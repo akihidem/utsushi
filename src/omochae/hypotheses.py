@@ -2,6 +2,7 @@
 
 判断の芯（J-002）: 仕組みを 1 つに決めて既定にしない。最初に刷る 1 枚は入口で、答えではない。
 予想を書く前に AI や作者の案を見せると、予想が案に引きずられるので、予想が無いと一覧も型紙も出さない。
+仮説を自分で立てたい人の道も持つ（J-008）。自分の仮説を書けば、それを型紙にでき、比べるのは本人が選ぶ時だけ。
 """
 import argparse
 import json
@@ -42,16 +43,47 @@ def save_prediction(source_id, text):
     return path, []
 
 
+def own_paths(source_id):
+    return sorted(_pred_dir().glob(f"own-{source_id}-*.json"), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
+
+
+def own_hypotheses(source_id):
+    return [json.loads(p.read_text(encoding="utf-8")) for p in own_paths(source_id)]
+
+
+def save_own(source_id, name, how, evidence, params=None):
+    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。"""
+    failures = [Failure("F9.own", field, f"{label}が空") for field, label, value in (("name", "仮説の名前", name), ("how", "動かし方", how), ("evidence", "図のどこを見たか", evidence)) if not value or not value.strip()]
+    if params is not None and not isinstance(params, dict):
+        failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
+    if failures:
+        return None, failures
+    n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+    rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
+           "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
+    folder = _pred_dir()
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"own-{source_id}-{n}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return rec, []
+
+
 def need_prediction(source_id):
-    return [] if predictions(source_id) else [Failure("F9.prediction", source_id, "先に予想を書く（python -m omochae.hypotheses predict）")]
+    if predictions(source_id) or own_paths(source_id):
+        return []
+    return [Failure("F9.prediction", source_id, "先に予想か自分の仮説を書く（python -m omochae.hypotheses predict か own）")]
 
 
 def letter(h):
     return h["id"].split("-")[1]
 
 
-def list_lines(data, latest):
-    lines = [f"{data['toy']}", f"あなたの予想: {latest}", data["note"], ""]
+def list_lines(data, latest, own=()):
+    lines = [f"{data['toy']}"]
+    if latest:
+        lines.append(f"あなたの予想: {latest}")
+    for h in own:
+        lines += [f"あなたの仮説 {h['id']} {h['name']}（{h['status']}）", f"  動かし方: {h['how_it_moves']}", f"  根拠: {h['evidence']}"]
+    lines += [data["note"], ""]
     for h in data["hypotheses"]:
         lines.append(f"{h['id']} {h['name']}（{h['status']}）")
         lines.append(f"  動かし方: {h['how_it_moves']}")
@@ -73,12 +105,42 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
     return generate("slider_fan", h["params"], source_id, out, title=title, version=version)
 
 
+def print_own(source_id, own_id, out, version=1):
+    from .__main__ import generate
+
+    match = [h for h in own_hypotheses(source_id) if h["id"] == own_id]
+    if not match:
+        raise ToolMissing(f"その仮説は無い: {own_id}")
+    h = match[0]
+    params = h["params"]
+    # 雛形に無い機構を作れるふりをしない。仮説は記録として残っている。
+    if not params or "push_part" not in params:
+        print(Failure("F9.own", own_id, "今の雛形には乗らない仮説なので型紙にできない。記録としては残っている").line(), file=sys.stderr)
+        return 3
+    data = load(source_id)
+    return generate("slider_fan", params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
+
+
+def picture(source_id):
+    source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    return f"{source['toy']} の図（出典 ID {source_id}・{source['holding']}）: {source['image_url']}"
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="omochae.hypotheses")
     ap.add_argument("--source", default="NDL-1187053-R0000005-L")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("predict").add_argument("text")
+    sub.add_parser("picture")
     sub.add_parser("list")
+    o = sub.add_parser("own")
+    o.add_argument("name")
+    o.add_argument("--how", default="")
+    o.add_argument("--evidence", default="")
+    o.add_argument("--params", help="型紙にする時の寸法の JSON。push_part が要る")
+    po = sub.add_parser("print-own")
+    po.add_argument("id")
+    po.add_argument("--out")
     s = sub.add_parser("print")
     s.add_argument("hypothesis")
     s.add_argument("--out")
@@ -87,7 +149,17 @@ def main(argv=None):
     except SystemExit as e:
         return 0 if e.code == 0 else 4
     try:
-        if args.cmd == "predict":
+        if args.cmd == "picture":
+            print(picture(args.source))
+            return 0
+        if args.cmd == "print-own":
+            return print_own(args.source, args.id, args.out or f"out/templates/{args.id}_v1")
+        if args.cmd == "own":
+            rec, failures = save_own(args.source, args.name, args.how, args.evidence, json.loads(args.params) if args.params else None)
+            if not failures:
+                print(f"{rec['id']} を残しました。print-own で型紙にして試せます。用意された仮説と比べたくなったら list です")
+                return 0
+        elif args.cmd == "predict":
             _, failures = save_prediction(args.source, args.text)
         else:
             failures = need_prediction(args.source)
@@ -99,8 +171,9 @@ def main(argv=None):
             print("予想を残しました。次に list で仮説を並べて見られます")
             return 0
         if args.cmd == "list":
-            latest = json.loads(predictions(args.source)[-1].read_text(encoding="utf-8"))["text"]
-            print("\n".join(list_lines(load(args.source), latest)))
+            preds = predictions(args.source)
+            latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
+            print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source))))
             return 0
         return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v1")
     except (ToolMissing, OSError, ValueError, KeyError) as e:

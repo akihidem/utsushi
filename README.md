@@ -22,6 +22,7 @@
 
 - NDL の manifest から出典の記録を作る
 - 御来迎の動く仕組みを 5 つの仮説として並べ、使い手が先に書いた予想と一緒に見せる。予想が無ければ一覧も型紙も出さない
+- 仮説を自分で立てて型紙にし、比べたい時に用意された仮説を並べて見る道も選べる
 - 選んだ仮説の型紙を A4 の PDF に刷る。寸法・重なり・文字・扇の開きの形の検査を通らなければ出さない
 - NDL の図を参照して、筒の面と像の色と線を描き直す。絵が折り線をまたがない事と、図を貼っていない事を検査する
 - 所蔵・改変・出典 ID・仮説の印を PDF から読み直して検査する
@@ -47,7 +48,17 @@ export PYTHONPATH=src
 .venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf
 ```
 
-100% で刷り、紙の物差しが 10cm か確かめる。寸法を直接試す時は `python -m omochae --params 寸法.json`（`push_part` が必須）。
+仮説を自分で立てたい時は、図を見て自分の案を書き、型紙にして試し、比べたくなった時に一覧を見る。
+
+```
+.venv/bin/python -m omochae.hypotheses picture
+.venv/bin/python -m omochae.hypotheses own "自分の仮説の名前" --how "動かし方" --evidence "図のどこを見たか" \\
+  --params '{"push_part": "stick", "hub": "axle", "pusher_height": 84}'
+.venv/bin/python -m omochae.hypotheses print-own OWN-1
+.venv/bin/python -m omochae.hypotheses list
+```
+
+`--params` が無い仮説や今の雛形に乗らない仮説は、記録として残り、型紙にはならない。100% で刷り、紙の物差しが 10cm か確かめる。寸法を直接試す時は `python -m omochae --params 寸法.json`（`push_part` が必須）。
 
 型紙の生成に API の鍵は要らない。
 

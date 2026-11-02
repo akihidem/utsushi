@@ -29,6 +29,7 @@ def cli(*args):
     return subprocess.run([sys.executable, "-m", "omochae.hypotheses", *args], capture_output=True, text=True)
 
 
+assert "dl.ndl.go.jp" in cli("picture").stdout and "H-A" not in cli("picture").stdout, "図は仮説の前に見られる"
 r = cli("list")
 assert r.returncode == 3 and "F9.prediction" in r.stderr and "H-A" not in r.stdout, "予想の前に仮説を見せない"
 assert cli("print", "H-A", "--out", f"{tmp}/x").returncode == 3 and not pathlib.Path(f"{tmp}/x.pdf").exists()
@@ -43,3 +44,24 @@ r = cli("print", "H-D", "--out", f"{tmp}/d")
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", f"{tmp}/d.pdf", "-"], capture_output=True, text=True).stdout
 assert "仮説D" in "".join(text.split()) and "答えではありません" in "".join(text.split())
+
+# 自分の仮説から入る道（J-008）。別の置き場で、予想なしから始める
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+tmp2 = os.environ["OMOCHAE_DATA"]
+assert cli("list").returncode == 3
+r = cli("own", "筒を回すと開く")
+assert r.returncode == 3 and "F9.own" in r.stderr, "動かし方と根拠が要る"
+r = cli("own", "筒を回すと開く", "--how", "筒をねじる", "--evidence", "筒の 2 本線がねじれて見える")
+assert r.returncode == 0 and "OWN-1" in r.stdout
+r = cli("print-own", "OWN-1", "--out", f"{tmp2}/none")
+assert r.returncode == 3 and "F9.own" in r.stderr and not pathlib.Path(f"{tmp2}/none.pdf").exists(), "雛形に無い機構を作れるふりをしない"
+assert cli("own", "壊れた寸法", "--how", "押す", "--evidence", "図", "--params", json.dumps({"push_part": "tab", "tube_side": 500})).returncode == 0
+r = cli("print-own", "OWN-2", "--out", f"{tmp2}/bad")
+assert r.returncode == 3 and "F5.range" in r.stderr, "自分の仮説も同じ検査を通す"
+assert cli("own", "つまみを斜めに", "--how", "溝のつまみを上げる", "--evidence", "寝かせた筒の棒", "--params", json.dumps({"push_part": "tab", "hub": "axle", "pusher_height": 15})).returncode == 0
+r = cli("print-own", "OWN-3", "--out", f"{tmp2}/mine")
+assert r.returncode == 0, r.stderr
+flat = "".join(subprocess.run(["pdftotext", f"{tmp2}/mine.pdf", "-"], capture_output=True, text=True).stdout.split())
+assert "自分の仮説" in flat and "仮説D" not in flat
+r = cli("list")
+assert r.returncode == 0 and r.stdout.index("OWN-1") < r.stdout.index("H-A"), "比べる時は自分の仮説を先に置く"
