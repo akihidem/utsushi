@@ -97,4 +97,8 @@ path.unlink()
 env = {k: v for k, v in os.environ.items() if not k.startswith("ANTHROPIC")}
 out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "generate"], capture_output=True, text=True, env={**env, "HOME": tmp}, cwd=tmp)
 assert out.returncode == 4 and "固定の仮説" in out.stderr
+
+# 本人の決定で全部 Opus（J-017）。黙って別のモデルに変わらないように固定する
+from api.config import MODELS
+assert set(MODELS.values()) == {"claude-opus-5-5"}
 assert out.returncode == 4

@@ -1,6 +1,7 @@
 """実行時のモデルを 1 か所で決める。
 
-既定は Opus 5.5（公式の既定）。解釈と差分案を安いモデルに分けるかは本人の判断待ちで、答えが出たらここだけを直す。
+全部 Opus 5.5 にするのは本人の決定（docs/process/decisions/J017-runtime-model.md）。質を比べて選んだのではなく、計画書どおりにした判断。
+費用の歯止めはモデルでなく src/api/budget.py の上限で持つ。配分を変える時はここだけを直す。
 """
 MODELS = {"generate": "claude-opus-5-5", "interpret": "claude-opus-5-5", "propose": "claude-opus-5-5", "words": "claude-opus-5-5"}
 EFFORT = {"generate": "high", "interpret": "medium", "propose": "high", "words": "medium"}

@@ -69,7 +69,7 @@
 | Skills | 開発中に公式の `claude-api` を参照しただけ。この repo の Skill は無い | 作っていない |
 | フック | Claude Code のフックは repo に無い。push のゲートは git のフックで、repo の外 | 作っていない |
 | MCP | 使っていない。絵の拡大と寸法の検査は Messages API の道具（`src/api/tools.py`） | 比べていない |
-| モデルの選び分け | 製品の API は全部 Opus 5.5 の設定（`src/api/config.py`）で、未実行 | 本人の答え待ち |
+| モデルの選び分け | 製品の API は全部 Opus 5.5（`src/api/config.py`）で、未実行 | 本人の決定（[J-017](../decisions/J017-runtime-model.md)）。追記: この点検の後に決まった。選び分けない判断で、比べた結果ではない |
 | Messages API の手書きの輪 | 作った。偽の応答で試験しただけ | 上限と人の確定を自分で握るため（[J-010](../decisions/J010-loop-back-half.md)） |
 
 つまり、**語れる物語はまだ無い。** 無い物を語らず、作るなら理由のある物だけを作る。案は次のとおり。

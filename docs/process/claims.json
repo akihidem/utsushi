@@ -340,5 +340,16 @@
     "quote": "そもそも測り切れない"
    }
   ]
+ },
+ {
+  "id": "C-31",
+  "claim": "批評は Claude のセッションだけで行い、人のレビューは受けない",
+  "kind": "立場",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J018-no-peer-review.md",
+    "quote": "批評は Claude のセッションだけで行い"
+   }
+  ]
  }
 ]

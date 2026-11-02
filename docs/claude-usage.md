@@ -11,11 +11,15 @@
 
 ## 製品の中で Claude を呼ぶ所
 
-裏の制作の仮説生成（`src/api/generate.py`）、言葉の仮説を寸法に写す口（`src/api/words.py`）、輪の後半（記録の解釈・次の手の提案）で Messages API の tool use を呼ぶ形を作った。本物の API はまだ 1 回も呼んでいない。試験は記録した形の偽物。実行時のモデルの配分は本人の判断待ちで、今は `src/api/config.py` の Opus 5.5。
+裏の制作の仮説生成（`src/api/generate.py`）、言葉の仮説を寸法に写す口（`src/api/words.py`）、輪の後半（記録の解釈・次の手の提案）で Messages API の tool use を呼ぶ形を作った。本物の API はまだ 1 回も呼んでいない。試験は記録した形の偽物。実行時のモデルは本人の決定で全部 Opus 5.5（`src/api/config.py`）。計画書どおりにした判断で、下の層と質を比べた結果ではない。上限は `src/api/budget.py` で守る（`docs/process/decisions/J017-runtime-model.md`）。
 
 ## 決定的な検査との境目
 
 型紙の座標と SVG・PDF は生成器が描き、寸法と印は検査が見る。基準は `tests/frozen/criteria.md`、入口は `./run.sh`。
+
+## 批評
+
+人のレビューは受けない。本人の決定で、批評は Claude のセッションだけで行う（`docs/process/decisions/J018-no-peer-review.md`）。批評の役も Claude なので、人の評価の代わりにはならない。
 
 ## 検証
 
@@ -25,6 +29,7 @@
 
 ## 凍結の変更の記録
 
+- F6.label に本人の決定の内容を追記し、凍結を閉じた（3 分類、文言の検査なし）。凍結の時から「答えの後に 1 回だけ追記する」と書いてあった分で、これ以上は足さない。負の対照の欄を `tests/test_labels.py` にした。理由は `docs/process/decisions/J016-zukan-labels.md`。
 - F3.result の文を、結果は雛形の値に変えた。虎は本人の判断で揺れた／揺れないの 2 値にしたため（`docs/process/research/15-philosophy-review.md`）。御来迎の 3 値は変えていない。
 - 基準の文は変更なし。基準に名前を決めてあった負の対照 `neg_bom_material`・`neg_bom_original` の場面を、部品表の検査を作る時に足した。
 - 既定の寸法を手元の複写の基準に変えたので、場面 `pos_tube`・`pos_stick` の押す部品の長さを 84 に、`neg_figure_height` の像の高さを 55 に直した。検査の基準の文は変えていない。狙いの検査も同じ。理由は `docs/process/research/07-own-scans.md`。
