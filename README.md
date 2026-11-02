@@ -10,6 +10,10 @@
 - 判断の記録: [docs/process/decisions/](docs/process/decisions/)
 - 試行の索引（仮説 → 型紙 → 実物 → 記録 → 次の版）: [docs/process/trials/](docs/process/trials/)
 
+## 構成
+
+[docs/architecture.md](docs/architecture.md) に置き場と処理の流れ、[docs/features.json](docs/features.json) に機能の状態を書いている。
+
 ## 開発基盤と提出物の切り分け
 
 提出するコード・機能・データは、開発期間（2026-11-02 12:00 〜 2026-11-08 20:00 JST）中に、この repo で新規に作った。開発には、従前から運用している Claude Code の作業基盤を道具として使ったが、そのコードは含めていない。題材については開発の開始前に調査と構想の検討をしており、そのメモは参考資料として手元に置いた。この repo には入れていない。扱いは [docs/process/README.md](docs/process/README.md) に書いた。
@@ -22,13 +26,24 @@
 
 ## 動かし方
 
+要る物: [uv](https://docs.astral.sh/uv/)、poppler（`pdftotext`・`pdftoppm`）、fontconfig（`fc-match`）、字 Noto Serif CJK JP。Ubuntu なら `sudo apt install poppler-utils fontconfig fonts-noto-cjk`。
+
 ```
-./init.sh
-PYTHONPATH=src .venv/bin/python -m omochae --out out/templates/slider_fan_v1
-./run.sh
+git clone <この repo の URL>
+cd <この repo>
+./init.sh   # 環境を作る。足りない物があれば名指しして止まる
+./run.sh    # 検査を全部回す。結果は out/RESULT.md
 ```
 
-poppler（pdftotext・pdftoppm）、uv、字 Noto Serif CJK JP が要る。
+`./run.sh` の後、`out/scenarios/pos_tab.pdf` に御来迎の型紙（つまみの形）ができる。`pos_tube.pdf`・`pos_stick.pdf` は下から押す形。100% で刷り、紙の物差しが 10cm か確かめる。
+
+好きな寸法で刷る時は、変えたい値だけを JSON に書いて渡す。
+
+```
+PYTHONPATH=src .venv/bin/python -m omochae --params 寸法.json --out out/templates/my_v1
+```
+
+型紙の生成に API の鍵は要らない。
 
 ## Claude の活用
 
@@ -50,6 +65,10 @@ poppler（pdftotext・pdftoppm）、uv、字 Noto Serif CJK JP が要る。
 | NDL-1187053-R0000014-R | 『江都二色』張子の首振り虎 | 同上 | PDM | まだ使っていない |
 
 依存: cairosvg（LGPL-3）、shapely（BSD-3）、drawsvg（MIT）、fontTools（MIT）。
+
+## ライセンス
+
+コードと文書は [MIT](LICENSE)。NDL の図と歌は上の出典の表のとおりで、MIT の対象ではない。
 
 ## 将来構想（未実装）
 

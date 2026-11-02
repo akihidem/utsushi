@@ -4,7 +4,7 @@
 
 ## 置き場
 - `src/omochae/` 雛形の生成器と検査 / `src/api/` Claude を呼ぶ所と道具
-- `data/sources` 出典 / `data/records` 再現例 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
+- `data/sources` 出典（NDL の記録と、手元の複写の記録 `own-scans.json` を分ける）/ `data/records` 再現例 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
 - `tests/frozen/` 凍結した試験の場面と合格の基準（変えない。変えるなら理由を commit と `docs/claude-usage.md` に）
 - `docs/process/` 開発の過程（調査・判断・試行）。**作業しながら書く。後からまとめて作らない**
 - `out/` 生成物（git に入れない）
@@ -18,4 +18,8 @@
 - この repo の中の物だけで作る。期間前の試作は読まない・写さない。事前の検討メモは参考にしてよいが、結論を写さず、一次資料か実験で確かめ直して `docs/process/` に残す。
 - 検査の exit code は 0 = 通る / 3 = 落ちる（どの検査が・どこで）/ 4 = 検査できない。1 と 2 は使わない。入口は `run.sh`。
 - コードのコメントには判断の理由を書く。commit は小さく、日本語で、何を作り何の検査を通したかを書く。
-- 秘密は `.env`。画像は NDL と東京学芸大学の PDM の物だけ。GPL のコードは入れない。
+- 秘密は `.env`。画像は NDL と東京学芸大学の PDM の物だけ。GPL のコードは入れない。個人のパスと機械固有の値を入れない。
+- 手元の複写は寸法と読みの照合の基準。画像と本文は入れず、歌の読み・頁の番号・自分の言葉の要約だけを残す。
+- 構成を変えたら `docs/architecture.md` と `docs/features.json` を同じ commit で直す。
+- 判断の記録は `docs/process/decisions/`、調査は `docs/process/research/` に番号順で足す。
+- push は本人が決めた手順を通した物だけ。
