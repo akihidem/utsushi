@@ -192,6 +192,12 @@
   "status": "決定"
  },
  {
+  "id": "J-019",
+  "path": "decisions/J019-experiment-sheet.md",
+  "hook": "型紙を実験装置に。角度で分かれるのは H-E を含む組だけ",
+  "status": "決定"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

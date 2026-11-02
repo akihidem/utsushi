@@ -45,6 +45,8 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | F5.image_box | 描き直しの絵が部品の中にあり、折り線と糊代をまたがない | `neg_image_box` | 3・F5.image_box |
 | F5.image_count | PDF に貼られた画像が 0 枚（原図を貼らない。J-007） | `neg_image_count` | 3・F5.image_count |
 
+F11.compare は案 B で足した床。見分ける物差しの無い雛形と、同じ仮説どうしは見比べる紙にしない。負の対照は `tests/test_discriminate.py`。
+
 F9.prediction は、予想か自分の仮説が無いと仮説の一覧も型紙も出さない床で、F9 の一部として足した。F9.own は自分の仮説に動かし方と根拠を求め、雛形に乗らない仮説を型紙にしない床。試験は `tests/test_hypotheses.py`。
 
 F5.fan_height は、軸の形では「中心の高さ＋折りの高さ ≦ 押し上げる量」で見る。`pos_rim` は台に載せる形の正の場面。

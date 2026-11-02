@@ -209,5 +209,15 @@
    "tests/test_labels.py"
   ],
   "unverified": "図鑑の画面が無く、公開の経路につながっていない。本物の図鑑の文では未試験"
+ },
+ {
+  "id": "f25",
+  "name": "仮説を見比べる紙と作り手用の表（案 B）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/discriminate.py",
+   "tests/test_discriminate.py"
+  ],
+  "unverified": "実物で未試行。Claude が見分ける試作を設計する所は未実装。虎は対象外"
  }
 ]

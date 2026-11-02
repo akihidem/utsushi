@@ -49,3 +49,4 @@
 | C-29 | 学ぶ人の紙に成功、失敗、正解の語は刷らない | 自動試験 | [test_records.py](../../tests/test_records.py) |
 | C-30 | 昔の玩具が再現されたかは、原物が無いので測り切れない | 立場 | [philosophy.md](philosophy.md) |
 | C-31 | 批評は Claude のセッションだけで行い、人のレビューは受けない | 立場 | [J018-no-peer-review.md](decisions/J018-no-peer-review.md) |
+| C-32 | 御来迎の 5 つの仮説のうち、開く角度で分かれるのは H-E を含む組だけ | 計算 | [test_discriminate.py](../../tests/test_discriminate.py)、[J019-experiment-sheet.md](decisions/J019-experiment-sheet.md) |

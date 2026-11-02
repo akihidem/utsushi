@@ -88,6 +88,49 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures
 
 
+COMPARE_LIMIT = "どちらかがよく動いても、昔の作り方の証明にはなりません。紙で言えるのは、この紙がどう動くかまでです。"
+
+
+def compose_compare(source, toy, ha, hb, labels, page_name="A4"):
+    """2 つの仮説を見比べる紙（J-019）。計算の上限も、どちらが正しいかの欄も置かない。
+
+    判断の芯: 問うのは「どこが違ったか」で、勝ち負けを決めない（記録は観察で成績にしない。philosophy.md）。
+    """
+    page = PAGES[page_name]
+    width = page.x1 - page.x0
+    texts, shapes = [], []
+    y = _block(texts, [f"見比べる紙 {toy} 仮説 {labels[0]} と 仮説 {labels[1]}"], page.x0, page.y0, TITLE_SIZE, width)
+    y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["2 つの型紙を同じ紙で刷って作り、同じ手で試す"], page.x0, y + GAP, HEAD_SIZE, width)
+    for label, h in zip(labels, (ha, hb)):
+        y = _block(texts, [f"{label}: {h['name']}", h["how_it_moves"], f"見る物: {h['to_measure']}"], page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["作る前に: どちらがどう違うと思いますか"], page.x0, y + GAP, HEAD_SIZE, width)
+    y += ANSWER_GAP
+    shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
+    y = _block(texts, ["測る（紙の力だけ。3 回）"], page.x0, y + GAP, HEAD_SIZE, width)
+    for label in labels:
+        x = page.x0
+        for n in (1, 2, 3):
+            head = f"{label} {n} 回目（度）"
+            lw = text_width(head, BODY_SIZE)
+            texts.append(TextBox(x, y, lw, BODY_SIZE * LINE, head, BODY_SIZE))
+            shapes.append({"kind": "rect", "x": x + lw + 1.5, "y": y, "w": 22, "h": BODY_SIZE * LINE})
+            texts.append(TextBox(x + lw + 1.5, y, 22, BODY_SIZE * LINE, None))
+            x += lw + 28
+        y += BODY_SIZE * LINE + 2
+    y = _block(texts, ["見て考える"], page.x0, y + GAP, HEAD_SIZE, width)
+    for q in ("2 つでどこが違いましたか", "違いが出なかった所はどこですか", "もう 1 つ見比べるなら、何を変えますか"):
+        texts.append(TextBox(page.x0, y, text_width(q, BODY_SIZE), BODY_SIZE * LINE, q, BODY_SIZE))
+        y += BODY_SIZE * LINE + ANSWER_GAP
+        shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
+    y = _block(texts, [COMPARE_LIMIT], page.x0, y + 1, BODY_SIZE, width)
+    ruler_y = y + 2
+    texts.append(TextBox(page.x0, ruler_y, 100, 3, None))
+    _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], page.x0, ruler_y + 4, BODY_SIZE, width)
+    failures = check_layout(page, [], texts)
+    return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures
+
+
 def compose_after(source, title, after, page_name="A4"):
     """試した後の紙。対比を先に見せ、説明は折って閉じた札にする（J-013）。
 

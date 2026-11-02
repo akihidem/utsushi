@@ -29,6 +29,7 @@
 
 ## 凍結の変更の記録
 
+- 本人の決定で案 B を採ったので、床 F11.compare を足した。既存の床は変えていない。理由は `docs/process/decisions/J019-experiment-sheet.md`。
 - F6.label に本人の決定の内容を追記し、凍結を閉じた（3 分類、文言の検査なし）。凍結の時から「答えの後に 1 回だけ追記する」と書いてあった分で、これ以上は足さない。負の対照の欄を `tests/test_labels.py` にした。理由は `docs/process/decisions/J016-zukan-labels.md`。
 - F3.result の文を、結果は雛形の値に変えた。虎は本人の判断で揺れた／揺れないの 2 値にしたため（`docs/process/research/15-philosophy-review.md`）。御来迎の 3 値は変えていない。
 - 基準の文は変更なし。基準に名前を決めてあった負の対照 `neg_bom_material`・`neg_bom_original` の場面を、部品表の検査を作る時に足した。

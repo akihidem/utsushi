@@ -351,5 +351,20 @@
     "quote": "批評は Claude のセッションだけで行い"
    }
   ]
+ },
+ {
+  "id": "C-32",
+  "claim": "御来迎の 5 つの仮説のうち、開く角度で分かれるのは H-E を含む組だけ",
+  "kind": "計算",
+  "evidence": [
+   {
+    "path": "tests/test_discriminate.py",
+    "quote": "角度で分かれると言えるのは H-E を含む 4 組だけ"
+   },
+   {
+    "path": "docs/process/decisions/J019-experiment-sheet.md",
+    "quote": "今の測り方では見分けられない"
+   }
+  ]
  }
 ]
