@@ -15,7 +15,7 @@ import tempfile
 import unicodedata
 from datetime import datetime, timedelta, timezone
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .model import Failure
 
@@ -37,12 +37,13 @@ TEXT_FIELDS = ("display_name", "origin", "where_when", "toy_name", "source_id", 
 PUBLIC_FIELDS = ("id", "status", "received_at", "kind", "role", "certainty", "body", "display_name", "origin", "where_when", "toy_name", "source_id", "rights", "media")
 ID_NAME = re.compile(r"^C-(\d{4,})\.json$")
 # 公開の文に個人の連絡先が紛れる事故を減らす。人の確認の補助で、これだけで安全とは言わない。
-EMAIL = re.compile(r"[\w.+-]+\s*@\s*[\w-]+(?:\s*\.\s*[\w-]+)+|\b\w+\s+at\s+\w+\s+dot\s+\w+", re.I)
-PHONE_RUN = re.compile(r"\+?[\d][\d\s().\-‐‑‒–—―−ー]{7,}\d")
+EMAIL = re.compile(r"[\w.+-]+\s*@\s*[\w-]+(?:\s*\.\s*[\w-]+)*|\b\w+\s*(?:\[at\]|\(at\)|\s+at\s+|アット)\s*\w+\s*(?:\.|\s+dot\s+)\s*\w+", re.I)
+PHONE_RUN = re.compile(r"\+?\d[\d\s().\-/・~〜‐‑‒–—―−ー]*\d")
 POSTAL = re.compile(r"(?:〒|郵便番号)\s*\d{3}[\s\-‐‑‒–—―−ー]?\d{4}|(?<!\d)\d{3}[\-‐‑‒–—―−ー]\d{4}(?!\d)")
 PUBLIC_TEXT_FIELDS = ("body", "display_name", "origin", "where_when", "toy_name", "source_id")
 # 状態の移り方を 1 か所で決める。承認の後の却下は認めない（公開を下げるのは取り下げだけにして、消し忘れを無くす）。
-TRANSITIONS = {"received": {"approved", "rejected", "withdrawn"}, "approved": {"withdrawn"}, "rejected": {"withdrawn"}, "withdrawn": set()}
+# 取り下げはどの状態からでもでき、受付の記録ごと消すので、ここには書かない。
+TRANSITIONS = {"received": {"approved", "rejected"}, "approved": set(), "rejected": set()}
 
 
 def dirs():
@@ -86,23 +87,29 @@ def _bad_text(s):
         s.encode("utf-8")
     except UnicodeEncodeError:
         return True
-    return any(unicodedata.category(ch) == "Cc" and ch not in "\n\t" for ch in s)
+    # 文字の向きを変える制御文字は、確認する人に見える文と保存される文を違わせられるので断る。
+    return any((unicodedata.category(ch) == "Cc" and ch not in "\n\t") or 0x202A <= ord(ch) <= 0x202E or 0x2066 <= ord(ch) <= 0x2069 for ch in s)
 
 
 def _normalize(text):
     """全角や見えない文字で検査をすり抜けないよう、そろえてから調べる。"""
     text = unicodedata.normalize("NFKC", text)
-    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    # 異体字セレクタも見えない文字なので一緒に消す。
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf" and not 0xFE00 <= ord(ch) <= 0xFE0F)
     return text.replace("。", ".").replace("(0)", "")
 
 
 def _looks_like_phone(text):
+    """数字の塊の連続した組で 10〜11 桁を探す。前後の別の数字（10時・1960年など）に引きずられないよう、塊の窓で見る。"""
     for m in PHONE_RUN.finditer(text):
-        digits = re.sub(r"\D", "", m.group())
-        if digits.startswith("81"):
-            digits = "0" + digits[2:]
-        if digits.startswith("0") and 10 <= len(digits) <= 11:
-            return True
+        groups = re.findall(r"\d+", m.group())
+        for i in range(len(groups)):
+            for j in range(i + 1, len(groups) + 1):
+                digits = "".join(groups[i:j])
+                if digits.startswith("81"):
+                    digits = "0" + digits[2:]
+                if digits.startswith("0") and 10 <= len(digits) <= 11:
+                    return True
     return False
 
 
@@ -176,16 +183,21 @@ def check_pii(c):
 
 def _clean_image(raw):
     """画像として本当に読めるかを確かめ、描き直す。位置情報などの付帯情報を公開に持ち越さないため。返り値は (bytes, 拡張子)。"""
-    Image.MAX_IMAGE_PIXELS = MAX_PIXELS
     try:
-        with Image.open(io.BytesIO(raw)) as im:
-            if im.format not in ("JPEG", "PNG"):
+        # MPO はスマホの JPEG に多く、Pillow は JPEG の読み手から MPO として返す。下で JPEG として描き直す。
+        with Image.open(io.BytesIO(raw), formats=("JPEG", "PNG")) as im:
+            if im.size[0] * im.size[1] > MAX_PIXELS:  # Pillow の上限は警告の倍まで通るので、読む前に自分で比べる
                 return None, None
+            fmt = "PNG" if im.format == "PNG" else "JPEG"
             im.load()
-            fmt = im.format
-            mode = "RGB" if fmt == "JPEG" or im.mode not in ("RGB", "RGBA") else im.mode
-            clean = Image.new(mode, im.size)
-            clean.paste(im.convert(mode))
+            # 付帯情報を消すと向きも消えるので、先に向きを画素へ反映する。
+            im = ImageOps.exif_transpose(im)
+            if im.mode.startswith("I"):  # 16bit をそのまま 8bit にすると真っ白になる
+                im = im.point(lambda v: v / 256).convert("L")
+            mode = "RGB" if fmt == "JPEG" or im.mode not in ("RGB", "RGBA", "LA", "P") else "RGBA"
+            source = im.convert(mode)
+            clean = Image.new(mode, source.size)
+            clean.paste(source)
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError, SyntaxError):
         return None, None
     buf = io.BytesIO()
@@ -210,9 +222,13 @@ def _now():
 def submit(data, image_b64=None):
     """受付。返り値は (ID, failures)。失敗なら何も保存しない。"""
     checked = dict(data)
+    if isinstance(checked.get("body"), str):
+        checked["body"] = checked["body"].replace("\r\n", "\n")  # ブラウザの改行を、使えない文字として断らない
     if image_b64:
         checked["_has_image"] = True
     failures = check_intake(checked)
+    # 公開の時でなく受付の時に知らせる。本人がその場で直せて、確認者が他人の言葉を書き換えずに済む。
+    failures += check_pii(checked)
     raw = ext = None
     if image_b64:
         try:
@@ -233,11 +249,12 @@ def submit(data, image_b64=None):
         return None, failures
     d = dirs()
     _ensure_dirs()
-    if sum(1 for _ in d["inbox"].glob("C-*.json")) >= MAX_INBOX:
+    if sum(1 for p in d["inbox"].glob("C-*.json") if '"status": "received"' in p.read_text(encoding="utf-8")) >= MAX_INBOX:
         return None, [Failure("F10.intake", "inbox", "受付箱がいっぱい")]
     # 知らない項目を保存しない。公開の記録に紛れ込む道を入口で断つ。
-    allowed = {"kind", "role", "certainty", "body", "display_name", "origin", "where_when", "toy_name", "source_id", "attest"}
-    rec = {k: data[k] for k in allowed if k in data}
+    allowed = {"kind", "role", "certainty", "body", "display_name", "origin", "where_when", "toy_name", "source_id"}
+    rec = {k: checked[k] for k in allowed if k in checked}
+    rec["attest"] = {a: True for a in ATTESTS}
     r = data["rights"]
     rec["rights"] = {"basis": r["basis"], "holder": r.get("holder", ""), "license": r["license"]}
     rec.update(status="received", received_at=_now(), media=[])
@@ -251,15 +268,22 @@ def submit(data, image_b64=None):
             break
         except FileExistsError:
             continue
-    if raw:
-        _write_atomic(d["media"] / f"{cid}{ext}", raw)
-    if data.get("contact"):
-        _write_atomic(d["inbox"] / f"{cid}.private", json.dumps({"contact": data["contact"]}, ensure_ascii=False))
+    try:
+        if raw:
+            _write_atomic(d["media"] / f"{cid}{ext}", raw)
+        if data.get("contact"):
+            _write_atomic(d["inbox"] / f"{cid}.private", json.dumps({"contact": data["contact"]}, ensure_ascii=False))
+    except OSError:
+        # 写真の無い記録を承認できる形で残さない。投稿者には失敗として返る。
+        (d["inbox"] / f"{cid}.json").unlink(missing_ok=True)
+        (d["media"] / f"{cid}{ext}").unlink(missing_ok=True)
+        raise
     return cid, []
 
 
 def _check_id(cid):
-    if not re.fullmatch(r"C-\d{4,}", cid):
+    # 全角の数字や桁の違う番号を別の番号として通さない。
+    if not re.fullmatch(r"C-(?:[0-9]{4}|[1-9][0-9]{4,})", cid):
         raise ValueError(f"ID の形が違う: {cid}")
 
 
@@ -284,10 +308,14 @@ def approve(cid, reviewer, note=""):
     if not isinstance(reviewer, str) or not reviewer.strip():
         failures.append(Failure("F10.review", cid, "確認した人の名前が無い"))
     if "approved" not in TRANSITIONS.get(rec.get("status"), set()):
-        failures.append(Failure("F10.review", cid, f"状態 {rec.get('status')} からは公開できない"))
+        # 却下の記録は中身を消してあるので、他の検査を重ねず、状態の理由だけを返す。
+        return failures + [Failure("F10.review", cid, f"状態 {rec.get('status')} からは公開できない")]
     if (dirs()["withdrawn"] / f"{cid}.json").exists():
         failures.append(Failure("F10.review", cid, "取り下げられた番号は公開できない"))
     failures += check_rights(rec) + check_pii(rec)
+    for name in rec.get("media", []):
+        if not (dirs()["media"] / name).exists():
+            failures.append(Failure("F10.review", cid, f"写真 {name} が無い"))
     if failures:
         return failures
     _ensure_dirs()
@@ -312,8 +340,9 @@ def reject(cid, reviewer, note=""):
     for name in rec.get("media", []):
         (d["media"] / name).unlink(missing_ok=True)
     (d["inbox"] / f"{cid}.private").unlink(missing_ok=True)
-    rec.update(status="rejected", media=[], review={"by": reviewer.strip(), "at": _now(), "note": note})
-    _write_atomic(path, _dump(rec))
+    (d["public"] / f"{cid}.json").unlink(missing_ok=True)  # 承認の途中で失敗した物が公開に残らないように
+    # 本文も残さない。公開しないと決めた他人の文を持ち続ける理由が無い。
+    _write_atomic(path, _dump({"id": cid, "status": "rejected", "review": {"by": reviewer.strip(), "at": _now(), "note": note}}))
     return []
 
 
@@ -325,6 +354,9 @@ def withdraw(cid):
     _check_id(cid)
     d = dirs()
     _ensure_dirs()
+    # 打ち間違いの番号で「取り下げた」と答えない。
+    if not ((d["inbox"] / f"{cid}.json").exists() or (d["public"] / f"{cid}.json").exists() or (d["withdrawn"] / f"{cid}.json").exists()):
+        raise ValueError(f"その番号の投稿は無い: {cid}")
     _write_atomic(d["withdrawn"] / f"{cid}.json", _dump({"id": cid, "status": "withdrawn", "withdrawn_at": _now()}))
     (d["public"] / f"{cid}.json").unlink(missing_ok=True)
     for folder in (d["media"],):
@@ -336,7 +368,7 @@ def withdraw(cid):
 
 
 def _valid_public(rec):
-    return isinstance(rec, dict) and all(isinstance(rec.get(k), str) for k in ("id", "body", "kind", "role", "certainty")) and rec["kind"] in KINDS and rec["role"] in ROLES and isinstance(rec.get("rights"), dict) and all(isinstance(rec["rights"].get(k, ""), str) for k in ("holder", "license", "basis")) and isinstance(rec.get("media", []), list)
+    return isinstance(rec, dict) and all(isinstance(rec.get(k), str) for k in ("id", "body", "kind", "role", "certainty")) and rec["kind"] in KINDS and rec["role"] in ROLES and isinstance(rec.get("rights"), dict) and all(isinstance(rec["rights"].get(k, ""), str) for k in ("holder", "license", "basis")) and all(isinstance(n, str) for n in rec.get("media", []) if isinstance(rec.get("media", []), list)) and isinstance(rec.get("media", []), list) and all(isinstance(rec.get(k, ""), str) for k in ("display_name", "origin", "where_when", "toy_name", "source_id"))
 
 
 def public_list(source_id=None):
@@ -363,13 +395,19 @@ def _show(cid):
     """確認する人に、公開される項目を全部見せる。本文の一部だけで承認させないため。"""
     _, rec = _load(cid)
     print(json.dumps(public_record(rec), ensure_ascii=False, indent=2))
+    private = dirs()["inbox"] / f"{cid}.private"
+    if private.exists():
+        # 確認で止めた時に再投稿を頼めるように、確認する人にだけ見せる。
+        print("連絡先（公開しない）:", json.loads(private.read_text(encoding="utf-8")).get("contact", ""))
     print("公開の前に写真も確かめる:", ", ".join(str(dirs()["media"] / n) for n in rec.get("media", [])) or "写真なし")
 
 
 def _human_confirm(cid):
     """人が端末で番号を打った時だけ公開する。AI や自動の処理の承認を止めるための補助で、完全な保証ではない。"""
     try:
-        with open("/dev/tty", "r+", encoding="utf-8") as tty:
+        # 端末は seek できないので、普通の open の読み書きの形では開けない。
+        fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
+        with io.TextIOWrapper(io.FileIO(fd, "r+"), encoding="utf-8") as tty:
             tty.write(f"公開される内容を確かめましたか。公開するなら {cid} と打ってください: ")
             tty.flush()
             return tty.readline().strip() == cid
@@ -394,13 +432,15 @@ def main(argv=None):
         return 0 if e.code == 0 else 4
     try:
         if args.cmd == "inbox":
+            unreadable = 0
             for p in sorted(dirs()["inbox"].glob("C-*.json")):
                 try:
                     rec = json.loads(p.read_text(encoding="utf-8"))
                     print(rec["id"], rec["status"], rec.get("kind", ""), "".join(ch for ch in str(rec.get("body", ""))[:40] if ch.isprintable()))
                 except (OSError, ValueError, KeyError, TypeError):
                     print(f"{p.name} 読めない記録", file=sys.stderr)
-            return 0
+                    unreadable += 1
+            return 4 if unreadable else 0
         if args.cmd == "show":
             _show(args.id)
             return 0
@@ -414,6 +454,7 @@ def main(argv=None):
             failures = reject(args.id, args.reviewer, args.note)
         else:
             failures = withdraw(args.id)
+            print(f"取り下げた: {args.id}")
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:
         print(f"検査できない: {type(e).__name__}: {e}", file=sys.stderr)
         return 4

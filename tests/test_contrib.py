@@ -70,16 +70,29 @@ cid, _ = contrib.submit(base())
 assert floors(contrib.approve(cid, " ")) == {"F10.review"}
 assert contrib.reject(cid, "確認者") == []
 assert floors(contrib.approve(cid, "確認者")) == {"F10.review"}
-# F10.pii
+# F10.pii: 受付で知らせる。公開の時にも重ねて見る
 for text in ("連絡は a.b@example.com まで", "電話 03-1234-5678", "〒100-0001 のお店", "携帯09012345678", "03 - 1234 - 5678", "03.1234.5678", "(03)1234-5678",
              "０３（１２３４）５６７８", "090−1234−5678", "090–1234–5678", "+81-(0)90-1234-5678", "a＠example．com", "a@example。com", "a@exam\u200bple.com",
-             "03\u200b-1234-5678", "〒1000001", "郵便番号1000001", "〒100 0001", "a at example dot com"):
-    cid, _ = contrib.submit(base(body=text))
-    assert floors(contrib.approve(cid, "確認者")) == {"F10.pii"}, text
-cid, _ = contrib.submit(base(rights={"basis": "own_work", "holder": "x@example.com", "license": "display_only", "phone": "090-9999-8888"}, source_id="090-1111-2222"))
+             "03\u200b-1234-5678", "〒1000001", "郵便番号1000001", "〒100 0001", "a at example dot com",
+             "03-1234-5678 10時から", "03-1234-5678 (10時まで)", "03-1234-5678 03-1234-5679", "03-1234-5678\n03-1234-5679", "1. 03-1234-5678", "1960 03-1234-5678",
+             "090 1234 5678 10時", "1960 090 1234 5678", "0120-123-456 24時間", "03-1234-5678\n1960年", "a [at] example.com", "a(at)example.com", "aアットexample.com",
+             "a@localhost", "03・1234・5678", "03/1234/5678", "03〜1234〜5678", "0\ufe0f3-1234-5678"):
+    assert floors(contrib.submit(base(body=text))[1]) == {"F10.pii"}, text
+assert floors(contrib.submit(base(rights={"basis": "own_work", "holder": "x@example.com", "license": "display_only"}))[1]) == {"F10.pii"}
+assert floors(contrib.submit(base(source_id="090-1111-2222"))[1]) == {"F10.pii"}
+cid, _ = contrib.submit(base())
+inbox_path = pathlib.Path(tmp) / "contributions_inbox" / f"{cid}.json"
+rec = json.loads(inbox_path.read_text(encoding="utf-8"))
+rec["body"] = "電話 03-1234-5678"
+inbox_path.write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
 assert floors(contrib.approve(cid, "確認者")) == {"F10.pii"}
+contrib.withdraw(cid)
+cid, _ = contrib.submit(base(rights={"basis": "own_work", "holder": "", "license": "display_only", "phone": "090-9999-8888"}, attest={"agrees_terms": True, "adult_or_guardian": True, "no_identifiable_people": True, "extra": "090-9999-8888"}))
 inbox_text = (pathlib.Path(tmp) / "contributions_inbox" / f"{cid}.json").read_text(encoding="utf-8")
-assert "090-9999-8888" not in inbox_text, "rights の知らない項目を保存しない"
+assert "090-9999-8888" not in inbox_text, "知らない項目を保存しない"
+contrib.withdraw(cid)
+assert contrib.submit(base(body="a\r\nb"))[1] == [], "ブラウザの改行を断らない"
+assert floors(contrib.submit(base(body="a\u202eb"))[1]) == {"F10.intake"}
 cid, _ = contrib.submit(base(body="1773 年の本にある。1931 年の複製もある"))
 assert contrib.approve(cid, "確認者") == [], "年の数字を電話番号と誤って止めない"
 contrib.withdraw(cid)
@@ -159,6 +172,58 @@ assert list_contributions() == [] and get(f"/media/{name}")[0] == 404 and cid no
 assert not (pathlib.Path(tmp) / "contributions_inbox" / f"{cid}.private").exists()
 new, _ = contrib.submit(base())
 assert new != cid, "取り下げの番号を使い回さない"
+# 番号の打ち間違いで成功と答えない
+for bad_id in ("C-99999999", "C-00001", "C-０００１"):
+    try:
+        contrib.withdraw(bad_id)
+        raise AssertionError(bad_id)
+    except ValueError:
+        pass
+# 写真の向きを失わない
+ex = Image.Exif()
+ex[0x0112] = 6
+buf = io.BytesIO()
+Image.new("RGB", (40, 20), "red").save(buf, format="JPEG", exif=ex)
+oid, fs = contrib.submit(base(kind="photo", rights={"basis": "own_work", "holder": "本人", "license": "display_only"}), base64.b64encode(buf.getvalue()).decode())
+assert not fs and Image.open(pathlib.Path(tmp) / "contributions_media" / f"{oid}.jpg").size == (20, 40)
+# 画素が多すぎる画像を読まない
+buf = io.BytesIO()
+Image.new("1", (9000, 9000)).save(buf, format="PNG")
+assert floors(contrib.submit(base(kind="photo", rights={"basis": "own_work", "holder": "本人", "license": "display_only"}), base64.b64encode(buf.getvalue()).decode())[1]) == {"F10.intake"}
+# 16bit の画像を真っ白にしない
+buf = io.BytesIO()
+Image.new("I;16", (4, 4), 30000).save(buf, format="PNG")
+gray, fs = contrib.submit(base(kind="photo", rights={"basis": "own_work", "holder": "本人", "license": "display_only"}), base64.b64encode(buf.getvalue()).decode())
+assert not fs and Image.open(pathlib.Path(tmp) / "contributions_media" / f"{gray}.png").convert("L").getpixel((0, 0)) < 200
+# 却下で本文も残さない
+rid, _ = contrib.submit(base(body="残さない本文"))
+assert contrib.reject(rid, "確認者") == []
+assert "残さない本文" not in (pathlib.Path(tmp) / "contributions_inbox" / f"{rid}.json").read_text(encoding="utf-8")
+# 端末で人が番号を打てば公開でき、違う番号では公開しない（機械の pty でも通るので、補助の検査）
+import pty, select
+
+
+def tty_approve(cid, typed):
+    pid, fd = pty.fork()
+    if pid == 0:
+        os.execv(sys.executable, [sys.executable, "-m", "omochae.contrib", "approve", cid, "--reviewer", "確認者"])
+    seen = b""
+    while b"\xe6\x89\x93\xe3\x81\xa3\xe3\x81\xa6" not in seen:  # 「打って」の問いが出るまで待つ
+        if not select.select([fd], [], [], 20)[0]:
+            raise AssertionError(seen)
+        seen += os.read(fd, 4096)
+    os.write(fd, typed.encode() + b"\n")
+    try:
+        while os.read(fd, 4096):
+            pass
+    except OSError:
+        pass
+    return os.waitstatus_to_exitcode(os.waitpid(pid, 0)[1])
+
+
+hid, _ = contrib.submit(base())
+assert tty_approve(hid, "C-0000") == 3 and hid not in [c["id"] for c in contrib.public_list()]
+assert tty_approve(hid, hid) == 0 and hid in [c["id"] for c in contrib.public_list()]
 # 付帯情報を公開に持ち越さない
 exif = Image.Exif()
 exif[0x010e] = "GPS35.7148N139.7967E_home"

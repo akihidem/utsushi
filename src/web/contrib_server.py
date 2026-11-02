@@ -171,5 +171,10 @@ if __name__ == "__main__":
     except ValueError:
         print("検査できない: ポートは数字で指定する", file=sys.stderr)
         sys.exit(4)
+    try:
+        server = serve(port)
+    except (OSError, OverflowError) as e:
+        print(f"検査できない: ポート {port} で開けない: {e}", file=sys.stderr)
+        sys.exit(4)
     print(f"http://127.0.0.1:{port}/")
-    serve(port).serve_forever()
+    server.serve_forever()
