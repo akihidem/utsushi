@@ -24,5 +24,5 @@
 - 秘密は `.env`。画像は NDL と東京学芸大学の PDM の物だけ。GPL のコードは入れない。個人のパスと機械固有の値を入れない。
 - 手元の複写は寸法と読みの照合の基準。画像と本文は入れず、歌の読み・頁の番号・自分の言葉の要約だけを残す。
 - 構成を変えたら `docs/architecture.md` と `docs/features.json` を同じ commit で直す。
-- 判断の記録は `docs/process/decisions/`、調査は `docs/process/research/` に番号順で足す。
+- 判断の記録は `docs/process/decisions/`、調査は `docs/process/research/` に番号順で足す。詳しさの基準（比べた代案・捨てた理由・失敗と原因・測った数値、成果物は失敗した版も残す）は `docs/process/README.md`。
 - push は本人が決めた手順を通した物だけ。
