@@ -136,13 +136,32 @@ def parts(p):
     return out
 
 
-def materials(p):
-    """紙以外に要る物。型紙の「用意する物」はここだけから刷る（2 か所に手で書かない）。"""
-    lines = [f"紙: 厚さ {p['paper_thickness']}mm 前後を 1 枚（全部品を同じ紙に刷る）", "のり、はさみ、定規"]
+def bom(p):
+    """部品表。元の素材は絵から読めないので、分からない物は「不明」と書き、歴史の事実として断定しない。"""
+    paper = f"紙（厚さ {p['paper_thickness']}mm 前後）"
+    why = "家庭のプリンタで刷って作るため"
+    rows = [
+        {"number": 1, "key": "tube", "name": "外筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明（竹か木か、絵からは読めない）", "reason": why},
+        {"number": 3, "key": "base", "name": "扇の台", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why},
+        {"number": 4, "key": "fan", "name": "蛇腹の扇", "qty": 1, "material": paper, "substituted": True, "original_guess": "和紙（推定）", "reason": why},
+        {"number": 5, "key": "figure", "name": "像", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why},
+    ]
+    if p["push_part"] in ("tab", "tube"):
+        rows.insert(1, {"number": 2, "key": "pusher", "name": "内筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why})
     if p["push_part"] == "tab":
-        lines += [f"竹串 1 本（長さ約 {p['tube_side'] + 20}mm に切り、先を落とす）", "カッター（溝を切る。大人がする）"]
+        rows.append({"number": 6, "key": "knob", "name": "つまみ", "qty": 1, "material": f"竹串（長さ約 {p['tube_side'] + 20}mm に切り、先を落とす）", "substituted": True, "original_guess": "不明（絵の細い棒の素材は読めない）", "reason": "家にあり、細くて溝を通るため"})
     if p["push_part"] == "stick":
-        lines += [f"割り箸 1 本（長さ約 {p['pusher_height']}mm）"]
+        rows.append({"number": 6, "key": "stick", "name": "柄", "qty": 1, "material": f"割り箸（長さ約 {p['pusher_height']}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあり、押す力に耐えるため"})
+    return rows
+
+
+def materials(p):
+    """型紙の「用意する物」。素材は部品表だけから刷り、2 か所に手で書かない。"""
+    rows = bom(p)
+    lines = [f"{rows[0]['material']}を 1 枚（全部品を同じ紙に刷る）", "のり、はさみ、定規"]
+    lines += [f"{r['material']} {r['qty']} 本" for r in rows if r["number"] == 6]
+    if p["push_part"] == "tab":
+        lines.append("カッター（溝を切る。大人がする）")
     return lines
 
 

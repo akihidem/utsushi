@@ -1,5 +1,5 @@
 """寸法から頁の配置を作る。描画はしない（検査だけを速く回せるようにするため。道具 check_params もここを使う）。"""
-from .floors import check_layout
+from .floors import check_bom, check_layout
 from .marks import mark_lines
 from .model import TextBox
 from .page import PAGES
@@ -29,6 +29,14 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     if failures:  # 範囲の外の値で先を計算すると、別の検査が連鎖して狙いが読めなくなる。
         return p, None, failures
     failures += tpl.check_physics(p)
+    rows = tpl.bom(p)
+    # 負の対照のためだけ。寸法の入力からは部品表を壊せない。
+    for r in rows:
+        if r["key"] == inject.get("bom_blank_material"):
+            r["material"] = ""
+        if r["key"] == inject.get("bom_drop_original"):
+            r["original_guess"] = ""
+    failures += check_bom(rows)
     page = PAGES[page_name]
     texts = []
     title = title or f"{source['toy']} 型紙（{tpl.TITLES[p['push_part']]}）版 {version}"

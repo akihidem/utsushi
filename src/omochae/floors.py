@@ -44,3 +44,14 @@ def check_layout(page, parts, texts):
                 if ta.intersection(polys[p.key]).area > EPS:
                     out.append(Failure("F5.text_overlap", a.text or "物差し", f"文字が部品「{p.name}」と重なっている"))
     return out
+
+
+def check_bom(rows):
+    """素材が空の部品と、置き換えの根拠が無い部品を落とす。「不明」は正直な答えなので通す。"""
+    out = []
+    for r in rows:
+        if not str(r.get("material", "")).strip():
+            out.append(Failure("F2.bom", r["name"], "素材の欄が空"))
+        if r.get("substituted") and not (str(r.get("original_guess", "")).strip() and str(r.get("reason", "")).strip()):
+            out.append(Failure("F2.bom", r["name"], "置き換えた部品に元の素材（推定）か理由が無い"))
+    return out

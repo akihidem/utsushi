@@ -12,7 +12,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PY = str(ROOT / ".venv/bin/python")
-NOT_YET = ["F2.bom", "F3.result", "F4.evidence", "F5.pivot", "F6.label", "F7.revision", "F8.references", "F9.human"]
+NOT_YET = ["F3.result", "F4.evidence", "F5.pivot", "F6.label", "F7.revision", "F8.references", "F9.human"]
 
 
 def main():
@@ -34,6 +34,11 @@ def main():
         rows.append((sc.stem, r.returncode, expect["rc"], ",".join(got) or "—", ",".join(expect["floors"]) or "—", "OK" if ok else "NG"))
         if not ok:
             print(f"NG {sc.stem}: rc={r.returncode} {r.stderr.strip()[:500]}", file=sys.stderr)
+    unit = subprocess.run([PY, "tests/test_zoom.py"], cwd=ROOT, env=env, capture_output=True, text=True)
+    bad += unit.returncode != 0
+    rows.append(("test_zoom", unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
+    if unit.returncode:
+        print(f"NG test_zoom: {unit.stderr.strip()[:500]}", file=sys.stderr)
     lines = ["# 床の実行結果", "", "| 段 | 命令 | rc | 期待 | 落ちた検査 | 期待の検査 | 判定 |", "|---|---|---|---|---|---|---|"]
     for n, rc, erc, g, e, v in rows:
         lines.append(f"| {n} | `python -m omochae --scenario {n}` | {rc} | {erc} | {g} | {e} | {v} |")
