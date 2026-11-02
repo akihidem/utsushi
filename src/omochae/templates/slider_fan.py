@@ -6,15 +6,15 @@
 from ..model import Failure, Part
 
 ID = "slider_fan"
-# 初期値は絵の比と紙面の制約から出した（docs/process/research/06）。事前メモの値を土台にしない。
+# 初期値は手元の複写の図の比を基準に、紙面の制約から出した（docs/process/research/06・07）。事前メモの値を土台にしない。
 DEFAULTS = {
     "push_part": "tab",
-    "tube_side": 30, "tube_height": 75, "tube_glue": 8,
+    "tube_side": 30, "tube_height": 84, "tube_glue": 8,
     "pusher_side": 26, "pusher_height": 40, "pusher_glue": 8,
-    "push_amount": 29,
-    "fold_height": 46, "fold_width": 8, "fold_count": 28,
+    "push_amount": 36,
+    "fold_height": 48, "fold_width": 8.5, "fold_count": 28,
     "base_side": 26, "base_glue": 6,
-    "figure_w": 11, "figure_h": 30,
+    "figure_w": 12, "figure_h": 32,
     "knob_width": 4,
     # 0.15mm はふつうの厚めの紙の見込み。実物の紙を測ったら置き換える。
     "paper_thickness": 0.15,
@@ -142,10 +142,10 @@ def bom(p):
     paper = f"紙（厚さ {p['paper_thickness']}mm 前後）"
     why = "家庭のプリンタで刷って作るため"
     rows = [
-        {"number": 1, "key": "tube", "name": "外筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明（竹か木か、絵からは読めない）", "reason": why},
+        {"number": 1, "key": "tube", "name": "外筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "竹（『還魂紙料』を引く解説による。原典は未確認）", "reason": why},
         {"number": 3, "key": "base", "name": "扇の台", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why},
-        {"number": 4, "key": "fan", "name": "蛇腹の扇", "qty": 1, "material": paper, "substituted": True, "original_guess": "和紙（推定）", "reason": why},
-        {"number": 5, "key": "figure", "name": "像", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why},
+        {"number": 4, "key": "fan", "name": "蛇腹の扇", "qty": 1, "material": paper, "substituted": True, "original_guess": "紙（同じ解説による）", "reason": why},
+        {"number": 5, "key": "figure", "name": "像", "qty": 1, "material": paper, "substituted": True, "original_guess": "紙の張貫か木（同じ解説による）", "reason": why},
     ]
     if p["push_part"] in ("tab", "tube"):
         rows.insert(1, {"number": 2, "key": "pusher", "name": "内筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why})

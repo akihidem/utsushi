@@ -57,8 +57,8 @@ def main():
             "rights": meta["Access Restrictions"],
             "license_url": manifest["license"],
             "attribution": manifest["attribution"],
-            # 原本の刊年は manifest に無い。確かめるまで書かない（research/01）。
-            "original_publication": {"value": None, "status": "unverified"},
+            # 奥付はコマ 31 の複製の版面にある。manifest には無いので、読んだ箇所を記録する（research/07）。
+            "original_publication": {"value": "安永二歳癸巳正月（1773）", "basis": "NDL コマ 31 の左頁の奥付", "read_by": "Claude Code のセッション", "checked_by": None},
             "modification_note": "改変: 図をもとに寸法と形を起こした翻案で、原図そのものではありません",
             # 翻刻は人が写す欄。読みが割れる事があるので複数を持てる形にする。
             "transcription": {"status": "pending", "entries": []},
@@ -71,6 +71,7 @@ def main():
             # 人が入れた翻刻と読みは取り込みで消さない。
             rec["transcription"] = old.get("transcription", rec["transcription"])
             rec["reading_hypothesis"] = old.get("reading_hypothesis", rec["reading_hypothesis"])
+            old["original_publication"] = rec["original_publication"]  # 文を直しても、それだけで取得日時を動かさない
             rec["fetched_at"] = old_time if old == rec else now
         else:
             rec["fetched_at"] = now

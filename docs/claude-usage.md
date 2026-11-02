@@ -25,3 +25,4 @@
 ## 凍結の変更の記録
 
 - 基準の文は変更なし。基準に名前を決めてあった負の対照 `neg_bom_material`・`neg_bom_original` の場面を、部品表の検査を作る時に足した。
+- 既定の寸法を手元の複写の基準に変えたので、場面 `pos_tube`・`pos_stick` の押す部品の長さを 84 に、`neg_figure_height` の像の高さを 55 に直した。検査の基準の文は変えていない。狙いの検査も同じ。理由は `docs/process/research/07-own-scans.md`。
