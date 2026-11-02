@@ -74,10 +74,11 @@
 | 29 | [J-015](decisions/J015-ai-readable.md) | AI の読み手に伝わる作り。主張から根拠へ | 決定 |
 | 30 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
 | 31 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 32 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 33 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 34 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 35 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 32 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装はキット。虎は振り子 | 判断待ち O-13〜O-17 |
+| 33 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 34 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 35 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 36 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

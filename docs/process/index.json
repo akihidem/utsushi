@@ -186,6 +186,12 @@
   "status": "判断待ち O-08〜O-11"
  },
  {
+  "id": "research/15",
+  "path": "research/15-philosophy-review.md",
+  "hook": "哲学への批判。言葉は紙と紐、実装はキット。虎は振り子",
+  "status": "判断待ち O-13〜O-17"
+ },
+ {
   "id": "open",
   "path": "open.json",
   "hook": "今の判断待ちの一覧",

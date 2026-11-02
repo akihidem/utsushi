@@ -274,5 +274,38 @@
     "quote": "def materials"
    }
   ]
+ },
+ {
+  "id": "C-25",
+  "claim": "虎の 3 仮説は 10 往復の秒で見分けられない（差は最大 0.11 秒）",
+  "kind": "計算",
+  "evidence": [
+   {
+    "path": "docs/process/research/15-philosophy-review.md",
+    "quote": "仮説の差は最大 0.11 秒"
+   }
+  ]
+ },
+ {
+  "id": "C-26",
+  "claim": "日本の小 4 の理科の実験は週 1 回以上が 59.6% で、実験経験が無いとは言えない",
+  "kind": "文献",
+  "evidence": [
+   {
+    "path": "docs/process/research/15-philosophy-review.md",
+    "quote": "59.6%"
+   }
+  ]
+ },
+ {
+  "id": "C-27",
+  "claim": "「学習の再定義」と「AI と子どものタッグ」は、まだ実装に無い言葉",
+  "kind": "未確認",
+  "evidence": [
+   {
+    "path": "docs/process/research/15-philosophy-review.md",
+    "quote": "**言葉だけ**"
+   }
+  ]
  }
 ]
