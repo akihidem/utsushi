@@ -1,0 +1,82 @@
+[
+ {
+  "id": "f01",
+  "name": "出典の取り込み",
+  "status": "done"
+ },
+ {
+  "id": "f02",
+  "name": "雛形 slider_fan",
+  "status": "doing"
+ },
+ {
+  "id": "f03",
+  "name": "雛形 pivot_counterweight",
+  "status": "todo"
+ },
+ {
+  "id": "f04",
+  "name": "部品表の床",
+  "status": "todo"
+ },
+ {
+  "id": "f05",
+  "name": "手順の紙",
+  "status": "todo"
+ },
+ {
+  "id": "f06",
+  "name": "予想の入力",
+  "status": "todo"
+ },
+ {
+  "id": "f07",
+  "name": "仮説生成（前例を引く・床で直す）",
+  "status": "todo"
+ },
+ {
+  "id": "f08",
+  "name": "仮説の採否",
+  "status": "todo"
+ },
+ {
+  "id": "f09",
+  "name": "型紙の確定",
+  "status": "todo"
+ },
+ {
+  "id": "f10",
+  "name": "再現例のアップロード",
+  "status": "todo"
+ },
+ {
+  "id": "f11",
+  "name": "記録の解釈",
+  "status": "todo"
+ },
+ {
+  "id": "f12",
+  "name": "次の手の提案",
+  "status": "todo"
+ },
+ {
+  "id": "f13",
+  "name": "版の更新",
+  "status": "todo"
+ },
+ {
+  "id": "f14",
+  "name": "くずし字の読み",
+  "status": "todo"
+ },
+ {
+  "id": "f15",
+  "name": "図鑑と選ぶ画面",
+  "status": "todo"
+ },
+ {
+  "id": "f16",
+  "name": "run.sh",
+  "status": "doing"
+ }
+]
