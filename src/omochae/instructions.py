@@ -6,7 +6,7 @@
 from .compose import GAP, LINE, TEMPLATES, TITLE_SIZE, _block
 from .floors import check_layout
 from .marks import mark_lines
-from .model import TextBox
+from .model import Failure, TextBox
 from .page import PAGES
 from .textfit import text_width
 
@@ -86,4 +86,38 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     texts.append(TextBox(page.x0, ruler_y, 100, 3, None))
     _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], page.x0, ruler_y + 4, BODY_SIZE, width)
     failures = check_layout(page, [], texts)
+    return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures
+
+
+def compose_after(source, title, after, page_name="A4"):
+    """試した後の紙。対比を先に見せ、説明は折って閉じた札にする（J-013）。
+
+    判断の芯: 説明を渡さず、次に変える条件を先に渡す。ただし誤った結論のまま終わらないよう、説明は手元に置いて自分で開ける。
+    札は谷折りで白い帯の上に重ねて隠す。端末でなく紙で閉じるので、子どもに AI も鍵も要らない。
+    """
+    page = PAGES[page_name]
+    width = page.x1 - page.x0
+    texts, shapes = [], []
+    y = _block(texts, [f"試した後の紙 {title}"], page.x0, page.y0, TITLE_SIZE, width)
+    y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["渡す人へ: 下の札を点線で谷折りし、端をテープで止めてから、試した後に渡す"], page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["次はこれを変えて試す（予想を書いてから）"], page.x0, y + GAP, HEAD_SIZE, width)
+    for c in after["contrasts"]:
+        y = _block(texts, [c["change"], f"見る物: {c['watch']}"], page.x0, y + 1, BODY_SIZE, width)
+        y += ANSWER_GAP
+        shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
+    # 次の条件でも測るので物差しを刷る。折り上げる帯より上に置く。
+    ruler_y = y + 1
+    texts.append(TextBox(page.x0, ruler_y, 100, 3, None))
+    y = ruler_y + 4
+    trial = []
+    height = _block(trial, ["札: 自分で開いた時だけ読む", *after["card"]], page.x0, 0, BODY_SIZE, width)
+    fold = page.y1 - height - 1
+    failures = []
+    # 札を折り上げた先に文字があると隠れ方が崩れるので、重なる帯を空けられない時は刷らない。
+    if fold - height - 1 < y:
+        failures.append(Failure("F5.fold", title, "札を折って隠す帯が取れない"))
+    shapes.append({"kind": "line", "x1": page.x0, "y1": fold, "x2": page.x1, "y2": fold, "dash": "1.5,1.5"})
+    _block(texts, ["札: 自分で開いた時だけ読む", *after["card"]], page.x0, fold + 1, BODY_SIZE, width)
+    failures += check_layout(page, [], texts)
     return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures

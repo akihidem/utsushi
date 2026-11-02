@@ -61,5 +61,6 @@
 | 人の説明と次の思いつきを先に（`loop explain`） | 作った。偽の応答の試験のみ |
 | 順位と集計を学ぶ人の一覧から外す | 作った。作り手は `records summary` と `loop` で見る |
 | 記録と手順の紙の欄 | 作った |
-| 言葉から型紙にする口、試した後の段 | 上の決定で作る |
+| 言葉から型紙にする口（`src/api/words.py`） | 作った。本物の API では未実行 |
+| 試した後の紙（`src/omochae/instructions.py` の `compose_after`） | 作った。札は谷折りで隠す。実際の人は未使用 |
 | 裏の制作 | 作っていない。形は [research/14](../research/14-judging-criteria.md) の判断待ち |

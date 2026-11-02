@@ -111,6 +111,26 @@ def _print_instructions(params, source_id, title, how, out, version, template="s
         if not failures:
             to_png(pdf, stem)
             print(pdf)
+            return _print_after(source, title, out)
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3
+
+
+def _print_after(source, title, out):
+    """試した後の紙を刷る。手順の紙と分けるのは、試す前に渡さないため（J-013）。"""
+    from .instructions import compose_after
+    from .marks import check_image_count, check_pdf
+    from .render import to_png, write_all
+
+    layout, failures = compose_after(source, title, load(source["source_id"])["after_try"])
+    if not failures:
+        stem = pathlib.Path(f"{out}_after")
+        pdf = write_all(layout, stem)
+        failures = check_pdf(pdf, source) + check_image_count(pdf)
+        if not failures:
+            to_png(pdf, stem)
+            print(pdf)
             return 0
     for f in failures:
         print(f.line(), file=sys.stderr)
@@ -173,6 +193,36 @@ def picture(source_id):
     return f"{source['toy']} の図（出典 ID {source_id}・{source['holding']}）: {source['image_url']}"
 
 
+def _words_command(args):
+    from .contrib import _human_confirm
+    from .loop import _read, folder
+
+    if args.cmd == "show-words":
+        print(json.dumps(_read(folder() / f"words-{args.id[2:]}.json"), ensure_ascii=False, indent=2))
+        return 0
+    from api.words import adopt_words, draft_words
+
+    if args.cmd == "adopt-words":
+        if not _human_confirm(args.id, "採用"):
+            print(Failure("F9.human", args.id, "端末での人の確認が無い").line(), file=sys.stderr)
+            return 3
+        rec, failures = adopt_words(args.id, args.by)
+        if not failures:
+            print(f"{rec['id']} を残しました。" + ("print-own で型紙にできます" if rec["params"] else "今の雛形には乗らないので、記録として残りました"))
+    else:
+        source = json.loads((ROOT / "data/sources" / f"{args.source}.json").read_text(encoding="utf-8"))
+        try:
+            wid, failures = draft_words(source, args.text, args.name, args.evidence, args.by)
+        except Exception as e:  # 鍵が無い・通信できない・予算の上限。値は出さない
+            print(f"検査できない: Claude を呼べなかった（{type(e).__name__}: {str(e)[:160]}）。own --params で寸法を書けば同じ道で作れます", file=sys.stderr)
+            return 4
+        if not failures:
+            print(f"{wid} を作りました。show-words で補った寸法を見て、adopt-words で採ります")
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3 if failures else 0
+
+
 def _generated_command(args):
     from .contrib import _human_confirm
     from .loop import _read, folder
@@ -217,6 +267,15 @@ def main(argv=None):
     ag.add_argument("id")
     ag.add_argument("--by", required=True)
     ag.add_argument("--accept", required=True, help="採る案の番号。1,2 のように")
+    w = sub.add_parser("words", help="大人が打った言葉の仮説を、Claude が雛形の寸法に写す。正しさは評価しない")
+    w.add_argument("text")
+    w.add_argument("--name", required=True)
+    w.add_argument("--evidence", required=True, help="図のどこを見たか")
+    w.add_argument("--by", required=True, help="打った大人")
+    sub.add_parser("show-words").add_argument("id")
+    aw = sub.add_parser("adopt-words", help="写した寸法を人が見て採る")
+    aw.add_argument("id")
+    aw.add_argument("--by", required=True)
     o = sub.add_parser("own")
     o.add_argument("name")
     o.add_argument("--how", default="")
@@ -236,6 +295,8 @@ def main(argv=None):
     try:
         if args.cmd in ("generate", "show-generated", "adopt-generated"):
             return _generated_command(args)
+        if args.cmd in ("words", "show-words", "adopt-words"):
+            return _words_command(args)
         if args.cmd == "picture":
             print(picture(args.source))
             return 0

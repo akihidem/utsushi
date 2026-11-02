@@ -165,8 +165,12 @@
  {
   "id": "f20",
   "name": "自分の仮説を言葉から型紙にする口",
-  "status": "todo",
-  "unverified": "決定どおり作る（J-013）"
+  "status": "doing",
+  "unverified": "本物の API で未実行。偽の応答の試験のみ",
+  "evidence": [
+   "src/api/words.py",
+   "tests/test_words.py"
+  ]
  },
  {
   "id": "f21",
@@ -186,5 +190,15 @@
    "src/omochae/ledger.py",
    "tests/test_ledger.py"
   ]
+ },
+ {
+  "id": "f23",
+  "name": "試した後の紙（対比と閉じた札）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/instructions.py",
+   "tests/test_words.py"
+  ],
+  "unverified": "実際の人が使っていない。札の文の確かさは式と一般の物理による"
  }
 ]

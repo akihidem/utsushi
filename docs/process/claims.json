@@ -215,5 +215,38 @@
     "quote": "名前を挙げられる使い手が今はいない"
    }
   ]
+ },
+ {
+  "id": "C-20",
+  "claim": "言葉の口は人の文を書き換えず、隠れた寸法の補いを通さない",
+  "kind": "偽の応答の試験",
+  "evidence": [
+   {
+    "path": "tests/test_words.py",
+    "quote": "隠れた補いを通さない"
+   }
+  ]
+ },
+ {
+  "id": "C-21",
+  "claim": "試した後の紙は対比を先に出し、説明は折って閉じた札に置く",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "tests/test_words.py",
+    "quote": "説明を札の外に出さない"
+   }
+  ]
+ },
+ {
+  "id": "C-22",
+  "claim": "閉じた札が考える邪魔をしないか",
+  "kind": "未確認",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J013-core-words.md",
+    "quote": "効果の証拠は無い"
+   }
+  ]
  }
 ]

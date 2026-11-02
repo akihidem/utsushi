@@ -10,47 +10,161 @@
   ],
   "hypotheses": [
     {
-      "id": "H-A", "name": "側面のつまみで押し上げる", "status": "untested", "rank": null,
-      "params": {"push_part": "tab", "hub": "axle", "pusher_height": 15},
+      "id": "H-A",
+      "name": "側面のつまみで押し上げる",
+      "status": "untested",
+      "rank": null,
+      "params": {
+        "push_part": "tab",
+        "hub": "axle",
+        "pusher_height": 15
+      },
       "how_it_moves": "筒を持ち、側面の溝から出たつまみを上げる",
       "evidence": [
-        {"kind": "image", "where": "NDL コマ 5 の寝かせた筒", "what": "側面から細い棒が出ている", "certainty": "観察"},
-        {"kind": "text", "where": "https://japan-toy-museum.org/wp-json/wp/v2/monthly/29399", "what": "日本玩具博物館の記事に、角筒から出たつまみを押し上げるとある", "certainty": "二次資料"}
+        {
+          "kind": "image",
+          "where": "NDL コマ 5 の寝かせた筒",
+          "what": "側面から細い棒が出ている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "https://japan-toy-museum.org/wp-json/wp/v2/monthly/29399",
+          "what": "日本玩具博物館の記事に、角筒から出たつまみを押し上げるとある",
+          "certainty": "二次資料"
+        }
       ],
-      "against": ["絵の棒が別の物かもしれない", "溝は絵からは読めない", "刃物の工程が要る"],
+      "against": [
+        "絵の棒が別の物かもしれない",
+        "溝は絵からは読めない",
+        "刃物の工程が要る"
+      ],
       "to_measure": "開いた角度・溝を切る時間・つまみが途中で引っかかるか"
     },
     {
-      "id": "H-B", "name": "内筒を下から押し上げる", "status": "untested", "rank": null,
-      "params": {"push_part": "tube", "hub": "axle", "pusher_height": 84},
+      "id": "H-B",
+      "name": "内筒を下から押し上げる",
+      "status": "untested",
+      "rank": null,
+      "params": {
+        "push_part": "tube",
+        "hub": "axle",
+        "pusher_height": 84
+      },
       "how_it_moves": "筒を持ち、下に出た内筒を指で押し上げる",
-      "evidence": [{"kind": "calc", "where": "research/03", "what": "長さが筒の高さ以上なら押し切れる", "certainty": "計算"}],
-      "against": ["文献の裏付けが見つかっていない", "底が開いているかは絵から読めない"],
+      "evidence": [
+        {
+          "kind": "calc",
+          "where": "research/03",
+          "what": "長さが筒の高さ以上なら押し切れる",
+          "certainty": "計算"
+        }
+      ],
+      "against": [
+        "文献の裏付けが見つかっていない",
+        "底が開いているかは絵から読めない"
+      ],
       "to_measure": "開いた角度・押す指の動かしやすさ"
     },
     {
-      "id": "H-C", "name": "柄を下から押し上げる", "status": "untested", "rank": null,
-      "params": {"push_part": "stick", "hub": "axle", "pusher_height": 84},
+      "id": "H-C",
+      "name": "柄を下から押し上げる",
+      "status": "untested",
+      "rank": null,
+      "params": {
+        "push_part": "stick",
+        "hub": "axle",
+        "pusher_height": 84
+      },
       "how_it_moves": "筒を持ち、下に出た割り箸の柄を押し上げる",
-      "evidence": [{"kind": "text", "where": "手元の複写 B 頁 78 の解説（要約）", "what": "藁の束のような物に刺して並べて売ったという趣旨。根元に刺す柄があったのかもしれない", "certainty": "解釈"}],
-      "against": ["絵に柄は描かれていない", "台が筒の中で傾くかもしれない"],
+      "evidence": [
+        {
+          "kind": "text",
+          "where": "手元の複写 B 頁 78 の解説（要約）",
+          "what": "藁の束のような物に刺して並べて売ったという趣旨。根元に刺す柄があったのかもしれない",
+          "certainty": "解釈"
+        }
+      ],
+      "against": [
+        "絵に柄は描かれていない",
+        "台が筒の中で傾くかもしれない"
+      ],
       "to_measure": "開いた角度・台が傾くか"
     },
     {
-      "id": "H-D", "name": "柄を持って筒を下げる", "status": "untested", "rank": null,
-      "params": {"push_part": "stick", "hub": "axle", "pusher_height": 84},
+      "id": "H-D",
+      "name": "柄を持って筒を下げる",
+      "status": "untested",
+      "rank": null,
+      "params": {
+        "push_part": "stick",
+        "hub": "axle",
+        "pusher_height": 84
+      },
       "how_it_moves": "柄を持ち、筒のほうを下げる。型紙は H-C と同じで、動かし方が逆",
-      "evidence": [{"kind": "text", "where": "手元の複写 B 頁 78 が引く『還魂紙料』（要約。原典は未確認）", "what": "竹の筒を下げると畳んだ後光が開いて仏が現れる", "certainty": "二次資料"}],
-      "against": ["原典に当たっていない", "H-A の記事の押し上げる説明と逆"],
+      "evidence": [
+        {
+          "kind": "text",
+          "where": "手元の複写 B 頁 78 が引く『還魂紙料』（要約。原典は未確認）",
+          "what": "竹の筒を下げると畳んだ後光が開いて仏が現れる",
+          "certainty": "二次資料"
+        }
+      ],
+      "against": [
+        "原典に当たっていない",
+        "H-A の記事の押し上げる説明と逆"
+      ],
       "to_measure": "H-C と同じ 1 個で比べ、どちらの動かし方がよく開くか"
     },
     {
-      "id": "H-E", "name": "扇を筒の口の台に載せる", "status": "untested", "rank": null,
-      "params": {"push_part": "tube", "hub": "rim", "push_amount": 36, "pusher_height": 84, "fold_count": 18, "fold_width": 8},
+      "id": "H-E",
+      "name": "扇を筒の口の台に載せる",
+      "status": "untested",
+      "rank": null,
+      "params": {
+        "push_part": "tube",
+        "hub": "rim",
+        "push_amount": 36,
+        "pusher_height": 84,
+        "fold_count": 18,
+        "fold_width": 8
+      },
       "how_it_moves": "内筒を押し上げると、口の高さの台の上で扇が開く",
-      "evidence": [{"kind": "calc", "where": "research/08", "what": "形の計算では半円までしか開けない。絵の開きとは違うが、行程が短く作りやすい", "certainty": "計算"}],
-      "against": ["絵の扇は 3/4 周ほど開いて見える", "中心の位置が絵と違う"],
+      "evidence": [
+        {
+          "kind": "calc",
+          "where": "research/08",
+          "what": "形の計算では半円までしか開けない。絵の開きとは違うが、行程が短く作りやすい",
+          "certainty": "計算"
+        }
+      ],
+      "against": [
+        "絵の扇は 3/4 周ほど開いて見える",
+        "中心の位置が絵と違う"
+      ],
       "to_measure": "開いた角度が本当に半円で止まるか"
     }
-  ]
+  ],
+  "after_try": {
+    "contrasts": [
+      {
+        "change": "強くしごいて折った扇と、軽く折っただけの扇を比べる",
+        "watch": "開いた角度"
+      },
+      {
+        "change": "紙の力だけの時と、糸で引いた時を比べる",
+        "watch": "開いた角度と、止まった所"
+      },
+      {
+        "change": "扇の中心を筒の口に近づける",
+        "watch": "どこで止まるか。何にぶつかるか"
+      }
+    ],
+    "card": [
+      "畳んだ紙は、折り目が元に戻ろうとします。これが紙の力です。",
+      "戻る力が、こすれる力や糸の重さより小さいと、途中で止まります。",
+      "筒の口の角にぶつかると、それ以上は開きません。扇の中心が口に近いほど、開ける角度は小さくなります。口と同じ高さなら 180° までです。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
 }
