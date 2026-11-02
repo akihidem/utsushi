@@ -34,11 +34,12 @@ def main():
         rows.append((sc.stem, r.returncode, expect["rc"], ",".join(got) or "—", ",".join(expect["floors"]) or "—", "OK" if ok else "NG"))
         if not ok:
             print(f"NG {sc.stem}: rc={r.returncode} {r.stderr.strip()[:500]}", file=sys.stderr)
-    unit = subprocess.run([PY, "tests/test_zoom.py"], cwd=ROOT, env=env, capture_output=True, text=True)
-    bad += unit.returncode != 0
-    rows.append(("test_zoom", unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
-    if unit.returncode:
-        print(f"NG test_zoom: {unit.stderr.strip()[:500]}", file=sys.stderr)
+    for test in sorted((ROOT / "tests").glob("test_*.py")):
+        unit = subprocess.run([PY, str(test)], cwd=ROOT, env=env, capture_output=True, text=True)
+        bad += unit.returncode != 0
+        rows.append((test.stem, unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
+        if unit.returncode:
+            print(f"NG {test.stem}: {unit.stderr.strip()[:500]}", file=sys.stderr)
     lines = ["# 床の実行結果", "", "| 段 | 命令 | rc | 期待 | 落ちた検査 | 期待の検査 | 判定 |", "|---|---|---|---|---|---|---|"]
     for n, rc, erc, g, e, v in rows:
         lines.append(f"| {n} | `python -m omochae --scenario {n}` | {rc} | {erc} | {g} | {e} | {v} |")
