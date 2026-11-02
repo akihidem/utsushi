@@ -49,8 +49,14 @@ class Fake:
 interp = {"observed": ["60° で止まった"], "causes": [{"text": "折りが固い", "confidence": "中くらい"}], "unknown": ["紙の差"]}
 # H6: 確定なしには進めない
 r1 = rec()
+never = Fake([])
+assert floors(loop_agents.draft_interpretation(r1, never)[1]) == {"F9.human"} and never.calls == [], "人の説明の前に Claude を呼ばない"
+assert floors(loop.save_explanation(r1, "確認者", "折りが固そう", " ")) == {"F9.human"}, "次の思いつきも人が先"
+assert floors(loop.save_explanation(r1, "確認者", "連絡先 a@example.com", "折りを減らす")) == {"F3.result"}
+assert loop.save_explanation(r1, "確認者", "わからない", "折りを減らす") == []
 client = Fake([([tool("submit_result", interp)], "tool_use")])
-assert loop_agents.draft_interpretation(r1, client) == interp
+assert loop_agents.draft_interpretation(r1, client) == (interp, [])
+assert "折りを減らす" in client.calls[0]["messages"][0]["content"]
 assert loop.interpretation(r1)["status"] == "pending_human"
 assert client.calls[0]["model"] == config.MODELS["interpret"] and "tool_choice" not in client.calls[0], "Opus 5.5 は強制の tool_choice が 400"
 assert "<record>" in client.calls[0]["messages"][0]["content"]
@@ -102,6 +108,8 @@ made, fs = loop.adopt(pid, "確認者", ["fold_width"], True, True)
 assert not fs and made == {"version": 2, "ranking": True, "new_hypothesis": "H-N1"}
 assert floors(loop.adopt(pid, "確認者", ["fold_width"])[1]) == {"F9.human"}, "同じ提案を 2 度採らない"
 data = hypotheses.load(G)
+shown = "\n".join(hypotheses.list_lines(data, "予想"))
+assert "順位" not in shown and "動いた " not in shown, "順位と集計は学ぶ人の画面に出さない"
 assert next(h for h in data["hypotheses"] if h["id"] == "H-D")["rank"] == 1 and any(h["id"] == "H-N1" and any(e["where"] == r1 for e in h["evidence"]) for h in data["hypotheses"])
 # 版 2 の紙: 根拠の記録が刷られる
 assert hypotheses.save_prediction(G, "試験")[1] == []
@@ -135,6 +143,9 @@ r3 = rec()
 out = subprocess.run([sys.executable, "-m", "omochae.loop", "confirm", r3, "--by", "Claude", "--text", "x"], capture_output=True, text=True, stdin=subprocess.DEVNULL, start_new_session=True)
 assert out.returncode == 3 and "F9.human" in out.stderr and not loop.confirmed(r3)
 env = {k: v for k, v in os.environ.items() if not k.startswith("ANTHROPIC")}
+out = subprocess.run([sys.executable, "-m", "omochae.loop", "interpret", r3], capture_output=True, text=True, env={**env, "HOME": tmp})
+assert out.returncode == 3 and "F9.human" in out.stderr, "説明が無ければ鍵の前に止まる"
+assert loop.save_explanation(r3, "確認者", "わからない", "もう一度折る") == []
 out = subprocess.run([sys.executable, "-m", "omochae.loop", "interpret", r3], capture_output=True, text=True, env={**env, "HOME": tmp})
 assert out.returncode == 4 and "検査できない" in out.stderr
 # 人の手書きの変更でも整数の寸法が通る。半端な折り数は落とす

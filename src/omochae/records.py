@@ -44,11 +44,14 @@ def check(rec):
         out.append(Failure("F3.result", "ten_swings_sec", "10 往復の秒は 0〜600"))
     if rec.get("power") is not None and rec["power"] not in ("手", "息", "団扇", "風"):
         out.append(Failure("F3.result", "power", "動かした物は 手／息／団扇／風 のどれか"))
+    minutes = rec.get("minutes_to_try")
+    if minutes is not None and not (isinstance(minutes, (int, float)) and not isinstance(minutes, bool) and 0 < minutes <= 600):
+        out.append(Failure("F3.result", "minutes_to_try", "最初に動かすまでの分は 0〜600"))
     for i, fix in enumerate(rec.get("fixes", []), 1):
         if not all(str(fix.get(k, "")).strip() for k in ("part", "change", "outcome")):
             out.append(Failure("F3.result", f"fixes[{i}]", "直した点は部品名・変えた事・結果の 3 欄が要る"))
     # 記録は公開の repo に入り得るので、連絡先の形を残さない。
-    for f in check_pii({"body": rec.get("note", "") + " " + " ".join(str(v) for fix in rec.get("fixes", []) for v in fix.values())}):
+    for f in check_pii({"body": " ".join([rec.get("note", ""), *rec.get("answers", {}).values(), *rec.get("ideas", []), *(str(v) for fix in rec.get("fixes", []) for v in fix.values())])}):
         out.append(Failure("F3.result", "note", f.message))
     return out
 
@@ -111,6 +114,12 @@ def main(argv=None):
     a.add_argument("--power", help="動かした物。手／息／団扇／風")
     a.add_argument("--fix", action="append", default=[], help="部品,変えた事,結果")
     a.add_argument("--note", default="")
+    # 手順の紙の問いの答え。「動いたか」だけでなく、「すぐ返ってきたか」「作る途中で考えが湧いたか」を見る物差しのため（J-013）。
+    a.add_argument("--first-moved", default="", help="最初に動いたのはどこか")
+    a.add_argument("--stuck", default="", help="引っかかった所はどこか")
+    a.add_argument("--what-if", default="", help="何を変えると違いが出そうか")
+    a.add_argument("--idea", action="append", default=[], help="作っている途中で思いついた事")
+    a.add_argument("--minutes-to-try", type=float, help="作り始めて最初に動かすまでの分")
     sub.add_parser("summary")
     try:
         args = ap.parse_args(argv)
@@ -121,7 +130,8 @@ def main(argv=None):
             print(json.dumps(summarize(all_records(args.source)), ensure_ascii=False, indent=2))
             return 0
         rec = {"source_id": args.source, "hypothesis_id": args.hypothesis, "sheet_version": args.version, "result": args.result, "opened_deg": args.opened_deg, "opener": args.opener,
-               "predicted_deg": args.predicted_deg, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note}
+               "predicted_deg": args.predicted_deg, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note,
+               "answers": {k: v for k, v in (("first_moved", args.first_moved), ("stuck", args.stuck), ("what_if", args.what_if)) if v}, "ideas": args.idea, "minutes_to_try": args.minutes_to_try}
         rid, failures = add(rec)
     except (OSError, ValueError, KeyError) as e:
         print(f"検査できない: {type(e).__name__}: {e}", file=sys.stderr)

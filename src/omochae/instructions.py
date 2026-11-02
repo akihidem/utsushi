@@ -15,7 +15,7 @@ BODY_SIZE, HEAD_SIZE = 3.6, 4.4
 ANSWER_GAP, FIX_ROW = 9.0, 10.0
 DIAGRAM_W, DIAGRAM_H = 42.0, 62.0
 RESULTS = ("動いた", "動かない", "わからない")
-QUESTIONS = ("最初に動いたのはどこですか", "引っかかった所はどこですか", "何を変えると違いが出そうですか")
+QUESTIONS = ("最初に動いたのはどこですか", "引っかかった所はどこですか", "何を変えると違いが出そうですか", "作っている途中で思いついた事は何ですか")
 
 
 def steps(p, template="slider_fan"):
@@ -59,7 +59,9 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         for label, w in row:
             x = field(label, x, y, w)
         y += BODY_SIZE * LINE + 2
-    y += 1
+    # 紙が返事をするまでの速さを測る。「すぐ返ってくる」を主張にするなら、作る時間の実測が要るため（J-013）。
+    field("作り始めて最初に動かすまで（分）", page.x0, y, 20)
+    y += BODY_SIZE * LINE + 3
     y = _block(texts, ["見て考える"], page.x0, y, HEAD_SIZE, width)
     for q in QUESTIONS:
         texts.append(TextBox(page.x0, y, text_width(q, BODY_SIZE), BODY_SIZE * LINE, q, BODY_SIZE))

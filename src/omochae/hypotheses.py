@@ -80,8 +80,7 @@ def letter(h):
     return h["id"].split("-")[1]
 
 
-def list_lines(data, latest, own=(), tallies=None):
-    tallies = tallies or {}
+def list_lines(data, latest, own=()):
     lines = [f"{data['toy']}"]
     if latest:
         lines.append(f"あなたの予想: {latest}")
@@ -89,8 +88,7 @@ def list_lines(data, latest, own=(), tallies=None):
         lines += [f"あなたの仮説 {h['id']} {h['name']}（{h['status']}）", f"  動かし方: {h['how_it_moves']}", f"  根拠: {h['evidence']}"]
     lines += [data["note"], ""]
     for h in data["hypotheses"]:
-        rank = f"人が決めた順位 {h['rank']}・" if h.get("rank") else ""
-        lines.append(f"{h['id']} {h['name']}（{rank}{tallies.get(h['id'], h['status'])}）")
+        lines.append(f"{h['id']} {h['name']}（{h['status']}）")
         lines.append(f"  動かし方: {h['how_it_moves']}")
         lines += [f"  根拠〔{e['certainty']}〕: {e['what']}（{e['where']}）" for e in h["evidence"]]
         lines += [f"  弱い所: {x}" for x in h["against"]]
@@ -262,11 +260,9 @@ def main(argv=None):
         if args.cmd == "list":
             preds = predictions(args.source)
             latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
-            # 記録の数は見せるが、順位は付けない。順位を変えるのは人の確認（H7）。
-            from .records import all_records, summarize
-
-            tallies = {k: f"動いた {v['動いた']}・動かない {v['動かない']}・わからない {v['わからない']}" for k, v in summarize(all_records(args.source)).items()}
-            print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source), tallies)))
+            # 順位も他の人の集計も見せない。次の人にとって記録から作られた答えになるため（J-013）。
+            # 作り手が版を直す時は records summary と loop で見る。
+            print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source))))
             return 0
         return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:

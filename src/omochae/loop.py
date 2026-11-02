@@ -1,6 +1,7 @@
 """輪の後半: 記録の解釈 → 次の手の提案 → 人の採否 → 版 2・順位・新しい仮説。
 
 判断の芯: Claude は案までで、確定は人の操作だけ。人が確定していない解釈は根拠に使えない（F9）。
+人の説明と次の思いつきを先に受ける。作っている人のアイディアより先に AI の原因と次の手が出ると、作る意味を奪うため（J-013）。
 変更には記録 ID が要り（F4）、式のある変更は向きを数え直す（F7）。
 API の鍵が無くても、人が解釈と変更を書けば同じ道で輪が閉じる（manual）。
 """
@@ -13,7 +14,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 from .compose import compose
-from .contrib import _human_confirm, public_list
+from .contrib import _human_confirm, check_pii, public_list
 from .metrics import ALLOWED, values
 from .model import Failure
 
@@ -62,6 +63,24 @@ def interpretation(rid):
 def confirmed(rid):
     i = interpretation(rid)
     return bool(i and i.get("status") == "confirmed")
+
+
+def explanation(rid):
+    return _read(folder() / f"explanation-{rid}.json")
+
+
+def save_explanation(rid, by, text, next_idea):
+    """人の説明と次の思いつき。「わからない」でも書けばよく、中身は評価しない。"""
+    record(rid)
+    if not by or not by.strip():
+        return [Failure("F9.human", rid, "説明した人の名前が無い")]
+    if not (text or "").strip() or not (next_idea or "").strip():
+        return [Failure("F9.human", rid, "説明と次の思いつきの両方が要る（わからない、と書いてもよい）")]
+    failures = [Failure("F3.result", rid, f.message) for f in check_pii({"body": f"{text} {next_idea}"})]
+    if failures:
+        return failures
+    _write(folder() / f"explanation-{rid}.json", {"record_id": rid, "text": text.strip(), "next_idea": next_idea.strip(), "by": by.strip(), "at": _now()})
+    return []
 
 
 def save_interpretation_draft(rid, content, trace=None):
@@ -270,7 +289,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="omochae.loop")
     ap.add_argument("--source", default="NDL-1187053-R0000005-L")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("interpret", help="Claude に解釈の案を作らせる")
+    s = sub.add_parser("explain", help="人の説明と次の思いつきを残す。Claude の案より先に要る")
+    s.add_argument("record")
+    s.add_argument("--by", required=True)
+    s.add_argument("--text", required=True)
+    s.add_argument("--next-idea", required=True)
+    s = sub.add_parser("interpret", help="人の説明の後に、Claude に解釈の案を作らせる")
     s.add_argument("record")
     s = sub.add_parser("confirm", help="解釈を人が確定する。--text で書き直せる")
     s.add_argument("record")
@@ -299,9 +323,15 @@ def main(argv=None):
         if args.cmd == "interpret":
             from api.loop_agents import draft_interpretation
 
-            draft_interpretation(args.record)
-            print(json.dumps(interpretation(args.record)["content"], ensure_ascii=False, indent=2))
-            print(f"案です。確かめて confirm {args.record} --by 名前 で確定します")
+            _, failures = draft_interpretation(args.record)
+            if not failures:
+                print(json.dumps(interpretation(args.record)["content"], ensure_ascii=False, indent=2))
+                print(f"案です。確かめて confirm {args.record} --by 名前 で確定します")
+        elif args.cmd == "explain":
+            if not _human_confirm(args.record, "説明"):
+                failures = [Failure("F9.human", args.record, "端末での人の確認が無い")]
+            else:
+                failures = save_explanation(args.record, args.by, args.text, args.next_idea)
         elif args.cmd == "confirm":
             if not _human_confirm(args.record, "解釈の確定"):
                 failures = [Failure("F9.human", args.record, "端末での人の確認が無い")]
