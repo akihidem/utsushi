@@ -9,3 +9,5 @@ __pycache__/
 data/records/media/
 data/contributions_inbox/
 data/contributions_media/
+data/contributions/*
+!data/contributions/.gitkeep

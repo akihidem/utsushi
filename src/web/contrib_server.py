@@ -36,12 +36,12 @@ FORM = """<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewp
 <label>写真（JPEG か PNG、5MB まで。人が写っていない物）<input type="file" name="image" accept="image/jpeg,image/png"></label>
 <label>写真や文の権利<select name="basis"><option value="own_work">自分で撮った・書いた</option><option value="permission">持ち主の許可がある</option><option value="public_domain">権利が切れている</option><option value="unknown">分からない（公開しません）</option></select></label>
 <label>権利の持ち主の名前（写真の時は必須。公開されます）<input type="text" name="holder" maxlength="100"></label>
-<label>公開の条件<select name="license"><option value="display_only">この場所での表示だけ</option><option value="CC-BY-4.0">CC BY 4.0（出典を示せば誰でも使える）</option></select></label>
+<label>公開の条件<select name="license"><option value="display_only">この場所での表示だけ（AI には渡しません）</option><option value="CC-BY-4.0">CC BY 4.0（出典を示せば誰でも使える。仮説づくりの参考として AI の Claude にも渡します）</option></select></label>
 <label>公開する名前（空なら匿名）<input type="text" name="display_name" maxlength="50"></label>
 <label>連絡先（任意。公開しません。確認や取り下げの連絡に使います）<input type="text" name="contact" maxlength="200"></label>
 <label class="check"><input type="checkbox" name="agrees_terms"> 確認の後に公開される事、取り下げを申し出られる事に同意します</label>
 <label class="check"><input type="checkbox" name="adult_or_guardian"> 18 歳以上か、保護者の同意があります</label>
-<label class="check"><input type="checkbox" name="no_identifiable_people"> 写真と文に、他の人が特定できる情報はありません</label>
+<label class="check"><input type="checkbox" name="no_identifiable_people"> 写真に人が写っておらず、文に他の人の連絡先や私的な事を書いていません</label>
 <button>寄せる</button><div id="msg" role="status"></div></form></main>
 <script>
 const f=document.getElementById('f'),m=document.getElementById('msg');
@@ -54,6 +54,9 @@ m.textContent=r.ok?('受け付けました（'+j.id+'）。確認の後に公開
 </script></html>""" % STYLE
 
 
+LICENSE_LABEL = {"display_only": "この場所での表示だけ", "CC-BY-4.0": "CC BY 4.0"}
+
+
 def public_page():
     rows = []
     for c in contrib.public_list():
@@ -64,13 +67,16 @@ def public_page():
             f'<article id="{e(c["id"])}"><h2>{e(c.get("toy_name") or "玩具の名は未記入")}</h2>{img}<p>{e(c["body"])}</p>'
             f'<p class="meta">{e(c["id"])}・{e(KIND[c["kind"]])}・{e(ROLE[c["role"]])}・確かさ: {e(c["certainty"])}'
             f'・{e(c.get("where_when") or "時と所は未記入")}<br>出所: {e(c.get("origin") or "未記入")}・寄せた人: {e(c.get("display_name") or "匿名")}'
-            f'<br>権利: {e(rights.get("holder") or "未記入")}・条件: {e(rights.get("license", ""))}</p></article>'
+            f'<br>権利: {e(rights.get("holder") or "未記入")}・条件: {e(LICENSE_LABEL.get(rights.get("license"), "未記入"))}</p></article>'
         )
     body = "".join(rows) or "<p>確認済みの投稿はまだありません。</p>"
     return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>持ち寄られた事</title><style>{STYLE}</style><main><h1>持ち寄られた事</h1><p>寄せられた言葉をそのまま載せています。事実と確かめた物ではありません。<a href="/">寄せる</a></p>{body}</main></html>'
 
 
 class Handler(BaseHTTPRequestHandler):
+    # 本文を送らない接続を待ち続けないため。
+    timeout = 20
+
     def log_message(self, *a):  # 投稿の中身や連絡先を記録に残さない
         pass
 
@@ -86,7 +92,28 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, code, obj):
         self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
 
+    def _host_ok(self):
+        # DNS rebinding で外のサイトから手元の受付を読み書きさせないため、手元の名前だけを受ける。
+        port = self.server.server_address[1]
+        return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
+
     def do_GET(self):
+        try:
+            self._get()
+        except Exception as e:  # 中身を応答に出さず、1 回の失敗で接続を黙って切らない
+            print(f"GET の失敗: {type(e).__name__}", file=sys.stderr)
+            self._send(500, "うまく表示できませんでした")
+
+    def do_POST(self):
+        try:
+            self._post()
+        except Exception as e:
+            print(f"POST の失敗: {type(e).__name__}", file=sys.stderr)
+            self._json(500, {"errors": ["受け付けられませんでした"]})
+
+    def _get(self):
+        if not self._host_ok():
+            return self._send(403, "受け付けられません")
         path = self.path.split("?")[0]
         if path == "/":
             return self._send(200, FORM)
@@ -98,16 +125,20 @@ class Handler(BaseHTTPRequestHandler):
             names = {n for c in contrib.public_list() for n in c.get("media", [])}
             if m.group(1) in names:
                 ctype = "image/png" if m.group(1).endswith(".png") else "image/jpeg"
-                return self._send(200, (contrib.dirs()["media"] / m.group(1)).read_bytes(), ctype)
+                media = contrib.dirs()["media"] / m.group(1)
+                if media.exists():
+                    return self._send(200, media.read_bytes(), ctype)
         self._send(404, "見つかりません")
 
-    def do_POST(self):
+    def _post(self):
+        if not self._host_ok():
+            return self._json(403, {"errors": ["受け付けられない送り方です"]})
         if self.path != "/api/contribute":
             return self._send(404, "見つかりません")
         # 別のサイトの頁から手元の受付へ送らせないため、JSON と同じ出所だけを受ける。
         origin = self.headers.get("Origin")
         host = self.headers.get("Host", "")
-        if self.headers.get("Content-Type", "").split(";")[0] != "application/json" or (origin and origin != f"http://{host}"):
+        if self.headers.get("Content-Type", "").split(";")[0] != "application/json" or origin != f"http://{host}":
             return self._json(403, {"errors": ["受け付けられない送り方です"]})
         try:
             length = int(self.headers.get("Content-Length", ""))
@@ -122,7 +153,7 @@ class Handler(BaseHTTPRequestHandler):
             image = data.pop("image", None)
             if image is not None and not isinstance(image, str):
                 raise ValueError
-        except ValueError:
+        except (ValueError, RecursionError):
             return self._json(400, {"errors": ["読めない送り方です"]})
         cid, failures = contrib.submit(data, image)
         if failures:
@@ -135,6 +166,10 @@ def serve(port=8765):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+    try:
+        port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+    except ValueError:
+        print("検査できない: ポートは数字で指定する", file=sys.stderr)
+        sys.exit(4)
     print(f"http://127.0.0.1:{port}/")
     serve(port).serve_forever()

@@ -41,8 +41,11 @@ def zoom_source(source_id, x, y, w, h, width=1000):
 
 
 def list_contributions(source_id=None):
-    """公開済みの持ち寄りを前例として返す。確かさの種類を付けたまま渡し、事実として扱わせない。"""
+    """公開済みの持ち寄りを前例として返す。確かさの種類を付けたまま渡し、事実として扱わせない。
+
+    Claude に渡す事に同意した CC BY の投稿だけを返す。「この場所での表示だけ」の文を外部の API へ送らないため。
+    """
     from omochae.contrib import public_list
 
     keep = ("id", "kind", "role", "certainty", "body", "origin", "where_when", "toy_name", "source_id")
-    return [{k: c[k] for k in keep if k in c} for c in public_list(source_id)]
+    return [{k: c[k] for k in keep if k in c} for c in public_list(source_id) if c.get("rights", {}).get("license") == "CC-BY-4.0"]
