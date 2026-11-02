@@ -6,14 +6,15 @@
 from ..model import Failure, Part
 
 ID = "slider_fan"
+# 初期値は絵の比と紙面の制約から出した（docs/process/research/06）。事前メモの値を土台にしない。
 DEFAULTS = {
     "push_part": "tab",
     "tube_side": 30, "tube_height": 75, "tube_glue": 8,
     "pusher_side": 26, "pusher_height": 40, "pusher_glue": 8,
     "push_amount": 29,
-    "fold_height": 46, "fold_width": 10, "fold_count": 22,
+    "fold_height": 46, "fold_width": 8, "fold_count": 28,
     "base_side": 26, "base_glue": 6,
-    "figure_w": 14, "figure_h": 36,
+    "figure_w": 11, "figure_h": 30,
     "knob_width": 4,
     # 0.15mm はふつうの厚めの紙の見込み。実物の紙を測ったら置き換える。
     "paper_thickness": 0.15,
@@ -132,7 +133,7 @@ def parts(p):
         (fan.valley if i % 2 else fan.mountain).append(line)
     out.append(fan)
     fw, fh = p["figure_w"], p["figure_h"]
-    out.append(Part(5, "figure", "像", [(0, 0), (fw, 0), (fw, fh), (0, fh)], label_xy=(1, 1.5), label="5 像"))
+    out.append(Part(5, "figure", "像", [(0, 0), (fw, 0), (fw, fh), (0, fh)], label_xy=(0.6, 1.5), label="5 像"))
     return out
 
 
