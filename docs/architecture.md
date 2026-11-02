@@ -28,6 +28,10 @@
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
+| `src/omochae/loop.py` | 輪の後半。解釈の確定、提案の検査、人の採否、版・順位・新しい仮説 |
+| `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
+| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪、頼みと道具、モデルの設定 |
+| `data/loop/` | 解釈・提案・版・順位の記録 |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面 |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |

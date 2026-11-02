@@ -11,7 +11,7 @@
 
 ## 製品の中で Claude を呼ぶ所
 
-まだ無い。実行時のモデルは本人の判断待ち。
+輪の後半（記録の解釈・次の手の提案）で Messages API の tool use を呼ぶ形を作った。本物の API はまだ 1 回も呼んでいない。試験は記録した形の偽物。実行時のモデルの配分は本人の判断待ちで、今は `src/api/config.py` の Opus 5.5。
 
 ## 決定的な検査との境目
 
@@ -34,3 +34,4 @@
 - 本人の指摘で仕組みを複数の仮説として並べる形に組み直したので、床 F9.prediction を足した。理由は `docs/process/decisions/J002-mechanism-hypotheses.md`。
 - 本人の設計入力で自分の仮説から入る道を足したので、F9.prediction の文を直し、F9.own を足した。理由は `docs/process/decisions/J008-own-hypothesis-path.md`。
 - 虎の雛形を作る時に、名前だけ決めてあった F5.pivot の中身と負の対照の名前を基準に書いた。
+- 輪の後半を作る時に、F2・F3・F4・F7・F8・F9 の負の対照の欄を実際の試験の場所に直した。F9.human の文に、仮説の採否と型紙の確定の記録が未実装である事を書き足した。

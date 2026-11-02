@@ -20,7 +20,10 @@ def load(source_id):
     path = ROOT / "data/hypotheses" / f"{source_id}.json"
     if not path.exists():
         raise ToolMissing(f"仮説の記録が無い: {source_id}")
-    return json.loads(path.read_text(encoding="utf-8"))
+    from .loop import overlay
+
+    # 人が採った順位と新しい仮説だけを重ねる（F9）。元の記録は書き換えない。
+    return overlay(json.loads(path.read_text(encoding="utf-8")))
 
 
 def _pred_dir():
@@ -86,7 +89,8 @@ def list_lines(data, latest, own=(), tallies=None):
         lines += [f"あなたの仮説 {h['id']} {h['name']}（{h['status']}）", f"  動かし方: {h['how_it_moves']}", f"  根拠: {h['evidence']}"]
     lines += [data["note"], ""]
     for h in data["hypotheses"]:
-        lines.append(f"{h['id']} {h['name']}（{tallies.get(h['id'], h['status'])}）")
+        rank = f"人が決めた順位 {h['rank']}・" if h.get("rank") else ""
+        lines.append(f"{h['id']} {h['name']}（{rank}{tallies.get(h['id'], h['status'])}）")
         lines.append(f"  動かし方: {h['how_it_moves']}")
         lines += [f"  根拠〔{e['certainty']}〕: {e['what']}（{e['where']}）" for e in h["evidence"]]
         lines += [f"  弱い所: {x}" for x in h["against"]]
@@ -117,18 +121,29 @@ def _print_instructions(params, source_id, title, how, out, version, template="s
 
 def print_sheet(source_id, hypothesis_id, out, version=1):
     from .__main__ import generate
+    from .loop import version_params
 
     data = load(source_id)
     match = [h for h in data["hypotheses"] if h["id"] == hypothesis_id]
     if not match:
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
-    title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」版 {version}"
+    params, adopted = version_params(source_id, hypothesis_id, version)
+    if params is None:
+        print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
+        return 3
+    label = f"版 {version}"
+    how = h["how_it_moves"]
+    if adopted:
+        # 紙から根拠の記録へ戻れるように刷る（F7）。
+        label += "・根拠 " + "、".join(adopted["record_ids"])
+        how += "。前の版から変えた所: " + "、".join(f"{c['param']} {c['from']}→{c['to']}" for c in adopted["changes"])
+    title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
     template = data.get("template", "slider_fan")
-    rc = generate(template, h["params"], source_id, out, title=title, version=version)
+    rc = generate(template, params, source_id, out, title=title, version=version)
     if rc:
         return rc
-    return _print_instructions(h["params"], source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], out, version, template)
+    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template)
 
 
 def print_own(source_id, own_id, out, version=1):
@@ -175,6 +190,7 @@ def main(argv=None):
     s = sub.add_parser("print")
     s.add_argument("hypothesis")
     s.add_argument("--out")
+    s.add_argument("--version", type=int, default=1)
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
@@ -210,7 +226,7 @@ def main(argv=None):
             tallies = {k: f"動いた {v['動いた']}・動かない {v['動かない']}・わからない {v['わからない']}" for k, v in summarize(all_records(args.source)).items()}
             print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source), tallies)))
             return 0
-        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v1")
+        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)
         return 4

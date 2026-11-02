@@ -53,6 +53,8 @@ def spec():
 
 def check_range(p):
     out = []
+    if isinstance(p.get("fold_count"), float) and not p["fold_count"].is_integer():
+        out.append(Failure("F5.range", "fold_count", "折り数は整数"))
     for k, v in p.items():
         if k == "push_part":
             if v not in PUSH_PARTS:
@@ -205,7 +207,7 @@ def parts(p):
               [(g + b, g), (g + b + g, g + 1), (g + b + g, g + b - 1), (g + b, g + b)],
               [(g + b, g + b), (g + b - 1, g + b + g), (g + 1, g + b + g), (g, g + b)],
               [(g, g + b), (0, g + b - 1), (0, g + 1), (g, g)]]))
-    n, w, h = p["fold_count"], p["fold_width"], p["fold_height"]
+    n, w, h = int(p["fold_count"]), p["fold_width"], p["fold_height"]
     fan = Part(4, "fan", "蛇腹の扇", [(0, 0), (h, 0), (h, n * w), (0, n * w)], label_xy=(5, 1.5), label="4 扇")
     for i in range(1, n):
         line = ((0, i * w), (h, i * w))

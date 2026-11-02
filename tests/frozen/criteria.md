@@ -7,9 +7,9 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | ID | 見る事 | 負の対照（場面） | 期待 |
 |---|---|---|---|
 | F1.marks | 型紙の PDF から pdftotext で、所蔵（国立国会図書館デジタルコレクションと永続 ID）・改変・出典 ID・「仮説」が取り出せる | `neg_marks_all`・`neg_marks_source_id` | 3・F1.marks |
-| F2.bom | 部品表の素材が空でない。置き換えには元の素材（推定）と理由がある | `neg_bom_material`・`neg_bom_original`（未実装） | 3・F2.bom |
-| F3.result | 結果は 3 値。「わからない」を「動いた」に数えない | `neg_result_unknown`（未実装） | 3・F3.result |
-| F4.evidence | 寸法や仮説の順位の変更には根拠の記録 ID が要る | `neg_change_no_record`（未実装） | 3・F4.evidence |
+| F2.bom | 部品表の素材が空でない。置き換えには元の素材（推定）と理由がある | `neg_bom_material`・`neg_bom_original` | 3・F2.bom |
+| F3.result | 結果は 3 値。「わからない」を「動いた」に数えない | `tests/test_records.py` の負の場面 | 3・F3.result |
+| F4.evidence | 寸法や仮説の順位の変更には根拠の記録 ID が要る | `tests/test_loop.py` の負の場面 | 3・F4.evidence |
 | F5.range | 寸法が雛形の範囲の中で、知らない名前が無い | `neg_range` | 3・F5.range |
 | F5.print_area | 全部品と全文字が印字域に収まる | `neg_print_area` | 3・F5.print_area |
 | F5.overlap | 部品どうしが重ならない | `neg_overlap` | 3・F5.overlap |
@@ -23,9 +23,9 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | F5.stroke | 下から押す形は 押す部品の長さ ≧ 筒の高さ。つまみの形は 内筒が筒に収まり、溝が筒の端から 5mm 以上離れる | `neg_stroke_tube`・`neg_stroke_tab` | 3・F5.stroke |
 | F5.pivot | 虎の雛形の族の床。重心が軸より下、静かな時の傾きが 15° まで、穴の余白、揺れの余裕、重りと頭が底に当たらない | `neg_pivot_weight_above`・`neg_pivot_tilt`・`neg_pivot_ear`・`neg_pivot_floor` | 3・F5.pivot |
 | F6.label | 図鑑の文は印を持ち、印の無い文は公開できない。原文の引用は翻刻か人が確かめた文だけ。**分類の数と文言検査は本人の答え（判断待ち）の後に 1 回だけ追記する** | （未実装） | 3・F6.label |
-| F7.revision | 版 2 は根拠の記録 ID を持ち、版 1 と寸法が違い、式のある寸法は向きが式と合う。式の無い変更には印を付ける | （未実装） | 3・F7.revision |
-| F8.references | 仮説が引いた前例の ID は実在する | （未実装） | 3・F8.references |
-| F9.human | 仮説の採否・型紙の確定・記録の解釈・版の更新の人の確認が無いと次に進めない | （未実装） | 3・F9.human |
+| F7.revision | 版 2 は根拠の記録 ID を持ち、版 1 と寸法が違い、式のある寸法は向きが式と合う。式の無い変更には印を付ける | `tests/test_loop.py` の負の場面 | 3・F7.revision |
+| F8.references | 仮説や提案が引いた前例の ID は実在する | `tests/test_loop.py`・`tests/test_records.py` の負の場面 | 3・F8.references |
+| F9.human | 記録の解釈・版の更新の人の確認が無いと次に進めない。仮説の採否と型紙の確定は、人が仮説を選んで刷る操作で代える（確定の記録は未実装） | `tests/test_loop.py` の負の場面 | 3・F9.human |
 
 ## F5.stroke の由来
 
