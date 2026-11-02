@@ -80,6 +80,23 @@ for text in ("連絡は a.b@example.com まで", "電話 03-1234-5678", "〒100-
     assert floors(contrib.submit(base(body=text))[1]) == {"F10.pii"}, text
 assert floors(contrib.submit(base(rights={"basis": "own_work", "holder": "x@example.com", "license": "display_only"}))[1]) == {"F10.pii"}
 assert floors(contrib.submit(base(source_id="090-1111-2222"))[1]) == {"F10.pii"}
+# 普通の文を連絡先と誤って止めない
+for text in ("紙の厚さは 0.1 0.2 0.3 0.4 0.5 mm を試した", "0.25 0.30 0.35 0.40 mm の紙", "厚さ 0.5/1.0/1.5/2.0/2.5 を比べた", "寸法 05 10 15 20 25 mm", "01 02 03 04 05 の順に折る",
+             "図 01 / 02 / 03 / 04 / 05", "1931-01-02〜1945-08-15", "1931/01/02-1945/08/15", "1960/05/01-1960/05/31", "ISBN 0-19-852663-6", "ISBN 978-0-19-852663-6", "1931\n01\n02\n1945\n08",
+             "店はアットホームな雰囲気。また来たい", "We looked at this. Then we left.", "I saw it at home. It was old.", "友人と@浅草。楽しかった", "浅草@1960",
+             "1773 1931 1945 1960 1985 2001 年に版がある", "1931-01-02 から 1945-08-15 まで", "09:00-17:00 に開店"):
+    assert contrib.submit(base(body=text))[1] == [], text
+# 形に当たった普通の文も、投稿者が確かめれば受け付け、確認する人が読んで通す
+fid, fs = contrib.submit(base(body="資料番号 123-4567", pii_confirmed=True))
+assert not fs
+assert floors(contrib.approve(fid, "確認者")) == {"F10.pii"}
+assert contrib.approve(fid, "確認者", pii_cleared=True) == []
+assert '"pii_flag"' not in (pathlib.Path(tmp) / "contributions" / f"{fid}.json").read_text(encoding="utf-8")
+contrib.withdraw(fid)
+# 読めないファイルが受付箱にあっても受付を止めない
+(pathlib.Path(tmp) / "contributions_inbox" / "C-8000.json").write_bytes(b"\xff\xfe")
+assert contrib.submit(base())[1] == []
+(pathlib.Path(tmp) / "contributions_inbox" / "C-8000.json").unlink()
 cid, _ = contrib.submit(base())
 inbox_path = pathlib.Path(tmp) / "contributions_inbox" / f"{cid}.json"
 rec = json.loads(inbox_path.read_text(encoding="utf-8"))
@@ -93,6 +110,7 @@ assert "090-9999-8888" not in inbox_text, "知らない項目を保存しない"
 contrib.withdraw(cid)
 assert contrib.submit(base(body="a\r\nb"))[1] == [], "ブラウザの改行を断らない"
 assert floors(contrib.submit(base(body="a\u202eb"))[1]) == {"F10.intake"}
+assert floors(contrib.submit(base(body="a\u200fb"))[1]) == {"F10.intake"}
 cid, _ = contrib.submit(base(body="1773 年の本にある。1931 年の複製もある"))
 assert contrib.approve(cid, "確認者") == [], "年の数字を電話番号と誤って止めない"
 contrib.withdraw(cid)

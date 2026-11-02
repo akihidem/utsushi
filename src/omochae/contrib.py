@@ -37,7 +37,10 @@ TEXT_FIELDS = ("display_name", "origin", "where_when", "toy_name", "source_id", 
 PUBLIC_FIELDS = ("id", "status", "received_at", "kind", "role", "certainty", "body", "display_name", "origin", "where_when", "toy_name", "source_id", "rights", "media")
 ID_NAME = re.compile(r"^C-(\d{4,})\.json$")
 # 公開の文に個人の連絡先が紛れる事故を減らす。人の確認の補助で、これだけで安全とは言わない。
-EMAIL = re.compile(r"[\w.+-]+\s*@\s*[\w-]+(?:\s*\.\s*[\w-]+)*|\b\w+\s*(?:\[at\]|\(at\)|\s+at\s+|アット)\s*\w+\s*(?:\.|\s+dot\s+)\s*\w+", re.I)
+# 文の中の「@」や「at」を拾いすぎないよう、英数字の形に絞る。
+EMAIL = re.compile(r"[A-Za-z0-9._+-]+\s*@\s*[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*"
+                   r"|[A-Za-z0-9._+-]+\s*(?:\[at\]|\(at\)|アット)\s*[A-Za-z0-9-]+\.[A-Za-z]{2,}"
+                   r"|\b[A-Za-z0-9._+-]+\s+at\s+[A-Za-z0-9-]+\s*(?:\.\s*(?:com|jp|net|org|co\.jp)\b|\s+dot\s+[A-Za-z]{2,})", re.I)
 PHONE_RUN = re.compile(r"\+?\d[\d\s().\-/・~〜‐‑‒–—―−ー]*\d")
 POSTAL = re.compile(r"(?:〒|郵便番号)\s*\d{3}[\s\-‐‑‒–—―−ー]?\d{4}|(?<!\d)\d{3}[\-‐‑‒–—―−ー]\d{4}(?!\d)")
 PUBLIC_TEXT_FIELDS = ("body", "display_name", "origin", "where_when", "toy_name", "source_id")
@@ -88,7 +91,7 @@ def _bad_text(s):
     except UnicodeEncodeError:
         return True
     # 文字の向きを変える制御文字は、確認する人に見える文と保存される文を違わせられるので断る。
-    return any((unicodedata.category(ch) == "Cc" and ch not in "\n\t") or 0x202A <= ord(ch) <= 0x202E or 0x2066 <= ord(ch) <= 0x2069 for ch in s)
+    return any((unicodedata.category(ch) == "Cc" and ch not in "\n\t") or 0x202A <= ord(ch) <= 0x202E or 0x2066 <= ord(ch) <= 0x2069 or ord(ch) in (0x200E, 0x200F, 0x061C) for ch in s)
 
 
 def _normalize(text):
@@ -96,19 +99,24 @@ def _normalize(text):
     text = unicodedata.normalize("NFKC", text)
     # 異体字セレクタも見えない文字なので一緒に消す。
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf" and not 0xFE00 <= ord(ch) <= 0xFE0F)
-    return text.replace("。", ".").replace("(0)", "")
+    return text.replace("(0)", "")
 
 
 def _looks_like_phone(text):
-    """数字の塊の連続した組で 10〜11 桁を探す。前後の別の数字（10時・1960年など）に引きずられないよう、塊の窓で見る。"""
+    """電話番号の形（0 始まり 10〜11 桁、塊は 3 つまで、先頭は 2 桁以上）を探す。
+
+    前後の別の数字に引きずられないよう塊の窓で見るが、寸法や日付の並びを拾わないよう窓を絞る。国番号 81 の塊は別に数える。
+    """
     for m in PHONE_RUN.finditer(text):
         groups = re.findall(r"\d+", m.group())
-        for i in range(len(groups)):
-            for j in range(i + 1, len(groups) + 1):
+        for i, first in enumerate(groups):
+            if first == "81":
+                digits = "0" + "".join(groups[i + 1 : i + 4]).lstrip("0")
+                if 10 <= len(digits) <= 11:
+                    return True
+            for j in range(i + 1, min(i + 3, len(groups)) + 1):
                 digits = "".join(groups[i:j])
-                if digits.startswith("81"):
-                    digits = "0" + digits[2:]
-                if digits.startswith("0") and 10 <= len(digits) <= 11:
+                if len(first) >= 2 and digits.startswith("0") and 10 <= len(digits) <= 11:
                     return True
     return False
 
@@ -219,6 +227,17 @@ def _now():
     return datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
 
 
+def _received_count(d):
+    """確認待ちの数。読めないファイルや、取り下げと同時に消えたファイルで受付全体を止めない。"""
+    count = 0
+    for p in d["inbox"].glob("C-*.json"):
+        try:
+            count += '"status": "received"' in p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+    return count
+
+
 def submit(data, image_b64=None):
     """受付。返り値は (ID, failures)。失敗なら何も保存しない。"""
     checked = dict(data)
@@ -227,8 +246,10 @@ def submit(data, image_b64=None):
     if image_b64:
         checked["_has_image"] = True
     failures = check_intake(checked)
-    # 公開の時でなく受付の時に知らせる。本人がその場で直せて、確認者が他人の言葉を書き換えずに済む。
-    failures += check_pii(checked)
+    # 公開の時でなく受付の時に知らせる。形の検査は誤検知が必ず残るので、断り切らず、投稿者が確かめれば受け付けて確認者に印を渡す。
+    pii = check_pii(checked)
+    if not data.get("pii_confirmed"):
+        failures += pii
     raw = ext = None
     if image_b64:
         try:
@@ -249,7 +270,7 @@ def submit(data, image_b64=None):
         return None, failures
     d = dirs()
     _ensure_dirs()
-    if sum(1 for p in d["inbox"].glob("C-*.json") if '"status": "received"' in p.read_text(encoding="utf-8")) >= MAX_INBOX:
+    if _received_count(d) >= MAX_INBOX:
         return None, [Failure("F10.intake", "inbox", "受付箱がいっぱい")]
     # 知らない項目を保存しない。公開の記録に紛れ込む道を入口で断つ。
     allowed = {"kind", "role", "certainty", "body", "display_name", "origin", "where_when", "toy_name", "source_id"}
@@ -257,7 +278,7 @@ def submit(data, image_b64=None):
     rec["attest"] = {a: True for a in ATTESTS}
     r = data["rights"]
     rec["rights"] = {"basis": r["basis"], "holder": r.get("holder", ""), "license": r["license"]}
-    rec.update(status="received", received_at=_now(), media=[])
+    rec.update(status="received", received_at=_now(), media=[], pii_flag=bool(pii))
     while True:
         cid = f"C-{max(_all_ids(d), default=0) + 1:04d}"
         rec["id"] = cid
@@ -301,7 +322,7 @@ def public_record(rec):
     return out
 
 
-def approve(cid, reviewer, note=""):
+def approve(cid, reviewer, note="", pii_cleared=False):
     """人の確認。公開の記録を書く。人が画面で確かめる入口は CLI の approve だけ（F9 と同じ線）。"""
     path, rec = _load(cid)
     failures = []
@@ -312,7 +333,10 @@ def approve(cid, reviewer, note=""):
         return failures + [Failure("F10.review", cid, f"状態 {rec.get('status')} からは公開できない")]
     if (dirs()["withdrawn"] / f"{cid}.json").exists():
         failures.append(Failure("F10.review", cid, "取り下げられた番号は公開できない"))
-    failures += check_rights(rec) + check_pii(rec)
+    failures += check_rights(rec)
+    # 形の検査に当たった文は、人が全文を読んで連絡先でないと判断した時だけ通す。
+    if not pii_cleared:
+        failures += check_pii(rec)
     for name in rec.get("media", []):
         if not (dirs()["media"] / name).exists():
             failures.append(Failure("F10.review", cid, f"写真 {name} が無い"))
@@ -395,6 +419,8 @@ def _show(cid):
     """確認する人に、公開される項目を全部見せる。本文の一部だけで承認させないため。"""
     _, rec = _load(cid)
     print(json.dumps(public_record(rec), ensure_ascii=False, indent=2))
+    if rec.get("pii_flag"):
+        print("注意: 連絡先の形に当たった文です。全文を読み、連絡先でなければ approve に --pii-checked を付けます")
     private = dirs()["inbox"] / f"{cid}.private"
     if private.exists():
         # 確認で止めた時に再投稿を頼めるように、確認する人にだけ見せる。
@@ -402,13 +428,19 @@ def _show(cid):
     print("公開の前に写真も確かめる:", ", ".join(str(dirs()["media"] / n) for n in rec.get("media", [])) or "写真なし")
 
 
-def _human_confirm(cid):
-    """人が端末で番号を打った時だけ公開する。AI や自動の処理の承認を止めるための補助で、完全な保証ではない。"""
+def _show_if_present(cid):
+    _check_id(cid)
+    if (dirs()["inbox"] / f"{cid}.json").exists():
+        _show(cid)
+
+
+def _human_confirm(cid, action="公開"):
+    """人が端末で番号を打った時だけ進める。AI や自動の処理と、番号の打ち間違いを止めるための補助で、完全な保証ではない。"""
     try:
         # 端末は seek できないので、普通の open の読み書きの形では開けない。
         fd = os.open("/dev/tty", os.O_RDWR | os.O_NOCTTY)
         with io.TextIOWrapper(io.FileIO(fd, "r+"), encoding="utf-8") as tty:
-            tty.write(f"公開される内容を確かめましたか。公開するなら {cid} と打ってください: ")
+            tty.write(f"内容を確かめましたか。{action}するなら {cid} と打ってください: ")
             tty.flush()
             return tty.readline().strip() == cid
     except OSError:
@@ -425,6 +457,8 @@ def main(argv=None):
         s.add_argument("id")
         s.add_argument("--reviewer", required=True)
         s.add_argument("--note", default="")
+        if name == "approve":
+            s.add_argument("--pii-checked", action="store_true", help="形の検査に当たった文を人が読み、連絡先でないと判断した")
     sub.add_parser("withdraw").add_argument("id")
     try:
         args = ap.parse_args(argv)
@@ -449,10 +483,15 @@ def main(argv=None):
             if not _human_confirm(args.id):
                 print(Failure("F10.review", args.id, "端末での人の確認が無い").line(), file=sys.stderr)
                 return 3
-            failures = approve(args.id, args.reviewer, args.note)
+            failures = approve(args.id, args.reviewer, args.note, args.pii_checked)
         elif args.cmd == "reject":
             failures = reject(args.id, args.reviewer, args.note)
         else:
+            _show_if_present(args.id)
+            # 消すと戻せないので、別の人の番号を打ち間違えていないか確かめる。
+            if not _human_confirm(args.id, "取り下げ"):
+                print(Failure("F10.review", args.id, "端末での人の確認が無い").line(), file=sys.stderr)
+                return 3
             failures = withdraw(args.id)
             print(f"取り下げた: {args.id}")
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:

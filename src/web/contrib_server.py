@@ -49,8 +49,10 @@ f.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(f)
 const b={kind:v('kind'),role:v('role'),toy_name:v('toy_name'),body:v('body'),certainty:v('certainty'),where_when:v('where_when'),origin:v('origin'),display_name:v('display_name'),contact:v('contact'),
 rights:{basis:v('basis'),holder:v('holder'),license:v('license')},attest:{agrees_terms:!!v('agrees_terms'),adult_or_guardian:!!v('adult_or_guardian'),no_identifiable_people:!!v('no_identifiable_people')}};
 const file=f.image.files[0];if(file){b.image=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.onerror=no;r.readAsDataURL(file)})}
+b.pii_confirmed=window.piiAsked===JSON.stringify([b.body,b.origin,b.where_when,b.toy_name,b.display_name,b.rights.holder]);
 const r=await fetch('/api/contribute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json();
-m.textContent=r.ok?('受け付けました（'+j.id+'）。確認の後に公開します。'):('送れませんでした: '+j.errors.join(' / '));if(r.ok)f.reset()});
+if(!r.ok&&j.pii_only){window.piiAsked=JSON.stringify([b.body,b.origin,b.where_when,b.toy_name,b.display_name,b.rights.holder]);m.textContent='連絡先に見える所があります（'+j.errors.join(' / ')+'）。連絡先なら消してください。連絡先でなければ、もう一度「寄せる」を押すと、そのまま受け付けて確認の人に伝えます。';return}
+m.textContent=r.ok?('受け付けました（'+j.id+'）。確認の後に公開します。'):('送れませんでした: '+j.errors.join(' / '));if(r.ok){f.reset();window.piiAsked=null}});
 </script></html>""" % STYLE
 
 
@@ -157,7 +159,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"errors": ["読めない送り方です"]})
         cid, failures = contrib.submit(data, image)
         if failures:
-            return self._json(422, {"errors": [f"{f.where}: {f.message}" for f in failures]})
+            only_pii = all(f.floor == "F10.pii" for f in failures)
+            return self._json(422, {"errors": [f"{f.where}: {f.message}" for f in failures], "pii_only": only_pii})
         self._json(200, {"id": cid})
 
 
