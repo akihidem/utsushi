@@ -9,6 +9,7 @@ from shapely.geometry import LineString, Polygon
 from .model import ToolMissing
 from .textfit import FAMILY
 
+ASSETS = pathlib.Path(__file__).resolve().parents[2] / "data/assets"
 STROKE = {"stroke": "black", "fill": "none"}
 VALLEY, MOUNTAIN = "2,1", "3,1,0.6,1"
 
@@ -33,6 +34,13 @@ def to_svg(layout):
     d = dw.Drawing(page.w, page.h, origin=(0, 0))
     d.set_render_size(f"{page.w}mm", f"{page.h}mm")
     d.append(dw.Rectangle(0, 0, page.w, page.h, fill="white"))
+    # 絵を先に描く。線を上に重ねないと、切る線と折る線が絵に隠れる。
+    for q in layout["parts"]:
+        for im in q.images:
+            d.append(dw.Image(q.x + im["x"], q.y + im["y"], im["w"], im["h"], path=str(ASSETS / im["asset"]), embed=True))
+    ref = layout["ref"]
+    if layout["parts"][0].images or layout["parts"][-1].images:
+        d.append(dw.Image(ref["x"], ref["y"], ref["w"], ref["h"], path=str(ASSETS / ref["asset"]), embed=True))
     for q in layout["parts"]:
         for g in q.glue:
             _hatch(d, g, q.x, q.y)

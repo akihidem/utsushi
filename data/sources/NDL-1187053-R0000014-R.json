@@ -22,7 +22,7 @@
     "read_by": "Claude Code のセッション",
     "checked_by": null
   },
-  "modification_note": "改変: 図をもとに寸法と形を起こした翻案で、原図そのものではありません",
+  "modification_note": "改変: 図をもとに寸法と形を起こし、図の一部を切り出し・切り抜き・伸縮して載せた翻案で、原図そのものではありません",
   "transcription": {
     "status": "read_by_claude_needs_human_check",
     "entries": [
@@ -50,5 +50,5 @@
     "status": "pending",
     "entries": []
   },
-  "fetched_at": "2026-11-02T14:08:39+09:00"
+  "fetched_at": "2026-11-02T15:21:47+09:00"
 }

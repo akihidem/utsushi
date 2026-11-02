@@ -20,6 +20,17 @@ def mark_lines(source, omit=None):
     return lines
 
 
+def check_image_count(pdf_path, expected):
+    """絵が PDF に実際に入った数を見る。描く命令の数を信じず、できた紙を数える。"""
+    try:
+        out = subprocess.run(["pdfimages", "-list", str(pdf_path)], capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise ToolMissing(f"pdfimages で読めない: {e}")
+    # 透明度の smask は別の行に出るので、image の行だけを数える。
+    found = sum(1 for line in out.splitlines()[2:] if line.split()[2] == "image")
+    return [] if found == expected else [Failure("F5.image_count", "PDF", f"絵の数 {found} が見込み {expected} と違う")]
+
+
 def check_pdf(pdf_path, source):
     try:
         out = subprocess.run(["pdftotext", str(pdf_path), "-"], capture_output=True, text=True, check=True).stdout

@@ -1,5 +1,5 @@
 """雛形の族によらない描く前の検査（印字域・重なり・文字）。"""
-from shapely.geometry import Polygon, box
+from shapely.geometry import LineString, Polygon, box
 
 from .model import Failure
 
@@ -54,4 +54,23 @@ def check_bom(rows):
             out.append(Failure("F2.bom", r["name"], "素材の欄が空"))
         if r.get("substituted") and not (str(r.get("original_guess", "")).strip() and str(r.get("reason", "")).strip()):
             out.append(Failure("F2.bom", r["name"], "置き換えた部品に元の素材（推定）か理由が無い"))
+    return out
+
+
+def check_images(parts):
+    """原図が部品の中にあり、折り線と糊代をまたがない事を見る。またぐと折った時に絵が割れる。"""
+    out = []
+    for p in parts:
+        poly = part_poly(p)
+        for im in p.images:
+            b = box(p.x + im["x"], p.y + im["y"], p.x + im["x"] + im["w"], p.y + im["y"] + im["h"]).buffer(-0.01)
+            # 切り抜きの絵は輪郭の外が白なので、枠でなく足を除いた本体の範囲で見る。
+            if p.key != "figure" and not poly.buffer(EPS).contains(b):
+                out.append(Failure("F5.image_box", p.name, f"原図 {im['asset']} が部品の外に出ている"))
+            for (x1, y1), (x2, y2) in p.valley + p.mountain:
+                if b.intersects(LineString([(p.x + x1, p.y + y1), (p.x + x2, p.y + y2)])):
+                    out.append(Failure("F5.image_box", p.name, f"原図 {im['asset']} が折り線をまたいでいる"))
+            for g in p.glue:
+                if p.key != "figure" and b.intersection(Polygon([(p.x + x, p.y + y) for x, y in g])).area > EPS:
+                    out.append(Failure("F5.image_box", p.name, f"原図 {im['asset']} が糊代にかかっている"))
     return out

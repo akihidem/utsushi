@@ -59,7 +59,7 @@ def main():
             "attribution": manifest["attribution"],
             # 奥付はコマ 31 の複製の版面にある。manifest には無いので、読んだ箇所を記録する（research/07）。
             "original_publication": {"value": "安永二歳癸巳正月（1773）", "basis": "NDL コマ 31 の左頁の奥付", "read_by": "Claude Code のセッション", "checked_by": None},
-            "modification_note": "改変: 図をもとに寸法と形を起こした翻案で、原図そのものではありません",
+            "modification_note": "改変: 図をもとに寸法と形を起こし、図の一部を切り出し・切り抜き・伸縮して載せた翻案で、原図そのものではありません",
             # 翻刻は人が写す欄。読みが割れる事があるので複数を持てる形にする。
             "transcription": {"status": "pending", "entries": []},
             "reading_hypothesis": {"status": "pending", "entries": []},

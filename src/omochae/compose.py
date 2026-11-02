@@ -1,5 +1,5 @@
 """寸法から頁の配置を作る。描画はしない（検査だけを速く回せるようにするため。道具 check_params もここを使う）。"""
-from .floors import check_bom, check_layout
+from .floors import check_bom, check_images, check_layout
 from .marks import mark_lines
 from .model import TextBox
 from .page import PAGES
@@ -58,7 +58,15 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     base, fig = by_key["base"], by_key["figure"]
     base.x, base.y = page.x0, left_y
     fig.x, fig.y = page.x0 + base.width + GAP * 2, left_y
+    # 比べるための元の図。切り捨てる余白の参考なので、部品の列の空きに置く。
+    ref_h = base.height
+    ref = {"asset": "goraigo_page.jpg", "x": fig.x + fig.width + GAP * 2, "y": left_y, "h": ref_h, "w": ref_h * 0.6}
+    texts.append(TextBox(ref["x"], ref["y"], ref["w"], ref["h"], None))
+    _block(texts, ["元の図", f"NDL コマ {source['canvas']}", "（比べるため）"], ref["x"] + ref["w"] + 2, left_y, BODY_SIZE, fan.x - ref["x"] - ref["w"] - 2 - GAP)
     left_y += max(base.height, fig.height) + GAP
+    shift = inject.get("image_shift")
+    if shift:  # 負の対照のためだけ。
+        by_key[shift["part"]].images[0]["x"] += shift["dx"]
     move = inject.get("move_part")
     if move:  # 負の対照のためだけ。
         by_key[move["name"]].x, by_key[move["name"]].y = move["x"], move["y"]
@@ -80,7 +88,12 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     note_y = ruler_y + 4
     _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], page.x0, note_y, BODY_SIZE, width)
     failures += check_layout(page, parts, texts)
-    return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (page.x0, ruler_y)}, failures
+    failures += check_images(parts)
+    expected = sum(len(q.images) for q in parts) + 1
+    if inject.get("drop_images"):  # 負の対照のためだけ。絵が黙って抜けた事を PDF の側の検査で見つけられるか確かめる。
+        for q in parts:
+            q.images = []
+    return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (page.x0, ruler_y), "ref": ref, "expected_images": expected}, failures
 
 
 def check_params(template_id, params, source, page_name="A4"):

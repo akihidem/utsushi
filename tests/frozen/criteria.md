@@ -34,3 +34,15 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 ## 正の場面
 
 `pos_tab`・`pos_tube`・`pos_stick`・`pos_long_title`（長い見出しでも部品が下へ送られて通る）は exit 0。
+
+## 追加した床（理由は docs/process/research/08 と decisions/J005）
+
+既存の床は変えず、足しただけ。凍結の時には考えていなかった形の失敗が計算で見つかったため。
+
+| ID | 見る事 | 負の対照 | 期待 |
+|---|---|---|---|
+| F5.fan_clearance | 帯の長さの開く上限が、筒の口の角に当たらない角度に収まる | `neg_fan_clearance` | 3・F5.fan_clearance |
+| F5.image_box | 原図が部品の中にあり、折り線と糊代をまたがない | `neg_image_box` | 3・F5.image_box |
+| F5.image_count | PDF の絵の数が見込みと合う | `neg_image_count` | 3・F5.image_count |
+
+F5.fan_height は、軸の形では「中心の高さ＋折りの高さ ≦ 押し上げる量」で見る。`pos_rim` は台に載せる形の正の場面。

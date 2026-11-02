@@ -24,6 +24,7 @@
 | 7 | [J-004](decisions/J004-parallel-lines.md) | 担当の分割の案と取りやめ |
 | 8 | [research/06](research/06-rederive-defaults.md) | 初期値の出し直し |
 | 9 | [research/07](research/07-own-scans.md) | 手元の複写での照合 |
+| 10 | [research/08](research/08-fan-axle.md)・[J-005](decisions/J005-axle-default.md) | 扇の中心の位置、開く力、原図の入れ方 |
 
 ## 事前の検討との関係（正直に書く所）
 
