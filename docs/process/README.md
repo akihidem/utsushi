@@ -33,6 +33,7 @@
 | 16 | [J-009](decisions/J009-sheet-and-records.md) | 手順の紙と記録の入口 |
 | 17 | [research/12](research/12-tiger.md) | 虎の仮説と寸法。紙の頭は重りより桁で軽い |
 | 18 | [J-010](decisions/J010-loop-back-half.md) | 輪の後半と、人が確定する線 |
+| 19 | [J-011](decisions/J011-generate-on-the-spot.md) | AI がその場で仮説と寸法を作る本線 |
 
 ## 事前の検討との関係（正直に書く所）
 

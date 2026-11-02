@@ -139,7 +139,10 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
         label += "・根拠 " + "、".join(adopted["record_ids"])
         how += "。前の版から変えた所: " + "、".join(f"{c['param']} {c['from']}→{c['to']}" for c in adopted["changes"])
     title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
-    template = data.get("template", "slider_fan")
+    template = h.get("template") or data.get("template", "slider_fan")
+    if h.get("template_id", "") is None:
+        print(Failure("F9.own", hypothesis_id, "今の雛形には乗らない仮説なので型紙にできない").line(), file=sys.stderr)
+        return 3
     rc = generate(template, params, source_id, out, title=title, version=version)
     if rc:
         return rc
@@ -172,6 +175,36 @@ def picture(source_id):
     return f"{source['toy']} の図（出典 ID {source_id}・{source['holding']}）: {source['image_url']}"
 
 
+def _generated_command(args):
+    from .contrib import _human_confirm
+    from .loop import _read, folder
+
+    if args.cmd == "show-generated":
+        print(json.dumps(_read(folder() / f"generated-{args.id[2:]}.json"), ensure_ascii=False, indent=2))
+        return 0
+    from api.generate import adopt_generated, generate
+
+    if args.cmd == "adopt-generated":
+        if not _human_confirm(args.id, "採用"):
+            print(Failure("F9.human", args.id, "端末での人の確認が無い").line(), file=sys.stderr)
+            return 3
+        made, failures = adopt_generated(args.id, args.by, [int(x) for x in args.accept.split(",")])
+        if not failures:
+            print("採りました:", " ".join(made))
+    else:
+        source = json.loads((ROOT / "data/sources" / f"{args.source}.json").read_text(encoding="utf-8"))
+        try:
+            gid, failures = generate(source)
+        except Exception as e:  # 鍵が無い・通信できない・予算の上限。値は出さない
+            print(f"検査できない: Claude を呼べなかった（{type(e).__name__}: {str(e)[:160]}）。固定の仮説は list で見られます", file=sys.stderr)
+            return 4
+        if not failures:
+            print(f"{gid} を作りました。show-generated で見て adopt-generated で採ります")
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3 if failures else 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="omochae.hypotheses")
     ap.add_argument("--source", default="NDL-1187053-R0000005-L")
@@ -179,6 +212,13 @@ def main(argv=None):
     sub.add_parser("predict").add_argument("text")
     sub.add_parser("picture")
     sub.add_parser("list")
+    sub.add_parser("generate", help="Claude がその場で仮説と寸法を作る。予想か自分の仮説が先に要る")
+    sg = sub.add_parser("show-generated")
+    sg.add_argument("id")
+    ag = sub.add_parser("adopt-generated", help="案を人が採る")
+    ag.add_argument("id")
+    ag.add_argument("--by", required=True)
+    ag.add_argument("--accept", required=True, help="採る案の番号。1,2 のように")
     o = sub.add_parser("own")
     o.add_argument("name")
     o.add_argument("--how", default="")
@@ -196,6 +236,8 @@ def main(argv=None):
     except SystemExit as e:
         return 0 if e.code == 0 else 4
     try:
+        if args.cmd in ("generate", "show-generated", "adopt-generated"):
+            return _generated_command(args)
         if args.cmd == "picture":
             print(picture(args.source))
             return 0

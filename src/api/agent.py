@@ -6,7 +6,7 @@
 """
 from dataclasses import dataclass, field
 
-from . import config
+from . import budget, config
 
 BETAS = ["server-side-fallback-2026-07-01"]
 
@@ -25,8 +25,16 @@ class Trace:
 
 
 def default_client():
+    """鍵は repo の .env から読む。起動の環境に鍵を置かない運用なので、ここでだけ読み、表示も記録もしない。"""
+    import pathlib
+
     import anthropic
 
+    env = pathlib.Path(__file__).resolve().parents[2] / ".env"
+    if env.exists():
+        for line in env.read_text(encoding="utf-8").splitlines():
+            if line.startswith("ANTHROPIC_API_KEY=") and line.split("=", 1)[1].strip():
+                return anthropic.Anthropic(api_key=line.split("=", 1)[1].strip())
     return anthropic.Anthropic()
 
 
@@ -36,7 +44,9 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
     trace = Trace(model=config.MODELS[role])
     definitions = tools + [{"name": "submit_result", "description": "最終結果を提出する。作業の最後に必ず 1 回呼ぶ。", "input_schema": submit_schema}]
     messages = [{"role": "user", "content": user}]
+    run_usd = 0.0
     for _ in range(config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3):
+        budget.check(run_usd)  # 呼ぶ前に毎回見る。途中で上限に当たれば、そこで止めて人へ返す
         response = client.beta.messages.create(
             model=trace.model, max_tokens=config.MAX_TOKENS, system=system, tools=definitions, messages=messages,
             output_config={"effort": config.EFFORT[role]}, thinking={"type": "adaptive"}, betas=BETAS, fallbacks="default",
@@ -44,6 +54,7 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
         usage = getattr(response, "usage", None)
         trace.input_tokens += getattr(usage, "input_tokens", 0) or 0
         trace.output_tokens += getattr(usage, "output_tokens", 0) or 0
+        run_usd += budget.add(role, trace.model, getattr(usage, "input_tokens", 0) or 0, getattr(usage, "output_tokens", 0) or 0)
         if response.stop_reason == "refusal":
             raise AgentStopped("Claude が応答を断った。入力を人が確かめる")
         if response.stop_reason == "max_tokens":
