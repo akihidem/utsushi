@@ -60,6 +60,12 @@ def to_svg(layout):
             d.append(dw.Rectangle(q.x + x, q.y + y, w, h, stroke_width=0.25, **STROKE))
         for x, y, r in q.holes:
             d.append(dw.Circle(q.x + x, q.y + y, r, stroke_width=0.25, **STROKE))
+    for s in layout.get("shapes", []):
+        dash = {"stroke_dasharray": s["dash"]} if s.get("dash") else {}
+        if s["kind"] == "rect":
+            d.append(dw.Rectangle(s["x"], s["y"], s["w"], s["h"], stroke_width=0.25, **STROKE, **dash))
+        else:
+            d.append(dw.Line(s["x1"], s["y1"], s["x2"], s["y2"], stroke="black", stroke_width=0.25, **dash))
     for t in layout["texts"]:
         if t.text:
             # 基線は字の箱の下の方。字面の高さは約 0.88em。

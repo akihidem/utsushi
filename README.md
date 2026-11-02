@@ -23,7 +23,8 @@
 - NDL の manifest から出典の記録を作る
 - 御来迎の動く仕組みを 5 つの仮説として並べ、使い手が先に書いた予想と一緒に見せる。予想が無ければ一覧も型紙も出さない
 - 仮説を自分で立てて型紙にし、比べたい時に用意された仮説を並べて見る道も選べる
-- 選んだ仮説の型紙を A4 の PDF に刷る。寸法・重なり・文字・扇の開きの形の検査を通らなければ出さない
+- 試した結果を 3 値と測った数で記録する。「わからない」を「動いた」に数えない（`python -m omochae.records add`）
+- 選んだ仮説の型紙と手順の紙を A4 の PDF に刷る。寸法・重なり・文字・扇の開きの形の検査を通らなければ出さない
 - NDL の図を参照して、筒の面と像の色と線を描き直す。絵が折り線をまたがない事と、図を貼っていない事を検査する
 - 所蔵・改変・出典 ID・仮説の印を PDF から読み直して検査する
 - 玩具の写真・情報・思い出・作り方の知見を手元の画面で受け付け、人が確認した物だけを公開の頁に出す（`PYTHONPATH=src .venv/bin/python -m web.contrib_server`。ssh で転送する時は手元と同じポート番号で）
@@ -45,7 +46,8 @@ cd <この repo>
 export PYTHONPATH=src
 .venv/bin/python -m omochae.hypotheses predict "筒を押すと上の飾りが開く。動力は手"
 .venv/bin/python -m omochae.hypotheses list
-.venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf
+.venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf と手順の紙 H-A_v1_tejun.pdf
+.venv/bin/python -m omochae.records add --hypothesis H-A --result わからない --opened-deg 90 --opener 紙の力
 ```
 
 仮説を自分で立てたい時は、図を見て自分の案を書き、型紙にして試し、比べたくなった時に一覧を見る。
@@ -89,4 +91,4 @@ export PYTHONPATH=src
 
 ## 将来構想（未実装）
 
-Claude による仮説生成、記録の解釈、次の版の提案、虎の雛形、図鑑の画面。
+Claude による仮説生成、写真つきの記録、記録の解釈、次の版の提案、虎の雛形、図鑑の画面。

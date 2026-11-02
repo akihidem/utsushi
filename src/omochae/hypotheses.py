@@ -77,7 +77,8 @@ def letter(h):
     return h["id"].split("-")[1]
 
 
-def list_lines(data, latest, own=()):
+def list_lines(data, latest, own=(), tallies=None):
+    tallies = tallies or {}
     lines = [f"{data['toy']}"]
     if latest:
         lines.append(f"あなたの予想: {latest}")
@@ -85,12 +86,33 @@ def list_lines(data, latest, own=()):
         lines += [f"あなたの仮説 {h['id']} {h['name']}（{h['status']}）", f"  動かし方: {h['how_it_moves']}", f"  根拠: {h['evidence']}"]
     lines += [data["note"], ""]
     for h in data["hypotheses"]:
-        lines.append(f"{h['id']} {h['name']}（{h['status']}）")
+        lines.append(f"{h['id']} {h['name']}（{tallies.get(h['id'], h['status'])}）")
         lines.append(f"  動かし方: {h['how_it_moves']}")
         lines += [f"  根拠〔{e['certainty']}〕: {e['what']}（{e['where']}）" for e in h["evidence"]]
         lines += [f"  弱い所: {x}" for x in h["against"]]
         lines.append(f"  試して測る事: {h['to_measure']}")
     return lines
+
+
+def _print_instructions(params, source_id, title, how, out, version):
+    """型紙と対の手順の紙を刷る。型紙と同じ印の検査を通す。"""
+    from .instructions import compose_sheet
+    from .marks import check_image_count, check_pdf
+    from .render import to_png, write_all
+
+    source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    layout, failures = compose_sheet("slider_fan", params, source, f"{title} 版 {version}", how)
+    if not failures:
+        stem = pathlib.Path(f"{out}_tejun")
+        pdf = write_all(layout, stem)
+        failures = check_pdf(pdf, source) + check_image_count(pdf)
+        if not failures:
+            to_png(pdf, stem)
+            print(pdf)
+            return 0
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3
 
 
 def print_sheet(source_id, hypothesis_id, out, version=1):
@@ -102,7 +124,10 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」版 {version}"
-    return generate("slider_fan", h["params"], source_id, out, title=title, version=version)
+    rc = generate("slider_fan", h["params"], source_id, out, title=title, version=version)
+    if rc:
+        return rc
+    return _print_instructions(h["params"], source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], out, version)
 
 
 def print_own(source_id, own_id, out, version=1):
@@ -118,7 +143,10 @@ def print_own(source_id, own_id, out, version=1):
         print(Failure("F9.own", own_id, "今の雛形には乗らない仮説なので型紙にできない。記録としては残っている").line(), file=sys.stderr)
         return 3
     data = load(source_id)
-    return generate("slider_fan", params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
+    rc = generate("slider_fan", params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
+    if rc:
+        return rc
+    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version)
 
 
 def picture(source_id):
@@ -173,7 +201,11 @@ def main(argv=None):
         if args.cmd == "list":
             preds = predictions(args.source)
             latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
-            print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source))))
+            # 記録の数は見せるが、順位は付けない。順位を変えるのは人の確認（H7）。
+            from .records import all_records, summarize
+
+            tallies = {k: f"動いた {v['動いた']}・動かない {v['動かない']}・わからない {v['わからない']}" for k, v in summarize(all_records(args.source)).items()}
+            print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source), tallies)))
             return 0
         return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v1")
     except (ToolMissing, OSError, ValueError, KeyError) as e:
