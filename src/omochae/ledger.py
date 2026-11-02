@@ -87,6 +87,11 @@ def check():
                 out.append(Failure("L.claims", c["id"], f"根拠のファイルが無い: {e['path']}"))
             elif e["quote"] not in path.read_text(encoding="utf-8"):
                 out.append(Failure("L.claims", c["id"], f"根拠の文が {e['path']} に無い: {e['quote']}"))
+    for o in _json(PROCESS / "open.json"):
+        e = o["evidence"]
+        path = ROOT / e["path"]
+        if not path.exists() or e["quote"] not in path.read_text(encoding="utf-8"):
+            out.append(Failure("L.open", o["id"], f"判断待ちの根拠の文が無い: {e['path']}"))
     if (ROOT / PROCESS / "claims.md").read_text(encoding="utf-8") != render_claims(claims):
         out.append(Failure("L.claims", "docs/process/claims.md", "表が claims.json と違う。render を回す"))
     # 要約は 2 か所に置くので、片方だけ古くならないように同じ文かを見る。

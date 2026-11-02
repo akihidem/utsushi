@@ -49,7 +49,8 @@
   "evidence": [
    "src/omochae/hypotheses.py",
    "tests/test_hypotheses.py"
-  ]
+  ],
+  "unverified": "実際の人が使っていない"
  },
  {
   "id": "f07",
@@ -77,7 +78,7 @@
  },
  {
   "id": "f10",
-  "name": "再現例のアップロード",
+  "name": "試した記録の入口",
   "status": "doing",
   "evidence": [
    "src/omochae/records.py",
@@ -152,19 +153,20 @@
   "evidence": [
    "src/omochae/hypotheses.py",
    "tests/test_hypotheses.py"
-  ]
+  ],
+  "unverified": "実際の人が使っていない"
  },
  {
   "id": "f19",
-  "name": "裏の制作と確かさの段",
+  "name": "裏の制作の仕組みと確かさの段（案を作る道具 f07 とは別）",
   "status": "todo",
-  "unverified": "決める点の答え待ち（J-013）"
+  "unverified": "判断待ち O-01・O-02（J-013）"
  },
  {
   "id": "f20",
   "name": "自分の仮説を言葉から型紙にする口",
   "status": "todo",
-  "unverified": "決める点の答え待ち（J-013）"
+  "unverified": "判断待ち O-02（J-013）"
  },
  {
   "id": "f21",

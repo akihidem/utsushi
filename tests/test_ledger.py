@@ -33,6 +33,7 @@ def edit(path, fn):
 
 # 根拠の文が消えると落ちる。ファイルが残っていても通さない
 assert edit("docs/process/research/03-mechanism-dimensions.md", lambda t: t.replace("20mm 足りない", "足りる")) == {"L.claims"}
+assert edit("docs/process/decisions/J005-axle-default.md", lambda t: t.replace("実物で試すまで確定しない", "確定")) == {"L.open"}
 # 索引に無い記録、地図の手直し、要約の片方だけの変更
 new = tmp / "docs/process/decisions/J999-x.md"
 new.write_text("# x\n", encoding="utf-8")

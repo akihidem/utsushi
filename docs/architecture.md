@@ -37,7 +37,7 @@
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面 |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
-| `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`） |
+| `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |
 | `src/omochae/ledger.py` | 台帳の検査と、地図と主張の表の描画 |
 

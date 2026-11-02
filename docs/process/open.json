@@ -1,0 +1,65 @@
+[
+ {
+  "id": "O-01",
+  "decision": "試した後に何を開くか",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/decisions/J013-core-words.md",
+   "quote": "試した後に何を開くかは判断待ち"
+  }
+ },
+ {
+  "id": "O-02",
+  "decision": "子どもと Claude の接点、タッグの形",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/decisions/J013-core-words.md",
+   "quote": "レビューの推し「紙だけ」は、この言葉と食い違う"
+  }
+ },
+ {
+  "id": "O-03",
+  "decision": "実行時のモデルと、最初の API の試験",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/decisions/J010-loop-back-half.md",
+   "quote": "本物では 1 回も呼んでいない"
+  }
+ },
+ {
+  "id": "O-04",
+  "decision": "持ち寄りの外の入口と公開の条件",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/decisions/J006-contributions-minimum.md",
+   "quote": "外の人"
+  }
+ },
+ {
+  "id": "O-05",
+  "decision": "扇の中心の置き方",
+  "waiting_on": "実物の試行",
+  "evidence": {
+   "path": "docs/process/decisions/J005-axle-default.md",
+   "quote": "実物で試すまで確定しない"
+  }
+ },
+ {
+  "id": "O-06",
+  "decision": "拡大の道具を仮説生成に組み込むか",
+  "waiting_on": "比較",
+  "evidence": {
+   "path": "docs/process/decisions/J003-zoom-tool.md",
+   "quote": "比べてから決める"
+  }
+ },
+ {
+  "id": "O-07",
+  "decision": "記録を repo に載せるか",
+  "waiting_on": "本人（最初の記録が届いた時）",
+  "evidence": {
+   "path": "docs/process/decisions/J013-core-words.md",
+   "quote": "最初の実物の記録が届いた時に本人に聞く"
+  }
+ }
+]

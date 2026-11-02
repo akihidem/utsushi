@@ -4,10 +4,10 @@
 ## 30 秒の要約
 
 - **何か**: 江戸の絵本『江都二色』（1773）に図と歌だけが残る玩具の動く仕組みを、自分で予想し、紙の型紙に刷り、作って確かめる道具。返事をするのは AI でなく紙。
-- **輪**: 予想か自分の仮説 → 型紙を刷る → 作って試す → 記録と人の説明 → Claude が案を出し人が採る → 次の版。
+- **輪**: 予想か自分の仮説 → 型紙を刷る → 作って試す → 記録と人の説明 → 版の間に Claude が案を出し人が採る → 次の版。学ぶ人にその場で正誤は返さない。
 - **哲学**: 「AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。」
 - **今の状態**: 型紙の生成と検査は動く。実物の試行は 0 件、本物の Claude API は未実行。学習の効果は主張しない。
-- **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)。
+- **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)、判断待ちは [docs/process/open.json](docs/process/open.json)。
 <!-- summary:end -->
 
 ## 開発の過程
@@ -26,7 +26,7 @@
 
 提出するコード・機能・データは、開発期間（2026-11-02 12:00 〜 2026-11-08 20:00 JST）中に、この repo で新規に作った。開発には、従前から運用している Claude Code の作業基盤を道具として使ったが、そのコードは含めていない。題材については開発の開始前に調査と構想の検討をしており、そのメモは参考資料として手元に置いた。この repo には入れていない。扱いは [docs/process/README.md](docs/process/README.md) に書いた。
 
-## できること（実装済み）
+## できること（動く物。実物の試行と本物の API は未確認。機能ごとの状態は `docs/features.json`）
 
 - NDL の manifest から出典の記録を作る
 - 御来迎と張子の首振り虎の動く仕組みを、複数の仮説として並べ、使い手が先に書いた予想と一緒に見せる。予想が無ければ一覧も型紙も出さない
@@ -64,7 +64,7 @@ export PYTHONPATH=src
 
 ```
 .venv/bin/python -m omochae.hypotheses picture
-.venv/bin/python -m omochae.hypotheses own "自分の仮説の名前" --how "動かし方" --evidence "図のどこを見たか" \\
+.venv/bin/python -m omochae.hypotheses own "自分の仮説の名前" --how "動かし方" --evidence "図のどこを見たか" \
   --params '{"push_part": "stick", "hub": "axle", "pusher_height": 84}'
 .venv/bin/python -m omochae.hypotheses print-own OWN-1
 .venv/bin/python -m omochae.hypotheses list

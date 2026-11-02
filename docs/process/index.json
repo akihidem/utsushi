@@ -20,7 +20,7 @@
  {
   "id": "research/03",
   "path": "research/03-mechanism-dimensions.md",
-  "hook": "下から押す形は行程が 20mm 足りないと計算で発見",
+  "hook": "初期の寸法では下から押す行程が 20mm 足りない",
   "status": "調査"
  },
  {
@@ -87,7 +87,7 @@
   "id": "J-006",
   "path": "decisions/J006-contributions-minimum.md",
   "hook": "持ち寄りは確認つきの受付を先に作る",
-  "status": "決定"
+  "status": "決定。外の入口は判断待ち"
  },
  {
   "id": "research/10",
@@ -129,7 +129,7 @@
   "id": "J-010",
   "path": "decisions/J010-loop-back-half.md",
   "hook": "輪の後半と、人が確定する線",
-  "status": "作った。API は未実行"
+  "status": "作った。API 未実行、モデル判断待ち"
  },
  {
   "id": "J-011",
@@ -172,6 +172,12 @@
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",
   "status": "記録"
+ },
+ {
+  "id": "open",
+  "path": "open.json",
+  "hook": "今の判断待ちの一覧",
+  "status": "機械可読"
  },
  {
   "id": "claims",
