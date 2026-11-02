@@ -267,4 +267,77 @@ def materials(p):
 
 
 TITLES = {"tab": "つまみで動かす", "tube": "内筒を下から押す", "stick": "割り箸の柄で動かす"}
-LAYOUT = {"right_column": "fan", "left_row_last": ("base", "figure")}
+
+
+def title(p):
+    return TITLES[p["push_part"]]
+
+
+def place(by_key, page, top, gap):
+    """扇は長いので右の列に縦に置き、残りを左の列に積む。返り値は (文字の開始 y, 文字の幅, 文字の開始 x)。"""
+    fan = by_key["fan"]
+    fan.x, fan.y = page.x1 - fan.width, top
+    left_y = top
+    for key in ("tube", "pusher"):
+        if key in by_key:
+            q = by_key[key]
+            q.x, q.y = page.x0, left_y
+            left_y += q.height + gap
+    base, fig = by_key["base"], by_key["figure"]
+    base.x, base.y = page.x0, left_y
+    fig.x, fig.y = page.x0 + base.width + gap * 2, left_y
+    left_y += max(base.height, fig.height) + gap
+    return left_y, fan.x - page.x0 - gap, page.x0
+
+
+def steps(p):
+    """組み方。部品番号は型紙と同じ。押し方と中心の置き方で変わる所だけを分ける。"""
+    out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る。穴は竹串の先であける"]
+    if p["push_part"] == "tab":
+        out.append("1 外筒の溝をカッターで切る（大人がする）")
+    out.append("1 外筒を破線で谷折りし、糊代で貼って角筒にする")
+    if p["push_part"] in ("tab", "tube"):
+        out.append("2 内筒も同じように角筒にする")
+    if p["push_part"] == "tab":
+        out.append("竹串を 2 内筒の 2 つの穴に通す")
+    if p["push_part"] == "stick":
+        out.append("3 台を割り箸の先に貼る")
+    else:
+        out.append("3 台で 2 内筒の上に蓋をする")
+    out.append("4 扇を破線で谷折り、一点鎖線で山折りにして蛇腹に畳む")
+    if p["hub"] == "axle":
+        out.append("糸を 5 像の穴と 4 扇の中心側の穴の列に通し、ゆるく結ぶ")
+        out.append("5 像の足を 3 台に貼る")
+    else:
+        out.append("4 扇の端を 3 台に貼り、5 像の足も台に貼る")
+    if p["push_part"] == "tab":
+        out.append("内筒を 1 外筒に入れ、竹串の端を溝から出す")
+    else:
+        out.append("押す部品を 1 外筒に下から入れる")
+    return out
+
+
+def measures(p):
+    first = [("開いた角度（度）紙の力だけ", 20)]
+    if p["hub"] == "axle":
+        first.append(("糸あり", 20))
+    return {"predict": "どこまで開くと思いますか（度）", "rows": [first, [("試した回数", 15), ("開いた回数", 15)]]}
+
+
+def diagram(x, y, w, h, p):
+    """組み上がりの断面の見取り図。寸法の図ではなく、部品の並びを見せるだけの絵。"""
+    s = (h - 8) / (p["tube_height"] + p["fold_height"])
+    cx, base = x + w / 2, y + h - 4
+    tw, th = p["tube_side"] * s, p["tube_height"] * s
+    shapes = [{"kind": "rect", "x": cx - tw / 2, "y": base - th, "w": tw, "h": th}]
+    inner = p["pusher_side"] * s
+    rest_top = base - (p["tube_height"] - p["push_amount"]) * s
+    length = p["pusher_height"] * s
+    if p["push_part"] == "stick":
+        shapes.append({"kind": "rect", "x": cx - 0.6, "y": rest_top, "w": 1.2, "h": length, "dash": "1,0.6"})
+    else:
+        shapes.append({"kind": "rect", "x": cx - inner / 2, "y": rest_top, "w": inner, "h": length, "dash": "1,0.6"})
+    if p["push_part"] == "tab":
+        shapes.append({"kind": "line", "x1": cx - tw / 2 - 5, "y1": rest_top + length / 2, "x2": cx, "y2": rest_top + length / 2})
+    shapes.append({"kind": "rect", "x": cx - 1.2, "y": rest_top - p["fold_height"] * s, "w": 2.4, "h": p["fold_height"] * s, "dash": "1,0.6"})
+    return shapes

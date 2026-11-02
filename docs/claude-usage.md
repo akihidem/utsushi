@@ -33,3 +33,4 @@
 - F10.public の見る事を足した（道具は CC BY だけ、戻された公開の記録も出さない）。F10.pii は受付の時にも見る。理由は `docs/process/decisions/J006-contributions-minimum.md`。
 - 本人の指摘で仕組みを複数の仮説として並べる形に組み直したので、床 F9.prediction を足した。理由は `docs/process/decisions/J002-mechanism-hypotheses.md`。
 - 本人の設計入力で自分の仮説から入る道を足したので、F9.prediction の文を直し、F9.own を足した。理由は `docs/process/decisions/J008-own-hypothesis-path.md`。
+- 虎の雛形を作る時に、名前だけ決めてあった F5.pivot の中身と負の対照の名前を基準に書いた。

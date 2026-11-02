@@ -69,3 +69,16 @@ r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", 
 assert r.returncode == 0, r.stderr
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/a_tejun.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert "手順の紙" in flat and SID in flat and "国立国会図書館デジタルコレクション" in flat and "わからない" in flat
+# 虎: 手順と仮説
+TSID = "NDL-1187053-R0000014-R"
+tsource = json.loads((pathlib.Path(__file__).resolve().parents[1] / "data/sources" / f"{TSID}.json").read_text(encoding="utf-8"))
+for h in load(TSID)["hypotheses"]:
+    layout, failures = compose_sheet("pivot_counterweight", h["params"], tsource, h["name"], h["how_it_moves"])
+    assert not failures, (h["id"], [f.line() for f in failures])
+assert subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID, "predict", "頭が揺れる"], capture_output=True).returncode == 0
+r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID, "print", "H-C", "--out", f"{tmp}/t"], capture_output=True, text=True)
+assert r.returncode == 0, r.stderr
+flat = "".join(subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output=True, text=True).stdout.split())
+assert TSID in flat and "張子の首振り虎" in flat
+assert add(base(source_id=TSID, hypothesis_id="H-C", power="団扇", ten_swings_sec=4.2))[1] == []
+assert floors(add(base(source_id=TSID, hypothesis_id="H-C", power="念力"))[1]) == {"F3.result"}

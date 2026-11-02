@@ -1,0 +1,16 @@
+{
+  "template": "pivot_counterweight",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {
+    "mount": "hang",
+    "axle_height": 50,
+    "ear_length": 7
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pivot"
+    ]
+  }
+}

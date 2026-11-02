@@ -94,14 +94,14 @@ def list_lines(data, latest, own=(), tallies=None):
     return lines
 
 
-def _print_instructions(params, source_id, title, how, out, version):
+def _print_instructions(params, source_id, title, how, out, version, template="slider_fan"):
     """型紙と対の手順の紙を刷る。型紙と同じ印の検査を通す。"""
     from .instructions import compose_sheet
     from .marks import check_image_count, check_pdf
     from .render import to_png, write_all
 
     source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
-    layout, failures = compose_sheet("slider_fan", params, source, f"{title} 版 {version}", how)
+    layout, failures = compose_sheet(template, params, source, f"{title} 版 {version}", how)
     if not failures:
         stem = pathlib.Path(f"{out}_tejun")
         pdf = write_all(layout, stem)
@@ -124,10 +124,11 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」版 {version}"
-    rc = generate("slider_fan", h["params"], source_id, out, title=title, version=version)
+    template = data.get("template", "slider_fan")
+    rc = generate(template, h["params"], source_id, out, title=title, version=version)
     if rc:
         return rc
-    return _print_instructions(h["params"], source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], out, version)
+    return _print_instructions(h["params"], source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], out, version, template)
 
 
 def print_own(source_id, own_id, out, version=1):
@@ -139,14 +140,16 @@ def print_own(source_id, own_id, out, version=1):
     h = match[0]
     params = h["params"]
     # 雛形に無い機構を作れるふりをしない。仮説は記録として残っている。
-    if not params or "push_part" not in params:
+    template = data_template = load(source_id).get("template", "slider_fan")
+    key = "mount" if data_template == "pivot_counterweight" else "push_part"
+    if not params or key not in params:
         print(Failure("F9.own", own_id, "今の雛形には乗らない仮説なので型紙にできない。記録としては残っている").line(), file=sys.stderr)
         return 3
     data = load(source_id)
-    rc = generate("slider_fan", params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
+    rc = generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
     if rc:
         return rc
-    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version)
+    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version, template)
 
 
 def picture(source_id):

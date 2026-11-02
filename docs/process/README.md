@@ -31,6 +31,7 @@
 | 14 | [research/11](research/11-naming.md) | 名前の候補。「かがみ」は哲学の話という訂正を含む |
 | 15 | [J-008](decisions/J008-own-hypothesis-path.md) | 仮説を自分で立てる道を足す |
 | 16 | [J-009](decisions/J009-sheet-and-records.md) | 手順の紙と記録の入口 |
+| 17 | [research/12](research/12-tiger.md) | 虎の仮説と寸法。紙の頭は重りより桁で軽い |
 
 ## 事前の検討との関係（正直に書く所）
 

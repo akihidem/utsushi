@@ -21,7 +21,7 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | F5.figure_height | 像の高さ ≦ 折りの高さ ＋ 6 | `neg_figure_height` | 3・F5.figure_height |
 | F5.base_size | 扇の台 ≦ 内筒の一辺 | `neg_base_size` | 3・F5.base_size |
 | F5.stroke | 下から押す形は 押す部品の長さ ≧ 筒の高さ。つまみの形は 内筒が筒に収まり、溝が筒の端から 5mm 以上離れる | `neg_stroke_tube`・`neg_stroke_tab` | 3・F5.stroke |
-| F5.pivot | 虎の雛形の族の床（未実装。名前だけ決める） | `neg_pivot_*`（未実装） | 3 |
+| F5.pivot | 虎の雛形の族の床。重心が軸より下、静かな時の傾きが 15° まで、穴の余白、揺れの余裕、重りと頭が底に当たらない | `neg_pivot_weight_above`・`neg_pivot_tilt`・`neg_pivot_ear`・`neg_pivot_floor` | 3・F5.pivot |
 | F6.label | 図鑑の文は印を持ち、印の無い文は公開できない。原文の引用は翻刻か人が確かめた文だけ。**分類の数と文言検査は本人の答え（判断待ち）の後に 1 回だけ追記する** | （未実装） | 3・F6.label |
 | F7.revision | 版 2 は根拠の記録 ID を持ち、版 1 と寸法が違い、式のある寸法は向きが式と合う。式の無い変更には印を付ける | （未実装） | 3・F7.revision |
 | F8.references | 仮説が引いた前例の ID は実在する | （未実装） | 3・F8.references |

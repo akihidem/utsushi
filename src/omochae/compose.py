@@ -3,10 +3,10 @@ from .floors import check_art, check_bom, check_layout
 from .marks import mark_lines
 from .model import TextBox
 from .page import PAGES
-from .templates import slider_fan
+from .templates import pivot_counterweight, slider_fan
 from .textfit import text_width, wrap
 
-TEMPLATES = {slider_fan.ID: slider_fan}
+TEMPLATES = {slider_fan.ID: slider_fan, pivot_counterweight.ID: pivot_counterweight}
 TITLE_SIZE, BODY_SIZE, LABEL_SIZE = 5.0, 3.0, 2.8
 LINE = 1.25  # 行送りの倍率。CJK の字面より少し広く取る
 GAP = 4.0
@@ -39,7 +39,7 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     failures += check_bom(rows)
     page = PAGES[page_name]
     texts = []
-    title = title or f"{source['toy']} 型紙（{tpl.TITLES[p['push_part']]}）版 {version}"
+    title = title or f"{source['toy']} 型紙（{tpl.title(p)}）版 {version}"
     y = _block(texts, [title], page.x0, page.y0, TITLE_SIZE, page.x1 - page.x0)
     y = _block(texts, mark_lines(source, inject.get("omit_marks")), page.x0, y + 1, BODY_SIZE, page.x1 - page.x0)
     # 見出しが増えれば部品の置き場も下がる。固定の y にすると行が増えた時に重なる。
@@ -47,18 +47,7 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     top = inject.get("fixed_parts_top", y + GAP)
     parts = tpl.parts(p)
     by_key = {q.key: q for q in parts}
-    fan = by_key["fan"]
-    fan.x, fan.y = page.x1 - fan.width, top
-    left_y = top
-    for key in ("tube", "pusher"):
-        if key in by_key:
-            q = by_key[key]
-            q.x, q.y = page.x0, left_y
-            left_y += q.height + GAP
-    base, fig = by_key["base"], by_key["figure"]
-    base.x, base.y = page.x0, left_y
-    fig.x, fig.y = page.x0 + base.width + GAP * 2, left_y
-    left_y += max(base.height, fig.height) + GAP
+    left_y, width, text_x = tpl.place(by_key, page, top, GAP)
     shift = inject.get("art_shift")
     if shift:  # 負の対照のためだけ。
         item = by_key[shift["part"]].art[0]
@@ -69,24 +58,23 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     for q in parts:
         texts.append(TextBox(q.x + q.label_xy[0], q.y + q.label_xy[1], text_width(q.label, LABEL_SIZE),
                              LABEL_SIZE * LINE, q.label, LABEL_SIZE, owner=q.key))
-    width = fan.x - page.x0 - GAP
-    y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], page.x0, left_y, BODY_SIZE, width)
+    y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], text_x, left_y, BODY_SIZE, width)
     legend_y = y + 1
     legend = [("切る", None), ("谷折り", "2,1"), ("山折り", "3,1,0.6,1"), ("糊代", "hatch")]
-    samples, x = [], page.x0
+    samples, x = [], text_x
     for name, dash in legend:
         samples.append((x, legend_y + BODY_SIZE * 0.6, dash))
         texts.append(TextBox(x + 9, legend_y, text_width(name, BODY_SIZE), BODY_SIZE * LINE, name, BODY_SIZE))
         x += 9 + text_width(name, BODY_SIZE) + 3
     ruler_y = legend_y + BODY_SIZE * LINE + 2
     # 物差しは 100mm。刷りの倍率を人が確かめる唯一の手がかりなので、印字域に収まらなければ検査で落とす。
-    texts.append(TextBox(page.x0, ruler_y, 100, 3, None))
+    texts.append(TextBox(text_x, ruler_y, 100, 3, None))
     note_y = ruler_y + 4
-    _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], page.x0, note_y, BODY_SIZE, width)
+    _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], text_x, note_y, BODY_SIZE, width)
     failures += check_layout(page, parts, texts)
     failures += check_art(parts)
     # paste_image は負の対照のためだけ。図を貼った PDF を、刷った後の検査が見つけられるか確かめる。
-    return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (page.x0, ruler_y), "paste_image": bool(inject.get("paste_image"))}, failures
+    return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (text_x, ruler_y), "paste_image": bool(inject.get("paste_image"))}, failures
 
 
 def check_params(template_id, params, source, page_name="A4"):

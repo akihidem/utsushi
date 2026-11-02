@@ -39,6 +39,11 @@ def check(rec):
         out.append(Failure("F3.result", "opened_deg", "開いた角度は 0〜360"))
     if rec.get("opener") is not None and rec["opener"] not in OPENERS:
         out.append(Failure("F3.result", "opener", f"開いた力は {'／'.join(OPENERS)} のどれか"))
+    sec = rec.get("ten_swings_sec")
+    if sec is not None and not (isinstance(sec, (int, float)) and not isinstance(sec, bool) and 0 < sec <= 600):
+        out.append(Failure("F3.result", "ten_swings_sec", "10 往復の秒は 0〜600"))
+    if rec.get("power") is not None and rec["power"] not in ("手", "息", "団扇", "風"):
+        out.append(Failure("F3.result", "power", "動かした物は 手／息／団扇／風 のどれか"))
     for i, fix in enumerate(rec.get("fixes", []), 1):
         if not all(str(fix.get(k, "")).strip() for k in ("part", "change", "outcome")):
             out.append(Failure("F3.result", f"fixes[{i}]", "直した点は部品名・変えた事・結果の 3 欄が要る"))
@@ -102,6 +107,8 @@ def main(argv=None):
     a.add_argument("--opener", help="紙の力／糸／手")
     a.add_argument("--predicted-deg", type=float)
     a.add_argument("--version", type=int, default=1)
+    a.add_argument("--ten-swings-sec", type=float)
+    a.add_argument("--power", help="動かした物。手／息／団扇／風")
     a.add_argument("--fix", action="append", default=[], help="部品,変えた事,結果")
     a.add_argument("--note", default="")
     sub.add_parser("summary")
@@ -114,7 +121,7 @@ def main(argv=None):
             print(json.dumps(summarize(all_records(args.source)), ensure_ascii=False, indent=2))
             return 0
         rec = {"source_id": args.source, "hypothesis_id": args.hypothesis, "sheet_version": args.version, "result": args.result, "opened_deg": args.opened_deg, "opener": args.opener,
-               "predicted_deg": args.predicted_deg, "fixes": [parse_fix(x) for x in args.fix], "note": args.note}
+               "predicted_deg": args.predicted_deg, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note}
         rid, failures = add(rec)
     except (OSError, ValueError, KeyError) as e:
         print(f"検査できない: {type(e).__name__}: {e}", file=sys.stderr)

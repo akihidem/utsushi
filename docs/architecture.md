@@ -22,6 +22,8 @@
 | `src/omochae/textfit.py` | 字の幅の測定 |
 | `src/omochae/templates/slider_fan.py` | 御来迎の雛形。寸法の初期値・範囲・式・部品・部品表 |
 | `src/omochae/fan_model.py` | 扇の開きの幾何（開く角度の上限・口の角との干渉・糸の長さ） |
+| `src/omochae/pivot_model.py` | 首振りの重心・傾き・周期の式 |
+| `src/omochae/templates/pivot_counterweight.py` | 虎の雛形 |
 | `src/omochae/ingest.py` | NDL から出典の記録を作る |
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
@@ -34,4 +36,4 @@
 
 ## 雛形を足す時
 
-`templates/` に `DEFAULTS`・`RANGES`・`check_range`・`check_physics`・`parts`・`bom`・`materials`・`TITLES` を持つモジュールを置き、`compose.py` の `TEMPLATES` に足す。
+`templates/` に `DEFAULTS`・`RANGES`・`check_range`・`check_physics`・`parts`・`bom`・`materials`・`title`・`place`・`steps`・`measures`・`diagram` を持つモジュールを置き、`compose.py` の `TEMPLATES` に足す。
