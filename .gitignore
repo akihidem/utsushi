@@ -12,3 +12,5 @@ data/contributions_media/
 data/contributions/*
 !data/contributions/.gitkeep
 data/contributions_withdrawn/
+data/decisions/*
+!data/decisions/.gitkeep

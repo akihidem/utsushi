@@ -37,6 +37,6 @@
 
 ## 決めた事
 
-[J-005](../decisions/J005-axle-default.md)。実物で弾性と糸を比べられるよう、1 枚の型紙に両方の穴を刷る。
+[J-005](../decisions/J005-axle-default.md) と [J-002](../decisions/J002-mechanism-hypotheses.md)。実物で弾性と糸を比べられるよう、1 枚の型紙に両方の穴を刷る。
 
 **限界**: どの数字も形の計算で、紙のたわみ・摩擦・糸の伸びを入れていない。

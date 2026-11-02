@@ -21,7 +21,8 @@
 ## できること（実装済み）
 
 - NDL の manifest から出典の記録を作る
-- 御来迎の型紙（押し方 3 通り）を A4 の PDF に刷る。寸法・重なり・文字・扇の開きの形の検査を通らなければ出さない
+- 御来迎の動く仕組みを 5 つの仮説として並べ、使い手が先に書いた予想と一緒に見せる。予想が無ければ一覧も型紙も出さない
+- 選んだ仮説の型紙を A4 の PDF に刷る。寸法・重なり・文字・扇の開きの形の検査を通らなければ出さない
 - NDL の図を参照して、筒の面と像の色と線を描き直す。絵が折り線をまたがない事と、図を貼っていない事を検査する
 - 所蔵・改変・出典 ID・仮説の印を PDF から読み直して検査する
 - 玩具の写真・情報・思い出・作り方の知見を手元の画面で受け付け、人が確認した物だけを公開の頁に出す（`PYTHONPATH=src .venv/bin/python -m web.contrib_server`。ssh で転送する時は手元と同じポート番号で）
@@ -37,13 +38,16 @@ cd <この repo>
 ./run.sh    # 検査を全部回す。結果は out/RESULT.md
 ```
 
-`./run.sh` の後、`out/scenarios/pos_tab.pdf` に御来迎の型紙（つまみの形）ができる。`pos_tube.pdf`・`pos_stick.pdf` は下から押す形。100% で刷り、紙の物差しが 10cm か確かめる。
-
-好きな寸法で刷る時は、変えたい値だけを JSON に書いて渡す。
+動く仕組みの答えは 1 つに決めていない。自分の予想を先に書くと、仮説が並び、試したい仮説の型紙を刷れる。
 
 ```
-PYTHONPATH=src .venv/bin/python -m omochae --params 寸法.json --out out/templates/my_v1
+export PYTHONPATH=src
+.venv/bin/python -m omochae.hypotheses predict "筒を押すと上の飾りが開く。動力は手"
+.venv/bin/python -m omochae.hypotheses list
+.venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf
 ```
+
+100% で刷り、紙の物差しが 10cm か確かめる。寸法を直接試す時は `python -m omochae --params 寸法.json`（`push_part` が必須）。
 
 型紙の生成に API の鍵は要らない。
 
@@ -74,4 +78,4 @@ PYTHONPATH=src .venv/bin/python -m omochae --params 寸法.json --out out/templa
 
 ## 将来構想（未実装）
 
-仮説生成、記録の解釈、次の版の提案、虎の雛形、図鑑の画面。
+Claude による仮説生成、記録の解釈、次の版の提案、虎の雛形、図鑑の画面。

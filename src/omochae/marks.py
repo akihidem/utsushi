@@ -8,7 +8,7 @@ import subprocess
 from .model import Failure, ToolMissing
 
 HOLDER = "国立国会図書館デジタルコレクション"
-HYPOTHESIS = "仮説: 復元ではなく、仮説に基づく翻案です"
+HYPOTHESIS = "仮説: 復元ではなく、試すための 1 つの翻案です。答えではありません"
 
 
 def mark_lines(source, omit=None):

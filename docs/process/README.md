@@ -17,7 +17,7 @@
 |---|---|---|
 | 1 | [research/01](research/01-primary-source.md) | NDL の図の観察。側面の棒 |
 | 2 | [research/02](research/02-render-backends.md)・[J-001](decisions/J001-render-backend.md) | 描画の方式の実験と決定 |
-| 3 | [research/03](research/03-mechanism-dimensions.md)・[J-002](decisions/J002-mechanism-tab.md) | 行程の不足の発見と、押し方の仮説 |
+| 3 | [research/03](research/03-mechanism-dimensions.md)・[J-002](decisions/J002-mechanism-hypotheses.md) | 行程の不足の発見と、押し方の仮説 |
 | 4 | [research/04](research/04-questioned-assumptions.md) | 疑わしい前提 Q1〜Q9 |
 | 5 | [research/05](research/05-three-axes.md) | 3 つの物差しの採点と、鋭くする案 |
 | 6 | [J-003](decisions/J003-zoom-tool.md) | 絵を拡大する道具 |
@@ -27,6 +27,7 @@
 | 10 | [research/08](research/08-fan-axle.md)・[J-005](decisions/J005-axle-default.md) | 扇の中心の位置、開く力、原図の入れ方 |
 | 11 | [research/09](research/09-contributions-design.md)・[J-006](decisions/J006-contributions-minimum.md) | 持ち寄りの場の設計と最小の形 |
 | 12 | [research/10](research/10-redraw-colors.md)・[J-007](decisions/J007-redraw-not-paste.md) | 図を貼らず描き直す |
+| 13 | [J-002 の組み直し](decisions/J002-mechanism-hypotheses.md) | 1 つの既定をやめ、複数の仮説として並べる |
 
 ## 事前の検討との関係（正直に書く所）
 

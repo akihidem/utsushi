@@ -10,7 +10,9 @@
 
 | パス | 役割 |
 |---|---|
-| `src/omochae/__main__.py` | 生成の入口 |
+| `src/omochae/hypotheses.py` | 使い手の入口。予想を受け、仮説を並べ、選んだ仮説の型紙を刷る |
+| `data/hypotheses/` | 玩具ごとの仮説（根拠・弱い所・測る事）。順位は持たない |
+| `src/omochae/__main__.py` | 型紙を 1 枚作る共通の流れと、開発用の入口 |
 | `src/omochae/compose.py` | 配置と描く前の検査。描画はしない |
 | `src/omochae/floors.py` | 雛形によらない検査 |
 | `src/omochae/marks.py` | 型紙の印と、刷った後の検査 |

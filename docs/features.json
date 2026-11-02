@@ -27,7 +27,7 @@
  {
   "id": "f06",
   "name": "予想の入力",
-  "status": "todo"
+  "status": "doing"
  },
  {
   "id": "f07",
@@ -82,6 +82,11 @@
  {
   "id": "f17",
   "name": "持ち寄りの場（受付・確認・公開）",
+  "status": "doing"
+ },
+ {
+  "id": "f18",
+  "name": "仮説を並べて見せる入口",
   "status": "doing"
  }
 ]

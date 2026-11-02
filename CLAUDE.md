@@ -5,12 +5,13 @@
 ## 置き場
 - `src/omochae/` 雛形の生成器と検査 / `src/api/` Claude を呼ぶ所と道具
 - `data/contributions*` 持ち寄りの投稿（git に入れない）
-- `data/sources` 出典（NDL の記録と、手元の複写の記録 `own-scans.json` を分ける）/ `data/records` 再現例 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
+- `data/hypotheses` 玩具ごとの仮説 / `data/sources` 出典（NDL の記録と、手元の複写の記録 `own-scans.json` を分ける）/ `data/records` 再現例 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
 - `tests/frozen/` 凍結した試験の場面と合格の基準（変えない。変えるなら理由を commit と `docs/claude-usage.md` に）
 - `docs/process/` 開発の過程（調査・判断・試行）。**作業しながら書く。後からまとめて作らない**
 - `out/` 生成物（git に入れない）
 
 ## 方針
+- 仕組みは 1 つに決めず、複数の仮説として並べる。最初に刷る 1 枚は入口で答えではない。予想を先に受ける。順位は試した記録でだけ変わる。
 - Claude は仮説・解釈・差分の JSON まで。SVG と PDF は雛形の生成器が描く。
 - 人の確認の記録が無いと次の段に進めない。
 - エージェントの動きは人の操作の後に 1 回走るだけ（常駐しない）。道具は 1 生成 8 回、やり直し 2 回まで。
