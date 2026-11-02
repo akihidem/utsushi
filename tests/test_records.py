@@ -11,6 +11,7 @@ os.environ["OMOCHAE_DATA"] = tmp
 
 from omochae.instructions import QUESTIONS, compose_sheet, steps
 from omochae.hypotheses import load
+from omochae import records
 from omochae.records import add, summarize
 
 SID = "NDL-1187053-R0000005-L"
