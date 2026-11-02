@@ -1,6 +1,6 @@
 """試した記録（再現例）の入口。人が入れた物だけを記録にする。
 
-判断の芯: 成否は人が決める 3 値で、写真から判定しない。「わからない」を「動いた」に数えない。
+判断の芯: 成否は人が決める値で、写真から判定しない。「わからない」を「動いた」に数えない。値は雛形が持つ（虎は揺れた／揺れない）。
 直した点は 3 欄が揃った物だけを残す。次の版や順位を変える根拠になるので、あいまいな記録を混ぜないため。
 """
 import argparse
@@ -16,12 +16,17 @@ from .hypotheses import load, own_hypotheses
 from .model import Failure
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-RESULTS = ("動いた", "動かない", "わからない")
 OPENERS = ("紙の力", "糸", "手")
 
 
 def folder():
     return pathlib.Path(os.environ.get("OMOCHAE_DATA", ROOT / "data")) / "records"
+
+
+def results_for(source_id):
+    from .compose import TEMPLATES
+
+    return TEMPLATES[load(source_id).get("template", "slider_fan")].RESULTS
 
 
 def known_hypothesis(source_id, hypothesis_id):
@@ -30,8 +35,9 @@ def known_hypothesis(source_id, hypothesis_id):
 
 def check(rec):
     out = []
-    if rec.get("result") not in RESULTS:
-        out.append(Failure("F3.result", "result", f"結果は {'／'.join(RESULTS)} のどれか"))
+    results = results_for(rec["source_id"])
+    if rec.get("result") not in results:
+        out.append(Failure("F3.result", "result", f"結果は {'／'.join(results)} のどれか"))
     if not known_hypothesis(rec["source_id"], rec.get("hypothesis_id")):
         out.append(Failure("F8.references", "hypothesis_id", f"仮説 {rec.get('hypothesis_id')} は実在しない"))
     deg = rec.get("opened_deg")
@@ -39,10 +45,9 @@ def check(rec):
         out.append(Failure("F3.result", "opened_deg", "開いた角度は 0〜360"))
     if rec.get("opener") is not None and rec["opener"] not in OPENERS:
         out.append(Failure("F3.result", "opener", f"開いた力は {'／'.join(OPENERS)} のどれか"))
-    for key in ("ten_swings_sec", "predicted_swings_sec"):
-        sec = rec.get(key)
-        if sec is not None and not (isinstance(sec, (int, float)) and not isinstance(sec, bool) and 0 < sec <= 600):
-            out.append(Failure("F3.result", key, "10 往復の秒は 0〜600"))
+    sec = rec.get("ten_swings_sec")
+    if sec is not None and not (isinstance(sec, (int, float)) and not isinstance(sec, bool) and 0 < sec <= 600):
+        out.append(Failure("F3.result", "ten_swings_sec", "10 往復の秒は 0〜600"))
     if rec.get("power") is not None and rec["power"] not in ("手", "息", "団扇", "風"):
         out.append(Failure("F3.result", "power", "動かした物は 手／息／団扇／風 のどれか"))
     minutes = rec.get("minutes_to_try")
@@ -86,10 +91,10 @@ def all_records(source_id=None):
 
 
 def summarize(records):
-    """仮説ごとの集計。3 値を別々に数え、合算しない（F3）。順位は付けない。順位を変えるのは人の確認（H7）。"""
+    """仮説ごとの集計。値を別々に数え、合算しない（F3）。順位は付けない。順位を変えるのは人の確認（H7）。"""
     table = {}
     for r in records:
-        row = table.setdefault(r["hypothesis_id"], {x: 0 for x in RESULTS} | {"record_ids": []})
+        row = table.setdefault(r["hypothesis_id"], {x: 0 for x in results_for(r["source_id"])} | {"record_ids": []})
         row[r["result"]] += 1
         row["record_ids"].append(r["id"])
     return table
@@ -106,12 +111,11 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("add")
     a.add_argument("--hypothesis", required=True)
-    a.add_argument("--result", required=True, help="動いた／動かない／わからない")
+    a.add_argument("--result", required=True, help="御来迎は動いた／動かない／わからない、虎は揺れた／揺れない")
     a.add_argument("--opened-deg", type=float)
     a.add_argument("--opener", help="紙の力／糸／手")
     a.add_argument("--predicted-deg", type=float)
     a.add_argument("--version", type=int, default=1)
-    a.add_argument("--predicted-swings-sec", type=float, help="作る前に予想した 10 往復の秒。手順の紙の欄と同じ")
     a.add_argument("--ten-swings-sec", type=float)
     a.add_argument("--power", help="動かした物。手／息／団扇／風")
     a.add_argument("--fix", action="append", default=[], help="部品,変えた事,結果")
@@ -132,7 +136,7 @@ def main(argv=None):
             print(json.dumps(summarize(all_records(args.source)), ensure_ascii=False, indent=2))
             return 0
         rec = {"source_id": args.source, "hypothesis_id": args.hypothesis, "sheet_version": args.version, "result": args.result, "opened_deg": args.opened_deg, "opener": args.opener,
-               "predicted_deg": args.predicted_deg, "predicted_swings_sec": args.predicted_swings_sec, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note,
+               "predicted_deg": args.predicted_deg, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note,
                "answers": {k: v for k, v in (("first_moved", args.first_moved), ("stuck", args.stuck), ("what_if", args.what_if)) if v}, "ideas": args.idea, "minutes_to_try": args.minutes_to_try}
         rid, failures = add(rec)
     except (OSError, ValueError, KeyError) as e:

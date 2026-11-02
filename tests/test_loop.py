@@ -78,7 +78,7 @@ assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "c
 assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "changes": [{"param": "fold_width", "to": 8, "why": "短くする", "metric": "opening_bound_deg", "direction": "increase"}]}, gs, "human")[1]) == {"F7.revision"}, "式と逆向き"
 assert floors(loop.save_proposal({"record_ids": [r1], "ranking": [{"hypothesis_id": "H-Z", "rank_after": 1, "why": "x"}]}, gs, "human")[1]) == {"F8.references"}
 # 虎: 周期の向き（重りを軸に近づけると短い）
-tr = rec(T, "H-A", opener=None, opened_deg=None, ten_swings_sec=4.1)
+tr = rec(T, "H-A", opener=None, opened_deg=None, ten_swings_sec=4.1, result="揺れた")
 assert loop.confirm_interpretation(tr, "確認者", {"human_text": "ゆっくりで見えにくい"}) == []
 assert floors(loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 36, "why": "x", "metric": "period_s", "direction": "decrease"}]}, ts, "human")[1]) == {"F7.revision"}
 tp, fs = loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 18, "why": "速くする", "metric": "period_s", "direction": "decrease"}]}, ts, "human")

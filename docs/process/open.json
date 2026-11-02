@@ -117,15 +117,6 @@
   }
  },
  {
-  "id": "O-16",
-  "decision": "虎の位置づけ。振り子のモデルと明言するか、デモは御来迎に絞るか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/15-philosophy-review.md",
-   "quote": "虎は振り子のモデルで、虎のモデルではない"
-  }
- },
- {
   "id": "O-17",
   "decision": "札と対比の文を本人が読んで採るか",
   "waiting_on": "本人",

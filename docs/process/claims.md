@@ -42,6 +42,6 @@
 | C-22 | 閉じた札が考える邪魔をしないか | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-23 | 手元でトイモデルと遊ぶ体験をしないと科学の面白さに気づけない | 立場 | [philosophy.md](philosophy.md) |
 | C-24 | 御来迎の本体は紙と糸で作る。ただし軸の竹串なども使う | 自動試験 | [philosophy.md](philosophy.md)、[slider_fan.py](../../src/omochae/templates/slider_fan.py) |
-| C-25 | 虎の 3 仮説は 10 往復の秒で見分けられない（差は最大 0.11 秒） | 計算 | [15-philosophy-review.md](research/15-philosophy-review.md) |
+| C-25 | 虎の物差しは頭が揺れるかどうかで、仮説の違いは作り方の違い | 立場 | [15-philosophy-review.md](research/15-philosophy-review.md) |
 | C-26 | 日本の小 4 の理科の実験は週 1 回以上が 59.6% で、実験経験が無いとは言えない | 文献 | [15-philosophy-review.md](research/15-philosophy-review.md) |
 | C-27 | 「学習の再定義」と「AI と子どものタッグ」は、まだ実装に無い言葉 | 未確認 | [15-philosophy-review.md](research/15-philosophy-review.md) |

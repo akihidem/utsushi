@@ -257,6 +257,9 @@ def thread_mm(p):
     return shortest_free_thread(p["tube_side"], THREAD_RADIUS, p["pivot_above_rim"] - p["push_amount"], p["pivot_above_rim"])
 
 
+RESULTS = ("動いた", "動かない", "わからない")
+
+
 def materials(p):
     """型紙の「用意する物」。素材は部品表だけから刷り、2 か所に手で書かない。"""
     rows = bom(p)

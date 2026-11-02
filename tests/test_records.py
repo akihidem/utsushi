@@ -81,8 +81,8 @@ r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID
 assert r.returncode == 0, r.stderr
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert TSID in flat and "張子の首振り虎" in flat
-assert add(base(source_id=TSID, hypothesis_id="H-C", power="団扇", ten_swings_sec=4.2))[1] == []
+assert add(base(source_id=TSID, hypothesis_id="H-C", power="団扇", ten_swings_sec=4.2, result="揺れた"))[1] == []
 assert floors(add(base(source_id=TSID, hypothesis_id="H-C", power="念力"))[1]) == {"F3.result"}
-# 手順の紙が聞く秒の予想を記録に入れられる。範囲の外は落とす
-assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "動いた", "predicted_swings_sec": 0})} == {"F3.result"}
-assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "動いた", "predicted_swings_sec": 5}) == []
+# 虎の物差しは頭が揺れるかどうか（research/15）
+assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "わからない"})} == {"F3.result"}, "虎は 2 値"
+assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "揺れない"}) == []

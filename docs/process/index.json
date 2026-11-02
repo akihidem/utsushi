@@ -128,7 +128,7 @@
  {
   "id": "research/12",
   "path": "research/12-tiger.md",
-  "hook": "虎の仮説。紙の頭は重りより桁で軽い",
+  "hook": "虎の仮説。物差しは頭が揺れるか。紙の頭は桁で軽い",
   "status": "調査"
  },
  {
@@ -188,8 +188,8 @@
  {
   "id": "research/15",
   "path": "research/15-philosophy-review.md",
-  "hook": "哲学への批判。言葉は紙と紐、実装は型紙一式。虎は振り子",
-  "status": "判断待ち O-13〜O-17"
+  "hook": "哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答",
+  "status": "判断待ち O-13〜O-15、O-17"
  },
  {
   "id": "open",

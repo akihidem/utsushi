@@ -28,9 +28,9 @@
 
 | 言葉 | 設計 | 根拠 |
 |---|---|---|
-| 自然とのコールアンドレスポンス | 予想を書く（呼ぶ）→ 紙が開く、開かない、揺れる（応える）。その場の返事を AI はしない。ただし試した後の札の文は Claude が書いた案で、人の確認はまだ | [J-013](decisions/J013-core-words.md) |
+| 自然とのコールアンドレスポンス | 予想を書く（呼ぶ）→ 紙が開く、開かない、頭が揺れる、揺れない（応える）。その場の返事を AI はしない。ただし試した後の札の文は Claude が書いた案で、人の確認はまだ | [J-013](decisions/J013-core-words.md) |
 | 包んでいた紙、リボンの紐 | 下の材料 | `src/omochae/templates/slider_fan.py` |
-| トイをモデルとして | 紙の動きを式で持つ。虎は振り子のモデルで、3 仮説は周期では見分けられない（[research/15](research/15-philosophy-review.md)） | [research/08](research/08-fan-axle.md)・[research/12](research/12-tiger.md) |
+| トイをモデルとして | 紙の動きを式で持つ。虎の物差しは頭が揺れるかどうかで、仮説の違いは作り方の違い（[research/15](research/15-philosophy-review.md)） | [research/08](research/08-fan-axle.md)・[research/12](research/12-tiger.md) |
 | おもちゃで遊び続ける | 記録で次の版と次の仮説が変わる。[試した後の紙](decisions/J013-core-words.md)は次に変える条件を渡す | [J-010](decisions/J010-loop-back-half.md) |
 
 ### 御来迎の材料

@@ -64,7 +64,7 @@
 | 19 | [J-008](decisions/J008-own-hypothesis-path.md) | 仮説を自分で立てる道を足した | 決定 |
 | 20 | [J-009](decisions/J009-sheet-and-records.md) | 手順の紙と 3 値の記録の入口 | 決定 |
 | 21 | [research/11](research/11-naming.md) | 名前の候補の比較と、鏡の論点の取り違え | 調査 |
-| 22 | [research/12](research/12-tiger.md) | 虎の仮説。紙の頭は重りより桁で軽い | 調査 |
+| 22 | [research/12](research/12-tiger.md) | 虎の仮説。物差しは頭が揺れるか。紙の頭は桁で軽い | 調査 |
 | 23 | [J-010](decisions/J010-loop-back-half.md) | 輪の後半と、人が確定する線 | 作った。API 未実行、モデル判断待ち |
 | 24 | [J-011](decisions/J011-generate-on-the-spot.md) | その場の生成を本線に。11 分後に置き直した | J-012 で置換 |
 | 25 | [J-012](decisions/J012-backstage-content-and-own-hypothesis.md) | 裏で確かめる内容と自分の仮説の口 | J-013 で読み直し |
@@ -74,7 +74,7 @@
 | 29 | [J-015](decisions/J015-ai-readable.md) | AI の読み手に伝わる作り。主張から根拠へ | 決定 |
 | 30 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
 | 31 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 32 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は振り子 | 判断待ち O-13〜O-17 |
+| 32 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 判断待ち O-13〜O-15、O-17 |
 | 33 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
 | 34 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
 | 35 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |

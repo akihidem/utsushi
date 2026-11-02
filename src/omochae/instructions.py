@@ -1,7 +1,7 @@
 """手順の紙。型紙と同じ検査（印字域・文字の重なり・印）を通す。
 
 判断の芯: 答えを先に言わない。計算の開く角度の上限は刷らない（作る前の予想と、測った数を比べるのが目的なので）。
-結果の 3 値は同じ大きさの欄で、既定の選択を置かない。
+結果は雛形ごとの値で、同じ大きさの欄で、既定の選択を置かない。
 """
 from .compose import GAP, LINE, TEMPLATES, TITLE_SIZE, _block
 from .floors import check_layout
@@ -14,7 +14,6 @@ from .textfit import text_width
 BODY_SIZE, HEAD_SIZE = 3.6, 4.4
 ANSWER_GAP, FIX_ROW = 9.0, 10.0
 DIAGRAM_W, DIAGRAM_H = 42.0, 62.0
-RESULTS = ("動いた", "動かない", "わからない")
 QUESTIONS = ("最初に動いたのはどこですか", "引っかかった所はどこですか", "何を変えると違いが出そうですか", "作っている途中で思いついた事は何ですか")
 
 
@@ -70,8 +69,8 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     y += 1
     y = _block(texts, ["結果（1 つに丸）"], page.x0, y, HEAD_SIZE, width)
     x = page.x0
-    # 3 つの欄を同じ大きさにする。「わからない」を小さくすると、選ぶのをためらわせるため。
-    for r in RESULTS:
+    # 欄を同じ大きさにする。「わからない」を小さくすると、選ぶのをためらわせるため。
+    for r in tpl.RESULTS:
         shapes.append({"kind": "rect", "x": x, "y": y, "w": 30, "h": BODY_SIZE * LINE + 1})
         texts.append(TextBox(x + 2, y + 0.5, text_width(r, BODY_SIZE), BODY_SIZE * LINE, r, BODY_SIZE))
         x += 34
