@@ -9,8 +9,8 @@
 | 担当 | セッション | ブランチ | 持ち場 | 触らない所 |
 |---|---|---|---|---|
 | 型紙 | hack-main | main | `src/omochae/`・`src/api/`・`tests/frozen/`・`data/`・`run.sh` | `src/web/` |
-| 画面 | hack-zukan | zukan | `src/web/`・`tests/web/`・`docs/process/research/1*`・`docs/process/decisions/W*` | 左の持ち場すべて |
+| 画面 | hack-zukan | zukan | 画面のコードと、その試験・調査メモ | 左の持ち場すべて |
 
 - **統合**: 画面の担当は main へ自分で統合しない。hack-main が確かめて統合する。データの形を変えたい時は hack-main へ依頼する。
-- **守る事**: 画面も、この期間に新しく作る。期間前の試作のコードと画面は読まない。
+- **守る事**: 画面も、この repo で新しく作る。
 - **足りない要件**: 紙に原図を入れ込む事は、今の型紙にまだ無い。型紙の担当の次の仕事にする。
