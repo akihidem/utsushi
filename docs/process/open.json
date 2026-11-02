@@ -124,5 +124,14 @@
    "path": "docs/process/research/15-philosophy-review.md",
    "quote": "札の文は本人が読む"
   }
+ },
+ {
+  "id": "O-18",
+  "decision": "仮説の順位を残すか、次に試す物の提案だけにするか",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/philosophy.md",
+   "quote": "構造は成績のまま"
+  }
  }
 ]

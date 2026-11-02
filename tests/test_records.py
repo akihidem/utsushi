@@ -9,7 +9,7 @@ import tempfile
 tmp = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = tmp
 
-from omochae.instructions import QUESTIONS, compose_sheet, steps
+from omochae.instructions import QUESTIONS, compose_after, compose_sheet, steps
 from omochae.hypotheses import load
 from omochae import records
 from omochae.records import add, summarize
@@ -86,3 +86,11 @@ assert floors(add(base(source_id=TSID, hypothesis_id="H-C", power="念力"))[1])
 # 虎の物差しは頭が揺れるかどうか（research/15）
 assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "わからない"})} == {"F3.result"}, "虎は 2 値"
 assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "揺れない"}) == []
+# 記録は成績でなく観察（philosophy.md）。紙の文で成績に読ませない
+for tid, src, sid in (("slider_fan", source, "NDL-1187053-R0000005-L"), ("pivot_counterweight", tsource, TSID)):
+    h = load(sid)["hypotheses"][0]
+    layout, _ = compose_sheet(tid, h["params"], src, h["name"], h["how_it_moves"])
+    after, _ = compose_after(src, h["name"], load(sid)["after_try"])
+    words = " ".join(x.text or "" for x in layout["texts"] + after["texts"])
+    assert not any(w in words for w in ("成功", "失敗", "正解", "合格")), "学ぶ人の紙に成績の語を刷らない"
+    assert "見た事" in words

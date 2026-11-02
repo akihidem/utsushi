@@ -15,12 +15,13 @@
 ## 置き場
 - `src/omochae/` 雛形の生成器と検査 / `src/api/` Claude を呼ぶ所と道具
 - `data/contributions*`・`data/records`・`data/loop` 投稿と試行の記録（git に入れない）
-- `data/hypotheses` 玩具ごとの仮説 / `data/sources` 出典（NDL の記録と、手元の複写の記録 `own-scans.json` を分ける）/ `data/records` 再現例 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
+- `data/hypotheses` 玩具ごとの仮説 / `data/sources` 出典（NDL の記録と、手元の複写の記録 `own-scans.json` を分ける）/ `data/records` 観察の記録 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
 - `tests/frozen/` 凍結した試験の場面と合格の基準（変えない。変えるなら理由を commit と `docs/claude-usage.md` に）
 - `docs/process/` 開発の過程（調査・判断・試行）。**作業しながら書く。後からまとめて作らない**
 - `out/` 生成物（git に入れない）
 
 ## 方針
+- 試行の記録は成績でなく観察の記録（`docs/process/philosophy.md`）。動かない事を失敗と呼ばない。
 - 返事をするのは紙と工作で、AI は正誤・原因・解釈・次の手を学ぶ人にリアルタイムで返さない。人の説明と思いつきを Claude より先に受ける（J-013）。
 - 裏の作業は、紙の返事を濁らせないためにする。組める、測れる、安全、根拠の種類を確かめる（J-012・J-013）。
 - 仕組みは 1 つに決めず、複数の仮説として並べる。最初に刷る 1 枚は入口で答えではない。予想を先に受ける。順位と集計は学ぶ人の画面に出さない。予想から入る道と、仮説を自分で立てる道を選べる（J-008）。

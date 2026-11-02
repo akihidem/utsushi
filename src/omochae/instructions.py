@@ -67,7 +67,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         y += BODY_SIZE * LINE + ANSWER_GAP
         shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
     y += 1
-    y = _block(texts, ["結果（1 つに丸）"], page.x0, y, HEAD_SIZE, width)
+    y = _block(texts, ["見た事（1 つに丸）"], page.x0, y, HEAD_SIZE, width)
     x = page.x0
     # 欄を同じ大きさにする。「わからない」を小さくすると、選ぶのをためらわせるため。
     for r in tpl.RESULTS:

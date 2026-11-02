@@ -45,3 +45,6 @@
 | C-25 | 虎の物差しは頭が揺れるかどうかで、仮説の違いは作り方の違い | 立場 | [15-philosophy-review.md](research/15-philosophy-review.md) |
 | C-26 | 日本の小 4 の理科の実験は週 1 回以上が 59.6% で、実験経験が無いとは言えない | 文献 | [15-philosophy-review.md](research/15-philosophy-review.md) |
 | C-27 | 「学習の再定義」と「AI と子どものタッグ」は、まだ実装に無い言葉 | 未確認 | [15-philosophy-review.md](research/15-philosophy-review.md) |
+| C-28 | 試行の記録は成績でなく観察の記録である | 立場 | [philosophy.md](philosophy.md) |
+| C-29 | 学ぶ人の紙に成功、失敗、正解の語は刷らない | 自動試験 | [test_records.py](../../tests/test_records.py) |
+| C-30 | 昔の玩具が再現されたかは、原物が無いので測り切れない | 立場 | [philosophy.md](philosophy.md) |

@@ -43,7 +43,7 @@
 <!-- map:start -->
 | 順 | 記録 | 一言 | 状態 |
 |---|---|---|---|
-| 1 | [philosophy](philosophy.md) | 包み紙と紐で自然とやりとりする。玩具＝トイモデルの定義 | 本人の言葉 |
+| 1 | [philosophy](philosophy.md) | 包み紙と紐で自然とやりとりする。記録は成績でなく観察 | 本人の言葉 |
 | 2 | [research/01](research/01-primary-source.md) | NDL の図の観察。筒の側面の棒を見つけた | 調査 |
 | 3 | [research/02](research/02-render-backends.md) | 描画の方式を 4 つ実験で比べた | 調査 |
 | 4 | [J-001](decisions/J001-render-backend.md) | 描画は drawsvg → cairosvg に決めた | 決定 |

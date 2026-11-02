@@ -307,5 +307,38 @@
     "quote": "**言葉だけ**"
    }
   ]
+ },
+ {
+  "id": "C-28",
+  "claim": "試行の記録は成績でなく観察の記録である",
+  "kind": "立場",
+  "evidence": [
+   {
+    "path": "docs/process/philosophy.md",
+    "quote": "**観察の記録**"
+   }
+  ]
+ },
+ {
+  "id": "C-29",
+  "claim": "学ぶ人の紙に成功、失敗、正解の語は刷らない",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "tests/test_records.py",
+    "quote": "学ぶ人の紙に成績の語を刷らない"
+   }
+  ]
+ },
+ {
+  "id": "C-30",
+  "claim": "昔の玩具が再現されたかは、原物が無いので測り切れない",
+  "kind": "立場",
+  "evidence": [
+   {
+    "path": "docs/process/philosophy.md",
+    "quote": "そもそも測り切れない"
+   }
+  ]
  }
 ]
