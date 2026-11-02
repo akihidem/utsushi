@@ -20,7 +20,9 @@
 | `src/omochae/fan_model.py` | 扇の開きの幾何（開く角度の上限・口の角との干渉・糸の長さ） |
 | `src/omochae/ingest.py` | NDL から出典の記録を作る |
 | `src/omochae/assets.py` | NDL から型紙に載せる図を切り出す。結果は `data/assets/` |
-| `src/api/tools.py` | Claude に渡す道具（今は絵の拡大だけ） |
+| `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
+| `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
+| `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `data/sources/` | 出典の記録 |
 | `data/assets/` | 型紙に載せる NDL の図と、切り出しの記録 `assets.json` |
 | `tests/frozen/` | 凍結した基準と場面 |

@@ -4,6 +4,7 @@
 
 ## 置き場
 - `src/omochae/` 雛形の生成器と検査 / `src/api/` Claude を呼ぶ所と道具
+- `data/contributions*` 持ち寄りの投稿（git に入れない）
 - `data/sources` 出典（NDL の記録と、手元の複写の記録 `own-scans.json` を分ける）/ `data/records` 再現例 / `data/known_examples` 既知の作例（人が書く）/ `data/decisions` 人の確認
 - `tests/frozen/` 凍結した試験の場面と合格の基準（変えない。変えるなら理由を commit と `docs/claude-usage.md` に）
 - `docs/process/` 開発の過程（調査・判断・試行）。**作業しながら書く。後からまとめて作らない**
