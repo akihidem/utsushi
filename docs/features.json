@@ -129,12 +129,11 @@
  {
   "id": "f16",
   "name": "run.sh",
-  "status": "doing",
+  "status": "done",
   "evidence": [
    "run.sh",
    "tests/run_floors.py"
-  ],
-  "unverified": "未実装の検査 F6.label が 1 本残る"
+  ]
  },
  {
   "id": "f17",
@@ -200,5 +199,15 @@
    "tests/test_words.py"
   ],
   "unverified": "実際の人が使っていない。札の文の確かさは式と一般の物理による"
+ },
+ {
+  "id": "f24",
+  "name": "図鑑の文の印の床（F6.label）",
+  "status": "done",
+  "evidence": [
+   "src/omochae/labels.py",
+   "tests/test_labels.py"
+  ],
+  "unverified": "図鑑の画面が無く、公開の経路につながっていない。本物の図鑑の文では未試験"
  }
 ]

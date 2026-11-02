@@ -12,7 +12,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PY = str(ROOT / ".venv/bin/python")
-NOT_YET = ["F6.label"]
+NOT_YET = []
 
 
 def main():
