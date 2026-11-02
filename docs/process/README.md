@@ -66,14 +66,15 @@
 | 23 | [J-011](decisions/J011-generate-on-the-spot.md) | その場の生成を本線に。11 分後に置き直した | J-012 で置換 |
 | 24 | [J-012](decisions/J012-backstage-content-and-own-hypothesis.md) | 裏で確かめる内容と自分の仮説の口 | J-013 で読み直し |
 | 25 | [research/13](research/13-critical-review.md) | 前提への批判。物理と歴史の問いが混ざっていた | 調査 |
-| 26 | [J-013](decisions/J013-core-words.md) | 設計の核: 素材が返事をし、考えが湧く | 2 点は判断待ち |
+| 26 | [J-013](decisions/J013-core-words.md) | 設計の核: 素材が返事をし、考えが湧く | 決定 |
 | 27 | [J-014](decisions/J014-name-utsushi.md) | 名前を utsushi に。決め方の経緯 | 決定 |
 | 28 | [J-015](decisions/J015-ai-readable.md) | AI の読み手に伝わる作り。主張から根拠へ | 決定 |
 | 29 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 30 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 31 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 32 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 33 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 30 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 31 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 32 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 33 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 34 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

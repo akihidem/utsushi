@@ -1,23 +1,5 @@
 [
  {
-  "id": "O-01",
-  "decision": "試した後に何を開くか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/decisions/J013-core-words.md",
-   "quote": "試した後に何を開くかは判断待ち"
-  }
- },
- {
-  "id": "O-02",
-  "decision": "子どもと Claude の接点、タッグの形",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/decisions/J013-core-words.md",
-   "quote": "レビューの推し「紙だけ」は、この言葉と食い違う"
-  }
- },
- {
   "id": "O-03",
   "decision": "実行時のモデルと、最初の API の試験",
   "waiting_on": "本人",
@@ -60,6 +42,51 @@
   "evidence": {
    "path": "docs/process/decisions/J013-core-words.md",
    "quote": "最初の実物の記録が届いた時に本人に聞く"
+  }
+ },
+ {
+  "id": "O-08",
+  "decision": "本人の現場。誰が、どの場面で、どれくらい困っているか。問題の言い方を A と B のどちらにするか",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/research/14-judging-criteria.md",
+   "quote": "本人が誰を見て、どの場面でこの問題を感じたかは、書き手には分からない"
+  }
+ },
+ {
+  "id": "O-09",
+  "decision": "ハッカソンの後に誰が使い続けるか",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/research/14-judging-criteria.md",
+   "quote": "名前を挙げられる使い手が今はいない"
+  }
+ },
+ {
+  "id": "O-10",
+  "decision": "前提知識なしで通れる入口の形",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/research/14-judging-criteria.md",
+   "quote": "前提知識なしで通れる入口"
+  }
+ },
+ {
+  "id": "O-11",
+  "decision": "Claude の機能の選び分け。裏の制作を Claude Code の上に組むか",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/research/14-judging-criteria.md",
+   "quote": "語れる物語はまだ無い"
+  }
+ },
+ {
+  "id": "O-12",
+  "decision": "実物の試行",
+  "waiting_on": "本人の手",
+  "evidence": {
+   "path": "docs/process/trials/README.md",
+   "quote": "まだ 0 件"
   }
  }
 ]

@@ -153,7 +153,7 @@
   "id": "J-013",
   "path": "decisions/J013-core-words.md",
   "hook": "設計の核: 素材が返事をし、考えが湧く",
-  "status": "2 点は判断待ち"
+  "status": "決定"
  },
  {
   "id": "J-014",
@@ -172,6 +172,12 @@
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",
   "status": "記録"
+ },
+ {
+  "id": "research/14",
+  "path": "research/14-judging-criteria.md",
+  "hook": "審査基準の 4 項目で点検。現場と継続利用が欠けている",
+  "status": "判断待ち O-08〜O-11"
  },
  {
   "id": "open",

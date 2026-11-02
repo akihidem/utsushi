@@ -36,3 +36,4 @@
 | C-16 | 作っているうちに新しい考えが湧く | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-17 | 返事をするのは AI でなく素材と工作 | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-18 | 学習の効果より学習の再定義を物差しにする | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |
+| C-19 | 本人の現場と、誰が使い続けるかは、まだ言えない | 未確認 | [14-judging-criteria.md](research/14-judging-criteria.md) |

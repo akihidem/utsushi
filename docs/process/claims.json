@@ -204,5 +204,16 @@
     "quote": "再定義は作品の立場で"
    }
   ]
+ },
+ {
+  "id": "C-19",
+  "claim": "本人の現場と、誰が使い続けるかは、まだ言えない",
+  "kind": "未確認",
+  "evidence": [
+   {
+    "path": "docs/process/research/14-judging-criteria.md",
+    "quote": "名前を挙げられる使い手が今はいない"
+   }
+  ]
  }
 ]
