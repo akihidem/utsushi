@@ -14,3 +14,7 @@ data/contributions/*
 data/contributions_withdrawn/
 data/decisions/*
 !data/decisions/.gitkeep
+data/records/*
+!data/records/.gitkeep
+data/loop/*
+!data/loop/.gitkeep

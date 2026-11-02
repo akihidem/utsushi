@@ -17,7 +17,7 @@
 2. その場の生成は目玉にしない。
 3. 自分の仮説を型紙にする口だけが、その場で動く。
 
-詳しくは [J-012](decisions/J012-backstage-content-and-own-hypothesis.md)。レビューの結論で変わる事がある。
+詳しくは [J-012](decisions/J012-backstage-content-and-own-hypothesis.md)。[批判的レビュー](research/13-critical-review.md)で、前提 1 は条件つき、前提 2 は賛成、前提 3 は今の形では反対という判定が出た。決定は本人の判断待ち。
 
 ## 順に読む
 
@@ -43,6 +43,7 @@
 | 18 | [J-010](decisions/J010-loop-back-half.md) | 輪の後半と、人が確定する線 |
 | 19 | [J-011](decisions/J011-generate-on-the-spot.md) | AI がその場で仮説と寸法を作る本線 |
 | 20 | [J-012](decisions/J012-backstage-content-and-own-hypothesis.md) | 山場の置き直し。裏で作って確かめる内容と、自分の仮説を型紙にする口 |
+| 21 | [research/13](research/13-critical-review.md) | 前提への批判的レビュー。固めるのは答えか条件か |
 
 ## 事前の検討との関係（正直に書く所）
 

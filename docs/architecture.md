@@ -33,7 +33,7 @@
 | `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪、頼みと道具、モデルの設定 |
 | `src/api/generate.py` | 裏の制作の 1 段。図・歌・記録から仮説と寸法の案を作る |
 | `src/api/budget.py` | API の消費の見積もりと上限 |
-| `data/loop/` | 解釈・提案・版・順位の記録 |
+| `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版・順位の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面 |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
