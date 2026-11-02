@@ -1,0 +1,54 @@
+"""部品と検査結果の型。雛形の族が変わっても共通に使う形だけをここに置く。"""
+from dataclasses import dataclass, field
+
+
+class ToolMissing(Exception):
+    """検査そのものができない（exit 4）。落ちた（exit 3）と混ぜないために分ける。"""
+
+
+@dataclass
+class Failure:
+    floor: str
+    where: str
+    message: str
+
+    def line(self):
+        return f"FAIL {self.floor} [{self.where}] {self.message}"
+
+
+@dataclass
+class Part:
+    """部品 1 つ。座標は部品の左上を原点にした mm。"""
+    number: int
+    key: str
+    name: str
+    outline: list  # 外形の頂点。切る線
+    label_xy: tuple = (2, 2)
+    label: str = ""
+    valley: list = field(default_factory=list)  # ((x1,y1),(x2,y2))
+    mountain: list = field(default_factory=list)
+    glue: list = field(default_factory=list)  # 糊代の多角形
+    cuts: list = field(default_factory=list)  # 中を切る矩形 (x,y,w,h)
+    holes: list = field(default_factory=list)  # 軸の穴 (x,y,r)
+    x: float = 0.0
+    y: float = 0.0
+
+    @property
+    def width(self):
+        return max(p[0] for p in self.outline) - min(p[0] for p in self.outline)
+
+    @property
+    def height(self):
+        return max(p[1] for p in self.outline) - min(p[1] for p in self.outline)
+
+
+@dataclass
+class TextBox:
+    """置いた文字 1 行、または物差しのような文字扱いの塊（text が None）。"""
+    x: float
+    y: float
+    w: float
+    h: float
+    text: str | None
+    size: float = 3.0
+    owner: str | None = None  # 部品の中のラベルなら部品の key
