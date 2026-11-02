@@ -28,6 +28,7 @@
 | 11 | [research/09](research/09-contributions-design.md)・[J-006](decisions/J006-contributions-minimum.md) | 持ち寄りの場の設計と最小の形 |
 | 12 | [research/10](research/10-redraw-colors.md)・[J-007](decisions/J007-redraw-not-paste.md) | 図を貼らず描き直す |
 | 13 | [J-002 の組み直し](decisions/J002-mechanism-hypotheses.md) | 1 つの既定をやめ、複数の仮説として並べる |
+| 14 | [research/11](research/11-naming.md) | 名前をできた物に照らす。鏡は仕組みに無い |
 
 ## 事前の検討との関係（正直に書く所）
 
