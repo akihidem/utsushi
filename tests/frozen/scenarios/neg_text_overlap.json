@@ -1,0 +1,15 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {},
+  "inject": {
+    "fixed_parts_top": 30
+  },
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.text_overlap"
+    ]
+  },
+  "title": "御来迎の型紙　筒の中に畳んだ紙の扇を収め、つまみを動かすと後光のように開いて像が現れる形を試すための一枚"
+}

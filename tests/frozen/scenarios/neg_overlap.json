@@ -1,0 +1,18 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {},
+  "inject": {
+    "move_part": {
+      "name": "figure",
+      "x": 20,
+      "y": 70
+    }
+  },
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.overlap"
+    ]
+  }
+}
