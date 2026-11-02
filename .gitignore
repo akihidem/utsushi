@@ -7,3 +7,5 @@
 out/
 __pycache__/
 data/records/media/
+data/contributions_inbox/
+data/contributions_media/

@@ -38,3 +38,11 @@ def zoom_source(source_id, x, y, w, h, width=1000):
         with urllib.request.urlopen(url, timeout=60) as r:
             out.write_bytes(r.read())
     return out
+
+
+def list_contributions(source_id=None):
+    """公開済みの持ち寄りを前例として返す。確かさの種類を付けたまま渡し、事実として扱わせない。"""
+    from omochae.contrib import public_list
+
+    keep = ("id", "kind", "role", "certainty", "body", "origin", "where_when", "toy_name", "source_id")
+    return [{k: c[k] for k in keep if k in c} for c in public_list(source_id)]
