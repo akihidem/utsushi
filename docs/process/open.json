@@ -46,11 +46,11 @@
  },
  {
   "id": "O-08",
-  "decision": "本人の現場。誰が、どの場面で、どれくらい困っているか。問題の言い方を A と B のどちらにするか",
+  "decision": "本人の現場の残り。どの場面で誰を見て感じたか、どれくらい困っているか。本人がどの世界に身を置いてきたか",
   "waiting_on": "本人",
   "evidence": {
-   "path": "docs/process/research/14-judging-criteria.md",
-   "quote": "本人が誰を見て、どの場面でこの問題を感じたかは、書き手には分からない"
+   "path": "docs/process/philosophy.md",
+   "quote": "推測で書かない"
   }
  },
  {

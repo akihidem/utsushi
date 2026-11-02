@@ -40,3 +40,5 @@
 | C-20 | 言葉の口は人の文を書き換えず、隠れた寸法の補いを通さない | 偽の応答の試験 | [test_words.py](../../tests/test_words.py) |
 | C-21 | 試した後の紙は対比を先に出し、説明は折って閉じた札に置く | 自動試験 | [test_words.py](../../tests/test_words.py) |
 | C-22 | 閉じた札が考える邪魔をしないか | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
+| C-23 | 手元でトイモデルと遊ぶ体験をしないと科学の面白さに気づけない | 立場 | [philosophy.md](philosophy.md) |
+| C-24 | 御来迎の本体は紙と糸で作る。ただし軸の竹串なども使う | 自動試験 | [philosophy.md](philosophy.md)、[slider_fan.py](../../src/omochae/templates/slider_fan.py) |

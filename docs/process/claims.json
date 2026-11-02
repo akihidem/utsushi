@@ -248,5 +248,31 @@
     "quote": "効果の証拠は無い"
    }
   ]
+ },
+ {
+  "id": "C-23",
+  "claim": "手元でトイモデルと遊ぶ体験をしないと科学の面白さに気づけない",
+  "kind": "立場",
+  "evidence": [
+   {
+    "path": "docs/process/philosophy.md",
+    "quote": "本人の立場で、確かめた結果ではない"
+   }
+  ]
+ },
+ {
+  "id": "C-24",
+  "claim": "御来迎の本体は紙と糸で作る。ただし軸の竹串なども使う",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "docs/process/philosophy.md",
+    "quote": "紙と紐だけではない"
+   },
+   {
+    "path": "src/omochae/templates/slider_fan.py",
+    "quote": "def materials"
+   }
+  ]
  }
 ]
