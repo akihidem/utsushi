@@ -34,33 +34,46 @@
 
 読み取りと、[批判的レビュー](research/13-critical-review.md)の読み直しは [J-013](decisions/J013-core-words.md)。名前の決め方は [J-014](decisions/J014-name-utsushi.md)。この体験が他の人に起きるかは、まだ試していない（実物の試行は 0 件）。
 
-## 順に読む
+## 地図
 
-| 順 | 記録 | 何が分かったか |
-|---|---|---|
-| 1 | [research/01](research/01-primary-source.md) | NDL の図の観察。側面の棒 |
-| 2 | [research/02](research/02-render-backends.md)・[J-001](decisions/J001-render-backend.md) | 描画の方式の実験と決定 |
-| 3 | [research/03](research/03-mechanism-dimensions.md)・[J-002](decisions/J002-mechanism-hypotheses.md) | 行程の不足の発見と、押し方の仮説 |
-| 4 | [research/04](research/04-questioned-assumptions.md) | 疑わしい前提 Q1〜Q9 |
-| 5 | [research/05](research/05-three-axes.md) | 3 つの物差しの採点と、鋭くする案 |
-| 6 | [J-003](decisions/J003-zoom-tool.md) | 絵を拡大する道具 |
-| 7 | [J-004](decisions/J004-parallel-lines.md) | 担当の分割の案と取りやめ |
-| 8 | [research/06](research/06-rederive-defaults.md) | 初期値の出し直し |
-| 9 | [research/07](research/07-own-scans.md) | 手元の複写での照合 |
-| 10 | [research/08](research/08-fan-axle.md)・[J-005](decisions/J005-axle-default.md) | 扇の中心の位置、開く力、原図の入れ方 |
-| 11 | [research/09](research/09-contributions-design.md)・[J-006](decisions/J006-contributions-minimum.md) | 持ち寄りの場の設計と最小の形 |
-| 12 | [research/10](research/10-redraw-colors.md)・[J-007](decisions/J007-redraw-not-paste.md) | 図を貼らず描き直す |
-| 13 | [J-002 の組み直し](decisions/J002-mechanism-hypotheses.md) | 1 つの既定をやめ、複数の仮説として並べる |
-| 14 | [research/11](research/11-naming.md) | 名前の候補。「かがみ」は哲学の話という訂正を含む |
-| 15 | [J-008](decisions/J008-own-hypothesis-path.md) | 仮説を自分で立てる道を足す |
-| 16 | [J-009](decisions/J009-sheet-and-records.md) | 手順の紙と記録の入口 |
-| 17 | [research/12](research/12-tiger.md) | 虎の仮説と寸法。紙の頭は重りより桁で軽い |
-| 18 | [J-010](decisions/J010-loop-back-half.md) | 輪の後半と、人が確定する線 |
-| 19 | [J-011](decisions/J011-generate-on-the-spot.md) | AI がその場で仮説と寸法を作る本線 |
-| 20 | [J-012](decisions/J012-backstage-content-and-own-hypothesis.md) | 山場の置き直し。裏で作って確かめる内容と、自分の仮説を型紙にする口 |
-| 21 | [research/13](research/13-critical-review.md) | 前提への批判的レビュー。固めるのは答えか条件か |
-| 22 | [J-013](decisions/J013-core-words.md) | 本人の言葉を設計の核にし、レビューの決める点を読み直す |
-| 23 | [J-014](decisions/J014-name-utsushi.md) | 名前を utsushi にする。決め方の経緯 |
+1 行の一言つきの索引。正本は [index.json](index.json) で、主張から根拠へは [claims.md](claims.md) から届く。
+
+<!-- map:start -->
+| 順 | 記録 | 一言 | 状態 |
+|---|---|---|---|
+| 1 | [research/01](research/01-primary-source.md) | NDL の図の観察。筒の側面の棒を見つけた | 調査 |
+| 2 | [research/02](research/02-render-backends.md) | 描画の方式を 4 つ実験で比べた | 調査 |
+| 3 | [J-001](decisions/J001-render-backend.md) | 描画は drawsvg → cairosvg に決めた | 決定 |
+| 4 | [research/03](research/03-mechanism-dimensions.md) | 下から押す形は行程が 20mm 足りないと計算で発見 | 調査 |
+| 5 | [J-002](decisions/J002-mechanism-hypotheses.md) | 仕組みを 1 つに決めず複数の仮説として並べる | 決定 |
+| 6 | [research/04](research/04-questioned-assumptions.md) | 疑わしい前提 Q1〜Q9。一番は折り目の弾性 | 調査 |
+| 7 | [research/05](research/05-three-axes.md) | 3 つの物差しの採点と、鋭くする案の比較 | 調査 |
+| 8 | [J-003](decisions/J003-zoom-tool.md) | Claude に絵を拡大する道具を渡す | 作った。組み込みは未定 |
+| 9 | [J-004](decisions/J004-parallel-lines.md) | 担当を 2 つに分ける案。取りやめた | 取りやめ |
+| 10 | [research/06](research/06-rederive-defaults.md) | 初期値を絵の測定と紙面の制約から出し直した | 調査 |
+| 11 | [research/07](research/07-own-scans.md) | 手元の複写を基準に寸法と読みを照合した | 調査 |
+| 12 | [research/08](research/08-fan-axle.md) | 台に載せる形は 180° で筒にぶつかると計算 | 調査 |
+| 13 | [J-005](decisions/J005-axle-default.md) | 扇の中心の置き方を比べた。実物で未確定 | 仮の決定 |
+| 14 | [research/09](research/09-contributions-design.md) | 持ち寄りの場の受付と権利の線の設計 | 調査 |
+| 15 | [J-006](decisions/J006-contributions-minimum.md) | 持ち寄りは確認つきの受付を先に作る | 決定 |
+| 16 | [research/10](research/10-redraw-colors.md) | 図を描き直すための色と線を調べた | 調査 |
+| 17 | [J-007](decisions/J007-redraw-not-paste.md) | 図を貼らず描き直す。PDF が約 0.1MB に | 決定 |
+| 18 | [J-008](decisions/J008-own-hypothesis-path.md) | 仮説を自分で立てる道を足した | 決定 |
+| 19 | [J-009](decisions/J009-sheet-and-records.md) | 手順の紙と 3 値の記録の入口 | 決定 |
+| 20 | [research/11](research/11-naming.md) | 名前の候補の比較と、鏡の論点の取り違え | 調査 |
+| 21 | [research/12](research/12-tiger.md) | 虎の仮説。紙の頭は重りより桁で軽い | 調査 |
+| 22 | [J-010](decisions/J010-loop-back-half.md) | 輪の後半と、人が確定する線 | 作った。API は未実行 |
+| 23 | [J-011](decisions/J011-generate-on-the-spot.md) | その場の生成を本線に。11 分後に置き直した | J-012 で置換 |
+| 24 | [J-012](decisions/J012-backstage-content-and-own-hypothesis.md) | 裏で確かめる内容と自分の仮説の口 | J-013 で読み直し |
+| 25 | [research/13](research/13-critical-review.md) | 前提への批判。物理と歴史の問いが混ざっていた | 調査 |
+| 26 | [J-013](decisions/J013-core-words.md) | 設計の核: 素材が返事をし、考えが湧く | 2 点は判断待ち |
+| 27 | [J-014](decisions/J014-name-utsushi.md) | 名前を utsushi に。決め方の経緯 | 決定 |
+| 28 | [J-015](decisions/J015-ai-readable.md) | AI の読み手に伝わる作り。主張から根拠へ | 決定 |
+| 29 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 30 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 31 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 32 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+<!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
 

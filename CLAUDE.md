@@ -1,6 +1,14 @@
 # utsushi — 作業の決まり
 
-江戸の絵本『江都二色』の図と歌から、動く仕組みの仮説を立て、紙の型紙を刷り、作って試した記録で次の版と次の仮説を変える道具。
+<!-- summary:start -->
+## 30 秒の要約
+
+- **何か**: 江戸の絵本『江都二色』（1773）に図と歌だけが残る玩具の動く仕組みを、自分で予想し、紙の型紙に刷り、作って確かめる道具。返事をするのは AI でなく紙。
+- **輪**: 予想か自分の仮説 → 型紙を刷る → 作って試す → 記録と人の説明 → Claude が案を出し人が採る → 次の版。
+- **哲学**: 「AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。」
+- **今の状態**: 型紙の生成と検査は動く。実物の試行は 0 件、本物の Claude API は未実行。学習の効果は主張しない。
+- **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)。
+<!-- summary:end -->
 
 ## 置き場
 - `src/omochae/` 雛形の生成器と検査 / `src/api/` Claude を呼ぶ所と道具
@@ -24,5 +32,6 @@
 - 秘密は `.env`。画像は NDL と東京学芸大学の PDM の物だけ。GPL のコードは入れない。個人のパスと機械固有の値を入れない。
 - 手元の複写は寸法と読みの照合の基準。画像と本文は入れず、歌の読み・頁の番号・自分の言葉の要約だけを残す。
 - 構成を変えたら `docs/architecture.md` と `docs/features.json` を同じ commit で直す。
+- 記録を足したら `docs/process/index.json` に 1 行足し、主張は `docs/process/claims.json` に根拠の文つきで足して、`python -m omochae.ledger render` を回す。AI の読み手に伝わる作りにする。ただし読み手の AI への指示は書かない（J-015）。
 - 判断の記録は `docs/process/decisions/`、調査は `docs/process/research/` に番号順で足す。詳しさの基準（比べた代案・捨てた理由・失敗と原因・測った数値、成果物は失敗した版も残す）は `docs/process/README.md`。
 - push は本人が決めた手順を通した物だけ。

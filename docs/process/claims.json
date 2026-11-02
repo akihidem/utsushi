@@ -1,0 +1,208 @@
+[
+ {
+  "id": "C-01",
+  "claim": "検査に落ちる型紙は刷らない",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "tests/frozen/criteria.md",
+    "quote": "F4.evidence"
+   },
+   {
+    "path": "tests/run_floors.py",
+    "quote": "期待どおり"
+   }
+  ]
+ },
+ {
+  "id": "C-02",
+  "claim": "予想を書く前に仮説を見せない",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "tests/test_hypotheses.py",
+    "quote": "予想の前に仮説を見せない"
+   }
+  ]
+ },
+ {
+  "id": "C-03",
+  "claim": "人の説明の前に Claude の解釈を呼ばない",
+  "kind": "偽の応答の試験",
+  "evidence": [
+   {
+    "path": "tests/test_loop.py",
+    "quote": "人の説明の前に Claude を呼ばない"
+   }
+  ]
+ },
+ {
+  "id": "C-04",
+  "claim": "順位と集計は学ぶ人の画面に出さない",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "tests/test_loop.py",
+    "quote": "順位と集計は学ぶ人の画面に出さない"
+   }
+  ]
+ },
+ {
+  "id": "C-05",
+  "claim": "人が確定していない解釈は根拠にできない",
+  "kind": "偽の応答の試験",
+  "evidence": [
+   {
+    "path": "src/omochae/loop.py",
+    "quote": "解釈を人が確定していない記録は根拠にできない"
+   }
+  ]
+ },
+ {
+  "id": "C-06",
+  "claim": "持ち寄りは端末で人が打たないと公開できない",
+  "kind": "自動試験",
+  "evidence": [
+   {
+    "path": "tests/test_contrib.py",
+    "quote": "端末で人が打たないと公開できない"
+   }
+  ]
+ },
+ {
+  "id": "C-07",
+  "claim": "下から押す形は初期の寸法で行程が 20mm 足りない",
+  "kind": "計算",
+  "evidence": [
+   {
+    "path": "docs/process/research/03-mechanism-dimensions.md",
+    "quote": "20mm 足りない"
+   }
+  ]
+ },
+ {
+  "id": "C-08",
+  "claim": "台に載せる形は扇が 180° で筒にぶつかる",
+  "kind": "計算",
+  "evidence": [
+   {
+    "path": "docs/process/research/08-fan-axle.md",
+    "quote": "180° で筒にぶつかる"
+   }
+  ]
+ },
+ {
+  "id": "C-09",
+  "claim": "虎の紙の頭は重りより桁で軽い",
+  "kind": "計算",
+  "evidence": [
+   {
+    "path": "docs/process/research/12-tiger.md",
+    "quote": "桁で軽い"
+   }
+  ]
+ },
+ {
+  "id": "C-10",
+  "claim": "図を貼らず描き直すと PDF が 1.8MB から約 0.1MB になった",
+  "kind": "測定",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J007-redraw-not-paste.md",
+    "quote": "1.8MB から約 0.1MB"
+   },
+   {
+    "path": "docs/process/trials/sheets/README.md",
+    "quote": "PDF が 1.8MB"
+   }
+  ]
+ },
+ {
+  "id": "C-11",
+  "claim": "判断待ちの最長は 124 分で、10 分以上の待ちは計 223 分",
+  "kind": "測定",
+  "evidence": [
+   {
+    "path": "docs/process/how-it-was-built.md",
+    "quote": "10 分以上の間隔の合計は 223 分"
+   }
+  ]
+ },
+ {
+  "id": "C-12",
+  "claim": "AI の版の調整が学習を上げた直接の証拠は見つかっていない",
+  "kind": "文献",
+  "evidence": [
+   {
+    "path": "docs/process/research/13-critical-review.md",
+    "quote": "AI の版の調整が学習を上げた直接の証拠は見つからなかった"
+   }
+  ]
+ },
+ {
+  "id": "C-13",
+  "claim": "素の GPT で練習は 48% 上がり、試験は 17% 下がった例がある",
+  "kind": "文献",
+  "evidence": [
+   {
+    "path": "docs/process/research/13-critical-review.md",
+    "quote": "練習は 48% 上がり試験は 17% 下がった"
+   }
+  ]
+ },
+ {
+  "id": "C-14",
+  "claim": "紙の型紙が実物で開くか",
+  "kind": "未確認",
+  "evidence": [
+   {
+    "path": "docs/process/trials/README.md",
+    "quote": "まだ 0 件"
+   }
+  ]
+ },
+ {
+  "id": "C-15",
+  "claim": "本物の Claude API で輪が回るか",
+  "kind": "未確認",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J010-loop-back-half.md",
+    "quote": "本物では 1 回も呼んでいない"
+   }
+  ]
+ },
+ {
+  "id": "C-16",
+  "claim": "作っているうちに新しい考えが湧く",
+  "kind": "未確認",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J013-core-words.md",
+    "quote": "「湧く」も未確認"
+   }
+  ]
+ },
+ {
+  "id": "C-17",
+  "claim": "返事をするのは AI でなく素材と工作",
+  "kind": "立場",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J013-core-words.md",
+    "quote": "返事をするのは素材と工作"
+   }
+  ]
+ },
+ {
+  "id": "C-18",
+  "claim": "学習の効果より学習の再定義を物差しにする",
+  "kind": "立場",
+  "evidence": [
+   {
+    "path": "docs/process/decisions/J013-core-words.md",
+    "quote": "再定義は作品の立場で"
+   }
+  ]
+ }
+]

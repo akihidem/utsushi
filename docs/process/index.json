@@ -1,0 +1,194 @@
+[
+ {
+  "id": "research/01",
+  "path": "research/01-primary-source.md",
+  "hook": "NDL の図の観察。筒の側面の棒を見つけた",
+  "status": "調査"
+ },
+ {
+  "id": "research/02",
+  "path": "research/02-render-backends.md",
+  "hook": "描画の方式を 4 つ実験で比べた",
+  "status": "調査"
+ },
+ {
+  "id": "J-001",
+  "path": "decisions/J001-render-backend.md",
+  "hook": "描画は drawsvg → cairosvg に決めた",
+  "status": "決定"
+ },
+ {
+  "id": "research/03",
+  "path": "research/03-mechanism-dimensions.md",
+  "hook": "下から押す形は行程が 20mm 足りないと計算で発見",
+  "status": "調査"
+ },
+ {
+  "id": "J-002",
+  "path": "decisions/J002-mechanism-hypotheses.md",
+  "hook": "仕組みを 1 つに決めず複数の仮説として並べる",
+  "status": "決定"
+ },
+ {
+  "id": "research/04",
+  "path": "research/04-questioned-assumptions.md",
+  "hook": "疑わしい前提 Q1〜Q9。一番は折り目の弾性",
+  "status": "調査"
+ },
+ {
+  "id": "research/05",
+  "path": "research/05-three-axes.md",
+  "hook": "3 つの物差しの採点と、鋭くする案の比較",
+  "status": "調査"
+ },
+ {
+  "id": "J-003",
+  "path": "decisions/J003-zoom-tool.md",
+  "hook": "Claude に絵を拡大する道具を渡す",
+  "status": "作った。組み込みは未定"
+ },
+ {
+  "id": "J-004",
+  "path": "decisions/J004-parallel-lines.md",
+  "hook": "担当を 2 つに分ける案。取りやめた",
+  "status": "取りやめ"
+ },
+ {
+  "id": "research/06",
+  "path": "research/06-rederive-defaults.md",
+  "hook": "初期値を絵の測定と紙面の制約から出し直した",
+  "status": "調査"
+ },
+ {
+  "id": "research/07",
+  "path": "research/07-own-scans.md",
+  "hook": "手元の複写を基準に寸法と読みを照合した",
+  "status": "調査"
+ },
+ {
+  "id": "research/08",
+  "path": "research/08-fan-axle.md",
+  "hook": "台に載せる形は 180° で筒にぶつかると計算",
+  "status": "調査"
+ },
+ {
+  "id": "J-005",
+  "path": "decisions/J005-axle-default.md",
+  "hook": "扇の中心の置き方を比べた。実物で未確定",
+  "status": "仮の決定"
+ },
+ {
+  "id": "research/09",
+  "path": "research/09-contributions-design.md",
+  "hook": "持ち寄りの場の受付と権利の線の設計",
+  "status": "調査"
+ },
+ {
+  "id": "J-006",
+  "path": "decisions/J006-contributions-minimum.md",
+  "hook": "持ち寄りは確認つきの受付を先に作る",
+  "status": "決定"
+ },
+ {
+  "id": "research/10",
+  "path": "research/10-redraw-colors.md",
+  "hook": "図を描き直すための色と線を調べた",
+  "status": "調査"
+ },
+ {
+  "id": "J-007",
+  "path": "decisions/J007-redraw-not-paste.md",
+  "hook": "図を貼らず描き直す。PDF が約 0.1MB に",
+  "status": "決定"
+ },
+ {
+  "id": "J-008",
+  "path": "decisions/J008-own-hypothesis-path.md",
+  "hook": "仮説を自分で立てる道を足した",
+  "status": "決定"
+ },
+ {
+  "id": "J-009",
+  "path": "decisions/J009-sheet-and-records.md",
+  "hook": "手順の紙と 3 値の記録の入口",
+  "status": "決定"
+ },
+ {
+  "id": "research/11",
+  "path": "research/11-naming.md",
+  "hook": "名前の候補の比較と、鏡の論点の取り違え",
+  "status": "調査"
+ },
+ {
+  "id": "research/12",
+  "path": "research/12-tiger.md",
+  "hook": "虎の仮説。紙の頭は重りより桁で軽い",
+  "status": "調査"
+ },
+ {
+  "id": "J-010",
+  "path": "decisions/J010-loop-back-half.md",
+  "hook": "輪の後半と、人が確定する線",
+  "status": "作った。API は未実行"
+ },
+ {
+  "id": "J-011",
+  "path": "decisions/J011-generate-on-the-spot.md",
+  "hook": "その場の生成を本線に。11 分後に置き直した",
+  "status": "J-012 で置換"
+ },
+ {
+  "id": "J-012",
+  "path": "decisions/J012-backstage-content-and-own-hypothesis.md",
+  "hook": "裏で確かめる内容と自分の仮説の口",
+  "status": "J-013 で読み直し"
+ },
+ {
+  "id": "research/13",
+  "path": "research/13-critical-review.md",
+  "hook": "前提への批判。物理と歴史の問いが混ざっていた",
+  "status": "調査"
+ },
+ {
+  "id": "J-013",
+  "path": "decisions/J013-core-words.md",
+  "hook": "設計の核: 素材が返事をし、考えが湧く",
+  "status": "2 点は判断待ち"
+ },
+ {
+  "id": "J-014",
+  "path": "decisions/J014-name-utsushi.md",
+  "hook": "名前を utsushi に。決め方の経緯",
+  "status": "決定"
+ },
+ {
+  "id": "J-015",
+  "path": "decisions/J015-ai-readable.md",
+  "hook": "AI の読み手に伝わる作り。主張から根拠へ",
+  "status": "決定"
+ },
+ {
+  "id": "how-it-was-built",
+  "path": "how-it-was-built.md",
+  "hook": "本人は窓口を通して決める。待ちと取り違えも",
+  "status": "記録"
+ },
+ {
+  "id": "claims",
+  "path": "claims.md",
+  "hook": "主張ごとの確かさの種類と根拠の表",
+  "status": "自動で描く"
+ },
+ {
+  "id": "trials",
+  "path": "trials/README.md",
+  "hook": "実物の試行の索引。まだ 0 件",
+  "status": "0 件"
+ },
+ {
+  "id": "trials/sheets",
+  "path": "trials/sheets/README.md",
+  "hook": "型紙の全版。失敗した版も残す",
+  "status": "記録"
+ }
+]

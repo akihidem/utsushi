@@ -2,42 +2,73 @@
  {
   "id": "f01",
   "name": "出典の取り込み",
-  "status": "done"
+  "status": "done",
+  "evidence": [
+   "src/omochae/ingest.py"
+  ]
  },
  {
   "id": "f02",
   "name": "雛形 slider_fan",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/templates/slider_fan.py"
+  ],
+  "unverified": "実物で組んで開くかは未確認"
  },
  {
   "id": "f03",
   "name": "雛形 pivot_counterweight",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/templates/pivot_counterweight.py"
+  ],
+  "unverified": "実物で組んで揺れるかは未確認"
  },
  {
   "id": "f04",
   "name": "部品表の床",
-  "status": "done"
+  "status": "done",
+  "evidence": [
+   "src/omochae/floors.py"
+  ]
  },
  {
   "id": "f05",
   "name": "手順の紙",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/instructions.py"
+  ],
+  "unverified": "実際の人が使っていない"
  },
  {
   "id": "f06",
   "name": "予想の入力",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/hypotheses.py",
+   "tests/test_hypotheses.py"
+  ]
  },
  {
   "id": "f07",
   "name": "仮説生成（前例を引く・床で直す）",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/api/generate.py",
+   "tests/test_generate.py"
+  ],
+  "unverified": "本物の API で未実行。偽の応答の試験のみ"
  },
  {
   "id": "f08",
   "name": "仮説の採否",
-  "status": "todo"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/hypotheses.py"
+  ],
+  "unverified": "人が選んで刷る操作で代える。確定の記録は未実装"
  },
  {
   "id": "f09",
@@ -47,22 +78,42 @@
  {
   "id": "f10",
   "name": "再現例のアップロード",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/records.py",
+   "tests/test_records.py"
+  ],
+  "unverified": "文と数の記録のみ。写真は未実装。実際の記録は 0 件"
  },
  {
   "id": "f11",
   "name": "記録の解釈",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/loop.py",
+   "tests/test_loop.py"
+  ],
+  "unverified": "本物の API で未実行"
  },
  {
   "id": "f12",
   "name": "次の手の提案",
-  "status": "todo"
+  "status": "doing",
+  "evidence": [
+   "src/api/loop_agents.py",
+   "tests/test_loop.py"
+  ],
+  "unverified": "本物の API で未実行"
  },
  {
   "id": "f13",
   "name": "版の更新",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/loop.py",
+   "tests/test_loop.py"
+  ],
+  "unverified": "実際の記録で未実行"
  },
  {
   "id": "f14",
@@ -77,26 +128,61 @@
  {
   "id": "f16",
   "name": "run.sh",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "run.sh",
+   "tests/run_floors.py"
+  ],
+  "unverified": "未実装の検査 F6.label が 1 本残る"
  },
  {
   "id": "f17",
   "name": "持ち寄りの場（受付・確認・公開）",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/contrib.py",
+   "tests/test_contrib.py"
+  ],
+  "unverified": "外の人に開く入口は未実装。ブラウザ操作は未確認"
  },
  {
   "id": "f18",
   "name": "仮説を並べて見せる入口",
-  "status": "doing"
+  "status": "doing",
+  "evidence": [
+   "src/omochae/hypotheses.py",
+   "tests/test_hypotheses.py"
+  ]
  },
  {
   "id": "f19",
   "name": "裏の制作と確かさの段",
-  "status": "todo"
+  "status": "todo",
+  "unverified": "決める点の答え待ち（J-013）"
  },
  {
   "id": "f20",
   "name": "自分の仮説を言葉から型紙にする口",
-  "status": "todo"
+  "status": "todo",
+  "unverified": "決める点の答え待ち（J-013）"
+ },
+ {
+  "id": "f21",
+  "name": "人の説明と思いつきを Claude より先に受ける",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/loop.py",
+   "tests/test_loop.py"
+  ],
+  "unverified": "実際の人が使っていない"
+ },
+ {
+  "id": "f22",
+  "name": "台帳の検査（主張と根拠・地図・要約）",
+  "status": "done",
+  "evidence": [
+   "src/omochae/ledger.py",
+   "tests/test_ledger.py"
+  ]
  }
 ]

@@ -2,7 +2,7 @@
 
 判断の芯（J-002）: 仕組みを 1 つに決めて既定にしない。最初に刷る 1 枚は入口で、答えではない。
 予想を書く前に AI や作者の案を見せると、予想が案に引きずられるので、予想が無いと一覧も型紙も出さない。
-仮説を自分で立てたい人の道も持つ（J-008）。自分の仮説を書けば、それを型紙にでき、比べるのは本人が選ぶ時だけ。
+仮説を自分で立てたい人の道も持つ（J-008）。自分の仮説を書けば記録に残り、寸法を付ければ型紙にでき、比べるのは本人が選ぶ時だけ。
 """
 import argparse
 import json
@@ -210,7 +210,7 @@ def main(argv=None):
     sub.add_parser("predict").add_argument("text")
     sub.add_parser("picture")
     sub.add_parser("list")
-    sub.add_parser("generate", help="Claude がその場で仮説と寸法を作る。予想か自分の仮説が先に要る")
+    sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
     sg = sub.add_parser("show-generated")
     sg.add_argument("id")
     ag = sub.add_parser("adopt-generated", help="案を人が採る")
