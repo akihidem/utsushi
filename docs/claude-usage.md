@@ -29,3 +29,4 @@
 - 既定の寸法を手元の複写の基準に変えたので、場面 `pos_tube`・`pos_stick` の押す部品の長さを 84 に、`neg_figure_height` の像の高さを 55 に直した。検査の基準の文は変えていない。狙いの検査も同じ。理由は `docs/process/research/07-own-scans.md`。
 - 床 F5.fan_clearance・F5.image_box・F5.image_count を足した。既定を軸の形に変えたので、F5.fan_height の軸の形の式を基準に書き足した。理由は `docs/process/research/08-fan-axle.md`。
 - 本人の決定で持ち寄りの場が範囲に入ったので、床 F10 を基準に足した。
+- 本人の方針で図を貼らず描き直す事にしたので、F5.image_box・F5.image_count の基準の文と、場面 `neg_image_box`・`neg_image_count` の入力を直した。理由は `docs/process/decisions/J007-redraw-not-paste.md`。

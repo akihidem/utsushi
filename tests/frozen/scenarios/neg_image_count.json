@@ -3,7 +3,7 @@
   "source_id": "NDL-1187053-R0000005-L",
   "params": {},
   "inject": {
-    "drop_images": true
+    "paste_image": true
   },
   "expect": {
     "rc": 3,

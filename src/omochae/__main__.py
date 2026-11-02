@@ -38,7 +38,7 @@ def run(args):
     from .render import to_png, write_all  # 描く前の検査だけの時に重い読み込みをしない
     stem = pathlib.Path(args.out)
     pdf = write_all(layout, stem)
-    failures = check_pdf(pdf, source) + check_image_count(pdf, layout["expected_images"])
+    failures = check_pdf(pdf, source) + check_image_count(pdf)
     if failures:
         rejected = stem.with_suffix(".rejected.pdf")
         pdf.replace(rejected)  # 印の無い紙を正しい名前で残さない。

@@ -42,8 +42,8 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | ID | 見る事 | 負の対照 | 期待 |
 |---|---|---|---|
 | F5.fan_clearance | 帯の長さの開く上限が、筒の口の角に当たらない角度に収まる | `neg_fan_clearance` | 3・F5.fan_clearance |
-| F5.image_box | 原図が部品の中にあり、折り線と糊代をまたがない | `neg_image_box` | 3・F5.image_box |
-| F5.image_count | PDF の絵の数が見込みと合う | `neg_image_count` | 3・F5.image_count |
+| F5.image_box | 描き直しの絵が部品の中にあり、折り線と糊代をまたがない | `neg_image_box` | 3・F5.image_box |
+| F5.image_count | PDF に貼られた画像が 0 枚（原図を貼らない。J-007） | `neg_image_count` | 3・F5.image_count |
 
 F5.fan_height は、軸の形では「中心の高さ＋折りの高さ ≦ 押し上げる量」で見る。`pos_rim` は台に載せる形の正の場面。
 

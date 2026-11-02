@@ -30,7 +30,8 @@ class Part:
     glue: list = field(default_factory=list)  # 糊代の多角形
     cuts: list = field(default_factory=list)  # 中を切る矩形 (x,y,w,h)
     holes: list = field(default_factory=list)  # 軸の穴 (x,y,r)
-    images: list = field(default_factory=list)  # 原図 {asset,x,y,w,h}。折り線や糊代をまたがない
+    # 描き直しの絵。{"kind": "poly"|"line", "pts": [...], "fill": 色, "stroke": 色, "sw": 太さ}。折り線や糊代をまたがない
+    art: list = field(default_factory=list)
     x: float = 0.0
     y: float = 0.0
 

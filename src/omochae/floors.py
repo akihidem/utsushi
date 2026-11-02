@@ -57,20 +57,20 @@ def check_bom(rows):
     return out
 
 
-def check_images(parts):
-    """原図が部品の中にあり、折り線と糊代をまたがない事を見る。またぐと折った時に絵が割れる。"""
+def check_art(parts):
+    """描き直しの絵が部品の中にあり、折り線と糊代をまたがない事を見る。またぐと折った時に絵が割れる。"""
     out = []
     for p in parts:
         poly = part_poly(p)
-        for im in p.images:
-            b = box(p.x + im["x"], p.y + im["y"], p.x + im["x"] + im["w"], p.y + im["y"] + im["h"]).buffer(-0.01)
-            # 切り抜きの絵は輪郭の外が白なので、枠でなく足を除いた本体の範囲で見る。
-            if p.key != "figure" and not poly.buffer(EPS).contains(b):
-                out.append(Failure("F5.image_box", p.name, f"原図 {im['asset']} が部品の外に出ている"))
+        for item in p.art:
+            pts = [(p.x + x, p.y + y) for x, y in item["pts"]]
+            geom = Polygon(pts).buffer(-0.01) if item["kind"] == "poly" else LineString(pts)
+            if not poly.buffer(0.05).contains(geom):
+                out.append(Failure("F5.image_box", p.name, "絵が部品の外に出ている"))
             for (x1, y1), (x2, y2) in p.valley + p.mountain:
-                if b.intersects(LineString([(p.x + x1, p.y + y1), (p.x + x2, p.y + y2)])):
-                    out.append(Failure("F5.image_box", p.name, f"原図 {im['asset']} が折り線をまたいでいる"))
+                if geom.intersects(LineString([(p.x + x1, p.y + y1), (p.x + x2, p.y + y2)])):
+                    out.append(Failure("F5.image_box", p.name, "絵が折り線をまたいでいる"))
             for g in p.glue:
-                if p.key != "figure" and b.intersection(Polygon([(p.x + x, p.y + y) for x, y in g])).area > EPS:
-                    out.append(Failure("F5.image_box", p.name, f"原図 {im['asset']} が糊代にかかっている"))
+                if geom.intersection(Polygon([(p.x + x, p.y + y) for x, y in g])).area > EPS:
+                    out.append(Failure("F5.image_box", p.name, "絵が糊代にかかっている"))
     return out

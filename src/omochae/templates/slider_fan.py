@@ -1,13 +1,16 @@
 """雛形 slider_fan: 角筒の中で動く台に蛇腹の扇と像を載せ、押し上げると開く。
 
-押し方は仮説の違いなので 3 つ描き分ける（docs/process/decisions/J002）。寸法の初期値の根拠は research/03。
+押し方は仮説の違いなので描き分ける（docs/process/decisions/J002）。寸法の初期値の根拠は research/03。
 どの値も実物では未確認。Claude が変えてよいのは RANGES にある名前の値だけで、座標には触れない。
 """
+from shapely.geometry import LineString, Polygon
+
 from ..fan_model import clearance_limit_deg, opening_bound_deg, shortest_free_thread
 from ..model import Failure, Part
 
 ID = "slider_fan"
-# 初期値は手元の複写の図の比を基準に、紙面の制約から出した（docs/process/research/06・07）。事前メモの値を土台にしない。
+# 寸法の共通の出発点。手元の複写の図の比と紙面の制約から出した（docs/process/research/06・07）。
+# 押し方と中心の置き方の値は答えではない。使い手に見せる組は data/hypotheses の仮説が決める（J-002）。
 DEFAULTS = {
     "push_part": "tab",
     # 扇の中心の置き方も仮説の違い（J-005）。axle は口より上の軸、rim は口の高さの台。
@@ -118,7 +121,49 @@ def _tube(number, key, name, side, height, glue, label):
                 glue=[[(w, 0), (w + glue, 2), (w + glue, height - 2), (w, height)]])
 
 
-# 像の輪郭（絵から読み取った点を 0〜1 にした物）。assets.py の切り抜きと同じ点を使い、絵と切る線をずらさない。
+# 色は NDL の図から測った値（research/10）。図を貼らず、色と線を描き直す（J-007）。
+PAPER, ORANGE, BROWN, LINE, FACE = "#a89365", "#a5632c", "#7a5e3b", "#55492c", "#b9a677"
+
+
+def _tube_art(A, H):
+    """筒の 4 面の描き直し。絵の手前の角の 2 本線は、折り線の両側に 1 本ずつ引くと組んだ時に細い面に見える。"""
+    art = []
+    for i in range(4):
+        x0, x1 = A * i, A * (i + 1)
+        art.append({"kind": "poly", "pts": [(x0, 0), (x1, 0), (x1, H), (x0, H)], "fill": PAPER})
+        art.append({"kind": "poly", "pts": [(x0, 0), (x1, 0), (x1, 4.5), (x0, 4.5)], "fill": ORANGE})
+        art.append({"kind": "poly", "pts": [(x0, H - 5), (x1, H - 5), (x1, H), (x0, H)], "fill": BROWN})
+    art.append({"kind": "line", "pts": [(A - 1.2, 0), (A - 1.2, H)], "stroke": LINE, "sw": 0.5})
+    art.append({"kind": "line", "pts": [(A + 1.2, 0), (A + 1.2, H)], "stroke": LINE, "sw": 0.5})
+    return art
+
+
+# 像の線。絵を見て手で点を取り直した物で、絵の画素は使っていない。座標は輪郭と同じ 0〜1 に直す。
+_FIGURE_LINES = [
+    [(72, 155), (85, 195)], [(170, 150), (155, 200)],
+    [(110, 218), (115, 180), (125, 168), (138, 185), (145, 205), (130, 225), (120, 235), (110, 218)],
+    [(40, 240), (60, 265), (110, 240)], [(195, 272), (150, 235)],
+    [(65, 270), (100, 310)], [(90, 285), (140, 245)], [(125, 280), (130, 340)],
+    [(72, 340), (95, 340), (105, 355), (130, 360), (170, 340)],
+    [(105, 360), (110, 410), (122, 425), (158, 385), (140, 470)], [(185, 385), (165, 470)], [(72, 345), (85, 500)],
+]
+_FACE = [(118, 60), (140, 68), (153, 90), (150, 118), (135, 140), (118, 146), (100, 140), (85, 118), (82, 90), (95, 68)]
+
+
+def _figure_art(fw, fh, pts):
+    scale = lambda ps: [(fw * (x - 36) / 177, fh * (y - 33) / 472) for x, y in ps]
+    art = [{"kind": "poly", "pts": pts, "fill": PAPER}, {"kind": "poly", "pts": scale(_FACE), "fill": FACE, "stroke": LINE, "sw": 0.25}]
+    # 手で取った線の端が輪郭を越えた時は切る。切る線の外に絵を残さないため。
+    body = Polygon(pts).buffer(-0.15)
+    for line in _FIGURE_LINES:
+        clipped = LineString(scale(line)).intersection(body)
+        for piece in getattr(clipped, "geoms", [clipped]):
+            if not piece.is_empty and piece.geom_type == "LineString":
+                art.append({"kind": "line", "pts": list(piece.coords), "stroke": LINE, "sw": 0.25})
+    return art
+
+
+# 像の輪郭（絵を見て手で取った点を 0〜1 にした物）。
 _RAW = [(113, 33), (135, 45), (150, 62), (158, 85), (157, 120), (153, 135), (172, 152), (195, 175), (210, 205), (213, 250),
         (200, 272), (193, 280), (190, 330), (180, 410), (170, 475), (165, 505), (90, 505), (85, 470), (72, 400), (65, 350),
         (62, 330), (68, 290), (50, 265), (40, 240), (36, 210), (45, 175), (65, 155), (78, 130), (80, 100), (78, 80), (90, 62), (100, 45)]
@@ -135,8 +180,7 @@ def parts(p):
     A, H, a, L = p["tube_side"], p["tube_height"], p["pusher_side"], p["pusher_height"]
     out = []
     tube = _tube(1, "tube", "外筒", A, H, p["tube_glue"], "1 外筒")
-    # 絵の筒の左の面と右の面を 2 面ずつ交互に載せる（J-005）。面からはみ出すと折った時に別の面へ回るので、面の枠に合わせる。
-    tube.images = [{"asset": "goraigo_tube_left.jpg" if i % 2 == 0 else "goraigo_tube_right.jpg", "x": A * i, "y": 0, "w": A, "h": H} for i in range(4)]
+    tube.art = _tube_art(A, H)
     if p["hub"] == "axle":
         # 開く糸を試す穴。扇は 1 面目に平行に開くので、その両脇の面につなぐ。
         tube.holes += [(A * 1.5, 3, 0.6), (A * 3.5, 3, 0.6)]
@@ -179,7 +223,7 @@ def parts(p):
     cx0, cx1 = fw * 0.3, fw * 0.7
     figure = Part(5, "figure", "像", _insert_tab(pts, cx0, cx1, fh, tab), label_xy=(fw * 0.4, fh * 0.6), label="5",
                   glue=[[(cx0, fh), (cx1, fh), (cx1, fh + tab), (cx0, fh + tab)]],
-                  images=[{"asset": "goraigo_figure.png", "x": 0, "y": 0, "w": fw, "h": fh}])
+                  art=_figure_art(fw, fh, pts))
     if p["hub"] == "axle":
         figure.holes.append((fw / 2, fh - p["pivot_above_rim"], 0.6))
     out.append(figure)
@@ -222,5 +266,5 @@ def materials(p):
     return lines
 
 
-TITLES = {"tab": "つまみで動かす", "tube": "内筒を下から押す", "stick": "割り箸を下から押す"}
+TITLES = {"tab": "つまみで動かす", "tube": "内筒を下から押す", "stick": "割り箸の柄で動かす"}
 LAYOUT = {"right_column": "fan", "left_row_last": ("base", "figure")}
