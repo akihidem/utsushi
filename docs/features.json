@@ -123,8 +123,13 @@
  },
  {
   "id": "f15",
-  "name": "図鑑と選ぶ画面",
-  "status": "todo"
+  "name": "使い手の画面（手元のブラウザ）",
+  "status": "doing",
+  "evidence": [
+   "src/web/play_server.py",
+   "tests/test_play_server.py"
+  ],
+  "unverified": "人がブラウザで使った確認はまだ。図鑑の頁は未実装。公開の形は無い（J-024）"
  },
  {
   "id": "f16",
@@ -219,5 +224,18 @@
    "tests/test_discriminate.py"
   ],
   "unverified": "実物で未試行。Claude が見分ける試作を設計する所は未実装。虎は対象外"
+ },
+ {
+  "id": "f26",
+  "name": "作り手の工房（Claude Code の Skill・MCP・サブエージェント・フック）",
+  "status": "doing",
+  "evidence": [
+   ".claude/skills/backstage/SKILL.md",
+   "src/api/mcp_server.py",
+   ".claude/agents/second-eye.md",
+   ".claude/hooks/ledger-check.sh",
+   "tests/test_claude_code.py"
+  ],
+  "unverified": "工房で実際に案を作った事は無い。MCP は使う前の承認がまだ"
  }
 ]

@@ -36,7 +36,7 @@
 | C-16 | 作っているうちに新しい考えが湧く | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-17 | 返事をするのは AI でなく素材と工作 | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-18 | 学習の効果より学習の再定義を物差しにする | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |
-| C-19 | 出発は本人の教育現場で、続ける人は本人。博物館・科学館と家庭への広がりは本人の見立てで、まだ試していない | 未確認 | [14-judging-criteria.md](research/14-judging-criteria.md) |
+| C-19 | 出発は本人の教育現場で、本人も使い続ける。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない。現場の具体の場面は本人に聞いている | 未確認 | [17-field-and-continuers.md](research/17-field-and-continuers.md) |
 | C-20 | 言葉の口は人の文を書き換えず、隠れた寸法の補いを通さない | 偽の応答の試験 | [test_words.py](../../tests/test_words.py) |
 | C-21 | 試した後の紙は対比を先に出し、説明は折って閉じた札に置く | 自動試験 | [test_words.py](../../tests/test_words.py) |
 | C-22 | 閉じた札が考える邪魔をしないか | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |

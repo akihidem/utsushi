@@ -160,5 +160,14 @@
    "path": "docs/process/claude-story-draft.md",
    "quote": "本人に決めてもらう線"
   }
+ },
+ {
+  "id": "O-23",
+  "decision": "現場の具体（教育現場の種類、見た場面、度合い、今までのやり方、学習活動の形、くずし字とインタビューを今週どこまで）",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/research/17-field-and-continuers.md",
+   "quote": "足りない所（本人に聞く）"
+  }
  }
 ]

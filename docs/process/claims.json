@@ -207,12 +207,12 @@
  },
  {
   "id": "C-19",
-  "claim": "出発は本人の教育現場で、続ける人は本人。博物館・科学館と家庭への広がりは本人の見立てで、まだ試していない",
+  "claim": "出発は本人の教育現場で、本人も使い続ける。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない。現場の具体の場面は本人に聞いている",
   "kind": "未確認",
   "evidence": [
    {
-    "path": "docs/process/research/14-judging-criteria.md",
-    "quote": "本人の見立て。当ては未確認"
+    "path": "docs/process/research/17-field-and-continuers.md",
+    "quote": "足りない所は作らず"
    }
   ]
  },
