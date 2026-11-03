@@ -84,7 +84,7 @@
 | 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
 | 40 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
 | 41 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
-| 42 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ直し、足りない所を聞く | 調査。本人の答え待ち |
+| 42 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
 | 43 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |
 | 44 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
 | 45 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
