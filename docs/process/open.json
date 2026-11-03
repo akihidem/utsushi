@@ -82,7 +82,7 @@
  },
  {
   "id": "O-20",
-  "decision": "生徒の記録を集め始める時期、「声」の範囲、生徒の所属と許可、聞き取りの聞き手と名前、使うフォーム",
+  "decision": "生徒の記録を集め始める時期（今週は現役の生徒から集めない）、「声」の範囲、聞き取りの聞き手と名前、使うフォーム",
   "waiting_on": "本人",
   "evidence": {
    "path": "docs/process/decisions/J021-contributions-form-students.md",
