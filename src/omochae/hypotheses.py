@@ -283,6 +283,16 @@ def _generated_command(args):
     from .contrib import _human_confirm
     from .loop import _read, folder
 
+    if args.cmd == "import-draft":
+        from api.generate import import_draft
+
+        source = json.loads((ROOT / "data/sources" / f"{args.source}.json").read_text(encoding="utf-8"))
+        gid, failures = import_draft(source, json.loads(pathlib.Path(args.file).read_text(encoding="utf-8")), args.by)
+        if not failures:
+            print(f"{gid} を受け付けました。show-generated で見て adopt-generated で採ります")
+        for f in failures:
+            print(f.line(), file=sys.stderr)
+        return 3 if failures else 0
     if args.cmd == "show-generated":
         print(json.dumps(_read(folder() / f"generated-{args.id[2:]}.json"), ensure_ascii=False, indent=2))
         return 0
@@ -331,6 +341,9 @@ def main(argv=None):
     pc.add_argument("--out")
     sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
     sg0.add_argument("--dry-run", action="store_true", help="本物を呼ばず、送る中身を書き出す")
+    im = sub.add_parser("import-draft", help="Claude Code の Skill で作った案を、人が採る前の受付に入れる")
+    im.add_argument("file")
+    im.add_argument("--by", required=True, help="案を作ったセッション")
     sg = sub.add_parser("show-generated")
     sg.add_argument("id")
     ag = sub.add_parser("adopt-generated", help="案を人が採る")
@@ -364,7 +377,7 @@ def main(argv=None):
     except SystemExit as e:
         return 0 if e.code == 0 else 4
     try:
-        if args.cmd in ("generate", "show-generated", "adopt-generated"):
+        if args.cmd in ("generate", "show-generated", "adopt-generated", "import-draft"):
             return _generated_command(args)
         if args.cmd in ("words", "show-words", "adopt-words"):
             return _words_command(args)

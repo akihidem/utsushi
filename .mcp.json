@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "utsushi": {
+      "command": ".venv/bin/python",
+      "args": [
+        "src/api/mcp_server.py"
+      ]
+    }
+  }
+}

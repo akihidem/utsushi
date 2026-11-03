@@ -222,6 +222,12 @@
   "status": "決定"
  },
  {
+  "id": "claude-story-draft",
+  "path": "claude-story-draft.md",
+  "hook": "Claude の使い方の物語。機能の選び分けと開発の運転の形",
+  "status": "下書き。本人の確認待ち"
+ },
+ {
   "id": "research/16",
   "path": "research/16-scan-titles.md",
   "hook": "複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた",

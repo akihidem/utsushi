@@ -87,6 +87,8 @@
 | モデルの選び分け | 製品の API は全部 Opus 5.5（`src/api/config.py`）で、未実行 | 本人の決定（[J-017](../decisions/J017-runtime-model.md)）。追記: この点検の後に決まった。選び分けない判断で、比べた結果ではない |
 | Messages API の手書きの輪 | 作った。偽の応答で試験しただけ | 上限と人の確定を自分で握るため（[J-010](../decisions/J010-loop-back-half.md)） |
 
+**追記（11-03 夜）**: 本人が案 b に当たる案 2 を採った。Skill・MCP・サブエージェント・フックを repo に足した（[claude-usage.md](../../claude-usage.md)）。選び分けの物語の下書きは [claude-story-draft.md](../claude-story-draft.md) で、本人の確認待ち。下の表と「語れる物語はまだ無い」は当時の記録。
+
 つまり、**語れる物語はまだ無い。** 無い物を語らず、作るなら理由のある物だけを作る。案は次のとおり。
 
 | 案 | 中身 | 良い所 | 弱い所 |

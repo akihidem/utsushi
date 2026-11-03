@@ -104,12 +104,34 @@ def generate(source, client=None, image=None):
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image if image is not None else source_image(source)}},
                {"type": "text", "text": "この図と次の材料から仮説を立ててください。\n<data>\n" + json.dumps(context, ensure_ascii=False) + "\n</data>"}]
     result, trace = agent.run("generate", SYSTEM, content, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source)], client=client)
+    return _save_draft(sid, preds, own, result, {"model": trace.model, "tool_calls": trace.tool_calls, "retries": trace.retries, "input_tokens": trace.input_tokens, "output_tokens": trace.output_tokens}), []
+
+
+def _save_draft(sid, preds, own, result, trace):
     folder = loop.folder()
     nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder.glob("generated-*.json")]
     gid = f"G-{max(nums, default=0) + 1:04d}"
-    loop._write(folder / f"generated-{gid[2:]}.json", {"id": gid, "source_id": sid, "status": "pending_human", "reader_prediction": preds[-1] if preds else None, "reader_own": [h["id"] for h in own], "result": result, "drafted_at": loop._now(),
-                                                         "trace": {"model": trace.model, "tool_calls": trace.tool_calls, "retries": trace.retries, "input_tokens": trace.input_tokens, "output_tokens": trace.output_tokens}})
-    return gid, []
+    loop._write(folder / f"generated-{gid[2:]}.json", {"id": gid, "source_id": sid, "status": "pending_human", "reader_prediction": preds[-1] if preds else None, "reader_own": [h["id"] for h in own], "result": result, "drafted_at": loop._now(), "trace": trace})
+    return gid
+
+
+def import_draft(source, result, made_by):
+    """Claude Code のセッションが Skill（.claude/skills/backstage）で作った案を、API の案と同じ受付に入れる。
+
+    なぜ同じ受付か: 作った道が API でも Claude Code でも、予想が先・決定的な床・人が採るまで一覧に入らない、の線を変えないため。
+    作り手は API の鍵が要らない（research/14 の案 b）。どこで作ったかは trace に残す。
+    """
+    sid = source["source_id"]
+    failures = hypotheses.need_prediction(sid)
+    if not (made_by or "").strip():
+        failures.append(Failure("F9.human", "made_by", "案を作ったセッションの名前が無い"))
+    if failures:
+        return None, failures
+    failures = check_result(result, source)
+    if failures:
+        return None, failures
+    preds = [json.loads(p.read_text(encoding="utf-8"))["text"] for p in hypotheses.predictions(sid)]
+    return _save_draft(sid, preds, hypotheses.own_hypotheses(sid), result, {"model": made_by.strip(), "via": "claude-code-skill"}), []
 
 
 def adopt_generated(gid, by, numbers):

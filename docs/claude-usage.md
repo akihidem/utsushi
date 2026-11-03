@@ -13,6 +13,19 @@
 
 裏の制作の仮説生成（`src/api/generate.py`）、言葉の仮説を寸法に写す口（`src/api/words.py`）、輪の後半（記録の解釈・次の手の提案）で Messages API の tool use を呼ぶ形を作った。本物の API はまだ 1 回も呼んでいない。試験は記録した形の偽物。実行時のモデルは本人の決定で全部 Opus 5.5（`src/api/config.py`）。計画書どおりにした判断で、下の層と質を比べた結果ではない。上限は `src/api/budget.py` で守る（`docs/process/decisions/J017-runtime-model.md`）。
 
+## 作り手の工房の Claude Code の機能
+
+本人の決定（カード 20261102-211820-2 の案 2）で、作品の輪に合った機能を repo に足した。選び分けの理由の下書きは [docs/process/claude-story-draft.md](process/claude-story-draft.md)（本人の確認待ち）。
+
+| 機能 | 置き場 | 中身 |
+|---|---|---|
+| Skill | `.claude/skills/backstage/SKILL.md` | 裏の制作の手順。API の鍵なしで仮説の案を作り、`hypotheses import-draft` で人が採る前の受付に入れる |
+| MCP | `.mcp.json`・`src/api/mcp_server.py` | API の輪と同じ道具（寸法の検査、図の拡大、前例）と、案の全体の検査 `check_draft` |
+| サブエージェント | `.claude/agents/second-eye.md` | 案の言葉と根拠を、作った者と別の目で読む。書き換えない |
+| フック | `.claude/settings.json`・`.claude/hooks/ledger-check.sh` | 記録や台帳を直した直後に台帳の検査を回し、落ちたら Claude に返す |
+
+試験は `tests/test_claude_code.py`（MCP の応答、受付の床、フックの負の対照）。工房で実際に案を作った事はまだ無い。MCP は Claude Code が認識したが、使う前の承認はまだ。
+
 ## 決定的な検査との境目
 
 型紙の座標と SVG・PDF は生成器が描き、寸法と印は検査が見る。基準は `tests/frozen/criteria.md`、入口は `./run.sh`。
