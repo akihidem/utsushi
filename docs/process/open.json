@@ -82,11 +82,11 @@
  },
  {
   "id": "O-20",
-  "decision": "生徒の記録を集め始める時期（今週は現役の生徒から集めない）、「声」の範囲、聞き取りの聞き手と名前、使うフォーム",
+  "decision": "生徒の録音を扱う時に、決まり「子どもの写真・声は扱わない」を外すか（集め始める時期は、要る時に改めて聞く）",
   "waiting_on": "本人",
   "evidence": {
    "path": "docs/process/decisions/J021-contributions-form-students.md",
-   "quote": "本人に聞く事"
+   "quote": "録音の扱い（設計し直した物。まだ集めない）"
   }
  },
  {
