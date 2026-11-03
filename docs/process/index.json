@@ -258,6 +258,12 @@
   "status": "調査"
  },
  {
+  "id": "research/19",
+  "path": "research/19-emil-skills-review.md",
+  "hook": "参照のルックブックの観察と A の再現、Skill 集から拾った物",
+  "status": "評価。A は作り替えた。人の目はまだ"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

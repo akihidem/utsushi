@@ -56,6 +56,8 @@ for name in ("taiban", "zine"):
     look = look.decode()
     assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
     assert "原文の引用" in look, "引用の印を残す"
+    # スマホで表紙の下が URL の帯に隠れないよう、画面の高さは svh（research/19）
+    assert "100svh" in look and "whileInView" not in look and "IntersectionObserver" not in look, name
 assert get("/look/none")[0] == 404
 # 予想の前は仮説を見せない
 body = get(f"/toy/{G}")[1].decode()
