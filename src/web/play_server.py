@@ -131,8 +131,13 @@ body.studio{background:radial-gradient(ellipse at 50% 35%,#ece8e0 0,#d8d2c6 60%,
 .face .cap{font-size:clamp(8px,.9vw,11px)}
 .grid4{display:grid;grid-template-columns:1fr 1fr;gap:4%;flex:1}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:3%;height:46%}
 .tile{background-repeat:no-repeat;background-size:300%;position:relative}.tile span{position:absolute;left:4px;bottom:3px;font-size:clamp(8px,.9vw,11px);color:#fff;text-shadow:0 0 3px #000}
-.cover{background:#2f2a24;color:#efe8d8}.cover .kick,.cover .cap{color:#c9a27a}.cover .pad{justify-content:space-between}.cover h2{font-size:clamp(28px,5vw,70px);letter-spacing:.4em}
-.cover .shot{flex:1;margin:6% 0;background-size:cover;background-position:50% 55%}
+.cover{background:#2f2a24;color:#f3ecdc}
+.cover .shot{position:absolute;inset:0;background-size:cover;background-position:50% 62%}
+.cover .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(28,24,20,.55) 0,rgba(28,24,20,0) 22%,rgba(28,24,20,0) 58%,rgba(28,24,20,.82) 100%)}
+.cover .pad{position:relative;z-index:1;justify-content:space-between}
+.cover .kick{color:#f0d9b5}.cover .cap{color:#efe3cc;max-width:60%}
+.cover h2{writing-mode:vertical-rl;position:absolute;right:7%;bottom:9%;font-size:clamp(34px,6.4vw,92px);letter-spacing:.25em;margin:0;text-shadow:0 2px 18px rgba(0,0,0,.45)}
+.cover .vol{font-size:clamp(9px,1vw,12px);letter-spacing:.3em;color:#f0d9b5}
 .flipnav{display:flex;justify-content:center;gap:24px;align-items:center;padding:6px 0 40px}
 .flipnav button{background:none;color:#3d3a36;border:1px solid #3d3a36;padding:6px 18px;margin:0}
 @media (prefers-reduced-motion:reduce){.leaf{transition:none}}
@@ -153,7 +158,9 @@ def book_page():
     toys = [(s, hypotheses.load(s)["toy"], source(s)) for s in sources() if (ROOT / "out/sources" / f"{s}.jpg").exists()]
     first = toys[0][0] if toys else None
     shot = f'<div class="shot" style="background-image:url(/picture/{first})"></div>' if first else '<div class="shot"></div>'
-    faces = [f'<div class="pad"><span class="kick">Edo toy lookbook · vol.01</span>{shot}<h2>うつし</h2><span class="cap">江都二色（1773）の玩具 · 紙と糸で動きを確かめる</span></div>']
+    # 表紙は図を全面に敷き、題を縦に重ねる。下に空きを残さない（本人の指摘「下の部分が勿体無いね」）。
+    faces = [f'{shot}<div class="pad"><span class="kick">Edo toy lookbook</span><h2>うつし</h2>'
+             f'<div><p class="vol">vol.01 · 江都二色（1773）</p><p class="cap">図と歌だけが残る玩具。動きを予想し、紙と糸で確かめる。</p></div></div>']
     folio = 1
     for i, (s, toy, src) in enumerate(toys, 1):
         faces.append(f'<img class="bleed" src="/picture/{s}" alt="{esc(toy)}の図">')
