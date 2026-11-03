@@ -77,13 +77,14 @@
 | 32 | [J-018](decisions/J018-no-peer-review.md) | 人のレビューは受けず、批評は Claude だけ | 決定 |
 | 33 | [J-019](decisions/J019-experiment-sheet.md) | 型紙を実験装置に。角度で分かれるのは H-E を含む組だけ | 決定 |
 | 34 | [J-020](decisions/J020-gate-without-trial.md) | 今夜の関門は試行の結果なしで迎える。実物が要る物は 11-04 の試行の後へ | 決定 |
-| 35 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 36 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 37 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 判断待ち O-13〜O-15、O-17 |
-| 38 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 39 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 40 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 41 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 35 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名をほぼ特定。歌の読みは本人が決めた | 調査。本人の確認は未 |
+| 36 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 37 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 38 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 判断待ち O-13〜O-15、O-17 |
+| 39 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 40 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 41 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 42 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

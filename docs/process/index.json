@@ -204,6 +204,12 @@
   "status": "決定"
  },
  {
+  "id": "research/16",
+  "path": "research/16-scan-titles.md",
+  "hook": "複写 2 式の書名をほぼ特定。歌の読みは本人が決めた",
+  "status": "調査。本人の確認は未"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

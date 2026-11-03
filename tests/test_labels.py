@@ -41,6 +41,12 @@ for path in sources:
     source = json.loads(path.read_text(encoding="utf-8"))
     entries = source_lines(source)
     assert len(check(entries)) == sum(not e.get("checked_by") for e in entries), path.name
+    # 人が採らなかった読みは候補に出さない
+    assert not any(e.get("rejected_by") for e in entries), path.name
+
+# 割れた読みの片方を人が採らなかった時、その読みは引用の候補から外れる
+split = {"transcription": {"entries": [{"text": "読み一", "checked_by": "人"}, {"text": "読み二", "rejected_by": "人"}]}}
+assert [e["text"] for e in source_lines(split)] == ["読み一"]
 
 
 def run(*args):

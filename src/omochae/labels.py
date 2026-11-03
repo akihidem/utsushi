@@ -45,8 +45,13 @@ def check(lines):
 
 
 def source_lines(source):
-    """出典の読みを引用の候補として並べる。図鑑の画面はまだ無いので、今この床にかけられる実データはここだけ。"""
-    return [{**entry, "label": QUOTE} for entry in source.get("transcription", {}).get("entries", [])]
+    """出典の読みを引用の候補として並べる。図鑑の画面はまだ無いので、今この床にかけられる実データはここだけ。
+
+    人が採らなかった読み（rejected_by）は候補に入れない。割れた読みの片方を人が選んだ後も、もう片方は記録として出典に残すが、
+    引用として出す物ではないため。
+    """
+    entries = source.get("transcription", {}).get("entries", [])
+    return [{**entry, "label": QUOTE} for entry in entries if not entry.get("rejected_by")]
 
 
 def main(argv=None):

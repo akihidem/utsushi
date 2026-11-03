@@ -24,7 +24,7 @@
   },
   "modification_note": "改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません",
   "transcription": {
-    "status": "read_by_claude_needs_human_check",
+    "status": "human_checked",
     "entries": [
       {
         "text": "御来迎 拝むにつけて怠らし 朝な夕なに 南無あめの鳥",
@@ -33,16 +33,21 @@
         "page": "215",
         "read_by": "Claude Code のセッション",
         "checked_by": null,
-        "checked_at": null
+        "checked_at": null,
+        "rejected_by": "本人",
+        "rejected_at": "2026-11-03"
       },
       {
-        "text": "御来迎拝むにつけて怠らじ朝な夕なに南無あめの鳥",
+        "text": "御来迎拝むにつけて怠けらじ朝な夕なに南無あめの鳥",
         "source": "own-scans",
         "set": "B",
         "page": "78",
         "read_by": "Claude Code のセッション",
-        "checked_by": null,
-        "checked_at": null
+        "checked_by": "本人",
+        "checked_at": "2026-11-03",
+        "printed_text": "御来迎拝むにつけて怠らじ朝な夕なに南無あめの鳥",
+        "checked_scope": "割れていた語（怠らし／怠らじ）を本人が複写 B の読みに決めた。表記「怠けらじ」は本人の言葉どおり",
+        "note": "複写 B の頁 78 の見出しの活字は「怠らじ」で、本人の表記と 1 字違う（research/16）"
       }
     ]
   },
