@@ -5,6 +5,7 @@
 仮説を自分で立てたい人の道も持つ（J-008）。自分の仮説を書けば記録に残り、寸法を付ければ型紙にでき、比べるのは本人が選ぶ時だけ。
 """
 import argparse
+import base64
 import json
 import os
 import pathlib
@@ -218,6 +219,31 @@ def picture(source_id):
     return f"{source['toy']} の図（出典 ID {source_id}・{source['holding']}）: {source['image_url']}"
 
 
+def _preview(role, call):
+    """本物を呼ばずに、送るはずの中身を書き出す（--dry-run）。
+
+    なぜ: 本物の試験は本人の承認が要る。承認の前に、何をどの指示で送り、1 回でいくらまで使いうるかを見せるため。
+    返り値は (書き出したパス, failures)。予想が無い等で呼ぶ前に止まる時は failures だけを返す。
+    """
+    from api import agent, budget, config
+
+    from .loop import _write, folder
+
+    try:
+        _, failures = call(agent.PreviewClient())
+        return None, failures
+    except agent.Preview as p:
+        request = agent.elide_images(p.request)
+    path = folder() / f"preview-{role}.json"
+    _write(path, request)
+    turns = config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3
+    print(f"下見を書きました: {path}")
+    print(f"モデル {request['model']}・思考の深さ {request['output_config']['effort']}・道具 {len(request['tools'])} 個・呼ぶ回数の上限 {turns} 回")
+    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.DAILY_CAP.get(budget._today(), 0)}")
+    print("本物は呼んでいません")
+    return path, []
+
+
 def _words_command(args):
     from .contrib import _human_confirm
     from .loop import _read, folder
@@ -236,6 +262,11 @@ def _words_command(args):
             print(f"{rec['id']} を残しました。" + ("print-own で型紙にできます" if rec["params"] else "今の雛形には乗らないので、記録として残りました"))
     else:
         source = json.loads((ROOT / "data/sources" / f"{args.source}.json").read_text(encoding="utf-8"))
+        if args.dry_run:
+            _, failures = _preview("words", lambda client: draft_words(source, args.text, args.name, args.evidence, args.by, client=client))
+            for f in failures:
+                print(f.line(), file=sys.stderr)
+            return 3 if failures else 0
         try:
             wid, failures = draft_words(source, args.text, args.name, args.evidence, args.by)
         except Exception as e:  # 鍵が無い・通信できない・予算の上限。値は出さない
@@ -266,6 +297,14 @@ def _generated_command(args):
             print("採りました:", " ".join(made))
     else:
         source = json.loads((ROOT / "data/sources" / f"{args.source}.json").read_text(encoding="utf-8"))
+        if args.dry_run:
+            # 下見では図を NDL から取りに行かない。手元に取ってあればその大きさを、無ければ空で示す。
+            cached = ROOT / "out/sources" / f"{args.source}.jpg"
+            image = base64.b64encode(cached.read_bytes()).decode() if cached.exists() else ""
+            _, failures = _preview("generate", lambda client: generate(source, client=client, image=image))
+            for f in failures:
+                print(f.line(), file=sys.stderr)
+            return 3 if failures else 0
         try:
             gid, failures = generate(source)
         except Exception as e:  # 鍵が無い・通信できない・予算の上限。値は出さない
@@ -290,7 +329,8 @@ def main(argv=None):
     pc.add_argument("a")
     pc.add_argument("b")
     pc.add_argument("--out")
-    sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
+    sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
+    sg0.add_argument("--dry-run", action="store_true", help="本物を呼ばず、送る中身を書き出す")
     sg = sub.add_parser("show-generated")
     sg.add_argument("id")
     ag = sub.add_parser("adopt-generated", help="案を人が採る")
@@ -302,6 +342,7 @@ def main(argv=None):
     w.add_argument("--name", required=True)
     w.add_argument("--evidence", required=True, help="図のどこを見たか")
     w.add_argument("--by", required=True, help="打った大人")
+    w.add_argument("--dry-run", action="store_true", help="本物を呼ばず、送る中身を書き出す")
     sub.add_parser("show-words").add_argument("id")
     aw = sub.add_parser("adopt-words", help="写した寸法を人が見て採る")
     aw.add_argument("id")

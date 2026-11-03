@@ -1,7 +1,7 @@
 [
  {
   "id": "O-03",
-  "decision": "最初の API の試験（鍵と承認）。モデルは決まった",
+  "decision": "最初の API の試験（鍵と承認）。作り込んでから出す（J-023）",
   "waiting_on": "本人",
   "evidence": {
    "path": "docs/process/decisions/J010-loop-back-half.md",

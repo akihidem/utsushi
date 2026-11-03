@@ -80,6 +80,18 @@ def source_image(source):
     return base64.b64encode(path.read_bytes()).decode()
 
 
+def transcription_for_claude(source):
+    """歌の読みのうち、人が採らなかった読みを除いて渡す。
+
+    なぜ: 割れた読みの片方を本人が採らなかった後も、記録には残している（data/sources）。それをそのまま渡すと、
+    Claude が採られなかった語を根拠に仮説を立てうる。図鑑の引用の候補から外したのと同じ線（labels.source_lines）。
+    """
+    t = source.get("transcription")
+    if not t:
+        return t
+    return {**t, "entries": [e for e in t.get("entries", []) if not e.get("rejected_by")]}
+
+
 def generate(source, client=None, image=None):
     sid = source["source_id"]
     failures = hypotheses.need_prediction(sid)
@@ -88,7 +100,7 @@ def generate(source, client=None, image=None):
     preds = [json.loads(p.read_text(encoding="utf-8"))["text"] for p in hypotheses.predictions(sid)]
     own = hypotheses.own_hypotheses(sid)
     context = {"source_id": sid, "toy": source["toy"], "default_template": hypotheses.load(sid).get("template", "slider_fan"),
-               "transcription": source.get("transcription"), "reader_predictions": preds[-1:], "reader_own_hypotheses": own}
+               "transcription": transcription_for_claude(source), "reader_predictions": preds[-1:], "reader_own_hypotheses": own}
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image if image is not None else source_image(source)}},
                {"type": "text", "text": "この図と次の材料から仮説を立ててください。\n<data>\n" + json.dumps(context, ensure_ascii=False) + "\n</data>"}]
     result, trace = agent.run("generate", SYSTEM, content, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source)], client=client)

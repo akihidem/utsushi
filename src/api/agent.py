@@ -15,6 +15,42 @@ class AgentStopped(Exception):
     """上限・拒否・長さの超過で結果なしに止まった。理由を人に見せる。"""
 
 
+class Preview(Exception):
+    """下見の時、最初の呼び出しの直前で止めて、送るはずだった中身を運ぶ。"""
+
+    def __init__(self, request):
+        super().__init__("下見なので呼ばなかった")
+        self.request = request
+
+
+class PreviewClient:
+    """下見の偽の client。鍵も通信も要らない。
+
+    なぜ: 本物の試験の前に、本人が「何を送るか」を見て承認できるようにするため。
+    本物と同じ run を通すので、下見と本番で送る中身がずれない。
+    """
+
+    def __init__(self):
+        from types import SimpleNamespace
+
+        self.beta = SimpleNamespace(messages=SimpleNamespace(create=self._create))
+
+    def _create(self, **request):
+        raise Preview(request)
+
+
+def elide_images(request):
+    """下見の記録に画像の中身を残さない。大きく、人が読む物でないため。大きさだけ書く。"""
+    import copy
+
+    out = copy.deepcopy(request)
+    for message in out.get("messages", []):
+        for block in message["content"] if isinstance(message.get("content"), list) else []:
+            if isinstance(block, dict) and block.get("type") == "image":
+                block["source"]["data"] = f"<base64 {len(block['source']['data'])} 文字を省いた>"
+    return out
+
+
 @dataclass
 class Trace:
     tool_calls: list = field(default_factory=list)
@@ -47,14 +83,19 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
     run_usd = 0.0
     for _ in range(config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3):
         budget.check(run_usd)  # 呼ぶ前に毎回見る。途中で上限に当たれば、そこで止めて人へ返す
+        # 1 回の生成で道具の往復ごとに図と指示を送り直すので、キャッシュで入力の費用を下げる。
+        # 指示と道具の定義は変わらないので、その終わりに目印を置く。伸びていく会話は自動の目印に任せる。
         response = client.beta.messages.create(
-            model=trace.model, max_tokens=config.MAX_TOKENS, system=system, tools=definitions, messages=messages,
+            model=trace.model, max_tokens=config.MAX_TOKENS, system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+            tools=definitions, messages=messages, cache_control={"type": "ephemeral"},
             output_config={"effort": config.EFFORT[role]}, thinking={"type": "adaptive"}, betas=BETAS, fallbacks="default",
         )
         usage = getattr(response, "usage", None)
-        trace.input_tokens += getattr(usage, "input_tokens", 0) or 0
-        trace.output_tokens += getattr(usage, "output_tokens", 0) or 0
-        run_usd += budget.add(role, trace.model, getattr(usage, "input_tokens", 0) or 0, getattr(usage, "output_tokens", 0) or 0)
+        counts = {k: getattr(usage, k, 0) or 0 for k in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")}
+        # 入力の数はキャッシュの外の残りだけなので、書いた分と読んだ分も足して数える。足さないと費用を少なく見積もる。
+        trace.input_tokens += counts["input_tokens"] + counts["cache_creation_input_tokens"] + counts["cache_read_input_tokens"]
+        trace.output_tokens += counts["output_tokens"]
+        run_usd += budget.add(role, trace.model, counts["input_tokens"], counts["output_tokens"], counts["cache_creation_input_tokens"], counts["cache_read_input_tokens"])
         if response.stop_reason == "refusal":
             raise AgentStopped("Claude が応答を断った。入力を人が確かめる")
         if response.stop_reason == "max_tokens":

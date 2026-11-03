@@ -10,6 +10,9 @@ from datetime import datetime, timedelta, timezone
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PRICES = {"claude-opus-5-5": (4.0, 20.0), "claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50)}
+# キャッシュの書き込みと読み出しは入力の単価に掛ける。5 分の書き込みは 1.25 倍。読み出しは Opus 5.5 が 0.05 倍、他は 0.1 倍（claude-api の資料）。
+CACHE_WRITE = 1.25
+CACHE_READ = {"claude-opus-5-5": 0.05}
 DAILY_CAP = {"11-02": 40, "11-03": 50, "11-04": 60, "11-05": 70, "11-06": 80, "11-07": 70, "11-08": 50}
 STOP_TOTAL = 475.0
 # 1 回の生成の上限。暴走した輪で日割りを使い切らないため。
@@ -30,9 +33,9 @@ def _today():
     return datetime.now(timezone(timedelta(hours=9))).strftime("%m-%d")
 
 
-def cost(model, input_tokens, output_tokens):
+def cost(model, input_tokens, output_tokens, cache_write=0, cache_read=0):
     i, o = PRICES.get(model, PRICES["claude-opus-5-5"])
-    return (input_tokens * i + output_tokens * o) / 1e6
+    return (input_tokens * i + cache_write * i * CACHE_WRITE + cache_read * i * CACHE_READ.get(model, 0.1) + output_tokens * o) / 1e6
 
 
 def spent():
@@ -57,8 +60,8 @@ def check(run_usd=0.0):
         raise BudgetStop(f"この 1 回が ${run_usd:.2f} に達した。上限 ${PER_RUN_CAP:.0f} で止める")
 
 
-def add(role, model, input_tokens, output_tokens):
-    usd = cost(model, input_tokens, output_tokens)
+def add(role, model, input_tokens, output_tokens, cache_write=0, cache_read=0):
+    usd = cost(model, input_tokens, output_tokens, cache_write, cache_read)
     with open(_path(), "a", encoding="utf-8") as f:
-        f.write(json.dumps({"day": _today(), "role": role, "model": model, "input": input_tokens, "output": output_tokens, "usd": usd}) + "\n")
+        f.write(json.dumps({"day": _today(), "role": role, "model": model, "input": input_tokens, "output": output_tokens, "cache_write": cache_write, "cache_read": cache_read, "usd": usd}) + "\n")
     return usd

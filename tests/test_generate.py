@@ -55,6 +55,8 @@ gid, fs = gen.generate(source, client, image="QQ==")
 assert not fs, fs
 first = client.calls[0]["messages"][0]["content"]
 assert first[0]["type"] == "image" and "筒を押すと上が開く" in first[1]["text"], "図と予想を渡す"
+# 本人が採らなかった歌の読み（複写 A の「怠らし」）は渡さない。採った読みは渡す
+assert "御来迎 拝むにつけて怠らし" not in first[1]["text"] and "怠けらじ" in first[1]["text"]
 sent = json.dumps(client.calls[2]["messages"], ensure_ascii=False, default=str)
 assert "F5.range" in sent and "F8.references" in sent, "落ちた理由を読ませる"
 for fail in ({"hypotheses": [hyp("1 本", A)], "references": []},
@@ -97,6 +99,13 @@ path.unlink()
 env = {k: v for k, v in os.environ.items() if not k.startswith("ANTHROPIC")}
 out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "generate"], capture_output=True, text=True, env={**env, "HOME": tmp}, cwd=tmp)
 assert out.returncode == 4 and "固定の仮説" in out.stderr
+
+# 下見: 本物を呼ばず、送る中身を書き出す。案の記録は作らない
+before = sorted(p.name for p in loop.folder().glob("generated-*.json"))
+dry = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "generate", "--dry-run"], capture_output=True, text=True, env={**env, "OMOCHAE_DATA": tmp})
+assert dry.returncode == 0, dry.stderr
+assert "本物は呼んでいません" in dry.stdout and (loop.folder() / "preview-generate.json").exists()
+assert sorted(p.name for p in loop.folder().glob("generated-*.json")) == before
 
 # 本人の決定で全部 Opus（J-017）。黙って別のモデルに変わらないように固定する
 from api.config import MODELS

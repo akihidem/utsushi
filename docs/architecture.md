@@ -31,7 +31,7 @@
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・順位（作り手用）・新しい仮説 |
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
-| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪、頼みと道具、モデルの設定 |
+| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定 |
 | `src/api/generate.py` | 裏の制作の 1 段。図・歌・記録から仮説と寸法の案を作る |
 | `src/api/budget.py` | API の消費の見積もりと上限 |
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版・順位の記録（個人の記録なので git に入れない） |

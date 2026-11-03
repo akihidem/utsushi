@@ -216,6 +216,12 @@
   "status": "作る側の案。本人の答え待ち"
  },
  {
+  "id": "J-023",
+  "path": "decisions/J023-first-test-later.md",
+  "hook": "本物の API の最初の試験は作り込んでから。下見・キャッシュ・費用の数え方を足した",
+  "status": "決定"
+ },
+ {
   "id": "research/16",
   "path": "research/16-scan-titles.md",
   "hook": "複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた",
