@@ -20,6 +20,30 @@ from omochae.hypotheses import ROOT
 
 from .contrib_server import STYLE
 
+# 見た目はルックブックの様式（本人の指定、J-024）。絵が主役で、文字は添え。見開きのように絵と短い文を左右に置き、玩具ごとに左右を入れ替える。
+# 本人が参照した X の記事の実物はまだ届いていないので、様式だけを写す。届いたら、この塊と下の 2 つの頁の組み方だけを替える。
+LOOK = STYLE + """
+body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
+.wrap{max-width:1180px;margin:auto;padding:0 20px 64px}
+.cover{padding:56px 20px 24px;max-width:1180px;margin:auto}
+.cover h1{font-size:clamp(40px,7vw,88px);letter-spacing:.3em;font-weight:400;margin:0}
+.cover p{max-width:34em;color:#5d5345;margin:12px 0 0}
+.spread{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:40px;align-items:end;margin:48px auto;max-width:1180px;padding:0 20px}
+.spread.flip{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)}.spread.flip figure{order:2}
+.spread figure{margin:0;background:#fffdf7;padding:18px;box-shadow:0 1px 0 #c9bda3}
+.spread figure img{display:block;width:100%;height:min(78vh,900px);object-fit:contain}
+.spread figcaption,.cap{font-size:.78em;color:#6b604f;margin-top:8px}
+.side h1,.side h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
+.side .no{font-size:.8em;letter-spacing:.3em;color:#7a3b1d}
+.side a.open{display:inline-block;margin-top:18px;border-bottom:1px solid #7a3b1d;text-decoration:none}
+.song{writing-mode:vertical-rl;font-size:1.25em;line-height:2;height:16em;margin:8px 0 0 auto}
+.plates{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
+.plate{background:#fffdf7;border:1px solid #c9bda3;padding:18px}.plate .letter{font-size:56px;line-height:1;color:#7a3b1d}
+.plate h3{font-weight:400;margin:6px 0}.plate p{font-size:.9em}
+.wrap > form,.wrap > article{max-width:640px}
+@media (max-width:760px){.spread,.spread.flip{grid-template-columns:1fr}.spread.flip figure{order:0}.spread figure img{height:auto;max-height:70vh}.song{writing-mode:horizontal-tb;height:auto}}
+"""
+
 MAX_FORM = 64 * 1024
 SID = r"NDL-\d+-R\d+-[LR]"
 
@@ -43,18 +67,34 @@ def esc(s):
 
 
 def page(title, body):
-    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><style>{STYLE}</style><main>{body}</main></html>'
+    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><style>{LOOK}</style><main>{body}</main></html>'
+
+
+def figure(sid, toy, src):
+    """図の頁。手元に取ってある NDL の頁だけを大きく出し、無ければ所蔵先へのリンクにする（画面から NDL を取りに行かない）。"""
+    if (ROOT / "out/sources" / f"{sid}.jpg").exists():
+        return f'<figure><img src="/picture/{sid}" alt="{esc(toy)}の図"><figcaption>{esc(src.get("holding", ""))}</figcaption></figure>'
+    return f'<figure><p><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p></figure>'
 
 
 def index_page():
-    items = "".join(f'<article><h2><a href="/toy/{s}">{esc(hypotheses.load(s)["toy"])}</a></h2><p class="meta">出典 ID {s}</p></article>' for s in sources())
-    return page("うつし", f"<h1>うつし</h1><p>江戸の絵本『江都二色』に図と歌だけが残る玩具を、紙と糸で作って確かめます。返事をするのは紙です。</p>{items}")
+    cover = '<header class="cover"><h1>うつし</h1><p>江戸の絵本『江都二色』（1773）に、図と歌だけが残る玩具。動きを予想して、紙と糸で作って確かめます。返事をするのは紙です。</p></header>'
+    spreads = ""
+    for i, s in enumerate(sources(), 1):
+        toy, src = hypotheses.load(s)["toy"], source(s)
+        spreads += (f'<section class="spread{" flip" if i % 2 == 0 else ""}">{figure(s, toy, src)}'
+                    f'<div class="side"><p class="no">{i:02d}</p><h2>{esc(toy)}</h2>{song(src, short=True)}'
+                    f'<a class="open" href="/toy/{s}">この玩具をひらく</a><p class="cap">出典 ID {s}</p></div></section>')
+    return page("うつし", cover + spreads)
 
 
-def song(src):
-    """歌は人が確かめた読みだけを、原文の引用として出す。採らなかった読みは出さない（labels.source_lines と同じ線）。"""
+def song(src, short=False):
+    """歌は人が確かめた読みだけを、原文の引用として出す。採らなかった読みは出さない（labels.source_lines と同じ線）。
+
+    本の頁のように縦に組む。引用の印（誰が確かめたか）は短くしても消さない。図鑑の文の印（J-016）を画面でも守るため。
+    """
     lines = [e for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")]
-    return "".join(f'<p>「{esc(e["text"])}」<span class="meta">（原文の引用。確かめた人: {esc(e["checked_by"])}）</span></p>' for e in lines)
+    return "".join(f'<p class="song">{esc(e["text"])}</p><p class="cap">原文の引用。確かめた人: {esc(e["checked_by"])}</p>' for e in lines)
 
 
 def sheets(sid, hid, recorded):
@@ -69,9 +109,10 @@ def sheets(sid, hid, recorded):
 
 def toy_page(sid, errors=(), msg=""):
     data, src = hypotheses.load(sid), source(sid)
-    head = f'<p><a href="/">← 玩具の一覧</a></p><h1>{esc(data["toy"])}</h1>'
     note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")
-    pic = f'<p><img src="/picture/{sid}" alt="{esc(data["toy"])}の図"></p>' if (ROOT / "out/sources" / f"{sid}.jpg").exists() else f'<p><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p>'
+    # 頁の頭は見開き: 大きな図と、名前と縦組みの歌。操作の欄はその下に置く。
+    hero = (f'<section class="spread">{figure(sid, data["toy"], src)}<div class="side"><p class="cap"><a href="/">← 玩具の一覧</a></p>'
+            f'<h1>{esc(data["toy"])}</h1>{song(src)}</div></section>')
     preds = hypotheses.predictions(sid)
     latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
     form_pred = f'<form method="post" action="/toy/{sid}/predict"><label>どう動くと思いますか（先に書きます）<textarea name="text" required></textarea></label><button>予想を残す</button></form>'
@@ -79,11 +120,11 @@ def toy_page(sid, errors=(), msg=""):
                 f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>')
     if hypotheses.need_prediction(sid):
         # 予想の前は仮説を見せない。答えを先に見せないため（F9.prediction）。
-        return page(data["toy"], head + note + pic + song(src) + form_pred + form_own)
+        return page(data["toy"], hero + f'<div class="wrap">{note}{form_pred}{form_own}</div>')
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
     own = hypotheses.own_hypotheses(sid)
-    body = head + note + pic + song(src)
+    body = note
     body += (f"<article><h2>あなたの予想</h2><p>{esc(latest)}</p></article>" if latest else "") + form_pred
     for h in own:
         # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
@@ -91,17 +132,18 @@ def toy_page(sid, errors=(), msg=""):
         link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
         body += (f'<article><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button>紙を刷る</button></form><p>{link}</p></article>')
-    body += form_own + f'<h2>仮説</h2><p class="meta">{esc(data["note"])}</p>'
+    body += form_own + f'<h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
         printed = sheets(sid, h["id"], h["id"] in recorded)
-        body += (f'<article><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
+        # 仮説は図版の 1 枚のように並べる。大きな字は仮説の名札で、順位ではない（並びは元の記録の順）。
+        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button>型紙と手順の紙を刷る</button></form>'
-                 f'<p>{printed}</p></article>')
-    body += record_form(sid, data, own) + records_list(recs)
-    return page(data["toy"], body)
+                 f'<p>{printed}</p></div>')
+    body += "</div>" + record_form(sid, data, own) + records_list(recs)
+    return page(data["toy"], hero + f'<div class="wrap">{body}</div>')
 
 
 def record_form(sid, data, own):
