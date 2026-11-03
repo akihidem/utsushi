@@ -166,3 +166,52 @@ def compose_after(source, title, after, page_name="A4"):
     _block(texts, ["札: 自分で開いた時だけ読む", *after["card"]], page.x0, fold + 1, BODY_SIZE, width)
     failures += check_layout(page, [], texts)
     return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures
+
+
+FREE_MATERIALS = ("包んでいた紙、広告の紙、紙袋など、手元の紙", "リボン、糸、輪ゴムなど、手元の紐", "のり、テープ、はさみ", "あれば割り箸か竹串")
+FREE_THINK = ("どこが動くと思いますか", "動かす力はどこから来ますか（押す・引く・紙の戻る力・重さ）", "紙をどう切って、どう折りますか")
+
+
+def compose_free(source, title, how_it_moves, evidence, results, page_name="A4"):
+    """型紙なしの紙（本人の決定、哲学のレビューの第 1 点 (b)）。用意した型紙に乗らない仮説に返す。
+
+    判断の芯: 雛形に無い機構を作れるふりをして寸法を出さない（F9.own）。代わりに、身の回りの紙と紐で
+    自分で形を考えて作るための問いと欄を渡す。本人の言葉の「包んでいた紙、リボンに結ばれた紐」に一番近い紙。
+    答えも寸法も刷らない。見た事の欄と問いは型紙の手順の紙と同じにして、記録を同じ形で残せるようにする。
+    """
+    page = PAGES[page_name]
+    width = page.x1 - page.x0
+    texts, shapes = [], []
+    y = _block(texts, [f"型紙なしの紙 {title}"], page.x0, page.y0, TITLE_SIZE, width)
+    y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["この仮説は、用意した型紙に乗りません。身の回りの紙と紐で、形を自分で考えて作ります"], page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["あなたの仮説", how_it_moves, f"図のどこを見たか: {evidence}"], page.x0, y + GAP, BODY_SIZE, width)
+    y = _block(texts, ["用意する物", *[f"・{m}" for m in FREE_MATERIALS]], page.x0, y + 1, BODY_SIZE, width)
+    y = _block(texts, ["作る前に考える"], page.x0, y + GAP, HEAD_SIZE, width)
+    for q in FREE_THINK:
+        texts.append(TextBox(page.x0, y, text_width(q, BODY_SIZE), BODY_SIZE * LINE, q, BODY_SIZE))
+        y += BODY_SIZE * LINE + ANSWER_GAP
+        shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
+    # 描く欄。形を言葉にしにくい時に、図で考えられるように。
+    texts.append(TextBox(page.x0, y + 1, text_width("ここに形を描く", BODY_SIZE), BODY_SIZE * LINE, "ここに形を描く", BODY_SIZE))
+    box_y = y + 1 + BODY_SIZE * LINE
+    shapes.append({"kind": "rect", "x": page.x0, "y": box_y, "w": width, "h": 45})
+    texts.append(TextBox(page.x0, box_y, width, 45, None))
+    y = box_y + 45 + GAP
+    y = _block(texts, ["見て考える"], page.x0, y, HEAD_SIZE, width)
+    for q in QUESTIONS:
+        texts.append(TextBox(page.x0, y, text_width(q, BODY_SIZE), BODY_SIZE * LINE, q, BODY_SIZE))
+        y += BODY_SIZE * LINE + ANSWER_GAP
+        shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
+    y = _block(texts, ["見た事（1 つに丸）"], page.x0, y + 1, HEAD_SIZE, width)
+    x = page.x0
+    for r in results:
+        shapes.append({"kind": "rect", "x": x, "y": y, "w": 30, "h": BODY_SIZE * LINE + 1})
+        texts.append(TextBox(x + 2, y + 0.5, text_width(r, BODY_SIZE), BODY_SIZE * LINE, r, BODY_SIZE))
+        x += 34
+    y += BODY_SIZE * LINE + 4
+    ruler_y = y
+    texts.append(TextBox(page.x0, ruler_y, 100, 3, None))
+    _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], page.x0, ruler_y + 4, BODY_SIZE, width)
+    failures = check_layout(page, [], texts)
+    return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures

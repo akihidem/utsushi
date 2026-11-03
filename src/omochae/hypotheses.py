@@ -138,6 +138,31 @@ def _print_after(source, title, out):
     return 3
 
 
+def print_free(source_id, title, how, evidence, out):
+    """型紙に乗らない仮説に、型紙なしの紙を刷る（本人の決定）。寸法は出さないので F9.own の線は変えない。"""
+    from .compose import TEMPLATES
+    from .instructions import compose_free
+    from .marks import check_image_count, check_pdf
+    from .render import to_png, write_all
+
+    source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    results = TEMPLATES[load(source_id).get("template", "slider_fan")].RESULTS
+    layout, failures = compose_free(source, title, how, evidence, results)
+    if not failures:
+        stem = pathlib.Path(f"{out}_free")
+        pdf = write_all(layout, stem)
+        failures = check_pdf(pdf, source) + check_image_count(pdf)
+        if not failures:
+            to_png(pdf, stem)
+            # 落ちたのではないので FAIL の行にしない。型紙にしなかった事（F9.own）は知らせる。
+            print(f"F9.own: {title} は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った", file=sys.stderr)
+            print(pdf)
+            return 0
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3
+
+
 def print_compare(source_id, a, b, out):
     """見比べる紙を刷る（J-019）。型紙は仮説ごとに print で刷る物なので、ここでは紙 1 枚だけ。"""
     from .discriminate import pick_pair
@@ -185,8 +210,8 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
     title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
-        print(Failure("F9.own", hypothesis_id, "今の雛形には乗らない仮説なので型紙にできない").line(), file=sys.stderr)
-        return 3
+        evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
+        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
     rc = generate(template, params, source_id, out, title=title, version=version)
     if rc:
         return rc
@@ -205,8 +230,7 @@ def print_own(source_id, own_id, out, version=1):
     template = data_template = load(source_id).get("template", "slider_fan")
     key = "mount" if data_template == "pivot_counterweight" else "push_part"
     if not params or key not in params:
-        print(Failure("F9.own", own_id, "今の雛形には乗らない仮説なので型紙にできない。記録としては残っている").line(), file=sys.stderr)
-        return 3
+        return print_free(source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], h["evidence"], out)
     data = load(source_id)
     rc = generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
     if rc:

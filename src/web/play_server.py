@@ -86,7 +86,11 @@ def toy_page(sid, errors=(), msg=""):
     body = head + note + pic + song(src)
     body += (f"<article><h2>あなたの予想</h2><p>{esc(latest)}</p></article>" if latest else "") + form_pred
     for h in own:
-        body += f'<article><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p></article>'
+        # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
+        free = f'{h["id"]}_v1_free.pdf'
+        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
+        body += (f'<article><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
+                 f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button>紙を刷る</button></form><p>{link}</p></article>')
     body += form_own + f'<h2>仮説</h2><p class="meta">{esc(data["note"])}</p>'
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
@@ -191,7 +195,7 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
-        m = re.fullmatch(rf"/sheet/({SID})/(H-[A-Z0-9]+_v1(?:_tejun|_after)?\.pdf)", path)
+        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v1(?:_tejun|_after|_free)?\.pdf)", path)
         if m and m.group(1) in sources():
             sid, name = m.groups()
             hid = name.split("_v1")[0]
@@ -226,7 +230,7 @@ class Handler(BaseHTTPRequestHandler):
         form = self._form()
         if form is None:
             return self._send(403, "受け付けられない送り方です")
-        m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|record)", self.path)
+        m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
             return self._toy_post(sid, act, form)
@@ -246,7 +250,15 @@ class Handler(BaseHTTPRequestHandler):
             msg = "予想を残しました"
         elif act == "own":
             _, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
-            msg = "仮説を残しました。寸法の無い仮説は記録として残り、型紙にはしません"
+            msg = "仮説を残しました。「紙を刷る」で、身の回りの紙と紐で作る型紙なしの紙が刷れます"
+        elif act == "print-own":
+            oid = form.get("id", "")
+            if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
+                return self._send(422, toy_page(sid, [f"仮説 {oid} は無い"]))
+            out_dir(sid).mkdir(parents=True, exist_ok=True)
+            if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
+                return self._send(422, toy_page(sid, ["紙を刷れませんでした（検査に落ちた）"]))
+            failures, msg = [], "刷りました。100% で印刷します"
         elif act == "print":
             failures = hypotheses.need_prediction(sid)
             hid = form.get("hypothesis", "")

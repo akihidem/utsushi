@@ -81,33 +81,6 @@
   }
  },
  {
-  "id": "O-13",
-  "decision": "「挑む」の外向けの説明を、順番と答えの持ち主の話に言い直すか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/15-philosophy-review.md",
-   "quote": "挑む相手を「順番」と「答えの持ち主」に言い直す"
-  }
- },
- {
-  "id": "O-14",
-  "decision": "タッグの今週の言い方",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/15-philosophy-review.md",
-   "quote": "現在形で言わない"
-  }
- },
- {
-  "id": "O-15",
-  "decision": "雛形に乗らない仮説に返す物。型紙なしで作る紙を返すか。紙と紐は設計された型紙を含むか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/15-philosophy-review.md",
-   "quote": "言葉は「紙と紐」なのに、実装は「設計済みの型紙一式」"
-  }
- },
- {
   "id": "O-17",
   "decision": "札と対比の文を本人が読んで採るか",
   "waiting_on": "本人",
@@ -168,6 +141,15 @@
   "evidence": {
    "path": "docs/process/research/17-field-and-continuers.md",
    "quote": "足りない所（本人に聞く）"
+  }
+ },
+ {
+  "id": "O-24",
+  "decision": "「フィードバックはAIからもらう」と、子どもにその場で返さない線（J-013 の 2）・返事は紙の関係",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/philosophy.md",
+   "quote": "今の決まりとの緊張"
   }
  }
 ]

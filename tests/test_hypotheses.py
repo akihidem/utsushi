@@ -54,7 +54,12 @@ assert r.returncode == 3 and "F9.own" in r.stderr, "動かし方と根拠が要�
 r = cli("own", "筒を回すと開く", "--how", "筒をねじる", "--evidence", "筒の 2 本線がねじれて見える")
 assert r.returncode == 0 and "OWN-1" in r.stdout
 r = cli("print-own", "OWN-1", "--out", f"{tmp2}/none")
-assert r.returncode == 3 and "F9.own" in r.stderr and not pathlib.Path(f"{tmp2}/none.pdf").exists(), "雛形に無い機構を作れるふりをしない"
+# 雛形に無い機構を作れるふりをしない。型紙は刷らず、型紙なしの紙を返す（本人の決定）
+assert r.returncode == 0 and "F9.own" in r.stderr and not pathlib.Path(f"{tmp2}/none.pdf").exists() and pathlib.Path(f"{tmp2}/none_free.pdf").exists(), r.stderr
+free = subprocess.run(["pdftotext", "-layout", f"{tmp2}/none_free.pdf", "-"], capture_output=True, text=True).stdout
+assert "型紙なしの紙" in free and "身の回りの紙と紐" in free and "見た事" in free
+for word in ("正解", "成功", "失敗"):
+    assert word not in free, word
 assert cli("own", "壊れた寸法", "--how", "押す", "--evidence", "図", "--params", json.dumps({"push_part": "tab", "tube_side": 500})).returncode == 0
 r = cli("print-own", "OWN-2", "--out", f"{tmp2}/bad")
 assert r.returncode == 3 and "F5.range" in r.stderr, "自分の仮説も同じ検査を通す"

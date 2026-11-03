@@ -73,7 +73,7 @@ assert not fs and made == ["H-N1", "H-N2"]
 assert floors(gen.adopt_generated(gid, "確認者", [2])[1]) == {"F9.human"}, "2 度採らない"
 # 描くのは描画器。雛形に無い読みは型紙にしない
 assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
-assert hypotheses.print_sheet(G, "H-N2", f"{tmp}/n2") == 3 and not pathlib.Path(f"{tmp}/n2.pdf").exists()
+assert hypotheses.print_sheet(G, "H-N2", f"{tmp}/n2") == 0 and not pathlib.Path(f"{tmp}/n2.pdf").exists() and pathlib.Path(f"{tmp}/n2_free.pdf").exists()
 # 固定の仮説は受け皿として残る
 assert any(h["id"] == "H-A" for h in hypotheses.load(G)["hypotheses"])
 # 確定した記録が次の生成の前例になり、結果が記録で変わる

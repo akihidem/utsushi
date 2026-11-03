@@ -86,7 +86,7 @@
 | 41 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ直し、足りない所を聞く | 調査。本人の答え待ち |
 | 42 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
 | 43 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 44 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 判断待ち O-13〜O-15、O-17 |
+| 44 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 1〜3 は本人が決めた。4（O-17）は判断待ち |
 | 45 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
 | 46 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
 | 47 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |

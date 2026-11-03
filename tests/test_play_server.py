@@ -83,6 +83,13 @@ for word in ("成功", "失敗", "正解"):
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "", "by": "本人"})[0] == 422
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "強くしごく", "by": "本人"})[0] == 303
 assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
+# 自分の仮説には型紙なしの紙を返す（本人の決定）
+assert post(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})[0] == 303
+assert post(f"/toy/{G}/print-own", {"id": "OWN-9"})[0] == 422
+assert post(f"/toy/{G}/print-own", {"id": "OWN-1"})[0] == 303
+assert "OWN-1_v1_free.pdf" in get(f"/toy/{G}")[1].decode()
+code, pdf = get(f"/sheet/{G}/OWN-1_v1_free.pdf")
+assert code == 200 and pdf[:4] == b"%PDF"
 # 手元の名前以外の Host は受けない
 req = urllib.request.Request(base + "/", headers={"Host": "evil.example"})
 try:
