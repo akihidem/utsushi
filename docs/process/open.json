@@ -90,15 +90,6 @@
   }
  },
  {
-  "id": "O-22",
-  "decision": "Claude の使い方の物語をどこまで書くか（運転の形、弱さ、窓口が Claude である事）",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/claude-story-draft.md",
-   "quote": "本人に決めてもらう線"
-  }
- },
- {
   "id": "O-23",
   "decision": "現場の具体（教育現場の種類、見た場面、度合い、今までのやり方、学習活動の形、くずし字とインタビューを今週どこまで）",
   "waiting_on": "本人",

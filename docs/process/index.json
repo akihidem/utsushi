@@ -234,10 +234,10 @@
   "status": "決定"
  },
  {
-  "id": "claude-story-draft",
-  "path": "claude-story-draft.md",
+  "id": "claude-story",
+  "path": "claude-story.md",
   "hook": "Claude の使い方の物語。機能の選び分けと開発の運転の形",
-  "status": "下書き。本人の確認待ち"
+  "status": "本人が確認した"
  },
  {
   "id": "research/16",

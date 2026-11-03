@@ -32,4 +32,4 @@
 | 使い手の口（言葉の仮説を寸法に写す） | 使い手の大人 | Messages API（`hypotheses words`） |
 | 作り手の工房（仮説の案、記録の解釈、次の手） | 作り手 | Claude Code の Skill `backstage`、MCP `utsushi`、サブエージェント `second-eye`、フック |
 
-今の輪の後半（`loop interpret` と `propose`）は API のまま残っている。工房へ移すのは、Skill に手順を足して進める。選び分けの物語の下書きは [claude-story-draft.md](../claude-story-draft.md)（本人の確認待ち）。
+今の輪の後半（`loop interpret` と `propose`）は API のまま残っている。工房へ移すのは、Skill に手順を足して進める。選び分けの物語は [claude-story.md](../claude-story.md)（本人が確認した）。

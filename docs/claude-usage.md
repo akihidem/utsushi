@@ -15,7 +15,7 @@
 
 ## 作り手の工房の Claude Code の機能
 
-本人の決定（カード 20261102-211820-2 の案 2）で、作品の輪に合った機能を repo に足した。選び分けの理由の下書きは [docs/process/claude-story-draft.md](process/claude-story-draft.md)（本人の確認待ち）。
+本人の決定（カード 20261102-211820-2 の案 2）で、作品の輪に合った機能を repo に足した。選び分けの理由と開発の運転の形は [docs/process/claude-story.md](process/claude-story.md)（本人が確認した）。
 
 | 機能 | 置き場 | 中身 |
 |---|---|---|
