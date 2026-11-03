@@ -204,6 +204,12 @@
   "status": "決定"
  },
  {
+  "id": "J-021",
+  "path": "decisions/J021-contributions-form-students.md",
+  "hook": "持ち寄りの入口は既製のフォーム。生徒の記録と本人の聞き取りを載せる形と、同意・名前を外す扱い",
+  "status": "入口は決定。生徒の分は設計だけで、集めない"
+ },
+ {
   "id": "research/16",
   "path": "research/16-scan-titles.md",
   "hook": "複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた",

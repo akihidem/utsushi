@@ -10,11 +10,11 @@
  },
  {
   "id": "O-04",
-  "decision": "持ち寄りの外の入口と公開の条件",
+  "decision": "持ち寄りの公開の条件（入口は既製のフォームに決まった）",
   "waiting_on": "本人",
   "evidence": {
-   "path": "docs/process/decisions/J006-contributions-minimum.md",
-   "quote": "外の人"
+   "path": "docs/process/decisions/J021-contributions-form-students.md",
+   "quote": "公開の条件 3 点"
   }
  },
  {
@@ -141,6 +141,15 @@
   "evidence": {
    "path": "docs/process/decisions/J019-experiment-sheet.md",
    "quote": "確認までの仮の物"
+  }
+ },
+ {
+  "id": "O-20",
+  "decision": "生徒の記録を集め始める時期、「声」の範囲、生徒の所属と許可、聞き取りの聞き手と名前、使うフォーム",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/decisions/J021-contributions-form-students.md",
+   "quote": "本人に聞く事"
   }
  }
 ]
