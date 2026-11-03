@@ -105,7 +105,6 @@ def detail_tiles(sid):
     return "".join(f'<div class="detail" style="background-image:url(/picture/{sid});background-position:{p}"></div>' for p in spots)
 
 
-SWITCH = '<nav class="switch"><a href="/">見開き型</a>｜<a href="/book">冊子型（参照の再現）</a><span class="cap">本人が 2 つを見比べて決める（J-024）</span></nav>'
 
 FLIP = """
 body.studio{background:radial-gradient(ellipse at 50% 35%,#ece8e0 0,#d8d2c6 60%,#c9c2b4 100%);min-height:100vh}
@@ -189,7 +188,9 @@ addEventListener('keydown',e=>{if(e.key==='ArrowRight')set(t+1);if(e.key==='Arro
 const h=parseInt(location.hash.slice(1),10);set(h>=1?h-1:0)})();
 </script>"""
     nav = '<nav class="flipnav"><button data-d="-1" aria-label="前へ">‹</button><span id="fno"></span><button data-d="1" aria-label="次へ">›</button></nav>'
-    body = (f'{SWITCH}<div class="stage"><div class="fbook"><div class="coil"></div>{leaves}</div></div>{nav}'
+    from .looks import switch
+
+    body = (f'{switch("/book")}<div class="stage"><div class="fbook"><div class="coil"></div>{leaves}</div></div>{nav}'
             '<noscript><p class="cap" style="text-align:center">この版は JavaScript で頁をめくる。<a href="/">見開き型</a>は JavaScript なしでも読める。</p></noscript>' + js)
     return page("うつし · 冊子型", body, FLIP, "studio")
 
@@ -212,7 +213,9 @@ def index_page():
             sheets.append(f'<section class="sheet"><div class="pg l"><div class="details">{detail_tiles(s)}</div><p class="cap">{esc(toy)} の図の細部</p></div>'
                           f'<div class="pg r"><p class="no">{i:02d}</p><p>どこが動くと思いますか。図を見て、先に予想を書いてから作ります。</p><a class="open" href="/toy/{s}">予想を書く</a></div></section>')
     nav = '<nav class="turn"><button data-d="-1" aria-label="前の見開き">‹</button><span id="pno"></span><button data-d="1" aria-label="次の見開き">›</button></nav>'
-    return page("うつし", f'{SWITCH}<div id="book" class="booklet">{"".join(sheets)}</div>{nav}{TURN}')
+    from .looks import switch
+
+    return page("うつし", f'{switch("/")}<div id="book" class="booklet">{"".join(sheets)}</div>{nav}{TURN}')
 
 
 def song(src, short=False):
@@ -363,6 +366,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, index_page())
         if path == "/book":
             return self._send(200, book_page())
+        m = re.fullmatch(r"/look/([a-z]+)", path)
+        if m:
+            from .looks import PAGES
+
+            if m.group(1) in PAGES:
+                return self._send(200, PAGES[m.group(1)]())
         m = re.fullmatch(rf"/toy/({SID})", path)
         if m and m.group(1) in sources():
             return self._send(200, toy_page(m.group(1), msg=urllib.parse.parse_qs(query).get("msg", [""])[0]))

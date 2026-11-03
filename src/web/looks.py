@@ -1,0 +1,193 @@
+"""入口のルックブックの別の案（本人の指示「どんどん案を作って、ルックブックとして完成度を高めていく」、J-024）。
+
+判断の芯: 案ごとに佇まい（表紙・見開きの構成・題の組み方）だけを変え、守る線は同じにする。
+新しい絵は作らず、NDL の図の頁とその寄りだけを使う。歌は人が確かめた読みだけを引用の印つきで出す。
+仮説は出さない（予想が先、F9.prediction）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
+採否は本人が見比べて決めるので、案は並べて残し、ここで 1 つに絞らない。
+"""
+from omochae import hypotheses
+
+from .play_server import ROOT, esc, page, source, sources
+
+LOOKS = {
+    "taiban": "A 大判写真集",
+    "watoji": "B 和綴じ帖",
+    "zine": "C 縦読みのジン",
+}
+
+
+def switch(current):
+    """5 つの案を行き来する切り替え。今いる案は太字にする。"""
+    items = [("/", "見開き型"), ("/book", "冊子型")] + [(f"/look/{k}", v) for k, v in LOOKS.items()]
+    links = "｜".join(f"<b>{esc(n)}</b>" if u == current else f'<a href="{u}">{esc(n)}</a>' for u, n in items)
+    return f'<nav class="switch">{links}<span class="cap">本人が見比べて決める（J-024）</span></nav>'
+
+
+def toys():
+    out = []
+    for s in sources():
+        if not (ROOT / "out/sources" / f"{s}.jpg").exists():
+            continue
+        src = source(s)
+        song = [e["text"] for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")]
+        out.append({"sid": s, "toy": hypotheses.load(s)["toy"], "song": song, "holding": src.get("holding", "")})
+    return out
+
+
+def _bg(sid, pos="50% 50%", size="cover"):
+    return f"background-image:url(/picture/{sid});background-position:{pos};background-size:{size};background-repeat:no-repeat"
+
+
+QUOTE = "原文の引用。確かめた人: 本人"
+
+# 見比べるための写しを撮る補助。?only=<節の id> で、その節だけを画面の頭に出す。
+# なぜ: 縦に流れる案は、頭からしか写しを撮れず、途中の見開きを並べて比べられないため。ふだんの閲覧には効かない。
+ONLY = """<script>(()=>{const id=new URLSearchParams(location.search).get('only');if(!id)return;
+const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.switch,.tb-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
+
+# ---------------------------------------------------------------- A 大判写真集
+TAIBAN = """
+body.taiban{background:#f4f1ea;color:#1f1b17}
+.tb-cover{height:100vh;display:grid;grid-template-columns:58% 42%}
+.tb-cover .img{position:relative}.tb-cover .txt{padding:6vw 5vw;display:flex;flex-direction:column;justify-content:space-between}
+.tb-cover h1{font-size:clamp(64px,12vw,190px);font-weight:300;line-height:.9;margin:0;letter-spacing:-.02em}
+.tb-meta{font-size:12px;letter-spacing:.35em;text-transform:uppercase}
+.tb-spread{height:92vh;margin:6vh 4vw;position:relative;box-shadow:0 1px 0 #d8d0c0}
+.tb-spread .gutter{position:absolute;left:50%;top:0;bottom:0;width:2px;background:linear-gradient(90deg,rgba(0,0,0,.18),transparent)}
+.tb-spread .band{position:absolute;left:4%;bottom:6%;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+.tb-spread .band h2{font-size:clamp(40px,7vw,110px);font-weight:300;margin:0;letter-spacing:.1em}
+.tb-item{display:grid;grid-template-columns:1fr 1fr;min-height:92vh;margin:0 4vw;background:#fff}
+.tb-item .l{display:flex;align-items:center;justify-content:center}.tb-item .l div{width:46%;aspect-ratio:3/4;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.tb-item .r{padding:8vw 6vw;display:flex;flex-direction:column;justify-content:flex-end;border-left:1px solid #eee}
+.tb-item .no{font-size:clamp(60px,9vw,150px);font-weight:200;line-height:1;margin:0}
+.tb-item .song{writing-mode:vertical-rl;font-size:18px;line-height:2;height:14em;margin:24px 0 24px auto}
+.tb-end{padding:12vh 6vw;font-size:13px}
+@media (max-width:760px){.tb-cover,.tb-item{grid-template-columns:1fr}.tb-cover .img{height:60vh}.tb-item .song{writing-mode:horizontal-tb;height:auto}}
+"""
+
+
+def taiban():
+    ts = toys()
+    first = ts[0]["sid"] if ts else ""
+    body = switch("/look/taiban")
+    body += (f'<section class="tb-cover"><div class="img" style="{_bg(first, "50% 62%")}"></div><div class="txt">'
+             '<p class="tb-meta">Edo toy lookbook · vol.01</p><h1>うつ<br>し</h1>'
+             '<div><p>江都二色（1773）に、図と歌だけが残る玩具。</p><p class="tb-meta">動きを予想し · 紙と糸で確かめる</p></div></div></section>')
+    for i, t in enumerate(ts, 1):
+        # 1 枚の図を見開きいっぱいに敷く。綴じの影を真ん中に置いて、冊子の見開きに見せる。
+        body += (f'<section id="look-{i}" class="tb-spread" style="{_bg(t["sid"], "50% 58%")}"><div class="gutter"></div>'
+                 f'<div class="band"><p class="tb-meta">look {i:02d}</p><h2>{esc(t["toy"])}</h2></div></section>')
+        song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])
+        body += (f'<section id="item-{i}" class="tb-item"><div class="l"><div style="{_bg(t["sid"], "50% 72%", "300%")}"></div></div>'
+                 f'<div class="r"><p class="no">{i:02d}</p><p class="tb-meta">{esc(t["toy"])}</p>{song}<p class="cap">{QUOTE} · {esc(t["holding"])}</p>'
+                 f'<a class="open" href="/toy/{t["sid"]}">予想を書いてひらく →</a></div></section>')
+    body += '<p class="tb-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。この冊子のための新しい絵は作っていない。</p>'
+    return page("うつし · 大判写真集", body + ONLY, TAIBAN, "taiban")
+
+
+# ---------------------------------------------------------------- B 和綴じ帖（右から左へめくる）
+WATOJI = """
+body.watoji{background:#e9e4da;min-height:100vh}
+.wj-stage{display:flex;justify-content:center;padding:28px 12px 8px;perspective:2600px}
+.wj-book{position:relative;width:min(1080px,94vw);aspect-ratio:3/2;filter:drop-shadow(0 26px 26px rgba(40,30,20,.25))}
+.wj-leaf{position:absolute;left:0;top:0;width:50%;height:100%;transform-origin:right center;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.3,.1,.2,1);cursor:pointer}
+.wj-leaf.turned{transform:rotateY(180deg)}
+.wj-face{position:absolute;inset:0;backface-visibility:hidden;overflow:hidden;
+ background:#f6f0e2 radial-gradient(rgba(120,100,70,.06) 1px,transparent 1px) 0 0/5px 5px}
+.wj-face.back{transform:rotateY(180deg)}
+.wj-face::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(270deg,rgba(0,0,0,.10),transparent 9%)}
+.wj-face.back::after{background:linear-gradient(90deg,rgba(0,0,0,.10),transparent 9%)}
+/* 無地のままだと空きが目立つ（表紙の空きへの本人の指摘と同じ）。藍の地に細い線の地紋を重ねる。 */
+.wj-cover{background:
+ repeating-linear-gradient(60deg,transparent 0 23px,rgba(233,225,204,.10) 23px 24px),
+ repeating-linear-gradient(-60deg,transparent 0 23px,rgba(233,225,204,.10) 23px 24px),
+ repeating-linear-gradient(0deg,transparent 0 23px,rgba(233,225,204,.07) 23px 24px),#22324a}
+.wj-cover .mark{position:absolute;left:12%;bottom:8%;color:#e9e1cc;font-size:clamp(10px,1.1vw,13px);letter-spacing:.4em;writing-mode:vertical-rl}
+.wj-cover::before{content:"";position:absolute;right:5%;top:0;bottom:0;width:2px;background:repeating-linear-gradient(180deg,#e9e1cc 0 10px,transparent 10px 60px)}
+.daisen{position:absolute;left:12%;top:8%;writing-mode:vertical-rl;background:#f3ead4;border:1px solid #b9a77f;padding:16px 10px;font-size:clamp(18px,2.6vw,34px);letter-spacing:.3em;color:#2b2520}
+.daisen small{font-size:.45em;letter-spacing:.2em;margin-top:1em}
+.wj-v{writing-mode:vertical-rl;position:absolute;inset:8% 9%;line-height:2.1;font-size:clamp(12px,1.4vw,18px)}
+.wj-v h2{font-size:clamp(22px,3.2vw,44px);font-weight:400;letter-spacing:.3em;margin:0 0 0 1.2em}
+.wj-v .cap{font-size:clamp(9px,.9vw,11px);color:#6b604f}
+.wj-img{position:absolute;inset:6%}
+.wj-tiles{position:absolute;inset:8%;display:grid;grid-template-columns:1fr 1fr;gap:5%}
+.wj-nav{display:flex;justify-content:center;gap:24px;align-items:center;padding:6px 0 40px}
+.wj-nav button{background:none;color:#22324a;border:1px solid #22324a;padding:6px 18px;margin:0}
+@media (prefers-reduced-motion:reduce){.wj-leaf{transition:none}}
+"""
+
+
+def watoji():
+    """江戸の絵本と同じく右から左へ読む。閉じた表紙は左半分にあり、紙は右へめくれる。"""
+    ts = toys()
+    faces = ['<div class="daisen">うつし<small>江都二色の玩具</small></div><p class="mark">安永二年の絵本より · 第一帖</p>']
+    for i, t in enumerate(ts, 1):
+        song = "".join(f"<p>{esc(x)}</p>" for x in t["song"])
+        # 右から読むので、見開きの右頁（先に読む）に名と歌、左頁に図を置く。
+        faces.append(f'<div class="wj-v"><h2>{esc(t["toy"])}</h2>{song}<p class="cap">{QUOTE}</p><p class="cap"><a href="/toy/{t["sid"]}">予想を書いてひらく</a></p></div>')
+        faces.append(f'<div class="wj-img" style="{_bg(t["sid"], "50% 50%", "contain")}"></div>')
+        faces.append(f'<div class="wj-v"><h2>細部</h2><p>どこが動くと思いますか。</p><p>図を見て、先に予想を書いてから作ります。</p><p class="cap">{esc(t["holding"])}</p></div>')
+        tiles = "".join(f'<div style="{_bg(t["sid"], p, "300%")}"></div>' for p in ("30% 30%", "72% 40%", "35% 75%", "70% 82%"))
+        faces.append(f'<div class="wj-tiles">{tiles}</div>')
+    faces.append('<div class="wj-v"><h2>奥付</h2><p>図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。</p><p>この帖のための新しい絵は作っていない。</p></div>')
+    if len(faces) % 2:
+        faces.append("")
+    n = len(faces) // 2
+    leaves = ""
+    for k in range(n):
+        fcls = "wj-face front wj-cover" if k == 0 else "wj-face front"
+        leaves += f'<div class="wj-leaf" style="z-index:{n - k}"><div class="{fcls}">{faces[2 * k]}</div><div class="wj-face back">{faces[2 * k + 1]}</div></div>'
+    js = """<script>
+(()=>{const L=[...document.querySelectorAll('.wj-leaf')];let t=0;const no=document.getElementById('wno');
+const set=n=>{t=Math.max(0,Math.min(L.length,n));L.forEach((l,k)=>{const on=k<t;l.classList.toggle('turned',on);l.style.zIndex=on?k+1:L.length-k});no.textContent=(t+1)+' / '+(L.length+1)};
+L.forEach((l,k)=>l.addEventListener('click',e=>{if(e.target.closest('a'))return;set(l.classList.contains('turned')?k:k+1)}));
+document.querySelectorAll('.wj-nav button').forEach(b=>b.onclick=()=>set(t+(+b.dataset.d)));
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')set(t+1);if(e.key==='ArrowRight')set(t-1)});
+const h=parseInt(location.hash.slice(1),10);set(h>=1?h-1:0)})();
+</script>"""
+    # 右から左へ読む本なので、「次」を左に置く。矢印キーも左が次。
+    nav = '<nav class="wj-nav"><button data-d="1" aria-label="次へ">‹ 次</button><span id="wno"></span><button data-d="-1" aria-label="前へ">前 ›</button></nav>'
+    body = switch("/look/watoji") + f'<div class="wj-stage"><div class="wj-book">{leaves}</div></div>{nav}' + js
+    return page("うつし · 和綴じ帖", body, WATOJI, "watoji")
+
+
+# ---------------------------------------------------------------- C 縦読みのジン
+ZINE = """
+body.zine{background:#111;color:#eee6d6}
+body.zine a{color:#f0c27a}.zine .switch a{color:#f0c27a}
+.zn-cover{height:100vh;position:relative;overflow:hidden}
+.zn-cover .strip{position:absolute;left:0;right:0;top:22%;height:46%;filter:saturate(.9)}
+.zn-cover h1{position:absolute;left:4vw;bottom:5vh;font-size:clamp(72px,17vw,260px);line-height:1.1;margin:0;font-weight:200;letter-spacing:-.04em;mix-blend-mode:difference;color:#fff}
+.zn-cover .meta{position:absolute;right:4vw;top:6vh;color:#cfc4ad;font-size:12px;letter-spacing:.35em;text-transform:uppercase}
+.zn-toy{display:grid;grid-template-columns:1fr 1fr}
+.zn-toy .pin{position:sticky;top:0;height:100vh}
+.zn-toy .flow > div{min-height:100vh;padding:12vh 6vw;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.zn-toy .big{font-size:clamp(80px,14vw,220px);font-weight:200;line-height:.9;margin:0}
+.zn-toy h2{font-size:clamp(32px,5vw,72px);font-weight:300;margin:.2em 0}
+.zn-toy .song{font-size:clamp(18px,2vw,26px);line-height:1.9}
+.zn-toy .cap{color:#a99f8d}
+.zn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.zn-grid div{aspect-ratio:1}
+@media (max-width:760px){.zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:70vh}}
+"""
+
+
+def zine():
+    ts = toys()
+    first = ts[0]["sid"] if ts else ""
+    body = switch("/look/zine")
+    body += (f'<section class="zn-cover"><div class="strip" style="{_bg(first, "50% 60%")}"></div>'
+             '<p class="meta">Edo toy lookbook · vol.01 · 1773</p><h1>うつし</h1></section>')
+    for i, t in enumerate(ts, 1):
+        song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])
+        tiles = "".join(f'<div style="{_bg(t["sid"], p, "300%")}"></div>' for p in ("30% 30%", "72% 40%", "35% 75%", "70% 82%"))
+        # 図は左に留めたまま、右で名・歌・細部・入口が流れる。図から目を離さずに読む形。
+        body += (f'<section id="look-{i}" class="zn-toy"><div class="pin" style="{_bg(t["sid"], "50% 50%", "contain")};background-color:#1a1714"></div><div class="flow">'
+                 f'<div><p class="big">{i:02d}</p><h2>{esc(t["toy"])}</h2></div>'
+                 f'<div id="song-{i}">{song}<p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
+                 f'<div><div class="zn-grid">{tiles}</div><p class="cap">図の細部</p></div>'
+                 f'<div><p class="song">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく →</a></p></div></div></section>')
+    body += '<p class="cap" style="padding:10vh 6vw">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
+    return page("うつし · 縦読みのジン", body + ONLY, ZINE, "zine")
+
+
+PAGES = {"taiban": taiban, "watoji": watoji, "zine": zine}

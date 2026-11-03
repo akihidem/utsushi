@@ -50,6 +50,13 @@ code, book = get("/book")
 book = book.decode()
 assert code == 200 and "御来迎" in book and 'class="leaf"' in book and "仮説 A" not in book and "/toy/" in book
 assert "冊子型" in get("/")[1].decode() and "見開き型" in book
+# 入口の別の案（J-024）。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
+for name in ("taiban", "watoji", "zine"):
+    code, look = get(f"/look/{name}")
+    look = look.decode()
+    assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
+    assert "原文の引用" in look, "引用の印を残す"
+assert get("/look/none")[0] == 404
 # 予想の前は仮説を見せない
 body = get(f"/toy/{G}")[1].decode()
 assert "仮説 A" not in body and "どう動くと思いますか" in body
