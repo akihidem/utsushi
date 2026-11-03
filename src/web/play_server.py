@@ -25,14 +25,7 @@ from .contrib_server import STYLE
 LOOK = STYLE + """
 body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 .wrap{max-width:1180px;margin:auto;padding:0 20px 64px}
-.cover{padding:56px 20px 24px;max-width:1180px;margin:auto}
-.cover h1{font-size:clamp(40px,7vw,88px);letter-spacing:.3em;font-weight:400;margin:0}
-.cover p{max-width:34em;color:#5d5345;margin:12px 0 0}
-.spread{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:40px;align-items:end;margin:48px auto;max-width:1180px;padding:0 20px}
-.spread.flip{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)}.spread.flip figure{order:2}
-.spread figure{margin:0;background:#fffdf7;padding:18px;box-shadow:0 1px 0 #c9bda3}
-.spread figure img{display:block;width:100%;height:min(78vh,900px);object-fit:contain}
-.spread figcaption,.cap{font-size:.78em;color:#6b604f;margin-top:8px}
+.cap{font-size:.78em;color:#6b604f;margin-top:8px}
 .side h1,.side h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
 .side .no{font-size:.8em;letter-spacing:.3em;color:#7a3b1d}
 .side a.open{display:inline-block;margin-top:18px;border-bottom:1px solid #7a3b1d;text-decoration:none}
@@ -41,7 +34,7 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 .plate{background:#fffdf7;border:1px solid #c9bda3;padding:18px}.plate .letter{font-size:56px;line-height:1;color:#7a3b1d}
 .plate h3{font-weight:400;margin:6px 0}.plate p{font-size:.9em}
 .wrap > form,.wrap > article{max-width:640px}
-@media (max-width:760px){.spread,.spread.flip{grid-template-columns:1fr}.spread.flip figure{order:0}.spread figure img{height:auto;max-height:70vh}.song{writing-mode:horizontal-tb;height:auto}}
+@media (max-width:760px){.song{writing-mode:horizontal-tb;height:auto}}
 """
 
 MAX_FORM = 64 * 1024
@@ -67,25 +60,68 @@ def esc(s):
 
 
 def page(title, body):
-    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><style>{LOOK}</style><main>{body}</main></html>'
+    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><style>{LOOK}{BOOK}</style><main>{body}</main></html>'
 
 
-def figure(sid, toy, src):
-    """図の頁。手元に取ってある NDL の頁だけを大きく出し、無ければ所蔵先へのリンクにする（画面から NDL を取りに行かない）。"""
-    if (ROOT / "out/sources" / f"{sid}.jpg").exists():
-        return f'<figure><img src="/picture/{sid}" alt="{esc(toy)}の図"><figcaption>{esc(src.get("holding", ""))}</figcaption></figure>'
-    return f'<figure><p><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p></figure>'
+BOOK = """
+.booklet{max-width:1180px;margin:24px auto 8px;padding:0 20px;perspective:2400px}
+.sheet{display:grid;grid-template-columns:1fr 1fr;background:#fffdf7;box-shadow:0 2px 0 #c9bda3,0 18px 40px rgba(60,40,20,.12);position:relative;min-height:min(80vh,820px);margin-bottom:32px}
+.sheet::after{content:"";position:absolute;left:calc(50% - 9px);top:18px;bottom:18px;width:18px;
+ background:radial-gradient(circle at 50% 50%,#8a7a62 0 4px,transparent 5px) 0 0/18px 34px repeat-y}
+.pg{padding:40px 44px;display:flex;flex-direction:column;justify-content:flex-end;min-width:0;transform-origin:left center;backface-visibility:hidden}
+.pg.l{border-right:1px solid #e3d9c4;transform-origin:right center}
+.pg.full{padding:24px}.pg.full img{width:100%;height:100%;max-height:76vh;object-fit:contain}
+.pg h1{font-size:clamp(48px,8vw,104px);letter-spacing:.3em;font-weight:400;margin:0}
+.pg h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
+.pg .no{font-size:.8em;letter-spacing:.3em;color:#7a3b1d}.pg a.open{align-self:flex-start;display:inline-block;margin-top:18px;border-bottom:1px solid #7a3b1d;text-decoration:none}
+.details{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1}
+.detail{background-repeat:no-repeat;background-size:260%;border:1px solid #e3d9c4;min-height:150px}
+.toc li{margin:6px 0}.toc{list-style:none;padding:0}
+.turn{display:none;justify-content:center;gap:24px;align-items:center;margin:0 auto 40px}
+.turn button{background:none;color:#7a3b1d;border:1px solid #7a3b1d;padding:6px 18px;margin:0}
+.book .sheet{display:none;margin-bottom:0}.book .sheet.on{display:grid}.book + .turn{display:flex}
+.book .sheet.go-next .pg.r{animation:turnR .55s ease-in forwards}.book .sheet.go-prev .pg.l{animation:turnL .55s ease-in forwards}
+@keyframes turnR{to{transform:rotateY(-180deg)}}@keyframes turnL{to{transform:rotateY(180deg)}}
+@media (prefers-reduced-motion:reduce){.book .sheet.go-next .pg.r,.book .sheet.go-prev .pg.l{animation:none}}
+@media (max-width:760px){.sheet{grid-template-columns:1fr}.sheet::after{display:none}.pg.l{border-right:0;border-bottom:1px solid #e3d9c4}.pg{padding:24px}}
+"""
+# 頁をめくる動き。JS が無くても全部の見開きが縦に並ぶ（中身は HTML にすべてある）。動きを減らす設定では、めくらずに替える。
+TURN = """<script>
+(()=>{const b=document.getElementById('book');if(!b)return;const s=[...b.querySelectorAll('.sheet')];let i=0;b.classList.add('book');
+const no=document.getElementById('pno');const show=n=>{s.forEach((x,k)=>x.classList.toggle('on',k===n));no.textContent=(n+1)+' / '+s.length;i=n};
+const go=d=>{const n=i+d;if(n<0||n>=s.length)return;const cur=s[i];if(matchMedia('(prefers-reduced-motion: reduce)').matches){show(n);return}
+cur.classList.add(d>0?'go-next':'go-prev');setTimeout(()=>{cur.classList.remove('go-next','go-prev');show(n)},520)};
+document.querySelectorAll('.turn button').forEach(x=>x.onclick=()=>go(+x.dataset.d));
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1)});
+const h=parseInt(location.hash.slice(1),10);show(h>=1&&h<=s.length?h-1:0)})();
+</script>"""
+
+
+def detail_tiles(sid):
+    """小物の見開き: 図の細部を小さく切り出して並べる。新しい絵は作らず、同じ図の寄りだけを見せる。"""
+    spots = ("30% 30%", "70% 40%", "35% 75%", "70% 80%")
+    return "".join(f'<div class="detail" style="background-image:url(/picture/{sid});background-position:{p}"></div>' for p in spots)
 
 
 def index_page():
-    cover = '<header class="cover"><h1>うつし</h1><p>江戸の絵本『江都二色』（1773）に、図と歌だけが残る玩具。動きを予想して、紙と糸で作って確かめます。返事をするのは紙です。</p></header>'
-    spreads = ""
-    for i, s in enumerate(sources(), 1):
-        toy, src = hypotheses.load(s)["toy"], source(s)
-        spreads += (f'<section class="spread{" flip" if i % 2 == 0 else ""}">{figure(s, toy, src)}'
-                    f'<div class="side"><p class="no">{i:02d}</p><h2>{esc(toy)}</h2>{song(src, short=True)}'
-                    f'<a class="open" href="/toy/{s}">この玩具をひらく</a><p class="cap">出典 ID {s}</p></div></section>')
-    return page("うつし", cover + spreads)
+    """入口: リング綴じの冊子の見開きを 1 枚ずつめくる形（本人が参照に挙げたルックブック、J-024）。
+
+    見開きは、表紙 → 玩具ごとに「大きく見せる頁」と「小物の見開き」を交互に置く。
+    仮説はここに出さない。予想の前に答えの候補を見せないため（F9.prediction）。
+    """
+    toys = [(s, hypotheses.load(s)["toy"], source(s)) for s in sources()]
+    toc = "".join(f'<li><a href="/toy/{s}">{i:02d}　{esc(t)}</a></li>' for i, (s, t, _) in enumerate(toys, 1))
+    sheets = [f'<section class="sheet"><div class="pg l"><h1>うつし</h1></div><div class="pg r"><p>江戸の絵本『江都二色』（1773）に、図と歌だけが残る玩具。動きを予想して、紙と糸で作って確かめます。返事をするのは紙です。</p><ul class="toc">{toc}</ul></div></section>']
+    for i, (s, toy, src) in enumerate(toys, 1):
+        has_pic = (ROOT / "out/sources" / f"{s}.jpg").exists()
+        pic = f'<img src="/picture/{s}" alt="{esc(toy)}の図">' if has_pic else f'<a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a>'
+        sheets.append(f'<section class="sheet"><div class="pg l full">{pic}<p class="cap">{esc(src.get("holding", ""))}</p></div>'
+                      f'<div class="pg r"><p class="no">{i:02d}</p><h2>{esc(toy)}</h2>{song(src, short=True)}<a class="open" href="/toy/{s}">この玩具をひらく</a><p class="cap">出典 ID {s}</p></div></section>')
+        if has_pic:
+            sheets.append(f'<section class="sheet"><div class="pg l"><div class="details">{detail_tiles(s)}</div><p class="cap">{esc(toy)} の図の細部</p></div>'
+                          f'<div class="pg r"><p class="no">{i:02d}</p><p>どこが動くと思いますか。図を見て、先に予想を書いてから作ります。</p><a class="open" href="/toy/{s}">予想を書く</a></div></section>')
+    nav = '<nav class="turn"><button data-d="-1" aria-label="前の見開き">‹</button><span id="pno"></span><button data-d="1" aria-label="次の見開き">›</button></nav>'
+    return page("うつし", f'<div id="book" class="booklet">{"".join(sheets)}</div>{nav}{TURN}')
 
 
 def song(src, short=False):
@@ -111,8 +147,11 @@ def toy_page(sid, errors=(), msg=""):
     data, src = hypotheses.load(sid), source(sid)
     note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")
     # 頁の頭は見開き: 大きな図と、名前と縦組みの歌。操作の欄はその下に置く。
-    hero = (f'<section class="spread">{figure(sid, data["toy"], src)}<div class="side"><p class="cap"><a href="/">← 玩具の一覧</a></p>'
-            f'<h1>{esc(data["toy"])}</h1>{song(src)}</div></section>')
+    # 入口の冊子と同じ見開きの紙。玩具の頁ではめくらず、この 1 枚の下に操作の欄を置く。
+    has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
+    pic = f'<img src="/picture/{sid}" alt="{esc(data["toy"])}の図">' if has_pic else f'<a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a>'
+    hero = (f'<div class="booklet"><section class="sheet"><div class="pg l full">{pic}<p class="cap">{esc(src.get("holding", ""))}</p></div>'
+            f'<div class="pg r"><p class="cap"><a href="/">← 玩具の一覧</a></p><h2>{esc(data["toy"])}</h2>{song(src)}</div></section></div>')
     preds = hypotheses.predictions(sid)
     latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
     form_pred = f'<form method="post" action="/toy/{sid}/predict"><label>どう動くと思いますか（先に書きます）<textarea name="text" required></textarea></label><button>予想を残す</button></form>'
