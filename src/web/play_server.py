@@ -65,157 +65,20 @@ def page(title, body, extra_style="", body_class=""):
             f'<style>{LOOK}{BOOK}{extra_style}</style><body{cls}><main>{body}</main></body></html>')
 
 
+# 玩具の頁の頭に置く見開きの紙（図と、名前と縦組みの歌）。入口の冊子をめくる仕組みは、
+# 本人が見開き型と冊子型を残さないと決めたので外した（2026-11-04、J-024）。この紙の形だけを玩具の頁に残す。
 BOOK = """
-.booklet{max-width:1180px;margin:24px auto 8px;padding:0 20px;perspective:2400px}
+.booklet{max-width:1180px;margin:24px auto 8px;padding:0 20px}
 .sheet{display:grid;grid-template-columns:1fr 1fr;background:#fffdf7;box-shadow:0 2px 0 #c9bda3,0 18px 40px rgba(60,40,20,.12);position:relative;min-height:min(80vh,820px);margin-bottom:32px}
 .sheet::after{content:"";position:absolute;left:calc(50% - 9px);top:18px;bottom:18px;width:18px;
  background:radial-gradient(circle at 50% 50%,#8a7a62 0 4px,transparent 5px) 0 0/18px 34px repeat-y}
-.pg{padding:40px 44px;display:flex;flex-direction:column;justify-content:flex-end;min-width:0;transform-origin:left center;backface-visibility:hidden}
-.pg.l{border-right:1px solid #e3d9c4;transform-origin:right center}
+.pg{padding:40px 44px;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.pg.l{border-right:1px solid #e3d9c4}
 .pg.full{padding:24px}.pg.full img{width:100%;height:100%;max-height:76vh;object-fit:contain}
-.pg h1{font-size:clamp(48px,8vw,104px);letter-spacing:.3em;font-weight:400;margin:0}
 .pg h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
-.pg .no{font-size:.8em;letter-spacing:.3em;color:#7a3b1d}.pg a.open{align-self:flex-start;display:inline-block;margin-top:18px;border-bottom:1px solid #7a3b1d;text-decoration:none}
-.details{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1}
-.detail{background-repeat:no-repeat;background-size:260%;border:1px solid #e3d9c4;min-height:150px}
-.toc li{margin:6px 0}.toc{list-style:none;padding:0}
-.turn{display:none;justify-content:center;gap:24px;align-items:center;margin:0 auto 40px}
-.turn button{background:none;color:#7a3b1d;border:1px solid #7a3b1d;padding:6px 18px;margin:0}
-.book .sheet{display:none;margin-bottom:0}.book .sheet.on{display:grid}.book + .turn{display:flex}
-.book .sheet.go-next .pg.r{animation:turnR .55s ease-in forwards}.book .sheet.go-prev .pg.l{animation:turnL .55s ease-in forwards}
-@keyframes turnR{to{transform:rotateY(-180deg)}}@keyframes turnL{to{transform:rotateY(180deg)}}
-@media (prefers-reduced-motion:reduce){.book .sheet.go-next .pg.r,.book .sheet.go-prev .pg.l{animation:none}}
+.switch{max-width:1180px;margin:0 auto;padding:14px 20px;font-size:.85em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 @media (max-width:760px){.sheet{grid-template-columns:1fr}.sheet::after{display:none}.pg.l{border-right:0;border-bottom:1px solid #e3d9c4}.pg{padding:24px}}
 """
-# 頁をめくる動き。JS が無くても全部の見開きが縦に並ぶ（中身は HTML にすべてある）。動きを減らす設定では、めくらずに替える。
-TURN = """<script>
-(()=>{const b=document.getElementById('book');if(!b)return;const s=[...b.querySelectorAll('.sheet')];let i=0;b.classList.add('book');
-const no=document.getElementById('pno');const show=n=>{s.forEach((x,k)=>x.classList.toggle('on',k===n));no.textContent=(n+1)+' / '+s.length;i=n};
-const go=d=>{const n=i+d;if(n<0||n>=s.length)return;const cur=s[i];if(matchMedia('(prefers-reduced-motion: reduce)').matches){show(n);return}
-cur.classList.add(d>0?'go-next':'go-prev');setTimeout(()=>{cur.classList.remove('go-next','go-prev');show(n)},520)};
-document.querySelectorAll('.turn button').forEach(x=>x.onclick=()=>go(+x.dataset.d));
-addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1)});
-const h=parseInt(location.hash.slice(1),10);show(h>=1&&h<=s.length?h-1:0)})();
-</script>"""
-
-
-def detail_tiles(sid):
-    """小物の見開き: 図の細部を小さく切り出して並べる。新しい絵は作らず、同じ図の寄りだけを見せる。"""
-    spots = ("30% 30%", "70% 40%", "35% 75%", "70% 80%")
-    return "".join(f'<div class="detail" style="background-image:url(/picture/{sid});background-position:{p}"></div>' for p in spots)
-
-
-
-FLIP = """
-body.studio{background:radial-gradient(ellipse at 50% 35%,#ece8e0 0,#d8d2c6 60%,#c9c2b4 100%);min-height:100vh}
-.switch{max-width:1180px;margin:0 auto;padding:14px 20px;font-size:.85em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.stage{display:flex;justify-content:center;padding:24px 12px 8px;perspective:2600px}
-.fbook{position:relative;width:min(1080px,94vw);aspect-ratio:3/2;transform:rotateX(8deg);transform-style:preserve-3d;
- filter:drop-shadow(0 30px 30px rgba(40,30,20,.28))}
-.leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;
- transition:transform .9s cubic-bezier(.3,.1,.2,1);cursor:pointer}
-.leaf.turned{transform:rotateY(-180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;background:#fbf8f1;overflow:hidden;display:flex;flex-direction:column}
-.face.back{transform:rotateY(180deg)}
-.face::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.10),transparent 8%)}
-.face.back::after{background:linear-gradient(270deg,rgba(0,0,0,.10),transparent 8%)}
-.coil{position:absolute;left:calc(50% - 14px);top:2%;height:96%;width:28px;z-index:999;pointer-events:none;
- background:radial-gradient(ellipse 13px 6px at 50% 50%,transparent 8px,#3d3a36 9px,#8d877d 11px,transparent 12px) 0 0/28px 22px repeat-y}
-.face .bleed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.face .pad{padding:7% 8%;display:flex;flex-direction:column;height:100%;box-sizing:border-box}
-.face .folio{position:absolute;bottom:3%;font-size:clamp(9px,1vw,12px);letter-spacing:.2em;color:#8a7f6d}.face.front .folio{right:6%}.face.back .folio{left:6%}
-.face h2{font-weight:400;letter-spacing:.2em;font-size:clamp(20px,3.4vw,46px);margin:0}
-.face .kick{font-size:clamp(9px,1vw,12px);letter-spacing:.35em;color:#7a3b1d;text-transform:uppercase}
-.face .vsong{writing-mode:vertical-rl;font-size:clamp(11px,1.35vw,17px);line-height:2;margin:4% 0 0 auto;flex:1}
-.face .cap{font-size:clamp(8px,.9vw,11px)}
-.grid4{display:grid;grid-template-columns:1fr 1fr;gap:4%;flex:1}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:3%;height:46%}
-.tile{background-repeat:no-repeat;background-size:300%;position:relative}.tile span{position:absolute;left:4px;bottom:3px;font-size:clamp(8px,.9vw,11px);color:#fff;text-shadow:0 0 3px #000}
-.cover{background:#2f2a24;color:#f3ecdc}
-.cover .shot{position:absolute;inset:0;background-size:cover;background-position:50% 62%}
-.cover .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(28,24,20,.55) 0,rgba(28,24,20,0) 22%,rgba(28,24,20,0) 58%,rgba(28,24,20,.82) 100%)}
-.cover .pad{position:relative;z-index:1;justify-content:space-between}
-.cover .kick{color:#f0d9b5}.cover .cap{color:#efe3cc;max-width:60%}
-.cover h2{writing-mode:vertical-rl;position:absolute;right:7%;bottom:9%;font-size:clamp(34px,6.4vw,92px);letter-spacing:.25em;margin:0;text-shadow:0 2px 18px rgba(0,0,0,.45)}
-.cover .vol{font-size:clamp(9px,1vw,12px);letter-spacing:.3em;color:#f0d9b5}
-.flipnav{display:flex;justify-content:center;gap:24px;align-items:center;padding:6px 0 40px}
-.flipnav button{background:none;color:#3d3a36;border:1px solid #3d3a36;padding:6px 18px;margin:0}
-@media (prefers-reduced-motion:reduce){.leaf{transition:none}}
-"""
-
-
-def _tiles(sid, spots):
-    return "".join(f'<div class="tile" style="background-image:url(/picture/{sid});background-position:{p}"><span>{n:02d}</span></div>' for n, p in enumerate(spots, 1))
-
-
-def book_page():
-    """冊子型: 参照のルックブックの形式そのものを再現した版（本人の依頼で見開き型と並べて比べる、J-024）。
-
-    リング綴じの冊子を卓上の物として置き、紙を 1 枚ずつ 3D でめくる。1 枚の紙は表と裏を持ち、
-    めくると裏が次の見開きの左頁になる。大きく見せる見開きと、図の細部を小物のように並べる見開きを交互に置く。
-    新しい絵は作らず、NDL の頁とその寄りだけを使う。仮説は出さない（予想が先、F9.prediction）。
-    """
-    toys = [(s, hypotheses.load(s)["toy"], source(s)) for s in sources() if (ROOT / "out/sources" / f"{s}.jpg").exists()]
-    first = toys[0][0] if toys else None
-    shot = f'<div class="shot" style="background-image:url(/picture/{first})"></div>' if first else '<div class="shot"></div>'
-    # 表紙は図を全面に敷き、題を縦に重ねる。下に空きを残さない（本人の指摘「下の部分が勿体無いね」）。
-    faces = [f'{shot}<div class="pad"><span class="kick">Edo toy lookbook</span><h2>うつし</h2>'
-             f'<div><p class="vol">vol.01 · 江都二色（1773）</p><p class="cap">図と歌だけが残る玩具。動きを予想し、紙と糸で確かめる。</p></div></div>']
-    folio = 1
-    for i, (s, toy, src) in enumerate(toys, 1):
-        faces.append(f'<img class="bleed" src="/picture/{s}" alt="{esc(toy)}の図">')
-        faces.append(f'<div class="pad"><span class="kick">look {i:02d}</span><h2>{esc(toy)}</h2>{"".join(f"<p class=vsong>{esc(e)}</p>" for e in [x["text"] for x in src.get("transcription", {}).get("entries", []) if not x.get("rejected_by") and x.get("checked_by")])}'
-                     f'<p class="cap">原文の引用。確かめた人: 本人 · {esc(src.get("holding", ""))}</p><a class="open" href="/toy/{s}">この玩具をひらく →</a></div>')
-        faces.append(f'<div class="pad"><span class="kick">details {i:02d}</span><div class="grid4">{_tiles(s, ("30% 28%", "72% 38%", "34% 74%", "70% 82%"))}</div><p class="cap">{esc(toy)} · 図の細部</p></div>')
-        faces.append(f'<div class="pad"><span class="kick">details {i:02d}</span><div class="grid3">{_tiles(s, ("50% 45%", "20% 60%", "85% 65%"))}</div>'
-                     f'<p style="margin-top:8%">どこが動くと思いますか。図を見て、先に予想を書いてから作ります。</p><a class="open" href="/toy/{s}">予想を書く →</a></div>')
-    faces.append('<div class="pad"><span class="kick">colophon</span><p style="margin-top:auto">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。この冊子のための新しい絵は作っていない。</p>'
-                 '<p class="cap">うつし · 失われた玩具の動きを、紙で実験して確かめる道具</p></div>')
-    if len(faces) % 2:
-        faces.append('<div class="pad"></div>')
-    leaves = ""
-    n = len(faces) // 2
-    for k in range(n):
-        f, b = faces[2 * k], faces[2 * k + 1]
-        fcls = "face front cover" if k == 0 else "face front"
-        leaves += (f'<div class="leaf" data-k="{k}" style="z-index:{n - k}"><div class="{fcls}">{f}<span class="folio">{2 * k + 1 if k else ""}</span></div>'
-                   f'<div class="face back">{b}<span class="folio">{2 * k + 2}</span></div></div>')
-    js = """<script>
-(()=>{const L=[...document.querySelectorAll('.leaf')];let t=0;const no=document.getElementById('fno');
-const set=n=>{t=Math.max(0,Math.min(L.length,n));L.forEach((l,k)=>{const on=k<t;l.classList.toggle('turned',on);l.style.zIndex=on?k+1:L.length-k});no.textContent=(t+1)+' / '+(L.length+1)};
-L.forEach((l,k)=>l.addEventListener('click',e=>{if(e.target.closest('a'))return;set(l.classList.contains('turned')?k:k+1)}));
-document.querySelectorAll('.flipnav button').forEach(b=>b.onclick=()=>set(t+(+b.dataset.d)));
-addEventListener('keydown',e=>{if(e.key==='ArrowRight')set(t+1);if(e.key==='ArrowLeft')set(t-1)});
-const h=parseInt(location.hash.slice(1),10);set(h>=1?h-1:0)})();
-</script>"""
-    nav = '<nav class="flipnav"><button data-d="-1" aria-label="前へ">‹</button><span id="fno"></span><button data-d="1" aria-label="次へ">›</button></nav>'
-    from .looks import switch
-
-    body = (f'{switch("/book")}<div class="stage"><div class="fbook"><div class="coil"></div>{leaves}</div></div>{nav}'
-            '<noscript><p class="cap" style="text-align:center">この版は JavaScript で頁をめくる。<a href="/">見開き型</a>は JavaScript なしでも読める。</p></noscript>' + js)
-    return page("うつし · 冊子型", body, FLIP, "studio")
-
-
-def index_page():
-    """入口: リング綴じの冊子の見開きを 1 枚ずつめくる形（本人が参照に挙げたルックブック、J-024）。
-
-    見開きは、表紙 → 玩具ごとに「大きく見せる頁」と「小物の見開き」を交互に置く。
-    仮説はここに出さない。予想の前に答えの候補を見せないため（F9.prediction）。
-    """
-    toys = [(s, hypotheses.load(s)["toy"], source(s)) for s in sources()]
-    toc = "".join(f'<li><a href="/toy/{s}">{i:02d}　{esc(t)}</a></li>' for i, (s, t, _) in enumerate(toys, 1))
-    sheets = [f'<section class="sheet"><div class="pg l"><h1>うつし</h1></div><div class="pg r"><p>江戸の絵本『江都二色』（1773）に、図と歌だけが残る玩具。動きを予想して、紙と糸で作って確かめます。まず紙が返事をします。</p><ul class="toc">{toc}</ul></div></section>']
-    for i, (s, toy, src) in enumerate(toys, 1):
-        has_pic = (ROOT / "out/sources" / f"{s}.jpg").exists()
-        pic = f'<img src="/picture/{s}" alt="{esc(toy)}の図">' if has_pic else f'<a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a>'
-        sheets.append(f'<section class="sheet"><div class="pg l full">{pic}<p class="cap">{esc(src.get("holding", ""))}</p></div>'
-                      f'<div class="pg r"><p class="no">{i:02d}</p><h2>{esc(toy)}</h2>{song(src, short=True)}<a class="open" href="/toy/{s}">この玩具をひらく</a><p class="cap">出典 ID {s}</p></div></section>')
-        if has_pic:
-            sheets.append(f'<section class="sheet"><div class="pg l"><div class="details">{detail_tiles(s)}</div><p class="cap">{esc(toy)} の図の細部</p></div>'
-                          f'<div class="pg r"><p class="no">{i:02d}</p><p>どこが動くと思いますか。図を見て、先に予想を書いてから作ります。</p><a class="open" href="/toy/{s}">予想を書く</a></div></section>')
-    nav = '<nav class="turn"><button data-d="-1" aria-label="前の見開き">‹</button><span id="pno"></span><button data-d="1" aria-label="次の見開き">›</button></nav>'
-    from .looks import switch
-
-    return page("うつし", f'{switch("/")}<div id="book" class="booklet">{"".join(sheets)}</div>{nav}{TURN}')
 
 
 def song(src, short=False):
@@ -362,10 +225,11 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._send(403, "受け付けられません")
         path, _, query = self.path.partition("?")
+        # 入口は本人が残した A 大判写真集（2026-11-04、J-024）。/look/ の下には残した 2 案だけがある。
         if path == "/":
-            return self._send(200, index_page())
-        if path == "/book":
-            return self._send(200, book_page())
+            from .looks import taiban
+
+            return self._send(200, taiban())
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m:
             from .looks import PAGES

@@ -225,7 +225,7 @@
   "id": "J-024",
   "path": "decisions/J024-entrance-and-workshop.md",
   "hook": "使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能",
-  "status": "決定。画面は作った（人の確認はまだ）"
+  "status": "決定。ルックブックは A と C を残した（11-04）。画面は人がまだ使っていない"
  },
  {
   "id": "J-025",
@@ -280,6 +280,12 @@
   "path": "open.json",
   "hook": "今の判断待ちの一覧",
   "status": "機械可読"
+ },
+ {
+  "id": "decided-and-open",
+  "path": "decided-and-open.md",
+  "hook": "決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚",
+  "status": "11-05 の凍結の前の一覧。提出前に数え直す"
  },
  {
   "id": "claims",

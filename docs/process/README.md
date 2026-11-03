@@ -80,7 +80,7 @@
 | 35 | [J-021](decisions/J021-contributions-form-students.md) | 持ち寄りの入口は既製のフォーム。生徒の記録と本人の聞き取りを載せる形と、同意・名前を外す扱い | 入口と公開の条件は決定。生徒の分は設計だけで、集めない |
 | 36 | [J-022](decisions/J022-video-gallery.md) | 動画を Claude が見るのは観察の補助と型紙の判定だけ。成績にしない再現ギャラリーと有識者の声 | 1〜3 は本人が採った。有識者は仕組みだけ |
 | 37 | [J-023](decisions/J023-first-test-later.md) | 本物の API の最初の試験は作り込んでから。下見・キャッシュ・費用の数え方を足した | 決定 |
-| 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。画面は作った（人の確認はまだ） |
+| 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。ルックブックは A と C を残した（11-04）。画面は人がまだ使っていない |
 | 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
 | 40 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
 | 41 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
@@ -90,9 +90,10 @@
 | 45 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
 | 46 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
 | 47 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 48 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 49 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 50 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 48 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
+| 49 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 50 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 51 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

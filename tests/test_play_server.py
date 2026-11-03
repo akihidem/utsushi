@@ -44,14 +44,14 @@ def post(path, data, origin=base, ctype="application/x-www-form-urlencoded"):
 
 
 code, body = get("/")
-assert code == 200 and "御来迎" in body.decode()
-# 2 つの入口を見比べられる（本人の依頼、J-024）。冊子型も仮説を出さない
-code, book = get("/book")
-book = book.decode()
-assert code == 200 and "御来迎" in book and 'class="leaf"' in book and "仮説 A" not in book and "/toy/" in book
-assert "冊子型" in get("/")[1].decode() and "見開き型" in book
-# 入口の別の案（J-024）。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
-for name in ("taiban", "watoji", "zine"):
+body = body.decode()
+# 入口は本人が残した A 大判写真集（J-024）。玩具の一覧から入れる
+assert code == 200 and "御来迎" in body and "大判写真集" in body and f"/toy/{G}" in body
+# 外した 3 案（見開き型・冊子型・B 和綴じ帖）は出さない
+assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404
+assert "冊子型" not in body and "和綴じ帖" not in body
+# 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
+for name in ("taiban", "zine"):
     code, look = get(f"/look/{name}")
     look = look.decode()
     assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name

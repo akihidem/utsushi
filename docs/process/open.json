@@ -45,30 +45,12 @@
   }
  },
  {
-  "id": "O-09",
-  "decision": "ハッカソンの後に誰が使い続けるか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/14-judging-criteria.md",
-   "quote": "名前を挙げられる使い手が今はいない"
-  }
- },
- {
   "id": "O-10",
   "decision": "前提知識なしで通れる入口の形",
   "waiting_on": "本人",
   "evidence": {
    "path": "docs/process/research/14-judging-criteria.md",
    "quote": "前提知識なしで通れる入口"
-  }
- },
- {
-  "id": "O-11",
-  "decision": "Claude の機能の選び分け。裏の制作を Claude Code の上に組むか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/14-judging-criteria.md",
-   "quote": "語れる物語はまだ無い"
   }
  },
  {
@@ -87,15 +69,6 @@
   "evidence": {
    "path": "docs/process/decisions/J021-contributions-form-students.md",
    "quote": "録音の扱い（設計し直した物。まだ集めない）"
-  }
- },
- {
-  "id": "O-23",
-  "decision": "現場の具体の残り（今までのやり方、学習活動の形）。現場と場面は答えあり、印象の裏付けは research/18",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/research/17-field-and-continuers.md",
-   "quote": "足りない所（本人に聞く）"
   }
  }
 ]
