@@ -198,6 +198,12 @@
   "status": "決定"
  },
  {
+  "id": "J-020",
+  "path": "decisions/J020-gate-without-trial.md",
+  "hook": "今夜の関門は試行の結果なしで迎える。実物が要る物は 11-04 の試行の後へ",
+  "status": "決定"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",
