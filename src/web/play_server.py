@@ -203,7 +203,7 @@ def index_page():
     """
     toys = [(s, hypotheses.load(s)["toy"], source(s)) for s in sources()]
     toc = "".join(f'<li><a href="/toy/{s}">{i:02d}　{esc(t)}</a></li>' for i, (s, t, _) in enumerate(toys, 1))
-    sheets = [f'<section class="sheet"><div class="pg l"><h1>うつし</h1></div><div class="pg r"><p>江戸の絵本『江都二色』（1773）に、図と歌だけが残る玩具。動きを予想して、紙と糸で作って確かめます。返事をするのは紙です。</p><ul class="toc">{toc}</ul></div></section>']
+    sheets = [f'<section class="sheet"><div class="pg l"><h1>うつし</h1></div><div class="pg r"><p>江戸の絵本『江都二色』（1773）に、図と歌だけが残る玩具。動きを予想して、紙と糸で作って確かめます。まず紙が返事をします。</p><ul class="toc">{toc}</ul></div></section>']
     for i, (s, toy, src) in enumerate(toys, 1):
         has_pic = (ROOT / "out/sources" / f"{s}.jpg").exists()
         pic = f'<img src="/picture/{s}" alt="{esc(toy)}の図">' if has_pic else f'<a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a>'

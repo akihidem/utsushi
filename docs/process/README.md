@@ -69,7 +69,7 @@
 | 24 | [J-011](decisions/J011-generate-on-the-spot.md) | その場の生成を本線に。11 分後に置き直した | J-012 で置換 |
 | 25 | [J-012](decisions/J012-backstage-content-and-own-hypothesis.md) | 裏で確かめる内容と自分の仮説の口 | J-013 で読み直し |
 | 26 | [research/13](research/13-critical-review.md) | 前提への批判。物理と歴史の問いが混ざっていた | 調査 |
-| 27 | [J-013](decisions/J013-core-words.md) | 設計の核: 素材が返事をし、考えが湧く | 決定 |
+| 27 | [J-013](decisions/J013-core-words.md) | 設計の核: 素材が返事をし、考えが湧く | 決定。決める点 2 は 11-04 に本人が変えた（子どもも AI から直接返事） |
 | 28 | [J-014](decisions/J014-name-utsushi.md) | 名前を utsushi に。決め方の経緯 | 決定 |
 | 29 | [J-015](decisions/J015-ai-readable.md) | AI の読み手に伝わる作り。主張から根拠へ | 決定 |
 | 30 | [J-016](decisions/J016-zukan-labels.md) | 図鑑の文の印は 3 分類。文言は検査しない | 決定 |
