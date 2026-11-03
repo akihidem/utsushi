@@ -81,30 +81,12 @@
   }
  },
  {
-  "id": "O-19",
-  "decision": "案 B の一言の「解き明かす」を残すか。虎と順位の扱いの確認",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/decisions/J019-experiment-sheet.md",
-   "quote": "確認までの仮の物"
-  }
- },
- {
   "id": "O-20",
   "decision": "生徒の記録を集め始める時期、「声」の範囲、生徒の所属と許可、聞き取りの聞き手と名前、使うフォーム",
   "waiting_on": "本人",
   "evidence": {
    "path": "docs/process/decisions/J021-contributions-form-students.md",
    "quote": "本人に聞く事"
-  }
- },
- {
-  "id": "O-21",
-  "decision": "11-04 の試行を動画で撮るか。Claude の観察の範囲。ギャラリーと観察と有識者の声を週内のどこまで入れるか。有識者の当て",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/decisions/J022-video-gallery.md",
-   "quote": "週内の範囲と 11-05 夜の関門"
   }
  },
  {

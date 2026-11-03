@@ -78,7 +78,7 @@
 | 33 | [J-019](decisions/J019-experiment-sheet.md) | 型紙を実験装置に。角度で分かれるのは H-E を含む組だけ | 決定 |
 | 34 | [J-020](decisions/J020-gate-without-trial.md) | 今夜の関門は試行の結果なしで迎える。実物が要る物は 11-04 の試行の後へ | 決定 |
 | 35 | [J-021](decisions/J021-contributions-form-students.md) | 持ち寄りの入口は既製のフォーム。生徒の記録と本人の聞き取りを載せる形と、同意・名前を外す扱い | 入口と公開の条件は決定。生徒の分は設計だけで、集めない |
-| 36 | [J-022](decisions/J022-video-gallery.md) | 動画を Claude が見るのは観察の補助と型紙の判定だけ。成績にしない再現ギャラリーと有識者の声 | 作る側の案。本人の答え待ち |
+| 36 | [J-022](decisions/J022-video-gallery.md) | 動画を Claude が見るのは観察の補助と型紙の判定だけ。成績にしない再現ギャラリーと有識者の声 | 1〜3 は本人が採った。有識者は仕組みだけ |
 | 37 | [J-023](decisions/J023-first-test-later.md) | 本物の API の最初の試験は作り込んでから。下見・キャッシュ・費用の数え方を足した | 決定 |
 | 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。画面は作った（人の確認はまだ） |
 | 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
