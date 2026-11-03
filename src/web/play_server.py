@@ -59,8 +59,10 @@ def esc(s):
     return html.escape(str(s if s is not None else ""))
 
 
-def page(title, body):
-    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><style>{LOOK}{BOOK}</style><main>{body}</main></html>'
+def page(title, body, extra_style="", body_class=""):
+    cls = f' class="{body_class}"' if body_class else ""
+    return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title>'
+            f'<style>{LOOK}{BOOK}{extra_style}</style><body{cls}><main>{body}</main></body></html>')
 
 
 BOOK = """
@@ -103,6 +105,88 @@ def detail_tiles(sid):
     return "".join(f'<div class="detail" style="background-image:url(/picture/{sid});background-position:{p}"></div>' for p in spots)
 
 
+SWITCH = '<nav class="switch"><a href="/">見開き型</a>｜<a href="/book">冊子型（参照の再現）</a><span class="cap">本人が 2 つを見比べて決める（J-024）</span></nav>'
+
+FLIP = """
+body.studio{background:radial-gradient(ellipse at 50% 35%,#ece8e0 0,#d8d2c6 60%,#c9c2b4 100%);min-height:100vh}
+.switch{max-width:1180px;margin:0 auto;padding:14px 20px;font-size:.85em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.stage{display:flex;justify-content:center;padding:24px 12px 8px;perspective:2600px}
+.fbook{position:relative;width:min(1080px,94vw);aspect-ratio:3/2;transform:rotateX(8deg);transform-style:preserve-3d;
+ filter:drop-shadow(0 30px 30px rgba(40,30,20,.28))}
+.leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;
+ transition:transform .9s cubic-bezier(.3,.1,.2,1);cursor:pointer}
+.leaf.turned{transform:rotateY(-180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;background:#fbf8f1;overflow:hidden;display:flex;flex-direction:column}
+.face.back{transform:rotateY(180deg)}
+.face::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.10),transparent 8%)}
+.face.back::after{background:linear-gradient(270deg,rgba(0,0,0,.10),transparent 8%)}
+.coil{position:absolute;left:calc(50% - 14px);top:2%;height:96%;width:28px;z-index:999;pointer-events:none;
+ background:radial-gradient(ellipse 13px 6px at 50% 50%,transparent 8px,#3d3a36 9px,#8d877d 11px,transparent 12px) 0 0/28px 22px repeat-y}
+.face .bleed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.face .pad{padding:7% 8%;display:flex;flex-direction:column;height:100%;box-sizing:border-box}
+.face .folio{position:absolute;bottom:3%;font-size:clamp(9px,1vw,12px);letter-spacing:.2em;color:#8a7f6d}.face.front .folio{right:6%}.face.back .folio{left:6%}
+.face h2{font-weight:400;letter-spacing:.2em;font-size:clamp(20px,3.4vw,46px);margin:0}
+.face .kick{font-size:clamp(9px,1vw,12px);letter-spacing:.35em;color:#7a3b1d;text-transform:uppercase}
+.face .vsong{writing-mode:vertical-rl;font-size:clamp(11px,1.35vw,17px);line-height:2;margin:4% 0 0 auto;flex:1}
+.face .cap{font-size:clamp(8px,.9vw,11px)}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:4%;flex:1}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:3%;height:46%}
+.tile{background-repeat:no-repeat;background-size:300%;position:relative}.tile span{position:absolute;left:4px;bottom:3px;font-size:clamp(8px,.9vw,11px);color:#fff;text-shadow:0 0 3px #000}
+.cover{background:#2f2a24;color:#efe8d8}.cover .kick,.cover .cap{color:#c9a27a}.cover .pad{justify-content:space-between}.cover h2{font-size:clamp(28px,5vw,70px);letter-spacing:.4em}
+.cover .shot{flex:1;margin:6% 0;background-size:cover;background-position:50% 55%}
+.flipnav{display:flex;justify-content:center;gap:24px;align-items:center;padding:6px 0 40px}
+.flipnav button{background:none;color:#3d3a36;border:1px solid #3d3a36;padding:6px 18px;margin:0}
+@media (prefers-reduced-motion:reduce){.leaf{transition:none}}
+"""
+
+
+def _tiles(sid, spots):
+    return "".join(f'<div class="tile" style="background-image:url(/picture/{sid});background-position:{p}"><span>{n:02d}</span></div>' for n, p in enumerate(spots, 1))
+
+
+def book_page():
+    """冊子型: 参照のルックブックの形式そのものを再現した版（本人の依頼で見開き型と並べて比べる、J-024）。
+
+    リング綴じの冊子を卓上の物として置き、紙を 1 枚ずつ 3D でめくる。1 枚の紙は表と裏を持ち、
+    めくると裏が次の見開きの左頁になる。大きく見せる見開きと、図の細部を小物のように並べる見開きを交互に置く。
+    新しい絵は作らず、NDL の頁とその寄りだけを使う。仮説は出さない（予想が先、F9.prediction）。
+    """
+    toys = [(s, hypotheses.load(s)["toy"], source(s)) for s in sources() if (ROOT / "out/sources" / f"{s}.jpg").exists()]
+    first = toys[0][0] if toys else None
+    shot = f'<div class="shot" style="background-image:url(/picture/{first})"></div>' if first else '<div class="shot"></div>'
+    faces = [f'<div class="pad"><span class="kick">Edo toy lookbook · vol.01</span>{shot}<h2>うつし</h2><span class="cap">江都二色（1773）の玩具 · 紙と糸で動きを確かめる</span></div>']
+    folio = 1
+    for i, (s, toy, src) in enumerate(toys, 1):
+        faces.append(f'<img class="bleed" src="/picture/{s}" alt="{esc(toy)}の図">')
+        faces.append(f'<div class="pad"><span class="kick">look {i:02d}</span><h2>{esc(toy)}</h2>{"".join(f"<p class=vsong>{esc(e)}</p>" for e in [x["text"] for x in src.get("transcription", {}).get("entries", []) if not x.get("rejected_by") and x.get("checked_by")])}'
+                     f'<p class="cap">原文の引用。確かめた人: 本人 · {esc(src.get("holding", ""))}</p><a class="open" href="/toy/{s}">この玩具をひらく →</a></div>')
+        faces.append(f'<div class="pad"><span class="kick">details {i:02d}</span><div class="grid4">{_tiles(s, ("30% 28%", "72% 38%", "34% 74%", "70% 82%"))}</div><p class="cap">{esc(toy)} · 図の細部</p></div>')
+        faces.append(f'<div class="pad"><span class="kick">details {i:02d}</span><div class="grid3">{_tiles(s, ("50% 45%", "20% 60%", "85% 65%"))}</div>'
+                     f'<p style="margin-top:8%">どこが動くと思いますか。図を見て、先に予想を書いてから作ります。</p><a class="open" href="/toy/{s}">予想を書く →</a></div>')
+    faces.append('<div class="pad"><span class="kick">colophon</span><p style="margin-top:auto">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。この冊子のための新しい絵は作っていない。</p>'
+                 '<p class="cap">うつし · 失われた玩具の動きを、紙で実験して確かめる道具</p></div>')
+    if len(faces) % 2:
+        faces.append('<div class="pad"></div>')
+    leaves = ""
+    n = len(faces) // 2
+    for k in range(n):
+        f, b = faces[2 * k], faces[2 * k + 1]
+        fcls = "face front cover" if k == 0 else "face front"
+        leaves += (f'<div class="leaf" data-k="{k}" style="z-index:{n - k}"><div class="{fcls}">{f}<span class="folio">{2 * k + 1 if k else ""}</span></div>'
+                   f'<div class="face back">{b}<span class="folio">{2 * k + 2}</span></div></div>')
+    js = """<script>
+(()=>{const L=[...document.querySelectorAll('.leaf')];let t=0;const no=document.getElementById('fno');
+const set=n=>{t=Math.max(0,Math.min(L.length,n));L.forEach((l,k)=>{const on=k<t;l.classList.toggle('turned',on);l.style.zIndex=on?k+1:L.length-k});no.textContent=(t+1)+' / '+(L.length+1)};
+L.forEach((l,k)=>l.addEventListener('click',e=>{if(e.target.closest('a'))return;set(l.classList.contains('turned')?k:k+1)}));
+document.querySelectorAll('.flipnav button').forEach(b=>b.onclick=()=>set(t+(+b.dataset.d)));
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')set(t+1);if(e.key==='ArrowLeft')set(t-1)});
+const h=parseInt(location.hash.slice(1),10);set(h>=1?h-1:0)})();
+</script>"""
+    nav = '<nav class="flipnav"><button data-d="-1" aria-label="前へ">‹</button><span id="fno"></span><button data-d="1" aria-label="次へ">›</button></nav>'
+    body = (f'{SWITCH}<div class="stage"><div class="fbook"><div class="coil"></div>{leaves}</div></div>{nav}'
+            '<noscript><p class="cap" style="text-align:center">この版は JavaScript で頁をめくる。<a href="/">見開き型</a>は JavaScript なしでも読める。</p></noscript>' + js)
+    return page("うつし · 冊子型", body, FLIP, "studio")
+
+
 def index_page():
     """入口: リング綴じの冊子の見開きを 1 枚ずつめくる形（本人が参照に挙げたルックブック、J-024）。
 
@@ -121,7 +205,7 @@ def index_page():
             sheets.append(f'<section class="sheet"><div class="pg l"><div class="details">{detail_tiles(s)}</div><p class="cap">{esc(toy)} の図の細部</p></div>'
                           f'<div class="pg r"><p class="no">{i:02d}</p><p>どこが動くと思いますか。図を見て、先に予想を書いてから作ります。</p><a class="open" href="/toy/{s}">予想を書く</a></div></section>')
     nav = '<nav class="turn"><button data-d="-1" aria-label="前の見開き">‹</button><span id="pno"></span><button data-d="1" aria-label="次の見開き">›</button></nav>'
-    return page("うつし", f'<div id="book" class="booklet">{"".join(sheets)}</div>{nav}{TURN}')
+    return page("うつし", f'{SWITCH}<div id="book" class="booklet">{"".join(sheets)}</div>{nav}{TURN}')
 
 
 def song(src, short=False):
@@ -270,6 +354,8 @@ class Handler(BaseHTTPRequestHandler):
         path, _, query = self.path.partition("?")
         if path == "/":
             return self._send(200, index_page())
+        if path == "/book":
+            return self._send(200, book_page())
         m = re.fullmatch(rf"/toy/({SID})", path)
         if m and m.group(1) in sources():
             return self._send(200, toy_page(m.group(1), msg=urllib.parse.parse_qs(query).get("msg", [""])[0]))

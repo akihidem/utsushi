@@ -45,6 +45,11 @@ def post(path, data, origin=base, ctype="application/x-www-form-urlencoded"):
 
 code, body = get("/")
 assert code == 200 and "御来迎" in body.decode()
+# 2 つの入口を見比べられる（本人の依頼、J-024）。冊子型も仮説を出さない
+code, book = get("/book")
+book = book.decode()
+assert code == 200 and "御来迎" in book and 'class="leaf"' in book and "仮説 A" not in book and "/toy/" in book
+assert "冊子型" in get("/")[1].decode() and "見開き型" in book
 # 予想の前は仮説を見せない
 body = get(f"/toy/{G}")[1].decode()
 assert "仮説 A" not in body and "どう動くと思いますか" in body
