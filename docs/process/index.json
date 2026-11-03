@@ -252,6 +252,12 @@
   "status": "調査。本人の答え待ち"
  },
  {
+  "id": "research/18",
+  "path": "research/18-field-evidence.md",
+  "hook": "現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58%",
+  "status": "調査"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

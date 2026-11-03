@@ -50,3 +50,5 @@
 | C-30 | 昔の玩具が再現されたかは、原物が無いので測り切れない | 立場 | [philosophy.md](philosophy.md) |
 | C-31 | 批評は Claude のセッションだけで行い、人のレビューは受けない | 立場 | [J018-no-peer-review.md](decisions/J018-no-peer-review.md) |
 | C-32 | 御来迎の 5 つの仮説のうち、開く角度で分かれるのは H-E を含む組だけ | 計算 | [test_discriminate.py](../../tests/test_discriminate.py)、[J019-experiment-sheet.md](decisions/J019-experiment-sheet.md) |
+| C-33 | 日本の中 2 で「理科を使うことが含まれる職業につきたい」は 27%、国際平均は 58%（TIMSS 2023） | 文献 | [18-field-evidence.md](research/18-field-evidence.md) |
+| C-34 | 「大きな装置にしか真理がない」と生徒が思っている事を測った調査は見つからなかった。本人の印象のまま | 未確認 | [18-field-evidence.md](research/18-field-evidence.md) |
