@@ -101,7 +101,10 @@ def compose_compare(source, toy, ha, hb, labels, page_name="A4"):
     texts, shapes = [], []
     y = _block(texts, [f"見比べる紙 {toy} 仮説 {labels[0]} と 仮説 {labels[1]}"], page.x0, page.y0, TITLE_SIZE, width)
     y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
-    y = _block(texts, ["2 つの型紙を同じ紙で刷って作り、同じ手で試す"], page.x0, y + GAP, HEAD_SIZE, width)
+    # 型紙が同じ仮説の組（御来迎の C と D）は動かし方だけが違う。2 個作らせると、作りの差が動かし方の差に混ざる。
+    same = (ha.get("template"), ha.get("params")) == (hb.get("template"), hb.get("params"))
+    head = "型紙は 1 つ。1 個を作り、同じ物を 2 通りの動かし方で試す" if same else "2 つの型紙を同じ紙で刷って作り、同じ手で試す"
+    y = _block(texts, [head], page.x0, y + GAP, HEAD_SIZE, width)
     for label, h in zip(labels, (ha, hb)):
         y = _block(texts, [f"{label}: {h['name']}", h["how_it_moves"], f"見る物: {h['to_measure']}"], page.x0, y + 1, BODY_SIZE, width)
     y = _block(texts, ["作る前に: どちらがどう違うと思いますか"], page.x0, y + GAP, HEAD_SIZE, width)

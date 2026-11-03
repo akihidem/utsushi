@@ -49,6 +49,12 @@ assert "昔の作り方の証明にはなりません" in text
 # 答えを先に言わない。計算の上限も勝ち負けの語も刷らない
 for word in ("284", "172", "正解", "成功", "失敗", "合格", "勝"):
     assert word not in text, word
+assert "2 つの型紙" in text
+# 型紙が同じ組は 1 個で比べる。2 個作れと刷らない
+r = run(FAN, "print-compare", "H-C", "H-D", "--out", str(out))
+assert r.returncode == 0, r.stderr
+text = subprocess.run(["pdftotext", "-layout", r.stdout.strip(), "-"], capture_output=True, text=True).stdout
+assert "型紙は 1 つ" in text and "2 つの型紙" not in text
 assert run(TIGER, "predict", "重り").returncode == 0
 assert run(TIGER, "print-compare", "H-A", "H-B", "--out", str(out)).returncode == 3
 assert run(TIGER, "compare").returncode == 3
