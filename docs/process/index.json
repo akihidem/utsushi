@@ -210,6 +210,12 @@
   "status": "入口と公開の条件は決定。生徒の分は設計だけで、集めない"
  },
  {
+  "id": "J-022",
+  "path": "decisions/J022-video-gallery.md",
+  "hook": "動画を Claude が見るのは観察の補助と型紙の判定だけ。成績にしない再現ギャラリーと有識者の声",
+  "status": "作る側の案。本人の答え待ち"
+ },
+ {
   "id": "research/16",
   "path": "research/16-scan-titles.md",
   "hook": "複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた",

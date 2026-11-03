@@ -142,5 +142,14 @@
    "path": "docs/process/decisions/J021-contributions-form-students.md",
    "quote": "本人に聞く事"
   }
+ },
+ {
+  "id": "O-21",
+  "decision": "11-04 の試行を動画で撮るか。Claude の観察の範囲。ギャラリーと観察と有識者の声を週内のどこまで入れるか。有識者の当て",
+  "waiting_on": "本人",
+  "evidence": {
+   "path": "docs/process/decisions/J022-video-gallery.md",
+   "quote": "週内の範囲と 11-05 夜の関門"
+  }
  }
 ]
