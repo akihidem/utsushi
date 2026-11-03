@@ -206,8 +206,8 @@
  {
   "id": "research/16",
   "path": "research/16-scan-titles.md",
-  "hook": "複写 2 式の書名をほぼ特定。歌の読みは本人が決めた",
-  "status": "調査。本人の確認は未"
+  "hook": "複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた",
+  "status": "調査。書名と読みは本人の確認済み"
  },
  {
   "id": "how-it-was-built",
