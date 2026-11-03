@@ -30,14 +30,14 @@
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面（予想・型紙・記録・説明。J-024） |
-| `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・順位（作り手用）・新しい仮説 |
+| `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・新しい仮説。順位は持たない（J-025） |
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
 | `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定 |
 | `src/api/generate.py` | 裏の制作の 1 段。図・歌・記録から仮説と寸法の案を作る |
 | `src/api/budget.py` | API の消費の見積もりと上限 |
 | `src/api/mcp_server.py`・`.mcp.json` | 工房の道具を Claude Code から呼ぶ MCP サーバ（API の輪と同じ道具） |
 | `.claude/skills/backstage`・`.claude/agents/second-eye.md`・`.claude/hooks/ledger-check.sh` | 作り手の工房: 裏の制作の手順、別の目、台帳の検査のフック |
-| `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版・順位の記録（個人の記録なので git に入れない） |
+| `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面 |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |

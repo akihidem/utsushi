@@ -228,6 +228,12 @@
   "status": "決定。画面は作った（人の確認はまだ）"
  },
  {
+  "id": "J-025",
+  "path": "decisions/J025-no-ranking.md",
+  "hook": "仮説の順位をやめ、記録は次に試す物の提案の材料だけにする",
+  "status": "決定"
+ },
+ {
   "id": "claude-story-draft",
   "path": "claude-story-draft.md",
   "hook": "Claude の使い方の物語。機能の選び分けと開発の運転の形",

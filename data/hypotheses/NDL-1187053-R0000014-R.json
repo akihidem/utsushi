@@ -14,7 +14,6 @@
       "id": "H-A",
       "name": "首を胴の穴に入れ、中の重りで揺らす",
       "status": "untested",
-      "rank": null,
       "params": {
         "mount": "neck"
       },
@@ -43,7 +42,6 @@
       "id": "H-B",
       "name": "頭を胴の前に吊る",
       "status": "untested",
-      "rank": null,
       "params": {
         "mount": "hang",
         "axle_height": 50,
@@ -68,7 +66,6 @@
       "id": "H-C",
       "name": "軽い頭が風で揺れる",
       "status": "untested",
-      "rank": null,
       "params": {
         "mount": "neck",
         "weight_g": 0.8,

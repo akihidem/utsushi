@@ -17,7 +17,7 @@ source = json.loads((pathlib.Path(__file__).resolve().parents[1] / "data/sources
 data = load(SID)
 hs = data["hypotheses"]
 assert len(hs) >= 2, "1 つに断定しない"
-assert all(h["rank"] is None and h["status"] == "untested" for h in hs), "記録の無い順位を付けない"
+assert all("rank" not in h and h["status"] == "untested" for h in hs), "順位を持たない（J-025）"
 assert "default" not in json.dumps(data) and not any("既定" in json.dumps(h, ensure_ascii=False) for h in hs)
 for h in hs:
     assert h["evidence"] and h["against"] and h["to_measure"], h["id"]

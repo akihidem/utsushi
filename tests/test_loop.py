@@ -76,7 +76,9 @@ assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "c
 assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "changes": [{"param": "fold_width", "to": 8.5, "why": "x"}]}, gs, "human")[1]) == {"F7.revision"}, "版 1 と同じ"
 assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "changes": [{"param": "fold_width", "to": 9, "why": " "}]}, gs, "human")[1]) == {"F4.evidence"}
 assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "changes": [{"param": "fold_width", "to": 8, "why": "短くする", "metric": "opening_bound_deg", "direction": "increase"}]}, gs, "human")[1]) == {"F7.revision"}, "式と逆向き"
-assert floors(loop.save_proposal({"record_ids": [r1], "ranking": [{"hypothesis_id": "H-Z", "rank_after": 1, "why": "x"}]}, gs, "human")[1]) == {"F8.references"}
+# 順位は扱わない（J-025）。混ざれば黙って捨てず落とす。次に試す仮説は実在する物だけ
+assert floors(loop.save_proposal({"record_ids": [r1], "ranking": [{"hypothesis_id": "H-D", "rank_after": 1, "why": "x"}]}, gs, "human")[1]) == {"F4.evidence"}
+assert floors(loop.save_proposal({"record_ids": [r1], "next_to_try": {"hypothesis_id": "H-Z", "why": "x", "what_to_measure": "y"}}, gs, "human")[1]) == {"F8.references"}
 # 虎: 周期の向き（重りを軸に近づけると短い）
 tr = rec(T, "H-A", opener=None, opened_deg=None, ten_swings_sec=4.1, result="揺れた")
 assert loop.confirm_interpretation(tr, "確認者", {"human_text": "ゆっくりで見えにくい"}) == []
@@ -87,7 +89,7 @@ assert not fs
 bad = {"hypothesis_id": "H-A", "changes": [{"param": "fold_width", "to": 8, "why": "長さを詰める", "metric": "opening_bound_deg", "direction": "increase"}], "next_to_try": {"why": "a", "what_to_measure": "b"}, "references": [r1]}
 # 9mm は検査（紙の外・口の角に当たる）で落ちるので、通る 8.6mm の案にする。
 good = {"hypothesis_id": "H-A", "changes": [{"param": "fold_width", "to": 8.6, "why": f"{r1} の 60° から長くする", "metric": "opening_bound_deg", "direction": "increase"}],
-        "ranking": [{"hypothesis_id": "H-D", "rank_after": 1, "why": "下げる形を先に見分ける"}], "new_hypothesis": {"name": "糸で先に開く", "how_it_moves": "糸を引く", "params": {"push_part": "stick", "hub": "axle", "pusher_height": 84}, "against": ["未確認"], "to_measure": "角度", "evidence": []},
+        "new_hypothesis": {"name": "糸で先に開く", "how_it_moves": "糸を引く", "params": {"push_part": "stick", "hub": "axle", "pusher_height": 84}, "against": ["未確認"], "to_measure": "角度", "evidence": []},
         "next_to_try": {"hypothesis_id": "H-D", "why": "比べる", "what_to_measure": "開いた角度と筒を下げた距離の比"}, "references": [r1]}
 client = Fake([([tool("list_records", {"source_id": G}, "a"), tool("get_known_examples", {"source_id": G}, "a")], "tool_use"),
                ([tool("check_params", {"template_id": "slider_fan", "source_id": G, "params": {"fold_width": 9}}, "b")], "tool_use"),
@@ -102,15 +104,20 @@ assert "逆" in json.dumps(client.calls[3]["messages"], ensure_ascii=False, defa
 saved = loop._read(loop.folder() / f"proposal-{pid[2:]}.json")
 assert saved["status"] == "pending_human" and saved["trace"]["tool_calls"] == ["list_records", "get_known_examples", "check_params"] and saved["changes"][0]["formula_check"] == "ok"
 # 採るまで何も変わらない（F9）
-assert loop.latest_version(G, "H-A") == 1 and all(h["rank"] is None for h in hypotheses.load(G)["hypotheses"])
+assert loop.latest_version(G, "H-A") == 1 and all("rank" not in h for h in hypotheses.load(G)["hypotheses"])
+# 頼みに順位を求めない
+assert "ranking" not in json.dumps(client.calls[0]["tools"], ensure_ascii=False) and "順位を付けない" in client.calls[0]["system"][0]["text"]
 assert floors(loop.adopt(pid, " ", ["fold_width"])[1]) == {"F9.human"}
-made, fs = loop.adopt(pid, "確認者", ["fold_width"], True, True)
-assert not fs and made == {"version": 2, "ranking": True, "new_hypothesis": "H-N1"}
+order_before = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
+made, fs = loop.adopt(pid, "確認者", ["fold_width"], True)
+assert not fs and made == {"version": 2, "new_hypothesis": "H-N1"}
+# 次に試す物の提案を採っても、並びは変わらない（新しい仮説が末尾に足されるだけ）
+assert [h["id"] for h in hypotheses.load(G)["hypotheses"]][: len(order_before)] == order_before
 assert floors(loop.adopt(pid, "確認者", ["fold_width"])[1]) == {"F9.human"}, "同じ提案を 2 度採らない"
 data = hypotheses.load(G)
 shown = "\n".join(hypotheses.list_lines(data, "予想"))
 assert "順位" not in shown and "動いた " not in shown, "順位と集計は学ぶ人の画面に出さない"
-assert next(h for h in data["hypotheses"] if h["id"] == "H-D")["rank"] == 1 and any(h["id"] == "H-N1" and any(e["where"] == r1 for e in h["evidence"]) for h in data["hypotheses"])
+assert all("rank" not in h for h in data["hypotheses"]) and any(h["id"] == "H-N1" and any(e["where"] == r1 for e in h["evidence"]) for h in data["hypotheses"])
 # 版 2 の紙: 根拠の記録が刷られる
 assert hypotheses.save_prediction(G, "試験")[1] == []
 assert hypotheses.print_sheet(G, "H-A", f"{tmp}/v2", version=2) == 0

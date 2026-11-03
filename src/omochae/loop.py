@@ -1,4 +1,7 @@
-"""輪の後半: 記録の解釈 → 次の手の提案 → 人の採否 → 版 2・順位・新しい仮説。
+"""輪の後半: 記録の解釈 → 次の手の提案 → 人の採否 → 版 2・新しい仮説。
+
+順位は持たない（本人の決定、J-025）。記録で順位が動くと、動いた事を正しさとして扱う成績の形になるため。
+記録は「次に試す物」の提案の材料にだけ使う。
 
 判断の芯: Claude は案までで、確定は人の操作だけ。人が確定していない解釈は根拠に使えない（F9）。
 人の説明と次の思いつきを先に受ける。作っている人のアイディアより先に AI の原因と次の手が出ると、作る意味を奪うため（J-013）。
@@ -209,9 +212,12 @@ def check_proposal(p, source):
                         else:
                             c["formula_check"] = "ok"
                     c["from"] = {**TEMPLATES_DEFAULT(template), **current}.get(c["param"])
-    for r in p.get("ranking", []):
-        if _hypothesis(sid, r.get("hypothesis_id")) is None:
-            out.append(Failure("F8.references", str(r.get("hypothesis_id")), "順位を変える仮説が実在しない"))
+    # 順位は扱わない（J-025）。古い形の提案や手書きで混ざっても、黙って捨てず落として知らせる。
+    if p.get("ranking"):
+        out.append(Failure("F4.evidence", "ranking", "仮説の順位は扱わない。記録は次に試す物の提案に使う（J-025）"))
+    nxt = p.get("next_to_try") or {}
+    if nxt.get("hypothesis_id") and _hypothesis(sid, nxt["hypothesis_id"]) is None:
+        out.append(Failure("F8.references", str(nxt["hypothesis_id"]), "次に試す仮説が実在しない"))
     return out
 
 
@@ -231,8 +237,8 @@ def save_proposal(proposal, source, drafted_by):
     return pid, []
 
 
-def adopt(pid, by, accept_params=(), accept_ranking=False, accept_new=False, source=None):
-    """人の採否（H7）。採った物だけが版・順位・仮説の一覧に入る。"""
+def adopt(pid, by, accept_params=(), accept_new=False, source=None):
+    """人の採否（H7）。採った物だけが版と仮説の一覧に入る。次に試す物の提案は、採っても並びを変えない。"""
     path = folder() / f"proposal-{pid[2:]}.json"
     p = _read(path)
     if p is None:
@@ -256,13 +262,10 @@ def adopt(pid, by, accept_params=(), accept_ranking=False, accept_new=False, sou
         params = {**current, **{c["param"]: c["to"] for c in chosen}}
         _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": chosen, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
         made["version"] = version
-    if accept_ranking and p.get("ranking"):
-        _write(folder() / f"ranking-{sid}.json", {"ranking": p["ranking"], "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
-        made["ranking"] = True
     if accept_new and p.get("new_hypothesis"):
         extras_path = folder() / f"extra-hypotheses-{sid}.json"
         extras = _read(extras_path) or []
-        new = {**p["new_hypothesis"], "id": f"H-N{len(extras) + 1}", "status": "untested", "rank": None, "evidence": p["new_hypothesis"].get("evidence", []) + [{"kind": "record", "where": rid, "what": "試した記録", "certainty": "記録"} for rid in p["record_ids"]], "proposal": pid, "adopted_by": by.strip()}
+        new = {**p["new_hypothesis"], "id": f"H-N{len(extras) + 1}", "status": "untested", "evidence": p["new_hypothesis"].get("evidence", []) + [{"kind": "record", "where": rid, "what": "試した記録", "certainty": "記録"} for rid in p["record_ids"]], "proposal": pid, "adopted_by": by.strip()}
         extras.append(new)
         _write(extras_path, extras)
         made["new_hypothesis"] = new["id"]
@@ -272,16 +275,13 @@ def adopt(pid, by, accept_params=(), accept_ranking=False, accept_new=False, sou
 
 
 def overlay(data):
-    """人が採った順位と新しい仮説を、一覧に重ねる。元の仮説の記録は書き換えない。"""
+    """人が採った新しい仮説を、一覧に重ねる。元の仮説の記録は書き換えない。
+
+    前に採った順位の記録（ranking-*.json）が手元に残っていても重ねない。順位は持たない（J-025）。
+    """
     sid = data["source_id"]
     extras = _read(folder() / f"extra-hypotheses-{sid}.json") or []
     data["hypotheses"] = data["hypotheses"] + extras
-    rank = _read(folder() / f"ranking-{sid}.json")
-    if rank:
-        order = {r["hypothesis_id"]: r["rank_after"] for r in rank["ranking"]}
-        for h in data["hypotheses"]:
-            if h["id"] in order:
-                h["rank"] = order[h["id"]]
     return data
 
 
@@ -311,7 +311,6 @@ def main(argv=None):
     s.add_argument("proposal")
     s.add_argument("--by", required=True)
     s.add_argument("--param", action="append", default=[])
-    s.add_argument("--ranking", action="store_true")
     s.add_argument("--new", action="store_true")
     try:
         args = ap.parse_args(argv)
@@ -356,7 +355,7 @@ def main(argv=None):
             if not _human_confirm(args.proposal, "採用"):
                 failures = [Failure("F9.human", args.proposal, "端末での人の確認が無い")]
             else:
-                made, failures = adopt(args.proposal, args.by, args.param, args.ranking, args.new, source)
+                made, failures = adopt(args.proposal, args.by, args.param, args.new, source)
                 if not failures:
                     print(json.dumps(made, ensure_ascii=False))
     except ImportError as e:

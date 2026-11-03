@@ -23,7 +23,7 @@ def load(source_id):
         raise ToolMissing(f"仮説の記録が無い: {source_id}")
     from .loop import overlay
 
-    # 人が採った順位と新しい仮説だけを重ねる（F9）。元の記録は書き換えない。
+    # 人が採った新しい仮説だけを重ねる（F9）。元の記録は書き換えない。順位は持たない（J-025）。
     return overlay(json.loads(path.read_text(encoding="utf-8")))
 
 

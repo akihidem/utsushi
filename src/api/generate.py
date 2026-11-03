@@ -153,7 +153,7 @@ def adopt_generated(gid, by, numbers):
     made = []
     for n in numbers:
         h = items[n - 1]
-        new = {**h, "id": f"H-N{len(extras) + 1}", "status": "untested", "rank": None, "generated_by": g["trace"]["model"], "generated_in": gid, "adopted_by": by.strip()}
+        new = {**h, "id": f"H-N{len(extras) + 1}", "status": "untested", "generated_by": g["trace"]["model"], "generated_in": gid, "adopted_by": by.strip()}
         if h.get("template_id"):
             new["template"] = h["template_id"]
         extras.append(new)

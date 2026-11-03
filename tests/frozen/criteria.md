@@ -9,7 +9,7 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | F1.marks | 型紙の PDF から pdftotext で、所蔵（国立国会図書館デジタルコレクションと永続 ID）・改変・出典 ID・「仮説」が取り出せる | `neg_marks_all`・`neg_marks_source_id` | 3・F1.marks |
 | F2.bom | 部品表の素材が空でない。置き換えには元の素材（推定）と理由がある | `neg_bom_material`・`neg_bom_original` | 3・F2.bom |
 | F3.result | 結果は雛形の値（御来迎は 3 値、虎は揺れた／揺れないの 2 値）。「わからない」を「動いた」に数えない | `tests/test_records.py` の負の場面 | 3・F3.result |
-| F4.evidence | 寸法や仮説の順位の変更には根拠の記録 ID が要る | `tests/test_loop.py` の負の場面 | 3・F4.evidence |
+| F4.evidence | 寸法の変更と次に試す物の提案には根拠の記録 ID が要る。仮説の順位は扱わない（順位が混ざった提案は落とす。J-025） | `tests/test_loop.py` の負の場面 | 3・F4.evidence |
 | F5.range | 寸法が雛形の範囲の中で、知らない名前が無い | `neg_range` | 3・F5.range |
 | F5.print_area | 全部品と全文字が印字域に収まる | `neg_print_area` | 3・F5.print_area |
 | F5.overlap | 部品どうしが重ならない | `neg_overlap` | 3・F5.overlap |

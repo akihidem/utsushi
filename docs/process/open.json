@@ -81,15 +81,6 @@
   }
  },
  {
-  "id": "O-18",
-  "decision": "仮説の順位を残すか、次に試す物の提案だけにするか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/philosophy.md",
-   "quote": "構造は成績のまま"
-  }
- },
- {
   "id": "O-19",
   "decision": "案 B の一言の「解き明かす」を残すか。虎と順位の扱いの確認",
   "waiting_on": "本人",

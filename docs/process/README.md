@@ -81,16 +81,17 @@
 | 36 | [J-022](decisions/J022-video-gallery.md) | 動画を Claude が見るのは観察の補助と型紙の判定だけ。成績にしない再現ギャラリーと有識者の声 | 作る側の案。本人の答え待ち |
 | 37 | [J-023](decisions/J023-first-test-later.md) | 本物の API の最初の試験は作り込んでから。下見・キャッシュ・費用の数え方を足した | 決定 |
 | 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。画面は作った（人の確認はまだ） |
-| 39 | [claude-story-draft](claude-story-draft.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 下書き。本人の確認待ち |
-| 40 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
-| 41 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ直し、足りない所を聞く | 調査。本人の答え待ち |
-| 42 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 43 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 44 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
-| 45 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 46 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 47 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 48 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
+| 40 | [claude-story-draft](claude-story-draft.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 下書き。本人の確認待ち |
+| 41 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
+| 42 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ直し、足りない所を聞く | 調査。本人の答え待ち |
+| 43 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 44 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 45 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
+| 46 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 47 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 48 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 49 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

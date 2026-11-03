@@ -13,7 +13,6 @@
       "id": "H-A",
       "name": "側面のつまみで押し上げる",
       "status": "untested",
-      "rank": null,
       "params": {
         "push_part": "tab",
         "hub": "axle",
@@ -45,7 +44,6 @@
       "id": "H-B",
       "name": "内筒を下から押し上げる",
       "status": "untested",
-      "rank": null,
       "params": {
         "push_part": "tube",
         "hub": "axle",
@@ -70,7 +68,6 @@
       "id": "H-C",
       "name": "柄を下から押し上げる",
       "status": "untested",
-      "rank": null,
       "params": {
         "push_part": "stick",
         "hub": "axle",
@@ -95,7 +92,6 @@
       "id": "H-D",
       "name": "柄を持って筒を下げる",
       "status": "untested",
-      "rank": null,
       "params": {
         "push_part": "stick",
         "hub": "axle",
@@ -120,7 +116,6 @@
       "id": "H-E",
       "name": "扇を筒の口の台に載せる",
       "status": "untested",
-      "rank": null,
       "params": {
         "push_part": "tube",
         "hub": "rim",
