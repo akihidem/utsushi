@@ -2,8 +2,9 @@
 
 判断の芯: コマンドの輪と同じ線を画面でも守る。予想が先（F9.prediction）、仮説に順位を出さない（J-013）、
 試した後の紙は記録を残すまで渡さない（J-013）、結果は人が入れる値で、成績にしない（philosophy.md）。
-Claude を呼ぶ所は置かない。鍵なしで輪の前半（予想 → 型紙 → 試す → 記録 → 人の説明）が回る。
-持ち寄りの画面（contrib_server.py）と同じく 127.0.0.1 にだけ開く。外に開く責任を週内に持てないため。
+鍵なしで輪の前半（予想 → 型紙 → 試す → 記録 → 人の説明）が回る。Claude を呼ぶ所（手帖の質問・読み・観察）は鍵がある時だけ動く。
+既定は持ち寄りの画面（contrib_server.py）と同じく 127.0.0.1 にだけ開く。外に開く責任を週内に持てないため。
+家の網に開く切り替え（--lan、U-36）だけは本人の決定で足した。
 """
 import html
 import json
@@ -282,7 +283,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, PAGES[m.group(1)]())
         if path == "/gallery":
             from . import techo_site
-            return self._send(200, page("上げた物と、職人の言葉", techo_site.gallery_page(sources()), techo_site.STYLE, "techo"))
+            from .demo_samples import STYLE as SAMPLE_STYLE
+            return self._send(200, page("上げた物と、職人の言葉", techo_site.gallery_page(sources()), techo_site.STYLE + SAMPLE_STYLE, "techo"))
         # 図鑑（f15）。文の印の床（F6.label）と予想が先の線は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):

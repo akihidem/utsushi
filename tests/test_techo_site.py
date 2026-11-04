@@ -85,7 +85,7 @@ except urllib.error.HTTPError as e:
     assert e.code == 303 and "/techo" in e.headers["Location"]
 # サイトのギャラリー: 上げた物と職人の言葉の枠
 g = req("/gallery")[1].decode()
-assert "m1.jpg" in g and "職人の言葉" in g and "（準備中）" in g
+assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
 server.shutdown()
 print("ok")

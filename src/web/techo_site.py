@@ -223,7 +223,10 @@ def gallery_page(sids):
             cards += (f'<div class="item"><p class="meta">{esc(data["toy"])}　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
                       f'<div class="row">{pics}</div></div>')
     cards = cards or '<p class="meta">まだ上げた物はありません。手帖の「上げる」から上げると、ここに並びます。</p>'
-    voices = "".join(f'<div class="item"><p class="meta">{esc(k)}</p><p>（準備中）</p></div>' for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
+    from .demo_samples import uploads_html, voice_html
+    cards += uploads_html()
+    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
     return ('<div class="top"><h1>上げた物</h1><a href="/">入口へ</a></div>'
             '<section class="panel" aria-label="上げた物"><p class="mark">上げた物</p><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'

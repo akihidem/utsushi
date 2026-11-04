@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "tests/test_demo_samples.py", line 13, in <module>
+    assert html.count('class="item is-sample"') == len(demo_samples.UPLOADS) + len(demo_samples.CONTRIBUTIONS), "見本が全部出る"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 見本が全部出る
+rc 1
