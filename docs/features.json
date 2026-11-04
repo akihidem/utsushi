@@ -277,5 +277,32 @@
    "tests/test_sheet_u25.py"
   ],
   "unverified": "実際の授業で使っていない。点は付けず、子どもの名前の欄を置かない"
+ },
+ {
+  "id": "f29",
+  "name": "デモ動画を 1 つの命令で作り直す（7 場面をコードで描き、試験の数を入れ、3 分の床でつなぐ）",
+  "status": "doing",
+  "evidence": [
+   "src/demo/build.py",
+   "src/demo/flip.py",
+   "src/demo/scene2.py",
+   "src/demo/scene3.py",
+   "src/demo/scene4.py",
+   "src/demo/scene5.py",
+   "src/demo/scene6.py",
+   "src/demo/scene7.py",
+   "src/demo/assemble.py",
+   "tests/test_demo_flip.py",
+   "tests/test_demo_scene2.py",
+   "tests/test_demo_scene3.py",
+   "tests/test_demo_scene4.py",
+   "tests/test_demo_scene5.py",
+   "tests/test_demo_scene6.py",
+   "tests/test_demo_scene7.py",
+   "tests/test_demo_assemble.py",
+   "tests/test_demo_build.py",
+   "docs/demo/plan.md"
+  ],
+  "unverified": "曲と字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まるまで入らない。本人と審査の人に見せていない"
  }
 ]

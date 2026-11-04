@@ -1,0 +1,53 @@
+{
+  "_why": "デモ動画の場面 4（江戸の仕組みの絵から型紙へ）で映す北斎漫画の切り出しの記録。座標は頁の画像の割合（pct、[x, y, 幅, 高さ]）で持ち、画像の大きさに依らない。画像そのものは repo に入れず、撮る時に IIIF から取る。型紙は repo の生成器で撮る時に刷る（下の template）。",
+  "pages": {
+    "v3-R0000022": {
+      "title": "北斎漫画. ３編",
+      "short": "北斎漫画 三編",
+      "creator": "葛飾北斎 画",
+      "publisher": "片野東四郎",
+      "publication": "明11（1878）",
+      "persistent_id": "info:ndljp/pid/851648",
+      "doi": "10.11501/851648",
+      "canvas": "R0000022",
+      "iiif": "https://dl.ndl.go.jp/api/iiif/851648/R0000022",
+      "rights": "PDM",
+      "rights_basis": "IIIF の manifest（https://dl.ndl.go.jp/api/iiif/851648/manifest.json）の metadata「Access Restrictions: PDM」（2026-11-04 に読んだ。attribution と license の行も同じ manifest で読んだ）",
+      "attribution": "国立国会図書館 National Diet Library, JAPAN",
+      "modification_note": "改変: 頁の上の段の遠近の図を左右の頁から切り出し、並べた。絵の線は描き直していない",
+      "what": "遠近法の線。左の頁は通りと家並みに消える線、右の頁は「三ツワリの法」の線（天と地を分ける）",
+      "crops": [
+        {"id": "left", "box_pct": [5.5, 24.5, 41.0, 34.5], "what": "通りの図（奥へ集まる線）"},
+        {"id": "right", "box_pct": [51.5, 24.5, 41.0, 34.5], "what": "三ツワリの法の図"}
+      ]
+    },
+    "v8-R0000011": {
+      "title": "北斎漫画. ８編",
+      "short": "北斎漫画 八編",
+      "creator": "葛飾北斎 画",
+      "publisher": "片野東四郎",
+      "publication": "明11（1878）",
+      "persistent_id": "info:ndljp/pid/851653",
+      "doi": "10.11501/851653",
+      "canvas": "R0000011",
+      "iiif": "https://dl.ndl.go.jp/api/iiif/851653/R0000011",
+      "rights": "PDM",
+      "rights_basis": "IIIF の manifest（https://dl.ndl.go.jp/api/iiif/851653/manifest.json）の metadata「Access Restrictions: PDM」（2026-11-04 に読んだ）",
+      "attribution": "国立国会図書館 National Diet Library, JAPAN",
+      "modification_note": "改変: 左の頁の糸車の図を切り出した。絵の線は描き直していない",
+      "what": "糸車（左の頁、書き込み「二繰目車ノ部」）。繭から引いた糸が枠に掛かる仕組みの図",
+      "crops": [
+        {"id": "wheel", "box_pct": [4.5, 24.0, 41.5, 66.0], "what": "二繰目車ノ部の図"}
+      ]
+    }
+  },
+  "template": {
+    "what": "御来迎の型紙（slider_fan）と、対の手順の紙。repo の生成器（compose → render.write_all）で撮る時に刷る",
+    "source_id": "NDL-1187053-R0000005-L",
+    "hypotheses_file": "data/hypotheses/NDL-1187053-R0000005-L.json",
+    "example_hypothesis": "H-A",
+    "example_why": "大きく映す例は記号の順の先頭（A）にした。順位ではない。並べた仮説は全部、同じ大きさの小さな紙で横に並べる（J-025）",
+    "tejun_crop_rule": "手順の紙は、題から「組み方」の終わりまでを映す（「遊び方」の行の上で切る）。閉じた時の中の様子の図とその説明は白く伏せる。扇の開き方を見せない決まり（F9）のため。図の左で縦に切ると題と所蔵の行が途中で切れるので、切らずに伏せた。座標は撮る時に配置の字の箱から計算する",
+    "modification_note": "型紙と手順の紙は utsushi の生成器が寸法から描いた。原図の写しは貼っていない"
+  }
+}
