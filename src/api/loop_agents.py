@@ -37,8 +37,9 @@ PROPOSE_SCHEMA = {"type": "object", "properties": {
 }, "required": ["next_to_try", "references"]}
 
 
-def _tools():
-    return [
+def _tools(zoom=True):
+    """道具の一覧。zoom=False は U-12 の比べ（拡大の道具あり・なし）のためだけで、既定は今までどおり入れる。"""
+    tools = [
         {"name": "list_records", "description": "人が解釈を確定した試行の記録を返す。", "input_schema": {"type": "object", "properties": {"source_id": {"type": "string"}}, "required": ["source_id"]}},
         {"name": "get_known_examples", "description": "人が要約した既知の作例を返す。", "input_schema": {"type": "object", "properties": {"source_id": {"type": "string"}}, "required": ["source_id"]}},
         {"name": "list_contributions", "description": "公開済みの持ち寄りを、確かさの種類つきで返す。", "input_schema": {"type": "object", "properties": {"source_id": {"type": "string"}}}},
@@ -46,6 +47,7 @@ def _tools():
         {"name": "check_params", "description": "寸法を決定的な検査にかけ、通ったかと落ちた理由を返す。", "input_schema": {"type": "object", "properties": {"template_id": {"type": "string"}, "source_id": {"type": "string"}, "params": {"type": "object"}}, "required": ["template_id", "source_id", "params"]}},
         {"name": "zoom_picture", "description": "対象の頁の図の一部を拡大して見る。x・y・w・h は見開き全体に対する %。", "input_schema": {"type": "object", "properties": {"source_id": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}, "w": {"type": "number"}, "h": {"type": "number"}}, "required": ["source_id", "x", "y", "w", "h"]}},
     ]
+    return tools if zoom else [t for t in tools if t["name"] != "zoom_picture"]
 
 
 def _known_examples(source_id):

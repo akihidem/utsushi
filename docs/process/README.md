@@ -99,9 +99,10 @@
 | 54 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
 | 55 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
 | 56 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
-| 57 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 58 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 59 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 57 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
+| 58 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 59 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 60 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

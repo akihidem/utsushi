@@ -336,6 +336,12 @@
   "status": "11-06〜07 に使う（U-19）"
  },
  {
+  "id": "api-test-plan",
+  "path": "api-test-plan.md",
+  "hook": "本物の API の最初の試験 7 回の手順書",
+  "status": "本人の承認待ち（U-05）"
+ },
+ {
   "id": "claims",
   "path": "claims.md",
   "hook": "主張ごとの確かさの種類と根拠の表",
