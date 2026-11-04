@@ -23,6 +23,8 @@ def switch(current):
     links = "｜".join(f"<b>{esc(n)}</b>" if u == current else f'<a href="{u}">{esc(n)}</a>' for u, n in items)
     # 上げた物のギャラリーと職人の言葉（本人の設計、11-04）。入口からいつでも行けるよう、切り替えの並びに置く。
     links += '｜<a href="/gallery">上げた物と職人の言葉</a>'
+    # 増やした雛形の玩具にも、デモで触れる（本人の決定 Q3 (b)、11-04）。入口の主役は必須の 2 種のままで、ほかの玩具へは図鑑から入る。
+    links += '｜<a href="/zukan">図鑑（ほかの玩具も）</a>'
     return f'<nav class="switch">{links}<span class="cap">A と A′ は本人が見比べて決める（11-04）</span></nav>'
 
 

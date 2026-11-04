@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "tests/test_demo_walk_all.py", line 40, in <module>
+    assert 'href="/zukan"' in call("/")[1], "入口から図鑑へ行ける"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 入口から図鑑へ行ける
+rc 1
