@@ -1,0 +1,4 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 2   # 直した後（lane/fix-api の作業ツリー）
+ok 2
+ok
+rc=0

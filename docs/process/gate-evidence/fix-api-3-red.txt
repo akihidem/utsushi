@@ -1,0 +1,10 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 3   # 直す前（main 32b6dfc + この試験だけ）
+Traceback (most recent call last):
+  File "tests/test_api_review_fixes.py", line 265, in <module>
+    ALL[key]()
+    ~~~~~~~~^^
+  File "tests/test_api_review_fixes.py", line 149, in test_3
+    assert gen.check_result(draft, gs), "欠けた欄を落とす"
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 欠けた欄を落とす
+rc=1

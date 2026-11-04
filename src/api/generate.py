@@ -11,6 +11,7 @@ import pathlib
 
 from omochae import hypotheses, loop
 from omochae.compose import TEMPLATES, compose
+from omochae.contrib import public_list
 from omochae.model import Failure
 
 from . import agent
@@ -32,31 +33,82 @@ HYPOTHESIS = {"type": "object", "properties": {
     "name": {"type": "string"}, "how_it_moves": {"type": "string"}, "physics": {"type": "string"},
     "evidence": {"type": "array", "minItems": 1, "items": {"type": "object", "properties": {"kind": {"type": "string", "enum": ["image", "song", "record", "known_example", "contribution"]}, "where": {"type": "string"}, "what": {"type": "string"}, "certainty": {"type": "string"}}, "required": ["kind", "where", "what", "certainty"]}},
     "against": {"type": "array", "items": {"type": "string"}}, "to_measure": {"type": "string"},
-    "template_id": {"type": ["string", "null"]}, "params": {"type": "object"},
+    "template_id": {"type": ["string", "null"]}, "params": {"type": ["object", "null"]},
     "vs_prediction": {"type": "object", "properties": {"same": {"type": "array", "items": {"type": "string"}}, "different": {"type": "array", "items": {"type": "string"}}}, "required": ["same", "different"]},
 }, "required": ["name", "how_it_moves", "physics", "evidence", "against", "to_measure", "template_id", "vs_prediction"]}
 SCHEMA = {"type": "object", "properties": {"hypotheses": {"type": "array", "minItems": 2, "maxItems": 3, "items": HYPOTHESIS}, "references": {"type": "array", "items": {"type": "string"}}}, "required": ["hypotheses", "references"]}
 
 
+def _record_of(ref):
+    try:
+        return loop.record(ref)
+    except (ValueError, TypeError):  # 形の違う ID（R-0001 の形でない）も「記録ではない」として扱う
+        return None
+
+
+def _known_example_ids(sid):
+    out = set()
+    for p in (loop.ROOT / "data/known_examples").glob("*.json"):
+        if json.loads(p.read_text(encoding="utf-8")).get("source_id") == sid:
+            out.add(p.stem)
+    return out
+
+
+def evidence_failure(ref, sid, kind=None):
+    """根拠・前例の ID 1 つを見る。通れば None、落ちれば Failure。
+
+    なぜ実在だけでなく玩具と確定まで見るか: loop.known_ids() は全部の玩具の記録・作例・持ち寄りと、人が確定していない記録まで含む。
+    それだけで通すと、別の玩具の記録や未確定の記録が根拠に混ざる（外の検品の指摘、11-04）。
+    提案の検査（loop.check_proposal）と同じく、記録は人が解釈を確定した物だけを根拠にできる（F9）。
+    kind が無い（references の）時は、記録・作例・持ち寄りのどれかで同じ玩具の物なら通す。
+    loop.py は別の担当が持つので、ここで api の側の見方として持つ。
+    """
+    ref = str(ref)
+    if kind in (None, "record"):
+        rec = _record_of(ref)
+        if rec is not None:
+            if rec.get("source_id") != sid:
+                return Failure("F8.references", ref, f"別の玩具（{rec.get('source_id')}）の記録は根拠にできない")
+            if not loop.confirmed(ref):
+                return Failure("F9.human", ref, "解釈を人が確定していない記録は根拠にできない")
+            return None
+        if kind == "record":
+            return Failure("F8.references", ref, "その記録は実在しない")
+    if kind in (None, "known_example") and ref in _known_example_ids(sid):
+        return None
+    if kind in (None, "contribution") and ref in {c["id"] for c in public_list(sid)}:
+        return None
+    if ref in loop.known_ids():
+        return Failure("F8.references", ref, "この玩具の前例でない（別の玩具の物か、根拠の種類と合わない）")
+    return Failure("F8.references", ref, "その前例は実在しない")
+
+
 def check_result(result, source):
     """決定的な床で落とす。プロンプトの約束を信じない。"""
-    errors = []
-    hs = result.get("hypotheses") or []
+    # 形を先に見る（欄が欠けた案・型の違う案を落とす）。形が違っても後の検査は続け、落ちた理由を一度に全部返す。
+    # 1 つずつ返すと、Claude のやり直し（2 回まで）を理由の小出しで使い切るため。後の検査は欄の型を仮定しないよう、型の違う所は飛ばす。
+    # 床の名前は凍結した表（tests/frozen/criteria.md）に足さず、根拠と読みの欄が揃う事の床として F4.evidence に載せる。
+    if not isinstance(result, dict):
+        return [Failure("F4.evidence", "形", "案は JSON の object で出す")]
+    errors = [Failure("F4.evidence", "形", f"案の形が違う: {e}") for e in agent.schema_errors(result, SCHEMA)]
+    sid = source["source_id"]
+    hs = [h for h in (result.get("hypotheses") or []) if isinstance(h, dict)] if isinstance(result.get("hypotheses"), list) else []
     if not 2 <= len(hs) <= 3:
         errors.append(Failure("F8.references", "hypotheses", "仮説は 2〜3 本"))
-    ids = loop.known_ids()
-    for ref in result.get("references", []):
-        if ref not in ids:
-            errors.append(Failure("F8.references", ref, "その前例は実在しない"))
+    for ref in result.get("references") if isinstance(result.get("references"), list) else []:
+        if (f := evidence_failure(ref, sid)) is not None:
+            errors.append(f)
     for h in hs:
-        for e in h.get("evidence", []):
-            if e.get("kind") in ("record", "known_example", "contribution") and e.get("where") not in ids:
-                errors.append(Failure("F8.references", str(e.get("where")), "根拠の前例が実在しない"))
+        for e in h.get("evidence") if isinstance(h.get("evidence"), list) else []:
+            if isinstance(e, dict) and e.get("kind") in ("record", "known_example", "contribution") and (f := evidence_failure(e.get("where"), sid, e["kind"])) is not None:
+                errors.append(f)
         tid = h.get("template_id")
         if tid is None:
             if h.get("params"):
                 errors.append(Failure("F5.range", h.get("name", "?"), "型紙にできない仮説に寸法がある"))
             continue
+        if not isinstance(tid, str) or not isinstance(h.get("params") or {}, dict):
+            continue  # 型の違いは形の検査で落としてある。ここで描画器に渡すと例外で受付ごと落ちる
         if tid not in TEMPLATES:
             errors.append(Failure("F5.range", str(tid), "その雛形は無い"))
             continue

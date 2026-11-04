@@ -1,0 +1,10 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 4   # 直す前（main 32b6dfc + この試験だけ）
+Traceback (most recent call last):
+  File "tests/test_api_review_fixes.py", line 265, in <module>
+    ALL[key]()
+    ~~~~~~~~^^
+  File "tests/test_api_review_fixes.py", line 176, in test_4
+    assert floors(gen.check_result(with_ref(other), gs)) == {"F8.references"}, "別の玩具の記録を根拠にしない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 別の玩具の記録を根拠にしない
+rc=1

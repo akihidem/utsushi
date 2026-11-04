@@ -28,13 +28,48 @@ INTERPRET_SCHEMA = {"type": "object", "properties": {
     "unknown": {"type": "array", "items": {"type": "string"}},
 }, "required": ["observed", "causes", "unknown"]}
 
+# 新しい仮説の案の形。採ると（loop.adopt）そのまま仮説の一覧（data/hypotheses/*.json の hypotheses と同じ並び）に入るので、
+# 一覧の仮説と同じ欄（名前・動き方・根拠・反証・測る事）を求める。id と status は採る時に人の側で付ける。
+# 根拠は空でもよい（採る時に、元の記録が根拠として足される）。前は {} の素の object で、空の案が保存できた（外の検品の指摘、11-04）。
+NEW_HYPOTHESIS = {"type": "object", "properties": {
+    "name": {"type": "string", "minLength": 1}, "how_it_moves": {"type": "string", "minLength": 1}, "physics": {"type": "string"},
+    "evidence": {"type": "array", "items": {"type": "object", "properties": {"kind": {"type": "string", "enum": ["image", "song", "text", "record", "known_example", "contribution"]}, "where": {"type": "string"}, "what": {"type": "string"}, "certainty": {"type": "string"}}, "required": ["kind", "where", "what", "certainty"]}},
+    "against": {"type": "array", "items": {"type": "string"}}, "to_measure": {"type": "string", "minLength": 1}, "params": {"type": ["object", "null"]},
+}, "required": ["name", "how_it_moves", "evidence", "against", "to_measure"]}
+
 PROPOSE_SCHEMA = {"type": "object", "properties": {
     "hypothesis_id": {"type": "string"},
     "changes": {"type": "array", "items": {"type": "object", "properties": {"param": {"type": "string"}, "to": {"type": "number"}, "why": {"type": "string"}, "metric": {"type": "string"}, "direction": {"type": "string", "enum": ["increase", "decrease"]}}, "required": ["param", "to", "why"]}},
-    "new_hypothesis": {"type": "object"},
+    "new_hypothesis": NEW_HYPOTHESIS,
     "next_to_try": {"type": "object", "properties": {"hypothesis_id": {"type": "string"}, "why": {"type": "string"}, "what_to_measure": {"type": "string"}}, "required": ["why", "what_to_measure"]},
     "references": {"type": "array", "items": {"type": "string"}},
 }, "required": ["next_to_try", "references"]}
+
+
+def check_new_hypothesis(nh, source_id=None):
+    """新しい仮説の案を見る。失敗の文の一覧を返す（空なら通る）。
+
+    形（NEW_HYPOTHESIS）に加えて、空白だけの欄も落とす（minLength は空白を通すため）。
+    source_id があれば、根拠の記録・前例が同じ玩具の物で、記録は人が確定した物かも見る（仮説の案の受付と同じ見方）。
+    """
+    return agent.schema_errors(nh, NEW_HYPOTHESIS) + _new_hypothesis_content(nh, source_id)
+
+
+def _new_hypothesis_content(nh, source_id=None):
+    """形の検査（JSON Schema）では見られない所だけ。提案全体の形を見る時に、形の失敗を二重に数えないため分けてある。"""
+    from .generate import evidence_failure  # generate がこの部品を読むので、循環を避けて使う時に読む
+
+    errors = []
+    if not isinstance(nh, dict):
+        return errors
+    for key in ("name", "how_it_moves", "to_measure"):
+        if isinstance(nh.get(key), str) and nh[key] and not nh[key].strip():
+            errors.append(f"new_hypothesis/{key}: 空白だけの欄は書いていないのと同じ")
+    if source_id:
+        for e in nh.get("evidence") if isinstance(nh.get("evidence"), list) else []:
+            if isinstance(e, dict) and e.get("kind") in ("record", "known_example", "contribution") and (f := evidence_failure(e.get("where"), source_id, e["kind"])) is not None:
+                errors.append(f.line())
+    return errors
 
 
 def _tools(zoom=True):
@@ -105,13 +140,23 @@ def draft_proposal(record_id, source, client=None):
     if not told:
         return None, [Failure("F9.human", record_id, "人の説明と次の思いつきが先。explain で残す")]
     rec = {**loop.record(record_id), "human_next_idea": told["next_idea"]}
-    data = load(source["source_id"])
+    sid = source["source_id"]
+    # 記録の玩具と渡された玩具が違えば、別の玩具の仮説と寸法で案を作ってしまう。Claude を呼ぶ前に止める（外の検品の指摘、11-04）。
+    if rec.get("source_id") != sid:
+        return None, [Failure("F8.references", record_id, f"記録は {rec.get('source_id')} の物で、渡された玩具 {sid} と違う")]
+    data = load(sid)
     hypothesis_id = rec["hypothesis_id"]
-    context = {"template_id": data.get("template", "slider_fan"), "record": rec, "interpretation": loop.interpretation(record_id)["content"], "hypotheses": data["hypotheses"], "allowed_params": sorted(loop.ALLOWED[data.get("template", "slider_fan")])}
+    # 雛形は玩具の既定でなく、その記録の仮説の雛形を使う。人が採った新しい仮説は玩具の既定と違う雛形を持ち得る（extra-hypotheses の template）。
+    # 注: 提案の検査（loop.check_proposal）は今も玩具の既定の雛形で寸法を見る。loop.py は別の担当なので、そちらの直しとして渡す。
+    h = loop._hypothesis(sid, hypothesis_id) or {}
+    template = h.get("template") or data.get("template", "slider_fan")
+    context = {"template_id": template, "record": rec, "interpretation": loop.interpretation(record_id)["content"], "hypotheses": data["hypotheses"], "allowed_params": sorted(loop.ALLOWED[template])}
     user = "次の材料から案を作ってください。\n<data>\n" + json.dumps(context, ensure_ascii=False) + "\n</data>"
 
     def validate(result):
-        return [f.line() for f in loop.check_proposal({**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id)}, source)]
+        # 形（PROPOSE_SCHEMA）と新しい仮説の中身も見る。提案の検査（loop.check_proposal）は寸法と根拠の記録しか見ないため。
+        shape = agent.schema_errors(result, PROPOSE_SCHEMA) + _new_hypothesis_content(result.get("new_hypothesis"), sid)
+        return shape + [f.line() for f in loop.check_proposal({**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id)}, source)]
 
     result, trace = agent.run("propose", PROPOSE_SYSTEM, user, _tools(), PROPOSE_SCHEMA, execute, validate=validate, client=client)
     proposal = {**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id), "trace": _trace(trace)}
