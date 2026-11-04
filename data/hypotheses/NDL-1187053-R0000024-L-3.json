@@ -1,0 +1,111 @@
+{
+  "source_id": "NDL-1187053-R0000024-L-3",
+  "toy": "木菟（みみずく）の凧",
+  "template": "string_pull",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは、凧を落ち着かせる作りの違い。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "糸目はどこに付いているのか",
+    "尾は付いていたのか",
+    "形の凧は平らか、反っているか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "尾を付けて揚げる",
+      "status": "untested",
+      "params": {
+        "rig": "tail",
+        "shape": "mimizuku",
+        "sail_w": 130,
+        "sail_h": 140,
+        "spar_y": 35,
+        "bridle_top": 20,
+        "bridle_bottom": 110,
+        "tow_at": 40,
+        "bridle_h": 85,
+        "tail_len": 440
+      },
+      "how_it_moves": "風上に向かって揚げ糸を少しずつ出す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 24 の図",
+          "what": "羽を広げたみみずくの形が袖凧の下に重なって描かれている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inference",
+          "where": "棚卸し（data/inventory/edo-nishiki.json）の見立て",
+          "what": "尾で回りを抑えるのは凧の作り方の通例からの推測",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "図に尾は見えない",
+        "図の糸目の付き方はこの型紙（縦骨の 2 点）と違うかもしれない"
+      ],
+      "to_measure": "揚がるか。回らずに落ち着くか"
+    },
+    {
+      "id": "H-B",
+      "name": "横骨を反らせ、尾なしで揚げる",
+      "status": "untested",
+      "params": {
+        "rig": "bow",
+        "shape": "mimizuku",
+        "sail_w": 130,
+        "sail_h": 140,
+        "spar_y": 35,
+        "bridle_top": 20,
+        "bridle_bottom": 110,
+        "tow_at": 40,
+        "bridle_h": 85,
+        "bow_depth": 12
+      },
+      "how_it_moves": "風上に向かって揚げ糸を少しずつ出す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 24 の図",
+          "what": "羽を広げたみみずくの形が袖凧の下に重なって描かれている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inference",
+          "where": "棚卸し（data/inventory/edo-nishiki.json）の見立て",
+          "what": "図に尾が見えないので、反りで落ち着かせる読みを立てた",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "横骨が反っているかは図から読めない"
+      ],
+      "to_measure": "揚がるか。回らずに落ち着くか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "Claude Code のセッションが書いた案。人の確認はまだ",
+    "contrasts": [
+      {
+        "change": "糸目の結び目を上へずらす・下へずらす",
+        "watch": "凧の立つ角度と、揚がり方"
+      },
+      {
+        "change": "尾を長くする・短くする（尾なしなら横骨の反りを変える）",
+        "watch": "くるくる回るか、落ち着くか"
+      },
+      {
+        "change": "薄い紙と厚い紙で作って比べる",
+        "watch": "弱い風でも揚がるか"
+      }
+    ],
+    "card": [
+      "風は帆を押し、糸はそれを引き止めます。結び目が帆の真ん中より上にあると、凧は少し上を向いて風を下へ流し、上へ持ち上がります。",
+      "尾や反った横骨は、凧が左右に回るのを抑えます。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

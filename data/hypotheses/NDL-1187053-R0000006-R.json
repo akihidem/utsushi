@@ -1,0 +1,108 @@
+{
+  "source_id": "NDL-1187053-R0000006-R",
+  "toy": "糸からくりの絵箱",
+  "template": "string_pull",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは、動く所をどう動かすかの違い。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "箱の上と下の糸は何につながっているのか",
+    "動くのは人物の袖か、絵の全体か"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "糸で人物の袖を口元へ上げる",
+      "status": "untested",
+      "params": {
+        "rig": "pull",
+        "shape": "ebako",
+        "board_w": 80,
+        "board_h": 130,
+        "pivot_x": 36,
+        "pivot_y": 60,
+        "arm_len": 50,
+        "arm_w": 20,
+        "pivot_at": 14,
+        "pull_arm": 8,
+        "stroke": 6,
+        "guide_drop": 40
+      },
+      "how_it_moves": "糸を引いて離す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 6 の図",
+          "what": "人物が袖を口元に当てている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 6 の図",
+          "what": "箱の上と下に糸が出ていて、下の端に結び目がある",
+          "certainty": "観察"
+        }
+      ],
+      "against": [
+        "箱の中の作りは絵から読めない",
+        "絵が入れ替わる仕掛けかもしれない"
+      ],
+      "to_measure": "袖が上がって、離すと戻るか"
+    },
+    {
+      "id": "H-B",
+      "name": "袖を軸に吊り、箱を揺らすと袖が揺れる",
+      "status": "untested",
+      "params": {
+        "rig": "sway",
+        "shape": "ebako",
+        "board_w": 80,
+        "board_h": 130,
+        "pivot_x": 36,
+        "pivot_y": 60,
+        "arm_len": 50,
+        "arm_w": 20,
+        "pivot_at": 14,
+        "pull_arm": 8,
+        "stroke": 6,
+        "guide_drop": 40
+      },
+      "how_it_moves": "台紙の上を持って左右に小さく揺らす",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 6 の図",
+          "what": "箱の上の端に吊るための輪のような糸がある",
+          "certainty": "観察"
+        }
+      ],
+      "against": [
+        "糸を引く読みと違い、下の糸を説明しない"
+      ],
+      "to_measure": "袖が揺れるか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "Claude Code のセッションが書いた案。人の確認はまだ",
+    "contrasts": [
+      {
+        "change": "軸から糸の穴までを短くした腕木と、長くした腕木を作って比べる",
+        "watch": "同じだけ引いた時に、どれだけ動くか"
+      },
+      {
+        "change": "軸を腕木の真ん中に近づける",
+        "watch": "離した時に元へ戻るか"
+      },
+      {
+        "change": "軸の穴を少し大きくする",
+        "watch": "動きが軽くなるか、ぐらつくか"
+      }
+    ],
+    "card": [
+      "軸の近くを少し引くと、軸から遠い所は大きく動きます。てこと同じです。",
+      "軸の片側が重いと、離した時に重い方が下がって元へ戻ります。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "source_id": "NDL-1187053-R0000018-L",
+  "toy": "木偶の相撲人形",
+  "template": "string_pull",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは、動く所をどう動かすかの違い。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "2 体をつなぐ板はどこで回るのか",
+    "棒を押すと 2 体のどちらが動くのか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "棒で押すと力士が組み付くように傾く",
+      "status": "untested",
+      "params": {
+        "rig": "push",
+        "shape": "sumo",
+        "board_w": 90,
+        "board_h": 130,
+        "pivot_x": 55,
+        "pivot_y": 45,
+        "arm_len": 75,
+        "arm_w": 40,
+        "pivot_at": 18,
+        "pull_arm": 12,
+        "stroke": 12,
+        "guide_drop": 50
+      },
+      "how_it_moves": "棒を押し上げ下げする",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 18 の図",
+          "what": "褌の 2 体の力士が板でつながり、棒が 1 本付いている",
+          "certainty": "観察"
+        }
+      ],
+      "against": [
+        "2 体とも動く作りかもしれない。この型紙では 1 体だけ動かす"
+      ],
+      "to_measure": "力士が傾いて組み合うように見えるか"
+    },
+    {
+      "id": "H-B",
+      "name": "力士を軸に吊り、揺らすと組み合う",
+      "status": "untested",
+      "params": {
+        "rig": "sway",
+        "shape": "sumo",
+        "board_w": 90,
+        "board_h": 130,
+        "pivot_x": 55,
+        "pivot_y": 45,
+        "arm_len": 75,
+        "arm_w": 40,
+        "pivot_at": 18,
+        "pull_arm": 12,
+        "stroke": 12,
+        "guide_drop": 50
+      },
+      "how_it_moves": "台紙の上を持って左右に小さく揺らす",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 18 の図",
+          "what": "褌の 2 体の力士が板でつながっている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inference",
+          "where": "棚卸し（data/inventory/edo-nishiki.json）の見立て",
+          "what": "揺らす読みは、棒が持ち手かもしれないという推測",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "棒の役目を説明しない"
+      ],
+      "to_measure": "力士が揺れるか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "Claude Code のセッションが書いた案。人の確認はまだ",
+    "contrasts": [
+      {
+        "change": "軸から糸の穴までを短くした腕木と、長くした腕木を作って比べる",
+        "watch": "同じだけ引いた時に、どれだけ動くか"
+      },
+      {
+        "change": "軸を腕木の真ん中に近づける",
+        "watch": "離した時に元へ戻るか"
+      },
+      {
+        "change": "軸の穴を少し大きくする",
+        "watch": "動きが軽くなるか、ぐらつくか"
+      }
+    ],
+    "card": [
+      "軸の近くを少し引くと、軸から遠い所は大きく動きます。てこと同じです。",
+      "軸の片側が重いと、離した時に重い方が下がって元へ戻ります。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}
