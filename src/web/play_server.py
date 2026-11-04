@@ -166,13 +166,13 @@ def record_form(sid, data, own):
     if template == "pivot_counterweight":
         extra = '<label>動かした物<select name="power"><option value="">—</option><option>手</option><option>息</option><option>団扇</option><option>風</option></select></label>'
     else:
-        extra = ('<label>開いた角度（度。測った時だけ）<input type="text" name="opened_deg" inputmode="decimal"></label>'
-                 '<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>')
+        # 角度の欄は外した（本人の方針「開き具合の角度などは今回の課題ではない」、U-25）。受け口は古い記録のために残す。
+        extra = ('<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>')
     return (f'<form method="post" action="/toy/{sid}/record"><h2>試した記録</h2><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset><legend>見た事</legend>{results}</fieldset>{extra}'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
             '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
-            '<label>作り始めて最初に動かすまで（分）<input type="text" name="minutes_to_try" inputmode="decimal"></label><label>メモ<textarea name="note"></textarea></label>'
+            '<label>メモ<textarea name="note"></textarea></label>'
             '<button>記録を残す</button></form>')
 
 

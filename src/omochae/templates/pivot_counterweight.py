@@ -12,7 +12,7 @@ from ..pivot_model import center, paper_mass, period_s, rest_tilt_deg
 
 ID = "pivot_counterweight"
 # 刷った組の版（U-31）。slider_fan.SHEET_SET と同じ意味。
-SHEET_SET = "tora-v2"
+SHEET_SET = "tora-v3"
 DEFAULTS = {
     "mount": "neck",
     "body_length": 64, "body_width": 28, "body_height": 54, "glue": 8,
