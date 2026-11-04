@@ -16,5 +16,11 @@ data/decisions/*
 !data/decisions/.gitkeep
 data/records/*
 !data/records/.gitkeep
+# 11-04 の試行の記録だけは、本人の決定で repo に載せる（U-09・U-28・U-32）。ほかの記録は個人の物なので入れない。
+!data/records/R-0001.json
+!data/records/R-0002.json
 data/loop/*
 !data/loop/.gitkeep
+!data/loop/explanation-R-0001.json
+!data/loop/explanation-R-0002.json
+!data/loop/template-change-0001.json

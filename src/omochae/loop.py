@@ -274,6 +274,45 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     return made, []
 
 
+def save_template_change(record_ids, sheet_set, commit, changes, by, decided_in=""):
+    """雛形の直し（本人の決定 U-32、11-04）。寸法の数値では表せない直し（部品の形・組み方の順など）を、台帳でつなぐ記録。
+
+    寸法の版（version-*.json）は数値を変える形しか持てず、11-04 の試行から出た v8 の直し（溝の形、扇の足、土台、組み方の順）が
+    乗らなかった。そこで「記録 → 人の説明 → 次の版 → 人が採る」の次の版の所に、この種類を置く。
+    床: 根拠の記録が実在する（F8）。どの記録にも人の説明が先にある（F9.human、J-013）。採った人・刷った組・commit・直した中身が要る。
+    数値の向きの検査（F7）は当てない。式の無い直しなので、印として kind を template_change にする。
+    """
+    out = []
+    if not record_ids:
+        out.append(Failure("F4.evidence", "record_ids", "根拠の記録 ID が要る"))
+    for rid in record_ids:
+        try:
+            record(rid)
+        except ValueError as e:
+            out.append(Failure("F8.references", rid, str(e)))
+            continue
+        if explanation(rid) is None:
+            out.append(Failure("F9.human", rid, "人の説明が先に要る"))
+    if not by or not by.strip():
+        out.append(Failure("F9.human", "by", "採った人の名前が無い"))
+    for name, v in (("sheet_set", sheet_set), ("commit", commit)):
+        if not (v or "").strip():
+            out.append(Failure("F7.revision", name, f"{name} が無い"))
+    if not changes or not all(str(c).strip() for c in changes):
+        out.append(Failure("F7.revision", "changes", "直した中身が要る"))
+    if out:
+        return None, out
+    nums = [int(p.stem.split("-")[-1]) for p in folder().glob("template-change-*.json")]
+    tid = f"T-{max(nums, default=0) + 1:04d}"
+    _write(folder() / f"template-change-{tid[2:]}.json", {"id": tid, "kind": "template_change", "record_ids": list(record_ids), "sheet_set": sheet_set.strip(),
+                                                           "commit": commit.strip(), "changes": list(changes), "adopted_by": by.strip(), "decided_in": decided_in, "at": _now()})
+    return tid, []
+
+
+def template_changes():
+    return [_read(p) for p in sorted(folder().glob("template-change-*.json"))]
+
+
 def overlay(data):
     """人が採った新しい仮説を、一覧に重ねる。元の仮説の記録は書き換えない。
 
