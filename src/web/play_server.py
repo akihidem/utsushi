@@ -180,10 +180,10 @@ class Handler(BaseHTTPRequestHandler):
         return False
 
     def _pick_look(self):
-        """この要求の皮。?look= が先、次に cookie、無ければ既定（skin.DEFAULT）。?look= の時は cookie に移して全部の頁に続ける。"""
-        _, _, query = self.path.partition("?")
-        self._look, want = skinmod.pick(self.headers.get("Cookie", ""), query)
-        self._cookie = [skinmod.cookie_header(want)] if want else []
+        """この要求の皮。サーバを立てた時に 1 つに決める（serve の look、命令の --look）。
+        なぜ切り替えないか: 本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」。1 つのサイトの中で
+        見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
+        self._look, self._cookie = getattr(self.server, "look", skinmod.DEFAULT), []
 
     def _toy(self, sid, **kw):
         return toy_page(sid, look=self._look, **kw)
@@ -214,16 +214,13 @@ class Handler(BaseHTTPRequestHandler):
         look = self._look
         from .looks import PAGES
 
-        # 入口は皮の入口（A′ 白の展示が既定、黒のジンは cookie か ?look=zine）。A はルックブックの再現として /look/taiban に残す（カード 011452 の Q1・Q2）。
+        # 入口はこのサイトの皮の入口（白の展示か黒のジン、--look）。別の皮の入口はこのサイトには無い（404）。
+        # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
-            return self._send(200, PAGES["zine" if look == "zine" else "tenji"]())
+            return self._send(200, PAGES[look]())
         m = re.fullmatch(r"/look/([a-z]+)", path)
-        if m:
-            if m.group(1) in PAGES:
-                if m.group(1) in skinmod.SKINS:
-                    # 入口で皮が決まり、以後の頁に続く（要件の L-01）。
-                    self._look, self._cookie = m.group(1), [skinmod.cookie_header(m.group(1))]
-                return self._send(200, PAGES[m.group(1)]())
+        if m and m.group(1) == look:
+            return self._send(200, PAGES[look]())
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
@@ -528,14 +525,18 @@ def lan_addresses():
     return ips + [f"{socket.gethostname().split('.')[0]}.local"]
 
 
-def serve(port=8766, lan=False, public_key=None):
+def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
-    public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。"""
+    public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。
+    look はこのサイトの皮（tenji 白の展示・zine 黒のジン）。皮ごとに 1 サイト（本人の決定 11-05 朝）なので、2 つ立てる時は port と look を変える。"""
     if public_key is not None and len(public_key) < 16:
         raise ValueError("合言葉が短すぎる（16 字以上）")
+    if look not in skinmod.SKINS:
+        raise ValueError(f"皮が無い: {look}（{'・'.join(skinmod.SKINS)}）")
     server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
+    server.look = look
     return server
 
 
@@ -548,14 +549,20 @@ if __name__ == "__main__":
             i = argv.index("--public-key-file")
             key = pathlib.Path(argv[i + 1]).read_text(encoding="utf-8").strip()
             del argv[i:i + 2]
+        look = skinmod.DEFAULT
+        if "--look" in argv:
+            # どの皮のサイトか（tenji か zine）。2 サイト目は port も変えて別に立てる。
+            i = argv.index("--look")
+            look = argv[i + 1]
+            del argv[i:i + 2]
         args = [a for a in argv if a != "--lan"]
         lan = "--lan" in argv
         port = int(args[0]) if args else 8766
-        server = serve(port, lan=lan, public_key=key)
+        server = serve(port, lan=lan, public_key=key, look=look)
     except (ValueError, OSError, OverflowError, IndexError) as e:
         print(f"検査できない: 開けない: {e}", file=sys.stderr)
         sys.exit(4)
-    print(f"http://127.0.0.1:{port}/")
+    print(f"http://127.0.0.1:{port}/  皮: {skinmod.SKINS[look]['name']}（{look}）")
     for h in server.lan_hosts:
         print(f"家の網から: http://{h}:{port}/  （同じ網の iPhone で開く。音声認識は https でないので使えない見込みで、字の入力と読み上げは使える）")
     server.serve_forever()

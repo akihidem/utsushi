@@ -45,16 +45,16 @@ def post(path, data, origin=base, ctype="application/x-www-form-urlencoded"):
 
 code, body = get("/")
 body = body.decode()
-# 入口は本人が残した A 大判写真集（J-024）。玩具の一覧から入れる
-assert code == 200 and "御来迎" in body and "大判写真集" in body and f"/toy/{G}" in body
-# 外した 3 案（見開き型・冊子型・B 和綴じ帖）は出さない
-assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404
+# 入口はこのサイトの皮の入口（既定は白の展示）。玩具の一覧から入れる。大判（A）と外した 3 案は出さない（本人の決定 11-05 朝: 日本画かジン、皮ごとに 1 サイト）
+assert code == 200 and "御来迎" in body and f"/toy/{G}" in body and "大判写真集" not in body
+assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404 and get("/look/taiban")[0] == 404
 assert "冊子型" not in body and "和綴じ帖" not in body
-# 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
-for name in ("taiban", "tenji", "zine"):
-    code, look = get(f"/look/{name}")
-    look = look.decode()
-    assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
+# この皮の入口は /look/<皮> でも開く。別の皮はこのサイトには無い（切り替えは置かない）
+assert get("/look/tenji")[0] == 200 and get("/look/zine")[0] == 404 and "?look=" not in body
+# 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない（黒のジンは入口の関数で見る。サーバの形は test_two_sites）
+from web import looks  # noqa: E402
+for name, look in (("tenji", get("/look/tenji")[1].decode()), ("zine", looks.zine())):
+    assert "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
     assert "原文の引用" in look, "引用の印を残す"
     # スマホで表紙の下が URL の帯に隠れないよう、画面の高さは svh（research/19）
     assert "100svh" in look and "whileInView" not in look and "IntersectionObserver" not in look, name

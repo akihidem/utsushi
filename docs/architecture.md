@@ -29,12 +29,12 @@
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
-| `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮の cookie、刷った紙の口（PDF・PNG・SVG。試した後の紙は記録の後だけ）、合言葉の門 |
-| `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。入口で選んだ皮が cookie で全部の頁に続く（docs/process/site-requirements.md） |
+| `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮はサーバごとに 1 つ（--look。皮ごとに 1 サイト）、刷った紙の口（PDF・PNG・SVG、インライン。試した後の紙は記録の後だけ）、合言葉の門 |
+| `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。皮はサイトごとに 1 つで、頁の中に切り替えは無い（docs/process/site-requirements.md の 15） |
 | `src/web/toy.py` | 玩具の頁。記録を読む → 予想 → 仮説の札 → 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る。たとえと関連する事柄の節（analogy_section、予想の後） |
 | `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（必須 2 を大きく、試作を札で） |
 | `src/web/about.py` | 序（コンセプト・『江都二色』の解説・動機）。文面は本人の言葉の引用と書誌の値だけ。採否は本人 |
-| `src/web/looks.py` | 入口。A′ 日本画展の展示（既定）と C 縦読みのジン。全部の玩具の一覧の節を持つ。A 大判写真集はルックブックの再現として /look/taiban に残す（J-024） |
+| `src/web/looks.py` | 入口。A′ 日本画展の展示と C 縦読みのジン（どちらのサイトかは --look）。全部の玩具の一覧の節を持つ。大判（A）は 11-05 朝に外した |
 | `src/web/kuzushi.py` | くずし字を読む頁（f14）。先に自分の読みを書き、確かめた読みと並べる。書いた読みは保存しない |
 | `src/web/zukan.py` | 図鑑の頁（印つきの文、F6.label） |
 | `src/web/techo_site.py` | 手帖の頁（聞く・上げる・フィードバック）と、上げた物と職人の言葉の頁 |
