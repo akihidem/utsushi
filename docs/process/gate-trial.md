@@ -88,3 +88,13 @@
 - 検証ゲート: **済み**。Red（ギャラリーに見本を入れる前）: rc 1、AssertionError「見本が全部出る」（gate-evidence/red-demo-samples.txt）。Green: rc 0（gate-evidence/green-demo-samples.txt）
 - エビデンスゲート: **済み**。上の出力と tests/test_demo_walk.py（床に落ちる次の版の値は理由を見せて刷らない事も含む）。例外: 作る（紙を切って組む）は手の仕事なので、刷った紙が開ける所までを見る。外の網から iPad・iPhone で開く道（https の一時の名前）は、外へ開く操作なので本人の判断を待つ
 - マージ後の書き戻し: push の後に main の上で ./run.sh を回して書く
+
+## デモの一周を外の機器から開く合言葉の門（hack-main、11-04 夜）
+
+- 目的: パソコン・iPad・iPhone のどれからでも、どの網からでもデモの一周を開けるようにする
+- なぜか: 本人の決定 A（カード 20261104-221318、11-04）「AWS でトンネルを立ててよい。合言葉付きのリンクで、3台がどの網でも開ける形で」
+- どうしたらいいか: 推しは、サーバの口を 127.0.0.1 のままにして、cloudflared の一時の https の名前だけを足し、合言葉の門を必ず通す事（run-demo.sh）。代案: 家のパソコンの --lan（同じ網でしか開けず、iPhone の音声認識が http で動かない）
+- ゴールの要件: tests/test_public_gate.py が入れる前に落ち、入れた後に通る。合言葉なしの起動は今までどおりで、トンネルの名前を断る。./run.sh が rc 0
+- 検証ゲート: **済み**。Red: rc 1、TypeError「serve() got an unexpected keyword argument 'public_key'」（入口で落ちる弱い Red、gate-evidence/red-public-gate.txt）。Green: rc 0（gate-evidence/green-public-gate.txt）
+- エビデンスゲート: 上の出力と ./run.sh。iPhone の Safari での一周と音声認識は本人が見る（作る側の機械では確かめられない）
+- マージ後の書き戻し: 前の節（デモ用の見本）の分は、main 6752b9a の上で ./run.sh 81/81。この節の分は push の後に書く

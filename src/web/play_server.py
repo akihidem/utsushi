@@ -4,8 +4,10 @@
 試した後の紙は記録を残すまで渡さない（J-013）、結果は人が入れる値で、成績にしない（philosophy.md）。
 鍵なしで輪の前半（予想 → 型紙 → 試す → 記録 → 人の説明）が回る。Claude を呼ぶ所（手帖の質問・読み・観察）は鍵がある時だけ動く。
 既定は持ち寄りの画面（contrib_server.py）と同じく 127.0.0.1 にだけ開く。外に開く責任を週内に持てないため。
-家の網に開く切り替え（--lan、U-36）だけは本人の決定で足した。
+家の網に開く切り替え（--lan、U-36）と、デモの一周を外の機器から開く合言葉の門（--public-key-file、11-04 の本人の決定 A）は
+本人の決定で足した。後者は口を 127.0.0.1 のままにし、外からはトンネル（run-demo.sh）だけが入る。
 """
+import hmac
 import html
 import json
 import os
@@ -39,6 +41,8 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 """
 
 MAX_FORM = 64 * 1024
+# トンネルの一時の名前の形（run-demo.sh の cloudflared）。本物の名前は repo に書かない（push の門の決まり）ので、形だけをここに 1 か所置く。
+TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
 SID = r"NDL-\d+-R\d+-[LR]"
 
 
@@ -250,18 +254,52 @@ class Handler(BaseHTTPRequestHandler):
         port = self.server.server_address[1]
         # 家の網に開いた時（--lan）は、この機械の網の中の番地と名前だけを足す。ほかの名前は今までどおり断る。
         extra = getattr(self.server, "lan_hosts", ())
-        return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}", *(f"{h}:{port}" for h in extra))
+        host = self.headers.get("Host", "")
+        # デモの一周を外の機器から開く時（public_key あり）は、トンネルの名前を足す。名前は毎回変わるので形で受け、合言葉の門（_gate）で絞る。
+        if getattr(self.server, "public_key", None) and re.fullmatch(TUNNEL_HOST, host):
+            return True
+        return host in (f"127.0.0.1:{port}", f"localhost:{port}", *(f"{h}:{port}" for h in extra))
+
+    def _origin_ok(self):
+        # トンネルの先は https、手元は http。どちらも同じ Host の頁から来た物だけを受ける（別のサイトから送らせない）。
+        host = self.headers.get("Host", "")
+        ok = {f"http://{host}"} | ({f"https://{host}"} if getattr(self.server, "public_key", None) else set())
+        return self.headers.get("Origin") in ok
+
+    def _gate(self):
+        """合言葉の門。public_key がある時だけ働く。URL を知っただけの人に記録と写真を見せないため。通れば True、断った時は返事を送って False。
+        合言葉は最初の 1 回だけ ?k= で受け、Cookie に移して URL から消す（履歴や画面に長く残さない）。"""
+        key = getattr(self.server, "public_key", None)
+        if not key:
+            return True
+        jar = {}
+        for part in self.headers.get("Cookie", "").split(";"):
+            k, _, v = part.strip().partition("=")
+            jar[k] = v
+        if hmac.compare_digest(jar.get("utsushi_k", "").encode(), key.encode()):
+            return True
+        path, _, query = self.path.partition("?")
+        given = urllib.parse.parse_qs(query).get("k", [""])[0]
+        if self.command == "GET" and given and hmac.compare_digest(given.encode(), key.encode()):
+            rest = urllib.parse.urlencode([(a, b) for a, b in urllib.parse.parse_qsl(query) if a != "k"])
+            self._send(303, "", headers=[("Location", path + (f"?{rest}" if rest else "")),
+                                         ("Set-Cookie", f"utsushi_k={key}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax")])
+            return False
+        self._send(403, "合言葉付きのリンクから開いてください")
+        return False
 
     def do_GET(self):
         try:
-            self._get()
+            if self._gate():
+                self._get()
         except Exception as e:
             print(f"GET の失敗: {type(e).__name__}: {e}", file=sys.stderr)
             self._send(500, "うまく表示できませんでした")
 
     def do_POST(self):
         try:
-            self._post()
+            if self._gate():
+                self._post()
         except Exception as e:
             print(f"POST の失敗: {type(e).__name__}: {e}", file=sys.stderr)
             self._send(500, "受け付けられませんでした")
@@ -332,7 +370,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _form(self):
         # 別のサイトの頁から手元の記録へ送らせないため、同じ出所のフォームだけを受ける。
-        if self.headers.get("Origin") != f"http://{self.headers.get('Host', '')}":
+        if not self._origin_ok():
             return None
         if self.headers.get("Content-Type", "").split(";")[0] != "application/x-www-form-urlencoded":
             return None
@@ -356,7 +394,7 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             # 写真と動画はフォームでなく本体そのままで受ける。別のサイトから送らせないため、同じ出所だけを受ける。
             from . import techo_site
-            if self.headers.get("Origin") != f"http://{self.headers.get('Host', '')}":
+            if not self._origin_ok():
                 return self._send(403, "受け付けられない送り方です")
             try:
                 length = int(self.headers.get("Content-Length", ""))
@@ -566,20 +604,31 @@ def lan_addresses():
     return ips + [f"{socket.gethostname().split('.')[0]}.local"]
 
 
-def serve(port=8766, lan=False):
-    """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。"""
+def serve(port=8766, lan=False, public_key=None):
+    """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
+    public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。"""
+    if public_key is not None and len(public_key) < 16:
+        raise ValueError("合言葉が短すぎる（16 字以上）")
     server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
+    server.public_key = public_key
     return server
 
 
 if __name__ == "__main__":
     try:
-        args = [a for a in sys.argv[1:] if a != "--lan"]
-        lan = "--lan" in sys.argv[1:]
+        argv = sys.argv[1:]
+        key = None
+        if "--public-key-file" in argv:
+            # 合言葉は引数に書かない（ps で見える）。ファイルの中身だけを読む。
+            i = argv.index("--public-key-file")
+            key = pathlib.Path(argv[i + 1]).read_text(encoding="utf-8").strip()
+            del argv[i:i + 2]
+        args = [a for a in argv if a != "--lan"]
+        lan = "--lan" in argv
         port = int(args[0]) if args else 8766
-        server = serve(port, lan=lan)
-    except (ValueError, OSError, OverflowError) as e:
+        server = serve(port, lan=lan, public_key=key)
+    except (ValueError, OSError, OverflowError, IndexError) as e:
         print(f"検査できない: 開けない: {e}", file=sys.stderr)
         sys.exit(4)
     print(f"http://127.0.0.1:{port}/")
