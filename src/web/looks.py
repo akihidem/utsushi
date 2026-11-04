@@ -189,42 +189,77 @@ def taiban():
     return page("うつし · 大判写真集", body + ONLY, TAIBAN, "taiban")
 
 
-# ---------------------------------------------------------------- C 縦読みのジン
+# ---------------------------------------------------------------- C 縦読みのジン（黒地）
+# 本人の答え（2026-11-04）: C は黒地のジンのまま性格を保つ（U-23）。さらに「本の形式もわるくないけど、黒の背景に高級感ある方が
+# もっと良くなる」。デザイナーの感想「もっと美術品みたく、歴史的価値のあるように見せたサイトの方が良い」も受けた。
+# 磨きの向き: 図を額装した美術品として見せる。深い黒の地に、図だけに光を当て、細い金の線の額とマット、明朝の細い字、
+# 美術館の作品の札（題・作・画・年・所蔵）を添える。札の中身は出典の記録（NDL の書誌）だけから刷り、足さない。
+# 動きは入れない（research/19 の判断のまま。何度も開く入口なので）。
 ZINE = """
-body.zine{background:#111;color:#eee6d6}
-body.zine a{color:#f0c27a}.zine .switch a{color:#f0c27a}
-.zn-cover{height:100vh;height:100svh;position:relative;overflow:hidden}
-.zn-cover .strip{position:absolute;left:0;right:0;top:22%;height:46%;filter:saturate(.9)}
-.zn-cover h1{position:absolute;left:4vw;bottom:5vh;font-size:clamp(72px,17vw,260px);line-height:1.1;margin:0;font-weight:200;letter-spacing:-.04em;mix-blend-mode:difference;color:#fff}
-.zn-cover .meta{position:absolute;right:4vw;top:6vh;color:#cfc4ad;font-size:12px;letter-spacing:.35em;text-transform:uppercase}
-.zn-toy{display:grid;grid-template-columns:1fr 1fr}
-.zn-toy .pin{position:sticky;top:0;height:100vh;height:100svh}
-.zn-toy .flow > div{min-height:100vh;min-height:100svh;padding:12vh 6vw;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
-.zn-toy .big{font-size:clamp(80px,14vw,220px);font-weight:200;line-height:.9;margin:0;font-variant-numeric:tabular-nums lining-nums}
-.zn-toy h2{font-size:clamp(32px,5vw,72px);font-weight:300;margin:.2em 0}
-.zn-toy .song{font-size:clamp(18px,2vw,26px);line-height:1.9}
-.zn-toy .cap{color:#a99f8d}
-.zn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.zn-grid div{aspect-ratio:1}
-@media (max-width:760px){.zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:70vh;height:70svh}}
+body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+ font-feature-settings:"palt" 1}
+body.zine a{color:#c9a96a;text-decoration:none;border-bottom:1px solid rgba(201,169,106,.45)}
+.zine .switch{position:relative;z-index:2;font-size:12px;letter-spacing:.2em;padding:14px 4vw;color:#7d7463}
+.zine .switch a{color:#c9a96a}.zine .switch b{color:#e9e1cf;font-weight:400}
+.zine .switch .cap{color:#5f584c}
+.zn-cover{min-height:100vh;min-height:100svh;position:relative;display:grid;grid-template-columns:1fr minmax(0,44vh) 1fr;align-items:center;
+ background:radial-gradient(ellipse 46% 62% at 50% 46%,#1d1914 0%,#0b0a09 72%)}
+.zn-cover .frame{grid-column:2;aspect-ratio:1600/2656;padding:18px;background:#141210;border:1px solid #6e5a35;
+ box-shadow:0 0 0 6px #0b0a09,0 0 0 7px #3a3122,0 30px 80px rgba(0,0,0,.7)}
+.zn-cover .frame div{width:100%;height:100%}
+.zn-cover h1{grid-column:3;justify-self:start;margin:0 0 0 6vw;writing-mode:vertical-rl;font-weight:300;
+ font-size:clamp(40px,6.5vw,92px);letter-spacing:.5em;color:#efe6d2}
+.zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
+.zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
+.zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
+.zn-toy{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1f1b16}
+.zn-toy .pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(ellipse 60% 70% at 50% 48%,#1c1813 0%,#0b0a09 75%)}
+.zn-toy .pin .frame{height:78%;aspect-ratio:1600/2656;padding:14px;background:#141210;border:1px solid #6e5a35;box-shadow:0 26px 70px rgba(0,0,0,.75)}
+.zn-toy .pin .frame div{width:100%;height:100%}
+.zn-toy .flow > div{min-height:100vh;min-height:100svh;padding:14vh 7vw;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.zn-toy .big{font-size:clamp(14px,1.2vw,16px);letter-spacing:.5em;color:#c9a96a;margin:0 0 18px;font-variant-numeric:tabular-nums lining-nums}
+.zn-toy h2{font-size:clamp(40px,5.5vw,84px);font-weight:300;margin:0;letter-spacing:.25em}
+.zn-toy .songs{writing-mode:vertical-rl;height:min(60vh,520px);margin:0 auto 24px}
+.zn-toy .song{font-size:clamp(18px,1.9vw,24px);line-height:2.2;letter-spacing:.12em;margin:0 .4em}
+.zn-toy .cap{color:#8c826e;font-size:12px;letter-spacing:.15em;line-height:1.9}
+.zn-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.zn-grid div{aspect-ratio:1;border:1px solid #3a3122;outline:8px solid #141210;outline-offset:-9px}
+.zn-end{padding:14vh 7vw;border-top:1px solid #1f1b16;text-align:center}
+@media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
+ .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
+ .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
+ .zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:72vh;height:72svh}
+ .zn-toy .songs{writing-mode:horizontal-tb;height:auto}}
 """
+
+
+def _label(t, src):
+    """美術館の作品の札。中身は出典の記録（NDL の書誌）の値だけで、作る側の言葉を足さない。"""
+    who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
+    when = esc((src.get("original_publication") or {}).get("value", ""))
+    rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
+    return (f'<p class="zn-label">『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>'
+            f'{esc(t["holding"])}<br>{rights}</p>')
 
 
 def zine():
     ts = toys()
     first = ts[0]["sid"] if ts else ""
     body = switch("/look/zine")
-    body += (f'<section class="zn-cover"><div class="strip" style="{_bg(first, "50% 60%")}"></div>'
-             '<p class="meta">Edo toy lookbook · vol.01 · 1773</p><h1>うつし</h1></section>')
+    body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
+             f'<div class="frame"><div style="{_bg(first, "50% 50%", "contain")}"></div></div><h1>うつし</h1></section>')
     for i, t in enumerate(ts, 1):
+        src = source(t["sid"])
         song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])
         tiles = "".join(f'<div style="{_bg(t["sid"], p, "300%")}"></div>' for p in ("30% 30%", "72% 40%", "35% 75%", "70% 82%"))
-        # 図は左に留めたまま、右で名・歌・細部・入口が流れる。図から目を離さずに読む形。
-        body += (f'<section id="look-{i}" class="zn-toy"><div class="pin" style="{_bg(t["sid"], "50% 50%", "contain")};background-color:#1a1714"></div><div class="flow">'
-                 f'<div><p class="big">{i:02d}</p><h2>{esc(t["toy"])}</h2>{_nopic(t)}</div>'
-                 f'<div id="song-{i}">{song}<p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
+        # 図は左に額装して留めたまま、右で札・歌・細部・入口が流れる。図から目を離さずに読む形。
+        body += (f'<section id="look-{i}" class="zn-toy"><div class="pin"><div class="frame"><div style="{_bg(t["sid"], "50% 50%", "contain")}"></div></div></div><div class="flow">'
+                 f'<div><p class="big">No. {i:02d}</p><h2>{esc(t["toy"])}</h2>{_label(t, src)}{_nopic(t)}</div>'
+                 f'<div id="song-{i}"><div class="songs">{song}</div><p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
                  f'<div><div class="zn-grid">{tiles}</div><p class="cap">図の細部</p></div>'
-                 f'<div><p class="song">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく →</a></p></div></div></section>')
-    body += '<p class="cap" style="padding:10vh 6vw">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
+                 f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></p></div></div></section>')
+    body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
     return page("うつし · 縦読みのジン", body + ONLY, ZINE, "zine")
 
 
