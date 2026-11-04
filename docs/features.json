@@ -38,7 +38,8 @@
   "name": "手順の紙",
   "status": "doing",
   "evidence": [
-   "src/omochae/instructions.py"
+   "src/omochae/instructions.py",
+   "tests/test_sheet_u25.py"
   ],
   "unverified": "実際の人が使っていない"
  },
@@ -201,7 +202,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/instructions.py",
-   "tests/test_words.py"
+   "tests/test_words.py",
+   "tests/test_sheet_u25.py"
   ],
   "unverified": "実際の人が使っていない。札の文の確かさは式と一般の物理による"
  },
@@ -221,7 +223,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/discriminate.py",
-   "tests/test_discriminate.py"
+   "tests/test_discriminate.py",
+   "tests/test_sheet_u25.py"
   ],
   "unverified": "実物で未試行。Claude が見分ける試作を設計する所は未実装。虎は対象外"
  },
@@ -237,5 +240,16 @@
    "tests/test_claude_code.py"
   ],
   "unverified": "工房で実際に案を作った事は無い。MCP は使う前の承認がまだ"
+ },
+ {
+  "id": "f27",
+  "name": "先生の見る紙（4 つの着目、U-25 の案 4）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/instructions.py",
+   "src/omochae/hypotheses.py",
+   "tests/test_sheet_u25.py"
+  ],
+  "unverified": "実際の授業で使っていない。点は付けず、子どもの名前の欄を置かない"
  }
 ]

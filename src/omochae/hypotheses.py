@@ -171,6 +171,32 @@ def print_free(source_id, title, how, evidence, out):
     return 3
 
 
+def print_teacher(source_id, out):
+    """先生の見る紙を刷る（U-25 の案 4）。仮説に依らない 1 枚なので、予想の門（F9.prediction）を通さずに刷れる。
+
+    先生は授業の前に刷っておくため。紙に答えも仮説も載らないので、予想より先に渡っても答えを先に言う事にならない。
+    """
+    from .compose import TEMPLATES
+    from .instructions import compose_teacher
+    from .marks import check_image_count, check_pdf
+    from .render import to_png, write_all
+
+    data = load(source_id)
+    source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    layout, failures = compose_teacher(source, data["toy"], sheet_set=TEMPLATES[data.get("template", "slider_fan")].SHEET_SET)
+    if not failures:
+        stem = pathlib.Path(out)
+        pdf = write_all(layout, stem)
+        failures = check_pdf(pdf, source) + check_image_count(pdf)
+        if not failures:
+            to_png(pdf, stem)
+            print(pdf)
+            return 0
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3
+
+
 def print_compare(source_id, a, b, out):
     """見比べる紙を刷る（J-019）。型紙は仮説ごとに print で刷る物なので、ここでは紙 1 枚だけ。"""
     from .discriminate import pick_pair
@@ -371,6 +397,8 @@ def main(argv=None):
     pc.add_argument("a")
     pc.add_argument("b")
     pc.add_argument("--out")
+    pt = sub.add_parser("print-teacher", help="先生の見る紙を刷る。4 つの着目ごとに見た事を書く。点は付けない")
+    pt.add_argument("--out")
     sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
     sg0.add_argument("--dry-run", action="store_true", help="本物を呼ばず、送る中身を書き出す")
     im = sub.add_parser("import-draft", help="Claude Code の Skill で作った案を、人が採る前の受付に入れる")
@@ -426,6 +454,8 @@ def main(argv=None):
                 return 3
             print("\n".join(table_lines(rows)))
             return 0
+        if args.cmd == "print-teacher":
+            return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
             return print_own(args.source, args.id, args.out or f"out/templates/{args.id}_v1")
         if args.cmd == "own":

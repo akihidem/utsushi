@@ -57,7 +57,7 @@ r = cli("print-own", "OWN-1", "--out", f"{tmp2}/none")
 # 雛形に無い機構を作れるふりをしない。型紙は刷らず、型紙なしの紙を返す（本人の決定）
 assert r.returncode == 0 and "F9.own" in r.stderr and not pathlib.Path(f"{tmp2}/none.pdf").exists() and pathlib.Path(f"{tmp2}/none_free.pdf").exists(), r.stderr
 free = subprocess.run(["pdftotext", "-layout", f"{tmp2}/none_free.pdf", "-"], capture_output=True, text=True).stdout
-assert "型紙なしの紙" in free and "身の回りの紙と紐" in free and "見た事" in free
+assert "型紙なしの紙" in free and "身の回りの紙と紐" in free and "おもちゃとして動きましたか" in free
 for word in ("正解", "成功", "失敗"):
     assert word not in free, word
 assert cli("own", "壊れた寸法", "--how", "押す", "--evidence", "図", "--params", json.dumps({"push_part": "tab", "tube_side": 500})).returncode == 0
