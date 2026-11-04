@@ -369,12 +369,12 @@ def _generated_command(args):
             # 下見では図を NDL から取りに行かない。手元に取ってあればその大きさを、無ければ空で示す。
             cached = ROOT / "out/sources" / f"{args.source}.jpg"
             image = base64.b64encode(cached.read_bytes()).decode() if cached.exists() else ""
-            _, failures = _preview("generate", lambda client: generate(source, client=client, image=image))
+            _, failures = _preview("generate", lambda client: generate(source, client=client, image=image, zoom=not args.no_zoom))
             for f in failures:
                 print(f.line(), file=sys.stderr)
             return 3 if failures else 0
         try:
-            gid, failures = generate(source)
+            gid, failures = generate(source, zoom=not args.no_zoom)
         except Exception as e:  # 鍵が無い・通信できない・予算の上限。値は出さない
             print(f"検査できない: Claude を呼べなかった（{type(e).__name__}: {str(e)[:160]}）。固定の仮説は list で見られます", file=sys.stderr)
             return 4
@@ -401,6 +401,7 @@ def main(argv=None):
     pt.add_argument("--out")
     sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
     sg0.add_argument("--dry-run", action="store_true", help="本物を呼ばず、送る中身を書き出す")
+    sg0.add_argument("--no-zoom", action="store_true", help="拡大の道具を渡さない（U-12 の比べのためだけ）")
     im = sub.add_parser("import-draft", help="Claude Code の Skill で作った案を、人が採る前の受付に入れる")
     im.add_argument("file")
     im.add_argument("--by", required=True, help="案を作ったセッション")

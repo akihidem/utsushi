@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/akhd/work/hackathon-utsushikagami/tests/test_transcription_filter.py", line 8, in <module>
+    assert "怠らし" not in out, "採らなかった読みの語が、採った読みの注の中から渡っている"
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: 採らなかった読みの語が、採った読みの注の中から渡っている

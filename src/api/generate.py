@@ -89,10 +89,13 @@ def transcription_for_claude(source):
     t = source.get("transcription")
     if not t:
         return t
-    return {**t, "entries": [e for e in t.get("entries", []) if not e.get("rejected_by")]}
+    # 採った読みも、渡すのは読みの文と出所と確かめた人だけにする。注（checked_scope・note）には、割れた読みの話として
+    # 採らなかった語がそのまま書いてある（11-04 の API の手順書の下見で、「怠らし」が注から渡っていたのが分かった）。
+    keep = ("text", "source", "set", "page", "read_by", "checked_by")
+    return {**t, "entries": [{k: e[k] for k in keep if k in e} for e in t.get("entries", []) if not e.get("rejected_by")]}
 
 
-def generate(source, client=None, image=None):
+def generate(source, client=None, image=None, zoom=True):
     sid = source["source_id"]
     failures = hypotheses.need_prediction(sid)
     if failures:
@@ -103,7 +106,7 @@ def generate(source, client=None, image=None):
                "transcription": transcription_for_claude(source), "reader_predictions": preds[-1:], "reader_own_hypotheses": own}
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image if image is not None else source_image(source)}},
                {"type": "text", "text": "この図と次の材料から仮説を立ててください。\n<data>\n" + json.dumps(context, ensure_ascii=False) + "\n</data>"}]
-    result, trace = agent.run("generate", SYSTEM, content, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source)], client=client)
+    result, trace = agent.run("generate", SYSTEM, content, _tools(zoom), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source)], client=client)
     return _save_draft(sid, preds, own, result, {"model": trace.model, "tool_calls": trace.tool_calls, "retries": trace.retries, "input_tokens": trace.input_tokens, "output_tokens": trace.output_tokens}), []
 
 
