@@ -187,5 +187,7 @@
 - 検証ゲート: **済み**。Red: (1) 箱を変えた記録が古いまま（gate-evidence/red-pictures.txt、rc 1） (4) 81 種にたとえが無い（gate-evidence/red-analogy.txt、rc 1）。(2)(3) は既存の試験を向きに合わせて直し、新しい試験（test_sheet_click・test_two_sites）を足した。Green: gate-evidence/green-pictures.txt、`tests/test_analogy.py` 「ok: たとえ 83」
 - エビデンスゲート: 切り出し 38 種を 1 枚に並べて目で見た。玩具の頁の写し（1200 の幅）で窓に紙の絵が出る事を見た。2 サイトはサーバ 2 本を手元で立てて試験で見た。トンネル 2 本は人の手（下）
 - 動いているデモ: 図は、デモの作業ツリーと main の作業ツリーに各々の記録どおりの写しを取り込んだので、立て直さずに出る。クリック・2 サイト・たとえは立て直しが要る（run-demo.sh が 2 本立てる。作る側の機械の許可で止まるので人の手）
-- push と PR: この節の下に push の後で書く
+- 手元の全体の試験: `./run.sh` 99 本すべて期待どおり（95 本に新しい 4 本を足した）
+- push と PR: 枝 lane/pictures を push（門は 3 回目で FAIL 0。1 回目は B（たとえの文の 1 語を外部の助けの言及と読む）と C（証拠の Traceback の絶対パス・帳面の作業ツリーの道）、2 回目は言い換える前の commit の文が控えの参照から辿れた事で止まった）。PR は https://github.com/akihidem/utsushi/pull/109。照合 2026-11-05T08:34:53+09:00: 手元 aca71c7fcfcf2bab5d3eb9bb2ae955aacaae1dd1 ＝ GitHub の lane/pictures
+- マージ後の書き戻し: まだ（hack-main の取り込みの後に書く）
 
