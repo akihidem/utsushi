@@ -100,7 +100,23 @@ def sheets(sid, hid, recorded):
     return "・".join(links)
 
 
-def toy_page(sid, errors=(), msg=""):
+def ask_form(sid, data, asked=None):
+    """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
+    printed = [h for h in data["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
+    if not printed:
+        return ""
+    opts = "".join(f'<option value="{esc(h["id"])}">仮説 {esc(hypotheses.letter(h))} の紙</option>' for h in printed)
+    shown = ""
+    if asked:
+        q, a = asked
+        shown = f'<div id="ask-answer"><p class="meta">聞いた事: {esc(q)}</p><p>{esc(a)}</p></div>'
+    return (f'<form method="post" action="/toy/{sid}/ask" id="ask"><h2>作っている途中で困ったら</h2>'
+            '<p class="meta">切る・折る・貼る・組む順の疑問に答えます（例: 谷折りって？）。どう動くか・仕組みは、試して確かめる所なので答えません。</p>'
+            f'<label>どの紙か<select name="hypothesis">{opts}</select></label><label>聞きたい事<input type="text" name="question" required maxlength="300"></label>'
+            f'<button>聞く</button>{shown}</form>')
+
+
+def toy_page(sid, errors=(), msg="", asked=None):
     data, src = hypotheses.load(sid), source(sid)
     note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")
     # 頁の頭は見開き: 大きな図と、名前と縦組みの歌。操作の欄はその下に置く。
@@ -138,7 +154,7 @@ def toy_page(sid, errors=(), msg=""):
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button>型紙と手順の紙を刷る</button></form>'
                  f'<p>{printed}</p></div>')
-    body += "</div>" + record_form(sid, data, own) + records_list(recs)
+    body += "</div>" + ask_form(sid, data, asked) + record_form(sid, data, own) + records_list(recs)
     return page(data["toy"], hero + f'<div class="wrap">{body}</div>')
 
 
@@ -277,7 +293,7 @@ class Handler(BaseHTTPRequestHandler):
         form = self._form()
         if form is None:
             return self._send(403, "受け付けられない送り方です")
-        m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record)", self.path)
+        m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
             return self._toy_post(sid, act, form)
@@ -292,6 +308,21 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, "見つかりません")
 
     def _toy_post(self, sid, act, form):
+        if act == "ask":
+            # 手順の質問は記録に残さず、その場で答えを頁に出す。仮説への返事の順（紙 → 記録と説明 → AI）には入らない。
+            from api import ask
+            from api.budget import BudgetStop
+
+            hid = form.get("hypothesis", "")
+            if hypotheses.need_prediction(sid) or not (out_dir(sid) / f"{hid}_v1.pdf").exists():
+                return self._send(422, toy_page(sid, ["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
+            try:
+                text, _ = ask.answer(sid, hid, form.get("question", ""))
+            except BudgetStop as e:
+                text = f"今は AI に聞けません（{e}）"
+            except Exception:
+                text = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください"
+            return self._send(200, toy_page(sid, asked=(form.get("question", ""), text)))
         if act == "predict":
             _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
             msg = "予想を残しました"

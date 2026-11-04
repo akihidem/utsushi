@@ -237,5 +237,16 @@
    "tests/test_claude_code.py"
   ],
   "unverified": "工房で実際に案を作った事は無い。MCP は使う前の承認がまだ"
+ },
+ {
+  "id": "f27",
+  "name": "作っている最中の手順の質問に答える口（聞かれた時だけ、手順だけ）",
+  "status": "doing",
+  "evidence": [
+   "src/api/ask.py",
+   "src/web/play_server.py",
+   "tests/test_ask.py"
+  ],
+  "unverified": "AI の分は偽の応答の試験だけ。本物の API は本人が鍵を置くまで動かない（J-023）。人が使った事は無い"
  }
 ]
