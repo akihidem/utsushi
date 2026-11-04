@@ -1,0 +1,98 @@
+{
+  "source_id": "NDL-1187053-R0000029-L",
+  "toy": "太鼓（幣つきの振り太鼓）",
+  "stage": "試作",
+  "template": "den_den",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは鳴らし方の違い。確かめるのは鳴るかどうかと、どう動かすと鳴るか。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "柄を回すのか、振るのか、打つのか",
+    "紙垂は飾りか、鳴らし方に関わるのか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "柄を回して糸の玉で打つ",
+      "status": "untested",
+      "params": {
+        "play": "twist",
+        "motif": "tori",
+        "band_color": "ochre",
+        "head_d": 50,
+        "band_w": 16,
+        "thread_len": 28,
+        "streamers": 3
+      },
+      "how_it_moves": "柄を両の手のひらで挟んで左右に回す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 29 の図",
+          "what": "鳥の絵の円い太鼓に長い柄が付き、脇に紙垂が束ねてある",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 29 の図",
+          "what": "でんでん太鼓と同じ形の柄なので、回して鳴らすのではないか",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "絵に糸の玉は描かれていない",
+        "名前は見立てで確かめていない"
+      ],
+      "to_measure": "鳴るか。紙垂が糸に絡まないか"
+    },
+    {
+      "id": "H-B",
+      "name": "皮を指で打って鳴らす",
+      "status": "untested",
+      "params": {
+        "play": "tap",
+        "motif": "tori",
+        "band_color": "ochre",
+        "head_d": 50,
+        "band_w": 16,
+        "streamers": 3
+      },
+      "how_it_moves": "柄を持ち、皮を指で軽く打つ",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 29 の図",
+          "what": "玉も糸も描かれず、太鼓と柄と紙垂だけがある",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 29 の図",
+          "what": "歌に「湯島」「松坂」が見え、祭りのみやげ物かもしれない",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "紙の皮を打つと音は小さいと見込む",
+        "何で打つのかは描かれていない"
+      ],
+      "to_measure": "鳴るか"
+    }
+  ],
+  "after_try": {
+    "contrasts": [
+      {
+        "change": "回す、打つ、で比べる",
+        "watch": "鳴るか"
+      },
+      {
+        "change": "紙垂の数を変える",
+        "watch": "動かした時の見え方"
+      }
+    ],
+    "card": [
+      "糸の玉は、柄を回すと外へ振れて皮を打ちます。",
+      "紙垂は鳴らないが、振ると揺れて動きが見えます。",
+      "これは鳴り方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

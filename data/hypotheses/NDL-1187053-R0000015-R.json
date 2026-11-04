@@ -1,0 +1,99 @@
+{
+  "source_id": "NDL-1187053-R0000015-R",
+  "toy": "弓矢（弓と箙）",
+  "template": "stick_prop",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。仮説の違いは、どう持つか・何が動くかの読みの違い。名前は棚卸しの見立てで、人の確認はまだ。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "弓と箙は 1 つの物か、別々か",
+    "矢は抜けるのか、描いてあるだけか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "弓と箙を組んだ飾りを竹串でかざす",
+      "status": "untested",
+      "params": {
+        "hold": "sandwich",
+        "shape": "yumiya",
+        "size": 150
+      },
+      "how_it_moves": "竹串を持ってかざす・肩にかつぐ",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 15 の図",
+          "what": "2 本の弓と、矢を何本も入れた箙が組み合わされている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "本文に「弓矢」と読める（棚卸しの見立て）",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "弓と箙が 1 つか 2 つかは不明",
+        "弓の弦が張れるかは試さない"
+      ],
+      "to_measure": "かざして遊べるか・持ち物に見えるか"
+    },
+    {
+      "id": "H-B",
+      "name": "箙を袋にして、矢を差して抜く",
+      "status": "untested",
+      "params": {
+        "hold": "pocket",
+        "shape": "yumiya",
+        "size": 150,
+        "arrows": 3,
+        "pocket_depth": 35
+      },
+      "how_it_moves": "つまようじの矢を箙から抜いたり差したりする",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 15 の図",
+          "what": "矢羽が箙の口から上に並んで出ている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "calc",
+          "where": "雛形 stick_prop の床（ARROW_OUT）",
+          "what": "つまようじ 60mm のうち 15mm 以上が袋の口から出る深さにする",
+          "certainty": "計算"
+        }
+      ],
+      "against": [
+        "矢が抜けるかは絵から読めない",
+        "つまようじの先は尖っているので、人に向けない"
+      ],
+      "to_measure": "矢の出し入れのしやすさ"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "人の確認はまだ。札と対比の文は Claude Code のセッションの案",
+    "contrasts": [
+      {
+        "change": "付け方を変える。弓と箙を組んだ飾りを竹串でかざすと、箙を袋にして、矢を差して抜く",
+        "watch": "遊び方のどこが変わるか"
+      },
+      {
+        "change": "1 枚の物と、2 枚で挟んだ物を比べる",
+        "watch": "振った時のしなり方と、手に来る重さ"
+      },
+      {
+        "change": "差す矢の数を変える",
+        "watch": "矢の出し入れのしやすさ"
+      }
+    ],
+    "card": [
+      "2 枚で挟むと、1 枚の時よりしなりにくくなります。厚みが増えるからです。",
+      "袋の口が狭いと矢が入らず、深いと矢が隠れて取り出しにくくなります。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

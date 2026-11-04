@@ -1,0 +1,102 @@
+{
+  "source_id": "NDL-1187053-R0000009-L",
+  "toy": "小槌（打ち出の小槌か）",
+  "stage": "試作",
+  "template": "den_den",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは鳴らし方の違い。確かめるのは鳴るかどうかと、どう動かすと鳴るか。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "槌の頭は中が空の胴か",
+    "振って鳴らすのか、打って鳴らすのか、飾りか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "頭の中の玉を振って鳴らす",
+      "status": "untested",
+      "params": {
+        "play": "shake",
+        "motif": "kiku",
+        "band_color": "ochre",
+        "band_stripe": 1,
+        "head_d": 36,
+        "band_w": 40,
+        "handle_len": 120,
+        "bead_d": 8,
+        "beads_inside": 3
+      },
+      "how_it_moves": "柄を持って頭を振る",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 9 の図",
+          "what": "円筒の頭の端に菊の紋の面があり、胴の端に寄って黒い帯が巻かれている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 9 の図",
+          "what": "歌が「ぴいぴい」「鳴る音」と読めた。音の出る物かもしれない",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "中に玉が入っているかは絵から読めない",
+        "歌のどの語がこの絵に当たるかは推測",
+        "名前は見立てで確かめていない"
+      ],
+      "to_measure": "鳴るか"
+    },
+    {
+      "id": "H-B",
+      "name": "頭の面を手のひらに打って鳴らす",
+      "status": "untested",
+      "params": {
+        "play": "tap",
+        "motif": "kiku",
+        "band_color": "ochre",
+        "band_stripe": 1,
+        "head_d": 36,
+        "band_w": 40,
+        "handle_len": 120
+      },
+      "how_it_moves": "柄を持って、頭の面を手のひらか机に軽く打つ",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 9 の図",
+          "what": "頭の端の面が太鼓の皮のような丸い面に描かれている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 9 の図",
+          "what": "槌の形なので、打つ物かもしれない",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "紙の面を打つと音は小さいと見込む",
+        "飾りの小槌かもしれない"
+      ],
+      "to_measure": "鳴るか。どこを打つと鳴るか"
+    }
+  ],
+  "after_try": {
+    "contrasts": [
+      {
+        "change": "振る、打つ、で比べる",
+        "watch": "鳴るか"
+      },
+      {
+        "change": "中の玉の数を変える",
+        "watch": "音がどう変わるか"
+      }
+    ],
+    "card": [
+      "中が空の胴は、中で玉が当たると響きます。",
+      "閉じた胴の面を打っても鳴ります。紙の面は張りが弱いので、音は小さめです。",
+      "これは鳴り方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

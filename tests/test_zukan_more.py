@@ -16,10 +16,11 @@ real_load, real_stage = hypotheses.load, hypotheses.stage
 hypotheses.load = lambda s: {"toy": "月の兎（見立て）", "stage": "試作", "hypotheses": []} if s == FAKE else real_load(s)
 hypotheses.stage = lambda s: "試作" if s == FAKE else real_stage(s)
 
-html = zukan.index_page(sources() + [FAKE])
+required = [s for s in sources() if real_stage(s) == "必須"]
+html = zukan.index_page(required + [FAKE])
 assert html.count('class="toy"') == 2, "必須の 2 種は大きいまま"
 assert "ほかの玩具" in html and "月の兎（見立て）" in html and "試作" in html and "コマ 13" in html
 assert "まだ確かめていません" in html, "名前が見立てである事を添える"
-assert "ほかの玩具" not in zukan.index_page(sources()), "試作が無い時は出さない"
-assert {t["sid"] for t in toys()} == set(sources()), "入口の主役は必須だけ（今は全部が必須）"
+assert "ほかの玩具" not in zukan.index_page(required), "試作が無い時は出さない"
+assert {t["sid"] for t in toys()} == set(required), "入口の主役は必須だけ"
 print("ok")

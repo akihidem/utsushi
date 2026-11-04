@@ -1,0 +1,97 @@
+{
+  "source_id": "NDL-1187053-R0000005-R-2",
+  "toy": "兜巾（ときん）",
+  "template": "stick_prop",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。仮説の違いは、どう持つか・何が動くかの読みの違い。名前は棚卸しの見立てで、人の確認はまだ。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "頭にどう付けるのか",
+    "平らな物か、厚みのある笠か"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "平らな六角を糸で額に結ぶ",
+      "status": "untested",
+      "params": {
+        "hold": "tie",
+        "shape": "tokin",
+        "size": 90
+      },
+      "how_it_moves": "額に当て、糸を頭の後ろで結ぶ",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 5 の図",
+          "what": "六角形の円盤で、上面に放射状の線と赤い中心点がある",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "歌の「山ぶし」らしい字から、山伏の兜巾と見立てた（自信は低い）",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "名前の見立ての自信が低い",
+        "結ぶ紐は絵に描かれていない"
+      ],
+      "to_measure": "頭に付けて動いても落ちないか"
+    },
+    {
+      "id": "H-B",
+      "name": "六角を浅い笠に折って頭に載せる",
+      "status": "untested",
+      "params": {
+        "hold": "cone",
+        "shape": "tokin",
+        "size": 90
+      },
+      "how_it_moves": "笠を頭に載せ、糸を頭の後ろで結ぶ",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 5 の図",
+          "what": "縁に厚みがあるように描かれている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "放射状の線を折り目と読むと、浅い笠になる",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "放射状の線は模様かもしれない",
+        "絵の厚みは描き方かもしれない"
+      ],
+      "to_measure": "頭への載り方・平らな物との違い"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "人の確認はまだ。札と対比の文は Claude Code のセッションの案",
+    "contrasts": [
+      {
+        "change": "付け方を変える。平らな六角を糸で額に結ぶと、六角を浅い笠に折って頭に載せる",
+        "watch": "遊び方のどこが変わるか"
+      },
+      {
+        "change": "糸を締める強さを変える",
+        "watch": "額にどう当たるか"
+      },
+      {
+        "change": "平らなままの物と、笠に折った物を比べる",
+        "watch": "頭への載り方"
+      }
+    ],
+    "card": [
+      "平らな紙は、頭の丸みに沿わずに浮きます。",
+      "六角の 1 か所を切って重ねると、平らな紙が浅い笠になります。紙を曲げずに立体を作るやり方です。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

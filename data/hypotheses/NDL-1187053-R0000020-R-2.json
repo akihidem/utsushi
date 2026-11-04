@@ -1,0 +1,98 @@
+{
+  "source_id": "NDL-1187053-R0000020-R-2",
+  "toy": "幟（吹流し付きの竿）",
+  "template": "stick_prop",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。仮説の違いは、どう持つか・何が動くかの読みの違い。名前は棚卸しの見立てで、人の確認はまだ。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "幟は竿に貼ってあるのか、輪で通してあるのか",
+    "風でなびくのか、回るのか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "幟の端を竿に巻いて貼る",
+      "status": "untested",
+      "params": {
+        "hold": "glue",
+        "shape": "nobori",
+        "size": 120
+      },
+      "how_it_moves": "竿を持って振る・走る",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 20 の図",
+          "what": "長い竹竿の先に房があり、桃色の長い吹流しがなびく",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "歌に「のほり」らしき字（判読は中程度）",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "竿への付き方は絵から読めない"
+      ],
+      "to_measure": "なびき方"
+    },
+    {
+      "id": "H-B",
+      "name": "輪の帯で竿に通し、風で回る",
+      "status": "untested",
+      "params": {
+        "hold": "turn",
+        "shape": "nobori",
+        "size": 120,
+        "loops": 3,
+        "loop_len": 22
+      },
+      "how_it_moves": "竿を立てて持ち、息を吹きかけたり歩いたりする",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 20 の図",
+          "what": "幟が竿から離れる向きに大きく曲がって描かれている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "calc",
+          "where": "雛形 stick_prop の床（loop_len）",
+          "what": "竹串の周りの長さに糊代を足した長さの帯で輪を作る",
+          "certainty": "計算"
+        }
+      ],
+      "against": [
+        "輪は絵に描かれていない",
+        "曲がりは描き方かもしれない"
+      ],
+      "to_measure": "幟が風下を向くか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "人の確認はまだ。札と対比の文は Claude Code のセッションの案",
+    "contrasts": [
+      {
+        "change": "付け方を変える。幟の端を竿に巻いて貼ると、輪の帯で竿に通し、風で回る",
+        "watch": "遊び方のどこが変わるか"
+      },
+      {
+        "change": "竹串を貼る長さを変えて作る",
+        "watch": "振った時のしなり方"
+      },
+      {
+        "change": "息を吹きかける向きを変える",
+        "watch": "幟がどちらを向くか"
+      }
+    ],
+    "card": [
+      "竹串を貼った長さが短いと、振った時に紙が先にしなります。",
+      "輪が竿に貼られていないと、幟は竿の周りを回れます。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

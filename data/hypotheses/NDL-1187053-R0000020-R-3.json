@@ -1,0 +1,108 @@
+{
+  "source_id": "NDL-1187053-R0000020-R-3",
+  "toy": "のぼり猿",
+  "template": "string_pull",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは、動く所をどう動かすかの違い。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "猿は斜めの棒にどう留まっているのか",
+    "風車の一部か、別の玩具か"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "糸で猿を引いて棒の上で動かす",
+      "status": "untested",
+      "params": {
+        "rig": "pull",
+        "shape": "noborizaru",
+        "board_w": 70,
+        "board_h": 110,
+        "pivot_x": 35,
+        "pivot_y": 50,
+        "arm_len": 45,
+        "arm_w": 36,
+        "pivot_at": 14,
+        "pull_arm": 8,
+        "stroke": 6,
+        "guide_drop": 40
+      },
+      "how_it_moves": "糸を引いて離す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 20 の図",
+          "what": "茶色い毛の猿が斜めの竹の棒にしがみついている",
+          "certainty": "観察"
+        }
+      ],
+      "against": [
+        "絵に糸は見えない",
+        "風車の棒の飾りかもしれない（棚卸しの注記）"
+      ],
+      "to_measure": "猿が動いて、離すと戻るか"
+    },
+    {
+      "id": "H-B",
+      "name": "猿を棒に吊り、振ると猿が揺れる",
+      "status": "untested",
+      "params": {
+        "rig": "sway",
+        "shape": "noborizaru",
+        "board_w": 70,
+        "board_h": 110,
+        "pivot_x": 35,
+        "pivot_y": 50,
+        "arm_len": 45,
+        "arm_w": 36,
+        "pivot_at": 14,
+        "pull_arm": 8,
+        "stroke": 6,
+        "guide_drop": 40
+      },
+      "how_it_moves": "台紙の上を持って左右に小さく揺らす",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 20 の図",
+          "what": "猿が棒の 1 点にしがみついている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inference",
+          "where": "棚卸し（data/inventory/edo-nishiki.json）の見立て",
+          "what": "風車の棒に付いて揺れる飾りという読みは推測",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "登る動きを作らない"
+      ],
+      "to_measure": "猿が揺れるか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "Claude Code のセッションが書いた案。人の確認はまだ",
+    "contrasts": [
+      {
+        "change": "軸から糸の穴までを短くした腕木と、長くした腕木を作って比べる",
+        "watch": "同じだけ引いた時に、どれだけ動くか"
+      },
+      {
+        "change": "軸を腕木の真ん中に近づける",
+        "watch": "離した時に元へ戻るか"
+      },
+      {
+        "change": "軸の穴を少し大きくする",
+        "watch": "動きが軽くなるか、ぐらつくか"
+      }
+    ],
+    "card": [
+      "軸の近くを少し引くと、軸から遠い所は大きく動きます。てこと同じです。",
+      "軸の片側が重いと、離した時に重い方が下がって元へ戻ります。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

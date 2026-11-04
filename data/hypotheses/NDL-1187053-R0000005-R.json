@@ -1,0 +1,103 @@
+{
+  "source_id": "NDL-1187053-R0000005-R",
+  "toy": "大小の刀（木太刀・玩具の刀）",
+  "template": "stick_prop",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。仮説の違いは、どう持つか・何が動くかの読みの違い。名前は棚卸しの見立てで、人の確認はまだ。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "刀身は鞘から抜けるのか、鞘ごと 1 本の棒なのか",
+    "大小 2 本は 1 組の玩具か"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "鞘ごと 1 本の刀を腰に差す",
+      "status": "untested",
+      "params": {
+        "hold": "sandwich",
+        "shape": "katana",
+        "size": 170
+      },
+      "how_it_moves": "柄を持って振る・帯に差す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 5 の図",
+          "what": "柄巻が茶と白の菱模様、鍔が青緑、鞘が黒地に白い水玉",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 5 の図",
+          "what": "大小 2 本が交差して立っている",
+          "certainty": "観察"
+        }
+      ],
+      "against": [
+        "抜けるかどうかは絵から読めない",
+        "大小の小は size を小さくして刷る（この記録は大の 1 本）"
+      ],
+      "to_measure": "振った時に曲がらないか・腰に差せるか"
+    },
+    {
+      "id": "H-B",
+      "name": "刀身が鞘から抜ける",
+      "status": "untested",
+      "params": {
+        "hold": "slide",
+        "shape": "katana",
+        "size": 170
+      },
+      "how_it_moves": "柄を持ち、鞘を引いて抜く・差す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 5 の図",
+          "what": "柄と鞘の境に鍔があり、別の部品に描き分けられている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "腰に差したり振って遊ぶ持ち物という見込み",
+          "certainty": "推測"
+        },
+        {
+          "kind": "calc",
+          "where": "雛形 stick_prop の床（SLIDE_MIN・SLIDE_MAX）",
+          "what": "すき間が 1.5〜6mm なら出し入れできると見込む。実物では未確認",
+          "certainty": "計算"
+        }
+      ],
+      "against": [
+        "鞘の中は絵から読めない",
+        "紙の鞘は抜き差しで傷みやすい"
+      ],
+      "to_measure": "抜き差しのしやすさ・鞘が抜け落ちないか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "人の確認はまだ。札と対比の文は Claude Code のセッションの案",
+    "contrasts": [
+      {
+        "change": "付け方を変える。鞘ごと 1 本の刀を腰に差すと、刀身が鞘から抜ける",
+        "watch": "遊び方のどこが変わるか"
+      },
+      {
+        "change": "1 枚の物と、2 枚で挟んだ物を比べる",
+        "watch": "振った時のしなり方と、手に来る重さ"
+      },
+      {
+        "change": "すき間を変えて作る",
+        "watch": "出し入れのしやすさ"
+      }
+    ],
+    "card": [
+      "2 枚で挟むと、1 枚の時よりしなりにくくなります。厚みが増えるからです。",
+      "すき間が狭いと紙どうしがこすれて止まり、広いと抜け落ちます。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}

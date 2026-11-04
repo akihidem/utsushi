@@ -43,7 +43,10 @@ def hypothesis_words(sid):
 code, idx = get("/zukan")
 assert code == 200 and "図鑑" in idx
 for sid in sources():
-    assert f'href="/zukan/{sid}"' in idx and f'href="/toy/{sid}"' in idx and f'href="/toy/{sid}/techo"' in idx
+    # 必須の 2 種は大きな節で玩具の頁と手帖へ直に行ける。試作の玩具は一覧の札から、その玩具の図鑑の頁へ入る（test_zukan_more）
+    assert f'href="/zukan/{sid}"' in idx, sid
+    if hypotheses.stage(sid) == "必須":
+        assert f'href="/toy/{sid}"' in idx and f'href="/toy/{sid}/techo"' in idx, sid
     code, body = get(f"/zukan/{sid}")
     assert code == 200, sid
     assert "予想を書くと仮説が見られる" in body and f'href="/toy/{sid}"' in body

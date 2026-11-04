@@ -1,0 +1,116 @@
+{
+  "source_id": "NDL-1187053-R0000006-L",
+  "toy": "米搗き人形",
+  "template": "string_pull",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。名前は棚卸しの見立てで、人の確認はまだ。仮説の違いは、動く所をどう動かすかの違い。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "人形はどこで支えられているのか",
+    "台の下へ垂れた紐は何をするのか",
+    "杵は人形が持つのか、臼に立つだけか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "糸で上半身を持ち上げ、離して搗く",
+      "status": "untested",
+      "params": {
+        "rig": "pull",
+        "shape": "kometsuki",
+        "board_w": 100,
+        "board_h": 100,
+        "pivot_x": 30,
+        "pivot_y": 40,
+        "arm_len": 80,
+        "arm_w": 30,
+        "pivot_at": 18,
+        "pull_arm": 12,
+        "stroke": 10,
+        "guide_drop": 40
+      },
+      "how_it_moves": "糸を引いて離す",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 6 の図",
+          "what": "台の下へ紐が垂れている",
+          "certainty": "観察"
+        },
+        {
+          "kind": "image",
+          "where": "NDL コマ 6 の図",
+          "what": "人形の腰が 2 本の柱の間にある",
+          "certainty": "観察"
+        }
+      ],
+      "against": [
+        "紐が人形のどこに付くかは絵から読めない",
+        "杵の重さは紙では出ない"
+      ],
+      "to_measure": "上半身が上がって、離すと下がるか"
+    },
+    {
+      "id": "H-B",
+      "name": "棒で腰の後ろを押して上半身を動かす",
+      "status": "untested",
+      "params": {
+        "rig": "push",
+        "shape": "kometsuki",
+        "board_w": 100,
+        "board_h": 100,
+        "pivot_x": 30,
+        "pivot_y": 40,
+        "arm_len": 80,
+        "arm_w": 30,
+        "pivot_at": 18,
+        "pull_arm": 12,
+        "stroke": 10,
+        "guide_drop": 40
+      },
+      "how_it_moves": "腰の後ろに付けた棒を押し上げ下げする",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 6 の図",
+          "what": "人形の腰が 2 本の柱の間にある",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inference",
+          "where": "棚卸し（data/inventory/edo-nishiki.json）の見立て",
+          "what": "押して動かす読みは、柱の所で回るなら手で押しても動くという推測",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "絵に押す棒は見えない",
+        "垂れた紐を説明しない"
+      ],
+      "to_measure": "上半身が上下するか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "Claude Code のセッションが書いた案。人の確認はまだ",
+    "contrasts": [
+      {
+        "change": "軸から糸の穴までを短くした腕木と、長くした腕木を作って比べる",
+        "watch": "同じだけ引いた時に、どれだけ動くか"
+      },
+      {
+        "change": "軸を腕木の真ん中に近づける",
+        "watch": "離した時に元へ戻るか"
+      },
+      {
+        "change": "軸の穴を少し大きくする",
+        "watch": "動きが軽くなるか、ぐらつくか"
+      }
+    ],
+    "card": [
+      "軸の近くを少し引くと、軸から遠い所は大きく動きます。てこと同じです。",
+      "軸の片側が重いと、離した時に重い方が下がって元へ戻ります。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}
