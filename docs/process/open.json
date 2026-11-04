@@ -27,15 +27,6 @@
   }
  },
  {
-  "id": "O-08",
-  "decision": "本人の現場の残り。どの場面で誰を見て感じたか、どれくらい困っているか。本人がどの世界に身を置いてきたか",
-  "waiting_on": "本人",
-  "evidence": {
-   "path": "docs/process/philosophy.md",
-   "quote": "推測で書かない"
-  }
- },
- {
   "id": "O-10",
   "decision": "前提知識なしで通れる入口の形",
   "waiting_on": "本人",
