@@ -52,6 +52,20 @@ def _get(url):
         return r.read()
 
 
+def inventory_targets():
+    """全部の玩具を作る線（本人の指示、11-04）の分。棚卸し（data/inventory/edo-nishiki.json）のうち、仮説の記録を置いた玩具だけを取り込む。
+    線が共有の TARGETS を書き足してぶつからないため、置いた仮説の記録の有無で決める。名前は棚卸しの見立てのまま（確かめ待ち）。"""
+    inv = ROOT / "data/inventory/edo-nishiki.json"
+    if not inv.exists():
+        return {}
+    out = {}
+    for t in json.loads(inv.read_text(encoding="utf-8"))["toys"]:
+        if t["id"] in TARGETS or not (ROOT / "data/hypotheses" / f"{t['id']}.json").exists():
+            continue
+        out[t["id"]] = {"toy": t["name_guess"], "canvas": t["frame"], "side": t["side"], "region": t["region"]}
+    return out
+
+
 def main():
     try:
         manifest = json.loads(_get(MANIFEST))
@@ -64,7 +78,7 @@ def main():
     now = datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
     (ROOT / "data/sources").mkdir(parents=True, exist_ok=True)
     (ROOT / "out/sources").mkdir(parents=True, exist_ok=True)
-    for sid, t in TARGETS.items():
+    for sid, t in {**TARGETS, **inventory_targets()}.items():
         c = canvases[t["canvas"] - 1]
         service = c["images"][0]["resource"]["service"]["@id"]
         image_url = f"{service}/{t['region']}/1600,/0/default.jpg"

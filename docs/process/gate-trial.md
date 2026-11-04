@@ -98,3 +98,13 @@
 - 検証ゲート: **済み**。Red: rc 1、TypeError「serve() got an unexpected keyword argument 'public_key'」（入口で落ちる弱い Red、gate-evidence/red-public-gate.txt）。Green: rc 0（gate-evidence/green-public-gate.txt）
 - エビデンスゲート: 上の出力と ./run.sh。iPhone の Safari での一周と音声認識は本人が見る（作る側の機械では確かめられない）
 - マージ後の書き戻し: 前の節（デモ用の見本）の分は、main 6752b9a の上で ./run.sh 81/81。この節の分は push の後に書く
+
+## 雛形の受け口を 1 か所にまとめる（hack-main、11-04 夜）
+
+- 目的: 全部の玩具の型紙を並列の線で作る時、線が共有のファイルを書き足してぶつからないようにする
+- なぜか: 本人の指示（11-04 夜）「なるべく並列ですべて作ろう」。今は雛形を足すたびに compose・metrics・words・generate・play_server を直す必要があった
+- どうしたらいいか: 推しは templates/ に置いた .py を自動で載せ、仮説を分ける寸法の名前（HYP_KEY）・台帳の式・変えてよい寸法・記録の足しの欄を雛形の中に持たせる事。代案: 線を直列に回す（並列にならない）
+- ゴールの要件: tests/test_tpl_registry.py が直す前に落ち、直した後に通る。必須の 2 種の型紙と手順の紙の配置が、直す前と同じ指紋になる。./run.sh が rc 0
+- 検証ゲート: **済み**。Red: rc 1、AssertionError「('slider_fan', ['HYP_KEY'])」（gate-evidence/red-tpl-registry.txt）。Green: rc 0（gate-evidence/green-tpl-registry.txt）。必須の 2 種の 8 仮説の型紙と手順の紙の配置の指紋は、直す前後で同じだった
+- エビデンスゲート: 上の出力と ./run.sh
+- マージ後の書き戻し: #99 の分は、main 6752b9a の上で ./run.sh 81/81。#100 の分は、main 4f5b12c で合言葉の門をトンネル越しに確かめた（合言葉なし 403・合言葉付き 303・頁 200・別のサイトからの送信 403）。この節の分は push の後に書く

@@ -106,6 +106,7 @@
 | 61 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
 | 62 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
 | 63 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 64 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

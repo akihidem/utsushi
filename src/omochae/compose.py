@@ -3,10 +3,26 @@ from .floors import check_art, check_bom, check_layout
 from .marks import mark_lines
 from .model import TextBox
 from .page import PAGES
+import importlib
+import pkgutil
+
+from . import templates as _templates
 from .templates import pivot_counterweight, slider_fan
 from .textfit import text_width, wrap
 
-TEMPLATES = {slider_fan.ID: slider_fan, pivot_counterweight.ID: pivot_counterweight}
+def _discover():
+    """templates/ に置いた雛形を全部載せる（本人「なるべく並列ですべて作ろう」、11-04）。並列の線が、この表を手で書き足して
+    ぶつからないため。必須の 2 種を先頭に置き、残りは名前の順（並びを決まった物にして、頁と試験の出力が揺れないため）。"""
+    found = {slider_fan.ID: slider_fan, pivot_counterweight.ID: pivot_counterweight}
+    for m in sorted(pkgutil.iter_modules(_templates.__path__), key=lambda m: m.name):
+        if m.name.startswith("_"):
+            continue
+        mod = importlib.import_module(f"{_templates.__name__}.{m.name}")
+        found.setdefault(mod.ID, mod)
+    return found
+
+
+TEMPLATES = _discover()
 TITLE_SIZE, BODY_SIZE, LABEL_SIZE = 5.0, 3.0, 2.8
 LINE = 1.25  # 行送りの倍率。CJK の字面より少し広く取る
 GAP = 4.0

@@ -7,7 +7,7 @@ Claude が返すのは寸法と、補った点と、乗らない点だけで、�
 import json
 
 from omochae import hypotheses, loop
-from omochae.compose import compose
+from omochae.compose import TEMPLATES, compose
 from omochae.contrib import check_pii
 from omochae.model import Failure
 
@@ -41,7 +41,7 @@ def check_result(result, source):
             return [Failure("F9.own", "not_fit", "乗らない理由が無い")]
         return []
     template = hypotheses.load(sid).get("template", "slider_fan")
-    key = "mount" if template == "pivot_counterweight" else "push_part"
+    key = TEMPLATES[template].HYP_KEY
     errors = [] if key in params else [Failure("F5.range", key, f"{key} が要る")]
     # 隠れた補いを許さない。寸法の 1 つ 1 つが、人の文か補いの一覧のどちらかに載っている事を見る。
     told = set(result.get("from_words", [])) | {f["param"] for f in result.get("filled_in", [])}

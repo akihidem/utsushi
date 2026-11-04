@@ -27,9 +27,10 @@ def switch(current):
 
 
 def toys():
-    """図の写しが手元に無い玩具も並べる。A は入口なので、写しの有無で玩具が消えると入れなくなるため。"""
+    """図の写しが手元に無い玩具も並べる。A は入口なので、写しの有無で玩具が消えると入れなくなるため。
+    入口の主役は必須の 2 種だけ。試作の玩具は図鑑から入る（hypotheses.stage）。"""
     out = []
-    for s in sources():
+    for s in (s for s in sources() if hypotheses.stage(s) == "必須"):
         src = source(s)
         song = [e["text"] for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")]
         out.append({"sid": s, "toy": hypotheses.load(s)["toy"], "song": song, "holding": src.get("holding", ""),
