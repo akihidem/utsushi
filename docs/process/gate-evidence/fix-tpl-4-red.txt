@@ -1,0 +1,9 @@
+# fix-tpl-4 red  2026-11-04T15:22:19+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_pivot_hang_model.py
+Traceback (most recent call last):
+  File "tests/test_pivot_hang_model.py", line 19, in <module>
+    assert any(f.floor == "F5.pivot" and "耳の穴" in f.message for f in check_physics(off)), "式の軸の高さが刷る穴と違えば落とす"
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 式の軸の高さが刷る穴と違えば落とす
+# exit=1

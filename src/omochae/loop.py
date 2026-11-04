@@ -170,6 +170,9 @@ def check_proposal(p, source):
     for rid in records:
         if not (base() / "records" / f"{rid}.json").exists():
             out.append(Failure("F8.references", rid, "その記録は実在しない"))
+        elif record(rid).get("source_id") != sid:
+            # 別の玩具の記録は根拠にしない。仮説 ID（H-A など）は玩具ごとに振るので、偶然そろうと別の玩具の試行で寸法が変わる（レビュー指摘）。
+            out.append(Failure("F8.references", rid, f"出典 {record(rid).get('source_id')} の記録で、提案の出典 {sid} と違う"))
         elif not confirmed(rid):
             out.append(Failure("F9.human", rid, "解釈を人が確定していない記録は根拠にできない"))
     ids = known_ids()
@@ -249,7 +252,10 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
         return None, [Failure("F9.human", pid, f"状態 {p['status']} の提案は採れない")]
     # 提案の後に前提が変わっていないか、採る時にも同じ床を当てる。
     sid = p["source_id"]
-    source = source or json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
+    # 渡された出典が提案の出典と違えば使わない。命令の --source の既定は御来迎なので、虎の提案を --source なしで採ると
+    # 御来迎の雛形で虎の寸法を検査していた（レビュー指摘［中］）。提案に書いた出典が正。
+    if not source or source.get("source_id") != sid:
+        source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
     chosen = [c for c in p.get("changes", []) if c["param"] in accept_params]
     failures = check_proposal({**p, "changes": chosen}, source)
     if failures:

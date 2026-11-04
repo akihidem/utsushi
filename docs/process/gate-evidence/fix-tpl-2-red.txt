@@ -1,0 +1,9 @@
+# fix-tpl-2 red  2026-11-04T15:22:18+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_foldsim.py
+Traceback (most recent call last):
+  File "tests/test_foldsim.py", line 23, in <module>
+    assert names == ["H-A_base_foldsim.svg", "H-A_fan_foldsim.svg", "H-A_pusher_foldsim.svg", "H-A_tube_foldsim.svg"], names
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['H-A_fan_foldsim.svg', 'H-A_tube_foldsim.svg']
+# exit=1

@@ -1,0 +1,9 @@
+# fix-tpl-3 green  2026-11-04T15:22:07+09:00
+# 対象のコード: 32b6dfc ＋ この直し（branch lane/fix-tpl の src）
+$ PYTHONPATH=src .venv/bin/python tests/test_ingest_keep.py
+ingest: NDL-1187053-R0000005-L ok
+ingest: NDL-1187053-R0000014-R ok
+ingest: NDL-1187053-R0000005-L ok
+ingest: NDL-1187053-R0000014-R ok
+ok
+# exit=0

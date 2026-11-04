@@ -3,7 +3,7 @@
 押し方は仮説の違いなので描き分ける（docs/process/decisions/J002）。寸法の初期値の根拠は research/03。
 どの値も実物では未確認。Claude が変えてよいのは RANGES にある名前の値だけで、座標には触れない。
 """
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString, Point, Polygon
 
 from ..fan_model import clearance_limit_deg, opening_bound_deg, shortest_free_thread
 from ..model import Failure, Part
@@ -120,9 +120,32 @@ def check_physics(p):
             out.append(Failure("F5.stroke", "溝", f"溝が筒の口から {SLOT_MARGIN}mm 離れない（底から 0〜{high:.1f}）"))
     elif p["push_part"] == "stick" and p["stage_height"] > H - s:
         out.append(Failure("F5.stroke", "土台", f"土台の高さ {p['stage_height']} が静止時の筒の空き {H - s} に収まらない"))
+    elif p["push_part"] == "tube" and s > H:
+        # 静止時の内筒の上の端は外筒の底から H − s。量が高さを超えると、扇の台が外筒の下へ出て扇が筒に入らない（レビュー指摘）。
+        # つまみと柄の形は上の 2 つの検査が同じ事を含むので、内筒を下から押す形だけに足す。
+        out.append(Failure("F5.stroke", "内筒", f"押し上げる量 {s} が筒の高さ {H} を超え、静止時に内筒の上の端が筒の下に出る"))
     if p["push_part"] != "tab" and L < H:
         # research/03: L < H だと指が筒の外にある間に押し切れない。
         out.append(Failure("F5.stroke", "押す部品", f"長さ {L} が筒の高さ {H} より短く、押し切れない"))
+    out += check_holes(p)
+    return out
+
+
+def check_holes(p):
+    """穴が部品の紙の中にある事（F5.holes）。
+
+    開く糸の穴は扇の要から THREAD_RADIUS の所に固定し、折りの高さは 20mm まで許すので、低い扇では穴が紙の外に出る。
+    像の穴は足元から pivot_above_rim の高さで、像より高いと紙の上に出る（レビュー指摘）。
+    半径を折りの高さに合わせて縮める案は採らない。35mm は糸が突っ張らない位置として選んだ値（research/08）で、黙って変えると糸の長さの計算と食い違うため。
+    """
+    out = []
+    for q in parts(p):
+        if not q.holes:
+            continue
+        paper = Polygon(q.outline).buffer(0)
+        for x, y, r in q.holes:
+            if not paper.contains(Point(x, y).buffer(r)):
+                out.append(Failure("F5.holes", q.name, f"穴 ({x:.1f}, {y:.1f}) が紙の外に出る"))
     return out
 
 

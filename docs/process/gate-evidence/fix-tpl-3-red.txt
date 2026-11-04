@@ -1,0 +1,13 @@
+# fix-tpl-3 red  2026-11-04T15:22:19+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_ingest_keep.py
+ingest: NDL-1187053-R0000005-L ok
+ingest: NDL-1187053-R0000014-R ok
+ingest: NDL-1187053-R0000005-L ok
+ingest: NDL-1187053-R0000014-R ok
+Traceback (most recent call last):
+  File "tests/test_ingest_keep.py", line 46, in <module>
+    assert after["crop_status"] == "checked", after["crop_status"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: unverified
+# exit=1
