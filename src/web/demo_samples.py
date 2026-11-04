@@ -35,7 +35,7 @@ TORA = _svg("首振り", '<rect x="40" y="52" width="80" height="34" rx="10" fil
 KAZAGURUMA = _svg("風車", '<path d="M80 50 L80 18 L100 34 Z M80 50 L112 50 L96 70 Z M80 50 L80 82 L60 66 Z M80 50 L48 50 L64 30 Z" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
                           '<circle cx="80" cy="50" r="3" fill="#7a3b1d"/><path d="M80 53v47" stroke="#7a3b1d" stroke-width="2"/>')
 DENDEN = _svg("でんでん太鼓", '<circle cx="80" cy="44" r="24" fill="none" stroke="#7a3b1d" stroke-width="2"/><path d="M80 68v36" stroke="#7a3b1d" stroke-width="2"/>'
-                             '<path d="M56 44q-14 10 -18 26M104 44q14 10 18 26" fill="none" stroke="#7a3b1d" stroke-width="1.5"/>'
+                             '<path d="M56 44 Q42 54 38 70 M104 44 Q118 54 122 70" fill="none" stroke="#7a3b1d" stroke-width="1.5"/>'
                              '<circle cx="38" cy="70" r="4" fill="none" stroke="#7a3b1d" stroke-width="2"/><circle cx="122" cy="70" r="4" fill="none" stroke="#7a3b1d" stroke-width="2"/>')
 OKIAGARI = _svg("起き上がり", '<path d="M80 20 a30 30 0 0 1 0 60 a30 30 0 0 1 0 -60" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
                               '<path d="M52 72 a28 14 0 0 0 56 0" fill="none" stroke="#7a3b1d" stroke-width="2"/><circle cx="80" cy="36" r="10" fill="none" stroke="#7a3b1d" stroke-width="1.5"/>'
