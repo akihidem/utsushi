@@ -93,10 +93,14 @@ def song(src, short=False):
 def sheets(sid, hid, recorded):
     """刷った紙へのリンク。試した後の紙は、その仮説の記録が 1 件でもある時だけ出す（試す前に渡さない）。"""
     links = []
-    for suffix, label in (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙")):
-        name = f"{hid}_v1{suffix}.pdf"
-        if (out_dir(sid) / name).exists() and (suffix != "_after" or recorded):
-            links.append(f'<a href="/sheet/{sid}/{name}">{label}</a>')
+    # 版 2 以降は、画面の「次の版を作る」で人が採った時にできる（11-04、本人の問いの (7)）。版ごとに並べる。
+    versions = sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))} | {1})
+    for v in versions:
+        tag = "" if v == 1 else f"版 {v} の"
+        for suffix, label in (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙")):
+            name = f"{hid}_v{v}{suffix}.pdf"
+            if (out_dir(sid) / name).exists() and (suffix != "_after" or recorded):
+                links.append(f'<a href="/sheet/{sid}/{name}">{tag}{label}</a>')
     return "・".join(links)
 
 
@@ -176,13 +180,35 @@ def record_form(sid, data, own):
             '<button>記録を残す</button></form>')
 
 
+# 画面で変えてよい寸法と、その呼び名。変えてよい寸法そのものは台帳の決まり（metrics.ALLOWED）に従う。
+PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）", "fold_height": "扇の高さ（mm）", "tube_side": "外筒の一辺（mm）",
+               "pusher_side": "内筒の一辺（mm）", "push_amount": "押し上げる量（mm）", "pivot_above_rim": "扇の中心の高さ（mm）",
+               "paper_thickness": "紙の厚さ（mm）", "weight_g": "重りの重さ（g）", "weight_below_axle": "重りの軸からの下がり（mm）",
+               "weight_behind": "重りの後ろへのずれ（mm）", "ear_length": "耳の長さ（mm）", "neck_length": "首の長さ（mm）",
+               "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
+
+
+def next_form(r):
+    """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
+    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。"""
+    from omochae.metrics import ALLOWED
+
+    template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
+    opts = "".join(f'<option value="{esc(k)}">{esc(PARAM_NAMES.get(k, k))}</option>' for k in sorted(ALLOWED[template]))
+    return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next">'
+            '<label>何が起きたと読むか（解釈）<textarea name="interpretation" required></textarea></label>'
+            f'<label>変える寸法<select name="param">{opts}</select></label><label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
+            '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
+            '<button>次の版を刷る</button></form></details>')
+
+
 def records_list(recs):
     out = "<h2>これまでの記録</h2>" if recs else ""
     for r in reversed(recs):
         told = loop.explanation(r["id"])
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
         if told:
-            tail = f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>'
+            tail = f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>' + next_form(r)
         else:
             # 人の説明が先。Claude の解釈はこの後の段で、画面からは呼ばない。
             tail = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
@@ -275,10 +301,10 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
-        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v1(?:_tejun|_after|_free)?\.pdf)", path)
+        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v\d+(?:_tejun|_after|_free)?\.pdf)", path)
         if m and m.group(1) in sources():
             sid, name = m.groups()
-            hid = name.split("_v1")[0]
+            hid = re.split(r"_v\d+", name)[0]
             # 試した後の紙は、URL を知っていても記録の前は渡さない。
             if name.endswith("_after.pdf") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
                 return self._send(403, "試した記録を残してから開きます")
@@ -331,6 +357,9 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             sid, act = m.groups()
             return self._toy_post(sid, act, form)
+        m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
+        if m:
+            return self._next_version(m.group(1), form)
         m = re.fullmatch(r"/record/(R-\d{4,})/explain", self.path)
         if m:
             rid = m.group(1)
@@ -340,6 +369,34 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, toy_page(rec["source_id"], [f.message for f in failures]))
             return self._done(rec["source_id"], "説明を残しました")
         self._send(404, "見つかりません")
+
+    def _next_version(self, rid, form):
+        """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止める。"""
+        rec = loop.record(rid)
+        sid, hid = rec["source_id"], rec["hypothesis_id"]
+        if loop.explanation(rid) is None:
+            return self._send(422, toy_page(sid, ["先に説明を書く"]))
+        by = form.get("by", "")
+        failures = loop.confirm_interpretation(rid, by, form.get("interpretation", "").strip() or None)
+        if failures:
+            return self._send(422, toy_page(sid, [f.message for f in failures]))
+        to = _num(form.get("to"))
+        if not isinstance(to, float):
+            return self._send(422, toy_page(sid, ["新しい値は数で書く"]))
+        # 折りの数のような整数の寸法は、整数で渡す（範囲の検査が小数の折り数を落とすため）。
+        to = int(to) if to.is_integer() else to
+        source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
+        pid, failures = loop.save_proposal({"record_ids": [rid], "hypothesis_id": hid, "changes": [{"param": form.get("param"), "to": to, "why": form.get("why", "")}]}, source, "human")
+        if failures:
+            return self._send(422, toy_page(sid, [f.message for f in failures]))
+        made, failures = loop.adopt(pid, by, accept_params=[form.get("param")], source=source)
+        if failures or "version" not in made:
+            return self._send(422, toy_page(sid, [f.message for f in failures] or ["次の版ができませんでした"]))
+        v = made["version"]
+        out_dir(sid).mkdir(parents=True, exist_ok=True)
+        if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
+            return self._send(422, toy_page(sid, [f"版 {v} を刷れませんでした（検査に落ちた）"]))
+        return self._done(sid, f"版 {v} を刷りました。100% で印刷します")
 
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
