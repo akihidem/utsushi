@@ -51,7 +51,7 @@ assert code == 200 and "御来迎" in body and "大判写真集" in body and f"/
 assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404
 assert "冊子型" not in body and "和綴じ帖" not in body
 # 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
-for name in ("taiban", "zine"):
+for name in ("taiban", "tenji", "zine"):
     code, look = get(f"/look/{name}")
     look = look.decode()
     assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
@@ -82,6 +82,12 @@ assert "H-A_v1.pdf" in body and "H-A_v1_tejun.pdf" in body and "H-A_v1_after.pdf
 code, pdf = get(f"/sheet/{G}/H-A_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
 assert get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 403
+# 作っている最中の手順の質問（本人の決定 11-04）: 刷った紙についてだけ、聞かれた時に答える。仕組みは答えない
+code, body = post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "谷折りって何？"})
+assert code == 200 and "手前にへこむ" in body
+code, body = post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？"})
+assert code == 200 and "試して確かめる所" in body
+assert post(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって何？"})[0] == 422, "刷っていない紙には答えない"
 assert get(f"/sheet/{G}/../../etc/passwd")[0] == 404
 assert post(f"/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 # 記録: 決まりの外の値は落とし、動かない記録もそのまま残す

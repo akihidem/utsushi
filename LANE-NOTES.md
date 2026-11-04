@@ -63,7 +63,7 @@ F4. 折る順の図（候補 4）: 手順の紙（御来迎）に「折る順（
 - 先生の見る紙: compose_teacher と `python -m omochae.hypotheses print-teacher [--out]`。日付・場面・人数、4 つの着目（見出しは本人の言葉のまま）ごとに見る物の手がかりと 3 行、聞こえたつぶやき、次の版に返したい事。点・名前の欄は無い。予想の門は通さない（答えも仮説も載らないため）。
 - render.py: shapes に kind "poly"（塗り）を足し、ruler が None なら物差しを描かない。部品のループは触っていない。
 - 試験: tests/test_sheet_u25.py（凍結の条件を全部）。test_hypotheses と test_records の「見た事」を新しい見出しに合わせた。`./run.sh` 47/47。
-- docs/architecture.md の instructions.py の行と、docs/features.json（f05・f23・f25 に試験、f27 先生の見る紙）を直した。
+- docs/architecture.md の instructions.py の行と、docs/features.json（f05・f23・f25 に試験、f28 先生の見る紙）を直した。
 
 ## hack-main に写してほしい事・判断してほしい事
 1. data/hypotheses の文に「開いた角度」が残る。試した後の紙の「次はこれを変えて試す」の見る物（after_try.contrasts[].watch）と、見比べる紙の「見る物」（hypotheses[].to_measure）。紙の欄は外したが、文は data にあるのでこの線では直していない。「どこまで開くか」「どこで止まるか」などに言い換えるかは hack-main と本人。

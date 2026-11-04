@@ -11,16 +11,17 @@ from .play_server import ROOT, esc, page, source, sources
 
 LOOKS = {
     "taiban": "A 大判写真集",
+    "tenji": "A′ 日本画展の展示",
     "zine": "C 縦読みのジン",
 }
 
 
 def switch(current):
     """残した 2 案を行き来する切り替え。今いる案は太字にする。A は入口（/）と同じ頁。"""
-    items = [("/", LOOKS["taiban"]), ("/look/zine", LOOKS["zine"])]
+    items = [("/", LOOKS["taiban"]), ("/look/tenji", LOOKS["tenji"]), ("/look/zine", LOOKS["zine"])]
     current = "/" if current == "/look/taiban" else current
     links = "｜".join(f"<b>{esc(n)}</b>" if u == current else f'<a href="{u}">{esc(n)}</a>' for u, n in items)
-    return f'<nav class="switch">{links}<span class="cap">本人が残した 2 案（J-024）</span></nav>'
+    return f'<nav class="switch">{links}<span class="cap">A と A′ は本人が見比べて決める（11-04）</span></nav>'
 
 
 def toys():
@@ -39,6 +40,15 @@ def _bg(sid, pos="50% 50%", size="cover"):
     if not (ROOT / "out/sources" / f"{sid}.jpg").exists():
         return "background-color:#d9d2c3"
     return f"background-image:url(/picture/{sid});background-position:{pos};background-size:{size};background-repeat:no-repeat"
+
+
+# 額に入れる図は、複写の台の黒い縁が額の中に見えないよう、枠と同じ比のまま少し大きく敷く（A の全面の図と同じ考え）。
+FRAMED = "112% 112%"
+
+
+def framed_pos(sid):
+    """綴じの影は頁の綴じ側に出る。左頁（L）は左、右頁（R）は右に濃いので、反対側へ寄せて影を落とす。"""
+    return "15% 50%" if source(sid).get("side") == "R" else "85% 50%"
 
 
 def _nopic(t):
@@ -189,43 +199,142 @@ def taiban():
     return page("うつし · 大判写真集", body + ONLY, TAIBAN, "taiban")
 
 
-# ---------------------------------------------------------------- C 縦読みのジン
+# ---------------------------------------------------------------- C 縦読みのジン（黒地）
+# 本人の答え（2026-11-04）: C は黒地のジンのまま性格を保つ（U-23）。さらに「本の形式もわるくないけど、黒の背景に高級感ある方が
+# もっと良くなる」。デザイナーの感想「もっと美術品みたく、歴史的価値のあるように見せたサイトの方が良い」も受けた。
+# 磨きの向き: 図を額装した美術品として見せる。深い黒の地に、図だけに光を当て、細い金の線の額とマット、明朝の細い字、
+# 美術館の作品の札（題・作・画・年・所蔵）を添える。札の中身は出典の記録（NDL の書誌）だけから刷り、足さない。
+# 動きは入れない（research/19 の判断のまま。何度も開く入口なので）。
 ZINE = """
-body.zine{background:#111;color:#eee6d6}
-body.zine a{color:#f0c27a}.zine .switch a{color:#f0c27a}
-.zn-cover{height:100vh;height:100svh;position:relative;overflow:hidden}
-.zn-cover .strip{position:absolute;left:0;right:0;top:22%;height:46%;filter:saturate(.9)}
-.zn-cover h1{position:absolute;left:4vw;bottom:5vh;font-size:clamp(72px,17vw,260px);line-height:1.1;margin:0;font-weight:200;letter-spacing:-.04em;mix-blend-mode:difference;color:#fff}
-.zn-cover .meta{position:absolute;right:4vw;top:6vh;color:#cfc4ad;font-size:12px;letter-spacing:.35em;text-transform:uppercase}
-.zn-toy{display:grid;grid-template-columns:1fr 1fr}
-.zn-toy .pin{position:sticky;top:0;height:100vh;height:100svh}
-.zn-toy .flow > div{min-height:100vh;min-height:100svh;padding:12vh 6vw;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
-.zn-toy .big{font-size:clamp(80px,14vw,220px);font-weight:200;line-height:.9;margin:0;font-variant-numeric:tabular-nums lining-nums}
-.zn-toy h2{font-size:clamp(32px,5vw,72px);font-weight:300;margin:.2em 0}
-.zn-toy .song{font-size:clamp(18px,2vw,26px);line-height:1.9}
-.zn-toy .cap{color:#a99f8d}
-.zn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.zn-grid div{aspect-ratio:1}
-@media (max-width:760px){.zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:70vh;height:70svh}}
+body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+ font-feature-settings:"palt" 1}
+body.zine a{color:#c9a96a;text-decoration:none;border-bottom:1px solid rgba(201,169,106,.45)}
+.zine .switch{position:relative;z-index:2;font-size:12px;letter-spacing:.2em;padding:14px 4vw;color:#7d7463}
+.zine .switch a{color:#c9a96a}.zine .switch b{color:#e9e1cf;font-weight:400}
+.zine .switch .cap{color:#5f584c}
+.zn-cover{min-height:100vh;min-height:100svh;position:relative;display:grid;grid-template-columns:1fr minmax(0,44vh) 1fr;align-items:center;
+ background:radial-gradient(ellipse 46% 62% at 50% 46%,#1d1914 0%,#0b0a09 72%)}
+.zn-cover .frame{grid-column:2;aspect-ratio:1600/2656;padding:18px;background:#141210;border:1px solid #6e5a35;
+ box-shadow:0 0 0 6px #0b0a09,0 0 0 7px #3a3122,0 30px 80px rgba(0,0,0,.7)}
+.zn-cover .frame div{width:100%;height:100%}
+.zn-cover h1{grid-column:3;justify-self:start;margin:0 0 0 6vw;writing-mode:vertical-rl;font-weight:300;
+ font-size:clamp(40px,6.5vw,92px);letter-spacing:.5em;color:#efe6d2}
+.zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
+.zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
+.zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
+.zn-toy{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1f1b16}
+.zn-toy .pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(ellipse 60% 70% at 50% 48%,#1c1813 0%,#0b0a09 75%)}
+.zn-toy .pin .frame{height:78%;aspect-ratio:1600/2656;padding:14px;background:#141210;border:1px solid #6e5a35;box-shadow:0 26px 70px rgba(0,0,0,.75)}
+.zn-toy .pin .frame div{width:100%;height:100%}
+.zn-toy .flow > div{min-height:100vh;min-height:100svh;padding:14vh 7vw;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.zn-toy .big{font-size:clamp(14px,1.2vw,16px);letter-spacing:.5em;color:#c9a96a;margin:0 0 18px;font-variant-numeric:tabular-nums lining-nums}
+.zn-toy h2{font-size:clamp(40px,5.5vw,84px);font-weight:300;margin:0;letter-spacing:.25em}
+.zn-toy .songs{writing-mode:vertical-rl;height:min(60vh,520px);margin:0 auto 24px}
+.zn-toy .song{font-size:clamp(18px,1.9vw,24px);line-height:2.2;letter-spacing:.12em;margin:0 .4em}
+.zn-toy .cap{color:#8c826e;font-size:12px;letter-spacing:.15em;line-height:1.9}
+.zn-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.zn-grid div{aspect-ratio:1;border:1px solid #3a3122;outline:8px solid #141210;outline-offset:-9px}
+.zn-end{padding:14vh 7vw;border-top:1px solid #1f1b16;text-align:center}
+@media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
+ .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
+ .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
+ .zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:72vh;height:72svh}
+ .zn-toy .songs{writing-mode:horizontal-tb;height:auto}}
 """
+
+
+def _label(t, src, cls="zn-label"):
+    """美術館の作品の札。中身は出典の記録（NDL の書誌）の値だけで、作る側の言葉を足さない。"""
+    who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
+    when = esc((src.get("original_publication") or {}).get("value", ""))
+    rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
+    return (f'<p class="{cls}">『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>'
+            f'{esc(t["holding"])}<br>{rights}</p>')
 
 
 def zine():
     ts = toys()
     first = ts[0]["sid"] if ts else ""
     body = switch("/look/zine")
-    body += (f'<section class="zn-cover"><div class="strip" style="{_bg(first, "50% 60%")}"></div>'
-             '<p class="meta">Edo toy lookbook · vol.01 · 1773</p><h1>うつし</h1></section>')
+    body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
+             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1></section>')
     for i, t in enumerate(ts, 1):
+        src = source(t["sid"])
         song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])
         tiles = "".join(f'<div style="{_bg(t["sid"], p, "300%")}"></div>' for p in ("30% 30%", "72% 40%", "35% 75%", "70% 82%"))
-        # 図は左に留めたまま、右で名・歌・細部・入口が流れる。図から目を離さずに読む形。
-        body += (f'<section id="look-{i}" class="zn-toy"><div class="pin" style="{_bg(t["sid"], "50% 50%", "contain")};background-color:#1a1714"></div><div class="flow">'
-                 f'<div><p class="big">{i:02d}</p><h2>{esc(t["toy"])}</h2>{_nopic(t)}</div>'
-                 f'<div id="song-{i}">{song}<p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
+        # 図は左に額装して留めたまま、右で札・歌・細部・入口が流れる。図から目を離さずに読む形。
+        body += (f'<section id="look-{i}" class="zn-toy"><div class="pin"><div class="frame"><div style="{_bg(t["sid"], framed_pos(t["sid"]), FRAMED)}"></div></div></div><div class="flow">'
+                 f'<div><p class="big">No. {i:02d}</p><h2>{esc(t["toy"])}</h2>{_label(t, src)}{_nopic(t)}</div>'
+                 f'<div id="song-{i}"><div class="songs">{song}</div><p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
                  f'<div><div class="zn-grid">{tiles}</div><p class="cap">図の細部</p></div>'
-                 f'<div><p class="song">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく →</a></p></div></div></section>')
-    body += '<p class="cap" style="padding:10vh 6vw">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
+                 f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></p></div></div></section>')
+    body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
     return page("うつし · 縦読みのジン", body + ONLY, ZINE, "zine")
 
 
-PAGES = {"taiban": taiban, "zine": zine}
+# ---------------------------------------------------------------- A′ 日本画展の展示（白の壁）
+# 本人の言葉（2026-11-04）: 「白の背景で高級感出してもいいよ。美術館の展示みたく」「日本画の展覧会の展示みたいな。山種美術館の展示環境みたいな」。
+# デザイナーの感想（本人が伝えた）: 「もっと美術品みたく、歴史的価値のあるように見せたサイトの方が良い」。
+# A をバインダーの再現のまま磨くか展示の形に作り替えるかを聞いたら、本人は「まだ決めず、どっちも作る」と答えた。だから A はそのまま残し、
+# 展示の形を A′ として並べる。順路: 入口の題のパネル → 章ごとに 1 点を白い壁に掛け、作品の札と解説 → 細部 → 出口（玩具の頁へ）。
+# 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。動きは入れない。
+TENJI = """
+body.tenji{background:#f6f3ec;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
+body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107,79,42,.35)}
+.tenji .switch{font-size:12px;letter-spacing:.2em;padding:14px 5vw;color:#8b8172}.tenji .switch .cap{color:#a59b8b}
+.tj-hall{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 5vw;box-sizing:border-box}
+.tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
+.tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
+.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:11px;letter-spacing:.35em;color:#8b8172;text-transform:uppercase;writing-mode:vertical-rl}
+.tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
+ padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #e4ddcf}
+.tj-room .panel{align-self:start;padding-top:6vh}
+.tj-room .chapter{font-size:12px;letter-spacing:.5em;color:#8b8172;margin:0 0 18px}
+.tj-room h2{font-weight:400;font-size:clamp(26px,2.8vw,42px);letter-spacing:.18em;margin:0 0 26px;word-break:keep-all}
+.tj-room .lead{font-size:14px;line-height:2.2;letter-spacing:.08em;color:#4a4339}
+.tj-work{justify-self:center;width:min(100%,46vh);aspect-ratio:1600/2656;padding:3.2%;background:#fbf9f4;
+ border:1px solid #d8cdb6;box-shadow:0 1px 0 #e8e1d2,0 40px 60px -30px rgba(70,55,35,.35),0 2px 6px rgba(70,55,35,.08)}
+.tj-work div{width:100%;height:100%}
+.tj-side{align-self:end;padding-bottom:6vh}
+.tj-label{font-size:12px;line-height:2;letter-spacing:.06em;color:#5d554a;border-left:1px solid #b9a982;padding-left:14px;max-width:22em}
+.tj-label .no{display:block;color:#8b8172;letter-spacing:.3em}
+.tj-label .ttl{display:block;font-size:18px;letter-spacing:.25em;color:#1f1b17;margin:4px 0}
+.tj-songs{writing-mode:vertical-rl;height:min(46vh,420px);margin:0 0 20px auto;font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
+.tj-songs p{margin:0 .3em}
+.tj-detail{padding:12vh 5vw;border-top:1px solid #e4ddcf;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3vw;align-items:start}
+.tj-detail figure{margin:0}.tj-detail figure div{aspect-ratio:3/4;background-color:#fbf9f4;border:1px solid #d8cdb6;box-shadow:0 20px 30px -24px rgba(70,55,35,.4)}
+.tj-detail figcaption{font-size:11px;letter-spacing:.2em;color:#8b8172;margin-top:10px}
+.tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #e4ddcf}
+.tj-exit p{font-size:clamp(20px,2.2vw,28px);letter-spacing:.3em;font-weight:400}
+.tj-note{font-size:11px;color:#8b8172;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
+@media (max-width:820px){.tj-room{grid-template-columns:1fr;gap:6vh}.tj-work{width:72vw}.tj-songs{writing-mode:horizontal-tb;height:auto}
+ .tj-detail{grid-template-columns:1fr 1fr}.tj-hall{grid-template-columns:1fr;justify-items:center;gap:4vh;padding:10vh 5vw}
+ .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}}
+"""
+KANJI = "一二三四五六七八九十"
+
+
+def tenji():
+    ts = toys()
+    body = switch("/look/tenji")
+    body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
+    for i, t in enumerate(ts, 1):
+        src = source(t["sid"])
+        song = "".join(f"<p>{esc(x)}</p>" for x in t["song"])
+        n = KANJI[i - 1] if i <= len(KANJI) else str(i)
+        body += (f'<section id="look-{i}" class="tj-room"><div class="panel"><p class="chapter">第{n}章</p><h2>{esc(t["toy"])}</h2>'
+                 f'<div class="tj-songs" id="song-{i}">{song}</div><p class="lead">{QUOTE}</p></div>'
+                 f'<div class="tj-work"><div style="{_bg(t["sid"], framed_pos(t["sid"]), FRAMED)}"></div></div>'
+                 f'<div class="tj-side"><div class="tj-label"><span class="no">No. {i:02d}</span><span class="ttl">{esc(t["toy"])}</span>'
+                 f'{_label(t, src, "tj-inner")}</div>{_nopic(t)}</div></section>')
+        figs = "".join(f'<figure><div style="{_bg(t["sid"], p, "300%")}"></div><figcaption>部分 {k}</figcaption></figure>'
+                       for k, p in enumerate(("30% 30%", "72% 40%", "35% 75%", "70% 82%"), 1))
+        body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
+        body += (f'<section class="tj-exit"><p>どこが動くと思いますか。</p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></section>')
+    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
+    return page("うつし · 日本画展の展示", body + ONLY, TENJI, "tenji")
+
+
+PAGES = {"taiban": taiban, "tenji": tenji, "zine": zine}
