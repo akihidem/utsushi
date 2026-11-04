@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<repo>/tests/test_sheet_u25.py", line 13, in <module>
+    from omochae.instructions import (AFTER_QUESTION, COMPARE_LIMIT, COMPARE_QUESTIONS, QUESTIONS, RESULT_HEAD, STUCK, TEACHER_FOCUS,
+                                      TEACHER_NOTE, compose_after, compose_compare, compose_free, compose_sheet, compose_teacher)
+ImportError: cannot import name 'AFTER_QUESTION' from 'omochae.instructions' (<scratch>/red/src/omochae/instructions.py)
+rc=1

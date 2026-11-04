@@ -324,6 +324,12 @@
   "status": "11-05 の凍結に使う。決まっていない点は U-27〜U-31"
  },
  {
+  "id": "gate-trial",
+  "path": "gate-trial.md",
+  "hook": "関門の試行（Red/Green・証拠・書き戻し）の帳面",
+  "status": "試行中（11-04〜）"
+ },
+ {
   "id": "claims",
   "path": "claims.md",
   "hook": "主張ごとの確かさの種類と根拠の表",
