@@ -1,5 +1,5 @@
 Traceback (most recent call last):
-  File "/home/akhd/work/utsushi-wt-pictures/tests/test_analogy.py", line 36, in <module>
+  File "tests/test_analogy.py", line 36, in <module>
     assert not missing, ("たとえが無い玩具", len(missing), missing[:10])
            ^^^^^^^^^^^
 AssertionError: ('たとえが無い玩具', 81, ['NDL-1187053-R0000004-L', 'NDL-1187053-R0000004-L-4', 'NDL-1187053-R0000004-L-5', 'NDL-1187053-R0000005-L-3', 'NDL-1187053-R0000005-R', 'NDL-1187053-R0000005-R-2', 'NDL-1187053-R0000006-L', 'NDL-1187053-R0000006-R', 'NDL-1187053-R0000007-L', 'NDL-1187053-R0000007-R'])
