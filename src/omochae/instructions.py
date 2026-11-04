@@ -94,15 +94,16 @@ def _first_steps(x, y, shapes, texts):
     end = zz + 8
     for name, head in (("谷折り（手前へ）", VALLEY_HEAD), ("山折り（向こうへ）", MOUNTAIN_HEAD)):
         _arc_arrow(shapes, x, end + 3, x + 6, 1.2, head)
-        texts.append(TextBox(x, end, 7, 3.5, None))
-        end = _block(texts, [name], x + 7.5, end, PICTURE_SIZE, text_width(name, PICTURE_SIZE) + 0.5)
+        texts.append(TextBox(x, end, 7, 4.5, None))  # 矢じりの先は弧の終わりより下へ約 0.9mm 出るので、その分まで取る
+        end = max(end + 4.5, _block(texts, [name], x + 7.5, end, PICTURE_SIZE, text_width(name, PICTURE_SIZE) + 0.5))
     return end
 
 
 # 折る順のコマ（research/22 の候補 4）。押し方と中心の置き方で変わる所だけを分け、組み方の文と同じ部品番号を使う。
 def _order_panels(p):
     second = {"tab": "2 内筒を角筒にし、竹串を通す", "stick": "2 土台を角筒にし、割り箸を差す", "tube": "2 内筒を角筒にする"}[p["push_part"]]
-    last = "糸を通し、扇と像を 3 台に貼る" if p["hub"] == "axle" else "扇の端と像を 3 台に貼る"
+    # 他のコマと同じく部品番号から書き出す（レビューの指摘: 4 コマ目だけ番号が無く、読み方がそろわなかった）。
+    last = "3 台に 4 扇と 5 像を貼る（糸を通してから）" if p["hub"] == "axle" else "3 台に 4 扇の端と 5 像を貼る"
     return [("tube", "1 外筒を切って角筒に"), (p["push_part"], second), ("fan", "4 扇を色の境で蛇腹に"), ("join", last)]
 
 
@@ -253,7 +254,8 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         x += 34
     y += BODY_SIZE * LINE + 4
     y = _block(texts, ["直した点（部品・変えた事・結果）"], page.x0, y, HEAD_SIZE, width)
-    # 行は 2 つ。版 2 の紙のように遊び方の文が長くなって頁に入らない時は 1 行にする（表そのものは必ず残す。0 行なら検査が落とす）。
+    # 行は 2 つ。版 2 の紙のように遊び方の文が長くなって頁に入らない時は 1 行にする（表そのものは必ず残す）。
+    # 1 行でも入らない時は、行の枠が印字域の外に出て check_layout が F5.print_area で落とす。
     rows = max(1, min(2, int((page.y1 - y) // FIX_ROW)))
     for _ in range(rows):
         for col, cw in enumerate((40.0, 80.0, 70.0)):
