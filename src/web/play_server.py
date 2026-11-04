@@ -247,7 +247,9 @@ class Handler(BaseHTTPRequestHandler):
     def _host_ok(self):
         # DNS rebinding で外のサイトから手元の記録を読み書きさせないため、手元の名前だけを受ける。
         port = self.server.server_address[1]
-        return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
+        # 家の網に開いた時（--lan）は、この機械の網の中の番地と名前だけを足す。ほかの名前は今までどおり断る。
+        extra = getattr(self.server, "lan_hosts", ())
+        return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}", *(f"{h}:{port}" for h in extra))
 
     def do_GET(self):
         try:
@@ -477,16 +479,44 @@ class Handler(BaseHTTPRequestHandler):
         self._done(sid, msg)
 
 
-def serve(port=8766):
-    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+def lan_addresses():
+    """この機械の網の中の番地（192.168.x.x などの私的な番地だけ）と、.local の名前。"""
+    import ipaddress
+    import socket
+
+    names = set()
+    try:
+        # 外へ繋がる番地を知るため、送らない UDP の口で経路だけを引く（実際には何も送らない）。
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("192.0.2.1", 9))
+            names.add(s.getsockname()[0])
+    except OSError:
+        pass
+    try:
+        names.update(socket.gethostbyname_ex(socket.gethostname())[2])
+    except OSError:
+        pass
+    ips = sorted(a for a in names if ipaddress.ip_address(a).is_private and not ipaddress.ip_address(a).is_loopback)
+    return ips + [f"{socket.gethostname().split('.')[0]}.local"]
+
+
+def serve(port=8766, lan=False):
+    """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。"""
+    server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
+    server.lan_hosts = tuple(lan_addresses()) if lan else ()
+    return server
 
 
 if __name__ == "__main__":
     try:
-        port = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
-        server = serve(port)
+        args = [a for a in sys.argv[1:] if a != "--lan"]
+        lan = "--lan" in sys.argv[1:]
+        port = int(args[0]) if args else 8766
+        server = serve(port, lan=lan)
     except (ValueError, OSError, OverflowError) as e:
         print(f"検査できない: 開けない: {e}", file=sys.stderr)
         sys.exit(4)
     print(f"http://127.0.0.1:{port}/")
+    for h in server.lan_hosts:
+        print(f"家の網から: http://{h}:{port}/  （同じ網の iPhone で開く。音声認識は https でないので使えない見込みで、字の入力と読み上げは使える）")
     server.serve_forever()
