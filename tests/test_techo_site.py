@@ -66,7 +66,8 @@ assert req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param":
 code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
 assert code in (200, 303), body[:300]
 page = req(f"/toy/{G}")[1].decode()
-assert "H-A_v2.pdf" in page and "版 2 の型紙" in page
+# 版を言わずに開くと窓は最新の版（PDF の押し釦は版 2）。字のリンクは窓へ（本人の指示 11-05）
+assert "H-A_v2.pdf" in page and "版 2 の型紙" in page and f"see=H-A&kind=sheet&v=2#win" in page
 assert req(f"/sheet/{G}/H-A_v2.pdf")[1][:4] == b"%PDF"
 # 型紙の確定の記録（f09）: 刷った版ごとに、誰が・どの組で確定したかが台帳に残る
 from omochae import loop  # noqa: E402

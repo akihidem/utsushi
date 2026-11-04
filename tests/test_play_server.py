@@ -78,7 +78,9 @@ assert re.search(r"仮説 A.*仮説 B.*仮説 C.*仮説 D.*仮説 E", body, re.S
 # 刷る。試した後の紙は記録の前は出さず、URL を知っていても渡さない
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 body = get(f"/toy/{G}")[1].decode()
-assert "H-A_v1.pdf" in body and "H-A_v1_tejun.pdf" in body and "H-A_v1_after.pdf" not in body
+# 字のリンクは画面の窓へ（本人の指示 11-05「型紙はクリックすると表示される形に」）。PDF は窓の押し釦。試した後の紙はどちらも出ない
+assert "see=H-A&kind=sheet&v=1#win" in body and "see=H-A&kind=tejun&v=1#win" in body and "kind=after" not in body
+assert "H-A_v1.pdf" in body and "H-A_v1_after.pdf" not in body
 code, pdf = get(f"/sheet/{G}/H-A_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
 assert get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 403

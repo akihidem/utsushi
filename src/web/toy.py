@@ -30,14 +30,15 @@ def versions_of(sid, hid):
 
 
 def sheet_links(sid, hid, recorded):
-    """刷った紙への字のリンク（PDF）。試した後の紙は記録の後だけ。"""
+    """刷った紙への字のリンク。押すと画面の窓（#win）にその紙の絵が出る。
+    なぜ窓へ向けるか: 本人の指示（11-05、デモを見て）「型紙はクリックすると表示されるように」。前は PDF へ直に飛び、機器によっては
+    ダウンロードだけになって画面に紙が出なかった。PDF は窓の「PDF を開いて刷る」から（別のタブ、インライン）。試した後の紙は記録の後だけ。"""
     links = []
     for v in versions_of(sid, hid):
         tag = "" if v == 1 else f"版 {v} の"
         for suffix, label in KINDS:
-            name = f"{hid}_v{v}{suffix}.pdf"
-            if (out_dir(sid) / name).exists() and (suffix != "_after" or recorded):
-                links.append(f'<a href="/sheet/{sid}/{name}">{tag}{label}</a>')
+            if (out_dir(sid) / f"{hid}_v{v}{suffix}.pdf").exists() and (suffix != "_after" or recorded):
+                links.append(f'<a href="/toy/{sid}?see={hid}&kind={suffix.lstrip("_") or "sheet"}&v={v}#win">{tag}{label}</a>')
     return "・".join(links)
 
 
@@ -89,9 +90,10 @@ def window(sid, data, see, kind, v, recorded):
            f'<div class="zoom" id="zoom"><a class="close" href="#win">閉じる</a><img src="{png}" alt=""></div>')
     side = (f'<div class="side"><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}'
-            f'<p><a class="btn" href="{pdf}">PDF を開いて刷る</a></p>'
+            # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
+            f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて刷る</a></p>'
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
-            f'<p class="meta"><a href="/sheet/{sid}/{name}.svg">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
+            f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             '<p class="meta">紙は復元ではなく、試すための翻案です。答えではありません。</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
@@ -190,7 +192,10 @@ def records_list(sid, recs):
     for r in reversed(recs):
         told = loop.explanation(r["id"])
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
-        after = f'<p><a href="/sheet/{sid}/{esc(r["hypothesis_id"])}_v{r.get("sheet_version", 1)}_after.pdf">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
+        # 試した後の紙も字のリンクは窓へ（画面に出す）。PDF は添え。
+        hid, ver = esc(r["hypothesis_id"]), r.get("sheet_version", 1)
+        after = (f'<p><a href="/toy/{sid}?see={hid}&kind=after&v={ver}#win">試した後の紙</a>（先に開いて、次に変える条件を読む。'
+                 f'<a href="/sheet/{sid}/{hid}_v{ver}_after.pdf" target="_blank" rel="noopener">PDF</a>）</p>')
         if told:
             tail = f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>' + ai_block(r) + next_form(r)
         else:

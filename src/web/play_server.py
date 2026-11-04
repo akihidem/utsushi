@@ -265,10 +265,11 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 型紙の窓の選び（仮説・紙の種類・版）は URL で持つ。JS なしで切り替えられ、戻るで前の紙に戻れる。
             kind = {"sheet": "", "tejun": "_tejun", "after": "_after"}.get(qs.get("kind", ["sheet"])[0], "")
+            # 版を言わなければ一番新しい版（0 は「無指定」で、窓が最新に直す）。次の版を刷った後に開く時に、古い版が先に出ないため。
             try:
-                v = int(qs.get("v", ["1"])[0])
+                v = int(qs.get("v", ["0"])[0])
             except ValueError:
-                v = 1
+                v = 0
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
@@ -282,7 +283,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(403, "試した記録を残してから開きます")
             f = out_dir(sid) / f"{stem}.{ext}"
             if f.exists():
-                return self._send(200, f.read_bytes(), {"pdf": "application/pdf", "svg": "image/svg+xml", "png": "image/png"}[ext])
+                # インラインの印: ブラウザが PDF を表示できる機器では、落とさずにその場で開く（本人の指示 11-05「クリックで画面に型紙が出る形」）。
+                return self._send(200, f.read_bytes(), {"pdf": "application/pdf", "svg": "image/svg+xml", "png": "image/png"}[ext],
+                                  [("Content-Disposition", f'inline; filename="{stem}.{ext}"')])
         self._send(404, "見つかりません")
 
     def _form(self):
