@@ -49,4 +49,10 @@ assert form_import.run(g)[0] == [] and "題が表と違う" in form_import.run(g
 # 取り込んだ後に CSV を消す
 form_import.run(f, delete_csv=True)
 assert not f.exists()
+# サイトの頁から作ったフォームへつなぐ（本人の指示 11-04）
+from omochae.form_import import FORM_URL  # noqa: E402
+from web.contrib_server import public_page  # noqa: E402
+from web.techo_site import gallery_page  # noqa: E402
+
+assert FORM_URL.startswith("https://docs.google.com/forms/") and FORM_URL in gallery_page([]) and FORM_URL in public_page()
 print("ok")

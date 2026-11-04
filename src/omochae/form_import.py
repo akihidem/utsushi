@@ -17,6 +17,10 @@ import sys
 
 from . import contrib
 
+# 外の入口のフォームの公開の URL（本人のアカウントで作り、本人が「作ったフォームを使って」と指示した、11-04）。
+# サイトの頁はここから引き、2 か所に書かない。
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSegV8WnKg7KIjtDHaUjQS3AQs34Ld1Bd9c--PDAqygSQKY2sw/viewform"
+
 # フォームの質問の題 → 受付の欄。題は docs/process/contributions-form.md と同じ。
 Q = {
     "kind": "投稿の種類",
