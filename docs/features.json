@@ -147,9 +147,12 @@
   "status": "doing",
   "evidence": [
    "src/omochae/contrib.py",
-   "tests/test_contrib.py"
+   "tests/test_contrib.py",
+   "src/omochae/form_import.py",
+   "tests/test_form_import.py",
+   "docs/process/contributions-form.md"
   ],
-  "unverified": "外の人に開く入口は未実装。ブラウザ操作は未確認"
+  "unverified": "外の入口の取り込み口（Google フォームの CSV）は作った。フォームそのものは本人が作る。人が投稿した事はまだ無い"
  },
  {
   "id": "f18",

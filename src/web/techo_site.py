@@ -14,6 +14,7 @@ import re
 
 from omochae import hypotheses, records
 from omochae.compose import TEMPLATES
+from omochae.form_import import FORM_URL
 
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
 MAX_MEDIA = 20 * 1024 * 1024
@@ -204,6 +205,8 @@ def gallery_page(sids):
             '<section class="panel" aria-label="上げた物"><p class="mark">上げた物</p><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
             '<section class="panel" aria-label="職人の言葉"><p class="mark">職人の言葉</p><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
+            f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
+            '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section>')
 
 

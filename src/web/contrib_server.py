@@ -10,6 +10,7 @@ import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from omochae import contrib
+from omochae.form_import import FORM_URL
 
 MAX_REQUEST = 8 * 1024 * 1024
 KIND = {"photo": "写真", "info": "情報", "memory": "思い出", "knowhow": "作り方の知見"}
@@ -72,7 +73,7 @@ def public_page():
             f'<br>権利: {e(rights.get("holder") or "未記入")}・条件: {e(LICENSE_LABEL.get(rights.get("license"), "未記入"))}</p></article>'
         )
     body = "".join(rows) or "<p>確認済みの投稿はまだありません。</p>"
-    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>持ち寄られた事</title><style>{STYLE}</style><main><h1>持ち寄られた事</h1><p>寄せられた言葉をそのまま載せています。事実と確かめた物ではありません。<a href="/">寄せる</a></p>{body}</main></html>'
+    return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>持ち寄られた事</title><style>{STYLE}</style><main><h1>持ち寄られた事</h1><p>寄せられた言葉をそのまま載せています。事実と確かめた物ではありません。<a href="{html.escape(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a>（手元の受付は <a href="/">こちら</a>）</p>{body}</main></html>'
 
 
 class Handler(BaseHTTPRequestHandler):

@@ -101,9 +101,10 @@
 | 56 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
 | 57 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
 | 58 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
-| 59 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 60 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 61 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 59 | [contributions-form](contributions-form.md) | 外の入口の Google フォームの表と取り込みの流れ | 本人がフォームを作れば開く（f17） |
+| 60 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 61 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 62 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
