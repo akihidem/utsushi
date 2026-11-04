@@ -1,0 +1,9 @@
+# fix-tpl-6 red  2026-11-04T15:22:19+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_loop_record_source.py
+Traceback (most recent call last):
+  File "tests/test_loop_record_source.py", line 21, in <module>
+    assert {f.floor for f in fs} == {"F8.references"}, [f.line() for f in fs]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: []
+# exit=1

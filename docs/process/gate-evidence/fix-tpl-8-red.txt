@@ -1,0 +1,9 @@
+# fix-tpl-8 red  2026-11-04T15:22:20+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_slider_tube_stroke.py
+Traceback (most recent call last):
+  File "tests/test_slider_tube_stroke.py", line 9, in <module>
+    assert fs and any("押し上げる量" in f.message for f in fs), [f.line() for f in check_physics(p)]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: []
+# exit=1

@@ -1,0 +1,9 @@
+# fix-tpl-9 red  2026-11-04T15:22:21+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_loop_adopt_source.py
+Traceback (most recent call last):
+  File "tests/test_loop_adopt_source.py", line 25, in <module>
+    assert not fs, [f.line() for f in fs]
+           ^^^^^^
+AssertionError: ['FAIL F7.revision [weight_below_axle] 変えてよい寸法の外']
+# exit=1
