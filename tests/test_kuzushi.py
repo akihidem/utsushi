@@ -85,7 +85,9 @@ for sid in sources():
 for sid in sources():
     code, body = get(f"/zukan/{sid}/yomi")
     assert code == 200, sid
-    assert f'src="/picture/{sid}"' in body and 'name="mine"' in body, sid
+    # 原図の写しは git の外（out/sources）なので、まっさらな clone では絵の代わりに「手元に絵がありません」が出る
+    has_pic = (pathlib.Path(__file__).resolve().parents[1] / "out/sources" / f"{sid}.jpg").exists()
+    assert (f'src="/picture/{sid}"' in body if has_pic else "手元に絵がありません" in body) and 'name="mine"' in body, sid
     for e in checked(sid):
         assert e["text"] not in body, (sid, "書く前に確かめた読みが出ている")
     for e in rejected(sid):
