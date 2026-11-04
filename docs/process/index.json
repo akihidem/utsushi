@@ -376,5 +376,11 @@
   "path": "trials/sheets/README.md",
   "hook": "型紙の全版。失敗した版も残す",
   "status": "記録"
+ },
+ {
+  "id": "template-contract",
+  "path": "template-contract.md",
+  "hook": "全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前",
+  "status": "設計"
  }
 ]

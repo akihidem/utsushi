@@ -114,7 +114,7 @@ def check_result(result, source):
             continue
         _, _, floors = compose(tid, h.get("params") or {}, source)
         errors += floors
-        key = "mount" if tid == "pivot_counterweight" else "push_part"
+        key = TEMPLATES[tid].HYP_KEY
         if key not in (h.get("params") or {}):
             errors.append(Failure("F5.range", h.get("name", "?"), f"{key} が要る"))
     return errors

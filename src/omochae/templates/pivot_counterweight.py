@@ -12,6 +12,8 @@ from ..pivot_model import center, paper_mass, period_s, rest_tilt_deg
 
 ID = "pivot_counterweight"
 # 刷った組の版（U-31）。slider_fan.SHEET_SET と同じ意味。
+# 仮説を分ける寸法の名前（words・generate が、仮説の寸法にこれがあるかを見る）。
+HYP_KEY = "mount"
 SHEET_SET = "tora-v3"
 DEFAULTS = {
     "mount": "neck",

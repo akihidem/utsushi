@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "tests/test_tpl_registry.py", line 17, in <module>
+    assert not missing, (tid, missing)
+           ^^^^^^^^^^^
+AssertionError: ('slider_fan', ['HYP_KEY'])
+rc 1

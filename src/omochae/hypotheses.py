@@ -71,6 +71,12 @@ def save_own(source_id, name, how, evidence, params=None):
     return rec, []
 
 
+def stage(source_id):
+    """玩具の段。必須の 2 種は印が無く "必須"。全部を作る線で足した玩具は記録に "試作" と書き、入口の主役には出さない
+    （凍結の床は必須の 2 種の完成で、試作が床を崩さないため。本人の指示 11-04）。"""
+    return load(source_id).get("stage", "必須")
+
+
 def need_prediction(source_id):
     if predictions(source_id) or own_paths(source_id):
         return []

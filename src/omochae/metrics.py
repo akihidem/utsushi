@@ -31,3 +31,9 @@ ALLOWED = {
 
 def values(template, params):
     return METRICS[template]({**TEMPLATES[template].DEFAULTS, **params})
+# 新しい雛形は、自分の式（metrics）と変えてよい寸法（ALLOWED）を雛形の中に持つ。この表を線ごとに書き足してぶつからないため。
+for _id, _tpl in TEMPLATES.items():
+    if _id not in METRICS and hasattr(_tpl, "metrics"):
+        METRICS[_id] = _tpl.metrics
+    if _id not in ALLOWED and hasattr(_tpl, "ALLOWED"):
+        ALLOWED[_id] = set(_tpl.ALLOWED)

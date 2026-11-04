@@ -10,6 +10,8 @@ from ..model import Failure, Part
 
 ID = "slider_fan"
 # 刷った組の版。紙の題の「版」は仮説の版なので、組の版を別に小さく刷る（本人の決定 U-31、11-04）。組を刷り直したら上げる。
+# 仮説を分ける寸法の名前（words・generate が、仮説の寸法にこれがあるかを見る）。
+HYP_KEY = "push_part"
 SHEET_SET = "goraigo-v10"
 # 寸法の共通の出発点。手元の複写の図の比と紙面の制約から出した（docs/process/research/06・07）。
 # 押し方と中心の置き方の値は答えではない。使い手に見せる組は data/hypotheses の仮説が決める（J-002）。

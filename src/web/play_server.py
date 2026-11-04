@@ -43,7 +43,8 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 MAX_FORM = 64 * 1024
 # トンネルの一時の名前の形（run-demo.sh の cloudflared）。本物の名前は repo に書かない（push の門の決まり）ので、形だけをここに 1 か所置く。
 TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
-SID = r"NDL-\d+-R\d+-[LR]"
+# 1 頁に玩具が何個もある時は、頁の印の後に -2, -3 と番号を足す（全部の玩具を作る、本人の指示 11-04）。1 個目は今までどおり番号なし。
+SID = r"NDL-\d+-R\d+-[LR](?:-\d+)?"
 
 
 def out_dir(sid):
@@ -174,9 +175,12 @@ def record_form(sid, data, own):
     results = "".join(f'<label class="check"><input type="radio" name="result" value="{esc(r)}" required>{esc(r)}</label>' for r in TEMPLATES[template].RESULTS)
     if template == "pivot_counterweight":
         extra = '<label>動かした物<select name="power"><option value="">—</option><option>手</option><option>息</option><option>団扇</option><option>風</option></select></label>'
-    else:
+    elif template == "slider_fan":
         # 角度の欄は外した（本人の方針「開き具合の角度などは今回の課題ではない」、U-25）。受け口は古い記録のために残す。
         extra = ('<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>')
+    else:
+        # 新しい雛形は、記録の足しの欄を雛形の中に持てる（無ければ足さない）。
+        extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
     return (f'<form method="post" action="/toy/{sid}/record"><h2>試した記録</h2><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset><legend>見た事</legend>{results}</fieldset>{extra}'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
@@ -199,7 +203,7 @@ def next_form(r):
     from omochae.metrics import ALLOWED
 
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
-    opts = "".join(f'<option value="{esc(k)}">{esc(PARAM_NAMES.get(k, k))}</option>' for k in sorted(ALLOWED[template]))
+    opts = "".join(f'<option value="{esc(k)}">{esc(PARAM_NAMES.get(k, getattr(TEMPLATES[template], "PARAM_NAMES", {}).get(k, k)))}</option>' for k in sorted(ALLOWED[template]))
     return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next">'
             '<label>何が起きたと読むか（解釈）<textarea name="interpretation" required></textarea></label>'
             f'<label>変える寸法<select name="param">{opts}</select></label><label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
