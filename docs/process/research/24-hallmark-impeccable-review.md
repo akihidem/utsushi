@@ -10,7 +10,7 @@
 | repo | https://github.com/Nutlope/hallmark | https://github.com/pbakaus/impeccable |
 | commit | 52328cb3129135499e4e178d4864ee90029dea2b（2026-11-03） | 9fadc41729c38fd47d7ae622b501558653f9d2e9（2026-11-02） |
 | license | MIT | Apache 2.0（NOTICE.md あり） |
-| 読んだ範囲 | `skills/hallmark/SKILL.md`（床の 16 条と流れ）、`references/gates.md`（色・字・組み・飾りの門の一覧） | `README.md`、`skill/SKILL.src.md`（型と命令の表）、`reference/craft-floor.md`（床と「選ばない」一覧）、`reference/new-work.md` の「AI の見た目の型」の段、`reference/polish.md` の前半 |
+| 読んだ範囲 | skills/hallmark/SKILL.md（床の 16 条と流れ）、references/gates.md（色・字・組み・飾りの門の一覧） | README.md、skill/SKILL.src.md（型と命令の表）、reference/craft-floor.md（床と「選ばない」一覧）、reference/new-work.md の「AI の見た目の型」の段、reference/polish.md の前半 |
 | 読まなかった物 | 主題の型（themes）・組みの型（macrostructures）・画像の取り方・検査の台本（`sloplint.mjs` など） | 命令ごとの細かい手順、ネイティブ（iOS・Android）、live の仕組み、Rust の検出器 |
 
 作る側の作業場（scratchpad の ext/）に `git clone --depth 1` で写して読んだだけ。Skill として入れていない（`npx impeccable install` も hallmark の導入もしない）。台本は 1 本も動かしていない。文は写さず、考えを作る側の言葉で書いた。
