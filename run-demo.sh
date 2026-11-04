@@ -12,9 +12,9 @@ cd "$(dirname "$0")" || exit 4
 PORT=${DEMO_PORT:-8767}
 [ -x .venv/bin/python ] || ./init.sh >/dev/null || exit 4
 command -v cloudflared >/dev/null || { echo "cloudflared が無いので外の機器からは開けません" >&2; exit 4; }
-if [ ! -f out/sources/NDL-1187053-R0000005-L.jpg ]; then
-  PYTHONPATH=src .venv/bin/python -m omochae.ingest || echo "原図の写しを取り込めませんでした。図の所は字だけで動きます"
-fi
+# 原図の写し（切り出し）は git の外なので、足りない分を起動のたびに取る（出典の記録の URL から。網が無ければ字だけで動く）。
+# なぜ毎回か: 前は最初の 1 枚が在ると残りを取らず、38 種が字だけで出ていた（本人「図がないおもちゃは図を入れて」、11-05）。
+PYTHONPATH=src .venv/bin/python -m omochae.ingest images || echo "写しの一部を取り込めませんでした。その玩具は字だけで動きます"
 [ "${1:-}" = "--fresh" ] && rm -rf out/demo-data
 mkdir -p out/demo-data
 umask 077

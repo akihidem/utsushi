@@ -1,4 +1,4 @@
-"""NDL の IIIF manifest から出典の記録と元の図を作る。
+"""NDL の IIIF manifest から出典の記録と元の図（切り出しの写し）を作る。写しだけなら `images`。
 
 なぜ manifest を毎回読むか: 権利と書誌を手で写すと、写し間違いが型紙の印に刷られる。一次資料の値をそのまま運ぶ。
 なぜ取得日時を内容が変わった時だけ更新するか: 何度走らせても git の差分が出ないようにするため。
@@ -77,7 +77,7 @@ def main():
     from datetime import datetime, timezone, timedelta
     now = datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
     (ROOT / "data/sources").mkdir(parents=True, exist_ok=True)
-    (ROOT / "out/sources").mkdir(parents=True, exist_ok=True)
+    wanted = {}
     for sid, t in {**TARGETS, **inventory_targets()}.items():
         c = canvases[t["canvas"] - 1]
         service = c["images"][0]["resource"]["service"]["@id"]
@@ -119,16 +119,48 @@ def main():
         else:
             rec["fetched_at"] = now
         path.write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        img = ROOT / "out/sources" / f"{sid}.jpg"
-        if not img.exists():
-            try:
-                img.write_bytes(_get(image_url))
-            except Exception as e:
-                print(f"ingest: 画像を取れない {sid}: {e}", file=sys.stderr)
-                return 4
+        wanted[sid] = image_url
         print(f"ingest: {sid} ok")
-    return 0
+    # 写しは記録を全部書いてから取る。前は 1 枚取れないとそこで止めていたので、後ろの玩具は記録も写しも残らなかった
+    # （11-05 に 83 種のうち 38 種が字だけで出ていた原因。本人「図がないおもちゃは図を入れて」）。
+    return 4 if fetch_images(wanted) else 0
+
+
+def image_targets():
+    """写しを置く玩具と、その切り出しの URL。仮説の記録を置いた玩具の出典の記録（data/sources）から読む。
+    manifest は読まない: 網が無くても「どの写しが足りないか」は手元の記録だけで分かり、起動のたびに NDL へ行かずに済む。"""
+    out = {}
+    for p in sorted((ROOT / "data/hypotheses").glob("NDL-*.json")):
+        rec = ROOT / "data/sources" / p.name
+        if rec.exists():
+            out[p.stem] = json.loads(rec.read_text(encoding="utf-8"))["image_url"]
+    return out
+
+
+def fetch_images(targets):
+    """足りない写しだけを out/sources に取る。取れなかった玩具の印の一覧を返す（空なら全部そろった）。
+    1 枚取れなくても止めない: 1 枚の通信の失敗で残りの玩具まで字だけになるのを避ける。在る写しは取り直さない（箱を変えた時は消してから）。"""
+    (ROOT / "out/sources").mkdir(parents=True, exist_ok=True)
+    failed = []
+    for sid, url in targets.items():
+        img = ROOT / "out/sources" / f"{sid}.jpg"
+        if img.exists():
+            continue
+        try:
+            img.write_bytes(_get(url))
+        except Exception as e:
+            print(f"ingest: 写しを取れない {sid}: {e}", file=sys.stderr)
+            failed.append(sid)
+    return failed
+
+
+def images():
+    """`python -m omochae.ingest images`: 足りない写しだけを取る入口（run-home.sh・run-demo.sh が起動のたびに回す）。"""
+    targets = image_targets()
+    failed = fetch_images(targets)
+    print(f"ingest: 写し {len(targets) - len(failed)}/{len(targets)} 種が手元にある" + (f"。取れなかった: {' '.join(failed)}" if failed else ""))
+    return 4 if failed else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(images() if sys.argv[1:] == ["images"] else main())

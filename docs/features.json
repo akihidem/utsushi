@@ -4,8 +4,10 @@
   "name": "出典の取り込み",
   "status": "done",
   "evidence": [
-   "src/omochae/ingest.py"
-  ]
+   "src/omochae/ingest.py",
+   "tests/test_pictures.py"
+  ],
+  "unverified": "11-05 に 83 種の写し（切り出し）を全部取る形にした（images の口。1 枚の失敗で止まらない）。箱は作る側が目で確かめた（research/26）。人の確認（crop_status）はまだ"
  },
  {
   "id": "f02",

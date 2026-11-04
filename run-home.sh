@@ -7,10 +7,9 @@
 set -u
 cd "$(dirname "$0")" || exit 4
 ./init.sh || exit 4
-if [ ! -f out/sources/NDL-1187053-R0000005-L.jpg ]; then
-  echo "原図の写しを取り込みます（国立国会図書館、PDM）"
-  PYTHONPATH=src .venv/bin/python -m omochae.ingest || echo "取り込めませんでした。図の所は字だけで動きます"
-fi
+# 原図の写し（切り出し）は git の外なので、足りない分を起動のたびに取る（国立国会図書館、PDM。出典の記録の URL から）。
+# なぜ毎回か: 前は最初の 1 枚が在ると残りを取らず、38 種が字だけで出ていた（本人「図がないおもちゃは図を入れて」、11-05）。
+PYTHONPATH=src .venv/bin/python -m omochae.ingest images || echo "写しの一部を取り込めませんでした。その玩具は字だけで動きます"
 keyfile=".env"
 if [ -f "$keyfile" ] && [ "$(grep -c '^ANTHROPIC_API_KEY=.' "$keyfile")" = "1" ]; then
   echo "鍵: 置かれている（Claude の答え・読み・観察が動きます）"
