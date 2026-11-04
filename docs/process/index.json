@@ -294,6 +294,12 @@
   "status": "評価。拾った 1〜5 は A′・C・A に入れた"
  },
  {
+  "id": "research/25",
+  "path": "research/25-kuzushi-reading.md",
+  "hook": "くずし字を読む頁: 先に書き、確かめた読みと並べる",
+  "status": "作った。印の当て方と保存は未決"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

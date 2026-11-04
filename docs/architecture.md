@@ -31,6 +31,9 @@
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面（予想・型紙・記録・説明。J-024） |
 | `src/web/looks.py` | 入口のルックブックの別の案（本人が見比べて決める。J-024） |
+| `src/web/kuzushi.py` | くずし字を読む頁（f14）。先に自分の読みを書き、確かめた読みと並べる。書いた読みは保存しない |
+| `src/web/zukan.py` | 図鑑の頁（印つきの文、F6.label） |
+| `src/web/techo_site.py` | 手帖の頁（聞く・上げる・フィードバック）と、上げた物と職人の言葉の頁 |
 | `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・新しい仮説。順位は持たない（J-025） |
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
 | `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定 |
