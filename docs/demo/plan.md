@@ -70,7 +70,7 @@
 - コード: [../../src/demo/flip.py](../../src/demo/flip.py)。床: [../../tests/test_demo_flip.py](../../tests/test_demo_flip.py)（網につながず、偽の頁で 1 コマが時刻だけで決まる事と出所の記録を見る）
 - 書き出し: `PYTHONPATH=src .venv/bin/python -m demo.flip --out <repo の外>/scene1-flip.mp4 --sheet <要のコマの一覧>.jpg`
 - 結果（11-04）: exit 0、22 秒で書き出せた。ffprobe で 1920×1080・30fps・15.000 秒
-- 置き場: repo の外の手元の作業場 `hackathon-demo-out/20261104-scene1/`（scene1-flip.mp4 と、要のコマ 9 枚の一覧 sheet.jpg）。repo には入れない
+- 置き場: repo の外の手元の作業場 hackathon-demo-out の 20261104-scene1（scene1-flip.mp4 と、要のコマ 9 枚の一覧 sheet.jpg）。repo には入れない
 - 試し見で直した事: (1) 題の 2 行が頁と重なった → 頁を高さ 900px から 780px にし、下へ寄せた (2) 締めの字幕が人物と重なった → 締めに入ったら人物を消す
 - 残る粗: 切り出しの枠に隣の人物の槍の先が少し入る。枠の座標は目で決めた（1400px の画像で読んだ値を割合にした）。撮る前に枠を詰めるか、墨のつながりで切る
 

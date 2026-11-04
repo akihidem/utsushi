@@ -1,5 +1,5 @@
 Traceback (most recent call last):
-  File "~/work/hackathon-utsushi-demo/tests/test_demo_scene5.py", line 41, in <module>
+  File "tests/test_demo_scene5.py", line 41, in <module>
     assert scene5.allowed_photos(fake) == ("p01",), scene5.allowed_photos(fake)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: ('p01', 'p05', 'p06', 'p07')
