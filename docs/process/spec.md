@@ -51,7 +51,7 @@
 | D1 | 型紙と対で手順の紙を刷る。答え（計算の開く上限）を刷らない | J-009、`instructions.py` の判断の芯 | `instructions.py` | `test_records.py` | 満たす |
 | D2 | 試した後の紙は、次に変える条件を先に渡し、説明は折って閉じた札にする。記録の前は渡さない | J-013 | `instructions.py` の compose_after、画面 | `test_play_server.py` | 満たす |
 | D3 | 見比べる紙は 2 つの仮説を並べ、勝ち負けの欄を置かない。型紙が同じ組は 1 個を 2 通りに動かす | J-019、F11.compare | `instructions.py` の compose_compare | `test_discriminate.py` | 満たす |
-| D4 | 問いかけを本人の 4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）で考え直す。角度は今回の課題にしない | 本人の方針 11-04 | — | — | 未（U-25。学習プリントの線 hack-print が案を作っている） |
+| D4 | 問いかけを本人の 4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）で考え直す。角度は今回の課題にしない | 本人の方針 11-04 | `instructions.py`（compose_sheet・compose_after・compose_compare・compose_teacher） | `tests/test_sheet_u25.py` | 満たす（11-04、hack-print が作り hack-main が main に入れた。goraigo-v10・tora-v3。画面の角度と分の欄も外した。実物と人の目は未確認） |
 
 ### E 試行・記録・人の説明
 
