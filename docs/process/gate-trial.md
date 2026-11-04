@@ -71,3 +71,10 @@
 - 検証ゲート: **済み**（入口で落ちる弱い Red）。Red: rc 1、TypeError「generate() got an unexpected keyword argument 'zoom'」（gate-evidence/red-zoom.txt）。Green: rc 0（gate-evidence/green-zoom.txt）。既定が今までどおりな事は同じ試験の 1 行目で見る
 - エビデンスゲート: **済み**。上の出力と ./run.sh 54/54
 - マージ後の書き戻し: push の後に main の上で ./run.sh を回して書く
+
+## U-36 手帖を入口のサイトと地続きにする（hack-main、11-04 午後）
+
+- 目的・なぜか・どうしたらいいか・ゴールの要件: カード 20261104-142933 と research/23 の末尾の節
+- 検証ゲート: **当たらない**（新しい頁と口を足した。玩具の頁は手帖へのリンクを 1 つ足しただけで、今までの動作は変えていない）
+- エビデンスゲート: **済み**。tests/test_techo_site.py（11 の判定）と ./run.sh 55/55。例外: ブラウザの音声認識と読み上げは、作る側の機械（頭の無い Chrome）では確かめられない。代わりに、使えない時にマイクのボタンを隠して字の操作が残る作りを頁の台本に入れた
+- マージ後の書き戻し: push の後に main の上で ./run.sh を回して書く
