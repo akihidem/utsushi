@@ -105,7 +105,7 @@
 
 ## 4. エンジンとの境目
 
-型紙を作って検査する部分を、エンジンとして別の repo に切り出す（本人の決定 11-04。作業はエンジンの線 hack-engine、`~/work/hackathon-engine`。窓口はこの境目の向こう側を「paperto3d 側」と呼んだが、その名の repo はまだ無く、公開名は本人の答え待ち。U-29）。
+型紙を作って検査する部分を、エンジンとして別の repo に切り出す（本人の決定 11-04。作業はエンジンの線 hack-engine が、この repo の外の新しい repo で進めている。窓口はこの境目の向こう側を「paperto3d 側」と呼んだが、その名の repo はまだ無く、公開名は本人の答え待ち。U-29）。
 
 ### エンジンが持つ物
 
@@ -141,7 +141,7 @@ PYTHONPATH=src .venv/bin/python -m web.play_server   # http://127.0.0.1:8766/ �
 
 - 型紙を手で刷るには予想が先に要る。試しで刷る時は、使い捨ての置き場に仮の予想を書く: `OMOCHAE_DATA=<使い捨ての場所> PYTHONPATH=src .venv/bin/python -m omochae.hypotheses predict "仮の予想"` の後に `... hypotheses print H-A --out <出す場所>`
 - 原図の写し（`out/sources/*.jpg`）は git の外。まっさらな clone では画面の図と、手順の紙の完成のイメージが出ない（どちらも無い時の形で動く）。取り込みは `python -m omochae.ingest`
-- 提出の床: `~/work/hackathon-grove/bin/submit-check.sh .`。11-04 昼に残る FAIL はデモ動画のリンクと非公開の 2 つ（U-19・U-20・U-24）
+- 提出の床: 受け皿の道具の submit-check（この repo の外）。11-04 昼に残る FAIL はデモ動画のリンクと非公開の 2 つ（U-19・U-20・U-24）
 - 凍結の判定に使う物: 上の 3 行が通る事、2 の各条件の「状態」、6 の決まっていない点のうち凍結の前に要る物
 
 まだ確かめていない事: 本物の API、本物のスマホ、人が画面を使う事、v8 の実物の組み立て、虎の完成。
