@@ -31,7 +31,7 @@
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮の cookie、刷った紙の口（PDF・PNG・SVG。試した後の紙は記録の後だけ）、合言葉の門 |
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。入口で選んだ皮が cookie で全部の頁に続く（docs/process/site-requirements.md） |
-| `src/web/toy.py` | 玩具の頁。記録を読む → 予想 → 仮説の札 → 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る |
+| `src/web/toy.py` | 玩具の頁。記録を読む → 予想 → 仮説の札 → 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る。たとえと関連する事柄の節（analogy_section、予想の後） |
 | `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（必須 2 を大きく、試作を札で） |
 | `src/web/about.py` | 序（コンセプト・『江都二色』の解説・動機）。文面は本人の言葉の引用と書誌の値だけ。採否は本人 |
 | `src/web/looks.py` | 入口。A′ 日本画展の展示（既定）と C 縦読みのジン。全部の玩具の一覧の節を持つ。A 大判写真集はルックブックの再現として /look/taiban に残す（J-024） |

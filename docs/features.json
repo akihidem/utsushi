@@ -321,5 +321,16 @@
    "docs/process/site-requirements.md"
   ],
   "unverified": "人がブラウザで使った確認と本物のスマホはまだ。序の文面・既定の皮・A の扱いは本人の採否待ち（カード 20261105-011452-sub-site）"
+ },
+ {
+  "id": "f31",
+  "name": "たとえと、関連する事柄（全玩具）",
+  "status": "doing",
+  "evidence": [
+   "src/web/toy.py",
+   "data/hypotheses",
+   "tests/test_analogy.py"
+  ],
+  "unverified": "本人の頼み（11-05、御来迎の扇を開く話を気に入って）。作る側のたとえで、印と「答えではない」の断り付き。予想の後にだけ出す。文の人の確認はまだ"
  }
 ]

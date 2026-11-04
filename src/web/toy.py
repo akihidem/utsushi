@@ -96,6 +96,20 @@ def window(sid, data, see, kind, v, recorded):
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
 
+def analogy_section(data):
+    """たとえと、関連する事柄（本人の頼み 11-05「扇を開くのような、身近な物へのたとえと関連する事柄を全部の玩具に」）。
+    文は作る側の言葉なので印を付け、答えではない事を書く（J-016 の線）。仕組みの手がかりになるので予想の後にだけ出す（F9.prediction）。
+    欄の形は data/hypotheses の `analogy`（like・related・written_by）。試験は tests/test_analogy.py。"""
+    a = data.get("analogy")
+    if not a:
+        return ""
+    rel = "".join(f"<li>{esc(x)}</li>" for x in a.get("related", []))
+    return (f'<section class="sec" id="tatoe"><h2>たとえと、関連する事柄</h2>'
+            f'<p class="meta"><span class="lb">作る側のたとえ</span>{esc(a.get("written_by", ""))}。たとえは仕組みを考える手がかりで、答えではありません。</p>'
+            f'<article class="card"><h3>身近な物でいうと</h3><p>{esc(a["like"])}</p></article>'
+            f'<article class="card"><h3>関連する事柄</h3><ul>{rel}</ul></article></section>')
+
+
 def ask_form(sid, data, asked=None):
     """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
     printed = [h for h in data["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
@@ -260,6 +274,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
                  f'<p class="meta">{printed}</p></div></div>')
     body += "</div></section>"
+    body += analogy_section(data)
     body += f'<section class="sec" id="win"><h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
              f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>{ask_form(sid, data, asked)}</section>')
