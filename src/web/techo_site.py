@@ -1,0 +1,201 @@
+"""手帖を入口のサイトの中に置く（本人の方向転換、2026-11-04 午後）。
+
+本人の言葉: 「最初のサイトと、いまアーティファクトで作った手帖は地続きの方が良いのでは。アーティファクトで作ってと言ったのが良くなかったね」。
+本人の指定（同じ日）: 生徒向けの画面は机に置いて声で操作する。両手は工作で塞がっている。写真や動画を上げられる。文字は最小。
+判断の芯:
+- 入口（A・A′・C の展示）→ 玩具の頁 → 手帖 → 試した記録、を同じサーバの頁で一続きにする。見た目は A′ の白い展示の世界に合わせる
+- 聞く口は src/api/ask.py をそのまま使う（仕組みは答えない、よくある言葉は刷った説明から、ほかは鍵がある時だけ Claude）
+- 声: ブラウザの音声認識で、1 回押したら話し続けられる形（続けて聞く）と、答えの読み上げ。使えない画面では字の操作だけが残る
+- 上げた写真と動画は、その場で作った試した記録（R-番号）に添える。置き場は記録と同じ git の外（data/records/media）
+- 写真の撮影情報（位置など）は保存の時に外す。試行の写真を repo に載せた時と同じ扱い（JPEG の APP1 の区画を外す）
+"""
+import html
+import re
+
+from omochae import hypotheses, records
+from omochae.compose import TEMPLATES
+
+MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
+MAX_MEDIA = 20 * 1024 * 1024
+MAX_PER_RECORD = 3
+ICONS = {
+    "動いた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 34c8 0 14-6 18-18M20 14l8 2 2 8"/></svg>',
+    "動かない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 24h28"/></svg>',
+    "わからない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M18 18a6 6 0 1 1 8 6c-2 1-2 2-2 5"/><circle cx="24" cy="35" r="1"/></svg>',
+    "揺れた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24c4-8 8-8 12 0s8 8 12 0 8-8 12 0"/></svg>',
+    "揺れない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24h36"/></svg>',
+}
+
+
+def esc(s):
+    return html.escape(str(s or ""), quote=True)
+
+
+def media_dir(rid):
+    return records.folder() / "media" / rid
+
+
+def strip_jpeg_meta(data):
+    """JPEG の撮影情報（EXIF・XMP の APP1）を外す。画素は変えない。形が読めない時はそのまま返す（画像として保存しない判断は呼ぶ側）。"""
+    if data[:2] != b"\xff\xd8":
+        return data
+    out, p = bytearray(data[:2]), 2
+    try:
+        while p < len(data):
+            if data[p] != 0xFF:
+                return data
+            m = data[p + 1]
+            if m == 0xDA:
+                out += data[p:]
+                return bytes(out)
+            n = int.from_bytes(data[p + 2:p + 4], "big")
+            if m != 0xE1:
+                out += data[p:p + 2 + n]
+            p += 2 + n
+    except IndexError:
+        return data
+    return bytes(out)
+
+
+def save_media(rid, ctype, data):
+    """Returns (ファイル名 or None, 失敗の文)。記録が実在し、型と大きさと数の上限を守る物だけを置く。"""
+    if not re.fullmatch(r"R-\d{4,}", rid) or not (records.folder() / f"{rid}.json").exists():
+        return None, "記録が無い"
+    ext = MEDIA_TYPES.get(ctype)
+    if not ext:
+        return None, "写真（JPEG・PNG）か動画（MP4・MOV）だけ"
+    if not 0 < len(data) <= MAX_MEDIA:
+        return None, "1 つ 20MB まで"
+    d = media_dir(rid)
+    d.mkdir(parents=True, exist_ok=True)
+    have = sorted(d.glob("m*.*"))
+    if len(have) >= MAX_PER_RECORD:
+        return None, "1 つの記録に 3 つまで"
+    name = f"m{len(have) + 1}.{ext}"
+    (d / name).write_bytes(strip_jpeg_meta(data) if ext == "jpg" else data)
+    return name, ""
+
+
+def media_of(rid):
+    d = media_dir(rid)
+    return [p.name for p in sorted(d.glob("m*.*"))] if d.exists() else []
+
+
+STYLE = """
+body.techo{background:#fbfaf6;color:#27231e;font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
+.techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
+.techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
+.techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid #ddd3c0}
+.techo .top a{margin-left:auto;font-size:14px;color:#7a5a2e}
+.techo .row{display:flex;gap:12px;flex-wrap:wrap}
+.techo .tile{display:grid;justify-items:center;gap:6px;border:2px solid #ddd3c0;background:#fff;color:#27231e;font:inherit;font-size:15px;padding:10px 14px;border-radius:14px;cursor:pointer;min-width:84px;text-decoration:none;position:relative}
+.techo .tile[aria-pressed="true"],.techo .tile:has(input:checked){border-color:#7a5a2e;box-shadow:0 0 0 2px #7a5a2e inset}
+.techo .tile .big{font-family:"Noto Serif CJK JP",serif;font-size:34px;line-height:1}
+.techo .tile svg{width:44px;height:44px;stroke:#27231e;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.techo .tile input{position:absolute;opacity:0;pointer-events:none}
+.techo .panel{border:1px solid #ddd3c0;border-radius:18px;padding:18px;display:grid;gap:14px;background:#fff}
+.techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
+.techo .mark svg{width:40px;height:40px;stroke:#7a5a2e;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.techo input[type=text]{font:inherit;font-size:22px;border:2px solid #ddd3c0;border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:#fbfaf6}
+.techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:#7a5a2e;color:#fff;display:grid;place-items:center;cursor:pointer;justify-self:center}
+.techo .mic svg{width:48px;height:48px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round}
+.techo .mic[aria-pressed="true"]{background:#3f6b4a}
+.techo .answer{font-size:26px;line-height:1.6;white-space:pre-wrap;min-height:1.6em}
+.techo .shot{display:grid;place-items:center;gap:6px;border:2px dashed #7a5a2e;border-radius:16px;padding:22px;cursor:pointer;color:#7a5a2e;position:relative}
+.techo .shot svg{width:56px;height:56px;stroke:#7a5a2e;fill:none;stroke-width:2.5}
+.techo .shot input{position:absolute;opacity:0;width:1px;height:1px}
+.techo .go{font:inherit;font-size:20px;background:#7a5a2e;color:#fff;border:0;padding:16px 28px;border-radius:12px;cursor:pointer}
+.techo .check{display:flex;gap:10px;align-items:center;font-size:15px}.techo .check input{width:26px;height:26px}
+.techo .meta{font-size:12px;color:#6f665a}
+.techo .item{border-top:1px solid #ddd3c0;padding-top:10px;display:grid;gap:6px}
+.techo .item img,.techo .item video{height:110px;max-width:100%;border:1px solid #ddd3c0;border-radius:8px}
+.techo .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+:focus-visible{outline:3px solid #7a5a2e;outline-offset:2px}
+"""
+
+SCRIPT = """
+<script>
+(() => {
+const sid = document.querySelector('[data-sid]').dataset.sid;
+const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; speechSynthesis.speak(u); } catch (e) {} };
+const ans = document.getElementById('answer');
+async function ask(q) {
+  const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
+  if (!q || !hid) return;
+  ans.textContent = '…';
+  const r = await fetch(`/toy/${sid}/ask-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, question: q }) });
+  const j = await r.json().catch(() => ({ text: '今は答えられません' }));
+  ans.textContent = j.text; say(j.text);
+}
+document.getElementById('ask-form').onsubmit = (e) => { e.preventDefault(); ask(document.getElementById('q').value.trim()); };
+// 音声認識: 1 回押すと話し続けられる（続けて聞く）。もう 1 回押すと止まる。使えない画面ではボタンを隠し、字の操作だけにする。
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const mic = document.getElementById('mic');
+if (!SR) { mic.hidden = true; } else {
+  let rec = null, on = false;
+  mic.onclick = () => {
+    if (on) { on = false; rec && rec.stop(); mic.setAttribute('aria-pressed', 'false'); return; }
+    rec = new SR(); rec.lang = 'ja-JP'; rec.continuous = true; rec.interimResults = false;
+    rec.onresult = (ev) => { const t = ev.results[ev.results.length - 1][0].transcript.trim(); document.getElementById('q').value = t; ask(t); };
+    rec.onend = () => { if (on) { try { rec.start(); } catch (e) {} } };
+    on = true; mic.setAttribute('aria-pressed', 'true'); rec.start();
+  };
+}
+// 上げる: 先に記録を作り（見た事）、その R-番号に写真と動画を 1 つずつ送る。
+document.getElementById('up-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const st = document.getElementById('up-status');
+  const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
+  const result = (document.querySelector('[name=result]:checked') || {}).value;
+  const files = [...document.getElementById('files').files].slice(0, 3);
+  if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
+  st.textContent = '…';
+  const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, result, note: document.getElementById('note').value }) });
+  const j = await r.json().catch(() => ({}));
+  if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
+  for (const f of files) {
+    const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+    if (!m.ok) { st.textContent = (await m.text()) || '上げられませんでした'; return; }
+  }
+  location.href = `/toy/${sid}/techo#mine`;
+};
+})();
+</script>
+"""
+
+
+def page(sid, printed_ids, picture_url):
+    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。予想の前は呼ばない（呼ぶ側が F9.prediction を見る）。"""
+    data = hypotheses.load(sid)
+    tpl = TEMPLATES[data.get("template", "slider_fan")]
+    hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
+    sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}"{" checked" if i == 0 else ""}>'
+                     f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
+    if not hyps:
+        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'
+    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
+    mine = ""
+    for r in reversed(records.all_records(sid)):
+        files = media_of(r["id"])
+        pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
+                        else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
+        h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+        who = f"{hypotheses.letter(h)} の紙" if h else ""
+        mine += f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}</div>'
+    pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
+    mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
+           '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')
+    body = (f'<div data-sid="{esc(sid)}" hidden></div><div class="top">{pic}<h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
+            f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(tpl.SHEET_SET)}</p>'
+            '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
+            f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"></form>'
+            '<div class="answer" id="answer" aria-live="polite"></div></section>'
+            '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
+            '<form id="up-form"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
+            '<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple></label>'
+            f'<div class="row" role="radiogroup" aria-label="見た事">{results}</div>'
+            '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
+            '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
+            '<p><button class="go">上げる</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
+            f'<div id="mine">{mine}</div></section>')
+    return body + SCRIPT

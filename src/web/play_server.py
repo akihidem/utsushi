@@ -154,7 +154,7 @@ def toy_page(sid, errors=(), msg="", asked=None):
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button>型紙と手順の紙を刷る</button></form>'
                  f'<p>{printed}</p></div>')
-    body += "</div>" + ask_form(sid, data, asked) + record_form(sid, data, own) + records_list(recs)
+    body += "</div>" + f'<p><a class="go" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>' + ask_form(sid, data, asked) + record_form(sid, data, own) + records_list(recs)
     return page(data["toy"], hero + f'<div class="wrap">{body}</div>')
 
 
@@ -252,6 +252,23 @@ class Handler(BaseHTTPRequestHandler):
 
             if m.group(1) in PAGES:
                 return self._send(200, PAGES[m.group(1)]())
+        m = re.fullmatch(rf"/toy/({SID})/techo", path)
+        if m and m.group(1) in sources():
+            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
+            sid = m.group(1)
+            if hypotheses.need_prediction(sid):
+                return self._send(200, toy_page(sid, ["先に予想を書くと、手帖が開きます"]))
+            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
+            pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
+            from . import techo_site
+            return self._send(200, page("手帖", techo_site.page(sid, printed, pic), techo_site.STYLE, "techo"))
+        m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
+        if m:
+            from . import techo_site
+            f = techo_site.media_dir(m.group(1)) / m.group(2)
+            if f.exists():
+                kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
+                return self._send(200, f.read_bytes(), kind)
         m = re.fullmatch(rf"/toy/({SID})", path)
         if m and m.group(1) in sources():
             return self._send(200, toy_page(m.group(1), msg=urllib.parse.parse_qs(query).get("msg", [""])[0]))
@@ -290,9 +307,26 @@ class Handler(BaseHTTPRequestHandler):
     def _post(self):
         if not self._host_ok():
             return self._send(403, "受け付けられません")
+        m = re.fullmatch(r"/record/(R-\d{4,})/media", self.path)
+        if m:
+            # 写真と動画はフォームでなく本体そのままで受ける。別のサイトから送らせないため、同じ出所だけを受ける。
+            from . import techo_site
+            if self.headers.get("Origin") != f"http://{self.headers.get('Host', '')}":
+                return self._send(403, "受け付けられない送り方です")
+            try:
+                length = int(self.headers.get("Content-Length", ""))
+            except ValueError:
+                return self._send(411, "大きさが分かりません")
+            if not 0 < length <= techo_site.MAX_MEDIA:
+                return self._send(413, "1 つ 20MB まで")
+            name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length))
+            return self._send(201 if name else 422, name or why, "text/plain; charset=utf-8")
         form = self._form()
         if form is None:
             return self._send(403, "受け付けられない送り方です")
+        m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
+        if m and m.group(1) in sources():
+            return self._json_post(m.group(1), m.group(2), form)
         m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
@@ -306,6 +340,29 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, toy_page(rec["source_id"], [f.message for f in failures]))
             return self._done(rec["source_id"], "説明を残しました")
         self._send(404, "見つかりません")
+
+    def _json_post(self, sid, act, form):
+        """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
+        out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
+        if hypotheses.need_prediction(sid):
+            return out(422, {"error": "先に予想を書く"})
+        hid = form.get("hypothesis", "")
+        if not (out_dir(sid) / f"{hid}_v1.pdf").exists():
+            return out(422, {"error": "刷った紙をえらぶ"})
+        if act == "ask-json":
+            from api import ask
+            from api.budget import BudgetStop
+
+            try:
+                text, how = ask.answer(sid, hid, form.get("question", ""))
+            except BudgetStop:
+                text, how = "今は AI に聞けません", "stop"
+            except Exception:
+                text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
+            return out(200, {"text": text, "from": how})
+        rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": 1, "result": form.get("result"),
+                                     "note": form.get("note", ""), "fixes": [], "via": "techo"})
+        return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
         if act == "ask":
