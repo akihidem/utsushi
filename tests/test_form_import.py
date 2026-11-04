@@ -28,11 +28,11 @@ assert "蛇腹は" not in fails[0][1], "落ちた行の本文は出さない"
 # 添付（本人の決定 11-04「ファイル添付はしてもよい」）: リンクは公開の記録に入らない預かりの所に置き、写真の決まりを当てる
 import json  # noqa: E402
 
-photo = dict(good, **{"投稿の種類": "写真", "写真・動画（任意）": "https://drive.google.com/open?id=abc"})
+photo = dict(good, **{"投稿の種類": "写真", "ファイル添付（任意）": "https://drive.google.com/open?id=abc"})
 nohold = dict(photo, **{"載せる時の名前（任意）": ""})  # 写真なのに権利の持ち主が無い
 f2 = d / "photo.csv"
 with open(f2, "w", encoding="utf-8", newline="") as fh:
-    w = csv.DictWriter(fh, fieldnames=head + ["写真・動画（任意）"])
+    w = csv.DictWriter(fh, fieldnames=head + ["ファイル添付（任意）"])
     w.writeheader()
     w.writerow({"タイムスタンプ": "z", **photo})
     w.writerow({"タイムスタンプ": "w", **nohold})
