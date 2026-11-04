@@ -164,6 +164,49 @@ document.getElementById('up-form').onsubmit = async (e) => {
 """
 
 
+def feedback(sid, r):
+    """手帖で受けるフィードバック（本人「フィードバックも手帖」、11-04）。順は J-013 のまま: 紙の返事（試した後の紙）→ 人の説明 → 次の版。
+    Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。"""
+    from omochae import loop
+
+    after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v1_after.pdf"
+    told = loop.explanation(r["id"])
+    if told:
+        from web.play_server import next_form
+
+        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+    else:
+        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><input type="hidden" name="back" value="techo">'
+                '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
+                '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
+                '<p><button class="go">残す</button></p></form>')
+    return f'<p><a href="{after}">試した後の紙</a></p>{body}'
+
+
+def gallery_page(sids):
+    """サイトの「上げた物のギャラリー」と「職人の言葉」の枠（本人の設計、11-04）。上げた物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。
+    並びは記録の順で、上下を付けない（J-025）。職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
+    cards = ""
+    for sid in sids:
+        data = hypotheses.load(sid)
+        for r in records.all_records(sid):
+            files = media_of(r["id"])
+            if not files:
+                continue
+            pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
+                            else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
+            h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+            cards += (f'<div class="item"><p class="meta">{esc(data["toy"])}　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
+                      f'<div class="row">{pics}</div></div>')
+    cards = cards or '<p class="meta">まだ上げた物はありません。手帖の「上げる」から上げると、ここに並びます。</p>'
+    voices = "".join(f'<div class="item"><p class="meta">{esc(k)}</p><p>（準備中）</p></div>' for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    return ('<div class="top"><h1>上げた物</h1><a href="/">入口へ</a></div>'
+            '<section class="panel" aria-label="上げた物"><p class="mark">上げた物</p><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
+            f'{cards}</section>'
+            '<section class="panel" aria-label="職人の言葉"><p class="mark">職人の言葉</p><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
+            f'{voices}</section>')
+
+
 def page(sid, printed_ids, picture_url):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。予想の前は呼ばない（呼ぶ側が F9.prediction を見る）。"""
     data = hypotheses.load(sid)
@@ -181,7 +224,8 @@ def page(sid, printed_ids, picture_url):
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
-        mine += f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}</div>'
+        mine += (f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+                 f'{feedback(sid, r)}</div>')
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')

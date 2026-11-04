@@ -21,6 +21,8 @@ def switch(current):
     items = [("/", LOOKS["taiban"]), ("/look/tenji", LOOKS["tenji"]), ("/look/zine", LOOKS["zine"])]
     current = "/" if current == "/look/taiban" else current
     links = "｜".join(f"<b>{esc(n)}</b>" if u == current else f'<a href="{u}">{esc(n)}</a>' for u, n in items)
+    # 上げた物のギャラリーと職人の言葉（本人の設計、11-04）。入口からいつでも行けるよう、切り替えの並びに置く。
+    links += '｜<a href="/gallery">上げた物と職人の言葉</a>'
     return f'<nav class="switch">{links}<span class="cap">A と A′ は本人が見比べて決める（11-04）</span></nav>'
 
 
