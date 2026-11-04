@@ -68,5 +68,20 @@ assert code in (200, 303), body[:300]
 page = req(f"/toy/{G}")[1].decode()
 assert "H-A_v2.pdf" in page and "版 2 の型紙" in page
 assert req(f"/sheet/{G}/H-A_v2.pdf")[1][:4] == b"%PDF"
+# フィードバックも手帖で（本人 11-04）: 試した後の紙・説明・次の版が手帖の記録に出て、送った後は手帖へ戻る
+page = req(f"/toy/{G}/techo")[1].decode()
+assert "試した後の紙" in page and "次の版を作る" in page and 'name="back" value="techo"' in page
+r2 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた"})[1])["id"]
+opener = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
+x = urllib.request.Request(base + f"/record/{r2}/explain", data=urllib.parse.urlencode({"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"}).encode(),
+                           headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
+try:
+    opener.open(x)
+except urllib.error.HTTPError as e:
+    assert e.code == 303 and "/techo" in e.headers["Location"]
+# サイトのギャラリー: 上げた物と職人の言葉の枠
+g = req("/gallery")[1].decode()
+assert "m1.jpg" in g and "職人の言葉" in g and "（準備中）" in g
+assert "/gallery" in req("/look/tenji")[1].decode()
 server.shutdown()
 print("ok")

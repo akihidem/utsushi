@@ -280,6 +280,9 @@ class Handler(BaseHTTPRequestHandler):
 
             if m.group(1) in PAGES:
                 return self._send(200, PAGES[m.group(1)]())
+        if path == "/gallery":
+            from . import techo_site
+            return self._send(200, page("上げた物と、職人の言葉", techo_site.gallery_page(sources()), techo_site.STYLE, "techo"))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
@@ -329,8 +332,10 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
-    def _done(self, sid, msg):
-        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}")])
+    def _done(self, sid, msg, back=""):
+        # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。
+        where = f"/toy/{sid}/techo" if back == "techo" else f"/toy/{sid}"
+        self._send(303, "", headers=[("Location", f"{where}?msg={urllib.parse.quote(msg)}#mine")])
 
     def _post(self):
         if not self._host_ok():
@@ -369,7 +374,7 @@ class Handler(BaseHTTPRequestHandler):
             failures = loop.save_explanation(rid, form.get("by", ""), form.get("text", ""), form.get("next_idea", ""))
             if failures:
                 return self._send(422, toy_page(rec["source_id"], [f.message for f in failures]))
-            return self._done(rec["source_id"], "説明を残しました")
+            return self._done(rec["source_id"], "説明を残しました", form.get("back", ""))
         self._send(404, "見つかりません")
 
     def _next_version(self, rid, form):
@@ -398,7 +403,7 @@ class Handler(BaseHTTPRequestHandler):
         out_dir(sid).mkdir(parents=True, exist_ok=True)
         if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
             return self._send(422, toy_page(sid, [f"版 {v} を刷れませんでした（検査に落ちた）"]))
-        return self._done(sid, f"版 {v} を刷りました。100% で印刷します")
+        return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""))
 
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
