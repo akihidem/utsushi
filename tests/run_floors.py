@@ -20,7 +20,9 @@ def main():
         if not shutil.which(tool):
             print(f"検査できない: {tool} が無い", file=sys.stderr)
             return 4
-    env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+    # 試験は素の assert で検査するので、assert を消す設定（PYTHONOPTIMIZE）を子に渡さない。
+    # 呼ぶ側の環境に残っていると、落ちるはずの試験が黙って通る（外の検品の指摘、11-04）。子は -O も付けずに起こす。
+    env = {**{k: v for k, v in os.environ.items() if k != "PYTHONOPTIMIZE"}, "PYTHONPATH": str(ROOT / "src")}
     rows, bad, broken = [], 0, 0
     for sc in sorted((ROOT / "tests/frozen/scenarios").glob("*.json")):
         expect = json.loads(sc.read_text(encoding="utf-8"))["expect"]
