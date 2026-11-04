@@ -264,7 +264,8 @@ def submit(data, image_b64=None):
                 raw, ext = _clean_image(decoded)
                 if raw is None:
                     failures.append(Failure("F10.intake", "image", "JPEG か PNG の画像だけを受け付ける"))
-    elif data.get("kind") == "photo":
+    elif data.get("kind") == "photo" and not data.get("form_files"):
+        # フォームの添付（ドライブのリンク）は、本人が確かめて手元へ移すまでファイルが無い。リンクがあれば受け付けて預かる（f17、11-04）。
         failures.append(Failure("F10.intake", "image", "写真の投稿に画像が無い"))
     if failures:
         return None, failures
@@ -292,8 +293,10 @@ def submit(data, image_b64=None):
     try:
         if raw:
             _write_atomic(d["media"] / f"{cid}{ext}", raw)
-        if data.get("contact"):
-            _write_atomic(d["inbox"] / f"{cid}.private", json.dumps({"contact": data["contact"]}, ensure_ascii=False))
+        private = {k: data[k] for k in ("contact", "form_files") if data.get(k)}
+        if private:
+            # 連絡先とフォームの添付のリンクは、公開の記録に入らない預かりの所に置く（本人が確かめて手元へ移す）。
+            _write_atomic(d["inbox"] / f"{cid}.private", json.dumps(private, ensure_ascii=False))
     except OSError:
         # 写真の無い記録を承認できる形で残さない。投稿者には失敗として返る。
         (d["inbox"] / f"{cid}.json").unlink(missing_ok=True)
