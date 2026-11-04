@@ -175,13 +175,36 @@ def feedback(sid, r):
     if told:
         from web.play_server import next_form
 
-        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
     else:
         body = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
     return f'<p><a href="{after}">試した後の紙</a></p>{body}'
+
+
+def ai_part(r):
+    """人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。"""
+    from omochae import loop
+    from api import observe
+
+    rid = esc(r["id"])
+    out = ""
+    i = loop.interpretation(r["id"])
+    if i and isinstance(i.get("content"), dict):
+        c = i["content"]
+        lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
+        lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
+        lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
+        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
+    o = observe.observation(r["id"])
+    if o:
+        lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
+        out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
+    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>'
+               f'<form method="post" action="/record/{rid}/ai-observe"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>')
+    return out + f'<div class="row">{buttons}</div>'
 
 
 def gallery_page(sids):
