@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "tests/test_kuzushi.py", line 90, in <module>
+    assert (f'src="/picture/{sid}"' in body if has_pic else "手元に絵がありません" in body) and 'name="mine"' in body, sid
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: NDL-1187053-R0000007-R
+rc 1 （drum の線の上で、直す前の試験）

@@ -16,7 +16,7 @@ import urllib.request
 DATA = pathlib.Path(tempfile.mkdtemp())
 os.environ["OMOCHAE_DATA"] = str(DATA)
 
-from omochae import labels  # noqa: E402
+from omochae import hypotheses, labels  # noqa: E402
 from web import kuzushi  # noqa: E402
 from web.play_server import serve, source, sources  # noqa: E402
 
@@ -86,7 +86,8 @@ for sid in sources():
     code, body = get(f"/zukan/{sid}/yomi")
     assert code == 200, sid
     # 原図の写しは git の外（out/sources）なので、まっさらな clone では絵の代わりに「手元に絵がありません」が出る
-    has_pic = (pathlib.Path(__file__).resolve().parents[1] / "out/sources" / f"{sid}.jpg").exists()
+    # 歌の枠（SONG_BOX）を決めた玩具だけが歌の所の絵を出す。試作の玩具は写しがあっても枠が無いので、絵の代わりの一文になる
+    has_pic = sid in kuzushi.SONG_BOX and (pathlib.Path(__file__).resolve().parents[1] / "out/sources" / f"{sid}.jpg").exists()
     assert (f'src="/picture/{sid}"' in body if has_pic else "手元に絵がありません" in body) and 'name="mine"' in body, sid
     for e in checked(sid):
         assert e["text"] not in body, (sid, "書く前に確かめた読みが出ている")
@@ -145,7 +146,8 @@ assert kuzushi.diff_marks("あ い", "あい")[2] is False
 for sid, (x, y, w, h) in kuzushi.SONG_BOX.items():
     assert 0 <= x and x + w <= 100 and 0 <= y and y + h <= 100, sid
     assert kuzushi.zoom_link(source(sid), sid).startswith("https://dl.ndl.go.jp/api/iiif/"), sid
-assert set(kuzushi.SONG_BOX) == set(sources())
+# 歌の枠は必須の 2 種に要る。全部の玩具の線で足す試作の玩具（本人の指示 11-04）は、歌の枠を決めるまで枠なしで開く
+assert set(kuzushi.SONG_BOX) == {s for s in sources() if hypotheses.stage(s) == "必須"}
 
 server.shutdown()
 print("ok")
