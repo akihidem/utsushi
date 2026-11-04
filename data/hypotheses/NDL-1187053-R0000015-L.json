@@ -1,0 +1,102 @@
+{
+  "source_id": "NDL-1187053-R0000015-L",
+  "toy": "土の徳利",
+  "template": "stand_figure",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。仮説の違いは、どう置いて遊ぶかの読みの違い。絵は原図を見て描き直した翻案。棚卸しの注: 本文冒頭に「土器（どき）」らしき字と「酒」。ままごとの土器一式の一部。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "これは何の玩具か（名前は棚卸しの見立てで、確かめ待ち）",
+    "どう置いて、どう遊んだのか",
+    "素材は何か（土器（見立て））"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "台に立てて飾る置物",
+      "status": "untested",
+      "template": "stand_figure",
+      "params": {
+        "form": "base",
+        "motif": "tokkuri",
+        "fig_h": 90,
+        "base_w": 53,
+        "base_d": 45,
+        "base_h": 12
+      },
+      "how_it_moves": "台に載せて棚や机に飾る。指で軽く押して、倒れずに戻るか見る",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 15 の左頁（棚卸しの箱 pct:33,59,9,15）",
+          "what": "細い首の素焼き風の徳利。",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inventory",
+          "where": "data/inventory/edo-nishiki.json",
+          "what": "棚卸しの見込み: 動かない飾りに見える（ままごと道具）",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "台板があるかは絵によって違い、紙の台は試すための置き換え"
+      ],
+      "to_measure": "倒れずに立つか"
+    },
+    {
+      "id": "H-B",
+      "name": "ままごとで物を入れる器",
+      "status": "untested",
+      "template": "stand_figure",
+      "params": {
+        "form": "box",
+        "motif": "tokkuri",
+        "fig_h": 90,
+        "base_w": 36,
+        "base_d": 45,
+        "base_h": 20
+      },
+      "how_it_moves": "器の前に絵を立て、器に豆や丸めた紙を入れてままごとをする",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 15 の左頁（棚卸しの箱 pct:33,59,9,15）",
+          "what": "細い首の素焼き風の徳利。",
+          "certainty": "観察"
+        },
+        {
+          "kind": "inventory",
+          "where": "data/inventory/edo-nishiki.json",
+          "what": "器・箱・建物の形で、中に物を入れて遊んだと読む（ままごと道具の見立て）",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "中が空いているかは絵から読めない。ただの飾りかもしれない"
+      ],
+      "to_measure": "倒れずに立つか"
+    }
+  ],
+  "after_try": {
+    "contrasts": [
+      {
+        "change": "台（器）の奥行きを変えて作る（広い台と狭い台）",
+        "watch": "指で押した時に倒れるか"
+      },
+      {
+        "change": "絵の高さを変えて刷る",
+        "watch": "倒れやすさがどう変わるか"
+      },
+      {
+        "change": "置き方を変える（台に立てる・立てかける・器に立てる）",
+        "watch": "どれが絵の玩具らしく見えるか"
+      }
+    ],
+    "card": [
+      "重さの真ん中（重心）が、支える面の上にある間は倒れずに戻ります。",
+      "台が広く、絵が低いほど、倒れるまでに大きく傾けられます。",
+      "これは紙の置き物の話です。昔の玩具がどう作られ、どう遊ばれたかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}
