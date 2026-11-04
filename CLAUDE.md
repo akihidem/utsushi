@@ -9,7 +9,7 @@
 - **足りない物**: 手元のトイモデルで自然とやりとりする体験。無いと、大型の装置や計算資源を使う科学にしか真理がないと思ってしまう（本人の言葉からの読み）。
 - **輪**: 予想か自分の仮説 → 型紙を刷る → 作って試す → 記録と人の説明 → 版の間に Claude が案を出し人が採る → 次の版。AI の返事は学ぶ人の記録と説明の後で、採点しない。
 - **哲学**: 「AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。」全文は [docs/process/philosophy.md](docs/process/philosophy.md)。
-- **今の状態**: 型紙の生成と検査は動く。実物の試行は 0 件、本物の Claude API は未実行。学習の効果は主張しない。
+- **今の状態**: 型紙の生成と検査は動く。実物の試行は 1 回（11-04、成人 5 人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。本物の Claude API は未実行。学習の効果は主張しない。
 - **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)、判断待ちは [docs/process/open.json](docs/process/open.json)。
 <!-- summary:end -->
 
