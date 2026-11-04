@@ -282,6 +282,12 @@
   "status": "調査。候補を採るかは本人（U-26）"
  },
  {
+  "id": "research/23",
+  "path": "research/23-phone-artifact.md",
+  "hook": "iPhone で手順を聞き、できた物を上げるアーティファクトの案",
+  "status": "案。決める点は U-35"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",
