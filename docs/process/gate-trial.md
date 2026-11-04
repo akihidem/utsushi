@@ -169,4 +169,6 @@
 - 検証ゲート: **当たる**（既存の頁の作り替え）。Red: 前の玩具の頁は PDF のリンクだけで絵が無く、入口の皮が内側に続かない（main 1dd8f5c の `/toy/<sid>` に `img src="/sheet/` が無い）。Green: `tests/test_play_server.py`・`test_techo_site.py`・`test_demo_walk.py`・`test_toys.py`・`test_about.py`・`test_looks_motion.py` が通り、`/sheet/<sid>/<name>.png` が 200、記録の前の `_after.png` が 403
 - エビデンスゲート: 写し（1440・390 の幅、白と黒）を作る側の機械で見た。人の目と本物のスマホは未
 - 取り込みの前の全体の試験: 枝 lane/site の a967ff7 の作業ツリーで `./run.sh`: 「実行した場面 95 本、期待どおり 95 本、未実装の床 0 本。」（11-05 02:50 頃）。その後の fbb2fa3（図鑑とくずし字を皮に載せる）は `tests/test_zukan.py`・`test_kuzushi.py` で確かめた。push の門（hackathon-grove の push-gate）がまっさらな clone でも全部を回す
+- push と PR: 枝 lane/site を push（門は 564729c で FAIL 0。前の 2 回は、文書の裏書きの画面の道を tree に無い道と読んだ F と、見本の線の座標と commit の文を日付と読んだ A で止まった）。PR は https://github.com/akihidem/utsushi/pull/107。照合 2026-11-05T01:51:19+09:00: 手元 564729c985f6015e29b8c8c5ccfeb5386fbdb7ed ＝ GitHub の lane/site
+- デモの立て直し: 作る側の機械の許可（動いている仕事を止める・外へのトンネル）で止まった。人の手の手順はカード 20261105-014111-sub-site
 - マージ後の書き戻し: まだ（hack-main の取り込みの後に書く）
