@@ -19,6 +19,10 @@ ID = "den_den"
 # 刷った組の版（U-31）。組を刷り直したら上げる。
 SHEET_SET = "den_den-v1"
 # 仮説を分ける寸法の名前。twist＝柄を手のひらで回して糸の玉で打つ、shake＝胴の中の玉を振って鳴らす、tap＝皮を指で打つ。
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "胴と柄と玉の糸（破線は玉の道）"
+# 結果の欄の見出し。この形の玩具に合う問いにする。
+RESULT_HEAD = "おもちゃとして鳴りましたか（1 つに丸）"
 HYP_KEY = "play"
 DEFAULTS = {
     "play": "twist",

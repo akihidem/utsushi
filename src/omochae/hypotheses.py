@@ -268,7 +268,10 @@ def print_own(source_id, own_id, out, version=1):
     params = h["params"]
     # 雛形に無い機構を作れるふりをしない。仮説は記録として残っている。
     template = data_template = load(source_id).get("template", "slider_fan")
-    key = "mount" if data_template == "pivot_counterweight" else "push_part"
+    from .compose import TEMPLATES
+
+    # 仮説を分ける寸法の名前は雛形が持つ（HYP_KEY）。試作の雛形の自分の仮説でも同じ検査にするため。
+    key = TEMPLATES[data_template].HYP_KEY
     if not params or key not in params:
         return print_free(source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], h["evidence"], out)
     data = load(source_id)

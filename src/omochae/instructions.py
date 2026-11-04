@@ -182,7 +182,8 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     diagram_x = page.x1 - DIAGRAM_W
     shapes += tpl.diagram(diagram_x, top, DIAGRAM_W, DIAGRAM_H, p)
     texts.append(TextBox(diagram_x, top, DIAGRAM_W, DIAGRAM_H, None))
-    _block(texts, ["閉じた時の中の様子（破線は筒の中）"], diagram_x, top + DIAGRAM_H + 1, 2.8, DIAGRAM_W)
+    # 図の説明は雛形が持てる（全部の玩具の線の報告）。御来迎の筒の言葉を、車や凧の図に刷らないため。無ければ今までの文。
+    _block(texts, [getattr(tpl, "DIAGRAM_CAPTION", "閉じた時の中の様子（破線は筒の中）")], diagram_x, top + DIAGRAM_H + 1, 2.8, DIAGRAM_W)
     y = _block(texts, ["組み方"], page.x0, top, HEAD_SIZE, left_w)
     y = _block(texts, [f"{i}. {s}" for i, s in enumerate(tpl.steps(p), 1)], page.x0, y, BODY_SIZE, left_w)
     y = _block(texts, ["遊び方", how_it_moves, "力を入れすぎず、手でゆっくり動かす"], page.x0, y + 1, BODY_SIZE, left_w)
@@ -244,8 +245,10 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
     y += 1
     # 丸の欄は問いと同じ行に並べる（A4 に収めるため）。入らない幅なら次の行へ送る。
-    _block(texts, [RESULT_HEAD], page.x0, y, HEAD_SIZE, width)
-    x = page.x0 + text_width(RESULT_HEAD, HEAD_SIZE) + 3
+    # 結果の欄の見出しも雛形が持てる。動かない玩具に「動きましたか」と問わないため。
+    head = getattr(tpl, "RESULT_HEAD", RESULT_HEAD)
+    _block(texts, [head], page.x0, y, HEAD_SIZE, width)
+    x = page.x0 + text_width(head, HEAD_SIZE) + 3
     if x + 34 * len(tpl.RESULTS) > page.x1:
         x, y = page.x0, y + HEAD_SIZE * LINE
     # 欄を同じ大きさにする。「わからない」を小さくすると、選ぶのをためらわせるため。
