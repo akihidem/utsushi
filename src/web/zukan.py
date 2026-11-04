@@ -113,7 +113,13 @@ def toy_section(sid, link_title=False):
             f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">上げた物</a></p></div></section>')
 
 
-def _page(title, body):
+def _page(title, body, look=None, path="/zukan"):
+    """look があれば皮の骨（skin.shell）に載せる（入口で選んだ皮を図鑑まで続ける、11-05 の作り直し）。
+    自前の帯（NAV）は頭の帯と重なるので外す。look が無い時は今までの 1 枚の頁（試験と書き出しはこちら）。"""
+    if look:
+        from . import skin
+
+        return skin.shell(title, body.replace(NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(title)}</title><style>{STYLE}</style><body class="zukan"><main>{body}</main></body></html>')
 
@@ -122,7 +128,7 @@ NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="
 LEAD = '<p class="meta">文にはどれも印があります。原文の引用は人が確かめた読み、仮説は試していない考え、観察は人が残した記録です。</p>'
 
 
-def index_page(sids):
+def index_page(sids, look=None):
     """必須の 2 種は今までどおり 1 つずつ大きく並べる。全部を作る線で足した試作の玩具（本人の指示 11-04）は、その下に小さな札で並べる。
     100 を超える玩具を全部大きく並べると、入口から見たい物に届かないため。試作の札は名前が確かめ待ちである事も添える。"""
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
@@ -132,8 +138,8 @@ def index_page(sids):
         cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">コマ {esc(s.split("-R")[1][:7].lstrip("0"))}</span></li>' for s in rest)
         body += (f'<section class="more" aria-label="ほかの玩具"><h2>ほかの玩具</h2><p class="meta"><span class="lb">試作</span>'
                  f'全部の玩具を型紙にする途中の {len(rest)} 種。名前は作る側の見立てで、まだ確かめていません。</p><ul class="grid">{cards}</ul></section>')
-    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body)
+    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body, look)
 
 
-def toy_zukan(sid):
-    return _page(f"うつし · 図鑑 · {hypotheses.load(sid)['toy']}", f"<h1>図鑑</h1>{NAV}{LEAD}" + toy_section(sid))
+def toy_zukan(sid, look=None):
+    return _page(f"うつし · 図鑑 · {hypotheses.load(sid)['toy']}", f"<h1>図鑑</h1>{NAV}{LEAD}" + toy_section(sid), look, f"/zukan/{sid}")
