@@ -118,3 +118,13 @@
 - 検証ゲート: **済み**。Red: rc 1、試作の玩具の出典を大きな節として読みに行って FileNotFoundError（gate-evidence/red-zukan-more.txt）。Green: rc 0（gate-evidence/green-zukan-more.txt）
 - エビデンスゲート: 上の出力と ./run.sh
 - マージ後の書き戻し: 前の節（雛形の受け口）の分は、main 7cd585e の上の ship の試験で 83/83。この節の分は push の後に書く
+
+## 増やした雛形をデモで触れる形にする（hack-main、11-04 夜）
+
+- 目的: 全部の玩具の線で増やした雛形を、デモの一周で触れるようにする
+- なぜか: 本人の決定 Q3 (b)「デモで触れる」（11-04）
+- どうしたらいいか: 推しは、入口の切り替えの並びに図鑑への道を置き、雛形ごとに試作の玩具を 1 つ選んで一周を通す試験を置く事。線を取り込むたびに、この試験が増えた雛形を通す。代案: 入口の主役に試作を並べる（凍結の床の主役が埋もれる）
+- ゴールの要件: tests/test_demo_walk_all.py が直す前に落ち、直した後に通る。./run.sh が rc 0
+- 検証ゲート: **済み**。Red: rc 1、AssertionError「入口から図鑑へ行ける」（gate-evidence/red-demo-trial.txt）。Green: rc 0（gate-evidence/green-demo-trial.txt、試作はまだ 0 種）。歩く中身は、手元で虎を試作と見なして 1 回通した（repo には残していない）
+- エビデンスゲート: 上の出力と ./run.sh
+- マージ後の書き戻し: 前の節（図鑑の一覧）の分は、main f0c11ac の上の ship の試験で 84/84。この節の分は push の後に書く
