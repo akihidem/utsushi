@@ -3,7 +3,7 @@
 判断の芯: 答えを先に言わない。計算の開く角度の上限は刷らない（作る前の予想と、測った数を比べるのが目的なので）。
 結果は雛形ごとの値で、同じ大きさの欄で、既定の選択を置かない。
 """
-from .compose import GAP, LINE, TEMPLATES, TITLE_SIZE, _block
+from .compose import GAP, LINE, TEMPLATES, TITLE_SIZE, _block, set_label
 from .floors import check_layout
 from .marks import mark_lines
 from .model import Failure, TextBox
@@ -65,6 +65,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     texts, shapes = [], []
     width = page.x1 - page.x0
     y = _block(texts, [f"手順の紙 {title}"], page.x0, page.y0, TITLE_SIZE, width)
+    y = set_label(texts, f"刷った組 {tpl.SHEET_SET}", page, y)  # U-31
     y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
     top = y + GAP
     left_w = width - DIAGRAM_W - GAP
@@ -191,7 +192,7 @@ def compose_compare(source, toy, ha, hb, labels, page_name="A4"):
     return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures
 
 
-def compose_after(source, title, after, page_name="A4"):
+def compose_after(source, title, after, page_name="A4", sheet_set=None):
     """試した後の紙。対比を先に見せ、説明は折って閉じた札にする（J-013）。
 
     判断の芯: 説明を渡さず、次に変える条件を先に渡す。ただし誤った結論のまま終わらないよう、説明は手元に置いて自分で開ける。
@@ -201,6 +202,8 @@ def compose_after(source, title, after, page_name="A4"):
     width = page.x1 - page.x0
     texts, shapes = [], []
     y = _block(texts, [f"試した後の紙 {title}"], page.x0, page.y0, TITLE_SIZE, width)
+    if sheet_set:
+        y = set_label(texts, f"刷った組 {sheet_set}", page, y)  # U-31
     y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
     y = _block(texts, ["渡す人へ: 下の札を点線で谷折りし、端をテープで止めてから、試した後に渡す"], page.x0, y + 1, BODY_SIZE, width)
     y = _block(texts, ["次はこれを変えて試す（予想を書いてから）"], page.x0, y + GAP, HEAD_SIZE, width)

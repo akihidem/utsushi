@@ -128,7 +128,11 @@ def _print_after(source, title, out):
     from .marks import check_image_count, check_pdf
     from .render import to_png, write_all
 
-    layout, failures = compose_after(source, title, load(source["source_id"])["after_try"])
+    from .compose import TEMPLATES
+
+    data = load(source["source_id"])
+    sheet_set = TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
+    layout, failures = compose_after(source, title, data["after_try"], sheet_set=sheet_set)
     if not failures:
         stem = pathlib.Path(f"{out}_after")
         pdf = write_all(layout, stem)
