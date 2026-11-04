@@ -42,6 +42,8 @@
 
 ## 凍結の変更の記録
 
+- 11-04 の試行を受けた本人の決定（goraigo-v8）で、F5.stroke のつまみの形の溝の端の見方（口の側だけ）と、柄の形の土台の高さの見方を変え、F5.image_count を手順の紙では載せた原図の数と照らす形にした。理由と中身は `tests/frozen/criteria.md` の「goraigo-v8 で変えた所」と `docs/process/trials/README.md`。
+
 - 本人の決定で仮説の順位をやめたので、F4.evidence の文から「仮説の順位の変更」を外し、「次に試す物の提案」と「順位は扱わない」を書いた。狙いの検査の名前は変えていない。理由は `docs/process/decisions/J025-no-ranking.md`。
 - 本人の決定で案 B を採ったので、床 F11.compare を足した。既存の床は変えていない。理由は `docs/process/decisions/J019-experiment-sheet.md`。
 - F6.label に本人の決定の内容を追記し、凍結を閉じた（3 分類、文言の検査なし）。凍結の時から「答えの後に 1 回だけ追記する」と書いてあった分で、これ以上は足さない。負の対照の欄を `tests/test_labels.py` にした。理由は `docs/process/decisions/J016-zukan-labels.md`。

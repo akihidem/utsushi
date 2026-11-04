@@ -95,9 +95,10 @@
 | 50 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
 | 51 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
 | 52 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
-| 53 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 54 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 55 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 53 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
+| 54 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 55 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 56 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
