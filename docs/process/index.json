@@ -264,6 +264,12 @@
   "status": "評価。A は作り替えた。人の目はまだ"
  },
  {
+  "id": "research/20",
+  "path": "research/20-worksheet-rethink.md",
+  "hook": "学習プリントの問いかけを本人の 4 つの着目で考え直す案",
+  "status": "案。採るかは本人（U-25）"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

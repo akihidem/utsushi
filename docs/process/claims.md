@@ -31,7 +31,7 @@
 | C-11 | 判断待ちの最長は 124 分で、10 分以上の待ちは計 223 分 | 測定 | [how-it-was-built.md](how-it-was-built.md) |
 | C-12 | AI の版の調整が学習を上げた直接の証拠は見つかっていない | 文献 | [13-critical-review.md](research/13-critical-review.md) |
 | C-13 | 素の GPT で練習は 48% 上がり、試験は 17% 下がった例がある | 文献 | [13-critical-review.md](research/13-critical-review.md) |
-| C-14 | 紙の型紙が実物で開くか | 未確認 | [README.md](trials/README.md) |
+| C-14 | 紙の型紙が実物で開くか（御来迎は 11-04 の動画で開いた。仮説ごとの違いと虎は未確認） | 測定 | [README.md](trials/README.md) |
 | C-15 | 本物の Claude API で輪が回るか | 未確認 | [J010-loop-back-half.md](decisions/J010-loop-back-half.md) |
 | C-16 | 作っているうちに新しい考えが湧く | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-17 | 返事をするのは AI でなく素材と工作 | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |

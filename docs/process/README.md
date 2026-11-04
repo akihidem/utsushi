@@ -87,14 +87,15 @@
 | 42 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
 | 43 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |
 | 44 | [research/19](research/19-emil-skills-review.md) | 参照のルックブックの観察と A の再現、Skill 集から拾った物 | 評価。A は作り替えた。人の目はまだ |
-| 45 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 46 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 47 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
-| 48 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 49 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
-| 50 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 51 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 52 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 45 | [research/20](research/20-worksheet-rethink.md) | 学習プリントの問いかけを本人の 4 つの着目で考え直す案 | 案。採るかは本人（U-25） |
+| 46 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 47 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 48 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
+| 49 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 50 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
+| 51 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 52 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 53 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
