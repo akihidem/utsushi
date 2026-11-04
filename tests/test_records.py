@@ -93,4 +93,4 @@ for tid, src, sid in (("slider_fan", source, "NDL-1187053-R0000005-L"), ("pivot_
     after, _ = compose_after(src, h["name"], load(sid)["after_try"])
     words = " ".join(x.text or "" for x in layout["texts"] + after["texts"])
     assert not any(w in words for w in ("成功", "失敗", "正解", "合格")), "学ぶ人の紙に成績の語を刷らない"
-    assert "見た事" in words
+    assert "おもちゃとして動きましたか" in words  # 見た事の見出しを、本人の着目 1 の問いにした（U-25）

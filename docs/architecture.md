@@ -12,7 +12,7 @@
 |---|---|
 | `src/omochae/hypotheses.py` | 使い手の入口。予想か自分の仮説を受け、仮説を並べ、選んだ仮説の型紙を刷る |
 | `data/hypotheses/` | 玩具ごとの仮説（根拠・弱い所・測る事）。順位は持たない |
-| `src/omochae/instructions.py` | 手順の紙と試した後の紙 |
+| `src/omochae/instructions.py` | 学ぶ人の紙（手順・試した後・見比べる・型紙なし）と先生の見る紙。測る欄は持たず、問いは本人の 4 つの着目に合わせる（U-25） |
 | `src/api/words.py` | 言葉の仮説を雛形の寸法に写す口 |
 | `src/omochae/records.py` | 試した記録の入口と集計。記録は `data/records/` |
 | `src/omochae/__main__.py` | 型紙を 1 枚作る共通の流れと、開発用の入口 |
