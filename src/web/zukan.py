@@ -36,6 +36,8 @@ body.zukan{margin:0;background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK
 .zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#6f665a;border:1px solid #d8cdb6;padding:0 8px;margin-right:10px}
 .zukan .meta{font-size:12px;color:#6f665a;letter-spacing:.08em;line-height:1.9}
 .zukan .links{font-size:13px;letter-spacing:.12em;display:flex;gap:16px;flex-wrap:wrap}
+.zukan .more{padding:8vh 0;border-top:1px solid #ebe8e2}.zukan .more h2{font-weight:400;letter-spacing:.2em}
+.zukan .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px 18px}.zukan .grid li{margin:0}
 @media (max-width:760px){.zukan .toy{grid-template-columns:1fr}.zukan .song{writing-mode:horizontal-tb;height:auto}}
 """
 
@@ -120,7 +122,16 @@ LEAD = '<p class="meta">文にはどれも印があります。原文の引用�
 
 
 def index_page(sids):
-    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + "".join(toy_section(s, link_title=True) for s in sids))
+    """必須の 2 種は今までどおり 1 つずつ大きく並べる。全部を作る線で足した試作の玩具（本人の指示 11-04）は、その下に小さな札で並べる。
+    100 を超える玩具を全部大きく並べると、入口から見たい物に届かないため。試作の札は名前が確かめ待ちである事も添える。"""
+    main = [s for s in sids if hypotheses.stage(s) == "必須"]
+    rest = [s for s in sids if hypotheses.stage(s) != "必須"]
+    body = "".join(toy_section(s, link_title=True) for s in main)
+    if rest:
+        cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">コマ {esc(s.split("-R")[1][:7].lstrip("0"))}</span></li>' for s in rest)
+        body += (f'<section class="more" aria-label="ほかの玩具"><h2>ほかの玩具</h2><p class="meta"><span class="lb">試作</span>'
+                 f'全部の玩具を型紙にする途中の {len(rest)} 種。名前は作る側の見立てで、まだ確かめていません。</p><ul class="grid">{cards}</ul></section>')
+    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body)
 
 
 def toy_zukan(sid):
