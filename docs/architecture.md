@@ -48,6 +48,7 @@
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |
 | `src/omochae/ledger.py` | 台帳の検査と、地図と主張の表の描画 |
+| `src/demo/` | デモ動画の 7 場面をコードだけで描いて録る。`build.py` が本番の入口（試験を数える → 7 場面を書き出す → つなぐ → build.json に commit と長さを残す）。場面は `flip.py`（1 北斎漫画の槍の型、書き出しと色・字の共有もここ）・`scene2.py`（江都二色）・`scene3.py`（予想が先 → 仮説、使い手の画面を手元で動かして撮る）・`scene4.py`（江戸の仕組みの絵から型紙へ）・`scene5.py`（11-04 の試行。写真は U-24 の表で許された物だけ）・`scene6.py`（所見 → T-0001 → 版の差 → 工作の手帖）・`scene7.py`（締めとクレジット）。`assemble.py` がつなぎ 3 分の床を見る。画像と動画は repo に入れない |
 
 ## 雛形を足す時
 
