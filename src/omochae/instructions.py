@@ -21,8 +21,43 @@ def steps(p, template="slider_fan"):
     return TEMPLATES[template].steps(p)
 
 
-def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A4", version=1):
-    """Returns (layout, failures)。"""
+PICTURES_W = 75.0
+
+
+def _first_steps(x, y, shapes, texts):
+    """最初の一歩と蛇腹の畳み方の小さな絵（v8）。幅 50mm・高さ 34mm ほどに収める。
+
+    試行で手が止まったのは平面から立体への最初の一歩で（本人の補足所見）、「ジャバラに折る発想が出てこない」
+    「谷折り、山折りがわからない」の声があった。絵は形の作り方だけで、扇がどう開くか（仕組み）は描かない（予想が先、F9）。
+    """
+    # 1) 平らな外筒 → 角筒。4 面の帯と糊代、矢印、組んだ角筒の斜めの姿
+    _block(texts, ["まず筒を 1 つ作る"], x, y, 2.8, 50)
+    fw, fh, sy = 6.0, 13.0, y + 4.5
+    shapes.append({"kind": "rect", "x": x, "y": sy, "w": fw * 4, "h": fh})
+    for i in range(1, 4):
+        shapes.append({"kind": "line", "x1": x + fw * i, "y1": sy, "x2": x + fw * i, "y2": sy + fh, "dash": "2,1"})
+    shapes.append({"kind": "rect", "x": x + fw * 4, "y": sy + 1, "w": 3, "h": fh - 2})
+    ax, my = x + fw * 4 + 5, sy + fh / 2
+    shapes += [{"kind": "line", "x1": ax, "y1": my, "x2": ax + 6, "y2": my},
+               {"kind": "line", "x1": ax + 4, "y1": my - 2, "x2": ax + 6, "y2": my},
+               {"kind": "line", "x1": ax + 4, "y1": my + 2, "x2": ax + 6, "y2": my}]
+    bx, by = ax + 9, sy + 3
+    shapes += [{"kind": "rect", "x": bx, "y": by, "w": 6, "h": fh - 3},
+               {"kind": "line", "x1": bx, "y1": by, "x2": bx + 3, "y2": by - 3},
+               {"kind": "line", "x1": bx + 6, "y1": by, "x2": bx + 9, "y2": by - 3},
+               {"kind": "line", "x1": bx + 3, "y1": by - 3, "x2": bx + 9, "y2": by - 3},
+               {"kind": "line", "x1": bx + 9, "y1": by - 3, "x2": bx + 9, "y2": by + fh - 6},
+               {"kind": "line", "x1": bx + 6, "y1": by + fh - 3, "x2": bx + 9, "y2": by + fh - 6}]
+    # 2) 蛇腹: 横から見た山と谷
+    zy = sy + fh + 3
+    _block(texts, ["蛇腹（横から）: 上が山折り、下が谷折り"], x, zy, 2.8, 70)
+    pts = [(x + 4 * i, zy + (5 if i % 2 else 12)) for i in range(9)]
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
+        shapes.append({"kind": "line", "x1": x1, "y1": y1, "x2": x2, "y2": y2})
+
+
+def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A4", version=1, picture=None):
+    """Returns (layout, failures)。picture は完成のイメージとして載せる原図の写しの道（v8、slider_fan だけ）。"""
     tpl = TEMPLATES[template_id]
     p = {**tpl.DEFAULTS, **params}
     page = PAGES[page_name]
@@ -40,6 +75,9 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     y = _block(texts, [f"{i}. {s}" for i, s in enumerate(tpl.steps(p), 1)], page.x0, y, BODY_SIZE, left_w)
     y = _block(texts, ["遊び方", how_it_moves, "力を入れすぎず、手でゆっくり動かす"], page.x0, y + 1, BODY_SIZE, left_w)
     y = max(y, top + DIAGRAM_H + 8) + 2
+    images = []
+    # 絵は「作る前に」と「測る」の欄の右の空きに置く（v8）。欄の左の列は 115mm ほどで止まるため、頁を伸ばさずに済む。
+    pics_y = y
 
     def field(label, x, y0, w=30.0):
         lw = text_width(label, BODY_SIZE)
@@ -61,6 +99,24 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     # 紙が返事をするまでの速さを測る。「すぐ返ってくる」を主張にするなら、作る時間の実測が要るため（J-013）。
     field("作り始めて最初に動かすまで（分）", page.x0, y, 20)
     y += BODY_SIZE * LINE + 3
+    if template_id == "slider_fan":
+        px = page.x1 - PICTURES_W
+        _first_steps(px, pics_y, shapes, texts)
+        if picture:
+            # 完成のイメージとして原図を試しに載せる（本人の決定、11-04）。縮めた写しを埋め込み、PDF を重くしない。
+            import io
+            from PIL import Image
+            im = Image.open(picture).convert("RGB")
+            im.thumbnail((360, 600))
+            buf = io.BytesIO()
+            im.save(buf, format="JPEG", quality=80)
+            h = 28.0
+            w = h * im.width / im.height
+            ix = page.x1 - w
+            images.append({"x": ix, "y": pics_y, "w": w, "h": h, "data": buf.getvalue()})
+            texts.append(TextBox(ix, pics_y, w, h, None))
+            _block(texts, ["完成の", "イメージ", "（原図）"], ix, pics_y + h + 0.5, 2.8, w)
+        y = max(y, pics_y + 38)
     y = _block(texts, ["見て考える"], page.x0, y, HEAD_SIZE, width)
     for q in QUESTIONS:
         texts.append(TextBox(page.x0, y, text_width(q, BODY_SIZE), BODY_SIZE * LINE, q, BODY_SIZE))
@@ -85,7 +141,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     texts.append(TextBox(page.x0, ruler_y, 100, 3, None))
     _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], page.x0, ruler_y + 4, BODY_SIZE, width)
     failures = check_layout(page, [], texts)
-    return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes}, failures
+    return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": (page.x0, ruler_y), "shapes": shapes, "images": images}, failures
 
 
 COMPARE_LIMIT = "どちらかがよく動いても、昔の作り方の証明にはなりません。紙で言えるのは、この紙がどう動くかまでです。"

@@ -20,6 +20,8 @@ DEFAULTS = {
     "push_amount": 69,
     "fold_height": 48, "fold_width": 8.5, "fold_count": 28,
     "base_side": 26, "base_glue": 6,
+    # 割り箸の柄で押す形にも、内筒を短く切った土台を載せる。試行で「仮説Aにある土台が仮説Cにもあると、作りやすい」（本人、11-04、goraigo-v8）。
+    "stage_height": 15,
     "figure_w": 12, "figure_h": 32,
     "knob_width": 4,
     # 0.15mm はふつうの厚めの紙の見込み。実物の紙を測ったら置き換える。
@@ -32,6 +34,7 @@ RANGES = {
     "pivot_above_rim": (0, 40),
     "fold_height": (20, 60), "fold_width": (5, 15), "fold_count": (6, 40),
     "base_side": (10, 48), "base_glue": (4, 10),
+    "stage_height": (8, 40),
     "figure_w": (8, 30), "figure_h": (15, 60),
     "knob_width": (2, 8),
     # 上限を広く取るのは、厚さの検査が範囲の検査より先に落ちないようにするため。
@@ -70,7 +73,11 @@ def check_range(p):
 
 
 def slot_span(p):
-    """溝の範囲を筒の底からの高さで返す。つまみは内筒の高さの中ほどに通す。"""
+    """溝の範囲を筒の底からの高さで返す。つまみは内筒の高さの中ほどに通す。
+
+    v8 から溝は筒の下の端まで切り込む（くり抜かない）。試行で「くり抜く側面の穴を切るのが大変で、下から切り取ることになった」
+    （本人、11-04）。下の端は開くので、使うのは上の端 high だけ。low は内筒が静止する高さの目安として残す。
+    """
     rest_bottom = p["tube_height"] - p["push_amount"] - p["pusher_height"]
     low = rest_bottom + p["pusher_height"] / 2 - p["knob_width"] / 2
     return low, low + p["push_amount"] + p["knob_width"]
@@ -106,18 +113,26 @@ def check_physics(p):
         if L > H - s:
             out.append(Failure("F5.stroke", "内筒", f"内筒の長さ {L} が静止時の筒の空き {H - s} に収まらない"))
         low, high = slot_span(p)
-        if low < SLOT_MARGIN or H - high < SLOT_MARGIN:
-            out.append(Failure("F5.stroke", "溝", f"溝が筒の端から {SLOT_MARGIN}mm 離れない（底から {low:.1f}〜{high:.1f}）"))
-    elif L < H:
+        # 下の端は開いた切り込みなので、上の端だけが筒の口から離れていればよい。
+        if H - high < SLOT_MARGIN:
+            out.append(Failure("F5.stroke", "溝", f"溝が筒の口から {SLOT_MARGIN}mm 離れない（底から 0〜{high:.1f}）"))
+    elif p["push_part"] == "stick" and p["stage_height"] > H - s:
+        out.append(Failure("F5.stroke", "土台", f"土台の高さ {p['stage_height']} が静止時の筒の空き {H - s} に収まらない"))
+    if p["push_part"] != "tab" and L < H:
         # research/03: L < H だと指が筒の外にある間に押し切れない。
         out.append(Failure("F5.stroke", "押す部品", f"長さ {L} が筒の高さ {H} より短く、押し切れない"))
     return out
 
 
-def _tube(number, key, name, side, height, glue, label):
+def _tube(number, key, name, side, height, glue, label, notch=None):
+    """notch=(x0, x1, top) は下の端から top まで切り込む溝（v8）。はさみで下から切れるよう、輪郭の一部にする。"""
     w = side * 4
     # 糊代の角を落とすのは、貼る時に隣の面へはみ出さないようにするため。
-    outline = [(0, 0), (w, 0), (w + glue, 2), (w + glue, height - 2), (w, height), (0, height)]
+    outline = [(0, 0), (w, 0), (w + glue, 2), (w + glue, height - 2), (w, height)]
+    if notch:
+        x0, x1, top = notch
+        outline += [(x1, height), (x1, top), (x0, top), (x0, height)]
+    outline.append((0, height))
     return Part(number, key, name, outline, label_xy=(1.5, 1.5), label=label,
                 valley=[((side * i, 0), (side * i, height)) for i in range(1, 5)],
                 glue=[[(w, 0), (w + glue, 2), (w + glue, height - 2), (w, height)]])
@@ -127,14 +142,24 @@ def _tube(number, key, name, side, height, glue, label):
 PAPER, ORANGE, BROWN, LINE, FACE = "#a89365", "#a5632c", "#7a5e3b", "#55492c", "#b9a677"
 
 
-def _tube_art(A, H):
-    """筒の 4 面の描き直し。絵の手前の角の 2 本線は、折り線の両側に 1 本ずつ引くと組んだ時に細い面に見える。"""
+def _tube_art(A, H, notch=None):
+    """筒の 4 面の描き直し。絵の手前の角の 2 本線は、折り線の両側に 1 本ずつ引くと組んだ時に細い面に見える。
+
+    溝の切り込みがある面は、切り込みの左右に分けて塗る（絵を切る線の外に出さないため）。
+    """
     art = []
     for i in range(4):
         x0, x1 = A * i, A * (i + 1)
-        art.append({"kind": "poly", "pts": [(x0, 0), (x1, 0), (x1, H), (x0, H)], "fill": PAPER})
+        cols = [(x0, x1)]
+        if notch and x0 < notch[0] and notch[1] < x1:
+            cols = [(x0, notch[0]), (notch[1], x1)]
         art.append({"kind": "poly", "pts": [(x0, 0), (x1, 0), (x1, 4.5), (x0, 4.5)], "fill": ORANGE})
-        art.append({"kind": "poly", "pts": [(x0, H - 5), (x1, H - 5), (x1, H), (x0, H)], "fill": BROWN})
+        for c0, c1 in cols:
+            art.append({"kind": "poly", "pts": [(c0, 4.5), (c1, 4.5), (c1, H - 5), (c0, H - 5)], "fill": PAPER})
+            art.append({"kind": "poly", "pts": [(c0, H - 5), (c1, H - 5), (c1, H), (c0, H)], "fill": BROWN})
+        if len(cols) == 2:
+            # 溝の上の端より上は 1 枚の面のまま塗る。
+            art.append({"kind": "poly", "pts": [(notch[0], 4.5), (notch[1], 4.5), (notch[1], notch[2]), (notch[0], notch[2])], "fill": PAPER})
     art.append({"kind": "line", "pts": [(A - 1.2, 0), (A - 1.2, H)], "stroke": LINE, "sw": 0.5})
     art.append({"kind": "line", "pts": [(A + 1.2, 0), (A + 1.2, H)], "stroke": LINE, "sw": 0.5})
     return art
@@ -181,18 +206,21 @@ def _insert_tab(pts, x0, x1, bottom, tab):
 def parts(p):
     A, H, a, L = p["tube_side"], p["tube_height"], p["pusher_side"], p["pusher_height"]
     out = []
-    tube = _tube(1, "tube", "外筒", A, H, p["tube_glue"], "1 外筒")
-    tube.art = _tube_art(A, H)
-    if p["hub"] == "axle":
-        # 開く糸を試す穴。扇は 1 面目に平行に開くので、その両脇の面につなぐ。
-        tube.holes += [(A * 1.5, 3, 0.6), (A * 3.5, 3, 0.6)]
+    notch = None
     if p["push_part"] == "tab":
         low, high = slot_span(p)
         # 溝は 2 面目の中央。ラベルの面と離し、糊の継ぎ目からも離す。y は頁の下向きなので高さから引く。
-        tube.cuts.append((A * 1.5 - (p["knob_width"] + 1) / 2, H - high, p["knob_width"] + 1, high - low))
+        notch = (A * 1.5 - (p["knob_width"] + 1) / 2, A * 1.5 + (p["knob_width"] + 1) / 2, H - high)
+    tube = _tube(1, "tube", "外筒", A, H, p["tube_glue"], "1 外筒", notch)
+    tube.art = _tube_art(A, H, notch)
+    if p["hub"] == "axle":
+        # 開く糸を試す穴。扇は 1 面目に平行に開くので、その両脇の面につなぐ。
+        tube.holes += [(A * 1.5, 3, 0.6), (A * 3.5, 3, 0.6)]
     out.append(tube)
-    if p["push_part"] in ("tab", "tube"):
-        inner = _tube(2, "pusher", "内筒", a, L, p["pusher_glue"], "2 内筒")
+    if p["push_part"] in ("tab", "tube", "stick"):
+        # 柄の形の内筒は短い土台（v8）。柄の先を下から差し込んで貼り、台を載せる面にする。
+        height, name = (p["stage_height"], "土台") if p["push_part"] == "stick" else (L, "内筒")
+        inner = _tube(2, "pusher", name, a, height, p["pusher_glue"], f"2 {name}")
         if p["push_part"] == "tab":
             # 向かい合う 2 面に串を通す穴。1 面だけだと串が傾いて溝の中で引っかかりやすい。
             inner.holes += [(a * 1.5, L / 2, 1.2), (a * 3.5, L / 2, 1.2)]
@@ -206,9 +234,19 @@ def parts(p):
         glue=[[(g, g), (g + 1, 0), (g + b - 1, 0), (g + b, g)],
               [(g + b, g), (g + b + g, g + 1), (g + b + g, g + b - 1), (g + b, g + b)],
               [(g + b, g + b), (g + b - 1, g + b + g), (g + 1, g + b + g), (g, g + b)],
-              [(g, g + b), (0, g + b - 1), (0, g + 1), (g, g)]]))
+              [(g, g + b), (0, g + b - 1), (0, g + 1), (g, g)]],
+        art=_base_mark(p)))
     n, w, h = int(p["fold_count"]), p["fold_width"], p["fold_height"]
-    fan = Part(4, "fan", "蛇腹の扇", [(0, 0), (h, 0), (h, n * w), (0, n * w)], label_xy=(5, 1.5), label="4 扇")
+    outline = [(0, 0), (h, 0), (h, n * w), (0, n * w)]
+    glue, leg_valley = [], []
+    if p["hub"] == "axle":
+        # ジャバラの固定（v8）。試行で「ジャバラの固定に苦慮していた」（本人、11-04）。本人の決定で、糊代と貼る位置の印まで型紙で決める。
+        # 真ん中の 1 枚を要から下へ伸ばした足にし、先の糊代を 3 台の印に貼る。真ん中が立ったまま、両側の板が開く。
+        m, leg = n // 2, leg_length(p)
+        outline += [(0, (m + 1) * w), (-leg, (m + 1) * w), (-leg, m * w), (0, m * w)]
+        glue.append([(-leg, m * w), (-leg + LEG_GLUE, m * w), (-leg + LEG_GLUE, (m + 1) * w), (-leg, (m + 1) * w)])
+        leg_valley.append(((-leg + LEG_GLUE, m * w), (-leg + LEG_GLUE, (m + 1) * w)))
+    fan = Part(4, "fan", "蛇腹の扇", outline, label_xy=(5, 1.5), label="4 扇", glue=glue, valley=leg_valley)
     for i in range(1, n):
         line = ((0, i * w), (h, i * w))
         # 山と谷を交互にするのが蛇腹の形そのもの。
@@ -232,6 +270,25 @@ def parts(p):
     return out
 
 
+# 扇の足の先の糊代の長さ。台に貼る面。
+LEG_GLUE = 6
+
+
+def leg_length(p):
+    """扇の足の長さ。要（糸の穴）は像の足元から pivot_above_rim の高さにあり、そこから台まで届かせ、糊代を足す。"""
+    return p["pivot_above_rim"] - 2 + LEG_GLUE
+
+
+def _base_mark(p):
+    """3 台の上の面に、扇の足を貼る位置の印（v8）。像の足を貼る真ん中を空けて、奥の縁に寄せる。"""
+    if p["hub"] != "axle":
+        return []
+    g, b, w = p["base_glue"], p["base_side"], p["fold_width"]
+    x0, x1, y0, y1 = g + b / 2 - w / 2, g + b / 2 + w / 2, g + 1, g + 1 + LEG_GLUE
+    return [{"kind": "line", "pts": [(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)], "stroke": LINE, "sw": 0.3},
+            {"kind": "line", "pts": [(x0, y0), (x1, y1)], "stroke": LINE, "sw": 0.2}]
+
+
 def bom(p):
     """部品表。元の素材は絵から読めないので、分からない物は「不明」と書き、歴史の事実として断定しない。"""
     paper = f"紙（厚さ {p['paper_thickness']}mm 前後）"
@@ -242,6 +299,8 @@ def bom(p):
         {"number": 4, "key": "fan", "name": "蛇腹の扇", "qty": 1, "material": paper, "substituted": True, "original_guess": "紙（同じ解説による）", "reason": why},
         {"number": 5, "key": "figure", "name": "像", "qty": 1, "material": paper, "substituted": True, "original_guess": "紙の張貫か木（同じ解説による）", "reason": why},
     ]
+    if p["push_part"] == "stick":
+        rows.insert(1, {"number": 2, "key": "pusher", "name": "土台", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": "柄の先に台を載せて作りやすくするため（11-04 の試行）"})
     if p["push_part"] in ("tab", "tube"):
         rows.insert(1, {"number": 2, "key": "pusher", "name": "内筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why})
     if p["push_part"] == "tab":
@@ -266,8 +325,6 @@ def materials(p):
     lines = [f"{rows[0]['material']}を 1 枚（全部品を同じ紙に刷る）", "のり、はさみ、定規"]
     lines += [f"{r['material']} {r['qty']} 本" for r in rows if r["number"] == 6]
     lines += [r["material"] for r in rows if r["number"] == 7]
-    if p["push_part"] == "tab":
-        lines.append("カッター（溝を切る。大人がする）")
     return lines
 
 
@@ -281,7 +338,9 @@ def title(p):
 def place(by_key, page, top, gap):
     """扇は長いので右の列に縦に置き、残りを左の列に積む。返り値は (文字の開始 y, 文字の幅, 文字の開始 x)。"""
     fan = by_key["fan"]
-    fan.x, fan.y = page.x1 - fan.width, top
+    # 扇の足（v8）は部品の原点より左に出るので、右端をそろえて置く。
+    minx = min(x for x, _ in fan.outline)
+    fan.x, fan.y = page.x1 - fan.width - minx, top
     left_y = top
     for key in ("tube", "pusher"):
         if key in by_key:
@@ -292,26 +351,32 @@ def place(by_key, page, top, gap):
     base.x, base.y = page.x0, left_y
     fig.x, fig.y = page.x0 + base.width + gap * 2, left_y
     left_y += max(base.height, fig.height) + gap
+    # 文字の列の幅は扇の本体まで取る。足は真ん中の 1 枚の高さにしか無く、文字と重なれば配置の検査（F5.overlap）が落とす。
     return left_y, fan.x - page.x0 - gap, page.x0
 
 
 def steps(p):
     """組み方。部品番号は型紙と同じ。押し方と中心の置き方で変わる所だけを分ける。"""
-    out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る。穴は竹串の先であける"]
+    # まず筒を 1 つ作る（v8）。試行で、手が止まったのは平面から立体への最初の一歩で、「筒ができただけで目の色が変わって」
+    # 取り組み始めた（本人の補足所見、11-04）。最初に形が 1 つできる順にする。
+    out = ["刷った物差しに定規を当て、10cm か確かめる"]
     if p["push_part"] == "tab":
-        out.append("1 外筒の溝をカッターで切る（大人がする）")
+        out.append("まず 1 外筒だけを実線で切る。溝は下の端からはさみで切り込む（くり抜かない）")
+    else:
+        out.append("まず 1 外筒だけを実線で切る")
     out.append("1 外筒を破線で谷折りし、糊代で貼って角筒にする")
+    out.append("残りの部品を実線で切る。穴は竹串の先であける")
     if p["push_part"] in ("tab", "tube"):
         out.append("2 内筒も同じように角筒にする")
     if p["push_part"] == "tab":
         out.append("竹串を 2 内筒の 2 つの穴に通す")
     if p["push_part"] == "stick":
-        out.append("3 台を割り箸の先に貼る")
-    else:
-        out.append("3 台で 2 内筒の上に蓋をする")
-    out.append("4 扇を破線で谷折り、一点鎖線で山折りにして蛇腹に畳む")
+        out.append("2 土台も同じように角筒にし、割り箸の先を下から差し込んで貼る")
+    out.append("3 台で 2 の上に蓋をする")
+    out.append("4 扇を破線で谷折り、一点鎖線で山折りにして、端から順に蛇腹に畳む")
     if p["hub"] == "axle":
         out.append("糸を 5 像の穴と 4 扇の中心側の穴の列に通し、ゆるく結ぶ")
+        out.append("4 扇の真ん中の足を破線で折り、足の糊代を 3 台の印に貼る")
         out.append("5 像の足を 3 台に貼る")
     else:
         out.append("4 扇の端を 3 台に貼り、5 像の足も台に貼る")
@@ -339,7 +404,9 @@ def diagram(x, y, w, h, p):
     rest_top = base - (p["tube_height"] - p["push_amount"]) * s
     length = p["pusher_height"] * s
     if p["push_part"] == "stick":
-        shapes.append({"kind": "rect", "x": cx - 0.6, "y": rest_top, "w": 1.2, "h": length, "dash": "1,0.6"})
+        stage = p["stage_height"] * s
+        shapes.append({"kind": "rect", "x": cx - inner / 2, "y": rest_top, "w": inner, "h": stage, "dash": "1,0.6"})
+        shapes.append({"kind": "rect", "x": cx - 0.6, "y": rest_top + stage, "w": 1.2, "h": length - stage, "dash": "1,0.6"})
     else:
         shapes.append({"kind": "rect", "x": cx - inner / 2, "y": rest_top, "w": inner, "h": length, "dash": "1,0.6"})
     if p["push_part"] == "tab":

@@ -44,6 +44,9 @@ def to_svg(layout):
                 d.append(dw.Lines(*pts, close=True, fill=item["fill"], **kw))
             else:
                 d.append(dw.Lines(*pts, close=False, fill="none", stroke=item["stroke"], stroke_width=item["sw"]))
+    # 手順の紙の完成のイメージ（原図、v8）。型紙の部品には貼らない（J-007）。
+    for im in layout.get("images", []):
+        d.append(dw.Image(im["x"], im["y"], im["w"], im["h"], data=im["data"], mime_type="image/jpeg"))
     if layout.get("paste_image"):
         buf = io.BytesIO()
         Image.new("RGB", (4, 4), "red").save(buf, format="PNG")

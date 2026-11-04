@@ -60,12 +60,17 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
                              LABEL_SIZE * LINE, q.label, LABEL_SIZE, owner=q.key))
     y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], text_x, left_y, BODY_SIZE, width)
     legend_y = y + 1
-    legend = [("切る", None), ("谷折り", "2,1"), ("山折り", "3,1,0.6,1"), ("糊代", "hatch")]
+    # 谷と山の意味を添える（v8）。試行のつぶやき「谷折り、山折りがわからない」（11-04）。線の種類だけでは折る向きが伝わらなかった。
+    legend = [("切る", None), ("谷折り（手前にへこむ）", "2,1"), ("山折り（手前に出る）", "3,1,0.6,1"), ("糊代", "hatch")]
     samples, x = [], text_x
     for name, dash in legend:
+        step = 9 + text_width(name, BODY_SIZE) + 3
+        # 説明を足した凡例は、列の幅が狭い型紙（虎）では 1 行に入らない。入らない分は次の行へ送る。
+        if x > text_x and x + step - 3 > text_x + width:
+            x, legend_y = text_x, legend_y + BODY_SIZE * LINE + 0.5
         samples.append((x, legend_y + BODY_SIZE * 0.6, dash))
         texts.append(TextBox(x + 9, legend_y, text_width(name, BODY_SIZE), BODY_SIZE * LINE, name, BODY_SIZE))
-        x += 9 + text_width(name, BODY_SIZE) + 3
+        x += step
     ruler_y = legend_y + BODY_SIZE * LINE + 2
     # 物差しは 100mm。刷りの倍率を人が確かめる唯一の手がかりなので、印字域に収まらなければ検査で落とす。
     texts.append(TextBox(text_x, ruler_y, 100, 3, None))

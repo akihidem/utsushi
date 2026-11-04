@@ -104,11 +104,15 @@ def _print_instructions(params, source_id, title, how, out, version, template="s
     from .render import to_png, write_all
 
     source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
-    layout, failures = compose_sheet(template, params, source, f"{title} 版 {version}", how)
+    # 完成のイメージとして原図を手順の紙に試しに載せる（本人の決定、11-04、goraigo-v8）。型紙には貼らない（J-007 のまま）。
+    # 原図の写しは git の外（out/sources、ingest が取る）なので、無い所では載せずに刷る。
+    pic = ROOT / "out/sources" / f"{source_id}.jpg"
+    picture = pic if template == "slider_fan" and pic.exists() else None
+    layout, failures = compose_sheet(template, params, source, f"{title} 版 {version}", how, picture=picture)
     if not failures:
         stem = pathlib.Path(f"{out}_tejun")
         pdf = write_all(layout, stem)
-        failures = check_pdf(pdf, source) + check_image_count(pdf)
+        failures = check_pdf(pdf, source) + check_image_count(pdf, expected=len(layout.get("images", [])))
         if not failures:
             to_png(pdf, stem)
             print(pdf)
