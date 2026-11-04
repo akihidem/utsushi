@@ -130,7 +130,7 @@
    "src/web/play_server.py",
    "tests/test_play_server.py"
   ],
-  "unverified": "人がブラウザで使った確認はまだ。図鑑の頁は未実装。公開の形は無い（J-024）"
+  "unverified": "人がブラウザで使った確認はまだ。図鑑の頁（/zukan）は 11-04 に作った（F6.label を通してから描く）。公開の形は無い（J-024）"
  },
  {
   "id": "f16",

@@ -283,6 +283,11 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/gallery":
             from . import techo_site
             return self._send(200, page("上げた物と、職人の言葉", techo_site.gallery_page(sources()), techo_site.STYLE, "techo"))
+        # 図鑑（f15）。文の印の床（F6.label）と予想が先の線は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
+        m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
+        if m and (m.group(1) is None or m.group(1) in sources()):
+            from . import zukan
+            return self._send(200, zukan.toy_zukan(m.group(1)) if m.group(1) else zukan.index_page(sources()))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
