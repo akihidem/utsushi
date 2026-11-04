@@ -159,3 +159,16 @@
 - 同じ PR で、自分の仮説を刷る口（hypotheses.print_own）の、仮説を分ける寸法の名前の決め打ちを HYP_KEY にした（必須 2 種では値が同じ）
 - エビデンスゲート: 上の出力と ./run.sh
 - マージ後の書き戻し: #105 の分は、main 68f705a の上の ship の試験で 92/92。デモを立て直し、トンネル越しに入口・図鑑・試作の玩具の頁・手帖が開く事を確かめた。この節の分は push の後に書く
+
+## サイトの作り直し（A′ と C を一気通貫に。sub-site、lane/site、11-05 未明）
+
+- 目的: 入口から玩具の頁へ入った所で世界が変わる 4 系統の見た目を 1 つの骨と 2 つの皮にし、型紙を画面に絵で出す（要件は [site-requirements](site-requirements.md)）
+- なぜか: 本人の指示（11-05）「小さな直しの積み重ねを止め、要件定義から作り直す」と差し替え「2 案とも実装まで、今朝 8:30 にデモで一周」
+- どうしたらいいか: 推しは 1 つの順路 + CSS の変数の皮 2 つ（頁ごとに書かない）。捨てた代案: 皮ごとに頁を書く（直しが 2 倍になる）、入口だけ直す（玩具の頁で世界が変わるのは残る）
+- ゴールの要件: 要件の 10 の 7 つ。`./run.sh` が全部期待どおり
+- 検証ゲート: **当たる**（既存の頁の作り替え）。Red: 前の玩具の頁は PDF のリンクだけで絵が無く、入口の皮が内側に続かない（main 1dd8f5c の `/toy/<sid>` に `img src="/sheet/` が無い）。Green: `tests/test_play_server.py`・`test_techo_site.py`・`test_demo_walk.py`・`test_toys.py`・`test_about.py`・`test_looks_motion.py` が通り、`/sheet/<sid>/<name>.png` が 200、記録の前の `_after.png` が 403
+- エビデンスゲート: 写し（1440・390 の幅、白と黒）を作る側の機械で見た。人の目と本物のスマホは未
+- 取り込みの前の全体の試験: 枝 lane/site の a967ff7 の作業ツリーで `./run.sh`: 「実行した場面 95 本、期待どおり 95 本、未実装の床 0 本。」（11-05 02:50 頃）。その後の fbb2fa3（図鑑とくずし字を皮に載せる）は `tests/test_zukan.py`・`test_kuzushi.py` で確かめた。push の門（hackathon-grove の push-gate）がまっさらな clone でも全部を回す
+- push と PR: 枝 lane/site を push（門は 564729c で FAIL 0。前の 2 回は、文書の裏書きの画面の道を tree に無い道と読んだ F と、見本の線の座標と commit の文を日付と読んだ A で止まった）。PR は https://github.com/akihidem/utsushi/pull/107。照合 2026-11-05T01:51:19+09:00: 手元 564729c985f6015e29b8c8c5ccfeb5386fbdb7ed ＝ GitHub の lane/site
+- デモの立て直し: 作る側の機械の許可（動いている仕事を止める・外へのトンネル）で止まった。人の手の手順はカード 20261105-014111-sub-site
+- マージ後の書き戻し: まだ（hack-main の取り込みの後に書く）

@@ -82,36 +82,40 @@ def media_of(rid):
     return [p.name for p in sorted(d.glob("m*.*"))] if d.exists() else []
 
 
+# 色は皮の変数から取る（skin.py の SKINS。本人の指示 11-05: A′ 白の展示と C 黒のジンを一気通貫に）。
+# 手帖だけ書体をゴシックにし字を大きくするのは、机に置いて離れて読むため（本人の指定 11-04「文字は最小」）。骨（頭の帯・余白）は skin.shell が持つ。
 STYLE = """
-body.techo{background:#fbfaf6;color:#27231e;font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
+body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
+.techo main:has(.gallery){max-width:960px}
 .techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
-.techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid #ddd3c0}
-.techo .top a{margin-left:auto;font-size:14px;color:#7a5a2e}
+.techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
+.techo .top a{margin-left:auto;font-size:14px;color:var(--accent)}
 .techo .row{display:flex;gap:12px;flex-wrap:wrap}
-.techo .tile{display:grid;justify-items:center;gap:6px;border:2px solid #ddd3c0;background:#fff;color:#27231e;font:inherit;font-size:15px;padding:10px 14px;border-radius:14px;cursor:pointer;min-width:84px;text-decoration:none;position:relative}
-.techo .tile[aria-pressed="true"],.techo .tile:has(input:checked){border-color:#7a5a2e;box-shadow:0 0 0 2px #7a5a2e inset}
+.techo .tile{display:grid;justify-items:center;gap:6px;border:2px solid var(--frame);background:var(--paper);color:var(--fg);font:inherit;font-size:15px;padding:10px 14px;border-radius:14px;cursor:pointer;min-width:84px;text-decoration:none;position:relative}
+.techo .tile[aria-pressed="true"],.techo .tile:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .techo .tile .big{font-family:"Noto Serif CJK JP",serif;font-size:34px;line-height:1}
-.techo .tile svg{width:44px;height:44px;stroke:#27231e;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.techo .tile svg{width:44px;height:44px;stroke:var(--fg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .techo .tile input{position:absolute;opacity:0;pointer-events:none}
-.techo .panel{border:1px solid #ddd3c0;border-radius:18px;padding:18px;display:grid;gap:14px;background:#fff}
+.techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
-.techo .mark svg{width:40px;height:40px;stroke:#7a5a2e;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.techo input[type=text]{font:inherit;font-size:22px;border:2px solid #ddd3c0;border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:#fbfaf6}
-.techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:#7a5a2e;color:#fff;display:grid;place-items:center;cursor:pointer;justify-self:center}
-.techo .mic svg{width:48px;height:48px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round}
-.techo .mic[aria-pressed="true"]{background:#3f6b4a}
+.techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.techo input[type=text]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
+.techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:var(--onaccent);display:grid;place-items:center;cursor:pointer;justify-self:center;margin:0}
+.techo .mic svg{width:48px;height:48px;stroke:var(--onaccent);fill:none;stroke-width:3;stroke-linecap:round}
+/* 聞いている間は地と字を入れ替える。緑などの別の色を足さず、どちらの皮でも「今は違う状態」と読めるようにするため。 */
+.techo .mic[aria-pressed="true"]{background:var(--fg);color:var(--bg)}.techo .mic[aria-pressed="true"] svg{stroke:var(--bg)}
 .techo .answer{font-size:26px;line-height:1.6;white-space:pre-wrap;min-height:1.6em}
-.techo .shot{display:grid;place-items:center;gap:6px;border:2px dashed #7a5a2e;border-radius:16px;padding:22px;cursor:pointer;color:#7a5a2e;position:relative}
-.techo .shot svg{width:56px;height:56px;stroke:#7a5a2e;fill:none;stroke-width:2.5}
+.techo .shot{display:grid;place-items:center;gap:6px;border:2px dashed var(--accent);border-radius:16px;padding:22px;cursor:pointer;color:var(--accent);position:relative;margin:0}
+.techo .shot svg{width:56px;height:56px;stroke:var(--accent);fill:none;stroke-width:2.5}
 .techo .shot input{position:absolute;opacity:0;width:1px;height:1px}
-.techo .go{font:inherit;font-size:20px;background:#7a5a2e;color:#fff;border:0;padding:16px 28px;border-radius:12px;cursor:pointer}
-.techo .check{display:flex;gap:10px;align-items:center;font-size:15px}.techo .check input{width:26px;height:26px}
-.techo .meta{font-size:12px;color:#6f665a}
-.techo .item{border-top:1px solid #ddd3c0;padding-top:10px;display:grid;gap:6px}
-.techo .item img,.techo .item video{height:110px;max-width:100%;border:1px solid #ddd3c0;border-radius:8px}
+.techo .go{font:inherit;font-size:20px;letter-spacing:.05em;background:var(--accent);color:var(--onaccent);border:0;padding:16px 28px;border-radius:12px;cursor:pointer;margin:0}
+.techo .check{display:flex;gap:10px;align-items:center;font-size:15px;margin:0}.techo .check input{width:26px;height:26px}
+.techo .meta{font-size:12px;color:var(--mute)}
+.techo .item{border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:6px}
+.techo .item img,.techo .item video{height:110px;max-width:100%;border:1px solid var(--frame);border-radius:8px}
 .techo .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-:focus-visible{outline:3px solid #7a5a2e;outline-offset:2px}
+.techo :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 """
 
 SCRIPT = """
@@ -227,13 +231,19 @@ def gallery_page(sids):
     from .demo_samples import uploads_html, voice_html
     cards += uploads_html()
     voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
-    return ('<div class="top"><h1>上げた物</h1><a href="/">入口へ</a></div>'
+    # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
+    from .demo_samples import voices_html
+
+    # .gallery で包むのは、手帖の幅（640px）より広く並べるため（STYLE の main:has(.gallery)）。
+    return ('<div class="gallery"><div class="top"><h1>上げた物</h1><a href="/">入口へ</a></div>'
             '<section class="panel" aria-label="上げた物"><p class="mark">上げた物</p><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
+            '<section class="panel" aria-label="寄せられた声"><p class="mark">寄せられた声</p><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
+            f'{voices_html()}</section>'
             '<section class="panel" aria-label="職人の言葉"><p class="mark">職人の言葉</p><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
-            f'{voices}</section>')
+            f'{voices}</section></div>')
 
 
 def page(sid, printed_ids, picture_url):

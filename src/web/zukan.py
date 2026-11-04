@@ -20,23 +20,24 @@ from omochae.hypotheses import ROOT
 
 QUOTE, HYPO, OBS = labels.LABELS
 
+# 色は皮の変数（skin.SKINS）に乗せ、変数が無い時は今までの白い展示の値に落ちる。黒のジンの皮で /zukan を開いても読めるようにするため（11-05）。
 STYLE = """
-body.zukan{margin:0;background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
+body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 .zukan main{max-width:1100px;margin:0 auto;padding:10vh 5vw 14vh;box-sizing:border-box}
-.zukan a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107,79,42,.35)}
+.zukan a{color:var(--accent,#6b4f2a);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent,#6b4f2a) 40%,transparent)}
 .zukan h1{font-weight:400;font-size:clamp(30px,4vw,48px);letter-spacing:.5em;margin:0 0 8px}
-.zukan .nav{font-size:12px;letter-spacing:.2em;color:#6f665a;display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
-.zukan .toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;padding:8vh 0;border-top:1px solid #ebe8e2;align-items:start}
-.zukan .toy figure{margin:0;background:#fffefc;border:1px solid #d8cdb6;padding:3%;box-shadow:0 40px 60px -30px rgba(70,55,35,.35)}
+.zukan .nav{font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
+.zukan .toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2);align-items:start}
+.zukan .toy figure{margin:0;background:var(--paper,#fffefc);border:1px solid var(--frame,#d8cdb6);padding:3%;box-shadow:0 40px 60px -30px var(--shadow,rgba(70,55,35,.35))}
 .zukan .toy figure img{width:100%;display:block}
 .zukan .toy h2{font-weight:400;font-size:clamp(24px,2.6vw,38px);letter-spacing:.2em;margin:0 0 20px}
 .zukan .song{writing-mode:vertical-rl;height:min(40vh,360px);font-size:clamp(16px,1.5vw,20px);line-height:2.2;letter-spacing:.12em;margin:0 0 12px auto}
 .zukan ul{list-style:none;padding:0;margin:0 0 22px}
-.zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid #b9a982;padding-left:12px;margin:0 0 6px}
-.zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#6f665a;border:1px solid #d8cdb6;padding:0 8px;margin-right:10px}
-.zukan .meta{font-size:12px;color:#6f665a;letter-spacing:.08em;line-height:1.9}
+.zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid var(--frame,#b9a982);padding-left:12px;margin:0 0 6px}
+.zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
+.zukan .meta{font-size:12px;color:var(--mute,#6f665a);letter-spacing:.08em;line-height:1.9}
 .zukan .links{font-size:13px;letter-spacing:.12em;display:flex;gap:16px;flex-wrap:wrap}
-.zukan .more{padding:8vh 0;border-top:1px solid #ebe8e2}.zukan .more h2{font-weight:400;letter-spacing:.2em}
+.zukan .more{padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2)}.zukan .more h2{font-weight:400;letter-spacing:.2em}
 .zukan .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px 18px}.zukan .grid li{margin:0}
 @media (max-width:760px){.zukan .toy{grid-template-columns:1fr}.zukan .song{writing-mode:horizontal-tb;height:auto}}
 """
@@ -112,7 +113,13 @@ def toy_section(sid, link_title=False):
             f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">上げた物</a></p></div></section>')
 
 
-def _page(title, body):
+def _page(title, body, look=None, path="/zukan"):
+    """look があれば皮の骨（skin.shell）に載せる（入口で選んだ皮を図鑑まで続ける、11-05 の作り直し）。
+    自前の帯（NAV）は頭の帯と重なるので外す。look が無い時は今までの 1 枚の頁（試験と書き出しはこちら）。"""
+    if look:
+        from . import skin
+
+        return skin.shell(title, body.replace(NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(title)}</title><style>{STYLE}</style><body class="zukan"><main>{body}</main></body></html>')
 
@@ -121,7 +128,7 @@ NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="
 LEAD = '<p class="meta">文にはどれも印があります。原文の引用は人が確かめた読み、仮説は試していない考え、観察は人が残した記録です。</p>'
 
 
-def index_page(sids):
+def index_page(sids, look=None):
     """必須の 2 種は今までどおり 1 つずつ大きく並べる。全部を作る線で足した試作の玩具（本人の指示 11-04）は、その下に小さな札で並べる。
     100 を超える玩具を全部大きく並べると、入口から見たい物に届かないため。試作の札は名前が確かめ待ちである事も添える。"""
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
@@ -131,8 +138,8 @@ def index_page(sids):
         cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">コマ {esc(s.split("-R")[1][:7].lstrip("0"))}</span></li>' for s in rest)
         body += (f'<section class="more" aria-label="ほかの玩具"><h2>ほかの玩具</h2><p class="meta"><span class="lb">試作</span>'
                  f'全部の玩具を型紙にする途中の {len(rest)} 種。名前は作る側の見立てで、まだ確かめていません。</p><ul class="grid">{cards}</ul></section>')
-    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body)
+    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body, look)
 
 
-def toy_zukan(sid):
-    return _page(f"うつし · 図鑑 · {hypotheses.load(sid)['toy']}", f"<h1>図鑑</h1>{NAV}{LEAD}" + toy_section(sid))
+def toy_zukan(sid, look=None):
+    return _page(f"うつし · 図鑑 · {hypotheses.load(sid)['toy']}", f"<h1>図鑑</h1>{NAV}{LEAD}" + toy_section(sid), look, f"/zukan/{sid}")

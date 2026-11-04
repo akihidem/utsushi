@@ -21,6 +21,7 @@ from omochae import hypotheses, loop, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 
+from . import skin as skinmod
 from .contrib_server import STYLE
 
 # 見た目はルックブックの様式（本人の指定、J-024）。絵が主役で、文字は添え。見開きのように絵と短い文を左右に置き、玩具ごとに左右を入れ替える。
@@ -87,108 +88,6 @@ BOOK = """
 """
 
 
-def song(src, short=False):
-    """歌は人が確かめた読みだけを、原文の引用として出す。採らなかった読みは出さない（labels.source_lines と同じ線）。
-
-    本の頁のように縦に組む。引用の印（誰が確かめたか）は短くしても消さない。図鑑の文の印（J-016）を画面でも守るため。
-    """
-    lines = [e for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")]
-    return "".join(f'<p class="song">{esc(e["text"])}</p><p class="cap">原文の引用。確かめた人: {esc(e["checked_by"])}</p>' for e in lines)
-
-
-def sheets(sid, hid, recorded):
-    """刷った紙へのリンク。試した後の紙は、その仮説の記録が 1 件でもある時だけ出す（試す前に渡さない）。"""
-    links = []
-    # 版 2 以降は、画面の「次の版を作る」で人が採った時にできる（11-04、本人の問いの (7)）。版ごとに並べる。
-    versions = sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))} | {1})
-    for v in versions:
-        tag = "" if v == 1 else f"版 {v} の"
-        for suffix, label in (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙")):
-            name = f"{hid}_v{v}{suffix}.pdf"
-            if (out_dir(sid) / name).exists() and (suffix != "_after" or recorded):
-                links.append(f'<a href="/sheet/{sid}/{name}">{tag}{label}</a>')
-    return "・".join(links)
-
-
-def ask_form(sid, data, asked=None):
-    """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
-    printed = [h for h in data["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
-    if not printed:
-        return ""
-    opts = "".join(f'<option value="{esc(h["id"])}">仮説 {esc(hypotheses.letter(h))} の紙</option>' for h in printed)
-    shown = ""
-    if asked:
-        q, a = asked
-        shown = f'<div id="ask-answer"><p class="meta">聞いた事: {esc(q)}</p><p>{esc(a)}</p></div>'
-    return (f'<form method="post" action="/toy/{sid}/ask" id="ask"><h2>作っている途中で困ったら</h2>'
-            '<p class="meta">切る・折る・貼る・組む順の疑問に答えます（例: 谷折りって？）。どう動くか・仕組みは、試して確かめる所なので答えません。</p>'
-            f'<label>どの紙か<select name="hypothesis">{opts}</select></label><label>聞きたい事<input type="text" name="question" required maxlength="300"></label>'
-            f'<button>聞く</button>{shown}</form>')
-
-
-def toy_page(sid, errors=(), msg="", asked=None):
-    data, src = hypotheses.load(sid), source(sid)
-    note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")
-    # 頁の頭は見開き: 大きな図と、名前と縦組みの歌。操作の欄はその下に置く。
-    # 入口の冊子と同じ見開きの紙。玩具の頁ではめくらず、この 1 枚の下に操作の欄を置く。
-    has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
-    pic = f'<img src="/picture/{sid}" alt="{esc(data["toy"])}の図">' if has_pic else f'<a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a>'
-    hero = (f'<div class="booklet"><section class="sheet"><div class="pg l full">{pic}<p class="cap">{esc(src.get("holding", ""))}</p></div>'
-            f'<div class="pg r"><p class="cap"><a href="/">← 玩具の一覧</a></p><h2>{esc(data["toy"])}</h2>{song(src)}</div></section></div>')
-    preds = hypotheses.predictions(sid)
-    latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
-    form_pred = f'<form method="post" action="/toy/{sid}/predict"><label>どう動くと思いますか（先に書きます）<textarea name="text" required></textarea></label><button>予想を残す</button></form>'
-    form_own = (f'<form method="post" action="/toy/{sid}/own"><h3>自分の仮説を立てる</h3><label>名前<input type="text" name="name" required></label>'
-                f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>')
-    if hypotheses.need_prediction(sid):
-        # 予想の前は仮説を見せない。答えを先に見せないため（F9.prediction）。
-        return page(data["toy"], hero + f'<div class="wrap">{note}{form_pred}{form_own}</div>')
-    recs = records.all_records(sid)
-    recorded = {r["hypothesis_id"] for r in recs}
-    own = hypotheses.own_hypotheses(sid)
-    body = note
-    body += (f"<article><h2>あなたの予想</h2><p>{esc(latest)}</p></article>" if latest else "") + form_pred
-    for h in own:
-        # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
-        free = f'{h["id"]}_v1_free.pdf'
-        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
-        body += (f'<article><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button>紙を刷る</button></form><p>{link}</p></article>')
-    body += form_own + f'<h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
-    # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
-    for h in data["hypotheses"]:
-        ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
-        printed = sheets(sid, h["id"], h["id"] in recorded)
-        # 仮説は図版の 1 枚のように並べる。大きな字は仮説の名札で、順位ではない（並びは元の記録の順）。
-        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
-                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button>型紙と手順の紙を刷る</button></form>'
-                 f'<p>{printed}</p></div>')
-    body += "</div>" + f'<p><a class="go" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>' + ask_form(sid, data, asked) + record_form(sid, data, own) + records_list(recs)
-    return page(data["toy"], hero + f'<div class="wrap">{body}</div>')
-
-
-def record_form(sid, data, own):
-    template = data.get("template", "slider_fan")
-    hyps = [(h["id"], f'仮説 {hypotheses.letter(h)}「{h["name"]}」') for h in data["hypotheses"]] + [(h["id"], f'あなたの仮説「{h["name"]}」') for h in own]
-    opts = "".join(f'<option value="{esc(i)}">{esc(n)}</option>' for i, n in hyps)
-    results = "".join(f'<label class="check"><input type="radio" name="result" value="{esc(r)}" required>{esc(r)}</label>' for r in TEMPLATES[template].RESULTS)
-    if template == "pivot_counterweight":
-        extra = '<label>動かした物<select name="power"><option value="">—</option><option>手</option><option>息</option><option>団扇</option><option>風</option></select></label>'
-    elif template == "slider_fan":
-        # 角度の欄は外した（本人の方針「開き具合の角度などは今回の課題ではない」、U-25）。受け口は古い記録のために残す。
-        extra = ('<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>')
-    else:
-        # 新しい雛形は、記録の足しの欄を雛形の中に持てる（無ければ足さない）。
-        extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
-    return (f'<form method="post" action="/toy/{sid}/record"><h2>試した記録</h2><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
-            f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset><legend>見た事</legend>{results}</fieldset>{extra}'
-            '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
-            '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
-            '<label>メモ<textarea name="note"></textarea></label>'
-            '<button>記録を残す</button></form>')
-
-
 # 画面で変えてよい寸法と、その呼び名。変えてよい寸法そのものは台帳の決まり（metrics.ALLOWED）に従う。
 PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）", "fold_height": "扇の高さ（mm）", "tube_side": "外筒の一辺（mm）",
                "pusher_side": "内筒の一辺（mm）", "push_amount": "押し上げる量（mm）", "pivot_above_rim": "扇の中心の高さ（mm）",
@@ -197,33 +96,18 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
                "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
 
 
-def next_form(r):
-    """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
-    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。"""
-    from omochae.metrics import ALLOWED
+def toy_page(sid, errors=(), msg="", asked=None, look=skinmod.DEFAULT, **kw):
+    """玩具の頁。中身は toy.py（順路と皮は docs/process/site-requirements.md）。ここは古い呼び口を残す薄い包み。"""
+    from . import toy
 
-    template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
-    opts = "".join(f'<option value="{esc(k)}">{esc(PARAM_NAMES.get(k, getattr(TEMPLATES[template], "PARAM_NAMES", {}).get(k, k)))}</option>' for k in sorted(ALLOWED[template]))
-    return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next">'
-            '<label>何が起きたと読むか（解釈）<textarea name="interpretation" required></textarea></label>'
-            f'<label>変える寸法<select name="param">{opts}</select></label><label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
-            '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
-            '<button>次の版を刷る</button></form></details>')
+    return toy.toy_page(sid, look, errors, msg, asked, **kw)
 
 
-def records_list(recs):
-    out = "<h2>これまでの記録</h2>" if recs else ""
-    for r in reversed(recs):
-        told = loop.explanation(r["id"])
-        deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
-        if told:
-            tail = f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>' + next_form(r)
-        else:
-            # 人の説明が先。Claude の解釈はこの後の段で、画面からは呼ばない。
-            tail = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>')
-        out += f'<article><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}</p>{tail}</article>'
-    return out
+def next_form(r, back=""):
+    """次の版を作る口。中身は toy.py。手帖（techo_site）がこの名前で呼ぶので残す。"""
+    from . import toy
+
+    return toy.next_form(r, back)
 
 
 def _num(v):
@@ -249,6 +133,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.send_header("X-Content-Type-Options", "nosniff")
         for k, v in headers:
+            self.send_header(k, v)
+        # 皮（白の展示・黒のジン）を選んだ時だけ cookie を書く。合言葉の cookie（_gate）とは別の名前。
+        for k, v in getattr(self, "_cookie", ()):
             self.send_header(k, v)
         self.end_headers()
         self.wfile.write(data)
@@ -292,8 +179,18 @@ class Handler(BaseHTTPRequestHandler):
         self._send(403, "合言葉付きのリンクから開いてください")
         return False
 
+    def _pick_look(self):
+        """この要求の皮。?look= が先、次に cookie、無ければ既定（skin.DEFAULT）。?look= の時は cookie に移して全部の頁に続ける。"""
+        _, _, query = self.path.partition("?")
+        self._look, want = skinmod.pick(self.headers.get("Cookie", ""), query)
+        self._cookie = [skinmod.cookie_header(want)] if want else []
+
+    def _toy(self, sid, **kw):
+        return toy_page(sid, look=self._look, **kw)
+
     def do_GET(self):
         try:
+            self._pick_look()
             if self._gate():
                 self._get()
         except Exception as e:
@@ -302,6 +199,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
+            self._pick_look()
             if self._gate():
                 self._post()
         except Exception as e:
@@ -312,41 +210,50 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._send(403, "受け付けられません")
         path, _, query = self.path.partition("?")
-        # 入口は本人が残した A 大判写真集（2026-11-04、J-024）。/look/ の下には残した 2 案だけがある。
-        if path == "/":
-            from .looks import taiban
+        qs = urllib.parse.parse_qs(query)
+        look = self._look
+        from .looks import PAGES
 
-            return self._send(200, taiban())
+        # 入口は皮の入口（A′ 白の展示が既定、黒のジンは cookie か ?look=zine）。A はルックブックの再現として /look/taiban に残す（カード 011452 の Q1・Q2）。
+        if path == "/":
+            return self._send(200, PAGES["zine" if look == "zine" else "tenji"]())
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m:
-            from .looks import PAGES
-
             if m.group(1) in PAGES:
+                if m.group(1) in skinmod.SKINS:
+                    # 入口で皮が決まり、以後の頁に続く（要件の L-01）。
+                    self._look, self._cookie = m.group(1), [skinmod.cookie_header(m.group(1))]
                 return self._send(200, PAGES[m.group(1)]())
+        if path == "/about":
+            from . import about
+            return self._send(200, about.page(look, path))
+        if path == "/toys":
+            from . import toys
+            return self._send(200, toys.page(look, path))
         if path == "/gallery":
             from . import techo_site
             from .demo_samples import STYLE as SAMPLE_STYLE
-            return self._send(200, page("上げた物と、職人の言葉", techo_site.gallery_page(sources()), techo_site.STYLE + SAMPLE_STYLE, "techo"))
+            return self._send(200, skinmod.shell("上げた物と、職人の言葉", techo_site.gallery_page(sources()), look, "/gallery", path, techo_site.STYLE + SAMPLE_STYLE, "techo"))
         # 図鑑（f15）。文の印の床（F6.label）と予想が先の線は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
             from . import zukan
-            return self._send(200, zukan.toy_zukan(m.group(1)) if m.group(1) else zukan.index_page(sources()))
+            return self._send(200, zukan.toy_zukan(m.group(1), look) if m.group(1) else zukan.index_page(sources(), look))
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。予想が先の線と印の床は kuzushi.py が持つ。
         m = re.fullmatch(rf"/zukan/({SID})/yomi", path)
         if m and m.group(1) in sources():
             from . import kuzushi
-            return self._send(200, kuzushi.page(m.group(1)))
+            return self._send(200, kuzushi.page(m.group(1), look=look))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
             sid = m.group(1)
             if hypotheses.need_prediction(sid):
-                return self._send(200, toy_page(sid, ["先に予想を書くと、手帖が開きます"]))
+                return self._send(200, self._toy(sid, errors=["先に予想を書くと、手帖が開きます"]))
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
-            return self._send(200, page("手帖", techo_site.page(sid, printed, pic), techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m:
             from . import techo_site
@@ -356,20 +263,26 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, f.read_bytes(), kind)
         m = re.fullmatch(rf"/toy/({SID})", path)
         if m and m.group(1) in sources():
-            return self._send(200, toy_page(m.group(1), msg=urllib.parse.parse_qs(query).get("msg", [""])[0]))
+            # 型紙の窓の選び（仮説・紙の種類・版）は URL で持つ。JS なしで切り替えられ、戻るで前の紙に戻れる。
+            kind = {"sheet": "", "tejun": "_tejun", "after": "_after"}.get(qs.get("kind", ["sheet"])[0], "")
+            try:
+                v = int(qs.get("v", ["1"])[0])
+            except ValueError:
+                v = 1
+            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
-        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v\d+(?:_tejun|_after|_free)?\.pdf)", path)
+        # 刷った紙。PDF（刷る）のほかに PNG と SVG（画面で見る、要件の S-01）。試した後の紙はどの形でも記録の前は渡さない。
+        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v\d+(?:_tejun|_after|_free)?)\.(pdf|svg|png)", path)
         if m and m.group(1) in sources():
-            sid, name = m.groups()
-            hid = re.split(r"_v\d+", name)[0]
-            # 試した後の紙は、URL を知っていても記録の前は渡さない。
-            if name.endswith("_after.pdf") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
+            sid, stem, ext = m.groups()
+            hid = re.split(r"_v\d+", stem)[0]
+            if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
                 return self._send(403, "試した記録を残してから開きます")
-            f = out_dir(sid) / name
+            f = out_dir(sid) / f"{stem}.{ext}"
             if f.exists():
-                return self._send(200, f.read_bytes(), "application/pdf")
+                return self._send(200, f.read_bytes(), {"pdf": "application/pdf", "svg": "image/svg+xml", "png": "image/png"}[ext])
         self._send(404, "見つかりません")
 
     def _form(self):
@@ -386,10 +299,12 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
-    def _done(self, sid, msg, back=""):
-        # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。
-        where = f"/toy/{sid}/techo" if back == "techo" else f"/toy/{sid}"
-        self._send(303, "", headers=[("Location", f"{where}?msg={urllib.parse.quote(msg)}#mine")])
+    def _done(self, sid, msg, back="", see=None, anchor="kiroku"):
+        # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
+        if back == "techo":
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
+        extra = f"&see={see}&kind=sheet" if see else ""
+        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}{extra}#{anchor}")])
 
     def _post(self):
         if not self._host_ok():
@@ -424,8 +339,8 @@ class Handler(BaseHTTPRequestHandler):
             from . import kuzushi
             mine = form.get("mine", "").strip()[:kuzushi.MAX_READING]
             if not mine:
-                return self._send(422, kuzushi.page(m.group(1), msg="先に、読めた所だけでも書いてください"))
-            return self._send(200, kuzushi.page(m.group(1), mine))
+                return self._send(422, kuzushi.page(m.group(1), msg="先に、読めた所だけでも書いてください", look=self._look))
+            return self._send(200, kuzushi.page(m.group(1), mine, look=self._look))
         m = re.fullmatch(r"/record/(R-\d{4,})/(ai-interpret|ai-observe)", self.path)
         if m:
             return self._ai_reply(m.group(1), m.group(2), form)
@@ -438,7 +353,7 @@ class Handler(BaseHTTPRequestHandler):
             rec = loop.record(rid)
             failures = loop.save_explanation(rid, form.get("by", ""), form.get("text", ""), form.get("next_idea", ""))
             if failures:
-                return self._send(422, toy_page(rec["source_id"], [f.message for f in failures]))
+                return self._send(422, self._toy(rec["source_id"], errors=[f.message for f in failures]))
             return self._done(rec["source_id"], "説明を残しました", form.get("back", ""))
         self._send(404, "見つかりません")
 
@@ -451,7 +366,7 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid = rec["source_id"]
         if loop.explanation(rid) is None:
-            return self._send(422, toy_page(sid, ["先に何が起きたと思うかを書く"]))
+            return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"]))
         if not ask._key_present():
             return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""))
         try:
@@ -482,29 +397,29 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid, hid = rec["source_id"], rec["hypothesis_id"]
         if loop.explanation(rid) is None:
-            return self._send(422, toy_page(sid, ["先に説明を書く"]))
+            return self._send(422, self._toy(sid, errors=["先に説明を書く"]))
         by = form.get("by", "")
         failures = loop.confirm_interpretation(rid, by, form.get("interpretation", "").strip() or None)
         if failures:
-            return self._send(422, toy_page(sid, [f.message for f in failures]))
+            return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
         to = _num(form.get("to"))
         if not isinstance(to, float):
-            return self._send(422, toy_page(sid, ["新しい値は数で書く"]))
+            return self._send(422, self._toy(sid, errors=["新しい値は数で書く"]))
         # 折りの数のような整数の寸法は、整数で渡す（範囲の検査が小数の折り数を落とすため）。
         to = int(to) if to.is_integer() else to
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
         pid, failures = loop.save_proposal({"record_ids": [rid], "hypothesis_id": hid, "changes": [{"param": form.get("param"), "to": to, "why": form.get("why", "")}]}, source, "human")
         if failures:
-            return self._send(422, toy_page(sid, [f.message for f in failures]))
+            return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
         made, failures = loop.adopt(pid, by, accept_params=[form.get("param")], source=source)
         if failures or "version" not in made:
-            return self._send(422, toy_page(sid, [f.message for f in failures] or ["次の版ができませんでした"]))
+            return self._send(422, self._toy(sid, errors=[f.message for f in failures] or ["次の版ができませんでした"]))
         v = made["version"]
         out_dir(sid).mkdir(parents=True, exist_ok=True)
         if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
-            return self._send(422, toy_page(sid, [f"版 {v} を刷れませんでした（検査に落ちた）"]))
+            return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"]))
         loop.confirm_sheet(sid, hid, v, by, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-        return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""))
+        return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
 
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
@@ -530,6 +445,7 @@ class Handler(BaseHTTPRequestHandler):
         return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
+        see = None  # 刷った時だけ、戻り先を型紙の窓にする
         if act == "ask":
             # 手順の質問は記録に残さず、その場で答えを頁に出す。仮説への返事の順（紙 → 記録と説明 → AI）には入らない。
             from api import ask
@@ -537,14 +453,14 @@ class Handler(BaseHTTPRequestHandler):
 
             hid = form.get("hypothesis", "")
             if hypotheses.need_prediction(sid) or not (out_dir(sid) / f"{hid}_v1.pdf").exists():
-                return self._send(422, toy_page(sid, ["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
+                return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
             try:
                 text, _ = ask.answer(sid, hid, form.get("question", ""))
             except BudgetStop as e:
                 text = f"今は AI に聞けません（{e}）"
             except Exception:
                 text = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください"
-            return self._send(200, toy_page(sid, asked=(form.get("question", ""), text)))
+            return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "predict":
             _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
             msg = "予想を残しました"
@@ -554,23 +470,24 @@ class Handler(BaseHTTPRequestHandler):
         elif act == "print-own":
             oid = form.get("id", "")
             if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
-                return self._send(422, toy_page(sid, [f"仮説 {oid} は無い"]))
+                return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"]))
             out_dir(sid).mkdir(parents=True, exist_ok=True)
             if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
-                return self._send(422, toy_page(sid, ["紙を刷れませんでした（検査に落ちた）"]))
+                return self._send(422, self._toy(sid, errors=["紙を刷れませんでした（検査に落ちた）"]))
             failures, msg = [], "刷りました。100% で印刷します"
         elif act == "print":
             failures = hypotheses.need_prediction(sid)
             hid = form.get("hypothesis", "")
             if not failures and hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
-                return self._send(422, toy_page(sid, [f"仮説 {hid} は無い"]))
+                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"]))
             if not failures:
                 out_dir(sid).mkdir(parents=True, exist_ok=True)
                 if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v1")) != 0:
-                    return self._send(422, toy_page(sid, ["型紙を刷れませんでした（検査に落ちた）"]))
+                    return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"]))
                 # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
                 loop.confirm_sheet(sid, hid, 1, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-            msg = "刷りました。100% で印刷します"
+            msg = "刷りました。下の窓で絵を見て、PDF を 100% で印刷します"
+            see = hid
         else:
             if hypotheses.need_prediction(sid):
                 failures = hypotheses.need_prediction(sid)
@@ -583,8 +500,8 @@ class Handler(BaseHTTPRequestHandler):
                 _, failures = records.add(rec)
             msg = "記録を残しました。試した後の紙が開けます"
         if failures:
-            return self._send(422, toy_page(sid, [f.message for f in failures]))
-        self._done(sid, msg)
+            return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
+        self._done(sid, msg, see=see, anchor="win" if see else "kiroku")
 
 
 def lan_addresses():

@@ -129,7 +129,12 @@ def _li(line, inner=None):
 NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">上げた物</a></p>'
 
 
-def _page(title, body):
+def _page(title, body, look=None, path="/zukan"):
+    """look があれば皮の骨に載せる（図鑑と同じ理由、11-05）。look が無い時は今までの 1 枚の頁。"""
+    if look:
+        from . import skin
+
+        return skin.shell(title, body.replace(zukan.NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(title)}</title><style>{STYLE}</style><body class="zukan"><main>{body}</main></body></html>')
 
@@ -141,7 +146,7 @@ def _form(sid, mine=""):
             f'<button type="submit">書いた読みと並べる</button></form>')
 
 
-def page(sid, mine=None, msg=""):
+def page(sid, mine=None, msg="", look=None):
     """mine が None なら、書く前の頁（確かめた読みを出さない）。文字があれば、並べて見せる頁。"""
     data = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -154,7 +159,7 @@ def page(sid, mine=None, msg=""):
     note = f'<p class="meta">{esc(msg)}</p>' if msg else ""
     if mine is None:
         body = f'<section class="yomi"><div>{pic}</div><div>{note}{_form(sid)}</div></section>'
-        return _page(f"うつし · くずし字を読む · {toy}", head + body)
+        return _page(f"うつし · くずし字を読む · {toy}", head + body, look, f"/zukan/{sid}/yomi")
 
     checked = _checked(src)
     reader = {"text": mine, "label": OBS}
@@ -172,4 +177,4 @@ def page(sid, mine=None, msg=""):
     how = f'<p class="meta">読みが割れた事と、決めた事</p><ul>{"".join(_li(x) for x in splits)}</ul>' if splits else ""
     body = (f'<section class="yomi"><div>{pic}</div><div>{"".join(rows)}{how}'
             f'<p class="meta">もう一度書く</p>{_form(sid, mine)}</div></section>')
-    return _page(f"うつし · くずし字を読む · {toy}", head + body)
+    return _page(f"うつし · くずし字を読む · {toy}", head + body, look, f"/zukan/{sid}/yomi")
