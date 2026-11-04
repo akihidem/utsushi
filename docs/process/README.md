@@ -98,9 +98,10 @@
 | 53 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
 | 54 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
 | 55 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
-| 56 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 57 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 58 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 56 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
+| 57 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 58 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 59 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

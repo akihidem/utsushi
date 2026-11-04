@@ -330,6 +330,12 @@
   "status": "試行中（11-04〜）"
  },
  {
+  "id": "demo-notes",
+  "path": "demo-notes.md",
+  "hook": "デモ動画の準備の参考と当てはめの案",
+  "status": "11-06〜07 に使う（U-19）"
+ },
+ {
   "id": "claims",
   "path": "claims.md",
   "hook": "主張ごとの確かさの種類と根拠の表",
