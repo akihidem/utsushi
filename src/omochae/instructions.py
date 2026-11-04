@@ -50,8 +50,9 @@ def _first_steps(x, y, shapes, texts):
                {"kind": "line", "x1": bx + 6, "y1": by + fh - 3, "x2": bx + 9, "y2": by + fh - 6}]
     # 2) 蛇腹: 横から見た山と谷
     zy = sy + fh + 3
-    _block(texts, ["蛇腹（横から）: 上が山折り、下が谷折り"], x, zy, 2.8, 70)
-    pts = [(x + 4 * i, zy + (5 if i % 2 else 12)) for i in range(9)]
+    # 線の無い面（v9 の筒と扇）は色の境で折る事も、ここで言う。
+    zz = _block(texts, ["蛇腹（横から）: 上が山、下が谷", "線の無い面は色の境で折る"], x, zy, 2.8, 50)
+    pts = [(x + 4 * i, zz + (1 if i % 2 else 6)) for i in range(9)]
     for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
         shapes.append({"kind": "line", "x1": x1, "y1": y1, "x2": x2, "y2": y2})
 

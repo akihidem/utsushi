@@ -32,6 +32,8 @@ class Part:
     holes: list = field(default_factory=list)  # 軸の穴 (x,y,r)
     # 描き直しの絵。{"kind": "poly"|"line", "pts": [...], "fill": 色, "stroke": 色, "sw": 太さ}。折り線や糊代をまたがない
     art: list = field(default_factory=list)
+    # 見える面の折り線を刷らず、絵の色の境で折る部品（v9、本人の決定 d）。折り線のデータは検査のために持ち続ける。
+    hide_folds: bool = False
     x: float = 0.0
     y: float = 0.0
 

@@ -41,3 +41,16 @@ for p in (tab, stick, rim):
     st = steps(p)
     assert st[1].startswith("まず 1 外筒だけ") and "角筒にする" in st[2]
 print("ok")
+
+# 5. v9: 見える面（外筒と扇）は折り線を刷らず、絵の色の境で折る（本人の決定 d、11-04）。隠れる部品は線を残す
+for p in (tab, stick, rim):
+    k = by_key(p)
+    assert k["tube"].hide_folds and k["fan"].hide_folds
+    assert not k["base"].hide_folds and ("pusher" not in k or not k["pusher"].hide_folds)
+    fan = k["fan"]
+    fills = [a["fill"] for a in fan.art[: int(p["fold_count"])]]
+    assert all(a != b for a, b in zip(fills, fills[1:])), "隣の板は色が違う（色の境が折り目）"
+    tube_grounds = [a["fill"] for a in k["tube"].art if a["kind"] == "poly" and a["pts"][0][1] == 4.5]
+    assert len(set(tube_grounds)) == 2, "外筒は 1 面おきに地の色を変える"
+assert any("色の境" in s for s in steps(tab))
+print("ok v9")

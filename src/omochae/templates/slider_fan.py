@@ -140,6 +140,11 @@ def _tube(number, key, name, side, height, glue, label, notch=None):
 
 # 色は NDL の図から測った値（research/10）。図を貼らず、色と線を描き直す（J-007）。
 PAPER, ORANGE, BROWN, LINE, FACE = "#a89365", "#a5632c", "#7a5e3b", "#55492c", "#b9a677"
+# 色の境で折る（v9）。ワークショップを見ていたデザイナーの「見た目のクオリティが低く見えるのは、谷折り線とか入ってるからじゃない？」
+# を受け、本人が d「絵の色の境で折り、線を引かない」を選んだ（11-04）。隣り合う面と板の色を変え、その境を折り目にする。
+# 筒は 1 面おきに少し明るい地、扇は 2 色の板を交互にする。色は原図の地の色の近くから選んだ（作る側の選び）。
+PAPER_ALT = "#bba982"
+FAN_A, FAN_B = "#f1e9d6", "#d9caa6"
 
 
 def _tube_art(A, H, notch=None):
@@ -154,12 +159,13 @@ def _tube_art(A, H, notch=None):
         if notch and x0 < notch[0] and notch[1] < x1:
             cols = [(x0, notch[0]), (notch[1], x1)]
         art.append({"kind": "poly", "pts": [(x0, 0), (x1, 0), (x1, 4.5), (x0, 4.5)], "fill": ORANGE})
+        ground = PAPER if i % 2 == 0 else PAPER_ALT
         for c0, c1 in cols:
-            art.append({"kind": "poly", "pts": [(c0, 4.5), (c1, 4.5), (c1, H - 5), (c0, H - 5)], "fill": PAPER})
+            art.append({"kind": "poly", "pts": [(c0, 4.5), (c1, 4.5), (c1, H - 5), (c0, H - 5)], "fill": ground})
             art.append({"kind": "poly", "pts": [(c0, H - 5), (c1, H - 5), (c1, H), (c0, H)], "fill": BROWN})
         if len(cols) == 2:
             # 溝の上の端より上は 1 枚の面のまま塗る。
-            art.append({"kind": "poly", "pts": [(notch[0], 4.5), (notch[1], 4.5), (notch[1], notch[2]), (notch[0], notch[2])], "fill": PAPER})
+            art.append({"kind": "poly", "pts": [(notch[0], 4.5), (notch[1], 4.5), (notch[1], notch[2]), (notch[0], notch[2])], "fill": ground})
     art.append({"kind": "line", "pts": [(A - 1.2, 0), (A - 1.2, H)], "stroke": LINE, "sw": 0.5})
     art.append({"kind": "line", "pts": [(A + 1.2, 0), (A + 1.2, H)], "stroke": LINE, "sw": 0.5})
     return art
@@ -213,6 +219,7 @@ def parts(p):
         notch = (A * 1.5 - (p["knob_width"] + 1) / 2, A * 1.5 + (p["knob_width"] + 1) / 2, H - high)
     tube = _tube(1, "tube", "外筒", A, H, p["tube_glue"], "1 外筒", notch)
     tube.art = _tube_art(A, H, notch)
+    tube.hide_folds = True
     if p["hub"] == "axle":
         # 開く糸を試す穴。扇は 1 面目に平行に開くので、その両脇の面につなぐ。
         tube.holes += [(A * 1.5, 3, 0.6), (A * 3.5, 3, 0.6)]
@@ -251,6 +258,12 @@ def parts(p):
         line = ((0, i * w), (h, i * w))
         # 山と谷を交互にするのが蛇腹の形そのもの。
         (fan.valley if i % 2 else fan.mountain).append(line)
+    # 板ごとに 2 色を交互に塗り、色の境で折る（v9）。足は真ん中の板と同じ色にし、糊代は塗らない。
+    fan.art = [{"kind": "poly", "pts": [(0, i * w), (h, i * w), (h, (i + 1) * w), (0, (i + 1) * w)], "fill": FAN_A if i % 2 == 0 else FAN_B} for i in range(n)]
+    if p["hub"] == "axle":
+        m, leg = n // 2, leg_length(p)
+        fan.art.append({"kind": "poly", "pts": [(-leg + LEG_GLUE, m * w), (0, m * w), (0, (m + 1) * w), (-leg + LEG_GLUE, (m + 1) * w)], "fill": FAN_A if m % 2 == 0 else FAN_B})
+    fan.hide_folds = True
     if p["hub"] == "axle":
         # 中心の穴に糸を通して束ねる。扇の要と同じ形。端の 2 枚の穴は開く糸を試すため。
         r_hole = 2
@@ -364,7 +377,7 @@ def steps(p):
         out.append("まず 1 外筒だけを実線で切る。溝は下の端からはさみで切り込む（くり抜かない）")
     else:
         out.append("まず 1 外筒だけを実線で切る")
-    out.append("1 外筒を破線で谷折りし、糊代で貼って角筒にする")
+    out.append("1 外筒を色の境で谷折りし、糊代で貼って角筒にする")
     out.append("残りの部品を実線で切る。穴は竹串の先であける")
     if p["push_part"] in ("tab", "tube"):
         out.append("2 内筒も同じように角筒にする")
@@ -373,10 +386,10 @@ def steps(p):
     if p["push_part"] == "stick":
         out.append("2 土台も同じように角筒にし、割り箸の先を下から差し込んで貼る")
     out.append("3 台で 2 の上に蓋をする")
-    out.append("4 扇を破線で谷折り、一点鎖線で山折りにして、端から順に蛇腹に畳む")
+    out.append("4 扇を色の境で、端から谷折り・山折りを交互にして蛇腹に畳む")
     if p["hub"] == "axle":
         out.append("糸を 5 像の穴と 4 扇の中心側の穴の列に通し、ゆるく結ぶ")
-        out.append("4 扇の真ん中の足を破線で折り、足の糊代を 3 台の印に貼る")
+        out.append("4 扇の真ん中の足を、糊代の境の破線で折り、足の糊代を 3 台の印に貼る")
         out.append("5 像の足を 3 台に貼る")
     else:
         out.append("4 扇の端を 3 台に貼り、5 像の足も台に貼る")
