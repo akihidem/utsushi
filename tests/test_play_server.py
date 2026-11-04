@@ -51,7 +51,7 @@ assert code == 200 and "御来迎" in body and "大判写真集" in body and f"/
 assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404
 assert "冊子型" not in body and "和綴じ帖" not in body
 # 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
-for name in ("taiban", "zine"):
+for name in ("taiban", "tenji", "zine"):
     code, look = get(f"/look/{name}")
     look = look.decode()
     assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
