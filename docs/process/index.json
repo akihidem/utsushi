@@ -276,6 +276,12 @@
   "status": "比較。Wandy の実物は未確認"
  },
  {
+  "id": "research/22",
+  "path": "research/22-origami-papercraft-ai.md",
+  "hook": "折り紙・ペーパークラフトと AI の研究の系譜と取り入れる候補",
+  "status": "調査。候補を採るかは本人（U-26）"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",

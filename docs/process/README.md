@@ -89,14 +89,15 @@
 | 44 | [research/19](research/19-emil-skills-review.md) | 参照のルックブックの観察と A の再現、Skill 集から拾った物 | 評価。A は作り替えた。人の目はまだ |
 | 45 | [research/20](research/20-worksheet-rethink.md) | 学習プリントの問いかけを本人の 4 つの着目で考え直す案 | 案。採るかは本人（U-25） |
 | 46 | [research/21](research/21-prior-art-compare.md) | Wandy を含む先行事例と今の実装の比較 | 比較。Wandy の実物は未確認 |
-| 47 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 48 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 49 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
-| 50 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 51 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
-| 52 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 53 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 54 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 47 | [research/22](research/22-origami-papercraft-ai.md) | 折り紙・ペーパークラフトと AI の研究の系譜と取り入れる候補 | 調査。候補を採るかは本人（U-26） |
+| 48 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 49 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 50 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
+| 51 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 52 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
+| 53 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 54 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 55 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
