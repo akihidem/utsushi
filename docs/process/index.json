@@ -382,5 +382,11 @@
   "path": "template-contract.md",
   "hook": "全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前",
   "status": "設計"
+ },
+ {
+  "id": "site-requirements",
+  "path": "site-requirements.md",
+  "hook": "サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで",
+  "status": "実装した（11-05 未明）。本人の採否はカード"
  }
 ]

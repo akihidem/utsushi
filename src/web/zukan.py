@@ -20,23 +20,24 @@ from omochae.hypotheses import ROOT
 
 QUOTE, HYPO, OBS = labels.LABELS
 
+# 色は皮の変数（skin.SKINS）に乗せ、変数が無い時は今までの白い展示の値に落ちる。黒のジンの皮で /zukan を開いても読めるようにするため（11-05）。
 STYLE = """
-body.zukan{margin:0;background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
+body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 .zukan main{max-width:1100px;margin:0 auto;padding:10vh 5vw 14vh;box-sizing:border-box}
-.zukan a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107,79,42,.35)}
+.zukan a{color:var(--accent,#6b4f2a);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent,#6b4f2a) 40%,transparent)}
 .zukan h1{font-weight:400;font-size:clamp(30px,4vw,48px);letter-spacing:.5em;margin:0 0 8px}
-.zukan .nav{font-size:12px;letter-spacing:.2em;color:#6f665a;display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
-.zukan .toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;padding:8vh 0;border-top:1px solid #ebe8e2;align-items:start}
-.zukan .toy figure{margin:0;background:#fffefc;border:1px solid #d8cdb6;padding:3%;box-shadow:0 40px 60px -30px rgba(70,55,35,.35)}
+.zukan .nav{font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
+.zukan .toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2);align-items:start}
+.zukan .toy figure{margin:0;background:var(--paper,#fffefc);border:1px solid var(--frame,#d8cdb6);padding:3%;box-shadow:0 40px 60px -30px var(--shadow,rgba(70,55,35,.35))}
 .zukan .toy figure img{width:100%;display:block}
 .zukan .toy h2{font-weight:400;font-size:clamp(24px,2.6vw,38px);letter-spacing:.2em;margin:0 0 20px}
 .zukan .song{writing-mode:vertical-rl;height:min(40vh,360px);font-size:clamp(16px,1.5vw,20px);line-height:2.2;letter-spacing:.12em;margin:0 0 12px auto}
 .zukan ul{list-style:none;padding:0;margin:0 0 22px}
-.zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid #b9a982;padding-left:12px;margin:0 0 6px}
-.zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#6f665a;border:1px solid #d8cdb6;padding:0 8px;margin-right:10px}
-.zukan .meta{font-size:12px;color:#6f665a;letter-spacing:.08em;line-height:1.9}
+.zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid var(--frame,#b9a982);padding-left:12px;margin:0 0 6px}
+.zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
+.zukan .meta{font-size:12px;color:var(--mute,#6f665a);letter-spacing:.08em;line-height:1.9}
 .zukan .links{font-size:13px;letter-spacing:.12em;display:flex;gap:16px;flex-wrap:wrap}
-.zukan .more{padding:8vh 0;border-top:1px solid #ebe8e2}.zukan .more h2{font-weight:400;letter-spacing:.2em}
+.zukan .more{padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2)}.zukan .more h2{font-weight:400;letter-spacing:.2em}
 .zukan .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px 18px}.zukan .grid li{margin:0}
 @media (max-width:760px){.zukan .toy{grid-template-columns:1fr}.zukan .song{writing-mode:horizontal-tb;height:auto}}
 """

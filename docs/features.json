@@ -142,7 +142,7 @@
    "src/web/play_server.py",
    "tests/test_play_server.py"
   ],
-  "unverified": "人がブラウザで使った確認はまだ。図鑑の頁（/zukan）は 11-04 に作った（F6.label を通してから描く）。公開の形は無い（J-024）"
+  "unverified": "人がブラウザで使った確認はまだ。図鑑の頁（/zukan）は 11-04 に作った（F6.label を通してから描く）。公開の形はデモの合言葉付きの一時のリンク（run-demo.sh）。11-05 に骨と皮を 1 つにし、玩具の頁を作り直した（f30）"
  },
  {
   "id": "f16",
@@ -304,5 +304,20 @@
    "docs/demo/plan.md"
   ],
   "unverified": "曲と字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まるまで入らない。本人と審査の人に見せていない"
+ },
+ {
+  "id": "f30",
+  "name": "サイトの骨と皮（白の展示・黒のジン）と型紙の窓",
+  "status": "doing",
+  "evidence": [
+   "src/web/skin.py",
+   "src/web/toy.py",
+   "src/web/toys.py",
+   "src/web/about.py",
+   "tests/test_toys.py",
+   "tests/test_about.py",
+   "docs/process/site-requirements.md"
+  ],
+  "unverified": "人がブラウザで使った確認と本物のスマホはまだ。序の文面・既定の皮・A の扱いは本人の採否待ち（カード 20261105-011452-sub-site）"
  }
 ]
