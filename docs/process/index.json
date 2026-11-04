@@ -348,6 +348,12 @@
   "status": "本人の承認待ち（U-05）"
  },
  {
+  "id": "contributions-form",
+  "path": "contributions-form.md",
+  "hook": "外の入口の Google フォームの表と取り込みの流れ",
+  "status": "本人がフォームを作れば開く（f17）"
+ },
+ {
   "id": "claims",
   "path": "claims.md",
   "hook": "主張ごとの確かさの種類と根拠の表",
