@@ -1,0 +1,9 @@
+# fix-tpl-5 red  2026-11-04T15:22:19+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_pivot_neck_opening.py
+Traceback (most recent call last):
+  File "tests/test_pivot_neck_opening.py", line 13, in <module>
+    assert neck_fail(opening=10, strip_width=20), "帯が穴より広い"
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 帯が穴より広い
+# exit=1

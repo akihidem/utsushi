@@ -18,6 +18,35 @@ TARGETS = {
 }
 
 
+# 人が書く・確かめる欄。再取り込みで消さない（レビュー指摘: 前は翻刻と読みだけで、crop_status と奥付の確認者が戻っていた）。
+# 「.」は入れ子の欄。欄を足す時はここに足し、tests/test_ingest_keep.py で確かめる。
+HUMAN_FIELDS = ("transcription", "reading_hypothesis", "crop_status", "original_publication.checked_by")
+# 確認の欄は、確かめた対象が同じ時だけ残す。切り出しの箱や奥付の読みがコードの側で変わったら、古い確認を新しい値に付け替えない。
+CHECKED_AGAINST = {"crop_status": "crop_region", "original_publication.checked_by": "original_publication.value"}
+
+
+def _dig(rec, dotted):
+    *head, last = dotted.split(".")
+    for k in head:
+        rec = rec.get(k) if isinstance(rec, dict) else None
+    return rec, last
+
+
+def keep_human_fields(old, rec):
+    """旧い記録の人の欄を新しい記録へ移す。rec を書き換える。"""
+    for name in HUMAN_FIELDS:
+        src, key = _dig(old, name)
+        dst, _ = _dig(rec, name)
+        if not isinstance(src, dict) or key not in src or not isinstance(dst, dict):
+            continue
+        target = CHECKED_AGAINST.get(name)
+        if target:
+            (a, ka), (b, kb) = _dig(old, target), _dig(rec, target)
+            if not (isinstance(a, dict) and isinstance(b, dict) and a.get(ka) == b.get(kb)):
+                continue
+        dst[key] = src[key]
+
+
 def _get(url):
     with urllib.request.urlopen(url, timeout=60) as r:
         return r.read()
@@ -68,11 +97,11 @@ def main():
         if path.exists():
             old = json.loads(path.read_text(encoding="utf-8"))
             old_time = old.pop("fetched_at", now)
-            # 人が入れた翻刻と読みは取り込みで消さない。
-            rec["transcription"] = old.get("transcription", rec["transcription"])
-            rec["reading_hypothesis"] = old.get("reading_hypothesis", rec["reading_hypothesis"])
-            old["original_publication"] = rec["original_publication"]  # 文を直しても、それだけで取得日時を動かさない
-            rec["fetched_at"] = old_time if old == rec else now
+            keep_human_fields(old, rec)
+            # 奥付の文はコードの側で直す物で、取得した値ではない。文を直しても、それだけで取得日時を動かさない。
+            # 前は比べる前に旧い記録の奥付を新しい物で上書きしていたので、人の確認の消失も差分として見えなかった（レビュー指摘）。
+            strip = lambda r: {k: v for k, v in r.items() if k != "original_publication"}
+            rec["fetched_at"] = old_time if strip(old) == strip(rec) else now
         else:
             rec["fetched_at"] = now
         path.write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

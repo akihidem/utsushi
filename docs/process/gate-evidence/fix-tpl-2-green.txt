@@ -1,0 +1,5 @@
+# fix-tpl-2 green  2026-11-04T15:22:06+09:00
+# 対象のコード: 32b6dfc ＋ この直し（branch lane/fix-tpl の src）
+$ PYTHONPATH=src .venv/bin/python tests/test_foldsim.py
+ok
+# exit=0

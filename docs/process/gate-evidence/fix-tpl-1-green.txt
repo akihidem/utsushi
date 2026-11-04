@@ -1,0 +1,6 @@
+# fix-tpl-1 green  2026-11-04T15:22:05+09:00
+# 対象のコード: 32b6dfc ＋ この直し（branch lane/fix-tpl の src）
+$ PYTHONPATH=src .venv/bin/python tests/test_foldsim_no_template.py
+FAIL foldsim [H-Z] H-Z は型紙にできない仮説（雛形に乗らない）なので、折りも書き出さない
+ok
+# exit=0

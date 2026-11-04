@@ -1,0 +1,9 @@
+# fix-tpl-7 red  2026-11-04T15:22:20+09:00
+# 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_slider_holes.py
+Traceback (most recent call last):
+  File "tests/test_slider_holes.py", line 12, in <module>
+    assert fs and any(f.where == "蛇腹の扇" for f in fs), [f.line() for f in check_physics(low)]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['FAIL F5.fan_clearance [蛇腹の扇] 帯の長さでは 455° 開くが、筒の口の角に当たって 289° までしか開けない']
+# exit=1

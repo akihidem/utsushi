@@ -33,6 +33,11 @@ RANGES = {
 }
 MOUNTS = ("neck", "hang")
 HOLE_MARGIN = 4  # 穴から紙の端までの見込み。これより狭いと裂けやすい
+NECK_BACK = 6  # 首の形で、軸を前の壁の後ろに通す距離。部品の穴と揺れの検査が同じ値を使う
+# 吊る形の帯: 帯の上の端から穴まで STRIP_HOLE、頭の上の端と帯の下の端を HEAD_OVERLAP 重ねて貼る。
+# 帯の長さ＝STRIP_HOLE＋軸から頭の上の端まで＋HEAD_OVERLAP。式（axle_to_head_top）と刷る帯・手順が同じ数を指すように名前を付けた。
+STRIP_HOLE = 6
+HEAD_OVERLAP = 4
 MIN_SWING = 10
 MAX_TILT = 15
 TIGER, STRIPE, RIM, MOUTH, EYE = "#b1a37a", "#3c3424", "#8d7745", "#553c24", "#666c53"
@@ -77,9 +82,14 @@ def axle_to_head_top(p):
     return 8
 
 
+def axle_z(p):
+    """刷る穴の高さ（胴の底から）。吊る形では耳の穴が胴の上の縁から HOLE_MARGIN 下に決まり、axle_height は部品に効かない。"""
+    return p["body_height"] - HOLE_MARGIN if p["mount"] == "hang" else p["axle_height"]
+
+
 def check_physics(p):
     out = []
-    H, ax = p["body_height"], p["axle_height"]
+    H, ax = p["body_height"], axle_z(p)
     pts = mass_points(p)
     _, z, _ = center(pts)
     if z <= 0:
@@ -90,6 +100,13 @@ def check_physics(p):
     if H - ax < HOLE_MARGIN and p["mount"] == "neck":
         out.append(Failure("F5.pivot", "軸の穴", f"軸の穴から胴の上の縁まで {H - ax}mm で、裂けやすい"))
     if p["mount"] == "hang":
+        # 式と刷る物を同じにする（レビュー指摘）。吊る形の軸は耳の穴で決まるので、axle_height が違えば式が別の物を計算している。
+        if abs(p["axle_height"] - ax) > 0.5:
+            out.append(Failure("F5.pivot", "軸の高さ", f"axle_height {p['axle_height']} が、刷る耳の穴の高さ（胴の高さ−{HOLE_MARGIN}＝{ax}）と違う"))
+        # 重りは頭の裏に貼る（手順）。式の位置が頭の外なら、刷った手順では作れない。
+        arm = axle_to_head_top(p)
+        if not arm <= p["weight_below_axle"] <= arm + p["head_h"]:
+            out.append(Failure("F5.pivot", "重り", f"軸の下 {p['weight_below_axle']}mm は頭（軸の下 {arm}〜{arm + p['head_h']}mm）の外で、頭の裏に貼れない"))
         if p["ear_length"] < 2 * HOLE_MARGIN:
             out.append(Failure("F5.pivot", "耳", f"耳が短く、穴の前後に {HOLE_MARGIN}mm 取れない"))
         reach = axle_to_head_top(p) + p["head_h"]
@@ -99,10 +116,13 @@ def check_physics(p):
         if H - HOLE_MARGIN - reach < 3:
             out.append(Failure("F5.pivot", "頭", "頭の下端が床に近すぎる"))
     else:
-        # 首の帯が穴の縁に当たらずに揺れる余裕。穴の中で上下に動ける量を、軸からの距離で角度に直す。
-        room = (p["opening"] - p["strip_width"] * 0.2) / 2
-        if room <= 0 or math.degrees(math.atan2(room, 6)) < MIN_SWING:
-            out.append(Failure("F5.pivot", "首", f"首が穴の縁に当たるまで {MIN_SWING}° 揺れない"))
+        # 首の帯が穴の縁に当たらずに MIN_SWING まで揺れるか。帯の面は軸に直交する（軸は帯の面の穴を貫く）ので、
+        # 帯の幅は穴の中で縦に並ぶ。軸は前の壁の NECK_BACK 後ろ。θ 傾くと、壁の所で帯の中心は NECK_BACK·tanθ 動き、
+        # 帯の縦の幅は sw/cosθ に広がる。前は帯の幅の 2 割しか引いておらず、穴より広い帯も通していた（レビュー指摘: 穴 10・帯 20）。
+        t = math.radians(MIN_SWING)
+        need = NECK_BACK * math.tan(t) + p["strip_width"] / (2 * math.cos(t))
+        if need > p["opening"] / 2:
+            out.append(Failure("F5.pivot", "首", f"首の帯（幅 {p['strip_width']}）が穴（{p['opening']}）の縁に当たるまで {MIN_SWING}° 揺れない"))
         if p["head_h"] / 2 > ax - 3:
             out.append(Failure("F5.pivot", "頭", "頭の下端が床に近すぎる"))
     if p["weight_below_axle"] > ax - 3:
@@ -189,7 +209,7 @@ def parts(p):
     if hang:
         body.holes = [(H - e + HOLE_MARGIN, top1 + HOLE_MARGIN, 1.2), (H - e + HOLE_MARGIN, bottom - HOLE_MARGIN, 1.2)]
     else:
-        back = 6  # 前の壁の少し後ろに軸を通す。首の帯が壁に当たらないように
+        back = NECK_BACK  # 前の壁の少し後ろに軸を通す。首の帯が壁に当たらないように
         body.holes = [(H + back, top1 + H - ax, 1.2), (H + back, bottom - (H - ax), 1.2)]
         op = p["opening"]
         cy = (b0 + b1) / 2
@@ -198,10 +218,10 @@ def parts(p):
         body.art.append(_panel(H - ax - op / 2 - 1.5, cy - op / 2 - 1.5, H - ax + op / 2 + 1.5, cy + op / 2 + 1.5, RIM))
     head = _head_part(p)
     sw = p["strip_width"]
-    length = (p["neck_length"] + 12) if not hang else axle_to_head_top(p) + 10
+    length = (p["neck_length"] + 12) if not hang else STRIP_HOLE + axle_to_head_top(p) + HEAD_OVERLAP
     # 帯は半分に折って 2 枚にする。1 枚では頭を支えるには柔らかいと見込むため。
     strip = Part(3, "strip", "首の帯", [(0, 0), (2 * sw, 0), (2 * sw, length), (0, length)], label_xy=(1, 1.5), label="3",
-                 valley=[((sw, 0), (sw, length))], holes=[(sw / 2, 6, 1.0), (1.5 * sw, 6, 1.0)])
+                 valley=[((sw, 0), (sw, length))], holes=[(sw / 2, STRIP_HOLE, 1.0), (1.5 * sw, STRIP_HOLE, 1.0)])
     tail = Part(4, "tail", "尾", [(0, 0), (8, 0), (8, 56), (0, 56)], label_xy=(1, 1.5), label="4",
                 art=[_panel(0.1, 0.1, 7.9, 55.9, TIGER)] + [{"kind": "line", "pts": [(0.3, y), (7.7, y)], "stroke": STRIPE, "sw": 0.5} for y in range(10, 54, 8)])
     out = [body, head, strip, tail]
@@ -257,7 +277,10 @@ def steps(p):
     if p["mount"] == "neck":
         out += ["3 首の帯の前の端に 2 頭を貼る", "帯を前の壁の穴に入れ、竹串を胴の穴と帯の穴に通す", "5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める"]
     else:
-        out += ["3 首の帯の下の端に 2 頭を貼る", "竹串を耳の穴と帯の穴に通す", "粘土を頭の裏のあごの近くに貼る"]
+        # 式の「軸から頭の上の端まで」と重りの位置を手順に刷る。前は「下の端に貼る」「あごの近く」だけで、紙が式の寸法を実現しなかった（レビュー指摘）。
+        arm = axle_to_head_top(p)
+        out += [f"3 首の帯の下の端を、2 頭の上の端に {HEAD_OVERLAP}mm 重ねて貼る", "竹串を耳の穴と帯の穴に通す",
+                f"粘土を頭の裏の真ん中、頭の上の端から {p['weight_below_axle'] - arm:g}mm 下に貼る"]
     out += ["1 胴の上の面を閉じる", "4 尾を丸くして、後ろに貼る"]
     return out
 
@@ -275,7 +298,7 @@ def diagram(x, y, w, h, p):
     s = min(w / (p["body_length"] + p["head_w"]), h / (p["body_height"] + 6))
     bx, by = x + p["head_w"] * s, y + 3
     shapes = [{"kind": "rect", "x": bx, "y": by, "w": p["body_length"] * s, "h": p["body_height"] * s}]
-    ax_y = by + (p["body_height"] - p["axle_height"]) * s
+    ax_y = by + (p["body_height"] - axle_z(p)) * s
     if p["mount"] == "neck":
         ax_x = bx + 6 * s
         head_x = ax_x - (p["neck_length"] + 6 + p["head_w"]) * s

@@ -34,21 +34,29 @@ def part_svg(part):
             f"{body}</svg>\n")
 
 
-def export(source_id, hypothesis_id, out_dir, parts=("fan", "tube")):
-    """仮説の寸法で雛形の部品を作り、折りのある部品を 1 つずつ SVG にする。書いたファイルの一覧を返す。"""
-    from .hypotheses import load
+def export(source_id, hypothesis_id, out_dir, parts=None):
+    """仮説の寸法で雛形の部品を作り、折りのある部品を 1 つずつ SVG にする。書いたファイルの一覧を返す。
 
-    data = load(source_id)
+    parts=None（既定）は折りのある部品を全部書く。前は扇と外筒に固定していて、台・内筒や虎の胴・帯が出ず、
+    虎では何も書かずに正常に終わっていた（レビュー指摘）。部品の名前で絞りたい時だけ parts を渡す。
+    """
+    from . import hypotheses
+
+    data = hypotheses.load(source_id)
     match = [h for h in data["hypotheses"] if h["id"] == hypothesis_id]
     if not match:
         raise ValueError(f"その仮説は無い: {hypothesis_id}")
+    # 型紙にできない仮説（template_id が null）は断る。print_sheet と同じ意味にそろえる。
+    # 既定の雛形へ落とすと、仮説と無関係な寸法の折りが「その仮説の折り」として残るため（レビュー指摘）。
+    if match[0].get("template_id", "") is None:
+        raise ValueError(f"{hypothesis_id} は型紙にできない仮説（雛形に乗らない）なので、折りも書き出さない")
     tpl = TEMPLATES[match[0].get("template") or data.get("template", "slider_fan")]
     p = {**tpl.DEFAULTS, **match[0].get("params", {})}
     out = pathlib.Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     written = []
     for q in tpl.parts(p):
-        if q.key in parts and (q.valley or q.mountain):
+        if (parts is None or q.key in parts) and (q.valley or q.mountain):
             f = out / f"{hypothesis_id}_{q.key}_foldsim.svg"
             f.write_text(part_svg(q), encoding="utf-8")
             written.append(f)
@@ -60,8 +68,14 @@ def main(argv=None):
     ap.add_argument("hypothesis")
     ap.add_argument("--source", default="NDL-1187053-R0000005-L")
     ap.add_argument("--out", default="out/foldsim")
+    ap.add_argument("--part", action="append", help="書く部品の名前（fan・tube など）。無ければ折りのある部品を全部")
     args = ap.parse_args(argv)
-    for f in export(args.source, args.hypothesis, args.out):
+    try:
+        written = export(args.source, args.hypothesis, args.out, parts=args.part)
+    except ValueError as e:  # 無い仮説・型紙にできない仮説。検査の約束に合わせて 3（落ちる）で返す
+        print(f"FAIL foldsim [{args.hypothesis}] {e}", file=sys.stderr)
+        return 3
+    for f in written:
         print(f)
     return 0
 
