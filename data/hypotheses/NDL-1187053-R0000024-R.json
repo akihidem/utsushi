@@ -1,0 +1,102 @@
+{
+  "source_id": "NDL-1187053-R0000024-R",
+  "toy": "石橋の獅子頭",
+  "template": "stick_prop",
+  "stage": "試作",
+  "note": "どれも試していない仮説で、どれが正しいかは書かない。仮説の違いは、どう持つか・何が動くかの読みの違い。名前は棚卸しの見立てで、人の確認はまだ。",
+  "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
+  "questions": [
+    "口は開け閉めできるのか",
+    "かぶるのか、手に持つのか"
+  ],
+  "hypotheses": [
+    {
+      "id": "H-A",
+      "name": "獅子頭を棒で持って振る",
+      "status": "untested",
+      "params": {
+        "hold": "glue",
+        "shape": "shishi",
+        "size": 120
+      },
+      "how_it_moves": "竹串を持って振る・舞わせる",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 24 の図",
+          "what": "黒い顔に金色の角、白い牙の口、羽飾り二本の獅子頭に、輪の取っ手が付く",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "ルビ「しゃっきゃう」から能の石橋（獅子）と推定",
+          "certainty": "推測"
+        }
+      ],
+      "against": [
+        "輪の取っ手は竹串に置き換えた"
+      ],
+      "to_measure": "振って遊べるか・獅子に見えるか"
+    },
+    {
+      "id": "H-B",
+      "name": "顎を軸で付け、糸で口を開け閉めする",
+      "status": "untested",
+      "params": {
+        "hold": "jaw",
+        "shape": "shishi",
+        "size": 120
+      },
+      "how_it_moves": "竹串を持ち、糸を引いたりゆるめたりする",
+      "evidence": [
+        {
+          "kind": "image",
+          "where": "NDL コマ 24 の図",
+          "what": "上の歯と下の歯が別の線で描かれ、口が少し開いて見える",
+          "certainty": "観察"
+        },
+        {
+          "kind": "text",
+          "where": "棚卸しの見立て（data/inventory/edo-nishiki.json）",
+          "what": "口を鳴らして獅子舞をするという見込み",
+          "certainty": "推測"
+        },
+        {
+          "kind": "calc",
+          "where": "雛形 stick_prop の式（_jaw_offset）",
+          "what": "顎の重心が軸より前にあれば、重さで口が開くと数える",
+          "certainty": "計算"
+        }
+      ],
+      "against": [
+        "顎が動くかは絵から読めない",
+        "糸は絵に描かれていない"
+      ],
+      "to_measure": "口が開け閉めできるか・音が出るか"
+    }
+  ],
+  "after_try": {
+    "adopted_by": null,
+    "adopted_note": "人の確認はまだ。札と対比の文は Claude Code のセッションの案",
+    "contrasts": [
+      {
+        "change": "付け方を変える。獅子頭を棒で持って振ると、顎を軸で付け、糸で口を開け閉めする",
+        "watch": "遊び方のどこが変わるか"
+      },
+      {
+        "change": "竹串を貼る長さを変えて作る",
+        "watch": "振った時のしなり方"
+      },
+      {
+        "change": "糸を引く速さを変える",
+        "watch": "口の開き方と音"
+      }
+    ],
+    "card": [
+      "竹串を貼った長さが短いと、振った時に紙が先にしなります。",
+      "顎の重心が軸より前にあると、顎は重さで下がって口が開きます。",
+      "これは動き方の話です。昔の職人がどう作ったかの答えではありません。そちらは今も開いた問いです。"
+    ]
+  }
+}
