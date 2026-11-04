@@ -58,5 +58,15 @@ assert req(f"/record/{rid}/media", b"x", "text/html")[0] == 422, "写真と動�
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg", origin="http://evil.example")[0] == 403
 assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 422, "記録の無い所には置かない"
 assert "m1.jpg" in req(f"/toy/{G}/techo")[1].decode()
+# 次の版（本人の問いの (7)）: 説明が先、数でない値は断る、床に通った時だけ版 2 を刷る
+code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
+assert code == 422 and "先に説明を書く" in body.decode()
+assert req(f"/record/{rid}/explain", {"text": "わからない", "next_idea": "折りを減らす", "by": "本人"})[0] in (200, 303)
+assert req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "abc", "why": "x", "by": "本人"})[0] == 422
+code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
+assert code in (200, 303), body[:300]
+page = req(f"/toy/{G}")[1].decode()
+assert "H-A_v2.pdf" in page and "版 2 の型紙" in page
+assert req(f"/sheet/{G}/H-A_v2.pdf")[1][:4] == b"%PDF"
 server.shutdown()
 print("ok")
