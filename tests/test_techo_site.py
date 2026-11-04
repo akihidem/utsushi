@@ -68,6 +68,10 @@ assert code in (200, 303), body[:300]
 page = req(f"/toy/{G}")[1].decode()
 assert "H-A_v2.pdf" in page and "版 2 の型紙" in page
 assert req(f"/sheet/{G}/H-A_v2.pdf")[1][:4] == b"%PDF"
+# 型紙の確定の記録（f09）: 刷った版ごとに、誰が・どの組で確定したかが台帳に残る
+from omochae import loop  # noqa: E402
+conf = {(c["hypothesis_id"], c["version"]): c["confirmations"] for c in loop.sheet_confirmations(G)}
+assert ("H-A", 1) in conf and conf[("H-A", 2)][-1]["by"] == "本人" and conf[("H-A", 2)][-1]["sheet_set"]
 # フィードバックも手帖で（本人 11-04）: 試した後の紙・説明・次の版が手帖の記録に出て、送った後は手帖へ戻る
 page = req(f"/toy/{G}/techo")[1].decode()
 assert "試した後の紙" in page and "次の版を作る" in page and 'name="back" value="techo"' in page

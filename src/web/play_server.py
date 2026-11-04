@@ -382,6 +382,9 @@ class Handler(BaseHTTPRequestHandler):
             if not mine:
                 return self._send(422, kuzushi.page(m.group(1), msg="先に、読めた所だけでも書いてください"))
             return self._send(200, kuzushi.page(m.group(1), mine))
+        m = re.fullmatch(r"/record/(R-\d{4,})/(ai-interpret|ai-observe)", self.path)
+        if m:
+            return self._ai_reply(m.group(1), m.group(2), form)
         m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
         if m:
             return self._next_version(m.group(1), form)
@@ -394,6 +397,41 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, toy_page(rec["source_id"], [f.message for f in failures]))
             return self._done(rec["source_id"], "説明を残しました", form.get("back", ""))
         self._send(404, "見つかりません")
+
+    def _ai_reply(self, rid, act, form):
+        """手帖で AI の返事を受ける口（J-013 の決める点 2: 子どもも AI から直接返事をもらってよい。紙 → 人の説明 → AI の順）。
+        人の説明が先に無い記録には呼ばない。鍵が無い時は、鍵が置かれると答える事を伝えて止める（J-023）。"""
+        from api import ask
+        from api.budget import BudgetStop
+
+        rec = loop.record(rid)
+        sid = rec["source_id"]
+        if loop.explanation(rid) is None:
+            return self._send(422, toy_page(sid, ["先に何が起きたと思うかを書く"]))
+        if not ask._key_present():
+            return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""))
+        try:
+            from api.agent import default_client
+
+            if act == "ai-interpret":
+                from api.loop_agents import draft_interpretation
+
+                _, failures = draft_interpretation(rid, client=default_client())
+                msg = "Claude の読みを出しました" if not failures else failures[0].message
+            else:
+                from api import observe
+
+                from . import techo_site
+                videos = [f for f in techo_site.media_of(rid) if f.endswith(("mp4", "mov"))]
+                if not videos:
+                    return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""))
+                _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client())
+                msg = "Claude が見えた事を出しました" if not why else why
+        except BudgetStop:
+            msg = "今は AI に聞けません（予算の上限）"
+        except Exception:
+            msg = "今は AI に聞けません"
+        return self._done(sid, msg, form.get("back", ""))
 
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止める。"""
@@ -421,6 +459,7 @@ class Handler(BaseHTTPRequestHandler):
         out_dir(sid).mkdir(parents=True, exist_ok=True)
         if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
             return self._send(422, toy_page(sid, [f"版 {v} を刷れませんでした（検査に落ちた）"]))
+        loop.confirm_sheet(sid, hid, v, by, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""))
 
     def _json_post(self, sid, act, form):
@@ -485,6 +524,8 @@ class Handler(BaseHTTPRequestHandler):
                 out_dir(sid).mkdir(parents=True, exist_ok=True)
                 if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v1")) != 0:
                     return self._send(422, toy_page(sid, ["型紙を刷れませんでした（検査に落ちた）"]))
+                # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
+                loop.confirm_sheet(sid, hid, 1, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
             msg = "刷りました。100% で印刷します"
         else:
             if hypotheses.need_prediction(sid):
