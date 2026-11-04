@@ -1,0 +1,22 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 6   # 直す前（main 32b6dfc + この試験だけ）
+Traceback (most recent call last):
+  File "tests/test_api_review_fixes.py", line 265, in <module>
+    ALL[key]()
+    ~~~~~~~~^^
+  File "tests/test_api_review_fixes.py", line 220, in test_6
+    pid, fs = loop_agents.draft_proposal(tr, gs, never)
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "src/api/loop_agents.py", line 116, in draft_proposal
+    result, trace = agent.run("propose", PROPOSE_SYSTEM, user, _tools(), PROPOSE_SCHEMA, execute, validate=validate, client=client)
+                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/api/agent.py", line 88, in run
+    response = client.beta.messages.create(
+        model=trace.model, max_tokens=config.MAX_TOKENS, system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+        tools=definitions, messages=messages, cache_control={"type": "ephemeral"},
+        output_config={"effort": config.EFFORT[role]}, thinking={"type": "adaptive"}, betas=BETAS, fallbacks="default",
+    )
+  File "tests/test_api_review_fixes.py", line 52, in create
+    content, stop, *usage = self.script.pop(0)
+                            ~~~~~~~~~~~~~~~^^^
+IndexError: pop from empty list
+rc=1

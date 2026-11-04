@@ -74,6 +74,17 @@ def default_client():
     return anthropic.Anthropic()
 
 
+def schema_errors(instance, schema):
+    """提出された結果を、提出の道具に渡した JSON Schema で見る。失敗の文の一覧を返す。
+
+    なぜ自前で見るか: 道具の input_schema は Claude への案内で、API は形を強制しない（strict を使っていない）。
+    欠けた欄の案が受付を通らないよう、受ける側で決定的に落とす（外の検品の指摘、11-04）。
+    """
+    from jsonschema import Draft202012Validator
+
+    return [f"{'/'.join(str(x) for x in e.absolute_path) or '(全体)'}: {e.message}" for e in Draft202012Validator(schema).iter_errors(instance)]
+
+
 def run(role, system, user, tools, submit_schema, execute, validate=None, client=None):
     """Returns (result, trace)。execute(name, input) は道具の実行、validate(result) は失敗の文の一覧を返す。"""
     client = client or default_client()
@@ -82,7 +93,9 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
     messages = [{"role": "user", "content": user}]
     run_usd = 0.0
     for _ in range(config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3):
-        budget.check(run_usd)  # 呼ぶ前に毎回見る。途中で上限に当たれば、そこで止めて人へ返す
+        # 呼ぶ前に毎回見る。途中で上限に当たれば、そこで止めて人へ返す。
+        # この 1 回の最悪の費用（送る中身の見積もり + 出力の上限）まで足して見る。今までの消費だけだと 1 回分はみ出す。
+        budget.check(run_usd, budget.worst_case(trace.model, budget.estimate_tokens(system, definitions, messages), config.MAX_TOKENS))
         # 1 回の生成で道具の往復ごとに図と指示を送り直すので、キャッシュで入力の費用を下げる。
         # 指示と道具の定義は変わらないので、その終わりに目印を置く。伸びていく会話は自動の目印に任せる。
         response = client.beta.messages.create(
@@ -122,7 +135,12 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
                 results.append({"type": "tool_result", "tool_use_id": block.id, "content": execute(block.name, block.input)})
             except Exception as e:  # 道具の失敗は Claude に返して直させる。輪全体を落とさない
                 results.append({"type": "tool_result", "tool_use_id": block.id, "is_error": True, "content": f"{type(e).__name__}: {e}"})
-        if submitted is not None:
+        if submitted is not None and len(uses) > 1:
+            # 同じ応答で他の道具も呼んだ時の提出は、その道具の結果を読む前に書かれている。受けずに結果を返し、出し直させる。
+            # tool_use には必ず tool_result を返す決まりなので、提出にも「受けなかった」を返す。
+            # 検査の落ちではないのでやり直しの回数には数えない。止まるのは輪の上限（range）で保証する。
+            results.append({"type": "tool_result", "tool_use_id": submitted.id, "is_error": True, "content": "同じ応答で他の道具も呼んだので、この提出は受けていない。道具の結果を読んでから、submit_result だけを呼び直す。"})
+        elif submitted is not None:
             errors = validate(submitted.input) if validate else []
             if not errors:
                 return submitted.input, trace

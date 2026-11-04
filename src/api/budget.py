@@ -49,15 +49,55 @@ def spent():
     return day, total
 
 
-def check(run_usd=0.0):
+# 図 1 枚の入力の数の上限の見積もり。図は画素の数で数えられ（約 1.15MP で 1600 前後）、高い解像度でも 5000 には届かない。
+# base64 の文字数で数えると図 1 枚で数百万になり、余裕があっても止めてしまうので、図だけは決まった数で数える。
+IMAGE_TOKENS = 5000
+
+
+def estimate_tokens(*parts):
+    """送る中身（指示・道具の定義・会話）の入力の数を、多めに見積もる。
+
+    なぜ多めか: 予算の見張りは呼ぶ前の判断なので、少なく見て上限を越えるより、多く見て手前で止まる方を選ぶ。
+    文字 1 つを 1 として数える。日本語はおよそ 1 文字 1 前後、英数字と JSON は 3〜4 文字で 1 なので、どちらも多めになる。
+    本物の数え方（count_tokens）は API を 1 回呼ぶので、ここでは使わない。
+    """
+    def walk(x):
+        if isinstance(x, str):
+            return len(x)
+        if isinstance(x, dict):
+            if x.get("type") == "image":
+                return IMAGE_TOKENS
+            return sum(walk(k) + walk(v) for k, v in x.items())
+        if isinstance(x, (list, tuple)):
+            return sum(walk(v) for v in x)
+        if hasattr(x, "model_dump"):  # SDK の応答の塊（前の往復の応答を会話に積んで送り直す）
+            return walk(x.model_dump())
+        if hasattr(x, "__dict__"):
+            return walk(vars(x))
+        return len(str(x))
+
+    return sum(walk(p) for p in parts)
+
+
+def worst_case(model, input_tokens, max_tokens):
+    """この 1 回で使い得る最大の費用。出力は上限まで使い、入力は全部キャッシュの書き込み（入力の単価の 1.25 倍）で数える。"""
+    return cost(model, 0, max_tokens, cache_write=input_tokens)
+
+
+def check(run_usd=0.0, upcoming_usd=0.0):
+    """呼ぶ前の見張り。upcoming_usd はこれから呼ぶ 1 回の最悪の費用（worst_case）。
+
+    なぜ足すか: 今までの消費だけを見ると、上限の直前から 1 回分（Opus の出力の上限だけで $0.32）はみ出す（外の検品の指摘、11-04）。
+    引数なしと run_usd だけの呼び方は前と同じに動く（upcoming_usd の既定が 0）。
+    """
     day, total = spent()
     cap = DAILY_CAP.get(_today(), 0)
-    if total >= STOP_TOTAL:
-        raise BudgetStop(f"累計の見積もり ${total:.2f} が停止線 ${STOP_TOTAL:.0f} に達した。本人の承認が要る")
-    if day >= cap:
-        raise BudgetStop(f"今日の見積もり ${day:.2f} が日割りの上限 ${cap} に達した。本人の承認が要る")
-    if run_usd >= PER_RUN_CAP:
-        raise BudgetStop(f"この 1 回が ${run_usd:.2f} に達した。上限 ${PER_RUN_CAP:.0f} で止める")
+    if total + upcoming_usd >= STOP_TOTAL:
+        raise BudgetStop(f"累計の見積もり ${total:.2f} と次の 1 回の最大 ${upcoming_usd:.2f} で停止線 ${STOP_TOTAL:.0f} に達する。本人の承認が要る")
+    if day + upcoming_usd >= cap:
+        raise BudgetStop(f"今日の見積もり ${day:.2f} と次の 1 回の最大 ${upcoming_usd:.2f} で日割りの上限 ${cap} に達する。本人の承認が要る")
+    if run_usd + upcoming_usd >= PER_RUN_CAP:
+        raise BudgetStop(f"この 1 回が ${run_usd:.2f} と次の最大 ${upcoming_usd:.2f} で上限 ${PER_RUN_CAP:.0f} に達する。そこで止める")
 
 
 def add(role, model, input_tokens, output_tokens, cache_write=0, cache_read=0):

@@ -81,10 +81,12 @@ def answer(source_id, hypothesis_id, question, client=None):
         if not _key_present():
             return NO_KEY, "no_key"
         client = default_client()
-    budget.check()
+    messages = [{"role": "user", "content": f"{context}\n\n質問: {question}"}]
+    # 呼ぶ前に、この 1 回の最悪の費用まで足して上限を見る（輪の agent.run と同じ見方。外の検品の指摘、11-04）。
+    budget.check(0.0, budget.worst_case(config.MODELS["ask"], budget.estimate_tokens(SYSTEM, messages), config.ASK_MAX_TOKENS))
     response = client.messages.create(
         model=config.MODELS["ask"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
-        messages=[{"role": "user", "content": f"{context}\n\n質問: {question}"}],
+        messages=messages,
         thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["ask"]},
     )
     usage = getattr(response, "usage", None)
