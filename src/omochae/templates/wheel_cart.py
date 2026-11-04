@@ -15,6 +15,10 @@ from ..model import Failure, Part
 
 ID = "wheel_cart"
 SHEET_SET = "wheel_cart-v1"
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "車と軸と台（破線は軸）"
+# 結果の欄の見出し。この形の玩具に合う問いにする。
+RESULT_HEAD = "おもちゃとして転がりましたか（1 つに丸）"
 HYP_KEY = "drive"
 DRIVES = ("pull", "slope")
 BODIES = ("cart", "bale")

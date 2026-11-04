@@ -13,6 +13,8 @@ from ..model import Failure, Part
 ID = "string_pull"
 SHEET_SET = "string-v1"
 # 仮説を分ける寸法。人形は動かし方（pull・push・sway）、凧は揚げ方の釣り合いの取り方（tail・bow）で読みが分かれるため。
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "引いた時の動き（破線は後）"
 HYP_KEY = "rig"
 LEVER_RIGS = ("pull", "push", "sway")
 KITE_RIGS = ("tail", "bow")

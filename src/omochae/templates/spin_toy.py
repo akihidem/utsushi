@@ -14,6 +14,10 @@ from ..model import Failure, Part
 
 ID = "spin_toy"
 SHEET_SET = "spin-v1"
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "回る芯と羽・円盤（破線は芯）"
+# 結果の欄の見出し。この形の玩具に合う問いにする。
+RESULT_HEAD = "おもちゃとして回りましたか（1 つに丸）"
 HYP_KEY = "drive"
 DEFAULTS = {
     "shape": "pinwheel", "look": "kazaguruma", "drive": "pitch",

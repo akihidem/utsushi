@@ -36,7 +36,11 @@
 - `RESULTS`: 人が見た事の言葉（2〜3 個）
 - `title`、`spec`、`check_range`、`check_physics`: 床。落ちる時は Failure の一覧を返す
 - `parts`、`place`、`bom`、`materials`、`steps`、`measures`、`diagram`
-- 無くてもよい物: `PARAM_NAMES`（画面での呼び名）、`RECORD_EXTRA`（記録の足しの欄）
+- 無くてもよい物（無ければ今までの文や欄になる）
+  - `PARAM_NAMES`: 画面での寸法の呼び名
+  - `RECORD_EXTRA`: 記録の足しの欄
+  - `DIAGRAM_CAPTION`: 手順の紙の図の説明。1 行に収める
+  - `RESULT_HEAD`: 結果の欄の見出し
 
 ## 玩具ごとの仮説の記録
 
@@ -45,6 +49,7 @@
 - 仮説は 2〜3 個。HYP_KEY の値で分ける。仕組みを事実として書かない。絵で見た事は「観察」、そこからの読みは「推測」と分ける
 - 名前は棚卸しの見立てで、人の確認はまだ。翻刻の欄（transcription）は空のまま（読みは本人が確かめる、U-01）
 - 書く欄は今の 2 種の記録に倣う（`questions`・`hypotheses` の `evidence`・`against`・`to_measure`）
+- `after_try`（試した後の紙の対比と札）も置く。無いと試した後の紙が刷れない。採った人の欄（`adopted_by`）は空のままにする（11-05、線の報告で足した）
 
 ## 線の完成の定義
 

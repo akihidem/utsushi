@@ -21,6 +21,10 @@ from ..textfit import text_width
 ID = "stick_prop"
 SHEET_SET = "stick-prop-v1"
 # 仮説を分ける寸法の名前。持ち物の玩具の読みは「どう付けて、何が動くか」で割れるので、付け方で分ける。
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "持った時の姿（棒と貼る所）"
+# 結果の欄の見出し。この形の玩具に合う問いにする。
+RESULT_HEAD = "おもちゃとして遊べましたか（1 つに丸）"
 HYP_KEY = "hold"
 DEFAULTS = {
     "shape": "uchiwa_l", "hold": "glue",

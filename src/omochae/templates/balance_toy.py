@@ -17,6 +17,8 @@ from ..pivot_model import center, paper_mass, rest_tilt_deg
 
 ID = "balance_toy"
 SHEET_SET = "balance_toy-v1"
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "支点と重り（破線は重さの線）"
 HYP_KEY = "hold"
 HOLDS = ("arm", "spin", "round", "flat")
 DEFAULTS = {

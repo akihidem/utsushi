@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "tests/test_tpl_captions.py", line 25, in <module>
+    assert OLD not in words, (tid, "筒の言葉を刷らない")
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('balance_toy', '筒の言葉を刷らない')
+rc 1 （雛形の説明は置き、刷る側を直す前）

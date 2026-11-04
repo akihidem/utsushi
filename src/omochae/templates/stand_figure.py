@@ -13,6 +13,10 @@ from ..model import Failure, Part
 
 ID = "stand_figure"
 SHEET_SET = "stand_figure-v1"
+# 手順の紙の図の説明（instructions.compose_sheet）。御来迎の筒の言葉を刷らないため。
+DIAGRAM_CAPTION = "台に立てた姿（前と横）"
+# 結果の欄の見出し。この形の玩具に合う問いにする。
+RESULT_HEAD = "おもちゃとして立ちましたか（1 つに丸）"
 HYP_KEY = "form"
 DEFAULTS = {
     "form": "base", "motif": "doll_mino_net",
