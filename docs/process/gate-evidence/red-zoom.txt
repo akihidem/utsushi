@@ -1,8 +1,8 @@
 Traceback (most recent call last):
-  File "/home/akhd/work/hackathon-utsushikagami/tests/test_generate_zoom_switch.py", line 27, in <module>
+  File "tests/test_generate_zoom_switch.py", line 27, in <module>
     assert "zoom_picture" not in sent_tools(zoom=False), "zoom=False なら拡大の道具を渡さない"
                                  ~~~~~~~~~~^^^^^^^^^^^^
-  File "/home/akhd/work/hackathon-utsushikagami/tests/test_generate_zoom_switch.py", line 20, in sent_tools
+  File "tests/test_generate_zoom_switch.py", line 20, in sent_tools
     generate(src, client=PreviewClient(), image="", **kw)
     ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: generate() got an unexpected keyword argument 'zoom'

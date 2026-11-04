@@ -94,7 +94,7 @@ U-12 は 1 回ずつの比べなので、どちらが良いかの結論にはし
 | 物 | 置き場 | git |
 |---|---|---|
 | 下見 | `data/loop/preview-<役>.json`（画像は大きさだけ） | 載らない |
-| 案 | `data/loop/generated-*.json`・`words-*.json`・`interpretation-R-0001.json`・`proposal-*.json`（中に model・道具の回数・トークン数） | 載らない |
+| 案 | data/loop の generated-*.json・words-*.json・interpretation-R-0001.json・proposal-*.json（git の外）（中に model・道具の回数・トークン数） | 載らない |
 | 費用 | `out/api-usage.jsonl`（日・役・トークン・キャッシュ・$）。正は Console | 載らない |
 | ask の答え | 残らない（`answer` は記録しない）。端末の出力を要約に写す | — |
 | 要約 | 7 回の表（回・役・通った床・落ちた床・トークン・$・止まった理由）を docs/process の決定の記録に 1 枚足し、J-017 の「1 回の費用は未実測」、U-05、U-12 を書き換える | 載せる。案の中身と鍵は載せない |
