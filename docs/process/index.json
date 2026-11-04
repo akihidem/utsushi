@@ -270,6 +270,12 @@
   "status": "案。採るかは本人（U-25）"
  },
  {
+  "id": "research/21",
+  "path": "research/21-prior-art-compare.md",
+  "hook": "Wandy を含む先行事例と今の実装の比較",
+  "status": "比較。Wandy の実物は未確認"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",
