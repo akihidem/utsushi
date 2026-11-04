@@ -120,7 +120,13 @@
  {
   "id": "f14",
   "name": "くずし字の読み",
-  "status": "todo"
+  "status": "doing",
+  "evidence": [
+   "src/web/kuzushi.py",
+   "tests/test_kuzushi.py",
+   "docs/process/research/25-kuzushi-reading.md"
+  ],
+  "unverified": "人が使っていない。書いた人の読みの印（観察）と、残すかは未決。図鑑と玩具の頁は確かめた読みを予想の前から出している"
  },
  {
   "id": "f15",

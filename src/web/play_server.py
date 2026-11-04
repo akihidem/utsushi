@@ -288,6 +288,11 @@ class Handler(BaseHTTPRequestHandler):
         if m and (m.group(1) is None or m.group(1) in sources()):
             from . import zukan
             return self._send(200, zukan.toy_zukan(m.group(1)) if m.group(1) else zukan.index_page(sources()))
+        # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。予想が先の線と印の床は kuzushi.py が持つ。
+        m = re.fullmatch(rf"/zukan/({SID})/yomi", path)
+        if m and m.group(1) in sources():
+            from . import kuzushi
+            return self._send(200, kuzushi.page(m.group(1)))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
@@ -369,6 +374,14 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             sid, act = m.groups()
             return self._toy_post(sid, act, form)
+        m = re.fullmatch(rf"/zukan/({SID})/yomi", self.path)
+        if m and m.group(1) in sources():
+            # 書いた読みは応答に映すだけで、どこにも書かない（保存の形は本人が決めていない、research/25）。
+            from . import kuzushi
+            mine = form.get("mine", "").strip()[:kuzushi.MAX_READING]
+            if not mine:
+                return self._send(422, kuzushi.page(m.group(1), msg="先に、読めた所だけでも書いてください"))
+            return self._send(200, kuzushi.page(m.group(1), mine))
         m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
         if m:
             return self._next_version(m.group(1), form)
