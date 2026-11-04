@@ -73,12 +73,14 @@ const st=document.createElement('style');st.textContent='section:not(#'+CSS.esca
 # 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
 TAIBAN = """
 body.taiban{background:#f2f2f0;color:#161616}
+/* 選んだ時の色も墨と紙に揃える（research/24 の 5）。既定の青は参照の紙面に無い色のため。 */
+body.taiban ::selection{background:#d6d6d3;color:#161616}
 .taiban .switch{font-family:"Helvetica Neue",Arial,sans-serif}
 .ab-slide{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:3svh 0;box-sizing:border-box}
 .board{position:relative;width:min(1180px,92vw,calc(86vh * 1.56));width:min(1180px,92vw,calc(86svh * 1.56));aspect-ratio:1.56;
  background:#fbfbfa;border:1px solid #dedede;border-radius:3px;padding:.9%;box-sizing:border-box;
  box-shadow:0 1px 0 #fff inset,0 28px 40px -22px rgba(0,0,0,.30),0 6px 12px -6px rgba(0,0,0,.12)}
-.spread{display:grid;grid-template-columns:1fr 1fr;height:100%}
+.spread{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);height:100%}
 .page{position:relative;overflow:hidden;background:#fff}
 .page.l{box-shadow:inset -22px 0 24px -22px rgba(0,0,0,.22)}.page.r{box-shadow:inset 22px 0 24px -22px rgba(0,0,0,.22)}
 .page .fill{position:absolute;inset:0}
@@ -86,7 +88,9 @@ body.taiban{background:#f2f2f0;color:#161616}
 .rings::before{content:"";position:absolute;left:-3px;top:-2%;bottom:-2%;width:6px;border-radius:3px;background:linear-gradient(90deg,#8e9297,#eef0f2 45%,#9a9ea3)}
 .rings i{display:block;width:clamp(26px,3.6vw,46px);height:clamp(10px,1.4vw,18px);margin-left:calc(clamp(26px,3.6vw,46px) / -2);border-radius:50%;
  border:clamp(2px,.25vw,3px) solid #a8acb1;border-top-color:#f1f2f4;border-bottom-color:#73777c;box-shadow:0 2px 3px rgba(0,0,0,.28)}
-.t{position:absolute;font-family:"Helvetica Neue",Arial,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:clamp(8px,.78vw,11px);line-height:1.5;letter-spacing:.05em;color:#161616;margin:0}
+/* 小さな字の大きさの方針（参照の細かい字）は残し、下限だけ 10px へ。8px では画数の多い漢字が潰れるため（research/24 の 4）。
+   格子の列を minmax(0,1fr) にするのは、長い名前や大きな図が列を押し広げないための保険（同 3）。 */
+.t{position:absolute;font-family:"Helvetica Neue",Arial,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:clamp(10px,.78vw,11px);line-height:1.5;letter-spacing:.05em;color:#161616;margin:0}
 .t.up{text-transform:uppercase;letter-spacing:.08em}
 .t.v{writing-mode:vertical-rl;letter-spacing:.2em}
 .t a{color:#161616;text-decoration:none;border-bottom:1px solid #161616}
@@ -95,11 +99,11 @@ body.taiban{background:#f2f2f0;color:#161616}
 .cut{position:absolute;filter:drop-shadow(0 8px 10px rgba(0,0,0,.18))}
 .box{position:absolute;background:#f0f0ee}
 /* 平置き: 1 つ目を上の段いっぱいに、残りを 2 列で。各部分は枠に収まる最大の大きさで、縦横比を崩さない（コンテナの単位で計る）。 */
-.lay{position:absolute;left:5%;top:6%;bottom:6%;width:62%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:40% 1fr 1fr;gap:4%}
+.lay{position:absolute;left:5%;top:6%;bottom:6%;width:62%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:40% 1fr 1fr;gap:4%}
 .cell{container-type:size;display:flex;align-items:center;justify-content:center;min-height:0}.cell.big{grid-column:1/-1}
 .pc{width:min(92cqw,calc(92cqh * var(--r)));filter:drop-shadow(0 8px 10px rgba(0,0,0,.18))}
 .sw{position:absolute;display:grid;grid-template-columns:repeat(4,1fr);gap:3%}.sw div{aspect-ratio:3/4;background-color:#f0f0ee}
-.ab-end{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#777;text-align:center;padding:2svh 6vw 6svh}
+.ab-end{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#6d6d6d;text-align:center;padding:2svh 6vw 6svh}
 @media (max-width:760px){
  .board{width:92vw;aspect-ratio:auto}.spread{grid-template-columns:1fr}.page{aspect-ratio:.78}.rings{display:none}
  .page.l,.page.r{box-shadow:none}.page.l{border-bottom:1px solid #e6e6e6}.t{font-size:10px}}
@@ -211,9 +215,11 @@ ZINE = """
 body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
  font-feature-settings:"palt" 1}
 body.zine a{color:#c9a96a;text-decoration:none;border-bottom:1px solid rgba(201,169,106,.45)}
-.zine .switch{position:relative;z-index:2;font-size:12px;letter-spacing:.2em;padding:14px 4vw;color:#7d7463}
+.zine .switch{position:relative;z-index:2;font-size:12px;letter-spacing:.2em;padding:14px 4vw;color:#8a806e}
 .zine .switch a{color:#c9a96a}.zine .switch b{color:#e9e1cf;font-weight:400}
-.zine .switch .cap{color:#5f584c}
+.zine .switch .cap{color:#827968}
+/* 細い字も 4.5:1 を割らないよう明るさだけ上げ、色相は保つ（research/24 の 2）。選んだ時は黒地に金の薄い面（同 5）。 */
+body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-cover{min-height:100vh;min-height:100svh;position:relative;display:grid;grid-template-columns:1fr minmax(0,44vh) 1fr;align-items:center;
  background:radial-gradient(ellipse 46% 62% at 50% 46%,#1d1914 0%,#0b0a09 72%)}
 .zn-cover .frame{grid-column:2;aspect-ratio:1600/2656;padding:18px;background:#141210;border:1px solid #6e5a35;
@@ -224,18 +230,18 @@ body.zine a{color:#c9a96a;text-decoration:none;border-bottom:1px solid rgba(201,
 .zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
 .zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
 .zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
-.zn-toy{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1f1b16}
+.zn-toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid #1f1b16}
 .zn-toy .pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;align-items:center;justify-content:center;
  background:radial-gradient(ellipse 60% 70% at 50% 48%,#1c1813 0%,#0b0a09 75%)}
 .zn-toy .pin .frame{height:78%;aspect-ratio:1600/2656;padding:14px;background:#141210;border:1px solid #6e5a35;box-shadow:0 26px 70px rgba(0,0,0,.75)}
 .zn-toy .pin .frame div{width:100%;height:100%}
 .zn-toy .flow > div{min-height:100vh;min-height:100svh;padding:14vh 7vw;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
 .zn-toy .big{font-size:clamp(14px,1.2vw,16px);letter-spacing:.5em;color:#c9a96a;margin:0 0 18px;font-variant-numeric:tabular-nums lining-nums}
-.zn-toy h2{font-size:clamp(40px,5.5vw,84px);font-weight:300;margin:0;letter-spacing:.25em}
+.zn-toy h2{font-size:clamp(40px,5.5vw,84px);font-weight:300;margin:0;letter-spacing:.25em;overflow-wrap:break-word;min-width:0}
 .zn-toy .songs{writing-mode:vertical-rl;height:min(60vh,520px);margin:0 auto 24px}
 .zn-toy .song{font-size:clamp(18px,1.9vw,24px);line-height:2.2;letter-spacing:.12em;margin:0 .4em}
 .zn-toy .cap{color:#8c826e;font-size:12px;letter-spacing:.15em;line-height:1.9}
-.zn-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.zn-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
 .zn-grid div{aspect-ratio:1;border:1px solid #3a3122;outline:8px solid #141210;outline-offset:-9px}
 .zn-end{padding:14vh 7vw;border-top:1px solid #1f1b16;text-align:center}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
@@ -280,41 +286,165 @@ def zine():
 # デザイナーの感想（本人が伝えた）: 「もっと美術品みたく、歴史的価値のあるように見せたサイトの方が良い」。
 # A をバインダーの再現のまま磨くか展示の形に作り替えるかを聞いたら、本人は「まだ決めず、どっちも作る」と答えた。だから A はそのまま残し、
 # 展示の形を A′ として並べる。順路: 入口の題のパネル → 章ごとに 1 点を白い壁に掛け、作品の札と解説 → 細部 → 出口（玩具の頁へ）。
-# 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。動きは入れない。
+# 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。
+# 動き: 本人の頼み（2026-11-04「この動き、デモサイトでやってみる？」）で、A′ だけに扇の札・スクロールのせり上がり・扇をひらくノブを足した
+# （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。A と C は動かさないまま。
 TENJI = """
-body.tenji{background:#f6f3ec;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
+body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
+/* 地は本人の言葉「白の背景」へ戻した（research/24 の 1）。前のクリーム #f6f3ec は作る側の手癖で、生成物の定番の見た目に寄っていた。
+   小さな字の灰は色相を保って明るさだけ下げ、白地で 4.5:1 を割らないようにした（同 2）。 */
+body.tenji ::selection{background:#e6e1d6;color:#1f1b17}
 body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107,79,42,.35)}
-.tenji .switch{font-size:12px;letter-spacing:.2em;padding:14px 5vw;color:#8b8172}.tenji .switch .cap{color:#a59b8b}
+.tenji .switch{font-size:12px;letter-spacing:.2em;padding:14px 5vw;color:#7a7164}.tenji .switch .cap{color:#7c7160}
 .tj-hall{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 5vw;box-sizing:border-box}
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
-.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:11px;letter-spacing:.35em;color:#8b8172;text-transform:uppercase;writing-mode:vertical-rl}
+.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:11px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
- padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #e4ddcf}
-.tj-room .panel{align-self:start;padding-top:6vh}
-.tj-room .chapter{font-size:12px;letter-spacing:.5em;color:#8b8172;margin:0 0 18px}
-.tj-room h2{font-weight:400;font-size:clamp(26px,2.8vw,42px);letter-spacing:.18em;margin:0 0 26px;word-break:keep-all}
+ padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
+.tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
+.tj-room .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 18px}
+/* keep-all は和文の名を 1 語に保つが、空白の無い長い名は欄を越える。越える時だけ折る（research/24 の 3）。 */
+.tj-room h2{font-weight:400;font-size:clamp(26px,2.8vw,42px);letter-spacing:.18em;margin:0 0 26px;word-break:keep-all;overflow-wrap:break-word;min-width:0}
 .tj-room .lead{font-size:14px;line-height:2.2;letter-spacing:.08em;color:#4a4339}
-.tj-work{justify-self:center;width:min(100%,46vh);aspect-ratio:1600/2656;padding:3.2%;background:#fbf9f4;
+.tj-work{justify-self:center;width:min(100%,46vh);aspect-ratio:1600/2656;padding:3.2%;background:#fffefc;
  border:1px solid #d8cdb6;box-shadow:0 1px 0 #e8e1d2,0 40px 60px -30px rgba(70,55,35,.35),0 2px 6px rgba(70,55,35,.08)}
 .tj-work div{width:100%;height:100%}
 .tj-side{align-self:end;padding-bottom:6vh}
 .tj-label{font-size:12px;line-height:2;letter-spacing:.06em;color:#5d554a;border-left:1px solid #b9a982;padding-left:14px;max-width:22em}
-.tj-label .no{display:block;color:#8b8172;letter-spacing:.3em}
+.tj-label .no{display:block;color:#7a7164;letter-spacing:.3em}
 .tj-label .ttl{display:block;font-size:18px;letter-spacing:.25em;color:#1f1b17;margin:4px 0}
 .tj-songs{writing-mode:vertical-rl;height:min(46vh,420px);margin:0 0 20px auto;font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .tj-songs p{margin:0 .3em}
-.tj-detail{padding:12vh 5vw;border-top:1px solid #e4ddcf;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3vw;align-items:start}
-.tj-detail figure{margin:0}.tj-detail figure div{aspect-ratio:3/4;background-color:#fbf9f4;border:1px solid #d8cdb6;box-shadow:0 20px 30px -24px rgba(70,55,35,.4)}
-.tj-detail figcaption{font-size:11px;letter-spacing:.2em;color:#8b8172;margin-top:10px}
-.tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #e4ddcf}
+.tj-detail{padding:12vh 5vw;border-top:1px solid #ebe8e2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3vw;align-items:start}
+.tj-detail figure{margin:0}.tj-detail figure div{aspect-ratio:3/4;background-color:#fffefc;border:1px solid #d8cdb6;box-shadow:0 20px 30px -24px rgba(70,55,35,.4)}
+.tj-detail figcaption{font-size:11px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
+.tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #ebe8e2}
 .tj-exit p{font-size:clamp(20px,2.2vw,28px);letter-spacing:.3em;font-weight:400}
-.tj-note{font-size:11px;color:#8b8172;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
-@media (max-width:820px){.tj-room{grid-template-columns:1fr;gap:6vh}.tj-work{width:72vw}.tj-songs{writing-mode:horizontal-tb;height:auto}
- .tj-detail{grid-template-columns:1fr 1fr}.tj-hall{grid-template-columns:1fr;justify-items:center;gap:4vh;padding:10vh 5vw}
- .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}}
+.tj-note{font-size:11px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
+
+/* 扇の札（本人の頼み 2026-11-04「この動き、デモサイトでやってみる？」の (1)）。図と寄りの札を、下の 1 点（要）を軸に
+   開いた扇のように並べる。御来迎の図の扇と響かせるため。中央の札を大きく手前に。--k は中央からの番手で、角度だけを決める。
+   JS が無くても、刷った時の --k のまま開いた扇として完成している。動きは遅い減速だけで、跳ねない（展示の静けさ）。 */
+.tj-fan{border-top:1px solid #ebe8e2;padding:8vh 5vw 6vh;text-align:center;--w:clamp(120px,15vw,210px);--step:11deg}
+.tj-fan .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 2vh}
+.fan-stage{position:relative;height:calc(var(--w) * 1.5 * 1.8 + 40px);overflow:hidden;touch-action:pan-y;outline:none}
+.fan-stage:focus-visible{box-shadow:0 0 0 1px #b9a982 inset}
+.fan-card{position:absolute;left:50%;bottom:calc(var(--w) * 1.5 * .55 + 20px);width:var(--w);margin-left:calc(var(--w) / -2);aspect-ratio:2/3;
+ box-sizing:border-box;padding:6px 6px 26px;background:#fffefc;border:1px solid #d8cdb6;border-bottom:1px solid #d8cdb6;
+ transform-origin:50% 155%;transform:rotate(calc(var(--k) * var(--step))) scale(var(--s,.92));
+ box-shadow:0 18px 26px -20px rgba(70,55,35,.45);transition:transform 1.1s cubic-bezier(.22,.61,.36,1),box-shadow 1.1s ease}
+.fan-card.is-c{--s:1.14;box-shadow:0 34px 44px -26px rgba(70,55,35,.55),0 2px 6px rgba(70,55,35,.1)}
+.fan-pic{display:block;width:100%;height:100%}
+.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:11px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.fan-kaname{position:absolute;left:50%;bottom:20px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#b9a982;box-shadow:0 0 0 3px #fcfcfa,0 0 0 4px #d8cdb6}
+.fan-ctl{display:flex;gap:2em;justify-content:center;align-items:center;margin-top:2vh;font-size:13px;letter-spacing:.2em;color:#5d554a}
+.fan-ctl button{font:inherit;color:#6b4f2a;background:none;border:0;border-bottom:1px solid rgba(107,79,42,.35);padding:4px 2px;cursor:pointer}
+.fan-ctl button:disabled{color:#a59b8b;border-color:transparent;cursor:default}
+.fan-cap{min-width:8em}
+
+/* 「扇をひらく」（本人の頼みの (3) を静かにした物）。派手な 3D のねじれは持ち込まず、線の扇の開く角だけをノブで動かす。
+   筒の中の仕組みは描かない（仮説を出さないため。予想が先、F9.prediction）。--t は骨の位置（-0.5〜0.5）、--a が開く角。 */
+.tj-ogi{padding:6vh 5vw 10vh;text-align:center}
+.tj-ogi svg{width:min(360px,80vw);height:auto;display:block;margin:0 auto}
+.tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
+.tj-ogi label{display:inline-flex;gap:1em;align-items:center;font-size:13px;letter-spacing:.2em;color:#5d554a;margin-top:2vh}
+.tj-ogi input{accent-color:#8a6d3b;width:min(240px,50vw)}
+.tj-ogi .cap{font-size:11px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
+
+/* スクロールでせり上がる（本人の頼みの (2)）。CSS のスクロール連動だけで、見える状態から始める（opacity を 0 にしない）。
+   なぜ: 速く読む人から中身を隠さないため（research/19 の「全部の節に演出を付けない」を、隠さない形で守る）。
+   図と札で始まりをずらし、段差をつける。効かない閲覧器では何も起きず、止まった展示のまま。 */
+@supports (animation-timeline: view()){
+ @media (prefers-reduced-motion:no-preference){
+  .tj-room .tj-work{animation:tj-rise-work linear both;animation-timeline:view();animation-range:entry 0% cover 38%}
+  .tj-room .tj-label{animation:tj-rise linear both;animation-timeline:view();animation-range:entry 15% cover 45%}
+  .tj-detail figure{animation:tj-rise linear both;animation-timeline:view();animation-range:entry 0% cover 30%}
+  .tj-detail figure:nth-child(2){animation-range:entry 10% cover 36%}
+  .tj-detail figure:nth-child(3){animation-range:entry 20% cover 42%}
+  .tj-detail figure:nth-child(4){animation-range:entry 30% cover 48%}
+ }
+}
+@keyframes tj-rise-work{from{transform:translateY(28px) rotate(-.8deg);box-shadow:0 1px 0 #e8e1d2,0 16px 24px -18px rgba(70,55,35,.25),0 2px 6px rgba(70,55,35,.08)}
+ to{transform:none;box-shadow:0 1px 0 #e8e1d2,0 40px 60px -30px rgba(70,55,35,.35),0 2px 6px rgba(70,55,35,.08)}}
+@keyframes tj-rise{from{transform:translateY(18px) rotate(.6deg)}to{transform:none}}
+/* 動きを減らす設定の人には、扇は止まった扇のまま（札の入れ替えは瞬時）、せり上がりも無し。 */
+@media (prefers-reduced-motion:reduce){.fan-card{transition:none}}
+
+@media (max-width:820px){.tj-room{grid-template-columns:minmax(0,1fr);gap:6vh}.tj-work{width:72vw}.tj-songs{writing-mode:horizontal-tb;height:auto}
+ .tj-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tj-hall{grid-template-columns:1fr;justify-items:center;gap:4vh;padding:10vh 5vw}
+ .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}
+ .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}}
 """
 KANJI = "一二三四五六七八九十"
+DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
+
+# 扇の札を動かす小さな台本。矢印の釦・キーボードの左右・指で払う、の 3 つで中央の札を入れ替える。
+# なぜ IntersectionObserver を使わないか: 見えた時に起こす仕掛けは入口に置かない決まり（research/19、試験で固定）。押した時だけ動く。
+# 端の札を押した時は、玩具の頁へ飛ばずに先に中央へ回す（扇を回す手応えを先に返す）。中央の札を押せば玩具の頁へ入る。
+FAN_JS = """<script>(()=>{const d=document.getElementById('tj-fan');if(!d)return;
+const st=d.querySelector('.fan-stage'),cs=[...d.querySelectorAll('.fan-card')],cap=d.querySelector('.fan-cap'),
+pv=d.querySelector('.fan-prev'),nx=d.querySelector('.fan-next');let c=+d.dataset.c;
+function set(n){c=Math.max(0,Math.min(cs.length-1,n));cs.forEach((e,i)=>{const k=i-c;e.style.setProperty('--k',k);
+e.style.zIndex=50-Math.abs(k);e.classList.toggle('is-c',k===0);e.tabIndex=k===0?0:-1});
+cap.textContent=cs[c].dataset.name;pv.disabled=c===0;nx.disabled=c===cs.length-1}
+pv.hidden=nx.hidden=false;pv.onclick=()=>set(c-1);nx.onclick=()=>set(c+1);
+st.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){set(c-1);e.preventDefault()}else if(e.key==='ArrowRight'){set(c+1);e.preventDefault()}});
+cs.forEach((e,i)=>e.addEventListener('click',ev=>{if(i!==c){ev.preventDefault();set(i)}}));
+let x0=null;st.addEventListener('pointerdown',e=>{x0=e.clientX});
+st.addEventListener('pointerup',e=>{if(x0===null)return;const dx=e.clientX-x0;x0=null;if(Math.abs(dx)>40)set(c+(dx<0?1:-1))});
+set(c)})();
+(()=>{const r=document.getElementById('ogi-range'),s=document.getElementById('ogi-svg');if(!r||!s)return;
+const f=()=>s.style.setProperty('--a',r.value+'deg');r.addEventListener('input',f);f()})();</script>"""
+
+
+def _fan_cards(ts):
+    """扇に並べる札。玩具 1 の寄り → 玩具 1 の図 → 玩具 2 の図 → 玩具 2 の寄り、の順にし、中央に図が来るようにする。
+    寄りの場所は部分の段（tj-detail）と同じ。図に見える所の写しだけで、名前は「部分」に留める（仕組みの名を出さない）。"""
+    cards = []
+    for j, t in enumerate(ts):
+        name = esc(t["toy"])
+        pic = {"href": f"/toy/{t['sid']}", "name": name, "style": _bg(t["sid"], framed_pos(t["sid"]), FRAMED)}
+        details = [{"href": "", "name": f"{name} 部分 {k}", "style": _bg(t["sid"], p, "300%")} for k, p in enumerate(DETAIL_POS, 1)]
+        cards += (details + [pic]) if j % 2 == 0 else ([pic] + details)
+    return cards
+
+
+def fan_deck(ts):
+    cards = _fan_cards(ts)
+    if not cards:
+        return ""
+    # 中央は 1 つ目の玩具の図。偶数枚でも図が真ん中に来るよう、寄りの数（4）を中央の番手にする。
+    c = min(len(DETAIL_POS), len(cards) - 1)
+    items = []
+    for i, cd in enumerate(cards):
+        k = i - c
+        tag, href = ("a", f' href="{cd["href"]}"') if cd["href"] else ("div", "")
+        items.append(f'<{tag} class="fan-card{" is-c" if k == 0 else ""}"{href} data-name="{cd["name"]}" style="--k:{k};z-index:{50 - abs(k)}">'
+                     f'<span class="fan-pic" style="{cd["style"]}"></span><span class="fan-lb">{cd["name"]}</span></{tag}>')
+    return (f'<section class="tj-fan" id="tj-fan" data-c="{c}" aria-label="扇の札"><p class="chapter">扇の間</p>'
+            f'<div class="fan-stage" tabindex="0" aria-label="扇の札。左右の矢印で回す">{"".join(items)}<i class="fan-kaname"></i></div>'
+            f'<div class="fan-ctl"><button type="button" class="fan-prev" hidden aria-label="左の札へ">◁ 左へ</button>'
+            f'<span class="fan-cap" aria-live="polite">{cards[c]["name"]}</span>'
+            f'<button type="button" class="fan-next" hidden aria-label="右の札へ">右へ ▷</button></div></section>')
+
+
+def ogi_slider(n=13, start=150):
+    """線で描いた扇。骨 n 本の楔を要（120,128）から立て、開く角 --a で回すだけ。御来迎の図の扇の形（閉じた → 半円）に合わせた。
+    楔の幅は全開の 180° を n-1 で割った角。閉じると楔が重なって 1 本の骨になる。"""
+    import math
+    hw = math.radians(180 / (n - 1) / 2)
+    r0, r1, cx, cy = 34, 112, 120, 128
+
+    def pt(r, a):
+        return f"{cx + r * math.sin(a):.1f},{cy - r * math.cos(a):.1f}"
+    wedge = f"M{pt(r0, -hw)} L{pt(r1, -hw)} A{r1},{r1} 0 0 1 {pt(r1, hw)} L{pt(r0, hw)} A{r0},{r0} 0 0 0 {pt(r0, -hw)}Z"
+    pleats = "".join(f'<g class="pl" style="--t:{i / (n - 1) - .5:.4f}"><path d="{wedge}" fill="{"#f4f0e7" if i % 2 else "#e7e0d1"}" stroke="#b9a982" stroke-width=".6"/>'
+                     f'<line x1="{cx}" y1="{cy}" x2="{cx}" y2="{cy - r0}" stroke="#8a6d3b" stroke-width="1.4"/></g>' for i in range(n))
+    return (f'<section class="tj-ogi" id="tj-ogi"><svg id="ogi-svg" viewBox="0 0 240 140" style="--a:{start}deg" role="img" aria-label="線で描いた扇">{pleats}'
+            f'<circle cx="{cx}" cy="{cy}" r="4" fill="#8a6d3b"/></svg>'
+            f'<label>扇をひらく <input id="ogi-range" type="range" min="0" max="180" value="{start}" aria-label="扇をひらく角"></label>'
+            '<p class="cap">開く角だけの線の絵。どう開くかは描いていない。それを紙で確かめる。</p></section>')
 
 
 def tenji():
@@ -322,6 +452,7 @@ def tenji():
     body = switch("/look/tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
+    body += fan_deck(ts) + ogi_slider()
     for i, t in enumerate(ts, 1):
         src = source(t["sid"])
         song = "".join(f"<p>{esc(x)}</p>" for x in t["song"])
@@ -332,11 +463,11 @@ def tenji():
                  f'<div class="tj-side"><div class="tj-label"><span class="no">No. {i:02d}</span><span class="ttl">{esc(t["toy"])}</span>'
                  f'{_label(t, src, "tj-inner")}</div>{_nopic(t)}</div></section>')
         figs = "".join(f'<figure><div style="{_bg(t["sid"], p, "300%")}"></div><figcaption>部分 {k}</figcaption></figure>'
-                       for k, p in enumerate(("30% 30%", "72% 40%", "35% 75%", "70% 82%"), 1))
+                       for k, p in enumerate(DETAIL_POS, 1))
         body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
         body += (f'<section class="tj-exit"><p>どこが動くと思いますか。</p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></section>')
-    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし · 日本画展の展示", body + ONLY, TENJI, "tenji")
+    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。扇の開く角を示す線の絵のほかに、新しい絵は作っていない。</p>'
+    return page("うつし · 日本画展の展示", body + ONLY + FAN_JS, TENJI, "tenji")
 
 
 PAGES = {"taiban": taiban, "tenji": tenji, "zine": zine}

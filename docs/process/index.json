@@ -288,6 +288,12 @@
   "status": "案。決める点は U-35"
  },
  {
+  "id": "research/24",
+  "path": "research/24-hallmark-impeccable-review.md",
+  "hook": "デザインの Skill 2 つを入口の磨きの参考として評価",
+  "status": "評価。拾った 1〜5 は A′・C・A に入れた"
+ },
+ {
   "id": "how-it-was-built",
   "path": "how-it-was-built.md",
   "hook": "本人は窓口を通して決める。待ちと取り違えも",
