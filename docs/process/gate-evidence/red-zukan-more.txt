@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "tests/test_zukan_more.py", line 19, in <module>
+    html = zukan.index_page(sources() + [FAKE])
+  File "src/web/zukan.py", line 123, in index_page
+    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + "".join(toy_section(s, link_title=True) for s in sids))
+                                                                ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/zukan.py", line 123, in <genexpr>
+    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + "".join(toy_section(s, link_title=True) for s in sids))
+                                                                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/web/zukan.py", line 99, in toy_section
+    z = lines_for(sid)
+  File "src/web/zukan.py", line 80, in lines_for
+    data, src = hypotheses.load(sid), _source(sid)
+                                      ~~~~~~~^^^^^
+  File "src/web/zukan.py", line 52, in _source
+    return json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/pathlib/__init__.py", line 787, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'data/sources/NDL-1187053-R0000013-L-3.json'
+rc 1
