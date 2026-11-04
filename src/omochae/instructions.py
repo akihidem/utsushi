@@ -103,7 +103,8 @@ def _first_steps(x, y, shapes, texts):
 def _order_panels(p):
     second = {"tab": "2 内筒を角筒にし、竹串を通す", "stick": "2 土台を角筒にし、割り箸を差す", "tube": "2 内筒を角筒にする"}[p["push_part"]]
     # 他のコマと同じく部品番号から書き出す（レビューの指摘: 4 コマ目だけ番号が無く、読み方がそろわなかった）。
-    last = "3 台に 4 扇と 5 像を貼る（糸を通してから）" if p["hub"] == "axle" else "3 台に 4 扇の端と 5 像を貼る"
+    # 1 行に収める。糸を先に通す順は組み方の文にある。
+    last = "3 台に 4 扇と 5 像を貼る" if p["hub"] == "axle" else "3 台に 4 扇の端と 5 像を貼る"
     return [("tube", "1 外筒を切って角筒に"), (p["push_part"], second), ("fan", "4 扇を色の境で蛇腹に"), ("join", last)]
 
 
