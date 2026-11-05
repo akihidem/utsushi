@@ -124,7 +124,7 @@ for sid in (G, T, TRIAL):
     # 3. 前の記録と、それで刷った紙は読める。紙は記録の札から開く
     rid = recorded(sid, oid, "前の感想")
     card = card_of(get(f"/toy/{sid}"), rid)
-    assert f"自分の仮説 {oid} の紙" in card and "感想: 前の感想" in card and "説明: 前の感想の説明" in card and "次の思いつき: 前の感想の次" in card, card
+    assert "自分の仮説の紙" in card and "感想: 前の感想" in card and "説明: 前の感想の説明" in card and "次の思いつき: 前の感想の次" in card, card
     paper = f"/sheet/{sid}/{oid}_v1_free.pdf"
     assert f'<a href="{paper}"' in card and "型紙なしの紙" in card, (sid, "刷った紙への道")
     assert status(paper) == (200, "application/pdf"), (sid, paper)

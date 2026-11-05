@@ -130,11 +130,11 @@ assert f'action="/record/{rid}/next' in page, "OWN-n の記録にも、次の版
 ids = lambda rs: [r["id"] for r in rs]
 ready, waiting = kaizen.pending(G, records.all_records(G))
 assert rid in ids(ready) and rid not in ids(waiting), (ids(ready), ids(waiting))
-assert f'次の版を待つ報告 1 件: <a href="#{rid}">{rid}</a>' in page, "節に出る"
+assert f'次の版を待つ報告 1 件: <a href="#{rid}">記録の番号 {rid}</a>' in page, "節に出る"
 assert send(f"/toy/{G}/record", {"hypothesis": oid0, "sheet_version": 1, "result": "動いた", "who": "nextwho000"}, cookie=key0)[0] == 303
 rid0 = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid0)
 assert rid0 in ids(kaizen.pending(G, records.all_records(G))[1]), "説明の無い OWN-n の記録は、説明を待つ"
-assert f'説明を待つ報告 1 件: <a href="#{rid0}">{rid0}</a>' in send(f"/toy/{G}")[1].decode()
+assert f'説明を待つ報告 1 件: <a href="#{rid0}">記録の番号 {rid0}</a>' in send(f"/toy/{G}")[1].decode()
 assert send("/loop")[0] == 200
 base_params = loop.version_params(G, SHEET, 1)[0]
 param, to = one_change()
