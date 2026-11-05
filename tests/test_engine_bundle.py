@@ -26,7 +26,7 @@ WHO1, WHO2 = "abcd1234", "wxyz5678"
 
 # エンジンの入口（paper-to-toy の omochae.engine_loop）の一覧。片方を変える時は、両方を変える。
 ENGINE_TOP = {"schema", "exported_at", "from", "dropped_pii", "current_sets", "groups"}
-ENGINE_GROUP = {"template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
+ENGINE_GROUP = {"template", "sheet_set", "paper", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
                 "minutes", "measures", "record_ids", "texts"}
 ENGINE_TEXT = {"kind", "step", "text", "count"}
 ENGINE_KINDS = {"stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep"}
@@ -232,5 +232,36 @@ many = [{"kind": k, "step": None, "text": f"{k}{i}", "count": 1} for k in ("stuc
 capped = eb._cap_texts(many)
 assert len(capped) == eb.MAX_TEXTS and {t["kind"] for t in capped} == {"stuck", "craft", "keep"}
 assert [t for t in many if t in capped] == capped  # 並びは元のまま
+
+# 12. 紙ごとの群（Issue 334）: 同じ雛形・同じ刷った組でも、紙（玩具と仮説と版）が違えば、手順の番号の意味が違う。違う紙の「手順 3」を足さない。
+# 雛形の組み方の手順の数は、紙で違う（御来迎の 5 枚は 12・11・11・11・9 手順）
+tpl = TEMPLATES["slider_fan"]
+counts = [len(tpl.steps({**tpl.DEFAULTS, **h.get("params", {})})) for h in hypotheses.load(G)["hypotheses"]]
+assert len(set(counts)) > 1, counts
+for who, hid in ((WHO1, "H-B"), (WHO2, "H-C")):
+    assert making_log.add_step(G, hid, 1, 3, "stuck", who=who) is not None
+b4 = eb.build()
+assert {g["paper"] for g in b4["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET} == {f"{G}.H-A", f"{G}.H-B", f"{G}.H-C"}
+p4 = {g["paper"]: g for g in b4["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET}
+assert p4[f"{G}.H-B"]["stuck_steps"] == {"3": {"taps": 1, "people": 1}} and p4[f"{G}.H-C"]["stuck_steps"] == {"3": {"taps": 1, "people": 1}}
+assert p4[f"{G}.H-A"]["stuck_steps"]["3"] == {"taps": 3, "people": 2}
+# 動きの札と報告の数は、紙で分けても、雛形と組で足すと同じ数になる（エンジンの側は雛形と組で足す。分けるのは手順ごとの数と文だけ）
+before = [g for g in b4["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET]
+extra, fails = records.add({"source_id": G, "hypothesis_id": "H-B", "sheet_version": 1, "result": "動かない", "sheet_set": NOW_SET, "fixes": []})
+assert fails == [], [f.line() for f in fails]
+after_rec = [g for g in eb.build()["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET]
+assert sum(g["reports"] for g in after_rec) == sum(g["reports"] for g in before) + 1
+assert sum(g["results"].get("動かない", 0) for g in after_rec) == sum(g["results"].get("動かない", 0) for g in before) + 1
+assert {g["paper"]: g["reports"] for g in after_rec}[f"{G}.H-B"] == 1
+# 版が違えば別の紙。紙の名は決まった形だけで、人を辿れる物でない。雛形と組と紙の組は 1 つの群だけ
+v2 = [making_log.add_step(G, "H-D", 2, 4, "stuck", who=WHO1)]
+assert v2[0] is not None
+b5 = eb.build()
+assert f"{G}.H-D.v2" in {g["paper"] for g in b5["groups"]}
+keys = [(g["template"], g["sheet_set"], g["paper"]) for g in b5["groups"]]
+assert len(keys) == len(set(keys)) and all(eb.NAME.fullmatch(g["paper"]) or g["paper"] == "" for g in b5["groups"])
+assert all(not re.search(r"[0-9]{2}:[0-9]{2}|" + WHO1 + "|" + WHO2, g["paper"]) for g in b5["groups"])
+# 結んだ話も、その記録の紙の群に入る
+assert {g["paper"] for g in b5["groups"] if ("think", SPOKEN["think_old"]) in {(t["kind"], t["text"]) for t in g["texts"]}} == {f"{G}.H-B"}
 
 print("OK test_engine_bundle")
