@@ -42,6 +42,11 @@ page = body.decode()
 assert code == 200 and "手帖" in page and 'value="H-A"' in page and 'id="mic"' in page
 for h in hypotheses.load(G)["hypotheses"]:
     assert h["how_it_moves"] not in page and h["name"] not in page, "仮説の名前と動き方は出さない"
+# 聞く: 字で打った後に押す釦が欄と同じ form にある。Enter だけだと、声の使えない機器で送り方が画面から分からない（#140）
+form = page.split('<form id="ask-form">', 1)[1].split("</form>", 1)[0]
+assert 'id="q"' in form and '<button type="submit" class="go">聞く</button>' in form
+assert form.index('id="q"') < form.index("<button"), "打つ → 送る の順でキーボードが進む"
+assert '<div class="answer" id="answer" aria-live="polite"></div>' in page and "ここに答えが出ます" in page, "答えの出る場所が空の時も分かる"
 # 聞く: 仕組みは答えない、よくある言葉は刷った説明から、刷っていない紙は断る
 j = json.loads(req(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？"})[1])
 assert "試して確かめる所" in j["text"]
