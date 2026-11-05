@@ -23,6 +23,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # �
 
 from api import words  # noqa: E402
 from omochae import engine_bundle, hypotheses, loop, records, talk_log  # noqa: E402
+from omochae.compose import TEMPLATES  # noqa: E402
 from web import hanasu  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -80,7 +81,15 @@ WHO, OTHER = "roundwho01", "roundwho02"
 
 # たたき台を刷る
 assert send(f"/toy/{G}/print", {"hypothesis": SHEET})[0] == 303
+# 紙を採る前に、たたき台を見ながら話した工夫と考え（同じ印）。案の紙の記録に一緒に結ばれる。ほかの印の字は結ばれない
+EARLY_CRAFT, EARLY_THINK, THEIRS = "たたき台の筒を先に切った", "筒はもっと細くていいかも", "ほかの人の考えです"
+assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": SHEET, "sheet_version": 1, "step": 1, "text": EARLY_CRAFT, "who": WHO})[0] == 200
+assert send(f"/toy/{G}/talk", {"scene": "think", "hypothesis": SHEET, "text": EARLY_THINK, "who": WHO})[0] == 303
+assert send(f"/toy/{G}/talk", {"scene": "think", "hypothesis": SHEET, "text": THEIRS, "who": OTHER})[0] == 303
 oid, key = made(WHO, THINK, {"push_part": "stick", "pusher_height": 84})
+# 刷った組は、紙を確定する時に残す（紙に刷った組。記録の時の組ではない）
+confirmed = [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
+assert confirmed and confirmed[0]["version"] == 1 and confirmed[0]["confirmations"][0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, confirmed
 
 # ── 作りながら見る: 本人には、その人の紙が開く ──
 code, body = page(f"/toy/{G}/tsukuru", cookie=key)
@@ -120,19 +129,24 @@ assert code == 303, code
 rid = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid)
 told = talk_log.kufu(G, rid)
 assert {x["when"] for x in told} == {"idea", "making"} and any(x["text"] == CRAFT and x["step"] == 2 for x in told) and any(x["text"] == THINK for x in told), told
-assert [x["text"] for x in loop.maker_talk(rid)["items"]] == [CRAFT], "輪の材料に工夫が入る（考えはループ1 の材料なので入れない）"
+assert {x["text"] for x in told} == {THINK, EARLY_THINK, CRAFT, EARLY_CRAFT}, "紙を採る前にたたき台に付いた同じ印の字も結ばれる。ほかの印の字は結ばれない"
+assert {x["text"] for x in loop.maker_talk(rid)["items"]} == {CRAFT, EARLY_CRAFT}, "輪の材料に工夫が入る（考えはループ1 の材料なので入れない）"
 body = page(f"/toy/{G}/techo")[1]
 assert CRAFT in body and hanasu.KUFU_HEAD in body and THINK not in body, "手帖の記録の札の「工夫した所」に出る。考えは出さない"
 groups = engine_bundle.build()["groups"]
-assert len(groups) == 1 and groups[0]["reports"] == 1, "束で群が分かれない"
+assert len(groups) == 1 and groups[0]["reports"] == 1 and groups[0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, "束で群が分かれず、紙の組に入る"
+assert {CRAFT, EARLY_CRAFT} <= {t["text"] for t in groups[0]["texts"]}, "束に工夫の字が入る"
 # 記録の後は閉じる。作りながら見る頁も、工夫も
 assert f'data-hid="{oid}"' not in page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1]
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": oid, "sheet_version": 1, "step": 1, "text": "記録の後の工夫", "who": WHO}, cookie=key)[0] == 422
 
 # ── 取り下げ: 工夫の字も考えの字も消える ──
 assert records.withdraw(rid)[1] == []
-assert everywhere(CRAFT) == [] and everywhere(THINK) == [], (everywhere(CRAFT), everywhere(THINK))
+for gone in (CRAFT, THINK, EARLY_CRAFT, EARLY_THINK):
+    assert everywhere(gone) == [], (gone, everywhere(gone))
+assert everywhere(THEIRS), "ほかの人の字は消さない"
 assert oid not in {x["id"] for x in hypotheses.own_hypotheses(G)}
+assert not [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid], "消えた紙の確定の記録を残さない"
 
 # ── 手帖から: 本人の紙を選んで記録する ──
 T2, C2 = "筒を細くしたら速く開くと思う", "内筒に蝋を塗ると滑る"

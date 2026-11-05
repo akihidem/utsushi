@@ -109,6 +109,22 @@ assert think_sheet.NO_FIT in think_sheet.section(G, f"think-{w2['token']}")
 free = think_sheet.confirm(G, w2["token"])[0]
 assert free.endswith("_free.pdf") and f'<img src="/sheet/{G}/{free[:-4]}.png"' in think_sheet.section(G, f"think-{w2['token']}"), "型紙なしの紙でも絵が出る"
 
+# 変えた寸法の「もと」は、たたき台の記録に無くても出す（雛形の既定を重ねた今の値。虎は記録に mount しか無い）
+T0 = "NDL-1187053-R0000014-R"
+talk_log.add(T0, "think", "耳を長くしたい", who=WHO)
+wt, _ = think_sheet.request(T0, WHO)
+assert not words.fill_think(wt["id"], words.think_result(wt["base_params"], {"ear_length": 13}), "作る側")[1]
+html = think_sheet.section(T0, f"think-{wt['token']}")
+assert "耳の長さ（mm）: 12 → 13" in html, html
+# Claude が既定のままの寸法を一緒に返しても、変えていないので案にする。呼び名の無い物は「もとのまま」に内部の名前で出さない
+extra = {"fits": True, "params": {"mount": "neck", "ear_length": 13, "glue": 8}, "from_words": ["ear_length"],
+         "filled_in": [{"param": "mount", "why": words.KEPT_AS_IS}, {"param": "glue", "why": words.KEPT_AS_IS}], "not_fit": []}
+talk_log.add(T0, "think", "耳をもっと長くしたい", who=WHO)
+wx, why = think_sheet.request(T0, WHO, claude=True, client=Fake([extra]))
+assert wx and wx["status"] == "pending_human", (wx, why)
+html = think_sheet.section(T0, f"think-{wx['token']}")
+assert "耳の長さ（mm）: 12 → 13" in html and "glue" not in html and "頭の付け方" in html, html
+
 # ── 鍵ありの道（偽の Claude）を画面の関数で ──
 think("割り箸の柄で押したい", who=OTHER)
 CHANGED = {"push_part": "stick", "pusher_height": 84}

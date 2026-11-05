@@ -168,6 +168,11 @@ def confirm(sid, token):
     out_dir(sid).mkdir(parents=True, exist_ok=True)
     if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
         return None, FAILED
+    # 紙に刷った組を、刷る時に残す（たたき台を刷る時と同じ型紙の確定）。束が、この紙の記録を同じ組の札や工夫と同じ群に入れるため。記録の時の組では、版が上がった後に違う組になる。
+    from omochae import loop
+    from omochae.compose import TEMPLATES
+
+    loop.confirm_sheet(sid, oid, 1, BY_PAGE, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
     return sheet_of(sid, oid), None
 
 
@@ -213,10 +218,11 @@ def changeable(sid):
 def _changes(sid, w, r):
     """変えた所は「もと → 今」で、文を見た人が決めた所は理由つきで、もとのままの所は畳んで見せる。内部の名前を学ぶ人に見せない（今ある呼び名を使う）。"""
     template = hypotheses.load(sid).get("template", "slider_fan")
-    p, base = r.get("params", {}), w.get("base_params") or {}
+    p, base = r.get("params", {}), words.current_values(sid, w.get("base_params"))
     said = "".join(f"<li>{esc(_name(template, k))}: {esc(_value(base[k])) + ' → ' if k in base else ''}{esc(_value(p.get(k)))}</li>" for k in r.get("from_words", []))
     filled = [f for f in r.get("filled_in", []) if f["why"] != words.KEPT_AS_IS]
-    kept = [f["param"] for f in r.get("filled_in", []) if f["why"] == words.KEPT_AS_IS]
+    # もとのままの所は、読める物だけを出す（変わらないので、確かめに要らない。雛形の既定の寸法を、内部の名前で出さない）。
+    kept = [f["param"] for f in r.get("filled_in", []) if f["why"] == words.KEPT_AS_IS and readable(template, f["param"], p.get(f["param"]))]
     out = f'<p>{esc(CHECK)}</p><p class="meta">{esc(FROM_WORDS)}</p><ul>{said}</ul>'
     if filled:
         items = "".join(f"<li>{esc(_name(template, f['param']))}: {esc(_value(p.get(f['param'])))}（{esc(f['why'])}）</li>" for f in filled)

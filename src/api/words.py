@@ -114,6 +114,12 @@ THINK_NOTE = ("次の考えは、たたき台の型紙（base）を見た人が�
               "変えてよい寸法は can_change だけです。ほかの寸法を変えないと言っている事にならない時は fits を false にします。")
 
 
+def current_values(source_id, base_params):
+    """今の紙の寸法の全部（雛形の既定に、たたき台の寸法を重ねた物）。たたき台の記録は仮説を分ける寸法しか持たないので、比べる元はこれにする。
+    節を出すかの判定（think_sheet.ready）は、たたき台の記録の寸法を見るので、ここを使わない。"""
+    return {**TEMPLATES[hypotheses.load(source_id).get("template", "slider_fan")].DEFAULTS, **(base_params or {})}
+
+
 def base_of(source_id):
     """たたき台の仮説（記録の欄 sheet。hypotheses.sheet_of）と、その一番新しい版の寸法。作り直す元はここ 1 か所で決める（話した時に見た仮説には依らない。本人の決定 11-05 18:08）。
     一番新しい版なのは、最新版が次の人の型紙になるので（本人の方針 11-05）、本人が見て話した紙がそれだから。"""
@@ -222,7 +228,7 @@ def request_think(source, talk, talk_file, name, evidence, client=None, use_clau
     if use_claude:
         from web import think_sheet
 
-        user = (THINK_NOTE + "\n<data>\n" + _data({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"), "can_change": think_sheet.changeable(sid),
+        user = (THINK_NOTE + "\n<data>\n" + _data({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"), "can_change": {k: current_values(sid, base_params).get(k) for k in think_sheet.changeable(sid)},
                                                        "base": {"hypothesis_id": h["id"], "name": h["name"], "how_it_moves": h["how_it_moves"], "params": base_params},
                                                        "what_they_said": text}) + "\n</data>")
         try:
@@ -275,8 +281,8 @@ def check_names(result, source, base):
     sid = source["source_id"]
     if not think_sheet.ready(sid):
         return []
-    template, base = hypotheses.load(sid).get("template", "slider_fan"), base or {}
-    return [Failure("F9.own", k, f"呼び名の無い寸法は変えられない: {k}") for k, v in (result.get("params") or {}).items() if base.get(k) != v and not think_sheet.readable(template, k, v)]
+    template, now = hypotheses.load(sid).get("template", "slider_fan"), current_values(sid, base)
+    return [Failure("F9.own", k, f"呼び名の無い寸法は変えられない: {k}") for k, v in (result.get("params") or {}).items() if now.get(k) != v and not think_sheet.readable(template, k, v)]
 
 
 def think_result(base_params, changed=None, not_fit=None):
@@ -333,7 +339,8 @@ def main(argv=None):
         for w in waiting():
             print(f"{w['id']} {w['source_id']} たたき台 {w['base']} {json.dumps(w.get('base_params'), ensure_ascii=False)}")
             print(f"  話した考え: {w['how_it_moves']}")
-            print(f"  変えられる寸法: {' '.join(think_sheet.changeable(w['source_id']))}")
+            now = current_values(w["source_id"], w.get("base_params"))
+            print("  変えられる寸法（今の値）: " + " ".join(f"{k}={now.get(k)}" for k in think_sheet.changeable(w["source_id"])))
         return 0
     w = loop._read(loop.folder() / f"words-{args.id[2:]}.json") if args.id.startswith("W-") else None
     if w is None:
