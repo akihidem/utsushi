@@ -4,6 +4,7 @@
 details なので JS なしで開く。文は玩具にも仮説にもよらない（型紙は玩具ごとに 1 枚にする決定 #332 で、仮説ごとの案内は要らなくなる）。
 文の表が空の時は何も出さない。文面を本人が確かめるまで、仕組みだけを main に入れられるようにするため。
 """
+import json
 import os
 import re
 import tempfile
@@ -14,10 +15,14 @@ import urllib.request
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "api-usage.jsonl")
 
+from omochae import hypotheses  # noqa: E402
 from web import toy  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# ほかの玩具の紙でも同じ文か見る。型紙は玩具ごとに 1 枚（#332）で、必須 2 種の今の組はたたき台しか刷れないので、仮説でなく玩具を替える
+T = next(p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("*.json")) if json.loads(p.read_text(encoding="utf-8")).get("stage") == "試作")
+SHEET = {sid: hypotheses.sheet_of(sid)["id"] for sid in (G, T)}
 SAMPLE = (("見出し<1>", "文の 1"), ("見出し 2", "文の 2"), ("見出し 3", "文の 3"))
 
 
@@ -33,18 +38,18 @@ for look in ("tenji", "zine"):
     base = f"http://127.0.0.1:{server.server_address[1]}"
     threading.Thread(target=server.serve_forever, daemon=True).start()
     if not printed:
-        for hid in ("H-A", "H-B"):
+        for sid, hid in SHEET.items():
             data = urllib.parse.urlencode({"hypothesis": hid}).encode()
-            urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
+            urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=data, headers={"Origin": base}), timeout=120)
         printed = True
-    get = lambda q: urllib.request.urlopen(f"{base}/toy/{G}{q}", timeout=60).read().decode()  # noqa: E731
+    get = lambda q, sid=G: urllib.request.urlopen(f"{base}/toy/{sid}?see={SHEET[sid]}&v=1&{q}", timeout=60).read().decode()  # noqa: E731
 
     # 文の表が空なら、窓に何も足さない
     toy.PRINT_HELP_SUMMARY, toy.PRINT_HELP = "", ()
-    assert help_part(get("?see=H-A&kind=sheet&v=1")) == "", ("空の時は出さない", look)
+    assert help_part(get("kind=sheet")) == "", ("空の時は出さない", look)
 
     toy.PRINT_HELP_SUMMARY, toy.PRINT_HELP = "止まった時", SAMPLE
-    page = get("?see=H-A&kind=sheet&v=1")
+    page = get("kind=sheet")
     part = help_part(page)
     assert part, ("案内が無い", look)
     # 押す前は閉じていて、1 回押せば全部読める。JS に頼らない
@@ -55,7 +60,7 @@ for look in ("tenji", "zine"):
     # PDF の釦のすぐ後ろ。遠くに置くと止まった時に見つからない
     assert page.index("PDF を開いて印刷する") < page.index('class="meta print-help"') < page.index("100% で刷り"), ("置き場", look)
     # どの紙でも同じ文
-    assert help_part(get("?see=H-A&kind=tejun&v=1")) == part, ("手順の紙", look)
-    assert help_part(get("?see=H-B&kind=sheet&v=1")) == part, ("ほかの紙", look)
+    assert help_part(get("kind=tejun")) == part, ("手順の紙", look)
+    assert help_part(get("kind=sheet", T)) == part, ("ほかの玩具", look)
     server.shutdown()
 print("ok")
