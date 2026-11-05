@@ -81,7 +81,7 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}, ctype="text/plain")[0] == 
 assert re.search(r"id=\"kasetsu\".*class=\"plates\".*<details><summary>自分の仮説を立てる", body, re.S), "畳んでいない"
 # 順位を出さない。並びは元の記録の順
 assert "rank" not in body and "順位" not in body
-assert re.search(r"仮説 A.*仮説 B.*仮説 C.*仮説 D.*仮説 E", body, re.S)
+assert "仮説 A" in body and "仮説 B" not in body, "札はたたき台の 1 枚だけ（J-032）"
 # 刷る。試した後の紙は記録の前は出さず、URL を知っていても渡さない
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 body = get(f"/toy/{G}")[1].decode()

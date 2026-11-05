@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_after_sheet_real.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 7782ede（直す前の main。試験だけを置いた git の外の木で回した）
+AssertionError: ('窓の紙の番号が記録と違う', 'R-0001')
+試験 rc=1
+rc=0
