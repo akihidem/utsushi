@@ -1007,6 +1007,20 @@
 - 検証ゲート: **済み**。Red: 足した試験が直す前に rc 1（gate-evidence/red-run-demo-port.txt）。Green: rc 0（gate-evidence/green-run-demo-port.txt）
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: Issue #274 に書く
+
+## 印刷で止まった時の案内の置き場を作る（Issue 対応の担当、issue/297-print-help、11-05 夕。#297）
+
+- 目的: プリンタの前で止まった時に、次にする事を窓の中で読めるようにする
+- なぜか: 窓の説明は「100% で刷り」だけで、設定の場所も、10cm でない時も、プリンタが無い時も画面に無かった
+- どうしたらいいか: PDF の釦のすぐ下に `details` を 1 つ置く。比べた案は序の頁に置く形（窓から遠い）と、紙の字だけで足す形（刷れない人に届かない）。文の表が空の時は何も出さない
+- ゴールの要件: 窓から 1 回の操作で全部の案内が読める。JS なしで開く。どの紙でも同じ文（`tests/test_print_help.py`）
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-297-print-help.txt`、Green は `docs/process/gate-evidence/green-297-print-help.txt`
+- エビデンスゲート: 上の出力と `./run.sh`
+- 案内の文（本人の決定、11-05 夕、全部このまま）: 倍率の出し方、10cm でない時、プリンタが無い時の 3 つ。10cm にならない時は、そのまま作ってよいと決まった。文は試験で文字列を見る。Red は `docs/process/gate-evidence/red-297-print-words.txt`、Green は `docs/process/gate-evidence/green-297-print-words.txt`
+- 案内の字の大きさ: 本文と同じ 16px にした。プリンタの前で小学生も読む文で、前の 12px では小さいため（文面の直しではない）。Red は `docs/process/gate-evidence/red-297-print-size.txt`、Green は `docs/process/gate-evidence/green-297-print-size.txt`
+- まだの事: 書いた道を実機で確かめた記録は無い。人の手が要る
+- マージ後の書き戻し: #297 に書く
+
 ## スマホの幅の頭の帯を詰める（Issue 対応の担当、issue/303-fix、11-05 夕。#303）
 
 - 目的: 帯の字を読めるように替えても、スマホの幅で段を増やさない
