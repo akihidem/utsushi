@@ -56,7 +56,7 @@
 | 11 | [research/06](research/06-rederive-defaults.md) | 初期値を絵の測定と紙面の制約から出し直した | 調査 |
 | 12 | [research/07](research/07-own-scans.md) | 手元の複写を基準に寸法と読みを照合した | 調査 |
 | 13 | [research/08](research/08-fan-axle.md) | 台に載せる形は 180° で筒にぶつかると計算 | 調査 |
-| 14 | [J-005](decisions/J005-axle-default.md) | 扇の中心の置き方を比べた。実物で未確定 | 仮の決定 |
+| 14 | [J-005](decisions/J005-axle-default.md) | 扇の中心の置き方を比べた。中心の軸で開くのを試行で確かめた | 試行で確かめた |
 | 15 | [research/09](research/09-contributions-design.md) | 持ち寄りの場の受付と権利の線の設計 | 調査 |
 | 16 | [J-006](decisions/J006-contributions-minimum.md) | 持ち寄りは確認つきの受付を先に作る | 決定。外の入口は判断待ち |
 | 17 | [research/10](research/10-redraw-colors.md) | 図を描き直すための色と線を調べた | 調査 |

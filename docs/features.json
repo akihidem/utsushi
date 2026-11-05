@@ -158,6 +158,8 @@
   "status": "doing",
   "evidence": [
    "tests/test_reply_visible.py",
+   "src/web/wording.py",
+   "tests/test_wording.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",
