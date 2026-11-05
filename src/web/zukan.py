@@ -68,7 +68,8 @@ def record_title(r, data):
     """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
-    return f"{who}・{r['result']}"
+    word = records.result_word(r)
+    return f"{who}・{word}" if word else who
 
 
 def record_date(r):

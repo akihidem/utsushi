@@ -37,6 +37,12 @@ def results_for(source_id):
     return TEMPLATES[load(source_id).get("template", "slider_fan")].RESULTS
 
 
+def result_word(rec):
+    """記録の札の字。手で置かれた記録の札は字とは限らず、欄が無い事もある（#146）。字でない札は数えず、頁にも出さない。"""
+    word = rec.get("result")
+    return word if isinstance(word, str) else ""
+
+
 def old_results_for(source_id):
     """前の札の言葉 → 今の札の言葉。新しく選ばせる札でなく、前の札で残った記録を読むための受け口（#146）。"""
     from .compose import TEMPLATES
@@ -161,7 +167,9 @@ def summarize(records):
     table = {}
     for r in records:
         row = table.setdefault(r["hypothesis_id"], {x: 0 for x in results_for(r["source_id"])} | {"record_ids": []})
-        row[r["result"]] = row.get(r["result"], 0) + 1  # 前の札の記録は、その言葉のまま別に数える
+        word = result_word(r)
+        if word:
+            row[word] = row.get(word, 0) + 1  # 前の札の記録は、その言葉のまま別に数える
         row["record_ids"].append(r["id"])
     return table
 
