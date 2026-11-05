@@ -37,7 +37,10 @@ const hiddenLabel=e=>e.tagName==='LABEL'&&e.getBoundingClientRect().height<=2;
 const tap=[...document.querySelectorAll('a,button,input,select,summary,label,textarea')].filter(e=>e.type!=='hidden'&&vis(e)&&!inSentence(e)&&!(e.tagName==='INPUT'&&e.closest('label'))&&!hiddenLabel(e));
 const low=tap.map(e=>[name(e),Math.round(e.getBoundingClientRect().height)]).filter(x=>x[1]<%d);
 const small={};for(const e of document.querySelectorAll('body *')){if(!vis(e)||![...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()))continue;const f=parseFloat(getComputedStyle(e).fontSize);if(f<%d){const k=(e.className&&e.className.baseVal===undefined&&e.className?'.'+String(e.className).trim().split(/\\s+/)[0]:e.tagName.toLowerCase())+' '+f;small[k]=(small[k]||0)+1}}
-parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth}),'*');
+// 帯の段ごとの項目の数。1 つだけ次の行に落ちていないかを見る（#125）
+// 縦の中心が近い物を同じ段と数える。top で数えると、今いる項目の下の罫の分だけずれて、同じ段を別の段と数えた
+const rows=[];for(const a of document.querySelectorAll('.nav a')){if(!vis(a))continue;const r=a.getBoundingClientRect(),c=(r.top+r.bottom)/2,hit=rows.find(x=>Math.abs(x.c-c)<14);if(hit)hit.n++;else rows.push({c,n:1})}
+parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth,nav:rows.map(x=>x.n)}),'*');
 },800)</script>""" % (MIN_TAP, MIN_FONT)
 # Chrome の新しい headless は窓の幅が 500 より狭くならない。CSS の幅の判定は iframe の幅で働くので、幅を決めた iframe に入れて測り、結果を親へ渡す
 WRAP = """<!doctype html><body><iframe src="%s" width="%d" height="844" style="border:0"></iframe><script>
@@ -112,8 +115,9 @@ def main():
                 print(f"検査できない: 窓の幅が {got['w']} で {width} にならない", file=sys.stderr)
                 return 4
             kinds = sorted({re.sub(r" .*", "", x[0]) for x in got["low"]})
-            print(f"{look:6} {path[:28]:28} 押す所 {got['tap']:3}・{MIN_TAP} 未満 {len(got['low']):3} {kinds[:5]}  小さい字 {sum(got['small'].values()):3} {list(got['small'])[:4]}  横幅 {got['sx']}")
+            print(f"{look:6} {path[:28]:28} 押す所 {got['tap']:3}・{MIN_TAP} 未満 {len(got['low']):3} {kinds[:5]}  小さい字 {sum(got['small'].values()):3} {list(got['small'])[:4]}  横幅 {got['sx']}  帯の段 {got['nav']}")
             bad += len(got["low"]) + sum(got["small"].values())
+            bad += sum(1 for i, n in enumerate(got["nav"]) if i and n == 1)  # 2 段目より後に 1 つだけ落ちた項目
         server.shutdown()
     print(f"満たさない所 {bad}")
     return 3 if bad else 0
