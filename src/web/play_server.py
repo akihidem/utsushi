@@ -302,7 +302,8 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
             from . import zukan
-            return self._send(200, zukan.toy_zukan(m.group(1), look) if m.group(1) else zukan.index_page(sources(), look))
+            photos = not getattr(self.server, "public_open", False)
+            return self._send(200, zukan.toy_zukan(m.group(1), look, photos) if m.group(1) else zukan.index_page(sources(), look, photos))
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
         if path == "/en":
             # 英語の入口と玩具の頁（J-030 の段 1）。
@@ -382,7 +383,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
         # 刷った紙。PDF（刷る）のほかに PNG と SVG（画面で見る、要件の S-01）。試した後の紙はどの形でも記録の前は渡さない。
         m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v\d+(?:_tejun|_after|_free)?)\.(pdf|svg|png)", path)
-        if m and m.group(1) in sources():
+        # 自分の仮説の紙は、合言葉なしで開いた場では渡さない: 紙に文が刷られ、番号を数えれば誰でも開ける（J-028、#336）。
+        if m and m.group(1) in sources() and not (getattr(self.server, "public_open", False) and m.group(2).startswith("OWN-")):
             sid, stem, ext = m.groups()
             hid = re.split(r"_v\d+", stem)[0]
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
@@ -666,7 +668,12 @@ class Handler(BaseHTTPRequestHandler):
             own, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
             msg = "仮説を残しました。「紙を作る」で、身の回りの紙と紐で作る型紙なしの紙ができます"
             anchor = f"own-{own['id']}" if own else anchor
+            # 合言葉なしで開いた場では札も紙も出さないので、無い釦へ案内せず、節の頭で返事をする（J-028、#336）。
+            if getattr(self.server, "public_open", False):
+                msg, anchor = "仮説を残しました。", "kasetsu"
         elif act == "print-own":
+            if getattr(self.server, "public_open", False):
+                return self._send(403, "公開のデモでは使えません")
             oid = form.get("id", "")
             if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
                 return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"], at="kasetsu"))

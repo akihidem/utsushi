@@ -453,7 +453,7 @@ def neighbours(sid):
 def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None):
     """玩具の頁。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で、開いたら仮説の札と刷る口がすぐ見える。
     答えに読まれない事は、門でなく札で守る: 「型紙は正解ではなく、AI が考えた仮説」を作る節の頭に出す（本人の言葉 11-05）。
-    photos=False は合言葉なしで開いた場（写真と動画を出さない。J-028）。
+    photos=False は合言葉なしで開いた場（写真と動画と、人の書いた文を出さない。J-028）。
     at は返事の文を入れる場所（節か札の id）。着く錨と同じ物を渡す（#121）。filled は通らなかった欄の名前と、書いた中身。"""
     data, src = hypotheses.load(sid), source(sid)
     path = path or f"/toy/{sid}"
@@ -477,7 +477,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                 f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>', fill("own"))
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
-    own = hypotheses.own_hypotheses(sid)
+    # 合言葉なしで開いた場では、札にも記録の欄の選択肢にも出さない: 人ごとに分かれておらず、文の中の名前は機械で落とせない（J-028、#336）。
+    own = hypotheses.own_hypotheses(sid) if photos else []
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。札はたたき台の 1 枚だけで、順位は学ぶ人の画面に出さない（J-013・J-025・J-032）。
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}{esc(ways.NOTE)}</p><div class="plates">')

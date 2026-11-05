@@ -8,12 +8,13 @@ import io
 import os
 import tempfile
 import threading
+import urllib.parse
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from PIL import Image  # noqa: E402
 
-from omochae import records  # noqa: E402
+from omochae import hypotheses, records  # noqa: E402
 from web import techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -52,6 +53,7 @@ def up(**kw):
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=20)
         c.request(method, path, body=body, headers={"Host": HOST, **(headers or {})})
         r = c.getresponse()
+        call.location = r.getheader("Location")
         return r.status, r.read().decode("utf-8", "replace")
     call.local = f"127.0.0.1:{port}"
     return call
@@ -101,6 +103,38 @@ for path in (f"/toy/{G}", f"/toy/{G}/techo"):
     assert "TOLDWORDS" in page and "NEXTWORDS" in page and f"/record/{told_id}/next" in page and 'name="interpretation"' in page, path
 made = closed("POST", f"/record/{told_id}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"})
 assert made[0] == 303, made
+# 自分の仮説の文も同じ線（#336 の続き）。残せるが、札・記録の欄の選択肢・図鑑・文が刷られる紙のどこにも出さない
+assert opened("POST", f"/toy/{G}/own", "name=OWNNAME&how=OWNHOW&evidence=OWNWHERE", form)[0] == 303
+oid = hypotheses.own_hypotheses(G)[-1]["id"]
+back = opened.location.split("#")[0]
+# 合言葉付きの場（手元の名前で開く）では、札と図鑑に今までどおり出て、紙も作れる。ここで作った紙と記録を、下で開いた場から開く
+local_form = {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"}
+for path in (f"/toy/{G}", f"/zukan/{G}", "/zukan"):
+    page = closed("GET", path, None, local)[1]
+    assert "OWNNAME" in page and "OWNHOW" in page, path
+page = closed("GET", f"/toy/{G}", None, local)[1]
+assert "OWNWHERE" in page and f"/toy/{G}/print-own" in page and f'<option value="{oid}">' in page
+assert closed("POST", f"/toy/{G}/print-own", f"id={oid}", local_form)[0] == 303
+assert closed("POST", f"/toy/{G}/record", f"hypothesis={oid}&result=%E5%8B%95%E3%81%84%E3%81%9F", local_form)[0] == 303
+papers = [f"/sheet/{G}/{oid}_v1_{kind}.{ext}" for kind in ("free", "after") for ext in ("pdf", "png", "svg")]
+for path in papers:
+    assert closed("GET", path, None, local)[0] == 200, path
+# 紙が在っても、合言葉なしの場の頁に文を出さず、紙も開けない
+for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/tsukuru?h={oid}", f"/toy/{G}/techo"):
+    code, page = opened("GET", path)
+    assert code == 200, (path, code)
+    for word in ("OWNNAME", "OWNHOW", "OWNWHERE"):
+        assert word not in page, (path, word)
+for path in papers:
+    assert opened("GET", path)[0] == 404, path
+assert opened("GET", f"/sheet/{G}/H-A_v1.pdf")[0] == 200, "閉じるのは自分の仮説の紙だけ。たたき台の紙は開ける"
+assert opened("POST", f"/toy/{G}/print-own", f"id={oid}", form)[0] == 403, "紙に文が刷られるので刷らない"
+page = opened("GET", f"/toy/{G}")[1]
+assert f"/toy/{G}/print-own" not in page and f'id="own-{oid}"' not in page and f'<option value="{oid}">' not in page
+assert f"/toy/{G}/own#kasetsu" in page, "欄は残す（残せる線）"
+# 残した事は返事で分かる。この場に無い釦へは案内しない
+assert "at=kasetsu" in back, back
+assert "仮説を残しました。" in opened("GET", back)[1] and "紙を作る" not in urllib.parse.unquote(back)
 # 別の出所からは書けない（開いていても）
 assert opened("POST", f"/toy/{G}/own", "name=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
 # 作る側の頁は出さない（聞いた言葉と感想の文が読める頁で、名前は機械では落とせない）。開いていない時は出る
