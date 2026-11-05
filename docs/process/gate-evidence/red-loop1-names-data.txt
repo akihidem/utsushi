@@ -1,0 +1,13 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_words.py
+# commit: 961f100（回した時の HEAD）
+F9.own: 自分の仮説「試験の案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp3ihr1k5l/OWN-1_v1.pdf
+/tmp/tmp3ihr1k5l/OWN-1_v1_tejun.pdf
+/tmp/tmp3ihr1k5l/OWN-1_v1_after.pdf
+/tmp/tmp3ihr1k5l/OWN-2_v1_free.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_words.py", line 148, in <module>
+    assert any(f.where == "tube_height" and "呼び名" in f.message for f in fs), fs
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: []
+rc=1

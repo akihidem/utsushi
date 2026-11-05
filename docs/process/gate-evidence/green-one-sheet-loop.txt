@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_loop.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 6f386d7（回した時の HEAD）
+ok 改善の輪はたたき台の 1 枚の形で回る。採った案は次の版か作る側の控えになり、札に出ない
+試験 rc=0
+rc=0

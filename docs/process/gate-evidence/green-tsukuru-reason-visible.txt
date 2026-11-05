@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_reply_visible.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmpcc0likn9/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpcc0likn9/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpcc0likn9/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpcc0likn9/play/NDL-1187053-R0000005-L/.tmp-jf3d8ufl/H-A_v2.pdf
+/tmp/tmpcc0likn9/play/NDL-1187053-R0000005-L/.tmp-jf3d8ufl/H-A_v2_tejun.pdf
+/tmp/tmpcc0likn9/play/NDL-1187053-R0000005-L/.tmp-jf3d8ufl/H-A_v2_after.pdf
+ok
+rc=0
