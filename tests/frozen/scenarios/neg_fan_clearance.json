@@ -4,7 +4,8 @@
   "params": {
     "hub": "rim",
     "push_amount": 36,
-    "pusher_height": 40
+    "pusher_height": 40,
+    "fold_height": 36
   },
   "inject": {},
   "expect": {
