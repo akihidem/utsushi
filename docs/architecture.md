@@ -41,6 +41,7 @@
 | `src/web/demo_check.py` | デモのリンクの先が開くかを見る（`run-demo.sh` から呼ぶ。合言葉付きのリンク → Cookie で頁まで。合言葉なしの形は入口が開くか）。port が空いているかも見る |
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。皮はサイトごとに 1 つで、頁の中に切り替えは無い（docs/process/site-requirements.md の 15） |
 | `src/web/toy.py` | 玩具の頁。開いたらすぐ仮説の札（#242）→ 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る。たとえと関連する事柄の節（analogy_section、予想の後） |
+| `src/web/rittai.py` | できあがりの形を立体で見る試し（#331）。御来迎だけ。カメラの映像は頁の中で小さく縮めて読むだけで、送らず残さない。絵は雛形の寸法から CSS の立体で組む |
 | `src/web/en.py` | 英語の頁（J-030 の段 1）。入口と玩具ごとの頁。文は data/en の下。紙は日本語のままで、刷る口は日本語の頁と同じ `print_latest`。聞く口と記録の口は置かない |
 | `src/web/hokusai.py` | 北斎漫画の節（本人の決定 11-05）。絵の取り込みは `src/omochae/hokusai.py`、権利と切り出しの枠は動画と同じ `src/demo/figures.json`・`src/demo/scene4_sources.json`。玩具の頁と一覧には置かない |
 | `src/web/kaizen.py` | 改善の輪（J-026）。玩具の頁の節（どの報告がどの版を変えたか・次の版を待つ報告）と、サイト側の一覧 /loop。台帳は omochae.loop の版の記録をそのまま読む。玩具ごとの様子の頁 /loop/<印>（作る側の集計） |

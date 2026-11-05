@@ -22,6 +22,7 @@ from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
+from . import rittai
 from .toys import way_tags
 
 KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙"))
@@ -463,7 +464,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     own = hypotheses.own_hypotheses(sid)
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。並びは記録の順で、順位は学ぶ人の画面に出さない（J-013・J-025）。
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">作りたい案を選んで、型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
-                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}{esc(ways.NOTE)}</p><div class="plates">')
+                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}{esc(ways.NOTE)}</p>{rittai.link(sid)}<div class="plates">')
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])

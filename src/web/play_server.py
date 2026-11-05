@@ -301,6 +301,13 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/rittai", path)
+        if m:
+            # できあがりの形を立体で見る試し（本人の決定 11-05、#331）。カメラの映像は頁の中だけで使い、ここへは届かない。
+            from . import rittai
+            if m.group(1) not in rittai.MODELS:
+                return self._send(404, "無い")
+            return self._send(200, rittai.page(m.group(1), look, path))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
