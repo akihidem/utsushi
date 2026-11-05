@@ -30,6 +30,7 @@
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮の cookie、刷った紙の口（PDF・PNG・SVG。試した後の紙は記録の後だけ）、合言葉の門 |
+| `src/web/demo_check.py` | デモのリンクの先が開くかを見る（`run-demo.sh` から呼ぶ。合言葉付きのリンク → Cookie で頁まで）。port が空いているかも見る |
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。入口で選んだ皮が cookie で全部の頁に続く（docs/process/site-requirements.md） |
 | `src/web/toy.py` | 玩具の頁。記録を読む → 予想 → 仮説の札 → 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る |
 | `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（必須 2 を大きく、試作を札で） |

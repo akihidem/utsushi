@@ -1,0 +1,12 @@
+# Green: 直した後。トンネルは偽の命令で、網は使っていない
+$ PYTHONPATH=src .venv/bin/python tests/test_run_demo.py
+ok opens
+ok busy port
+ok server died at start
+ok tunnel unreachable
+ok open and stop
+ok fresh key
+ok server died later
+ok tunnel died later
+ok
+rc 0
