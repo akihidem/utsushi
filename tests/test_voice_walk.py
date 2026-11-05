@@ -76,6 +76,11 @@ mic.click();await wait();R.talkOn=mic.getAttribute('aria-pressed');
 await hear('紙を二重に貼った');R.kufu=[kufu.value,fold.open];
 mic.click();await wait();R.talkOff=mic.getAttribute('aria-pressed');
 await hear(CH[1]);R.kufuAfter=kufu.value;
+// 写真を選んだ後は、約束の印が無いと先へ進まない（押した時に見る。選んだ知らせの有無に頼らない）
+const dt=new DataTransfer();dt.items.add(new File([new Uint8Array([255,216,255,217])],'a.jpg',{type:'image/jpeg'}));
+const picker=document.getElementById('files');picker.files=dt.files;picker.dispatchEvent(new Event('change'));await wait();
+await hear('のこす');R.noPromise=[te.dataset.scene,document.querySelector('.check').classList.contains('call'),picker.files.length];
+document.getElementById('ok').checked=true;
 await hear('のこす');R.kekka=te.dataset.scene;
 await hear(CH[0]);R.chatter=[te.dataset.scene,asks().length];
 await hear('もどる');R.fromkekka=[te.dataset.scene,mic.getAttribute('aria-pressed')];
@@ -228,6 +233,8 @@ assert R["end"] == ["end", 1], R["end"]
 assert R["kufuBefore"] == ["", False, "false", 2], R["kufuBefore"]
 assert R["talkOn"] == "true" and R["kufu"] == ["紙を二重に貼った", True], (R["talkOn"], R["kufu"])
 assert R["talkOff"] == "false" and R["kufuAfter"] == "紙を二重に貼った", (R["talkOff"], R["kufuAfter"])
+# 写真を選んだ後は、約束の印が無いと「のこす」で先へ進まない。選んだ写真は頁の中に持ち、選ぶ欄は空に戻す（戻った時にブラウザが欄を戻しても、印なしでは上がらない）
+assert R["noPromise"] == ["end", True, 0], R["noPromise"]
 # 結果の画面の話し声は捨てる。「もどる」で最後の画面へ戻ると、話す切り替えは閉じている
 assert R["kekka"] == "kekka" and R["chatter"] == ["kekka", 2] and R["fromkekka"] == ["end", "false"], (R["kekka"], R["chatter"], R["fromkekka"])
 # 操作の字は 1 つも送っていない。残す前は、工夫も記録も送っていない。出来事は開いた時の版のまま
