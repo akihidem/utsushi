@@ -38,7 +38,8 @@ def _pic(sid, main):
 
 def way_tags(names):
     """作り方の印の札。並べ替えや点数にしない（J-025）。"""
-    return f'<p class="ways">{"".join(f"<span class=\"lb\">{esc(n)}</span>" for n in names)}</p>' if names else ""
+    tags = "".join(f'<span class="lb">{esc(n)}</span>' for n in names)
+    return f'<p class="ways">{tags}</p>' if names else ""
 
 
 def card(sid):
@@ -46,7 +47,8 @@ def card(sid):
     main = hypotheses.stage(sid) == "必須"
     has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     more = "" if has else f'<p class="meta"><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></p>'
-    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
+    big = ' class="big"' if main else ""
+    return f'<li{big}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
 
 
 def paper_only_sids(sids):
