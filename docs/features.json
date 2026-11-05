@@ -292,6 +292,7 @@
   "status": "doing",
   "evidence": [
    "src/demo/build.py",
+   "src/demo/prepare.py",
    "src/demo/flip.py",
    "src/demo/scene2.py",
    "src/demo/scene3.py",
@@ -309,6 +310,7 @@
    "tests/test_demo_scene7.py",
    "tests/test_demo_assemble.py",
    "tests/test_demo_build.py",
+   "tests/test_demo_prepare.py",
    "docs/demo/plan.md"
   ],
   "unverified": "曲と字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まり、9 枚とも通る（どれを映すかは撮影の中身で決める）。本人と審査の人に見せていない"

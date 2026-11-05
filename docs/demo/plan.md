@@ -98,7 +98,7 @@
 ### 7 場面をそろえ、本番の入口で通した（11-04、本人の方針「本番想定で動かすところまで」）
 
 - 場面 3・5・6 も枝を分けて同時に作った（lane/demo-s3・s5・s6、c8e64ee から）。場面 3 は使い手の画面（play_server）を手元で立て、予想を一時の場所へ送り（repo の data/ には書かない）、headless の Chrome で撮った。場面 5 は U-24 の表で許された写真だけを使う（今は 0 枚。空の枠に「写真は公開前の確かめの後に入る（U-24）」）。場面 6 の旧い紙は git に残した goraigo-v7 の PDF で、作り直していない
-- 本番の入口: `PYTHONPATH=src .venv/bin/python -m demo.build --out <repo の外>`（撮る日は `--music`・`--photos` を本人の答えで足す）
+- 本番の入口: `PYTHONPATH=src .venv/bin/python -m demo.build --out <repo の外>`（撮る日は `--music`・`--photos` を本人の答えで足す）。前の日に `python -m demo.prepare`（道具と絵の取り寄せ）、撮る日は `--offline` で網を切れる。途中で落ちたら `--run <置き場> --only <場面>` で作り直す（#168）
 - 通した結果（11-04）: 試験 61/61 を読んで 7 場面を書き出し、計 170.0 秒（床 180 秒）・rc 0。build.json に commit 3a95fa9・dirty false・試験 [61, 61]
 - 各場面の床は、前の版の src で ImportError・rc 1（Red）、今の版で ok（Green）
 - 長さ: 15・20・25・30・30・30・20 秒。台本の表の時間をこれに合わせて直した（場面 5・6 は 35 秒から 30 秒）
