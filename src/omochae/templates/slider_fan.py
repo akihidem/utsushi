@@ -3,7 +3,7 @@
 押し方は仮説の違いなので描き分ける（docs/process/decisions/J002）。寸法の初期値の根拠は research/03。
 どの値も実物では未確認。Claude が変えてよいのは RANGES にある名前の値だけで、座標には触れない。
 """
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Polygon
 
 from ..fan_model import clearance_limit_deg, opening_bound_deg, shortest_free_thread
 from ..model import Failure, Part
@@ -48,7 +48,10 @@ RANGES = {
 PUSH_PARTS = ("tab", "tube", "stick")
 HUBS = ("axle", "rim")
 # 開く糸を扇の中心からこの距離につなぐ。途中で突っ張らない糸が一番短く、よく開く位置（research/08）。
+# 低い扇では穴が紙の外に出る（F5.hole で落とす）が、半径を折りの高さに合わせて縮めない。黙って変えると糸の長さの計算と食い違うため。
 THREAD_RADIUS = 35
+# 開く糸を結ぶ筒の穴の、口からの深さ。糸の長さの式（thread_mm）も同じ値から測る。
+THREAD_DEPTH = 3
 # 溝が筒の端に近いと紙が裂けやすい。実物で確かめるまでの安全側の見込み。
 SLOT_MARGIN = 5
 
@@ -99,6 +102,10 @@ def check_physics(p):
         # 中心が上がる分だけ、隠すための行程が要る。
         if d + h > s:
             out.append(Failure("F5.fan_height", "蛇腹の扇", f"中心の高さ {d}＋折りの高さ {h} が押し上げる量 {s} を超え、扇が隠れない"))
+        # 足の糊代が扇の本体に食い込むと、糊代の折り線が要の穴の列を横切る。
+        # 範囲の検査は pivot_above_rim を 0 まで許すので、足の長さが糊代に足りない組はここで落とす。
+        if leg_length(p) < LEG_GLUE:
+            out.append(Failure("F5.fan_leg", "蛇腹の扇", f"足の長さ {leg_length(p)} が糊代 {LEG_GLUE} に足りず、糊代が扇に食い込む（中心の高さ {d} が 2 未満）"))
     elif h > s:
         # 口の台の形も、静かな時の台から口までは押し上げる量 s（軸の形と同じ見方）。H − s は台の下の空きで、
         # これと比べていたので、扇が口から出る寸法が通っていた（paper-to-toy の直しに合わせた。#163）。
@@ -115,6 +122,10 @@ def check_physics(p):
         out.append(Failure("F5.figure_height", "像", f"像の高さ {p['figure_h']} が折りの高さ＋6={h + 6} を超える"))
     if p["base_side"] > a:
         out.append(Failure("F5.base_size", "扇の台", f"扇の台 {p['base_side']} が内筒 {a} を超える"))
+    # 像の足の糊代は像の幅の 0.3〜0.7（parts の cx0・cx1）。台より広いと貼れない。像の高さだけを見ていたので通っていた。
+    foot = p["figure_w"] * (FOOT[1] - FOOT[0])
+    if foot > p["base_side"]:
+        out.append(Failure("F5.figure_base", "像", f"像の足の糊代 {foot:.1f} が扇の台 {p['base_side']} より広く、台に貼れない"))
     if p["push_part"] == "tab":
         if L > H - s:
             out.append(Failure("F5.stroke", "内筒", f"内筒の長さ {L} が静止時の筒の空き {H - s} に収まらない"))
@@ -131,25 +142,6 @@ def check_physics(p):
     if p["push_part"] != "tab" and L < H:
         # research/03: L < H だと指が筒の外にある間に押し切れない。
         out.append(Failure("F5.stroke", "押す部品", f"長さ {L} が筒の高さ {H} より短く、押し切れない"))
-    out += check_holes(p)
-    return out
-
-
-def check_holes(p):
-    """穴が部品の紙の中にある事（F5.holes）。
-
-    開く糸の穴は扇の要から THREAD_RADIUS の所に固定し、折りの高さは 20mm まで許すので、低い扇では穴が紙の外に出る。
-    像の穴は足元から pivot_above_rim の高さで、像より高いと紙の上に出る（レビュー指摘）。
-    半径を折りの高さに合わせて縮める案は採らない。35mm は糸が突っ張らない位置として選んだ値（research/08）で、黙って変えると糸の長さの計算と食い違うため。
-    """
-    out = []
-    for q in parts(p):
-        if not q.holes:
-            continue
-        paper = Polygon(q.outline).buffer(0)
-        for x, y, r in q.holes:
-            if not paper.contains(Point(x, y).buffer(r)):
-                out.append(Failure("F5.holes", q.name, f"穴 ({x:.1f}, {y:.1f}) が紙の外に出る"))
     return out
 
 
@@ -251,7 +243,7 @@ def parts(p):
     tube.hide_folds = True
     if p["hub"] == "axle":
         # 開く糸を試す穴。扇は 1 面目に平行に開くので、その両脇の面につなぐ。
-        tube.holes += [(A * 1.5, 3, 0.6), (A * 3.5, 3, 0.6)]
+        tube.holes += [(A * 1.5, THREAD_DEPTH, 0.6), (A * 3.5, THREAD_DEPTH, 0.6)]
     out.append(tube)
     if p["push_part"] in ("tab", "tube", "stick"):
         # 柄の形の内筒は短い土台（v8）。柄の先を下から差し込んで貼り、台を載せる面にする。
@@ -289,7 +281,8 @@ def parts(p):
         (fan.valley if i % 2 else fan.mountain).append(line)
     # 板ごとに 2 色を交互に塗り、色の境で折る（v9）。足は真ん中の板と同じ色にし、糊代は塗らない。
     fan.art = [{"kind": "poly", "pts": [(0, i * w), (h, i * w), (h, (i + 1) * w), (0, (i + 1) * w)], "fill": FAN_A if i % 2 == 0 else FAN_B} for i in range(n)]
-    if p["hub"] == "axle":
+    if p["hub"] == "axle" and leg_length(p) > LEG_GLUE:
+        # 足が糊代より短い寸法は F5.fan_leg で落とす。その時に足の絵を描くと形が裏返る（糊代より左から右へ逆に塗る）ので描かない。
         m, leg = n // 2, leg_length(p)
         fan.art.append({"kind": "poly", "pts": [(-leg + LEG_GLUE, m * w), (0, m * w), (0, (m + 1) * w), (-leg + LEG_GLUE, (m + 1) * w)], "fill": FAN_A if m % 2 == 0 else FAN_B})
     fan.hide_folds = True
@@ -302,7 +295,7 @@ def parts(p):
     fw, fh = p["figure_w"], p["figure_h"]
     pts = [(fw * x, fh * y) for x, y in FIGURE_OUTLINE]
     tab = 5  # 台に貼る足。絵には無いが、立てるのに要る。
-    cx0, cx1 = fw * 0.3, fw * 0.7
+    cx0, cx1 = fw * FOOT[0], fw * FOOT[1]
     figure = Part(5, "figure", "像", _insert_tab(pts, cx0, cx1, fh, tab), label_xy=(fw * 0.4, fh * 0.6), label="5",
                   glue=[[(cx0, fh), (cx1, fh), (cx1, fh + tab), (cx0, fh + tab)]],
                   art=_figure_art(fw, fh, pts))
@@ -314,6 +307,8 @@ def parts(p):
 
 # 扇の足の先の糊代の長さ。台に貼る面。
 LEG_GLUE = 6
+# 像の足の糊代を、像の幅のどこからどこまでに取るか。台に貼る幅の検査（F5.figure_base）と同じ値を使う。
+FOOT = (0.3, 0.7)
 
 
 def leg_length(p):
@@ -355,7 +350,9 @@ def bom(p):
 
 
 def thread_mm(p):
-    return shortest_free_thread(p["tube_side"], THREAD_RADIUS, p["pivot_above_rim"] - p["push_amount"], p["pivot_above_rim"])
+    # 高さは筒の穴から測る。穴は口から THREAD_DEPTH 下にあるので、口から測ると糸の長さが最大で約 3mm ずれた。
+    z0 = p["pivot_above_rim"] + THREAD_DEPTH
+    return shortest_free_thread(p["tube_side"], THREAD_RADIUS, z0 - p["push_amount"], z0)
 
 
 RESULTS = ("動いた", "動かない", "わからない")

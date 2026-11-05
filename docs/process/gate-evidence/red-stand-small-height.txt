@@ -1,0 +1,18 @@
+# 命令: .venv/bin/python tests/test_engine_floors.py
+# commit: 3fd7aa1（回した時の HEAD）
+ok   bom_neck_arm
+ok   bom_through_compose
+ok   bom_every_hypothesis
+ok   bom_forms_without_hypothesis
+ok   marks_whole_text
+ok   image_box_line_across_glue
+ok   image_box_printed_width
+ok   image_box_fold_at_printed_width
+FAIL stand_figure_small_heights: AssertionError: 304 件。先頭: ['doll_mino_net 25 FAIL F5.image_box [表] 絵が折り線をまたいでいる', 'doll_mino_net 25 FAIL F5.image_box [表] 絵が糊代にかかっている', 'doll_mino_net 25 FAIL F5.image_box [裏] 絵が折り線をまたいでいる']
+ok   fan_leg
+ok   figure_base
+ok   hole_every_template
+ok   thread_from_hole
+ok   next_reasons_no_new_words
+14 条件のうち 13 が通った
+rc=3
