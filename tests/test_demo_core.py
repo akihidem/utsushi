@@ -55,6 +55,11 @@ for name in core.SECONDS:
 # 画面の場面は 2 段目で別の頁に替わる
 gal = core.build_scene("core_gallery", dict(core.CUES_ALL["core_gallery"]), shots=fake)
 assert gal.frame(3.0).tobytes() != gal.frame(8.0).tobytes()
+# 頁の頭から映す（題から読ませる）
+head = core._cam_page(1280)
+assert abs(head[1] - head[2] * core.ASPECT / 2) < 1e-6 and head[0] == 640
+# 撮った枠の外は、撮った頁の地の色で埋める（皮の色を書き込まない）
+assert core._view(Image.new("RGB", (800, 800), (252, 252, 250)), (200, 200, 1200)).getpixel((0, 0)) == (252, 252, 250)
 # 曲の拍へ寄せた表（同じ dict）が、作った場面に効く
 mod = script.load_scene("core_map")
 assert mod.CUES is script.load_scene("core_map").CUES

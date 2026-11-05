@@ -1,4 +1,4 @@
-"""場面 3: 使い手の画面（play_server、J-024）を開くと、仮説 A〜E の札と型紙を刷る口がすぐ並ぶ所を見せる。
+"""場面 3: 使い手の画面（play_server、J-024）を開くと、仮説 A〜E の札と型紙を見る口がすぐ並ぶ所を見せる。
 
 使い方: python -m demo.scene3 --out <repo の外の場所>/scene3.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -41,7 +41,6 @@ SHOT_W = 1600                    # 撮る窓の幅（CSS の px）。ルック�
 SHOT_H = 3400                    # 撮る高さの下限。足りない時は測った枠から伸ばす（need_height）
 # 使う枠の下に残す余白（CSS の px）。寄った絵は、枠の下に枠の高さの半分ほどを映すため。
 SHOT_MARGIN = 400
-SCREEN_BG = (239, 232, 216)      # 画面の地の色（#efe8d8）。撮った枠の外をこの色で埋め、継ぎ目を見せない
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
@@ -57,7 +56,7 @@ TITLE_TOY = "玩具の頁（utsushi の画面）"
 SUB_OPEN = "開いたら、すぐ作れる"
 TITLE_PREMISE = "型紙は正解ではなく、AI が考えた仮説"
 SUB_PREMISE = "うまく動かない所が出る。人の工夫が、次の版の材料になる"
-TITLE_LIST = "作りたい案を選んで、刷る"
+TITLE_LIST = "作りたい案を選んで、型紙を見る"  # 画面の釦の字のまま。刷るのは型紙の窓の印刷の所だけ（#305）
 SUB_READY = "作って、確かめる"
 LABEL = "仮説 {n}（{toy}）"
 SUB_LIST = "並びは記号の順。順位ではない"
@@ -229,6 +228,12 @@ def capture(cache, sid=SID):
 
 # ---- 描く所（時刻だけで決まる） ----
 
+def page_color(shot):
+    """撮った画面の地の色。枠の外をこの色で埋め、継ぎ目を見せない。
+    皮の色は main で変わる（生成りから白へ替わった時、書き込んだ色のまま枠の外に帯が出た）ので、撮った絵の隅から読む。"""
+    return shot.getpixel((2, shot.height - 3))
+
+
 def _cam(center, width):
     return (center[0], center[1], width)
 
@@ -273,7 +278,7 @@ class Scene3:
         bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
         k = bw / (cw * self.dpr)  # 撮った画素 → 動画の画素
         x0, y0 = (cx - cw / 2) * self.dpr, (cy - cw * self.aspect / 2) * self.dpr
-        return shot.transform((bw, bh), Image.AFFINE, (1 / k, 0, x0, 0, 1 / k, y0), resample=Image.BICUBIC, fillcolor=SCREEN_BG)
+        return shot.transform((bw, bh), Image.AFFINE, (1 / k, 0, x0, 0, 1 / k, y0), resample=Image.BICUBIC, fillcolor=page_color(shot))
 
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""

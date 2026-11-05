@@ -32,7 +32,7 @@ import urllib.request
 from PIL import Image, ImageDraw
 
 from demo.flip import H, PAPER, ROOT, SHU, SUMI, W, contact_sheet, ease, fade, render, text
-from demo.scene3 import SCREEN_BG, _chrome, _ensure_picture, _free_port
+from demo.scene3 import _chrome, _ensure_picture, _free_port, page_color
 from demo.words import step_badge
 
 SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2・3 と同じ
@@ -40,6 +40,7 @@ HID = "H-A"
 PHOTO = ROOT / "docs/process/trials/photos/20261104/p01.jpg"   # 確かめ表で通った写真（demo.scene5 の PHOTOS）
 DPR = 2
 BOX = (160, 196, 1760, 936)      # 画面を映す枠（場面 3 と同じ）
+ASPECT = (BOX[3] - BOX[1]) / (BOX[2] - BOX[0])
 SHOT_NOTE = "画面: utsushi の使い手の画面（play_server）を手元で動かして撮った"
 EXAMPLE_NOTE = "（例）の記録は動画のための作り物。見本の札も作り物。写真は 11-04 の試行（U-24 の確かめ済み）"
 SOON = "これから作る"
@@ -188,18 +189,24 @@ def _view(shot, cam, box=BOX, dpr=DPR):
     bw, bh = box[2] - box[0], box[3] - box[1]
     k = bw / (cw * dpr)
     x0, y0 = (cx - cw / 2) * dpr, (cy - cw * (bh / bw) / 2) * dpr
-    return shot.transform((bw, bh), Image.AFFINE, (1 / k, 0, x0, 0, 1 / k, y0), resample=Image.BICUBIC, fillcolor=SCREEN_BG)
+    return shot.transform((bw, bh), Image.AFFINE, (1 / k, 0, x0, 0, 1 / k, y0), resample=Image.BICUBIC, fillcolor=page_color(shot))
 
 
 def _lerp(c0, c1, u):
     return (c0[0] + (c1[0] - c0[0]) * u, c0[1] + (c1[1] - c0[1]) * u, c0[2] * (c1[2] / c0[2]) ** u)
 
 
-def _cam_on(rect, margin=1.08, top=True, aspect=(BOX[3] - BOX[1]) / (BOX[2] - BOX[0])):
+def _cam_on(rect, margin=1.08, top=True, aspect=ASPECT):
     """測った所へ寄るカメラ。top は所の頭を枠の上に合わせる（長い節の頭から読ませるため）。"""
     x, y, w, h = rect
     cw = max(w * margin, 700)
     return (x + w / 2, (y - 20 + cw * aspect / 2) if top else y + h / 2, cw)
+
+
+def _cam_page(page_w, margin=1.04, aspect=ASPECT):
+    """頁の頭から全体の幅を映すカメラ。題から読ませる（途中から映すと、何の頁か分からない）。"""
+    cw = page_w * margin
+    return (page_w / 2, cw * aspect / 2, cw)
 
 
 class Screens:
@@ -399,14 +406,14 @@ def build_scene(name, cues, cache=None, shots=None):
         return None
     if name == "core_make":
         rects = shots["make"][1]
-        whole = (shots["make"][2] / 2, 560, shots["make"][2] * 1.04)
+        width = shots["make"][2]
         return Screens(name, cues, shots, 2, "工夫を声で残す口はこれから。今あるのは手順を見る頁と、声で聞く口", [
-            {"at": None, "shot": "make", "move": "move", "from": whole, "to": _cam_on(rects["henji"], 1.5),
+            {"at": None, "shot": "make", "move": "move", "from": _cam_page(width), "to": _cam_on(rects["henji"], 1.5),
              "title": "作りながら見る頁", "sub": "手順を見ながら作る。止まったら、そのまま声か字で聞ける"}])
     if name == "core_keep":
         rects = shots["keep"][1]
         return Screens(name, cues, shots, 3, "カメラと声で残す口はこれから。今あるのは写真と工夫の欄", [
-            {"at": None, "shot": "keep", "move": "move", "from": (shots["keep"][2] / 2, 500, shots["keep"][2] * 1.3), "to": _cam_on(rects["up"], 1.5),
+            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": _cam_on(rects["up"], 1.5),
              "title": "写真を上げる手帖", "sub": "できた物の写真と、工夫した所を記録に添える"}])
     if name == "core_gallery":
         made, kai = shots["gallery"][1]["made"], shots["toy"][1]["kaizen"]

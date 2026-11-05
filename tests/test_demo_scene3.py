@@ -33,13 +33,15 @@ assert all(c.count("順位") == c.count("順位ではない") for c in captions)
 # 予想の段は外した（本人の決定 11-05、#242）。字幕が予想を先に求めない。前提は本人の言葉の形で出す
 assert not any("先に予想" in c or "予想が先" in c for c in captions)
 assert "正解ではなく" in scene3.TITLE_PREMISE and "AI が考えた仮説" in scene3.TITLE_PREMISE
+# 画面の釦は「型紙を見る」（刷るのは型紙の窓の印刷の所だけ。#305）。字幕を今の画面に合わせる
+assert "型紙を見る" in scene3.TITLE_LIST and "刷る" not in scene3.TITLE_LIST
 
 # 偽の画面: 測った枠の所に四角を置く（前提の札・仮説の札）
 premise = [210, 1100, 1000, 70]
 plates = [[210 + 300 * i, 1300, 280, 671] for i in range(4)] + [[210, 2001, 280, 486]]
 rects = {"premise": [premise], "plate": plates[:n]}
 dpr = 2
-shot = Image.new("RGB", (1600 * dpr, 3400 * dpr), scene3.SCREEN_BG)
+shot = Image.new("RGB", (1600 * dpr, 3400 * dpr), (252, 252, 250))
 d = ImageDraw.Draw(shot)
 for p in rects["plate"] + rects["premise"]:
     d.rectangle([v * dpr for v in (p[0], p[1], p[0] + p[2], p[1] + p[3])], fill=(255, 253, 247), outline=(122, 59, 29))
@@ -59,6 +61,11 @@ scale = {round(p.width / q[2], 3) for (_, _, p), q in zip(scene.plates, plates)}
 assert max(scale) - min(scale) < 0.01, scale
 # 札は動画の幅の中
 assert min(xs) >= 0 and max(x + p.width for x, _, p in scene.plates) <= W
+# 撮った枠の外は、撮った頁の地の色で埋める（継ぎ目を見せない。皮の色が変わっても追いつくよう、色を書き込まない）
+for bg in ((252, 252, 250), (30, 30, 30)):
+    plain = Image.new("RGB", (1600 * dpr, 1000 * dpr), bg)
+    assert scene3.page_color(plain) == bg
+    assert scene3.Scene3(plain, rects, dpr=dpr).view(plain, (800, 900, 3200)).getpixel((0, 0)) == bg
 print("ok")
 
 # 撮る高さ: 頁の作りが変わって長くなっても、使う枠（前提の札・仮説の札）と寄りの余白が撮った画面に入る。
