@@ -61,6 +61,8 @@ assert gal.frame(3.0).tobytes() != gal.frame(gal.duration - 1.0).tobytes()
 assert "持ち寄られ" in gal.segs[0]["sub"] and "ギャラリー" in gal.segs[0]["sub"]
 assert gal.segs[0]["to"][1] > gal.segs[0]["from"][1]
 assert "持ち寄" in core.GALLERY_LINE and "今ある" in core.GALLERY_LINE
+# 次の版を決めるのは人。「どれを使うか」と選ばせる形にしない（本人の決定 11-05 17:26: 型紙はおもちゃ一個につき一個）
+assert gal.segs[1]["sub"].endswith("決めるのは人") and "どれ" not in gal.segs[1]["sub"]
 # 聞く口の答えが AI のものに見えないように書く（本物の API は未実行）
 make = core.build_scene("core_make", dict(core.CUES_ALL["core_make"]), shots=fake)
 assert "AI の答えは、まだ動かしていません" in make.segs[0].get("note", make.note)

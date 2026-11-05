@@ -35,6 +35,8 @@ assert not any("先に予想" in c or "予想が先" in c for c in captions)
 assert "正解ではなく" in scene3.TITLE_PREMISE and "AI が考えた仮説" in scene3.TITLE_PREMISE
 # 画面の釦は「型紙を見る」（刷るのは型紙の窓の印刷の所だけ。#305）。字幕を今の画面に合わせる
 assert "型紙を見る" in scene3.TITLE_LIST and "刷る" not in scene3.TITLE_LIST
+# 新しく書く字幕に「案を選ぶ」を入れない（本人の決定 11-05 17:26: 型紙はおもちゃ一個につき一個）
+assert "案を選" not in scene3.TITLE_LIST
 
 # 偽の画面: 測った枠の所に四角を置く（前提の札・仮説の札）
 premise = [210, 1100, 1000, 70]

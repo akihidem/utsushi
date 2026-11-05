@@ -421,16 +421,16 @@ def build_scene(name, cues, cache=None, shots=None):
     if name == "core_keep":
         rects = shots["keep"][1]
         return Screens(name, cues, shots, 3, "カメラと声で残す口はこれから。今あるのは写真と工夫の欄", [
-            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": _cam_on(rects["up"], 1.5),
+            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": _cam_on(rects["up"], 1.95),  # 「工夫した所」の欄まで映す。字幕がそこを言っているので
              "title": "写真を上げる手帖", "sub": "できた物の写真と、工夫した所を記録に添える"}])
     if name == "core_gallery":
         made, kai = shots["gallery"][1]["made"], shots["toy"][1]["kaizen"]
-        top = _cam_on(made, 1.1)
+        top = _cam_on([made[0], made[1] + 10, made[2], made[3]], 1.1)  # 節の上の見出しの下線を枠に入れない
         # 持ち寄られた物の列を下へ動く。1 つの記録だけに見せず、何人もの物が集まる場だと分かるように。
         lower = (top[0], top[1] + min(GALLERY_PAN, max(0, made[3] - top[2] * ASPECT)), top[2])
         return Screens(name, cues, shots, 0, EXAMPLE_NOTE, [
             {"at": None, "shot": "gallery", "move": "pan", "from": top, "to": lower, "title": "他の人が作った物", "sub": "作った物が持ち寄られ、ギャラリーで見られる"},
-            {"at": "second", "shot": "toy", "from": _cam_on(kai, 1.1), "to": _cam_on(kai, 1.1), "title": "型紙が次の版へ", "sub": "作った人の話から、次の版ができる。どれを使うかは人が決める"}])
+            {"at": "second", "shot": "toy", "from": _cam_on(kai, 1.1), "to": _cam_on(kai, 1.1), "title": "型紙が次の版へ", "sub": "作った人の話から、次の版ができる。決めるのは人"}])
     raise KeyError(name)
 
 
