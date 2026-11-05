@@ -102,7 +102,6 @@ BOOK = """
 .pg.l{border-right:1px solid #e3d9c4}
 .pg.full{padding:24px}.pg.full img{width:100%;height:100%;max-height:76vh;object-fit:contain}
 .pg h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
-.switch{max-width:1180px;margin:0 auto;padding:14px 20px;font-size:.85em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 @media (max-width:760px){.sheet{grid-template-columns:1fr}.sheet::after{display:none}.pg.l{border-right:0;border-bottom:1px solid #e3d9c4}.pg{padding:24px}}
 """
 
@@ -322,11 +321,12 @@ class Handler(BaseHTTPRequestHandler):
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
             sid = m.group(1)
             if hypotheses.need_prediction(sid):
-                return self._send(200, self._toy(sid, errors=["先に予想を書くと、手帖が開きます"]))
+                # 頁の頭に戻すと理由が画面の外になるので、予想の欄へ送る（#121）。
+                return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote('先に予想を書くと、手帖が開きます')}&at=yosou#yosou")])
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
@@ -349,7 +349,7 @@ class Handler(BaseHTTPRequestHandler):
                 v = int(qs.get("v", ["0"])[0])
             except ValueError:
                 v = 0
-            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
+            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
@@ -386,7 +386,7 @@ class Handler(BaseHTTPRequestHandler):
         if back == "techo":
             return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
         extra = f"&see={see}&kind=sheet" if see else ""
-        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}{extra}#{anchor}")])
+        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
 
     def _post(self):
         if not self._host_ok():
@@ -461,8 +461,8 @@ class Handler(BaseHTTPRequestHandler):
             rec = loop.record(rid)
             failures = loop.save_explanation(rid, form.get("by", ""), form.get("text", ""), form.get("next_idea", ""))
             if failures:
-                return self._send(422, self._toy(rec["source_id"], errors=[f.message for f in failures]))
-            return self._done(rec["source_id"], "説明を残しました", form.get("back", ""))
+                return self._send(422, self._toy(rec["source_id"], errors=[f.message for f in failures], at=rid, filled=("explain", form)))
+            return self._done(rec["source_id"], "説明を残しました", form.get("back", ""), anchor=rid)
         self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
 
     def _ai_reply(self, rid, act, form):
@@ -474,9 +474,9 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid = rec["source_id"]
         if loop.explanation(rid) is None:
-            return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"]))
+            return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
-            return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""))
+            return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""), anchor=rid)
         try:
             from api.agent import default_client
 
@@ -491,7 +491,7 @@ class Handler(BaseHTTPRequestHandler):
                 from . import techo_site
                 videos = [f for f in techo_site.media_of(rid) if f.endswith(("mp4", "mov"))]
                 if not videos:
-                    return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""))
+                    return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""), anchor=rid)
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
                 msg = "Claude が見えた事を出しました" if not why else why
         except BudgetStop as e:  # 今日の上限か累計の停止線かを言う（待てば聞けるのかが分かるように）
@@ -500,16 +500,16 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # 画面の文は変えない。理由は作る側の記録に残す
             failure_log.claude_failed(act.removeprefix("ai-"), "POST", self.path, e)
             msg = "今は AI に聞けません"
-        return self._done(sid, msg, form.get("back", ""))
+        return self._done(sid, msg, form.get("back", ""), anchor=rid)
 
     def _reprint(self, sid, form):
         """版の記録があって紙が無い版を刷り直す（#158）。「次の版を作る」は、同じ値では前の版と変わらないので通らない。"""
         hid, v = form.get("hypothesis", ""), form.get("version", "")
         if (hypotheses.need_prediction(sid) or hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
-            return self._send(422, self._toy(sid, errors=["その版は採られていません"]))
+            return self._send(422, self._toy(sid, errors=["その版は採られていません"], at="win"))
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
-            return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"]))
+            return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", see=hid, anchor="win")
 
@@ -518,10 +518,10 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid, hid = rec["source_id"], rec["hypothesis_id"]
         if loop.explanation(rid) is None:
-            return self._send(422, self._toy(sid, errors=["先に説明を書く"]))
+            return self._send(422, self._toy(sid, errors=["先に説明を書く"], at=rid))
         to = _num(form.get("to"))
         if not isinstance(to, float):
-            return self._send(422, self._toy(sid, errors=["新しい値は数で書く"]))
+            return self._send(422, self._toy(sid, errors=["新しい値は数で書く"], at=f"next-{rid}", filled=("next", form)))
         # 折りの数のような整数の寸法は、整数で渡す（範囲の検査が小数の折り数を落とすため）。
         to = int(to) if to.is_integer() else to
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -530,7 +530,7 @@ class Handler(BaseHTTPRequestHandler):
         if failures:
             from . import toy
 
-            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"])))
+            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"]), at=f"next-{rid}", filled=("next", form)))
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
@@ -614,7 +614,7 @@ class Handler(BaseHTTPRequestHandler):
 
             hid = form.get("hypothesis", "")
             if hypotheses.need_prediction(sid) or not printed_versions(sid, hid):
-                return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
+                return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"], at="ask", filled=("ask", form)))
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
@@ -634,16 +634,16 @@ class Handler(BaseHTTPRequestHandler):
         elif act == "print-own":
             oid = form.get("id", "")
             if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
-                return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"]))
+                return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"], at="yosou"))
             out_dir(sid).mkdir(parents=True, exist_ok=True)
             if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
-                return self._send(422, self._toy(sid, errors=["紙を刷れませんでした（検査に落ちた）"]))
+                return self._send(422, self._toy(sid, errors=["紙を刷れませんでした（検査に落ちた）"], at=f"own-{oid}"))
             failures, msg = [], "刷りました。100% で印刷します"
         elif act == "print":
             failures = hypotheses.need_prediction(sid)
             hid = form.get("hypothesis", "")
             if not failures and hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
-                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"]))
+                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at="kasetsu"))
             if not failures:
                 out_dir(sid).mkdir(parents=True, exist_ok=True)
                 # 刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、
@@ -652,7 +652,7 @@ class Handler(BaseHTTPRequestHandler):
                 # 一番新しい版が刷れない時は、1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。
                 while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
                     if v <= 1:
-                        return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"]))
+                        return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"], at="kasetsu"))
                     v -= 1
                 # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
                 loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
@@ -670,10 +670,12 @@ class Handler(BaseHTTPRequestHandler):
                        "minutes_to_try": _num(form.get("minutes_to_try")), "fixes": [], "note": form.get("note", ""),
                        "answers": {k: form[k] for k in ("first_moved", "stuck", "what_if") if form.get(k, "").strip()},
                        "ideas": [form["idea"]] if form.get("idea", "").strip() else []}
-                _, failures = records.add(rec)
+                rid, failures = records.add(rec)
+                anchor = rid or anchor  # 今残した記録の札に着く。欄に戻ると、押す前と同じ画面に見える（#121）
             msg = "記録を残しました。試した後の紙が開けます"
         if failures:
-            return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
+            at = {"predict": "yosou", "own": "yosou", "print": "kasetsu"}.get(act, "kiroku")
+            return self._send(422, self._toy(sid, errors=[f.message for f in failures], at=at, filled=(act, form)))
         # 頁の段の進み（予想を書いた・刷った・記録を残した）を工作の様子に残す（U-45 の段取り 2）。何を書いたかは写さない。
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("predict", "print", "record"):

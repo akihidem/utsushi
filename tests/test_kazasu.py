@@ -96,7 +96,7 @@ for sid, fp in FINGERPRINT.items():
 # 入口: 予想の前の玩具の頁から行ける。文字で書く道も残っている。予想の前の頁には、今までどおり仮説の中身を出さない
 data = hypotheses.load(G)
 code, toy, _ = get(f"/toy/{G}")
-assert code == 200 and f'href="/toy/{G}/kazasu"' in toy and "先に、予想を書く" in toy and f'action="/toy/{G}/predict"' in toy
+assert code == 200 and f'href="/toy/{G}/kazasu"' in toy and "先に、予想を書く" in toy and f'action="/toy/{G}/predict#yosou"' in toy
 for h in data["hypotheses"]:
     assert h["name"] not in toy and h["how_it_moves"] not in toy
 
