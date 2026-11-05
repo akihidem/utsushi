@@ -262,17 +262,6 @@
   "unverified": "人が図鑑の頁で読んだ確認はまだ。図鑑の頁（/zukan）はこの床を通してから描く（f15）"
  },
  {
-  "id": "f25",
-  "name": "仮説を見比べる紙と作り手用の表（案 B）",
-  "status": "doing",
-  "evidence": [
-   "src/omochae/discriminate.py",
-   "tests/test_discriminate.py",
-   "tests/test_sheet_u25.py"
-  ],
-  "unverified": "実物で未試行。Claude が見分ける試作を設計する所は未実装。虎は対象外"
- },
- {
   "id": "f26",
   "name": "作り手の工房（Claude Code の Skill・MCP・サブエージェント・フック）",
   "status": "doing",
