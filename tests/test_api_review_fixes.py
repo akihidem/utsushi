@@ -215,7 +215,7 @@ def test_5():
 
 
 def test_6():
-    """渡された玩具と記録の玩具が違えば Claude を呼ばない。案の雛形は、玩具の既定でなく、その記録の仮説の雛形を使う。"""
+    """渡された玩具と記録の玩具が違えば Claude を呼ばない。雛形はたたき台の物を渡す（次の版はたたき台にだけ足す。J-032）。"""
     fresh()
     tr = _confirmed_record(T, "H-A", result="揺れた")
     never = Fake([])
@@ -230,8 +230,8 @@ def test_6():
     pid, fs = loop_agents.draft_proposal(rid, gs, client)
     assert not fs, fs
     sent = json.loads(client.calls[0]["messages"][0]["content"].split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
-    assert sent["template_id"] == "pivot_counterweight", "仮説の雛形を渡す"
-    assert sent["allowed_params"] == sorted(loop.ALLOWED["pivot_counterweight"])
+    assert sent["template_id"] == "slider_fan", "控えの記録でも、たたき台の雛形を渡す"
+    assert sent["allowed_params"] == sorted(loop.ALLOWED["slider_fan"])
 
 
 def test_8():

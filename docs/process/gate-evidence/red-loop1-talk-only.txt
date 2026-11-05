@@ -1,0 +1,35 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: 58f8052（回した時の HEAD）
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-8_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-8_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-8_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-9_v1.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-9_v1_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/OWN-9_v1_after.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/.tmp-dxxlma00/H-A_v2.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/.tmp-dxxlma00/H-A_v2_tejun.pdf
+/tmp/tmpliwaj6_8/play/NDL-1187053-R0000005-L/.tmp-dxxlma00/H-A_v2_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_withdraw.py", line 150, in <module>
+    assert gone == [] and fs[0].floor == "F4.evidence" and "--media-only" in fs[0].message and "--talk-only" in fs[0].message, fs
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [Failure(floor='F4.evidence', where='R-0009', message='proposal-0001.json、version-NDL-1187053-R0000005-L-H-A-2.json の根拠に使われているので消さなかった。写真と動画だけなら --media-only')]
+rc=1

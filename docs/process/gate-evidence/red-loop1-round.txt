@@ -1,0 +1,14 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_round.py
+# commit: b63f3fb（回した時の HEAD）
+/tmp/tmpaxxjeoya/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpaxxjeoya/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpaxxjeoya/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpaxxjeoya/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpaxxjeoya/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpaxxjeoya/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_round.py", line 87, in <module>
+    assert code == 200 and f'data-hid="{oid}"' in body, "紙の印が無ければ、本人の紙を開く"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 紙の印が無ければ、本人の紙を開く
+rc=1

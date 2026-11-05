@@ -14,7 +14,7 @@ import tempfile
 DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 
-from omochae import engine_bundle as eb, hypotheses, loop, making_log, records, talk_log  # noqa: E402
+from omochae import engine_bundle as eb, hypotheses, loop, making_log, records, talk_log, trial_video  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -26,10 +26,10 @@ WHO1, WHO2 = "abcd1234", "wxyz5678"
 
 # エンジンの入口（paper-to-toy の omochae.engine_loop）の一覧。片方を変える時は、両方を変える。
 ENGINE_TOP = {"schema", "exported_at", "from", "dropped_pii", "current_sets", "groups"}
-ENGINE_GROUP = {"template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
+ENGINE_GROUP = {"template", "sheet_set", "paper", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
                 "minutes", "measures", "record_ids", "texts"}
 ENGINE_TEXT = {"kind", "step", "text", "count"}
-ENGINE_KINDS = {"stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep"}
+ENGINE_KINDS = {"stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep", "review"}
 # 話した事の種類は、話す口の場面の名と同じ（Issue 307）。場面の名が変わったら、ここで落ちて気づく
 assert set(talk_log.SCENES) == {"think", "craft", "keep"} <= ENGINE_KINDS
 ENGINE_MAX_TEXT, ENGINE_MAX_STEP = 300, 40
@@ -232,5 +232,132 @@ many = [{"kind": k, "step": None, "text": f"{k}{i}", "count": 1} for k in ("stuc
 capped = eb._cap_texts(many)
 assert len(capped) == eb.MAX_TEXTS and {t["kind"] for t in capped} == {"stuck", "craft", "keep"}
 assert [t for t in many if t in capped] == capped  # 並びは元のまま
+
+# 13. 動画の札（試行の動画の入口 trial_video）: 人が確かめた札だけが束に入る。動画の受け口の記録（学ぶ人の頁に出さない約束の記録）も、
+# 確かめた札があれば群に数える。動いたかは聞いていないので、動きの札には数えない。人の数は数えない（1 人が何本上げるか分からない）
+def mark(mid, step, kind, note, ok=True, dropped=False):
+    return {"id": mid, "video": "v1.mp4", "at": 12.0, "step": step, "kind": kind, "note": note, "read_by": "読んだ山田", "confirmed_by": "確かめた田中" if ok else None, "rejected_by": "外した佐藤" if dropped else None}
+
+
+def video_up(rid, sheet_set, marks, note="上げた人の文で、札に書いていない話", result="わからない"):
+    rec = {"source_id": T, "hypothesis_id": "H-C", "sheet_version": 1, "result": result, "sheet_set": sheet_set, "fixes": [], "note": note, "via": records.UPLOADED,
+           "id": rid, "by": "human", "recorded_at": "2026-11-05T18:00:00+09:00"}
+    (records.folder() / f"{rid}.json").write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
+    trial_video._save(rid, {"record_id": rid, "source_id": T, "hypothesis_id": "H-C", "sheet_version": 1, "sheet_set": sheet_set, "videos": [{"file": "v1.mp4", "duration": 70.0, "still": [], "attached_at": "", "checked_by": None}], "marks": marks})
+
+
+video_up("R-0080", "tora-v8", [mark("M1", 2, "fold", "首の帯の折り線が見えない"), mark("M2", 2, "fold", "折る前に裏から透かして見た"), mark("M3", 4, trial_video.KUFU, "粘土を少しずつ足して揺れを見た"),
+                               mark("M4", 2, "cut", "案のままの札", ok=False), mark("M5", 2, "cut", "人が外した札", ok=False, dropped=True), mark("M6", 3, "site", "画面の字が小さい札"), mark("M7", None, "other", "手順の分からない札"),
+                               mark("M8", 2, "fold", f"分からない時は {PHONE} へ")])
+video_up("R-0081", "tora-v8", [mark("M1", 2, "fold", "首の帯をどちらへ折るのか迷った")])
+video_up("R-0082", "tora-v8", [mark("M1", 5, "fold", "案のままの札 2", ok=False)])  # 確かめた札が無い記録は、数えない
+video_up("R-0083", "tora-v7", [mark("M1", 1, "cut", "切る線が細い")], result="揺れた")  # 上げた人が結果を選んだ記録は、動きの札に数える
+# 機械が作った札の案（止まった候補）は、人が確かめるまで束に入らない
+video_up("R-0084", "tora-v6", [{**mark("M1", None, "other", "動きの少ない区間 25〜49 秒（機械が拾った候補。意味はまだ付けていない）", ok=False), "read_by": "機械（止まった候補）"}], result="揺れた")
+# 手で結んだ記録（本人の動画など。via が video）の札も同じに扱う。記録は今までどおり数えるので、2 重に数えない
+hand_rid, _ = records.add({"source_id": T, "hypothesis_id": "H-B", "sheet_version": 1, "result": "揺れた", "sheet_set": "tora-v9", "fixes": []})
+trial_video._save(hand_rid, {"record_id": hand_rid, "source_id": T, "hypothesis_id": "H-B", "sheet_version": 1, "sheet_set": "tora-v9", "videos": [], "marks": [mark("M1", 7, "glue", "糊がはみ出した")]})
+b3 = eb.build()
+text3 = json.dumps(b3, ensure_ascii=False)
+g3 = {(g["template"], g["sheet_set"]): g for g in b3["groups"]}
+up = g3[("pivot_counterweight", "tora-v8")]
+assert up["reports"] == 2 and up["record_ids"] == ["R-0080", "R-0081"], up  # R-0082 は確かめた札が無いので数えない
+assert up["results"] == {}, up["results"]  # 動いたかを聞いていない記録を、動きの札に数えない
+assert up["stuck_steps"] == {"2": {"taps": 3, "people": 0}}, up["stuck_steps"]  # 確かめた札だけ。番号の形の札は入らない。人は 0
+assert up["craft_steps"] == {"4": {"talks": 1, "people": 0}}, up["craft_steps"]  # 人の工夫の札は、止まった段に数えず、工夫へ
+assert {(t["kind"], t["step"], t["text"]) for t in up["texts"]} == {("stuck", 2, "首の帯の折り線が見えない"), ("stuck", 2, "折る前に裏から透かして見た"), ("stuck", 2, "首の帯をどちらへ折るのか迷った"),
+                                                                    ("craft", 4, "粘土を少しずつ足して揺れを見た"), ("stuck", None, "手順の分からない札")}, up["texts"]
+for hidden in ("案のままの札", "人が外した札", "画面の字が小さい札", "上げた人の文", "読んだ山田", "確かめた田中", "外した佐藤", "v1.mp4", '"at"', PHONE):
+    assert hidden not in text3, hidden
+chose = g3[("pivot_counterweight", "tora-v7")]
+assert chose["results"] == {"揺れた": 1} and (chose["moved_word"], chose["not_moved_word"]) == ("揺れた", "揺れない"), chose
+assert ("pivot_counterweight", "tora-v6") not in g3 and "動きの少ない区間" not in text3
+hg = g3[("pivot_counterweight", "tora-v9")]
+assert hg["record_ids"] == [hand_rid] and hg["reports"] == 1 and hg["results"] == {"揺れた": 1} and hg["stuck_steps"] == {"7": {"taps": 1, "people": 0}}, hg
+# 受け口の記録の、札の無い分は、今までどおり束に出ない。取り下げると、札のファイルごと消えるので束からも落ちる
+assert not [g for g in b3["groups"] if "R-0082" in g["record_ids"]]
+assert records.withdraw("R-0081")[1] == []
+gone = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v8")]
+assert gone["record_ids"] == ["R-0080"] and gone["stuck_steps"] == {"2": {"taps": 2, "people": 0}} and "首の帯をどちらへ折るのか迷った" not in json.dumps(gone, ensure_ascii=False)
+r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--out", str(pathlib.Path(DATA) / "bundle3.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
+assert r.returncode == 0, r.stderr
+
+# 14. 作る前の型紙のレビューの動画（本人の指示 11-05 20:35）: 作っていないので、確かめた札は止まった段にも工夫の数にも入れず、種類 review の文にする。
+# 報告の数にも入れない（作った人の数と混ぜない）。字の全文は記録の置き場にあるが、束には入れない
+def review_up(rid, sheet_set, marks):
+    video_up(rid, sheet_set, marks)
+    path = records.folder() / f"{rid}.json"
+    path.write_text(json.dumps({**json.loads(path.read_text(encoding="utf-8")), "video_kind": "review"}, ensure_ascii=False), encoding="utf-8")
+
+
+review_up("R-0085", "tora-v5", [mark("M1", 8, "fit", "軸の穴が紙の厚みに比べて小さく見える"), mark("M2", None, trial_video.KUFU, "竹ひごの太さで揺れの速さが変わるはず"), mark("M3", 2, "fold", "案のままの指摘", ok=False), mark("M4", 3, "site", "画面の字の指摘"), mark("M5", 2, "fold", "わたしの名前は山田です、と話していた"), mark("M6", None, "guide", "題の言葉の意味が分かりづらい")])
+media = records.folder() / "media" / "R-0085"
+media.mkdir(parents=True, exist_ok=True)
+(media / "transcript.txt").write_text("わたしは山田です。字の全文です", encoding="utf-8")
+r5 = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v5")]
+assert r5["reports"] == 0 and r5["record_ids"] == ["R-0085"] and r5["results"] == {} and r5["stuck_steps"] == {} and r5["craft_steps"] == {}, r5
+# 読んでいるのは紙なので、案内の札（題や組み方の文の読みにくさ）も、紙への指摘として入れる。サイトの札は入れない
+assert {(t["kind"], t["step"], t["text"]) for t in r5["texts"]} == {("review", 8, "軸の穴が紙の厚みに比べて小さく見える"), ("review", None, "竹ひごの太さで揺れの速さが変わるはず"), ("review", None, "題の言葉の意味が分かりづらい")}, r5["texts"]
+assert "字の全文" not in json.dumps(eb.build(), ensure_ascii=False) and "案のままの指摘" not in json.dumps(r5, ensure_ascii=False) and "山田です" not in json.dumps(r5, ensure_ascii=False)  # 名乗りの形の札は、確かめてあっても入れない
+
+# 15. 映っている紙が、受付で選ばれた玩具の紙と違う時（1 本目がそうだった。エンジンの repo の雛形の紙を読んでいた）: 人が決めて札の置き場に書いた紙に数える。
+# 形の外の値は読まない（自由な文をこの欄で運ばせない）。元の玩具の群には数えない
+review_up("R-0086", "tora-v4", [mark("M1", None, "mark", "折り線の表記が無く、曲げる所が読めない")])
+sheet = {**trial_video.load("R-0086"), "engine_sheet": {"template": "spinner", "paper": "pinwheel", "by": "決めた本人"}}
+trial_video._save("R-0086", sheet)
+review_up("R-0087", "tora-v33", [mark("M1", None, "mark", "形の外の紙の欄の記録の札")])
+trial_video._save("R-0087", {**trial_video.load("R-0087"), "engine_sheet": {"template": "山田さんの紙", "paper": "pinwheel"}})
+b6 = eb.build()
+g6 = {(g["template"], g["sheet_set"], g["paper"]): g for g in b6["groups"]}
+over = g6[("spinner", "", "pinwheel")]
+assert over["record_ids"] == ["R-0086"] and over["reports"] == 0 and [t["text"] for t in over["texts"]] == ["折り線の表記が無く、曲げる所が読めない"], over
+assert not [k for k in g6 if k[0] == "pivot_counterweight" and k[1] == "tora-v4"] and "決めた本人" not in json.dumps(b6, ensure_ascii=False)
+assert [g["record_ids"] for k, g in g6.items() if "R-0087" in g["record_ids"]] == [["R-0087"]] and [k for k, g in g6.items() if "R-0087" in g["record_ids"]][0][:2] == ("pivot_counterweight", "tora-v33")
+assert "山田さんの紙" not in json.dumps(b6, ensure_ascii=False)
+# 束の出し元の名（エンジンは同じ出し元の束を新しい 1 つだけ数えるので、置き場が違う束は名を分ける）。形の外は rc 4
+r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--from", "utsushi-review", "--out", str(pathlib.Path(DATA) / "bundle4.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
+assert r.returncode == 0 and json.loads((pathlib.Path(DATA) / "bundle4.json").read_text(encoding="utf-8"))["from"] == "utsushi-review", r.stderr
+r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--from", "山田の束", "--out", str(pathlib.Path(DATA) / "bundle5.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
+assert r.returncode == 4 and not (pathlib.Path(DATA) / "bundle5.json").exists(), r.stderr
+assert eb.build()["from"] == "utsushi"
+# 札の置き場は人が手で触るファイル。記録の番号が決まりの外の形でも、束ごと止めない（読み飛ばす。#313 の線）
+before = eb.build()["groups"]
+for i, odd in enumerate((["R-0086"], {"a": 1}, 86, None)):
+    (pathlib.Path(DATA) / "loop" / f"video-R-08{i:02d}.json").write_text(json.dumps({"record_id": odd, "marks": [{"id": "M1", "kind": "mark", "note": "形の外の札の字", "confirmed_by": "人"}]}, ensure_ascii=False), encoding="utf-8")
+assert eb.build()["groups"] == before, "形の外の札の置き場は読み飛ばす"
+for i in range(4):
+    (pathlib.Path(DATA) / "loop" / f"video-R-08{i:02d}.json").unlink()
+
+# 12. 紙ごとの群（Issue 334）: 同じ雛形・同じ刷った組でも、紙（玩具と仮説と版）が違えば、手順の番号の意味が違う。違う紙の「手順 3」を足さない。
+# 雛形の組み方の手順の数は、紙で違う（御来迎の 5 枚は 12・11・11・11・9 手順）
+tpl = TEMPLATES["slider_fan"]
+counts = [len(tpl.steps({**tpl.DEFAULTS, **h.get("params", {})})) for h in hypotheses.load(G)["hypotheses"]]
+assert len(set(counts)) > 1, counts
+for who, hid in ((WHO1, "H-B"), (WHO2, "H-C")):
+    assert making_log.add_step(G, hid, 1, 3, "stuck", who=who) is not None
+b4 = eb.build()
+assert {g["paper"] for g in b4["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET} == {f"{G}.H-A", f"{G}.H-B", f"{G}.H-C"}
+p4 = {g["paper"]: g for g in b4["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET}
+assert p4[f"{G}.H-B"]["stuck_steps"] == {"3": {"taps": 1, "people": 1}} and p4[f"{G}.H-C"]["stuck_steps"] == {"3": {"taps": 1, "people": 1}}
+assert p4[f"{G}.H-A"]["stuck_steps"]["3"] == {"taps": 3, "people": 2}
+# 動きの札と報告の数は、紙で分けても、雛形と組で足すと同じ数になる（エンジンの側は雛形と組で足す。分けるのは手順ごとの数と文だけ）
+before = [g for g in b4["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET]
+extra, fails = records.add({"source_id": G, "hypothesis_id": "H-B", "sheet_version": 1, "result": "動かない", "sheet_set": NOW_SET, "fixes": []})
+assert fails == [], [f.line() for f in fails]
+after_rec = [g for g in eb.build()["groups"] if g["template"] == "slider_fan" and g["sheet_set"] == NOW_SET]
+assert sum(g["reports"] for g in after_rec) == sum(g["reports"] for g in before) + 1
+assert sum(g["results"].get("動かない", 0) for g in after_rec) == sum(g["results"].get("動かない", 0) for g in before) + 1
+assert {g["paper"]: g["reports"] for g in after_rec}[f"{G}.H-B"] == 1
+# 版が違えば別の紙。紙の名は決まった形だけで、人を辿れる物でない。雛形と組と紙の組は 1 つの群だけ
+v2 = [making_log.add_step(G, "H-D", 2, 4, "stuck", who=WHO1)]
+assert v2[0] is not None
+b5 = eb.build()
+assert f"{G}.H-D.v2" in {g["paper"] for g in b5["groups"]}
+keys = [(g["template"], g["sheet_set"], g["paper"]) for g in b5["groups"]]
+assert len(keys) == len(set(keys)) and all(eb.NAME.fullmatch(g["paper"]) or g["paper"] == "" for g in b5["groups"])
+assert all(not re.search(r"[0-9]{2}:[0-9]{2}|" + WHO1 + "|" + WHO2, g["paper"]) for g in b5["groups"])
+# 動画の札の記録と、結んだ話も、その記録の紙の群に入る
+assert {g["paper"] for g in b5["groups"] if g["sheet_set"] == "tora-v8"} == {f"{T}.H-C"}
+assert {g["paper"] for g in b5["groups"] if ("think", SPOKEN["think_old"]) in {(t["kind"], t["text"]) for t in g["texts"]}} == {f"{G}.H-B"}
 
 print("OK test_engine_bundle")

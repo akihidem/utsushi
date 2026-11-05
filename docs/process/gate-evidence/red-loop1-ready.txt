@@ -1,0 +1,19 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_think.py
+# commit: 961f100（回した時の HEAD）
+F9.own: 自分の仮説「仮説 A から変えた案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-2_v1_free.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-3_v1.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-3_v1_tejun.pdf
+/tmp/tmp5luq6s6l/play/NDL-1187053-R0000005-L/OWN-3_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_think.py", line 169, in <module>
+    assert [p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("NDL-*.json")) if think_sheet.ready(p.stem)] == [G, T]
+                                                                                                ^^^^^^^^^^^^^^^^^
+AttributeError: module 'web.think_sheet' has no attribute 'ready'
+rc=1
