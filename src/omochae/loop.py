@@ -413,7 +413,7 @@ def save_template_change(record_ids, sheet_set, commit, changes, by, decided_in=
 @exclusive
 def confirm_sheet(source_id, hid, version, by, sheet_set):
     """型紙の確定（f09）: 人が刷ると決めた仮説と版を、刷った組と一緒に台帳に残す。F9.human の「確定の記録は未実装」を埋める。
-    刷る操作そのものが人の選び（予想の後、仮説を選んで刷る）なので、その時に 1 件ずつ足す。中身は評価しない。"""
+    刷る操作そのものが人の選び（仮説を選んで刷る）なので、その時に 1 件ずつ足す。中身は評価しない。"""
     if not (by or "").strip():
         return [Failure("F9.human", f"{hid} 版 {version}", "確定した人が無い")]
     path = folder() / f"sheet-confirm-{source_id}-{hid}-v{version}.json"

@@ -167,13 +167,12 @@ def check_pages_open():
 
 
 def check_writes_are_atomic():
-    """記録・輪・予想の書き込みは全部、一時ファイル → 置き換え を通る。確定の直前で落ちると、前の中身だけが残る。"""
+    """記録・輪・自分の仮説の書き込みは全部、一時ファイル → 置き換え を通る。確定の直前で落ちると、前の中身だけが残る。"""
     d = fresh()
     target = d / "loop" / "explanation-R-0001.json"
     loop._write(target, {"v": 1})
     with patched(os, "replace", fails), patched(os, "link", fails):
         for name, write in (("輪", lambda: loop._write(target, {"v": 2})),
-                            ("予想", lambda: hypotheses.save_prediction(G, "筒を押すと開く")),
                             ("自分の仮説", lambda: hypotheses.save_own(G, "名", "動かし方", "根拠")),
                             ("記録", rec)):
             try:
@@ -241,7 +240,7 @@ def check_generated_numbers():
     fresh()
     ids = []
     with patched(loop, "_now", slowed(loop._now)):
-        run_threads(6, lambda i: ids.append(generate._save_draft(G, [], [], {"hypotheses": []}, {"model": "人"})))
+        run_threads(6, lambda i: ids.append(generate._save_draft(G, [], {"hypotheses": []}, {"model": "人"})))
     assert sorted(ids) == [f"G-{i:04d}" for i in range(1, 7)], ids
 
 

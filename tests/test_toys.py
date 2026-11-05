@@ -6,6 +6,7 @@ import tempfile
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
+from omochae.marks import without_premise  # noqa: E402
 from omochae import hypotheses  # noqa: E402
 from omochae.hypotheses import ROOT  # noqa: E402
 from web import looks, skin, toys  # noqa: E402
@@ -19,7 +20,7 @@ for name in skin.SKINS:
     assert sorted(found) == sids, (name, len(found), len(sids))
     assert "御来迎" in html and "張子" in html
     for w in ("仮説 A", "H-A", "怠らし", "成功", "失敗", "正解", "順位"):
-        assert w not in html, (name, w)
+        assert w not in without_premise(html), (name, w)
     for sid in sids:
         for h in hypotheses.load(sid)["hypotheses"]:
             assert h["name"] not in html and h["how_it_moves"] not in html, (sid, h["id"])

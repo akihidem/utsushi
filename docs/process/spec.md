@@ -8,9 +8,9 @@
 
 ## 1. 成立の一文
 
-> **江戸の絵本に図と歌だけが残る玩具について、学ぶ人が予想を先に書き、仮説ごとの紙の型紙を刷って作り、試した事を順位も成否の言葉も付けずに記録し、人の説明を先に受けてから次の版が出る輪が、まっさらな環境で動き、その型紙で作った物が実物で動く事。**
+> **江戸の絵本に図と歌だけが残る玩具について、学ぶ人が開いてすぐ仮説ごとの紙の型紙を刷って作り、試した事を順位も成否の言葉も付けずに記録し、人の説明を先に受けてから次の版が出る輪が、まっさらな環境で動き、その型紙で作った物が実物で動く事。**
 
-由来: 哲学「自然とのコールアンドレスポンス」「おもちゃで遊び続ける」、J-002（複数の仮説）・J-013（素材が返事をし、人の説明が先）・J-025（順位なし）・F9.prediction（予想が先）、本人の言葉「紙で江戸時代のおもちゃを再現して、実際にトイモデルを作ることに意味がある」（11-04）。
+由来: 哲学「自然とのコールアンドレスポンス」「おもちゃで遊び続ける」、J-002（複数の仮説）・J-013（素材が返事をし、人の説明が先）・J-025（順位なし）、本人の決定 11-05「予想の段を無くして、すぐ作る形にする」（#242）、本人の言葉「紙で江戸時代のおもちゃを再現して、実際にトイモデルを作ることに意味がある」（11-04）。
 
 この一文を、下の 2〜4 の条件に分けた。
 
@@ -26,12 +26,12 @@
 | A5 | くずし字を読む頁: 先に自分の読みを書き、人が確かめた読みと並べ、違って読めた字に線を引く。点と正誤は出さず、書いた読みは残さない | 本人の決定 11-04（f14） | `src/web/kuzushi.py` | `tests/test_kuzushi.py` | 一部（人が使った確認はまだ） |
 | A4 | 歌の読みは本人が確かめた形（御来迎「怠けらじ」）で出す | 本人の決定 11-04（U-01） | `src/web/` | `tests/test_play_server.py` | 満たす |
 
-### B 仮説と予想
+### B 仮説
 
 | # | 条件 | 由来 | 実装 | 確かめ方 | 状態 |
 |---|---|---|---|---|---|
 | B1 | 仕組みを 1 つに決めず、複数の仮説として並べる（御来迎 5、虎 3） | J-002 | `data/hypotheses/` | `tests/test_hypotheses.py` | 満たす |
-| B2 | 予想か自分の仮説を書くまで、仮説の一覧も型紙も出さない | F9.prediction | `hypotheses.py`、画面 | `test_hypotheses.py`・`test_play_server.py` | 満たす |
+| B2 | 開いたらすぐ仮説の一覧と型紙が出る。型紙は正解でなく AI が考えた仮説と明示する | 本人の決定 11-05、#242 | `src/web/toy.py`、`src/omochae/marks.py` | `test_build_now.py`・`test_loop_premise.py` | 満たす |
 | B3 | 仮説に順位を付けない。並びは元の記録の順 | J-025、F4.evidence | `hypotheses.py`、`loop.py` | `test_play_server.py`・`test_loop.py` | 満たす |
 | B4 | 自分の仮説を立てられる。雛形に乗らない仮説には型紙なしの紙を返す | J-008、F9.own | `hypotheses.py` の own | `test_hypotheses.py` | 満たす |
 | B5 | Claude が出すのは雛形の範囲の中の値と仮説の案だけで、人が採るまで使わない | J-010、F9.human | `src/api/`、`hypotheses.py` の adopt | `test_loop.py`（偽の応答） | 一部（本物の API は 0 回、U-05） |
@@ -76,7 +76,7 @@
 
 | # | 条件 | 由来 | 実装 | 確かめ方 | 状態 |
 |---|---|---|---|---|---|
-| G1 | 手元のブラウザの画面（127.0.0.1）で、予想 → 仮説 → 刷る → 記録 → 説明が回る | J-024 | `src/web/play_server.py` | `test_play_server.py` | 満たす（人はまだ使っていない、U-10） |
+| G1 | 手元のブラウザの画面（127.0.0.1）で、仮説 → 刷る → 記録 → 説明が回る | J-024 | `src/web/play_server.py` | `test_play_server.py` | 満たす（人はまだ使っていない、U-10） |
 | G5 | 手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）。机に置いて声で使う（音声認識で話し続けられる・答えの読み上げ）。写真と動画をその場の試した記録に添え、写真と動画の撮影情報は保存の時に外す。使えない画面では字の操作だけが残る | 本人の方向転換 11-04（U-36） | `src/web/techo_site.py`、`play_server.py` | `tests/test_techo_site.py`・`test_play_server.py` | 一部（作った。人が使った確認と本物のスマホはまだ。網に開くかとアーティファクトの手帖を消すかは本人、U-35・U-36） |
 | G2 | 日本画展の展示（白）と縦読みのジン（黒）を、それぞれ 1 つのサイトとして立てる（--look）。どちらも入口から一周できる。1 つのサイトの中で見た目は切り替えない。大判（A）と外した 3 案は出さない | J-024、本人の指示 11-05（小さな直しを止めて作り直す。[site-requirements](site-requirements.md)） | `src/web/skin.py`、`looks.py` | `test_play_server.py`・`test_toys.py` | 満たす（既定の皮と A の扱いは本人、カード 20261105-011452-sub-site） |
 | G6 | 型紙と手順の紙を画面に絵で出し、拡大して見られ、版を並べ、PDF を刷る。試した後の紙は記録の前は絵も PDF も渡さない | 本人の指示 11-05（「今は型紙が出力されていない」） | `src/web/toy.py`、`play_server.py` の /sheet/ | `test_play_server.py` | 満たす（人の目と本物のスマホはまだ） |
@@ -93,7 +93,7 @@
 | H3 | 子どもも AI から直接返事をもらってよい。ただし紙の返事と人の記録・説明の後 | J-013 の決める点 2 の変更（11-04） | 手帖の「Claude に聞く（何が起きたか）」（`src/web/play_server.py` の _ai_reply、`src/api/loop_agents.py` の draft_interpretation） | `tests/test_ai_feedback.py` | 一部（11-04: 人の説明の後だけ出す口を作った。鍵が無い間は呼ばずに知らせる。本物では未確認） |
 | H5 | 作っている最中の手順の質問に、聞かれた時だけ答える。範囲は切る・折る・貼る・組む順だけで、仕組み・どの仮説かは答えない。仮説への返事の順（紙 → 記録と説明 → AI）は変えない | 本人の決定 11-04（試行の「谷折り、山折りがわからない」から） | `src/api/ask.py`、玩具の頁の「作っている途中で困ったら」 | `tests/test_ask.py`・`test_play_server.py` | 一部（よくある言葉は刷った説明からその場で答える。玩具の頁と手帖の頁（G5、声でも聞ける）から使える。AI の分は偽の応答でだけ確かめた。本人が鍵を置くまで動かない、J-023） |
 | H4 | 動画を Claude が見るのは観察の補助と型紙の判定だけで、成績にしない。試した記録は再現ギャラリーに記録の順で並べ、順位と「再現できた」を書かない | J-022 | `src/omochae/gallery.py`、docs/gallery/index.html | `tests/test_gallery.py` | 一部（ギャラリーは作った: `python -m omochae.gallery` で docs/gallery/index.html を書き出す。11-04 の試行の写真 3 枚と動画 1 本を添える。U-21 は閉じた。動画の観察は今週は作らない、U-13 で閉じた） |
-| H6 | 型紙の折りの部品を Origami Simulator の SVG に書き出す。作り手用で、学ぶ人の画面には出さない（予想が先） | 本人が research/22 の候補 5 を採った（U-26） | `src/omochae/foldsim.py` | `tests/test_foldsim.py` | 満たす（書き出しだけ。紙の厚みと摩擦は模擬しないので実物と動きは違う） |
+| H6 | 型紙の折りの部品を Origami Simulator の SVG に書き出す。作り手用で、学ぶ人の画面には出さない（紙で確かめる前に動きの答えを見せない） | 本人が research/22 の候補 5 を採った（U-26） | `src/omochae/foldsim.py` | `tests/test_foldsim.py` | 満たす（書き出しだけ。紙の厚みと摩擦は模擬しないので実物と動きは違う） |
 
 ### I 持ち寄りと、データの決まり
 
@@ -130,7 +130,7 @@
 
 ### utsushi に残る物
 
-仮説と予想（`hypotheses.py`）、学習プリント（`instructions.py`）、見比べる紙（`discriminate.py`）、記録・輪・台帳（`records.py`・`loop.py`・`ledger.py`）、図鑑の印（`labels.py`）、持ち寄り（`contrib.py`）、取り込み（`ingest.py`）、AI（`src/api/`）、画面（`src/web/`）、`docs/` の全部、仮説と記録のデータ、試行の写真と動画。
+仮説（`hypotheses.py`）、学習プリント（`instructions.py`）、見比べる紙（`discriminate.py`）、記録・輪・台帳（`records.py`・`loop.py`・`ledger.py`）、図鑑の印（`labels.py`）、持ち寄り（`contrib.py`）、取り込み（`ingest.py`）、AI（`src/api/`）、画面（`src/web/`）、`docs/` の全部、仮説と記録のデータ、試行の写真と動画。
 
 ### 境目をまたぐ所（今のコードで見えた物）
 
@@ -151,7 +151,7 @@ git clone https://github.com/akihidem/utsushi.git && cd utsushi
 PYTHONPATH=src .venv/bin/python -m web.play_server   # http://127.0.0.1:8766/ で入口 A
 ```
 
-- 型紙を手で刷るには予想が先に要る。試しで刷る時は、使い捨ての置き場に仮の予想を書く: `OMOCHAE_DATA=<使い捨ての場所> PYTHONPATH=src .venv/bin/python -m omochae.hypotheses predict "仮の予想"` の後に `... hypotheses print H-A --out <出す場所>`
+- 型紙を手で刷る: `OMOCHAE_DATA=<使い捨ての場所> PYTHONPATH=src .venv/bin/python -m omochae.hypotheses print H-A --out <出す場所>`
 - 原図の写し（`out/sources/*.jpg`）は git の外。まっさらな clone では画面の図と、手順の紙の完成のイメージが出ない（どちらも無い時の形で動く）。取り込みは `python -m omochae.ingest`
 - 提出の床: 受け皿の道具の submit-check（この repo の外）。11-04 昼に残る FAIL はデモ動画のリンクと非公開の 2 つ（U-19・U-20・U-24）。11-04 午後に remote なしで回すと、FAIL はデモ動画のリンクだけ（非公開かは remote ありで回さないと分からない）
 - 凍結の判定に使う物: 上の 3 行が通る事、2 の各条件の「状態」、6 の決まっていない点のうち凍結の前に要る物

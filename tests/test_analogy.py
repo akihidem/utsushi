@@ -1,7 +1,7 @@
 """全部の玩具に「たとえと、関連する事柄」がある（本人の頼み 11-05）。通信はしない。
 
 なぜ: 本人が御来迎の扇を開く話を気に入り、同じ形で身近な物へのたとえと関連する事柄を全部の玩具に求めた。
-文は作る側の言葉なので、印（作る側のたとえ）と「答えではない」の断りを付け、予想の前には出さない（F9.prediction）。
+文は作る側の言葉なので、印（作る側のたとえ）と「答えではない」の断りを付ける。
 成績の言葉（成功・失敗・正解・順位）は入れない（J-025、philosophy.md）。仮説の名前の丸写しもしない（たとえは仕組みの手がかりで、仮説の言い換えではない）。
 """
 import json
@@ -35,11 +35,8 @@ for sid in sids:
     assert "\n" not in text, sid
 assert not missing, ("たとえが無い玩具", len(missing), missing[:10])
 
-# 頁: 予想の前は出ない。予想の後は印と断り付きで出る
+# 頁: 印と断り付きで出る
 sid = "NDL-1187053-R0000005-L"
-before = toy.toy_page(sid)
-assert "身近な物でいうと" not in before and "作る側のたとえ" not in before
-hypotheses.save_prediction(sid, "扇が開くと思う")
 after = toy.toy_page(sid)
 a = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))["analogy"]
 assert "作る側のたとえ" in after and "答えではありません" in after and a["like"] in after and a["related"][0] in after

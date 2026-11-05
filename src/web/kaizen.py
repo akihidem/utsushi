@@ -8,7 +8,7 @@
 - 成績に見える数（何件動いた、など）は、玩具の頁の節と一覧 /loop には出さない（J-025）。出すのは「報告の数」「版の数」「変えた寸法」だけ。
 - 玩具ごとの作る側の頁 /loop/<印>（toy_page）だけは、工作の様子の集計を出す（本人の決定 11-05 朝「工作の様子を蓄積して、サービス全体の改善をする」）:
   聞かれた事・止まった所・最初に動いた所・感想・版ごとの動きの札の数。版や案内を直す材料で、玩具や仮説の上下ではない事を頁の頭に書く。
-  仮説は字（A・B）だけで指し、名前と動かし方は出さない（予想の前でも開ける頁なので、F9.prediction の線を守る）。
+  仮説は字（A・B）だけで指す（集計の表を短くするため）。
   出すのは Issue #119（U-45）の 6 つ（止まった段・動きの結果・感想の言葉・聞く口の質問・完成の様子・サイトの流れ）で、数と幅だけ。
   多い順に仮説や玩具を並べる・点・％の成績、のような上下を付ける形は作らない。人は、その場限りの無作為の印で数える。
 - /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）。
@@ -18,6 +18,7 @@
   だから、報告から案を機械で出す道具はここに置かない。
 """
 from omochae import hypotheses, loop, making_log, records
+from omochae.marks import HYPOTHESIS, LOOP_PREMISE
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, sources
@@ -75,7 +76,8 @@ def section(sid, data, recs):
     if not recs:
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
-            '<p class="meta">作った人の報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
+            f'<p class="meta">{esc(HYPOTHESIS)}</p>'
+            '<p class="meta">作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
             f'{lines}{todo}</section>')
 
 
@@ -115,7 +117,7 @@ TABLE_STYLE = "table{border-collapse:collapse;width:100%}th,td{text-align:left;p
 
 # 測った値の欄の、頁での呼び方。表に無い欄は、欄の名前のまま出す（雛形ごとに測る物が違うので、ここで全部は決めない）。
 MEASURE_NAMES = {"opened_deg": "開いた角度（度）", "ten_swings_sec": "10 往復の秒"}
-STAGE_NAMES = {"predict": "予想を書いた", "print": "型紙を作った", "make": "作りながら見る頁を開いた", "record": "記録を残した"}
+STAGE_NAMES = {"print": "型紙を作った", "make": "作りながら見る頁を開いた", "record": "記録を残した"}
 
 
 def _span(sp, unit=""):
@@ -129,7 +131,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     1 止まった段 / 2 動きの結果 / 3 感想の言葉 / 4 聞く口の質問 / 5 完成の様子 / 6 サイトの流れ。
     なぜ別の頁か: 学ぶ人の頁（/toy/<印>）に集計を出すと、数が成績や答えのように見える（J-025）。ここは案内・答え・型紙の版を直す人が読む。
     上下を付ける形は作らない: 仮説や玩具を多い順に並べない（並びは版・手順・仮説の元の順）、点や％の成績にしない。
-    仮説は字だけで指す。名前と動かし方は出さない（予想の前でも開ける頁なので）。"""
+    仮説は字だけで指す（表を短くするため）。"""
     data = hypotheses.load(sid)
     sm = making_log.summary(sid)
     letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
@@ -150,7 +152,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
            f'<h3>最初に動いた所</h3>{lines(sm["first_moved"], "書かれた物はまだありません。")}'
            f'<h3>何を変えると違いが出そうか</h3>{lines(sm["what_if"], "書かれた物はまだありません。")}')
 
-    # 2 動きの結果: 仮説と版ごとの「見た事」の数、測った値の幅、直した点。
+    # 2 動きの結果: 仮説と版ごとの「見た事」の数、測った値の幅、人の工夫（次の版の一番の材料。本人の言葉 11-05）。
     rows = ""
     for hid, by_v in sm["results_by_version"].items():
         for v in sorted(by_v):
@@ -159,7 +161,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             rows += f'<tr><td>{esc(paper(hid))}</td><td>版 {esc(v)}</td><td>{"、".join(f"{esc(k)} {n}" for k, n in by_v[v].items())}</td><td>{span}</td></tr>'
     s2 = table(("紙", "版", "動きの札", "測った値の幅"), rows) if rows else none("報告はまだありません。")
     fixes = [f'{f["record_id"]}（{paper(f["hypothesis_id"])}・版 {f["sheet_version"]}）: {f["part"]} / {f["change"]} / {f["outcome"]}' for f in sm["fixes"]]
-    s2 += f'<h3>直した点（部品・変えた事・結果）</h3>{lines(fixes, "書かれた物はまだありません。")}'
+    s2 += f'<h3>人の工夫（部品・変えた事・結果）</h3>{lines(fixes, "書かれた物はまだありません。")}'
 
     # 3 感想の言葉: 分からなかった側と面白かった側に分けて並べる（たとえと説明のどこを言い換えるかの材料）。
     hard, fun = sm["words"]["hard"], sm["words"]["fun"]
@@ -187,12 +189,13 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     s5 += "<h3>途中でやめた段（できたを押していない人が、最後に居た手順）</h3>" + (
         table(("紙", "手順の番号", "人（印のある分）"), rows) if rows else none("印のある人の記録はまだありません。"))
 
-    # 6 サイトの流れ: 順路の段（予想 → 型紙 → 作る → 記録）ごとの、先へ進んだ数。
+    # 6 サイトの流れ: 順路の段（型紙 → 作る → 記録）ごとの、先へ進んだ数。
     rows = "".join(f'<tr><td>{STAGE_NAMES[k]}</td><td>{x["events"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>' for k, x in sm["flow"].items())
     s6 = table(("段", "出来事の数", "人（印のある分）"), rows)
 
     body = (f'<section class="hero"><div><h1>{esc(data["toy"])} の工作の様子</h1>'
             '<p class="lead">作る側の集計。学ぶ人の頁には出しません。公開しない頁です。上下を付ける物ではありません。</p>'
+            f'<p class="premise">{esc(LOOP_PREMISE)}</p>'
             f'<p class="meta">聞く口の質問、手順の進み、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
             f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
@@ -202,7 +205,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'
             f'<section class="sec" id="k4"><h2>4 聞く口の質問</h2><p class="meta">作っている途中に聞く口へ来た質問を、手順の段ごとに束ねます（同じ文だけを 1 つに数えます）。</p>{s4}</section>'
             f'<section class="sec" id="k5"><h2>5 完成の様子</h2><p class="meta">時間は幅で、動いた記録は件数で出します。</p>{s5}</section>'
-            f'<section class="sec" id="k6"><h2>6 サイトの流れ</h2><p class="meta">予想 → 型紙 → 作る → 記録の、どの段まで進んだか。何を書いたかは写していません。</p>{s6}</section>')
+            f'<section class="sec" id="k6"><h2>6 サイトの流れ</h2><p class="meta">型紙 → 作る → 記録の、どの段まで進んだか。何を書いたかは写していません。</p>{s6}</section>')
     # 7 話した事（一周の声の部分、Issue #279）。字だけ。並べ方と断りは hanasu.py が持つ。
     from . import hanasu
 

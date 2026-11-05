@@ -16,12 +16,12 @@ from omochae import hypotheses, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-hypotheses.save_prediction(G, "押すと開く")
+# 予想の段は #266 で外したので、予想を置かずに全部の頁が開く
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # 頁と、帯で印の付く項目（None は印なし。順路の外の頁）。kazasu と tsukuru は別の枝（#242）で形が変わるので入れない
-PAGES = {"/": "うつし", "/about": "序", "/toys": "おもちゃ", f"/toy/{G}": "おもちゃ", f"/toy/{G}/techo": "おもちゃ", "/gallery": "上げた物と職人の言葉",
+PAGES = {"/": "うつし", "/about": "序", "/toys": "おもちゃ", f"/toy/{G}": "おもちゃ", f"/toy/{G}/techo": "おもちゃ", "/gallery": "作った物と職人の言葉",
          "/zukan": "図鑑", f"/zukan/{G}": "図鑑", f"/zukan/{G}/yomi": "図鑑", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "序", "おもちゃ", "上げた物と職人の言葉", "図鑑"]
+ITEMS = ["うつし", "序", "おもちゃ", "作った物と職人の言葉", "図鑑", "English"]
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)

@@ -94,7 +94,6 @@ def timed(path, data):
 
 video = os.path.join(tempfile.mkdtemp(), "v.mp4")
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=duration=2:size=160x120:rate=10", "-pix_fmt", "yuv420p", video], check=True)
-hypotheses.save_prediction(G, "押すと開く")
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")

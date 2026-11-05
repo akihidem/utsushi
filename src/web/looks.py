@@ -3,7 +3,7 @@
 
 判断の芯: 案ごとに佇まい（表紙・見開きの構成・題の組み方）だけを変え、守る線は同じにする。
 新しい絵は作らず、NDL の図の頁とその寄りだけを使う。歌は人が確かめた読みだけを引用の印つきで出す。
-仮説は出さない（予想が先、F9.prediction）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
+入口には仮説を出さない（絵を先に見せるため）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
 """
 from omochae import hypotheses
 
@@ -66,13 +66,13 @@ const st=document.createElement('style');st.textContent='section:not(#'+CSS.esca
 # 参照は、白いリングバインダーを真上から撮った見開きを縦に並べる形（research/19 に観察を書いた）。
 # 写したのは組み方だけ: 綴じ金具とバインダーの縁、見開きの型（全面の写真と白地の小物、平置きと番号の一覧、
 # 見開きをまたぐ 1 枚、文字の頁と色見本の列、余白の多い奥付）、細かい字の小さな文字組み。参照の写真と文は使わない。
-# 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。仮説は出さない（予想が先、F9.prediction）。
+# 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。
 # 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
 def all_toys(prefix):
     """全部の玩具の一覧（本人の指示 11-05「88 種のおもちゃから 1 個選ぶ」。要件 L-02: 入口から試作の玩具にも入れる）。
     必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、全体が入る形で敷く
     （必須の 2 種は頁の半分の写しなので、額の敷き方 FRAMED で寄せる）。写しが無い玩具は名前だけにし、国立国会図書館への道を添える。
-    仮説の名前と動き方は出さない（予想が先、F9.prediction）。名前は作る側の見立てで確かめ待ち（U-01）。動きは付けない。"""
+    仮説の名前と動き方は一覧に出さない（絵を先に見せるため）。名前は作る側の見立てで確かめ待ち（U-01）。動きは付けない。"""
     items = []
     # 必須の 2 種を先頭に（入口の主役のまま）、試作はコマの順。順位ではなく、記録の並び。
     sids = sorted(sources(), key=lambda s: (hypotheses.stage(s) != "必須", s))
@@ -90,7 +90,7 @@ def all_toys(prefix):
     n = len(items)
     return (f'<section class="{prefix}-all" id="all-toys" aria-label="全部の玩具"><p class="chapter">おもちゃ</p>'
             f'<h2>{n} の玩具から、1 つ選ぶ</h2>'
-            '<p class="cap">どれも図と歌だけが残った玩具。選んで、先に予想を書くと、仮説と型紙が出る。'
+            '<p class="cap">どれも図と歌だけが残った玩具。選ぶと、すぐ型紙を刷って作れる。型紙は正解ではなく、AI が考えた仮説。'
             '先頭の 2 つのほかは全部を型紙にする途中の試作で、名前は作る側の見立てで、まだ確かめていません。</p>'
             f'<ul class="grid">{"".join(items)}</ul></section>')
 
@@ -173,7 +173,7 @@ def zine():
                  f'<div><p class="big">No. {i:02d}</p><h2>{esc(t["toy"])}</h2>{_label(t, src)}{_nopic(t)}</div>'
                  f'<div id="song-{i}"><div class="songs">{song}</div><p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
                  f'<div><div class="zn-grid">{tiles}</div><p class="cap">図の細部</p></div>'
-                 f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></p></div></div></section>')
+                 f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">紙で作って、確かめる。</p><p><a href="/toy/{t["sid"]}">型紙をひらく</a></p></div></div></section>')
     # 全部の玩具の一覧は、額装した 2 種の後、奥付の前（本人の指示 11-05）。黒地のジンの性格は保つ（U-23）。
     body += all_toys("zn")
     body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
@@ -257,7 +257,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .fan-cap{min-width:8em}
 
 /* 「扇をひらく」（本人の頼みの (3) を静かにした物）。派手な 3D のねじれは持ち込まず、線の扇の開く角だけをノブで動かす。
-   筒の中の仕組みは描かない（仮説を出さないため。予想が先、F9.prediction）。--t は骨の位置（-0.5〜0.5）、--a が開く角。 */
+   筒の中の仕組みは描かない（入口で仕組みを語らないため）。--t は骨の位置（-0.5〜0.5）、--a が開く角。 */
 .tj-ogi{padding:6vh 5vw 10vh;text-align:center}
 .tj-ogi svg{width:min(360px,80vw);height:auto;display:block;margin:0 auto}
 .tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
@@ -381,7 +381,7 @@ def tenji():
         figs = "".join(f'<figure><div style="{_bg(t["sid"], p, "300%")}"></div><figcaption>部分 {k}</figcaption></figure>'
                        for k, p in enumerate(DETAIL_POS, 1))
         body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
-        body += (f'<section class="tj-exit"><p>どこが動くと思いますか。</p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></section>')
+        body += (f'<section class="tj-exit"><p>紙で作って、確かめる。</p><a href="/toy/{t["sid"]}">型紙をひらく</a></section>')
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。扇の開く角を示す線の絵のほかに、新しい絵は作っていない。</p>'
     return page("うつし", body + ONLY + FAN_JS, TENJI + skin.entrance_style("tenji"), "tenji")
 

@@ -2,7 +2,7 @@
 
 判断の芯:
 - 全部の玩具（仮説の記録がある物）を 1 頁で選べる。必須の 2 種を大きく、試作を小さな札で。並びは記録の印（コマ）の順で、順位ではない。
-- 仮説の名前と動き方は出さない（予想が先、F9.prediction）。出すのは玩具の名前・コマ・図だけ。
+- 一覧には仮説の名前と動き方を出さない（選ぶ頁を軽くするため）。出すのは玩具の名前・コマ・図だけ。
 - 試作の写し（out/sources）は棚卸しの箱で切り出した物なので、そのまま敷く。必須の 2 種は頁の半分の写しなので、綴じの影の反対側へ寄せる（looks.framed_pos と同じ）。
   写しが無い玩具は名前だけにし、国立国会図書館への道を添える（入口と同じ線。写しの有無で玩具が消えると選べなくなるため）。
 - 見た目は骨と皮（skin.shell）に任せ、この頁は皮を知らない。play_server と looks は読み込まない（道の登録で循環しないため）。
@@ -15,8 +15,8 @@ from omochae.hypotheses import ROOT
 from . import skin as skinmod
 from .skin import esc
 
-LEAD = "どれも図と歌だけが残った玩具です。選んで、先に予想を書くと、仮説と型紙が出ます。"
-NOTE = "先頭の 2 つのほかは、全部を型紙にする途中の試作です。名前は作る側の見立てで、まだ確かめていません。"
+LEAD = "どれも図と歌だけが残った玩具です。選ぶと、すぐ型紙を刷って作れます。型紙は正解ではなく、AI が考えた仮説です。"
+NOTE = "先頭の {n} つのほかは、全部を型紙にする途中の試作です。名前は作る側の見立てで、まだ確かめていません。"
 
 
 def sources():
@@ -49,12 +49,21 @@ def card(sid):
     return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
 
 
-def page(skin, path="/toys"):
-    """全部の玩具を選ぶ頁。skin は皮の名前（skin.SKINS の鍵）。"""
+def paper_only_sids(sids):
+    """紙 1 枚で作れる仮説を持つ玩具。札の印と同じ ways の「紙一枚」で絞る（#255 の頃は別の判定を持っていたが、
+    main の ways（#261、エンジンとそろえた物）と二重になり、札と絞り込みが食い違いうるので ways に寄せた）。"""
+    return [s for s in sids if "紙一枚" in ways.toy_labels(s)]
+
+
+def page(skin, path="/toys", paper=False):
+    """全部の玩具を選ぶ頁。skin は皮の名前（skin.SKINS の鍵）。paper は紙 1 枚で作れる玩具だけに絞る（本人の言葉 11-05「一枚の紙から作る選択肢もある」）。"""
     sids = sources()
+    if paper:
+        sids = paper_only_sids(sids)
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE)}</p><p class="meta">{esc(ways.NOTE)}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)))}</p><p class="meta">{esc(ways.NOTE)}</p>'
+            + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

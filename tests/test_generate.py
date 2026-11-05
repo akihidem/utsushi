@@ -41,23 +41,19 @@ class Fake:
 
 
 def hyp(name, params, template="slider_fan", evidence=None):
-    return {"name": name, "how_it_moves": "動かす", "physics": "折り目の力", "evidence": evidence or [{"kind": "image", "where": "寝かせた筒", "what": "棒", "certainty": "観察"}], "against": ["未確認"], "to_measure": "角度", "template_id": template, "params": params, "vs_prediction": {"same": ["手で動かす"], "different": ["棒"]}}
+    return {"name": name, "how_it_moves": "動かす", "physics": "折り目の力", "evidence": evidence or [{"kind": "image", "where": "寝かせた筒", "what": "棒", "certainty": "観察"}], "against": ["未確認"], "to_measure": "角度", "template_id": template, "params": params, "vs_own": {"same": ["手で動かす"], "different": ["棒"]}}
 
 
 A = {"push_part": "tab", "hub": "axle", "pusher_height": 15}
 C = {"push_part": "stick", "hub": "axle", "pusher_height": 84}
 good = {"hypotheses": [hyp("読み 1", A), hyp("読み 2", C), {**hyp("雛形に無い読み", None, None), "params": None}], "references": []}
-# 予想の前は呼ばない
-never = Fake([])
-assert floors(gen.generate(source, never, image="QQ==")[1]) == {"F9.prediction"} and never.calls == []
-assert hypotheses.save_prediction(G, "筒を押すと上が開く")[1] == []
 # 検査に落ちた案は直させる: 範囲の外・実在しない前例・1 本だけ
 bad = {"hypotheses": [hyp("範囲の外", {"push_part": "tab", "tube_side": 500}), hyp("x", A)], "references": ["R-9999"]}
 client = Fake([([tool("get_template_spec", {"template_id": "slider_fan"}, "a")], "tool_use"), ([tool("submit_result", bad, "b")], "tool_use"), ([tool("submit_result", good, "c")], "tool_use")])
 gid, fs = gen.generate(source, client, image="QQ==")
 assert not fs, fs
 first = client.calls[0]["messages"][0]["content"]
-assert first[0]["type"] == "image" and "筒を押すと上が開く" in first[1]["text"], "図と予想を渡す"
+assert first[0]["type"] == "image" and "reader_predictions" not in first[1]["text"], "図を渡す。予想の段は無いので、予想の欄は渡さない（#242）"
 # 本人が採らなかった歌の読み（複写 A の「怠らし」）は渡さない。採った読みは渡す
 assert "御来迎 拝むにつけて怠らし" not in first[1]["text"] and "怠けらじ" in first[1]["text"]
 sent = json.dumps(client.calls[2]["messages"], ensure_ascii=False, default=str)

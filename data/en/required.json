@@ -1,0 +1,98 @@
+{
+ "_note": "英語の案。本人の確認の前は draft の印を画面に出す（J-030）。原文の手順の文を鍵にするので、原文が変わると試験（tests/test_en.py）が落ちて訳し直しが分かる。",
+ "toys": {
+  "NDL-1187053-R0000005-L": {
+   "hypotheses": {
+    "H-A": {
+     "name": "A tab on the side pushes it up",
+     "how": "Hold the tube and lift the tab that sticks out of the slot in the side."
+    },
+    "H-B": {
+     "name": "Push the inner tube up from below",
+     "how": "Hold the tube and push up the inner tube that sticks out at the bottom with your finger."
+    },
+    "H-C": {
+     "name": "Push a handle up from below",
+     "how": "Hold the tube and push up the chopstick handle that sticks out at the bottom."
+    },
+    "H-D": {
+     "name": "Hold the handle and lower the tube",
+     "how": "Hold the handle and lower the tube. The template is the same as idea C, and the movement is the opposite."
+    },
+    "H-E": {
+     "name": "Set the fan on a platform at the mouth of the tube",
+     "how": "Push up the inner tube, and the fan opens on a platform at the height of the mouth."
+    }
+   }
+  },
+  "NDL-1187053-R0000014-R": {
+   "hypotheses": {
+    "H-A": {
+     "name": "Put the neck in a hole in the body and let a weight inside swing it",
+     "how": "Touch the head with a finger and let go."
+    },
+    "H-B": {
+     "name": "Hang the head in front of the body",
+     "how": "Touch the head with a finger and let go."
+    },
+    "H-C": {
+     "name": "A light head swayed by wind",
+     "how": "Fan it or blow on it."
+    }
+   }
+  }
+ },
+ "steps": {
+  "刷った物差しに定規を当て、10cm か確かめる": "Put a ruler on the printed scale and check that it measures 10 cm.",
+  "まず 1 外筒だけを実線で切る。溝は下の端からはさみで切り込む（くり抜かない）": "First cut out only part 1 (outer tube) along the solid lines. Cut the slot in from the bottom edge with scissors (do not punch it out).",
+  "1 外筒を色の境で谷折りし、糊代で貼って角筒にする": "Valley-fold part 1 along the color boundaries and glue the tab to make a square tube.",
+  "残りの部品を実線で切る。穴は竹串の先であける": "Cut out the other parts along the solid lines. Make the holes with the tip of a skewer.",
+  "2 内筒も同じように角筒にする": "Make part 2 (inner tube) into a square tube the same way.",
+  "竹串を 2 内筒の 2 つの穴に通す": "Pass the skewer through the two holes in part 2.",
+  "3 台で 2 の上に蓋をする": "Cap the top of part 2 with part 3 (platform).",
+  "4 扇を色の境で、端から谷折り・山折りを交互にして蛇腹に畳む": "Starting from one end, fold part 4 (fan) along the color boundaries, alternating valley and mountain folds, into an accordion.",
+  "糸を 5 像の穴と 4 扇の中心側の穴の列に通し、ゆるく結ぶ": "Thread string through the hole in part 5 (figure) and the row of holes on the center side of part 4, and tie it loosely.",
+  "4 扇の真ん中の足を、糊代の境の破線で折り、足の糊代を 3 台の印に貼る": "Fold the middle foot of part 4 on the dashed line at the glue tab, and glue the tab to the mark on part 3.",
+  "5 像の足を 3 台に貼る": "Glue the foot of part 5 to part 3.",
+  "内筒を 1 外筒に入れ、竹串の端を溝から出す": "Put the inner tube into part 1 and let the ends of the skewer stick out through the slots.",
+  "まず 1 外筒だけを実線で切る": "First cut out only part 1 (outer tube) along the solid lines.",
+  "押す部品を 1 外筒に下から入れる": "Put the pushing part into part 1 from below.",
+  "2 土台も同じように角筒にし、割り箸の先を下から差し込んで貼る": "Make part 2 (base) into a square tube the same way, then push the tip of a disposable chopstick in from below and glue it.",
+  "4 扇の端を 3 台に貼り、5 像の足も台に貼る": "Glue the end of part 4 to part 3, and glue the foot of part 5 to the platform too.",
+  "部品を実線で切る。胴の穴は竹串の先であける": "Cut out the parts along the solid lines. Make the holes in the body with the tip of a skewer.",
+  "1 胴の前の壁の四角い穴を切る（カッターは大人がする）": "Cut the square hole in the front wall of part 1 (body). An adult should use the craft knife.",
+  "1 胴を破線で谷折りし、糊代で貼って箱にする。上の面は後で閉じる": "Valley-fold part 1 on the dashed lines and glue the tabs to make a box. Close the top later.",
+  "3 首の帯を半分に折って貼る。穴は重ねたまま通す": "Fold part 3 (neck strip) in half and glue it, keeping the holes lined up and open.",
+  "3 首の帯の前の端に 2 頭を貼る": "Glue part 2 (head) to the front end of part 3.",
+  "帯を前の壁の穴に入れ、竹串を胴の穴と帯の穴に通す": "Put the strip into the hole in the front wall, and pass a skewer through the holes in the body and the strip.",
+  "5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る": "Pass the skewer through the hole in part 5 (weight arm) too, and put clay on its lower end. Glue the arm to part 3.",
+  "頭の傾きを見て、腕を貼る位置を決める": "Watch how the head tilts to decide where to glue the arm.",
+  "1 胴の上の面を閉じる": "Close the top of part 1.",
+  "4 尾を丸くして、後ろに貼る": "Curl part 4 (tail) and glue it to the back.",
+  "3 首の帯の下の端を、2 頭の上の端に 4mm 重ねて貼る": "Glue the lower end of part 3 to the top edge of part 2, overlapping by 4 mm.",
+  "竹串を耳の穴と帯の穴に通す": "Pass the skewer through the holes in the ears and the strip.",
+  "粘土を頭の裏の真ん中、頭の上の端から 20mm 下に貼る": "Stick clay on the middle of the back of the head, 20 mm below its top edge."
+ },
+ "results": {
+  "動いた": "It moved",
+  "動かない": "It did not move",
+  "わからない": "Not sure",
+  "よく動いた": "It moved well",
+  "少し動いた": "It moved a little",
+  "揺れた": "It swayed",
+  "揺れない": "It did not sway",
+  "回った": "It spun",
+  "回らない": "It did not spin",
+  "戻った": "It came back",
+  "戻らない": "It did not come back",
+  "転がった": "It rolled",
+  "転がらない": "It did not roll",
+  "立った": "It stood",
+  "倒れた": "It fell over",
+  "鳴った": "It made a sound",
+  "鳴らない": "It made no sound",
+  "遊べた": "I could play with it",
+  "少し遊べた": "I could play with it a little",
+  "遊べない": "I could not play with it"
+ }
+}

@@ -1,7 +1,7 @@
 """くずし字を読む頁（docs/features.json の f14、調べと決め事は docs/process/research/25-kuzushi-reading.md）。
 
 判断の芯:
-- 予想が先（F9.prediction、philosophy.md）。玩具と同じく、先に自分の読みを書き、その後で人が確かめた読みを開く。
+- 読みの練習なので、先に自分の読みを書き、その後で人が確かめた読みを開く。玩具の予想の段を外した（#242）後も、この順は残す（本人の言葉は玩具の予想の段の話で、読みの練習には触れていない）。
   GET の頁には確かめた読みを出さない。書いた読みを POST で受けた応答の中でだけ開く。
 - 書いた読みは保存しない。応答の頁に映すだけで、記録の置き場（OMOCHAE_DATA）にもログにも書かない。
   くずし字を読む事は試しの記録（records）と違い、紙の輪の中の段ではない。残す形は本人が決めていない（research/25）。
@@ -127,7 +127,7 @@ def _li(line, inner=None):
     return f'<li><span class="lb">{esc(line["label"])}</span>{inner if inner is not None else esc(line["text"])}</li>'
 
 
-NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">上げた物</a></p>'
+NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">作った物</a></p>'
 
 
 def _page(title, body, look=None, path="/zukan"):

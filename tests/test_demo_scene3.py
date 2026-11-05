@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 
 from demo import scene3
 from demo.flip import H, W
+from omochae.marks import without_premise
 
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene3.CUES.values())
@@ -20,39 +21,37 @@ assert scene3.Scene3.duration == scene3.DURATION == 25.0
 data = json.loads((scene3.ROOT / "data/hypotheses" / f"{scene3.SID}.json").read_text(encoding="utf-8"))
 n = len(data["hypotheses"])
 assert scene3.hypothesis_count() == n
-assert scene3.label() == f'仮説 {n}（{data["toy"]}）・予想が先', scene3.label()
+assert scene3.label() == f'仮説 {n}（{data["toy"]}）', scene3.label()
 assert "{n}" in scene3.LABEL and not any(ch.isdigit() for ch in scene3.LABEL.replace("{n}", ""))
 
 # 順位や推しに見える言葉を字幕に出さない（J-025）。並びに触れる時は「順位ではない」と言う
 captions = scene3.CAPTIONS + (scene3.label(),)
 for word in ("1位", "１位", "2位", "上位", "おすすめ", "オススメ", "推し", "一番", "ベスト", "正解", "ランキング", "点"):
-    assert not any(word in c for c in captions), word
+    assert not any(word in without_premise(c) for c in captions), word
 assert "順位ではない" in scene3.SUB_LIST
 assert all(c.count("順位") == c.count("順位ではない") for c in captions)
-# 予想の文は例である事を文の頭で示し、画面にも例と出す
-assert scene3.EXAMPLE.startswith("（例）") and "実在の人の予想ではない" in scene3.SUB_PRED
+# 予想の段は外した（本人の決定 11-05、#242）。字幕が予想を先に求めない。前提は本人の言葉の形で出す
+assert not any("先に予想" in c or "予想が先" in c for c in captions)
+assert "正解ではなく" in scene3.TITLE_PREMISE and "AI が考えた仮説" in scene3.TITLE_PREMISE
 
-# 偽の画面: 測った枠の所に四角を置く（入力欄・予想・仮説の札）
-ta = [210, 1070, 640, 120]
-plates = [[210 + 300 * i, 2010, 280, 671] for i in range(4)] + [[210, 2701, 280, 486]]
-rects = {"before": {"textarea": [ta], "article": [], "plate": []},
-         "after": {"textarea": [[210, 1238, 640, 120]], "article": [[210, 1043, 670, 154]], "plate": plates[:n]}}
+# 偽の画面: 測った枠の所に四角を置く（前提の札・仮説の札）
+premise = [210, 1100, 1000, 70]
+plates = [[210 + 300 * i, 1300, 280, 671] for i in range(4)] + [[210, 2001, 280, 486]]
+rects = {"premise": [premise], "plate": plates[:n]}
 dpr = 2
-before = Image.new("RGB", (1600 * dpr, 1400 * dpr), scene3.SCREEN_BG)
-ImageDraw.Draw(before).rectangle([v * dpr for v in (ta[0], ta[1], ta[0] + ta[2], ta[1] + ta[3])], fill=(255, 253, 247), outline=(138, 122, 98))
-after = Image.new("RGB", (1600 * dpr, 3400 * dpr), scene3.SCREEN_BG)
-d = ImageDraw.Draw(after)
-for p in rects["after"]["plate"] + rects["after"]["article"]:
+shot = Image.new("RGB", (1600 * dpr, 3400 * dpr), scene3.SCREEN_BG)
+d = ImageDraw.Draw(shot)
+for p in rects["plate"] + rects["premise"]:
     d.rectangle([v * dpr for v in (p[0], p[1], p[0] + p[2], p[1] + p[3])], fill=(255, 253, 247), outline=(122, 59, 29))
-scene = scene3.Scene3(before, after, rects, dpr=dpr)
+scene = scene3.Scene3(shot, rects, dpr=dpr)
 assert len(scene.plates) == n and f"仮説の {n} 枚" in scene.mod_note
 
 for t in (0.5, 3.0, 6.0, 9.2, 11.0, 13.0, 16.0, 21.0, 24.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (W, H) and a.tobytes() == b.tobytes(), t
 
-# 打ち込みが効いている（途中で絵が変わる）
-assert scene.frame(5.0).tobytes() != scene.frame(7.0).tobytes()
+# 寄りが効いている（途中で絵が変わる）
+assert scene.frame(2.5).tobytes() != scene.frame(6.0).tobytes() != scene.frame(11.0).tobytes()
 # 仮説の札は同じ倍率で同じ高さの所から並び、記号の順（左から右）のまま
 xs = [x for x, _, _ in scene.plates]
 assert xs == sorted(xs) and len({y for _, y, _ in scene.plates}) == 1
@@ -62,15 +61,12 @@ assert max(scale) - min(scale) < 0.01, scale
 assert min(xs) >= 0 and max(x + p.width for x, _, p in scene.plates) <= W
 print("ok")
 
-# 撮る高さ: 頁の作りが変わって長くなっても、使う枠（入力欄・予想・仮説の札）と寄りの余白が撮った画面に入る。
+# 撮る高さ: 頁の作りが変わって長くなっても、使う枠（前提の札・仮説の札）と寄りの余白が撮った画面に入る。
 # 11-05 に頁を作り直した後、高さを決め打ちにしていたので札 D・E の下が黒く欠けた（3400px に対して札の下端 3505px）。
-grown = {"textarea": [[313, 1305, 974, 110]], "article": [[290, 1129, 1020, 133]],
-         "plate": [[290, 2303, 326, 627], [290, 2951, 326, 553]]}
+grown = {"premise": [[290, 1129, 1020, 133]], "plate": [[290, 2303, 326, 627], [290, 2951, 326, 553]]}
 assert not scene3.shot_fits(grown, 3400), "札の下端が画面の外"
 need = scene3.need_height(grown, 3400)
 assert need >= 2951 + 553 + scene3.SHOT_MARGIN and scene3.shot_fits(grown, need)
-# 予想の前の頁でも、入力欄の下に寄りの余白が要る（入力欄の下端 1415px に対して 1400px で撮っていた）
-assert scene3.need_height({"textarea": [[313, 1305, 974, 110]], "article": [], "plate": []}, 1400) >= 1415 + scene3.SHOT_MARGIN
 # 短い頁は、決めた高さより低くしない（寄りの絵の大きさを変えない）
-assert scene3.need_height({"textarea": [[0, 100, 10, 10]], "article": [], "plate": []}, 1400) == 1400
+assert scene3.need_height({"premise": [[0, 100, 10, 10]], "plate": []}, 1400) == 1400
 print("ok shot height")

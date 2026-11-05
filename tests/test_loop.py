@@ -116,11 +116,10 @@ assert not fs and made == {"version": 2, "new_hypothesis": "H-N1"}
 assert [h["id"] for h in hypotheses.load(G)["hypotheses"]][: len(order_before)] == order_before
 assert floors(loop.adopt(pid, "確認者", ["fold_width"])[1]) == {"F9.human"}, "同じ提案を 2 度採らない"
 data = hypotheses.load(G)
-shown = "\n".join(hypotheses.list_lines(data, "予想"))
+shown = "\n".join(hypotheses.list_lines(data))
 assert "順位" not in shown and "動いた " not in shown, "順位と集計は学ぶ人の画面に出さない"
 assert all("rank" not in h for h in data["hypotheses"]) and any(h["id"] == "H-N1" and any(e["where"] == r1 for e in h["evidence"]) for h in data["hypotheses"])
 # 版 2 の紙: 根拠の記録が刷られる
-assert hypotheses.save_prediction(G, "試験")[1] == []
 assert hypotheses.print_sheet(G, "H-A", f"{tmp}/v2", version=2) == 0
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/v2.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert "版2" in flat and r1 in flat
