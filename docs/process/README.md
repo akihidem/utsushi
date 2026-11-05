@@ -120,7 +120,7 @@
 | 75 | [research/31](research/31-observation-depth.md) | 観察の深さを運用の必要から決める。先行例つき。A を土台に、聞く時の 1 枚を次に | 本人の問いへの答え（11-05 朝）。決める点 3 つ |
 | 76 | [research/33](research/33-observe-from-picture.md) | 型紙なしで絵だけから作る過程を、机の端の端末のカメラで観察し、再生の知見を得る案 | 案。採否は本人（U-46） |
 | 77 | [research/32](research/32-contributor-recognition.md) | 型紙を直した人を示す案（本人の種）。J-025 との切り分けと形の 3 案 | 種の記録（11-05）。形は本人が決める |
-| 78 | [research/32](research/32-talk-build-share-loop.md) | 話す・作る・残すの一周とエンジンごとの改善。提出の核。今ある物と無い物 | 本人の言葉（11-05 昼）。音声とエンジンは別の担当で作る |
+| 78 | [research/34](research/34-talk-build-share-loop.md) | 話す・作る・残すの一周とエンジンごとの改善。提出の核。今ある物と無い物 | 本人の言葉（11-05 昼）。音声とエンジンは別の担当で作る |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
