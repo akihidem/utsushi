@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ways.py
+# commit: 887c072（回した時の HEAD）
+ok
+rc=0

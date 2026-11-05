@@ -33,15 +33,19 @@ for hid in ("H-A", "H-B", "H-C"):
     assert marks_of(TORA, hid)["period"] is False, hid  # 油粘土は江戸の頃に無かったので、当時の材料に数えない（#311）
 
 # 2. 紙と道具のほかの材料の語を、書き方が違っても拾う。当時の材料は一覧に当たる物だけで、知らない物にも今の物にも付けない（#311）
+# 語と素材の 2 つの表は、エンジン（paper-to-toy の tests/test_ways.py）にも同じ物を置く。片方を変える時は両方を変える
+WORD_PERIOD = (("竹串", True), ("竹ひご", True), ("楊枝", True), ("つまようじ", True), ("割り箸", True), ("木綿の糸", True), ("たこ糸", True), ("細い紐", True), ("鈴", True), ("玉", True),
+               ("油粘土", False), ("粘土", False), ("セロハンテープ", False), ("ビーズ", False), ("輪ゴム", False), ("割ピン", False), ("厚紙", False), ("ストロー", False))
+MATERIAL_PERIOD = (("竹串（長さ 180mm）", True, []), ("木綿の糸（200mm）", True, []), ("竹串 1 本とテープ", False, ["テープ"]), ("油粘土 3g", False, ["油粘土"]),
+                   ("油粘土の玉（直径 8mm）かビーズ", False, ["ビーズ", "油粘土"]), ("針金", False, []))
 tpl = TEMPLATES["slider_fan"]
 keep = tpl.bom, tpl.materials
-for word, period in (("竹串", True), ("竹ひご", True), ("楊枝", True), ("つまようじ", True), ("割り箸", True), ("木綿の糸", True), ("細い紐", True),
-                     ("油粘土", False), ("粘土", False), ("セロハンテープ", False), ("ビーズ", False)):
+for word, period in WORD_PERIOD:
     tpl.bom, tpl.materials = (lambda p: [{"name": "x", "material": "紙"}]), (lambda p, w=word: ["のり、はさみ、定規", f"{w} 1 本"])
     d = ways.details("slider_fan", {})
     assert d["one_sheet"] is False and d["period"] is period, (word, d)
 # 部品表の素材でも同じ。当時の物と今の物が混ざれば付けない。どちらの一覧にも無い物は、今の物とも言わずに付けない
-for material, period, modern in (("竹串（長さ 180mm）", True, []), ("竹串 1 本とテープ", False, ["テープ"]), ("油粘土 3g", False, ["油粘土"]), ("針金", False, [])):
+for material, period, modern in MATERIAL_PERIOD:
     tpl.bom, tpl.materials = (lambda p, m=material: [{"name": "x", "material": m}]), (lambda p: ["のり、はさみ、定規"])
     d = ways.details("slider_fan", {})
     assert d["one_sheet"] is False and d["period"] is period and d["modern_substitutes"] == modern, (material, d)
