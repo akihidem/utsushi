@@ -1,0 +1,129 @@
+{
+ "font": "f6eb5662bcada832",
+ "papers": {
+  "goraigo-v10/H-A/型紙": {
+   "real": "2b7f33e30b73a0b4d90591d3cbb0f48e3f0d32cc2a6078b5a37987c370cc14ad",
+   "standin": "8bb816eb4ede855fb64ce665c50095e5e6ea0b60ee57b32c83341d2879074cfa"
+  },
+  "goraigo-v10/H-A/手順の紙": {
+   "real": "9862aeb5fc115a8eb13eab3cb20cbe4588f25f8b38c2341c8b98d4543fa3ff54",
+   "standin": "bc5dbecfacbfe9e7ed6e06dfad831e3c7357581b38603f7ba909775d3e7cc46c"
+  },
+  "goraigo-v10/H-A/手順の紙（原図つき）": {
+   "real": "0c8da3ee738a20e1ba631e3e6826ac66861c457194d0a18226de10608d46b37d",
+   "standin": "5f902e3918f00f7f385d4cdb17b4ccc3dc3d6d81be1cf18ca4f1a4a15d825d70"
+  },
+  "goraigo-v10/H-A/試した後の紙": {
+   "real": "19edb0d4c7aa1e20703d62619495d2aae9d573484887564c15e5b2906a40895f",
+   "standin": "eaf98ea4bf9ed284d39f5f7f5da888d00fc0b1f6fea3576a783eaed9844de39b"
+  },
+  "goraigo-v10/H-B/型紙": {
+   "real": "b0e9d413e6dbc1e1a6c6aacc62dda1b049d4001c2423cc78c1a123622b89d84f",
+   "standin": "e474e0e9dab91c0038363aca46dcc9349c911cf753a4fac95c23e08700c5c61c"
+  },
+  "goraigo-v10/H-B/手順の紙": {
+   "real": "a3243fbda6d3eb223fd46e6253c2fa197a120405fe0e434b5022f2ef6def715e",
+   "standin": "8c3ba70696a3c362627d9a05cf31245e65758f5dd1e251aeb62414e78bbfa647"
+  },
+  "goraigo-v10/H-B/手順の紙（原図つき）": {
+   "real": "eb90c4e8a3bf1a88402a1c5b206b3a7131a361372d50dbde6ada137688b2fe6c",
+   "standin": "b6cd20c0cac68144c3f05bee7c74ceffb554e142ef918dbd16216eb6179353d0"
+  },
+  "goraigo-v10/H-B/試した後の紙": {
+   "real": "5e443b1448047ce53d051bc33aa25ff33bec59e64aac6161c898da30e076e284",
+   "standin": "88f1ba8113cf1db1be296994c46ce8671a23a385bda533cdd1f38c13d64c5bc1"
+  },
+  "goraigo-v10/H-C/型紙": {
+   "real": "3da25157db248dbfb1e769584bf30f3fed2bca5c06f4231c99b732cdaf13ea1b",
+   "standin": "23180084a349f92d138177eb0b15521e906131de608767fa3a2ecf2742f66e9f"
+  },
+  "goraigo-v10/H-C/手順の紙": {
+   "real": "d6d8a21b3df6e6f78b952e378f6db8ca4c8a51ef361240410e23a7848119bb84",
+   "standin": "f4a6469433c262cf89a0440e80361e858a5623302f676e82f5342eae74351400"
+  },
+  "goraigo-v10/H-C/手順の紙（原図つき）": {
+   "real": "a84ecdeb5726605e426d37c339eb9a6952640cd04607e5f70eb4fa60b86abdb7",
+   "standin": "5501d140c0dd0995b3ecd3d460eda3a49fdeec3c5b912c854201b310d6bbd205"
+  },
+  "goraigo-v10/H-C/試した後の紙": {
+   "real": "4195896f521f699c90223013e7eca1faeedcb5de9512208cf8d2ebf44d7f99bb",
+   "standin": "b9e62ca163a085b6bd1f64c42c63d5de0cacfdf4cbb1dfcfdaa86abf3bf6a5be"
+  },
+  "goraigo-v10/H-D/型紙": {
+   "real": "0047a22f06c7b4176aed51f73f2946838c8eb005754e54d3d5bf6720990ec576",
+   "standin": "3fdd4dac0e1a24875b1d39e3b778a4e9fc3646649b3d73d62dfa6c5062759516"
+  },
+  "goraigo-v10/H-D/手順の紙": {
+   "real": "4e8ae78112475aef897d64ebb7973d2e2236cdb4df54d168de6f0cde4fb209a4",
+   "standin": "3dc3c3c9d555b6883fee6c068b8ad36b94154a69013d32054005156cb7c6c475"
+  },
+  "goraigo-v10/H-D/手順の紙（原図つき）": {
+   "real": "c078905eb14ac63d82be6a8e7dc76e45b9e158f8ee33ba1a9da1261e618e6ab3",
+   "standin": "3b5ab13f596cb71c67eabf60834c5fd75ef0e639a9fd1b0754501825723dee41"
+  },
+  "goraigo-v10/H-D/試した後の紙": {
+   "real": "86abb604393e740c83150553cc226cef3641d4f81f0c06ba78dddb6e383a17cb",
+   "standin": "6c6ec1d1f69dc3ac16b13e883e8ff3250b3b8ac8e6ef2f24e213192a3ab12ddf"
+  },
+  "goraigo-v10/H-E/型紙": {
+   "real": "936d8a7a9ef00bf950f360b4fdcffb874af7985088f0efa28ea0e319f8949d87",
+   "standin": "7579c656b11e26731bfd1eb0d93e6da860d3d2abfb547ef794322c8359ca840b"
+  },
+  "goraigo-v10/H-E/手順の紙": {
+   "real": "e3c0fb1bcbb577a39249ce97f00a8f059d15072941b9382cd063cd0b99ef954e",
+   "standin": "9b53041fb2acdaea8a2b34d92b4b81e955008f142a78d73a13dc8d57f1f2b051"
+  },
+  "goraigo-v10/H-E/手順の紙（原図つき）": {
+   "real": "9cf21f67b6051281f63f8e815ae970fa8b30d5092f4880a8ef35b39e8f8038ff",
+   "standin": "017d1dc0e6d308d6fe445cb8e05376b623c2ccd18aa246448684f62fe967d9f3"
+  },
+  "goraigo-v10/H-E/試した後の紙": {
+   "real": "136160b527c0d9bd744314455b050181cc1c854f4dece60873e97226a69bb13a",
+   "standin": "70bc12a661a8861de556e46ad74f7a7940bf457939a760373a4173fe0e27e335"
+  },
+  "goraigo-v10/先生の見る紙": {
+   "real": "59b56dd2c078a498155f1504ed7abb0c43c1dab2295727cd05cdd62fb20d409c",
+   "standin": "b14d4cbd614ac6af63d1ca81daaa9e0beb1780fcac2c5f5dcfd84adb540ea355"
+  },
+  "tora-v3/H-A/型紙": {
+   "real": "053a0f3a19f61874d7f9935e744e0fd8a66e559832f8be73352bcd338b1a7b78",
+   "standin": "053a0f3a19f61874d7f9935e744e0fd8a66e559832f8be73352bcd338b1a7b78"
+  },
+  "tora-v3/H-A/手順の紙": {
+   "real": "4d228929e15095b8e60de98854fd927737af7faa4651ce3af3626e3861aadbb4",
+   "standin": "74587887ec03ac7b90c96df963a3fbebcb732b2a21a12aca8c4eacd17da269f7"
+  },
+  "tora-v3/H-A/試した後の紙": {
+   "real": "fd33d6a9d5617bf54f5ba204152c30d776aa9f909535b4a3f223ff00a4ea7f77",
+   "standin": "cc58710fe1cc6bd8ec091d3d157df42ca17819142b6cf06f24aefbf3c5cee023"
+  },
+  "tora-v3/H-B/型紙": {
+   "real": "93dd1f01635e5b8110b80526d1356cd2285347db6f95fb3f12478a420baf3a3d",
+   "standin": "6d404ad1b7d2e7a30c0afbe3521019720083aa83c985c590edc94d3459b754d4"
+  },
+  "tora-v3/H-B/手順の紙": {
+   "real": "42e61d845d00cebffd25910c7a0e9124ddb284a0d7a366374489f0ff38e81109",
+   "standin": "16f6acd6bc8b45e92e077d958e992f9ef5b1e5d5bf6e79a75518548247c76f27"
+  },
+  "tora-v3/H-B/試した後の紙": {
+   "real": "a5847eb4d5ee56ade206b97fc27b5d1afdcfb36b358631eac9e6e9ecade85f99",
+   "standin": "aa8963fde643998c983b6f6cfe5f70404d08ef8c8ab93a1a47b9a7615ef33007"
+  },
+  "tora-v3/H-C/型紙": {
+   "real": "eaddaba53d989ae16d07c2757eac9299083793907564e3f16f22f55af57ecf87",
+   "standin": "75cc3d778a56c100f99492deeedea7c0c264c0e23ac5df7fe8398734186995ed"
+  },
+  "tora-v3/H-C/手順の紙": {
+   "real": "c8df8026e16e1afa6e9c8a301dd0b2923d6e99e15af5e327eafa653271fd58a9",
+   "standin": "c188268996c959139c40885800baef5d3da539ef9fe4566f96ea96973187d843"
+  },
+  "tora-v3/H-C/試した後の紙": {
+   "real": "db6dff1af8aaf29ebc56629650d1be995e67933b5ef4b58d28872bedae98e910",
+   "standin": "7bf8fa388b7001a80dfbb1496e389b3257d9423865b5faa3daca7726995d6d9a"
+  },
+  "tora-v3/先生の見る紙": {
+   "real": "16321d53afc950c22faa724f38d001345f1548bd593309d089969706a8a89151",
+   "standin": "af38db626b40d4487b72fa01061d1d8a8e045aabb0e0da55b1916c88158e2e87"
+  }
+ }
+}

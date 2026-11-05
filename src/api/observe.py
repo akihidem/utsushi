@@ -13,7 +13,7 @@ import pathlib
 import subprocess
 import tempfile
 
-from omochae import loop
+from omochae import loop, store
 
 from . import budget, config
 
@@ -49,8 +49,7 @@ def path(rid):
 
 
 def observation(rid):
-    p = path(rid)
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    return store.read_json_or_skip(path(rid))
 
 
 def observe(rid, video_path, client):

@@ -23,7 +23,7 @@ gs = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"
 ts = json.loads((ROOT / "data/sources" / f"{T}.json").read_text(encoding="utf-8"))
 A = {"push_part": "tab", "hub": "axle", "pusher_height": 15}
 C = {"push_part": "stick", "hub": "axle", "pusher_height": 84}
-# 日割りの上限は日付で変わる（表に無い日は 0）。試験を回す日で結果が変わらないよう、表にある日に固定する。
+# 日割りの上限は日付で変わる（表に無い日は既定の額）。試験を回す日で結果が変わらないよう、表にある日に固定する。
 budget._today = lambda: "11-04"
 
 
@@ -241,6 +241,7 @@ def test_8():
     root = pathlib.Path(tempfile.mkdtemp())
     (root / "tests/frozen/scenarios").mkdir(parents=True)
     (root / "tests/test_masked.py").write_text("assert False, '消えてはいけない assert'\n", encoding="utf-8")
+    run_floors.write_manifest(root)  # 床の入口は凍結の表と照らしてから回す（#165）。この小さな tree にも表を置く
     keep, old_root = os.environ.get("PYTHONOPTIMIZE"), run_floors.ROOT
     os.environ["PYTHONOPTIMIZE"] = "1"
     run_floors.ROOT = root

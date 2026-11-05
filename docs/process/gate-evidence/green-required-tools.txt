@@ -1,0 +1,14 @@
+直した後: ffmpeg と ffprobe を PATH から外して ./run.sh
+検査できない: ffmpeg が無い
+検査できない: ffprobe が無い
+rc 4
+同じ PATH で ./init.sh
+init: 足りない物: ffmpeg ffprobe
+rc 4
+.venv を外して python3 tests/run_floors.py
+検査できない: .venv が無い（./init.sh を先に）
+rc 4
+確かめの呼び出しを消した床の入口で tests/test_required_tools.py: AssertionError で rc 1（試験が効いている）
+全部そろった機械で ./run.sh
+実行した場面 99 本、期待どおり 99 本、未実装の床 0 本。
+rc 0

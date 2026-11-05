@@ -12,6 +12,7 @@ import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 
+from . import store
 from .model import Failure, ToolMissing
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -31,8 +32,24 @@ def _pred_dir():
     return pathlib.Path(os.environ.get("OMOCHAE_DATA", ROOT / "data")) / "decisions"
 
 
+def files_of(folder, kind, source_id):
+    """置き場の `{kind}-{玩具の ID}-….json` のうち、中の source_id がその玩具の物だけを名前の順で返す。
+
+    なぜ名前だけで数えないか: 1 コマに複数の玩具が入り、ID の末尾に枝番（…-L-3）が付いた。名前の前方一致だと、
+    枝番つきの玩具の記録が、枝番なしの玩具（…-L）の記録として数えられる。試作の玩具に書いた予想で、御来迎の予想の門が開いた（#147）。
+    予想・自分の仮説・型紙の確定の 3 か所が同じ形だったので、ここ 1 つにまとめた。
+    読めない記録は数えず、どのファイルかを stderr に出す。書きかけの 1 つで門を開けないためと、頁を止めないため。
+    """
+    out = []
+    for path in sorted(folder.glob(f"{kind}-{source_id}-*.json")):
+        rec = store.read_json_or_skip(path)
+        if rec is not None and rec.get("source_id") == source_id:
+            out.append(path)
+    return out
+
+
 def predictions(source_id):
-    return sorted(_pred_dir().glob(f"prediction-{source_id}-*.json"))
+    return files_of(_pred_dir(), "prediction", source_id)
 
 
 def save_prediction(source_id, text):
@@ -43,12 +60,12 @@ def save_prediction(source_id, text):
     folder.mkdir(parents=True, exist_ok=True)
     now = datetime.now(timezone(timedelta(hours=9)))
     path = folder / f"prediction-{source_id}-{now.strftime('%Y%m%d-%H%M%S-%f')}.json"
-    path.write_text(json.dumps({"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store.write_json(path, {"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"})
     return path, []
 
 
 def own_paths(source_id):
-    return sorted(_pred_dir().glob(f"own-{source_id}-*.json"), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
+    return sorted(files_of(_pred_dir(), "own", source_id), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
 
 
 def own_hypotheses(source_id):
@@ -62,12 +79,13 @@ def save_own(source_id, name, how, evidence, params=None):
         failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
     if failures:
         return None, failures
-    n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
-    rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
-           "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
     folder = _pred_dir()
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / f"own-{source_id}-{n}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with store.locked(folder):
+        n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+        rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
+               "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
+        store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
 
 
@@ -306,7 +324,7 @@ def _preview(role, call):
     turns = config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3
     print(f"下見を書きました: {path}")
     print(f"モデル {request['model']}・思考の深さ {request['output_config']['effort']}・道具 {len(request['tools'])} 個・呼ぶ回数の上限 {turns} 回")
-    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.DAILY_CAP.get(budget._today(), 0)}")
+    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.daily_cap()}")
     print("本物は呼んでいません")
     return path, []
 

@@ -9,6 +9,7 @@
 API の鍵が無くても、人が解釈と変更を書けば同じ道で輪が閉じる（manual）。
 """
 import argparse
+import functools
 import json
 import os
 import pathlib
@@ -16,6 +17,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 
+from . import store
 from .compose import compose
 from .contrib import _human_confirm, check_pii, public_list
 from .metrics import ALLOWED, values
@@ -39,11 +41,36 @@ def _now():
 
 
 def _read(path):
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    """必ず要る 1 件を読む。無ければ None。壊れていれば、飛ばさずに、どのファイルかを言って止める。一覧の読みは store.read_json_or_skip。"""
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as e:
+        raise ValueError(f"読めない記録: {path.name}（{type(e).__name__}）") from e
 
 
 def _write(path, obj):
-    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store.write_json(path, obj)
+
+
+def exclusive(fn):
+    """読んで足して書く処理を、輪の置き場の排他の中で動かす。同時に押した 2 台が上書きや番号の重なりを起こさないため。"""
+    @functools.wraps(fn)
+    def run(*a, **k):
+        with store.locked(folder()):
+            return fn(*a, **k)
+    return run
+
+
+@exclusive
+def save_numbered(kind, letter, make):
+    """次の番号を取って `{kind}-{番号}.json` に書く。make は ID を受けて中身を返す。"""
+    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder().glob(f"{kind}-*.json")]
+    n = max(nums, default=0) + 1
+    rid = f"{letter}-{n:04d}"
+    _write(folder() / f"{kind}-{n:04d}.json", make(rid))
+    return rid
 
 
 def record(rid):
@@ -60,7 +87,7 @@ def interp_path(rid):
 
 
 def interpretation(rid):
-    return _read(interp_path(rid))
+    return store.read_json_or_skip(interp_path(rid))
 
 
 def confirmed(rid):
@@ -69,7 +96,7 @@ def confirmed(rid):
 
 
 def explanation(rid):
-    return _read(folder() / f"explanation-{rid}.json")
+    return store.read_json_or_skip(folder() / f"explanation-{rid}.json")
 
 
 def save_explanation(rid, by, text, next_idea):
@@ -91,6 +118,7 @@ def save_interpretation_draft(rid, content, trace=None):
     _write(interp_path(rid), {"record_id": rid, "status": "pending_human", "content": content, "drafted_by": "claude", "trace": trace})
 
 
+@exclusive
 def confirm_interpretation(rid, by, content=None):
     """人の確定（H6）。案が無くても、人が書いた解釈で確定できる。"""
     record(rid)
@@ -112,8 +140,8 @@ def confirmed_records(source_id, known=None):
     out = []
     d = base() / "records"
     for p in sorted(d.glob("R-*.json")):
-        rec = json.loads(p.read_text(encoding="utf-8"))
-        if rec.get("source_id") == source_id and confirmed(rec["id"]):
+        rec = store.read_json_or_skip(p)
+        if rec is not None and rec.get("source_id") == source_id and confirmed(rec["id"]):
             out.append({**rec, "interpretation": interpretation(rec["id"])["content"]})
     return out
 
@@ -148,14 +176,15 @@ def version_params(source_id, hid, version):
     params = dict(h.get("params") or {})
     if version == 1:
         return params, None
-    v = _read(folder() / f"version-{source_id}-{hid}-{version}.json")
+    v = store.read_json_or_skip(folder() / f"version-{source_id}-{hid}-{version}.json")
     if v is None:
         return None, None
     return v["params"], v
 
 
 def latest_version(source_id, hid):
-    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder().glob(f"version-{source_id}-{hid}-*.json")]
+    # 読めない版は数えない。数えると、一番新しい版の寸法が取れず、頁と次の版が止まる。
+    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder().glob(f"version-{source_id}-{hid}-*.json") if store.read_json_or_skip(p) is not None]
     return max(nums, default=1)
 
 
@@ -234,12 +263,10 @@ def save_proposal(proposal, source, drafted_by):
     failures = check_proposal(proposal, source)
     if failures:
         return None, failures
-    nums = [int(p.stem.split("-")[1]) for p in folder().glob("proposal-*.json")]
-    pid = f"P-{max(nums, default=0) + 1:04d}"
-    _write(folder() / f"proposal-{pid[2:]}.json", {**proposal, "id": pid, "source_id": source["source_id"], "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()})
-    return pid, []
+    return save_numbered("proposal", "P", lambda pid: {**proposal, "id": pid, "source_id": source["source_id"], "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
 
 
+@exclusive
 def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     """人の採否（H7）。採った物だけが版と仮説の一覧に入る。次に試す物の提案は、採っても並びを変えない。"""
     path = folder() / f"proposal-{pid[2:]}.json"
@@ -308,13 +335,11 @@ def save_template_change(record_ids, sheet_set, commit, changes, by, decided_in=
         out.append(Failure("F7.revision", "changes", "直した中身が要る"))
     if out:
         return None, out
-    nums = [int(p.stem.split("-")[-1]) for p in folder().glob("template-change-*.json")]
-    tid = f"T-{max(nums, default=0) + 1:04d}"
-    _write(folder() / f"template-change-{tid[2:]}.json", {"id": tid, "kind": "template_change", "record_ids": list(record_ids), "sheet_set": sheet_set.strip(),
-                                                           "commit": commit.strip(), "changes": list(changes), "adopted_by": by.strip(), "decided_in": decided_in, "at": _now()})
-    return tid, []
+    return save_numbered("template-change", "T", lambda tid: {"id": tid, "kind": "template_change", "record_ids": list(record_ids), "sheet_set": sheet_set.strip(),
+                                                              "commit": commit.strip(), "changes": list(changes), "adopted_by": by.strip(), "decided_in": decided_in, "at": _now()}), []
 
 
+@exclusive
 def confirm_sheet(source_id, hid, version, by, sheet_set):
     """型紙の確定（f09）: 人が刷ると決めた仮説と版を、刷った組と一緒に台帳に残す。F9.human の「確定の記録は未実装」を埋める。
     刷る操作そのものが人の選び（予想の後、仮説を選んで刷る）なので、その時に 1 件ずつ足す。中身は評価しない。"""
@@ -328,11 +353,13 @@ def confirm_sheet(source_id, hid, version, by, sheet_set):
 
 
 def sheet_confirmations(source_id):
-    return [_read(p) for p in sorted(folder().glob(f"sheet-confirm-{source_id}-*.json"))]
+    from .hypotheses import files_of  # 名前の前方一致でほかの玩具の確定を拾わない（#147）
+
+    return [_read(p) for p in files_of(folder(), "sheet-confirm", source_id)]
 
 
 def template_changes():
-    return [_read(p) for p in sorted(folder().glob("template-change-*.json"))]
+    return [t for p in sorted(folder().glob("template-change-*.json")) if (t := store.read_json_or_skip(p)) is not None]
 
 
 def overlay(data):
@@ -341,7 +368,7 @@ def overlay(data):
     前に採った順位の記録（ranking-*.json）が手元に残っていても重ねない。順位は持たない（J-025）。
     """
     sid = data["source_id"]
-    extras = _read(folder() / f"extra-hypotheses-{sid}.json") or []
+    extras = store.read_json_or_skip(folder() / f"extra-hypotheses-{sid}.json", list) or []
     data["hypotheses"] = data["hypotheses"] + extras
     return data
 

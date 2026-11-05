@@ -65,3 +65,16 @@ assert scene7.SHEET_BOX[3] + 12 + (len(lines) - 1) * (scene7.SHEET_LABEL_PX + 6)
 print("ok label")
 # 全部の検査の後に出す（途中で出すと、後の検査が落ちても成功に見えるため。独立のレビューの指摘、11-05）
 print("ok")
+
+# 型紙の下の札は、どの行も動画の幅の中に収まる（組の名が長くなっても右の端で切れない。11-05 に v10 の「0」が切れた）
+from PIL import ImageFont
+lines = scene.sheet_label_lines()
+assert any("順位ではない" in s for s in lines) and any(scene.sheet_set in s for s in lines)
+font = ImageFont.truetype(flip.SERIF, scene7.SHEET_LABEL_PX)
+cx = (scene7.SHEET_BOX[0] + scene7.SHEET_BOX[2]) // 2
+for s in lines:
+    half = font.getlength(s) / 2
+    assert cx - half >= 0 and cx + half <= flip.W - 40, (s, cx + half)
+# 札の 2 行目の下端は、締めの字幕の帯（y 940 から）より上
+assert scene7.SHEET_BOX[3] + 12 + (len(lines) - 1) * (scene7.SHEET_LABEL_PX + 6) + scene7.SHEET_LABEL_PX + 6 <= 940
+print("ok label")

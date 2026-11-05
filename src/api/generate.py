@@ -163,11 +163,7 @@ def generate(source, client=None, image=None, zoom=True):
 
 
 def _save_draft(sid, preds, own, result, trace):
-    folder = loop.folder()
-    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder.glob("generated-*.json")]
-    gid = f"G-{max(nums, default=0) + 1:04d}"
-    loop._write(folder / f"generated-{gid[2:]}.json", {"id": gid, "source_id": sid, "status": "pending_human", "reader_prediction": preds[-1] if preds else None, "reader_own": [h["id"] for h in own], "result": result, "drafted_at": loop._now(), "trace": trace})
-    return gid
+    return loop.save_numbered("generated", "G", lambda gid: {"id": gid, "source_id": sid, "status": "pending_human", "reader_prediction": preds[-1] if preds else None, "reader_own": [h["id"] for h in own], "result": result, "drafted_at": loop._now(), "trace": trace})
 
 
 def import_draft(source, result, made_by):
@@ -189,6 +185,7 @@ def import_draft(source, result, made_by):
     return _save_draft(sid, preds, hypotheses.own_hypotheses(sid), result, {"model": made_by.strip(), "via": "claude-code-skill"}), []
 
 
+@loop.exclusive
 def adopt_generated(gid, by, numbers):
     """人の採否（H3）。採った仮説だけが一覧に入る。"""
     path = loop.folder() / f"generated-{gid[2:]}.json"

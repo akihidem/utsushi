@@ -1,0 +1,18 @@
+床を崩す変更の例: main d187de4 に、御来迎の外筒の 1 面おきの地の色を変える 1 行だけを入れた作業ツリー
+-PAPER_ALT = "#bba982"
++PAPER_ALT = "#a99870"
+
+1. 今の試験（新しい試験を置く前）: ./run.sh
+実行した場面 95 本、期待どおり 95 本、未実装の床 0 本。
+rc 0 （床が崩れても、今の試験は気づかない）
+
+2. 同じ作業ツリーの src で、新しい試験と控えを回す: tests/test_floor_pin.py
+Traceback (most recent call last):
+  File "tests/test_floor_pin.py", line 201, in <module>
+    sys.exit(check())
+             ~~~~~^^
+  File "tests/test_floor_pin.py", line 163, in check
+    assert not diff, ("必須 2 種の今の版の紙が変わった（凍結の床）。直しは次の版として足す。差は --dump で見る", diff)
+           ^^^^^^^^
+AssertionError: ('必須 2 種の今の版の紙が変わった（凍結の床）。直しは次の版として足す。差は --dump で見る', ['goraigo-v10/H-A/型紙', 'goraigo-v10/H-A/手順の紙', 'goraigo-v10/H-A/手順の紙（原図つき）', 'goraigo-v10/H-B/型紙', 'goraigo-v10/H-B/手順の紙', 'goraigo-v10/H-B/手順の紙（原図つき）', 'goraigo-v10/H-C/型紙', 'goraigo-v10/H-C/手順の紙', 'goraigo-v10/H-C/手順の紙（原図つき）', 'goraigo-v10/H-D/型紙', 'goraigo-v10/H-D/手順の紙', 'goraigo-v10/H-D/手順の紙（原図つき）', 'goraigo-v10/H-E/型紙', 'goraigo-v10/H-E/手順の紙', 'goraigo-v10/H-E/手順の紙（原図つき）'])
+rc 1 （変わった紙 15 枚: 御来迎の 5 仮説の型紙・手順の紙・原図つきの手順の紙）

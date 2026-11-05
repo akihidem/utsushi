@@ -15,6 +15,7 @@
 | `src/omochae/instructions.py` | 学ぶ人の紙（手順・試した後・見比べる・型紙なし）と先生の見る紙。測る欄は持たず、問いは本人の 4 つの着目に合わせる（U-25） |
 | `src/api/words.py` | 言葉の仮説を雛形の寸法に写す口 |
 | `src/omochae/records.py` | 試した記録の入口と集計。記録は `data/records/` |
+| `src/omochae/store.py` | 記録・輪・予想の置き場の読み書き。一時ファイル → 置き換え、読めない 1 件を飛ばす読み、プロセスをまたぐ排他（置き場の `.lock`） |
 | `src/omochae/__main__.py` | 型紙を 1 枚作る共通の流れと、開発用の入口 |
 | `src/omochae/compose.py` | 配置と描く前の検査。描画はしない |
 | `src/omochae/floors.py` | 雛形によらない検査 |
@@ -42,12 +43,13 @@
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
 | `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定 |
 | `src/api/generate.py` | 裏の制作の 1 段。図・歌・記録から仮説と寸法の案を作る |
-| `src/api/budget.py` | API の消費の見積もりと上限 |
+| `src/api/budget.py` | API の消費の見積もりと上限（日割りは、表に無い日は既定の額で続く。累計の停止線はどの日にも効く） |
 | `src/api/mcp_server.py`・`.mcp.json` | 工房の道具を Claude Code から呼ぶ MCP サーバ（API の輪と同じ道具） |
 | `.claude/skills/backstage`・`.claude/agents/second-eye.md`・`.claude/hooks/ledger-check.sh` | 作り手の工房: 裏の制作の手順、別の目、台帳の検査のフック |
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
-| `tests/frozen/` | 凍結した基準と場面 |
+| `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
+| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の今の版（goraigo-v10・tora-v3）の紙 31 枚を刷る SVG の指紋を控えと比べる。控えは書き換えず、次の版は足す（U-43） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |

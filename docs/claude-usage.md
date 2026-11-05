@@ -43,6 +43,7 @@
 
 ## 凍結の変更の記録
 
+- 凍結した場面と基準を機械で守るため、照合の表 `tests/frozen/manifest.json` を足した（#165）。場面と基準の文は変えていない。場面を消す・変える・足す、基準の文を変える、在るはずの試験を消すと、`./run.sh` が rc 4 でそのファイルを名指しする。これからは、凍結を変える commit に表の変更も入れる（`python tests/run_floors.py --write-manifest`）。試験は数でなく名前で持つ（並んで動く線が試験を足すたびに、同じ 1 行でぶつからないため）。
 - 8cf3ee9 までの見直しで見つかった所を直すため、床 F5.holes を足し、F5.stroke（内筒を下から押す形の押し上げる量）・F5.pivot（首の帯が穴を通る見方を正した。吊る形の軸の高さと重りの位置）・F8.references（根拠の記録の出典）に見る事を足した。負の対照の場面と既存の期待は変えていない。理由と中身は `tests/frozen/criteria.md` の「見直しで足した所」。
 - 11-04 の試行を受けた本人の決定（goraigo-v8）で、F5.stroke のつまみの形の溝の端の見方（口の側だけ）と、柄の形の土台の高さの見方を変え、F5.image_count を手順の紙では載せた原図の数と照らす形にした。理由と中身は `tests/frozen/criteria.md` の「goraigo-v8 で変えた所」と `docs/process/trials/README.md`。
 
