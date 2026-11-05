@@ -24,8 +24,9 @@ NOW_SET = TEMPLATES["slider_fan"].SHEET_SET
 PHONE = "-".join(("090", "1234", "5678"))
 WHO1, WHO2 = "abcd1234", "wxyz5678"
 
-# エンジンの入口（paper-to-toy の omochae.engine_loop、#63）の一覧。片方を変える時は、両方を変える。
-ENGINE_TOP = {"schema", "exported_at", "from", "dropped_pii", "groups"}
+# エンジンの入口（paper-to-toy の omochae.engine_loop）が受ける一覧のうち、サイトが今書く物。片方を変える時は、両方を変える。
+# エンジンは、話した事の種類（think・craft・keep）と群の craft_steps も受ける。サイトがそれを書くのは Issue 307 から。
+ENGINE_TOP = {"schema", "exported_at", "from", "dropped_pii", "current_sets", "groups"}
 ENGINE_GROUP = {"template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps",
                 "minutes", "measures", "record_ids", "texts"}
 ENGINE_TEXT = {"kind", "step", "text", "count"}
@@ -36,7 +37,7 @@ assert (eb.SCHEMA, eb.MAX_TEXT, eb.MAX_STEP) == ("omochae.making-bundle/1", ENGI
 
 # 0. 記録が無い時も、空の束が出る（形は同じ）
 empty = eb.build()
-assert set(empty) == ENGINE_TOP and empty["groups"] == [] and empty["dropped_pii"] == 0
+assert set(empty) == ENGINE_TOP and empty["groups"] == [] and empty["dropped_pii"] == 0 and empty["current_sets"] == {}
 
 # 1. 見本の記録を置く。刷った時の確定（今の組）→ 試した記録 → 人の説明 → 手順の進み → 聞く口の質問
 assert loop.confirm_sheet(G, "H-A", 1, "画面の使い手", NOW_SET) == []
@@ -93,6 +94,11 @@ assert tora["results"] == {"揺れた": 1} and tora["measures"] == {"ten_swings_
 # 間の札を持つ雛形は、動かない側を 2 番目と決めない（「少し動いた」を動かない側に数えない）
 pull = groups[("string_pull", "")]
 assert pull["results"] == {"少し動いた": 1} and (pull["moved_word"], pull["not_moved_word"]) == ("よく動いた", "動かない"), pull
+
+# 3b. 今の刷った組（Issue 309）: 群に出てくる雛形だけ。エンジンの側が、前の組の紙の記録から起きた案を見分けるのに使う。
+# 記録の無い雛形の組は入れない（読む物を増やさない）。値は雛形が持つ今の組の名で、記録の紙の組（goraigo-v7 など）ではない
+assert b["current_sets"] == {t: TEMPLATES[t].SHEET_SET for t in ("slider_fan", "pivot_counterweight", "string_pull")}, b["current_sets"]
+assert b["current_sets"]["slider_fan"] == NOW_SET != "goraigo-v7" and len(TEMPLATES) > len(b["current_sets"])
 
 # 4. 数は件数と幅だけ。止まった段は札の数と人の数、やめた段は、できたを押していない人が最後に居た段
 assert now["stuck_steps"] == {"3": {"taps": 3, "people": 2}, "5": {"taps": 1, "people": 0}}, now["stuck_steps"]
