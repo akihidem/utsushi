@@ -24,9 +24,10 @@ SKINS = {
              "field": "#171411", "onaccent": "#0b0a09", "soft": "#15120f"},
 }
 
-# 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
+# 頭の帯の道。順路の順（うつしとは → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
+# 「序」では何が書いてある頁か読めないので、行き先が読める字にした（#303）。文面は本人の確認待ちの案。「おもちゃ」は本人の決定で残す
 # 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
-NAV = (("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"), ("/en", "English"))
+NAV = (("/about", "うつしとは"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"), ("/en", "English"))
 # 英語の頁の帯（J-030 の段 1）。全部の頁を訳さないので、道は入口と日本語の頁へだけ。
 NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
@@ -43,11 +44,11 @@ def esc(s):
 
 
 # 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
-# スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）
+# スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）。6px は「うつしとは」の案の時に幅 390 で収まる値で、余りは 4px
 NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
-@media (max-width:480px){.nav{gap:8px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+@media (max-width:480px){.nav{gap:6px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。

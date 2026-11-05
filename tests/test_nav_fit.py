@@ -1,8 +1,8 @@
 """スマホの幅 390 で、頭の帯の項目が 1 段に収まる（#303）。帯の字を替えても段を増やさない。ブラウザなしで、字の数と CSS から幅を見積もる。
 
 なぜ見積もりか: ./run.sh はブラウザなしで動く決まり。本当の段は tests/measure_tap.py が手元の Chrome で測る（手で回す）。
-日本語は 1 字を字の大きさ 1 つ分に数える。かなを詰める分（palt）は引かないので、実際より少し広く見積もる。
-ラテン文字の 0.5 字分は English の実測（14px で 46px ほど）から取った。
+漢字は字の大きさ 1 つ分、かなは詰める分（palt）を見て 0.9 字分に数える。かなの値は、幅 390 の実測に合わせた
+（隙間 8px で English が落ち、6px で収まる所）。ラテン文字の 0.5 字分は English の実測（14px で 46px ほど）から取った。
 """
 import re
 
@@ -24,7 +24,8 @@ def row_width(labels, gap, spacing):
     width = gap * (len(labels) - 1)
     for label in labels:
         for ch in label:
-            width += FONT_PX * ((0.5 if ch.isascii() else 1) + spacing)
+            em = 0.5 if ch.isascii() else 0.9 if "\u3040" <= ch <= "\u30ff" else 1
+            width += FONT_PX * (em + spacing)
     return width
 
 

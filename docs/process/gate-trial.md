@@ -900,6 +900,8 @@
 - ゴールの要件: 幅 390 で項目が 1 段に収まる（`tests/test_nav_fit.py`）。白と黒の全部の頁で同じ
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-303-nav-fit.txt`、Green は `docs/process/gate-evidence/green-303-nav-fit.txt`
 - エビデンスゲート: 実物のブラウザで、白と黒の序の頁の帯を幅 390 と 375 で測り、この指定で項目が 1 段に収まった。全部の頁は測っていない（CSS は全部の頁で同じ）
+- エビデンスゲート: `tests/measure_tap.py` 390 の満たさない所が 24 から 2 になった。残る 2 は作りながら見る頁の `label.sr` で、main でも同じ
+- 帯の字の案（文面は本人の確認待ち）: 序を「うつしとは」にし、序の頁の題も同じ字にする。「おもちゃ」は本人の決定で残す。この組は隙間 8px だと幅 390 で English が次の段に落ちるので、隙間を 6px にした。余りは 4px で、幅 375 では落ちる（main と同じ）。Red は `docs/process/gate-evidence/red-303-nav-words.txt` と `docs/process/gate-evidence/red-303-nav-words-fit.txt` と `docs/process/gate-evidence/red-303-about-title.txt`、Green は `docs/process/gate-evidence/green-303-nav-words.txt`
 - マージ後の書き戻し: #303 に書く
 
 ## 英語の頁（サイトの線、lane/english、11-05 昼。J-030 の段 1、#247）

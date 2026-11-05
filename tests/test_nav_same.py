@@ -19,9 +19,9 @@ G = "NDL-1187053-R0000005-L"
 # 予想の段は #266 で外したので、予想を置かずに全部の頁が開く
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # 頁と、帯で印の付く項目（None は印なし。順路の外の頁）。kazasu と tsukuru は別の枝（#242）で形が変わるので入れない
-PAGES = {"/": "うつし", "/about": "序", "/toys": "おもちゃ", f"/toy/{G}": "おもちゃ", f"/toy/{G}/techo": "おもちゃ", "/gallery": "作った物と職人の言葉",
+PAGES = {"/": "うつし", "/about": "うつしとは", "/toys": "おもちゃ", f"/toy/{G}": "おもちゃ", f"/toy/{G}/techo": "おもちゃ", "/gallery": "作った物と職人の言葉",
          "/zukan": "図鑑", f"/zukan/{G}": "図鑑", f"/zukan/{G}/yomi": "図鑑", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "序", "おもちゃ", "作った物と職人の言葉", "図鑑", "English"]
+ITEMS = ["うつし", "うつしとは", "おもちゃ", "作った物と職人の言葉", "図鑑", "English"]
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)
@@ -51,6 +51,9 @@ for look in ("tenji", "zine"):
         else:
             assert re.fullmatch(r"(?!うつし · ).+ · うつし", title), ("題の形", where, title)
         assert not re.search("日本画展|縦読みのジン|展示案", title), ("案の名前", where, title)
+        # 帯の字と頁の題をそろえる（#303）
+        if path == "/about":
+            assert title == "うつしとは · うつし", ("序の頁の題", where, title)
         # スマホの幅で「図鑑」だけ次の行に落ちないよう、brand を 1 段目に置く。本当の段は tests/measure_tap.py が測る
         assert ".nav .brand{flex:none;white-space:nowrap;margin-right:100%}" in page, ("帯の段", where)
         # 床は帯の CSS より後ろ（前だと帯の字の大きさが戻る。入口で見つけた）

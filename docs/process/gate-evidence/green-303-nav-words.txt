@@ -1,0 +1,9 @@
+# 命令: sh -c 'PYTHONPATH=src .venv/bin/python tests/test_nav_same.py && PYTHONPATH=src .venv/bin/python tests/test_nav_fit.py && PYTHONPATH=src .venv/bin/python tests/test_about.py'
+# commit: b4cd3f4（回した時の HEAD）
+/tmp/tmp40xkos2d/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp40xkos2d/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp40xkos2d/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+ok
+ok
+rc=0

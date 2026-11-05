@@ -66,4 +66,4 @@ def page(skin_name, path="/about"):
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
             '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a></p></section></div>')
-    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)
+    return skin.shell("うつし · うつしとは", body, skin_name, current="/about", path=path, extra_style=STYLE)

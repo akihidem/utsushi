@@ -1,0 +1,11 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_nav_same.py
+# commit: b4cd3f4（回した時の HEAD）
+/tmp/tmpxyuy75s4/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpxyuy75s4/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpxyuy75s4/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_nav_same.py", line 56, in <module>
+    assert title == "うつしとは · うつし", ("序の頁の題", where, title)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('序の頁の題', ('tenji', '/about'), '序 · うつし')
+rc=1
