@@ -31,8 +31,28 @@ def _pred_dir():
     return pathlib.Path(os.environ.get("OMOCHAE_DATA", ROOT / "data")) / "decisions"
 
 
+def files_of(folder, kind, source_id):
+    """置き場の `{kind}-{玩具の ID}-….json` のうち、中の source_id がその玩具の物だけを名前の順で返す。
+
+    なぜ名前だけで数えないか: 1 コマに複数の玩具が入り、ID の末尾に枝番（…-L-3）が付いた。名前の前方一致だと、
+    枝番つきの玩具の記録が、枝番なしの玩具（…-L）の記録として数えられる。試作の玩具に書いた予想で、御来迎の予想の門が開いた（#147）。
+    予想・自分の仮説・型紙の確定の 3 か所が同じ形だったので、ここ 1 つにまとめた。
+    読めない記録は数えず、どのファイルかを stderr に出す。書きかけの 1 つで門を開けないためと、頁を止めないため。
+    """
+    out = []
+    for path in sorted(folder.glob(f"{kind}-{source_id}-*.json")):
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            print(f"読めない記録を飛ばした: {path.name}（{type(e).__name__}）", file=sys.stderr)
+            continue
+        if isinstance(rec, dict) and rec.get("source_id") == source_id:
+            out.append(path)
+    return out
+
+
 def predictions(source_id):
-    return sorted(_pred_dir().glob(f"prediction-{source_id}-*.json"))
+    return files_of(_pred_dir(), "prediction", source_id)
 
 
 def save_prediction(source_id, text):
@@ -48,7 +68,7 @@ def save_prediction(source_id, text):
 
 
 def own_paths(source_id):
-    return sorted(_pred_dir().glob(f"own-{source_id}-*.json"), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
+    return sorted(files_of(_pred_dir(), "own", source_id), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
 
 
 def own_hypotheses(source_id):

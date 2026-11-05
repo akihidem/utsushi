@@ -328,7 +328,9 @@ def confirm_sheet(source_id, hid, version, by, sheet_set):
 
 
 def sheet_confirmations(source_id):
-    return [_read(p) for p in sorted(folder().glob(f"sheet-confirm-{source_id}-*.json"))]
+    from .hypotheses import files_of  # 名前の前方一致でほかの玩具の確定を拾わない（#147）
+
+    return [_read(p) for p in files_of(folder(), "sheet-confirm", source_id)]
 
 
 def template_changes():

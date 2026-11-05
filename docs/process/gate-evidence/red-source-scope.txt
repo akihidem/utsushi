@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "tests/test_source_scope.py", line 44, in <module>
+    assert seen(b) == (False, 0, [], 0), (b, "枝番つきの玩具の記録が、枝番なしの側に出た", sid, seen(b))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L', '枝番つきの玩具の記録が、枝番なしの側に出た', 'NDL-1187053-R0000004-L-4', (True, 2, ['OWN-1', 'OWN-1'], 2))
+rc 1 （直す前の main 0bfd00f。枝番つきの 2 つの玩具に書いた記録が、枝番なしの側に出る: 門が開き、予想 2・自分の仮説 OWN-1 が 2 つ・型紙の確定 2）
