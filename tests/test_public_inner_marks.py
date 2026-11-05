@@ -80,7 +80,12 @@ for rid in (used, ready):
 st, _, body = call(closed, f"/record/{used}/next", {"interpretation": "読み", "param": "fold_count", "to": "27", "why": WHY, "by": "採った人"})
 assert st == 303, (st, body[-300:])
 loop.save_interpretation_draft(ready, {"observed": [READ], "causes": [{"text": CAUSE, "confidence": "低い"}], "unknown": [UNKNOWN]}, {"model": "x"})
-store.write_json(observe.path(ready), {"observed": [SEEN], "unclear": []})
+store.write_json(observe.path(ready), {"observed": [SEEN], "unclear": [], "video": "m1.mp4"})
+# 観察の文は、読んだ動画を人が確かめた後に誰の画面にも出る（#432）。合言葉の場の対照で読めるよう、物だけと確かめた動画として置く
+media = records.folder() / "media" / ready
+media.mkdir(parents=True, exist_ok=True)
+(media / "m1.mp4").write_bytes(b"\0")
+store.write_json(media / "review.json", {"m1.mp4": {"shows": "object"}})
 TOY, TECHO, ZUKAN, ZUKAN_ONE = f"/toy/{G}", f"/toy/{G}/techo", "/zukan", f"/zukan/{G}"
 NUM = re.compile(r"R-\d{4,}")
 

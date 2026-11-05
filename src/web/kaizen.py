@@ -197,13 +197,17 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     rows = "".join(f'<tr><td>{STAGE_NAMES[k]}</td><td>{x["events"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>' for k, x in sm["flow"].items())
     s6 = table(("段", "出来事の数", "人（印のある分）"), rows)
 
+    # 版の歩みの道は、その玩具の札がある時だけ置く（着く節の無い道を出さない）。
+    from . import ayumi
+
+    to_ayumi = f'<a href="/loop/ayumi#{esc(sid)}">型紙の版の歩み</a>' if ayumi.toy_block(sid, data) else ""
     body = (f'<section class="hero"><div><h1>{esc(data["toy"])} の工作の様子</h1>'
             '<p class="lead">作る側の集計。学ぶ人の頁には出しません。公開しない頁です。上下を付ける物ではありません。</p>'
             f'<p class="premise">{esc(LOOP_PREMISE)}</p>'
             f'<p class="meta">聞く口の質問、手順の進み、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
             f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
-            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a><a href="/loop/ayumi#{esc(sid)}">型紙の版の歩み</a></p></div></section>'
+            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a>{to_ayumi}</p></div></section>'
             f'<section class="sec" id="k1"><h2>1 止まった段</h2><p class="meta">作りながら見る頁（机の端に置く・試作）の「止まった」の札を、版と手順の番号ごとに数えます（止まった手順）。映像は残していません。</p>{s1}</section>'
             f'<section class="sec" id="k2"><h2>2 動きの結果</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{s2}</section>'
             f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'

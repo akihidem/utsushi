@@ -25,6 +25,9 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 - 束の上の段に、群に出てくる雛形の「今の刷った組」を書く（current_sets。Issue #309）。エンジンの repo の雛形は組の名を持たないので、
   前の組の紙の記録から起きた案（もう直っている事がある）を、読む人が見分けられない。ここは今の組を並べるだけで、前の組の記録を
   束から外しはしない（直っていない困り事まで消え、直す前と後を並べて読めなくなる）。
+- 群は「雛形の id × 刷った組 × 紙」（Issue #334）。紙は、玩具の番号と仮説の記号（版 2 からは版も）をつないだ名。同じ雛形・同じ組でも、紙が違えば組み方の
+  手順の数と番号が違うので、足すと「別の紙の別の段で止まった 2 人」が「同じ手順で止まった 2 人」になる。エンジンの側は、手順ごとの数と文だけを紙で分け、
+  動きの札・報告の数・工夫の言葉は雛形と組で足す。紙の名に人を辿れる物は入らない。玩具ごとに型紙が 1 枚になった後も、同じ雛形を使う別の玩具が混ざらない。
 - 手で置いた記録の形が決まりの外でも、束ごと止めない（Issue #313）。型の外の欄は読み飛ばし、その記録のほかの欄と数は数える。
   1 件の崩れた記録のために、全部の記録の束が出なくなる方が困るため。
 終了: 0 = できた / 4 = できない（書く先が決まりの外・呼び方の誤り）。1 と 2 は使わない。
@@ -45,7 +48,7 @@ from .hypotheses import ROOT
 SCHEMA = "omochae.making-bundle/1"
 FROM = "utsushi"
 TOP_KEYS = ("schema", "exported_at", "from", "dropped_pii", "current_sets", "groups")
-GROUP_KEYS = ("template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
+GROUP_KEYS = ("template", "sheet_set", "paper", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
               "minutes", "measures", "record_ids", "texts")
 TEXT_KEYS = ("kind", "step", "text", "count")
 # 文の種類: 止まった所・直した点（工夫）・思いつき（工夫）・感想・聞く口の質問・試した記録への人の説明。
@@ -101,10 +104,19 @@ def _sheet_set_of(rec):
     return best[1] if best else ""
 
 
-def _group(groups, template, sheet_set):
-    key = (_name(template), _name(sheet_set))
+def _paper(rec):
+    """どの紙かの名。玩具の番号と仮説の記号をつなぐ。版 2 からは版も足す（版で手順が変わる事がある）。分からない時は空（紙で分けない）。"""
+    source, hypothesis, version = rec.get("source_id"), rec.get("hypothesis_id"), rec.get("sheet_version")
+    if not (isinstance(source, str) and isinstance(hypothesis, str) and source and hypothesis):
+        return ""
+    name = f"{source}.{hypothesis}" + (f".v{version}" if isinstance(version, int) and not isinstance(version, bool) and version > 1 else "")
+    return _name(name)
+
+
+def _group(groups, template, sheet_set, paper=""):
+    key = (_name(template), _name(sheet_set), _name(paper))
     if key not in groups:
-        groups[key] = {"template": key[0], "sheet_set": key[1], "reports": 0, "results": {}, "moved_word": "", "not_moved_word": "",
+        groups[key] = {"template": key[0], "sheet_set": key[1], "paper": key[2], "reports": 0, "results": {}, "moved_word": "", "not_moved_word": "",
                        "stuck": {}, "craft": {}, "reached": {}, "finished": set(), "minutes": [], "measures": {}, "record_ids": [], "texts": {}}
     return groups[key]
 
@@ -157,11 +169,11 @@ def build():
         if not isinstance(r, dict):  # 辞書でない物（手で置いたファイル）は、記録として数えない
             continue
         template = making_log._engine(r.get("source_id"), r.get("hypothesis_id"))[0]
-        g = _group(groups, template, _sheet_set_of(r))
+        g = _group(groups, template, _sheet_set_of(r), _paper(r))
         g["reports"] += 1
         rid = r.get("id") if isinstance(r.get("id"), str) and RECORD_ID.fullmatch(r["id"]) else None
         if rid:
-            group_of[rid] = (g["template"], g["sheet_set"])
+            group_of[rid] = (g["template"], g["sheet_set"], g["paper"])
             g["record_ids"].append(rid)
         tpl = TEMPLATES.get(template)
         if tpl is not None:
@@ -200,7 +212,7 @@ def build():
         step = e.get("step")
         if not (isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP):
             continue
-        g = _group(groups, e.get("template"), e.get("sheet_set"))
+        g = _group(groups, e.get("template"), e.get("sheet_set"), _paper(e))
         who = making_log.clean_who(e.get("who"))
         if e.get("event") == "stuck":
             slot = g["stuck"].setdefault(step, {"taps": 0, "who": set()})
@@ -217,7 +229,7 @@ def build():
     for a in making_log.asks():
         if not isinstance(a, dict):
             continue
-        g = _group(groups, a.get("template"), a.get("sheet_set"))
+        g = _group(groups, a.get("template"), a.get("sheet_set"), _paper(a))
         if a.get("dropped"):
             dropped += 1
             continue
@@ -238,7 +250,7 @@ def build():
                 continue  # 記録に結んだ後に、作る側が隠した字（読んで名前などに気づいた時に隠す）。束にも入れない
             g = _group(groups, *group_of[t["record_id"]])
         else:
-            g = _group(groups, t.get("template"), t.get("sheet_set"))
+            g = _group(groups, t.get("template"), t.get("sheet_set"), _paper(t))
         step = t.get("step") if scene == "craft" else None
         step = step if isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP else None
         if say(g, scene, t.get("text"), step, floor=talk_log.blocked) and step:
@@ -256,7 +268,7 @@ def build():
         for who_key, n in g["reached"].items():
             if who_key not in g["finished"]:
                 quit_steps[n] = quit_steps.get(n, 0) + 1
-        out.append({"template": g["template"], "sheet_set": g["sheet_set"], "reports": g["reports"], "results": g["results"],
+        out.append({"template": g["template"], "sheet_set": g["sheet_set"], "paper": g["paper"], "reports": g["reports"], "results": g["results"],
                     "moved_word": g["moved_word"], "not_moved_word": g["not_moved_word"],
                     "stuck_steps": {str(n): {"taps": s["taps"], "people": len(s["who"])} for n, s in sorted(g["stuck"].items())},
                     "quit_steps": {str(n): k for n, k in sorted(quit_steps.items())},
