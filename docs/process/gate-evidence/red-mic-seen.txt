@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_mic_seen.py
+# commit: 2de1d2e（回した時の HEAD）
+/tmp/tmpk2y45kqc/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpk2y45kqc/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpk2y45kqc/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_mic_seen.py", line 99, in <module>
+    assert rec["shown"] and rec["mic"][0] >= 44 and rec["mic"][1] >= 44, ("話す釦が見えない", page, width, shape, rec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('話す釦が見えない', '/toy/NDL-1187053-R0000005-L', 390, 'safari', {'key': 0, 'w': 390, 'mic': [0, 0], 'shown': False, 'how': ['hanasu-how is-browser'], 'sx': 375})
+rc=1
