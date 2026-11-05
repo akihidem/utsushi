@@ -64,11 +64,19 @@ def note_at(page, anchor, role):
 # 予想の段は #266 で外した（本人の決定 11-05）。手帖は予想なしでそのまま開く。
 assert call(f"/toy/{G}/techo")[0] == 200
 
+# 作りながら見る: 刷る前は開かず、仮説の節に着いて理由を読める（#289）。文は頁の頭より 1 画面下にあった。
+page = landed(call(f"/toy/{G}/tsukuru"), "kasetsu")
+assert "先に紙を作ると、作りながら見る頁が開きます" in note_at(page, "kasetsu", "status")
+
+
 # 刷る: 通らないと仮説の節に、通ると型紙の窓に文が出る。
 code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
 assert code == 422 and "仮説 H-ZZ は無い" in note_at(page, "kasetsu", "alert")
 page = landed(call(f"/toy/{G}/print", {"hypothesis": "H-A"}), "win")
 assert "紙を作りました" in note_at(page, "win", "status")
+# 別の仮説の紙がある時でも、頼んだ仮説の紙が無ければ同じ所に着く。
+page = landed(call(f"/toy/{G}/tsukuru?h=H-B"), "kasetsu")
+assert "先に紙を作ると、作りながら見る頁が開きます" in note_at(page, "kasetsu", "status")
 
 # 聞く: 通らない時も、答えの時も、聞く欄に着く。
 code, _, page = call(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって？"})

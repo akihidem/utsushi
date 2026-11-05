@@ -25,6 +25,8 @@ from omochae import contrib, hypotheses, making_log, media_review, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
+from . import wording
+
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
 MAX_MEDIA = 20 * 1024 * 1024
 MAX_PER_RECORD = 3
@@ -392,7 +394,7 @@ def made_item(sid, data, r, photos=True):
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
+    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
@@ -440,7 +442,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
     mine.sort(key=lambda h: own.index(h["id"]))
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
                      f'{esc(h["name"]) if h in mine else "<span class=big>" + esc(hypotheses.letter(h)) + "</span>"}の紙</label>' for i, h in enumerate(mine + hyps))
-    if not hyps:
+    if not hyps and not mine:  # たたき台を誰も刷っていなくても、本人の紙があれば選べる
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{result_icon(r, tpl.RESULTS)}{esc(r)}</label>' for r in tpl.RESULTS)
     # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
@@ -453,7 +455,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
-        mine += (f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"]))}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=uploads)}'
                  f'{feedback(sid, r, photos=uploads)}</div>')
@@ -461,7 +463,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')
     body = (f'<div data-sid="{esc(sid)}" hidden></div><div class="top">{pic}<h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
-            f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(tpl.SHEET_SET)}</p>'
+            f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(wording.sheet_set(tpl.SHEET_SET))}</p>'
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
             # 断り: この頁は ③ の上げる頁なので、聞く口の断りの文（「声と映像は残しません」）は使わない（本人の決定 11-05、Issue #275 の決める点 3。

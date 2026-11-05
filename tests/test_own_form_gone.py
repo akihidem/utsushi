@@ -125,7 +125,7 @@ for sid in (G, T, TRIAL):
     assert status(paper) == (200, "application/pdf"), (sid, paper)
     after = f"/sheet/{sid}/{oid}_v1_after.pdf"
     assert f'<a href="{after}"' in card and status(after) == (200, "application/pdf"), (sid, after)
-    assert f"/record/{rid}/next" not in card, (sid, "次の版はたたき台の記録からだけ")
+    assert f"/record/{rid}/next" not in card, (sid, "型紙なしの紙の記録に、次の版の向く先は無い")
     # 記録の無い紙は頁に出ないが、道そのものは消さない
     alone = written(sid, "記録の無い案")
     assert "記録の無い案" not in get(f"/toy/{sid}") and status(f"/sheet/{sid}/{alone}_v1_free.pdf") == (200, "application/pdf"), sid
@@ -138,6 +138,11 @@ for stem, label in ((f"{typed}_v1", "型紙"), (f"{typed}_v1_tejun", "手順の�
     assert re.search(rf'<a href="/sheet/{G}/{stem}\.pdf"[^>]*>{label}</a>', card), (stem, card)
     assert status(f"/sheet/{G}/{stem}.pdf") == (200, "application/pdf"), stem
 assert f"{typed}_v1_free" not in card
+
+# 札を外しても、寸法つきの前の記録からの次の版はたたき台の紙になる。その人の案には版を足さない（細かい所は tests/test_loop1_next.py が見る）
+assert f"/record/{rid_typed}/next" in card
+assert post(f"/record/{rid_typed}/next", {"interpretation": "読み", "param": "fold_height", "to": "47.5", "why": "試す", "by": "書いた人"})[0] == 303
+assert (out_dir(G) / "H-A_v2.pdf").exists() and not list(out_dir(G).glob(f"{typed}_v2*"))
 
 # 4. 話した案の札には紙へのリンクを出さない（紙は作った本人の画面からだけ開くので、ほかの人には行き止まりになる）
 spoken = written(G, "話した案")

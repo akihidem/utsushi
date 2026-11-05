@@ -1,0 +1,7 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_loop.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 8b03926（回した時の HEAD）
+    assert all(c["why"] == "" for c in version["changes"]), version["changes"]
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [{'param': 'fold_count', 'to': 22, 'why': '採った案「折りをさらに減らす」: 折りをさらに減らすの動かし方', 'formula_check': 'no_formula', 'from': 24}, {'param': 'fold_height', 'to': 44, 'why': '採った案「折りをさらに減らす」: 折りをさらに減らすの動かし方', 'formula_check': 'no_formula', 'from': 48}]
+試験 rc=1
+rc=0

@@ -334,7 +334,9 @@ class Handler(BaseHTTPRequestHandler):
             # 紙の印が無ければ、本人の案、無ければたたき台の 1 枚を開く（J-032）。刷った物の先頭を開くと、ほかの仮説だけを刷った置き場でその紙が開く。
             hid = qs.get("h", [""])[0] or think_sheet.latest_mine(self, sid) or hypotheses.sheet_of(sid)["id"]
             if hid not in printed:
-                return self._send(200, self._toy(sid, errors=["先に紙を作ると、作りながら見る頁が開きます"]))
+                # 文が頁の頭より 1 画面下に出ないよう、#121 の手帖と同じく節へ送る（#289）
+                msg = urllib.parse.quote("先に紙を作ると、作りながら見る頁が開きます")
+                return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={msg}&at=kasetsu#kasetsu")])
             from . import tsukuru
             try:
                 n = int(qs.get("n", ["1"])[0])
@@ -582,7 +584,7 @@ class Handler(BaseHTTPRequestHandler):
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
         rec = loop.record(rid)
-        sid, hid = rec["source_id"], rec["hypothesis_id"]
+        sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"])  # 自分の紙の記録からの次の版は、たたき台へ向ける
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
             return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=rid))
         if loop.explanation(rid) is None:

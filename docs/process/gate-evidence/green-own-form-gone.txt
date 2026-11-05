@@ -1,5 +1,5 @@
 # 命令: bash -c '.venv/bin/python tests/test_own_form_gone.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
-# commit: 502839d（回した時の HEAD）
+# commit: 66eaf53（回した時の HEAD）
 ok: 玩具の頁に書く欄は無く、前の自分の仮説の記録と紙は読める
 試験 rc=0
 rc=0

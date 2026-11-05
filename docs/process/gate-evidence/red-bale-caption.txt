@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tpl_captions.py
+# commit: 771e0dd（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_tpl_captions.py", line 41, in <module>
+    assert (cart.DIAGRAM_CAPTION in [t.text for t in layout["texts"]]) is (body == "cart"), (sid, h["id"], body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000022-R-5', 'H-A', 'bale')
+rc=1
