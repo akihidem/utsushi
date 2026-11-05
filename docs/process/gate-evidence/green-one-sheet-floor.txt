@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_floor_pin.py
+# commit: ec615b1（回した時の HEAD）
+ok 紙 9 枚の指紋が控えと同じ。負の対照で拾った紙: 寸法 1・組の版 5・組み方の文 1
+rc=0

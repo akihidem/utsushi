@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_plain_words.py
+# commit: 1e4a33a（回した時の HEAD）
+/tmp/tmpke86inuj/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpke86inuj/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpke86inuj/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+rc=0
