@@ -388,11 +388,11 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
-    def _done(self, sid, msg, back="", see=None, anchor="kiroku"):
+    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
             return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
-        extra = f"&see={see}&kind=sheet" if see else ""
+        extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
 
     def _post(self):
@@ -540,7 +540,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
-        決まりの外（刷っていない紙・数でない番号・手順の数の外・知らない出来事）は 422。映像や写真はこの口では受けない（form の欄だけ）。"""
+        決まりの外（刷っていない紙・数でない番号・手順の数の外・知らない出来事・途中の手順の組み上がり）は 422。映像や写真はこの口では受けない（form の欄だけ）。"""
         from . import tsukuru
 
         as_json = form.get("json") == "1"
@@ -558,7 +558,10 @@ class Handler(BaseHTTPRequestHandler):
             return bad("手順の番号は数で")
         if not 1 <= step <= max(total, 1):
             return bad("その手順は無い")
-        # 最後の手順の「次の手順へ」は動かないので残さない（残すと、途中でやめた段の数えで、無い手順が出る）。
+        # 組み上がりは最後の手順だけで受ける。途中の札は頁に出さないが、開いたままの古い頁からは届く。残すと作る様子の集計がずれる（#321）。
+        if event == "done" and step < total:
+            return bad("その札は無い")
+        # 最後の手順の「次の手順へ」は頁に出さないが、開いたままの古い頁からは届く。動かないので残さない（残すと、途中でやめた段の数えで、無い手順が出る）。
         if not (event == "next" and step >= total):
             making_log.add_step(sid, hid, sheet_version_of(sid, hid, form), step, event, who=form.get("who", ""))
         if event == "start":
@@ -567,7 +570,9 @@ class Handler(BaseHTTPRequestHandler):
         nxt = min(step + 1, max(total, 1)) if event == "next" else max(step - 1, 1) if event == "back" else step
         if as_json:
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
-        ev = f"&ev={event}" if event in ("stuck", "done") else ""
+        if event == "done":  # どの紙かを渡して記録の欄へ送る。今の頁は JS の有無に関わらず、この道を通る（#321）。記録の欄の既定は変えない（紙を選ぶ欄は #332 で無くなる）
+            return self._done(sid, tsukuru.DONE_NOTE, see=hid, v=sheet_version_of(sid, hid, form))
+        ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
     def _ask(self, sid, hid, question):

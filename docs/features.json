@@ -351,6 +351,7 @@
    "tests/test_toys.py",
    "tests/test_plain_words.py",
    "tests/test_ways.py",
+   "tests/test_min_python.py",
    "tests/test_about.py",
    "docs/process/site-requirements.md",
    "tests/test_tap_size.py",
@@ -439,6 +440,7 @@
   "evidence": [
    "src/web/tsukuru.py",
    "tests/test_tsukuru.py",
+   "tests/test_tsukuru_last_step.py",
    "src/omochae/making_log.py",
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
@@ -464,7 +466,7 @@
    "src/web/toys.py",
    "tests/test_material_axes.py"
   ],
-  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
+  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。当時の材料の語の一覧（#311）は、楊枝や割り箸という形で当時あったかまでは確かめていない。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
  },
  {
   "id": "f39",
