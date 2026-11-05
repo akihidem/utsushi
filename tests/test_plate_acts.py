@@ -9,11 +9,9 @@ import tempfile
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import hypotheses  # noqa: E402
 from web import skin, toy  # noqa: E402
 
 SID = "NDL-1187053-R0000005-L"
-hypotheses.save_prediction(SID, "押すと開くと思う")
 for look in skin.SKINS:
     html = toy.toy_page(SID, look)
     plates = html[html.index('<div class="plates">'):html.index('id="win"')]

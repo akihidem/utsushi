@@ -485,7 +485,7 @@ class Handler(BaseHTTPRequestHandler):
     def _reprint(self, sid, form):
         """版の記録があって紙が無い版を刷り直す（#158）。「次の版を作る」は、同じ値では前の版と変わらないので通らない。"""
         hid, v = form.get("hypothesis", ""), form.get("version", "")
-        if (hypotheses.need_prediction(sid) or hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
+        if (hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"]))
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
