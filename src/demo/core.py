@@ -61,7 +61,7 @@ PAGES = {
     "make1": (f"/toy/{SID}/tsukuru?h={HID}&n=1", 1280, {"stage": ".stage"}),
     "make2": (f"/toy/{SID}/tsukuru?h={HID}&n=2", 1280, {"stage": ".stage"}),
     "make": (f"/toy/{SID}/tsukuru?h={HID}&n=3&ev=stuck", 1280, {"stage": ".stage", "henji": "#henji"}),
-    "keep": (f"/toy/{SID}/techo", 1000, {"up": '[aria-label="上げる"]'}),
+    "keep": (f"/toy/{SID}/techo", 1000, {"up": '[aria-label="上げる"]', "record": '[aria-label="上げる"] .item'}),
     "gallery": ("/gallery", 1400, {"made": "#ageta", "first_sample": "#ageta .samples .item"}),
 }
 
@@ -455,8 +455,9 @@ def build_scene(name, cues, cache=None, shots=None):
             {"at": "ask", "shot": "make", "from": stuck, "to": stuck, "line": "止まったら、そのまま声か字で聞ける"}])
     if name == "core_keep":
         rects = shots["keep"][1]
-        up = _cam_on(rects["up"], 1.95)  # 「工夫した所」の欄まで映す。字幕がそこを言っているので
-        record = (up[0], max(up[1], rects["up"][1] + rects["up"][3] - up[2] * ASPECT / 2 + 10), up[2])  # 節の下の端、上げた記録の所
+        up = _cam_on(rects["up"], 1.95)  # 写真を上げる所の頭から映す。字幕がそこを言っているので
+        # 上げた記録の頭から映す。節の下の端を基準にすると、記録の欄が伸びた時に写真が枠の外へ出る。
+        record = (up[0], rects["record"][1] - 20 + up[2] * ASPECT / 2, up[2])
         return Screens(name, cues, shots, [
             {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, "line": "できた物の写真と、"},
             {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "line": "工夫した所を記録に添える"}])

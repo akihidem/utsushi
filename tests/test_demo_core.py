@@ -61,7 +61,7 @@ fake = {
     "make1": (Image.new("RGB", (2560, 2000), (251, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
     "make2": (Image.new("RGB", (2560, 2000), (249, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
     "make": (Image.new("RGB", (2560, 2000), (250, 250, 250)), {"stage": [0, 0, 1280, 900], "henji": [700, 200, 500, 400], "h": 1000}, 1280),
-    "keep": (Image.new("RGB", (2000, 3000), (245, 245, 245)), {"up": [100, 200, 800, 1200], "h": 1500}, 1000),
+    "keep": (Image.new("RGB", (2000, 3000), (245, 245, 245)), {"up": [100, 200, 800, 1200], "record": [120, 900, 760, 300], "h": 1500}, 1000),
     "gallery": (Image.new("RGB", (2800, 2400), (240, 240, 240)), {"made": [100, 100, 1200, 900], "first_sample": [100, 700, 1200, 120], "h": 1200}, 1400),
 }
 for name in core.SECONDS:
@@ -89,6 +89,9 @@ assert stepping.segs[-1]["line"] == "止まったら、そのまま声か字で�
 # 手帖は上げる欄から、上げた記録へ動く。同じ頁の中なので段の替わり目で絵が変わらない
 keeping = core.build_scene("core_keep", dict(core.CUES_ALL["core_keep"]), shots=fake)
 assert [s["shot"] for s in keeping.segs] == ["keep", "keep"] and keeping.segs[1]["to"][1] > keeping.segs[1]["from"][1]
+# 字幕「工夫した所を記録に添える」の間は、上げた記録の頭から映す（節の下の端を基準にすると、記録の欄が伸びた時に写真が枠の外へ出る）
+keep_end = keeping.segs[1]["to"]
+assert 900 - 40 <= keep_end[1] - keep_end[2] * core.ASPECT / 2 <= 900, keep_end
 mark = core.CUES_ALL["core_keep"]["record"]
 assert keeping.frame(mark[0] + 0.05).crop(core.BOX).tobytes() == keeping.frame(mark[0] - 0.1).crop(core.BOX).tobytes()
 # 手順が替わる時は、前の画面を頁の地の色へ溶かしてから次の画面を出す（2 つの頁の字を重ねない）
