@@ -39,7 +39,7 @@ import json
 import os
 import urllib.parse
 
-from omochae import hypotheses, making_log, talk_log
+from omochae import hypotheses, making_log, records, talk_log
 from omochae.model import Failure
 
 from . import skin
@@ -244,10 +244,11 @@ def kufu_block(sid, r, show_shared=True):
     return f'<div class="hanasu-kufu" data-kufu="{esc(r["id"])}"><p class="hanasu-kufu-head">{esc(KUFU_HEAD)}</p><ul>{lines}</ul></div>'
 
 
-def keep_box(sid, r, show_shared=True):
+def keep_box(sid, r, show_shared=True, can_add=False):
     """手帖の記録の札に置く物（3 できた物を上げた後に、工夫した所と考えを残す）。上に、その記録の「工夫した所（直した所）」
-    （作りながら話した工夫が、記録を残した時にここへ入る）。下に、足す口。show_shared=False は合言葉なしで開いた場。"""
-    return kufu_block(sid, r, show_shared) + box(sid, "keep", rid=r["id"], with_assets=False)
+    （作りながら話した工夫が、記録を残した時にここへ入る）。下に、足す口。show_shared=False は合言葉なしで開いた場。
+    can_add は、この画面がこの記録を残した時に真。足す口はその画面にだけ出す（受け口の post も断る）。"""
+    return kufu_block(sid, r, show_shared) + (box(sid, "keep", rid=r["id"], with_assets=False) if can_add else "")
 
 
 def reason(failures):
@@ -280,6 +281,10 @@ def post(handler, sid, form):
     elif scene == "think" and hid:
         vs = printed_versions(sid, hid)
         version = vs[-1] if vs else None
+    # 上げた後に足す字は、記録を残した画面からだけ受ける。別の人の字が前の人の記録に結ばれないように（字は残さない）。
+    refused = scene == "keep" and not records.mine(form.get("record"), handler._rec_key())
+    if refused:
+        failures = [Failure("F8.references", "record_id", "記録を残した画面でない")]
     who = form.get("who", "")
     path = None
     if not failures:
@@ -288,7 +293,7 @@ def post(handler, sid, form):
     kept = path is not None
     if form.get("json") == "1":
         body = {"kept": True, "note": KEPT} if kept else {"kept": False, "why": reason(failures)}
-        return handler._send(200 if kept else 422, json.dumps(body, ensure_ascii=False), "application/json; charset=utf-8")
+        return handler._send(200 if kept else 403 if refused else 422, json.dumps(body, ensure_ascii=False), "application/json; charset=utf-8")
     if scene == "think":
         if kept:
             return handler._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(KEPT)}&at=hanasu#hanasu")])
@@ -298,7 +303,7 @@ def post(handler, sid, form):
         back = (f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={version}&n={step or 1}", "作りながら見る（机の端に置く・試作）")
     else:
         back = (f"/toy/{sid}/techo#mine", "手帖をひらく（作りながら聞く・上げる）")
-    return handler._send(200 if kept else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else reason(failures), handler._look, links=(back,)))
+    return handler._send(200 if kept else 403 if refused else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else reason(failures), handler._look, links=(back,)))
 
 
 def maker_section(sid, data):

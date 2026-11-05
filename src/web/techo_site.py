@@ -315,10 +315,11 @@ document.getElementById('up-form').onsubmit = async (e) => {
 """
 
 
-def feedback(sid, r, photos=True):
+def feedback(sid, r, photos=True, can_tell=False):
     """手帖で受けるフィードバック（本人「フィードバックも手帖」、11-04）。順は J-013 のまま: 紙の返事（試した後の紙）→ 人の説明 → 次の版。
     Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。
-    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。"""
+    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。
+    can_tell は、この画面がこの記録を残した時に真。説明の欄はその画面にだけ出す（受け口も断る。records.mine）。"""
     from omochae import loop
 
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
@@ -329,6 +330,8 @@ def feedback(sid, r, photos=True):
         from web.play_server import next_form
 
         body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+    elif not can_tell:
+        body = ""
     else:
         body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
@@ -429,7 +432,7 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
+def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), rec_key=None):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。own は、この画面が作った本人の案（話した考えから作った紙）の番号で、札の先頭に出す。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
@@ -457,8 +460,8 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
         who = f"{hypotheses.letter(h)} の紙" if h else ""
         mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"]))}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
-                 f'{hanasu.keep_box(sid, r, show_shared=uploads)}'
-                 f'{feedback(sid, r, photos=uploads)}</div>')
+                 f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
+                 f'{feedback(sid, r, photos=uploads, can_tell=records.mine(r["id"], rec_key))}</div>')
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')

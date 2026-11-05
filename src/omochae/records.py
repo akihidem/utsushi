@@ -5,6 +5,7 @@
 直した点は 3 欄が揃った物だけを残す。次の版や次に試す物の提案の根拠になるので、あいまいな記録を混ぜないため。
 """
 import argparse
+import hmac
 import json
 import os
 import pathlib
@@ -21,7 +22,9 @@ from .model import Failure
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 OPENERS = ("紙の力", "糸", "手")
-OWN = ("explanation", "interpretation", "observation", "video")  # 記録ごとに輪の置き場へ書く物
+OWN = ("explanation", "interpretation", "observation", "video", "owner")  # 記録ごとに輪の置き場へ書く物
+# 記録を残した画面が、その記録に説明と字を足せる長さ（分）。サーバの時刻で数える。過ぎたら作る側の端末から足す（loop explain）。
+OWNER_MINUTES = 15
 # 動画の受け口（web/video_up.py）から来た記録の印。上げた人に「頁に出さない」と約束した物で、紙も人が確かめていないので、all_records は既定で外す。
 UPLOADED = "video-up"
 UNSURE = "わからない"
@@ -119,6 +122,29 @@ def all_records(source_id=None, uploads=False):
         if rec is not None and (source_id is None or rec.get("source_id") == source_id) and (uploads or rec.get("via") != UPLOADED):
             out.append(rec)
     return out
+
+
+def claim(rid, key):
+    """記録を残した画面の鍵を控える。別の人が前の人の記録に説明や字を足せないように、受け口で照らす（下の mine）。写真の鍵（media_review.claim）と同じ作り。
+    who を使わないのは、記録が残ると作り直され（1 回の作りに 1 つの印）、記録にも残さないから。番号は連番なので証拠にならない。
+    控えは記録の外（輪の置き場）に置く。記録の欄に入れると、記録を読む所（束・ギャラリー）の全部に気を付ける事になる。"""
+    from . import loop
+
+    store.write_json(loop.folder() / f"owner-{rid}.json", {"record_id": rid, "key": key, "at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")})
+
+
+def mine(rid, key):
+    """その鍵の画面が残した記録で、期限の中か。控えの無い記録（作る側の端末で残した物、前からある記録）と、読めない控えは、閉じる側に倒す。"""
+    from . import loop
+
+    entry = store.read_json_or_skip(loop.folder() / f"owner-{rid}.json") if key and re.fullmatch(r"R-[0-9]{4,}", str(rid)) else None
+    if not isinstance(entry, dict) or not isinstance(entry.get("key"), str) or not hmac.compare_digest(entry["key"].encode(), key.encode("utf-8", "replace")):
+        return False
+    try:
+        at = datetime.fromisoformat(entry["at"])
+        return datetime.now(at.tzinfo) - at <= timedelta(minutes=OWNER_MINUTES)
+    except (KeyError, TypeError, ValueError):
+        return False
 
 
 def _used_paths(rid):

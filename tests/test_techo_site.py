@@ -24,6 +24,11 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{port}"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+JAR = urllib.request.HTTPCookieProcessor()
+urllib.request.install_opener(urllib.request.build_opener(JAR))
+
+
 def req(path, data=None, ctype="application/x-www-form-urlencoded", origin=base):
     body = urllib.parse.urlencode(data).encode() if isinstance(data, dict) else data
     r = urllib.request.Request(base + path, data=body, method="POST" if body is not None else "GET", headers={"Content-Type": ctype, "Origin": origin})
@@ -92,7 +97,7 @@ assert ("H-A", 1) in conf and conf[("H-A", 2)][-1]["by"] == "本人" and conf[("
 page = req(f"/toy/{G}/techo")[1].decode()
 assert "試した後の紙" in page and "次の版を作る" in page and 'name="back" value="techo"' in page
 r2 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた"})[1])["id"]
-opener = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
+opener = urllib.request.build_opener(JAR, type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
 x = urllib.request.Request(base + f"/record/{r2}/explain", data=urllib.parse.urlencode({"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"}).encode(),
                            headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
 try:

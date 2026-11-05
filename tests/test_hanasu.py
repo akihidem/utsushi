@@ -42,11 +42,12 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 opener = urllib.request.build_opener(NoRedirect)
+REC_KEY = "a" * 24  # この画面が記録を残した時の鍵。上げた後に足す口は、その画面にだけ開く（records.mine）
 
 
 def get(path, at=None):
     try:
-        r = opener.open((at or base) + path)
+        r = opener.open(urllib.request.Request((at or base) + path, headers={"Cookie": f"utsushi_rec={REC_KEY}"}))
         return r.status, r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "replace")
@@ -56,7 +57,7 @@ def send(path, body, ctype="application/x-www-form-urlencoded", origin=None, at=
     # 送る側がブラウザの名と cookie を付けても、記録に入らない事を見るために付ける
     at = at or base
     req = urllib.request.Request(at + path, data=body, method="POST",
-                                 headers={"Content-Type": ctype, "Origin": origin or at, "User-Agent": "TestBrowser/1.0", "Cookie": "name=someone"})
+                                 headers={"Content-Type": ctype, "Origin": origin or at, "User-Agent": "TestBrowser/1.0", "Cookie": f"name=someone; utsushi_rec={REC_KEY}"})
     try:
         r = opener.open(req)
         return r.status, r.read().decode(), dict(r.headers)
@@ -164,6 +165,8 @@ assert rid5 == "R-0005" and not failures and talk_log.kufu(G, rid5) == []
 
 # ---- 3 できた物: 試した記録に結ぶ。記録に入るので、ほかの人の頁にも出る（選び肢は無い。送っても受けない）
 KEEP_A, KEEP_B = "内筒が固かったので、角を丸く切った", "扇の根元を糸で留めたら、開いたままになった"
+records.claim(RID, REC_KEY)  # 受け口の形を見る。別の人が断られる事は tests/test_record_owner.py が見る
+records.claim("R-0002", REC_KEY)
 code, j = talk(scene="keep", record=RID, text=KEEP_A, share="0")
 assert code == 200 and j["kept"] is True and j["note"] == hanasu.KEPT, j
 # JS が無い時は、戻る道の付いた頁で答える。戻る道の字は、玩具の頁の入口と同じ字
@@ -175,7 +178,7 @@ for p in files():  # この先の数を変えないよう、見本を片づけ�
         p.unlink()
 assert talk(scene="keep", record=RID, text=KEEP_B, via="voice")[0] == 200
 code, j = talk(scene="keep", record="R-9999", text="無い記録")
-assert code == 422 and j["why"] == hanasu.FAILED, j
+assert code == 403 and j["why"] == hanasu.FAILED, j
 # 前にあった、記録ごとの合図の受け口は無い（選び肢と、既定で出さない形はやめた。本人の決定 11-05）
 n = len(files())
 assert post(f"/toy/{G}/talk", {"signing": "1", "record": RID})[0] == 422 and len(files()) == n
