@@ -381,7 +381,7 @@ class Handler(BaseHTTPRequestHandler):
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
         # 刷った紙。PDF（刷る）のほかに PNG と SVG（画面で見る、要件の S-01）。試した後の紙はどの形でも記録の前は渡さない。
-        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v\d+(?:_tejun|_after|_free)?)\.(pdf|svg|png)", path)
+        m = re.fullmatch(rf"/sheet/({SID})/((?:H-[A-Z0-9]+|OWN-\d+)_v\d{{1,6}}(?:_tejun|_after|_free)?)\.(pdf|svg|png)", path)  # 版は 6 桁まで: 桁の多い手作りの URL を、int の上限の 500 でなく 404 にする
         if m and m.group(1) in sources():
             sid, stem, ext = m.groups()
             hid = re.split(r"_v\d+", stem)[0]

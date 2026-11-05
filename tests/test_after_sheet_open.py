@@ -110,6 +110,11 @@ assert {s["stage"] for s in making_log.stages(DEN)} == {"record"}
 assert get(f"/sheet/{DEN}/H-A_v2_after.pdf")[0] == 404
 assert not [n for n in files(DEN, "H-A") if "_v2" in n]
 
+# 手作りの URL の桁の多い版の数字は、道に当たらず 404（int の上限で 500 にしない）。窓の版の数字は読めなければ無指定と同じ
+many = "9" * 5000
+assert get(f"/sheet/{DEN}/H-A_v{many}_after.pdf")[0] == 404, "桁の多い版の数字"
+assert get(f"/toy/{DEN}?see=H-A&kind=after&v={many}")[0] == 200
+
 # 前に残した記録と、置き場が空になった後の記録も同じ道で開く
 for p in out_dir(DEN).glob("H-A_v1*"):
     p.unlink()
