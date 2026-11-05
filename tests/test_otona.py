@@ -19,6 +19,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from api import ask, observe  # noqa: E402
 from omochae import media_review, records, talk_log  # noqa: E402
 from web import about, otona, skin, techo_site, wording  # noqa: E402
+from omochae.hypotheses import ROOT  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 TITLE = "保護者の方へ、ファシリテーターの方へ"
@@ -90,6 +91,24 @@ def main_text(page):
     return "".join(t.out)
 
 
+
+
+def recorded():
+    """決定の記録（research/36 の「採られた文」）から、見出しと文を読む。頁の字と記録の字がずれたら落とすため。"""
+    doc = (ROOT / "docs/process/research/36-road-and-audience.md").read_text(encoding="utf-8")
+    body = doc.split("## 採られた文: 保護者の方へ、ファシリテーターの方へ（本人の決定、11-06）", 1)[1]
+    body = body.split(f"**{TITLE}**", 1)[1].split("この文と作りの対応:", 1)[0]
+    out = []
+    for line in filter(None, (x.rstrip() for x in body.splitlines())):
+        m = re.fullmatch(r"\*\*(\d .+)\*\*", line)
+        if m:
+            out.append((m.group(1), []))
+        else:
+            out[-1][1].append(line.removeprefix("- "))
+    return tuple((h, tuple(lines)) for h, lines in out)
+
+
+assert recorded() == ADOPTED, "決定の記録の字と、この試験の字が違う。記録が直ったなら、頁と試験を記録から抜き直す"
 heads = [h for h, _ in ADOPTED]
 assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 32, "題と見出しと合わせて 39 行"
 expected = TITLE + "".join(heads) + "".join(h + "".join(lines) for h, lines in ADOPTED) + "".join(BUTTONS)

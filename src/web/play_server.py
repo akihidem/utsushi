@@ -253,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), **kw)
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), **kw)
 
     def do_GET(self):
         try:
@@ -575,6 +575,14 @@ class Handler(BaseHTTPRequestHandler):
 
         rec = loop.record(rid)
         sid = rec["source_id"]
+        from . import techo_site
+
+        is_video = lambda f: f.endswith(("mp4", "mov"))
+        files = techo_site.media_of(rid)
+        videos = [f for f in media_review.shown_to(rid, files, self._up_key()) if is_video(f)]  # 人や声が入ると確かめた動画は渡さない（#314）
+        # 確認の前の動画を、上げた本人でない画面から Claude に渡さない。頁に釦は出ないが、開いたままの古い頁から届く。
+        if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
+            return self._refuse(403, "受け付けられません")
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
@@ -590,8 +598,6 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 from api import observe
 
-                from . import techo_site
-                videos = [f for f in media_review.visible(rid, techo_site.media_of(rid)) if f.endswith(("mp4", "mov"))]  # 人や声が入ると確かめた動画は渡さない（#314）
                 if not videos:
                     return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""), anchor=rid)
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))

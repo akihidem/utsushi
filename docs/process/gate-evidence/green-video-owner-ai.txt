@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_video_owner_ai.py
+# commit: aacb1ed（回した時の HEAD）
+ok: 確認の前の動画を Claude に渡す口と読んだ文は、上げた本人の画面だけ
+rc=0

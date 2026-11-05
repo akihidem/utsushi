@@ -144,8 +144,10 @@ assert {x["text"] for x in loop.maker_talk(rid)["items"]} == {CRAFT, EARLY_CRAFT
 body = page(f"/toy/{G}/techo")[1]
 assert CRAFT in body and hanasu.KUFU_HEAD in body and THINK not in body, "手帖の記録の札の「工夫した所」に出る。考えは出さない"
 groups = engine_bundle.build()["groups"]
-assert len(groups) == 1 and groups[0]["reports"] == 1 and groups[0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, "束で群が分かれず、紙の組に入る"
-assert {CRAFT, EARLY_CRAFT} <= {t["text"] for t in groups[0]["texts"]}, "束に工夫の字が入る"
+# 束の群は紙ごと（Issue 334）。自分の紙の記録は、その紙の群で、たたき台の刷った組に入る（組が外れない）
+mine = [g for g in groups if rid in g["record_ids"]]
+assert len(mine) == 1 and mine[0]["reports"] == 1 and mine[0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, "束で群が分かれず、紙の組に入る"
+assert {CRAFT, EARLY_CRAFT} <= {t["text"] for g in groups for t in g["texts"]}, "束に工夫の字が入る"
 # 記録の後は閉じる。作りながら見る頁も、工夫も
 assert f'data-hid="{oid}"' not in page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1]
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": oid, "sheet_version": 1, "step": 1, "text": "記録の後の工夫", "who": WHO}, cookie=key)[0] == 422
