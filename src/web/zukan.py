@@ -68,7 +68,7 @@ def quote_lines(src):
 def record_title(r, data):
     """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
     return f"{who}・{r['result']}"
 
 
@@ -92,7 +92,7 @@ def hypothesis_lines(sid, data, photos=True):
     spoken = spoken_own_ids(sid)
     # 合言葉なしで開いた場では、書いて立てた仮説の文も出さない: 人ごとに分かれておらず、文の中の名前は機械で落とせない（J-028、#336）。
     own = hypotheses.own_hypotheses(sid) if photos else []
-    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in own if h["id"] not in spoken]
+    out += [{"text": f"あなたの仮説「{h['name']}」: {h['how_it_moves']}", "label": HYPO} for h in own if h["id"] not in spoken]
     return out
 
 
