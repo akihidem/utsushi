@@ -13,6 +13,8 @@ from .textfit import text_width
 # 型紙より字を大きく、欄を広くする。手で書き込む紙で、子どもも使うため。
 BODY_SIZE, HEAD_SIZE = 3.6, 4.4
 ANSWER_GAP, FIX_ROW = 9.0, 10.0
+# 手順の紙の書く欄の間の下限。版 2 の紙のように文が長くなって頁に入らない時に、ここまで詰める（compose_sheet）。これより狭いと字を書けない。
+MIN_ANSWER_GAP = 5.0
 DIAGRAM_W, DIAGRAM_H = 42.0, 62.0
 PICTURE_SIZE = 2.8
 # 見て考える 4 問は、本人の 4 つの着目（research/20）に 1 つずつ当てる。①②楽しさ ③納得 ④哲学（作りながら思いつく）。
@@ -26,8 +28,8 @@ PREDICT_H = 15.0
 # 前の字は、先に書かないと始められないように読めた（予想の段は #242 で外した）。問いと枠は、端末の無い場でも考えを書けるように残す。
 BEFORE_HEAD = "思った事（書かなくても作れます）"
 NEXT_HEAD = "次はこれを変えて試す"
-# 必須 2 種の今の組は指紋を変えないので、前の字のまま刷る（凍結の床）。次の組で上の字に直す。
-# 組の名前で持つ: 組を上げると前の字は外れ、この表に残った行を tests/test_sheet_heads.py が名指しして落ちる（消し忘れないため）。
+# 控えを残す前の組（凍結の床）は指紋を変えないので、前の字のまま刷る。次の組（goraigo-v11・tora-v4）は上の字。
+# 組の名前で持つ: 雛形の FROZEN_SET と食い違うと tests/test_sheet_heads.py が名指しして落ちる。
 _OLD_HEADS = ("作る前に", "次はこれを変えて試す（予想を書いてから）")
 FROZEN_HEADS = {"goraigo-v10": _OLD_HEADS, "tora-v3": _OLD_HEADS}
 
@@ -63,7 +65,7 @@ def _arc_arrow(shapes, x1, y, x2, rise, head):
     shapes.append({"kind": "poly", "pts": tri, "fill": head, "sw": 0.25, "tag": "arrowhead"})
 
 
-def _first_steps(x, y, shapes, texts):
+def _first_steps(x, y, shapes, texts, fold):
     """最初の一歩と蛇腹の畳み方の小さな絵（v8、U-25 で色と矢印を足した）。幅 50mm に収め、絵の下の y を返す。
 
     試行で手が止まったのは平面から立体への最初の一歩で（本人の補足所見）、「ジャバラに折る発想が出てこない」
@@ -73,15 +75,15 @@ def _first_steps(x, y, shapes, texts):
     from .templates.slider_fan import PAPER, PAPER_ALT
 
     # 1) 平らな外筒 → 角筒。4 面の帯と糊代、谷折りの矢印、組んだ角筒の斜めの姿
-    y = _block(texts, ["まず筒を 1 つ作る（色の境で谷折り）"], x, y, PICTURE_SIZE, 50)
+    y = _block(texts, [f"まず筒を 1 つ作る（色の境で{fold}）"], x, y, PICTURE_SIZE, 50)
     fw, fh, sy = 6.0, 11.0, y + 4.5
     for i in range(4):
         shapes.append({"kind": "poly", "pts": [(x + fw * i, sy), (x + fw * (i + 1), sy), (x + fw * (i + 1), sy + fh), (x + fw * i, sy + fh)],
                        "fill": PAPER if i % 2 == 0 else PAPER_ALT, "tag": "tube_face"})
     shapes.append({"kind": "rect", "x": x, "y": sy, "w": fw * 4, "h": fh})
     shapes.append({"kind": "rect", "x": x + fw * 4, "y": sy + 1, "w": 3, "h": fh - 2})
-    # 右の面を手前へ起こす谷折り。境の上をまたぐ弧にする（記号の決まり: 矢印は動く側から行き先へ）。
-    _arc_arrow(shapes, x + fw * 3.5, sy - 0.5, x + fw * 2.5, 1.8, VALLEY_HEAD)
+    # 右の面を折る矢印。境の上をまたぐ弧にする（記号の決まり: 矢印は動く側から行き先へ）。矢じりは折り方の語と同じ向き（手順の文と食い違わせない）。
+    _arc_arrow(shapes, x + fw * 3.5, sy - 0.5, x + fw * 2.5, 1.8, MOUNTAIN_HEAD if fold == "山折り" else VALLEY_HEAD)
     ax, my = x + fw * 4 + 5, sy + fh / 2
     shapes += [{"kind": "line", "x1": ax, "y1": my, "x2": ax + 6, "y2": my},
                {"kind": "line", "x1": ax + 4, "y1": my - 2, "x2": ax + 6, "y2": my},
@@ -176,7 +178,7 @@ def _fold_order(x, y, width, p, shapes, texts):
 ORDER_NOTE = "順番は目安です。やりやすい順に変えてよい。自分の順を見つけたら、直した点に書く"
 
 
-def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A4", version=1, picture=None):
+def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A4", version=1, picture=None, answer_gap=ANSWER_GAP):
     """Returns (layout, failures)。picture は完成のイメージとして載せる原図の写しの道（v8、slider_fan だけ）。
 
     U-25（本人が案 1〜4 を採った、11-04）: 角度と回数と物差しを外し、問いを本人の 4 つの着目に合わせた。
@@ -226,7 +228,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     y += PREDICT_H + 3
     # 作り始めて動かすまでの分は外した（角度と同じく測る欄）。詰まった所を言葉で残し、次の版に返す（試行で手が止まったのは最初の一歩）。
     # 最初の一歩の絵の横に置く。絵を見て、どこで詰まったかを書けるように。
-    y = _block(texts, [STUCK], page.x0, y, HEAD_SIZE, ask_w) + ANSWER_GAP - 2
+    y = _block(texts, [STUCK], page.x0, y, HEAD_SIZE, ask_w) + answer_gap - 2
     shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x0 + ask_w, "y2": y - 1.5})
     y += 2
     if m["rows"]:
@@ -238,7 +240,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
             y += BODY_SIZE * LINE + 2
     if fan:
         px = page.x1 - PICTURES_W
-        pics_end = _first_steps(px, pics_y, shapes, texts)
+        pics_end = _first_steps(px, pics_y, shapes, texts, tpl.tube_fold())
         if picture:
             # 完成のイメージとして原図を試しに載せる（本人の決定、11-04）。縮めた写しを埋め込み、PDF を重くしない。
             import io
@@ -257,7 +259,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         y = _fold_order(page.x0, y, width, p, shapes, texts) + 2
     y = _block(texts, ["見て考える"], page.x0, y, HEAD_SIZE, width)
     for q in QUESTIONS:
-        y = _block(texts, [q], page.x0, y, BODY_SIZE, width) + ANSWER_GAP
+        y = _block(texts, [q], page.x0, y, BODY_SIZE, width) + answer_gap
         shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
     y += 1
     # 丸の欄は問いと同じ行に並べる（A4 に収めるため）。入らない幅なら次の行へ送る。
@@ -284,6 +286,10 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         y += FIX_ROW
     # 物差しは型紙にある（刷りの倍率は型紙で確かめる）。この紙では測らないので刷らない（U-25）。
     failures = check_layout(page, [], texts)
+    # 表を 1 行にしても頁に入らない時は、書く欄の間を詰めて組み直す。次の組は印の文が 2 行で手順も増えたので、版 2 の遊び方の文が伸びると数 mm 溢れて、
+    # 版 2 の紙を刷れなくなる（輪が止まる）。字は変えない。頁に入る紙は今までどおり。
+    if answer_gap > MIN_ANSWER_GAP and any(f.floor == "F5.print_area" for f in failures):
+        return compose_sheet(template_id, params, source, title, how_it_moves, page_name, version, picture, answer_gap - 1)
     return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": None, "shapes": shapes, "images": images}, failures
 
 

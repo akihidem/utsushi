@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_next_sheets.py
+# commit: ea1332e（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_next_sheets.py", line 62, in <module>
+    assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v11", "goraigo-v10"), FAN.SHEET_SET
+                           ^^^^^^^^^^^^^^
+AttributeError: module 'omochae.templates.slider_fan' has no attribute 'FROZEN_SET'
+rc=1

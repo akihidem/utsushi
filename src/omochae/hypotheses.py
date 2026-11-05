@@ -252,7 +252,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     if not match:
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
-    # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
+    # 必須 2 種は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032。次の組 goraigo-v11・tora-v4 も同じ）。
     # 人が輪や生成で採って重ねた新しい仮説（H-N…）も作る側の控えなので、同じく刷らない。
     # 試作の玩具は、作る側がこの口から控えを刷れる（道は閉じない）。頁からは刷らない（web の /print の口が断る）。
     if data.get("stage", "必須") == "必須" and hypothesis_id != data.get("sheet"):

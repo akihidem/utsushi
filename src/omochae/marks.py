@@ -10,11 +10,10 @@ from .model import Failure, ToolMissing
 
 HOLDER = "国立国会図書館デジタルコレクション"
 HYPOTHESIS = "仮説（ためしの案）: AI が考えた、ためしに作るための案の 1 つです。正しい答えではありません。作って、動くか見て、直していきます。"
-# 必須 2 種の今の組（凍結の床・tests/test_floor_pin.py）に刷る文。やさしい言葉の文（#318、本人の決定 11-05）へ替えた時、
-# 本人に「必須 2 種の今の版の紙は変えず、次の版から」と確かめて採ったので、今の組だけ前の文（#258 の決定の文）のまま刷る。
-# 次の組（goraigo-v11・tora-v4）を足す時は、その玩具を FROZEN_SETS から外す（雛形の SHEET_SET と食い違うと test_hypothesis_label が落ちる）。
+# 必須 2 種の前の組（goraigo-v10・tora-v3。凍結の床・tests/test_floor_pin.py）に刷る文。やさしい言葉の文（#318、本人の決定 11-05）へ替えた時、
+# 本人に「必須 2 種の今の版の紙は変えず、次の版から」と確かめて採ったので、前の組だけ前の文（#258 の決定の文）のまま刷る。
+# 次の組（goraigo-v11・tora-v4）は上の文。前の組の紙を組む時は、呼ぶ側が source の hypothesis_mark でこの文を渡す。
 HYPOTHESIS_FROZEN = "仮説: AI が考えた、試すための 1 つの翻案です。正解ではありません。作って、動きを確かめて、直していきます"
-FROZEN_SETS = {"NDL-1187053-R0000005-L": "goraigo-v10", "NDL-1187053-R0000014-R": "tora-v3"}
 # 使い手が自分で立てた仮説の紙の文。人の仮説を「AI が考えた」と刷らないため（print_own）。文の残りは上と揃える。
 OWN_HYPOTHESIS = "仮説（ためしの案）: 自分で考えた、ためしに作るための案の 1 つです。正しい答えではありません。作って、動くか見て、直していきます。"
 # 頁の「すぐ作る」の頭に出す文（本人の言葉 11-05「型紙が正解ではなくて、とりあえずAIが考えた仮説であるということを明示する」）。文の変更は本人の確認に回す。
@@ -34,7 +33,7 @@ def without_premise(text):
 def mark_lines(source, omit=None):
     if omit == "all":
         return []
-    lines = [f"所蔵: {source['holding']}", source["modification_note"], source.get("hypothesis_mark", HYPOTHESIS_FROZEN if source.get("source_id") in FROZEN_SETS else HYPOTHESIS)]
+    lines = [f"所蔵: {source['holding']}", source["modification_note"], source.get("hypothesis_mark", HYPOTHESIS)]
     if omit != "source_id":
         lines.insert(2, f"出典ID: {source['source_id']}")
     return lines

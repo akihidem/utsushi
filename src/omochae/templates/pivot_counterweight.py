@@ -14,7 +14,15 @@ ID = "pivot_counterweight"
 # 刷った組の版（U-31）。slider_fan.SHEET_SET と同じ意味。
 # 仮説を分ける寸法の名前（words・generate が、仮説の寸法にこれがあるかを見る）。
 HYP_KEY = "mount"
-SHEET_SET = "tora-v3"
+SHEET_SET = "tora-v4"
+# 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。
+FROZEN_SET = "tora-v3"
+
+
+def frozen():
+    return SHEET_SET == FROZEN_SET
+
+
 DEFAULTS = {
     "mount": "neck",
     "body_length": 64, "body_width": 28, "body_height": 54, "glue": 8,
@@ -201,6 +209,9 @@ def parts(p):
     body = Part(1, "body", "胴", pts, label_xy=(H + 2, top0 + 2), label="1 胴")
     body.valley = [((H, top0), (H + L, top0)), ((H, top1), (H + L, top1)), ((H, b0), (H + L, b0)), ((H, b1), (H + L, b1)), ((H, b0), (H, b1)), ((H + L, b0), (H + L, b1)),
                    ((0, b0), (H, b0)), ((0, b1), (H, b1)), ((H + L, b0), (H + L + H, b0)), ((H + L, b1), (H + L + H, b1))]
+    if not frozen():
+        # 絵は箱の 6 面とも刷った面の側にある。色の面を外へ向けるには、刷った面から見て山折りにする（本人の答えは御来迎の外筒。虎も同じ形。エンジンの c4ade80 と同じ）。
+        body.mountain, body.valley = body.valley, []
     body.glue = [[(H + 2, 0), (H + L - 2, 0), (H + L, g), (H, g)], [(2, b0 - g), (H, b0 - g), (H, b0), (0, b0)], [(0, b1), (H, b1), (H, b1 + g), (2, b1 + g)],
                  [(H + L, b0 - g), (H + L + H - 2, b0 - g), (H + L + H, b0), (H + L, b0)], [(H + L, b1), (H + L + H, b1), (H + L + H - 2, b1 + g), (H + L, b1 + g)]]
     body.art = [_panel(H + 0.2, top0 + 0.2, H + L - 0.2, top1 - 0.2, TIGER), _panel(H + 0.2, b0 + 0.2, H + L - 0.2, b1 - 0.2, TIGER),
@@ -268,14 +279,18 @@ def bom(p):
 
 def materials(p):
     rows = bom(p)
-    return [f"{rows[0]['material']}を 1 枚", "のり、はさみ、定規", rows[4]["material"], rows[5]["material"]]
+    # 胴に中を切り抜く所がある形（首の形の前の壁の四角い穴）は、カッターを道具に書く（手順に「カッターは大人がする」。#294、本人の確認 11-06）。
+    # 前の組は紙を変えないので足さない。エンジン（paper-to-toy の e189dc6）と同じ結果になる事を tests/test_next_sheets.py が見る。
+    # 部品を組まずに形の値で決める（slider_fan と同じ理由）。
+    tools = "のり、はさみ、定規" + ("、カッター" if not frozen() and p["mount"] == "neck" else "")
+    return [f"{rows[0]['material']}を 1 枚", tools, rows[4]["material"], rows[5]["material"]]
 
 
 def steps(p):
     out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る。胴の穴は竹串の先であける"]
     if p["mount"] == "neck":
         out.append("1 胴の前の壁の四角い穴を切る（カッターは大人がする）")
-    out += ["1 胴を破線で谷折りし、糊代で貼って箱にする。上の面は後で閉じる", "3 首の帯を半分に折って貼る。穴は重ねたまま通す"]
+    out += [f"1 胴を破線で{'谷折り' if frozen() else '山折り'}し、糊代で貼って箱にする。上の面は後で閉じる", "3 首の帯を半分に折って貼る。穴は重ねたまま通す"]
     if p["mount"] == "neck":
         out += ["3 首の帯の前の端に 2 頭を貼る", "帯を前の壁の穴に入れ、竹串を胴の穴と帯の穴に通す", "5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める"]
     else:

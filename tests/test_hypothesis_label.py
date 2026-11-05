@@ -1,5 +1,5 @@
 """型紙は正しい答えでなく AI が考えた仮説だと、紙と頁に出す（#258、本人の決定）。
-文はやさしい言葉の文（#318、本人の決定 11-05）。必須 2 種の今の組（凍結の床）だけは前の文（marks.HYPOTHESIS_FROZEN）のまま刷る。"""
+文はやさしい言葉の文（#318、本人の決定 11-05）。必須 2 種の前の組（goraigo-v10・tora-v3。凍結の床）だけは前の文（marks.HYPOTHESIS_FROZEN）のまま刷る（tests/test_floor_pin.py が見る）。"""
 import json
 import os
 import pathlib
@@ -24,10 +24,6 @@ REQUIRED = {"NDL-1187053-R0000005-L": "H-A", "NDL-1187053-R0000014-R": "H-A"}
 assert marks.HYPOTHESIS == WORDS
 # 語の見張りで外すのは打ち消しの文だけ。文から「正解」を外したら、もう残っていない
 assert "正解" not in WORDS.replace("正解ではありません", "")
-# 前の文を刷るのは、雛形の今の組が凍結の組の玩具だけ。組を上げて FROZEN_SETS を直し忘れると、ここで落ちる
-from omochae.compose import TEMPLATES  # noqa: E402
-for sid, sheet_set in marks.FROZEN_SETS.items():
-    assert TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET == sheet_set, (sid, sheet_set)
 
 
 def flat(s):
@@ -54,8 +50,7 @@ for p in paths:
     after, failures = compose_after(source, h["name"], data["after_try"])
     assert not failures, (sid, [f.line() for f in failures])
     for name, lay in (("型紙", layout), ("手順の紙", sheet), ("試した後の紙", after)):
-        want = marks.HYPOTHESIS_FROZEN if sid in marks.FROZEN_SETS else WORDS
-        assert flat(want) in printed(lay), (sid, name)
+        assert flat(WORDS) in printed(lay), (sid, name)
 
 # 刷った PDF から読み直せる（必須 2 種）
 for sid, hid in REQUIRED.items():
@@ -63,7 +58,7 @@ for sid, hid in REQUIRED.items():
     assert r.returncode == 0, r.stderr
     for pdf in (f"{tmp}/{sid}.pdf", f"{tmp}/{sid}_tejun.pdf"):
         text = subprocess.run(["pdftotext", pdf, "-"], capture_output=True, text=True, check=True).stdout
-        assert flat(marks.HYPOTHESIS_FROZEN) in flat(text), pdf
+        assert flat(WORDS) in flat(text) and flat(marks.HYPOTHESIS_FROZEN) not in flat(text), pdf
 
 # 頁の型紙の窓に同じ文が出る
 server = serve(0)

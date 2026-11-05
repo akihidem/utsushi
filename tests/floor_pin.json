@@ -21,6 +21,26 @@
    "real": "d6fab2e9da140fa91f1bff486b3bc19584f1299f59a3b2e2e445cefaaddfac44",
    "standin": "7572cdede387650ee57bac1916883958f33e0ec54bcaf00eb0ca1eafd49fe592"
   },
+  "goraigo-v11/H-A/型紙": {
+   "real": "5d5ff4109683acffb6726fd95db884c54ca53680e60d96f5eb1b0caf1ccbe5da",
+   "standin": "789100fa820ac7debc6ecb5045a50192960c914a7b5ed23351d2e765e8a67acc"
+  },
+  "goraigo-v11/H-A/手順の紙": {
+   "real": "971aa5a904d853c1af547fd3bb4d637fc05c163cef3c777787ca9b41d93babb1",
+   "standin": "3b31a1381992c8704046db2d40cf1282ddfd70b5cac7dfd4a6b0ac7ad6a5feb2"
+  },
+  "goraigo-v11/H-A/手順の紙（原図つき）": {
+   "real": "509e618ee7e4611ef120ff65c32af9fb5997a1635ff0638bc728ecd37e9ee3fc",
+   "standin": "18ad47544e5f80ff5a9d164852e26929cad21affb3dea8d5679ccdc29ac5e9cc"
+  },
+  "goraigo-v11/H-A/試した後の紙": {
+   "real": "c36268d9ebd7d5a9f17be9a7c2be58c4d1e343030d9e0f629f3e0372108ab030",
+   "standin": "585d3ceb9e10f8428901b388bbe3386bef99e7466a1056b0065df7aaf9e637ea"
+  },
+  "goraigo-v11/先生の見る紙": {
+   "real": "c987e7577e826759ebca0fce059ccb1660a4c3f0f6ee6c1b7d4ecc95c9ec259b",
+   "standin": "957e041bba8a8951de6659caf5e87548f438ecb26539735e3b9c16bca12b2b66"
+  },
   "tora-v3/H-A/型紙": {
    "real": "932f088eb61ee3123deae11172f5968da84bf49113d256688c7bf110572f4bd2",
    "standin": "932f088eb61ee3123deae11172f5968da84bf49113d256688c7bf110572f4bd2"
@@ -36,6 +56,22 @@
   "tora-v3/先生の見る紙": {
    "real": "1b834e3fed2a6a1eef5963348a416cd511364515d0e07845287f2214ec41326a",
    "standin": "40168ce99848544bbeb05995f41447f3bea075b49778c8e5ca56aeb950efc1d5"
+  },
+  "tora-v4/H-A/型紙": {
+   "real": "36dc4d9dd263b9383b3fc7f8f32402323418ed5f507bed21159c4acb7cec5b19",
+   "standin": "2e2511ba0673b783154cbf97b0cd1c20d85df2e8fbf4ec5d0896a35bf5583555"
+  },
+  "tora-v4/H-A/手順の紙": {
+   "real": "5fd5d453929beede76ed173c9a301af1c8b1a2c024d38cc5b82f53e0b8ebf53d",
+   "standin": "3ef41fc5c5c5f0d2482c9b5d41a1f11eb5a524ece0f0eeb4dd096dbff4095e6c"
+  },
+  "tora-v4/H-A/試した後の紙": {
+   "real": "657be935ffc82bdedfa66749f9e0322b2093ac5e0698468f213fec3f89dd0813",
+   "standin": "8d342219ad001d9ee1b358a174653007042c7c058721640e22429e02d377f6d7"
+  },
+  "tora-v4/先生の見る紙": {
+   "real": "07f34608f7d1c3ad5e130c0a66a02792706bf80c2790083df34de63e374a1c4e",
+   "standin": "94ff2d0c56a7e03daa7b42e94ea4d253c1500fe233637dc5db0d2fdeadbf267e"
   }
  },
  "removed": {

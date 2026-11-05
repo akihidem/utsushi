@@ -12,7 +12,20 @@ ID = "slider_fan"
 # 刷った組の版。紙の題の「版」は仮説の版なので、組の版を別に小さく刷る（本人の決定 U-31、11-04）。組を刷り直したら上げる。
 # 仮説を分ける寸法の名前（words・generate が、仮説の寸法にこれがあるかを見る）。
 HYP_KEY = "push_part"
-SHEET_SET = "goraigo-v10"
+SHEET_SET = "goraigo-v11"
+# 控えを残す前の組（凍結の床。本人の指示「今の版の紙と指紋は変えない」）。SHEET_SET をこの名に置くと、前の組の紙を組む（tests/test_floor_pin.py）。
+FROZEN_SET = "goraigo-v10"
+
+
+def frozen():
+    return SHEET_SET == FROZEN_SET
+
+
+def tube_fold():
+    """外筒の折り方の語。本人の答え（11-05）「色がついている所が外を向くよう折った」。色の面を外へ向けるには、刷った面から見て山折りにする。"""
+    return "谷折り" if frozen() else "山折り"
+
+
 # 寸法の共通の出発点。手元の複写の図の比と紙面の制約から出した（docs/process/research/06・07）。
 # 押し方と中心の置き方の値は答えではない。使い手に見せる組は data/hypotheses の仮説が決める（J-002）。
 DEFAULTS = {
@@ -249,6 +262,9 @@ def parts(p):
     tube = _tube(1, "tube", "外筒", A, H, p["tube_glue"], "1 外筒", notch)
     tube.art = _tube_art(A, H, notch)
     tube.hide_folds = True
+    if not frozen():
+        # エンジン（paper-to-toy の c4ade80）と同じ形。線は刷らず色の境で折るので、型紙の線は変わらない。組む向き（3D の確かめと foldsim）がこの種類を読む。
+        tube.mountain, tube.valley = tube.valley, []
     if p["hub"] == "axle":
         # 開く糸を試す穴。扇は 1 面目に平行に開くので、その両脇の面につなぐ。
         tube.holes += [(A * 1.5, 3, 0.6), (A * 3.5, 3, 0.6)]
@@ -364,7 +380,13 @@ RESULTS = ("動いた", "動かない", "わからない")
 def materials(p):
     """型紙の「用意する物」。素材は部品表だけから刷り、2 か所に手で書かない。"""
     rows = bom(p)
-    lines = [f"{rows[0]['material']}を 1 枚（全部品を同じ紙に刷る）", "のり、はさみ、定規"]
+    # 穴があるのに竹串の行が無い形（内筒を下から押す形・柄の形）は、穴をあける竹串を道具に書く（手順に「穴は竹串の先であける」。#294、本人の確認 11-06）。
+    # つまみの形は竹串の行がもう有る。エンジン（paper-to-toy の e189dc6）と同じ結果になる事を tests/test_next_sheets.py が見る。
+    # 部品を組まずに形の値で決める。作り方の印の一覧が全部の記録で読むので、字の寸法が混ざった記録で落とさないため。
+    tools = "のり、はさみ、定規"
+    if not frozen() and p["hub"] == "axle" and not any("竹串" in r["material"] for r in rows):
+        tools += "、竹串（穴あけ）"
+    lines = [f"{rows[0]['material']}を 1 枚（全部品を同じ紙に刷る）", tools]
     lines += [f"{r['material']} {r['qty']} 本" for r in rows if r["number"] == 6]
     lines += [r["material"] for r in rows if r["number"] == 7]
     return lines
@@ -406,14 +428,16 @@ def steps(p):
         out.append("まず 1 外筒だけを実線で切る。溝は下の端からはさみで切り込む（くり抜かない）")
     else:
         out.append("まず 1 外筒だけを実線で切る")
-    out.append("1 外筒を色の境で谷折りし、糊代で貼って角筒にする")
+    out.append(f"1 外筒を色の境で{tube_fold()}し、糊代で貼って角筒にする")
     out.append("残りの部品を実線で切る。穴は竹串の先であける")
     if p["push_part"] in ("tab", "tube"):
-        out.append("2 内筒も同じように角筒にする")
+        # 外筒を山折りに直すと、「同じように」は、破線を谷折りで刷る内筒と食い違う。本人の決定（11-06）の文で、一字も変えない。内筒は隠れる部品で谷のまま。
+        out.append("2 内筒も同じように角筒にする" if frozen() else "2 内筒は破線で谷折りし、糊代で貼って角筒にする")
     if p["push_part"] == "tab":
         out.append("竹串を 2 内筒の 2 つの穴に通す")
     if p["push_part"] == "stick":
-        out.append("2 土台も同じように角筒にし、割り箸の先を下から差し込んで貼る")
+        # 内筒と同じ型の文（本人の確認 11-06）。「同じように」は山折りと読めて、破線を谷折りで刷る土台と食い違う。
+        out.append("2 土台も同じように角筒にし、割り箸の先を下から差し込んで貼る" if frozen() else "2 土台は破線で谷折りし、糊代で貼って角筒にし、割り箸の先を下から差し込んで貼る")
     out.append("3 台で 2 の上に蓋をする")
     out.append("4 扇を色の境で、端から谷折り・山折りを交互にして蛇腹に畳む")
     if p["hub"] == "axle":
@@ -424,6 +448,10 @@ def steps(p):
         out.append("4 扇の端を 3 台に貼り、5 像の足も台に貼る")
     if p["push_part"] == "tab":
         out.append("内筒を 1 外筒に入れ、竹串の端を溝から出す")
+        if not frozen():
+            # 組み立ての最後の動き（本人の追加 11-06「上にスライドさせて蛇腹が開く所まで」）。後ろに足すので、前の手順の番号はずれない（記録が手順の番号を鍵にしている）。
+            # 文は本人の答えのとおり押し上げる量を言わない。エンジン（e189dc6）の 3D の操作から作った文と同じ。
+            out.append("竹串の端を溝に沿って上に押し上げると、4 扇が 1 外筒の口から出て、蛇腹が開く")
     else:
         out.append("押す部品を 1 外筒に下から入れる")
     return out

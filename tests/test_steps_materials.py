@@ -33,13 +33,8 @@ NAMES = {
 }
 # 物の名前でない字。糸の穴は腕木の穴の呼び名（押して動かす形は糸を使わない）で、玉結びは結び方の名前。
 NOT_TOOL = re.compile(r"糸の穴|玉結び")
-# 必須 2 種の今の組で直さない案。虎 A はたたき台で、紙の指紋を変えない（凍結の床）ので、次の組で足す。ほかは本人の決定
-# （#332 の点 3）で今の組から刷らなくなった案で、直しても誰の手にも渡らない。記録が番号で結ばれているので仮説は残る。
-# 御来迎 E は部品に穴が無いので、次の組で使うなら、竹串を足さず手順の穴あけの文を外す（下で確かめる）。
-FROZEN = {
-    (GORAIGO, "goraigo-v10"): {"H-B": ["竹串"], "H-C": ["竹串"], "H-D": ["竹串"], "H-E": ["竹串"]},
-    (TORA, "tora-v3"): {"H-A": ["カッター"], "H-C": ["カッター"]},
-}
+# 必須 2 種の今の組で直さない案。御来迎 E は本人の決定（#332 の点 3）で刷らなくなった案で、部品に穴が無い。使うなら、竹串を足さず手順の穴あけの文を外す（下で確かめる）。
+FROZEN = {(GORAIGO, "goraigo-v11"): {"H-E": ["竹串"]}}
 # 直すと新しい文になるので、本人の文面の確認が済むまで直さない案。
 WORDING = {(KOMA, "H-B"): ["つまようじ"]}
 
@@ -101,7 +96,7 @@ for sid, hid, _, tpl, p in all_cases:
     if any("穴あけ" in str(m) for m in tpl.materials(p)):
         assert any(q.holes for q in tpl.parts(p)), ("穴の無い案に穴あけの字がある", sid, hid)
     if says_missing_hole(tpl, p):
-        assert (sid, hid, tpl.SHEET_SET) == (GORAIGO, "H-E", "goraigo-v10"), ("穴の無い案の手順に穴の字がある", sid, hid)
+        assert (sid, hid, tpl.SHEET_SET) == (GORAIGO, "H-E", "goraigo-v11"), ("穴の無い案の手順に穴の字がある", sid, hid)
 # 反対の向き: 部品に穴がある案は、あけ方の文を消さない
 named = {(sid, hid) for sid, hid, _, tpl, p in all_cases if lacks_poke_words(tpl, p)}
 assert named == NO_POKE_WORDS, ("穴があるのにあけ方の文が無い、または例外が古い", named ^ NO_POKE_WORDS)
@@ -158,12 +153,23 @@ assert {sid for sid, _, got, _ in named if got == ["竹串"]} >= KITES, named
 
 # 組を上げると例外が外れ、次の組で直す案を名指しする
 now = fan.SHEET_SET
-fan.SHEET_SET = "goraigo-v11"
+fan.SHEET_SET = "goraigo-v12"
 try:
     named = check()
 finally:
     fan.SHEET_SET = now
-assert named == [(GORAIGO, h, ["竹串"], []) for h in ("H-B", "H-C", "H-D", "H-E")], named
+assert named == [(GORAIGO, "H-E", ["竹串"], [])], named
+
+# 前の組に戻すと、次の組で足した字（御来迎の竹串と虎のカッター）が無い案を名指しする
+tiger = TEMPLATES["pivot_counterweight"]
+for tpl, want in ((fan, [(GORAIGO, h, ["竹串"], []) for h in ("H-B", "H-C", "H-D", "H-E")]), (tiger, [(TORA, h, ["カッター"], []) for h in ("H-A", "H-C")])):
+    now = tpl.SHEET_SET
+    tpl.SHEET_SET = tpl.FROZEN_SET
+    try:
+        named = check()
+    finally:
+        tpl.SHEET_SET = now
+    assert named == want, named
 
 # 例外に書いた抜けを直すと、例外が古いと言って落ちる
 keep = fan.materials
@@ -172,6 +178,6 @@ try:
     named = check()
 finally:
     fan.materials = keep
-assert named == [(GORAIGO, h, [], ["竹串"]) for h in ("H-B", "H-C", "H-D", "H-E")], named
+assert named == [(GORAIGO, "H-E", [], ["竹串"])], named
 
 print(f"ok {len(all_cases)} 案で手順と用意する物が合う（今の組の例外 {sum(len(v) for v in FROZEN.values())} 案、文面の確認待ち {len(WORDING)} 案）")

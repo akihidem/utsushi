@@ -1,0 +1,39 @@
+# 命令: ./run.sh
+# commit: 6748d86（回した時の HEAD）
+NG test_hypotheses: Traceback (most recent call last):
+  File "tests/test_hypotheses.py", line 43, in <module>
+    assert "仮説A" in "".join(text.split()) and "正解ではありません" in "".join(text.split())  # 必須 2 種の今の組は前の文のまま（凍結の床・#318）
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+NG test_loop: FAIL F5.print_area [物差し] 文字が印字域の外に出ている
+Traceback (most recent call last):
+  File "tests/test_loop.py", line 123, in <module>
+    assert hypotheses.print_sheet(G, "H-A", f"{tmp}/v2", version=2) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+NG test_loop_talk: FAIL F5.print_area [物差し] 文字が印字域の外に出ている
+Traceback (most recent call last):
+  File "tests/test_loop_talk.py", line 101, in <module>
+    assert fs == [] and v == 2, fs
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: [Failure(floor='F7.revision', where='H-A 版 2', message='版 2 の紙を作れませんでした（検査に落ちた）')]
+NG test_next_form: FAIL F5.print_area [物差し] 文字が印字域の外に出ている
+Traceback (most recent call last):
+  File "tests/test_next_form.py", line 81, in <module>
+    assert code in (200, 303), (code, page[:300])
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: (422, '<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>御来迎 · うつし</title><style>:root{--bg:#fcfcfa;--fg:#2b2722;--mute:#6f665a;--accent:#6b4f2a;--rule:#ebe
+NG test_one_sheet_loop: FAIL F5.print_area [物差し] 文字が印字域の外に出ている
+Traceback (most recent call last):
+  File "tests/test_one_sheet_loop.py", line 284, in <module>
+    rows = ways.table()
+  File "src/omochae/ways.py", line 101, in table
+    "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"] if _on_paper(data, h)]
+                                                         ~~~~~~~~~~~~~^^^^^^
+NG test_wording: Traceback (most recent call last):
+  File "tests/test_wording.py", line 78, in <module>
+    assert "◆goraigo-v10" in techo and "▼R-0001" in techo, "手帖"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 手帖
+実行した 175 本（場面 31 本、試験 144 本）、期待どおり 169 本、未実装の床 0 本。
+rc=3

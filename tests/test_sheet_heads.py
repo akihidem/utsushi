@@ -3,8 +3,8 @@
 見る線:
 - 試作の全部の案で、手順の紙と試した後の紙の見出しが、本人が採った字（一字も変えない。決定の文を文字列で見る）。前の字と「予想」の字が無い
 - 変わるのは見出しの字だけ。前の字で組んだ紙と比べて、ほかの字・枠・線・位置が同じ（問いと枠が残る。仮説の文と札の順が変わらない。配置が動かない）
-- 必須 2 種の今の組は前の字のまま（凍結の床。指紋そのものは tests/test_floor_pin.py が見る）。次の組で直す
-- 例外は組の名前で持つ。組を上げると前の字は外れ、表に残った行をこの試験が名指しして落ちる（消し忘れないため）
+- 必須 2 種の前の組は前の字のまま（凍結の床。指紋そのものは tests/test_floor_pin.py が見る）。次の組（goraigo-v11・tora-v4）は採った字
+- 例外は組の名前で持つ。雛形の前の組（FROZEN_SET）と食い違うと、この試験が名指しして落ちる
 
 なぜ確かめを関数に分けて全部回すか: 直す前に落ちる所を 1 回の出力でそろえて見るため。本物の API は呼ばない。紙は組むだけで刷らない。
 """
@@ -102,22 +102,35 @@ def only_the_head_changes():
         assert new_boxes == old_boxes and new_shapes == old_shapes, (sid, "試した後の紙の見出しのほかが変わった")
 
 
-def required_sets_keep_the_old_heads():
+def required_old_sets_keep_the_old_heads():
+    for sid, source, h, tid in plans(REQUIRED):
+        tpl = TEMPLATES[tid]
+        now, tpl.SHEET_SET = tpl.SHEET_SET, tpl.FROZEN_SET
+        try:
+            got = words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])
+        finally:
+            tpl.SHEET_SET = now
+        assert OLD_BEFORE in got and ADOPTED_BEFORE not in got, (sid, h["id"], "必須 2 種の前の組の手順の紙が変わった")
+    for sid, data, source in REQUIRED:
+        sheet_set = TEMPLATES[data.get("template", "slider_fan")].FROZEN_SET
+        got = words(compose_after(source, data["toy"], data["after_try"], sheet_set=sheet_set)[0])
+        assert OLD_NEXT in got and ADOPTED_NEXT not in got, (sid, "必須 2 種の前の組の試した後の紙が変わった")
+
+
+def required_next_sets_have_the_adopted_heads():
     for sid, source, h, tid in plans(REQUIRED):
         got = words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])
-        assert OLD_BEFORE in got and ADOPTED_BEFORE not in got, (sid, h["id"], "必須 2 種の今の組の手順の紙が変わった")
+        assert ADOPTED_BEFORE in got and OLD_BEFORE not in got, (sid, h["id"], "次の組の手順の紙に採った見出しが無い")
     for sid, data, source in REQUIRED:
         sheet_set = TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
         got = words(compose_after(source, data["toy"], data["after_try"], sheet_set=sheet_set)[0])
-        assert OLD_NEXT in got and ADOPTED_NEXT not in got, (sid, "必須 2 種の今の組の試した後の紙が変わった")
+        assert ADOPTED_NEXT in got and OLD_NEXT not in got, (sid, "次の組の試した後の紙に採った見出しが無い")
 
 
-def exceptions_match_the_current_sets():
-    # 組を上げたら、ここで落ちる。上げた組は採った字で刷られるので、表の前の行を消す（次の組の指紋は --add で足す）。
-    now = {TEMPLATES["slider_fan"].SHEET_SET, TEMPLATES["pivot_counterweight"].SHEET_SET}
-    stale = set(instructions.FROZEN_HEADS) - now
-    assert not stale, f"組を上げたので、instructions.FROZEN_HEADS から {sorted(stale)} の行を消す"
-    assert set(instructions.FROZEN_HEADS) == now, ("必須 2 種の今の組の例外が足りない", sorted(now))
+def exceptions_match_the_frozen_sets():
+    # 例外の表は、控えを残す前の組の行だけ。今の組の行があると前の字で刷り、前の組の行が無いと指紋が変わる。
+    frozen = {TEMPLATES["slider_fan"].FROZEN_SET, TEMPLATES["pivot_counterweight"].FROZEN_SET}
+    assert set(instructions.FROZEN_HEADS) == frozen, ("例外の表と雛形の前の組が食い違う", sorted(instructions.FROZEN_HEADS), sorted(frozen))
     assert all(v == (OLD_BEFORE, OLD_NEXT) for v in instructions.FROZEN_HEADS.values()), "例外の字は前の字のまま"
     trial_sets = {TEMPLATES[tid].SHEET_SET for _, _, _, tid in plans(TRIAL)}
     assert not trial_sets & set(instructions.FROZEN_HEADS), "試作の玩具が必須 2 種の組を使っている"
@@ -140,8 +153,8 @@ def raising_a_set_drops_the_old_heads():
 
 
 fails = []
-for check in (trial_sheets_have_the_adopted_heads, trial_after_sheets_have_the_adopted_head, only_the_head_changes, required_sets_keep_the_old_heads,
-              exceptions_match_the_current_sets, raising_a_set_drops_the_old_heads):
+for check in (trial_sheets_have_the_adopted_heads, trial_after_sheets_have_the_adopted_head, only_the_head_changes, required_old_sets_keep_the_old_heads,
+              required_next_sets_have_the_adopted_heads, exceptions_match_the_frozen_sets, raising_a_set_drops_the_old_heads):
     try:
         check()
     except Exception as e:  # 表が無い直す前も、ほかの確かめを止めずに名前で出す
