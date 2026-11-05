@@ -43,18 +43,22 @@ def esc(s):
 
 
 # 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
+# スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）
 NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
-@media (max-width:480px){.nav{gap:10px;letter-spacing:.1em}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
 # 文の中のリンクは入れない。行が崩れるので。字の大きさの床（12px）は、幅に関わらず CSS の指定そのもので守る。
+# button に display を付けると、ブラウザ既定の [hidden]{display:none} に勝ち、隠した釦が出たままになる（#321）。頁ごとに止めると見落としが残るので、
+# 原因のここで止める。.fan-ctl button は [hidden] より強いので !important が要る。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
 .nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 input[type=range]{height:44px}
+[hidden]{display:none!important}
 }
 """
 BASE = """
