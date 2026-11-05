@@ -104,6 +104,13 @@ export PYTHONPATH=src
 .venv/bin/python -m omochae.records add --hypothesis H-A --result わからない --opened-deg 90 --opener 紙の力
 ```
 
+仮説ごとの作り方の印（紙一枚・折るだけ・当時の材料）は、部品表と用意する物から出す。頁に札で出し、一覧でも並びは変えない。どの印も上下を表さない。名前と判定はエンジンとそろえてある。
+
+```
+.venv/bin/python -m omochae.ways          # 一覧
+.venv/bin/python -m omochae.ways --json
+```
+
 手帖から上げた記録を消す時は、番号を渡す。記録と、添えた写真・動画・説明・解釈・観察をまとめて消し、番号だけを残す。提案や版の根拠に使われている記録は、その事を言って止まる。その時も `--media-only` で写真と動画と観察は消せる。デモの置き場の記録は `OMOCHAE_DATA` を同じにして打つ。git に入れた物は、履歴からは消えない。
 
 ```

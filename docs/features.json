@@ -151,6 +151,7 @@
   "name": "使い手の画面（手元のブラウザ）",
   "status": "doing",
   "evidence": [
+   "tests/test_reply_visible.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",
@@ -341,7 +342,9 @@
    "src/web/toy.py",
    "src/web/toys.py",
    "src/web/about.py",
+   "src/omochae/ways.py",
    "tests/test_toys.py",
+   "tests/test_ways.py",
    "tests/test_about.py",
    "docs/process/site-requirements.md",
    "tests/test_tap_size.py",
