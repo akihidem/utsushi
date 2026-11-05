@@ -9,9 +9,9 @@ import wave
 import numpy as np
 
 from demo import beat
-from demo.build import SCENES
+from demo.script import SCENES, load_scene
 
-seconds = {n: __import__(f"demo.{n}", fromlist=["DURATION"]).DURATION for n in SCENES}
+seconds = {n: load_scene(n).DURATION for n in SCENES}
 points, total = beat.anchors(seconds)
 assert total == sum(seconds.values()) and total <= 180, total
 times = [p["t"] for p in points]
@@ -44,4 +44,16 @@ with tempfile.TemporaryDirectory() as tmp:
     beat.write_wav(mix, path)
     with wave.open(str(path)) as w:
         assert w.getframerate() == beat.SR and w.getnchannels() == 1 and w.getnframes() == mix.shape[0]
+# 音を作った commit が拍の表に残る（動画と同じく、後からコードを辿れる。#268）
+_, signed = beat.compose(seconds, commit="abc123", dirty=False)
+assert signed["commit"] == "abc123" and signed["dirty"] is False
+
+# 問いの札を台本から外しても止まらない（StopIteration で rc 1 にしない。#268）
+real_end = beat.END
+beat.END = ("ask", "無い合図")
+try:
+    _, table2 = beat.compose(seconds)
+    assert table2["stop"] == points[-1]["t"]
+finally:
+    beat.END = real_end
 print("ok")

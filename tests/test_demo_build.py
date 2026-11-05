@@ -3,22 +3,19 @@ import importlib.util
 
 from demo import build
 
-# 台本の 7 場面がこの順で、重ならない
-assert build.SCENES == ["flip", "scene2", "scene3", "scene4", "scene5", "scene6", "scene7"]
+# 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
+assert build.SCENES == ["flip", "scene2", "word_make", "scene3", "scene5", "word_fix", "scene6", "word_ai", "scene7", "word_who", "ask"]
 # 試験の数は RESULT.md の行から読む。読めない時は None（古い数を出さない）
 assert build.count_tests("実行した 57 本（場面 30 本、試験 27 本）、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
 assert build.count_tests("何も無い") is None
-# 引数: 試験の数は場面 4 にだけ、曲は場面 7 にだけ、写真は場面 5 にだけ
-assert build.scene_args("scene4", (57, 57), None, None) == ["--tests", "57/57"]
-assert build.scene_args("scene4", None, None, None) == []
+# 引数: 曲は場面 7 にだけ、写真は場面 5 にだけ。試験の数は画面に出さない（本人の決定 11-05「哲学よりの動画にして」）
 assert build.scene_args("scene7", None, "曲 X", None) == ["--music", "曲 X"]
 assert build.scene_args("scene7", None, None, None) == []
 assert build.scene_args("scene5", None, None, "p01") == ["--photos", "p01"]
 assert build.scene_args("flip", (1, 1), "曲", "p01") == []
 # 今ある場面のモジュールは、どれも main を持つ（build が同じ形で呼ぶ）
 for name in build.SCENES:
-    if importlib.util.find_spec(f"demo.{name}"):
-        assert callable(importlib.import_module(f"demo.{name}").main), name
+    assert callable(build.load_scene(name).main), name
 print("ok")
 
 # main の exit code: 試験が落ちたら 3、検査できない（run.sh が 4）なら 4、場面が無い・場面が例外で止まったら 4。
@@ -30,6 +27,8 @@ import types
 
 real_run, real_import = build.run_tests, build.importlib.import_module
 real_missing = build.prepare.missing_tools
+real_beat = build.make_beat
+build.make_beat = lambda run, made, sha, dirty: ({"kind": "仮の拍", "commit": sha, "dirty": dirty}, None)  # 分かれ道だけを通す。音の作りは下で別に見る
 build.prepare.missing_tools = lambda *a, **k: []  # この機械の道具に依らず分かれ道だけを通す（道具の確かめは下で別に見る）
 with tempfile.TemporaryDirectory() as tmp:
     build.run_tests = lambda: (3, (10, 9))
@@ -46,7 +45,7 @@ with tempfile.TemporaryDirectory() as tmp:
         return types.SimpleNamespace(main=boom if name.endswith("scene2") else (lambda argv: 0))
 
     build.importlib.import_module = fake_import
-    build.assemble.assemble = lambda made, out, audio=None: 0
+    build.assemble.assemble = lambda made, out, audio=None, **k: 0
     build.assemble.duration = lambda p: 1.0
     # 場面が例外で止まっても、トレースバックの 1 でなく 4 で返す
     assert build.main(["--out", tmp, "--skip-tests"]) == 4
@@ -112,22 +111,24 @@ with tempfile.TemporaryDirectory() as tmp:
 
     made_for_assemble = []
     build.importlib.import_module = fake_import
-    build.assemble.assemble = lambda made, out, audio=None: made_for_assemble.append([p.name for p in made]) or 0
+    build.assemble.assemble = lambda made, out, audio=None, **k: made_for_assemble.append([p.name for p in made]) or 0
     build.assemble.duration = lambda p: 1.0
-    assert build.main(["--out", tmp, "--run", str(run), "--only", "scene2,scene4"]) == 0
-    assert sorted(seen) == ["scene2", "scene4"], seen  # 言った場面だけを作り直す
+    assert build.main(["--out", tmp, "--run", str(run), "--only", "scene2,scene5"]) == 0
+    assert sorted(seen) == ["scene2", "scene5"], seen  # 言った場面だけを作り直す
     assert (run / "scene2.mp4").read_bytes() == b"new-scene2" and (run / "flip.mp4").read_bytes() == b"old-flip"
     assert made_for_assemble == [[f"{n}.mp4" for n in build.SCENES]], made_for_assemble  # つなぐのは全場面を台本の順で
     # 試験の数は前の記録から引き継ぐ（5 分の試験を回し直さない）。曲と写真も言わなければ前のまま
-    assert ran == [] and seen["scene4"][-2:] == ["--tests", "61/61"], (ran, seen["scene4"])
+    assert ran == [], ran
     assert not any("--photos" in v for k, v in seen.items() if k != "scene5")
     rec = json.loads((run / "build.json").read_text(encoding="utf-8"))
-    assert rec["tests"] == [61, 61] and rec["music"] == "曲 Y" and rec["photos"] == "p01" and rec["rebuilt"] == ["scene2", "scene4"], rec
+    assert rec["tests"] == [61, 61] and rec["music"] == "曲 Y" and rec["photos"] == "p01" and rec["rebuilt"] == ["scene2", "scene5"], rec
     # 記録は場面ごとに、その動画を作った commit を持つ（残した場面を今の commit と言わない。動画のコードを辿るため）
     by_name = {r["name"]: r for r in rec["scenes"]}
     assert by_name["flip"]["commit"] == "old111" and by_name["flip"]["dirty"] is True, by_name["flip"]
     assert by_name["scene2"]["commit"] == "abc123" and by_name["scene2"]["dirty"] is False, by_name["scene2"]
-    assert by_name["scene5"]["commit"] == "abc123", by_name["scene5"]  # 場面ごとの控えが無い古い記録は、全体の commit を使う
+    assert by_name["scene6"]["commit"] == "abc123", by_name["scene6"]  # 場面ごとの控えが無い古い記録は、全体の commit を使う
+    # 音を作った commit が記録に残る（#268）
+    assert rec["audio"]["kind"] == "仮の拍" and rec["audio"]["commit"] == "abc123" and rec["audio"]["dirty"] is False, rec["audio"]
     # 手元の変更があれば、前の試験の数は引き継がず回し直す
     build.is_dirty = lambda: True
     build.run_tests = lambda: ran.append("tests") or (0, (61, 61))
@@ -137,7 +138,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # 残す場面の動画に刷った物と食い違う時は、古い数や曲を出さないよう、作り直す場面を名指しして 4
     seen.clear()
     build.run_tests = lambda: ran.append("tests") or (0, (62, 62))
-    for extra, scene in (([], "scene4"), (["--music", "曲 Z"], "scene7"), (["--photos", "p02"], "scene5")):
+    for extra, scene in ((["--music", "曲 Z"], "scene7"), (["--photos", "p02"], "scene5")):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             assert build.main(["--out", tmp, "--run", str(run), "--only", "scene2", *extra]) == 4, extra
@@ -175,5 +176,52 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "網を切っている" in err.getvalue() and "dl.ndl.go.jp" in err.getvalue(), err.getvalue()
     assert urllib.request.urlopen is real_urlopen, "網を切る間だけ。終わったら戻す"
 build.prepare.verify = real_verify
-build.run_tests, build.importlib.import_module, build.prepare.missing_tools = real_run, real_import, real_missing
 print("ok demo day")
+
+# 曲を受ける口: クレジットと権利が無い曲は受けない。拍が読めない曲は試験を回す前に 3。場面の長さと消す所を assemble へ渡し、権利と commit を記録に残す
+build.importlib.import_module = lambda name: types.SimpleNamespace(main=lambda argv: pathlib.Path(argv[argv.index("--out") + 1]).write_bytes(b"x") and 0)
+build.prepare.verify = real_verify
+with tempfile.TemporaryDirectory() as tmp:
+    tune = pathlib.Path(tmp) / "曲.mp3"
+    tune.write_bytes(b"not-really-audio")
+    for bad in (["--song", str(tune)], ["--song", str(tune), "--music", "曲 X"], ["--song", str(tune), "--rights", "権利"],
+                ["--song", str(tune), "--music", "曲 X", "--rights", "権利", "--only", "scene2"]):
+        with contextlib.redirect_stderr(io.StringIO()):
+            assert build.main(["--out", tmp, "--skip-tests", *bad]) == 4, bad
+    ran.clear()
+    build.run_tests = lambda: ran.append("tests") or (0, (10, 10))
+    real_measure, real_align, real_apply = build.song.measure, build.song.align, build.song.apply_cues
+
+    def unreadable(path):
+        raise build.song.SongError(3, "拍がはっきりしない")
+
+    build.song.measure = unreadable
+    with contextlib.redirect_stderr(io.StringIO()):
+        assert build.main(["--out", tmp, "--song", str(tune), "--music", "曲 X", "--rights", "権利"]) == 3
+    assert ran == [], "曲が読めないのに試験を回した"
+    build.song.measure = lambda path: {"bpm": 100.0, "beats": [0.5, 1.1], "bars": [0.5], "seconds": 200.0, "clarity": 3.0}
+    fitted = {"seconds": {n: 10.0 for n in build.SCENES}, "cues": {n: {} for n in build.SCENES}, "moved": 5, "left": 1}
+    build.song.align = lambda *a: fitted
+    build.song.apply_cues = lambda t: None
+    build.load_scene_real = build.load_scene
+    build.load_scene = lambda n: types.SimpleNamespace(DURATION=10.0, CUES={}, main=lambda argv: pathlib.Path(argv[argv.index("--out") + 1]).write_bytes(b"x") and 0)
+    got = {}
+    build.assemble.assemble = lambda made, out, audio=None, **k: got.update(audio=audio, **k) or 0
+    tests_ok = build.main(["--out", tmp, "--skip-tests", "--song", str(tune), "--song-start", "2.0", "--music", "曲 X", "--rights", "本人が作った"])
+    build.load_scene = build.load_scene_real
+    assert tests_ok == 0, tests_ok
+    assert got["audio"] == str(tune) and got["seconds"] == [10.0] * len(build.SCENES) and got["audio_start"] == 2.0
+    assert got["fade_at"] == 10.0 * (len(build.SCENES) - 1) - 1.0, got["fade_at"]  # 問いの札の 1 秒前から消す
+    run_dir = sorted(p for p in pathlib.Path(tmp).iterdir() if p.is_dir())[-1]
+    rec = json.loads((run_dir / "build.json").read_text(encoding="utf-8"))
+    assert rec["music"] == "曲 X" and rec["audio"]["kind"] == "song" and rec["audio"]["rights"] == "本人が作った" and rec["audio"]["sha256"]
+    assert rec["audio"]["commit"] == rec["commit"]
+    table = json.loads((run_dir / "beats.json").read_text(encoding="utf-8"))
+    assert table["kind"] == "song" and table["commit"] == rec["commit"] and table["rights"] == "本人が作った" and table["moved"] == 5
+    build.song.measure, build.song.align, build.song.apply_cues = real_measure, real_align, real_apply
+
+# 曲が無い時は仮の拍を付け、クレジットにも仮と出す（Suno の曲に見せない）
+assert "仮の拍" in build.PROVISIONAL_CREDIT and "Suno の曲待ち" in build.PROVISIONAL_CREDIT
+build.run_tests, build.importlib.import_module, build.prepare.missing_tools = real_run, real_import, real_missing
+build.make_beat = real_beat
+print("ok song")

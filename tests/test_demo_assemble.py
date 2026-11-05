@@ -32,6 +32,13 @@ with tempfile.TemporaryDirectory() as tmp:
                             str(t / "music.mp4")], capture_output=True, text=True).stdout.split()
     assert sorted(kinds) == ["audio", "video"], kinds
     assert 1.9 < assemble.duration(t / "music.mp4") < 2.2
+    # 曲の小節へ寄せる時: 場面ごとの長さを渡すと、余れば最後のコマで止め、足りなければ切る。音は言った所から消える
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=6",
+                    str(t / "long.m4a")], check=True)
+    assert assemble.assemble([t / "a.mp4", t / "b.mp4"], t / "fit.mp4", t / "long.m4a", seconds=[1.5, 0.5], audio_start=1.0, fade_at=0.0) == 0
+    assert 1.9 < assemble.duration(t / "fit.mp4") < 2.2
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(t / "fit.mp4"), "-ac", "1", "-ar", "8000", "-f", "s16le", "-"], capture_output=True).stdout
+    assert len(raw) > 8000 and max(abs(int.from_bytes(raw[i:i + 2], "little", signed=True)) for i in range(len(raw) - 400, len(raw) - 2, 2)) < 2000, "音が消えていない"
     assemble.LIMIT = 1.5
     assert assemble.main(["--out", str(t / "long.mp4"), str(t / "a.mp4"), str(t / "b.mp4")]) == 3
     assert assemble.main(["--out", str(t / "x.mp4"), str(t / "missing.mp4")]) == 4

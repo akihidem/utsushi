@@ -27,7 +27,9 @@ def duration(path):
         return None
 
 
-def assemble(scenes, out, audio=None):
+def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=None):
+    """seconds: 場面ごとの長さ（曲の小節に合わせる時）。余れば最後のコマで止め、足りなければ切る。どの場面も最後は止めて読む間なので。
+    audio_start: 曲のどこから使うか。fade_at: 動画の何秒から音を 2 秒で消すか（問いの札の前で消すため）。"""
     if not (shutil.which("ffmpeg") and shutil.which("ffprobe")):
         print("検査できない: ffmpeg か ffprobe が無い", file=sys.stderr)
         return 4
@@ -45,22 +47,27 @@ def assemble(scenes, out, audio=None):
     args, parts = [], []
     for i, s in enumerate(scenes):
         args += ["-i", str(s)]
+        fit = ""
+        if seconds:
+            fit = f",tpad=stop_mode=clone:stop_duration={max(0.0, seconds[i] - lens[i]):.3f},trim=duration={seconds[i]:.3f},setpts=PTS-STARTPTS"
         parts.append(f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,"
-                     f"fps={FPS},setsar=1[v{i}]")
+                     f"fps={FPS},setsar=1{fit}[v{i}]")
     chain = "".join(f"[v{i}]" for i in range(len(scenes)))
     fil = ";".join(parts) + f";{chain}concat=n={len(scenes)}:v=1:a=0[v]"
     sound = []
     if audio:
         args += ["-i", str(audio)]
-        fil += f";[{len(scenes)}:a]apad[a]"
-        sound = ["-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-t", f"{sum(lens):.3f}"]
+        cut = f"atrim=start={audio_start:.3f},asetpts=PTS-STARTPTS," if audio_start else ""
+        gone = f",afade=t=out:st={fade_at:.3f}:d=2" if fade_at is not None else ""
+        fil += f";[{len(scenes)}:a]{cut}apad{gone}[a]"
+        sound = ["-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-t", f"{sum(seconds or lens):.3f}"]
     r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *args, "-filter_complex", fil, "-map", "[v]", *sound,
                         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", str(out)], capture_output=True, text=True)
     if r.returncode != 0:
         print(f"検査できない: つなげない（{r.stderr.strip()[:200]}）", file=sys.stderr)
         return 4
-    total = duration(out) or sum(lens)
-    for s, d in zip(scenes, lens):
+    total = duration(out) or sum(seconds or lens)
+    for s, d in zip(scenes, seconds or lens):
         print(f"{d:6.2f} 秒  {pathlib.Path(s).name}")
     print(f"計 {total:.2f} 秒（床 {LIMIT:.0f} 秒）")
     if total > LIMIT + 0.05:
