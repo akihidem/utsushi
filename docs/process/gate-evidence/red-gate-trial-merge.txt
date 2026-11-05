@@ -1,0 +1,7 @@
+直す前（main 845570c）: tests/test_gate_trial_merge.py を当てた
+Traceback (most recent call last):
+  File "tests/test_gate_trial_merge.py", line 47, in <module>
+    assert rc == 0, f"{LEDGER} の末尾で衝突する。.gitattributes を見る"
+           ^^^^^^^
+AssertionError: docs/process/gate-trial.md の末尾で衝突する。.gitattributes を見る
+rc 1
