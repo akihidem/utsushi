@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_ways.py
+    from omochae import hypotheses, ways  # noqa: E402
+ImportError: cannot import name 'ways' from 'omochae' (src/omochae/__init__.py)
+rc 1 （直す前の main 38027ef。作り方の印が無い）
