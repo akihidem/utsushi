@@ -171,12 +171,16 @@ def _mark(view, box):
             f"width:{100 * (box[2] - box[0]) / fw:.1f}%;height:{100 * (box[3] - box[1]) / fh:.1f}%")
 
 
+def has_picture(sid):
+    """原図の写し（out/sources の jpg）が手元に在るか。写しは git の外なので、まっさらな clone では無い（その時は候補を出さず、字の予想へ案内する）。"""
+    return (ROOT / "out/sources" / f"{sid}.jpg").exists()
+
 def page(sid, look=skin.DEFAULT, error=""):
     """かざして選ぶ頁。予想の前でも開く（選ぶ事が予想になる）。出すのは絵と、動く所の候補（部品の呼び名）だけ。"""
     data, src = hypotheses.load(sid), source(sid)
     s = skin.SKINS.get(look, skin.SKINS[skin.DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
-    has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
+    has_pic = has_picture(sid)
     cands = candidates(data)
     view = view_box(sid, src, cands)
     url = f"background-image:url(/picture/{esc(sid)})"

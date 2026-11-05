@@ -382,6 +382,8 @@ class Handler(BaseHTTPRequestHandler):
             cand, why = kazasu.choose(sid, form.get("choice", ""))
             if cand is None:
                 return self._send(422, kazasu.page(sid, self._look, error="；".join(why)))
+            # 頁の段の進み: かざして選んだ予想も「予想を書いた」に数える（U-45 の段取り 2。文字の予想と同じ段）。
+            making_log.add_stage(sid, "predict", form.get("who", ""))
             return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(kazasu.SENT)}#kasetsu")])
         m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():

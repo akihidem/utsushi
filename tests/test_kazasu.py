@@ -27,6 +27,9 @@ from omochae.hypotheses import ROOT  # noqa: E402
 from web import kazasu  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
+# 原図の写し（out/sources）は git の外なので、まっさらな clone には無い。写しが在る時の出方（候補の絵）を、写しのファイル無しで見る。
+kazasu.has_picture = lambda sid: True
+
 G, T, OTHER = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R", "NDL-1187053-R0000016-L"
 
 
@@ -167,9 +170,13 @@ code, toy, _ = get(loc.split("#")[0])
 assert code == 200 and "予想を残しました。紙で確かめます" in toy and "ここが動くと思う: 扇の所" in toy
 # 仮説が開く（予想の後）。選んだ候補で仮説を特別扱いしない: 並びは元のまま
 assert "仮説 A" in toy and toy.index("仮説 A「") < toy.index("仮説 B「")
-# 映像の置き場が無い事: 記録の置き場に増えたのは予想の 1 本だけ
+# 映像の置き場が無い事: 記録の置き場に増えたのは、予想の 1 本と、頁の段の進み（予想を書いた、の出来事 1 本。U-45）だけ。
+# 段の進みの出来事は、玩具・雛形・段・印・分までの時刻だけで、選んだ物も映像も持たない
 files = sorted(p.name for p in pathlib.Path(DATA).rglob("*") if p.is_file())
-assert files == [preds[0].name], files
+stages = [f for f in files if f.startswith("stage-")]
+assert sorted(f for f in files if not f.startswith("stage-")) == [preds[0].name] and len(stages) == 1, files
+ev = json.loads(next(pathlib.Path(DATA).rglob(stages[0])).read_text(encoding="utf-8"))
+assert ev["stage"] == "predict" and set(ev) == {"source_id", "template", "stage", "who", "at"}, ev
 # 虎でも同じに残る
 assert post(f"/toy/{T}/predict-choice", {"choice": "head"})[0] == 303
 trec = json.loads(hypotheses.predictions(T)[0].read_text(encoding="utf-8"))
