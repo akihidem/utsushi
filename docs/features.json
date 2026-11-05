@@ -43,7 +43,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/instructions.py",
-   "tests/test_sheet_u25.py"
+   "tests/test_sheet_u25.py",
+   "tests/test_sheet_heads.py"
   ],
   "unverified": "実際の人が使っていない"
  },
@@ -56,9 +57,10 @@
    "src/omochae/hypotheses.py",
    "tests/test_build_now.py",
    "tests/test_hypotheses.py",
-   "tests/test_hypothesis_label.py"
+   "tests/test_hypothesis_label.py",
+   "tests/test_one_sheet.py"
   ],
-  "unverified": "実際の人が使っていない"
+  "unverified": "実際の人が使っていない。型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）は、記録の欄と必須 2 種の刷る口まで。頁は後の直し"
  },
  {
   "id": "f07",
@@ -239,7 +241,8 @@
   "evidence": [
    "src/omochae/instructions.py",
    "tests/test_words.py",
-   "tests/test_sheet_u25.py"
+   "tests/test_sheet_u25.py",
+   "tests/test_sheet_heads.py"
   ],
   "unverified": "実際の人が使っていない。札の文の確かさは式と一般の物理による"
  },
@@ -343,9 +346,12 @@
    "src/web/toy.py",
    "src/web/toys.py",
    "src/web/about.py",
+   "src/web/plain_words.py",
    "src/omochae/ways.py",
    "tests/test_toys.py",
+   "tests/test_plain_words.py",
    "tests/test_ways.py",
+   "tests/test_min_python.py",
    "tests/test_about.py",
    "docs/process/site-requirements.md",
    "tests/test_tap_size.py",
@@ -421,9 +427,11 @@
    "src/web/techo_site.py",
    "src/web/toy.py",
    "tests/test_build_now.py",
-   "tests/test_made_records.py"
+   "tests/test_made_records.py",
+   "src/omochae/media_review.py",
+   "tests/test_media_review.py"
   ],
-  "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した"
+  "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した 上げた写真と動画は、人の確認（omochae.media_review）を通した物だけを出す（#314）。人がこの確認を回した事はまだ無い"
  },
  {
   "id": "f36",
@@ -432,6 +440,7 @@
   "evidence": [
    "src/web/tsukuru.py",
    "tests/test_tsukuru.py",
+   "tests/test_tsukuru_last_step.py",
    "src/omochae/making_log.py",
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
@@ -457,7 +466,7 @@
    "src/web/toys.py",
    "tests/test_material_axes.py"
   ],
-  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
+  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。当時の材料の語の一覧（#311）は、楊枝や割り箸という形で当時あったかまでは確かめていない。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
  },
  {
   "id": "f39",

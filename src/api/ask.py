@@ -5,11 +5,14 @@
 
 判断の芯:
 - 仕組み・動き方・どの仮説かの質問には答えない。紙で試す前に答えを渡さないため（J-013）
-- よく出る言葉（谷折り・山折り・糊代・蛇腹・色の境など）は、型紙に刷った説明だけからその場で答える。AI も鍵も要らない
+- よく出る言葉（谷折り・山折り・糊代・蛇腹・色の境など）そのものを尋ねる短い問いは、型紙に刷った説明だけからその場で答える。AI も鍵も要らない
+- 語が入っていても作り方を聞く問いは、語の説明では答えにならないので、ほかの問いと同じに扱う（#287。試行で一番手こずった蛇腹の固定がこの形）
 - それ以外は Claude に、その紙の組み方と凡例と用意する物だけを渡して答えさせる。仮説の名前と動き方は渡さない
 - 答えに仮説の名前や動き方の文が混ざったら、出さずに断りの文に替える（渡していないが、念のため出口でも見る）
 - 本物の API は、本人が repo の .env に鍵を置いた時だけ動く（J-023。鍵を置く事が本人の承認）。鍵が無ければ、その旨を返す
 """
+import re
+
 from omochae import hypotheses
 from omochae.compose import TEMPLATES
 
@@ -31,6 +34,15 @@ GLOSSARY = {
     "色の境": "線の無い面（外筒と扇）は、色が変わる所で折ります。扇は 2 色の板が交互で、その境が折り目です。",
     "物差し": "刷った物差しに定規を当てて 10cm か確かめます。違う時は、印刷の設定を「100%」（用紙に合わせない）にして刷り直します。",
 }
+# 語そのものを尋ねる形。問い全体がこの形の時だけ語の表で答える（#287）。語の後に別の中身があれば、語の説明は答えにならない。
+# 迷う形は入れない: 外れても AI か「語の説明と、鍵が無い事」に落ちるだけだが、入れすぎると工夫を聞いた人に定義だけが返る。
+# 手帖の頁の JS も同じ形を使う（web/techo.py の data）ので、JS でも読める書き方だけにする。
+TERM_QUESTION = (
+    rf"(?:(?:{'|'.join(map(re.escape, GLOSSARY))})[\s、,・とや]*)+"
+    r"(?:って|とは|は|が|の|を)?\s*"
+    r"(?:(?:何|なに|なん)(?:のこと)?(?:ですか|でしょうか)?|(?:どういう)?意味(?:は|ですか)?|(?:わから|分から)ない(?:です)?|(?:わかり|分かり)ません|教えて(?:ください)?)?"
+    r"[\s。．.、,？?！!…]*"
+)
 
 
 def is_mechanism(question):
@@ -40,6 +52,10 @@ def is_mechanism(question):
 def glossary(question):
     hits = [text for word, text in GLOSSARY.items() if word in question]
     return " ".join(dict.fromkeys(hits)) or None
+
+
+def asks_term(question):
+    return re.fullmatch(TERM_QUESTION, question) is not None
 
 
 def sheet_context(source_id, hypothesis_id):
@@ -72,15 +88,16 @@ def answer(source_id, hypothesis_id, question, client=None):
         return "聞きたい事を書いてください。", "refuse"
     if is_mechanism(question):
         return REFUSE, "refuse"
-    known = glossary(question)
-    if known:
-        return known, "glossary"
+    if asks_term(question):
+        return glossary(question), "glossary"
     context, h = sheet_context(source_id, hypothesis_id)
     if client is None:
         from .agent import default_client
 
         if not _key_present():
-            return NO_KEY, "no_key"
+            # 語が入っていれば語の説明は残す。ただ問いの答えにはならないので、語の表で答えた問いとは分けて no_key と返す。
+            known = glossary(question)
+            return f"{known} {NO_KEY}" if known else NO_KEY, "no_key"
         client = default_client("ask")
     messages = [{"role": "user", "content": f"{context}\n\n質問: {question}"}]
     # 呼ぶ前に、この 1 回の最悪の費用まで足して上限を見る（輪の agent.run と同じ見方。外の検品の指摘、11-04）。

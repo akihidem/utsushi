@@ -1,0 +1,23 @@
+# 命令: .venv/bin/python tests/test_tsukuru_last_step.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmpj2pfliec/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpj2pfliec/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpj2pfliec/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpj2pfliec/play/NDL-1187053-R0000005-L/H-B_v1.pdf
+/tmp/tmpj2pfliec/play/NDL-1187053-R0000005-L/H-B_v1_tejun.pdf
+/tmp/tmpj2pfliec/play/NDL-1187053-R0000005-L/H-B_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_tsukuru_last_step.py", line 173, in <module>
+    assert not fails, "\n" + "\n".join(fails)
+           ^^^^^^^^^
+AssertionError: 
+big_tile_on_the_last_step: AssertionError: 最後の手順の一番大きい札が「次の手順へ」のまま
+not_shown_midway: AssertionError: 途中の手順 1 に組み上がりの札が出ている
+midway_leaves_nothing: AssertionError: 途中の手順 1 の組み上がりを受けた（303）
+road_to_the_record: AssertionError: 記録の欄へ送っていない: /toy/NDL-1187053-R0000005-L/tsukuru?h=H-A&v=1&n=12&ev=done
+passes_which_sheet: AssertionError: どの紙かを渡していない: /toy/NDL-1187053-R0000005-L/tsukuru?h=H-B&v=1&n=11&ev=done
+js_takes_the_same_road: AssertionError: JS が組み上がりの札を横取りしている（JS が無い時と道が分かれる）
+hidden_tile_stays_hidden_on_narrow_screens: AssertionError: 幅の狭い画面で、隠した札が出る
+one_step_when_there_is_no_text: AssertionError: 文の無い紙で組み上がりの札が出ない
+no_praise: AttributeError: module 'web.tsukuru' has no attribute 'DONE_LABEL'
+rc=1
