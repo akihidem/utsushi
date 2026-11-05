@@ -418,9 +418,12 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
             f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(tpl.SHEET_SET)}</p>'
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
-            # 断り（本人の決定 11-05、様子の蓄積）: 声は残さず、字にした質問だけを残す。名前は言わないでほしい事も出す。
-            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc(making_log.ASK_NOTICE) + esc(making_log.ASK_NAME_VOICE) + '</p></section>'
+            # 断り: この頁は ③ の上げる頁なので、聞く口の断りの文（「声と映像は残しません」）は使わない（本人の決定 11-05、Issue #275 の決める点 3。
+            # 上げた写真と動画は残すので、同じ頁に並ぶと食い違う）。名前は言わないでほしい事は、聞く口のすぐ下に残す。
+            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc(making_log.ASK_NAME_VOICE) + '</p></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
+            # ③ で上げる時の説明文（本人の決定 11-05。採られたやさしい言葉の文を、一字も変えずに出す。文は hanasu.UPLOAD_NOTICE の 1 か所）。
+            f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p>'
             f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
             # 合言葉なしで開いたデモ（uploads=False）では、写真と動画の口を閉じる（play_server の受け口も断る）。見た事とひとことは残せる。
             + ('<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple>' if uploads else '<input type="file" id="files" disabled>')

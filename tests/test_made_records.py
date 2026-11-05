@@ -84,8 +84,11 @@ assert f'<img src="/record/{g_rid}/media/m1.jpg"' in get(f"/toy/{G}")[1]
 DECIDED = "聞いた言葉は、名前や連絡先を除いて、案内を良くするために残します。声と映像は残しません"
 ask_part = page.split('id="ask"')[1].split("</form>")[0]
 assert DECIDED in ask_part and "名前は書かないでください" in ask_part
+# 手帖は ③ の上げる頁なので、聞く口の断りの文は使わず、③ で上げる時の説明文を出す（本人の決定 11-05、#275 の決める点 3。採られたやさしい言葉の文）。
+# 一字でも変わったら落ちるように、ここに決定の文を書く。名前を言わないでほしい事は、聞く口の下に残る
+UPLOAD = "声は字にかえて、声は残しません。のせた写真と動画は、いつ・どこでとったかなどの情報を消してから残します。"
 techo = get(f"/toy/{G}/techo")[1]
-assert DECIDED in techo and "名前は言わないでください" in techo
+assert f'<p class="meta" id="up-notice">{UPLOAD}</p>' in techo and DECIDED not in techo and "名前は言わないでください" in techo
 # ギャラリーの札から、玩具の頁の同じ記録へ
 gal = get("/gallery")[1]
 assert f'href="/toy/{G}#{g_rid}"' in gal and f'href="/toy/{T}#{rid}"' in gal

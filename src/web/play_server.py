@@ -606,10 +606,10 @@ class Handler(BaseHTTPRequestHandler):
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
         if rid:
             making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
-            # 作りながら話した工夫を、この記録の「工夫した所（直した所）」に入れる（Issue #279）。入れた数を返し、手帖が知らせる。
+            # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返し、手帖が知らせる。
             from omochae import talk_log
-            tied = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
-            return out(201, {"id": rid, "kufu": tied} if tied else {"id": rid})
+            kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}))
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
@@ -683,7 +683,7 @@ class Handler(BaseHTTPRequestHandler):
                 rid, failures = records.add(rec)
                 anchor = rid or anchor  # 今残した記録の札に着く。欄に戻ると、押す前と同じ画面に見える（#121）
                 if rid:
-                    # 作りながら話した工夫を、この記録の「工夫した所（直した所）」に入れる（Issue #279。手帖の記録を残す口と同じ）。
+                    # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279。手帖の記録を残す口と同じ）。
                     from omochae import talk_log
                     talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
             msg = "記録を残しました。試した後の紙が開けます"

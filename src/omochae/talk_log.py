@@ -14,12 +14,15 @@
   ひらがなだけの学校の名前（「さくら小学校で作った」）と、学年だけの言い方（「中 3」）も落とせない。
   だから画面は、字を本人が見てから残す形にし、名前を言わないお願いを出す。
   狭く保つ: 広げるほど、工作の話（「この部品の名前は分からない」「小学校の時に作った」「当時小学校で作った」）を落とす。
-- 記録の「工夫した所（直した所）」に、話した字がそのまま入る（本人の設計）: 作りながら話した工夫（2）は、その作りの記録を残した時に、
-  その記録に結ぶ（bind）。上げた後に残した字（3）は、初めからその記録に結ぶ。記録の側から読む口は kufu。
+- 記録の「工夫した所（直した所）」に、話した字がそのまま入る（本人の設計）: 作りながら話した工夫（2）と、仮説を見て話した考え（1）は、
+  その作りの記録を残した時に、その記録に結ぶ（bind）。上げた後に残した字（3）は、初めからその記録に結ぶ。記録の側から読む口は kufu。
   字を記録のファイルに写さないのは、記録は 1 回書いたら書き換えない作り（説明・解釈・観察も、記録の番号で結ぶ別のファイル）に合わせるため。
   今ある「直した点」（records の fixes。部品・変えた事・結果の 3 欄）は、そのまま別に残る: 話した字は 3 欄に分けられないので、混ぜない。
-- 見せる範囲: 1 の字は作る側の頁だけ。2 と 3 の字は、本人が「ほかの人に見せてよい」を選び（share）、記録に結ばれた物だけを、
-  学ぶ人の頁が読める（talks と kufu の shared_only）。既定は見せない。
+- 見せる範囲（本人の決定 11-05）: 記録に結んだ字は、記録の感想などと同じに、ほかの人の頁に文で出す（talks と kufu の shared_only が、
+  学ぶ人の頁とギャラリーのための読み方）。名前は機械で落とせないので、入れないお願いの文で頼む（画面の断り。web/hanasu.py）。
+  記録に結ぶ前の字（考えと工夫）は、学ぶ人の頁に出さない（出す札が無い。作る側の頁だけ）。
+  出す時に、入口の床をもう一度当てる（床を広げる前に残した字や、手で置いた字のため）。
+  作る側が読んで名前などに気づいた時は、その記録の字を、消さずに隠せる（set_share。記録ごと消すのは records.withdraw）。
 - 記録を取り下げたら、結んだ字も消す（drop_for_record。records.withdraw が呼ぶ）。
 - 字を残す事がこの口の用事なので、残せなかった時は理由を返す（making_log.add_ask は黙って捨てるが、ここは本人に知らせる）。例外は外へ出さない。
 """
@@ -35,7 +38,7 @@ MAX_TEXT = 400
 EMPTY = "話した事が空"
 # 場面。1 考え（仮説を見て）・2 工夫（作りながら）・3 できた物（上げた後）。
 SCENES = ("think", "craft", "keep")
-# 記録の「工夫した所（直した所）」に入る場面。1 の考えは仮説に結ぶ物で、記録には入れない。
+# 工夫の場面（作りながら・上げた後）。1 の考えも記録に結ぶが、工夫ではないので、札では「考え」と分けて出す。
 KUFU_SCENES = ("craft", "keep")
 # エンジンへ渡す束で使う、場面の呼び名（Issue #275 で、型紙エンジンの報告の欄と合わせた名）。
 WHEN = {"think": "idea", "craft": "making", "keep": "made"}
@@ -78,8 +81,10 @@ def _record_of(source_id, record_id):
     return next((r for r in records.all_records(source_id) if r["id"] == record_id), None)
 
 
-def add(source_id, scene, text, hypothesis_id=None, sheet_version=None, step=None, record_id=None, via="text", share=False, who=""):
+def add(source_id, scene, text, hypothesis_id=None, sheet_version=None, step=None, record_id=None, via="text", who=""):
     """話した事 1 件を残す。Returns (書いたファイルの path か None, Failure の一覧)。
+    見せる印（share）は、ここでは受けない: 記録に結んだ字は、ほかの人の頁に出す決まり（本人の決定 11-05）。上げた後に残す字（keep）は、
+    初めから記録に結ぶので、初めから出す。考えと工夫は、記録に結んだ時に出す（bind）。
 
     3（keep）は試した記録に結ぶ: 仮説と版は記録の値を使う（画面の値を信じない）。2（craft）は刷った紙の仮説が要る。1（think）は仮説を選ばなくてよい。
     床に落ちた文は残さず、落とした事だけを書く（path は None、Failure は F10.pii）。
@@ -104,7 +109,7 @@ def add(source_id, scene, text, hypothesis_id=None, sheet_version=None, step=Non
         template, sheet_set = making_log._engine(source_id, hypothesis_id)
         out = {"source_id": source_id, "hypothesis_id": hypothesis_id or None, "sheet_version": sheet_version, "template": template, "sheet_set": sheet_set,
                "scene": scene, "step": making_log._step_no(step) if scene == "craft" else None, "record_id": record_id, "text": text,
-               "via": via if via in VIAS else "text", "share": bool(share) and scene in KUFU_SCENES, "who": making_log.clean_who(who), "at": making_log._now()}
+               "via": via if via in VIAS else "text", "share": scene == "keep", "who": making_log.clean_who(who), "at": making_log._now()}
         shape = blocked(text)
         if shape:
             # 文は残さない。見せてよいの印も落とす（残す文が無い）。どの床で落ちたかは、床が効いているかを見るために残す。
@@ -122,39 +127,70 @@ def _all(source_id=None):
 
 def talks(source_id=None, scene=None, record_id=None, shared_only=False):
     """残した話（分の順）。床で落とした物は入れない。取り下げた記録に結んだ物は drop_for_record が消しているので、ここでは見ない。
-    shared_only は学ぶ人の頁とギャラリーのための読み方（記録に結ばれた 2 と 3 の字のうち、本人が見せてよいと選んだ物だけ）。"""
+    shared_only は学ぶ人の頁とギャラリーのための読み方: 記録に結ばれ、作る側が隠していず、入口の床に当たらない物だけ。"""
     return [t for t in _all(source_id) if not t.get("dropped") and (scene is None or t.get("scene") == scene)
             and (record_id is None or t.get("record_id") == record_id)
-            and (not shared_only or (t.get("scene") in KUFU_SCENES and t.get("record_id") and t.get("share") is True))]
+            and (not shared_only or (t.get("record_id") and t.get("share") is True and not blocked(t.get("text", ""))))]
 
 
 def bind(source_id, hypothesis_id, sheet_version, who, record_id):
-    """試した記録を残した時に、その作りの間に話した工夫（2）を、その記録に結ぶ。結んだ数を返す。
-    どれが「その作り」か: 同じ玩具・同じ紙（仮説と版）・同じその場限りの印（who）で、まだどの記録にも結んでいない物。
-    印が無い時（JS の無い画面）は結ばない: 印なしで結ぶと、ほかの人が話した工夫まで、この記録に入るため。
+    """試した記録を残した時に、その作りの間に話した工夫（2）と考え（1）を、その記録に結ぶ。Returns (結んだ工夫の数, 結んだ考えの数)。
+    どれが「その作り」か: 同じ玩具・同じその場限りの印（who）で、まだどの記録にも結んでいない物。
+    工夫は、同じ紙（仮説と版）の物。考えは、同じ仮説か、仮説を選ばずに話した物（考えは作る前の話なので、版は見ない）。
+    印が無い時（JS の無い画面）は結ばない: 印なしで結ぶと、ほかの人が話した事まで、この記録に入るため。
+    結んだ字には、見せる印を付ける（記録に結んだ字は、記録の感想などと同じに、ほかの人の頁に出す。本人の決定 11-05）。
     書けなくても例外は外へ出さない（記録を残す口を、話した字の都合で止めない）。"""
     who = making_log.clean_who(who)
     d = making_log.folder()
-    n = 0
+    n = {"craft": 0, "think": 0}
     for p in sorted(d.glob("talk-*.json")) if who and d.exists() else []:
         try:
             t = json.loads(p.read_text(encoding="utf-8"))
-            if (t.get("scene") == "craft" and not t.get("record_id") and not t.get("dropped") and t.get("who") == who and t.get("source_id") == source_id
-                    and t.get("hypothesis_id") == hypothesis_id and (t.get("sheet_version") or 1) == (sheet_version or 1)):
-                store.write_json(p, {**t, "record_id": record_id})
-                n += 1
+            if t.get("record_id") or t.get("dropped") or t.get("who") != who or t.get("source_id") != source_id:
+                continue
+            same_paper = t.get("hypothesis_id") == hypothesis_id and (t.get("sheet_version") or 1) == (sheet_version or 1)
+            if (t.get("scene") == "craft" and same_paper) or (t.get("scene") == "think" and t.get("hypothesis_id") in (None, hypothesis_id)):
+                store.write_json(p, {**t, "record_id": record_id, "share": True})
+                n[t["scene"]] += 1
         except (OSError, ValueError, AttributeError):
             continue
-    return n
+    return n["craft"], n["think"]
 
 
 def kufu(source_id, record_id, shared_only=False):
-    """その記録の「工夫した所（直した所）」に入っている字。作りながら話した物（手順の番号の順。番号なしは後）、次に、上げた後に残した物。
-    Returns [{"when": "making" か "made", "step", "text", "share"}…]。shared_only は学ぶ人の頁とギャラリーのための読み方。"""
+    """その記録に結んだ字。仮説を見て話した考え、作りながら話した工夫（手順の番号の順。番号なしは後）、上げた後に残した物、の順。
+    Returns [{"when": "idea"・"making"・"made" のどれか, "step", "text", "share"}…]。shared_only は学ぶ人の頁とギャラリーのための読み方
+    （作る側が隠していず、入口の床に当たらない物だけ）。"""
     mine = talks(source_id, record_id=record_id, shared_only=shared_only)
     craft = sorted((t for t in mine if t["scene"] == "craft"), key=lambda t: (t.get("step") is None, t.get("step") or 0))
     return [{"when": WHEN[t["scene"]], "step": t.get("step"), "text": t["text"], "share": t.get("share") is True}
-            for t in craft + [t for t in mine if t["scene"] == "keep"]]
+            for t in [t for t in mine if t["scene"] == "think"] + craft + [t for t in mine if t["scene"] == "keep"]]
+
+
+def set_share(source_id, record_id, on):
+    """作る側の道具: その記録に結んだ字を、ほかの人の頁から隠す（on=False）・戻す（on=True）。Returns (変えた数, Failure の一覧)。
+    なぜ要るか: 名前は機械で落とせない。作る側が読んで気づいた時に、字を消さずに、学ぶ人の頁から外せるように。画面からは呼ばない。
+    床で落とした出来事（文が無い）には触らない。"""
+    d = making_log.folder()
+    mine = []
+    for p in sorted(d.glob("talk-*.json")) if d.exists() else []:
+        try:
+            t = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(t, dict) and t.get("record_id") == record_id and t.get("source_id") == source_id and not t.get("dropped"):
+            mine.append((p, t))
+    if not mine:
+        return 0, [Failure("F8.references", "record_id", f"記録 {record_id} に結んだ字は無い")]
+    n = 0
+    for p, t in mine:
+        if (t.get("share") is True) != bool(on):
+            try:
+                store.write_json(p, {**t, "share": bool(on)})
+                n += 1
+            except OSError:
+                return n, [Failure("F3.result", "share", "書けなかった")]
+    return n, []
 
 
 def dropped(source_id=None):
@@ -184,7 +220,7 @@ def summary(source_id):
     """作る側が読む集計。学ぶ人の画面には出さない。場面ごとに字を並べるだけで、多い順や点の形は作らない（J-025）。
     - think: [{"hypothesis_id", "text"}…]（1 考え。仮説を選ばなかった物は None）
     - craft: {仮説: {版: {手順（無ければ None）: [字…]}}}（2 工夫。手順の番号は仮説ごとに別の文なので、仮説と版で分ける。記録に結んだ物も入る）
-    - records: [{"record_id", "hypothesis_id", "sheet_version", "kufu": kufu() の形}…]（記録ごとの「工夫した所（直した所）」。記録の番号の順）
+    - records: [{"record_id", "hypothesis_id", "sheet_version", "kufu": kufu() の形}…]（記録ごとに結んだ字。考えも入る。記録の番号の順）
     - via: {"voice": 声から字にした数, "text": 字で書いた数}・dropped: 床で落とした数"""
     live = talks(source_id)
     craft = {}
@@ -194,8 +230,10 @@ def summary(source_id):
     by_step = lambda ss: dict(sorted(ss.items(), key=lambda kv: (kv[0] is None, kv[0] or 0)))  # 手順の番号の順。番号なしは最後
     tied = {}
     for t in live:
-        if t["scene"] in KUFU_SCENES and t.get("record_id"):
-            tied.setdefault(t["record_id"], t)
+        rid = t.get("record_id")
+        # 仮説と版は、工夫か上げた後の字から読む（考えは、仮説を選ばずに話した物がある）。それが無い記録だけ、考えの値を使う。
+        if rid and (rid not in tied or (t["scene"] in KUFU_SCENES and tied[rid]["scene"] not in KUFU_SCENES)):
+            tied[rid] = t
     return {"think": [{"hypothesis_id": t.get("hypothesis_id"), "text": t["text"]} for t in live if t["scene"] == "think"],
             "craft": {h: {v: by_step(ss) for v, ss in sorted(vs.items())} for h, vs in sorted(craft.items())},
             "records": [{"record_id": rid, "hypothesis_id": t.get("hypothesis_id"), "sheet_version": t.get("sheet_version"), "kufu": kufu(source_id, rid)}

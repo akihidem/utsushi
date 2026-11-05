@@ -6,11 +6,14 @@
 判断の芯:
 - **声そのものは残さない（本人の決定）。** この頁は、マイクを開く code・録る code・声を送る code を持たない（tests/test_hanasu.py が固定する）。
   声を字にするのはブラウザの音声認識で、頁が受け取るのは字だけ。受け口は字のフォームしか受けない（play_server の _form）。
-- **端末の中だけで字にする（既定）。** ブラウザの音声認識は、既定では声を認識のサービスへ送って字にする（MDN の Web Speech API の頁で確かめた）。
-  端末の中だけで字にする指定（processLocally）を持つ画面でだけ、話す釦を出す。日本語で使えるかは、釦を押した時にブラウザへ聞き
-  （available）、使えなければ釦をしまう。無い画面では釦を出さず、字の欄だけにする（キーボードの音声入力は使える。頁は声に触らない）。対応は、調べた時点でパソコンの Chrome と Edge、Firefox の新しい版。
-  iPhone と iPad の Safari には無い。そこで声の釦を出すかは本人が決める事なので、切り替え（OMOCHAE_VOICE）にした。
-  local（既定）・browser（端末の中でできない画面では、ブラウザの既定の音声認識を使う。断りの文が変わる）・off（釦を出さない）。
+- **声を字にする所（本人の決定 11-05: iPhone・iPad でも話す釦を出す）。** ブラウザの音声認識は、既定では声を認識のサービスへ送って字にする
+  （MDN の Web Speech API の頁で確かめた）。端末の中だけで字にする指定（processLocally）を持つ画面では、その指定で聞く。日本語で使えるかは、
+  釦を押した時にブラウザへ聞く（available）。持たない画面（調べた時点で iPhone と iPad の Safari など）と、使えなかった画面では、ブラウザの既定の
+  音声認識で聞き、本人の決めた断り（「声はブラウザの音声認識で字になります。この頁は声を受け取りません」）を出す。声がブラウザの会社の仕組みへ
+  送られる事がある事も、続けて書く。音声認識の口が無い画面では釦を出さず、字の欄だけにする（キーボードの音声入力は使える。頁は声に触らない）。
+  切り替え（OMOCHAE_VOICE）: browser（既定）・local（端末の中だけで字にできる画面でだけ釦を出す）・off（釦を出さない）。
+- ブラウザの既定の口では、1 回話すごとに止まる形で聞き、途中の字も欄に出す。話し続ける形は、機種によって同じ字が重なったり、終わりの字が来なかったり
+  するため（実機では確かめていない。広く使われている聞き方に合わせた）。端末の中で字にする時は、話し続けられる。
 - **字は本人が見てから残す。** 聞き取った字は欄に足すだけで、送らない。「残す」を押した時に送る。なぜ: 名前は機械で見分けられない
   （talk_log の床の限り）ので、人の目を入口に置く。聞き違いも直せる。話し終えたら自動で残す形は、手は空くが、この目が無くなるので採らない。
 - 床に落ちた時は、欄の字を消さずに理由を返す（直して残せる）。JS が無い時は、理由の頁を返す。
@@ -22,9 +25,13 @@
 - **作りながら話した工夫は、そのまま記録の「工夫した所（直した所）」に入る（本人の設計）。** 記録を残した時に、同じ画面（その場限りの印）で、
   同じ紙について話した工夫を、その記録に結ぶ（talk_log.bind。play_server の記録を残す口が呼ぶ）。上げた後に書き直さなくてよい。
   手帖の記録の札は「工夫した所（直した所）」を出し、その下の口で足せる。
-- 1 の字は学ぶ人の頁に出さない（作る側の頁だけ）。2 と 3 の字は、本人が「ほかの人に見せてよい」を選んだ物だけを記録の札に出す。
-  選んでいない物は、件数だけを出す（記録に入った事は分かるが、文は作る側だけが読む）。
-  合言葉なしで開いたデモでは、文は出さない（文の中の名前は機械で落とせないため。J-028 と同じ線）。
+- **記録に入った工夫の字は、記録の感想と同じに、ほかの人の頁に文で出す（本人の決定 11-05）。** 選び肢と、既定で出さない形は置かない。
+  名前は機械で落とせないので、名前などを書かないお願いを、口の断りに出す（採られた文のまま）。入口の床（連絡先・名乗り・学年と組・学校の名前）は
+  そのままで、出す時にもう一度当てる。合言葉なしで開いた場では、文を出さない（J-028 の線は変えない。件数だけ出す）。
+  記録に入る前の字は、学ぶ人の頁に出さない（作る側の頁だけ）。作る側が読んで名前などに気づいた時は、その記録の字を隠せる（talk_log.set_share。画面からは呼ばない）。
+  仮説を見て話した考えも記録に結ぶが、記録の札にはまだ出さない（札で工夫と見分ける見出しの文が要り、文面は本人の確認が要るため）。作る側の頁には出す。
+- 利用者向けの文は、本人が採ったやさしい言葉の文を、一字も変えずに置く（本人の方針と決定 11-05、Issue #318）。新しい文は、ここで足さない
+  （文面は本人の確認が要る。足したい文は、統合の担当へ知らせる）。
 """
 import json
 import os
@@ -36,28 +43,34 @@ from omochae.model import Failure
 from . import skin
 from .play_server import esc, printed_versions, sheet_version_of
 
-MODES = ("local", "browser", "off")
+MODES = ("browser", "local", "off")
+DEFAULT_MODE = "browser"  # 本人の決定 11-05: iPhone・iPad でも話す釦を出す
 
+# 利用者向けの文は、本人が採ったやさしい言葉の文（11-05、Issue #318）。小学生・中学生にも分かる言葉で、一字も変えずに置く（tests/test_hanasu.py が文字列で見る）。
 # 断りの文。どの場面でも同じ物を出す。名前は床で落とせない（落とせるのは形だけ）ので、入れないお願いを添える。
-NOTICE = "残すのは字だけです。声は録らず、送りません。字は、残す前に見て直せます。名前、学校の名前、連絡先は入れないでください。"
-HOW_LOCAL = "話す釦を押すと、声はこの端末の中で字になります。"
-HOW_BROWSER = "話す釦を押すと、声はブラウザの音声認識で字になります（ブラウザの会社の仕組みへ送られる事があります）。この頁は声を受け取りません。"
-HOW_NONE = "この画面は、声を端末の中だけで字にできないので、話す釦を出していません。キーボードの音声入力を使うと、欄に字が入ります（声の扱いは機器の設定によります）。"
+NOTICE = "残るのは字だけです。声は録音しないし、どこにも送りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。"
+HOW_LOCAL = "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。"
+# ブラウザの既定の音声認識で聞く時の断り（本人の決定 11-05: iPhone・iPad でも話す釦を出し、頁に断りを出す。文は、採られたやさしい言葉の文）。
+HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。このサイトは声を受け取りません。"
+# 釦を出さない時（切り替えが local か off の時と、音声認識の口が無い画面）。
+HOW_NONE = "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。"
+# ③ で上げる時の説明文（本人の決定 11-05、Issue #275 の決める点 3。採られたやさしい言葉の文）。文を変える時は、ここだけを変える。
+UPLOAD_NOTICE = "声は字にかえて、声は残しません。のせた写真と動画は、いつ・どこでとったかなどの情報を消してから残します。"
 
 SCENES = {
-    "think": {"head": "考えを話す", "hint": "こう動くと思う、ここが気になる、など"},
-    "craft": {"head": "工夫を話す", "hint": "ここをこう工夫した、など"},
-    "keep": {"head": "工夫した所や考えを足す", "hint": "工夫した所、考えた事"},
+    "think": {"head": "考えを話す", "hint": "『こう動くと思う』『ここが気になる』など"},
+    "craft": {"head": "工夫を話す", "hint": "『ここをこうしたら、うまくいった』など"},
+    "keep": {"head": "工夫した所や、思った事を足す", "hint": "工夫した所、考えた事"},
 }
 # 記録の札の節の名前。本人の言葉「工夫した所（直した所）」のまま。
 KUFU_HEAD = "工夫した所（直した所）"
-SHARE = {"craft": "記録に入った時に、ほかの人に見せてよい（選ばなければ、作る側だけが読みます）",
-         "keep": "ほかの人に見せてよい（選ばなければ、作る側だけが読みます）"}
-KEPT = "残しました。型紙と案内を直す材料にします。"
+KEPT = "残しました。型紙や説明をよくするのに使います。"
+# 入口の床に当たって残せなかった時の文。talk_log の理由（「名乗りの形がある」など）は作る人向けの言葉なので、そのまま出さない。
+# 連絡先の形の時も、この文を出す（採られた文は 1 つ。連絡先の時の言い分けは、文面の確認が要るので足していない）。
+BLOCKED = "名前や学校の名前のような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
 # 作りながら話した工夫は、記録を残した時にその記録に入る。入るのは、画面がその場限りの印を持つ時だけなので、印が無い時はこの文を出さない。
 KEPT_CRAFT = f"残しました。記録を残すと、その記録の「{KUFU_HEAD}」に入ります。"
 KEPT_SHARED = "残しました。ほかの人にも見せます。"
-KEPT_PRIVATE = "残しました。ほかの人には見せません。"
 
 STYLE = """
 .hanasu{border:1px solid var(--frame);background:var(--paper);padding:14px 16px;margin:14px 0;display:grid;gap:8px}
@@ -76,9 +89,6 @@ STYLE = """
 .hanasu .hanasu-mic[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
 .hanasu .hanasu-go{border:0;background:var(--accent);color:var(--onaccent)}
 .hanasu .hanasu-go:disabled{opacity:.6}
-/* 選ぶ欄は、字の行ごと押せる高さにする。四角は、字が折り返す幅でも縮めない。 */
-.hanasu .hanasu-share{display:flex;gap:8px;align-items:center;min-height:44px;font-size:14px;line-height:1.5}
-.hanasu .hanasu-share input{flex:0 0 22px;width:22px;height:22px;margin:0}
 .hanasu .hanasu-note{margin:0;font-size:15px}
 .hanasu .hanasu-note:empty,.hanasu .hanasu-said:empty{display:none}
 .hanasu .hanasu-said{margin:0;padding-left:1.2em;font-size:14px}
@@ -93,13 +103,13 @@ STYLE = """
 
 # 声を字にする所。REC はブラウザの音声認識の口（前置きの付いた名前でしか出していない版もあるので、両方の名前を見る）。
 # 端末の中で字にできるかは、名前でなく、口の形で見分ける（使えるかを聞く口 available と、端末の中だけの指定 processLocally を持つか）。
-# 端末の中だけの指定を付けない聞き方（ブラウザの既定。声が外へ送られる事がある）は、切り替えが browser の時だけ使う。
+# 端末の中だけの指定を付けない聞き方（ブラウザの既定。声が外へ送られる事がある）は、切り替えが browser（既定）の時だけ使い、断りの文を替える。
 # 聞き取った字は欄に足すだけ。送るのは「残す」を押した時（submit）。
 SCRIPT = """<script>(()=>{
 const REC=window.SpeechRecognition||window.webkitSpeechRecognition,LANG='ja-JP',html=document.documentElement;
-const M={listening:'聞いています。話した事が、欄に字で出ます。',heard:'字にしました。見て、よければ「残す」を押します。',sending:'残しています…',kept:'残しました。',
- failed:'残せませんでした。つながりを見て、もう一度押してください。',nolang:'この端末の中では字にできませんでした。字で書けます。',
- noheard:'聞き取れませんでした。もう一度押すか、字で書けます。',install:'この端末の中で字にする仕組みを入れています（初めの 1 回だけ）…',
+const M={listening:'聞いています。話した事が、欄に字で出ます。',heard:'字にしました。読んで、よければ「残す」を押してください。',sending:'残しています…',kept:'残しました。',
+ failed:'残せませんでした。インターネットにつながっているか見て、もう一度押してください。',nolang:'この機械では字にできませんでした。字で書いてください。',
+ noheard:'聞き取れませんでした。もう一度押すか、字で書いてください。',install:'声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…',
  tobrowser:'この端末の中では字にできません。もう一度押すと、ブラウザの音声認識で字にします（声がブラウザの会社の仕組みへ送られる事があります）。'};
 const want='__VOICE__';
 // 釦を出すかは、口の形だけで決める（端末の中で字にする指定を持つ実装か）。頁を開いた時には、使えるかをブラウザに聞かない:
@@ -113,13 +123,16 @@ const note=(root,t)=>{root.querySelector('.hanasu-note').textContent=t};
 const press=(mic,on)=>{mic.setAttribute('aria-pressed',on?'true':'false');mic.textContent=on?'止める':'話す'};
 const stop=()=>{if(rec){try{rec.stop()}catch(e){}}};
 const listen=(root,onDevice)=>{
- const box=root.querySelector('textarea'),mic=root.querySelector('.hanasu-mic'),r=new REC();
- r.lang=LANG;r.continuous=true;r.interimResults=false;if(onDevice)r.processLocally=true;
+ const box=root.querySelector('textarea'),mic=root.querySelector('.hanasu-mic'),r=new REC(),base=box.value.trim();
+ // 端末の中で字にする時は、話し続けられる。ブラウザの既定の口は、1 回話すごとに止まる形で聞き、途中の字も出す
+ // （話し続ける形は、機種によって同じ字が重なったり、終わりの字が来なかったりする）。
+ r.lang=LANG;r.continuous=onDevice;r.interimResults=!onDevice;if(onDevice)r.processLocally=true;
  r.onresult=(ev)=>{
   // 読み上げの間に入った字は、端末が自分の答えを聞いた物なので入れない。
   if(window.speechSynthesis&&speechSynthesis.speaking)return;
-  for(let i=ev.resultIndex;i<ev.results.length;i++){if(!ev.results[i].isFinal)continue;const t=ev.results[i][0].transcript.trim();
-   if(t){box.value=(box.value?box.value+' ':'')+t;root.dataset.via='voice';note(root,M.heard)}}};
+  // 聞き始めた時の欄の字の後ろに、この回に聞いた字を置き直す（途中の字が来るたびに足すと、同じ字が重なる）。
+  let said='',n=ev.results.length;for(let i=0;i<n;i++)said+=ev.results[i][0].transcript;said=said.trim();
+  if(said){box.value=(base?base+' ':'')+said;root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};
  r.onerror=(ev)=>{note(root,ev.error==='language-not-supported'?M.nolang:M.noheard)};
  r.onend=()=>{press(mic,false);if(rec===r)rec=null};
  rec=r;press(mic,true);note(root,M.listening);
@@ -159,9 +172,9 @@ addEventListener('pagehide',stop);
 })()</script>"""
 
 def mode():
-    """声の釦の出し方。既定は local（端末の中だけで字にできる画面でだけ出す）。決まりの外の値は local に戻す。"""
-    m = os.environ.get("OMOCHAE_VOICE", "local")
-    return m if m in MODES else "local"
+    """声の釦の出し方。既定は browser（端末の中だけで字にできない画面では、ブラウザの既定の音声認識で聞く。本人の決定 11-05）。決まりの外の値は既定に戻す。"""
+    m = os.environ.get("OMOCHAE_VOICE", DEFAULT_MODE)
+    return m if m in MODES else DEFAULT_MODE
 
 
 def assets():
@@ -176,15 +189,13 @@ def box(sid, scene, hid="", version=None, step=None, rid="", hyps=(), with_asset
     key = esc(f"hn-{scene}-{rid}" if rid else f"hn-{scene}")
     hidden = f'<input type="hidden" name="scene" value="{esc(scene)}">'
     if scene == "think":
-        opts = '<option value="">どの仮説についてか（選ばなくてもよい）</option>' + "".join(f'<option value="{esc(i)}">仮説 {esc(n)}</option>' for i, n in hyps)
+        opts = '<option value="">どの案（仮説）のこと？（選ばなくてもだいじょうぶです）</option>' + "".join(f'<option value="{esc(i)}">仮説 {esc(n)}</option>' for i, n in hyps)
         hidden += f'<label class="sr" for="{key}-h">どの仮説についてか</label><select id="{key}-h" name="hypothesis">{opts}</select>'
     elif scene == "craft":
         hidden += (f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{esc(version)}">'
                    f'<input type="hidden" name="step" value="{esc(step)}">')
     else:
         hidden += f'<input type="hidden" name="record" value="{esc(rid)}">'
-    # 見せてよいかは、話した本人がその場で選ぶ（既定は見せない）。1 の考えは記録に入らないので、選ぶ欄を出さない。
-    share = f'<label class="hanasu-share"><input type="checkbox" name="share" value="1"> {esc(SHARE[scene])}</label>' if scene in SHARE else ""
     how = (f'<span class="hanasu-how is-local">{esc(HOW_LOCAL)}</span><span class="hanasu-how is-browser">{esc(HOW_BROWSER)}</span>'
            f'<span class="hanasu-how is-none">{esc(HOW_NONE)}</span>')
     # 玩具の頁の口は、JS が無い時に同じ節へ着く（返事の文もそこに出る。#121 と同じ形）。ほかの 2 つは、戻る道の付いた頁で答える。
@@ -192,7 +203,7 @@ def box(sid, scene, hid="", version=None, step=None, rid="", hyps=(), with_asset
     return (f'<div class="hanasu" data-hanasu data-voice="{mode()}"><p class="hanasu-head">{esc(s["head"])}</p>'
             f'<form method="post" action="/toy/{esc(sid)}/talk{land}">{hidden}'
             f'<label class="sr" for="{key}">{esc(s["head"])}</label><textarea id="{key}" name="text" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(s["hint"])}" required></textarea>'
-            f'{share}<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false" aria-label="話す（もう一度押すと止まる）" hidden>話す</button>'
+            '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false" aria-label="話す（もう一度押すと止まる）" hidden>話す</button>'
             '<button class="hanasu-go">残す</button></div></form>'
             '<p class="hanasu-note" aria-live="polite"></p><ul class="hanasu-said" aria-label="この頁で残した言葉"></ul>'
             f'<p class="meta">{esc(NOTICE)}{how}</p></div>' + (assets() if with_assets else ""))
@@ -202,7 +213,7 @@ def think_section(sid, data, note=""):
     """玩具の頁の節（1 仮説を見て、考えを話す）。仮説の札のすぐ後に置く。note は、JS が無い時に送った後の返事の文（着いたこの節の頭に出す）。"""
     hyps = [(h["id"], hypotheses.letter(h)) for h in data["hypotheses"]]
     return (f'<section class="sec" id="hanasu">{note}<h2>考えを話す</h2>'
-            '<p class="lead">仮説は AI が考えた案です。見て思った事を、話すか書いて残します。合っているかは見ません。</p>'
+            '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>'
             f'{box(sid, "think", hyps=hyps)}</section>')
 
 
@@ -214,26 +225,24 @@ def craft_box(sid, hid, version, step):
 def kufu_block(sid, r, show_shared=True):
     """記録の札に出す「工夫した所（直した所）」。1 つの節に並べる: 記録の欄に書いた直した点（部品・変えた事・結果）、
     作りながら話した工夫（手順の番号つき）、上げた後に残した字。
-    話した字は、本人が見せてよいと選んだ物だけを文で出し、ほかは件数だけ。記録の欄の直した点は、記録の中身なので文で出す。
-    show_shared=False は合言葉なしで開いた場（人の書いた文を出さず、件数だけ）。1 件も無い記録には、何も出さない。
+    記録に入った字は、記録の感想と同じに、文で出す（本人の決定 11-05）。作る側が隠した字と、床に当たる字は出さない（talk_log.kufu の shared_only）。
+    show_shared=False は合言葉なしで開いた場（人の書いた文を出さず、件数だけ。J-028 の線）。1 件も無い記録には、何も出さない。
+    仮説を見て話した考えは、ここにはまだ出さない（工夫と見分ける見出しの文が要り、文面は本人の確認が要るため）。
     学ぶ人の頁とギャラリーが記録の札を作る時も、この関数を呼べる。"""
     typed = [f'{f["part"]} / {f["change"]} / {f["outcome"]}' for f in r.get("fixes") or []
              if isinstance(f, dict) and all(str(f.get(k, "")).strip() for k in ("part", "change", "outcome"))]
-    items = talk_log.kufu(sid, r["id"])
-    if not (typed or items):
-        return ""
     step = lambda k: f"手順 {k['step']}: " if k["step"] else ""
-    shown = typed + [step(k) + k["text"] for k in items if k["share"]] if show_shared else []
-    lines = "".join(f"<li>{esc(x)}</li>" for x in shown)
-    rest = len(typed) + len(items) - len(shown)
-    why = "作る側だけが読みます" if show_shared else "公開のデモでは、文を出しません"
-    more = f'<p class="meta">{"ほかに " if shown else ""}{rest} 件（{why}）</p>' if rest else ""
-    return f'<div class="hanasu-kufu"><p class="hanasu-kufu-head">{esc(KUFU_HEAD)}</p>{f"<ul>{lines}</ul>" if lines else ""}{more}</div>'
+    texts = typed + [step(k) + k["text"] for k in talk_log.kufu(sid, r["id"], shared_only=True) if k["when"] != "idea"]
+    if not texts:
+        return ""
+    body = (f'<ul>{"".join(f"<li>{esc(x)}</li>" for x in texts)}</ul>' if show_shared
+            else f'<p class="meta">{len(texts)} 件（公開のデモでは、文を出しません）</p>')
+    return f'<div class="hanasu-kufu" data-kufu="{esc(r["id"])}"><p class="hanasu-kufu-head">{esc(KUFU_HEAD)}</p>{body}</div>'
 
 
 def keep_box(sid, r, show_shared=True):
     """手帖の記録の札に置く物（3 できた物を上げた後に、工夫した所と考えを残す）。上に、その記録の「工夫した所（直した所）」
-    （作りながら話した工夫が、記録を残した時にここへ入る）。下に、足す口。"""
+    （作りながら話した工夫が、記録を残した時にここへ入る）。下に、足す口。show_shared=False は合言葉なしで開いた場。"""
     return kufu_block(sid, r, show_shared) + box(sid, "keep", rid=r["id"], with_assets=False)
 
 
@@ -241,7 +250,7 @@ def reason(failures):
     """残せなかった理由を、学ぶ人の言葉にする。床に落ちた時は、何の形かと、直せば残せる事を言う。"""
     f = failures[0]
     if f.floor == "F10.pii":
-        return f"{f.message}ので、残しませんでした。その所を消すと残せます。"
+        return BLOCKED
     if f.message == talk_log.EMPTY:
         return "話した事を、話すか書いてください。"
     if f.where == "record_id":
@@ -270,14 +279,14 @@ def post(handler, sid, form):
     elif scene == "think" and hid:
         vs = printed_versions(sid, hid)
         version = vs[-1] if vs else None
-    share = form.get("share") == "1"
     who = form.get("who", "")
     path = None
     if not failures:
         path, failures = talk_log.add(sid, scene, form.get("text", ""), hypothesis_id=hid or None, sheet_version=version, step=step,
-                                      record_id=form.get("record") or None, via=form.get("via", "text"), share=share, who=who)
+                                      record_id=form.get("record") or None, via=form.get("via", "text"), who=who)
     kept = path is not None
-    said = (KEPT_SHARED if share else KEPT_PRIVATE) if scene == "keep" else KEPT_CRAFT if scene == "craft" and making_log.clean_who(who) else KEPT
+    # 上げた後に足した字は、記録の札に出る（ほかの人も読む）。
+    said = KEPT_SHARED if scene == "keep" else KEPT_CRAFT if scene == "craft" and making_log.clean_who(who) else KEPT
     if form.get("json") == "1":
         body = {"kept": True, "note": said} if kept else {"kept": False, "why": reason(failures)}
         return handler._send(200 if kept else 422, json.dumps(body, ensure_ascii=False), "application/json; charset=utf-8")
@@ -304,15 +313,16 @@ def maker_section(sid, data):
     think = lines([f'{"仮説 " + letter[t["hypothesis_id"]] if t["hypothesis_id"] in letter else "仮説を選ばず"}: {t["text"]}' for t in sm["think"]])
     craft = "".join(f'<h4>{esc(paper(h))}・版 {esc(v)}・{"手順 " + str(n) if n is not None else "手順なし"}</h4>{lines(texts)}'
                     for h, vs in sm["craft"].items() for v, ss in vs.items() for n, texts in ss.items()) or none
-    when = lambda k: (f"手順 {k['step']}" if k["step"] else "作りながら") if k["when"] == "making" else "上げた後"
+    when = lambda k: "考え" if k["when"] == "idea" else (f"手順 {k['step']}" if k["step"] else "作りながら") if k["when"] == "making" else "上げた後"
     keep = "".join(f'<h4>{esc(r["record_id"])}（{esc(paper(r["hypothesis_id"]))}・版 {esc(r["sheet_version"])}）</h4>'
-                   + lines([f'{when(k)}: {k["text"]}{"［見せてよい］" if k["share"] else ""}' for k in r["kufu"]]) for r in sm["records"]) or none
+                   + lines([f'{when(k)}: {k["text"]}{"" if k["share"] else "［隠している］"}' for k in r["kufu"]]) for r in sm["records"]) or none
     d = sm["dropped"]
     return ('<section class="sec" id="k7"><h2>7 話した事</h2>'
             '<p class="meta">話すか書いて残した言葉を、場面ごとに並べます。残っているのは字だけで、声は残していません。'
             '名前は機械では見分けられないので、読む時に気づいたら消します。</p>'
             f'<h3>仮説を見て話した考え</h3>{think}<h3>作りながら話した工夫（手順ごと）</h3>{craft}<h3>記録の「{esc(KUFU_HEAD)}」</h3>'
-            '<p class="meta">作りながら話した工夫は、記録を残した時にその記録に入ります。上げた後に足した言葉も、ここに並びます。</p>'
+            '<p class="meta">話した考えと、作りながら話した工夫は、記録を残した時にその記録に入ります。上げた後に足した言葉も、ここに並びます。'
+            '記録に入った言葉は、ほかの人の頁にも出ます。［隠している］は、作る側が隠した言葉です。</p>'
             f'{keep}'
             f'<p class="meta">声から字にした物 {sm["via"]["voice"]} 件・字で書いた物 {sm["via"]["text"]} 件。'
             f'床で落とした物（文は残していません）: 連絡先の形 {d["pii"]} 件・名乗りや学校の形 {d["name"]} 件。</p></section>')
