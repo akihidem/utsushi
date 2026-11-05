@@ -1,0 +1,9 @@
+# Red 1: 新しい試験を、直す前の main 765ac7b に当てる
+AttributeError: module 'api.config' has no attribute 'SCREEN_TIMEOUT'
+rc=1
+
+# Red 2: 直す前の動き（手元の黙る口へ向けた。timeout で 8 秒で打ち切る。124 は打ち切られた＝戻らなかった印）
+画面から呼ぶ client の時間切れ: Timeout(connect=5.0, read=600, write=600, pool=600) やり直し: 2
+defaults rc=0
+ask rc=124
+ffprobe rc=124

@@ -27,18 +27,22 @@ BANNED = ("成功", "失敗", "正解", "上手", "下手", "点数", "順位")
 
 
 def frames(video_path, n=3):
-    """動画から等間隔に n コマを JPEG で取り出す。ffmpeg が無い・読めない時は空。"""
+    """動画から等間隔に n コマを JPEG で取り出す。ffmpeg が無い・読めない・時間切れの時は空。"""
     out = []
     with tempfile.TemporaryDirectory() as d:
         try:
             dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(video_path)],
-                                       capture_output=True, text=True, check=True).stdout.strip() or 0)
-        except (OSError, subprocess.CalledProcessError, ValueError):
+                                       capture_output=True, text=True, check=True, timeout=config.VIDEO_TIMEOUT).stdout.strip() or 0)
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError):
             return []
         for i in range(n):
             t = dur * (i + 0.5) / n
             f = pathlib.Path(d) / f"f{i}.jpg"
-            r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t:.2f}", "-i", str(video_path), "-frames:v", "1", "-vf", "scale=640:-1", str(f)], capture_output=True)
+            try:
+                r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t:.2f}", "-i", str(video_path), "-frames:v", "1", "-vf", "scale=640:-1", str(f)],
+                                   capture_output=True, timeout=config.VIDEO_TIMEOUT)
+            except (OSError, subprocess.TimeoutExpired):
+                return []
             if r.returncode == 0 and f.exists():
                 out.append(f.read_bytes())
     return out

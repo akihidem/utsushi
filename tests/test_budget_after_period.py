@@ -122,7 +122,7 @@ rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")
 ask.answer = over
 ask._key_present = lambda: True  # 鍵がある時の道を通す。Claude を呼ぶ所は上の代わりに替えてある
-agent.default_client = lambda: None
+agent.default_client = lambda role=None: None
 loop_agents.draft_interpretation = over
 on("11-09")
 for fill, word, other in ((lambda: spend(budget.DEFAULT_DAILY_CAP - 0.5), "今日の予算の上限", "累計"),
