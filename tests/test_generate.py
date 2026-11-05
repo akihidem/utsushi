@@ -14,7 +14,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本
 os.environ["PYTHONPATH"] = str(pathlib.Path(__file__).resolve().parents[1] / "src")
 
 from api import budget, generate as gen
-from omochae import hypotheses, loop, records
+from omochae import hypotheses, instructions, loop, records
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
@@ -77,8 +77,12 @@ assert floors(gen.adopt_generated(gid, "確認者", [2])[1]) == {"F9.human"}, "2
 assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n0") == 3 and not pathlib.Path(f"{tmp}/n0.pdf").exists()
 TRIAL = "NDL-1187053-R0000004-L-4"
 loop._write(loop.folder() / f"extra-hypotheses-{TRIAL}.json", loop._read(loop.folder() / f"extra-hypotheses-{G}.json"))
+# 見るのは控えを刷る道だけ。原図の写し（git の外の out/sources）が在る機械でも同じ結果になるよう、ここでは手順の紙に原図を載せない
+real_sheet = instructions.compose_sheet
+instructions.compose_sheet = lambda *a, **k: real_sheet(*a, **{**k, "picture": None})
 assert hypotheses.print_sheet(TRIAL, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
 assert hypotheses.print_sheet(TRIAL, "H-N2", f"{tmp}/n2") == 0 and not pathlib.Path(f"{tmp}/n2.pdf").exists() and pathlib.Path(f"{tmp}/n2_free.pdf").exists()
+instructions.compose_sheet = real_sheet
 # 固定の仮説は受け皿として残る
 assert any(h["id"] == "H-A" for h in hypotheses.load(G)["hypotheses"])
 # 確定した記録が次の生成の前例になり、結果が記録で変わる
