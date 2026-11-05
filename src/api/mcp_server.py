@@ -13,6 +13,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from api.generate import check_result  # noqa: E402
 from api.loop_agents import _tools, execute  # noqa: E402
+from api.tools import check_source_id  # noqa: E402
 
 PROTOCOL = "2025-06-18"
 CHECK_DRAFT = {"name": "check_draft", "description": "仮説の案の全体（submit する形）を、受付と同じ決定的な床にかける。通れば空の一覧。",
@@ -25,6 +26,7 @@ def tools():
 
 def call(name, args):
     if name == "check_draft":
+        check_source_id(args["source_id"])
         source = json.loads((pathlib.Path(__file__).resolve().parents[2] / "data/sources" / f"{args['source_id']}.json").read_text(encoding="utf-8"))
         return [{"type": "text", "text": json.dumps([f.line() for f in check_result(args["draft"], source)], ensure_ascii=False)}]
     out = execute(name, args)

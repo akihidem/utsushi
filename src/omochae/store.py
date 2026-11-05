@@ -17,6 +17,10 @@ _UMASK = os.umask(0)  # umask は読むだけの口が無い。スレッドが�
 os.umask(_UMASK)
 _held = threading.local()
 
+# 玩具の頁の ID の形。source_id をパスにつなぐ前に、画面・Claude の道具・MCP の口で同じ式で確かめる（#174）。
+# 1 頁に玩具が何個もある時は、頁の印の後に -2, -3 と番号を足す（全部の玩具を作る、本人の指示 11-04）。1 個目は番号なし。
+SID = r"NDL-\d+-R\d+-[LR](?:-\d+)?"
+
 
 def write_atomic(path, data, exclusive=False, mode=None):
     """途中の状態を読ませないよう、一時ファイルに書いてから確定する。exclusive は同じ番号を上書きしない。mode が無ければ umask に従う。"""

@@ -1,4 +1,5 @@
 """入口のサイトの中の手帖（本人の方向転換 11-04）。予想が先・仮説の名前と動き方を出さない・手順だけ答える・上げた物は記録に添い撮影情報を外す。"""
+import io
 import json
 import os
 import tempfile
@@ -8,6 +9,8 @@ import urllib.parse
 import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+
+from PIL import Image  # noqa: E402
 
 from omochae import hypotheses  # noqa: E402
 from web.play_server import serve  # noqa: E402
@@ -48,7 +51,9 @@ assert req(f"/toy/{G}/ask-json", {"hypothesis": "H-B", "question": "谷折りっ
 # 上げる: 記録を作り、その R-番号に写真を添える。撮影情報（APP1）を外し、型と大きさと出所を見る
 code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない"})
 rid = json.loads(body)["id"]
-jpeg = b"\xff\xd8" + b"\xff\xe1\x00\x08EXIF!!" + b"\xff\xdb\x00\x03\x00" + b"\xff\xda\x00\x02DATA" + b"\xff\xd9"
+photo = io.BytesIO()
+Image.new("RGB", (8, 8), (200, 180, 140)).save(photo, "JPEG")
+jpeg = photo.getvalue()[:2] + b"\xff\xe1\x00\x08EXIF!!" + photo.getvalue()[2:]
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg")[0] == 201
 saved = (media_dir(rid) / "m1.jpg").read_bytes()
 assert b"EXIF" not in saved and saved == strip_jpeg_meta(jpeg)

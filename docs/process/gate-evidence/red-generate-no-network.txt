@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "tests/test_generate.py", line 114, in <module>
+    assert out.returncode == 4 and "固定の仮説" in out.stderr and "鍵が無い" in out.stderr, out.stderr
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 検査できない: Claude を呼べなかった（OSError: 図を取り寄せに行った）。固定の仮説は list で見られます
+
+rc 1 （直す前の main 9f341bb。鍵が無いのに図を取りに行き、差し替えた取り寄せの所で止まる）

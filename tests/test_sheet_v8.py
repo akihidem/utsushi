@@ -7,7 +7,7 @@ from omochae.templates.slider_fan import DEFAULTS, LEG_GLUE, leg_length, materia
 
 tab = {**DEFAULTS, "push_part": "tab", "hub": "axle", "pusher_height": 15}
 stick = {**DEFAULTS, "push_part": "stick", "hub": "axle", "pusher_height": 84}
-rim = {**DEFAULTS, "push_part": "tube", "hub": "rim", "push_amount": 36, "pusher_height": 84, "fold_count": 18, "fold_width": 8}
+rim = {**DEFAULTS, "push_part": "tube", "hub": "rim", "push_amount": 36, "pusher_height": 84, "fold_count": 14, "fold_width": 8, "fold_height": 36}
 
 
 def by_key(p):

@@ -4,11 +4,14 @@
 写真を載せない。J-021 の持ち寄りの線と、子どもの写真を扱わない線）。合言葉付きと同時には立たない。開いていない時は、トンネルの名前を断る。
 """
 import http.client
+import io
 import os
 import tempfile
 import threading
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+
+from PIL import Image  # noqa: E402
 
 from omochae import records  # noqa: E402
 from web import techo_site  # noqa: E402
@@ -16,7 +19,10 @@ from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 HOST = "plain-words-here.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分けて書く
-jpeg = b"\xff\xd8" + b"\xff\xdb\x00\x03\x00" + b"\xff\xda\x00\x02DATA" + b"\xff\xd9"
+# 受け口は中身が読める写真だけを受ける（#187 の床）ので、本物の小さな JPEG を作る
+_photo = io.BytesIO()
+Image.new("RGB", (8, 8), (200, 180, 140)).save(_photo, "JPEG")
+jpeg = _photo.getvalue()
 
 try:
     serve(0, public_key="k" * 20, public_open=True)

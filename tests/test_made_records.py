@@ -3,6 +3,7 @@
 見る線: 記録の札に写真・感想・止まった所が出る。頁の頭の帯から記録の札へ飛べる。ギャラリーの札から玩具の頁の同じ記録へ行ける。
 見本（デモ用の作り物）は札つきで、その玩具の分だけ出る。予想の前は写真も感想も見本も出さない（予想が先、F9）。本物の API は呼ばない。
 """
+import io
 import os
 import tempfile
 import threading
@@ -12,6 +13,8 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
+from PIL import Image  # noqa: E402
+
 from omochae import records  # noqa: E402
 from web import demo_samples, techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
@@ -20,7 +23,10 @@ G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
-jpeg = b"\xff\xd8" + b"\xff\xdb\x00\x03\x00" + b"\xff\xda\x00\x02DATA" + b"\xff\xd9"
+# 受け口は中身が読める写真だけを受ける（#187 の床）ので、本物の小さな JPEG を作る
+_photo = io.BytesIO()
+Image.new("RGB", (8, 8), (200, 180, 140)).save(_photo, "JPEG")
+jpeg = _photo.getvalue()
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):

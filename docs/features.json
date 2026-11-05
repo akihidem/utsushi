@@ -84,7 +84,8 @@
   "evidence": [
    "src/omochae/loop.py",
    "src/web/play_server.py",
-   "tests/test_techo_site.py"
+   "tests/test_techo_site.py",
+   "tests/test_media_strip.py"
   ],
   "unverified": "人が画面で使った確認はまだ。版 1 は画面に名前の欄が無いので「画面の使い手」と残す"
  },
@@ -96,6 +97,7 @@
    "src/omochae/records.py",
    "src/omochae/store.py",
    "tests/test_records.py",
+   "tests/test_records_withdraw.py",
    "tests/test_media_range.py",
    "tests/test_store.py"
   ],
@@ -217,7 +219,7 @@
  },
  {
   "id": "f22",
-  "name": "台帳の検査（主張と根拠・地図・要約）",
+  "name": "台帳の検査（主張と根拠・地図・要約・数・モジュールの載せ漏れ）",
   "status": "done",
   "evidence": [
    "src/omochae/ledger.py",
@@ -241,9 +243,10 @@
   "status": "done",
   "evidence": [
    "src/omochae/labels.py",
+   "src/web/zukan.py",
    "tests/test_labels.py"
   ],
-  "unverified": "図鑑の画面が無く、公開の経路につながっていない。本物の図鑑の文では未試験"
+  "unverified": "人が図鑑の頁で読んだ確認はまだ。図鑑の頁（/zukan）はこの床を通してから描く（f15）"
  },
  {
   "id": "f25",
@@ -279,7 +282,9 @@
    "tests/test_ask.py",
    "src/api/budget.py",
    "tests/test_budget_after_period.py",
-   "tests/test_call_timeouts.py"
+   "tests/test_call_timeouts.py",
+   "src/web/failure_log.py",
+   "tests/test_failure_log.py"
   ],
   "unverified": "AI の分は偽の応答の試験だけ。本物の API は本人が鍵を置くまで動かない（J-023）。人が使った事は無い"
  },

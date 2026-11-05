@@ -15,7 +15,7 @@ exit code: 0 = 通る / 3 = 落ちる（検査の名前を出す）/ 4 = 検査�
 | F5.overlap | 部品どうしが重ならない | `neg_overlap` | 3・F5.overlap |
 | F5.text_overlap | 文字どうしが重ならず、文字が部品の枠をまたがない。幅はフォントから測る | `neg_text_overlap` | 3・F5.text_overlap |
 | F5.fan_length | 折り数 × 折り幅 ＝ 扇の長さ | `neg_fan_length` | 3・F5.fan_length |
-| F5.fan_height | 畳んだ扇の高さ ≦ 静止時の筒の空き（高さ − 押し上げる量） | `neg_fan_height` | 3・F5.fan_height |
+| F5.fan_height | 畳んだ扇の高さ（軸の形は中心の高さ＋扇の高さ）≦ 押し上げる量（静かな時の台から口まで）。口の台の形も軸の形と同じ見方 | `neg_fan_height`・`neg_fan_height_rim` | 3・F5.fan_height |
 | F5.fan_thickness | 畳んだ扇の厚さ ≦ 内筒の一辺 − 2 | `neg_fan_thickness` | 3・F5.fan_thickness |
 | F5.slide_clearance | 内筒の一辺 < 外筒の一辺 − 1（等号は落とす） | `neg_slide_clearance` | 3・F5.slide_clearance |
 | F5.figure_height | 像の高さ ≦ 折りの高さ ＋ 6 | `neg_figure_height` | 3・F5.figure_height |
@@ -50,6 +50,15 @@ F11.compare は案 B で足した床。見分ける物差しの無い雛形と�
 F9.prediction は、予想か自分の仮説が無いと仮説の一覧も型紙も出さない床で、F9 の一部として足した。F9.own は自分の仮説に動かし方と根拠を求め、雛形に乗らない仮説を型紙にしない床。試験は `tests/test_hypotheses.py`。
 
 F5.fan_height は、軸の形では「中心の高さ＋折りの高さ ≦ 押し上げる量」で見る。`pos_rim` は台に載せる形の正の場面。
+
+### F5.fan_height を直した（2026-11-05・本人の決定。#163）
+
+元の文は「畳んだ扇の高さ ≦ 静止時の筒の空き（高さ − 押し上げる量）」で、口の台の形はこの通りに見ていた。ところが静かな時の台から口までは押し上げる量で、高さ − 押し上げる量は台の下の空き（内筒が入る所）だった。そのため、扇が口から出る寸法が通っていた（元の H-E と `pos_rim` は扇の高さ 48・押し上げる量 36 で、静かな時に扇の上 12mm が口から出る）。paper-to-toy では 2026-11-04 の本人の決定で直してあり、同じ名前の床が 2 つの repo で別の意味になっていた。
+
+- 床を paper-to-toy と同じにし、口の台の形も押し上げる量と比べる
+- 御来迎の H-E を 14 折り・高さ 36mm に直した。今の版（goraigo-v10）の例外で、次の版にしない（本人の決定）。控えの指紋で変えたのは H-E の型紙・手順の紙・手順の紙（原図つき）の 3 枚。H-E の紙は試行で使っていない
+- `pos_rim` は扇が隠れる寸法（扇の高さ 36・折り数 14）に替えた。元の寸法は負の場面 `neg_fan_height_rim` にした
+- `neg_fan_clearance` は口の台の形で、元の寸法（扇の高さ 48）だと F5.fan_height でも落ち、狙いの F5.fan_clearance だけで落ちる場面でなくなるので、扇の高さを 36 にした（F5.fan_clearance だけで落ちる事は変わらない）
 
 ## goraigo-v8 で変えた所（2026-11-04、11-04 の試行を受けた本人の決定）
 

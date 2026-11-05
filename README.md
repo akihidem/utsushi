@@ -10,7 +10,7 @@
 - **足りない物**: 手元のトイモデルで自然とやりとりする体験。無いと、大型の装置や計算資源を使う科学にしか真理がないと思ってしまう（本人の言葉からの読み）。
 - **輪**: 予想か自分の仮説 → 型紙を刷る → 作って試す → 記録と人の説明 → 版の間に Claude が案を出し人が採る → 次の版。AI の返事は学ぶ人の記録と説明の後で、採点しない。
 - **哲学**: 「AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。」全文は [docs/process/philosophy.md](docs/process/philosophy.md)。
-- **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面 67 本が期待どおり。11-04 午後）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、上げた物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
+- **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面と試験が全部期待どおり。数は `./run.sh` の最後の行と `out/RESULT.md` に出る）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、上げた物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
 - **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)、判断待ちは [docs/process/open.json](docs/process/open.json)。
 <!-- summary:end -->
 
@@ -40,6 +40,14 @@
 
 - NDL の manifest から出典の記録を作る
 - 御来迎と張子の首振り虎の動く仕組みを、複数の仮説として並べ、使い手が先に書いた予想と一緒に見せる。予想が無ければ一覧も型紙も出さない
+- 『江都二色』のほかの玩具も、試作として図鑑から入れる。入口の主役は御来迎と虎の 2 種のまま。雛形は置くだけで読み込まれる。足し方は [docs/architecture.md](docs/architecture.md) の「雛形を足す時」。今の数は次のとおり（`python -m omochae.ledger render` が tree から数えて書き、`./run.sh` が照らす）。
+
+<!-- counts:start -->
+- 玩具: 83 件（`data/hypotheses` のファイルの数。必須の 2 種を含む）
+- 雛形: 9 本（`src/omochae/templates`。必須の 2 本を含む）
+- 凍結の場面: 31 本（`tests/frozen/scenarios`。うち 24 本は落ちるべき紙を入れる負の場面）
+<!-- counts:end -->
+
 - 用意した型紙に乗らない仮説には、寸法を作らず、身の回りの紙と紐で作るための「型紙なしの紙」を刷る
 - 仮説を自分で立てて型紙にし、比べたい時に用意された仮説を並べて見る道も選べる
 - 試した結果を、御来迎は 3 値と測った数で、虎は揺れた／揺れないで記録する。「わからない」を「動いた」に数えない（`python -m omochae.records add`）
@@ -53,14 +61,14 @@
 - 先生の見る紙を刷る。4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）ごとに見た事を書き、点は付けない（`hypotheses print-teacher`）
 - 試した記録を 1 件 1 枚にして、記録の順に並べた再現ギャラリーを書き出す。順位と「再現できた」は書かない（`python -m omochae.gallery`、出来上がりは [docs/gallery/index.html](docs/gallery/index.html)）
 - 作っている途中の手順の質問に、聞かれた時だけ答える。仕組みとどの仮説かは答えない。よくある言葉（谷折り・山折り・糊代など）は刷った説明からその場で答え、それ以外は鍵がある時だけ Claude が答える（`src/api/ask.py`。AI の分は偽の応答でだけ確かめた）
-- 手帖: 入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、ブラウザの音声認識で話し続けて手順を聞き、答えを読み上げ、写真と動画を試した記録に添える。写真の撮影情報は保存の時に外す（`src/web/techo_site.py`。人が使った確認はまだ）
+- 手帖: 入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、ブラウザの音声認識で話し続けて手順を聞き、答えを読み上げ、写真と動画を試した記録に添える。写真と動画の撮影情報は保存の時に外し、中身が写真・動画として読めない物は置かない。動画に ffmpeg を使うので、無い機械では動画を受けない（`src/web/techo_site.py`。人が使った確認はまだ）
 - 型紙の折りの部品を Origami Simulator が読める SVG に書き出す。作り手用で、学ぶ人の画面には出さない（`python -m omochae.foldsim H-A`）
 - 手元のブラウザの画面で、玩具を選び、予想を書き、仮説を見て型紙を刷り、試した記録と説明を残す。予想の前は仮説を見せず、試した後の紙は記録の後に開く（`PYTHONPATH=src .venv/bin/python -m web.play_server`。人が使った確認はまだ）
 - 玩具の写真・情報・思い出・作り方の知見を手元の画面で受け付け、人が確認した物だけを公開の頁に出す（`PYTHONPATH=src .venv/bin/python -m web.contrib_server`。ssh で転送する時は手元と同じポート番号で）
 
 ## 動かし方
 
-要る物: [uv](https://docs.astral.sh/uv/)、poppler（`pdftotext`・`pdftoppm`）、fontconfig（`fc-match`）、FFmpeg（`ffmpeg`・`ffprobe`）、字 Noto Serif CJK JP。Ubuntu なら `sudo apt install poppler-utils fontconfig ffmpeg fonts-noto-cjk`。
+要る物: Python 3.11 以上、[uv](https://docs.astral.sh/uv/)、poppler（`pdftotext`・`pdftoppm`）、fontconfig（`fc-match`）、FFmpeg（`ffmpeg`・`ffprobe`）、字 Noto Serif CJK JP。Ubuntu 24.04 なら `sudo apt install python3 pipx poppler-utils fontconfig ffmpeg fonts-noto-cjk`、`pipx install uv`、`export PATH="$HOME/.local/bin:$PATH"` で揃う。
 
 ```
 git clone https://github.com/akihidem/utsushi.git
@@ -69,16 +77,20 @@ cd utsushi
 ./run.sh    # 検査を全部回す。結果は out/RESULT.md
 ```
 
+ほかの入口: `./run-home.sh` は家のパソコンで手元の画面を開く（`--lan` で家の網に開く）。`./run-demo.sh` はデモの一周の画面（入口と手帖。置き場は本物の記録と分けた `out/demo-data`）を立て、パソコン・iPad・iPhone から開ける合言葉付きの https のリンクを作る（cloudflared が要る。止めるとリンクは変わる）。合言葉とリンクは git の外の `out/demo-key`・`out/demo-url` にだけ置く。commit に入れない。
+
 ### デモ動画を作る
 
 要る物は上に足して、`google-chrome` か `chromium` の名前で呼べるブラウザ。ffmpeg も要る。足りない物は、書き出しの最初に名前で出て exit 4 で止まる。
 
 ```
 export PYTHONPATH=src
+OUT_DIR="$HOME/utsushi-demo"                           # 書き出す置き場。repo の外にする
 .venv/bin/python -m demo.prepare                       # 前の日、網のある所で。道具を確かめ、江戸の絵を全部取り寄せて控えを残す
 .venv/bin/python -m demo.prepare --check               # 撮る日の朝、網なしで。写しが控えと合うか
-.venv/bin/python -m demo.build --out <repo の外> --offline          # 網を切って 7 場面を書き出す
-.venv/bin/python -m demo.build --out <repo の外> --run <前の置き場> --only scene3   # 1 場面だけ作り直してつなぎ直す
+.venv/bin/python -m demo.build --out "$OUT_DIR" --offline          # 網を切って 7 場面を書き出す
+PREV_DIR=$(ls -d "$OUT_DIR"/*/ | tail -1)              # 一番新しい書き出しの置き場（フォルダの名前は日時）
+.venv/bin/python -m demo.build --out "$OUT_DIR" --run "$PREV_DIR" --only scene3   # 1 場面だけ作り直してつなぎ直す
 ```
 
 動く仕組みの答えは 1 つに決めていない。自分の予想を先に書くと、仮説が並び、試したい仮説の型紙を刷れる。
@@ -89,6 +101,13 @@ export PYTHONPATH=src
 .venv/bin/python -m omochae.hypotheses list
 .venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf と手順の紙 H-A_v1_tejun.pdf
 .venv/bin/python -m omochae.records add --hypothesis H-A --result わからない --opened-deg 90 --opener 紙の力
+```
+
+手帖から上げた記録を消す時は、番号を渡す。記録と、添えた写真・動画・説明・解釈・観察をまとめて消し、番号だけを残す。提案や版の根拠に使われている記録は、その事を言って止まる。その時も `--media-only` で写真と動画と観察は消せる。デモの置き場の記録は `OMOCHAE_DATA` を同じにして打つ。git に入れた物は、履歴からは消えない。
+
+```
+.venv/bin/python -m omochae.records withdraw R-0003
+.venv/bin/python -m omochae.records withdraw R-0003 --media-only
 ```
 
 仮説を自分で立てたい時は、図を見て自分の案を書き、型紙にして試し、比べたくなった時に一覧を見る。
@@ -115,7 +134,7 @@ export PYTHONPATH=src
 
 基準は [tests/frozen/criteria.md](tests/frozen/criteria.md)。`./run.sh` の結果は `out/RESULT.md` に出る。
 
-- 11-04 午後の結果: 場面 67 本、期待どおり 67 本、未実装の床 0 本（凍結した場面と試験。凍結した場面のうち 23 本は落ちるべき紙を入れる負の場面）
+- 結果の数は `./run.sh` の最後の行と `out/RESULT.md` で見る（試験は増えていくので、ここには書かない）。凍結の場面の数は「できること」の節にある
 - 負の場面の例: `neg_fan_clearance` は扇の中心を縁に置き（`hub: rim`）、帯の開く上限が筒の口の角に当たる寸法を入れ、床 F5.fan_clearance で落ちて紙を出さない（rc 3）事を確かめる
 
 ## データの扱い
@@ -129,7 +148,7 @@ export PYTHONPATH=src
 | NDL-1187053-R0000005-L | 『江都二色』御来迎 | 国立国会図書館デジタルコレクション info:ndljp/pid/1187053（米山堂・1931 年の複製） | PDM | 図を参照して寸法・形・色・線を描き直した翻案 |
 | NDL-1187053-R0000014-R | 『江都二色』張子の首振り虎 | 同上 | PDM | 図を参照して寸法・形・色・線を描き直した翻案 |
 
-依存: cairosvg（LGPL-3）、shapely（BSD-3）、drawsvg（MIT）、fontTools（MIT）。
+依存: cairosvg（LGPL-3）、shapely（BSD-3）、drawsvg（MIT）、fontTools（MIT）、jsonschema（MIT）、anthropic（Apache-2.0）、pillow（MIT-CMU）。版は `requirements.txt`。
 
 ## ライセンス
 
@@ -137,5 +156,5 @@ export PYTHONPATH=src
 
 ## 将来構想（未実装）
 
-図鑑の画面、外の人が投稿できる入口（入口の形は Google フォームに決めた。生徒の分は集めない。[J-021](docs/process/decisions/J021-contributions-form-students.md)）。写真つきの記録は、手帖から試した記録に写真と動画を添える所までは作った（上の「できること」）。
+外の人が投稿できる入口（入口の形は Google フォームに決めた。生徒の分は集めない。[J-021](docs/process/decisions/J021-contributions-form-students.md)）。写真つきの記録は、手帖から試した記録に写真と動画を添える所までは作った（上の「できること」）。
 

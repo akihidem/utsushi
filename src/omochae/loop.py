@@ -19,7 +19,7 @@ from datetime import datetime, timedelta, timezone
 
 from . import store
 from .compose import compose
-from .contrib import _human_confirm, check_pii, public_list
+from .contrib import _human_confirm, check_pii, public_list, too_long
 from .metrics import ALLOWED, values
 from .model import Failure
 
@@ -106,6 +106,9 @@ def save_explanation(rid, by, text, next_idea):
         return [Failure("F9.human", rid, "説明した人の名前が無い")]
     if not (text or "").strip() or not (next_idea or "").strip():
         return [Failure("F9.human", rid, "説明と次の思いつきの両方が要る（わからない、と書いてもよい）")]
+    long = too_long([("説明", text), ("次の思いつき", next_idea)])
+    if long:
+        return [Failure("F3.result", rid, message) for _, message in long]
     failures = [Failure("F3.result", rid, f.message) for f in check_pii({"body": f"{text} {next_idea}"})]
     if failures:
         return failures
@@ -140,6 +143,8 @@ def confirmed_records(source_id, known=None):
     out = []
     d = base() / "records"
     for p in sorted(d.glob("R-*.json")):
+        if (d / "withdrawn" / p.name).exists():
+            continue
         rec = store.read_json_or_skip(p)
         if rec is not None and rec.get("source_id") == source_id and confirmed(rec["id"]):
             out.append({**rec, "interpretation": interpretation(rec["id"])["content"]})
@@ -147,7 +152,7 @@ def confirmed_records(source_id, known=None):
 
 
 def known_ids():
-    ids = {p.stem for p in (base() / "records").glob("R-*.json")}
+    ids = {p.stem for p in (base() / "records").glob("R-*.json") if not (base() / "records/withdrawn" / p.name).exists()}
     ids |= {p.stem for p in (ROOT / "data/known_examples").glob("*.json")}
     ids |= {c["id"] for c in public_list()}
     return ids

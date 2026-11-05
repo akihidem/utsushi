@@ -121,8 +121,9 @@
         "hub": "rim",
         "push_amount": 36,
         "pusher_height": 84,
-        "fold_count": 18,
-        "fold_width": 8
+        "fold_count": 14,
+        "fold_width": 8,
+        "fold_height": 36
       },
       "how_it_moves": "内筒を押し上げると、口の高さの台の上で扇が開く",
       "evidence": [
