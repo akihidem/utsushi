@@ -14,13 +14,14 @@
 import json
 import re
 
-from omochae import hypotheses, loop, making_log, records
+from omochae import hypotheses, loop, making_log, records, ways
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
+from .toys import way_tags
 
 KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙"))
 
@@ -54,6 +55,17 @@ def latest_printed(sid, data):
     """窓に最初に出す仮説: 一番新しく刷った物。"""
     cands = [(p.stat().st_mtime, p.name.split("_v")[0]) for p in out_dir(sid).glob("H-*_v*.pdf")] if out_dir(sid).exists() else []
     return max(cands)[1] if cands else None
+
+
+ZOOM_SIZES = (100, 180, 300)
+# 開け閉めは CSS（:target）で足りる。Esc と絵の外で閉じる所だけ小さな JS を使う（L-11）。ここから開いた時は履歴を戻し、見ていた位置に帰す。
+ZOOM_SCRIPT = """<script>(()=>{const z=document.getElementById('zoom'),a=document.querySelector('figure.sheet a');if(!z||!a)return;let mine=false;
+a.addEventListener('click',()=>{mine=true});
+const shut=()=>{if(location.hash!=='#zoom')return;if(mine){mine=false;history.back()}else{location.hash='win'}a.focus({preventScroll:true})};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')shut()});
+z.addEventListener('click',e=>{if(e.target===z||e.target.classList.contains('pic'))shut()});
+z.querySelector('.close').addEventListener('click',e=>{e.preventDefault();shut()});
+window.addEventListener('hashchange',()=>{if(location.hash==='#zoom')z.querySelector('.close').focus({preventScroll:true})});})();</script>"""
 
 
 def window(sid, data, see, kind, v, recorded):
@@ -93,8 +105,13 @@ def window(sid, data, see, kind, v, recorded):
                    for n in loop.adopted_versions(sid, see) if n not in vs)
     png = f"/sheet/{sid}/{name}.png"
     pdf = f"/sheet/{sid}/{name}.pdf"
+    # 窓の絵は軽い PNG、拡大は目盛りと字がにじまない SVG（S-01）。SVG の無い古い紙は PNG に戻る。
+    big = f"/sheet/{sid}/{name}.svg" if (out_dir(sid) / f"{name}.svg").exists() else png
+    sizes = "".join(f'<input type="radio" name="zoom-size" id="zs{n}"{" checked" if n == 180 else ""}>' for n in ZOOM_SIZES)
+    labels = "".join(f'<label for="zs{n}">{n}%</label>' for n in ZOOM_SIZES)
     fig = (f'<figure class="sheet"><a href="#zoom" aria-label="拡大して見る"><img src="{png}" alt="{esc(data["toy"])} 仮説 {esc(hypotheses.letter(h))} の{esc(dict(KINDS)[kind])}"></a></figure>'
-           f'<div class="zoom" id="zoom"><a class="close" href="#win">閉じる</a><img src="{png}" alt=""></div>')
+           f'<div class="zoom" id="zoom">{sizes}<div class="bar" role="group" aria-label="大きさ">{labels}</div><a class="close" href="#win">閉じる</a><div class="pic"><img src="{big}" alt="" loading="lazy"></div></div>'
+           + ZOOM_SCRIPT)
     side = (f'<div class="side"><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}'
             # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
@@ -411,7 +428,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         body += (f'<article class="card" id="own-{esc(h["id"])}"><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
     body += f'<details><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
-    body += f'<section class="sec" id="kasetsu"><h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
+    body += f'<section class="sec" id="kasetsu"><h2>仮説</h2><p class="meta">{esc(data["note"])}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">'
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
@@ -420,7 +437,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
-                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{thumb}<div class="acts">'
+                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h)))}{thumb}<div class="acts">'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
                  f'<p class="meta">{printed}</p></div></div>')
     body += "</div></section>"

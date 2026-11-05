@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_run_demo.py
+# commit: 38027ef（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_run_demo.py", line 41, in <module>
+    assert all(free_port() < 32000 for _ in range(50)), "ephemeral の範囲から選んでいる"
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ephemeral の範囲から選んでいる
+rc=1

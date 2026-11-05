@@ -9,7 +9,7 @@
 """
 import json
 
-from omochae import hypotheses
+from omochae import hypotheses, ways
 from omochae.hypotheses import ROOT
 
 from . import skin as skinmod
@@ -36,12 +36,17 @@ def _pic(sid, main):
     return f'<div class="pic" style="background-image:url(/picture/{esc(sid)});background-position:{pos};background-size:{size}" role="img" aria-label="図"></div>'
 
 
+def way_tags(names):
+    """作り方の印の札。並べ替えや点数にしない（J-025）。"""
+    return f'<p class="ways">{"".join(f"<span class=\"lb\">{esc(n)}</span>" for n in names)}</p>' if names else ""
+
+
 def card(sid):
     data, src = hypotheses.load(sid), _source(sid)
     main = hypotheses.stage(sid) == "必須"
     has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     more = "" if has else f'<p class="meta"><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></p>'
-    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
+    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
 
 
 def page(skin, path="/toys"):
@@ -50,6 +55,6 @@ def page(skin, path="/toys"):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE)}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE)}</p><p class="meta">{esc(ways.NOTE)}</p>'
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)
