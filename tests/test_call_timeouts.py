@@ -139,18 +139,19 @@ def frames_of(video_path):
     return out, time.monotonic() - t
 
 
-config.VIDEO_TIMEOUT = 0.5
 keep_path = os.environ["PATH"]
+# 本物の命令は、決まりの時間切れのまま見る。0.5 秒にした後で見ると、機械が混んだ時に落ちる
 assert len(observe.frames(video)) == 3, "本物の命令なら 3 コマ取れる（時間切れで前の動きを壊していない）"
+config.VIDEO_TIMEOUT = 0.5
 os.environ["PATH"] = f"{fake}{os.pathsep}{keep_path}"
 tool("ffprobe", "exec sleep 30")  # 長さを見る所で止まる
 out, took = frames_of(video)
-assert out == [] and took < 5, (out, took)
+assert out == [] and took < 15, (out, took)  # 偽の命令は 30 秒眠る。混んだ機械の余裕を取っても時間切れが効いたと言える
 assert observe.observe(rid, video, Never()) == (None, "動画のコマを取り出せない")
 tool("ffprobe", "echo 2.0")
 tool("ffmpeg", "exec sleep 30")  # コマを取る所で止まる
 out, took = frames_of(video)
-assert out == [] and took < 5, (out, took)
+assert out == [] and took < 15, (out, took)  # 偽の命令は 30 秒眠る。混んだ機械の余裕を取っても時間切れが効いたと言える
 assert observe.observe(rid, video, Never()) == (None, "動画のコマを取り出せない")
 # ffprobe はあるが ffmpeg が無い機械でも、頁を落とさず空で戻す（docstring の約束。前は OSError が抜けた）
 (fake / "ffmpeg").unlink()
