@@ -53,9 +53,10 @@ assert items > 0
 assert lines[fold + 1] == f"<summary>くわしい要約（{items} 項目）</summary>", lines[fold + 1]
 
 # 4. 審査員が読む所は「AI」でなく「Claude」と書く（本人の決定 11-06）。本人の言葉の引用と、紙や画面の字の引用（「」の中）は変えない。
-# 英語だけの行は、別の直し（英語の紹介）の持ち物なので見ない。要約は CLAUDE.md と同じ字なので、ここで一緒に見た事になる。
-JAPANESE = re.compile(r"[ぁ-んァ-ヶ一-龠]")
-left = [ln[:60] for ln in lines if JAPANESE.search(ln) and "AI" in re.sub(r"「[^」]*」", "", ln)]
-assert not left, left
+# 英語の紹介も同じ（README は審査員が読む所）。序の頁は学ぶ人の頁で「AI」のままなので、ここでは見ない。要約は CLAUDE.md と同じ字なので、ここで一緒に見た事になる。
+# 前後を英字でない所に限るのは、FAIL や MAIN のような語に当てないため。
+AI_WORD = re.compile(r"(?<![A-Za-z])AI(?![A-Za-z])")
+left = [ln[:60] for ln in lines if AI_WORD.search(re.sub(r"「[^」]*」", "", ln))]
+assert not left, ("README の中は審査員が読む所なので「Claude」と書く（本人の決定 11-06。英語の紹介も同じ）", left)
 assert all(x in "\n".join(lines) for x in ("「AI は鏡。", WORDS)), "本人の言葉の引用は残す"
 print(f"ok README の頭は本人が採った字で、要約 {items} 項目は畳んである")
