@@ -130,12 +130,18 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             rows += f'<tr><td>{esc(who)}</td><td>版 {esc(v)}</td><td>{"、".join(f"{esc(k)} {n}" for k, n in by_v[v].items())}</td></tr>'
     results = (f"<table><thead><tr><th>紙</th><th>版</th><th>動きの札</th></tr></thead><tbody>{rows}</tbody></table>"
                if rows else '<p class="meta">報告はまだありません。</p>')
+    # 止まった手順（作りながら見る頁の「止まった」の札。番号ごとの回数）と、できたの回数。手順の紙のどの段を直すかの材料。
+    stuck_steps = ("<table><thead><tr><th>手順の番号</th><th>止まったの札</th></tr></thead><tbody>"
+                   + "".join(f"<tr><td>手順 {esc(n)}</td><td>{c} 回</td></tr>" for n, c in sm["stuck_steps"].items()) + "</tbody></table>"
+                   if sm["stuck_steps"] else '<p class="meta">止まったの札はまだ押されていません。</p>')
+    stuck_steps += f'<p class="meta">できたの札: {sm["steps_done"]} 回</p>'
     body = (f'<section class="hero"><div><h1>{esc(data["toy"])} の工作の様子</h1>'
             '<p class="lead">作る側の集計。学ぶ人の頁には出しません。順位ではありません。</p>'
             f'<p class="meta">聞く口の質問、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
             f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a></p></div></section>'
             f'<section class="sec"><h2>聞かれた事</h2><p class="meta">作っている途中に聞く口へ来た質問。多い順（同じ文だけを 1 つに数えます）。</p>{asks}</section>'
+            f'<section class="sec"><h2>止まった手順</h2><p class="meta">作りながら見る頁（机の端に置く・試作）で押された札の数。映像は残していません。</p>{stuck_steps}</section>'
             f'<section class="sec"><h2>止まった所</h2>{lines(sm["stuck"], "書かれた物はまだありません。")}</section>'
             f'<section class="sec"><h2>最初に動いた所</h2>{lines(sm["first_moved"], "書かれた物はまだありません。")}</section>'
             f'<section class="sec"><h2>何を変えると違いが出そうか</h2>{lines(sm["what_if"], "書かれた物はまだありません。")}</section>'

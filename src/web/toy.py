@@ -339,7 +339,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += analogy_section(data)
     body += f'<section class="sec" id="win"><h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
-             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>{ask_form(sid, data, asked)}</section>')
+             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
+             # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
+             + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if printed_ids(sid, data) else "")
+             + f'</p>{ask_form(sid, data, asked)}</section>')
     body += f'<section class="sec" id="kiroku"><h2>記録と返事</h2>{record_form(sid, data, own)}{records_list(sid, recs)}{sample_records(data)}</section>'
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen

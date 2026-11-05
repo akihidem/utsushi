@@ -98,7 +98,8 @@ assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", 
                                  "impression": "折るのは楽しかった"})[0] == 303
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "stuck": "筒の口"})[0] == 303
 sm = making_log.summary(G)
-assert set(sm) == {"asks", "asks_dropped", "stuck", "first_moved", "what_if", "impressions", "results_by_version", "reports"}
+# stuck_steps・steps_done は、作りながら見る頁（観察 A）の手順の進みから（tests/test_tsukuru.py が中身を見る）
+assert set(sm) == {"asks", "asks_dropped", "stuck", "first_moved", "what_if", "impressions", "results_by_version", "reports", "stuck_steps", "steps_done"}
 # 同じ質問（空白と句読点の違いだけ）は 1 つに数え、多い順に並ぶ
 assert sm["asks"][0][1] == 2 and making_log._same(sm["asks"][0][0]) == "谷折りって何", sm["asks"][0]
 assert ("どういう仕組みで動くの？", 1) in sm["asks"] and sm["asks_dropped"] == 1

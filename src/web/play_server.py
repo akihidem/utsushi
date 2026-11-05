@@ -260,6 +260,23 @@ class Handler(BaseHTTPRequestHandler):
             # かざして選ぶ（試作、本人の案 11-05）。内カメラの映像に原図を重ね、札のタップで予想を選ぶ。映像は端末の外へ出さない（kazasu.py）。
             from . import kazasu
             return self._send(200, kazasu.page(m.group(1), look))
+        m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
+        if m and m.group(1) in sources():
+            # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
+            # 予想の前と、刷った紙が無い時は開かない（手帖と同じ扱い。仮説の中身を先に見せないため）。
+            sid = m.group(1)
+            if hypotheses.need_prediction(sid):
+                return self._send(200, self._toy(sid, errors=["先に予想を書くと、作りながら見る頁が開きます"]))
+            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
+            hid = qs.get("h", [""])[0] or (printed[0] if printed else "")
+            if hid not in printed:
+                return self._send(200, self._toy(sid, errors=["先に紙を刷ると、作りながら見る頁が開きます"]))
+            from . import tsukuru
+            try:
+                n = int(qs.get("n", ["1"])[0])
+            except ValueError:
+                n = 1
+            return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0]))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
@@ -348,6 +365,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
         if m and m.group(1) in sources():
             return self._json_post(m.group(1), m.group(2), form)
+        m = re.fullmatch(rf"/toy/({SID})/step", self.path)
+        if m and m.group(1) in sources():
+            return self._step_post(m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/predict-choice", self.path)
         if m and m.group(1) in sources():
             # かざして選ぶ頁の札（試作）。受けるのは押した札の印だけ。選んだ事を予想として残し、仮説の所へ戻す。
@@ -448,6 +468,36 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"]))
         loop.confirm_sheet(sid, hid, v, by, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
+
+    def _step_post(self, sid, form):
+        """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
+        決まりの外（予想の前・刷っていない紙・数でない番号・手順の数の外・知らない出来事）は 422。映像や写真はこの口では受けない（form の欄だけ）。"""
+        from . import tsukuru
+
+        as_json = form.get("json") == "1"
+        bad = lambda why: self._send(422, json.dumps({"error": why}, ensure_ascii=False) if as_json else why,
+                                     "application/json; charset=utf-8" if as_json else "text/plain; charset=utf-8")
+        if hypotheses.need_prediction(sid):
+            return bad("先に予想を書く")
+        hid, event = form.get("hypothesis", ""), form.get("event", "")
+        if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]} or not printed_versions(sid, hid):
+            return bad("刷った紙をえらぶ")
+        if event not in making_log.EVENTS:
+            return bad("その札は無い")
+        total = tsukuru.count(sid, hid)
+        try:
+            step = int(form.get("step", ""))
+        except ValueError:
+            return bad("手順の番号は数で")
+        if not 1 <= step <= max(total, 1):
+            return bad("その手順は無い")
+        making_log.add_step(sid, hid, printed_versions(sid, hid)[-1], step, event)
+        # 次に見せる手順: 進む・戻るは 1 つ動かし、止まった・できた・開いたは同じ手順のまま。
+        nxt = min(step + 1, max(total, 1)) if event == "next" else max(step - 1, 1) if event == "back" else step
+        if as_json:
+            return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
+        ev = f"&ev={event}" if event in ("stuck", "done") else ""
+        return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&n={nxt}{ev}")])
 
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
