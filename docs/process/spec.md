@@ -33,7 +33,7 @@
 | B1 | 仕組みを 1 つに決めず、複数の仮説として並べる（御来迎 5、虎 3） | J-002 | `data/hypotheses/` | `tests/test_hypotheses.py` | 満たす |
 | B2 | 開いたらすぐ仮説の一覧と型紙が出る。型紙は正解でなく AI が考えた仮説と明示する | 本人の決定 11-05、#242 | `src/web/toy.py`、`src/omochae/marks.py` | `test_build_now.py`・`test_loop_premise.py` | 満たす |
 | B3 | 仮説に順位を付けない。並びは元の記録の順 | J-025、F4.evidence | `hypotheses.py`、`loop.py` | `test_play_server.py`・`test_loop.py` | 満たす |
-| B4 | 自分の仮説を立てられる。雛形に乗らない仮説には型紙なしの紙を返す | J-008、F9.own | `hypotheses.py` の own | `test_hypotheses.py` | 満たす |
+| B4 | 自分の案を立てられる。玩具の頁では書かずに話す形で、話した考えから紙を作る（必須 2 種。ほかの玩具は考えを話すまで）。雛形に乗らない案には型紙なしの紙を返す | J-008、J-032、F9.own | `web/think_sheet.py`、`hypotheses.py` の own | `test_loop1_think.py`、`test_own_form_gone.py`、`test_hypotheses.py` | 満たす |
 | B5 | Claude が出すのは雛形の範囲の中の値と仮説の案だけで、人が採るまで使わない | J-010、F9.human | `src/api/`、`hypotheses.py` の adopt | `test_loop.py`（偽の応答） | 一部（本物の API は 0 回、U-05） |
 
 ### C 型紙（エンジンの側。4 の境目を見よ）

@@ -184,7 +184,7 @@ print("ok no ffmpeg")
 rid = new_record()
 for i in range(techo_site.MAX_PER_RECORD):
     assert req(f"/record/{rid}/media", sample_mp4, "video/mp4")[0] == 201
-assert sorted(p.name for p in media_dir(rid).iterdir()) == ["m1.mp4", "m2.mp4", "m3.mp4"], "作業のファイルが残った"
+assert sorted(p.name for p in media_dir(rid).iterdir()) == ["m1.mp4", "m2.mp4", "m3.mp4", "owners.json"], "作業のファイルが残った"
 assert req(f"/record/{rid}/media", sample_mp4, "video/mp4")[0] == 422, "数の上限"
 print("ok tidy")
 
