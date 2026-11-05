@@ -188,6 +188,8 @@ def count(sid, hid, version=None):
 
 def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     """作りながら見る頁。呼ぶ側（play_server）が、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
+    from . import hanasu  # 話す口（Issue #279）。循環を避けて、ここで読む
+
     data = hypotheses.load(sid)
     h = next(x for x in data["hypotheses"] if x["id"] == hid)
     s = skin.SKINS.get(look, skin.SKINS[skin.DEFAULT])
@@ -197,7 +199,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     steps = step_texts(sid, hid, v)
     total = max(len(steps), 1)
     n = min(max(step, 1), total)
-    items = "".join(f'<li{" class=\"on\"" if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
+    on = ' class="on"'
+    items = "".join(f'<li{on if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
     if not steps:
         items = '<li class="on">手順の紙の絵を見て、番号の順に進めます。</li>'
     name = f"{hid}_v{v}_tejun.png"
@@ -222,6 +225,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<button name="event" value="done" class="go"{"" if n >= total else " hidden"}>{esc(DONE_LABEL)}</button>'
             '<button name="event" value="stuck">ここで止まった</button>'
             '<button name="event" value="back" class="small">戻る</button></form>'
+            # 作りながら、工夫を話す（一周の 2、Issue #279）。札のすぐ下に置き、今の手順の番号に結ぶ。声は字にして、字だけを残す（hanasu.py）。
+            f'{hanasu.craft_box(sid, hid, v, n)}'
             # 聞く口: JS がある時は手帖と同じ口（ask-json）で答えをここに出す。無い時は玩具の頁の聞く口へ送る。
             # 声の釦は、音声認識が在る画面でだけ JS が出す（hidden を外す）。声は字にして送るだけで、録らない。
             f'<div class="henji{" open" if asking else ""}" id="henji" aria-label="返事"><p class="ask-head" id="ask-head">{esc(ask_head)}</p>'
