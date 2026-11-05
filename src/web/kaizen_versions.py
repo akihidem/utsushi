@@ -7,14 +7,16 @@
 - どのループかは、判定でなく通った道で決める（本人の 4 つのループ、11-05 17:57）:
   - ループ 3: 雛形の直し（T-番号）と、案から刻んだエンジンの版（型紙を作る側を直した物）。材料の記録が通ったループも並べる。
   - 寸法の版は根拠の記録で決める。話した考えから作った紙（OWN-n）の記録はループ 1 も付く。作りながらの話がある記録と、話の無い記録はループ 2。
-    上げた後に残した話や、上げる口から来た記録はループ 4。
+    上げた後に残した話、手帖で上げた写真と動画、上げる口から来た記録はループ 4。
   - 作る前のレビューは作っていないので、4 つのどれにも数えず、材料の名で出す。
   - 記録に結ばれていない直し（試す前の設計・見学者の意見・決定だけの直し）は「ループの外」。ループに入れて見せない。
 - repo に入っている記録（11-04 の試行の分）は、置き場（OMOCHAE_DATA）が別の場でも読む。読まないと、同じ版の答えが場によって変わる。
-  置き場の同じ番号は別の記録なので、repo の直しの根拠は repo から読み、置き場の話した字を混ぜない。
+  置き場の同じ番号は別の記録なので、repo の直しの根拠は repo から読み、置き場の話した字と写真を混ぜない。
+  その場では repo の記録の番号を字に出さない。同じ番号が 2 つの記録を指すと、1 つの頁で同じ記録に読めるため。
 - エンジンの台帳は別の repo にある。在れば読み、無くても止めない。答え（v8 がループ 3 など）は台帳に頼らない。
   隣の木は作業の途中の枝のことがあるので、main の中身を git から読み、読めなければ木の中のファイルを読む。
-- 知見は人が書いた字だけを写す（人の説明・次の思いつき・止まった所・人の工夫・人が確かめた読み・話した工夫）。機械が要約した文を作らない。
+- 知見は人が書いた字だけを写す（人の説明・次の思いつき・止まった所・人の工夫・人が確かめた読み・話した工夫。ループ 1 の版は話した考えも）。機械が要約した文を作らない。
+  読みが人の説明と同じ字なら 1 行にする（頁の欄は説明の字を読みの欄へ入れて出すので、同じ字が 2 行並ぶ）。
   その記録の字だけで、ほかの記録の字を混ぜない。案のままの読みと作る側が隠した字は読まない。床より前の記録や手で置いた記録もあるので、
   出す時にも入口の床（talk_log.blocked）を当てる。採った人と説明した人の名前は返さない。動きの札の数も返さない（J-025）。
 """
@@ -70,8 +72,10 @@ def record_loops(rid, in_repo=False):
         return [], False
     if rec.get("video_kind") == "review":
         return [], True
+    from .techo_site import media_of  # 手帖で上げた物（m*）。受け口の動画（v*）は via で見る
+
     said = [] if in_repo else [t["when"] for t in talk_log.kufu(rec.get("source_id"), rid)]
-    made = rec.get("via") == records.UPLOADED or talk_log.WHEN["keep"] in said
+    made = rec.get("via") == records.UPLOADED or talk_log.WHEN["keep"] in said or (not in_repo and bool(media_of(rid)))
     out = {1} if not in_repo and rec.get("hypothesis_id") in words.spoken_own_ids(rec.get("source_id")) else set()
     if talk_log.WHEN["craft"] in said or not made:
         out.add(2)
@@ -101,18 +105,22 @@ def record_words(rid, in_repo=False):
     if rec is None:
         return []
     told = (_repo_json("loop", f"explanation-{rid}.json") if in_repo else loop.explanation(rid)) or {}
+    no = "" if in_repo else f" {rid}"  # repo の記録の番号は出さない（repo の分として読むのは、置き場が別の時だけ）
     out = []
     if _said(told.get("text")):
-        out.append(f"人の説明 {rid}: {told['text']}" + (f" 次の思いつき: {told['next_idea']}" if _said(told.get("next_idea")) else ""))
+        out.append(f"人の説明{no}: {told['text']}" + (f" 次の思いつき: {told['next_idea']}" if _said(told.get("next_idea")) else ""))
     answers = rec.get("answers") if isinstance(rec.get("answers"), dict) else {}
     if _said(answers.get("stuck")):
-        out.append(f"止まった所 {rid}: {answers['stuck']}")
+        out.append(f"止まった所{no}: {answers['stuck']}")
     for f in rec.get("fixes") if isinstance(rec.get("fixes"), list) else []:
         fix = " / ".join(str(f.get(k, "")) for k in ("part", "change", "outcome")) if isinstance(f, dict) else ""
         if _said(fix):
-            out.append(f"人の工夫 {rid}: {fix}")
-    out += [f"読み {rid}: {x}" for x in _reading(_repo_json("loop", f"interpretation-{rid}.json") if in_repo else loop.interpretation(rid)) if _said(x)]
-    if not in_repo:  # 話した字は git に入れないので、repo の記録には無い。床は maker_talk の中で当たる
+            out.append(f"人の工夫{no}: {fix}")
+    same = str(told.get("text", "")).strip()
+    out += [f"読み{no}: {x}" for x in _reading(_repo_json("loop", f"interpretation-{rid}.json") if in_repo else loop.interpretation(rid)) if _said(x) and x.strip() != same]
+    if not in_repo:  # 話した字は git に入れないので、repo の記録には無い。床は kufu の中で当たる
+        if 1 in record_loops(rid)[0]:
+            out += [f"話した考え {rid}: {t['text']}" for t in talk_log.kufu(rec.get("source_id"), rid, shared_only=True) if t["when"] == talk_log.WHEN["think"]]
         for t in loop.maker_talk(rid)["items"]:
             where = f"手順 {t['step']} で話した工夫" if t["step"] else ("上げた後の話" if t["when"] == talk_log.WHEN["keep"] else "作りながら話した工夫")
             out.append(f"{where} {rid}: {t['text']}")
