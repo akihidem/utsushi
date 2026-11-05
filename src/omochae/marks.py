@@ -53,11 +53,13 @@ def check_pdf(pdf_path, source):
         raise ToolMissing(f"pdftotext で読めない: {e}")
     # 印が折り返されても読めるよう、空白と改行を全部取ってから探す。
     flat = "".join(out.split())
+    # 短い語だけを探すと、本文が欠けても化けても別の所に同じ語が残れば通ってしまう。刷った文をそのまま探す。
     need = {
         "所蔵": HOLDER,
+        "所蔵の文": source["holding"],
         "永続ID": source["persistent_id"],
-        "改変": "改変",
+        "改変": source["modification_note"],
         "出典ID": source["source_id"],
-        "仮説": "仮説",
+        "仮説": source.get("hypothesis_mark", HYPOTHESIS),
     }
-    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if text not in flat]
+    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if "".join(text.split()) not in flat]
