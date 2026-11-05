@@ -363,6 +363,7 @@
    "tests/test_ways.py",
    "tests/test_min_python.py",
    "tests/test_about.py",
+   "tests/test_ai_name.py",
    "docs/process/site-requirements.md",
    "tests/test_tap_size.py",
    "tests/measure_tap.py",
