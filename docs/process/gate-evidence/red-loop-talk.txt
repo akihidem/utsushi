@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop_talk.py
+# commit: 2e711d5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_talk.py", line 72, in <module>
+    m = loop.material(r1)
+        ^^^^^^^^^^^^^
+AttributeError: module 'omochae.loop' has no attribute 'material'
+rc=1

@@ -16,7 +16,7 @@ description: 江都二色の玩具の図から、紙で試せる仕組みの仮�
 1. 図を見る。全体は `hypotheses picture` の URL、細部は MCP の `utsushi` の `zoom_picture`（頁の中だけ）
 2. 前例を引く: `list_records`、`get_known_examples`、`list_contributions`（CC BY の物だけが返る）
 3. 雛形を見る: `get_template_spec`。寸法は `check_params` を通す
-4. 仮説を 2〜3 本、`src/api/generate.py` の `SCHEMA` の形で書く。互いに見分けられ、何を測れば見分けられるかを書く
+4. 仮説を 1 本、読みが本当に割れる時だけ 3 本まで、`src/api/generate.py` の `SCHEMA` の形で書く。何を測れば確かめられるかを書く。型紙は玩具ごとに 1 枚のたたき台で、この案は作る側の控えになり、画面には並ばない（J-032）
 5. 案の全体を `check_draft` にかけ、空の一覧になるまで直す
 6. サブエージェント `second-eye` に案を読ませる。作った者と別の目で、言葉と根拠の線を見るため
 7. 案を scratchpad などの repo の外の JSON に書き、受付に入れる: `hypotheses --source <出典 ID> import-draft <ファイル> --by "<このセッション>"`
