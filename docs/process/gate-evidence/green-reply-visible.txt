@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_reply_visible.py（画面は repo の外の道具で Chromium を動かした）
+# commit: d720f76（この上に main を取り込んで PR にした）
 $ PYTHONPATH=src .venv/bin/python tests/test_reply_visible.py
 ok
 rc=0

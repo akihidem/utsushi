@@ -1,0 +1,6 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_error_pages.py
+# commit: 6cd3198（このファイルを足した commit。main c17f48e の上）
+直した後: python tests/test_error_pages.py は ok、rc 0
+画面: 無い道（白の展示 1440 幅・黒のジン 390 幅）、合言葉の門（黒のジン 1440 幅）を Chrome で開いて撮り、皮の地と書体で読める事、門に帯とリンクが無い事を見た
+実行した場面 115 本、期待どおり 115 本、未実装の床 0 本。
+./run.sh rc 0

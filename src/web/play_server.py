@@ -159,6 +159,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _refuse(self, code, reason, title="開けません", **kw):
+        """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
+        self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
+
     def _host_ok(self):
         # DNS rebinding で外のサイトから手元の記録を読み書きさせないため、手元の名前だけを受ける。
         port = self.server.server_address[1]
@@ -195,7 +199,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(303, "", headers=[("Location", path + (f"?{rest}" if rest else "")),
                                          ("Set-Cookie", f"utsushi_k={key}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax")])
             return False
-        self._send(403, "合言葉付きのリンクから開いてください")
+        # 合言葉を落とした人が最初に見る頁。帯もリンクも出さず、頁の中身と玩具の名前を見せない
+        self._refuse(403, "合言葉付きのリンクから開いてください。リンクを渡した人に聞いてください。", "合言葉が要ります", links=(), bare=True)
         return False
 
     def _pick_look(self):
@@ -214,7 +219,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._get()
         except Exception as e:
             failure_log.request_failed("GET", self.path, e)
-            self._send(500, "うまく表示できませんでした")
+            self._refuse(500, "うまく表示できませんでした。少し待って、もう一度開いてください。")
 
     def do_POST(self):
         try:
@@ -223,11 +228,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._post()
         except Exception as e:
             failure_log.request_failed("POST", self.path, e)
-            self._send(500, "受け付けられませんでした")
+            self._refuse(500, "受け付けられませんでした。少し待って、もう一度送ってください。", "送れませんでした")
 
     def _get(self):
         if not self._host_ok():
-            return self._send(403, "受け付けられません")
+            # 手元の名前でない Host には、その名前へ戻るリンクを出さない
+            return self._refuse(403, "受け付けられません", links=(), bare=True)
         path, _, query = self.path.partition("?")
         qs = urllib.parse.parse_qs(query)
         look = self._look
@@ -305,11 +311,11 @@ class Handler(BaseHTTPRequestHandler):
             sid, stem, ext = m.groups()
             hid = re.split(r"_v\d+", stem)[0]
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
-                return self._send(403, "試した記録を残してから開きます")
+                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
             if f.exists():
                 return self._send(200, f.read_bytes(), {"pdf": "application/pdf", "svg": "image/svg+xml", "png": "image/png"}[ext])
-        self._send(404, "見つかりません")
+        self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
 
     def _form(self):
         # 別のサイトの頁から手元の記録へ送らせないため、同じ出所のフォームだけを受ける。
@@ -334,7 +340,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _post(self):
         if not self._host_ok():
-            return self._send(403, "受け付けられません")
+            # 手元の名前でない Host には、その名前へ戻るリンクを出さない
+            return self._refuse(403, "受け付けられません", links=(), bare=True)
         m = re.fullmatch(r"/record/(R-\d{4,})/media", self.path)
         if m:
             # 写真と動画はフォームでなく本体そのままで受ける。別のサイトから送らせないため、同じ出所だけを受ける。
@@ -351,7 +358,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(201 if name else 422, name or why, "text/plain; charset=utf-8")
         form = self._form()
         if form is None:
-            return self._send(403, "受け付けられない送り方です")
+            return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
@@ -384,7 +391,7 @@ class Handler(BaseHTTPRequestHandler):
             if failures:
                 return self._send(422, self._toy(rec["source_id"], errors=[f.message for f in failures], at=rid, filled=("explain", form)))
             return self._done(rec["source_id"], "説明を残しました", form.get("back", ""), anchor=rid)
-        self._send(404, "見つかりません")
+        self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
 
     def _ai_reply(self, rid, act, form):
         """手帖で AI の返事を受ける口（J-013 の決める点 2: 子どもも AI から直接返事をもらってよい。紙 → 人の説明 → AI の順）。
