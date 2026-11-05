@@ -86,7 +86,8 @@ def all_toys(prefix):
         else:
             pic = '<div class="pic nopic">図は手元に無い</div>'
         more = "" if has else f'<small><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></small>'
-        items.append(f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>')
+        big = ' class="big"' if main else ""
+        items.append(f'<li{big}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>')
     n = len(items)
     return (f'<section class="{prefix}-all" id="all-toys" aria-label="全部の玩具"><p class="chapter">おもちゃ</p>'
             f'<h2>{n} の玩具から、1 つ選ぶ</h2>'

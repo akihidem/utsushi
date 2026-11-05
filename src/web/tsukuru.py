@@ -189,7 +189,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     steps = step_texts(sid, hid, v)
     total = max(len(steps), 1)
     n = min(max(step, 1), total)
-    items = "".join(f'<li{" class=\"on\"" if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
+    on = ' class="on"'
+    items = "".join(f'<li{on if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
     if not steps:
         items = '<li class="on">手順の紙の絵を見て、番号の順に進めます。</li>'
     name = f"{hid}_v{v}_tejun.png"
