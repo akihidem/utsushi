@@ -50,9 +50,9 @@ assert post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303
 code, body, _ = get(f"/toy/{G}")
 body = body.decode()
-# 仮説の札の字のリンクは窓へ。PDF へ直に飛ぶ字のリンクは置かない（窓の押し釦だけ）
-assert f'href="/toy/{G}?see=H-A&kind=sheet&v=1#win">型紙</a>' in body
-assert f'href="/toy/{G}?see=H-A&kind=tejun&v=1#win">手順の紙</a>' in body
+# 紙を選ぶ字の札は窓へ。PDF へ直に飛ぶ字のリンクは置かない（窓の押し釦だけ）
+assert f'href="/toy/{G}?see=H-A&kind=sheet&v=1#win" aria-current="true">型紙</a>' in body
+assert f'href="/toy/{G}?see=H-A&kind=tejun&v=1#win" aria-current="false">手順の紙</a>' in body
 assert body.count(f'href="/sheet/{G}/H-A_v1.pdf"') == 1 and 'target="_blank"' in body.split(f'href="/sheet/{G}/H-A_v1.pdf"')[1][:40]
 # 窓: 絵が出て、押すと拡大の窓
 code, win, _ = get(f"/toy/{G}?see=H-A&kind=tejun&v=1")
@@ -67,6 +67,6 @@ assert "kind=after" not in body
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目"}) == 303
 code, body, _ = get(f"/toy/{G}")
 body = body.decode()
-assert f'href="/toy/{G}?see=H-A&kind=after&v=1#win">試した後の紙</a>' in body
+assert f'href="/toy/{G}?see=H-A&kind=after&v=1#win" aria-current="false">試した後の紙</a>' in body
 assert f'<img src="/sheet/{G}/H-A_v1_after.png"' in get(f"/toy/{G}?see=H-A&kind=after&v=1")[1].decode()
 print("ok: 型紙はクリックで画面に出る")

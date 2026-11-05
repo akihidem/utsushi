@@ -366,7 +366,7 @@ def next_version(rid, by, content, change, source, sheet_dir):
         return None, failures
     version, params = _next_params(sid, hid, proposal["changes"])
     if print_version(sid, hid, version, sheet_dir, pending={"params": params, "changes": proposal["changes"], "record_ids": [rid]}):
-        return None, [Failure("F7.revision", f"{hid} 版 {version}", f"版 {version} を刷れませんでした（検査に落ちた）")]
+        return None, [Failure("F7.revision", f"{hid} 版 {version}", f"版 {version} の紙を作れませんでした（検査に落ちた）")]
     confirm_interpretation(rid, by, content)
     pid, failures = save_proposal(proposal, source, "human")
     if failures:

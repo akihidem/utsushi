@@ -111,6 +111,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .tabs a,.tabs span{border:1px solid var(--frame);padding:4px 12px}
 .tabs a[aria-current=true]{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
 .tabs span{color:var(--mute);border-style:dashed}
+.tabs button{margin:0;padding:4px 12px;font-size:inherit;letter-spacing:inherit;color:var(--accent);background:transparent;border:1px dashed var(--frame);cursor:pointer}
 .win .sheet{margin:0;background:#fff;border:1px solid var(--frame);box-shadow:0 30px 50px -30px var(--shadow)}
 .win .sheet a{display:block;border:0}.win .sheet img{display:block;width:100%}
 .win .side{font-size:14px;line-height:2}

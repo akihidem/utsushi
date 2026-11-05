@@ -82,7 +82,7 @@ def tool_gone(sid, hid, out, version=1, **kw):
 
 hypotheses.print_sheet = print_fails
 code, page = post(f"/record/{rid}/next", form | {"to": "26"})
-assert code == 422 and "版 2 を刷れませんでした" in page, (code, page[-400:])
+assert code == 422 and "版 2 の紙を作れませんでした" in page, (code, page[-400:])
 assert_nothing_added(before, "刷るのが検査に落ちた")
 hypotheses.print_sheet = tool_gone
 code, _ = post(f"/record/{rid}/next", form | {"to": "26"})
@@ -108,14 +108,14 @@ assert any(c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の�
 text = subprocess.run(["pdftotext", str(out_dir(G) / "H-A_v2.pdf"), "-"], capture_output=True, text=True, check=True).stdout
 assert "版 2" in text and rid in text, text[:300]
 
-# 紙の無い版: 刷り直す口が画面に出て、押すと紙ができる。
+# 紙の無い版: 作り直す口が画面に出て、押すと紙ができる。
 page_before = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
-assert "刷り直す" not in page_before, "紙がある間は出さない"
+assert "作り直す" not in page_before, "紙がある間は出さない"
 gone = sorted(p.name for p in out_dir(G).glob("H-A_v2*"))
 for name in gone:
     (out_dir(G) / name).unlink()
 page_now = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
-assert "版 2 の紙を刷り直す" in page_now, "紙の無い版を画面で知らせる"
+assert "版 2 の紙を作り直す" in page_now, "紙の無い版を画面で知らせる"
 code, _ = post(f"/toy/{G}/reprint", {"hypothesis": "H-A", "version": "3"})
 assert code == 422, "採っていない版は刷らない"
 for bad in ({"hypothesis": "H-ZZ", "version": "2"}, {"hypothesis": "H-A", "version": "x"}, {"hypothesis": "H-A", "version": "0"},
@@ -127,7 +127,7 @@ assert code in (200, 303)
 assert sorted(p.name for p in out_dir(G).glob("H-A_v2*")) == gone, "同じ組の紙ができる"
 assert (out_dir(G) / "H-A_v2.pdf").read_bytes()[:4] == b"%PDF"
 assert len([c for c in loop.sheet_confirmations(G) if c["version"] == 2][0]["confirmations"]) == count + 1
-assert "刷り直す" not in urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
+assert "作り直す" not in urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 server.shutdown()
 print("ok")
