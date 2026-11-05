@@ -79,10 +79,25 @@ F5.fan_height は、軸の形では「中心の高さ＋折りの高さ ≦ 押�
 
 | ID | 足した事 | 試験 |
 |---|---|---|
-| F5.holes（新しい床） | 穴が部品の紙の中にある（御来迎）。開く糸の穴は要から 35mm に固定なので、低い扇では紙の外に出る。像の穴が像より高い時も落とす | `tests/test_slider_holes.py` |
+| F5.holes（新しい床。#164 で F5.hole に置き換えた） | 穴が部品の紙の中にある（御来迎）。開く糸の穴は要から 35mm に固定なので、低い扇では紙の外に出る。像の穴が像より高い時も落とす | `tests/test_slider_holes.py` |
 | F5.stroke | 内筒を下から押す形は、押し上げる量 ≦ 筒の高さ（静止時に内筒の上の端が筒の中にある） | `tests/test_slider_tube_stroke.py` |
 | F5.pivot | 首の形: 帯の幅は穴の中で縦に並ぶとして、10° 傾いても帯が穴の縁に当たらない（軸は壁の 6mm 後ろ）。前は帯の幅の 2 割しか引かず、穴より広い帯も通していたので、見方を正した。吊る形: axle_height が刷る耳の穴の高さ（胴の高さ − 4）と同じで、重りの位置が頭の中にある | `tests/test_pivot_neck_opening.py`・`tests/test_pivot_hang_model.py` |
 | F8.references | 提案の根拠の記録は、提案と同じ出典（玩具）の物 | `tests/test_loop_record_source.py` |
+
+## paper-to-toy と同じにした所（2026-11-05、#164）
+
+同じ名前の床が 2 つの repo で別の意味になっていたので、正の paper-to-toy の見方に合わせた。前からの場面の中身と期待は変えていない。紙も変わらない（全 171 仮説の型紙と手順の紙の SVG を、直す前と比べて同じ）。証拠は `docs/process/gate-evidence/red-engine-floors.txt`（直す前に落ちる）と `docs/process/gate-evidence/green-engine-floors.txt`（直した後に通る）。
+
+| ID | 見る事 | 負の対照・試験 | 期待 |
+|---|---|---|---|
+| F1.marks | 所蔵の頭の語・「改変」「仮説」の短い語だけでなく、出典の記録の所蔵の文（holding）と改変の注記（modification_note）、紙に刷った仮説の文を、空白を除いてそのまま探す。短い語だけだと、本文が欠けても化けても通った | `tests/test_engine_floors.py` の marks_whole_text | 3・F1.marks |
+| F2.bom | 型紙に刷る部品ごとに、番号と key の合う部品表の行がある。番号の重なりも落とす。虎の首の形の部品 5（重りの腕）が部品表に無いまま通り、族の雛形はまとめた行で番号も合っていなかった。部品表の行を直しただけで、刷る「用意する物」は変わらない | 同じ試験の bom_neck_arm・bom_every_hypothesis・bom_forms_without_hypothesis | 3・F2.bom |
+| F5.image_box | 線は刷られる太さの帯で、輪郭線つきの面は線の太さまで、折り線と糊代にかかるかを見る。前は幅 0 の線で見ていたので、糊代を横切る線を拾えなかった | 同じ試験の image_box_line_across_glue・image_box_printed_width | 3・F5.image_box |
+| F5.fan_leg（新しい床） | 軸の形で、扇の足の長さ（中心の高さ − 2 ＋ 糊代）が糊代より短くない。短いと糊代が扇の本体に食い込み、糊代の折り線が要の穴の列を横切る（中心の高さ 2 未満） | `neg_fan_leg` | 3・F5.fan_leg・F5.image_box |
+| F5.figure_base（新しい床） | 像の足の糊代（像の幅の 0.3〜0.7）が扇の台の一辺より広くない。広いと台に貼れない | `neg_figure_base` | 3・F5.figure_base |
+| F5.hole（F5.holes を置き換えた） | 穴の円が部品の輪郭の中にある。御来迎だけを見ていた F5.holes を、全部の雛形を見る床に 1 つにした | `neg_hole`・`tests/test_slider_holes.py` | 3・F5.hole |
+
+`neg_fan_leg` の期待に F5.image_box があるのは、足の糊代が扇の本体に食い込む寸法では、糊代と糊代の折り線が本当に扇の絵にかかるため（偽の失敗ではない）。
 
 ## 持ち寄りの床（本人の決定で範囲に入った。設計は docs/process/research/09）
 

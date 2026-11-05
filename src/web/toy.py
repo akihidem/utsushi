@@ -290,6 +290,8 @@ NEXT_REASONS = {
     "F5.base_size": "この値だと、扇の台が内筒に入りません。",
     "F5.stroke": "この値だと、押し上げる動きが筒の中に収まりません。",
 }
+# 文面を本人に確認してもらっている床（#164）。確認が済むまで検査の文を画面に出さず、下の「近い値を試す」の 1 行だけにする。文は確認の後に上の表へ足す。
+NEXT_REASONS_WAITING = {"F5.fan_leg", "F5.figure_base", "F5.hole"}
 
 
 def next_reasons(failures, sid, hid, param, to=None):
@@ -308,6 +310,9 @@ def next_reasons(failures, sid, hid, param, to=None):
                 on_paper = True
                 continue
             text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
+        elif f.floor in NEXT_REASONS_WAITING:
+            on_paper = True
+            continue
         elif f.floor.startswith("F5."):
             # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
             text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
@@ -409,8 +414,9 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
                  f'<a href="{pdf}" target="_blank" rel="noopener">PDF</a>）</p>')
         # 自分の仮説は窓に出ない（窓へ向けると、ほかの案の紙が出る）ので、字のリンクも PDF へ向ける（#320）。
         if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]):
-            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
-            # 話した案の紙は作った本人の画面からだけ開き、合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので道を出さない。
+            # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
+            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>' if photos else ""
+            # 話した案の刷った紙は、作った本人の画面からだけ開く。これも道を出さない。
             if photos and r["hypothesis_id"] not in spoken:
                 after = own_papers(sid, r["hypothesis_id"], ver) + after
         if told:
