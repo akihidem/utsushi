@@ -92,6 +92,7 @@ assert f'href="/toy/{G}#{g_rid}"' in gal and f'href="/toy/{T}#{rid}"' in gal
 # 見本の無い玩具には見本を出さない
 other = "NDL-1187053-R0000016-L"
 assert post(f"/toy/{other}/predict", {"text": "立つと思う"}) == 303 and "見本の記録" not in get(f"/toy/{other}")[1]
+# 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for w in ("成功", "失敗", "正解", "順位"):
-    assert w not in page, w
+    assert w not in page.replace("正解ではありません", ""), w
 print("ok: 作った記録を玩具の頁で")

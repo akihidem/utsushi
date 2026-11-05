@@ -7,7 +7,7 @@
 - 型紙と手順の紙は、刷ると PDF と一緒に PNG と SVG も書き出されている（render.write_all・to_png）。前の頁は PDF のリンクしか出さず、
   画面に絵が出なかった（本人「今は型紙が出力されていない」）。ここでは「型紙の窓」で絵を画面に出し、押すと拡大の窓（CSS の :target、JS なし）。
 - 試した後の紙は、その仮説の記録が 1 件でもある時だけ出す。絵も PDF も、記録の前は URL を知っていても渡さない（J-013。門は play_server の /sheet/）。
-- 記録は雛形の値で、動かない記録もそのまま並ぶ。成功・失敗・正解の言葉を使わない（philosophy.md）。
+- 記録は雛形の値で、動かない記録もそのまま並ぶ。成功・失敗・正解の言葉を使わない（philosophy.md）。仮説の文の打ち消し「正解ではありません」だけは本人の決定で出す（#258）。
 - 返事の順は 紙 → 人の説明 → AI（J-013 の 11-04 の変更）。AI の釦は人の説明の後にだけ出す。
 - 寸法のつまみは置かない。寸法を変えるのは「次の版を作る」（人の説明の後、1 つの寸法、床に落ちたら刷らない）だけ（本線は紙の実物）。
 """
@@ -17,6 +17,7 @@ import re
 from omochae import hypotheses, loop, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
+from omochae.marks import HYPOTHESIS
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
@@ -100,7 +101,7 @@ def window(sid, data, see, kind, v, recorded):
             f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて刷る</a></p>'
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
-            '<p class="meta">紙は復元ではなく、試すための翻案です。答えではありません。</p></div>')
+            f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
 

@@ -92,5 +92,6 @@ for tid, src, sid in (("slider_fan", source, "NDL-1187053-R0000005-L"), ("pivot_
     layout, _ = compose_sheet(tid, h["params"], src, h["name"], h["how_it_moves"])
     after, _ = compose_after(src, h["name"], load(sid)["after_try"])
     words = " ".join(x.text or "" for x in layout["texts"] + after["texts"])
-    assert not any(w in words for w in ("成功", "失敗", "正解", "合格")), "学ぶ人の紙に成績の語を刷らない"
+    # 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
+    assert not any(w in words.replace("正解ではありません", "") for w in ("成功", "失敗", "正解", "合格")), "学ぶ人の紙に成績の語を刷らない"
     assert "おもちゃとして動きましたか" in words  # 見た事の見出しを、本人の着目 1 の問いにした（U-25）
