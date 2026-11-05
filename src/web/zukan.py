@@ -109,7 +109,7 @@ def toy_section(sid, link_title=False):
     title = f'<a href="/zukan/{esc(sid)}">{esc(z["toy"])}</a>' if link_title else esc(z["toy"])
     return (f'<section class="toy" id="{esc(sid)}">{pic}<div><h2>{title}</h2>{songs}'
             f'<p class="meta">試した記録</p>{obs}<p class="meta">仮説</p>{hyp}'
-            f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">上げた物</a></p></div></section>')
+            f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">作った物</a></p></div></section>')
 
 
 def _page(title, body, look=None, path="/zukan"):
@@ -123,7 +123,7 @@ def _page(title, body, look=None, path="/zukan"):
             f'<title>{esc(title)}</title><style>{STYLE}</style><body class="zukan"><main>{body}</main></body></html>')
 
 
-NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">上げた物</a></p>'
+NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">作った物</a></p>'
 LEAD = '<p class="meta">文にはどれも印があります。原文の引用は人が確かめた読み、仮説は試していない考え、観察は人が残した記録です。</p>'
 
 

@@ -126,7 +126,7 @@ def _li(line, inner=None):
     return f'<li><span class="lb">{esc(line["label"])}</span>{inner if inner is not None else esc(line["text"])}</li>'
 
 
-NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">上げた物</a></p>'
+NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">作った物</a></p>'
 
 
 def _page(title, body, look=None, path="/zukan"):
