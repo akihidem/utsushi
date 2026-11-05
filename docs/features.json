@@ -167,6 +167,7 @@
    "src/web/demo_check.py",
    "tests/test_play_server.py",
    "tests/test_public_open.py",
+   "tests/test_public_links.py",
    "tests/test_run_demo.py"
   ],
   "unverified": "人がブラウザで使った確認はまだ。図鑑の頁（/zukan）は 11-04 に作った（F6.label を通してから描く）。公開の形はデモの合言葉付きの一時のリンク（run-demo.sh）。run-demo.sh の「開くかを見る」は偽のトンネルの試験まで（#159）で、実のトンネルでの確かめはデモを立て直す時。11-05 に骨と皮を 1 つにし、玩具の頁を作り直した（f30）。11-05 朝の本人の許可で、合言葉なしで開く形を足した（J-028。写真と動画は受けない・置き場は別）"
