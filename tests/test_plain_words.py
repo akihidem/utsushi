@@ -64,7 +64,10 @@ filled = {e["word"]: e["plain"] for e in pw.TABLE if e["plain"]}
 assert filled == {"連絡先": "住所・電話番号・メール", "上下はありません": "どれがえらい、ということはありません", "仮説": "ためしの案（仮説）", "正解": "正しい答えではありません"}, filled
 assert not hasattr(pw, "PROPOSED")
 # 内輪の言葉は #135 の表の受け持ち。同じ語を両方に書かない
-assert not {e["word"] for e in pw.TABLE} & {"本人", "棚卸し", "雛形", "複写", "鍵", "見込み", "型紙エンジン"}
+assert not {e["word"] for e in pw.TABLE} & {"本人", "棚卸し", "雛形", "複写", "鍵", "型紙エンジン"}
+# data の札の文に残る語も、言いかえの欄を空にして数える（案は本人の確認待ち）
+for w in ("本文", "翻刻", "見込み", "未確認", "推定", "通例", "趣旨", "確度"):
+    assert w in {e["word"] for e in pw.TABLE if not e["plain"]}, w
 
 # 本物の頁: 全部の種類が開けて数えられる。頁を開くだけで記録の置き場に書かない
 before = sorted(p.relative_to(_data.name) for p in pathlib.Path(_data.name).rglob("*.json"))
