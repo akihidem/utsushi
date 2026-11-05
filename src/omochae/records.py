@@ -108,7 +108,8 @@ def add(rec):
 
 def all_records(source_id=None, uploads=False):
     """記録の一覧。uploads は動画の受け口の記録も含める形で、版の輪の表（trial_video.effect）だけが使う。
-    なぜ 1 か所で外すか: 読む所は学ぶ人の頁・ギャラリー・束など多く、1 つずつ外すと、新しく読む所が足された時に約束が崩れる。"""
+    なぜここで外すか: 読む所は学ぶ人の頁・ギャラリー・束など多く、1 つずつ外すと、新しく読む所が足された時に約束が崩れる。
+    この関数を通らない所（loop.confirmed_records とサイトの /record の口）は、それぞれで外す。"""
     out = []
     for p in sorted(folder().glob("R-*.json")):
         if (withdrawn_folder() / p.name).exists():

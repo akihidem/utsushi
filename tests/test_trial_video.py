@@ -227,4 +227,111 @@ assert not records.withdraw(up)[1] and not tv._base(up).exists() and tv.load(up)
 # 案の根拠になった記録は残す。動画とコマと札は消える（顔や声を、根拠の話のために残さない）
 assert records.withdraw(rid)[1], "案の根拠の記録は、そのまま消さない"
 assert not records.withdraw(rid, media_only=True)[1] and not tv._base(rid).exists() and tv.load(rid) is None and loop.record(rid)
+# 映像の流れの中の情報: H.264 の SEI に入れた字が残らない。コマの絵は同じ
+MARK = "SECRET-IN-STREAM"
+sei = work / "sei.mov"
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=64x48:rate=5:duration=3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-bsf:v", f"h264_metadata=sei_user_data=086f3693b7b34f2c965321492feee5b8+{MARK}", str(sei)], check=True, capture_output=True, timeout=120)
+assert MARK.encode() in sei.read_bytes(), "作り物に印が入っていない"
+r4, _ = tv.new_record(G, "H-A", "動いた")
+assert tv.attach(r4, sei)[1] == []
+out_sei = tv._base(r4) / "v1.mp4"
+assert MARK.encode() not in out_sei.read_bytes(), "流れの中の字を落とす"
+
+
+def md5(path):
+    made = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-map", "0:V:0", "-f", "framemd5", "-"], capture_output=True, text=True, check=True).stdout
+    return [x.split(",")[-1] for x in made.splitlines() if not x.startswith("#")]
+
+
+assert md5(sei) == md5(out_sei), "絵は作り直さない"
+# H.264 と HEVC でない形（コマごとに EXIF を持てる MJPEG）は作り直す
+mjpeg = work / "mjpeg.mov"
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=64x48:rate=5:duration=3", "-c:v", "mjpeg", "-q:v", "5", str(mjpeg)], check=True, capture_output=True, timeout=120)
+r5, _ = tv.new_record(G, "H-A", "動いた")
+assert tv.attach(r5, mjpeg)[1] == []
+codec = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "V:0", "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(tv._base(r5) / "v1.mp4")], capture_output=True, text=True, check=True).stdout.strip()
+assert codec == "h264", codec
+# 写すと大きくなりすぎる物（同じ所を何度も指す動画）と、長さの欄が長すぎる物は断る
+room, tv.ROOM = tv.ROOM, 1000 - src.stat().st_size
+assert tv.attach(r5, src)[1], "大きくなりすぎる"
+tv.ROOM = room
+top, tv.MAX_SECONDS = tv.MAX_SECONDS, 1
+assert tv.attach(r5, src)[1], "長すぎる"
+tv.MAX_SECONDS = top
+# 後ろが欠けた動画は、結んだ事にしない（入れ物の欄の長さと、写せた中身を比べる）
+whole = work / "whole.mov"
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=15:duration=20", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(whole)], check=True, capture_output=True, timeout=120)
+cut = work / "cut.mov"
+cut.write_bytes(whole.read_bytes()[:whole.stat().st_size // 3])
+assert tv.attach(r5, cut, "mov")[1], "欠けた動画"
+# 道具が止められた時は、動画のせいにしない（例外で分ける）
+real_run = subprocess.run
+
+
+def killed(*a, **k):
+    subprocess.run = real_run
+    return subprocess.CompletedProcess(a[0], -9, "", "")
+
+
+subprocess.run = killed
+try:
+    tv._probe(src)
+except tv.Interrupted:
+    pass
+else:
+    raise AssertionError("止められた事が分からない")
+# 受け口の記録はサイトの口で触れない。前例の読みにも出ない
+keep_up, _ = tv.new_record(TORA, "H-A", records.UNSURE, note="上げた人の文その 2", via=records.UPLOADED)
+assert loop.confirm_interpretation(keep_up, "確かめた人", "読み") == [] and all(r["id"] != keep_up for r in loop.confirmed_records(TORA))
+server2 = serve(0)
+threading.Thread(target=server2.serve_forever, daemon=True).start()
+req = urllib.request.Request(f"http://127.0.0.1:{server2.server_address[1]}/record/{keep_up}/explain", data=b"by=x&text=y&next_idea=z", method="POST", headers={"Origin": f"http://127.0.0.1:{server2.server_address[1]}", "Content-Type": "application/x-www-form-urlencoded"})
+try:
+    urllib.request.urlopen(req)
+except urllib.error.HTTPError as e:
+    assert e.code == 404, e.code
+else:
+    raise AssertionError("受け口の記録に説明を書けた")
+assert not loop.explanation(keep_up)
+server2.shutdown()
+
+# 外の受け口の置き場から移す: 作り物の受付（結んだ物・結ぶ前の物・止まった物・途中の物）
+place = work / "place"
+(place / "receipts").mkdir(parents=True)
+(place / "inbox/V-0002").mkdir(parents=True)
+(place / "data/records/media/R-0001").mkdir(parents=True)
+(place / "data/loop").mkdir(parents=True)
+shutil.copy(sei, place / "data/records/media/R-0001/v1.mp4")
+(place / "data/loop/video-R-0001.json").write_text(json.dumps({"marks": [{"at": 1.0, "step": 3, "kind": "fold", "note": "折りで止まった", "read_by": "読み手", "confirmed_by": "確かめた人"}, {"at": 2.0, "step": None, "kind": "other", "note": "外した札", "read_by": "機械", "rejected_by": "確かめた人"}]}), encoding="utf-8")
+(place / "receipts/V-0001.json").write_text(json.dumps({"receipt": "V-0001", "name": "IMG_0001.MOV", "sid": G, "note": "上げた人の文", "result": "動いた", "record": "R-0001", "stage": "waiting_maker"}), encoding="utf-8")
+shutil.copy(sei, place / "inbox/V-0002/video.mp4")
+(place / "inbox/V-0002/audio.mka").write_bytes(b"VOICE-PRIVATE")
+(place / "receipts/V-0002.json").write_text(json.dumps({"receipt": "V-0002", "name": "IMG_0002.MOV", "sid": TORA, "note": "", "result": "", "stage": "waiting_maker", "draft_marks": [{"at": 1.0, "step": None, "kind": "other", "note": "動きの少ない区間", "read_by": "機械（止まった候補）", "confirmed_by": None}]}), encoding="utf-8")
+(place / "receipts/V-0003.json").write_text(json.dumps({"receipt": "V-0003", "name": "x.mov", "sid": G, "stage": "error", "error": "読めない"}), encoding="utf-8")
+(place / "receipts/V-0004.json").write_text(json.dumps({"receipt": "V-0004", "name": "y.mov", "sid": G, "stage": "received"}), encoding="utf-8")
+(place / "receipts/V-0005.json").write_text(json.dumps({"receipt": "V-0005", "sid": "../../etc", "stage": "waiting_maker"}), encoding="utf-8")
+before = len(records.all_records(uploads=True))
+dry, fails = tv.take_in(place, dry_run=True)
+assert {x for x, _ in dry} == {"V-0001", "V-0002", "V-0004"} and len(fails) == 1 and "形が違う" in fails[0].message and len(records.all_records(uploads=True)) == before, (dry, fails)
+done = cli("take-in", str(place))
+assert done.returncode == 3 and "V-0005" in done.stderr, (done.returncode, done.stderr[-300:])
+moved = tv.taken_in()
+assert set(moved) == {"V-0001", "V-0002"}, moved
+first, second = loop.record(moved["V-0001"]), loop.record(moved["V-0002"])
+assert first["via"] == records.UPLOADED and first["result"] == "動いた" and first["note"] == "上げた人の文" and first["upload"] == "V-0001" and first["source_id"] == G
+assert second["result"] == records.UNSURE and second["source_id"] == TORA, "動いたかは決めつけない"
+assert "IMG_000" not in json.dumps([first, second]) + json.dumps(moved), "元のファイルの名前を移さない"
+marks = tv.load(moved["V-0001"])["marks"]
+assert [(m["step"], m["kind"], m["note"], m["confirmed_by"], m["rejected_by"]) for m in marks] == [(3, "fold", "折りで止まった", "確かめた人", None), (None, "other", "外した札", None, "確かめた人")], marks
+assert tv.load(moved["V-0002"])["marks"][0]["confirmed_by"] is None, "案は案のまま"
+for rid_moved in moved.values():
+    base_dir = tv._base(rid_moved)
+    assert MARK.encode() not in (base_dir / "v1.mp4").read_bytes() and (base_dir / "frames/sheet-v1.png").exists(), "写し直す"
+    assert not list(base_dir.rglob("*.mka")), "声は移さない"
+assert (place / "inbox/V-0002/audio.mka").exists() and (place / "inbox/V-0002/video.mp4").exists(), "元の置き場は変えない"
+assert rid_moved not in {r["id"] for r in records.all_records()}, "学ぶ人の頁と束に出ない"
+# 2 回回しても移さない
+count = len(records.all_records(uploads=True))
+assert tv.take_in(place)[0] == [] and len(records.all_records(uploads=True)) == count
+assert cli("take-in", str(work / "nothing")).returncode == 4, "置き場が無いのは 4"
 print("ok: 動画から版まで")

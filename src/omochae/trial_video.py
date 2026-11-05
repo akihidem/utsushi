@@ -3,7 +3,8 @@
 本人の言葉（窓口経由）: 作成の過程を動画で撮っている。それをフィードバックの仕組みに入れて、実際に型紙が改善するかを見たい。
 
 判断の芯:
-- 動画は git の外（記録の置き場の media/<記録>/v1.mp4）に置き、記録と番号で結ぶ。音と撮影情報は落とす（声なしの決まり J-022、位置情報を残さない）。映像は元のまま。
+- 動画は git の外（記録の置き場の media/<記録>/v1.mp4）に置き、記録と番号で結ぶ。音と撮影情報は落とす（声なしの決まり J-022、位置情報を残さない）。
+  H.264 と HEVC は絵を作り直さず、映像の流れの中の付帯情報（SEI）も落とす。ほかの形は流れの中の情報を落とせないので作り直す（MJPEG はコマごとに EXIF を持てる）。
 - 学ぶ人の頁とギャラリーには出さない。名前を v で始めて、上げた物の一覧（techo_site.media_of の m*）に拾わせない。
   作る側の頁でも、人が動画ごとに「顔と声が入っていない」と確かめるまで、映像とコマを出さない（子どもの写真と声を扱わない決まり。仕様書 I2・J-021）。
   顔や声が入った動画は確かめないまま置き、札の字だけで回す（本人の決定 11-05）。
@@ -27,12 +28,15 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 
 from . import hypotheses, instructions, loop, making_log, records, store
 from .compose import TEMPLATES
 from .contrib import _human_confirm, check_pii
 from .hypotheses import ROOT
 from .model import Failure
+from .store import SID as STORE_SID
 
 # 困り事の種類。エンジンの報告（omochae.feedback の KINDS）と同じ言葉にして、そのまま渡せるようにする。型紙の外の 3 つ（案内・答え・サイト）も同じ。
 KINDS = {"cut": "切る", "fold": "折る", "glue": "貼る", "fit": "はまり", "motion": "動き", "mark": "印や字", "material": "材料",
@@ -42,8 +46,18 @@ KINDS = {"cut": "切る", "fold": "折る", "glue": "貼る", "fit": "はまり"
 # エンジンの報告の種類には無いので、報告では「そのほか」に文の頭の印を付けて渡す（エンジンの形を勝手に変えない）。止まった手順には数えない。
 KUFU = "kufu"
 TIMEOUT = 900  # 秒。長い動画を読む時の上限（返らなくても手順を止めない）
+PROBE_TIMEOUT = 120  # 秒。頭を読むだけの上限
+FRAME_TIMEOUT = 120  # 秒。一覧の 1 コマの上限
+MAX_SECONDS = 6 * 3600  # 1 本の長さの上限。入れ物の欄は偽れるので、処理の前に断る
+ROOM = 64 * 1024 * 1024  # 写す時に元より増えてよい量。同じコマを何度も指す小さな動画で、置き場を埋めさせない
+RECORD_ID = re.compile(r"R-\d{4,}")
+SEI = {"h264": "filter_units=remove_types=6", "hevc": "filter_units=remove_types=39|40"}  # コマの絵は変わらない
 MIN_STILL = 20  # 秒。これより短い手の止まりは、候補に挙げない（持ち替えや確かめで普通に起きる）
 FLOOR = 0.5  # 動きの少なさの下限。センサーの揺れを動きと読まないため
+
+
+class Interrupted(OSError):
+    """道具が止められた・時間切れ・場所が足りない。動画のせいではない（受け口は動画を消さずにやり直す）。"""
 
 
 def _base(rid):
@@ -75,30 +89,59 @@ def all_for(sid=None):
 
 def _probe(path, demuxer=None):
     """(長さの秒, 映像の種類)。読めなければ (None, None)。demuxer は入れ物の形を決め打つ時（受け口）。形を当て推量で読ませると、
-    動画に見せた再生リストの中の道を開いてしまう。"""
+    動画に見せた再生リストの中の道を開いてしまう。長さは映像の流れの物（音だけ長い動画を、映像が欠けたと読まない）。"""
     try:
-        r = subprocess.run(["ffprobe", "-v", "error", "-protocol_whitelist", "file", *(["-f", demuxer] if demuxer else []), "-select_streams", "V:0", "-show_entries", "stream=codec_name:format=duration",
+        r = subprocess.run(["ffprobe", "-v", "error", "-protocol_whitelist", "file", *(["-f", demuxer] if demuxer else []), "-select_streams", "V:0", "-show_entries", "stream=codec_name,duration:format=duration",
+                            "-of", "json", str(path)], capture_output=True, text=True, timeout=PROBE_TIMEOUT)
+    except subprocess.TimeoutExpired as e:
+        raise Interrupted("ffprobe が時間切れ") from e
+    except OSError:
+        return None, None
+    if r.returncode < 0:
+        raise Interrupted("ffprobe が止められた")
+    try:
+        j = json.loads(r.stdout) if r.returncode == 0 else {}
+        return float(j["streams"][0].get("duration") or j["format"]["duration"]), j["streams"][0]["codec_name"]
+    except (ValueError, KeyError, IndexError):
+        return None, None
+
+
+def _span(path):
+    """写した物の本当の中身 (映像のコマ数, 長さの秒)。入れ物の欄を信じず、数える。読めなければ (0, 0)。"""
+    try:
+        r = subprocess.run(["ffprobe", "-v", "error", "-protocol_whitelist", "file", "-count_packets", "-select_streams", "V:0", "-show_entries", "stream=nb_read_packets:format=duration",
                             "-of", "json", str(path)], capture_output=True, text=True, check=True, timeout=TIMEOUT)
         j = json.loads(r.stdout)
-        return float(j["format"]["duration"]), j["streams"][0]["codec_name"]
+        return int(j["streams"][0]["nb_read_packets"]), float(j["format"]["duration"])
     except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError):
-        return None, None
+        return 0, 0.0
 
 
 def still_spans(path, min_sec=MIN_STILL):
     """動きの少ない区間 [[始め, 終わり], …]（秒）。1 秒に 1 コマを小さな灰色にして、隣のコマとの差を見るだけ。映像は外へ出さない。
     手が止まった候補にすぎない。考えている時も、カメラの外で作業している時も同じに見える。"""
     w, h = 64, 36
-    try:
-        raw = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", str(path), "-vf", f"fps=1,scale={w}:{h},format=gray", "-f", "rawvideo", "-"],
-                             capture_output=True, check=True, timeout=TIMEOUT).stdout
-    except (OSError, subprocess.SubprocessError):
-        return []
     size = w * h
-    frames = [raw[i:i + size] for i in range(0, len(raw) - size + 1, size)]
-    if len(frames) < 2:
+    try:
+        p = subprocess.Popen(["ffmpeg", "-nostdin", "-v", "error", "-i", str(path), "-vf", f"fps=1,scale={w}:{h},format=gray", "-f", "rawvideo", "-"],
+                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    except OSError:
         return []
-    diffs = [sum(abs(a - b) for a, b in zip(frames[i], frames[i + 1])) / size for i in range(len(frames) - 1)]
+    # 全部をメモリに溜めない。1 つ前のコマだけを持つ（長さを偽った小さな動画で、機械のメモリを埋めさせない）。
+    timer = threading.Timer(TIMEOUT, p.kill)
+    timer.start()
+    diffs, last = [], None
+    try:
+        while len(cur := p.stdout.read(size)) == size:
+            if last is not None:
+                diffs.append(sum(abs(a - b) for a, b in zip(last, cur)) / size)
+            last = cur
+    finally:
+        p.stdout.close()
+        finished = p.wait() == 0
+        timer.cancel()
+    if not (finished and diffs):
+        return []
     # 物差しは上から 1/4 の所の動き。中央の値にすると、止まっている時間が長い動画で物差しごと下がり、止まりを見逃す。
     line = max(FLOOR, 0.35 * statistics.quantiles(diffs, n=4)[2]) if len(diffs) >= 4 else FLOOR
     spans, start = [], None
@@ -126,13 +169,13 @@ def steps_of(sid, hid, version=1):
         return []
 
 
-def new_record(sid, hid, result, version=1, tried_on="", note="", via="video"):
+def new_record(sid, hid, result, version=1, tried_on="", note="", via="video", upload=""):
     """動画を結ぶ試行の記録を作る。刷った組（goraigo-v10 など）を一緒に残す: 版が上がった後に、どの紙の試行かが分かるように。"""
     data = hypotheses.load(sid)
     h = next((x for x in data["hypotheses"] if x["id"] == hid), None)
     template = (h or {}).get("template") or data.get("template", "slider_fan")
     return records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": version, "result": result, "sheet_set": TEMPLATES[template].SHEET_SET,
-                        **({"tried_on": tried_on} if tried_on else {}), "note": note, "fixes": [], "via": via})
+                        **({"tried_on": tried_on} if tried_on else {}), "note": note, "fixes": [], "via": via, **({"upload": upload} if upload else {})})
 
 
 def attach(rid, src, demuxer=None):
@@ -147,19 +190,37 @@ def attach(rid, src, demuxer=None):
     dur, codec = _probe(src, demuxer)
     if dur is None:
         return None, [Failure("F3.result", src.name, "動画として読めない（ffmpeg が無い時も）")]
+    if dur > MAX_SECONDS:
+        return None, [Failure("F3.result", src.name, f"長すぎる（{MAX_SECONDS // 3600} 時間まで）")]
     d = _base(rid)
     d.mkdir(parents=True, exist_ok=True)
-    # 映像は作り直さない（-c copy）。-tag:v hvc1 は iPhone の HEVC を Safari で再生するため。音・字幕・撮影情報（位置など）は写さない。
+    # H.264 と HEVC は作り直さない（-c copy）。-tag:v hvc1 は iPhone の HEVC を Safari で再生するため。音・字幕・撮影情報（位置など）は写さない。
+    # ほかの形は作り直す（流れの中の情報を落とせない。ProRes は MP4 に入らない）。どちらも大きさの上限を付ける。-fs は超えても 0 で終わるので、後で比べる。
+    size = src.stat().st_size
+    limit = size + ROOM if codec in SEI else max(2 * size, 256 * 1024 * 1024)
+    video = ["-c", "copy", "-bsf:v", SEI[codec]] if codec in SEI else ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p"]
     tag = ["-tag:v", "hvc1"] if codec == "hevc" else []
     # 重い所（写す・候補を拾う）は排他の外で行い、数分かかる動画の間も頁の確かめの口を止めない。名前を決めて置くのは _register の排他の中。
     with tempfile.TemporaryDirectory(dir=d) as tmp:
         out = pathlib.Path(tmp) / "take.mp4"
         try:
-            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-protocol_whitelist", "file", *(["-f", demuxer] if demuxer else []), "-i", str(src), "-map", "0:V:0", "-c", "copy", "-an", "-sn", "-dn", "-map_metadata", "-1",
-                            "-map_chapters", "-1", "-movflags", "+faststart", *tag, str(out)], capture_output=True, check=True, timeout=TIMEOUT)
-        except (OSError, subprocess.SubprocessError):
+            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-protocol_whitelist", "file", *(["-f", demuxer] if demuxer else []), "-i", str(src), "-map", "0:V:0", *video, "-an", "-sn", "-dn", "-map_metadata", "-1",
+                            "-map_chapters", "-1", "-fs", str(limit), "-movflags", "+faststart", *tag, str(out)], capture_output=True, check=True, timeout=TIMEOUT if codec in SEI else 4 * TIMEOUT)
+        except subprocess.TimeoutExpired as e:
+            raise Interrupted("ffmpeg が時間切れ") from e
+        except subprocess.CalledProcessError as e:
+            if e.returncode < 0:
+                raise Interrupted("ffmpeg が止められた") from e
             return None, [Failure("F3.result", src.name, "音と撮影情報を落とせなかった（動画の形を確かめる）")]
-        return _register(rid, out, round(dur, 1), still_spans(out)), []
+        except OSError:
+            return None, [Failure("F3.result", src.name, "音と撮影情報を落とせなかった（ffmpeg が無い時も）")]
+        if out.stat().st_size >= limit:
+            return None, [Failure("F3.result", src.name, "写すと元より大きくなりすぎる（同じ所を何度も指す動画かもしれない）")]
+        # 入れ物の欄の長さと、本当に写せた中身を比べる。中身の無い動画や後ろの欠けた動画を、受け取った事にしない。
+        packets, seconds = _span(out)
+        if not packets or seconds < 0.9 * dur:
+            return None, [Failure("F3.result", src.name, "動画の中身が足りない（外を指す動画か、後ろが欠けた動画かもしれない）")]
+        return _register(rid, out, round(seconds, 1), still_spans(out)), []
 
 
 @loop.exclusive
@@ -175,7 +236,7 @@ def _register(rid, out, duration, still):
     return item
 
 
-def frame(rid, video, at):
+def frame(rid, video, at, timeout=TIMEOUT):
     """動画の at 秒のコマを切り出して置き場に残す。読む時と作る側の頁で使う。写真は git に入らない（置き場は media の下）。"""
     f = _base(rid) / "frames" / f"{pathlib.Path(video).stem}-{int(at):06d}.jpg"
     if f.exists():
@@ -183,7 +244,7 @@ def frame(rid, video, at):
     f.parent.mkdir(parents=True, exist_ok=True)
     try:
         subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-ss", f"{at:.2f}", "-i", str(_base(rid) / video), "-frames:v", "1", "-vf", "scale=640:-1", "-q:v", "4", str(f)],
-                       capture_output=True, check=True, timeout=TIMEOUT)
+                       capture_output=True, check=True, timeout=timeout)
     except (OSError, subprocess.SubprocessError):
         return None
     return f if f.exists() else None
@@ -195,9 +256,15 @@ def contact(rid, video, every, out):
 
     d = load(rid)
     item = next(v for v in d["videos"] if v["file"] == video)
-    times = list(range(0, int(item["duration"]) + 1, every))
-    cells = [(t, frame(rid, video, t)) for t in times]
-    cells = [(t, f) for t, f in cells if f]
+    # 読むのを助ける物なので、全体の時間を決める。1 本で後ろの動画を長く止めない。
+    end = time.monotonic() + TIMEOUT
+    cells = []
+    for t in range(0, int(item["duration"]) + 1, every):
+        if time.monotonic() > end:
+            break
+        f = frame(rid, video, t, FRAME_TIMEOUT)
+        if f:
+            cells.append((t, f))
     cols, w, h = 5, 320, 200
     sheet = Image.new("RGB", (cols * w, ((len(cells) + cols - 1) // cols) * h), (30, 30, 30))
     draw = ImageDraw.Draw(sheet)
@@ -478,6 +545,85 @@ def report(rid, built, finish=None, minutes=None, gave_up=None, finish_notes="",
     return out, []
 
 
+def make_sheet(rid):
+    """読むための一覧の 1 枚を、最初の動画から作る。作れなくても動画の受け取りは止めない。Returns 一覧のファイルの道か空。"""
+    item = load(rid)["videos"][0]
+    sheet = _base(rid) / "frames" / f"sheet-{pathlib.Path(item['file']).stem}.png"
+    try:
+        contact(rid, item["file"], max(10, -(-int(item["duration"]) // 60)), sheet)
+    except Exception as e:
+        print(f"{rid}: コマの一覧を作れない（{type(e).__name__}）", file=sys.stderr)
+        return ""
+    return str(sheet)
+
+
+def _taken_path():
+    return loop.folder() / "taken-in.json"
+
+
+def taken_in():
+    """もう移した受付の表 {受付: 記録}。"""
+    return store.read_json_or_skip(_taken_path()) or {}
+
+
+def _take_one(place, slip):
+    """受付 1 つを移す。Returns (記録の番号か None, 失敗の list)。"""
+    sid, bound = slip["sid"], slip.get("record")
+    source = place / "data/records/media" / bound / "v1.mp4" if bound else place / "inbox" / slip["receipt"] / "video.mp4"
+    if not source.is_file():
+        return None, []  # まだ処理の途中か、止まった受付。動画が無い物は移さない
+    if bound and not RECORD_ID.fullmatch(bound):
+        return None, [Failure("F8.references", slip["receipt"], "結んだ記録の番号の形が違う")]
+    # 動いたかは、上げた人か作る側が選んだ時だけ持ってくる。無ければ決めつけない
+    result = slip.get("result") if slip.get("result") in records.results_for(sid) else records.UNSURE
+    hid = hypotheses.sheet_of(sid)["id"]
+    rid, failures = new_record(sid, hid, result, loop.latest_version(sid, hid), note=slip.get("note") or "", via=records.UPLOADED, upload=slip["receipt"])
+    if failures:
+        return None, failures
+    # 写し直す。元の口の写しに残った流れの中の情報も、ここで落ちる
+    item, failures = attach(rid, source, "mov")
+    if failures:
+        records.withdraw(rid)
+        return None, failures
+    marks = (store.read_json_or_skip(place / "data/loop" / f"video-{bound}.json") or {}).get("marks", []) if bound else slip.get("draft_marks", [])
+    out = []
+    for m in marks:
+        mid, bad = add_mark(rid, m.get("at", 0), m.get("step"), m.get("kind", "other"), m.get("note", ""), m.get("read_by", ""), item["file"])
+        out += bad
+        if mid and (m.get("confirmed_by") or m.get("rejected_by")):
+            out += judge_mark(rid, mid, m.get("confirmed_by") or m.get("rejected_by"), accept=bool(m.get("confirmed_by")))
+    make_sheet(rid)
+    return rid, out
+
+
+def take_in(place, dry_run=False):
+    """repo の外の受け口が受け取った物（その置き場の受付と動画と札の案）を、この入口の記録へ写す。Returns ([(受付, 記録か "")], 失敗の list)。
+    何度回しても同じ受付を 2 回移さない（移した表を持つ）。元の置き場は変えない（受け口は動いたまま、そこの頁が元を読むため）。
+    声は移さない。声そのものを残さない決まりで、字にするかは本人の決定を待つ。ファイルの名前も移さない。"""
+    place = pathlib.Path(place)
+    if not (place / "receipts").is_dir():
+        raise FileNotFoundError(f"受付の置き場が無い: {place.name}/receipts")
+    done, moved, failures = taken_in(), [], []
+    for path in sorted((place / "receipts").glob("V-*.json")):
+        slip = store.read_json_or_skip(path)
+        if slip is None or slip.get("receipt") != path.stem or path.stem in done or slip.get("stage") == "error":
+            continue
+        if not re.fullmatch(STORE_SID, slip.get("sid", "")):
+            failures.append(Failure("F8.references", path.stem, "玩具の印の形が違う"))
+            continue
+        if dry_run:
+            moved.append((path.stem, ""))
+            continue
+        rid, bad = _take_one(place, slip)
+        failures += [Failure(f.check, f"{path.stem}: {f.where}", f.message) for f in bad]
+        if rid:
+            done[path.stem] = rid
+            loop.folder().mkdir(parents=True, exist_ok=True)
+            store.write_json(_taken_path(), done)
+            moved.append((path.stem, rid))
+    return moved, failures
+
+
 def _say(failures):
     for f in failures:
         print(f.line(), file=sys.stderr)
@@ -544,6 +690,9 @@ def _main(argv=None):
     s = sub.add_parser("reject", help="人が案を採らない")
     s.add_argument("fix")
     s.add_argument("--by", required=True)
+    s = sub.add_parser("take-in", help="repo の外の受け口が受け取った物を、この入口の記録へ写す。声と元のファイルの名前は移さない")
+    s.add_argument("place", help="受け口の置き場（receipts・inbox・data がある所）")
+    s.add_argument("--dry-run", action="store_true", help="移す受付の番号だけを出す")
     s = sub.add_parser("report", help="エンジンの報告の形に書き出す")
     s.add_argument("record")
     s.add_argument("--built", choices=("yes", "no"), required=True)
@@ -573,6 +722,11 @@ def _main(argv=None):
             return _say(failures)
         print(json.dumps({"record": rid, **item}, ensure_ascii=False))
         return 0
+    if args.cmd == "take-in":
+        moved, failures = take_in(args.place, args.dry_run)
+        for slip, rid in moved:
+            print(slip, rid or "（移していない）", load(rid)["videos"][0]["file"] if rid else "")
+        return _say(failures) if failures else 0
     if args.cmd == "sheet":
         print(contact(args.record, args.video, args.every, args.out))
         return 0
