@@ -524,6 +524,8 @@ class Handler(BaseHTTPRequestHandler):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
         rec = loop.record(rid)
         sid, hid = rec["source_id"], rec["hypothesis_id"]
+        if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
+            return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=rid))
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に説明を書く"], at=rid))
         to = _num(form.get("to"))
