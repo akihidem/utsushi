@@ -7,6 +7,8 @@
 - 写真と動画だけの取り下げでは消さない。途中で落ちた後の回し直しでも通る。
 - 根拠に使われた記録でも、話した字（考え・工夫・上げた後）は消せる（--talk-only）。記録の番号と寸法の根拠は残し、版の根拠は数として読める。字の写しと、字が刷られた紙も消える。
 - 人が書いた解釈・案・説明・採った人の字は、話した字の引用を含む文を文ごと消す。番号・寸法・版・案の数と、時刻は残す。一部の引用と、字の幅や空白の違う引用も見る。
+- 人が書いた字（ひとこと・感想・答え・思いつき・工夫）と手書きの説明の字も空にする。番号・寸法・説明があった印は残し、人の説明が先の床は壊れない。
+- 控えの札は、取り下げた記録の番号を含む札だけを見る。名前・番号・印の欄は、短い話が当たっても消さない。Claude が書いた写しの理由も消す。
 - Claude が書いた解釈と案（と、そこから作った版と控えの文）は、引用の有無によらず全部消す。要約は機械で見分けられず、要約で話した字が残るため。
 """
 import json
@@ -15,13 +17,15 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace as NS
 
 tmp = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = tmp
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import words  # noqa: E402
-from omochae import hypotheses, loop, making_log, records, talk_log  # noqa: E402
+from omochae import engine_bundle, gallery, hypotheses, loop, making_log, records, talk_log  # noqa: E402
+from omochae.compose import TEMPLATES  # noqa: E402
 from web import techo_site, zukan  # noqa: E402
 from web.toy import toy_page  # noqa: E402
 
@@ -29,6 +33,16 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
 SOURCE = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))
 WHO, OTHER = "abcdefgh12", "zyxwvuts98"
+
+
+class Fake:
+    def __init__(self, script):
+        self.script, self.calls = list(script), []
+        self.beta = NS(messages=NS(create=self.create))
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        return NS(content=[NS(type="tool_use", name="submit_result", input=self.script.pop(0), id="t")], stop_reason="tool_use", usage=NS(input_tokens=10, output_tokens=5))
 
 
 def made(text, who=WHO, hid=None, not_fit=None):
@@ -280,7 +294,7 @@ v12 = json.loads(v_path.read_text(encoding="utf-8"))
 assert v12["changes"][0]["param"] == "fold_width" and v12["changes"][0]["to"] == 8.6 and v12["changes"][0]["why"] == "" and v12["params"]["fold_width"] == 8.6 and v12["adopted_at"] and v12["adopted_by"] == "採った人", "Claude の案から作った版は、理由の文だけが消える"
 assert json.loads((loop.folder() / f"proposal-{pid_h[2:]}.json").read_text(encoding="utf-8"))["next_to_try"]["why"] == "人が書いた理由", "人が書いた案の、引用の無い文は残す"
 told = loop.explanation(rid12)
-assert told["text"] == "" and told["next_idea"] == "折りを増やす" and told["by"] == "試した人", "人が書いた説明は、引用を含む文だけを消す"
+assert told is not None and told["record_id"] == rid12 and told["at"] and (told["text"], told["next_idea"], told["by"]) == ("", "", ""), "手書きの説明は、説明があった印だけを残して字を空にする"
 # 人が書き直した解釈は、人の字として読む（引用だけを消す）
 _, own13 = made("筒をもっと細くしたら速く開いた")
 rid13 = record(own13["id"])
@@ -291,7 +305,7 @@ assert loop.save_proposal({"record_ids": [rid13], "hypothesis_id": sheet, "next_
 assert records.withdraw(rid13, talk_only=True)[1] == []
 c13 = loop.interpretation(rid13)["content"]
 assert c13["human_text"] == "人が直した解釈" and c13["quote"] == "", c13
-assert loop.explanation(rid13)["by"] == "", "採った人の字も、引用なら消す"
+assert loop.explanation(rid13)["by"] == "", "説明を書いた人の欄も、本人が打った字なので空にする"
 
 # ── 時刻の欄を消さない（話した字「11」が時刻に当たる） ──
 assert records._without_quotes({"decided_at": "2026-11-05T11:11:00+09:00", "adopted_at": "2026-11-05T11:11", "confirmed_at": "11", "at": "11", "why": "11 番の案"}, [records._flat("11")]) == {"decided_at": "2026-11-05T11:11:00+09:00", "adopted_at": "2026-11-05T11:11", "confirmed_at": "11", "at": "11", "why": ""}
@@ -337,4 +351,216 @@ talk, name = words.latest_think(G, "abcdefgh77")
 words.request_think(SOURCE, talk, name, "案", "根拠")
 rid10 = record(sheet, who="abcdefgh77")
 assert everywhere(SAID10) and records.withdraw(rid10, talk_only=True)[1] == [] and everywhere(SAID10) == []
+
+# ── 控えの札は、取り下げた記録の番号を含む札だけを見る。関わりの無い札は 1 字も変えない ──
+def keep_card(rid_, by, new):
+    """案を作って控えへ採る。Returns (案の番号, 札の番号)。"""
+    pid, fs = loop.save_proposal({"record_ids": [rid_], "hypothesis_id": sheet, "next_to_try": {"why": "次の試しの理由", "what_to_measure": "開いた角度"}, "references": [],
+                                  "new_hypothesis": {"evidence": [], "against": [], "to_measure": "開いた角度", "params": None, **new}}, SOURCE, by)
+    assert pid and not fs, fs
+    got, fs = loop.adopt(pid, "採った人", accept_new=True, source=SOURCE)
+    assert got.get("new_hypothesis") and not fs, (got, fs)
+    return pid, got["new_hypothesis"]
+
+
+def card(cid):
+    return next(e for e in json.loads((loop.folder() / f"extra-hypotheses-{G}.json").read_text(encoding="utf-8")) if e["id"] == cid)
+
+
+def loop_json(name):
+    return json.loads((loop.folder() / name).read_text(encoding="utf-8"))
+
+
+def short_talk(said, who):
+    """短い話を、たたき台の記録に結ぶ。説明と解釈の確定まで済ませる（案を作れる形）。"""
+    assert not talk_log.add(G, "think", said, hypothesis_id=sheet, who=who)[1]
+    rid_ = record(sheet, who=who)
+    assert loop.save_explanation(rid_, "試した人", "紙の説明の文", "次の試しの文") == []
+    assert loop.confirm_interpretation(rid_, "確認者", {"human_text": "人が書いた解釈"}) == []
+    return rid_
+
+
+def next_value(rid_, param="fold_width"):
+    """今の版から変えられる値。版が進んでも試験が止まらないように、床を通る値を探す。"""
+    now = {**TEMPLATES[hypotheses.load(G).get("template", "slider_fan")].DEFAULTS, **(loop.version_params(G, sheet, loop.latest_version(G, sheet))[0] or {})}
+    for step in (0.1, -0.1, 0.2, -0.2, 0.3, -0.3, 0.5, -0.5, 1, -1):
+        to = round(now[param] + step, 2)
+        if not loop.check_proposal({"record_ids": [rid_], "hypothesis_id": sheet, "changes": [{"param": param, "to": to, "why": "x"}]}, SOURCE):
+            return to, now
+    raise AssertionError(f"{param} の変えられる値が無い")
+
+
+CLAUDE_TRACE = {"model": "claude-試験", "tool_calls": [], "retries": 0, "input_tokens": 1, "output_tokens": 1}
+far = short_talk("別の人の考えは紙を厚くしたい", "abcdefgh31")
+FAR_HAND, FAR_CLAUDE = "別の人の控えの案は扇が動いた時の止め方を見る事", "別の記録の Claude の案も扇が動いた時の話"
+_, far_hand = keep_card(far, "human", {"name": "別の人の案", "how_it_moves": FAR_HAND})
+_, far_claude = keep_card(far, "claude", {"name": "別の記録の Claude の案", "how_it_moves": FAR_CLAUDE})
+near = short_talk("動いた", "abcdefgh32")
+_, near_hand = keep_card(near, "human", {"name": "人の案の名前", "how_it_moves": "人の案は重りを足す事", "against": ["扇が動いた時は別の見方"]})
+_, near_claude = keep_card(near, "claude", {"name": "Claude の案の名前", "how_it_moves": "Claude の案は重りを足す事"})
+before_far = card(far_hand), card(far_claude)
+assert records.withdraw(near, talk_only=True)[1] == []
+assert (card(far_hand), card(far_claude)) == before_far, "番号を含まない札は、人の札も Claude の札も 1 字も変えない"
+hand_left, claude_left = card(near_hand), card(near_claude)
+assert hand_left["how_it_moves"] == "人の案は重りを足す事" and hand_left["name"] == "人の案の名前" and hand_left["against"] == [], "人の札は引用だけを消す"
+assert claude_left["how_it_moves"] == "" and claude_left["name"] == "" and claude_left["to_measure"] == "", "Claude の札は全部消す"
+assert any(e.get("where") == near for e in claude_left["evidence"]) and claude_left["adopted_by"] == "採った人", "番号と採った人の名は残す"
+
+# ── 短い話が、名前・番号・印の欄に当たっても消さない ──
+for said, who in (("作る人", "abcdefgh33"), ("00", "abcdefgh34"), ("claudeに聞いたら折り方が分かった", "abcdefgh35")):
+    rid_, _ = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない"})
+    assert not talk_log.add(G, "think", said, hypothesis_id=sheet, who=who)[1]
+    talk_log.bind(G, sheet, 1, who, rid_)
+    assert loop.save_explanation(rid_, "試した人", "説明の文", "次の文") == []
+    loop.save_interpretation_draft(rid_, {"observed": ["読みの文"]}, CLAUDE_TRACE)
+    assert loop.confirm_interpretation(rid_, "作る人") == []
+    to_, _ = next_value(rid_)
+    pid_, fs = loop.save_proposal({"record_ids": [rid_], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to_, "why": "案の理由の文", "metric": "", "direction": ""}],
+                                   "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": [], "trace": CLAUDE_TRACE}, SOURCE, "claude")
+    assert pid_ and not fs, fs
+    got, fs = loop.adopt(pid_, "作る人", accept_params=["fold_width"], source=SOURCE)
+    assert got.get("version") and not fs, (got, fs)
+    _, cid_ = keep_card(rid_, "human", {"name": "番号の欄の案", "how_it_moves": "番号の欄の案の動き方"})
+    assert records.withdraw(rid_, talk_only=True)[1] == []
+    i_, p_, v_ = loop.interpretation(rid_), loop_json(f"proposal-{pid_[2:]}.json"), loop_json(f"version-{G}-{sheet}-{got['version']}.json")
+    assert i_["confirmed_by"] == "作る人" and i_["drafted_by"] == "claude" and i_["trace"] == CLAUDE_TRACE, (said, i_)
+    assert p_["drafted_by"] == "claude" and p_["decided_by"] == "作る人" and p_["trace"] == CLAUDE_TRACE, (said, p_)
+    assert v_["adopted_by"] == "作る人" and v_["changes"][0]["why"] == "" and v_["changes"][0]["to"] == to_, (said, v_)
+    assert card(cid_)["adopted_by"] == "採った人" and any(e.get("where") == rid_ for e in card(cid_)["evidence"]), (said, card(cid_))
+# 字の値の寸法（push_part の stick）と、札の番号と、確かさの札も文でない。番号を含む長い文は文として読む
+keep_shape = records._without_quotes({"changes": [{"param": "push_part", "to": "stick", "from": "stick", "why": "stick の話"}], "accepted": {"new_hypothesis": "H-N1"}, "accepted_params": ["stick"],
+                                      "evidence": [{"kind": "record", "where": "R-0012", "what": "00 の話", "certainty": "00"}], "where": "00 の棚"}, [records._flat("stick"), records._flat("00"), records._flat("H-N1")])
+assert keep_shape == {"changes": [{"param": "push_part", "to": "stick", "from": "stick", "why": ""}], "accepted": {"new_hypothesis": "H-N1"}, "accepted_params": ["stick"],
+                      "evidence": [{"kind": "record", "where": "R-0012", "what": "", "certainty": "00"}], "where": ""}, keep_shape
+
+# ── 人の案からの版は消さない。Claude の案を版にした時の案の字（new_case）は消す ──
+said16 = short_talk("柄の根元をもっと強く折りたい", "abcdefgh36")
+to16, now16 = next_value(said16)
+pid_h16, fs = loop.save_proposal({"record_ids": [said16], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to16, "why": "人が書いた版の理由", "metric": "", "direction": ""}],
+                                  "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": []}, SOURCE, "human")
+assert pid_h16 and not fs, fs
+got_h16, fs = loop.adopt(pid_h16, "採った人", accept_params=["fold_width"], source=SOURCE)
+assert got_h16.get("version") and not fs, (got_h16, fs)
+to16b, now16 = next_value(said16)
+pid_c16, fs = loop.save_proposal({"record_ids": [said16], "hypothesis_id": sheet, "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": [],
+                                  "new_hypothesis": {"name": "版にした案の名前", "how_it_moves": "版にした案の動き方", "evidence": [], "against": [], "to_measure": "角度", "params": {**now16, "fold_width": to16b}}}, SOURCE, "claude")
+assert pid_c16 and not fs, fs
+got_c16, fs = loop.adopt(pid_c16, "採った人", accept_new=True, source=SOURCE)
+assert got_c16.get("new_hypothesis_as_version") and not fs, (got_c16, fs)
+assert records.withdraw(said16, talk_only=True)[1] == []
+v_h16, v_c16 = loop_json(f"version-{G}-{sheet}-{got_h16['version']}.json"), loop_json(f"version-{G}-{sheet}-{got_c16['version']}.json")
+assert v_h16["changes"][0]["why"] == "人が書いた版の理由", "人の案からの版の理由は消さない"
+assert v_c16["new_case"] == {"name": "", "how_it_moves": ""} and v_c16["params"]["fold_width"] == to16b, "Claude の案を版にした時の案の字は消し、寸法は残す"
+
+# ── Claude が書いた写しの理由は、引用の有無によらず消す（考えは Claude の字でない。not_fit と filled_in の why は Claude の字）。作る側の理由は引用だけ ──
+SAY17, PARA17 = "箱の形に組み替えて中で歯車を回したい", "内部に回転機構を持つ立方体は今の紙の形では扱えない"
+assert not records._quotes(PARA17, [records._flat(SAY17)]), "見本は比べ方では拾えない言い換え"
+who17 = "abcdefgh37"
+assert not talk_log.add(G, "think", SAY17, hypothesis_id=sheet, who=who17)[1]
+talk17, name17 = words.latest_think(G, who17)
+w17, fs = words.request_think(SOURCE, talk17, name17, "案", "根拠", client=Fake([{"fits": False, "params": {}, "from_words": [], "filled_in": [], "not_fit": [PARA17]}]), use_claude=True)
+assert w17 and not fs and w17["trace"]["model"] and "filled_by" not in w17, (w17, fs)
+rid17 = record(sheet, who=who17)
+assert everywhere(PARA17), "消す前は言い換えがある"
+assert records.withdraw(rid17, talk_only=True)[1] == []
+left17 = loop_json(f"words-{w17['id'][2:]}.json")
+assert everywhere(PARA17) == [] and left17["result"]["not_fit"] == [] and left17["trace"] == w17["trace"], left17
+# 紙にできる案の補った理由も同じ。寸法と、寸法の名前は残す
+SAY18, WHY18 = "耳をもっと長くしてゆらゆらさせたい", "揺れを大きくするための値として軸の高さも少し上げた"
+w18, own18 = made(SAY18, who="abcdefgh38")
+path18 = loop.folder() / f"words-{w18['id'][2:]}.json"
+now18 = json.loads(path18.read_text(encoding="utf-8"))
+kept18 = now18["result"]["filled_in"][0]["param"]
+assert now18["filled_by"] and now18["result"]["filled_in"][0]["why"] == words.KEPT_AS_IS
+rid18 = record(own18["id"], who="abcdefgh38")
+assert records.withdraw(rid18, talk_only=True)[1] == []
+assert json.loads(path18.read_text(encoding="utf-8"))["result"]["filled_in"][0]["why"] == words.KEPT_AS_IS, "作る側が書いた理由は、引用でなければ残す"
+SAY19 = "耳をもっと長くしてゆらゆらさせたい二回目"
+w19, own19 = made(SAY19, who="abcdefgh39")
+path19 = loop.folder() / f"words-{w19['id'][2:]}.json"
+now19 = json.loads(path19.read_text(encoding="utf-8"))
+wrote19 = {k: v for k, v in now19.items() if k not in ("filled_by", "filled_at")}
+wrote19["result"] = {**now19["result"], "filled_in": [{**f, "why": WHY18} for f in now19["result"]["filled_in"]]}
+loop._write(path19, {**wrote19, "trace": CLAUDE_TRACE})
+rid19 = record(own19["id"], who="abcdefgh39")
+assert everywhere(WHY18)
+assert records.withdraw(rid19, talk_only=True)[1] == []
+left19 = json.loads(path19.read_text(encoding="utf-8"))
+assert everywhere(WHY18) == [] and [f["param"] for f in left19["result"]["filled_in"]] == [f["param"] for f in now19["result"]["filled_in"]] and left19["result"]["params"] == now19["result"]["params"], left19
+
+# ── 人が書いた字も空にする（本人の決めた説明文「このサイトの中からは消えます」を本当にする）。番号・寸法・説明があった印は残す ──
+NOTE20, FEEL20, FIRST20, STUCK20, IF20, IDEA20 = "ひとことの字はここに残るか", "作ってみた感想の字は楽しかった", "最初に動いた所は持ち手だった", "引っかかった所は軸の穴だった", "変えると違いが出そうなのは糊の量", "思いついたのは紙を二重にする事"
+PART20, CHANGE20, OUT20 = "外筒の部品の名前", "太く巻き直した事", "内筒が入りやすくなった"
+TOLD20, IDEA_TOLD20, NAME20 = "人が手で書いた説明は筒が短かったという事", "次は人が手で書いた筒を長くする事", "書いた人の名前の字"
+rid20, fs = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない", "opened_deg": 40, "minutes_to_try": 12, "note": NOTE20, "impression": FEEL20,
+                         "answers": {"first_moved": FIRST20, "stuck": STUCK20, "what_if": IF20}, "ideas": [IDEA20], "fixes": [{"part": PART20, "change": CHANGE20, "outcome": OUT20}]})
+assert rid20 and not fs, fs
+assert loop.save_explanation(rid20, NAME20, TOLD20, IDEA_TOLD20) == []
+WRITTEN20 = (NOTE20, FEEL20, FIRST20, STUCK20, IF20, IDEA20, PART20, CHANGE20, OUT20, TOLD20, IDEA_TOLD20)
+# 画面の「次の版」の欄は説明の字が初めから入るので、説明のままの解釈は引用として消える。Claude の読みの見出しも、中身が無ければ出さない
+HEAD20 = "Claude の読み（案）"
+loop.save_interpretation_draft(rid20, {"observed": ["Claude が書いた読みの文"], "causes": [{"text": "Claude が書いた原因の文", "confidence": "低"}], "unknown": ["Claude が書いた分からない事"]}, CLAUDE_TRACE)
+assert loop.confirm_interpretation(rid20, "確認者") == []
+to20, _ = next_value(rid20)
+pid20, fs = loop.save_proposal({"record_ids": [rid20], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to20, "why": f"「{NOTE20}」と書いてあったから", "metric": "", "direction": ""}],
+                                "next_to_try": {"why": "人が書いた次の理由", "what_to_measure": "角度"}, "references": []}, SOURCE, "human")
+assert pid20 and not fs, fs
+pid20b, fs = loop.save_proposal({"record_ids": [rid20], "hypothesis_id": sheet, "next_to_try": {"why": TOLD20, "what_to_measure": IDEA_TOLD20}, "references": []}, SOURCE, "human")
+assert pid20b and not fs, fs
+pages20 = lambda: {"玩具の頁": toy_page(G), "手帖": techo_site.page(G, [sheet], ""), "ギャラリー": gallery.build()}
+assert all(x in pages20()["玩具の頁"] for x in (NOTE20, FEEL20, FIRST20, TOLD20, IDEA_TOLD20, HEAD20)), "消す前は頁に字がある（下の確かめが効いている事を見る）"
+assert TOLD20 in pages20()["手帖"] and HEAD20 in pages20()["手帖"] and TOLD20 in pages20()["ギャラリー"] and NAME20 in pages20()["ギャラリー"]
+heads20 = {k: v.count(HEAD20) for k, v in pages20().items()}
+LEFT20 = "説明を残しました。"
+open20 = lambda: (toy_page(G, photos=False).count(LEFT20), techo_site.page(G, [sheet], "", uploads=False).count(LEFT20))
+open_before20 = open20()
+rec20 = json.loads((records.folder() / f"{rid20}.json").read_text(encoding="utf-8"))
+assert records.withdraw(rid20, talk_only=True)[1] == []
+for text in (*WRITTEN20, NAME20):
+    assert everywhere(text) == [], (text, everywhere(text))
+for name, html in pages20().items():
+    assert not any(x in html for x in (*WRITTEN20, NAME20)), name
+    assert not any(x in html for x in ("<p>説明: </p>", "<p>次の思いつき: </p>", "次の思いつき: </p>", "<b>説明</b>（）", "<p></p>", f"{HEAD20}</p><ul></ul>", "工夫:  /  / ")), (name, "空の欄を並べない")
+    assert rid20 in html or name == "手帖", name
+assert toy_page(G).count(HEAD20) == heads20["玩具の頁"] - 1 and techo_site.page(G, [sheet], "").count(HEAD20) == heads20["手帖"] - 1, "中身の無い読みの見出しは出さない"
+assert open20() == (open_before20[0] - 1, open_before20[1] - 1), "合言葉なしの場でも、字が消えた説明を残したとは言わない"
+left20 = json.loads((records.folder() / f"{rid20}.json").read_text(encoding="utf-8"))
+assert left20 == {**rec20, "note": "", "impression": "", "answers": {}, "ideas": [], "fixes": []}, "番号・結果・寸法の欄は 1 つも変わらない"
+told20 = loop.explanation(rid20)
+assert told20 is not None and told20["record_id"] == rid20 and told20["at"] and (told20["text"], told20["next_idea"], told20["by"]) == ("", "", ""), "説明があった印は残し、中身の字と、本人が打った名前は空にする"
+p20 = loop_json(f"proposal-{pid20[2:]}.json")
+assert p20["changes"][0]["why"] == "" and p20["changes"][0]["to"] == to20 and p20["next_to_try"]["why"] == "人が書いた次の理由", "書いた字の引用も、話した字と同じに文ごと消す"
+assert loop_json(f"proposal-{pid20b[2:]}.json")["next_to_try"] == {"why": "", "what_to_measure": ""}, "説明の字をそのまま写した人の文も消す"
+# 人の説明が先の床は壊れない: 説明があった印で、次の案と次の版へ進める。束と材料も読める
+assert not loop.check_proposal({"record_ids": [rid20], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to20, "why": "x"}]}, SOURCE), "説明があった印で床を通る"
+v20, fs = loop.next_version(rid20, "採った人", {"human_text": "人が書いた解釈"}, {"param": "fold_width", "to": to20, "why": "人が書いた次の版の理由"}, SOURCE, d)
+assert v20 and not fs, fs
+assert loop.material(rid20)["explanation"]["text"] == "" and rid20 in loop.material_text(rid20)
+bundle20 = json.dumps(engine_bundle.build(), ensure_ascii=False)
+assert not any(x in bundle20 for x in WRITTEN20)
+# 回し直しても何も変わらない。そのままの取り下げは今までどおり断る
+snap20 = {p: p.read_bytes() for p in pathlib.Path(tmp).rglob("*.json") if p.name != "api-usage.jsonl"}
+assert records.withdraw(rid20, talk_only=True) == ([], [])
+assert {p: p.read_bytes() for p in snap20} == snap20
+assert records.withdraw(rid20)[1][0].floor == "F4.evidence"
+# 説明がまだ無い記録は、今までどおり床で止まる（印を説明があった事と読み違えない）
+rid21, _ = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない", "note": "説明の無い記録のひとこと"})
+assert records.withdraw(rid21, talk_only=True)[1] == [] and everywhere("説明の無い記録のひとこと") == []
+assert loop.explanation(rid21) is None and any(f.floor == "F9.human" for f in loop.check_proposal({"record_ids": [rid21], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to20, "why": "x"}]}, SOURCE)), "説明の印を作らない"
+# 字の無い記録の取り下げは何も消さない。Claude の文も、その人の字が無いので消さない
+rid22, _ = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない"})
+loop.save_interpretation_draft(rid22, {"observed": ["字の無い記録の Claude の読みの文"]}, CLAUDE_TRACE)
+assert records.withdraw(rid22, talk_only=True) == ([], []) and everywhere("字の無い記録の Claude の読みの文")
+# 「わからない」は欄が勧める字で、その人の言葉ではない。これだけの説明でも Claude の文は消え、人の文は引用と読まない
+rid23, _ = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない"})
+assert loop.save_explanation(rid23, "試した人", records.UNSURE, records.UNSURE) == []
+loop.save_interpretation_draft(rid23, {"observed": ["わからない時の Claude の読みの文"]}, CLAUDE_TRACE)
+assert loop.confirm_interpretation(rid23, "確認者") == []
+to23, _ = next_value(rid23)
+pid23, fs = loop.save_proposal({"record_ids": [rid23], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to23, "why": "動くかわからないので測る", "metric": "", "direction": ""}],
+                                "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": []}, SOURCE, "human")
+assert pid23 and not fs, fs
+assert records.withdraw(rid23, talk_only=True)[1] == []
+assert everywhere("わからない時の Claude の読みの文") == [], "「わからない」だけの説明でも、Claude の文は消す"
+assert loop_json(f"proposal-{pid23[2:]}.json")["changes"][0]["why"] == "動くかわからないので測る", "人の文を消し過ぎない"
 print("ok")

@@ -179,12 +179,15 @@ def _drop_loose_talk(sid, oid, talks):
 QUOTE_CHARS = 6
 DROP_TAIL_FROM = 4
 # 文でない欄。番号と名前と寸法の字なので、話した字と重なっても消さない。時刻（*_at と at）も（話した字「11」が時刻に当たる）。
+# 名前（*_by と by。話した字「作る人」が当たる。drafted_by を消すと Claude の文を見分けられなくなる）、呼び出しの記録（trace）、字の値の寸法（to・from）、採った物の番号と札も同じ。
 NOT_TEXT = frozenset(("id", "source_id", "hypothesis_id", "record_id", "record_ids", "references", "param", "params", "from_words", "proposal", "status", "kind", "at",
-                      "metric", "direction", "formula_check", "template", "template_id"))
+                      "metric", "direction", "formula_check", "template", "template_id", "by", "trace", "to", "from", "accepted", "accepted_params", "based_on_version",
+                      "version", "sheet_set", "commit", "decided_in", "certainty", "confidence", "label"))
+RECORD_NO = re.compile(r"R-[0-9]{4,}")  # 記録の番号だけの字は文でない（根拠の where の欄。話した字「00」が番号に当たる）
 
 
 def _not_text(key):
-    return key in NOT_TEXT or key.endswith("_at")
+    return key in NOT_TEXT or key.endswith(("_at", "_by"))
 
 
 def _flat(text):
@@ -206,16 +209,16 @@ def _quotes(text, spoken):
     return False
 
 
-def _clean(value, drop, keep=_not_text):
-    """drop(文) が真の文を消す。一覧の中の文と、文を text に持つ札は、札ごと外す。ほかの欄の文は空にする（欄の形と、並ぶ寸法・番号は残す）。keep(欄の名) が真の欄には触らない。"""
+def _clean(value, drop):
+    """drop(文) が真の文を消す。一覧の中の文と、文を text に持つ札は、札ごと外す。ほかの欄の文は空にする（欄の形と、並ぶ寸法・番号は残す）。文でない欄には触らない。"""
     if isinstance(value, str):
-        return "" if drop(value) else value
+        return "" if drop(value) and not RECORD_NO.fullmatch(value) else value
     if isinstance(value, dict):
-        return {k: v if keep(k) else _clean(v, drop, keep) for k, v in value.items()}
+        return {k: v if _not_text(k) else _clean(v, drop) for k, v in value.items()}
     if isinstance(value, list):
         out = []
         for x in value:
-            y = _clean(x, drop, keep)
+            y = _clean(x, drop)
             if (isinstance(x, str) and x and not y) or (isinstance(x, dict) and x.get("text") and not y.get("text")):
                 continue
             out.append(y)
@@ -229,8 +232,8 @@ def _without_quotes(value, spoken):
 
 
 def _blank(value):
-    """Claude が書いた文を全部消す。根拠の記録の番号は残す（where に入る）。人の名前の欄は Claude の字ではないので残す。"""
-    return _clean(value, lambda text: not re.fullmatch(r"R-[0-9]{4,}", text), keep=lambda key: _not_text(key) or key.endswith("_by"))
+    """Claude が書いた文を全部消す。根拠の記録の番号と、人の名前の欄は残す（_clean）。"""
+    return _clean(value, lambda text: True)
 
 
 def _by_claude(pid):
@@ -255,22 +258,19 @@ def _claude_keys(path, doc):
 
 def _scrubbed(path, doc, rid, spoken):
     """1 つの文書から話した字を消した形。Claude が書いた文は引用の有無によらず全部（要約で残るため）、人の字は引用を含む文だけ。"""
-    if isinstance(doc, list):  # 採った案の控え。この記録を根拠に Claude が書いた案から入った物
+    if isinstance(doc, list):  # 採った案の控え。札ごとに書いた人と根拠が違うので、この記録の番号を含む札だけを見る（関わりの無い札の字を消さない）
         word = re.compile(rf"(?<![\w-]){rid}(?![\w-])")
-        doc = [_blank(e) if isinstance(e, dict) and _by_claude(e.get("proposal")) and word.search(json.dumps(e, ensure_ascii=False)) else e for e in doc]
-    else:
-        doc = {**doc, **{k: _blank(doc[k]) for k in _claude_keys(path, doc) if k in doc}}
+        return [_without_quotes(_blank(e) if _by_claude(e.get("proposal")) else e, spoken) if isinstance(e, dict) and word.search(json.dumps(e, ensure_ascii=False)) else e for e in doc]
+    doc = {**doc, **{k: _blank(doc[k]) for k in _claude_keys(path, doc) if k in doc}}
     return _without_quotes(doc, spoken)
 
 
 def _scrub_quotes(rid, spoken):
-    """この記録を根拠にした解釈・案・版・控えと、人の説明から、話した字を消す。引用や要約が残ると取り下げにならないため。番号・寸法・版・案の数・時刻は残す。消した物の名前を返す。"""
+    """この記録を根拠にした解釈・案・版・控えから、話した字と書いた字を消す。引用や要約が残ると取り下げにならないため。番号・寸法・版・案の数・時刻は残す。消した物の名前を返す。"""
     from . import loop
 
     gone = []
-    if not spoken:
-        return gone
-    for p in [*_used_paths(rid), loop.interp_path(rid), loop.folder() / f"explanation-{rid}.json"]:
+    for p in [*_used_paths(rid), loop.interp_path(rid)]:
         before = store.read_json_or_skip(p, (dict, list))
         if before is None:
             continue
@@ -281,26 +281,60 @@ def _scrub_quotes(rid, spoken):
     return gone
 
 
+def _written(rec, told):
+    """記録に人が書いた字（ひとこと・感想・答え・思いつき・工夫）と、手書きの説明の字。手で置いた記録の形が違っても読めるように、決まった型の時だけ読む。"""
+    rec, told = rec or {}, told or {}
+    answers = rec.get("answers") if isinstance(rec.get("answers"), dict) else {}
+    ideas = rec.get("ideas") if isinstance(rec.get("ideas"), list) else []
+    fixes = rec.get("fixes") if isinstance(rec.get("fixes"), list) else []
+    texts = [rec.get("note"), rec.get("impression"), *answers.values(), *ideas, *(v for f in fixes if isinstance(f, dict) for v in f.values()), told.get("text"), told.get("next_idea")]
+    return [x for x in texts if isinstance(x, str) and x.strip()]
+
+
+def _blank_written(rid, rec, told):
+    """記録に人が書いた字と、手書きの説明の字を空にする。消した物の名前を返す。番号・結果・寸法は残す。
+    説明はファイルごと残し、字と本人が打った名前だけを空にする: 「人の説明が先」の床は説明があった事だけを見るので、消しても次の案と版の道を止めない。"""
+    from . import loop
+
+    gone = []
+    if rec:
+        left = {**rec, **{k: v for k, v in (("note", ""), ("impression", ""), ("answers", {}), ("ideas", []), ("fixes", [])) if k in rec}}
+        if left != rec:
+            store.write_json(folder() / f"{rid}.json", left)
+            gone.append(f"{rid}.json の文")
+    if told:
+        left = {**told, "text": "", "next_idea": "", "by": ""}
+        if left != told:
+            loop._write(loop.folder() / f"explanation-{rid}.json", left)
+            gone.append(f"explanation-{rid}.json の文")
+    return gone
+
+
 def _scrub_spoken(rid):
-    """話した字だけを消す（--talk-only）。根拠に使われた記録でも、その人の言葉は消せるように（本人の決定の線。写真と動画の --media-only と同じ形）。
+    """話した字と書いた字を消す（--talk-only）。根拠に使われた記録でも、その人の言葉は消せるように（本人の決定の線。写真と動画の --media-only と同じ形）。
     記録の番号と寸法の根拠は残し、版の根拠は数として読める。案は残す（試した記録が指す先で、札に出さない印でもあるため）が、字の写し（words の記録と OWN-n の動かし方）と、
     字が刷られた紙（手順の紙・型紙なしの紙）は消す。話した字の無い型紙と試した後の紙は残す。別の記録がその案を使っていても消す（字は本人の物で、寸法の根拠は残るため）。
-    Claude が書いた解釈と案の文は全部、人の字は引用を含む文を消す（_scrub_quotes）。"""
+    Claude が書いた解釈と案の文は全部、人の字は引用を含む文を消す（_scrub_quotes）。記録に書いた字と手書きの説明の字も空にする（_blank_written。本人の決めた説明文が本当になるように）。"""
     from . import hypotheses, loop, making_log
 
     talks = _talk_files()
     made = list(_spoken_of(rid, talks))
+    path = folder() / f"{rid}.json"
+    rec, told = store.read_json_or_skip(path) if path.exists() else None, loop.explanation(rid)
     # 消す字を先に集めて、引用から消す。字を先に消すと、途中で落ちた後の回し直しで引用を見つけられない。
     own_ids = {w.get("own_id") for _, w in made if w.get("own_id")}
     said = [t.get("text") for t in talks.values() if t.get("record_id") == rid or (t.get("hypothesis_id") in own_ids and not t.get("record_id"))]
     said += [t.get("text") for _, w in made if (t := talks.get(w["from_talk"])) and t.get("record_id") in (None, rid)]
     said += [w.get("how_it_moves") for _, w in made]
-    spoken = sorted({_flat(x) for x in said if x})
-    gone = _scrub_quotes(rid, spoken)
+    said += _written(rec, told)
+    spoken = {_flat(x) for x in said if x}
+    # 字の無い記録からは何も消さない。「わからない」は説明の欄が勧める字で、その人の言葉ではない（引用と読むと、人の文を消し過ぎる）。
+    gone = _scrub_quotes(rid, sorted(spoken - {UNSURE})) if spoken else []
     for p, w in made:
         sid, oid, stem = w.get("source_id"), w.get("own_id"), w["from_talk"]
-        # 先に写しを消す。途中で落ちても、回し直しで残りを見つけられる。作る側か Claude の理由の欄（not_fit・filled_in の why）の引用も同じ（寸法と名前は残す）。
-        scrubbed = {**w, "how_it_moves": "", "result": _without_quotes(w.get("result"), spoken)}
+        # 先に写しを消す。途中で落ちても、回し直しで残りを見つけられる。理由の欄（not_fit・filled_in の why）は、Claude が書いた結果なら全部（言い換えで残るため）、作る側が書いた結果なら引用だけ（寸法と名前は残す）。
+        result = _blank(w.get("result")) if w.get("trace") and not w.get("filled_by") else _without_quotes(w.get("result"), sorted(spoken))
+        scrubbed = {**w, "how_it_moves": "", "result": result}
         if scrubbed != w:
             loop._write(p, scrubbed)
             gone.append(p.name)
@@ -311,7 +345,7 @@ def _scrub_spoken(rid):
         if stem in talks and talks[stem].get("record_id") in (None, rid):
             (making_log.folder() / f"{stem}.json").unlink(missing_ok=True)
             gone.append(f"making/{stem}.json")
-    return gone
+    return gone + _blank_written(rid, rec, told)  # 最後に消す。途中で落ちても、回し直しで字を読み直して引用を見つけられる
 
 
 def _drop_spoken(rid):
@@ -348,7 +382,7 @@ def withdraw(rid, media_only=False, talk_only=False):
     なぜ番号だけ残すか: 持ち寄りの取り下げと同じ形。番号を使い回さず、記録が別の経路で戻っても一覧に出さないため。
     根拠に使われている記録は消さない。版や提案の根拠が指す先を失うため。その時も写真と動画は media_only で消せる
     （写った顔や名札を、根拠の話のために残さない）。観察と動画の札は動画から作った文なので一緒に消す。説明と解釈は人の言葉と根拠なので残す。
-    話した字（考え・工夫・上げた後）は talk_only で消せる（_scrub_spoken）。写真だけ消したい時に字まで消さないよう、media_only とは分ける。両方を渡せば両方消える。
+    話した字（考え・工夫・上げた後）と書いた字（ひとこと・感想・答え・思いつき・工夫・手書きの説明）は talk_only で消せる（_scrub_spoken）。写真だけ消したい時に字まで消さないよう、media_only とは分ける。両方を渡せば両方消える。
     """
     from . import loop
 
@@ -362,7 +396,7 @@ def withdraw(rid, media_only=False, talk_only=False):
         whole = not media_only and not talk_only
         users = used_by(rid)
         if users and whole:
-            return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only、話した字だけなら --talk-only。{WITHDRAW_NOTICE}")]
+            return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only、話した字と書いた字だけなら --talk-only。{WITHDRAW_NOTICE}")]
         kinds = OWN if whole else ("observation", "video") if media_only else ()
         files = [loop.folder() / f"{kind}-{rid}.json" for kind in kinds] + ([path] if whole else [])
         media = folder() / "media" / rid
@@ -427,7 +461,7 @@ def main(argv=None):
     w = sub.add_parser("withdraw", help="記録と、添えた写真・動画・説明・解釈・観察を消す。根拠に使われている記録は止まる")
     w.add_argument("id", help="記録の番号。R-0003 のように")
     w.add_argument("--media-only", action="store_true", help="記録は残し、写真と動画と観察だけを消す")
-    w.add_argument("--talk-only", action="store_true", help=f"記録は残し、話した字（考え・工夫・上げた後）と、字が刷られた紙だけを消す。根拠に使われた記録でも消せる。{WITHDRAW_NOTICE}")
+    w.add_argument("--talk-only", action="store_true", help=f"記録は残し、話した字（考え・工夫・上げた後）と書いた字（ひとこと・感想・工夫・手書きの説明）と、字が刷られた紙だけを消す。根拠に使われた記録でも消せる。{WITHDRAW_NOTICE}")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
@@ -441,7 +475,7 @@ def main(argv=None):
             for f in failures:
                 print(f.line(), file=sys.stderr)
             if not failures:
-                what = "と".join(n for n, on in (("写真と動画", args.media_only), ("話した字", args.talk_only)) if on) or "記録"
+                what = "と".join(n for n, on in (("写真と動画", args.media_only), ("話した字と書いた字", args.talk_only)) if on) or "記録"
                 print(f"{args.id} の{what}を取り下げました。消した物: {'、'.join(gone) or 'なし'}")
                 print(WITHDRAW_NOTICE)
             return 3 if failures else 0

@@ -324,11 +324,13 @@ def feedback(sid, r, photos=True):
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told and not photos:
-        body = '<p class="meta">説明を残しました。</p>' + ai_part(r)
+        body = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_part(r)
     elif told:
         from web.play_server import next_form
 
-        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+        # 取り下げた説明は字が空になるので、空の欄を並べない。
+        said = (f'<p>{esc(told["text"])}</p>' if told.get("text") else "") + (f'<p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' if told.get("next_idea") else "")
+        body = said + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
     else:
         body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
@@ -350,7 +352,7 @@ def ai_part(r):
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
-        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
+        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>' if lines else ""  # 取り下げで中身が消えた読みは、見出しも出さない
     o = observe.observation(r["id"])
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))

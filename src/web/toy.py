@@ -351,7 +351,7 @@ def ai_block(r):
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
-        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
+        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>' if lines else ""  # 取り下げで中身が消えた読みは、見出しも出さない
     o = observe.observation(r["id"])
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
@@ -399,8 +399,9 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
             if at == nid:
                 # 通らなかった時は、畳んだ欄を開いて、その上に理由を出す。手帖から来た印も保つ。
                 nxt = refill(next_form(r, filled[1].get("back", "")), filled[1]).replace("<details>", "<details open>", 1)
-            # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。
-            tail = (f'<div class="step"><p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p></div>'
+            # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。取り下げた説明は字が空になるので、空の欄を並べない。
+            said = "".join(f"<p>{label}: {esc(told[key])}</p>" for label, key in (("説明", "text"), ("次の思いつき", "next_idea")) if told.get(key))
+            tail = ((f'<div class="step">{said}</div>' if said else "") +
                     f'<div class="step">{ai_block(r)}</div>' + (f'<div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>' if nxt else ""))
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
@@ -423,7 +424,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
             feel = ""
             if told:
                 # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
-                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r)
+                tail = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_block(r)
         out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}・{esc(wording.record_no(r["id"]))}</p>{feel}{after}{tail}</article>'
     return out
 
