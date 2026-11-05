@@ -760,6 +760,8 @@ def materials(p):
     rows = bom(p)
     out = [f"{rows[0]['material']}を 1 枚", "のり、はさみ、定規"]
     out += [r["material"] for r in rows if r["number"] >= 20]
+    if p["shape"] == "tokin":  # 柄の竹串が無い形で、糸を通す穴を竹串の先であける（#294）
+        out.append("竹串（穴あけ）")
     if p["shape"] == "shitadashi" and p["hold"] == "slide":
         out.append("カッター（口の切れ目だけ。大人が切る）")
     return out
@@ -767,7 +769,9 @@ def materials(p):
 
 def steps(p):
     h, shape = p["hold"], p["shape"]
-    out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る。穴は竹串の先であける"]
+    # 穴の無い形に穴あけの文を出さない（#294）。形の名前でなく部品を見るので、形が増えても食い違わない。
+    cut = "部品を実線で切る。穴は竹串の先であける" if any(q.holes for q in parts(p)) else "部品を実線で切る"
+    out = ["刷った物差しに定規を当て、10cm か確かめる", cut]
     if shape == "andon":
         out += ["1 行灯を色の境で谷折りし、糊代で貼って四角い筒にする", "2 月の下の足を竹串の先にテープで巻く"]
         if h == "glue":

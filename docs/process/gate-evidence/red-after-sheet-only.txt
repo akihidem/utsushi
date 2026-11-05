@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_after_sheet_open.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 26e4393（回した時の HEAD）
+AssertionError: ['H-A_v1.pdf', 'H-A_v1.png', 'H-A_v1.svg', 'H-A_v1_after.pdf', 'H-A_v1_after.png', 'H-A_v1_after.svg', 'H-A_v1_tejun.pdf', 'H-A_v1_tejun.png', 'H-A_v1_tejun.svg']
+試験 rc=1
+rc=0

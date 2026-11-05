@@ -1,0 +1,15 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_round.py
+# commit: b63f3fb（回した時の HEAD）
+F9.own: 自分の仮説「仮説 A から変えた案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpkd_udlmt/play/NDL-1187053-R0000005-L/OWN-3_v1_free.pdf
+ok
+rc=0
