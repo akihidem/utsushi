@@ -18,7 +18,7 @@
 
 | ID | 主張 | 確かさ | 根拠 |
 |---|---|---|---|
-| C-01 | 検査に落ちる型紙は、正しい名前で残さない（rc 3。描く前の検査で落ちる時は何も残らず、刷った後の検査で落ちる時は .rejected.pdf と .svg だけが残る） | 自動試験 | [criteria.md](../../tests/frozen/criteria.md)、[__main__.py](../../src/omochae/__main__.py)、[run_floors.py](../../tests/run_floors.py)、[__main__.py](../../src/omochae/__main__.py) |
+| C-01 | 検査に落ちる型紙は、PDF と PNG を正しい名前で残さない（rc 3。描く前の検査で落ちる時は何も残らず、刷った後の検査で落ちる時は .rejected.pdf と、同じ名前の .svg が残る） | 自動試験 | [criteria.md](../../tests/frozen/criteria.md)、[__main__.py](../../src/omochae/__main__.py)、[run_floors.py](../../tests/run_floors.py)、[__main__.py](../../src/omochae/__main__.py)、[test_tpl_stick_prop.py](../../tests/test_tpl_stick_prop.py) |
 | C-02 | 玩具の頁を開いたらすぐ、たたき台の型紙を作れる（予想の段は本人の決定 11-05、#242 で外した。型紙は玩具ごとに 1 枚、J-032） | 自動試験 | [test_build_now.py](../../tests/test_build_now.py)、[test_one_sheet_page.py](../../tests/test_one_sheet_page.py) |
 | C-03 | 人の説明の前に Claude の解釈を呼ばない | 偽の応答の試験 | [test_loop.py](../../tests/test_loop.py) |
 | C-04 | 順位と、結果を数えた集計は学ぶ人の画面に出さない（頁の輪の節に出すのは、変えた寸法・理由の文・根拠の記録の番号と、待っている報告の件数と番号。動いた数や止まった数は出さない） | 自動試験 | [test_loop.py](../../tests/test_loop.py)、[test_play_server.py](../../tests/test_play_server.py)、[test_making_log.py](../../tests/test_making_log.py)、[kaizen.py](../../src/web/kaizen.py)、[test_kaizen.py](../../tests/test_kaizen.py) |
