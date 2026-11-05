@@ -1,14 +1,11 @@
 # 命令: .venv/bin/python tests/test_record_fold.py
-# commit: dabb992（回した時の HEAD）
+# commit: c8543e4（回した時の HEAD）
 ok: 見出しがある時は、どの紙かと 3 つを見せ、残りを素の details に畳む
 ok: どの紙かの欄は畳まない（配られた紙で作る人が選べる）
-/tmp/tmpgonpmcva/play/NDL-1187053-R0000005-L/H-A_v1.pdf
-/tmp/tmpgonpmcva/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
-/tmp/tmpgonpmcva/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
-/tmp/tmpgonpmcva/play/NDL-1187053-R0000005-L/H-B_v1.pdf
-/tmp/tmpgonpmcva/play/NDL-1187053-R0000005-L/H-B_v1_tejun.pdf
-/tmp/tmpgonpmcva/play/NDL-1187053-R0000005-L/H-B_v1_after.pdf
-ok: 試した後の紙が開く条件は前と同じ（選んだ案の紙だけ開く）
+/tmp/tmp3o7zoihl/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp3o7zoihl/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp3o7zoihl/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok: 試した後の紙が開く条件は前と同じ（記録のある案の紙だけ開く）
 ok: 畳んだ欄に書いた字も送られ、記録の形は前と同じ
 ok: 通らなかった時は畳みを開き、書いた字を隠さない
 ok: 版の欄も畳まない

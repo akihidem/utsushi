@@ -24,7 +24,8 @@ from web.play_server import out_dir, serve, sources  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 T = "NDL-1187053-R0000014-R"
-FIRST = {"hypothesis", "result", "impression", "fix_part", "fix_change", "fix_outcome"}  # どの紙かと、見た事・感想・工夫
+# どの紙かと、見た事・感想・工夫。#332 で紙を選ぶ欄が無くなったら、ここから hypothesis を外し、下の選ぶ所の確かめを消す。
+FIRST = {"hypothesis", "result", "impression", "fix_part", "fix_change", "fix_outcome"}
 REST = {"first_moved", "stuck", "what_if", "idea", "note"}
 SHIPPED = vars(toy).get("RECORD_MORE")  # 入っている見出し。下で例に置き換える前に控える
 EXAMPLE = "見出しの例"
@@ -133,15 +134,16 @@ assert chosen(page) is None, "既定は前と同じに先頭の案（印なし�
 assert "hypothesis" in Fields(page).outer and "hypothesis" not in Fields(page).inner
 print("ok: どの紙かの欄は畳まない（配られた紙で作る人が選べる）")
 
-# 試した後の紙が開く条件は変えない（S-03）。見た事だけで残せて、開くのは選んだ案の紙だけ。畳みは閉じたまま。
+# 試した後の紙が開く条件は変えない（S-03）。配られた紙の人の形: B の紙はサイトで作っていない。畳みは閉じたまま、見た事だけで残す。
+# B を選べば B の記録になり、記録の無い A の紙は開かない。B を刷らないのは、必須 2 種で刷れる紙が 1 枚になっても同じに見るため（#332）。
+assert post(f"/toy/{G}/print", hypothesis="H-A")[0] == 303
 for hid in ("H-A", "H-B"):
-    assert post(f"/toy/{G}/print", hypothesis=hid)[0] == 303
     assert status(f"/sheet/{G}/{hid}_v1_after.pdf") == 403
 assert post(f"/toy/{G}/record", hypothesis="H-B", result="動いた")[0] == 303
 assert records.all_records(G)[-1]["hypothesis_id"] == "H-B"
-assert status(f"/sheet/{G}/H-B_v1_after.pdf") == 200
+assert status(f"/sheet/{G}/H-B_v1_after.pdf") != 403, "記録のある案は断らない（紙が無ければ 404。作るのは #320）"
 assert status(f"/sheet/{G}/H-A_v1_after.pdf") == 403
-print("ok: 試した後の紙が開く条件は前と同じ（選んだ案の紙だけ開く）")
+print("ok: 試した後の紙が開く条件は前と同じ（記録のある案の紙だけ開く）")
 
 # 畳んだ欄に書いた字も送られ、記録の形は前と同じ。
 form = form_of(get(f"/toy/{G}"))
@@ -154,6 +156,7 @@ assert rec["answers"] == {"first_moved": "外筒の先", "stuck": "折りの向�
 assert rec["ideas"] == ["糊を減らす"] and rec["note"] == "紙が厚かった", rec
 assert rec["fixes"] == [{"part": "扇", "change": "糊を減らした", "outcome": "開いた"}], rec
 assert {"source_id", "hypothesis_id", "sheet_version", "result", "impression", "opened_deg", "opener", "power", "minutes_to_try", "fixes", "note", "answers", "ideas"} <= set(rec), rec
+assert status(f"/sheet/{G}/H-A_v1_after.pdf") == 200
 print("ok: 畳んだ欄に書いた字も送られ、記録の形は前と同じ")
 
 # 通らなかった時は畳みを開いて、書いた字と選んだ物を見せる。最初の頁は閉じたまま。
