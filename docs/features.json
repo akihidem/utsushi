@@ -239,7 +239,8 @@
   "evidence": [
    "src/omochae/instructions.py",
    "tests/test_words.py",
-   "tests/test_sheet_u25.py"
+   "tests/test_sheet_u25.py",
+   "tests/test_after_sheet_open.py"
   ],
   "unverified": "実際の人が使っていない。札の文の確かさは式と一般の物理による"
  },

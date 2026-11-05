@@ -343,8 +343,12 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
         # 試した後の紙も字のリンクは窓へ（画面に出す）。PDF は添え。
         hid, ver = esc(r["hypothesis_id"]), r.get("sheet_version", 1)
+        pdf = f'/sheet/{sid}/{hid}_v{ver}_after.pdf'
         after = (f'<p><a href="/toy/{sid}?see={hid}&kind=after&v={ver}#win">試した後の紙</a>（先に開いて、次に変える条件を読む。'
-                 f'<a href="/sheet/{sid}/{hid}_v{ver}_after.pdf" target="_blank" rel="noopener">PDF</a>）</p>')
+                 f'<a href="{pdf}" target="_blank" rel="noopener">PDF</a>）</p>')
+        # 自分の仮説は窓に出ない（窓へ向けると、ほかの案の紙が出る）ので、字のリンクも PDF へ向ける（#320）。
+        if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]):
+            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
         if told:
             nid = f'next-{r["id"]}'
             nxt = next_form(r)

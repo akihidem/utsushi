@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_after_sheet_open.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: dabb992（回した時の HEAD）
+AssertionError: 窓に試した後の紙が出ない
+試験 rc=1
+rc=0

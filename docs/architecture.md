@@ -36,7 +36,7 @@
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
-| `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮はサーバごとに 1 つ（--look。皮ごとに 1 サイト）、刷った紙の口（PDF・PNG・SVG、インライン。試した後の紙は記録の後だけ）、合言葉の門 |
+| `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮はサーバごとに 1 つ（--look。皮ごとに 1 サイト）、刷った紙の口（PDF・PNG・SVG、インライン。試した後の紙は記録の後だけ。紙が無ければ開く時に作る）、合言葉の門 |
 | `src/web/failure_log.py` | 作る側が読む失敗の記録（stderr）。道・役・型・トレースバックを出し、学ぶ人の書いた文と合言葉は出さない |
 | `src/web/demo_check.py` | デモのリンクの先が開くかを見る（`run-demo.sh` から呼ぶ。合言葉付きのリンク → Cookie で頁まで。合言葉なしの形は入口が開くか）。port が空いているかも見る |
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。皮はサイトごとに 1 つで、頁の中に切り替えは無い（docs/process/site-requirements.md の 15） |

@@ -170,7 +170,8 @@ def print_free(source_id, title, how, evidence, out, mark=None):
             # 落ちたのではないので FAIL の行にしない。型紙にしなかった事（F9.own）は知らせる。
             print(f"F9.own: {title} は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った", file=sys.stderr)
             print(pdf)
-            return 0
+            # 型紙なしの紙で作った人にも、次に変える条件と札を渡す（#320）。渡すのは記録の後（web/play_server.py の /sheet/）
+            return _print_after(source, title, out)
     for f in failures:
         print(f.line(), file=sys.stderr)
     return 3
@@ -235,6 +236,9 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     data = load(source_id)
     match = [h for h in data["hypotheses"] if h["id"] == hypothesis_id]
     if not match:
+        # 記録は自分の仮説にも付くので、版の紙の組を作る道（loop.print_version）から同じ呼び方で刷れるようにする（#320）
+        if any(h["id"] == hypothesis_id for h in own_hypotheses(source_id)):
+            return print_own(source_id, hypothesis_id, out, version)
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
