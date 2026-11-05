@@ -286,7 +286,8 @@ document.getElementById('up-form').onsubmit = async (e) => {
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
     form.reset(); showPicked();
-    done = '上げました';
+    // 作りながら話した工夫が、この記録に入った時は、その数を知らせる（Issue #279）。
+    done = '上げました' + (j.kufu ? `。作りながら話した工夫 ${j.kufu} 件が、この記録の「工夫した所（直した所）」に入りました` : '');
     for (const f of files) {
       const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
       if (!m.ok) { done = '記録は残しました。' + ((await m.text()) || '写真か動画を上げられませんでした'); break; }
@@ -388,7 +389,8 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
     hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
-    from .play_server import printed_versions  # 循環を避けて、ここで読む
+    from . import hanasu  # 循環を避けて、ここで読む
+    from .play_server import printed_versions
 
     # data-v: 開いた時に刷ってあった一番新しい版。作っている途中で別の人の版が刷られても、報告はこの版への物として残る。
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
@@ -406,6 +408,8 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
         mine += (f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+                 # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
+                 f'{hanasu.keep_box(sid, r, show_shared=uploads)}'
                  f'{feedback(sid, r)}</div>')
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
@@ -428,4 +432,5 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
             '<p><button class="go">記録だけ残す</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
             f'<div id="mine">{note}{mine}</div></section>')
-    return body + SCRIPT
+    # 話す口の見た目と動きは、頁に 1 回だけ置く（記録の一覧 #mine は後から入れ替わるので、その外に）。
+    return body + SCRIPT + hanasu.assets()

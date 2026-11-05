@@ -422,6 +422,11 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/step", self.path)
         if m and m.group(1) in sources():
             return self._step_post(m.group(1), form)
+        m = re.fullmatch(rf"/toy/({SID})/talk", self.path)
+        if m and m.group(1) in sources():
+            # 話す口（一周の声の部分、Issue #279）。ここに届くのは字のフォームだけ（上の _form が、音のファイルなど、ほかの形の本体を断る）。
+            from . import hanasu
+            return hanasu.post(self, m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/predict-choice", self.path)
         if m and m.group(1) in sources():
             # かざして選ぶ頁の候補（U-44、Issue #118）。受けるのは押した候補の印だけ（動く所の候補。仮説の印ではない）。
@@ -601,7 +606,11 @@ class Handler(BaseHTTPRequestHandler):
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
         if rid:
             making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
-        return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
+            # 作りながら話した工夫を、この記録の「工夫した所（直した所）」に入れる（Issue #279）。入れた数を返し、手帖が知らせる。
+            from omochae import talk_log
+            tied = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
+            return out(201, {"id": rid, "kufu": tied} if tied else {"id": rid})
+        return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
@@ -672,6 +681,10 @@ class Handler(BaseHTTPRequestHandler):
                        "ideas": [form["idea"]] if form.get("idea", "").strip() else []}
                 rid, failures = records.add(rec)
                 anchor = rid or anchor  # 今残した記録の札に着く。欄に戻ると、押す前と同じ画面に見える（#121）
+                if rid:
+                    # 作りながら話した工夫を、この記録の「工夫した所（直した所）」に入れる（Issue #279。手帖の記録を残す口と同じ）。
+                    from omochae import talk_log
+                    talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
             msg = "記録を残しました。試した後の紙が開けます"
         if failures:
             at = {"predict": "yosou", "own": "yosou", "print": "kasetsu"}.get(act, "kiroku")

@@ -203,4 +203,8 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'<section class="sec" id="k4"><h2>4 聞く口の質問</h2><p class="meta">作っている途中に聞く口へ来た質問を、手順の段ごとに束ねます（同じ文だけを 1 つに数えます）。</p>{s4}</section>'
             f'<section class="sec" id="k5"><h2>5 完成の様子</h2><p class="meta">時間は幅で、動いた記録は件数で出します。</p>{s5}</section>'
             f'<section class="sec" id="k6"><h2>6 サイトの流れ</h2><p class="meta">予想 → 型紙 → 作る → 記録の、どの段まで進んだか。何を書いたかは写していません。</p>{s6}</section>')
+    # 7 話した事（一周の声の部分、Issue #279）。字だけ。並べ方と断りは hanasu.py が持つ。
+    from . import hanasu
+
+    body += hanasu.maker_section(sid, data)
     return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE)
