@@ -109,10 +109,10 @@ body.taiban ::selection{background:#d6d6d3;color:#161616}
 .cell{container-type:size;display:flex;align-items:center;justify-content:center;min-height:0}.cell.big{grid-column:1/-1}
 .pc{width:min(92cqw,calc(92cqh * var(--r)));filter:drop-shadow(0 8px 10px rgba(0,0,0,.18))}
 .sw{position:absolute;display:grid;grid-template-columns:repeat(4,1fr);gap:3%}.sw div{aspect-ratio:3/4;background-color:#f0f0ee}
-.ab-end{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#6d6d6d;text-align:center;padding:2svh 6vw 6svh}
+.ab-end{font-family:"Helvetica Neue",Arial,sans-serif;font-size:12px;color:#6d6d6d;text-align:center;padding:2svh 6vw 6svh}
 @media (max-width:760px){
  .board{width:92vw;aspect-ratio:auto}.spread{grid-template-columns:1fr}.page{aspect-ratio:.78}.rings{display:none}
- .page.l,.page.r{box-shadow:none}.page.l{border-bottom:1px solid #e6e6e6}.t{font-size:10px}}
+ .page.l,.page.r{box-shadow:none}.page.l{border-bottom:1px solid #e6e6e6}.t{font-size:12px}}
 """
 
 
@@ -283,15 +283,15 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all{padding:12vh 7vw;border-top:1px solid #1f1b16}
 .zn-all .chapter{font-size:12px;letter-spacing:.5em;color:#c9a96a;margin:0 0 12px}
 .zn-all h2{font-size:clamp(24px,2.6vw,36px);font-weight:300;letter-spacing:.25em;margin:0 0 18px}
-.zn-all .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
+.zn-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
 .zn-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 18px}
 .zn-all li.big{grid-column:span 2}
 .zn-all a{border:0;color:#e9e1cf}
 .zn-all .pic{aspect-ratio:3/4;background:#141210 center/cover no-repeat;border:1px solid #6e5a35;outline:6px solid #141210;outline-offset:-7px;box-shadow:0 20px 40px rgba(0,0,0,.6)}
 .zn-all .big .pic{aspect-ratio:1600/2656}
-.zn-all .nopic{display:grid;place-items:center;font-size:11px;color:#9a8e76;letter-spacing:.15em}
+.zn-all .nopic{display:grid;place-items:center;font-size:12px;color:#9a8e76;letter-spacing:.15em}
 .zn-all .nm{display:block;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
-.zn-all .nm small,.zn-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#9a8e76}
+.zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
@@ -351,7 +351,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-hall{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 5vw;box-sizing:border-box}
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
-.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:11px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
+.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:12px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -370,24 +370,24 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-songs p{margin:0 .3em}
 .tj-detail{padding:12vh 5vw;border-top:1px solid #ebe8e2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3vw;align-items:start}
 .tj-detail figure{margin:0}.tj-detail figure div{aspect-ratio:3/4;background-color:#fffefc;border:1px solid #d8cdb6;box-shadow:0 20px 30px -24px rgba(70,55,35,.4)}
-.tj-detail figcaption{font-size:11px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
+.tj-detail figcaption{font-size:12px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
 .tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #ebe8e2}
 .tj-exit p{font-size:clamp(20px,2.2vw,28px);letter-spacing:.3em;font-weight:400}
-.tj-note{font-size:11px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
+.tj-note{font-size:12px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
 /* 全部の玩具の一覧（本人の指示 11-05）。白い壁に小さな額を並べる展示の一室。動きは無い（扇の間とせり上がりの外）。 */
 .tj-all{padding:10vh 5vw;border-top:1px solid #ebe8e2}
 .tj-all .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 12px}
 .tj-all h2{font-size:clamp(22px,2.4vw,34px);font-weight:400;letter-spacing:.22em;margin:0 0 14px}
 .tj-all .cap{font-size:13px;line-height:2;letter-spacing:.06em;color:#4a4339;max-width:46em}
-.tj-all .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
+.tj-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
 .tj-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:24px 16px}
 .tj-all li.big{grid-column:span 2}
 .tj-all a{border:0;color:#2b2722}
 .tj-all .pic{aspect-ratio:3/4;background:#fffefc center/cover no-repeat;border:1px solid #d8cdb6;box-shadow:0 14px 22px -18px rgba(70,55,35,.4)}
 .tj-all .big .pic{aspect-ratio:1600/2656}
-.tj-all .nopic{display:grid;place-items:center;font-size:11px;color:#7a7164;letter-spacing:.15em}
+.tj-all .nopic{display:grid;place-items:center;font-size:12px;color:#7a7164;letter-spacing:.15em}
 .tj-all .nm{display:block;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
-.tj-all .nm small,.tj-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#7a7164}
+.tj-all .nm small,.tj-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#7a7164}
 .tj-all li > small a{color:#6b4f2a;border-bottom:1px solid rgba(107,79,42,.35)}
 
 /* 扇の札（本人の頼み 2026-11-04「この動き、デモサイトでやってみる？」の (1)）。図と寄りの札を、下の 1 点（要）を軸に
@@ -403,7 +403,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
  box-shadow:0 18px 26px -20px rgba(70,55,35,.45);transition:transform 1.1s cubic-bezier(.22,.61,.36,1),box-shadow 1.1s ease}
 .fan-card.is-c{--s:1.14;box-shadow:0 34px 44px -26px rgba(70,55,35,.55),0 2px 6px rgba(70,55,35,.1)}
 .fan-pic{display:block;width:100%;height:100%}
-.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:11px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:12px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
 .fan-kaname{position:absolute;left:50%;bottom:20px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#b9a982;box-shadow:0 0 0 3px #fcfcfa,0 0 0 4px #d8cdb6}
 .fan-ctl{display:flex;gap:2em;justify-content:center;align-items:center;margin-top:2vh;font-size:13px;letter-spacing:.2em;color:#5d554a}
 .fan-ctl button{font:inherit;color:#6b4f2a;background:none;border:0;border-bottom:1px solid rgba(107,79,42,.35);padding:4px 2px;cursor:pointer}
@@ -417,7 +417,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
 .tj-ogi label{display:inline-flex;gap:1em;align-items:center;font-size:13px;letter-spacing:.2em;color:#5d554a;margin-top:2vh}
 .tj-ogi input{accent-color:#8a6d3b;width:min(240px,50vw)}
-.tj-ogi .cap{font-size:11px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
+.tj-ogi .cap{font-size:12px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
 
 /* スクロールでせり上がる（本人の頼みの (2)）。CSS のスクロール連動だけで、見える状態から始める（opacity を 0 にしない）。
    なぜ: 速く読む人から中身を隠さないため（research/19 の「全部の節に演出を付けない」を、隠さない形で守る）。

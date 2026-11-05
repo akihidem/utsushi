@@ -1,0 +1,21 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_tap_size.py 2>&1 | tail -1 | cut -c1-120; echo "試験 rc=${PIPESTATUS[0]}"; PYTHONPATH=src .venv/bin/python tests/measure_tap.py 390 2>&1 | grep -v "\.pdf$"; echo "実測 rc=${PIPESTATUS[0]}"'
+# commit: 4e3f820（回した時の HEAD）
+AttributeError: module 'web.skin' has no attribute 'TAP_FLOOR'
+試験 rc=1
+tenji  /                            押す所 181・44 未満  96 ['a', 'button.fan-next', 'button.fan-prev', 'label']  小さい字 270 ['.cap 9.36', '.en 11', '.fan-lb 11', '.cap 11']  横幅 375
+tenji  /about                       押す所   9・44 未満   7 ['a', 'a.brand']  小さい字   2 ['figcaption 11', '.foot 11']  横幅 375
+tenji  /toys                        押す所 173・44 未満  90 ['a', 'a.brand']  小さい字   2 ['.lb 11', '.foot 11']  横幅 375
+tenji  /toy/NDL-1187053-R0000005-L  押す所  63・44 未満  23 ['a', 'a.brand', 'summary']  小さい字   3 ['figcaption 11', '.lb 11', '.foot 11']  横幅 375
+tenji  /zukan                       押す所  99・44 未満  99 ['a', 'a.brand']  小さい字  10 ['.lb 11', '.foot 11']  横幅 375
+tenji  /gallery                     押す所   9・44 未満   8 ['a', 'a.brand']  小さい字  18 ['.sample 11', '.foot 11']  横幅 375
+tenji  /toy/NDL-1187053-R0000005-L/ 押す所  25・44 未満  11 ['a', 'a.brand', 'label.check']  小さい字   1 ['.foot 11']  横幅 375
+zine   /                            押す所 176・44 未満  93 ['a']  小さい字 249 ['.cap 9.36', '.lb 11', '.pic 11', 'a 11']  横幅 375
+zine   /about                       押す所   9・44 未満   7 ['a', 'a.brand']  小さい字   2 ['figcaption 11', '.foot 11']  横幅 375
+zine   /toys                        押す所 173・44 未満  90 ['a', 'a.brand']  小さい字   2 ['.lb 11', '.foot 11']  横幅 375
+zine   /toy/NDL-1187053-R0000005-L  押す所  63・44 未満  23 ['a', 'a.brand', 'summary']  小さい字   3 ['figcaption 11', '.lb 11', '.foot 11']  横幅 375
+zine   /zukan                       押す所  99・44 未満  99 ['a', 'a.brand']  小さい字  10 ['.lb 11', '.foot 11']  横幅 375
+zine   /gallery                     押す所   9・44 未満   8 ['a', 'a.brand']  小さい字  18 ['.sample 11', '.foot 11']  横幅 375
+zine   /toy/NDL-1187053-R0000005-L/ 押す所  25・44 未満  11 ['a', 'a.brand', 'label.check']  小さい字   1 ['.foot 11']  横幅 375
+満たさない所 1256
+実測 rc=3
+rc=0

@@ -31,7 +31,7 @@ from .contrib_server import STYLE
 LOOK = STYLE + """
 body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 .wrap{max-width:1180px;margin:auto;padding:0 20px 64px}
-.cap{font-size:.78em;color:#6b604f;margin-top:8px}
+.cap{font-size:max(12px,.78em);color:#6b604f;margin-top:8px}
 .side h1,.side h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
 .side .no{font-size:.8em;letter-spacing:.3em;color:#7a3b1d}
 .side a.open{display:inline-block;margin-top:18px;border-bottom:1px solid #7a3b1d;text-decoration:none}
@@ -88,7 +88,7 @@ def esc(s):
 def page(title, body, extra_style="", body_class=""):
     cls = f' class="{body_class}"' if body_class else ""
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title>'
-            f'<style>{LOOK}{BOOK}{extra_style}</style><body{cls}><main>{body}</main></body></html>')
+            f'<style>{LOOK}{BOOK}{skinmod.TAP_FLOOR}{extra_style}</style><body{cls}><main>{body}</main></body></html>')
 
 
 # 玩具の頁の頭に置く見開きの紙（図と、名前と縦組みの歌）。入口の冊子をめくる仕組みは、

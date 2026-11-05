@@ -339,7 +339,9 @@
    "src/web/about.py",
    "tests/test_toys.py",
    "tests/test_about.py",
-   "docs/process/site-requirements.md"
+   "docs/process/site-requirements.md",
+   "tests/test_tap_size.py",
+   "tests/measure_tap.py"
   ],
   "unverified": "人がブラウザで使った確認と本物のスマホはまだ。序の文面・既定の皮・A の扱いは本人の採否待ち（カード 20261105-011452-sub-site）"
  }
