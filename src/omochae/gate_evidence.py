@@ -20,7 +20,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "docs/process/gate-evidence"
 NAME = re.compile(r"[a-z0-9][a-z0-9-]*")
 HEAD_COMMAND = re.compile(r"# 命令: .+")
-HEAD_COMMIT = re.compile(r"# commit: [0-9a-f]{7,40}\b")
+# 不明は git の外の写し（zip で配った物など）で回した時。番号が無い事を、無いと書いてあればよい
+HEAD_COMMIT = re.compile(r"# commit: ([0-9a-f]{7,40}\b|不明)")
 TIMEOUT = 900  # 秒。./run.sh が混んだ機械で 13 分ほどかかるので、それより長く取る
 
 

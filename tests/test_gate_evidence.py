@@ -29,6 +29,15 @@ if has_git:
     assert head.stdout.strip() in lines[1], lines[1]
 assert "見た事" in lines[2] and lines[-1] == "rc=1", lines
 
+# git の外の写しでも、書いた物は検査を通る（zip で配った repo で ./run.sh を回しても、この試験が落ちない）
+keep_commit = ge._commit
+ge._commit = lambda: "不明（git の外）"
+assert ge.write("no-git", [sys.executable, "-c", "pass"]) == 0
+ge._commit = keep_commit
+assert (d / "no-git.txt").read_text(encoding="utf-8").splitlines()[1].startswith("# commit: 不明")
+assert ge.missing() == [], ge.missing()
+(d / "no-git.txt").unlink()
+
 # 2. 手元のパスを残さない（push の門が止める物。証拠のファイルで前に当たった）
 assert str(ROOT) not in text and str(pathlib.Path.home()) not in text.replace(lines[0], ""), text
 assert "tests/x.py" in text, text
