@@ -321,6 +321,8 @@
    "tests/test_demo_beat.py",
    "src/demo/script.py",
    "src/demo/words.py",
+   "src/demo/core.py",
+   "tests/test_demo_core.py",
    "src/demo/song.py",
    "tests/test_demo_words.py",
    "tests/test_demo_song.py",
