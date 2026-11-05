@@ -1,0 +1,10 @@
+# Red: 試験を足し、直す前の run-demo.sh（main 765ac7b）で回した
+$ PYTHONPATH=src .venv/bin/python tests/test_run_demo.py
+ok opens
+Traceback (most recent call last):
+  File "tests/test_run_demo.py", line 132, in <module>
+    assert "リンク" not in out, f"塞がっているのにリンクを案内した: {out}"
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: 塞がっているのにリンクを案内した: 外の機器から開くリンク（合言葉付き）は out/demo-url にあります。渡す時はこのリンクだけを渡す
+
+rc 1
