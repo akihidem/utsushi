@@ -10,6 +10,8 @@ from types import SimpleNamespace as NS
 tmp = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = tmp
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
+# 子を別の置き場で起こすので、呼ぶ側の PYTHONPATH=src が相対でも読めるように絶対へ直す（#170）
+os.environ["PYTHONPATH"] = str(pathlib.Path(__file__).resolve().parents[1] / "src")
 
 from api import budget, generate as gen
 from omochae import hypotheses, loop, records
