@@ -1,0 +1,21 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: ba352fd（回した時の HEAD）
+OK test_engine_bundle
+rc=0
+
+上は、直しを足した作業ツリー（HEAD の上に、まだ commit していない engine_bundle と試験）で回した。
+
+道具を壊した版 6 つを repo の外の写しで回した結果（どれも試験が rc 1。元のままは rc 0）:
+- 連絡先の文を落とさない: rc 1
+- その場限りの印の値を束に入れる: rc 1
+- 直す前の記録を今の組に数える: rc 1
+- 時刻に秒を持つ: rc 1
+- メモを文に入れる: rc 1
+- 書く先を確かめない: rc 1
+
+11-04 の試行の記録 2 件の写しから出した束（命令 python -m omochae.engine_bundle export --out の先は repo の外）:
+束を書いた: real-bundle.json（群 1・文 4・連絡先の形で落とした文 0）
+型紙エンジンの main の入口の検査（python -m omochae.engine_loop check）: rc 0
+同じ束を入口に通し（take）、案を起こした（propose）結果: 雛形の案が 1 件。
+
+全体（./run.sh。1 つ前の main の 0607371 に直しを足した作業ツリーで回した）: 実行した 137 本（場面 31 本、試験 106 本）、期待どおり 137 本、未実装の床 0 本。rc 0
