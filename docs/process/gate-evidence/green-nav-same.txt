@@ -1,0 +1,59 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_nav_same.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"; for w in 390 360; do echo "--- 幅 $w"; PYTHONPATH=src .venv/bin/python tests/measure_tap.py $w 2>&1 | grep -v "\.pdf$" | sed -E "s/押す所 +[0-9]+・44 未満 +//; s/小さい字 +/字 /; s/横幅 [0-9]+ +//"; echo "実測 rc=${PIPESTATUS[0]}"; done'
+# commit: 38027ef（回した時の HEAD）
+ok
+試験 rc=0
+--- 幅 390
+tenji  /                            0 []  字 0 []  帯の段 [1, 4]
+tenji  /about                       0 []  字 0 []  帯の段 [1, 4]
+tenji  /toys                        0 []  字 0 []  帯の段 [1, 4]
+tenji  /toy/NDL-1187053-R0000005-L  0 []  字 0 []  帯の段 [1, 4]
+tenji  /zukan                       0 []  字 0 []  帯の段 [1, 4]
+tenji  /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+tenji  /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+tenji  /gallery                     0 []  字 0 []  帯の段 [1, 4]
+tenji  /loop                        0 []  字 0 []  帯の段 [1, 4]
+tenji  /loop/NDL-1187053-R0000005-L 0 []  字 0 []  帯の段 [1, 4]
+tenji  /no-such-page                0 []  字 0 []  帯の段 [1, 4]
+tenji  /toy/NDL-1187053-R0000005-L/ 0 []  字 0 []  帯の段 [1, 4]
+zine   /                            0 []  字 0 []  帯の段 [1, 4]
+zine   /about                       0 []  字 0 []  帯の段 [1, 4]
+zine   /toys                        0 []  字 0 []  帯の段 [1, 4]
+zine   /toy/NDL-1187053-R0000005-L  0 []  字 0 []  帯の段 [1, 4]
+zine   /zukan                       0 []  字 0 []  帯の段 [1, 4]
+zine   /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+zine   /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+zine   /gallery                     0 []  字 0 []  帯の段 [1, 4]
+zine   /loop                        0 []  字 0 []  帯の段 [1, 4]
+zine   /loop/NDL-1187053-R0000005-L 0 []  字 0 []  帯の段 [1, 4]
+zine   /no-such-page                0 []  字 0 []  帯の段 [1, 4]
+zine   /toy/NDL-1187053-R0000005-L/ 0 []  字 0 []  帯の段 [1, 4]
+満たさない所 0
+実測 rc=0
+--- 幅 360
+tenji  /                            0 []  字 0 []  帯の段 [1, 4]
+tenji  /about                       0 []  字 0 []  帯の段 [1, 4]
+tenji  /toys                        0 []  字 0 []  帯の段 [1, 4]
+tenji  /toy/NDL-1187053-R0000005-L  0 []  字 0 []  帯の段 [1, 4]
+tenji  /zukan                       0 []  字 0 []  帯の段 [1, 4]
+tenji  /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+tenji  /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+tenji  /gallery                     0 []  字 0 []  帯の段 [1, 4]
+tenji  /loop                        0 []  字 0 []  帯の段 [1, 4]
+tenji  /loop/NDL-1187053-R0000005-L 0 []  字 0 []  帯の段 [1, 4]
+tenji  /no-such-page                0 []  字 0 []  帯の段 [1, 4]
+tenji  /toy/NDL-1187053-R0000005-L/ 0 []  字 0 []  帯の段 [1, 4]
+zine   /                            0 []  字 0 []  帯の段 [1, 4]
+zine   /about                       0 []  字 0 []  帯の段 [1, 4]
+zine   /toys                        0 []  字 0 []  帯の段 [1, 4]
+zine   /toy/NDL-1187053-R0000005-L  0 []  字 0 []  帯の段 [1, 4]
+zine   /zukan                       0 []  字 0 []  帯の段 [1, 4]
+zine   /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+zine   /zukan/NDL-1187053-R0000005- 0 []  字 0 []  帯の段 [1, 4]
+zine   /gallery                     0 []  字 0 []  帯の段 [1, 4]
+zine   /loop                        0 []  字 0 []  帯の段 [1, 4]
+zine   /loop/NDL-1187053-R0000005-L 0 []  字 0 []  帯の段 [1, 4]
+zine   /no-such-page                0 []  字 0 []  帯の段 [1, 4]
+zine   /toy/NDL-1187053-R0000005-L/ 0 []  字 0 []  帯の段 [1, 4]
+満たさない所 0
+実測 rc=0
+rc=0
