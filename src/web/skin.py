@@ -128,7 +128,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys a{display:block;border:0;color:var(--fg)}
 .toys .pic{aspect-ratio:3/4;background:var(--soft) center/300% no-repeat;border:1px solid var(--frame);box-shadow:0 14px 22px -18px var(--shadow)}
 .toys .nm{font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
-.toys .big{grid-column:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
+.toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
+@media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
 .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
 .is-sample{border-top:1px dashed var(--frame)}
 .foot{padding:48px 5vw 40px;font-size:11px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
