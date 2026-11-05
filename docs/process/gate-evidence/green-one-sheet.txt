@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_one_sheet.py
+# commit: ec615b1（回した時の HEAD）
+ok 型紙は玩具ごとに 1 枚のたたき台。必須 2 種は H-A だけを刷り、前の記録は読める
+rc=0

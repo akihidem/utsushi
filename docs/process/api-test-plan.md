@@ -2,6 +2,7 @@
 
 - 対象: utsushi（hackathon-utsushikagami）。U-05 の「試験の手順書」（J-023（docs/process/decisions/J023-first-test-later.md） の「まだ作り込む物」）
 - 状態: 案。本人が承認するまで本物は 0 回のまま。モデルは全部 Opus 5.5（J-017）
+- 11-05 の変更: 本人の決定（J-031（docs/process/decisions/J031-build-now.md））で予想の段を外したので、5〜7 回目に本人の予想は要らない。手順もその形に直した
 - この手順書を書いた時に確かめた事: 下の `--dry-run` と下見の python は、手元の別の置き場（`OMOCHAE_DATA` を作業用の場所に向けた）で動かし、通信なしで止まる事を見た。本物の 7 本は動かしていない
 
 ## 目的
@@ -44,9 +45,9 @@
 | — | 人 | 2 の案を本人が読んで確定する（API は呼ばない） | `PY -m omochae.loop confirm R-0001 --by 本人の名前`（書き直す時は `--text`） |
 | 3 | propose | R-0001 と、本人が確定した解釈 | 下見: `PY -c "import json; from api import agent, loop_agents; s=json.load(open('data/sources/NDL-1187053-R0000005-L.json')); loop_agents.draft_proposal('R-0001', s, client=agent.PreviewClient())"` → 本物: `PY -m omochae.loop propose R-0001` |
 | 4 | words | 用意した言葉の仮説（本人か大人が打つ）。例「筒の中の板を押し上げると扇が開く」、名前「押し上げ」、図のどこ「左下の筒」 | `PY -m omochae.hypotheses words "筒の中の板を押し上げると扇が開く" --name 押し上げ --evidence 左下の筒 --by 本人の名前 --dry-run` → 同じ文で `--dry-run` を外す |
-| 5 | generate（拡大あり） | 御来迎の図と歌。**本人の本物の予想が先に要る**（U-08。無いと F9.prediction で止まり、呼ばない） | `PY -m omochae.hypotheses predict "本人の予想"` → `PY -m omochae.hypotheses generate --dry-run` → `PY -m omochae.hypotheses generate` |
-| 6 | generate（拡大なし・U-12） | 5 と同じ図・歌・予想 | 切り替えを足した（11-04、`hypotheses generate --no-zoom`、`tests/test_generate_zoom_switch.py`）。5 と同じ入力で `--no-zoom` を付けて流す |
-| 7 | generate（予備） | 5 か 6 が床で落ちた時の 1 回だけのやり直し。使わなければ虎 `NDL-1187053-R0000014-R`（本人の予想が要る）で 1 回 | `PY -m omochae.hypotheses --source NDL-1187053-R0000014-R generate --dry-run` → `--dry-run` を外す |
+| 5 | generate（拡大あり） | 御来迎の図と歌 | `PY -m omochae.hypotheses generate --dry-run` → `PY -m omochae.hypotheses generate` |
+| 6 | generate（拡大なし・U-12） | 5 と同じ図・歌 | 切り替えを足した（11-04、`hypotheses generate --no-zoom`、`tests/test_generate_zoom_switch.py`）。5 と同じ入力で `--no-zoom` を付けて流す |
+| 7 | generate（予備） | 5 か 6 が床で落ちた時の 1 回だけのやり直し。使わなければ虎 `NDL-1187053-R0000014-R` で 1 回 | `PY -m omochae.hypotheses --source NDL-1187053-R0000014-R generate --dry-run` → `--dry-run` を外す |
 
 U-12 は 1 回ずつの比べなので、どちらが良いかの結論にはしない。「道具を何回使い、根拠の欄に拡大した所が出たか」の観察として残す。
 
@@ -58,7 +59,7 @@ U-12 は 1 回ずつの比べなので、どちらが良いかの結論にはし
 | 2 interpret | `observed`・`causes`・`unknown` が分かれ、人の入れた結果と説明を書き換えない | 動かない結果を「失敗」と呼ぶ。歴史の事実として断定する |
 | 3 propose | `check_proposal` を通る（F4.evidence、F7.revision の向きと変えてよい寸法、F8.references、F9.human） | 仮説に順位を付ける・どれが正しいと言う（J-025）。実在しない記録 ID を引く |
 | 4 words | `filled_in` と `from_words` で全寸法の出所が分かる（F9.own）。`compose` の床（F5.*）を通る | 人の文を書き換える・評価する・別案を勧める。隠れた補い |
-| 5〜7 generate | 仮説 2〜3 本、前例が実在（F8.references）、寸法が雛形の範囲（F5.range）、予想との共通点と違いを並べる | どちらが正しいかを言う。順位。雛形に無い機構を作れると言う。採らなかった歌の読みを根拠にする |
+| 5〜7 generate | 仮説 2〜3 本、前例が実在（F8.references）、寸法が雛形の範囲（F5.range）、使い手の仮説があれば共通点と違いを並べる | どちらが正しいかを言う。順位。雛形に無い機構を作れると言う。採らなかった歌の読みを根拠にする |
 
 床の検査はコード（`check_result`・`check_proposal`）が落とし、落ちれば 2 回までやり直して止まる。上の「落ちる条件」のうち順位・断定・書き換えはコードが見ないので、本人が案の JSON（`show-generated` / `show-words` / `show`）を読んで見る。
 
@@ -106,7 +107,7 @@ U-12 は 1 回ずつの比べなので、どちらが良いかの結論にはし
 
 - [ ] 7 回の中身と順（6 回目の拡大なしは `--no-zoom` で流す）
 - [ ] 費用の上限 約 $20 と、試験の日（11-08 まで）
-- [ ] 5・7 回目に使う本人の予想（U-08）と、4 回目の言葉の仮説の文
+- [ ] 4 回目の言葉の仮説の文
 - [ ] 採らなかった読みが `checked_scope` に残る件を、試験の前に直すか
 - [ ] 鍵は本人が repo の鍵の置き場（git の外）に自分の手で置き、試験の後に外すか残すかを決める
 - [ ] 止める条件の表で止まったら、その日は再開しない

@@ -1,6 +1,7 @@
 """試した記録の入口。成績でなく観察の記録で、人が入れた物だけを残す（philosophy.md）。
 
 判断の芯: 何が起きたかは人が決める値で、写真から判定しない。「動かない」は失敗でなく自然の返事。「わからない」を「動いた」に数えない。値は雛形が持つ（虎は揺れた／揺れない）。
+札を直しても、前の札で残った記録の中身は書き換えない（読み手が読めるように、雛形の OLD_RESULTS が今の札との対応を持つ。#146）。
 直した点は 3 欄が揃った物だけを残す。次の版や次に試す物の提案の根拠になるので、あいまいな記録を混ぜないため。
 """
 import argparse
@@ -36,6 +37,13 @@ def results_for(source_id):
     return TEMPLATES[load(source_id).get("template", "slider_fan")].RESULTS
 
 
+def old_results_for(source_id):
+    """前の札の言葉 → 今の札の言葉。新しく選ばせる札でなく、前の札で残った記録を読むための受け口（#146）。"""
+    from .compose import TEMPLATES
+
+    return getattr(TEMPLATES[load(source_id).get("template", "slider_fan")], "OLD_RESULTS", {})
+
+
 def known_hypothesis(source_id, hypothesis_id):
     return any(h["id"] == hypothesis_id for h in load(source_id)["hypotheses"]) or any(h["id"] == hypothesis_id for h in own_hypotheses(source_id))
 
@@ -43,7 +51,8 @@ def known_hypothesis(source_id, hypothesis_id):
 def check(rec):
     out = []
     results = results_for(rec["source_id"])
-    if rec.get("result") not in results:
+    # 前の札も受ける。札を直す前に開いた頁から送られても、記録を断らないため。断りの文には今の札だけを出す。
+    if rec.get("result") not in (*results, *old_results_for(rec["source_id"])):
         out.append(Failure("F3.result", "result", f"結果は {'／'.join(results)} のどれか"))
     if not known_hypothesis(rec["source_id"], rec.get("hypothesis_id")):
         out.append(Failure("F8.references", "hypothesis_id", f"仮説 {rec.get('hypothesis_id')} は実在しない"))
@@ -152,7 +161,7 @@ def summarize(records):
     table = {}
     for r in records:
         row = table.setdefault(r["hypothesis_id"], {x: 0 for x in results_for(r["source_id"])} | {"record_ids": []})
-        row[r["result"]] += 1
+        row[r["result"]] = row.get(r["result"], 0) + 1  # 前の札の記録は、その言葉のまま別に数える
         row["record_ids"].append(r["id"])
     return table
 

@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_media_review.py
+# commit: 9adb855（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_media_review.py", line 86, in <module>
+    assert url not in gallery(), "確認の前の写真をギャラリーに出さない"
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: 確認の前の写真をギャラリーに出さない
+rc=1
