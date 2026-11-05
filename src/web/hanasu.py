@@ -71,7 +71,6 @@ KUFU_HEAD = "工夫した所（直した所）"
 KEPT = "残しました。型紙や説明をよくするのに使います。"
 FAILED = "残せませんでした。インターネットにつながっているか見て、もう一度押してください。"
 NOHEARD = "聞き取れませんでした。もう一度押すか、字で書いてください。"
-WHICH = "どの案（仮説）のこと？（選ばなくてもだいじょうぶです）"
 # 入口の床に当たって残せなかった時の文。talk_log の理由（「名乗りの形がある」など）は作る人向けの言葉なので、そのまま出さない。
 # 連絡先の形の時も、この文を出す（採られた文は 1 つ。連絡先の時の言い分けは、文面の確認が要るので足していない）。
 BLOCKED = "名前や学校の名前のような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
@@ -189,14 +188,14 @@ def assets():
     return f"<style>{STYLE}</style>" + SCRIPT.replace("__VOICE__", mode())
 
 
-def box(sid, scene, hid="", version=None, step=None, rid="", hyps=(), with_assets=True):
-    """話す口 1 つ。hyps は 1（考え）で選べる仮説の (id, 字) の並び。with_assets=False は、同じ頁に何個も置く時（手帖）に、頁の側が assets() を 1 回置く形。"""
+def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
+    """話す口 1 つ。with_assets=False は、同じ頁に何個も置く時（手帖）に、頁の側が assets() を 1 回置く形。"""
     s = SCENES[scene]
     key = esc(f"hn-{scene}-{rid}" if rid else f"hn-{scene}")
     hidden = f'<input type="hidden" name="scene" value="{esc(scene)}">'
     if scene == "think":
-        opts = f'<option value="">{esc(WHICH)}</option>' + "".join(f'<option value="{esc(i)}">仮説 {esc(n)}</option>' for i, n in hyps)
-        hidden += f'<label class="sr" for="{key}-h">{esc(WHICH)}</label><select id="{key}-h" name="hypothesis">{opts}</select>'
+        # 考えは、頁に出ているたたき台に結ぶ（型紙は玩具ごとに 1 枚。本人の決定 11-05、J-032）。仮説を選ぶ欄は置かない。
+        hidden += f'<input type="hidden" name="hypothesis" value="{esc(hid)}">'
     elif scene == "craft":
         hidden += (f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{esc(version)}">'
                    f'<input type="hidden" name="step" value="{esc(step)}">')
@@ -218,10 +217,9 @@ def box(sid, scene, hid="", version=None, step=None, rid="", hyps=(), with_asset
 
 def think_section(sid, data, note=""):
     """玩具の頁の節（1 仮説を見て、考えを話す）。仮説の札のすぐ後に置く。note は、JS が無い時に送った後の返事の文（着いたこの節の頭に出す）。"""
-    hyps = [(h["id"], hypotheses.letter(h)) for h in data["hypotheses"]]
     return (f'<section class="sec" id="hanasu">{note}<h2>考えを話す</h2>'
             '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>'
-            f'{box(sid, "think", hyps=hyps)}</section>')
+            f'{box(sid, "think", hid=hypotheses.sheet_of(sid)["id"])}</section>')
 
 
 def craft_box(sid, hid, version, step):

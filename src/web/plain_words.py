@@ -223,7 +223,7 @@ def _open_pages(sids, walk):
     try:
         pages = {p: fetch(p) for p in paths}
         for sid in sids if walk else ():
-            hid = hypotheses.load(sid)["hypotheses"][0]["id"]
+            hid = hypotheses.sheet_of(sid)["id"]
             send(f"/toy/{sid}/print", hypothesis=hid)
             send(f"/toy/{sid}/record", hypothesis=hid, result=records.results_for(sid)[0])
             pages[f"/toy/{sid}（記録の後）"] = fetch(f"/toy/{sid}?see={hid}&kind=after&v=1")

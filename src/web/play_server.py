@@ -307,7 +307,8 @@ class Handler(BaseHTTPRequestHandler):
             # 刷った紙が無い時は開かない（手順は刷った版の物なので）。
             sid = m.group(1)
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
-            hid = qs.get("h", [""])[0] or (printed[0] if printed else "")
+            # 紙の印が無ければ、たたき台の 1 枚を開く（J-032）。刷った物の先頭を開くと、ほかの仮説だけを刷った置き場でその紙が開く。
+            hid = qs.get("h", [""])[0] or hypotheses.sheet_of(sid)["id"]
             if hid not in printed:
                 return self._send(200, self._toy(sid, errors=["先に紙を作ると、作りながら見る頁が開きます"]))
             from . import tsukuru
@@ -322,7 +323,8 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。
             sid = m.group(1)
-            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
+            sheet = hypotheses.sheet_of(sid)["id"]
+            printed = [sheet] if printed_versions(sid, sheet) else []  # 手帖の紙もたたき台の 1 枚だけ（J-032）
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
             return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
@@ -440,7 +442,7 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 英語の頁から刷る（J-030 の段 1）。紙は同じ物で日本語のまま。聞く口と記録の口は英語の頁に置かない。
             sid, hid = m.group(1), form.get("hypothesis", "")
-            if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
+            if hid != hypotheses.sheet_of(sid)["id"]:  # 刷れるのは頁に出すたたき台だけ（J-032）
                 return self._send(422, "That idea does not exist.", "text/plain; charset=utf-8")
             if print_latest(sid, hid) is None:
                 return self._send(422, "This template could not be printed.", "text/plain; charset=utf-8")
@@ -656,7 +658,7 @@ class Handler(BaseHTTPRequestHandler):
             failures = []
             hid = form.get("hypothesis", "")
             at = "win" if form.get("at") == "win" else "kasetsu"  # 窓の札から押した時は、通らない理由も窓で読む（#127）
-            if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
+            if hid != hypotheses.sheet_of(sid)["id"]:  # 刷れるのは頁に出すたたき台だけ（J-032）
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
             if print_latest(sid, hid) is None:
                 return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
