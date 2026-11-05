@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_next_form.py
+# commit: 8cc2c8e（回した時の HEAD）
+ok
+rc=0

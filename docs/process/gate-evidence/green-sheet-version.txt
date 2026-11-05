@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_sheet_version.py
+# commit: 165ae7c（回した時の HEAD）
+ok
+rc=0

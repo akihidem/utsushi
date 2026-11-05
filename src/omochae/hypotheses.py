@@ -84,37 +84,6 @@ def letter(h):
     return h["id"].split("-")[1]
 
 
-# 道具（材料の数に入れない）と、当時の材料の語。竹と糸だけにするのは本人の言葉の範囲を越えないため（楊枝や割り箸が当時の物かは確かめていない）。
-_TOOLS = ("のり", "はさみ", "定規", "テープ", "セロハンテープ", "透明な梱包テープ")
-# 玩具そのものにならない、試す時の小道具（坂を作る本・浮かべる盆）。紙だけの印を落とさない。
-_PROPS = ("載せる本", "厚い本", "盆か洗面器")
-_PERIOD = (("竹", ("竹串", "竹ひご")), ("糸", ("糸",)))
-
-
-def _period_in(item, words):
-    """当時の材料を使うか。「竹ひごか割り箸」のように別の物でも足りる時は、選べる物の全部がその材料の時だけ数える（必ず使うとは言えないため）。"""
-    return all(any(w in part for w in words) for part in item.split("か")) if "か" in item else any(w in item for w in words)
-
-
-def material_marks(source_id, h, data=None):
-    """仮説の 2 つの印を、雛形の材料の一覧から出す。本人の言葉（11-05）「一枚の紙から作る選択肢もある」「竹とか糸は江戸時代にもあったし使ったらよく再現できるということ」。
-    - paper_only: 紙 1 枚と道具だけで作れる形。優劣の印ではない（窓口の説明）。
-    - period: 当時の材料（竹・糸）のうち使う物。再現の良さの軸で、paper_only とは別の軸。
-    手で印を書かず材料の一覧から出すのは、版や雛形が変わっても札と紙が食い違わないため。穴をあけるだけの竹串は材料に数えない。"""
-    from .compose import TEMPLATES
-
-    data = data or load(source_id)
-    if h.get("template_id", "") is None or "params" not in h:
-        return {"paper_only": False, "period": []}
-    tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
-    items = [str(m) for m in tpl.materials({**tpl.DEFAULTS, **h["params"]})]
-    paper, rest = items[0] if items else "", items[1:]
-    extras = [m for m in rest if not all(w.strip() in _TOOLS for w in m.split("、")) and not any(w in m for w in _PROPS)]
-    used = [m.replace("竹串（穴あけ）", "") for m in rest]
-    period = [name for name, words in _PERIOD if any(_period_in(m, words) for m in used)]
-    return {"paper_only": "1 枚" in paper and "貼る" not in paper and not extras, "period": period}
-
-
 def list_lines(data, own=()):
     lines = [f"{data['toy']}"]
     for h in own:
@@ -127,15 +96,6 @@ def list_lines(data, own=()):
         lines += [f"  弱い所: {x}" for x in h["against"]]
         lines.append(f"  試して測る事: {h['to_measure']}")
     return lines
-
-
-def hypothesis_mark(source_id, version=1):
-    """AI の案から刷る紙の仮説の印。本人の言葉（11-05）「型紙が正解ではなくて、とりあえずAIが考えた仮説であるということを明示する」を紙の上で守る。
-    必須 2 種の版 1 だけは今の文のまま返す（None）: 凍結の床で今の版の紙を変えないため（tests/test_floor_pin.py）。次の版からは新しい文。
-    自分の仮説の紙（print_own）はここを通さない。人が立てた仮説を AI の案と書かないため。"""
-    from .marks import AI_HYPOTHESIS
-
-    return None if stage(source_id) == "必須" and version <= 1 else AI_HYPOTHESIS
 
 
 def _print_instructions(params, source_id, title, how, out, version, template="slider_fan", mark=None):
@@ -253,9 +213,6 @@ def print_compare(source_id, a, b, out):
     ha, hb, failures = pick_pair(data, a, b)
     if not failures:
         source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
-        mark = hypothesis_mark(source_id)  # 見比べる紙も AI の案から刷るので同じ印（必須 2 種の版 1 は今の文）
-        if mark:
-            source["hypothesis_mark"] = mark
         layout, failures = compose_compare(source, data["toy"], ha, hb, (letter(ha), letter(hb)))
     if not failures:
         stem = pathlib.Path(out)
@@ -294,17 +251,16 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
-        # 雛形に乗らない AI の案も仮説の印を付ける（自分の仮説の紙は print_own の道なので通らない）。
-        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out, mark=hypothesis_mark(source_id, version))
-    mark = hypothesis_mark(source_id, version)
-    rc = generate(template, params, source_id, out, title=title, version=version, mark=mark)
+        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
+    rc = generate(template, params, source_id, out, title=title, version=version)
     if rc:
         return rc
-    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template, mark=mark)
+    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template)
 
 
 def print_own(source_id, own_id, out, version=1):
     from .__main__ import generate
+    from .marks import OWN_HYPOTHESIS  # 人が立てた仮説を「AI が考えた」と刷らない
 
     match = [h for h in own_hypotheses(source_id) if h["id"] == own_id]
     if not match:
@@ -318,12 +274,12 @@ def print_own(source_id, own_id, out, version=1):
     # 仮説を分ける寸法の名前は雛形が持つ（HYP_KEY）。試作の雛形の自分の仮説でも同じ検査にするため。
     key = TEMPLATES[data_template].HYP_KEY
     if not params or key not in params:
-        return print_free(source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], h["evidence"], out)
+        return print_free(source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], h["evidence"], out, mark=OWN_HYPOTHESIS)
     data = load(source_id)
-    rc = generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version)
+    rc = generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version, mark=OWN_HYPOTHESIS)
     if rc:
         return rc
-    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version, template)
+    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version, template, mark=OWN_HYPOTHESIS)
 
 
 def picture(source_id):

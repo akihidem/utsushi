@@ -38,7 +38,7 @@ assert cli("print", "H-Z").returncode == 4
 r = cli("print", "H-D", "--out", f"{tmp}/d")
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", f"{tmp}/d.pdf", "-"], capture_output=True, text=True).stdout
-assert "仮説D" in "".join(text.split()) and "答えではありません" in "".join(text.split())
+assert "仮説D" in "".join(text.split()) and "正解ではありません" in "".join(text.split())
 
 # 自分の仮説から入る道（J-008）。別の置き場で始める
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
@@ -52,8 +52,9 @@ r = cli("print-own", "OWN-1", "--out", f"{tmp2}/none")
 assert r.returncode == 0 and "F9.own" in r.stderr and not pathlib.Path(f"{tmp2}/none.pdf").exists() and pathlib.Path(f"{tmp2}/none_free.pdf").exists(), r.stderr
 free = subprocess.run(["pdftotext", "-layout", f"{tmp2}/none_free.pdf", "-"], capture_output=True, text=True).stdout
 assert "型紙なしの紙" in free and "身の回りの紙と紐" in free and "おもちゃとして動きましたか" in free
+# 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("正解", "成功", "失敗"):
-    assert word not in free, word
+    assert word not in free.replace("正解ではありません", ""), word
 assert cli("own", "壊れた寸法", "--how", "押す", "--evidence", "図", "--params", json.dumps({"push_part": "tab", "tube_side": 500})).returncode == 0
 r = cli("print-own", "OWN-2", "--out", f"{tmp2}/bad")
 assert r.returncode == 3 and "F5.range" in r.stderr, "自分の仮説も同じ検査を通す"

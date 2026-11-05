@@ -50,10 +50,14 @@ def book_paragraph(src):
 
 
 def page(skin_name, path="/about"):
+    from . import hokusai
+
     src = _source()
     quotes = "".join(f"<blockquote>「{esc(w)}」</blockquote>" for w in WORDS)
     body = (f'<div class="about"><section class="hero sec"><div>{skin.frame(SID, caption=src.get("holding", ""))}</div>'
             f'<div><h1>うつし</h1><p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
+            # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。黒のジンの案 2 は入口の章の頭（looks.py）。
+            + (hokusai.flip_section() if skin_name == "tenji" else "") + hokusai.mechanism_section() +
             f'<section class="sec"><h2>本人の言葉</h2>{quotes}</section>'
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">文面は本人の採否待ち。本人の言葉の引用と、国立国会図書館の書誌の値だけで組んでいます。</p></section>'

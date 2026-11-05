@@ -18,7 +18,7 @@
   だから、報告から案を機械で出す道具はここに置かない。
 """
 from omochae import hypotheses, loop, making_log, records
-from omochae.marks import LOOP_PREMISE, PREMISE_SHORT
+from omochae.marks import HYPOTHESIS, LOOP_PREMISE
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, sources
@@ -70,13 +70,13 @@ def section(sid, data, recs):
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
     todo = ""
     if ready:
-        todo += f'<p>次の版を待つ報告 {len(ready)} 件: ' + "・".join(f'<a href="#{esc(r["id"])}">{esc(r["id"])}</a>' for r in ready) + '（記録の「次の版を作る」から、寸法を 1 つ変えて刷ります）</p>'
+        todo += f'<p>次の版を待つ報告 {len(ready)} 件: ' + "・".join(f'<a href="#{esc(r["id"])}">{esc(r["id"])}</a>' for r in ready) + '（記録の「次の版を作る」から、寸法を 1 つ変えて紙を作ります）</p>'
     if waiting:
         todo += f'<p class="meta">説明を待つ報告 {len(waiting)} 件: ' + "・".join(f'<a href="#{esc(r["id"])}">{esc(r["id"])}</a>' for r in waiting) + '（人の説明が先。説明が付くと次の版に進めます）</p>'
     if not recs:
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
-            f'<p class="meta">{esc(PREMISE_SHORT)}</p>'
+            f'<p class="meta">{esc(HYPOTHESIS)}</p>'
             '<p class="meta">作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
             f'{lines}{todo}</section>')
 
@@ -117,7 +117,7 @@ TABLE_STYLE = "table{border-collapse:collapse;width:100%}th,td{text-align:left;p
 
 # 測った値の欄の、頁での呼び方。表に無い欄は、欄の名前のまま出す（雛形ごとに測る物が違うので、ここで全部は決めない）。
 MEASURE_NAMES = {"opened_deg": "開いた角度（度）", "ten_swings_sec": "10 往復の秒"}
-STAGE_NAMES = {"print": "型紙を刷った", "make": "作りながら見る頁を開いた", "record": "記録を残した"}
+STAGE_NAMES = {"print": "型紙を作った", "make": "作りながら見る頁を開いた", "record": "記録を残した"}
 
 
 def _span(sp, unit=""):

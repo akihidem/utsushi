@@ -390,6 +390,18 @@
   "status": "実装した（11-05 未明）。本人の採否はカード"
  },
  {
+  "id": "workshop-design",
+  "path": "workshop-design.md",
+  "hook": "場の全体デザイン。本線は型紙で作る道で、話す・作る・残すの一周を 1 コマに置く",
+  "status": "案（版 2、11-05 午後）。場はまだ開いていない"
+ },
+ {
+  "id": "workshop-guide",
+  "path": "workshop-guide.md",
+  "hook": "進行者の手引き。時間割と言う事・止まった人への段・場の後の 15 分を A4 両面の 1 枚に",
+  "status": "本人の覚え書き（本人の決定、11-05）。文面は確定しない"
+ },
+ {
   "id": "J-031",
   "path": "decisions/J031-build-now.md",
   "hook": "予想の段を無くし、開いたらすぐ作る。他の人の作った物のギャラリーを作る（本人の決定）",
@@ -454,5 +466,11 @@
   "path": "research/33-observe-from-picture.md",
   "hook": "型紙なしで絵だけから作る過程を、机の端の端末のカメラで観察し、再生の知見を得る案",
   "status": "案。採否は本人（U-46）"
+ },
+ {
+  "id": "research/32",
+  "path": "research/32-contributor-recognition.md",
+  "hook": "型紙を直した人を示す案（本人の種）。J-025 との切り分けと形の 3 案",
+  "status": "種の記録（11-05）。形は本人が決める"
  }
 ]

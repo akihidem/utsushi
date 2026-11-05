@@ -81,7 +81,7 @@ a{color:var(--accent)}
 .live .mirror{display:block}
 #cam{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .mirror .line{position:absolute;left:0;right:0;top:55%;border-top:2px dashed var(--accent)}
-.mirror .cap{position:absolute;left:0;right:0;bottom:0;margin:0;padding:2px 6px;font-size:11px;color:var(--fg);background:color-mix(in srgb,var(--bg) 82%,transparent)}
+.mirror .cap{position:absolute;left:0;right:0;bottom:0;margin:0;padding:2px 6px;font-size:12px;color:var(--fg);background:color-mix(in srgb,var(--bg) 82%,transparent)}
 /* 横置き（机の端に立てた端末やタブレット）: 左に手本、右に札・返事・鏡。 */
 @media (min-width:860px) and (orientation:landscape){
  .stage{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
@@ -230,5 +230,5 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<p class="meta"><button type="button" id="on">鏡を出す</button><span id="mirror-note">自分と机の上が小さく映ります。{esc(PRIVACY)}鏡は出さなくても全部できます。</span></p>'
             '</section></main>')
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            f'<title>{esc(data["toy"])} · 作りながら見る</title><style>:root{{{root}}}{STYLE}</style>'
+            f'<title>{esc(data["toy"])} · 作りながら見る</title><style>:root{{{root}}}{STYLE}{skin.TAP_FLOOR}</style>'
             f'<body class="tsukuru skin-{esc(look)}">{body}{SCRIPT}</body></html>')

@@ -25,7 +25,10 @@ SKINS = {
 }
 
 # 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
-NAV = (("/", "うつし"), ("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"))
+# 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
+NAV = (("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"), ("/en", "English"))
+# 英語の頁の帯（J-030 の段 1）。全部の頁を訳さないので、道は入口と日本語の頁へだけ。
+NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
 
 # その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
@@ -39,6 +42,21 @@ def esc(s):
     return html.escape(str(s if s is not None else ""), quote=True)
 
 
+# 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
+NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
+.nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
+.nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
+@media (max-width:480px){.nav{gap:10px;letter-spacing:.1em}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+"""
+# 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
+# スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
+# 文の中のリンクは入れない。行が崩れるので。字の大きさの床（12px）は、幅に関わらず CSS の指定そのもので守る。
+TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
+.nav{font-size:14px;row-gap:0}
+.nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+input[type=range]{height:44px}
+}
+"""
 BASE = """
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -57,10 +75,8 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 5vw}
 .meta{font-size:12px;color:var(--mute);letter-spacing:.08em;line-height:1.9}
 .premise{font-size:14px;line-height:1.9;letter-spacing:.06em;margin:10px 0;padding:8px 12px;border-left:3px solid var(--frame)}
-.lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--frame);padding:0 8px;margin-right:8px;vertical-align:middle}
+.lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--frame);padding:0 8px;margin-right:8px;vertical-align:middle}
 .lead{font-size:15px;line-height:2.1;letter-spacing:.06em;max-width:40em}
-.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
-.nav a{color:var(--accent);border:0}.nav b{font-weight:400;color:var(--fg)}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 
 .sec{padding:56px 0;border-top:1px solid var(--rule)}
 .sec:first-child{border-top:0}
@@ -68,7 +84,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .frame{margin:0;background:var(--paper);border:1px solid var(--frame);padding:3%;box-shadow:0 1px 0 var(--rule),0 40px 60px -30px var(--shadow)}
 .frame img{width:100%;display:block}
 .frame .pic{width:100%;aspect-ratio:1600/2656;background-position:85% 50%;background-size:112% 112%;background-repeat:no-repeat;background-color:var(--soft)}
-.frame figcaption{font-size:11px;color:var(--mute);letter-spacing:.15em;margin-top:10px}
+.frame figcaption{font-size:12px;color:var(--mute);letter-spacing:.15em;margin-top:10px}
 .songs{writing-mode:vertical-rl;height:min(44vh,360px);margin:0 0 14px auto;font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .songs p{margin:0 .3em}
 .label{font-size:12px;line-height:2;letter-spacing:.06em;color:var(--mute);border-left:1px solid var(--frame);padding-left:14px;max-width:24em;margin:18px 0}
@@ -83,6 +99,7 @@ button,.btn{display:inline-block;margin-top:16px;padding:12px 26px;font:inherit;
 .btn.quiet,button.quiet{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 form.inline{display:inline}
 .notice,#msg{border-left:2px solid var(--accent);padding:4px 14px;margin:14px 0;font-size:14px;letter-spacing:.04em}
+.card .step{border-top:1px solid var(--frame);margin-top:14px;padding-top:12px}
 article.card,.card{background:var(--paper);border:1px solid var(--frame);padding:20px 22px;margin:16px 0;box-shadow:0 18px 30px -24px var(--shadow)}
 .plates{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
 .plate{background:var(--paper);border:1px solid var(--frame);padding:18px 20px;box-shadow:0 18px 30px -24px var(--shadow);display:flex;flex-direction:column}
@@ -97,6 +114,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .tabs a,.tabs span{border:1px solid var(--frame);padding:4px 12px}
 .tabs a[aria-current=true]{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
 .tabs span{color:var(--mute);border-style:dashed}
+.tabs button{margin:0;padding:4px 12px;font-size:inherit;letter-spacing:inherit;color:var(--accent);background:transparent;border:1px dashed var(--frame);cursor:pointer}
 .win .sheet{margin:0;background:#fff;border:1px solid var(--frame);box-shadow:0 30px 50px -30px var(--shadow)}
 .win .sheet a{display:block;border:0}.win .sheet img{display:block;width:100%}
 .win .side{font-size:14px;line-height:2}
@@ -106,6 +124,11 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .zoom{display:none;position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:4vh 4vw}
 .zoom:target{display:block}
 .zoom img{display:block;width:180%;max-width:none;margin:0 auto;background:#fff;border:1px solid var(--frame)}
+.zoom input{position:absolute;opacity:0;width:1px;height:1px}.zoom #zs100:checked~.pic img{width:100%}.zoom #zs300:checked~.pic img{width:300%}
+.zoom .bar{position:fixed;top:12px;left:16px;z-index:1;display:flex;gap:6px}.zoom .bar label{font-size:13px;padding:8px 12px;margin:0;background:var(--paper);color:var(--fg);border:1px solid var(--frame);cursor:pointer}
+.zoom #zs100:checked~.bar label[for=zs100],.zoom #zs180:checked~.bar label[for=zs180],.zoom #zs300:checked~.bar label[for=zs300]{background:var(--accent);color:var(--onaccent)}
+.zoom #zs100:focus-visible~.bar label[for=zs100],.zoom #zs180:focus-visible~.bar label[for=zs180],.zoom #zs300:focus-visible~.bar label[for=zs300]{outline:2px solid var(--fg);outline-offset:2px}
+.zoom .pic{margin-top:40px}
 .zoom .close{position:fixed;top:12px;right:16px;font-size:13px;letter-spacing:.2em;background:var(--accent);color:var(--onaccent);padding:8px 14px;border:0}
 .tiles{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
 .tile{display:grid;justify-items:center;gap:6px;border:1px solid var(--frame);background:var(--paper);color:var(--fg);font-size:14px;padding:10px 16px;cursor:pointer;min-width:84px;position:relative;margin:0}
@@ -120,33 +143,55 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px}
 .toys a{display:block;border:0;color:var(--fg)}
 .toys .pic{aspect-ratio:3/4;background:var(--soft) center/300% no-repeat;border:1px solid var(--frame);box-shadow:0 14px 22px -18px var(--shadow)}
+.ways{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}.ways .lb{margin:0}
 .toys .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
 @media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
-.sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
+.sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
 .is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
-.foot{padding:48px 5vw 40px;font-size:11px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
+.foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
- main,.wrap{padding-left:16px;padding-right:16px}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.zoom img{width:220%}}
+ main,.wrap{padding-left:16px;padding-right:16px}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
 
 
-def nav(skin, current="", path="/"):
+def nav(skin, current="", path="/", lang="ja"):
     """頭の帯。順路の道だけ。皮の切り替えは置かない（皮ごとに 1 サイト。skin と path は呼び手の形を保つために残す）。"""
-    items = "".join(f'<b>{esc(n)}</b>' if p == current else f'<a href="{p}">{esc(n)}</a>' for p, n in NAV)
-    return f'<nav class="nav"><a class="brand" href="/">うつし</a>{items}</nav>'
+    if lang == "en":
+        items = "".join(f'<a href="{p}">{esc(n)}</a>' for p, n in NAV_EN[1:])
+        return f'<nav class="nav"><a class="brand" href="/en">utsushi</a>{items}</nav>'
+    # 玩具の頁と手帖は道から「おもちゃ」に印を付ける。呼び手が current を渡さない頁の分
+    here = current or ("/toys" if (path or "").startswith("/toy/") else "")
+    mark = lambda p: ' aria-current="page"' if p == here else ""  # noqa: E731
+    items = "".join(f'<a href="{p}"{mark(p)}>{esc(n)}</a>' for p, n in NAV)
+    return f'<nav class="nav"><a class="brand" href="/"{mark("/")}>うつし</a>{items}</nav>'
 
 
-def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot=""):
+def page_title(title):
+    """<title> の形を「頁の名前 · うつし」にそろえる。頭に「うつし · 」を書いた呼び手の分も直す。入口は「うつし」だけ。"""
+    name = title.removeprefix("うつし · ").removesuffix(" · うつし")
+    return "うつし" if name in ("", "うつし") else f"{name} · うつし"
+
+
+def entrance_style(skin):
+    """入口の頁（骨は別）に、内側の頁と同じ帯の CSS を渡す。皮の変数も要る。入口だけ地を透かす（下の罫を置かない）。"""
+    s = SKINS.get(skin, SKINS[DEFAULT])
+    root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
+    # 入口の頁は body.tenji a のように a に下線を掛けるので、帯の下線だけ強い指定で外す（全部の頁で同じにする）。
+    # 床は帯の CSS の後ろにもう 1 度置く。前にしかないと、帯の字の大きさが 12px に戻った
+    return f":root{{{root}}}{NAV_STYLE}.nav{{border-bottom:0}}body .nav a:not([aria-current=page]){{border-bottom:0;text-decoration:none;color:var(--accent)}}{TAP_FLOOR}"
+
+
+def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot="", lang="ja"):
     """頁の骨。皮の変数を :root に置き、頭の帯と足を付ける。中身（body）は皮を知らずに書けるようにする。"""
     s = SKINS.get(skin, SKINS[DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
-    return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>:root{{{root}}}{BASE}{extra_style}</style>{head}'
-            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
+    return (f'<!doctype html><html lang="{esc(lang)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<title>{esc(page_title(title))}</title><style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
+            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path, lang)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
 
 
 def frame(sid, caption="", pos=None):

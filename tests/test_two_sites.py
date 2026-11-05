@@ -36,7 +36,8 @@ try:
 except ValueError:
     pass
 
-for look, other, title in (("tenji", "zine", "日本画展の展示"), ("zine", "tenji", "縦読みのジン")):
+# 入口の皮は <body> の印で見分ける。<title> に作る側の案の名前は出さない（#125）
+for look, other, title in (("tenji", "zine", '<body class="tenji"'), ("zine", "tenji", '<body class="zine"')):
     get = up(look)
     code, home = get("/")
     assert code == 200 and title in home and f"/toy/{G}" in home and "大判写真集" not in home, look

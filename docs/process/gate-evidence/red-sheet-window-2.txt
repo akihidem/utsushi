@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_sheet_window.py
+# commit: be31044（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_sheet_window.py", line 55, in <module>
+    assert "型紙を見る</button>" in page and all(making(h) in win(page) for h in ids), win(page)[:600]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ><h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p><p class="meta">仮説の札の「型紙と手順の紙を刷る」を押すと、ここに紙の絵が出ます。</p>
+rc=1

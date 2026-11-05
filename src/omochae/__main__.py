@@ -21,7 +21,7 @@ class Parser(argparse.ArgumentParser):
 
 
 def generate(template, params, source_id, out, page="A4", version=1, title=None, inject=None, mark=None):
-    """型紙を 1 枚作る共通の流れ。検査に落ちれば 3 を返す。mark は紙に刷る仮説の印の文（AI の案の時。hypotheses.hypothesis_mark）。"""
+    """型紙を 1 枚作る共通の流れ。検査に落ちれば 3 を返す。mark は紙に刷る仮説の印の文。自分の仮説の紙だけ別の文にする（hypotheses.print_own）。"""
     src = ROOT / "data/sources" / f"{source_id}.json"
     if not src.exists():
         raise ToolMissing(f"出典の記録が無い: {src}（python -m omochae.ingest を先に）")

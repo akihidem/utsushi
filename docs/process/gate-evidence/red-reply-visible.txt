@@ -1,0 +1,11 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_reply_visible.py
+# commit: ce38533（この main の上に試験だけを足して回した）
+$ PYTHONPATH=src .venv/bin/python tests/test_reply_visible.py   # 直す前（main の上）
+Traceback (most recent call last):
+  File "tests/test_reply_visible.py", line 63, in <module>
+    page = landed(call(f"/toy/{G}/techo"), "yosou")
+  File "tests/test_reply_visible.py", line 47, in landed
+    assert code == 303 and at.endswith(f"#{anchor}"), (code, at, anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (200, '', 'yosou')
+rc=1

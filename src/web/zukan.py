@@ -14,9 +14,12 @@
 """
 import html
 import json
+import re
 
 from omochae import hypotheses, labels, records
 from omochae.hypotheses import ROOT
+
+from .skin import TAP_FLOOR, page_title
 
 QUOTE, HYPO, OBS = labels.LABELS
 
@@ -25,8 +28,9 @@ STYLE = """
 body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 .zukan main{max-width:1100px;margin:0 auto;padding:10vh 5vw 14vh;box-sizing:border-box}
 .zukan a{color:var(--accent,#6b4f2a);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent,#6b4f2a) 40%,transparent)}
+.zukan .nav a:not([aria-current]){border-bottom:0}
 .zukan h1{font-weight:400;font-size:clamp(30px,4vw,48px);letter-spacing:.5em;margin:0 0 8px}
-.zukan .nav{font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
+.zukan p.nav{font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
 .zukan .toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2);align-items:start}
 .zukan .toy figure{margin:0;background:var(--paper,#fffefc);border:1px solid var(--frame,#d8cdb6);padding:3%;box-shadow:0 40px 60px -30px var(--shadow,rgba(70,55,35,.35))}
 .zukan .toy figure img{width:100%;display:block}
@@ -34,7 +38,7 @@ body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-fa
 .zukan .song{writing-mode:vertical-rl;height:min(40vh,360px);font-size:clamp(16px,1.5vw,20px);line-height:2.2;letter-spacing:.12em;margin:0 0 12px auto}
 .zukan ul{list-style:none;padding:0;margin:0 0 22px}
 .zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid var(--frame,#b9a982);padding-left:12px;margin:0 0 6px}
-.zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
+.zukan .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
 .zukan .meta{font-size:12px;color:var(--mute,#6f665a);letter-spacing:.08em;line-height:1.9}
 .zukan .links{font-size:13px;letter-spacing:.12em;display:flex;gap:16px;flex-wrap:wrap}
 .zukan .more{padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2)}.zukan .more h2{font-weight:400;letter-spacing:.2em}
@@ -60,15 +64,23 @@ def quote_lines(src):
     return [{**e, "label": QUOTE} for e in labels.source_lines(src) if e.get("checked_by")]
 
 
+def record_title(r, data):
+    """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
+    h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
+    return f"{who}・{r['result']}"
+
+
+def record_date(r):
+    """試した日を「11 月 5 日」の形にする。形の違う古い記録は、書いてあるままを出す。"""
+    when = r.get("tried_on") or str(r.get("recorded_at", ""))[:10]
+    m = re.fullmatch(r"\d{4}-(\d{2})-(\d{2})", when)
+    return f"{int(m[1])} 月 {int(m[2])} 日" if m else when
+
+
 def observation_lines(sid, data):
-    """記録 1 件を観察の文 1 つにする。字だけで仮説を指し、仮説の名前は書かない。"""
-    out = []
-    for r in records.all_records(sid):
-        h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-        who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
-        when = r.get("tried_on") or str(r.get("recorded_at", ""))[:10]
-        out.append({"text": f"{r['id']} {who}: {r['result']}（試した日 {when}）", "label": OBS, "record_id": r["id"]})
-    return out
+    """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。"""
+    return [{"text": f"{record_title(r, data)}（{record_date(r)}・{r['id']}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
 def hypothesis_lines(sid, data):
@@ -120,7 +132,7 @@ def _page(title, body, look=None, path="/zukan"):
 
         return skin.shell(title, body.replace(NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>{STYLE}</style><body class="zukan"><main>{body}</main></body></html>')
+            f'<title>{esc(page_title(title))}</title><style>{STYLE}{TAP_FLOOR}</style><body class="zukan"><main>{body}</main></body></html>')
 
 
 NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">作った物</a></p>'

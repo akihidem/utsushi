@@ -1,0 +1,6 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_sheet_window.py と、repo の外の道具で本物の Chrome を操作
+# commit: 0607371（回した時の HEAD に直しを載せた作業ツリー）
+rc=1
+
+# Chrome（headless・幅 390）。窓の札の釦へ焦点を置いて Enter を押し、別の仮説の紙が窓に出た
+rc=1

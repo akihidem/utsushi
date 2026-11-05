@@ -7,6 +7,7 @@
 """
 from omochae import hypotheses
 
+from . import skin
 from .play_server import ROOT, esc, page, source, sources
 
 # 残した 2 つの入口。大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
@@ -16,11 +17,9 @@ LOOKS = {
 }
 
 
-def switch(current):
-    """入口の頭の帯。順路の道（序・おもちゃ・作った物と職人の言葉・図鑑）だけ。
-    皮の切り替えは置かない: 皮ごとに 1 サイト（本人の決定 11-05 朝）。current は呼び手の形を保つために残す。"""
-    links = '<a href="/about">序</a>｜<a href="/toys">おもちゃ</a>｜<a href="/gallery">作った物と職人の言葉</a>｜<a href="/zukan">図鑑（ほかの玩具も）</a>'
-    return f'<nav class="switch">{links}</nav>'
+def switch(look):
+    """入口の頭の帯。内側の頁と同じ帯を使う（入口から入った所で帯が変わらないように。要件 2）。"""
+    return skin.nav(look, "/", "/")
 
 
 def toys():
@@ -60,7 +59,7 @@ QUOTE = "原文の引用。確かめた人: 本人"
 # 見比べるための写しを撮る補助。?only=<節の id> で、その節だけを画面の頭に出す。
 # なぜ: 縦に流れる案は、頭からしか写しを撮れず、途中の見開きを並べて比べられないため。ふだんの閲覧には効かない。
 ONLY = """<script>(()=>{const id=new URLSearchParams(location.search).get('only');if(!id)return;
-const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.switch,.ab-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
+const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.nav,.ab-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
 
 # ---------------------------------------------------------------- A 大判写真集（参照のルックブックの再現）
 # 本人の指示（2026-11-04）: 参照の X の投稿のルックブックの再現を、A の実装の基準にする。
@@ -100,9 +99,6 @@ ZINE = """
 body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
  font-feature-settings:"palt" 1}
 body.zine a{color:#c9a96a;text-decoration:none;border-bottom:1px solid rgba(201,169,106,.45)}
-.zine .switch{position:relative;z-index:2;font-size:12px;letter-spacing:.2em;padding:14px 4vw;color:#8a806e}
-.zine .switch a{color:#c9a96a}.zine .switch b{color:#e9e1cf;font-weight:400}
-.zine .switch .cap{color:#827968}
 /* 細い字も 4.5:1 を割らないよう明るさだけ上げ、色相は保つ（research/24 の 2）。選んだ時は黒地に金の薄い面（同 5）。 */
 body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-cover{min-height:100vh;min-height:100svh;position:relative;display:grid;grid-template-columns:1fr minmax(0,44vh) 1fr;align-items:center;
@@ -133,15 +129,15 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all{padding:12vh 7vw;border-top:1px solid #1f1b16}
 .zn-all .chapter{font-size:12px;letter-spacing:.5em;color:#c9a96a;margin:0 0 12px}
 .zn-all h2{font-size:clamp(24px,2.6vw,36px);font-weight:300;letter-spacing:.25em;margin:0 0 18px}
-.zn-all .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
+.zn-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
 .zn-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 18px}
 .zn-all li.big{grid-column:span 2;grid-row:span 2}
 .zn-all a{border:0;color:#e9e1cf}
 .zn-all .pic{aspect-ratio:3/4;background:#141210 center/cover no-repeat;border:1px solid #6e5a35;outline:6px solid #141210;outline-offset:-7px;box-shadow:0 20px 40px rgba(0,0,0,.6)}
 .zn-all .big .pic{aspect-ratio:1600/2656}
-.zn-all .nopic{display:grid;place-items:center;font-size:11px;color:#9a8e76;letter-spacing:.15em}
+.zn-all .nopic{display:grid;place-items:center;font-size:12px;color:#9a8e76;letter-spacing:.15em}
 .zn-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
-.zn-all .nm small,.zn-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#9a8e76}
+.zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
@@ -165,9 +161,13 @@ def _label(t, src, cls="zn-label"):
 def zine():
     ts = toys()
     first = ts[0]["sid"] if ts else ""
-    body = switch("/look/zine")
+    body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
              f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1></section>')
+    # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
+    from .hokusai import scroll_section
+
+    body += scroll_section()
     for i, t in enumerate(ts, 1):
         src = source(t["sid"])
         song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])
@@ -181,7 +181,7 @@ def zine():
     # 全部の玩具の一覧は、額装した 2 種の後、奥付の前（本人の指示 11-05）。黒地のジンの性格は保つ（U-23）。
     body += all_toys("zn")
     body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし · 縦読みのジン", body + ONLY, ZINE, "zine")
+    return page("うつし", body + ONLY, ZINE + skin.entrance_style("zine"), "zine")
 
 
 # ---------------------------------------------------------------- A′ 日本画展の展示（白の壁）
@@ -198,11 +198,10 @@ body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Not
    小さな字の灰は色相を保って明るさだけ下げ、白地で 4.5:1 を割らないようにした（同 2）。 */
 body.tenji ::selection{background:#e6e1d6;color:#1f1b17}
 body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107,79,42,.35)}
-.tenji .switch{font-size:12px;letter-spacing:.2em;padding:14px 5vw;color:#7a7164}.tenji .switch .cap{color:#7c7160}
 .tj-hall{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 5vw;box-sizing:border-box}
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
-.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:11px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
+.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:12px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -221,24 +220,24 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-songs p{margin:0 .3em}
 .tj-detail{padding:12vh 5vw;border-top:1px solid #ebe8e2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3vw;align-items:start}
 .tj-detail figure{margin:0}.tj-detail figure div{aspect-ratio:3/4;background-color:#fffefc;border:1px solid #d8cdb6;box-shadow:0 20px 30px -24px rgba(70,55,35,.4)}
-.tj-detail figcaption{font-size:11px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
+.tj-detail figcaption{font-size:12px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
 .tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #ebe8e2}
 .tj-exit p{font-size:clamp(20px,2.2vw,28px);letter-spacing:.3em;font-weight:400}
-.tj-note{font-size:11px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
+.tj-note{font-size:12px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
 /* 全部の玩具の一覧（本人の指示 11-05）。白い壁に小さな額を並べる展示の一室。動きは無い（扇の間とせり上がりの外）。 */
 .tj-all{padding:10vh 5vw;border-top:1px solid #ebe8e2}
 .tj-all .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 12px}
 .tj-all h2{font-size:clamp(22px,2.4vw,34px);font-weight:400;letter-spacing:.22em;margin:0 0 14px}
 .tj-all .cap{font-size:13px;line-height:2;letter-spacing:.06em;color:#4a4339;max-width:46em}
-.tj-all .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
+.tj-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
 .tj-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:24px 16px}
 .tj-all li.big{grid-column:span 2;grid-row:span 2}
 .tj-all a{border:0;color:#2b2722}
 .tj-all .pic{aspect-ratio:3/4;background:#fffefc center/cover no-repeat;border:1px solid #d8cdb6;box-shadow:0 14px 22px -18px rgba(70,55,35,.4)}
 .tj-all .big .pic{aspect-ratio:1600/2656}
-.tj-all .nopic{display:grid;place-items:center;font-size:11px;color:#7a7164;letter-spacing:.15em}
+.tj-all .nopic{display:grid;place-items:center;font-size:12px;color:#7a7164;letter-spacing:.15em}
 .tj-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
-.tj-all .nm small,.tj-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#7a7164}
+.tj-all .nm small,.tj-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#7a7164}
 .tj-all li > small a{color:#6b4f2a;border-bottom:1px solid rgba(107,79,42,.35)}
 
 /* 扇の札（本人の頼み 2026-11-04「この動き、デモサイトでやってみる？」の (1)）。図と寄りの札を、下の 1 点（要）を軸に
@@ -254,7 +253,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
  box-shadow:0 18px 26px -20px rgba(70,55,35,.45);transition:transform 1.1s cubic-bezier(.22,.61,.36,1),box-shadow 1.1s ease}
 .fan-card.is-c{--s:1.14;box-shadow:0 34px 44px -26px rgba(70,55,35,.55),0 2px 6px rgba(70,55,35,.1)}
 .fan-pic{display:block;width:100%;height:100%}
-.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:11px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:12px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
 .fan-kaname{position:absolute;left:50%;bottom:20px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#b9a982;box-shadow:0 0 0 3px #fcfcfa,0 0 0 4px #d8cdb6}
 .fan-ctl{display:flex;gap:2em;justify-content:center;align-items:center;margin-top:2vh;font-size:13px;letter-spacing:.2em;color:#5d554a}
 .fan-ctl button{font:inherit;color:#6b4f2a;background:none;border:0;border-bottom:1px solid rgba(107,79,42,.35);padding:4px 2px;cursor:pointer}
@@ -268,7 +267,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
 .tj-ogi label{display:inline-flex;gap:1em;align-items:center;font-size:13px;letter-spacing:.2em;color:#5d554a;margin-top:2vh}
 .tj-ogi input{accent-color:#8a6d3b;width:min(240px,50vw)}
-.tj-ogi .cap{font-size:11px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
+.tj-ogi .cap{font-size:12px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
 
 /* スクロールでせり上がる（本人の頼みの (2)）。CSS のスクロール連動だけで、見える状態から始める（opacity を 0 にしない）。
    なぜ: 速く読む人から中身を隠さないため（research/19 の「全部の節に演出を付けない」を、隠さない形で守る）。
@@ -369,7 +368,7 @@ def ogi_slider(n=13, start=150):
 
 def tenji():
     ts = toys()
-    body = switch("/look/tenji")
+    body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
     # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
@@ -388,7 +387,7 @@ def tenji():
         body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
         body += (f'<section class="tj-exit"><p>紙で作って、確かめる。</p><a href="/toy/{t["sid"]}">型紙をひらく</a></section>')
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。扇の開く角を示す線の絵のほかに、新しい絵は作っていない。</p>'
-    return page("うつし · 日本画展の展示", body + ONLY + FAN_JS, TENJI, "tenji")
+    return page("うつし", body + ONLY + FAN_JS, TENJI + skin.entrance_style("tenji"), "tenji")
 
 
 PAGES = {"tenji": tenji, "zine": zine}
