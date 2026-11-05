@@ -11,6 +11,7 @@ import pathlib
 import re
 import shutil
 import sys
+import unicodedata
 from datetime import datetime, timedelta, timezone
 
 from . import store
@@ -120,13 +121,18 @@ def all_records(source_id=None, uploads=False):
     return out
 
 
-def used_by(rid):
-    """この記録を根拠にしている物のファイル名。欄ごとに見ず番号の字で探す。根拠の欄が増えても見落とさないため。"""
+def _used_paths(rid):
+    """この記録を根拠にしている物のファイル。欄ごとに見ず番号の字で探す。根拠の欄が増えても見落とさないため。"""
     mine = {f"{kind}-{rid}.json" for kind in OWN}
     word = re.compile(rf"(?<![\w-]){rid}(?![\w-])")
     base = folder().parent
-    return sorted(p.name for d in ("loop", "decisions") for p in (base / d).glob("*.json")
-                  if p.name not in mine and word.search(p.read_text(encoding="utf-8", errors="replace")))
+    return [p for d in ("loop", "decisions") for p in (base / d).glob("*.json")
+            if p.name not in mine and word.search(p.read_text(encoding="utf-8", errors="replace"))]
+
+
+def used_by(rid):
+    """この記録を根拠にしている物のファイル名。"""
+    return sorted(p.name for p in _used_paths(rid))
 
 
 def _spoken_of(rid, talks):
@@ -163,18 +169,87 @@ def _drop_loose_talk(sid, oid, talks):
     return gone
 
 
+# 話した字の引用と読む長さ。これより長い字は、この長さの一部が写っていれば引用と読む（Claude は長い字の一部を引く）。短いと、よくある言い回しの文まで消す。
+# これより短い字は、全部が写っている時に引用と読む。1 字は読まない（どの文にも当たる）。言い換えは機械で見分けられないので、消せない。
+QUOTE_CHARS = 8
+# 文でない欄。番号と名前と寸法の字なので、話した字と重なっても消さない。
+NOT_TEXT = frozenset(("id", "source_id", "hypothesis_id", "record_id", "record_ids", "references", "param", "params", "from_words", "proposal", "status", "kind"))
+
+
+def _flat(text):
+    """引用を比べる形。声から字にした文は、字の幅と空白が揺れるので、そろえる。"""
+    return "".join(unicodedata.normalize("NFKC", str(text)).split())
+
+
+def _quotes(text, spoken):
+    """text に、話した字（_flat した物の一覧）の引用があるか。"""
+    flat = _flat(text)
+    for s in spoken:
+        if len(s) <= QUOTE_CHARS:
+            if len(s) > 1 and s in flat:
+                return True
+        elif any(s[i:i + QUOTE_CHARS] in flat for i in range(len(s) - QUOTE_CHARS + 1)):
+            return True
+    return False
+
+
+def _without_quotes(value, spoken):
+    """引用を含む文を文ごと消す。一覧の中の文と、文を text に持つ札は、札ごと外す。ほかの欄の文は空にする（欄の形と、並ぶ寸法・番号は残す）。"""
+    if isinstance(value, str):
+        return "" if _quotes(value, spoken) else value
+    if isinstance(value, dict):
+        return {k: v if k in NOT_TEXT else _without_quotes(v, spoken) for k, v in value.items()}
+    if isinstance(value, list):
+        out = []
+        for x in value:
+            y = _without_quotes(x, spoken)
+            if (isinstance(x, str) and x and not y) or (isinstance(x, dict) and x.get("text") and not y.get("text")):
+                continue
+            out.append(y)
+        return out
+    return value
+
+
+def _scrub_quotes(rid, spoken):
+    """この記録を根拠にした解釈・案・版・控えの文から、話した字の引用を消す。引用が残ると取り下げにならないため。番号・寸法・版・案の数は残す。消した物の名前を返す。"""
+    from . import loop
+
+    gone = []
+    if not spoken:
+        return gone
+    for p in [*_used_paths(rid), loop.interp_path(rid)]:
+        before = store.read_json_or_skip(p, (dict, list))
+        if before is None:
+            continue
+        after = _without_quotes(before, spoken)
+        if after != before:
+            store.write_json(p, after)
+            gone.append(f"{p.name} の引用")
+    return gone
+
+
 def _scrub_spoken(rid):
     """話した字だけを消す（--talk-only）。根拠に使われた記録でも、その人の言葉は消せるように（本人の決定の線。写真と動画の --media-only と同じ形）。
     記録の番号と寸法の根拠は残し、版の根拠は数として読める。案は残す（試した記録が指す先で、札に出さない印でもあるため）が、字の写し（words の記録と OWN-n の動かし方）と、
-    字が刷られた紙（手順の紙・型紙なしの紙）は消す。話した字の無い型紙と試した後の紙は残す。別の記録がその案を使っていても消す（字は本人の物で、寸法の根拠は残るため）。"""
+    字が刷られた紙（手順の紙・型紙なしの紙）は消す。話した字の無い型紙と試した後の紙は残す。別の記録がその案を使っていても消す（字は本人の物で、寸法の根拠は残るため）。
+    解釈と案と版の文の引用も消す（_scrub_quotes）。言い換えは機械で見分けられないので消せない。"""
     from . import hypotheses, loop, making_log
 
     talks = _talk_files()
-    gone = []
-    for p, w in list(_spoken_of(rid, talks)):
+    made = list(_spoken_of(rid, talks))
+    # 消す字を先に集めて、引用から消す。字を先に消すと、途中で落ちた後の回し直しで引用を見つけられない。
+    own_ids = {w.get("own_id") for _, w in made if w.get("own_id")}
+    said = [t.get("text") for t in talks.values() if t.get("record_id") == rid or (t.get("hypothesis_id") in own_ids and not t.get("record_id"))]
+    said += [t.get("text") for _, w in made if (t := talks.get(w["from_talk"])) and t.get("record_id") in (None, rid)]
+    said += [w.get("how_it_moves") for _, w in made]
+    spoken = sorted({_flat(x) for x in said if x})
+    gone = _scrub_quotes(rid, spoken)
+    for p, w in made:
         sid, oid, stem = w.get("source_id"), w.get("own_id"), w["from_talk"]
-        if w.get("how_it_moves"):  # 先に写しを消す。途中で落ちても、回し直しで残りを見つけられる
-            loop._write(p, {**w, "how_it_moves": ""})
+        # 先に写しを消す。途中で落ちても、回し直しで残りを見つけられる。作る側か Claude の理由の欄（not_fit・filled_in の why）の引用も同じ（寸法と名前は残す）。
+        scrubbed = {**w, "how_it_moves": "", "result": _without_quotes(w.get("result"), spoken)}
+        if scrubbed != w:
+            loop._write(p, scrubbed)
             gone.append(p.name)
         if oid:
             gone += hypotheses.scrub_own(sid, oid)
