@@ -71,7 +71,7 @@ python -m omochae.trial_video report R-0003 --built yes --finish 3 --minutes 40 
 
 | 線 | どうしたか |
 |---|---|
-| 学ぶ人の頁 | 記録に受け口の印（`via`）を付け、`records.all_records` が既定で外す。`loop.confirmed_records` とサイトの `/record` の口でも外す |
+| 学ぶ人の頁 | 記録に受け口の印（`via`）を付け、`records.all_records` が既定で外す。`loop.confirmed_records` とサイトの記録の口でも外す |
 | 動いたか | 受付に選んだ結果があれば持ってくる。無ければ「わからない」で受ける（雛形の札に無くても、受け口の記録だけ）。動いたと数えない |
 | 声とファイルの名前 | 移さない。声は受け口の置き場に残る。字にするかは本人の決定を待つ |
 | 映像 | 写し直す。受け口の写しに残った流れの中の情報も落ちる |
