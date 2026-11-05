@@ -329,20 +329,25 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     return made, []
 
 
-def print_version(sid, hid, version, sheet_dir, pending=None):
-    """版の紙の組を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。"""
-    from . import hypotheses
-
+def swap_in(sheet_dir, stem, make):
+    """紙の組を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。
+    読みに来た人にも書きかけを渡さない（#301）。make は一時の場所の名前の頭を受けて、刷れたら 0 を返す。"""
     sheet_dir.mkdir(parents=True, exist_ok=True)
-    stem = f"{hid}_v{version}"
     with tempfile.TemporaryDirectory(dir=sheet_dir, prefix=".tmp-") as tmp:
-        rc = hypotheses.print_sheet(sid, hid, f"{tmp}/{stem}", version, pending=pending)
+        rc = make(f"{tmp}/{stem}")
         if rc:
             return rc
         # 版の PDF があれば刷ってあると読む（web/toy.py の versions_of）ので、それを最後に置く。
         for p in sorted(pathlib.Path(tmp).iterdir(), key=lambda p: p.name == f"{stem}.pdf"):
             p.replace(sheet_dir / p.name)
     return 0
+
+
+def print_version(sid, hid, version, sheet_dir, pending=None):
+    """版の紙の組を刷って置き場へ移す。"""
+    from . import hypotheses
+
+    return swap_in(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_sheet(sid, hid, out, version, pending=pending))
 
 
 @exclusive
