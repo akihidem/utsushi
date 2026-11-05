@@ -56,7 +56,8 @@ UPLOAD_ID = re.compile(r"[0-9a-f]{32}")
 SLIP = re.compile(r"U-\d{4,}")
 BAD_TEXT = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069\ud800-\udfff]")  # 制御の字と、片割れの字。受付に書けず、一覧を読む端末も乱す
 TRIES = 3  # 機械の都合で止まった時に回し直す回数
-RETRY_WAIT = 30  # 秒
+RETRY_WAIT = 30  # 秒。機械の都合の失敗の後に待つ長さ。続く時は倍にしていく
+MAX_RETRY_WAIT = 1800  # 秒
 SWEEP_EVERY = 3600  # 秒
 FINAL = ("done", "failed", "withdrawn")
 BOXES = (b"ftyp", b"moov", b"mdat", b"free", b"skip", b"wide", b"pnot")  # MP4 と MOV の頭の箱。頁の側の確かめも同じ字を見る
@@ -117,8 +118,16 @@ def folder():
     return d
 
 
+class Withdrawn(Exception):
+    """処理の間に取り下げられた受付。書き戻すと、消した文と記録の番号が元に戻る。"""
+
+
 def _save(slip):
-    store.write_json(folder() / f'{slip["id"]}.json', slip)
+    path = folder() / f'{slip["id"]}.json'
+    now = store.read_json_or_skip(path)
+    if now and now.get("state") == "withdrawn" and slip.get("state") != "withdrawn":
+        raise Withdrawn(slip["id"])
+    store.write_json(path, slip)
 
 
 def slips():
@@ -247,14 +256,35 @@ def _keep_voice(joined, rid, size):
     d.mkdir(parents=True, exist_ok=True)
     d.chmod(0o700)
     out = d / "voice.mka"
-    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-protocol_whitelist", "file", "-f", FORMAT, "-i", str(joined), "-map", "0:a:0", "-c", "copy", "-vn", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
-                    "-fflags", "+bitexact", "-fs", str(size + trial_video.ROOM), str(out)], capture_output=True, check=True, timeout=trial_video.TIMEOUT)
+    try:
+        subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-protocol_whitelist", "file", "-f", FORMAT, "-i", str(joined), "-map", "0:a:0", "-c", "copy", "-vn", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
+                        "-fflags", "+bitexact", "-fs", str(size + trial_video.ROOM), str(out)], capture_output=True, check=True, timeout=trial_video.TIMEOUT)
+    except subprocess.TimeoutExpired as e:
+        raise trial_video.Interrupted("声を写す ffmpeg が時間切れ") from e
+    except subprocess.CalledProcessError as e:
+        if e.returncode < 0:
+            raise trial_video.Interrupted("声を写す ffmpeg が止められた") from e
+        # 声の形のせいで写せない時も、動画は受け取る
+        print(f"{rid}: 声を写せない", file=sys.stderr)
+        out.unlink(missing_ok=True)
+        return False
     out.chmod(0o600)
     return True
 
 
 def _text_path(rid):
     return trial_video._base(rid) / "voice" / "transcript.json"
+
+
+def _note_text(slip_id, state, text_file=""):
+    """字の様子を受付に書く。Returns False（字はできていない時の返り値に使う）。読み直して書くので、取り下げた受付を元に戻さない。"""
+    slip = store.read_json_or_skip(folder() / f"{slip_id}.json")
+    if slip and slip.get("state") == "done":
+        slip["text"] = state
+        if text_file:
+            slip["text_file"] = text_file
+        _save(slip)
+    return False
 
 
 def transcribe(slip_id):
@@ -265,14 +295,10 @@ def transcribe(slip_id):
         return False
     voice = trial_video._base(slip["record"]) / "voice" / "voice.mka"
     if not voice.exists():
-        slip["text"] = "no-voice"
-        _save(slip)
-        return False
+        return _note_text(slip_id, "no-voice")
     python = os.environ.get("OMOCHAE_ASR_PYTHON")
     if not python:
-        slip["text"] = "no-tool"
-        _save(slip)
-        return False
+        return _note_text(slip_id, "no-tool")
     try:
         r = subprocess.run([python, "-I", str(ASR_WORKER), str(voice), os.environ.get("OMOCHAE_ASR_MODEL", ASR_MODEL)], capture_output=True, text=True, timeout=4 * trial_video.MAX_SECONDS)
         data = json.loads(r.stdout) if r.returncode == 0 else None
@@ -280,14 +306,13 @@ def transcribe(slip_id):
         print(f"{slip_id}: 字にできない（{type(e).__name__}）", file=sys.stderr)
         data = None
     if not data:
-        slip["text"] = "failed"
-        _save(slip)
+        return _note_text(slip_id, "failed")
+    # 字にしている間に取り下げられていたら、字を書かない
+    if (store.read_json_or_skip(path) or {}).get("state") != "done" or not voice.parent.is_dir():
         return False
     store.write_json(_text_path(slip["record"]), data)
     _text_path(slip["record"]).chmod(0o600)
-    slip["text"] = "done"
-    slip["text_file"] = str(_text_path(slip["record"]))
-    _save(slip)
+    _note_text(slip_id, "done", str(_text_path(slip["record"])))
     return True
 
 
@@ -314,6 +339,8 @@ def _take_in(slip, job):
             slip["record"] = rid
     if not (rid and (trial_video.load(rid) or {}).get("videos")):
         # もう結んだ動画は、つなぎ直さない（止まった後の回し直し）
+        if not job.is_dir():
+            return False  # 元が無いので、待っても読めない
         if shutil.disk_usage(folder()).free < 2 * slip["size"] + CHUNK:
             raise trial_video.Interrupted("読み取る場所が足りない")
         joined = _join(slip, job)
@@ -352,45 +379,52 @@ def _forget(rid):
 
 
 def process(slip_id):
-    """受付を 1 つ処理する。Returns もう一度回すか。
-    上げた元は、終わったら残さない。ただし機械の都合（道具が止められた・場所が足りない）で止まった時は、元を消さずに回し直す。相手のファイルのせいにしない。"""
+    """受付を 1 つ処理する。Returns もう一度回すまでの秒（回さない時は 0）。上げた元は、終わったら残さない。
+    機械の都合（道具が止められた・時間切れ・場所が足りない）で止まった時は、回数で諦めない。元を残して待ち、次に立てた時も続ける。相手のファイルのせいにしない。
+    回数で止めて元を消すのは、それ以外の失敗（作りの誤り）だけ。読めないと分かった動画は、その場で断る。"""
     path = folder() / f"{slip_id}.json"
     slip = store.read_json_or_skip(path)
     if not slip or slip.get("state") not in ("waiting", "working"):
-        return False
-    slip["state"] = "working"
-    _save(slip)
+        return 0
     job = folder() / "tmp" / f"job-{slip_id}"
-    if not job.exists() and (folder() / "tmp" / slip["upload"]).is_dir():
-        os.replace(folder() / "tmp" / slip["upload"], job)  # 受付を書いた直後に止まった時
     try:
-        made = _take_in(slip, job)
-    except Exception as e:
-        print(f"{slip_id}: 受け取れない（{type(e).__name__}: {e}）", file=sys.stderr)
-        slip["tries"] = slip.get("tries", 0) + 1
-        if slip["tries"] < TRIES:
+        slip["state"] = "working"
+        _save(slip)
+        if not job.exists() and (folder() / "tmp" / slip["upload"]).is_dir():
+            os.replace(folder() / "tmp" / slip["upload"], job)  # 受付を書いた直後に止まった時
+        try:
+            made = _take_in(slip, job)
+        except Withdrawn:
+            raise
+        except OSError as e:  # trial_video.Interrupted もここ
+            print(f"{slip_id}: 待つ（{type(e).__name__}: {e}）", file=sys.stderr)
+            slip["waits"] = slip.get("waits", 0) + 1
             slip["state"] = "waiting"
             _save(slip)
-            return True
-        made = False
-    now = store.read_json_or_skip(path)
-    if now and now.get("state") == "withdrawn":  # 読んでいる間に取り下げられた
+            return min(RETRY_WAIT * 2 ** (slip["waits"] - 1), MAX_RETRY_WAIT)
+        except Exception as e:
+            print(f"{slip_id}: 受け取れない（{type(e).__name__}: {e}）", file=sys.stderr)
+            slip["tries"] = slip.get("tries", 0) + 1
+            if slip["tries"] < TRIES:
+                slip["state"] = "waiting"
+                _save(slip)
+                return RETRY_WAIT
+            made = False
+        if made:
+            slip["state"] = "done"
+        else:
+            if slip.get("record"):
+                _forget(slip["record"])
+            for key in ("record", "note", "sheet"):
+                slip.pop(key, None)
+            slip["state"] = "failed"
+        # 状態を書いてから元を消す。逆だと、間で止まった時に、受け取った物を受け取れなかった事にしてしまう
+        _save(slip)
+    except Withdrawn:  # 読んでいる間に取り下げられた。動画も文も残さない
         if slip.get("record"):
             _forget(slip["record"])
-        shutil.rmtree(job, ignore_errors=True)
-        return False
-    if made:
-        slip["state"] = "done"
-    else:
-        if slip.get("record"):
-            _forget(slip["record"])
-        for key in ("record", "note", "sheet"):
-            slip.pop(key, None)
-        slip["state"] = "failed"
-    # 状態を書いてから元を消す。逆だと、間で止まった時に、受け取った物を受け取れなかった事にしてしまう
-    _save(slip)
     shutil.rmtree(job, ignore_errors=True)
-    return False
+    return 0
 
 
 class Worker(threading.Thread):
@@ -410,11 +444,15 @@ class Worker(threading.Thread):
             try:
                 if slip_id.startswith("text:"):
                     transcribe(slip_id[5:])
-                elif process(slip_id):
-                    time.sleep(RETRY_WAIT)
-                    self.jobs.put(slip_id)
+                elif wait := process(slip_id):
+                    # 待つ間も、後ろの動画は止めない
+                    timer = threading.Timer(wait, self.jobs.put, [slip_id])
+                    timer.daemon = True
+                    timer.start()
                 elif (store.read_json_or_skip(folder() / f"{slip_id}.json") or {}).get("voice"):
                     self.jobs.put(f"text:{slip_id}")  # 字にするのは受け取りの後。上げた人を待たせない
+            except Withdrawn:
+                pass
             except Exception as e:  # 1 本の失敗で、後の動画を止めない。受付は読み取り中のまま残り、次に立てた時に続く
                 print(f"{slip_id}: 処理できない（{type(e).__name__}: {e}）", file=sys.stderr)
 
@@ -611,10 +649,11 @@ def page(nonce, kind="making"):
     script = SCRIPT.replace("__CHUNK__", str(CHUNK)).replace("__MAX__", str(MAX_FILE)).replace("__SAY__", json.dumps(say, ensure_ascii=False))
     promises = "".join(f"<li>{esc(p)}</li>" for p in conf["promises"])
     made = "".join(f'<label class="pick"><input type="radio" name="made_with" value="{k}" required> {esc(MADE_WITH_LABEL[k])}</label>' for k in conf["made_with"] if k in MADE_WITH_LABEL)
+    question = esc(conf["toy_question"])
     made = f"<fieldset><legend>何を見て作りましたか</legend>{made}</fieldset>" if made else '<input type="hidden" name="made_with" value="review">'
     body = (f"<h1>{esc(conf['title'])}</h1><p class=\"lead\">{esc(conf['lead'])}</p><ul class=\"promise\">{promises}</ul>"
             '<form id="up">'
-            f'<fieldset><label class="head" for="toy">{esc(conf['toy_question'])}</label><select id="toy" required><option value="">選んでください</option>{_options()}</select><img id="pic" hidden alt="選んだおもちゃの図"></fieldset>'
+            f'<fieldset><label class="head" for="toy">{question}</label><select id="toy" required><option value="">選んでください</option>{_options()}</select><img id="pic" hidden alt="選んだおもちゃの図"></fieldset>'
             f"{made}"
             f'<fieldset><label class="head" for="files">動画（いくつでも選べます）</label><input id="files" type="file" accept="video/*" multiple required><p class="hint">MP4 か MOV。1 本 {MAX_FILE // 1024 ** 3}GB までです。</p></fieldset>'
             f'<fieldset><label class="head" for="note">この動画で伝えたい事（なくてもかまいません）</label><textarea id="note" rows="4" maxlength="{NOTE_MAX}"></textarea><p class="hint">{esc(ASK_NAME)}住所・電話番号・メールも書かないでください。</p></fieldset>'

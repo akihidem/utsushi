@@ -12,6 +12,7 @@ import math
 import os
 import pathlib
 import shutil
+import socket
 import stat
 import subprocess
 import sys
@@ -179,6 +180,7 @@ assert call("GET", f"//evil.example/?k={KEY}", cookie=None)[2]["Location"] == "/
 assert call("GET", "/", host="evil.example")[0] == 403
 assert post("/check", form(), origin="https://evil.example")[0] == 403
 assert post("/check", form(), origin=None)[0] == 403
+assert post("/check", form(), host="evil.example", origin="http://evil.example")[0] == 403, "POST も名前を見る"
 tunnel = "abc-def.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分ける（tests/test_public_open.py と同じ）
 assert call("GET", "/", host=tunnel, origin=None)[0] == 200
 assert post("/check", form(), host=tunnel, origin=f"https://{tunnel}")[0] == 200
@@ -235,6 +237,19 @@ code, body, _ = call("POST", f"/chunk?id={uid}&n=0", body=b"x")
 video_up.MIN_FREE = floor
 assert code == 507 and "error" in json.loads(body)
 assert not (folder / "tmp" / uid).exists() or not list((folder / "tmp" / uid).iterdir())
+
+# 途中で切れた小分けは、届いた物に数えない
+cut_id = "9" * 32
+raw_sock = socket.create_connection(("127.0.0.1", port), timeout=30)
+raw_sock.sendall((f"POST /chunk?id={cut_id}&n=0 HTTP/1.1\r\nHost: {HOST}\r\nCookie: {JAR}\r\nOrigin: {ORIGIN}\r\nContent-Length: 100\r\n\r\n").encode() + b"x" * 10)
+raw_sock.close()
+for _ in range(100):
+    if not [p for p in (folder / "tmp" / cut_id).glob("*")] and (folder / "tmp" / cut_id).exists():
+        break
+    time.sleep(0.05)
+assert json.loads(call("GET", f"/have?id={cut_id}", origin=None)[1]) == {"have": []}
+assert not list((folder / "tmp" / cut_id).glob("*")), "途中の物を残さない"
+(folder / "tmp" / cut_id).rmdir()
 
 # 足りない小分けは番号で答える。受け取りにしない。続きの番号も聞ける
 data = video("a.mov")
@@ -492,38 +507,77 @@ def killed_once(*a, **k):
 
 
 tv._probe = killed_once
-assert video_up.process(again_a["receipt"]) is True
+assert video_up.process(again_a["receipt"]) == 0 * 1 + video_up.RETRY_WAIT
 kept = slip_of(again_a["receipt"])
-assert kept["state"] == "waiting" and kept["tries"] == 1 and (folder / "tmp" / f'job-{again_a["receipt"]}').exists() and hits
-assert video_up.process(again_a["receipt"]) is False and slip_of(again_a["receipt"])["state"] == "done"
+assert kept["state"] == "waiting" and kept["waits"] == 1 and (folder / "tmp" / f'job-{again_a["receipt"]}').exists() and hits
+assert video_up.process(again_a["receipt"]) == 0 and slip_of(again_a["receipt"])["state"] == "done"
 assert not (folder / "tmp" / f'job-{again_a["receipt"]}').exists()
-# 回し直しても直らない時は、回数で止める。記録も文も動画も残さない
-code, stuck = send(video("h.mov"), note="残らない文")
+# 機械の都合が何度続いても、動画を消さない。文も残して待つ。直ったら受け取る
+video_up.RETRY_WAIT = 30
+code, patient = send(video("h2.mov"), note="消えない文")
 real_attach = tv.attach
 
 
+def no_room(*a, **k):
+    raise tv.Interrupted("止められた")
+
+
+tv.attach = no_room
+waits = [video_up.process(patient["receipt"]) for _ in range(8)]
+tv.attach = real_attach
+assert waits == [30, 60, 120, 240, 480, 960, 1800, 1800], waits
+held = slip_of(patient["receipt"])
+assert held["state"] == "waiting" and held["note"] == "消えない文" and (folder / "tmp" / f'job-{patient["receipt"]}').exists()
+assert status(patient["token"])[patient["token"]]["word"] == video_up.WORDS["waiting"], "上げた人のせいにしない"
+# 場所が足りない時も同じ
+real_usage = shutil.disk_usage
+video_up.shutil.disk_usage = lambda p: type("U", (), {"free": 0})()
+assert video_up.process(patient["receipt"]) > 0 and slip_of(patient["receipt"])["state"] == "waiting"
+video_up.shutil.disk_usage = real_usage
+assert video_up.process(patient["receipt"]) == 0 and slip_of(patient["receipt"])["state"] == "done"
+video_up.RETRY_WAIT = 0
+# 作りの誤りは、回数で止める。記録も文も動画も残さない
+code, stuck = send(video("h.mov"), note="残らない文")
+
+
 def always_fail(*a, **k):
-    raise OSError("場所が足りない")
+    raise ValueError("作りの誤り")
 
 
 tv.attach = always_fail
 recs_before = len(records.all_records(uploads=True))
-assert video_up.process(stuck["receipt"]) is True and video_up.process(stuck["receipt"]) is True
-assert video_up.process(stuck["receipt"]) is False
+for _ in range(video_up.TRIES):
+    video_up.process(stuck["receipt"])
 tv.attach = real_attach
 gone = slip_of(stuck["receipt"])
 assert gone["state"] == "failed" and "note" not in gone and "record" not in gone
 assert len(records.all_records(uploads=True)) == recs_before and "残らない文" not in json.dumps(records.all_records(uploads=True), ensure_ascii=False)
+# 読んでいる間に取り下げられたら、元に戻さない。動画も記録も文も残さない
+code, mid = send(video("h3.mov"), note="取り下げた文")
+
+
+def withdraw_then_attach(rid_, src_, kind_=None):
+    assert video_up.withdraw(mid["receipt"], force=True) == []
+    return real_attach(rid_, src_, kind_)
+
+
+tv.attach = withdraw_then_attach
+recs_now = len(records.all_records(uploads=True))
+assert video_up.process(mid["receipt"]) == 0
+tv.attach = real_attach
+assert slip_of(mid["receipt"])["state"] == "withdrawn" and "note" not in slip_of(mid["receipt"])
+assert len(records.all_records(uploads=True)) == recs_now and "取り下げた文" not in json.dumps(records.all_records(uploads=True), ensure_ascii=False)
+assert not (folder / "tmp" / f'job-{mid["receipt"]}').exists()
 # 記録を作った直後に止まっても、同じ動画の記録を 2 つ作らない
 code, twice = send(video("i.mov"), note="二重にしない")
 made, _ = tv.new_record(G, hypotheses.sheet_of(G)["id"], records.UNSURE, note="二重にしない", via=records.UPLOADED, upload=twice["receipt"])
-assert video_up.process(twice["receipt"]) is False and slip_of(twice["receipt"])["record"] == made
+assert video_up.process(twice["receipt"]) == 0 and slip_of(twice["receipt"])["record"] == made
 assert sum(r.get("upload") == twice["receipt"] for r in records.all_records(uploads=True)) == 1
 # 結んだ後に止まっても、読み直して受け取りにする（受け取った物を受け取れなかった事にしない）
 slip_twice = slip_of(twice["receipt"])
 slip_path = folder / f'{twice["receipt"]}.json'
 slip_path.write_text(json.dumps({**slip_twice, "state": "working"}), encoding="utf-8")
-assert video_up.process(twice["receipt"]) is False and slip_of(twice["receipt"])["state"] == "done"
+assert video_up.process(twice["receipt"]) == 0 and slip_of(twice["receipt"])["state"] == "done"
 # 読み取り中のまま残った受付は、サーバを止めてから取り下げられる
 slip_path.write_text(json.dumps({**slip_twice, "state": "working"}), encoding="utf-8")
 assert cli("withdraw", twice["receipt"], module="web.video_up").returncode == 3
@@ -651,6 +705,28 @@ for _ in range(100):
 assert slip_n["text"] == "no-tool", slip_n
 os.environ["OMOCHAE_ASR_PYTHON"] = sys.executable
 assert video_up.transcribe(r3["receipt"]) is True and json.loads((folder / f'{r3["receipt"]}.json').read_text(encoding="utf-8"))["text"] == "done"
+# 字にしている間に取り下げられたら、受付を元に戻さない（道具が落ちる形でも）
+code, r4 = send(video("rv4.mov"), made_with="review", note="字にする間に取り下げる文")
+assert code == 200 and wait(r4["token"])["state"] == "done"
+for _ in range(100):
+    if json.loads((folder / f'{r4["receipt"]}.json').read_text(encoding="utf-8")).get("text"):
+        break
+    time.sleep(0.1)
+real_run = video_up.subprocess.run
+
+
+def withdraw_then_fail(*a, **k):
+    video_up.subprocess.run = real_run
+    assert video_up.withdraw(r4["receipt"], force=True) == []
+    raise OSError("道具が落ちた")
+
+
+video_up.subprocess.run = withdraw_then_fail
+assert video_up.transcribe(r4["receipt"]) is False
+video_up.subprocess.run = real_run
+slip_w = json.loads((folder / f'{r4["receipt"]}.json').read_text(encoding="utf-8"))
+assert slip_w["state"] == "withdrawn" and "note" not in slip_w and "record" not in slip_w, slip_w
+assert status(r4["token"])[r4["token"]]["word"] == video_up.REVIEW_WORDS["withdrawn"]
 # 整理が終わったら声を消す。字は残る
 assert cli("drop-voice", r1["receipt"], module="web.video_up").returncode == 0 and not voice.exists() and text_file.exists()
 assert cli("drop-voice", "U-9999", module="web.video_up").returncode == 3
