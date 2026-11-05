@@ -194,7 +194,7 @@ utsushi の問い（図と歌だけが残り、動く仕組みが書かれてい
 | トイをモデルとして | 紙の動きを式で持つ。虎の物差しは頭が揺れるかどうかで、仮説の違いは作り方の違い（[research/15](research/15-philosophy-review.md)） | [research/08](research/08-fan-axle.md)・[research/12](research/12-tiger.md) |
 | 入口は低く、広がりは広く（Papert の「低い床」と Resnick の「広い壁」の言葉を借りる。本人が research/22 の候補 3 を採った、11-04） | 最初の版は切って折るだけで動く（入口の低さ）。上の段は工作を難しくせず、絵柄・色・見せ方・遊び方・自分の仮説へ広げる（広い壁。自分の仮説は J-032 で、書く形から話す形に置き換えた）。utsushi では「床」を刷る前の検査の意味で使うので、ここは「入口の低さ」と書く | [research/22](research/22-origami-papercraft-ai.md) |
 | 難しさで水準を上げず、見た目とおもちゃとしての楽しさで上げる（2026-11-04 本人の省察） | 型紙と学習プリントの直しの物差し。切る量と折る難しさは増やさない方へ。採る直しは [research/20](research/20-worksheet-rethink.md)（U-25） | [trials](trials/README.md) |
-| おもちゃで遊び続ける | 記録で次の版と次の仮説が変わる（次の仮説を足す道は J-032 の後の直しで見直す）。[試した後の紙](decisions/J013-core-words.md)は次に変える条件を渡す | [J-010](decisions/J010-loop-back-half.md) |
+| おもちゃで遊び続ける | 記録で次の版と次の仮説が変わる（採った案は版か作る側の控えにする。J-032、#404）。[試した後の紙](decisions/J013-core-words.md)は次に変える条件を渡す | [J-010](decisions/J010-loop-back-half.md) |
 
 ### 御来迎の材料
 
