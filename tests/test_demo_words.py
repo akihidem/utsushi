@@ -76,7 +76,7 @@ for name in words.ALL:
     assert words.seconds_of(name) * 10 == round(words.seconds_of(name) * 10), name
     starts = [cues[f"c{i}"][0] for i in range(len(words.chunks_of(name)))] + [words.seconds_of(name)]
     for i, lines in enumerate(words.chunks_of(name)):
-        assert len("".join(lines)) / (starts[i + 1] - starts[i]) <= words.RATE + 1e-6, (name, lines)
+        assert words.reading_chars("".join(lines)) / (starts[i + 1] - starts[i]) <= words.RATE + 1e-6, (name, lines)
 
 # 問いは本人の決定（11-05）の文。言葉の記録の引用ではないので、本人の言葉の札と分ける
 assert words.ASK == "あなたなら、何を作りますか。" and words.ASK not in rec_lines
@@ -85,7 +85,7 @@ assert all(v >= 0 for v in words.fits().values()), words.fits()
 # つなぎの文は本人が決めた字のまま。本人の言葉の印を付けない
 BRIDGE1 = "むかしの子どもも、今の子どもも、もらったおもちゃより、それを包んでいた紙やリボンのひもで遊んでしまうことがあります。"
 assert words.flat(words.BRIDGE) == BRIDGE1 and "bridge" not in words.CARDS and BRIDGE1 not in rec_lines
-assert words.flat(words.BRIDGE2) == "作ったものを持ちよると、AI もそれを見て、次の型紙を少しずつよくしていきます。"
+assert words.flat(words.BRIDGE2) == "作ったものを持ちよると、Claude もそれを見て、次の型紙を少しずつよくしていきます。"
 assert words.NOW_LINE == "いま作っているところです"
 assert not {"bridge", "close", "core_loop"} & set(words.MARKED)
 assert set(words.CARDS) | set(words.TALKS) == set(words.MARKED)

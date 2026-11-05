@@ -21,7 +21,7 @@ for word in ("1位", "１位", "2位", "上位", "おすすめ", "オススメ",
     assert not any(word in without_premise(c) for c in captions), word
 # 予想の段は外した（本人の決定 11-05、#242）。字幕が予想を先に求めない。前提は本人の言葉の形で出す
 assert not any("先に予想" in c or "予想が先" in c for c in captions)
-assert "正解ではなく" in scene3.TITLE_PREMISE and "AI が考えた仮説" in scene3.TITLE_PREMISE
+assert "正解ではなく" in scene3.TITLE_PREMISE and "Claude が考えた仮説" in scene3.TITLE_PREMISE
 # 型紙は玩具に 1 つ（本人の決定 11-05 17:26）。「並べる」「案を選ぶ」を字幕に出さない。「開いたら、すぐ作る。」は残す
 assert scene3.CLOSING == ("開いたら、すぐ作る。",)
 assert not any("並べる" in c or "案を選" in c or "並ぶ" in c for c in captions)

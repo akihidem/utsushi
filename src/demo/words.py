@@ -57,7 +57,7 @@ TALKS = {
 }
 # つなぎの文（本人の決定 11-05）。つなぎ 1 は今の台本から外してある（demo.script の LEFT_OUT）。つなぎ 2 は core_loop に出す。
 BRIDGE = (("むかしの子どもも、今の子どもも、",), ("もらったおもちゃより、",), ("それを包んでいた紙や", "リボンのひもで"), ("遊んでしまうことがあります。",))
-BRIDGE2 = (("作ったものを持ちよると、",), ("AI もそれを見て、",), ("次の型紙を少しずつ", "よくしていきます。"))
+BRIDGE2 = (("作ったものを持ちよると、",), ("Claude もそれを見て、",), ("次の型紙を少しずつ", "よくしていきます。"))
 NOW_LINE = "いま作っているところです"      # AI はまだ動いていないので、つなぎ 2 と一緒に出す（本人の決定 11-05）
 ALL = {**CARDS, **TALKS, "bridge": BRIDGE, "close": ((CLOSING[0],), (CLOSING[1],)), "core_loop": (*BRIDGE2, (NOW_LINE,))}
 MARKED = (*CARDS, *TALKS)      # 本人の言葉の印を付ける札
@@ -108,9 +108,14 @@ def chunks_of(name):
     return ALL[name]
 
 
+def reading_chars(text):
+    """読む字の数。半角の字は半分に数える（「Claude」は 6 字の仮名ほど読む手間がかからない）。"""
+    return sum(0.5 if ord(c) < 128 else 1.0 for c in text)
+
+
 def chunk_seconds(lines):
     """1 かたまりの秒。1 秒 5 字以下。替わり目の溶けもこの中に入る。"""
-    return max(MIN_CHUNK, len("".join(lines)) / RATE)
+    return max(MIN_CHUNK, reading_chars("".join(lines)) / RATE)
 
 
 def cues_of(name):
