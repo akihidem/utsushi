@@ -1,10 +1,10 @@
 # 命令: .venv/bin/python tests/test_write_limit.py
-# commit: 8ba4d569（回した時の HEAD）
-/tmp/tmp_dtu9n8d/play/NDL-1187053-R0000005-L/.tmp-yapixng8/H-A_v1.pdf
-/tmp/tmp_dtu9n8d/play/NDL-1187053-R0000005-L/.tmp-yapixng8/H-A_v1_tejun.pdf
-/tmp/tmp_dtu9n8d/play/NDL-1187053-R0000005-L/.tmp-yapixng8/H-A_v1_after.pdf
-/tmp/tmp_dtu9n8d/play/NDL-1187053-R0000005-L/.tmp-mzbwtg8l/H-A_v1.pdf
-/tmp/tmp_dtu9n8d/play/NDL-1187053-R0000005-L/.tmp-mzbwtg8l/H-A_v1_tejun.pdf
-/tmp/tmp_dtu9n8d/play/NDL-1187053-R0000005-L/.tmp-mzbwtg8l/H-A_v1_after.pdf
-ok: 書き込みの口に、同じ相手からの短い間の数の上限
+# commit: cda9d773（回した時の HEAD）
+/tmp/tmp8jcpw2j8/play/NDL-1187053-R0000005-L/.tmp-zla61ald/H-A_v1.pdf
+/tmp/tmp8jcpw2j8/play/NDL-1187053-R0000005-L/.tmp-zla61ald/H-A_v1_tejun.pdf
+/tmp/tmp8jcpw2j8/play/NDL-1187053-R0000005-L/.tmp-zla61ald/H-A_v1_after.pdf
+/tmp/tmp8jcpw2j8/play/NDL-1187053-R0000005-L/.tmp-jsbbb321/H-A_v1.pdf
+/tmp/tmp8jcpw2j8/play/NDL-1187053-R0000005-L/.tmp-jsbbb321/H-A_v1_tejun.pdf
+/tmp/tmp8jcpw2j8/play/NDL-1187053-R0000005-L/.tmp-jsbbb321/H-A_v1_after.pdf
+ok: 書き込みの口と段の口に、同じ相手からの短い間の数の上限
 rc=0

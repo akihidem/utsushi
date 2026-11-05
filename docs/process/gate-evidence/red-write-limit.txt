@@ -1,10 +1,10 @@
 # 命令: .venv/bin/python tests/test_write_limit.py
-# commit: 8ba4d569（回した時の HEAD）
-/tmp/tmp_0zc51lo/play/NDL-1187053-R0000005-L/.tmp-5g5s083r/H-A_v1.pdf
-/tmp/tmp_0zc51lo/play/NDL-1187053-R0000005-L/.tmp-5g5s083r/H-A_v1_tejun.pdf
-/tmp/tmp_0zc51lo/play/NDL-1187053-R0000005-L/.tmp-5g5s083r/H-A_v1_after.pdf
+# commit: cda9d773（回した時の HEAD）
+/tmp/tmp1hq4qdur/play/NDL-1187053-R0000005-L/.tmp-9_d4mlzn/H-A_v1.pdf
+/tmp/tmp1hq4qdur/play/NDL-1187053-R0000005-L/.tmp-9_d4mlzn/H-A_v1_tejun.pdf
+/tmp/tmp1hq4qdur/play/NDL-1187053-R0000005-L/.tmp-9_d4mlzn/H-A_v1_after.pdf
 Traceback (most recent call last):
-  File "tests/test_write_limit.py", line 89, in <module>
+  File "tests/test_write_limit.py", line 111, in <module>
     assert st == 429 and json.loads(body) == {"kept": False, "why": BUSY}, (st, body[:200])
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: (200, '{"kept": true, "note": "残しました。型紙や説明をよくするのに使います。"}')
