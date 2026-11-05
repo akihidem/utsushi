@@ -568,6 +568,10 @@ class Handler(BaseHTTPRequestHandler):
         # 合言葉なしで開いたデモでは、次の版を採る口と AI の口を閉じる: 誰でも型紙の版を変えられる形にしない。費用のかかる呼び出しもさせない（J-028）。
         if getattr(self.server, "public_open", False) and re.fullmatch(r"/record/R-\d{4,}/(next|ai-interpret|ai-observe)", self.path):
             return self._send(403, "公開のデモでは使えません")
+        m = re.fullmatch(r"/record/(R-\d{4,})/(?:explain|next|ai-interpret|ai-observe)", self.path)
+        if m and not (records.folder() / f"{m.group(1)}.json").exists():
+            # 無い記録の番号（打ち間違いや、取り下げた後の古い頁）は 404 にする。記録を読む所で落ちて、送り直しを勧める 500 を返さないため
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         m = re.fullmatch(r"/record/(R-\d{4,})/(ai-interpret|ai-observe)", self.path)
         if m:
             return self._ai_reply(m.group(1), m.group(2), form)
