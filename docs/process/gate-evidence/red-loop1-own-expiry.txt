@@ -1,0 +1,16 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_own_private.py
+# commit: 66de9a2（回した時の HEAD）
+F9.own: 自分の仮説「書いた案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-2_v1_free.pdf
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-3_v1.pdf
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-3_v1_tejun.pdf
+/tmp/tmp908kh7yx/play/NDL-1187053-R0000005-L/OWN-3_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_own_private.py", line 156, in <module>
+    assert opened(k1, o1) == 404 and opened(k1, o1, "_tejun") == 404, "期限を過ぎると、鍵があっても開かない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 期限を過ぎると、鍵があっても開かない
+rc=1

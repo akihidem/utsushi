@@ -40,7 +40,7 @@ assert cli("print", "H-D", "--out", f"{tmp}/d").returncode == 3
 r = cli("print", "H-A", "--out", f"{tmp}/d")
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", f"{tmp}/d.pdf", "-"], capture_output=True, text=True).stdout
-assert "仮説A" in "".join(text.split()) and "正解ではありません" in "".join(text.split())
+assert "仮説A" in "".join(text.split()) and "正解ではありません" in "".join(text.split())  # 必須 2 種の今の組は前の文のまま（凍結の床・#318）
 
 # 自分の仮説から入る道（J-008）。別の置き場で始める
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()

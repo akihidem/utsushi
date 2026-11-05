@@ -26,7 +26,8 @@ INTRO = (
     "Two toys have full templates, in Japanese only. One is the Goraigo (roughly, \"welcoming descent\"), a tube with a fan. The other is a tiger based on old papier-mâché toys. An earlier Goraigo moved in one trial with adults. No one has finished the tiger yet. The other toys are untested drafts, and their names are our guesses.",
     "A paper model that moves does not prove how the original was made. These models are for trying things out. They are not exact copies of the old toys.",
 )
-# J-030 の短い紹介。序の頁と README の頭に同じ文を置く（#260）。頭の 4 文は本人が採った文（11-05、#318）で、一字も変えない。残りは同じ書き方にそろえた。
+# J-030 の短い紹介。序の頁と README に同じ文を置く（#260）。頭の 4 文は本人が採った文（11-05、#318）で、一字も変えない。残りは同じ書き方にそろえた。
+# README は審査員が読む所なので「AI」の 1 語だけ「Claude」と書く（本人の決定 11-06）。序の頁は学ぶ人の頁なので、ここは「AI」のまま。
 SHORT_INTRO = ("<i>Edo nishiki</i> is a Japanese picture book of toys from 1773. It has pictures and short poems, but it does not say how the toys worked. "
                "utsushi turns the pictures into paper models you can print. Each model is a guess about how the toy moved. "
                "Print one, build it, try it, and write down what you saw. The paper responds first. After you explain what you saw, AI can respond too. "
@@ -99,7 +100,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
     req = _load("required.json")["toys"].get(sid, {}).get("hypotheses", {})
     note = '<p class="meta">Printed. Open the PDF and print it at 100%.</p>' if printed else ""
     cards = ""
-    for h in data["hypotheses"]:
+    for h in [hypotheses.sheet_of(sid)]:  # 頁に出す型紙はたたき台の 1 枚だけ（J-032）
         letter = hypotheses.letter(h)
         en = req.get(h["id"])
         head = f'Idea {esc(letter)}: {esc(en["name"])}' if en else f'Idea {esc(letter)}'

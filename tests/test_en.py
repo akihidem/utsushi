@@ -109,7 +109,13 @@ for look in ("tenji", "zine"):
     assert 'lang="en"' in about_page and 'href="/en"' in about_page, look
     assert en.DRAFT in about_page, "英語を母語とする人が読むまで draft の印を付ける"
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-assert "*Edo nishiki* " + HEAD in readme and readme.index(HEAD) < readme.index("30 秒の要約"), "README の頭に同じ文"
+# README の頭に見える字は本人が採った字だけ（tests/test_readme_head.py）なので、畳んだ要約のすぐ後に置く
+assert "*Edo nishiki* " + HEAD in readme and readme.index("</details>") < readme.index(HEAD) < readme.index("## 開発の過程"), "README の畳んだ要約の後に同じ文"
+# README は審査員が読む所なので Claude、序の頁は学ぶ人の頁なので AI（本人の決定 11-06）。違うのはこの 1 語だけ
+SAID = "After you explain what you saw, {} can respond too."
+assert SAID.format("Claude") in readme and SAID.format("AI") not in readme
+assert SAID.format("AI") in en.SHORT_INTRO and SAID.format("Claude") not in en.SHORT_INTRO
+assert en.SHORT_INTRO.replace("<i>Edo nishiki</i>", "*Edo nishiki*").replace(SAID.format("AI"), SAID.format("Claude")) in readme, "README と序の頁で違うのは 1 語だけ"
 assert en.DRAFT in readme, "README にも draft の印"
 
 # 日本語の頁に帯と道

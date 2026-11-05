@@ -25,4 +25,19 @@ for tid, (sid, h) in sorted(first.items()):
     assert OLD not in words, (tid, "筒の言葉を刷らない")
     assert tpl.DIAGRAM_CAPTION in [t.text for t in layout["texts"]], (tid, "図の説明は 1 行に収める（折れると読みにくい）")
     assert getattr(tpl, "RESULT_HEAD", RESULT_HEAD) in words, tid
+
+# 形で図が変わる雛形: 俵の図には車も台も無いので、車と軸と台の札を刷らない（#294）。車の形は今までどおり刷る
+cart, seen = TEMPLATES["wheel_cart"], set()
+for sid in sources():
+    d = hypotheses.load(sid)
+    src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
+    for h in d["hypotheses"]:
+        if h.get("params") is None or h.get("template", d.get("template")) != "wheel_cart":
+            continue
+        layout, failures = compose_sheet("wheel_cart", h["params"], src, "x", h["how_it_moves"])
+        assert not failures, (sid, h["id"], [f.message for f in failures])
+        body = {**cart.DEFAULTS, **h["params"]}["body"]
+        seen.add(body)
+        assert (cart.DIAGRAM_CAPTION in [t.text for t in layout["texts"]]) is (body == "cart"), (sid, h["id"], body)
+assert seen == {"cart", "bale"}, seen
 print("ok", len(first))
