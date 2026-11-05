@@ -68,7 +68,7 @@
 
 ## 動かし方
 
-要る物: [uv](https://docs.astral.sh/uv/)、poppler（`pdftotext`・`pdftoppm`）、fontconfig（`fc-match`）、FFmpeg（`ffmpeg`・`ffprobe`）、字 Noto Serif CJK JP。Ubuntu なら `sudo apt install poppler-utils fontconfig ffmpeg fonts-noto-cjk`。
+要る物: Python 3.11 以上、[uv](https://docs.astral.sh/uv/)、poppler（`pdftotext`・`pdftoppm`）、fontconfig（`fc-match`）、FFmpeg（`ffmpeg`・`ffprobe`）、字 Noto Serif CJK JP。Ubuntu 24.04 なら `sudo apt install python3 pipx poppler-utils fontconfig ffmpeg fonts-noto-cjk`、`pipx install uv`、`export PATH="$HOME/.local/bin:$PATH"` で揃う。
 
 ```
 git clone https://github.com/akihidem/utsushi.git
