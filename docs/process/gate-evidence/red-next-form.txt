@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_next_form.py（直す前の木に、新しい試験だけを置いた）
+# commit: a3ea3b2（回した時の HEAD）
+AssertionError: 折りの幅（mm）
+rc=1

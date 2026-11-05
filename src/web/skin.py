@@ -39,6 +39,15 @@ def esc(s):
     return html.escape(str(s if s is not None else ""), quote=True)
 
 
+# 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
+# スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
+# 文の中のリンクは入れない。行が崩れるので。字の大きさの床（12px）は、幅に関わらず CSS の指定そのもので守る。
+TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
+.nav{font-size:14px;row-gap:0}
+.nav a,.nav .skins a,.switch a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+input[type=range]{height:44px}
+}
+"""
 BASE = """
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -57,7 +66,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 5vw}
 .meta{font-size:12px;color:var(--mute);letter-spacing:.08em;line-height:1.9}
 .premise{font-size:14px;line-height:1.9;letter-spacing:.06em;margin:10px 0;padding:8px 12px;border-left:3px solid var(--frame)}
-.lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--frame);padding:0 8px;margin-right:8px;vertical-align:middle}
+.lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--frame);padding:0 8px;margin-right:8px;vertical-align:middle}
 .lead{font-size:15px;line-height:2.1;letter-spacing:.06em;max-width:40em}
 .nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 .nav a{color:var(--accent);border:0}.nav b{font-weight:400;color:var(--fg)}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
@@ -68,7 +77,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .frame{margin:0;background:var(--paper);border:1px solid var(--frame);padding:3%;box-shadow:0 1px 0 var(--rule),0 40px 60px -30px var(--shadow)}
 .frame img{width:100%;display:block}
 .frame .pic{width:100%;aspect-ratio:1600/2656;background-position:85% 50%;background-size:112% 112%;background-repeat:no-repeat;background-color:var(--soft)}
-.frame figcaption{font-size:11px;color:var(--mute);letter-spacing:.15em;margin-top:10px}
+.frame figcaption{font-size:12px;color:var(--mute);letter-spacing:.15em;margin-top:10px}
 .songs{writing-mode:vertical-rl;height:min(44vh,360px);margin:0 0 14px auto;font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .songs p{margin:0 .3em}
 .label{font-size:12px;line-height:2;letter-spacing:.06em;color:var(--mute);border-left:1px solid var(--frame);padding-left:14px;max-width:24em;margin:18px 0}
@@ -124,9 +133,9 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
 @media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
-.sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
+.sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
 .is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
-.foot{padding:48px 5vw 40px;font-size:11px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
+.foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
  main,.wrap{padding-left:16px;padding-right:16px}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.zoom img{width:220%}}
@@ -146,7 +155,7 @@ def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>:root{{{root}}}{BASE}{extra_style}</style>{head}'
+            f'<title>{esc(title)}</title><style>:root{{{root}}}{BASE}{TAP_FLOOR}{extra_style}</style>{head}'
             f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
 
 
