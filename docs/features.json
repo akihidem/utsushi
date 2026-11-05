@@ -160,6 +160,7 @@
    "tests/test_reply_visible.py",
    "src/web/wording.py",
    "tests/test_wording.py",
+   "tests/test_reader_words.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",
@@ -221,7 +222,9 @@
    "tests/test_loop1_think.py",
    "tests/test_loop1_withdraw.py",
    "tests/test_loop1_own_private.py",
-   "tests/test_loop1_round.py"
+   "tests/test_loop1_round.py",
+   "tests/test_loop1_next.py",
+   "tests/test_own_form_gone.py"
   ]
  },
  {
@@ -454,7 +457,7 @@
    "src/omochae/cycle.py",
    "tests/test_cycle.py"
   ],
-  "unverified": "今の main で全部の段が本物のエンジンまで通る（11 段。ループ 1 の紙で作って記録する道は本物の頁で通す）。ギャラリーの頁は開かない。自分の紙の次の版、本物の API、人が実物で回した一周は未確認"
+  "unverified": "今の main で全部の段が本物のエンジンまで通る（12 段。ループ 1 の紙で作って記録し、その記録からたたき台の次の版を作って次の人が刷る道は、本物の頁で通す）。ギャラリーの頁は開かない。本物の API と、人が実物で回した一周は未確認"
  },
  {
   "id": "f35",
@@ -466,7 +469,8 @@
    "tests/test_build_now.py",
    "tests/test_made_records.py",
    "src/omochae/media_review.py",
-   "tests/test_media_review.py"
+   "tests/test_media_review.py",
+   "tests/test_photo_owner_only.py"
   ],
   "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した 上げた写真と動画は、人の確認（omochae.media_review）を通した物だけを出す（#314）。人がこの確認を回した事はまだ無い"
  },
@@ -535,5 +539,17 @@
    "tests/test_trial_video.py"
   ],
   "unverified": "作り物の動画だけで通した。本物の動画での札の読みと、版の効き目はまだ。札を人が確かめるのは端末の命令で、頁は無い"
+ },
+ {
+  "id": "f45",
+  "name": "型紙の版の歩み（裏側の改善ループの頁）",
+  "status": "doing",
+  "evidence": [
+   "src/web/ayumi.py",
+   "src/web/kaizen_versions.py",
+   "tests/test_loop_ayumi.py",
+   "docs/process/trials/sheets/README.md"
+  ],
+  "unverified": "どのループかは記録から決める。寸法の版とエンジンの版の本物はまだ無く、試験の作り物で見た。良くなったかは判定しない。エンジンの版は別の repo の台帳を読むだけで、無い機械では読めませんと出す"
  }
 ]
