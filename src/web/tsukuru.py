@@ -35,7 +35,7 @@ from . import skin
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
 PRIVACY = "映像はこの端末の中だけで、送りも残しもしません。"
-CAMERA_PURPOSE = "カメラで見るのは、不完全な型紙を人が工夫で乗り切る所です。人の出来を見るためではありません。"
+CAMERA_PURPOSE = "カメラで見るのは、うまくいかない型紙を、どう工夫して作ったかです。じょうずかどうかを見るためではありません。"
 from .play_server import esc, out_dir, printed_versions
 
 NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
