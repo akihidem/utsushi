@@ -299,3 +299,14 @@
 - 検証ゲート: **済み**。Red: 直す前の main で、一時の場所に置いた JSON を MCP の `check_draft` と `check_params` が読み、`zoom_picture` は取りに行く所まで進んだ（gate-evidence/red-source-id-check.txt）。Green: rc 0「ok source_id」（gate-evidence/green-source-id-check.txt）
 - エビデンスゲート: 上の出力と、直した作業ツリーでの `./run.sh`。`tests/test_floor_pin.py` も通る（型紙と手順の紙は変えていない）。本物の API は呼んでいない
 - マージ後の書き戻し: Issue #174 に書く（この帳面へは、次に帳面を書く取り込みで写す）
+
+## 時間切れの試験を、混んだ機械で落ちない形にする（Issue 対応の担当、issue/220-timeouts-test-order、11-05 昼。#220）
+
+- 目的: `tests/test_call_timeouts.py` が、機械の混み具合で落ちない
+- なぜか: #155 で足した試験で、動画の時間切れを 0.5 秒に縮めた後で本物の ffprobe と ffmpeg を回す行があった。別の窓が試験を回して機械が混んでいる時に実際に落ちた。直した物に問題は無く、試験の順の間違い。main の試験なので、`./run.sh` と push の門のまっさらな clone が時々落ち、ほかの枝の push まで止まり得る
+- どうしたらいいか: 推しは、本物の命令の行を時間切れを縮める前へ動かし、秒数の上限を混んだ機械より十分に長く取る事。画面の口の上限 30 秒は SDK の既定の 10 分と紛れず、動画の上限 20 秒は偽の命令の眠る 30 秒より短い。代案: 試験の時間切れをただ長くする（順の間違いが残る）
+- 気づき: 秒数を見る試験を足す時は、ほかの窓が同時に走る機械で回す。手元で 1 回通っただけでは分からなかった
+- ゴールの要件: 本物の命令を 1 秒遅らせた機械で、直す前の試験が落ち、直した後は通る。#155 の書き換え 8 通りが、直した後の試験でも全部落ちる。`./run.sh` と push の門が通る
+- 検証ゲート: **済み**。Red: rc 1、AssertionError「('ai-observe', 7.96, 2)」（直す前の main 9bb2537。gate-evidence/red-timeouts-test-order.txt）。Green: rc 0「ok」（gate-evidence/green-timeouts-test-order.txt）
+- エビデンスゲート: 上の出力。書き換え 8 通りの結果。試験の外のコードは触っていない
+- マージ後の書き戻し: Issue #220 に書く（この帳面へは、次に帳面を書く取り込みで写す）
