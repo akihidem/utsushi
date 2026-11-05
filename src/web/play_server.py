@@ -530,7 +530,10 @@ class Handler(BaseHTTPRequestHandler):
         to = int(to) if to.is_integer() else to
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
         change = {"param": form.get("param"), "to": to, "why": form.get("why", "")}
-        v, failures = loop.next_version(rid, form.get("by", ""), form.get("interpretation", "").strip() or None, change, source, out_dir(sid))
+        # 説明の時に書いた値を引き継ぐ。同じ値を 2 度打たせない（#138）。欄に入れて見せると、次に開いた別の人に見える。
+        # 欄があった古い頁から送られた値は、書いたとおりに受ける。空なら床（F9.human）が止める。
+        by = form.get("by", loop.explanation(rid)["by"])
+        v, failures = loop.next_version(rid, by, form.get("interpretation", "").strip() or None, change, source, out_dir(sid))
         if failures:
             from . import toy
 

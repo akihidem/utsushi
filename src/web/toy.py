@@ -291,7 +291,8 @@ def next_reasons(failures, sid, hid, param):
 
 def next_form(r, back=""):
     """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
-    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。"""
+    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。
+    誰が確かめたかの欄は置かない。説明の時に書いた値をサーバが引き継ぐ（#138）。"""
     from omochae.metrics import ALLOWED
 
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
@@ -304,7 +305,7 @@ def next_form(r, back=""):
             f'<label>何が起きたと読むか（解釈）<textarea name="interpretation" required>{esc(told)}</textarea></label>'
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
             '<label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
-            '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
+            '<label>変える理由<input type="text" name="why" required></label>'
             '<button>次の版の紙を作る</button></form></details>')
 
 

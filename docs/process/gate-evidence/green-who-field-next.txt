@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_who_field.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/.tmp-d5fwgev4/H-A_v2.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/.tmp-d5fwgev4/H-A_v2_tejun.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/.tmp-d5fwgev4/H-A_v2_after.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/.tmp-wf9zf67s/H-A_v3.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/.tmp-wf9zf67s/H-A_v3_tejun.pdf
+/tmp/tmp15oi4gzb/play/NDL-1187053-R0000005-L/.tmp-wf9zf67s/H-A_v3_after.pdf
+ok: 次の版は説明の値を引き継ぎ、頁に出さない
+rc=0

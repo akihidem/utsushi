@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_who_field.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmpyq7pw05z/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpyq7pw05z/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpyq7pw05z/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_who_field.py", line 59, in <module>
+    assert 'name="by"' not in box and "採った人" not in box, f"{where}: 次の版でもう一度打たせない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 玩具の頁: 次の版でもう一度打たせない
+rc=1
