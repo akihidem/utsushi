@@ -1,0 +1,24 @@
+# 網を切って 7 場面を書き出した記録（#168）
+この機械では網の名前空間（unshare）が使えなかったので、外へ出る口を道具ごとに塞いだ。機械の網そのものを切ってはいない。
+- Python（場面と子のサーバ）: 環境の proxy を行き止まりの手元の番号に向けた（手元の口だけ外す）
+- Chrome: --host-resolver-rules で手元以外の名前を引けなくし、--log-net-log で要求の記録を取った
+- 塞げている事の確かめ: Python から dl.ndl.go.jp へ → Connection refused
+
+$ python -m demo.prepare --check
+下ごしらえ: 絵は控えと合っている。網を切って書き出せる（demo.build --offline）
+rc=0
+$ python -m demo.build --out <repo の外> --offline --skip-tests
+ 15.00 秒  flip.mp4
+ 20.00 秒  scene2.mp4
+ 25.00 秒  scene3.mp4
+ 30.00 秒  scene4.mp4
+ 30.00 秒  scene5.mp4
+ 30.00 秒  scene6.mp4
+ 20.00 秒  scene7.mp4
+計 170.00 秒（床 180 秒）
+rc=0
+
+Chrome の要求の記録（6 本）:
+- fonts.googleapis・fonts.gstatic・dl.ndl.go.jp・iiif の語は 1 度も出なかった（頁が外の字や絵を読みに行っていない）
+- 手元（127.0.0.1）のほかに出た宛先は、Chrome 自身の裏の通信の google 系の名前だけ。名前を引けないので届いていない
+要のコマの一覧を目で見た事: 場面 3 と場面 6 を見た。場面 3 の札 D・E の下の欠けは #176 の崩れで、この直しとは別

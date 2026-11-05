@@ -69,6 +69,18 @@ cd utsushi
 ./run.sh    # 検査を全部回す。結果は out/RESULT.md
 ```
 
+### デモ動画を作る
+
+要る物は上に足して、`google-chrome` か `chromium` の名前で呼べるブラウザ。ffmpeg も要る。足りない物は、書き出しの最初に名前で出て exit 4 で止まる。
+
+```
+export PYTHONPATH=src
+.venv/bin/python -m demo.prepare                       # 前の日、網のある所で。道具を確かめ、江戸の絵を全部取り寄せて控えを残す
+.venv/bin/python -m demo.prepare --check               # 撮る日の朝、網なしで。写しが控えと合うか
+.venv/bin/python -m demo.build --out <repo の外> --offline          # 網を切って 7 場面を書き出す
+.venv/bin/python -m demo.build --out <repo の外> --run <前の置き場> --only scene3   # 1 場面だけ作り直してつなぎ直す
+```
+
 動く仕組みの答えは 1 つに決めていない。自分の予想を先に書くと、仮説が並び、試したい仮説の型紙を刷れる。
 
 ```
