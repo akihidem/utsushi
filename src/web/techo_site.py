@@ -277,8 +277,13 @@ function showPicked() {
   if (kept.some((f) => f.size > Number(upForm.dataset.maxBytes))) text += '（大きすぎて上げられない物があります）';
   document.getElementById('picked').textContent = text;
   upForm.querySelector('button.go').textContent = kept.length ? '上げる' : '記録だけ残す';
+  // 約束の印は、写真か動画を選んだ時だけ要る。「記録だけ残す」を止めない。合言葉なしの場には印が無い。
+  // 別の頁へ行って戻ると、ブラウザは選んだ写真を戻すのに change を出さない。頁を見せる度（pageshow）にも数え直す。
+  const promise = document.getElementById('ok');
+  if (promise) promise.required = kept.length > 0;
 }
 picker.onchange = showPicked;
+addEventListener('pageshow', showPicked);
 document.getElementById('up-form').onsubmit = async (e) => {
   e.preventDefault();
   const form = e.target, go = form.querySelector('button.go');
@@ -287,6 +292,9 @@ document.getElementById('up-form').onsubmit = async (e) => {
   const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
   const result = (document.querySelector('[name=result]:checked') || {}).value;
   const files = [...picker.files].slice(0, Number(form.dataset.maxN));
+  // 約束の印なしに写真を送らない。上の数え直しが間に合わない形でも、ここで止める（字はブラウザの標準の吹き出し）。
+  const promise = document.getElementById('ok');
+  if (promise && files.length && !promise.checked) { promise.required = true; form.reportValidity(); return; }
   if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
   go.disabled = true; st.textContent = '送っています…';
   let done = '';
@@ -298,7 +306,7 @@ document.getElementById('up-form').onsubmit = async (e) => {
     if (window.utsushiNewWho) utsushiNewWho();
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
     form.reset(); showPicked();
-    done = '上げました';
+    done = files.length ? '上げました' : '記録を残しました';
     for (const f of files) {
       const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
       if (!m.ok) { done = '記録は残しました。' + ((await m.text()) || '写真か動画を上げられませんでした'); break; }
@@ -482,7 +490,8 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
             '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
             # 工夫の欄（本人の言葉 11-05「工夫で乗り切る過程」）。作りながらなので畳んでおく。一部だけ書いても記録は落とさない（play_server.fixes_of）。
             '<details><summary>工夫した所（あれば）</summary><p class="meta">ほかの人も読むので、名前や連絡先は書かないでください。</p><input type="text" id="fix-part" maxlength="100" placeholder="どの部品か"><input type="text" id="fix-change" maxlength="200" placeholder="どう工夫したか"><input type="text" id="fix-outcome" maxlength="200" placeholder="どうなったか"></details>'
-            '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
+            # 約束の印は写真と動画の分。合言葉なしの場は写真の口が閉じているので出さない。要るかどうかは、選んだ時に script が決める。
+            + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
             '<p><button class="go">記録だけ残す</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
             f'<div id="mine">{note}{mine}</div></section>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く（記録の一覧 #mine は後から入れ替わるので、その外に）。
