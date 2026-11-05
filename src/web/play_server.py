@@ -607,9 +607,14 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
     def _ask(self, sid, hid, question):
-        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。"""
+        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。
+        話す口と同じ入口の床を先に当てる（#87）。手帖は 1 回押した後は聞き続けるので、名乗りや連絡先の形の話し声も字になって届く。
+        当たった字は Claude へ送らず、返す字は採られた文にする。残す時は add_ask が字を落として数だけ残す。"""
         from api import ask
+        from omochae import talk_log
 
+        if talk_log.blocked(question or ""):
+            return making_log.ASK_NAME_VOICE, "floor"
         try:
             return ask.answer(sid, hid, question)
         except Exception as e:
