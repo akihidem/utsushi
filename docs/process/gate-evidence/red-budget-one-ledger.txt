@@ -1,2 +1,4 @@
+# 命令: 残っていない（帳面の節「API の消費の台帳を 1 本にする」を見る）
+# commit: 327ddbc（このファイルを足した commit）
 FileNotFoundError: [Errno 2] No such file or directory: '<一時の場所>/api-usage.jsonl'
 rc 1 （直す前の main 5f041e9 に新しい試験を当てた。台帳が記録の置き場の側に書かれ、OMOCHAE_USAGE_LEDGER の場所に無い）

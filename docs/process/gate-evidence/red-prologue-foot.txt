@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「序の頁の末尾の釦を揃える」を見る）
+# commit: 499350a（このファイルを足した commit）
   File "tests/test_about.py", line 21, in <module>
     assert '<a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a>' in h
 AssertionError: tenji

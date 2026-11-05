@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_source_id_check.py
+# commit: 1010ffa（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_source_id_check.py   # 直す前（main の上）
 Traceback (most recent call last):
   File "tests/test_source_id_check.py", line 14, in <module>

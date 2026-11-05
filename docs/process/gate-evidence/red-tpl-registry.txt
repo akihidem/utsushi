@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「雛形の受け口を 1 か所にまとめる」を見る）
+# commit: 7cd585e（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_tpl_registry.py", line 17, in <module>
     assert not missing, (tid, missing)

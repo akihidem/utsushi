@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「序の頁の末尾の釦を揃える」を見る）
+# commit: 499350a（このファイルを足した commit）
 ok
 rc 0（tests/test_about.py）
 

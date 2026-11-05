@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_run_demo.py
+# commit: fc6bddc（このファイルを足した commit）
 # Red: 試験を足し、直す前の run-demo.sh（main 765ac7b）で回した
 $ PYTHONPATH=src .venv/bin/python tests/test_run_demo.py
 ok opens

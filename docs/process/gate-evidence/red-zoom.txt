@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「U-12 の比べのための切り替え: 拡大の道具を外す」を見る）
+# commit: 6c68c12（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_generate_zoom_switch.py", line 27, in <module>
     assert "zoom_picture" not in sent_tools(zoom=False), "zoom=False なら拡大の道具を渡さない"

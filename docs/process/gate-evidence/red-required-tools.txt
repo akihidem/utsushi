@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「道具が足りない機械で、落ちる」を見る）
+# commit: 26b51ef（このファイルを足した commit）
 直す前（main 6da8073 の tests/run_floors.py）: ffmpeg と ffprobe を PATH から外し、まっさらな写しで ./run.sh
 NG test_ai_feedback: FileNotFoundError（ffmpeg）
 NG test_demo_assemble: FileNotFoundError（ffmpeg）

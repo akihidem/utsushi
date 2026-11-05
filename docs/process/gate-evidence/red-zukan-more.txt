@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「図鑑の一覧に試作の玩具を並べる」を見る）
+# commit: f0c11ac（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_zukan_more.py", line 19, in <module>
     html = zukan.index_page(sources() + [FAKE])
