@@ -135,13 +135,13 @@ assert sm["flow"] == {"predict": {"events": 1, "people": 0}, "print": {"events":
 
 # ---- 段取り 1: その場限りの印（who）は形だけ確かめて残す。聞いた段（step）は 1 以上の数だけ
 A, B = "a1b2c3d4", "Zz9Yy8Xx7Ww6"
-for bad in ("", "short", "x" * 13, "has space1", "名前です名前です", "a@b.co12", "abc-1234", None):
+for bad in ("", "short", "x" * 13, "has space1", "名前です名前です", "a@example.com", "abc-1234", None):
     assert making_log.clean_who(bad) == "", bad
 assert making_log.clean_who(A) == A and making_log.clean_who(B) == B
 assert post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "山折りって何？", "step": "3", "who": A})[0] == 200
 assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "山折りって何", "step": "3", "who": B})[0] == 200
 assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "糊代って何？", "step": "abc", "who": "山田 太郎"})[0] == 200
-assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "蛇腹って何？", "step": "0", "who": "a@b.example-long-value"})[0] == 200
+assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "蛇腹って何？", "step": "0", "who": "long@example.com"})[0] == 200
 by_q = {r["question"]: r for r in making_log.asks(G)}
 assert by_q["山折りって何？"]["who"] == A and by_q["山折りって何？"]["step"] == 3 and by_q["山折りって何"]["who"] == B
 assert by_q["糊代って何？"]["who"] == "" and by_q["糊代って何？"]["step"] is None, "形の外の印と段は残さない"
