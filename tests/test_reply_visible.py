@@ -105,7 +105,7 @@ assert "筒が&lt;支えた&gt;</textarea>" in page and 'value="折りを増や�
 page = landed(call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えた", "next_idea": "折りを増やす"}), rid)
 assert "説明を残しました" in note_at(page, rid, "status")
 page = landed(call(f"/record/{rid}/ai-interpret", {}), rid)
-assert "Claude が答えます" in note_at(page, rid, "status")
+assert "AI の返事は、この場では使えません" in note_at(page, rid, "status")
 page = landed(call(f"/record/{rid}/ai-observe", {}), rid)
 assert note_at(page, rid, "status")
 
@@ -127,7 +127,7 @@ assert "版 2 の紙を作りました" in note_at(page, "win", "status")
 
 # 手帖に戻る時は、手帖の頁に文が出る。
 page = landed(call(f"/record/{rid}/ai-interpret", {"back": "techo"}), "mine")
-assert "Claude が答えます" in note_at(page, "mine", "status")
+assert "AI の返事は、この場では使えません" in note_at(page, "mine", "status")
 
 # 通らなかった時に錨へ着くよう、欄の送り先に錨がある。
 page = call(f"/toy/{G}")[2]
