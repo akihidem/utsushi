@@ -152,7 +152,22 @@ threads, results, raised = together([lambda: ps.print_own(G, oid)] * 3)
 finish(threads, hold)
 hypotheses.print_own = real_own
 assert len(hold.calls) == 1 and results == [0, 0, 0] and not raised, (hold.calls, results, raised)
-assert (ps.out_dir(G) / f"{oid}_v1_free.pdf").exists()
+own_sheet = ps.out_dir(G) / f"{oid}_v1_free.pdf"
+old_own = own_sheet.read_bytes()
+assert old_own.startswith(b"%PDF")
+
+
+# 自分の仮説の道でも、書きかけで落ちたら前の紙が残る。一時の場所も残らない
+def half_own(sid, oid, out, version=1):
+    pathlib.Path(f"{out}_free.pdf").write_bytes(b"half")
+    return 3
+
+
+hypotheses.print_own = half_own
+assert ps.print_own(G, oid) == 3
+hypotheses.print_own = real_own
+assert own_sheet.read_bytes() == old_own, "書きかけの紙が置き場に出た"
+assert not list(ps.out_dir(G).glob(".tmp-*"))
 
 # 本物の道具で、日本語の頁と英語の頁から同時に送る。片方が書きかけを読むと 500 になっていた
 codes = []

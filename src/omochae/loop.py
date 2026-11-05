@@ -329,25 +329,39 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     return made, []
 
 
-def swap_in(sheet_dir, stem, make):
-    """紙の組を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。
-    読みに来た人にも書きかけを渡さない（#301）。make は一時の場所の名前の頭を受けて、刷れたら 0 を返す。"""
+def _print_into(sheet_dir, stem, printer):
+    """紙を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。
+    読みに来た人にも書きかけを渡さない（#301）。"""
     sheet_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=sheet_dir, prefix=".tmp-") as tmp:
-        rc = make(f"{tmp}/{stem}")
+        rc = printer(f"{tmp}/{stem}")
         if rc:
             return rc
-        # 版の PDF があれば刷ってあると読む（web/toy.py の versions_of）ので、それを最後に置く。
-        for p in sorted(pathlib.Path(tmp).iterdir(), key=lambda p: p.name == f"{stem}.pdf"):
+        # PDF があれば刷ってあると読むので、絵の後に置く。版の PDF（web/toy.py の versions_of）は一番最後。
+        for p in sorted(pathlib.Path(tmp).iterdir(), key=lambda p: (p.suffix == ".pdf", p.name == f"{stem}.pdf")):
             p.replace(sheet_dir / p.name)
     return 0
 
 
 def print_version(sid, hid, version, sheet_dir, pending=None):
-    """版の紙の組を刷って置き場へ移す。"""
+    """版の紙の組を刷る。"""
     from . import hypotheses
 
-    return swap_in(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_sheet(sid, hid, out, version, pending=pending))
+    return _print_into(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_sheet(sid, hid, out, version, pending=pending))
+
+
+def print_after(sid, hid, version, sheet_dir):
+    """その版の試した後の紙だけを刷る（#320、hypotheses.print_after）。"""
+    from . import hypotheses
+
+    return _print_into(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_after(sid, hid, out))
+
+
+def print_own(sid, oid, sheet_dir):
+    """自分の仮説の紙を刷る。"""
+    from . import hypotheses
+
+    return _print_into(sheet_dir, f"{oid}_v1", lambda out: hypotheses.print_own(sid, oid, out))
 
 
 @exclusive
