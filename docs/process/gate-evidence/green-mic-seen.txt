@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_mic_seen.py
+# commit: df54685（回した時の HEAD）
+/tmp/tmp5rqqz45r/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp5rqqz45r/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp5rqqz45r/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok 話す釦: 幅 390 と 820 の 8 件で、見える物は見え、口の無い画面には出ない
+rc=0
