@@ -56,9 +56,10 @@
    "src/omochae/hypotheses.py",
    "tests/test_build_now.py",
    "tests/test_hypotheses.py",
-   "tests/test_hypothesis_label.py"
+   "tests/test_hypothesis_label.py",
+   "tests/test_one_sheet.py"
   ],
-  "unverified": "実際の人が使っていない"
+  "unverified": "実際の人が使っていない。型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）は、記録の欄と必須 2 種の刷る口まで。頁は後の直し"
  },
  {
   "id": "f07",

@@ -3,7 +3,11 @@
 なぜ要るか: 型紙の洗練（U-43）は、必須 2 種の今の版を変えず、次の版として足す決まり。今までは取り込みのたびに
 指紋を手で比べていて、比べる道具が repo に無かった（関門の帳面の記録）。手で比べる形は、比べ忘れた回に床が黙って崩れる。
 
-何の指紋か: 8 仮説の版 1 の、型紙・手順の紙（原図の有り無し）・試した後の紙と、玩具ごとの先生の見る紙。刷る SVG の SHA-256。
+何の指紋か: 必須 2 種のたたき台（記録の欄 "sheet"、どちらも H-A）の版 1 の、型紙・手順の紙（原図の有り無し）・試した後の紙と、
+玩具ごとの先生の見る紙。刷る SVG の SHA-256。
+前は 8 仮説の全部（31 枚）を見ていた。本人の決定（11-05、#332 の点 3、J-032）「型紙はおもちゃ一個につき一個」で、今の組を
+H-A の 1 枚にそろえたので、H-A 以外の仮説の紙（御来迎 H-B〜H-E・虎 H-B〜H-C の 22 枚）は照合から外した。
+外した紙の指紋は控えの "removed" に残し、比べない（何を外したかが後から読めるように）。H-A の紙と先生の紙の指紋は変えていない。
 配置でなく SVG にしたのは、線の太さや折り線を刷るかのような、描く側（render.py）の変更も紙を変えるため。
 PDF にしないのは、PDF が作った時刻と機械の字の埋め込みで揺れるため。
 
@@ -84,7 +88,8 @@ def papers(picture, strict):
         data = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
         sheet_set = TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
-        for h in data["hypotheses"]:
+        # たたき台の 1 枚だけ（J-032）。ほかの仮説の紙は今の組で刷らないので、床でもない。
+        for h in [h for h in data["hypotheses"] if h["id"] == data["sheet"]]:
             tid = h.get("template") or data.get("template", "slider_fan")
             base = f"{TEMPLATES[tid].SHEET_SET}/{h['id']}"
             name = f"仮説 {letter(h)}「{h['name']}」"
@@ -156,7 +161,10 @@ def compare(pin, kind, got):
 def check():
     pin = json.loads(PIN.read_text(encoding="utf-8"))
     real, standin = both()
-    assert len(pin["papers"]) >= 31, ("控えが減った", len(pin["papers"]))  # 8 仮説 × 3 枚 ＋ 御来迎の原図つき 5 枚 ＋ 先生の紙 2 枚
+    # たたき台 2 枚 × 3 枚 ＋ 御来迎の原図つき 1 枚 ＋ 先生の紙 2 枚。前の下限 31 は 8 仮説の時の数（J-032 で 9 に直した）
+    assert len(pin["papers"]) >= 9, ("控えが減った", len(pin["papers"]))
+    assert len(pin["removed"]["papers"]) == 22 and not set(pin["removed"]["papers"]) & set(pin["papers"]), "外した紙は印つきで残し、比べる紙と混ぜない"
+    assert "本人の決定" in pin["removed"]["why"], "外した理由の印を残す"
     gone, extra, diff = compare(pin, "standin", standin)
     assert not gone, ("控えた紙が刷れなくなった（凍結の床）。今の版を刷れる道を残し、直しは次の版として足す", gone)
     assert not extra, ("控えに無い紙がある。足すなら --add", extra)
