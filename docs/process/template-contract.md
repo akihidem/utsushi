@@ -33,7 +33,7 @@
 - `HYP_KEY`: 仮説を分ける寸法の名前。DEFAULTS に既定の値を置く
 - `ALLOWED`: 次の版で変えてよい寸法。RANGES にある物だけ
 - `metrics(p)`: 台帳の式（F7）。数を返す
-- `RESULTS`: 人が見た事の言葉（2〜3 個）
+- `RESULTS`: 人が見た事の言葉。「動きの言葉・その打ち消し・わからない」の 3 個。度合いの言葉を入れない（出来ばえの段に読めるため。#146、`tests/test_result_words.py`）
 - `title`、`spec`、`check_range`、`check_physics`: 床。落ちる時は Failure の一覧を返す
 - `parts`、`place`、`bom`、`materials`、`steps`、`measures`、`diagram`
 - 無くてもよい物（無ければ今までの文や欄になる）

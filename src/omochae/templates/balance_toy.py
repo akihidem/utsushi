@@ -500,7 +500,7 @@ def steps(p):
     return out
 
 
-RESULTS = ("戻った", "戻らない")
+RESULTS = ("戻った", "戻らない", "わからない")
 
 
 def measures(p):
