@@ -7,8 +7,8 @@
 code に案を持つと、確かめる前の字が頁へ流れる道ができるため。
 作る側の内輪の言葉（本人・棚卸し・雛形・複写など）は #135 の表の受け持ちで、ここには書かない。同じ語を 2 つの表に書くと、言いかえが割れるため。
 
-使い方: PYTHONPATH=src python -m web.plain_words [--toy <玩具の ID>]... [--sheets <PDF の置き場>] [--out <結果の紙>] [--strict]
-終わりの値: 0 数えた / 3 --strict で語か文が残っている / 4 数えられない。
+使い方: PYTHONPATH=src python -m web.plain_words [--toy <玩具の ID>]... [--walk] [--sheets <PDF の置き場>] [--out <結果の紙>] [--strict]
+終わりの値: 0 数えた / 3 --strict で語・です・ますでない文・並ばない「仮説」が残っている / 4 数えられない。
 """
 import argparse
 import html.parser
@@ -20,6 +20,7 @@ import sys
 import tempfile
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -37,7 +38,7 @@ TABLE = [
     _w("翻案"), _w("復元"), _w("端末"), _w("検討"), _w("原文の引用"), _w("見立て"),
     _w("二次資料"), _w("解釈"), _w("推測"), _w("要約"), _w("寸法"), _w("行程"),
     # 「印刷」「刷り上がり」の形に当てない。「刷る」の活用だけを見る
-    _w("刷る", pattern=r"(?<!印)刷(?:る|って|った|り|ら|れ)"),
+    _w("刷る", pattern=r"(?<!印)刷(?:る|って|った|り(?!上)|ら|れ)"),
     # 「出版」「版画」「版本」「図版」は別の語なので当てない
     _w("版", pattern=r"(?<![出図])版(?![画本])"),
     _w("本文"), _w("翻刻"), _w("見込み"), _w("未確認"), _w("推定"), _w("通例"), _w("趣旨"), _w("確度"),
@@ -48,9 +49,12 @@ NOT_A_WORD_HIT = {"仮説"}
 
 POLITE = re.compile(r"(です|ます|ました|でした|ません|でしょう|でしょうか|ください|ましょう|ですか|ますか|ませんか)[」』）)]*$")
 LONG = 40
+OPENING, CLOSING, ENDS = "（(「『", "）)」』", "。！？"
+# です・ますをそろえる頁（#317 のゴールの要件）。序・図鑑・改善の輪は書誌や作る側の字が多いので、一覧には出すが床にしない
+POLITE_PAGES = re.compile(r"/(toys|toy/[^/（]+(/tsukuru|/techo)?)?(（.*）)?")
 SKIP_TAGS = {"style", "blockquote", "noscript", "svg"}
-# 引用・歌・見本の声は、書いた人の言葉なので言いかえの相手にしない
-SKIP_CLASSES = {"songs", "samples", "sample"}
+# 引用・歌・見本の声は、書いた人の言葉なので言いかえの相手にしない。足（foot）は書誌なので見ない
+SKIP_CLASSES = {"songs", "samples", "sample", "foot"}
 BLOCK_TAGS = {"p", "div", "li", "ul", "ol", "dl", "dt", "dd", "h1", "h2", "h3", "h4", "h5", "h6", "section", "article", "aside",
               "header", "footer", "nav", "main", "figure", "figcaption", "table", "tr", "td", "th", "form", "label", "summary",
               "details", "button", "option", "select", "title", "br", "hr", "body", "head", "html", "textarea"}
@@ -124,12 +128,20 @@ def blocks(page):
 
 
 def _sentences(block):
-    # 「。」で閉じた文だけを文と数える。見出し・釦・書誌は「。」で閉じないので入らない
-    return [s.strip() for s in re.findall(r"[^。！？]*[。！？][」』）)]*", block) if s.strip(" 。！？」』）)")]
+    # 「。」で閉じた文だけを文と数える。見出し・釦・書誌は「。」で閉じないので入らない。かっこの中の句点では切らない
+    out, cur, depth = [], "", 0
+    for ch in block:
+        cur += ch
+        depth = depth + 1 if ch in OPENING else max(0, depth - 1) if ch in CLOSING else depth
+        if not depth and (ch in ENDS or (ch in CLOSING and cur[-2:-1] in tuple(ENDS))):
+            out.append(cur.strip())
+            cur = ""
+    return [s for s in out if s.strip(ENDS + CLOSING + OPENING + " ")]
 
 
 def _is_polite(sentence):
-    return bool(POLITE.search(re.sub(r"[。！？]", "", sentence)))
+    # 末尾のかっこ書き（「残しました（手順 1）。」）は文の終わりでない
+    return bool(POLITE.search(re.sub(r"(?<=.)（[^（）]*）$", "", re.sub(r"[。！？]", "", sentence))))
 
 
 def census(pages, sheets=None):
@@ -162,29 +174,61 @@ def census(pages, sheets=None):
     words = [{"word": w, "where": where, "count": n} for w, rows in per.items() for where, n in rows]
     # 同じ文が多くの頁に出ても 1 つと数える。直す手間は文ごとなので
     listed = {k: [{"text": s, "where": v} for s, v in rows.items()] for k, rows in seen.items()}
-    return {"words": words, "sentences": sentences, "hypothesis_alone": alone, **listed}
+    return {"words": words, "sentences": sentences, "hypothesis_alone": alone, "sheets": len(sheets or {}), **listed}
+
+
+def strict_failed(r):
+    """文の入れ替えが済んだ後の床。40 字を超える文は「人が見る」要件なので落とさない。"""
+    impolite = any(POLITE_PAGES.fullmatch(w) for s in r["not_polite"] for w in s["where"])
+    return bool(r["words"] or impolite or r["hypothesis_alone"])
 
 
 def _sids():
     return sorted(p.stem for p in (ROOT / "data/hypotheses").glob("*.json"))
 
 
-def collect(sids=None):
-    """本物の頁を手元の口で開く。記録の置き場は一時の場所にして、本物の data/ の記録を混ぜない。"""
-    os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
+def collect(sids=None, walk=False):
+    """本物の頁を手元の口で開く。設定が本物の置き場を指していても混ぜないよう、置き場は必ず一時の場所にして、終わったら戻す。
+    walk は玩具ごとに先頭の案を刷って記録してから、もう一度開く。紙の窓と記録の札の字は、作っている間にしか出ないため。"""
+    keep = os.environ.get("OMOCHAE_DATA")
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["OMOCHAE_DATA"] = tmp
+        try:
+            return _open_pages(sids or _sids(), walk)
+        finally:
+            if keep is None:
+                del os.environ["OMOCHAE_DATA"]
+            else:
+                os.environ["OMOCHAE_DATA"] = keep
+
+
+def _open_pages(sids, walk):
+    from omochae import hypotheses, records
     from web import play_server
     server = play_server.serve(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
-    sids = sids or _sids()
     paths = ["/", "/about", "/toys", "/gallery", "/zukan", "/loop"]
     for sid in sids:
         paths += [f"/zukan/{sid}", f"/toy/{sid}", f"/toy/{sid}/tsukuru", f"/toy/{sid}/techo", f"/loop/{sid}"]
-    pages = {}
+
+    def fetch(p):
+        with urllib.request.urlopen(base + p, timeout=120) as r:
+            return r.read().decode("utf-8", "replace")
+
+    def send(p, **data):
+        req = urllib.request.Request(base + p, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
+        urllib.request.urlopen(req, timeout=180).close()
+
     try:
-        for p in paths:
-            with urllib.request.urlopen(base + p, timeout=120) as r:
-                pages[p] = r.read().decode("utf-8", "replace")
+        pages = {p: fetch(p) for p in paths}
+        for sid in sids if walk else ():
+            hid = hypotheses.load(sid)["hypotheses"][0]["id"]
+            send(f"/toy/{sid}/print", hypothesis=hid)
+            send(f"/toy/{sid}/record", hypothesis=hid, result=records.results_for(sid)[0])
+            pages[f"/toy/{sid}（記録の後）"] = fetch(f"/toy/{sid}?see={hid}&kind=after&v=1")
+            for tail in ("tsukuru", "techo"):
+                pages[f"/toy/{sid}/{tail}（記録の後）"] = fetch(f"/toy/{sid}/{tail}")
     finally:
         server.shutdown()
         server.server_close()
@@ -193,7 +237,8 @@ def collect(sids=None):
 
 def read_sheets(folder):
     """刷った PDF の字を読む。頁の字と同じ語の表で見るため。-layout は行で字が切れるので使わない。"""
-    return {p.name: subprocess.run(["pdftotext", str(p), "-"], capture_output=True, text=True, check=True, timeout=120).stdout
+    # 鍵は置き場からの道にする。玩具ごとの置き場に同じ名前の紙があるので、名前だけだと 1 枚に潰れる
+    return {p.relative_to(folder).as_posix(): subprocess.run(["pdftotext", str(p), "-"], capture_output=True, text=True, check=True, timeout=120).stdout
             for p in sorted(pathlib.Path(folder).rglob("*.pdf"))}
 
 
@@ -209,7 +254,7 @@ def report(r):
         row["where"].append(h["where"])
     plain = {e["word"]: e["plain"] for e in TABLE}
     lines = ["# 小学生・中学生の目で数えた残り", "",
-             f"文 {r['sentences']}（「。」で閉じた物）。です・ますでない文 {len(r['not_polite'])}。{LONG} 字を超える文 {len(r['long'])}。"
+             f"紙 {r['sheets']} 枚（語だけを見る）。文 {r['sentences']}（「。」で閉じた物）。です・ますでない文 {len(r['not_polite'])}。{LONG} 字を超える文 {len(r['long'])}。"
              f"最初の「仮説」に「ためしの案」が並ばない頁 {len(r['hypothesis_alone'])}。", "", "## 語", "",
              "| 語 | 回数 | 頁の数 | 本人が採った言いかえ | 出ている所 |", "|---|---|---|---|---|"]
     for w, row in sorted(per.items(), key=lambda kv: -kv[1]["total"]):
@@ -223,21 +268,26 @@ def report(r):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--toy", action="append", help="玩具の ID。省くと全部の玩具")
+    ap.add_argument("--walk", action="store_true", help="玩具ごとに先頭の案を刷って記録した後の頁も数える")
     ap.add_argument("--sheets", help="刷った PDF の置き場。語だけを見る")
     ap.add_argument("--out", default=str(ROOT / "out/plain-words.md"))
-    ap.add_argument("--strict", action="store_true", help="語か文が残っていれば 3 で終える（文の入れ替えが済んだ後の床）")
+    ap.add_argument("--strict", action="store_true", help="語・です・ますでない文・並ばない「仮説」が残っていれば 3 で終える（文の入れ替えが済んだ後の床）")
     a = ap.parse_args(argv)
     try:
-        r = census(collect(a.toy), read_sheets(a.sheets) if a.sheets else None)
+        sheets = read_sheets(a.sheets) if a.sheets else None
+        if a.sheets and not sheets:
+            print(f"数えられない: 紙が無い: {a.sheets}", file=sys.stderr)
+            return 4
+        r = census(collect(a.toy, walk=a.walk), sheets)
     except (OSError, urllib.error.URLError, subprocess.SubprocessError) as e:
         print(f"数えられない: {e}", file=sys.stderr)
         return 4
     out = pathlib.Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report(r), encoding="utf-8")
-    print(f"語 {len({h['word'] for h in r['words']})} 種。文 {r['sentences']}。です・ますでない文 {len(r['not_polite'])}。{LONG} 字を超える文 {len(r['long'])}。"
+    print(f"語 {len({h['word'] for h in r['words']})} 種。紙 {r['sheets']} 枚。文 {r['sentences']}。です・ますでない文 {len(r['not_polite'])}。{LONG} 字を超える文 {len(r['long'])}。"
           f"「仮説」が並ばない頁 {len(r['hypothesis_alone'])}。結果: {out}")
-    return 3 if a.strict and (r["words"] or r["not_polite"] or r["long"] or r["hypothesis_alone"]) else 0
+    return 3 if a.strict and strict_failed(r) else 0
 
 
 if __name__ == "__main__":
