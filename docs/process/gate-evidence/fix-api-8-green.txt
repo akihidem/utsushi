@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 8
+# commit: e645457（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 8   # 直した後（lane/fix-api の作業ツリー）
 NG test_masked: Traceback (most recent call last):
   File "<一時の置き場>/tests/test_masked.py", line 1, in <module>

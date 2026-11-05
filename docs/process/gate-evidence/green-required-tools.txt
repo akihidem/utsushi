@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「道具が足りない機械で、落ちる」を見る）
+# commit: 26b51ef（このファイルを足した commit）
 直した後: ffmpeg と ffprobe を PATH から外して ./run.sh
 検査できない: ffmpeg が無い
 検査できない: ffprobe が無い

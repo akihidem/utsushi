@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「記録の読み書きを壊れにくくする」を見る）
+# commit: 6f23116（このファイルを足した commit）
 落ちた: check_lists_skip_unreadable
 落ちた: check_side_files_skip_unreadable
 落ちた: check_required_file_names_itself

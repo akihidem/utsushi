@@ -1,3 +1,5 @@
+# 命令: python -m omochae --scenario neg_fan_height_rim.json
+# commit: 9d34d51（このファイルを足した commit）
 # 直す前の main。元の寸法（扇の高さ 48・押し上げる量 36）は、静かな時に扇の上 12mm が口から出るのに通る
 $ python -m omochae --scenario neg_fan_height_rim.json   # 期待は rc 3・F5.fan_height
 rc=0

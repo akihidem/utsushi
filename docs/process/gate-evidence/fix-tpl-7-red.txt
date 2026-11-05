@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_slider_holes.py
+# commit: 62ed428（このファイルを足した commit）
 # fix-tpl-7 red  2026-11-04T15:22:20+09:00
 # 対象のコード: 32b6dfc の src（直す前。git archive HEAD src data で取り出して回した）
 $ PYTHONPATH=src .venv/bin/python tests/test_slider_holes.py

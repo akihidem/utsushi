@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 5
+# commit: e645457（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 5   # 直した後（lane/fix-api の作業ツリー）
 ok 5
 ok
