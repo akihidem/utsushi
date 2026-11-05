@@ -496,7 +496,9 @@ class Handler(BaseHTTPRequestHandler):
             return bad("手順の番号は数で")
         if not 1 <= step <= max(total, 1):
             return bad("その手順は無い")
-        making_log.add_step(sid, hid, printed_versions(sid, hid)[-1], step, event)
+        making_log.add_step(sid, hid, printed_versions(sid, hid)[-1], step, event, who=form.get("who", ""))
+        if event == "start":
+            making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
         # 次に見せる手順: 進む・戻るは 1 つ動かし、止まった・できた・開いたは同じ手順のまま。
         nxt = min(step + 1, max(total, 1)) if event == "next" else max(step - 1, 1) if event == "back" else step
         if as_json:
@@ -523,10 +525,12 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
-            making_log.add_ask(sid, hid, printed_versions(sid, hid)[-1], form.get("question", ""), how)
+            making_log.add_ask(sid, hid, printed_versions(sid, hid)[-1], form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return out(200, {"text": text, "from": how})
         rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": printed_versions(sid, hid)[-1], "result": form.get("result"),
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
+        if rid:
+            making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
         return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
@@ -546,7 +550,7 @@ class Handler(BaseHTTPRequestHandler):
                 text, how = f"今は AI に聞けません（{e}）", "stop"
             except Exception:
                 text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
-            making_log.add_ask(sid, hid, printed_versions(sid, hid)[-1], form.get("question", ""), how)
+            making_log.add_ask(sid, hid, printed_versions(sid, hid)[-1], form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "predict":
             _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
@@ -594,6 +598,10 @@ class Handler(BaseHTTPRequestHandler):
             msg = "記録を残しました。試した後の紙が開けます"
         if failures:
             return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
+        # 頁の段の進み（予想を書いた・刷った・記録を残した）を工作の様子に残す（U-45 の段取り 2）。何を書いたかは写さない。
+        # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
+        if act in ("predict", "print", "record"):
+            making_log.add_stage(sid, act, form.get("who", ""))
         self._done(sid, msg, see=see, anchor="win" if see else "kiroku")
 
 

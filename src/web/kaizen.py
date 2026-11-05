@@ -9,6 +9,8 @@
 - 玩具ごとの作る側の頁 /loop/<印>（toy_page）だけは、工作の様子の集計を出す（本人の決定 11-05 朝「工作の様子を蓄積して、サービス全体の改善をする」）:
   聞かれた事・止まった所・最初に動いた所・感想・版ごとの動きの札の数。版や案内を直す材料で、玩具や仮説の上下ではない事を頁の頭に書く。
   仮説は字（A・B）だけで指し、名前と動かし方は出さない（予想の前でも開ける頁なので、F9.prediction の線を守る）。
+  出すのは Issue #119（U-45）の 6 つ（止まった段・動きの結果・感想の言葉・聞く口の質問・完成の様子・サイトの流れ）で、数と幅だけ。
+  多い順に仮説や玩具を並べる・点・％の成績、のような上下を付ける形は作らない。人は、その場限りの無作為の印で数える。
 - /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の順路（頭の帯）には入れず、玩具の頁の節と序から行く。
 - 受け持ち（本人の決定 11-05、カード 20261105-090458 の (b)）: 雛形そのものを直すための報告の入口と道具（報告の形・検査・集計）は
   エンジン（paper-to-toy）の側。ここが持つのは、学ぶ人の記録と感想、仮説ごとの版（寸法を 1 つ変えた次の版）、その表示まで。
@@ -107,44 +109,93 @@ def page(look=skin.DEFAULT, path="/loop"):
 TABLE_STYLE = "table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}th{font-weight:normal;color:var(--mute);font-size:13px}"
 
 
+# 測った値の欄の、頁での呼び方。表に無い欄は、欄の名前のまま出す（雛形ごとに測る物が違うので、ここで全部は決めない）。
+MEASURE_NAMES = {"opened_deg": "開いた角度（度）", "ten_swings_sec": "10 往復の秒"}
+STAGE_NAMES = {"predict": "予想を書いた", "print": "型紙を刷った", "make": "作る頁を開いた", "record": "記録を残した"}
+
+
+def _span(sp, unit=""):
+    """幅 [最小, 最大, 件数] を「20〜40 分（3 件）」の形にする。平均や割合にはしない（少ない件数で、確かな値のように見えるため）。"""
+    lo, hi, n = sp
+    return (f"{lo:g}" if lo == hi else f"{lo:g}〜{hi:g}") + f"{unit}（{n} 件）"
+
+
 def toy_page(sid, look=skin.DEFAULT, path=None):
-    """その玩具の工作の様子（作る側の頁）。聞かれた事・止まった所・最初に動いた所・感想・版ごとの動きの札の数。
+    """その玩具の工作の様子（作る側の頁。公開しない）。Issue #119（U-45）の 6 つの集計を、数と幅で出す:
+    1 止まった段 / 2 動きの結果 / 3 感想の言葉 / 4 聞く口の質問 / 5 完成の様子 / 6 サイトの流れ。
     なぜ別の頁か: 学ぶ人の頁（/toy/<印>）に集計を出すと、数が成績や答えのように見える（J-025）。ここは案内・答え・型紙の版を直す人が読む。
+    上下を付ける形は作らない: 仮説や玩具を多い順に並べない（並びは版・手順・仮説の元の順）、点や％の成績にしない。
     仮説は字だけで指す。名前と動かし方は出さない（予想の前でも開ける頁なので）。"""
     data = hypotheses.load(sid)
     sm = making_log.summary(sid)
     letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
+    paper = lambda hid: f"仮説 {letter[hid]} の紙" if hid in letter else f"自分の仮説 {hid} の紙"
+    none = lambda text: f'<p class="meta">{text}</p>'
 
     def lines(items, empty):
-        return "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in items) + "</ul>" if items else f'<p class="meta">{empty}</p>'
+        return "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in items) + "</ul>" if items else none(empty)
 
-    asks = ("<table><thead><tr><th>聞かれた事</th><th>回数</th></tr></thead><tbody>"
-            + "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in sm["asks"]) + "</tbody></table>"
-            if sm["asks"] else '<p class="meta">聞かれた事はまだありません。</p>')
-    if sm["asks_dropped"]:
-        asks += f'<p class="meta">連絡先の形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
+    def table(head, rows):
+        return "<table><thead><tr>" + "".join(f"<th>{h}</th>" for h in head) + f"</tr></thead><tbody>{rows}</tbody></table>"
+
+    # 1 止まった段: 版ごと・手順ごとの「止まった」の札の数と、印のある人の数。並びは版と手順の番号の順（多い順にすると手順の並びが読めない）。
+    rows = "".join(f'<tr><td>版 {esc(v)}</td><td>手順 {esc(n)}</td><td>{x["taps"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>'
+                   for v, ss in sm["stuck_by_version"].items() for n, x in ss.items())
+    s1 = table(("版", "手順の番号", "止まったの札", "止まった人（印のある分）"), rows) if rows else none("止まったの札はまだ押されていません。")
+    s1 += (f'<h3>止まった所の言葉</h3>{lines(sm["stuck"], "書かれた物はまだありません。")}'
+           f'<h3>最初に動いた所</h3>{lines(sm["first_moved"], "書かれた物はまだありません。")}'
+           f'<h3>何を変えると違いが出そうか</h3>{lines(sm["what_if"], "書かれた物はまだありません。")}')
+
+    # 2 動きの結果: 仮説と版ごとの「見た事」の数、測った値の幅、直した点。
     rows = ""
     for hid, by_v in sm["results_by_version"].items():
-        who = f"仮説 {letter[hid]} の紙" if hid in letter else f"自分の仮説 {hid} の紙"
         for v in sorted(by_v):
-            rows += f'<tr><td>{esc(who)}</td><td>版 {esc(v)}</td><td>{"、".join(f"{esc(k)} {n}" for k, n in by_v[v].items())}</td></tr>'
-    results = (f"<table><thead><tr><th>紙</th><th>版</th><th>動きの札</th></tr></thead><tbody>{rows}</tbody></table>"
-               if rows else '<p class="meta">報告はまだありません。</p>')
-    # 止まった手順（作りながら見る頁の「止まった」の札。番号ごとの回数）と、できたの回数。手順の紙のどの段を直すかの材料。
-    stuck_steps = ("<table><thead><tr><th>手順の番号</th><th>止まったの札</th></tr></thead><tbody>"
-                   + "".join(f"<tr><td>手順 {esc(n)}</td><td>{c} 回</td></tr>" for n, c in sm["stuck_steps"].items()) + "</tbody></table>"
-                   if sm["stuck_steps"] else '<p class="meta">止まったの札はまだ押されていません。</p>')
-    stuck_steps += f'<p class="meta">できたの札: {sm["steps_done"]} 回</p>'
+            ms = sm["measures"].get(hid, {}).get(v, {})
+            span = "、".join(f"{esc(MEASURE_NAMES.get(k, k))} {_span(sp)}" for k, sp in ms.items()) or "—"
+            rows += f'<tr><td>{esc(paper(hid))}</td><td>版 {esc(v)}</td><td>{"、".join(f"{esc(k)} {n}" for k, n in by_v[v].items())}</td><td>{span}</td></tr>'
+    s2 = table(("紙", "版", "動きの札", "測った値の幅"), rows) if rows else none("報告はまだありません。")
+    fixes = [f'{f["record_id"]}（{paper(f["hypothesis_id"])}・版 {f["sheet_version"]}）: {f["part"]} / {f["change"]} / {f["outcome"]}' for f in sm["fixes"]]
+    s2 += f'<h3>直した点（部品・変えた事・結果）</h3>{lines(fixes, "書かれた物はまだありません。")}'
+
+    # 3 感想の言葉: 分からなかった側と面白かった側に分けて並べる（たとえと説明のどこを言い換えるかの材料）。
+    hard, fun = sm["words"]["hard"], sm["words"]["fun"]
+    s3 = (f'<h3>分からなかった・むずかしかった（{len(hard)} 件）</h3>{lines(hard, "書かれた物はまだありません。")}'
+          f'<h3>面白かった・楽しかった（{len(fun)} 件）</h3>{lines(fun, "書かれた物はまだありません。")}'
+          f'<h3>感想（全部、{len(sm["impressions"])} 件）</h3>{lines(sm["impressions"], "書かれた物はまだありません。")}')
+
+    # 4 聞く口の質問: 手順の段ごとに、同じ問いを束ねる。段の分からない質問は「段なし」。
+    s4 = ""
+    for step, qs in sm["asks_by_step"].items():
+        name = f"手順 {esc(step)}" if step is not None else "段なし"
+        s4 += f"<h3>{name}</h3>" + table(("聞かれた事", "回数"), "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in qs))
+    s4 = s4 or none("聞かれた事はまだありません。")
+    if sm["asks_dropped"]:
+        s4 += f'<p class="meta">連絡先の形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
+
+    # 5 完成の様子: 時間は幅、動いた記録は「何件のうち何件」。割合の％にしない。途中でやめた段は、印のある人の分だけ。
+    c = sm["completion"]
+    s5 = "<ul>"
+    s5 += f'<li>最初に動くまでの分: {_span(c["minutes"], " 分") if c["minutes"] else "書かれた物はまだありません"}</li>'
+    s5 += f'<li>「{esc(c["moved_word"])}」の記録: {sm["reports"]} 件のうち {c["moved"]} 件</li>' if sm["reports"] else "<li>報告はまだありません</li>"
+    s5 += f'<li>できたの札: {sm["steps_done"]} 回</li></ul>'
+    rows = "".join(f"<tr><td>手順 {esc(n)}</td><td>{k} 人</td></tr>" for n, k in c["quit_steps"].items())
+    s5 += "<h3>途中でやめた段（できたを押していない人が、最後に居た手順）</h3>" + (
+        table(("手順の番号", "人（印のある分）"), rows) if rows else none("印のある人の記録はまだありません。"))
+
+    # 6 サイトの流れ: 順路の段（予想 → 型紙 → 作る → 記録）ごとの、先へ進んだ数。
+    rows = "".join(f'<tr><td>{STAGE_NAMES[k]}</td><td>{x["events"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>' for k, x in sm["flow"].items())
+    s6 = table(("段", "出来事の数", "人（印のある分）"), rows)
+
     body = (f'<section class="hero"><div><h1>{esc(data["toy"])} の工作の様子</h1>'
-            '<p class="lead">作る側の集計。学ぶ人の頁には出しません。順位ではありません。</p>'
-            f'<p class="meta">聞く口の質問、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
-            f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
+            '<p class="lead">作る側の集計。学ぶ人の頁には出しません。公開しない頁です。上下を付ける物ではありません。</p>'
+            f'<p class="meta">聞く口の質問、手順の進み、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
+            f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
+            f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
             f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a></p></div></section>'
-            f'<section class="sec"><h2>聞かれた事</h2><p class="meta">作っている途中に聞く口へ来た質問。多い順（同じ文だけを 1 つに数えます）。</p>{asks}</section>'
-            f'<section class="sec"><h2>止まった手順</h2><p class="meta">作りながら見る頁（机の端に置く・試作）で押された札の数。映像は残していません。</p>{stuck_steps}</section>'
-            f'<section class="sec"><h2>止まった所</h2>{lines(sm["stuck"], "書かれた物はまだありません。")}</section>'
-            f'<section class="sec"><h2>最初に動いた所</h2>{lines(sm["first_moved"], "書かれた物はまだありません。")}</section>'
-            f'<section class="sec"><h2>何を変えると違いが出そうか</h2>{lines(sm["what_if"], "書かれた物はまだありません。")}</section>'
-            f'<section class="sec"><h2>感想</h2>{lines(sm["impressions"], "書かれた物はまだありません。")}</section>'
-            f'<section class="sec"><h2>動きの札（版ごと）</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{results}</section>')
+            f'<section class="sec" id="k1"><h2>1 止まった段</h2><p class="meta">作りながら見る頁（机の端に置く・試作）の「止まった」の札を、版と手順の番号ごとに数えます（止まった手順）。映像は残していません。</p>{s1}</section>'
+            f'<section class="sec" id="k2"><h2>2 動きの結果</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{s2}</section>'
+            f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'
+            f'<section class="sec" id="k4"><h2>4 聞く口の質問</h2><p class="meta">作っている途中に聞く口へ来た質問を、手順の段ごとに束ねます（同じ文だけを 1 つに数えます）。</p>{s4}</section>'
+            f'<section class="sec" id="k5"><h2>5 完成の様子</h2><p class="meta">時間は幅で、動いた記録は件数で出します。</p>{s5}</section>'
+            f'<section class="sec" id="k6"><h2>6 サイトの流れ</h2><p class="meta">予想 → 型紙 → 作る → 記録の、どの段まで進んだか。何を書いたかは写していません。</p>{s6}</section>')
     return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE)
