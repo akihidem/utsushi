@@ -31,10 +31,15 @@ def without_premise(text):
     return re.sub(r"(?<!不)正解では(?:なく|ありません)", "", text)
 
 
+def hypothesis_line(source):
+    """紙に刷る仮説の文。刷る所（mark_lines）と刷った後の検査（check_pdf）が別の文を見ると、正しい紙を断るので 1 か所にする。"""
+    return source.get("hypothesis_mark", HYPOTHESIS_FROZEN if source.get("source_id") in FROZEN_SETS else HYPOTHESIS)
+
+
 def mark_lines(source, omit=None):
     if omit == "all":
         return []
-    lines = [f"所蔵: {source['holding']}", source["modification_note"], source.get("hypothesis_mark", HYPOTHESIS_FROZEN if source.get("source_id") in FROZEN_SETS else HYPOTHESIS)]
+    lines = [f"所蔵: {source['holding']}", source["modification_note"], hypothesis_line(source)]
     if omit != "source_id":
         lines.insert(2, f"出典ID: {source['source_id']}")
     return lines
@@ -58,11 +63,13 @@ def check_pdf(pdf_path, source):
         raise ToolMissing(f"pdftotext で読めない: {e}")
     # 印が折り返されても読めるよう、空白と改行を全部取ってから探す。
     flat = "".join(out.split())
+    # 短い語だけを探すと、本文が欠けても化けても別の所に同じ語が残れば通ってしまう。刷った文をそのまま探す。
     need = {
         "所蔵": HOLDER,
+        "所蔵の文": source["holding"],
         "永続ID": source["persistent_id"],
-        "改変": "改変",
+        "改変": source["modification_note"],
         "出典ID": source["source_id"],
-        "仮説": "仮説",
+        "仮説": hypothesis_line(source),
     }
-    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if text not in flat]
+    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if "".join(text.split()) not in flat]

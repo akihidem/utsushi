@@ -1,0 +1,15 @@
+# 命令: .venv/bin/python tests/test_engine_floors.py
+# commit: ec615b1（回した時の HEAD）
+FAIL bom_neck_arm: TypeError: check_bom() takes 1 positional argument but 2 were given
+FAIL bom_every_hypothesis: TypeError: check_bom() takes 1 positional argument but 2 were given
+FAIL bom_forms_without_hypothesis: TypeError: check_bom() takes 1 positional argument but 2 were given
+FAIL marks_whole_text: AssertionError: 
+FAIL image_box_line_across_glue: AssertionError: 
+FAIL image_box_printed_width: AssertionError: 
+FAIL fan_leg: AssertionError: ['FAIL F5.image_box [蛇腹の扇] 絵が折り線をまたいでいる', 'FAIL F5.image_box [蛇腹の扇] 絵が糊代にかかっている', 'FAIL F5.image_box [蛇腹の扇] 絵が糊代にかかっている']
+FAIL figure_base: AssertionError: []
+FAIL hole_every_template: AttributeError: module 'omochae.floors' has no attribute 'check_holes'
+FAIL thread_from_hole: AttributeError: module 'omochae.templates.slider_fan' has no attribute 'THREAD_DEPTH'
+FAIL next_reasons_no_new_words: AssertionError: ('F5.fan_leg', ['検査の文', '扇の中心の高さ（mm）は今 21 です。近い値を試すか、別の寸法を変えてください。'])
+11 条件のうち 0 が通った
+rc=3

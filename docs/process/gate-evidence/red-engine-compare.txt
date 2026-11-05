@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/compare_engine.py out/p2t
+# commit: ec615b1（回した時の HEAD）
+neg_marks_all.json: 結果が違う
+  こちら rc=3 ['FAIL F#.marks [仮説] PDF から「仮説」を取り出せない', 'FAIL F#.marks [出典ID] PDF から「NDL#-R#-L」を取り出せない', 'FAIL F#.marks [所蔵] PDF から「国立国会図書館デジタルコレクション」を取り出せない', 'FAIL F#.marks [改変] PDF から「改変」を取り出せない', 'FAIL F#.marks [永続ID] PDF から「info:ndljp/pid/#」を取り出せない']
+  あちら rc=3 ['FAIL F#.marks [仮説] PDF から「仮説: AI が考えた、試すための # つの翻案です。正解ではありません。作って、動きを確かめて、直していきます」を取り出せない', 'FAIL F#.marks [出典ID] PDF から「NDL#-R#-L」を取り出せない', 'FAIL F#.marks [所蔵] PDF から「国立国会図書館デジタルコレクション」を取り出せない', 'FAIL F#.marks [所蔵の文] PDF から「国立国会図書館デジタルコレクション info:ndljp/pid/#（米山堂・# 年の複製）」を取り出せない', 'FAIL F#.marks [改変] PDF から「改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません」を取り出せない', 'FAIL F#.marks [永続ID] PDF から「info:ndljp/pid/#」を取り出せない']
+共通の場面 31 本、違う所 1 件。
+rc=3
