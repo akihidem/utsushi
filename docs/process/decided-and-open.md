@@ -14,13 +14,13 @@
 | J | 決まった事 | 今の状態 |
 |---|---|---|
 | [J-001](decisions/J001-render-backend.md) | 型紙の描画は drawsvg → cairosvg | 決定 |
-| [J-002](decisions/J002-mechanism-hypotheses.md) | 仕組みを 1 つに決めず、複数の仮説として並べる | 決定 |
+| [J-002](decisions/J002-mechanism-hypotheses.md) | 仕組みを 1 つに決めず、複数の仮説として並べる | J-032 で置き換え（11-05） |
 | [J-003](decisions/J003-zoom-tool.md) | Claude に絵を拡大する道具を渡す | 作った。仮説の生成に組み込むかは未決（下の U-12） |
 | [J-004](decisions/J004-parallel-lines.md) | 担当を 2 つに分ける案 | 取りやめ |
 | [J-005](decisions/J005-axle-default.md) | 扇の中心の置き方は中心の軸を既定にする | 仮の決定。実物で確定（U-07） |
 | [J-006](decisions/J006-contributions-minimum.md) | 持ち寄りは確認つきの受付を先に作る | 決定。外の入口は J-021 で決まった |
 | [J-007](decisions/J007-redraw-not-paste.md) | 図を貼らず描き直す | 決定 |
-| [J-008](decisions/J008-own-hypothesis-path.md) | 仮説を自分で立てる道を足す | 決定 |
+| [J-008](decisions/J008-own-hypothesis-path.md) | 仮説を自分で立てる道を足す | J-032 で置き換え（11-05。書く形から話す形へ） |
 | [J-009](decisions/J009-sheet-and-records.md) | 手順の紙と 3 値の記録の入口 | 決定 |
 | [J-010](decisions/J010-loop-back-half.md) | 輪の後半と、人が確定する線 | 作った。本物の API では未実行（U-05） |
 | [J-011](decisions/J011-generate-on-the-spot.md) | その場の生成を本線に | J-012 で置き換え |
@@ -31,13 +31,14 @@
 | [J-016](decisions/J016-zukan-labels.md) | 図鑑の文の印は 原文の引用／仮説／観察 の 3 分類。文言は検査しない | 決定。図鑑の画面はまだ無い |
 | [J-017](decisions/J017-runtime-model.md) | 製品の実行モデルは全部 Opus 5.5 | 決定 |
 | [J-018](decisions/J018-no-peer-review.md) | 人のレビューは受けず、批評は Claude だけ | 決定 |
-| [J-019](decisions/J019-experiment-sheet.md) | 型紙を実験装置にする（競合する仮説を見分ける試作と測り方） | 決定 |
+| [J-019](decisions/J019-experiment-sheet.md) | 型紙を実験装置にする（競合する仮説を見分ける試作と測り方） | J-032 で置き換え（11-05。見比べる紙は外す） |
 | [J-020](decisions/J020-gate-without-trial.md) | 11-03 の関門は試行の結果なしで迎える。11-04 は H-C と H-D を 1 個で比べる試作と H-A の両方 | 決定。試行の結果を受けた判定は U-06 |
 | [J-021](decisions/J021-contributions-form-students.md) | 持ち寄りの入口は Google フォーム（メールを集めない、取り込み後に消す）。生徒は通し番号、公開は管理者の本人が決める。本人の聞き取りは聞き手 Claude・名前を出す・勤め先と学年と地域は書かない。録音の扱いを設計 | 入口と公開の条件は決定。生徒の分は設計だけで集めない（U-03・U-04） |
 | [J-022](decisions/J022-video-gallery.md) | 動画を Claude が見るのは観察の補助と型紙の判定だけ。成績にしない再現ギャラリー。動画は 1 本 30 秒・固定・紙と手だけ・声なし | 1〜3 は決定。観察は学ぶ人に直接返してよい（11-04）。有識者は U-02 |
 | [J-023](decisions/J023-first-test-later.md) | 本物の API の最初の試験は作り込んでから出す | 決定。時期は U-05 |
 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能。ルックブックは A 大判写真集（入口）と C 縦読みのジンを残し、見開き型・冊子型・B を外す（11-04） | 決定。画面は人がまだ使っていない（U-10） |
 | [J-025](decisions/J025-no-ranking.md) | 仮説に順位を付けない。記録は次に試す物の提案の材料だけ | 決定 |
+| [J-032](decisions/J032-one-sheet-per-toy.md) | 型紙は玩具 1 つに 1 枚のたたき台（御来迎・虎とも H-A、ほかは記録の先頭）。選ぶのは最初に作る紙で、正しさの判定でも順位でもない。自分の案は話す形、見比べる紙は外す。必須 2 種は今の組から 1 枚 | 決定（11-05）。作りは #332 で順に入れる |
 
 ### J の外にある本人の決定
 
