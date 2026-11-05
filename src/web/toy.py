@@ -25,6 +25,43 @@ from .play_server import PARAM_NAMES, esc, out_dir, source, sources
 KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙"))
 
 
+def reply_note(errors, msg):
+    """返事の文（#121）。理由がいくつあっても 1 つの箱に入れ、id を重ねない。理由は読み上げの割り込み、返事はその場の知らせ。"""
+    if errors:
+        return f'<div role="alert"><p id="msg">{"<br>".join(esc(e) for e in errors)}</p></div>'
+    return f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
+
+
+def refill(form, values):
+    """通らなかった時に、書いた中身を欄に戻す（#121）。欄を作る関数ごとに引数を足さず、できた欄へ入れる。雛形ごとの欄（RECORD_EXTRA）にも同じに効く。"""
+    if not values:
+        return form
+
+    def text(m):
+        v = values.get(m.group(1))
+        return m.group(0) if v is None else f'{m.group(0)[:-1]} value="{esc(v)}">'
+
+    def radio(m):
+        return m.group(0) + " checked" if values.get(m.group(1)) == html.unescape(m.group(2)) else m.group(0)
+
+    def area(m):
+        return f'<textarea name="{m.group(1)}"{m.group(2)}>{esc(values.get(m.group(1), ""))}</textarea>'
+
+    def select(m):
+        want = values.get(m.group(1))
+
+        def option(o):
+            value = o.group(1) if o.group(1) is not None else o.group(2)
+            return o.group(0).replace(">", " selected>", 1) if want == html.unescape(value) else o.group(0)
+
+        return re.sub(r'<option(?: value="([^"]*)")?>([^<]*)</option>', option, m.group(0))
+
+    form = re.sub(r'<input type="text" name="([^"]+)"[^>]*>', text, form)
+    form = re.sub(r'<input type="radio" name="([^"]+)" value="([^"]*)"', radio, form)
+    form = re.sub(r'<textarea name="([^"]+)"([^>]*)></textarea>', area, form)
+    return re.sub(r'<select name="([^"]+)">.*?</select>', select, form, flags=re.S)
+
+
 def versions_of(sid, hid):
     """刷ってある版の番号。版 2 以降は「次の版を作る」で人が採った時にできる。"""
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))} | {1})
@@ -98,43 +135,6 @@ def window(sid, data, see, kind, v, recorded):
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             '<p class="meta">紙は復元ではなく、試すための翻案です。答えではありません。</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
-
-
-def reply_note(errors, msg):
-    """返事の文（#121）。理由がいくつあっても 1 つの箱に入れ、id を重ねない。理由は読み上げの割り込み、返事はその場の知らせ。"""
-    if errors:
-        return f'<div role="alert"><p id="msg">{"<br>".join(esc(e) for e in errors)}</p></div>'
-    return f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
-
-
-def refill(form, values):
-    """通らなかった時に、書いた中身を欄に戻す（#121）。欄を作る関数ごとに引数を足さず、できた欄へ入れる。雛形ごとの欄（RECORD_EXTRA）にも同じに効く。"""
-    if not values:
-        return form
-
-    def text(m):
-        v = values.get(m.group(1))
-        return m.group(0) if v is None else f'{m.group(0)[:-1]} value="{esc(v)}">'
-
-    def radio(m):
-        return m.group(0) + " checked" if values.get(m.group(1)) == html.unescape(m.group(2)) else m.group(0)
-
-    def area(m):
-        return f'<textarea name="{m.group(1)}"{m.group(2)}>{esc(values.get(m.group(1), ""))}</textarea>'
-
-    def select(m):
-        want = values.get(m.group(1))
-
-        def option(o):
-            value = o.group(1) if o.group(1) is not None else o.group(2)
-            return o.group(0).replace(">", " selected>", 1) if want == html.unescape(value) else o.group(0)
-
-        return re.sub(r'<option(?: value="([^"]*)")?>([^<]*)</option>', option, m.group(0))
-
-    form = re.sub(r'<input type="text" name="([^"]+)"[^>]*>', text, form)
-    form = re.sub(r'<input type="radio" name="([^"]+)" value="([^"]*)"', radio, form)
-    form = re.sub(r'<textarea name="([^"]+)"([^>]*)></textarea>', area, form)
-    return re.sub(r'<select name="([^"]+)">.*?</select>', select, form, flags=re.S)
 
 
 def ask_form(sid, data, asked=None, note="", filled=None):
