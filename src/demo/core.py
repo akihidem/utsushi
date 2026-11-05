@@ -85,7 +85,7 @@ VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記�
 SECONDS = {"core_map": 9.0, "core_make": 12.0, "core_keep": 7.0, "core_voice": 4.0, "core_gallery": 5.0, "core_loop": seconds_of("core_loop")}
 CUES_ALL = {
     "core_map": {"title": (0.0, 0.8), "l1": (0.8, 1.6), "l2": (1.8, 2.6), "l3": (2.8, 3.6), "l4": (3.8, 4.6), "sub": (5.2, 6.0)},
-    "core_make": {"in": (0.0, 0.8), "step2": (3.0, 3.8), "step3": (6.0, 6.8), "move": (7.0, 8.2), "ask": (8.2, 8.7)},
+    "core_make": {"in": (0.0, 0.8), "step2": (3.0, 4.0), "step3": (6.0, 7.0), "move": (7.2, 8.2), "ask": (8.2, 8.7)},
     "core_keep": {"in": (0.0, 0.8), "move": (0.8, 2.0), "record": (3.2, 3.4), "move2": (3.4, 4.6)},
     "core_voice": {"in": (0.0, 0.4), "b1": (0.4, 0.8), "b2": (0.9, 1.3), "b3": (1.4, 1.8)},
     "core_gallery": {"in": (0.0, 0.8), "pan": (1.0, 4.2)},
@@ -261,9 +261,16 @@ class Screens:
         prev = self.segs[seg - 1] if seg else None
         blend = self._p(t, s["at"]) if s["at"] else a_in
         if blend < 1:
-            # 段の替わり目は前の画面から重ねて替える。紙の地を挟むと、手順が進むたびに点滅して見えるため。
-            base = _view(self.shots[prev["shot"]][0], prev["to"]) if prev else Image.new("RGB", view.size, PAPER)
-            view = Image.blend(base, view, blend)
+            if not prev:
+                view = Image.blend(Image.new("RGB", view.size, PAPER), view, blend)
+            elif prev["shot"] != s["shot"]:
+                # 別の頁へ替わる時は、前の頁を頁の地の色へ溶かしてから次の頁を出す。重ねると 2 つの頁の字が重なって読めない。
+                # 紙の地でなく頁の地へ溶かすのは、手順が進むたびに枠の中が点滅して見えないため。
+                ground = Image.new("RGB", view.size, page_color(self.shots[s["shot"]][0]))
+                if blend < 0.5:
+                    view = Image.blend(_view(self.shots[prev["shot"]][0], prev["to"]), ground, blend * 2)
+                else:
+                    view = Image.blend(ground, view, (blend - 0.5) * 2)
         img.paste(view, BOX[:2])
         draw.rectangle((BOX[0] - 1, BOX[1] - 1, BOX[2], BOX[3]), outline=fade(SUMI, 0.3 * (1.0 if prev else blend)), width=2)
         # 上の 1 行。同じ字が続く段では替えない。字が替わる時は、前が消えてから次が現れる。

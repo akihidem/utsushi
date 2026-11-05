@@ -45,10 +45,11 @@ REPO_NAME = "utsushi"
 CUES = {
     "figs_in": (0.0, 2.0),     # 人物が 1 人ずつ薄く並ぶ
     "caption": (0.6, 1.2),     # 締めの字幕
-    "credits": (4.8, 5.8),     # 紙を覆ってクレジット
+    "caption_out": (4.8, 5.3),  # 字幕と人物が紙の地へ溶ける
+    "credits": (5.4, 5.9),     # 消えてからクレジットが現れる（字を重ねない）
 }
 DURATION = 9.0
-SHEET_TIMES = (0.6, 1.4, 2.4, 3.6, 4.6, 5.3, 6.0, 7.5, 8.8)
+SHEET_TIMES = (0.6, 1.4, 2.4, 3.6, 4.6, 5.1, 5.6, 7.5, 8.8)
 
 # 並べ方: 6 列 3 段の枠の上下の段に置く。真ん中の段は字幕の通り道として空ける（隠すと足だけが残って見えた）。
 # 和本の読む順に合わせ、1 人目を右上に置いて右から左へ並べる。
@@ -86,13 +87,13 @@ class Scene7:
         self.fig_layers = {fid: ink_layer(g, k) for fid, g in figs.items()}
         self.credits = credit_lines(music)
 
-    def _grid(self, img, t):
+    def _grid(self, img, t, dim):
         x0, y0, x1, y1 = GRID_BOX
         cw, ch = (x1 - x0) / GRID_COLS, (y1 - y0) / GRID_ROWS
         a, b = CUES["figs_in"]
         step = (b - a) / len(self.order)
         for i, fid in enumerate(self.order):
-            v = ease((t - a - i * step) / 0.6) * FIG_INK
+            v = ease((t - a - i * step) / 0.6) * FIG_INK * dim
             if v <= 0:
                 continue
             col, row = GRID_COLS - 1 - i % GRID_COLS, i // GRID_COLS
@@ -104,9 +105,6 @@ class Scene7:
             img.paste(l2, (cx - lay.width // 2, base - lay.height), l2)
 
     def _credits(self, img, c):
-        # 覆いは最後に不透明にする。下の絵が薄く透けると、クレジットの字と重なって読みにくい
-        veil = Image.new("RGBA", (W, H), PAPER + (round(255 * c),))
-        img.paste(veil, (0, 0), veil)
         draw = ImageDraw.Draw(img)
         text(draw, (W // 2, 96), REPO_NAME, 84, _fade(SUMI, c), True, "ma")
         draw.line((W // 2 - 60, 214, W // 2 + 60, 214), fill=_fade(SHU, c), width=3)
@@ -126,9 +124,11 @@ class Scene7:
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
-        self._grid(img, t)
+        out = ease((t - CUES["caption_out"][0]) / (CUES["caption_out"][1] - CUES["caption_out"][0]))
+        if out < 1:
+            self._grid(img, t, 1 - out)
         draw = ImageDraw.Draw(img)
-        cap = ease((t - CUES["caption"][0]) / (CUES["caption"][1] - CUES["caption"][0]))
+        cap = ease((t - CUES["caption"][0]) / (CUES["caption"][1] - CUES["caption"][0])) * (1 - out)
         if cap > 0:
             text(draw, (W // 2, H // 2 - 30), CAPTION, 64, _fade(SUMI, cap), False, "mm")
         c = ease((t - CUES["credits"][0]) / (CUES["credits"][1] - CUES["credits"][0]))

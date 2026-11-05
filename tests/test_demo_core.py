@@ -88,6 +88,10 @@ keeping = core.build_scene("core_keep", dict(core.CUES_ALL["core_keep"]), shots=
 assert [s["shot"] for s in keeping.segs] == ["keep", "keep"] and keeping.segs[1]["to"][1] > keeping.segs[1]["from"][1]
 mark = core.CUES_ALL["core_keep"]["record"]
 assert keeping.frame(mark[0] + 0.05).crop(core.BOX).tobytes() == keeping.frame(mark[0] - 0.1).crop(core.BOX).tobytes()
+# 手順が替わる時は、前の画面を頁の地の色へ溶かしてから次の画面を出す（2 つの頁の字を重ねない）
+middle = sum(core.CUES_ALL["core_make"]["step2"]) / 2
+assert len(stepping.frame(middle).crop(core.BOX).convert("RGB").getcolors(flip.W * flip.H)) <= 2
+assert stepping.frame(middle).getpixel((core.BOX[0] + 50, core.BOX[1] + 50)) == core.page_color(fake["make2"][0])
 # 写真は確認の記録が無いとギャラリーに出ない（#314）。例の記録に一時の置き場で確認を残す。出なければ止まる（通った振りをしない）
 real_post, real_run, real_open = core._post, core.subprocess.run, core.urllib.request.urlopen
 answers = {"/print": (303, ""), "/record-json": (201, '{"id": "R-0001"}'), "/media": (201, "m1.jpg"), "/explain": (303, ""), "/next": (303, "")}

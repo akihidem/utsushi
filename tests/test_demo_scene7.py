@@ -34,7 +34,7 @@ for f in rec["figures"]:
 
 scene = scene7.Scene7(page, rec)
 assert len(scene.order) == 18 and scene.duration == scene7.DURATION
-for t in (0.5, 2.0, 3.8, 6.0, 7.0, 8.0, 8.9):
+for t in (0.5, 2.0, 3.8, 5.0, 6.0, 7.0, 8.0, 8.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 # 並ぶ段の途中と並び終えた後で絵が違う（1 人ずつ現れる）
@@ -45,8 +45,11 @@ assert with_music.frame(8.0).tobytes() != scene.frame(8.0).tobytes()
 assert with_music.frame(3.8).tobytes() == scene.frame(3.8).tobytes()
 # 字幕の通り道（真ん中の段）に人物を置かない（字の後ろに絵を置かない）
 assert len(set(scene.frame(0.55).crop((0, 440, flip.W, 600)).getdata())) == 1, "真ん中の段に絵がある"
-# 字幕は読む間を置いてからクレジットへ溶ける（1 秒 5 字以下）
-assert scene7.CUES["credits"][0] - scene7.CUES["caption"][0] >= len(scene7.CAPTION) / 5 - 0.01
+# 字幕は読む間を置いてから消え、消えてからクレジットが現れる（字を重ねない。1 秒 5 字以下）
+assert scene7.CUES["caption_out"][0] - scene7.CUES["caption"][0] >= len(scene7.CAPTION) / 5 - 0.01
+assert scene7.CUES["caption_out"][1] <= scene7.CUES["credits"][0]
+gap = (scene7.CUES["caption_out"][1] + scene7.CUES["credits"][0]) / 2
+assert len(scene.frame(gap).getcolors(flip.W * flip.H)) == 1, "字幕とクレジットの間は紙の地だけ"
 # クレジットは幅の中に収まる。各場面の隅の札を寄せた分（出所・複製の年・作り物の断り・未実行の断り）がある
 rows = scene7.credit_lines("試しの曲")
 font = ImageFont.truetype(flip.SERIF, 30)
