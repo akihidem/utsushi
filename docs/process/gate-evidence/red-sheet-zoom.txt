@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_sheet_zoom.py（直す前の木に、新しい試験だけを置いた）
+# commit: 38027ef（回した時の HEAD）
+AssertionError: ><a class="close" href="#win">閉じる</a><img src="/sheet/<紙>/H-A_v1.png"
+rc=1
