@@ -221,7 +221,9 @@
    "tests/test_loop1_think.py",
    "tests/test_loop1_withdraw.py",
    "tests/test_loop1_own_private.py",
-   "tests/test_loop1_round.py"
+   "tests/test_loop1_round.py",
+   "tests/test_loop1_next.py",
+   "tests/test_own_form_gone.py"
   ]
  },
  {
@@ -442,7 +444,7 @@
    "src/omochae/cycle.py",
    "tests/test_cycle.py"
   ],
-  "unverified": "今の main で全部の段が本物のエンジンまで通る（11 段。ループ 1 の紙で作って記録する道は本物の頁で通す）。ギャラリーの頁は開かない。自分の紙の次の版、本物の API、人が実物で回した一周は未確認"
+  "unverified": "今の main で全部の段が本物のエンジンまで通る（12 段。ループ 1 の紙で作って記録し、その記録からたたき台の次の版を作って次の人が刷る道は、本物の頁で通す）。ギャラリーの頁は開かない。本物の API と、人が実物で回した一周は未確認"
  },
  {
   "id": "f35",
