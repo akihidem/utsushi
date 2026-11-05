@@ -19,6 +19,8 @@ from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 BUSY = " data-busy"
+# 押した時に釦に出す字（本人の決定 11-05）。一字も変えない。
+ADOPTED_JA, ADOPTED_EN = "作っています…", "Making…"
 # 紙を作る送信。記録や説明の送信は速く、押せなくすると書き直す道を狭めるので、印を付けない。
 SHEET = re.compile(rf"/toy/{G}/(print(-own)?|reprint)#|/record/R-\d+/next#")
 server = serve(0)
@@ -48,7 +50,8 @@ def marked(page):
         if BUSY in inner:
             assert re.search(r"<button[^>]* data-busy>[^<]+</button>", inner), inner
             made.append(action)
-    assert 'data-busy="on"' not in page  # 形を変えるのは押した時だけ
+    # 形と字を変えるのは押した時だけ
+    assert 'data-busy="on"' not in page and f">{ADOPTED_JA}<" not in page and f">{ADOPTED_EN}<" not in page
     return made
 
 
@@ -66,10 +69,15 @@ assert any("/print#" in a for a in marked(page))
 js = busy_script(page)
 assert "addEventListener('submit'" in js and "dataset.busy='on'" in js and ".disabled=true" in js, js
 assert "addEventListener('pageshow'" in js and "setTimeout(" in js, js
-# 読み上げの道具にも待っている事を伝える。字は足さない
+# 字は頁の言葉で選び、押した釦だけを替える。戻す時は元の字に戻す
+assert f"'{ADOPTED_JA}'" in js and f"'{ADOPTED_EN}'" in js and "documentElement.lang" in js, js
+assert '<html lang="ja">' in page and "b.textContent=word" in js and "b.textContent=b.dataset.was" in js, js
+# 読み上げの道具にも待っている事を伝える
 assert "setAttribute('aria-busy','true')" in js and "removeAttribute('aria-busy')" in js, js
 # 押した釦だけ輪が回る。動きを減らす設定では回さない
 assert "button[data-busy]:disabled{" in page and "button[data-busy=on]::after{" in page
+# 押した釦の字は読ませる字なので薄くしない（白の皮は 0.7 だと字と地の比が 3.58 で、4.5 に届かない）
+assert page.index("button[data-busy]:disabled{") < page.index("button[data-busy=on]:disabled{opacity:1}")
 assert "@media (prefers-reduced-motion:reduce){button[data-busy=on]::after{animation:none}}" in page
 
 # JS なしの送信は今までどおり刷れる。押した後の頁で釦は元の形に戻っている
@@ -93,8 +101,9 @@ for gone in out_dir(G).glob(f"{ids[0]}_v2*"):
     gone.unlink()
 assert any("/reprint#" in a for a in marked(get(f"/toy/{G}?see={ids[0]}")))
 
-# 英語の頁の釦も同じ
+# 英語の頁の釦も同じ。字を選ぶ言葉は頁の lang から読む
 page = get(f"/en/toy/{G}")
+assert '<html lang="en">' in page
 assert re.search(r"<button[^>]* data-busy>[^<]+</button>", page)
 busy_script(page)
 

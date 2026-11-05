@@ -40,12 +40,13 @@ WHO_SCRIPT = ("<script>(()=>{try{let w=sessionStorage.getItem('utsushi-who')||''
 # 紙を作る釦（#301）。作るのに数秒かかり、その間に釦が変わらないと、もう一度押す人が出て送信が 2 回出る。
 # 押した時に輪を回し、頁の紙を作る釦を全部押せなくする（別の札を押しても、前の送信の返事が捨てられるだけなので）。輪は見えない人に届かないので aria-busy も付ける。
 # submit で見るので、欄が足りずに送られない時は変わらない。JS が無ければ普通に送るだけで、形も変わらない。
+# 押した釦の字は本人の決定（11-05）。頁の lang で選ぶので、文はここの 1 か所だけ。元の字を覚えて、戻す時に戻す。
 # 押せないまま残らないように戻す: 戻る操作で頁がそのまま戻った時（pageshow）と、網が止まって返事が来ない時（時間切れ）。
 # 時間切れの 30 秒は、手元で一番長い案の 4.1 秒に、教室の網の遅れを見込んだ値。戻せば押し直せる。
-BUSY_SCRIPT = ("<script>(()=>{let t;const all=()=>document.querySelectorAll('button[data-busy]');"
-               "const back=()=>{clearTimeout(t);all().forEach(b=>{b.dataset.busy='';b.removeAttribute('aria-busy');b.disabled=false})};"
+BUSY_SCRIPT = ("<script>(()=>{let t;const word=document.documentElement.lang==='en'?'Making…':'作っています…',all=()=>document.querySelectorAll('button[data-busy]');"
+               "const back=()=>{clearTimeout(t);all().forEach(b=>{if(b.dataset.was){b.textContent=b.dataset.was;delete b.dataset.was}b.dataset.busy='';b.removeAttribute('aria-busy');b.disabled=false})};"
                "document.addEventListener('submit',e=>{const b=e.target.querySelector('button[data-busy]');if(!b||e.defaultPrevented)return;"
-               "all().forEach(x=>{x.disabled=true});b.dataset.busy='on';b.setAttribute('aria-busy','true');t=setTimeout(back,30000)});"
+               "all().forEach(x=>{x.disabled=true});b.dataset.was=b.textContent;b.textContent=word;b.dataset.busy='on';b.setAttribute('aria-busy','true');t=setTimeout(back,30000)});"
                "addEventListener('pageshow',back)})()</script>")
 
 
@@ -114,6 +115,7 @@ button,.btn{display:inline-block;margin-top:16px;padding:12px 26px;font:inherit;
  border:0;border-radius:0;cursor:pointer;text-decoration:none}
 .btn.quiet,button.quiet{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 button[data-busy]:disabled{opacity:.7;cursor:progress}
+button[data-busy=on]:disabled{opacity:1}
 button[data-busy=on]::after{content:"";display:inline-block;width:.8em;height:.8em;margin-left:.5em;vertical-align:-.1em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:busy-turn .9s linear infinite}
 @keyframes busy-turn{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){button[data-busy=on]::after{animation:none}}
