@@ -47,7 +47,7 @@
 | `.claude/skills/backstage`・`.claude/agents/second-eye.md`・`.claude/hooks/ledger-check.sh` | 作り手の工房: 裏の制作の手順、別の目、台帳の検査のフック |
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
-| `tests/frozen/` | 凍結した基準と場面 |
+| `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
 | `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の今の版（goraigo-v10・tora-v3）の紙 31 枚を刷る SVG の指紋を控えと比べる。控えは書き換えず、次の版は足す（U-43） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |

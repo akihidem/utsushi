@@ -241,6 +241,7 @@ def test_8():
     root = pathlib.Path(tempfile.mkdtemp())
     (root / "tests/frozen/scenarios").mkdir(parents=True)
     (root / "tests/test_masked.py").write_text("assert False, '消えてはいけない assert'\n", encoding="utf-8")
+    run_floors.write_manifest(root)  # 床の入口は凍結の表と照らしてから回す（#165）。この小さな tree にも表を置く
     keep, old_root = os.environ.get("PYTHONOPTIMIZE"), run_floors.ROOT
     os.environ["PYTHONOPTIMIZE"] = "1"
     run_floors.ROOT = root

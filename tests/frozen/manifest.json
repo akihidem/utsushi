@@ -1,0 +1,271 @@
+{
+ "criteria.md": "8da105a3d40fcd5e4d75204d754f09a1efe35c1c881a9522624f55a7b93116b0",
+ "scenarios": {
+  "neg_base_size.json": {
+   "floors": [
+    "F5.base_size"
+   ],
+   "rc": 3,
+   "sha256": "6f9168373e8c3d2b348f97cb15e562465fcd5ea5fe50374b3efc531b9edcfa8a"
+  },
+  "neg_bom_material.json": {
+   "floors": [
+    "F2.bom"
+   ],
+   "rc": 3,
+   "sha256": "242ce1ba942801056db761f327fcd81b60f5d9a035ce2df1d3364a26aec290fc"
+  },
+  "neg_bom_original.json": {
+   "floors": [
+    "F2.bom"
+   ],
+   "rc": 3,
+   "sha256": "cbc6efe36ad14c8283ed7c4d1f64c5f4f11e0230e90e83df47ccad6b89612a93"
+  },
+  "neg_fan_clearance.json": {
+   "floors": [
+    "F5.fan_clearance"
+   ],
+   "rc": 3,
+   "sha256": "5383674e5a6cec39628c90f44b43eb0b06b0b72f37b940863d4168b1c3fee675"
+  },
+  "neg_fan_height.json": {
+   "floors": [
+    "F5.fan_height"
+   ],
+   "rc": 3,
+   "sha256": "decfe974834df5b19c239427d3237feda9a83f322d57298c5a944e42327d1a7b"
+  },
+  "neg_fan_length.json": {
+   "floors": [
+    "F5.fan_length"
+   ],
+   "rc": 3,
+   "sha256": "c212df5fa94c09cfcc8e0ec322a1ccf57e0e4544f4dd384db45d2ee9a1c2dcda"
+  },
+  "neg_fan_thickness.json": {
+   "floors": [
+    "F5.fan_thickness"
+   ],
+   "rc": 3,
+   "sha256": "d97925fd72a5e923ea8e14ea4a0c8937d4809248601a94685dd60f84072ef673"
+  },
+  "neg_figure_height.json": {
+   "floors": [
+    "F5.figure_height"
+   ],
+   "rc": 3,
+   "sha256": "871d5d0f6c470195be916031018126b634f869e485115264af656ba35e0bee3b"
+  },
+  "neg_image_box.json": {
+   "floors": [
+    "F5.image_box"
+   ],
+   "rc": 3,
+   "sha256": "20dd09ee0544fcb33e63a596d708ac5d4bf82459a714d3287290511cf7827cd1"
+  },
+  "neg_image_count.json": {
+   "floors": [
+    "F5.image_count"
+   ],
+   "rc": 3,
+   "sha256": "b8e529716da90b765da5d84770f669f02b2b5d442a50f068f6aca7b4a37e1c73"
+  },
+  "neg_marks_all.json": {
+   "floors": [
+    "F1.marks"
+   ],
+   "rc": 3,
+   "sha256": "a050b72534963834bb1a8d176f9a273652d1f8502875c63a3e35e2f481385cf9"
+  },
+  "neg_marks_source_id.json": {
+   "floors": [
+    "F1.marks"
+   ],
+   "rc": 3,
+   "sha256": "65bd1a2bc0646219a130d1894c2443448096b899635ea52b56f61147e7e9191d"
+  },
+  "neg_overlap.json": {
+   "floors": [
+    "F5.overlap"
+   ],
+   "rc": 3,
+   "sha256": "7df355caebe429b42e929f5675eeac6a9672652a1904d0d98518e6c2c9dbd4a2"
+  },
+  "neg_pivot_ear.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "d58713289d1721a3f6d251ad71c01a64b33730b96152e66d49f6dba390818e56"
+  },
+  "neg_pivot_floor.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "4225e33ac81310ac89851226c31d8d8a1b231384586e1dce799f74395b93db5a"
+  },
+  "neg_pivot_tilt.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "f0978192a7466129e56c81af43f763b91adaaed556d60d25520346a019f6c370"
+  },
+  "neg_pivot_weight_above.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "3589ec0a1476541ed13dda9202d279ee0ad7dca3f6643fe782be1f9b08937b71"
+  },
+  "neg_print_area.json": {
+   "floors": [
+    "F5.print_area"
+   ],
+   "rc": 3,
+   "sha256": "21c6a4faf03360ce4386fe5c305dbff05566f02d8cf22a690dcc63075fdaa307"
+  },
+  "neg_range.json": {
+   "floors": [
+    "F5.range"
+   ],
+   "rc": 3,
+   "sha256": "d587721fcc76b9056ab3fd9e674913b3d0937a2db9438033cf111e9b48e8f743"
+  },
+  "neg_slide_clearance.json": {
+   "floors": [
+    "F5.slide_clearance"
+   ],
+   "rc": 3,
+   "sha256": "88a702072bad332381d00fe99f14c3f9ca4af56db0e0d76b24c618ee002a4c03"
+  },
+  "neg_stroke_tab.json": {
+   "floors": [
+    "F5.stroke"
+   ],
+   "rc": 3,
+   "sha256": "af94f223ff602c30be2a89333e9c0d2e8fd62659187c0f15e32d00c6fd7bc5e3"
+  },
+  "neg_stroke_tube.json": {
+   "floors": [
+    "F5.stroke"
+   ],
+   "rc": 3,
+   "sha256": "bbe9067822f702d2a8da1b9d65675ba1e544868df0a193d06904b60e3ab3bdfc"
+  },
+  "neg_text_overlap.json": {
+   "floors": [
+    "F5.text_overlap"
+   ],
+   "rc": 3,
+   "sha256": "4a47e0ca81b3a0953bfe7f1daa7efcbdf16ff466c1b438f82a1ea673b689d2a1"
+  },
+  "pos_long_title.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "f0bdfed907c32cdc16292a758b618df2acfa7ff6ca498628fd79fcf346bfc56b"
+  },
+  "pos_rim.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "748d439e27723cc0deda44b0f45accafaf41694b442d7174a665ba600e9e5c29"
+  },
+  "pos_stick.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "50bcd814192ed30ff20e13107beac73ffdbca29d096779f0ea07b97051f08999"
+  },
+  "pos_tab.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "6504ea801e17beda3f88aac70d3992505ab560de66e1cecb2278c0bb0b2e6086"
+  },
+  "pos_tiger_hang.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "cb6b5e3f09c2e82ec15b0de374faf24b3aa95b8231d6ffb73a2d03077ea848da"
+  },
+  "pos_tiger_neck.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "8738d0b65c80385d67fc60aaab370afd4e3e82892f9ae215f531e9551edb5a49"
+  },
+  "pos_tube.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "c04216525e0a9a243cb5a03dde03466f7e2d234cc96b5e9065cd39595b7bb79d"
+  }
+ },
+ "tests": [
+  "test_about",
+  "test_agent_sdk",
+  "test_ai_feedback",
+  "test_api_review_fixes",
+  "test_ask",
+  "test_claude_code",
+  "test_contrib",
+  "test_demo_assemble",
+  "test_demo_build",
+  "test_demo_flip",
+  "test_demo_samples",
+  "test_demo_scene2",
+  "test_demo_scene3",
+  "test_demo_scene4",
+  "test_demo_scene5",
+  "test_demo_scene6",
+  "test_demo_scene7",
+  "test_demo_walk",
+  "test_demo_walk_all",
+  "test_discriminate",
+  "test_fan_model",
+  "test_floor_pin",
+  "test_foldsim",
+  "test_foldsim_no_template",
+  "test_form_import",
+  "test_frozen_manifest",
+  "test_gallery",
+  "test_generate",
+  "test_generate_zoom_switch",
+  "test_hypotheses",
+  "test_ingest_keep",
+  "test_kuzushi",
+  "test_labels",
+  "test_lan_switch",
+  "test_ledger",
+  "test_looks_motion",
+  "test_loop",
+  "test_loop_adopt_source",
+  "test_loop_record_source",
+  "test_pivot_hang_model",
+  "test_pivot_model",
+  "test_pivot_neck_opening",
+  "test_play_server",
+  "test_public_gate",
+  "test_records",
+  "test_sheet_u25",
+  "test_sheet_v8",
+  "test_slider_holes",
+  "test_slider_tube_stroke",
+  "test_source_scope",
+  "test_techo",
+  "test_techo_site",
+  "test_template_change",
+  "test_toys",
+  "test_tpl_balance_toy",
+  "test_tpl_captions",
+  "test_tpl_den_den",
+  "test_tpl_registry",
+  "test_tpl_spin_toy",
+  "test_tpl_stand_figure",
+  "test_tpl_stick_prop",
+  "test_tpl_string_pull",
+  "test_tpl_wheel_cart",
+  "test_transcription_filter",
+  "test_words",
+  "test_zoom",
+  "test_zukan",
+  "test_zukan_more"
+ ]
+}
