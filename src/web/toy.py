@@ -148,7 +148,9 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     if v > 1:
         _, adopted = loop.version_params(sid, see, v)
         if adopted:
-            ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
+            from .kaizen import _param_name  # 呼び名の無い寸法は、内部の名前を出さない
+
+            ch = "、".join(f"{_param_name(sid, c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
             # 合言葉なしで開いた場には、記録の番号（内部の番号）を出さない（J-028）。
             basis = f'根拠 {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))}。' if photos else ""
             cap = f'<p class="meta">版 {v}: {basis}変えた所: {esc(ch)}</p>'
