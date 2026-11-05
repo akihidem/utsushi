@@ -1,27 +1,43 @@
 [
  {
   "id": "C-01",
-  "claim": "検査に落ちる型紙は刷らない",
+  "claim": "検査に落ちる型紙は、PDF と PNG を正しい名前で残さない（rc 3。描く前の検査で落ちる時は何も残らず、刷った後の検査で落ちる時は .rejected.pdf と、同じ名前の .svg が残る）",
   "kind": "自動試験",
   "evidence": [
    {
     "path": "tests/frozen/criteria.md",
-    "quote": "F4.evidence"
+    "quote": "3 = 落ちる"
+   },
+   {
+    "path": "src/omochae/__main__.py",
+    "quote": "検査に落ちれば 3 を返す"
    },
    {
     "path": "tests/run_floors.py",
     "quote": "期待どおり"
+   },
+   {
+    "path": "src/omochae/__main__.py",
+    "quote": "印の無い紙を正しい名前で残さない"
+   },
+   {
+    "path": "tests/test_tpl_stick_prop.py",
+    "quote": "刷った後の検査で落ちた紙も、正しい名前で残さない"
    }
   ]
  },
  {
   "id": "C-02",
-  "claim": "開いたらすぐ仮説が並ぶ（予想の段は本人の決定 11-05、#242 で外した）",
+  "claim": "玩具の頁を開いたらすぐ、たたき台の型紙を作れる（予想の段は本人の決定 11-05、#242 で外した。型紙は玩具ごとに 1 枚、J-032）",
   "kind": "自動試験",
   "evidence": [
    {
-    "path": "tests/test_hypotheses.py",
-    "quote": "予想の段は無い。開いたらすぐ並ぶ（#242）"
+    "path": "tests/test_build_now.py",
+    "quote": "# すぐ作れる"
+   },
+   {
+    "path": "tests/test_one_sheet_page.py",
+    "quote": "頁に出る型紙はたたき台の 1 枚だけ"
    }
   ]
  },
@@ -38,12 +54,28 @@
  },
  {
   "id": "C-04",
-  "claim": "順位と集計は学ぶ人の画面に出さない",
+  "claim": "順位と、結果を数えた集計は学ぶ人の画面に出さない（頁の輪の節に出すのは、変えた寸法・理由の文・根拠の記録の番号と、待っている報告の件数と番号。動いた数や止まった数は出さない）",
   "kind": "自動試験",
   "evidence": [
    {
     "path": "tests/test_loop.py",
     "quote": "順位と集計は学ぶ人の画面に出さない"
+   },
+   {
+    "path": "tests/test_play_server.py",
+    "quote": "\"順位\" not in body"
+   },
+   {
+    "path": "tests/test_making_log.py",
+    "quote": "学ぶ人の頁には、集計も回数も出ない"
+   },
+   {
+    "path": "src/web/kaizen.py",
+    "quote": "説明を待つ報告"
+   },
+   {
+    "path": "tests/test_kaizen.py",
+    "quote": "輪の節と一覧に、結果を数えた数を出さない"
    }
   ]
  },
@@ -55,6 +87,10 @@
    {
     "path": "src/omochae/loop.py",
     "quote": "解釈を人が確定していない記録は根拠にできない"
+   },
+   {
+    "path": "tests/test_api_review_fixes.py",
+    "quote": "確定していない記録を根拠にしない"
    }
   ]
  },
@@ -71,12 +107,16 @@
  },
  {
   "id": "C-07",
-  "claim": "下から押す形は初期の寸法で行程が 20mm 足りない",
+  "claim": "下から押す形は、初期の寸法（筒の高さ 90mm・押す部品 70mm）では行程が 20mm 足りなかった。今は検査 F5.stroke が止める",
   "kind": "計算",
   "evidence": [
    {
     "path": "docs/process/research/03-mechanism-dimensions.md",
     "quote": "20mm 足りない"
+   },
+   {
+    "path": "tests/frozen/criteria.md",
+    "quote": "F5.stroke"
    }
   ]
  },
@@ -119,18 +159,30 @@
  },
  {
   "id": "C-11",
-  "claim": "判断待ちの最長は 124 分で、10 分以上の待ちは計 223 分",
+  "claim": "11-02 の 393 分（14:00〜20:33）のうち、作る側の最後の出力から次の文が届くまでの間隔は最長 124 分で、10 分以上の間隔は計 223 分（判断待ちの目安。間隔は本人が考えていた時間とは限らず、待ちの全部が本人の側の原因ではない）",
   "kind": "測定",
   "evidence": [
    {
     "path": "docs/process/how-it-was-built.md",
     "quote": "10 分以上の間隔の合計は 223 分"
+   },
+   {
+    "path": "docs/process/how-it-was-built.md",
+    "quote": "11-02 14:00〜20:33 の 393 分のうち"
+   },
+   {
+    "path": "docs/process/how-it-was-built.md",
+    "quote": "間隔は本人が考えていた時間とは限らない"
+   },
+   {
+    "path": "docs/process/how-it-was-built.md",
+    "quote": "待ちの全部が本人の側の原因ではない"
    }
   ]
  },
  {
   "id": "C-12",
-  "claim": "AI の版の調整が学習を上げた直接の証拠は見つかっていない",
+  "claim": "AI の版の調整が学習を上げた直接の証拠は見つかっていない（検索は少ない）",
   "kind": "文献",
   "evidence": [
    {
@@ -141,23 +193,39 @@
  },
  {
   "id": "C-13",
-  "claim": "素の GPT で練習は 48% 上がり、試験は 17% 下がった例がある",
+  "claim": "素の GPT で練習は 48% 上がり、試験は 17% 下がった例がある（Bastani ら。トルコの高校 1 校の数学。作業論文の数値で、PNAS の版は未読）",
   "kind": "文献",
   "evidence": [
    {
     "path": "docs/process/research/13-critical-review.md",
     "quote": "練習は 48% 上がり試験は 17% 下がった"
+   },
+   {
+    "path": "docs/process/research/13-critical-review.md",
+    "quote": "トルコの高校 1 校、数学"
    }
   ]
  },
  {
   "id": "C-14",
-  "claim": "紙の型紙が実物で開くか（御来迎は 11-04 の動画で開いた。仮説ごとの違いと虎は未確認）",
+  "claim": "紙の型紙が実物で開くか。11-04 に前の組の御来迎が筒から扇を開いて動いた動画があるが、どの案の紙かは分からない。今の組（goraigo-v10）のたたき台 H-A と虎は、実物で動いた記録が無い",
   "kind": "測定",
   "evidence": [
    {
     "path": "docs/process/trials/README.md",
     "quote": "筒から扇がせり上がって開き、像が現れる"
+   },
+   {
+    "path": "docs/process/trials/README.md",
+    "quote": "動画がどの仮説の型紙か"
+   },
+   {
+    "path": "docs/process/trials/README.md",
+    "quote": "虎は途中"
+   },
+   {
+    "path": "docs/process/trials/sheets/README.md",
+    "quote": "11-04 の試行を受けた本人の決定"
    }
   ]
  },
@@ -185,12 +253,24 @@
  },
  {
   "id": "C-17",
-  "claim": "返事をするのは AI でなく素材と工作",
+  "claim": "最初に返事をするのは素材と工作（紙）。仕組みについて AI が返すのは人の説明の後で、作っている途中の手順の質問には答える形まで作った（本物の API では未実行。J-013。本人の決定 11-04 で、子どもも AI から直接返事をもらってよい）",
   "kind": "立場",
   "evidence": [
    {
     "path": "docs/process/decisions/J013-core-words.md",
-    "quote": "返事をするのは素材と工作"
+    "quote": "紙が先に返事をし、子どもも AI から直接返事をもらってよい"
+   },
+   {
+    "path": "tests/test_ai_feedback.py",
+    "quote": "人の説明が先、成否の言葉を出さない、鍵が無ければ呼ばない"
+   },
+   {
+    "path": "src/api/ask.py",
+    "quote": "仕組み・動き方・なぜ動くか・どれが正しいかは答えず"
+   },
+   {
+    "path": "docs/process/workshop-design.md",
+    "quote": "本物の Claude API は動かしていない"
    }
   ]
  },
@@ -207,12 +287,24 @@
  },
  {
   "id": "C-19",
-  "claim": "出発は本人の教育現場で、本人も使い続ける。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない。現場の具体の場面は本人に聞いている",
+  "claim": "出発は本人の教育現場（学校の理科の授業や探究の授業）で、本人も使い続ける。その現場の今の生徒では試していない（試行は卒業生の成人 5 人）。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない",
   "kind": "未確認",
   "evidence": [
    {
     "path": "docs/process/research/17-field-and-continuers.md",
-    "quote": "足りない所は作らず"
+    "quote": "学校の理科の授業や探究の授業"
+   },
+   {
+    "path": "docs/process/decided-and-open.md",
+    "quote": "自分もつかう"
+   },
+   {
+    "path": "docs/process/research/17-field-and-continuers.md",
+    "quote": "現役の自分の生徒はいまは難しいので、頼めない"
+   },
+   {
+    "path": "docs/process/trials/README.md",
+    "quote": "全員が本人の教え子の卒業生（成人）"
    }
   ]
  },
@@ -262,7 +354,7 @@
  },
  {
   "id": "C-24",
-  "claim": "御来迎の本体は紙と糸で作る。ただし軸の竹串なども使う",
+  "claim": "御来迎の本体は紙と糸で作る。ただし軸の竹串なども使う（紙一枚は必須の条件でない。本人の決定 11-05 19:44）",
   "kind": "自動試験",
   "evidence": [
    {
@@ -271,40 +363,68 @@
    },
    {
     "path": "src/omochae/templates/slider_fan.py",
-    "quote": "def materials"
+    "quote": "たこ糸（軸に 1 本"
+   },
+   {
+    "path": "tests/test_ways.py",
+    "quote": "ways.toy_labels(GORAIGO) == [\"当時の材料\"]"
+   },
+   {
+    "path": "docs/process/decisions/J032-one-sheet-per-toy.md",
+    "quote": "紙一枚は必須にしない"
    }
   ]
  },
  {
   "id": "C-25",
-  "claim": "虎の物差しは頭が揺れるかどうかで、仮説の違いは作り方の違い",
+  "claim": "虎の物差しは頭が揺れるかどうか（本人の判断）。たたき台は首を通す形（H-A、J-032）で、ほかの作り方は作る側の控え",
   "kind": "立場",
   "evidence": [
    {
     "path": "docs/process/research/15-philosophy-review.md",
     "quote": "虎の物差しは「頭が揺れるかどうか」で足りる"
+   },
+   {
+    "path": "docs/process/decisions/J032-one-sheet-per-toy.md",
+    "quote": "首を胴の穴に入れる形"
    }
   ]
  },
  {
   "id": "C-26",
-  "claim": "日本の小 4 の理科の実験は週 1 回以上が 59.6% で、実験経験が無いとは言えない",
+  "claim": "日本の小 4 の理科の実験は週 1 回以上が 59.6%（国際平均 31.5%。TIMSS 2023）で、実験経験が無いとは言えない",
   "kind": "文献",
   "evidence": [
    {
     "path": "docs/process/research/15-philosophy-review.md",
     "quote": "59.6%"
+   },
+   {
+    "path": "docs/process/research/15-philosophy-review.md",
+    "quote": "国際平均 31.5%"
    }
   ]
  },
  {
   "id": "C-27",
-  "claim": "「学習の再定義」と「AI と子どものタッグ」は、まだ実装に無い言葉",
+  "claim": "「学習の再定義」は立場の言葉で、実装に対応する物は無い。「AI と子どものタッグ」は、考えを話すと紙を作り直す口まで作ったが（今は必須 2 種だけ）、本物の API では未実行で、子どもでは試していない",
   "kind": "未確認",
   "evidence": [
    {
     "path": "docs/process/research/15-philosophy-review.md",
     "quote": "**言葉だけ**"
+   },
+   {
+    "path": "src/web/think_sheet.py",
+    "quote": "話した考えから紙を作り直す"
+   },
+   {
+    "path": "docs/process/trials/README.md",
+    "quote": "全員が本人の教え子の卒業生（成人）"
+   },
+   {
+    "path": "src/web/think_sheet.py",
+    "quote": "たたき台の寸法が全部読める玩具だけ（今は必須 2 種）"
    }
   ]
  },
@@ -321,12 +441,16 @@
  },
  {
   "id": "C-29",
-  "claim": "学ぶ人の紙に成功、失敗、正解の語は刷らない",
+  "claim": "学ぶ人の紙に成功、失敗、正解の語は刷らない（試験が見るのは必須 2 種の紙）。例外は仮説の文の打ち消し「正解ではありません」で、本人の決定（#258）で刷る",
   "kind": "自動試験",
   "evidence": [
    {
     "path": "tests/test_records.py",
     "quote": "学ぶ人の紙に成績の語を刷らない"
+   },
+   {
+    "path": "tests/test_records.py",
+    "quote": "本人の決定で刷る（#258）"
    }
   ]
  },
@@ -354,13 +478,9 @@
  },
  {
   "id": "C-32",
-  "claim": "型紙をたたき台の 1 枚にする前（J-032）に並べていた御来迎の 5 つの仮説のうち、開く角度で分かれるのは H-E を含む組だけだった（記録として残す。今の組で刷るのは H-A だけ）",
+  "claim": "型紙をたたき台の 1 枚にする前（J-032）に並べていた御来迎の 5 つの仮説のうち、開く角度で分かれるのは H-E を含む組だけだった（記録として残す。今の組で刷るのは H-A だけ。見比べる紙と計算の道具は #366 で外した）",
   "kind": "計算",
   "evidence": [
-   {
-    "path": "tests/test_discriminate.py",
-    "quote": "角度で分かれると言えるのは H-E を含む 4 組だけ"
-   },
    {
     "path": "docs/process/decisions/J019-experiment-sheet.md",
     "quote": "今の測り方では見分けられない"
@@ -391,7 +511,7 @@
  },
  {
   "id": "C-35",
-  "claim": "型紙は正解でなく AI が考えた仮説である前提を、輪を回す担当の全部に渡す（本人の言葉 11-05）",
+  "claim": "型紙は正解でなく AI が考えた仮説である前提を、輪を回す担当の全部（仮説・読み・案・言葉・観察）に渡す（本人の言葉 11-05）",
   "kind": "自動試験",
   "evidence": [
    {

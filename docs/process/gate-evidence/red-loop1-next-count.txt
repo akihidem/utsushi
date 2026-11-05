@@ -1,0 +1,17 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_next.py
+# commit: 58f8052（回した時の HEAD）
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpk1qgf6y6/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_next.py", line 130, in <module>
+    assert rid in ids(ready) and rid not in ids(waiting), (ids(ready), ids(waiting))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ([], [])
+rc=1

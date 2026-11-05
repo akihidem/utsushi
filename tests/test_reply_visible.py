@@ -64,22 +64,19 @@ def note_at(page, anchor, role):
 # 予想の段は #266 で外した（本人の決定 11-05）。手帖は予想なしでそのまま開く。
 assert call(f"/toy/{G}/techo")[0] == 200
 
-# 自分の仮説: 通らないと作る節に、書いた中身つきで戻る（字は esc）。欄は畳まれているので、開いて戻す。
-code, _, page = call(f"/toy/{G}/own", {"name": "筒の<仮説>", "how": "", "evidence": "右の図"})
-assert code == 422 and note_at(page, "kasetsu", "alert")
-assert 'value="筒の&lt;仮説&gt;"' in page and 'value="右の図"' in page, "書いた中身を欄に戻す（字は esc）"
-assert "筒の<仮説>" not in page
-code, _, page = call(f"/toy/{G}/own", {"name": "筒の案", "how": "", "evidence": "右の図"})
-assert code == 422 and note_at(page, "kasetsu", "alert")
-assert '<details open><summary>自分の仮説を立てる' in page and 'value="筒の案"' in page
-page = landed(call(f"/toy/{G}/own", {"name": "筒の案", "how": "押す", "evidence": "右の図"}), "own-OWN-1")
-assert "仮説を残しました" in note_at(page, "own-OWN-1", "status")
+# 作りながら見る: 刷る前は開かず、仮説の節に着いて理由を読める（#289）。文は頁の頭より 1 画面下にあった。
+page = landed(call(f"/toy/{G}/tsukuru"), "kasetsu")
+assert "先に紙を作ると、作りながら見る頁が開きます" in note_at(page, "kasetsu", "status")
+
 
 # 刷る: 通らないと仮説の節に、通ると型紙の窓に文が出る。
 code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
 assert code == 422 and "仮説 H-ZZ は無い" in note_at(page, "kasetsu", "alert")
 page = landed(call(f"/toy/{G}/print", {"hypothesis": "H-A"}), "win")
 assert "紙を作りました" in note_at(page, "win", "status")
+# 別の仮説の紙がある時でも、頼んだ仮説の紙が無ければ同じ所に着く。
+page = landed(call(f"/toy/{G}/tsukuru?h=H-B"), "kasetsu")
+assert "先に紙を作ると、作りながら見る頁が開きます" in note_at(page, "kasetsu", "status")
 
 # 聞く: 通らない時も、答えの時も、聞く欄に着く。
 code, _, page = call(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって？"})
@@ -90,7 +87,7 @@ bad = {"hypothesis": "H-A", "note": "3 枚目で<止まった>", "first_moved": 
 code, _, page = call(f"/toy/{G}/record", bad)
 assert code == 422 and note_at(page, "kiroku", "alert")
 assert "3 枚目で&lt;止まった&gt;</textarea>" in page and 'name="first_moved" value="筒"' in page
-assert re.search(r"<option selected>糸</option>", page) and '<option value="H-A" selected>' in page
+assert re.search(r"<option selected>糸</option>", page) and 'name="hypothesis" value="H-A"' in page[page.index('id="record"'):]
 good = bad | {"result": "動かない", "note": "3 枚目で止まった"}
 code, _, page = call(f"/toy/{G}/record", good | {"result": "ない結果"})
 assert code == 422 and '" checked' not in page[page.index('id="record"'):page.index("</form>", page.index('id="record"'))], "無い値に印を付けない"
@@ -134,7 +131,7 @@ assert "Claude が答えます" in note_at(page, "mine", "status")
 
 # 通らなかった時に錨へ着くよう、欄の送り先に錨がある。
 page = call(f"/toy/{G}")[2]
-for want in (f"/toy/{G}/own#kasetsu", f"/toy/{G}/print#kasetsu", f"/toy/{G}/print-own#own-OWN-1", f"/toy/{G}/ask#ask",
+for want in (f"/toy/{G}/print#kasetsu", f"/toy/{G}/ask#ask",
              f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}"):
     assert f'action="{want}"' in page, want
 # AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。

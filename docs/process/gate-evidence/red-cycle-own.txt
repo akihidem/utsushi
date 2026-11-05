@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_cycle.py
+# commit: 7fc2644（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_cycle.py", line 66, in <module>
+    assert OWN_STAGE in order, "ループ1 で作った紙で作って記録する段が無い"
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: ループ1 で作った紙で作って記録する段が無い
+rc=1

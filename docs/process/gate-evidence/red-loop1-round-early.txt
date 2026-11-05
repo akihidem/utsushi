@@ -1,0 +1,14 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_round.py
+# commit: 5ad4f53（回した時の HEAD）
+/tmp/tmpvp33grni/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpvp33grni/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpvp33grni/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpvp33grni/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpvp33grni/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpvp33grni/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_round.py", line 92, in <module>
+    assert confirmed and confirmed[0]["version"] == 1 and confirmed[0]["confirmations"][0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, confirmed
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: []
+rc=1
