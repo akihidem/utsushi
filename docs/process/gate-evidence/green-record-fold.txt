@@ -1,14 +1,14 @@
 # 命令: .venv/bin/python tests/test_record_fold.py
-# commit: 5552cb0（回した時の HEAD）
-ok: 見出しがある時は、どの紙かと 3 つを見せ、残りを素の details に畳む
-ok: どの紙かの欄は畳まない（配られた紙で作る人が選べる）
-/tmp/tmpskfl5z1o/play/NDL-1187053-R0000005-L/H-A_v1.pdf
-/tmp/tmpskfl5z1o/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
-/tmp/tmpskfl5z1o/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+# commit: 7f3a451（回した時の HEAD）
+ok: 見出しがある時は 3 つを見せ、残りを素の details に畳む
+/tmp/tmpn_vd71bp/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpn_vd71bp/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpn_vd71bp/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
 ok: 試した後の紙が開く条件は前と同じ（記録のある案の紙だけ開く）
 ok: 畳んだ欄に書いた字も送られ、記録の形は前と同じ
 ok: 通らなかった時は畳みを開き、書いた字を隠さない
-ok: 版の欄も畳まない
+ok: 版の欄は畳まない
+ok: 自分の仮説がある時のどの紙かの欄は畳まない
 ok: 見出しの文が無い間は畳まず、全部の欄が見える
 ok: 本人が採った見出しで畳まれる
 ok
