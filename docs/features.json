@@ -381,5 +381,17 @@
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
   "unverified": "本人の案（11-05 朝）の試作。映像は端末の中だけ（送る・録る code が無い事を試験で固定）。予想の前に動かし方の文を見せるので、予想が先の線がその分緩む。採否は本人。iPhone の実機と本物のカメラ映像での見え方は未確認"
+ },
+ {
+  "id": "f36",
+  "name": "作りながら見る（観察 A の試作）: 机の端に置く端末に手本・返事・小さな鏡",
+  "status": "doing",
+  "evidence": [
+   "src/web/tsukuru.py",
+   "tests/test_tsukuru.py",
+   "src/omochae/making_log.py",
+   "docs/process/research/30-kazasu-camera-choice.md"
+  ],
+  "unverified": "本人の案の具体化（11-05 朝）の一番浅い段。映像は端末の中だけで、残るのは手順の進み（番号・出来事・分までの時刻）だけ。実機・本物のカメラ映像・人が使った確認はまだ。観察 B（机の上の 1 枚）と C（続けて撮る）は本人の判断待ち"
  }
 ]
