@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_photo_owner_only.py
+# commit: ff54436（回した時の HEAD）
+/tmp/tmptzwj0qix/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmptzwj0qix/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmptzwj0qix/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_photo_owner_only.py", line 102, in <module>
+    assert "HttpOnly" in a.last and "SameSite=Lax" in a.last and "Max-Age" not in a.last and "utsushi_up=" in a.last, a.last
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

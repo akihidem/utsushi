@@ -15,6 +15,8 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "api-usage.jsonl")
 
 from omochae import hypotheses  # noqa: E402
+from api import config  # noqa: E402
+from web import think_sheet  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -22,7 +24,7 @@ BUSY = " data-busy"
 # 押した時に釦に出す字（本人の決定 11-05）。一字も変えない。
 ADOPTED_JA, ADOPTED_EN = "作っています…", "Making…"
 # 紙を作る送信。記録や説明の送信は速く、押せなくすると書き直す道を狭めるので、印を付けない。
-SHEET = re.compile(rf"/toy/{G}/(print(-own)?|reprint)#|/record/R-\d+/next#")
+SHEET = re.compile(rf"/toy/{G}/(print|reprint|think-sheet|think-ok)#|/record/R-\d+/next#")
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -48,7 +50,7 @@ def marked(page):
     for action, inner in forms(page):
         assert (BUSY in inner) == bool(SHEET.match(action)), action
         if BUSY in inner:
-            assert re.search(r"<button[^>]* data-busy>[^<]+</button>", inner), inner
+            assert re.search(r"<button[^>]* data-busy[ >][^<]*</button>", inner), inner
             made.append(action)
     # 形と字を変えるのは押した時だけ
     assert 'data-busy="on"' not in page and f">{ADOPTED_JA}<" not in page and f">{ADOPTED_EN}<" not in page
@@ -85,9 +87,15 @@ assert post(f"/toy/{G}/print", {"hypothesis": ids[0]}) == 200
 assert (out_dir(G) / f"{ids[0]}_v1.pdf").exists()
 assert any("/print#" in a for a in marked(get(f"/toy/{G}")))
 
-# 自分の仮説の紙を作る釦
-assert post(f"/toy/{G}/own", {"name": "ためしの案", "how": "下から押す", "evidence": "手元の絵"}) == 200
-assert any("/print-own#" in a for a in marked(get(f"/toy/{G}")))
+# 話した考えから紙を作る釦と、「この紙にする」の釦
+page = get(f"/toy/{G}")
+assert any("/think-sheet#" in a for a in marked(page))
+# 考えから紙を作る釦は Claude を呼ぶ。呼び出しの上限より先に押せるように戻ると、費用のかかる呼び出しが 2 回走る
+wait = int(re.search(r'data-busy-for="(\d+)"', page).group(1))
+assert wait > config.RUN_TIME_LIMIT["words"], wait
+assert "b.dataset.busyFor" in busy_script(page)
+check = think_sheet._status(G, {"status": "pending_human", "token": "t", "how_it_moves": "下から押す", "result": {"fits": False, "not_fit": []}})
+assert re.search(r"<button[^>]* data-busy>[^<]+</button>", check) and "/think-ok#" in check, check
 
 # 次の版の紙を作る釦
 assert post(f"/toy/{G}/record", {"hypothesis": ids[0], "result": "動いた"}) == 200

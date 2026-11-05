@@ -1,0 +1,25 @@
+# 命令: sh -c 'PYTHONPATH=src .venv/bin/python tests/test_print_help.py && PYTHONPATH=src .venv/bin/python tests/test_sheet_window.py && PYTHONPATH=src .venv/bin/python tests/test_tap_size.py'
+# commit: 5ffa20a（回した時の HEAD）
+/tmp/tmpfk_ggqf5/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpfk_ggqf5/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpfk_ggqf5/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpfk_ggqf5/play/NDL-1187053-R0000004-L-4/H-A_v1.pdf
+/tmp/tmpfk_ggqf5/play/NDL-1187053-R0000004-L-4/H-A_v1_tejun.pdf
+/tmp/tmpfk_ggqf5/play/NDL-1187053-R0000004-L-4/H-A_v1_after.pdf
+ok
+FAIL F9.human [NDL-1187053-R0000005-L H-B] 必須 2 種の今の組は、たたき台（H-A）の紙だけを刷る
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000004-L-4/H-A_v1.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000004-L-4/H-A_v1_tejun.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000004-L-4/H-A_v1_after.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000004-L-4/H-B_v1.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000004-L-4/H-B_v1_tejun.pdf
+/tmp/tmpuflyxlvm/play/NDL-1187053-R0000004-L-4/H-B_v1_after.pdf
+ok
+/tmp/tmp4jsql56v/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp4jsql56v/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp4jsql56v/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+rc=0

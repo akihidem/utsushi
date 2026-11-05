@@ -13,9 +13,9 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from PIL import Image  # noqa: E402
 
-from omochae import records  # noqa: E402
+from omochae import hypotheses, records  # noqa: E402
 from web import techo_site  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 HOST = "plain-words-here.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分けて書く
@@ -101,8 +101,30 @@ for path in (f"/toy/{G}", f"/toy/{G}/techo"):
     assert "TOLDWORDS" in page and "NEXTWORDS" in page and f"/record/{told_id}/next" in page and 'name="interpretation"' in page, path
 made = closed("POST", f"/record/{told_id}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"})
 assert made[0] == 303, made
+# 自分の仮説の文も同じ線（#336 の続き）。頁の書く口は閉じた（#332）が、置き場に在る物を、頁にも図鑑にも紙にも出さない
+own, failures = hypotheses.save_own(G, "OWNNAME", "OWNHOW", "OWNWHERE")
+assert not failures, failures
+oid = own["id"]
+assert hypotheses.print_own(G, oid, str(out_dir(G) / f"{oid}_v1")) == 0
+local_form = {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"}
+assert closed("POST", f"/toy/{G}/record", f"hypothesis={oid}&result=%E5%8B%95%E3%81%84%E3%81%9F", local_form)[0] == 303
+# 合言葉付きの場では、図鑑に今までどおり出て、紙も開ける
+for path in (f"/zukan/{G}", "/zukan"):
+    page = closed("GET", path, None, local)[1]
+    assert "OWNNAME" in page and "OWNHOW" in page, path
+papers = [f"/sheet/{G}/{oid}_v1_{kind}.{ext}" for kind in ("free", "after") for ext in ("pdf", "png", "svg")]
+for path in papers:
+    assert closed("GET", path, None, local)[0] == 200, path
+for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
+    code, page = opened("GET", path)
+    assert code == 200, (path, code)
+    for word in ("OWNNAME", "OWNHOW", "OWNWHERE"):
+        assert word not in page, (path, word)
+for path in papers:
+    assert opened("GET", path)[0] == 404, path
+assert opened("GET", f"/toy/{G}/tsukuru?h={oid}")[0] == 303, "作りながら見る頁も、その紙では開かない"
 # 別の出所からは書けない（開いていても）
-assert opened("POST", f"/toy/{G}/own", "name=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
+assert opened("POST", f"/toy/{G}/record", "name=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
 # 作る側の頁は出さない（聞いた言葉と感想の文が読める頁で、名前は機械では落とせない）。開いていない時は出る
 assert opened("GET", "/loop")[0] == 404 and opened("GET", f"/loop/{G}")[0] == 404
 # 次の版を採る口と AI の口は閉じる（誰でも型紙の版を変えられる形にしない・費用をかけさせない）
