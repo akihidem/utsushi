@@ -23,8 +23,7 @@ DEGREE = ("少し", "よく", "とても", "かなり", "まあまあ", "あま�
 SOURCES = {}  # 雛形ごとに、その雛形の玩具を全部
 for p in sorted((ROOT / "data/hypotheses").glob("*.json")):
     SOURCES.setdefault(json.loads(p.read_text(encoding="utf-8")).get("template", "slider_fan"), []).append(p.stem)
-# 虎は前の本人の判断（2 値）に当たるので、次の commit で分けて変える。
-THREE = [t for t in TEMPLATES if t != "pivot_counterweight"]
+TORA = "NDL-1187053-R0000014-R"
 
 
 def add(sid, word):
@@ -43,8 +42,7 @@ def boxes(tid, sid, h):
 
 
 # 1. 札の形: 3 つで、最後が「わからない」、2 番目が打ち消し、度合いの言葉が無い
-for tid in THREE:
-    tpl = TEMPLATES[tid]
+for tid, tpl in TEMPLATES.items():
     assert len(tpl.RESULTS) == 3 and tpl.RESULTS[2] == UNSURE, (tid, tpl.RESULTS)
     assert tpl.RESULTS[1].endswith("ない"), (tid, tpl.RESULTS)
     assert not [w for w in tpl.RESULTS for d in DEGREE if d in w], (tid, tpl.RESULTS)
@@ -92,7 +90,7 @@ stand = groups["stand_figure"]
 assert stand["results"] == {"立たない": 1} and stand["not_moved_word"] == "立たない", stand
 
 # 6. 「わからない」を動いた側にも動かない側にも数えない（F3）。5 と混ざらないよう、ここで足す
-for tid in THREE:
+for tid in TEMPLATES:
     sid = SOURCES[tid][-1]
     before = making_log.summary(sid)["completion"]["moved"]
     add(sid, UNSURE)
@@ -102,7 +100,13 @@ for tid in THREE:
     table = records.summarize(records.all_records(sid))[hypotheses.load(sid)["hypotheses"][0]["id"]]
     assert table[UNSURE] >= 1 and table[TEMPLATES[tid].RESULTS[1]] == 0, (tid, table)
 
-# 7. 英語の訳: 今の札にも前の札にもある（前の札の記録も英語で読めるように）
+# 7. 虎: 記録では「わからない」を選べる。今の組の手順の紙は 2 つの欄のまま（札を紙に刷るので、足すと床の紙の指紋が変わる）
+pc = TEMPLATES["pivot_counterweight"]
+assert pc.SHEET_SET == "tora-v3" and pc.PAPER_RESULTS == ("揺れた", "揺れない"), "次の組（tora-v4）を始める時に PAPER_RESULTS を外す"
+assert records.check({"source_id": TORA, "hypothesis_id": "H-A", "result": UNSURE}) == []
+assert {f.floor for f in records.check({"source_id": TORA, "hypothesis_id": "H-A", "result": "たぶん揺れた"})} == {"F3.result"}
+
+# 8. 英語の訳: 今の札にも前の札にもある（前の札の記録も英語で読めるように）
 required = json.loads((ROOT / "data/en/required.json").read_text(encoding="utf-8"))
 for tid, tpl in TEMPLATES.items():
     for w in (*tpl.RESULTS, *getattr(tpl, "OLD_RESULTS", {})):

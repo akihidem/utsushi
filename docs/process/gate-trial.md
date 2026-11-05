@@ -915,8 +915,9 @@
 - 文面: 言葉は本人の確認待ち（#146 の要件「どの言葉にするかは本人が決める」）。確認の前はマージしない
 - 推しと違う所: 度合いを聞く足しの欄は足していない。感想の欄に言葉で書ける。新しい欄を足すかは本人の判断にする
 - 組を上げない: 型紙の寸法と部品は変わらず、変わるのは手順の紙の丸の欄の札だけ。刷ってある紙の札は `OLD_RESULTS` で受ける
+- 虎: 札を手順の紙に刷っているので、そのまま足すと凍結の床の紙の指紋が変わる。雛形の `PAPER_RESULTS` で今の組の紙は 2 つの欄のまま刷り、記録の札にだけ「わからない」を足した。次の組（tora-v4）で外す。F3.result の文を変えた理由は `docs/claude-usage.md`。虎の 2 値は前の本人の判断（`docs/process/research/15-philosophy-review.md`）なので、本人の確認待ち。断られたら、この分の commit だけを外せるように分けた
 - ゴールの要件: どの玩具でも「わからない」を選べる。見た事の言葉に度合いが無い。前の札の記録が読める。必須 2 種の紙の指紋は変わらない
-- 検証ゲート: **済み**。Red: 札を直す前の木で rc 1（gate-evidence/red-result-words.txt）。Green: rc 0（gate-evidence/green-result-words.txt）
+- 検証ゲート: **済み**。Red: 札を直す前の木で rc 1（gate-evidence/red-result-words.txt）。Green: rc 0（gate-evidence/green-result-words.txt）。虎の分は Red: rc 1（gate-evidence/red-tora-unsure.txt）。Green: rc 0（gate-evidence/green-tora-unsure.txt）
 - エビデンスゲート: 上の出力。`tests/test_floor_pin.py` も通る。全部の玩具の全部の手順の紙が、札を足しても検査を通る（`tests/test_result_words.py`）。本物のサーバで、前の札は残り（201）、札に無い言葉は断られ（422）、改善の頁の数に入る事を確かめた
 - 限り: 本物のスマホでは確かめていない
 

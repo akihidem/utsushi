@@ -1,5 +1,5 @@
 {
- "criteria.md": "f412f5fbe94254a3aa38ca44c0cc831c8701ae96ead0f4b35077b8717c873dd9",
+ "criteria.md": "374b73e1e39300499b615a72fa0c48ebbcacc82b788e66a5be3078c6f9d204f8",
  "scenarios": {
   "neg_base_size.json": {
    "floors": [
@@ -267,6 +267,7 @@
   "test_media_range",
   "test_media_review",
   "test_media_strip",
+  "test_nav_fit",
   "test_nav_same",
   "test_next_form",
   "test_next_version_atomic",
@@ -288,8 +289,10 @@
   "test_required_tools",
   "test_result_readers",
   "test_result_table",
+  "test_result_words",
   "test_run_demo",
   "test_sheet_click",
+  "test_sheet_heads",
   "test_sheet_u25",
   "test_sheet_v8",
   "test_sheet_version",
@@ -318,6 +321,7 @@
   "test_tpl_wheel_cart",
   "test_transcription_filter",
   "test_tsukuru",
+  "test_tsukuru_last_step",
   "test_two_sites",
   "test_ways",
   "test_words",

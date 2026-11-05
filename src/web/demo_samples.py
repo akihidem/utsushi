@@ -42,7 +42,7 @@ OKIAGARI = _svg("起き上がり", '<path d="M80 20 a30 30 0 0 1 0 60 a30 30 0 0
                               '<path d="M30 92 h100" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3"/>')
 
 # 上げた物の見本。見た事の言葉は各雛形の RESULTS の中から選ぶ（本物の記録と同じ言葉で並ぶ形を見せるため）:
-# 御来迎 slider_fan（動いた・動かない・わからない）、虎 pivot_counterweight（揺れた・揺れない）、風車 spin_toy（回った・回らない・わからない）、
+# 御来迎 slider_fan（動いた・動かない・わからない）、虎 pivot_counterweight（揺れた・揺れない・わからない）、風車 spin_toy（回った・回らない・わからない）、
 # でんでん太鼓 den_den（鳴った・鳴らない・わからない）、起き上がり小法師 balance_toy（戻った・戻らない・わからない）。並びは番号の順（記録の順の見本）。
 UPLOADS = [
     {"no": 1, "toy": "御来迎", "sheet": "A", "result": "動いた", "note": "筒を先に丸めたら、すっと立った", "pic": FAN},
