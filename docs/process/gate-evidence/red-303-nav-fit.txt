@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_nav_fit.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_nav_fit.py", line 43, in <module>
+    assert row_width(labels, gap, spacing) <= room(), ("帯が 390 で 1 段に収まらない", labels, row_width(labels, gap, spacing), room())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('帯が 390 で 1 段に収まらない', ['序', 'おもちゃ', '作った物と職人の言葉', '図鑑', 'English'], 360.59999999999985, 351.0)
+rc=1
