@@ -35,7 +35,7 @@ body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-fa
 .zukan .toy figure{margin:0;background:var(--paper,#fffefc);border:1px solid var(--frame,#d8cdb6);padding:3%;box-shadow:0 40px 60px -30px var(--shadow,rgba(70,55,35,.35))}
 .zukan .toy figure img{width:100%;display:block}
 .zukan .toy h2{font-weight:400;font-size:clamp(24px,2.6vw,38px);letter-spacing:.2em;margin:0 0 20px}
-.zukan .song{writing-mode:vertical-rl;height:min(40vh,360px);font-size:clamp(16px,1.5vw,20px);line-height:2.2;letter-spacing:.12em;margin:0 0 12px auto}
+.zukan .song{writing-mode:vertical-rl;height:min(40vh,360px);font-size:clamp(16px,1.5vw,20px);line-height:2.2;letter-spacing:.12em;float:right;margin:0 0 12px 24px}
 .zukan ul{list-style:none;padding:0;margin:0 0 22px}
 .zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid var(--frame,#b9a982);padding-left:12px;margin:0 0 6px}
 .zukan .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
@@ -43,7 +43,7 @@ body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-fa
 .zukan .links{font-size:13px;letter-spacing:.12em;display:flex;gap:16px;flex-wrap:wrap}
 .zukan .more{padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2)}.zukan .more h2{font-weight:400;letter-spacing:.2em}
 .zukan .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px 18px}.zukan .grid li{margin:0}
-@media (max-width:760px){.zukan .toy{grid-template-columns:1fr}.zukan .song{writing-mode:horizontal-tb;height:auto}}
+@media (max-width:760px){.zukan .toy{grid-template-columns:1fr}.zukan .song{writing-mode:horizontal-tb;height:auto;float:none;margin:0 0 12px}}
 """
 
 

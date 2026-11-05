@@ -98,6 +98,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .frame figcaption{font-size:12px;color:var(--mute);letter-spacing:.15em;margin-top:10px}
 .songs{writing-mode:vertical-rl;height:min(44vh,360px);margin:0 0 14px auto;font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .songs p{margin:0 .3em}
+.hero .songs{float:right;margin:0 0 14px 24px}
 .label{font-size:12px;line-height:2;letter-spacing:.06em;color:var(--mute);border-left:1px solid var(--frame);padding-left:14px;max-width:24em;margin:18px 0}
 .label b{display:block;font-weight:400;font-size:17px;letter-spacing:.22em;color:var(--fg)}
 .links{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;letter-spacing:.12em}
@@ -166,7 +167,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
 .foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
+@media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.hero .songs{float:none;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
  main,.wrap{padding-left:16px;padding-right:16px}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """

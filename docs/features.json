@@ -56,9 +56,10 @@
    "src/omochae/hypotheses.py",
    "tests/test_build_now.py",
    "tests/test_hypotheses.py",
-   "tests/test_hypothesis_label.py"
+   "tests/test_hypothesis_label.py",
+   "tests/test_one_sheet.py"
   ],
-  "unverified": "実際の人が使っていない"
+  "unverified": "実際の人が使っていない。型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）は、記録の欄と必須 2 種の刷る口まで。頁は後の直し"
  },
  {
   "id": "f07",
@@ -343,8 +344,10 @@
    "src/web/toy.py",
    "src/web/toys.py",
    "src/web/about.py",
+   "src/web/plain_words.py",
    "src/omochae/ways.py",
    "tests/test_toys.py",
+   "tests/test_plain_words.py",
    "tests/test_ways.py",
    "tests/test_about.py",
    "docs/process/site-requirements.md",
@@ -421,9 +424,11 @@
    "src/web/techo_site.py",
    "src/web/toy.py",
    "tests/test_build_now.py",
-   "tests/test_made_records.py"
+   "tests/test_made_records.py",
+   "src/omochae/media_review.py",
+   "tests/test_media_review.py"
   ],
-  "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した"
+  "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した 上げた写真と動画は、人の確認（omochae.media_review）を通した物だけを出す（#314）。人がこの確認を回した事はまだ無い"
  },
  {
   "id": "f36",
