@@ -25,7 +25,7 @@ assert (widths <= beat.BEAT * 1.5).all(), widths.max()
 
 mix, table = beat.compose(seconds)
 assert table["note"].startswith("仮の拍") and "Suno の曲ではない" in table["note"], "Suno の曲に見せない"
-assert np.max(np.abs(mix)) <= 0.81, "割れない"
+assert abs(np.max(np.abs(mix)) - beat.TOP) < 1e-6, "割れないように頭を揃える"
 assert mix.shape[0] == int(beat.SR * total) + 1
 assert table["stop"] == next(p["t"] for p in points if (p["scene"], p["cue"]) == beat.END)
 # 問いの札の後は、最後に鳴らした音の余韻の後、無音になる（考える間を音で埋めない）

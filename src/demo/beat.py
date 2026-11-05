@@ -39,6 +39,7 @@ LEVEL = {"flip": 0.6, "scene2": 0.4, "scene3": 0.6, "scene4": 0.85, "scene5": 0.
 RUNS = (("flip", "boxes", 18), ("flip", "flip", 36), ("scene7", "figs_in", 18))
 STRONG = ("page_in", "persp_in", "title_in", "quote1", "figs_in", "closing", "caption")
 END = ("scene7", "ask")  # ここで音を止める
+GAIN, TOP = 5.0, 0.6     # 頭を丸める強さ（tanh の傾き）と最後の高さ
 
 
 def anchors(seconds):
@@ -95,6 +96,9 @@ def pluck(freq, rng):
     for i in range(n):
         out[i] = buf[i % period]
         buf[i % period] = 0.498 * (buf[i % period] + buf[(i + 1) % period])
+    # 切った所でぷつっと鳴らないよう、終わりの 2 割を細める（耳で確かめられないので、形で避ける）
+    tail = int(n * 0.2)
+    out[-tail:] *= np.linspace(1, 0, tail)
     return out
 
 
@@ -148,8 +152,11 @@ def compose(seconds, seed=7):
             at = t0 + (b - a) * k / count
             ticks.append(round(at, 4))
             _add(mix, at, wood_hit, 0.3)
+    # 太鼓の頭だけが大きく、全体が聞こえにくかった（測ると -27 LUFS）。頭を丸めて全体を持ち上げる。
+    # 強さと高さは ebur128 で 4 通り測って決めた: -18.5 LUFS・本当の頭 -1.0 dBFS（AAC にしても割れない余白を残す）。
     peak = float(np.max(np.abs(mix))) or 1.0
-    mix = mix / peak * 0.8  # 割れないように頭を揃える
+    mix = np.tanh(GAIN * mix / peak)
+    mix = mix / float(np.max(np.abs(mix))) * TOP
     table = {"bpm": 90, "stop": stop, "total": round(total, 3), "anchors": [p for p in points if p["t"] <= stop],
              "beats": [round(b, 4) for b in beats], "ticks": ticks,
              "note": "仮の拍。コードで作った音で、Suno の曲ではない。曲が来たら捨てる"}
