@@ -34,7 +34,7 @@ def flat(layout):
 
 fan = {"tab": {**slider_fan.DEFAULTS, "push_part": "tab", "hub": "axle", "pusher_height": 15},
        "stick": {**slider_fan.DEFAULTS, "push_part": "stick", "hub": "axle", "pusher_height": 84},
-       "tube": {**slider_fan.DEFAULTS, "push_part": "tube", "hub": "rim", "push_amount": 36, "pusher_height": 84, "fold_count": 18, "fold_width": 8}}
+       "tube": {**slider_fan.DEFAULTS, "push_part": "tube", "hub": "rim", "push_amount": 36, "pusher_height": 84, "fold_count": 14, "fold_width": 8, "fold_height": 36}}
 pic = ROOT / "out/sources" / f"{G}.jpg"
 sheets = {k: compose_sheet("slider_fan", p, src(G), f"御来迎 {k} 版 1", "筒を持ち、押す", picture=pic if pic.exists() else None) for k, p in fan.items()}
 sheets["tora"] = compose_sheet("pivot_counterweight", pivot_counterweight.DEFAULTS, src(T), "虎 版 1", "頭に触れる")

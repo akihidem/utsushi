@@ -22,6 +22,11 @@
 | `src/omochae/marks.py` | 型紙の印と、刷った後の検査 |
 | `src/omochae/render.py` | 描画 |
 | `src/omochae/textfit.py` | 字の幅の測定 |
+| `src/omochae/model.py` | 検査と描画が共に使う型（部品・字の箱・検査の失敗 `Failure`） |
+| `src/omochae/page.py` | 頁の大きさと印字域（A4・B4 を同じ計算で扱う） |
+| `src/omochae/foldsim.py` | 折りの部品を Origami Simulator が読める SVG に書き出す。作り手用で、学ぶ人の画面には道を作らない |
+| `src/omochae/gallery.py` | 再現ギャラリーの静的な頁を書き出す。記録の順に並べ、順位を付けない |
+| `src/omochae/templates/` のほかの雛形 | 試作の玩具の雛形（`balance_toy`・`den_den`・`spin_toy`・`stand_figure`・`stick_prop`・`string_pull`・`wheel_cart`）。図鑑から入る。足し方は下の「雛形を足す時」 |
 | `src/omochae/templates/slider_fan.py` | 御来迎の雛形。寸法の初期値・範囲・式・部品・部品表 |
 | `src/omochae/fan_model.py` | 扇の開きの幾何（開く角度の上限・口の角との干渉・糸の長さ） |
 | `src/omochae/pivot_model.py` | 首振りの重心・傾き・周期の式 |
@@ -40,6 +45,9 @@
 | `src/web/looks.py` | 入口。A′ 日本画展の展示（既定）と C 縦読みのジン。全部の玩具の一覧の節を持つ。A 大判写真集はルックブックの再現として /look/taiban に残す（J-024） |
 | `src/web/kuzushi.py` | くずし字を読む頁（f14）。先に自分の読みを書き、確かめた読みと並べる。書いた読みは保存しない |
 | `src/web/zukan.py` | 図鑑の頁（印つきの文、F6.label） |
+| `src/web/techo.py` | 工作の手帖の頁を書き出す。中身は repo のコードから作り、型紙と手帖が食い違わないようにする |
+| `src/web/demo_samples.py` | デモ用の見本（上げた物・声・職人の言葉）。本物の記録と混ぜず、見本の札を付ける |
+| `src/api/observe.py` | 上げた動画を Claude が見る観察の補助。見えた事と見えなかった事だけを返し、成績にしない |
 | `src/web/techo_site.py` | 手帖の頁（聞く・上げる・フィードバック）と、上げた物と職人の言葉の頁 |
 | `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・新しい仮説。順位は持たない（J-025） |
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
@@ -60,4 +68,6 @@
 
 ## 雛形を足す時
 
-`templates/` に `DEFAULTS`・`RANGES`・`check_range`・`check_physics`・`parts`・`bom`・`materials`・`title`・`place`・`steps`・`measures`・`diagram` を持つモジュールを置き、`compose.py` の `TEMPLATES` に足す。
+`src/omochae/templates/` にモジュールを 1 本置くだけでよい。`compose.py` の `_discover()` が、名前が `_` で始まらないモジュールを全部読んで `TEMPLATES` に載せる（必須の 2 種を先頭、残りは名前の順）。表を手で書き足さない。1 本が持つ物（`ID`・`HYP_KEY`・`DEFAULTS`・`RANGES`・`check_range`・`check_physics`・`parts`・`bom` など）と、仮説の記録・試験の置き方は [docs/process/template-contract.md](process/template-contract.md) の「雛形の 1 本が持つ物」にある。
+
+今の雛形は、必須の `slider_fan`・`pivot_counterweight` と、試作の `balance_toy`・`den_den`・`spin_toy`・`stand_figure`・`stick_prop`・`string_pull`・`wheel_cart`。数は README の数の節にある。試作の雛形の玩具は図鑑から入り、入口の主役には出ない。雛形を足したら、ここに名前を足す（`python -m omochae.ledger check` が見る）。

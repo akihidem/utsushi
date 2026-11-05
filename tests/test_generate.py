@@ -9,6 +9,7 @@ from types import SimpleNamespace as NS
 
 tmp = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = tmp
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import budget, generate as gen
 from omochae import hypotheses, loop, records
@@ -97,8 +98,21 @@ assert abs(budget.cost("claude-opus-5-5", 1_000_000, 1_000_000) - 24) < 1e-9
 path.unlink()
 # 鍵が無ければ exit 4 で固定の仮説を案内し、値を出さない
 env = {k: v for k, v in os.environ.items() if not k.startswith("ANTHROPIC")}
-out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "generate"], capture_output=True, text=True, env={**env, "HOME": tmp}, cwd=tmp)
-assert out.returncode == 4 and "固定の仮説" in out.stderr
+# 図を取り寄せる前に鍵を見る。取り寄せに行くと網に出て、repo の out/sources に書き、網なしでは別の理由で 4 になる
+# 手元の repo の .env に鍵が在っても本物を呼ばないよう、.env を読む所だけ差し替えて、鍵の無い機械と同じにする
+NO_KEY = """
+import sys, anthropic
+from api import agent, generate
+from omochae import hypotheses
+agent.default_client = lambda role=None: anthropic.Anthropic()
+def fetched(source):
+    raise OSError("図を取り寄せに行った")
+generate.source_image = fetched
+sys.exit(hypotheses.main(["generate"]))
+"""
+out = subprocess.run([sys.executable, "-c", NO_KEY], capture_output=True, text=True, env={**env, "HOME": tmp}, cwd=tmp)
+assert out.returncode == 4 and "固定の仮説" in out.stderr and "鍵が無い" in out.stderr, out.stderr
+assert "取り寄せに行った" not in out.stderr, out.stderr
 
 # 下見: 本物を呼ばず、送る中身を書き出す。案の記録は作らない
 before = sorted(p.name for p in loop.folder().glob("generated-*.json"))
