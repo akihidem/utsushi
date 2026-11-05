@@ -1,0 +1,18 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_think.py
+# commit: 38066d7（回した時の HEAD）
+F9.own: 自分の仮説「仮説 A から変えた案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-2_v1_free.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-3_v1.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-3_v1_tejun.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-3_v1_after.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpwfdxsqle/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+ok
+rc=0

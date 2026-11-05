@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_no_compare_sheet.py
+# commit: 4466a0e（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_no_compare_sheet.py", line 27, in <module>
+    assert r.returncode != 0 and "invalid choice" in r.stderr, args
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('print-compare', 'H-A', 'H-E')
+rc=1

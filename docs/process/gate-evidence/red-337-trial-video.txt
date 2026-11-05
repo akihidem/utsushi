@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_trial_video.py
+# commit: ec615b1（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_trial_video.py", line 26, in <module>
+    from omochae import loop, trial_video as tv  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'trial_video' from 'omochae' (src/omochae/__init__.py)
+rc=1

@@ -144,9 +144,10 @@ assert len(hold.calls) == 1 and not results and len(raised) == 3, (hold.calls, r
 hypotheses.print_sheet = real_sheet
 assert ps.print_latest(G, "H-A") == 1
 
-# 自分の仮説の紙も同じ。案の名前が違っても、同じ口を通る
-assert post(f"/toy/{G}/own", {"name": "ためしの案", "how": "下から押す", "evidence": "手元の絵"}) == 200
-oid = hypotheses.own_hypotheses(G)[0]["id"]
+# 自分の仮説の紙（話した考えから作る紙の道）も同じ。案の名前が違っても、同じ口を通る
+own, failures = hypotheses.save_own(G, "ためしの案", "下から押す", "手元の絵")
+assert not failures, failures
+oid = own["id"]
 hold = hypotheses.print_own = Hold(real_own)
 threads, results, raised = together([lambda: ps.print_own(G, oid)] * 3)
 finish(threads, hold)

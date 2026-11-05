@@ -1,0 +1,7 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_loop.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 6f386d7（回した時の HEAD）
+    assert hypotheses.print_sheet(G, "H-N1", stem) == 3, "必須 2 種は、命令からも控えを刷らない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 必須 2 種は、命令からも控えを刷らない
+試験 rc=1
+rc=0
