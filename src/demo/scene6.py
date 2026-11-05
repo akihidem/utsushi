@@ -1,4 +1,4 @@
-"""場面 6: 作った人の言葉で、次の版が変わる（本人の所見 → v7 と今の紙の差）。
+"""場面 6: 作った人の言葉で、次の版が変わる（本人の所見 → v7 と今の紙の差）。今の台本からは外してある（demo.script の LEFT_OUT）。
 
 使い方: python -m demo.scene6 --out <repo の外の場所>/scene6.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 型紙が刷れない・pdftoppm か ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -25,9 +25,11 @@ import sys
 from PIL import Image, ImageDraw
 
 from demo.flip import H, PAPER, ROOT, SHU, SUMI, W, contact_sheet, ease, fade, render, text
+from omochae.hypotheses import sheet_of
 from omochae.templates.slider_fan import SHEET_SET
 
 DURATION = 10.0
+SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2・3 と同じ
 
 # 本人の所見（docs/process/trials/README.md の表の文を一字一句そのまま。床で照らす）
 QUOTES = (
@@ -44,7 +46,7 @@ OLD_PDF = "goraigo_{hyp}_v7.pdf"
 
 # 紙の差の朱の札。部品の形から枠を引く（下の change_regions）。
 LABEL_GROOVE, LABEL_BASE, LABEL_COLOR = "下からの切り込み", "土台", "色の境で折る"
-SHOWN_HYPS = ("H-A",)  # 尺に合わせて、所見と同じ仮説 A の 1 組だけを見せる（順位ではない。J-025）
+SHOWN_HYPS = (sheet_of(SID)["id"],)  # 型紙は玩具に 1 枚（J-032）。たたき台の紙の 1 組だけを見せる。引く所見もこの紙の事（順位ではない。J-025）
 
 CAPTION = ("作った人の言葉で、", "次の版が変わる。")
 
@@ -124,7 +126,7 @@ def change_regions(layout):
 
 
 def build_sheets(cache):
-    """仮説 A・C の紙を、v7（git にある PDF）と今（生成器で刷る）の 2 枚ずつ。刷った後の検査も通す。"""
+    """たたき台の紙を、v7（git にある PDF）と今（生成器で刷る）の 2 枚。刷った後の検査も通す。"""
     from omochae.marks import check_image_count, check_pdf
     from omochae.render import write_all
 

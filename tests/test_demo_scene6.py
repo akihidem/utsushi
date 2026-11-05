@@ -7,13 +7,18 @@ import inspect
 
 from PIL import Image
 
-from demo import scene6
+from demo import scene6, script
+from omochae import hypotheses
 from omochae.templates import slider_fan
 
 # 本人の所見は、試行の索引の文に一字一句ある（言い換えると「作った人の言葉」でなくなる）
 readme = scene6.TRIALS_README.read_text(encoding="utf-8")
 assert scene6.QUOTES and all(f"「{q}」" in readme for q in scene6.QUOTES), "所見は README の原文のまま"
 assert "本人の所見" in scene6.QUOTE_FROM and "11-04" in scene6.QUOTE_FROM
+# 型紙は玩具に 1 枚（J-032）。見せるのは、たたき台の紙の 1 組だけ
+assert scene6.SHOWN_HYPS == (hypotheses.sheet_of(scene6.SID)["id"],) == ("H-A",)
+# 今の台本には出さない場面（本人が戻すかを決める）
+assert "scene6" in script.LEFT_OUT and "scene6" not in script.SCENES
 for hyp in scene6.SHOWN_HYPS:
     assert (scene6.OLD_DIR / scene6.OLD_PDF.format(hyp=hyp)).exists(), hyp
 
