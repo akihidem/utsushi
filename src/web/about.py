@@ -66,6 +66,6 @@ def page(skin_name, path="/about"):
     from . import en
 
     body = body.replace('<section class="sec"><p class="links"><a class="btn" href="/toys">',
-                        f'<section class="sec" id="english" lang="en"><h2>In English</h2><p class="lead">{en.SHORT_INTRO}</p><p class="links"><a href="/en">Read more and print in English</a></p></section>'
+                        f'<section class="sec" id="english" lang="en"><h2>In English</h2><p class="lead">{en.SHORT_INTRO}</p><p class="meta">{esc(en.DRAFT)}</p><p class="links"><a href="/en">Read more and print in English</a></p></section>'
                         '<section class="sec"><p class="links"><a class="btn" href="/toys">', 1)
     return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)

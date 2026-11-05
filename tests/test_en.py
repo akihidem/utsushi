@@ -107,8 +107,10 @@ for look in ("tenji", "zine"):
     about_page = about.page(look)
     assert HEAD in about_page and en.SHORT_INTRO in about_page, look
     assert 'lang="en"' in about_page and 'href="/en"' in about_page, look
+    assert en.DRAFT in about_page, "英語を母語とする人が読むまで draft の印を付ける"
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 assert "*Edo nishiki* " + HEAD in readme and readme.index(HEAD) < readme.index("30 秒の要約"), "README の頭に同じ文"
+assert en.DRAFT in readme, "README にも draft の印"
 
 # 日本語の頁に帯と道
 ja = get(f"/toy/{G}")
