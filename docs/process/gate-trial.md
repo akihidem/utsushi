@@ -1076,7 +1076,7 @@
 - 出していない範囲: README と CLAUDE.md の方針の文。見つけた物は統括の担当へ渡した
 - 別の目の確かめで足した直し: C-04 は試験の種類なのに、輪の節に動いた数を足しても落ちる試験が無かったので `tests/test_kaizen.py` に確かめを足し、「だけ」の言い過ぎを直した。C-17 に本物の API では未実行の留保を、C-11 に根拠の節の留保を戻した。C-01・C-19・C-24・C-27・C-29 も、範囲と根拠の字を直した
 - ゴールの要件: どの主張も今の main で本当で、種類と根拠が合う。台帳の検査が通る
-- 検証ゲート: **済み**。Red: 言葉の担当に前提が渡っていない（gate-evidence/red-claims-words-premise.txt）。Green: rc 0（gate-evidence/green-claims-words-premise.txt）。輪の節の数の確かめは、節と一覧に数を足す崩し 3 通りで落ち、直した木で rc 0（gate-evidence/green-claims-kaizen-count.txt）。`python -m omochae.ledger check` は rc 0
+- 検証ゲート: **済み**。Red: 言葉の担当に前提が渡っていない（gate-evidence/red-claims-words-premise.txt）。Green: rc 0（gate-evidence/green-claims-words-premise.txt）。輪の節の数の確かめは、節と一覧に数を足す崩し 3 通りで落ち、直した木で rc 0（gate-evidence/green-claims-kaizen-section.txt）。`python -m omochae.ledger check` は rc 0
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: Issue は立てない決まりなので、PR と統括の担当への知らせに書く
 
