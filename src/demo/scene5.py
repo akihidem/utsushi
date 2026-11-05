@@ -26,8 +26,9 @@ import sys
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from demo.flip import H, PAPER, ROOT, SERIF, SERIF_BOLD, SHU, SUMI, W, contact_sheet, ease, fade, render, text
+from demo.words import step_badge
 
-DURATION = 22.0
+DURATION = 13.0
 TRIALS = ROOT / "docs/process/trials/README.md"
 PHOTO_DIR = ROOT / "docs/process/trials/photos/20261104"
 REVIEW = PHOTO_DIR / "review.md"
@@ -41,14 +42,14 @@ ACCEPT = ("載せる", "載せてよい", "公開してよい")  # 欄が丸ご�
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
-    "title_in": (0.0, 1.2),     # 題と写真の枠が現れる
-    "facts": (1.5, 2.7),        # 試した人と案の札
-    "facts_out": (6.6, 7.2),
-    "notes": (7.4, 8.4),        # 本人の所見（原文のまま）
-    "notes_out": (13.6, 14.2),
-    "closing": (14.4, 15.8),    # 締めの字幕。22 秒まで止めて読ませる
+    "title_in": (0.0, 1.0),     # 題と写真の枠が現れる
+    "facts": (1.2, 2.0),        # 試した人と案の札
+    "facts_out": (4.3, 4.8),
+    "notes": (4.9, 5.7),        # 本人の所見（原文のまま）
+    "notes_out": (8.8, 9.2),
+    "closing": (9.4, 10.6),     # 締めの字幕。13 秒まで止めて読ませる
 }
-SHEET_TIMES = (0.6, 3.0, 6.0, 8.6, 11.0, 13.0, 15.0, 18.0, 21.5)
+SHEET_TIMES = (0.6, 2.5, 4.0, 6.0, 7.5, 8.5, 9.6, 11.0, 12.8)
 
 # 画面の数は README の文をそのまま写す。床が 1 つずつ README に在るかを見る。
 FACTS = (
@@ -182,6 +183,8 @@ class Scene5:
             text(draw, (W // 2, 440), CAPTION[0], 58, fade(SUMI, c), True, "ma")
             text(draw, (W // 2, 530), CAPTION[1], 58, fade(SUMI, c), True, "ma")
         text(draw, (80, H - 50), SOURCE_NOTE, 22, fade(SUMI, 0.7))
+        if c < 1:
+            step_badge(draw, 3, a_in * (1 - c))  # 核の一周の 3 段目（demo.core）
         return img
 
 

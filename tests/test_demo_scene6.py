@@ -19,7 +19,7 @@ for hyp in scene6.SHOWN_HYPS:
 
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene6.CUES.values())
-assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 21.0
+assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 12.0
 
 # 朱の枠は今の配置の部品から引く。A には下からの切り込み、C には土台、どちらも色の境で折る
 layouts, _ = scene6.current_layouts()
@@ -29,7 +29,6 @@ for hyp, (h, layout, failures) in layouts.items():
     regions[hyp] = layout, scene6.change_regions(layout)
 labels = {hyp: {lab for lab, _ in r} for hyp, (_, r) in regions.items()}
 assert scene6.LABEL_GROOVE in labels["H-A"] and scene6.LABEL_COLOR in labels["H-A"], labels
-assert scene6.LABEL_BASE in labels["H-C"] and scene6.LABEL_GROOVE not in labels["H-C"], labels
 for hyp, (layout, r) in regions.items():
     for lab, (x0, y0, x1, y1) in r:
         assert 0 <= x0 < x1 <= layout["page"].w and 0 <= y0 < y1 <= layout["page"].h, (hyp, lab)
@@ -40,7 +39,7 @@ pairs = [{"hyp": hyp, "letter": layouts[hyp][0]["letter"], "old": Image.new("RGB
           "page_mm": (regions[hyp][0]["page"].w, regions[hyp][0]["page"].h)} for hyp in scene6.SHOWN_HYPS]
 scene = scene6.Scene(pairs)
 assert scene.duration == scene6.DURATION
-for t in (0.5, 4.0, 6.5, 8.5, 10.6, 12.5, 15.3, 17.0, 20.9):
+for t in (0.5, 2.0, 3.8, 5.0, 7.0, 8.0, 9.0, 10.0, 11.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (1920, 1080) and a.tobytes() == b.tobytes(), t
 # 枠の段では朱の枠が現れる（同じ絵が続かない）

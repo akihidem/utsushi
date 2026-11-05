@@ -17,7 +17,7 @@ readme = scene5.TRIALS.read_text(encoding="utf-8")
 # 合図の表は時刻の順で、場面の長さの中（台本の 5 の行は 30 秒）
 spans = list(scene5.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene5.DURATION
-assert scene5.DURATION == 22.0 and scene5.Scene5.duration == scene5.DURATION
+assert scene5.DURATION == 13.0 and scene5.Scene5.duration == scene5.DURATION
 assert all(0 <= t <= scene5.DURATION for t in scene5.SHEET_TIMES)
 
 # 既定の写真は確かめ表と一致する。表を自前でも読み、scene5 の読み方と食い違わない事も見る
@@ -68,14 +68,14 @@ def spy(fp, *a, **k):
 Image.open = spy
 try:
     scene = scene5.Scene5(scene5.resolve_photos("") or ())
-    for t in (0.5, 3.0, 8.6, 13.0, 18.0, 21.9):
+    for t in (0.5, 3.0, 6.0, 8.5, 11.0, 12.9):
         a, b = scene.frame(t), scene.frame(t)
         assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 finally:
     Image.open = real_open
 assert not any("photos" in p for p in opened), opened
 # 札の組は入れ替わる（同じ列に 2 組が重ならない）
-f5, f13, f20 = (scene.frame(t).tobytes() for t in (5.0, 10.0, 20.0))
+f5, f13, f20 = (scene.frame(t).tobytes() for t in (3.0, 7.0, 12.0))
 assert f5 != f13 and f13 != f20 and f5 != f20
 
 # 写真が渡された時だけ枠の中が変わる（偽の写真で。repo の写真は開かない）
@@ -84,7 +84,7 @@ with tempfile.TemporaryDirectory() as tmp:
     Image.new("RGB", (400, 300), (20, 120, 60)).save(p)
     with_photo = scene5.Scene5([p])
     region = scene5.FRAME_BOX
-    assert with_photo.frame(5.0).crop(region).tobytes() != scene.frame(5.0).crop(region).tobytes()
+    assert with_photo.frame(3.0).crop(region).tobytes() != scene.frame(3.0).crop(region).tobytes()
     # 切らずに収める: 縦横の比が元のまま
     ph = with_photo.photos[0]
     assert abs(ph.width / ph.height - 400 / 300) < 0.01

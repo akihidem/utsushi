@@ -41,15 +41,15 @@ with tempfile.TemporaryDirectory() as tmp:
 
 scene = scene7.Scene7(page, rec, template)
 assert len(scene.order) == 18 and scene.duration == scene7.DURATION
-for t in (0.5, 2.0, 4.0, 6.0, 9.0, 11.0, 15.0, 16.9):
+for t in (0.5, 2.0, 3.8, 6.0, 7.0, 8.0, 10.0, 11.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 # 並ぶ段の途中と並び終えた後で絵が違う（1 人ずつ現れる）
-assert scene.frame(0.5).tobytes() != scene.frame(4.0).tobytes()
+assert scene.frame(0.5).tobytes() != scene.frame(3.8).tobytes()
 # 曲を渡した時だけ、クレジットの画面が変わる
 with_music = scene7.Scene7(page, rec, template, "試しの曲")
-assert with_music.frame(15.0).tobytes() != scene.frame(15.0).tobytes()
-assert with_music.frame(4.0).tobytes() == scene.frame(4.0).tobytes()
+assert with_music.frame(10.0).tobytes() != scene.frame(10.0).tobytes()
+assert with_music.frame(3.8).tobytes() == scene.frame(3.8).tobytes()
 
 # 型紙の下の札は、どの行も動画の幅の中に収まる（組の名が長くなっても右の端で切れない。11-05 に v10 の「0」が切れた）
 lines = scene.sheet_label_lines()

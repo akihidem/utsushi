@@ -12,7 +12,7 @@ exit: 0 = 書き出せた / 4 = 型紙が刷れない・pdftoppm か ffmpeg が�
 - 今の紙は repo の生成器（compose → render.write_all）で撮る時に刷る。版の札は slider_fan.SHEET_SET から読む
   （字で書くと、刷り直した時に動画だけ古くなる）。差の朱の枠も、同じ配置（layout）の部品の形から引く。
 - 扇の開き方・動き方は描かない（F9）。型紙は平らなまま映し、矢印も付けない。
-- 仮説 A と C を並べるのは、本人の所見がこの 2 つについてだったから。順位ではない（J-025）。
+- 仮説 A の紙を見せるのは、引く所見がこの仮説についてだから。順位ではない（J-025）。
 - 顔と声は入れない（J-022）。
 - frame(t) は時刻だけから 1 コマを描く純関数（flip.py と同じ）。合図は CUES の 1 か所だけを読む。
 """
@@ -27,12 +27,11 @@ from PIL import Image, ImageDraw
 from demo.flip import H, PAPER, ROOT, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 from omochae.templates.slider_fan import SHEET_SET
 
-DURATION = 21.0
+DURATION = 12.0
 
 # 本人の所見（docs/process/trials/README.md の表の文を一字一句そのまま。床で照らす）
 QUOTES = (
     "仮説Aは、くり抜く側面の穴を切るのが大変で、下から切り取ることになった",
-    "仮説Aにある土台が仮説Cにもあると、作りやすい",
 )
 QUOTE_FROM = "本人の所見（11-04）"
 TRIALS_README = ROOT / "docs/process/trials/README.md"
@@ -45,22 +44,18 @@ OLD_PDF = "goraigo_{hyp}_v7.pdf"
 
 # 紙の差の朱の札。部品の形から枠を引く（下の change_regions）。
 LABEL_GROOVE, LABEL_BASE, LABEL_COLOR = "下からの切り込み", "土台", "色の境で折る"
-SHOWN_HYPS = ("H-A", "H-C")
+SHOWN_HYPS = ("H-A",)  # 尺に合わせて、所見と同じ仮説 A の 1 組だけを見せる（順位ではない。J-025）
 
 CAPTION = ("作った人の言葉で、", "次の版が変わる。")
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
-    "quote1": (0.0, 0.8),        # 1 つ目の所見
-    "quote2": (2.0, 2.8),        # 2 つ目の所見
-    "quotes_out": (5.6, 6.2),
-    "pair_a": (6.2, 6.9),        # 仮説 A の紙: v7 と今
-    "boxes_a": (7.2, 8.2),       # 差の朱の枠
-    "pair_a_out": (10.4, 10.9),
-    "pair_c": (10.9, 11.6),      # 仮説 C の紙: v7 と今
-    "boxes_c": (11.9, 12.9),
-    "pair_c_out": (15.1, 15.6),
-    "closing": (15.8, 17.2),     # 締めの字幕（21 秒まで止めて読ませる）
+    "quote1": (0.0, 0.8),        # 所見
+    "quotes_out": (3.0, 3.6),
+    "pair_a": (3.6, 4.3),        # 仮説 A の紙: v7 と今
+    "boxes_a": (4.6, 5.6),       # 差の朱の枠
+    "pair_a_out": (7.8, 8.3),
+    "closing": (8.4, 9.6),       # 締めの字幕（12 秒まで止めて読ませる）
 }
 
 # 置き場（px）。紙は高さ 720px。左に v7、右に今の紙、間の帯に朱の札を置く。
@@ -184,7 +179,7 @@ class Scene:
 
     def _quotes(self, img, draw, t):
         a = 1 - phase(t, "quotes_out")
-        for i, (q, cue) in enumerate(zip(QUOTES, ("quote1", "quote2"))):
+        for i, (q, cue) in enumerate(zip(QUOTES, ("quote1",))):
             u = phase(t, cue) * a
             if u <= 0:
                 continue
@@ -199,8 +194,6 @@ class Scene:
             u = phase(t, "quote1") * a
             text(draw, (80, 60), QUOTE_FROM, 54, fade(SUMI, u), True)
             text(draw, (80, 132), "11-04 に成人 5 人が作って試した後の言葉（原文のまま）", 32, fade(SUMI, u))
-            text(draw, (220, 860), "記録 R-0001（仮説 A）・R-0002（仮説 C）。見た事はどちらも「わからない」", 30,
-                 fade(SUMI, 0.8 * phase(t, "quote2") * a))
 
     def _pair(self, img, draw, t, p, cin, cbox, cout):
         u = span(t, cin, cout)
@@ -243,7 +236,7 @@ class Scene:
         img = Image.new("RGB", (W, H), PAPER)
         draw = ImageDraw.Draw(img)
         self._quotes(img, draw, t)
-        for p, cues in zip(self.pairs, (("pair_a", "boxes_a", "pair_a_out"), ("pair_c", "boxes_c", "pair_c_out"))):
+        for p, cues in zip(self.pairs, (("pair_a", "boxes_a", "pair_a_out"),)):
             self._pair(img, draw, t, p, *cues)
         # 札（右上）: 版の移り。紙の段からずっと出す。
         lab = phase(t, "pair_a") * (1 - phase(t, "closing"))
@@ -267,7 +260,7 @@ class Scene:
                 "朱の枠は変えた所")
 
 
-SHEET_TIMES = (1.5, 4.5, 6.8, 8.6, 10.2, 11.4, 13.0, 15.0, 16.0, 18.0, 20.5)
+SHEET_TIMES = (1.5, 2.8, 3.8, 4.8, 6.0, 7.5, 8.6, 10.0, 11.8)
 
 
 def main(argv=None):

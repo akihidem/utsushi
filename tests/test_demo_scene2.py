@@ -45,7 +45,7 @@ fx, fy, fx1, fy1 = scene2.pct_box((px1 - px, py1 - py), rec["figure_pct"])
 d.rectangle((px + fx + 80, py + fy + 80, px + fx1 - 80, py + fy1 - 80), fill=0)
 d.line((px + 200, py + 200, px + 200, py + 600), fill=0, width=8)
 scene = scene2.Scene2(spread, rec, src)
-for t in (0.5, 4.0, 9.0, 15.5, 19.9):
+for t in (0.5, 4.0, 7.0, 11.5, 14.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (W, H) and a.tobytes() == b.tobytes(), t
 
@@ -58,7 +58,7 @@ early, late = scene.frame(h0 + 0.2).crop(region), scene.frame(h1 - 0.1).crop(reg
 assert early.tobytes() == late.tobytes(), "止まっている間に図の領域が変わった"
 # 図の上で玩具が描かれ、その領域に朱（矢印や枠に使う色）が無い
 assert early.convert("L").getextrema()[0] < 80, "図が描かれていない"
-for t in (h0 + 0.2, 12.0, h1 - 0.1):
+for t in (h0 + 0.2, 9.0, h1 - 0.1):
     px_ = scene.frame(t).crop(region).getcolors(W * H)
     assert not any(abs(c[0] - SHU[0]) + abs(c[1] - SHU[1]) + abs(c[2] - SHU[2]) < 40 for _, c in px_), t
 print("ok")

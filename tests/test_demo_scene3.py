@@ -15,7 +15,7 @@ from omochae.marks import without_premise
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene3.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene3.DURATION
-assert scene3.Scene3.duration == scene3.DURATION == 25.0
+assert scene3.Scene3.duration == scene3.DURATION == 13.0
 
 # 仮説の数と玩具の名は記録から。札の文に数を書き込んでいない
 data = json.loads((scene3.ROOT / "data/hypotheses" / f"{scene3.SID}.json").read_text(encoding="utf-8"))
@@ -46,12 +46,12 @@ for p in rects["plate"] + rects["premise"]:
 scene = scene3.Scene3(shot, rects, dpr=dpr)
 assert len(scene.plates) == n and f"仮説の {n} 枚" in scene.mod_note
 
-for t in (0.5, 3.0, 6.0, 9.2, 11.0, 13.0, 16.0, 21.0, 24.9):
+for t in (0.5, 2.0, 4.0, 6.0, 7.0, 8.2, 10.0, 11.0, 12.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (W, H) and a.tobytes() == b.tobytes(), t
 
 # 寄りが効いている（途中で絵が変わる）
-assert scene.frame(2.5).tobytes() != scene.frame(6.0).tobytes() != scene.frame(11.0).tobytes()
+assert scene.frame(1.5).tobytes() != scene.frame(4.0).tobytes() != scene.frame(9.0).tobytes()
 # 仮説の札は同じ倍率で同じ高さの所から並び、記号の順（左から右）のまま
 xs = [x for x, _, _ in scene.plates]
 assert xs == sorted(xs) and len({y for _, y, _ in scene.plates}) == 1
