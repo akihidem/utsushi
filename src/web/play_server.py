@@ -122,14 +122,14 @@ def printed_versions(sid, hid):
 def ensure_after(sid, hid, version):
     """記録のある案と版の試した後の紙が無ければ、開く時に作る（#320）。場で配られた紙で作った人は「型紙を見る」を押さないので、置き場に紙が無い。
     記録の時でなく開く時に作るのは、前に残した記録と、置き場が空になった後の記録も同じ道で開くため。記録の POST も重くならない。
-    記録の無い案と版では作らない（S-03）。型紙の確定（f09）は増やさない: 人が刷ると選んだ操作でないため。
-    紙の組は版の紙と同じ道で作るので、途中で落ちても半端な紙を残さない。作れない時は紙が無いだけにする（頁ごと落とさない）。"""
+    記録の無い案と版では作らない（S-03）。作るのは試した後の紙だけで、型紙の確定（f09）も増やさない: 人が刷ると選んだ操作でないので、刷った案に数えない。
+    途中で落ちても半端な紙を残さない。作れない時は紙が無いだけにする（頁ごと落とさない）。"""
     if not any(r["hypothesis_id"] == hid and r.get("sheet_version", 1) == version for r in records.all_records(sid)):
         return
     if (out_dir(sid) / f"{hid}_v{version}_after.pdf").exists():
         return
     try:
-        loop.print_version(sid, hid, version, out_dir(sid))
+        loop.print_after(sid, hid, version, out_dir(sid))
     except Exception as e:
         failure_log.request_failed("GET", f"/sheet/{sid}/{hid}_v{version}_after", e)
 

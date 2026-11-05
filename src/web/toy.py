@@ -78,8 +78,8 @@ def printed_ids(sid, data):
 
 
 def latest_printed(sid, data):
-    """窓に最初に出す仮説: 一番新しく刷った物。"""
-    cands = [(p.stat().st_mtime, p.name.split("_v")[0]) for p in out_dir(sid).glob("H-*_v*.pdf")] if out_dir(sid).exists() else []
+    """窓に最初に出す仮説: 一番新しく刷った物。版の PDF だけを見る: 試した後の紙だけがある案は刷った案でない（#320）。"""
+    cands = [(p.stat().st_mtime, m.group(1)) for p in out_dir(sid).glob("H-*_v*.pdf") if (m := re.fullmatch(r"(H-[A-Z0-9]+)_v\d+\.pdf", p.name))] if out_dir(sid).exists() else []
     return max(cands)[1] if cands else None
 
 
@@ -100,11 +100,16 @@ def window(sid, data, see, kind, v, recorded):
     # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。見比べるのに仮説の節まで戻らなくてよい。
     make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
                       f'<button>仮説 {esc(hypotheses.letter(x))}</button></form>')
-    if not ids:
+    # 紙を作らずに記録を残した人が札から来た時（#320）は、試した後の紙だけがある案も窓に出す。刷った案には数えないので、札は点線のまま。
+    only_after = (kind == "_after" and see in recorded and any(x["id"] == see for x in data["hypotheses"])
+                  and (out_dir(sid) / f"{see}_v{v}_after.png").exists())
+    if not ids and not only_after:
         tabs = "".join(make(x) for x in data["hypotheses"])
         return f'<div class="tabs">{tabs}</div><p class="meta">仮説の札を押すと、紙を作ってここに出します。</p>'
-    see = see if see in ids else (latest_printed(sid, data) or ids[0])
+    see = see if see in ids or only_after else (latest_printed(sid, data) or ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
+    if only_after and v not in vs:
+        vs = sorted([*vs, v])
     v = v if v in vs else vs[-1]
     kind = kind if kind in ("", "_tejun", "_after") else ""
     if kind == "_after" and see not in recorded:
