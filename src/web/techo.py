@@ -4,7 +4,7 @@
 判断の芯:
 - 中身（組み方・用意する物・凡例・よくある言葉の説明）は repo のコードから書き出す。型紙と手帖が食い違わないため
 - 仮説の名前と動き方は頁に入れない。紙は「仮説 A の紙」と字と組の版だけで指す（作りながら見る頁なので短くする）
-- 手順の質問は src/api/ask.py と同じ線: 仕組みの質問は答えない、よくある言葉は刷った説明から、ほかは見ている人の Claude に組み方と凡例だけを渡す
+- 手順の質問は src/api/ask.py と同じ線: 仕組みの質問は答えない、語そのものを尋ねる短い問いは刷った説明から、ほかは見ている人の Claude に組み方と凡例だけを渡す
 - 上げた写真は上げた人と本人だけが見る。持ち寄りの場へは本人が選び、持ち寄りの床を通してから移す（J-021・F10）
 - 頁は claude.ai のアーティファクトとして非公開で置く。人への共有は本人がする（外に出る操作）
 出す先: out/techo/index.html（git の外。頁の中身は毎回ここから作り直す）。
@@ -55,7 +55,7 @@ def data():
             sheets.append({"id": h["id"], "label": f"仮説 {hypotheses.letter(h)} の紙", "steps": tpl.steps(p), "materials": tpl.materials(p)})
         toys.append({"sid": sid, "toy": d["toy"], "set": tpl.SHEET_SET, "results": list(tpl.RESULTS), "holding": src.get("holding", ""),
                      "thumb": _thumb(sid), "sheets": sheets})
-    return {"toys": toys, "glossary": ask.GLOSSARY, "mechanism": list(ask.MECHANISM_WORDS), "refuse": ask.REFUSE, "system": ask.SYSTEM}
+    return {"toys": toys, "glossary": ask.GLOSSARY, "term_question": ask.TERM_QUESTION, "mechanism": list(ask.MECHANISM_WORDS), "refuse": ask.REFUSE, "system": ask.SYSTEM}
 
 
 def main(argv=None):

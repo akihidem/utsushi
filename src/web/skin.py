@@ -43,18 +43,22 @@ def esc(s):
 
 
 # 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
+# スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）
 NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
-@media (max-width:480px){.nav{gap:10px;letter-spacing:.1em}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
 # 文の中のリンクは入れない。行が崩れるので。字の大きさの床（12px）は、幅に関わらず CSS の指定そのもので守る。
+# button に display を付けると、ブラウザ既定の [hidden]{display:none} に勝ち、隠した釦が出たままになる（#321）。頁ごとに止めると見落としが残るので、
+# 原因のここで止める。.fan-ctl button は [hidden] より強いので !important が要る。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
 .nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 input[type=range]{height:44px}
+[hidden]{display:none!important}
 }
 """
 BASE = """
@@ -87,6 +91,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .frame figcaption{font-size:12px;color:var(--mute);letter-spacing:.15em;margin-top:10px}
 .songs{writing-mode:vertical-rl;height:min(44vh,360px);margin:0 0 14px auto;font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .songs p{margin:0 .3em}
+.hero .songs{float:right;margin:0 0 14px 24px}
 .label{font-size:12px;line-height:2;letter-spacing:.06em;color:var(--mute);border-left:1px solid var(--frame);padding-left:14px;max-width:24em;margin:18px 0}
 .label b{display:block;font-weight:400;font-size:17px;letter-spacing:.22em;color:var(--fg)}
 .links{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;letter-spacing:.12em}
@@ -151,7 +156,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
 .foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
+@media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.hero .songs{float:none;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
  main,.wrap{padding-left:16px;padding-right:16px}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
