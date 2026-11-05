@@ -61,3 +61,16 @@ assert max(scale) - min(scale) < 0.01, scale
 # 札は動画の幅の中
 assert min(xs) >= 0 and max(x + p.width for x, _, p in scene.plates) <= W
 print("ok")
+
+# 撮る高さ: 頁の作りが変わって長くなっても、使う枠（入力欄・予想・仮説の札）と寄りの余白が撮った画面に入る。
+# 11-05 に頁を作り直した後、高さを決め打ちにしていたので札 D・E の下が黒く欠けた（3400px に対して札の下端 3505px）。
+grown = {"textarea": [[313, 1305, 974, 110]], "article": [[290, 1129, 1020, 133]],
+         "plate": [[290, 2303, 326, 627], [290, 2951, 326, 553]]}
+assert not scene3.shot_fits(grown, 3400), "札の下端が画面の外"
+need = scene3.need_height(grown, 3400)
+assert need >= 2951 + 553 + scene3.SHOT_MARGIN and scene3.shot_fits(grown, need)
+# 予想の前の頁でも、入力欄の下に寄りの余白が要る（入力欄の下端 1415px に対して 1400px で撮っていた）
+assert scene3.need_height({"textarea": [[313, 1305, 974, 110]], "article": [], "plate": []}, 1400) >= 1415 + scene3.SHOT_MARGIN
+# 短い頁は、決めた高さより低くしない（寄りの絵の大きさを変えない）
+assert scene3.need_height({"textarea": [[0, 100, 10, 10]], "article": [], "plate": []}, 1400) == 1400
+print("ok shot height")

@@ -53,7 +53,8 @@ SHEET_TIMES = (0.6, 1.8, 3.6, 5.6, 8.0, 10.8, 11.4, 14.0, 19.5)
 GRID_COLS, GRID_ROWS = 6, 3
 GRID_BOX = (80, 150, 1080, 870)   # 左・上・右・下。下に札、右に型紙の余白を残す
 FIG_TALL = 200                    # 一番背の高い人を 200px に。全員を同じ倍率にし、体の大きさの差を消さない
-SHEET_BOX = (1180, 120, 1840, 880)  # 型紙を置く枠（A4 の縦長が入る高さ）
+SHEET_LABEL_PX = 28  # 型紙の下の札の字の大きさ
+SHEET_BOX = (1180, 120, 1840, 850)  # 型紙を置く枠（A4 の縦長が入る高さ）。下に札の 2 行を置き、940 からの字幕の帯に重ねない
 
 
 def credit_lines(music=None):
@@ -150,8 +151,12 @@ class Scene7:
         sheet = self.template.convert("RGBA")
         sheet.putalpha(round(255 * v))
         img.paste(sheet, (x, y), sheet)
-        text(draw, (x + tw // 2, SHEET_BOX[3] + 14), f"刷った型紙の一例（御来迎・仮説 B の紙。順位ではない・{self.sheet_set}）", 28,
-             _fade(SUMI, v), anchor="ma")
+        for i, s in enumerate(self.sheet_label_lines()):
+            text(draw, (x + tw // 2, SHEET_BOX[3] + 12 + i * (SHEET_LABEL_PX + 6)), s, SHEET_LABEL_PX, _fade(SUMI, v), anchor="ma")
+
+    def sheet_label_lines(self):
+        """型紙の下の札。1 行では右の端で組の名が切れた（11-05）ので、何の紙かと、順位でない事・組の名を 2 行に分ける。"""
+        return ("刷った型紙の一例（御来迎・仮説 B の紙）", f"順位ではない・組 {self.sheet_set}")
 
     def _credits(self, img, c):
         # 覆いは最後に不透明にする。下の絵が薄く透けると、クレジットの字と重なって読みにくい
