@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_wording.py
+# commit: a4aa34d（回した時の HEAD）
+/tmp/tmpzqa70ayn/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpzqa70ayn/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpzqa70ayn/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpzqa70ayn/play/NDL-1187053-R0000005-L/.tmp-b_f_8duz/H-A_v2.pdf
+/tmp/tmpzqa70ayn/play/NDL-1187053-R0000005-L/.tmp-b_f_8duz/H-A_v2_tejun.pdf
+/tmp/tmpzqa70ayn/play/NDL-1187053-R0000005-L/.tmp-b_f_8duz/H-A_v2_after.pdf
+ok
+rc=0
