@@ -49,6 +49,11 @@ for tid in ("balance_toy", "spin_toy", "stand_figure", "stick_prop", "string_pul
     assert lines(tid, {"paper_gsm": 80})[0] == "コピー用紙くらいの厚さの紙を 1 枚", tid
     assert lines(tid, {"paper_gsm": 150})[0] == "画用紙くらいの厚さの紙を 1 枚", tid
     assert lines(tid, {"paper_gsm": 250})[0] == "画用紙より厚い紙を 1 枚", tid
+    # 境の値そのもの。境が動くと、同じ重さの紙の名前が黙って変わる
+    assert lines(tid, {"paper_gsm": 109})[0] == "コピー用紙くらいの厚さの紙を 1 枚", tid
+    assert lines(tid, {"paper_gsm": 110})[0] == "画用紙くらいの厚さの紙を 1 枚", tid
+    assert lines(tid, {"paper_gsm": 219})[0] == "画用紙くらいの厚さの紙を 1 枚", tid
+    assert lines(tid, {"paper_gsm": 220})[0] == "画用紙より厚い紙を 1 枚", tid
 
 # 3. 空き箱の厚紙は、手順で使うので紙とは別の行に立てる。凧は厚紙を使わない
 board = next((c for c in cases if c[2] == "string_pull" and "厚紙" in " ".join(TEMPLATES["string_pull"].steps({**TEMPLATES["string_pull"].DEFAULTS, **c[3]}))))
