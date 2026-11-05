@@ -39,6 +39,7 @@ for word in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "RTCPeerConn
     assert word not in page, word
 assert "audio:false" in page and "audio:true" not in page
 assert 'muted playsinline aria-hidden="true"' in page and "#rt-video{position:absolute;width:1px;height:1px;opacity:0" in page
+assert "#rt-canvas{display:none}" in page, "読み取りの canvas も出さない（消すと顔の絵が 64×48 で出る）"
 # カメラは押した時だけ動かす
 assert page.index("go.addEventListener('click'") < page.index("getUserMedia({video")
 assert page.count("getUserMedia({video") == 1
