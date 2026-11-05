@@ -230,7 +230,7 @@ class Handler(BaseHTTPRequestHandler):
         if act == "judge":
             failures, msg = tv.judge_mark(form.get("record", ""), form.get("mark", ""), by, accept=form.get("action") == "confirm"), "札を確かめました"
         elif act == "shown":
-            failures, msg = tv.confirm_shown(form.get("record", ""), by), "顔と声の確かめを残しました。映像とコマが出ます"
+            failures, msg = tv.confirm_shown(form.get("record", ""), by, form.get("video", "v1.mp4")), "顔と声の確かめを残しました。映像とコマが出ます"
         elif form.get("action") == "reject":
             failures, msg = tv.reject(form.get("fix", ""), by), "案を採らない事にしました"
         else:
@@ -251,8 +251,8 @@ class Handler(BaseHTTPRequestHandler):
     def _send_video(self, rid, name):
         """作成の過程の動画を部分取得で返す。長い動画を丸ごとメモリに読まないよう、ファイルから必要な所だけ読む（iOS の Safari は部分取得で読む）。"""
         from omochae import trial_video
-        d, f = trial_video.load(rid), trial_video._base(rid) / name
-        if not (d and d.get("checked_by") and f.exists()):
+        f = trial_video._base(rid) / name
+        if not (trial_video.shown(rid, name) and f.exists()):
             return self._send(404, "見つかりません")
         size = f.stat().st_size
         span = byte_range(self.headers.get("Range"), size)
@@ -326,9 +326,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/loop/frame/(R-\d{4,})/(v\d+-\d{6}\.jpg)", path)
         if m:
             from omochae import trial_video
-            d = trial_video.load(m.group(1))
             f = trial_video._base(m.group(1)) / "frames" / m.group(2)
-            if d and d.get("checked_by") and f.exists():
+            # コマも、その動画を人が確かめた後だけ（名前の頭が動画の名前）。
+            if trial_video.shown(m.group(1), m.group(2).split("-")[0] + ".mp4") and f.exists():
                 return self._send(200, f.read_bytes(), "image/jpeg")
             return self._send(404, "見つかりません")
         if path == "/loop":
@@ -649,7 +649,7 @@ class Handler(BaseHTTPRequestHandler):
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return out(200, {"text": text, "from": how})
-        rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
+        rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "sheet_set": making_log._engine(sid, hid)[1], "result": form.get("result"),
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
         if rid:
             making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
@@ -713,7 +713,8 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 hid = form.get("hypothesis", "")
                 # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
-                rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
+                # 刷った組も残す: 版ごとの比べ（trial_video.effect）で、どの紙の報告かが分かるように。
+                rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "sheet_set": making_log._engine(sid, hid)[1], "result": form.get("result"),
                        "impression": form.get("impression", "").strip(),
                        "opened_deg": _num(form.get("opened_deg")), "opener": form.get("opener") or None, "power": form.get("power") or None,
                        "minutes_to_try": _num(form.get("minutes_to_try")), "fixes": [], "note": form.get("note", ""),

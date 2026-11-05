@@ -131,7 +131,7 @@ def new_record(sid, hid, result, version=1, tried_on="", note=""):
 def attach(rid, src):
     """動画を記録に結ぶ。音と撮影情報を落として置き場へ写し、止まった候補を拾う。元のファイルには触らない。返り値は (動画の項目, 失敗の list)。"""
     try:
-        rec = loop.record(rid)
+        loop.record(rid)
     except ValueError as e:
         return None, [Failure("F8.references", rid, str(e))]
     src = pathlib.Path(src)
@@ -142,23 +142,30 @@ def attach(rid, src):
         return None, [Failure("F3.result", src.name, "動画として読めない（ffmpeg が無い時も）")]
     d = _base(rid)
     d.mkdir(parents=True, exist_ok=True)
-    cur = load(rid) or {"record_id": rid, "source_id": rec["source_id"], "hypothesis_id": rec["hypothesis_id"], "sheet_version": rec.get("sheet_version", 1),
-                        "sheet_set": rec.get("sheet_set", ""), "videos": [], "marks": [], "checked_by": None}
-    name = f"v{len(cur['videos']) + 1}.mp4"
     # 映像は作り直さない（-c copy）。-tag:v hvc1 は iPhone の HEVC を Safari で再生するため。音・字幕・撮影情報（位置など）は写さない。
     tag = ["-tag:v", "hvc1"] if codec == "hevc" else []
+    # 重い所（写す・候補を拾う）は排他の外で行い、数分かかる動画の間も頁の確かめの口を止めない。名前を決めて置くのは _register の排他の中。
     with tempfile.TemporaryDirectory(dir=d) as tmp:
-        out = pathlib.Path(tmp) / name
+        out = pathlib.Path(tmp) / "take.mp4"
         try:
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:v:0", "-c", "copy", "-an", "-sn", "-dn", "-map_metadata", "-1",
                             "-map_chapters", "-1", "-movflags", "+faststart", *tag, str(out)], capture_output=True, check=True, timeout=TIMEOUT)
         except (OSError, subprocess.SubprocessError):
             return None, [Failure("F3.result", src.name, "音と撮影情報を落とせなかった（動画の形を確かめる）")]
-        shutil.move(str(out), d / name)
-    item = {"file": name, "duration": round(dur, 1), "still": still_spans(d / name), "attached_at": loop._now()}
+        return _register(rid, out, round(dur, 1), still_spans(out)), []
+
+
+@loop.exclusive
+def _register(rid, out, duration, still):
+    rec = loop.record(rid)
+    cur = load(rid) or {"record_id": rid, "source_id": rec["source_id"], "hypothesis_id": rec["hypothesis_id"], "sheet_version": rec.get("sheet_version", 1),
+                        "sheet_set": rec.get("sheet_set", ""), "videos": [], "marks": []}
+    name = f"v{len(cur['videos']) + 1}.mp4"
+    shutil.move(str(out), _base(rid) / name)
+    item = {"file": name, "duration": duration, "still": still, "attached_at": loop._now(), "checked_by": None}
     cur["videos"].append(item)
     _save(rid, cur)
-    return item, []
+    return item
 
 
 def frame(rid, video, at):
@@ -198,6 +205,7 @@ def contact(rid, video, every, out):
     return len(cells)
 
 
+@loop.exclusive
 def add_mark(rid, at, step, kind, note, read_by, video="v1.mp4"):
     """札を足す。人が確かめるまでは案で、数えない。返り値は (札の ID, 失敗の list)。"""
     d = load(rid)
@@ -228,6 +236,7 @@ def add_mark(rid, at, step, kind, note, read_by, video="v1.mp4"):
     return mid, []
 
 
+@loop.exclusive
 def judge_mark(rid, mid, by, accept=True):
     """人が札を確かめる（または外す）。確かめた札だけが根拠になる。"""
     d = load(rid)
@@ -242,16 +251,27 @@ def judge_mark(rid, mid, by, accept=True):
     return []
 
 
-def confirm_shown(rid, by):
-    """人が映像を見て、顔と声が入っていないと確かめた印。これが無いと作る側の頁にも映像とコマを出さない。"""
+@loop.exclusive
+def confirm_shown(rid, by, video="v1.mp4"):
+    """人が映像を見て、顔と声が入っていないと確かめた印。これが無いと作る側の頁にも映像とコマを出さない。
+    動画ごとに持つ: 記録ごとにすると、確かめた後に結んだ 2 本目が、見ないまま出てしまう（検品で再現）。"""
     d = load(rid)
     if d is None:
         return [Failure("F8.references", rid, "動画を結んだ記録が無い")]
+    item = next((v for v in d["videos"] if v["file"] == video), None)
+    if item is None:
+        return [Failure("F8.references", video, "その動画は結んでいない")]
     if not (by or "").strip():
         return [Failure("F9.human", rid, "確かめた人の名前が無い")]
-    d["checked_by"] = by.strip()
+    item["checked_by"] = by.strip()
     _save(rid, d)
     return []
+
+
+def shown(rid, video):
+    """その動画の映像とコマを、作る側の頁に出してよいか（人が確かめた動画だけ）。"""
+    d = load(rid)
+    return bool(d and any(v["file"] == video and v.get("checked_by") for v in d["videos"]))
 
 
 def _fix_path(fid):
@@ -263,6 +283,7 @@ def fixes(sid=None):
     return [f for f in out if sid is None or f.get("source_id") == sid]
 
 
+@loop.exclusive
 def propose(rid, mark_ids, text, drafted_by, param=None, to=None):
     """直しの案。根拠は確かめた札で、人の説明が先（J-013）。param があれば寸法を 1 つ変える案、無ければ形や手順の文の案。"""
     d = load(rid)
@@ -295,6 +316,7 @@ def _finish(fix, **made):
     store.write_json(_fix_path(fix["id"]), fix)
 
 
+@loop.exclusive
 def adopt(fid, by, sheet_set="", commit="", decided_in="", printer=None):
     """人が案を採る。寸法の案は今の輪で次の版を作って刷る（F7 の向きの検査が落とせば版にならない）。形や手順の案は雛形の直し（T-）の記録にする。
     雛形を実際に直すのはエンジンの側の受け持ちなので、T- には直した組と commit を要る物として求める（まだ直していない案を、直した事にしない）。"""
@@ -306,22 +328,45 @@ def adopt(fid, by, sheet_set="", commit="", decided_in="", printer=None):
     if not (by or "").strip():
         return None, [Failure("F9.human", fid, "採った人の名前が無い")]
     rid, sid, hid = fix["record_id"], fix["source_id"], fix["hypothesis_id"]
+    # 案を作った後に札が外された時に備えて、採る時にも床を当てる（loop.adopt と同じ考え）。
+    marks = {m["id"]: m for m in (load(rid) or {}).get("marks", [])}
+    bad = [mid for mid in fix["mark_ids"] if not (marks.get(mid) or {}).get("confirmed_by")]
+    if bad:
+        return None, [Failure("F9.human", mid, "根拠の札が、人の確かめた札ではなくなった") for mid in bad]
     if fix.get("param"):
-        failures = loop.confirm_interpretation(rid, by, fix["text"])
-        if failures:
-            return None, failures
+        # 今の輪は、確定した解釈を提案の床に求める。人がもう確定した解釈は上書きしない。無い時だけ案の文で確定し、採れなかったら元へ戻す
+        # （前は検査に落ちても、案の文が人の確定した解釈として残った。検品で再現）。
+        before = loop.interpretation(rid)
+        had = bool(before and before.get("status") == "confirmed")
+        def undo():
+            if had:
+                return
+            if before is None:
+                loop.interp_path(rid).unlink(missing_ok=True)
+            else:
+                store.write_json(loop.interp_path(rid), before)
+        if not had:
+            failures = loop.confirm_interpretation(rid, by, fix["text"])
+            if failures:
+                return None, failures
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
         pid, failures = loop.save_proposal({"record_ids": [rid], "hypothesis_id": hid, "changes": [{"param": fix["param"], "to": fix["to"], "why": fix["text"]}]}, source, "human")
         if failures:
+            undo()
             return None, failures
         made, failures = loop.adopt(pid, by, accept_params=[fix["param"]], source=source)
         if failures or "version" not in (made or {}):
+            undo()
             return None, failures or [Failure("F7.revision", fid, "次の版ができなかった")]
         version = made["version"]
-        # 刷れない時も版の記録は残る（loop.adopt の後）。案は採った事にして、刷れなかった事を返す。刷る口は 1 つ前の版へ戻るので、紙が刷れなくなる事は無い。
-        printed = printer(sid, hid, version) if printer else 0
-        _finish(fix, decided_by=by.strip(), version=version, proposal=pid, printed=printed == 0)
-        return {"version": version, "printed": printed == 0}, []
+        # 版の記録はもう残っている。刷れない時（道具が無いなど）も案は採った事にする。止めると、案は採れないまま版だけが増える（検品で再現）。
+        # 刷る口は 1 つ前の版へ戻るので、紙が刷れなくなる事は無い。
+        try:
+            printed = (printer(sid, hid, version) if printer else 0) == 0
+        except Exception:
+            printed = False
+        _finish(fix, decided_by=by.strip(), version=version, proposal=pid, printed=printed)
+        return {"version": version, "printed": printed}, []
     tid, failures = loop.save_template_change([rid], sheet_set, commit, [fix["text"]], by, decided_in)
     if failures:
         return None, failures
@@ -329,10 +374,13 @@ def adopt(fid, by, sheet_set="", commit="", decided_in="", printer=None):
     return {"template_change": tid}, []
 
 
+@loop.exclusive
 def reject(fid, by):
     fix = store.read_json_or_skip(_fix_path(fid))
     if fix is None:
         return [Failure("F8.references", fid, "その案は無い")]
+    if fix["status"] != "pending_human":
+        return [Failure("F9.human", fid, f"状態 {fix['status']} の案は変えられない")]  # 版になった案を「採らない」に見せない
     if not (by or "").strip():
         return [Failure("F9.human", fid, "決めた人の名前が無い")]
     fix.update(status="rejected", decided_by=by.strip(), decided_at=loop._now())
@@ -340,41 +388,49 @@ def reject(fid, by):
     return []
 
 
+def _version_order(col):
+    """列の並び: 組の版は数で比べる（文字の順だと goraigo-v10 が goraigo-v9 の前に来る）。組の記録の無い列は先頭。"""
+    m = re.fullmatch(r"(.*?)-v(\d+)", col[0] or "")
+    return (m.group(1), int(m.group(2)), col[1]) if m else (col[0] or "", -1, col[1])
+
+
 def effect(sid):
     """版にどう効いたかを読むための表。{仮説: {"columns": [(刷った組, 版)…], "rows": {手順: {列: {"video": 確かめた札, "tap": 画面の札}}}, "reports": {列: 報告の数}}}。
     判定はしない。数件の比べなので、数は読む人の手がかりにすぎない。"""
-    out = {}
+    raw = {}  # {仮説: [(組, 版, 種類, 手順)]}。先に集めて、組の記録の無い物を後で寄せる
 
-    def slot(hid, col):
-        h = out.setdefault(hid, {"columns": [], "rows": {}, "reports": {}})
-        if col not in h["columns"]:
-            h["columns"].append(col)
-        return h
-
-    def set_of(rec_or_ev):
-        return rec_or_ev.get("sheet_set", "")
+    def note(hid, sheet_set, version, what, step=None):
+        raw.setdefault(hid, []).append((sheet_set or "", version, what, step))
 
     for r in records.all_records(sid):
-        col = (set_of(r), r.get("sheet_version", 1))
-        h = slot(r["hypothesis_id"], col)
-        h["reports"][col] = h["reports"].get(col, 0) + 1
+        note(r["hypothesis_id"], r.get("sheet_set"), r.get("sheet_version", 1), "report")
     for d in all_for(sid):
-        col = (d.get("sheet_set", ""), d.get("sheet_version", 1))
-        h = slot(d["hypothesis_id"], col)
         for m in d["marks"]:
             if m.get("confirmed_by") and m.get("step") is not None:
-                cell = h["rows"].setdefault(m["step"], {}).setdefault(col, {"video": 0, "tap": 0})
-                cell["video"] += 1
+                note(d["hypothesis_id"], d.get("sheet_set"), d.get("sheet_version", 1), "video", m["step"])
+        note(d["hypothesis_id"], d.get("sheet_set"), d.get("sheet_version", 1), "seen")
     for e in making_log.steps(sid):
-        if e.get("event") != "stuck":
-            continue
-        col = (e.get("sheet_set", ""), e.get("sheet_version", 1))
-        h = slot(e.get("hypothesis_id", ""), col)
-        cell = h["rows"].setdefault(e["step"], {}).setdefault(col, {"video": 0, "tap": 0})
-        cell["tap"] += 1
-    for h in out.values():
-        h["columns"].sort(key=lambda c: (c[0], c[1]))
-        h["rows"] = dict(sorted(h["rows"].items()))
+        if e.get("event") == "stuck":
+            note(e.get("hypothesis_id", ""), e.get("sheet_set"), e.get("sheet_version", 1), "tap", e["step"])
+    out = {}
+    for hid, items in raw.items():
+        # 前の記録には組の欄が無い物がある。同じ版の組が 1 つに決まる時はそこへ寄せる（1 つの版が 2 列に割れて、報告と札が別の列に並ぶのを避ける）。
+        named = {}
+        for sheet_set, version, _, _ in items:
+            if sheet_set:
+                named.setdefault(version, set()).add(sheet_set)
+        col_of = lambda ss, v: (ss or (next(iter(named[v])) if len(named.get(v, ())) == 1 else ""), v)
+        cols, rows, reports = [], {}, {}
+        for sheet_set, version, what, step in items:
+            col = col_of(sheet_set, version)
+            if col not in cols:
+                cols.append(col)
+            if what == "report":
+                reports[col] = reports.get(col, 0) + 1
+            elif what in ("video", "tap"):
+                cell = rows.setdefault(step, {}).setdefault(col, {"video": 0, "tap": 0})
+                cell[what] += 1
+        out[hid] = {"columns": sorted(cols, key=_version_order), "rows": dict(sorted(rows.items())), "reports": reports}
     return out
 
 
@@ -386,14 +442,19 @@ def report(rid, built, finish=None, minutes=None, gave_up=None, finish_notes="")
         return None, [Failure("F8.references", rid, "動画を結んだ記録が無い")]
     rec = loop.record(rid)
     data = hypotheses.load(rec["source_id"])
-    h = next((x for x in data["hypotheses"] if x["id"] == rec["hypothesis_id"]), {})
+    h = next((x for x in [*data["hypotheses"], *hypotheses.own_hypotheses(rec["source_id"])] if x["id"] == rec["hypothesis_id"]), {})
     template = h.get("template") or data.get("template", "slider_fan")
+    # 寸法は、その記録の版の物（版 2 の報告を版 1 の寸法で渡すと、エンジンが別の寸法の困り事と読む）。
+    try:
+        params = loop.version_params(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_version", 1))[0] or {}
+    except ValueError:
+        params = h.get("params") or {}
     results = list(records.results_for(rec["source_id"]))
     moved = "moved" if rec["result"] == results[0] else "partly" if rec["result"] in ("少し動いた", "少し遊べた") else "not" if rec["result"] in ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "倒れた") else None
     confirmed = [m for m in d["marks"] if m.get("confirmed_by")]
     # 形の名前はエンジンの雛形の FORM（この repo の雛形の写しには無いので、ここに持つ）。
-    form = (h.get("params") or {}).get({"slider_fan": "push_part", "pivot_counterweight": "mount"}.get(template, "form"))
-    out = {"template": template, **({"form": form} if form else {}), "source_id": rec["source_id"], "params": h.get("params", {}), "built": bool(built), "motion_notes": rec.get("impression") or rec.get("note", ""),
+    form = params.get({"slider_fan": "push_part", "pivot_counterweight": "mount"}.get(template, "form"))
+    out = {"template": template, **({"form": form} if form else {}), "source_id": rec["source_id"], "params": params, "built": bool(built), "motion_notes": rec.get("impression") or rec.get("note", ""),
            "finish_notes": finish_notes, "problems": [{"kind": m["kind"], "step": m["step"], "note": m["note"]} for m in confirmed], "reported_at": rec.get("recorded_at", "")}
     if moved:
         out["moved"] = moved
@@ -416,6 +477,17 @@ def _say(failures):
 
 
 def main(argv=None):
+    # 終わりの番号は repo の決まり（0・3・4 だけ）。引数の間違いと、読めない記録は「確かめられない」の 4。
+    try:
+        return _main(argv)
+    except SystemExit as e:
+        return 0 if e.code in (0, None) else 4
+    except (KeyError, TypeError, ValueError, StopIteration, OSError) as e:
+        print(f"検査できない: {type(e).__name__}: {e}", file=sys.stderr)
+        return 4
+
+
+def _main(argv=None):
     ap = argparse.ArgumentParser(prog="omochae.trial_video")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("attach", help="動画を記録に結ぶ。--record か、--source と --hypothesis と --result で記録を作る")
@@ -444,8 +516,9 @@ def main(argv=None):
     s.add_argument("record")
     s.add_argument("mark")
     s.add_argument("--by", required=True)
-    s = sub.add_parser("show-ok", help="顔と声が入っていないと人が確かめた印")
+    s = sub.add_parser("show-ok", help="顔と声が入っていないと人が確かめた印（動画ごと）")
     s.add_argument("record")
+    s.add_argument("--video", default="v1.mp4")
     s.add_argument("--by", required=True)
     s = sub.add_parser("propose", help="直しの案")
     s.add_argument("record")
@@ -476,12 +549,18 @@ def main(argv=None):
         if not shutil.which("ffmpeg"):
             print("検査できない: ffmpeg が無い", file=sys.stderr)
             return 4
-        if not rid:
+        made_here = not rid
+        if made_here:
+            # 動画を先に確かめる。読めない動画のために記録を作ると、動画の無い報告が残って数を増やす（検品で再現）。
+            if _probe(args.video)[0] is None:
+                return _say([Failure("F3.result", pathlib.Path(args.video).name, "動画として読めない（無いファイルも）")])
             rid, failures = new_record(args.source, args.hypothesis, args.result, args.version, args.tried_on, args.note)
             if failures:
                 return _say(failures)
         item, failures = attach(rid, args.video)
         if failures:
+            if made_here:
+                (records.folder() / f"{rid}.json").unlink(missing_ok=True)
             return _say(failures)
         print(json.dumps({"record": rid, **item}, ensure_ascii=False))
         return 0
@@ -503,7 +582,7 @@ def main(argv=None):
         failures = judge_mark(args.record, args.mark, args.by, accept=args.cmd == "confirm")
         return _say(failures) if failures else 0
     if args.cmd == "show-ok":
-        failures = confirm_shown(args.record, args.by)
+        failures = confirm_shown(args.record, args.by, args.video)
         return _say(failures) if failures else 0
     if args.cmd == "propose":
         to = args.to

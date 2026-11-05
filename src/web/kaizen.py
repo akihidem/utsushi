@@ -153,14 +153,11 @@ def video_section(sid, paper):
         return '<p class="meta">動画を結んだ試行はまだありません。</p>'
     out = ""
     for d in trials:
-        rid, shown = d["record_id"], bool(d.get("checked_by"))
+        rid = d["record_id"]
         rec = loop.record(rid)
         out += (f'<h3 id="v-{esc(rid)}">{esc(rid)} {esc(paper(d["hypothesis_id"]))}・{esc(d.get("sheet_set", ""))} 版 {esc(d.get("sheet_version", 1))}</h3>'
                 f'<p class="meta">見た事: {esc(rec.get("result", ""))}。試した日: {esc(rec.get("tried_on") or str(rec.get("recorded_at", ""))[:10])}。'
-                + (f'顔と声の確かめ: {esc(d["checked_by"])}</p>' if shown else '顔と声の確かめ待ちなので、映像とコマは出していません。札の字だけを出します。</p>'))
-        if not shown:
-            out += (f'<form method="post" action="/loop/{esc(sid)}/shown"><input type="hidden" name="record" value="{esc(rid)}">{_by()}'
-                    '<button class="quiet">顔と声が入っていないと確かめた</button></form>')
+                + '</p>')
         told = loop.explanation(rid)
         # 人の説明が先（J-013）。説明の後でなければ直しの案を作れない。
         out += (f'<p>説明: {esc(told["text"])}（次に試したい事: {esc(told["next_idea"])}）</p>' if told else
@@ -168,16 +165,24 @@ def video_section(sid, paper):
                 f'<label>次に試したい事<input type="text" name="next_idea" required></label>{_by("書いた人")}<button class="quiet">説明を残す</button></form>')
         for v in d["videos"]:
             spans = "、".join(f"{_clock(a)}〜{_clock(b)}" for a, b in v.get("still", [])) or "無し"
-            player = f'<video src="/loop/video/{esc(rid)}/{esc(v["file"])}" controls muted playsinline preload="metadata" style="max-width:100%;max-height:360px"></video>' if shown else ""
-            out += f'{player}<p class="meta">{esc(v["file"])}（{_clock(v["duration"])}）。動きの少なかった区間: {spans}（手が止まった候補で、止まったとは限りません）</p>'
+            # 顔と声の確かめは動画ごと（確かめた後に結んだ動画を、見ないまま出さない）。
+            if v.get("checked_by"):
+                head = f'<video src="/loop/video/{esc(rid)}/{esc(v["file"])}" controls muted playsinline preload="metadata" style="max-width:100%;max-height:360px"></video>'
+                who = f'顔と声の確かめ: {esc(v["checked_by"])}。'
+            else:
+                head = (f'<form method="post" action="/loop/{esc(sid)}/shown"><input type="hidden" name="record" value="{esc(rid)}"><input type="hidden" name="video" value="{esc(v["file"])}">{_by()}'
+                        f'<button class="quiet">{esc(v["file"])} に顔と声が入っていないと確かめた</button></form>')
+                who = "顔と声の確かめ待ちなので、映像とコマは出していません。"
+            out += f'{head}<p class="meta">{esc(v["file"])}（{_clock(v["duration"])}）。{who}動きの少なかった区間: {spans}（手が止まった候補で、止まったとは限りません）</p>'
         rows = ""
         for m in d["marks"]:
             state = "外した" if m.get("rejected_by") else f'確かめた人: {esc(m["confirmed_by"])}' if m.get("confirmed_by") else "案（確かめ待ち）"
             if not m.get("confirmed_by") and not m.get("rejected_by"):
                 state += (f'<form method="post" action="/loop/{esc(sid)}/judge" style="margin-top:6px"><input type="hidden" name="record" value="{esc(rid)}"><input type="hidden" name="mark" value="{esc(m["id"])}">{_by()}'
                           '<button class="quiet" name="action" value="confirm">確かめた</button> <button class="quiet" name="action" value="drop">外す</button></form>')
-            at = f'<a href="/loop/video/{esc(rid)}/{esc(m["video"])}#t={int(m["at"])}">{_clock(m["at"])}</a>' if shown else _clock(m["at"])
-            pic = f'<img src="/loop/frame/{esc(rid)}/{esc(pathlib.Path(m["video"]).stem)}-{int(m["at"]):06d}.jpg" alt="" loading="lazy" style="height:72px">' if shown else ""
+            ok = tv.shown(rid, m["video"])
+            at = f'<a href="/loop/video/{esc(rid)}/{esc(m["video"])}#t={int(m["at"])}">{_clock(m["at"])}</a>' if ok else _clock(m["at"])
+            pic = f'<img src="/loop/frame/{esc(rid)}/{esc(pathlib.Path(m["video"]).stem)}-{int(m["at"]):06d}.jpg" alt="" loading="lazy" style="height:72px">' if ok else ""
             rows += (f'<tr><td>{esc(m["id"])}</td><td>{at}{pic}</td><td>{"手順 " + esc(m["step"]) if m.get("step") is not None else "—"}</td><td>{esc(tv.KINDS.get(m["kind"], m["kind"]))}</td>'
                      f'<td>{esc(m["note"])}</td><td>読んだ人: {esc(m["read_by"])}。{state}</td></tr>')
         out += ("<table><thead><tr><th>札</th><th>時刻</th><th>手順</th><th>種類</th><th>何が</th><th>読み</th></tr></thead><tbody>" + rows + "</tbody></table>"
