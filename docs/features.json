@@ -54,6 +54,7 @@
   "evidence": [
    "src/omochae/hypotheses.py",
    "tests/test_hypotheses.py",
+   "tests/test_hypothesis_label.py",
    "tests/test_source_scope.py"
   ],
   "unverified": "実際の人が使っていない"

@@ -20,7 +20,7 @@ import tempfile
 
 from PIL import Image
 
-from api import config
+from api import ask, config
 from omochae import contrib, hypotheses, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
@@ -148,6 +148,17 @@ def save_media(rid, ctype, data):
 def media_of(rid):
     d = media_dir(rid)
     return [p.name for p in sorted(d.glob("m*.*"))] if d.exists() else []
+
+
+def ai_offer(rid):
+    """AI の 2 つの口のうち、今押して進める物と、進めない時に出す 1 行を返す（#130）。
+
+    押しても断りの文が返るだけの釦を出さないため。play_server の受け口の断りは、古い頁から押された時のために残す。
+    """
+    if not ask._key_present():
+        return False, False, "AI の返事は、この場では使えません。"
+    has_video = any(f.endswith(("mp4", "mov")) for f in media_of(rid))
+    return True, has_video, "" if has_video else "動画を上げると、Claude が見えた事を返します。"
 
 
 # 色は皮の変数から取る（skin.py の SKINS。本人の指示 11-05: A′ 白の展示と C 黒のジンを一気通貫に）。
@@ -329,9 +340,10 @@ def ai_part(r):
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
-    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>'
-               f'<form method="post" action="/record/{rid}/ai-observe#{rid}"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>')
-    return out + f'<div class="row">{buttons}</div>'
+    can_ask, can_watch, why = ai_offer(r["id"])
+    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
+               f'<form method="post" action="/record/{rid}/ai-observe#{rid}"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>' if can_watch else "")
+    return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
 
 
 def gallery_page(sids):

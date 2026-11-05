@@ -14,6 +14,7 @@ import urllib.request
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
+from api import ask  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web.toy import reply_note  # noqa: E402
 
@@ -139,8 +140,13 @@ assert "Claude が答えます" in note_at(page, "mine", "status")
 # 通らなかった時に錨へ着くよう、欄の送り先に錨がある。
 page = call(f"/toy/{G}")[2]
 for want in (f"/toy/{G}/predict#yosou", f"/toy/{G}/own#yosou", f"/toy/{G}/print#kasetsu", f"/toy/{G}/print-own#own-OWN-1", f"/toy/{G}/ask#ask",
-             f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}", f"/record/{rid}/ai-interpret#{rid}", f"/record/{rid}/ai-observe#{rid}"):
+             f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}"):
     assert f'action="{want}"' in page, want
+# AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。
+ask._key_present = lambda: True
+page = call(f"/toy/{G}")[2]
+ask._key_present = lambda: False
+assert f'action="/record/{rid}/ai-interpret#{rid}"' in page
 rid2 = re.search(r"R-\d{4}", call(f"/toy/{G}/record", good)[1]).group(0)
 assert f'action="/record/{rid2}/explain#{rid2}"' in call(f"/toy/{G}")[2]
 
