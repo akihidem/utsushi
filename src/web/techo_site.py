@@ -25,6 +25,8 @@ from omochae import contrib, hypotheses, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
+from . import wording
+
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
 MAX_MEDIA = 20 * 1024 * 1024
 MAX_PER_RECORD = 3
@@ -362,7 +364,7 @@ def made_item(sid, data, r, photos=True):
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
+    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
@@ -419,13 +421,13 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
-        mine += (f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"]))}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  f'{feedback(sid, r)}</div>')
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')
     body = (f'<div data-sid="{esc(sid)}" hidden></div><div class="top">{pic}<h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
-            f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(tpl.SHEET_SET)}</p>'
+            f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(wording.sheet_set(tpl.SHEET_SET))}</p>'
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
             # 断り（本人の決定 11-05、様子の蓄積）: 声は残さず、字にした質問だけを残す。名前は言わないでほしい事も出す。
