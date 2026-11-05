@@ -18,7 +18,7 @@
   だから、報告から案を機械で出す道具はここに置かない。
 """
 from omochae import hypotheses, loop, making_log, records
-from omochae.marks import LOOP_PREMISE, PREMISE_SHORT
+from omochae.marks import HYPOTHESIS, LOOP_PREMISE
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, sources
@@ -76,7 +76,7 @@ def section(sid, data, recs):
     if not recs:
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
-            f'<p class="meta">{esc(PREMISE_SHORT)}</p>'
+            f'<p class="meta">{esc(HYPOTHESIS)}</p>'
             '<p class="meta">作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
             f'{lines}{todo}</section>')
 

@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_record_card.py
+# commit: 165ae7c（回した時の HEAD）
+/tmp/tmph8ka18_w/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmph8ka18_w/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmph8ka18_w/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+rc=0

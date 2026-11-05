@@ -106,7 +106,8 @@ code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かな�
 assert code == 303 and at.endswith("#R-0001"), at  # 残した札へ戻す。次の段（試した後の紙・説明）がそこにある
 body = get(f"/toy/{G}")[1].decode()
 assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
-assert "R-0001 H-A: 動かない・40°" in body
+assert "仮説 A の紙・動かない・40°" in body
+# 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("成功", "失敗", "正解"):
     assert word not in without_premise(body), word
 # 人の説明は、説明と次の思いつきの両方が要る

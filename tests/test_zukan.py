@@ -75,7 +75,7 @@ assert all(q["label"] == labels.QUOTE for q in zukan.quote_lines(fake))
 rid, fail = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない", "tried_on": "2026-11-04"})
 assert not fail
 body = get(f"/zukan/{G}")[1]
-assert f"{rid} 仮説 A の紙: わからない（試した日 2026-11-04）" in body
+assert f"仮説 A の紙・わからない（11 月 4 日・{rid}）" in body
 
 # 出た文はどれも 3 分類の印を持ち、組み立てた文の一覧は F6.label を通る
 for sid in sources():

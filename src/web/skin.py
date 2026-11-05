@@ -83,6 +83,7 @@ button,.btn{display:inline-block;margin-top:16px;padding:12px 26px;font:inherit;
 .btn.quiet,button.quiet{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 form.inline{display:inline}
 .notice,#msg{border-left:2px solid var(--accent);padding:4px 14px;margin:14px 0;font-size:14px;letter-spacing:.04em}
+.card .step{border-top:1px solid var(--frame);margin-top:14px;padding-top:12px}
 article.card,.card{background:var(--paper);border:1px solid var(--frame);padding:20px 22px;margin:16px 0;box-shadow:0 18px 30px -24px var(--shadow)}
 .plates{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
 .plate{background:var(--paper);border:1px solid var(--frame);padding:18px 20px;box-shadow:0 18px 30px -24px var(--shadow);display:flex;flex-direction:column}

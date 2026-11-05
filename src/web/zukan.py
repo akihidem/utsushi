@@ -14,6 +14,7 @@
 """
 import html
 import json
+import re
 
 from omochae import hypotheses, labels, records
 from omochae.hypotheses import ROOT
@@ -60,15 +61,23 @@ def quote_lines(src):
     return [{**e, "label": QUOTE} for e in labels.source_lines(src) if e.get("checked_by")]
 
 
+def record_title(r, data):
+    """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
+    h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
+    return f"{who}・{r['result']}"
+
+
+def record_date(r):
+    """試した日を「11 月 5 日」の形にする。形の違う古い記録は、書いてあるままを出す。"""
+    when = r.get("tried_on") or str(r.get("recorded_at", ""))[:10]
+    m = re.fullmatch(r"\d{4}-(\d{2})-(\d{2})", when)
+    return f"{int(m[1])} 月 {int(m[2])} 日" if m else when
+
+
 def observation_lines(sid, data):
-    """記録 1 件を観察の文 1 つにする。字だけで仮説を指し、仮説の名前は書かない。"""
-    out = []
-    for r in records.all_records(sid):
-        h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-        who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
-        when = r.get("tried_on") or str(r.get("recorded_at", ""))[:10]
-        out.append({"text": f"{r['id']} {who}: {r['result']}（試した日 {when}）", "label": OBS, "record_id": r["id"]})
-    return out
+    """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。"""
+    return [{"text": f"{record_title(r, data)}（{record_date(r)}・{r['id']}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
 def hypothesis_lines(sid, data):

@@ -1,0 +1,6 @@
+  File "tests/test_hypothesis_label.py", line 23, in <module>
+    assert marks.HYPOTHESIS == WORDS
+AssertionError
+rc 1 （直す前の main 165ae7c。紙の文が古い）
+
+文だけ直して頁を戻しても rc 1（頁の型紙の窓に文が出ない）。
