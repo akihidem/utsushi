@@ -128,11 +128,12 @@ export PYTHONPATH=src
 .venv/bin/python -m omochae.ways --json
 ```
 
-手帖から上げた記録を消す時は、番号を渡す。記録と、添えた写真・動画・説明・解釈・観察をまとめて消し、番号だけを残す。提案や版の根拠に使われている記録は、その事を言って止まる。その時も `--media-only` で写真と動画と観察は消せる。デモの置き場の記録は `OMOCHAE_DATA` を同じにして打つ。git に入れた物は、履歴からは消えない。
+手帖から上げた記録を消す時は、番号を渡す。記録と、添えた写真・動画・説明・解釈・観察をまとめて消し、番号だけを残す。提案や版の根拠に使われている記録は、その事を言って止まる。その時も `--media-only` で写真と動画と観察は消せる。デモの置き場の記録は `OMOCHAE_DATA` を同じにして打つ。git に入れた物は、履歴からは消えない。話した字（考え・工夫・上げた後）と、字が刷られた紙は `--talk-only` で消せる（記録の番号と寸法の根拠は残る）。
 
 ```
 .venv/bin/python -m omochae.records withdraw R-0003
 .venv/bin/python -m omochae.records withdraw R-0003 --media-only
+.venv/bin/python -m omochae.records withdraw R-0003 --talk-only
 ```
 
 仮説を自分で立てたい時は、図を見て自分の案を書き、型紙にして試し、比べたくなった時に一覧を見る。

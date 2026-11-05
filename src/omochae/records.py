@@ -129,25 +129,74 @@ def used_by(rid):
                   if p.name not in mine and word.search(p.read_text(encoding="utf-8", errors="replace")))
 
 
-def _drop_spoken(rid):
-    """話した考えから作った案（ループ1、Issue #335）のうち、この記録に関わる物を消す。消した物の名前を返す。人の言葉を、取り下げた記録の外に残さないため。
-    関わる物: 考えがこの記録に結ばれている案と、この記録が試した紙の案。考えは別の仮説を見て話すと紙の記録に結ばれないので、両方を見る。
-    別の記録がまだその案を使っている時は残す（試した記録が指す先を失わない）。最後の記録を取り下げた時に消える。
-    置き場を読むのは words の記録の形だけ（api へは依らない）。書いて立てた仮説は from_talk を持たないので触らない。"""
-    from . import hypotheses, loop, making_log, talk_log
+def _spoken_of(rid, talks):
+    """この記録に関わる、話した考えから作った案の words の記録（ファイル、中身）。考えがこの記録に結ばれている案と、この記録が試した紙の案。
+    考えは別の仮説を見て話すと紙の記録に結ばれないので、両方を見る。"""
+    from . import loop
 
     path = folder() / f"{rid}.json"
     rec = store.read_json_or_skip(path) if path.exists() else None
-    talks = {p.stem: t for p in making_log.folder().glob("talk-*.json") if (t := store.read_json_or_skip(p))} if making_log.folder().exists() else {}
-    gone = []
     for p in sorted(loop.folder().glob("words-*.json")):
         w = store.read_json_or_skip(p)
         if not w or not w.get("from_talk"):
             continue
+        tried = rec is not None and w.get("own_id") and rec.get("hypothesis_id") == w["own_id"] and rec.get("source_id") == w.get("source_id")
+        if tried or talks.get(w["from_talk"], {}).get("record_id") == rid:
+            yield p, w
+
+
+def _talk_files():
+    from . import making_log
+
+    return {p.stem: t for p in making_log.folder().glob("talk-*.json") if (t := store.read_json_or_skip(p))} if making_log.folder().exists() else {}
+
+
+def _drop_loose_talk(sid, oid, talks):
+    """その紙に付いた工夫で、まだ結ばれていない字を消す。この記録に結ばれた字は drop_for_record が消す。"""
+    from . import making_log
+
+    gone = []
+    for stem, t in talks.items():
+        if t.get("hypothesis_id") == oid and t.get("source_id") == sid and not t.get("record_id"):
+            (making_log.folder() / f"{stem}.json").unlink(missing_ok=True)
+            gone.append(f"making/{stem}.json")
+    return gone
+
+
+def _scrub_spoken(rid):
+    """話した字だけを消す（--talk-only）。根拠に使われた記録でも、その人の言葉は消せるように（本人の決定の線。写真と動画の --media-only と同じ形）。
+    記録の番号と寸法の根拠は残し、版の根拠は数として読める。案は残す（試した記録が指す先で、札に出さない印でもあるため）が、字の写し（words の記録と OWN-n の動かし方）と、
+    字が刷られた紙（手順の紙・型紙なしの紙）は消す。話した字の無い型紙と試した後の紙は残す。別の記録がその案を使っていても消す（字は本人の物で、寸法の根拠は残るため）。"""
+    from . import hypotheses, loop, making_log
+
+    talks = _talk_files()
+    gone = []
+    for p, w in list(_spoken_of(rid, talks)):
         sid, oid, stem = w.get("source_id"), w.get("own_id"), w["from_talk"]
-        tried = rec is not None and oid and rec.get("hypothesis_id") == oid and rec.get("source_id") == sid
-        if not tried and talks.get(stem, {}).get("record_id") != rid:
-            continue
+        if w.get("how_it_moves"):  # 先に写しを消す。途中で落ちても、回し直しで残りを見つけられる
+            loop._write(p, {**w, "how_it_moves": ""})
+            gone.append(p.name)
+        if oid:
+            gone += hypotheses.scrub_own(sid, oid)
+            gone += _drop_loose_talk(sid, oid, talks)
+        # 元の考えの字。ほかの記録に結ばれた字は、その記録の物なので残す。
+        if stem in talks and talks[stem].get("record_id") in (None, rid):
+            (making_log.folder() / f"{stem}.json").unlink(missing_ok=True)
+            gone.append(f"making/{stem}.json")
+    return gone
+
+
+def _drop_spoken(rid):
+    """話した考えから作った案（ループ1、Issue #335）のうち、この記録に関わる物を消す。消した物の名前を返す。人の言葉を、取り下げた記録の外に残さないため。
+    関わる物は _spoken_of。
+    別の記録がまだその案を使っている時は残す（試した記録が指す先を失わない）。最後の記録を取り下げた時に消える。
+    置き場を読むのは words の記録の形だけ（api へは依らない）。書いて立てた仮説は from_talk を持たないので触らない。"""
+    from . import hypotheses, loop, making_log
+
+    talks = _talk_files()
+    gone = []
+    for p, w in list(_spoken_of(rid, talks)):
+        sid, oid, stem = w.get("source_id"), w.get("own_id"), w["from_talk"]
         if oid and any(r["hypothesis_id"] == oid and r["id"] != rid for r in all_records(sid)):
             continue
         if oid:
@@ -155,11 +204,7 @@ def _drop_spoken(rid):
             for conf in sorted(loop.folder().glob(f"sheet-confirm-{sid}-{oid}-v*.json")):  # 消えた紙の確定の記録も残さない
                 conf.unlink()
                 gone.append(conf.name)
-            # その紙に付いた工夫で、まだ結ばれていない字も消す（消えた紙を指す字を残さない）。この記録に結ばれた字は drop_for_record が消す。
-            for stem_, t in talks.items():
-                if t.get("hypothesis_id") == oid and t.get("source_id") == sid and not t.get("record_id"):
-                    (making_log.folder() / f"{stem_}.json").unlink(missing_ok=True)
-                    gone.append(f"making/{stem_}.json")
+            gone += _drop_loose_talk(sid, oid, talks)  # 消えた紙を指す字を残さない
         # 元の考えの字。ほかの記録に結ばれた字は、その記録の物なので残す。
         if stem in talks and talks[stem].get("record_id") in (None, rid):
             (making_log.folder() / f"{stem}.json").unlink(missing_ok=True)
@@ -169,12 +214,13 @@ def _drop_spoken(rid):
     return gone
 
 
-def withdraw(rid, media_only=False):
+def withdraw(rid, media_only=False, talk_only=False):
     """取り下げ。消した物の名前の一覧と Failure の一覧を返す。
 
     なぜ番号だけ残すか: 持ち寄りの取り下げと同じ形。番号を使い回さず、記録が別の経路で戻っても一覧に出さないため。
     根拠に使われている記録は消さない。版や提案の根拠が指す先を失うため。その時も写真と動画は media_only で消せる
     （写った顔や名札を、根拠の話のために残さない）。観察と動画の札は動画から作った文なので一緒に消す。説明と解釈は人の言葉と根拠なので残す。
+    話した字（考え・工夫・上げた後）は talk_only で消せる（_scrub_spoken）。写真だけ消したい時に字まで消さないよう、media_only とは分ける。両方を渡せば両方消える。
     """
     from . import loop
 
@@ -185,24 +231,27 @@ def withdraw(rid, media_only=False):
         # 打ち間違いの番号で「取り下げた」と答えない。印だけある番号は、途中で落ちた後の回し直しとして通す
         if not (path.exists() or mark.exists()):
             return [], [Failure("F8.references", rid, "その番号の記録は無い")]
+        whole = not media_only and not talk_only
         users = used_by(rid)
-        if users and not media_only:
-            return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only")]
-        kinds = ("observation", "video") if media_only else OWN
-        files = [loop.folder() / f"{kind}-{rid}.json" for kind in kinds] + ([] if media_only else [path])
+        if users and whole:
+            return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only、話した字だけなら --talk-only")]
+        kinds = OWN if whole else ("observation", "video") if media_only else ()
+        files = [loop.folder() / f"{kind}-{rid}.json" for kind in kinds] + ([path] if whole else [])
         media = folder() / "media" / rid
-        if not media_only:
+        if whole:
             # 印を先に置く。途中で落ちても、記録は一覧に出ない
             mark.parent.mkdir(parents=True, exist_ok=True)
             store.write_json(mark, {"id": rid, "status": "withdrawn", "withdrawn_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")})
-        gone = [f"media/{rid}/{p.name}" for p in sorted(media.glob("*"))] + [p.name for p in files if p.exists()]
-        if not media_only:
+        gone = ([f"media/{rid}/{p.name}" for p in sorted(media.glob("*"))] if whole or media_only else []) + [p.name for p in files if p.exists()]
+        if whole:
             gone += _drop_spoken(rid)  # 記録を消す前に読む（試した紙がどの案かは、記録にしか無い）
-        if media.exists():
+        if talk_only:
+            gone += _scrub_spoken(rid)
+        if media.exists() and (whole or media_only):
             shutil.rmtree(media)
         for p in files:
             p.unlink(missing_ok=True)
-        if not media_only:
+        if whole or talk_only:
             # 記録に結んだ「話した事」も消す（Issue #279）。人の言葉を、取り下げた記録の外に残さないため。
             from . import talk_log
 
@@ -250,6 +299,7 @@ def main(argv=None):
     w = sub.add_parser("withdraw", help="記録と、添えた写真・動画・説明・解釈・観察を消す。根拠に使われている記録は止まる")
     w.add_argument("id", help="記録の番号。R-0003 のように")
     w.add_argument("--media-only", action="store_true", help="記録は残し、写真と動画と観察だけを消す")
+    w.add_argument("--talk-only", action="store_true", help="記録は残し、話した字（考え・工夫・上げた後）と、字が刷られた紙だけを消す。根拠に使われた記録でも消せる")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
@@ -259,11 +309,12 @@ def main(argv=None):
             print(json.dumps(summarize(all_records(args.source)), ensure_ascii=False, indent=2))
             return 0
         if args.cmd == "withdraw":
-            gone, failures = withdraw(args.id, args.media_only)
+            gone, failures = withdraw(args.id, args.media_only, args.talk_only)
             for f in failures:
                 print(f.line(), file=sys.stderr)
             if not failures:
-                print(f"{args.id} の{'写真と動画' if args.media_only else '記録'}を取り下げました。消した物: {'、'.join(gone) or 'なし'}")
+                what = "と".join(n for n, on in (("写真と動画", args.media_only), ("話した字", args.talk_only)) if on) or "記録"
+                print(f"{args.id} の{what}を取り下げました。消した物: {'、'.join(gone) or 'なし'}")
             return 3 if failures else 0
         rec = {"source_id": args.source, "hypothesis_id": args.hypothesis, "sheet_version": args.version, "result": args.result, "opened_deg": args.opened_deg, "opener": args.opener,
                "predicted_deg": args.predicted_deg, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note,

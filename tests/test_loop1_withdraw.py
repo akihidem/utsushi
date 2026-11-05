@@ -5,10 +5,13 @@
 - 消えた番号を使い回さない。ほかの人の案と、書いて立てた仮説は消さない。
 - 別の記録がまだその案を使っている間は消さない（試した記録が指す先を失わない）。そちらも取り下げると消える。
 - 写真と動画だけの取り下げでは消さない。途中で落ちた後の回し直しでも通る。
+- 根拠に使われた記録でも、話した字（考え・工夫・上げた後）は消せる（--talk-only）。記録の番号と寸法の根拠は残し、版の根拠は数として読める。字の写しと、字が刷られた紙も消える。
 """
 import json
 import os
 import pathlib
+import subprocess
+import sys
 import tempfile
 
 tmp = tempfile.mkdtemp()
@@ -16,7 +19,9 @@ os.environ["OMOCHAE_DATA"] = tmp
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import words  # noqa: E402
-from omochae import hypotheses, records, talk_log  # noqa: E402
+from omochae import hypotheses, loop, records, talk_log  # noqa: E402
+from web import techo_site, zukan  # noqa: E402
+from web.toy import toy_page  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
@@ -24,13 +29,13 @@ SOURCE = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="ut
 WHO, OTHER = "abcdefgh12", "zyxwvuts98"
 
 
-def made(text, who=WHO, hid=None):
+def made(text, who=WHO, hid=None, not_fit=None):
     """考えを残し、案を作り、採って紙を刷る。Returns (words の記録, OWN の記録)。"""
     talk_log.add(G, "think", text, hypothesis_id=hid, who=who)
     talk, name = words.latest_think(G, who)
     w, fs = words.request_think(SOURCE, talk, name, "案", "根拠")
     assert w and not fs, fs
-    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}, not_fit), "作る側")[1]
     own, fs = words.adopt_words(w["id"], "本人")
     assert own and not fs, fs
     d = hypotheses.play_dir(G)
@@ -126,4 +131,83 @@ talk, name = words.latest_think(G, WHO)
 w7, _ = words.request_think(SOURCE, talk, name, "案", "根拠")
 assert records.withdraw(record("H-A"))[1] == []
 assert everywhere(SAID7) == [] and words.by_token(G, w7["token"]) is None
+# ── 根拠に使われた記録でも、話した字は消せる ──
+def pdf_text(p):
+    return "".join(subprocess.run(["pdftotext", str(p), "-"], capture_output=True, text=True).stdout.split())
+
+
+SAID8, CRAFT8, KEEP8 = "割り箸の柄で大きく開くと思う", "柄の先に紙を巻いた", "上げた後に思った事"
+w8, own8 = made(SAID8)
+assert not talk_log.add(G, "craft", CRAFT8, hypothesis_id=own8["id"], sheet_version=1, step=1, who=WHO)[1]
+rid8 = record(own8["id"])
+assert not talk_log.add(G, "keep", KEEP8, record_id=rid8, who=WHO)[1]
+assert {x["text"] for x in talk_log.kufu(G, rid8)} == {SAID8, CRAFT8, KEEP8}
+assert loop.save_explanation(rid8, "試した人", "柄で押すと開いた", "折りを増やす") == []
+d = hypotheses.play_dir(G)
+version, fs = loop.next_version(rid8, "採った人", "柄で押すと開いた", {"param": "fold_count", "to": 27, "why": "試した記録から"}, SOURCE, d)
+assert version and not fs, fs
+sheet = hypotheses.sheet_of(G)["id"]
+# そのままの取り下げは今までどおり断り、消せる道を言う。断った時は何も消さない
+gone, fs = records.withdraw(rid8)
+assert gone == [] and fs[0].floor == "F4.evidence" and "--media-only" in fs[0].message and "--talk-only" in fs[0].message, fs
+assert everywhere(SAID8) and everywhere(CRAFT8) and everywhere(KEEP8)
+# 写真と動画だけの取り下げでは、話した字は残る
+assert records.withdraw(rid8, media_only=True)[1] == [] and everywhere(SAID8) and everywhere(CRAFT8)
+tejun = d / f"{own8['id']}_v1_tejun.pdf"
+assert "".join(SAID8.split()) in pdf_text(tejun), "消す前は手順の紙に字が刷られている（下の確かめが効いている事を見る）"
+# 話した字だけを消す
+env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+r = subprocess.run([sys.executable, "-m", "omochae.records", "withdraw", rid8, "--talk-only"], capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL)
+assert r.returncode == 0 and "話した字" in r.stdout, r.stdout + r.stderr
+for text in (SAID8, CRAFT8, KEEP8):
+    assert everywhere(text) == [], (text, everywhere(text))
+left = sorted(p.name for p in d.glob(f"{own8['id']}_v*"))
+assert f"{own8['id']}_v1.pdf" in left and f"{own8['id']}_v1_after.pdf" in left and not [n for n in left if "_tejun" in n or "_free" in n], left
+for p in d.glob(f"{own8['id']}_v*.pdf"):
+    flat = pdf_text(p)
+    assert not any("".join(x.split()) in flat for x in (SAID8, CRAFT8, KEEP8)), p.name
+# 記録の番号と寸法の根拠は残り、版の根拠は数として読める
+assert any(x["id"] == rid8 for x in records.all_records(G)), "記録は残る"
+assert rid8 in json.loads((loop.folder() / f"version-{G}-{sheet}-{version}.json").read_text(encoding="utf-8"))["record_ids"], "版の根拠は残る"
+assert records.used_by(rid8), "根拠として読める"
+own_left = next(x for x in hypotheses.own_hypotheses(G) if x["id"] == own8["id"])
+assert own_left["how_it_moves"] == "" and own_left["params"]["push_part"] == "stick" and own_left["name"], "寸法は残り、字だけが消える"
+assert own8["id"] in words.spoken_own_ids(G), "話した考えから作った案のままなので、札に出ず、紙は本人の画面の外に開かない"
+assert not words.key_open(words.by_token(G, w8["token"])), "鍵も閉じる"
+assert talk_log.kufu(G, rid8) == [] and loop.maker_talk(rid8)["items"] == [], "札と輪の材料からも消える"
+# 消した後も、記録の札と頁が開く。字は出ない
+for html in (toy_page(G), techo_site.page(G, [sheet], ""), json.dumps(zukan.lines_for(G), ensure_ascii=False)):
+    assert not any(x in html for x in (SAID8, CRAFT8, KEEP8)), html[:200]
+assert rid8 in toy_page(G), "記録の札は残る"
+# 話した字だけの時は、写真と動画を消さない（字と写真は別の用事）
+photo = records.folder() / "media" / rid8
+photo.mkdir(parents=True, exist_ok=True)
+(photo / "a.jpg").write_bytes(b"x")
+assert records.withdraw(rid8, talk_only=True)[1] == [] and (photo / "a.jpg").exists(), "写真は残る"
+(photo / "a.jpg").unlink()
+photo.rmdir()
+# 回し直しても落ちない。そのままの取り下げは今までどおり断る
+assert records.withdraw(rid8, talk_only=True) == ([], [])
+assert records.withdraw(rid8)[1][0].floor == "F4.evidence"
+# ほかの人の字は消さない（この案の紙に付いた字は消す）
+assert everywhere("柄を長くしたい"), "ほかの人の字は残る"
+# 型紙なしの紙は、紙ごと字が刷られているので消える
+SAID9 = "水の重さで開くのかも"
+_, own9 = made(SAID9, not_fit=["水の重さで動く機構は雛形に無い"])
+rid9 = record(own9["id"])
+assert (d / f"{own9['id']}_v1_free.pdf").exists() and "".join(SAID9.split()) in pdf_text(d / f"{own9['id']}_v1_free.pdf")
+assert records.withdraw(rid9, talk_only=True)[1] == []
+assert everywhere(SAID9) == [] and not list(d.glob(f"{own9['id']}_v1_free*"))
+# 写真と動画と一緒に消せる。記録のほかの欄は残る
+media = records.folder() / "media" / rid9
+media.mkdir(parents=True, exist_ok=True)
+(media / "a.jpg").write_bytes(b"x")
+assert records.withdraw(rid9, media_only=True, talk_only=True)[1] == [] and not media.exists() and any(x["id"] == rid9 for x in records.all_records(G))
+# 考えが記録に結ばれただけの案（たたき台の記録）でも、字は消える
+SAID10 = "たたき台の記録に結ばれる考え"
+talk_log.add(G, "think", SAID10, who="abcdefgh77")
+talk, name = words.latest_think(G, "abcdefgh77")
+words.request_think(SOURCE, talk, name, "案", "根拠")
+rid10 = record(sheet, who="abcdefgh77")
+assert everywhere(SAID10) and records.withdraw(rid10, talk_only=True)[1] == [] and everywhere(SAID10) == []
 print("ok")
