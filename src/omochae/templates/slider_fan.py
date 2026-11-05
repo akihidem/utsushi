@@ -450,7 +450,7 @@ def diagram(x, y, w, h, p):
     if p["push_part"] == "stick":
         stage = p["stage_height"] * s
         shapes.append({"kind": "rect", "x": cx - inner / 2, "y": rest_top, "w": inner, "h": stage, "dash": "1,0.6"})
-        # 割り箸は筒の下へ出るが、絵の枠（y+h）の中で止める。枠の外へ出ると下の説明と重なる（hack-print が見つけた）。
+        # 割り箸は筒の下へ出るが、絵の枠（y+h）の中で止める。枠の外へ出ると下の説明と重なる（印刷の担当が見つけた）。
         shapes.append({"kind": "rect", "x": cx - 0.6, "y": rest_top + stage, "w": 1.2, "h": max(0.0, min(length - stage, y + h - rest_top - stage)), "dash": "1,0.6"})
     else:
         shapes.append({"kind": "rect", "x": cx - inner / 2, "y": rest_top, "w": inner, "h": length, "dash": "1,0.6"})

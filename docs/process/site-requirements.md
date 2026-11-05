@@ -127,7 +127,7 @@ T-01 標準の `http.server` のまま、依存を増やさない。T-02 骨と�
 
 ## 13. 文書とコードの食い違い（見つけた物。直すかは本人）
 
-- README と CLAUDE.md の要約「場面 67 本」: 今の main は 92 本（hack-main の 11-05 の報告）
+- README と CLAUDE.md の要約「場面 67 本」: 今の main は 92 本（統括の担当の 11-05 の報告）
 - `docs/process/index.json` の trials の一言「まだ 0 件」・`docs/process/README.md` の「実物の試行は 0 件」: 11-04 の試行が 1 回ある
 - `docs/features.json` f10「写真は未実装。実際の記録は 0 件」: 手帖の写真と動画の口があり、記録は R-0001・R-0002 がある。f15「公開の形は無い」: 合言葉付きのトンネル（run-demo.sh）がある
 - 仕様書 G2「入口は A」: J-024 では A′ も並び、入口は U-34 で未決

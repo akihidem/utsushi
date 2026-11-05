@@ -53,7 +53,7 @@
 | D1 | 型紙と対で手順の紙を刷る。答え（計算の開く上限）を刷らない | J-009、`instructions.py` の判断の芯 | `instructions.py` | `test_records.py` | 満たす |
 | D2 | 試した後の紙は、次に変える条件を先に渡し、説明は折って閉じた札にする。記録の前は渡さない | J-013 | `instructions.py` の compose_after、画面 | `test_play_server.py` | 満たす |
 | D3 | 見比べる紙は 2 つの仮説を並べ、勝ち負けの欄を置かない。型紙が同じ組は 1 個を 2 通りに動かす | J-019、F11.compare | `instructions.py` の compose_compare | `test_discriminate.py` | 満たす |
-| D4 | 問いかけを本人の 4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）で考え直す。角度は今回の課題にしない | 本人の方針 11-04 | `instructions.py`（compose_sheet・compose_after・compose_compare・compose_teacher） | `tests/test_sheet_u25.py` | 満たす（11-04、hack-print が作り hack-main が main に入れた。goraigo-v10・tora-v3。画面の角度と分の欄も外した。U-25 は関門の試行の 3 つがそろって閉じた、[gate-trial](gate-trial.md)。先生の見る紙は `hypotheses print-teacher`。実物と人の目は未確認） |
+| D4 | 問いかけを本人の 4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）で考え直す。角度は今回の課題にしない | 本人の方針 11-04 | `instructions.py`（compose_sheet・compose_after・compose_compare・compose_teacher） | `tests/test_sheet_u25.py` | 満たす（11-04、印刷の担当が作り統括の担当が main に入れた。goraigo-v10・tora-v3。画面の角度と分の欄も外した。U-25 は関門の試行の 3 つがそろって閉じた、[gate-trial](gate-trial.md)。先生の見る紙は `hypotheses print-teacher`。実物と人の目は未確認） |
 
 ### E 試行・記録・人の説明
 
@@ -78,7 +78,7 @@
 |---|---|---|---|---|---|
 | G1 | 手元のブラウザの画面（127.0.0.1）で、仮説 → 刷る → 記録 → 説明が回る | J-024 | `src/web/play_server.py` | `test_play_server.py` | 満たす（人はまだ使っていない、U-10） |
 | G5 | 手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）。机に置いて声で使う（音声認識で話し続けられる・答えの読み上げ）。写真と動画をその場の試した記録に添え、写真と動画の撮影情報は保存の時に外す。使えない画面では字の操作だけが残る | 本人の方向転換 11-04（U-36） | `src/web/techo_site.py`、`play_server.py` | `tests/test_techo_site.py`・`test_play_server.py` | 一部（作った。人が使った確認と本物のスマホはまだ。網に開くかとアーティファクトの手帖を消すかは本人、U-35・U-36） |
-| G2 | 日本画展の展示（白）と縦読みのジン（黒）を、それぞれ 1 つのサイトとして立てる（--look）。どちらも入口から一周できる。1 つのサイトの中で見た目は切り替えない。大判（A）と外した 3 案は出さない | J-024、本人の指示 11-05（小さな直しを止めて作り直す。[site-requirements](site-requirements.md)） | `src/web/skin.py`、`looks.py` | `test_play_server.py`・`test_toys.py` | 満たす（既定の皮と A の扱いは本人、カード 20261105-011452-sub-site） |
+| G2 | 日本画展の展示（白）と縦読みのジン（黒）を、それぞれ 1 つのサイトとして立てる（--look）。どちらも入口から一周できる。1 つのサイトの中で見た目は切り替えない。大判（A）と外した 3 案は出さない | J-024、本人の指示 11-05（小さな直しを止めて作り直す。[site-requirements](site-requirements.md)） | `src/web/skin.py`、`looks.py` | `test_play_server.py`・`test_toys.py` | 満たす（既定の皮と A の扱いは本人、窓口のカード 20261105-011452） |
 | G6 | 型紙と手順の紙を画面に絵で出し、拡大して見られ、版を並べ、PDF を刷る。試した後の紙は記録の前は絵も PDF も渡さない | 本人の指示 11-05（「今は型紙が出力されていない」） | `src/web/toy.py`、`play_server.py` の /sheet/ | `test_play_server.py` | 満たす（人の目と本物のスマホはまだ） |
 | G7 | 作った人の報告（動きと感想）をサイト側が型紙の改善に回す。寸法を 1 つ変えた次の版を人が採り、次に刷る人は一番新しい版を受け取る。どの報告がどの版を変えたかを玩具の頁と /loop に出す。順位と成績は出さない | 本人の方針 11-05 朝（J-026） | `src/web/kaizen.py`、`tests/test_kaizen.py` |  |  |
 | G3 | 別のサイトから送らせない（Origin・Content-Type・Host）。URL を知っていても試した後の紙は記録の前に渡さない | 運用の安全 | `play_server.py` | `test_play_server.py` | 満たす |
@@ -114,7 +114,7 @@
 
 ## 4. エンジンとの境目
 
-型紙を作って検査する部分を、エンジンとして別の repo に切り出す（本人の決定 11-04。作業はエンジンの線 hack-engine が、この repo の外の新しい repo で進めている。公開名は本人の案で paper-to-toy に決まった（U-29）。11-04 昼の時点で GitHub にはまだ無い）。
+型紙を作って検査する部分を、エンジンとして別の repo に切り出す（本人の決定 11-04。作業はエンジンの担当が、この repo の外の新しい repo で進めている。公開名は本人の案で paper-to-toy に決まった（U-29）。11-04 昼の時点で GitHub にはまだ無い）。
 
 ### エンジンが持つ物
 
