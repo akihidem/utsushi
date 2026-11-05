@@ -72,19 +72,6 @@ def versions_of(sid, hid, printed_only=False):
     return got if printed_only else sorted(set(got) | {1})
 
 
-def sheet_links(sid, hid, recorded):
-    """刷った紙への字のリンク。押すと画面の窓（#win）にその紙の絵が出る。
-    なぜ窓へ向けるか: 本人の指示（11-05、デモを見て）「型紙はクリックすると表示されるように」。前は PDF へ直に飛び、機器によっては
-    ダウンロードだけになって画面に紙が出なかった。PDF は窓の「PDF を開いて刷る」から（別のタブ、インライン）。試した後の紙は記録の後だけ。"""
-    links = []
-    for v in versions_of(sid, hid):
-        tag = "" if v == 1 else f"版 {v} の"
-        for suffix, label in KINDS:
-            if (out_dir(sid) / f"{hid}_v{v}{suffix}.pdf").exists() and (suffix != "_after" or recorded):
-                links.append(f'<a href="/toy/{sid}?see={hid}&kind={suffix.lstrip("_") or "sheet"}&v={v}#win">{tag}{label}</a>')
-    return "・".join(links)
-
-
 def printed_ids(sid, data):
     # どの版でも刷ってあれば「刷った仮説」。版 1 を決め打ちしない（報告から直した版を次の人が最初に刷るため）。
     return [h["id"] for h in data["hypotheses"] if versions_of(sid, h["id"], printed_only=True)]
@@ -110,8 +97,12 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#zoom')z.querySele
 def window(sid, data, see, kind, v, recorded):
     """型紙の窓（要件の S-01〜S-05）。仮説と紙の種類と版を字の札で選び、絵（PNG）を出す。押すと拡大の窓（#zoom）。"""
     ids = printed_ids(sid, data)
+    # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。見比べるのに仮説の節まで戻らなくてよい。
+    make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
+                      f'<button>仮説 {esc(hypotheses.letter(x))}</button></form>')
     if not ids:
-        return '<p class="meta">仮説の札の「型紙と手順の紙を刷る」を押すと、ここに紙の絵が出ます。</p>'
+        tabs = "".join(make(x) for x in data["hypotheses"])
+        return f'<div class="tabs">{tabs}</div><p class="meta">仮説の札を押すと、紙を作ってここに出します。</p>'
     see = see if see in ids else (latest_printed(sid, data) or ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
     v = v if v in vs else vs[-1]
@@ -122,7 +113,7 @@ def window(sid, data, see, kind, v, recorded):
     name = f"{see}_v{v}{kind}"
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
     # 仮説の札（元の順）。順位ではない。
-    hyps = "".join((f'<span>仮説 {esc(hypotheses.letter(x))}</span>' if x["id"] not in ids else
+    hyps = "".join((make(x) if x["id"] not in ids else
                     f'<a href="{q(x["id"], "", versions_of(sid, x["id"], printed_only=True)[-1])}" aria-current="{"true" if x["id"] == see else "false"}">仮説 {esc(hypotheses.letter(x))}</a>')
                    for x in data["hypotheses"])
     kinds = ""
@@ -140,7 +131,7 @@ def window(sid, data, see, kind, v, recorded):
             ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
             cap = f'<p class="meta">版 {v}: 根拠 {esc("、".join(adopted.get("record_ids", [])))}。変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
-    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を刷り直す</button></form>'
+    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
     png = f"/sheet/{sid}/{name}.png"
     pdf = f"/sheet/{sid}/{name}.pdf"
@@ -154,11 +145,15 @@ def window(sid, data, see, kind, v, recorded):
     side = (f'<div class="side"><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}'
             # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
-            f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて刷る</a></p>'
+            f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>'
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
-    return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
+    # 押せない札の理由は title だけだとスマホで読めないので、字で出す（#127）。
+    why = "仮説の点線の札は、押すと紙を作ってここに出します。" if len(ids) < len(data["hypotheses"]) else ""
+    why += "試した後の紙は、記録を残すと開きます。" if see not in recorded else ""
+    why = f'<p class="meta">{why}</p>' if why else ""
+    return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div>{why}<div class="win">{fig}{side}</div>'
 
 
 def sample_records(data):
@@ -308,7 +303,7 @@ def next_form(r, back=""):
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
             '<label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
             '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
-            '<button>次の版を刷る</button></form></details>')
+            '<button>次の版の紙を作る</button></form></details>')
 
 
 def ai_block(r):
@@ -476,27 +471,27 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         free = f'{h["id"]}_v1_free.pdf'
         link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
         body += (f'<article class="card" id="own-{esc(h["id"])}">{head(f"own-{h['id']}")}<h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
+                 f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を作る</button></form><p>{link}</p></article>')
     body += f'<details{" open" if fill("own") else ""}><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
     body += f'<section class="sec" id="kasetsu">{head("kasetsu")}<h2>仮説</h2><p class="meta">{esc(data["note"])}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">'
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
-        printed = sheet_links(sid, h["id"], h["id"] in recorded)
         last = versions_of(sid, h["id"], printed_only=True)
-        thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
+        # 紙の種類と版を選ぶのは窓の札の役。札の下に字のリンクを並べると、版ごとに 3 つ増える（#127）。
+        thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win" aria-label="仮説 {esc(hypotheses.letter(h))} の紙を窓で見る"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h)))}{thumb}<div class="acts">'
-                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
-                 f'<p class="meta">{printed}</p></div></div>')
+                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙を見る</button></form>'
+                 '</div></div>')
     body += "</div></section>"
     # 仮説を見て、考えを話す（一周の 1、Issue #279）。仮説の札のすぐ後に置く。
     from . import hanasu
 
     body += hanasu.think_section(sid, data, head("hanasu"))
     body += analogy_section(data)
-    body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
+    body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
              f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。

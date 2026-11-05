@@ -84,7 +84,7 @@ assert "仮説を残しました" in note_at(page, "own-OWN-1", "status")
 code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
 assert code == 422 and "仮説 H-ZZ は無い" in note_at(page, "kasetsu", "alert")
 page = landed(call(f"/toy/{G}/print", {"hypothesis": "H-A"}), "win")
-assert "刷りました" in note_at(page, "win", "status")
+assert "紙を作りました" in note_at(page, "win", "status")
 
 # 聞く: 通らない時も、答えの時も、聞く欄に着く。
 code, _, page = call(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって？"})
@@ -131,7 +131,7 @@ assert code == 422 and page.count('id="msg"') == 1
 two = reply_note(["理由 1", "理由 <2>"], "")
 assert two.count("id=") == 1 and "理由 1" in two and "理由 &lt;2&gt;" in two, "理由が何個でも id は 1 つ"
 page = landed(call(f"/record/{rid}/next", {k: v for k, v in form.items() if k != "back"} | {"to": "26"}), "win")
-assert "版 2 を刷りました" in note_at(page, "win", "status")
+assert "版 2 の紙を作りました" in note_at(page, "win", "status")
 
 # 手帖に戻る時は、手帖の頁に文が出る。
 page = landed(call(f"/record/{rid}/ai-interpret", {"back": "techo"}), "mine")
