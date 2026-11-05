@@ -22,6 +22,19 @@ QUESTIONS = ("一番おもしろかったのはどの時ですか", "どうし�
 RESULT_HEAD = "おもちゃとして動きましたか（1 つに丸）"
 STUCK = "最初の一歩でつまずいた所"
 PREDICT_H = 15.0
+# 手順の紙の作る前の欄と、試した後の紙の見出し。本人が採った字で、一字も変えない（11-05、#302 の案 A）。
+# 前の字は、先に書かないと始められないように読めた（予想の段は #242 で外した）。問いと枠は、端末の無い場でも考えを書けるように残す。
+BEFORE_HEAD = "思った事（書かなくても作れます）"
+NEXT_HEAD = "次はこれを変えて試す"
+# 必須 2 種の今の組は指紋を変えないので、前の字のまま刷る（凍結の床）。次の組で上の字に直す。
+# 組の名前で持つ: 組を上げると前の字は外れ、この表に残った行を tests/test_sheet_heads.py が名指しして落ちる（消し忘れないため）。
+_OLD_HEADS = ("作る前に", "次はこれを変えて試す（予想を書いてから）")
+FROZEN_HEADS = {"goraigo-v10": _OLD_HEADS, "tora-v3": _OLD_HEADS}
+
+
+def _heads(sheet_set):
+    """その組で刷る（作る前の欄の見出し, 試した後の紙の見出し）。"""
+    return FROZEN_HEADS.get(sheet_set, (BEFORE_HEAD, NEXT_HEAD))
 
 
 def steps(p, template="slider_fan"):
@@ -190,7 +203,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     y = max(y, top + DIAGRAM_H + 8) + 2
     images = []
     fan = template_id == "slider_fan"
-    # 絵は「作る前に」の欄の右の空きに置く（v8）。頁を伸ばさずに済む。
+    # 絵は作る前の欄の右の空きに置く（v8）。頁を伸ばさずに済む。
     pics_y = y
     ask_w = width - PICTURES_W - GAP if fan else width
 
@@ -202,7 +215,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
         return x + lw + w + 5
 
     m = tpl.measures(p)
-    y = _block(texts, ["作る前に"], page.x0, y, HEAD_SIZE, ask_w)
+    y = _block(texts, [_heads(tpl.SHEET_SET)[0]], page.x0, y, HEAD_SIZE, ask_w)
     y = _block(texts, [m["predict"]], page.x0, y, BODY_SIZE, ask_w)
     # 動き方を言葉か絵で書くので、1 行の枠でなく描ける広さの枠にする。
     shapes.append({"kind": "rect", "x": page.x0, "y": y + 0.5, "w": ask_w, "h": PREDICT_H, "tag": "predict_box"})
@@ -321,7 +334,7 @@ def compose_after(source, title, after, page_name="A4", sheet_set=None):
         y = set_label(texts, f"刷った組 {sheet_set}", page, y)  # U-31
     y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
     y = _block(texts, ["渡す人へ: 下の札を点線で谷折りし、端をテープで止めてから、試した後に渡す"], page.x0, y + 1, BODY_SIZE, width)
-    y = _block(texts, ["次はこれを変えて試す（予想を書いてから）"], page.x0, y + GAP, HEAD_SIZE, width)
+    y = _block(texts, [_heads(sheet_set)[1]], page.x0, y + GAP, HEAD_SIZE, width)
     for c in after["contrasts"]:
         y = _block(texts, [c["change"], f"見る物: {c['watch']}"], page.x0, y + 1, BODY_SIZE, width)
         y += ANSWER_GAP
