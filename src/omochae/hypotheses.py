@@ -12,6 +12,7 @@ import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 
+from . import store
 from .model import Failure, ToolMissing
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -41,12 +42,8 @@ def files_of(folder, kind, source_id):
     """
     out = []
     for path in sorted(folder.glob(f"{kind}-{source_id}-*.json")):
-        try:
-            rec = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as e:
-            print(f"読めない記録を飛ばした: {path.name}（{type(e).__name__}）", file=sys.stderr)
-            continue
-        if isinstance(rec, dict) and rec.get("source_id") == source_id:
+        rec = store.read_json_or_skip(path)
+        if rec is not None and rec.get("source_id") == source_id:
             out.append(path)
     return out
 
@@ -63,7 +60,7 @@ def save_prediction(source_id, text):
     folder.mkdir(parents=True, exist_ok=True)
     now = datetime.now(timezone(timedelta(hours=9)))
     path = folder / f"prediction-{source_id}-{now.strftime('%Y%m%d-%H%M%S-%f')}.json"
-    path.write_text(json.dumps({"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store.write_json(path, {"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"})
     return path, []
 
 
@@ -82,12 +79,13 @@ def save_own(source_id, name, how, evidence, params=None):
         failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
     if failures:
         return None, failures
-    n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
-    rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
-           "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
     folder = _pred_dir()
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / f"own-{source_id}-{n}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with store.locked(folder):
+        n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+        rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
+               "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
+        store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
 
 
