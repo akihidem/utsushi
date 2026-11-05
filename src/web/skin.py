@@ -129,6 +129,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .plate h3{margin:8px 0}.plate p{font-size:14px;line-height:1.9;margin:6px 0}.plate ul{padding-left:1.2em;font-size:13px;color:var(--mute);margin:6px 0}
 .plate .thumb{display:block;margin:12px 0 4px;border:1px solid var(--frame);background:#fff}
 .plate .thumb img{display:block;width:100%}
+.plates>.plate:only-child{grid-column:1/-1;max-width:640px}.plates>.plate:only-child .thumb{max-width:280px}
 /* 札の足。頁の足 .foot と同じ名前だと、頁の足の余白と字の大きさが掛かり釦が 2 行に折れた（#124） */
 .plate .acts{margin-top:auto}.plate .acts form button{padding:12px 14px;white-space:nowrap}
 .win{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:4vw;align-items:start}
