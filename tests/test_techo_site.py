@@ -92,5 +92,15 @@ except urllib.error.HTTPError as e:
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
+# 上げた後は頁の中で一覧を入れ替える（#143）。同じ道へ location.href しても読み込まれず、「…」のまま残って、もう一度押すと記録が 2 件になっていた
+from web.techo_site import SCRIPT  # noqa: E402
+up = SCRIPT[SCRIPT.index("getElementById('up-form')"):]
+assert "location.href" not in up, "同じ道へは飛ばさない"
+assert "if (go.disabled) return" in up and "go.disabled = true" in up and "form.reset()" in up and "上げました" in up
+assert up.index("form.reset()") < up.index("/media"), "記録ができたら先に欄を空にする（写真で止まっても、押し直しで記録を増やさない）"
+# 入れ替える元は頁の #mine。今の記録と写真が、新しい順の頭に在る
+r3 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": "x"})[1])["id"]
+mine = req(f"/toy/{G}/techo")[1].decode().split('<div id="mine">')[1]
+assert mine.index(r3) < mine.index(r2), "新しい記録が頭に来ない"
 server.shutdown()
 print("ok")
