@@ -204,11 +204,18 @@ def ai_block(r):
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
-    return out + (f'<div class="row"><form method="post" action="/record/{rid}/ai-interpret" class="inline"><button class="quiet">Claude に聞く（何が起きたか）</button></form>'
-                  f'<form method="post" action="/record/{rid}/ai-observe" class="inline"><button class="quiet">動画を見てもらう</button></form></div>')
+    from . import techo_site
+
+    can_ask, can_watch, why = techo_site.ai_offer(r["id"])
+    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret" class="inline"><button class="quiet">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
+               f'<form method="post" action="/record/{rid}/ai-observe" class="inline"><button class="quiet">動画を見てもらう</button></form>' if can_watch else "")
+    return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
 
 
 def records_list(sid, recs):
+    from . import zukan
+
+    data = hypotheses.load(sid)
     out = "<h2>これまでの記録</h2><p class='meta'>記録の順。紙の返事 → 自分の説明 → AI の返事、の順で開きます。</p>" if recs else ""
     for r in reversed(recs):
         told = loop.explanation(r["id"])
@@ -218,7 +225,9 @@ def records_list(sid, recs):
         after = (f'<p><a href="/toy/{sid}?see={hid}&kind=after&v={ver}#win">試した後の紙</a>（先に開いて、次に変える条件を読む。'
                  f'<a href="/sheet/{sid}/{hid}_v{ver}_after.pdf" target="_blank" rel="noopener">PDF</a>）</p>')
         if told:
-            tail = f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>' + ai_block(r) + next_form(r)
+            # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。
+            tail = (f'<div class="step"><p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p></div>'
+                    f'<div class="step">{ai_block(r)}</div><div class="step">{next_form(r)}</div>')
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
             tail = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
@@ -227,9 +236,12 @@ def records_list(sid, recs):
         feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""
         # 作った物の写真と動画、止まった所の答えも同じ札に出す（本人の指摘 11-05: 制作した記録を玩具の頁で見る）。
         ans = r.get("answers") or {}
-        feel += "".join(f'<p class="meta">{label}: {esc(ans[k])}</p>' for k, label in (("first_moved", "最初に動いた所"), ("stuck", "引っかかった所"), ("what_if", "変えると違いが出そうな所")) if ans.get(k))
+        # 書いた欄だけを読める字で出す。書いていない欄の名前は並べない（#130）。
+        written = [("最初に動いた所", ans.get("first_moved")), ("引っかかった所", ans.get("stuck")), ("変えると違いが出そうな所", ans.get("what_if")),
+                   ("思いついた事", "、".join(str(x) for x in r.get("ideas") or [])), ("メモ", r.get("note"))]
+        feel += "".join(f"<p>{label}: {esc(text)}</p>" for label, text in written if text)
         feel = media_html(r["id"]) + feel
-        out += f'<article class="card" id="{esc(r["id"])}"><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}（版 {esc(ver)}）</p>{feel}{after}{tail}</article>'
+        out += f'<article class="card" id="{esc(r["id"])}"><h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}・{esc(r["id"])}</p>{feel}{after}{tail}</article>'
     return out
 
 
