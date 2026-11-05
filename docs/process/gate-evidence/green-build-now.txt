@@ -1,0 +1,13 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_build_now.py と tests/test_loop_premise.py と tests/test_material_axes.py と ./run.sh
+# commit: 8f74460 の木
+$ test_build_now
+ok
+rc=0
+$ test_loop_premise
+ok
+rc=0
+$ test_material_axes
+ok
+rc=0
+$ ./run.sh（直前の木。commit 6635b64）
+実行した場面 125 本、期待どおり 125 本、未実装の床 0 本。rc=0

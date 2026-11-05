@@ -1,8 +1,8 @@
-"""玩具の頁（順路の真ん中: 記録を読む → 予想 → 仮説と型紙の窓 → 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る）。
+"""玩具の頁（順路の真ん中: 記録を読む → 仮説と型紙の窓 → 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る）。
 要件は docs/process/site-requirements.md の 2・3・6。見た目は skin.py の骨と皮に任せ、この頁は中身だけを組む。
 
 判断の芯（play_server の前の玩具の頁から引き継いだ線）:
-- 予想か自分の仮説の前は、仮説の名前も型紙も出さない（F9.prediction）。
+- 開いたらすぐ作れる（本人の決定 11-05、#242）。型紙は正解でなく AI が考えた仮説である事を、作る節の頭に出す（本人の言葉 11-05）。
 - 仮説は元の記録の順で、順位・推し・点を出さない（J-025）。大きな字は名札で順位ではない。
 - 型紙と手順の紙は、刷ると PDF と一緒に PNG と SVG も書き出されている（render.write_all・to_png）。前の頁は PDF のリンクしか出さず、
   画面に絵が出なかった（本人「今は型紙が出力されていない」）。ここでは「型紙の窓」で絵を画面に出し、押すと拡大の窓（CSS の :target、JS なし）。
@@ -17,6 +17,7 @@ import re
 from omochae import hypotheses, loop, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
+from omochae.marks import PREMISE_PAGE, PREMISE_SHORT
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
@@ -100,7 +101,7 @@ def window(sid, data, see, kind, v, recorded):
             f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて刷る</a></p>'
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
-            '<p class="meta">紙は復元ではなく、試すための翻案です。答えではありません。</p></div>')
+            f'<p class="meta">{esc(PREMISE_SHORT)}</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
 
@@ -113,7 +114,7 @@ def sample_records(data):
 
 def analogy_section(data):
     """たとえと、関連する事柄（本人の頼み 11-05「扇を開くのような、身近な物へのたとえと関連する事柄を全部の玩具に」）。
-    文は作る側の言葉なので印を付け、答えではない事を書く（J-016 の線）。仕組みの手がかりになるので予想の後にだけ出す（F9.prediction）。
+    文は作る側の言葉なので印を付け、答えではない事を書く（J-016 の線）。
     欄の形は data/hypotheses の `analogy`（like・related・written_by）。試験は tests/test_analogy.py。"""
     a = data.get("analogy")
     if not a:
@@ -166,6 +167,8 @@ def record_form(sid, data, own):
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>{version_field}<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
             # 感想の欄（本人の方針 11-05「作ったものの感想と動きを報告してもらう」）。動きは上の札、感想は自由な文。空でもよい。
             '<label>作ってみてどうだったか（感想。動いた所、難しかった所、思った事）<textarea name="impression"></textarea></label>'
+            # 人の工夫（本人の言葉 11-05）。「型紙は不完全でうまく動かないけどそれを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」の、輪の材料の欄。一部だけ書いても記録は落とさない（play_server.fixes_of）。
+            '<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">うまくいかなくて工夫した所（あれば）</legend><label>どの部品か<input type="text" name="fix_part"></label><label>どう工夫したか<input type="text" name="fix_change"></label><label>どうなったか<input type="text" name="fix_outcome"></label></fieldset>'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
             '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
             '<label>メモ<textarea name="note"></textarea></label>'
@@ -208,8 +211,8 @@ def ai_block(r):
                   f'<form method="post" action="/record/{rid}/ai-observe" class="inline"><button class="quiet">動画を見てもらう</button></form></div>')
 
 
-def records_list(sid, recs):
-    out = "<h2>これまでの記録</h2><p class='meta'>記録の順。紙の返事 → 自分の説明 → AI の返事、の順で開きます。</p>" if recs else ""
+def records_list(sid, recs, photos=True):
+    out = "<p class='meta'>記録の順。上下はありません。紙の返事 → 自分の説明 → AI の返事、の順で開きます。</p>" if recs else ""
     for r in reversed(recs):
         told = loop.explanation(r["id"])
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
@@ -228,28 +231,36 @@ def records_list(sid, recs):
         # 作った物の写真と動画、止まった所の答えも同じ札に出す（本人の指摘 11-05: 制作した記録を玩具の頁で見る）。
         ans = r.get("answers") or {}
         feel += "".join(f'<p class="meta">{label}: {esc(ans[k])}</p>' for k, label in (("first_moved", "最初に動いた所"), ("stuck", "引っかかった所"), ("what_if", "変えると違いが出そうな所")) if ans.get(k))
-        feel = media_html(r["id"]) + feel
+        # 人の工夫（本人の言葉 11-05「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」）。輪の材料そのものなので札の上の方に出す。
+        feel = "".join(f'<p>工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict)) + feel
+        feel = media_html(r["id"], photos=photos) + feel
+        if not photos:
+            # 合言葉なしで開いた場: 人の書いた文を別の人に見せない（文の中の名前は機械で落とせない。J-028）。札と紙への道と欄だけ残す。
+            feel = ""
+            if told:
+                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r) + next_form(r)
         out += f'<article class="card" id="{esc(r["id"])}"><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}（版 {esc(ver)}）</p>{feel}{after}{tail}</article>'
     return out
 
 
-def observations(sid, data, link=False):
+def observations(sid, data, link=True):
     """記録を読む（順路の 2 段目）。文には印を付ける（J-016 の線。zukan と同じ作り）。"""
     from . import zukan
 
     lines = zukan.observation_lines(sid, data)
     if not lines:
         return '<p class="meta"><span class="lb">観察</span>試した記録はまだありません。最初の記録を残す人になります。</p>'
-    # 予想の後は、行から同じ頁の記録の札（写真・感想・説明）へ飛べる。予想の前は札が頁に無いので字だけ。
+    # 行から同じ頁の記録の札（写真・感想・説明）へ飛べる。
     text = lambda x: f'<a href="#{esc(x["record_id"])}">{esc(x["text"])}</a>' if link and x.get("record_id") else esc(x["text"])
     return "<ul class='meta' style='list-style:none;padding:0'>" + "".join(f'<li><span class="lb">{esc(x["label"])}</span>{text(x)}</li>' for x in lines) + "</ul>"
 
 
-def media_html(rid, cls="shots"):
-    """記録に添えた写真と動画（手帖の「上げる」で添えた物）。ギャラリーと同じ道（/record/<記録>/media/）から出す。"""
+def media_html(rid, cls="shots", photos=True):
+    """記録に添えた写真と動画（手帖の「上げる」で添えた物）。ギャラリーと同じ道（/record/<記録>/media/）から出す。
+    photos=False は合言葉なしで開いた場。受け口が画像を出さないので、壊れた絵にしないよう枠ごと出さない（J-028）。"""
     from .techo_site import media_of
 
-    files = media_of(rid)
+    files = media_of(rid) if photos else []
     if not files:
         return ""
     pics = "".join((f'<video src="/record/{esc(rid)}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
@@ -257,23 +268,20 @@ def media_html(rid, cls="shots"):
     return f'<div class="{cls}">{pics}</div>'
 
 
-def made_strip(sid, recs, shown):
-    """玩具の頁の頭に出す「作った記録」の帯（本人の指摘 11-05「制作した記録とおもちゃのページが関連してない。同じページで見れると良い」）。
-    予想の後は、写真の小さな並びから同じ頁の記録の札へ飛ぶ。予想の前は写真も感想も出さず、在る事だけを知らせる（予想が先、F9。
-    作った物の写真は動かし方の手がかりになるため、仮説と同じ扱いにする）。"""
+def made_strip(sid, recs, photos=True):
+    """玩具の頁の頭に出す「他の人が作った物」の帯（本人の指摘 11-05「制作した記録とおもちゃのページが関連してない」、本人の決定 11-05「他の人の作ったものギャラリーは作る」）。
+    写真の小さな並びから、同じ頁の記録の札へ飛ぶ。photos=False は合言葉なしで開いた場で、写真は出さず札への道だけを出す（J-028）。"""
     if not recs:
         return ""
-    if not shown:
-        return f'<p class="meta">作った記録が {len(recs)} 件あります。写真と感想は、予想を書くとこの頁で見られます。</p>'
     from .techo_site import media_of
 
     thumbs = ""
     for r in reversed(recs):
-        for f in media_of(r["id"])[:1]:
+        for f in (media_of(r["id"])[:1] if photos else []):
             tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">')
             thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(r["id"])} の記録へ">{tag}</a>'
-    return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#kiroku">作った記録を見る（写真・感想・説明）</a></p>'
+    return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 
 def neighbours(sid):
@@ -283,13 +291,30 @@ def neighbours(sid):
     out = []
     if prev_:
         out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
-    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">上げた物と職人の言葉</a>', '<a href="/">入口へ</a>']
+    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物と職人の言葉</a>', '<a href="/">入口へ</a>']
     if next_:
         out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
     return '<p class="links">' + "".join(out) + "</p>"
 
 
-def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None):
+# 2 つの印は別々の軸（本人の言葉 11-05「一枚の紙から作る選択肢もある」「竹とか糸は江戸時代にもあったし使ったらよく再現できるということ」）。上下を付けない。
+AXIS_NOTE = "紙だけの印と当時の材料の印は別々の物で、上下はありません。"
+
+
+def material_labels(sid, h, data):
+    m = hypotheses.material_marks(sid, h, data)
+    out = ""
+    if m["paper_only"]:
+        out += '<span class="lb">紙だけ</span>紙 1 枚とのりで作れる形です。'
+    if m["period"]:
+        out += f'<span class="lb">当時の材料</span>{esc("・".join(m["period"]))}を使う形です。江戸時代にもあった材料で、再現に近づきます。'
+    return f'<p class="meta">{out}</p>' if out else ""
+
+
+def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True):
+    """玩具の頁。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で、開いたら仮説の札と刷る口がすぐ見える。
+    答えに読まれない事は、門でなく札で守る: 「型紙は正解ではなく、AI が考えた仮説」を作る節の頭に出す（本人の言葉 11-05）。
+    photos=False は合言葉なしで開いた場（写真と動画を出さない。J-028）。"""
     data, src = hypotheses.load(sid), source(sid)
     path = path or f"/toy/{sid}"
     note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")
@@ -297,7 +322,6 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     nopic = "" if has_pic else f'<p class="meta"><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p>'
     songs = "".join(f'<p>{esc(e["text"])}</p>' for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by"))
     who = "・".join(sorted({e["checked_by"] for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")}))
-    shown = not hypotheses.need_prediction(sid)  # 予想の後だけ、作った記録の写真と感想を頭の帯に出す
     stage = hypotheses.stage(sid)
     stage_note = '<p class="meta"><span class="lb">試作</span>全部の玩具を型紙にする途中の物。名前は作る側の見立てで、まだ確かめていません。</p>' if stage != "必須" else ""
     hero = (f'<section class="hero">{skin.frame(sid, src.get("holding", ""))}<div>'
@@ -305,33 +329,15 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
             + (f'<div class="songs">{songs}</div><p class="meta">原文の引用。確かめた人: {esc(who)}</p>' if songs else "")
             + skin.artwork_label(data["toy"], src) + nopic
             + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a><a href="/toys">ほかのおもちゃ</a></p>'
-            f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data, link=shown)}{made_strip(sid, records.all_records(sid), shown)}</div></section>')
-    preds = hypotheses.predictions(sid)
-    latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
-    form_pred = (f'<form method="post" action="/toy/{sid}/predict" class="card"><h3>予想</h3><label>どう動くと思いますか（先に書きます）<textarea name="text" required></textarea></label>'
-                 '<button>予想を残す</button></form>')
+            f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data)}{made_strip(sid, records.all_records(sid), photos)}</div></section>')
     form_own = (f'<form method="post" action="/toy/{sid}/own" class="card"><h3>自分の仮説を立てる</h3><label>名前<input type="text" name="name" required></label>'
                 f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>')
-    if hypotheses.need_prediction(sid):
-        # 予想の前は仮説を見せない。答えを先に見せないため（F9.prediction）。
-        # かざして選ぶ（試作、本人の案 11-05）: 文字で書く代わりに、内カメラの映像に絵を重ねて札で選ぶ道。本人が見て決めるための入口を 1 つだけ置く。
-        kazasu_link = f'<p><a class="btn quiet" href="/toy/{sid}/kazasu">かざして選ぶ（試作）</a></p>'
-        body = hero + f'<section class="sec" id="yosou">{note}<h2>先に、予想を書く</h2><p class="lead">図を見て、どこがどう動くと思うかを書きます。書くと仮説と型紙が開きます。仮説を自分で立てる道もあります。</p>{kazasu_link}{form_pred}{form_own}</section>' + neighbours(sid)
-        return skin.shell(data["toy"], body, look, "", path)
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
     own = hypotheses.own_hypotheses(sid)
-    body = hero + f'<section class="sec" id="yosou">{note}<h2>予想</h2>'
-    # 予想の後は札を主にし、欄は畳む（JS なし）。大きな欄が残ると、次の段の仮説が画面の下へ押される（#120）。
-    body += (f'<article class="card"><h3>あなたの予想</h3><p>{esc(latest)}</p></article><details><summary>予想を書き足す</summary>{form_pred}</details>' if latest else form_pred)
-    for h in own:
-        # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
-        free = f'{h["id"]}_v1_free.pdf'
-        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
-        body += (f'<article class="card" id="own-{esc(h["id"])}"><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
-    body += f'<details><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
-    body += f'<section class="sec" id="kasetsu"><h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
+    # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。並びは記録の順で、順位は学ぶ人の画面に出さない（J-013・J-025）。
+    body = hero + (f'<section class="sec" id="kasetsu">{note}<h2>すぐ作る</h2><p class="lead">作りたい案を選んで、型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
+                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}{esc(AXIS_NOTE)}</p><div class="plates">')
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
@@ -340,10 +346,17 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
-                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{thumb}<div class="acts">'
+                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{material_labels(sid, h, data)}{thumb}<div class="acts">'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
                  f'<p class="meta">{printed}</p></div></div>')
-    body += "</div></section>"
+    body += "</div>"
+    for h in own:
+        # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
+        free = f'{h["id"]}_v1_free.pdf'
+        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
+        body += (f'<article class="card" id="own-{esc(h["id"])}"><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
+                 f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
+    body += f'<details><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
     body += analogy_section(data)
     body += f'<section class="sec" id="win"><h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
@@ -351,7 +364,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
              + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if printed_ids(sid, data) else "")
              + f'</p>{ask_form(sid, data, asked)}</section>')
-    body += f'<section class="sec" id="kiroku"><h2>記録と返事</h2>{record_form(sid, data, own)}{records_list(sid, recs)}{sample_records(data)}</section>'
+    body += f'<section class="sec" id="kiroku"><h2>試した記録を残す</h2>{record_form(sid, data, own)}</section>'
+    # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
+    body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
+             f'{sample_records(data)}<p class="links"><a href="/gallery">全部の玩具の、作った物を見る</a></p></section>')
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen
 

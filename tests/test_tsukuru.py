@@ -1,7 +1,7 @@
 """作りながら見る（観察 A の試作）。本人の案の具体化（11-05 朝）「端末を机の端に置いて…作成の様子を見れるようにする」の一番浅い段。
 
 見る線: 映像は端末の中だけ（画素を取り出す・録る・送る JS が頁に無い）。残るのは字と数だけ（手順の番号と出来事。人の印は持たない）。
-予想の前と刷る前は開かない。手順の文は手順の紙と同じ物。止まった手順の数は作る側の頁だけに出し、学ぶ人の頁には出さない。本物の API は呼ばない。
+刷る前は開かない。手順の文は手順の紙と同じ物。止まった手順の数は作る側の頁だけに出し、学ぶ人の頁には出さない。本物の API は呼ばない。
 """
 import html
 import json
@@ -19,7 +19,7 @@ os.environ["OMOCHAE_DATA"] = DATA
 
 from omochae import hypotheses, making_log  # noqa: E402
 from web import tsukuru  # noqa: E402
-from web.kazasu import PRIVACY  # noqa: E402
+from web.tsukuru import PRIVACY  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -59,11 +59,8 @@ def step(n, event, hid="H-A", **more):
     return post(f"/toy/{G}/step", {"hypothesis": hid, "step": str(n), "event": event, **more})
 
 
-# 予想の前は開かない（札も受けない）
-body = get(f"/toy/{G}/tsukuru")[1]
-assert "先に予想を書くと、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body
+# 刷る前は札も受けない
 assert step(1, "next")[0] == 422
-assert post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"})[0] == 303
 # 刷る前は開かない。玩具の頁に入口も出さない
 body = get(f"/toy/{G}/tsukuru")[1]
 assert "先に紙を刷ると、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body

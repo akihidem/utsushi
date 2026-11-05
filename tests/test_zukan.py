@@ -1,6 +1,6 @@
-"""図鑑の頁の試験（J-016、f15）。印の無い文を出さない・予想が先・採らなかった読みを出さない・引用は確かめた読みだけ、を見る。
+"""図鑑の頁の試験（J-016、f15）。印の無い文を出さない・採らなかった読みを出さない・引用は確かめた読みだけ、を見る。
 
-本物の記録や予想を汚さないよう、OMOCHAE_DATA を空の一時の置き場にしてから読み込む。
+本物の記録を汚さないよう、OMOCHAE_DATA を空の一時の置き場にしてから読み込む。
 """
 import os
 import re
@@ -39,7 +39,7 @@ def hypothesis_words(sid):
     return [w for h in data["hypotheses"] for w in (h["name"], h["how_it_moves"])]
 
 
-# 予想の前: 頁は開き、仮説の名前と動かし方は出ない。仮説の代わりに予想へのリンクだけ
+# 頁は開き、仮説の名前と動かし方も出る（予想の段を外した。#242）
 code, idx = get("/zukan")
 assert code == 200 and "図鑑" in idx
 for sid in sources():
@@ -49,9 +49,9 @@ for sid in sources():
         assert f'href="/toy/{sid}"' in idx and f'href="/toy/{sid}/techo"' in idx, sid
     code, body = get(f"/zukan/{sid}")
     assert code == 200, sid
-    assert "予想を書くと仮説が見られる" in body and f'href="/toy/{sid}"' in body
+    assert "予想を書くと" not in body
     for w in hypothesis_words(sid):
-        assert w not in body and w not in idx, w
+        assert w in body, w
 assert 'href="/gallery"' in idx
 assert get("/zukan/NDL-0-R0000001-L")[0] == 404
 
@@ -71,24 +71,17 @@ fake = {"transcription": {"entries": [{"text": "確かめた", "checked_by": "�
 assert [q["text"] for q in zukan.quote_lines(fake)] == ["確かめた"]
 assert all(q["label"] == labels.QUOTE for q in zukan.quote_lines(fake))
 
-# 記録と予想の後: 観察の文が増え、仮説の名前が出る
+# 記録の後: 観察の文が増える
 rid, fail = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない", "tried_on": "2026-11-04"})
 assert not fail
-hypotheses.save_prediction(G, "つまみを上げると開く")
 body = get(f"/zukan/{G}")[1]
 assert f"{rid} 仮説 A の紙: わからない（試した日 2026-11-04）" in body
-assert "予想を書くと仮説が見られる" not in body
-for w in hypothesis_words(G):
-    assert w in body, w
-# 予想は玩具ごと。もう 1 つの玩具の仮説はまだ隠れたまま
-other = next(s for s in sources() if s != G)
-assert all(w not in get(f"/zukan/{other}")[1] for w in hypothesis_words(other))
 
 # 出た文はどれも 3 分類の印を持ち、組み立てた文の一覧は F6.label を通る
 for sid in sources():
     body = get(f"/zukan/{sid}")[1]
     li = sentences(body)
-    assert li or sid != G, sid  # もう 1 つの玩具は記録も予想も無く、文は歌だけ
+    assert li or sid != G, sid  # もう 1 つの玩具は記録が無い
     for s in li:
         assert re.match(rf'<span class="lb">({"|".join(labels.LABELS)})</span>', s), s
     # 歌の直後には引用の印がある

@@ -65,7 +65,6 @@ from omochae.templates.slider_fan import DEFAULTS
 assert any("溝" in s for s in steps({**DEFAULTS, **tab["params"]}))
 assert not any("溝" in s for s in steps({**DEFAULTS, **stick["params"]})), "溝の無い形に溝の手順を出さない"
 # 型紙と一緒に手順の紙が刷られ、印が入っている
-assert subprocess.run([sys.executable, "-m", "omochae.hypotheses", "predict", "試験の予想"], capture_output=True).returncode == 0
 r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", "--out", f"{tmp}/a"], capture_output=True, text=True)
 assert r.returncode == 0, r.stderr
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/a_tejun.pdf", "-"], capture_output=True, text=True).stdout.split())
@@ -76,7 +75,6 @@ tsource = json.loads((pathlib.Path(__file__).resolve().parents[1] / "data/source
 for h in load(TSID)["hypotheses"]:
     layout, failures = compose_sheet("pivot_counterweight", h["params"], tsource, h["name"], h["how_it_moves"])
     assert not failures, (h["id"], [f.line() for f in failures])
-assert subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID, "predict", "頭が揺れる"], capture_output=True).returncode == 0
 r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID, "print", "H-C", "--out", f"{tmp}/t"], capture_output=True, text=True)
 assert r.returncode == 0, r.stderr
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output=True, text=True).stdout.split())

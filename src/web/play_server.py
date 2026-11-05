@@ -1,8 +1,8 @@
 """使い手の入口: 手元で動くブラウザの画面（本人の決定、J-024）。依存を増やさず標準の http.server で作る。
 
-判断の芯: コマンドの輪と同じ線を画面でも守る。予想が先（F9.prediction）、仮説に順位を出さない（J-013）、
+判断の芯: コマンドの輪と同じ線を画面でも守る。仮説に順位を出さない（J-013）、
 試した後の紙は記録を残すまで渡さない（J-013）、結果は人が入れる値で、成績にしない（philosophy.md）。
-鍵なしで輪の前半（予想 → 型紙 → 試す → 記録 → 人の説明）が回る。Claude を呼ぶ所（手帖の質問・読み・観察）は鍵がある時だけ動く。
+鍵なしで輪の前半（型紙 → 試す → 記録 → 人の説明）が回る。Claude を呼ぶ所（手帖の質問・読み・観察）は鍵がある時だけ動く。
 既定は持ち寄りの画面（contrib_server.py）と同じく 127.0.0.1 にだけ開く。外に開く責任を週内に持てないため。
 家の網に開く切り替え（--lan、U-36）と、デモの一周を外の機器から開く合言葉の門（--public-key-file、11-04 の本人の決定 A）は
 本人の決定で足した。後者は口を 127.0.0.1 のままにし、外からはトンネル（run-demo.sh）だけが入る。
@@ -159,7 +159,7 @@ def _num(v):
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
 
-    def log_message(self, *a):  # 予想や記録の文を記録に残さない
+    def log_message(self, *a):  # 記録の文を記録に残さない
         pass
 
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
@@ -225,7 +225,8 @@ class Handler(BaseHTTPRequestHandler):
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
 
     def _toy(self, sid, **kw):
-        return toy_page(sid, look=self._look, **kw)
+        # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), **kw)
 
     def do_GET(self):
         try:
@@ -278,33 +279,26 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, kaizen.toy_page(m.group(1), look, path))
         if path == "/toys":
             from . import toys
-            return self._send(200, toys.page(look, path))
+            return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
         if path == "/gallery":
             from . import techo_site
             from .demo_samples import STYLE as SAMPLE_STYLE
-            return self._send(200, skinmod.shell("上げた物と職人の言葉", techo_site.gallery_page(sources()), look, "/gallery", path, techo_site.STYLE + SAMPLE_STYLE, "techo"))
-        # 図鑑（f15）。文の印の床（F6.label）と予想が先の線は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.STYLE + SAMPLE_STYLE, "techo"))
+        # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
             from . import zukan
             return self._send(200, zukan.toy_zukan(m.group(1), look) if m.group(1) else zukan.index_page(sources(), look))
-        # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。予想が先の線と印の床は kuzushi.py が持つ。
+        # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
         m = re.fullmatch(rf"/zukan/({SID})/yomi", path)
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
-        m = re.fullmatch(rf"/toy/({SID})/kazasu", path)
-        if m and m.group(1) in sources():
-            # かざして選ぶ（試作、本人の案 11-05）。内カメラの映像に原図を重ね、札のタップで予想を選ぶ。映像は端末の外へ出さない（kazasu.py）。
-            from . import kazasu
-            return self._send(200, kazasu.page(m.group(1), look))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
-            # 予想の前と、刷った紙が無い時は開かない（手帖と同じ扱い。仮説の中身を先に見せないため）。
+            # 刷った紙が無い時は開かない（手順は刷った版の物なので）。
             sid = m.group(1)
-            if hypotheses.need_prediction(sid):
-                return self._send(200, self._toy(sid, errors=["先に予想を書くと、作りながら見る頁が開きます"]))
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             hid = qs.get("h", [""])[0] or (printed[0] if printed else "")
             if hid not in printed:
@@ -319,10 +313,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0], version=v))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
-            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
+            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。
             sid = m.group(1)
-            if hypotheses.need_prediction(sid):
-                return self._send(200, self._toy(sid, errors=["先に予想を書くと、手帖が開きます"]))
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
@@ -422,19 +414,7 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/step", self.path)
         if m and m.group(1) in sources():
             return self._step_post(m.group(1), form)
-        m = re.fullmatch(rf"/toy/({SID})/predict-choice", self.path)
-        if m and m.group(1) in sources():
-            # かざして選ぶ頁の候補（U-44、Issue #118）。受けるのは押した候補の印だけ（動く所の候補。仮説の印ではない）。
-            # 選んだ事を予想として残し、仮説の所へ戻す。どの仮説も選んでいないので、窓に出す仮説（see）は付けない。
-            from . import kazasu
-            sid = m.group(1)
-            cand, why = kazasu.choose(sid, form.get("choice", ""))
-            if cand is None:
-                return self._send(422, kazasu.page(sid, self._look, error="；".join(why)))
-            # 頁の段の進み: かざして選んだ予想も「予想を書いた」に数える（U-45 の段取り 2。文字の予想と同じ段）。
-            making_log.add_stage(sid, "predict", form.get("who", ""))
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(kazasu.SENT)}#kasetsu")])
-        m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record|ask)", self.path)
+        m = re.fullmatch(rf"/toy/({SID})/(own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
             return self._toy_post(sid, act, form)
@@ -505,7 +485,7 @@ class Handler(BaseHTTPRequestHandler):
     def _reprint(self, sid, form):
         """版の記録があって紙が無い版を刷り直す（#158）。「次の版を作る」は、同じ値では前の版と変わらないので通らない。"""
         hid, v = form.get("hypothesis", ""), form.get("version", "")
-        if (hypotheses.need_prediction(sid) or hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
+        if (hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"]))
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
@@ -533,14 +513,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
-        決まりの外（予想の前・刷っていない紙・数でない番号・手順の数の外・知らない出来事）は 422。映像や写真はこの口では受けない（form の欄だけ）。"""
+        決まりの外（刷っていない紙・数でない番号・手順の数の外・知らない出来事）は 422。映像や写真はこの口では受けない（form の欄だけ）。"""
         from . import tsukuru
 
         as_json = form.get("json") == "1"
         bad = lambda why: self._send(422, json.dumps({"error": why}, ensure_ascii=False) if as_json else why,
                                      "application/json; charset=utf-8" if as_json else "text/plain; charset=utf-8")
-        if hypotheses.need_prediction(sid):
-            return bad("先に予想を書く")
         hid, event = form.get("hypothesis", ""), form.get("event", "")
         if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]} or not printed_versions(sid, hid):
             return bad("刷った紙をえらぶ")
@@ -578,8 +556,6 @@ class Handler(BaseHTTPRequestHandler):
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
         out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
-        if hypotheses.need_prediction(sid):
-            return out(422, {"error": "先に予想を書く"})
         hid = form.get("hypothesis", "")
         if not printed_versions(sid, hid):
             return out(422, {"error": "刷った紙をえらぶ"})
@@ -596,14 +572,14 @@ class Handler(BaseHTTPRequestHandler):
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return out(200, {"text": text, "from": how})
         rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
-                                     "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
+                                     "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": fixes_of(form), "via": "techo"})
         if rid:
             making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
         return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
-        anchor = "kiroku"  # 予想と自分の仮説は次の段へ戻す（要件 L-04）。試した記録の欄へ戻すのは記録だけ
+        anchor = "kiroku"  # 自分の仮説は次の段へ戻す（要件 L-04）。試した記録の欄へ戻すのは記録だけ
         if act == "ask":
             # 手順の質問は、試した記録（仮説への返事）には入れず、その場で答えを頁に出す。順（紙 → 記録と説明 → AI）には入らない。
             # 質問の文だけは工作の様子（omochae.making_log）に残す: 何で止まるかを、案内と答えを直す材料にする（本人の決定 11-05 朝）。
@@ -611,8 +587,8 @@ class Handler(BaseHTTPRequestHandler):
             from api.budget import BudgetStop
 
             hid = form.get("hypothesis", "")
-            if hypotheses.need_prediction(sid) or not printed_versions(sid, hid):
-                return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
+            if not printed_versions(sid, hid):
+                return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に紙を刷ってください"]))
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
@@ -621,11 +597,7 @@ class Handler(BaseHTTPRequestHandler):
                 text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
-        if act == "predict":
-            _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
-            msg = "予想を残しました"
-            anchor = "kasetsu"
-        elif act == "own":
+        if act == "own":
             own, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
             msg = "仮説を残しました。「紙を刷る」で、身の回りの紙と紐で作る型紙なしの紙が刷れます"
             anchor = f"own-{own['id']}" if own else anchor
@@ -638,45 +610,54 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, self._toy(sid, errors=["紙を刷れませんでした（検査に落ちた）"]))
             failures, msg = [], "刷りました。100% で印刷します"
         elif act == "print":
-            failures = hypotheses.need_prediction(sid)
+            failures = []
             hid = form.get("hypothesis", "")
-            if not failures and hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
+            if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"]))
-            if not failures:
-                out_dir(sid).mkdir(parents=True, exist_ok=True)
-                # 刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、
-                # より良い型紙を提供する」）。版 1 しか無ければ版 1。
-                v = loop.latest_version(sid, hid)
-                # 一番新しい版が刷れない時は、1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。
-                while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
-                    if v <= 1:
-                        return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"]))
-                    v -= 1
-                # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
-                loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+            out_dir(sid).mkdir(parents=True, exist_ok=True)
+            # 刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、
+            # より良い型紙を提供する」）。版 1 しか無ければ版 1。
+            v = loop.latest_version(sid, hid)
+            # 一番新しい版が刷れない時は、1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。
+            while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
+                if v <= 1:
+                    return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"]))
+                v -= 1
+            # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
+            loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
             msg = "刷りました。下の窓で絵を見て、PDF を 100% で印刷します"
             see = hid
         else:
-            if hypotheses.need_prediction(sid):
-                failures = hypotheses.need_prediction(sid)
-            else:
-                hid = form.get("hypothesis", "")
-                # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
-                rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
-                       "impression": form.get("impression", "").strip(),
-                       "opened_deg": _num(form.get("opened_deg")), "opener": form.get("opener") or None, "power": form.get("power") or None,
-                       "minutes_to_try": _num(form.get("minutes_to_try")), "fixes": [], "note": form.get("note", ""),
-                       "answers": {k: form[k] for k in ("first_moved", "stuck", "what_if") if form.get(k, "").strip()},
-                       "ideas": [form["idea"]] if form.get("idea", "").strip() else []}
-                _, failures = records.add(rec)
+            hid = form.get("hypothesis", "")
+            # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
+            rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
+                   "impression": form.get("impression", "").strip(),
+                   "opened_deg": _num(form.get("opened_deg")), "opener": form.get("opener") or None, "power": form.get("power") or None,
+                   "minutes_to_try": _num(form.get("minutes_to_try")), "fixes": fixes_of(form), "note": form.get("note", ""),
+                   "answers": {k: form[k] for k in ("first_moved", "stuck", "what_if") if form.get(k, "").strip()},
+                   "ideas": [form["idea"]] if form.get("idea", "").strip() else []}
+            rid, failures = records.add(rec)
             msg = "記録を残しました。試した後の紙が開けます"
+            # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
+            anchor = rid or anchor
         if failures:
             return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
-        # 頁の段の進み（予想を書いた・刷った・記録を残した）を工作の様子に残す（U-45 の段取り 2）。何を書いたかは写さない。
+        # 頁の段の進み（刷った・記録を残した）を工作の様子に残す（U-45 の段取り 2）。何を書いたかは写さない。
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
-        if act in ("predict", "print", "record"):
+        if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
         self._done(sid, msg, see=see, anchor="win" if see else anchor)
+
+
+def fixes_of(form):
+    """記録の欄の「工夫した所」を記録の形にする。本人の言葉（11-05）「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」の、輪の材料の口。
+    何も書かなければ空。「あれば」の欄なので、一部だけ書いても記録ごと落とさない（落とすと書いた全部が消える）。
+    欠けた欄は「書かれていない」と残す: 3 欄の床（F3.result）を通し、読む人が欠けと分かるようにするため。"""
+    part, change, outcome = (form.get(k, "").strip() for k in ("fix_part", "fix_change", "fix_outcome"))
+    if not (part or change or outcome):
+        return []
+    blank = "書かれていない"
+    return [{"part": part or blank, "change": change or blank, "outcome": outcome or blank}]
 
 
 def lan_addresses():

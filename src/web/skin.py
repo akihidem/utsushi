@@ -24,8 +24,8 @@ SKINS = {
              "field": "#171411", "onaccent": "#0b0a09", "soft": "#15120f"},
 }
 
-# 頭の帯の道。順路の順（序 → おもちゃ → 上げた物 → 図鑑）。入口は「うつし」。
-NAV = (("/", "うつし"), ("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "上げた物と職人の言葉"), ("/zukan", "図鑑"))
+# 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
+NAV = (("/", "うつし"), ("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"))
 
 
 # その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
@@ -56,6 +56,7 @@ img,video{max-width:100%}
 main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 5vw}
 .meta{font-size:12px;color:var(--mute);letter-spacing:.08em;line-height:1.9}
+.premise{font-size:14px;line-height:1.9;letter-spacing:.06em;margin:10px 0;padding:8px 12px;border-left:3px solid var(--frame)}
 .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--frame);padding:0 8px;margin-right:8px;vertical-align:middle}
 .lead{font-size:15px;line-height:2.1;letter-spacing:.06em;max-width:40em}
 .nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}

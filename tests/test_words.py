@@ -74,8 +74,6 @@ for source, sid in ((gs, G), (ts, T)):
     assert not any(t.y + t.h > fold - height for t in above), "折り上げた札が上の文字に重なる"
     assert not any(t.text and "昔の職人" in t.text for t in above), "説明を札の外に出さない"
     assert "昔の職人" in " ".join(after["card"]), "歴史の問いを札で閉じない"
-out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "predict", "押すと開く"], capture_output=True, text=True)
-assert out.returncode == 0
 stem = pathlib.Path(tmp) / "a"
 out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", "--out", str(stem)], capture_output=True, text=True)
 assert out.returncode == 0 and (pathlib.Path(tmp) / "a_after.pdf").exists(), out.stderr

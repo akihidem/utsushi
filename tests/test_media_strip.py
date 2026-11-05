@@ -42,8 +42,7 @@ def req(path, data, ctype="application/x-www-form-urlencoded"):
         return e.code, e.read().decode()
 
 
-# 記録の口は、予想を書いて紙を刷った後に開く
-assert req(f"/toy/{G}/predict", urllib.parse.urlencode({"text": "筒を押すと扇が開く"}).encode())[0] in (200, 303)
+# 記録の口は、紙を刷った後に開く
 assert req(f"/toy/{G}/print", b"hypothesis=H-A")[0] in (200, 303)
 
 

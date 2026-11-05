@@ -1,4 +1,4 @@
-"""入口のサイトの中の手帖（本人の方向転換 11-04）。予想が先・仮説の名前と動き方を出さない・手順だけ答える・上げた物は記録に添い撮影情報を外す。"""
+"""入口のサイトの中の手帖（本人の方向転換 11-04）。仮説の名前と動き方を出さない・手順だけ答える・上げた物は記録に添い撮影情報を外す。"""
 import io
 import json
 import os
@@ -15,7 +15,7 @@ from PIL import Image  # noqa: E402
 
 from omochae import hypotheses  # noqa: E402
 from web.play_server import serve  # noqa: E402
-from web.techo_site import media_dir, strip_jpeg_meta  # noqa: E402
+from web.techo_site import MAX_MEDIA, media_dir, strip_jpeg_meta  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -35,8 +35,7 @@ def req(path, data=None, ctype="application/x-www-form-urlencoded", origin=base)
 
 
 code, body = req(f"/toy/{G}/techo")
-assert code == 200 and "先に予想を書く" in body.decode(), "予想の前は手帖を開かない"
-assert req(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})[0] in (200, 303)
+assert code == 200 and "先に予想を書く" not in body.decode(), "予想の段は無い（#242）"
 assert req(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
 code, body = req(f"/toy/{G}/techo")
 page = body.decode()
@@ -54,6 +53,11 @@ assert "試して確かめる所" in j["text"]
 j = json.loads(req(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})[1])
 assert "手前にへこむ" in j["text"]
 assert req(f"/toy/{G}/ask-json", {"hypothesis": "H-B", "question": "谷折りって？"})[0] == 422
+# 上げる: 数と大きさの決まりを押す前に読める。写真を選ぶまで、釦の字は写真なしで起きる事を言う（#144）
+form = page.split('<form id="up-form"', 1)[1].split("</form>", 1)[0]
+assert "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form and f'data-max-bytes="{MAX_MEDIA}"' in form
+assert 'id="picked"' in form and 'id="thumbs"' in form
+assert '<button class="go">記録だけ残す</button>' in form and "大人の手元だけ・顔なし・声なし" in form
 # 上げる: 記録を作り、その R-番号に写真を添える。撮影情報（APP1）を外し、型と大きさと出所を見る
 code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない"})
 rid = json.loads(body)["id"]
@@ -95,15 +99,15 @@ try:
     opener.open(x)
 except urllib.error.HTTPError as e:
     assert e.code == 303 and "/techo" in e.headers["Location"]
-# サイトのギャラリー: 上げた物と職人の言葉の枠
+# サイトのギャラリー: 作った物と職人の言葉の枠
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
-name = "上げた物と職人の言葉"
+name = "作った物と職人の言葉"
 assert f"<b>{name}</b>" in g and f"<title>{name}<" in g, g[:300]  # 帯の今いる所は b で出る
 assert re.findall(r"<h1[^>]*>(.*?)</h1>", g) == [name]
-for sec, label in (("ageta", "上げた物"), ("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
+for sec, label in (("ageta", "他の人が作った物"), ("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
     assert f'<a href="#{sec}">{label}</a>' in g and f'id="{sec}"' in g and f'<h2 class="mark">{label}</h2>' in g, sec
 # 見本は札と断りの一文で見分ける。縞の地と、皮によって白く浮く固定の色は使わない（#139）
 assert "repeating-linear-gradient" not in g and "#f4efe3" not in g and "#7a3b1d" not in g

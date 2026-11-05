@@ -1,7 +1,8 @@
-"""仮説を並べて見せ、使い手の予想を先に受ける入口。
+"""仮説を並べて見せ、選んだ仮説の型紙を刷る入口。
 
 判断の芯（J-002）: 仕組みを 1 つに決めて既定にしない。最初に刷る 1 枚は入口で、答えではない。
-予想を書く前に AI や作者の案を見せると、予想が案に引きずられるので、予想が無いと一覧も型紙も出さない。
+前は予想が無いと一覧も型紙も出さなかった（F9.prediction）。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で門を外した。
+型紙は正解でなく AI が考えた仮説（本人の言葉、11-05）。答えに読まれない事は、門でなく札と紙の印で守る。
 仮説を自分で立てたい人の道も持つ（J-008）。自分の仮説を書けば記録に残り、寸法を付ければ型紙にでき、比べるのは本人が選ぶ時だけ。
 """
 import argparse
@@ -36,8 +37,8 @@ def files_of(folder, kind, source_id):
     """置き場の `{kind}-{玩具の ID}-….json` のうち、中の source_id がその玩具の物だけを名前の順で返す。
 
     なぜ名前だけで数えないか: 1 コマに複数の玩具が入り、ID の末尾に枝番（…-L-3）が付いた。名前の前方一致だと、
-    枝番つきの玩具の記録が、枝番なしの玩具（…-L）の記録として数えられる。試作の玩具に書いた予想で、御来迎の予想の門が開いた（#147）。
-    予想・自分の仮説・型紙の確定の 3 か所が同じ形だったので、ここ 1 つにまとめた。
+    枝番つきの玩具の記録が、枝番なしの玩具（…-L）の記録として数えられる。試作の玩具に書いた記録で、御来迎の門が開いた（#147）。
+    自分の仮説・型紙の確定が同じ形だったので、ここ 1 つにまとめた。
     読めない記録は数えず、どのファイルかを stderr に出す。書きかけの 1 つで門を開けないためと、頁を止めないため。
     """
     out = []
@@ -46,22 +47,6 @@ def files_of(folder, kind, source_id):
         if rec is not None and rec.get("source_id") == source_id:
             out.append(path)
     return out
-
-
-def predictions(source_id):
-    return files_of(_pred_dir(), "prediction", source_id)
-
-
-def save_prediction(source_id, text):
-    """人が書いた予想を残す。個人の記録なので git には入れない。"""
-    if not text or not text.strip():
-        return None, [Failure("F9.prediction", source_id, "予想が空")]
-    folder = _pred_dir()
-    folder.mkdir(parents=True, exist_ok=True)
-    now = datetime.now(timezone(timedelta(hours=9)))
-    path = folder / f"prediction-{source_id}-{now.strftime('%Y%m%d-%H%M%S-%f')}.json"
-    store.write_json(path, {"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"})
-    return path, []
 
 
 def own_paths(source_id):
@@ -95,20 +80,43 @@ def stage(source_id):
     return load(source_id).get("stage", "必須")
 
 
-def need_prediction(source_id):
-    if predictions(source_id) or own_paths(source_id):
-        return []
-    return [Failure("F9.prediction", source_id, "先に予想か自分の仮説を書く（python -m omochae.hypotheses predict か own）")]
-
-
 def letter(h):
     return h["id"].split("-")[1]
 
 
-def list_lines(data, latest, own=()):
+# 道具（材料の数に入れない）と、当時の材料の語。竹と糸だけにするのは本人の言葉の範囲を越えないため（楊枝や割り箸が当時の物かは確かめていない）。
+_TOOLS = ("のり", "はさみ", "定規", "テープ", "セロハンテープ", "透明な梱包テープ")
+# 玩具そのものにならない、試す時の小道具（坂を作る本・浮かべる盆）。紙だけの印を落とさない。
+_PROPS = ("載せる本", "厚い本", "盆か洗面器")
+_PERIOD = (("竹", ("竹串", "竹ひご")), ("糸", ("糸",)))
+
+
+def _period_in(item, words):
+    """当時の材料を使うか。「竹ひごか割り箸」のように別の物でも足りる時は、選べる物の全部がその材料の時だけ数える（必ず使うとは言えないため）。"""
+    return all(any(w in part for w in words) for part in item.split("か")) if "か" in item else any(w in item for w in words)
+
+
+def material_marks(source_id, h, data=None):
+    """仮説の 2 つの印を、雛形の材料の一覧から出す。本人の言葉（11-05）「一枚の紙から作る選択肢もある」「竹とか糸は江戸時代にもあったし使ったらよく再現できるということ」。
+    - paper_only: 紙 1 枚と道具だけで作れる形。優劣の印ではない（窓口の説明）。
+    - period: 当時の材料（竹・糸）のうち使う物。再現の良さの軸で、paper_only とは別の軸。
+    手で印を書かず材料の一覧から出すのは、版や雛形が変わっても札と紙が食い違わないため。穴をあけるだけの竹串は材料に数えない。"""
+    from .compose import TEMPLATES
+
+    data = data or load(source_id)
+    if h.get("template_id", "") is None or "params" not in h:
+        return {"paper_only": False, "period": []}
+    tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
+    items = [str(m) for m in tpl.materials({**tpl.DEFAULTS, **h["params"]})]
+    paper, rest = items[0] if items else "", items[1:]
+    extras = [m for m in rest if not all(w.strip() in _TOOLS for w in m.split("、")) and not any(w in m for w in _PROPS)]
+    used = [m.replace("竹串（穴あけ）", "") for m in rest]
+    period = [name for name, words in _PERIOD if any(_period_in(m, words) for m in used)]
+    return {"paper_only": "1 枚" in paper and "貼る" not in paper and not extras, "period": period}
+
+
+def list_lines(data, own=()):
     lines = [f"{data['toy']}"]
-    if latest:
-        lines.append(f"あなたの予想: {latest}")
     for h in own:
         lines += [f"あなたの仮説 {h['id']} {h['name']}（{h['status']}）", f"  動かし方: {h['how_it_moves']}", f"  根拠: {h['evidence']}"]
     lines += [data["note"], ""]
@@ -121,13 +129,24 @@ def list_lines(data, latest, own=()):
     return lines
 
 
-def _print_instructions(params, source_id, title, how, out, version, template="slider_fan"):
+def hypothesis_mark(source_id, version=1):
+    """AI の案から刷る紙の仮説の印。本人の言葉（11-05）「型紙が正解ではなくて、とりあえずAIが考えた仮説であるということを明示する」を紙の上で守る。
+    必須 2 種の版 1 だけは今の文のまま返す（None）: 凍結の床で今の版の紙を変えないため（tests/test_floor_pin.py）。次の版からは新しい文。
+    自分の仮説の紙（print_own）はここを通さない。人が立てた仮説を AI の案と書かないため。"""
+    from .marks import AI_HYPOTHESIS
+
+    return None if stage(source_id) == "必須" and version <= 1 else AI_HYPOTHESIS
+
+
+def _print_instructions(params, source_id, title, how, out, version, template="slider_fan", mark=None):
     """型紙と対の手順の紙を刷る。型紙と同じ印の検査を通す。"""
     from .instructions import compose_sheet
     from .marks import check_image_count, check_pdf
     from .render import to_png, write_all
 
     source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    if mark:
+        source["hypothesis_mark"] = mark
     # 完成のイメージとして原図を手順の紙に試しに載せる（本人の決定、11-04、goraigo-v8）。型紙には貼らない（J-007 のまま）。
     # 原図の写しは git の外（out/sources、ingest が取る）なので、無い所では載せずに刷る。
     pic = ROOT / "out/sources" / f"{source_id}.jpg"
@@ -170,7 +189,7 @@ def _print_after(source, title, out):
     return 3
 
 
-def print_free(source_id, title, how, evidence, out):
+def print_free(source_id, title, how, evidence, out, mark=None):
     """型紙に乗らない仮説に、型紙なしの紙を刷る（本人の決定）。寸法は出さないので F9.own の線は変えない。"""
     from .compose import TEMPLATES
     from .instructions import compose_free
@@ -178,6 +197,8 @@ def print_free(source_id, title, how, evidence, out):
     from .render import to_png, write_all
 
     source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    if mark:
+        source["hypothesis_mark"] = mark
     results = TEMPLATES[load(source_id).get("template", "slider_fan")].RESULTS
     layout, failures = compose_free(source, title, how, evidence, results)
     if not failures:
@@ -196,9 +217,9 @@ def print_free(source_id, title, how, evidence, out):
 
 
 def print_teacher(source_id, out):
-    """先生の見る紙を刷る（U-25 の案 4）。仮説に依らない 1 枚なので、予想の門（F9.prediction）を通さずに刷れる。
+    """先生の見る紙を刷る（U-25 の案 4）。仮説に依らない 1 枚。
 
-    先生は授業の前に刷っておくため。紙に答えも仮説も載らないので、予想より先に渡っても答えを先に言う事にならない。
+    先生は授業の前に刷っておくため。紙に答えも仮説も載らない。
     """
     from .compose import TEMPLATES
     from .instructions import compose_teacher
@@ -232,6 +253,9 @@ def print_compare(source_id, a, b, out):
     ha, hb, failures = pick_pair(data, a, b)
     if not failures:
         source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+        mark = hypothesis_mark(source_id)  # 見比べる紙も AI の案から刷るので同じ印（必須 2 種の版 1 は今の文）
+        if mark:
+            source["hypothesis_mark"] = mark
         layout, failures = compose_compare(source, data["toy"], ha, hb, (letter(ha), letter(hb)))
     if not failures:
         stem = pathlib.Path(out)
@@ -270,11 +294,13 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
-        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
-    rc = generate(template, params, source_id, out, title=title, version=version)
+        # 雛形に乗らない AI の案も仮説の印を付ける（自分の仮説の紙は print_own の道なので通らない）。
+        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out, mark=hypothesis_mark(source_id, version))
+    mark = hypothesis_mark(source_id, version)
+    rc = generate(template, params, source_id, out, title=title, version=version, mark=mark)
     if rc:
         return rc
-    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template)
+    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template, mark=mark)
 
 
 def print_own(source_id, own_id, out, version=1):
@@ -309,7 +335,7 @@ def _preview(role, call):
     """本物を呼ばずに、送るはずの中身を書き出す（--dry-run）。
 
     なぜ: 本物の試験は本人の承認が要る。承認の前に、何をどの指示で送り、1 回でいくらまで使いうるかを見せるため。
-    返り値は (書き出したパス, failures)。予想が無い等で呼ぶ前に止まる時は failures だけを返す。
+    返り値は (書き出したパス, failures)。呼ぶ前に止まる時は failures だけを返す。
     """
     from api import agent, budget, config
 
@@ -417,7 +443,6 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="omochae.hypotheses")
     ap.add_argument("--source", default="NDL-1187053-R0000005-L")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("predict").add_argument("text")
     sub.add_parser("picture")
     sub.add_parser("list")
     sub.add_parser("compare", help="作り手用。どの仮説の組が開く角度で分かれうるかの表。学ぶ人に見せない")
@@ -427,7 +452,7 @@ def main(argv=None):
     pc.add_argument("--out")
     pt = sub.add_parser("print-teacher", help="先生の見る紙を刷る。4 つの着目ごとに見た事を書く。点は付けない")
     pt.add_argument("--out")
-    sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る。予想か自分の仮説が先に要る")
+    sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る")
     sg0.add_argument("--dry-run", action="store_true", help="本物を呼ばず、送る中身を書き出す")
     sg0.add_argument("--no-zoom", action="store_true", help="拡大の道具を渡さない（U-12 の比べのためだけ）")
     im = sub.add_parser("import-draft", help="Claude Code の Skill で作った案を、人が採る前の受付に入れる")
@@ -492,23 +517,13 @@ def main(argv=None):
             if not failures:
                 print(f"{rec['id']} を残しました。print-own で型紙にして試せます。用意された仮説と比べたくなったら list です")
                 return 0
-        elif args.cmd == "predict":
-            _, failures = save_prediction(args.source, args.text)
-        else:
-            failures = need_prediction(args.source)
-        if failures:
             for f in failures:
                 print(f.line(), file=sys.stderr)
             return 3
-        if args.cmd == "predict":
-            print("予想を残しました。次に list で仮説を並べて見られます")
-            return 0
         if args.cmd == "list":
-            preds = predictions(args.source)
-            latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
             # 順位も他の人の集計も見せない。次の人にとって記録から作られた答えになるため（J-013）。
             # 作り手が版を直す時は records summary と loop で見る。
-            print("\n".join(list_lines(load(args.source), latest, own_hypotheses(args.source))))
+            print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
         if args.cmd == "print-compare":
             return print_compare(args.source, args.a, args.b, args.out or f"out/templates/compare_{args.a}_{args.b}")

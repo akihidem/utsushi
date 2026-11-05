@@ -62,9 +62,9 @@ jar = f"utsushi_k={KEY}"
 assert call(port, "/gallery", TUN, jar)[0] == 200, "Cookie で入れる"
 assert call(port, "/", "evil.example", jar)[0] == 403, "ほかの名前は合言葉があっても断る"
 SID = "NDL-1187053-R0000005-L"
-code, _ = call(port, f"/toy/{SID}/predict", TUN, jar, "text=x")
+code, _ = call(port, f"/toy/{SID}/own", TUN, jar, "name=x")
 assert code in (200, 303, 422), "トンネルの https の頁からの送信は受ける"
-assert call(port, f"/toy/{SID}/predict", TUN, jar, "text=x", origin="https://evil.example")[0] == 403, "別のサイトからは断る"
-assert call(port, f"/toy/{SID}/predict", TUN, None, "text=x")[0] == 403, "合言葉の無い送信は断る"
+assert call(port, f"/toy/{SID}/own", TUN, jar, "name=x", origin="https://evil.example")[0] == 403, "別のサイトからは断る"
+assert call(port, f"/toy/{SID}/own", TUN, None, "name=x")[0] == 403, "合言葉の無い送信は断る"
 pub.shutdown()
 print("ok")
