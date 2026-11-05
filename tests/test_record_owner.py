@@ -179,4 +179,16 @@ for kw in ({}, {"public_open": True}):
         assert "別の人の説明の印" not in ayumi and "別の人の字の印" not in ayumi, "別の人の字が歩みに入った"
     server.shutdown()
 
+# 11. 合言葉付きの場は https なので Secure を付ける（話した案と写真の鍵と同じ）
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+server = serve(0, public_key="k" * 20)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+gated = Screen(f"http://127.0.0.1:{server.server_address[1]}")
+gated.cookies["utsushi_k"] = "k" * 20
+assert gated.call(f"/toy/{G}/print", {"hypothesis": sheet})[0] in (200, 303)
+gated.call(f"/toy/{G}/record", {"hypothesis": sheet, "result": "動いた"})
+line = next(x for x in gated.set_cookie if x.startswith(COOKIE))
+assert "Secure" in line and "HttpOnly" in line, line
+server.shutdown()
+
 print("ok")
