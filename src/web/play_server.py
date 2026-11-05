@@ -636,8 +636,10 @@ class Handler(BaseHTTPRequestHandler):
                    "minutes_to_try": _num(form.get("minutes_to_try")), "fixes": fixes_of(form), "note": form.get("note", ""),
                    "answers": {k: form[k] for k in ("first_moved", "stuck", "what_if") if form.get(k, "").strip()},
                    "ideas": [form["idea"]] if form.get("idea", "").strip() else []}
-            _, failures = records.add(rec)
+            rid, failures = records.add(rec)
             msg = "記録を残しました。試した後の紙が開けます"
+            # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
+            anchor = rid or anchor
         if failures:
             return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
         # 頁の段の進み（刷った・記録を残した）を工作の様子に残す（U-45 の段取り 2）。何を書いたかは写さない。
@@ -649,9 +651,13 @@ class Handler(BaseHTTPRequestHandler):
 
 def fixes_of(form):
     """記録の欄の「工夫した所」を記録の形にする。本人の言葉（11-05）「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」の、輪の材料の口。
-    何も書かなければ空。1 つでも書けば 3 欄を渡し、欠けは床（F3.result）に落とさせる: 部品も結果も無い工夫は次の版の材料にならないため。"""
+    何も書かなければ空。「あれば」の欄なので、一部だけ書いても記録ごと落とさない（落とすと書いた全部が消える）。
+    欠けた欄は「書かれていない」と残す: 3 欄の床（F3.result）を通し、読む人が欠けと分かるようにするため。"""
     part, change, outcome = (form.get(k, "").strip() for k in ("fix_part", "fix_change", "fix_outcome"))
-    return [{"part": part, "change": change, "outcome": outcome}] if part or change or outcome else []
+    if not (part or change or outcome):
+        return []
+    blank = "書かれていない"
+    return [{"part": part or blank, "change": change or blank, "outcome": outcome or blank}]
 
 
 def lan_addresses():

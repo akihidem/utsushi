@@ -7,7 +7,7 @@ J-022 の線: 動画を Claude が見るのは観察の補助と型紙の判定�
 - 人の説明が先（J-013）。記録に人の説明が無ければ呼ばない
 - 本物の API は本人が鍵を置いた時だけ（J-023）。費用は今までの見張り（budget）で、呼ぶ前に最悪の費用を足して見る
 """
-from omochae.marks import LOOP_PREMISE
+from omochae.marks import LOOP_PREMISE, without_premise
 import base64
 import json
 import pathlib
@@ -80,7 +80,8 @@ def observe(rid, video_path, client):
     if not isinstance(result.get("observed"), list) or not isinstance(result.get("unclear"), list):
         return None, "答えの形が違う"
     flat = " ".join(map(str, result["observed"] + result["unclear"]))
-    if any(w in flat for w in BANNED):
+    # 前提の文の否定の形（正解ではなく）を返事が引いても、成績の語とは数えない（marks.without_premise）。
+    if any(w in without_premise(flat) for w in BANNED):
         return None, "成否や点の言葉が入っていたので出さない"
     loop._write(path(rid), {"record_id": rid, "observed": result["observed"], "unclear": result["unclear"], "by": "claude", "label": "観察（Claude の補助）", "at": loop._now()})
     return result, ""

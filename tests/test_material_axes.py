@@ -45,10 +45,17 @@ assert toy.AXIS_NOTE in page and "<span class=\"lb\">紙だけ</span>" in page a
 for w in ("初心者", "かんたん", "おすすめ", "上級", "順位"):
     assert w not in toy.AXIS_NOTE and w not in toy.material_labels(G, hyp(gd, "H-E"), gd) and w not in toy.material_labels(G, hyp(gd, "H-A"), gd), w
 
+# 小道具（坂を作る本）は紙だけの印を落とさない。別の物でも足りる竹は「竹を使う」と言わない
+assert hypotheses._period_in("竹ひごか割り箸", ("竹串", "竹ひご")) is False
+assert hypotheses._period_in("竹串か竹ひご（太さ約 3mm）", ("竹串", "竹ひご")) is True
+assert hypotheses._period_in("竹串（長さ 180mm）", ("竹串", "竹ひご")) is True
+
 # 絞り込み
 listed = toys.page("tenji", "/toys", paper=True)
 papers = toys.paper_only_sids(toys.sources())
 assert G in papers and T not in papers and 0 < len(papers) < len(toys.sources())
 assert f'href="/toy/{G}"' in listed and f'href="/toy/{T}"' not in listed and "全部の玩具を見る" in listed
 assert "紙 1 枚で作れる玩具だけを見る" in toys.page("tenji")
+# 絞った一覧の断りは、並んでいる必須の玩具の数に合わせる（虎が消えると「先頭の 2 つ」は嘘になる）
+assert "先頭の 1 つのほかは" in listed and "先頭の 2 つのほかは" in toys.page("tenji")
 print("ok")

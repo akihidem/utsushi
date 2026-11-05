@@ -16,7 +16,7 @@ from . import skin as skinmod
 from .skin import esc
 
 LEAD = "どれも図と歌だけが残った玩具です。選ぶと、すぐ型紙を刷って作れます。型紙は正解ではなく、AI が考えた仮説です。"
-NOTE = "先頭の 2 つのほかは、全部を型紙にする途中の試作です。名前は作る側の見立てで、まだ確かめていません。"
+NOTE = "先頭の {n} つのほかは、全部を型紙にする途中の試作です。名前は作る側の見立てで、まだ確かめていません。"
 
 
 def sources():
@@ -62,7 +62,7 @@ def page(skin, path="/toys", paper=False):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE)}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)))}</p>'
             + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

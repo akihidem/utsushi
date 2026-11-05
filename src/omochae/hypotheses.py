@@ -85,8 +85,15 @@ def letter(h):
 
 
 # 道具（材料の数に入れない）と、当時の材料の語。竹と糸だけにするのは本人の言葉の範囲を越えないため（楊枝や割り箸が当時の物かは確かめていない）。
-_TOOLS = ("のり", "はさみ", "定規", "テープ", "セロハンテープ")
+_TOOLS = ("のり", "はさみ", "定規", "テープ", "セロハンテープ", "透明な梱包テープ")
+# 玩具そのものにならない、試す時の小道具（坂を作る本・浮かべる盆）。紙だけの印を落とさない。
+_PROPS = ("載せる本", "厚い本", "盆か洗面器")
 _PERIOD = (("竹", ("竹串", "竹ひご")), ("糸", ("糸",)))
+
+
+def _period_in(item, words):
+    """当時の材料を使うか。「竹ひごか割り箸」のように別の物でも足りる時は、選べる物の全部がその材料の時だけ数える（必ず使うとは言えないため）。"""
+    return all(any(w in part for w in words) for part in item.split("か")) if "か" in item else any(w in item for w in words)
 
 
 def material_marks(source_id, h, data=None):
@@ -102,9 +109,9 @@ def material_marks(source_id, h, data=None):
     tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
     items = [str(m) for m in tpl.materials({**tpl.DEFAULTS, **h["params"]})]
     paper, rest = items[0] if items else "", items[1:]
-    extras = [m for m in rest if not all(w.strip() in _TOOLS for w in m.split("、"))]
+    extras = [m for m in rest if not all(w.strip() in _TOOLS for w in m.split("、")) and not any(w in m for w in _PROPS)]
     used = [m.replace("竹串（穴あけ）", "") for m in rest]
-    period = [name for name, words in _PERIOD if any(w in m for m in used for w in words)]
+    period = [name for name, words in _PERIOD if any(_period_in(m, words) for m in used)]
     return {"paper_only": "1 枚" in paper and "貼る" not in paper and not extras, "period": period}
 
 
@@ -182,7 +189,7 @@ def _print_after(source, title, out):
     return 3
 
 
-def print_free(source_id, title, how, evidence, out):
+def print_free(source_id, title, how, evidence, out, mark=None):
     """型紙に乗らない仮説に、型紙なしの紙を刷る（本人の決定）。寸法は出さないので F9.own の線は変えない。"""
     from .compose import TEMPLATES
     from .instructions import compose_free
@@ -190,6 +197,8 @@ def print_free(source_id, title, how, evidence, out):
     from .render import to_png, write_all
 
     source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    if mark:
+        source["hypothesis_mark"] = mark
     results = TEMPLATES[load(source_id).get("template", "slider_fan")].RESULTS
     layout, failures = compose_free(source, title, how, evidence, results)
     if not failures:
@@ -244,6 +253,9 @@ def print_compare(source_id, a, b, out):
     ha, hb, failures = pick_pair(data, a, b)
     if not failures:
         source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+        mark = hypothesis_mark(source_id)  # 見比べる紙も AI の案から刷るので同じ印（必須 2 種の版 1 は今の文）
+        if mark:
+            source["hypothesis_mark"] = mark
         layout, failures = compose_compare(source, data["toy"], ha, hb, (letter(ha), letter(hb)))
     if not failures:
         stem = pathlib.Path(out)
@@ -282,7 +294,8 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
-        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
+        # 雛形に乗らない AI の案も仮説の印を付ける（自分の仮説の紙は print_own の道なので通らない）。
+        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out, mark=hypothesis_mark(source_id, version))
     mark = hypothesis_mark(source_id, version)
     rc = generate(template, params, source_id, out, title=title, version=version, mark=mark)
     if rc:

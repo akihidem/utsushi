@@ -167,7 +167,7 @@ def record_form(sid, data, own):
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>{version_field}<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
             # 感想の欄（本人の方針 11-05「作ったものの感想と動きを報告してもらう」）。動きは上の札、感想は自由な文。空でもよい。
             '<label>作ってみてどうだったか（感想。動いた所、難しかった所、思った事）<textarea name="impression"></textarea></label>'
-            # 人の工夫（本人の言葉 11-05）。「型紙は不完全でうまく動かないけどそれを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」の、輪の材料の欄。3 つとも書いた時だけ残す（F3.result）。
+            # 人の工夫（本人の言葉 11-05）。「型紙は不完全でうまく動かないけどそれを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」の、輪の材料の欄。一部だけ書いても記録は落とさない（play_server.fixes_of）。
             '<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">うまくいかなくて工夫した所（あれば）</legend><label>どの部品か<input type="text" name="fix_part"></label><label>どう工夫したか<input type="text" name="fix_change"></label><label>どうなったか<input type="text" name="fix_outcome"></label></fieldset>'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
             '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
@@ -234,6 +234,11 @@ def records_list(sid, recs, photos=True):
         # 人の工夫（本人の言葉 11-05「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」）。輪の材料そのものなので札の上の方に出す。
         feel = "".join(f'<p>工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict)) + feel
         feel = media_html(r["id"], photos=photos) + feel
+        if not photos:
+            # 合言葉なしで開いた場: 人の書いた文を別の人に見せない（文の中の名前は機械で落とせない。J-028）。札と紙への道と欄だけ残す。
+            feel = ""
+            if told:
+                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r) + next_form(r)
         out += f'<article class="card" id="{esc(r["id"])}"><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}（版 {esc(ver)}）</p>{feel}{after}{tail}</article>'
     return out
 
@@ -361,7 +366,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              + f'</p>{ask_form(sid, data, asked)}</section>')
     body += f'<section class="sec" id="kiroku"><h2>試した記録を残す</h2>{record_form(sid, data, own)}</section>'
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
-    body += (f'<section class="sec" id="minna"><h2>他の人が作った物</h2>{records_list(sid, recs, photos) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
+    body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{sample_records(data)}<p class="links"><a href="/gallery">全部の玩具の、作った物を見る</a></p></section>')
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen

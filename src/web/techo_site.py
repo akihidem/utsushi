@@ -335,13 +335,16 @@ def ai_part(r):
 
 
 def made_item(sid, data, r, photos=True):
-    """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫・ひとこと）の無い記録は、見せる物が無いので空を返す。
-    photos=False は合言葉なしで開いた場。写真と動画は出さず、言葉だけを出す（J-028）。
+    """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
+    photos=False は合言葉なしで開いた場。写真も人の書いた文も出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    ひとこと（note）は学ぶ人の頁に出してこなかった欄なので、ギャラリーにも出さない。
     動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
-    files = media_of(r["id"]) if photos else []
+    if not photos:
+        return ""
+    files = media_of(r["id"])
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
-    words = "".join(f'<p>{esc(t)}</p>' for t in (r.get("impression"), r.get("note")) if t)
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict))
     if not pics and not words:
         return ""
@@ -360,7 +363,8 @@ def gallery_page(sids, photos=True):
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
             cards += made_item(sid, data, r, photos)
-    cards = cards or '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>'
+    cards = cards or ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
+                      else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
     from .demo_samples import uploads_html, voice_html
     cards += uploads_html()
@@ -396,7 +400,7 @@ def page(sid, printed_ids, picture_url, uploads=True):
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
     mine = ""
     for r in reversed(records.all_records(sid)):
-        files = media_of(r["id"])
+        files = media_of(r["id"]) if uploads else []  # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
@@ -421,8 +425,8 @@ def page(sid, printed_ids, picture_url, uploads=True):
                '<p class="meta">公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。</p>') +
             f'<div class="row" role="radiogroup" aria-label="見た事">{results}</div>'
             '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
-            # 工夫の欄（本人の言葉 11-05「工夫で乗り切る過程」）。作りながらなので畳んでおく。3 つとも書いた時だけ残す（F3.result）。
-            '<details><summary>工夫した所（あれば）</summary><input type="text" id="fix-part" maxlength="100" placeholder="どの部品か"><input type="text" id="fix-change" maxlength="200" placeholder="どう工夫したか"><input type="text" id="fix-outcome" maxlength="200" placeholder="どうなったか"></details>'
+            # 工夫の欄（本人の言葉 11-05「工夫で乗り切る過程」）。作りながらなので畳んでおく。一部だけ書いても記録は落とさない（play_server.fixes_of）。
+            '<details><summary>工夫した所（あれば）</summary><p class="meta">ほかの人も読むので、名前や連絡先は書かないでください。</p><input type="text" id="fix-part" maxlength="100" placeholder="どの部品か"><input type="text" id="fix-change" maxlength="200" placeholder="どう工夫したか"><input type="text" id="fix-outcome" maxlength="200" placeholder="どうなったか"></details>'
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
             '<p><button class="go">記録だけ残す</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
             f'<div id="mine">{mine}</div></section>')

@@ -9,7 +9,7 @@
 - 他の人が作った物が、玩具の頁とギャラリーの両方で見られる。写真の無い記録も言葉で並ぶ。順位の語は無い。
 - 工夫の欄が記録に残り、札とギャラリーと工作の様子に出る（本人の言葉 11-05「工夫で乗り切る過程」）。
 - #208 の形（誰かの文が別の人の画面に「あなたの予想」と出る）が起きようがない。
-- 合言葉なしで開いた場では、ギャラリーにも写真を出さない（J-028）。
+- 合言葉なしで開いた場では、ギャラリーにも写真と人の書いた文を出さない（J-028）。
 """
 import json
 import os
@@ -94,8 +94,10 @@ for word in ("順位", "1 位", "人気", "ランキング", "予想"):
 # 工作の様子にも工夫が届く（輪の材料）
 fixes = making_log.summary(G, hypotheses.load(G).get("template", "slider_fan"))["fixes"] if making_log.summary.__code__.co_argcount == 2 else making_log.summary(G)["fixes"]
 assert any(f["change"] == "折り目を深くした" for f in fixes)
-# 3 欄そろわない工夫は床で落ちる（部品も結果も無い工夫は次の版の材料にならない）
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "fix_change": "直した"}) == 422
+# 「あれば」の欄なので、一部だけ書いても記録ごと落とさない（落とすと書いた全部が消える）。欠けは欠けと分かる形で残す
+assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "impression": "途中まで", "fix_change": "直した"}) == 303
+partial = records.all_records(G)[-1]
+assert partial["impression"] == "途中まで" and partial["fixes"] == [{"part": "書かれていない", "change": "直した", "outcome": "書かれていない"}]
 # 言葉の無い記録は、ギャラリーに札だけで並ばない
 rid = records.all_records(G)[-1]["id"]
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}) == 303
@@ -107,5 +109,10 @@ d.mkdir(parents=True, exist_ok=True)
 (d / "m1.jpg").write_bytes(b"\xff\xd8\xff")
 assert f"/record/{rid}/media/" in techo_site.gallery_page([G], photos=True)
 closed = techo_site.gallery_page([G], photos=False)
-assert f"/record/{rid}/media/" not in closed and "扇が引っかかった" in closed
+# 写真も人の書いた文も出さない（文の中の名前は機械で落とせない。J-028）
+assert f"/record/{rid}/media/" not in closed and "扇が引っかかった" not in closed and "公開のデモでは" in closed
+# ひとこと（note）はギャラリーに出さない
+assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "見える文", "note": "ないしょのメモ"}) == 303
+shown = get("/gallery")
+assert "見える文" in shown and "ないしょのメモ" not in shown
 print("ok")
