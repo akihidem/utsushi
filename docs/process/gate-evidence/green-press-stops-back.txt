@@ -1,0 +1,11 @@
+# 命令: sh -c 'PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python tests/test_press_stops.py && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python tests/test_techo_site.py'
+# commit: 18959c7（回した時の HEAD）
+ok 写真を選ばずに残せて、釦は断りの文のある節へ戻り、話した字は消えない
+/tmp/tmpnu444ykt/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpnu444ykt/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpnu444ykt/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpnu444ykt/play/NDL-1187053-R0000005-L/.tmp-fraiusjb/H-A_v2.pdf
+/tmp/tmpnu444ykt/play/NDL-1187053-R0000005-L/.tmp-fraiusjb/H-A_v2_tejun.pdf
+/tmp/tmpnu444ykt/play/NDL-1187053-R0000005-L/.tmp-fraiusjb/H-A_v2_after.pdf
+ok
+rc=0

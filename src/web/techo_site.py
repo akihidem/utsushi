@@ -278,10 +278,12 @@ function showPicked() {
   document.getElementById('picked').textContent = text;
   upForm.querySelector('button.go').textContent = kept.length ? '上げる' : '記録だけ残す';
   // 約束の印は、写真か動画を選んだ時だけ要る。「記録だけ残す」を止めない。合言葉なしの場には印が無い。
+  // 別の頁へ行って戻ると、ブラウザは選んだ写真を戻すのに change を出さない。頁を見せる度（pageshow）にも数え直す。
   const promise = document.getElementById('ok');
   if (promise) promise.required = kept.length > 0;
 }
 picker.onchange = showPicked;
+addEventListener('pageshow', showPicked);
 document.getElementById('up-form').onsubmit = async (e) => {
   e.preventDefault();
   const form = e.target, go = form.querySelector('button.go');
@@ -290,6 +292,9 @@ document.getElementById('up-form').onsubmit = async (e) => {
   const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
   const result = (document.querySelector('[name=result]:checked') || {}).value;
   const files = [...picker.files].slice(0, Number(form.dataset.maxN));
+  // 約束の印なしに写真を送らない。上の数え直しが間に合わない形でも、ここで止める（字はブラウザの標準の吹き出し）。
+  const promise = document.getElementById('ok');
+  if (promise && files.length && !promise.checked) { promise.required = true; form.reportValidity(); return; }
   if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
   go.disabled = true; st.textContent = '送っています…';
   let done = '';

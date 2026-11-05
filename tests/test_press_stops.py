@@ -4,6 +4,8 @@
 2. 写真を選ばずに残した時の返事を「上げました」にしない（上げていないので）。字は頁の記録の返事に今ある字
 3. 「この考えから紙を作る」の戻り先は #think。断りの文はそこにあり、頁の頭に戻ると見えなかった（幅 390 で 2978px 下）
 4. 「残す」の前に釦を押しても、話した字を消さない。字はタブの中にだけ持ち、サーバへ送らない（送るのは「残す」の時だけ、hanasu の決まり）
+5. 約束の印なしに写真を送らない。写真を選んで別の頁へ行って戻ると、ブラウザは写真を戻すのに change を出さない。印が要らないままだと、押した時に写真が上がった
+   （この PR の最初の形で別の目のレビューが見つけた。印を静的に要る形にしていた前は、たまたま止まっていた）。見せる時に数え直し、送る時にも確かめる
 
 押した時の動きはブラウザが要るので、ここでは頁と script の形を見る（./run.sh はブラウザなしで動く決まり）。実物で押した結果は帳面の節に書く。
 """
@@ -61,6 +63,13 @@ assert 'getElementById(\'ok\')' in picked and "if (promise)" in picked, "印の�
 shown = get(public, f"/toy/{G}/techo")
 assert 'id="ok"' not in shown and "大人の手元だけ" not in shown, "写真の口が閉じている場に印を出さない"
 assert '<input type="file" id="files" disabled>' in shown, "対照: 合言葉なしの場の頁を見ている"
+
+# 5. 戻った時の写真。頁を見せる度に数え直す。数え直しが間に合わない形でも、送る直前に確かめて、印なしには送らない
+assert "picker.onchange = showPicked;\naddEventListener('pageshow', showPicked);" in techo_site.SCRIPT, "戻った時も数え直す"
+send = techo_site.SCRIPT[techo_site.SCRIPT.index("getElementById('up-form')"):]
+guard = "if (promise && files.length && !promise.checked) { promise.required = true; form.reportValidity(); return; }"
+assert guard in send, "写真があって印が無ければ送らない"
+assert send.index(guard) < send.index("record-json"), "記録を作る前に止める"
 
 # 2. 返事
 up = techo_site.SCRIPT[techo_site.SCRIPT.index("getElementById('up-form')"):]
