@@ -86,7 +86,7 @@ PYTHONPATH=src .venv/bin/python -m demo.build --out <repo の外> --song 曲.mp3
 | 17 | ask | 2:48–2:57 | 問いの札。絵も音も止める | 問い（下の案。**文面は未定**） |
 
 - **問いの文面は未定（本人の決定待ち）**。今の案は「最後に自分の手で何かを作ったのは、いつですか。」。`src/demo/words.py` の `ASK` の 1 か所だけを直せば動画が変わる。本人の言葉ではないので、その印を付けない
-- クレジット: 図 国立国会図書館（PDM）『北斎漫画』『江都二色』／型紙と検査 utsushi のエンジン（paper-to-toy）／仮説の案・手順の質問・作る過程・動画のコード Claude（Opus 5.5、Claude Code）／試した人 成人 5 人（11-04）／説明と判断 本人／曲 仮の拍（曲が来たら `--music` の文）
+- クレジット: 図 国立国会図書館（PDM）『北斎漫画』『江都二色』／型紙と検査 utsushi のエンジン（paper-to-toy）／仮説の案・手順の質問・作る過程・動画のコード Claude（Claude Code）／試した人 成人 5 人（11-04）／説明と判断 本人／曲 仮の拍（曲が来たら `--music` の文）
 - 作り直しの手順（どれも 1 本の命令。前の日に `python -m demo.prepare` で絵を取り寄せておく）:
   1. 全部: `PYTHONPATH=src .venv/bin/python -m demo.build --out <repo の外>`（試験を確かめ、全場面を書き出し、仮の拍を付けてつなぐ。置き場に demo.mp4・beat.wav・beats.json・build.json）
   2. 1 場面だけ: 同じ命令に `--run <前の置き場> --only scene3`（音も作り直してつなぐ）
@@ -115,7 +115,7 @@ PYTHONPATH=src .venv/bin/python -m demo.build --out <repo の外> --song 曲.mp3
 
 ### 場面 2・4・7（並列で作った、11-04）
 
-本人の許可（並列で調べて作ってよい）で、場面ごとに作業ツリーと担当を分けて同時に作った（枝 lane/demo-s2・s4・s7、どれも 11b0d7e から）。書き出しと色・字は demo.flip を共有する。担当はどれも Claude（Opus 5.5）の作業員で、取り込みと検品は親の窓。
+本人の許可（並列で調べて作ってよい）で、場面ごとに作業ツリーと担当を分けて同時に作った（枝 lane/demo-s2・s4・s7、どれも 11b0d7e から）。書き出しと色・字は demo.flip を共有する。担当はどれも Claude の作業員で、取り込みと検品は別の担当。
 
 | 場面 | 長さ | 中身 | 床 | 書き出し（ffprobe） |
 |---|---|---|---|---|

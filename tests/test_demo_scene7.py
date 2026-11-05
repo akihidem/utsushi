@@ -21,6 +21,7 @@ assert all(0 <= t <= scene7.DURATION for t in scene7.SHEET_TIMES)
 # クレジット: 図の出所・Claude・本人が要る。曲は渡した時だけ書く（plan.md の 4）
 joined = " ".join(r + " " + n for r, n in scene7.CREDITS)
 assert "国立国会図書館（PDM）" in joined and "Claude" in joined and "本人" in joined
+assert dict(scene7.CREDITS)["仮説の案・手順の質問・作る過程・動画のコード"] == "Claude（Claude Code）", "クレジットにはどの版で作ったかを書かない"
 assert not any("曲" == r for r, _ in scene7.credit_lines())
 assert scene7.credit_lines(None) == scene7.CREDITS and scene7.credit_lines("") == scene7.CREDITS
 assert scene7.credit_lines("試しの曲")[-1] == ("曲", "試しの曲")
