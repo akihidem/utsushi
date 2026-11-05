@@ -213,7 +213,9 @@
   "evidence": [
    "src/api/words.py",
    "tests/test_words.py",
-   "tests/test_loop1_words.py"
+   "tests/test_loop1_words.py",
+   "src/web/think_sheet.py",
+   "tests/test_loop1_think.py"
   ]
  },
  {

@@ -456,6 +456,10 @@ class Handler(BaseHTTPRequestHandler):
             # 話す口（一周の声の部分、Issue #279）。ここに届くのは字のフォームだけ（上の _form が、音のファイルなど、ほかの形の本体を断る）。
             from . import hanasu
             return hanasu.post(self, m.group(1), form)
+        m = re.fullmatch(rf"/toy/({SID})/(think-sheet|think-ok)", self.path)
+        if m and m.group(1) in sources():  # 話した考えから紙を作り直す（ループ1、Issue #335。中身は think_sheet.py）
+            from . import think_sheet
+            return think_sheet.post(self, m.group(1), m.group(2), form)
         m = re.fullmatch(rf"/en/toy/({SID})/print", self.path)
         if m and m.group(1) in sources():
             # 英語の頁から刷る（J-030 の段 1）。紙は同じ物で日本語のまま。聞く口と記録の口は英語の頁に置かない。
