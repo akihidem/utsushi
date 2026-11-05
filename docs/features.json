@@ -212,7 +212,8 @@
   "unverified": "本物の API で未実行。偽の応答の試験のみ",
   "evidence": [
    "src/api/words.py",
-   "tests/test_words.py"
+   "tests/test_words.py",
+   "tests/test_loop1_words.py"
   ]
  },
  {

@@ -1,0 +1,176 @@
+"""ループ1（Issue #335）の仕組み: たたき台の紙を見て話した考えから、その人の紙の案を作る。本物の API は呼ばない（Claude は記録した形の偽物）。
+
+見る線:
+- 鍵なし: 考え → 作る側の待ち → 作る側が端末で寸法を書く → 本人の確認待ち → 採る → 「自分で立てた」の印の紙。話した字は一字も変わらない。
+- 鍵あり（偽の Claude）: たたき台の寸法と話した字を渡し、本人が採るまで何も刷らない。呼べない時は押した 1 回を失わず待ちに落ちる。
+- 順位・点・推しの言葉は、Claude の文でも作る側の文でも入口で止める。
+- 個人の情報の形の字は Claude へ送らない。雛形に乗らない考えは型紙なしの紙になる。必須 2 種とも通る。
+画面と文は tests/test_loop1_think.py が見る。
+"""
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import tempfile
+from types import SimpleNamespace as NS
+
+DATA = tempfile.mkdtemp()
+OUT = pathlib.Path(tempfile.mkdtemp())
+os.environ["OMOCHAE_DATA"] = DATA
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
+
+from api import words  # noqa: E402
+from omochae import hypotheses, making_log, talk_log  # noqa: E402
+from omochae.marks import OWN_HYPOTHESIS  # noqa: E402
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"  # 必須 2 種
+WHO, OTHER = "abcdefgh12", "zyxwvuts98"
+NAME, EVIDENCE = "試験の案", "試験の根拠"
+
+
+class Fake:
+    def __init__(self, script):
+        self.script, self.calls = list(script), []
+        self.beta = NS(messages=NS(create=self.create))
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        return NS(content=[NS(type="tool_use", name="submit_result", input=self.script.pop(0), id="t")], stop_reason="tool_use", usage=NS(input_tokens=10, output_tokens=5))
+
+
+def src(sid):
+    return json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
+
+
+def flat_pdf(path):
+    return "".join(subprocess.run(["pdftotext", str(path), "-"], capture_output=True, text=True).stdout.split())
+
+
+def said(sid, text, who=WHO, hid=None):
+    """考えを残し、その人の一番新しい考えとして読み直す。"""
+    path, fs = talk_log.add(sid, "think", text, hypothesis_id=hid, who=who)
+    assert path and not fs, fs
+    return words.latest_think(sid, who)
+
+
+def ask(sid, text, who=WHO, **kw):
+    talk, name = said(sid, text, who=who, hid=kw.pop("hid", None))
+    return words.request_think(src(sid), talk, name, NAME, EVIDENCE, **kw)
+
+
+def printed(sid, oid):
+    assert hypotheses.print_own(sid, oid, str(OUT / f"{oid}_v1")) == 0
+    return OUT / f"{oid}_v1.pdf"
+
+
+base_h, base_params = words.base_of(G)
+assert base_h["id"] == "H-A" == words.tatakidai(T), "作り直す元はたたき台（御来迎・虎とも H-A）"
+assert base_params and "push_part" in base_params, "たたき台の寸法がある"
+
+# ── 選ぶ: 印の人の一番新しい考えだけ ──
+assert words.latest_think(G, "") == (None, None), "印の無い画面からは選べない（ほかの人の考えを選ばない）"
+talk_log.add(G, "think", "連絡は a@example.com まで", who=WHO)  # 床で落ちた物は選ばない
+assert words.latest_think(G, WHO) == (None, None)
+assert said(G, "はじめの考え")[0]["text"] == "はじめの考え"
+assert said(G, "あとの考え")[0]["text"] == "あとの考え", "一番新しい考え"
+assert words.latest_think(G, OTHER) == (None, None), "ほかの人の考えは選ばない"
+assert words.latest_think(T, WHO) == (None, None), "ほかの玩具の考えは選ばない"
+
+# ── 鍵なしの道 ──
+SAID = "つまみを 長い棒にしたら、もっと大きく開くと思う"
+w, fs = ask(G, SAID)
+assert w and not fs and w["status"] == "waiting_maker" and w["how_it_moves"] == SAID, "話した字は一字も変えない"
+assert w["base"] == "H-A" and w["base_params"] == base_params and w["name"] == NAME and w["evidence"] == EVIDENCE
+assert words.asked_for(w["from_talk"])["id"] == w["id"]
+assert len(w["token"]) >= 12 and w["token"] != w["id"], "番号でない印で開く"
+assert words.by_token(G, w["token"])["id"] == w["id"] and words.by_token(T, w["token"]) is None and words.by_token(G, "") is None
+assert [x["id"] for x in words.waiting()] == [w["id"]]
+assert hypotheses.own_hypotheses(G) == [], "頼んだだけでは何も残らない"
+assert words.adopt_words(w["id"], "本人")[1], "作る側が書く前は採れない"
+
+# 作る側の端末の口（鍵なし）。子の命令で回す（作る側の Claude Code も同じ口を打つ）
+env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+cli = lambda *a: subprocess.run([sys.executable, "-m", "api.words", *a], capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL)
+r = cli("waiting")
+assert r.returncode == 0 and w["id"] in r.stdout and SAID in r.stdout, r.stderr
+assert cli("fill", w["id"], "--by", "作る側", "--params", "[1]").returncode == 3, "形の違う寸法は検査で落とす（Traceback にしない）"
+assert cli("fill", w["id"], "--by", "作る側", "--params", "こわれた").returncode == 3
+assert cli("fill", "W-9999", "--by", "作る側").returncode == 4, "無い記録は検査できない"
+assert cli("fill", w["id"], "--by", "作る側", "--params", json.dumps({"nope": 1})).returncode == 3, "知らない寸法の名前は通さない"
+r = cli("fill", w["id"], "--by", "作る側", "--params", json.dumps({"push_part": "stick", "pusher_height": 84}))
+assert r.returncode == 0, r.stderr
+assert cli("fill", w["id"], "--by", "作る側").returncode == 3, "書いた後にもう一度は書けない"
+w = words.by_token(G, w["token"])
+assert w["status"] == "pending_human" and w["result"]["from_words"] == ["push_part", "pusher_height"] and w["result"]["params"]["push_part"] == "stick"
+assert {f["param"] for f in w["result"]["filled_in"]} == set(base_params) - {"push_part", "pusher_height"}, "変えなかった寸法は、たたき台のままと書く"
+assert hypotheses.own_hypotheses(G) == [], "本人が採るまで残らない"
+own, fs = words.adopt_words(w["id"], "本人")
+assert own and not fs and own["how_it_moves"] == SAID and own["params"]["push_part"] == "stick"
+assert words.spoken_own_ids(G) == {own["id"]} and words.spoken_own_ids(T) == set()
+assert words.adopt_words(w["id"], "本人")[1], "同じ案を 2 度は採らない"
+pdf = flat_pdf(printed(G, own["id"]))
+assert "".join(OWN_HYPOTHESIS.split()) in pdf, "紙に「自分で立てた」の印"
+assert "AIが考えた" not in pdf
+assert "".join(SAID.split()) in flat_pdf(OUT / f"{own['id']}_v1_tejun.pdf"), "話した字がそのまま手順の紙に"
+
+# 作る側が雛形に乗らないと書いた時は、型紙なしの紙
+w2, _ = ask(G, "水を入れた重さで開くのかも")
+assert not words.fill_think(w2["id"], words.think_result(w2["base_params"], not_fit=["水の重さで動く機構は雛形に無い"]), "作る側")[1]
+own2, _ = words.adopt_words(w2["id"], "本人")
+assert hypotheses.print_own(G, own2["id"], str(OUT / f"{own2['id']}_v1")) == 0 and (OUT / f"{own2['id']}_v1_free.pdf").exists()
+# 作る側が雛形の範囲の外の寸法を書いたら、Claude と同じ検査で落とす
+w3, _ = ask(G, "棒を 500 にする")
+assert words.fill_think(w3["id"], words.think_result(w3["base_params"], {"tube_side": 500}), "作る側")[1], "範囲の外は通さない"
+assert words.fill_think(w3["id"], words.think_result(w3["base_params"], {}), " ")[1][0].floor == "F9.human", "書いた人が要る"
+
+# 順位・点・推しを付けない（#145 の要件を話す道でも）: 作る側の文も Claude の文も入口で止める
+assert words.fill_think(w3["id"], words.think_result(w3["base_params"], not_fit=["この案がおすすめです"]), "作る側")[1], "作る側の文でも止める"
+
+# 虎（必須のもう 1 種）も同じ道で紙になる
+t_base = words.base_of(T)[1]
+wt, _ = ask(T, "頭を吊るしたら、もっと揺れると思う")
+assert not words.fill_think(wt["id"], words.think_result(t_base, {"mount": "hang", "axle_height": 50, "weight_below_axle": 28}), "作る側")[1]
+ownt, _ = words.adopt_words(wt["id"], "本人")
+assert "".join(OWN_HYPOTHESIS.split()) in flat_pdf(printed(T, ownt["id"])), "虎の紙にも「自分で立てた」の印"
+
+# ── 鍵ありの道（偽の Claude） ──
+CHANGED = {"push_part": "stick", "pusher_height": 84}
+ok = {"fits": True, "params": {**base_params, **CHANGED}, "from_words": sorted(CHANGED),
+      "filled_in": [{"param": k, "why": words.KEPT_AS_IS} for k in base_params if k not in CHANGED], "not_fit": []}
+before = len(hypotheses.own_hypotheses(G))
+client = Fake([ok])
+k, fs = ask(G, "割り箸の柄で押したらいいと思う", who=OTHER, hid="H-C", client=client, use_claude=True)  # 別の仮説を見て話しても、作り直す元はたたき台
+assert k and not fs and k["status"] == "pending_human" and k["base"] == "H-A" and k["result"]["from_words"] == sorted(CHANGED), fs
+sent = client.calls[0]["messages"][0]["content"]
+assert "<data>" in sent and json.dumps(base_params, ensure_ascii=False) in sent and "たたき台" in sent and "割り箸の柄で押したらいいと思う" in sent, "たたき台の寸法と話した字を送る"
+assert WHO not in sent and OTHER not in sent and "who" not in sent, "その場限りの印は送らない"
+assert len(hypotheses.own_hypotheses(G)) == before, "本人が採るまで残らない"
+ownk, _ = words.adopt_words(k["id"], "本人")
+assert ownk["params"]["push_part"] == "stick" and flat_pdf(printed(G, ownk["id"]))
+# Claude が寸法を隠して補った時は検査に落ち、やり直しの後も落ちれば待ちに落ちる（押した 1 回を失わない）
+bad = {**ok, "from_words": [], "filled_in": []}
+k1, _ = ask(G, "軸をもっと上にしたい", who=OTHER, client=Fake([bad, bad, bad]), use_claude=True)
+assert k1["status"] == "waiting_maker" and k1["result"] is None, "隠れた補いは案にしない"
+ranked = {**ok, "filled_in": [{"param": f["param"], "why": "おすすめの値"} for f in ok["filled_in"]]}
+k0, _ = ask(G, "柄を太くしたい", who=OTHER, client=Fake([ranked, ranked, ranked]), use_claude=True)
+assert k0["status"] == "waiting_maker" and k0["result"] is None, "推しの言葉のある案は人に見せない"
+# Claude を呼べなかった時も待ちに落ちる
+k2, _ = ask(G, "つまみを二つにする", who=OTHER, client=Fake([]), use_claude=True)
+assert k2["status"] == "waiting_maker" and k2["trace"]["fell_back"]
+# 雛形に乗らない考え（偽の Claude）→ 型紙なしの紙
+no = {"fits": False, "params": {}, "from_words": [], "filled_in": [], "not_fit": ["熱で動く機構は雛形に無い"]}
+k3, _ = ask(G, "火であたためると開く", who=OTHER, client=Fake([no]), use_claude=True)
+own3, _ = words.adopt_words(k3["id"], "本人")
+assert own3["params"] is None or not own3.get("params")
+assert hypotheses.print_own(G, own3["id"], str(OUT / f"{own3['id']}_v1")) == 0 and (OUT / f"{own3['id']}_v1_free.pdf").exists()
+
+# ── 個人の情報の形は送らない ──
+# 話す口の入口で落ちるので、床を広げる前に残した字や手で置いた字を写して確かめる（送る前にもう一度当てる）
+for bad_text in ("連絡は a@example.com まで", "3年2組の考えです", "さくら第一小学校で作った", "電話 090-1234-5678"):
+    never = Fake([])
+    got, fs = words.request_think(src(G), {"text": bad_text}, "x", NAME, EVIDENCE, client=never, use_claude=True)
+    assert got is None and fs[0].floor == "F10.pii" and never.calls == [], bad_text
+assert making_log.folder().exists()
+print("ok")
