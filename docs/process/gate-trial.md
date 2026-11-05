@@ -1079,6 +1079,17 @@
 - 検証ゲート: **済み**。Red: 今の main に試験だけを置いて rc 1（gate-evidence/red-one-sheet.txt）。Green: rc 0（gate-evidence/green-one-sheet.txt、gate-evidence/green-one-sheet-floor.txt）。負の対照は寸法 1・組の版 5・組み方の文 1
 - エビデンスゲート: 上の出力と `./run.sh`。残した 9 枚と `removed` の 22 枚を合わせると、直す前の控え 31 枚と値まで同じ
 - マージ後の書き戻し: #332 に書く
+## 刷る命令の既定の名前に玩具を入れ、./run.sh に進みを出す（Issue 対応の担当、issue/71-print-names-progress、11-06。#71）
+
+- 目的: まっさらな環境で README のとおりに打った時に見つかった 2 つを直す
+- なぜか: 御来迎と虎はどちらも H-A なので、既定の名前だと後から刷った玩具の紙が前の紙を黙って消す。`./run.sh` は入れ物で 8〜9 分かかるのに最後の 1 行のほかに何も出ず、止まったのと見分けがつかない
+- どうしたらいいか: 既定の名前を「玩具の番号_仮説_版」にした（print と print-own）。`--out` はそのまま。進みは「本数/全部 名前」の形で 1 本ずつ出す。新しい字は足していない
+- 足した決め: 進みは端末の時だけ stderr に出す。合体の道は失敗の時に出力の末尾 15 行だけを見せるので、管にも出すと進みの行が NG の行を押し流す。最後の行と `out/RESULT.md` は変えていない
+- ゴールの要件: 2 つの玩具の H-A の紙が別々に残る。端末には本数と名前が順に出て、管には出ない
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-print-names.txt`・`docs/process/gate-evidence/red-floors-progress.txt`、Green は `docs/process/gate-evidence/green-print-names.txt`・`docs/process/gate-evidence/green-floors-progress.txt`
+- エビデンスゲート: 作りを 7 通り崩すと、どれも試験で落ちる。場面の進みは試験の小さな根に場面が無いので、本物の `./run.sh` を端末で動かして目で見た
+- マージ後の書き戻し: #71 に書く
+
 ## 見比べる紙を外す: 作り・命令・試験・凍結の基準 F11.compare（Issue 対応の担当、issue/332-remove-compare、11-05 夜。#332）
 
 - 目的: 本人の決定「見比べる紙は外す」（#332 の点 2）を作りと凍結の基準に入れる
