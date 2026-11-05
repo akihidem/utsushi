@@ -43,6 +43,8 @@ assert scene.frame(0.5).tobytes() != scene.frame(3.8).tobytes()
 with_music = scene7.Scene7(page, rec, "試しの曲")
 assert with_music.frame(8.0).tobytes() != scene.frame(8.0).tobytes()
 assert with_music.frame(3.8).tobytes() == scene.frame(3.8).tobytes()
+# 字幕の通り道（真ん中の段）に人物を置かない（字の後ろに絵を置かない）
+assert len(set(scene.frame(0.55).crop((0, 440, flip.W, 600)).getdata())) == 1, "真ん中の段に絵がある"
 # 字幕は読む間を置いてからクレジットへ溶ける（1 秒 5 字以下）
 assert scene7.CUES["credits"][0] - scene7.CUES["caption"][0] >= len(scene7.CAPTION) / 5 - 0.01
 # クレジットは幅の中に収まる。各場面の隅の札を寄せた分（出所・複製の年・作り物の断り・未実行の断り）がある

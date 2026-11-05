@@ -1,4 +1,4 @@
-"""場面 7: 槍の型の 18 人を薄く並べ、締めの字幕を出し、クレジットへ溶かす。
+"""場面 7: 槍の型の人物を薄く並べ、締めの字幕を出し、クレジットへ溶かす。
 
 使い方: python -m demo.scene7 --out <repo の外の場所>/scene7.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR] [--music 曲の札]
 exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -43,14 +43,15 @@ CREDITS = (
 REPO_NAME = "utsushi"
 # 合図の表。絵の動きも字幕もここだけを読む。
 CUES = {
-    "figs_in": (0.0, 2.0),     # 18 人が 1 人ずつ薄く並ぶ
+    "figs_in": (0.0, 2.0),     # 人物が 1 人ずつ薄く並ぶ
     "caption": (0.6, 1.2),     # 締めの字幕
     "credits": (4.8, 5.8),     # 紙を覆ってクレジット
 }
 DURATION = 9.0
 SHEET_TIMES = (0.6, 1.4, 2.4, 3.6, 4.6, 5.3, 6.0, 7.5, 8.8)
 
-# 並べ方: 6 列 3 段。和本の読む順に合わせ、1 人目を右上に置いて右から左へ並べる。
+# 並べ方: 6 列 3 段の枠の上下の段に置く。真ん中の段は字幕の通り道として空ける（隠すと足だけが残って見えた）。
+# 和本の読む順に合わせ、1 人目を右上に置いて右から左へ並べる。
 GRID_COLS, GRID_ROWS = 6, 3
 GRID_BOX = (260, 120, 1660, 900)
 FIG_TALL = 200                    # 一番背の高い人を 200px に。全員を同じ倍率にし、体の大きさの差を消さない
@@ -95,6 +96,8 @@ class Scene7:
             if v <= 0:
                 continue
             col, row = GRID_COLS - 1 - i % GRID_COLS, i // GRID_COLS
+            if row == 1:
+                continue
             lay = self.fig_layers[fid]
             cx, base = round(x0 + (col + 0.5) * cw), round(y0 + (row + 1) * ch - 18)
             l2 = _alpha(lay, v)
@@ -127,9 +130,6 @@ class Scene7:
         draw = ImageDraw.Draw(img)
         cap = ease((t - CUES["caption"][0]) / (CUES["caption"][1] - CUES["caption"][0]))
         if cap > 0:
-            band = Image.new("RGBA", (W, 170), PAPER + (round(235 * cap),))  # 字の後ろの人物を隠し、字だけを読ませる
-            img.paste(band, (0, H // 2 - 115), band)
-            draw = ImageDraw.Draw(img)
             text(draw, (W // 2, H // 2 - 30), CAPTION, 64, _fade(SUMI, cap), False, "mm")
         c = ease((t - CUES["credits"][0]) / (CUES["credits"][1] - CUES["credits"][0]))
         if c > 0:
