@@ -35,7 +35,7 @@ SAMPLE = (("見出し<1>", "文の 1"), ("見出し 2", "文の 2"), ("見出し
 
 
 def help_part(page):
-    found = re.findall(r'<details class="meta print-help">.*?</details>', page, re.S)
+    found = re.findall(r'<details class="[^"]*print-help">.*?</details>', page, re.S)
     assert len(found) <= 1, ("案内は 1 つ", len(found))
     return found[0] if found else ""
 
@@ -65,8 +65,12 @@ for look in ("tenji", "zine"):
     for head, text in SAMPLE[1:]:
         assert head in part and text in part, (head, look)
     assert "見出し&lt;1&gt;" in part, ("字を逃がす", look)
+    # プリンタの前で小学生も読む文なので、本文と同じ字の大きさにする（.meta の 12px にしない）。窓の横の欄は 14px なので、案内にだけ指定する
+    assert part.startswith('<details class="print-help">'), ("小さい字の class", look, part[:60])
+    body_px = re.search(r"body\{margin:0[^}]*?font-size:(\d+)px", page).group(1)
+    assert f".win .side .print-help{{font-size:{body_px}px" in page, ("案内の字が本文より小さい", look, body_px)
     # PDF の釦のすぐ後ろ。遠くに置くと止まった時に見つからない
-    assert page.index("PDF を開いて印刷する") < page.index('class="meta print-help"') < page.index("100% で刷り"), ("置き場", look)
+    assert page.index("PDF を開いて印刷する") < page.index('print-help">') < page.index("100% で刷り"), ("置き場", look)
     # どの紙でも同じ文
     assert help_part(get("kind=tejun")) == part, ("手順の紙", look)
     assert help_part(get("kind=sheet", T)) == part, ("ほかの玩具", look)

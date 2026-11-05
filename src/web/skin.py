@@ -123,6 +123,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .win .sheet{margin:0;background:#fff;border:1px solid var(--frame);box-shadow:0 30px 50px -30px var(--shadow)}
 .win .sheet a{display:block;border:0}.win .sheet img{display:block;width:100%}
 .win .side{font-size:14px;line-height:2}
+/* 印刷で止まった時の案内は、プリンタの前で小学生も読むので、本文と同じ字の大きさにする（#297） */
+.win .side .print-help{font-size:16px;line-height:1.8}
 .win .side .v{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;letter-spacing:.12em;margin:8px 0}
 .win .side .v a,.win .side .v b{border:1px solid var(--frame);padding:2px 10px;font-weight:400}
 .win .side .v b{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}

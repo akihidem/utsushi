@@ -109,7 +109,7 @@ def print_help():
     if not PRINT_HELP:
         return ""
     items = "".join(f"<p><b>{esc(head)}</b><br>{esc(text)}</p>" for head, text in PRINT_HELP)
-    return f'<details class="meta print-help"><summary>{esc(PRINT_HELP_SUMMARY)}</summary>{items}</details>'
+    return f'<details class="print-help"><summary>{esc(PRINT_HELP_SUMMARY)}</summary>{items}</details>'
 
 
 def window(sid, data, see, kind, v, recorded):
