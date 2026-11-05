@@ -109,7 +109,7 @@
 > カメラで見るのはそういうとこだよ
 
 - 上の「型紙は不完全で…人間が工夫で乗り切る過程」を受けた言葉。**カメラで見るのは、不完全な型紙（AI の仮説）のまわりで人が工夫して乗り切る過程で、人を測るためではない**
-- 関係する記録: [research/28 の観察の案](research/28-observe-from-picture.md)（型紙なしで絵だけから作る過程、U-46）、[research/31](research/31-observation-depth.md)（観察の深さ）。本人の作る過程の動画を記録に結ぶ作りは U-53（Issue #263）
+- 関係する記録: [research/33 の観察の案](research/33-observe-from-picture.md)（型紙なしで絵だけから作る過程、U-46）、[research/31](research/31-observation-depth.md)（観察の深さ）。本人の作る過程の動画を記録に結ぶ作りは U-53（Issue #263）
 - **書き手の整理**: 成績にしない・順位を付けない（[J-025](decisions/J025-no-ranking.md)）の線と同じ向き。見た物は型紙の直しに回し、人の出来の点にしない
 
 ### 予想の段を無くす（再掲）
