@@ -26,7 +26,9 @@ SKINS = {
 
 # 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
 # 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
-NAV = (("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"))
+NAV = (("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"), ("/en", "English"))
+# 英語の頁の帯（J-030 の段 1）。全部の頁を訳さないので、道は入口と日本語の頁へだけ。
+NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
 
 # その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
@@ -155,8 +157,11 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 """
 
 
-def nav(skin, current="", path="/"):
+def nav(skin, current="", path="/", lang="ja"):
     """頭の帯。順路の道だけ。皮の切り替えは置かない（皮ごとに 1 サイト。skin と path は呼び手の形を保つために残す）。"""
+    if lang == "en":
+        items = "".join(f'<a href="{p}">{esc(n)}</a>' for p, n in NAV_EN[1:])
+        return f'<nav class="nav"><a class="brand" href="/en">utsushi</a>{items}</nav>'
     # 玩具の頁と手帖は道から「おもちゃ」に印を付ける。呼び手が current を渡さない頁の分
     here = current or ("/toys" if (path or "").startswith("/toy/") else "")
     mark = lambda p: ' aria-current="page"' if p == here else ""  # noqa: E731
@@ -179,14 +184,14 @@ def entrance_style(skin):
     return f":root{{{root}}}{NAV_STYLE}.nav{{border-bottom:0}}body .nav a:not([aria-current=page]){{border-bottom:0;text-decoration:none;color:var(--accent)}}{TAP_FLOOR}"
 
 
-def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot=""):
+def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot="", lang="ja"):
     """頁の骨。皮の変数を :root に置き、頭の帯と足を付ける。中身（body）は皮を知らずに書けるようにする。"""
     s = SKINS.get(skin, SKINS[DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
-    return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    return (f'<!doctype html><html lang="{esc(lang)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(page_title(title))}</title><style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
-            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
+            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path, lang)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
 
 
 def frame(sid, caption="", pos=None):
