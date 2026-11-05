@@ -199,9 +199,9 @@ param = sorted(ALLOWED[result])[0]
 to = {**TEMPLATES[result].DEFAULTS, **rest[0]["params"]}[param] - 1
 assert post(f"/record/{rid}/next", {"interpretation": "x", "param": param, "to": str(to), "why": "x", "by": "x"})[0] == 422
 assert not list(out_dir(TRIAL).glob(f"{other}_v2*"))
-# 自分の仮説の記録にも欄を出さない
+# 寸法の無い自分の仮説の記録にも欄を出さない（向く先の版が無い。寸法のある自分の紙は、たたき台へ向けて欄を出す。tests/test_loop1_next.py が見る）
 mine, _ = hypotheses.save_own(TRIAL, "自分の案", "引くと開く", "図の折り目")
-assert post(f"/toy/{TRIAL}/print-own", {"id": mine["id"]})[0] == 303
+assert not mine.get("params") and hypotheses.print_own(TRIAL, mine["id"], str(out_dir(TRIAL) / f'{mine["id"]}_v1')) == 0
 assert post(f"/toy/{TRIAL}/record", {"hypothesis": mine["id"], "result": first_result})[0] in (200, 303)
 rid = next(r["id"] for r in records.all_records(TRIAL) if r["hypothesis_id"] == mine["id"])
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] in (200, 303)
