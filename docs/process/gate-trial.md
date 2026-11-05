@@ -1083,7 +1083,7 @@
 - どうしたらいいか: 引用の 1 行を見出しのすぐ下に置き、字を試験に書いて文字列で見る。比べた案は主張の一覧に足して台帳で見る事で、一覧は共有の帳面なので、この枝では足さない
 - ゴールの要件: 本人の言葉と、外に出す文での扱いの本人の決定（案 A）が一字も同じ。前からの線「失われた技術を取り戻す」とは書かないが残る（`tests/test_handwork_words.py`）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-handwork-words.txt`・`docs/process/gate-evidence/red-handwork-decision.txt`、Green は `docs/process/gate-evidence/green-handwork-words.txt`・`docs/process/gate-evidence/green-handwork-decision.txt`
-- エビデンスゲート: 字を変える 4 通り、引用を消す、見出しを変える、見出しと引用の間に字を足す、決定の字を変える、決定の行を消す、前からの線を変える、の 10 通りで試験が落ちた。「復活」の字は main の README・CLAUDE.md・デモ・画面の文・英語のデータに無く、README の頭の PR（#401）にも無い
+- エビデンスゲート: 字を変える 4 通り、引用を消す、見出しを変える、見出しと引用の間に字を足す、決定の字を変える、決定の行を消す、前からの線を変える、の 10 通りで試験が落ちた。見出しは、AI も継ぐ物の一つと読める形だったので、読みを決めない形に直した（新しい試験は古い見出しで rc 1、新しい見出しで rc 0。Red の証拠の字は、その時の実行のまま）。「復活」の字は main の README・CLAUDE.md・デモ・画面の文・英語のデータに無く、README の頭の PR（#401）にも無い
 - マージ後の書き戻し: #247 に書く
 
 ## 英語の頁（サイトの線、lane/english、11-05 昼。J-030 の段 1、#247）
