@@ -82,7 +82,8 @@
   "evidence": [
    "src/omochae/loop.py",
    "src/web/play_server.py",
-   "tests/test_techo_site.py"
+   "tests/test_techo_site.py",
+   "tests/test_media_strip.py"
   ],
   "unverified": "人が画面で使った確認はまだ。版 1 は画面に名前の欄が無いので「画面の使い手」と残す"
  },
