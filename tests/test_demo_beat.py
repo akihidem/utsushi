@@ -35,6 +35,8 @@ assert np.max(np.abs(tail)) < 1e-3, np.max(np.abs(tail))
 assert np.sqrt(np.mean(mix[:int(beat.SR * 15)] ** 2)) > 0.01
 # 1 枚ごとの刻みの数は絵の側の数と同じ
 assert len(table["ticks"]) == sum(c for _, _, c in beat.RUNS)
+# 癒し系（本人の方針 11-05）: 刻みの連打を置かず、拍もゆっくりにする
+assert beat.RUNS == () and beat.BEAT >= 1.0 and table["bpm"] == round(60 / beat.BEAT)
 # 同じ入力なら同じ音（動画と同じく、作り直しても同じ物が出る）
 again, _ = beat.compose(seconds)
 assert again.tobytes() == mix.tobytes()

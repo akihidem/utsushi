@@ -1,4 +1,4 @@
-"""場面 2: 『江都二色』の御来迎の図を、場面 1 と同じ紙の地に置き、図に寄って歌を添える。
+"""場面 2: 『江都二色』の御来迎の図を、場面 1 と同じ紙の地に置き、図に寄りながら本人の語りを 1 かたまりずつ添える。
 
 使い方: python -m demo.scene2 --out <repo の外の場所>/scene2.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -6,15 +6,13 @@ exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（こ�
 決めた事と理由:
 - 玩具の動き方は一切見せない（F9）。矢印・部品の動き・仕組みの線・部品の上の「?」を描かない。
   動くのは「目」（寄り）と字の出入りだけで、図の中の部品どうしは最後まで同じ形のまま。
-  この場面の芯は「動き方は書かれていない」なので、少しでも動きを描けば字幕と食い違う。
 - 寄りは頁全体を 1 枚の絵として拡大するだけにする。部品ごとに切り出して動かすと、
   それだけで「ここが動く」の暗示になる。
 - 色の複写だが、場面 1 と同じく墨一色（ink_layer）にする。場面をまたいで紙の地と墨の色が
-  変わると別の動画に見える。色を捨てる事は改変として隅の札に書く。
-- 歌は scene2_sources.json に写さず、data/sources の記録から本人が確かめた読みを毎回読む。
-  読みが直された時に、動画の字と記録が食い違わないようにするため。
-- 隅の札は「1773 年の本」と書かない。映るのは 1931 年に米山堂が複製した本なので、
-  元の年と複製の年を両方書く（所蔵の記録の holding に合わせる）。
+  変わると別の動画に見える。
+- 本人の指示（11-05）で、題・歌・締めの字幕は本人の語りに置き換えた。語りの字は demo.words の 1 か所にあり、全文と照らす。
+- 本人の方針（11-05 20:10）「認知負荷を減らす」で、隅の札は外し、出所と改変はクレジットへ寄せた（demo.scene7）。
+  クレジットでは「1773 年の本」とだけ書かない。映るのは 1931 年に米山堂が複製した本なので、元の年と複製の年を両方書く。
 """
 import argparse
 import json
@@ -23,24 +21,23 @@ import sys
 
 from PIL import Image, ImageDraw, ImageChops, ImageFilter, ImageOps
 
-from demo.flip import FPS, H, PAPER, SHU, SUMI, W, contact_sheet, ease, fade, fetch_image, ink_layer, render, text
+from demo.flip import H, PAPER, SUMI, W, contact_sheet, ease, fetch_image, ink_layer, render
+from demo.words import TALKS, chunk_alpha, cues_of, draw_chunk, draw_from, seconds_of
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SOURCES = pathlib.Path(__file__).with_name("scene2_sources.json")
-DURATION = 14.0
+DURATION = seconds_of("scene2")
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
-CUES = {
-    "page_in": (0.0, 1.8),    # 頁が紙の地に現れる
-    "title_out": (2.2, 3.0),  # 題の 2 行が消える（寄った頁と重ならないように）
-    "push": (2.6, 6.6),       # 図へゆっくり寄る（目が動くだけ。図の中は動かない）
-    "song": (6.8, 8.0),       # 歌が右に現れる
-    "closing": (10.6, 11.8),  # 締めの字幕。14 秒まで止めて読ませる
-}
-SONG_OUT = (9.8, 10.5)  # 歌は締めの字幕より先に消す（重ねると両方読めない。試し見で直した）
-HOLD = (CUES["push"][1], CUES["closing"][0])  # 図が止まっている間。床はここで図の画素が変わらない事を見る
+CUES = dict(sorted({
+    "page_in": (0.0, 1.4),    # 頁が紙の地に現れる
+    "push": (0.6, 6.0),       # 図へゆっくり寄る（目が動くだけ。図の中は動かない）
+    **cues_of("scene2"),      # 語りのかたまりが現れる時刻
+}.items(), key=lambda kv: kv[1]))
+HOLD = (CUES["push"][1], DURATION)  # 図が止まっている間。床はここで図の画素が変わらない事を見る
 PAPER_CUT = 175   # これより明るい灰は紙とみなして白に飛ばす
-FIG_RIGHT = 1080  # 寄った図の右の端。歌はこれより右に置き、床が図の領域だけを比べられるようにする
+FIG_RIGHT = 1080  # 寄った図の右の端。語りはこれより右に置き、床が図の領域だけを比べられるようにする
+TEXT_X, TEXT_SIZE = 1500, 46  # 語りの真ん中と字の大きさ
 
 
 def phase(t, cue):
@@ -53,25 +50,6 @@ def load_record():
     rec = json.loads(SOURCES.read_text(encoding="utf-8"))
     src = json.loads((ROOT / rec["source_record"]).read_text(encoding="utf-8"))
     return rec, src
-
-
-def checked_song(src):
-    """本人が確かめ、退けられていない読みだけを使う。無ければ歌を出さない（Claude だけの読みは画面に出さない）。"""
-    tr = src.get("transcription", {})
-    if tr.get("status") != "human_checked":
-        return None
-    for e in tr.get("entries", []):
-        if e.get("checked_by") and not e.get("rejected_by"):
-            return e
-    return None
-
-
-def song_lines(s):
-    """上の句と下の句に分ける。「朝な」で割れなければ真ん中で割る（読みが直されても画面が崩れない）。"""
-    i = s.find("朝な")
-    if i <= 0:
-        i = len(s) // 2
-    return s[:i].strip(), s[i:].strip()
 
 
 def load_page(cache, rec):
@@ -92,27 +70,33 @@ def pct_box(size, pct):
             round((x + w) / 100 * size[0]), round((y + h) / 100 * size[1]))
 
 
+def page_layer(spread, rec):
+    """見開きから左の頁を切り出し、墨の層にする。語りの札（demo.words）の図も同じ層を使う。"""
+    page = spread.crop(pct_box(spread.size, rec["page_pct"]))
+    # 裏写り（裏の頁の絵が透けた薄い線）と黄ばんだ紙を先に白へ飛ばす。flip.clean の閾値 190 は
+    # 北斎漫画の白い紙で決めた値で、この複写の紙と裏写りが灰色のまま残ったため（試し見で 175 に決めた）。
+    page = ImageOps.autocontrast(page, cutoff=1).point(lambda v: 255 if v > PAPER_CUT else v)
+    # 墨の層は元の大きさのまま持ち、毎コマ 1 回の affine で拡大縮小する（縮めた層を拡大すると線がぼける）
+    layer = ink_layer(page, 1)
+    # 頁の端は影で灰色になり、四角い縁が見えてしまう。端の 60px を紙へぼかして、紙の地に溶かす。
+    edge = Image.new("L", layer.size, 0)
+    ImageDraw.Draw(edge).rectangle((60, 60, layer.width - 61, layer.height - 61), fill=255)
+    edge = edge.filter(ImageFilter.GaussianBlur(25))
+    layer.putalpha(ImageChops.multiply(layer.getchannel("A"), edge))
+    return layer
+
+
 class Scene2:
     duration = DURATION
 
-    def __init__(self, spread, rec, src):
+    def __init__(self, spread, rec):
         self.rec = rec
-        self.song = checked_song(src)
-        page = spread.crop(pct_box(spread.size, rec["page_pct"]))
-        # 裏写り（裏の頁の絵が透けた薄い線）と黄ばんだ紙を先に白へ飛ばす。flip.clean の閾値 190 は
-        # 北斎漫画の白い紙で決めた値で、この複写の紙と裏写りが灰色のまま残ったため（試し見で 175 に決めた）。
-        page = ImageOps.autocontrast(page, cutoff=1).point(lambda v: 255 if v > PAPER_CUT else v)
-        # 墨の層は元の大きさのまま持ち、毎コマ 1 回の affine で拡大縮小する（縮めた層を拡大すると線がぼける）
-        self.layer = ink_layer(page, 1)
-        # 頁の端は影で灰色になり、四角い縁が見えてしまう。端の 60px を紙へぼかして、紙の地に溶かす。
-        edge = Image.new("L", self.layer.size, 0)
-        ImageDraw.Draw(edge).rectangle((60, 60, self.layer.width - 61, self.layer.height - 61), fill=255)
-        edge = edge.filter(ImageFilter.GaussianBlur(25))
-        self.layer.putalpha(ImageChops.multiply(self.layer.getchannel("A"), edge))
+        self.chunks = TALKS["scene2"]
+        self.layer = page_layer(spread, rec)
         pw, ph = self.layer.size
-        # 寄る前: 頁全体を高さ 800px で真ん中に。上に題、下に札の余白を残す（場面 1 と同じ考え）。
+        # 寄る前: 頁全体を高さ 800px で、左に寄せて置く。右は語りの場所として空けておく。
         s0 = 800 / ph
-        self.start = (s0, (W - pw * s0) / 2, (H - ph * s0) / 2 + 30)
+        self.start = (s0, (FIG_RIGHT + 60 - pw * s0) / 2, (H - ph * s0) / 2)
         # 寄った後: 図の枠を高さ 880px にし、左半分（右の端 FIG_RIGHT まで）の真ん中に置く。
         fx0, fy0, fx1, fy1 = pct_box((pw, ph), rec["figure_pct"])
         s1 = min(880 / (fy1 - fy0), (FIG_RIGHT - 120) / (fx1 - fx0))
@@ -140,34 +124,12 @@ class Scene2:
                 pg.putalpha(pg.getchannel("A").point(lambda v: round(v * a_in)))
             img.paste(pg, (0, 0), pg)
         draw = ImageDraw.Draw(img)
-        # 題: 頁が現れる間だけ。寄り始めたら消す。
-        a_t = a_in * (1 - phase(t, "title_out"))
-        if a_t > 0:
-            text(draw, (80, 70), "江都二色", 54, fade(SUMI, a_t), True)
-            text(draw, (80, 140), "安永二年（1773）の絵本。玩具の図と歌が並ぶ", 34, fade(SUMI, a_t))
-        # 歌: 図の右に。本人が確かめた読みが無ければ出さない。
-        a, b = SONG_OUT
-        a_s = phase(t, "song") * (1 - ease((t - a) / (b - a)))
-        if self.song and a_s > 0:
-            x = FIG_RIGHT + 60
-            text(draw, (x, 300), "歌", 40, fade(SHU, a_s), True)
-            kami, shimo = song_lines(self.song["text"])
-            text(draw, (x, 380), kami, 50, fade(SUMI, a_s), True)
-            text(draw, (x + 100, 460), shimo, 50, fade(SUMI, a_s), True)
-            # 「本人」は画面の外の人には通じないので、人が確かめた事だけを書く。
-            # 頁にほかの文が無いとは言わない（人が確かめていない）。それは締めの字幕に任せる。
-            text(draw, (x, 580), f'読み: 手元の複写の頁 {self.song["page"]} による（人が確かめた）', 26, fade(SUMI, 0.7 * a_s))
-        # 締め: 紙を薄く掛け、図はうっすら残す（止まった絵のまま）。
-        c = phase(t, "closing")
-        if c > 0:
-            veil = Image.new("RGBA", (W, H), PAPER + (round(225 * c),))
-            img.paste(veil, (0, 0), veil)
-            draw = ImageDraw.Draw(img)
-            text(draw, (W // 2, 440), "図と歌だけが残った玩具。", 58, fade(SUMI, c), True, "ma")
-            text(draw, (W // 2, 530), "動き方は書かれていない。", 58, fade(SUMI, c), True, "ma")
-        # 隅の札: 元の年と複製の年を両方。場面 1 と同じ大きさ。1 行では画面の幅を越えるので 2 行に分ける。
-        text(draw, (80, H - 82), self.rec["credit"], 22, fade(SUMI, 0.7))
-        text(draw, (80, H - 50), self.rec["modification_note"], 22, fade(SUMI, 0.7))
+        # 語り: 図の右に 1 かたまりずつ。前のかたまりが消えてから次が現れる。
+        for i, lines in enumerate(self.chunks):
+            v = chunk_alpha(CUES, len(self.chunks), i, t)
+            if v > 0:
+                draw_chunk(draw, lines, TEXT_X, H // 2 - 30, TEXT_SIZE, v)
+        draw_from(draw, TEXT_X)
         return img
 
 
@@ -177,13 +139,13 @@ def main(argv=None):
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
     ap.add_argument("--cache", default=str(ROOT / "out/demo/cache"))
     a = ap.parse_args(argv)
-    rec, src = load_record()
+    rec, _ = load_record()
     spread = load_page(pathlib.Path(a.cache), rec)
     if spread is None:
         return 4
-    scene = Scene2(spread, rec, src)
+    scene = Scene2(spread, rec)
     if a.sheet:
-        contact_sheet(scene, a.sheet, times=(0.9, 2.2, 4.0, 5.5, 7.0, 8.2, 10.0, 11.5, 13.8))
+        contact_sheet(scene, a.sheet, times=tuple(round(DURATION * k, 2) for k in (0.05, 0.14, 0.22, 0.32, 0.5, 0.66, 0.75, 0.88, 0.98)))
     return render(scene, pathlib.Path(a.out))
 
 

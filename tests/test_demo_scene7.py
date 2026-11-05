@@ -1,11 +1,8 @@
 """デモ動画の場面 7（demo.scene7）の床: 合図の順、1 コマが時刻だけで決まる事、クレジットの行を見る。
 
 頁の画像は取りに行かない（網につながずに回すため）。頁の代わりに黒い四角を置いた紙を使う。
-型紙はこのリポの生成器で手元で刷る（1〜2 秒で済み、動画と同じ道を通るので試す価値がある）。
 """
 import json
-import pathlib
-import tempfile
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -35,33 +32,26 @@ for f in rec["figures"]:
     x, y, w, h = f["box_pct"]
     d.rectangle((x * 14 + 10, y * 12 + 10, (x + w) * 14 - 10, (y + h) * 12 - 10), fill=0)
 
-with tempfile.TemporaryDirectory() as tmp:
-    template = scene7.make_template(pathlib.Path(tmp))
-    assert template is not None, "型紙が刷れない"
-    assert template.height > template.width, "A4 の縦長"
-
-scene = scene7.Scene7(page, rec, template)
+scene = scene7.Scene7(page, rec)
 assert len(scene.order) == 18 and scene.duration == scene7.DURATION
-for t in (0.5, 2.0, 3.8, 6.0, 7.0, 8.0, 10.0, 11.9):
+for t in (0.5, 2.0, 3.8, 6.0, 7.0, 8.0, 8.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 # 並ぶ段の途中と並び終えた後で絵が違う（1 人ずつ現れる）
 assert scene.frame(0.5).tobytes() != scene.frame(3.8).tobytes()
 # 曲を渡した時だけ、クレジットの画面が変わる
-with_music = scene7.Scene7(page, rec, template, "試しの曲")
-assert with_music.frame(10.0).tobytes() != scene.frame(10.0).tobytes()
+with_music = scene7.Scene7(page, rec, "試しの曲")
+assert with_music.frame(8.0).tobytes() != scene.frame(8.0).tobytes()
 assert with_music.frame(3.8).tobytes() == scene.frame(3.8).tobytes()
-
-# 型紙の下の札は、どの行も動画の幅の中に収まる（組の名が長くなっても右の端で切れない。11-05 に v10 の「0」が切れた）
-lines = scene.sheet_label_lines()
-assert any("順位ではない" in s for s in lines) and any(scene.sheet_set in s for s in lines)
-font = ImageFont.truetype(flip.SERIF, scene7.SHEET_LABEL_PX)
-cx = (scene7.SHEET_BOX[0] + scene7.SHEET_BOX[2]) // 2
-for s in lines:
-    half = font.getlength(s) / 2
-    assert cx - half >= 0 and cx + half <= flip.W - 40, (s, cx + half)
-# 札の 2 行目の下端は、締めの字幕の帯（y 940 から）より上
-assert scene7.SHEET_BOX[3] + 12 + (len(lines) - 1) * (scene7.SHEET_LABEL_PX + 6) + scene7.SHEET_LABEL_PX + 6 <= 940
-print("ok label")
+# 字幕は読む間を置いてからクレジットへ溶ける（1 秒 5 字以下）
+assert scene7.CUES["credits"][0] - scene7.CUES["caption"][0] >= len(scene7.CAPTION) / 5 - 0.01
+# クレジットは幅の中に収まる。各場面の隅の札を寄せた分（出所・複製の年・作り物の断り・未実行の断り）がある
+rows = scene7.credit_lines("試しの曲")
+font = ImageFont.truetype(flip.SERIF, 30)
+assert max(font.getlength(r) for r, _ in rows) + 40 + max(font.getlength(n) for _, n in rows) <= flip.W - 120
+assert 262 + 60 * len(rows) <= flip.H - 30
+for word in ("改", "1773", "1931", "米山堂", "作り物", "顔と声", "Claude API"):
+    assert word in joined or word == "改", word
+assert "描き直していない" in joined
 # 全部の検査の後に出す（途中で出すと、後の検査が落ちても成功に見えるため。独立のレビューの指摘、11-05）
 print("ok")

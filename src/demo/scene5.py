@@ -1,4 +1,4 @@
-"""場面 5: 11-04 の試行。本人の教え子の卒業生 5 人（全員成人）が刷った型紙を紙で作った事を、記録の文と（確かめ済みなら）写真で見せる。
+"""場面 5: 11-04 の試行。刷った型紙を紙で作った事を、確かめ済みの写真と短い字幕で見せる。
 
 使い方: python -m demo.scene5 --out <repo の外の場所>/scene5.mp4 [--sheet 要のコマの一覧.jpg] [--photos p01,p09]
 exit: 0 = 書き出せた / 4 = ffmpeg が無い・写真が確かめ表で通っていない・写真が無い（このリポの検査の決まりに合わせる）。
@@ -11,11 +11,12 @@ exit: 0 = 書き出せた / 4 = ffmpeg が無い・写真が確かめ表で通�
   表を直せばコードを直さずに撮れるようにし、表を飛ばす道は作らない。
 - 写真は切らずに枠へ収める（ImageOps.contain）。切ると写りの確かめと違う絵になる。顔のある写真は表に無い。
   動画（goraigo-motion.mp4）は使わない。表では公開してよいとなったが、この場面は写真だけで組んである。
-- 画面の数と言葉は docs/process/trials/README.md の文をそのまま写す（床で照らす）。
-  data/records と data/loop は git に入らないので読まない。README が言う事だけを言う。
+- 字幕の言葉は docs/process/trials/README.md が言う事だけを言う（床で照らす）。data/records と data/loop は git に入らないので読まない。
 - 結果は正直に「わからない」と出す。記録 R-0001（仮説 A）と R-0002（仮説 C）のどちらも、
   動画と写真がどちらの仮説の紙か分からないため「わからない」と本人が答えた。
 - 本人の決定（11-05）「哲学よりの動画にして」で、記録の番号の札を外して短くした。数より、作っている手を見せるため。
+- 本人の方針（11-05 20:10）「認知負荷を減らす」「癒し系」で、試した人と案の札・本人の所見の列・隅の札を外し、写真を 3 枚に絞ってゆっくり溶かす。
+  試した人と写真の断りはクレジットへ寄せた（demo.scene7）。
 - 扇の開き方を図に描かない（F9）。矢印・動きの線も描かない。学びの効果も言わない。声は入れない（J-022）。
 - frame(t) は時刻だけから 1 コマを描く純関数（場面 1 と同じ）。曲を付ける時は CUES を拍に合わせて直す。
 """
@@ -23,12 +24,11 @@ import argparse
 import pathlib
 import sys
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageOps
 
-from demo.flip import H, PAPER, ROOT, SERIF, SERIF_BOLD, SHU, SUMI, W, contact_sheet, ease, fade, render, text
-from demo.words import step_badge
+from demo.flip import H, PAPER, ROOT, SUMI, W, contact_sheet, ease, fade, render, text
 
-DURATION = 13.0
+DURATION = 8.0
 TRIALS = ROOT / "docs/process/trials/README.md"
 PHOTO_DIR = ROOT / "docs/process/trials/photos/20261104"
 REVIEW = PHOTO_DIR / "review.md"
@@ -40,48 +40,25 @@ PHOTOS = ("p01", "p02", "p03", "p04", "p05", "p06", "p07", "p08", "p09")
 # 言葉を広く取ると、条件つきの判断（「ぼかせば載せてよい」）を素通しにしてしまうため、先頭で見る。
 ACCEPT = ("載せる", "載せてよい", "公開してよい")  # 欄が丸ごとこのどれかの時だけ通す。「可」「OK」は但し書きと混ざりやすいので外した
 
-# 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
+# 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は CUES を拍に合わせて直す。
 CUES = {
-    "title_in": (0.0, 1.0),     # 題と写真の枠が現れる
-    "facts": (1.2, 2.0),        # 試した人と案の札
-    "facts_out": (4.3, 4.8),
-    "notes": (4.9, 5.7),        # 本人の所見（原文のまま）
-    "notes_out": (8.8, 9.2),
-    "closing": (9.4, 10.6),     # 締めの字幕。13 秒まで止めて読ませる
+    "title_in": (0.0, 1.0),     # 写真が現れる
+    "photo1": (1.6, 2.6),       # 次の写真へ溶ける
+    "line0": (2.0, 2.5),        # 字幕の前半
+    "photo2": (3.4, 4.4),       # 動いた紙の写真へ溶ける
+    "line1": (4.2, 4.7),        # 字幕の後半。8 秒まで止めて読ませる
 }
-SHEET_TIMES = (0.6, 2.5, 4.0, 6.0, 7.5, 8.5, 9.6, 11.0, 12.8)
-
-# 画面の数は README の文をそのまま写す。床が 1 つずつ README に在るかを見る。
-FACTS = (
-    ("試した人", "全員が本人の教え子の卒業生（成人）"),
-    ("作り方", "1 人が 2 案ずつ作った"),
-    ("試した案", "御来迎の仮説 A・仮説 C と張子の虎"),
-)
-# 本人の所見は README の表の「本人の所見」から、言葉を変えずに引く（誰の言葉かを毎回添える）。
-NOTES = (
-    "仮説Aは、くり抜く側面の穴を切るのが大変で、下から切り取ることになった",
-    "ジャバラの固定に苦慮していた",
-    "どちらの仮説も、内側の筒の土台があると良い",
-)
-# 台本（plan.md の 4 の 5 の行）の字幕をそのまま 2 行に割る。
+SHEET_TIMES = (0.6, 1.5, 2.2, 3.0, 3.8, 4.4, 5.2, 6.5, 7.8)
+# 切る → 組む → 動いた、の順に 3 枚。多く見せると速いカットになるので減らした。縦の写真でそろえ、溶ける時に形が崩れないようにする。確かめ表で通った物だけ（resolve_photos）。
+SHOWN = ("p05", "p02", "p07")
+# 台本（plan.md の 4）の字幕。1 かたまりずつ出す。
 CAPTION = ("紙で作って、動いた。", "どの仮説の紙かは記録で「わからない」")
-EMPTY_LABEL = ("写真は公開前の確かめの後に入る（U-24）",)
-SOURCE_NOTE = "記録 docs/process/trials/README.md（11-04）　顔と声は入れない"
-
-FRAME_BOX = (80, 200, 860, 820)   # 写真の枠。左に置き、右の列（RIGHT_X から）に札と所見
-RIGHT_X, RIGHT_W = 940, 900
-
+FRAME_BOX = (360, 56, 1560, 856)   # 写真の枠。下に字幕の余白
 
 def phase(t, cue):
     # flip.phase は flip.CUES を読むので、この場面の CUES で同じ事をする（flip.py は変えない）
     a, b = CUES[cue]
     return ease((t - a) / (b - a))
-
-
-def shown(t, cue):
-    """札の組が現れて消えるまでの濃さ。組ごとに入れ替えるので、同じ列に 2 組が重ならない。"""
-    out = cue + "_out"
-    return phase(t, cue) * (1 - phase(t, out)) if out in CUES else phase(t, cue)
 
 
 def review_table(path=REVIEW):
@@ -100,97 +77,58 @@ def allowed_photos(path=REVIEW):
                         if name.endswith(".jpg") and judge in ACCEPT))
 
 
-def wrap(s, size, width, bold=False):
-    """字の幅を測って折り返す。日本語は空白で切れないので、1 字ずつ足して幅を越えたら改行する。"""
-    font = ImageFont.truetype(SERIF_BOLD if bold else SERIF, size)
-    lines, cur = [], ""
-    for ch in s:
-        if cur and font.getlength(cur + ch) > width:
-            lines.append(cur)
-            cur = ""
-        cur += ch
-    return lines + [cur] if cur else lines
-
-
 class Scene5:
     duration = DURATION
 
     def __init__(self, photos=()):
-        # 写真は名の一覧ではなく、開いた画像で持つ。空の一覧なら 1 つも開かない（床で見る）。
+        # 写真は名の一覧ではなく、開いた画像で持つ。空の一覧なら 1 つも開かない（床で見る）
         self.photos = []
-        fw, fh = FRAME_BOX[2] - FRAME_BOX[0] - 24, FRAME_BOX[3] - FRAME_BOX[1] - 24
+        self.sheets = []   # 枠の大きさの紙に写真を置いた物。縦と横の写真の間でも溶かせるようにする
+        fw, fh = FRAME_BOX[2] - FRAME_BOX[0], FRAME_BOX[3] - FRAME_BOX[1]
         for p in photos:
             with Image.open(p) as im:
-                self.photos.append(ImageOps.contain(ImageOps.exif_transpose(im).convert("RGB"), (fw, fh)))
+                ph = ImageOps.contain(ImageOps.exif_transpose(im).convert("RGB"), (fw, fh))
+            self.photos.append(ph)
+            sheet = Image.new("RGB", (fw, fh), PAPER)
+            sheet.paste(ph, ((fw - ph.width) // 2, (fh - ph.height) // 2))
+            self.sheets.append(sheet)
 
-    def photo_at(self, t):
-        """写真は枠の出ている間に同じ長さずつ順に替える。時刻だけで決まる。"""
-        a, b = CUES["title_in"][1], CUES["closing"][0]
-        if not self.photos:
+    def sheet_at(self, t):
+        """時刻 t の写真。替わり目はゆっくり溶かす。写真が無い時は None。"""
+        if not self.sheets:
             return None
-        i = min(len(self.photos) - 1, max(0, int((t - a) / (b - a) * len(self.photos))))
-        return self.photos[i]
+        cues = ("photo1", "photo2")[:len(self.sheets) - 1]
+        out = self.sheets[0]
+        for i, cue in enumerate(cues):
+            v = phase(t, cue)
+            if v > 0:
+                out = Image.blend(out, self.sheets[i + 1], v)
+        return out
 
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
+        sheet = self.sheet_at(t)
+        if sheet is not None:
+            a_in = phase(t, "title_in")
+            if a_in < 1:
+                sheet = Image.blend(Image.new("RGB", sheet.size, PAPER), sheet, a_in)
+            img.paste(sheet, FRAME_BOX[:2])
         draw = ImageDraw.Draw(img)
-        a_in = phase(t, "title_in")
-        text(draw, (80, 70), "11-04 の試行", 54, fade(SUMI, a_in), True)
-        text(draw, (80, 140), "刷った御来迎の型紙を、紙で作った", 34, fade(SUMI, a_in))
-        # 写真の枠: 写真が無い時は、空の枠と「確かめの後に入る」の札だけ。何かを描いて写真の代わりにしない。
-        x0, y0, x1, y1 = FRAME_BOX
-        draw.rectangle(FRAME_BOX, outline=fade(SUMI, 0.5 * a_in), width=2)
-        ph = self.photo_at(t)
-        if ph is not None:
-            img.paste(ph, ((x0 + x1 - ph.width) // 2, (y0 + y1 - ph.height) // 2))
-            text(draw, (x0, y1 + 16), "写真: 11-04 の試行（U-24 の確かめ済み）", 22, fade(SUMI, 0.7 * a_in))
-        else:
-            # 点線の内枠で「ここは空けてある」と分かるようにする（実線だけだと何かの図に見える）
-            for x in range(x0 + 24, x1 - 24, 24):
-                draw.line((x, y0 + 24, x + 12, y0 + 24), fill=fade(SUMI, 0.35 * a_in), width=2)
-                draw.line((x, y1 - 24, x + 12, y1 - 24), fill=fade(SUMI, 0.35 * a_in), width=2)
-            for y in range(y0 + 24, y1 - 24, 24):
-                draw.line((x0 + 24, y, x0 + 24, y + 12), fill=fade(SUMI, 0.35 * a_in), width=2)
-                draw.line((x1 - 24, y, x1 - 24, y + 12), fill=fade(SUMI, 0.35 * a_in), width=2)
-            for i, line in enumerate(wrap(EMPTY_LABEL[0], 34, x1 - x0 - 120)):
-                text(draw, ((x0 + x1) // 2, (y0 + y1) // 2 - 24 + 50 * i), line, 34, fade(SUMI, 0.75 * a_in), anchor="ma")
-        # 右の列は 2 組を順に入れ替える: 試した人と案 → 本人の所見
-        a = shown(t, "facts")
-        if a > 0:
-            y = 230
-            for label, value in FACTS:
-                text(draw, (RIGHT_X, y), label, 30, fade(SHU, a), True)
-                for line in wrap(value, 48, RIGHT_W):
-                    text(draw, (RIGHT_X, y + 44), line, 48, fade(SUMI, a), True)
-                    y += 62
-                y += 90
-        a = shown(t, "notes")
-        if a > 0:
-            text(draw, (RIGHT_X, 230), "本人の所見（原文のまま）", 30, fade(SHU, a), True)
-            y = 300
-            for note in NOTES:
-                for j, line in enumerate(wrap(f"「{note}」", 38, RIGHT_W)):
-                    text(draw, (RIGHT_X + (0 if j == 0 else 20), y), line, 38, fade(SUMI, a))
-                    y += 56
-                y += 40
-        # 締め: 紙を薄く掛け、字幕だけを読ませる。
-        c = phase(t, "closing")
-        if c > 0:
-            veil = Image.new("RGBA", (W, H), PAPER + (round(235 * c),))
-            img.paste(veil, (0, 0), veil)
-            draw = ImageDraw.Draw(img)
-            text(draw, (W // 2, 440), CAPTION[0], 58, fade(SUMI, c), True, "ma")
-            text(draw, (W // 2, 530), CAPTION[1], 58, fade(SUMI, c), True, "ma")
-        text(draw, (80, H - 50), SOURCE_NOTE, 22, fade(SUMI, 0.7))
-        if c < 1:
-            step_badge(draw, 3, a_in * (1 - c))  # 核の一周の 3 段目（demo.core）
+        # 字幕は 1 かたまりずつ。前が消えてから次が現れる。
+        c0, c1 = CUES["line0"][0], CUES["line1"][0]
+        v0 = ease((t - c0) / 0.5) * (1 - ease((t - (c1 - 0.5)) / 0.5))
+        v1 = ease((t - c1) / 0.5)
+        if v0 > 0:
+            text(draw, (W // 2, 900), CAPTION[0], 52, fade(SUMI, v0), False, "ma")
+        if v1 > 0:
+            text(draw, (W // 2, 900), CAPTION[1], 52, fade(SUMI, v1), False, "ma")
         return img
 
 
 def resolve_photos(arg):
     """--photos の名を写真の道に直す。確かめ表で通っていない名や無い写真があれば None（使わずに止める）。"""
-    names = PHOTOS if arg is None else tuple(n.strip() for n in arg.split(",") if n.strip())
+    names = SHOWN if arg is None else tuple(n.strip() for n in arg.split(",") if n.strip())
     ok = set(allowed_photos())
     bad = [n for n in names if n not in ok]
     if bad:
@@ -208,7 +146,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", required=True, help="mp4 の置き場（repo の外）")
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
-    ap.add_argument("--photos", help="使う写真（例 p01,p09）。確かめ表で通った物だけ。省くと PHOTOS")
+    ap.add_argument("--photos", help="使う写真（例 p01,p09）。確かめ表で通った物だけ。省くと SHOWN")
     a = ap.parse_args(argv)
     photos = resolve_photos(a.photos)
     if photos is None:

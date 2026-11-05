@@ -4,18 +4,18 @@
 exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無い（このリポの検査の決まりに合わせる）。
 
 決めた事と理由:
-- 本人の言葉（11-05）「今話してるこの部分が今回のハッカソンの核になる！！」。動画の真ん中に置き、見ている人が 3 段と輪を覚えて帰る形にする。
+- 本人の方針（11-05 20:10）「たくさん見る審査員の認知負荷を減らす方針が1番最初。癒し系で。」。画面の字は 1 度に 1 かたまりだけで、上に 1 行。
+  題・副題・段の印・隅の札は外した。撮った画面である事と作り物の断りはクレジットへ寄せた（demo.scene7）。替わり目はゆっくり溶かす。
 - 今ある物だけを、動いている画面として映す。作りながら見る頁・声で聞く口・写真を上げる手帖・ギャラリーは、
   本物の play_server を一時の置き場で立て、本物の口へ送ってから headless の Chrome で撮る（場面 3 と同じ作り）。
 - まだ無い物（声の取り込み・エンジンごとの改善）は、動いているように見せない。core_map・core_voice・core_loop は図で描き、
-  画面に「図」「これから」「いま作っているところ」と書く。撮れるようになったら、demo.build の --clip でその場面だけを差し替える。
+  点線と「いま作っているところです」で分かるようにする。撮れるようになったら、demo.build の --clip でその場面だけを差し替える。
 - 本人の言葉（11-05 夕）「AIが良くなるのは副次的なもので、みんなが手で実際に作ることその楽しさに気づくことが最初。」で順番が決まった。
-  組み立ては、手で作る所を長く → 持ち寄り → みんなの工夫で AI が次をよくする。地図（core_map）の真ん中は手で作る所で、AI の字を置かない。輪（core_loop）は持ち寄りの次に短く置く。
-- 図は本人のループの定義の形にする。今動いていない所（型紙が生まれる・エンジンごと直る・システムが直る）は点線にして「いま作っているところ」と書く。
+  組み立ては、手で作る所を長く → 持ち寄り → みんなの工夫で AI が次をよくする。地図（core_map）の真ん中は手で作る所で、AI の字を置かない。輪（core_loop）は持ち寄りの次に置く。
+- 図は本人のループの定義の形にする。今動いていない所（型紙が生まれる・エンジンごと直る・システムが直る）は点線にする。
 - つなぎ 2 の文は本人が決めた字のまま出す（本人の決定 11-05）。本人の言葉の札にはしないので、その印を付けない。
-  本物の Claude API はまだ 1 度も動いていない。輪は図のままで、そう書く。聞く口の答えも AI の物に見せない（今の答えは型紙の言葉から出す）。
 - 作りながら見る頁は手順を順に映す（1 → 2 → 3 で止まって聞く）。1 枚の絵に長く留まるより、作り進める所が伝わるため。手帖は上げる欄から上げた記録まで動く。
-- 画面に映す例の記録は、字の頭に「（例）」を付け、隅の札に作り物と書く。人の報告に見せかけないため。写真は確かめ表で通った 11-04 の物だけ。
+- 画面に映す例の記録は、字の頭に「（例）」を付ける。人の報告に見せかけないため。写真は確かめ表で通った 11-04 の物だけ。
 - 例の記録は本物の口（説明 → 次の版）まで通し、一時の置き場に版 2 を作って撮る。作りながら見る頁に出る「版 2」が、本物の口で作った版であるため。
 - 顔と声は入れない（J-022）。鏡（カメラ）は押さないと動かないので、撮る画面には映らない。
 - frame(t) は時刻だけから 1 コマを描く純関数（場面 1 と同じ）。合図は CUES だけを読むので、曲の拍に寄せられる。
@@ -39,7 +39,7 @@ from PIL import Image, ImageDraw
 
 from demo.flip import H, PAPER, ROOT, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 from demo.scene3 import _chrome, _ensure_picture, _free_port, page_color
-from demo.words import step_badge
+from demo.words import chunk_alpha, chunks_of, cues_of, draw_chunk, seconds_of
 
 SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2・3 と同じ
 HID = "H-A"
@@ -47,8 +47,6 @@ PHOTO = ROOT / "docs/process/trials/photos/20261104/p01.jpg"   # 確かめ表で
 DPR = 2
 BOX = (160, 196, 1760, 936)      # 画面を映す枠（場面 3 と同じ）
 ASPECT = (BOX[3] - BOX[1]) / (BOX[2] - BOX[0])
-SHOT_NOTE = "画面: utsushi の使い手の画面（play_server）を手元で動かして撮った"
-EXAMPLE_NOTE = "（例）の記録は動画のための作り物。見本の札も作り物。写真は 11-04 の試行（U-24 の確かめ済み）"
 SOON = "これから作る"
 
 # 本物の口へ送る例の記録。どれも「（例）」で始める。
@@ -67,36 +65,31 @@ PAGES = {
     "gallery": ("/gallery", 1400, {"made": "#ageta"}),
 }
 
-# 本人のループの定義（11-05 17:57）。(札, 上の箱の行, 下の箱の並び)。下の箱は (行, いま作っているところか)。無い物を有るように見せない。
+# 本人のループの定義（11-05 17:57）を輪の形にした。(上の字, 輪の中の字, 輪の形)。形は done = 実線 / now = 点線 / half = 半分が点線。
+# 今動いていない所（型紙が生まれる・エンジンごと直る・システムが直る）を点線にする。無い物を有るように見せない。
 LOOPS = (
-    ("ループ 1", ("① 仮説を見ながら", "考えを話す"), ((("反応して", "型紙が生まれる"), True),)),
-    ("ループ 2", ("② 作りながら", "工夫を話す"), ((("型紙が直る",), False),)),
-    ("ループ 3", ("その上で",), ((("エンジンごと直る",), True),)),
-    ("ループ 4", ("③ できた物を", "上げて残す"), ((("ギャラリーで見られる",), False), (("型紙も直る",), False), (("システムも直る",), True))),
+    ("① 考えを話す", ("型紙が", "生まれる"), "now"),
+    ("② 作りながら話す", ("型紙が", "直る"), "done"),
+    ("その上で", ("エンジンごと", "直る"), "now"),
+    ("③ 上げて残す", ("ギャラリーへ", "型紙も", "システムも直る"), "half"),
 )
-NOW_MAKING = "いま作っているところ"
-COL_W, COL_GAP, COL_X0 = 412, 36, 82   # ループの列の幅・間・左端
-TOP_H, ARROW_H, ONE_H, STACK_H, STACK_GAP = 170, 70, 170, 100, 12   # 上の箱・矢印の所・下の箱 1 つの時・積む時・積む間の高さ
-MAP_Y, LOOP_Y = 228, 248               # 地図と輪の図の札の高さ。輪の図は上につなぎの字がある
-MAP_TITLE = "ここが真ん中: 手で作る"
-MAP_SUB = "4 つのループの図です。実線は今ある所。点線はいま作っているところ"
-# つなぎ 2（本人の決定 11-05）。字は変えない。行の切れ目だけで分ける。
-BRIDGE2 = ("作ったものを持ちよると、AI もそれを見て、", "次の型紙を少しずつよくしていきます。")
-NOW_LINE = "いま作っているところです"
-VOICE_LINE = "話した声とカメラの様子を取り込む所は、これから作ります"
-AI_NOTE = "本物の Claude API は、まだ 1 度も動かしていません"
-GALLERY_PAN = 850                # ギャラリーの列を下へ動く量（CSS の px）。節の高さを越えない所で止める
-MAKE_NOTE = "工夫を声で残す口は、これから作ります。今の聞く口は、型紙の言葉から答えます。AI の答えは、まだ動かしていません"
+RING_R, RING_XS = 150, (300, 740, 1180, 1620)  # 輪の半径と、輪の真ん中の横の位置
+MAP_Y, LOOP_Y = 500, 640                       # 地図と輪の図の、輪の真ん中の高さ
+# 字幕の案（本人の確認待ち。docs/demo/plan.md の 4）。短く、1 かたまりで。
+MAP_TITLE = "真ん中は、手で作る所。"
+MAP_SUB = "点線は、これから作る所。"
+GALLERY_LINE = "作った物を、持ちよる。"
+GALLERY_PAN = 620                # ギャラリーの列を下へ動く量（CSS の px）。節の高さを越えない所で止める。速く見えない量にした
 VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記録へ")
 
-SECONDS = {"core_map": 9.0, "core_make": 14.0, "core_keep": 9.0, "core_voice": 4.0, "core_gallery": 9.0, "core_loop": 9.0}
+SECONDS = {"core_map": 9.0, "core_make": 12.0, "core_keep": 7.0, "core_voice": 4.0, "core_gallery": 5.0, "core_loop": seconds_of("core_loop")}
 CUES_ALL = {
-    "core_map": {"title": (0.0, 0.6), "l1": (0.6, 1.2), "l2": (1.6, 2.2), "l3": (2.6, 3.2), "l4": (3.6, 4.2), "voice": (4.8, 5.4)},
-    "core_make": {"in": (0.0, 0.8), "step2": (3.6, 4.0), "step3": (7.2, 7.6), "move": (10.0, 11.2)},
-    "core_keep": {"in": (0.0, 0.8), "move": (1.4, 2.6), "record": (5.0, 5.2), "move2": (5.2, 6.4)},
+    "core_map": {"title": (0.0, 0.8), "l1": (0.8, 1.6), "l2": (1.8, 2.6), "l3": (2.8, 3.6), "l4": (3.8, 4.6), "sub": (5.2, 6.0)},
+    "core_make": {"in": (0.0, 0.8), "step2": (3.0, 3.8), "step3": (6.0, 6.8), "move": (7.0, 8.2), "ask": (8.2, 8.7)},
+    "core_keep": {"in": (0.0, 0.8), "move": (0.8, 2.0), "record": (3.2, 3.4), "move2": (3.4, 4.6)},
     "core_voice": {"in": (0.0, 0.4), "b1": (0.4, 0.8), "b2": (0.9, 1.3), "b3": (1.4, 1.8)},
-    "core_gallery": {"in": (0.0, 0.8), "pan": (2.0, 6.0)},
-    "core_loop": {"title": (0.0, 0.6), "now": (0.6, 1.2), "loops": (1.2, 2.2)},
+    "core_gallery": {"in": (0.0, 0.8), "pan": (1.0, 4.2)},
+    "core_loop": dict(sorted({**cues_of("core_loop"), "rings": (0.4, 2.4)}.items(), key=lambda kv: kv[1])),
 }
 _SHOTS = {}
 
@@ -231,10 +224,10 @@ def _cam_page(page_w, margin=1.04, aspect=ASPECT):
 
 
 class Screens:
-    """本物の画面を映す場面。segs: 段ごとの (始まりの合図, 絵の名前, カメラの始まり, カメラの終わり, 題, 副題)。"""
+    """本物の画面を映す場面。segs: 段ごとの {at: 始まりの合図, shot: 絵の名前, move: 動く合図, from/to: カメラ, line: 上の 1 行}。"""
 
-    def __init__(self, name, cues, shots, step, note, segs):
-        self.cues, self.step, self.note, self.segs = cues, step, note, segs
+    def __init__(self, name, cues, shots, segs):
+        self.cues, self.segs = cues, segs
         self.shots = shots
         self.duration = SECONDS[name]
 
@@ -260,16 +253,15 @@ class Screens:
             base = _view(self.shots[prev["shot"]][0], prev["to"]) if prev else Image.new("RGB", view.size, PAPER)
             view = Image.blend(base, view, blend)
         img.paste(view, BOX[:2])
-        draw.rectangle((BOX[0] - 1, BOX[1] - 1, BOX[2], BOX[3]), outline=fade(SUMI, 0.35 * (1.0 if prev else blend)), width=2)
-        # 同じ字幕が続く段では字を替えない
-        same = prev and (prev["title"], prev["sub"]) == (s["title"], s["sub"])
-        words_in = a_in if same else blend
-        text(draw, (80, 62), s["title"], 52, fade(SUMI, words_in), True)
-        text(draw, (80, 132), s["sub"], 34, fade(SUMI, words_in))
-        if self.step:
-            step_badge(draw, self.step, a_in)
-        for i, line in enumerate((SHOT_NOTE, s.get("note", self.note))):
-            text(draw, (80, H - 82 + 30 * i), line, 22, fade(SUMI, 0.7))
+        draw.rectangle((BOX[0] - 1, BOX[1] - 1, BOX[2], BOX[3]), outline=fade(SUMI, 0.3 * (1.0 if prev else blend)), width=2)
+        # 上の 1 行。同じ字が続く段では替えない。字が替わる時は、前が消えてから次が現れる。
+        at = self.cues[s["at"]][0] if s["at"] else 0.0
+        v = ease((t - at) / 0.5) if not (prev and prev["line"] == s["line"]) else 1.0
+        nxt = self.segs[seg + 1] if seg + 1 < len(self.segs) else None
+        if nxt and nxt["line"] != s["line"]:
+            v *= 1 - ease((t - (self.cues[nxt["at"]][0] - 0.5)) / 0.5)
+        if s["line"] and v > 0:
+            text(draw, (W // 2, 78), s["line"], 52, fade(SUMI, v), False, "ma")
         return img
 
 
@@ -307,44 +299,47 @@ def _lines_mid(d, cx, cy, lines, size, color, gap):
     """行を縦の真ん中 cy にそろえて描く。"""
     top = cy - (len(lines) * gap) / 2
     for i, line in enumerate(lines):
-        text(d, (cx, top + i * gap), line, size, color, True, "ma")
+        text(d, (cx, top + i * gap), line, size, color, False, "ma")
 
 
-def _loop(d, i, y, a, strong=False, dash=1.0):
-    """ループを 1 本描く。上の箱（人がする事）と下の箱（返ってくる事）を、行きと帰りの矢印でつなぐ。
-    今動いていない所は点線にして「いま作っているところ」と書く。y は札の高さ、a は濃さ。strong は手で作る所の朱の太い枠。"""
-    name, top, results = LOOPS[i]
-    x = COL_X0 + i * (COL_W + COL_GAP)
-    cx = x + COL_W // 2
-    text(d, (x, y), name, 30, fade(SUMI, 0.8 * a), True)
-    y0 = y + 46
-    if strong:
-        _box(d, (x, y0, x + COL_W, y0 + TOP_H), fade(SHU, a), 7)
-    else:
-        _box(d, (x, y0, x + COL_W, y0 + TOP_H), fade(SUMI, 0.7 * a))
-    _lines_mid(d, cx, y0 + TOP_H // 2 - 6, top, 38, fade(SUMI, a), 56)
-    y1 = y0 + TOP_H + ARROW_H
-    now = results[0][1]
-    color = fade(SHU, dash * a) if now else fade(SUMI, 0.7 * a)
-    _arrow(d, (x + COL_W * 0.66, y0 + TOP_H + 6), (x + COL_W * 0.66, y1 - 6), color, dashed=now)
-    _arrow(d, (x + COL_W * 0.34, y1 - 6), (x + COL_W * 0.34, y0 + TOP_H + 6), color, dashed=now)
-    h = ONE_H if len(results) == 1 else STACK_H
-    for lines, now in results:
-        if now:
-            _box(d, (x, y1, x + COL_W, y1 + h), fade(SHU, dash * a), dashed=True)
-            _lines_mid(d, cx, y1 + h // 2 - 22, lines, 36, fade(SUMI, a), 46)
-            text(d, (cx, y1 + h - 38), NOW_MAKING, 24, fade(SHU, a), True, "ma")
+def _ring(d, cx, cy, r, spans, width=4):
+    """輪を 1 本描く。spans は (始めの度, 終わりの度, 色, 点線か) の並びで、時計回り。最後の端に矢じりを付ける。"""
+    box = (cx - r, cy - r, cx + r, cy + r)
+    for a0, a1, color, dashed in spans:
+        if dashed:
+            a = a0
+            while a < a1:
+                d.arc(box, a, min(a + 9, a1), fill=color, width=width)
+                a += 18
         else:
-            _box(d, (x, y1, x + COL_W, y1 + h), fade(SUMI, 0.7 * a))
-            _lines_mid(d, cx, y1 + h // 2 - 6, lines, 36, fade(SUMI, a), 46)
-        y1 += h + STACK_GAP
-    if i:
-        _arrow(d, (x - COL_GAP + 4, y0 + TOP_H // 2), (x - 4, y0 + TOP_H // 2), fade(SUMI, 0.7 * a))
+            d.arc(box, a0, a1, fill=color, width=width)
+    end = math.radians(spans[-1][1])
+    px, py = cx + r * math.cos(end), cy + r * math.sin(end)
+    tx, ty = -math.sin(end), math.cos(end)   # 時計回りの向き
+    nx, ny = -ty, tx
+    d.polygon([(px + tx * 14, py + ty * 14), (px - tx * 8 + nx * 11, py - ty * 8 + ny * 11), (px - tx * 8 - nx * 11, py - ty * 8 - ny * 11)],
+              fill=spans[-1][2])
+
+
+def _rings(d, cy, alphas, strong=None, dash=1.0):
+    """4 つの輪を横に並べて描く。alphas は輪ごとの濃さ。strong は太くする輪（手で作る所）。dash は点線の濃さ。"""
+    for i, (label, inside, kind) in enumerate(LOOPS):
+        a = alphas[i]
+        if a <= 0:
+            continue
+        x = RING_XS[i]
+        done, now = fade(SUMI, 0.65 * a), fade(SHU, dash * a)
+        spans = {"done": ((-70, 250, done, False),), "now": ((-70, 250, now, True),), "half": ((-70, 90, done, False), (90, 250, now, True))}[kind]
+        _ring(d, x, cy, RING_R, spans, 8 if i == strong else 4)
+        text(d, (x, cy - RING_R - 66), label, 34, fade(SUMI, a), False, "ma")
+        _lines_mid(d, x, cy, inside, 32, fade(SUMI, a), 46)
+        if i:
+            _arrow(d, (x - 440 + RING_R + 14, cy), (x - RING_R - 14, cy), fade(SUMI, 0.45 * a))
 
 
 class MapCard:
-    """4 つのループの図（本人の定義 11-05 17:57）。動画の真ん中の地図。動いている画面ではないので「図」と書く。
-    真ん中は手で作る所で（②を朱の枠にする）、AI の字は置かない（本人の言葉 11-05 夕: AI が良くなるのは副次的）。"""
+    """4 つのループの図（本人の定義 11-05 17:57）。動画の真ん中の地図。動いている画面ではない。
+    真ん中は手で作る所で（②の輪を太くする）、AI の字は置かない（本人の言葉 11-05 夕: AI が良くなるのは副次的）。"""
 
     def __init__(self, cues):
         self.cues = cues
@@ -357,17 +352,11 @@ class MapCard:
     def frame(self, t):
         img = Image.new("RGB", (W, H), PAPER)
         d = ImageDraw.Draw(img)
-        a = self._p(t, "title")
-        text(d, (80, 62), MAP_TITLE, 56, fade(SUMI, a), True)
-        text(d, (80, 136), MAP_SUB, 34, fade(SUMI, a))
-        text(d, (W - 80, 76), "図", 30, fade(SUMI, 0.7 * a), False, "ra")
-        for i in range(len(LOOPS)):
-            v = self._p(t, f"l{i + 1}")
-            if v > 0:
-                _loop(d, i, MAP_Y, v, strong=i == 1, dash=0.7)
-        v = self._p(t, "voice")
+        text(d, (W // 2, 96), MAP_TITLE, 60, fade(SUMI, self._p(t, "title")), False, "ma")
+        _rings(d, MAP_Y, [self._p(t, f"l{i + 1}") for i in range(len(LOOPS))], strong=1, dash=0.7)
+        v = self._p(t, "sub")
         if v > 0:
-            text(d, (W // 2, 880), VOICE_LINE, 30, fade(SHU, v), False, "ma")
+            text(d, (W // 2, 860), MAP_SUB, 40, fade(SUMI, v), False, "ma")
         return img
 
 
@@ -385,7 +374,6 @@ class VoiceCard:
         a = p("in")
         text(d, (80, 62), "カメラか音声で、工夫と考えを残す", 52, fade(SUMI, a), True)
         text(d, (80, 132), f"{SOON}所の図です。動いている画面ではありません", 34, fade(SHU, a), True)
-        step_badge(d, 3, a)
         bw, gap, x0, y0, bh = 480, 80, 110, 400, 200
         for i, label in enumerate(VOICE_BOXES):
             v = p(f"b{i + 1}")
@@ -401,27 +389,27 @@ class VoiceCard:
 
 
 class LoopCard:
-    """つなぎ 2 と 4 つのループの図。AI はまだ動いていないので「いま作っているところです」を一緒に出す（本人の決定 11-05）。
-    地図と同じ形にして、最初に見た図の点線の所へ話が戻ったと分かるようにする。撮れたら --clip core_loop=… で差し替える。"""
+    """つなぎ 2 と 4 つのループの図。字は 1 かたまりずつ。AI はまだ動いていないので「いま作っているところです」を一緒に出す（本人の決定 11-05）。
+    その字が出る間は点線の輪を濃くして、どこの話かを絵で分かるようにする。撮れたら --clip core_loop=… で差し替える。"""
 
     def __init__(self, cues):
         self.cues = cues
         self.duration = SECONDS["core_loop"]
+        self.chunks = chunks_of("core_loop")
 
     def frame(self, t):
         img = Image.new("RGB", (W, H), PAPER)
         d = ImageDraw.Draw(img)
-        p = lambda c: ease((t - self.cues[c][0]) / (self.cues[c][1] - self.cues[c][0]))
-        a = p("title")
-        for i, line in enumerate(BRIDGE2):
-            text(d, (80, 52 + i * 62), line, 48, fade(SUMI, a), True)
-        text(d, (80, 180), NOW_LINE, 36, fade(SHU, p("now")), True)
-        text(d, (W - 80, 76), "図", 30, fade(SUMI, 0.7 * a), False, "ra")
-        v = p("loops")
+        n = len(self.chunks)
+        for i, lines in enumerate(self.chunks):
+            v = chunk_alpha(self.cues, n, i, t)
+            if v > 0:
+                draw_chunk(d, lines, W // 2, 200, 56, v)
+        a, b = self.cues["rings"]
+        v = ease((t - a) / (b - a))
         if v > 0:
-            for i in range(len(LOOPS)):
-                _loop(d, i, LOOP_Y, v)
-            text(d, (W // 2, 910), AI_NOTE, 28, fade(SUMI, 0.85 * v), False, "ma")
+            near = ease((t - self.cues[f"c{n - 1}"][0]) / 0.5)
+            _rings(d, LOOP_Y, [v] * len(LOOPS), dash=0.5 + 0.5 * near)
         return img
 
 
@@ -438,27 +426,26 @@ def build_scene(name, cues, cache=None, shots=None):
         return None
     if name == "core_make":
         rects = shots["make"][1]
-        head = _cam_page(shots["make"][2])
-        words = {"title": "作りながら見る頁", "sub": "手順を見ながら作る。止まったら、そのまま声か字で聞ける"}
-        return Screens(name, cues, shots, 2, MAKE_NOTE, [
-            {"at": None, "shot": "make1", "from": head, "to": head, **words},
-            {"at": "step2", "shot": "make2", "from": head, "to": head, **words},
-            {"at": "step3", "shot": "make", "move": "move", "from": head, "to": _cam_on(rects["henji"], 1.5), **words}])
+        head, stuck = _cam_page(shots["make"][2]), _cam_on(rects["henji"], 1.5)
+        line = "手順を見ながら作る。"
+        return Screens(name, cues, shots, [
+            {"at": None, "shot": "make1", "from": head, "to": head, "line": line},
+            {"at": "step2", "shot": "make2", "from": head, "to": head, "line": line},
+            {"at": "step3", "shot": "make", "move": "move", "from": head, "to": stuck, "line": line},
+            {"at": "ask", "shot": "make", "from": stuck, "to": stuck, "line": "止まったら、そのまま声か字で聞ける"}])
     if name == "core_keep":
         rects = shots["keep"][1]
         up = _cam_on(rects["up"], 1.95)  # 「工夫した所」の欄まで映す。字幕がそこを言っているので
         record = (up[0], max(up[1], rects["up"][1] + rects["up"][3] - up[2] * ASPECT / 2 + 10), up[2])  # 節の下の端、上げた記録の所
-        words = {"title": "写真を上げる手帖", "sub": "できた物の写真と、工夫した所を記録に添える"}
-        return Screens(name, cues, shots, 3, "カメラと声で残す口はこれから。今あるのは写真と工夫の欄", [
-            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, **words},
-            {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "note": EXAMPLE_NOTE, **words}])
+        return Screens(name, cues, shots, [
+            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, "line": "できた物の写真と、"},
+            {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "line": "工夫した所を記録に添える"}])
     if name == "core_gallery":
         made = shots["gallery"][1]["made"]
         top = _cam_on([made[0], made[1] + 10, made[2], made[3]], 1.1)  # 節の上の見出しの下線を枠に入れない
         # 持ち寄られた物の列を下へ動く。1 つの記録だけに見せず、何人もの物が集まる場だと分かるように。
         lower = (top[0], top[1] + min(GALLERY_PAN, max(0, made[3] - top[2] * ASPECT)), top[2])
-        return Screens(name, cues, shots, 0, EXAMPLE_NOTE, [
-            {"at": None, "shot": "gallery", "move": "pan", "from": top, "to": lower, "title": "他の人が作った物", "sub": "作った物が持ち寄られ、ギャラリーで見られる"}])
+        return Screens(name, cues, shots, [{"at": None, "shot": "gallery", "move": "pan", "from": top, "to": lower, "line": GALLERY_LINE}])
     raise KeyError(name)
 
 

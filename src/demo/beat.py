@@ -28,18 +28,18 @@ import numpy as np
 from demo.script import SCENES, load_scene
 
 SR = 44100
-BEAT = 60 / 90          # 1 拍の秒。16 分音符が 1/6 秒で、場面 1 の 1 秒 6 枚と重なる
+BEAT = 1.0              # 1 拍の秒。本人の方針（11-05）「癒し系」で、90 拍毎分から 60 拍毎分へ落とした
 MIN_GAP = 0.3           # これより近い合図は 1 つに束ねる（拍が詰まって聞き取れなくなるため）
 # 陰音階（都節）に寄せた 5 音。江戸の絵に合う響きとして選んだ（試し聞きはできていないので、音の良し悪しは人が聞いて決める）。
 SCALE = (146.83, 155.56, 196.00, 220.00, 233.08, 293.66, 311.13, 392.00)
 MOTIF = (0, 2, 3, 2, 4, 3, 2, 1)
 # 場面ごとの濃さ。話の山（場面 4・6）で少し濃くする。
-LEVEL = {"flip": 0.6, "scene2": 0.4, "bridge": 0.4, "word_touch": 0.5, "core_map": 0.7, "scene3": 0.6, "core_make": 0.7, "core_keep": 0.7, "core_voice": 0.5, "scene5": 0.7, "core_gallery": 0.8, "core_loop": 0.8, "scene6": 0.85, "word_ai": 0.6, "scene7": 0.6, "close": 0.35, "ask": 0.3}
-# 1 枚ごとに木の音を鳴らす所: (場面, 合図, 枚数)。枚数は絵の側の数と同じ（18 人。flip の重ねは 1 秒 6 枚 × 6 秒）。
-RUNS = (("flip", "boxes", 18), ("flip", "flip", 36), ("scene7", "figs_in", 18))
+LEVEL = {"opening": 0.3, "talk_toys": 0.35, "talk_lost": 0.3, "talk_physics": 0.35, "talk_claude": 0.4, "flip": 0.5, "scene2": 0.35, "bridge": 0.4, "word_touch": 0.5, "core_map": 0.7, "scene3": 0.6, "core_make": 0.7, "core_keep": 0.7, "core_voice": 0.5, "scene5": 0.7, "core_gallery": 0.8, "core_loop": 0.8, "scene6": 0.85, "word_ai": 0.6, "scene7": 0.6, "close": 0.35, "ask": 0.3}
+# 1 枚ごとに木の音を鳴らす所: (場面, 合図, 枚数)。癒し系の方針で刻みの連打をやめたので、今は置かない。
+RUNS = ()
 STRONG = ("page_in", "title_in", "quote1", "figs_in", "closing", "caption", "page", "title", "in")
 END = ("ask", "in")  # ここで音を止める
-GAIN, TOP = 5.0, 0.6     # 頭を丸める強さ（tanh の傾き）と最後の高さ
+GAIN, TOP = 2.5, 0.45    # 頭を丸める強さ（tanh の傾き）と最後の高さ。AAC にした後も 1.0 を超えない余白を残す
 
 
 def anchors(seconds):
@@ -134,14 +134,14 @@ def compose(seconds, seed=7, commit=None, dirty=None):
         level = LEVEL[scene_at(b)]
         note = SCALE[MOTIF[i % len(MOTIF)] + (SCENES.index(scene_at(b)) % 3)]
         _add(mix, b, plucks[note], 0.32 * level)
-        if i % 4 == 0:
-            _add(mix, b, drum_hit, 0.35 * level)
+        if i % 8 == 0:
+            _add(mix, b, drum_hit, 0.1 * level)
     for p in points:
         if p["t"] > stop:
             continue
         strong = p["cue"] in STRONG or p["cue"] == END[1]
-        _add(mix, p["t"], drum_hit, 0.75 if strong else 0.35)
-        _add(mix, p["t"], plucks[SCALE[5]], 0.4 if strong else 0.2)
+        _add(mix, p["t"], drum_hit, 0.15 if strong else 0.0)
+        _add(mix, p["t"], plucks[SCALE[5]], 0.22 if strong else 0.12)
     ticks = []
     starts = {(p["scene"], p["cue"]): p["t"] for p in points}
     for scene, cue, count in RUNS:
@@ -155,12 +155,11 @@ def compose(seconds, seed=7, commit=None, dirty=None):
             at = t0 + (b - a) * k / count
             ticks.append(round(at, 4))
             _add(mix, at, wood_hit, 0.3)
-    # 太鼓の頭だけが大きく、全体が聞こえにくかった（測ると -27 LUFS）。頭を丸めて全体を持ち上げる。
-    # 強さと高さは ebur128 で 4 通り測って決めた: -18.5 LUFS・本当の頭 -1.0 dBFS（AAC にしても割れない余白を残す）。
+    # 頭を丸めて全体をならす。癒し系の方針（11-05）で太鼓を弱め、全体も下げた。耳で確かめていないので、良し悪しは人が聞いて決める。
     peak = float(np.max(np.abs(mix))) or 1.0
     mix = np.tanh(GAIN * mix / peak)
     mix = mix / float(np.max(np.abs(mix))) * TOP
-    table = {"bpm": 90, "stop": stop, "total": round(total, 3), "anchors": [p for p in points if p["t"] <= stop],
+    table = {"bpm": round(60 / BEAT), "stop": stop, "total": round(total, 3), "anchors": [p for p in points if p["t"] <= stop],
              "beats": [round(b, 4) for b in beats], "ticks": ticks,
              "note": "仮の拍。コードで作った音で、Suno の曲ではない。曲が来たら捨てる", "commit": commit, "dirty": dirty}
     return mix, table

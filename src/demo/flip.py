@@ -1,4 +1,4 @@
-"""場面 1 の試作: 北斎漫画の槍の型の 18 人を切り出し、足もとを揃えて順に重ねる（パラパラ）。
+"""場面 flip: 北斎漫画の槍の型の人物を切り出し、足もとを揃えてゆっくり重ね、字幕「絵は動きを止めて残した。…」を出す。
 
 使い方: python -m demo.flip --out <repo の外の場所>/scene1.mp4 [--sheet 要のコマの一覧.jpg]
 exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -8,7 +8,9 @@ exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（こ�
   「江戸の絵が動く」の芯が消える。改変（切り出して重ねた）は画面の隅に必ず出す。
 - frame(t) は時刻だけから 1 コマを描く純関数にする（前のコマの状態を持たない）。
   試し見の 1 コマと本番の書き出しが同じ絵になり、曲を付ける時は拍の時刻を CUES に入れるだけで済む。
-- 18 の絵は 1 人の人物の連続した動きではなく、槍の型の別々の姿。字幕では「動いた」と言わず「順に重ねた」と言う。
+- 18 の絵は 1 人の人物の連続した動きではなく、槍の型の別々の姿。字幕では「動いた」と言わない。
+- 本人の方針（11-05 20:10）「たくさん見る審査員の認知負荷を減らす方針が1番最初。癒し系で。」で、頁・枠・数・題・隅の札を外し、速い重ねをやめた。
+  出所と改変の説明はクレジットへ寄せた（demo.scene7）。字幕は 1 かたまりずつ、1 秒 5 字以下で出す。
 """
 import argparse
 import json
@@ -46,14 +48,15 @@ SERIF_BOLD = _font("Noto Serif CJK JP:bold")
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
-    "page_in": (0.0, 1.5),     # 頁が現れる
-    "boxes": (2.0, 5.6),       # 18 人に 1 人ずつ枠が付く
-    "page_aside": (5.8, 6.8),  # 頁が左へ退き、薄くなる
-    "flip": (6.8, 12.8),       # 右で 18 人を順に重ねる
-    "closing": (12.8, 14.0),   # 締めの字幕。動画の初めと終わりに出す字なので、出きった後に止めて読ませる
+    "page_in": (0.0, 0.8),     # 人物が紙の地に現れる
+    "line0": (0.3, 0.8),       # 字幕の前半
+    "flip": (0.6, 2.6),        # 人物をゆっくり溶かして重ねる。割り切れる長さにして、止まった時に次の姿を薄く残さない
+    "line1": (2.7, 3.2),       # 字幕の後半。人物は止まったまま
 }
-FLIP_FPS = 6                   # 1 秒に 6 枚。速いと型の姿が読めず、遅いと動いて見えない（試し見で決めた）
-DURATION = 16.0
+FLIP_FPS = 2                   # 1 秒に 2 枚。前の 6 枚は癒し系の方針に対して速いので落とした。溶かして替えるのでカクつかない
+FADE = 0.6                     # 場面の頭と終わりを紙の地へ溶かす秒（faded）
+FIG_X, FIG_BASE, TEXT_X = 420, 860, 1270   # 人物の真ん中・足もと、字幕の真ん中
+DURATION = 6.6
 # 初めと終わりの字幕（本人の決定 11-05）。終わりの札（demo.words）もここから読み、字と置き場を食い違わせない。
 CLOSING = ("絵は動きを止めて残した。", "どう動いたかは、紙で作って確かめる。")
 
@@ -142,18 +145,14 @@ def fade(color, a):
     return tuple(round(PAPER[i] + (color[i] - PAPER[i]) * a) for i in range(3))
 
 
-def draw_closing(draw, a):
-    """締めの字幕を描く。動画の初めと終わりで同じ字・同じ大きさ・同じ置き場にする。"""
-    text(draw, (W // 2, 440), CLOSING[0], 58, fade(SUMI, a), True, "ma")
-    text(draw, (W // 2, 530), CLOSING[1], 58, fade(SUMI, a), True, "ma")
+def draw_closing(draw, line, cx, cy, size, a):
+    """締めの字幕の 1 かたまりを描く。動画の初めと終わりで同じ字にする。"""
+    text(draw, (cx, cy), line, size, fade(SUMI, a), False, "mm")
 
 
 class Scene:
     def __init__(self, page, rec):
         self.rec = rec
-        # 頁は高さ 780px に縮めて置く。上に題の 2 行、下に出所の札を置く余白が要る。
-        self.page_scale = 780 / page.height
-        self.page = ink_layer(page, self.page_scale)
         self.figs = cut_figures(page, rec)
         # 読む順: 和本なので右の頁から、上の段の右から左へ。
         order = sorted(self.figs, key=lambda f: (f[0][0] != "R", f[0][1], -ord(f[0][2])))
@@ -161,60 +160,48 @@ class Scene:
         tall = max(g.height for _, g in self.figs)
         self.fig_layers = {fid: ink_layer(g, 640 / tall) for fid, g in self.figs}
 
+    def _figure(self, img, i, v):
+        """i 番目の人物を、足もとを同じ線に揃えて v の濃さで置く。"""
+        lay = self.fig_layers[self.order[i % len(self.order)]]
+        l2 = lay.copy()
+        l2.putalpha(l2.getchannel("A").point(lambda x: round(x * v)))
+        img.paste(l2, (FIG_X - lay.width // 2, FIG_BASE - lay.height), l2)
+
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
         draw = ImageDraw.Draw(img)
-        # 頁: 真ん中に現れ、裏返しの段で左へ退いて薄くなる。
-        a_in, a_side = phase(t, "page_in"), phase(t, "page_aside")
-        scale = 1 - 0.45 * a_side
-        pg = self.page.resize((round(self.page.width * scale), round(self.page.height * scale)), Image.LANCZOS)
-        px = round((W - pg.width) / 2 * (1 - a_side) + 60 * a_side)
-        py = round((H - pg.height) / 2 + 50 * (1 - a_side))
-        alpha = a_in * (1 - 0.6 * a_side)
-        if alpha > 0:
-            pg.putalpha(pg.getchannel("A").point(lambda v: round(v * alpha)))
-            img.paste(pg, (px, py), pg)
-        # 枠: 18 人に 1 人ずつ。頁が退くと一緒に縮む。
-        a, b = CUES["boxes"]
-        shown = 0 if t < a else min(len(self.order), int((t - a) / (b - a) * len(self.order)) + 1)
-        figs = {f["id"]: f["box_pct"] for f in self.rec["figures"]}
-        for fid in self.order[:shown]:
-            x, y, w, h = figs[fid]
-            kx, ky = pg.width / 100, pg.height / 100
-            draw.rectangle((px + x * kx, py + y * ky, px + (x + w) * kx, py + (y + h) * ky),
-                           outline=fade(SHU, 1 - 0.5 * a_side), width=3)
-        if shown and t < CUES["page_aside"][1]:
-            text(draw, (W - 80, 90), f"{shown} / {len(self.order)} 人", 44, SHU, True, "ra")
-        # 重ねる: 足もとを同じ線に揃え、横は真ん中に。
+        # 重ねる: 型の姿をゆっくり溶かして替える。止まった所からが字幕の後半（絵は動きを止めて残した）。
+        a_in = phase(t, "page_in")
         f0, f1 = CUES["flip"]
-        if f0 <= t < CUES["closing"][0] + 0.6:
-            n = min(len(self.order) - 1, int((t - f0) * FLIP_FPS) % len(self.order))
-            if t >= f1:
-                n = len(self.order) - 1
-            lay = self.fig_layers[self.order[n]]
-            cx, base = 1300, 900
-            # 締めの字幕と重ならないよう、締めに入ったら消す
-            fade_in = ease((t - f0) / 0.4) * (1 - ease((t - CUES["closing"][0]) / 0.6))
-            l2 = lay.copy()
-            l2.putalpha(l2.getchannel("A").point(lambda v: round(v * fade_in)))
-            img.paste(l2, (cx - lay.width // 2, base - lay.height), l2)
-            draw.line((cx - 330, base + 6, cx + 330, base + 6), fill=fade(SUMI, 0.35 * fade_in), width=2)
-            text(draw, (W - 80, 90), f"{n + 1:02d} / {len(self.order)}", 44, fade(SHU, fade_in), True, "ra")
-            text(draw, (cx, 960), "槍の型の 18 の絵を、足もとを揃えて順に重ねた", 34, fade(SUMI, fade_in), anchor="ma")
-        # 字幕と隅の札
-        if t < CUES["page_aside"][0]:
-            text(draw, (80, 70), "北斎漫画 六編", 54, fade(SUMI, a_in), True)
-            text(draw, (80, 140), "江戸の絵手本。動きの途中を、止めて描いた", 34, fade(SUMI, a_in))
-        c = phase(t, "closing")
-        if c > 0:
-            veil = Image.new("RGBA", (W, H), PAPER + (round(235 * c),))
-            img.paste(veil, (0, 0), veil)
-            draw = ImageDraw.Draw(img)
-            draw_closing(draw, c)
-        text(draw, (80, H - 50), f'図 {self.rec["title"]}（{self.rec["publication"]}）国立国会図書館（PDM）'
-             f'　{self.rec["modification_note"]}', 22, fade(SUMI, 0.7))
+        u = max(0.0, min(t, f1) - f0) * FLIP_FPS
+        n, w = int(u), ease(u - int(u))
+        if a_in > 0:
+            self._figure(img, n, a_in * (1 - w))
+            if w > 0:
+                self._figure(img, n + 1, a_in * w)
+        # 字幕: 1 かたまりずつ。替わる時は溶かす（1 度に 1 かたまりだけ）。
+        c0, c1 = CUES["line0"][0], CUES["line1"][0]
+        v0 = ease((t - c0) / 0.5) * (1 - ease((t - (c1 - 0.5)) / 0.5))
+        v1 = ease((t - c1) / 0.5)
+        if v0 > 0:
+            draw_closing(draw, CLOSING[0], TEXT_X, H // 2 - 30, 60, v0)
+        if v1 > 0:
+            draw_closing(draw, CLOSING[1], TEXT_X, H // 2 - 30, 60, v1)
         return img
+
+
+def faded(scene, t):
+    """書き出す 1 コマ。場面の頭と終わりを紙の地へ溶かす。速いカットをやめるため（本人の方針 11-05「癒し系」）。
+    どの場面もここを通るので、場面ごとに溶けを書かない。頭は場面の地（ground）から、終わりは次の場面の紙の地へ。"""
+    img = scene.frame(t)
+    d = getattr(scene, "duration", DURATION)
+    head, tail = ease(t / FADE), ease((d - 1 / FPS - t) / FADE)
+    k = min(head, tail)
+    if k >= 1:
+        return img
+    ground = getattr(scene, "ground", PAPER) if head < tail else PAPER
+    return Image.blend(Image.new("RGB", img.size, ground), img, k)
 
 
 def render(scene, out):
@@ -230,12 +217,12 @@ def render(scene, out):
            "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", str(out)]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for i in range(round(getattr(scene, "duration", DURATION) * FPS)):
-        p.stdin.write(scene.frame(i / FPS).tobytes())
+        p.stdin.write(faded(scene, i / FPS).tobytes())
     p.stdin.close()
     return 0 if p.wait() == 0 else 4
 
 
-def contact_sheet(scene, path, times=(0.8, 2.6, 4.0, 5.6, 6.3, 7.5, 9.0, 11.0, 15.5)):
+def contact_sheet(scene, path, times=(0.3, 0.9, 1.6, 2.3, 2.9, 3.4, 4.2, 5.4, 6.5)):
     """要のコマを並べた一覧。動画を開かずに検品できる（エビデンスの 1 つ）。"""
     tw, th = W // 3, H // 3
     sheet = Image.new("RGB", (tw * 3, th * ((len(times) + 2) // 3)), "white")

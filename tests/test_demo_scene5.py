@@ -14,10 +14,10 @@ from demo import flip, scene5
 
 readme = scene5.TRIALS.read_text(encoding="utf-8")
 
-# 合図の表は時刻の順で、場面の長さの中（台本の 5 の行は 30 秒）
+# 合図の表は時刻の順で、場面の長さの中
 spans = list(scene5.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene5.DURATION
-assert scene5.DURATION == 13.0 and scene5.Scene5.duration == scene5.DURATION
+assert scene5.DURATION == 8.0 and scene5.Scene5.duration == scene5.DURATION
 assert all(0 <= t <= scene5.DURATION for t in scene5.SHEET_TIMES)
 
 # 既定の写真は確かめ表と一致する。表を自前でも読み、scene5 の読み方と食い違わない事も見る
@@ -44,16 +44,14 @@ if "p06" not in scene5.allowed_photos():
     assert scene5.resolve_photos("p06") is None
 assert scene5.resolve_photos("") == []
 
-# 画面の数と言葉は README の文のまま（数の入った言葉を 1 つずつ照らす）
-for value in [v for _, v in scene5.FACTS] + list(scene5.NOTES) + ["わからない"]:
-    assert value in readme, value
-assert "教え子の卒業生" in readme and "1 人が 2 案ずつ" in readme
-assert "動画と写真がどちらの仮説か分からないため" in readme and "本人の答え" in readme
-nums = re.findall(r"R-\d{4}|\d+ 人|\d+ 案|\d\d-\d\d", " ".join(
-    [v for _, v in scene5.FACTS] + list(scene5.CAPTION) + [scene5.SOURCE_NOTE]))
-assert nums and all(n in readme for n in nums), nums
-# 結果は「わからない」と正直に
+# 字幕の言葉は README が言う事だけ。結果は「わからない」と正直に
+assert "わからない" in readme and "動画と写真がどちらの仮説か分からないため" in readme and "本人の答え" in readme
 assert "「わからない」" in scene5.CAPTION[1]
+# 1 度に 1 かたまり、1 秒 5 字以下（本人の方針 11-05）
+assert scene5.CUES["line1"][0] - scene5.CUES["line0"][0] >= len(scene5.CAPTION[0]) / 5
+assert scene5.DURATION - scene5.CUES["line1"][0] >= len(scene5.CAPTION[1]) / 5
+# 既定の写真は確かめ表で通った物だけ。多く見せない
+assert set(scene5.SHOWN) <= set(scene5.PHOTOS) and len(scene5.SHOWN) <= 3
 
 # 写真の許可が空なら、写真のファイルを 1 つも開かない
 opened = []
@@ -68,15 +66,14 @@ def spy(fp, *a, **k):
 Image.open = spy
 try:
     scene = scene5.Scene5(scene5.resolve_photos("") or ())
-    for t in (0.5, 3.0, 6.0, 8.5, 11.0, 12.9):
+    for t in (0.5, 2.2, 3.0, 4.4, 6.0, 7.9):
         a, b = scene.frame(t), scene.frame(t)
         assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 finally:
     Image.open = real_open
 assert not any("photos" in p for p in opened), opened
-# 札の組は入れ替わる（同じ列に 2 組が重ならない）
-f5, f13, f20 = (scene.frame(t).tobytes() for t in (3.0, 7.0, 12.0))
-assert f5 != f13 and f13 != f20 and f5 != f20
+# 字幕は入れ替わる（2 つのかたまりが重ならない）
+assert scene.frame(3.0).tobytes() != scene.frame(6.0).tobytes()
 
 # 写真が渡された時だけ枠の中が変わる（偽の写真で。repo の写真は開かない）
 with tempfile.TemporaryDirectory() as tmp:
@@ -85,6 +82,11 @@ with tempfile.TemporaryDirectory() as tmp:
     with_photo = scene5.Scene5([p])
     region = scene5.FRAME_BOX
     assert with_photo.frame(3.0).crop(region).tobytes() != scene.frame(3.0).crop(region).tobytes()
+    # 縦と横の写真の間でも溶かせる（枠の大きさの紙に置いてから混ぜる）
+    q = pathlib.Path(tmp) / "fake2.jpg"
+    Image.new("RGB", (300, 400), (120, 20, 60)).save(q)
+    two = scene5.Scene5([p, q])
+    assert two.frame(1.0).crop(region).tobytes() != two.frame(5.0).crop(region).tobytes()
     # 切らずに収める: 縦横の比が元のまま
     ph = with_photo.photos[0]
     assert abs(ph.width / ph.height - 400 / 300) < 0.01

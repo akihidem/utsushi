@@ -24,18 +24,12 @@ for pct in (rec["page_pct"], rec["figure_pct"]):
     x, y, w, h = pct
     assert 0 <= x and 0 <= y and w > 0 and h > 0 and x + w <= 100 and y + h <= 100, pct
 
-# 歌は人が確かめ、退けられていない読みだけ
-song = scene2.checked_song(src)
-assert song and song["checked_by"] and not song.get("rejected_by")
-assert scene2.checked_song({"transcription": {"status": "pending", "entries": [song]}}) is None
-kami, shimo = scene2.song_lines(song["text"])
-assert kami + shimo == song["text"].replace(" ", "") and kami and shimo
-
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene2.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene2.DURATION
 assert scene2.Scene2.duration == scene2.DURATION
-assert scene2.CUES["song"][1] <= scene2.SONG_OUT[0] and scene2.SONG_OUT[1] <= scene2.CUES["closing"][0]
+# 図と歌の場面の字幕は、本人の語りに置き換えた（字は demo.words が全文と照らす）。語りを読み切ってから終わる
+assert scene2.DURATION >= len("".join("".join(c) for c in scene2.TALKS["scene2"])) / 5
 
 # 偽の見開き: 図の枠の中に黒い四角（玩具の代わり）、頁の上に細い線（歌の字の代わり）
 spread = Image.new("L", (2400, 1992), 255)
@@ -44,21 +38,21 @@ px, py, px1, py1 = scene2.pct_box(spread.size, rec["page_pct"])
 fx, fy, fx1, fy1 = scene2.pct_box((px1 - px, py1 - py), rec["figure_pct"])
 d.rectangle((px + fx + 80, py + fy + 80, px + fx1 - 80, py + fy1 - 80), fill=0)
 d.line((px + 200, py + 200, px + 200, py + 600), fill=0, width=8)
-scene = scene2.Scene2(spread, rec, src)
-for t in (0.5, 4.0, 7.0, 11.5, 13.9):
+scene = scene2.Scene2(spread, rec)
+for t in (0.5, 4.0, 7.0, 11.5, scene2.DURATION - 0.1):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (W, H) and a.tobytes() == b.tobytes(), t
 
 # 寄っている間は絵が変わる（寄りが効いている）
-assert scene.frame(4.0).tobytes() != scene.frame(6.0).tobytes()
-# 寄り終えた後、締めまでは図の領域が 1 画素も変わらない（部品を動かしていない）
+assert scene.frame(2.0).tobytes() != scene.frame(4.0).tobytes()
+# 寄り終えた後、最後まで図の領域が 1 画素も変わらない（部品を動かしていない）
 region = (0, 0, scene2.FIG_RIGHT, H - 100)
 h0, h1 = scene2.HOLD
 early, late = scene.frame(h0 + 0.2).crop(region), scene.frame(h1 - 0.1).crop(region)
 assert early.tobytes() == late.tobytes(), "止まっている間に図の領域が変わった"
 # 図の上で玩具が描かれ、その領域に朱（矢印や枠に使う色）が無い
 assert early.convert("L").getextrema()[0] < 80, "図が描かれていない"
-for t in (h0 + 0.2, 9.0, h1 - 0.1):
+for t in (h0 + 0.2, (h0 + h1) / 2, h1 - 0.1):
     px_ = scene.frame(t).crop(region).getcolors(W * H)
     assert not any(abs(c[0] - SHU[0]) + abs(c[1] - SHU[1]) + abs(c[2] - SHU[2]) < 40 for _, c in px_), t
 print("ok")
