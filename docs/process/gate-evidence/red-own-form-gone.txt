@@ -1,0 +1,8 @@
+# 命令: bash -c '.venv/bin/python tests/test_own_form_gone.py 2>&1 | tail -4; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 502839d（回した時の HEAD）
+  File "tests/test_own_form_gone.py", line 103, in <module>
+    assert "自分の仮説を立てる" not in page and f"/toy/{sid}/own" not in page, (sid, "書く欄")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '書く欄')
+試験 rc=1
+rc=0
