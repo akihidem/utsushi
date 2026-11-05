@@ -1,0 +1,4 @@
+# Green: 直した後。rc 0
+$ PYTHONPATH=src .venv/bin/python tests/test_demo_scene3.py
+ok
+ok shot height

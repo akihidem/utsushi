@@ -65,7 +65,8 @@ def leaks(answer, h):
 
 
 def answer(source_id, hypothesis_id, question, client=None):
-    """Returns (答えの文, どこから: "glossary"|"ai"|"refuse"|"no_key")。聞かれた時だけ呼ぶ。記録には残さない。"""
+    """Returns (答えの文, どこから: "glossary"|"ai"|"refuse"|"no_key")。聞かれた時だけ呼ぶ。この関数は何も残さない。
+    質問の文を残すのは呼び手（play_server が omochae.making_log に、連絡先の形を落として残す。本人の決定 11-05、J-027）。"""
     question = (question or "").strip()[:MAX_QUESTION]
     if not question:
         return "聞きたい事を書いてください。", "refuse"
@@ -80,7 +81,7 @@ def answer(source_id, hypothesis_id, question, client=None):
 
         if not _key_present():
             return NO_KEY, "no_key"
-        client = default_client()
+        client = default_client("ask")
     messages = [{"role": "user", "content": f"{context}\n\n質問: {question}"}]
     # 呼ぶ前に、この 1 回の最悪の費用まで足して上限を見る（輪の agent.run と同じ見方。外の検品の指摘、11-04）。
     budget.check(0.0, budget.worst_case(config.MODELS["ask"], budget.estimate_tokens(SYSTEM, messages), config.ASK_MAX_TOKENS))

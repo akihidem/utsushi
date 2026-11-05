@@ -154,6 +154,11 @@ def generate(source, client=None, image=None, zoom=True):
         return None, failures
     preds = [json.loads(p.read_text(encoding="utf-8"))["text"] for p in hypotheses.predictions(sid)]
     own = hypotheses.own_hypotheses(sid)
+    if client is None:
+        # 鍵が無ければ、図を取り寄せる前に止める。先に取りに行くと、呼べない時にも網に出て out/sources に書く
+        client = agent.default_client()
+        if not (client.api_key or client.auth_token):
+            raise RuntimeError("API の鍵が無い")
     context = {"source_id": sid, "toy": source["toy"], "default_template": hypotheses.load(sid).get("template", "slider_fan"),
                "transcription": transcription_for_claude(source), "reader_predictions": preds[-1:], "reader_own_hypotheses": own}
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image if image is not None else source_image(source)}},
@@ -163,11 +168,7 @@ def generate(source, client=None, image=None, zoom=True):
 
 
 def _save_draft(sid, preds, own, result, trace):
-    folder = loop.folder()
-    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder.glob("generated-*.json")]
-    gid = f"G-{max(nums, default=0) + 1:04d}"
-    loop._write(folder / f"generated-{gid[2:]}.json", {"id": gid, "source_id": sid, "status": "pending_human", "reader_prediction": preds[-1] if preds else None, "reader_own": [h["id"] for h in own], "result": result, "drafted_at": loop._now(), "trace": trace})
-    return gid
+    return loop.save_numbered("generated", "G", lambda gid: {"id": gid, "source_id": sid, "status": "pending_human", "reader_prediction": preds[-1] if preds else None, "reader_own": [h["id"] for h in own], "result": result, "drafted_at": loop._now(), "trace": trace})
 
 
 def import_draft(source, result, made_by):
@@ -189,6 +190,7 @@ def import_draft(source, result, made_by):
     return _save_draft(sid, preds, hypotheses.own_hypotheses(sid), result, {"model": made_by.strip(), "via": "claude-code-skill"}), []
 
 
+@loop.exclusive
 def adopt_generated(gid, by, numbers):
     """人の採否（H3）。採った仮説だけが一覧に入る。"""
     path = loop.folder() / f"generated-{gid[2:]}.json"

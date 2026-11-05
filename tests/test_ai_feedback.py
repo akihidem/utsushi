@@ -5,6 +5,7 @@ import tempfile
 from types import SimpleNamespace
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tempfile.mkdtemp(), "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import ask, observe  # noqa: E402
 from omochae import loop, records  # noqa: E402
@@ -66,7 +67,8 @@ def post(path, data):
 hypotheses.save_prediction(G, "押すと開く")
 post(f"/toy/{G}/print", {"hypothesis": "H-A"})
 page = urllib.request.urlopen(base + f"/toy/{G}/techo").read().decode()
-assert "Claude に聞く（何が起きたか）" in page and "観察（Claude の補助）" in page
+# 鍵が無い時は、押しても断りが返るだけの釦を出さない（#130）。受け口の断りは古い頁から押された時のために残す
+assert "Claude に聞く（何が起きたか）" not in page and "AI の返事は、この場では使えません" in page and "観察（Claude の補助）" in page
 code, loc = post(f"/record/{rid}/ai-interpret", {"back": "techo"})
 assert code == 303 and "techo" in loc and urllib.parse.quote("鍵が置かれると") in loc
 r2, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない"})

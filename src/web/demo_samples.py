@@ -21,25 +21,25 @@ def esc(s):
     return html.escape(str(s))
 
 
-# 上げた物の見本の絵。写真に見えない線画にして、本物の上げた物と取り違えないようにする。絵は紙の地（薄い色）に茶の線で、皮が黒でも「紙の上の絵」として読める。
+# 上げた物の見本の絵。写真に見えない線画にして、本物の上げた物と取り違えないようにする。地と線は皮の色で描く。固定の色だと、黒のジンで白い箱が頁から浮いた（#139）。
 def _svg(label, inner):
-    return f'<svg viewBox="0 0 160 110" role="img" aria-label="見本の線画（{label}）"><rect width="160" height="110" fill="#f4efe3"/>{inner}</svg>'
+    return f'<svg viewBox="0 0 160 110" role="img" aria-label="見本の線画（{label}）"><rect width="160" height="110" fill="var(--soft)"/>{inner}</svg>'
 
 
-FAN = _svg("扇", '<path d="M80 92 L28 40 A74 74 0 0 1 132 40 Z" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
-                 '<path d="M80 92 L54 30 M80 92 L80 20 M80 92 L106 30" stroke="#7a3b1d" stroke-width="1.5"/>'
-                 '<rect x="66" y="92" width="28" height="12" fill="none" stroke="#7a3b1d" stroke-width="2"/>')
-TORA = _svg("首振り", '<rect x="40" y="52" width="80" height="34" rx="10" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
-                     '<circle cx="42" cy="44" r="18" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
-                     '<path d="M50 86v14M110 86v14M120 60q18 -6 22 -22" fill="none" stroke="#7a3b1d" stroke-width="2"/>')
-KAZAGURUMA = _svg("風車", '<path d="M80 50 L80 18 L100 34 Z M80 50 L112 50 L96 70 Z M80 50 L80 82 L60 66 Z M80 50 L48 50 L64 30 Z" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
-                          '<circle cx="80" cy="50" r="3" fill="#7a3b1d"/><path d="M80 53v47" stroke="#7a3b1d" stroke-width="2"/>')
-DENDEN = _svg("でんでん太鼓", '<circle cx="80" cy="44" r="24" fill="none" stroke="#7a3b1d" stroke-width="2"/><path d="M80 68v36" stroke="#7a3b1d" stroke-width="2"/>'
-                             '<path d="M56 44 Q42 54 38 70 M104 44 Q118 54 122 70" fill="none" stroke="#7a3b1d" stroke-width="1.5"/>'
-                             '<circle cx="38" cy="70" r="4" fill="none" stroke="#7a3b1d" stroke-width="2"/><circle cx="122" cy="70" r="4" fill="none" stroke="#7a3b1d" stroke-width="2"/>')
-OKIAGARI = _svg("起き上がり", '<path d="M80 20 a30 30 0 0 1 0 60 a30 30 0 0 1 0 -60" fill="none" stroke="#7a3b1d" stroke-width="2"/>'
-                              '<path d="M52 72 a28 14 0 0 0 56 0" fill="none" stroke="#7a3b1d" stroke-width="2"/><circle cx="80" cy="36" r="10" fill="none" stroke="#7a3b1d" stroke-width="1.5"/>'
-                              '<path d="M30 92 h100" stroke="#7a3b1d" stroke-width="1.5" stroke-dasharray="3 3"/>')
+FAN = _svg("扇", '<path d="M80 92 L28 40 A74 74 0 0 1 132 40 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>'
+                 '<path d="M80 92 L54 30 M80 92 L80 20 M80 92 L106 30" stroke="var(--accent)" stroke-width="1.5"/>'
+                 '<rect x="66" y="92" width="28" height="12" fill="none" stroke="var(--accent)" stroke-width="2"/>')
+TORA = _svg("首振り", '<rect x="40" y="52" width="80" height="34" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"/>'
+                     '<circle cx="42" cy="44" r="18" fill="none" stroke="var(--accent)" stroke-width="2"/>'
+                     '<path d="M50 86v14M110 86v14M120 60q18 -6 22 -22" fill="none" stroke="var(--accent)" stroke-width="2"/>')
+KAZAGURUMA = _svg("風車", '<path d="M80 50 L80 18 L100 34 Z M80 50 L112 50 L96 70 Z M80 50 L80 82 L60 66 Z M80 50 L48 50 L64 30 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>'
+                          '<circle cx="80" cy="50" r="3" fill="var(--accent)"/><path d="M80 53v47" stroke="var(--accent)" stroke-width="2"/>')
+DENDEN = _svg("でんでん太鼓", '<circle cx="80" cy="44" r="24" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M80 68v36" stroke="var(--accent)" stroke-width="2"/>'
+                             '<path d="M56 44 Q42 54 38 70 M104 44 Q118 54 122 70" fill="none" stroke="var(--accent)" stroke-width="1.5"/>'
+                             '<circle cx="38" cy="70" r="4" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="122" cy="70" r="4" fill="none" stroke="var(--accent)" stroke-width="2"/>')
+OKIAGARI = _svg("起き上がり", '<path d="M80 20 a30 30 0 0 1 0 60 a30 30 0 0 1 0 -60" fill="none" stroke="var(--accent)" stroke-width="2"/>'
+                              '<path d="M52 72 a28 14 0 0 0 56 0" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="80" cy="36" r="10" fill="none" stroke="var(--accent)" stroke-width="1.5"/>'
+                              '<path d="M30 92 h100" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3"/>')
 
 # 上げた物の見本。見た事の言葉は各雛形の RESULTS の中から選ぶ（本物の記録と同じ言葉で並ぶ形を見せるため）:
 # 御来迎 slider_fan（動いた・動かない・わからない）、虎 pivot_counterweight（揺れた・揺れない）、風車 spin_toy（回った・回らない・わからない）、
@@ -96,6 +96,17 @@ def uploads_html():
     return f'<div class="samples"><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
 
 
+def uploads_for(toy):
+    """玩具の頁に出す、その玩具の見本の記録（本人の指摘 11-05「制作した記録とおもちゃのページが関連してない。同じページで見れると良い」）。
+    見本の無い玩具と、見本を切った時は空。札と架空である事の一文は、ギャラリーと同じに付ける。"""
+    mine = [u for u in UPLOADS if u["toy"] == toy] if enabled() else []
+    if not mine:
+        return ""
+    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["sheet"])} の紙　{esc(u["result"])}</p>'
+                    f'<div class="row">{u["pic"]}</div><p>{esc(u["note"])}</p></div>' for u in mine)
+    return f'<div class="samples"><h3>見本の記録</h3><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
+
+
 def voice_html(slot):
     """職人の言葉の 1 枠。見本が無い枠や見本を切った時は、今までどおり（準備中）。"""
     c = next((c for c in CONTRIBUTIONS if c["slot"] == slot), None) if enabled() else None
@@ -114,10 +125,10 @@ def voices_html():
     return f'<div class="samples"><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
 
 
-# 色は皮の変数から取る（skin.py）。白の展示でも黒のジンでも、見本の札と縞が同じ意味で読めるようにするため。
+# 色は皮の変数から取る（skin.py）。白の展示でも黒のジンでも、見本の札と点線の枠が同じ意味で読めるようにするため。
 STYLE = """
-.techo .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;border-radius:9px;margin-right:4px}
-.techo .is-sample{border-top:1px dashed var(--frame);background:repeating-linear-gradient(135deg,var(--paper) 0 10px,var(--soft) 10px 20px);padding:10px;border-radius:10px}
+.techo .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;border-radius:9px;margin-right:4px}
+.techo .is-sample{border:1px dashed var(--frame);padding:10px;border-radius:10px}
 .techo .is-sample svg{height:110px;width:auto;border:1px dashed var(--frame);border-radius:8px}
 .techo .samples{display:grid;gap:10px}
 """

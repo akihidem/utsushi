@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「凍結した場面と基準を照合の表で守る」を見る）
+# commit: b98fffa（このファイルを足した commit）
 直した後の tests/run_floors.py と照合の表を置いた写し
 
 1. 場面を 1 つ消す（neg_overlap.json）

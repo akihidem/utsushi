@@ -1,0 +1,4 @@
+# 命令: 残っていない（帳面の節「API の消費の台帳を 1 本にする」を見る）
+# commit: 327ddbc（このファイルを足した commit）
+rc 0 （直した木で tests/test_budget_one_ledger.py が通る。OMOCHAE_DATA を変えても同じ台帳に足され、置き場を消しても残る）
+直接走らせて台帳に触る試験 9 本（test_agent_sdk・test_ai_feedback・test_api_review_fixes・test_ask・test_budget_after_period・test_call_timeouts・test_generate・test_loop・test_words）は、どれも rc 0 で out/api-usage.jsonl を作らなかった

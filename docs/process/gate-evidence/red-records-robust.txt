@@ -1,0 +1,26 @@
+# 命令: 残っていない（帳面の節「記録の読み書きを壊れにくくする」を見る）
+# commit: 6f23116（このファイルを足した commit）
+落ちた: check_lists_skip_unreadable
+落ちた: check_side_files_skip_unreadable
+落ちた: check_required_file_names_itself
+AssertionError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+落ちた: check_pages_open
+AssertionError: ('/toy/NDL-1187053-R0000005-L', 500, 'GET の失敗: JSONDecodeError: Unterminated string starting at: line 1 column 8 (char 7)\n')
+落ちた: check_writes_are_atomic
+AssertionError: 輪: 確定を通らずに書いた
+落ちた: check_lock_reentrant
+落ちた: check_read_add_write
+AssertionError
+落ちた: check_own_numbers
+AssertionError
+落ちた: check_proposal_numbers
+AssertionError: ['P-0001', 'P-0001', 'P-0001', 'P-0001', 'P-0001', 'P-0001']
+落ちた: check_generated_numbers
+AssertionError: ['G-0001', 'G-0001', 'G-0001', 'G-0001', 'G-0001', 'G-0001']
+落ちた: check_version_numbers
+AssertionError: [({'version': 2}, []), ({'version': 2}, [])]
+落ちた: check_adopt_once
+AssertionError: [({'version': 2}, []), ({'version': 3}, [])]
+落ちた: check_across_processes
+AssertionError
+rc 1 （直す前の main 6da8073 に tests/test_store.py を当てた。14 件中 13 件が落ちた。通った 1 件は持ち寄りの権限の見張りで、直す前後で同じ事を見る）

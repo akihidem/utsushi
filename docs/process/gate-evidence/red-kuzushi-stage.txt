@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「くずし字の試験を、試作の玩具が来ても落ちない形にする」を見る）
+# commit: ae4e1d3（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_kuzushi.py", line 90, in <module>
     assert (f'src="/picture/{sid}"' in body if has_pic else "手元に絵がありません" in body) and 'name="mine"' in body, sid

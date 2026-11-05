@@ -12,6 +12,7 @@ import pathlib
 import sys
 from datetime import datetime, timedelta, timezone
 
+from . import store
 from .model import Failure, ToolMissing
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -41,12 +42,8 @@ def files_of(folder, kind, source_id):
     """
     out = []
     for path in sorted(folder.glob(f"{kind}-{source_id}-*.json")):
-        try:
-            rec = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as e:
-            print(f"読めない記録を飛ばした: {path.name}（{type(e).__name__}）", file=sys.stderr)
-            continue
-        if isinstance(rec, dict) and rec.get("source_id") == source_id:
+        rec = store.read_json_or_skip(path)
+        if rec is not None and rec.get("source_id") == source_id:
             out.append(path)
     return out
 
@@ -63,7 +60,7 @@ def save_prediction(source_id, text):
     folder.mkdir(parents=True, exist_ok=True)
     now = datetime.now(timezone(timedelta(hours=9)))
     path = folder / f"prediction-{source_id}-{now.strftime('%Y%m%d-%H%M%S-%f')}.json"
-    path.write_text(json.dumps({"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store.write_json(path, {"source_id": source_id, "text": text.strip(), "written_at": now.isoformat(timespec="seconds"), "by": "human"})
     return path, []
 
 
@@ -82,12 +79,13 @@ def save_own(source_id, name, how, evidence, params=None):
         failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
     if failures:
         return None, failures
-    n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
-    rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
-           "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
     folder = _pred_dir()
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / f"own-{source_id}-{n}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    with store.locked(folder):
+        n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+        rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
+               "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
+        store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
 
 
@@ -248,7 +246,8 @@ def print_compare(source_id, a, b, out):
     return 3
 
 
-def print_sheet(source_id, hypothesis_id, out, version=1):
+def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
+    """pending は、まだ記録していない版の中身。刷れると分かってから版の記録を書くために渡す（#158）。"""
     from .__main__ import generate
     from .loop import version_params
 
@@ -257,7 +256,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
     if not match:
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
-    params, adopted = version_params(source_id, hypothesis_id, version)
+    params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
     if params is None:
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
         return 3
@@ -326,7 +325,7 @@ def _preview(role, call):
     turns = config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3
     print(f"下見を書きました: {path}")
     print(f"モデル {request['model']}・思考の深さ {request['output_config']['effort']}・道具 {len(request['tools'])} 個・呼ぶ回数の上限 {turns} 回")
-    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.DAILY_CAP.get(budget._today(), 0)}")
+    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.daily_cap()}")
     print("本物は呼んでいません")
     return path, []
 

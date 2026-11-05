@@ -23,7 +23,7 @@ def floors(fs):
 rows, fs = compare_table(load(FAN))
 assert not fs and len(rows) == 10
 by = {(r["a"], r["b"]): r for r in rows}
-assert round(by[("H-A", "H-E")]["limit_a"]) == 284 and round(by[("H-A", "H-E")]["limit_b"]) == 172
+assert round(by[("H-A", "H-E")]["limit_a"]) == 284 and round(by[("H-A", "H-E")]["limit_b"]) == 178
 # 角度で分かれると言えるのは H-E を含む 4 組だけ。残りを見分けられると書かない
 assert {k for k, r in by.items() if r["by_angle"]} == {("H-A", "H-E"), ("H-B", "H-E"), ("H-C", "H-E"), ("H-D", "H-E")}
 # 虎は見分ける設計をしない（本人の判断）
@@ -47,8 +47,9 @@ assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", "-layout", r.stdout.strip(), "-"], capture_output=True, text=True).stdout
 assert "昔の作り方の証明にはなりません" in text
 # 答えを先に言わない。計算の上限も勝ち負けの語も刷らない
-for word in ("284", "172", "正解", "成功", "失敗", "合格", "勝"):
-    assert word not in text, word
+# 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
+for word in ("284", "178", "正解", "成功", "失敗", "合格", "勝"):
+    assert word not in text.replace("正解ではありません", ""), word
 assert "2 つの型紙" in text
 # 型紙が同じ組は 1 個で比べる。2 個作れと刷らない
 r = run(FAN, "print-compare", "H-C", "H-D", "--out", str(out))

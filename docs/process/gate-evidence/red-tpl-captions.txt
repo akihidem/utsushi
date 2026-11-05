@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「手順の紙の図の説明と結果の欄の見出しを雛形ごとに持つ」を見る）
+# commit: 1dd8f5c（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_tpl_captions.py", line 25, in <module>
     assert OLD not in words, (tid, "筒の言葉を刷らない")

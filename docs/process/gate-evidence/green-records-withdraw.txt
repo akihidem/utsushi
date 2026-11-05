@@ -1,0 +1,18 @@
+# 命令: python -m omochae.records withdraw R-0001
+# commit: bb34850（このファイルを足した commit）
+ok
+rc 0（tests/test_records_withdraw.py）
+
+見本の置き場で打った出力:
+$ python -m omochae.records withdraw R-0001
+R-0001 の記録を取り下げました。消した物: media/R-0001/m1.jpg、explanation-R-0001.json、R-0001.json
+rc 0
+$ python -m omochae.records withdraw R-0002
+FAIL F4.evidence [R-0002] proposal-0001.json の根拠に使われているので消さなかった。写真と動画だけなら --media-only
+rc 3
+$ python -m omochae.records withdraw R-0002 --media-only
+R-0002 の写真と動画を取り下げました。消した物: なし
+rc 0
+$ python -m omochae.records withdraw R-9999
+FAIL F8.references [R-9999] その番号の記録は無い
+rc 3

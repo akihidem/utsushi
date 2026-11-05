@@ -4,6 +4,7 @@
 常駐しない。人の操作（記録の確定など）の後に 1 回だけ呼ばれる。
 最終結果は submit_result の道具で受ける。Opus 5.5 は tool_choice の強制が使えないので、指示と自前の検証で守る。
 """
+import time
 from dataclasses import dataclass, field
 
 from . import budget, config
@@ -60,18 +61,22 @@ class Trace:
     model: str = ""
 
 
-def default_client():
-    """鍵は repo の .env から読む。起動の環境に鍵を置かない運用なので、ここでだけ読み、表示も記録もしない。"""
+def default_client(role=None):
+    """鍵は repo の .env から読む。起動の環境に鍵を置かない運用なので、ここでだけ読み、表示も記録もしない。
+
+    role が画面から呼ぶ役（config.SCREEN_TIMEOUT）なら、短い時間切れとやり直しの回数を渡す。それ以外は SDK の既定のまま。
+    """
     import pathlib
 
     import anthropic
 
+    opts = {"timeout": config.SCREEN_TIMEOUT[role], "max_retries": config.SCREEN_RETRIES} if role in config.SCREEN_TIMEOUT else {}
     env = pathlib.Path(__file__).resolve().parents[2] / ".env"
     if env.exists():
         for line in env.read_text(encoding="utf-8").splitlines():
             if line.startswith("ANTHROPIC_API_KEY=") and line.split("=", 1)[1].strip():
-                return anthropic.Anthropic(api_key=line.split("=", 1)[1].strip())
-    return anthropic.Anthropic()
+                return anthropic.Anthropic(api_key=line.split("=", 1)[1].strip(), **opts)
+    return anthropic.Anthropic(**opts)
 
 
 def schema_errors(instance, schema):
@@ -92,7 +97,11 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
     definitions = tools + [{"name": "submit_result", "description": "最終結果を提出する。作業の最後に必ず 1 回呼ぶ。", "input_schema": submit_schema}]
     messages = [{"role": "user", "content": user}]
     run_usd = 0.0
+    started, limit = time.monotonic(), config.RUN_TIME_LIMIT.get(role)
     for _ in range(config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3):
+        # 画面の役は、全部の時間も見る。次の往復を呼ばずに止めて、頁を戻す。
+        if limit is not None and time.monotonic() - started >= limit:
+            raise AgentStopped(f"時間切れ（{limit} 秒）。今回は止める")
         # 呼ぶ前に毎回見る。途中で上限に当たれば、そこで止めて人へ返す。
         # この 1 回の最悪の費用（送る中身の見積もり + 出力の上限）まで足して見る。今までの消費だけだと 1 回分はみ出す。
         budget.check(run_usd, budget.worst_case(trace.model, budget.estimate_tokens(system, definitions, messages), config.MAX_TOKENS))

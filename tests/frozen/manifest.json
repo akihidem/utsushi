@@ -1,5 +1,5 @@
 {
- "criteria.md": "8da105a3d40fcd5e4d75204d754f09a1efe35c1c881a9522624f55a7b93116b0",
+ "criteria.md": "096b77efa3bd89aaa9c6a712de95baa3143511faa2be8dd9d19258a4eecef5a1",
  "scenarios": {
   "neg_base_size.json": {
    "floors": [
@@ -27,7 +27,7 @@
     "F5.fan_clearance"
    ],
    "rc": 3,
-   "sha256": "5383674e5a6cec39628c90f44b43eb0b06b0b72f37b940863d4168b1c3fee675"
+   "sha256": "6010c3225a9df0bf1e7f5525c56479a05dbbf912160c235a41b35e14af927afb"
   },
   "neg_fan_height.json": {
    "floors": [
@@ -35,6 +35,13 @@
    ],
    "rc": 3,
    "sha256": "decfe974834df5b19c239427d3237feda9a83f322d57298c5a944e42327d1a7b"
+  },
+  "neg_fan_height_rim.json": {
+   "floors": [
+    "F5.fan_height"
+   ],
+   "rc": 3,
+   "sha256": "639da5688839dcde9ea6cb95e421ee66033ea46e7dfa19f3c14d67cb04f1fedf"
   },
   "neg_fan_length.json": {
    "floors": [
@@ -170,7 +177,7 @@
   "pos_rim.json": {
    "floors": [],
    "rc": 0,
-   "sha256": "748d439e27723cc0deda44b0f45accafaf41694b442d7174a665ba600e9e5c29"
+   "sha256": "fa2f9d627ac4f72e3b5612da975fc28a0a4d99a4ed18c99a675782b76a79d542"
   },
   "pos_stick.json": {
    "floors": [],
@@ -204,11 +211,14 @@
   "test_ai_feedback",
   "test_api_review_fixes",
   "test_ask",
+  "test_budget_after_period",
+  "test_call_timeouts",
   "test_claude_code",
   "test_contrib",
   "test_demo_assemble",
   "test_demo_build",
   "test_demo_flip",
+  "test_demo_prepare",
   "test_demo_samples",
   "test_demo_scene2",
   "test_demo_scene3",
@@ -238,17 +248,22 @@
   "test_loop",
   "test_loop_adopt_source",
   "test_loop_record_source",
+  "test_media_range",
   "test_pivot_hang_model",
   "test_pivot_model",
   "test_pivot_neck_opening",
   "test_play_server",
   "test_public_gate",
   "test_records",
+  "test_required_tools",
+  "test_run_demo",
   "test_sheet_u25",
   "test_sheet_v8",
   "test_slider_holes",
   "test_slider_tube_stroke",
+  "test_source_id_check",
   "test_source_scope",
+  "test_store",
   "test_techo",
   "test_techo_site",
   "test_template_change",

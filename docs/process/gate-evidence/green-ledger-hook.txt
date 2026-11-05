@@ -1,0 +1,18 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_claude_code.py
+# commit: df5f16c（このファイルを足した commit）
+# Green: 直した後のフックで回した
+$ PYTHONPATH=src .venv/bin/python tests/test_claude_code.py
+ok
+rc 0
+
+# 前と同じ条件で比べた
+## 直した後
+台帳の食い違い・絶対パス: rc 2 stderr あり
+台帳の食い違い・相対パス: rc 2 stderr あり
+台帳の食い違い・tests/frozen を直した: rc 2 stderr あり
+台帳の食い違い・ledger.py を直した: rc 2 stderr あり
+claims.json を壊した: rc 2 検査できない と出る
+フックの入力が壊れた: rc 2 検査できない と出る
+.venv が無い: rc 2 検査できない と出る
+対象の外: rc 0 stderr 無し
+対象の外（repo の中）: rc 0 stderr 無し

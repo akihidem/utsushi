@@ -1,0 +1,6 @@
+# 命令: 残っていない（帳面の節「関門の帳面の末尾の衝突をなくす」を見る）
+# commit: 7ed1c17（このファイルを足した commit）
+直した後: python tests/test_gate_trial_merge.py は ok、rc 0
+git check-attr merge docs/process/gate-trial.md: merge: union
+実行した場面 111 本、期待どおり 111 本、未実装の床 0 本。
+./run.sh rc 0

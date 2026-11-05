@@ -1,0 +1,6 @@
+# 命令: bash -c 'echo "前の green は、文の中の説明の 1 行も数えていた。書き戻しの行だけを数え直す"; echo "書き戻しの行で「push の後に書く」か「まだ」のままの行: $(grep -cE "^- マージ後の書き戻し:.*(push の後に書く|まだ)" docs/process/gate-trial.md)"; PYTHONPATH=src .venv/bin/python -m omochae.gate_evidence check; echo "頭の検査 rc=$?"'
+# commit: fb8d75d（回した時の HEAD）
+前の green は、文の中の説明の 1 行も数えていた。書き戻しの行だけを数え直す
+書き戻しの行で「push の後に書く」か「まだ」のままの行: 0
+頭の検査 rc=0
+rc=0

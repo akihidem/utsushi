@@ -1,0 +1,8 @@
+# 命令: 残っていない（帳面の節「上げた動画に部分取得で答える」を見る）
+# commit: 6901046（このファイルを足した commit）
+Traceback (most recent call last):
+  File "tests/test_media_range.py", line 41, in <module>
+    assert code == 200 and data == body and h["Accept-Ranges"] == "bytes" and h["Content-Type"] == "video/mp4", (code, dict(h))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (200, {'Server': 'BaseHTTP/0.6 Python/3.14.8', 'Date': 'Thu, 05 Nov 2026 01:41:57 GMT', 'Content-Type': 'video/mp4', 'Content-Length': '5000', 'X-Content-Type-Options': 'nosniff'})
+rc 1 （直す前の main 6da8073。Range を見ず、Accept-Ranges も出さない）

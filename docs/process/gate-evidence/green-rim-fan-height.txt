@@ -1,0 +1,10 @@
+# 命令: python -m omochae --scenario neg_fan_height_rim
+# commit: 9d34d51（このファイルを足した commit）
+$ python -m omochae --scenario neg_fan_height_rim   # 直した後
+FAIL F5.fan_height [蛇腹の扇] 畳んだ高さ 48 が押し上げる量 36 を超え、静かな時に扇が口から
+rc=3
+$ python -m omochae --scenario pos_rim
+rc=0
+$ python tests/test_floor_pin.py
+ok 紙 31 枚の指紋が控えと同じ。負の対照で拾った紙: 寸法 4・組の版 21・組み方の文 3
+rc=0

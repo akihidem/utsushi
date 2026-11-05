@@ -1,0 +1,16 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_next_version_atomic.py
+# commit: c27a740（このファイルを足した commit）
+$ PYTHONPATH=src .venv/bin/python tests/test_next_version_atomic.py   # 直す前（main の上）
+Traceback (most recent call last):
+  File "tests/test_next_version_atomic.py", line 65, in <module>
+    assert_nothing_added(before, f"通らない値 {bad}")
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "tests/test_next_version_atomic.py", line 47, in assert_nothing_added
+    assert not added and not changed, f"{why}: 増えた {added} 変わった {changed}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 通らない値 {'to': '29'}: 増えた ['loop/interpretation-R-0001.json'] 変わった []
+rc=1
+
+# 刷るのに失敗させた時（print_sheet を 3 にして送り、次に同じ値で送り直す）
+刷るのに失敗: 422 ['explanation-R-0001.json', 'interpretation-R-0001.json', 'proposal-0001.json', 'version-NDL-1187053-R0000005-L-H-A-2.json']
+同じ値で送り直す: 422 ['前の版と寸法が変わっていない']

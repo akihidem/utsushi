@@ -1,0 +1,25 @@
+# 命令: ./run.sh
+# commit: 402c85a（このファイルを足した commit）
+$ ./run.sh   # main a0432a5 に直しを載せた作業ツリー
+実行した 111 本（場面 31 本、試験 80 本）、期待どおり 111 本、未実装の床 0 本。
+rc=0
+
+$ PYTHONPATH=src .venv/bin/python tests/test_result_table.py
+ok
+rc=0
+
+$ PYTHONPATH=src .venv/bin/python tests/test_generate.py   # 直す前は rc 1
+rc=0
+
+# 表の行を、呼ぶ側の PYTHONPATH を消して repo の根で貼った（期待は表の rc の欄）
+$ PYTHONPATH=src .venv/bin/python -m omochae --scenario tests/frozen/scenarios/pos_tube.json --out out/scenarios/pos_tube
+rc=0（表の rc は 0）
+$ PYTHONPATH=src .venv/bin/python -m omochae --scenario tests/frozen/scenarios/neg_overlap.json --out out/scenarios/neg_overlap
+rc=3（表の rc は 3）
+$ PYTHONPATH=src .venv/bin/python tests/test_demo_build.py
+rc=0（表の rc は 0）
+
+# 紙の sha256 の頭（絶対のパスで渡す前の形 / 表の形）
+pos_stick 487eab3a5a81 / 487eab3a5a81
+pos_rim 38bf84b823f8 / 38bf84b823f8
+pos_tiger_neck ae6690ee5368 / ae6690ee5368

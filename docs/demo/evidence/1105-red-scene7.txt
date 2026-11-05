@@ -1,0 +1,5 @@
+# Red: 床を足し、直す前の src（main d187de4）で回した。rc 1
+$ PYTHONPATH=src .venv/bin/python tests/test_demo_scene7.py
+    lines = scene.sheet_label_lines()
+            ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Scene7' object has no attribute 'sheet_label_lines'

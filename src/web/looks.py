@@ -9,26 +9,18 @@ from omochae import hypotheses
 
 from .play_server import ROOT, esc, page, source, sources
 
+# 残した 2 つの入口。大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
 LOOKS = {
-    "taiban": "A 大判写真集",
     "tenji": "A′ 日本画展の展示",
     "zine": "C 縦読みのジン",
 }
 
 
 def switch(current):
-    """残した 2 案を行き来する切り替え。今いる案は太字にする。A は入口（/）と同じ頁。"""
-    items = [("/", LOOKS["taiban"]), ("/look/tenji", LOOKS["tenji"]), ("/look/zine", LOOKS["zine"])]
-    current = "/" if current == "/look/taiban" else current
-    links = "｜".join(f"<b>{esc(n)}</b>" if u == current else f'<a href="{u}">{esc(n)}</a>' for u, n in items)
-    # 上げた物のギャラリーと職人の言葉（本人の設計、11-04）。入口からいつでも行けるよう、切り替えの並びに置く。
-    links += '｜<a href="/gallery">上げた物と職人の言葉</a>'
-    # 増やした雛形の玩具にも、デモで触れる（本人の決定 Q3 (b)、11-04）。入口の主役は必須の 2 種のままで、ほかの玩具へは図鑑から入る。
-    links += '｜<a href="/zukan">図鑑（ほかの玩具も）</a>'
-    # 順路を 1 つにする作り直し（本人の指示 11-05、docs/process/site-requirements.md の 2）: 序（何をする所か）と、全部の玩具を選ぶ頁を、
-    # 入口の切り替えからも行けるようにする。入口の中の一覧（all_toys）と同じ玩具へ入る。
-    links = '<a href="/about">序</a>｜<a href="/toys">おもちゃ</a>｜' + links
-    return f'<nav class="switch">{links}<span class="cap">A と A′ は本人が見比べて決める（11-04）</span></nav>'
+    """入口の頭の帯。順路の道（序・おもちゃ・上げた物と職人の言葉・図鑑）だけ。
+    皮の切り替えは置かない: 皮ごとに 1 サイト（本人の決定 11-05 朝）。current は呼び手の形を保つために残す。"""
+    links = '<a href="/about">序</a>｜<a href="/toys">おもちゃ</a>｜<a href="/gallery">上げた物と職人の言葉</a>｜<a href="/zukan">図鑑（ほかの玩具も）</a>'
+    return f'<nav class="switch">{links}</nav>'
 
 
 def toys():
@@ -77,72 +69,9 @@ const st=document.createElement('style');st.textContent='section:not(#'+CSS.esca
 # 見開きをまたぐ 1 枚、文字の頁と色見本の列、余白の多い奥付）、細かい字の小さな文字組み。参照の写真と文は使わない。
 # 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。仮説は出さない（予想が先、F9.prediction）。
 # 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
-TAIBAN = """
-body.taiban{background:#f2f2f0;color:#161616}
-/* 選んだ時の色も墨と紙に揃える（research/24 の 5）。既定の青は参照の紙面に無い色のため。 */
-body.taiban ::selection{background:#d6d6d3;color:#161616}
-.taiban .switch{font-family:"Helvetica Neue",Arial,sans-serif}
-.ab-slide{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:3svh 0;box-sizing:border-box}
-.board{position:relative;width:min(1180px,92vw,calc(86vh * 1.56));width:min(1180px,92vw,calc(86svh * 1.56));aspect-ratio:1.56;
- background:#fbfbfa;border:1px solid #dedede;border-radius:3px;padding:.9%;box-sizing:border-box;
- box-shadow:0 1px 0 #fff inset,0 28px 40px -22px rgba(0,0,0,.30),0 6px 12px -6px rgba(0,0,0,.12)}
-.spread{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);height:100%}
-.page{position:relative;overflow:hidden;background:#fff}
-.page.l{box-shadow:inset -22px 0 24px -22px rgba(0,0,0,.22)}.page.r{box-shadow:inset 22px 0 24px -22px rgba(0,0,0,.22)}
-.page .fill{position:absolute;inset:0}
-.rings{position:absolute;left:50%;top:6%;bottom:6%;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
-.rings::before{content:"";position:absolute;left:-3px;top:-2%;bottom:-2%;width:6px;border-radius:3px;background:linear-gradient(90deg,#8e9297,#eef0f2 45%,#9a9ea3)}
-.rings i{display:block;width:clamp(26px,3.6vw,46px);height:clamp(10px,1.4vw,18px);margin-left:calc(clamp(26px,3.6vw,46px) / -2);border-radius:50%;
- border:clamp(2px,.25vw,3px) solid #a8acb1;border-top-color:#f1f2f4;border-bottom-color:#73777c;box-shadow:0 2px 3px rgba(0,0,0,.28)}
-/* 小さな字の大きさの方針（参照の細かい字）は残し、下限だけ 10px へ。8px では画数の多い漢字が潰れるため（research/24 の 4）。
-   格子の列を minmax(0,1fr) にするのは、長い名前や大きな図が列を押し広げないための保険（同 3）。 */
-.t{position:absolute;font-family:"Helvetica Neue",Arial,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:clamp(10px,.78vw,11px);line-height:1.5;letter-spacing:.05em;color:#161616;margin:0}
-.t.up{text-transform:uppercase;letter-spacing:.08em}
-.t.v{writing-mode:vertical-rl;letter-spacing:.2em}
-.t a{color:#161616;text-decoration:none;border-bottom:1px solid #161616}
-.t ol{list-style:none;padding:0;margin:0}.t ol li{display:grid;grid-template-columns:2.2em 1fr;margin:0 0 .35em}
-.t b{font-weight:500}
-.cut{position:absolute;filter:drop-shadow(0 8px 10px rgba(0,0,0,.18))}
-.box{position:absolute;background:#f0f0ee}
-/* 平置き: 1 つ目を上の段いっぱいに、残りを 2 列で。各部分は枠に収まる最大の大きさで、縦横比を崩さない（コンテナの単位で計る）。 */
-.lay{position:absolute;left:5%;top:6%;bottom:6%;width:62%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:40% 1fr 1fr;gap:4%}
-.cell{container-type:size;display:flex;align-items:center;justify-content:center;min-height:0}.cell.big{grid-column:1/-1}
-.pc{width:min(92cqw,calc(92cqh * var(--r)));filter:drop-shadow(0 8px 10px rgba(0,0,0,.18))}
-.sw{position:absolute;display:grid;grid-template-columns:repeat(4,1fr);gap:3%}.sw div{aspect-ratio:3/4;background-color:#f0f0ee}
-.ab-end{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#6d6d6d;text-align:center;padding:2svh 6vw 6svh}
-@media (max-width:760px){
- .board{width:92vw;aspect-ratio:auto}.spread{grid-template-columns:1fr}.page{aspect-ratio:.78}.rings{display:none}
- .page.l,.page.r{box-shadow:none}.page.l{border-bottom:1px solid #e6e6e6}.t{font-size:10px}}
-"""
-
-
-# 図の中の部分の場所（図の幅と高さに対する割合: 左, 上, 右, 下）。作る側が図を見て決めた。名前は図に見える物の名で、
-# 仕組みの名ではない（仮説を出さないため）。参照の平置きの「品物を切り抜いて散らす」を、同じ図の寄りで写すために要る。
-PARTS = {
-    "NDL-1187053-R0000005-L": {"focus": 62, "parts": [("扇", (0.25, 0.47, 0.66, 0.67)), ("扇の中の像", (0.38, 0.57, 0.53, 0.69)),
-                                                       ("筒", (0.37, 0.65, 0.55, 0.87)), ("竿の先の鳥", (0.62, 0.44, 0.92, 0.56)), ("下に置かれた物", (0.17, 0.78, 0.63, 0.90))]},
-    "NDL-1187053-R0000014-R": {"focus": 83, "parts": [("虎の頭", (0.05, 0.69, 0.26, 0.81)), ("虎", (0.05, 0.64, 0.63, 0.88)),
-                                                       ("隣の像の頭", (0.27, 0.52, 0.47, 0.63)), ("隣の像", (0.27, 0.52, 0.72, 0.77))]},
-}
-FALLBACK = {"focus": 55, "parts": [(f"図の細部 {k}", r) for k, r in enumerate(((0.1, 0.2, 0.5, 0.45), (0.5, 0.2, 0.9, 0.45), (0.1, 0.5, 0.5, 0.75), (0.5, 0.5, 0.9, 0.75)), 1)]}
-W_PX, H_PX = 1600, 2656  # NDL の写しの大きさ（2 枚とも同じ）。部分の箱の縦横比に使う
-
-
-def _crop(sid, rect):
-    """図の 1 部分だけを、その部分の縦横比の箱に収める。箱は幅だけ決めれば高さが決まる。"""
-    x0, y0, x1, y1 = rect
-    w, h = x1 - x0, y1 - y0
-    if not (ROOT / "out/sources" / f"{sid}.jpg").exists():
-        return f"aspect-ratio:{w * W_PX:.0f}/{h * H_PX:.0f};background-color:#d9d2c3"
-    px = x0 / (1 - w) * 100 if w < 1 else 0
-    py = y0 / (1 - h) * 100 if h < 1 else 0
-    return (f"aspect-ratio:{w * W_PX:.0f}/{h * H_PX:.0f};background-image:url(/picture/{sid});background-repeat:no-repeat;"
-            f"background-size:{100 / w:.1f}% {100 / h:.1f}%;background-position:{px:.1f}% {py:.1f}%")
-
-
 def all_toys(prefix):
     """全部の玩具の一覧（本人の指示 11-05「88 種のおもちゃから 1 個選ぶ」。要件 L-02: 入口から試作の玩具にも入れる）。
-    必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、そのまま敷く
+    必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、全体が入る形で敷く
     （必須の 2 種は頁の半分の写しなので、額の敷き方 FRAMED で寄せる）。写しが無い玩具は名前だけにし、国立国会図書館への道を添える。
     仮説の名前と動き方は出さない（予想が先、F9.prediction）。名前は作る側の見立てで確かめ待ち（U-01）。動きは付けない。"""
     items = []
@@ -153,99 +82,20 @@ def all_toys(prefix):
         src = source(sid)
         main = hypotheses.stage(sid) == "必須"
         has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
-        frame = sid.split("-R")[1][:7].lstrip("0")
         if has:
-            pic = f'<div class="pic" style="{_bg(sid, framed_pos(sid), FRAMED) if main else _bg(sid, "50% 50%", "cover")}" role="img" aria-label="{esc(data["toy"])}の図"></div>'
+            pic = f'<div class="pic" style="{_bg(sid, framed_pos(sid), FRAMED) if main else _bg(sid, "50% 50%", "contain")}" role="img" aria-label="{esc(data["toy"])}の図"></div>'
         else:
             pic = '<div class="pic nopic">図は手元に無い</div>'
-        tag = "" if main else f'<small>試作 · コマ {esc(frame)}</small>'
         more = "" if has else f'<small><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></small>'
-        items.append(f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}{tag}</span></a>{more}</li>')
+        items.append(f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>')
     n = len(items)
     return (f'<section class="{prefix}-all" id="all-toys" aria-label="全部の玩具"><p class="chapter">おもちゃ</p>'
             f'<h2>{n} の玩具から、1 つ選ぶ</h2>'
             '<p class="cap">どれも図と歌だけが残った玩具。選んで、先に予想を書くと、仮説と型紙が出る。'
-            '<span class="lb">試作</span>の札は全部を型紙にする途中の玩具で、名前は作る側の見立てで、まだ確かめていません。</p>'
+            '先頭の 2 つのほかは全部を型紙にする途中の試作で、名前は作る側の見立てで、まだ確かめていません。</p>'
             f'<ul class="grid">{"".join(items)}</ul></section>')
 
 
-def _page(cls, inner):
-    return f'<div class="page {cls}">{inner}</div>'
-
-
-def _spread(sid_attr, left, right):
-    rings = "<div class=\"rings\">" + "<i></i>" * 6 + "</div>"
-    return f'<section id="{sid_attr}" class="ab-slide"><div class="board"><div class="spread">{left}{right}</div>{rings}</div></section>'
-
-
-def taiban():
-    ts = toys()
-    first = ts[0]["sid"] if ts else ""
-    body = switch("/look/taiban")
-    toc = "".join(f'<li><span>{i}</span><a href="/toy/{t["sid"]}">{esc(t["toy"])}</a></li>' for i, t in enumerate(ts, 1))
-    # 1 枚目: 左に全面の図、右は白地に小さな文と、灰色の箱に置いた細部 1 つ（参照の 1 枚目の見開きの型）。入口なので一覧を置く。
-    body += _spread(
-        "look-0",
-        _page("l", f'<div class="fill" style="{_bg(first, "56% 62%", "132% auto")}"></div>'),
-        _page("r", '<p class="t up" style="left:9%;top:7%">うつし · Edo toy lookbook vol.01</p>'
-                   '<p class="t up" style="right:9%;top:7%">江都二色 1773</p>'
-                   '<p class="t" style="left:9%;top:14%;width:36%">江戸の絵本『江都二色』に、図と歌だけが残る玩具。</p>'
-                   '<p class="t" style="left:52%;top:14%;width:38%">動きを予想して、紙と糸で作って確かめます。まず紙が返事をします。</p>'
-                   f'<div class="t" style="left:9%;top:30%;width:40%"><ol>{toc}</ol></div>'
-                   f'<div class="box" style="left:9%;right:9%;top:46%;bottom:13%"><div class="cut" style="left:31%;top:12%;width:38%;{_crop(first, (PARTS.get(first) or FALLBACK)["parts"][0][1])}"></div></div>'
-                   '<p class="t up" style="left:9%;bottom:6%">失われた玩具の動きを、紙で実験して確かめる道具</p><p class="t up" style="right:9%;bottom:6%">utsushi</p>'))
-    for i, t in enumerate(ts, 1):
-        s, name = t["sid"], esc(t["toy"])
-        song = "".join(f"<span>{esc(x)}</span>" for x in t["song"])
-        # 平置きの見開き: 左は小さな写真と縦の一行と 2 段の文、右は寄りを切り抜きのように散らし、番号の一覧を添える。
-        info = PARTS.get(s, FALLBACK)
-        # 部分ごとに縦横比が違うので、高さを決めて並べ、幅は比に任せる。1 つ目を大きく置くのは参照の平置きの主役の置き方。
-        cuts = "".join(f'<div class="cell{" big" if k == 0 else ""}"><div class="pc" style="--r:{(r[2] - r[0]) * W_PX / ((r[3] - r[1]) * H_PX):.3f};{_crop(s, r)}"></div></div>'
-                       for k, (_, r) in enumerate(info["parts"]))
-        lst = "".join(f"<li><span>{k}</span>{esc(n)}</li>" for k, (n, _) in enumerate(info["parts"], 1))
-        body += _spread(
-            f"look-{i}",
-            _page("l", f'<p class="t up" style="left:18%;top:7%">look {i:02d}<br>{name}</p>'
-                       f'<div class="cut" style="left:30%;top:24%;width:36%;height:38%;{_bg(s, "56% 50%", "132% auto")}"></div>'
-                       '<p class="t v" style="left:9%;top:42%">どこが動くと思いますか</p>'
-                       f'<p class="t" style="left:18%;bottom:12%;width:30%">{song}</p>'
-                       f'<p class="t" style="left:54%;bottom:12%;width:30%">原文の引用。確かめた人: 本人。{esc(t["holding"])}{_nopic(t)}</p>'),
-            _page("r", f'<div class="fill" style="background:#eef0f2"></div><div class="lay">{cuts}</div>'
-                       f'<div class="t" style="right:5%;top:40%;width:26%"><ol>{lst}</ol></div>'
-                       f'<p class="t" style="right:5%;top:66%;width:26%">図に見える物の名。仕組みの名ではありません。</p>'
-                       f'<p class="t" style="right:5%;top:76%;width:26%"><a href="/toy/{s}">予想を書いてひらく →</a></p>'))
-        # 見開きをまたぐ 1 枚: 1 枚の図を左右の頁に半分ずつ敷き、左上に小さな文。
-        body += _spread(
-            f"wide-{i}",
-            _page("l", f'<div class="fill" style="{_bg(s, f"17% {(PARTS.get(s) or FALLBACK)['focus']}%", "230% auto")}"></div><p class="t up" style="left:7%;top:7%;width:46%;background:rgba(255,255,255,.78);padding:6px 8px">{name}<br>{esc(t["holding"])}</p>'),
-            _page("r", f'<div class="fill" style="{_bg(s, f"91% {(PARTS.get(s) or FALLBACK)['focus']}%", "230% auto")}"></div><p class="t up" style="right:7%;top:7%">utsushi</p>'))
-        # 文字の頁と全面の図: 左は文と、下に寄りを色見本のように 4 つ並べる。右は図を頁いっぱいに。
-        sw = "".join(f'<div style="{_bg(s, f"{(r[0] + r[2]) * 50:.0f}% {(r[1] + r[3]) * 50:.0f}%", "420%")}"></div>' for _, r in PARTS.get(s, FALLBACK)["parts"][:4])
-        body += _spread(
-            f"item-{i}",
-            _page("l", f'<p class="t up" style="left:9%;top:7%">{name}<br>a few small choices</p>'
-                       '<p class="t" style="left:52%;top:7%;width:38%">図を見て、先に予想を書いてから作ります。紙で作って、動くかを確かめます。動かなかった記録も、そのまま紙の返事です。</p>'
-                       f'<p class="t" style="left:52%;top:30%"><a href="/toy/{s}">予想を書いてひらく →</a></p>'
-                       f'<div class="sw" style="left:9%;right:9%;bottom:8%">{sw}</div>'),
-            _page("r", f'<div class="fill" style="{_bg(s, "56% 50%", "132% auto")}"></div>'))
-    # 奥付: 左は白地に寄り 1 つと縦の一行、右は右下に寄せた少ない文（参照の最後の見開きの型）。
-    body += _spread(
-        "colophon",
-        _page("l", f'<p class="t up" style="left:9%;top:7%">keep playing</p><p class="t up" style="right:9%;top:7%">うつし</p>'
-                   f'<div class="cut" style="left:50%;top:24%;height:46%;transform:translateX(-50%);{_crop(first, (PARTS.get(first) or FALLBACK)["parts"][0][1])}"></div>'
-                   '<p class="t v" style="left:6%;bottom:12%">おもちゃで遊び続ける</p><p class="t up" style="left:9%;bottom:6%">utsushi</p>'),
-        _page("r", '<p class="t" style="right:9%;bottom:16%;width:62%;text-align:right">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。この冊子のための新しい絵は作っていない。</p>'
-                   '<p class="t up" style="right:9%;bottom:6%">vol.01</p>'))
-    body += '<p class="ab-end">組み方は本人が挙げたルックブックの再現（J-024）。写真と文は参照の物を使っていない。</p>'
-    return page("うつし · 大判写真集", body + ONLY, TAIBAN, "taiban")
-
-
-# ---------------------------------------------------------------- C 縦読みのジン（黒地）
-# 本人の答え（2026-11-04）: C は黒地のジンのまま性格を保つ（U-23）。さらに「本の形式もわるくないけど、黒の背景に高級感ある方が
-# もっと良くなる」。広告代理店の見学者の感想「もっと美術品みたく、歴史的価値のあるように見せたサイトの方が良い」も受けた。
-# 磨きの向き: 図を額装した美術品として見せる。深い黒の地に、図だけに光を当て、細い金の線の額とマット、明朝の細い字、
-# 美術館の作品の札（題・作・画・年・所蔵）を添える。札の中身は出典の記録（NDL の書誌）だけから刷り、足さない。
-# 動きは入れない（research/19 の判断のまま。何度も開く入口なので）。
 ZINE = """
 body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
  font-feature-settings:"palt" 1}
@@ -283,15 +133,15 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all{padding:12vh 7vw;border-top:1px solid #1f1b16}
 .zn-all .chapter{font-size:12px;letter-spacing:.5em;color:#c9a96a;margin:0 0 12px}
 .zn-all h2{font-size:clamp(24px,2.6vw,36px);font-weight:300;letter-spacing:.25em;margin:0 0 18px}
-.zn-all .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
+.zn-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
 .zn-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 18px}
-.zn-all li.big{grid-column:span 2}
+.zn-all li.big{grid-column:span 2;grid-row:span 2}
 .zn-all a{border:0;color:#e9e1cf}
 .zn-all .pic{aspect-ratio:3/4;background:#141210 center/cover no-repeat;border:1px solid #6e5a35;outline:6px solid #141210;outline-offset:-7px;box-shadow:0 20px 40px rgba(0,0,0,.6)}
 .zn-all .big .pic{aspect-ratio:1600/2656}
-.zn-all .nopic{display:grid;place-items:center;font-size:11px;color:#9a8e76;letter-spacing:.15em}
-.zn-all .nm{display:block;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
-.zn-all .nm small,.zn-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#9a8e76}
+.zn-all .nopic{display:grid;place-items:center;font-size:12px;color:#9a8e76;letter-spacing:.15em}
+.zn-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
+.zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
@@ -299,6 +149,7 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
  .zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:72vh;height:72svh}
  .zn-all .grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
  .zn-toy .songs{writing-mode:horizontal-tb;height:auto}}
+@media (max-width:680px){.zn-all li.big{grid-column:auto;grid-row:auto}}
 """
 
 
@@ -351,7 +202,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-hall{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 5vw;box-sizing:border-box}
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
-.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:11px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
+.tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:12px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -370,24 +221,24 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-songs p{margin:0 .3em}
 .tj-detail{padding:12vh 5vw;border-top:1px solid #ebe8e2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3vw;align-items:start}
 .tj-detail figure{margin:0}.tj-detail figure div{aspect-ratio:3/4;background-color:#fffefc;border:1px solid #d8cdb6;box-shadow:0 20px 30px -24px rgba(70,55,35,.4)}
-.tj-detail figcaption{font-size:11px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
+.tj-detail figcaption{font-size:12px;letter-spacing:.2em;color:#7a7164;margin-top:10px}
 .tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #ebe8e2}
 .tj-exit p{font-size:clamp(20px,2.2vw,28px);letter-spacing:.3em;font-weight:400}
-.tj-note{font-size:11px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
+.tj-note{font-size:12px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
 /* 全部の玩具の一覧（本人の指示 11-05）。白い壁に小さな額を並べる展示の一室。動きは無い（扇の間とせり上がりの外）。 */
 .tj-all{padding:10vh 5vw;border-top:1px solid #ebe8e2}
 .tj-all .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 12px}
 .tj-all h2{font-size:clamp(22px,2.4vw,34px);font-weight:400;letter-spacing:.22em;margin:0 0 14px}
 .tj-all .cap{font-size:13px;line-height:2;letter-spacing:.06em;color:#4a4339;max-width:46em}
-.tj-all .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
+.tj-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
 .tj-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:24px 16px}
-.tj-all li.big{grid-column:span 2}
+.tj-all li.big{grid-column:span 2;grid-row:span 2}
 .tj-all a{border:0;color:#2b2722}
 .tj-all .pic{aspect-ratio:3/4;background:#fffefc center/cover no-repeat;border:1px solid #d8cdb6;box-shadow:0 14px 22px -18px rgba(70,55,35,.4)}
 .tj-all .big .pic{aspect-ratio:1600/2656}
-.tj-all .nopic{display:grid;place-items:center;font-size:11px;color:#7a7164;letter-spacing:.15em}
-.tj-all .nm{display:block;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
-.tj-all .nm small,.tj-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#7a7164}
+.tj-all .nopic{display:grid;place-items:center;font-size:12px;color:#7a7164;letter-spacing:.15em}
+.tj-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
+.tj-all .nm small,.tj-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#7a7164}
 .tj-all li > small a{color:#6b4f2a;border-bottom:1px solid rgba(107,79,42,.35)}
 
 /* 扇の札（本人の頼み 2026-11-04「この動き、デモサイトでやってみる？」の (1)）。図と寄りの札を、下の 1 点（要）を軸に
@@ -403,7 +254,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
  box-shadow:0 18px 26px -20px rgba(70,55,35,.45);transition:transform 1.1s cubic-bezier(.22,.61,.36,1),box-shadow 1.1s ease}
 .fan-card.is-c{--s:1.14;box-shadow:0 34px 44px -26px rgba(70,55,35,.55),0 2px 6px rgba(70,55,35,.1)}
 .fan-pic{display:block;width:100%;height:100%}
-.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:11px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:12px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
 .fan-kaname{position:absolute;left:50%;bottom:20px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#b9a982;box-shadow:0 0 0 3px #fcfcfa,0 0 0 4px #d8cdb6}
 .fan-ctl{display:flex;gap:2em;justify-content:center;align-items:center;margin-top:2vh;font-size:13px;letter-spacing:.2em;color:#5d554a}
 .fan-ctl button{font:inherit;color:#6b4f2a;background:none;border:0;border-bottom:1px solid rgba(107,79,42,.35);padding:4px 2px;cursor:pointer}
@@ -417,7 +268,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
 .tj-ogi label{display:inline-flex;gap:1em;align-items:center;font-size:13px;letter-spacing:.2em;color:#5d554a;margin-top:2vh}
 .tj-ogi input{accent-color:#8a6d3b;width:min(240px,50vw)}
-.tj-ogi .cap{font-size:11px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
+.tj-ogi .cap{font-size:12px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
 
 /* スクロールでせり上がる（本人の頼みの (2)）。CSS のスクロール連動だけで、見える状態から始める（opacity を 0 にしない）。
    なぜ: 速く読む人から中身を隠さないため（research/19 の「全部の節に演出を付けない」を、隠さない形で守る）。
@@ -443,6 +294,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
  .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}
  .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}
  .tj-all .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
+@media (max-width:680px){.tj-all li.big{grid-column:auto;grid-row:auto}}
 """
 KANJI = "一二三四五六七八九十"
 DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
@@ -539,4 +391,4 @@ def tenji():
     return page("うつし · 日本画展の展示", body + ONLY + FAN_JS, TENJI, "tenji")
 
 
-PAGES = {"taiban": taiban, "tenji": tenji, "zine": zine}
+PAGES = {"tenji": tenji, "zine": zine}

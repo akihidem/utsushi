@@ -1,0 +1,6 @@
+# 命令: repo の外の測る script（playwright で札の釦と足の大きさを読む。repo には playwright を入れない決まり）と、.venv/bin/python tests/test_plate_acts.py
+# commit: 61af021（載せ直す前の枝の頭）
+直した後: 同じ測り方（白・黒とも同じ値。幅 1440・1024・700・390・320）
+釦 192×51px（1 行）、札の枠の中。足の padding 0・左寄せ・罫なし。札のリンクの字 14px。横のはみ出しなし
+頁の足は前と同じ（1440 で padding 48px 72px 40px・11px・中央寄せ）
+tests/test_plate_acts.py: ok

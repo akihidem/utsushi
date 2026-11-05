@@ -1,0 +1,8 @@
+# 命令: 残っていない（帳面の節「文書の数と一覧を tree に合わせ、台帳の検査で照らす」を見る）
+# commit: 5d30dd0（このファイルを足した commit）
+直す前（台帳の検査に数とモジュールの照らしが無い）: tests/test_ledger.py に足した試験を当てた
+玩具の記録を 1 件足しても、文の数は古いまま検査が通る
+  File "tests/test_ledger.py", line 56, in <module>
+    assert floors() == {"L.counts"}
+AssertionError
+rc 1
