@@ -19,7 +19,7 @@
 | ID | 主張 | 確かさ | 根拠 |
 |---|---|---|---|
 | C-01 | 検査に落ちる型紙は刷らない | 自動試験 | [criteria.md](../../tests/frozen/criteria.md)、[run_floors.py](../../tests/run_floors.py) |
-| C-02 | 予想を書く前に仮説を見せない | 自動試験 | [test_hypotheses.py](../../tests/test_hypotheses.py) |
+| C-02 | 開いたらすぐ仮説が並ぶ（予想の段は本人の決定 11-05、#242 で外した） | 自動試験 | [test_hypotheses.py](../../tests/test_hypotheses.py) |
 | C-03 | 人の説明の前に Claude の解釈を呼ばない | 偽の応答の試験 | [test_loop.py](../../tests/test_loop.py) |
 | C-04 | 順位と集計は学ぶ人の画面に出さない | 自動試験 | [test_loop.py](../../tests/test_loop.py) |
 | C-05 | 人が確定していない解釈は根拠にできない | 偽の応答の試験 | [loop.py](../../src/omochae/loop.py) |
@@ -52,3 +52,4 @@
 | C-32 | 御来迎の 5 つの仮説のうち、開く角度で分かれるのは H-E を含む組だけ | 計算 | [test_discriminate.py](../../tests/test_discriminate.py)、[J019-experiment-sheet.md](decisions/J019-experiment-sheet.md) |
 | C-33 | 日本の中 2 で「理科を使うことが含まれる職業につきたい」は 27%、国際平均は 58%（TIMSS 2023） | 文献 | [18-field-evidence.md](research/18-field-evidence.md) |
 | C-34 | 「大きな装置にしか真理がない」と生徒が思っている事を測った調査は見つからなかった。本人の印象のまま | 未確認 | [18-field-evidence.md](research/18-field-evidence.md) |
+| C-35 | 型紙は正解でなく AI が考えた仮説である前提を、輪を回す担当の全部に渡す（本人の言葉 11-05） | 自動試験 | [test_loop_premise.py](../../tests/test_loop_premise.py) |

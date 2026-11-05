@@ -64,7 +64,6 @@ def post(path, data):
         return e.code, e.headers.get("Location", "")
 
 
-hypotheses.save_prediction(G, "押すと開く")
 post(f"/toy/{G}/print", {"hypothesis": "H-A"})
 page = urllib.request.urlopen(base + f"/toy/{G}/techo").read().decode()
 # 鍵が無い時は、押しても断りが返るだけの釦を出さない（#130）。受け口の断りは古い頁から押された時のために残す

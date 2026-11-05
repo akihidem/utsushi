@@ -5,7 +5,7 @@
 連絡先の形がある質問は文を残さない。集計は作る側の頁（/loop/<印>）にだけ出て、学ぶ人の頁には出ない。成績の言葉は出さない（J-025）。
 
 Issue #119（U-45）の段取り 1〜3 で足した線: 人はその場限りの無作為の印（who。英数字 8〜12 桁。形の外は落とす）で数える。出来事に雛形の id と
-刷った組を残す（エンジンの報告とつなぐ）。聞いた段（step）と、頁の段の進み（予想・刷る・作る・記録）を残す。作る側の頁に 6 つの集計
+刷った組を残す（エンジンの報告とつなぐ）。聞いた段（step）と、頁の段の進み（刷る・作る・記録）を残す。作る側の頁に 6 つの集計
 （止まった段・動きの結果・感想の言葉・聞く口の質問・完成の様子・サイトの流れ）が数と幅で出て、上下を付ける形（順位・点・％）が無い。
 """
 import json
@@ -21,6 +21,7 @@ import urllib.request
 DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 
+from omochae.marks import without_premise  # noqa: E402
 from omochae import hypotheses, loop, making_log, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -59,7 +60,6 @@ def post(path, data):
 
 
 making = pathlib.Path(DATA) / "making"
-assert post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"})[0] == 303
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 # 刷っていない紙への質問は断られ、残らない。空の質問も残らない
 assert post(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって何？"})[0] == 422
@@ -118,9 +118,8 @@ assert sm["results_by_version"] == {"H-A": {1: {"動かない": 1, "動いた": 
 assert making_log.asks("NDL-1187053-R0000014-R") == [] and making_log.summary("NDL-1187053-R0000014-R")["asks"] == []
 assert sm["asks_by_step"] == {"H-A": {None: sm["asks"]}}, "段を送っていない質問は、その紙の段なしにまとまる"
 
-# ---- 段取り 2: 頁の段の進み。予想・刷る・記録（2 件）が残る。落ちた送信（空の予想）は残らない。何を書いたかは写さない
-assert post(f"/toy/{G}/predict", {"text": "   "})[0] == 422
-assert sorted(e["stage"] for e in making_log.stages(G)) == ["predict", "print", "record", "record"]
+# ---- 段取り 2: 頁の段の進み。刷る・記録（2 件）が残る。予想の段は外した（#242）。何を書いたかは写さない
+assert sorted(e["stage"] for e in making_log.stages(G)) == ["print", "record", "record"]
 for f in making.glob("stage-*.json"):
     r = json.loads(f.read_text(encoding="utf-8"))
     assert set(r) == set(making_log.STAGE_FIELDS), r  # IP・機器の名前・cookie・書いた中身は無い
@@ -130,7 +129,7 @@ for f in making.glob("stage-*.json"):
     for leak in ("TestBrowser", "someone", "127.0.0.1", "筒を持つと", "折るのは楽しかった"):
         assert leak not in raw, (leak, r)
 assert making_log.add_stage(G, "win") is None, "決まりの外の段は残さない"
-assert sm["flow"] == {"predict": {"events": 1, "people": 0}, "print": {"events": 1, "people": 0}, "make": {"events": 0, "people": 0},
+assert sm["flow"] == {"print": {"events": 1, "people": 0}, "make": {"events": 0, "people": 0},
                       "record": {"events": 2, "people": 0}}
 
 # ---- 段取り 1: その場限りの印（who）は形だけ確かめて残す。聞いた段（step）は 1 以上の数だけ
@@ -186,7 +185,7 @@ assert {making_log._same(q) for q, _ in by[None]} >= {"谷折りって何", "糊
 # 5 完成の様子: 時間の幅、動いた記録の数、途中でやめた段（印のある人だけ。A は 2 で止まったまま）
 assert sm["completion"] == {"minutes": [20, 40, 2], "moved": 3, "moved_word": "動いた", "quit_steps": {"H-A": {2: 1}}, "people": 2}, sm["completion"]
 # 6 サイトの流れ: 作る頁を開いた 2 人が足される（直に足した記録は、画面を通っていないので段の進みに数えない）
-assert sm["flow"] == {"predict": {"events": 1, "people": 0}, "print": {"events": 1, "people": 0}, "make": {"events": 2, "people": 2},
+assert sm["flow"] == {"print": {"events": 1, "people": 0}, "make": {"events": 2, "people": 2},
                       "record": {"events": 2, "people": 0}}, sm["flow"]
 assert sm == making_log.summary(G), "並びが毎回同じ"
 
@@ -204,14 +203,14 @@ assert f"<td>{sm['asks'][0][0]}</td><td>2 回</td>" in page
 assert "連絡先の形があったので文を残さなかった質問: 1 件" in page and "090" not in page
 assert "最初に動くまでの分: 20〜40 分（2 件）" in page and "「動いた」の記録: 4 件のうち 3 件" in page and "できたの札: 1 回" in page
 assert "<td>仮説 A の紙</td><td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
-assert "<td>予想を書いた</td><td>1 回</td><td>—</td>" in page and "<td>作りながら見る頁を開いた</td><td>2 回</td><td>2 人</td>" in page
+assert "<td>作りながら見る頁を開いた</td><td>2 回</td><td>2 人</td>" in page
 assert "<td>記録を残した</td><td>2 回</td><td>—</td>" in page
 for h in hypotheses.load(G)["hypotheses"]:
     assert h["name"] not in page and h["how_it_moves"] not in page, h["id"]
 # 上下を付ける形の言葉と記号が無い。その場限りの印そのものは頁に出さない
 main = page.split("<main>")[1].split("</main>")[0]  # 頁の字だけを見る（後ろの印の script の % は字ではない）
 for w in ("成功", "失敗", "正解", "点数", "順位", "％", "%", A, B):
-    assert w not in main, w
+    assert w not in without_premise(main), w
 assert "順位" not in page
 assert get("/loop/NDL-0000000-R0000000-L")[0] == 404
 # 一覧から行ける

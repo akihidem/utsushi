@@ -62,7 +62,6 @@ assert closed("GET", "/")[0] == 403
 # 開いたサーバは、合言葉なしで入口から玩具の頁まで開く
 assert opened("GET", "/")[0] == 200 and opened("GET", "/toys")[0] == 200 and opened("GET", f"/toy/{G}")[0] == 200
 form = {"Content-Type": "application/x-www-form-urlencoded", "Origin": f"https://{HOST}"}
-assert opened("POST", f"/toy/{G}/predict", "text=%E6%89%87%E3%81%8C%E9%96%8B%E3%81%8F", form)[0] == 303
 assert opened("POST", f"/toy/{G}/print", "hypothesis=H-A", form)[0] == 303
 assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
 rid = records.all_records(G)[-1]["id"]
@@ -75,8 +74,14 @@ assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" not i
 # 置き場に写真が在っても出さない
 assert techo_site.save_media(rid, "image/jpeg", jpeg)[0]
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 404
+# 頁とギャラリーにも画像の道を出さない（壊れた絵にしない。#242 のギャラリー）
+assert f"/record/{rid}/media/" not in opened("GET", f"/toy/{G}")[1] and f"/record/{rid}/media/" not in opened("GET", "/gallery")[1]
+assert f"/record/{rid}/media/" not in opened("GET", f"/toy/{G}/techo")[1], "手帖の自分の記録も、壊れた絵を出さない"
+# 人の書いた文は別の人に見せない（文の中の名前は機械で落とせない。J-028）
+assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=SECRETWORDS", form)[0] == 303
+assert "SECRETWORDS" not in opened("GET", f"/toy/{G}")[1] and "SECRETWORDS" not in opened("GET", "/gallery")[1]
 # 別の出所からは書けない（開いていても）
-assert opened("POST", f"/toy/{G}/predict", "text=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
+assert opened("POST", f"/toy/{G}/own", "name=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
 # 作る側の頁は出さない（聞いた言葉と感想の文が読める頁で、名前は機械では落とせない）。開いていない時は出る
 assert opened("GET", "/loop")[0] == 404 and opened("GET", f"/loop/{G}")[0] == 404
 # 次の版を採る口と AI の口は閉じる（誰でも型紙の版を変えられる形にしない・費用をかけさせない）

@@ -61,21 +61,16 @@ def note_at(page, anchor, role):
     return page[pos:page.index("</p>", pos)]
 
 
-# 予想の前に手帖を開く: 理由の文と予想の欄が見える。
-page = landed(call(f"/toy/{G}/techo"), "yosou")
-assert "先に予想を書くと、手帖が開きます" in note_at(page, "yosou", "status") and 'name="text"' in page
+# 予想の段は #266 で外した（本人の決定 11-05）。手帖は予想なしでそのまま開く。
+assert call(f"/toy/{G}/techo")[0] == 200
 
-# 予想: 通らないと予想の欄に、書いた中身つきで戻る。通ると次の段の頭に文が出る。
+# 自分の仮説: 通らないと作る節に、書いた中身つきで戻る（字は esc）。欄は畳まれているので、開いて戻す。
 code, _, page = call(f"/toy/{G}/own", {"name": "筒の<仮説>", "how": "", "evidence": "右の図"})
-assert code == 422 and note_at(page, "yosou", "alert")
+assert code == 422 and note_at(page, "kasetsu", "alert")
 assert 'value="筒の&lt;仮説&gt;"' in page and 'value="右の図"' in page, "書いた中身を欄に戻す（字は esc）"
 assert "筒の<仮説>" not in page
-page = landed(call(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"}), "kasetsu")
-assert "予想を残しました" in note_at(page, "kasetsu", "status")
-
-# 自分の仮説: 予想の後は欄が畳まれているので、通らない時は開いて戻す。
 code, _, page = call(f"/toy/{G}/own", {"name": "筒の案", "how": "", "evidence": "右の図"})
-assert code == 422 and note_at(page, "yosou", "alert")
+assert code == 422 and note_at(page, "kasetsu", "alert")
 assert '<details open><summary>自分の仮説を立てる' in page and 'value="筒の案"' in page
 page = landed(call(f"/toy/{G}/own", {"name": "筒の案", "how": "押す", "evidence": "右の図"}), "own-OWN-1")
 assert "仮説を残しました" in note_at(page, "own-OWN-1", "status")
@@ -139,7 +134,7 @@ assert "Claude が答えます" in note_at(page, "mine", "status")
 
 # 通らなかった時に錨へ着くよう、欄の送り先に錨がある。
 page = call(f"/toy/{G}")[2]
-for want in (f"/toy/{G}/predict#yosou", f"/toy/{G}/own#yosou", f"/toy/{G}/print#kasetsu", f"/toy/{G}/print-own#own-OWN-1", f"/toy/{G}/ask#ask",
+for want in (f"/toy/{G}/own#kasetsu", f"/toy/{G}/print#kasetsu", f"/toy/{G}/print-own#own-OWN-1", f"/toy/{G}/ask#ask",
              f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}"):
     assert f'action="{want}"' in page, want
 # AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。
@@ -153,6 +148,6 @@ assert f'action="/record/{rid2}/explain#{rid2}"' in call(f"/toy/{G}")[2]
 # 外から渡した印は、字の位置にしか使わない。
 assert "<script>mark" not in call(f"/toy/{G}?msg=%3Cscript%3Emark&at=%22%3E%3Cscript%3Emark")[2]
 page = call(f"/toy/{G}?msg=x&at=no-such")[2]
-assert note_at(page, "yosou", "status"), "知らない印の時も文を落とさない"
+assert note_at(page, "kasetsu", "status"), "知らない印の時も文を落とさない"
 server.shutdown()
 print("ok")

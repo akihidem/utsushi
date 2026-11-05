@@ -63,7 +63,7 @@ def spend(usd, day=None):
 
 def hyp(name, params, template="slider_fan", evidence=None):
     return {"name": name, "how_it_moves": "動かす", "physics": "折り目の力", "evidence": evidence or [{"kind": "image", "where": "寝かせた筒", "what": "棒", "certainty": "観察"}],
-            "against": ["未確認"], "to_measure": "角度", "template_id": template, "params": params, "vs_prediction": {"same": ["手で動かす"], "different": ["棒"]}}
+            "against": ["未確認"], "to_measure": "角度", "template_id": template, "params": params, "vs_own": {"same": ["手で動かす"], "different": ["棒"]}}
 
 
 SCHEMA = {"type": "object", "properties": {"answer": {"type": "string"}}, "required": ["answer"]}
@@ -146,8 +146,7 @@ def test_2():
 def test_3():
     """案の形を SCHEMA で見る。要る欄が欠けた案を、API の道でも Claude Code の道でも受けない。"""
     fresh()
-    assert hypotheses.save_prediction(G, "筒を押すと上が開く")[1] == []
-    thin = {k: v for k, v in hyp("欄が欠けた", A).items() if k not in ("physics", "against", "to_measure", "vs_prediction")}
+    thin = {k: v for k, v in hyp("欄が欠けた", A).items() if k not in ("physics", "against", "to_measure")}
     draft = {"hypotheses": [thin, hyp("b", C)], "references": []}
     assert gen.check_result(draft, gs), "欠けた欄を落とす"
     gid, fs = gen.import_draft(gs, draft, "セッション")

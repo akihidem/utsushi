@@ -117,7 +117,6 @@ def over(*a, **k):
     raise AssertionError("予算で止まるはず")
 
 
-hypotheses.save_prediction(G, "押すと開く")
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")

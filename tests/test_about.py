@@ -5,6 +5,7 @@ import tempfile
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
+from omochae.marks import without_premise  # noqa: E402
 from web import about  # noqa: E402
 
 pages = {k: about.page(k) for k in ("tenji", "zine")}
@@ -13,7 +14,7 @@ for k, h in pages.items():
         assert w in h, (k, w)
     # 仕組みの答えと仮説の名前を書かない。成績の言葉を使わない
     for w in ("成功", "失敗", "正解", "仮説 A", "H-A", "つまみ", "内筒"):
-        assert w not in h, (k, w)
+        assert w not in without_premise(h), (k, w)
     assert "IntersectionObserver" not in h and "<blockquote>" in h, k
 # 末尾の 2 つは同じ釦の形にする。字のリンクを並べると、並びの高さに伸びて縦長の押す所になり、下線が字から離れる（#141）
 for k, h in pages.items():
