@@ -406,5 +406,17 @@
   "path": "decisions/J026-site-side-loop.md",
   "hook": "改善の輪はサイト側でも回す。報告（動きと感想）を型紙の改善に回し、次に作る人に直した版を渡す",
   "status": "本人の方針（11-05 朝）。作った"
+ },
+ {
+  "id": "research/29",
+  "path": "research/29-making-data-to-service.md",
+  "hook": "工作の様子の蓄積を、サービス全体の何にどう回すか。蓄積する物・改善の行き先・段取り・決める点",
+  "status": "本人の問いへの答え（11-05 朝）。段 0 は作業中"
+ },
+ {
+  "id": "research/30",
+  "path": "research/30-kazasu-camera-choice.md",
+  "hook": "かざして選ぶ（内カメラに原図を重ね、予想を選ぶ）の設計・守る線・重さの見積もり",
+  "status": "本人の案（11-05 朝）。試作は作業中、決める点 3 つ"
  }
 ]
