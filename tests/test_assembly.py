@@ -93,17 +93,19 @@ for key in ("fan", "figure"):
             assert assembly.apply(closed[f"{key}:{i}"], point)[1] >= -P["tube_height"] / 2 - 1e-6, key
 
 # 今の紙: 言葉のとおりに折ると合わない所が 2 つある（11-04 の実物の写真 p07・p09 は逆の向きで作っている）
+# もう 1 つ: 蛇腹を動画のとおりに立てると、足の糊代が台の印の向きと合わない（足は 11-04 の後に足した物で、実物では未確認）
 found = lines(bench)
-assert len(found) == 2, found
+assert len(found) == 3, found
 assert any("手順 3" in x and "絵のある面（4 面）が筒の内側に入る" in x for x in found), found
 assert any("手順 7" in x and "印のある面が下を向く" in x for x in found), found
+assert any("手順 10" in x and "足の糊代が台の印から外れる" in x for x in found), found
 
 # 紙の線が山折りなら、この 2 つは出ない（検査が言葉でなく紙の線を見ている）
 parts = slider_fan.parts(P)
 for q in parts:
     if q.key in ("tube", "base"):
         q.mountain, q.valley = q.valley, q.mountain
-assert lines(assembly._slider_fan(P, parts)) == []
+assert [x for x in lines(assembly._slider_fan(P, parts)) if "手順 3" in x or "手順 7" in x] == []
 
 
 def tube_part(widths, kinds="valley"):

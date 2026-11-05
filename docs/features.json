@@ -424,13 +424,15 @@
  },
  {
   "id": "f46",
-  "name": "手順どおりの 3D 組み立て",
+  "name": "手順どおりの 3D 組み立て（型紙の頁の絵）",
   "status": "doing",
   "evidence": [
    "src/omochae/assembly.py",
-   "tests/test_assembly.py"
+   "src/web/kumitate.py",
+   "tests/test_assembly.py",
+   "tests/test_kumitate.py"
   ],
-  "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で手順 3 と手順 7 の向きをまだ確かめていない。組み立ての書き方は御来迎の H-A の形だけ"
+  "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で手順 3・手順 7 の向きと手順 10 の足の糊代をまだ確かめていない。iPhone の実機で見ていない。組み立ての書き方は御来迎の H-A の形だけ"
  },
  {
   "id": "f41",
