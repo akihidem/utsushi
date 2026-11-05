@@ -95,6 +95,17 @@ def latest_printed(sid, data):
     return max(cands)[1] if cands else None
 
 
+ZOOM_SIZES = (100, 180, 300)
+# 開け閉めは CSS（:target）で足りる。Esc と絵の外で閉じる所だけ小さな JS を使う（L-11）。ここから開いた時は履歴を戻し、見ていた位置に帰す。
+ZOOM_SCRIPT = """<script>(()=>{const z=document.getElementById('zoom'),a=document.querySelector('figure.sheet a');if(!z||!a)return;let mine=false;
+a.addEventListener('click',()=>{mine=true});
+const shut=()=>{if(location.hash!=='#zoom')return;if(mine){mine=false;history.back()}else{location.hash='win'}a.focus({preventScroll:true})};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')shut()});
+z.addEventListener('click',e=>{if(e.target===z||e.target.classList.contains('pic'))shut()});
+z.querySelector('.close').addEventListener('click',e=>{e.preventDefault();shut()});
+window.addEventListener('hashchange',()=>{if(location.hash==='#zoom')z.querySelector('.close').focus({preventScroll:true})});})();</script>"""
+
+
 def window(sid, data, see, kind, v, recorded):
     """型紙の窓（要件の S-01〜S-05）。仮説と紙の種類と版を字の札で選び、絵（PNG）を出す。押すと拡大の窓（#zoom）。"""
     ids = printed_ids(sid, data)
@@ -132,8 +143,13 @@ def window(sid, data, see, kind, v, recorded):
                    for n in loop.adopted_versions(sid, see) if n not in vs)
     png = f"/sheet/{sid}/{name}.png"
     pdf = f"/sheet/{sid}/{name}.pdf"
+    # 窓の絵は軽い PNG、拡大は目盛りと字がにじまない SVG（S-01）。SVG の無い古い紙は PNG に戻る。
+    big = f"/sheet/{sid}/{name}.svg" if (out_dir(sid) / f"{name}.svg").exists() else png
+    sizes = "".join(f'<input type="radio" name="zoom-size" id="zs{n}"{" checked" if n == 180 else ""}>' for n in ZOOM_SIZES)
+    labels = "".join(f'<label for="zs{n}">{n}%</label>' for n in ZOOM_SIZES)
     fig = (f'<figure class="sheet"><a href="#zoom" aria-label="拡大して見る"><img src="{png}" alt="{esc(data["toy"])} 仮説 {esc(hypotheses.letter(h))} の{esc(dict(KINDS)[kind])}"></a></figure>'
-           f'<div class="zoom" id="zoom"><a class="close" href="#win">閉じる</a><img src="{png}" alt=""></div>')
+           f'<div class="zoom" id="zoom">{sizes}<div class="bar" role="group" aria-label="大きさ">{labels}</div><a class="close" href="#win">閉じる</a><div class="pic"><img src="{big}" alt="" loading="lazy"></div></div>'
+           + ZOOM_SCRIPT)
     side = (f'<div class="side"><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}'
             # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
