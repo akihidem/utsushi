@@ -71,6 +71,7 @@ code, body = opened("POST", f"/record/{rid}/media", jpeg, {"Content-Type": "imag
 assert code == 403 and "上げられません" in body, (code, body)
 techo = opened("GET", f"/toy/{G}/techo")[1]
 assert 'id="files" disabled' in techo and "公開のデモでは、写真と動画は上げられません" in techo
+assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" not in techo, "閉じた口でも台本の探す欄は残し、上げられる数は言わない（#144）"
 # 置き場に写真が在っても出さない
 assert techo_site.save_media(rid, "image/jpeg", jpeg)[0]
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 404
