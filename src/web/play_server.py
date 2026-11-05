@@ -349,6 +349,13 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:
                 v = 0
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
+        m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
+        if m:
+            # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
+            from omochae import hokusai as hk
+            if m.group(1) in hk.names() and hk.has(m.group(1)):
+                return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
+            return self._send(404, "無い")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
