@@ -33,4 +33,17 @@ assert f'href="/toy/{G}"' in listed and f'href="/toy/{T}"' not in listed and "�
 assert "紙 1 枚で作れる玩具だけを見る" in toys.page("tenji")
 # 絞った一覧の断りは、並んでいる必須の玩具の数に合わせる（虎が消えると「先頭の 2 つ」は嘘になる）
 assert "先頭の 1 つのほかは" in listed and "先頭の 2 つのほかは" in toys.page("tenji")
+# 寸法（params）の無い仮説は印を出さずに頁が開く（#255 の頃の判定が持っていた守りを、ways に寄せた後も保つ）
+import copy  # noqa: E402
+from omochae import hypotheses  # noqa: E402
+_load = hypotheses.load
+def _no_params(sid):
+    d = copy.deepcopy(_load(sid))
+    d["hypotheses"][0].pop("params", None)
+    return d
+hypotheses.load = _no_params
+try:
+    assert "仮説" in toy.toy_page(G)
+finally:
+    hypotheses.load = _load
 print("ok")
