@@ -135,6 +135,15 @@ def material(rid):
     return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
 
 
+def next_target(source_id, hid):
+    """次の版を足す仮説。自分の紙（OWN-n）の記録から作る次の版は、たたき台へ向ける（根拠は OWN-n の記録のまま）。
+    なぜ: 型紙は玩具ごとに 1 枚（J-032）で、最新版が次の人の型紙になる。OWN-n に版を足しても紙は刷られず、次の人にも届かない。ループ1 を通った人の工夫がループ2（型紙の改善）に届くように。
+    画面の欄・端末の propose・Claude の道は、ここ 1 か所を読む。"""
+    from .hypotheses import sheet_of
+
+    return sheet_of(source_id)["id"] if str(hid).startswith("OWN-") else hid
+
+
 def material_text(rid):
     """鍵の無い道で、人（作る側）が解釈と変更を書く前に読む材料の文。人の説明と、話した字を、別の仕切りで出す。"""
     m = material(rid)
@@ -155,6 +164,9 @@ def material_text(rid):
         lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
     elif not talk["items"]:
         lines.append("  （この記録に結んだ字は無い）")
+    target = next_target(rec["source_id"], rec["hypothesis_id"])
+    if target != rec["hypothesis_id"]:
+        lines += ["", f"次の版は {target} に足します（根拠はこの記録）"]
     lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
     return "\n".join(lines)
 
@@ -289,7 +301,9 @@ def check_proposal(p, source, will_confirm=()):
             out.append(Failure("F8.references", ref, "その前例は実在しない"))
     hid = p.get("hypothesis_id")
     changes = p.get("changes") or []
-    if changes:
+    if changes and str(hid).startswith("OWN-"):  # どの道からでも、自分の紙に版を足さない（next_target）
+        out.append(Failure("F8.references", str(hid), "次の版はたたき台へ足す。自分の紙には版を足さない"))
+    elif changes:
         h = _hypothesis(sid, hid)
         if h is None:
             out.append(Failure("F8.references", str(hid), "その仮説は実在しない"))
@@ -431,7 +445,7 @@ def next_version(rid, by, content, change, source, sheet_dir):
     if failures:
         return None, failures
     rec = record(rid)
-    sid, hid = rec["source_id"], rec["hypothesis_id"]
+    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"])
     proposal = {"record_ids": [rid], "hypothesis_id": hid, "changes": [change]}
     failures = check_proposal(proposal, source, will_confirm=[rid])
     if failures:
@@ -575,7 +589,7 @@ def main(argv=None):
                 for c in args.change:
                     k, v = c.split("=", 1)
                     changes.append({"param": k, "to": float(v), "why": args.why})
-                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or record(args.record)["hypothesis_id"], "changes": changes}, source, "human")
+                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"]), "changes": changes}, source, "human")
             else:
                 from api.loop_agents import draft_proposal
 
