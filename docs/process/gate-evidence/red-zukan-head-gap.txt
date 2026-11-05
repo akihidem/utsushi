@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_toy_head.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toy_head.py", line 37, in <module>
+    assert re.search(r"\.zukan \.song\{[^}]*float:right", wide), "図鑑も机の幅では歌を右に浮かせる"
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 図鑑も机の幅では歌を右に浮かせる
+rc=1

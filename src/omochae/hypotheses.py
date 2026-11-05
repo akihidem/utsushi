@@ -1,6 +1,9 @@
-"""仮説を並べて見せ、選んだ仮説の型紙を刷る入口。
+"""玩具ごとの仮説の記録と、型紙を刷る入口。
 
-判断の芯（J-002）: 仕組みを 1 つに決めて既定にしない。最初に刷る 1 枚は入口で、答えではない。
+判断の芯（J-032、本人の決定 11-05）: 型紙は説を羅列せず、玩具 1 つに 1 枚のたたき台にする。たたき台は記録の欄 "sheet" が指し、
+読む所は sheet_of の 1 つ。選ぶのは「最初に作る紙」を決める事だけで、正しさの判定でも順位でもない（J-025）。
+ほかの仮説は作る側の控えとして記録に残す（試した記録 R-0001・R-0002 と型紙の直し T-0001 が仮説の番号で結ばれているため）。
+前の芯（J-002）は「仕組みを 1 つに決めて既定にしない。仮説を並べる」だった。J-032 で置き換えた。
 前は予想が無いと一覧も型紙も出さなかった（F9.prediction）。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で門を外した。
 型紙は正解でなく AI が考えた仮説（本人の言葉、11-05）。答えに読まれない事は、門でなく札と紙の印で守る。
 仮説を自分で立てたい人の道も持つ（J-008）。自分の仮説を書けば記録に残り、寸法を付ければ型紙にでき、比べるのは本人が選ぶ時だけ。
@@ -72,6 +75,19 @@ def save_own(source_id, name, how, evidence, params=None):
                "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
         store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
+
+
+def sheet_of(source_id):
+    """玩具のたたき台の仮説を返す。ほかの所（頁・輪・デモ）がたたき台を知る時は、ここだけを読む。
+
+    なぜ欄で持つか: 記録の先頭（H-A）と決めて並びで読むと、並びを変えただけでたたき台が変わる。欄にすれば、
+    本人が別の仮説に替える時も 1 か所で済む（御来迎は H-A と H-C で迷いがあった。#332 の点 1）。
+    """
+    data = load(source_id)
+    match = [h for h in data["hypotheses"] if h["id"] == data.get("sheet")]
+    if not match:
+        raise ToolMissing(f"たたき台の紙の欄が無いか、指す仮説が無い: {source_id}")
+    return match[0]
 
 
 def stage(source_id):
@@ -237,6 +253,14 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     if not match:
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
+    # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
+    # 断るのは記録（data/hypotheses）にある仮説のうち、たたき台でない物。人が輪や生成で採って重ねた新しい仮説（H-N…）は、
+    # 輪を 1 枚の形に直す時に一緒に扱うので、ここではまだ止めない（#332 の後の直し）。
+    # 試作の玩具は今の作りのまま。頁が 1 枚だけを出す直しと一緒に揃える。
+    recorded = {x["id"] for x in json.loads((ROOT / "data/hypotheses" / f"{source_id}.json").read_text(encoding="utf-8"))["hypotheses"]}
+    if data.get("stage", "必須") == "必須" and hypothesis_id in recorded and hypothesis_id != data.get("sheet"):
+        print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{data.get('sheet')}）の紙だけを刷る").line(), file=sys.stderr)
+        return 3
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
     if params is None:
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)

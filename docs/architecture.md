@@ -10,7 +10,7 @@
 
 | パス | 役割 |
 |---|---|
-| `src/omochae/hypotheses.py` | 使い手の入口。仮説を並べ、選んだ仮説の型紙を刷る。自分の仮説も受ける |
+| `src/omochae/hypotheses.py` | 使い手の入口。玩具ごとのたたき台の仮説（記録の欄 sheet、読む所は sheet_of。J-032）と型紙を刷る。必須 2 種の今の組はたたき台だけを刷る。自分の仮説も受ける（話す形への直しは後） |
 | `data/hypotheses/` | 玩具ごとの仮説（根拠・弱い所・測る事）。順位は持たない |
 | `src/omochae/instructions.py` | 学ぶ人の紙（手順・試した後・見比べる・型紙なし）と先生の見る紙。測る欄は持たず、問いは本人の 4 つの着目に合わせる（U-25） |
 | `src/api/words.py` | 言葉の仮説を雛形の寸法に写す口 |
@@ -35,6 +35,7 @@
 | `src/omochae/ingest.py` | NDL から出典の記録と原図の写し（切り出し）を作る。`images` は足りない写しだけを取る（起動の台本が毎回回す） |
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
+| `src/omochae/media_review.py` | 上げた写真と動画の、出す前の人の確認（物だけ／人や声が入る）。結果は写真の置き場に持つ。命令は端末で人が番号を打った時だけ進む（#314） |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮はサーバごとに 1 つ（--look。皮ごとに 1 サイト）、刷った紙の口（PDF・PNG・SVG、インライン。試した後の紙は記録の後だけ。無ければ開く時にそれだけを作り、刷った案に数えない）、合言葉の門 |
 | `src/web/failure_log.py` | 作る側が読む失敗の記録（stderr）。道・役・型・トレースバックを出し、学ぶ人の書いた文と合言葉は出さない |
@@ -52,6 +53,7 @@
 | `src/web/about.py` | 序（コンセプト・『江都二色』の解説・動機）。文面は本人の言葉の引用と書誌の値だけ。採否は本人 |
 | `src/web/looks.py` | 入口。A′ 日本画展の展示と C 縦読みのジン（どちらのサイトかは --look）。全部の玩具の一覧の節を持つ。大判（A）は 11-05 朝に外した |
 | `src/web/kuzushi.py` | くずし字を読む頁（f14）。先に自分の読みを書き、確かめた読みと並べる。書いた読みは保存しない |
+| `src/web/plain_words.py` | 小学生・中学生の目で頁と紙の文を数える命令（#317）。語の表を 1 か所に置く。頁の字は変えない。結果は `out/` |
 | `src/web/zukan.py` | 図鑑の頁（印つきの文、F6.label） |
 | `src/web/techo.py` | 工作の手帖の頁を書き出す。中身は repo のコードから作り、型紙と手帖が食い違わないようにする |
 | `src/web/demo_samples.py` | デモ用の見本（上げた物・声・職人の言葉）。本物の記録と混ぜず、見本の札を付ける |
@@ -67,7 +69,7 @@
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
-| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の今の版（goraigo-v10・tora-v3）の紙 31 枚を刷る SVG の指紋を控えと比べる。控えは書き換えず、次の版は足す（U-43） |
+| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の今の版（goraigo-v10・tora-v3）のたたき台 H-A の紙と先生の見る紙の 9 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |

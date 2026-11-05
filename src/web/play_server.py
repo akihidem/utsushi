@@ -17,7 +17,7 @@ import sys
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from omochae import hypotheses, loop, making_log, records
+from omochae import hypotheses, loop, making_log, media_review, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.store import SID
@@ -345,7 +345,8 @@ class Handler(BaseHTTPRequestHandler):
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
-            if f.exists():
+            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。
+            if f.exists() and media_review.visible(m.group(1), [m.group(2)]):
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
                 data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
                 span = byte_range(self.headers.get("Range"), len(data))
@@ -513,7 +514,7 @@ class Handler(BaseHTTPRequestHandler):
                 from api import observe
 
                 from . import techo_site
-                videos = [f for f in techo_site.media_of(rid) if f.endswith(("mp4", "mov"))]
+                videos = [f for f in media_review.visible(rid, techo_site.media_of(rid)) if f.endswith(("mp4", "mov"))]  # 人や声が入ると確かめた動画は渡さない（#314）
                 if not videos:
                     return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""), anchor=rid)
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))

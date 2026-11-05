@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_plain_words.py
+# commit: 1e4a33a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_plain_words.py", line 41, in <module>
+    assert (w, "/見本") not in words, w
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 蛇腹
+rc=1
