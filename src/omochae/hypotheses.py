@@ -326,7 +326,7 @@ def _preview(role, call):
     turns = config.MAX_TOOL_CALLS + config.MAX_RETRIES + 3
     print(f"下見を書きました: {path}")
     print(f"モデル {request['model']}・思考の深さ {request['output_config']['effort']}・道具 {len(request['tools'])} 個・呼ぶ回数の上限 {turns} 回")
-    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.DAILY_CAP.get(budget._today(), 0)}")
+    print(f"1 回の生成の費用の上限 ${budget.PER_RUN_CAP:.0f}（超える前に止める）。今日の上限 ${budget.daily_cap()}")
     print("本物は呼んでいません")
     return path, []
 

@@ -1,0 +1,4 @@
+  File "src/api/budget.py", line 98, in check
+    raise BudgetStop(f"今日の見積もり ${day:.2f} と次の 1 回の最大 ${upcoming_usd:.2f} で日割りの上限 ${cap} に達する。本人の承認が要る")
+api.budget.BudgetStop: 今日の見積もり $0.00 と次の 1 回の最大 $0.05 で日割りの上限 $0 に達する。本人の承認が要る
+rc 1 （直す前の main 6da8073 に新しい試験を当てた。今日を 11-09 にした 1 回目の check が、上限 0 で止まる）
