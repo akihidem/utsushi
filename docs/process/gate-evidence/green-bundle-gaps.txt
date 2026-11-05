@@ -1,0 +1,18 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: 14211a3（回した時の HEAD）
+読めない記録を飛ばした: R-0096.json（形が違う）
+読めない記録を飛ばした: R-0096.json（形が違う）
+OK test_engine_bundle
+rc=0
+
+上は、直しを足した作業ツリー（頭の commit の上に、まだ commit していない直し）で回した。
+
+道具を壊した版 8 つを repo の外の控えで回した結果（どれも試験が rc 1。元のままは rc 0）:
+- 呼び方の誤りを rc 2 のままにする: rc 1
+- answers の型を見ない: rc 1
+- ideas の型を見ない: rc 1
+- 文字でない欄も文として読む: rc 1
+- 番号の形を見ない: rc 1
+- 時刻で切らない: rc 1
+- 確定の並びの順で選ぶ: rc 1
+- 時刻を文字のまま比べる: rc 1

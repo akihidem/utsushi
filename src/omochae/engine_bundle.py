@@ -25,7 +25,9 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 - 束の上の段に、群に出てくる雛形の「今の刷った組」を書く（current_sets。Issue #309）。エンジンの repo の雛形は組の名を持たないので、
   前の組の紙の記録から起きた案（もう直っている事がある）を、読む人が見分けられない。ここは今の組を並べるだけで、前の組の記録を
   束から外しはしない（直っていない困り事まで消え、直す前と後を並べて読めなくなる）。
-終了: 0 = できた / 4 = できない（書く先が決まりの外など）。
+- 手で置いた記録の形が決まりの外でも、束ごと止めない（Issue #313）。型の外の欄は読み飛ばし、その記録のほかの欄と数は数える。
+  1 件の崩れた記録のために、全部の記録の束が出なくなる方が困るため。
+終了: 0 = できた / 4 = できない（書く先が決まりの外・呼び方の誤り）。1 と 2 は使わない。
 """
 import argparse
 import json
@@ -52,6 +54,8 @@ MAX_TEXT = 300  # エンジンの入口の、文 1 つの上限。長い感想�
 MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
 MEASURE = re.compile(r"[a-z_]{1,30}")
+RECORD_ID = re.compile(r"R-[0-9]{4,8}")  # 記録の番号の形（エンジンの入口と同じ）。形の外の番号は束に入れない（自由な文をこの欄で運ばせない）
+JST = timezone(timedelta(hours=9))
 UNSURE = "わからない"  # 動いた側にも動かない側にも数えない札（records の頭の決まり）
 
 
@@ -68,19 +72,31 @@ def _name(value):
     return value if isinstance(value, str) and NAME.fullmatch(value) else ""
 
 
+def _when(text):
+    """時刻を時刻として読む。読めない時は None。文字のまま比べると、秒の有無や時差の書き方が違う時刻で、黙って誤る。"""
+    try:
+        t = datetime.fromisoformat(str(text))
+    except ValueError:
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=JST)
+
+
 def _sheet_set_of(rec):
     """その記録の紙の刷った組。記録が持てばそれ。無ければ、記録の時刻までに刷った型紙の確定の記録のうち、一番新しい物。
-    どちらも無ければ空（不明）。今の雛形の組は使わない（直した後の組に、直す前の記録を数えないため）。"""
+    どちらも無ければ空（不明）。今の雛形の組は使わない（直した後の組に、直す前の記録を数えないため）。
+    時刻の読めない記録と確定は、使わない側に倒す（不明の群に分ける）。確定の並びの順でなく、時刻で一番新しい物を選ぶ。"""
     if _name(rec.get("sheet_set")):
         return rec["sheet_set"]
-    at = str(rec.get("recorded_at") or "")
-    found = ""
-    for conf in loop.sheet_confirmations(rec.get("source_id")):
-        if conf and conf.get("hypothesis_id") == rec.get("hypothesis_id") and conf.get("version") == rec.get("sheet_version", 1):
-            for c in conf.get("confirmations", []):
-                if str(c.get("at") or "") <= at:
-                    found = _name(c.get("sheet_set")) or found
-    return found
+    at = _when(rec.get("recorded_at"))
+    best = None
+    for conf in loop.sheet_confirmations(rec.get("source_id")) if at else []:
+        if isinstance(conf, dict) and conf.get("hypothesis_id") == rec.get("hypothesis_id") and conf.get("version") == rec.get("sheet_version", 1):
+            confirmations = conf.get("confirmations")
+            for c in confirmations if isinstance(confirmations, list) else []:
+                when, name = (_when(c.get("at")), _name(c.get("sheet_set"))) if isinstance(c, dict) else (None, "")
+                if when and name and when <= at and (best is None or when >= best[0]):
+                    best = (when, name)
+    return best[1] if best else ""
 
 
 def _group(groups, template, sheet_set):
@@ -106,7 +122,9 @@ def build():
         """文を 1 つ足す。床に当たれば入れず、落とした数だけ数える。同じ文（同じ種類・同じ段）は回数にまとめる。入れたら真。
         床は、上限で切る前の全文に当てる（切った端に番号の半分が残る形を作らない）。既定は連絡先の形。話した事は、話す口の床。"""
         nonlocal dropped
-        full = " ".join(str(text or "").split())
+        if not isinstance(text, str):  # 文字でない欄（手で置いた記録の list など）は、文として読まない
+            return False
+        full = " ".join(text.split())
         if not full:
             return False
         if floor(full) if floor else check_pii({"body": full}):
@@ -120,11 +138,15 @@ def build():
     # 試した記録: 動きの札・測った値・止まった所・直した点・思いつき・感想と、人の説明。
     group_of = {}  # 記録の番号 → その記録の群の鍵（記録に結んだ話を、同じ群に数えるため）
     for r in records.all_records():
+        if not isinstance(r, dict):  # 辞書でない物（手で置いたファイル）は、記録として数えない
+            continue
         template = making_log._engine(r.get("source_id"), r.get("hypothesis_id"))[0]
         g = _group(groups, template, _sheet_set_of(r))
-        group_of[r["id"]] = (g["template"], g["sheet_set"])
         g["reports"] += 1
-        g["record_ids"].append(r["id"])
+        rid = r.get("id") if isinstance(r.get("id"), str) and RECORD_ID.fullmatch(r["id"]) else None
+        if rid:
+            group_of[rid] = (g["template"], g["sheet_set"])
+            g["record_ids"].append(rid)
         tpl = TEMPLATES.get(template)
         if tpl is not None:
             # 札の言葉は雛形が持つ物だけを数える（自由な文を札の欄で運ばせない）。先頭が動いた側。動かない側は、「わからない」を除いた最後の札
@@ -140,21 +162,25 @@ def build():
         for k, v in r.items():
             if isinstance(v, (int, float)) and not isinstance(v, bool) and k != "sheet_version" and MEASURE.fullmatch(k):
                 (g["minutes"] if k == "minutes_to_try" else g["measures"].setdefault(k, [])).append(v)
-        answers = r.get("answers") or {}
+        # 欄は、決まった型の時だけ読む（answers は辞書・ideas と fixes は list・文は文字）。文字の欄を list として読むと、1 字ずつの文になる。
+        answers = r.get("answers") if isinstance(r.get("answers"), dict) else {}
         say(g, "stuck", answers.get("stuck"))
         say(g, "idea", answers.get("what_if"))
-        for idea in r.get("ideas") or []:
+        for idea in r.get("ideas") if isinstance(r.get("ideas"), list) else []:
             say(g, "idea", idea)
         say(g, "impression", r.get("impression"))
-        for f in r.get("fixes") or []:
-            if isinstance(f, dict) and all(str(f.get(k, "")).strip() for k in ("part", "change", "outcome")):
+        for f in r.get("fixes") if isinstance(r.get("fixes"), list) else []:
+            if isinstance(f, dict) and all(isinstance(f.get(k), str) and f[k].strip() for k in ("part", "change", "outcome")):
                 say(g, "fix", f'{f["part"]} / {f["change"]} / {f["outcome"]}')
-        told = loop.explanation(r["id"]) or {}  # 人が書いた説明だけ（Claude の読みは入れない）
+        told = (loop.explanation(rid) if rid else None) or {}  # 人が書いた説明だけ（Claude の読みは入れない）
+        told = told if isinstance(told, dict) else {}
         say(g, "explain", told.get("text"))
         say(g, "idea", told.get("next_idea"))
 
     # 手順の進み: 止まったの札と、途中でやめた段。人は、その場限りの印で数えるだけで、印の値は束に入れない。
     for e in making_log.steps():
+        if not isinstance(e, dict):
+            continue
         step = e.get("step")
         if not (isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP):
             continue
@@ -173,6 +199,8 @@ def build():
 
     # 聞く口の質問: 手順の番号つき。残す時に連絡先の形で落ちた物は、落とした数に足す。
     for a in making_log.asks():
+        if not isinstance(a, dict):
+            continue
         g = _group(groups, a.get("template"), a.get("sheet_set"))
         if a.get("dropped"):
             dropped += 1
@@ -182,6 +210,8 @@ def build():
     # 話した事（話す口の記録）。入口の床で落ちた物は文が残っていないので、落とした数にだけ足す。
     dropped += sum(talk_log.dropped().values())
     for t in talk_log.talks():
+        if not isinstance(t, dict):
+            continue
         scene = t.get("scene")
         if scene not in talk_log.SCENES:
             continue
@@ -246,7 +276,10 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     ex = sub.add_parser("export", help="束を書く（git の外か out/ の下）")
     ex.add_argument("--out", default=None)
-    args = ap.parse_args(argv)
+    try:
+        args = ap.parse_args(argv)
+    except SystemExit as e:
+        return 0 if e.code == 0 else 4  # 呼び方の誤りは 4（argparse の既定の 2 は使わない）。--help は 0
     try:
         path = out_path(args.out)
         bundle = build()
