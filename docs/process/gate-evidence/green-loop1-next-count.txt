@@ -1,0 +1,28 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_next.py
+# commit: 58f8052（回した時の HEAD）
+F9.own: 自分の仮説「仮説 A から変えた案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/.tmp-gw_u0_e0/H-A_v2.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/.tmp-gw_u0_e0/H-A_v2_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/.tmp-gw_u0_e0/H-A_v2_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-3_v1.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-3_v1_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-3_v1_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/OWN-6_v1_free.pdf
+/tmp/tmpju1gct9i/play/NDL-1187053-R0000005-L/.tmp-m9yidpxc/OWN-6_v1_after.pdf
+ok
+rc=0

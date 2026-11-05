@@ -28,7 +28,7 @@ PERIOD = re.compile(r"竹串|竹ひご|楊枝|つまようじ|割り箸|糸|紐|
 # 江戸の頃に無かった、今の物で代えた材料の語。油粘土は当時の土や練り物の代わりで、物としては今の物なので、当時の材料に数えない（#311）。
 MODERN = re.compile(r"油粘土|輪ゴム|テープ|割り?ピン|ビーズ|ストロー|厚紙|水よけ|ろう")
 LABELS = (("one_sheet", "紙一枚"), ("fold_only", "折るだけ"), ("period", "当時の材料"))
-NOTE = "紙一枚・折るだけ・当時の材料は、作り方の違いです。どの印も上下を表しません。"
+NOTE = "「紙一枚」「折るだけ」「当時の材料」は、作り方のちがいを表すしるしです。どれがえらい、ということはありません。「当時の材料」は、江戸時代にもあった材料だけで作れる、というしるしです。"
 
 
 def _is_paper(material):
@@ -78,6 +78,11 @@ def of_hypothesis(data, h):
     return details(h.get("template", data.get("template", "slider_fan")), h["params"])
 
 
+def _on_paper(data, h):
+    """紙になる案か。寸法か雛形の無い控えは印を持たない（1 つあるだけで一覧が全部の玩具ごと落ちないように）。"""
+    return isinstance(h.get("params"), dict) and h.get("template", data.get("template", "slider_fan")) in TEMPLATES
+
+
 @functools.lru_cache(maxsize=None)
 def toy_labels(source_id):
     """玩具のたたき台に付く印の名前（頁に出る型紙はたたき台の 1 枚だけなので、刷れない仮説の印を玩具に付けない。J-032）。
@@ -93,7 +98,7 @@ def table():
     for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
         data, sheet = load(path.stem), sheet_of(path.stem)["id"]
         out += [{"source_id": path.stem, "hypothesis_id": h["id"], "sheet": h["id"] == sheet,
-                 "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"]]
+                 "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"] if _on_paper(data, h)]
     return out
 
 

@@ -1,0 +1,5 @@
+# 命令: .venv/bin/python tests/test_cycle.py
+# commit: 7fc2644（回した時の HEAD）
+できない: その玩具は無い: no-such-toy
+ok 段 11・まだ main に無い部品 0
+rc=0

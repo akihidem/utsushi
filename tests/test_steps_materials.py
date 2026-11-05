@@ -12,6 +12,7 @@
 """
 import json
 import re
+from types import SimpleNamespace
 
 from omochae import ways
 from omochae.compose import TEMPLATES
@@ -43,6 +44,10 @@ FROZEN = {
 WORDING = {(KOMA, "H-B"): ["つまようじ"]}
 
 
+# 部品に穴があるのに、手順にあけ方の文が無い案。台の穴に竹串を通す形で、文を足すと新しい字になるので、今は足さない。
+NO_POKE_WORDS = {("NDL-1187053-R0000007-L", "H-A"), ("NDL-1187053-R0000007-L", "H-B")}
+
+
 def steps_text(tpl, p):
     return NOT_TOOL.sub("", " ".join(tpl.steps(p)))
 
@@ -51,6 +56,16 @@ def missing(tpl, p):
     """手順に出るのに、用意する物の字に無い語。"""
     listed, steps = " ".join(str(m) for m in tpl.materials(p)), steps_text(tpl, p)
     return sorted(w for w, names in NAMES.items() if w in steps and not any(n in listed for n in names))
+
+
+def says_missing_hole(tpl, p):
+    """部品に穴が無いのに、手順に穴の字がある。無い穴を探させ、要らない物をそろえさせる。"""
+    return "穴" in " ".join(tpl.steps(p)) and not any(q.holes for q in tpl.parts(p))
+
+
+def lacks_poke_words(tpl, p):
+    """部品に穴があるのに、手順に穴のあけ方の文が無い。穴の字だけを見ると、穴に糸を通す文が残る案（兜巾）で見逃す。"""
+    return any(q.holes for q in tpl.parts(p)) and "の先であける" not in " ".join(tpl.steps(p))
 
 
 def cases():
@@ -81,10 +96,15 @@ assert len(all_cases) > 100 and {tid for _, _, tid, _, _ in all_cases} == set(TE
 wrong = check()
 assert not wrong, ("手順に出る語が用意する物に無い、または例外が古い", wrong)
 
-# 2. 穴あけの字は、部品に穴がある案だけに出す（穴の無い案に、要らない物をそろえさせない）
+# 2. 穴あけの字は、部品に穴がある案だけに出す（穴の無い案に、要らない物をそろえさせない）。手順の穴の字も同じで、御来迎 E だけ今の組の例外
 for sid, hid, _, tpl, p in all_cases:
     if any("穴あけ" in str(m) for m in tpl.materials(p)):
         assert any(q.holes for q in tpl.parts(p)), ("穴の無い案に穴あけの字がある", sid, hid)
+    if says_missing_hole(tpl, p):
+        assert (sid, hid, tpl.SHEET_SET) == (GORAIGO, "H-E", "goraigo-v10"), ("穴の無い案の手順に穴の字がある", sid, hid)
+# 反対の向き: 部品に穴がある案は、あけ方の文を消さない
+named = {(sid, hid) for sid, hid, _, tpl, p in all_cases if lacks_poke_words(tpl, p)}
+assert named == NO_POKE_WORDS, ("穴があるのにあけ方の文が無い、または例外が古い", named ^ NO_POKE_WORDS)
 
 # 3. 紙一枚の印の案の手順に、ほかの材料の語が出ない。御来迎 E の竹串は今の組の例外で、穴が無いので印は外さない
 for sid, hid, tid, tpl, p in all_cases:
@@ -98,8 +118,8 @@ assert ways.details("slider_fan", e)["one_sheet"] is True and not any(q.holes fo
 
 # 4. 負の対照: 照らす形が抜けを拾う事を確かめる（拾わない検査は、同じと言っても意味が無い）
 class Stub:
-    def __init__(self, steps, materials):
-        self.steps, self.materials = (lambda p: steps), (lambda p: materials)
+    def __init__(self, steps, materials, parts=()):
+        self.steps, self.materials, self.parts = (lambda p: steps), (lambda p: materials), (lambda p: parts)
 
 
 assert missing(Stub(["穴は竹串の先であける"], ["のり、はさみ"]), {}) == ["竹串"]
@@ -109,6 +129,22 @@ assert missing(Stub(["糸を腕木の糸の穴に結ぶ"], ["竹串"]), {}) == [
 assert missing(Stub(["内側で玉結びにする"], ["糸"]), {}) == [] and missing(Stub(["玉を通す"], ["糸"]), {}) == ["玉"]
 assert missing(Stub(["紐を巻く"], ["糸（長さ約 30cm）"]), {}) == [] and missing(Stub(["紐を巻く"], ["のり"]), {}) == ["紐"]
 assert missing(Stub(["2 本の先を結ぶ"], ["のり"]), {}) == [] and missing(Stub(["端を本に載せる"], ["のり"]), {}) == ["本に"]
+assert says_missing_hole(Stub(["穴は竹串の先であける"], [], [SimpleNamespace(holes=[])]), {})
+assert not says_missing_hole(Stub(["穴は竹串の先であける"], [], [SimpleNamespace(holes=[(1, 1, 1)])]), {})
+assert not says_missing_hole(Stub(["部品を実線で切る"], [], [SimpleNamespace(holes=[])]), {})
+assert lacks_poke_words(Stub(["2 つの穴に糸を通す"], [], [SimpleNamespace(holes=[(1, 1, 1)])]), {})  # 穴に通す文だけでは足りない
+assert not lacks_poke_words(Stub(["穴は竹串の先であける"], [], [SimpleNamespace(holes=[(1, 1, 1)])]), {})
+assert not lacks_poke_words(Stub(["部品を実線で切る"], [], [SimpleNamespace(holes=[])]), {})
+
+# 穴あけの文を全部の形で外すと、穴がある兜巾を名指しする
+prop = TEMPLATES["stick_prop"]
+keep = prop.steps
+prop.steps = lambda p: [s.replace("。穴は竹串の先であける", "") for s in keep(p)]
+try:
+    named = {(sid, hid) for sid, hid, _, tpl, p in cases() if lacks_poke_words(tpl, p)}
+finally:
+    prop.steps = keep
+assert {("NDL-1187053-R0000005-R-2", "H-A"), ("NDL-1187053-R0000005-R-2", "H-B")} <= named, named
 
 # 用意する物から字を消すと、その案を名指しする
 kite = TEMPLATES["string_pull"]

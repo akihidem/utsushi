@@ -52,6 +52,12 @@ def files_of(folder, kind, source_id):
     return out
 
 
+def play_dir(source_id):
+    """刷った紙の置き場。試験で本物の置き場を汚さないよう、記録と同じ環境変数に従う。"""
+    base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "play" if os.environ.get("OMOCHAE_DATA") else ROOT / "out/play"
+    return base / source_id
+
+
 def own_paths(source_id):
     return sorted(files_of(_pred_dir(), "own", source_id), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
 
@@ -70,11 +76,44 @@ def save_own(source_id, name, how, evidence, params=None):
     folder = _pred_dir()
     folder.mkdir(parents=True, exist_ok=True)
     with store.locked(folder):
-        n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+        # 消した番号も数える（drop_own の印）。番号を使い回すと、古いリンクが別の人の紙を開く。
+        gone = (int(p.stem.rsplit("-", 1)[1]) for p in folder.glob(f"own-{source_id}-*.gone"))
+        n = max([int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)] + list(gone), default=0) + 1
         rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
                "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
         store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
+
+
+def drop_own(source_id, own_id):
+    """自分の仮説を消す（記録の取り下げから呼ぶ）。その記録と、刷った紙の全部。消した物の名前を返す。字を持たない印だけを残して、番号を使い回さない。"""
+    gone = []
+    n = own_id.rsplit("-", 1)[1]
+    path = _pred_dir() / f"own-{source_id}-{n}.json"
+    if path.exists():
+        path.with_suffix(".gone").touch()  # 先に印を置く。途中で落ちても番号は戻らない
+        path.unlink()
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted(d.glob(f"{own_id}_v*")) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
+
+
+def scrub_own(source_id, own_id):
+    """自分の仮説から話した字だけを消す（記録の --talk-only から呼ぶ）。動かし方の字と、字が刷られた紙（手順の紙・型紙なしの紙）。名前と寸法と、字の無い紙は残す。消した物の名前を返す。"""
+    gone = []
+    path = _pred_dir() / f"own-{source_id}-{own_id.rsplit('-', 1)[1]}.json"
+    rec = store.read_json_or_skip(path)
+    if rec and rec.get("how_it_moves"):
+        store.write_json(path, {**rec, "how_it_moves": ""})
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted([*d.glob(f"{own_id}_v*_tejun*"), *d.glob(f"{own_id}_v*_free*")]) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
 
 
 def sheet_of(source_id):
@@ -218,31 +257,6 @@ def print_teacher(source_id, out):
     return 3
 
 
-def print_compare(source_id, a, b, out):
-    """見比べる紙を刷る（J-019）。型紙は仮説ごとに print で刷る物なので、ここでは紙 1 枚だけ。"""
-    from .discriminate import pick_pair
-    from .instructions import compose_compare
-    from .marks import check_image_count, check_pdf
-    from .render import to_png, write_all
-
-    data = load(source_id)
-    ha, hb, failures = pick_pair(data, a, b)
-    if not failures:
-        source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
-        layout, failures = compose_compare(source, data["toy"], ha, hb, (letter(ha), letter(hb)))
-    if not failures:
-        stem = pathlib.Path(out)
-        pdf = write_all(layout, stem)
-        failures = check_pdf(pdf, source) + check_image_count(pdf)
-        if not failures:
-            to_png(pdf, stem)
-            print(pdf)
-            return 0
-    for f in failures:
-        print(f.line(), file=sys.stderr)
-    return 3
-
-
 def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     """pending は、まだ記録していない版の中身。刷れると分かってから版の記録を書くために渡す（#158）。"""
     from .__main__ import generate
@@ -254,11 +268,9 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
-    # 断るのは記録（data/hypotheses）にある仮説のうち、たたき台でない物。人が輪や生成で採って重ねた新しい仮説（H-N…）は、
-    # 輪を 1 枚の形に直す時に一緒に扱うので、ここではまだ止めない（#332 の後の直し）。
-    # 試作の玩具は今の作りのまま。頁が 1 枚だけを出す直しと一緒に揃える。
-    recorded = {x["id"] for x in json.loads((ROOT / "data/hypotheses" / f"{source_id}.json").read_text(encoding="utf-8"))["hypotheses"]}
-    if data.get("stage", "必須") == "必須" and hypothesis_id in recorded and hypothesis_id != data.get("sheet"):
+    # 人が輪や生成で採って重ねた新しい仮説（H-N…）も作る側の控えなので、同じく刷らない。
+    # 試作の玩具は、作る側がこの口から控えを刷れる（道は閉じない）。頁からは刷らない（web の /print の口が断る）。
+    if data.get("stage", "必須") == "必須" and hypothesis_id != data.get("sheet"):
         print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{data.get('sheet')}）の紙だけを刷る").line(), file=sys.stderr)
         return 3
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
@@ -441,11 +453,6 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("picture")
     sub.add_parser("list")
-    sub.add_parser("compare", help="作り手用。どの仮説の組が開く角度で分かれうるかの表。学ぶ人に見せない")
-    pc = sub.add_parser("print-compare", help="2 つの仮説を見比べる紙を刷る")
-    pc.add_argument("a")
-    pc.add_argument("b")
-    pc.add_argument("--out")
     pt = sub.add_parser("print-teacher", help="先生の見る紙を刷る。4 つの着目ごとに見た事を書く。点は付けない")
     pt.add_argument("--out")
     sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る")
@@ -494,16 +501,6 @@ def main(argv=None):
         if args.cmd == "picture":
             print(picture(args.source))
             return 0
-        if args.cmd == "compare":
-            from .discriminate import compare_table, table_lines
-
-            rows, failures = compare_table(load(args.source))
-            for f in failures:
-                print(f.line(), file=sys.stderr)
-            if failures:
-                return 3
-            print("\n".join(table_lines(rows)))
-            return 0
         if args.cmd == "print-teacher":
             return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
@@ -521,8 +518,6 @@ def main(argv=None):
             # 作り手が版を直す時は records summary と loop で見る。
             print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
-        if args.cmd == "print-compare":
-            return print_compare(args.source, args.a, args.b, args.out or f"out/templates/compare_{args.a}_{args.b}")
         return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)
