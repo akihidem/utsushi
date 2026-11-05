@@ -20,7 +20,10 @@ from .model import Failure
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 OPENERS = ("紙の力", "糸", "手")
-OWN = ("explanation", "interpretation", "observation")  # 記録ごとに輪の置き場へ書く物
+OWN = ("explanation", "interpretation", "observation", "video")  # 記録ごとに輪の置き場へ書く物
+# 動画の受け口（web/video_up.py）から来た記録の印。上げた人に「頁に出さない」と約束した物で、紙も人が確かめていないので、all_records は既定で外す。
+UPLOADED = "video-up"
+UNSURE = "わからない"
 
 
 def folder():
@@ -52,7 +55,8 @@ def check(rec):
     out = []
     results = results_for(rec["source_id"])
     # 前の札も受ける。札を直す前に開いた頁から送られても、記録を断らないため。断りの文には今の札だけを出す。
-    if rec.get("result") not in (*results, *old_results_for(rec["source_id"])):
+    # 受け口は動いたかを聞かない（動画だけが届く）。雛形の札に「わからない」が無くても、決めつけずにこの字で受ける。束はこの字を数えない
+    if rec.get("result") not in (*results, *old_results_for(rec["source_id"])) and not (rec.get("via") == UPLOADED and rec.get("result") == UNSURE):
         out.append(Failure("F3.result", "result", f"結果は {'／'.join(results)} のどれか"))
     if not known_hypothesis(rec["source_id"], rec.get("hypothesis_id")):
         out.append(Failure("F8.references", "hypothesis_id", f"仮説 {rec.get('hypothesis_id')} は実在しない"))
@@ -102,13 +106,16 @@ def add(rec):
             nums.append(int(rid[2:]))
 
 
-def all_records(source_id=None):
+def all_records(source_id=None, uploads=False):
+    """記録の一覧。uploads は動画の受け口の記録も含める形で、版の輪の表（trial_video.effect）だけが使う。
+    なぜここで外すか: 読む所は学ぶ人の頁・ギャラリー・束など多く、1 つずつ外すと、新しく読む所が足された時に約束が崩れる。
+    この関数を通らない所（loop.confirmed_records とサイトの /record の口）は、それぞれで外す。"""
     out = []
     for p in sorted(folder().glob("R-*.json")):
         if (withdrawn_folder() / p.name).exists():
             continue
         rec = store.read_json_or_skip(p)
-        if rec is not None and (source_id is None or rec.get("source_id") == source_id):
+        if rec is not None and (source_id is None or rec.get("source_id") == source_id) and (uploads or rec.get("via") != UPLOADED):
             out.append(rec)
     return out
 
@@ -167,7 +174,7 @@ def withdraw(rid, media_only=False):
 
     なぜ番号だけ残すか: 持ち寄りの取り下げと同じ形。番号を使い回さず、記録が別の経路で戻っても一覧に出さないため。
     根拠に使われている記録は消さない。版や提案の根拠が指す先を失うため。その時も写真と動画は media_only で消せる
-    （写った顔や名札を、根拠の話のために残さない）。観察は動画から作った文なので一緒に消す。説明と解釈は人の言葉と根拠なので残す。
+    （写った顔や名札を、根拠の話のために残さない）。観察と動画の札は動画から作った文なので一緒に消す。説明と解釈は人の言葉と根拠なので残す。
     """
     from . import loop
 
@@ -181,7 +188,7 @@ def withdraw(rid, media_only=False):
         users = used_by(rid)
         if users and not media_only:
             return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only")]
-        kinds = ("observation",) if media_only else OWN
+        kinds = ("observation", "video") if media_only else OWN
         files = [loop.folder() / f"{kind}-{rid}.json" for kind in kinds] + ([] if media_only else [path])
         media = folder() / "media" / rid
         if not media_only:

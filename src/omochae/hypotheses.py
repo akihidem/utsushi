@@ -242,31 +242,6 @@ def print_teacher(source_id, out):
     return 3
 
 
-def print_compare(source_id, a, b, out):
-    """見比べる紙を刷る（J-019）。型紙は仮説ごとに print で刷る物なので、ここでは紙 1 枚だけ。"""
-    from .discriminate import pick_pair
-    from .instructions import compose_compare
-    from .marks import check_image_count, check_pdf
-    from .render import to_png, write_all
-
-    data = load(source_id)
-    ha, hb, failures = pick_pair(data, a, b)
-    if not failures:
-        source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
-        layout, failures = compose_compare(source, data["toy"], ha, hb, (letter(ha), letter(hb)))
-    if not failures:
-        stem = pathlib.Path(out)
-        pdf = write_all(layout, stem)
-        failures = check_pdf(pdf, source) + check_image_count(pdf)
-        if not failures:
-            to_png(pdf, stem)
-            print(pdf)
-            return 0
-    for f in failures:
-        print(f.line(), file=sys.stderr)
-    return 3
-
-
 def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     """pending は、まだ記録していない版の中身。刷れると分かってから版の記録を書くために渡す（#158）。"""
     from .__main__ import generate
@@ -465,11 +440,6 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("picture")
     sub.add_parser("list")
-    sub.add_parser("compare", help="作り手用。どの仮説の組が開く角度で分かれうるかの表。学ぶ人に見せない")
-    pc = sub.add_parser("print-compare", help="2 つの仮説を見比べる紙を刷る")
-    pc.add_argument("a")
-    pc.add_argument("b")
-    pc.add_argument("--out")
     pt = sub.add_parser("print-teacher", help="先生の見る紙を刷る。4 つの着目ごとに見た事を書く。点は付けない")
     pt.add_argument("--out")
     sg0 = sub.add_parser("generate", help="裏の制作の道具。Claude が仮説と寸法の案を作る")
@@ -518,16 +488,6 @@ def main(argv=None):
         if args.cmd == "picture":
             print(picture(args.source))
             return 0
-        if args.cmd == "compare":
-            from .discriminate import compare_table, table_lines
-
-            rows, failures = compare_table(load(args.source))
-            for f in failures:
-                print(f.line(), file=sys.stderr)
-            if failures:
-                return 3
-            print("\n".join(table_lines(rows)))
-            return 0
         if args.cmd == "print-teacher":
             return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
@@ -545,8 +505,6 @@ def main(argv=None):
             # 作り手が版を直す時は records summary と loop で見る。
             print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
-        if args.cmd == "print-compare":
-            return print_compare(args.source, args.a, args.b, args.out or f"out/templates/compare_{args.a}_{args.b}")
         return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)

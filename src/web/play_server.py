@@ -17,7 +17,7 @@ import sys
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from omochae import hypotheses, loop, making_log, media_review, records
+from omochae import hypotheses, loop, making_log, media_review, records, store
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.store import SID
@@ -46,6 +46,12 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 MAX_FORM = 64 * 1024
 # トンネルの一時の名前の形（run-demo.sh の cloudflared）。本物の名前は repo に書かない（push の門の決まり）ので、形だけをここに 1 か所置く。
 TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
+
+
+def uploaded(rid):
+    """動画の受け口の記録か。上げた人に「頁に出さない」と約束した記録なので、置き場を共有していてもサイトの口から触らせない。"""
+    rec = store.read_json_or_skip(records.folder() / f"{rid}.json")
+    return bool(rec and rec.get("via") == records.UPLOADED)
 
 
 def byte_range(header, size):
@@ -298,8 +304,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
         if path == "/gallery":
             from . import techo_site
-            from .demo_samples import STYLE as SAMPLE_STYLE
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.STYLE + SAMPLE_STYLE, "techo"))
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
@@ -439,6 +444,9 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        m = re.fullmatch(r"/record/(R-\d{4,})/.*", self.path)
+        if m and uploaded(m.group(1)):
+            return self._refuse(404, "見つかりません")
         m = re.fullmatch(r"/record/(R-\d{4,})/media", self.path)
         if m:
             # 写真と動画はフォームでなく本体そのままで受ける。別のサイトから送らせないため、同じ出所だけを受ける。
