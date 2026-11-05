@@ -127,7 +127,7 @@ def voices_html():
 
 # 色は皮の変数から取る（skin.py）。白の展示でも黒のジンでも、見本の札と点線の枠が同じ意味で読めるようにするため。
 STYLE = """
-.techo .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;border-radius:9px;margin-right:4px}
+.techo .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;border-radius:9px;margin-right:4px}
 .techo .is-sample{border:1px dashed var(--frame);padding:10px;border-radius:10px}
 .techo .is-sample svg{height:110px;width:auto;border:1px dashed var(--frame);border-radius:8px}
 .techo .samples{display:grid;gap:10px}

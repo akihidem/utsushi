@@ -19,6 +19,8 @@ import re
 from omochae import hypotheses, labels, records
 from omochae.hypotheses import ROOT
 
+from .skin import TAP_FLOOR
+
 QUOTE, HYPO, OBS = labels.LABELS
 
 # 色は皮の変数（skin.SKINS）に乗せ、変数が無い時は今までの白い展示の値に落ちる。黒のジンの皮で /zukan を開いても読めるようにするため（11-05）。
@@ -35,7 +37,7 @@ body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-fa
 .zukan .song{writing-mode:vertical-rl;height:min(40vh,360px);font-size:clamp(16px,1.5vw,20px);line-height:2.2;letter-spacing:.12em;margin:0 0 12px auto}
 .zukan ul{list-style:none;padding:0;margin:0 0 22px}
 .zukan li{font-size:14px;line-height:2;letter-spacing:.04em;border-left:1px solid var(--frame,#b9a982);padding-left:12px;margin:0 0 6px}
-.zukan .lb{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
+.zukan .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);border:1px solid var(--frame,#d8cdb6);padding:0 8px;margin-right:10px}
 .zukan .meta{font-size:12px;color:var(--mute,#6f665a);letter-spacing:.08em;line-height:1.9}
 .zukan .links{font-size:13px;letter-spacing:.12em;display:flex;gap:16px;flex-wrap:wrap}
 .zukan .more{padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2)}.zukan .more h2{font-weight:400;letter-spacing:.2em}
@@ -130,7 +132,7 @@ def _page(title, body, look=None, path="/zukan"):
 
         return skin.shell(title, body.replace(NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>{STYLE}</style><body class="zukan"><main>{body}</main></body></html>')
+            f'<title>{esc(title)}</title><style>{STYLE}{TAP_FLOOR}</style><body class="zukan"><main>{body}</main></body></html>')
 
 
 NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">上げた物</a></p>'
