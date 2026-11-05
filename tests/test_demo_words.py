@@ -125,4 +125,13 @@ with tempfile.TemporaryDirectory() as tmp:
     p = pathlib.Path(tmp) / "p.md"
     p.write_text("> 別の言葉\n", encoding="utf-8")
     assert words.in_record(("別の", "言葉"), p) and not words.in_record(lines, p)
+
+# 継承を軸にする（本人の決定 11-05）: 札にも場面の字にも「復活」「取り戻」を出さない
+for name, chunks in words.ALL.items():
+    assert not words.says_restored(chunks), name
+assert words.says_restored((("昔の作り方を", "取り戻した"),)) and words.says_restored((("おもちゃを復活させる",),))
+for py in pathlib.Path(flip.__file__).parent.glob("*.py"):
+    if py.name != "words.py":
+        text = py.read_text(encoding="utf-8")
+        assert not any(w in text for w in words.NOT_SAID), py.name
 print("ok")

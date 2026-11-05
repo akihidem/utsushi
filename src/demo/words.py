@@ -60,6 +60,9 @@ BRIDGE2 = (("作ったものを持ちよると、",), ("AI もそれを見て、
 NOW_LINE = "いま作っているところです"      # AI はまだ動いていないので、つなぎ 2 と一緒に出す（本人の決定 11-05）
 ALL = {**CARDS, **TALKS, "bridge": BRIDGE, "close": ((CLOSING[0],), (CLOSING[1],)), "core_loop": (*BRIDGE2, (NOW_LINE,))}
 MARKED = (*CARDS, *TALKS)      # 本人の言葉の印を付ける札
+# デモと外に出す文で使わない言い方（本人の決定 11-05）。継承を軸にし、「復活」を「昔の作り方を取り戻した」の意味で使わない。
+# 前からの線「失われた技術を取り戻すとは書かない」を残す。語りの全文には「復活」の文があるが、札に選ばない。
+NOT_SAID = ("復活", "取り戻")
 ASK_SECONDS = 5.0
 ASK_SIZE = 72
 # 札ごとの置き方。図を右に置く札は、字を左に寄せて小さくする。ink は図の濃さ（始め, 終わり）。
@@ -93,6 +96,11 @@ def in_narration(chunks, path=NARRATION):
     """語りのかたまりの文が 1 文ずつ、語りの全文の中にそのままあるか。札の中で文を飛ばしてよいが、文の途中では切らない。"""
     full = path.read_text(encoding="utf-8")
     return flat(chunks).endswith("。") and all(s in full for s in sentences_of(chunks))
+
+
+def says_restored(chunks):
+    """札の字に、使わない言い方があるか。"""
+    return any(w in flat(chunks) for w in NOT_SAID)
 
 
 def chunks_of(name):
@@ -222,6 +230,9 @@ def _render(name, cues, argv=None):
             return 4
         if name in TALKS and not in_narration(TALKS[name]):
             print(f"検査できない: 札 {name} の字が語りの全文（opening-narration.txt）と違う", file=sys.stderr)
+            return 4
+        if name in ALL and says_restored(ALL[name]):
+            print(f"検査できない: 札 {name} に使わない言い方がある（{'・'.join(NOT_SAID)}）", file=sys.stderr)
             return 4
         pic = None
         if name in PICTURED:
