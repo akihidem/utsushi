@@ -120,7 +120,7 @@ assert send(f"/toy/{G}/ask-json", {"hypothesis": oid, "question": "谷折りっ�
 assert send(f"/toy/{G}/ask", {"hypothesis": oid, "question": "谷折りって？", "who": OTHER})[0] == 422
 assert send(f"/toy/{G}/record-json", {"hypothesis": oid, "result": "わからない", "who": OTHER})[0] == 422
 assert send(f"/toy/{G}/record", {"hypothesis": oid, "result": "わからない", "who": OTHER})[0] == 422
-assert send(f"/toy/{G}/print-own", {"id": oid})[0] == 422, "ほかの人は刷り直せない"
+assert send(f"/toy/{G}/print-own", {"id": oid})[0] == 404, "刷り直す口は閉じた（J-032 の点 2）"
 assert records.all_records(G) == [], "ほかの人の記録を残さない"
 
 # 本人の札・工夫・問いは、その紙に付く
