@@ -219,6 +219,64 @@ class Handler(BaseHTTPRequestHandler):
         見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
 
+    def _loop_post(self, sid, act, form):
+        """動画から版までの、人の判断の口（札の確かめ・顔と声の確かめ・案の採否）。頁のフォームが人の操作で、命令の側は端末の床（trial_video.main）が同じ役をする。
+        合言葉なしの場では閉じる（/loop の頁と同じ）。"""
+        from omochae import trial_video as tv
+        from . import kaizen
+        if getattr(self.server, "public_open", False):
+            return self._send(404, "見つかりません")
+        by = form.get("by", "")
+        if act == "judge":
+            failures, msg = tv.judge_mark(form.get("record", ""), form.get("mark", ""), by, accept=form.get("action") == "confirm"), "札を確かめました"
+        elif act == "shown":
+            failures, msg = tv.confirm_shown(form.get("record", ""), by), "顔と声の確かめを残しました。映像とコマが出ます"
+        elif form.get("action") == "reject":
+            failures, msg = tv.reject(form.get("fix", ""), by), "案を採らない事にしました"
+        else:
+            def printer(s, h, v):
+                out_dir(s).mkdir(parents=True, exist_ok=True)
+                rc = hypotheses.print_sheet(s, h, str(out_dir(s) / f"{h}_v{v}"), v)
+                if rc == 0:
+                    loop.confirm_sheet(s, h, v, by, TEMPLATES[hypotheses.load(s).get("template", "slider_fan")].SHEET_SET)
+                return rc
+            made, failures = tv.adopt(form.get("fix", ""), by, form.get("sheet_set", ""), form.get("commit", ""), "作る側の頁のフォーム", printer)
+            msg = ""
+            if made:
+                msg = (f"版 {made['version']} を刷りました" if made.get("printed") else f"版 {made['version']} の記録を残しましたが、刷れませんでした") if "version" in made else f"雛形の直し {made['template_change']} を残しました"
+        if failures:
+            return self._send(422, kaizen.toy_page(sid, self._look, f"/loop/{sid}", note="；".join(f.message for f in failures)))
+        return self._done(sid, msg, back="loop")
+
+    def _send_video(self, rid, name):
+        """作成の過程の動画を部分取得で返す。長い動画を丸ごとメモリに読まないよう、ファイルから必要な所だけ読む（iOS の Safari は部分取得で読む）。"""
+        from omochae import trial_video
+        d, f = trial_video.load(rid), trial_video._base(rid) / name
+        if not (d and d.get("checked_by") and f.exists()):
+            return self._send(404, "見つかりません")
+        size = f.stat().st_size
+        span = byte_range(self.headers.get("Range"), size)
+        if span is False:
+            return self._send(416, b"", "video/mp4", (("Accept-Ranges", "bytes"), ("Content-Range", f"bytes */{size}")))
+        start, end = span if span else (0, size - 1)
+        self.send_response(206 if span else 200)
+        self.send_header("Content-Type", "video/mp4")
+        self.send_header("Content-Length", str(end - start + 1))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if span:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        with f.open("rb") as src:
+            src.seek(start)
+            left = end - start + 1
+            while left > 0:
+                chunk = src.read(min(1 << 20, left))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                left -= len(chunk)
+
     def _toy(self, sid, **kw):
         return toy_page(sid, look=self._look, **kw)
 
@@ -261,6 +319,18 @@ class Handler(BaseHTTPRequestHandler):
         # 作る側の頁は、合言葉なしで開いたデモには出さない: 聞いた言葉と感想の文がそのまま読める頁で、名前は機械では落とせないため（J-027・J-028）。
         if path.startswith("/loop") and getattr(self.server, "public_open", False):
             return self._send(404, "見つかりません")
+        # 作成の過程の動画とコマ（作る側の頁から）。人が顔と声の確かめをした記録だけ出す（omochae.trial_video）。名前は置き場の v*.mp4 と frames の jpg だけ。
+        m = re.fullmatch(r"/loop/video/(R-\d{4,})/(v\d+\.mp4)", path)
+        if m:
+            return self._send_video(*m.groups())
+        m = re.fullmatch(r"/loop/frame/(R-\d{4,})/(v\d+-\d{6}\.jpg)", path)
+        if m:
+            from omochae import trial_video
+            d = trial_video.load(m.group(1))
+            f = trial_video._base(m.group(1)) / "frames" / m.group(2)
+            if d and d.get("checked_by") and f.exists():
+                return self._send(200, f.read_bytes(), "image/jpeg")
+            return self._send(404, "見つかりません")
         if path == "/loop":
             # 改善の輪の一覧（本人の方針 11-05）。サイト側が輪を回す所で、学ぶ人の順路の帯には入れない。
             from . import kaizen
@@ -269,7 +339,7 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # その玩具の工作の様子（聞かれた事・止まった所・感想・動きの札）。作る側が読む集計で、学ぶ人の頁には出さない。
             from . import kaizen
-            return self._send(200, kaizen.toy_page(m.group(1), look, path))
+            return self._send(200, kaizen.toy_page(m.group(1), look, path, note=qs.get("msg", [""])[0]))
         if path == "/toys":
             from . import toys
             return self._send(200, toys.page(look, path))
@@ -379,6 +449,8 @@ class Handler(BaseHTTPRequestHandler):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
             return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
+        if back == "loop":  # 作る側の頁（動画から版まで）から送った物は、そこへ戻す
+            return self._send(303, "", headers=[("Location", f"/loop/{sid}?msg={urllib.parse.quote(msg)}#k0")])
         extra = f"&see={see}&kind=sheet" if see else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}{extra}#{anchor}")])
 
@@ -445,6 +517,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
         if m:
             return self._next_version(m.group(1), form)
+        m = re.fullmatch(rf"/loop/({SID})/(judge|shown|fix)", self.path)
+        if m and m.group(1) in sources():
+            return self._loop_post(m.group(1), m.group(2), form)
         m = re.fullmatch(r"/record/(R-\d{4,})/explain", self.path)
         if m:
             rid = m.group(1)

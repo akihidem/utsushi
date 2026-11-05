@@ -1,0 +1,541 @@
+"""作成の過程の動画を試行の記録に結び、止まった所 → 直しの案 → 型紙の版まで回す（本人の指示 2026-11-05、Issue #216、J-029）。
+
+本人の言葉（窓口経由）: 作成の過程を動画で撮っている。それをフィードバックの仕組みに入れて、実際に型紙が改善するかを見たい。
+
+判断の芯:
+- 動画は git の外（記録の置き場の media/<記録>/v1.mp4）に置き、記録と番号で結ぶ。音と撮影情報は落とす（声なしの決まり J-022、位置情報を残さない）。映像は元のまま。
+- 学ぶ人の頁とギャラリーには出さない。名前を v で始めて、上げた物の一覧（techo_site.media_of の m*）に拾わせない。
+  作る側の頁でも、人が「顔と声が入っていない」と確かめるまで、映像とコマを出さない（子どもの写真と声を扱わない決まり。仕様書 I2・J-021）。
+- 止まった候補は、機械が動きの少なさから拾うだけで、意味を付けない。作業の中で手を止める事はいくらでもあるので、止まったとは言わない。
+- 札（何秒・どの手順・どんな困り事）は読みの案で、人が確かめた札だけを根拠に数える（F9。Claude の読みも人の読みも同じ床）。
+- 直しの案は確かめた札を根拠に持ち、人の説明の後で、人が採るまで版にならない（J-013）。寸法は今の輪（loop の提案。F7 の向きの検査）、
+  形や手順の文は雛形の直し（T-）。どちらも今の版の紙は変えない（凍結の床。tests/test_floor_pin.py）。
+- 効いたかは、版ごとの止まった札を手順ごとに並べるだけにする。数件で「効いた」と判定しない。読むのは人。成績にしない（J-025）。
+- 困り事の種類はエンジンの報告の言葉にそろえ、確かめた札をエンジンの報告の形で書き出せるようにする（入口と道具はエンジンの側。J-026）。
+
+終了: 0 = 通る / 3 = 落ちる（理由を出す）/ 4 = 確かめられない（ffmpeg が無い・読めない）。
+"""
+import argparse
+import json
+import os
+import pathlib
+import re
+import shutil
+import statistics
+import subprocess
+import sys
+import tempfile
+
+from . import hypotheses, instructions, loop, making_log, records, store
+from .compose import TEMPLATES
+from .contrib import _human_confirm, check_pii
+from .hypotheses import ROOT
+from .model import Failure
+
+# 困り事の種類。エンジンの報告（omochae.feedback の KINDS）と同じ言葉にして、そのまま渡せるようにする。型紙の外の 3 つ（案内・答え・サイト）も同じ。
+KINDS = {"cut": "切る", "fold": "折る", "glue": "貼る", "fit": "はまり", "motion": "動き", "mark": "印や字", "material": "材料",
+         "finish": "仕上がり", "guide": "案内", "answer": "聞く口の答え", "site": "サイト", "other": "そのほか"}
+TIMEOUT = 900  # 秒。長い動画を読む時の上限（返らなくても手順を止めない）
+MIN_STILL = 20  # 秒。これより短い手の止まりは、候補に挙げない（持ち替えや確かめで普通に起きる）
+FLOOR = 0.5  # 動きの少なさの下限。センサーの揺れを動きと読まないため
+
+
+def _base(rid):
+    return records.folder() / "media" / rid
+
+
+def _path(rid):
+    return loop.folder() / f"video-{rid}.json"
+
+
+def load(rid):
+    return store.read_json_or_skip(_path(rid))
+
+
+def _save(rid, data):
+    loop.folder().mkdir(parents=True, exist_ok=True)
+    store.write_json(_path(rid), data)
+
+
+def all_for(sid=None):
+    """動画を結んだ記録の一覧（記録の番号の順）。sid があればその玩具だけ。"""
+    out = []
+    for p in sorted(loop.folder().glob("video-R-*.json")):
+        d = store.read_json_or_skip(p)
+        if d and (sid is None or d.get("source_id") == sid):
+            out.append(d)
+    return out
+
+
+def _probe(path):
+    """(長さの秒, 映像の種類)。読めなければ (None, None)。"""
+    try:
+        r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name:format=duration",
+                            "-of", "json", str(path)], capture_output=True, text=True, check=True, timeout=TIMEOUT)
+        j = json.loads(r.stdout)
+        return float(j["format"]["duration"]), j["streams"][0]["codec_name"]
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError):
+        return None, None
+
+
+def still_spans(path, min_sec=MIN_STILL):
+    """動きの少ない区間 [[始め, 終わり], …]（秒）。1 秒に 1 コマを小さな灰色にして、隣のコマとの差を見るだけ。映像は外へ出さない。
+    手が止まった候補にすぎない。考えている時も、カメラの外で作業している時も同じに見える。"""
+    w, h = 64, 36
+    try:
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-vf", f"fps=1,scale={w}:{h},format=gray", "-f", "rawvideo", "-"],
+                             capture_output=True, check=True, timeout=TIMEOUT).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    size = w * h
+    frames = [raw[i:i + size] for i in range(0, len(raw) - size + 1, size)]
+    if len(frames) < 2:
+        return []
+    diffs = [sum(abs(a - b) for a, b in zip(frames[i], frames[i + 1])) / size for i in range(len(frames) - 1)]
+    # 物差しは上から 1/4 の所の動き。中央の値にすると、止まっている時間が長い動画で物差しごと下がり、止まりを見逃す。
+    line = max(FLOOR, 0.35 * statistics.quantiles(diffs, n=4)[2]) if len(diffs) >= 4 else FLOOR
+    spans, start = [], None
+    for i, d in enumerate(diffs + [line + 1]):  # 終わりで必ず閉じる
+        if d < line and start is None:
+            start = i
+        elif d >= line and start is not None:
+            if i - start >= min_sec:
+                spans.append([start, i])
+            start = None
+    return spans
+
+
+def steps_of(sid, hid, version=1):
+    """その版の手順の文。手順の紙と同じ雛形の steps。作れない時は空（札の手順の番号の検査をしない）。"""
+    data = hypotheses.load(sid)
+    h = next((x for x in data["hypotheses"] if x["id"] == hid), None)
+    if h is None:
+        return []
+    try:
+        params, _ = loop.version_params(sid, hid, version)
+        template = h.get("template") or data.get("template", "slider_fan")
+        return [str(s) for s in instructions.steps({**TEMPLATES[template].DEFAULTS, **(params or h.get("params") or {})}, template)]
+    except Exception:
+        return []
+
+
+def new_record(sid, hid, result, version=1, tried_on="", note=""):
+    """動画を結ぶ試行の記録を作る。刷った組（goraigo-v10 など）を一緒に残す: 版が上がった後に、どの紙の試行かが分かるように。"""
+    data = hypotheses.load(sid)
+    h = next((x for x in data["hypotheses"] if x["id"] == hid), None)
+    template = (h or {}).get("template") or data.get("template", "slider_fan")
+    return records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": version, "result": result, "sheet_set": TEMPLATES[template].SHEET_SET,
+                        **({"tried_on": tried_on} if tried_on else {}), "note": note, "fixes": [], "via": "video"})
+
+
+def attach(rid, src):
+    """動画を記録に結ぶ。音と撮影情報を落として置き場へ写し、止まった候補を拾う。元のファイルには触らない。返り値は (動画の項目, 失敗の list)。"""
+    try:
+        rec = loop.record(rid)
+    except ValueError as e:
+        return None, [Failure("F8.references", rid, str(e))]
+    src = pathlib.Path(src)
+    if not src.is_file():
+        return None, [Failure("F8.references", str(src.name), "動画のファイルが無い")]
+    dur, codec = _probe(src)
+    if dur is None:
+        return None, [Failure("F3.result", src.name, "動画として読めない（ffmpeg が無い時も）")]
+    d = _base(rid)
+    d.mkdir(parents=True, exist_ok=True)
+    cur = load(rid) or {"record_id": rid, "source_id": rec["source_id"], "hypothesis_id": rec["hypothesis_id"], "sheet_version": rec.get("sheet_version", 1),
+                        "sheet_set": rec.get("sheet_set", ""), "videos": [], "marks": [], "checked_by": None}
+    name = f"v{len(cur['videos']) + 1}.mp4"
+    # 映像は作り直さない（-c copy）。-tag:v hvc1 は iPhone の HEVC を Safari で再生するため。音・字幕・撮影情報（位置など）は写さない。
+    tag = ["-tag:v", "hvc1"] if codec == "hevc" else []
+    with tempfile.TemporaryDirectory(dir=d) as tmp:
+        out = pathlib.Path(tmp) / name
+        try:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:v:0", "-c", "copy", "-an", "-sn", "-dn", "-map_metadata", "-1",
+                            "-map_chapters", "-1", "-movflags", "+faststart", *tag, str(out)], capture_output=True, check=True, timeout=TIMEOUT)
+        except (OSError, subprocess.SubprocessError):
+            return None, [Failure("F3.result", src.name, "音と撮影情報を落とせなかった（動画の形を確かめる）")]
+        shutil.move(str(out), d / name)
+    item = {"file": name, "duration": round(dur, 1), "still": still_spans(d / name), "attached_at": loop._now()}
+    cur["videos"].append(item)
+    _save(rid, cur)
+    return item, []
+
+
+def frame(rid, video, at):
+    """動画の at 秒のコマを切り出して置き場に残す。読む時と作る側の頁で使う。写真は git に入らない（置き場は media の下）。"""
+    f = _base(rid) / "frames" / f"{pathlib.Path(video).stem}-{int(at):06d}.jpg"
+    if f.exists():
+        return f
+    f.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{at:.2f}", "-i", str(_base(rid) / video), "-frames:v", "1", "-vf", "scale=640:-1", "-q:v", "4", str(f)],
+                       capture_output=True, check=True, timeout=TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return f if f.exists() else None
+
+
+def contact(rid, video, every, out):
+    """読むための一覧の 1 枚（every 秒ごとのコマに時刻を書いて並べる）。札を付ける人や Claude が、全部を再生せずに流れを追うため。"""
+    from PIL import Image, ImageDraw
+
+    d = load(rid)
+    item = next(v for v in d["videos"] if v["file"] == video)
+    times = list(range(0, int(item["duration"]) + 1, every))
+    cells = [(t, frame(rid, video, t)) for t in times]
+    cells = [(t, f) for t, f in cells if f]
+    cols, w, h = 5, 320, 200
+    sheet = Image.new("RGB", (cols * w, ((len(cells) + cols - 1) // cols) * h), (30, 30, 30))
+    draw = ImageDraw.Draw(sheet)
+    for i, (t, f) in enumerate(cells):
+        im = Image.open(f).convert("RGB")
+        im.thumbnail((w - 6, h - 24))
+        x, y = (i % cols) * w + 3, (i // cols) * h + 3
+        sheet.paste(im, (x, y))
+        draw.text((x + 2, y + h - 22), f"{t // 60:02d}:{t % 60:02d}", fill=(255, 255, 255))
+    pathlib.Path(out).parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(out)
+    return len(cells)
+
+
+def add_mark(rid, at, step, kind, note, read_by, video="v1.mp4"):
+    """札を足す。人が確かめるまでは案で、数えない。返り値は (札の ID, 失敗の list)。"""
+    d = load(rid)
+    out = []
+    if d is None:
+        return None, [Failure("F8.references", rid, "動画を結んだ記録が無い")]
+    item = next((v for v in d["videos"] if v["file"] == video), None)
+    if item is None:
+        return None, [Failure("F8.references", video, "その動画は結んでいない")]
+    if not 0 <= at <= item["duration"]:
+        out.append(Failure("F3.result", "at", f"時刻は 0〜{item['duration']} 秒"))
+    total = len(steps_of(d["source_id"], d["hypothesis_id"], d.get("sheet_version", 1)))
+    if step is not None and total and not 1 <= step <= total:
+        out.append(Failure("F3.result", "step", f"手順は 1〜{total}"))
+    if kind not in KINDS:
+        out.append(Failure("F3.result", "kind", f"種類は {'・'.join(KINDS)} のどれか"))
+    if not (note or "").strip():
+        out.append(Failure("F3.result", "note", "何が起きたかの一言が要る"))
+    if not (read_by or "").strip():
+        out.append(Failure("F9.human", "read_by", "読んだ人（または読んだ道具）の名前が要る"))
+    out += [Failure("F3.result", "note", f.message) for f in check_pii({"body": note or ""})]
+    if out:
+        return None, out
+    mid = f"M{len(d['marks']) + 1}"
+    d["marks"].append({"id": mid, "video": video, "at": round(at, 1), "step": step, "kind": kind, "note": note.strip(), "read_by": read_by.strip(), "confirmed_by": None, "rejected_by": None})
+    _save(rid, d)
+    frame(rid, video, at)
+    return mid, []
+
+
+def judge_mark(rid, mid, by, accept=True):
+    """人が札を確かめる（または外す）。確かめた札だけが根拠になる。"""
+    d = load(rid)
+    m = next((x for x in (d or {}).get("marks", []) if x["id"] == mid), None)
+    if m is None:
+        return [Failure("F8.references", mid, "その札は無い")]
+    if not (by or "").strip():
+        return [Failure("F9.human", mid, "確かめた人の名前が無い")]
+    m["confirmed_by" if accept else "rejected_by"] = by.strip()
+    m["rejected_by" if accept else "confirmed_by"] = None
+    _save(rid, d)
+    return []
+
+
+def confirm_shown(rid, by):
+    """人が映像を見て、顔と声が入っていないと確かめた印。これが無いと作る側の頁にも映像とコマを出さない。"""
+    d = load(rid)
+    if d is None:
+        return [Failure("F8.references", rid, "動画を結んだ記録が無い")]
+    if not (by or "").strip():
+        return [Failure("F9.human", rid, "確かめた人の名前が無い")]
+    d["checked_by"] = by.strip()
+    _save(rid, d)
+    return []
+
+
+def _fix_path(fid):
+    return loop.folder() / f"fix-{fid[2:]}.json"
+
+
+def fixes(sid=None):
+    out = [f for p in sorted(loop.folder().glob("fix-*.json")) if (f := store.read_json_or_skip(p))]
+    return [f for f in out if sid is None or f.get("source_id") == sid]
+
+
+def propose(rid, mark_ids, text, drafted_by, param=None, to=None):
+    """直しの案。根拠は確かめた札で、人の説明が先（J-013）。param があれば寸法を 1 つ変える案、無ければ形や手順の文の案。"""
+    d = load(rid)
+    out = []
+    if d is None:
+        return None, [Failure("F8.references", rid, "動画を結んだ記録が無い")]
+    if loop.explanation(rid) is None:
+        out.append(Failure("F9.human", rid, "人の説明が先に要る"))
+    marks = {m["id"]: m for m in d["marks"]}
+    if not mark_ids:
+        out.append(Failure("F4.evidence", "marks", "根拠の札が要る"))
+    for mid in mark_ids:
+        if mid not in marks:
+            out.append(Failure("F8.references", mid, "その札は無い"))
+        elif not marks[mid].get("confirmed_by"):
+            out.append(Failure("F9.human", mid, "人が確かめた札だけが根拠になる"))
+    if not (text or "").strip():
+        out.append(Failure("F3.result", "text", "何をどう直すかの文が要る"))
+    if not (drafted_by or "").strip():
+        out.append(Failure("F9.human", "drafted_by", "案を書いた人の名前が要る"))
+    if out:
+        return None, out
+    fid = loop.save_numbered("fix", "D", lambda i: {"id": i, "record_id": rid, "source_id": d["source_id"], "hypothesis_id": d["hypothesis_id"], "mark_ids": list(mark_ids),
+                                                     "text": text.strip(), "param": param, "to": to, "drafted_by": drafted_by.strip(), "status": "pending_human", "drafted_at": loop._now()})
+    return fid, []
+
+
+def _finish(fix, **made):
+    fix.update(status="adopted", decided_at=loop._now(), **made)
+    store.write_json(_fix_path(fix["id"]), fix)
+
+
+def adopt(fid, by, sheet_set="", commit="", decided_in="", printer=None):
+    """人が案を採る。寸法の案は今の輪で次の版を作って刷る（F7 の向きの検査が落とせば版にならない）。形や手順の案は雛形の直し（T-）の記録にする。
+    雛形を実際に直すのはエンジンの側の受け持ちなので、T- には直した組と commit を要る物として求める（まだ直していない案を、直した事にしない）。"""
+    fix = store.read_json_or_skip(_fix_path(fid))
+    if fix is None:
+        return None, [Failure("F8.references", fid, "その案は無い")]
+    if fix["status"] != "pending_human":
+        return None, [Failure("F9.human", fid, f"状態 {fix['status']} の案は採れない")]
+    if not (by or "").strip():
+        return None, [Failure("F9.human", fid, "採った人の名前が無い")]
+    rid, sid, hid = fix["record_id"], fix["source_id"], fix["hypothesis_id"]
+    if fix.get("param"):
+        failures = loop.confirm_interpretation(rid, by, fix["text"])
+        if failures:
+            return None, failures
+        source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
+        pid, failures = loop.save_proposal({"record_ids": [rid], "hypothesis_id": hid, "changes": [{"param": fix["param"], "to": fix["to"], "why": fix["text"]}]}, source, "human")
+        if failures:
+            return None, failures
+        made, failures = loop.adopt(pid, by, accept_params=[fix["param"]], source=source)
+        if failures or "version" not in (made or {}):
+            return None, failures or [Failure("F7.revision", fid, "次の版ができなかった")]
+        version = made["version"]
+        # 刷れない時も版の記録は残る（loop.adopt の後）。案は採った事にして、刷れなかった事を返す。刷る口は 1 つ前の版へ戻るので、紙が刷れなくなる事は無い。
+        printed = printer(sid, hid, version) if printer else 0
+        _finish(fix, decided_by=by.strip(), version=version, proposal=pid, printed=printed == 0)
+        return {"version": version, "printed": printed == 0}, []
+    tid, failures = loop.save_template_change([rid], sheet_set, commit, [fix["text"]], by, decided_in)
+    if failures:
+        return None, failures
+    _finish(fix, decided_by=by.strip(), template_change=tid, sheet_set=sheet_set, commit=commit)
+    return {"template_change": tid}, []
+
+
+def reject(fid, by):
+    fix = store.read_json_or_skip(_fix_path(fid))
+    if fix is None:
+        return [Failure("F8.references", fid, "その案は無い")]
+    if not (by or "").strip():
+        return [Failure("F9.human", fid, "決めた人の名前が無い")]
+    fix.update(status="rejected", decided_by=by.strip(), decided_at=loop._now())
+    store.write_json(_fix_path(fid), fix)
+    return []
+
+
+def effect(sid):
+    """版にどう効いたかを読むための表。{仮説: {"columns": [(刷った組, 版)…], "rows": {手順: {列: {"video": 確かめた札, "tap": 画面の札}}}, "reports": {列: 報告の数}}}。
+    判定はしない。数件の比べなので、数は読む人の手がかりにすぎない。"""
+    out = {}
+
+    def slot(hid, col):
+        h = out.setdefault(hid, {"columns": [], "rows": {}, "reports": {}})
+        if col not in h["columns"]:
+            h["columns"].append(col)
+        return h
+
+    def set_of(rec_or_ev):
+        return rec_or_ev.get("sheet_set", "")
+
+    for r in records.all_records(sid):
+        col = (set_of(r), r.get("sheet_version", 1))
+        h = slot(r["hypothesis_id"], col)
+        h["reports"][col] = h["reports"].get(col, 0) + 1
+    for d in all_for(sid):
+        col = (d.get("sheet_set", ""), d.get("sheet_version", 1))
+        h = slot(d["hypothesis_id"], col)
+        for m in d["marks"]:
+            if m.get("confirmed_by") and m.get("step") is not None:
+                cell = h["rows"].setdefault(m["step"], {}).setdefault(col, {"video": 0, "tap": 0})
+                cell["video"] += 1
+    for e in making_log.steps(sid):
+        if e.get("event") != "stuck":
+            continue
+        col = (e.get("sheet_set", ""), e.get("sheet_version", 1))
+        h = slot(e.get("hypothesis_id", ""), col)
+        cell = h["rows"].setdefault(e["step"], {}).setdefault(col, {"video": 0, "tap": 0})
+        cell["tap"] += 1
+    for h in out.values():
+        h["columns"].sort(key=lambda c: (c[0], c[1]))
+        h["rows"] = dict(sorted(h["rows"].items()))
+    return out
+
+
+def report(rid, built, finish=None, minutes=None, gave_up=None, finish_notes=""):
+    """確かめた札を、エンジンの報告の形に書き出す（入口と道具はエンジンの側。J-026）。組み上がったか・仕上がりは動画から決めず、人が言う。
+    動いたかは記録の見た事から読む。雛形の RESULTS の先頭が動いた側、末尾が動かない側（「わからない」は少し動いた扱いにしない）。"""
+    d = load(rid)
+    if d is None:
+        return None, [Failure("F8.references", rid, "動画を結んだ記録が無い")]
+    rec = loop.record(rid)
+    data = hypotheses.load(rec["source_id"])
+    h = next((x for x in data["hypotheses"] if x["id"] == rec["hypothesis_id"]), {})
+    template = h.get("template") or data.get("template", "slider_fan")
+    results = list(records.results_for(rec["source_id"]))
+    moved = "moved" if rec["result"] == results[0] else "partly" if rec["result"] in ("少し動いた", "少し遊べた") else "not" if rec["result"] in ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "倒れた") else None
+    confirmed = [m for m in d["marks"] if m.get("confirmed_by")]
+    # 形の名前はエンジンの雛形の FORM（この repo の雛形の写しには無いので、ここに持つ）。
+    form = (h.get("params") or {}).get({"slider_fan": "push_part", "pivot_counterweight": "mount"}.get(template, "form"))
+    out = {"template": template, **({"form": form} if form else {}), "source_id": rec["source_id"], "params": h.get("params", {}), "built": bool(built), "motion_notes": rec.get("impression") or rec.get("note", ""),
+           "finish_notes": finish_notes, "problems": [{"kind": m["kind"], "step": m["step"], "note": m["note"]} for m in confirmed], "reported_at": rec.get("recorded_at", "")}
+    if moved:
+        out["moved"] = moved
+    if finish is not None:
+        out["finish"] = finish
+    if minutes is not None:
+        out["minutes"] = minutes
+    if gave_up is not None:
+        out["gave_up"] = gave_up
+    stuck = sorted({m["step"] for m in confirmed if m.get("step") is not None})
+    if stuck:
+        out["stuck_step"] = stuck[0]
+    return out, []
+
+
+def _say(failures):
+    for f in failures:
+        print(f.line(), file=sys.stderr)
+    return 3
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(prog="omochae.trial_video")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("attach", help="動画を記録に結ぶ。--record か、--source と --hypothesis と --result で記録を作る")
+    s.add_argument("video")
+    for a in ("--record", "--source", "--hypothesis", "--result", "--tried-on", "--note"):
+        s.add_argument(a, default="")
+    s.add_argument("--version", type=int, default=1)
+    s = sub.add_parser("sheet", help="読むための一覧の 1 枚を作る")
+    s.add_argument("record")
+    s.add_argument("out")
+    s.add_argument("--video", default="v1.mp4")
+    s.add_argument("--every", type=int, default=30)
+    s = sub.add_parser("mark", help="札を足す（案）")
+    s.add_argument("record")
+    s.add_argument("--at", type=float, required=True)
+    s.add_argument("--step", type=int)
+    s.add_argument("--kind", required=True)
+    s.add_argument("--note", required=True)
+    s.add_argument("--read-by", required=True)
+    s.add_argument("--video", default="v1.mp4")
+    s = sub.add_parser("confirm", help="札を人が確かめる")
+    s.add_argument("record")
+    s.add_argument("mark")
+    s.add_argument("--by", required=True)
+    s = sub.add_parser("drop", help="札を人が外す")
+    s.add_argument("record")
+    s.add_argument("mark")
+    s.add_argument("--by", required=True)
+    s = sub.add_parser("show-ok", help="顔と声が入っていないと人が確かめた印")
+    s.add_argument("record")
+    s.add_argument("--by", required=True)
+    s = sub.add_parser("propose", help="直しの案")
+    s.add_argument("record")
+    s.add_argument("--marks", required=True, help="M1,M2")
+    s.add_argument("--text", required=True)
+    s.add_argument("--by", required=True)
+    s.add_argument("--param")
+    s.add_argument("--to", type=float)
+    s = sub.add_parser("adopt", help="人が案を採る")
+    s.add_argument("fix")
+    s.add_argument("--by", required=True)
+    s.add_argument("--sheet-set", default="")
+    s.add_argument("--commit", default="")
+    s.add_argument("--decided-in", default="")
+    s = sub.add_parser("reject", help="人が案を採らない")
+    s.add_argument("fix")
+    s.add_argument("--by", required=True)
+    s = sub.add_parser("report", help="エンジンの報告の形に書き出す")
+    s.add_argument("record")
+    s.add_argument("--built", choices=("yes", "no"), required=True)
+    s.add_argument("--finish", type=int)
+    s.add_argument("--minutes", type=float)
+    s.add_argument("--finish-notes", default="")
+    args = ap.parse_args(argv)
+
+    if args.cmd == "attach":
+        rid = args.record
+        if not shutil.which("ffmpeg"):
+            print("検査できない: ffmpeg が無い", file=sys.stderr)
+            return 4
+        if not rid:
+            rid, failures = new_record(args.source, args.hypothesis, args.result, args.version, args.tried_on, args.note)
+            if failures:
+                return _say(failures)
+        item, failures = attach(rid, args.video)
+        if failures:
+            return _say(failures)
+        print(json.dumps({"record": rid, **item}, ensure_ascii=False))
+        return 0
+    if args.cmd == "sheet":
+        print(contact(args.record, args.video, args.every, args.out))
+        return 0
+    if args.cmd == "mark":
+        mid, failures = add_mark(args.record, args.at, args.step, args.kind, args.note, args.read_by, args.video)
+        if failures:
+            return _say(failures)
+        print(mid)
+        return 0
+    # 人の判断の命令は、端末で人が番号を打った時だけ進める（loop の命令と同じ床）。AI や自動の処理が「本人」と名乗って札を確かめ、案を採る事を止める。
+    # 手元に端末が無い人（本人は窓口と頁から動く）は、作る側の頁のフォームから同じ事をする。
+    who = {"confirm": "mark", "drop": "mark", "show-ok": "record", "adopt": "fix", "reject": "fix"}.get(args.cmd)
+    if who and not _human_confirm(getattr(args, who), {"confirm": "札の確かめ", "drop": "札を外す事", "show-ok": "顔と声の確かめ", "adopt": "採用", "reject": "不採用"}[args.cmd]):
+        return _say([Failure("F9.human", getattr(args, who), "端末での人の確認が無い（作る側の頁のフォームからもできます）")])
+    if args.cmd in ("confirm", "drop"):
+        failures = judge_mark(args.record, args.mark, args.by, accept=args.cmd == "confirm")
+        return _say(failures) if failures else 0
+    if args.cmd == "show-ok":
+        failures = confirm_shown(args.record, args.by)
+        return _say(failures) if failures else 0
+    if args.cmd == "propose":
+        to = args.to
+        if to is not None and float(to).is_integer():
+            to = int(to)  # 折りの数のような整数の寸法を、小数で渡さない（範囲の検査が落とすため）
+        fid, failures = propose(args.record, re.split(r"[,、\s]+", args.marks.strip()), args.text, args.by, args.param, to)
+        if failures:
+            return _say(failures)
+        print(fid)
+        return 0
+    if args.cmd == "adopt":
+        def printer(sid, hid, v):
+            # 刷った紙の置き場は画面（play_server.out_dir）と同じ。採った版がすぐ窓に出るように。
+            base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "play" if os.environ.get("OMOCHAE_DATA") else ROOT / "out/play"
+            (base / sid).mkdir(parents=True, exist_ok=True)
+            return hypotheses.print_sheet(sid, hid, str(base / sid / f"{hid}_v{v}"), v)
+        made, failures = adopt(args.fix, args.by, args.sheet_set, args.commit, args.decided_in, printer)
+        if failures:
+            return _say(failures)
+        print(json.dumps(made, ensure_ascii=False))
+        return 0
+    if args.cmd == "reject":
+        failures = reject(args.fix, args.by)
+        return _say(failures) if failures else 0
+    if args.cmd == "report":
+        out, failures = report(args.record, args.built == "yes", args.finish, args.minutes, None, args.finish_notes)
+        if failures:
+            return _say(failures)
+        print(json.dumps(out, ensure_ascii=False, indent=1))
+        return 0
+    return 4
+
+
+if __name__ == "__main__":
+    sys.exit(main())

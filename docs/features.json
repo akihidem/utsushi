@@ -409,5 +409,18 @@
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
   "unverified": "「ここで止まった」を押すと、その段のまま声か字で聞け、止まった段が残る（Issue 118）。映像は端末の中だけ、声は録らず字になった問いだけ送る。実機・本物の音声認識・人が使った確認はまだ。観察 B と C は本人の判断待ち"
+ },
+ {
+  "id": "f37",
+  "name": "作成の過程の動画から型紙の版まで（動画 → 札 → 人の確かめ → 直しの案 → 版 → 版ごとの止まり方）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/trial_video.py",
+   "src/web/kaizen.py",
+   "src/web/play_server.py",
+   "tests/test_trial_video.py",
+   "docs/process/decisions/J029-trial-video.md"
+  ],
+  "unverified": "本人の指示（11-05、Issue #216）。作り物の動画で命令と頁の両方の道を通した。本人の動画での 1 周、長い動画、iPhone の HEVC の再生はまだ。雛形そのものの直しはエンジンの側"
  }
 ]

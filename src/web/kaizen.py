@@ -17,6 +17,8 @@
   エンジン（paper-to-toy）の側。ここが持つのは、学ぶ人の記録と感想、仮説ごとの版（寸法を 1 つ変えた次の版）、その表示まで。
   だから、報告から案を機械で出す道具はここに置かない。
 """
+import pathlib
+
 from omochae import hypotheses, loop, making_log, records
 
 from . import skin
@@ -65,6 +67,12 @@ def section(sid, data, recs):
             rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
                      + (f'（{why}）' if why else "") + f'。根拠: {"・".join(f"<a href=#{esc(r)}>{esc(r)}</a>" for r in v.get("record_ids", []))}'
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
+    # 雛形の直し（T-）も、この玩具の記録を根拠にした物を出す。寸法の版だけだと、形や組み方の直しが見えない。
+    mine = {r["id"] for r in recs}
+    for t in loop.template_changes():
+        if mine & set(t.get("record_ids", [])):
+            rows += (f'<li><b>雛形の直し {esc(t.get("id", ""))}（{esc(t.get("sheet_set", ""))}）</b>: {esc("、".join(t.get("changes", [])))}。'
+                     f'根拠: {"・".join(f"<a href=#{esc(r)}>{esc(r)}</a>" for r in t.get("record_ids", []))}</li>')
     ready, waiting = pending(sid, recs)
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
     todo = ""
@@ -124,7 +132,93 @@ def _span(sp, unit=""):
     return (f"{lo:g}" if lo == hi else f"{lo:g}〜{hi:g}") + f"{unit}（{n} 件）"
 
 
-def toy_page(sid, look=skin.DEFAULT, path=None):
+def _clock(sec):
+    sec = int(sec)
+    return f"{sec // 60:02d}:{sec % 60:02d}"
+
+
+def _by(label="確かめた人"):
+    return f'<label style="display:inline-block;margin:0 8px 0 0;font-size:12px">{label}<input type="text" name="by" required style="width:9em"></label>'
+
+
+def video_section(sid, paper):
+    """動画 → 札 → 直しの案 → 版 → 版ごとの止まり方を、1 本につなげて見せる（本人の指示 11-05「実際に型紙が改善するかを見たい」、J-029）。
+    数は比べるための手がかりで、効いたとは判定しない（数件の比べなので）。映像とコマは、人が顔と声の確かめをした記録だけ出す。"""
+    from omochae import trial_video as tv
+
+    trials = tv.all_for(sid)
+    fixes = tv.fixes(sid)
+    eff = tv.effect(sid)
+    if not trials and not any(h["rows"] for h in eff.values()):
+        return '<p class="meta">動画を結んだ試行はまだありません。</p>'
+    out = ""
+    for d in trials:
+        rid, shown = d["record_id"], bool(d.get("checked_by"))
+        rec = loop.record(rid)
+        out += (f'<h3 id="v-{esc(rid)}">{esc(rid)} {esc(paper(d["hypothesis_id"]))}・{esc(d.get("sheet_set", ""))} 版 {esc(d.get("sheet_version", 1))}</h3>'
+                f'<p class="meta">見た事: {esc(rec.get("result", ""))}。試した日: {esc(rec.get("tried_on") or str(rec.get("recorded_at", ""))[:10])}。'
+                + (f'顔と声の確かめ: {esc(d["checked_by"])}</p>' if shown else '顔と声の確かめ待ちなので、映像とコマは出していません。札の字だけを出します。</p>'))
+        if not shown:
+            out += (f'<form method="post" action="/loop/{esc(sid)}/shown"><input type="hidden" name="record" value="{esc(rid)}">{_by()}'
+                    '<button class="quiet">顔と声が入っていないと確かめた</button></form>')
+        told = loop.explanation(rid)
+        # 人の説明が先（J-013）。説明の後でなければ直しの案を作れない。
+        out += (f'<p>説明: {esc(told["text"])}（次に試したい事: {esc(told["next_idea"])}）</p>' if told else
+                f'<form method="post" action="/record/{esc(rid)}/explain"><input type="hidden" name="back" value="loop"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
+                f'<label>次に試したい事<input type="text" name="next_idea" required></label>{_by("書いた人")}<button class="quiet">説明を残す</button></form>')
+        for v in d["videos"]:
+            spans = "、".join(f"{_clock(a)}〜{_clock(b)}" for a, b in v.get("still", [])) or "無し"
+            player = f'<video src="/loop/video/{esc(rid)}/{esc(v["file"])}" controls muted playsinline preload="metadata" style="max-width:100%;max-height:360px"></video>' if shown else ""
+            out += f'{player}<p class="meta">{esc(v["file"])}（{_clock(v["duration"])}）。動きの少なかった区間: {spans}（手が止まった候補で、止まったとは限りません）</p>'
+        rows = ""
+        for m in d["marks"]:
+            state = "外した" if m.get("rejected_by") else f'確かめた人: {esc(m["confirmed_by"])}' if m.get("confirmed_by") else "案（確かめ待ち）"
+            if not m.get("confirmed_by") and not m.get("rejected_by"):
+                state += (f'<form method="post" action="/loop/{esc(sid)}/judge" style="margin-top:6px"><input type="hidden" name="record" value="{esc(rid)}"><input type="hidden" name="mark" value="{esc(m["id"])}">{_by()}'
+                          '<button class="quiet" name="action" value="confirm">確かめた</button> <button class="quiet" name="action" value="drop">外す</button></form>')
+            at = f'<a href="/loop/video/{esc(rid)}/{esc(m["video"])}#t={int(m["at"])}">{_clock(m["at"])}</a>' if shown else _clock(m["at"])
+            pic = f'<img src="/loop/frame/{esc(rid)}/{esc(pathlib.Path(m["video"]).stem)}-{int(m["at"]):06d}.jpg" alt="" loading="lazy" style="height:72px">' if shown else ""
+            rows += (f'<tr><td>{esc(m["id"])}</td><td>{at}{pic}</td><td>{"手順 " + esc(m["step"]) if m.get("step") is not None else "—"}</td><td>{esc(tv.KINDS.get(m["kind"], m["kind"]))}</td>'
+                     f'<td>{esc(m["note"])}</td><td>読んだ人: {esc(m["read_by"])}。{state}</td></tr>')
+        out += ("<table><thead><tr><th>札</th><th>時刻</th><th>手順</th><th>種類</th><th>何が</th><th>読み</th></tr></thead><tbody>" + rows + "</tbody></table>"
+                if rows else '<p class="meta">札はまだありません。</p>')
+    rows = ""
+    for f in fixes:
+        to = f'{esc(f["param"])} → {esc(f["to"])}' if f.get("param") else "形や手順の文"
+        state = {"pending_human": "人の採否を待っている", "rejected": f'採らない（{esc(f.get("decided_by", ""))}）'}.get(f["status"])
+        if f["status"] == "adopted":
+            state = f'版 {esc(f["version"])} になった（採った人: {esc(f["decided_by"])}）' if f.get("version") else f'{esc(f.get("template_change", ""))}・{esc(f.get("sheet_set", ""))} になった（採った人: {esc(f["decided_by"])}）'
+        if f["status"] == "pending_human":
+            # 形や手順の文の案は、雛形を直した後で採る（直した組と commit を書く。まだ直していない案を、直した事にしない）。
+            more = "" if f.get("param") else ('<label style="display:inline-block;margin:0 8px 0 0;font-size:12px">直した組<input type="text" name="sheet_set" style="width:8em"></label>'
+                                              '<label style="display:inline-block;margin:0 8px 0 0;font-size:12px">commit<input type="text" name="commit" style="width:6em"></label>')
+            state += (f'<form method="post" action="/loop/{esc(sid)}/fix" style="margin-top:6px"><input type="hidden" name="fix" value="{esc(f["id"])}">{more}{_by("決めた人")}'
+                      '<button class="quiet" name="action" value="adopt">採る</button> <button class="quiet" name="action" value="reject">採らない</button></form>')
+        rows += f'<tr><td>{esc(f["id"])}</td><td>{esc(f["record_id"])} の {esc("・".join(f["mark_ids"]))}</td><td>{esc(f["text"])}</td><td>{to}</td><td>{state}</td></tr>'
+    out += "<h3>直しの案</h3>" + ("<table><thead><tr><th>案</th><th>根拠の札</th><th>何をどう直すか</th><th>変える物</th><th>どうなったか</th></tr></thead><tbody>" + rows + "</tbody></table>"
+                                  if rows else '<p class="meta">直しの案はまだありません。確かめた札と人の説明の後に作れます。</p>')
+    out += '<h3>版ごとの止まり方</h3><p class="meta">確かめた札（動画）と「ここで止まった」の札（画面）の数を、手順ごとに並べます。数件の比べなので、効いたかは人が読みます。</p>'
+    shown_any = False
+    for hid, h in eff.items():
+        if not h["rows"]:
+            continue
+        shown_any = True
+        cols = h["columns"]
+        head = "".join(f"<th>{esc(c[0] or '組の記録なし')} 版 {esc(c[1])}（報告 {h['reports'].get(c, 0)} 件）</th>" for c in cols)
+        body = ""
+        for step, cells in h["rows"].items():
+            tds = ""
+            for c in cols:
+                x = cells.get(c)
+                tds += f'<td>動画 {x["video"]}・画面 {x["tap"]}</td>' if x else "<td>—</td>"
+            body += f"<tr><td>手順 {esc(step)}</td>{tds}</tr>"
+        out += f'<p>{esc(paper(hid))}</p><table><thead><tr><th>手順</th>{head}</tr></thead><tbody>{body}</tbody></table>'
+    if not shown_any:
+        out += '<p class="meta">確かめた札も画面の札も、まだありません。</p>'
+    return out
+
+
+def toy_page(sid, look=skin.DEFAULT, path=None, note=""):
     """その玩具の工作の様子（作る側の頁。公開しない）。Issue #119（U-45）の 6 つの集計を、数と幅で出す:
     1 止まった段 / 2 動きの結果 / 3 感想の言葉 / 4 聞く口の質問 / 5 完成の様子 / 6 サイトの流れ。
     なぜ別の頁か: 学ぶ人の頁（/toy/<印>）に集計を出すと、数が成績や答えのように見える（J-025）。ここは案内・答え・型紙の版を直す人が読む。
@@ -197,6 +291,8 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
             f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
             f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a></p></div></section>'
+            + (f'<p id="msg">{esc(note)}</p>' if note else "") +
+            f'<section class="sec" id="k0"><h2>動画から版まで</h2><p class="meta">作成の過程の動画 → 札 → 人の確かめ・説明 → 直しの案 → 人が採る → 版 → 版ごとの止まり方。</p>{video_section(sid, paper)}</section>'
             f'<section class="sec" id="k1"><h2>1 止まった段</h2><p class="meta">作りながら見る頁（机の端に置く・試作）の「止まった」の札を、版と手順の番号ごとに数えます（止まった手順）。映像は残していません。</p>{s1}</section>'
             f'<section class="sec" id="k2"><h2>2 動きの結果</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{s2}</section>'
             f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'
