@@ -206,6 +206,15 @@ assert "own_paper" in client.calls[0]["system"][0]["text"], "決まりの文に�
 saved = json.loads((loop.folder() / f"proposal-{pid3[2:]}.json").read_text(encoding="utf-8"))
 assert saved["hypothesis_id"] == SHEET and saved["record_ids"] == [rid3], saved
 
+# ── 欄の「今」の値は、たたき台の今の版の物（本人の紙の値でない）。次の版はたたき台に足すので、比べる元はたたき台 ──
+param6, to6 = one_change()
+oid6, key6 = made("nextwho006", "寸法を変えた紙で試した", {param6: to6})
+assert next(h for h in hypotheses.own_hypotheses(G) if h["id"] == oid6)["params"][param6] == to6, "本人の紙の値はたたき台と違う"
+rid6 = recorded("nextwho006", oid6, key6)
+form = send(f"/toy/{G}")[1].decode().split(f'action="/record/{rid6}/next', 1)[1].split("</form>", 1)[0]
+now6 = {**TEMPLATES["slider_fan"].DEFAULTS, **loop.version_params(G, SHEET, loop.latest_version(G, SHEET))[0]}[param6]
+assert now6 != to6 and f"今 {now6:g}" in form and f"今 {to6:g}" not in form, form[:400]
+
 # ── 試した後の紙: 話した字が無いので、記録があれば別の人にも開く ──
 after = out_dir(G) / f"{oid}_v1_after.pdf"
 assert after.exists() and "".join(THINK.split()) not in flat_pdf(after) and "".join(CRAFT.split()) not in flat_pdf(after), "試した後の紙に話した字が刷られない"
