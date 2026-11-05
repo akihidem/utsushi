@@ -38,14 +38,14 @@ WHO_SCRIPT = ("<script>(()=>{try{let w=sessionStorage.getItem('utsushi-who')||''
               "document.querySelectorAll('form[method=post]').forEach(f=>{if(f.elements.who)return;const i=document.createElement('input');i.type='hidden';i.name='who';i.value=w;f.appendChild(i)})}catch(e){}})()</script>")
 
 # 紙を作る釦（#301）。作るのに数秒かかり、その間に釦が変わらないと、もう一度押す人が出て送信が 2 回出る。
-# 押した時に輪を回し、頁の紙を作る釦を全部押せなくする（別の札を押しても、前の送信の返事が捨てられるだけなので）。
+# 押した時に輪を回し、頁の紙を作る釦を全部押せなくする（別の札を押しても、前の送信の返事が捨てられるだけなので）。輪は見えない人に届かないので aria-busy も付ける。
 # submit で見るので、欄が足りずに送られない時は変わらない。JS が無ければ普通に送るだけで、形も変わらない。
 # 押せないまま残らないように戻す: 戻る操作で頁がそのまま戻った時（pageshow）と、網が止まって返事が来ない時（時間切れ）。
 # 時間切れの 30 秒は、手元で一番長い案の 4.1 秒に、教室の網の遅れを見込んだ値。戻せば押し直せる。
 BUSY_SCRIPT = ("<script>(()=>{let t;const all=()=>document.querySelectorAll('button[data-busy]');"
-               "const back=()=>{clearTimeout(t);all().forEach(b=>{b.dataset.busy='';b.disabled=false})};"
+               "const back=()=>{clearTimeout(t);all().forEach(b=>{b.dataset.busy='';b.removeAttribute('aria-busy');b.disabled=false})};"
                "document.addEventListener('submit',e=>{const b=e.target.querySelector('button[data-busy]');if(!b||e.defaultPrevented)return;"
-               "all().forEach(x=>{x.disabled=true});b.dataset.busy='on';t=setTimeout(back,30000)});"
+               "all().forEach(x=>{x.disabled=true});b.dataset.busy='on';b.setAttribute('aria-busy','true');t=setTimeout(back,30000)});"
                "addEventListener('pageshow',back)})()</script>")
 
 

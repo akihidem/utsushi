@@ -20,7 +20,7 @@ from web.play_server import out_dir, serve  # noqa: E402
 G = "NDL-1187053-R0000005-L"
 BUSY = " data-busy"
 # 紙を作る送信。記録や説明の送信は速く、押せなくすると書き直す道を狭めるので、印を付けない。
-SHEET = re.compile(rf"/toy/{G}/print(-own)?#|/record/R-\d+/next#")
+SHEET = re.compile(rf"/toy/{G}/(print(-own)?|reprint)#|/record/R-\d+/next#")
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -66,6 +66,8 @@ assert any("/print#" in a for a in marked(page))
 js = busy_script(page)
 assert "addEventListener('submit'" in js and "dataset.busy='on'" in js and ".disabled=true" in js, js
 assert "addEventListener('pageshow'" in js and "setTimeout(" in js, js
+# 読み上げの道具にも待っている事を伝える。字は足さない
+assert "setAttribute('aria-busy','true')" in js and "removeAttribute('aria-busy')" in js, js
 # 押した釦だけ輪が回る。動きを減らす設定では回さない
 assert "button[data-busy]:disabled{" in page and "button[data-busy=on]::after{" in page
 assert "@media (prefers-reduced-motion:reduce){button[data-busy=on]::after{animation:none}}" in page
@@ -83,6 +85,13 @@ assert any("/print-own#" in a for a in marked(get(f"/toy/{G}")))
 assert post(f"/toy/{G}/record", {"hypothesis": ids[0], "result": "動いた"}) == 200
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}) == 200
 assert any("/next#" in a for a in marked(get(f"/toy/{G}")))
+
+# 紙の無い版を作り直す釦。押すたびに確定の記録が 1 件増えるので、2 回送ると確定も増えていた
+form = {"interpretation": "折りが固い", "param": "paper_thickness", "to": "0.2", "why": "開きを見る", "by": "大人"}
+assert post("/record/R-0001/next", form) == 200
+for gone in out_dir(G).glob(f"{ids[0]}_v2*"):
+    gone.unlink()
+assert any("/reprint#" in a for a in marked(get(f"/toy/{G}?see={ids[0]}")))
 
 # 英語の頁の釦も同じ
 page = get(f"/en/toy/{G}")
