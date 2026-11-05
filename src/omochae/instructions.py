@@ -121,6 +121,13 @@ def _order_panels(p):
     return [("tube", "1 外筒を切って角筒に"), (p["push_part"], second), ("fan", "4 扇を色の境で蛇腹に"), ("join", last)]
 
 
+PANEL_GAP, PANEL_H = 4.0, 14.0
+
+
+def _panel_size(width, n):
+    return (width - PANEL_GAP * (n - 1)) / n, PANEL_H
+
+
 def _panel_picture(kind, x, y, w, h, shapes):
     """コマの絵。形の作り方だけで、扇が開く様子（仕組み）は描かない（紙で確かめる前に答えを見せない。J-013）。"""
     cx = x + w / 2
@@ -152,6 +159,11 @@ def _panel_picture(kind, x, y, w, h, shapes):
         shapes.append({"kind": "line", "x1": cx - 7, "y1": y + h / 2, "x2": cx + 7, "y2": y + h / 2})
 
 
+def _panel_kind(kind, i):
+    """2 コマ目が筒の時は、1 コマ目の外筒より細い内筒を描く。紙と画面（step_pictures）で同じ絵にするため 1 か所に置く。"""
+    return "tube_in" if kind == "tube" and i == 1 else kind
+
+
 def _fold_order(x, y, width, p, shapes, texts):
     """折る順の図を 4 コマで刷り、下の y を返す。手順を細かく決めすぎず、順を変える余白を文で渡す（本人の「工夫の余白」）。"""
     head = "折る順（目安）"
@@ -161,19 +173,57 @@ def _fold_order(x, y, width, p, shapes, texts):
     _block(texts, [ORDER_NOTE], x + hw, y + (HEAD_SIZE - PICTURE_SIZE) * LINE, PICTURE_SIZE, width - hw)
     y += HEAD_SIZE * LINE
     panels = _order_panels(p)
-    gap = 4.0
-    pw, ph = (width - gap * (len(panels) - 1)) / len(panels), 14.0
+    pw, ph = _panel_size(width, len(panels))
+    gap = PANEL_GAP
     bottom = y
     for i, (kind, caption) in enumerate(panels):
         px = x + i * (pw + gap)
         shapes.append({"kind": "rect", "x": px, "y": y, "w": pw, "h": ph, "tag": "order_panel"})
         texts.append(TextBox(px, y, pw, ph, None))
-        _panel_picture("tube_in" if kind == "tube" and i == 1 else kind, px, y, pw, ph, shapes)
+        _panel_picture(_panel_kind(kind, i), px, y, pw, ph, shapes)
         bottom = max(bottom, _block(texts, [caption], px, y + ph + 0.5, PICTURE_SIZE, pw))
     return bottom
 
 
 ORDER_NOTE = "順番は目安です。やりやすい順に変えてよい。自分の順を見つけたら、直した点に書く"
+
+
+def _steps_to_panels(texts):
+    """手順の文が触る部品から、折る順のコマを選ぶ。コマは手順の番号を持たないので、部品の名前で結ぶ。
+    順は戻さない（最後の「内筒を外筒に入れ」は組み上げなので、1 コマ目へ戻さず 4 コマ目のまま）。"""
+    at, out = 0, []
+    for t in texts:
+        if "3 台" in t and "貼る" in t:
+            hit = 3
+        elif "扇" in t:
+            hit = 2
+        elif any(w in t for w in ("内筒", "土台", "竹串", "割り箸")):
+            hit = 1
+        else:
+            hit = 0
+        at = max(at, hit)
+        out.append(at)
+    return out
+
+
+def step_pictures(template_id, p, texts):
+    """手帖の 1 手 1 画面に出す絵（段 1。本人の決定 11-05、#87）。Returns (絵の並び, 手順ごとの絵の番号)。絵は形の並びで、render.shapes_svg が描く。
+
+    手順ごとの絵はまだ無いので、手順の紙に刷ってある絵をそのまま使う。紙と画面で絵が食い違わず、刷っていない画面でも形から描ける。
+    折る順の 4 コマがあるのは slider_fan（御来迎）だけ（compose_sheet の fan の時だけ刷る）。ほかの雛形は手順の紙の図 1 枚を、全部の手順で出す（段 2 で手順ごとの絵を描くまで）。
+    どちらも紙に刷ってある物なので、見せてよい範囲は紙と変わらない（J-013。扇が開く様子は、紙と同じくコマに描いていない）。
+    """
+    if template_id != "slider_fan":
+        return [TEMPLATES[template_id].diagram(0, 0, DIAGRAM_W, DIAGRAM_H, p)], [0] * len(texts)
+    page = PAGES["A4"]
+    panels = _order_panels(p)
+    pw, ph = _panel_size(page.x1 - page.x0, len(panels))
+    pictures = []
+    for i, (kind, _) in enumerate(panels):
+        shapes = []
+        _panel_picture(_panel_kind(kind, i), 0, 0, pw, ph, shapes)
+        pictures.append(shapes)
+    return pictures, _steps_to_panels(texts)
 
 
 def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A4", version=1, picture=None):
