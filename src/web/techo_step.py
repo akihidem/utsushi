@@ -261,6 +261,12 @@ sayStart = () => { speaking = true; if (listening && rec) { try { rec.stop(); } 
 sayEnd = () => { if (!speaking) return; speaking = false; if (listening && rec) { try { rec.start(); } catch (e) {} } };
 mic.onclick = () => { if (listening) { listening = false; if (rec) rec.stop(); press(); return; } note.textContent = ''; wake(); };
 addEventListener('pagehide', () => { listening = false; if (rec) { try { rec.stop(); } catch (e) {} } });
+// 隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
+let paused = false;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (listening) { paused = true; listening = false; press(); try { rec.stop(); } catch (e) {} } return; }
+  if (paused) { paused = false; listening = true; press(); if (!speaking) { try { rec.start(); } catch (e) {} } }
+});
 $('start').onclick = () => {
   try { const k = `tsukuru-start-${sid}-${hid}`; if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); send('start'); } } catch (e) {}
   to(n > total ? 'end' : 'step'); wake();

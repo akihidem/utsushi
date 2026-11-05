@@ -336,6 +336,12 @@ except urllib.error.HTTPError as e:
 code, back = req(f"/toy/{G}/talk", {"scene": "keep", "record": j["id"], "text": "足した字"})
 assert code == 200 and f'/toy/{G}/techo/kiroku#mine' in back
 
+# ---- 開いた時の版のまま作り続ける（別の人の報告で版が上がっても、手順と札の版を変えない）
+code, body = req(f"/record/{j['id']}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
+assert code in (200, 303), body[:300]
+assert 'data-v="2"' in req(f"/toy/{G}/techo")[1] and 'data-v="1"' in req(f"/toy/{G}/techo?v=1")[1] and 'data-v="2"' in req(f"/toy/{G}/techo?v=9")[1]
+assert "?v=1&amp;n=3" in req(f"/toy/{G}/techo?v=1&n=2")[1], "JS が無い時のリンクも開いた時の版を持つ"
+
 # ---- 虎: 絵は手順の紙の図。結果の札は虎の値
 page = req(f"/toy/{T}/techo")[1]
 doc = read(page)
