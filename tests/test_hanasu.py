@@ -118,7 +118,7 @@ code, page, _ = post(f"/toy/{G}/talk", {"scene": "think", "text": "電話は 090
 assert code == 422 and f'<section class="sec" id="hanasu"><div role="alert"><p id="msg">{hanasu.BLOCKED}</p></div>' in page and "連絡先の形" not in page
 code, j = talk(scene="think", hypothesis="H-ZZ", text="無い仮説")
 assert code == 422 and j["kept"] is False, j
-# 同じ画面で、別の仮説について話した考えと、仮説を選ばずに話した考え
+# 同じ画面で、別の仮説について話した考えと、仮説を選ばずに話した考え（頁に選ぶ欄は無いが、前に残した字と、JS の無い送り方の分。記録の形は受ける）
 THINK_OTHER, THINK_FREE = "糸を引くと、下から開くのかもしれない", "どの案か分からないけど、紙が固そう"
 assert talk(scene="think", hypothesis="H-B", text=THINK_OTHER, who=W)[0] == 200 and talk(scene="think", text=THINK_FREE, who=W)[0] == 200
 
@@ -375,7 +375,6 @@ ADOPTED = {
     "BLOCKED": "名前や学校の名前のような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。",
     "FAILED": "残せませんでした。インターネットにつながっているか見て、もう一度押してください。",
     "NOHEARD": "聞き取れませんでした。もう一度押すか、字で書いてください。",
-    "WHICH": "どの案（仮説）のこと？（選ばなくてもだいじょうぶです）",
     "UPLOAD_NOTICE": "声は字にかえて、声は残しません。のせた写真と動画は、いつ・どこでとったかなどの情報を消してから残します。",
 }
 for name, text in ADOPTED.items():
@@ -388,7 +387,9 @@ for page in (toy, tsu, techo):
 assert '<p class="hanasu-head">考えを話す</p>' in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' in toy
 assert '<p class="hanasu-head">工夫を話す</p>' in tsu and 'placeholder="『ここをこうしたら、うまくいった』など"' in tsu
 assert '<p class="hanasu-head">工夫した所や、思った事を足す</p>' in techo
-assert '<option value="">どの案（仮説）のこと？（選ばなくてもだいじょうぶです）</option>' in toy
+# 考えは、頁に出ているたたき台に結ぶ。仮説を選ぶ欄を置かない（型紙は玩具ごとに 1 枚。J-032）
+think_form = toy[toy.index('id="hanasu"'):toy.index("</form>", toy.index('id="hanasu"'))]
+assert '<input type="hidden" name="hypothesis" value="H-A">' in think_form and "<select" not in think_form and "どの案（仮説）" not in toy
 assert '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>' in toy
 # 釦は「話す」「止める」「残す」のまま。声を聞いている時などの知らせ
 assert ">話す</button>" in toy and '<button class="hanasu-go">残す</button>' in toy and "mic.textContent=on?'止める':'話す'" in hanasu.SCRIPT
