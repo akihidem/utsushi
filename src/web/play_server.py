@@ -119,6 +119,21 @@ def printed_versions(sid, hid):
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))}) if out_dir(sid).exists() else []
 
 
+def ensure_after(sid, hid, version):
+    """記録のある案と版の試した後の紙が無ければ、開く時に作る（#320）。場で配られた紙で作った人は「型紙を見る」を押さないので、置き場に紙が無い。
+    記録の時でなく開く時に作るのは、前に残した記録と、置き場が空になった後の記録も同じ道で開くため。記録の POST も重くならない。
+    記録の無い案と版では作らない（S-03）。作るのは試した後の紙だけで、型紙の確定（f09）も増やさない: 人が刷ると選んだ操作でないので、刷った案に数えない。
+    途中で落ちても半端な紙を残さない。作れない時は紙が無いだけにする（頁ごと落とさない）。"""
+    if not any(r["hypothesis_id"] == hid and r.get("sheet_version", 1) == version for r in records.all_records(sid)):
+        return
+    if (out_dir(sid) / f"{hid}_v{version}_after.pdf").exists():
+        return
+    try:
+        loop.print_after(sid, hid, version, out_dir(sid))
+    except Exception as e:
+        failure_log.request_failed("GET", f"/sheet/{sid}/{hid}_v{version}_after", e)
+
+
 def sheet_version_of(sid, hid, form):
     """この報告・質問・札が、どの版の紙への物か。画面が言った版（刷ってある物だけ）を使い、言わなければ一番新しい版。
     なぜ画面から受けるか: 版 1 で作っている間に、別の人の報告で版 2 が刷られる事がある。一番新しい版を決め打ちすると、版 1 の動きが版 2 の記録になり、
@@ -351,7 +366,10 @@ class Handler(BaseHTTPRequestHandler):
                 v = int(qs.get("v", ["0"])[0])
             except ValueError:
                 v = 0
-            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
+            see = qs.get("see", [None])[0]
+            if kind == "_after" and see:
+                ensure_after(m.group(1), see, v)  # 札の「試した後の紙」の着く先。紙が無いと窓に出ない（#320）
+            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=see, kind=kind, v=v, path=path))
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
         if m:
             # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
@@ -370,6 +388,8 @@ class Handler(BaseHTTPRequestHandler):
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
                 return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
+            if stem.endswith("_after"):
+                ensure_after(sid, hid, int(re.search(r"_v(\d+)", stem).group(1)))
             if f.exists():
                 # インラインの印: ブラウザが PDF を表示できる機器では、落とさずにその場で開く（本人の指示 11-05「クリックで画面に型紙が出る形」）。
                 return self._send(200, f.read_bytes(), {"pdf": "application/pdf", "svg": "image/svg+xml", "png": "image/png"}[ext],

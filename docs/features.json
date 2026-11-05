@@ -241,6 +241,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/instructions.py",
+   "tests/test_after_sheet_open.py",
+   "tests/test_after_sheet_real.py",
    "tests/test_words.py",
    "tests/test_sheet_u25.py",
    "tests/test_sheet_heads.py"
