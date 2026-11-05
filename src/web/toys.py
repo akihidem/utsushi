@@ -16,7 +16,7 @@ from . import skin as skinmod
 from .skin import esc
 
 LEAD = "どれも図と歌だけが残った玩具です。選んで、先に予想を書くと、仮説と型紙が出ます。"
-NOTE = "の札は、全部を型紙にする途中の玩具です。名前は作る側の見立てで、まだ確かめていません。"
+NOTE = "先頭の 2 つのほかは、全部を型紙にする途中の試作です。名前は作る側の見立てで、まだ確かめていません。"
 
 
 def sources():
@@ -27,17 +27,12 @@ def _source(sid):
     return json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
 
 
-def frame_no(sid):
-    """記録の印 NDL-…-R0000005-L から、コマの番号（5）を取る。図鑑の一覧と同じ取り方。"""
-    return sid.split("-R")[1][:7].lstrip("0")
-
-
 def _pic(sid, main):
     if not (ROOT / "out/sources" / f"{sid}.jpg").exists():
         return '<div class="pic nopic" role="img" aria-label="図は手元に無い"></div>'
-    # 必須の 2 種は半頁の写しなので額の敷き方（112%・綴じの反対側）、試作は箱の切り出しなので cover。皮の .toys .pic の 300% は打ち消す。
+    # 必須の 2 種は半頁の写しなので額の敷き方（112%・綴じの反対側）。試作は箱の切り出しで、札と縦横が違うので contain（cover だと切れて、何の玩具か分からない札が出る）。皮の .toys .pic の 300% を上書きする
     pos = ("15% 50%" if _source(sid).get("side") == "R" else "85% 50%") if main else "50% 50%"
-    size = "112% 112%" if main else "cover"
+    size = "112% 112%" if main else "contain"
     return f'<div class="pic" style="background-image:url(/picture/{esc(sid)});background-position:{pos};background-size:{size}" role="img" aria-label="図"></div>'
 
 
@@ -45,9 +40,8 @@ def card(sid):
     data, src = hypotheses.load(sid), _source(sid)
     main = hypotheses.stage(sid) == "必須"
     has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
-    tag = "" if main else f'<br><small class="meta">試作 · コマ {esc(frame_no(sid))}</small>'
     more = "" if has else f'<p class="meta"><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></p>'
-    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}{tag}</span></a>{more}</li>'
+    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
 
 
 def page(skin, path="/toys"):
@@ -56,6 +50,6 @@ def page(skin, path="/toys"):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。<span class="lb">試作</span>{esc(NOTE)}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE)}</p>'
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

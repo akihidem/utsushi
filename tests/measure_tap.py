@@ -24,6 +24,8 @@ from web import play_server  # noqa: E402
 
 MIN_TAP, MIN_FONT = 44, 12
 G = "NDL-1187053-R0000005-L"
+# kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
+PAGES = ["/", "/about", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}", "/no-such-page"]
 # 文の中のリンクは床の外（本文の要件）。親に字があって、自分が inline の物
 # load を待たない。図の読み込みが遅い頁で、時間切れの前に測れなくなる。押す所の高さと字の大きさは図に頼らない
 MEASURE = """<script>setTimeout(()=>{
@@ -87,20 +89,22 @@ def main():
         print("検査できない: Chrome が無い", file=sys.stderr)
         return 4
     inject(play_server.Handler)
-    server = play_server.serve(0)
-    base = f"http://127.0.0.1:{server.server_address[1]}"
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    before = ["/", "/about", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/no-such-page"]
-    # 予想の前と後で頁が違う（#242 で予想の段が外れるまで）。後の頁も測る
+    # 頁の予想の段と手帖は、置き場の記録で形が変わる（#242 で予想の段が外れるまで）。1 回だけ作り、皮ごとのサーバで同じ記録を見る
     hypotheses.save_prediction(G, "押すと開く")
-    data = urllib.parse.urlencode({"hypothesis": "H-A"}).encode()
-    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
     records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-    pages = before + [f"/toy/{G}/techo"]
-    bad = 0
+    pages = PAGES + [f"/toy/{G}/techo"]
+    printed, bad = False, 0
     for look in ("tenji", "zine"):
+        # 皮はサーバごとに 1 つ（本人の決定 11-05）。?look= は効かない
+        server = play_server.serve(0, look=look)
+        base = f"http://127.0.0.1:{server.server_address[1]}"
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        if not printed:
+            data = urllib.parse.urlencode({"hypothesis": "H-A"}).encode()
+            urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
+            printed = True
         for path in pages:
-            got = measure(exe, base, f"{path}?look={look}", width)
+            got = measure(exe, base, path, width)
             if got is None:
                 print(f"測れない: {look} {path}", file=sys.stderr)
                 return 4
@@ -110,7 +114,7 @@ def main():
             kinds = sorted({re.sub(r" .*", "", x[0]) for x in got["low"]})
             print(f"{look:6} {path[:28]:28} 押す所 {got['tap']:3}・{MIN_TAP} 未満 {len(got['low']):3} {kinds[:5]}  小さい字 {sum(got['small'].values()):3} {list(got['small'])[:4]}  横幅 {got['sx']}")
             bad += len(got["low"]) + sum(got["small"].values())
-    server.shutdown()
+        server.shutdown()
     print(f"満たさない所 {bad}")
     return 3 if bad else 0
 

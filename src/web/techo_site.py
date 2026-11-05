@@ -21,7 +21,7 @@ import tempfile
 from PIL import Image
 
 from api import config
-from omochae import contrib, hypotheses, records
+from omochae import contrib, hypotheses, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
@@ -157,6 +157,8 @@ STYLE = """
 body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
 .techo main:has(.gallery){max-width:960px}
+.techo .gallery h1{font-size:clamp(19px,5vw,26px);letter-spacing:.2em}.techo .gallery .top a{white-space:nowrap}
+.techo .jump{display:flex;gap:6px 18px;flex-wrap:wrap;margin:8px 0 14px;font-size:14px;letter-spacing:.1em}.techo .jump a{color:var(--accent)}
 .techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
 .techo .top a{margin-left:auto;font-size:14px;color:var(--accent)}
@@ -180,6 +182,8 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .shot{display:grid;place-items:center;gap:6px;border:2px dashed var(--accent);border-radius:16px;padding:22px;cursor:pointer;color:var(--accent);position:relative;margin:0}
 .techo .shot svg{width:56px;height:56px;stroke:var(--accent);fill:none;stroke-width:2.5}
 .techo .shot input{position:absolute;opacity:0;width:1px;height:1px}
+.techo .picked{font-size:16px}.techo .picked:empty,.techo .thumbs:empty{display:none}
+.techo .thumbs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.techo .thumbs img,.techo .thumbs video{width:72px;height:72px;object-fit:cover;border-radius:8px}
 .techo .go{font:inherit;font-size:20px;letter-spacing:.05em;background:var(--accent);color:var(--onaccent);border:0;padding:16px 28px;border-radius:12px;cursor:pointer;margin:0}
 .techo .check{display:flex;gap:10px;align-items:center;font-size:15px;margin:0}.techo .check input{width:26px;height:26px}
 .techo .meta{font-size:12px;color:var(--mute)}
@@ -193,13 +197,20 @@ SCRIPT = """
 <script>
 (() => {
 const sid = document.querySelector('[data-sid]').dataset.sid;
-const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; speechSynthesis.speak(u); } catch (e) {} };
+// 読み上げの間は音声認識を止める: 止めないと端末が自分の答えを聞き取り、問いとして送り、それがまた読み上げられる（答えの文が質問として残り、費用もかかる）。
+// 読み上げの終わりの知らせが来ない機種があるので、長さから見た時間でも戻す。前の読み上げの取り消しの知らせで戻らないよう、番号で見分ける。
+let sayStart = () => {}, sayEnd = () => {}, sayId = 0;
+const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t), id = ++sayId; u.lang = 'ja-JP';
+  const fin = () => { if (id === sayId) sayEnd(); }; u.onend = fin; u.onerror = fin; setTimeout(fin, Math.min(60000, t.length * 400 + 3000)); sayStart(); speechSynthesis.speak(u); } catch (e) { sayEnd(); } };
+// 版（開いた時に刷ってあった一番新しい版）と、その場限りの印（skin.WHO_SCRIPT が持つ）を、出来事に添える。
+const paper = () => document.querySelector('[name=hypothesis]:checked') || {};
+const extra = (o) => { const b = new URLSearchParams(o); const el = paper(); if (el.dataset && el.dataset.v) b.set('sheet_version', el.dataset.v); try { const w = sessionStorage.getItem('utsushi-who'); if (w) b.set('who', w); } catch (e) {} return b; };
 const ans = document.getElementById('answer');
 async function ask(q) {
   const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
   if (!q || !hid) return;
   ans.textContent = '…';
-  const r = await fetch(`/toy/${sid}/ask-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, question: q }) });
+  const r = await fetch(`/toy/${sid}/ask-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, question: q }) });
   const j = await r.json().catch(() => ({ text: '今は答えられません' }));
   ans.textContent = j.text; say(j.text);
 }
@@ -208,12 +219,14 @@ document.getElementById('ask-form').onsubmit = (e) => { e.preventDefault(); ask(
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const mic = document.getElementById('mic');
 if (!SR) { mic.hidden = true; } else {
-  let rec = null, on = false;
+  let rec = null, on = false, speaking = false;
+  sayStart = () => { speaking = true; if (on && rec) { try { rec.stop(); } catch (e) {} } };
+  sayEnd = () => { if (!speaking) return; speaking = false; if (on && rec) { try { rec.start(); } catch (e) {} } };
   mic.onclick = () => {
     if (on) { on = false; rec && rec.stop(); mic.setAttribute('aria-pressed', 'false'); return; }
     rec = new SR(); rec.lang = 'ja-JP'; rec.continuous = true; rec.interimResults = false;
-    rec.onresult = (ev) => { const t = ev.results[ev.results.length - 1][0].transcript.trim(); document.getElementById('q').value = t; ask(t); };
-    rec.onend = () => { if (on) { try { rec.start(); } catch (e) {} } };
+    rec.onresult = (ev) => { if (speaking) return; const t = ev.results[ev.results.length - 1][0].transcript.trim(); document.getElementById('q').value = t; ask(t); };
+    rec.onend = () => { if (on && !speaking) { try { rec.start(); } catch (e) {} } };
     on = true; mic.setAttribute('aria-pressed', 'true'); rec.start();
   };
 }
@@ -223,6 +236,28 @@ const showMine = async () => {
   const doc = new DOMParser().parseFromString(await (await fetch(location.pathname)).text(), 'text/html');
   document.getElementById('mine').innerHTML = doc.getElementById('mine').innerHTML;
 };
+// 選んだ物を押す前に見せる。写しはこの端末の中だけで作り、送らない。
+const upForm = document.getElementById('up-form'), picker = document.getElementById('files');
+const thumbs = document.getElementById('thumbs');
+function showPicked() {
+  thumbs.querySelectorAll('[src]').forEach((el) => URL.revokeObjectURL(el.src));
+  thumbs.textContent = '';
+  const all = [...picker.files], kept = all.slice(0, Number(upForm.dataset.maxN));
+  const movies = kept.filter((f) => f.type.startsWith('video/')).length, stills = kept.length - movies;
+  for (const f of kept) {
+    const el = document.createElement(f.type.startsWith('video/') ? 'video' : 'img');
+    el.src = URL.createObjectURL(f); el.alt = '';
+    if (el.tagName === 'VIDEO') { el.muted = true; el.playsInline = true; el.preload = 'metadata'; }
+    thumbs.append(el);
+  }
+  const notes = [[stills, '写真'], [movies, '動画']].filter(([n]) => n).map(([n, w]) => `${w} ${n}`);
+  let text = notes.join('・');
+  if (all.length > kept.length) text += `（${upForm.dataset.maxN} つまでなので、残りの ${all.length - kept.length} つは上げません）`;
+  if (kept.some((f) => f.size > Number(upForm.dataset.maxBytes))) text += '（大きすぎて上げられない物があります）';
+  document.getElementById('picked').textContent = text;
+  upForm.querySelector('button.go').textContent = kept.length ? '上げる' : '記録だけ残す';
+}
+picker.onchange = showPicked;
 document.getElementById('up-form').onsubmit = async (e) => {
   e.preventDefault();
   const form = e.target, go = form.querySelector('button.go');
@@ -230,16 +265,16 @@ document.getElementById('up-form').onsubmit = async (e) => {
   const st = document.getElementById('up-status');
   const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
   const result = (document.querySelector('[name=result]:checked') || {}).value;
-  const files = [...document.getElementById('files').files].slice(0, 3);
+  const files = [...picker.files].slice(0, Number(form.dataset.maxN));
   if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
   go.disabled = true; st.textContent = '送っています…';
   let done = '';
   try {
-    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, result, note: document.getElementById('note').value }) });
+    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value }) });
     const j = await r.json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
-    form.reset();
+    form.reset(); showPicked();
     done = '上げました';
     for (const f of files) {
       const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
@@ -262,7 +297,7 @@ def feedback(sid, r):
     Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。"""
     from omochae import loop
 
-    after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v1_after.pdf"
+    after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told:
         from web.play_server import next_form
@@ -312,7 +347,8 @@ def gallery_page(sids):
             pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                             else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
             h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-            cards += (f'<div class="item"><p class="meta">{esc(data["toy"])}　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
+            # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
+            cards += (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
                       f'<div class="row">{pics}</div></div>')
     cards = cards or '<p class="meta">まだ上げた物はありません。手帖の「上げる」から上げると、ここに並びます。</p>'
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
@@ -323,23 +359,27 @@ def gallery_page(sids):
     from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（STYLE の main:has(.gallery)）。
-    return ('<div class="gallery"><div class="top"><h1>上げた物</h1><a href="/">入口へ</a></div>'
-            '<section class="panel" aria-label="上げた物"><p class="mark">上げた物</p><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
+    return ('<div class="gallery"><div class="top"><h1>上げた物と職人の言葉</h1><a href="/">入口へ</a></div>'
+            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">上げた物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
+            '<section class="panel" id="ageta"><h2 class="mark">上げた物</h2><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
-            '<section class="panel" aria-label="寄せられた声"><p class="mark">寄せられた声</p><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
+            '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
             f'{voices_html()}</section>'
-            '<section class="panel" aria-label="職人の言葉"><p class="mark">職人の言葉</p><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
+            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url):
+def page(sid, printed_ids, picture_url, uploads=True):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。予想の前は呼ばない（呼ぶ側が F9.prediction を見る）。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
     hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
-    sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}"{" checked" if i == 0 else ""}>'
+    from .play_server import printed_versions  # 循環を避けて、ここで読む
+
+    # data-v: 開いた時に刷ってあった一番新しい版。作っている途中で別の人の版が刷られても、報告はこの版への物として残る。
+    sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'
@@ -360,13 +400,18 @@ def page(sid, printed_ids, picture_url):
             f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(tpl.SHEET_SET)}</p>'
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
-            '<div class="answer" id="answer" aria-live="polite"></div></section>'
+            # 断り（本人の決定 11-05、様子の蓄積）: 声は残さず、字にした質問だけを残す。名前は言わないでほしい事も出す。
+            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc(making_log.ASK_NOTICE) + esc(making_log.ASK_NAME_VOICE) + '</p></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
-            '<form id="up-form"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
-            '<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple></label>'
+            f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
+            # 合言葉なしで開いたデモ（uploads=False）では、写真と動画の口を閉じる（play_server の受け口も断る）。見た事とひとことは残せる。
+            + ('<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple>' if uploads else '<input type="file" id="files" disabled>')
+            + '<span class="picked" id="picked" aria-live="polite"></span><span class="thumbs" id="thumbs"></span></label>'
+            + (f'<p class="meta">{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで</p>' if uploads else
+               '<p class="meta">公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。</p>') +
             f'<div class="row" role="radiogroup" aria-label="見た事">{results}</div>'
             '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
-            '<p><button class="go">上げる</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
+            '<p><button class="go">記録だけ残す</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
             f'<div id="mine">{mine}</div></section>')
     return body + SCRIPT

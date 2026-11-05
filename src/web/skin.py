@@ -3,8 +3,9 @@
 判断の芯:
 - 順路は 1 つ、皮は 2 つ。皮は CSS の変数の表（SKINS）だけで、頁の骨（shell・nav）と部品の CSS（BASE）は共通。皮ごとに頁を書かない。
   なぜ: 今まで頁ごとに見た目の塊を持ち（入口 3 系統・玩具の頁・手帖・図鑑）、入口から玩具の頁へ入った所で世界が変わっていた（要件の 0）。
-- 皮は入口（/look/tenji・/look/zine）で選び、cookie `look` で全部の頁に続く。?look= でも切り替わる。既定は tenji（白）。
-  本人の答え（カード 20261105-011452-sub-site の Q2）で既定を変えられるよう、DEFAULT を 1 か所に置く。
+- 皮はサイトごとに 1 つ（本人の決定 11-05 朝「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」）。サーバを立てる時に
+  --look で決め（play_server.serve の look）、頁の中に切り替えは置かない。cookie も ?look= も使わない。DEFAULT は --look を省いた時の皮。
+  大判（A）は外した（同じ決定「他のデザインは要らない」）。
 - 動きは入口の扇の札だけ。内側の頁は静か（research/19・24 の線のまま）。見えた時に起こす仕掛け（IntersectionObserver）は置かない。
 - 図は国立国会図書館の頁の写しだけ。新しい絵は作らない。小さな字も 4.5:1 を割らない（research/24）。
 - 成績・順位に見える物（点・票・数の回る表示・祝いの演出）は部品に入れない（J-025、philosophy.md）。
@@ -27,27 +28,15 @@ SKINS = {
 NAV = (("/", "うつし"), ("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "上げた物と職人の言葉"), ("/zukan", "図鑑"))
 
 
+# その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
+# cookie にしない・名前にしない・日をまたいで同じ人と分からない。持てない画面では添えない（頁は JS なしでも動く。人の数が「—」になるだけ）。
+WHO_SCRIPT = ("<script>(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){"
+              "const a=crypto.getRandomValues(new Uint8Array(10));w=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');sessionStorage.setItem('utsushi-who',w)}"
+              "document.querySelectorAll('form[method=post]').forEach(f=>{if(f.elements.who)return;const i=document.createElement('input');i.type='hidden';i.name='who';i.value=w;f.appendChild(i)})}catch(e){}})()</script>")
+
+
 def esc(s):
     return html.escape(str(s if s is not None else ""), quote=True)
-
-
-def pick(cookie_header="", query=""):
-    """どの皮か。?look= が先、次に cookie、無ければ既定。返り値は (皮, cookie に書くべき皮 or None)。"""
-    import urllib.parse
-
-    want = urllib.parse.parse_qs(query).get("look", [""])[0]
-    if want in SKINS:
-        return want, want
-    jar = {}
-    for part in (cookie_header or "").split(";"):
-        k, _, v = part.strip().partition("=")
-        jar[k] = v
-    got = jar.get("look", "")
-    return (got if got in SKINS else DEFAULT), None
-
-
-def cookie_header(skin):
-    return ("Set-Cookie", f"look={skin}; Max-Age=2592000; Path=/; SameSite=Lax")
 
 
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
@@ -55,7 +44,7 @@ def cookie_header(skin):
 # 文の中のリンクは入れない。行が崩れるので。字の大きさの床（12px）は、幅に関わらず CSS の指定そのもので守る。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
-.nav a,.nav .skins a,.switch a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav a,.nav .skins a,.switch a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a:only-child,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 input[type=range]{height:44px}
 }
 """
@@ -80,7 +69,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .lead{font-size:15px;line-height:2.1;letter-spacing:.06em;max-width:40em}
 .nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 .nav a{color:var(--accent);border:0}.nav b{font-weight:400;color:var(--fg)}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
-.nav .skins{margin-left:auto;display:flex;gap:12px}.nav .skins a[aria-current=true]{color:var(--fg);border-bottom:1px solid var(--fg)}
+
 .sec{padding:56px 0;border-top:1px solid var(--rule)}
 .sec:first-child{border-top:0}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;align-items:start;padding:48px 0 56px}
@@ -134,27 +123,28 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .item{border-top:1px solid var(--rule);padding:14px 0;display:grid;gap:6px}
 .item img,.item video{height:120px;max-width:100%;border:1px solid var(--frame)}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.shots{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.shots img,.shots video{height:150px;max-width:100%;border:1px solid var(--frame);background:#fff}
+.strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.strip a{border:0}.strip img,.strip video{height:72px;border:1px solid var(--frame);background:#fff}
 .toys{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px}
 .toys a{display:block;border:0;color:var(--fg)}
 .toys .pic{aspect-ratio:3/4;background:var(--soft) center/300% no-repeat;border:1px solid var(--frame);box-shadow:0 14px 22px -18px var(--shadow)}
-.toys .nm{font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
+.toys .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
 @media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
 .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
-.is-sample{border-top:1px dashed var(--frame)}
+.is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
 .foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
- main,.wrap{padding-left:16px;padding-right:16px}.nav .skins{margin-left:0}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.zoom img{width:220%}}
+ main,.wrap{padding-left:16px;padding-right:16px}.toys{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.zoom img{width:220%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
 
 
 def nav(skin, current="", path="/"):
-    """頭の帯。順路の道と、皮の切り替え（今の頁に ?look= を付けて戻る）。"""
+    """頭の帯。順路の道だけ。皮の切り替えは置かない（皮ごとに 1 サイト。skin と path は呼び手の形を保つために残す）。"""
     items = "".join(f'<b>{esc(n)}</b>' if p == current else f'<a href="{p}">{esc(n)}</a>' for p, n in NAV)
-    sw = "".join(f'<a href="{esc(path)}?look={k}" aria-current="{"true" if k == skin else "false"}">{esc(v["name"])}</a>' for k, v in SKINS.items())
-    return f'<nav class="nav"><a class="brand" href="/">うつし</a>{items}<span class="skins" aria-label="見た目">{sw}</span></nav>'
+    return f'<nav class="nav"><a class="brand" href="/">うつし</a>{items}</nav>'
 
 
 def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot=""):
@@ -164,7 +154,7 @@ def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(title)}</title><style>:root{{{root}}}{BASE}{TAP_FLOOR}{extra_style}</style>{head}'
-            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}</body></html>')
+            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
 
 
 def frame(sid, caption="", pos=None):
