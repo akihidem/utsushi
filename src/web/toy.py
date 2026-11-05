@@ -240,14 +240,15 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     recorded = {r["hypothesis_id"] for r in recs}
     own = hypotheses.own_hypotheses(sid)
     body = hero + f'<section class="sec" id="yosou">{note}<h2>予想</h2>'
-    body += (f'<article class="card"><h3>あなたの予想</h3><p>{esc(latest)}</p></article>' if latest else "") + form_pred
+    # 予想の後は札を主にし、欄は畳む（JS なし）。大きな欄が残ると、次の段の仮説が画面の下へ押される（#120）。
+    body += (f'<article class="card"><h3>あなたの予想</h3><p>{esc(latest)}</p></article><details><summary>予想を書き足す</summary>{form_pred}</details>' if latest else form_pred)
     for h in own:
         # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
         free = f'{h["id"]}_v1_free.pdf'
         link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
-        body += (f'<article class="card"><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
+        body += (f'<article class="card" id="own-{esc(h["id"])}"><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
-    body += form_own + "</section>"
+    body += f'<details><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
     body += f'<section class="sec" id="kasetsu"><h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
