@@ -24,7 +24,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # �
 
 from api import words  # noqa: E402
 from omochae import hypotheses, loop, making_log, talk_log  # noqa: E402
-from omochae.compose import compose  # noqa: E402
+from omochae.compose import TEMPLATES, compose  # noqa: E402
 from omochae.marks import OWN_HYPOTHESIS  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -150,7 +150,8 @@ assert any(f.where == "tube_height" and "呼び名" in f.message for f in fs), f
 r = cli("fill", wn["id"], "--by", "作る側", "--params", json.dumps({"tube_height": 100}))
 assert r.returncode == 3 and "tube_height" in r.stderr, r.stderr
 r = cli("waiting")
-assert r.returncode == 0 and "fold_count=" in r.stdout.split(wn["id"], 1)[1] and "tube_height" not in r.stdout.split(wn["id"], 1)[1], "作る側に変えられる寸法と今の値を見せる"
+listed = r.stdout.split(wn["id"], 1)[1]
+assert r.returncode == 0 and f"fold_count={TEMPLATES['slider_fan'].DEFAULTS['fold_count']}" in listed and "tube_height" not in listed and "=None" not in listed, "作る側に変えられる寸法と今の値を見せる"
 assert not words.fill_think(wn["id"], words.think_result(wn["base_params"], not_fit=["筒の高さの呼び名がまだ無い"]), "作る側")[1], "乗らない形には書ける"
 # ほかの玩具には当てない（頁に出ないので、内部の名前を見せる事が無い）
 P = "NDL-1187053-R0000004-L"

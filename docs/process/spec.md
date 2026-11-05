@@ -34,7 +34,7 @@
 | B1 | 仕組みを 1 つに決めず、複数の仮説として並べる（御来迎 5、虎 3）。J-032 で置き換えた: 型紙は玩具ごとに 1 枚のたたき台にする（B6）。仮説の記録は消さない | J-002、J-032 | `data/hypotheses/` | `tests/test_hypotheses.py`・`tests/test_one_sheet.py`・`tests/test_one_sheet_page.py` | 置き換えた（B6） |
 | B2 | 開いたらすぐ仮説の一覧と型紙が出る。型紙は正解でなく AI が考えた仮説と明示する。J-032 で置き換えた: 仮説の一覧でなく、玩具ごとに 1 枚のたたき台の型紙が出る | 本人の決定 11-05、#242、J-032 | `src/web/toy.py`、`src/omochae/marks.py` | `test_build_now.py`・`test_loop_premise.py`・`test_one_sheet_page.py` | 満たす（頁の札は #386 で 1 枚にした。人が使った確認はまだ） |
 | B3 | 仮説に順位を付けない。並びは元の記録の順。たたき台を選ぶのも最初に作る紙を決めるだけで、正しさの判定でも順位でもない | J-025、F4.evidence、J-032 | `hypotheses.py`、`loop.py` | `test_play_server.py`・`test_loop.py` | 満たす |
-| B4 | 自分の仮説を立てられる。雛形に乗らない仮説には型紙なしの紙を返す。J-032 で置き換えた: 書く形をやめ、たたき台を見ながら考えを話すと型紙が作り直される形にする。前に書かれた自分の仮説の記録と紙は読める形で残す | J-008、F9.own、J-032 | `hypotheses.py` の own | `test_hypotheses.py` | 一部（話した考えから紙を作る節は必須 2 種の頁にある。#402。ほかの玩具は考えを話すまで。頁の書く欄を外す直しは #409） |
+| B4 | 自分の案を立てられる。玩具の頁では書かずに話す形で、話した考えから紙を作る（必須 2 種。ほかの玩具は考えを話すまで）。雛形に乗らない案には型紙なしの紙を返す。前に書かれた自分の仮説の記録と紙は読める形で残す（前は書いて立てる形。J-032 で置き換えた） | J-008、J-032、F9.own | `web/think_sheet.py`、`hypotheses.py` の own | `test_loop1_think.py`、`test_own_form_gone.py`、`test_hypotheses.py` | 満たす |
 | B5 | Claude が出すのは雛形の範囲の中の値と仮説の案だけで、人が採るまで使わない | J-010、F9.human | `src/api/`、`hypotheses.py` の adopt | `test_loop.py`（偽の応答） | 一部（本物の API は 0 回、U-05） |
 | B6 | 型紙は玩具ごとに 1 枚のたたき台にする（御来迎と虎は H-A、ほかの 81 種は記録の先頭）。1 枚は型紙の数で、紙だけで作る意味ではない。紙一枚は必須でない（本人の決定 11-05 19:44） | J-032 | 記録の欄 sheet、`hypotheses.sheet_of`、刷る口、`src/web/toy.py` | `tests/test_one_sheet.py`・`tests/test_one_sheet_page.py` | 一部（記録の欄・刷る口・玩具の頁・英語の頁・図鑑・手帖・作りながら見る頁まで。#386。残りは J-032 の「直す所」） |
 

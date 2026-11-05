@@ -159,6 +159,8 @@
   "status": "doing",
   "evidence": [
    "tests/test_reply_visible.py",
+   "src/web/wording.py",
+   "tests/test_wording.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",
@@ -211,7 +213,7 @@
   "id": "f20",
   "name": "自分の仮説を言葉から型紙にする口",
   "status": "doing",
-  "unverified": "自分の案は書く形をやめて話す形にする決定（J-032）。話した考えから紙を作る節は #402 で必須 2 種の頁に入った。本物の API で未実行。偽の応答の試験のみ",
+  "unverified": "自分の案は書く形をやめて話す形にする決定（J-032）。話した考えから紙を作る節は #402 で必須 2 種の頁に入り、頁の書く欄は #409 で外した。本物の API で未実行。偽の応答の試験のみ",
   "evidence": [
    "src/api/words.py",
    "tests/test_words.py",
@@ -220,7 +222,9 @@
    "tests/test_loop1_think.py",
    "tests/test_loop1_withdraw.py",
    "tests/test_loop1_own_private.py",
-   "tests/test_loop1_round.py"
+   "tests/test_loop1_round.py",
+   "tests/test_loop1_next.py",
+   "tests/test_own_form_gone.py"
   ]
  },
  {
@@ -441,7 +445,7 @@
    "src/omochae/cycle.py",
    "tests/test_cycle.py"
   ],
-  "unverified": "今の main で全部の段が本物のエンジンまで通る（11 段。ループ 1 の紙で作って記録する道は本物の頁で通す）。ギャラリーの頁は開かない。自分の紙の次の版、本物の API、人が実物で回した一周は未確認"
+  "unverified": "今の main で全部の段が本物のエンジンまで通る（12 段。ループ 1 の紙で作って記録し、その記録からたたき台の次の版を作って次の人が刷る道は、本物の頁で通す）。ギャラリーの頁は開かない。本物の API と、人が実物で回した一周は未確認"
  },
  {
   "id": "f35",
