@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_print_help.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmpf9llcd9h/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpf9llcd9h/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpf9llcd9h/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpf9llcd9h/play/NDL-1187053-R0000005-L/H-B_v1.pdf
+/tmp/tmpf9llcd9h/play/NDL-1187053-R0000005-L/H-B_v1_tejun.pdf
+/tmp/tmpf9llcd9h/play/NDL-1187053-R0000005-L/H-B_v1_after.pdf
+ok
+rc=0

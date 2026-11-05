@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: 14211a3（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_engine_bundle.py", line 190, in <module>
+    assert r.returncode == 4, (wrong, r.returncode)
+           ^^^^^^^^^^^^^^^^^
+AssertionError: ([], 2)
+rc=1
+
+上は、新しい試験に、直す前の src/omochae/engine_bundle.py を当てて回した（引数なしの rc 2 を名指しして落ちる）。

@@ -19,6 +19,7 @@ import re
 from omochae import hypotheses, labels, records
 from omochae.hypotheses import ROOT
 
+from . import wording
 from .skin import TAP_FLOOR, page_title
 
 QUOTE, HYPO, OBS = labels.LABELS
@@ -80,13 +81,16 @@ def record_date(r):
 
 def observation_lines(sid, data):
     """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。"""
-    return [{"text": f"{record_title(r, data)}（{record_date(r)}・{r['id']}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
+    return [{"text": f"{record_title(r, data)}（{record_date(r)}・{wording.record_no(r['id'])}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
 def hypothesis_lines(sid, data):
-    """どれも試していない考えなので、仮説の印を付ける（status も添える）。"""
-    out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in data["hypotheses"]]
-    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid)]
+    """どれも試していない考えなので、仮説の印を付ける（status も添える）。出すのはたたき台の 1 つだけ（J-032。説を羅列しない）。"""
+    out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"] if h["id"] == data.get("sheet")]
+    from api.words import spoken_own_ids  # 話した考えから採った案は出さない（ループ1、Issue #335。記録に結ぶ前の字は学ぶ人の頁に出さない決まり）
+
+    spoken = spoken_own_ids(sid)
+    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid) if h["id"] not in spoken]
     return out
 
 
@@ -114,7 +118,7 @@ def toy_section(sid, link_title=False):
     guard(z["quotes"] + z["observations"] + z["hypotheses"])
     has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     pic = f'<figure><img src="/picture/{esc(sid)}" alt="{esc(z["toy"])}の図"><figcaption class="meta">{esc(z["holding"])}</figcaption></figure>' if has_pic else "<div></div>"
-    songs = "".join(f'<p class="song">{esc(q["text"])}</p><p class="meta"><span class="lb">{esc(q["label"])}</span>確かめた人: {esc(q["checked_by"])}</p>'
+    songs = "".join(f'<p class="song">{esc(q["text"])}</p><p class="meta"><span class="lb">{esc(q["label"])}</span>確かめた人: {esc(wording.plain(q["checked_by"]))}</p>'
                     for q in z["quotes"])
     obs = f"<ul>{_items(z['observations'])}</ul>" if z["observations"] else '<p class="meta">試した記録はまだありません</p>'
     hyp = f"<ul>{_items(z['hypotheses'])}</ul>"
@@ -146,7 +150,7 @@ def index_page(sids, look=None):
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = "".join(toy_section(s, link_title=True) for s in main)
     if rest:
-        cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">コマ {esc(s.split("-R")[1][:7].lstrip("0"))}</span></li>' for s in rest)
+        cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">{esc(wording.frame(s))}</span></li>' for s in rest)
         body += (f'<section class="more" aria-label="ほかの玩具"><h2>ほかの玩具</h2><p class="meta"><span class="lb">試作</span>'
                  f'全部の玩具を型紙にする途中の {len(rest)} 種。名前は作る側の見立てで、まだ確かめていません。</p><ul class="grid">{cards}</ul></section>')
     return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body, look)
