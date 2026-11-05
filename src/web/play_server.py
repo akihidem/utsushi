@@ -355,6 +355,13 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
+        if m:
+            # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
+            from . import kumitate
+            if m.group(1) not in sources() or not kumitate.available(m.group(1)):
+                return self._send(404, "無い")
+            return self._send(200, kumitate.page(m.group(1), look, path))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
