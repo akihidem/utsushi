@@ -71,8 +71,8 @@ code, body = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷�
 assert code == 200 and json.loads(body)["from"] == "glossary", body
 # 仕組みを聞く質問は断るが、何を聞かれたかは残す（案内を直す材料）
 assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？"})[0] == 200
-# 連絡先の形がある質問は、文を残さない（言葉の表で答えられる質問にして、鍵のある機械でも本物の API を呼ばないようにする）
-assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "谷折りって何？ 電話は 090-1234-5678 です"})[0] == 200
+# 連絡先の形がある質問は、文を残さない（仕組みの質問にして、鍵のある機械でも本物の API を呼ばないようにする）
+assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？ 電話は 090-1234-5678 です"})[0] == 200
 files = sorted(making.glob("ask-*.json"))
 assert len(files) == 4, [f.name for f in files]
 assert all(re.fullmatch(r"ask-\d{8}-\d{4}-[0-9a-f]{8}\.json", f.name) for f in files), [f.name for f in files]  # 名前の時刻も分まで
@@ -87,7 +87,7 @@ for r in recs:
     raw = json.dumps(r, ensure_ascii=False)
     for leak in ("TestBrowser", "someone", "127.0.0.1", "手前にへこむ", "090"):
         assert leak not in raw, (leak, r)
-assert sorted(r["answered_from"] for r in recs) == ["glossary", "glossary", "glossary", "refuse"], [r["answered_from"] for r in recs]
+assert sorted(r["answered_from"] for r in recs) == ["glossary", "glossary", "refuse", "refuse"], [r["answered_from"] for r in recs]
 dropped = [r for r in recs if r.get("dropped")]
 assert len(dropped) == 1 and dropped[0]["question"] == "" and dropped[0]["dropped"] == "pii"
 assert all(len(r["question"]) <= making_log.MAX_QUESTION for r in recs)
