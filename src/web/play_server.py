@@ -375,13 +375,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._step_post(m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/predict-choice", self.path)
         if m and m.group(1) in sources():
-            # かざして選ぶ頁の札（試作）。受けるのは押した札の印だけ。選んだ事を予想として残し、仮説の所へ戻す。
+            # かざして選ぶ頁の候補（U-44、Issue #118）。受けるのは押した候補の印だけ（動く所の候補。仮説の印ではない）。
+            # 選んだ事を予想として残し、仮説の所へ戻す。どの仮説も選んでいないので、窓に出す仮説（see）は付けない。
             from . import kazasu
             sid = m.group(1)
-            h, why = kazasu.choose(sid, form.get("hypothesis", ""))
-            if h is None:
+            cand, why = kazasu.choose(sid, form.get("choice", ""))
+            if cand is None:
                 return self._send(422, kazasu.page(sid, self._look, error="；".join(why)))
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(kazasu.SENT)}&see={h['id']}#kasetsu")])
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(kazasu.SENT)}#kasetsu")])
         m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
