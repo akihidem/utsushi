@@ -25,7 +25,8 @@ SKINS = {
 }
 
 # 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
-NAV = (("/", "うつし"), ("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"))
+# 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
+NAV = (("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"))
 
 
 # その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
@@ -39,12 +40,18 @@ def esc(s):
     return html.escape(str(s if s is not None else ""), quote=True)
 
 
+# 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
+NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
+.nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
+.nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
+@media (max-width:480px){.nav{gap:10px;letter-spacing:.1em}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+"""
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
 # 文の中のリンクは入れない。行が崩れるので。字の大きさの床（12px）は、幅に関わらず CSS の指定そのもので守る。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
-.nav a,.nav .skins a,.switch a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 input[type=range]{height:44px}
 }
 """
@@ -68,8 +75,6 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .premise{font-size:14px;line-height:1.9;letter-spacing:.06em;margin:10px 0;padding:8px 12px;border-left:3px solid var(--frame)}
 .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--frame);padding:0 8px;margin-right:8px;vertical-align:middle}
 .lead{font-size:15px;line-height:2.1;letter-spacing:.06em;max-width:40em}
-.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
-.nav a{color:var(--accent);border:0}.nav b{font-weight:400;color:var(--fg)}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 
 .sec{padding:56px 0;border-top:1px solid var(--rule)}
 .sec:first-child{border-top:0}
@@ -107,6 +112,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .tabs a,.tabs span{border:1px solid var(--frame);padding:4px 12px}
 .tabs a[aria-current=true]{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
 .tabs span{color:var(--mute);border-style:dashed}
+.tabs button{margin:0;padding:4px 12px;font-size:inherit;letter-spacing:inherit;color:var(--accent);background:transparent;border:1px dashed var(--frame);cursor:pointer}
 .win .sheet{margin:0;background:#fff;border:1px solid var(--frame);box-shadow:0 30px 50px -30px var(--shadow)}
 .win .sheet a{display:block;border:0}.win .sheet img{display:block;width:100%}
 .win .side{font-size:14px;line-height:2}
@@ -151,8 +157,26 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 
 def nav(skin, current="", path="/"):
     """頭の帯。順路の道だけ。皮の切り替えは置かない（皮ごとに 1 サイト。skin と path は呼び手の形を保つために残す）。"""
-    items = "".join(f'<b>{esc(n)}</b>' if p == current else f'<a href="{p}">{esc(n)}</a>' for p, n in NAV)
-    return f'<nav class="nav"><a class="brand" href="/">うつし</a>{items}</nav>'
+    # 玩具の頁と手帖は道から「おもちゃ」に印を付ける。呼び手が current を渡さない頁の分
+    here = current or ("/toys" if (path or "").startswith("/toy/") else "")
+    mark = lambda p: ' aria-current="page"' if p == here else ""  # noqa: E731
+    items = "".join(f'<a href="{p}"{mark(p)}>{esc(n)}</a>' for p, n in NAV)
+    return f'<nav class="nav"><a class="brand" href="/"{mark("/")}>うつし</a>{items}</nav>'
+
+
+def page_title(title):
+    """<title> の形を「頁の名前 · うつし」にそろえる。頭に「うつし · 」を書いた呼び手の分も直す。入口は「うつし」だけ。"""
+    name = title.removeprefix("うつし · ").removesuffix(" · うつし")
+    return "うつし" if name in ("", "うつし") else f"{name} · うつし"
+
+
+def entrance_style(skin):
+    """入口の頁（骨は別）に、内側の頁と同じ帯の CSS を渡す。皮の変数も要る。入口だけ地を透かす（下の罫を置かない）。"""
+    s = SKINS.get(skin, SKINS[DEFAULT])
+    root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
+    # 入口の頁は body.tenji a のように a に下線を掛けるので、帯の下線だけ強い指定で外す（全部の頁で同じにする）。
+    # 床は帯の CSS の後ろにもう 1 度置く。前にしかないと、帯の字の大きさが 12px に戻った
+    return f":root{{{root}}}{NAV_STYLE}.nav{{border-bottom:0}}body .nav a:not([aria-current=page]){{border-bottom:0;text-decoration:none;color:var(--accent)}}{TAP_FLOOR}"
 
 
 def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot=""):
@@ -161,7 +185,7 @@ def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>:root{{{root}}}{BASE}{TAP_FLOOR}{extra_style}</style>{head}'
+            f'<title>{esc(page_title(title))}</title><style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
             f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
 
 

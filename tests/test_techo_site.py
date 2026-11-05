@@ -81,8 +81,8 @@ assert req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param":
 code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
 assert code in (200, 303), body[:300]
 page = req(f"/toy/{G}")[1].decode()
-# 版を言わずに開くと窓は最新の版（PDF の押し釦は版 2）。字のリンクは窓へ（本人の指示 11-05）
-assert "H-A_v2.pdf" in page and "版 2 の型紙" in page and f"see=H-A&kind=sheet&v=2#win" in page
+# 版を言わずに開くと窓は最新の版（PDF の押し釦は版 2）。字の札は窓へ（本人の指示 11-05）
+assert "H-A_v2.pdf" in page and "<b>版 2</b>" in page and f"see=H-A&kind=sheet&v=2#win" in page
 assert req(f"/sheet/{G}/H-A_v2.pdf")[1][:4] == b"%PDF"
 # 型紙の確定の記録（f09）: 刷った版ごとに、誰が・どの組で確定したかが台帳に残る
 from omochae import loop  # noqa: E402
@@ -105,7 +105,7 @@ assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
 name = "作った物と職人の言葉"
-assert f"<b>{name}</b>" in g and f"<title>{name}<" in g, g[:300]  # 帯の今いる所は b で出る
+assert f'aria-current="page">{name}</a>' in g and f"<title>{name} · うつし<" in g, g[:300]  # 帯の今いる所は aria-current で出る
 assert re.findall(r"<h1[^>]*>(.*?)</h1>", g) == [name]
 for sec, label in (("ageta", "他の人が作った物"), ("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
     assert f'<a href="#{sec}">{label}</a>' in g and f'id="{sec}"' in g and f'<h2 class="mark">{label}</h2>' in g, sec

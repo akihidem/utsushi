@@ -60,7 +60,7 @@ page = get(f"/toy/{G}")
 assert 'id="kasetsu"' in page and "すぐ作る" in page
 for h in hypotheses.load(G)["hypotheses"]:
     assert f'value="{h["id"]}"' in page and h["name"] in page
-assert f'action="/toy/{G}/print"' in page
+assert f'action="/toy/{G}/print#kasetsu"' in page
 # 予想の段が無い
 assert "/predict" not in page and "あなたの予想" not in page and "先に、予想を書く" not in page and "kazasu" not in page
 assert post(f"/toy/{G}/predict", {"text": "x"}) == 404
@@ -75,7 +75,7 @@ assert not hasattr(hypotheses, "need_prediction") and not hasattr(hypotheses, "s
 assert 'id="premise"' in page and "AI が考えた仮説" in page and "正解ではありません" in page
 assert page.index('id="premise"') < page.index('class="plates"')
 # 自分の仮説の道は残す（J-008）
-assert f'action="/toy/{G}/own"' in page
+assert f'action="/toy/{G}/own#kasetsu"' in page
 # 手帖は予想なしで開く
 assert "手帖" in get(f"/toy/{G}/techo")
 # 刷れて、作りながら見る頁が開く

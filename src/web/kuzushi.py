@@ -23,7 +23,7 @@ from omochae import labels
 from omochae.hypotheses import ROOT
 
 from . import zukan
-from .skin import TAP_FLOOR
+from .skin import TAP_FLOOR, page_title
 
 QUOTE, HYPO, OBS = labels.LABELS
 MAX_READING = 200  # 歌 1 首は 31 字ほど。長い貼り付けで頁を膨らませないための上限
@@ -137,7 +137,7 @@ def _page(title, body, look=None, path="/zukan"):
 
         return skin.shell(title, body.replace(zukan.NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>{STYLE}{TAP_FLOOR}</style><body class="zukan"><main>{body}</main></body></html>')
+            f'<title>{esc(page_title(title))}</title><style>{STYLE}{TAP_FLOOR}</style><body class="zukan"><main>{body}</main></body></html>')
 
 
 def _form(sid, mine=""):

@@ -63,7 +63,7 @@ def step(n, event, hid="H-A", **more):
 assert step(1, "next")[0] == 422
 # 刷る前は開かない。玩具の頁に入口も出さない
 body = get(f"/toy/{G}/tsukuru")[1]
-assert "先に紙を刷ると、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body
+assert "先に紙を作ると、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body
 assert step(1, "next")[0] == 422 and f'href="/toy/{G}/tsukuru"' not in get(f"/toy/{G}")[1]
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 assert f'href="/toy/{G}/tsukuru"' in get(f"/toy/{G}")[1]

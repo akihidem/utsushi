@@ -45,7 +45,7 @@ now = {**slider_fan.DEFAULTS, **loop.version_params(G, "H-A", 1)[0]}
 
 
 def form_of(page):
-    return page.split('action="/record/R-0001/next"', 1)[1].split("</form>", 1)[0]
+    return page.split('action="/record/R-0001/next#next-R-0001"', 1)[1].split("</form>", 1)[0]
 
 
 def option(page, key):
