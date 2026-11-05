@@ -82,32 +82,33 @@
 | 37 | [J-023](decisions/J023-first-test-later.md) | 本物の API の最初の試験は作り込んでから。下見・キャッシュ・費用の数え方を足した | 決定 |
 | 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。ルックブックは A と C を残した（11-04）。画面は人がまだ使っていない |
 | 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
-| 40 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
-| 41 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
-| 42 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
-| 43 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |
-| 44 | [research/19](research/19-emil-skills-review.md) | 参照のルックブックの観察と A の再現、Skill 集から拾った物 | 評価。A は作り替えた。人の目はまだ |
-| 45 | [research/20](research/20-worksheet-rethink.md) | 学習プリントの問いかけを本人の 4 つの着目で考え直す案 | 案。採るかは本人（U-25） |
-| 46 | [research/21](research/21-prior-art-compare.md) | Wandy を含む先行事例と今の実装の比較 | 比較。Wandy の実物は未確認 |
-| 47 | [research/22](research/22-origami-papercraft-ai.md) | 折り紙・ペーパークラフトと AI の研究の系譜と取り入れる候補 | 調査。候補を採るかは本人（U-26） |
-| 48 | [research/23](research/23-phone-artifact.md) | iPhone で手順を聞き、できた物を上げるアーティファクトの案 | 案。決める点は U-35 |
-| 49 | [research/24](research/24-hallmark-impeccable-review.md) | デザインの Skill 2 つを入口の磨きの参考として評価 | 評価。拾った 1〜5 は A′・C・A に入れた |
-| 50 | [research/25](research/25-kuzushi-reading.md) | くずし字を読む頁: 先に書き、確かめた読みと並べる | 作った。印の当て方と保存は未決 |
-| 51 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 52 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 53 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
-| 54 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 55 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
-| 56 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
-| 57 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
-| 58 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
-| 59 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
-| 60 | [contributions-form](contributions-form.md) | 外の入口の Google フォームの表と取り込みの流れ | 本人がフォームを作れば開く（f17） |
-| 61 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 62 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 63 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
-| 64 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
-| 65 | [site-requirements](site-requirements.md) | サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで | 実装した（11-05 未明）。本人の採否はカード |
+| 40 | [J-030](decisions/J030-reach-abroad.md) | 届け先はいろんな国の人。絵を先に、字の少ない道を太く。英語の紹介文の案と段 | 本人の方針（11-05）。文面と段の範囲は本人の採否待ち |
+| 41 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
+| 42 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
+| 43 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
+| 44 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |
+| 45 | [research/19](research/19-emil-skills-review.md) | 参照のルックブックの観察と A の再現、Skill 集から拾った物 | 評価。A は作り替えた。人の目はまだ |
+| 46 | [research/20](research/20-worksheet-rethink.md) | 学習プリントの問いかけを本人の 4 つの着目で考え直す案 | 案。採るかは本人（U-25） |
+| 47 | [research/21](research/21-prior-art-compare.md) | Wandy を含む先行事例と今の実装の比較 | 比較。Wandy の実物は未確認 |
+| 48 | [research/22](research/22-origami-papercraft-ai.md) | 折り紙・ペーパークラフトと AI の研究の系譜と取り入れる候補 | 調査。候補を採るかは本人（U-26） |
+| 49 | [research/23](research/23-phone-artifact.md) | iPhone で手順を聞き、できた物を上げるアーティファクトの案 | 案。決める点は U-35 |
+| 50 | [research/24](research/24-hallmark-impeccable-review.md) | デザインの Skill 2 つを入口の磨きの参考として評価 | 評価。拾った 1〜5 は A′・C・A に入れた |
+| 51 | [research/25](research/25-kuzushi-reading.md) | くずし字を読む頁: 先に書き、確かめた読みと並べる | 作った。印の当て方と保存は未決 |
+| 52 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 53 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 54 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
+| 55 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 56 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
+| 57 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
+| 58 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
+| 59 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
+| 60 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
+| 61 | [contributions-form](contributions-form.md) | 外の入口の Google フォームの表と取り込みの流れ | 本人がフォームを作れば開く（f17） |
+| 62 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 63 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 64 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 65 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
+| 66 | [site-requirements](site-requirements.md) | サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで | 実装した（11-05 未明）。本人の採否はカード |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
