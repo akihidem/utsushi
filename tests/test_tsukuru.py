@@ -97,7 +97,7 @@ assert json.loads(step(2, "back", json="1")[1])["step"] == 1
 assert step(2, "stuck")[0] == 303 and step(2, "stuck", json="1")[0] == 200 and step(3, "stuck", json="1")[0] == 200
 assert step(len(texts), "next", json="1")[1] == json.dumps({"ok": True, "step": len(texts)}), "最後の手順より先へは進まない"
 code, _, headers = step(len(texts), "done")
-assert code == 303 and headers["Location"].endswith("&ev=done")
+assert code == 303 and headers["Location"].endswith("#kiroku")  # 行き先と札の形は tests/test_tsukuru_last_step.py（#321）
 files = sorted((pathlib.Path(DATA) / "making").glob("step-*.json"))
 assert len(files) == 7, "最後の手順の次へは残さない（動かないので、途中でやめた段の数えを狂わせる）"
 for f in files:
@@ -108,10 +108,9 @@ for f in files:
     assert re.fullmatch(r"step-\d{8}-\d{4}-[0-9a-f]{8}\.json", f.name), f.name
 sm = making_log.summary(G)
 assert sm["stuck_steps"] == {2: 2, 3: 1} and sm["steps_done"] == 1
-# 止まった・できたの文は、押した時だけ出る（JS が無い時は ?ev= で出す）
-assert '<p id="msg-stuck" class="msg" hidden>' in t and '<p id="msg-done" class="msg" hidden>' in t
+# 止まったの文は、押した時だけ出る（JS が無い時は ?ev= で出す）
+assert '<p id="msg-stuck" class="msg" hidden>' in t
 assert '<p id="msg-stuck" class="msg">' in get(f"/toy/{G}/tsukuru?h=H-A&n=2&ev=stuck")[1]
-assert '<p id="msg-done" class="msg">' in get(f"/toy/{G}/tsukuru?h=H-A&n=2&ev=done")[1]
 # 作る側の頁に、止まった手順とできたの回数。学ぶ人の頁には出さない
 lp = get(f"/loop/{G}")[1]
 assert "止まった手順" in lp and "<td>手順 2</td><td>2 回</td>" in lp and "<td>手順 3</td><td>1 回</td>" in lp and "できたの札: 1 回" in lp

@@ -387,7 +387,8 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
             # 合言葉なしで開いた場: 人の書いた文を別の人に見せない（文の中の名前は機械で落とせない。J-028）。札と紙への道と欄だけ残す。
             feel = ""
             if told:
-                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r) + next_form(r)
+                # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
+                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r)
         out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}・{esc(r["id"])}</p>{feel}{after}{tail}</article>'
     return out
 
