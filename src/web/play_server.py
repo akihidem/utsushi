@@ -13,6 +13,7 @@ import json
 import os
 import pathlib
 import re
+import secrets
 import sys
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,6 +25,7 @@ from omochae.store import SID
 
 from . import failure_log
 from . import skin as skinmod
+from . import wording
 from .contrib_server import STYLE
 
 # 見た目はルックブックの様式（本人の指定、J-024）。絵が主役で、文字は添え。見開きのように絵と短い文を左右に置き、玩具ごとに左右を入れ替える。
@@ -177,6 +179,9 @@ def _num(v):
         return v  # 数でない物は記録の検査に落とさせ、理由を画面に返す
 
 
+UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
+
+
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
 
@@ -248,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), **kw)
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), **kw)
 
     def do_GET(self):
         try:
@@ -294,6 +299,10 @@ class Handler(BaseHTTPRequestHandler):
             # 改善の輪の一覧（本人の方針 11-05）。サイト側が輪を回す所で、学ぶ人の順路の帯には入れない。
             from . import kaizen
             return self._send(200, kaizen.page(look, path))
+        if path == "/loop/ayumi":
+            # 型紙の版の歩み（本人の希望 11-06）。前の履歴・良くした所・知見・共通の知見・どのループか。
+            from . import ayumi
+            return self._send(200, ayumi.page(look, path))
         m = re.fullmatch(rf"/loop/({SID})", path)
         if m and m.group(1) in sources():
             # その玩具の工作の様子（聞かれた事・止まった所・感想・動きの札）。作る側が読む集計で、学ぶ人の頁には出さない。
@@ -309,7 +318,8 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
             from . import zukan
-            return self._send(200, zukan.toy_zukan(m.group(1), look) if m.group(1) else zukan.index_page(sources(), look))
+            photos = not getattr(self.server, "public_open", False)
+            return self._send(200, zukan.toy_zukan(m.group(1), look, photos) if m.group(1) else zukan.index_page(sources(), look, photos))
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
         if path == "/en":
             # 英語の入口と玩具の頁（J-030 の段 1）。
@@ -355,13 +365,13 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             from . import think_sheet
             own = sorted(think_sheet.mine(self, sid), key=lambda o: int(o.rsplit("-", 1)[1]), reverse=True)  # 本人の案を先に（作っている紙の記録として残すため）
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, up_key=self._up_key()), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
-            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。
-            if f.exists() and media_review.visible(m.group(1), [m.group(2)]):
+            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。確認の前の物は、上げた本人の画面にだけ返す。
+            if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
                 data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
                 span = byte_range(self.headers.get("Range"), len(data))
@@ -433,6 +443,23 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
+    def _up_key(self):
+        """この画面が写真を上げた時に渡した鍵（media_review.claim）。無ければ None。"""
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == UP_COOKIE and value:
+                return value
+        return None
+
+    def _up_cookie(self, key=""):
+        """鍵の cookie。ブラウザを閉じれば消えるように Max-Age を付けない。key が空なら消す。外から開く場（合言葉付き）は https なので Secure を付ける。"""
+        secure = "; Secure" if getattr(self.server, "public_key", None) else ""
+        return ("Set-Cookie", f"{UP_COOKIE}={key}; Path=/; HttpOnly; SameSite=Lax{secure}" + ("" if key else "; Max-Age=0"))
+
+    def _up_close(self):
+        """記録を残すのが交代の区切り（who を作り直すのと同じ）。同じ機械の次の人に、前の人の確認の前の写真を出さない。"""
+        return [self._up_cookie()] if self._up_key() else []
+
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
@@ -440,7 +467,7 @@ class Handler(BaseHTTPRequestHandler):
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
-        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
+        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")] + (self._up_close() if fresh else []))
 
     def _post(self):
         if not self._host_ok():
@@ -466,7 +493,11 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= techo_site.MAX_MEDIA:
                 return self._send(413, "1 つ 20MB まで")
             name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length))
-            return self._send(201 if name else 422, name or why, "text/plain; charset=utf-8")
+            if not name:
+                return self._send(422, why, "text/plain; charset=utf-8")
+            key = self._up_key() or secrets.token_urlsafe(18)
+            media_review.claim(m.group(1), name, key)
+            return self._send(201, name, "text/plain; charset=utf-8", [self._up_cookie(key)])
         form = self._form()
         if form is None:
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
@@ -541,10 +572,18 @@ class Handler(BaseHTTPRequestHandler):
 
         rec = loop.record(rid)
         sid = rec["source_id"]
+        from . import techo_site
+
+        is_video = lambda f: f.endswith(("mp4", "mov"))
+        files = techo_site.media_of(rid)
+        videos = [f for f in media_review.shown_to(rid, files, self._up_key()) if is_video(f)]  # 人や声が入ると確かめた動画は渡さない（#314）
+        # 確認の前の動画を、上げた本人でない画面から Claude に渡さない。頁に釦は出ないが、開いたままの古い頁から届く。
+        if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
+            return self._refuse(403, "受け付けられません")
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
-            return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""), anchor=rid)
+            return self._done(sid, wording.plain("鍵が置かれると、Claude が答えます"), form.get("back", ""), anchor=rid)
         try:
             from api.agent import default_client
 
@@ -556,8 +595,6 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 from api import observe
 
-                from . import techo_site
-                videos = [f for f in media_review.visible(rid, techo_site.media_of(rid)) if f.endswith(("mp4", "mov"))]  # 人や声が入ると確かめた動画は渡さない（#314）
                 if not videos:
                     return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""), anchor=rid)
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
@@ -600,7 +637,7 @@ class Handler(BaseHTTPRequestHandler):
         if failures:
             from . import toy
 
-            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"]), at=f"next-{rid}", filled=("next", form)))
+            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
         return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
@@ -644,9 +681,14 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
     def _ask(self, sid, hid, question):
-        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。"""
+        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。
+        話す口と同じ入口の床を先に当てる（#87）。手帖は 1 回押した後は聞き続けるので、名乗りや連絡先の形の話し声も字になって届く。
+        当たった字は Claude へ送らず、返す字は採られた文にする。残す時は add_ask が字を落として数だけ残す。"""
         from api import ask
+        from omochae import talk_log
 
+        if talk_log.blocked(question or ""):
+            return making_log.ASK_NAME_VOICE, "floor"
         try:
             return ask.answer(sid, hid, question)
         except Exception as e:
@@ -655,7 +697,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
-        out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
+        out = lambda code, obj, headers=(): self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8", headers)
         hid = form.get("hypothesis", "")
         from . import think_sheet
 
@@ -680,7 +722,7 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}))
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), self._up_close())
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):

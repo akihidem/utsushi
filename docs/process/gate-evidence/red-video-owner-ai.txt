@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_video_owner_ai.py
+# commit: aacb1ed（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_video_owner_ai.py", line 93, in <module>
+    assert form not in pages(key), "別の人には釦を出さない"
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 別の人には釦を出さない
+rc=1

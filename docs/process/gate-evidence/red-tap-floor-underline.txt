@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_tap_size.py 2>&1 | tail -1 | cut -c1-200; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: cad4a6d（回した時の HEAD）
+AssertionError: 床で高さを上げたリンクの下線を字に付ける行が無い
+試験 rc=1
+rc=0

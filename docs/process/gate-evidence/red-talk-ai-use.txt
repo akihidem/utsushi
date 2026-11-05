@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_hanasu.py
+# commit: e6fc74c（回した時の HEAD）
+/tmp/tmpc2npbsp9/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpc2npbsp9/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpc2npbsp9/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_hanasu.py", line 381, in <module>
+    assert getattr(hanasu, name) == text, name
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: NOTICE
+rc=1
