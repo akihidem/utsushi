@@ -1,0 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_sheet_window.py（直す前の木に、新しい試験だけを置いた）
+# commit: fb4d51c（回した時の HEAD）
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

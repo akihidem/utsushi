@@ -71,7 +71,7 @@ for name, look in (("tenji", get("/look/tenji")[1].decode()), ("zine", looks.zin
 assert get("/look/none")[0] == 404
 # 開いたら仮説と刷る口がすぐ見える（本人の決定 11-05、#242）
 body = get(f"/toy/{G}")[1].decode()
-assert "仮説 A" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print"' in body
+assert "仮説 A" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#kasetsu"' in body
 # 採らなかった歌の読みは出さない
 assert "怠けらじ" in body and "怠らし" not in body
 # 別のサイトから・別の形で送らせない
@@ -103,7 +103,7 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "成功"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "abc"})[0] == 422
 code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
-assert code == 303 and at.endswith("#R-0001"), at  # 残した札へ戻す。次の段（試した後の紙・説明）がそこにある
+assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の札に着く（#121）
 body = get(f"/toy/{G}")[1].decode()
 assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
 assert "仮説 A の紙・動かない・40°" in body
@@ -116,8 +116,8 @@ assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "
 assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
 # 自分の仮説には型紙なしの紙を返す（本人の決定）
 code, at = where(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})
-assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を刷る」に着く
-assert re.search(r'id="own-OWN-1".*紙を刷る', get(f"/toy/{G}")[1].decode(), re.S)
+assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を作る」に着く
+assert re.search(r'id="own-OWN-1".*紙を作る', get(f"/toy/{G}")[1].decode(), re.S)
 assert post(f"/toy/{G}/print-own", {"id": "OWN-9"})[0] == 422
 assert post(f"/toy/{G}/print-own", {"id": "OWN-1"})[0] == 303
 assert "OWN-1_v1_free.pdf" in get(f"/toy/{G}")[1].decode()

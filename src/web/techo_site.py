@@ -315,7 +315,7 @@ def feedback(sid, r):
 
         body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
     else:
-        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><input type="hidden" name="back" value="techo">'
+        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
@@ -341,8 +341,8 @@ def ai_part(r):
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
     can_ask, can_watch, why = ai_offer(r["id"])
-    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
-               f'<form method="post" action="/record/{rid}/ai-observe"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>' if can_watch else "")
+    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
+               f'<form method="post" action="/record/{rid}/ai-observe#{rid}"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>' if can_watch else "")
     return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
 
 
@@ -397,7 +397,7 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True):
+def page(sid, printed_ids, picture_url, uploads=True, msg=""):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
@@ -408,8 +408,10 @@ def page(sid, printed_ids, picture_url, uploads=True):
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
-        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'
+        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
+    # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
         files = media_of(r["id"]) if uploads else []  # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）
@@ -441,5 +443,5 @@ def page(sid, printed_ids, picture_url, uploads=True):
             '<details><summary>工夫した所（あれば）</summary><p class="meta">ほかの人も読むので、名前や連絡先は書かないでください。</p><input type="text" id="fix-part" maxlength="100" placeholder="どの部品か"><input type="text" id="fix-change" maxlength="200" placeholder="どう工夫したか"><input type="text" id="fix-outcome" maxlength="200" placeholder="どうなったか"></details>'
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
             '<p><button class="go">記録だけ残す</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
-            f'<div id="mine">{mine}</div></section>')
+            f'<div id="mine">{note}{mine}</div></section>')
     return body + SCRIPT
