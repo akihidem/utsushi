@@ -39,6 +39,6 @@ assert "原文の引用" in html and "100svh" in html
 # research/24 の小さな直し
 assert "body.tenji{background:#fcfcfa" in html and "body.tenji ::selection" in html
 assert "overflow-wrap:break-word" in html
-assert "clamp(10px,.78vw,11px)" in looks.TAIBAN and "::selection" in looks.TAIBAN and "::selection" in looks.ZINE
+assert "::selection" in looks.ZINE  # 大判（A）は外した（本人の決定 11-05 朝）
 assert "minmax(0,1fr) minmax(0,1fr)" in looks.ZINE
 print("ok")

@@ -1,0 +1,10 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_gate_evidence.py
+# commit: 42ad039（直す前の main）
+ImportError: cannot import name 'gate_evidence' from 'omochae' (src/omochae/__init__.py)
+rc=1
+
+# 帳面の古い行の数（直す前）
+push の後に書く: 7
+まだ（取り込みの後に書く）: 1
+# 頭の無い証拠の数（直す前）
+91

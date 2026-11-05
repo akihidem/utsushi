@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_toys.py
+# commit: ad50255（この上に直しを足した作業ツリーで回した）
+ok
+rc=0

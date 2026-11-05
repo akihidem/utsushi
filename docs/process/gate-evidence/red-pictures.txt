@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "tests/test_pictures.py", line 35, in <module>
+    assert rec["crop_region"] == expect, (sid, rec["crop_region"], expect)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000010-L', 'pct:10,54,11,30', 'pct:9,51,14,33')

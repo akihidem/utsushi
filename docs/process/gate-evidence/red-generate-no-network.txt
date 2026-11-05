@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「図を取り寄せる前に鍵を見る」を見る）
+# commit: 381c830（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_generate.py", line 114, in <module>
     assert out.returncode == 4 and "固定の仮説" in out.stderr and "鍵が無い" in out.stderr, out.stderr

@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「Claude の呼び出しと動画の処理に時間切れを付ける」を見る）
+# commit: 10bbf44（このファイルを足した commit）
 # Red 1: 新しい試験を、直す前の main 765ac7b に当てる
 AttributeError: module 'api.config' has no attribute 'SCREEN_TIMEOUT'
 rc=1

@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_floors_hygiene.py
+# commit: 1ee40a5（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_floors_hygiene.py
 ok floors hygiene
 rc=0

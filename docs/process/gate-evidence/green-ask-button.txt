@@ -1,0 +1,14 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_techo_site.py と、repo の外の道具で本物の Chrome を操作
+# commit: 766fa7f（このファイルを足した commit）
+$ PYTHONPATH=src .venv/bin/python tests/test_techo_site.py   # main 34644c3 に直しを載せた作業ツリー
+ok
+rc=0
+
+# 本物の Chrome（headless・幅 390）をキーボードだけで操作した。手元の一時の口と一時の置き場。道具は repo の外
+空の時の答えの箱: '' / 字: "ここに答えが出ます"
+欄と釦の上下: [540, 612, 540, 612]
+Tab の後の焦点: BUTTON.go 聞く
+釦で Enter: 谷折りは、折った所が手前にへこむ折り方です。型紙では破線で、線の無い面（筒と扇）は色の境で折ります。
+欄で Enter: それは、予想を書いて紙で試して確かめる所なので、ここでは答えません。試した後に、記録と説明を残してから考
+OK
+rc=0

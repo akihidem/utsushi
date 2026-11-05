@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「増やした雛形をデモで触れる形にする」を見る）
+# commit: 7ab90b0（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_demo_walk_all.py", line 40, in <module>
     assert 'href="/zukan"' in call("/")[1], "入口から図鑑へ行ける"

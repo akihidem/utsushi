@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 8
+# commit: e645457（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_api_review_fixes.py 8   # 直す前（main 32b6dfc + この試験だけ）
 実行した場面 1 本、期待どおり 1 本、未実装の床 0 本。
 Traceback (most recent call last):

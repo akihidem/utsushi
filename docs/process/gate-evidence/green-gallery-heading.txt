@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_techo_site.py と、repo の外の測る script（playwright。repo には playwright を入れない決まり）
+# commit: ad50255（直した作業ツリーで。commit の前）
+tests/test_techo_site.py: ok
+幅 1440・390・320、白と黒: title と h1 は「上げた物と職人の言葉」で同じ、h1 は 1 つ、h2 は 上げた物・寄せられた声・職人の言葉
+見本の地に縞なし。線画の地と線は皮の色（白 rgb(243, 241, 236) と rgb(107, 79, 42)、黒 rgb(21, 18, 15) と rgb(201, 169, 106)）
+「職人の言葉」のリンクを押すと、節の上の端が画面の上に着く（1 回）。横のはみ出しなし
+h1 は 390 と 320 でも 1 行（高さ 35px と 34px）。「入口へ」は折れない
+rc=0
