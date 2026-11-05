@@ -246,7 +246,8 @@ def print_compare(source_id, a, b, out):
     return 3
 
 
-def print_sheet(source_id, hypothesis_id, out, version=1):
+def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
+    """pending は、まだ記録していない版の中身。刷れると分かってから版の記録を書くために渡す（#158）。"""
     from .__main__ import generate
     from .loop import version_params
 
@@ -255,7 +256,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1):
     if not match:
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
-    params, adopted = version_params(source_id, hypothesis_id, version)
+    params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
     if params is None:
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
         return 3

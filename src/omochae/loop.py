@@ -15,6 +15,7 @@ import os
 import pathlib
 import re
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 
 from . import store
@@ -121,15 +122,23 @@ def save_interpretation_draft(rid, content, trace=None):
     _write(interp_path(rid), {"record_id": rid, "status": "pending_human", "content": content, "drafted_by": "claude", "trace": trace})
 
 
-@exclusive
-def confirm_interpretation(rid, by, content=None):
-    """人の確定（H6）。案が無くても、人が書いた解釈で確定できる。"""
+def check_confirm(rid, by, content=None):
+    """人の確定の床。書く前に見られるよう、確定そのものと分ける（#158）。"""
     record(rid)
     if not by or not by.strip():
         return [Failure("F9.human", rid, "確定した人の名前が無い")]
-    current = interpretation(rid) or {"record_id": rid, "drafted_by": "human"}
-    if content is None and "content" not in current:
+    if content is None and "content" not in (interpretation(rid) or {}):
         return [Failure("F9.human", rid, "解釈の案が無く、人の解釈も無い")]
+    return []
+
+
+@exclusive
+def confirm_interpretation(rid, by, content=None):
+    """人の確定（H6）。案が無くても、人が書いた解釈で確定できる。"""
+    failures = check_confirm(rid, by, content)
+    if failures:
+        return failures
+    current = interpretation(rid) or {"record_id": rid, "drafted_by": "human"}
     if content is not None:
         current["content"] = content
         current["edited_by_human"] = current.get("drafted_by") == "claude"
@@ -187,14 +196,18 @@ def version_params(source_id, hid, version):
     return v["params"], v
 
 
-def latest_version(source_id, hid):
+def adopted_versions(source_id, hid):
+    """人が採った版の番号（版 1 は入らない）。"""
     # 読めない版は数えない。数えると、一番新しい版の寸法が取れず、頁と次の版が止まる。
-    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder().glob(f"version-{source_id}-{hid}-*.json") if store.read_json_or_skip(p) is not None]
-    return max(nums, default=1)
+    return sorted(int(p.stem.rsplit("-", 1)[1]) for p in folder().glob(f"version-{source_id}-{hid}-*.json") if store.read_json_or_skip(p) is not None)
 
 
-def check_proposal(p, source):
-    """提案の検査。Claude にも人の手書きにも同じ床を当てる。"""
+def latest_version(source_id, hid):
+    return max(adopted_versions(source_id, hid), default=1)
+
+
+def check_proposal(p, source, will_confirm=()):
+    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。"""
     out = []
     sid = source["source_id"]
     template = _template(sid)
@@ -207,7 +220,7 @@ def check_proposal(p, source):
         elif record(rid).get("source_id") != sid:
             # 別の玩具の記録は根拠にしない。仮説 ID（H-A など）は玩具ごとに振るので、偶然そろうと別の玩具の試行で寸法が変わる（レビュー指摘）。
             out.append(Failure("F8.references", rid, f"出典 {record(rid).get('source_id')} の記録で、提案の出典 {sid} と違う"))
-        elif not confirmed(rid):
+        elif not confirmed(rid) and rid not in will_confirm:
             out.append(Failure("F9.human", rid, "解釈を人が確定していない記録は根拠にできない"))
     ids = known_ids()
     for ref in p.get("references", []):
@@ -271,6 +284,12 @@ def save_proposal(proposal, source, drafted_by):
     return save_numbered("proposal", "P", lambda pid: {**proposal, "id": pid, "source_id": source["source_id"], "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
 
 
+def _next_params(sid, hid, changes):
+    """次の版の番号と寸法。"""
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    return latest_version(sid, hid) + 1, {**current, **{c["param"]: c["to"] for c in changes}}
+
+
 @exclusive
 def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     """人の採否（H7）。採った物だけが版と仮説の一覧に入る。次に試す物の提案は、採っても並びを変えない。"""
@@ -295,9 +314,7 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     made = {}
     if chosen:
         hid = p["hypothesis_id"]
-        current, _ = version_params(sid, hid, latest_version(sid, hid))
-        version = latest_version(sid, hid) + 1
-        params = {**current, **{c["param"]: c["to"] for c in chosen}}
+        version, params = _next_params(sid, hid, chosen)
         _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": chosen, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
         made["version"] = version
     if accept_new and p.get("new_hypothesis"):
@@ -310,6 +327,55 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     p.update(status="decided", decided_by=by.strip(), decided_at=_now(), accepted=made, accepted_params=list(accept_params))
     _write(path, p)
     return made, []
+
+
+def print_version(sid, hid, version, sheet_dir, pending=None):
+    """版の紙の組を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。"""
+    from . import hypotheses
+
+    sheet_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"{hid}_v{version}"
+    with tempfile.TemporaryDirectory(dir=sheet_dir, prefix=".tmp-") as tmp:
+        rc = hypotheses.print_sheet(sid, hid, f"{tmp}/{stem}", version, pending=pending)
+        if rc:
+            return rc
+        # 版の PDF があれば刷ってあると読む（web/toy.py の versions_of）ので、それを最後に置く。
+        for p in sorted(pathlib.Path(tmp).iterdir(), key=lambda p: p.name == f"{stem}.pdf"):
+            p.replace(sheet_dir / p.name)
+    return 0
+
+
+@exclusive
+def next_version(rid, by, content, change, source, sheet_dir):
+    """画面の「次の版を作る」の 1 操作: 解釈の確定 → 変更の案 → 人の採用 → 刷る → 型紙の確定（#158）。
+
+    途中で落ちると前の分だけが残り、確定した解釈が根拠に使え、版の記録だけが残ると同じ値で送り直せなくなる。
+    そこで、書く前に床を全部見て、刷るのも先に済ませ、通った時だけ書く。紙を先に置くのは、版の記録があって紙が無い形を作らないため。
+    消して戻す形は、消し残しの形が増えるので採らない。排他の中で刷るので、その数秒は同じ置き場の書き込みが待つ。
+    """
+    from .compose import TEMPLATES
+
+    failures = check_confirm(rid, by, content)
+    if failures:
+        return None, failures
+    rec = record(rid)
+    sid, hid = rec["source_id"], rec["hypothesis_id"]
+    proposal = {"record_ids": [rid], "hypothesis_id": hid, "changes": [change]}
+    failures = check_proposal(proposal, source, will_confirm=[rid])
+    if failures:
+        return None, failures
+    version, params = _next_params(sid, hid, proposal["changes"])
+    if print_version(sid, hid, version, sheet_dir, pending={"params": params, "changes": proposal["changes"], "record_ids": [rid]}):
+        return None, [Failure("F7.revision", f"{hid} 版 {version}", f"版 {version} を刷れませんでした（検査に落ちた）")]
+    confirm_interpretation(rid, by, content)
+    pid, failures = save_proposal(proposal, source, "human")
+    if failures:
+        return None, failures
+    made, failures = adopt(pid, by, accept_params=[change.get("param")], source=source)
+    if failures:
+        return None, failures
+    confirm_sheet(sid, hid, made["version"], by, TEMPLATES[_template(sid)].SHEET_SET)
+    return made["version"], []
 
 
 def save_template_change(record_ids, sheet_set, commit, changes, by, decided_in=""):
