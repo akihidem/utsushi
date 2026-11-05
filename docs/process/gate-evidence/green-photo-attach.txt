@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_photo_attach.py
+# commit: 6c2a93c4（回した時の HEAD）
+/tmp/tmpm90jmrbd/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpm90jmrbd/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpm90jmrbd/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpm90jmrbd/play/NDL-1187053-R0000014-R/H-A_v1.pdf
+/tmp/tmpm90jmrbd/play/NDL-1187053-R0000014-R/H-A_v1_tejun.pdf
+/tmp/tmpm90jmrbd/play/NDL-1187053-R0000014-R/H-A_v1_after.pdf
+ok 写真を足す: この画面が玩具の頁で残した記録にだけ足し、番号では足さない。新しい中身は新しい記録に。写真の受け口も鍵で照らす
+rc=0
