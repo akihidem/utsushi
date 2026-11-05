@@ -126,7 +126,7 @@ assert "版2" in flat and r1 in flat
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/v2_tejun.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert "fold_width" in flat or "折り幅" in flat
 assert hypotheses.print_sheet(G, "H-A", f"{tmp}/v3", version=3) == 3, "採っていない版は刷らない"
-assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n1") == 0, "採った新しい仮説を刷れる"
+assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n1") == 3, "採った新しい仮説は作る側の控えで、必須 2 種では刷らない（J-032。試作の玩具は tests/test_one_sheet_loop.py）"
 # 上限
 many = [([tool("list_records", {"source_id": G}, f"m{i}")], "tool_use") for i in range(config.MAX_TOOL_CALLS + 2)] + [([tool("submit_result", interp, "z")], "tool_use")]
 client = Fake(many)
@@ -156,6 +156,6 @@ assert loop.save_explanation(r3, "確認者", "わからない", "もう一度�
 out = subprocess.run([sys.executable, "-m", "omochae.loop", "interpret", r3], capture_output=True, text=True, env={**env, "HOME": tmp})
 assert out.returncode == 4 and "検査できない" in out.stderr
 # 人の手書きの変更でも整数の寸法が通る。半端な折り数は落とす
-hand, fs = loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-B", "changes": [{"param": "fold_count", "to": 26.0, "why": "折りを減らす"}]}, gs, "human")
+hand, fs = loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "changes": [{"param": "fold_count", "to": 26.0, "why": "折りを減らす"}]}, gs, "human")
 assert not fs and hand
-assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-B", "changes": [{"param": "fold_count", "to": 26.5, "why": "x"}]}, gs, "human")[1]) == {"F5.range"}
+assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "changes": [{"param": "fold_count", "to": 26.5, "why": "x"}]}, gs, "human")[1]) == {"F5.range"}

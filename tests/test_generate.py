@@ -47,7 +47,7 @@ def hyp(name, params, template="slider_fan", evidence=None):
 A = {"push_part": "tab", "hub": "axle", "pusher_height": 15}
 C = {"push_part": "stick", "hub": "axle", "pusher_height": 84}
 good = {"hypotheses": [hyp("読み 1", A), hyp("読み 2", C), {**hyp("雛形に無い読み", None, None), "params": None}], "references": []}
-# 検査に落ちた案は直させる: 範囲の外・実在しない前例・1 本だけ
+# 検査に落ちた案は直させる: 範囲の外・実在しない前例
 bad = {"hypotheses": [hyp("範囲の外", {"push_part": "tab", "tube_side": 500}), hyp("x", A)], "references": ["R-9999"]}
 client = Fake([([tool("get_template_spec", {"template_id": "slider_fan"}, "a")], "tool_use"), ([tool("submit_result", bad, "b")], "tool_use"), ([tool("submit_result", good, "c")], "tool_use")])
 gid, fs = gen.generate(source, client, image="QQ==")
@@ -58,7 +58,9 @@ assert first[0]["type"] == "image" and "reader_predictions" not in first[1]["tex
 assert "御来迎 拝むにつけて怠らし" not in first[1]["text"] and "怠けらじ" in first[1]["text"]
 sent = json.dumps(client.calls[2]["messages"], ensure_ascii=False, default=str)
 assert "F5.range" in sent and "F8.references" in sent, "落ちた理由を読ませる"
-for fail in ({"hypotheses": [hyp("1 本", A)], "references": []},
+assert not gen.check_result({"hypotheses": [hyp("1 本", A)], "references": []}, source), "案は 1 本でよい（型紙は玩具ごとに 1 枚。J-032）"
+for fail in ({"hypotheses": [], "references": []},
+             {"hypotheses": [hyp("a", A), hyp("b", A), hyp("c", A), hyp("d", A)], "references": []},
              {"hypotheses": [hyp("a", A), hyp("b", {"hub": "axle"})], "references": []},
              {"hypotheses": [hyp("a", A), hyp("b", A, "無い雛形")], "references": []},
              {"hypotheses": [hyp("a", A), hyp("b", A, evidence=[{"kind": "record", "where": "R-7777", "what": "x", "certainty": "記録"}])], "references": []}):
@@ -71,8 +73,12 @@ made, fs = gen.adopt_generated(gid, "確認者", [1, 3])
 assert not fs and made == ["H-N1", "H-N2"]
 assert floors(gen.adopt_generated(gid, "確認者", [2])[1]) == {"F9.human"}, "2 度採らない"
 # 描くのは描画器。雛形に無い読みは型紙にしない
-assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
-assert hypotheses.print_sheet(G, "H-N2", f"{tmp}/n2") == 0 and not pathlib.Path(f"{tmp}/n2.pdf").exists() and pathlib.Path(f"{tmp}/n2_free.pdf").exists()
+# 採った案は作る側の控えで、必須 2 種では刷らない（J-032）。控えを刷る道は試作の玩具で見る
+assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n0") == 3 and not pathlib.Path(f"{tmp}/n0.pdf").exists()
+TRIAL = "NDL-1187053-R0000004-L-4"
+loop._write(loop.folder() / f"extra-hypotheses-{TRIAL}.json", loop._read(loop.folder() / f"extra-hypotheses-{G}.json"))
+assert hypotheses.print_sheet(TRIAL, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
+assert hypotheses.print_sheet(TRIAL, "H-N2", f"{tmp}/n2") == 0 and not pathlib.Path(f"{tmp}/n2.pdf").exists() and pathlib.Path(f"{tmp}/n2_free.pdf").exists()
 # 固定の仮説は受け皿として残る
 assert any(h["id"] == "H-A" for h in hypotheses.load(G)["hypotheses"])
 # 確定した記録が次の生成の前例になり、結果が記録で変わる

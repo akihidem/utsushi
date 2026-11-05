@@ -20,7 +20,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
-from . import skin
+from . import skin, wording
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
 from .toys import way_tags
 
@@ -149,7 +149,7 @@ def window(sid, data, see, kind, v, recorded):
         _, adopted = loop.version_params(sid, see, v)
         if adopted:
             ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
-            cap = f'<p class="meta">版 {v}: 根拠 {esc("、".join(adopted.get("record_ids", [])))}。変えた所: {esc(ch)}</p>'
+            cap = f'<p class="meta">版 {v}: 根拠 {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))}。変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
     cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
@@ -192,7 +192,7 @@ def analogy_section(data):
         return ""
     rel = "".join(f"<li>{esc(x)}</li>" for x in a.get("related", []))
     return (f'<section class="sec" id="tatoe"><h2>たとえと、関連する事柄</h2>'
-            f'<p class="meta"><span class="lb">作る側のたとえ</span>{esc(a.get("written_by", ""))}。たとえは仕組みを考える手がかりで、答えではありません。</p>'
+            f'<p class="meta"><span class="lb">作る側のたとえ</span>{esc(wording.plain(a.get("written_by", "")))}。たとえは仕組みを考える手がかりで、答えではありません。</p>'
             f'<article class="card"><h3>身近な物でいうと</h3><p>{esc(a["like"])}</p></article>'
             f'<article class="card"><h3>関連する事柄</h3><ul>{rel}</ul></article></section>')
 
@@ -395,7 +395,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
         ans = r.get("answers") or {}
         # 書いた欄だけを読める字で出す。書いていない欄の名前は並べない（#130）。
         written = [("最初に動いた所", ans.get("first_moved")), ("引っかかった所", ans.get("stuck")), ("変えると違いが出そうな所", ans.get("what_if")),
-                   ("思いついた事", "、".join(str(x) for x in r.get("ideas") or [])), ("メモ", r.get("note"))]
+                   ("思いついた事", "、".join(str(x) for x in r.get("ideas") or [])), ("メモ", wording.record_note(r.get("note")))]
         feel += "".join(f"<p>{label}: {esc(text)}</p>" for label, text in written if text)
         # 人の工夫（本人の言葉 11-05「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」）。輪の材料そのものなので札の上の方に出す。
         feel = "".join(f'<p>工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict)) + feel
@@ -406,7 +406,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
             if told:
                 # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
                 tail = '<p class="meta">説明を残しました。</p>' + ai_block(r)
-        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}・{esc(r["id"])}</p>{feel}{after}{tail}</article>'
+        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}・{esc(wording.record_no(r["id"]))}</p>{feel}{after}{tail}</article>'
     return out
 
 
@@ -452,7 +452,7 @@ def made_strip(sid, recs, photos=True):
         for f in (media_review.public(r["id"], media_of(r["id"]))[:1] if photos else []):
             tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">')
-            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(r["id"])} の記録へ">{tag}</a>'
+            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} の記録へ">{tag}</a>'
     return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 
@@ -483,7 +483,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     nopic = "" if has_pic else f'<p class="meta"><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p>'
     songs = "".join(f'<p>{esc(e["text"])}</p>' for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by"))
-    who = "・".join(sorted({e["checked_by"] for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")}))
+    who = "・".join(sorted({wording.plain(e["checked_by"]) for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")}))
     stage = hypotheses.stage(sid)
     stage_note = '<p class="meta"><span class="lb">試作</span>全部の玩具を型紙にする途中の物。名前は作る側の見立てで、まだ確かめていません。</p>' if stage != "必須" else ""
     hero = (f'<section class="hero">{skin.frame(sid, src.get("holding", ""))}<div>'
@@ -501,13 +501,13 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
     for h in [hypotheses.sheet_of(sid)]:
-        ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
+        ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(wording.plain(e["what"]))}（{esc(wording.plain(e["where"]))}）</li>' for e in h["evidence"])
         last = versions_of(sid, h["id"], printed_only=True)
         # 紙の種類と版を選ぶのは窓の札の役。札の下に字のリンクを並べると、版ごとに 3 つ増える（#127）。
         thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win" aria-label="仮説 {esc(hypotheses.letter(h))} の紙を窓で見る"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
-        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
-                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
+        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
+                 f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
                  f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙を見る</button></form>'
                  '</div></div>')
     body += "</div>"
