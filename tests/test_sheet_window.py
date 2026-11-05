@@ -3,6 +3,7 @@
 なぜ: 札の「刷る」は絵を作るだけで印刷せず、窓の説明と順が逆だった。ほかの仮説を見るには節を戻って札ごとに押す必要があり、
 押せない点線の札の理由は title にしか無く、スマホでは読めなかった。
 """
+import json
 import os
 import re
 import tempfile
@@ -15,7 +16,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "api-usage.jsonl")
 
 from omochae import hypotheses, loop  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -49,7 +50,7 @@ def win(page):
 page = get(f"/toy/{G}")
 ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
 first, other = ids[0], ids[1]
-making = lambda hid: f'<form method="post" action="/toy/{G}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button>'
+making = lambda hid, sid=G: f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button>'
 # 最初の 1 枚も窓の中で作れる。上の節の札は「型紙を見る」で、印刷とは言わない
 assert "型紙を見る</button>" in page and all(making(h) in win(page) for h in ids), win(page)[:600]
 assert "仮説の札を押すと、紙を作ってここに出します" in visible(win(page))
@@ -80,13 +81,20 @@ assert code == 422 and "型紙を作れませんでした" in win(failed), (code
 code, _, failed = post(f"/toy/{G}/print", {"hypothesis": other})
 assert code == 422 and "型紙を作れませんでした" not in win(failed) and "型紙を作れませんでした" in failed.split('id="kasetsu"', 1)[1], code
 hypotheses.print_sheet = real
-code, where, page = post(f"/toy/{G}/print", {"hypothesis": other, "at": "win"})
-assert code == 200 and f"see={other}" in where
+# 必須 2 種の今の組で刷れるのは、たたき台だけ（本人の決定 11-05、J-032）。札の行き来は頁の直しまで残るので、試作の玩具で見る。
+assert post(f"/toy/{G}/print", {"hypothesis": other, "at": "win"})[0] == 422
+assert not list(out_dir(G).glob(f"{other}_v1*")), "断った紙を残さない"
+T = next(p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("*.json"))
+         if json.loads(p.read_text(encoding="utf-8")).get("stage") == "試作" and len(json.loads(p.read_text(encoding="utf-8"))["hypotheses"]) > 1)
+first_t, other_t = [h["id"] for h in hypotheses.load(T)["hypotheses"]][:2]
+assert post(f"/toy/{T}/print", {"hypothesis": first_t, "at": "win"})[0] == 200
+code, where, page = post(f"/toy/{T}/print", {"hypothesis": other_t, "at": "win"})
+assert code == 200 and f"see={other_t}" in where
 assert "紙を作りました" in win(page)
-assert f'/sheet/{G}/{other}_v1.png' in win(page)
-assert button not in win(page) and f"see={first}&" in win(page), "作った札は字のリンクになり、窓の中で行き来できる"
+assert f'/sheet/{T}/{other_t}_v1.png' in win(page)
+assert making(other_t, T) not in win(page) and f"see={first_t}&" in win(page), "作った札は字のリンクになり、窓の中で行き来できる"
 # 型紙の確定の記録は、押した紙の分だけ残る（線は変えない）
-assert {c["hypothesis_id"] for c in loop.sheet_confirmations(G)} >= {first, other}
+assert {c["hypothesis_id"] for c in loop.sheet_confirmations(T)} >= {first_t, other_t}
 # 試した後の紙は、記録の前は渡さず、理由を字で出す
 assert "試した後の紙は、記録を残すと開きます" in visible(win(page))
 assert f"{first}_v1_after" not in win(page)

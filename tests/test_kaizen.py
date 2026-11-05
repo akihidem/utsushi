@@ -106,7 +106,8 @@ assert f"/sheet/{G}/H-A_v1.png" not in only2 and "<b>版 2</b>" in only2 and ">�
 assert get(f"/toy/{G}?see=H-A&kind=sheet&v=1")[0] == 200 and f'<img src="/sheet/{G}/H-A_v2.png"' in get(f"/toy/{G}?see=H-A&kind=sheet&v=1")[1], "無い版を言われても一番新しい版へ"
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303  # 元に戻す（版 2 を刷り直す。版 1 は無いまま）
 # 報告の版: 版が 2 つある時は、どの版の紙かを聞き、言われた版の報告として残す（版 1 で作っていた人の報告が版 2 の記録にならない）
-assert post(f"/toy/{G}/print", {"hypothesis": "H-B"})[0] == 303
+# 御来迎の今の組で刷れるのは、たたき台の H-A だけ（本人の決定 11-05、J-032）。頁の札の直しは後の PR で、今は刷る所で断る。
+assert post(f"/toy/{G}/print", {"hypothesis": "H-B"})[0] == 422
 from omochae import hypotheses  # noqa: E402
 
 hypotheses.print_sheet(G, "H-A", str(out / "H-A_v1"), 1)

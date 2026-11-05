@@ -13,7 +13,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from PIL import Image  # noqa: E402
 
-from omochae import hypotheses  # noqa: E402
+from omochae import hypotheses, media_review  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web.techo_site import MAX_MEDIA, media_dir, strip_jpeg_meta  # noqa: E402
 
@@ -100,6 +100,8 @@ try:
 except urllib.error.HTTPError as e:
     assert e.code == 303 and "/techo" in e.headers["Location"]
 # サイトのギャラリー: 作った物と職人の言葉の枠
+assert "m1.jpg" not in req("/gallery")[1].decode(), "人の確認の前は出さない（#314）"
+assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
