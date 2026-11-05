@@ -240,6 +240,22 @@ assert [k["when"] for k in ku] == ["idea", "idea", "making", "making", "made", "
 assert {k["text"] for k in ku[:2]} == {THINK, THINK_FREE} and {k["text"] for k in ku[4:]} == {KEEP_A, KEEP_B}
 assert talk_log.kufu(G, RID, shared_only=True) == ku and [k["text"] for k in talk_log.kufu(G, "R-0004", shared_only=True)] == [CRAFT_OTHER]
 assert talk_log.WHEN == {"think": "idea", "craft": "making", "keep": "made"}  # 型紙エンジンの報告の欄と合わせた名（#275）
+# ---- 輪と束が読む口（talk_log.texts）: 玩具・紙・場面・記録で絞って字を返す。印・見せる印・声か字かは返さない。記録に結ぶ前の字も入る
+every = talk_log.texts(G)
+assert all(tuple(t) == talk_log.TEXT_KEYS for t in every) and not {"who", "share", "via"} & set(talk_log.TEXT_KEYS)
+assert {t["text"] for t in every} == OPEN | {CRAFT_OTHER, "糸で引く所が気になる", THINK_OTHER, CRAFT_NOWHO, CRAFT_NOJS}, sorted(t["text"] for t in every)
+assert talk_log.texts() == every and talk_log.texts("NDL-1187053-R0000014-R") == []
+assert {t["text"] for t in talk_log.texts(G, scene="think")} == {THINK, "糸で引く所が気になる", THINK_OTHER, THINK_FREE}
+assert {t["text"] for t in talk_log.texts(G, scene="think", hypothesis_id="H-B")} == {THINK_OTHER}
+assert {(t["step"], t["text"]) for t in talk_log.texts(G, scene="craft", hypothesis_id="H-A", sheet_version=1)} == {(2, CRAFT), (None, CRAFT_QUIET), (1, CRAFT_OTHER), (3, CRAFT_NOWHO), (3, CRAFT_NOJS)}
+assert talk_log.texts(G, scene="craft", sheet_version=2) == [] and {t["text"] for t in talk_log.texts(G, record_id=RID)} == OPEN
+assert {t["text"] for t in talk_log.texts(G, scene="keep")} == {KEEP_A, KEEP_B} and {t["record_id"] for t in talk_log.texts(G, scene="keep")} == {RID}
+# その画面で話した字だけ（その場限りの印で絞る。形の外の印では何も返さない）
+assert {t["text"] for t in talk_log.texts(G, scene="think", who=W)} == {THINK, THINK_OTHER, THINK_FREE} and {t["text"] for t in talk_log.texts(G, who=W2)} == {CRAFT_OTHER}
+assert talk_log.texts(G, who="") == [] and talk_log.texts(G, who="Tanaka Taro!") == []
+one = next(t for t in every if t["text"] == CRAFT)
+assert one == {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "template": "slider_fan", "sheet_set": one["sheet_set"], "scene": "craft", "step": 2,
+               "record_id": RID, "text": CRAFT, "at": one["at"]} and one["sheet_set"] and re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d\+09:00", one["at"])
 sm = talk_log.summary(G)
 assert {t["text"] for t in sm["think"]} == {THINK, "糸で引く所が気になる", THINK_OTHER, THINK_FREE}
 assert sm["craft"]["H-A"][1][1] == [CRAFT_OTHER] and sm["craft"]["H-A"][1][2] == [CRAFT] and set(sm["craft"]["H-A"][1][3]) == {CRAFT_NOWHO, CRAFT_NOJS}, sm["craft"]
@@ -388,6 +404,7 @@ assert get(f"/loop/{G}", at=open_base)[0] == 404
 # ---- 作る側の道具（talk_log.set_share）: 名前などに気づいた時に、その記録の字を、消さずに学ぶ人の頁から隠せる。戻せる
 assert talk_log.set_share(G, RID, False) == (6, []) and talk_log.set_share(G, RID, False) == (0, [])
 assert talk_log.kufu(G, RID, shared_only=True) == [] and len(talk_log.kufu(G, RID)) == 6 and {t["text"] for t in talk_log.talks(G, shared_only=True)} == {CRAFT_OTHER}
+assert talk_log.texts(G, record_id=RID) == [] and not OPEN & {t["text"] for t in talk_log.texts(G)}, "作る側が隠した字は、輪と束が読む口にも出ない"
 hidden = get(f"/toy/{G}/techo")[1]
 assert not any(text in hidden for text in OPEN) and f'data-kufu="{RID}"' not in hidden and CRAFT_OTHER in hidden
 assert f"<li>手順 2: {CRAFT}［隠している］</li>" in get(f"/loop/{G}")[1]
@@ -427,7 +444,7 @@ assert len(talk_log.kufu(G, "R-0003", shared_only=True)) == 3
 some = next(p for p in files() if json.loads(p.read_text(encoding="utf-8")).get("record_id") == "R-0003")
 placed = some.with_name("talk-20261105-0000-deadbeef.json")
 placed.write_text(json.dumps(json.loads(some.read_text(encoding="utf-8")) | {"scene": "craft", "text": "電話は 090-1111-2222 です"}, ensure_ascii=False), encoding="utf-8")
-assert len(talk_log.kufu(G, "R-0003")) == 4 and len(talk_log.kufu(G, "R-0003", shared_only=True)) == 3
+assert len(talk_log.kufu(G, "R-0003")) == 4 and len(talk_log.kufu(G, "R-0003", shared_only=True)) == 3 and len(talk_log.texts(G, record_id="R-0003")) == 3
 assert "090-1111" not in "".join(t["text"] for t in talk_log.talks(G, shared_only=True)) and "090-1111" not in get(f"/toy/{G}/techo")[1]
 placed.unlink()
 

@@ -23,6 +23,8 @@
   記録に結ぶ前の字（考えと工夫）は、学ぶ人の頁に出さない（出す札が無い。作る側の頁だけ）。
   出す時に、入口の床をもう一度当てる（床を広げる前に残した字や、手で置いた字のため）。
   作る側が読んで名前などに気づいた時は、その記録の字を、消さずに隠せる（set_share。記録ごと消すのは records.withdraw）。
+- 読む口は 3 つ: texts（輪と束が読む。渡してよい物だけを、印を外した欄で返す）・kufu（記録の札が読む。その記録に結んだ字）・
+  talks（作る側の頁と集計が読む。出来事そのまま）。
 - 記録を取り下げたら、結んだ字も消す（drop_for_record。records.withdraw が呼ぶ）。
 - 字を残す事がこの口の用事なので、残せなかった時は理由を返す（making_log.add_ask は黙って捨てるが、ここは本人に知らせる）。例外は外へ出さない。
 """
@@ -46,6 +48,9 @@ WHEN = {"think": "idea", "craft": "making", "keep": "made"}
 VIAS = ("voice", "text")
 # 残す欄はこれだけ。欄を足す時は、誰が話したかを辿れる物でない事を確かめてからここに足す。
 FIELDS = ("source_id", "hypothesis_id", "sheet_version", "template", "sheet_set", "scene", "step", "record_id", "text", "via", "share", "who", "at")
+
+# 輪と束が読む口（texts）が返す欄。その場限りの印・見せる印・声か字かは入れない（輪や束や外の API へ運ばせないため）。
+TEXT_KEYS = ("source_id", "hypothesis_id", "sheet_version", "template", "sheet_set", "scene", "step", "record_id", "text", "at")
 
 # 名乗りと学校の形。NFKC でそろえた後の字に当てる。どれも短い範囲しか見ない（長い文で遅くならないように）。
 NAME_SHAPES = (
@@ -131,6 +136,26 @@ def talks(source_id=None, scene=None, record_id=None, shared_only=False):
     return [t for t in _all(source_id) if not t.get("dropped") and (scene is None or t.get("scene") == scene)
             and (record_id is None or t.get("record_id") == record_id)
             and (not shared_only or (t.get("record_id") and t.get("share") is True and not blocked(t.get("text", ""))))]
+
+
+def texts(source_id=None, scene=None, hypothesis_id=None, sheet_version=None, record_id=None, who=None):
+    """輪と束が読む口: 玩具・紙（仮説と版）・場面・記録で絞って、話した字を返す。Returns [{TEXT_KEYS の欄}…]（分の順）。
+    本人の描く 4 つのループ（Issue #335）は、どれもここを読む: 考え（think）から紙・工夫（craft）から型紙の直し・束・上げた後の話（keep）。
+    返すのは、輪や束へ渡してよい物だけ: 床で落とした物・作る側が隠した物（記録に結んだ後に share を外した物）・入口の床にもう一度当たる物は入れない。
+    記録に結ぶ前の字（考え・工夫）も入る（考えから紙を作る時は、記録がまだ無い）。
+    絞り方: どの引数も、渡した時だけ絞る（同じ値の物だけ）。考えは仮説を選ばずに話した物があり、その hypothesis_id は None。
+    who はその場限りの印で、絞るためだけに受ける（その画面で話した字だけを読む時）。返す欄には入れない。"""
+    who = making_log.clean_who(who) if who is not None else None
+    out = []
+    for t in _all(source_id):
+        if t.get("dropped") or (t.get("record_id") and t.get("share") is not True) or blocked(t.get("text", "")):
+            continue
+        if ((scene is not None and t.get("scene") != scene) or (hypothesis_id is not None and t.get("hypothesis_id") != hypothesis_id)
+                or (sheet_version is not None and t.get("sheet_version") != sheet_version) or (record_id is not None and t.get("record_id") != record_id)
+                or (who is not None and (not who or t.get("who") != who))):
+            continue
+        out.append({k: t.get(k) for k in TEXT_KEYS})
+    return out
 
 
 def bind(source_id, hypothesis_id, sheet_version, who, record_id):
