@@ -28,6 +28,7 @@ PROPOSE_SYSTEM = """江戸の玩具を紙で試した記録と、人が確定し
 先に list_records と get_known_examples と list_contributions で前例を引く。必要なら zoom_picture で図を見る。
 型紙は玩具ごとに 1 枚のたたき台で、データの sheet がその仮説を指す。次の版はたたき台にだけ足す。sheet_params が今の版の寸法で、次の人が刷る紙の寸法。寸法の案と new_hypothesis の params は sheet_params から書く。
 作る物: (a) たたき台の寸法の変更案。ほかの仮説の記録からは、変えるならたたき台の寸法を変え、hypothesis_id に sheet の番号を書く。check_params を通してから出す。式で確かめられる変更には metric と direction を付ける。
+記録が自分の案の紙（own_paper）で試した物でも、変えるならたたき台の寸法を変える。own_paper の params が無い記録（型紙なしの紙）からは changes を出さない。
 (b) 次に試す事と、それを確かめるために測る事。
 (c) 寸法の差で言えない案だけを new_hypothesis に書く。採っても作る側の控えに残り、画面には出ない。
 仮説に順位を付けない。どれが正しいかを決めない。雛形に無い機構を作れるとは言わない。
@@ -170,7 +171,8 @@ def draft_proposal(record_id, source, client=None):
     if rec.get("source_id") != sid:
         return None, [Failure("F8.references", record_id, f"記録は {rec.get('source_id')} の物で、渡された玩具 {sid} と違う")]
     data = load(sid)
-    hypothesis_id = rec["hypothesis_id"]
+    # 既定の向く先は loop.next_target（自分の紙の記録はたたき台へ。型紙なしの紙の記録は向く先が無い）。欄・受け口・端末と同じ所を読む。
+    hypothesis_id = loop.next_target(sid, rec["hypothesis_id"])
     # 雛形と変えてよい寸法は、たたき台の物を渡す。次の版はたたき台にだけ足すので、記録が控えの物でも、控えの雛形を渡すと sheet_params と食い違う（J-032）。
     card = sheet_of(sid)
     sheet = card["id"]
@@ -182,11 +184,16 @@ def draft_proposal(record_id, source, client=None):
     # 話した字は解釈の頼みと同じ物を渡す（loop.material。床・隠した字の扱いを 1 か所に置く）。
     context = {"template_id": template, "sheet": sheet, "sheet_version": based, "sheet_params": now, "record": rec, "interpretation": loop.interpretation(record_id)["content"],
                "maker_talk": loop.maker_talk(record_id), "hypotheses": shown, "allowed_params": sorted(loop.ALLOWED[template])}
+    if str(rec["hypothesis_id"]).startswith("OWN-"):
+        # 試した紙はたたき台と寸法が違う。記録を読む手がかりに寸法だけを渡す。話した考えの字（how_it_moves）は渡さない（考えはループ1 の材料。maker_talk と同じ線）。
+        context["own_paper"] = {"hypothesis_id": rec["hypothesis_id"], "params": (loop._hypothesis(sid, rec["hypothesis_id"]) or {}).get("params")}
     user = "次の材料から案を作ってください。\n<data>\n" + _data(context) + "\n</data>"
 
     def validate(result):
         # 形（PROPOSE_SCHEMA）と新しい仮説の中身も見る。提案の検査（loop.check_proposal）は寸法と根拠の記録しか見ないため。
         shape = agent.schema_errors(result, PROPOSE_SCHEMA) + _new_hypothesis_content(result.get("new_hypothesis"), sid)
+        if result.get("changes") and loop.next_target(sid, rec["hypothesis_id"]) != sheet and str(rec["hypothesis_id"]).startswith("OWN-"):
+            shape = shape + ["型紙なしの紙の記録からは、寸法の変更を出さない"]  # 組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らない（next_target）
         return shape + [f.line() for f in loop.check_proposal({**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id)}, source)]
 
     result, trace = agent.run("propose", PROPOSE_SYSTEM, user, _tools(), PROPOSE_SCHEMA, execute, validate=validate, client=client)
