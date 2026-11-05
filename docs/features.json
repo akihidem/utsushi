@@ -380,7 +380,6 @@
   "status": "doing",
   "evidence": [
    "src/web/kaizen.py",
-   "src/web/kaizen_versions.py",
    "src/web/toy.py",
    "src/web/play_server.py",
    "tests/test_kaizen.py",
@@ -525,5 +524,17 @@
    "tests/test_trial_video.py"
   ],
   "unverified": "作り物の動画だけで通した。本物の動画での札の読みと、版の効き目はまだ。札を人が確かめるのは端末の命令で、頁は無い"
+ },
+ {
+  "id": "f45",
+  "name": "型紙の版の歩み（裏側の改善ループの頁）",
+  "status": "doing",
+  "evidence": [
+   "src/web/ayumi.py",
+   "src/web/kaizen_versions.py",
+   "tests/test_loop_ayumi.py",
+   "docs/process/trials/sheets/README.md"
+  ],
+  "unverified": "どのループかは記録から決める。寸法の版とエンジンの版の本物はまだ無く、試験の作り物で見た。良くなったかは判定しない。エンジンの版は別の repo の台帳を読むだけで、無い機械では読めませんと出す"
  }
 ]

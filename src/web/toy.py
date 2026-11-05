@@ -148,7 +148,9 @@ def window(sid, data, see, kind, v, recorded):
     if v > 1:
         _, adopted = loop.version_params(sid, see, v)
         if adopted:
-            ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
+            from .kaizen import _param_name  # 呼び名の無い寸法は、内部の名前を出さない
+
+            ch = "、".join(f"{_param_name(sid, c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
             cap = f'<p class="meta">版 {v}: 根拠 {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))}。変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
     cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
