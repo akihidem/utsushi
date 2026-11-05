@@ -1,0 +1,12 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_build_now.py と tests/test_loop_premise.py（lane/pictures の木に、新しい試験だけを足した写しで回した）
+# commit: 23349fb
+$ PYTHONPATH=src .venv/bin/python tests/test_build_now.py   # lane/pictures 23349fb に新しい試験だけを足した写し
+    assert 'id="kasetsu"' in page and "すぐ作る" in page
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
+$ PYTHONPATH=src .venv/bin/python tests/test_loop_premise.py   # lane/pictures 23349fb に新しい試験だけを足した写し
+    from omochae.marks import AI_HYPOTHESIS, HYPOTHESIS, LOOP_PREMISE, PREMISE_PAGE, mark_lines  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'AI_HYPOTHESIS' from 'omochae.marks' (src/omochae/marks.py)
+rc=1
