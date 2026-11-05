@@ -6,6 +6,7 @@ port は毎回空きを取る。デモの決まった port には触らない。
 """
 import os
 import pathlib
+import random
 import shutil
 import signal
 import socket
@@ -28,13 +29,16 @@ FIRST_IMAGE = "out/sources/NDL-1187053-R0000005-L.jpg"
 
 
 def free_port():
-    """2 サイト（白は port、黒は port + 1）が立てられる、空きの続き番号の頭を返す。"""
+    """2 サイト（白は port、黒は port + 1）が立てられる、空きの続き番号の頭を返す。
+    ephemeral の範囲（Linux は 32768 から）の外から選ぶ: serve(0) と同じ範囲だと、ほかの試験に取られ得る。"""
     while True:
-        with socket.socket() as s:
-            s.bind(("127.0.0.1", 0))
-            port = s.getsockname()[1]
-        if demo_check.port_free(port + 1):
+        port = random.randrange(20000, 32000)
+        if demo_check.port_free(port) and demo_check.port_free(port + 1):
             return port
+
+
+# 門は 8 本ほどの試験の組を同時に回す。ほかの試験の serve(0) と同じ範囲から選ぶと、閉じてから立てるまでの間に取られて落ちる（#274）
+assert all(free_port() < 32000 for _ in range(50)), "ephemeral の範囲から選んでいる"
 
 
 def write_exec(path, body):
