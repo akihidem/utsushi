@@ -105,9 +105,9 @@ const st=document.querySelector('.stage'),sid=st.dataset.sid,hid=st.dataset.hid,
 const wantCam=new URLSearchParams(location.search).get('cam')==='1';
 const items=[...document.querySelectorAll('#steps li')],num=document.getElementById('n'),stepIn=document.getElementById('step');
 const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg-stuck');
-const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]');
+const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');
 let n=+stepIn.value;
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
 const who=(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){
@@ -236,7 +236,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<button name="event" value="next" class="go"{" hidden" if n >= total else ""}>次の手順へ</button>'
             f'<button name="event" value="done" class="go"{"" if n >= total else " hidden"}>{esc(DONE_LABEL)}</button>'
             '<button name="event" value="stuck">ここで止まった</button>'
-            '<button name="event" value="back" class="small">戻る</button></form>'
+            # 手順 1 の「戻る」は行き先が無く、押しても何も起きないので出さない。
+            f'<button name="event" value="back" class="small"{" hidden" if n <= 1 else ""}>戻る</button></form>'
             # 作りながら、工夫を話す（一周の 2、Issue #279）。札のすぐ下に置き、今の手順の番号に結ぶ。声は字にして、字だけを残す（hanasu.py）。
             f'{hanasu.craft_box(sid, hid, v, n)}'
             # 聞く口: JS がある時は手帖と同じ口（ask-json）で答えをここに出す。無い時は玩具の頁の聞く口へ送る。
