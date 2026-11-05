@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_about.py
+# commit: 3600ad9（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_about.py", line 26, in <module>
+    assert html.escape(w, quote=False) in h or w in h, (k, w)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('tenji', 'なくなったおもちゃの動きを、紙で実験してたしかめる道具')
+rc=1
