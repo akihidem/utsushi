@@ -43,6 +43,15 @@ def post(path, data, origin=base, ctype="application/x-www-form-urlencoded"):
         return e.code, e.read().decode()
 
 
+def where(path, data):
+    """送った後の戻り先を見る。(rc, Location) を返す。"""
+    req = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), method="POST", headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
+    try:
+        return opener.open(req).status, ""
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers.get("Location", "")
+
+
 code, body = get("/")
 body = body.decode()
 # 入口は本人が残した A 大判写真集（J-024）。玩具の一覧から入れる
@@ -69,9 +78,13 @@ assert post(f"/toy/{G}/predict", {"text": "x"}, origin="http://evil.example")[0]
 assert post(f"/toy/{G}/predict", {"text": "x"}, ctype="text/plain")[0] == 403
 assert post(f"/toy/{G}/predict", {"text": " "})[0] == 422
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 422, "予想の前は刷らない"
-assert post(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})[0] == 303
+assert "<details><summary>予想を書き足す" not in get(f"/toy/{G}")[1].decode(), "予想の前は欄を畳まない"
+code, at = where(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})
+assert code == 303 and at.endswith("#kasetsu"), at  # 予想の次の段は仮説と型紙（要件 L-04）。試した記録の欄へは行かない
 body = get(f"/toy/{G}")[1].decode()
 assert "筒を押すと扇が開く" in body and "仮説 A" in body
+# 予想の後は札を主にし、書き足す欄と自分の仮説の欄は畳む。仮説の節は札の後ろに続く
+assert re.search(r"あなたの予想.*<details><summary>予想を書き足す.*<details><summary>自分の仮説を立てる.*id=\"kasetsu\"", body, re.S), "畳んでいない"
 # 順位を出さない。並びは元の記録の順
 assert "rank" not in body and "順位" not in body
 assert re.search(r"仮説 A.*仮説 B.*仮説 C.*仮説 D.*仮説 E", body, re.S)
@@ -93,7 +106,8 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 # 記録: 決まりの外の値は落とし、動かない記録もそのまま残す
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "成功"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "abc"})[0] == 422
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})[0] == 303
+code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
+assert code == 303 and at.endswith("#kiroku"), at
 body = get(f"/toy/{G}")[1].decode()
 assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
 assert "R-0001 H-A: 動かない・40°" in body
@@ -104,7 +118,9 @@ assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "強くしごく", "by": "本人"})[0] == 303
 assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
 # 自分の仮説には型紙なしの紙を返す（本人の決定）
-assert post(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})[0] == 303
+code, at = where(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})
+assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を刷る」に着く
+assert re.search(r'id="own-OWN-1".*紙を刷る', get(f"/toy/{G}")[1].decode(), re.S)
 assert post(f"/toy/{G}/print-own", {"id": "OWN-9"})[0] == 422
 assert post(f"/toy/{G}/print-own", {"id": "OWN-1"})[0] == 303
 assert "OWN-1_v1_free.pdf" in get(f"/toy/{G}")[1].decode()

@@ -95,6 +95,7 @@
    "src/omochae/records.py",
    "src/omochae/store.py",
    "tests/test_records.py",
+   "tests/test_records_withdraw.py",
    "tests/test_media_range.py",
    "tests/test_store.py"
   ],

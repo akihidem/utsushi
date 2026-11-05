@@ -485,6 +485,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
+        anchor = "kiroku"  # 予想と自分の仮説は次の段へ戻す（要件 L-04）。試した記録の欄へ戻すのは記録だけ
         if act == "ask":
             # 手順の質問は記録に残さず、その場で答えを頁に出す。仮説への返事の順（紙 → 記録と説明 → AI）には入らない。
             from api.budget import BudgetStop
@@ -502,9 +503,11 @@ class Handler(BaseHTTPRequestHandler):
         if act == "predict":
             _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
             msg = "予想を残しました"
+            anchor = "kasetsu"
         elif act == "own":
-            _, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
+            own, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
             msg = "仮説を残しました。「紙を刷る」で、身の回りの紙と紐で作る型紙なしの紙が刷れます"
+            anchor = f"own-{own['id']}" if own else anchor
         elif act == "print-own":
             oid = form.get("id", "")
             if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
@@ -539,7 +542,7 @@ class Handler(BaseHTTPRequestHandler):
             msg = "記録を残しました。試した後の紙が開けます"
         if failures:
             return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
-        self._done(sid, msg, see=see, anchor="win" if see else "kiroku")
+        self._done(sid, msg, see=see, anchor="win" if see else anchor)
 
 
 def lan_addresses():
