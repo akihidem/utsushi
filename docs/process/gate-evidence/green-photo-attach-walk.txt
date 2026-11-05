@@ -1,7 +1,7 @@
 # 命令: .venv/bin/python tests/test_photo_attach_walk.py
-# commit: 6c2a93c4（回した時の HEAD）
-/tmp/tmp2bzer4_h/play/NDL-1187053-R0000005-L/H-A_v1.pdf
-/tmp/tmp2bzer4_h/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
-/tmp/tmp2bzer4_h/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+# commit: efdc9499（回した時の HEAD）
+/tmp/tmpuq1971l2/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpuq1971l2/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpuq1971l2/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
 ok 写真を足す頁: 写真だけで押すと記録が 1 つのまま。写真のある記録・書いた字がある時は今までどおり。2 度押しても写真は 1 つ
 rc=0

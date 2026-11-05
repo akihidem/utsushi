@@ -4,6 +4,7 @@
 残った記録と写真をサーバの側で数える。受け口の決まり（鍵・番号を受けない・期限）は tests/test_photo_attach.py が見る。
 
 歩く道:
+N 約束の印（大人の手元だけ・顔なし・声なし）を入れずに押す: 何も送らない（足せるかも聞かない）。印が「要る」になっていない形でも同じ
 A 写真だけを選んで押す: 見た事を求めず、さっきの記録に足す（記録は増えない）
 B 写真のある記録には、もう足さない: 今までどおり「紙と見た事をえらぶ」
 C 続けて 2 度押す: 同じ写真を 2 度送らない
@@ -37,7 +38,8 @@ WALK = r"""<!doctype html><body><iframe id="f" width="820" height="900" style="b
 const R={},G=%s,f=document.getElementById('f');
 const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
 const record=(result)=>fetch('/toy/'+G+'/record',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({hypothesis:'H-A',result}),redirect:'manual'});
-const open=()=>new Promise(r=>{f.onload=()=>r();f.src='/toy/'+G+'/techo?t='+Math.random()});
+// 頁が記録の口へ送った数を数える（約束の印が無い時に、足せるかも聞かない事を見るため）
+const open=()=>new Promise(r=>{f.onload=()=>{const w=f.contentWindow,real=w.fetch;w.__sent=0;w.fetch=(u,o)=>{if(String(u).includes('record-json'))w.__sent++;return real.call(w,u,o)};r()};f.src='/toy/'+G+'/techo?t='+Math.random()});
 const doc=()=>f.contentDocument,go=()=>doc().querySelector('#up-form button.go'),st=()=>doc().getElementById('up-status');
 const jpeg=()=>new Promise(r=>{const c=document.createElement('canvas');c.width=c.height=8;c.getContext('2d').fillRect(0,0,8,8);c.toBlob(r,'image/jpeg')});
 const pick=async()=>{const w=f.contentWindow,dt=new w.DataTransfer();dt.items.add(new w.File([await jpeg()],'a.jpg',{type:'image/jpeg'}));
@@ -46,9 +48,12 @@ const press=async(times=1)=>{st().textContent='';doc().getElementById('ok').chec
  for(let i=0;i<300&&(go().disabled||!st().textContent||st().textContent==='送っています…');i++)await wait(50);return st().textContent};
 const choose=(result)=>doc().querySelector('[name=result][value="'+result+'"]').click(),who=()=>sessionStorage.getItem('utsushi-who');
 try{
- await record('動いた');await open();await pick();R.button=go().textContent;R.who_a=[who()];R.a=await press();R.who_a.push(who());
+ await record('動いた');await open();await pick();R.button=go().textContent;
+ // 印が「要る」になっていない形（別の頁から戻って、写真だけが戻った時）を作る。ブラウザの標準の止めが効かないので、頁の中の止めを通る
+ const ok=doc().getElementById('ok');ok.checked=false;ok.required=false;st().textContent='';go().click();await wait(400);R.n=[st().textContent,f.contentWindow.__sent,go().disabled,ok.required];
+ R.who_a=[who()];R.a=await press();R.who_a.push(who());
  await pick();R.b=await press();R.b_ready=!go().disabled;
- await record('動かない');await open();await pick();R.c=await press(2);
+ await record('動かない');await open();await pick();R.c=await press(2);R.c_sent=f.contentWindow.__sent;
  await record('わからない');await open();await pick();choose('わからない');R.d=await press();
  await record('動いた');await open();await pick();choose('動いた');doc().getElementById('note').value='二度目の作り';R.who_e=[who()];R.e=await press();R.who_e.push(who());
 }catch(e){R.error=String(e&&e.stack||e)}
@@ -100,6 +105,8 @@ if got is None:
 assert isinstance(got, dict), ("歩き始めたのに終わらなかった", got, [(r["id"], r["result"]) for r in records.all_records(G)])
 assert "error" not in got, got
 rows = [(r["result"], r.get("via"), r.get("note") or "", len(techo_site.media_of(r["id"]))) for r in sorted(records.all_records(G), key=lambda r: r["id"])]
+# N 約束の印なしでは、足せるかも聞かず、何も送らない。押す所も止めない
+assert got["n"] == ["", 0, False, True], got
 # A 写真だけで押すと、見た事を求めず、玩具の頁で残した記録に足す
 assert got["button"] == "上げる" and got["a"] == "上げました", got
 assert rows[0] == ("動いた", None, "", 1), rows
@@ -107,8 +114,8 @@ assert rows[0] == ("動いた", None, "", 1), rows
 assert got["who_a"][0] and got["who_a"][0] == got["who_a"][1], got
 # B 写真のある記録にはもう足さず、今までどおり見た事を求める。押す所は戻る
 assert got["b"] == "紙と見た事をえらぶ" and got["b_ready"], got
-# C 続けて 2 度押しても、写真は 1 つ
-assert got["c"] == "上げました" and rows[1] == ("動かない", None, "", 1), (got, rows)
+# C 続けて 2 度押しても、写真は 1 つ。2 度目の押しは送る所まで行かない（写真の数だけだと、送る順の具合で 1 つに見える事があるので、送った数も見る）
+assert got["c"] == "上げました" and got["c_sent"] == 1 and rows[1] == ("動かない", None, "", 1), (got, rows)
 # D 同じ見た事を選び直しても、記録は増えない
 assert got["d"] == "上げました" and rows[2] == ("わからない", None, "", 1), (got, rows)
 # E 書いた字がある時は、新しい記録にして字を残す。玩具の頁で残した記録は、写真なしのまま

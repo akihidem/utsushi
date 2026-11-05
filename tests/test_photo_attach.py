@@ -20,9 +20,12 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from PIL import Image  # noqa: E402
 
+from api import ask  # noqa: E402
 from omochae import records  # noqa: E402
 from web import play_server, techo_site  # noqa: E402
 from web.play_server import REC_COOKIE, serve  # noqa: E402
+
+ask._key_present = lambda: False  # 合言葉なしの場は鍵のある所で立たない。鍵のある機械でも同じに動かす
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 server = serve(0)
