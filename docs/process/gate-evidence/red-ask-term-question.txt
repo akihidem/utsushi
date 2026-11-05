@@ -1,0 +1,18 @@
+# 命令: bash -c 'rc=0; for t in test_ask test_techo test_demo_walk; do PYTHONPATH=src .venv/bin/python tests/$t.py 2>&1 | tail -4; s=${PIPESTATUS[0]}; echo "$t rc=$s"; [ "$s" = 0 ] || rc=1; done; exit $rc'
+# commit: dabb992（回した時の HEAD）
+  File "tests/test_ask.py", line 56, in <module>
+    assert ask.answer(G, "H-A", q, client=f) == ("端を糊代で貼ります。", "ai"), q
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 蛇腹が固定できない。どうしたらいい？
+test_ask rc=1
+  File "tests/test_techo.py", line 17, in <module>
+    assert re.fullmatch(d["term_question"], "蛇腹とは") and not re.fullmatch(d["term_question"], "蛇腹が固定できない。どうしたらいい？")
+                        ~^^^^^^^^^^^^^^^^^
+KeyError: 'term_question'
+test_techo rc=1
+  File "tests/test_demo_walk.py", line 62, in <module>
+    assert code == 200 and got["from"] == "no_key" and got["text"] != ask.GLOSSARY["蛇腹"], got
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'text': '蛇腹は、山折りと谷折りを交互にして、端から順に畳む形です。手順の紙の「蛇腹（横から）」の絵で、上の角が山、下の角が谷です。', 'from': 'glossary'}
+test_demo_walk rc=1
+rc=1
