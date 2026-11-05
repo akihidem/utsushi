@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_one_sheet_page.py
+# commit: ae42437（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_one_sheet_page.py", line 74, in <module>
+    assert page.count('<div class="plate">') == 1, (sid, when)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '刷る前')
+rc=1
