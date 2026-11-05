@@ -88,7 +88,7 @@ assert sum("poke" in q["extras"] for q in four) == 3 and "poke" not in four[-1][
 
 # 手順 6: 竹串は外から穴を通って入る
 six = step(6)
-assert six[0]["extras"]["axle"][0][0] > six[-1]["extras"]["axle"][0][0], "竹串が外から入っていない"
+assert six[0]["extras"]["axle"][0][2] > six[-1]["extras"]["axle"][0][2], "竹串が手前から入っていない"
 
 # 手順 7: 台は内筒の上で平らなまま来て、糊代を折ってから下りる
 seven = step(7)
@@ -156,12 +156,14 @@ for i in o["strips"]:
 end_pose = assembly.fan_pose(o, 1.0)
 for i in o["strips"]:
     assert end_pose[i] == last_pose["panels"][f"fan:{i}"], i
-# 開いた扇は正面を向く: 真ん中の板は正面で、板の先は外筒の 1 面目に平行な面に広がる（奥行きより幅がずっと広い）
+# 開いた扇は正面を向く: 真ん中の板は正面で、板の先は溝のある面に平行な面に広がる（奥行きより幅がずっと広い。今の型紙で作った動画と写真 p01 の向き）
 assert assembly.normal_of(end_pose[o["mid"]])[2] > 0.999
 tips = [assembly.apply(end_pose[i], (P["fold_height"], fan.panels[i].centroid.y)) for i in o["strips"]]
 assert max(p[0] for p in tips) - min(p[0] for p in tips) > 10 * (max(p[2] for p in tips) - min(p[2] for p in tips)), "扇が正面に開いていない"
-face = bench.panel_at("tube", 4, 40)
-assert assembly.normal_of(last_pose["panels"][f"tube:{face}"])[2] > 0.999, "1 面目が正面にない"
+face = bench.panel_at("tube", P["tube_side"] + 4, 40)
+assert assembly.normal_of(last_pose["panels"][f"tube:{face}"])[2] > 0.999, "溝のある面が正面にない"
+ax = last_pose["extras"]["axle"]
+assert abs(ax[0][2] - ax[1][2]) > 30 and max(abs(ax[0][0]), abs(ax[1][0])) < 1, "竹串が手前へ出ていない"
 # 上がるほど広がり、途中で閉じない
 spans = []
 for r in range(0, 11):

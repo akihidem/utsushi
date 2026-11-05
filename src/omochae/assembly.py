@@ -435,6 +435,9 @@ def _slider_fan(p, parts, paper=None):
                 "fan": translate(tw / 2 + 2 + leg, -n * w / 2)}
         left = -tw / 2 - 6
     b.place.update(laid)
+    # 扇は、穴と溝のある面に平行に開く（作った物の記録: 今の型紙で作った動画 と 11-04 の写真 p01）。台は正方形なのでどちら向きにも貼れて、型紙のデータでは決まらない。
+    # 竹串は手前へ出て、溝を正面から見ながら押し上げられる。絵の前後を動かさず、筒の側を回して合わせる。
+    face_slot = rotate_y(-90)
 
     def step(k):
         b.step = k
@@ -502,12 +505,13 @@ def _slider_fan(p, parts, paper=None):
     b.place["pusher"] = translate(-(4 * ps + p["pusher_glue"]) / 2, -ph / 2)
     b.beat({"rx": -16, "ry": -24}, 900)
     _print_side_out(b, "pusher", ps, ph)
+    b.place["pusher"] = mul(face_slot, b.place["pusher"])
     tab = b.panel_at("pusher", 4 * ps + 4, ph / 2)
     b.closes("pusher", tab, b.panel_at("pusher", 4, ph / 2))
     b.nudge["pusher"][tab] = -0.3
     b.snapshot(text, {"rx": -18, "ry": -30}, cam=1.0)
 
-    # 6 竹串を外から 2 つの穴に通す。竹串の内の端は反対の穴から少し出るだけにする（反対の面に溝は無い）
+    # 6 竹串を手前から 2 つの穴に通す。竹串の奥の端は反対の穴から少し出るだけにする（反対の面に溝は無い）
     text = step(6)
     view = {"rx": -18, "ry": -30}
     line = b.holes_in_line("pusher", 0, 1)
@@ -587,7 +591,7 @@ def _slider_fan(p, parts, paper=None):
     view = {"rx": -18, "ry": -32}
     foot_h = by_key["figure"].height - fh
     b.fold("fan", deg=90, only=[leg_fold])
-    stand = [[0, 1, 0, 0], [0, 0, -1, 0], [-1, 0, 0, 0], [0, 0, 0, 1.0]]  # 糊代の面を上に、真ん中の板は立てて正面を向く。扇は外筒の 1 面目に平行に開く
+    stand = [[0, 1, 0, 0], [0, 0, -1, 0], [-1, 0, 0, 0], [0, 0, 0, 1.0]]  # 糊代の面を上に、真ん中の板は立てて正面を向く
     settle = mul(stand, translate(-fold_x, -hub[1]))
     b.place["fan"] = mul(translate(0, top - 24, mark_z), settle)
     b.place["figure"] = translate(-hole[0], top - 24 - fh - foot_h - 0.5, 0)
@@ -619,10 +623,10 @@ def _slider_fan(p, parts, paper=None):
         b.fail(b.sheets["figure"].part.name, "像の穴と扇の要の穴の高さが合わない（糸がまっすぐ通らない）")
     b.snapshot(text, view, 700)
 
-    # 12 内筒を外筒の下から入れる。溝は下の端が開いているので、竹串は下から溝に入る
+    # 12 内筒を外筒の下から入れる。溝は下の端が開いているので、竹串は下から溝に入る。溝の面を正面にする
     text = step(12)
     b.visible = set(b.sheets)
-    b.place["tube"] = translate(-side / 2, -tall / 2, side / 2)
+    b.place["tube"] = mul(face_slot, translate(-side / 2, -tall / 2, side / 2))
     fixed = {key: b.place[key] for key in ("pusher", "base", "fan", "figure")}
     rod = b.extras["axle"] if "axle" in b.extras else None
     below = translate(0, tall / 2 - ph / 2 + tall + 10)
@@ -631,7 +635,7 @@ def _slider_fan(p, parts, paper=None):
     _carry(b, "axle", below)
     _thread(b, strip, hub, hole)
     _row(b)
-    b.beat({"rx": -10, "ry": -30}, 900)
+    b.beat({"rx": -10, "ry": -22}, 900)
     # 内筒が外筒の底にある時まで上げる（内筒の中心は y=0 にある）
     move = translate(0, tall / 2 - ph / 2)
     for key, value in fixed.items():
@@ -647,7 +651,7 @@ def _slider_fan(p, parts, paper=None):
     if above > EPS:
         b.fail(fan.part.name, f"畳んだ扇が外筒の口から {above:.1f}mm 出る")
     _slot_check(b, p)
-    b.snapshot(text, {"rx": -12, "ry": -16}, 1700, cam=1.0)
+    b.snapshot(text, {"rx": -12, "ry": -22}, 1700, cam=1.0)
 
     # 組み立ての最後の動き（本人の追加 11-06「上にスライドさせて蛇腹が開く所まで」）: 竹串のつまみを上へ動かすと、内筒が上がり、扇が口から出て開く。
     # 開いた形は硬い面の折りでは表せないので、面を要のまわりに並べる（紙の形はそのまま）。
@@ -660,7 +664,7 @@ def _slider_fan(p, parts, paper=None):
     opening = _open_fan(b, p, hub0, apply(rise, hub0), hub[0], fold_x, pleat, -tall / 2)
     del b.extras["row"]  # 開くと穴の列は要に集まる
     _thread(b, strip, hub, hole)
-    b.snapshot("", {"rx": -10, "ry": -10}, 3000, open=opening)
+    b.snapshot("", {"rx": -10, "ry": -18}, 3000, open=opening)
     return b
 
 
@@ -708,7 +712,7 @@ def _shift(p, dy):
 def fan_pose(o, rise):
     """押し上げた割合 rise（0〜1）の時の、扇の面ごとの行列。頁の動きも同じ計算をする（web.kumitate の openShape）。
 
-    真ん中の板は足で台に貼ってあるので正面を向いたまま。ほかの板は要の糸（前後の向き）のまわりに開き、外筒の 1 面目に平行な面に広がる。
+    真ん中の板は足で台に貼ってあるので正面を向いたまま。ほかの板は要の糸（前後の向き）のまわりに開き、外筒の溝のある面に平行な面に広がる。
     要が筒の口より下の間は、口の幅が許す分だけ開く（11-04 の動画: 扇の先が口の幅いっぱいに出てきて、上がるほど広がる）。
     紙はばねのように開くので、筒の中でも口の幅まで広がる。最初の少しの間（筒に隠れている間）に、その形になる。
     """
