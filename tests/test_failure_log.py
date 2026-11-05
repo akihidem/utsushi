@@ -146,6 +146,8 @@ rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")
 techo_site.media_dir(rid).mkdir(parents=True, exist_ok=True)
 (techo_site.media_dir(rid) / "m1.mp4").write_bytes(b"not a video")
+# 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
+(techo_site.media_dir(rid) / "review.json").write_text(json.dumps({"m1.mp4": {"shows": "object"}}), encoding="utf-8")
 agent.default_client = lambda role=None: (_ for _ in ()).throw(api_error("AuthenticationError", f"invalid x-api-key {key_like}"))
 keep_interpret = loop_agents.draft_interpretation
 for act, role in (("ai-interpret", "interpret"), ("ai-observe", "observe")):

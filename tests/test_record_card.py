@@ -82,9 +82,12 @@ try:
     folder = techo_site.media_dir("R-0001")
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "m1.mp4").write_bytes(b"\0")
+    # 確認の前の動画は、上げた本人の画面にだけ AI の口を出す（tests/test_video_owner_ai.py）。ここは釦の出し方を見るので、人が物だけと確かめた動画として置く
+    (folder / "review.json").write_text('{"m1.mp4": {"shows": "object"}}', encoding="utf-8")
     full = card(get(f"/toy/{G}"), "R-0001")
     assert "Claude に聞く" in full and "動画を見てもらう" in full
     (folder / "m1.mp4").unlink()
+    (folder / "review.json").unlink()
     # 手帖の札も同じ
     techo = get(f"/toy/{G}/techo")
     assert "Claude に聞く" in techo and "動画を上げると、Claude が見えた事を返します" in techo and "動画を見てもらう" not in techo

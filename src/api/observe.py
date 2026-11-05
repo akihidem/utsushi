@@ -83,5 +83,5 @@ def observe(rid, video_path, client):
     # 前提の文の否定の形（正解ではなく）を返事が引いても、成績の語とは数えない（marks.without_premise）。
     if any(w in without_premise(flat) for w in BANNED):
         return None, "成否や点の言葉が入っていたので出さない"
-    loop._write(path(rid), {"record_id": rid, "observed": result["observed"], "unclear": result["unclear"], "by": "claude", "label": "観察（Claude の補助）", "at": loop._now()})
+    loop._write(path(rid), {"record_id": rid, "observed": result["observed"], "unclear": result["unclear"], "video": pathlib.Path(video_path).name, "by": "claude", "label": "観察（Claude の補助）", "at": loop._now()})
     return result, ""

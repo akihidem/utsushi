@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_floors_progress.py
+# commit: e6fc74c（回した時の HEAD）
+ok ./run.sh は端末にだけ、1 本ずつ本数と名前を出す
+rc=0
