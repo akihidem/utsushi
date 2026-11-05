@@ -563,12 +563,17 @@ def lan_addresses():
     return ips + [f"{socket.gethostname().split('.')[0]}.local"]
 
 
-def serve(port=8766, lan=False, public_key=None):
+def bind_host(lan):
+    return "0.0.0.0" if lan else "127.0.0.1"
+
+
+def serve(port=8766, lan=False, public_key=None, bind=None):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
     public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。"""
     if public_key is not None and len(public_key) < 16:
         raise ValueError("合言葉が短すぎる（16 字以上）")
-    server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
+    # bind は試験のため。--lan の番地の許しを試す間も、全部の網に口を開かない（#169）。
+    server = ThreadingHTTPServer((bind or bind_host(lan), port), Handler)
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     return server
