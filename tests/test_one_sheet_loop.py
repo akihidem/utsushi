@@ -12,6 +12,7 @@
 6. たたき台は、案を採っても替わらない
 7. 案を作る Claude に、たたき台の番号と今の版の寸法を渡す。ほかの仮説の記録で寸法の案を出すと、直させる
 8. 全部の玩具で、版 1 の時に全部の寸法を書いた案は前の版の直しを戻さない。寸法の無い控えや字の寸法の控えがあっても、一覧と頁は開く
+9. 渡された材料を読んで写す Claude でも、前の版の直しは戻らない（文に従うかに頼らない）。案を作っている途中で版が増えても、途中の直しは戻らない
 """
 import contextlib
 import io
@@ -190,6 +191,11 @@ made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 8, "new_hypothesis_as_version": 8}, (made, failures)
 params, version = loop.version_params(G, "H-A", 8)
 assert params == {**now, "fold_width": 9, "paper_thickness": 0.2} and [c["param"] for c in version["changes"]] == ["paper_thickness"]
+# 案の差のうち、今の版ともう同じ値の物は変更に混ぜない
+pid = propose(G, rid, "H-A", based_on_version=1, new_hypothesis=new_case("一部はもう直っている", {**first, "fold_count": params["fold_count"], "fold_height": 46}))
+made, failures = loop.adopt(pid, "作る側", accept_new=True)
+assert not failures and made == {"version": 9, "new_hypothesis_as_version": 9}, (made, failures)
+assert [c["param"] for c in loop.version_params(G, "H-A", 9)[1]["changes"]] == ["fold_height"]
 
 # 4. 版にならない案は、版を作らず、作る側の控えに入る（人が採った案を捨てない）
 now, _ = loop.version_params(G, "H-A", loop.latest_version(G, "H-A"))
@@ -201,12 +207,17 @@ for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**
                            ("雛形が違う", {"fold_height": 44}, {"template": "pivot_counterweight"}),
                            # 案を作った後に今の版で変わった寸法に触る案は、後の直しを黙って上書きしない
                            ("後の直しとぶつかる", {**first, "fold_count": 26}, {"based_on_version": 1}),
-                           ("もう同じ値", {**first, "fold_count": now["fold_count"]}, {"based_on_version": 1})):
+                           ("もう同じ値", {**first, "fold_count": now["fold_count"]}, {"based_on_version": 1}),
+                           ("読めない版の案", {**now, "fold_width": 8.5}, {"based_on_version": 99}),
+                           ("寸法が字", "多め", {}),
+                           ("寸法が並び", [1, 2], {}),
+                           ("雛形の無い案", {"fold_height": 44}, {"template": None}),
+                           ("雛形に乗らない読み", {"fold_height": 44}, {"template_id": None})):
     based = {"based_on_version": more.pop("based_on_version")} if "based_on_version" in more else {}
     pid = propose(G, rid, "H-A", new_hypothesis=new_case(name, params, **more), **based)
     number = len(extras(G)) + 1
     made, failures = loop.adopt(pid, "作る側", accept_new=True)
-    assert not failures and made == {"new_hypothesis": f"H-N{number}"} and loop.latest_version(G, "H-A") == 8, (name, made, failures)
+    assert not failures and made == {"new_hypothesis": f"H-N{number}"} and loop.latest_version(G, "H-A") == 9, (name, made, failures)
 
 # 5. 次の版はたたき台にだけ足す。ほかの仮説と自分の仮説の寸法の案は断る
 other = confirmed(G, "H-C")
@@ -249,8 +260,10 @@ client = Fake([([tool("submit_result", {"changes": [{"param": "fold_count", "to"
 pid, failures = loop_agents.draft_proposal(other, source(G), client)
 assert not failures and len(client.calls) == 2, (failures, len(client.calls))
 sent = json.loads(client.calls[0]["messages"][0]["content"].split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
-now, _ = loop.version_params(G, "H-A", 8)
-assert sent["sheet"] == "H-A" and sent["sheet_version"] == 8 and sent["sheet_params"] == now, "たたき台の番号と今の版の寸法を渡す"
+now, _ = loop.version_params(G, "H-A", 9)
+assert sent["sheet"] == "H-A" and sent["sheet_version"] == 9 and sent["sheet_params"] == now, "たたき台の番号と今の版の寸法を渡す"
+shown = {h["id"]: h["params"] for h in sent["hypotheses"]}
+assert shown["H-A"] == now and shown["H-C"] == params_of(G, "H-C"), "一覧のたたき台の寸法も今の版。ほかの仮説は記録のまま"
 assert "たたき台" in client.calls[0]["system"][0]["text"] and "作る側の控え" in client.calls[0]["system"][0]["text"]
 assert "F7.revision" in json.dumps(client.calls[1]["messages"], ensure_ascii=False, default=str), "落ちた理由を読ませる"
 
@@ -259,10 +272,10 @@ assert loop.save_explanation(rid, "作った人", "幅が広い", "幅を戻す"
 client = Fake([([tool("submit_result", {"based_on_version": 1, "new_hypothesis": new_case("幅を戻す", {**now, "fold_width": 8.5}), "next_to_try": NEXT, "references": []}, "c")], "tool_use")])
 pid, failures = loop_agents.draft_proposal(rid, source(G), client)
 assert not failures, failures
-assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["based_on_version"] == 8
+assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["based_on_version"] == 9
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
-assert not failures and made == {"version": 9, "new_hypothesis_as_version": 9}, (made, failures)
-assert [c["param"] for c in loop.version_params(G, "H-A", 9)[1]["changes"]] == ["fold_width"]
+assert not failures and made == {"version": 10, "new_hypothesis_as_version": 10}, (made, failures)
+assert [c["param"] for c in loop.version_params(G, "H-A", 10)[1]["changes"]] == ["fold_width"]
 
 # 8. 寸法の無い控えや字の寸法の控えがあっても、一覧と頁は開く
 rows = ways.table()
@@ -293,6 +306,73 @@ for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
         assert [c["param"] for c in changes] == [names[1]], (sid, changes)
         kept += 1
 assert kept > 60, kept
+
+
+# 9. 渡された材料を読んで写す Claude でも、前の版の直しは戻らない。文に従うかに頼らない（本物の Claude が文に従うかは確かめられない）
+class Reading:
+    """渡された材料から案の寸法を写す偽の Claude。during は返す前に動かす（案を作っている途中で版が増える形）。"""
+
+    def __init__(self, copy, during=None):
+        self.copy, self.during = copy, during
+        self.beta = NS(messages=NS(create=self.create))
+
+    def create(self, **kw):
+        data = json.loads(kw["messages"][0]["content"].split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
+        if self.during:
+            self.during()
+        done = {"new_hypothesis": new_case("写した案", self.copy(data)), "next_to_try": NEXT, "references": []}
+        return NS(content=[tool("submit_result", done, "r")], stop_reason="tool_use", usage=NS(input_tokens=10, output_tokens=5))
+
+
+def entry(data):
+    return next(h for h in data["hypotheses"] if h["id"] == data["sheet"])["params"]
+
+
+def with_defaults(sid, params):
+    return {**TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].DEFAULTS, **params}
+
+
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+# 必須 2 種と 5 雛形（別の目の確かめで、版 1 の寸法を写すと直しが戻った 7 種）
+for sid in (G, "NDL-1187053-R0000014-R", "NDL-1187053-R0000007-R", "NDL-1187053-R0000004-L", TRIAL, "NDL-1187053-R0000005-L-3", "NDL-1187053-R0000014-L"):
+    sheet = hypotheses.sheet_of(sid)
+    template = hypotheses.load(sid).get("template", "slider_fan")
+    whole = {**TEMPLATES[template].DEFAULTS, **sheet["params"]}
+    name = next(k for k in sorted(ALLOWED[template]) if type(whole.get(k)) in (int, float))
+    fixed = {**sheet["params"], name: whole[name] + 1}
+    loop._write(loop.folder() / f"version-{sid}-{sheet['id']}-2.json", {"source_id": sid, "hypothesis_id": sheet["id"], "version": 2, "params": fixed, "changes": []})
+    reader = confirmed(sid, sheet["id"])
+    assert loop.save_explanation(reader, "作った人", "説明", "次") == []
+    for label, copy in (("今の版の寸法", lambda d: d["sheet_params"]),
+                        ("既定と今の版の寸法", lambda d, s=sid: with_defaults(s, d["sheet_params"])),
+                        ("一覧のたたき台の寸法", entry),
+                        ("既定と一覧のたたき台の寸法", lambda d, s=sid: with_defaults(s, entry(d)))):
+        pid, failures = loop_agents.draft_proposal(reader, source(sid), Reading(copy))
+        assert not failures, (sid, label, failures)
+        made, failures = loop.adopt(pid, "作る側", accept_new=True)
+        assert not failures and "version" not in made and loop.latest_version(sid, sheet["id"]) == 2, (sid, label, made, failures)
+        assert loop.version_params(sid, sheet["id"], 2)[0][name] == whole[name] + 1, (sid, label)
+
+
+# 案を作っている途中で版が増えても、案を作り始めた時の版から見るので、途中の直しは戻らない
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+start = {**params_of(G, "H-A"), "fold_count": 24}
+loop._write(loop.folder() / f"version-{G}-H-A-2.json", {"source_id": G, "hypothesis_id": "H-A", "version": 2, "params": start, "changes": []})
+
+
+def bump():
+    loop._write(loop.folder() / f"version-{G}-H-A-3.json", {"source_id": G, "hypothesis_id": "H-A", "version": 3, "params": {**start, "fold_height": 44}, "changes": []})
+
+
+reader = confirmed(G, "H-A")
+assert loop.save_explanation(reader, "作った人", "説明", "次") == []
+pid, failures = loop_agents.draft_proposal(reader, source(G), Reading(lambda d: {**d["sheet_params"], "paper_thickness": 0.2}, bump))
+assert not failures, failures
+assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["based_on_version"] == 2, "案を作り始めた時の版を持つ"
+made, failures = loop.adopt(pid, "作る側", accept_new=True)
+assert not failures and made == {"version": 4, "new_hypothesis_as_version": 4}, (made, failures)
+params = loop.version_params(G, "H-A", 4)[0]
+assert params["fold_count"] == 24 and params["fold_height"] == 44 and params["paper_thickness"] == 0.2, params
 
 server.shutdown()
 print("ok 改善の輪はたたき台の 1 枚の形で回る。採った案は次の版か作る側の控えになり、札に出ない")

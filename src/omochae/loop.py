@@ -380,11 +380,12 @@ def _new_as_changes(sid, hid, new, based_on):
     template = _template(sid)
     defaults = TEMPLATES_DEFAULT(template)
     then, _ = version_params(sid, hid, based_on)
-    if new.get("template", template) != template or then is None:
+    params = new.get("params")
+    if new.get("template", new.get("template_id", template)) != template or then is None or not isinstance(params, dict):
         return []
     current, _ = version_params(sid, hid, latest_version(sid, hid))
     then, now = {**defaults, **then}, {**defaults, **current}
-    said = {k: v for k, v in (new.get("params") or {}).items() if then.get(k) != v}
+    said = {k: v for k, v in params.items() if then.get(k) != v}
     if any(now.get(k) != then.get(k) and now.get(k) != v for k, v in said.items()):
         return []
     return [{"param": k, "to": v, "why": ""} for k, v in sorted(said.items()) if now.get(k) != v]
