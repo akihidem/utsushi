@@ -4,7 +4,8 @@
 自動で撮影情報を外し、試行の動画の入口（omochae.trial_video。札とコマ読み）を通して、各玩具のたたき台の改善の輪へ回す。上げた人に受け取りが見える。
 もう 1 つの形（本人の指示 20:35「作る前の型紙のレビューを、江戸二色を再現したことのある教え子にしてもらった動画の入り口も作って」）: 同じ仕組みの別の口（--kind review）。
 レビューは話が本体なので、声を非公開で残し、この機械の中で字にする（omochae.asr_worker）。字を作る側のセッションが読んで札の案を書き、人が確かめる（本物の API はまだ動かしていない）。
-声は整理が終わったら消す（drop-voice）。声も字も動画も頁に出さない。
+声は整理が終わったら消す（drop-voice）。声と動画そのものは頁に出さない。
+本人の決定（11-06）: 作る時の動画の声も同じ形にする（声を残す → 字にする → 整理が終わったら消す）。決定の前に送られた受付は、読んだ文のとおり声を残さない。
 
 判断の芯:
 - サイトの道に足さず、小さなサーバを別に立てる。リンクを渡した相手に、記録や写真の頁を見せる道を作らないため。合言葉が無いと立たない。
@@ -68,11 +69,12 @@ FORMAT = "mov"  # ffmpeg の読み手の名前（MP4 と MOV は同じ読み手�
 TITLE = "動画を送る"
 LEAD = "『江都二色』のおもちゃを作った時の動画を送る頁です。型紙のたたき台を直すために使います。"
 PROMISES = (
-    "音と、いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
+    "いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
+    "声は、字にして整理するために、この機械の中にだけ置きます。整理が終わったら消します。",
     "声と動画そのものは、サイトの頁に出しません。切り出した絵（紙と手の所）と、話した言葉の一部を、名前などを除いて、サイトに載せる事があります。載せる前に人が見ます。",
-    "動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、手が止まった所と工夫した所です。",
+    "字にした言葉と、動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、手が止まった所と工夫した所です。",
     "型紙を直すかどうかは、人が決めます。作った人の出来に点は付けません。",
-    "取り下げたい時は、受付番号を、リンクを渡した人に伝えてください。動画も切り出した絵も消します。",
+    "取り下げたい時は、受付番号を、リンクを渡した人に伝えてください。動画も声も字も消します。",
 )
 AGREE_PEOPLE = "とった人と、映っている人の許しをもらっています。"
 AGREE_ADULT = "私は 18 歳以上です。子どもは映っていません。"
@@ -82,9 +84,9 @@ NEED_KEY = "合言葉付きのリンクから開いてください。リンク�
 WORDS = {
     "waiting": "順番を待っています。",
     "working": "読み取っています。",
-    "done": "受け取りました。音と、いつ・どこでとったかなどの情報を消しました。",
+    "done": "受け取りました。いつ・どこでとったかなどの情報を消しました。",
     "failed": "読み取れませんでした。MP4 か MOV の動画か確かめて、もう一度送ってください。",
-    "withdrawn": "取り下げました。動画と切り出した絵を消しました。",
+    "withdrawn": "取り下げました。動画と声と字を消しました。",
 }
 # レビューの口の文。本人が採った文（11-05）。一字も変えない。tests/test_video_up.py が文字列で見る。
 REVIEW_TITLE = "型紙のレビューの動画を送る"
@@ -99,7 +101,7 @@ REVIEW_PROMISES = (
 )
 REVIEW_WORDS = {"done": "受け取りました。いつ・どこでとったかなどの情報を消しました。", "withdrawn": "取り下げました。動画と声と字を消しました。"}
 KINDS = {
-    "making": {"title": TITLE, "lead": LEAD, "promises": PROMISES, "words": WORDS, "toy_question": "どのおもちゃですか", "made_with": ("sheet", "own"), "keep_voice": False, "video_kind": ""},
+    "making": {"title": TITLE, "lead": LEAD, "promises": PROMISES, "words": WORDS, "toy_question": "どのおもちゃですか", "made_with": ("sheet", "own"), "keep_voice": True, "video_kind": ""},
     "review": {"title": REVIEW_TITLE, "lead": REVIEW_LEAD, "promises": REVIEW_PROMISES, "words": {**WORDS, **REVIEW_WORDS}, "toy_question": "どのおもちゃの型紙ですか", "made_with": ("review",), "keep_voice": True, "video_kind": "review"},
 }
 # 紙を見て作ったか。自分のやり方で作った動画は、手順の文の困り事として数えられないので、読む人に分かるように文の頭に残す
@@ -207,7 +209,7 @@ def accept(body, wake=None, kind="making"):
         # 番号は受付と残った小分けの両方から数える。同じ番号で次の人の受付を止めない
         numbers = [int(s["id"][2:]) for s in slips()] + [int(p.name[6:]) for p in (folder() / "tmp").glob("job-U-*") if p.name[6:].isdigit()]
         slip = {"id": f"U-{max(numbers, default=0) + 1:04d}", "token": secrets.token_hex(16), "upload": uid, "source_id": body["toy"],
-                "made_with": body["made_with"], "note": body.get("note", "").strip(), "size": size, "chunks": chunks, "state": "waiting", "at": loop._now(), "agreed": True, "kind": kind}
+                "made_with": body["made_with"], "note": body.get("note", "").strip(), "size": size, "chunks": chunks, "state": "waiting", "at": loop._now(), "agreed": True, "kind": kind, "keep_voice": KINDS[kind]["keep_voice"]}
         # 受付を先に書く。書けなかった時に小分けを動かさない（送り直せる形のまま）。名前を受付の物に変えるのは、同じ動画を別のおもちゃへ送り直す人が、処理の途中の小分けを動かさないように
         path = folder() / f'{slip["id"]}.json'
         store.write_json(path, slip, exclusive=True)
@@ -245,6 +247,14 @@ def _join(slip, job):
     for n in range(slip["chunks"]):
         (job / str(n)).unlink(missing_ok=True)
     return joined
+
+
+def _keeps_voice(slip):
+    """この受付の声を残すか。送った人が読んだ頁の文で決まるので、受付の時に印を残す。
+
+    印の無い古い受付は、作る時の動画なら残さない（本人の決定 11-06 の前は、頁に「音を消します」と書いていた）。レビューは初めから残す形。
+    """
+    return slip.get("keep_voice", slip.get("kind", "making") == "review")
 
 
 def _keep_voice(joined, rid, size):
@@ -362,7 +372,7 @@ def _take_in(slip, job):
             print(f'{slip["id"]}: 結べない: {failures[0].message}', file=sys.stderr)
             return False
     # 声は元のファイルにしか無いので、元を消す前に写す（結んだ後に止まった時も、元があれば写す）
-    if KINDS[slip.get("kind", "making")]["keep_voice"] and "voice" not in slip and (job / "joined").exists():
+    if _keeps_voice(slip) and "voice" not in slip and (job / "joined").exists():
         slip["voice"] = _keep_voice(job / "joined", rid, slip["size"])
     item = trial_video.load(rid)["videos"][0]
     slip["sheet"] = trial_video.make_sheet(rid)  # 読む人の手間を減らす物で、作れなくても動画の受け取りは止めない

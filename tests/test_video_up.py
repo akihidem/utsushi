@@ -129,11 +129,12 @@ def video(name, audio=True):
 ADOPTED = (
     "動画を送る",
     "『江都二色』のおもちゃを作った時の動画を送る頁です。型紙のたたき台を直すために使います。",
-    "音と、いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
+    "いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
+    "声は、字にして整理するために、この機械の中にだけ置きます。整理が終わったら消します。",
     "声と動画そのものは、サイトの頁に出しません。切り出した絵（紙と手の所）と、話した言葉の一部を、名前などを除いて、サイトに載せる事があります。載せる前に人が見ます。",
-    "動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、手が止まった所と工夫した所です。",
+    "字にした言葉と、動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、手が止まった所と工夫した所です。",
     "型紙を直すかどうかは、人が決めます。作った人の出来に点は付けません。",
-    "取り下げたい時は、受付番号を、リンクを渡した人に伝えてください。動画も切り出した絵も消します。",
+    "取り下げたい時は、受付番号を、リンクを渡した人に伝えてください。動画も声も字も消します。",
     "どのおもちゃですか",
     "何を見て作りましたか",
     "うつしの型紙",
@@ -144,7 +145,7 @@ ADOPTED = (
     "とった人と、映っている人の許しをもらっています。",
     "私は 18 歳以上です。子どもは映っていません。",
     "送っている間は、この頁を開いたままにしてください。途中で切れたら、同じ動画を選んで、もう一度「送る」を押してください。続きから送ります。",
-    "受け取りました。音と、いつ・どこでとったかなどの情報を消しました。",
+    "受け取りました。いつ・どこでとったかなどの情報を消しました。",
     "読み取れませんでした。MP4 か MOV の動画か確かめて、もう一度送ってください。",
 )
 
@@ -281,6 +282,10 @@ assert seen["state"] == "done" and seen["receipt"] == "U-0001" and seen["word"] 
 slip = json.loads((folder / "U-0001.json").read_text(encoding="utf-8"))
 rid = slip["record"]
 assert slip["source_id"] == G and slip["state"] == "done"
+# 作る時の動画も声を残す（本人の決定 11-06）。受付に印を持つ。決定の前の受付（印が無い）は、読んだ文のとおり声を残さない
+assert slip["keep_voice"] is True and slip["voice"] is True, slip
+assert video_up._keeps_voice({"kind": "making"}) is False and video_up._keeps_voice({"kind": "review"}) is True
+assert video_up._keeps_voice({"kind": "making", "keep_voice": True}) is True and video_up._keeps_voice({"kind": "review", "keep_voice": False}) is False
 assert not ({"name", "filename", "file", "ip", "address", "agent", "user_agent"} & set(slip)), "ファイルの名前と、誰が上げたかを残さない"
 assert "a.mov" not in json.dumps(slip)
 assert not list((folder / "tmp").iterdir()), "上げた元は消す"
@@ -649,7 +654,8 @@ code, body, _ = call("GET", "/", origin=None)
 page = body.decode()
 assert code == 200 and all(line in page for line in REVIEW_ADOPTED), "本人が採った文"
 assert video_up.REVIEW_WORDS == {"done": "受け取りました。いつ・どこでとったかなどの情報を消しました。", "withdrawn": "取り下げました。動画と声と字を消しました。"}
-assert "何を見て作りましたか" not in page and video_up.PROMISES[0] not in page, "音を消す文を出さない（レビューは声を残す）"
+assert "何を見て作りましたか" not in page, "レビューの頁に、作り方を聞く欄を出さない"
+assert not any(line.startswith("音と") for line in (*video_up.PROMISES, *video_up.REVIEW_PROMISES)), "音を消すと書かない（本人の決定 11-06。声を残す形にそろえた）"
 assert 'name="made_with" value="review"' in page and video_up.AGREE_ADULT in page and video_up.AGREE_PEOPLE in page
 assert post("/check", form(made_with="sheet"))[0] == 422 and post("/check", form(made_with="review"))[0] == 200
 code, r1 = send(video("rv1.mov"), made_with="review", note="見た感想です")
