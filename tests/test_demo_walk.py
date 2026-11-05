@@ -16,6 +16,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from PIL import Image  # noqa: E402
 
 from api import ask  # noqa: E402
+from omochae import media_review  # noqa: E402
 
 ask._key_present = lambda: False  # 鍵が置かれた機械でも、この試験は鍵なしの道だけを通す
 
@@ -75,6 +76,8 @@ code, out = call(f"/record/{rid}/next", form | {"to": "26"})
 assert code in (200, 303), re.findall(r'<p id="msg">(.*?)<', out.decode()) or out.decode()[-600:]
 assert call(f"/sheet/{SID}/H-A_v2.pdf")[1][:4] == b"%PDF", "次の版の紙が開ける"
 # ギャラリー（見本も並ぶ）
+assert f"/record/{rid}/media/" not in call("/gallery")[1].decode(), "人の確認の前は出さない（#314）"
+assert media_review.record(rid, media_review.waiting()[0][1], "object", "確認者") == []
 gallery = call("/gallery")[1].decode()
 assert f"/record/{rid}/media/" in gallery and "見本" in gallery, "上げた写真と見本が並ぶ"
 server.shutdown()

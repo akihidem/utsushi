@@ -28,7 +28,7 @@ os.environ["OMOCHAE_DATA"] = f"{tmp.name}/data"
 os.environ["OMOCHAE_SAMPLES"] = "0"
 os.chdir(tmp.name)
 
-from omochae import hypotheses, making_log, records  # noqa: E402
+from omochae import hypotheses, making_log, media_review, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web import techo_site  # noqa: E402
 
@@ -107,6 +107,8 @@ assert rid != quiet and quiet not in get("/gallery")
 d = techo_site.media_dir(rid)
 d.mkdir(parents=True, exist_ok=True)
 (d / "m1.jpg").write_bytes(b"\xff\xd8\xff")
+assert f"/record/{rid}/media/" not in techo_site.gallery_page([G], photos=True), "人の確認の前は出さない（#314）"
+assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 assert f"/record/{rid}/media/" in techo_site.gallery_page([G], photos=True)
 closed = techo_site.gallery_page([G], photos=False)
 # 写真も人の書いた文も出さない（文の中の名前は機械で落とせない。J-028）
