@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_loop_talk.py
+# commit: 5792935（回した時の HEAD）
+/tmp/tmpzw5yq_4t/sheets/.tmp-2hphttvp/H-A_v2.pdf
+/tmp/tmpzw5yq_4t/sheets/.tmp-2hphttvp/H-A_v2_tejun.pdf
+/tmp/tmpzw5yq_4t/sheets/.tmp-2hphttvp/H-A_v2_after.pdf
+ok
+rc=0

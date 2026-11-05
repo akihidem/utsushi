@@ -58,9 +58,10 @@
    "tests/test_build_now.py",
    "tests/test_hypotheses.py",
    "tests/test_hypothesis_label.py",
-   "tests/test_one_sheet.py"
+   "tests/test_one_sheet.py",
+   "tests/test_one_sheet_page.py"
   ],
-  "unverified": "実際の人が使っていない。型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）は、記録の欄と必須 2 種の刷る口まで。頁は後の直し"
+  "unverified": "実際の人が使っていない。型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）は、頁・図鑑・手帖まで入れた。輪とデモは後の直し"
  },
  {
   "id": "f07",
@@ -113,7 +114,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/loop.py",
-   "tests/test_loop.py"
+   "tests/test_loop.py",
+   "tests/test_loop_talk.py"
   ],
   "unverified": "本物の API で未実行"
  },
@@ -134,7 +136,8 @@
   "evidence": [
    "src/omochae/loop.py",
    "tests/test_loop.py",
-   "tests/test_next_version_atomic.py"
+   "tests/test_next_version_atomic.py",
+   "tests/test_one_sheet_loop.py"
   ],
   "unverified": "実際の記録で未実行"
  },
@@ -210,7 +213,13 @@
   "unverified": "本物の API で未実行。偽の応答の試験のみ",
   "evidence": [
    "src/api/words.py",
-   "tests/test_words.py"
+   "tests/test_words.py",
+   "tests/test_loop1_words.py",
+   "src/web/think_sheet.py",
+   "tests/test_loop1_think.py",
+   "tests/test_loop1_withdraw.py",
+   "tests/test_loop1_own_private.py",
+   "tests/test_loop1_round.py"
   ]
  },
  {
@@ -240,6 +249,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/instructions.py",
+   "tests/test_after_sheet_open.py",
+   "tests/test_after_sheet_real.py",
    "tests/test_words.py",
    "tests/test_sheet_u25.py",
    "tests/test_sheet_heads.py"
@@ -256,17 +267,6 @@
    "tests/test_labels.py"
   ],
   "unverified": "人が図鑑の頁で読んだ確認はまだ。図鑑の頁（/zukan）はこの床を通してから描く（f15）"
- },
- {
-  "id": "f25",
-  "name": "仮説を見比べる紙と作り手用の表（案 B）",
-  "status": "doing",
-  "evidence": [
-   "src/omochae/discriminate.py",
-   "tests/test_discriminate.py",
-   "tests/test_sheet_u25.py"
-  ],
-  "unverified": "実物で未試行。Claude が見分ける試作を設計する所は未実装。虎は対象外"
  },
  {
   "id": "f26",
@@ -397,6 +397,19 @@
   "unverified": "本人の指摘（11-05 朝）。記録の札に写真と動画・感想・止まった所、頁の頭の帯、ギャラリーからの道、その玩具の見本。人が使った確認はまだ"
  },
  {
+  "id": "f42",
+  "name": "話す口（一周の声の部分、Issue 279）: 考え・工夫・できた物を声か字で残し、話した工夫が記録の「工夫した所（直した所）」に入って、ほかの人も読める",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/talk_log.py",
+   "src/web/hanasu.py",
+   "tests/test_hanasu.py",
+   "tests/test_mic_seen.py",
+   "tests/test_who_fresh.py"
+  ],
+  "unverified": "本人の設計と決定（11-05）。声そのものは残さず、字だけを残す。個人の情報は入口で落とす（連絡先・名乗り・学年と組・学校の名前の形。名前そのものは形で見分けられないので、字を本人が見てから残し、書かないお願いを出す）。記録に入った工夫の字は、記録の感想と同じに、手帖の記録の札に文で出す（選び肢は置かない。合言葉なしで開いた場では出さない）。iPhone・iPad でも話す釦を出し、ブラウザの既定の音声認識で聞いて断りを出す。利用者向けの文は、本人が採ったやさしい言葉の文（Issue 318）。実際のブラウザでは、音声認識の口を差し替えた見本で歩いた。実機（iPhone・iPad・パソコンの Chrome）で声を入れた確認はまだ。仮説を見て話した考えは記録に結ぶが、記録の札にはまだ出していない（見出しの文面が本人の確認待ち）。他の人が作った物の頁に出す所（サイトの線）、エンジンへ渡す束に入れる所（Issue 307）はまだ。輪の Claude の読みと案に渡す所は偽の Claude で試験した（Issue 335 のループ2、tests/test_loop_talk.py）。本物の API では未実行"
+ },
+ {
   "id": "f34",
   "name": "工作の様子の蓄積（U-45 の段取り 1〜3）: 蓄積の器・出来事・作る側の集計の頁",
   "status": "doing",
@@ -417,7 +430,17 @@
    "src/omochae/engine_bundle.py",
    "tests/test_engine_bundle.py"
   ],
-  "unverified": "Issue 278・309。命令 1 つで束（JSON）を書く所まで。束の上の段に、群に出てくる雛形の今の刷った組も書く（309）。11-04 の試行の記録 2 件から出した束が、型紙エンジンの側の入口の検査を通る事は手元で確かめた。束から直しの案を起こす所・人の採否・次の版・版ごとの数の並びは、型紙エンジンの repo の側（その repo の Issue 63）で、この repo には無い。エンジンで採られた案と次の版を、作る側の頁に出す所はまだ無い。実の場の記録（多くの人の手順の進みと質問）で束を出した事はまだ無い。名前は形では落とせないので、束は git に入れず、人が読んでから使う"
+  "unverified": "Issue 278・309。命令 1 つで束（JSON）を書く所まで。束の上の段に、群に出てくる雛形の今の刷った組も書く（309）。話した事（考え・工夫・できた後の話）も束に入れる（307。工夫は手順の番号つきで、記録に結んだ話はその記録の群に数える）。話した事の入った束は見本の話でだけ通した（実の人が話した記録では、まだ出していない）。11-04 の試行の記録 2 件から出した束が、型紙エンジンの側の入口の検査を通る事は手元で確かめた。束から直しの案を起こす所・人の採否・次の版・版ごとの数の並びは、型紙エンジンの repo の側（その repo の Issue 63）で、この repo には無い。エンジンで採られた案と次の版を、作る側の頁に出す所はまだ無い。実の場の記録（多くの人の手順の進みと質問）で束を出した事はまだ無い。名前は形では落とせないので、束は git に入れず、人が読んでから使う"
+ },
+ {
+  "id": "f44",
+  "name": "鍵なしで 4 つのループを一周回す入口（#335）: 部品の無い段で名指しして止まり、部品が入ると通る段が増える",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/cycle.py",
+   "tests/test_cycle.py"
+  ],
+  "unverified": "今の main は話す口とループ 2 が入り、ループ 1 の紙の段で止まる（--keep-going と本物のエンジンで 10 段のうち 8 段）。部品を合わせた控えの木では 9 段が通った。ループ 1 とループ 2 を同時に持つ木と、人が実物で回した一周は未確認"
  },
  {
   "id": "f35",
@@ -488,5 +511,15 @@
    "tests/test_site_hokusai.py"
   ],
   "unverified": "絵は国立国会図書館の PDM（権利の記録は動画と同じ）。18 人は動く形でよい（本人の決定）。文は本人が採った（11-05、#318）。人が使った確認はまだ"
+ },
+ {
+  "id": "f43",
+  "name": "作成の過程の動画を記録に結ぶ入口（本人の指示 11-05、J-029、#337）: 音と撮影情報を落とし、止まった候補とコマの一覧を作り、札・人の確かめ・直しの案・エンジンの報告の形まで回す命令。repo の外の受け口から移す命令",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/trial_video.py",
+   "tests/test_trial_video.py"
+  ],
+  "unverified": "作り物の動画だけで通した。本物の動画での札の読みと、版の効き目はまだ。札を人が確かめるのは端末の命令で、頁は無い"
  }
 ]
