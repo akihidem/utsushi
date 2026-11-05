@@ -15,6 +15,13 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 - 試した記録の刷った組は、記録が持つ値か、刷った時の型紙の確定の記録から引く。分からない時は空（不明）の群に分ける。
   今の組に数えると、直す前の紙の記録が、直した後の紙の数に混ざる。
 - メモ（note）は束に入れない。記録を入れた人の覚え書きで、作った人の言葉とは限らないため。
+- 話した事（Issue #307。話す口 talk_log の記録）も束に入れる: 作る前の考え・作りながらの工夫（手順の番号つき）・できた後の話。
+  文の種類の名は、話す口の場面の名（think・craft・keep）と同じ。声は置き場にも束にも無い（話す口が字だけを残す）。
+  記録に結んだ話は、その記録と同じ群に数える（直す前の組の紙の話を、今の組に数えない）。記録の番号があるのに記録が無い話は入れない
+  （取り下げた人の言葉を、束で外へ出さない側に倒す）。記録に結んだ後に作る側が隠した字も入れない（名前は形で落とせないので、
+  作る側が読んで気づいた時に隠す。その字を、束からエンジンの側の下書きへ流さない）。見せる印・声から入れたかの印・その場限りの印の値は入れない。
+  見せてよいと選んだ話だけに絞らないのは、束を読むのが作る側だけで、git の外に置く物だから（エンジンの側の Issue の下書きは、
+  作った人の言葉を「Issue に写さない手元の材料」に分けて置く）。出す時に、話す口の入口の床（連絡先・名乗り・学校の形）をもう一度当てる。
 - 束の上の段に、群に出てくる雛形の「今の刷った組」を書く（current_sets。Issue #309）。エンジンの repo の雛形は組の名を持たないので、
   前の組の紙の記録から起きた案（もう直っている事がある）を、読む人が見分けられない。ここは今の組を並べるだけで、前の組の記録を
   束から外しはしない（直っていない困り事まで消え、直す前と後を並べて読めなくなる）。
@@ -27,7 +34,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 
-from . import loop, making_log, records
+from . import loop, making_log, records, talk_log
 from .contrib import check_pii
 from .hypotheses import ROOT
 
@@ -35,11 +42,12 @@ from .hypotheses import ROOT
 SCHEMA = "omochae.making-bundle/1"
 FROM = "utsushi"
 TOP_KEYS = ("schema", "exported_at", "from", "dropped_pii", "current_sets", "groups")
-GROUP_KEYS = ("template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps",
+GROUP_KEYS = ("template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
               "minutes", "measures", "record_ids", "texts")
 TEXT_KEYS = ("kind", "step", "text", "count")
 # 文の種類: 止まった所・直した点（工夫）・思いつき（工夫）・感想・聞く口の質問・試した記録への人の説明。
-TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain")
+# 話した事の 3 つは、話す口の場面の名のまま: think 作る前の考え・craft 作りながらの工夫・keep できた後の話。
+TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep")
 MAX_TEXT = 300  # エンジンの入口の、文 1 つの上限。長い感想は頭だけを入れる（全文は記録の番号から人が読む）
 MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
@@ -79,7 +87,7 @@ def _group(groups, template, sheet_set):
     key = (_name(template), _name(sheet_set))
     if key not in groups:
         groups[key] = {"template": key[0], "sheet_set": key[1], "reports": 0, "results": {}, "moved_word": "", "not_moved_word": "",
-                       "stuck": {}, "reached": {}, "finished": set(), "minutes": [], "measures": {}, "record_ids": [], "texts": {}}
+                       "stuck": {}, "craft": {}, "reached": {}, "finished": set(), "minutes": [], "measures": {}, "record_ids": [], "texts": {}}
     return groups[key]
 
 
@@ -94,22 +102,27 @@ def build():
 
     groups, dropped = {}, 0
 
-    def say(g, kind, text, step=None):
-        """文を 1 つ足す。連絡先の形があれば入れず、落とした数だけ数える。同じ文（同じ種類・同じ段）は回数にまとめる。"""
+    def say(g, kind, text, step=None, floor=None):
+        """文を 1 つ足す。床に当たれば入れず、落とした数だけ数える。同じ文（同じ種類・同じ段）は回数にまとめる。入れたら真。
+        床は、上限で切る前の全文に当てる（切った端に番号の半分が残る形を作らない）。既定は連絡先の形。話した事は、話す口の床。"""
         nonlocal dropped
-        text = _clean(text)
-        if text is None:
-            return
-        if check_pii({"body": text}):
+        full = " ".join(str(text or "").split())
+        if not full:
+            return False
+        if floor(full) if floor else check_pii({"body": full}):
             dropped += 1
-            return
+            return False
+        text = _clean(full)
         step = step if isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP else None
         g["texts"][(kind, step, text)] = g["texts"].get((kind, step, text), 0) + 1
+        return True
 
     # 試した記録: 動きの札・測った値・止まった所・直した点・思いつき・感想と、人の説明。
+    group_of = {}  # 記録の番号 → その記録の群の鍵（記録に結んだ話を、同じ群に数えるため）
     for r in records.all_records():
         template = making_log._engine(r.get("source_id"), r.get("hypothesis_id"))[0]
         g = _group(groups, template, _sheet_set_of(r))
+        group_of[r["id"]] = (g["template"], g["sheet_set"])
         g["reports"] += 1
         g["record_ids"].append(r["id"])
         tpl = TEMPLATES.get(template)
@@ -166,6 +179,30 @@ def build():
             continue
         say(g, "question", a.get("question"), a.get("step"))
 
+    # 話した事（話す口の記録）。入口の床で落ちた物は文が残っていないので、落とした数にだけ足す。
+    dropped += sum(talk_log.dropped().values())
+    for t in talk_log.talks():
+        scene = t.get("scene")
+        if scene not in talk_log.SCENES:
+            continue
+        if t.get("record_id"):
+            if t["record_id"] not in group_of:
+                continue  # 記録が無い（取り下げた・消えた）。その人の言葉を束に入れない
+            if t.get("share") is not True:
+                continue  # 記録に結んだ後に、作る側が隠した字（読んで名前などに気づいた時に隠す）。束にも入れない
+            g = _group(groups, *group_of[t["record_id"]])
+        else:
+            g = _group(groups, t.get("template"), t.get("sheet_set"))
+        step = t.get("step") if scene == "craft" else None
+        step = step if isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP else None
+        if say(g, scene, t.get("text"), step, floor=talk_log.blocked) and step:
+            # 手順ごとの、束に入った工夫の数と人の数。人は、その場限りの印で数えるだけで、印の値は束に入れない。
+            slot = g["craft"].setdefault(step, {"talks": 0, "who": set()})
+            slot["talks"] += 1
+            who = making_log.clean_who(t.get("who"))
+            if who:
+                slot["who"].add(who)
+
     out = []
     for key in sorted(groups):
         g = groups[key]
@@ -177,6 +214,7 @@ def build():
                     "moved_word": g["moved_word"], "not_moved_word": g["not_moved_word"],
                     "stuck_steps": {str(n): {"taps": s["taps"], "people": len(s["who"])} for n, s in sorted(g["stuck"].items())},
                     "quit_steps": {str(n): k for n, k in sorted(quit_steps.items())},
+                    "craft_steps": {str(n): {"talks": c["talks"], "people": len(c["who"])} for n, c in sorted(g["craft"].items())},
                     "minutes": _span(g["minutes"]), "measures": {k: _span(v) for k, v in sorted(g["measures"].items())},
                     "record_ids": g["record_ids"],
                     "texts": [{"kind": kind, "step": step, "text": text, "count": n}
