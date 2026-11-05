@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_error_pages.py
+# commit: c17f48e（この main に試験だけを載せた作業ツリー）
 直す前（main c17f48e）: tests/test_error_pages.py を当てた。無い道の頁が素の 1 行で、lang も題も皮も無い
 Traceback (most recent call last):
   File "tests/test_error_pages.py", line 54, in <module>
