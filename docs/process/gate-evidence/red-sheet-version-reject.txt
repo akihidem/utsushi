@@ -1,0 +1,9 @@
+# 命令: .venv/bin/python tests/test_sheet_version.py
+# commit: 165ae7c（回した時の HEAD）
+# 採らなかった形の記録: 刷っていない版を断る形を試した時に、今の動きに当てた出力。断る形は test_kaizen の決めとぶつかるので採らなかった
+Traceback (most recent call last):
+  File "tests/test_sheet_version.py", line 66, in <module>
+    assert send(sheet_version=bad) == 422, bad
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2
+rc=1

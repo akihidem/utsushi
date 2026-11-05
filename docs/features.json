@@ -344,7 +344,9 @@
    "src/web/about.py",
    "tests/test_toys.py",
    "tests/test_about.py",
-   "docs/process/site-requirements.md"
+   "docs/process/site-requirements.md",
+   "tests/test_tap_size.py",
+   "tests/measure_tap.py"
   ],
   "unverified": "人がブラウザで使った確認と本物のスマホはまだ。11-05 朝の本人の決定で大判を外し、皮ごとに 1 サイト（--look）にした。序の文面は本人の採否待ち"
  },

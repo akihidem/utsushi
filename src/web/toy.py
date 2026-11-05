@@ -46,7 +46,8 @@ def refill(form, values):
         return m.group(0) + " checked" if values.get(m.group(1)) == html.unescape(m.group(2)) else m.group(0)
 
     def area(m):
-        return f'<textarea name="{m.group(1)}"{m.group(2)}>{esc(values.get(m.group(1), ""))}</textarea>'
+        v = values.get(m.group(1))
+        return m.group(0) if v is None else f'<textarea name="{m.group(1)}"{m.group(2)}>{esc(v)}</textarea>'
 
     def select(m):
         want = values.get(m.group(1))
@@ -59,7 +60,7 @@ def refill(form, values):
 
     form = re.sub(r'<input type="text" name="([^"]+)"[^>]*>', text, form)
     form = re.sub(r'<input type="radio" name="([^"]+)" value="([^"]*)"', radio, form)
-    form = re.sub(r'<textarea name="([^"]+)"([^>]*)></textarea>', area, form)
+    form = re.sub(r'<textarea name="([^"]+)"([^>]*)>[^<]*</textarea>', area, form)
     return re.sub(r'<select name="([^"]+)">.*?</select>', select, form, flags=re.S)
 
 
@@ -211,17 +212,84 @@ def record_form(sid, data, own):
             '<button>記録を残す</button></form>')
 
 
+def _param_label(template, k):
+    return PARAM_NAMES.get(k, getattr(TEMPLATES[template], "PARAM_NAMES", {}).get(k, k))
+
+
+def _params_now(sid, hid, template):
+    """次の版の元になる寸法（今の版の値に、雛形の既定を足した物）。loop.check_proposal が比べる元と同じ。"""
+    try:
+        params, _ = loop.version_params(sid, hid, loop.latest_version(sid, hid))
+    except ValueError:  # 自分の仮説のように、版を持たない物
+        params = None
+    return {**TEMPLATES[template].DEFAULTS, **(params or {})}
+
+
+def _param_option(template, k, now):
+    """選ぶ項目の字。JS を使わず、今の値と変えてよい幅を項目そのものに並べる（#129）。"""
+    label, value, span = _param_label(template, k), now.get(k), getattr(TEMPLATES[template], "RANGES", {}).get(k)
+    if isinstance(value, (int, float)):
+        label += f": 今 {value:g}"
+        if span:
+            label += f"（{span[0]:g}〜{span[1]:g}）"
+    return f'<option value="{esc(k)}">{esc(label)}</option>'
+
+
+# 床に落ちた理由を、学ぶ人の言葉にする（#129）。検査の言葉と座標は作る側の物で、次に何を入れるかの手がかりにならない。
+NEXT_REASONS = {
+    "F5.print_area": "この値だと、紙が A4 からはみ出します。",
+    "F5.overlap": "この値だと、紙の上で部品どうしが重なります。",
+    "F5.text_overlap": "この値だと、紙の上で字が重なります。",
+    "F5.image_box": "この値だと、絵が部品からはみ出します。",
+    "F5.fan_height": "この値だと、畳んだ扇が筒に隠れません。",
+    "F5.fan_clearance": "この値だと、扇が筒の口の角に当たって開ききりません。",
+    "F5.fan_length": "この値だと、扇の長さが折りの数と幅に合いません。",
+    "F5.fan_thickness": "この値だと、畳んだ扇が内筒に入りません。",
+    "F5.slide_clearance": "この値だと、内筒が外筒の中で動きません。",
+    "F5.figure_height": "この値だと、像が扇より高くなります。",
+    "F5.base_size": "この値だと、扇の台が内筒に入りません。",
+    "F5.stroke": "この値だと、押し上げる動きが筒の中に収まりません。",
+}
+
+
+def next_reasons(failures, sid, hid, param):
+    """「次の版を作る」が通らなかった時に出す文。理由のあとに、今の値と次の一手を 1 行足す。"""
+    template = hypotheses.load(sid).get("template", "slider_fan")
+    now = _params_now(sid, hid, template)
+    label, value = _param_label(template, param), now.get(param)
+    value = f"{value:g}" if isinstance(value, (int, float)) else ""
+    span = getattr(TEMPLATES[template], "RANGES", {}).get(param)
+    out, on_paper = [], False
+    for f in failures:
+        if f.floor == "F5.range" and f.where == param and span:
+            text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
+        elif f.floor.startswith("F5."):
+            # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
+            text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
+        else:
+            text = f.message
+        if text not in out:
+            out.append(text)
+    if on_paper and value:
+        out.append(f"{label}は今 {value} です。近い値を試すか、別の寸法を変えてください。")
+    return out
+
+
 def next_form(r, back=""):
     """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
     人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。"""
     from omochae.metrics import ALLOWED
 
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
-    opts = "".join(f'<option value="{esc(k)}">{esc(PARAM_NAMES.get(k, getattr(TEMPLATES[template], "PARAM_NAMES", {}).get(k, k)))}</option>' for k in sorted(ALLOWED[template]))
+    now = _params_now(r["source_id"], r["hypothesis_id"], template)
+    opts = "".join(_param_option(template, k, now) for k in sorted(ALLOWED[template]))
+    # 解釈はすぐ上の説明とほぼ同じ問いなので、説明を初めから入れておく（#129）。そのまま採っても、書き直してもよい。
+    told = (loop.explanation(r["id"]) or {}).get("text", "")
     hidden = f'<input type="hidden" name="back" value="{esc(back)}">' if back else ""
     return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next#next-{esc(r["id"])}">{hidden}'
-            '<label>何が起きたと読むか（解釈）<textarea name="interpretation" required></textarea></label>'
-            f'<label>変える寸法<select name="param">{opts}</select></label><label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
+            f'<label>何が起きたと読むか（解釈）<textarea name="interpretation" required>{esc(told)}</textarea></label>'
+            f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
+            '<label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
             '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
             '<button>次の版を刷る</button></form></details>')
 
