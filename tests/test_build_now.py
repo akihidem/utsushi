@@ -74,7 +74,7 @@ except urllib.error.HTTPError as e:
     assert e.code == 404
 assert not hasattr(hypotheses, "need_prediction") and not hasattr(hypotheses, "save_prediction")
 # 前提の明示。頭の札が仮説の札より前にある
-assert 'id="premise"' in page and "AI が考えた仮説" in page and "正解ではありません" in page
+assert 'id="premise"' in page and "ためしの案（仮説）" in page and "正しい答えではありません" in page
 assert page.index('id="premise"') < page.index('class="plates"')
 # 仮説を書く欄は外した（本人の決定 11-05 18:08、J-032 の点 2）。考えは話す節で話す
 assert f"/toy/{G}/own" not in page and f"/toy/{G}/talk" in page
