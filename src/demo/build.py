@@ -19,6 +19,8 @@ exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超え�
 - 途中で落ちたら、--run で同じ置き場を指して作り直す。--only で場面を絞ると、ほかの場面の動画はそのまま使い、
   つなぎ直す。試験の数は、前の記録が今の commit で手元の変更なしなら引き継ぐ（5 分の試験を回し直さない）。
   残す場面の動画に刷った物（試験の数・曲・写真）と今の値が違う時は、古い数を出さないよう 4 で止めて場面を名指しする。
+- 最初の場面に職人のおもちゃの動画が入っていない間は、印（demo.opening）が画面に残る。本人だけが見る試作なので、build.json の placeholder と
+  not_for_release に載せ、終わりにも言う。書き出しは止めない（試作を本人に見てもらうため）。外へ出す前に not_for_release が空である事を見る。
 - 記録に commit の SHA と各場面の長さを残す。出した動画がどのコードから出たかを後で辿れるようにする（エビデンスゲート）。
   場面ごとにも commit を持つ。--only で残した場面は、前の commit のコードから出た物なので。
 """
@@ -34,8 +36,8 @@ import subprocess
 import sys
 import time
 
-from demo import assemble, beat, prepare, song
-from demo.script import SCENES, load_scene
+from demo import assemble, beat, opening, prepare, song
+from demo.script import BEFORE_RELEASE, SCENES, load_scene
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 # 動画に効く物。場面 5・6 は docs/process/trials の記録を読み、言葉の札は哲学の記録を読むので、そこの手の変更も印に数える。
@@ -78,6 +80,20 @@ def is_dirty():
 
 def file_sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def shows_placeholder(only, clips, prev):
+    """最初の場面の動画に印が残っているか。作り直さない時は、前の記録のまま（作り直すまで動画に印が残るため）。"""
+    if "opening" in clips:
+        return False
+    if "opening" in only:
+        return not opening.has_video()
+    return prev.get("placeholder", True)
+
+
+def release_blockers(placeholder):
+    """外へ出せない理由の一覧。空なら出してよい。"""
+    return ([f"最初の場面に印「{opening.PLACEHOLDER}」が残っている（職人のおもちゃの動画が入っていない）"] if placeholder else []) + list(BEFORE_RELEASE)
 
 
 def make_beat(run, made, sha, dirty):
@@ -179,6 +195,8 @@ def main(argv=None):
     stale = [n for n in SCENES if n not in only
              and scene_args(n, prev.get("tests"), prev.get("music"), prev.get("photos"))
              != scene_args(n, tests if tests else prev.get("tests"), music, photos)]
+    if "opening" not in only and "opening" not in clips and prev.get("placeholder") and opening.has_video():
+        stale.append("opening")  # 動画を置いたのに、前の印の場面を残すと印が消えない
     if stale:
         print(f"検査できない: 残す場面に刷った物と今の値が違う: {'、'.join(stale)}（--only に足して作り直す）", file=sys.stderr)
         return 4
@@ -249,13 +267,18 @@ def main(argv=None):
         old = before.get(name, {})
         return {"commit": old.get("commit", prev.get("commit")), "dirty": old.get("dirty", prev.get("dirty"))}
 
+    placeholder = shows_placeholder(only, clips, prev)
+    blockers = release_blockers(placeholder)
     record = {"commit": sha, "dirty": dirty, "tests": tests, "music": music, "audio": audio, "photos": photos, "skipped": skipped,
+              "placeholder": placeholder, "not_for_release": blockers,
               "clips": {n: {"file": pathlib.Path(p).name, "sha256": file_sha(p)} for n, p in clips.items()},
               "rebuilt": only if a.only else [], "offline": a.offline,
               "scenes": [{"name": p.stem, "seconds": assemble.duration(p), **made_by(p.stem)} for p in made],
               "total_seconds": assemble.duration(run / "demo.mp4"), "assemble_rc": rc}
     (run / "build.json").write_text(json.dumps(record, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"置き場 {run}")
+    for why in blockers:
+        print(f"外へ出せない: {why}")
     if rc != 0:
         return rc
     # 場面が欠けた動画は、--partial で最後まで作っても通ったとは言わない（4）。

@@ -4,8 +4,15 @@ import importlib.util
 from demo import build
 
 # 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
-assert build.SCENES == ["flip", "scene2", "bridge", "word_touch", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "scene6", "core_gallery",
+assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "talk_physics", "talk_claude", "scene3", "core_make", "core_keep", "scene5", "core_gallery",
                         "core_loop", "word_ai", "scene7", "close", "ask"]
+# 外した場面は本人が戻すかを決める。コードは残すので、読み込める
+from demo import script  # noqa: E402
+assert set(script.LEFT_OUT) == {"core_map", "core_voice", "scene6", "bridge", "word_touch"} and not set(script.LEFT_OUT) & set(build.SCENES)
+for name in script.LEFT_OUT:
+    assert callable(script.load_scene(name).main), name
+# 全体は 179.5 秒以内
+assert sum(script.load_scene(n).DURATION for n in build.SCENES) <= 179.5
 # 試験の数は RESULT.md の行から読む。読めない時は None（古い数を出さない）
 assert build.count_tests("実行した 57 本（場面 30 本、試験 27 本）、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
 assert build.count_tests("何も無い") is None
@@ -87,13 +94,13 @@ with tempfile.TemporaryDirectory() as tmp:
     run = pathlib.Path(tmp) / "20261107-100000"
     run.mkdir()
     for n in build.SCENES:
-        if n not in ("scene2", "scene6"):
+        if n not in ("scene2", "core_keep"):
             (run / f"{n}.mp4").write_bytes(b"old-" + n.encode())
     err = io.StringIO()
     with contextlib.redirect_stderr(err):
         assert build.main(["--out", tmp, "--skip-tests", "--run", str(run), "--only", "scene2"]) == 4
-    assert "scene6" in err.getvalue(), err.getvalue()  # 前の置き場に無い場面は、作り直さずに黙ってつながない
-    (run / "scene6.mp4").write_bytes(b"old-scene6")
+    assert "core_keep" in err.getvalue(), err.getvalue()  # 前の置き場に無い場面は、作り直さずに黙ってつながない
+    (run / "core_keep.mp4").write_bytes(b"old-core_keep")
     real_sha, real_dirty = build.head_sha, build.is_dirty
     build.head_sha, build.is_dirty = (lambda: "abc123"), (lambda: False)
     (run / "build.json").write_text(json.dumps({
@@ -127,7 +134,17 @@ with tempfile.TemporaryDirectory() as tmp:
     by_name = {r["name"]: r for r in rec["scenes"]}
     assert by_name["flip"]["commit"] == "old111" and by_name["flip"]["dirty"] is True, by_name["flip"]
     assert by_name["scene2"]["commit"] == "abc123" and by_name["scene2"]["dirty"] is False, by_name["scene2"]
-    assert by_name["scene6"]["commit"] == "abc123", by_name["scene6"]  # 場面ごとの控えが無い古い記録は、全体の commit を使う
+    assert by_name["core_keep"]["commit"] == "abc123", by_name["core_keep"]  # 場面ごとの控えが無い古い記録は、全体の commit を使う
+    # 職人の動画が無い間は、印が残っている事と外へ出せない事が記録に残る。opening を作り直さない間は前の記録のまま
+    assert rec["placeholder"] is True and any("印" in w for w in rec["not_for_release"]), rec
+    assert build.shows_placeholder(["opening"], {}, {}) is (not build.opening.has_video())
+    real_has = build.opening.has_video
+    build.opening.has_video = lambda path=None: True
+    assert build.shows_placeholder(["opening"], {}, {}) is False and build.shows_placeholder(["flip"], {}, {"placeholder": True}) is True
+    assert build.shows_placeholder(["flip"], {"opening": "撮った.mp4"}, {"placeholder": True}) is False
+    assert not any("印" in w for w in build.release_blockers(False)) and any("印" in w for w in build.release_blockers(True))
+    assert set(script.BEFORE_RELEASE) <= set(build.release_blockers(False))
+    build.opening.has_video = real_has
     # 音を作った commit が記録に残る（#268）
     assert rec["audio"]["kind"] == "仮の拍" and rec["audio"]["commit"] == "abc123" and rec["audio"]["dirty"] is False, rec["audio"]
     # 手元の変更があれば、前の試験の数は引き継がず回し直す
@@ -232,7 +249,7 @@ with tempfile.TemporaryDirectory() as tmp:
     build.importlib.import_module = lambda name: types.SimpleNamespace(main=lambda argv: seen_scene.append(pathlib.Path(argv[argv.index("--out") + 1]).stem) or pathlib.Path(argv[argv.index("--out") + 1]).write_bytes(b"x") and 0)
     build.assemble.assemble = lambda made, out, audio=None, **k: 0
     assert build.main(["--out", tmp, "--skip-tests", "--clip", "core_loop=" + str(clip)]) == 0
-    assert "core_loop" not in seen_scene and "core_map" in seen_scene, seen_scene
+    assert "core_loop" not in seen_scene and "core_gallery" in seen_scene, seen_scene
     run_dir = sorted(p for p in pathlib.Path(tmp).iterdir() if p.is_dir())[-1]
     assert (run_dir / "core_loop.mp4").read_bytes() == b"clip-bytes"
     rec = json.loads((run_dir / "build.json").read_text(encoding="utf-8"))
