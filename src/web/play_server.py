@@ -459,8 +459,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""))
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client())
                 msg = "Claude が見えた事を出しました" if not why else why
-        except BudgetStop:
-            msg = "今は AI に聞けません（予算の上限）"
+        except BudgetStop as e:  # 今日の上限か累計の停止線かを言う（待てば聞けるのかが分かるように）
+            msg = f"今は AI に聞けません（{e.note}）"
         except Exception:
             msg = "今は AI に聞けません"
         return self._done(sid, msg, form.get("back", ""))
@@ -542,8 +542,8 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 text, how = ask.answer(sid, hid, form.get("question", ""))
-            except BudgetStop:
-                text, how = "今は AI に聞けません", "stop"
+            except BudgetStop as e:
+                text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
                 text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
@@ -568,8 +568,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
             try:
                 text, how = ask.answer(sid, hid, form.get("question", ""))
-            except BudgetStop as e:
-                text, how = f"今は AI に聞けません（{e}）", "stop"
+            except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
+                text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
                 text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))

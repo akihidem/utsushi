@@ -23,7 +23,7 @@ gs = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"
 ts = json.loads((ROOT / "data/sources" / f"{T}.json").read_text(encoding="utf-8"))
 A = {"push_part": "tab", "hub": "axle", "pusher_height": 15}
 C = {"push_part": "stick", "hub": "axle", "pusher_height": 84}
-# 日割りの上限は日付で変わる（表に無い日は 0）。試験を回す日で結果が変わらないよう、表にある日に固定する。
+# 日割りの上限は日付で変わる（表に無い日は既定の額）。試験を回す日で結果が変わらないよう、表にある日に固定する。
 budget._today = lambda: "11-04"
 
 
