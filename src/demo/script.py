@@ -12,8 +12,9 @@ import importlib
 
 # 言葉の札（word_*）と終わりの字幕の札（close）と問いの札（ask）は demo.words、核の一周の図と画面（core_*）は demo.core で描く。
 # 終わりは、初めと同じ字幕（close）→ 問い（ask）の順（本人の決定 11-05）。
-SCENES = ["flip", "scene2", "word_touch", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "core_gallery", "scene6",
-          "word_ai", "core_loop", "scene7", "close", "ask"]
+# つなぎ 2 の輪（core_loop）は持ち寄り（core_gallery）の次（本人の決定 11-05）。作った人の言葉で版が変わる場面（scene6）は、手で作る側なので持ち寄りの前に置く。
+SCENES = ["flip", "scene2", "word_touch", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "scene6", "core_gallery",
+          "core_loop", "word_ai", "scene7", "close", "ask"]
 
 
 def load_scene(name):

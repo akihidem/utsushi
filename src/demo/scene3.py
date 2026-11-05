@@ -37,7 +37,7 @@ from demo.words import step_badge
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2 と同じ頁
-DURATION = 13.0
+DURATION = 14.0
 DPR = 2                          # 撮る時の画素の倍率。寄った時に字がぼけないよう、2 倍で撮って縮める
 SHOT_W = 1600                    # 撮る窓の幅（CSS の px）。ルックブックの頁が 1180px で真ん中に来る
 SHOT_H = 3400                    # 撮る高さの下限。足りない時は測った枠から伸ばす（need_height）
@@ -48,9 +48,9 @@ SHOT_MARGIN = 400
 CUES = {
     "page_in": (0.0, 1.2),      # 開いた画面が現れる（頭は江戸の図と歌の見開き）
     "to_premise": (1.8, 3.0),   # 前提の札の所へ寄る
-    "to_list": (5.6, 6.6),      # 仮説の札の所へ下がる
-    "plates_in": (7.2, 8.0),    # 画面の 5 枚を切り出し、同じ大きさで 1 列に並べる（同時に出す）
-    "closing": (10.2, 11.2),    # 締めの字幕。13 秒まで止めて読ませる
+    "to_list": (6.6, 7.6),      # 仮説の札の所へ下がる
+    "plates_in": (8.2, 9.0),    # 画面の 5 枚を切り出し、同じ大きさで 1 列に並べる（同時に出す）
+    "closing": (11.2, 12.2),    # 締めの字幕。14 秒まで止めて読ませる
 }
 
 # 頭の 2 行。時刻の区切りは CUES から作り、別に時刻を持たない（合図の表を 1 つにするため）。
@@ -347,7 +347,7 @@ def main(argv=None):
         return 4
     scene = Scene3(*shots)
     if a.sheet:
-        contact_sheet(scene, a.sheet, times=(0.8, 2.5, 4.0, 6.0, 7.0, 8.5, 10.0, 11.0, 12.8))
+        contact_sheet(scene, a.sheet, times=(0.8, 2.5, 4.0, 7.0, 8.0, 9.5, 11.0, 12.0, 13.8))
     return render(scene, pathlib.Path(a.out))
 
 

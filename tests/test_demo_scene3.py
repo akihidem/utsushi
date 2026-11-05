@@ -15,7 +15,7 @@ from omochae.marks import without_premise
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene3.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene3.DURATION
-assert scene3.Scene3.duration == scene3.DURATION == 13.0
+assert scene3.Scene3.duration == scene3.DURATION == 14.0
 
 # 仮説の数と玩具の名は記録から。札の文に数を書き込んでいない
 data = json.loads((scene3.ROOT / "data/hypotheses" / f"{scene3.SID}.json").read_text(encoding="utf-8"))
