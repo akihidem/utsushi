@@ -357,5 +357,18 @@
    "tests/test_made_records.py"
   ],
   "unverified": "本人の指摘（11-05 朝）。記録の札に写真と動画・感想・止まった所、頁の頭の帯、ギャラリーからの道、その玩具の見本。予想の前は出さない。人が使った確認はまだ"
+ },
+ {
+  "id": "f34",
+  "name": "工作の様子の蓄積（聞く口の質問を残し、作る側の頁で読む）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/making_log.py",
+   "src/web/kaizen.py",
+   "tests/test_making_log.py",
+   "docs/process/decisions/J027-making-data.md",
+   "docs/process/research/29-making-data-to-service.md"
+  ],
+  "unverified": "本人の決定（11-05 朝、J-027）。質問は名前と連絡先の形を落として残す（名前は機械では落とせないので断りで頼む）。集計は作る側の頁だけ。断りの文・残す期間は本人の判断待ち。先回りの答えなど、改善へ回す所は段 1 以降（research/29）"
  }
 ]

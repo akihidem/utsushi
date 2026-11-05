@@ -114,7 +114,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys .nm{font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .toys .big{grid-column:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
 .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
-.is-sample{border-top:1px dashed var(--frame)}
+.is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
 .foot{padding:48px 5vw 40px;font-size:11px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:820px){.hero,.win{grid-template-columns:1fr}.songs{writing-mode:horizontal-tb;height:auto;margin:0 0 14px}.nav{gap:12px;padding:12px 16px}
