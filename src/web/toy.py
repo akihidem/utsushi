@@ -203,9 +203,9 @@ def record_form(sid, data, own):
     seen = sorted({n for h in data["hypotheses"] for n in versions_of(sid, h["id"], printed_only=True)})
     version_field = ('<label>どの版の紙か（紙の題の横に刷ってあります）<select name="sheet_version"><option value="">いちばん新しい版</option>'
                      + "".join(f'<option value="{n}">版 {n}</option>' for n in seen) + '</select></label>') if len(seen) > 1 else ""
-    from .techo_site import ICONS
+    from .techo_site import result_icon
 
-    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}" required>{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>'
+    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}" required>{result_icon(r, TEMPLATES[template].RESULTS)}{esc(r)}</label>'
                       for r in TEMPLATES[template].RESULTS)
     if template == "pivot_counterweight":
         extra = '<label>動かした物<select name="power"><option value="">—</option><option>手</option><option>息</option><option>団扇</option><option>風</option></select></label>'
