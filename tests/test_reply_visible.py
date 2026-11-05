@@ -113,13 +113,13 @@ page = landed(call(f"/record/{rid}/ai-observe", {}), rid)
 assert note_at(page, rid, "status")
 
 # 次の版: 欄を開いて、その上に理由を出し、書いた中身を戻す。手帖から来た印も保つ。
-form = {"interpretation": "折りが<多い>", "param": "fold_count", "why": "口に当たる", "back": "techo"}
+form = {"interpretation": "折りが<多い>", "param": "fold_count", "why": "口に当たる", "by": "本人", "back": "techo"}
 for to, says in (("29", "筒の口の角に当たって"), ("abc", "新しい値は数で書く")):
     code, _, page = call(f"/record/{rid}/next", form | {"to": to})
     assert code == 422 and says in note_at(page, f"next-{rid}", "alert"), (to, code)
     box = page[page.index(f'id="next-{rid}"'):]
     assert "<details open>" in box[:400] and "折りが&lt;多い&gt;</textarea>" in box
-    assert f'name="to" inputmode="decimal" required value="{to}"' in box and 'value="口に当たる"' in box
+    assert f'name="to" inputmode="decimal" required value="{to}"' in box and 'value="口に当たる"' in box and 'value="本人"' in box
     assert '<option value="fold_count" selected>' in box and 'name="back" value="techo"' in box
 code, _, page = call(f"/record/{rid}/next", form | {"to": "29", "why": " ", "by": " "})
 assert code == 422 and page.count('id="msg"') == 1

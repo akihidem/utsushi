@@ -1,12 +1,11 @@
-"""学ぶ人に同じ値を 2 度打たせず、書いた値を頁に出さない（#138）。
+"""次の版の欄は採る人が自分で打ち、前の人の値を欄にも頁にも出さない（#138）。
 
-なぜ: 説明で「書いた人」を打ち、次の版の欄で「採った人」をもう一度打っていた。
-人の確認の記録の床（F9.human）は通したまま、値は説明の時に 1 回だけ書き、次の版はそれを引き継ぐ。
-欄に入れて見せる形にしないのは、次に開いた別の人に見えるため（学ぶ人の頁に、採った人の名前を出さない線）。
+なぜ: 別の人が次の版を作る事がある。説明の値で埋めると、採った人と確定した人の記録が事実と違いうる（J-026 の「採るのは人」、F9.human）。
+前の値を欄に入れておくと、次に開いた別の人に見える。空の欄で足りる。同じ機器でブラウザが前の人の値を候補に出さないよう、autocomplete も切る。
 """
 import json
 import os
-import pathlib
+import re
 import tempfile
 import threading
 import urllib.error
@@ -39,37 +38,57 @@ def post(path, data):
         return e.code, e.read().decode()
 
 
-def next_box(page):
-    return page.split('action="/record/R-0001/next#next-R-0001"', 1)[1].split("</form>", 1)[0]
+def box(page, rid, act):
+    return page.split(f'action="/record/{rid}/{act}#', 1)[1].split("</form>", 1)[0]
+
+
+def who_field(form):
+    found = re.search(r'<input [^>]*name="by"[^>]*>', form)
+    assert found, "打つ欄が要る"
+    return found.group(0)
 
 
 def adopted_by(version):
     return json.loads((loop.folder() / f"version-{G}-H-A-{version}.json").read_text(encoding="utf-8"))["adopted_by"]
 
 
-WHO = "3 班の目印"  # 頁に出ない事を見るので、ほかの字と重ならない値にする
+# 頁に出ない事を見るので、ほかの字と重ならない値にする
+WHO, ADOPTER = "3 班の目印", "4 班の目印"
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] == 200
+pages = lambda: (("玩具の頁", get(f"/toy/{G}")), ("手帖", get(f"/toy/{G}/techo")))
+
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": WHO})[0] == 200
 
-# 玩具の頁と手帖の両方で、次の版の欄に打つ欄が無く、説明で書いた値も頁に出ない
-for where, page in (("玩具の頁", get(f"/toy/{G}")), ("手帖", get(f"/toy/{G}/techo"))):
-    box = next_box(page)
-    assert 'name="interpretation"' in box, where
-    assert 'name="by"' not in box and "採った人" not in box, f"{where}: 次の版でもう一度打たせない"
-    assert WHO not in page, f"{where}: 書いた値を次に開く別の人に見せない"
+# 次の版の欄に、採る人が打つ空の欄がある。説明で書いた値は欄にも頁にも出ない
+for where, page in pages():
+    field = who_field(box(page, "R-0001", "next"))
+    assert "value=" not in field and "required" in field and 'autocomplete="off"' in field, (where, field)
+    assert WHO not in page, f"{where}: 前の人の値を、次に開いた別の人に見せない"
 
-# 欄が無くても、説明の値が人の確認の記録に残る（F9.human の床を通る）
+# 欄が空なら、床が止める。説明の値で埋めない
 form = {"interpretation": "折りが固い", "param": "fold_count", "to": "26", "why": "開きを見る"}
-assert post("/record/R-0001/next", form)[0] == 200 and loop.latest_version(G, "H-A") == 2
-assert loop.interpretation("R-0001")["confirmed_by"] == WHO and adopted_by(2) == WHO
-conf = {(c["hypothesis_id"], c["version"]): c["confirmations"] for c in loop.sheet_confirmations(G)}
-assert conf[("H-A", 2)][-1]["by"] == WHO, conf
+for sent in (form, {**form, "by": ""}, {**form, "by": " "}):
+    code, page = post("/record/R-0001/next", sent)
+    assert code == 422 and "確定した人の名前が無い" in page and WHO not in page, (code, sent)
+    assert loop.latest_version(G, "H-A") == 1, "説明の値で埋めて次の版を作らない"
+assert (loop.interpretation("R-0001") or {}).get("status") != "confirmed", "床で止まった時は、確定の記録も残さない"
 
-# 床は残っている: 空で送られると通らず、何も増えない（欄があった古い頁から送られた時）
-code, page = post("/record/R-0001/next", {**form, "to": "24", "by": " "})
-assert code == 422 and "確定した人の名前が無い" in page and loop.latest_version(G, "H-A") == 2
-# 古い頁の欄から送られた値は、書いたとおりに受ける
-assert post("/record/R-0001/next", {**form, "to": "24", "by": "4 班"})[0] == 200
-assert loop.latest_version(G, "H-A") == 3 and adopted_by(3) == "4 班"
-print("ok: 次の版は説明の値を引き継ぎ、頁に出さない")
+# 記録には、説明を書いた人でなく、次の版の欄で打った人が残る（別の人が作っても事実のとおり）
+assert post("/record/R-0001/next", {**form, "by": ADOPTER})[0] == 200 and loop.latest_version(G, "H-A") == 2
+assert loop.interpretation("R-0001")["confirmed_by"] == ADOPTER and adopted_by(2) == ADOPTER
+conf = {(c["hypothesis_id"], c["version"]): c["confirmations"] for c in loop.sheet_confirmations(G)}
+assert conf[("H-A", 2)][-1]["by"] == ADOPTER, conf
+
+# 通らなかった時に打った値が戻るのは、送った本人への返事だけ。次に開く人の頁には出ない
+code, page = post("/record/R-0001/next", {**form, "to": "abc", "by": ADOPTER})
+assert code == 422 and f'value="{ADOPTER}"' in page, code
+for where, page in pages():
+    field = who_field(box(page, "R-0001", "next"))
+    assert "value=" not in field and ADOPTER not in page and WHO not in page, where
+
+# 説明の欄にも、前の人の値を候補に出さない印がある
+assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] == 200
+for where, page in pages():
+    assert 'autocomplete="off"' in who_field(box(page, "R-0002", "explain")), where
+print("ok: 次の版の欄は採る人が打ち、前の人の値を出さない")

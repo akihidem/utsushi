@@ -72,7 +72,7 @@ for tid, sid in sorted(picked.items()):
             to = round(min(max(to, lo), hi)) if isinstance(v, int) else round(min(max(to, lo), hi), 2)
             if to == v:
                 continue
-            code, out = call(f"/record/{rid}/next", {"interpretation": "少し変える", "param": param, "to": str(to), "why": "確かめ"})
+            code, out = call(f"/record/{rid}/next", {"interpretation": "少し変える", "param": param, "to": str(to), "why": "確かめ", "by": "本人"})
             assert code in (200, 303, 422), (tid, code)
             if code in (200, 303):
                 made = True

@@ -68,7 +68,7 @@ assert call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えに�
 code, techo = call(f"/toy/{SID}/techo")
 assert "次の版".encode() in techo, "説明の後に次の版の口が出る"
 # 次の版
-form = {"interpretation": "折りが多く、筒の口に当たって開き切らない", "param": "fold_count", "why": "口に当たらないように", "back": "techo"}
+form = {"interpretation": "折りが多く、筒の口に当たって開き切らない", "param": "fold_count", "why": "口に当たらないように", "by": "本人", "back": "techo"}
 code, out = call(f"/record/{rid}/next", form | {"to": "29"})
 assert code == 422 and "筒の口の角に当たって" in out.decode(), "床に落ちる値は刷らず、理由を見せる"
 code, out = call(f"/record/{rid}/next", form | {"to": "26"})

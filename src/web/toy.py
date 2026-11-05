@@ -292,7 +292,7 @@ def next_reasons(failures, sid, hid, param):
 def next_form(r, back=""):
     """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
     人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。
-    誰が確かめたかの欄は置かない。説明の時に書いた値をサーバが引き継ぐ（#138）。"""
+    採った人の欄は、採る人が自分で打つ（#138）。説明の値で埋めると、別の人が作った時に記録が事実と違う。入れておくと、次に開いた別の人に前の人の値が見える。"""
     from omochae.metrics import ALLOWED
 
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
@@ -305,7 +305,7 @@ def next_form(r, back=""):
             f'<label>何が起きたと読むか（解釈）<textarea name="interpretation" required>{esc(told)}</textarea></label>'
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
             '<label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
-            '<label>変える理由<input type="text" name="why" required></label>'
+            '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" autocomplete="off" required></label>'
             '<button>次の版の紙を作る</button></form></details>')
 
 
@@ -356,9 +356,9 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
             tail = (f'<div class="step"><p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p></div>'
                     f'<div class="step">{ai_block(r)}</div><div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>')
         else:
-            # 人の説明が先。Claude の釦はこの後の段で出す。
+            # 人の説明が先。Claude の釦はこの後の段で出す。autocomplete: 同じ機器で、前の人の値を候補に出さない（#138）。
             tail = refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
+                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" autocomplete="off" required></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
         here = note if at == r["id"] else ""
         # 感想（本人の方針 11-05「感想と動きの報告」）。動きの欄の次に、作った人の言葉として出す。
         feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""
