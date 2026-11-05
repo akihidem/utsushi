@@ -138,10 +138,13 @@ def material(rid):
 def next_target(source_id, hid):
     """次の版を足す仮説。自分の紙（OWN-n）の記録から作る次の版は、たたき台へ向ける（根拠は OWN-n の記録のまま）。
     なぜ: 型紙は玩具ごとに 1 枚（J-032）で、最新版が次の人の型紙になる。OWN-n に版を足しても紙は刷られず、次の人にも届かない。ループ1 を通った人の工夫がループ2（型紙の改善）に届くように。
-    画面の欄・端末の propose・Claude の道は、ここ 1 か所を読む。"""
+    型紙なしの紙（寸法の無い案）の記録は向く先が無いので、そのまま返す。組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らないため。欄も節の数も出ず、受け口と床が断る。
+    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。"""
     from .hypotheses import sheet_of
 
-    return sheet_of(source_id)["id"] if str(hid).startswith("OWN-") else hid
+    if not str(hid).startswith("OWN-") or not (_hypothesis(source_id, hid) or {}).get("params"):
+        return hid
+    return sheet_of(source_id)["id"]
 
 
 def material_text(rid):

@@ -5,7 +5,9 @@
 - 画面の欄・端末の propose・Claude の道の既定が、そろってたたき台へ向く。OWN-n へ版を足す案は床で断る。
 - 版の根拠は OWN-n の記録のまま（紙に番号が刷られ、取り下げは根拠を守って断る）。版が足されると、次の人の元の寸法になる。
 - 試した後の紙は話した字が刷られないので、記録があれば別の人にも開く（ほかの紙は開かない）。合言葉なしの場では開かない。
-- 型紙なしの紙は刷った組を残さない（紙の組の報告に数えない）。たたき台が未刷の場でも、手帖で本人の紙を選べる。
+- 改善の輪の節と作る側の数（kaizen.pending）も、同じ向く先で数える。札に欄が出る記録と、節に出る記録を食い違わせない。
+- 型紙なしの紙は刷った組を残さない（紙の組の報告に数えない）。次の版の欄も出さない（組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らないため）。
+- たたき台が未刷の場でも、手帖で本人の紙を選べる。
 """
 import json
 import os
@@ -28,6 +30,7 @@ from api import loop_agents, words  # noqa: E402
 from omochae import engine_bundle, hypotheses, loop, records, talk_log  # noqa: E402
 from omochae.compose import TEMPLATES, compose  # noqa: E402
 from omochae.metrics import ALLOWED  # noqa: E402
+from web import kaizen  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -121,6 +124,16 @@ oid, key = made("nextwho001", THINK, STICK)
 rid = recorded("nextwho001", oid, key, CRAFT)
 page = send(f"/toy/{G}")[1].decode()
 assert f'action="/record/{rid}/next' in page, "OWN-n の記録にも、次の版の欄が出る"
+# 改善の輪の節と作る側の数も、同じ記録を数える（説明のある報告は次の版を待ち、説明の無い報告は説明を待つ）
+ids = lambda rs: [r["id"] for r in rs]
+ready, waiting = kaizen.pending(G, records.all_records(G))
+assert rid in ids(ready) and rid not in ids(waiting), (ids(ready), ids(waiting))
+assert f'次の版を待つ報告 1 件: <a href="#{rid}">{rid}</a>' in page, "節に出る"
+assert send(f"/toy/{G}/record", {"hypothesis": oid0, "sheet_version": 1, "result": "動いた", "who": "nextwho000"}, cookie=key0)[0] == 303
+rid0 = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid0)
+assert rid0 in ids(kaizen.pending(G, records.all_records(G))[1]), "説明の無い OWN-n の記録は、説明を待つ"
+assert f'説明を待つ報告 1 件: <a href="#{rid0}">{rid0}</a>' in send(f"/toy/{G}")[1].decode()
+assert send("/loop")[0] == 200
 base_params = loop.version_params(G, SHEET, 1)[0]
 param, to = one_change()
 code, _, h = send(f"/record/{rid}/next", {"interpretation": "柄で押すと大きく開いた", "param": param, "to": to, "why": "試した記録から", "by": "採った人"})
@@ -134,6 +147,7 @@ paper = out_dir(G) / f"{SHEET}_v2.pdf"
 assert paper.exists() and rid in flat_pdf(paper) and "版2" in flat_pdf(paper), "版 2 の紙が刷られ、根拠の記録が載る"
 assert any(c["hypothesis_id"] == SHEET and c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の確定も残る"
 assert words.base_of(G)[1][param] == to, "最新版が次の人の型紙の元になる"
+assert rid not in ids(kaizen.pending(G, records.all_records(G))[0]), "版に使った報告は、もう待たない"
 assert send(f"/toy/{G}")[0] == 200 and send(f"/toy/{G}/techo")[0] == 200, "版の根拠が OWN-n の記録でも、頁が開く"
 assert records.withdraw(rid)[1][0].floor == "F4.evidence", "根拠に使われている記録は消さない（今までの決まりのまま）"
 assert talk_log.talks(G, record_id=rid), "断った時は何も消さない"
@@ -214,5 +228,19 @@ for g in engine_bundle.build()["groups"]:
     if g["sheet_set"] == SET:
         assert rid5 not in g["record_ids"] and rid in g["record_ids"], g["record_ids"]
 assert send(f"/sheet/{G}/{oid5}_v1_after.pdf", cookie=key5)[0] == 200, "型紙なしの紙の記録にも、試した後の紙が開く"
+# 次の版は、どの道からも作らない。節の数にも入れない（向く先が無い）
+assert loop.next_target(G, oid5) == oid5 and loop.next_target(G, oid) == SHEET, "型紙なしには向く先が無い"
+page = send(f"/toy/{G}")[1].decode()
+assert f'action="/record/{rid5}/next' not in page and f'action="/record/{rid5}/next' not in send(f"/toy/{G}/techo")[1].decode(), "欄を出さない"
+assert not {rid5} & set(ids(kaizen.pending(G, records.all_records(G))[0]) + ids(kaizen.pending(G, records.all_records(G))[1])), "節の数に入れない"
+param5, to5 = one_change()
+latest = loop.latest_version(G, SHEET)
+assert send(f"/record/{rid5}/next", {"interpretation": "x", "param": param5, "to": to5, "why": "x", "by": "採った人"})[0] == 422, "受け口も断る"
+r = cli("propose", rid5, "--change", f"{param5}={to5}", "--why", "x")
+assert r.returncode == 3, r.stdout + r.stderr
+assert loop.confirm_interpretation(rid5, "確認者", {"human_text": "水で開いた"}) == []
+fs = loop.check_proposal({"record_ids": [rid5], "hypothesis_id": loop.next_target(G, oid5), "changes": [{"param": param5, "to": to5, "why": "x"}]}, SOURCE)
+assert fs, "Claude の道の既定でも、寸法の変更は床で断る"
+assert loop.latest_version(G, SHEET) == latest, "たたき台の版は増えない"
 server.shutdown()
 print("ok")
