@@ -18,6 +18,7 @@ from web import toy  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+WORDS_SUMMARY, WORDS = toy.PRINT_HELP_SUMMARY, toy.PRINT_HELP
 SAMPLE = (("見出し<1>", "文の 1"), ("見出し 2", "文の 2"), ("見出し 3", "文の 3"))
 
 
@@ -58,4 +59,10 @@ for look in ("tenji", "zine"):
     assert help_part(get("?see=H-A&kind=tejun&v=1")) == part, ("手順の紙", look)
     assert help_part(get("?see=H-B&kind=sheet&v=1")) == part, ("ほかの紙", look)
     server.shutdown()
+
+# 文の案（文面は本人の確認待ち）。案内は 3 つで、やさしい言葉（#317 の「刷る」は「印刷する」）
+assert WORDS_SUMMARY == "印刷できない時は", WORDS_SUMMARY
+assert [head for head, _ in WORDS] == ["大きさを 100% にするには", "物差しが 10cm でない時は", "プリンタが無い時は"], WORDS
+for _, text in WORDS:
+    assert "刷" not in text.replace("印刷", "") and text.endswith("。"), text
 print("ok")
