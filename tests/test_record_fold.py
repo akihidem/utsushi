@@ -1,9 +1,10 @@
 """記録の欄を、作る前から重く見せない（#300）。
 
 なぜ: 欄の全部が刷る前の頁から開いていて、必須は見た事だけなのに「全部書くのか」と読める。すぐ作る形（#242）と逆の重さになる。
-見る線: 最初に見える欄は、どの紙かと、見た事・感想・工夫。残りはその後ろに置き、見出しの文があれば素の details に畳む（閉じたままでも送られる）。
+見る線: 最初に見える欄は、見た事・感想・工夫の 3 つ。残りはその後ろに置き、見出しの文があれば素の details に畳む（閉じたままでも送られる）。
 記録の形と、試した後の紙が開く条件は変えない。
-どの紙かの欄は畳まない: 配られた紙で作る人が見えないまま先頭の案で送ると、記録と試した後の紙が別の案になる（#332 で欄ごと無くなるまで）。
+紙はたたき台の 1 枚なので、ふだんは選ぶ欄が無く、記録はたたき台に入る（#332）。前に書いた自分の仮説がある時と、版が 2 つ以上ある時だけ選ぶ欄が出て、
+それは畳まない: 見えないまま先頭の物で送ると、記録と試した後の紙が別の案になる。
 畳みの見出しは本人が採った文を入れる。入れる前の形（定数が空で畳まない）と畳んだ形は、試験の中で見出しの例を置いて見る。
 """
 import os
@@ -24,8 +25,7 @@ from web.play_server import out_dir, serve, sources  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 T = "NDL-1187053-R0000014-R"
-# どの紙かと、見た事・感想・工夫。#332 で紙を選ぶ欄が無くなったら、ここから hypothesis を外し、下の選ぶ所の確かめを消す。
-FIRST = {"hypothesis", "result", "impression", "fix_part", "fix_change", "fix_outcome"}
+FIRST = {"result", "impression", "fix_part", "fix_change", "fix_outcome"}  # 見た事・感想・工夫の 3 つ
 REST = {"first_moved", "stuck", "what_if", "idea", "note"}
 SHIPPED = vars(toy).get("RECORD_MORE")  # 入っている見出し。下で例に置き換える前に控える
 EXAMPLE = "見出しの例"
@@ -78,7 +78,7 @@ class Fields(HTMLParser):
             self.details.append(a)
         elif tag == "summary":
             self.in_summary = True
-        elif tag in ("input", "select", "textarea") and a.get("name"):
+        elif tag in ("input", "select", "textarea") and a.get("name") and a.get("type") != "hidden":
             (self.inner if self.depth else self.outer).add(a["name"])
             if self.depth and "required" in a:
                 self.required_inner.add(a["name"])
@@ -106,7 +106,7 @@ def chosen(form, name="hypothesis"):
     return got[0] if got else None
 
 
-# 見出しがある時: どの玩具でも、最初に見える欄はどの紙かと 3 つ。残りは閉じた details の中にあり、必須は畳みに入れない
+# 見出しがある時: どの玩具でも、最初に見える欄は 3 つ。残りは閉じた details の中にあり、必須は畳みに入れない
 # （閉じた欄に必須があると、ブラウザは知らせる先を出せず、送れないままになる）。
 toy.RECORD_MORE = EXAMPLE
 for sid in sources():
@@ -114,8 +114,8 @@ for sid in sources():
     form = toy.record_form(sid, data, [])
     f = Fields(form)
     assert f.outer == FIRST, (sid, f.outer)
-    # 既定は先頭の案で、どの玩具でも H-A。型紙は 1 枚で、たたき台は H-A（#332）。
-    assert re.search(r'<select name="hypothesis"><option value="([^"]+)"', form).group(1) == "H-A", sid
+    # 紙を選ぶ欄は無く、記録はたたき台に入る。どの玩具でも H-A（#332）。
+    assert re.search(r'<input type="hidden" name="hypothesis" value="([^"]+)"', form).group(1) == hypotheses.sheet_of(sid)["id"] == "H-A", sid
     assert REST <= f.inner, (sid, f.inner)
     assert not f.required_inner, (sid, f.required_inner)
     assert len(f.details) == 1 and "open" not in f.details[0] and f.summary == EXAMPLE, (sid, f.details, f.summary)
@@ -125,27 +125,21 @@ assert "power" in Fields(toy.record_form(T, hypotheses.load(T), [])).inner
 # JS を切っても開ける: 素の details で、押す口に JS を足さず、隠す属性も付けない。
 page = form_of(get(f"/toy/{G}"))
 assert "open" not in Fields(page).details[0] and "<script" not in page and "onclick" not in page and " hidden" not in page, page
-print("ok: 見出しがある時は、どの紙かと 3 つを見せ、残りを素の details に畳む")
+print("ok: 見出しがある時は 3 つを見せ、残りを素の details に畳む")
 
 # 押す所の決まり（#137）で summary を inline-flex にする幅でも、開け閉めの印が出る。消えると、ただの字に見えて畳んだ欄に気づけない。
 assert "summary::before" in skin.TAP_FLOOR and "details[open]>summary::before" in skin.TAP_FLOOR
 assert "▶" not in skin.TAP_FLOOR, "iPhone で絵文字になる事がある"
 assert skin.TAP_FLOOR in get(f"/toy/{G}")
 
-# 紙を作っていない人（配られた紙で作った人）は、窓に紙が無い。どの紙かの欄が見えていて、選んだ案で残る。既定を作り込まない（#319）。
-assert chosen(page) is None, "既定は前と同じに先頭の案（印なし）"
-assert "hypothesis" in Fields(page).outer and "hypothesis" not in Fields(page).inner
-print("ok: どの紙かの欄は畳まない（配られた紙で作る人が選べる）")
-
-# 試した後の紙が開く条件は変えない（S-03）。配られた紙の人の形: B の紙はサイトで作っていない。畳みは閉じたまま、見た事だけで残す。
-# B を選べば B の記録になり、記録の無い A の紙は開かない。B を刷らないのは、必須 2 種で刷れる紙が 1 枚になっても同じに見るため（#332）。
+# 試した後の紙が開く条件は変えない（S-03）。畳みは閉じたまま、見た事だけで残せて、開くのは記録のある案の紙だけ。
 assert post(f"/toy/{G}/print", hypothesis="H-A")[0] == 303
 for hid in ("H-A", "H-B"):
     assert status(f"/sheet/{G}/{hid}_v1_after.pdf") == 403
-assert post(f"/toy/{G}/record", hypothesis="H-B", result="動いた")[0] == 303
-assert records.all_records(G)[-1]["hypothesis_id"] == "H-B"
-assert status(f"/sheet/{G}/H-B_v1_after.pdf") != 403, "記録のある案は断らない（紙が無ければ 404。作るのは #320）"
-assert status(f"/sheet/{G}/H-A_v1_after.pdf") == 403
+assert post(f"/toy/{G}/record", hypothesis="H-A", result="動いた")[0] == 303
+assert records.all_records(G)[-1]["hypothesis_id"] == "H-A"
+assert status(f"/sheet/{G}/H-A_v1_after.pdf") == 200
+assert status(f"/sheet/{G}/H-B_v1_after.pdf") == 403
 print("ok: 試した後の紙が開く条件は前と同じ（記録のある案の紙だけ開く）")
 
 # 畳んだ欄に書いた字も送られ、記録の形は前と同じ。
@@ -159,26 +153,34 @@ assert rec["answers"] == {"first_moved": "外筒の先", "stuck": "折りの向�
 assert rec["ideas"] == ["糊を減らす"] and rec["note"] == "紙が厚かった", rec
 assert rec["fixes"] == [{"part": "扇", "change": "糊を減らした", "outcome": "開いた"}], rec
 assert {"source_id", "hypothesis_id", "sheet_version", "result", "impression", "opened_deg", "opener", "power", "minutes_to_try", "fixes", "note", "answers", "ideas"} <= set(rec), rec
-assert status(f"/sheet/{G}/H-A_v1_after.pdf") == 200
 print("ok: 畳んだ欄に書いた字も送られ、記録の形は前と同じ")
 
 # 通らなかった時は畳みを開いて、書いた字と選んだ物を見せる。最初の頁は閉じたまま。
-bad = {"hypothesis": "H-B", "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}  # 見た事を選んでいない
+bad = {"hypothesis": "H-A", "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}  # 見た事を選んでいない
 code, page = post(f"/toy/{G}/record", **bad)
 assert code == 422, code
 form = form_of(page)
 assert "open" in Fields(form).details[0], form
 assert 'value="筒"' in form and "3 枚目で&lt;止まった&gt;</textarea>" in form and "<option selected>糸</option>" in form, form
-assert chosen(form) == "H-B", form
 assert "open" not in Fields(form_of(get(f"/toy/{G}"))).details[0]
 print("ok: 通らなかった時は畳みを開き、書いた字を隠さない")
 
-# 版が 2 つ以上ある時の欄も畳まない。どの紙かの欄と同じ理由。版を言わなければ前と同じ「いちばん新しい版」。
+# 版が 2 つ以上ある時の欄は畳まない。見えないまま送ると、別の版の記録になる。版を言わなければ前と同じ「いちばん新しい版」。
 (out_dir(G) / "H-A_v2.pdf").write_bytes(b"%PDF-1.4\n")
 form = form_of(get(f"/toy/{G}"))
 assert "sheet_version" in Fields(form).outer, form
 assert chosen(form, "sheet_version") is None
-print("ok: 版の欄も畳まない")
+print("ok: 版の欄は畳まない")
+
+# 前に書いた自分の仮説がある時だけ、どの紙かを選ぶ欄が出る。畳まない: 見えないまま先頭のたたき台で送ると、記録と試した後の紙が別の案になる。
+# 既定を作り込まない（#319）。先頭はたたき台で、通らなかった時は選んだ物が残る。
+assert post(f"/toy/{G}/own", name="糸で開く形", how="糸を引くと扇が開く", evidence="図の右の糸")[0] == 303
+form = form_of(get(f"/toy/{G}"))
+assert "hypothesis" in Fields(form).outer and "hypothesis" not in Fields(form).inner, form
+assert chosen(form) is None and re.search(r'<select name="hypothesis"><option value="([^"]+)"', form).group(1) == "H-A", form
+code, page = post(f"/toy/{G}/record", **{**bad, "hypothesis": "OWN-1"})
+assert code == 422 and chosen(form_of(page)) == "OWN-1", code
+print("ok: 自分の仮説がある時のどの紙かの欄は畳まない")
 
 # 見出しの文が無い時（本人の確認が済むまで）: 畳まず、全部の欄が見える。並びは同じで、残りが後ろに来る。
 toy.RECORD_MORE = ""
