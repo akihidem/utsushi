@@ -48,6 +48,25 @@ TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
 SID = r"NDL-\d+-R\d+-[LR](?:-\d+)?"
 
 
+def byte_range(header, size):
+    """Range の要求を (始め, 終わり) にする。読めない形は None（全体を 200 で返す）、範囲の外は False（416）。
+
+    なぜ要るか: iOS の Safari は動画を部分取得で読み、答えないサーバの動画は再生されない事が知られている（#152）。
+    複数の範囲は受けず全体を返す。動画の再生では使われず、全体を返しても決まりの内で、組み立ての形を持たずに済むため。
+    """
+    m = re.fullmatch(r"bytes=([0-9]*)-([0-9]*)", (header or "").strip())
+    if not m or not (m.group(1) or m.group(2)):
+        return None
+    first, last = m.groups()
+    if not first:  # 末尾から last バイト。ファイルより長ければ全体
+        return (max(size - int(last), 0), size - 1) if int(last) and size else False
+    if last and int(last) < int(first):
+        return None
+    if int(first) >= size:
+        return False
+    return int(first), min(int(last), size - 1) if last else size - 1
+
+
 def out_dir(sid):
     """刷った紙の置き場。試験で本物の置き場を汚さないよう、記録と同じ環境変数に従う。"""
     base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "play" if os.environ.get("OMOCHAE_DATA") else ROOT / "out/play"
@@ -308,7 +327,13 @@ class Handler(BaseHTTPRequestHandler):
             f = techo_site.media_dir(m.group(1)) / m.group(2)
             if f.exists():
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
-                return self._send(200, f.read_bytes(), kind)
+                data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
+                span = byte_range(self.headers.get("Range"), len(data))
+                if span is False:
+                    return self._send(416, b"", kind, plain + (("Content-Range", f"bytes */{len(data)}"),))
+                if span:
+                    return self._send(206, data[span[0]:span[1] + 1], kind, plain + (("Content-Range", f"bytes {span[0]}-{span[1]}/{len(data)}"),))
+                return self._send(200, data, kind, plain)
         m = re.fullmatch(rf"/toy/({SID})", path)
         if m and m.group(1) in sources():
             # 型紙の窓の選び（仮説・紙の種類・版）は URL で持つ。JS なしで切り替えられ、戻るで前の紙に戻れる。

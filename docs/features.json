@@ -94,7 +94,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/records.py",
-   "tests/test_records.py"
+   "tests/test_records.py",
+   "tests/test_media_range.py"
   ],
   "unverified": "文と数の記録のみ。写真は未実装。実際の記録は 0 件"
  },

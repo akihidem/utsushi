@@ -213,6 +213,17 @@
 - 凍結の変更の記録: `docs/claude-usage.md` に 1 行足した（表を足した。場面と基準の文は変えていない）
 - マージ後の書き戻し: Issue #165 に書く（この帳面へは、次に帳面を書く取り込みで写す）
 
+## 上げた動画に部分取得で答える（Issue 対応の担当、pr/i152-media-range、11-05 朝。#152）
+
+- 目的: 手帖とギャラリーに上げた動画が、撮影で使う iPhone と iPad の画面で再生できる
+- なぜか: iOS の Safari は動画を部分取得（Range、206）で読み、答えないサーバの動画は再生されない事が知られている。サーバは Range を見ず、いつも 200 で全体を返し、`Accept-Ranges` も出していなかった。点検の記録は #152
+- どうしたらいいか: 推し（#152 の推し）は、`/record/…/media/` に Range の答え（206・`Content-Range`・`Accept-Ranges: bytes`、範囲の外は 416）を足す事。1 つ 20MB までなので、読んで切り出すだけにした。複数の範囲は受けず全体を返す。代案: 動画を頁に埋めず、1 コマの絵と「開く」リンクにする（再生の体験が落ちる）
+- ゴールの要件: Range 付きの GET に 206 と正しい `Content-Range` を返す試験。範囲が外の時は 416。iPhone と iPad の実機で再生できた確認を、この帳面に 1 行
+- 検証ゲート: **済み**。Red: rc 1（直す前の main 6da8073。`Accept-Ranges` が無い。gate-evidence/red-media-range.txt）。Green: rc 0「ok 部分取得の答え 7 通り・範囲の外 5 通り・読めない形 7 通り」（gate-evidence/green-media-range.txt）
+- エビデンスゲート: 上の出力と、push の門のまっさらな clone での `./run.sh`
+- **実機の確認はまだ**: iPhone と iPad で再生できるかは、この直しでは確かめていない。Safari が部分取得を求めた時に決まりどおり答える事までが、試験で言える範囲
+- マージ後の書き戻し: Issue #152 に書く（この帳面へは、次に帳面を書く取り込みで写す）
+
 ## 予算の日割りを期間の後も続ける（Issue 対応の担当、issue/150-budget-after-period、11-05 朝。#150）
 
 - 目的: 提出の後（期間の後）も、鍵を置けば Claude を呼ぶ機能が動く。上限で止まった時に、画面の文から理由が分かる
@@ -263,3 +274,14 @@
 - push の照合（枝 lane/pictures、PR は https://github.com/akihidem/utsushi/pull/109）: 2026-11-05T09:06:13+09:00 7e6a13b（記録の共有）／2026-11-05T09:39:56+09:00 b53f428250e32aaf2a4bbd026d80570c23cd88aa（改善の輪・作った記録・様子の蓄積）／2026-11-05T09:45:42+09:00 0a7aca18eba7470010cfe8288990ebe4a1d25aef（かざして選ぶ試作）。どれも門は FAIL 0、手元と GitHub は同じ。途中の 1 回は、門が走っている間に作業ツリーへ用意した文書（まだ tree に無いファイルを指す行）を門が読んで F で止まった（code の欠けではない。以後、門の間は作業ツリーを触らない）
 - 「作りながら見る」試作（観察 A）を含む版の照合は、次の push の後に書く
 
+## 道具が足りない機械で、落ちる（3）でなく検査できない（4）にする（Issue 対応の担当、issue/160-missing-tool-rc4、11-05 朝。#160）
+
+- 目的: まっさらな機械で README のとおりに進めた人が、足りない道具を名前で知らされる
+- なぜか: `tests/test_demo_assemble.py` と `tests/test_ai_feedback.py` は ffmpeg を直に呼ぶのに、README・`init.sh`・床の入口の一覧に ffmpeg が無かった。無い機械では `./run.sh` が rc 3 になり、不足が「落ちた」に見える。`.venv` が無い時に床の入口を直に呼ぶと、トレースバックの rc 1 になる
+- どうしたらいいか: 推し（#160 の推し）は、床の入口と `init.sh` の確かめに `ffmpeg`・`ffprobe` を足し、無ければ名前を言って 4。README にも書く。代案は、ffmpeg の要る試験だけ飛ばす形。全体が 4 にならない分、見落としやすいので採らない
+- 推しに足した物: 床の入口で `.venv` と字も見る（字が無い時も同じ形で 3 になり得るので、一覧をそろえた）。足りない物は 1 回で全部言う。uv は環境を作る時だけ使うので、床の入口では `.venv` を見る
+- 出していない範囲: デモ動画の書き出しに要る Chrome か Chromium。`./run.sh` では使わないので #168 で扱う
+- ゴールの要件: ffmpeg を PATH から外して `./run.sh` が「ffmpeg が無い」で rc 4。`.venv` が無い時に `python tests/run_floors.py` が rc 4。README・`init.sh`・`tests/run_floors.py` の一覧が同じ
+- 検証ゲート: **済み**。Red: 直す前の `./run.sh` が ffmpeg なしで 98 本中 96 本・rc 3（gate-evidence/red-required-tools.txt）。Green: 3 通りとも rc 4 で名指し（gate-evidence/green-required-tools.txt）。`tests/test_required_tools.py` を足した。確かめの呼び出しを消すと、この試験は落ちる
+- エビデンスゲート: 上の出力と、直した作業ツリーでの `./run.sh`（「実行した場面 99 本、期待どおり 99 本」）。`tests/test_floor_pin.py` も通る（型紙と手順の紙は変えていない）。凍結の場面と基準の文は変えていない
+- マージ後の書き戻し: Issue #160 に書く（この帳面へは、次に帳面を書く取り込みで写す）

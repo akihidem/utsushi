@@ -4,7 +4,7 @@
 set -u
 cd "$(dirname "$0")"
 missing=()
-for c in uv pdftotext pdftoppm fc-match; do command -v "$c" >/dev/null || missing+=("$c"); done
+for c in uv pdftotext pdftoppm fc-match ffmpeg ffprobe; do command -v "$c" >/dev/null || missing+=("$c"); done
 if [ ${#missing[@]} -eq 0 ] && ! fc-list | grep -q "Noto Serif CJK JP"; then missing+=("字 Noto Serif CJK JP"); fi
 if [ ${#missing[@]} -gt 0 ]; then echo "init: 足りない物: ${missing[*]}" >&2; exit 4; fi
 [ -d .venv ] || uv venv -q .venv || exit 4
