@@ -70,8 +70,11 @@ assert gen.adopt_generated(gid, "確認者", [1])[0] == ["H-N1"]
 hook = ROOT / ".claude/hooks/ledger-check.sh"
 
 
-def run_hook(root, path):
-    return subprocess.run([str(root / ".claude/hooks/ledger-check.sh")], input=json.dumps({"tool_input": {"file_path": str(path)}}), capture_output=True, text=True)
+def run_hook(root, path, cwd=None, where=None):
+    data = {"tool_input": {"file_path": str(path)}}
+    if cwd:
+        data["cwd"] = str(cwd)
+    return subprocess.run([str(root / ".claude/hooks/ledger-check.sh")], input=json.dumps(data), capture_output=True, text=True, cwd=where)
 
 
 assert run_hook(ROOT, ROOT / "docs/progress.md").returncode == 0
@@ -80,7 +83,36 @@ copy = pathlib.Path(tempfile.mkdtemp()) / "repo"
 shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", ".venv", "out", "__pycache__"))
 (copy / ".venv").symlink_to(ROOT / ".venv")
 readme = copy / "README.md"
-readme.write_text(readme.read_text(encoding="utf-8").replace("30 秒の要約", "30 秒の要約（崩した）", 1), encoding="utf-8")
+intact = readme.read_text(encoding="utf-8")
+readme.write_text(intact.replace("30 秒の要約", "30 秒の要約（崩した）", 1), encoding="utf-8")
 r = run_hook(copy, copy / "README.md")
 assert r.returncode == 2 and "L.summary" in r.stderr, r.stderr
+
+# 渡され方が違っても同じ判定にする: 相対のパスは Claude Code の渡す cwd から解き、.. を畳んでから比べる
+elsewhere = tempfile.mkdtemp()
+for path, cwd, where in (("README.md", copy, elsewhere), ("docs/../README.md", copy, elsewhere), ("../README.md", copy / "docs", elsewhere), ("README.md", None, copy)):
+    r = run_hook(copy, path, cwd, where)
+    assert r.returncode == 2 and "L.summary" in r.stderr, (path, r.stderr)
+assert run_hook(copy, "src/web/skin.py", copy, elsewhere).returncode == 0
+assert run_hook(copy, "docs/../../README.md", copy, elsewhere).returncode == 0  # repo の外の同じ名前は対象の外
+# 台帳の検査そのものと凍結の場面を直した時も回す
+for path in ("src/omochae/ledger.py", "tests/frozen/criteria.md"):
+    r = run_hook(copy, copy / path)
+    assert r.returncode == 2 and "L.summary" in r.stderr, (path, r.stderr)
+readme.write_text(intact, encoding="utf-8")
+assert run_hook(copy, copy / "README.md").returncode == 0
+
+# 検査できない時は黙って通さない。exit 0 の stderr は Claude に届かないので、これも exit 2 で返す
+claims = copy / "docs/process/claims.json"
+kept = claims.read_text(encoding="utf-8")
+claims.write_text("{壊れた", encoding="utf-8")
+r = run_hook(copy, claims)
+assert r.returncode == 2 and "検査できない" in r.stderr, r.stderr
+claims.write_text(kept, encoding="utf-8")
+broken = subprocess.run([str(copy / ".claude/hooks/ledger-check.sh")], input="{壊れた", capture_output=True, text=True)
+assert broken.returncode == 2 and "検査できない" in broken.stderr, broken.stderr
+(copy / ".venv").unlink()
+r = run_hook(copy, copy / "README.md")
+assert r.returncode == 2 and "検査できない" in r.stderr and ".venv" in r.stderr, r.stderr
+assert run_hook(copy, "/tmp/elsewhere.txt").returncode == 0  # 対象の外は .venv が無くても止めない
 print("ok")
