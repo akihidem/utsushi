@@ -101,6 +101,21 @@ def drop_own(source_id, own_id):
     return gone
 
 
+def scrub_own(source_id, own_id):
+    """自分の仮説から話した字だけを消す（記録の --talk-only から呼ぶ）。動かし方の字と、字が刷られた紙（手順の紙・型紙なしの紙）。名前と寸法と、字の無い紙は残す。消した物の名前を返す。"""
+    gone = []
+    path = _pred_dir() / f"own-{source_id}-{own_id.rsplit('-', 1)[1]}.json"
+    rec = store.read_json_or_skip(path)
+    if rec and rec.get("how_it_moves"):
+        store.write_json(path, {**rec, "how_it_moves": ""})
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted([*d.glob(f"{own_id}_v*_tejun*"), *d.glob(f"{own_id}_v*_free*")]) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
+
+
 def sheet_of(source_id):
     """玩具のたたき台の仮説を返す。ほかの所（頁・輪・デモ）がたたき台を知る時は、ここだけを読む。
 
