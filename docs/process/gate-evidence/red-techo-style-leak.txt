@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_techo_style_leak.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_techo_style_leak.py", line 29, in <module>
+    assert re.search(r"\.nav[^{}]*\{[^}]*font-family:\"Noto Serif CJK JP\"", skin.NAV_STYLE), "頭の帯は骨の書体を自分で持つ"
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 頭の帯は骨の書体を自分で持つ
+rc=1

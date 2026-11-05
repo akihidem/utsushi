@@ -33,8 +33,12 @@ NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
 # その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
 # cookie にしない・名前にしない・日をまたいで同じ人と分からない。持てない画面では添えない（頁は JS なしでも動く。人の数が「—」になるだけ）。
-WHO_SCRIPT = ("<script>(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){"
-              "const a=crypto.getRandomValues(new Uint8Array(10));w=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');sessionStorage.setItem('utsushi-who',w)}"
+# 記録を残したら、印を作り直す（1 回の作りに 1 つの印。同じタブを次の人が使っても、前の人の字が混ざらないように。Issue #279 の続き）。
+# 頁を移る時は戻る先の合図（fresh）で、手帖のように頁を移らない時は utsushiNewWho で。合図は住所から消す（読み直しで、また作り直さないように）。
+WHO_SCRIPT = ("<script>(()=>{try{const make=()=>{const a=crypto.getRandomValues(new Uint8Array(10)),n=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');sessionStorage.setItem('utsushi-who',n);return n};"
+              "let w=sessionStorage.getItem('utsushi-who')||'';const u=new URL(location.href);"
+              "if(u.searchParams.has('fresh')){w=make();u.searchParams.delete('fresh');history.replaceState(null,'',u)}else if(!/^[a-z0-9]{10}$/.test(w))w=make();"
+              "window.utsushiNewWho=()=>{w=make();document.querySelectorAll('input[name=who]').forEach(i=>{i.value=w})};"
               "document.querySelectorAll('form[method=post]').forEach(f=>{if(f.elements.who)return;const i=document.createElement('input');i.type='hidden';i.name='who';i.value=w;f.appendChild(i)})}catch(e){}})()</script>")
 
 
@@ -45,6 +49,8 @@ def esc(s):
 # 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
 # スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）
 NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
+/* 頭の帯と足は骨の物なので、頁の本文の書体（手帖のゴシックなど）を受け継がない（#126） */
+.nav,.foot{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
 @media (max-width:480px){.nav{gap:8px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
