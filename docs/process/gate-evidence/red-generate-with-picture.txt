@@ -1,0 +1,19 @@
+# 命令: .venv/bin/python tests/test_generate.py
+# commit: 68f4773（回した時の HEAD）
+FAIL F9.human [NDL-1187053-R0000005-L H-N1] 必須 2 種の今の組は、たたき台（H-A）の紙だけを刷る
+FAIL F5.text_overlap [まず筒を 1 つ作る（色の境で谷折り）] 文字が「物差し」と重なっている
+FAIL F5.text_overlap [物差し] 文字が「物差し」と重なっている
+FAIL F5.text_overlap [蛇腹（横から）: 上が山、下が谷] 文字が「物差し」と重なっている
+FAIL F5.text_overlap [線の無い面は色の境で折る] 文字が「物差し」と重なっている
+FAIL F5.text_overlap [線の無い面は色の境で折る] 文字が「完成の」と重なっている
+FAIL F5.text_overlap [物差し] 文字が「完成の」と重なっている
+FAIL F5.text_overlap [物差し] 文字が「イメージ」と重なっている
+FAIL F5.text_overlap [物差し] 文字が「（原図）」と重なっている
+FAIL F5.text_overlap [谷折り（手前へ）] 文字が「（原図）」と重なっている
+/tmp/tmpf57f4q_1/n1.pdf
+Traceback (most recent call last):
+  File "tests/test_generate.py", line 80, in <module>
+    assert hypotheses.print_sheet(TRIAL, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
