@@ -1,0 +1,10 @@
+直す前（main c17f48e）: tests/test_error_pages.py を当てた。無い道の頁が素の 1 行で、lang も題も皮も無い
+Traceback (most recent call last):
+  File "tests/test_error_pages.py", line 54, in <module>
+    page(code, body, "見つかりません", skin)
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "tests/test_error_pages.py", line 41, in page
+    assert '<html lang="ja"' in body, body[:120]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 見つかりません
+rc 1
