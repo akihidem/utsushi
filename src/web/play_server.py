@@ -733,6 +733,11 @@ if __name__ == "__main__":
         lan = "--lan" in argv
         port = int(args[0]) if args else 8766
         server = serve(port, lan=lan, public_key=key, look=look, public_open=public_open)
+        # 作り方の印は部品を組み立てて数えるので、初めて数える時は一覧の頁が 3 秒ほど待たされる。人が開く前に裏で数えておく
+        import threading
+        from omochae import ways
+
+        threading.Thread(target=lambda: [ways.toy_labels(s) for s in sources()], daemon=True).start()
     except (ValueError, OSError, OverflowError, IndexError) as e:
         print(f"検査できない: 開けない: {e}", file=sys.stderr)
         sys.exit(4)

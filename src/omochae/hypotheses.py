@@ -84,37 +84,6 @@ def letter(h):
     return h["id"].split("-")[1]
 
 
-# 道具（材料の数に入れない）と、当時の材料の語。竹と糸だけにするのは本人の言葉の範囲を越えないため（楊枝や割り箸が当時の物かは確かめていない）。
-_TOOLS = ("のり", "はさみ", "定規", "テープ", "セロハンテープ", "透明な梱包テープ")
-# 玩具そのものにならない、試す時の小道具（坂を作る本・浮かべる盆）。紙だけの印を落とさない。
-_PROPS = ("載せる本", "厚い本", "盆か洗面器")
-_PERIOD = (("竹", ("竹串", "竹ひご")), ("糸", ("糸",)))
-
-
-def _period_in(item, words):
-    """当時の材料を使うか。「竹ひごか割り箸」のように別の物でも足りる時は、選べる物の全部がその材料の時だけ数える（必ず使うとは言えないため）。"""
-    return all(any(w in part for w in words) for part in item.split("か")) if "か" in item else any(w in item for w in words)
-
-
-def material_marks(source_id, h, data=None):
-    """仮説の 2 つの印を、雛形の材料の一覧から出す。本人の言葉（11-05）「一枚の紙から作る選択肢もある」「竹とか糸は江戸時代にもあったし使ったらよく再現できるということ」。
-    - paper_only: 紙 1 枚と道具だけで作れる形。優劣の印ではない（窓口の説明）。
-    - period: 当時の材料（竹・糸）のうち使う物。再現の良さの軸で、paper_only とは別の軸。
-    手で印を書かず材料の一覧から出すのは、版や雛形が変わっても札と紙が食い違わないため。穴をあけるだけの竹串は材料に数えない。"""
-    from .compose import TEMPLATES
-
-    data = data or load(source_id)
-    if h.get("template_id", "") is None or "params" not in h:
-        return {"paper_only": False, "period": []}
-    tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
-    items = [str(m) for m in tpl.materials({**tpl.DEFAULTS, **h["params"]})]
-    paper, rest = items[0] if items else "", items[1:]
-    extras = [m for m in rest if not all(w.strip() in _TOOLS for w in m.split("、")) and not any(w in m for w in _PROPS)]
-    used = [m.replace("竹串（穴あけ）", "") for m in rest]
-    period = [name for name, words in _PERIOD if any(_period_in(m, words) for m in used)]
-    return {"paper_only": "1 枚" in paper and "貼る" not in paper and not extras, "period": period}
-
-
 def list_lines(data, own=()):
     lines = [f"{data['toy']}"]
     for h in own:

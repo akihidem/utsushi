@@ -9,7 +9,7 @@
 """
 import json
 
-from omochae import hypotheses
+from omochae import hypotheses, ways
 from omochae.hypotheses import ROOT
 
 from . import skin as skinmod
@@ -36,22 +36,23 @@ def _pic(sid, main):
     return f'<div class="pic" style="background-image:url(/picture/{esc(sid)});background-position:{pos};background-size:{size}" role="img" aria-label="図"></div>'
 
 
+def way_tags(names):
+    """作り方の印の札。並べ替えや点数にしない（J-025）。"""
+    return f'<p class="ways">{"".join(f"<span class=\"lb\">{esc(n)}</span>" for n in names)}</p>' if names else ""
+
+
 def card(sid):
     data, src = hypotheses.load(sid), _source(sid)
     main = hypotheses.stage(sid) == "必須"
     has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     more = "" if has else f'<p class="meta"><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></p>'
-    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
+    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
 
 
 def paper_only_sids(sids):
-    """紙 1 枚で作れる仮説を持つ玩具。材料の一覧から出す（hypotheses.material_marks）。"""
-    out = []
-    for s in sids:
-        data = hypotheses.load(s)
-        if any(hypotheses.material_marks(s, h, data)["paper_only"] for h in data["hypotheses"]):
-            out.append(s)
-    return out
+    """紙 1 枚で作れる仮説を持つ玩具。札の印と同じ ways の「紙一枚」で絞る（#255 の頃は別の判定を持っていたが、
+    main の ways（#261、エンジンとそろえた物）と二重になり、札と絞り込みが食い違いうるので ways に寄せた）。"""
+    return [s for s in sids if "紙一枚" in ways.toy_labels(s)]
 
 
 def page(skin, path="/toys", paper=False):
@@ -62,7 +63,7 @@ def page(skin, path="/toys", paper=False):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)))}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)))}</p><p class="meta">{esc(ways.NOTE)}</p>'
             + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

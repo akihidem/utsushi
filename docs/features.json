@@ -342,7 +342,9 @@
    "src/web/toy.py",
    "src/web/toys.py",
    "src/web/about.py",
+   "src/omochae/ways.py",
    "tests/test_toys.py",
+   "tests/test_ways.py",
    "tests/test_about.py",
    "docs/process/site-requirements.md",
    "tests/test_tap_size.py",
@@ -439,11 +441,10 @@
   "name": "紙一枚の印と当時の材料の印（本人の言葉 11-05、#255）: 仮説の札に別々の軸で出し、一覧を絞れる",
   "status": "doing",
   "evidence": [
-   "src/omochae/hypotheses.py",
-   "src/web/toy.py",
+   "src/omochae/ways.py",
    "src/web/toys.py",
    "tests/test_material_axes.py"
   ],
-  "unverified": "印は材料の一覧から機械で出す。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
+  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
  }
 ]

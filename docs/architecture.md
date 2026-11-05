@@ -15,6 +15,7 @@
 | `src/omochae/instructions.py` | 学ぶ人の紙（手順・試した後・見比べる・型紙なし）と先生の見る紙。測る欄は持たず、問いは本人の 4 つの着目に合わせる（U-25） |
 | `src/api/words.py` | 言葉の仮説を雛形の寸法に写す口 |
 | `src/omochae/records.py` | 試した記録の入口と集計。記録は `data/records/` |
+| `src/omochae/ways.py` | 仮説ごとの作り方の印（紙一枚・折るだけ・当時の材料）を部品表と用意する物から出す。どの印も上下を表さない |
 | `src/omochae/store.py` | 記録・輪・自分の仮説の置き場の読み書き。一時ファイル → 置き換え、読めない 1 件を飛ばす読み、プロセスをまたぐ排他（置き場の `.lock`） |
 | `src/omochae/__main__.py` | 型紙を 1 枚作る共通の流れと、開発用の入口 |
 | `src/omochae/compose.py` | 配置と描く前の検査。描画はしない |
