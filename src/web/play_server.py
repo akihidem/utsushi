@@ -289,6 +289,14 @@ class Handler(BaseHTTPRequestHandler):
             from . import zukan
             return self._send(200, zukan.toy_zukan(m.group(1), look) if m.group(1) else zukan.index_page(sources(), look))
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
+        if path == "/en":
+            # 英語の入口と玩具の頁（J-030 の段 1）。
+            from . import en
+            return self._send(200, en.index_page(look, path))
+        m = re.fullmatch(rf"/en/toy/({SID})", path)
+        if m and m.group(1) in sources():
+            from . import en
+            return self._send(200, en.toy_page(m.group(1), look, path, printed=qs.get("printed", [""])[0] == "1"))
         m = re.fullmatch(rf"/zukan/({SID})/yomi", path)
         if m and m.group(1) in sources():
             from . import kuzushi
@@ -341,6 +349,13 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:
                 v = 0
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
+        m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
+        if m:
+            # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
+            from omochae import hokusai as hk
+            if m.group(1) in hk.names() and hk.has(m.group(1)):
+                return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
+            return self._send(404, "無い")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
@@ -413,6 +428,16 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/step", self.path)
         if m and m.group(1) in sources():
             return self._step_post(m.group(1), form)
+        m = re.fullmatch(rf"/en/toy/({SID})/print", self.path)
+        if m and m.group(1) in sources():
+            # 英語の頁から刷る（J-030 の段 1）。紙は同じ物で日本語のまま。聞く口と記録の口は英語の頁に置かない。
+            sid, hid = m.group(1), form.get("hypothesis", "")
+            if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
+                return self._send(422, "That idea does not exist.", "text/plain; charset=utf-8")
+            if print_latest(sid, hid) is None:
+                return self._send(422, "This template could not be printed.", "text/plain; charset=utf-8")
+            making_log.add_stage(sid, "print", form.get("who", ""))
+            return self._send(303, "", headers=[("Location", f"/en/toy/{sid}?printed=1#ideas")])
         m = re.fullmatch(rf"/toy/({SID})/(own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
@@ -616,17 +641,8 @@ class Handler(BaseHTTPRequestHandler):
             at = "win" if form.get("at") == "win" else "kasetsu"  # 窓の札から押した時は、通らない理由も窓で読む（#127）
             if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
-            out_dir(sid).mkdir(parents=True, exist_ok=True)
-            # 刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、
-            # より良い型紙を提供する」）。版 1 しか無ければ版 1。
-            v = loop.latest_version(sid, hid)
-            # 一番新しい版が刷れない時は、1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。
-            while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
-                if v <= 1:
-                    return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
-                v -= 1
-            # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
-            loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+            if print_latest(sid, hid) is None:
+                return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
             msg = "紙を作りました。下の窓で絵を見て、印刷する時は PDF を 100% で"
             see = hid
         else:
@@ -650,6 +666,21 @@ class Handler(BaseHTTPRequestHandler):
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
         self._done(sid, msg, see=see, anchor="win" if see else anchor)
+
+
+def print_latest(sid, hid):
+    """仮説の一番新しい版を刷る。日本語の頁と英語の頁で同じ物を使う（紙は同じ。J-030）。刷った版を返し、刷れなければ None。
+    刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、より良い型紙を提供する」）。
+    一番新しい版が刷れない時は 1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。"""
+    out_dir(sid).mkdir(parents=True, exist_ok=True)
+    v = loop.latest_version(sid, hid)
+    while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
+        if v <= 1:
+            return None
+        v -= 1
+    # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
+    loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+    return v
 
 
 def fixes_of(form):

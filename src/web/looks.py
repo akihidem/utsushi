@@ -1,5 +1,6 @@
 """入口のルックブック（J-024）。本人が 5 案を見比べ、A 大判写真集と C 縦読みのジンを残した（2026-11-04）。
-見開き型・冊子型・B 和綴じ帖は外した。A が入口（/）で、C は /look/zine から見る。
+見開き型・冊子型・B 和綴じ帖は外した。その後 A も外した（本人の決定 2026-11-05 朝）。
+今の入口は A′ 白の展示と C 黒のジンの 2 つで、サイトごとに 1 つを / に出す（--look）。
 
 判断の芯: 案ごとに佇まい（表紙・見開きの構成・題の組み方）だけを変え、守る線は同じにする。
 新しい絵は作らず、NDL の図の頁とその寄りだけを使う。歌は人が確かめた読みだけを引用の印つきで出す。
@@ -164,6 +165,10 @@ def zine():
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
              f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1></section>')
+    # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
+    from .hokusai import scroll_section
+
+    body += scroll_section()
     for i, t in enumerate(ts, 1):
         src = source(t["sid"])
         song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])

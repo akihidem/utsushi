@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_about.py
+# commit: 3600ad9（回した時の HEAD）
+ok
+rc=0
