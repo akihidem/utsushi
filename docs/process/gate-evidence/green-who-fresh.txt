@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_who_fresh.py
+# commit: 92727be（回した時の HEAD）
+/tmp/tmp9koo_cyd/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp9koo_cyd/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp9koo_cyd/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmp9koo_cyd/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp9koo_cyd/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp9koo_cyd/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok（字で見て、Chrome でも動きを測った）
+rc=0

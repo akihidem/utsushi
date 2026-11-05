@@ -46,11 +46,12 @@ def TEMPLATES_NAMES(sid):
 
 
 def pending(sid, recs):
-    """まだ版に使っていない報告。(説明があって次の版に進める物, 説明を待つ物)。"""
+    """まだ版に使っていない報告。(説明があって次の版に進める物, 説明を待つ物)。次の版はたたき台の記録からだけなので（J-032）、ほかの仮説の記録は数えない。"""
+    sheet = hypotheses.sheet_of(sid)["id"]
     used = {rid for h in hypotheses.load(sid)["hypotheses"] for v in versions(sid, h["id"]) for rid in v.get("record_ids", [])}
     ready, waiting = [], []
     for r in recs:
-        if r["id"] in used:
+        if r["id"] in used or r["hypothesis_id"] != sheet:
             continue
         (ready if loop.explanation(r["id"]) else waiting).append(r)
     return ready, waiting
@@ -206,4 +207,8 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'<section class="sec" id="k4"><h2>4 聞く口の質問</h2><p class="meta">作っている途中に聞く口へ来た質問を、手順の段ごとに束ねます（同じ文だけを 1 つに数えます）。</p>{s4}</section>'
             f'<section class="sec" id="k5"><h2>5 完成の様子</h2><p class="meta">時間は幅で、動いた記録は件数で出します。</p>{s5}</section>'
             f'<section class="sec" id="k6"><h2>6 サイトの流れ</h2><p class="meta">型紙 → 作る → 記録の、どの段まで進んだか。何を書いたかは写していません。</p>{s6}</section>')
+    # 7 話した事（一周の声の部分、Issue #279）。字だけ。並べ方と断りは hanasu.py が持つ。
+    from . import hanasu
+
+    body += hanasu.maker_section(sid, data)
     return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE)

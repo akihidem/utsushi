@@ -33,8 +33,12 @@ NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
 # その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
 # cookie にしない・名前にしない・日をまたいで同じ人と分からない。持てない画面では添えない（頁は JS なしでも動く。人の数が「—」になるだけ）。
-WHO_SCRIPT = ("<script>(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){"
-              "const a=crypto.getRandomValues(new Uint8Array(10));w=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');sessionStorage.setItem('utsushi-who',w)}"
+# 記録を残したら、印を作り直す（1 回の作りに 1 つの印。同じタブを次の人が使っても、前の人の字が混ざらないように。Issue #279 の続き）。
+# 頁を移る時は戻る先の合図（fresh）で、手帖のように頁を移らない時は utsushiNewWho で。合図は住所から消す（読み直しで、また作り直さないように）。
+WHO_SCRIPT = ("<script>(()=>{try{const make=()=>{const a=crypto.getRandomValues(new Uint8Array(10)),n=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');sessionStorage.setItem('utsushi-who',n);return n};"
+              "let w=sessionStorage.getItem('utsushi-who')||'';const u=new URL(location.href);"
+              "if(u.searchParams.has('fresh')){w=make();u.searchParams.delete('fresh');history.replaceState(null,'',u)}else if(!/^[a-z0-9]{10}$/.test(w))w=make();"
+              "window.utsushiNewWho=()=>{w=make();document.querySelectorAll('input[name=who]').forEach(i=>{i.value=w})};"
               "document.querySelectorAll('form[method=post]').forEach(f=>{if(f.elements.who)return;const i=document.createElement('input');i.type='hidden';i.name='who';i.value=w;f.appendChild(i)})}catch(e){}})()</script>")
 
 
@@ -112,6 +116,7 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .plate h3{margin:8px 0}.plate p{font-size:14px;line-height:1.9;margin:6px 0}.plate ul{padding-left:1.2em;font-size:13px;color:var(--mute);margin:6px 0}
 .plate .thumb{display:block;margin:12px 0 4px;border:1px solid var(--frame);background:#fff}
 .plate .thumb img{display:block;width:100%}
+.plates>.plate:only-child{grid-column:1/-1;max-width:640px}.plates>.plate:only-child .thumb{max-width:280px}
 /* 札の足。頁の足 .foot と同じ名前だと、頁の足の余白と字の大きさが掛かり釦が 2 行に折れた（#124） */
 .plate .acts{margin-top:auto}.plate .acts form button{padding:12px 14px;white-space:nowrap}
 .win{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:4vw;align-items:start}
@@ -123,6 +128,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .win .sheet{margin:0;background:#fff;border:1px solid var(--frame);box-shadow:0 30px 50px -30px var(--shadow)}
 .win .sheet a{display:block;border:0}.win .sheet img{display:block;width:100%}
 .win .side{font-size:14px;line-height:2}
+/* 印刷で止まった時の案内は、プリンタの前で小学生も読むので、本文と同じ字の大きさにする（#297） */
+.win .side .print-help{font-size:16px;line-height:1.8}
 .win .side .v{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;letter-spacing:.12em;margin:8px 0}
 .win .side .v a,.win .side .v b{border:1px solid var(--frame);padding:2px 10px;font-weight:400}
 .win .side .v b{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}

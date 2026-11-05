@@ -1,0 +1,14 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_print_help.py
+# commit: 5ffa20a（回した時の HEAD）
+/tmp/tmpaug9yv30/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpaug9yv30/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpaug9yv30/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpaug9yv30/play/NDL-1187053-R0000004-L-4/H-A_v1.pdf
+/tmp/tmpaug9yv30/play/NDL-1187053-R0000004-L-4/H-A_v1_tejun.pdf
+/tmp/tmpaug9yv30/play/NDL-1187053-R0000004-L-4/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_print_help.py", line 69, in <module>
+    assert part.startswith('<details class="print-help">'), ("小さい字の class", look, part[:60])
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('小さい字の class', 'tenji', '<details class="meta print-help"><summary>止まった時</summary><p>')
+rc=1

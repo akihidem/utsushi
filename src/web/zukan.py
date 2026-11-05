@@ -85,8 +85,8 @@ def observation_lines(sid, data):
 
 
 def hypothesis_lines(sid, data):
-    """どれも試していない考えなので、仮説の印を付ける（status も添える）。"""
-    out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"]]
+    """どれも試していない考えなので、仮説の印を付ける（status も添える）。出すのはたたき台の 1 つだけ（J-032。説を羅列しない）。"""
+    out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"] if h["id"] == data.get("sheet")]
     out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid)]
     return out
 
