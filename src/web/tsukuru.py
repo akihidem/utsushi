@@ -65,8 +65,6 @@ a{color:var(--accent)}
 /* 札は手が紙でふさがっていても押せる大きさ。並びは進む順（次へか組み上がり・止まった・戻る）。色で良し悪しを付けない。 */
 .tiles{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0}
 .tiles button{font:inherit;font-size:clamp(17px,4.8vw,22px);min-height:72px;border:2px solid var(--accent);background:var(--paper);color:var(--fg);cursor:pointer;padding:8px 10px}
-/* 押せない方の札は隠す。幅の狭い画面では skin.TAP_FLOOR が button に display を付けて hidden が効かなくなるので、ここで止める（試験はブラウザなしなので字で見る）。 */
-.tiles button[hidden]{display:none}
 .tiles .go{background:var(--accent);color:var(--onaccent);font-size:26px;min-height:84px}
 .tiles .small{min-height:44px;font-size:15px;border:1px solid var(--frame);color:var(--mute)}
 .msg{margin:0;padding:10px 12px;border:1px solid var(--accent);font-size:17px}

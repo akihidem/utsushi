@@ -141,9 +141,9 @@ def js_takes_the_same_road():
 
 
 def hidden_tile_stays_hidden_on_narrow_screens():
-    # 幅の狭い画面の skin.TAP_FLOOR は button に display を付ける。札の側で止めないと、スマホで 2 つの大きい札が並ぶ（実物のブラウザで見つけた）。
+    # 幅の狭い画面の skin.TAP_FLOOR は button に display を付ける。床の側で止めないと、スマホで 2 つの大きい札が並ぶ（実物のブラウザで見つけた）。
     body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
-    assert ".tiles button[hidden]{display:none}" in body, "幅の狭い画面で、隠した札が出る"
+    assert "[hidden]{display:none!important}" in body, "幅の狭い画面で、隠した札が出る"
 
 
 def one_step_when_there_is_no_text():
