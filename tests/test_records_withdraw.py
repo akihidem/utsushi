@@ -47,7 +47,6 @@ def own_files(rid):
     return [LOOP / f"{kind}-{rid}.json" for kind in ("explanation", "interpretation", "observation")]
 
 
-assert subprocess.run([sys.executable, "-m", "omochae.hypotheses", "predict", "筒を押すと扇が開く"], capture_output=True).returncode == 0
 
 # 取り下げると、記録と添えた物が全部消え、どの頁と集計にも出ない
 rid = trial()

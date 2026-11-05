@@ -6,10 +6,10 @@
 - 原文の引用は、人が確かめた歌の読みだけ（checked_by がある物）。人が採らなかった読み（rejected_by）は出さない。
   labels.source_lines は確かめていない読みも候補に残すので、ここでさらに確かめた物だけに絞る。絞らないと、
   確かめていない読みが 1 つあるだけで頁ごと描けなくなり、公開できる歌まで隠れるため。
-- 予想が先（F9.prediction、philosophy.md）。仮説の名前と動かし方は、その玩具に予想か自分の仮説が書かれた後にだけ出す。
-  その前は、玩具の頁（/toy/<sid>）への「予想を書くと仮説が見られる」のリンクだけを置く。
+- 仮説の名前と動かし方はいつも出す（本人の決定 11-05、#242「予想の段を無くして、すぐ作る形にする」）。
+  答えに読まれない事は、仮説の印（J-016）で守る。
 - 観察は人が入れた記録から作る（records.py）。結果の値をそのまま書き、成績や順位にしない（J-025）。仮説は字（A の紙）だけで指し、
-  名前や動かし方を観察の文に混ぜない。記録の字は再現ギャラリー（gallery.py）が予想の前から出しているのと同じ範囲。
+  名前や動かし方を観察の文に混ぜない。記録の字は再現ギャラリー（gallery.py）が出しているのと同じ範囲。
 - 文言は検査しない（本人の判断、J-016）。飾りの文は作らない。見た目は日本画展の展示（looks.py の tenji）に揃えた白い地で、文字は少なく。
 """
 import html
@@ -19,7 +19,7 @@ import re
 from omochae import hypotheses, labels, records
 from omochae.hypotheses import ROOT
 
-from .skin import TAP_FLOOR
+from .skin import TAP_FLOOR, page_title
 
 QUOTE, HYPO, OBS = labels.LABELS
 
@@ -28,8 +28,9 @@ STYLE = """
 body.zukan{margin:0;background:var(--bg,#fcfcfa);color:var(--fg,#2b2722);font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 .zukan main{max-width:1100px;margin:0 auto;padding:10vh 5vw 14vh;box-sizing:border-box}
 .zukan a{color:var(--accent,#6b4f2a);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent,#6b4f2a) 40%,transparent)}
+.zukan .nav a:not([aria-current]){border-bottom:0}
 .zukan h1{font-weight:400;font-size:clamp(30px,4vw,48px);letter-spacing:.5em;margin:0 0 8px}
-.zukan .nav{font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
+.zukan p.nav{font-size:12px;letter-spacing:.2em;color:var(--mute,#6f665a);display:flex;gap:18px;flex-wrap:wrap;margin:0 0 6vh}
 .zukan .toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5vw;padding:8vh 0;border-top:1px solid var(--rule,#ebe8e2);align-items:start}
 .zukan .toy figure{margin:0;background:var(--paper,#fffefc);border:1px solid var(--frame,#d8cdb6);padding:3%;box-shadow:0 40px 60px -30px var(--shadow,rgba(70,55,35,.35))}
 .zukan .toy figure img{width:100%;display:block}
@@ -83,18 +84,17 @@ def observation_lines(sid, data):
 
 
 def hypothesis_lines(sid, data):
-    """予想の後にだけ呼ぶ。どれも試していない考えなので、仮説の印を付ける（status も添える）。"""
+    """どれも試していない考えなので、仮説の印を付ける（status も添える）。"""
     out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in data["hypotheses"]]
     out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid)]
     return out
 
 
 def lines_for(sid):
-    """その玩具の図鑑の文を、印ごとに返す。仮説は予想の前なら空で、shown=False。"""
+    """その玩具の図鑑の文を、印ごとに返す。予想の段を外した（本人の決定 11-05、#242）ので、仮説はいつも出す。"""
     data, src = hypotheses.load(sid), _source(sid)
-    shown = not hypotheses.need_prediction(sid)
     return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data),
-            "hypotheses": hypothesis_lines(sid, data) if shown else [], "shown": shown, "holding": src.get("holding", "")}
+            "hypotheses": hypothesis_lines(sid, data), "holding": src.get("holding", "")}
 
 
 def guard(lines):
@@ -117,11 +117,11 @@ def toy_section(sid, link_title=False):
     songs = "".join(f'<p class="song">{esc(q["text"])}</p><p class="meta"><span class="lb">{esc(q["label"])}</span>確かめた人: {esc(q["checked_by"])}</p>'
                     for q in z["quotes"])
     obs = f"<ul>{_items(z['observations'])}</ul>" if z["observations"] else '<p class="meta">試した記録はまだありません</p>'
-    hyp = f"<ul>{_items(z['hypotheses'])}</ul>" if z["shown"] else f'<p class="links"><a href="/toy/{esc(sid)}">予想を書くと仮説が見られる</a></p>'
+    hyp = f"<ul>{_items(z['hypotheses'])}</ul>"
     title = f'<a href="/zukan/{esc(sid)}">{esc(z["toy"])}</a>' if link_title else esc(z["toy"])
     return (f'<section class="toy" id="{esc(sid)}">{pic}<div><h2>{title}</h2>{songs}'
             f'<p class="meta">試した記録</p>{obs}<p class="meta">仮説</p>{hyp}'
-            f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">上げた物</a></p></div></section>')
+            f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">作った物</a></p></div></section>')
 
 
 def _page(title, body, look=None, path="/zukan"):
@@ -132,10 +132,10 @@ def _page(title, body, look=None, path="/zukan"):
 
         return skin.shell(title, body.replace(NAV, ""), look, "/zukan", path, STYLE, "zukan")
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(title)}</title><style>{STYLE}{TAP_FLOOR}</style><body class="zukan"><main>{body}</main></body></html>')
+            f'<title>{esc(page_title(title))}</title><style>{STYLE}{TAP_FLOOR}</style><body class="zukan"><main>{body}</main></body></html>')
 
 
-NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">上げた物</a></p>'
+NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">作った物</a></p>'
 LEAD = '<p class="meta">文にはどれも印があります。原文の引用は人が確かめた読み、仮説は試していない考え、観察は人が残した記録です。</p>'
 
 

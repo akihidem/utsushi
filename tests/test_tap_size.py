@@ -12,16 +12,15 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import hypotheses, records  # noqa: E402
+from omochae import records  # noqa: E402
 from web import skin  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 MIN_FONT = 12
 G = "NDL-1187053-R0000005-L"
-hypotheses.save_prediction(G, "押すと開く")
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
-PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
+PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
 
 # 床は机の幅の見た目を変えない。スマホと iPad の幅か、指で触る機器の時だけ効く
 assert "(max-width:1100px)" in skin.TAP_FLOOR and "(pointer:coarse)" in skin.TAP_FLOOR, skin.TAP_FLOOR[:80]

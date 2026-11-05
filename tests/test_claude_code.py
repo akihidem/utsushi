@@ -27,7 +27,7 @@ C = {"push_part": "stick", "hub": "axle", "pusher_height": 84}
 
 
 def hyp(name, params):
-    return {"name": name, "how_it_moves": "動かす", "physics": "折り目の力", "evidence": [{"kind": "image", "where": "筒", "what": "棒", "certainty": "観察"}], "against": ["未確認"], "to_measure": "角度", "template_id": "slider_fan", "params": params, "vs_prediction": {"same": [], "different": []}}
+    return {"name": name, "how_it_moves": "動かす", "physics": "折り目の力", "evidence": [{"kind": "image", "where": "筒", "what": "棒", "certainty": "観察"}], "against": ["未確認"], "to_measure": "角度", "template_id": "slider_fan", "params": params, "vs_own": {"same": [], "different": []}}
 
 
 good = {"hypotheses": [hyp("a", A), hyp("b", C)], "references": []}
@@ -50,13 +50,11 @@ fails = by[5]["result"]["content"][0]["text"]
 assert "F5.range" in fails and "F8.references" in fails
 assert by[6]["result"]["isError"] is True and by[7]["error"]["code"] == -32601
 
-# 案の受付: 予想が先、床を通った物だけ、人が採るまで一覧に入らない
+# 案の受付: 床を通った物だけ、人が採るまで一覧に入らない
 from api import generate as gen  # noqa: E402
 from omochae import hypotheses  # noqa: E402
 
 source = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))
-assert {f.floor for f in gen.import_draft(source, good, "セッション")[1]} == {"F9.prediction"}
-assert hypotheses.save_prediction(G, "筒を押すと開く")[1] == []
 assert {f.floor for f in gen.import_draft(source, good, " ")[1]} == {"F9.human"}
 assert gen.import_draft(source, {"hypotheses": [hyp("a", bad), hyp("b", C)], "references": []}, "セッション")[1]
 gid, fs = gen.import_draft(source, good, "Claude Code のセッション")

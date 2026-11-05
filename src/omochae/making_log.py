@@ -23,8 +23,8 @@
   - **エンジンとつなぐ欄（template・sheet_set）**: 型紙エンジンの報告は雛形と形で集める。玩具の印と版だけでは向こうの集計と
     突き合わせられないので、雛形の id と刷った組を出来事に残す。
   - **聞いた段（step）**: 聞く口の質問に、今どの手順かを任意で添える（同じ段の同じ問いを束ねて、先回りの答えの材料にする）。
-  - **頁の段の進み（add_stage）**: 予想を書いた・刷った・作る頁を開いた・記録を残した、の 4 つだけ。どの段で先へ進まなくなるかを数える。
-    残す欄は source_id・template・stage・who・at。何を書いたか（予想の文・記録の中身）はここに写さない。
+  - **頁の段の進み（add_stage）**: 刷った・作る頁を開いた・記録を残した、の 3 つだけ（予想の段は #242 で外した）。どの段で先へ進まなくなるかを数える。
+    残す欄は source_id・template・stage・who・at。何を書いたか（記録の中身）はここに写さない。
 """
 import json
 import os
@@ -45,9 +45,9 @@ FIELDS = ("source_id", "hypothesis_id", "sheet_version", "template", "sheet_set"
 # 手順の進みの欄と、受ける出来事。欄を足す時の考えは FIELDS と同じ（誰が押したかを辿れる物を足さない）。
 STEP_FIELDS = ("source_id", "hypothesis_id", "sheet_version", "template", "sheet_set", "step", "event", "who", "at")
 EVENTS = ("start", "next", "back", "stuck", "done")
-# 頁の段の進み。順路の順（予想 → 型紙 → 作る → 記録）。
+# 頁の段の進み。順路の順（型紙 → 作る → 記録）。前に残った predict の行は数えない（集計は STAGES の順に引くだけなので、捨てずに黙って読み飛ばす）。
 STAGE_FIELDS = ("source_id", "template", "stage", "who", "at")
-STAGES = ("predict", "print", "make", "record")
+STAGES = ("print", "make", "record")
 # その場限りの印の形。英数字だけ・8〜12 桁。これ以外は残さない（自由な文を who に入れさせない）。
 WHO = re.compile(r"[A-Za-z0-9]{8,12}")
 # 感想と説明から拾う言葉。分からなかった側と面白かった側を分けて、たとえと説明のどこを言い換えるかの材料にする（Issue #119 の 3）。
@@ -149,7 +149,7 @@ def add_step(source_id, hypothesis_id, sheet_version, step, event, who=""):
 
 
 def add_stage(source_id, stage, who=""):
-    """頁の段の進み 1 件を残す（予想を書いた predict・刷った print・作る頁を開いた make・記録を残した record）。
+    """頁の段の進み 1 件を残す（刷った print・作る頁を開いた make・記録を残した record）。
     返り値は書いたファイルの path（決まりの外と、書けなかった時は None）。何を書いたかは写さない。呼ぶ口を止めないよう、例外は外へ出さない。"""
     try:
         if stage not in STAGES:

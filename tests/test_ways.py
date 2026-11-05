@@ -68,7 +68,7 @@ assert [r["hypothesis_id"] for r in table if r["source_id"] == GORAIGO and r["on
 
 # 5. 頁に札で出る。順位の形にしない。仮説の並びは元の記録のまま
 data = hypotheses.load(TORA)
-hypotheses.save_prediction(TORA, "頭が揺れると思う")
+# 予想の段は #266 で外したので、予想を置かずに開いた頁にそのまま札が出る
 page = toy.toy_page(TORA)
 assert '<span class="lb">当時の材料</span>' in page and '<span class="lb">紙一枚</span>' not in page
 assert "どの印も上下を表しません" in page
