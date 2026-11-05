@@ -295,6 +295,8 @@ document.getElementById('up-form').onsubmit = async (e) => {
     const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value, fix_part: document.getElementById('fix-part').value, fix_change: document.getElementById('fix-change').value, fix_outcome: document.getElementById('fix-outcome').value }) });
     const j = await r.json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
+    // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。
+    if (window.utsushiNewWho) utsushiNewWho();
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
     form.reset(); showPicked();
     done = '上げました';
