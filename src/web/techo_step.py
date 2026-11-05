@@ -23,7 +23,6 @@
 - 祝う演出と順位の言葉は入れない（J-025）。JS が無い時は、つぎ・もどるがリンクとして手順を送る。
 """
 import json
-import re
 
 from omochae import hypotheses, instructions, loop, making_log, render, talk_log
 from omochae.compose import TEMPLATES
@@ -31,16 +30,12 @@ from omochae.compose import TEMPLATES
 from . import hanasu, skin, tsukuru
 from .play_server import esc, printed_versions
 from .techo_site import ICONS, MAX_MEDIA, MAX_PER_RECORD
+from .voice_words import CLEAN, WORDS, clean  # noqa: F401  (clean は試験が読む)
 
 # 本人の決定 11-05: 押す所の名前。字を変える時は本人の確認が要る。
 NAMES = ("つぎ", "もどる", "こまった", "とって", "のこす", "はじめる")
 NEXT, BACK, STUCK, SHOOT, KEEP, START = NAMES
 
-# 声の操作。全部が一致した時だけ操作にする（CLEAN で空白と句読点を除いた後の字）。認識は漢字で返す事が多いので両方を持つ。
-WORDS = {"つぎ": "next", "次": "next", "つぎへ": "next", "次へ": "next", "できた": "next", "出来た": "next",
-         "もどる": "back", "戻る": "back", "もう一回": "again", "もういっかい": "again", "もう1回": "again", "もう１回": "again",
-         "こまった": "stuck", "困った": "stuck", "とって": "photo", "撮って": "photo", "取って": "photo", "のこす": "keep", "残す": "keep"}
-CLEAN = r"[\s。、．，！？!?…・]"
 # 結果の札を声で選ぶ言い方。値は雛形の RESULTS のまま（凍結の床 F3 の語）。
 RESULT_WORDS = {r: r for tpl in TEMPLATES.values() for r in tpl.RESULTS} | {
     "うごいた": "動いた", "うごかない": "動かない", "分からない": "わからない", "ゆれた": "揺れた", "ゆれない": "揺れない", "もどった": "戻った", "もどらない": "戻らない",
@@ -358,10 +353,6 @@ def sheet_of(data, printed_ids):
     ids = [h["id"] for h in data["hypotheses"] if h["id"] in printed_ids]
     head = data["hypotheses"][0]["id"]
     return head if head in ids else (ids[0] if ids else "")
-
-
-def clean(t):
-    return re.sub(CLEAN, "", t)
 
 
 def _params(sid, data, h, v):

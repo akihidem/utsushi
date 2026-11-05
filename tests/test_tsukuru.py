@@ -177,6 +177,14 @@ techo_js = get(f"/toy/{G}/techo")[1]
 for js in (page_js, techo_js):
     assert "speaking" in js and "sayStart" in js and "sayEnd" in js, "読み上げの間は音声認識を止める"
 assert "if(speaking)return" in page_js and "if (speaking) return" in techo_js
+# 声の操作は手帖と同じ表（#87）。言葉の全部が一致した時だけ札を押し、操作の字は問いに送らない。ほかは問いとして送る
+from web.voice_words import WORDS, clean  # noqa: E402
+assert "WORDS[clean(t)]" in page_js and page_js.index("if(op){act(op);return}") < page_js.index("qIn.value=t;ask(t)")
+assert all(f'"{word}": "{op}"' in page_js for word, op in WORDS.items()) and "__WORDS__" not in page_js and "__CLEAN__" not in page_js
+assert WORDS[clean("つぎ。")] == "next" and WORDS[clean("もう 一回")] == "again" and clean("次の手順ってどうやるの") not in WORDS
+for v in ("back", "stuck", "next", "done"):
+    assert f'value="{v}"' in page_js, v
+assert "tile('done')" in page_js and "say(items[n-1].textContent)" in page_js
 # 開いた時の版のまま作る: 版を言えばその版の文と札、札の記録もその版
 assert 'data-v="1"' in page_js and 'name="sheet_version" value="1"' in page_js and "b.set('sheet_version',ver)" in page_js
 assert "sheet_version" in techo_js and 'data-v="1"' in techo_js and "utsushi-who" in techo_js
