@@ -192,7 +192,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.techo input[type=text]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
+.techo input[type=text],.techo input[type=number]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
 .techo #ask-form{display:flex;gap:10px;align-items:stretch}.techo #ask-form input{flex:1;min-width:0;margin:0}.techo #ask-form .go{white-space:nowrap}
 .techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:var(--onaccent);display:grid;place-items:center;cursor:pointer;justify-self:center;margin:0}
 .techo .mic svg{width:48px;height:48px;stroke:var(--onaccent);fill:none;stroke-width:3;stroke-linecap:round}

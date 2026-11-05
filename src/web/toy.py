@@ -59,7 +59,7 @@ def refill(form, values):
 
         return re.sub(r'<option(?: value="([^"]*)")?>([^<]*)</option>', option, m.group(0))
 
-    form = re.sub(r'<input type="text" name="([^"]+)"[^>]*>', text, form)
+    form = re.sub(r'<input type="(?:text|number)"(?: step="any")? name="([^"]+)"[^>]*>', text, form)
     form = re.sub(r'<input type="radio" name="([^"]+)" value="([^"]*)"', radio, form)
     form = re.sub(r'<textarea name="([^"]+)"([^>]*)>[^<]*</textarea>', area, form)
     return re.sub(r'<select name="([^"]+)">.*?</select>', select, form, flags=re.S)
@@ -302,9 +302,12 @@ def next_reasons(failures, sid, hid, param, to=None):
     out, on_paper = [], False
     for f in failures:
         if f.floor == "F5.range" and f.where == param and span:
-            # 幅の中なのに範囲の床に落ちるのは、整数の決まりなど別の理由。幅を言うと、31.4 に「6〜40 の間で」と的外れに断る事になるので、床の文を出す。
-            inside = isinstance(to, (int, float)) and span[0] <= to <= span[1]
-            text = (f.message if inside else f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください") + (f"（今 {value}）。" if value else "。")
+            # 幅の中なのに範囲の床に落ちるのは、整数の決まり。欄は整数だけを受ける（whole_params）ので、ここへ来るのは JS が無い時か直に送った時。
+            # 幅を言うと 31.4 に「6〜40 の間で」と的外れになり、床の文は作る側の字なので、今の値と次の一手だけを言う。
+            if isinstance(to, (int, float)) and span[0] <= to <= span[1]:
+                on_paper = True
+                continue
+            text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
         elif f.floor.startswith("F5."):
             # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
             text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
@@ -315,6 +318,14 @@ def next_reasons(failures, sid, hid, param, to=None):
     if on_paper and value:
         out.append(f"{label}は今 {value} です。近い値を試すか、別の寸法を変えてください。")
     return out
+
+
+def whole_params(template):
+    """整数だけを受ける寸法（折りの数など）。雛形の範囲の検査に聞く: 幅の中の整数でない値で落ちる寸法。表を別に持つと検査とずれるため。"""
+    from omochae.metrics import ALLOWED
+
+    tpl = TEMPLATES[template]
+    return [k for k in sorted(ALLOWED[template]) if tpl.check_range({**tpl.DEFAULTS, k: tpl.RANGES[k][0] + (tpl.RANGES[k][1] - tpl.RANGES[k][0]) * 0.6317})]
 
 
 def next_form(r, back=""):
@@ -337,12 +348,17 @@ def next_form(r, back=""):
     # 解釈はすぐ上の説明とほぼ同じ問いなので、説明を初めから入れておく（#129）。そのまま採っても、書き直してもよい。
     told = (loop.explanation(r["id"]) or {}).get("text", "")
     hidden = f'<input type="hidden" name="back" value="{esc(back)}">' if back else ""
+    # 整数だけの寸法を選んだ時は step=1 にして、ブラウザの標準の吹き出しで断る（新しい字を足さない）。欄は 1 つで寸法は選ぶ物なので、JS で切り替える。JS が無ければ小数も通り、next_reasons が断る。
+    # min と max は付けない: 幅の外は今ある字で断る。書いた値を欄に戻した時は value が step の起点になるので、起点が 0 に戻るように外す（値は残る）。
+    whole = whole_params(template)
+    step = ('<script>(()=>{const f=document.currentScript.previousElementSibling,s=f.elements.param,t=f.elements.to,w=' + json.dumps(whole) + ';'
+            'const set=()=>{t.step=w.includes(s.value)?"1":"any"};t.value=t.value;t.removeAttribute("value");s.addEventListener("change",set);set()})()</script>') if whole else ""
     return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next#next-{esc(r["id"])}">{hidden}'
             f'<label>何が起きたと読むか（解釈）<textarea name="interpretation" required>{esc(told)}</textarea></label>'
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
-            '<label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
+            '<label>新しい値<input type="number" step="any" name="to" inputmode="decimal" required></label>'
             '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
-            '<button>次の版の紙を作る</button></form></details>')
+            f'<button>次の版の紙を作る</button></form>{step}</details>')
 
 
 def ai_block(r):

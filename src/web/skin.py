@@ -65,7 +65,7 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
 .nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
-label:not(.sr):has(>input[type=text]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
+label:not(.sr):has(>input[type=text]),label:not(.sr):has(>input[type=number]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 [hidden]{display:none!important}
 }
@@ -105,7 +105,7 @@ main{max-width:1180px;margin:0 auto;padding:0 5vw 96px}
 .label b{display:block;font-weight:400;font-size:17px;letter-spacing:.22em;color:var(--fg)}
 .links{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;letter-spacing:.12em}
 label{display:block;margin-top:14px;font-size:14px;letter-spacing:.06em}
-input[type=text],textarea,select{display:block;width:100%;margin-top:6px;padding:10px 12px;font:inherit;font-size:16px;color:var(--fg);background:var(--field);
+input[type=text],input[type=number],textarea,select{display:block;width:100%;margin-top:6px;padding:10px 12px;font:inherit;font-size:16px;color:var(--fg);background:var(--field);
  border:1px solid var(--frame);border-radius:0}
 textarea{min-height:110px}
 button,.btn{display:inline-block;margin-top:16px;padding:12px 26px;font:inherit;font-size:14px;letter-spacing:.2em;color:var(--onaccent);background:var(--accent);

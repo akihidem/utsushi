@@ -4,7 +4,8 @@
 内筒を収める床（内筒の長さ ≦ 筒の高さ − 押し上げる量）に挟まれ、今の寸法だと 69 ちょうどしか通らない（21＋48＝84−15）。どちらも凍結の基準どおりの検査。
 欄は「寸法を 1 つ変える」形なので、選んでも必ず断られる項目になっていた。ほかの寸法を変えると通る幅が開くので、固定の表でなく今の版の値で決める。
 
-折りの数の 31.4 は幅の中なのに「6〜40 の間で」と断っていたので、落ちた床の文をそのまま出す（新しい字は足さない）。
+折りの数の 31.4 は幅の中なのに「6〜40 の間で」と断っていた。整数だけの寸法は欄が整数だけを受け（step=1 とブラウザの標準の吹き出し）、新しい字を足さない。
+床の文は作る側の字なので頁に出さない。JS が無い時や直に送った時は、前からある「今の値と次の一手」の文を出す。
 """
 import json
 import os
@@ -24,7 +25,7 @@ from omochae import hypotheses, loop  # noqa: E402
 from omochae.compose import TEMPLATES, compose  # noqa: E402
 from omochae.metrics import ALLOWED  # noqa: E402
 from omochae.templates import den_den, slider_fan, spin_toy  # noqa: E402
-from web import toy  # noqa: E402
+from web import skin, toy  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -84,22 +85,43 @@ assert "push_amount" in options(page) and "押し上げる量（mm）: 今 69（
 assert post("/record/R-0001/next", {**form, "param": "push_amount", "to": "68.6"})[0] in (200, 303)
 assert loop.latest_version(G, "H-A") == 3 and loop.version_params(G, "H-A", 3)[0]["push_amount"] == 68.6
 
-# 5. 幅の中なのに断る時は、落ちた床の文を出す。「6〜40 の間で」と書かない。幅の外は今までどおり幅を言う
+# 5. 整数だけの寸法は、欄が整数だけを受ける。数の欄で、既定は小数も通し（step=any）、選んだ寸法が整数だけの時に JS が step=1 にする。min と max は付けない（幅の外は今ある字で断る）
+page = get(f"/toy/{G}")
+box = page.split('action="/record/R-0001/next#next-R-0001"', 1)[1].split("</details>", 1)[0]
+assert '<input type="number" step="any" name="to" inputmode="decimal" required>' in box, box[:900]
+assert " min=" not in box and " max=" not in box
+assert ',w=["fold_count"];' in box and 'addEventListener("change"' in box and 't.step=w.includes(s.value)?"1":"any"' in box, box[-500:]
+# 欄に戻した値は step の起点になる（31.4 を戻すと 32 が断られる）ので、起点を 0 に戻す。動きは Chromium で見た
+assert 't.value=t.value;t.removeAttribute("value")' in box, box[-500:]
+# 数の欄も字の欄と同じ形にする（皮の字の色と地。黒のジンで白く浮かないように）
+assert "input[type=text],input[type=number],textarea,select{display:block" in skin.BASE
+assert "label:not(.sr):has(>input[type=number])" in skin.TAP_FLOOR
+# JS が無い時や直に送った時: 床の文を頁に出さず、幅の中なので幅も言わない。今の値と次の一手だけを言い、書いた値を欄に戻す
 code, page = post("/record/R-0001/next", {**form, "param": "fold_count", "to": "31.4"})
-assert code == 422 and "折り数は整数（今 28）。" in page and "6〜40 の間で" not in page, page[:400]
+assert code == 422 and "折りの数は今 28 です。近い値を試すか、別の寸法を変えてください。" in page, page[:400]
+assert "折り数は整数" not in page and "6〜40 の間で" not in page, page[:400]
+assert 'name="to" inputmode="decimal" required value="31.4"' in page
+assert loop.latest_version(G, "H-A") == 3
+# 幅の外は今ある字のまま
 code, page = post("/record/R-0001/next", {**form, "param": "fold_count", "to": "99"})
 assert code == 422 and "折りの数は 6〜40 の間で書いてください（今 28）。" in page, page[:400]
-# 整数の決まりを持つほかの雛形も同じ。どの雛形でも、幅の中の値で「範囲の外」を見せない
+# 整数の決まりを持つほかの雛形も同じ。床の文（数は整数・枚数・本数なので整数）を出さない
 DEN, SPIN = "NDL-1187053-R0000007-R", "NDL-1187053-R0000020-R"
-for sid, tpl, param, to, want in ((DEN, den_den, "beads_inside", 1.5, "数は整数"), (SPIN, spin_toy, "blade_count", 4.5, "4.5 は枚数・本数なので整数")):
+for sid, tpl, param, to in ((DEN, den_den, "beads_inside", 1.5), (SPIN, spin_toy, "blade_count", 4.5)):
     params = {**tpl.DEFAULTS, **hypotheses.sheet_of(sid)["params"], param: to}
     lines = toy.next_reasons(tpl.check_range(params), sid, hypotheses.sheet_of(sid)["id"], param, to)
-    assert lines and lines[0].startswith(want) and "の間で" not in lines[0], lines
+    assert len(lines) == 1 and lines[0].endswith("近い値を試すか、別の寸法を変えてください。") and "整数" not in lines[0], lines
+    assert param in toy.whole_params(tpl.ID), (tpl.ID, toy.whole_params(tpl.ID))
+# 整数だけの寸法の表は、範囲の検査と同じ答え。整数なら通り、整数でなければ落ちる寸法だけが入る
 for tid, tpl in TEMPLATES.items():
     for k in sorted(ALLOWED[tid]):
         lo, hi = tpl.RANGES[k]
-        for f in tpl.check_range({**tpl.DEFAULTS, k: (lo + hi) / 2 + 0.25}):
-            assert "範囲" not in f.message and "の外" not in f.message, (tid, k, f.message)
+        half = lo + (hi - lo) * 0.6317
+        assert (k in toy.whole_params(tid)) == bool(tpl.check_range({**tpl.DEFAULTS, k: half})), (tid, k)
+        assert not tpl.check_range({**tpl.DEFAULTS, k: lo}), (tid, k, lo)
+assert toy.whole_params("slider_fan") == ["fold_count"] and toy.whole_params("pivot_counterweight") == []
+# 整数だけの寸法を持たない玩具には、JS を付けない（虎。欄は小数も通す）
+assert "<script" not in toy.next_form({**loop.record("R-0001"), "source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A"})
 
 # 6. 欄に出す寸法には、配置の検査まで通る値がある（画面の判定は範囲と物理の床だけなので、ここで compose と照らす）。雛形ごとに 1 つと、動かない寸法を持つ玩具で見る
 seen, sample = set(), [G, "NDL-1187053-R0000021-L-2", "NDL-1187053-R0000029-R-2"]
