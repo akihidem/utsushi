@@ -78,12 +78,13 @@ assert making_log.add_ask(G, "H-A", 1, "足は山折りですか？", "words", s
 assert making_log.add_ask(G, "H-A", 1, f"{PHONE} に電話してもいいですか", "words", step=2) is not None  # 残す時に文が落ちる
 
 # 話した事（Issue 307。話す口 talk_log の記録）: 作る前の考え・作りながらの工夫（手順の番号つき）・できた後の話
-SPOKEN = {"think": "筒を押すと、扇が上に出て開くと思う", "craft3a": "足を先に全部折ってから扇を畳んだ", "craft3b": "折る前に定規で線をなぞった",
+SPOKEN = {"think": "筒を押すと、扇が上に出て開くと思う", "craft3a": "足を先に全部折ってから扇を畳んだ", "craft3b": "折る前に定規で線をなぞった", "craft3c": "折った後に指でしごいた",
           "craft5": "つまみは最後に付けた", "keep": "薄い紙に替えたら開きやすかった", "keep_old": "台が載せにくかった", "gone": "取り下げる記録に残した話",
           "think_old": "柄で押すと、台ごと上がると思った", "hidden": "作る側が読んで隠した話"}
 assert talk_log.add(G, "think", SPOKEN["think"], hypothesis_id="H-A", who=WHO1)[1] == []
 assert talk_log.add(G, "craft", SPOKEN["craft3a"], hypothesis_id="H-A", sheet_version=1, step=3, who=WHO1, via="voice")[1] == []
 assert talk_log.add(G, "craft", SPOKEN["craft3b"], hypothesis_id="H-A", sheet_version=1, step=3, who=WHO2)[1] == []
+assert talk_log.add(G, "craft", SPOKEN["craft3c"], hypothesis_id="H-A", sheet_version=1, step=3, who=WHO1)[1] == []  # 同じ人が同じ手順で 2 回話した。人の数は増えない
 assert talk_log.add(G, "craft", SPOKEN["craft5"], hypothesis_id="H-A", sheet_version=1, step=5)[1] == []  # その場限りの印が無い話
 assert talk_log.add(G, "keep", SPOKEN["keep"], record_id=rid1, who=WHO1)[1] == []
 assert talk_log.add(G, "keep", SPOKEN["keep_old"], record_id=rid4)[1] == []  # 直す前の組の紙の記録に結んだ話
@@ -99,7 +100,7 @@ hand_talk = {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "templa
 # 記録に結んだ後に、作る側が隠した字（読んで名前などに気づいた時に隠す）は、束にも入れない。記録そのものは、今までどおり数える
 assert talk_log.add(T, "keep", SPOKEN["hidden"], record_id=rid6)[1] == [] and talk_log.set_share(T, rid6, False)[1] == []
 # 記録の番号があるのに記録が無い話（記録が消えた後に残った物）は、束に入れない
-(making_log.folder() / "talk-20261105-1201-orphan00.json").write_text(json.dumps({**hand_talk, "scene": "keep", "step": None, "record_id": "R-7777", "text": "消えた記録に結んだ話"}, ensure_ascii=False), encoding="utf-8")
+(making_log.folder() / "talk-20261105-1201-orphan00.json").write_text(json.dumps({**hand_talk, "scene": "keep", "step": None, "record_id": "R-7777", "share": True, "text": "消えた記録に結んだ話"}, ensure_ascii=False), encoding="utf-8")
 # 取り下げた記録に結んだ話は、取り下げと一緒に消える（話す口の決まり）。束にも出ない
 rid_gone, _ = records.add({"source_id": T, "hypothesis_id": "H-A", "sheet_version": 1, "result": "揺れた", "fixes": []})
 assert talk_log.add(T, "keep", SPOKEN["gone"], record_id=rid_gone)[1] == [] and records.withdraw(rid_gone)[1] == []
@@ -154,7 +155,7 @@ assert len(long) == 1 and len(long[0]["text"]) == ENGINE_MAX_TEXT and long[0]["t
 # 5b. 話した事: 場面が文の種類になり、工夫は手順の番号つき。同じ手順で工夫を話した数と、その場限りの印で数えた人の数が craft_steps に入る
 assert texts[("think", None, SPOKEN["think"])] == 1 and texts[("keep", None, SPOKEN["keep"])] == 1
 assert texts[("craft", 3, SPOKEN["craft3a"])] == 1 and texts[("craft", 3, SPOKEN["craft3b"])] == 1 and texts[("craft", 5, SPOKEN["craft5"])] == 1
-assert now["craft_steps"] == {"3": {"talks": 2, "people": 2}, "5": {"talks": 1, "people": 0}}, now["craft_steps"]
+assert now["craft_steps"] == {"3": {"talks": 3, "people": 2}, "5": {"talks": 1, "people": 0}}, now["craft_steps"]
 # 記録に結んだ話は、その記録と同じ群に入る（直す前の組の紙の記録の話を、今の組に数えない）
 old_texts = {(t["kind"], t["text"]) for t in groups[("slider_fan", "goraigo-v7")]["texts"]}
 assert ("keep", SPOKEN["keep_old"]) in old_texts and ("keep", SPOKEN["keep_old"]) not in {(t["kind"], t["text"]) for t in now["texts"]}
@@ -183,5 +184,53 @@ r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--
 assert r.returncode == 0 and "落とした文 5" in r.stdout and PHONE not in r.stdout + r.stderr, r.stdout + r.stderr
 written = json.loads(out.read_text(encoding="utf-8"))
 assert {**written, "exported_at": ""} == {**eb.build(), "exported_at": ""}
+
+# 8. 呼び方の誤り（引数なし・知らない命令・知らない印）は rc 4。1 と 2 は使わない（Issue 313）。--help は rc 0
+for wrong in ([], ["no_such_command"], ["export", "--nope"]):
+    r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", *wrong], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
+    assert r.returncode == 4, (wrong, r.returncode)
+assert subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "--help"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120).returncode == 0
+
+# 9. 手で置いた記録の形が決まりの外でも、束は出る（Issue 313）。型の外の欄は読み飛ばし、その記録の動きの札は数える。
+# 文字の欄を 1 字ずつの文にしない。辞書でない記録と、番号の形でない記録の番号は、束に入れない
+odd = {"source_id": T, "hypothesis_id": "H-A", "sheet_version": 1, "result": "揺れた", "answers": "首の向きで止まった", "ideas": "粘土を増やす",
+       "fixes": "軸を短くした", "impression": ["首が揺れて楽しかった"], "id": "R-0097", "by": "human", "recorded_at": "2026-11-05T12:30:00+09:00"}
+(records.folder() / "R-0097.json").write_text(json.dumps(odd, ensure_ascii=False), encoding="utf-8")
+(records.folder() / "R-0096.json").write_text(json.dumps(["記録でない"], ensure_ascii=False), encoding="utf-8")
+(records.folder() / "R-0095.json").write_text(json.dumps({**odd, "id": "山田の記録", "answers": {"stuck": ["文でない"]}, "ideas": ["軸を太くしたい", 3], "fixes": [], "impression": ""}, ensure_ascii=False), encoding="utf-8")
+b2 = eb.build()
+text2 = json.dumps(b2, ensure_ascii=False)
+tora2 = {(g["template"], g["sheet_set"]): g for g in b2["groups"]}[("pivot_counterweight", "")]
+assert tora2["results"]["揺れた"] == tora["results"]["揺れた"] + 2 and tora2["reports"] == tora["reports"] + 2
+assert "R-0097" in tora2["record_ids"] and "山田の記録" not in text2 and "記録でない" not in text2
+assert not [t for g in b2["groups"] for t in g["texts"] if len(t["text"]) == 1], "1 字ずつの文が束に入った"
+for skipped in ("首の向きで止まった", "粘土を増やす", "軸を短くした", "楽しかった", "文でない"):
+    assert skipped not in text2, skipped
+assert ("idea", "軸を太くしたい") in {(t["kind"], t["text"]) for t in tora2["texts"]}  # 型の合う欄は、今までどおり読む
+r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--out", str(pathlib.Path(DATA) / "bundle2.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
+assert r.returncode == 0, r.stderr
+
+# 10. 刷り直しの前後（Issue 313）: 記録の紙の組は、記録の時刻までに刷った確定のうち、一番新しい物。後で刷り直しても、前の記録は前の組のまま。
+# 確定より前の記録と、時刻の読めない記録は、不明の群（今の組にも、後の組にも数えない）。確定の並びの順でなく、時刻で見る
+confirm = {"source_id": T, "hypothesis_id": "H-B", "version": 1, "confirmations": [
+    {"by": "画面の使い手", "sheet_set": "tora-v3", "at": "2026-11-05T12:00:00+09:00"},
+    {"by": "画面の使い手", "sheet_set": "tora-v2", "at": "2026-11-05T10:00:00+09:00"},
+    {"by": "画面の使い手", "sheet_set": "tora-v9", "at": "読めない時刻"}]}
+(loop.folder() / f"sheet-confirm-{T}-H-B-v1.json").write_text(json.dumps(confirm, ensure_ascii=False), encoding="utf-8")
+for rid, at in (("R-0094", "2026-11-05T11:00:00+09:00"), ("R-0093", "2026-11-05T13:00:00+09:00"), ("R-0092", "2026-11-05T09:00:00+09:00"),
+                ("R-0091", "読めない時刻"), ("R-0090", "2026-11-05T11:30+09:00")):
+    rec = {"source_id": T, "hypothesis_id": "H-B", "sheet_version": 1, "result": "揺れた", "fixes": [], "id": rid, "by": "human", "recorded_at": at}
+    (records.folder() / f"{rid}.json").write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
+where = {rid: g["sheet_set"] for g in eb.build()["groups"] for rid in g["record_ids"]}
+assert (where["R-0094"], where["R-0093"], where["R-0092"], where["R-0091"], where["R-0090"]) == ("tora-v2", "tora-v3", "", "", "tora-v2"), where
+
+# 11. 群 1 つの文の上限（エンジンの入口は 2000 件を超えると束ごと断る）。話した字は一番数が増えるので、束の側で持つ。
+# 上限を超えた時は、どの種類も残るように順に取る（並びのまま切ると、後ろの種類が丸ごと消える）。超えなければ何も変えない
+few = [{"kind": "stuck", "step": None, "text": f"文{i}", "count": 1} for i in range(3)]
+assert eb._cap_texts(few) == few and eb.MAX_TEXTS == 2000
+many = [{"kind": k, "step": None, "text": f"{k}{i}", "count": 1} for k in ("stuck", "craft") for i in range(1500)] + [{"kind": "keep", "step": None, "text": "1 件だけの種類", "count": 1}]
+capped = eb._cap_texts(many)
+assert len(capped) == eb.MAX_TEXTS and {t["kind"] for t in capped} == {"stuck", "craft", "keep"}
+assert [t for t in many if t in capped] == capped  # 並びは元のまま
 
 print("OK test_engine_bundle")
