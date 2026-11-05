@@ -44,6 +44,7 @@
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。皮はサイトごとに 1 つで、頁の中に切り替えは無い（docs/process/site-requirements.md の 15） |
 | `src/web/toy.py` | 玩具の頁。開いたらすぐ仮説の札（#242）→ 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る。たとえと関連する事柄の節（analogy_section、予想の後） |
 | `src/web/en.py` | 英語の頁（J-030 の段 1）。入口と玩具ごとの頁。文は data/en の下。紙は日本語のままで、刷る口は日本語の頁と同じ `print_latest`。聞く口と記録の口は置かない |
+| `src/web/otona.py` | 保護者の方へ、ファシリテーターの方への頁（/otona、本人の決定 11-06）。声や字の扱い・写真の載せ方・取り下げ・AI（Claude）の役目・場の進め方を 1 か所に。作る人の道の外に置き、序の頁と頁の足から来る |
 | `src/web/hokusai.py` | 北斎漫画の節（本人の決定 11-05）。絵の取り込みは `src/omochae/hokusai.py`、権利と切り出しの枠は動画と同じ `src/demo/figures.json`・`src/demo/scene4_sources.json`。玩具の頁と一覧には置かない |
 | `src/web/kaizen.py` | 改善の輪（J-026）。玩具の頁の節（どの報告がどの版を変えたか・次の版を待つ報告）と、サイト側の一覧 /loop。台帳は omochae.loop の版の記録をそのまま読む。玩具ごとの様子の頁 /loop/<印>（作る側の集計） |
 | `src/web/ayumi.py` | 型紙の版の歩み（/loop/ayumi）。前の履歴・良くした所・知見・共通の知見・どのループかを、今ある台帳から並べる。頁に出す答えは repo の中の data だけで決まる |

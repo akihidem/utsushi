@@ -64,7 +64,7 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 # label:not(.sr) と頭をそろえるのは、label:has(>textarea) だと詳細度で負けて効かないため。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
-.nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,.foot>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 label:not(.sr):has(>input[type=text]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 [hidden]{display:none!important}
@@ -205,7 +205,7 @@ def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_
     """頁の骨。皮の変数を :root に置き、頭の帯と足を付ける。中身（body）は皮を知らずに書けるようにする。"""
     s = SKINS.get(skin, SKINS[DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
-    foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
+    foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。<br><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p>'
     return (f'<!doctype html><html lang="{esc(lang)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(page_title(title))}</title><style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
             f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path, lang)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')

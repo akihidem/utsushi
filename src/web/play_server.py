@@ -291,6 +291,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
+        if path == "/otona":
+            from . import otona
+            return self._send(200, otona.page(look, path))
         # 作る側の頁は、合言葉なしで開いたデモには出さない: 聞いた言葉と感想の文がそのまま読める頁で、名前は機械では落とせないため（J-027・J-028）。
         if path.startswith("/loop") and getattr(self.server, "public_open", False):
             return self._send(404, "見つかりません")
