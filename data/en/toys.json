@@ -1,0 +1,337 @@
+{
+ "_note": "玩具の英語の名前と短い紹介の案。図の見立てから書いた物で、人の確認はまだ。本人の確認の前は draft の印を画面に出す（J-030）。",
+ "toys": {
+  "NDL-1187053-R0000004-L": {
+   "name": "Monkey on a bamboo tube",
+   "intro": "A gray, brown-faced monkey held to a slanted bamboo tube by a metal band, with a rod at its arm."
+  },
+  "NDL-1187053-R0000004-L-4": {
+   "name": "Striped oval object",
+   "intro": "A brown and orange striped oval resting on a blue-green stand, which may be a plate or a leaf."
+  },
+  "NDL-1187053-R0000004-L-5": {
+   "name": "White striped oval object",
+   "intro": "A whitish oval with orange vertical stripes, set down on its own with no stand."
+  },
+  "NDL-1187053-R0000005-L": {
+   "name": "Goraigo",
+   "intro": "A square tube topped with a large open fan and a small figure. The name refers to the welcoming descent of a Buddha."
+  },
+  "NDL-1187053-R0000005-L-3": {
+   "name": "White bird on a stick",
+   "intro": "A small white bird with a pointed beak and tail, at the tip of a long thin stick."
+  },
+  "NDL-1187053-R0000005-R": {
+   "name": "Two crossed swords",
+   "intro": "A long and a short sword stand crossed, with brown-and-white diamond handles, blue-green guards, and white-dotted black sheaths."
+  },
+  "NDL-1187053-R0000005-R-2": {
+   "name": "Thick six-sided disc",
+   "intro": "A thick six-sided disc with lines spreading across its top from a red dot at the center."
+  },
+  "NDL-1187053-R0000006-L": {
+   "name": "Doll with mortar and pestle",
+   "intro": "A round-headed doll on a board, bent over a mortar with a pestle standing in it, and a string hanging below."
+  },
+  "NDL-1187053-R0000006-R": {
+   "name": "Picture in a box frame",
+   "intro": "A box-shaped frame holds a picture of a young person, sleeve to mouth, with strings at top and bottom."
+  },
+  "NDL-1187053-R0000007-L": {
+   "name": "Doll on a tall pole",
+   "intro": "A small seated doll on a tall pole, under a white hat-and-robe shaped board, with round balls on two threads."
+  },
+  "NDL-1187053-R0000007-R": {
+   "name": "Drum on a long handle",
+   "intro": "A white drum with a flower crest on a long handle, with beaded strings hanging from its orange sides."
+  },
+  "NDL-1187053-R0000008-R": {
+   "name": "Face on a long stick",
+   "intro": "A big-eyed man's face in a hat, with his tongue sticking out, fixed to a long stick."
+  },
+  "NDL-1187053-R0000008-R-2": {
+   "name": "Small round fan",
+   "intro": "A small white round fan with visible ribs and a black handle."
+  },
+  "NDL-1187053-R0000008-R-3": {
+   "name": "Larger round fan",
+   "intro": "A white round fan with visible ribs and a thin handle."
+  },
+  "NDL-1187053-R0000009-L": {
+   "name": "Hammer with a round head",
+   "intro": "A white handle topped by a round tube-shaped head with a black band and a flower pattern on its face."
+  },
+  "NDL-1187053-R0000009-L-2": {
+   "name": "Stick with two white discs",
+   "intro": "A thin stick carrying two white discs, one overlapping the other, each with a dot at its center."
+  },
+  "NDL-1187053-R0000009-R": {
+   "name": "Small red shrine",
+   "intro": "A small red-painted shrine with a gray roof, a gate behind it, and stone steps in front."
+  },
+  "NDL-1187053-R0000010-L": {
+   "name": "Red-caped doll with a tool",
+   "intro": "A doll in a red straw cape and hat stands on a board, with a long-handled tool on its shoulder."
+  },
+  "NDL-1187053-R0000010-L-2": {
+   "name": "Red-caped doll with a pole",
+   "intro": "A bald doll in a red straw cape and green sash on a board, holding a black-tipped pole and a slanted stick."
+  },
+  "NDL-1187053-R0000010-R": {
+   "name": "Drum on a stand",
+   "intro": "A tube-shaped drum with a swirl crest sits on a stand, beside a small wheel, with a long handle below."
+  },
+  "NDL-1187053-R0000011-L": {
+   "name": "Doll in a black hood",
+   "intro": "A doll with a topknot, its face covered by a black hood, wearing a checked robe and standing on a board."
+  },
+  "NDL-1187053-R0000011-R": {
+   "name": "Oval box with leaf patterns",
+   "intro": "An oval box with orange and brown leaf patterns and green leaves painted on its lid and sides."
+  },
+  "NDL-1187053-R0000012-L": {
+   "name": "Long-haired paper doll",
+   "intro": "A slim standing paper doll with a long-haired woman's face and a flowered robe wrapped at a slant around it."
+  },
+  "NDL-1187053-R0000012-L-2": {
+   "name": "Tall-capped paper doll",
+   "intro": "A standing paper doll of a round-faced man in a tall cap, with peony robes and wide trousers spread out."
+  },
+  "NDL-1187053-R0000012-L-4": {
+   "name": "Bare child figure",
+   "intro": "A standing bare child figure with a shaved head."
+  },
+  "NDL-1187053-R0000013-L": {
+   "name": "Two birds on a stand",
+   "intro": "Two small birds that look like sparrows, wings spread, one above the other on a stand."
+  },
+  "NDL-1187053-R0000013-L-3": {
+   "name": "Small white rabbit",
+   "intro": "A long-eared white rabbit crouched in a small round shape."
+  },
+  "NDL-1187053-R0000013-L-4": {
+   "name": "Yellow fish",
+   "intro": "A yellow fish with small scales drawn all over its body."
+  },
+  "NDL-1187053-R0000013-L-5": {
+   "name": "Green turtle",
+   "intro": "A green turtle seen from above, showing the top of its shell."
+  },
+  "NDL-1187053-R0000013-L-6": {
+   "name": "Long-necked green turtle",
+   "intro": "A green turtle facing to the side, with its neck stretched out."
+  },
+  "NDL-1187053-R0000013-R": {
+   "name": "Man in a green coat",
+   "intro": "A small standing man with a shaved head and topknot, wearing a striped robe and a green coat."
+  },
+  "NDL-1187053-R0000014-L": {
+   "name": "Chicken on a drum",
+   "intro": "A chicken on a drum at the end of a long stick, with two small pinwheels on a crossbar below."
+  },
+  "NDL-1187053-R0000014-L-2": {
+   "name": "Square lantern on a pole",
+   "intro": "A square paper lantern with writing on its side, on a long stick, topped by a crescent moon and grass plumes."
+  },
+  "NDL-1187053-R0000014-R-2": {
+   "name": "White papier-mâché dog",
+   "intro": "A white papier-mâché dog with a red bib, a cord, and a curled tail."
+  },
+  "NDL-1187053-R0000014-R": {
+   "name": "Papier-mâché tiger",
+   "intro": "A striped papier-mâché tiger standing on four legs, with its head set a little apart from its body."
+  },
+  "NDL-1187053-R0000015-L": {
+   "name": "Narrow-necked clay bottle",
+   "intro": "A bottle with a thin neck that looks like bare clay."
+  },
+  "NDL-1187053-R0000015-L-2": {
+   "name": "Green cup on a stand",
+   "intro": "A shallow green cup set on top of a tall stand."
+  },
+  "NDL-1187053-R0000015-L-3": {
+   "name": "Clay pot with a spout",
+   "intro": "A clay pot with a spout and a loop handle over the top."
+  },
+  "NDL-1187053-R0000015-R": {
+   "name": "Bows and arrows",
+   "intro": "Two bows joined with a holder full of arrows."
+  },
+  "NDL-1187053-R0000016-L": {
+   "name": "Spotted papier-mâché dog",
+   "intro": "A white papier-mâché dog with spots, a flowered bib, and a red cord."
+  },
+  "NDL-1187053-R0000016-R": {
+   "name": "Chickens on a straw bundle",
+   "intro": "A rooster and a hen on a bundle of straw, with thread forming a triangle above them."
+  },
+  "NDL-1187053-R0000017-L": {
+   "name": "Red horse with a saddle",
+   "intro": "A red horse wearing a saddle and belly band, with a mane and tail of hair."
+  },
+  "NDL-1187053-R0000017-R": {
+   "name": "Green-hooded face on a stick",
+   "intro": "A face wearing a green hood, fixed to the end of a stick."
+  },
+  "NDL-1187053-R0000017-R-2": {
+   "name": "Black-capped face on a stick",
+   "intro": "A face wearing a tall black cap, fixed to the end of a long stick."
+  },
+  "NDL-1187053-R0000018-L": {
+   "name": "Two joined sumo figures",
+   "intro": "Two wrestlers in loincloths joined by a board, with one stick attached."
+  },
+  "NDL-1187053-R0000018-R": {
+   "name": "Long-tailed furry animal",
+   "intro": "A narrow mouse-like face, a body of long bristling fur, and a long tail that curls into a loop."
+  },
+  "NDL-1187053-R0000019-L": {
+   "name": "Figure on a white mouse",
+   "intro": "A hooded figure sits astride a white mouse on a flat board with four wheels."
+  },
+  "NDL-1187053-R0000020-L": {
+   "name": "Flat gourd-shaped object",
+   "intro": "A flat half-gourd shape on a stick, black with white flower crests above and a tiger-skin pattern below."
+  },
+  "NDL-1187053-R0000020-R": {
+   "name": "Pinwheel",
+   "intro": "Eight thin rods spread from a center, each tipped with a square of paper, on a bamboo stick."
+  },
+  "NDL-1187053-R0000020-R-2": {
+   "name": "Pink banner on a pole",
+   "intro": "A long pink streamer on a tall bamboo pole with a tassel at its tip."
+  },
+  "NDL-1187053-R0000020-R-3": {
+   "name": "Monkey on a slanted stick",
+   "intro": "A small monkey with brown fur gripping a slanted bamboo stick."
+  },
+  "NDL-1187053-R0000021-L": {
+   "name": "Shallow pan with a spout",
+   "intro": "A shallow round pan with a spout and a long handle marked with a flower crest."
+  },
+  "NDL-1187053-R0000021-L-2": {
+   "name": "Small brown top",
+   "intro": "A small brown top with a stem."
+  },
+  "NDL-1187053-R0000022-L": {
+   "name": "Doll standing on a jar",
+   "intro": "A doll with open arms holding a stick and ball stands on a glazed jar on a stand, beside two rods."
+  },
+  "NDL-1187053-R0000022-R": {
+   "name": "Small yellow gourd",
+   "intro": "A small yellow gourd tied with a cord."
+  },
+  "NDL-1187053-R0000022-R-2": {
+   "name": "Brown drawstring bag",
+   "intro": "A brown bag with its mouth gathered shut."
+  },
+  "NDL-1187053-R0000022-R-3": {
+   "name": "Ring of white beads",
+   "intro": "White beads strung together in a ring."
+  },
+  "NDL-1187053-R0000022-R-4": {
+   "name": "Small black box with cord",
+   "intro": "A small black box with a white diamond crest and a cord attached."
+  },
+  "NDL-1187053-R0000022-R-5": {
+   "name": "Small brown bale",
+   "intro": "A small brown bale marked with a pattern of rope lines."
+  },
+  "NDL-1187053-R0000023-L": {
+   "name": "Painted paddle",
+   "intro": "A paddle with a cloud-shaped border, painted with pine, bamboo leaves, and straw treasures."
+  },
+  "NDL-1187053-R0000024-L": {
+   "name": "Thunder god kite",
+   "intro": "A square kite showing a thunder god above clouds, with a ring of drums on his back and strings attached."
+  },
+  "NDL-1187053-R0000024-L-2": {
+   "name": "Sleeve-shaped kite",
+   "intro": "A kite with sleeve-like side parts in a saw-tooth pattern, a cross in a circle at its center, and strings attached."
+  },
+  "NDL-1187053-R0000024-L-3": {
+   "name": "Gray owl shape",
+   "intro": "A gray owl shape with open wings, partly hidden under the sleeve-shaped kite."
+  },
+  "NDL-1187053-R0000024-R": {
+   "name": "Black lion head with horns",
+   "intro": "A black lion head with gold horns, white fangs, two feather plumes, and a ring-shaped handle."
+  },
+  "NDL-1187053-R0000025-L": {
+   "name": "Small gold screen",
+   "intro": "A small gold screen of about four panels with square patterns, one panel having a round hole and a handle-like part."
+  },
+  "NDL-1187053-R0000025-L-2": {
+   "name": "Two discs on a cord",
+   "intro": "A spool shape of two discs joined at the center, with a long string that also reaches the screen's holed part."
+  },
+  "NDL-1187053-R0000026-L": {
+   "name": "Hooded doll with dots",
+   "intro": "A hooded doll shaped like a pointed oval, with black dots on its body."
+  },
+  "NDL-1187053-R0000026-L-2": {
+   "name": "Kneeling doll in orange",
+   "intro": "A black-haired doll in an orange robe, kneeling with its legs folded under it."
+  },
+  "NDL-1187053-R0000026-L-3": {
+   "name": "Flat disc top",
+   "intro": "A flat disc with a thin rod passing through its center."
+  },
+  "NDL-1187053-R0000026-R-2": {
+   "name": "Pale yellow narrow bottle",
+   "intro": "A pale yellow bottle with a long thin neck."
+  },
+  "NDL-1187053-R0000026-R-3": {
+   "name": "Small round jar",
+   "intro": "A round jar with a short mouth."
+  },
+  "NDL-1187053-R0000027-L": {
+   "name": "Yellow owl",
+   "intro": "A yellow owl with ear tufts, big eyes, and small feather spots on its chest."
+  },
+  "NDL-1187053-R0000027-R": {
+   "name": "Clay woman with a child",
+   "intro": "A clay doll of a woman in a hat and orange robe, with a small child doll beside her."
+  },
+  "NDL-1187053-R0000028-L-2": {
+   "name": "Small helmet shape",
+   "intro": "A small helmet-like shape with horn-like pieces on top and guards at the sides."
+  },
+  "NDL-1187053-R0000028-L-3": {
+   "name": "Yellow bird on a stick",
+   "intro": "A small yellow bird at the tip of a thin stick."
+  },
+  "NDL-1187053-R0000029-L": {
+   "name": "Drum with paper strips",
+   "intro": "A round drum with a bird painted on it, a long handle, and a bunch of paper strips at its side."
+  },
+  "NDL-1187053-R0000029-R-2": {
+   "name": "Large striped top",
+   "intro": "A fairly large top with a brown striped body and a rod through its middle."
+  },
+  "NDL-1187053-R0000030-L": {
+   "name": "Lion head on a stick",
+   "intro": "A lion head with a gold mane and open mouth on a stick, with a string reaching down below."
+  },
+  "NDL-1187053-R0000030-L-2": {
+   "name": "Monkey holding a yellow fruit",
+   "intro": "A reddish-brown monkey crouching with a yellow fruit in its arms."
+  },
+  "NDL-1187053-R0000030-R": {
+   "name": "Lidded pot on a stove",
+   "intro": "A lidded pot sitting on a round gray stove with cherry blossom patterns."
+  },
+  "NDL-1187053-R0000030-R-2": {
+   "name": "Small house with red posts",
+   "intro": "A small roofed building with red posts, a base like stone steps, and a ladder."
+  },
+  "NDL-1187053-R0000031-R": {
+   "name": "Horse head on a pole",
+   "intro": "A spotted horse head with reins and cloth on a long bamboo pole that ends in a ring."
+  },
+  "NDL-1187053-R0000031-R-2": {
+   "name": "Yellow box with a carp",
+   "intro": "A long thin yellow box shape with a picture of a carp and a crest-like pattern above it."
+  }
+ }
+}
