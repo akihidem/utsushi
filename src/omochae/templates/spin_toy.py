@@ -507,29 +507,32 @@ def bom(p):
     paper = f"紙（厚さ 0.2mm 前後・{p['paper_gsm']}g/m² の見込み）"
     why = "家庭のプリンタで刷って作るため"
     shape = p["shape"]
-    rows = []
+
+    def guess(key):
+        """刷る部品の元の素材の見立て。部品の種類ごとに同じ。"""
+        if shape == "pinwheel":
+            return "細い竹の棒の先に紙を貼った物（図の見た目による）" if key.startswith("wheel") else "不明"
+        return "木（図の木目と色による）" if shape in ("disc", "cone") else "木（図の見た目による）"
+
+    # 刷る部品は 1 つずつ行にする（F2.bom が番号と key で照らす）。部品の数は形と寸法で動くので、刷らない物の番号はその後ろに続ける。
+    printed = parts(p)
+    rows = [{"number": q.number, "key": q.key, "name": q.name, "qty": 1, "material": paper, "substituted": True, "original_guess": guess(q.key), "reason": why} for q in printed]
+    others = []
     if shape == "pinwheel":
-        rows.append({"number": 1, "key": "wheel", "name": "羽の車", "qty": int(p["wheels"]), "material": paper, "substituted": True,
-                     "original_guess": "細い竹の棒の先に紙を貼った物（図の見た目による）", "reason": why})
-        rows.append({"number": 7, "key": "axle", "name": "車の芯", "qty": 1, "material": "つまようじか竹ひご（短く切る）", "substituted": True, "original_guess": "不明", "reason": "家にあり、穴に通しやすいため"})
-        rows.append({"number": 8, "key": "stick", "name": "柄", "qty": 1, "material": "竹ひごか割り箸（長さ 25cm 前後）", "substituted": True, "original_guess": "竹の棒（図の見た目による）", "reason": "家にあるため"})
-        rows.append({"number": 9, "key": "bead", "name": "車の間に挟む玉", "qty": 2, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "車が柄にこすれて止まらないため"})
-        if p["look"] == "kanko":
-            rows.append({"number": 2, "key": "drum", "name": "太鼓と鶏", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why})
+        others.append({"key": "axle", "name": "車の芯", "qty": 1, "material": "つまようじか竹ひご（短く切る）", "substituted": True, "original_guess": "不明", "reason": "家にあり、穴に通しやすいため"})
+        others.append({"key": "stick", "name": "柄", "qty": 1, "material": "竹ひごか割り箸（長さ 25cm 前後）", "substituted": True, "original_guess": "竹の棒（図の見た目による）", "reason": "家にあるため"})
+        others.append({"key": "bead", "name": "車の間に挟む玉", "qty": 2, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "車が柄にこすれて止まらないため"})
     elif shape in ("disc", "cone"):
-        rows.append({"number": 1, "key": "body", "name": "円盤" if shape == "disc" else "ふたと胴", "qty": 1, "material": paper, "substituted": True,
-                     "original_guess": "木（図の木目と色による）", "reason": why})
-        rows.append({"number": 7, "key": "axis", "name": "芯", "qty": 1, "material": f"{'つまようじ' if p['axis_len'] <= 65 else '竹ひご'}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
-                     "original_guess": "木か竹の心棒（図の見た目による）", "reason": "家にあるため"})
+        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"{'つまようじ' if p['axis_len'] <= 65 else '竹ひご'}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
+                       "original_guess": "木か竹の心棒（図の見た目による）", "reason": "家にあるため"})
     else:
-        rows.append({"number": 1, "key": "disc", "name": "円盤と芯の帯", "qty": 1, "material": paper, "substituted": True, "original_guess": "木（図の見た目による）", "reason": why})
-        rows.append({"number": 7, "key": "axis", "name": "芯", "qty": 1, "material": f"つまようじ（長さ約 {p['axis_len']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあるため"})
+        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"つまようじ（長さ約 {p['axis_len']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあるため"})
         if p["drive"] == "handle":
-            rows.append({"number": 9, "key": "bead", "name": "芯の止めの玉", "qty": 1, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "芯が柄から抜けないため"})
+            others.append({"key": "bead", "name": "芯の止めの玉", "qty": 1, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "芯が柄から抜けないため"})
     if p["drive"] in ("string", "yoyo", "handle"):
         length = p["string_len"] if shape == "yoyo" else round(p["string_turns"] * math.pi * AXIS_D + 250)
-        rows.append({"number": 10, "key": "string", "name": "紐", "qty": 1, "material": f"糸（長さ約 {length / 10:.0f}cm）", "substituted": True, "original_guess": "紐（図の見た目による）", "reason": "家にあるため"})
-    return rows
+        others.append({"key": "string", "name": "紐", "qty": 1, "material": f"糸（長さ約 {length / 10:.0f}cm）", "substituted": True, "original_guess": "紐（図の見た目による）", "reason": "家にあるため"})
+    return rows + [{"number": len(printed) + 1 + i, **r} for i, r in enumerate(others)]
 
 
 def materials(p):
