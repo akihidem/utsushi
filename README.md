@@ -97,7 +97,6 @@ PREV_DIR=$(ls -d "$OUT_DIR"/*/ | tail -1)              # 一番新しい書き�
 
 ```
 export PYTHONPATH=src
-.venv/bin/python -m omochae.hypotheses predict "筒を押すと上の飾りが開く。動力は手"
 .venv/bin/python -m omochae.hypotheses list
 .venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf と手順の紙 H-A_v1_tejun.pdf
 .venv/bin/python -m omochae.records add --hypothesis H-A --result わからない --opened-deg 90 --opener 紙の力
@@ -127,7 +126,7 @@ export PYTHONPATH=src
 .venv/bin/python -m omochae.hypotheses list
 ```
 
-`--params` が無い仮説や今の雛形に乗らない仮説は、記録として残り、型紙にはならない。虎は `--source NDL-1187053-R0000014-R` を付ける（`python -m omochae.hypotheses --source NDL-1187053-R0000014-R predict "…"`）。100% で刷り、紙の物差しが 10cm か確かめる。寸法を直接試す時は `python -m omochae --params 寸法.json`（`push_part` が必須）。
+`--params` が無い仮説や今の雛形に乗らない仮説は、記録として残り、型紙にはならない。虎は `--source NDL-1187053-R0000014-R` を付ける（`python -m omochae.hypotheses --source NDL-1187053-R0000014-R list`）。100% で刷り、紙の物差しが 10cm か確かめる。寸法を直接試す時は `python -m omochae --params 寸法.json`（`push_part` が必須）。
 
 型紙の生成に API の鍵は要らない。
 
