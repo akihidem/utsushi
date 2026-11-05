@@ -13,10 +13,13 @@
 """
 import json
 
+from shapely.geometry import LineString, box
+
 from omochae import instructions, marks
-from omochae.compose import TEMPLATES, compose
+from omochae.compose import LABEL_SIZE, LINE, TEMPLATES, compose
 from omochae.hypotheses import ROOT
 from omochae.instructions import compose_after, compose_sheet, compose_teacher
+from omochae.textfit import text_width
 
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 FAN, TIGER = TEMPLATES["slider_fan"], TEMPLATES["pivot_counterweight"]
@@ -163,6 +166,21 @@ for mount in ("neck", "hang"):
     p = {**TIGER.DEFAULTS, "mount": mount}
     assert ("カッター" in TIGER.materials(p)[1]) == any(q.cuts for q in TIGER.parts(p)), mount
 
+# 虎の胴の札の字に縞がかからない（首の形と吊る形。字は変えず、札の位置を動かす）。前の組は紙を変えないので、かかったまま
+def label_hits_stripe(tpl, p):
+    body = part(tpl, p, "body")
+    x, y = body.label_xy
+    label = box(x, y, x + text_width(body.label, LABEL_SIZE), y + LABEL_SIZE * LINE)
+    return any(a["kind"] == "line" and LineString(a["pts"]).buffer(a.get("sw", 0) / 2).intersects(label) for a in body.art)
+
+
+for mount in ("neck", "hang"):
+    p = {**TIGER.DEFAULTS, "mount": mount}
+    assert not label_hits_stripe(TIGER, p), (mount, "札の字に縞がかかる")
+    with old_set(TIGER):
+        assert label_hits_stripe(TIGER, p), (mount, "前の組の札の位置が変わった（または当たりの見方が空振り）")
+    assert part(TIGER, p, "body").label == "1 胴", mount
+
 # 7. 紙の差は見込んだ所だけ（たたき台の型紙と手順の紙）。位置・線・絵は前の組と同じ。御来迎の手順の紙は手順が 1 つ増えるので、下の物は 1 行分ずれる
 for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_NEW, PICTURE_OLD, PICTURE_NEW}), (TORA, TIGER, {BODY_OLD, BODY_NEW})):
     data, source = load(sid)
@@ -174,7 +192,7 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
         """組の札・印の文・見出し・見込んだ文を除いた、字の箱の全部。"""
         out = []
         for t in layout["texts"]:
-            if not t.text or t.text.startswith(("刷った組", "仮説", "作る前に", "思った事", "・のり")):
+            if not t.text or t.text.startswith(("刷った組", "仮説", "作る前に", "思った事", "・のり", "1 胴")):
                 continue
             out.append((round(t.x, 3), round(t.y, 3), t.text if not any(c in t.text for c in changed) else "(見込んだ文)"))
         return out

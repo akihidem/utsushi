@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_next_sheets.py
+# commit: 80770117（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_next_sheets.py", line 179, in <module>
+    assert not label_hits_stripe(TIGER, p), (mount, "札の字に縞がかかる")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('neck', '札の字に縞がかかる')
+rc=1

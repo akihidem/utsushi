@@ -206,7 +206,8 @@ def parts(p):
     if hang:
         pts += [(H, top1 + eh), (H - e, top1 + eh), (H - e, top1), (H, top1)]
     pts += [(H, g)]
-    body = Part(1, "body", "胴", pts, label_xy=(H + 2, top0 + 2), label="1 胴")
+    # 札の字は、上の面の左下に置く。左上だと 1 本目の縞が字にかかる（読めるが、次の組で直す）。前の組は紙を変えないので左上のまま。
+    body = Part(1, "body", "胴", pts, label_xy=(H + 2, top0 + 2) if frozen() else (H + 2, top1 - 5.5), label="1 胴")
     body.valley = [((H, top0), (H + L, top0)), ((H, top1), (H + L, top1)), ((H, b0), (H + L, b0)), ((H, b1), (H + L, b1)), ((H, b0), (H, b1)), ((H + L, b0), (H + L, b1)),
                    ((0, b0), (H, b0)), ((0, b1), (H, b1)), ((H + L, b0), (H + L + H, b0)), ((H + L, b1), (H + L + H, b1))]
     if not frozen():
