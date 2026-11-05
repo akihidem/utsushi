@@ -1,0 +1,1 @@
+rc 0 （直した木で tests/test_store.py の 14 件が全部通る）

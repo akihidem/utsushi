@@ -15,6 +15,7 @@
 | `src/omochae/instructions.py` | 学ぶ人の紙（手順・試した後・見比べる・型紙なし）と先生の見る紙。測る欄は持たず、問いは本人の 4 つの着目に合わせる（U-25） |
 | `src/api/words.py` | 言葉の仮説を雛形の寸法に写す口 |
 | `src/omochae/records.py` | 試した記録の入口と集計。記録は `data/records/` |
+| `src/omochae/store.py` | 記録・輪・予想の置き場の読み書き。一時ファイル → 置き換え、読めない 1 件を飛ばす読み、プロセスをまたぐ排他（置き場の `.lock`） |
 | `src/omochae/__main__.py` | 型紙を 1 枚作る共通の流れと、開発用の入口 |
 | `src/omochae/compose.py` | 配置と描く前の検査。描画はしない |
 | `src/omochae/floors.py` | 雛形によらない検査 |
@@ -30,6 +31,7 @@
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮はサーバごとに 1 つ（--look。皮ごとに 1 サイト）、刷った紙の口（PDF・PNG・SVG、インライン。試した後の紙は記録の後だけ）、合言葉の門 |
+| `src/web/demo_check.py` | デモのリンクの先が開くかを見る（`run-demo.sh` から呼ぶ。合言葉付きのリンク → Cookie で頁まで。合言葉なしの形は入口が開くか）。port が空いているかも見る |
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。皮はサイトごとに 1 つで、頁の中に切り替えは無い（docs/process/site-requirements.md の 15） |
 | `src/web/toy.py` | 玩具の頁。記録を読む → 予想 → 仮説の札 → 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る。たとえと関連する事柄の節（analogy_section、予想の後） |
 | `src/web/kaizen.py` | 改善の輪（J-026）。玩具の頁の節（どの報告がどの版を変えたか・次の版を待つ報告）と、サイト側の一覧 /loop。台帳は omochae.loop の版の記録をそのまま読む。玩具ごとの様子の頁 /loop/<印>（作る側の集計） |
@@ -44,7 +46,7 @@
 | `src/web/techo_site.py` | 手帖の頁（聞く・上げる・フィードバック）と、上げた物と職人の言葉の頁 |
 | `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・新しい仮説。順位は持たない（J-025） |
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
-| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定 |
+| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定と、画面から呼ぶ役の時間切れ |
 | `src/api/generate.py` | 裏の制作の 1 段。図・歌・記録から仮説と寸法の案を作る |
 | `src/api/budget.py` | API の消費の見積もりと上限（日割りは、表に無い日は既定の額で続く。累計の停止線はどの日にも効く） |
 | `src/api/mcp_server.py`・`.mcp.json` | 工房の道具を Claude Code から呼ぶ MCP サーバ（API の輪と同じ道具） |
@@ -57,7 +59,7 @@
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |
 | `src/omochae/ledger.py` | 台帳の検査と、地図と主張の表の描画 |
-| `src/demo/` | デモ動画の 7 場面をコードだけで描いて録る。`build.py` が本番の入口（試験を数える → 7 場面を書き出す → つなぐ → build.json に commit と長さを残す）。場面は `flip.py`（1 北斎漫画の槍の型、書き出しと色・字の共有もここ）・`scene2.py`（江都二色）・`scene3.py`（予想が先 → 仮説、使い手の画面を手元で動かして撮る）・`scene4.py`（江戸の仕組みの絵から型紙へ）・`scene5.py`（11-04 の試行。写真は U-24 の表で許された物だけ）・`scene6.py`（所見 → T-0001 → 版の差 → 工作の手帖）・`scene7.py`（締めとクレジット）。`assemble.py` がつなぎ 3 分の床を見る。画像と動画は repo に入れない |
+| `src/demo/` | デモ動画の 7 場面をコードだけで描いて録る。`prepare.py` が前の日の下ごしらえ（道具を名前で確かめる・江戸の絵を取り寄せて控えを残す・網を切る）。`build.py` が本番の入口（道具を確かめる → 試験を数える → 7 場面を書き出す（`--offline` で網を切る・`--run --only` で場面ごとに作り直す）→ つなぐ → build.json に commit と長さを残す）。場面は `flip.py`（1 北斎漫画の槍の型、書き出しと色・字の共有もここ）・`scene2.py`（江都二色）・`scene3.py`（予想が先 → 仮説、使い手の画面を手元で動かして撮る）・`scene4.py`（江戸の仕組みの絵から型紙へ）・`scene5.py`（11-04 の試行。写真は U-24 の表で許された物だけ）・`scene6.py`（所見 → T-0001 → 版の差 → 工作の手帖）・`scene7.py`（締めとクレジット）。`assemble.py` がつなぎ 3 分の床を見る。画像と動画は repo に入れない |
 
 ## 雛形を足す時
 

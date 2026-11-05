@@ -1,0 +1,14 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_demo_prepare.py
+ok
+rc=0
+$ PYTHONPATH=src .venv/bin/python tests/test_demo_build.py
+FAIL D.tests 試験が通らない（rc 3、(10, 9)）。書き出さない
+検査できない: 試験を回せない・数が読めない（rc 4）
+検査できない: 場面 scene2 が途中で止まった（RuntimeError: chrome が止まった）
+検査できない: 場面 scene3 が無い
+注意: --music（クレジット）が有るのに --audio（曲のファイル）が無い。音の無い動画になる
+注意: --music（クレジット）が有るのに --audio（曲のファイル）が無い。音の無い動画になる
+ok
+ok main
+ok demo day
+rc=0

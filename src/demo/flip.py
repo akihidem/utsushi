@@ -33,7 +33,10 @@ def _font(pattern):
     """字の場所は機械ごとに違うので、fc-match で引く（パスを書き込まない）。明朝は江戸の版本の字に近い。
     fc-match は字が無くても別の字（DejaVu など）を黙って返し、日本語が豆腐の字のまま書き出せてしまう。
     家族の名が Noto Serif CJK でない時は空にし、render が 4 で止める。"""
-    out = subprocess.run(["fc-match", "-f", "%{family}|%{file}", pattern], capture_output=True, text=True).stdout
+    try:
+        out = subprocess.run(["fc-match", "-f", "%{family}|%{file}", pattern], capture_output=True, text=True).stdout
+    except OSError:
+        return ""  # fc-match 自体が無い。読み込みで落とさず、demo.build の道具の確かめが名前で 4 を返す
     family, _, path = out.partition("|")
     return path.strip() if "Noto Serif CJK" in family else ""
 

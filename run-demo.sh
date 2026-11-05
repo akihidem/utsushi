@@ -8,51 +8,95 @@
 # なぜ置き場が 1 つか: 本人の決定（11-05 朝、カード 083822 の判断 1）「記録は共有。片方で書いた記録がもう片方でも読める形」。まだデモなので仮の形で、
 #   2 つのサーバが同じ out/demo-data を読み書きする（記録の印 R-番号は exclusive create で付け直すのでぶつからない）。
 # なぜ data/ と別か: デモで上げた物と予想を、本物の記録（data/）と混ぜないため。置き場は out/demo-data（git の外）。
-# 使い方: ./run-demo.sh            前回の置き場を続けて使う（合言葉付きのリンク）
-#         ./run-demo.sh --fresh    置き場を空にして始める
+# なぜ開くかを見てから案内するか: サーバやトンネルが立っていないのにリンクを渡すと、撮影の最中や渡した先で初めて気づく（#159）。
+#   手元の口と、トンネルの名前越しの両方を、サイトごとに開いて確かめ、開かなければ案内せずにログの末尾を出して 4 で止める。
+# 使い方: ./run-demo.sh            前回の置き場と合言葉を続けて使う（合言葉付きのリンク）
+#         ./run-demo.sh --fresh    置き場を空にし、合言葉も作り直して始める（前のデモで渡したリンクでは入れない）
 #         ./run-demo.sh --open     合言葉なしで、他の人も見られる形に開く（本人の許可 11-05「デモサイト 2 つを他の人でも見れるように公開していいよ」）。
 #                                  置き場は別（out/demo-data-open）: 合言葉付きの時に書かれた記録と写真を、開いた場に出さないため。
 #                                  開いた場では写真と動画を受けない（誰でも上げられる所に、確かめていない写真を載せない）。
-# 止める: Ctrl+C（サーバとトンネルを全部止める）。リンクは止めるたびに変わる。
+# 止める: Ctrl+C（サーバとトンネルを全部止める）。リンクは止めるたびに変わるので、out/demo-url* も消す。
+# 途中でサーバかトンネルが止まった時は、理由を出して 4 で終わる（片方だけ残して黙らない）。
 set -u
 cd "$(dirname "$0")" || exit 4
 PORT=${DEMO_PORT:-8767}          # 白の展示。黒のジンは次の番号
 [ -x .venv/bin/python ] || ./init.sh >/dev/null || exit 4
 command -v cloudflared >/dev/null || { echo "cloudflared が無いので外の機器からは開けません" >&2; exit 4; }
-# 原図の写し（切り出し）は git の外なので、足りない分を起動のたびに取る（出典の記録の URL から。網が無ければ字だけで動く）。
-# なぜ毎回か: 前は最初の 1 枚が在ると残りを取らず、38 種が字だけで出ていた（本人「図がないおもちゃは図を入れて」、11-05）。
-PYTHONPATH=src .venv/bin/python -m omochae.ingest images || echo "写しの一部を取り込めませんでした。その玩具は字だけで動きます"
+check() { PYTHONPATH=src .venv/bin/python -m web.demo_check "$@"; }
+LOOKS="tenji zine"
+port_of() { if [ "$1" = zine ]; then echo $((PORT + 1)); else echo "$PORT"; fi; }
+# 何より先に、2 つの port を見る。塞いでいるのが動いているデモなら、そのリンク・合言葉・置き場に触らずに止めるため。
+for look in $LOOKS; do check --port-free "$(port_of "$look")" || exit 4; done
 OPEN=""; DATA=out/demo-data
 for a in "$@"; do [ "$a" = "--open" ] && { OPEN=1; DATA=out/demo-data-open; }; done
-for a in "$@"; do [ "$a" = "--fresh" ] && rm -rf "$DATA"; done
+mkdir -p out
+rm -f out/demo-url out/demo-url-tenji out/demo-url-zine  # 前回が止まり切らずに残したリンクを、今回の物と取り違えない
+# 原図の写し（切り出し）は git の外なので、足りない分を起動のたびに取る（出典の記録の URL から。網が無ければ字だけで動く）。
+# なぜ毎回か: 前は最初の 1 枚が在ると残りを取らず、38 種が字だけで出ていた（本人「図がないおもちゃは図を入れて」、11-05）。DEMO_NO_IMAGES は試験の口（網に出ない）。
+[ -n "${DEMO_NO_IMAGES:-}" ] || PYTHONPATH=src .venv/bin/python -m omochae.ingest images || echo "写しの一部を取り込めませんでした。その玩具は字だけで動きます"
+for a in "$@"; do [ "$a" = "--fresh" ] && rm -rf "$DATA" out/demo-key; done
 mkdir -p "$DATA"
 umask 077
 # 合言葉は手元のファイルにだけ置く（引数・環境変数に出さない）。
-[ -s out/demo-key ] || .venv/bin/python -c "import secrets;print(secrets.token_urlsafe(18))" > out/demo-key
-PIDS=""
-trap 'kill $PIDS 2>/dev/null' EXIT INT TERM
-for look in tenji zine; do
-  port=$PORT; [ "$look" = zine ] && port=$((PORT + 1))
+[ -n "$OPEN" ] || [ -s out/demo-key ] || .venv/bin/python -c "import secrets;print(secrets.token_urlsafe(18))" > out/demo-key
+SRV=""; TUN=""
+# サーバの終わりまで待つ。すぐ立て直した時に、自分の前の回を「使用中」と読まないため。
+trap 'kill $SRV $TUN 2>/dev/null; wait $SRV 2>/dev/null; rm -f out/demo-url out/demo-url-tenji out/demo-url-zine' EXIT
+trap 'exit 0' INT TERM  # 人が止めた時。片づけは EXIT の方でする
+alive() { kill -0 "$1" 2>/dev/null; }
+give_up() { echo "$1（$2 の末尾）:" >&2; tail -n 20 "$2" >&2; exit 4; }
+# 開くまで待つ。つなぐ相手（$4）が止まったら待たない。合言葉はファイルで渡し、画面に出さない。
+wait_open() {  # wait_open <URL の頭> <回数> <ログ> <pid> [demo_check の引数]
+  local base=$1 tries=$2 log=$3 pid=$4 why="" how="--key-file out/demo-key"
+  shift 4
+  [ -z "$OPEN" ] || how="--no-key"
+  for _ in $(seq "$tries"); do
+    alive "$pid" || give_up "止まりました" "$log"
+    # shellcheck disable=SC2086
+    why=$(check "$base" $how "$@" 2>&1) && return 0
+    sleep 1
+  done
+  give_up "$base が開けません: $why" "$log"
+}
+for look in $LOOKS; do
+  port=$(port_of "$look")
   if [ -n "$OPEN" ]; then
     OMOCHAE_DATA="$PWD/$DATA" PYTHONPATH=src .venv/bin/python -m web.play_server "$port" --look "$look" --public > "out/demo-server-$look.log" 2>&1 &
   else
     OMOCHAE_DATA="$PWD/$DATA" PYTHONPATH=src .venv/bin/python -m web.play_server "$port" --look "$look" --public-key-file out/demo-key > "out/demo-server-$look.log" 2>&1 &
   fi
-  PIDS="$PIDS $!"
-  cloudflared tunnel --no-autoupdate --protocol http2 --url "http://127.0.0.1:$port" > "out/demo-tunnel-$look.log" 2>&1 &
-  PIDS="$PIDS $!"
+  pid=$!
+  SRV="$SRV $pid"
+  wait_open "http://127.0.0.1:$port" 30 "out/demo-server-$look.log" "$pid"
 done
-for look in tenji zine; do
+LINKS=""
+for look in $LOOKS; do
+  port=$(port_of "$look")
+  cloudflared tunnel --no-autoupdate --protocol http2 --url "http://127.0.0.1:$port" > "out/demo-tunnel-$look.log" 2>&1 &
+  pid=$!
+  TUN="$TUN $pid"
   URL=""
   for _ in $(seq 60); do
+    alive "$pid" || give_up "トンネルが止まりました" "out/demo-tunnel-$look.log"
     URL=$(grep -oE "https://[a-z0-9-]+\.trycloudflare\.com" "out/demo-tunnel-$look.log" | head -1)
     [ -n "$URL" ] && break
     sleep 1
   done
-  [ -n "$URL" ] || { echo "トンネルの名前が出ませんでした（out/demo-tunnel-$look.log）" >&2; exit 4; }
+  [ -n "$URL" ] || give_up "トンネルの名前が出ませんでした" "out/demo-tunnel-$look.log"
+  # 名前が出てから世の中に届くまで少しかかるので、回数を多めに取る。DEMO_TUNNEL_VIA は試験の口（網を使わずに手元へ向ける）。
+  wait_open "$URL" "${DEMO_TUNNEL_TRIES:-60}" "out/demo-tunnel-$look.log" "$pid" ${DEMO_TUNNEL_VIA:+--via "$DEMO_TUNNEL_VIA"}
+  LINKS="$LINKS $look=$URL"
+done
+# 2 つとも開くと確かめてから、リンクを置く（片方だけ開く状態で案内しない）。
+for pair in $LINKS; do
+  look=${pair%%=*}; URL=${pair#*=}
   if [ -n "$OPEN" ]; then echo "$URL/" > "out/demo-url-$look"; else echo "$URL/?k=$(cat out/demo-key)" > "out/demo-url-$look"; fi
 done
 # 前からの置き場（out/demo-url）は白の展示のリンクを指す。
 cp out/demo-url-tenji out/demo-url
 echo "外の機器から開くリンクは out/demo-url-tenji（白の展示）と out/demo-url-zine（黒のジン）にあります（--open の時は合言葉なし）。渡す時はこのリンクだけを渡す"
-wait
+while :; do
+  for pid in $SRV; do alive "$pid" || give_up "サーバが止まりました。リンクはもう開きません" out/demo-server-tenji.log; done
+  for pid in $TUN; do alive "$pid" || give_up "トンネルが止まりました。リンクはもう開きません" out/demo-tunnel-tenji.log; done
+  sleep 1
+done
