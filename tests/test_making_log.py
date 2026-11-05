@@ -23,6 +23,7 @@ os.environ["OMOCHAE_DATA"] = DATA
 
 from omochae.marks import without_premise  # noqa: E402
 from omochae import hypotheses, loop, making_log, records  # noqa: E402
+from web import tsukuru  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -71,8 +72,8 @@ code, body = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷�
 assert code == 200 and json.loads(body)["from"] == "glossary", body
 # 仕組みを聞く質問は断るが、何を聞かれたかは残す（案内を直す材料）
 assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？"})[0] == 200
-# 連絡先の形がある質問は、文を残さない（言葉の表で答えられる質問にして、鍵のある機械でも本物の API を呼ばないようにする）
-assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "谷折りって何？ 電話は 090-1234-5678 です"})[0] == 200
+# 連絡先の形がある質問は、文を残さない（仕組みの質問にして、鍵のある機械でも本物の API を呼ばないようにする）
+assert post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？ 電話は 090-1234-5678 です"})[0] == 200
 files = sorted(making.glob("ask-*.json"))
 assert len(files) == 4, [f.name for f in files]
 assert all(re.fullmatch(r"ask-\d{8}-\d{4}-[0-9a-f]{8}\.json", f.name) for f in files), [f.name for f in files]  # 名前の時刻も分まで
@@ -87,7 +88,7 @@ for r in recs:
     raw = json.dumps(r, ensure_ascii=False)
     for leak in ("TestBrowser", "someone", "127.0.0.1", "手前にへこむ", "090"):
         assert leak not in raw, (leak, r)
-assert sorted(r["answered_from"] for r in recs) == ["glossary", "glossary", "glossary", "refuse"], [r["answered_from"] for r in recs]
+assert sorted(r["answered_from"] for r in recs) == ["glossary", "glossary", "refuse", "refuse"], [r["answered_from"] for r in recs]
 dropped = [r for r in recs if r.get("dropped")]
 assert len(dropped) == 1 and dropped[0]["question"] == "" and dropped[0]["dropped"] == "pii"
 assert all(len(r["question"]) <= making_log.MAX_QUESTION for r in recs)
@@ -152,8 +153,9 @@ def step(n, event, who=""):
     return post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": str(n), "event": event, "json": "1", **({"who": who} if who else {})})
 
 
-# A: 開いて、2 へ進み、2 で止まって、そのままやめた。B: 開いて、2 で止まり、3 へ進んで、できた。印の無い人も 2 で止まった
-for n, ev, w in ((1, "start", A), (1, "next", A), (2, "stuck", A), (1, "start", B), (1, "next", B), (2, "stuck", B), (2, "next", B), (3, "done", B),
+# A: 開いて、2 へ進み、2 で止まって、そのままやめた。B: 開いて、2 で止まり、3 へ進んで、最後の手順でできた（組み上がりは最後の手順だけで受ける。#321）。印の無い人も 2 で止まった
+last = tsukuru.count(G, "H-A")
+for n, ev, w in ((1, "start", A), (1, "next", A), (2, "stuck", A), (1, "start", B), (1, "next", B), (2, "stuck", B), (2, "next", B), (last, "done", B),
                  (2, "stuck", "")):
     assert step(n, ev, w)[0] == 200, (n, ev, w)
 for f in making.glob("step-*.json"):

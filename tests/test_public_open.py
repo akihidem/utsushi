@@ -53,6 +53,7 @@ def up(**kw):
         c.request(method, path, body=body, headers={"Host": HOST, **(headers or {})})
         r = c.getresponse()
         return r.status, r.read().decode("utf-8", "replace")
+    call.local = f"127.0.0.1:{port}"
     return call
 
 
@@ -80,6 +81,26 @@ assert f"/record/{rid}/media/" not in opened("GET", f"/toy/{G}/techo")[1], "手�
 # 人の書いた文は別の人に見せない（文の中の名前は機械で落とせない。J-028）
 assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=SECRETWORDS", form)[0] == 303
 assert "SECRETWORDS" not in opened("GET", f"/toy/{G}")[1] and "SECRETWORDS" not in opened("GET", "/gallery")[1]
+# 説明と次の思いつきと書いた人も同じ線（#336）。送っても断られる次の版の欄ごと出さず、札は「説明を残しました。」だけにする
+said = "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F"
+assert opened("POST", f"/toy/{G}/record", said, form)[0] == 303
+told_id = records.all_records(G)[-1]["id"]
+assert opened("POST", f"/record/{told_id}/explain", "text=TOLDWORDS&next_idea=NEXTWORDS&by=BYWORDS", form)[0] == 303
+for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A&v=1", f"/toy/{G}/techo"):
+    code, page = opened("GET", path)
+    assert code == 200, (path, code)
+    for word in ("TOLDWORDS", "NEXTWORDS", "BYWORDS"):
+        assert word not in page, (path, word)
+for path in (f"/toy/{G}", f"/toy/{G}/techo"):
+    page = opened("GET", path)[1]
+    assert "説明を残しました。" in page and f"/record/{told_id}/next" not in page and 'name="interpretation"' not in page, path
+# 合言葉付きの場（ここでは手元の名前で開く）では、同じ記録の説明が今までどおり読めて、次の版を作れる
+local = {"Host": closed.local}
+for path in (f"/toy/{G}", f"/toy/{G}/techo"):
+    page = closed("GET", path, None, local)[1]
+    assert "TOLDWORDS" in page and "NEXTWORDS" in page and f"/record/{told_id}/next" in page and 'name="interpretation"' in page, path
+made = closed("POST", f"/record/{told_id}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"})
+assert made[0] == 303, made
 # 別の出所からは書けない（開いていても）
 assert opened("POST", f"/toy/{G}/own", "name=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
 # 作る側の頁は出さない（聞いた言葉と感想の文が読める頁で、名前は機械では落とせない）。開いていない時は出る

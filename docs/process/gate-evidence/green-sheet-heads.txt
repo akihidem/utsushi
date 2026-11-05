@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_sheet_heads.py
+# commit: f40c598（回した時の HEAD）
+ok: 紙の見出し
+rc=0

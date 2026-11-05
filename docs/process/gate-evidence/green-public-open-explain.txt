@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: e4e1153（回した時の HEAD）
+/tmp/tmpo58_xdyb/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpo58_xdyb/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpo58_xdyb/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpo58_xdyb/play/NDL-1187053-R0000005-L/.tmp-fahxwak6/H-A_v2.pdf
+/tmp/tmpo58_xdyb/play/NDL-1187053-R0000005-L/.tmp-fahxwak6/H-A_v2_tejun.pdf
+/tmp/tmpo58_xdyb/play/NDL-1187053-R0000005-L/.tmp-fahxwak6/H-A_v2_after.pdf
+ok: 合言葉なしで開くデモ
+rc=0
