@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_think.py
+# commit: 2e711d5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop1_think.py", line 26, in <module>
+    from web import think_sheet, zukan  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'think_sheet' from 'web' (src/web/__init__.py)
+rc=1

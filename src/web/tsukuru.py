@@ -165,12 +165,22 @@ addEventListener('pagehide',()=>{const s=v.srcObject;if(s)s.getTracks().forEach(
 })()</script>""" % PRIVACY
 
 
+def _paper(sid, hid):
+    """その紙の仮説。話した考えから作った本人の案（OWN-n）も同じ道で開く（呼ぶ側が、本人の画面である事を確かめる）。無ければ None。"""
+    return next((x for x in hypotheses.load(sid)["hypotheses"] + hypotheses.own_hypotheses(sid) if x["id"] == hid), None)
+
+
+def _label(h):
+    """紙の呼び名。案は名前で呼ぶ（OWN-n の番号は学ぶ人に見せない）。話した字（how_it_moves）は出さない。"""
+    return h["name"] if h["id"].startswith("OWN-") else hypotheses.letter(h)
+
+
 def step_texts(sid, hid, version=None):
     """その紙（刷ってある一番新しい版）の組み方の文。手順の紙が刷る文と同じ物（instructions.steps ＝ 雛形の steps）。
     版 2 以降は採った寸法で文が変わる事があるので、手順の紙と同じく、その版の寸法で作る。作れない時は空（頁は手順の紙の絵だけで動く）。"""
     data = hypotheses.load(sid)
-    h = next((x for x in data["hypotheses"] if x["id"] == hid), None)
-    if h is None:
+    h = _paper(sid, hid)
+    if h is None or (hid.startswith("OWN-") and not h.get("params")):  # 型紙なしの紙に、雛形の手順は無い
         return []
     vs = printed_versions(sid, hid)
     try:
@@ -191,7 +201,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     from . import hanasu  # 話す口（Issue #279）。循環を避けて、ここで読む
 
     data = hypotheses.load(sid)
-    h = next(x for x in data["hypotheses"] if x["id"] == hid)
+    h = _paper(sid, hid)
     s = skin.SKINS.get(look, skin.SKINS[skin.DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
     vs = printed_versions(sid, hid)
@@ -204,7 +214,9 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     if not steps:
         items = '<li class="on">手順の紙の絵を見て、番号の順に進めます。</li>'
     name = f"{hid}_v{v}_tejun.png"
-    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="手順の紙（{esc(hypotheses.letter(h))} の紙・版 {v}）">'
+    if not (out_dir(sid) / name).exists():  # 型紙なしの紙には手順の紙が無い。その紙そのものを出す
+        name = f"{hid}_v{v}_free.png"
+    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="手順の紙（{esc(_label(h))} の紙・版 {v}）">'
            if (out_dir(sid) / name).exists() else "")
     # 止まったの文は先に置いておき、押した時に出す（JS が無い時は ?ev= で出す）。
     stuck = (f'<p id="msg-stuck" class="msg"{"" if event == "stuck" else " hidden"}>止まった所を残しました（手順 <span class="sn">{n}</span>）。'
@@ -214,7 +226,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
-            f'<span>作りながら見る（試作）　{esc(hypotheses.letter(h))} の紙・版 {v}</span></p>'
+            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'
