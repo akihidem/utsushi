@@ -38,6 +38,7 @@ FROM = "本人の言葉（11-05）"
 RATE, MIN_CHUNK = 5.0, 2.0     # 1 秒に読ませる字の上限と、短いかたまりでも置く秒
 LEAD, TAIL = 0.4, 0.2          # 場面の頭と終わりの余り（場面の溶けと重なる所）
 DISSOLVE = 0.5                 # かたまりが消える・現れる秒。前が消えてから次が現れるので、替わり目は 1 秒
+EPS = 1e-9                     # 小数の誤差で切り上げが 0.1 秒増えないようにする
 # 本人の言葉の札: (かたまり…)。かたまりは行の並び。つなぐと記録の引用の 1 行になる。
 CARDS = {
     "word_touch": (("AIが良くなるのは副次的なもので、",), ("みんなが手で実際に作ること",), ("その楽しさに気づくことが最初。",)),
@@ -126,7 +127,7 @@ def cues_of(name):
 def seconds_of(name):
     if name == "ask":
         return ASK_SECONDS
-    return math.ceil((LEAD + sum(chunk_seconds(c) for c in chunks_of(name)) + TAIL) * 10 - 1e-9) / 10
+    return math.ceil((LEAD + sum(chunk_seconds(c) for c in chunks_of(name)) + TAIL) * 10 - EPS) / 10
 
 
 def chunk_alpha(cues, n, i, t):
