@@ -174,7 +174,7 @@ def feedback(sid, r):
     Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。"""
     from omochae import loop
 
-    after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v1_after.pdf"
+    after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told:
         from web.play_server import next_form

@@ -332,5 +332,18 @@
    "tests/test_analogy.py"
   ],
   "unverified": "本人の頼み（11-05、御来迎の扇を開く話を気に入って）。83 種に入れた（手本 2 種は sub-site、81 種は分身 3 本。research/27）。作る側のたとえで、印と「答えではない」の断り付き。予想の後にだけ出す。文の人の確認はまだ"
+ },
+ {
+  "id": "f32",
+  "name": "改善の輪（サイト側）: 報告 → 次の版 → 次に作る人へ",
+  "status": "doing",
+  "evidence": [
+   "src/web/kaizen.py",
+   "src/web/toy.py",
+   "src/web/play_server.py",
+   "tests/test_kaizen.py",
+   "docs/process/decisions/J026-site-side-loop.md"
+  ],
+  "unverified": "本人の方針（11-05 朝、J-026）。感想の欄・一番新しい版を刷る・輪の節と /loop を作った。人で一周した確認と、機械の案の質はまだ"
  }
 ]

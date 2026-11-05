@@ -24,9 +24,11 @@ from .play_server import PARAM_NAMES, esc, out_dir, source, sources
 KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙"))
 
 
-def versions_of(sid, hid):
+def versions_of(sid, hid, printed_only=False):
     """刷ってある版の番号。版 2 以降は「次の版を作る」で人が採った時にできる。"""
-    return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))} | {1})
+    # printed_only=False の時は、無くても版 1 を入れる（窓の札の並びを空にしないため）。True は「本当に刷ってある版」だけ。
+    got = {int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))} if out_dir(sid).exists() else set()
+    return sorted(got if printed_only else got | {1})
 
 
 def sheet_links(sid, hid, recorded):
@@ -43,7 +45,8 @@ def sheet_links(sid, hid, recorded):
 
 
 def printed_ids(sid, data):
-    return [h["id"] for h in data["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
+    # どの版でも刷ってあれば「刷った仮説」。版 1 を決め打ちしない（報告から直した版を次の人が最初に刷るため）。
+    return [h["id"] for h in data["hypotheses"] if versions_of(sid, h["id"], printed_only=True)]
 
 
 def latest_printed(sid, data):
@@ -114,7 +117,7 @@ def analogy_section(data):
 
 def ask_form(sid, data, asked=None):
     """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
-    printed = [h for h in data["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
+    printed = [h for h in data["hypotheses"] if versions_of(sid, h["id"], printed_only=True)]
     if not printed:
         return ""
     opts = "".join(f'<option value="{esc(h["id"])}">仮説 {esc(hypotheses.letter(h))} の紙</option>' for h in printed)
@@ -145,6 +148,8 @@ def record_form(sid, data, own):
         extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
     return (f'<form method="post" action="/toy/{sid}/record" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
+            # 感想の欄（本人の方針 11-05「作ったものの感想と動きを報告してもらう」）。動きは上の札、感想は自由な文。空でもよい。
+            '<label>作ってみてどうだったか（感想。動いた所、難しかった所、思った事）<textarea name="impression"></textarea></label>'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
             '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
             '<label>メモ<textarea name="note"></textarea></label>'
@@ -202,7 +207,9 @@ def records_list(sid, recs):
             # 人の説明が先。Claude の釦はこの後の段で出す。
             tail = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
                     '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>')
-        out += f'<article class="card"><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}</p>{after}{tail}</article>'
+        # 感想（本人の方針 11-05「感想と動きの報告」）。動きの欄の次に、作った人の言葉として出す。
+        feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""
+        out += f'<article class="card" id="{esc(r["id"])}"><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}（版 {esc(ver)}）</p>{feel}{after}{tail}</article>'
     return out
 
 
@@ -272,8 +279,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
         printed = sheet_links(sid, h["id"], h["id"] in recorded)
-        thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={versions_of(sid, h["id"])[-1]}#win"><img src="/sheet/{sid}/{h["id"]}_v{versions_of(sid, h["id"])[-1]}.png" alt="" loading="lazy"></a>'
-                 if (out_dir(sid) / f"{h['id']}_v1.png").exists() else "")
+        last = versions_of(sid, h["id"], printed_only=True)
+        thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
+                 if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{thumb}<div class="foot">'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
@@ -284,5 +292,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
              f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>{ask_form(sid, data, asked)}</section>')
     body += f'<section class="sec" id="kiroku"><h2>記録と返事</h2>{record_form(sid, data, own)}{records_list(sid, recs)}</section>'
+    # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
+    from . import kaizen
+
+    body += kaizen.section(sid, data, recs)
     body += f'<section class="sec">{neighbours(sid)}</section>'
     return skin.shell(data["toy"], body, look, "", path)

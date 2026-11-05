@@ -57,7 +57,8 @@ def check(rec):
         if not all(str(fix.get(k, "")).strip() for k in ("part", "change", "outcome")):
             out.append(Failure("F3.result", f"fixes[{i}]", "直した点は部品名・変えた事・結果の 3 欄が要る"))
     # 記録は公開の repo に入り得るので、連絡先の形を残さない。
-    for f in check_pii({"body": " ".join([rec.get("note", ""), *rec.get("answers", {}).values(), *rec.get("ideas", []), *(str(v) for fix in rec.get("fixes", []) for v in fix.values())])}):
+    # 感想（impression）は本人の方針（11-05）「感想と動きの報告」の感想の欄。自由な文なので、他の文と同じく連絡先の形を残さない。
+    for f in check_pii({"body": " ".join([rec.get("note", ""), rec.get("impression", ""), *rec.get("answers", {}).values(), *rec.get("ideas", []), *(str(v) for fix in rec.get("fixes", []) for v in fix.values())])}):
         out.append(Failure("F3.result", "note", f.message))
     return out
 

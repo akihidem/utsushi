@@ -96,6 +96,11 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
                "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
 
 
+def printed_versions(sid, hid):
+    """刷ってある版の番号（小さい順）。無ければ空。版 1 を決め打ちしない: 報告から直した版 2 以降を、次に作る人が最初に刷る事があるため。"""
+    return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))}) if out_dir(sid).exists() else []
+
+
 def toy_page(sid, errors=(), msg="", asked=None, look=skinmod.DEFAULT, **kw):
     """玩具の頁。中身は toy.py（順路と皮は docs/process/site-requirements.md）。ここは古い呼び口を残す薄い包み。"""
     from . import toy
@@ -224,6 +229,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
+        if path == "/loop":
+            # 改善の輪の一覧（本人の方針 11-05）。サイト側が輪を回す所で、学ぶ人の順路の帯には入れない。
+            from . import kaizen
+            return self._send(200, kaizen.page(look, path))
         if path == "/toys":
             from . import toys
             return self._send(200, toys.page(look, path))
@@ -247,7 +256,7 @@ class Handler(BaseHTTPRequestHandler):
             sid = m.group(1)
             if hypotheses.need_prediction(sid):
                 return self._send(200, self._toy(sid, errors=["先に予想を書くと、手帖が開きます"]))
-            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
+            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
             return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic), look, "", path, techo_site.STYLE, "techo"))
@@ -427,7 +436,7 @@ class Handler(BaseHTTPRequestHandler):
         if hypotheses.need_prediction(sid):
             return out(422, {"error": "先に予想を書く"})
         hid = form.get("hypothesis", "")
-        if not (out_dir(sid) / f"{hid}_v1.pdf").exists():
+        if not printed_versions(sid, hid):
             return out(422, {"error": "刷った紙をえらぶ"})
         if act == "ask-json":
             from api import ask
@@ -440,8 +449,8 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
             return out(200, {"text": text, "from": how})
-        rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": 1, "result": form.get("result"),
-                                     "note": form.get("note", ""), "fixes": [], "via": "techo"})
+        rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": printed_versions(sid, hid)[-1], "result": form.get("result"),
+                                     "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
         return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
@@ -452,7 +461,7 @@ class Handler(BaseHTTPRequestHandler):
             from api.budget import BudgetStop
 
             hid = form.get("hypothesis", "")
-            if hypotheses.need_prediction(sid) or not (out_dir(sid) / f"{hid}_v1.pdf").exists():
+            if hypotheses.need_prediction(sid) or not printed_versions(sid, hid):
                 return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
             try:
                 text, _ = ask.answer(sid, hid, form.get("question", ""))
@@ -482,17 +491,23 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"]))
             if not failures:
                 out_dir(sid).mkdir(parents=True, exist_ok=True)
-                if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v1")) != 0:
+                # 刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、
+                # より良い型紙を提供する」）。版 1 しか無ければ版 1。
+                v = loop.latest_version(sid, hid)
+                if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
                     return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"]))
                 # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
-                loop.confirm_sheet(sid, hid, 1, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+                loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
             msg = "刷りました。下の窓で絵を見て、PDF を 100% で印刷します"
             see = hid
         else:
             if hypotheses.need_prediction(sid):
                 failures = hypotheses.need_prediction(sid)
             else:
-                rec = {"source_id": sid, "hypothesis_id": form.get("hypothesis"), "sheet_version": 1, "result": form.get("result"),
+                hid = form.get("hypothesis", "")
+                # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
+                rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": (printed_versions(sid, hid) or [1])[-1], "result": form.get("result"),
+                       "impression": form.get("impression", "").strip(),
                        "opened_deg": _num(form.get("opened_deg")), "opener": form.get("opener") or None, "power": form.get("power") or None,
                        "minutes_to_try": _num(form.get("minutes_to_try")), "fixes": [], "note": form.get("note", ""),
                        "answers": {k: form[k] for k in ("first_moved", "stuck", "what_if") if form.get(k, "").strip()},
