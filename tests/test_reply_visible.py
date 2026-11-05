@@ -145,7 +145,7 @@ rid2 = re.search(r"R-\d{4}", call(f"/toy/{G}/record", good)[1]).group(0)
 assert f'action="/record/{rid2}/explain#{rid2}"' in call(f"/toy/{G}")[2]
 
 # 外から渡した印は、字の位置にしか使わない。
-assert "<script>" not in call(f"/toy/{G}?msg=%3Cscript%3E&at=%22%3E%3Cscript%3E")[2]
+assert "<script>mark" not in call(f"/toy/{G}?msg=%3Cscript%3Emark&at=%22%3E%3Cscript%3Emark")[2]
 page = call(f"/toy/{G}?msg=x&at=no-such")[2]
 assert note_at(page, "yosou", "status"), "知らない印の時も文を落とさない"
 server.shutdown()

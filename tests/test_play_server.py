@@ -54,16 +54,16 @@ def where(path, data):
 
 code, body = get("/")
 body = body.decode()
-# 入口は本人が残した A 大判写真集（J-024）。玩具の一覧から入れる
-assert code == 200 and "御来迎" in body and "大判写真集" in body and f"/toy/{G}" in body
-# 外した 3 案（見開き型・冊子型・B 和綴じ帖）は出さない
-assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404
+# 入口はこのサイトの皮の入口（既定は白の展示）。玩具の一覧から入れる。大判（A）と外した 3 案は出さない（本人の決定 11-05 朝: 日本画かジン、皮ごとに 1 サイト）
+assert code == 200 and "御来迎" in body and f"/toy/{G}" in body and "大判写真集" not in body
+assert get("/book")[0] == 404 and get("/look/watoji")[0] == 404 and get("/look/taiban")[0] == 404
 assert "冊子型" not in body and "和綴じ帖" not in body
-# 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない
-for name in ("taiban", "tenji", "zine"):
-    code, look = get(f"/look/{name}")
-    look = look.decode()
-    assert code == 200 and "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
+# この皮の入口は /look/<皮> でも開く。別の皮はこのサイトには無い（切り替えは置かない）
+assert get("/look/tenji")[0] == 200 and get("/look/zine")[0] == 404 and "?look=" not in body
+# 残した 2 案。どれも仮説を出さず、玩具の頁へ入る。採らなかった歌の読みも出さない（黒のジンは入口の関数で見る。サーバの形は test_two_sites）
+from web import looks  # noqa: E402
+for name, look in (("tenji", get("/look/tenji")[1].decode()), ("zine", looks.zine())):
+    assert "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
     assert "原文の引用" in look, "引用の印を残す"
     # スマホで表紙の下が URL の帯に隠れないよう、画面の高さは svh（research/19）
     assert "100svh" in look and "whileInView" not in look and "IntersectionObserver" not in look, name
@@ -91,7 +91,9 @@ assert re.search(r"仮説 A.*仮説 B.*仮説 C.*仮説 D.*仮説 E", body, re.S
 # 刷る。試した後の紙は記録の前は出さず、URL を知っていても渡さない
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 body = get(f"/toy/{G}")[1].decode()
-assert "H-A_v1.pdf" in body and "H-A_v1_tejun.pdf" in body and "H-A_v1_after.pdf" not in body
+# 字のリンクは画面の窓へ（本人の指示 11-05「型紙はクリックすると表示される形に」）。PDF は窓の押し釦。試した後の紙はどちらも出ない
+assert "see=H-A&kind=sheet&v=1#win" in body and "see=H-A&kind=tejun&v=1#win" in body and "kind=after" not in body
+assert "H-A_v1.pdf" in body and "H-A_v1_after.pdf" not in body
 code, pdf = get(f"/sheet/{G}/H-A_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
 assert get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 403
