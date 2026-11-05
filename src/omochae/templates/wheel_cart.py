@@ -417,6 +417,11 @@ def measures(p):
     return {"predict": "坂に置いて手を離すと、どう動くと思いますか（言葉か絵で）", "rows": [[("坂の高さ（本の冊数）", 30)]]}
 
 
+def diagram_caption(p):
+    """図の札。俵の図には車も台も無いので、札を刷らない（#294）。"""
+    return DIAGRAM_CAPTION if p["body"] == "cart" else ""
+
+
 def diagram(x, y, w, h, p):
     """横から見た図。床の線、台か俵、軸の点。坂の形では坂を斜めに描く。"""
     shapes = []

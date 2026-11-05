@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_steps_materials.py
+# commit: 771e0dd（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_steps_materials.py", line 95, in <module>
+    assert (sid, hid, tpl.SHEET_SET) == (GORAIGO, "H-E", "goraigo-v10"), ("穴の無い案の手順に穴の字がある", sid, hid)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('穴の無い案の手順に穴の字がある', 'NDL-1187053-R0000005-L-3', 'H-A')
+rc=1

@@ -78,6 +78,11 @@ def of_hypothesis(data, h):
     return details(h.get("template", data.get("template", "slider_fan")), h["params"])
 
 
+def _on_paper(data, h):
+    """紙になる案か。寸法か雛形の無い控えは印を持たない（1 つあるだけで一覧が全部の玩具ごと落ちないように）。"""
+    return isinstance(h.get("params"), dict) and h.get("template", data.get("template", "slider_fan")) in TEMPLATES
+
+
 @functools.lru_cache(maxsize=None)
 def toy_labels(source_id):
     """玩具のたたき台に付く印の名前（頁に出る型紙はたたき台の 1 枚だけなので、刷れない仮説の印を玩具に付けない。J-032）。
@@ -93,7 +98,7 @@ def table():
     for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
         data, sheet = load(path.stem), sheet_of(path.stem)["id"]
         out += [{"source_id": path.stem, "hypothesis_id": h["id"], "sheet": h["id"] == sheet,
-                 "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"]]
+                 "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"] if _on_paper(data, h)]
     return out
 
 

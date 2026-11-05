@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_steps_materials.py
+# commit: 381c602（回した時の HEAD）
+ok 171 案で手順と用意する物が合う（今の組の例外 6 案、文面の確認待ち 1 案）
+rc=0
