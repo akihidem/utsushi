@@ -38,9 +38,11 @@ PUBLIC_FIELDS = ("id", "status", "received_at", "kind", "role", "certainty", "bo
 ID_NAME = re.compile(r"^C-(\d{4,})\.json$")
 # 公開の文に個人の連絡先が紛れる事故を減らす。人の確認の補助で、これだけで安全とは言わない。
 # 文の中の「@」や「at」を拾いすぎないよう、英数字の形に絞る。
-EMAIL = re.compile(r"[A-Za-z0-9._+-]+\s*@\s*[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*"
-                   r"|[A-Za-z0-9._+-]+\s*(?:\[at\]|\(at\)|アット)\s*[A-Za-z0-9-]+\.[A-Za-z]{2,}"
-                   r"|\b[A-Za-z0-9._+-]+\s+at\s+[A-Za-z0-9-]+\s*(?:\.\s*(?:com|jp|net|org|co\.jp)\b|\s+dot\s+[A-Za-z]{2,})", re.I)
+# 頭は英数字の並びの始まりからだけ読む（#161）。途中から読み直すと文の長さの 2 乗で遅くなるが、並びは @ の手前まで続くので拾う物は変わらない。
+LOCAL = r"(?<![A-Za-z0-9._+-])[A-Za-z0-9._+-]+"
+EMAIL = re.compile(LOCAL + r"\s*@\s*[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*"
+                   r"|" + LOCAL + r"\s*(?:\[at\]|\(at\)|アット)\s*[A-Za-z0-9-]+\.[A-Za-z]{2,}"
+                   r"|" + LOCAL + r"\s+at\s+[A-Za-z0-9-]+(?:\s*\.\s*(?:com|jp|net|org|co\.jp)\b|\s+dot\s+[A-Za-z]{2,})", re.I)
 PHONE_RUN = re.compile(r"\+?\d[\d\s().\-/・~〜‐‑‒–—―−ー]*\d")
 POSTAL = re.compile(r"(?:〒|郵便番号)\s*\d{3}[\s\-‐‑‒–—―−ー]?\d{4}|(?<!\d)\d{3}[\-‐‑‒–—―−ー]\d{4}(?!\d)")
 PUBLIC_TEXT_FIELDS = ("body", "display_name", "origin", "where_when", "toy_name", "source_id")
@@ -163,6 +165,11 @@ def check_rights(c, intake=False):
     if not intake and basis == "unknown":
         out.append(Failure("F10.rights", "basis", "権利の根拠が不明なので公開できない"))
     return out
+
+
+def too_long(fields):
+    """長さの上限を越えた欄を、断る文にして返す。検査の前に見て、貼り付けの長い文を検査へ回さない（#161）。fields は (欄, 文) の並び。"""
+    return [(where, f"{where} が {MAX_BODY} 字を超える") for where, text in fields if len(text or "") > MAX_BODY]
 
 
 def check_pii(c):
