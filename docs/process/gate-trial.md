@@ -373,3 +373,15 @@
 - 検証ゲート: **済み**。Red: 直す前の main に試験を当てて rc 1（gate-evidence/red-generate-no-network.txt）。Green: rc 0（gate-evidence/green-generate-no-network.txt）
 - エビデンスゲート: 例外の宣言つき。この機械では網の名前空間を切れないので、行き先の無い proxy で外への接続だけを止めて代わりにした（手元の `127.0.0.1` は除く。除かないと、手元のサーバを立てる試験が proxy に向いて落ちる）。上の出力の 105 本は全部期待どおりで、`tests/test_floor_pin.py` も通る（型紙と手順の紙は変えていない）。本物の API は呼んでいない
 - マージ後の書き戻し: Issue #162 に書く（この帳面へは、次に帳面を書く取り込みで写す）
+
+## 台帳のフックが、検査できない時に知らせる（Issue 対応の担当、issue/166-ledger-hook、11-05 昼。#166）
+
+- 目的: 台帳の検査が回らなかった時に、その事が分かる
+- なぜか: フックは検査の rc が 3 の時だけ返し、4（検査できない）・`.venv` が無い時・フックの入力が読めない時は黙って 0 で終わっていた。比べるのが絶対パスだけで、`tests/frozen/` と `src/omochae/ledger.py` も見ていなかった
+- どうしたらいいか: #166 の推しは「stderr に 1 行出す」だったが、Claude Code の文書では exit 0 の stderr は Claude に届かない。PostToolUse から知らせる形として文書が挙げる exit 2 にした（編集は戻らない）。代案の `additionalContext` は同じ事を JSON で返す形で、落ちた時と書き方が 2 つになるので採らない
+- 足した決め: `.venv` が無い木では、対象の編集のたびに知らせる（直すのは `./init.sh`）。対象の外の編集には何も言わない
+- 出していない範囲: `.claude/settings.json` の組は Edit と Write のままで、シェルで直した時は走らない（`./run.sh` の台帳の検査が受ける）。Claude Code の中でフックが返した文を読む所は、文書で確かめただけで、実行では見ていない
+- ゴールの要件: 台帳の JSON が壊れている時に「検査できない」と出る。相対パスでも同じ判定になる
+- 検証ゲート: **済み**。Red: 足した試験が直す前のフックで rc 1（gate-evidence/red-ledger-hook.txt）。Green: rc 0（gate-evidence/green-ledger-hook.txt）
+- エビデンスゲート: 上の出力（前後を同じ 9 条件で比べた）と、直した作業ツリーでの `./run.sh`。本物の台帳は壊さず、repo の写しの上で壊した
+- マージ後の書き戻し: Issue #166 に書く
