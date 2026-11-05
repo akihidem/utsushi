@@ -16,7 +16,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from PIL import Image  # noqa: E402
 
 from omochae.marks import without_premise  # noqa: E402
-from omochae import records  # noqa: E402
+from omochae import media_review, records  # noqa: E402
 from web import demo_samples, techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -59,6 +59,8 @@ def post(path, data, ctype="application/x-www-form-urlencoded"):
 rid, failures = records.add({"source_id": T, "hypothesis_id": "H-A", "sheet_version": 1, "result": "揺れた", "impression": "首が長く揺れた", "fixes": []})
 assert rid and not failures
 assert techo_site.save_media(rid, "image/jpeg", jpeg)[0]
+assert f'/record/{rid}/media/m1.jpg' not in get(f"/toy/{T}")[1], "人の確認の前は出さない（#314）"
+assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 after = get(f"/toy/{T}")[1]
 hero, rest = after.split('id="kasetsu"')[0], after.split('id="minna"')[1]
 assert f'href="#{rid}"' in hero and f'/record/{rid}/media/m1.jpg' in hero
@@ -74,6 +76,7 @@ page = get(f"/toy/{G}")[1]
 g_rid = sorted(r["id"] for r in records.all_records(G))[-1]
 assert "引っかかった所: 3 枚目の折り目" in page and "感想: 折るのは楽しかった" in page
 assert post(f"/record/{g_rid}/media", jpeg, "image/jpeg") == 201
+assert media_review.record(g_rid, "m1.jpg", "object", "確認者") == []
 assert f'<img src="/record/{g_rid}/media/m1.jpg"' in get(f"/toy/{G}")[1]
 # 聞く口の断り（J-027: 質問の文を残すので、残す事と、名前を書かないでほしい事を聞く口のすぐ下に出す）
 # 文は本人の決定（11-05、カード 20261105-092043 の 1 点目）のとおり。一字でも変わったら落ちるように、ここに決定の文を書く

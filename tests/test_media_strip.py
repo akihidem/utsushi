@@ -132,14 +132,14 @@ with Image.open(io.BytesIO(saved)) as im:
     assert im.size == (20, 40) and im.getexif().get(0x0112, 1) == 1, (im.size, dict(im.getexif()))
 print("ok jpeg")
 
-# 3 動画: MP4 と MOV。位置の欄・流れの欄・字幕の流れを落とし、絵と音は残す
+# 3 動画: MP4 と MOV。位置の欄・流れの欄・字幕の流れと音を落とし、絵は残す（音は本人の決定 11-05、#314）
 for ctype, ext in (("video/mp4", "mp4"), ("video/quicktime", "mov")):
     code, text, saved = upload(make_video(f"sample.{ext}"), ctype)
     assert code == 201 and text == f"m1.{ext}", (code, text)
     for mark in (PLACE, STREAM_MARK, SUBTITLE_MARK):
         assert mark not in saved, f"{ext} に {mark} が残った"
     got = probe(saved, ext)
-    assert sorted(s["codec_type"] for s in got["streams"]) == ["audio", "video"], got["streams"]
+    assert sorted(s["codec_type"] for s in got["streams"]) == ["video"], got["streams"]
     tags = {**got.get("format", {}).get("tags", {}), **{k: v for s in got["streams"] for k, v in s.get("tags", {}).items()}}
     assert "creation_time" not in tags and not any("location" in k for k in tags), tags
 print("ok video")
