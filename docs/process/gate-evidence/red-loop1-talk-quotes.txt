@@ -1,0 +1,35 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: 558bb0f（回した時の HEAD）
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-8_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-8_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-8_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-9_v1.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-9_v1_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/OWN-9_v1_after.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/.tmp-xaoh1mny/H-A_v2.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/.tmp-xaoh1mny/H-A_v2_tejun.pdf
+/tmp/tmpjlv9sx7b/play/NDL-1187053-R0000005-L/.tmp-xaoh1mny/H-A_v2_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_withdraw.py", line 179, in <module>
+    assert everywhere(text) == [], (text, everywhere(text))
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('割り箸の柄で大きく開くと思う', ['loop/extra-hypotheses-NDL-1187053-R0000005-L.json', 'loop/proposal-0002.json'])
+rc=1

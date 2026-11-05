@@ -1,0 +1,17 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: c1961d8（回した時の HEAD）
+F9.own: 自分の仮説「OWNNAME」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/.tmp-g6tzw0rk/H-A_v2.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/.tmp-g6tzw0rk/H-A_v2_tejun.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/.tmp-g6tzw0rk/H-A_v2_after.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/OWN-1_v1_free.pdf
+/tmp/tmpjg4objiq/play/NDL-1187053-R0000005-L/.tmp-mjj0nwo9/OWN-1_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_public_open.py", line 122, in <module>
+    assert word not in page, (path, word)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('/zukan', 'OWNNAME')
+rc=1
