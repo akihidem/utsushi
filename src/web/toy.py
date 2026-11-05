@@ -195,7 +195,11 @@ def ask_form(sid, data, asked=None, note="", filled=None):
             f'<button>聞く</button><p class="meta">{esc(making_log.ASK_NOTICE)}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
 
 
-def record_form(sid, data, own):
+# 記録の欄の畳みの見出し（#300）。利用者に見せる新しい文なので、本人の確認が済むまで入れない。空の間は畳まずに並べる。
+RECORD_MORE = ""
+
+
+def record_form(sid, data, own, open_more=False):
     template = data.get("template", "slider_fan")
     hyps = [(h["id"], f'仮説 {hypotheses.letter(h)}「{h["name"]}」') for h in data["hypotheses"]] + [(h["id"], f'あなたの仮説「{h["name"]}」') for h in own]
     opts = "".join(f'<option value="{esc(i)}">{esc(n)}</option>' for i, n in hyps)
@@ -214,16 +218,21 @@ def record_form(sid, data, own):
         extra = '<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>'
     else:
         extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
+    more = (f'{extra}<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
+            '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
+            '<label>メモ<textarea name="note"></textarea></label>')
+    if RECORD_MORE:
+        # 残りは畳む（#300）。作る前の人に「全部書くのか」と読ませないため。素の details なので JS なしで開け、閉じたままでも送られる。
+        # どの紙かの欄は畳まない: 配られた紙で作る人が見えないまま先頭の案で送ると、記録と試した後の紙が別の案になる（#332 で欄ごと無くなるまで）。
+        # 必須の欄も入れない: 閉じた欄が空だと、ブラウザは知らせる先を出せず送れなくなる。
+        more = f'<details{" open" if open_more else ""} style="margin:14px 0 0"><summary>{esc(RECORD_MORE)}</summary>{more}</details>'
     return (f'<form method="post" action="/toy/{sid}/record#kiroku" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。記録はこの頁でほかの人も読むので、名前や連絡先は書かないでください。</p>'
-            f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>{version_field}<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
+            f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>{version_field}<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>'
             # 感想の欄（本人の方針 11-05「作ったものの感想と動きを報告してもらう」）。動きは上の札、感想は自由な文。空でもよい。
             '<label>作ってみてどうだったか（感想。動いた所、難しかった所、思った事）<textarea name="impression"></textarea></label>'
             # 人の工夫（本人の言葉 11-05）。「型紙は不完全でうまく動かないけどそれを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」の、輪の材料の欄。一部だけ書いても記録は落とさない（play_server.fixes_of）。
             '<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">うまくいかなくて工夫した所（あれば）</legend><label>どの部品か<input type="text" name="fix_part"></label><label>どう工夫したか<input type="text" name="fix_change"></label><label>どうなったか<input type="text" name="fix_outcome"></label></fieldset>'
-            '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
-            '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
-            '<label>メモ<textarea name="note"></textarea></label>'
-            '<button>記録を残す</button></form>')
+            f'{more}<button>記録を残す</button></form>')
 
 
 def _param_label(template, k):
@@ -490,7 +499,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
              + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if printed_ids(sid, data) else "")
              + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"))}</section>')
-    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, own), fill("record"))}</section>'
+    # 通らなかった時は畳みを開く。書いた字を隠さないため（#300）。
+    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, own, bool(fill("record"))), fill("record"))}</section>'
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{sample_records(data)}<p class="links"><a href="/gallery">全部の玩具の、作った物を見る</a></p></section>')
