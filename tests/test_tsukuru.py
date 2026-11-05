@@ -62,7 +62,8 @@ def step(n, event, hid="H-A", **more):
 # 刷る前は札も受けない
 assert step(1, "next")[0] == 422
 # 刷る前は開かない。玩具の頁に入口も出さない
-body = get(f"/toy/{G}/tsukuru")[1]
+assert get(f"/toy/{G}/tsukuru")[0] == 303
+body = urllib.request.urlopen(base + f"/toy/{G}/tsukuru").read().decode()
 assert "先に紙を作ると、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body
 assert step(1, "next")[0] == 422 and f'href="/toy/{G}/tsukuru"' not in get(f"/toy/{G}")[1]
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
@@ -76,7 +77,7 @@ assert len(texts) >= 3 and all(html.escape(s, quote=True) in t for s in texts)
 assert f'<img class="sheet" src="/sheet/{G}/H-A_v1_tejun.png"' in t and get(f"/sheet/{G}/H-A_v1_tejun.png")[0] == 200
 assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and "できた" in t
 # 刷っていない紙は h で指しても開かない
-assert 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]
+assert get(f"/toy/{G}/tsukuru?h=H-B")[0] == 303 and 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]
 # 映像は端末の中だけ: 画素を取り出す・録る・送る JS が無い。送るのは聞く口と札（form の欄）だけ
 for w in ("canvas", "toBlob", "toDataURL", "MediaRecorder", "captureStream", "ImageCapture", "WebSocket", "sendBeacon", "XMLHttpRequest", "IntersectionObserver"):
     assert w not in t, w

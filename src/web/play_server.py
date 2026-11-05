@@ -309,7 +309,9 @@ class Handler(BaseHTTPRequestHandler):
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             hid = qs.get("h", [""])[0] or (printed[0] if printed else "")
             if hid not in printed:
-                return self._send(200, self._toy(sid, errors=["先に紙を作ると、作りながら見る頁が開きます"]))
+                # 文が頁の頭より 1 画面下に出ないよう、#121 の手帖と同じく節へ送る（#289）
+                msg = urllib.parse.quote("先に紙を作ると、作りながら見る頁が開きます")
+                return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={msg}&at=kasetsu#kasetsu")])
             from . import tsukuru
             try:
                 n = int(qs.get("n", ["1"])[0])
