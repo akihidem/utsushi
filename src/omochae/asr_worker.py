@@ -12,23 +12,32 @@ import subprocess
 import sys
 
 os.environ["HF_HUB_OFFLINE"] = "1"
-os.nice(10)  # ほかの作業を止めない
+RATE = 16000
 
-import numpy  # noqa: E402
-from faster_whisper import WhisperModel  # noqa: E402
+
+def inside(segments, seconds):
+    """音の長さの内の字だけを残す。音の無い終わりに、道具が話していない字を作る事があった（本物の 1 本目。110 秒の音に、118〜126 秒の「ご視聴ありがとうございました」）。"""
+    return [s for s in segments if s["start"] < seconds]
 
 
 def read_voice(path):
+    import numpy
+
     """声を ffmpeg の管でメモリへ読む。ファイルを増やさない。faster-whisper の読み手は環境の部品の版で動かない事がある（手元の 1 つの環境で落ちた）。"""
-    raw = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-protocol_whitelist", "file", "-i", path, "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "-"], capture_output=True, check=True).stdout
+    raw = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-protocol_whitelist", "file", "-i", path, "-vn", "-ac", "1", "-ar", str(RATE), "-f", "s16le", "-"], capture_output=True, check=True).stdout
     return numpy.frombuffer(raw, dtype=numpy.int16).astype(numpy.float32) / 32768.0
 
 
 def main(path, name):
+    from faster_whisper import WhisperModel
+
+    os.nice(10)  # ほかの作業を止めない
+    voice = read_voice(path)
     model = WhisperModel(name, device="cpu", compute_type="int8", cpu_threads=6, local_files_only=True)
-    segments, info = model.transcribe(read_voice(path), language="ja", vad_filter=True, beam_size=1)
+    # 前の字に引きずられると、同じ字を繰り返す（同じ 1 本目の「以上です」）
+    segments, info = model.transcribe(voice, language="ja", vad_filter=True, beam_size=1, condition_on_previous_text=False)
     out = [{"start": round(s.start, 1), "end": round(s.end, 1), "text": s.text.strip()} for s in segments]
-    json.dump({"model": name, "language": info.language, "segments": out}, sys.stdout, ensure_ascii=False)
+    json.dump({"model": name, "language": info.language, "segments": inside(out, len(voice) / RATE)}, sys.stdout, ensure_ascii=False)
 
 
 if __name__ == "__main__":

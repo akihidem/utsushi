@@ -31,7 +31,7 @@ if not shutil.which("ffmpeg"):  # 確かめられない時は 4（repo の決ま
 
 from PIL import Image  # noqa: E402
 
-from omochae import engine_bundle, gallery, hypotheses, loop, records, trial_video as tv  # noqa: E402
+from omochae import asr_worker, engine_bundle, gallery, hypotheses, loop, records, trial_video as tv  # noqa: E402
 from web import video_up  # noqa: E402
 from web.play_server import serve as site_serve  # noqa: E402
 from web.toys import sources  # noqa: E402
@@ -678,6 +678,8 @@ assert str(text_file) in cli("list", module="web.video_up").stdout
 # 札はふつうの札の形で足せる。人が確かめるまで案のまま
 mr, fails = tv.add_mark(rid_r, 1, 3, "mark", "手順 3 の折り線が薄い（レビューの字から）", "Claude Code のセッション")
 assert mr and not fails and not tv.load(rid_r)["marks"][0]["confirmed_by"], fails
+# 音の長さを超えた字は、道具が作った字なので残さない（本物の 1 本目で見た形）
+assert asr_worker.inside([{"start": 109.5, "text": "以上です"}, {"start": 118.6, "text": "以上です"}, {"start": 124.7, "text": "ご視聴ありがとうございました"}], 110.1) == [{"start": 109.5, "text": "以上です"}]
 # 頁に出ない。声とコマの道は開かない
 site2 = site_serve(0)
 threading.Thread(target=site2.serve_forever, daemon=True).start()
