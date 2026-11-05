@@ -15,6 +15,9 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 - 試した記録の刷った組は、記録が持つ値か、刷った時の型紙の確定の記録から引く。分からない時は空（不明）の群に分ける。
   今の組に数えると、直す前の紙の記録が、直した後の紙の数に混ざる。
 - メモ（note）は束に入れない。記録を入れた人の覚え書きで、作った人の言葉とは限らないため。
+- 束の上の段に、群に出てくる雛形の「今の刷った組」を書く（current_sets。Issue #309）。エンジンの repo の雛形は組の名を持たないので、
+  前の組の紙の記録から起きた案（もう直っている事がある）を、読む人が見分けられない。ここは今の組を並べるだけで、前の組の記録を
+  束から外しはしない（直っていない困り事まで消え、直す前と後を並べて読めなくなる）。
 終了: 0 = できた / 4 = できない（書く先が決まりの外など）。
 """
 import argparse
@@ -31,7 +34,7 @@ from .hypotheses import ROOT
 # 束の形。エンジンの omochae.engine_loop（paper-to-toy の #63）と同じ一覧で、片方を変える時は両方を変える（tests/test_engine_bundle.py が鍵の一致を見る）。
 SCHEMA = "omochae.making-bundle/1"
 FROM = "utsushi"
-TOP_KEYS = ("schema", "exported_at", "from", "dropped_pii", "groups")
+TOP_KEYS = ("schema", "exported_at", "from", "dropped_pii", "current_sets", "groups")
 GROUP_KEYS = ("template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps",
               "minutes", "measures", "record_ids", "texts")
 TEXT_KEYS = ("kind", "step", "text", "count")
@@ -176,8 +179,14 @@ def build():
                               for (kind, step, text), n in sorted(g["texts"].items(), key=lambda kv: (TEXT_KINDS.index(kv[0][0]), kv[0][1] or 0, kv[0][2]))]})
     # 雛形の id が分からない群（記録が壊れている等）は入れない。エンジンの入口が、束ごと断るため。
     out = [g for g in out if g["template"]]
+    # 今の刷った組は、群に出てくる雛形の分だけ（記録の無い雛形の名を束に並べない）。組の名を持たない雛形と、形の外の名は入れない。
+    current = {}
+    for g in out:
+        name = _name(getattr(TEMPLATES.get(g["template"]), "SHEET_SET", None))
+        if name:
+            current[g["template"]] = name
     now = datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="minutes")  # 分まで（秒を持たない）
-    return {"schema": SCHEMA, "exported_at": now, "from": FROM, "dropped_pii": dropped, "groups": out}
+    return {"schema": SCHEMA, "exported_at": now, "from": FROM, "dropped_pii": dropped, "current_sets": current, "groups": out}
 
 
 def out_path(out=None):
