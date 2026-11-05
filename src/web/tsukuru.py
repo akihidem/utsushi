@@ -152,7 +152,13 @@ if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
   rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();qIn.value=t;ask(t)};
   rec.onend=()=>{if(listening&&!speaking){try{rec.start()}catch(e){}}};
   rec.onerror=()=>{listening=false;mic.setAttribute('aria-pressed','false')};
-  listening=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}})}
+  listening=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
+ // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
+ addEventListener('pagehide',()=>{listening=false;if(rec){try{rec.stop()}catch(e){}}});
+ let paused=false;
+ document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){if(listening){paused=true;listening=false;mic.setAttribute('aria-pressed','false');try{rec.stop()}catch(e){}}return}
+  if(paused){paused=false;listening=true;mic.setAttribute('aria-pressed','true');if(!speaking){try{rec.start()}catch(e){}}}})}
 if(henji.classList.contains('open'))head.textContent=`手順 ${n} で止まった所を聞く`;
 const v=document.getElementById('cam'),on=document.getElementById('on'),note=document.getElementById('mirror-note');
 const off='鏡は出さなくても全部できます。';
