@@ -190,7 +190,8 @@ for route, want, who, text in (("record", 303, "handover01", "下から押した
     label = f'<option value="{oid}" selected>'
     assert label in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 本人の form に自分の案"
     assert f'value="{oid}"' not in send(base, f"/toy/{G}")[1].decode(), f"{route}: ほかの人の form に出さない"
-    assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who})[0] == want, route
+    assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who})[0] == 422, f"{route}: 鍵の無い人の記録は受けない"
+    assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who}, cookie=k)[0] == want, route
     assert opened(k, oid) == 404 and opened(k, oid, "_tejun") == 404, f"{route}: 記録を残すと、紙も手順の紙も閉じる"
     assert text not in send(base, p, cookie=k)[1].decode(), f"{route}: 話した字も見えない"
     assert opened(k, oid, "_after") == 200, f"{route}: 試した後の紙は、記録の後に本人が使う（話した字は刷られない）"

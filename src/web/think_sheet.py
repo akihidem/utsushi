@@ -43,6 +43,7 @@ NO_FIT = "今の型紙には合わないので、型紙なしの紙（身の回�
 OK = "この紙にする"
 DONE = "紙ができました。"
 SEE = "紙を見る"
+MAKE = "作りながら見る（机の端に置く・試作）"  # 玩具の頁の入口と同じ字（新しい文を足さない）
 ASKED = "頼みました。"
 FAILED = "紙を作れませんでした。もう一度押してください。"
 
@@ -87,9 +88,21 @@ def _holds(handler, sid, token):
 
 
 def mine(handler, sid):
-    """この画面が今開いてよい案の OWN-n。記録の form に、本人の案だけを出すために引く（ほかの人の案は並べない）。"""
+    """この画面が今開いてよい案の OWN-n。記録の form・手帖の札・作りながら見る頁に、本人の案だけを出すために引く（ほかの人の案は並べない）。"""
+    if getattr(handler.server, "public_open", False):
+        return set()
     found = (words.by_token(sid, t) for t in _tokens(handler))
     return {w["own_id"] for w in found if w and w.get("own_id") and words.key_open(w)}
+
+
+def latest_mine(handler, sid):
+    """この画面の一番新しい案（作りながら見る頁が、紙の印の無い時に開く紙）。無ければ None。"""
+    return max(mine(handler, sid), key=lambda oid: int(oid.rsplit("-", 1)[1]), default=None)
+
+
+def usable(handler, sid, hid):
+    """その紙への札・工夫・問い・記録を、この画面から受けてよいか。話した考えから作った案は、作った本人の画面からだけ（期限の内・記録の前）。ほかの紙は今までどおり。"""
+    return not str(hid).startswith("OWN-") or hid not in words.spoken_own_ids(sid) or hid in mine(handler, sid)
 
 
 def opens(handler, sid, oid, after=False):
@@ -227,7 +240,9 @@ def _status(sid, w):
         # 紙を作った直後に、その紙の絵を画面に出す（#145 の要件を話す道でも）。絵は刷る時に PDF と一緒にできる。押すと PDF を開く。
         pic = name[:-len(".pdf")] + ".png"
         fig = f'<figure class="own-sheet" style="margin:12px 0"><a href="/sheet/{esc(sid)}/{esc(name)}"><img src="/sheet/{esc(sid)}/{esc(pic)}" alt="{esc(w["name"])}" style="display:block;width:100%;border:1px solid var(--frame)"></a></figure>' if (out_dir(sid) / pic).exists() else ""
-        return f'{said}<p>{esc(DONE)} <a href="/sheet/{esc(sid)}/{esc(name)}">{esc(SEE)}</a></p>{fig}'
+        # 次の段（作る）への道。その紙の手順の頁を開き、工夫がこの紙に付く（本人の描く一周の順）。
+        make = f'<p><a class="btn quiet" href="/toy/{esc(sid)}/tsukuru?h={esc(w.get("own_id", ""))}">{esc(MAKE)}</a></p>'
+        return f'{said}<p>{esc(DONE)} <a href="/sheet/{esc(sid)}/{esc(name)}">{esc(SEE)}</a></p>{fig}{make}'
     r = w.get("result") or {}
     if r.get("fits"):
         body = _changes(sid, w, r)

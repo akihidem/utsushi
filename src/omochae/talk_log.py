@@ -158,23 +158,38 @@ def texts(source_id=None, scene=None, hypothesis_id=None, sheet_version=None, re
     return out
 
 
+def _made_from(source_id, hypothesis_id):
+    """その案（OWN-n）を作った元の考えのファイルの名前。話した考えから作った案でなければ None。"""
+    if not str(hypothesis_id).startswith("OWN-"):
+        return None
+    from . import loop
+
+    for p in sorted(loop.folder().glob("words-*.json")):
+        w = store.read_json_or_skip(p)
+        if w and w.get("own_id") == hypothesis_id and w.get("source_id") == source_id:
+            return w.get("from_talk")
+    return None
+
+
 def bind(source_id, hypothesis_id, sheet_version, who, record_id):
     """試した記録を残した時に、その作りの間に話した工夫（2）と考え（1）を、その記録に結ぶ。Returns (結んだ工夫の数, 結んだ考えの数)。
     どれが「その作り」か: 同じ玩具・同じその場限りの印（who）で、まだどの記録にも結んでいない物。
     工夫は、同じ紙（仮説と版）の物。考えは、同じ仮説か、仮説を選ばずに話した物（考えは作る前の話なので、版は見ない）。
     印が無い時（JS の無い画面）は結ばない: 印なしで結ぶと、ほかの人が話した事まで、この記録に入るため。
+    話した考えから作った案（OWN-n）の紙の記録には、その元の考えも結ぶ。考えはたたき台を見て話した物でたたき台に付いたままなので、案の紙の記録と仮説が合わない（ループ1、#335）。
     結んだ字には、見せる印を付ける（記録に結んだ字は、記録の感想などと同じに、ほかの人の頁に出す。本人の決定 11-05）。
     書けなくても例外は外へ出さない（記録を残す口を、話した字の都合で止めない）。"""
     who = making_log.clean_who(who)
     d = making_log.folder()
     n = {"craft": 0, "think": 0}
+    made_from = _made_from(source_id, hypothesis_id)
     for p in sorted(d.glob("talk-*.json")) if who and d.exists() else []:
         try:
             t = json.loads(p.read_text(encoding="utf-8"))
             if t.get("record_id") or t.get("dropped") or t.get("who") != who or t.get("source_id") != source_id:
                 continue
             same_paper = t.get("hypothesis_id") == hypothesis_id and (t.get("sheet_version") or 1) == (sheet_version or 1)
-            if (t.get("scene") == "craft" and same_paper) or (t.get("scene") == "think" and t.get("hypothesis_id") in (None, hypothesis_id)):
+            if (t.get("scene") == "craft" and same_paper) or (t.get("scene") == "think" and (t.get("hypothesis_id") in (None, hypothesis_id) or p.stem == made_from)):
                 store.write_json(p, {**t, "record_id": record_id, "share": True})
                 n[t["scene"]] += 1
         except (OSError, ValueError, AttributeError):

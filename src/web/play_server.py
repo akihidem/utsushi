@@ -115,7 +115,9 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
 
 def printed_versions(sid, hid):
     """刷ってある版の番号（小さい順）。無ければ空。版 1 を決め打ちしない: 報告から直した版 2 以降を、次に作る人が最初に刷る事があるため。"""
-    return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))}) if out_dir(sid).exists() else []
+    # 自分の仮説は、型紙なしの紙（_free）も刷った紙に数える。作りながら見る頁と話す口が、その紙に付くように（ループ1、#335）。
+    free = "(?:_free)?" if str(hid).startswith("OWN-") else ""
+    return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+){free}\.pdf", p.name))}) if out_dir(sid).exists() else []
 
 
 def ensure_after(sid, hid, version):
@@ -321,9 +323,11 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
             # 刷った紙が無い時は開かない（手順は刷った版の物なので）。
             sid = m.group(1)
-            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
-            # 紙の印が無ければ、たたき台の 1 枚を開く（J-032）。刷った物の先頭を開くと、ほかの仮説だけを刷った置き場でその紙が開く。
-            hid = qs.get("h", [""])[0] or hypotheses.sheet_of(sid)["id"]
+            from . import think_sheet
+            # 話した考えから作った案は、作った本人の画面にだけ開く。工夫がその紙に付くように（本人の描く一周の順。ループ1、#335）。
+            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])] + [o for o in think_sheet.mine(self, sid) if printed_versions(sid, o)]
+            # 紙の印が無ければ、本人の案、無ければたたき台の 1 枚を開く（J-032）。刷った物の先頭を開くと、ほかの仮説だけを刷った置き場でその紙が開く。
+            hid = qs.get("h", [""])[0] or think_sheet.latest_mine(self, sid) or hypotheses.sheet_of(sid)["id"]
             if hid not in printed:
                 return self._send(200, self._toy(sid, errors=["先に紙を作ると、作りながら見る頁が開きます"]))
             from . import tsukuru
@@ -342,7 +346,9 @@ class Handler(BaseHTTPRequestHandler):
             printed = [sheet] if printed_versions(sid, sheet) else []  # 手帖の紙もたたき台の 1 枚だけ（J-032）
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+            from . import think_sheet
+            own = sorted(think_sheet.mine(self, sid), key=lambda o: int(o.rsplit("-", 1)[1]), reverse=True)  # 本人の案を先に（作っている紙の記録として残すため）
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
@@ -594,7 +600,10 @@ class Handler(BaseHTTPRequestHandler):
         bad = lambda why: self._send(422, json.dumps({"error": why}, ensure_ascii=False) if as_json else why,
                                      "application/json; charset=utf-8" if as_json else "text/plain; charset=utf-8")
         hid, event = form.get("hypothesis", ""), form.get("event", "")
-        if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]} or not printed_versions(sid, hid):
+        from . import think_sheet
+
+        known = hid in {h["id"] for h in hypotheses.load(sid)["hypotheses"]} or hid in think_sheet.mine(self, sid)  # 本人の案は、作った本人の画面からだけ
+        if not known or not printed_versions(sid, hid):
             return bad("作った紙をえらぶ")
         if event not in making_log.EVENTS:
             return bad("その札は無い")
@@ -636,7 +645,9 @@ class Handler(BaseHTTPRequestHandler):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
         out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
         hid = form.get("hypothesis", "")
-        if not printed_versions(sid, hid):
+        from . import think_sheet
+
+        if not printed_versions(sid, hid) or not think_sheet.usable(self, sid, hid):
             return out(422, {"error": "作った紙をえらぶ"})
         if act == "ask-json":
             from api.budget import BudgetStop
@@ -670,7 +681,9 @@ class Handler(BaseHTTPRequestHandler):
             from api.budget import BudgetStop
 
             hid = form.get("hypothesis", "")
-            if not printed_versions(sid, hid):
+            from . import think_sheet
+
+            if not printed_versions(sid, hid) or not think_sheet.usable(self, sid, hid):
                 return self._send(422, self._toy(sid, errors=["作った紙について聞けます。先に紙を作ってください"], at="ask", filled=("ask", form)))
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
@@ -686,7 +699,9 @@ class Handler(BaseHTTPRequestHandler):
             anchor = f"own-{own['id']}" if own else anchor
         elif act == "print-own":
             oid = form.get("id", "")
-            if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
+            from . import think_sheet
+
+            if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)} or not think_sheet.usable(self, sid, oid):
                 return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"], at="kasetsu"))
             out_dir(sid).mkdir(parents=True, exist_ok=True)
             if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
@@ -704,6 +719,10 @@ class Handler(BaseHTTPRequestHandler):
             see = hid
         else:
             hid = form.get("hypothesis", "")
+            from . import think_sheet
+
+            if not think_sheet.usable(self, sid, hid):  # 話した考えから作った案の記録は、作った本人の画面からだけ
+                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at="kiroku", filled=(act, form)))
             # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
             rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
                    "impression": form.get("impression", "").strip(),

@@ -217,7 +217,8 @@
    "src/web/think_sheet.py",
    "tests/test_loop1_think.py",
    "tests/test_loop1_withdraw.py",
-   "tests/test_loop1_own_private.py"
+   "tests/test_loop1_own_private.py",
+   "tests/test_loop1_round.py"
   ]
  },
  {

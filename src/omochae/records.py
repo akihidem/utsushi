@@ -88,6 +88,11 @@ def add(rec):
     failures = check(rec)
     if failures:
         return None, failures
+    if str(rec.get("hypothesis_id")).startswith("OWN-") and not rec.get("sheet_set"):
+        # 自分の案の紙は今の組の雛形から刷った物で、型紙の確定の記録を持たない。組を持たせないと、束で、同じ紙の札や工夫と別の群に分かれる（ループ1、#335）。
+        from . import making_log
+
+        rec = {**rec, "sheet_set": making_log._engine(rec["source_id"], rec["hypothesis_id"])[1]}
     d = folder()
     d.mkdir(parents=True, exist_ok=True)
     # 取り下げた番号も数える。使い回すと、残った根拠や控えが別の記録を指してしまう
@@ -145,6 +150,11 @@ def _drop_spoken(rid):
             continue
         if oid:
             gone += hypotheses.drop_own(sid, oid)
+            # その紙に付いた工夫で、まだ結ばれていない字も消す（消えた紙を指す字を残さない）。この記録に結ばれた字は drop_for_record が消す。
+            for stem_, t in talks.items():
+                if t.get("hypothesis_id") == oid and t.get("source_id") == sid and not t.get("record_id"):
+                    (making_log.folder() / f"{stem_}.json").unlink(missing_ok=True)
+                    gone.append(f"making/{stem_}.json")
         # 元の考えの字。ほかの記録に結ばれた字は、その記録の物なので残す。
         if stem in talks and talks[stem].get("record_id") in (None, rid):
             (making_log.folder() / f"{stem}.json").unlink(missing_ok=True)

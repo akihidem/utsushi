@@ -84,12 +84,20 @@ assert everywhere("書いて立てた動かし方"), "書いて立てた仮説�
 
 # ── その案の紙で試した記録を取り下げる（考えが記録に結ばれていなくても） ──
 SAID4 = "扇の折りを増やしたい"
-_, own4 = made(SAID4, hid="H-C")  # H-C を見て話した考えは、OWN の紙の記録には結ばれない
-rid4 = record(own4["id"])
+_, own4 = made(SAID4, hid="H-C")
+talk_log.add(G, "craft", "その紙に付いた工夫", hypothesis_id=own4["id"], sheet_version=1, step=1, who=OTHER)  # ほかの印の字。記録には結ばれない
+rid4 = record(own4["id"], who="")  # 印の無い画面の記録。何も結ばれない
 assert talk_log.talks(G, record_id=rid4) == [], "この形では考えが記録に結ばれない"
 assert records.withdraw(rid4)[1] == []
 assert everywhere(SAID4) == [], "その案の紙の記録を取り下げると、元の考えの字も消える"
+assert everywhere("その紙に付いた工夫") == [], "消えた紙を指す工夫の字も残さない"
 assert printed(own4["id"]) == []
+# 同じ印の記録なら、考えはその案の紙の記録に結ばれる（考えはたたき台に付いていても）
+SAID4B = "折りを減らしたい"
+_, own4b = made(SAID4B, hid="H-C")
+rid4b = record(own4b["id"])
+assert [t["text"] for t in talk_log.talks(G, record_id=rid4b)] == [SAID4B], "元の考えが結ばれる"
+assert records.withdraw(rid4b)[1] == [] and everywhere(SAID4B) == []
 
 # ── 別の記録がまだ使っている間は消さない ──
 SAID5 = "柄を太くしたい"
