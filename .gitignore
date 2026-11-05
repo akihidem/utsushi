@@ -25,3 +25,5 @@ data/loop/*
 !data/loop/explanation-R-0002.json
 !data/loop/template-change-0001.json
 .venv
+# 作る側の機械ごとの設定。共有の設定 .claude/settings.json は入れる。
+.claude/settings.local.json
