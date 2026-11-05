@@ -432,6 +432,7 @@
   "evidence": [
    "src/web/tsukuru.py",
    "tests/test_tsukuru.py",
+   "tests/test_tsukuru_last_step.py",
    "src/omochae/making_log.py",
    "docs/process/research/30-kazasu-camera-choice.md"
   ],

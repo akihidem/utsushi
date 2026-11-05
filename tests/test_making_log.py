@@ -23,6 +23,7 @@ os.environ["OMOCHAE_DATA"] = DATA
 
 from omochae.marks import without_premise  # noqa: E402
 from omochae import hypotheses, loop, making_log, records  # noqa: E402
+from web import tsukuru  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -152,8 +153,9 @@ def step(n, event, who=""):
     return post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": str(n), "event": event, "json": "1", **({"who": who} if who else {})})
 
 
-# A: 開いて、2 へ進み、2 で止まって、そのままやめた。B: 開いて、2 で止まり、3 へ進んで、できた。印の無い人も 2 で止まった
-for n, ev, w in ((1, "start", A), (1, "next", A), (2, "stuck", A), (1, "start", B), (1, "next", B), (2, "stuck", B), (2, "next", B), (3, "done", B),
+# A: 開いて、2 へ進み、2 で止まって、そのままやめた。B: 開いて、2 で止まり、3 へ進んで、最後の手順でできた（組み上がりは最後の手順だけで受ける。#321）。印の無い人も 2 で止まった
+last = tsukuru.count(G, "H-A")
+for n, ev, w in ((1, "start", A), (1, "next", A), (2, "stuck", A), (1, "start", B), (1, "next", B), (2, "stuck", B), (2, "next", B), (last, "done", B),
                  (2, "stuck", "")):
     assert step(n, ev, w)[0] == 200, (n, ev, w)
 for f in making.glob("step-*.json"):
