@@ -71,14 +71,14 @@ data = hypotheses.load(TORA)
 # 予想の段は #266 で外したので、予想を置かずに開いた頁にそのまま札が出る
 page = toy.toy_page(TORA)
 assert '<span class="lb">当時の材料</span>' in page and '<span class="lb">紙一枚</span>' not in page
-assert "どの印も上下を表しません" in page
+assert "どれがえらい、ということはありません" in page
 for w in ("順位", "おすすめ", "初心者", "点数", "★"):
     assert w not in page, w
 at = [page.index(f"仮説 {hypotheses.letter(h)}「") for h in data["hypotheses"]]
 assert at == sorted(at), "仮説の並びを変えた"
 # 一覧は玩具ごと。どれかの仮説に付く印を、並びを変えずに出す
 listing = toys.page("tenji")
-assert listing.count('class="ways"') >= 1 and "どの印も上下を表しません" in listing
+assert listing.count('class="ways"') >= 1 and "どれがえらい、ということはありません" in listing
 assert ways.toy_labels(TORA) == ["当時の材料"]
 at = [listing.index(f'href="/toy/{sid}"') for sid in sorted(toys.sources(), key=lambda s: hypotheses.stage(s) != "必須")]
 assert at == sorted(at), "印で一覧の並びを変えた"
