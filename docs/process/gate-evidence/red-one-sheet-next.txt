@@ -1,0 +1,8 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_page.py 2>&1 | tail -4; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 7782ede（回した時の HEAD）
+  File "tests/test_one_sheet_page.py", line 170, in <module>
+    assert "/record/R-0001/next" in gpage and "/record/R-0002/next" not in gpage and 'id="next-R-0002"' not in gpage
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+試験 rc=1
+rc=0

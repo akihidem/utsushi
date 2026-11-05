@@ -295,9 +295,12 @@ def next_reasons(failures, sid, hid, param):
 
 def next_form(r, back=""):
     """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
-    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。"""
+    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。
+    次の版はたたき台の記録からだけ（J-032）。ほかの仮説の記録に欄を出しても、版は刷れないか、札に出ない紙が増えるだけなので空を返す。"""
     from omochae.metrics import ALLOWED
 
+    if r["hypothesis_id"] != hypotheses.sheet_of(r["source_id"])["id"]:
+        return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
     now = _params_now(r["source_id"], r["hypothesis_id"], template)
     opts = "".join(_param_option(template, k, now) for k in sorted(ALLOWED[template]))
@@ -361,7 +364,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
                 nxt = refill(next_form(r, filled[1].get("back", "")), filled[1]).replace("<details>", "<details open>", 1)
             # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。
             tail = (f'<div class="step"><p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p></div>'
-                    f'<div class="step">{ai_block(r)}</div><div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>')
+                    f'<div class="step">{ai_block(r)}</div>' + (f'<div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>' if nxt else ""))
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
             tail = refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
