@@ -75,7 +75,8 @@ tsource = json.loads((pathlib.Path(__file__).resolve().parents[1] / "data/source
 for h in load(TSID)["hypotheses"]:
     layout, failures = compose_sheet("pivot_counterweight", h["params"], tsource, h["name"], h["how_it_moves"])
     assert not failures, (h["id"], [f.line() for f in failures])
-r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID, "print", "H-C", "--out", f"{tmp}/t"], capture_output=True, text=True)
+# 虎の今の組で刷れるのは、たたき台の H-A だけ（本人の決定 11-05、J-032）。記録の床は仮説の番号に依らないので、下の H-C の記録はそのまま見る。
+r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", TSID, "print", "H-A", "--out", f"{tmp}/t"], capture_output=True, text=True)
 assert r.returncode == 0, r.stderr
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert TSID in flat and "張子の首振り虎" in flat
