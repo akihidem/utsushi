@@ -8,6 +8,7 @@ import os
 import tempfile
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tempfile.mkdtemp(), "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 import anthropic
 import httpx2
