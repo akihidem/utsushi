@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_loop_ayumi.py
+# commit: eb6348a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_ayumi.py", line 11, in <module>
+    from web import ayumi, kaizen
+ImportError: cannot import name 'ayumi' from 'web' (src/web/__init__.py)
+rc=1
