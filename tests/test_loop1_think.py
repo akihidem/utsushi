@@ -5,7 +5,7 @@
 - 確かめる所に内部の名前を出さない。本人が押すまで刷らない。乗らない考えは型紙なしの紙になる。
 - 紙を作った直後に、その紙の絵が出る。順位・点・推しを付けない（#145 の要件を話す道でも）。
 - 話した字は、採った後も玩具の頁の札と図鑑に出さない（記録に結ぶ前の字は学ぶ人の頁に出さない決まり）。
-- 文は「文面は本人の確認待ち」の新しい文（文字列をここに固定しない。定数で見る）。
+- 文は本人が採った文（11-05 21:5x・全部このまま）。ADOPTED が文字列で見る。
 """
 import json
 import os
@@ -51,6 +51,19 @@ def think(text, who=WHO, hid=None):
     assert path and not fs, fs
 
 
+# 本人の決定（11-05 21:5x・全部このまま）で採られた文。一字も変えない。変える時は本人の確認が要る
+ADOPTED = {"GO": "この考えから紙を作る", "LEAD": "残した考えに合わせて、もとの紙を変えます。", "NONE": "先に、考えを話すか書いて「残す」を押してください。",
+           "WAITING": "作る人が、この考えから紙を作っています。あとで、もう一度この釦を押すと、続きが見られます。", "ASKED": "頼みました。",
+           "CHECK": "あなたの言葉から変えた所と、こちらで決めた所です。よければ「この紙にする」を押してください。", "FROM_WORDS": "あなたの言葉から",
+           "FILLED": "こちらで決めた所", "SAME": "もとの紙のまま", "OK": "この紙にする",
+           "NO_FIT": "今の型紙には合わないので、型紙なしの紙（身の回りの紙とひもで作る紙）になります。",
+           "DONE": "紙ができました。", "SEE": "紙を見る", "FAILED": "紙を作れませんでした。もう一度押してください。"}
+for key, text in ADOPTED.items():
+    assert getattr(think_sheet, key) == text, key
+assert think_sheet.NAMES == {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方"}
+assert think_sheet.VALUES == {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る"}
+assert think_sheet.labels({"id": "H-A"}) == ("仮説 A から変えた案", "仮説 A の紙を見て話した考え"), "紙に刷る名前と根拠"
+
 base_params = words.base_of(G)[1]
 
 # ── 鍵なしの道を画面の関数で ──
@@ -75,6 +88,7 @@ name, why = think_sheet.confirm(G, w["token"])
 oid = words.by_token(G, w["token"])["own_id"]
 assert name == f"{oid}_v1.pdf" and why is None
 assert "".join(OWN_HYPOTHESIS.split()) in flat_pdf(out_dir(G) / name), "紙に「自分で立てた」の印"
+assert "仮説Aから変えた案" in flat_pdf(out_dir(G) / name), "紙に刷る名前は採られた文"
 done = think_sheet.section(G, f"think-{w['token']}")
 assert think_sheet.DONE in done and name in done and SAID in done
 assert f'<img src="/sheet/{G}/{name[:-4]}.png"' in done and (out_dir(G) / f"{name[:-4]}.png").exists(), "紙を作った直後に、その紙の絵が出る（#145）"
