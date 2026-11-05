@@ -6,6 +6,8 @@
 """
 import json
 import os
+import pathlib
+import re
 import tempfile
 import threading
 import urllib.request
@@ -14,7 +16,7 @@ DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "usage.jsonl")
 
-from omochae import engine_bundle, gallery, hypotheses, making_log, records  # noqa: E402
+from omochae import engine_bundle, gallery, hypotheses, making_log, records, trial_video  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -65,4 +67,16 @@ for rec in records.all_records(G):
 
 # 4. エンジンへ渡す束も同じ記録で落ちない
 assert engine_bundle.build() is not None
+# 5. 動画の報告も同じ。札が字でなければ、動いたかを作らない
+for rid in (*ODD, "R-9006"):
+    trial_video._save(rid, {"marks": []})
+    assert "moved" not in trial_video.report(rid, True)[0], rid
+trial_video._save("R-9000", {"marks": []})
+assert trial_video.report("R-9000", True)[0]["moved"] == "moved"
+
+# 6. 読む所を足す時に同じ形を入れない（1 件の置き間違いで頁が落ちる形なので、字でも見る）
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+direct = [f"{p.relative_to(ROOT)}:{n}" for p in sorted((ROOT / "src").rglob("*.py"))
+          for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if re.search(r"""\b(r|rec)\[["']result["']\]""", line)]
+assert not direct, ("札を直に読んでいる。records.result_word を使う", direct)
 print("ok")

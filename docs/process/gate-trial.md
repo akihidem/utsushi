@@ -1053,7 +1053,7 @@
 - 足した決め: 記録そのものは落とさない（記録の番号の一覧には残る）。数字や真偽の札は今まで字にして出ていたが、これも出さない
 - 出していない範囲: 札の言葉と、前の札の受け口。札のほかの欄の手置きの崩れは見ていない
 - ゴールの要件: 札が list・dict・null・数・真偽・欄なしの記録があっても頁が開き、字の札だけが数えられる（`tests/test_loop_odd_result.py`）。必須 2 種の紙の指紋は変わらない
-- 検証ゲート: Red: 直す前に rc 1（gate-evidence/red-loop-odd-result.txt）。Green: gate-evidence/green-loop-odd-result.txt。直しを 1 か所ずつ外す書き換えを全部の読む所で回し、どれも落ちる事を確かめた
+- 検証ゲート: Red: 直す前に rc 1（gate-evidence/red-loop-odd-result.txt）。main を取り込むと動画の報告にも同じ読み方が入っていて、ここも直す前に rc 1（gate-evidence/red-loop-odd-result-video.txt）。同じ形が増えないよう、札を直に読む字も試験で見る。Green: gate-evidence/green-loop-odd-result.txt と gate-evidence/green-loop-odd-result-video.txt。直しを 1 か所ずつ外す書き換えを全部の読む所で回し、どれも落ちる事を確かめた
 - エビデンスゲート: 上の出力。関わる試験を 1 本ずつ回した。画面は目で見ていない。文は足していない
 - マージ後の書き戻し: #146 に書く。#146 の本体（札の言葉）は残るので閉じない
 
