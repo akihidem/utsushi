@@ -52,6 +52,12 @@ def files_of(folder, kind, source_id):
     return out
 
 
+def play_dir(source_id):
+    """刷った紙の置き場。試験で本物の置き場を汚さないよう、記録と同じ環境変数に従う。"""
+    base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "play" if os.environ.get("OMOCHAE_DATA") else ROOT / "out/play"
+    return base / source_id
+
+
 def own_paths(source_id):
     return sorted(files_of(_pred_dir(), "own", source_id), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
 
@@ -70,11 +76,29 @@ def save_own(source_id, name, how, evidence, params=None):
     folder = _pred_dir()
     folder.mkdir(parents=True, exist_ok=True)
     with store.locked(folder):
-        n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+        # 消した番号も数える（drop_own の印）。番号を使い回すと、古いリンクが別の人の紙を開く。
+        gone = (int(p.stem.rsplit("-", 1)[1]) for p in folder.glob(f"own-{source_id}-*.gone"))
+        n = max([int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)] + list(gone), default=0) + 1
         rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
                "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
         store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
+
+
+def drop_own(source_id, own_id):
+    """自分の仮説を消す（記録の取り下げから呼ぶ）。その記録と、刷った紙の全部。消した物の名前を返す。字を持たない印だけを残して、番号を使い回さない。"""
+    gone = []
+    n = own_id.rsplit("-", 1)[1]
+    path = _pred_dir() / f"own-{source_id}-{n}.json"
+    if path.exists():
+        path.with_suffix(".gone").touch()  # 先に印を置く。途中で落ちても番号は戻らない
+        path.unlink()
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted(d.glob(f"{own_id}_v*")) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
 
 
 def sheet_of(source_id):
@@ -229,11 +253,9 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
-    # 断るのは記録（data/hypotheses）にある仮説のうち、たたき台でない物。人が輪や生成で採って重ねた新しい仮説（H-N…）は、
-    # 輪を 1 枚の形に直す時に一緒に扱うので、ここではまだ止めない（#332 の後の直し）。
-    # 試作の玩具は今の作りのまま。頁が 1 枚だけを出す直しと一緒に揃える。
-    recorded = {x["id"] for x in json.loads((ROOT / "data/hypotheses" / f"{source_id}.json").read_text(encoding="utf-8"))["hypotheses"]}
-    if data.get("stage", "必須") == "必須" and hypothesis_id in recorded and hypothesis_id != data.get("sheet"):
+    # 人が輪や生成で採って重ねた新しい仮説（H-N…）も作る側の控えなので、同じく刷らない。
+    # 試作の玩具は、作る側がこの口から控えを刷れる（道は閉じない）。頁からは刷らない（web の /print の口が断る）。
+    if data.get("stage", "必須") == "必須" and hypothesis_id != data.get("sheet"):
         print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{data.get('sheet')}）の紙だけを刷る").line(), file=sys.stderr)
         return 3
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)

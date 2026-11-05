@@ -80,8 +80,8 @@
  {
   "id": "J-005",
   "path": "decisions/J005-axle-default.md",
-  "hook": "扇の中心の置き方を比べた。実物で未確定",
-  "status": "仮の決定"
+  "hook": "扇の中心の置き方を比べた。中心の軸で開くのを試行で確かめた",
+  "status": "試行で確かめた"
  },
  {
   "id": "research/09",
