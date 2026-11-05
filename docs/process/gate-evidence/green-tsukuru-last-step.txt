@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_tsukuru_last_step.py
+# commit: 6aa6740（回した時の HEAD）
+/tmp/tmpd2bd_1c3/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpd2bd_1c3/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpd2bd_1c3/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpd2bd_1c3/play/NDL-1187053-R0000005-L/H-B_v1.pdf
+/tmp/tmpd2bd_1c3/play/NDL-1187053-R0000005-L/H-B_v1_tejun.pdf
+/tmp/tmpd2bd_1c3/play/NDL-1187053-R0000005-L/H-B_v1_after.pdf
+ok: 作りながら見るの最後の手順
+rc=0

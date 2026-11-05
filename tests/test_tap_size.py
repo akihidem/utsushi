@@ -27,6 +27,8 @@ assert "(max-width:1100px)" in skin.TAP_FLOOR and "(pointer:coarse)" in skin.TAP
 assert "min-height:44px" in skin.TAP_FLOOR
 for selector in (".nav a", ".tabs a", ".links a", ".notice-back a", "summary", "button", "select", "label"):
     assert selector in skin.TAP_FLOOR, selector
+# 床は button に display を付ける。止めないと、hidden にした釦（鏡を出す・声で聞く・扇の釦・作りながら見るの札）が狭い幅で出たままになる（#321）
+assert "[hidden]{display:none!important}" in skin.TAP_FLOOR, "幅の狭い画面で、hidden にした釦が隠れない"
 
 printed = False
 for look in ("tenji", "zine"):
