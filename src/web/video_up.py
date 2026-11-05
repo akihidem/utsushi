@@ -547,7 +547,7 @@ async function send(file,base,r,name){
   const item={token:made.token,receipt:made.receipt,name:file.name,toy:name,word:SAY.waiting,state:'waiting'};
   sent=sent.filter(x=>x.token!==item.token).concat(item);
   write(sent);
-  rows.querySelectorAll(`li[data-token="${item.token}"]`).forEach(li=>li.remove());
+  [...rows.children].filter(li=>li.dataset.token===item.token).forEach(li=>li.remove());
   r.li.dataset.token=item.token;
   show(r,item);
   watch();
@@ -564,8 +564,8 @@ async function poll(){
         const now=got[x.token];
         if(!now)continue;
         x.state=now.state;x.word=now.word;
-        const li=rows.querySelector(`li[data-token="${x.token}"] .state`);
-        if(li)li.textContent=x.word;
+        const li=[...rows.children].find(y=>y.dataset.token===x.token);
+        if(li)li.querySelector('.state').textContent=x.word;
       }
       write(sent);
     }

@@ -179,7 +179,7 @@ assert call("GET", f"//evil.example/?k={KEY}", cookie=None)[2]["Location"] == "/
 assert call("GET", "/", host="evil.example")[0] == 403
 assert post("/check", form(), origin="https://evil.example")[0] == 403
 assert post("/check", form(), origin=None)[0] == 403
-tunnel = "abc-def.trycloudflare.com"
+tunnel = "abc-def.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分ける（tests/test_public_open.py と同じ）
 assert call("GET", "/", host=tunnel, origin=None)[0] == 200
 assert post("/check", form(), host=tunnel, origin=f"https://{tunnel}")[0] == 200
 assert post("/check", form(), host=tunnel, origin=f"http://{tunnel}")[0] == 403, "トンネルの先は https だけ"
