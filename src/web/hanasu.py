@@ -173,6 +173,16 @@ document.addEventListener('submit',async(e)=>{
  go.disabled=false;
  if(j.kept){const li=document.createElement('li');li.textContent=text;root.querySelector('.hanasu-said').append(li);box.value='';root.dataset.via='';note(root,j.note)}
  else note(root,j.why||M.failed)});
+// 「残す」の前に #think の釦を押すと、頁を読み直して欄の字が消える。字はこのタブの中にだけ持ち、読み直したら消す（サーバへ送るのは「残す」の時だけ）。
+const said=document.querySelector('#hanasu textarea');
+if(said){
+ const keep='utsushi-said '+said.form.getAttribute('action'),box=said.closest('[data-hanasu]');
+ try{const d=JSON.parse(sessionStorage.getItem(keep)||'null');sessionStorage.removeItem(keep);
+  if(d&&!said.value){said.value=d.text;box.dataset.via=d.via}}catch(e){}
+ document.addEventListener('submit',(e)=>{
+  if(!e.target.closest||!e.target.closest('#think')||!said.value.trim())return;
+  try{sessionStorage.setItem(keep,JSON.stringify({text:said.value,via:box.dataset.via||''}))}catch(e2){}});
+}
 addEventListener('pagehide',stop);
 })()</script>""".replace("__FAILED__", FAILED).replace("__NOHEARD__", NOHEARD).replace("__HOW_BROWSER__", HOW_BROWSER)
 

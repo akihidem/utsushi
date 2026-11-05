@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_press_stops.py
+# commit: ff54436（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_press_stops.py", line 57, in <module>
+    assert "required" not in mark.group(0), ("写真を選ばない時は要らない", mark.group(0))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('写真を選ばない時は要らない', '<input type="checkbox" id="ok" required>')
+rc=1

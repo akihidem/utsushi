@@ -82,4 +82,8 @@ assert fails({"shape": "uchiwa_l", "hold": "glue", "size": 999})[0].startswith("
 bad = f"{tmp}/bad"
 assert generate(T.ID, {"shape": "katana", "hold": "slide", "size": 170, "slide_gap": 0.5}, "NDL-1187053-R0000005-R", bad) == 3
 assert not pathlib.Path(f"{bad}.pdf").exists()
+# 刷った後の検査で落ちた紙も、正しい名前で残さない（場面 neg_marks_all と同じ形。PDF は .rejected.pdf へ移し、PNG は作らない）
+bad = f"{tmp}/bad_marks"
+assert generate("slider_fan", {}, "NDL-1187053-R0000005-L", bad, inject={"omit_marks": "all"}) == 3
+assert not pathlib.Path(f"{bad}.pdf").exists() and not pathlib.Path(f"{bad}.png").exists() and pathlib.Path(f"{bad}.rejected.pdf").exists()
 print("ok 床")

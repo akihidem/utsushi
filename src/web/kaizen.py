@@ -13,6 +13,7 @@
   多い順に仮説や玩具を並べる・点・％の成績、のような上下を付ける形は作らない。人は、その場限りの無作為の印で数える。
 - /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）。
   合言葉なしで開いたデモでは出さない（J-028）。学ぶ人の頁の節には、版と根拠だけを出し、採った人の名前は出さない（自由な文で、名前を書かない線に沿う）。
+- 新しく作られた版の型紙の歩み（本人の希望 11-06）は、別の頁 /loop/ayumi（ayumi.py）。どのループで走ったかの決め方は kaizen_versions.py。
 - 受け持ち（本人の決定 11-05、カード 20261105-090458 の (b)）: 雛形そのものを直すための報告の入口と道具（報告の形・検査・集計）は
   エンジン（paper-to-toy）の側。ここが持つのは、学ぶ人の記録と感想、仮説ごとの版（寸法を 1 つ変えた次の版）、その表示まで。
   だから、報告から案を機械で出す道具はここに置かない。
@@ -36,7 +37,7 @@ def versions(sid, hid):
 
 def _param_name(sid, k):
     tpl = TEMPLATES_NAMES(sid)
-    return PARAM_NAMES.get(k, tpl.get(k, k))
+    return PARAM_NAMES.get(k, tpl.get(k, "寸法"))  # 呼び名の無い寸法は、内部の名前（arm_len など）を出さない
 
 
 def TEMPLATES_NAMES(sid):
@@ -65,7 +66,7 @@ def section(sid, data, recs):
             ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
             rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
-                     + (f'（{why}）' if why else "") + f'。根拠: {"・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", []))}'
+                     + (f'（{why}）' if why else "") + f'。{wording.BASED_ON.format("・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}'
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
     ready, waiting = pending(sid, recs)
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
@@ -78,7 +79,7 @@ def section(sid, data, recs):
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p>'
-            '<p class="meta">作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
+            f'<p class="meta">{esc(wording.plain("作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。"))}</p>'
             f'{lines}{todo}</section>')
 
 
@@ -108,7 +109,8 @@ def page(look=skin.DEFAULT, path="/loop"):
     table = (f'<table><thead><tr><th>玩具</th><th>報告</th><th>報告から直した版</th><th>次の版を待つ報告</th><th>説明を待つ報告</th><th>聞かれた事</th></tr></thead><tbody>{rows}</tbody></table>'
              if items else '<p class="meta">報告はまだありません。</p>')
     body = (f'<section class="hero"><div><h1>改善の輪</h1><p class="lead">作った人の報告を、型紙の改善に回す所。報告か質問のある玩具 {len(items)} 種、報告 {n_rep} 件。</p>'
-            '<p class="meta">輪: 報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。並びは本の順です。</p></div></section>'
+            '<p class="meta">輪: 報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。並びは本の順です。</p>'
+            '<p class="links"><a href="/loop/ayumi">型紙の版の歩み</a></p></div></section>'
             f'<section class="sec">{table}</section>')
     return skin.shell("改善の輪", body, look, "", path, TABLE_STYLE)
 
@@ -200,7 +202,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'<p class="meta">聞く口の質問、手順の進み、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
             f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
-            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a></p></div></section>'
+            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a><a href="/loop/ayumi#{esc(sid)}">型紙の版の歩み</a></p></div></section>'
             f'<section class="sec" id="k1"><h2>1 止まった段</h2><p class="meta">作りながら見る頁（机の端に置く・試作）の「止まった」の札を、版と手順の番号ごとに数えます（止まった手順）。映像は残していません。</p>{s1}</section>'
             f'<section class="sec" id="k2"><h2>2 動きの結果</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{s2}</section>'
             f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'

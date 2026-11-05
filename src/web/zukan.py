@@ -68,7 +68,7 @@ def quote_lines(src):
 def record_title(r, data):
     """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
     word = records.result_word(r)
     return f"{who}・{word}" if word else who
 
@@ -85,21 +85,23 @@ def observation_lines(sid, data):
     return [{"text": f"{record_title(r, data)}（{record_date(r)}・{wording.record_no(r['id'])}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
-def hypothesis_lines(sid, data):
+def hypothesis_lines(sid, data, photos=True):
     """どれも試していない考えなので、仮説の印を付ける（status も添える）。出すのはたたき台の 1 つだけ（J-032。説を羅列しない）。"""
     out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"] if h["id"] == data.get("sheet")]
     from api.words import spoken_own_ids  # 話した考えから採った案は出さない（ループ1、Issue #335。記録に結ぶ前の字は学ぶ人の頁に出さない決まり）
 
     spoken = spoken_own_ids(sid)
-    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid) if h["id"] not in spoken]
+    # 合言葉なしで開いた場では、書いて立てた仮説の文も出さない: 人ごとに分かれておらず、文の中の名前は機械で落とせない（J-028、#336）。
+    own = hypotheses.own_hypotheses(sid) if photos else []
+    out += [{"text": f"あなたの仮説「{h['name']}」: {h['how_it_moves']}", "label": HYPO} for h in own if h["id"] not in spoken]
     return out
 
 
-def lines_for(sid):
+def lines_for(sid, photos=True):
     """その玩具の図鑑の文を、印ごとに返す。予想の段を外した（本人の決定 11-05、#242）ので、仮説はいつも出す。"""
     data, src = hypotheses.load(sid), _source(sid)
     return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data),
-            "hypotheses": hypothesis_lines(sid, data), "holding": src.get("holding", "")}
+            "hypotheses": hypothesis_lines(sid, data, photos), "holding": src.get("holding", "")}
 
 
 def guard(lines):
@@ -114,8 +116,8 @@ def _items(lines):
     return "".join(f'<li><span class="lb">{esc(x["label"])}</span>{esc(x["text"])}</li>' for x in lines)
 
 
-def toy_section(sid, link_title=False):
-    z = lines_for(sid)
+def toy_section(sid, link_title=False, photos=True):
+    z = lines_for(sid, photos)
     guard(z["quotes"] + z["observations"] + z["hypotheses"])
     has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     pic = f'<figure><img src="/picture/{esc(sid)}" alt="{esc(z["toy"])}の図"><figcaption class="meta">{esc(z["holding"])}</figcaption></figure>' if has_pic else "<div></div>"
@@ -144,12 +146,12 @@ NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="
 LEAD = '<p class="meta">文にはどれも印があります。原文の引用は人が確かめた読み、仮説は試していない考え、観察は人が残した記録です。</p>'
 
 
-def index_page(sids, look=None):
+def index_page(sids, look=None, photos=True):
     """必須の 2 種は今までどおり 1 つずつ大きく並べる。全部を作る線で足した試作の玩具（本人の指示 11-04）は、その下に小さな札で並べる。
     100 を超える玩具を全部大きく並べると、入口から見たい物に届かないため。試作の札は名前が確かめ待ちである事も添える。"""
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
-    body = "".join(toy_section(s, link_title=True) for s in main)
+    body = "".join(toy_section(s, link_title=True, photos=photos) for s in main)
     if rest:
         cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">{esc(wording.frame(s))}</span></li>' for s in rest)
         body += (f'<section class="more" aria-label="ほかの玩具"><h2>ほかの玩具</h2><p class="meta"><span class="lb">試作</span>'
@@ -157,5 +159,5 @@ def index_page(sids, look=None):
     return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body, look)
 
 
-def toy_zukan(sid, look=None):
-    return _page(f"うつし · 図鑑 · {hypotheses.load(sid)['toy']}", f"<h1>図鑑</h1>{NAV}{LEAD}" + toy_section(sid), look, f"/zukan/{sid}")
+def toy_zukan(sid, look=None, photos=True):
+    return _page(f"うつし · 図鑑 · {hypotheses.load(sid)['toy']}", f"<h1>図鑑</h1>{NAV}{LEAD}" + toy_section(sid, photos=photos), look, f"/zukan/{sid}")

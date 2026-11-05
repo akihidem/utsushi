@@ -114,7 +114,7 @@ assert code == 422 and not h.get("Set-Cookie"), "ほかの印には渡さない"
 
 # 書いて立てた仮説の紙は今までどおり（鍵なしで開く）
 typed, _ = hypotheses.save_own(G, "書いた案", "書いて立てた動かし方", "右の図")
-assert send(base, f"/toy/{G}/print-own", {"id": typed["id"]})[0] == 303
+assert hypotheses.print_own(G, typed["id"], str(hypotheses.play_dir(G) / f'{typed["id"]}_v1')) == 0
 assert send(base, f"/sheet/{G}/{typed['id']}_v1_free.pdf")[0] == 200
 
 
