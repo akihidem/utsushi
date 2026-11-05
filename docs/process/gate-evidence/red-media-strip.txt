@@ -1,0 +1,13 @@
+# Red: 試験を足し、直す前の src（main 6176d15）で回した
+$ PYTHONPATH=src .venv/bin/python tests/test_media_strip.py
+Traceback (most recent call last):
+  File "tests/test_media_strip.py", line 104, in <module>
+    assert PLACE not in saved, "PNG に撮影情報が残った"
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: PNG に撮影情報が残った
+rc 1
+
+# 動画と型の偽り・向き: 直す前の save_media に直に渡した（試験は上で止まるので別に見た）
+位置の欄を入れた MP4: m1.mp4 位置の印が残る: True
+HTML を video/mp4 と言う: ('m1.mp4', '')
+向き 6（縦に撮った写真）の JPEG 40x20: 置いた後の大きさ (40, 20) 向きの欄 None

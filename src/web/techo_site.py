@@ -7,18 +7,28 @@
 - 聞く口は src/api/ask.py をそのまま使う（仕組みは答えない、よくある言葉は刷った説明から、ほかは鍵がある時だけ Claude）
 - 声: ブラウザの音声認識で、1 回押したら話し続けられる形（続けて聞く）と、答えの読み上げ。使えない画面では字の操作だけが残る
 - 上げた写真と動画は、その場で作った試した記録（R-番号）に添える。置き場は記録と同じ git の外（data/records/media）
-- 写真の撮影情報（位置など）は保存の時に外す。試行の写真を repo に載せた時と同じ扱い（JPEG の APP1 の区画を外す）
+- 写真と動画の撮影情報（位置など）は保存の時に外す。記録は公開の repo に入り得るし、ギャラリーは合言葉を知る人の全員に見えるため（#156）
+- 中身が写真・動画として読める物だけを置く。送られた Content-Type は信じない。動画は観察の ffmpeg に渡るので、なおさら
 """
 import html
+import io
+import pathlib
 import re
+import shutil
+import subprocess
+import tempfile
 
-from omochae import hypotheses, records
+from PIL import Image
+
+from api import config
+from omochae import contrib, hypotheses, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
 MAX_MEDIA = 20 * 1024 * 1024
 MAX_PER_RECORD = 3
+MISMATCH = "中身を写真か動画として読めません（JPEG・PNG・MP4・MOV だけ）"
 ICONS = {
     "動いた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 34c8 0 14-6 18-18M20 14l8 2 2 8"/></svg>',
     "動かない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 24h28"/></svg>',
@@ -37,29 +47,81 @@ def media_dir(rid):
 
 
 def strip_jpeg_meta(data):
-    """JPEG の撮影情報（EXIF・XMP の APP1）を外す。画素は変えない。形が読めない時はそのまま返す（画像として保存しない判断は呼ぶ側）。"""
+    """JPEG の撮影情報を外す。画素は変えない。読めない形なら None（情報が残るかもしれない物を置かないため）。
+
+    残す区画を決めて、ほかは全部外す（JFIF・ICC の色・Adobe の色の変換）。外す物を並べる形だと、機種ごとの区画（位置や顔の情報）が抜けるため。
+    最後の EOI の後ろも捨てる。スマホの写真はそこに 2 枚目の画像（MPF）を持ち、それ自身の EXIF が付く事がある。
+    """
     if data[:2] != b"\xff\xd8":
-        return data
+        return None
     out, p = bytearray(data[:2]), 2
-    try:
-        while p < len(data):
-            if data[p] != 0xFF:
-                return data
-            m = data[p + 1]
-            if m == 0xDA:
-                out += data[p:]
-                return bytes(out)
-            n = int.from_bytes(data[p + 2:p + 4], "big")
-            if m != 0xE1:
-                out += data[p:p + 2 + n]
-            p += 2 + n
-    except IndexError:
-        return data
-    return bytes(out)
+    while p + 1 < len(data):
+        if data[p] != 0xFF:
+            return None
+        m = data[p + 1]
+        if m == 0xFF:  # 区画の前の詰め物
+            p += 1
+            continue
+        if m == 0xD9:
+            return bytes(out) + b"\xff\xd9"
+        n = int.from_bytes(data[p + 2:p + 4], "big")
+        seg = data[p:p + 2 + n]
+        extra = 0xE0 <= m <= 0xEF or m == 0xFE
+        if not extra or m in (0xE0, 0xEE) or (m == 0xE2 and seg[4:16] == b"ICC_PROFILE\x00"):
+            out += seg
+        p += 2 + n
+        if m == 0xDA:  # 画素の本体。次の区画まで（FF00 と RST は本体の中の印）そのまま写す
+            q = p
+            while True:
+                q = data.find(b"\xff", q)
+                if q < 0 or q + 1 >= len(data):
+                    return None
+                if data[q + 1] != 0 and not 0xD0 <= data[q + 1] <= 0xD7:
+                    break
+                q += 2
+            out += data[p:q]
+            p = q
+    return None
+
+
+def clean_photo(data, ext):
+    """写真を置ける形にする。Returns 中身 or None（型と合わない・読めない）。PNG は画素だけを書き直す。JPEG は描き直すと画質が落ちるので区画だけを外す。"""
+    clean, kind = contrib._clean_image(data)
+    if clean is None or kind != f".{ext}":
+        return None
+    if ext == "png":
+        return clean
+    # 向きの欄は EXIF の中にある。外すと縦に撮った写真が横倒しになるので、向きのある写真だけは描き直して画素へ移す
+    with Image.open(io.BytesIO(data)) as im:
+        return clean if im.getexif().get(0x0112, 1) != 1 else strip_jpeg_meta(data)
+
+
+def clean_video(data, ext):
+    """動画の撮影情報を落として入れ物を作り直す。絵と音は再符号化しない。Returns (中身 or None, 失敗の文)。
+
+    絵と音の流れだけを写す（-map）。全体の欄だけを消しても、字幕や時刻つきの情報の流れと流れごとの欄に位置が残るため。
+    読み手を mov に決める（-f mov）。中身の形で読み手を選ばせると、ほかのファイルや URL を指す一覧（HLS など）を読みに行くため。
+    """
+    if data[4:8] not in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip"):
+        return None, MISMATCH
+    if not shutil.which("ffmpeg"):
+        return None, "この機械では動画を受けられません（撮影情報を外す ffmpeg が無い）"
+    with tempfile.TemporaryDirectory() as tmp:
+        src, dst = pathlib.Path(tmp) / "in", pathlib.Path(tmp) / f"out.{ext}"
+        src.write_bytes(data)
+        try:
+            r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-f", "mov", "-i", str(src),
+                                "-map", "0:V", "-map", "0:a?", "-map_metadata", "-1", "-map_metadata:s", "-1", "-map_chapters", "-1",
+                                "-c", "copy", "-f", ext, str(dst)], capture_output=True, timeout=config.VIDEO_TIMEOUT)
+        except (OSError, subprocess.TimeoutExpired):
+            return None, MISMATCH
+        if r.returncode != 0 or not dst.exists():
+            return None, MISMATCH
+        return dst.read_bytes(), ""
 
 
 def save_media(rid, ctype, data):
-    """Returns (ファイル名 or None, 失敗の文)。記録が実在し、型と大きさと数の上限を守る物だけを置く。"""
+    """Returns (ファイル名 or None, 失敗の文)。記録が実在し、型と大きさと数の上限を守り、中身が読める物だけを、撮影情報を外して置く。"""
     if not re.fullmatch(r"R-\d{4,}", rid) or not (records.folder() / f"{rid}.json").exists():
         return None, "記録が無い"
     ext = MEDIA_TYPES.get(ctype)
@@ -68,12 +130,18 @@ def save_media(rid, ctype, data):
     if not 0 < len(data) <= MAX_MEDIA:
         return None, "1 つ 20MB まで"
     d = media_dir(rid)
-    d.mkdir(parents=True, exist_ok=True)
-    have = sorted(d.glob("m*.*"))
+    have = sorted(d.glob("m*.*")) if d.exists() else []
     if len(have) >= MAX_PER_RECORD:
         return None, "1 つの記録に 3 つまで"
+    if ext in ("mp4", "mov"):
+        clean, why = clean_video(data, ext)
+    else:
+        clean, why = clean_photo(data, ext), MISMATCH
+    if clean is None:
+        return None, why
+    d.mkdir(parents=True, exist_ok=True)
     name = f"m{len(have) + 1}.{ext}"
-    (d / name).write_bytes(strip_jpeg_meta(data) if ext == "jpg" else data)
+    (d / name).write_bytes(clean)
     return name, ""
 
 
