@@ -48,7 +48,11 @@ import urllib.request  # noqa: E402
 
 from omochae import hypotheses  # noqa: E402
 from web.play_server import serve  # noqa: E402
+from web.techo_site import media_dir  # noqa: E402
 
+# 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
+media_dir(rid).mkdir(parents=True, exist_ok=True)
+(media_dir(rid) / "review.json").write_text('{"v.mp4": {"shows": "object"}}', encoding="utf-8")
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
