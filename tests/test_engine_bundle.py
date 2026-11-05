@@ -320,6 +320,13 @@ assert r.returncode == 0 and json.loads((pathlib.Path(DATA) / "bundle4.json").re
 r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--from", "山田の束", "--out", str(pathlib.Path(DATA) / "bundle5.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
 assert r.returncode == 4 and not (pathlib.Path(DATA) / "bundle5.json").exists(), r.stderr
 assert eb.build()["from"] == "utsushi"
+# 札の置き場は人が手で触るファイル。記録の番号が決まりの外の形でも、束ごと止めない（読み飛ばす。#313 の線）
+before = eb.build()["groups"]
+for i, odd in enumerate((["R-0086"], {"a": 1}, 86, None)):
+    (pathlib.Path(DATA) / "loop" / f"video-R-08{i:02d}.json").write_text(json.dumps({"record_id": odd, "marks": [{"id": "M1", "kind": "mark", "note": "形の外の札の字", "confirmed_by": "人"}]}, ensure_ascii=False), encoding="utf-8")
+assert eb.build()["groups"] == before, "形の外の札の置き場は読み飛ばす"
+for i in range(4):
+    (pathlib.Path(DATA) / "loop" / f"video-R-08{i:02d}.json").unlink()
 
 # 12. 紙ごとの群（Issue 334）: 同じ雛形・同じ刷った組でも、紙（玩具と仮説と版）が違えば、手順の番号の意味が違う。違う紙の「手順 3」を足さない。
 # 雛形の組み方の手順の数は、紙で違う（御来迎の 5 枚は 12・11・11・11・9 手順）

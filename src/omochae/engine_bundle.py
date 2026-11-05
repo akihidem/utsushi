@@ -282,6 +282,8 @@ def build(origin=FROM):
     uploads = {r["id"]: r for r in records.all_records(uploads=True) if r.get("via") == records.UPLOADED}
     for d in trial_video.all_for():
         rid = d.get("record_id")
+        if not isinstance(rid, str):  # 札の置き場は人が手で触るファイル。形の外でも束ごと止めない
+            continue
         marks = d.get("marks") if isinstance(d.get("marks"), list) else []
         marks = [m for m in marks if isinstance(m, dict) and m.get("confirmed_by") and not m.get("rejected_by")]
         if not marks:
