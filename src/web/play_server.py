@@ -528,7 +528,9 @@ class Handler(BaseHTTPRequestHandler):
         change = {"param": form.get("param"), "to": to, "why": form.get("why", "")}
         v, failures = loop.next_version(rid, form.get("by", ""), form.get("interpretation", "").strip() or None, change, source, out_dir(sid))
         if failures:
-            return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
+            from . import toy
+
+            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"])))
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
