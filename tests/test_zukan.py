@@ -76,7 +76,7 @@ rid, fail = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version"
 assert not fail
 hypotheses.save_prediction(G, "つまみを上げると開く")
 body = get(f"/zukan/{G}")[1]
-assert f"{rid} 仮説 A の紙: わからない（試した日 2026-11-04）" in body
+assert f"仮説 A の紙・わからない（11 月 4 日・{rid}）" in body
 assert "予想を書くと仮説が見られる" not in body
 for w in hypothesis_words(G):
     assert w in body, w

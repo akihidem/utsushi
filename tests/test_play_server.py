@@ -112,7 +112,7 @@ code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かな�
 assert code == 303 and at.endswith("#kiroku"), at
 body = get(f"/toy/{G}")[1].decode()
 assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
-assert "R-0001 H-A: 動かない・40°" in body
+assert "仮説 A の紙・動かない・40°" in body
 for word in ("成功", "失敗", "正解"):
     assert word not in body, word
 # 人の説明は、説明と次の思いつきの両方が要る
