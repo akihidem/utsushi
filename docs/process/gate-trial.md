@@ -299,3 +299,16 @@
 - 検証ゲート: **済み**。Red: 直す前の main で、一時の場所に置いた JSON を MCP の `check_draft` と `check_params` が読み、`zoom_picture` は取りに行く所まで進んだ（gate-evidence/red-source-id-check.txt）。Green: rc 0「ok source_id」（gate-evidence/green-source-id-check.txt）
 - エビデンスゲート: 上の出力と、直した作業ツリーでの `./run.sh`。`tests/test_floor_pin.py` も通る（型紙と手順の紙は変えていない）。本物の API は呼んでいない
 - マージ後の書き戻し: Issue #174 に書く（この帳面へは、次に帳面を書く取り込みで写す）
+
+## 文書の数と一覧を tree に合わせ、台帳の検査で照らす（Issue 対応の担当、issue/167-doc-counts、11-05 朝。#167）
+
+- 目的: 提出の時に最初に読まれる文書の数と一覧が、今の repo と合っている
+- なぜか: README などの「場面 67 本」は 11-04 午後の数のままで、今の `./run.sh` の数と合っていない。玩具と雛形の数も、`src/` のモジュールの載せ漏れも、台帳の検査は通していた
+- どうしたらいいか: 推し（#167 の推し）は、数を tree から数えて書く小さな命令を足す形。代案の、手で 1 か所ずつ直す形は、次に増やした時にまたずれる
+- 推しと変えた所: 試験の総数は文に書かない。並列の線が試験を足すたびに古くなり、数をそろえる 1 行で枝がぶつかるため。文は `./run.sh` の最後の行を指す。数えて書くのは玩具・雛形・凍結の場面だけで、README の数の節に `python -m omochae.ledger render` が書く
+- 元にした物: 統括の線の手元の枝 lane/fix-readme の commit 328e4a0。#160 と重なる `init.sh` と README の要る物の分は、#160 の形を残して入れていない
+- ゴールの要件: 数が tree から数えた値と同じで、ずれると `L.counts` で落ちる。`src/` の全部のモジュールが `docs/architecture.md` か `docs/features.json` に出て、漏れると `L.modules` で落ちる。図鑑は「在る」に 1 つにそろえる
+- 検証ゲート: **済み**。Red: 玩具の記録を足しても検査が通る（gate-evidence/red-doc-counts.txt）。Green: 崩し方ごとに狙った検査で落ち、render で直る（gate-evidence/green-doc-counts.txt）
+- エビデンスゲート: 直した作業ツリーでの `./run.sh`（gate-evidence/green-doc-counts.txt）。型紙と手順の紙、凍結の場面と基準は変えていない
+- 守れない所: 文の中の「総数を書く」は決まった形だけを見る。言い換えた書き方は見つけない。`claude-story.md`・`how-it-was-built.md` の数え直しは #71 に残る
+- マージ後の書き戻し: Issue #167 に書く（この帳面へは、次に帳面を書く取り込みで写す）

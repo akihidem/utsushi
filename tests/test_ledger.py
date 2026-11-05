@@ -50,3 +50,22 @@ def features(fn):
 assert features(lambda d: [{**d[0], "evidence": []}, *d[1:]]) == {"L.features"}
 assert features(lambda d: [{**d[0], "status": "ほぼ"}, *d[1:]]) == {"L.features"}
 assert edit("docs/process/how-it-was-built.md", lambda t: t + "\n[x](無い.md)\n") == {"L.links"}
+# 数は tree から数える（#167）。玩具や雛形が増えたのに文が古いままなら落ち、render で直る
+new = tmp / "data/hypotheses/NDL-0000000-R0000000-R.json"
+new.write_text("{}\n", encoding="utf-8")
+assert floors() == {"L.counts"}
+ledger.render()
+assert floors() == set()
+new.unlink()
+ledger.render()
+assert edit("README.md", lambda t: t.replace("<!-- counts:start -->\n- 玩具: ", "<!-- counts:start -->\n- 玩具: 1", 1)) == {"L.counts"}
+# 試験は並列の線が足し続けるので、総数を文に書かない。書くと次の 1 本で古くなる
+assert edit("docs/process/spec.md", lambda t: t + "\n場面 67 本が期待どおり\n") == {"L.counts"}
+assert edit("CLAUDE.md", lambda t: t + "\n98 本が期待どおり\n") == {"L.counts"}
+# モジュールは architecture.md か features.json のどちらかに出る。雛形は置くだけで読まれるので、文の名前も見る
+assert edit("docs/architecture.md", lambda t: t.replace("`src/omochae/page.py`", "頁の物", 1)) == {"L.modules"}
+assert edit("docs/architecture.md", lambda t: t.replace("`den_den`", "でんでん")) == {"L.modules"}
+new = tmp / "src/web/mada_kaitenai.py"
+new.write_text("", encoding="utf-8")
+assert floors() == {"L.modules"}
+new.unlink()

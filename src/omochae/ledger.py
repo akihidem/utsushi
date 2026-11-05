@@ -19,6 +19,10 @@ CLAIM_KINDS = {"計算": "式で出した。実物では未確認", "測定": "�
 SUMMARY = re.compile(r"<!-- summary:start -->.*?<!-- summary:end -->", re.S)
 MAP = re.compile(r"<!-- map:start -->.*?<!-- map:end -->", re.S)
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
+COUNTS = re.compile(r"<!-- counts:start -->.*?<!-- counts:end -->", re.S)
+# 試験の総数は並列の線が足すたびに変わるので、最初に読まれる文書には書かず `./run.sh` の最後の行を指す。書くと次の 1 本で古くなり、数をそろえる 1 行で枝どうしがぶつかる（#165 の表が数でなく名前で持つのと同じ理由）。
+RUN_TOTAL = re.compile(r"場面(?:と試験)?\s*\d+\s*本|\d+\s*本が期待どおり")
+ENTRY_DOCS = ("README.md", "CLAUDE.md", "docs/architecture.md", "docs/claude-usage.md", "docs/process/spec.md")
 
 
 def _json(path):
@@ -40,6 +44,36 @@ def render_claims(claims):
         links = "、".join(f"[{pathlib.Path(e['path']).name}]({_rel(e['path'])})" for e in c["evidence"])
         lines.append(f"| {c['id']} | {c['claim']} | {c['kind']} | {links} |")
     return "\n".join(lines) + "\n"
+
+
+def render_counts():
+    """玩具・雛形・凍結の場面の数を tree から数える。手で書くと、増やした時に文だけ古く残るため。"""
+    toys = len(list((ROOT / "data/hypotheses").glob("*.json")))
+    templates = [p for p in (ROOT / "src/omochae/templates").glob("*.py") if not p.name.startswith("_")]
+    scenarios = list((ROOT / "tests/frozen/scenarios").glob("*.json"))
+    negative = [p for p in scenarios if p.name.startswith("neg_")]
+    return "\n".join([
+        "<!-- counts:start -->",
+        f"- 玩具: {toys} 件（`data/hypotheses` のファイルの数。必須の 2 種を含む）",
+        f"- 雛形: {len(templates)} 本（`src/omochae/templates`。必須の 2 本を含む）",
+        f"- 凍結の場面: {len(scenarios)} 本（`tests/frozen/scenarios`。うち {len(negative)} 本は落ちるべき紙を入れる負の場面）",
+        "<!-- counts:end -->",
+    ])
+
+
+def _unlisted_modules():
+    """`src/` のモジュールで、architecture.md にも features.json にも名前が出ない物を返す。雛形は置くだけで読まれるので、architecture.md の文に名前が出れば足りる。"""
+    arch = (ROOT / "docs/architecture.md").read_text(encoding="utf-8")
+    known = arch + (ROOT / "docs/features.json").read_text(encoding="utf-8")
+    missing = []
+    for p in sorted((ROOT / "src").rglob("*.py")):
+        rel = p.relative_to(ROOT).as_posix()
+        if p.name == "__init__.py" or rel in known or f"`{p.name}`" in known:
+            continue
+        if p.parent.name == "templates" and f"`{p.stem}`" in arch:
+            continue
+        missing.append(rel)
+    return missing
 
 
 def _rel(path):
@@ -102,6 +136,13 @@ def check():
         for target in LINK.findall(f.read_text(encoding="utf-8")):
             if not target.startswith("http") and not (f.parent / target).exists():
                 out.append(Failure("L.links", str(f.relative_to(ROOT)), f"リンク先が無い: {target}"))
+    found = COUNTS.search((ROOT / "README.md").read_text(encoding="utf-8"))
+    if not found or found.group(0) != render_counts():
+        out.append(Failure("L.counts", "README.md", "玩具・雛形・凍結の場面の数が tree と違う。render を回す"))
+    for f in ENTRY_DOCS:
+        for hit in RUN_TOTAL.findall(COUNTS.sub("", (ROOT / f).read_text(encoding="utf-8"))):
+            out.append(Failure("L.counts", f, f"試験の総数は書かず `./run.sh` の最後の行を指す: {hit}"))
+    out += [Failure("L.modules", m, "architecture.md にも features.json にも出ていない") for m in _unlisted_modules()]
     return out
 
 
@@ -110,6 +151,8 @@ def render():
     p = ROOT / PROCESS / "README.md"
     p.write_text(MAP.sub(lambda _: render_map(index), p.read_text(encoding="utf-8")), encoding="utf-8")
     (ROOT / PROCESS / "claims.md").write_text(render_claims(_json(PROCESS / "claims.json")), encoding="utf-8")
+    readme = ROOT / "README.md"
+    readme.write_text(COUNTS.sub(lambda _: render_counts(), readme.read_text(encoding="utf-8")), encoding="utf-8")
 
 
 def main(argv=None):
