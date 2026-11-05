@@ -54,7 +54,6 @@ def clean(log):
     assert KEY not in log and "?k=" not in log, ("合言葉が記録に出た", log)
 
 
-hypotheses.save_prediction(G, "押すと開く")
 assert call(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 
 

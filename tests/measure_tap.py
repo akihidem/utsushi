@@ -19,7 +19,7 @@ import urllib.request
 
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
-from omochae import hypotheses, records  # noqa: E402
+from omochae import records  # noqa: E402
 from web import play_server  # noqa: E402
 
 MIN_TAP, MIN_FONT = 44, 12
@@ -93,9 +93,8 @@ def main():
         return 4
     inject(play_server.Handler)
     # 頁の予想の段と手帖は、置き場の記録で形が変わる（#242 で予想の段が外れるまで）。1 回だけ作り、皮ごとのサーバで同じ記録を見る
-    hypotheses.save_prediction(G, "押すと開く")
     records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-    pages = PAGES + [f"/toy/{G}/techo"]
+    pages = PAGES + [f"/toy/{G}/techo", f"/toy/{G}/tsukuru"]
     printed, bad = False, 0
     for look in ("tenji", "zine"):
         # 皮はサーバごとに 1 つ（本人の決定 11-05）。?look= は効かない

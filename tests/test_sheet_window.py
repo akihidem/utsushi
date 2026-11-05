@@ -45,8 +45,7 @@ def win(page):
     return page.split('id="win"', 1)[1].split("</section>", 1)[0]
 
 
-# 予想の段がある間は先に書く。外す枝（#242）ではこの口が無く 404 になるだけなので、結果は見ない。どちらが先に main に入っても通すため
-post(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})
+# 予想の段は #266 で外したので、予想を置かずに開いた頁で窓を見る
 page = get(f"/toy/{G}")
 ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
 first, other = ids[0], ids[1]

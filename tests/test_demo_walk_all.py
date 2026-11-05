@@ -1,5 +1,5 @@
 """増やした雛形の玩具にもデモで触れる（本人の決定 Q3 (b)、11-04）。雛形ごとに試作の玩具を 1 つ選び、
-入口 → 図鑑 → 玩具の頁 → 予想 → 型紙 → 手帖 → 質問 → 記録 → 説明 → 次の版 を通す。鍵は使わない。
+入口 → 図鑑 → 玩具の頁 → 型紙 → 手帖 → 質問 → 記録 → 説明 → 次の版 を通す。鍵は使わない。
 試作の玩具がまだ無い雛形は飛ばす（線を取り込むたびに、この試験が増えた雛形を通す）。"""
 import json
 import os
@@ -50,7 +50,6 @@ for tid, sid in sorted(picked.items()):
     h = hypotheses.load(sid)["hypotheses"][0]
     assert f"/zukan/{sid}" in zukan, (tid, "図鑑の一覧から入れる")
     assert call(f"/toy/{sid}")[0] == 200, (tid, sid)
-    assert call(f"/toy/{sid}/predict", {"text": "こう動くと思う"})[0] in (200, 303), (tid, sid)
     assert call(f"/toy/{sid}/print", {"hypothesis": h["id"]})[0] in (200, 303), (tid, sid)
     with urllib.request.urlopen(urllib.request.Request(f"http://{host}/sheet/{sid}/{h['id']}_v1.pdf", headers={"Host": host})) as r:
         assert r.read(4) == b"%PDF", (tid, "型紙が開ける")

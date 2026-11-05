@@ -37,7 +37,6 @@ def zoom_of(page):
     return page.split('id="zoom"', 1)[1].split("</div></div>", 1)[0]
 
 
-assert post(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"}) in (200, 303)
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) in (200, 303)
 page = get(f"/toy/{G}?see=H-A")[1]
 z = zoom_of(page)

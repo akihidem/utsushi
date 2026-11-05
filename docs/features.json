@@ -49,13 +49,14 @@
  },
  {
   "id": "f06",
-  "name": "予想の入力",
+  "name": "開いたらすぐ作る（予想の段は本人の決定 11-05、#242 で外した）",
   "status": "doing",
   "evidence": [
+   "src/web/toy.py",
    "src/omochae/hypotheses.py",
+   "tests/test_build_now.py",
    "tests/test_hypotheses.py",
-   "tests/test_hypothesis_label.py",
-   "tests/test_source_scope.py"
+   "tests/test_hypothesis_label.py"
   ],
   "unverified": "実際の人が使っていない"
  },
@@ -144,7 +145,7 @@
    "tests/test_kuzushi.py",
    "docs/process/research/25-kuzushi-reading.md"
   ],
-  "unverified": "人が使っていない。書いた人の読みの印（観察）と、残すかは未決。図鑑と玩具の頁は確かめた読みを予想の前から出している"
+  "unverified": "人が使っていない。書いた人の読みの印（観察）と、残すかは未決。図鑑と玩具の頁は確かめた読みを出している"
  },
  {
   "id": "f15",
@@ -362,7 +363,7 @@
    "data/hypotheses",
    "tests/test_analogy.py"
   ],
-  "unverified": "本人の頼み（11-05、御来迎の扇を開く話を気に入って）。83 種に入れた（手本 2 種は sub-site、81 種は分身 3 本。research/27）。作る側のたとえで、印と「答えではない」の断り付き。予想の後にだけ出す。文の人の確認はまだ"
+  "unverified": "本人の頼み（11-05、御来迎の扇を開く話を気に入って）。83 種に入れた（手本 2 種は sub-site、81 種は分身 3 本。research/27）。作る側のたとえで、印と「答えではない」の断り付き。文の人の確認はまだ"
  },
  {
   "id": "f32",
@@ -387,7 +388,7 @@
    "src/web/techo_site.py",
    "tests/test_made_records.py"
   ],
-  "unverified": "本人の指摘（11-05 朝）。記録の札に写真と動画・感想・止まった所、頁の頭の帯、ギャラリーからの道、その玩具の見本。予想の前は出さない。人が使った確認はまだ"
+  "unverified": "本人の指摘（11-05 朝）。記録の札に写真と動画・感想・止まった所、頁の頭の帯、ギャラリーからの道、その玩具の見本。人が使った確認はまだ"
  },
  {
   "id": "f34",
@@ -414,14 +415,15 @@
  },
  {
   "id": "f35",
-  "name": "かざして選ぶ（U-44）: 内カメラの映像に原図を重ね、動く所の候補の絵で予想を選ぶ（必須の 2 種）",
+  "name": "他の人が作った物のギャラリー（本人の決定 11-05、#242）: 玩具の頁と /gallery に写真・感想・工夫を記録の順で並べる",
   "status": "doing",
   "evidence": [
-   "src/web/kazasu.py",
-   "tests/test_kazasu.py",
-   "docs/process/research/30-kazasu-camera-choice.md"
+   "src/web/techo_site.py",
+   "src/web/toy.py",
+   "tests/test_build_now.py",
+   "tests/test_made_records.py"
   ],
-  "unverified": "本人の案（11-05 朝）と Issue 118。必須の 2 種に候補の絵（原図の上の枠。仮説の名前と仕組みの文は出さない）、重ねた絵は指で動かせる。映像は端末の中だけ（送る・録る code が無い事を試験で固定）。試作の 81 種は重ねた絵だけ。iPhone の実機と本物のカメラ映像は未確認"
+  "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した"
  },
  {
   "id": "f36",
@@ -434,5 +436,27 @@
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
   "unverified": "「ここで止まった」を押すと、その段のまま声か字で聞け、止まった段が残る（Issue 118）。映像は端末の中だけ、声は録らず字になった問いだけ送る。実機・本物の音声認識・人が使った確認はまだ。観察 B と C は本人の判断待ち"
+ },
+ {
+  "id": "f37",
+  "name": "輪の前提の明示（本人の言葉 11-05）: 型紙は正解でなく AI が考えた仮説と頁と紙に出し、輪を回す担当の全部に同じ前提を渡す。工夫の欄を記録に足した",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/marks.py",
+   "tests/test_loop_premise.py",
+   "tests/test_build_now.py"
+  ],
+  "unverified": "紙の文は #258 の本人の決定の文。本物の Claude API は未実行。文面は本人の確認待ち"
+ },
+ {
+  "id": "f38",
+  "name": "紙一枚の印と当時の材料の印（本人の言葉 11-05、#255）: 仮説の札に別々の軸で出し、一覧を絞れる",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/ways.py",
+   "src/web/toys.py",
+   "tests/test_material_axes.py"
+  ],
+  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
  }
 ]
