@@ -128,4 +128,46 @@ assert len(list((pathlib.Path(DATA) / "making").glob("step-*.json"))) == 8
 assert post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": "1", "event": "next"}, origin="http://evil.example")[0] == 403
 # 道具の側: 決まりの外は残さない
 assert making_log.add_step(G, "H-A", 1, 1, "win") is None and making_log.add_step(G, "H-A", 1, 0, "next") is None and making_log.add_step(G, "H-A", 1, True, "next") is None
+
+# ---- 「ここで止まった」から、その段のまま聞ける（Issue #118・U-44 の「聞く」）
+# 札の字と、聞く口の作り: 見出し・声の釦（音声認識が在る画面でだけ JS が出す）・字の欄
+assert ">ここで止まった</button>" in t and 'id="ask-head">聞く</p>' in t
+assert '<button type="button" class="mic" id="mic" aria-pressed="false" hidden>' in t and 'id="q"' in t
+# JS: 問いに今の手順の番号（step）を添え、出来事と問いの両方に、その場限りの印（who）を添える
+assert "fields({hypothesis:hid,question:q,step:n})" in t and "fields({hypothesis:hid,step:n,event,json:'1'})" in t
+assert "b.set('who',who)" in t and "sessionStorage.getItem('utsushi-who')" in t and "/^[a-z0-9]{10}$/" in t
+# 印は cookie にしない・長く持たない（タブの sessionStorage だけ）
+assert "document.cookie" not in t and "localStorage" not in t
+# 声は字にして送るだけ: 録る code・マイクを開く code が無い。鏡のカメラは 1 か所で audio:false のまま
+assert ("SpeechRecognition" in t and "audio:true" not in t and "audio: true" not in t and "MediaRecorder" not in t
+        and t.count("getUserMedia(") == 1 and "getUserMedia({video:{facingMode:'user'},audio:false})" in t)
+assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 2
+# 止まった段に戻った頁（JS が無い時の戻り先）は、その段を名指しして聞く口を開く
+back = get(f"/toy/{G}/tsukuru?h=H-A&n=2&ev=stuck")[1]
+assert '<div class="henji open" id="henji"' in back and 'id="ask-head">手順 2 で止まった所を聞く</p>' in back
+assert '<div class="henji" id="henji"' in t  # ふだんは開いていない
+# 止まった段が残り、そのまま聞く口が答える。who と step を添えても通る（サーバが受けない版では、余った欄は読まれないだけ）
+WHO = "ab12cd34ef"
+before = len(list((pathlib.Path(DATA) / "making").glob("step-*.json")))
+code, body, _ = step(4, "stuck", json="1", who=WHO)
+assert code == 200 and json.loads(body) == {"ok": True, "step": 4}
+code, _, headers = step(4, "stuck", who=WHO)
+assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&n=4&ev=stuck"
+new = sorted((pathlib.Path(DATA) / "making").glob("step-*.json"), key=lambda f: f.stat().st_mtime)[before:]
+assert len(new) == 2
+for f in new:
+    rec = json.loads(f.read_text(encoding="utf-8"))
+    assert rec["step"] == 4 and rec["event"] == "stuck" and rec["hypothesis_id"] == "H-A"
+    assert set(rec) - {"who"} == set(making_log.STEP_FIELDS) - {"who"}, rec  # 印を残す版でも、ほかの欄は増えない
+    assert rec.get("who", WHO) == WHO
+assert making_log.summary(G)["stuck_steps"][4] == 2
+code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって何？", "step": "4", "who": WHO})
+assert code == 200 and "手前にへこむ" in json.loads(body)["text"]
+asked = [a for a in making_log.asks(G) if a.get("question") == "谷折りって何？"]
+assert len(asked) == 1 and asked[0]["hypothesis_id"] == "H-A" and asked[0].get("step", 4) == 4 and asked[0].get("who", WHO) == WHO
+# 仕組みは答えない線は、聞く口の側のまま（段を添えても変わらない）
+code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？", "step": "4", "who": WHO})
+assert code == 200 and "試して確かめる所" in json.loads(body)["text"]
+# 決まりの外の印を添えられても、札は残る（印の形を見るのはサーバの側。ここでは落ちない事だけ）
+assert step(4, "next", json="1", who="x")[0] in (200, 422)
 print("ok: 作りながら見る")
