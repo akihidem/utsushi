@@ -15,6 +15,9 @@
 - 効いたかの判定はしない（本人の決まり）。見るのは、つながって紙と束と下書きが出来るかだけ。
 - 必須 2 種の今の組の紙には触らない。次の版は一時の場所に刷る。
 - ループ4 は、上げた後の字が材料と束へ渡る所までを見る。ギャラリーの頁は開かないので、全部の段が通っても、ギャラリーに字が出るかは分からない。
+- ループ1 で作った自分の紙で作る段は、関数でなく本物の頁の受け口を手元の口で通す（1 人の画面と cookie）。部品ごとに通っても頁の道で紙が切れていて、
+  関数だけを通すこの命令が気づけなかった事があるため。ほかの段は、頁の道を別の試験が見ているので、関数のまま軽く回す。
+- 作る人は 2 人に分ける（印が 2 つ）。ループ1 の紙で作る人と、たたき台で次の版まで進む人。記録を残すと同じ印の作りは区切りが付く決まりなので、1 人では両方の道を通れない。
 
 使い方: PYTHONPATH=src python -m omochae.cycle [--toy <玩具の ID>] [--keep-going] [--keep <置き場>] [--engine-repo <paper-to-toy の場所>]
 エンジンの repo は --engine-repo・環境の値 OMOCHAE_ENGINE_REPO・この repo の隣の paper-to-toy の順に探す。
@@ -23,6 +26,8 @@
 import argparse
 import contextlib
 import dataclasses
+import html
+import http.client
 import importlib
 import importlib.util
 import io
@@ -32,6 +37,8 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+import threading
+import urllib.parse
 
 from . import engine_bundle, hypotheses, loop, records
 from .compose import TEMPLATES, compose
@@ -41,9 +48,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PASSED, NOT_YET, SKIPPED, FAILED = "通った", "まだ main に無い", "飛ばした", "落ちた"
 TOY = "NDL-1187053-R0000005-L"
 BY = "一周の試し"
-WHO = "cycletest01"  # その場限りの印の形（making_log.WHO）
+WHO = "cycletest01"  # その場限りの印の形（making_log.WHO）。たたき台で次の版まで進む人
+OWN_WHO = "cycletest02"  # ループ1 の紙で作る人
 THINK = "札を見て、つまみを押すと扇が開くと思った"
 CRAFT = "折り目を先に強くつけると、押した時に引っかからなかった"
+OWN_THINK = "もう少し折りを増やすと、大きく開くと思う"
+OWN_CRAFT = "自分の紙では、折りを増やした所を先にならすと動いた"
 KEEP = "できた後に開いて見せたら、折り目の所で少し止まった"
 EXPLAIN, NEXT_IDEA = "押す量が足りず、扇が途中で止まったと思う", "もう少し長く押せる形にする"
 INTERPRET = "途中で止まるのは押す量が足りないからと読む"
@@ -104,6 +114,9 @@ class Context:
     rid: str = None
     bundle: pathlib.Path = None
     talked: bool = False
+    own_id: str = None  # ループ1 で刷った紙（OWN-n）
+    own_cookie: str = ""  # その紙を開ける本人の画面の印
+    own_rid: str = None
 
 
 @dataclasses.dataclass
@@ -173,9 +186,10 @@ def stage_explain(c):
 
 
 def stage_talk(c):
-    """話した字: 考えと工夫。床に当たる字は残らない事も見る。上げた後の字は、記録を残す段で足す（記録に結ぶ字なので）。"""
+    """話した字: 2 人の考えと、たたき台で作る人の工夫。床に当たる字は残らない事も見る。上げた後の字は、記録を残す段で足す（記録に結ぶ字なので）。"""
     _need("talk_log")
     talk_log = importlib.import_module("omochae.talk_log")
+    _ok(talk_log.add(c.sid, "think", OWN_THINK, hypothesis_id=c.hid, who=OWN_WHO)[1], "ループ1 の考え")
     _ok(talk_log.add(c.sid, "think", THINK, hypothesis_id=c.hid, who=WHO)[1], "考え")
     _ok(talk_log.add(c.sid, "craft", CRAFT, hypothesis_id=c.hid, sheet_version=1, step=1, who=WHO)[1], "工夫")
     for probe in PROBES:
@@ -192,7 +206,9 @@ def stage_think_sheet(c):
     _need("think_sheet")
     think_sheet = importlib.import_module("web.think_sheet")
     words = importlib.import_module("api.words")
-    w, note = think_sheet.request(c.sid, WHO)
+    if not think_sheet.ready(c.sid):
+        raise Skipped("この玩具には、話した考えから紙を作る節が無い")
+    w, note = think_sheet.request(c.sid, OWN_WHO)
     if w is None:
         raise Failed(f"考えから案を作れない: {note}")
     change = _one_change(c)
@@ -202,7 +218,87 @@ def stage_think_sheet(c):
     name, note = think_sheet.confirm(c.sid, w["token"])
     if not name:
         raise Failed(f"考えから紙を刷れない: {note}")
+    c.own_id = words.by_token(c.sid, w["token"])["own_id"]
+    c.own_cookie = f"{think_sheet.COOKIE}{w['id']}={w['token']}"  # 頼んだ時に本人の画面へ渡る印（鍵なしの道なので、受け口を通さずに作る）
     return name
+
+
+class _Screen:
+    """手元の口に開いた 1 人の画面。その人の印（cookie）を持って頁を開き、フォームを送る。"""
+
+    def __init__(self, port, cookie=""):
+        self.port, self.cookie = port, cookie
+
+    def _open(self, method, path, body=None):
+        headers = {"Cookie": self.cookie} if self.cookie else {}
+        if body is not None:
+            headers.update({"Content-Type": "application/x-www-form-urlencoded", "Origin": f"http://127.0.0.1:{self.port}"})
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=120)
+        try:
+            conn.request(method, path, body, headers)
+            r = conn.getresponse()
+            return r.status, r.read().decode("utf-8", "replace")
+        finally:
+            conn.close()
+
+    def get(self, path):
+        return self._open("GET", path)
+
+    def post(self, path, **form):
+        return self._open("POST", path, urllib.parse.urlencode(form))
+
+
+def _walk_own_paper(c, port):
+    """作りながら見る → 札 → 工夫 → 記録を、本物の受け口で通す。Returns 記録の番号。"""
+    tsukuru = importlib.import_module("web.tsukuru")
+    talk_log = importlib.import_module("omochae.talk_log")
+    mine, stranger = _Screen(port, c.own_cookie), _Screen(port)
+    toy, oid = f"/toy/{c.sid}", c.own_id
+    steps = tsukuru.step_texts(c.sid, oid, 1)
+    if not steps:
+        raise Failed(f"自分の紙 {oid} の手順が無い")
+    first, path = html.escape(steps[0], quote=True), f"{toy}/tsukuru?h={oid}&v=1"
+    status, page = mine.get(path)
+    if status != 200 or first not in page:
+        raise Failed(f"自分の紙 {oid} の作りながら見る頁が開かない（{status}）")
+    if first in stranger.get(path)[1]:
+        raise Failed(f"自分の紙 {oid} が、ほかの人の画面に開いた")
+    paper = {"hypothesis": oid, "sheet_version": "1", "who": OWN_WHO}
+    status, body = mine.post(f"{toy}/step", step="1", event="start", json="1", **paper)
+    if status != 200:
+        raise Failed(f"作りながら見る頁の札を受けない（{status}: {body[:80]}）")
+    status, body = mine.post(f"{toy}/talk", scene="craft", step="1", text=OWN_CRAFT, json="1", **paper)
+    if status != 200:
+        raise Failed(f"自分の紙で話した工夫を受けない（{status}: {body[:80]}）")
+    if f'value="{oid}" selected' not in mine.get(toy)[1]:
+        raise Failed(f"記録の欄に自分の紙 {oid} が選ばれて出ない")
+    status, _ = mine.post(f"{toy}/record", result=records.results_for(c.sid)[0], **paper)
+    kept = [r for r in records.all_records(c.sid) if r["hypothesis_id"] == oid]
+    if status != 303 or len(kept) != 1:
+        raise Failed(f"自分の紙の記録を受けない（{status}・{len(kept)} 件）")
+    rid = kept[0]["id"]
+    said = {t["when"]: t["text"] for t in talk_log.kufu(c.sid, rid)}
+    if said.get("making") != OWN_CRAFT or said.get("idea") != OWN_THINK:
+        raise Failed(f"工夫と考えの字が、自分の紙の記録に結ばれない（{sorted(said)}）")
+    if first in mine.get(path)[1]:
+        raise Failed("記録の後も、自分の紙が開いたまま（次の人に見える）")
+    return rid
+
+
+def stage_own_paper(c):
+    """ループ1 の紙で作る人の道。工夫の字がその紙の記録に結ばれ、ほかの人の画面に開かず、記録を残すと案が閉じるまで見る。"""
+    _need("think_sheet")
+    if c.own_id is None:
+        raise Skipped("ループ1 の紙がまだ無い")
+    play_server = importlib.import_module("web.play_server")
+    server = play_server.serve(0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        c.own_rid = _walk_own_paper(c, server.server_address[1])
+    finally:
+        server.shutdown()
+        server.server_close()
+    return f"{c.own_id} で記録 {c.own_rid}、工夫と考えを結んだ"
 
 
 def stage_material(c):
@@ -217,6 +313,8 @@ def stage_material(c):
         raise Failed("考えの字が直しの材料に入った")
     if not m["explanation"]:
         raise Failed("人の説明が材料に無い")
+    if c.own_rid and OWN_CRAFT not in [t["text"] for t in loop.material(c.own_rid)["maker_talk"]["items"]]:
+        raise Failed("自分の紙で話した工夫が材料に無い")
     return f"話した字 {len(said)} 件"
 
 
@@ -250,6 +348,8 @@ def stage_bundle(c):
     _need("bundle_talk")
     if c.talked and not {CRAFT, KEEP} <= {t["text"] for t in group[0]["texts"]}:
         raise Failed("話した字が束に無い")
+    if c.own_rid and OWN_CRAFT not in {t["text"] for g in bundle["groups"] for t in g["texts"]}:
+        raise Failed("自分の紙で話した工夫が束に無い")
     return f"群 {len(bundle['groups'])}・文 {sum(len(g['texts']) for g in bundle['groups'])}"
 
 
@@ -306,7 +406,8 @@ def stage_floor(c):
 
 # 段の順は作る人の順（紙を刷る → 話す → 考えから紙 → 作って記録 → 説明 → 直し）。考えを記録に結ぶと、その人の作りは区切りが付く（api.words の決まり）ので、
 # ループ1 の紙は記録より先に置く。
-STAGES = (("最初の紙", stage_first_sheet), ("話した字", stage_talk), ("ループ1 の紙", stage_think_sheet), ("記録", stage_record), ("人の説明", stage_explain),
+STAGES = (("最初の紙", stage_first_sheet), ("話した字", stage_talk), ("ループ1 の紙", stage_think_sheet), ("自分の紙で作って記録", stage_own_paper),
+          ("記録", stage_record), ("人の説明", stage_explain),
           ("ループ2 の材料", stage_material), ("人の解釈と次の版の紙", stage_next), ("ループ3 の束", stage_bundle),
           ("エンジンの入口と下書き", stage_engine), ("床と声", stage_floor))
 
