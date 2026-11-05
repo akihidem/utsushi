@@ -295,6 +295,10 @@ class Handler(BaseHTTPRequestHandler):
             # 改善の輪の一覧（本人の方針 11-05）。サイト側が輪を回す所で、学ぶ人の順路の帯には入れない。
             from . import kaizen
             return self._send(200, kaizen.page(look, path))
+        if path == "/loop/ayumi":
+            # 型紙の版の歩み（本人の希望 11-06）。前の履歴・良くした所・知見・共通の知見・どのループか。
+            from . import ayumi
+            return self._send(200, ayumi.page(look, path))
         m = re.fullmatch(rf"/loop/({SID})", path)
         if m and m.group(1) in sources():
             # その玩具の工作の様子（聞かれた事・止まった所・感想・動きの札）。作る側が読む集計で、学ぶ人の頁には出さない。
