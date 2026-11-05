@@ -21,7 +21,7 @@ records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result
 # 頁と、帯で印の付く項目（None は印なし。順路の外の頁）。kazasu と tsukuru は別の枝（#242）で形が変わるので入れない
 PAGES = {"/": "うつし", "/about": "序", "/toys": "おもちゃ", f"/toy/{G}": "おもちゃ", f"/toy/{G}/techo": "おもちゃ", "/gallery": "作った物と職人の言葉",
          "/zukan": "図鑑", f"/zukan/{G}": "図鑑", f"/zukan/{G}/yomi": "図鑑", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "序", "おもちゃ", "作った物と職人の言葉", "図鑑"]
+ITEMS = ["うつし", "序", "おもちゃ", "作った物と職人の言葉", "図鑑", "English"]
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)

@@ -23,7 +23,7 @@ tmp = tempfile.TemporaryDirectory()
 os.environ["OMOCHAE_DATA"] = f"{tmp.name}/data"
 os.chdir(tmp.name)
 
-from omochae import hypotheses  # noqa: E402
+from omochae import hypotheses, ways  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
 from web import en  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
@@ -92,9 +92,14 @@ page = get(at)
 assert "Printed." in page and f"/sheet/{G}/H-A_v1.pdf" in page and f"/sheet/{G}/H-A_v1_tejun.pdf" in page
 assert post(f"/en/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 
-# 材料の 2 つの軸を分けて出す。上下を付けない
+# 作り方の印を分けて出す。上下を付けない。印の語は日本語の札（omochae.ways）の全部に当たる
 page = get(f"/en/toy/{G}")
-assert "Paper only" in page and "Period materials" in page and en.AXIS_NOTE in page
+assert "One sheet" in page and en.WAYS_NOTE in page
+assert set(en.WAY_EN) == {name for _, name in ways.LABELS}
+
+# 本人が採った文（11-05、#318）。一字でも変わったら落ちるように、ここに決定の文を書く
+assert en.PREMISE == "This template is not the answer. It is a guess made by an AI. Some parts may not work. Tell us how you fixed them. That helps us make the next version better."
+assert en.PREMISE in get(f"/en/toy/{G}")
 
 # 日本語の頁に帯と道
 ja = get(f"/toy/{G}")
