@@ -118,8 +118,10 @@ def road_to_the_record():
 
 
 def passes_which_sheet():
-    assert post(f"/toy/{G}/print", {"hypothesis": "H-B"})[0] == 303
-    code, _, headers = step(tsukuru.count(G, "H-B"), "done", hid="H-B")
+    # 必須 2 種はたたき台の紙だけを刷るので（#332）、2 枚目を刷れる試作の玩具で見る。
+    toy = "NDL-1187053-R0000019-L"
+    assert post(f"/toy/{toy}/print", {"hypothesis": "H-B"})[0] == 303
+    code, _, headers = post(f"/toy/{toy}/step", {"hypothesis": "H-B", "step": str(tsukuru.count(toy, "H-B")), "event": "done"})
     assert code == 303 and "see=H-B" in headers["Location"], f"どの紙かを渡していない: {headers['Location']}"
 
 
