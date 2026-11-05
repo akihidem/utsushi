@@ -498,6 +498,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     from . import kaizen
 
     body += kaizen.section(sid, data, recs)
+    # 英語の短い紹介（本人の指示 11-05「実装までやって」、J-030）。頁の足に置く: 日本語の順路を押し下げないため。
+    from . import en
+
+    body += en.band(sid)
     body += f'<section class="sec">{neighbours(sid)}</section>'
     if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない
         body = body.replace('id="kasetsu">', f'id="kasetsu">{note}', 1)
