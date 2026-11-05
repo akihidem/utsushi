@@ -1,0 +1,5 @@
+# Red: 床を足し、直す前の src（main d187de4）で回した。rc 1
+$ PYTHONPATH=src .venv/bin/python tests/test_demo_scene3.py
+    assert not scene3.shot_fits(grown, 3400), "札の下端が画面の外"
+               ^^^^^^^^^^^^^^^^
+AttributeError: module 'demo.scene3' has no attribute 'shot_fits'
