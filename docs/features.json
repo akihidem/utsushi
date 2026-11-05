@@ -78,9 +78,10 @@
   "name": "仮説の採否",
   "status": "doing",
   "evidence": [
-   "src/omochae/hypotheses.py"
+   "src/omochae/hypotheses.py",
+   "src/omochae/loop.py"
   ],
-  "unverified": "たたき台を刷る操作で代える（前は人が選んで刷る操作。J-032 で置き換えた）。確定の記録は未実装"
+  "unverified": "たたき台を刷る操作で代える（前は人が選んで刷る操作。J-032 で置き換えた）。刷った時と次の版を採った時に、型紙の確定を台帳に残す（loop.confirm_sheet）。人が画面で使った確認はまだ"
  },
  {
   "id": "f09",
