@@ -599,7 +599,7 @@ class Handler(BaseHTTPRequestHandler):
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": fixes_of(form), "via": "techo"})
         if rid:
             making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
-            # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返し、手帖が知らせる。
+            # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
             return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}))

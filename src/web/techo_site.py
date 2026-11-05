@@ -286,8 +286,7 @@ document.getElementById('up-form').onsubmit = async (e) => {
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
     form.reset(); showPicked();
-    // 作りながら話した工夫が、この記録に入った時は、その数を知らせる（Issue #279）。
-    done = '上げました' + (j.kufu ? `。作りながら話した工夫 ${j.kufu} 件が、この記録の「工夫した所（直した所）」に入りました` : '');
+    done = '上げました';
     for (const f of files) {
       const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
       if (!m.ok) { done = '記録は残しました。' + ((await m.text()) || '写真か動画を上げられませんでした'); break; }
