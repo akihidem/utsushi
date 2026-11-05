@@ -359,6 +359,45 @@ def TEMPLATES_DEFAULT(template):
     return TEMPLATES[template].DEFAULTS
 
 
+def _trial_values(lo, hi, now):
+    """1 つの寸法で試す値を、今の値から近い順に返す。通る値はたいてい今の値の近くにあるので、近くを細かく、遠くは粗く見る
+    （全部の玩具の版 1 と動かした後の版で、400 値の総当たりと同じ答えになった）。整数の寸法のために、近くの整数と幅の両端も入れる。"""
+    span = hi - lo
+    near = [now + sign * span * step for step in (0.00125, 0.0025, 0.005, 0.01, 0.02, 0.05) for sign in (1, -1)]
+    whole = [round(now) + d for d in (-3, -2, -1, 1, 2, 3)]
+    far = [lo + span * i / 20 for i in range(21)]
+    values = {round(v, 4) for v in near + whole + far + [round(v) for v in far] if lo <= v <= hi and v != now}
+    # 画面の口（play_server の次の版）と同じに、整数で言える値は整数で渡す。
+    return [int(v) if float(v).is_integer() else v for v in sorted(values, key=lambda v: (abs(v - now), v))]
+
+
+@functools.lru_cache(maxsize=256)
+def _movable(sid, current_json):
+    """今の寸法（json の字）で、1 つ変えて通る値がある寸法と、その値の 1 つ。寸法が同じなら答えも同じなので、1 度だけ検査する。
+    範囲と物理の床だけで決める。配置まで組むと、棒の玩具では 1 回 0.85 秒かかり、頁の最初の表示が 9 秒止まった。物理で通った値が配置で落ちる寸法は、
+    全部の玩具の版 1 と動かした後の版で見て無かった。もし出ても、断りの文が理由を言うので、欄が止まる事はない。"""
+    from .compose import TEMPLATES
+
+    template = _template(sid)
+    tpl, now = TEMPLATES[template], {**TEMPLATES[template].DEFAULTS, **json.loads(current_json)}
+    found = {}
+    for k in sorted(ALLOWED[template]):
+        for v in _trial_values(*tpl.RANGES[k], now[k]):
+            trial = {**now, k: v}
+            if not (tpl.check_range(trial) or tpl.check_physics(trial)):
+                found[k] = v
+                break
+    return found
+
+
+def movable_params(sid, hid):
+    """次の版の欄（寸法を 1 つ変える形）に出す寸法を、通る値の 1 つと一緒に返す。今の版の寸法で決める。
+    なぜ固定の表にしないか: 動かせない寸法は型の拘束で決まり、ほかの寸法を変えると通る幅が開く。例えば御来迎の押し上げる量は、扇を隠す床と内筒を収める床に
+    挟まれて今の寸法だと 69 ちょうどしか通らないが、扇を低くすると動かせる。Claude の案は寸法を同時に変えられるので、この絞りは掛けない（ALLOWED のまま）。"""
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    return _movable(sid, json.dumps(current, ensure_ascii=False, sort_keys=True))
+
+
 def save_proposal(proposal, source, drafted_by):
     from .hypotheses import sheet_of
 

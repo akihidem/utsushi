@@ -138,6 +138,7 @@
    "src/omochae/loop.py",
    "tests/test_loop.py",
    "tests/test_next_version_atomic.py",
+   "tests/test_next_range.py",
    "tests/test_one_sheet_loop.py"
   ],
   "unverified": "実際の記録で未実行"
