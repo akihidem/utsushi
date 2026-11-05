@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_page.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 87eb68d（回した時の HEAD）
+ok 頁に出る型紙はたたき台の 1 枚だけ。記録はその 1 枚の番号で残り、前の記録と紙は読める
+試験 rc=0
+rc=0

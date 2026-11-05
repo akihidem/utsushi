@@ -1,0 +1,12 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: 9f7916f（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_engine_bundle.py", line 36, in <module>
+    assert (set(eb.TOP_KEYS), set(eb.GROUP_KEYS), set(eb.TEXT_KEYS), set(eb.TEXT_KINDS)) == (ENGINE_TOP, ENGINE_GROUP, ENGINE_TEXT, ENGINE_KINDS)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
+
+上は、新しい試験に、直す前の src/omochae/engine_bundle.py を当てて回した（欄の一覧の照らしで落ちる）。
+
+頭の commit の番号 9f7916f は、履歴の載せ直しの前の番号（この直しの最初の commit）。載せ直しで番号が変わった。中身は同じ。
