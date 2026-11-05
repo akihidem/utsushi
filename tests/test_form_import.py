@@ -42,6 +42,29 @@ rec = json.loads((contrib.dirs()["inbox"] / f"{got2[0]}.json").read_text(encodin
 assert "drive.google" not in json.dumps(rec), "リンクは公開の記録に入れない"
 assert "drive.google" in (contrib.dirs()["inbox"] / f"{got2[0]}.private").read_text(encoding="utf-8")
 assert "drive.google" not in json.dumps(contrib.public_record({**rec, "status": "published"}))
+# 職人・玩具店・実際に遊んだ人が同じ入口で書ける（本人の決定 11-05、#285）。前の選び肢も受ける。公開中のフォームが変わるまでの回答を落とさないため。
+people = d / "people.csv"
+with open(people, "w", encoding="utf-8", newline="") as fh:
+    w = csv.DictWriter(fh, fieldnames=head)
+    w.writeheader()
+    w.writerow({"タイムスタンプ": "p1", **good, "投稿の種類": "思い出", "あなたの立場": "遊んだ人", "確かさの種類": "遊んだ", "いつ頃・どこで（思い出の時）": "昭和の頃"})
+    w.writerow({"タイムスタンプ": "p2", **good, "あなたの立場": "玩具店・お店", "確かさの種類": "売っている"})
+    w.writerow({"タイムスタンプ": "p3", **good, "あなたの立場": "店", "確かさの種類": "見た"})
+got3, fails3 = form_import.run(people)
+assert len(got3) == 3 and not fails3, (got3, fails3)
+kept = [json.loads((contrib.dirs()["inbox"] / f"{g}.json").read_text(encoding="utf-8")) for g in got3]
+assert [(r["role"], r["certainty"]) for r in kept] == [("played", "遊んだ"), ("shop", "売っている"), ("shop", "見た")], kept
+# フォームの表の選び肢は、取り込みの道具が読める物だけにする。表はフォームを作る時の元なので、ずれると回答が取り込みで落ちる。
+form_doc = (pathlib.Path(__file__).resolve().parents[1] / "docs/process/contributions-form.md").read_text(encoding="utf-8")
+
+
+def choices(title):
+    row = next(line for line in form_doc.splitlines() if line.startswith(f"| {title} |"))
+    return row.split("|")[4].strip().split("／")
+
+
+assert {"職人", "玩具店・お店", "遊んだ人"} <= set(choices("あなたの立場")) and set(choices("あなたの立場")) <= set(form_import.ROLE)
+assert {"売っている", "遊んだ"} <= set(choices("確かさの種類")) and set(choices("確かさの種類")) <= contrib.CERTAINTY
 # 題が表と違えば 1 行も入れない
 g = d / "wrong.csv"
 g.write_text("投稿の種類,本文\n情報,x\n", encoding="utf-8")

@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_form_import.py
+# commit: 0607371（回した時の HEAD）
+ok
+rc=0

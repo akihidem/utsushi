@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_contrib.py
+# commit: 0607371（回した時の HEAD）
+読めない公開の記録を飛ばした: C-9000.json: JSONDecodeError
+形の違う公開の記録を飛ばした: C-9001.json
+読めない公開の記録を飛ばした: C-9000.json: JSONDecodeError
+形の違う公開の記録を飛ばした: C-9001.json
+rc=0

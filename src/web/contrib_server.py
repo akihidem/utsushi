@@ -13,8 +13,6 @@ from omochae import contrib
 from omochae.form_import import FORM_URL
 
 MAX_REQUEST = 8 * 1024 * 1024
-KIND = {"photo": "写真", "info": "情報", "memory": "思い出", "knowhow": "作り方の知見"}
-ROLE = {"craftsperson": "職人", "shop": "お店", "scholar": "調べている人", "memory": "思い出を持つ人", "other": "その他"}
 STYLE = """
 body{font-family:"Noto Serif CJK JP",serif;background:#f5efe0;color:#2b2520;margin:0;padding:24px 16px;line-height:1.7}
 main{max-width:640px;margin:auto}label{display:block;margin-top:14px;font-weight:bold}
@@ -25,13 +23,13 @@ a{color:#7a3b1d}
 """
 FORM = """<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>おもちゃの持ち寄り</title><style>%s</style><main>
 <h1>おもちゃの持ち寄り</h1>
-<p>江戸の玩具について、手元の写真、知っている事、思い出、作り方を寄せてください。確認した物だけを<a href="/public">公開の頁</a>に載せます。</p>
+<p>職人、玩具店、実際に遊んだ人の話を集めています。江戸の玩具について、手元の写真、知っている事、思い出、作り方を寄せてください。確認した物だけを<a href="/public">公開の頁</a>に載せます。</p>
 <form id="f">
 <label>何を寄せますか<select name="kind"><option value="memory">思い出</option><option value="info">情報</option><option value="knowhow">作り方の知見</option><option value="photo">写真</option></select></label>
-<label>あなたの立場<select name="role"><option value="memory">思い出を持つ人</option><option value="craftsperson">職人</option><option value="shop">お店</option><option value="scholar">調べている人</option><option value="other">その他</option></select></label>
+<label>あなたの立場<select name="role"><option value="memory">思い出を持つ人</option><option value="craftsperson">職人</option><option value="shop">玩具店・お店</option><option value="played">遊んだ人</option><option value="scholar">調べている人</option><option value="other">その他</option></select></label>
 <label>どの玩具ですか<input type="text" name="toy_name" maxlength="100"></label>
 <label>内容（公開されます）<textarea name="body" maxlength="2000" required></textarea></label>
-<label>それは、どうして知っていますか<select name="certainty"><option>見た</option><option>持っている</option><option>聞いた</option><option>覚えている</option><option>作っている</option><option>推測</option></select></label>
+<label>それは、どうして知っていますか<select name="certainty"><option>見た</option><option>持っている</option><option>聞いた</option><option>覚えている</option><option>作っている</option><option>売っている</option><option>遊んだ</option><option>推測</option></select></label>
 <label>いつ頃・どのあたりの話ですか（おおよそで。公開されます）<input type="text" name="where_when" maxlength="100"></label>
 <label>出所（本や人の話など。公開されます）<input type="text" name="origin" maxlength="200"></label>
 <label>写真（JPEG か PNG、5MB まで。人が写っていない物）<input type="file" name="image" accept="image/jpeg,image/png"></label>
@@ -68,7 +66,7 @@ def public_page():
         rights = c.get("rights", {})
         rows.append(
             f'<article id="{e(c["id"])}"><h2>{e(c.get("toy_name") or "玩具の名は未記入")}</h2>{img}<p>{e(c["body"])}</p>'
-            f'<p class="meta">{e(c["id"])}・{e(KIND[c["kind"]])}・{e(ROLE[c["role"]])}・確かさ: {e(c["certainty"])}'
+            f'<p class="meta">{e(c["id"])}・{e(contrib.KIND_LABEL[c["kind"]])}・{e(contrib.ROLE_LABEL[c["role"]])}・確かさ: {e(c["certainty"])}'
             f'・{e(c.get("where_when") or "時と所は未記入")}<br>出所: {e(c.get("origin") or "未記入")}・寄せた人: {e(c.get("display_name") or "匿名")}'
             f'<br>権利: {e(rights.get("holder") or "未記入")}・条件: {e(LICENSE_LABEL.get(rights.get("license"), "未記入"))}</p></article>'
         )

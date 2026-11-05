@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_form_import.py
+# commit: 0607371（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_form_import.py", line 54, in <module>
+    assert len(got3) == 3 and not fails3, (got3, fails3)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (['C-0003'], [(2, 'role: 立場が決まりの外か、無い；certainty: 確かさの種類が決まりの外か、無い'), (3, 'role: 立場が決まりの外か、無い；certainty: 確かさの種類が決まりの外か、無い')])
+rc=1

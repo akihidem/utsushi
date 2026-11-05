@@ -40,7 +40,8 @@ Q = {
 # 添付の欄は任意なので、古い表で作ったフォーム（この欄が無い CSV）も取り込めるようにする。
 OPTIONAL = {"files"}
 KIND = {"写真": "photo", "情報": "info", "思い出": "memory", "作り方の知見": "knowhow"}
-ROLE = {"職人": "craftsperson", "店": "shop", "研究者": "scholar", "思い出のある人": "memory", "その他": "other"}
+# 「店」は前の選び肢。公開中のフォームを変えるまでの回答を落とさないため、残す（#285）。
+ROLE = {"職人": "craftsperson", "玩具店・お店": "shop", "店": "shop", "遊んだ人": "played", "研究者": "scholar", "思い出のある人": "memory", "その他": "other"}
 BASIS = {"自分で書いた": "own_work", "持ち主の許しがある": "permission", "パブリック・ドメイン": "public_domain", "分からない": "unknown"}
 LICENSE = {"CC BY 4.0 で公開してよい": "CC-BY-4.0", "表示だけ（再利用は不可）": "display_only"}
 ATTEST = {"規約に同意します": "agrees_terms", "18 歳以上です（または保護者の同意があります）": "adult_or_guardian",

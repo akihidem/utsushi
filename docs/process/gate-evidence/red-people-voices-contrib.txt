@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_contrib.py
+# commit: 0607371（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_contrib.py", line 180, in <module>
+    assert 'value="played"' in form and "<option>売っている</option>" in form and "<option>遊んだ</option>" in form
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
