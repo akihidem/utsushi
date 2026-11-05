@@ -224,7 +224,8 @@
    "tests/test_loop1_round.py",
    "tests/test_loop1_next.py",
    "tests/test_own_form_gone.py",
-   "tests/test_loop1_quotes.py"
+   "tests/test_loop1_quotes.py",
+   "tests/test_withdraw_notice.py"
   ]
  },
  {

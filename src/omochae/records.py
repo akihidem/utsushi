@@ -25,6 +25,9 @@ OWN = ("explanation", "interpretation", "observation", "video")  # 記録ごと�
 # 動画の受け口（web/video_up.py）から来た記録の印。上げた人に「頁に出さない」と約束した物で、紙も人が確かめていないので、all_records は既定で外す。
 UPLOADED = "video-up"
 UNSURE = "わからない"
+# 取り下げの説明文（本人の決定、Issue #335）。本人が確かめた字を、一字も変えずに出す（tests/test_withdraw_notice.py が文字列で見る）。
+# 消せるのはこのサイトの中だけで、書き出した束やエンジンに渡した字には届かないので、そう言う。文を変える時は、ここだけを変える。
+WITHDRAW_NOTICE = "取り下げると、このサイトの中からは消えます。前にエンジンへ渡した分は残ります"
 
 
 def folder():
@@ -358,7 +361,7 @@ def withdraw(rid, media_only=False, talk_only=False):
         whole = not media_only and not talk_only
         users = used_by(rid)
         if users and whole:
-            return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only、話した字だけなら --talk-only")]
+            return [], [Failure("F4.evidence", rid, f"{'、'.join(users)} の根拠に使われているので消さなかった。写真と動画だけなら --media-only、話した字だけなら --talk-only。{WITHDRAW_NOTICE}")]
         kinds = OWN if whole else ("observation", "video") if media_only else ()
         files = [loop.folder() / f"{kind}-{rid}.json" for kind in kinds] + ([path] if whole else [])
         media = folder() / "media" / rid
@@ -423,7 +426,7 @@ def main(argv=None):
     w = sub.add_parser("withdraw", help="記録と、添えた写真・動画・説明・解釈・観察を消す。根拠に使われている記録は止まる")
     w.add_argument("id", help="記録の番号。R-0003 のように")
     w.add_argument("--media-only", action="store_true", help="記録は残し、写真と動画と観察だけを消す")
-    w.add_argument("--talk-only", action="store_true", help="記録は残し、話した字（考え・工夫・上げた後）と、字が刷られた紙だけを消す。根拠に使われた記録でも消せる")
+    w.add_argument("--talk-only", action="store_true", help=f"記録は残し、話した字（考え・工夫・上げた後）と、字が刷られた紙だけを消す。根拠に使われた記録でも消せる。{WITHDRAW_NOTICE}")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
@@ -439,6 +442,7 @@ def main(argv=None):
             if not failures:
                 what = "と".join(n for n, on in (("写真と動画", args.media_only), ("話した字", args.talk_only)) if on) or "記録"
                 print(f"{args.id} の{what}を取り下げました。消した物: {'、'.join(gone) or 'なし'}")
+                print(WITHDRAW_NOTICE)
             return 3 if failures else 0
         rec = {"source_id": args.source, "hypothesis_id": args.hypothesis, "sheet_version": args.version, "result": args.result, "opened_deg": args.opened_deg, "opener": args.opener,
                "predicted_deg": args.predicted_deg, "ten_swings_sec": args.ten_swings_sec, "power": args.power, "fixes": [parse_fix(x) for x in args.fix], "note": args.note,

@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from omochae import contrib
 from omochae.form_import import FORM_URL
+from omochae.records import WITHDRAW_NOTICE
 
 MAX_REQUEST = 8 * 1024 * 1024
 KIND = {"photo": "写真", "info": "情報", "memory": "思い出", "knowhow": "作り方の知見"}
@@ -41,6 +42,7 @@ FORM = """<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewp
 <label>公開する名前（空なら匿名）<input type="text" name="display_name" maxlength="50"></label>
 <label>連絡先（任意。公開しません。確認や取り下げの連絡に使います）<input type="text" name="contact" maxlength="200"></label>
 <label class="check"><input type="checkbox" name="agrees_terms"> 確認の後に公開される事、取り下げを申し出られる事に同意します</label>
+<p class="meta">%s</p>
 <label class="check"><input type="checkbox" name="adult_or_guardian"> 18 歳以上か、保護者の同意があります</label>
 <label class="check"><input type="checkbox" name="no_identifiable_people"> 写真に人が写っておらず、文に他の人の連絡先や私的な事を書いていません</label>
 <button>寄せる</button><div id="msg" role="status"></div></form></main>
@@ -54,7 +56,7 @@ b.pii_confirmed=window.piiAsked===JSON.stringify([b.body,b.origin,b.where_when,b
 const r=await fetch('/api/contribute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json();
 if(!r.ok&&j.pii_only){window.piiAsked=JSON.stringify([b.body,b.origin,b.where_when,b.toy_name,b.display_name,b.rights.holder]);m.textContent='連絡先に見える所があります（'+j.errors.join(' / ')+'）。連絡先なら消してください。連絡先でなければ、もう一度「寄せる」を押すと、そのまま受け付けて確認の人に伝えます。';return}
 m.textContent=r.ok?('受け付けました（'+j.id+'）。確認の後に公開します。'):('送れませんでした: '+j.errors.join(' / '));if(r.ok){f.reset();window.piiAsked=null}});
-</script></html>""" % STYLE
+</script></html>""" % (STYLE, WITHDRAW_NOTICE)
 
 
 LICENSE_LABEL = {"display_only": "この場所での表示だけ", "CC-BY-4.0": "CC BY 4.0"}
