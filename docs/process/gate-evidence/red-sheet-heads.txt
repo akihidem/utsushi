@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_sheet_heads.py
+# commit: f40c598（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_sheet_heads.py", line 145, in <module>
+    assert not fails, "\n" + "\n".join(fails)
+           ^^^^^^^^^
+AssertionError: 
+trial_sheets_have_the_adopted_heads: AssertionError: ('NDL-1187053-R0000004-L-4', 'H-A', '手順の紙に採った見出しが無い')
+trial_after_sheets_have_the_adopted_head: AssertionError: ('NDL-1187053-R0000004-L-4', '試した後の紙に採った見出しが無い')
+only_the_head_changes: AssertionError: 見出し「思った事（書かなくても作れます）」が 0 個
+exceptions_match_the_current_sets: AttributeError: module 'omochae.instructions' has no attribute 'FROZEN_HEADS'
+raising_a_set_drops_the_old_heads: AssertionError: 組を上げても前の字が残る
+rc=1
