@@ -5,12 +5,14 @@
 
 本人の決定（11-05）「哲学よりの動画にして」で、機能の説明の場面 4 を外し、言葉の札（demo.words）を足した。
 本人の言葉（11-05）「今話してるこの部分が今回のハッカソンの核になる！！」で、3 段と輪（demo.core）を筋の真ん中に置いた。
+本人の言葉（11-05 夕）で芯を「自分の手で触れる物を作る楽しさ」に置き直し、言葉の札を word_touch と word_ai に絞った。
+札を減らした分は、作った物が持ち寄られる場面（core_gallery）と、AI が動きを強める輪（core_loop）の尺に回した。
 """
 import importlib
 
 # 言葉の札（word_*）と問いの札（ask）は demo.words、核の一周の図と画面（core_*）は demo.core で描く。
-SCENES = ["flip", "scene2", "word_make", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "core_gallery", "scene6",
-          "word_ai", "core_loop", "word_fix", "scene7", "word_who", "ask"]
+SCENES = ["flip", "scene2", "word_touch", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "core_gallery", "scene6",
+          "word_ai", "core_loop", "scene7", "ask"]
 
 
 def load_scene(name):

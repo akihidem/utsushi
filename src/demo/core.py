@@ -1,4 +1,4 @@
-"""核の一周: ①仮説を見ながら自分の考えを話す → ②作りながら工夫を話す → ③できた物を上げて工夫と考えを残す → ギャラリーと、良くなる輪。
+"""核の一周: ①仮説を見ながら自分の考えを話す → ②作りながら工夫を話す → ③できた物を上げて工夫と考えを残す → 持ち寄ってギャラリーへ → AI が動きを強める輪。
 
 使い方: python -m demo.core <場面の名前> --out <repo の外の場所>/core.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -8,7 +8,9 @@ exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無
 - 今ある物だけを、動いている画面として映す。作りながら見る頁・声で聞く口・写真を上げる手帖・ギャラリー・版の輪は、
   本物の play_server を一時の置き場で立て、本物の口へ送ってから headless の Chrome で撮る（場面 3 と同じ作り）。
 - まだ無い物（声の取り込み・エンジンごとの改善）は、動いているように見せない。core_map・core_voice・core_loop は図で描き、
-  画面に「図」「これから」と書く。撮れるようになったら、demo.build の --clip でその場面だけを差し替える。
+  画面に「図」「これから」「作っている途中」と書く。撮れるようになったら、demo.build の --clip でその場面だけを差し替える。
+- 本人の言葉（11-05 夕）「それが持ち寄られて、AIもその動きをエンハンスするのが面白いよね」で、持ち寄る所と AI が強める所を面白さの中心に置いた。
+  ただし本物の Claude API はまだ 1 度も動いていない。輪は図のままで、そう書く。聞く口の答えも AI の物に見せない（今の答えは型紙の言葉から出す）。
 - 画面に映す例の記録は、字の頭に「（例）」を付け、隅の札に作り物と書く。人の報告に見せかけないため。写真は確かめ表で通った 11-04 の物だけ。
 - 版の輪は本物の口（説明 → 次の版）を通して、一時の置き場に版 2 を作って撮る。描き直した絵では「動いている」事の証拠にならないため。
 - 顔と声は入れない（J-022）。鏡（カメラ）は押さないと動かないので、撮る画面には映らない。
@@ -63,18 +65,21 @@ PAGES = {
 # 3 段の図の字。段の文は words.STEPS。「今ある」と「これから」を分けて書き、無い物を有るように見せない。
 HAVE = ("今ある: 開いたらすぐ作る頁", "今ある: 作りながら見る頁・声で聞く口", "今ある: 写真を上げる手帖")
 VOICE_LINE = "話した声とカメラの様子を取り込む所は、これから作ります"
-LOOP_NODES = ("型紙（AI の仮説）", "作る（人の工夫）", "残す（写真と言葉）", "次の版（人が採る）")
-LOOP_OUTER = "エンジンごと良くなる（これから作る）"
-AI_NOTE = "AI が読む所は道を作った段で、本物の API ではまだ回していません"
+LOOP_NODES = ("型紙（AI の仮説）", "自分の手で作る", "持ち寄る（写真と言葉）", "次の版（人が決める）")
+LOOP_OUTER = "AI が動きを強める（作っている途中）"
+AI_NOTE = "本物の Claude API は、まだ 1 度も動かしていません"
+GALLERY_LINE = "持ち寄って、ギャラリーで見る（今ある）"
+GALLERY_PAN = 850                # ギャラリーの列を下へ動く量（CSS の px）。節の高さを越えない所で止める
+MAKE_NOTE = "工夫を声で残す口は、これから作ります。今の聞く口は、型紙の言葉から答えます。AI の答えは、まだ動かしていません"
 VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記録へ")
 
-SECONDS = {"core_map": 8.0, "core_make": 11.0, "core_keep": 7.0, "core_voice": 5.0, "core_gallery": 9.0, "core_loop": 9.0}
+SECONDS = {"core_map": 8.0, "core_make": 11.0, "core_keep": 7.0, "core_voice": 5.0, "core_gallery": 13.0, "core_loop": 11.0}
 CUES_ALL = {
     "core_map": {"title": (0.0, 0.6), "s1": (0.6, 1.2), "s2": (1.6, 2.2), "s3": (2.6, 3.2), "after": (3.8, 4.4), "loop": (4.8, 5.6)},
     "core_make": {"in": (0.0, 0.8), "move": (4.2, 5.6)},
     "core_keep": {"in": (0.0, 0.8), "move": (1.6, 3.0)},
     "core_voice": {"in": (0.0, 0.6), "b1": (0.6, 1.1), "b2": (1.3, 1.8), "b3": (2.0, 2.5)},
-    "core_gallery": {"in": (0.0, 0.8), "second": (4.4, 5.2)},
+    "core_gallery": {"in": (0.0, 0.8), "pan": (2.4, 6.4), "second": (7.6, 8.4)},
     "core_loop": {"title": (0.0, 0.6), "ring": (0.6, 2.2), "outer": (3.0, 4.4)},
 }
 _SHOTS = {}
@@ -316,8 +321,8 @@ class MapCard:
             text(d, (W // 2, y0 + bh + 18), VOICE_LINE, 30, fade(SHU, v), False, "ma")
             ya = y0 + bh + 90
             _arrow(d, (x0 + 2 * (bw + gap) + bw // 2, y0 + bh + 6), (x0 + 2 * (bw + gap) + bw // 2, ya), fade(SUMI, 0.7 * v))
-            _box(d, (1100, ya, 1810, ya + 90), fade(SUMI, 0.7 * v))
-            text(d, (1455, ya + 22), "ギャラリーで見られる（今ある）", 38, fade(SUMI, v), True, "ma")
+            _box(d, (1000, ya, 1810, ya + 90), fade(SUMI, 0.7 * v))
+            text(d, (1405, ya + 22), GALLERY_LINE, 38, fade(SUMI, v), True, "ma")
         u = self._p(t, "loop")
         if u > 0:
             ya = y0 + bh + 90
@@ -361,7 +366,7 @@ class VoiceCard:
 
 
 class LoopCard:
-    """良くなる輪の図。内の実線は今ある版の輪、外の点線はこれから作るエンジンごとの輪。撮れたら --clip core_loop=… で差し替える。"""
+    """AI が動きを強める輪の図。内の実線は今ある版の輪、外の点線は作っている途中の所。撮れたら --clip core_loop=… で差し替える。"""
 
     def __init__(self, cues):
         self.cues = cues
@@ -372,8 +377,8 @@ class LoopCard:
         d = ImageDraw.Draw(img)
         p = lambda c: ease((t - self.cues[c][0]) / (self.cues[c][1] - self.cues[c][0]))
         a = p("title")
-        text(d, (80, 62), "こう回す", 56, fade(SUMI, a), True)
-        text(d, (80, 136), f"実線は今ある輪。点線は{SOON}輪", 34, fade(SUMI, a))
+        text(d, (80, 62), "AI がこの動きを強める", 56, fade(SUMI, a), True)
+        text(d, (80, 136), "図です。実線は今ある所。点線は作っている途中の所", 34, fade(SUMI, a))
         text(d, (W - 80, 76), "図", 30, fade(SUMI, 0.7 * a), False, "ra")
         cx, cy, rx, ry = W // 2, 590, 520, 230
         pos = [(cx, cy - ry), (cx + rx, cy), (cx, cy + ry), (cx - rx, cy)]
@@ -388,7 +393,10 @@ class LoopCard:
         u = p("outer")
         if u > 0:
             _box(d, (cx - rx - 330, cy - ry - 80, cx + rx + 330, cy + ry + 90), fade(SHU, u), dashed=True)
-            text(d, (cx, cy - 26), LOOP_OUTER, 40, fade(SHU, u), True, "ma")
+            # 2 行に分ける。1 行だと左右の札（次の版・持ち寄る）に重なる
+            head, _, tail = LOOP_OUTER.partition("（")
+            text(d, (cx, cy - 56), head, 40, fade(SHU, u), True, "ma")
+            text(d, (cx, cy + 2), "（" + tail, 40, fade(SHU, u), True, "ma")
             text(d, (cx, cy + ry + 112), AI_NOTE, 28, fade(SUMI, 0.85 * u), False, "ma")
         return img
 
@@ -407,7 +415,7 @@ def build_scene(name, cues, cache=None, shots=None):
     if name == "core_make":
         rects = shots["make"][1]
         width = shots["make"][2]
-        return Screens(name, cues, shots, 2, "工夫を声で残す口はこれから。今あるのは手順を見る頁と、声で聞く口", [
+        return Screens(name, cues, shots, 2, MAKE_NOTE, [
             {"at": None, "shot": "make", "move": "move", "from": _cam_page(width), "to": _cam_on(rects["henji"], 1.5),
              "title": "作りながら見る頁", "sub": "手順を見ながら作る。止まったら、そのまま声か字で聞ける"}])
     if name == "core_keep":
@@ -417,9 +425,12 @@ def build_scene(name, cues, cache=None, shots=None):
              "title": "写真を上げる手帖", "sub": "できた物の写真と、工夫した所を記録に添える"}])
     if name == "core_gallery":
         made, kai = shots["gallery"][1]["made"], shots["toy"][1]["kaizen"]
+        top = _cam_on(made, 1.1)
+        # 持ち寄られた物の列を下へ動く。1 つの記録だけに見せず、何人もの物が集まる場だと分かるように。
+        lower = (top[0], top[1] + min(GALLERY_PAN, max(0, made[3] - top[2] * ASPECT)), top[2])
         return Screens(name, cues, shots, 0, EXAMPLE_NOTE, [
-            {"at": None, "shot": "gallery", "from": _cam_on(made, 1.1), "to": _cam_on(made, 1.1), "title": "他の人が作った物", "sub": "作った物と工夫を、ギャラリーで見られる"},
-            {"at": "second", "shot": "toy", "from": _cam_on(kai, 1.1), "to": _cam_on(kai, 1.1), "title": "型紙の改善の輪", "sub": "報告と人の説明から、次の版へ（人が採る）"}])
+            {"at": None, "shot": "gallery", "move": "pan", "from": top, "to": lower, "title": "他の人が作った物", "sub": "作った物が持ち寄られ、ギャラリーで見られる"},
+            {"at": "second", "shot": "toy", "from": _cam_on(kai, 1.1), "to": _cam_on(kai, 1.1), "title": "型紙が次の版へ", "sub": "作った人の話から、次の版ができる。どれを使うかは人が決める"}])
     raise KeyError(name)
 
 

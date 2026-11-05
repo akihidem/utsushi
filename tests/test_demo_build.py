@@ -4,8 +4,8 @@ import importlib.util
 from demo import build
 
 # 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
-assert build.SCENES == ["flip", "scene2", "word_make", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "core_gallery", "scene6",
-                        "word_ai", "core_loop", "word_fix", "scene7", "word_who", "ask"]
+assert build.SCENES == ["flip", "scene2", "word_touch", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "core_gallery", "scene6",
+                        "word_ai", "core_loop", "scene7", "ask"]
 # 試験の数は RESULT.md の行から読む。読めない時は None（古い数を出さない）
 assert build.count_tests("実行した 57 本（場面 30 本、試験 27 本）、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
 assert build.count_tests("何も無い") is None

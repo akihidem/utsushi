@@ -19,14 +19,21 @@ for name, (lines, seconds, step) in words.CARDS.items():
     spans = list(words.cues_of(name).values())
     assert spans == sorted(spans) and spans[-1][1] < seconds - 3, f"{name} は最後の行の後に読む間を置く"
 
+# 3 番目の札は本人の言葉（11-05 夕）の全文。字は足さず引かず、行の切れ目だけで分ける
+TOUCH = "壊れても直せる、という要素よりも大事なのは、自分の手で実際に触れるものを作る楽しさを感じて欲しい。それが持ち寄られて、AIもその動きをエンハンスするのが面白いよね"
+assert script.SCENES[2] == "word_touch" and "".join(words.CARDS["word_touch"][0]) == TOUCH and TOUCH in rec_lines
+# 優先の順が変わったので、前の札は台本に出さない（記録の言葉は消さない）
+for gone in ("word_make", "word_fix", "word_who"):
+    assert gone not in words.CARDS and gone not in script.SCENES, gone
+
 # 一字でも違えば落ちる。短く切った文も落ちる（切った文を本人の言葉と書かない）
-lines = words.CARDS["word_make"][0]
-assert not words.in_record((lines[0].replace("作れて", "作って"), *lines[1:]))
+lines = words.CARDS["word_touch"][0]
+assert not words.in_record((lines[0].replace("直せる", "なおせる"), *lines[1:]))
 assert not words.in_record(lines[1:]), "切った文を通した"
 assert not words.in_record(("手を動かす楽しさを忘れた人のために作っている。",))
 
-# 問いは本人の言葉と書かない。問いの形で、まだ本人が決めていない文（記録に無い）
-assert words.ASK.endswith("か。") and words.ASK not in rec_lines
+# 問いの文は本人の決定（11-05）。言葉の記録の引用ではないので、本人の言葉の札と分ける
+assert words.ASK == "あなたなら、何を作りますか。" and words.ASK not in rec_lines
 assert all(v >= 0 for v in words.fits().values()), words.fits()
 
 # 台本の順: 問いの札が最後

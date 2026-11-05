@@ -8,13 +8,15 @@ from demo import core, flip, script
 
 # 真ん中に置く: 3 段と輪が、言葉の札の間にある
 order = script.SCENES
-assert order.index("word_make") < order.index("core_map") < order.index("scene3") < order.index("core_make") < order.index("core_keep") \
-    < order.index("scene5") < order.index("core_gallery") < order.index("core_loop") < order.index("word_fix") < order.index("ask")
+assert order.index("word_touch") < order.index("core_map") < order.index("scene3") < order.index("core_make") < order.index("core_keep") \
+    < order.index("scene5") < order.index("core_gallery") < order.index("word_ai") < order.index("core_loop") < order.index("ask")
 
 # まだ無い物の場面は図と書き、これから作ると書く。画面として撮らない
 assert core.SOON == "これから作る"
-assert "これから" in core.VOICE_LINE and "これから" in core.LOOP_OUTER
-assert "本物の API ではまだ" in core.AI_NOTE
+assert "これから" in core.VOICE_LINE
+# AI が動きを強める輪は図のままで、作っている途中と書く。本物の API はまだ動かしていないので、そう書く
+assert "作っている途中" in core.LOOP_OUTER and "AI" in core.LOOP_OUTER
+assert "本物の Claude API は、まだ 1 度も動かしていません" in core.AI_NOTE
 assert "これから" in core.build_scene("core_make", dict(core.CUES_ALL["core_make"]), shots={
     "make": (Image.new("RGB", (2560, 2000), (250, 250, 250)), {"stage": [0, 0, 1280, 900], "henji": [700, 200, 500, 400], "h": 1000}, 1280)}).note
 for name in ("core_map", "core_voice", "core_loop"):
@@ -54,7 +56,14 @@ for name in core.SECONDS:
     assert scene.frame(0.0).tobytes() != scene.frame(d - 0.05).tobytes(), name
 # 画面の場面は 2 段目で別の頁に替わる
 gal = core.build_scene("core_gallery", dict(core.CUES_ALL["core_gallery"]), shots=fake)
-assert gal.frame(3.0).tobytes() != gal.frame(8.0).tobytes()
+assert gal.frame(3.0).tobytes() != gal.frame(gal.duration - 1.0).tobytes()
+# ギャラリーの字幕は、作った物が持ち寄られる事を言う。寄りは持ち寄られた物の列を下へ動く（1 つの記録だけに見せない）
+assert "持ち寄られ" in gal.segs[0]["sub"] and "ギャラリー" in gal.segs[0]["sub"]
+assert gal.segs[0]["to"][1] > gal.segs[0]["from"][1]
+assert "持ち寄" in core.GALLERY_LINE and "今ある" in core.GALLERY_LINE
+# 聞く口の答えが AI のものに見えないように書く（本物の API は未実行）
+make = core.build_scene("core_make", dict(core.CUES_ALL["core_make"]), shots=fake)
+assert "AI の答えは、まだ動かしていません" in make.segs[0].get("note", make.note)
 # 頁の頭から映す（題から読ませる）
 head = core._cam_page(1280)
 assert abs(head[1] - head[2] * core.ASPECT / 2) < 1e-6 and head[0] == 640
