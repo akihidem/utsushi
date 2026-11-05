@@ -15,6 +15,8 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "a
 
 from web.play_server import serve  # noqa: E402
 
+# 1 つのブラウザとして cookie を持つ。記録を残した画面の鍵（utsushi_rec）が無いと、自分で残した記録にも説明を書けないため
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 G = "NDL-1187053-R0000005-L"
 FORM = {"text": "折りが固い", "next_idea": "幅を変える", "by": "大人", "param": "fold_count", "to": "13", "why": "理由", "interpretation": "読み"}
 
