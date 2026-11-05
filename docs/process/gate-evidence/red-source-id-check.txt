@@ -1,0 +1,12 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_source_id_check.py   # 直す前（main の上）
+Traceback (most recent call last):
+  File "tests/test_source_id_check.py", line 14, in <module>
+    from api.tools import ToolInputError, check_source_id
+ImportError: cannot import name 'check_source_id' from 'api.tools' (src/api/tools.py)
+rc=1
+
+# 穴そのものの確かめ（一時の場所に置いた JSON を source_id で指す）
+MCP check_draft: 置き場の外の JSON で isError = False
+check_params: 置き場の外の JSON で返した字数 = 30
+zoom_picture: 置き場の外の JSON を読み、取りに行く所まで進んだ: 1 回
+rc=0

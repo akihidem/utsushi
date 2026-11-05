@@ -1,7 +1,10 @@
 """Claude に渡す道具。どれも決定的で、repo の外へ書かず、決まった資料だけを読む。"""
 import json
 import pathlib
+import re
 import urllib.request
+
+from omochae.store import SID
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SIDE_RANGE = {"L": (0.0, 50.0), "R": (50.0, 100.0)}
@@ -9,6 +12,13 @@ SIDE_RANGE = {"L": (0.0, 50.0), "R": (50.0, 100.0)}
 
 class ToolInputError(ValueError):
     """道具の入力が決まりの外。理由を Claude に返して直させる。"""
+
+
+def check_source_id(source_id):
+    """パスにつなぐ前に形を確かめる。道具の入力は Claude が書き、Claude には外の人が書いた持ち寄りの文も渡るため。
+    形を見れば `..` も絶対パスも通らない。つないだ後のパスを見る形より、画面と同じ 1 つの式で済む。"""
+    if not (isinstance(source_id, str) and re.fullmatch(SID, source_id)):
+        raise ToolInputError(f"source_id の形が違う: {source_id!r}（例: NDL-1187053-R0000005-L）")
 
 
 def zoom_url(source, x, y, w, h, width=1000):
@@ -27,6 +37,7 @@ def zoom_url(source, x, y, w, h, width=1000):
 
 def zoom_source(source_id, x, y, w, h, width=1000):
     """切り出した絵を out/zoom に置いてパスを返す。同じ領域は取り直さない（NDL に負担をかけず、再現もできる）。"""
+    check_source_id(source_id)
     path = ROOT / "data/sources" / f"{source_id}.json"
     if not path.exists():
         raise ToolInputError(f"出典の記録が無い: {source_id}")
