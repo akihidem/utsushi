@@ -1,14 +1,12 @@
 """保護者の方へ、ファシリテーターの方への頁（/otona）の試験。本物の API は呼ばない。
 
-本人の決定（11-06）: 道の外に置き、大人向けの説明をここへ集める（声や字の扱い・取り下げ・写真の載せ方・AI（Claude）の役目・場の進め方）。
-本人の言葉（11-06）: 全年齢向けで、日本に関心のある海外の人にも使ってほしい。みんなで再現し合う場所を作りたい。
+本人の決定（11-06）「3 点とも推し A。文はこの形で頁へ」。全文は docs/process/research/36-road-and-audience.md の「採られた文」で、一字も変えない。
 見る事:
-1. 2 つの皮で開き、合言葉なしの場でも開く。7 つの節と、どの頁からも来られる道がある
-2. 同じ意味の文は、ほかの頁の文のまま（断りの文を 2 通りにしない）
-3. 頁が約束した事の裏付けが、今のコードにある（消えたら、ここで気づく）
-4. 作る側の内輪の言葉と番号、成績の言葉、順位が出ない
+1. 2 つの皮で開き、合言葉なしの場でも開く。序の頁と頁の足から来られる
+2. 採られた文が一字も変わらず、この順で出る。中身に、採られた文の外の字が無い（節へ飛ぶ道と、今ある釦の字を除く）
+3. 文が書いた約束の裏付けが、今のコードにある（消えたら、ここで気づく）
 """
-import html
+import html.parser
 import inspect
 import os
 import re
@@ -18,31 +16,92 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
+from api import ask  # noqa: E402
 from omochae import media_review, records, talk_log  # noqa: E402
-from omochae.marks import without_premise  # noqa: E402
-from web import about, hanasu, otona, skin, techo_site, toy, tsukuru  # noqa: E402
+from web import about, otona, skin, techo_site, wording  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
-pages = {k: otona.page(k) for k in ("tenji", "zine")}
+TITLE = "保護者の方へ、ファシリテーターの方へ"
+# 本人が採った文。一字でも変わったら落ちるように、ここに決定の文を書く
+ADOPTED = (
+    ("1 このサイトでする事",
+     ("江戸時代の絵本に、絵と歌だけが残ったおもちゃがあります。どう動いたかは、分かっていません。このサイトでは、そのおもちゃを紙で作って、動きを自分で確かめます。",
+      "型紙は、AI が考えた「たたき台」です。正解ではありません。うまく動かない時は、作る人が工夫して直します。動かなくても、失敗ではありません。",
+      "子どもから大人まで、どなたでも使えます。")),
+    ("2 声と字のあつかい",
+     ("声は録音しません。このサイトは声を受け取りません。",
+      "声を字にするのは、ブラウザ（ネットを見るアプリ）です。そのとき、声がブラウザの会社に送られることがあります。",
+      "聞くのは、ボタンを押した後だけです。「はじめる」を押すと、「つぎ」「もどる」などの操作の言葉を聞きます。質問は「こまった」の後の 1 つだけ受けます。工夫は、マイクを押してから話した事だけを受けます。まわりの話し声は残りません。",
+      "残るのは字だけです。字は「のこす」を押した時に残ります。残す前に、読んで直せます。",
+      "名前・学校の名前・住所・電話番号・メールは、言ったり書いたりしないでください。名乗りや連絡先の形の言葉は、機械が落とします。ただし、全部を見分ける事はできません。",
+      "残した工夫の字は、ほかの人も読めます。",
+      "質問の字は、案内をよくするために残します。AI に送るのは、質問の字だけです。")),
+    ("3 写真と動画",
+     ("写してよいのは、作った物と、大人の手元だけです。顔、名札、子どもは写さないでください。",
+      "写真と動画は、いつ・どこでとったかなどの情報を消してから残します。動画の音は消します。",
+      "のせた写真と動画は、人が確かめてから、みんなの頁に出します。確かめる前は、のせた人の画面にだけ出ます。",
+      "人や声が入っていた時は、頁には出しません。",
+      "合言葉なしで開く公開の場では、写真と動画はのせられません。")),
+    ("4 取り下げ（あとから消す）",
+     ("残した記録、写真、話した字は、あとから消せます。",
+      "消したい時は、場の進行者に、記録の番号を伝えてください。番号は、手帖の記録の頁に出ています（R-0003 のような形です）。",
+      "記録ごと消す事も、写真だけ、話した字だけを消す事もできます。")),
+    ("5 AI（Claude）の役目",
+     ("型紙は、AI が絵と歌から考えた案を、決まった検査に通して作っています。",
+      "作っている途中の質問に答えます。答えるのは、言葉の意味と手順です。動く仕組みの答えは言いません。確かめるのは作る人です。",
+      "記録と、作った人の説明の後で、AI が読みと次の案を出します。採るかどうかは、人が決めます。",
+      "AI は、点数や順位を付けません。",
+      "AI を使えない場でも、紙で作って、記録を残せます。")),
+    ("6 場の進め方（ファシリテーターの方へ）",
+     ("進行する人は、答えを持つ人ではありません。昔の作り方は残っていないので、いっしょに分からない人として立ちます。",
+      "はじめに 3 つ約束します。「動かなくても、それは紙の返事です」「壊してかまいません。自分で作った物は直せます」「となりの作り方は、見てよい、まねてよい」。",
+      "言う事は、見えた事です（「ここを 3 回折り直したね」）。言わない事は、評価（いいね・おしい・正解）、仕組みの答え、人とのくらべです。",
+      "手が止まった人には、まず 1 分見ます。次に、見えた事を返します。問いを小さくします（「今、動かないのはどこ？」）。材料を 1 つ渡します。",
+      "場の前に、合言葉付きのリンクで開きます。型紙を 1 度出しておきます。刷った紙の物差しが 10cm かを測ります。自分でも 1 つ作って、詰まる所を知っておきます（答えとしては見せません）。")),
+)
+BUTTONS = ("おもちゃを選ぶ", "入口へ戻る")
 
 
-def shown(page):
-    """画面に見える字。style と script と札の外の属性は見ない。"""
-    body = re.sub(r"<(style|script)\b.*?</\1>", "", page, flags=re.S)
-    return html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body)))
+class Text(html.parser.HTMLParser):
+    """<main> の中の字を順に集める。"""
+
+    def __init__(self):
+        super().__init__()
+        self.out, self.inside = [], 0
+
+    def handle_starttag(self, tag, attrs):
+        self.inside += tag == "main"
+
+    def handle_endtag(self, tag):
+        self.inside -= tag == "main"
+
+    def handle_data(self, data):
+        if self.inside and data.strip():
+            self.out.append(data.strip())
 
 
-# 1. 節と道
-for look, page in pages.items():
-    assert "<title>保護者の方へ、ファシリテーターの方へ" in page and "保護者の方へ、ファシリテーターの方へ" in shown(page.split("</h1>")[0].split("<h1>")[1]).replace(" ", ""), look
-    for sec in ("site", "koe", "shashin", "torisage", "ai", "ie", "ba"):
-        assert f'id="{sec}"' in page and f'href="#{sec}"' in page, (look, sec)
-    assert 'href="/toys"' in page and 'href="/en"' in page, look
+def main_text(page):
+    t = Text()
+    t.feed(page)
+    return "".join(t.out)
 
-about_page = about.page("tenji")
-assert 'href="/otona"' in about_page, "序の頁から来られる"
+
+heads = [h for h, _ in ADOPTED]
+assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 28, "題と合わせて 35 行"
+expected = TITLE + "".join(heads) + "".join(h + "".join(lines) for h, lines in ADOPTED) + "".join(BUTTONS)
+
+# 1. 2 つの皮で、採られた文のまま（2 も同じ所で見る）
+for look in ("tenji", "zine"):
+    page = otona.page(look)
+    assert f"<title>{TITLE}" in page, look
+    assert main_text(page) == expected, (look, "採られた文と字が違う、または外の字がある")
+    assert page.count('<section class="sec" id=') == 6 and page.count('<a href="#') == 6, look
+    assert 'href="/toys"' in page and 'href="/"' in page, look
+
+# どこから来るか。帯に「よむ」が入る時に置き場を合わせる
+assert 'href="/otona"' in about.page("tenji"), "序の頁から来られる"
 assert 'href="/otona"' in skin.shell("題", "<p>中身</p>"), "どの頁の足からも来られる"
-assert 'href="/otona"' not in skin.shell("title", "<p>body</p>", lang="en", foot='<p class="foot">credit</p>'), "英語の頁の足は英語のまま"
+assert 'href="/otona"' not in skin.shell("title", "<p>body</p>", lang="en", foot='<p class="foot">credit</p>'), "英語の頁の足は英語のまま（英語の文はまだ無い）"
 
 
 def fetch(server, path):
@@ -55,41 +114,18 @@ for public_open in (False, True):
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
         status, got = fetch(server, "/otona")
-        assert status == 200 and "ファシリテーターの方へ" in got, public_open
+        assert status == 200 and main_text(got) == expected, public_open
     finally:
         server.shutdown()
         server.server_close()
 
-text = shown(pages["tenji"])
-
-# 2. 同じ意味の文は、ほかの頁の文のまま
-for w in (hanasu.HOW_BROWSER, tsukuru.CAMERA_PURPOSE):
-    assert w in text, w
-for w in ("残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。",
-          "名前・学校の名前・住所・電話番号・メールは書かないでください。"):
-    assert w in text and w in hanasu.NOTICE, w
-gallery_src = inspect.getsource(techo_site)
-for w in ("公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。",
-          "フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。"):
-    assert w in text and w in gallery_src, w
-assert "100% で刷り、紙の物差しが 10cm か確かめます。" in text and "100% で刷り、紙の物差しが 10cm か確かめます。" in inspect.getsource(toy)
-# 本人が採った文（11-06、AI の名前の書き方）。一字でも変わったら落ちるように、ここに決定の文を書く
-assert "残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。" in text
-assert "紙で動いても、昔の作り方が分かったことにはなりません。" in text and "紙で動いても、昔の作り方が分かったことにはなりません。" in about.LOOP
-
-# 3. 約束の裏付け。消えたら、頁の文を直す
-assert set(inspect.signature(records.withdraw).parameters) >= {"media_only", "talk_only"}, "記録が理由に使われていても、写真と動画と話した字は消せる"
-assert talk_log.drop_for_record and talk_log.set_share, "記録の取り下げで字も消え、作る側がほかの人の頁から外せる"
-assert media_review.SHOWS == ("object", "people"), "物だけ / 人や声が入る、の 2 つ"
-assert talk_log.blocked("山田小学校の田中です") and talk_log.blocked("電話は 090-1234-5678 です"), "学校の名前と電話番号の形は機械が残さない"
-assert not talk_log.blocked("田中さんに教わった"), "名前は機械で全部は見分けられないと書く根拠。ここが変わったら文を直す"
-
-# 4. 内輪の言葉と番号（#135 の表と同じ物）・むずかしい語（#317 の表から）・成績の言葉
-for name, shape in (("本人", r"本人"), ("採否", r"採否"), ("仮説の番号", r"(?<![A-Za-z0-9])H-[A-Z0-9]+"), ("記録の番号", r"(?<![A-Za-z0-9])R-\d+"),
-                    ("決定の番号", r"(?<![A-Za-z0-9])[JUTW]-\d+"), ("雛形", r"雛形"), ("鍵", r"鍵"), ("見込み", r"見込[みむ]"), ("組の版", r"[a-z_-]+-v\d+"),
-                    ("端末", r"端末"), ("版", r"版"), ("連絡先", r"連絡先")):
-    for m in re.finditer(shape, text):
-        raise AssertionError((name, text[max(0, m.start() - 12):m.end() + 12]))
-for w in ("成功", "失敗", "正解", "順位が", "ランキング"):
-    assert w not in without_premise(text), w
-print("ok 大人の方への頁は 2 つの皮と合言葉なしの場で開き、文はほかの頁の文のままで、約束の裏付けがある")
+# 3. 約束の裏付け。消えたら、文を本人に確かめ直す
+assert set(inspect.signature(records.withdraw).parameters) >= {"media_only", "talk_only"}, "記録ごと・写真だけ・話した字だけを消せる"
+assert talk_log.drop_for_record, "記録を消すと話した字も消える"
+assert re.fullmatch(r"記録の番号 R-0003", wording.record_no("R-0003")), "番号は手帖の記録の頁に、この形で出る"
+assert media_review.SHOWS == ("object", "people"), "物だけ / 人や声が入る、を人が確かめる"
+assert talk_log.blocked("山田小学校の田中です") and talk_log.blocked("電話は 090-1234-5678 です"), "名乗りや連絡先の形の言葉は機械が落とす"
+assert not talk_log.blocked("田中さんに教わった"), "全部を見分ける事はできない、と書く根拠。ここが変わったら文を確かめ直す"
+assert "公開のデモでは、写真と動画は上げられません。" in inspect.getsource(techo_site), "公開の場では写真と動画はのせられない"
+assert ask.REFUSE and ask.MECHANISM_WORDS, "動く仕組みの答えは言わない"
+print("ok 大人の方への頁は採られた文のままで、2 つの皮と合言葉なしの場で開き、約束の裏付けがある")

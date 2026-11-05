@@ -119,7 +119,7 @@ for s in sources():
         see(white, path)
 # 2 頁の作りの字。皮で作りが違う頁は両方を見る
 for site, tag in ((white, "白"), (black, "黒")):
-    for path in ("/", "/about", "/otona", "/toys", "/gallery", "/zukan", "/en", f"/toy/{G}", f"/toy/{T}"):
+    for path in ("/", "/about", "/toys", "/gallery", "/zukan", "/en", f"/toy/{G}", f"/toy/{T}"):
         see(site, path, name=path if site is white else f"{path}（{tag}）")
 for s in (G, T):
     see(white, f"/zukan/{s}/yomi", {"mine": "ためしの読み"}, f"/zukan/{s}/yomi（読みの後）")
