@@ -63,7 +63,7 @@ def check(rec):
     for i, fix in enumerate(rec.get("fixes", []), 1):
         if not all(str(fix.get(k, "")).strip() for k in ("part", "change", "outcome")):
             out.append(Failure("F3.result", f"fixes[{i}]", "直した点は部品名・変えた事・結果の 3 欄が要る"))
-    # 感想（impression）は本人の方針（11-05）「感想と動きの報告」の感想の欄。自由な文なので、他の文と同じく長さと連絡先の形を見る。
+    # 感想（impression）も文の欄（本人の方針 11-05「感想と動きの報告」）。長さの床と連絡先の床を同じに当てる。
     fields = [("note", rec.get("note", "")), ("impression", rec.get("impression", "")), *(("answers", v) for v in rec.get("answers", {}).values()),
               *(("ideas", v) for v in rec.get("ideas", [])), *(("fixes", str(v)) for fix in rec.get("fixes", []) for v in fix.values())]
     long = too_long(fields)
