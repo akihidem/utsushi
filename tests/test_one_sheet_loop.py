@@ -199,6 +199,9 @@ assert [c["param"] for c in loop.version_params(G, "H-A", 9)[1]["changes"]] == [
 
 # 4. 版にならない案は、版を作らず、作る側の控えに入る（人が採った案を捨てない）
 now, _ = loop.version_params(G, "H-A", loop.latest_version(G, "H-A"))
+assert now["fold_height"] == 46 and first["fold_height"] != 46
+# 下の「後の直しとぶつかる」の値は紙に乗る。乗らない値だと、ぶつかる守りを外しても控えに入り、見張りにならない
+assert not loop.check_proposal({"record_ids": [rid], "hypothesis_id": "H-A", "changes": [{"param": "fold_height", "to": 44, "why": "試す"}]}, source(G))
 for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**now, "fold_width": 15}, {}),
                            ("読みだけ違う（差が無い）", dict(now), {}),
                            ("寸法を書いていない", None, {}),
@@ -206,7 +209,7 @@ for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**
                            ("変えてよい寸法の外", {**now, "pusher_height": 20}, {}),
                            ("雛形が違う", {"fold_height": 44}, {"template": "pivot_counterweight"}),
                            # 案を作った後に今の版で変わった寸法に触る案は、後の直しを黙って上書きしない
-                           ("後の直しとぶつかる", {**first, "fold_count": 26}, {"based_on_version": 1}),
+                           ("後の直しとぶつかる", {**first, "fold_height": 44}, {"based_on_version": 1}),
                            ("もう同じ値", {**first, "fold_count": now["fold_count"]}, {"based_on_version": 1}),
                            ("読めない版の案", {**now, "fold_width": 8.5}, {"based_on_version": 99}),
                            ("寸法が字", "多め", {}),
