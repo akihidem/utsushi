@@ -322,7 +322,7 @@ def feedback(sid, r, photos=True):
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told and not photos:
-        body = '<p class="meta">説明を残しました。</p>' + ai_part(r)
+        body = '<p class="meta">説明を残しました。</p>' + ai_part(r, photos=False)
     elif told:
         from web.play_server import next_form
 
@@ -335,21 +335,22 @@ def feedback(sid, r, photos=True):
     return f'<p><a href="{after}">試した後の紙</a></p>{body}'
 
 
-def ai_part(r):
-    """人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。"""
+def ai_part(r, photos=True):
+    """photos=False は合言葉なしで開いた場で、読みと観察の文を出さない（J-028）。
+    人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。"""
     from omochae import loop
     from api import observe
 
     rid = esc(r["id"])
     out = ""
-    i = loop.interpretation(r["id"])
+    i = loop.interpretation(r["id"]) if photos else None
     if i and isinstance(i.get("content"), dict):
         c = i["content"]
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
         out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
-    o = observe.observation(r["id"])
+    o = observe.observation(r["id"]) if photos else None
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
@@ -421,7 +422,7 @@ def gallery_page(sids, photos=True):
             f'{cards}</section>'
             '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
             f'{voices_html()}</section>'
-            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
+            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場）。</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section></div>')
@@ -453,7 +454,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
-        mine += (f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(r["id"]) + "　" if uploads else ""}{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=uploads)}'
                  f'{feedback(sid, r, photos=uploads)}</div>')

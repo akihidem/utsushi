@@ -177,13 +177,33 @@ def _num(v):
         return v  # 数でない物は記録の検査に落とさせ、理由を画面に返す
 
 
+def without_notes(page):
+    """頁の style と script の注釈を外す。作る側の控え（決定や Issue の番号、内部の名前）なので、合言葉なしで開いた場には送らない（J-028）。
+    script は行の頭の // と、文の後ろの // だけを外す。字の中の // や URL を切らないため。"""
+    def clean(m):
+        tag, attrs, part = m.groups()
+        if tag == "style":
+            part = re.sub(r"/\*.*?\*/", "", part, flags=re.S)
+        else:
+            part = re.sub(r"(?m)^[ \t]*//[^\n]*\n?", "", part)
+            part = re.sub(r"(?m)(?<=[;{}])[ \t]*//[^\n'\"`]*$", "", part)
+        return f"<{tag}{attrs}>{part}</{tag}>"
+
+    return re.sub(r"<(style|script)\b([^>]*)>(.*?)</\1>", clean, page, flags=re.S)
+
+
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
+    # Server の見出しに Python の版を出さない（公開の前の点検）。
+    server_version = "utsushi"
+    sys_version = ""
 
     def log_message(self, *a):  # 記録の文を記録に残さない
         pass
 
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+        if isinstance(body, str) and ctype.startswith("text/html") and getattr(self.server, "public_open", False):
+            body = without_notes(body)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -309,7 +329,8 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
             from . import zukan
-            return self._send(200, zukan.toy_zukan(m.group(1), look) if m.group(1) else zukan.index_page(sources(), look))
+            photos = not getattr(self.server, "public_open", False)
+            return self._send(200, zukan.toy_zukan(m.group(1), look, photos) if m.group(1) else zukan.index_page(sources(), look, photos))
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
         if path == "/en":
             # 英語の入口と玩具の頁（J-030 の段 1）。
