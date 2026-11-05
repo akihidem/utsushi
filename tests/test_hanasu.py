@@ -293,10 +293,11 @@ code, gallery = get("/gallery")
 for page in (toy, tsu, techo, gallery):
     for text in ("糸で引く所が気になる", THINK_OTHER, CRAFT_NOWHO, CRAFT_NOJS, THINK, THINK_FREE):
         assert text not in page, text
-# 玩具の頁・作りながら見る頁・上げた物の頁には、まだ出さない（予想の段を外す枝が入った後に、サイトの線が結ぶ）
-for page in (toy, tsu, gallery):
-    for text in OPEN | {CRAFT_OTHER}:
-        assert text not in page, text
+# 作りながら見る頁には出さない。玩具の頁と上げた物の頁には、記録の札に出る（本人の決定 11-05 の 2b「全部見せる」、#315。tests/test_talk_in_gallery.py）
+for text in OPEN | {CRAFT_OTHER}:
+    assert text not in tsu, text
+for text in (OPEN - {THINK, THINK_FREE}) | {CRAFT_OTHER}:
+    assert text in toy and text in gallery, text
 # 手帖の記録の札の「工夫した所（直した所）」: 作りながら話した物（手順の番号つき）→ 上げた後に残した物。選び肢は無い
 card = techo[techo.index(f"{RID}　"):techo.index('<div class="hanasu" data-hanasu', techo.index(f"{RID}　"))]
 assert '<p class="hanasu-kufu-head">工夫した所（直した所）</p>' in card and f'data-kufu="{RID}"' in card, card

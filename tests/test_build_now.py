@@ -87,7 +87,7 @@ assert "H-A" in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/
 assert "他の人が作った物" in get(f"/toy/{G}")
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "impression": "扇が引っかかった", "fix_part": "扇", "fix_change": "折り目を深くした", "fix_outcome": "少し開いた"}) == 303
 page = get(f"/toy/{G}")
-assert "工夫: 扇 / 折り目を深くした / 少し開いた" in page and "扇が引っかかった" in page
+assert "<li>扇 / 折り目を深くした / 少し開いた</li>" in page and "工夫した所（直した所）" in page and "扇が引っかかった" in page
 assert page.index('id="minna"') < page.index('id="kaizen"')
 gallery = get("/gallery")
 assert "他の人が作った物" in gallery and "扇が引っかかった" in gallery and "折り目を深くした" in gallery

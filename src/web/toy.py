@@ -366,7 +366,10 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
                    ("思いついた事", "、".join(str(x) for x in r.get("ideas") or [])), ("メモ", r.get("note"))]
         feel += "".join(f"<p>{label}: {esc(text)}</p>" for label, text in written if text)
         # 人の工夫（本人の言葉 11-05「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」）。輪の材料そのものなので札の上の方に出す。
-        feel = "".join(f'<p>工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict)) + feel
+        # 記録の欄の工夫と話した工夫を 1 つの節に並べる（本人の決定 11-05 の 2b「全部見せる」、#315）。合言葉なしで開いた場では下で全部外す。
+        from . import hanasu
+
+        feel = hanasu.kufu_block(sid, r, photos) + feel
         feel = media_html(r["id"], photos=photos) + feel
         if not photos:
             # 合言葉なしで開いた場: 人の書いた文を別の人に見せない（文の中の名前は機械で落とせない。J-028）。札と紙への道と欄だけ残す。

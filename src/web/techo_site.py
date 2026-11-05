@@ -372,7 +372,10 @@ def made_item(sid, data, r, photos=True):
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
-    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict))
+    # 記録の欄の工夫と話した工夫を、手帖の札と同じ 1 つの節に並べる（本人の決定 11-05 の 2b「全部見せる」、#315）。ここまで来るのは合言葉のある場だけ。
+    from . import hanasu  # 循環を避けて、ここで読む
+
+    words += hanasu.kufu_block(sid, r)
     if not pics and not words:
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)

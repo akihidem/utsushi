@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_talk_in_gallery.py
+# commit: feb378d（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_talk_in_gallery.py", line 45, in <module>
+    assert f"手順 3: {CRAFT}" in page, f"{path}: 作りながら話した工夫（手順の番号つき）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: /gallery: 作りながら話した工夫（手順の番号つき）
+rc=1
