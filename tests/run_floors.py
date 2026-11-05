@@ -14,6 +14,7 @@ import os
 import pathlib
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 PY = str(ROOT / ".venv/bin/python")
 NOT_YET = []
 MANIFEST = "tests/frozen/manifest.json"
+# 子の命令 1 本の時間切れ（秒）。止まった 1 本で関門が固まらないように。
+# 測った時の一番遅い 1 本は 29 秒（全部で 365 秒）。機械が混んでも通るように、その 10 倍ほどにした。
+STEP_TIMEOUT = 300
 # 要る物の一覧。README の「動かし方」と init.sh も同じ物を挙げる（tests/test_required_tools.py が照らす）。
 # uv は環境を作る時だけ使うので、ここでは作られた .venv を見る。
 TOOLS = ("pdftotext", "pdftoppm", "fc-match", "ffmpeg", "ffprobe")
@@ -50,6 +54,24 @@ def manifest_now(root):
 def ledger_env(env, folder, name):
     """子に渡す環境。API の消費の台帳は記録の置き場で分かれないので、試験ごとに一時の台帳へ向け、本物に書かせない（#151）。"""
     return {**env, "OMOCHAE_USAGE_LEDGER": str(pathlib.Path(folder) / f"{name}.jsonl")}
+
+
+def run_child(cmd, env):
+    """子の命令を時間切れつきで回す。切れたら 4（検査できない）にして、文に時間切れと書く。
+
+    組ごと止めるのは、子だけを止めると、孫が出力の管を持ったままで読み終わらず、結局固まるため。
+    """
+    proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+    try:
+        out, err = proc.communicate(timeout=STEP_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        out, err = proc.communicate()
+        return subprocess.CompletedProcess(cmd, 4, out, f"検査できない: 時間切れ（{STEP_TIMEOUT} 秒）\n{err[-400:]}")
+    except BaseException:  # 手で止めた時も、別の組の子を残さない
+        os.killpg(proc.pid, signal.SIGKILL)
+        raise
+    return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
 
 
 def check_manifest(root):
@@ -117,13 +139,24 @@ def main():
     # 試験は素の assert で検査するので、assert を消す設定（PYTHONOPTIMIZE）を子に渡さない。
     # 呼ぶ側の環境に残っていると、落ちるはずの試験が黙って通る（外の検品の指摘、11-04）。子は -O も付けずに起こす。
     env = {**{k: v for k, v in os.environ.items() if k != "PYTHONOPTIMIZE"}, "PYTHONPATH": str(ROOT / "src")}
+    # 試験は mkdtemp で一時の置き場を作って消さない物が多い（1 回で約 480MB）。走りごとの置き場に集めて、最後に丸ごと消す。
+    # 54 本の試験を 1 つずつ直すと並ぶ線とぶつかり、足した試験でまた漏れるので、入口で受ける（#169）。
+    scratch = tempfile.TemporaryDirectory(prefix="utsushi-floors-", ignore_cleanup_errors=True)
+    env["TMPDIR"] = scratch.name
+    try:
+        return _run_all(env)
+    finally:
+        scratch.cleanup()
+
+
+def _run_all(env):
     rows, bad, broken = [], 0, 0
     ledgers = tempfile.TemporaryDirectory()
     for sc in sorted((ROOT / "tests/frozen/scenarios").glob("*.json")):
         expect = json.loads(sc.read_text(encoding="utf-8"))["expect"]
         out = ROOT / "out/scenarios" / sc.stem
         cmd = [PY, "-m", "omochae", "--scenario", str(sc), "--out", str(out)]
-        r = subprocess.run(cmd, cwd=ROOT, env=ledger_env(env, ledgers.name, sc.stem), capture_output=True, text=True)
+        r = run_child(cmd, ledger_env(env, ledgers.name, sc.stem))
         got = sorted(set(re.findall(r"^FAIL (\S+)", r.stderr, re.M)))
         ok = r.returncode == expect["rc"] and got == sorted(expect["floors"])
         broken += r.returncode == 4
@@ -132,7 +165,8 @@ def main():
         if not ok:
             print(f"NG {sc.stem}: rc={r.returncode} {r.stderr.strip()[:500]}", file=sys.stderr)
     for test in sorted((ROOT / "tests").glob("test_*.py")):
-        unit = subprocess.run([PY, str(test)], cwd=ROOT, env=ledger_env(env, ledgers.name, test.stem), capture_output=True, text=True)
+        unit = run_child([PY, str(test)], ledger_env(env, ledgers.name, test.stem))
+        broken += unit.returncode == 4
         bad += unit.returncode != 0
         rows.append((test.stem, unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
         if unit.returncode:
