@@ -81,10 +81,10 @@ try:
     assert "Claude に聞く" in full and "動画を見てもらう" in full
     (folder / "m1.mp4").unlink()
     # 手帖の札も同じ
-    techo = get(f"/toy/{G}/techo")
+    techo = get(f"/toy/{G}/techo/kiroku")
     assert "Claude に聞く" in techo and "動画を上げると、Claude が見えた事を返します" in techo and "動画を見てもらう" not in techo
     ask._key_present = lambda: False
-    techo = get(f"/toy/{G}/techo")
+    techo = get(f"/toy/{G}/techo/kiroku")
     assert "Claude に聞く" not in techo and "AI の返事は、この場では使えません" in techo
 finally:
     ask._key_present = keep

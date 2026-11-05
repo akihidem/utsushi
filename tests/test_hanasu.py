@@ -168,7 +168,7 @@ code, j = talk(scene="keep", record=RID, text=KEEP_A, share="0")
 assert code == 200 and j["kept"] is True and j["note"] == hanasu.KEPT, j
 # JS が無い時は、戻る道の付いた頁で答える。戻る道の字は、玩具の頁の入口と同じ字
 code, page, _ = post(f"/toy/{G}/talk", {"scene": "keep", "record": "R-0002", "text": "JS の無い画面で足した字"})
-assert code == 200 and hanasu.KEPT in page and f'href="/toy/{G}/techo#mine">手帖をひらく（作りながら聞く・上げる）</a>' in page, page[-500:]
+assert code == 200 and hanasu.KEPT in page and f'href="/toy/{G}/techo/kiroku#mine">手帖をひらく（作りながら聞く・上げる）</a>' in page, page[-500:]
 assert talk_log.kufu(G, "R-0002")[0]["text"] == "JS の無い画面で足した字"
 for p in files():  # この先の数を変えないよう、見本を片づける
     if json.loads(p.read_text(encoding="utf-8")).get("text") == "JS の無い画面で足した字":
@@ -277,7 +277,8 @@ assert code == 200 and 'id="hanasu"' in toy and f'action="/toy/{G}/talk#hanasu"'
 assert hanasu.NOTICE in toy and toy.count("<script>(()=>{\nconst REC=") == 1
 code, tsu = get(f"/toy/{G}/tsukuru?h=H-A&n=2")
 assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and MIC in tsu
-code, techo = get(f"/toy/{G}/techo")
+# 手帖の記録の札は記録の頁にある（作る頁は 1 手 1 画面にして、記録の番号を出さない。本人の決定 11-05、#87）
+code, techo = get(f"/toy/{G}/techo/kiroku")
 assert code == 200 and f'name="record" value="{RID}"' in techo and MIC in techo
 # 釦に hidden 属性を付けない。指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が CSS の出し分けに勝って、幅 1100 以下で釦が消えた。
 # 画面の結果は tests/test_mic_seen.py が測る（Chrome が無い機械では測れないので、原因の形をここでも字で見る）
@@ -398,14 +399,15 @@ for said in ("聞いています。話した事が、欄に字で出ます。", 
              "聞き取れませんでした。もう一度押すか、字で書いてください。", "声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…"):
     assert f"'{said}'" in hanasu.SCRIPT, said
 # ③ で上げる時の説明文は、手帖（③ の上げる頁）の上げる節に出る。聞く口の断りの文は、この頁では使わない
-assert f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo and making_log.ASK_NOTICE not in techo and making_log.ASK_NOTICE in toy
+code, techo_make = get(f"/toy/{G}/techo")  # 上げる説明は作る頁の最後の画面に出る（1 手 1 画面、#87）
+assert code == 200 and f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo_make and making_log.ASK_NOTICE not in techo_make + techo and making_log.ASK_NOTICE in toy
 # 端末の中で字にできないと分かった時の知らせは、採られた断りの文（次に押すと声が外へ送られる事がある、と押す前に言う）
 assert f"tobrowser:'{ADOPTED['HOW_BROWSER']}'" in hanasu.SCRIPT and "__" not in hanasu.SCRIPT.replace("__VOICE__", "")
 # 本人の確認が済んでいない文を足していない（入れる時は、確認の後に、この一覧と一緒に直す）。節の名だけは本人の言葉のまま
 assert hanasu.KUFU_HEAD == "工夫した所（直した所）" and f'<p class="hanasu-kufu-head">{hanasu.KUFU_HEAD}</p>' in techo
 for word in ("に入ります", "ほかの人にも見せます", "ほかの人には見せません", "に入りました", "残しています", "公開のデモでは、文を出しません", "頁を開き直して",
              "この端末の中では", "もう一度押すと止まる）\" hidden", "この頁で残した言葉", "どの仮説についてか", "工夫した所、考えた事"):
-    assert word not in toy + tsu + techo + hanasu.SCRIPT, word
+    assert word not in toy + tsu + techo + techo_make + hanasu.SCRIPT, word
 # 前の文が残っていない
 # 「どこにも送りません」は、ブラウザの音声認識で聞く画面では本当でない（声がブラウザの会社に送られる事がある）。本人が決め直した文（11-05）に、この言い方は無い
 for old in ("残すのは字だけです", "話す釦を押すと", "型紙と案内を直す材料にします", "ほかの人に見せてよい", "作る側だけが読みます", "どこにも送りません", "録音しないし"):
@@ -415,7 +417,7 @@ for old in ("残すのは字だけです", "話す釦を押すと", "型紙と�
 open_server = serve(0, public_open=True)
 threading.Thread(target=open_server.serve_forever, daemon=True).start()
 open_base = f"http://127.0.0.1:{open_server.server_address[1]}"
-code, open_techo = get(f"/toy/{G}/techo", at=open_base)
+code, open_techo = get(f"/toy/{G}/techo/kiroku", at=open_base)
 assert code == 200 and not any(text in open_techo for text in OPEN | {CRAFT_OTHER}) and f'name="record" value="{RID}"' in open_techo
 assert 'class="hanasu-kufu"' not in open_techo and "太く巻いた" not in open_techo
 code, body, _ = post(f"/toy/{G}/talk", {"json": "1", "scene": "think", "text": "開いた場でも残せる"}, at=open_base)
@@ -426,13 +428,13 @@ assert get(f"/loop/{G}", at=open_base)[0] == 404
 assert talk_log.set_share(G, RID, False) == (6, []) and talk_log.set_share(G, RID, False) == (0, [])
 assert talk_log.kufu(G, RID, shared_only=True) == [] and len(talk_log.kufu(G, RID)) == 6 and {t["text"] for t in talk_log.talks(G, shared_only=True)} == {CRAFT_OTHER}
 assert talk_log.texts(G, record_id=RID) == [] and not OPEN & {t["text"] for t in talk_log.texts(G)}, "作る側が隠した字は、輪と束が読む口にも出ない"
-hidden = get(f"/toy/{G}/techo")[1]
+hidden = get(f"/toy/{G}/techo/kiroku")[1]
 assert not any(text in hidden for text in OPEN) and f'data-kufu="{RID}"' not in hidden and CRAFT_OTHER in hidden
 assert f"<li>手順 2: {CRAFT}［隠している］</li>" in get(f"/loop/{G}")[1]
 n, failures = talk_log.set_share(G, "R-0002", False)
 assert n == 0 and failures and failures[0].where == "record_id"  # 話した字の無い記録
 assert talk_log.set_share("NDL-1187053-R0000014-R", RID, True)[0] == 0 and talk_log.kufu(G, RID, shared_only=True) == [], "別の玩具の名では変えられない"
-assert talk_log.set_share(G, RID, True) == (6, []) and f"<li>手順 2: {CRAFT}</li>" in get(f"/toy/{G}/techo")[1]
+assert talk_log.set_share(G, RID, True) == (6, []) and f"<li>手順 2: {CRAFT}</li>" in get(f"/toy/{G}/techo/kiroku")[1]
 
 # ---- 記録を取り下げると、結んだ字も消える。ほかの場面の字は残る
 before = len(talk_log.talks(G))
@@ -466,7 +468,7 @@ some = next(p for p in files() if json.loads(p.read_text(encoding="utf-8")).get(
 placed = some.with_name("talk-20261105-0000-deadbeef.json")
 placed.write_text(json.dumps(json.loads(some.read_text(encoding="utf-8")) | {"scene": "craft", "text": "電話は 090-1111-2222 です"}, ensure_ascii=False), encoding="utf-8")
 assert len(talk_log.kufu(G, "R-0003")) == 4 and len(talk_log.kufu(G, "R-0003", shared_only=True)) == 3 and len(talk_log.texts(G, record_id="R-0003")) == 3
-assert "090-1111" not in "".join(t["text"] for t in talk_log.talks(G, shared_only=True)) and "090-1111" not in get(f"/toy/{G}/techo")[1]
+assert "090-1111" not in "".join(t["text"] for t in talk_log.talks(G, shared_only=True)) and "090-1111" not in get(f"/toy/{G}/techo/kiroku")[1]
 placed.unlink()
 
 server.shutdown()

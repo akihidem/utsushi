@@ -336,13 +336,23 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0], version=v))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
-            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。
+            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。1 手 1 画面で、頭の帯を置かない（本人の決定 11-05、#87。techo_step.py）。
             sid = m.group(1)
             sheet = hypotheses.sheet_of(sid)["id"]
             printed = [sheet] if printed_versions(sid, sheet) else []  # 手帖の紙もたたき台の 1 枚だけ（J-032）
-            pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
+            from . import techo_step
+            try:
+                n = int(qs.get("n", ["1"])[0])
+            except ValueError:
+                n = 1
+            # 版は開いた時に決めて URL で持つ（作りながら見る頁と同じ）。
+            v = int(qs["v"][0]) if qs.get("v", [""])[0].isdigit() else None
+            return self._send(200, techo_step.page(sid, printed, look, step=n, version=v, uploads=not getattr(self.server, "public_open", False)))
+        m = re.fullmatch(rf"/toy/({SID})/techo/kiroku", path)
+        if m and m.group(1) in sources():
+            # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
@@ -413,7 +423,7 @@ class Handler(BaseHTTPRequestHandler):
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}#mine")])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
 

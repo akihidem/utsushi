@@ -70,7 +70,7 @@ code, name = call(f"/record/{rid}/media", body=buf.getvalue(), ctype="image/jpeg
 assert code == 201, name
 # フィードバック（人の説明が先）
 assert call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えになった", "next_idea": "折りを増やす", "back": "techo"})[0] in (200, 303)
-code, techo = call(f"/toy/{SID}/techo")
+code, techo = call(f"/toy/{SID}/techo/kiroku")
 assert "次の版".encode() in techo, "説明の後に次の版の口が出る"
 # 次の版
 form = {"interpretation": "折りが多く、筒の口に当たって開き切らない", "param": "fold_count", "why": "口に当たらないように", "by": "本人", "back": "techo"}
