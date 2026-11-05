@@ -67,12 +67,11 @@ jpeg = photo.getvalue()[:2] + b"\xff\xe1\x00\x08EXIF!!" + photo.getvalue()[2:]
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg")[0] == 201
 saved = (media_dir(rid) / "m1.jpg").read_bytes()
 assert b"EXIF" not in saved and saved == strip_jpeg_meta(jpeg)
-code, got = req(f"/record/{rid}/media/m1.jpg")
-assert code == 200 and got == saved
+assert req(f"/record/{rid}/media/m1.jpg")[0] == 404, "確認の前の写真は、上げた本人の画面にだけ（tests/test_photo_owner_only.py）"
 assert req(f"/record/{rid}/media", b"x", "text/html")[0] == 422, "写真と動画の型だけ"
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg", origin="http://evil.example")[0] == 403
 assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 422, "記録の無い所には置かない"
-assert "m1.jpg" in req(f"/toy/{G}/techo")[1].decode()
+assert "m1.jpg" not in req(f"/toy/{G}/techo")[1].decode(), "別の人の手帖に確認の前の写真を出さない"
 # 次の版（本人の問いの (7)）: 説明が先、数でない値は断る、床に通った時だけ版 2 を刷る
 code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
 assert code == 422 and "先に説明を書く" in body.decode()
@@ -102,6 +101,9 @@ except urllib.error.HTTPError as e:
 # サイトのギャラリー: 作った物と職人の言葉の枠
 assert "m1.jpg" not in req("/gallery")[1].decode(), "人の確認の前は出さない（#314）"
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
+code, got = req(f"/record/{rid}/media/m1.jpg")
+assert code == 200 and got == saved, "確かめた写真は誰にでも開く。撮影の情報を外した物"
+assert "m1.jpg" in req(f"/toy/{G}/techo")[1].decode()
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()

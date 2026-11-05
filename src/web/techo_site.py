@@ -429,7 +429,7 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
+def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=None):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。own は、この画面が作った本人の案（話した考えから作った紙）の番号で、札の先頭に出す。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
@@ -449,8 +449,8 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
     note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
-        # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた人が受け取りを確かめられるように出す（#314）。
-        files = media_review.visible(r["id"], media_of(r["id"])) if uploads else []
+        # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
+        files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
