@@ -38,6 +38,15 @@ ICONS = {
 }
 
 
+def result_icon(word, words):
+    """札の絵。言葉の絵が無い札は、札の並びで決める。「わからない」を除いた最後が動かない側で、ほかは動いた側（engine_bundle と同じ読み）。
+    全部を「?」にすると、「転がった」まで分からない札に見える（#146）。"""
+    if word in ICONS:
+        return ICONS[word]
+    sure = [w for w in words if w != "わからない"]
+    return ICONS["動かない" if len(sure) > 1 and word == sure[-1] else "動いた"]
+
+
 def esc(s):
     return html.escape(str(s or ""), quote=True)
 
@@ -409,7 +418,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
-    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
+    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{result_icon(r, tpl.RESULTS)}{esc(r)}</label>' for r in tpl.RESULTS)
     # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
     note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
