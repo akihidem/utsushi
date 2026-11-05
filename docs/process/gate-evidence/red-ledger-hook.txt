@@ -1,0 +1,20 @@
+# Red: 試験を足し、直す前のフック（main b025975）で回した
+$ PYTHONPATH=src .venv/bin/python tests/test_claude_code.py
+Traceback (most recent call last):
+  File "tests/test_claude_code.py", line 95, in <module>
+    assert r.returncode == 2 and "L.summary" in r.stderr, (path, r.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('README.md', '')
+rc 1
+
+# 試験は最初の外れで止まるので、前後のフックを同じ条件で比べた（repo の写しの上で実行。本物の台帳は壊していない）
+## 直す前
+台帳の食い違い・絶対パス: rc 2 stderr あり
+台帳の食い違い・相対パス: rc 0 stderr 無し
+台帳の食い違い・tests/frozen を直した: rc 0 stderr 無し
+台帳の食い違い・ledger.py を直した: rc 0 stderr 無し
+claims.json を壊した: rc 0 何も言わない
+フックの入力が壊れた: rc 0 何も言わない
+.venv が無い: rc 0 何も言わない
+対象の外: rc 0 stderr 無し
+対象の外（repo の中）: rc 0 stderr 無し
