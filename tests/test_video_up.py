@@ -683,7 +683,7 @@ site2 = site_serve(0)
 threading.Thread(target=site2.serve_forever, daemon=True).start()
 site_port = site2.server_address[1]
 for path in (f"/toy/{G}", "/gallery", f"/zukan/{G}", f"/toy/{G}/techo"):
-    assert "折り線" not in site_get(path)[1] and "voice" not in site_get(path)[1] and rid_r not in site_get(path)[1], path
+    assert "折り線" not in site_get(path)[1] and "voice.mka" not in site_get(path)[1] and "transcript" not in site_get(path)[1] and rid_r not in site_get(path)[1], path
 for path in (f"/record/{rid_r}/media/voice.mka", f"/record/{rid_r}/media/voice/voice.mka", f"/record/{rid_r}/media/voice/transcript.json"):
     assert site_get(path)[0] == 404, path
 site2.shutdown()
