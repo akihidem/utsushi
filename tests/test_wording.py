@@ -3,8 +3,10 @@
 なぜ印で見るか: 新しい字は本人の確認の後に入るので、字では見られない。替える関数を印を付ける物に置き換え、印の付き方で通り道だけを見る。
 表の中身が変わっても、この試験は変えなくてよい。
 """
+import importlib
 import os
 import pathlib
+import re
 import shutil
 import tempfile
 import threading
@@ -22,7 +24,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 for part in ("records", "loop"):
     shutil.copytree(ROOT / "data" / part, os.path.join(DATA, part))
 
-from web import wording  # noqa: E402
+from web import plain_words, wording  # noqa: E402
 
 keep_note = wording.record_note
 # 入口の引用の札は読み込む時に字を作るので、ほかの頁を読み込む前に替える
@@ -98,6 +100,18 @@ for text in ("すっと開いた", "折りが固くて戻る", "糸で引いて�
 song = next(e["text"] for e in hypotheses.json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))["transcription"]["entries"] if e.get("checked_by") and not e.get("rejected_by"))
 assert song in page and f"▲{song}" not in page, "歌の引用"
 assert "▲糸で引いて開く" not in get(f"/zukan/{G}"), "図鑑の自分の仮説"
+# 2 つの表は 1 か所に読める（#135・#317）。数える命令は内輪の言葉の表も読み、同じ語を両方に書かず、読む人の字にむずかしい語を戻さない
+keep_table = wording.TABLE
+wording.TABLE = ((re.compile("棚卸し"), "作る側"),)
+counted = importlib.reload(plain_words).census({"/見本": "<p>棚卸しの注を読みます。</p>"})["words"]
+assert any(x["word"] == "棚卸し" for x in counted), counted
+wording.TABLE = keep_table
+importlib.reload(plain_words)
+hard = [w for w in plain_words.TABLE if w["word"] in plain_words.OWN_WORDS and w["word"] not in plain_words.NOT_A_WORD_HIT]
+for raw, reader in [(row.pattern, reader) for row, reader in wording.TABLE] + list(wording.RECORD_NOTES.items()):
+    assert raw not in plain_words.OWN_WORDS, raw
+    for w in hard:
+        assert not w["pattern"].search(reader), (reader, w["word"])
 # 人が書いたメモは、作る側の控えの文でなければそのまま返る
 assert keep_note("本人が折った") == "本人が折った" and keep_note(None) is None
 print("ok")

@@ -5,7 +5,7 @@
 
 表の言いかえ（plain）に入れるのは本人が採った字（#318）だけ。まだ採られていない語は None のまま置き、案は Issue で本人に見てもらう。
 code に案を持つと、確かめる前の字が頁へ流れる道ができるため。
-作る側の内輪の言葉（本人・棚卸し・雛形・複写など）は #135 の表の受け持ちで、ここには書かない。同じ語を 2 つの表に書くと、言いかえが割れるため。
+作る側の内輪の言葉（本人・棚卸し・雛形・複写など）は #135 の表（wording.py）の受け持ちで、ここには書かない。同じ語を 2 つの表に書くと、言いかえが割れるため。数える時は、その表を読んで 1 つに並べる。
 
 使い方: PYTHONPATH=src python -m web.plain_words [--toy <玩具の ID>]... [--walk] [--sheets <PDF の置き場>] [--out <結果の紙>] [--strict]
 終わりの値: 0 数えた / 3 --strict で語・です・ますでない文・並ばない「仮説」が残っている / 4 数えられない。
@@ -22,6 +22,8 @@ import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+
+from . import wording
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -44,6 +46,8 @@ TABLE = [
     _w("本文"), _w("翻刻"), _w("見込み"), _w("未確認"), _w("推定"), _w("通例"), _w("趣旨"), _w("確度"),
     _w("糊代"), _w("蛇腹"), _w("角筒"), _w("外筒"), _w("内筒"), _w("錘"), _w("楊枝"),
 ]
+OWN_WORDS = {w["word"] for w in TABLE}
+TABLE += [_w(row.pattern, reader, row.pattern) for row, reader in wording.TABLE]
 # 語を数えない所。「仮説」は語の数ではなく、頁の最初の 1 つで並ぶかを別に見る（消さずに並べる決まりなので、語としては残ってよい）
 NOT_A_WORD_HIT = {"仮説"}
 
