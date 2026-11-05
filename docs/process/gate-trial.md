@@ -658,7 +658,7 @@
 - 途中の間違い: 最初は開く時に紙の組を作った。版の PDF ができるので、開いただけの案が刷った案に数えられ、窓の最初の案と記録の欄の既定（#300）がその案へ移り、次の人の記録が黙ってその案に入る形だった。試した後の紙だけを作る形に直した
 - 出していない範囲: 新しい文は足していない。仮説を並べる形は変えていない（#332）。本物のスマホと人の目の確かめはまだ
 - ゴールの要件: 紙を作っていない案の記録でも札の「試した後の紙」と「PDF」が開く。開いても刷った案にならない。記録の前は渡さない（S-03）。型紙の確定の線は変えない。必須 2 種の紙の指紋は変わらない
-- 検証ゲート: **済み**。`tests/test_after_sheet_open.py`。Red は直す前の木で「窓に試した後の紙が出ない」（gate-evidence/red-after-sheet-open.txt）と、紙の組を作る形で「開くと型紙までできる」（gate-evidence/red-after-sheet-only.txt）。Green は同じ試験が rc 0（gate-evidence/green-after-sheet-only.txt）。直しの部分を 1 つずつ外した 13 通りはどれも試験で落ちる。実物のブラウザで白の机の幅と黒のスマホの幅を歩いた
+- 検証ゲート: **済み**。`tests/test_after_sheet_open.py`。Red は直す前の木で「窓に試した後の紙が出ない」（gate-evidence/red-after-sheet-open.txt）と、紙の組を作る形で「開くと型紙までできる」（gate-evidence/red-after-sheet-only.txt）。Green は同じ試験が rc 0（gate-evidence/green-after-sheet-only.txt）。直しの部分を 1 つずつ外した 13 通りはどれも試験で落ちる。実物のブラウザで白の机の幅と黒のスマホの幅を歩いた。本物の記録で札から窓までをたどる `tests/test_after_sheet_real.py` は、直す前の main（7782ede）で「窓の紙の番号が記録と違う」（gate-evidence/red-after-sheet-real.txt）、直した後は rc 0（gate-evidence/green-after-sheet-real.txt）
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: Issue #320 に書く
 
