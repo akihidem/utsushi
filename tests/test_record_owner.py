@@ -97,6 +97,11 @@ for kw in ({}, {"public_open": True}):
     assert b.keep(first, "別の人の字") == 403 and b.keep(first, "別の人の字", who=WHO) == 403, kw
     no_js = b.call(f"/toy/{G}/talk", {"scene": "keep", "record": first, "text": "別の人の字", "who": WHO})
     assert no_js[0] == 403 and "別の人の字" not in no_js[1], kw
+    # 断る時の字は前からある字。つながりの案内は誤りになる（開いたままのタブや 15 分の後に、もう一度押すだけになる）
+    REFUSED = "受け付けられません"
+    assert REFUSED in no_js[1] and "インターネット" not in no_js[1], no_js[1][-300:]
+    assert json.loads(b.call(f"/toy/{G}/talk", {"scene": "keep", "record": first, "text": "別の人の字", "json": "1"})[1]) == {"kept": False, "why": REFUSED}
+    assert REFUSED in b.call(f"/record/{first}/explain", {"text": "別の人の字", "next_idea": "次", "by": "別の人"})[1]
     assert talk_log.texts(G, record_id=first) == [], "別の人の字が前の人の記録に結ばれた"
     assert a.forms(first) == OPEN, "別の人が押しても、本人の欄は閉じない"
 
@@ -154,6 +159,8 @@ for kw in ({}, {"public_open": True}):
     assert forged.forms(fourth) == OPEN, "15 分の内は開く"
     path.write_text(json.dumps({**saved, "at": (at - timedelta(minutes=records.OWNER_MINUTES + 1)).isoformat()}), encoding="utf-8")
     assert forged.forms(fourth) == SHUT and forged.explain(fourth) == 403 and forged.keep(fourth, "遅れた字") == 403, kw
+    late = forged.call(f"/toy/{G}/talk", {"scene": "keep", "record": fourth, "text": "遅れた字", "json": "1"})[1]
+    assert json.loads(late) == {"kept": False, "why": REFUSED}, "15 分の後も、つながりの案内でなく断りの字"
     path.write_text(json.dumps({**saved, "at": "読めない"}), encoding="utf-8")
     assert forged.forms(fourth) == SHUT, "読めない時は閉じる側"
 

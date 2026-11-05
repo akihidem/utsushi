@@ -178,7 +178,7 @@ for p in files():  # この先の数を変えないよう、見本を片づけ�
         p.unlink()
 assert talk(scene="keep", record=RID, text=KEEP_B, via="voice")[0] == 200
 code, j = talk(scene="keep", record="R-9999", text="無い記録")
-assert code == 403 and j["why"] == hanasu.FAILED, j
+assert code == 403 and j["why"] == hanasu.REFUSED, j
 # 前にあった、記録ごとの合図の受け口は無い（選び肢と、既定で出さない形はやめた。本人の決定 11-05）
 n = len(files())
 assert post(f"/toy/{G}/talk", {"signing": "1", "record": RID})[0] == 422 and len(files()) == n

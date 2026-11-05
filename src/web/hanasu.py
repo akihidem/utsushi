@@ -70,6 +70,7 @@ SCENES = {
 KUFU_HEAD = "工夫した所（直した所）"
 KEPT = "残しました。型紙や説明をよくするのに使います。"
 FAILED = "残せませんでした。インターネットにつながっているか見て、もう一度押してください。"
+REFUSED = "受け付けられません"  # 記録を残した画面の外から足す字を断る時。つながりの案内は誤りになる（開いたままのタブ、15 分の後）。説明の受け口と同じ字
 NOHEARD = "聞き取れませんでした。もう一度押すか、字で書いてください。"
 # 入口の床に当たって残せなかった時の文。talk_log の理由（「名乗りの形がある」など）は作る人向けの言葉なので、そのまま出さない。
 # 連絡先の形の時も、この文を出す（採られた文は 1 つ。連絡先の時の言い分けは、文面の確認が要るので足していない）。
@@ -292,7 +293,7 @@ def post(handler, sid, form):
                                       record_id=form.get("record") or None, via=form.get("via", "text"), who=who)
     kept = path is not None
     if form.get("json") == "1":
-        body = {"kept": True, "note": KEPT} if kept else {"kept": False, "why": reason(failures)}
+        body = {"kept": True, "note": KEPT} if kept else {"kept": False, "why": REFUSED if refused else reason(failures)}
         return handler._send(200 if kept else 403 if refused else 422, json.dumps(body, ensure_ascii=False), "application/json; charset=utf-8")
     if scene == "think":
         if kept:
@@ -303,7 +304,7 @@ def post(handler, sid, form):
         back = (f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={version}&n={step or 1}", "作りながら見る（机の端に置く・試作）")
     else:
         back = (f"/toy/{sid}/techo#mine", "手帖をひらく（作りながら聞く・上げる）")
-    return handler._send(200 if kept else 403 if refused else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else reason(failures), handler._look, links=(back,)))
+    return handler._send(200 if kept else 403 if refused else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else REFUSED if refused else reason(failures), handler._look, links=(back,)))
 
 
 def maker_section(sid, data):
