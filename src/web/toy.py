@@ -307,7 +307,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                 f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>')
     if hypotheses.need_prediction(sid):
         # 予想の前は仮説を見せない。答えを先に見せないため（F9.prediction）。
-        body = hero + f'<section class="sec" id="yosou">{note}<h2>先に、予想を書く</h2><p class="lead">図を見て、どこがどう動くと思うかを書きます。書くと仮説と型紙が開きます。仮説を自分で立てる道もあります。</p>{form_pred}{form_own}</section>' + neighbours(sid)
+        # かざして選ぶ（試作、本人の案 11-05）: 文字で書く代わりに、内カメラの映像に絵を重ねて札で選ぶ道。本人が見て決めるための入口を 1 つだけ置く。
+        kazasu_link = f'<p><a class="btn quiet" href="/toy/{sid}/kazasu">かざして選ぶ（試作）</a></p>'
+        body = hero + f'<section class="sec" id="yosou">{note}<h2>先に、予想を書く</h2><p class="lead">図を見て、どこがどう動くと思うかを書きます。書くと仮説と型紙が開きます。仮説を自分で立てる道もあります。</p>{kazasu_link}{form_pred}{form_own}</section>' + neighbours(sid)
         return skin.shell(data["toy"], body, look, "", path)
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}

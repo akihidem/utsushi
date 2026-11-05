@@ -255,6 +255,11 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/kazasu", path)
+        if m and m.group(1) in sources():
+            # かざして選ぶ（試作、本人の案 11-05）。内カメラの映像に原図を重ね、札のタップで予想を選ぶ。映像は端末の外へ出さない（kazasu.py）。
+            from . import kazasu
+            return self._send(200, kazasu.page(m.group(1), look))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。予想の前は仮説の字も出さない（F9.prediction）。
@@ -343,6 +348,15 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
         if m and m.group(1) in sources():
             return self._json_post(m.group(1), m.group(2), form)
+        m = re.fullmatch(rf"/toy/({SID})/predict-choice", self.path)
+        if m and m.group(1) in sources():
+            # かざして選ぶ頁の札（試作）。受けるのは押した札の印だけ。選んだ事を予想として残し、仮説の所へ戻す。
+            from . import kazasu
+            sid = m.group(1)
+            h, why = kazasu.choose(sid, form.get("hypothesis", ""))
+            if h is None:
+                return self._send(422, kazasu.page(sid, self._look, error="；".join(why)))
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(kazasu.SENT)}&see={h['id']}#kasetsu")])
         m = re.fullmatch(rf"/toy/({SID})/(predict|own|print|print-own|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
