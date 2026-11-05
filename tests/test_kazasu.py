@@ -86,7 +86,8 @@ for sid in (G, T):
         for w in ("押", "引", "上げ", "下げ", "揺", "開", "回", "吹", "あお"):
             assert w not in c["label"], (c["label"], w)
 # 必須の 2 種の仮説の中身は変えない（寸法・名前・根拠）。足したのは move_candidates だけ。指紋は、足す前の記録から取った値
-FINGERPRINT = {G: "37d71d75fbebd8f2", T: "cd34b20ec3e677b3"}
+# 御来迎は 11-05 に H-E を v10 の例外として直した（本人の決定、カード 20261105-112045、#163・#226）。その後の記録から取り直した
+FINGERPRINT = {G: "cdf94e01af28e6cf", T: "cd34b20ec3e677b3"}
 for sid, fp in FINGERPRINT.items():
     raw = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
     got = hashlib.sha256(json.dumps(raw["hypotheses"], ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]

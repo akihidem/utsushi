@@ -16,7 +16,10 @@ from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 HOST = "plain-words-here.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分けて書く
-jpeg = b"\xff\xd8" + b"\xff\xdb\x00\x03\x00" + b"\xff\xda\x00\x02DATA" + b"\xff\xd9"
+# 本物の小さな JPEG（保存の時に撮影情報を外すので、形だけの偽のバイト列は受けない。#156）
+_b = __import__("io").BytesIO()
+__import__("PIL.Image", fromlist=["Image"]).new("RGB", (8, 8), (200, 180, 140)).save(_b, "JPEG")
+jpeg = _b.getvalue()
 
 try:
     serve(0, public_key="k" * 20, public_open=True)
