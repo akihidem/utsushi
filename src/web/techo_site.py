@@ -267,7 +267,7 @@ def feedback(sid, r):
 
         body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
     else:
-        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><input type="hidden" name="back" value="techo">'
+        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
@@ -292,8 +292,8 @@ def ai_part(r):
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
-    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>'
-               f'<form method="post" action="/record/{rid}/ai-observe"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>')
+    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>'
+               f'<form method="post" action="/record/{rid}/ai-observe#{rid}"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>')
     return out + f'<div class="row">{buttons}</div>'
 
 
@@ -332,7 +332,7 @@ def gallery_page(sids):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url):
+def page(sid, printed_ids, picture_url, msg=""):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。予想の前は呼ばない（呼ぶ側が F9.prediction を見る）。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
@@ -342,6 +342,8 @@ def page(sid, printed_ids, picture_url):
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
+    # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
         files = media_of(r["id"])
@@ -366,5 +368,5 @@ def page(sid, printed_ids, picture_url):
             '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
             '<p><button class="go">上げる</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
-            f'<div id="mine">{mine}</div></section>')
+            f'<div id="mine">{note}{mine}</div></section>')
     return body + SCRIPT

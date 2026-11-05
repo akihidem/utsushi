@@ -11,6 +11,7 @@
 - 返事の順は 紙 → 人の説明 → AI（J-013 の 11-04 の変更）。AI の釦は人の説明の後にだけ出す。
 - 寸法のつまみは置かない。寸法を変えるのは「次の版を作る」（人の説明の後、1 つの寸法、床に落ちたら刷らない）だけ（本線は紙の実物）。
 """
+import html
 import json
 import re
 
@@ -84,7 +85,7 @@ def window(sid, data, see, kind, v, recorded):
             ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
             cap = f'<p class="meta">版 {v}: 根拠 {esc("、".join(adopted.get("record_ids", [])))}。変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
-    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を刷り直す</button></form>'
+    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を刷り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
     png = f"/sheet/{sid}/{name}.png"
     pdf = f"/sheet/{sid}/{name}.pdf"
@@ -99,7 +100,44 @@ def window(sid, data, see, kind, v, recorded):
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
 
-def ask_form(sid, data, asked=None):
+def reply_note(errors, msg):
+    """返事の文（#121）。理由がいくつあっても 1 つの箱に入れ、id を重ねない。理由は読み上げの割り込み、返事はその場の知らせ。"""
+    if errors:
+        return f'<div role="alert"><p id="msg">{"<br>".join(esc(e) for e in errors)}</p></div>'
+    return f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
+
+
+def refill(form, values):
+    """通らなかった時に、書いた中身を欄に戻す（#121）。欄を作る関数ごとに引数を足さず、できた欄へ入れる。雛形ごとの欄（RECORD_EXTRA）にも同じに効く。"""
+    if not values:
+        return form
+
+    def text(m):
+        v = values.get(m.group(1))
+        return m.group(0) if v is None else f'{m.group(0)[:-1]} value="{esc(v)}">'
+
+    def radio(m):
+        return m.group(0) + " checked" if values.get(m.group(1)) == html.unescape(m.group(2)) else m.group(0)
+
+    def area(m):
+        return f'<textarea name="{m.group(1)}"{m.group(2)}>{esc(values.get(m.group(1), ""))}</textarea>'
+
+    def select(m):
+        want = values.get(m.group(1))
+
+        def option(o):
+            value = o.group(1) if o.group(1) is not None else o.group(2)
+            return o.group(0).replace(">", " selected>", 1) if want == html.unescape(value) else o.group(0)
+
+        return re.sub(r'<option(?: value="([^"]*)")?>([^<]*)</option>', option, m.group(0))
+
+    form = re.sub(r'<input type="text" name="([^"]+)"[^>]*>', text, form)
+    form = re.sub(r'<input type="radio" name="([^"]+)" value="([^"]*)"', radio, form)
+    form = re.sub(r'<textarea name="([^"]+)"([^>]*)></textarea>', area, form)
+    return re.sub(r'<select name="([^"]+)">.*?</select>', select, form, flags=re.S)
+
+
+def ask_form(sid, data, asked=None, note="", filled=None):
     """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
     printed = [h for h in data["hypotheses"] if (out_dir(sid) / f"{h['id']}_v1.pdf").exists()]
     if not printed:
@@ -109,10 +147,10 @@ def ask_form(sid, data, asked=None):
     if asked:
         q, a = asked
         shown = f'<div id="ask-answer" class="notice"><p class="meta">聞いた事: {esc(q)}</p><p>{esc(a)}</p></div>'
-    return (f'<form method="post" action="/toy/{sid}/ask" id="ask" class="card"><h3>作っている途中で困ったら</h3>'
+    return refill(f'<form method="post" action="/toy/{sid}/ask#ask" id="ask" class="card">{note}<h3>作っている途中で困ったら</h3>'
             '<p class="meta">切る・折る・貼る・組む順の疑問に答えます（例: 谷折りって？）。どう動くか・仕組みは、試して確かめる所なので答えません。</p>'
             f'<label>どの紙か<select name="hypothesis">{opts}</select></label><label>聞きたい事<input type="text" name="question" required maxlength="300"></label>'
-            f'<button>聞く</button>{shown}</form>')
+            f'<button>聞く</button>{shown}</form>', filled)
 
 
 def record_form(sid, data, own):
@@ -130,7 +168,7 @@ def record_form(sid, data, own):
         extra = '<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>'
     else:
         extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
-    return (f'<form method="post" action="/toy/{sid}/record" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
+    return (f'<form method="post" action="/toy/{sid}/record#kiroku" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
             '<label>何を変えると違いが出そうか<input type="text" name="what_if"></label><label>作っている途中で思いついた事<input type="text" name="idea"></label>'
@@ -146,7 +184,7 @@ def next_form(r, back=""):
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
     opts = "".join(f'<option value="{esc(k)}">{esc(PARAM_NAMES.get(k, getattr(TEMPLATES[template], "PARAM_NAMES", {}).get(k, k)))}</option>' for k in sorted(ALLOWED[template]))
     hidden = f'<input type="hidden" name="back" value="{esc(back)}">' if back else ""
-    return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next">{hidden}'
+    return (f'<details><summary>次の版を作る（寸法を 1 つ変える）</summary><form method="post" action="/record/{esc(r["id"])}/next#next-{esc(r["id"])}">{hidden}'
             '<label>何が起きたと読むか（解釈）<textarea name="interpretation" required></textarea></label>'
             f'<label>変える寸法<select name="param">{opts}</select></label><label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
             '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
@@ -170,23 +208,30 @@ def ai_block(r):
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
-    return out + (f'<div class="row"><form method="post" action="/record/{rid}/ai-interpret" class="inline"><button class="quiet">Claude に聞く（何が起きたか）</button></form>'
-                  f'<form method="post" action="/record/{rid}/ai-observe" class="inline"><button class="quiet">動画を見てもらう</button></form></div>')
+    return out + (f'<div class="row"><form method="post" action="/record/{rid}/ai-interpret#{rid}" class="inline"><button class="quiet">Claude に聞く（何が起きたか）</button></form>'
+                  f'<form method="post" action="/record/{rid}/ai-observe#{rid}" class="inline"><button class="quiet">動画を見てもらう</button></form></div>')
 
 
-def records_list(sid, recs):
+def records_list(sid, recs, at="", note="", filled=(None, {})):
     out = "<h2>これまでの記録</h2><p class='meta'>記録の順。紙の返事 → 自分の説明 → AI の返事、の順で開きます。</p>" if recs else ""
     for r in reversed(recs):
         told = loop.explanation(r["id"])
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
         after = f'<p><a href="/sheet/{sid}/{esc(r["hypothesis_id"])}_v{r.get("sheet_version", 1)}_after.pdf">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
         if told:
-            tail = f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>' + ai_block(r) + next_form(r)
+            nid = f'next-{r["id"]}'
+            nxt = next_form(r)
+            if at == nid:
+                # 通らなかった時は、畳んだ欄を開いて、その上に理由を出す。手帖から来た印も保つ。
+                nxt = refill(next_form(r, filled[1].get("back", "")), filled[1]).replace("<details>", "<details open>", 1)
+            tail = (f'<p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p>' + ai_block(r)
+                    + f'<div id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>')
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
-            tail = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>')
-        out += f'<article class="card"><h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}</p>{after}{tail}</article>'
+            tail = refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
+                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
+        here = note if at == r["id"] else ""
+        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(r["id"])} {esc(r["hypothesis_id"])}: {esc(r["result"])}{esc(deg)}</h3><p class="meta">{esc(r["recorded_at"])}</p>{after}{tail}</article>'
     return out
 
 
@@ -213,10 +258,14 @@ def neighbours(sid):
     return '<p class="links">' + "".join(out) + "</p>"
 
 
-def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=1, path=None):
+def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=1, path=None, at="", filled=None):
+    """at は返事の文を入れる場所（節か札の id）。着く錨と同じ物を渡す（#121）。filled は通らなかった欄の名前と、書いた中身。"""
     data, src = hypotheses.load(sid), source(sid)
     path = path or f"/toy/{sid}"
-    note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")
+    note = reply_note(errors, msg)
+    filled = filled or (None, {})
+    head = lambda name: note if at == name else ""
+    fill = lambda name: filled[1] if filled[0] == name else {}
     has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     nopic = "" if has_pic else f'<p class="meta"><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p>'
     songs = "".join(f'<p>{esc(e["text"])}</p>' for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by"))
@@ -231,28 +280,29 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
             f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data)}</div></section>')
     preds = hypotheses.predictions(sid)
     latest = json.loads(preds[-1].read_text(encoding="utf-8"))["text"] if preds else None
-    form_pred = (f'<form method="post" action="/toy/{sid}/predict" class="card"><h3>予想</h3><label>どう動くと思いますか（先に書きます）<textarea name="text" required></textarea></label>'
-                 '<button>予想を残す</button></form>')
-    form_own = (f'<form method="post" action="/toy/{sid}/own" class="card"><h3>自分の仮説を立てる</h3><label>名前<input type="text" name="name" required></label>'
-                f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>')
+    form_pred = refill(f'<form method="post" action="/toy/{sid}/predict#yosou" class="card"><h3>予想</h3><label>どう動くと思いますか（先に書きます）<textarea name="text" required></textarea></label>'
+                 '<button>予想を残す</button></form>', fill("predict"))
+    form_own = refill(f'<form method="post" action="/toy/{sid}/own#yosou" class="card"><h3>自分の仮説を立てる</h3><label>名前<input type="text" name="name" required></label>'
+                f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>', fill("own"))
     if hypotheses.need_prediction(sid):
         # 予想の前は仮説を見せない。答えを先に見せないため（F9.prediction）。
+        # 予想の前の頁に節は 1 つだけなので、どこから来ても文はここに出す。
         body = hero + f'<section class="sec" id="yosou">{note}<h2>先に、予想を書く</h2><p class="lead">図を見て、どこがどう動くと思うかを書きます。書くと仮説と型紙が開きます。仮説を自分で立てる道もあります。</p>{form_pred}{form_own}</section>' + neighbours(sid)
         return skin.shell(data["toy"], body, look, "", path)
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
     own = hypotheses.own_hypotheses(sid)
-    body = hero + f'<section class="sec" id="yosou">{note}<h2>予想</h2>'
+    body = hero + f'<section class="sec" id="yosou">{head("yosou")}<h2>予想</h2>'
     # 予想の後は札を主にし、欄は畳む（JS なし）。大きな欄が残ると、次の段の仮説が画面の下へ押される（#120）。
-    body += (f'<article class="card"><h3>あなたの予想</h3><p>{esc(latest)}</p></article><details><summary>予想を書き足す</summary>{form_pred}</details>' if latest else form_pred)
+    body += (f'<article class="card"><h3>あなたの予想</h3><p>{esc(latest)}</p></article><details{" open" if fill("predict") else ""}><summary>予想を書き足す</summary>{form_pred}</details>' if latest else form_pred)
     for h in own:
         # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
         free = f'{h["id"]}_v1_free.pdf'
         link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
-        body += (f'<article class="card" id="own-{esc(h["id"])}"><h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print-own"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
-    body += f'<details><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
-    body += f'<section class="sec" id="kasetsu"><h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
+        body += (f'<article class="card" id="own-{esc(h["id"])}">{head(f"own-{h['id']}")}<h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
+                 f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を刷る</button></form><p>{link}</p></article>')
+    body += f'<details{" open" if fill("own") else ""}><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
+    body += f'<section class="sec" id="kasetsu">{head("kasetsu")}<h2>仮説</h2><p class="meta">{esc(data["note"])}</p><div class="plates">'
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
@@ -261,12 +311,14 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                  if (out_dir(sid) / f"{h['id']}_v1.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{thumb}<div class="foot">'
-                 f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
+                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
                  f'<p class="meta">{printed}</p></div></div>')
     body += "</div></section>"
-    body += f'<section class="sec" id="win"><h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
+    body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、刷る前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
-             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>{ask_form(sid, data, asked)}</section>')
-    body += f'<section class="sec" id="kiroku"><h2>記録と返事</h2>{record_form(sid, data, own)}{records_list(sid, recs)}</section>'
+             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>{ask_form(sid, data, asked, head("ask"), fill("ask"))}</section>')
+    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>記録と返事</h2>{refill(record_form(sid, data, own), fill("record"))}{records_list(sid, recs, at, note, filled)}</section>'
     body += f'<section class="sec">{neighbours(sid)}</section>'
+    if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない
+        body = body.replace('id="yosou">', f'id="yosou">{note}', 1)
     return skin.shell(data["toy"], body, look, "", path)
