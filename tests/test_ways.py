@@ -87,18 +87,18 @@ assert [r["hypothesis_id"] for r in table if r["source_id"] == GORAIGO and r["on
 data = hypotheses.load(TORA)
 # 予想の段は #266 で外したので、予想を置かずに開いた頁にそのまま札が出る
 page = toy.toy_page(GORAIGO)
-assert '<span class="lb">当時の材料</span>' in page and '<span class="lb">紙一枚</span>' in page
+# 札の印はたたき台の分（J-032）。御来迎の H-E の紙一枚は頁に出さない。本人の決定 19:44 で、たたき台が紙一枚でなくてよい
+assert '<span class="lb">当時の材料</span>' in page and '<span class="lb">紙一枚</span>' not in page
 page = toy.toy_page(TORA)
 assert 'class="ways"' not in page  # 虎は竹串と油粘土が要るので、どの印も付かない。札の無い頁も開く
 assert "どの印も上下を表しません" in page
 for w in ("順位", "おすすめ", "初心者", "点数", "★"):
     assert w not in page, w
-at = [page.index(f"仮説 {hypotheses.letter(h)}「") for h in data["hypotheses"]]
-assert at == sorted(at), "仮説の並びを変えた"
-# 一覧は玩具ごと。どれかの仮説に付く印を、並びを変えずに出す
+assert f'仮説 {hypotheses.letter(hypotheses.sheet_of(TORA))}「' in page and "仮説 B「" not in page, "札はたたき台の 1 枚だけ（J-032）"
+# 一覧は玩具ごと。たたき台に付く印を、並びを変えずに出す（J-032。本人の決定 19:44 で、必須 2 種に紙一枚が付かなくてよい）
 listing = toys.page("tenji")
 assert listing.count('class="ways"') >= 1 and "どの印も上下を表しません" in listing
-assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == ["紙一枚", "当時の材料"]
+assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == ["当時の材料"]
 at = [listing.index(f'href="/toy/{sid}"') for sid in sorted(toys.sources(), key=lambda s: hypotheses.stage(s) != "必須")]
 assert at == sorted(at), "印で一覧の並びを変えた"
 
