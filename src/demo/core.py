@@ -62,7 +62,7 @@ PAGES = {
     "make2": (f"/toy/{SID}/tsukuru?h={HID}&n=2", 1280, {"stage": ".stage"}),
     "make": (f"/toy/{SID}/tsukuru?h={HID}&n=3&ev=stuck", 1280, {"stage": ".stage", "henji": "#henji"}),
     "keep": (f"/toy/{SID}/techo", 1000, {"up": '[aria-label="上げる"]'}),
-    "gallery": ("/gallery", 1400, {"made": "#ageta"}),
+    "gallery": ("/gallery", 1400, {"made": "#ageta", "first_sample": "#ageta .samples .item"}),
 }
 
 # 本人のループの定義（11-05 17:57）を輪の形にした。(上の字, 輪の中の字, 輪の形)。形は done = 実線 / now = 点線 / half = 半分が点線。
@@ -80,6 +80,7 @@ MAP_TITLE = "真ん中は、手で作る所。"
 MAP_SUB = "点線は、これから作る所。"
 GALLERY_LINE = "作った物を、持ちよる。"
 GALLERY_PAN = 620                # ギャラリーの列を下へ動く量（CSS の px）。節の高さを越えない所で止める。速く見えない量にした
+SAMPLE_GAP = 6                   # 列を止める時に、1 つ目の見本の下に残す余白（CSS の px）。次の札の頭が入らない量
 VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記録へ")
 
 SECONDS = {"core_map": 9.0, "core_make": 12.0, "core_keep": 7.0, "core_voice": 4.0, "core_gallery": 5.0, "core_loop": seconds_of("core_loop")}
@@ -460,10 +461,12 @@ def build_scene(name, cues, cache=None, shots=None):
             {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, "line": "できた物の写真と、"},
             {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "line": "工夫した所を記録に添える"}])
     if name == "core_gallery":
-        made = shots["gallery"][1]["made"]
+        made, sample = shots["gallery"][1]["made"], shots["gallery"][1]["first_sample"]
         top = _cam_on([made[0], made[1] + 10, made[2], made[3]], 1.1)  # 節の上の見出しの下線を枠に入れない
         # 持ち寄られた物の列を下へ動く。1 つの記録だけに見せず、何人もの物が集まる場だと分かるように。
-        lower = (top[0], top[1] + min(GALLERY_PAN, max(0, made[3] - top[2] * ASPECT)), top[2])
+        # 1 つ目の見本の下で止める。頁の 2 つ目の見本には別の仮説の紙の名（C の紙）があり、型紙を玩具に 1 枚とする形（J-032）と合わない。
+        room = sample[1] + sample[3] + SAMPLE_GAP - (top[1] + top[2] * ASPECT / 2)
+        lower = (top[0], top[1] + min(GALLERY_PAN, max(0, room)), top[2])
         return Screens(name, cues, shots, [{"at": None, "shot": "gallery", "move": "pan", "from": top, "to": lower, "line": GALLERY_LINE}])
     raise KeyError(name)
 
