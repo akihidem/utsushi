@@ -93,7 +93,7 @@ def table():
     for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
         data, sheet = load(path.stem), sheet_of(path.stem)["id"]
         out += [{"source_id": path.stem, "hypothesis_id": h["id"], "sheet": h["id"] == sheet,
-                 "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"]]
+                 "reading_of": None if h["id"] == sheet else sheet, **of_hypothesis(data, h)} for h in data["hypotheses"] if h.get("params") is not None]  # 寸法の無い控えは紙にならず、印を持たない
     return out
 
 

@@ -26,7 +26,7 @@ maker_talk は作った人が作りながら話した事と上げた後に残し
 
 PROPOSE_SYSTEM = """江戸の玩具を紙で試した記録と、人が確定した解釈から、次の手の案を作る担当です。決めるのは人で、案を出すだけです。動かす事を目的にしない。動かない記録は失敗でなく、次に何を確かめるかの材料です。
 先に list_records と get_known_examples と list_contributions で前例を引く。必要なら zoom_picture で図を見る。
-型紙は玩具ごとに 1 枚のたたき台で、データの sheet がその仮説を指す。次の版はたたき台にだけ足す。
+型紙は玩具ごとに 1 枚のたたき台で、データの sheet がその仮説を指す。次の版はたたき台にだけ足す。sheet_params が今の版の寸法で、次の人が刷る紙の寸法。hypotheses の寸法は版 1 の物。寸法の案と new_hypothesis の params は sheet_params から書く。
 作る物: (a) たたき台の寸法の変更案。ほかの仮説の記録からは、変えるならたたき台の寸法を変え、hypothesis_id に sheet の番号を書く。check_params を通してから出す。式で確かめられる変更には metric と direction を付ける。
 (b) 次に試す事と、それを確かめるために測る事。
 (c) 寸法の差で言えない案だけを new_hypothesis に書く。採っても作る側の控えに残り、画面には出ない。
@@ -170,7 +170,9 @@ def draft_proposal(record_id, source, client=None):
     h = loop._hypothesis(sid, hypothesis_id) or {}
     template = h.get("template") or data.get("template", "slider_fan")
     # 話した字は解釈の頼みと同じ物を渡す（loop.material。床・隠した字の扱いを 1 か所に置く）。
-    context = {"template_id": template, "sheet": sheet_of(sid)["id"], "record": rec, "interpretation": loop.interpretation(record_id)["content"],
+    sheet = sheet_of(sid)["id"]
+    based = loop.latest_version(sid, sheet)  # 案を作った時の版。Claude の返事でなく、ここで持つ
+    context = {"template_id": template, "sheet": sheet, "sheet_version": based, "sheet_params": loop.version_params(sid, sheet, based)[0], "record": rec, "interpretation": loop.interpretation(record_id)["content"],
                "maker_talk": loop.maker_talk(record_id), "hypotheses": data["hypotheses"], "allowed_params": sorted(loop.ALLOWED[template])}
     user = "次の材料から案を作ってください。\n<data>\n" + json.dumps(context, ensure_ascii=False) + "\n</data>"
 
@@ -180,5 +182,5 @@ def draft_proposal(record_id, source, client=None):
         return shape + [f.line() for f in loop.check_proposal({**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id)}, source)]
 
     result, trace = agent.run("propose", PROPOSE_SYSTEM, user, _tools(), PROPOSE_SCHEMA, execute, validate=validate, client=client)
-    proposal = {**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id), "trace": _trace(trace)}
+    proposal = {**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id), "based_on_version": based, "trace": _trace(trace)}
     return loop.save_proposal(proposal, source, "claude")

@@ -265,8 +265,9 @@ def latest_version(source_id, hid):
     return max(adopted_versions(source_id, hid), default=1)
 
 
-def check_proposal(p, source, will_confirm=()):
-    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。"""
+def check_proposal(p, source, will_confirm=(), need_why=True):
+    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。
+    need_why は変更ごとの理由を求めるか。採った新しい案を版にする時だけ外す（案の字は版の記録の new_case に残す。_new_as_changes）。"""
     from .hypotheses import sheet_of
 
     out = []
@@ -304,7 +305,7 @@ def check_proposal(p, source, will_confirm=()):
                 if c.get("param") not in ALLOWED[template]:
                     out.append(Failure("F7.revision", str(c.get("param")), "変えてよい寸法の外"))
                     continue
-                if not c.get("why", "").strip():
+                if need_why and not c.get("why", "").strip():
                     out.append(Failure("F4.evidence", c["param"], "変える理由が無い"))
                 merged[c["param"]] = c.get("to")
             if not any(c.get("to") != {**TEMPLATES_DEFAULT(template), **current}.get(c.get("param")) for c in changes):
@@ -342,10 +343,15 @@ def TEMPLATES_DEFAULT(template):
 
 
 def save_proposal(proposal, source, drafted_by):
+    from .hypotheses import sheet_of
+
     failures = check_proposal(proposal, source)
     if failures:
         return None, failures
-    return save_numbered("proposal", "P", lambda pid: {**proposal, "id": pid, "source_id": source["source_id"], "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
+    sid = source["source_id"]
+    # 案を作った時のたたき台の版を持つ。採る時に、この版からの差だけを今の版に重ねるため（_new_as_changes）。
+    based = proposal.get("based_on_version") or latest_version(sid, sheet_of(sid)["id"])
+    return save_numbered("proposal", "P", lambda pid: {**proposal, "based_on_version": based, "id": pid, "source_id": sid, "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
 
 
 def _next_params(sid, hid, changes):
@@ -354,27 +360,34 @@ def _next_params(sid, hid, changes):
     return latest_version(sid, hid) + 1, {**current, **{c["param"]: c["to"] for c in changes}}
 
 
-def _write_version(p, pid, by, hid, changes):
-    """採った変更を次の版の記録にして、版の番号を返す。"""
+def _write_version(p, pid, by, hid, changes, new_case=None):
+    """採った変更を次の版の記録にして、版の番号を返す。new_case は版にした案の字で、頁には出さない（変更の理由の欄は頁の輪の節に出る）。"""
     sid = p["source_id"]
     version, params = _next_params(sid, hid, changes)
-    _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": changes, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
+    _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": changes, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now(), **({"new_case": new_case} if new_case else {})})
     return version
 
 
-def _new_as_changes(sid, hid, new):
-    """採った新しい案が、たたき台の今の版からの寸法の差で言えるなら、次の版の変更にして返す。言えなければ空（J-032）。
+def _new_as_changes(sid, hid, new, based_on):
+    """採った新しい案が、たたき台の寸法の差で言えるなら、次の版の変更にして返す。言えなければ空（J-032）。
 
     なぜ版にするか: 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（本人の方針 11-05）。別の仮説として控えに入れると、次の人に届かない。
-    雛形の違う案は、寸法を重ねる版の形に乗らない。差が無い案は読みだけが違う案で、版にならない。
-    変えてよい寸法の外（形の違い）と紙に乗らない差は、呼ぶ側の check_proposal が落とす。どの雛形も字の寸法は範囲の検査で断る。
+    差は案を作った時の版（based_on）から見て、今の版に重ねる。案は全部の寸法を書くので、今の版と比べると、案が言っていない前の版の直しまで戻してしまう。
+    案を作った後に今の版で変わった寸法に触る案は、後の直しを黙って上書きしないよう、版にしない。雛形の違う案は、寸法を重ねる版の形に乗らない。
+    今の版と差が無い案は読みだけが違う案で、版にならない。変えてよい寸法の外（形の違い）と紙に乗らない差は、呼ぶ側の check_proposal が落とす。
+    理由の欄は空にする: 頁の輪の節に出る欄で、案の字は Claude の字なので頁に出さない（new_case に残す）。
     """
     template = _template(sid)
-    if new.get("template", template) != template:
+    defaults = TEMPLATES_DEFAULT(template)
+    then, _ = version_params(sid, hid, based_on)
+    if new.get("template", template) != template or then is None:
         return []
     current, _ = version_params(sid, hid, latest_version(sid, hid))
-    now = {**TEMPLATES_DEFAULT(template), **current}
-    return [{"param": k, "to": v, "why": f"採った案「{new['name']}」: {new['how_it_moves']}"} for k, v in sorted((new.get("params") or {}).items()) if now.get(k) != v]
+    then, now = {**defaults, **then}, {**defaults, **current}
+    said = {k: v for k, v in (new.get("params") or {}).items() if then.get(k) != v}
+    if any(now.get(k) != then.get(k) and now.get(k) != v for k, v in said.items()):
+        return []
+    return [{"param": k, "to": v, "why": ""} for k, v in sorted(said.items()) if now.get(k) != v]
 
 
 @exclusive
@@ -406,10 +419,12 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     if chosen:
         made["version"] = _write_version(p, pid, by, p["hypothesis_id"], chosen)
     sheet = sheet_of(sid)["id"]
-    as_version = _new_as_changes(sid, sheet, p["new_hypothesis"]) if accept_new and p.get("new_hypothesis") else []
+    # 番号を持たない前の形の案は版 1 の時の案（前は Claude に版 1 の寸法だけを渡していた）。
+    as_version = _new_as_changes(sid, sheet, p["new_hypothesis"], p.get("based_on_version", 1)) if accept_new and p.get("new_hypothesis") else []
     # 紙に乗らない差は版にしない（版の記録だけ残り、紙が刷れない形を作らない）。この時は下の控えに入る。
-    if as_version and not check_proposal({"record_ids": p["record_ids"], "hypothesis_id": sheet, "changes": as_version}, source):
-        made["version"] = made["new_hypothesis_as_version"] = _write_version(p, pid, by, sheet, as_version)
+    if as_version and not check_proposal({"record_ids": p["record_ids"], "hypothesis_id": sheet, "changes": as_version}, source, need_why=False):
+        new_case = {k: p["new_hypothesis"][k] for k in ("name", "how_it_moves")}
+        made["version"] = made["new_hypothesis_as_version"] = _write_version(p, pid, by, sheet, as_version, new_case)
     elif accept_new and p.get("new_hypothesis"):
         extras_path = folder() / f"extra-hypotheses-{sid}.json"
         extras = _read(extras_path) or []
