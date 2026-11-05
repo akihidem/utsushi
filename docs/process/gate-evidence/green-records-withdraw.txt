@@ -1,3 +1,5 @@
+# 命令: python -m omochae.records withdraw R-0001
+# commit: bb34850（このファイルを足した commit）
 ok
 rc 0（tests/test_records_withdraw.py）
 

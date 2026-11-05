@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_next_version_atomic.py
+# commit: c27a740（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_next_version_atomic.py   # 直す前（main の上）
 Traceback (most recent call last):
   File "tests/test_next_version_atomic.py", line 65, in <module>

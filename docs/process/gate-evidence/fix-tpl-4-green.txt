@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_pivot_hang_model.py
+# commit: 62ed428（このファイルを足した commit）
 # fix-tpl-4 green  2026-11-04T15:22:07+09:00
 # 対象のコード: 32b6dfc ＋ この直し（branch lane/fix-tpl の src）
 $ PYTHONPATH=src .venv/bin/python tests/test_pivot_hang_model.py

@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「予想の門を玩具ごとに守る」を見る）
+# commit: 9c9a9d2（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_source_scope.py", line 44, in <module>
     assert seen(b) == (False, 0, [], 0), (b, "枝番つきの玩具の記録が、枝番なしの側に出た", sid, seen(b))

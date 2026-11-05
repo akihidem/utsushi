@@ -221,7 +221,9 @@
   "status": "done",
   "evidence": [
    "src/omochae/ledger.py",
-   "tests/test_ledger.py"
+   "tests/test_ledger.py",
+   "src/omochae/gate_evidence.py",
+   "tests/test_gate_evidence.py"
   ]
  },
  {
