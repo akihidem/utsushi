@@ -6,7 +6,8 @@
 - 別の記録がまだその案を使っている間は消さない（試した記録が指す先を失わない）。そちらも取り下げると消える。
 - 写真と動画だけの取り下げでは消さない。途中で落ちた後の回し直しでも通る。
 - 根拠に使われた記録でも、話した字（考え・工夫・上げた後）は消せる（--talk-only）。記録の番号と寸法の根拠は残し、版の根拠は数として読める。字の写しと、字が刷られた紙も消える。
-- 解釈と案と版の文に話した字の引用が残ると取り下げにならないので、引用を含む文は文ごと消す。番号・寸法・版・案の数は残す。一部の引用と、字の幅や空白の違う引用も見る。
+- 人が書いた解釈・案・説明・採った人の字は、話した字の引用を含む文を文ごと消す。番号・寸法・版・案の数と、時刻は残す。一部の引用と、字の幅や空白の違う引用も見る。
+- Claude が書いた解釈と案（と、そこから作った版と控えの文）は、引用の有無によらず全部消す。要約は機械で見分けられず、要約で話した字が残るため。
 """
 import json
 import os
@@ -183,7 +184,7 @@ r = subprocess.run([sys.executable, "-m", "omochae.records", "withdraw", rid8, "
 assert r.returncode == 0 and "話した字" in r.stdout, r.stdout + r.stderr
 for text in (SAID8, CRAFT8, KEEP8):
     assert everywhere(text) == [], (text, everywhere(text))
-# 引用を含む文は文ごと消え、一部の引用も消える。引用の無い文と、番号・寸法・版・案の数は残る
+# 引用を含む文は文ごと消え、一部の引用も消える。人の引用の無い文と、番号・寸法・版・案の数は残る
 for part in (f"{PART_CRAFT}て押した", f"あ{PART_KEEP}", SAID8_SPACED, SAID8[:8]):
     assert everywhere(part) == [], (part, everywhere(part))
 w8_left = json.loads(w8_path.read_text(encoding="utf-8"))
@@ -197,9 +198,13 @@ v8 = json.loads((loop.folder() / f"version-{G}-{hypotheses.sheet_of(G)['id']}-{v
 assert v8["changes"][0]["param"] == "fold_count" and v8["changes"][0]["to"] == 27 and v8["changes"][0]["why"] == "" and v8["record_ids"] == [rid8] and v8["params"]["fold_count"] == 27, v8
 p8 = json.loads((loop.folder() / f"proposal-{pid8[2:]}.json").read_text(encoding="utf-8"))
 assert len(list(loop.folder().glob("proposal-*.json"))) == proposals_before and p8["changes"][0]["param"] == "fold_width" and p8["changes"][0]["to"] == 8.4 and p8["changes"][0]["why"] == "", p8
-assert p8["next_to_try"]["why"] == "" and p8["next_to_try"]["what_to_measure"] == "開いた角度" and p8["new_hypothesis"]["how_it_moves"] == "" and p8["new_hypothesis"]["name"] == "控えの案", p8
+# Claude が書いた案は、引用の無い文も全部消える（要約で残るため）。寸法と番号は残る
+assert p8["next_to_try"]["why"] == "" and p8["next_to_try"]["what_to_measure"] == "" and p8["new_hypothesis"]["how_it_moves"] == "" and p8["new_hypothesis"]["name"] == "" and p8["drafted_by"] == "claude", p8
+assert p8["id"] == pid8 and p8["record_ids"] == [rid8] and p8["hypothesis_id"] == hypotheses.sheet_of(G)["id"] and p8["decided_at"], "番号と時刻は残る"
 extra = json.loads((loop.folder() / f"extra-hypotheses-{G}.json").read_text(encoding="utf-8"))
-assert extra[-1]["id"].startswith("H-N") and extra[-1]["how_it_moves"] == "" and extra[-1]["name"] == "控えの案", "控えも番号と名前は残り、文だけが消える"
+assert extra[-1]["id"].startswith("H-N") and extra[-1]["how_it_moves"] == "" and extra[-1]["name"] == "" and extra[-1]["proposal"] == pid8, "Claude の案から入った控えも、番号は残り、文は消える"
+assert any(e.get("where") == rid8 for e in extra[-1]["evidence"]), "根拠の番号は残る"
+assert extra[-1]["adopted_by"] == "採った人", "採った人の名は Claude の字ではないので残る"
 left = sorted(p.name for p in d.glob(f"{own8['id']}_v*"))
 assert f"{own8['id']}_v1.pdf" in left and f"{own8['id']}_v1_after.pdf" in left and not [n for n in left if "_tejun" in n or "_free" in n], left
 for p in d.glob(f"{own8['id']}_v*.pdf"):
@@ -249,6 +254,70 @@ for p in (making_log.folder()).glob("talk-*.json"):
         p.unlink()
 assert everywhere(SAID11)
 assert records.withdraw(rid11, talk_only=True)[1] == [] and everywhere(SAID11) == [], everywhere(SAID11)
+# ── Claude が書いた文は、引用の有無によらず全部消す。人の字は引用だけを消す ──
+SAID12, SUMMARY = "折り目をもう二回なぞったら開きがよくなった", "折り筋を強く付けると広がりやすいようだ"  # 要約: 話した字の引用ではない
+assert not records._quotes(SUMMARY, [records._flat(SAID12)]), "見本は比べ方では拾えない要約（下の確かめが効いている事を見る）"
+_, own12 = made(SAID12)
+rid12 = record(own12["id"])
+assert loop.save_explanation(rid12, "試した人", "紙が開いた。" + SAID12[:8], "折りを増やす") == []
+hand = {"record_ids": [rid12], "hypothesis_id": sheet, "next_to_try": {"why": "人が書いた理由", "what_to_measure": "角度"}, "references": []}
+loop.save_interpretation_draft(rid12, {"observed": [SUMMARY], "causes": [{"text": SUMMARY, "confidence": "低"}]}, {"model": "試験"})
+assert loop.confirm_interpretation(rid12, "確認者") == []  # 人が直さずに確定: Claude の字のまま
+pid_c, fs = loop.save_proposal({"record_ids": [rid12], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": 8.6, "why": SUMMARY, "metric": "", "direction": ""}], "next_to_try": {"why": SUMMARY, "what_to_measure": SUMMARY}, "references": []}, SOURCE, "claude")
+assert pid_c and not fs, fs
+made_c, fs = loop.adopt(pid_c, "採った人", accept_params=["fold_width"], source=SOURCE)
+assert made_c.get("version") and not fs, (made_c, fs)
+pid_h, fs = loop.save_proposal(hand, SOURCE, "human")
+assert pid_h and not fs, fs
+v_path = loop.folder() / f"version-{G}-{sheet}-{made_c['version']}.json"
+assert everywhere(SUMMARY), "消す前は要約が残っている"
+gone, fs = records.withdraw(rid12, talk_only=True)
+assert not fs, fs
+assert everywhere(SUMMARY) == [], ("要約も消える", everywhere(SUMMARY))
+i12 = loop.interpretation(rid12)
+assert i12["content"]["observed"] == [] and i12["content"]["causes"] == [] and i12["confirmed_by"] == "確認者" and i12["confirmed_at"], "Claude の解釈は全部消え、確定の印は残る"
+v12 = json.loads(v_path.read_text(encoding="utf-8"))
+assert v12["changes"][0]["param"] == "fold_width" and v12["changes"][0]["to"] == 8.6 and v12["changes"][0]["why"] == "" and v12["params"]["fold_width"] == 8.6 and v12["adopted_at"] and v12["adopted_by"] == "採った人", "Claude の案から作った版は、理由の文だけが消える"
+assert json.loads((loop.folder() / f"proposal-{pid_h[2:]}.json").read_text(encoding="utf-8"))["next_to_try"]["why"] == "人が書いた理由", "人が書いた案の、引用の無い文は残す"
+told = loop.explanation(rid12)
+assert told["text"] == "" and told["next_idea"] == "折りを増やす" and told["by"] == "試した人", "人が書いた説明は、引用を含む文だけを消す"
+# 人が書き直した解釈は、人の字として読む（引用だけを消す）
+_, own13 = made("筒をもっと細くしたら速く開いた")
+rid13 = record(own13["id"])
+loop.save_interpretation_draft(rid13, {"observed": ["Claude の文"]}, {"model": "試験"})
+assert loop.confirm_interpretation(rid13, "確認者", {"human_text": "人が直した解釈", "quote": "筒をもっと細くしたらと話した"}) == []
+assert loop.save_explanation(rid13, "筒をもっと細くしたら", "説明", "思いつき") == []
+assert loop.save_proposal({"record_ids": [rid13], "hypothesis_id": sheet, "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": []}, SOURCE, "human")[0]
+assert records.withdraw(rid13, talk_only=True)[1] == []
+c13 = loop.interpretation(rid13)["content"]
+assert c13["human_text"] == "人が直した解釈" and c13["quote"] == "", c13
+assert loop.explanation(rid13)["by"] == "", "採った人の字も、引用なら消す"
+
+# ── 時刻の欄を消さない（話した字「11」が時刻に当たる） ──
+assert records._without_quotes({"decided_at": "2026-11-05T11:11:00+09:00", "adopted_at": "2026-11-05T11:11", "confirmed_at": "11", "at": "11", "why": "11 番の案"}, [records._flat("11")]) == {"decided_at": "2026-11-05T11:11:00+09:00", "adopted_at": "2026-11-05T11:11", "confirmed_at": "11", "at": "11", "why": ""}
+_, own14 = made("11")
+rid14 = record(own14["id"])
+assert loop.save_explanation(rid14, "試した人", "説明", "思いつき") == []
+assert loop.confirm_interpretation(rid14, "確認者", {"human_text": "x"}) == []
+pid14, fs = loop.save_proposal({"record_ids": [rid14], "hypothesis_id": sheet, "next_to_try": {"why": "y", "what_to_measure": "z"}, "references": []}, SOURCE, "human")
+made14, fs14 = loop.adopt(pid14, "採った人", source=SOURCE)
+assert not fs and not fs14, (fs, fs14)
+before14 = json.loads((loop.folder() / f"proposal-{pid14[2:]}.json").read_text(encoding="utf-8"))
+assert records.withdraw(rid14, talk_only=True)[1] == []
+after14 = json.loads((loop.folder() / f"proposal-{pid14[2:]}.json").read_text(encoding="utf-8"))
+assert after14["decided_at"] == before14["decided_at"] and after14["drafted_at"] == before14["drafted_at"] and loop.interpretation(rid14)["confirmed_at"], "時刻は残る"
+
+# ── --talk-only の取りこぼしの 2 つ: 結ばれない工夫と、結ばれていない元の考え ──
+SAID15, LOOSE15 = "印の無い記録に結ばれない考え", "ほかの印で話した結ばれない工夫"
+_, own15 = made(SAID15, hid="H-C")
+assert not talk_log.add(G, "craft", LOOSE15, hypothesis_id=own15["id"], sheet_version=1, step=1, who=OTHER)[1]
+rid15 = record(own15["id"], who="")  # 印の無い画面の記録: 考えも工夫も結ばれない
+assert talk_log.talks(G, record_id=rid15) == [] and everywhere(SAID15) and everywhere(LOOSE15)
+assert records.withdraw(rid15, talk_only=True)[1] == []
+talk_texts = [json.loads(p.read_text(encoding="utf-8")).get("text") for p in making_log.folder().glob("talk-*.json")]
+assert LOOSE15 not in talk_texts, "結ばれない工夫も消える"
+assert SAID15 not in talk_texts, "結ばれていない元の考えも消える"
+
 # 型紙なしの紙は、紙ごと字が刷られているので消える
 SAID9 = "水の重さで開くのかも"
 _, own9 = made(SAID9, not_fit=[f"「{SAID9}」は雛形に無い"])

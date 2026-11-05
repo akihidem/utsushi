@@ -169,11 +169,18 @@ def _drop_loose_talk(sid, oid, talks):
     return gone
 
 
-# 話した字の引用と読む長さ。これより長い字は、この長さの一部が写っていれば引用と読む（Claude は長い字の一部を引く）。短いと、よくある言い回しの文まで消す。
-# これより短い字は、全部が写っている時に引用と読む。1 字は読まない（どの文にも当たる）。言い換えは機械で見分けられないので、消せない。
-QUOTE_CHARS = 8
-# 文でない欄。番号と名前と寸法の字なので、話した字と重なっても消さない。
-NOT_TEXT = frozenset(("id", "source_id", "hypothesis_id", "record_id", "record_ids", "references", "param", "params", "from_words", "proposal", "status", "kind"))
+# 話した字の引用と読む長さ。これより長い字は、この長さの一部が写っていれば引用と読む（文は長い字の一部を引く）。これ以下の字は、4 字以上なら語尾 1 字を落とした全部を探す
+# （活用の違いを拾う。紙が破れた → 紙が破れている）。4 字未満はそのまま全部で、1 字は読まない（どの文にも当たる）。tests/test_loop1_quotes.py が手で作った例で振る舞いを固定する。
+# 要約はどの比べ方でも拾えないので、Claude が書いた文は引用の有無によらず消す（_claude_keys）。人が言い換えた文は消せない。
+QUOTE_CHARS = 6
+DROP_TAIL_FROM = 4
+# 文でない欄。番号と名前と寸法の字なので、話した字と重なっても消さない。時刻（*_at と at）も（話した字「11」が時刻に当たる）。
+NOT_TEXT = frozenset(("id", "source_id", "hypothesis_id", "record_id", "record_ids", "references", "param", "params", "from_words", "proposal", "status", "kind", "at",
+                      "metric", "direction", "formula_check", "template", "template_id"))
+
+
+def _not_text(key):
+    return key in NOT_TEXT or key.endswith("_at")
 
 
 def _flat(text):
@@ -185,24 +192,26 @@ def _quotes(text, spoken):
     """text に、話した字（_flat した物の一覧）の引用があるか。"""
     flat = _flat(text)
     for s in spoken:
-        if len(s) <= QUOTE_CHARS:
-            if len(s) > 1 and s in flat:
+        if len(s) > QUOTE_CHARS:
+            if any(s[i:i + QUOTE_CHARS] in flat for i in range(len(s) - QUOTE_CHARS + 1)):
                 return True
-        elif any(s[i:i + QUOTE_CHARS] in flat for i in range(len(s) - QUOTE_CHARS + 1)):
-            return True
+        else:
+            key = s[:-1] if len(s) >= DROP_TAIL_FROM else s
+            if len(key) > 1 and key in flat:
+                return True
     return False
 
 
-def _without_quotes(value, spoken):
-    """引用を含む文を文ごと消す。一覧の中の文と、文を text に持つ札は、札ごと外す。ほかの欄の文は空にする（欄の形と、並ぶ寸法・番号は残す）。"""
+def _clean(value, drop, keep=_not_text):
+    """drop(文) が真の文を消す。一覧の中の文と、文を text に持つ札は、札ごと外す。ほかの欄の文は空にする（欄の形と、並ぶ寸法・番号は残す）。keep(欄の名) が真の欄には触らない。"""
     if isinstance(value, str):
-        return "" if _quotes(value, spoken) else value
+        return "" if drop(value) else value
     if isinstance(value, dict):
-        return {k: v if k in NOT_TEXT else _without_quotes(v, spoken) for k, v in value.items()}
+        return {k: v if keep(k) else _clean(v, drop, keep) for k, v in value.items()}
     if isinstance(value, list):
         out = []
         for x in value:
-            y = _without_quotes(x, spoken)
+            y = _clean(x, drop, keep)
             if (isinstance(x, str) and x and not y) or (isinstance(x, dict) and x.get("text") and not y.get("text")):
                 continue
             out.append(y)
@@ -210,21 +219,61 @@ def _without_quotes(value, spoken):
     return value
 
 
+def _without_quotes(value, spoken):
+    """引用を含む文を文ごと消す。"""
+    return _clean(value, lambda text: _quotes(text, spoken))
+
+
+def _blank(value):
+    """Claude が書いた文を全部消す。根拠の記録の番号は残す（where に入る）。人の名前の欄は Claude の字ではないので残す。"""
+    return _clean(value, lambda text: not re.fullmatch(r"R-[0-9]{4,}", text), keep=lambda key: _not_text(key) or key.endswith("_by"))
+
+
+def _by_claude(pid):
+    """その案を Claude が書いたか。"""
+    from . import loop
+
+    p = store.read_json_or_skip(loop.folder() / f"proposal-{str(pid)[2:]}.json") if pid else None
+    return bool(p and p.get("drafted_by") == "claude")
+
+
+def _claude_keys(path, doc):
+    """その文書で Claude が書いた文の欄。人が書き直した解釈は人の字（edited_by_human）。版は、元の案を Claude が書いた時（採った人は寸法を採っただけで、理由の文は Claude の字）。"""
+    name = path.name
+    if name.startswith("interpretation-"):
+        return ("content",) if doc.get("drafted_by") == "claude" and not doc.get("edited_by_human") else ()
+    if name.startswith("proposal-"):
+        return ("changes", "next_to_try", "new_hypothesis") if doc.get("drafted_by") == "claude" else ()
+    if name.startswith("version-"):
+        return ("changes", "new_case") if _by_claude(doc.get("proposal")) else ()
+    return ()
+
+
+def _scrubbed(path, doc, rid, spoken):
+    """1 つの文書から話した字を消した形。Claude が書いた文は引用の有無によらず全部（要約で残るため）、人の字は引用を含む文だけ。"""
+    if isinstance(doc, list):  # 採った案の控え。この記録を根拠に Claude が書いた案から入った物
+        word = re.compile(rf"(?<![\w-]){rid}(?![\w-])")
+        doc = [_blank(e) if isinstance(e, dict) and _by_claude(e.get("proposal")) and word.search(json.dumps(e, ensure_ascii=False)) else e for e in doc]
+    else:
+        doc = {**doc, **{k: _blank(doc[k]) for k in _claude_keys(path, doc) if k in doc}}
+    return _without_quotes(doc, spoken)
+
+
 def _scrub_quotes(rid, spoken):
-    """この記録を根拠にした解釈・案・版・控えの文から、話した字の引用を消す。引用が残ると取り下げにならないため。番号・寸法・版・案の数は残す。消した物の名前を返す。"""
+    """この記録を根拠にした解釈・案・版・控えと、人の説明から、話した字を消す。引用や要約が残ると取り下げにならないため。番号・寸法・版・案の数・時刻は残す。消した物の名前を返す。"""
     from . import loop
 
     gone = []
     if not spoken:
         return gone
-    for p in [*_used_paths(rid), loop.interp_path(rid)]:
+    for p in [*_used_paths(rid), loop.interp_path(rid), loop.folder() / f"explanation-{rid}.json"]:
         before = store.read_json_or_skip(p, (dict, list))
         if before is None:
             continue
-        after = _without_quotes(before, spoken)
+        after = _scrubbed(p, before, rid, spoken)
         if after != before:
             store.write_json(p, after)
-            gone.append(f"{p.name} の引用")
+            gone.append(f"{p.name} の文")
     return gone
 
 
@@ -232,7 +281,7 @@ def _scrub_spoken(rid):
     """話した字だけを消す（--talk-only）。根拠に使われた記録でも、その人の言葉は消せるように（本人の決定の線。写真と動画の --media-only と同じ形）。
     記録の番号と寸法の根拠は残し、版の根拠は数として読める。案は残す（試した記録が指す先で、札に出さない印でもあるため）が、字の写し（words の記録と OWN-n の動かし方）と、
     字が刷られた紙（手順の紙・型紙なしの紙）は消す。話した字の無い型紙と試した後の紙は残す。別の記録がその案を使っていても消す（字は本人の物で、寸法の根拠は残るため）。
-    解釈と案と版の文の引用も消す（_scrub_quotes）。言い換えは機械で見分けられないので消せない。"""
+    Claude が書いた解釈と案の文は全部、人の字は引用を含む文を消す（_scrub_quotes）。"""
     from . import hypotheses, loop, making_log
 
     talks = _talk_files()
