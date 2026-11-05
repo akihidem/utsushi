@@ -74,9 +74,12 @@ assert "引っかかった所: 3 枚目の折り目" in page and "感想: 折る
 assert post(f"/record/{g_rid}/media", jpeg, "image/jpeg") == 201
 assert f'<img src="/record/{g_rid}/media/m1.jpg"' in get(f"/toy/{G}")[1]
 # 聞く口の断り（J-027: 質問の文を残すので、残す事と、名前を書かないでほしい事を聞く口のすぐ下に出す）
-assert "聞いた言葉は、名前や連絡先を除いて" in page and "名前は書かないでください" in page.split('id="ask"')[1].split("</form>")[0]
+# 文は本人の決定（11-05、カード 20261105-092043 の 1 点目）のとおり。一字でも変わったら落ちるように、ここに決定の文を書く
+DECIDED = "聞いた言葉は、名前や連絡先を除いて、案内を良くするために残します。声と映像は残しません"
+ask_part = page.split('id="ask"')[1].split("</form>")[0]
+assert DECIDED in ask_part and "名前は書かないでください" in ask_part
 techo = get(f"/toy/{G}/techo")[1]
-assert "声と映像は残しません" in techo and "名前は言わないでください" in techo
+assert DECIDED in techo and "名前は言わないでください" in techo
 # ギャラリーの札から、玩具の頁の同じ記録へ
 gal = get("/gallery")[1]
 assert f'href="/toy/{G}#{g_rid}"' in gal and f'href="/toy/{T}#{rid}"' in gal

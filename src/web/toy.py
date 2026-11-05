@@ -14,7 +14,7 @@
 import json
 import re
 
-from omochae import hypotheses, loop, records
+from omochae import hypotheses, loop, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 
@@ -137,7 +137,7 @@ def ask_form(sid, data, asked=None):
             f'<label>どの紙か<select name="hypothesis">{opts}</select></label><label>聞きたい事<input type="text" name="question" required maxlength="300"></label>'
             # 断り（本人の決定 11-05「工作の様子を蓄積してサービス全体の改善に回す。個人の情報は落とす」）: 質問の文を残すので、残す事と、
             # 名前を書かないでほしい事を、聞く口のすぐ下に出す。床が落とせるのは連絡先の形だけで、名前は機械では落とせないため。
-            f'<button>聞く</button><p class="meta">聞いた言葉は、名前や連絡先を除いて、案内と答えを良くするために残します。名前は書かないでください。</p>{shown}</form>')
+            f'<button>聞く</button><p class="meta">{esc(making_log.ASK_NOTICE)}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>')
 
 
 def record_form(sid, data, own):

@@ -25,14 +25,14 @@
   なぜ持つか: 「同じ段で 3 人以上止まった」を数えるには、同じ人の押し直しを 1 人と数える印が要る（Issue #119 の「人は、その場限りの
   無作為の印で数える」）。cookie にしない・名前や機器と結び付けない・次に開いた時は別の印になる、で人を追える物にしない。
 """
-from omochae import hypotheses, instructions, loop
+from omochae import hypotheses, instructions, loop, making_log
 from omochae.compose import TEMPLATES
 
 from . import skin
 from .kazasu import PRIVACY
 from .play_server import esc, out_dir, printed_versions
 
-NOTICE = "聞いた言葉は字にして、案内を良くするために残します。声と映像は残しません。名前は言わないでください。"
+NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
 
 STYLE = """
 *{box-sizing:border-box}

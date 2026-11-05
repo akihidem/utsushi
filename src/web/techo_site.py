@@ -12,7 +12,7 @@
 import html
 import re
 
-from omochae import hypotheses, records
+from omochae import hypotheses, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
@@ -274,7 +274,7 @@ def page(sid, printed_ids, picture_url, uploads=True):
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"></form>'
             # 断り（本人の決定 11-05、様子の蓄積）: 声は残さず、字にした質問だけを残す。名前は言わないでほしい事も出す。
-            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">聞いた言葉は字にして、案内を良くするために残します。声と映像は残しません。名前は言わないでください。</p></section>'
+            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc(making_log.ASK_NOTICE) + esc(making_log.ASK_NAME_VOICE) + '</p></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
             '<form id="up-form"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
             # 合言葉なしで開いたデモ（uploads=False）では、写真と動画の口を閉じる（play_server の受け口も断る）。見た事とひとことは残せる。
