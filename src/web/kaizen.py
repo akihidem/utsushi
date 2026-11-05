@@ -5,13 +5,16 @@
 - 輪は、報告（記録＋感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る、の順。既にある台帳（omochae.loop）を
   画面で見える形にするだけで、別の台帳を作らない。版は data/loop の version-*.json、根拠は記録の ID。
 - 「次の版を待つ報告」を数えて出す。説明の無い報告は、先に説明を待つ（J-013: 人の説明が AI より先）。
-- 成績に見える数（何件動いた、など）は出さない（J-025）。出すのは「報告の数」「版の数」「変えた寸法」だけ。
+- 成績に見える数（何件動いた、など）は、玩具の頁の節と一覧 /loop には出さない（J-025）。出すのは「報告の数」「版の数」「変えた寸法」だけ。
+- 玩具ごとの作る側の頁 /loop/<印>（toy_page）だけは、工作の様子の集計を出す（本人の決定 11-05 朝「工作の様子を蓄積して、サービス全体の改善をする」）:
+  聞かれた事・止まった所・最初に動いた所・感想・版ごとの動きの札の数。版や案内を直す材料で、玩具や仮説の上下ではない事を頁の頭に書く。
+  仮説は字（A・B）だけで指し、名前と動かし方は出さない（予想の前でも開ける頁なので、F9.prediction の線を守る）。
 - /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の順路（頭の帯）には入れず、玩具の頁の節と序から行く。
 - 受け持ち（本人の決定 11-05、カード 20261105-090458 の (b)）: 雛形そのものを直すための報告の入口と道具（報告の形・検査・集計）は
   エンジン（paper-to-toy）の側。ここが持つのは、学ぶ人の記録と感想、仮説ごとの版（寸法を 1 つ変えた次の版）、その表示まで。
   だから、報告から案を機械で出す道具はここに置かない。
 """
-from omochae import hypotheses, loop, records
+from omochae import hypotheses, loop, making_log, records
 
 from . import skin
 from .play_server import PARAM_NAMES, esc, sources
@@ -77,21 +80,65 @@ def section(sid, data, recs):
 def page(look=skin.DEFAULT, path="/loop"):
     """サイト側が輪を回すための一覧。報告のある玩具から順に、版と次の版を待つ報告を数えて出す。"""
     items, n_rep = [], 0
+    asked = {}
+    for a in making_log.asks():
+        asked[a.get("source_id")] = asked.get(a.get("source_id"), 0) + 1
     for sid in sources():
         recs = records.all_records(sid)
-        if not recs:
+        # 報告が無くても、聞かれた事がある玩具は載せる: 質問だけあって報告が無いのは「作りかけて止まった」かもしれない様子で、案内を直す材料になる。
+        if not recs and not asked.get(sid):
             continue
         data = hypotheses.load(sid)
         n_rep += len(recs)
         vers = sum(len(versions(sid, h["id"])) for h in data["hypotheses"])
         ready, waiting = pending(sid, recs)
-        items.append((len(ready), sid, data["toy"], len(recs), vers, len(waiting)))
+        items.append((len(ready), sid, data["toy"], len(recs), vers, len(waiting), asked.get(sid, 0)))
     items.sort(key=lambda x: (-x[0], -x[3]))
-    rows = "".join(f'<tr><td><a href="/toy/{esc(sid)}#kaizen">{esc(toy)}</a></td><td>{n}</td><td>{v}</td><td>{r}</td><td>{w}</td></tr>'
-                   for r, sid, toy, n, v, w in items)
-    table = (f'<table><thead><tr><th>玩具</th><th>報告</th><th>報告から直した版</th><th>次の版を待つ報告</th><th>説明を待つ報告</th></tr></thead><tbody>{rows}</tbody></table>'
+    rows = "".join(f'<tr><td><a href="/toy/{esc(sid)}#kaizen">{esc(toy)}</a>　<a href="/loop/{esc(sid)}">様子</a></td><td>{n}</td><td>{v}</td><td>{r}</td><td>{w}</td><td>{q}</td></tr>'
+                   for r, sid, toy, n, v, w, q in items)
+    table = (f'<table><thead><tr><th>玩具</th><th>報告</th><th>報告から直した版</th><th>次の版を待つ報告</th><th>説明を待つ報告</th><th>聞かれた事</th></tr></thead><tbody>{rows}</tbody></table>'
              if items else '<p class="meta">報告はまだありません。</p>')
-    body = (f'<section class="hero"><div><h1>改善の輪</h1><p class="lead">作った人の報告を、型紙の改善に回す所。報告のある玩具 {len(items)} 種、報告 {n_rep} 件。</p>'
+    body = (f'<section class="hero"><div><h1>改善の輪</h1><p class="lead">作った人の報告を、型紙の改善に回す所。報告か質問のある玩具 {len(items)} 種、報告 {n_rep} 件。</p>'
             '<p class="meta">輪: 報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。並びは待っている報告の多い順で、玩具の上下ではありません。</p></div></section>'
             f'<section class="sec">{table}</section>')
-    return skin.shell("改善の輪", body, look, "", path, "table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}th{font-weight:normal;color:var(--mute);font-size:13px}")
+    return skin.shell("改善の輪", body, look, "", path, TABLE_STYLE)
+
+
+TABLE_STYLE = "table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}th{font-weight:normal;color:var(--mute);font-size:13px}"
+
+
+def toy_page(sid, look=skin.DEFAULT, path=None):
+    """その玩具の工作の様子（作る側の頁）。聞かれた事・止まった所・最初に動いた所・感想・版ごとの動きの札の数。
+    なぜ別の頁か: 学ぶ人の頁（/toy/<印>）に集計を出すと、数が成績や答えのように見える（J-025）。ここは案内・答え・型紙の版を直す人が読む。
+    仮説は字だけで指す。名前と動かし方は出さない（予想の前でも開ける頁なので）。"""
+    data = hypotheses.load(sid)
+    sm = making_log.summary(sid)
+    letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
+
+    def lines(items, empty):
+        return "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in items) + "</ul>" if items else f'<p class="meta">{empty}</p>'
+
+    asks = ("<table><thead><tr><th>聞かれた事</th><th>回数</th></tr></thead><tbody>"
+            + "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in sm["asks"]) + "</tbody></table>"
+            if sm["asks"] else '<p class="meta">聞かれた事はまだありません。</p>')
+    if sm["asks_dropped"]:
+        asks += f'<p class="meta">連絡先の形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
+    rows = ""
+    for hid, by_v in sm["results_by_version"].items():
+        who = f"仮説 {letter[hid]} の紙" if hid in letter else f"自分の仮説 {hid} の紙"
+        for v in sorted(by_v):
+            rows += f'<tr><td>{esc(who)}</td><td>版 {esc(v)}</td><td>{"、".join(f"{esc(k)} {n}" for k, n in by_v[v].items())}</td></tr>'
+    results = (f"<table><thead><tr><th>紙</th><th>版</th><th>動きの札</th></tr></thead><tbody>{rows}</tbody></table>"
+               if rows else '<p class="meta">報告はまだありません。</p>')
+    body = (f'<section class="hero"><div><h1>{esc(data["toy"])} の工作の様子</h1>'
+            '<p class="lead">作る側の集計。学ぶ人の頁には出しません。順位ではありません。</p>'
+            f'<p class="meta">聞く口の質問、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
+            f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
+            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a></p></div></section>'
+            f'<section class="sec"><h2>聞かれた事</h2><p class="meta">作っている途中に聞く口へ来た質問。多い順（同じ文だけを 1 つに数えます）。</p>{asks}</section>'
+            f'<section class="sec"><h2>止まった所</h2>{lines(sm["stuck"], "書かれた物はまだありません。")}</section>'
+            f'<section class="sec"><h2>最初に動いた所</h2>{lines(sm["first_moved"], "書かれた物はまだありません。")}</section>'
+            f'<section class="sec"><h2>何を変えると違いが出そうか</h2>{lines(sm["what_if"], "書かれた物はまだありません。")}</section>'
+            f'<section class="sec"><h2>感想</h2>{lines(sm["impressions"], "書かれた物はまだありません。")}</section>'
+            f'<section class="sec"><h2>動きの札（版ごと）</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{results}</section>')
+    return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE)

@@ -7,6 +7,8 @@
 out/
 __pycache__/
 data/records/media/
+# 工作の様子（聞く口の質問。本人の決定 11-05 朝）。個人の記録なので git に入れない。
+data/making/
 data/contributions_inbox/
 data/contributions_media/
 data/contributions/*

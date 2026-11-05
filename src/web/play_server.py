@@ -17,7 +17,7 @@ import sys
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from omochae import hypotheses, loop, records
+from omochae import hypotheses, loop, making_log, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 
@@ -233,6 +233,11 @@ class Handler(BaseHTTPRequestHandler):
             # 改善の輪の一覧（本人の方針 11-05）。サイト側が輪を回す所で、学ぶ人の順路の帯には入れない。
             from . import kaizen
             return self._send(200, kaizen.page(look, path))
+        m = re.fullmatch(rf"/loop/({SID})", path)
+        if m and m.group(1) in sources():
+            # その玩具の工作の様子（聞かれた事・止まった所・感想・動きの札）。作る側が読む集計で、学ぶ人の頁には出さない。
+            from . import kaizen
+            return self._send(200, kaizen.toy_page(m.group(1), look, path))
         if path == "/toys":
             from . import toys
             return self._send(200, toys.page(look, path))
@@ -448,6 +453,8 @@ class Handler(BaseHTTPRequestHandler):
                 text, how = "今は AI に聞けません", "stop"
             except Exception:
                 text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
+            # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
+            making_log.add_ask(sid, hid, printed_versions(sid, hid)[-1], form.get("question", ""), how)
             return out(200, {"text": text, "from": how})
         rid, failures = records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": printed_versions(sid, hid)[-1], "result": form.get("result"),
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": [], "via": "techo"})
@@ -456,7 +463,8 @@ class Handler(BaseHTTPRequestHandler):
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
         if act == "ask":
-            # 手順の質問は記録に残さず、その場で答えを頁に出す。仮説への返事の順（紙 → 記録と説明 → AI）には入らない。
+            # 手順の質問は、試した記録（仮説への返事）には入れず、その場で答えを頁に出す。順（紙 → 記録と説明 → AI）には入らない。
+            # 質問の文だけは工作の様子（omochae.making_log）に残す: 何で止まるかを、案内と答えを直す材料にする（本人の決定 11-05 朝）。
             from api import ask
             from api.budget import BudgetStop
 
@@ -464,11 +472,12 @@ class Handler(BaseHTTPRequestHandler):
             if hypotheses.need_prediction(sid) or not printed_versions(sid, hid):
                 return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
             try:
-                text, _ = ask.answer(sid, hid, form.get("question", ""))
+                text, how = ask.answer(sid, hid, form.get("question", ""))
             except BudgetStop as e:
-                text = f"今は AI に聞けません（{e}）"
+                text, how = f"今は AI に聞けません（{e}）", "stop"
             except Exception:
-                text = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください"
+                text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
+            making_log.add_ask(sid, hid, printed_versions(sid, hid)[-1], form.get("question", ""), how)
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "predict":
             _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
