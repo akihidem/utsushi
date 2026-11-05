@@ -45,4 +45,15 @@ for look, other, title in (("tenji", "zine", "日本画展の展示"), ("zine", 
     for path in ("/about", "/toys", "/gallery", "/zukan", f"/toy/{G}", f"/toys?look={other}"):
         code, body = get(path)
         assert code == 200 and f'class="skin-{look}' in body and f'skin-{other}' not in body and "?look=" not in body, (look, path)
-print("ok: 皮ごとに 1 サイト")
+
+# 記録は 2 サイトで共有（本人の決定 11-05 朝、カード 083822 の判断 1）: 白の展示で書いた予想が、黒のジンの同じ玩具の頁で見える
+import urllib.parse  # noqa: E402
+
+tenji, zine = up("tenji"), up("zine")
+assert "先に、予想を書く" in zine(f"/toy/{G}")[1]
+server_port = tenji("/")[1] and None  # 入口が開く事だけ見る（下は同じ置き場への書き込み）
+from omochae import hypotheses  # noqa: E402
+
+hypotheses.save_prediction(G, "白の展示で書いた予想")  # 白のサーバと同じ置き場（OMOCHAE_DATA）に書く
+assert "白の展示で書いた予想" in zine(f"/toy/{G}")[1] and "白の展示で書いた予想" in tenji(f"/toy/{G}")[1]
+print("ok: 皮ごとに 1 サイト、記録は共有")

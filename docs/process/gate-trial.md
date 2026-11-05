@@ -190,4 +190,5 @@
 - 手元の全体の試験: `./run.sh` 99 本すべて期待どおり（95 本に新しい 4 本を足した）
 - push と PR: 枝 lane/pictures を push（門は 3 回目で FAIL 0。1 回目は B（たとえの文の 1 語を外部の助けの言及と読む）と C（証拠の Traceback の絶対パス・帳面の作業ツリーの道）、2 回目は言い換える前の commit の文が控えの参照から辿れた事で止まった）。PR は https://github.com/akihidem/utsushi/pull/109。照合 2026-11-05T08:34:53+09:00: 手元 aca71c7fcfcf2bab5d3eb9bb2ae955aacaae1dd1 ＝ GitHub の lane/pictures
 - マージ後の書き戻し: まだ（hack-main の取り込みの後に書く）
+- 本人の判断 1（カード 083822、11-05 朝）: 2 サイトの記録は共有。run-demo.sh の置き場を 1 つ（out/demo-data）に戻し、test_two_sites に「白で書いた予想が黒でも見える」を足した。補足「まだデモだから」なので仮の形のまま
 
