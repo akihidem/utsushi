@@ -23,7 +23,7 @@
 - `data/sources/<玩具の印>.json`（`python -m omochae.ingest` が、仮説の記録を置いた玩具の分だけ作る。手で書かない）
 - `tests/test_tpl_<雛形>.py`
 
-共有のファイル（compose・metrics・play_server・looks・zukan・ingest・棚卸し）を直したくなったら、直さずに返事に書く。統合の担当がまとめて直す。
+共有のファイル（compose・metrics・play_server・looks・zukan・ingest・棚卸し）を直したくなったら、直さずに返事に書く。統括の担当がまとめて直す。
 
 ## 雛形の 1 本が持つ物
 
@@ -58,7 +58,7 @@
 - 床に落ちる値を 1 つ以上入れ、落ちる事を試験で見る
 - `./run.sh` が全部期待どおり。必須の 2 種の試験は 1 本も変えない
 - API の鍵は使わない
-- commit は題が日本語で、本文に「なぜ」の行と `Co-Authored-By` の行を置く。push はしない（統合の担当が PR で入れる）
+- commit は題が日本語で、本文に「なぜ」の行と `Co-Authored-By` の行を置く。push はしない（統括の担当が PR で入れる）
 
 ## 統合
 
