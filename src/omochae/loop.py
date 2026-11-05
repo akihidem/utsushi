@@ -143,6 +143,8 @@ def confirmed_records(source_id, known=None):
     out = []
     d = base() / "records"
     for p in sorted(d.glob("R-*.json")):
+        if (d / "withdrawn" / p.name).exists():
+            continue
         rec = store.read_json_or_skip(p)
         if rec is not None and rec.get("source_id") == source_id and confirmed(rec["id"]):
             out.append({**rec, "interpretation": interpretation(rec["id"])["content"]})
@@ -150,7 +152,7 @@ def confirmed_records(source_id, known=None):
 
 
 def known_ids():
-    ids = {p.stem for p in (base() / "records").glob("R-*.json")}
+    ids = {p.stem for p in (base() / "records").glob("R-*.json") if not (base() / "records/withdrawn" / p.name).exists()}
     ids |= {p.stem for p in (ROOT / "data/known_examples").glob("*.json")}
     ids |= {c["id"] for c in public_list()}
     return ids
