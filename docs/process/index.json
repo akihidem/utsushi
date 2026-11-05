@@ -472,5 +472,11 @@
   "path": "research/32-contributor-recognition.md",
   "hook": "型紙を直した人を示す案（本人の種）。J-025 との切り分けと形の 3 案",
   "status": "種の記録（11-05）。形は本人が決める"
+ },
+ {
+  "id": "research/34",
+  "path": "research/34-talk-build-share-loop.md",
+  "hook": "話す・作る・残すの一周とエンジンごとの改善。提出の核。今ある物と無い物",
+  "status": "本人の言葉（11-05 昼）。音声とエンジンは別の担当で作る"
  }
 ]
