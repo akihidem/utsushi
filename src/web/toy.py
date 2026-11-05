@@ -196,11 +196,12 @@ def ask_form(sid, data, asked=None, note="", filled=None):
             f'<button>聞く</button><p class="meta">{esc(making_log.ASK_NOTICE)}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
 
 
-def record_form(sid, data, own):
+def record_form(sid, data, own, mine=()):
     template = data.get("template", "slider_fan")
     card = hypotheses.sheet_of(sid)
     hyps = [(card["id"], f'仮説 {hypotheses.letter(card)}「{card["name"]}」')] + [(h["id"], f'あなたの仮説「{h["name"]}」') for h in own]
-    opts = "".join(f'<option value="{esc(i)}">{esc(n)}</option>' for i, n in hyps)
+    # 話した考えから作った本人の案は、選んだ形で出す。作った紙の記録として残すため（たたき台の記録に取り違えない）。
+    opts = "".join(f'<option value="{esc(i)}"{" selected" if i in mine else ""}>{esc(n)}</option>' for i, n in hyps)
     # 紙はたたき台の 1 枚なので選ぶ欄を出さない。前に書いた自分の仮説がある時だけ、その紙の記録を残せるように欄を残す（話す形への直しまで）。
     which = f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>' if own else f'<input type="hidden" name="hypothesis" value="{esc(card["id"])}">'
     # 版が 2 つ以上ある時だけ、どの版の紙かを聞く（紙の題の横に刷ってある）。報告が版を取り違えないため（play_server.sheet_version_of）。
@@ -450,7 +451,7 @@ def neighbours(sid):
     return '<p class="links">' + "".join(out) + "</p>"
 
 
-def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None):
+def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None, mine=()):
     """玩具の頁。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で、開いたら仮説の札と刷る口がすぐ見える。
     答えに読まれない事は、門でなく札で守る: 「型紙は正解ではなく、AI が考えた仮説」を作る節の頭に出す（本人の言葉 11-05）。
     photos=False は合言葉なしで開いた場（写真と動画を出さない。J-028）。
@@ -516,7 +517,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
              + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) else "")
              + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"))}</section>')
-    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, own), fill("record"))}</section>'
+    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in own if h["id"] not in spoken or h["id"] in mine], mine), fill("record"))}</section>'
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{sample_records(data)}<p class="links"><a href="/gallery">全部の玩具の、作った物を見る</a></p></section>')

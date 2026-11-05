@@ -21,7 +21,7 @@ os.environ["OMOCHAE_DATA"] = DATA
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import words  # noqa: E402
-from omochae import hypotheses, making_log, talk_log  # noqa: E402
+from omochae import hypotheses, loop, making_log, talk_log  # noqa: E402
 from omochae.marks import OWN_HYPOTHESIS  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -66,8 +66,20 @@ def printed(sid, oid):
 
 
 base_h, base_params = words.base_of(G)
-assert base_h["id"] == "H-A" == words.tatakidai(T), "作り直す元はたたき台（御来迎・虎とも H-A）"
+assert base_h["id"] == hypotheses.sheet_of(G)["id"] and words.base_of(T)[0]["id"] == hypotheses.sheet_of(T)["id"], "作り直す元はたたき台"
 assert base_params and "push_part" in base_params, "たたき台の寸法がある"
+# たたき台は記録の欄（sheet）から読む。決め打ちしない（本人が別の仮説に替える時も 1 か所で済むように）
+real_load = hypotheses.load
+hypotheses.load = lambda sid: {**real_load(sid), "sheet": "H-C"}
+assert words.base_of(G)[0]["id"] == "H-C" and words.base_of(G)[1]["push_part"] == "stick", "欄を替えると、作り直す元も替わる"
+hypotheses.load = real_load
+# 元の寸法はたたき台の一番新しい版（最新版が次の人の型紙になる。本人の方針 11-05）。本人が見て話した紙から変える
+newer = loop.folder() / f"version-{G}-{base_h['id']}-2.json"
+newer.parent.mkdir(parents=True, exist_ok=True)
+newer.write_text(json.dumps({"params": {**base_params, "fold_count": 26}}), encoding="utf-8")
+assert words.base_of(G)[1]["fold_count"] == 26, "版 2 があれば、版 2 の寸法から変える"
+assert "fold_count" in words.think_result(words.base_of(G)[1], {"push_part": "stick"})["params"]
+newer.unlink()
 
 # ── 選ぶ: 印の人の一番新しい考えだけ ──
 assert words.latest_think(G, "") == (None, None), "印の無い画面からは選べない（ほかの人の考えを選ばない）"

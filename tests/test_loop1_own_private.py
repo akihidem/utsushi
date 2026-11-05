@@ -59,8 +59,9 @@ def send(base, path, data=None, cookie=""):
 
 
 def ask(base, who, text):
-    """考えを残して頼む。Returns (Location, cookie の「名=値」)。"""
-    talk_log.add(G, "think", text, who=who)
+    """考えを残して頼む。頁と同じ口から話す（考えにはたたき台の印が付く。hanasu.think_section）。Returns (Location, cookie の「名=値」)。"""
+    code, _, _ = send(base, f"/toy/{G}/talk", {"scene": "think", "hypothesis": hypotheses.sheet_of(G)["id"], "text": text, "who": who})
+    assert code == 303, code
     code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": who})
     assert code == 303, code
     return h["Location"], h["Set-Cookie"].split(";")[0]
@@ -185,6 +186,10 @@ assert send(base, f"/toy/{G}/think-sheet", {"who": "expiry0004"})[0] == 422 and 
 for route, want, who, text in (("record", 303, "handover01", "下から押したい"), ("record-json", 201, "handover02", "上から押したい")):
     t, k, oid, p = adopted(who, text)
     assert opened(k, oid) == 200 and opened(k, oid, "_tejun") == 200
+    # 記録の form: 本人にだけ、その案の選び肢が出て、選ばれている（作った紙の記録として残すため）。ほかの人の案は並べない（型紙は玩具ごとに 1 枚。J-032）
+    label = f'<option value="{oid}" selected>'
+    assert label in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 本人の form に自分の案"
+    assert f'value="{oid}"' not in send(base, f"/toy/{G}")[1].decode(), f"{route}: ほかの人の form に出さない"
     assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who})[0] == want, route
     assert opened(k, oid) == 404 and opened(k, oid, "_tejun") == 404, f"{route}: 記録を残すと、紙も手順の紙も閉じる"
     assert text not in send(base, p, cookie=k)[1].decode(), f"{route}: 話した字も見えない"
@@ -192,6 +197,7 @@ for route, want, who, text in (("record", 303, "handover01", "下から押した
     assert opened("", oid, "_after") == 404, f"{route}: 試した後の紙も、鍵の無い人には開かない"
     code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": who})
     assert code == 422 and not h.get("Set-Cookie"), f"{route}: 同じタブの次の人が押しても、前の人の案へ戻らない"
+    assert f'value="{oid}"' not in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 閉じた案は form にも出さない"
     age(t, 121)
     assert opened(k, oid, "_after") == 404, f"{route}: 試した後の紙も期限まで"
     age(t, 1)

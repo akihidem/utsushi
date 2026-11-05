@@ -8,7 +8,7 @@ import json
 import secrets
 from datetime import datetime, timedelta
 
-from omochae import hypotheses, loop, making_log, store, talk_log
+from omochae import hypotheses, loop, making_log, records, store, talk_log
 from omochae.compose import TEMPLATES, compose
 from omochae.contrib import check_pii, too_long
 from omochae.model import Failure
@@ -107,24 +107,14 @@ THINK_NOTE = ("次の考えは、たたき台の型紙（base）を見た人が�
               "考えが雛形に無い機構を言う時は fits を false にして not_fit に書きます。考えが寸法を言っていない時は、たたき台のままを出します。")
 
 
-# たたき台の仮説の既定（本人の決定 11-05 18:08: 御来迎・虎とも H-A）。#332 の「たたき台の紙」の欄がデータに入ったら、tatakidai() だけをその欄から読む形に替える。
-TATAKIDAI = "H-A"
-
-
-def tatakidai(source_id):
-    """その玩具のたたき台の仮説の ID。作り直す元はここ 1 か所で決める（話した時に選んだ仮説には依らない。本人の決定 11-05 18:08）。"""
-    data = hypotheses.load(source_id)
-    ids = [h["id"] for h in data["hypotheses"]]
-    return TATAKIDAI if TATAKIDAI in ids else ids[0]
-
-
 def base_of(source_id):
-    """たたき台の仮説と、その寸法。"""
-    data = hypotheses.load(source_id)
-    h = next(x for x in data["hypotheses"] if x["id"] == tatakidai(source_id))
+    """たたき台の仮説（記録の欄 sheet。hypotheses.sheet_of）と、その一番新しい版の寸法。作り直す元はここ 1 か所で決める（話した時に見た仮説には依らない。本人の決定 11-05 18:08）。
+    一番新しい版なのは、最新版が次の人の型紙になるので（本人の方針 11-05）、本人が見て話した紙がそれだから。"""
+    h = hypotheses.sheet_of(source_id)
     # 雛形を持たない仮説（型紙なしの紙）は、寸法のたたき台にならない。
-    params = h.get("params") if h.get("template_id", "") is not None and isinstance(h.get("params"), dict) else None
-    return h, params
+    if h.get("template_id", "") is None or not isinstance(h.get("params"), dict):
+        return h, None
+    return h, loop.version_params(source_id, h["id"], loop.latest_version(source_id, h["id"]))[0]
 
 
 def _think_floor(text):
@@ -158,10 +148,15 @@ def key_live(w):
 
 
 def key_open(w):
-    """話した字が読める物を開いてよいか。期限の中で、元の考えがまだ記録に結ばれていない時。
-    記録を残すのが交代の区切り: 1 人の作業は期限より短いので、期限だけでは次の人に間に合わない。記録の口は 2 つあるが、どちらも bind を呼ぶので、ここで見れば足りる。"""
+    """話した字が読める物を開いてよいか。期限の中で、まだ記録を残していない時。
+    記録を残すのが交代の区切り: 1 人の作業は期限より短いので、期限だけでは次の人に間に合わない。記録の口は 2 つあるが、どちらも下の 2 つのどちらかになる。
+    - たたき台の紙の記録: 元の考えが記録に結ばれる（bind）。
+    - その案の紙の記録: 考えはたたき台に付いている（頁の口が付ける）ので、結ばれない。記録の側を見る。"""
     talk = store.read_json_or_skip(making_log.folder() / f"{w.get('from_talk')}.json")
-    return key_live(w) and talk is not None and not talk.get("record_id")
+    if not key_live(w) or talk is None or talk.get("record_id"):
+        return False
+    oid = w.get("own_id")
+    return not (oid and any(r["hypothesis_id"] == oid for r in records.all_records(w["source_id"])))
 
 
 def think_fresh(talk):

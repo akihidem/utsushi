@@ -239,7 +239,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), **kw)
+        from . import think_sheet
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), **kw)
 
     def do_GET(self):
         try:

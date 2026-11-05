@@ -3,7 +3,7 @@
 本人の言葉（11-05 17:57）「インカメラか音声でAIが作った仮説を見ながら自分の考えを話す。このときこの仮説に反応して型紙が生成されるとなお良い」。
 生まれる紙は「たたき台から変えた、その人の案」（#332）で、新しい仮説を並べる形にしない。
 本人の決定（11-05 18:08）「仮説は書かず、話すことができる。そうすると型紙を再生成できる」: 入口は話した考え（talk_log の think）だけで、
-書く欄（自分の仮説の form）は使わない。作り直す元はその玩具のたたき台（api.words.tatakidai。今は H-A）。中身の道は api.words（request_think・fill_think・adopt_words）。
+書く欄（自分の仮説の form）は使わない。作り直す元はその玩具のたたき台の一番新しい版（api.words.base_of）。中身の道は api.words（request_think・fill_think・adopt_words）。
 
 判断の芯:
 - どの考えか: 画面のその場限りの印（who。skin.WHO_SCRIPT が POST のフォームに足す）で、その人が最後に残した考えを選ぶ（words.latest_think）。印が無い画面（JS なし）では作れない。
@@ -83,6 +83,12 @@ def _holds(handler, sid, token):
     """その印の案を、この画面が今開いてよいか（鍵を持ち、期限の中で、まだ記録で区切っていない）。"""
     w = words.by_token(sid, token) if token in _tokens(handler) else None
     return bool(w and words.key_open(w))
+
+
+def mine(handler, sid):
+    """この画面が今開いてよい案の OWN-n。記録の form に、本人の案だけを出すために引く（ほかの人の案は並べない）。"""
+    found = (words.by_token(sid, t) for t in _tokens(handler))
+    return {w["own_id"] for w in found if w and w.get("own_id") and words.key_open(w)}
 
 
 def opens(handler, sid, oid, after=False):
