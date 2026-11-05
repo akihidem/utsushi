@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_techo_site.py（足した検査を、直す前の頁に当てた）
+# commit: ad50255
+AssertionError: <title> が「上げた物と、職人の言葉」で、帯の「上げた物と職人の言葉」・h1 の「上げた物」と合わない
+rc=1
