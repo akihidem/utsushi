@@ -1,5 +1,5 @@
 """寸法から頁の配置を作る。描画はしない（検査だけを速く回せるようにするため。道具 check_params もここを使う）。"""
-from .floors import check_art, check_bom, check_layout
+from .floors import check_art, check_bom, check_holes, check_layout
 from .marks import mark_lines
 from .model import TextBox
 from .page import PAGES
@@ -62,7 +62,7 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
             r["material"] = ""
         if r["key"] == inject.get("bom_drop_original"):
             r["original_guess"] = ""
-    failures += check_bom(rows)
+    failures += check_bom(rows, tpl.parts(p))
     page = PAGES[page_name]
     texts = []
     title = title or f"{source['toy']} 型紙（{tpl.title(p)}）版 {version}"
@@ -107,6 +107,7 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], text_x, note_y, BODY_SIZE, width)
     failures += check_layout(page, parts, texts)
     failures += check_art(parts)
+    failures += check_holes(parts)
     # paste_image は負の対照のためだけ。図を貼った PDF を、刷った後の検査が見つけられるか確かめる。
     return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (text_x, ruler_y), "paste_image": bool(inject.get("paste_image"))}, failures
 

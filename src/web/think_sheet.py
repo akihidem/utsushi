@@ -29,7 +29,7 @@ import urllib.parse
 from api import words
 from omochae import hypotheses, making_log, records
 
-from .play_server import esc, out_dir
+from .play_server import esc, out_dir, print_own
 
 # ── 利用者向けの文。本人の決定（11-05 21:5x・全部このまま）で採られた文 ──
 GO = "この考えから紙を作る"
@@ -167,8 +167,7 @@ def confirm(sid, token):
         oid = w.get("own_id", "")
     else:
         return None, FAILED
-    out_dir(sid).mkdir(parents=True, exist_ok=True)
-    if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
+    if print_own(sid, oid) != 0:
         return None, FAILED
     # 紙に刷った組を、刷る時に残す（たたき台を刷る時と同じ型紙の確定）。束が、この紙の記録を同じ組の札や工夫と同じ群に入れるため。記録の時の組では、版が上がった後に違う組になる。
     # 型紙なしの紙には組が無い。残すと、紙の組の報告に数えられる。

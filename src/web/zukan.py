@@ -79,9 +79,10 @@ def record_date(r):
     return f"{int(m[1])} 月 {int(m[2])} 日" if m else when
 
 
-def observation_lines(sid, data):
-    """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。"""
-    return [{"text": f"{record_title(r, data)}（{record_date(r)}・{wording.record_no(r['id'])}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
+def observation_lines(sid, data, photos=True):
+    """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。
+    photos=False は合言葉なしで開いた場で、内部の番号を字に出さない（札への道は record_id で残る。J-028）。"""
+    return [{"text": f"{record_title(r, data)}（{record_date(r)}" + (f"・{wording.record_no(r['id'])}" if photos else "") + "）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
 def hypothesis_lines(sid, data, photos=True):
@@ -99,7 +100,7 @@ def hypothesis_lines(sid, data, photos=True):
 def lines_for(sid, photos=True):
     """その玩具の図鑑の文を、印ごとに返す。予想の段を外した（本人の決定 11-05、#242）ので、仮説はいつも出す。"""
     data, src = hypotheses.load(sid), _source(sid)
-    return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data),
+    return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data, photos),
             "hypotheses": hypothesis_lines(sid, data, photos), "holding": src.get("holding", "")}
 
 

@@ -15,7 +15,9 @@ import pathlib
 import re
 import secrets
 import sys
+import threading
 import urllib.parse
+from concurrent.futures import Future
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from omochae import hypotheses, loop, making_log, media_review, records, store
@@ -179,16 +181,36 @@ def _num(v):
         return v  # 数でない物は記録の検査に落とさせ、理由を画面に返す
 
 
+def without_notes(page):
+    """頁の style と script の注釈を外す。作る側の控え（決定や Issue の番号、内部の名前）なので、合言葉なしで開いた場には送らない（J-028）。
+    script は行の頭の // と、文の後ろの // だけを外す。字の中の // や URL を切らないため。"""
+    def clean(m):
+        tag, attrs, part = m.groups()
+        if tag == "style":
+            part = re.sub(r"/\*.*?\*/", "", part, flags=re.S)
+        else:
+            part = re.sub(r"(?m)^[ \t]*//[^\n]*\n?", "", part)
+            part = re.sub(r"(?m)(?<=[;{}])[ \t]*//[^\n'\"`]*$", "", part)
+        return f"<{tag}{attrs}>{part}</{tag}>"
+
+    return re.sub(r"<(style|script)\b([^>]*)>(.*?)</\1>", clean, page, flags=re.S)
+
+
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
 
 
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
+    # Server の見出しに Python の版を出さない（公開の前の点検）。
+    server_version = "utsushi"
+    sys_version = ""
 
     def log_message(self, *a):  # 記録の文を記録に残さない
         pass
 
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+        if isinstance(body, str) and ctype.startswith("text/html") and getattr(self.server, "public_open", False):
+            body = without_notes(body)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -253,7 +275,7 @@ class Handler(BaseHTTPRequestHandler):
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), **kw)
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), **kw)
 
     def do_GET(self):
         try:
@@ -579,6 +601,14 @@ class Handler(BaseHTTPRequestHandler):
 
         rec = loop.record(rid)
         sid = rec["source_id"]
+        from . import techo_site
+
+        is_video = lambda f: f.endswith(("mp4", "mov"))
+        files = techo_site.media_of(rid)
+        videos = [f for f in media_review.shown_to(rid, files, self._up_key()) if is_video(f)]  # 人や声が入ると確かめた動画は渡さない（#314）
+        # 確認の前の動画を、上げた本人でない画面から Claude に渡さない。頁に釦は出ないが、開いたままの古い頁から届く。
+        if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
+            return self._refuse(403, "受け付けられません")
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
@@ -594,8 +624,6 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 from api import observe
 
-                from . import techo_site
-                videos = [f for f in media_review.visible(rid, techo_site.media_of(rid)) if f.endswith(("mp4", "mov"))]  # 人や声が入ると確かめた動画は渡さない（#314）
                 if not videos:
                     return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""), anchor=rid)
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
@@ -638,7 +666,7 @@ class Handler(BaseHTTPRequestHandler):
         if failures:
             from . import toy
 
-            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"]), at=f"next-{rid}", filled=("next", form)))
+            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
         return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
@@ -682,9 +710,14 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
     def _ask(self, sid, hid, question):
-        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。"""
+        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。
+        話す口と同じ入口の床を先に当てる（#87）。手帖は 1 回押した後は聞き続けるので、名乗りや連絡先の形の話し声も字になって届く。
+        当たった字は Claude へ送らず、返す字は採られた文にする。残す時は add_ask が字を落として数だけ残す。"""
         from api import ask
+        from omochae import talk_log
 
+        if talk_log.blocked(question or ""):
+            return making_log.ASK_NAME_VOICE, "floor"
         try:
             return ask.answer(sid, hid, question)
         except Exception as e:
@@ -783,19 +816,53 @@ class Handler(BaseHTTPRequestHandler):
         self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record")
 
 
+_making = {}  # 作っている最中の紙。（玩具, 案）→ その結果
+_making_guard = threading.Lock()
+
+
+def _one_at_a_time(key, make):
+    """同じ案の紙を同時に作らない（#301）。作っている人がいれば作り直さず、その結果を待って同じ物を返す。
+    順に作り直すと、同じ釦に人が集まる場（#332）で、最後の人が人数分待つ。作る人が落ちたら、待っている人も同じ失敗を受け取る。"""
+    with _making_guard:
+        running = _making.get(key)
+        if running is None:
+            mine = _making[key] = Future()
+    if running is not None:
+        return running.result()
+    try:
+        result = make()
+    except BaseException as e:
+        mine.set_exception(e)
+        raise
+    else:
+        mine.set_result(result)
+        return result
+    finally:
+        with _making_guard:
+            del _making[key]
+
+
 def print_latest(sid, hid):
     """仮説の一番新しい版を刷る。日本語の頁と英語の頁で同じ物を使う（紙は同じ。J-030）。刷った版を返し、刷れなければ None。
     刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、より良い型紙を提供する」）。
     一番新しい版が刷れない時は 1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。"""
-    out_dir(sid).mkdir(parents=True, exist_ok=True)
-    v = loop.latest_version(sid, hid)
-    while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
-        if v <= 1:
-            return None
-        v -= 1
-    # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
-    loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-    return v
+
+    def make():
+        v = loop.latest_version(sid, hid)
+        while loop.print_version(sid, hid, v, out_dir(sid)) != 0:
+            if v <= 1:
+                return None
+            v -= 1
+        # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
+        loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+        return v
+
+    return _one_at_a_time((sid, hid), make)
+
+
+def print_own(sid, oid):
+    """自分の仮説の紙を刷る。刷れたら 0。順番と置き換えは print_latest と同じ。"""
+    return _one_at_a_time((sid, oid), lambda: loop.print_own(sid, oid, out_dir(sid)))
 
 
 def fixes_of(form):

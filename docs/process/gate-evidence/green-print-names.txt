@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_print_names.py
+# commit: e6fc74c（回した時の HEAD）
+ok 既定の名前に玩具が入り、同じ H-A の紙が別々に残る
+rc=0
