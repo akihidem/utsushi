@@ -2,7 +2,7 @@
 
 なぜ要るか: 紙の字が雛形ごとに 7 通りあり、g/m² と mm は家や店の紙と結びつかない。「見込み」は作る側の言葉で、
 糸で動かす雛形の 18 案は「…に貼るを 1 枚」と文が崩れていた。雛形を足すたびに揺れるので、全部の案を試験で見る。
-字は本人の決まり（11-05）で、下の PAPER_LINES と BOX の 4 つのほかは落とす。必須 2 種の今の組の字は凍結の床なので変えない。次の組（goraigo-v11・tora-v4）で直す時に、下の FROZEN を外す。
+文面は本人の確認待ちの案で、下の PAPER_LINES と BOX の 4 つのほかは落とす。必須 2 種の今の組の字は凍結の床なので変えない。次の組（goraigo-v11・tora-v4）で直す時に、下の FROZEN を外す。
 """
 import json
 import pathlib
@@ -30,7 +30,7 @@ for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     cases += [(path.stem, h["id"], h.get("template") or data.get("template", "slider_fan"), h["params"]) for h in data["hypotheses"]]
 assert len(cases) > 100
 
-# 1. 必須 2 種のほかは、紙の行が決まりの字で、作る側の言葉と数が出ない
+# 1. 必須 2 種のほかは、紙の行が案の字で、作る側の言葉と数が出ない
 checked = 0
 for sid, hid, tid, params in cases:
     got = lines(tid, params)
@@ -39,7 +39,7 @@ for sid, hid, tid, params in cases:
         continue
     checked += 1
     assert got[0] in PAPER_LINES, (sid, hid, got[0])
-    # 2 行目より後に紙の行を足さない。厚紙の行は決まりの字だけ
+    # 2 行目より後に紙の行を足さない。厚紙の行も案の字だけ
     assert not PAPER_LINES.intersection(map(str, got[1:])) and all(m == BOX for m in map(str, got) if "厚紙" in m), (sid, hid, got)
     # 「前後」は見ない。竹ひごの長さの「25cm 前後」のように、紙の行のほかでは分かる言葉として使っている。
     assert not re.search(r"見込み|貼るを|g/m²", " ".join(map(str, got))), (sid, hid, got)
