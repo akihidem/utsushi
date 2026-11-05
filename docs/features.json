@@ -430,5 +430,17 @@
    "tests/test_build_now.py"
   ],
   "unverified": "必須 2 種は今の版の紙を変えず次の版から刷る（凍結の床）。本物の Claude API は未実行。文面は本人の確認待ち"
+ },
+ {
+  "id": "f38",
+  "name": "紙一枚の印と当時の材料の印（本人の言葉 11-05、#255）: 仮説の札に別々の軸で出し、一覧を絞れる",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/hypotheses.py",
+   "src/web/toy.py",
+   "src/web/toys.py",
+   "tests/test_material_axes.py"
+  ],
+  "unverified": "印は材料の一覧から機械で出す。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
  }
 ]

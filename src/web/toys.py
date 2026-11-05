@@ -44,12 +44,25 @@ def card(sid):
     return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
 
 
-def page(skin, path="/toys"):
-    """全部の玩具を選ぶ頁。skin は皮の名前（skin.SKINS の鍵）。"""
+def paper_only_sids(sids):
+    """紙 1 枚で作れる仮説を持つ玩具。材料の一覧から出す（hypotheses.material_marks）。"""
+    out = []
+    for s in sids:
+        data = hypotheses.load(s)
+        if any(hypotheses.material_marks(s, h, data)["paper_only"] for h in data["hypotheses"]):
+            out.append(s)
+    return out
+
+
+def page(skin, path="/toys", paper=False):
+    """全部の玩具を選ぶ頁。skin は皮の名前（skin.SKINS の鍵）。paper は紙 1 枚で作れる玩具だけに絞る（本人の言葉 11-05「一枚の紙から作る選択肢もある」）。"""
     sids = sources()
+    if paper:
+        sids = paper_only_sids(sids)
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
             f'<p class="meta">{len(sids)} の玩具。{esc(NOTE)}</p>'
+            + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

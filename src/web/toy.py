@@ -292,6 +292,20 @@ def neighbours(sid):
     return '<p class="links">' + "".join(out) + "</p>"
 
 
+# 2 つの印は別々の軸（本人の言葉 11-05「一枚の紙から作る選択肢もある」「竹とか糸は江戸時代にもあったし使ったらよく再現できるということ」）。上下を付けない。
+AXIS_NOTE = "紙だけの印と当時の材料の印は別々の物で、上下はありません。"
+
+
+def material_labels(sid, h, data):
+    m = hypotheses.material_marks(sid, h, data)
+    out = ""
+    if m["paper_only"]:
+        out += '<span class="lb">紙だけ</span>紙 1 枚とのりで作れる形です。'
+    if m["period"]:
+        out += f'<span class="lb">当時の材料</span>{esc("・".join(m["period"]))}を使う形です。江戸時代にもあった材料で、再現に近づきます。'
+    return f'<p class="meta">{out}</p>' if out else ""
+
+
 def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True):
     """玩具の頁。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で、開いたら仮説の札と刷る口がすぐ見える。
     答えに読まれない事は、門でなく札で守る: 「型紙は正解ではなく、AI が考えた仮説」を作る節の頭に出す（本人の言葉 11-05）。
@@ -318,7 +332,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     own = hypotheses.own_hypotheses(sid)
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。並びは記録の順で、順位は学ぶ人の画面に出さない（J-013・J-025）。
     body = hero + (f'<section class="sec" id="kasetsu">{note}<h2>すぐ作る</h2><p class="lead">作りたい案を選んで、型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
-                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}</p><div class="plates">')
+                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}{esc(AXIS_NOTE)}</p><div class="plates">')
     # 並びは記録の順位でなく、元の記録の並び。順位は学ぶ人の画面に出さない（J-013）。
     for h in data["hypotheses"]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
@@ -327,7 +341,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
-                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{thumb}<div class="acts">'
+                 f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{material_labels(sid, h, data)}{thumb}<div class="acts">'
                  f'<form method="post" action="/toy/{sid}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙と手順の紙を刷る</button></form>'
                  f'<p class="meta">{printed}</p></div></div>')
     body += "</div>"

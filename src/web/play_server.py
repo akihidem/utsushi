@@ -279,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, kaizen.toy_page(m.group(1), look, path))
         if path == "/toys":
             from . import toys
-            return self._send(200, toys.page(look, path))
+            return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
         if path == "/gallery":
             from . import techo_site
             from .demo_samples import STYLE as SAMPLE_STYLE
