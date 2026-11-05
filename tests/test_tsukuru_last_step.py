@@ -20,9 +20,9 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import making_log  # noqa: E402
+from omochae import hypotheses, making_log  # noqa: E402
 from web import tsukuru  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 WHO = "ab12cd34ef"
@@ -118,9 +118,10 @@ def road_to_the_record():
 
 
 def passes_which_sheet():
-    # 必須 2 種はたたき台の紙だけを刷るので（#332）、2 枚目を刷れる試作の玩具で見る。
+    # 頁から刷れるのはたたき台だけ（J-032）。前に刷った別の紙で作っている人の形は、試作の玩具に紙の口で直に刷って見る。
     toy = "NDL-1187053-R0000019-L"
-    assert post(f"/toy/{toy}/print", {"hypothesis": "H-B"})[0] == 303
+    out_dir(toy).mkdir(parents=True, exist_ok=True)
+    assert hypotheses.print_sheet(toy, "H-B", str(out_dir(toy) / "H-B_v1"), 1) == 0
     code, _, headers = post(f"/toy/{toy}/step", {"hypothesis": "H-B", "step": str(tsukuru.count(toy, "H-B")), "event": "done"})
     assert code == 303 and "see=H-B" in headers["Location"], f"どの紙かを渡していない: {headers['Location']}"
 
