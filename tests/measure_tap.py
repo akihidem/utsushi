@@ -90,7 +90,7 @@ def main():
     server = play_server.serve(0)
     base = f"http://127.0.0.1:{server.server_address[1]}"
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    before = ["/", "/about", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery"]
+    before = ["/", "/about", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/no-such-page"]
     # 予想の前と後で頁が違う（#242 で予想の段が外れるまで）。後の頁も測る
     hypotheses.save_prediction(G, "押すと開く")
     data = urllib.parse.urlencode({"hypothesis": "H-A"}).encode()

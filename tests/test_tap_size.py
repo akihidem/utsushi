@@ -7,7 +7,7 @@ import os
 import re
 import tempfile
 import threading
-import urllib.parse
+import urllib.error
 import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
@@ -29,7 +29,7 @@ PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", "/zukan", f"/zu
 # 床は机の幅の見た目を変えない。スマホと iPad の幅か、指で触る機器の時だけ効く
 assert "(max-width:1100px)" in skin.TAP_FLOOR and "(pointer:coarse)" in skin.TAP_FLOOR, skin.TAP_FLOOR[:80]
 assert "min-height:44px" in skin.TAP_FLOOR
-for selector in (".nav a", ".tabs a", ".links a", "summary", "button", "select", "label"):
+for selector in (".nav a", ".tabs a", ".links a", ".notice-back a", "summary", "button", "select", "label"):
     assert selector in skin.TAP_FLOOR, selector
 
 for look in ("tenji", "zine"):
@@ -41,6 +41,12 @@ for look in ("tenji", "zine"):
         assert not small, ("小さい字の指定", where, sorted(set(small)))
         ems = re.findall(r"font-size:\s*(0?\.\d+)r?em", page)
         assert all(float(x) >= .75 for x in ems), ("小さい字の指定（em）", where, ems)
+# 断りの頁（404）にも床が届く（#136）
+try:
+    urllib.request.urlopen(f"{base}/no-such-page", timeout=60)
+    raise AssertionError("404 のはず")
+except urllib.error.HTTPError as e:
+    assert e.code == 404 and skin.TAP_FLOOR in e.read().decode(), e.code
 server.shutdown()
 
 # 皮なしの形（画面からは通らず、頁を直に作る時の形）にも床が届く
