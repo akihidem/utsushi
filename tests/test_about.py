@@ -15,6 +15,9 @@ for k, h in pages.items():
     for w in ("成功", "失敗", "正解", "仮説 A", "H-A", "つまみ", "内筒"):
         assert w not in h, (k, w)
     assert "IntersectionObserver" not in h and "<blockquote>" in h, k
+# 末尾の 2 つは同じ釦の形にする。字のリンクを並べると、並びの高さに伸びて縦長の押す所になり、下線が字から離れる（#141）
+for k, h in pages.items():
+    assert '<a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a>' in h, k
 roots = [re.search(r":root\{([^}]*)\}", h).group(1) for h in pages.values()]
 assert roots[0] != roots[1] and "--bg:#fcfcfa" in roots[0] and "--bg:#0b0a09" in roots[1]
 print("ok")
