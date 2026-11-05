@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_write_limit.py
+# commit: 2c809c99（回した時の HEAD）
+/tmp/tmpfft6sdmy/play/NDL-1187053-R0000005-L/.tmp-cn8cf8c9/H-A_v1.pdf
+/tmp/tmpfft6sdmy/play/NDL-1187053-R0000005-L/.tmp-cn8cf8c9/H-A_v1_tejun.pdf
+/tmp/tmpfft6sdmy/play/NDL-1187053-R0000005-L/.tmp-cn8cf8c9/H-A_v1_after.pdf
+/tmp/tmpfft6sdmy/play/NDL-1187053-R0000005-L/.tmp-i0nixido/H-A_v1.pdf
+/tmp/tmpfft6sdmy/play/NDL-1187053-R0000005-L/.tmp-i0nixido/H-A_v1_tejun.pdf
+/tmp/tmpfft6sdmy/play/NDL-1187053-R0000005-L/.tmp-i0nixido/H-A_v1_after.pdf
+ok: 書き込みの口に、同じ相手からの短い間の数の上限
+rc=0

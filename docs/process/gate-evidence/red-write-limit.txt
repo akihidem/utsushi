@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_write_limit.py
+# commit: 7eb67274（回した時の HEAD）
+/tmp/tmpvjvhpd82/play/NDL-1187053-R0000005-L/.tmp-714dcnra/H-A_v1.pdf
+/tmp/tmpvjvhpd82/play/NDL-1187053-R0000005-L/.tmp-714dcnra/H-A_v1_tejun.pdf
+/tmp/tmpvjvhpd82/play/NDL-1187053-R0000005-L/.tmp-714dcnra/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_write_limit.py", line 83, in <module>
+    assert st == 429 and json.loads(body) == {"kept": False, "why": BUSY}, (st, body[:200])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (200, '{"kept": true, "note": "残しました。型紙や説明をよくするのに使います。"}')
+rc=1
