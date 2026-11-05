@@ -27,7 +27,7 @@ from demo.flip import FPS, H, PAPER, SHU, SUMI, W, contact_sheet, ease, fade, fe
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SOURCES = pathlib.Path(__file__).with_name("scene2_sources.json")
-DURATION = 15.0
+DURATION = 14.0
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
@@ -35,9 +35,9 @@ CUES = {
     "title_out": (2.2, 3.0),  # 題の 2 行が消える（寄った頁と重ならないように）
     "push": (2.6, 6.6),       # 図へゆっくり寄る（目が動くだけ。図の中は動かない）
     "song": (6.8, 8.0),       # 歌が右に現れる
-    "closing": (11.0, 12.4),  # 締めの字幕。15 秒まで止めて読ませる
+    "closing": (10.6, 11.8),  # 締めの字幕。14 秒まで止めて読ませる
 }
-SONG_OUT = (10.2, 10.9)  # 歌は締めの字幕より先に消す（重ねると両方読めない。試し見で直した）
+SONG_OUT = (9.8, 10.5)  # 歌は締めの字幕より先に消す（重ねると両方読めない。試し見で直した）
 HOLD = (CUES["push"][1], CUES["closing"][0])  # 図が止まっている間。床はここで図の画素が変わらない事を見る
 PAPER_CUT = 175   # これより明るい灰は紙とみなして白に飛ばす
 FIG_RIGHT = 1080  # 寄った図の右の端。歌はこれより右に置き、床が図の領域だけを比べられるようにする
@@ -183,7 +183,7 @@ def main(argv=None):
         return 4
     scene = Scene2(spread, rec, src)
     if a.sheet:
-        contact_sheet(scene, a.sheet, times=(0.9, 2.2, 4.0, 5.5, 7.0, 8.2, 10.0, 11.5, 14.5))
+        contact_sheet(scene, a.sheet, times=(0.9, 2.2, 4.0, 5.5, 7.0, 8.2, 10.0, 11.5, 13.8))
     return render(scene, pathlib.Path(a.out))
 
 

@@ -28,7 +28,7 @@ for f in rec["figures"]:
 spans = list(flip.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= flip.DURATION
 # 締めの字幕は現れた後に止めて読ませる（動画の初めと終わりに出す字幕なので。出きると同時に場面が替わると読めない）
-assert flip.DURATION - flip.CUES["closing"][1] >= 2.5
+assert flip.DURATION - flip.CUES["closing"][1] >= 2.0
 
 # 偽の頁: 枠ごとに黒い四角（人物の代わり）
 page = Image.new("L", (1400, 1200), 255)

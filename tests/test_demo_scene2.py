@@ -45,7 +45,7 @@ fx, fy, fx1, fy1 = scene2.pct_box((px1 - px, py1 - py), rec["figure_pct"])
 d.rectangle((px + fx + 80, py + fy + 80, px + fx1 - 80, py + fy1 - 80), fill=0)
 d.line((px + 200, py + 200, px + 200, py + 600), fill=0, width=8)
 scene = scene2.Scene2(spread, rec, src)
-for t in (0.5, 4.0, 7.0, 11.5, 14.9):
+for t in (0.5, 4.0, 7.0, 11.5, 13.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (W, H) and a.tobytes() == b.tobytes(), t
 

@@ -1,4 +1,4 @@
-"""言葉の札: 本人の言葉を紙の地に出す場面と、終わりの字幕の札と、最後の問いの札。
+"""言葉の札: 本人の言葉を紙の地に出す場面と、つなぎの字幕の札と、終わりの字幕の札と、最後の問いの札。
 
 使い方: python -m demo.words <札の名前> --out <repo の外の場所>/word.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -12,6 +12,7 @@ exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（こ�
   短く切った文は本人の言葉と書かない決まりなので、ここには全文だけを置く。
 - 問いの文面は本人の決定（11-05）。説教くさくしないよう、見ている人を問い詰めない形にした。
   本人の言葉の記録の引用ではないので、言葉の札の印（FROM）は付けない。
+- 本人の決定（11-05）: つなぎ 1 の文は案のまま決まった。字を変えず、図と歌の場面の次、本人の言葉の札の前に出す。本人の言葉の札にはしないので、その印を付けない。
 - 本人の決定（11-05）: 初めと終わりの字幕は同じ文。終わりは、この字幕 → 問いの順にする。字と置き場は demo.flip の 1 か所から読む（初めと終わりで食い違わないため）。
   本人が決めた字幕で、言葉の記録の引用ではないので、言葉の札の印は付けない。
 - 隅で北斎の人物を重ねて動かす。「絵は動きを止めて残した」で始まる筋を字の間も続けるため。薄くして字を先に読ませる。
@@ -34,11 +35,14 @@ ASK = "あなたなら、何を作りますか。"
 FROM = "本人の言葉（11-05）"
 # 札ごとの (行, 長さの秒, 行の間の秒)。長さは字を 1 秒に 5 字で読む見当に、最後に止めて読む間を足して決めた。
 CARDS = {
-    "word_touch": (("AIが良くなるのは副次的なもので、", "みんなが手で実際に作ること", "その楽しさに気づくことが最初。"), 12.0, 3.0),
+    "word_touch": (("AIが良くなるのは副次的なもので、", "みんなが手で実際に作ること", "その楽しさに気づくことが最初。"), 11.0, 3.0),
     "word_ai": (("型紙は不完全でうまく動かないけど", "それを人間が工夫で乗り切る過程を", "AIにフィードバックして", "型紙が改善される"), 11.0, 1.6),
 }
-ASK_SECONDS = 9.0
-CLOSE_SECONDS = 6.0                    # 30 字を 1 秒に 5 字で読む見当
+ASK_SECONDS = 7.0
+CLOSE_SECONDS = 5.0                    # 30 字。場面 1 で 1 度見た字なので、1 秒に 5 字の見当より少し短い
+# つなぎ 1（本人の決定 11-05）。字は変えない。行の切れ目だけで分ける。
+BRIDGE = ("むかしの子どもも、今の子どもも、", "もらったおもちゃより、", "それを包んでいた紙やリボンのひもで", "遊んでしまうことがあります。")
+BRIDGE_SECONDS, BRIDGE_STEP, BRIDGE_LEADING = 12.0, 2.6, 96   # 58 字を 1 秒に 5 字で読む見当
 # 核の一周の 3 段（本人の言葉 11-05「今話してるこの部分が今回のハッカソンの核になる！！」の中身を窓口が整理した文）。本人の言葉の印は付けない。
 STEPS = (("①", "仮説を見ながら、自分の考えを話す"), ("②", "作りながら、工夫を話す"), ("③", "できた物を上げて、工夫と考えを残す"))
 SIZE, LEADING, LEFT = 66, 112, 230     # 字の大きさ・行の間（px）・字の左端
@@ -68,12 +72,12 @@ def cues_of(name):
     """札の合図の表。行ごとに 0.7 秒で現れる。"""
     if name in ("ask", "close"):
         return {"in": (0.0, 1.4)}
-    lines, _, step = CARDS[name]
+    lines, step = (BRIDGE, BRIDGE_STEP) if name == "bridge" else (CARDS[name][0], CARDS[name][2])
     return {"page": (0.0, 0.3), **{f"line{i}": (0.3 + i * step, 1.0 + i * step) for i in range(len(lines))}}
 
 
 def seconds_of(name):
-    return {"ask": ASK_SECONDS, "close": CLOSE_SECONDS}[name] if name in ("ask", "close") else CARDS[name][1]
+    return {"ask": ASK_SECONDS, "close": CLOSE_SECONDS, "bridge": BRIDGE_SECONDS}[name] if name in ("ask", "close", "bridge") else CARDS[name][1]
 
 
 def _ink(layer, v):
@@ -124,6 +128,25 @@ class Card:
         return img
 
 
+class BridgeCard:
+    """つなぎの字幕。紙の地に字だけで、行は順に現れる。本人の言葉の札と見分けが付くよう、朱の線と印を付けない。"""
+
+    def __init__(self, cues):
+        self.cues = cues
+        self.duration = BRIDGE_SECONDS
+
+    def frame(self, t):
+        img = Image.new("RGB", (W, H), PAPER)
+        draw = ImageDraw.Draw(img)
+        top = (H - len(BRIDGE) * BRIDGE_LEADING) // 2 - 30
+        for i, line in enumerate(BRIDGE):
+            a, b = self.cues[f"line{i}"]
+            v = ease((t - a) / (b - a))
+            if v > 0:
+                text(draw, (W // 2, top + i * BRIDGE_LEADING), line, 58, fade(SUMI, v), True, "ma")
+        return img
+
+
 class CloseCard:
     """終わりの字幕。場面 1 の締めと同じ字を、紙の地に字だけで出す。問いの前に、初めの言葉へ戻すため。"""
 
@@ -162,6 +185,7 @@ def fits():
     out = {name: W - 80 - LEFT - max(f.getlength(s) for s in CARDS[name][0]) for name in CARDS}
     out["ask"] = W - 160 - ImageFont.truetype(SERIF_BOLD, ASK_SIZE).getlength(ASK)
     out["close"] = W - 160 - max(ImageFont.truetype(SERIF_BOLD, 58).getlength(s) for s in CLOSING)
+    out["bridge"] = W - 160 - max(ImageFont.truetype(SERIF_BOLD, 58).getlength(s) for s in BRIDGE)
     return out
 
 
@@ -171,8 +195,8 @@ def _render(name, cues, argv=None):
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
     ap.add_argument("--cache", default=str(ROOT / "out/demo/cache"))
     a = ap.parse_args(argv)
-    if name in ("ask", "close"):
-        scene = (AskCard if name == "ask" else CloseCard)(cues)
+    if name in ("ask", "close", "bridge"):
+        scene = {"ask": AskCard, "close": CloseCard, "bridge": BridgeCard}[name](cues)
     else:
         if not in_record(CARDS[name][0]):
             print(f"検査できない: 札 {name} の字が記録（philosophy.md）と違う", file=sys.stderr)
@@ -199,7 +223,7 @@ def scene_module(name):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or (sys.argv[1] not in CARDS and sys.argv[1] not in ("ask", "close")):
-        print(f"検査できない: 札の名前は {'・'.join([*CARDS, 'close', 'ask'])}", file=sys.stderr)
+    if len(sys.argv) < 2 or (sys.argv[1] not in CARDS and sys.argv[1] not in ("ask", "close", "bridge")):
+        print(f"検査できない: 札の名前は {'・'.join([*CARDS, 'bridge', 'close', 'ask'])}", file=sys.stderr)
         sys.exit(4)
     sys.exit(scene_module(sys.argv[1]).main(sys.argv[2:]))

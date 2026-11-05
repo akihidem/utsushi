@@ -19,7 +19,7 @@ for hyp in scene6.SHOWN_HYPS:
 
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene6.CUES.values())
-assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 12.0
+assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 10.0
 
 # 朱の枠は今の配置の部品から引く。A には下からの切り込み、C には土台、どちらも色の境で折る
 layouts, _ = scene6.current_layouts()

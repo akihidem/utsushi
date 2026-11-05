@@ -34,7 +34,7 @@ MIN_GAP = 0.3           # これより近い合図は 1 つに束ねる（拍が
 SCALE = (146.83, 155.56, 196.00, 220.00, 233.08, 293.66, 311.13, 392.00)
 MOTIF = (0, 2, 3, 2, 4, 3, 2, 1)
 # 場面ごとの濃さ。話の山（場面 4・6）で少し濃くする。
-LEVEL = {"flip": 0.6, "scene2": 0.4, "word_touch": 0.5, "core_map": 0.7, "scene3": 0.6, "core_make": 0.7, "core_keep": 0.7, "core_voice": 0.5, "scene5": 0.7, "core_gallery": 0.8, "core_loop": 0.8, "scene6": 0.85, "word_ai": 0.6, "scene7": 0.6, "close": 0.35, "ask": 0.3}
+LEVEL = {"flip": 0.6, "scene2": 0.4, "bridge": 0.4, "word_touch": 0.5, "core_map": 0.7, "scene3": 0.6, "core_make": 0.7, "core_keep": 0.7, "core_voice": 0.5, "scene5": 0.7, "core_gallery": 0.8, "core_loop": 0.8, "scene6": 0.85, "word_ai": 0.6, "scene7": 0.6, "close": 0.35, "ask": 0.3}
 # 1 枚ごとに木の音を鳴らす所: (場面, 合図, 枚数)。枚数は絵の側の数と同じ（18 人。flip の重ねは 1 秒 6 枚 × 6 秒）。
 RUNS = (("flip", "boxes", 18), ("flip", "flip", 36), ("scene7", "figs_in", 18))
 STRONG = ("page_in", "title_in", "quote1", "figs_in", "closing", "caption", "page", "title", "in")

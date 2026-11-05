@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw
 from demo.flip import H, PAPER, ROOT, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 from omochae.templates.slider_fan import SHEET_SET
 
-DURATION = 12.0
+DURATION = 10.0
 
 # 本人の所見（docs/process/trials/README.md の表の文を一字一句そのまま。床で照らす）
 QUOTES = (
@@ -51,11 +51,11 @@ CAPTION = ("作った人の言葉で、", "次の版が変わる。")
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
     "quote1": (0.0, 0.8),        # 所見
-    "quotes_out": (3.0, 3.6),
-    "pair_a": (3.6, 4.3),        # 仮説 A の紙: v7 と今
-    "boxes_a": (4.6, 5.6),       # 差の朱の枠
-    "pair_a_out": (7.8, 8.3),
-    "closing": (8.4, 9.6),       # 締めの字幕（12 秒まで止めて読ませる）
+    "quotes_out": (2.8, 3.3),
+    "pair_a": (3.3, 4.0),        # 仮説 A の紙: v7 と今
+    "boxes_a": (4.2, 5.2),       # 差の朱の枠
+    "pair_a_out": (6.6, 7.1),
+    "closing": (7.2, 8.4),       # 締めの字幕（10 秒まで止めて読ませる）
 }
 
 # 置き場（px）。紙は高さ 720px。左に v7、右に今の紙、間の帯に朱の札を置く。
@@ -260,7 +260,7 @@ class Scene:
                 "朱の枠は変えた所")
 
 
-SHEET_TIMES = (1.5, 2.8, 3.8, 4.8, 6.0, 7.5, 8.6, 10.0, 11.8)
+SHEET_TIMES = (1.5, 2.6, 3.6, 4.6, 5.6, 6.4, 7.4, 8.6, 9.8)
 
 
 def main(argv=None):
