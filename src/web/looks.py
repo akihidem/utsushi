@@ -8,7 +8,7 @@
 """
 from omochae import hypotheses
 
-from . import skin
+from . import skin, wording
 from .play_server import ROOT, esc, page, source, sources
 
 # 残した 2 つの入口。大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
@@ -55,7 +55,7 @@ def _nopic(t):
     return "" if t["pic"] else f'<p class="cap"><a href="{esc(t["image_url"])}">図を見る（国立国会図書館）</a></p>'
 
 
-QUOTE = "原文の引用。確かめた人: 本人"
+QUOTE = f"原文の引用。確かめた人: {wording.MAKER}"
 
 # 見比べるための写しを撮る補助。?only=<節の id> で、その節だけを画面の頭に出す。
 # なぜ: 縦に流れる案は、頭からしか写しを撮れず、途中の見開きを並べて比べられないため。ふだんの閲覧には効かない。
