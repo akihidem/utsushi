@@ -630,7 +630,7 @@ class Handler(BaseHTTPRequestHandler):
         if failures:
             from . import toy
 
-            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"]), at=f"next-{rid}", filled=("next", form)))
+            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
         return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):

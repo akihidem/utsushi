@@ -292,7 +292,7 @@ NEXT_REASONS = {
 }
 
 
-def next_reasons(failures, sid, hid, param):
+def next_reasons(failures, sid, hid, param, to=None):
     """「次の版を作る」が通らなかった時に出す文。理由のあとに、今の値と次の一手を 1 行足す。"""
     template = hypotheses.load(sid).get("template", "slider_fan")
     now = _params_now(sid, hid, template)
@@ -302,7 +302,9 @@ def next_reasons(failures, sid, hid, param):
     out, on_paper = [], False
     for f in failures:
         if f.floor == "F5.range" and f.where == param and span:
-            text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
+            # 幅の中なのに範囲の床に落ちるのは、整数の決まりなど別の理由。幅を言うと、31.4 に「6〜40 の間で」と的外れに断る事になるので、床の文を出す。
+            inside = isinstance(to, (int, float)) and span[0] <= to <= span[1]
+            text = (f.message if inside else f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください") + (f"（今 {value}）。" if value else "。")
         elif f.floor.startswith("F5."):
             # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
             text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
@@ -327,7 +329,11 @@ def next_form(r, back=""):
         return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
     now = _params_now(r["source_id"], target, template)
-    opts = "".join(_param_option(template, k, now) for k in sorted(ALLOWED[template]))
+    # 1 つ変えるだけでは通らない寸法は出さない。選んでも必ず断られる項目になるため（loop.movable_params）。
+    movable = loop.movable_params(r["source_id"], target)
+    opts = "".join(_param_option(template, k, now) for k in sorted(ALLOWED[template]) if k in movable)
+    if not opts:
+        return ""
     # 解釈はすぐ上の説明とほぼ同じ問いなので、説明を初めから入れておく（#129）。そのまま採っても、書き直してもよい。
     told = (loop.explanation(r["id"]) or {}).get("text", "")
     hidden = f'<input type="hidden" name="back" value="{esc(back)}">' if back else ""
