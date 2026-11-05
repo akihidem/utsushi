@@ -68,9 +68,8 @@ def byte_range(header, size):
 
 
 def out_dir(sid):
-    """刷った紙の置き場。試験で本物の置き場を汚さないよう、記録と同じ環境変数に従う。"""
-    base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "play" if os.environ.get("OMOCHAE_DATA") else ROOT / "out/play"
-    return base / sid
+    """刷った紙の置き場。"""
+    return hypotheses.play_dir(sid)
 
 
 def sources():

@@ -52,6 +52,12 @@ def files_of(folder, kind, source_id):
     return out
 
 
+def play_dir(source_id):
+    """刷った紙の置き場。試験で本物の置き場を汚さないよう、記録と同じ環境変数に従う。"""
+    base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "play" if os.environ.get("OMOCHAE_DATA") else ROOT / "out/play"
+    return base / source_id
+
+
 def own_paths(source_id):
     return sorted(files_of(_pred_dir(), "own", source_id), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
 
@@ -70,11 +76,29 @@ def save_own(source_id, name, how, evidence, params=None):
     folder = _pred_dir()
     folder.mkdir(parents=True, exist_ok=True)
     with store.locked(folder):
-        n = max((int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)), default=0) + 1
+        # 消した番号も数える（drop_own の印）。番号を使い回すと、古いリンクが別の人の紙を開く。
+        gone = (int(p.stem.rsplit("-", 1)[1]) for p in folder.glob(f"own-{source_id}-*.gone"))
+        n = max([int(p.stem.rsplit("-", 1)[1]) for p in own_paths(source_id)] + list(gone), default=0) + 1
         rec = {"id": f"OWN-{n}", "source_id": source_id, "name": name.strip(), "how_it_moves": how.strip(), "evidence": evidence.strip(), "params": params, "by": "human",
                "written_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds"), "status": "untested"}
         store.write_json(folder / f"own-{source_id}-{n}.json", rec)
     return rec, []
+
+
+def drop_own(source_id, own_id):
+    """自分の仮説を消す（記録の取り下げから呼ぶ）。その記録と、刷った紙の全部。消した物の名前を返す。字を持たない印だけを残して、番号を使い回さない。"""
+    gone = []
+    n = own_id.rsplit("-", 1)[1]
+    path = _pred_dir() / f"own-{source_id}-{n}.json"
+    if path.exists():
+        path.with_suffix(".gone").touch()  # 先に印を置く。途中で落ちても番号は戻らない
+        path.unlink()
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted(d.glob(f"{own_id}_v*")) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
 
 
 def sheet_of(source_id):
