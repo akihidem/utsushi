@@ -9,6 +9,9 @@
 - どの考えか: 画面のその場限りの印（who。skin.WHO_SCRIPT が POST のフォームに足す）で、その人が最後に残した考えを選ぶ（words.latest_think）。印が無い画面（JS なし）では作れない。
 - 採った案の字は、玩具の頁の札に出さない（words.spoken_own_ids で外す）: 話した字は、記録に結ぶ前は学ぶ人の頁に出さない決まり（talk_log）。本人は印の URL で見る。
 - 頼んだ後の様子は、本人だけが持つ印（token）の URL で見る（/toy/<玩具>?at=think-<印>#think）。W-番号は数えられるので、番号では開かない。
+- 話した字が読める物（頼んだ後の頁・OWN-n の紙・字が刷られた手順の紙）は、作った本人の画面からしか開かない。その場限りの印（who）を確かめて頼んだ人に、印（token）を cookie で渡す。
+  who は sessionStorage にあって GET に載らず、絵と別タブの PDF では送れないため、cookie にした。URL に載せないので、URL を渡されても開かない。ブラウザを閉じれば消える（押し直すと、同じ who の人は受け取り直せる）。
+- 合言葉なしの場では、節も受け口も閉じ、OWN-n の紙は開かない（J-028 の線。誰でも開ける場で、人の言葉を別の人に見せない）。
 - 鍵がある所では、押した 1 回で Claude に寸法を写させる。鍵が無い所・合言葉なしで開いた場（J-028: 費用のかかる呼び出しをさせない）・呼べなかった時は、
   作る側の待ちに置く（作る側が端末で python -m api.words fill を打つ）。どちらも、刷る前に本人がこの節で、変えた所と決めた所を見て「この紙にする」を押す。
 - 刷るのは今ある自分の仮説の道（hypotheses.save_own → print_own）。紙には「自分で立てた」の印（marks.OWN_HYPOTHESIS）が刷られ、
@@ -53,6 +56,41 @@ def labels(h):
     """自分の仮説として残す時の名前と根拠（紙に刷られる）。文面は本人の確認待ち。"""
     letter = hypotheses.letter(h)
     return f"仮説 {letter} から変えた案", f"仮説 {letter} の紙を見て話した考え"
+
+
+COOKIE = "utsushi_own_"
+
+
+def _tokens(handler):
+    """その画面が持つ印。"""
+    out = set()
+    for part in handler.headers.get("Cookie", "").split(";"):
+        name, _, value = part.strip().partition("=")
+        if name.startswith(COOKIE) and value:
+            out.add(value)
+    return out
+
+
+def _key_header(handler, w):
+    """本人の画面へ印を渡す。ブラウザを閉じれば消えるように Max-Age を付けない。外から開く場（合言葉付き）は https なので Secure を付ける。"""
+    secure = "; Secure" if getattr(handler.server, "public_key", None) else ""
+    return ("Set-Cookie", f"{COOKIE}{w['id']}={w['token']}; Path=/; HttpOnly; SameSite=Lax{secure}")
+
+
+def opens(handler, sid, oid):
+    """OWN-n の紙を、この画面に開いてよいか。書いて立てた仮説の紙は今までどおり（合言葉なしの場を除く）。"""
+    if getattr(handler.server, "public_open", False):
+        return False
+    if oid not in words.spoken_own_ids(sid):
+        return True
+    return any((w := words.by_token(sid, t)) and w.get("own_id") == oid for t in _tokens(handler))
+
+
+def allowed_at(handler, at):
+    """頼んだ後の頁を開く at。本人の印でなければ、節を開かない（URL だけでは話した字を見せない）。"""
+    if at.startswith("think-") and (getattr(handler.server, "public_open", False) or at[len("think-"):] not in _tokens(handler)):
+        return ""
+    return at
 
 
 def use_claude(handler):
@@ -176,8 +214,11 @@ def post(handler, sid, act, form):
         token, msg = (w["token"], ASKED) if w else ("", why)
     else:
         token = form.get("t", "")
-        _, why = confirm(sid, token)
+        w = None
+        # 印を知っているだけでは採れない。本人の画面（cookie）からだけ。
+        _, why = confirm(sid, token) if token in _tokens(handler) else (None, FAILED)
         msg = why or ""  # できた時の文は節の中に出る（2 回並べない）
     if not token or (act == "think-ok" and why):
         return handler._send(422, handler._toy(sid, errors=[msg], at="think"))
-    return handler._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at=think-{urllib.parse.quote(token)}#think")])
+    headers = [("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at=think-{urllib.parse.quote(token)}#think")]
+    return handler._send(303, "", headers=headers + ([_key_header(handler, w)] if w else []))

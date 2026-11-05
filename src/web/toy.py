@@ -498,7 +498,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     for h in (x for x in own if x["id"] not in spoken):
         # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
         free = f'{h["id"]}_v1_free.pdf'
-        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
+        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if photos and (out_dir(sid) / free).exists() else ""  # 合言葉なしの場では開かない紙の入口を出さない
         body += (f'<article class="card" id="own-{esc(h["id"])}">{head("own-" + h["id"])}<h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を作る</button></form><p>{link}</p></article>')
     body += f'<details{" open" if fill("own") else ""}><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
@@ -507,7 +507,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
 
     body += hanasu.think_section(sid, data, head("hanasu"))
     from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ1、Issue #335）
-    body += think_sheet.section(sid, at, head(at))
+    if photos:  # 合言葉なしの場（photos=False）では節を出さない。受け口も閉じている（J-028）
+        body += think_sheet.section(sid, at, head(at))
     body += analogy_section(data)
     body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'

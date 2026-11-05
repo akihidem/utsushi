@@ -130,14 +130,22 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 opener = urllib.request.build_opener(NoRedirect)
 
 
+jar = {}  # 本人の画面が持つ cookie
+
+
 def send(path, data=None):
-    req = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode() if data is not None else None, method="POST" if data is not None else "GET",
-                                 headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
+    headers = {"Content-Type": "application/x-www-form-urlencoded", "Origin": base}
+    if jar:
+        headers["Cookie"] = "; ".join(f"{k}={v}" for k, v in jar.items())
+    req = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode() if data is not None else None, method="POST" if data is not None else "GET", headers=headers)
     try:
         r = opener.open(req)
-        return r.status, r.read().decode(), dict(r.headers)
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode(), dict(e.headers)
+    except urllib.error.HTTPError as e:  # 飛び先を追わないので、303 もここへ来る
+        r = e
+    if r.headers.get("Set-Cookie"):
+        k, _, v = r.headers["Set-Cookie"].split(";")[0].partition("=")
+        jar[k] = v
+    return getattr(r, "code", r.status), r.read().decode(), dict(r.headers)
 
 
 code, body, _ = send(f"/toy/{G}")
@@ -164,7 +172,7 @@ assert code == 303, code
 code, body, _ = send(h["Location"].split("#")[0])
 src = re.search(r'<section class="sec" id="think">.*?<img src="([^"]+\.png)"', body, re.S)
 assert code == 200 and src, "押した後に着く頁の節に、紙の絵"
-r = opener.open(base + src.group(1))
+r = opener.open(urllib.request.Request(base + src.group(1), headers={"Cookie": "; ".join(f"{k}={v}" for k, v in jar.items())}))
 assert r.status == 200 and r.headers["Content-Type"] == "image/png" and r.read()[:8] == b"\x89PNG\r\n\x1a\n", "絵が開く"
 sections.append(think_sheet.section(G, f"think-{tok}"))
 for html in sections:
