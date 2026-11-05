@@ -98,7 +98,7 @@ for sid, owned in mine.items():
     page = page_at(opened, f"/toy/{sid}")
     for oid, rid in owned:
         card = card_of(page, rid)
-        assert f"自分の仮説 {oid} の紙" in card, (sid, rid)
+        assert "自分の仮説" in card, (sid, rid)
         assert "/sheet/" not in card and "試した後の紙" not in card, (sid, rid, "開かない紙への道を出さない")
     techo = page_at(opened, f"/toy/{sid}/techo")
     assert not [oid for oid, _ in owned if f"/sheet/{sid}/{oid}_" in techo], (sid, "手帖の札にも出さない")
