@@ -1,5 +1,7 @@
 # utsushi
 
+*Edo nishiki* is a Japanese picture book of toys from 1773. It has pictures and short poems, but it does not say how the toys worked. utsushi turns the pictures into paper models you can print. Each model is a guess about how the toy moved. Print one, build it, try it, and write down what you saw. The paper responds first. After you explain what you saw, AI can respond too. A paper model that moves does not prove how the original was made.
+
 <!-- summary:start -->
 ## 30 秒の要約
 

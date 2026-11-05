@@ -26,6 +26,11 @@ INTRO = (
     "Two toys have full templates, in Japanese only. One is the Goraigo (roughly, \"welcoming descent\"), a tube with a fan. The other is a tiger based on old papier-mâché toys. An earlier Goraigo moved in one trial with adults. No one has finished the tiger yet. The other toys are untested drafts, and their names are our guesses.",
     "A paper model that moves does not prove how the original was made. These models are for trying things out. They are not exact copies of the old toys.",
 )
+# J-030 の短い紹介。序の頁と README の頭に同じ文を置く（#260）。頭の 4 文は本人が採った文（11-05、#318）で、一字も変えない。残りは同じ書き方にそろえた。
+SHORT_INTRO = ("<i>Edo nishiki</i> is a Japanese picture book of toys from 1773. It has pictures and short poems, but it does not say how the toys worked. "
+               "utsushi turns the pictures into paper models you can print. Each model is a guess about how the toy moved. "
+               "Print one, build it, try it, and write down what you saw. The paper responds first. After you explain what you saw, AI can respond too. "
+               "A paper model that moves does not prove how the original was made.")
 # 本人が採った文（11-05、#318）。一字も変えない。
 PREMISE = "This template is not the answer. It is a guess made by an AI. Some parts may not work. Tell us how you fixed them. That helps us make the next version better."
 JA_ONLY = "The templates print in Japanese only. Part numbers, line styles, and the steps here are what you need to follow them."

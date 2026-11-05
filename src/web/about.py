@@ -62,4 +62,10 @@ def page(skin_name, path="/about"):
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">文面は本人の採否待ち。本人の言葉の引用と、国立国会図書館の書誌の値だけで組んでいます。</p></section>'
             '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a></p></section></div>')
+    # 英語の短い紹介（本人の言葉 11-05「いろんな国の人に知って欲しい」、#260）。en は play_server を読むので、循環を避けてここで読む。
+    from . import en
+
+    body = body.replace('<section class="sec"><p class="links"><a class="btn" href="/toys">',
+                        f'<section class="sec" id="english" lang="en"><h2>In English</h2><p class="lead">{en.SHORT_INTRO}</p><p class="links"><a href="/en">Read more and print in English</a></p></section>'
+                        '<section class="sec"><p class="links"><a class="btn" href="/toys">', 1)
     return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)

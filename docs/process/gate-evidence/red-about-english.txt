@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_en.py
+# commit: 3600ad9（回した時の HEAD）
+/tmp/tmpnccaxyke/data/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpnccaxyke/data/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpnccaxyke/data/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_en.py", line 108, in <module>
+    assert HEAD in about_page and en.SHORT_INTRO in about_page, look
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: tenji
+rc=1

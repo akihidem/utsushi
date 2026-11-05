@@ -25,7 +25,7 @@ os.chdir(tmp.name)
 
 from omochae import hypotheses, ways  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
-from web import en  # noqa: E402
+from web import about, en  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -100,6 +100,15 @@ assert set(en.WAY_EN) == {name for _, name in ways.LABELS}
 # 本人が採った文（11-05、#318）。一字でも変わったら落ちるように、ここに決定の文を書く
 assert en.PREMISE == "This template is not the answer. It is a guess made by an AI. Some parts may not work. Tell us how you fixed them. That helps us make the next version better."
 assert en.PREMISE in get(f"/en/toy/{G}")
+
+# 序の頁に英語の短い紹介（#260）。頭の文は本人が採った文（11-05、#318）。一字でも変わったら落ちるように、ここに決定の文を書く
+HEAD = "is a Japanese picture book of toys from 1773. It has pictures and short poems, but it does not say how the toys worked. utsushi turns the pictures into paper models you can print. Each model is a guess about how the toy moved."
+for look in ("tenji", "zine"):
+    about_page = about.page(look)
+    assert HEAD in about_page and en.SHORT_INTRO in about_page, look
+    assert 'lang="en"' in about_page and 'href="/en"' in about_page, look
+readme = (ROOT / "README.md").read_text(encoding="utf-8")
+assert "*Edo nishiki* " + HEAD in readme and readme.index(HEAD) < readme.index("30 秒の要約"), "README の頭に同じ文"
 
 # 日本語の頁に帯と道
 ja = get(f"/toy/{G}")
