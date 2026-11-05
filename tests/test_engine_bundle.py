@@ -78,12 +78,13 @@ assert making_log.add_ask(G, "H-A", 1, "足は山折りですか？", "words", s
 assert making_log.add_ask(G, "H-A", 1, f"{PHONE} に電話してもいいですか", "words", step=2) is not None  # 残す時に文が落ちる
 
 # 話した事（Issue 307。話す口 talk_log の記録）: 作る前の考え・作りながらの工夫（手順の番号つき）・できた後の話
-SPOKEN = {"think": "筒を押すと、扇が上に出て開くと思う", "craft3a": "足を先に全部折ってから扇を畳んだ", "craft3b": "折る前に定規で線をなぞった",
+SPOKEN = {"think": "筒を押すと、扇が上に出て開くと思う", "craft3a": "足を先に全部折ってから扇を畳んだ", "craft3b": "折る前に定規で線をなぞった", "craft3c": "折った後に指でしごいた",
           "craft5": "つまみは最後に付けた", "keep": "薄い紙に替えたら開きやすかった", "keep_old": "台が載せにくかった", "gone": "取り下げる記録に残した話",
           "think_old": "柄で押すと、台ごと上がると思った", "hidden": "作る側が読んで隠した話"}
 assert talk_log.add(G, "think", SPOKEN["think"], hypothesis_id="H-A", who=WHO1)[1] == []
 assert talk_log.add(G, "craft", SPOKEN["craft3a"], hypothesis_id="H-A", sheet_version=1, step=3, who=WHO1, via="voice")[1] == []
 assert talk_log.add(G, "craft", SPOKEN["craft3b"], hypothesis_id="H-A", sheet_version=1, step=3, who=WHO2)[1] == []
+assert talk_log.add(G, "craft", SPOKEN["craft3c"], hypothesis_id="H-A", sheet_version=1, step=3, who=WHO1)[1] == []  # 同じ人が同じ手順で 2 回話した。人の数は増えない
 assert talk_log.add(G, "craft", SPOKEN["craft5"], hypothesis_id="H-A", sheet_version=1, step=5)[1] == []  # その場限りの印が無い話
 assert talk_log.add(G, "keep", SPOKEN["keep"], record_id=rid1, who=WHO1)[1] == []
 assert talk_log.add(G, "keep", SPOKEN["keep_old"], record_id=rid4)[1] == []  # 直す前の組の紙の記録に結んだ話
@@ -99,7 +100,7 @@ hand_talk = {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "templa
 # 記録に結んだ後に、作る側が隠した字（読んで名前などに気づいた時に隠す）は、束にも入れない。記録そのものは、今までどおり数える
 assert talk_log.add(T, "keep", SPOKEN["hidden"], record_id=rid6)[1] == [] and talk_log.set_share(T, rid6, False)[1] == []
 # 記録の番号があるのに記録が無い話（記録が消えた後に残った物）は、束に入れない
-(making_log.folder() / "talk-20261105-1201-orphan00.json").write_text(json.dumps({**hand_talk, "scene": "keep", "step": None, "record_id": "R-7777", "text": "消えた記録に結んだ話"}, ensure_ascii=False), encoding="utf-8")
+(making_log.folder() / "talk-20261105-1201-orphan00.json").write_text(json.dumps({**hand_talk, "scene": "keep", "step": None, "record_id": "R-7777", "share": True, "text": "消えた記録に結んだ話"}, ensure_ascii=False), encoding="utf-8")
 # 取り下げた記録に結んだ話は、取り下げと一緒に消える（話す口の決まり）。束にも出ない
 rid_gone, _ = records.add({"source_id": T, "hypothesis_id": "H-A", "sheet_version": 1, "result": "揺れた", "fixes": []})
 assert talk_log.add(T, "keep", SPOKEN["gone"], record_id=rid_gone)[1] == [] and records.withdraw(rid_gone)[1] == []
@@ -154,7 +155,7 @@ assert len(long) == 1 and len(long[0]["text"]) == ENGINE_MAX_TEXT and long[0]["t
 # 5b. 話した事: 場面が文の種類になり、工夫は手順の番号つき。同じ手順で工夫を話した数と、その場限りの印で数えた人の数が craft_steps に入る
 assert texts[("think", None, SPOKEN["think"])] == 1 and texts[("keep", None, SPOKEN["keep"])] == 1
 assert texts[("craft", 3, SPOKEN["craft3a"])] == 1 and texts[("craft", 3, SPOKEN["craft3b"])] == 1 and texts[("craft", 5, SPOKEN["craft5"])] == 1
-assert now["craft_steps"] == {"3": {"talks": 2, "people": 2}, "5": {"talks": 1, "people": 0}}, now["craft_steps"]
+assert now["craft_steps"] == {"3": {"talks": 3, "people": 2}, "5": {"talks": 1, "people": 0}}, now["craft_steps"]
 # 記録に結んだ話は、その記録と同じ群に入る（直す前の組の紙の記録の話を、今の組に数えない）
 old_texts = {(t["kind"], t["text"]) for t in groups[("slider_fan", "goraigo-v7")]["texts"]}
 assert ("keep", SPOKEN["keep_old"]) in old_texts and ("keep", SPOKEN["keep_old"]) not in {(t["kind"], t["text"]) for t in now["texts"]}
@@ -222,5 +223,14 @@ for rid, at in (("R-0094", "2026-11-05T11:00:00+09:00"), ("R-0093", "2026-11-05T
     (records.folder() / f"{rid}.json").write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
 where = {rid: g["sheet_set"] for g in eb.build()["groups"] for rid in g["record_ids"]}
 assert (where["R-0094"], where["R-0093"], where["R-0092"], where["R-0091"], where["R-0090"]) == ("tora-v2", "tora-v3", "", "", "tora-v2"), where
+
+# 11. 群 1 つの文の上限（エンジンの入口は 2000 件を超えると束ごと断る）。話した字は一番数が増えるので、束の側で持つ。
+# 上限を超えた時は、どの種類も残るように順に取る（並びのまま切ると、後ろの種類が丸ごと消える）。超えなければ何も変えない
+few = [{"kind": "stuck", "step": None, "text": f"文{i}", "count": 1} for i in range(3)]
+assert eb._cap_texts(few) == few and eb.MAX_TEXTS == 2000
+many = [{"kind": k, "step": None, "text": f"{k}{i}", "count": 1} for k in ("stuck", "craft") for i in range(1500)] + [{"kind": "keep", "step": None, "text": "1 件だけの種類", "count": 1}]
+capped = eb._cap_texts(many)
+assert len(capped) == eb.MAX_TEXTS and {t["kind"] for t in capped} == {"stuck", "craft", "keep"}
+assert [t for t in many if t in capped] == capped  # 並びは元のまま
 
 print("OK test_engine_bundle")

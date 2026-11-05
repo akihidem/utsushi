@@ -30,6 +30,7 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 終了: 0 = できた / 4 = できない（書く先が決まりの外・呼び方の誤り）。1 と 2 は使わない。
 """
 import argparse
+import itertools
 import json
 import pathlib
 import re
@@ -51,6 +52,7 @@ TEXT_KEYS = ("kind", "step", "text", "count")
 # 話した事の 3 つは、話す口の場面の名のまま: think 作る前の考え・craft 作りながらの工夫・keep できた後の話。
 TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep")
 MAX_TEXT = 300  # エンジンの入口の、文 1 つの上限。長い感想は頭だけを入れる（全文は記録の番号から人が読む）
+MAX_TEXTS = 2000  # エンジンの入口の、群 1 つの文の上限。超えると束ごと断られる
 MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
 MEASURE = re.compile(r"[a-z_]{1,30}")
@@ -105,6 +107,20 @@ def _group(groups, template, sheet_set):
         groups[key] = {"template": key[0], "sheet_set": key[1], "reports": 0, "results": {}, "moved_word": "", "not_moved_word": "",
                        "stuck": {}, "craft": {}, "reached": {}, "finished": set(), "minutes": [], "measures": {}, "record_ids": [], "texts": {}}
     return groups[key]
+
+
+def _cap_texts(texts):
+    """群 1 つの文を上限までにする。超えた時は種類ごとに順に取る（並びのまま切ると、後ろの種類が丸ごと消える）。並びは元のまま返す。
+    全部を見たい時は、記録の番号から人が読む。超えなければ何も変えない。"""
+    if len(texts) <= MAX_TEXTS:
+        return texts
+    by_kind = {}
+    for i, t in enumerate(texts):
+        by_kind.setdefault(t["kind"], []).append(i)
+    turns = [i for row in itertools.zip_longest(*by_kind.values()) for i in row if i is not None]
+    kept = set(turns[:MAX_TEXTS])
+    print(f"文が多い群があるので、{len(texts) - MAX_TEXTS} 件を束に入れなかった", file=sys.stderr)
+    return [t for i, t in enumerate(texts) if i in kept]
 
 
 def _span(values):
@@ -247,8 +263,8 @@ def build():
                     "craft_steps": {str(n): {"talks": c["talks"], "people": len(c["who"])} for n, c in sorted(g["craft"].items())},
                     "minutes": _span(g["minutes"]), "measures": {k: _span(v) for k, v in sorted(g["measures"].items())},
                     "record_ids": g["record_ids"],
-                    "texts": [{"kind": kind, "step": step, "text": text, "count": n}
-                              for (kind, step, text), n in sorted(g["texts"].items(), key=lambda kv: (TEXT_KINDS.index(kv[0][0]), kv[0][1] or 0, kv[0][2]))]})
+                    "texts": _cap_texts([{"kind": kind, "step": step, "text": text, "count": n}
+                              for (kind, step, text), n in sorted(g["texts"].items(), key=lambda kv: (TEXT_KINDS.index(kv[0][0]), kv[0][1] or 0, kv[0][2]))])})
     # 雛形の id が分からない群（記録が壊れている等）は入れない。エンジンの入口が、束ごと断るため。
     out = [g for g in out if g["template"]]
     # 今の刷った組は、群に出てくる雛形の分だけ（記録の無い雛形の名を束に並べない）。組の名を持たない雛形と、形の外の名は入れない。
