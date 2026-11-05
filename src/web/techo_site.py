@@ -251,6 +251,13 @@ if (!SR) { mic.hidden = true; } else {
     rec.onend = () => { if (on && !speaking) { try { rec.start(); } catch (e) {} } };
     on = true; mic.setAttribute('aria-pressed', 'true'); rec.start();
   };
+  // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
+  addEventListener('pagehide', () => { on = false; if (rec) { try { rec.stop(); } catch (e) {} } });
+  let paused = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (on) { paused = true; on = false; mic.setAttribute('aria-pressed', 'false'); try { rec.stop(); } catch (e) {} } return; }
+    if (paused) { paused = false; on = true; mic.setAttribute('aria-pressed', 'true'); if (!speaking) { try { rec.start(); } catch (e) {} } }
+  });
 }
 // 上げる: 先に記録を作り（見た事）、その R-番号に写真と動画を 1 つずつ送る。
 // 送った後は頁の中で一覧を入れ替える。同じ道へ移っても読み込まれず、「…」のまま残って押し直すと記録が 2 件になるため（#143）。読み込み直さないので、話している手順も切れない。
