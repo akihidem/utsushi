@@ -1,6 +1,7 @@
 """デモのリンクの先が本当に開くかを見る（run-demo.sh から呼ぶ。#159）。
 
 使い方: python -m web.demo_check <URL の頭> --key-file <合言葉のファイル> [--via <つなぐ先>]
+        python -m web.demo_check <URL の頭> --no-key [--via <つなぐ先>]（合言葉なしで開く形。入口が 200 か）
         python -m web.demo_check --port-free <port>
 exit: 0 = 開く・port が空いている / 4 = 開かない・port が使用中。理由は stderr に 1 行。
 
@@ -57,6 +58,17 @@ def opens(base, key, via=None):
         return f"つながらない（{type(e).__name__}）"
 
 
+def opens_public(base, via=None):
+    """合言葉なしで開く形（run-demo.sh --open）。入口が 200 なら None。合言葉の門が無いので 303 は返らない。"""
+    base = base.rstrip("/")
+    host = urllib.parse.urlsplit(base).netloc
+    try:
+        code, _ = _get(f"{(via or base).rstrip('/')}/", host)
+        return None if code == 200 else f"入口に {code} が返った（200 を待っていた）"
+    except (OSError, http.client.HTTPException) as e:
+        return f"つながらない（{type(e).__name__}）"
+
+
 def port_free(port):
     with socket.socket() as s:
         s.settimeout(TIMEOUT)
@@ -67,6 +79,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("base", nargs="?")
     ap.add_argument("--key-file")
+    ap.add_argument("--no-key", action="store_true")
     ap.add_argument("--via")
     ap.add_argument("--port-free", type=int)
     args = ap.parse_args(argv)
@@ -78,6 +91,12 @@ def main(argv=None):
     if not args.base:
         print("URL の頭か --port-free が要る", file=sys.stderr)
         return 4
+    if args.no_key:
+        why = opens_public(args.base, via=args.via)
+        if why:
+            print(why, file=sys.stderr)
+            return 4
+        return 0
     try:
         key = pathlib.Path(args.key_file).read_text(encoding="utf-8").strip()
     except (OSError, TypeError) as e:
