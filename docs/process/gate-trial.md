@@ -903,7 +903,7 @@
 - 足した決め: ほかの仮説の記録そのものと説明は残して読めるようにする。ほかの仮説の記録に経路で直に送っても 422 で断る
 - 出していない範囲: 新しい文は足していない。改善の輪で採った新しい仮説の扱いは、ループ 2 の枝が入った後の本
 - ゴールの要件: R-0002 に次の版の欄が無く、待つ報告に数えない。R-0001 の欄と版 2 はこれまでどおり。刷る前は聞く欄を出さない。聞く口はたたき台の番号を送る
-- 検証ゲート: **済み**。Red: 直す前の main で rc 1（gate-evidence/red-one-sheet-next.txt）。Green: rc 0（gate-evidence/green-one-sheet-next.txt）。作りを 8 通り崩すと、どれも試験で落ちる
+- 検証ゲート: **済み**。Red: 直す前の main で rc 1（gate-evidence/red-one-sheet-next.txt）。Green: rc 0（gate-evidence/green-one-sheet-next.txt）。作りを 7 通り崩すと、どれも試験で落ちる
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: #332 に書く
 
