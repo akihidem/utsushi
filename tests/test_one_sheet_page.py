@@ -100,6 +100,7 @@ out_dir(TRIAL).mkdir(parents=True, exist_ok=True)
 assert hypotheses.print_sheet(TRIAL, rest[0]["id"], str(out_dir(TRIAL) / f'{rest[0]["id"]}_v1'), 1) == 0
 assert 'class="tsukuru' not in get(f"/toy/{TRIAL}/tsukuru"), "ほかの仮説の紙だけなら、作りながら見る頁は開かない"
 assert f'href="/toy/{TRIAL}/tsukuru"' not in get(f"/toy/{TRIAL}")
+assert 'id="ask"' not in get(f"/toy/{TRIAL}"), "ほかの仮説の紙だけなら、聞く欄を出さない"
 assert post(f"/toy/{TRIAL}/print", {"hypothesis": sheet})[0] == 303
 tsukuru_page = get(f"/toy/{TRIAL}/tsukuru")
 assert 'class="tsukuru' in tsukuru_page and f'name="hypothesis" value="{sheet}"' in tsukuru_page, "たたき台を開く"
@@ -178,7 +179,8 @@ gpage = get(f"/toy/{G}")
 assert "/record/R-0001/next" in gpage and "/record/R-0002/next" not in gpage and 'id="next-R-0002"' not in gpage
 kaizen = gpage.split('id="kaizen"', 1)[1]
 assert 'href="#R-0001"' in kaizen and 'href="#R-0002"' not in kaizen, "次の版に進めない記録を、待つ報告に数えない"
-assert "説明: " in gpage.split('id="R-0002"', 1)[1].split('id="R-0001"', 1)[0] or "説明: " in gpage.split('id="R-0002"', 1)[1], "記録の説明は読める"
+card_c = gpage.split('id="R-0002"', 1)[1].split('id="R-0001"', 1)[0]
+assert "説明: " in card_c and "次の思いつき: " in card_c, "記録の説明は読める"
 assert post("/record/R-0002/next", {"interpretation": "x", "param": "fold_count", "to": "24", "why": "x", "by": "x"})[0] == 422
 assert not list(out_dir(G).glob("H-C_v2*"))
 # 試作の玩具でも、ほかの仮説の記録からは次の版を作らない（作っても札に出ない紙が増えるだけ）
@@ -197,6 +199,15 @@ param = sorted(ALLOWED[result])[0]
 to = {**TEMPLATES[result].DEFAULTS, **rest[0]["params"]}[param] - 1
 assert post(f"/record/{rid}/next", {"interpretation": "x", "param": param, "to": str(to), "why": "x", "by": "x"})[0] == 422
 assert not list(out_dir(TRIAL).glob(f"{other}_v2*"))
+# 寸法の無い自分の仮説の記録にも欄を出さない（向く先の版が無い。寸法のある自分の紙は、たたき台へ向けて欄を出す。tests/test_loop1_next.py が見る）
+mine, _ = hypotheses.save_own(TRIAL, "自分の案", "引くと開く", "図の折り目")
+assert not mine.get("params") and hypotheses.print_own(TRIAL, mine["id"], str(out_dir(TRIAL) / f'{mine["id"]}_v1')) == 0
+assert post(f"/toy/{TRIAL}/record", {"hypothesis": mine["id"], "result": first_result})[0] in (200, 303)
+rid = next(r["id"] for r in records.all_records(TRIAL) if r["hypothesis_id"] == mine["id"])
+assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] in (200, 303)
+tpage = get(f"/toy/{TRIAL}")
+assert f"/record/{rid}/next" not in tpage and f'href="#{rid}"' not in tpage.split('id="kaizen"', 1)[1]
+assert post(f"/record/{rid}/next", {"interpretation": "x", "param": param, "to": str(to), "why": "x", "by": "x"})[0] == 422
 
 # 8. 札の上の断りは頁に出さない（本人の決定 11-05・案 A）。作る側の控えとしては残す
 sids = toys.sources()
@@ -206,6 +217,7 @@ for sid in sids:
     page = toy.toy_page(sid)
     assert data["note"] and data["note"] not in page, (sid, "断りを頁に出さない")
     assert "どれも試していない" not in page and "どれが正しいかは書かない" not in page, sid
+    assert not [part for part in data["note"].split("。") if part.strip() and part.strip() in page], (sid, "note のどの文も頁に出さない")
     assert ways.NOTE in page, (sid, "作り方の印の断りは残す")
     assert data["note"] in hypotheses.list_lines(data), (sid, "作る側の一覧の命令には残す")
 

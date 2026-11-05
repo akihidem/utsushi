@@ -181,7 +181,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             s4 += f"<h3>{name}</h3>" + table(("聞かれた事", "回数"), "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in qs))
     s4 = s4 or none("聞かれた事はまだありません。")
     if sm["asks_dropped"]:
-        s4 += f'<p class="meta">連絡先の形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
+        s4 += f'<p class="meta">連絡先や名乗りの形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
 
     # 5 完成の様子: 時間は幅、動いた記録は「何件のうち何件」。割合の％にしない。途中でやめた段は、印のある人の分だけ。
     c = sm["completion"]

@@ -204,7 +204,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.techo input[type=text]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
+.techo input[type=text],.techo input[type=number]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
 .techo #ask-form{display:flex;gap:10px;align-items:stretch}.techo #ask-form input{flex:1;min-width:0;margin:0}.techo #ask-form .go{white-space:nowrap}
 .techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:var(--onaccent);display:grid;place-items:center;cursor:pointer;justify-self:center;margin:0}
 .techo .mic svg{width:48px;height:48px;stroke:var(--onaccent);fill:none;stroke-width:3;stroke-linecap:round}
@@ -262,6 +262,13 @@ if (!SR) { mic.hidden = true; } else {
     rec.onend = () => { if (on && !speaking) { try { rec.start(); } catch (e) {} } };
     on = true; mic.setAttribute('aria-pressed', 'true'); rec.start();
   };
+  // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
+  addEventListener('pagehide', () => { on = false; if (rec) { try { rec.stop(); } catch (e) {} } });
+  let paused = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (on) { paused = true; on = false; mic.setAttribute('aria-pressed', 'false'); try { rec.stop(); } catch (e) {} } return; }
+    if (paused) { paused = false; on = true; mic.setAttribute('aria-pressed', 'true'); if (!speaking) { try { rec.start(); } catch (e) {} } }
+  });
 }
 // 上げる: 先に記録を作り（見た事）、その R-番号に写真と動画を 1 つずつ送る。
 // 送った後は頁の中で一覧を入れ替える。同じ道へ移っても読み込まれず、「…」のまま残って押し直すと記録が 2 件になるため（#143）。読み込み直さないので、話している手順も切れない。
@@ -354,6 +361,9 @@ def feedback(sid, r, photos=True, up_key=None):
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
+    # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
+    if not photos and str(r["hypothesis_id"]).startswith("OWN-"):
+        return body
     return f'<p><a href="{after}">試した後の紙</a></p>{body}'
 
 
