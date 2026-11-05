@@ -30,6 +30,9 @@ STEP_TIMEOUT = 300
 # uv は環境を作る時だけ使うので、ここでは作られた .venv を見る。
 TOOLS = ("pdftotext", "pdftoppm", "fc-match", "ffmpeg", "ffprobe")
 FONT = "Noto Serif CJK JP"
+# 相対にするのは、表の命令と同じ形で回すため。別の形で回すと、貼った時だけ落ちる試験に気づけない。
+# 子を別の置き場で起こす試験は、自分で絶対に直す（tests/test_generate.py）。
+CHILD_PYTHONPATH = "src"
 
 
 def _sha(path):
@@ -124,6 +127,11 @@ def missing_needs():
     return out
 
 
+def shown(args):
+    """結果の表に書く命令（repo の根で貼って回す形）。実際に回す子も同じ引数と同じ PYTHONPATH にする（#170）。"""
+    return f"PYTHONPATH={CHILD_PYTHONPATH} .venv/bin/python " + " ".join(args)
+
+
 def main():
     wrong = check_manifest(ROOT)
     if wrong:
@@ -138,7 +146,7 @@ def main():
         return 4
     # 試験は素の assert で検査するので、assert を消す設定（PYTHONOPTIMIZE）を子に渡さない。
     # 呼ぶ側の環境に残っていると、落ちるはずの試験が黙って通る（外の検品の指摘、11-04）。子は -O も付けずに起こす。
-    env = {**{k: v for k, v in os.environ.items() if k != "PYTHONOPTIMIZE"}, "PYTHONPATH": str(ROOT / "src")}
+    env = {**{k: v for k, v in os.environ.items() if k != "PYTHONOPTIMIZE"}, "PYTHONPATH": CHILD_PYTHONPATH}
     # 試験は mkdtemp で一時の置き場を作って消さない物が多い（1 回で約 480MB）。走りごとの置き場に集めて、最後に丸ごと消す。
     # 54 本の試験を 1 つずつ直すと並ぶ線とぶつかり、足した試験でまた漏れるので、入口で受ける（#169）。
     scratch = tempfile.TemporaryDirectory(prefix="utsushi-floors-", ignore_cleanup_errors=True)
@@ -154,29 +162,30 @@ def _run_all(env):
     ledgers = tempfile.TemporaryDirectory()
     for sc in sorted((ROOT / "tests/frozen/scenarios").glob("*.json")):
         expect = json.loads(sc.read_text(encoding="utf-8"))["expect"]
-        out = ROOT / "out/scenarios" / sc.stem
-        cmd = [PY, "-m", "omochae", "--scenario", str(sc), "--out", str(out)]
-        r = run_child(cmd, ledger_env(env, ledgers.name, sc.stem))
+        args = ["-m", "omochae", "--scenario", f"tests/frozen/scenarios/{sc.name}", "--out", f"out/scenarios/{sc.stem}"]
+        r = run_child([PY, *args], ledger_env(env, ledgers.name, sc.stem))
         got = sorted(set(re.findall(r"^FAIL (\S+)", r.stderr, re.M)))
         ok = r.returncode == expect["rc"] and got == sorted(expect["floors"])
         broken += r.returncode == 4
         bad += not ok
-        rows.append((sc.stem, r.returncode, expect["rc"], ",".join(got) or "—", ",".join(expect["floors"]) or "—", "OK" if ok else "NG"))
+        rows.append((sc.stem, shown(args), r.returncode, expect["rc"], ",".join(got) or "—", ",".join(expect["floors"]) or "—", "OK" if ok else "NG"))
         if not ok:
             print(f"NG {sc.stem}: rc={r.returncode} {r.stderr.strip()[:500]}", file=sys.stderr)
+    scenes = len(rows)
     for test in sorted((ROOT / "tests").glob("test_*.py")):
-        unit = run_child([PY, str(test)], ledger_env(env, ledgers.name, test.stem))
+        args = [f"tests/{test.name}"]
+        unit = run_child([PY, *args], ledger_env(env, ledgers.name, test.stem))
         broken += unit.returncode == 4
         bad += unit.returncode != 0
-        rows.append((test.stem, unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
+        rows.append((test.stem, shown(args), unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
         if unit.returncode:
             print(f"NG {test.stem}: {unit.stderr.strip()[:500]}", file=sys.stderr)
     ledgers.cleanup()
     lines = ["# 床の実行結果", "", "| 段 | 命令 | rc | 期待 | 落ちた検査 | 期待の検査 | 判定 |", "|---|---|---|---|---|---|---|"]
-    for n, rc, erc, g, e, v in rows:
-        lines.append(f"| {n} | `python -m omochae --scenario {n}` | {rc} | {erc} | {g} | {e} | {v} |")
+    for n, shown_cmd, rc, erc, g, e, v in rows:
+        lines.append(f"| {n} | `{shown_cmd}` | {rc} | {erc} | {g} | {e} | {v} |")
     lines += [f"| {f} | — | — | — | — | — | 未実装 |" for f in NOT_YET]
-    lines += ["", f"実行した場面 {len(rows)} 本、期待どおり {len(rows) - bad} 本、未実装の床 {len(NOT_YET)} 本。"]
+    lines += ["", f"実行した {len(rows)} 本（場面 {scenes} 本、試験 {len(rows) - scenes} 本）、期待どおり {len(rows) - bad} 本、未実装の床 {len(NOT_YET)} 本。"]
     (ROOT / "out").mkdir(exist_ok=True)
     (ROOT / "out/RESULT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(lines[-1])

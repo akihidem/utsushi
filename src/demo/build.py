@@ -37,8 +37,8 @@ DIRTY_PATHS = ["src", "data/hypotheses", "data/sources", "tests", "docs/process/
 
 
 def count_tests(result_text):
-    """out/RESULT.md の「実行した場面 N 本、期待どおり M 本」を読む。読めない時は None。"""
-    m = re.search(r"実行した場面 (\d+) 本、期待どおり (\d+) 本", result_text)
+    """out/RESULT.md の「実行した N 本（場面と試験の内訳）、期待どおり M 本」を読む。読めない時は None。"""
+    m = re.search(r"実行した (\d+) 本（[^）]*）、期待どおり (\d+) 本", result_text)
     return (int(m.group(1)), int(m.group(2))) if m else None
 
 

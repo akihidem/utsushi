@@ -1,0 +1,8 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_result_table.py   # 直す前の main 97898e7 に、新しい試験だけを置いて回した
+AssertionError: {'neg_fan_length': ('python -m omochae --scenario neg_fan_length', 3, 'OK'), 'pos_stick': ('python -m omochae --scenario pos_stick', 0, 'OK'), 'test_red': ('python -m omochae --scenario test_red', 5, 'NG'), 'test_same_form': ('python -m omochae
+rc=1
+
+$ PYTHONPATH=src .venv/bin/python tests/test_generate.py   # 直す前の main 97898e7。関門の証拠の頭に書いてある形
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

@@ -6,7 +6,7 @@ from demo import build
 # 台本の 7 場面がこの順で、重ならない
 assert build.SCENES == ["flip", "scene2", "scene3", "scene4", "scene5", "scene6", "scene7"]
 # 試験の数は RESULT.md の行から読む。読めない時は None（古い数を出さない）
-assert build.count_tests("実行した場面 57 本、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
+assert build.count_tests("実行した 57 本（場面 30 本、試験 27 本）、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
 assert build.count_tests("何も無い") is None
 # 引数: 試験の数は場面 4 にだけ、曲は場面 7 にだけ、写真は場面 5 にだけ
 assert build.scene_args("scene4", (57, 57), None, None) == ["--tests", "57/57"]
