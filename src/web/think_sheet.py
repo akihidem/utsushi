@@ -242,7 +242,7 @@ def _status(sid, w):
     if w["status"] == "waiting_maker":
         return f"<p>{esc(WAITING)}</p>"
     said = f'<blockquote>{esc(w["how_it_moves"])}</blockquote>'
-    ok = (f'<form method="post" action="/toy/{esc(sid)}/think-ok"><input type="hidden" name="t" value="{esc(w["token"])}">'
+    ok = (f'<form method="post" action="/toy/{esc(sid)}/think-ok#think"><input type="hidden" name="t" value="{esc(w["token"])}">'
           f"<button>{esc(OK)}</button></form>")
     if w["status"] == "decided":
         name = sheet_of(sid, w.get("own_id", ""))
@@ -268,7 +268,7 @@ def section(sid, at="", note=""):
     w = words.by_token(sid, at[len("think-"):]) if at.startswith("think-") else None
     status = _status(sid, w) if w else ""
     # 確かめている間は頼む釦を出さない（押しても同じ案へ戻るだけで、押す釦が 2 つ並ぶと迷う）。
-    go = "" if w and w["status"] == "pending_human" else f'<form method="post" action="/toy/{esc(sid)}/think-sheet"><button class="quiet">{esc(GO)}</button></form>'
+    go = "" if w and w["status"] == "pending_human" else f'<form method="post" action="/toy/{esc(sid)}/think-sheet#think"><button class="quiet">{esc(GO)}</button></form>'
     return f'<section class="sec" id="think">{note if at.startswith("think") else ""}<p class="lead">{esc(LEAD)}</p>{status}{go}</section>'
 
 
