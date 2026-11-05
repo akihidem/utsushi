@@ -254,11 +254,9 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
-    # 断るのは記録（data/hypotheses）にある仮説のうち、たたき台でない物。人が輪や生成で採って重ねた新しい仮説（H-N…）は、
-    # 輪を 1 枚の形に直す時に一緒に扱うので、ここではまだ止めない（#332 の後の直し）。
-    # 試作の玩具は今の作りのまま。頁が 1 枚だけを出す直しと一緒に揃える。
-    recorded = {x["id"] for x in json.loads((ROOT / "data/hypotheses" / f"{source_id}.json").read_text(encoding="utf-8"))["hypotheses"]}
-    if data.get("stage", "必須") == "必須" and hypothesis_id in recorded and hypothesis_id != data.get("sheet"):
+    # 人が輪や生成で採って重ねた新しい仮説（H-N…）も作る側の控えなので、同じく刷らない。
+    # 試作の玩具は、作る側がこの口から控えを刷れる（道は閉じない）。頁からは刷らない（web の /print の口が断る）。
+    if data.get("stage", "必須") == "必須" and hypothesis_id != data.get("sheet"):
         print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{data.get('sheet')}）の紙だけを刷る").line(), file=sys.stderr)
         return 3
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)

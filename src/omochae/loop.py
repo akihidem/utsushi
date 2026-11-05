@@ -267,6 +267,8 @@ def latest_version(source_id, hid):
 
 def check_proposal(p, source, will_confirm=()):
     """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。"""
+    from .hypotheses import sheet_of
+
     out = []
     sid = source["source_id"]
     template = _template(sid)
@@ -291,6 +293,9 @@ def check_proposal(p, source, will_confirm=()):
         h = _hypothesis(sid, hid)
         if h is None:
             out.append(Failure("F8.references", str(hid), "その仮説は実在しない"))
+        elif hid != sheet_of(sid)["id"]:
+            # 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（J-032）。ほかの仮説に版を足しても次の人に届かず、必須 2 種では紙も刷れない。
+            out.append(Failure("F7.revision", str(hid), f"次の版はたたき台（{sheet_of(sid)['id']}）にだけ足す"))
         else:
             current, _ = version_params(sid, hid, latest_version(sid, hid))
             merged = dict(current)
@@ -349,9 +354,36 @@ def _next_params(sid, hid, changes):
     return latest_version(sid, hid) + 1, {**current, **{c["param"]: c["to"] for c in changes}}
 
 
+def _write_version(p, pid, by, hid, changes):
+    """採った変更を次の版の記録にして、版の番号を返す。"""
+    sid = p["source_id"]
+    version, params = _next_params(sid, hid, changes)
+    _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": changes, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
+    return version
+
+
+def _new_as_changes(sid, hid, new):
+    """採った新しい案が、たたき台の今の版からの寸法の差で言えるなら、次の版の変更にして返す。言えなければ空（J-032）。
+
+    なぜ版にするか: 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（本人の方針 11-05）。別の仮説として控えに入れると、次の人に届かない。
+    雛形の違う案は、寸法を重ねる版の形に乗らない。差が無い案は読みだけが違う案で、版にならない。
+    変えてよい寸法の外（形の違い）と紙に乗らない差は、呼ぶ側の check_proposal が落とす。どの雛形も字の寸法は範囲の検査で断る。
+    """
+    template = _template(sid)
+    if new.get("template", template) != template:
+        return []
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    now = {**TEMPLATES_DEFAULT(template), **current}
+    return [{"param": k, "to": v, "why": f"採った案「{new['name']}」: {new['how_it_moves']}"} for k, v in sorted((new.get("params") or {}).items()) if now.get(k) != v]
+
+
 @exclusive
 def adopt(pid, by, accept_params=(), accept_new=False, source=None):
-    """人の採否（H7）。採った物だけが版と仮説の一覧に入る。次に試す物の提案は、採っても並びを変えない。"""
+    """人の採否（H7）。採った物だけが版と作る側の控えに入る。次に試す物の提案は、採っても並びを変えない。
+    新しい案（accept_new）は道を閉じず、札にも出さない（J-032）: 寸法の差で言える案はたたき台の次の版にし、言えない案と紙に乗らない案は
+    作る側の控え（extra-hypotheses）に残す。人が採った案を捨てないため。たたき台は替えない（替えるのは本人が決めた時に記録の欄 sheet を直す）。"""
+    from .hypotheses import sheet_of
+
     path = folder() / f"proposal-{pid[2:]}.json"
     p = _read(path)
     if p is None:
@@ -372,11 +404,13 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
         return None, failures
     made = {}
     if chosen:
-        hid = p["hypothesis_id"]
-        version, params = _next_params(sid, hid, chosen)
-        _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": chosen, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
-        made["version"] = version
-    if accept_new and p.get("new_hypothesis"):
+        made["version"] = _write_version(p, pid, by, p["hypothesis_id"], chosen)
+    sheet = sheet_of(sid)["id"]
+    as_version = _new_as_changes(sid, sheet, p["new_hypothesis"]) if accept_new and p.get("new_hypothesis") else []
+    # 紙に乗らない差は版にしない（版の記録だけ残り、紙が刷れない形を作らない）。この時は下の控えに入る。
+    if as_version and not check_proposal({"record_ids": p["record_ids"], "hypothesis_id": sheet, "changes": as_version}, source):
+        made["version"] = made["new_hypothesis_as_version"] = _write_version(p, pid, by, sheet, as_version)
+    elif accept_new and p.get("new_hypothesis"):
         extras_path = folder() / f"extra-hypotheses-{sid}.json"
         extras = _read(extras_path) or []
         new = {**p["new_hypothesis"], "id": f"H-N{len(extras) + 1}", "status": "untested", "evidence": p["new_hypothesis"].get("evidence", []) + [{"kind": "record", "where": rid, "what": "試した記録", "certainty": "記録"} for rid in p["record_ids"]], "proposal": pid, "adopted_by": by.strip()}
