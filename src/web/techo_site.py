@@ -180,9 +180,6 @@ STYLE = """
 #up-status{scroll-margin-top:16px}
 body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
-.techo main:has(.gallery){max-width:960px}
-.techo .gallery h1{font-size:clamp(19px,5vw,26px);letter-spacing:.2em}.techo .gallery .top a{white-space:nowrap}
-.techo .jump{display:flex;gap:6px 18px;flex-wrap:wrap;margin:8px 0 14px;font-size:14px;letter-spacing:.1em}.techo .jump a{color:var(--accent)}
 .techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
 .techo .top a{margin-left:auto;font-size:14px;color:var(--accent)}
@@ -364,6 +361,22 @@ def ai_part(r):
     return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
 
 
+# /gallery は机に置く道具でなく読む頁なので、手帖の STYLE を使わず、骨の書体と皮の角 0 で組む（#126）。
+GALLERY_STYLE = """
+main:has(.gallery){max-width:960px;padding-top:20px}
+.gallery{display:grid;gap:22px}
+.gallery .top{display:flex;align-items:center;gap:14px}.gallery .top a{margin-left:auto;font-size:14px;white-space:nowrap}
+.gallery h1{font-size:clamp(19px,5vw,26px);letter-spacing:.2em}
+.gallery .jump{display:flex;gap:6px 18px;flex-wrap:wrap;margin:-8px 0 0;font-size:14px;letter-spacing:.1em}
+.gallery .panel{border:1px solid var(--frame);border-radius:0;padding:18px;display:grid;gap:14px;background:var(--paper)}
+.gallery .mark{font-size:22px;letter-spacing:.15em;margin:0}
+.gallery p{margin:0}
+.gallery .samples{display:grid;gap:10px;margin:0}
+.gallery .is-sample{border:1px dashed var(--frame);padding:10px}
+.gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
+"""
+
+
 def made_item(sid, data, r, photos=True):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
     photos=False は合言葉なしで開いた場。写真も人の書いた文も出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
@@ -403,7 +416,7 @@ def gallery_page(sids, photos=True):
     # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
     from .demo_samples import voices_html
 
-    # .gallery で包むのは、手帖の幅（640px）より広く並べるため（STYLE の main:has(.gallery)）。
+    # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
             '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
@@ -416,8 +429,8 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True, msg=""):
-    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。"""
+def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
+    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。own は、この画面が作った本人の案（話した考えから作った紙）の番号で、札の先頭に出す。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
     hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
@@ -425,8 +438,10 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
     from .play_server import printed_versions
 
     # data-v: 開いた時に刷ってあった一番新しい版。作っている途中で別の人の版が刷られても、報告はこの版への物として残る。
+    mine = [h for h in hypotheses.own_hypotheses(sid) if h["id"] in own]
+    mine.sort(key=lambda h: own.index(h["id"]))
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
-                     f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
+                     f'{esc(h["name"]) if h in mine else "<span class=big>" + esc(hypotheses.letter(h)) + "</span>"}の紙</label>' for i, h in enumerate(mine + hyps))
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{result_icon(r, tpl.RESULTS)}{esc(r)}</label>' for r in tpl.RESULTS)

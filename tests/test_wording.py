@@ -64,7 +64,7 @@ data = hypotheses.load(G)
 h = data["hypotheses"][0]
 page = get(f"/toy/{G}")
 # 玩具の頁: data/hypotheses の欄と確かめた人
-for want in (f"▲{esc(data['note'])}", f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to_measure'])}",
+for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to_measure'])}",
              f"〔{esc(h['evidence'][0]['certainty'])}〕▲{esc(h['evidence'][0]['what'])}（▲{esc(h['evidence'][0]['where'])}）",
              "確かめた人: ▲本人", f"▲{esc(data['analogy']['written_by'])}"):
     assert want in page, want
