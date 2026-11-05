@@ -1,11 +1,11 @@
 # 命令: .venv/bin/python tests/test_photo_attach.py
-# commit: efdc9499（回した時の HEAD）
-/tmp/tmpcs99kkta/play/NDL-1187053-R0000005-L/H-A_v1.pdf
-/tmp/tmpcs99kkta/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
-/tmp/tmpcs99kkta/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
-/tmp/tmpcs99kkta/play/NDL-1187053-R0000014-R/H-A_v1.pdf
-/tmp/tmpcs99kkta/play/NDL-1187053-R0000014-R/H-A_v1_tejun.pdf
-/tmp/tmpcs99kkta/play/NDL-1187053-R0000014-R/H-A_v1_after.pdf
+# commit: d496b4fa（回した時の HEAD）
+/tmp/tmpc1p0zf3u/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpc1p0zf3u/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpc1p0zf3u/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpc1p0zf3u/play/NDL-1187053-R0000014-R/H-A_v1.pdf
+/tmp/tmpc1p0zf3u/play/NDL-1187053-R0000014-R/H-A_v1_tejun.pdf
+/tmp/tmpc1p0zf3u/play/NDL-1187053-R0000014-R/H-A_v1_after.pdf
 Traceback (most recent call last):
   File "tests/test_photo_attach.py", line 85, in <module>
     assert attach(G, mine) == (200, {"id": first, "attached": True}, "")

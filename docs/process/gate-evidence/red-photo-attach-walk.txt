@@ -1,11 +1,11 @@
 # 命令: .venv/bin/python tests/test_photo_attach_walk.py
-# commit: efdc9499（回した時の HEAD）
-/tmp/tmp18oxxq0z/play/NDL-1187053-R0000005-L/H-A_v1.pdf
-/tmp/tmp18oxxq0z/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
-/tmp/tmp18oxxq0z/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+# commit: d496b4fa（回した時の HEAD）
+/tmp/tmpp3m1nt43/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpp3m1nt43/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpp3m1nt43/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
 Traceback (most recent call last):
-  File "tests/test_photo_attach_walk.py", line 111, in <module>
+  File "tests/test_photo_attach_walk.py", line 115, in <module>
     assert got["button"] == "上げる" and got["a"] == "上げました", got
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: {'button': '上げる', 'n': ['', 0, False, True], 'who_a': ['e8skdfequ2', 'e8skdfequ2'], 'a': '紙と見た事をえらぶ', 'b': '紙と見た事をえらぶ', 'b_ready': True, 'c': '紙と見た事をえらぶ', 'c_sent': 0, 'd': '上げました', 'who_e': ['8uefoz7is6', 'qkpt0chtga'], 'e': '上げました'}
+AssertionError: {'button': '上げる', 'n': ['', 0, False, True], 'who_a': ['ontbeam2qc', 'ontbeam2qc'], 'a': '紙と見た事をえらぶ', 'b': '紙と見た事をえらぶ', 'b_ready': True, 'c': '紙と見た事をえらぶ', 'c_sent': 0, 'd': '上げました', 'who_e': ['ka0uy9vm33', 'ux6dm0zbcp'], 'e': '上げました', 'p': '紙と見た事をえらぶ'}
 rc=1

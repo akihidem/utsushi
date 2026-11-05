@@ -707,7 +707,9 @@ class Handler(BaseHTTPRequestHandler):
     def _photo_target(self, sid, form):
         """写真を足す先: この画面が、写真の口の無い所（玩具の頁の記録の欄）で残した、同じ玩具の、写真の無い記録の番号（無ければ None）。
         そこで残した後に手帖で写真を上げる人の記録を、1 つのままにするために引く。照らすのは記録の鍵だけ（records.mine）。
-        手帖の欄に新しい中身（字・別の見た事・別の紙や版）がある時は足さない: 足すと、書いた事が残らないため。その時は今までどおり新しい記録になる。
+        手帖の欄に新しい中身（字・別の見た事）がある時は足さない: 足すと、書いた事が残らないため。その時は今までどおり新しい記録になる。
+        別の紙や版を選んでいる時も足さない（見た事を選んでいなくても）: 別の紙の作りの写真を、前の紙の記録に付けないため。紙は頁で最初から 1 つ
+        選ばれているので、頁は、紙を選び直した時と見た事を選んだ時だけ紙を送る。紙が来ない時は、紙と版を見ない。
         手帖で残した記録には足さない: 写真の口のある所で「記録だけ」を選んだ物で、机の端の 1 台を順に使う場では、次の人の写真が前の人の記録に付くため。"""
         key = self._rec_key()
         if not key or getattr(self.server, "public_open", False):
@@ -720,7 +722,9 @@ class Handler(BaseHTTPRequestHandler):
         if any(form.get(k, "").strip() for k in ("note", "impression", "fix_part", "fix_change", "fix_outcome")):
             return None
         hid = form.get("hypothesis", "")
-        if form.get("result") and (form["result"] != r["result"] or hid != r["hypothesis_id"] or sheet_version_of(sid, hid, form) != r.get("sheet_version", 1)):
+        if hid and (hid != r["hypothesis_id"] or sheet_version_of(sid, hid, form) != r.get("sheet_version", 1)):
+            return None
+        if form.get("result") and (not hid or form["result"] != r["result"]):
             return None
         return r["id"]
 

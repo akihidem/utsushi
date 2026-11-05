@@ -3,7 +3,7 @@
 前の形: 作りながら見るの「できた」の後は玩具の頁の記録の欄に着き、そこに写真の口が無い。記録の後に手帖で写真を上げると、別の記録になった。
 直した形: 手帖が「写真あり」の合図を送ると、この画面が玩具の頁の記録の欄で残した記録（記録の鍵 records.mine）で、同じ玩具の、写真の無い物に足す。
 新しい記録は作らない。頁から番号は受けない（番号は札に出る連番なので、別の人が送れる）。写真の受け口も、番号だけでは受けない。
-足さない時: 欄に新しい中身（字・別の見た事・別の版）がある時（足すと、書いた事が残らない）。手帖で残した記録（写真の口のある所で「記録だけ」を選んだ物。
+足さない時: 欄に新しい中身（字・別の見た事）がある時（足すと、書いた事が残らない）。別の紙や版を選んでいる時。手帖で残した記録（写真の口のある所で「記録だけ」を選んだ物。
 机の端の 1 台を順に使う場で、次の人の写真が前の人の記録に付かないように）。頁の動きは tests/test_photo_attach_walk.py が Chrome で歩いて見る。
 """
 import io
@@ -96,10 +96,14 @@ keep_version = play_server.sheet_version_of
 play_server.sheet_version_of = lambda sid, hid, form: 2
 try:
     assert attach(G, mine, result="動いた")[1] == {"attached": False}, "別の版"
-    assert attach(G, mine)[1] == {"id": first, "attached": True}, "見た事を選んでいなければ、紙の選びは見ない（紙は最初から 1 つ選ばれている）"
+    assert attach(G, mine)[1] == {"attached": False}, "見た事を選んでいなくても、選んだ紙の版が違えば足さない"
+    assert attach(G, mine, hypothesis="")[1] == {"id": first, "attached": True}, "紙が来ない時（頁で最初から選ばれているまま）は、紙と版を見ない"
 finally:
     play_server.sheet_version_of = keep_version
-assert attach(G, mine, hypothesis="H-Z")[1] == {"id": first, "attached": True}
+# 別の紙を選んだ時は、見た事を選んでいなくても足さない（別の紙の作りの写真を、前の紙の記録に付けない）
+assert attach(G, mine, hypothesis="H-Z")[1] == {"attached": False}
+assert attach(G, mine, hypothesis="")[1] == {"id": first, "attached": True}
+assert attach(G, mine, hypothesis="", result="動いた")[1] == {"attached": False}, "見た事だけで紙の無い送りには足さない"
 
 # ---- 番号は受けない: 鍵の無い画面と、でたらめの鍵の画面からは、番号を添えても足せない。記録も増えない
 for other in ("", FAKE):

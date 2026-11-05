@@ -300,10 +300,12 @@ document.getElementById('up-form').onsubmit = async (e) => {
   // 写真や動画がある時は、先に「この画面が残した記録に足せるか」を聞く（玩具の頁の記録の欄には写真の口が無いので、そこで残した後に写真を足す人の道）。
   // 足せる時は、新しい記録を作らず、見た事も求めない。番号は送らない。決めるのはサーバ（記録を残した画面か・欄に新しい中身が無いか）。
   // 聞いている間に押し直されて、同じ写真が 2 度送られないよう、聞く前に押せなくする。
+  // 紙は最初から 1 つ選ばれているので、選び直した時と見た事を選んだ時だけ、選んだ紙として送る（選んでいないのに別の紙と読まれて、足せなくならないように）。
   go.disabled = true;
   let target = '';
   if (files.length) {
-    try { const a = await (await post({ ...filled, attach: '1' })).json(); if (a.attached) target = a.id; } catch (err) {}
+    const chose = result || paper().defaultChecked === false;
+    try { const a = await (await post({ ...filled, hypothesis: chose ? filled.hypothesis : '', attach: '1' })).json(); if (a.attached) target = a.id; } catch (err) {}
   }
   if (!target && (!hid || !result)) { go.disabled = false; st.textContent = '紙と見た事をえらぶ'; return; }
   st.textContent = '送っています…';
