@@ -294,9 +294,10 @@ def summary(source_id):
             ss[n] = ss.get(n, 0) + 1
     try:
         moved_word = records.results_for(source_id)[0]  # 雛形の RESULTS の先頭が、動いた側の言葉
+        old = records.old_results_for(source_id)  # 前の札の記録も、今の札に読み替えて数える（#146）
     except Exception:
-        moved_word = ""
-    completion = {"minutes": _span([r.get("minutes_to_try") for r in recs]), "moved": sum(1 for r in recs if r["result"] == moved_word),
+        moved_word, old = "", {}
+    completion = {"minutes": _span([r.get("minutes_to_try") for r in recs]), "moved": sum(1 for r in recs if old.get(r["result"], r["result"]) == moved_word),
                   "moved_word": moved_word, "quit_steps": {h: dict(sorted(ss.items())) for h, ss in sorted(quit_steps.items())}, "people": len({w for w, _ in reached})}
 
     flow = {}

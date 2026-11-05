@@ -4,7 +4,7 @@
 本人の指定（同じ日）: 生徒向けの画面は机に置いて声で操作する。両手は工作で塞がっている。写真や動画を上げられる。文字は最小。
 判断の芯:
 - 入口（A・A′・C の展示）→ 玩具の頁 → 手帖 → 試した記録、を同じサーバの頁で一続きにする。見た目は A′ の白い展示の世界に合わせる
-- 聞く口は src/api/ask.py をそのまま使う（仕組みは答えない、よくある言葉は刷った説明から、ほかは鍵がある時だけ Claude）
+- 聞く口は src/api/ask.py をそのまま使う（仕組みは答えない、語そのものを尋ねる短い問いは刷った説明から、ほかは鍵がある時だけ Claude）
 - 声: ブラウザの音声認識で、1 回押したら話し続けられる形（続けて聞く）と、答えの読み上げ。使えない画面では字の操作だけが残る
 - 上げた写真と動画は、その場で作った試した記録（R-番号）に添える。置き場は記録と同じ git の外（data/records/media）
 - 写真と動画の撮影情報（位置など）は保存の時に外す。記録は公開の repo に入り得るし、ギャラリーは合言葉を知る人の全員に見えるため（#156）
@@ -21,7 +21,7 @@ import tempfile
 from PIL import Image
 
 from api import ask, config
-from omochae import contrib, hypotheses, making_log, records
+from omochae import contrib, hypotheses, making_log, media_review, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
@@ -36,6 +36,15 @@ ICONS = {
     "揺れた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24c4-8 8-8 12 0s8 8 12 0 8-8 12 0"/></svg>',
     "揺れない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24h36"/></svg>',
 }
+
+
+def result_icon(word, words):
+    """札の絵。言葉の絵が無い札は、札の並びで決める。「わからない」を除いた最後が動かない側で、ほかは動いた側（engine_bundle と同じ読み）。
+    全部を「?」にすると、「転がった」まで分からない札に見える（#146）。"""
+    if word in ICONS:
+        return ICONS[word]
+    sure = [w for w in words if w != "わからない"]
+    return ICONS["動かない" if len(sure) > 1 and word == sure[-1] else "動いた"]
 
 
 def esc(s):
@@ -97,9 +106,10 @@ def clean_photo(data, ext):
 
 
 def clean_video(data, ext):
-    """動画の撮影情報を落として入れ物を作り直す。絵と音は再符号化しない。Returns (中身 or None, 失敗の文)。
+    """動画の撮影情報と音を落として入れ物を作り直す。絵は再符号化しない。Returns (中身 or None, 失敗の文)。
 
-    絵と音の流れだけを写す（-map）。全体の欄だけを消しても、字幕や時刻つきの情報の流れと流れごとの欄に位置が残るため。
+    絵の流れだけを写す（-map）。全体の欄だけを消しても、字幕や時刻つきの情報の流れと流れごとの欄に位置が残るため。
+    音を落とすのは本人の決定（11-05「声は字にして、声そのものは残しません」、#314）。頁の muted だけでは、ファイルに声が残る。
     読み手を mov に決める（-f mov）。中身の形で読み手を選ばせると、ほかのファイルや URL を指す一覧（HLS など）を読みに行くため。
     """
     if data[4:8] not in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip"):
@@ -111,7 +121,7 @@ def clean_video(data, ext):
         src.write_bytes(data)
         try:
             r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-f", "mov", "-i", str(src),
-                                "-map", "0:V", "-map", "0:a?", "-map_metadata", "-1", "-map_metadata:s", "-1", "-map_chapters", "-1",
+                                "-map", "0:V", "-an", "-map_metadata", "-1", "-map_metadata:s", "-1", "-map_chapters", "-1",
                                 "-c", "copy", "-f", ext, str(dst)], capture_output=True, timeout=config.VIDEO_TIMEOUT)
         except (OSError, subprocess.TimeoutExpired):
             return None, MISMATCH
@@ -157,7 +167,8 @@ def ai_offer(rid):
     """
     if not ask._key_present():
         return False, False, "AI の返事は、この場では使えません。"
-    has_video = any(f.endswith(("mp4", "mov")) for f in media_of(rid))
+    # 人や声が入ると確かめた動画は AI にも渡さない（#314）。
+    has_video = any(f.endswith(("mp4", "mov")) for f in media_review.visible(rid, media_of(rid)))
     return True, has_video, "" if has_video else "動画を上げると、Claude が見えた事を返します。"
 
 
@@ -300,14 +311,17 @@ document.getElementById('up-form').onsubmit = async (e) => {
 """
 
 
-def feedback(sid, r):
+def feedback(sid, r, photos=True):
     """手帖で受けるフィードバック（本人「フィードバックも手帖」、11-04）。順は J-013 のまま: 紙の返事（試した後の紙）→ 人の説明 → 次の版。
-    Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。"""
+    Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。
+    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。"""
     from omochae import loop
 
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
-    if told:
+    if told and not photos:
+        body = '<p class="meta">説明を残しました。</p>' + ai_part(r)
+    elif told:
         from web.play_server import next_form
 
         body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
@@ -366,7 +380,8 @@ def made_item(sid, data, r, photos=True):
     動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
     if not photos:
         return ""
-    files = media_of(r["id"])
+    # 物だけと人が確かめた写真と動画だけを出す。ほかは字だけになる（本人の決定 11-05、#314）。
+    files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
@@ -422,18 +437,19 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
-    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
+    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{result_icon(r, tpl.RESULTS)}{esc(r)}</label>' for r in tpl.RESULTS)
     # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
     note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
-        files = media_of(r["id"]) if uploads else []  # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）
+        # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた人が受け取りを確かめられるように出す（#314）。
+        files = media_review.visible(r["id"], media_of(r["id"])) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
         mine += (f'<div class="item"><p class="meta">{esc(r["id"])}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
-                 f'{feedback(sid, r)}</div>')
+                 f'{feedback(sid, r, photos=uploads)}</div>')
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')
