@@ -26,7 +26,7 @@ for part in ("records", "loop"):
     shutil.copytree(ROOT / "data" / part, os.path.join(DATA, part))
 
 from api import ask  # noqa: E402
-from omochae import hypotheses, labels, records  # noqa: E402
+from omochae import hypotheses, labels, loop, records  # noqa: E402
 from web import zukan  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 
@@ -86,6 +86,10 @@ def visible(page):
     return v.out
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開くので、その字もここで見る）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 class Site:
     def __init__(self, look):
         self.server = serve(0, look=look)
@@ -126,12 +130,15 @@ for s in (G, T):
 # 3 番号の出る札まで進める: 紙 → 記録 → 説明 → 次の版 → 窓 → 手帖 → 自分の仮説 → 聞く口
 see(white, f"/toy/{G}/print", {"hypothesis": "H-A"}, "紙を作った後")
 see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた"}, "記録の後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
-rid = records.all_records(G)[-2]["id"]  # 本物の記録の後ろの 1 つ目。番号を決め打ちしない
-see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
+rid = records.all_records(G)[-1]["id"]  # 今残した記録。説明は次の記録が残る前に、残した画面から書く。番号を決め打ちしない
+told = see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
+assert loop.explanation(rid) and "次の版を作る" in told, "説明の後の札まで届いていない"  # 通らないまま進むと、この先の見張りが空になる
 see(white, f"/record/{rid}/ai-interpret", {}, "鍵が無い時の AI の口")
 see(white, f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"}, "次の版の後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert loop.latest_version(G, "H-A") == 2, "次の版の後の札まで届いていない"
+see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
+waiting = see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert 'name="next_idea"' in waiting, "説明の欄まで届いていない"
 see(white, f"/toy/{G}?see=H-A&kind=sheet&v=2", name="版 2 の窓")
 see(white, f"/toy/{G}/techo", name="記録の後の手帖")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")
