@@ -1,10 +1,10 @@
 # 命令: .venv/bin/python tests/test_reader_words.py
-# commit: d25d525（回した時の HEAD）
-/tmp/tmp743d8jyr/play/NDL-1187053-R0000005-L/H-A_v1.pdf
-/tmp/tmp743d8jyr/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
-/tmp/tmp743d8jyr/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
-/tmp/tmp743d8jyr/play/NDL-1187053-R0000005-L/.tmp-giu72t7g/H-A_v2.pdf
-/tmp/tmp743d8jyr/play/NDL-1187053-R0000005-L/.tmp-giu72t7g/H-A_v2_tejun.pdf
-/tmp/tmp743d8jyr/play/NDL-1187053-R0000005-L/.tmp-giu72t7g/H-A_v2_after.pdf
+# commit: f11b7e8（回した時の HEAD）
+/tmp/tmp5_galpb0/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp5_galpb0/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp5_galpb0/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmp5_galpb0/play/NDL-1187053-R0000005-L/.tmp-gp7_yd83/H-A_v2.pdf
+/tmp/tmp5_galpb0/play/NDL-1187053-R0000005-L/.tmp-gp7_yd83/H-A_v2_tejun.pdf
+/tmp/tmp5_galpb0/play/NDL-1187053-R0000005-L/.tmp-gp7_yd83/H-A_v2_after.pdf
 ok
 rc=0
