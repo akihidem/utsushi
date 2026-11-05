@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_floors_progress.py
+# commit: e6fc74c（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_floors_progress.py", line 53, in <module>
+    assert [ln for ln in lines if re.fullmatch(r"\d+/\d+ \S+", ln)] == ["1/2 test_aa", "2/2 test_bb"], lines
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['NG test_bb: Traceback (most recent call last):', '  File "/tmp/tmpicmr119d/root/tests/test_bb.py", line 1, in <module>', "    assert False, '落ちる見本'", '           ^^^^^', 'AssertionError: 落ちる見本']
+rc=1

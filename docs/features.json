@@ -71,16 +71,17 @@
    "src/api/generate.py",
    "tests/test_generate.py"
   ],
-  "unverified": "本物の API で未実行。偽の応答の試験のみ"
+  "unverified": "本物の API で未実行。偽の応答の試験のみ。作る案は作る側の控えで、採っても画面に並ばない（J-032、#404）"
  },
  {
   "id": "f08",
   "name": "仮説の採否",
   "status": "doing",
   "evidence": [
-   "src/omochae/hypotheses.py"
+   "src/omochae/hypotheses.py",
+   "src/omochae/loop.py"
   ],
-  "unverified": "人が選んで刷る操作で代える。確定の記録は未実装"
+  "unverified": "たたき台を刷る操作で代える（前は人が選んで刷る操作。J-032 で置き換えた）。刷った時と次の版を採った時に、型紙の確定を台帳に残す（loop.confirm_sheet）。人が画面で使った確認はまだ"
  },
  {
   "id": "f09",
@@ -137,6 +138,7 @@
    "src/omochae/loop.py",
    "tests/test_loop.py",
    "tests/test_next_version_atomic.py",
+   "tests/test_next_range.py",
    "tests/test_one_sheet_loop.py"
   ],
   "unverified": "実際の記録で未実行"
@@ -160,6 +162,7 @@
    "tests/test_reply_visible.py",
    "src/web/wording.py",
    "tests/test_wording.py",
+   "tests/test_reader_words.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",
@@ -194,13 +197,13 @@
  },
  {
   "id": "f18",
-  "name": "仮説を並べて見せる入口",
+  "name": "仮説を並べて見せる入口（J-032 で置き換えた）",
   "status": "doing",
   "evidence": [
    "src/omochae/hypotheses.py",
    "tests/test_hypotheses.py"
   ],
-  "unverified": "実際の人が使っていない"
+  "unverified": "型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）で、並べて見せる形は置き換えた。#386 で 1 枚にした。実際の人が使っていない"
  },
  {
   "id": "f19",
@@ -212,7 +215,7 @@
   "id": "f20",
   "name": "自分の仮説を言葉から型紙にする口",
   "status": "doing",
-  "unverified": "本物の API で未実行。偽の応答の試験のみ",
+  "unverified": "自分の案は書く形をやめて話す形にする決定（J-032）。話した考えから紙を作る節は #402 で必須 2 種の頁に入り、頁の書く欄は #409 で外した。本物の API で未実行。偽の応答の試験のみ",
   "evidence": [
    "src/api/words.py",
    "tests/test_words.py",
@@ -435,7 +438,7 @@
    "src/omochae/engine_bundle.py",
    "tests/test_engine_bundle.py"
   ],
-  "unverified": "Issue 278・309。命令 1 つで束（JSON）を書く所まで。束の上の段に、群に出てくる雛形の今の刷った組も書く（309）。話した事（考え・工夫・できた後の話）も束に入れる（307。工夫は手順の番号つきで、記録に結んだ話はその記録の群に数える）。話した事の入った束は見本の話でだけ通した（実の人が話した記録では、まだ出していない）。11-04 の試行の記録 2 件から出した束が、型紙エンジンの側の入口の検査を通る事は手元で確かめた。束から直しの案を起こす所・人の採否・次の版・版ごとの数の並びは、型紙エンジンの repo の側（その repo の Issue 63）で、この repo には無い。エンジンで採られた案と次の版を、作る側の頁に出す所はまだ無い。実の場の記録（多くの人の手順の進みと質問）で束を出した事はまだ無い。名前は形では落とせないので、束は git に入れず、人が読んでから使う"
+  "unverified": "Issue 278・309・307・313・334。命令 1 つで束（JSON）を書く所まで。群は雛形と刷った組と紙（玩具と仮説と版の名）ごとで、違う紙の手順の番号を足さない（334）。人が確かめた動画の札も入れる（335。レビューは文の種類 review で、報告の数に入れない）。動画の札は作り物の動画と控えでだけ通した（本物の札の確かめは、まだ）。束の上の段に、群に出てくる雛形の今の刷った組も書く（309）。話した事（考え・工夫・できた後の話）も束に入れる（307。工夫は手順の番号つきで、記録に結んだ話はその記録の群に数える）。話した事の入った束は見本の話でだけ通した（実の人が話した記録では、まだ出していない）。11-04 の試行の記録 2 件から出した束が、型紙エンジンの側の入口の検査を通る事は手元で確かめた。束から直しの案を起こす所・人の採否・次の版・版ごとの数の並びは、型紙エンジンの repo の側（その repo の Issue 63）で、この repo には無い。エンジンで採られた案と次の版を、作る側の頁に出す所はまだ無い。実の場の記録（多くの人の手順の進みと質問）で束を出した事はまだ無い。名前は形では落とせないので、束は git に入れず、人が読んでから使う"
  },
  {
   "id": "f44",
@@ -458,7 +461,8 @@
    "tests/test_made_records.py",
    "src/omochae/media_review.py",
    "tests/test_media_review.py",
-   "tests/test_photo_owner_only.py"
+   "tests/test_photo_owner_only.py",
+   "tests/test_video_owner_ai.py"
   ],
   "unverified": "順位なし。見本は作り物で札付き。合言葉なしで開いた場では写真を出さず言葉だけ。人が使った確認はまだ。かざして選ぶ（U-44）はこの決定で外した 上げた写真と動画は、人の確認（omochae.media_review）を通した物だけを出す（#314）。人がこの確認を回した事はまだ無い"
  },
@@ -495,7 +499,7 @@
    "src/web/toys.py",
    "tests/test_material_axes.py"
   ],
-  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。当時の材料の語の一覧（#311）は、楊枝や割り箸という形で当時あったかまでは確かめていない。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
+  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。当時の材料の語の一覧（#311）は、楊枝や割り箸という形で当時あったかまでは確かめていない。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中。紙一枚は必須の条件でない（本人の決定 11-05 19:44）。たたき台の中に紙一枚で作れる物が無くてもよい"
  },
  {
   "id": "f39",

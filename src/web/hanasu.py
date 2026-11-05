@@ -52,7 +52,8 @@ DEFAULT_MODE = "browser"  # 本人の決定 11-05: iPhone・iPad でも話す釦
 # 断りの文。どの場面でも同じ物を出す。名前は床で落とせない（落とせるのは形だけ）ので、入れないお願いを添える。
 # 頭の 3 つの文は、本人が決め直した文（11-05）: 前の「声は録音しないし、どこにも送りません」は、ブラウザの音声認識で聞く画面では本当でなかった
 # （声がブラウザの会社に送られる事がある）。どの画面でも本当の文にした。
-NOTICE = "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。"
+# 最後の文も本人が採った字（話した字を輪の Claude へ渡す事を、残す前に知らせる）。一字も変えない。
+NOTICE = "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
 HOW_LOCAL = "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。"
 # ブラウザの既定の音声認識で聞く時の断り（本人の決定 11-05: iPhone・iPad でも話す釦を出し、頁に断りを出す。文は、採られたやさしい言葉の文）。
 HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。このサイトは声を受け取りません。"
@@ -173,6 +174,16 @@ document.addEventListener('submit',async(e)=>{
  go.disabled=false;
  if(j.kept){const li=document.createElement('li');li.textContent=text;root.querySelector('.hanasu-said').append(li);box.value='';root.dataset.via='';note(root,j.note)}
  else note(root,j.why||M.failed)});
+// 「残す」の前に #think の釦を押すと、頁を読み直して欄の字が消える。字はこのタブの中にだけ持ち、読み直したら消す（サーバへ送るのは「残す」の時だけ）。
+const said=document.querySelector('#hanasu textarea');
+if(said){
+ const keep='utsushi-said '+said.form.getAttribute('action'),box=said.closest('[data-hanasu]');
+ try{const d=JSON.parse(sessionStorage.getItem(keep)||'null');sessionStorage.removeItem(keep);
+  if(d&&!said.value){said.value=d.text;box.dataset.via=d.via}}catch(e){}
+ document.addEventListener('submit',(e)=>{
+  if(!e.target.closest||!e.target.closest('#think')||!said.value.trim())return;
+  try{sessionStorage.setItem(keep,JSON.stringify({text:said.value,via:box.dataset.via||''}))}catch(e2){}});
+}
 addEventListener('pagehide',stop);
 })()</script>""".replace("__FAILED__", FAILED).replace("__NOHEARD__", NOHEARD).replace("__HOW_BROWSER__", HOW_BROWSER)
 
