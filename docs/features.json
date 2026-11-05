@@ -305,7 +305,7 @@
  },
  {
   "id": "f29",
-  "name": "デモ動画を 1 つの命令で作り直す（7 場面をコードで描き、試験の数を入れ、3 分の床でつなぐ）",
+  "name": "デモ動画を 1 つの命令で作り直す（本人の言葉を軸に場面をコードで描き、音を付けて 3 分の床でつなぐ。曲は --song で受ける）",
   "status": "doing",
   "evidence": [
    "src/demo/build.py",
@@ -319,6 +319,11 @@
    "src/demo/scene7.py",
    "src/demo/beat.py",
    "tests/test_demo_beat.py",
+   "src/demo/script.py",
+   "src/demo/words.py",
+   "src/demo/song.py",
+   "tests/test_demo_words.py",
+   "tests/test_demo_song.py",
    "src/demo/assemble.py",
    "tests/test_demo_flip.py",
    "tests/test_demo_scene2.py",
@@ -332,7 +337,7 @@
    "tests/test_demo_prepare.py",
    "docs/demo/plan.md"
   ],
-  "unverified": "曲と字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まり、9 枚とも通る（どれを映すかは撮影の中身で決める）。本人と審査の人に見せていない"
+  "unverified": "曲は本人が Suno で作って渡す待ちで、本物の曲の拍では試していない（合成のクリック音まで）。問いの文面は未定。字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まり、9 枚とも通る（どれを映すかは撮影の中身で決める）。本人と審査の人に見せていない"
  },
  {
   "id": "f30",
