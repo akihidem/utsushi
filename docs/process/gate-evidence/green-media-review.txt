@@ -1,0 +1,5 @@
+# 命令: .venv/bin/python tests/test_media_review.py
+# commit: 9adb855（回した時の HEAD）
+読めない記録を飛ばした: review.json（JSONDecodeError）
+ok
+rc=0

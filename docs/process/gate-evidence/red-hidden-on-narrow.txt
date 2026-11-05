@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_tap_size.py
+# commit: b75e419（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_tap_size.py", line 31, in <module>
+    assert "[hidden]{display:none!important}" in skin.TAP_FLOOR, "幅の狭い画面で、hidden にした釦が隠れない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 幅の狭い画面で、hidden にした釦が隠れない
+rc=1

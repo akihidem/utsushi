@@ -196,16 +196,16 @@ function showAnswer(text, from) {
   $("answer").replaceChildren(d);
 }
 
-// 手順の質問。src/api/ask.py と同じ線: 仕組みは答えない → よくある言葉は刷った説明 → ほかは見ている人の Claude に組み方と凡例だけ。
+// 手順の質問。src/api/ask.py と同じ線: 仕組みは答えない → 語そのものを尋ねる短い問いは刷った説明 → ほかは見ている人の Claude に組み方と凡例だけ。
 $("ask-form").onsubmit = async (e) => {
   e.preventDefault();
   const q = $("q").value.trim().slice(0, 300);
   if (!q) return;
   if (DATA.mechanism.some((w) => q.includes(w))) { showAnswer(DATA.refuse, "答えない質問"); return speak(DATA.refuse); }
-  const hits = Object.entries(DATA.glossary).filter(([w]) => q.includes(w)).map(([, t]) => t);
-  if (hits.length) { const t = [...new Set(hits)].join(" "); showAnswer(t, "型紙の説明から"); return speak(t); }
+  const known = [...new Set(Object.entries(DATA.glossary).filter(([w]) => q.includes(w)).map(([, t]) => t))].join(" ");
+  if (new RegExp(`^(?:${DATA.term_question})$`).test(q)) { showAnswer(known, "型紙の説明から"); return speak(known); }
   const sample = await use("sample");
-  if (!sample) return showAnswer("この画面では AI に聞けません。組み方と凡例を見てください。", "—");
+  if (!sample) return showAnswer(`${known} この画面では AI に聞けません。組み方と凡例を見てください。`.trim(), "—");
   const s = sheet();
   const context = `組み方:\n${s.steps.map((x, i) => `${i + 1}. ${x}`).join("\n")}\n\n用意する物:\n${s.materials.map((x) => "・" + x).join("\n")}\n\n凡例: 切る＝実線、谷折り＝破線（手前にへこむ）、山折り＝一点鎖線（手前に出る）、糊代＝斜線。線の無い面（外筒と扇）は色の境で折る`;
   $("ask-go").disabled = true;

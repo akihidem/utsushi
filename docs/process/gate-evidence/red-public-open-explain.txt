@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: ec615b1（回した時の HEAD）
+/tmp/tmph6t731qi/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmph6t731qi/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmph6t731qi/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_public_open.py", line 93, in <module>
+    assert word not in page, (path, word)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('/toy/NDL-1187053-R0000005-L', 'TOLDWORDS')
+rc=1
