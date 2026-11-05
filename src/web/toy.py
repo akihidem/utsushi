@@ -387,8 +387,9 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
                  f'<a href="{pdf}" target="_blank" rel="noopener">PDF</a>）</p>')
         # 自分の仮説は窓に出ない（窓へ向けると、ほかの案の紙が出る）ので、字のリンクも PDF へ向ける（#320）。
         if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]):
-            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
-            # 話した案の紙は作った本人の画面からだけ開き、合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので道を出さない。
+            # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
+            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>' if photos else ""
+            # 話した案の刷った紙は、作った本人の画面からだけ開く。これも道を出さない。
             if photos and r["hypothesis_id"] not in spoken:
                 after = own_papers(sid, r["hypothesis_id"], ver) + after
         if told:
