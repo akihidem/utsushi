@@ -46,13 +46,13 @@
 | C4 | 11-04 の試行を受けた直し（v8）: 柄の形にも土台、つまみの溝は下から切り込む、扇の足の糊代と台の印、谷・山の向きの説明、外筒を先に作る順 | 本人の決定（カード 103912・104321） | `slider_fan.py`、`compose.py` | `tests/test_sheet_v8.py` | 満たす（実物では未確認） |
 | C5 | 工作の難しさで水準を上げない。見た目とおもちゃとしての楽しさで上げる | 本人の省察 11-04 | — | 人の目 | 一部（見える面の折り線は本人の決定 d で、goraigo-v9 から色の境で折る。実物と人の目は未確認） |
 
-### D 学習プリント（手順の紙・試した後の紙・見比べる紙）
+### D 学習プリント（手順の紙・試した後の紙）
 
 | # | 条件 | 由来 | 実装 | 確かめ方 | 状態 |
 |---|---|---|---|---|---|
 | D1 | 型紙と対で手順の紙を刷る。答え（計算の開く上限）を刷らない | J-009、`instructions.py` の判断の芯 | `instructions.py` | `test_records.py` | 満たす |
 | D2 | 試した後の紙は、次に変える条件を先に渡し、説明は折って閉じた札にする。記録の前は渡さない | J-013 | `instructions.py` の compose_after、画面 | `test_play_server.py` | 満たす |
-| D3 | 見比べる紙は 2 つの仮説を並べ、勝ち負けの欄を置かない。型紙が同じ組は 1 個を 2 通りに動かす | J-019、F11.compare | `instructions.py` の compose_compare | `test_discriminate.py` | 満たす |
+| D3 | 見比べる紙は本人の決定で外した（前は 2 つの仮説を並べる紙。#332 の点 2） | J-032 | なし（compare-v1・v2 の PDF は履歴） | `test_no_compare_sheet.py` | 外した |
 | D4 | 問いかけを本人の 4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）で考え直す。角度は今回の課題にしない | 本人の方針 11-04 | `instructions.py`（compose_sheet・compose_after・compose_compare・compose_teacher） | `tests/test_sheet_u25.py` | 満たす（11-04、hack-print が作り hack-main が main に入れた。goraigo-v10・tora-v3。画面の角度と分の欄も外した。U-25 は関門の試行の 3 つがそろって閉じた、[gate-trial](gate-trial.md)。先生の見る紙は `hypotheses print-teacher`。実物と人の目は未確認） |
 
 ### E 試行・記録・人の説明
@@ -130,7 +130,7 @@
 
 ### utsushi に残る物
 
-仮説（`hypotheses.py`）、学習プリント（`instructions.py`）、見比べる紙（`discriminate.py`）、記録・輪・台帳（`records.py`・`loop.py`・`ledger.py`）、図鑑の印（`labels.py`）、持ち寄り（`contrib.py`）、取り込み（`ingest.py`）、AI（`src/api/`）、画面（`src/web/`）、`docs/` の全部、仮説と記録のデータ、試行の写真と動画。
+仮説（`hypotheses.py`）、学習プリント（`instructions.py`）、記録・輪・台帳（`records.py`・`loop.py`・`ledger.py`）、図鑑の印（`labels.py`）、持ち寄り（`contrib.py`）、取り込み（`ingest.py`）、AI（`src/api/`）、画面（`src/web/`）、`docs/` の全部、仮説と記録のデータ、試行の写真と動画。
 
 ### 境目をまたぐ所（今のコードで見えた物）
 

@@ -129,6 +129,46 @@ def used_by(rid):
                   if p.name not in mine and word.search(p.read_text(encoding="utf-8", errors="replace")))
 
 
+def _drop_spoken(rid):
+    """話した考えから作った案（ループ1、Issue #335）のうち、この記録に関わる物を消す。消した物の名前を返す。人の言葉を、取り下げた記録の外に残さないため。
+    関わる物: 考えがこの記録に結ばれている案と、この記録が試した紙の案。考えは別の仮説を見て話すと紙の記録に結ばれないので、両方を見る。
+    別の記録がまだその案を使っている時は残す（試した記録が指す先を失わない）。最後の記録を取り下げた時に消える。
+    置き場を読むのは words の記録の形だけ（api へは依らない）。書いて立てた仮説は from_talk を持たないので触らない。"""
+    from . import hypotheses, loop, making_log, talk_log
+
+    path = folder() / f"{rid}.json"
+    rec = store.read_json_or_skip(path) if path.exists() else None
+    talks = {p.stem: t for p in making_log.folder().glob("talk-*.json") if (t := store.read_json_or_skip(p))} if making_log.folder().exists() else {}
+    gone = []
+    for p in sorted(loop.folder().glob("words-*.json")):
+        w = store.read_json_or_skip(p)
+        if not w or not w.get("from_talk"):
+            continue
+        sid, oid, stem = w.get("source_id"), w.get("own_id"), w["from_talk"]
+        tried = rec is not None and oid and rec.get("hypothesis_id") == oid and rec.get("source_id") == sid
+        if not tried and talks.get(stem, {}).get("record_id") != rid:
+            continue
+        if oid and any(r["hypothesis_id"] == oid and r["id"] != rid for r in all_records(sid)):
+            continue
+        if oid:
+            gone += hypotheses.drop_own(sid, oid)
+            for conf in sorted(loop.folder().glob(f"sheet-confirm-{sid}-{oid}-v*.json")):  # 消えた紙の確定の記録も残さない
+                conf.unlink()
+                gone.append(conf.name)
+            # その紙に付いた工夫で、まだ結ばれていない字も消す（消えた紙を指す字を残さない）。この記録に結ばれた字は drop_for_record が消す。
+            for stem_, t in talks.items():
+                if t.get("hypothesis_id") == oid and t.get("source_id") == sid and not t.get("record_id"):
+                    (making_log.folder() / f"{stem_}.json").unlink(missing_ok=True)
+                    gone.append(f"making/{stem_}.json")
+        # 元の考えの字。ほかの記録に結ばれた字は、その記録の物なので残す。
+        if stem in talks and talks[stem].get("record_id") in (None, rid):
+            (making_log.folder() / f"{stem}.json").unlink(missing_ok=True)
+            gone.append(f"making/{stem}.json")
+        p.unlink()  # 最後に消す。途中で落ちても、回し直しで残りを見つけられる
+        gone.append(p.name)
+    return gone
+
+
 def withdraw(rid, media_only=False):
     """取り下げ。消した物の名前の一覧と Failure の一覧を返す。
 
@@ -156,6 +196,8 @@ def withdraw(rid, media_only=False):
             mark.parent.mkdir(parents=True, exist_ok=True)
             store.write_json(mark, {"id": rid, "status": "withdrawn", "withdrawn_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")})
         gone = [f"media/{rid}/{p.name}" for p in sorted(media.glob("*"))] + [p.name for p in files if p.exists()]
+        if not media_only:
+            gone += _drop_spoken(rid)  # 記録を消す前に読む（試した紙がどの案かは、記録にしか無い）
         if media.exists():
             shutil.rmtree(media)
         for p in files:

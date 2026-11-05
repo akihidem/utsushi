@@ -1,0 +1,11 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_own_private.py
+# commit: 19a510a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop1_own_private.py", line 65, in <module>
+    loc, key = ask(base, WHO, SAID)
+               ~~~^^^^^^^^^^^^^^^^^
+  File "tests/test_loop1_own_private.py", line 61, in ask
+    return h["Location"], h["Set-Cookie"].split(";")[0]
+                          ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'split'
+rc=1
