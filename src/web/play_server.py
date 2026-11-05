@@ -17,7 +17,7 @@ import sys
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from omochae import hypotheses, loop, making_log, media_review, records
+from omochae import hypotheses, loop, making_log, media_review, records, store
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.store import SID
@@ -46,6 +46,12 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 MAX_FORM = 64 * 1024
 # トンネルの一時の名前の形（run-demo.sh の cloudflared）。本物の名前は repo に書かない（push の門の決まり）ので、形だけをここに 1 か所置く。
 TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
+
+
+def uploaded(rid):
+    """動画の受け口の記録か。上げた人に「頁に出さない」と約束した記録なので、置き場を共有していてもサイトの口から触らせない。"""
+    rec = store.read_json_or_skip(records.folder() / f"{rid}.json")
+    return bool(rec and rec.get("via") == records.UPLOADED)
 
 
 def byte_range(header, size):
@@ -296,8 +302,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
         if path == "/gallery":
             from . import techo_site
-            from .demo_samples import STYLE as SAMPLE_STYLE
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.STYLE + SAMPLE_STYLE, "techo"))
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
@@ -410,17 +415,22 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
-    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None):
+    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
             return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
+        # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
+        extra += "&fresh=1" if fresh else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
 
     def _post(self):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        m = re.fullmatch(r"/record/(R-\d{4,})/.*", self.path)
+        if m and uploaded(m.group(1)):
+            return self._refuse(404, "見つかりません")
         m = re.fullmatch(r"/record/(R-\d{4,})/media", self.path)
         if m:
             # 写真と動画はフォームでなく本体そのままで受ける。別のサイトから送らせないため、同じ出所だけを受ける。
@@ -708,7 +718,7 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else anchor)
+        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record")
 
 
 def print_latest(sid, hid):
