@@ -119,6 +119,72 @@ with mock.patch.object(cycle.loop, "next_version", side_effect=TypeError("形が
     r = cycle.run(keep_going=True, engine_repo=NO_ENGINE)
 assert r.rc == 3 and r.stages[-1].status == cycle.FAILED and r.stages[-1].name == "人の解釈と次の版の紙" and "形が違う" in r.stages[-1].detail, r.stages
 
+# 落ちた段では、後ろの段を回さない（--keep-going でも。後ろの段が前の結果を使うため）
+ran = []
+
+
+def raises(c):
+    raise cycle.Failed("つながらない")
+
+
+fake_stages = (("前", lambda c: ran.append("前")), ("落ちる", raises), ("後ろ", lambda c: ran.append("後ろ")))
+for going in (False, True):
+    ran.clear()
+    with mock.patch.object(cycle, "STAGES", fake_stages):
+        r = cycle.run(keep_going=going, engine_repo=NO_ENGINE)
+    assert ran == ["前"] and [s.status for s in r.stages] == [cycle.PASSED, cycle.FAILED] and r.rc == 3, (going, ran, r.stages)
+    assert "つながらない" in r.stages[-1].detail, r.stages
+
+# 段 10 は、声と映像の形のファイルと、床に当たるはずの字を、全部のファイルから探す。話した字が無ければ飛ばす
+floor = pathlib.Path(tempfile.mkdtemp())
+(floor / "clean.json").write_text("{}", encoding="utf-8")
+c = cycle.Context(sid=G, folder=floor, talked=True)
+assert "1" in cycle.stage_floor(c)
+for suffix in sorted(cycle.VOICE_SUFFIXES):
+    bad = floor / f"voice{suffix.upper()}"  # 字の大きさの違いでも見つける
+    bad.write_bytes(b"")
+    try:
+        cycle.stage_floor(c)
+        raise AssertionError(f"声の形を見逃した: {suffix}")
+    except cycle.Failed as e:
+        assert bad.name in str(e), e
+    bad.unlink()
+(floor / "deep").mkdir()
+for mark in cycle.PROBE_MARKS:
+    bad = floor / "deep" / "talk.json"
+    bad.write_text(json.dumps({"text": f"前 {mark} 後"}, ensure_ascii=False), encoding="utf-8")
+    try:
+        cycle.stage_floor(c)
+        raise AssertionError(f"床に当たる字を見逃した: {mark}")
+    except cycle.Failed as e:
+        assert bad.name in str(e), e
+    bad.unlink()
+c.talked = False
+try:
+    cycle.stage_floor(c)
+    raise AssertionError("話した字が無いのに床を見たと言った")
+except cycle.Skipped as e:
+    assert "話した字" in str(e), e
+
+# 段 2 は、床に当たる字が残らない事を本当に試す。話す口が字を残したら落ちる（話す口の床を試さなくなると、ここで分かる）
+if cycle.has("talk_log"):
+    from omochae import talk_log  # noqa: E402
+
+    tried = []
+
+    def keeps(sid, scene, text, **kw):
+        tried.append(text)
+        return "残した", []
+
+    with mock.patch.object(talk_log, "add", keeps):
+        try:
+            cycle.stage_talk(cycle.Context(sid=G, folder=floor, hid="H-A"))
+            raise AssertionError("床に当たる字が残ったのに通った")
+        except cycle.Failed as e:
+            assert "床に当たる" in str(e), e
+    assert set(tried) & set(cycle.PROBES), tried
+    assert all(any(mark in probe for probe in cycle.PROBES) for mark in cycle.PROBE_MARKS), "探す字と試す字が合っていない"
+
 # 9. エンジンの入口の呼び方。偽の repo で、置き場の向け先と鍵を見る。本物の repo の置き場と台帳に書かない
 fake = pathlib.Path(tempfile.mkdtemp()) / "engine"
 (fake / "src/omochae").mkdir(parents=True)
