@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「デモ用の見本と、デモの一周の試験」を見る）
+# commit: 6752b9a（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_demo_samples.py", line 13, in <module>
     assert html.count('class="item is-sample"') == len(demo_samples.UPLOADS) + len(demo_samples.CONTRIBUTIONS), "見本が全部出る"

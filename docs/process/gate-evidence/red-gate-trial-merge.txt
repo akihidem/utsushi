@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「関門の帳面の末尾の衝突をなくす」を見る）
+# commit: 7ed1c17（このファイルを足した commit）
 直す前（main 845570c）: tests/test_gate_trial_merge.py を当てた
 Traceback (most recent call last):
   File "tests/test_gate_trial_merge.py", line 47, in <module>

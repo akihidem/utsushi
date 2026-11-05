@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_floors_hygiene.py
+# commit: 1ee40a5（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_floors_hygiene.py   # 直す前の main。眠る試験が関門を固める
             stderr=b''.join(stderr_seq) if stderr_seq else None)
 subprocess.TimeoutExpired: Command '['.venv/bin/python', '-c', '\nimport pathlib, sys\nsys.path.insert(0, sys.argv[1])\nimport run_floors as rf\nrf.ROOT = pathlib.Path(sys.argv[2])\nrf.PY = sys.execut

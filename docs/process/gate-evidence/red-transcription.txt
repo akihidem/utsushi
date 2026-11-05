@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「U-05 の下見で見つかった不具合: 採らなかった歌の読みが注から Claude に渡る」を見る）
+# commit: 6c68c12（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_transcription_filter.py", line 8, in <module>
     assert "怠らし" not in out, "採らなかった読みの語が、採った読みの注の中から渡っている"

@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_media_strip.py
+# commit: d40bdfd（このファイルを足した commit）
 # Green: 直した後
 $ PYTHONPATH=src .venv/bin/python tests/test_media_strip.py
 ok png
