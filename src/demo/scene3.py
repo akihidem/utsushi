@@ -20,6 +20,7 @@ exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無
 """
 import argparse
 import json
+import math
 import os
 import pathlib
 import shutil
@@ -41,7 +42,9 @@ SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2 と同じ頁
 DURATION = 25.0
 DPR = 2                          # 撮る時の画素の倍率。寄った時に字がぼけないよう、2 倍で撮って縮める
 SHOT_W = 1600                    # 撮る窓の幅（CSS の px）。ルックブックの頁が 1180px で真ん中に来る
-SHOT_H = {"before": 1400, "after": 3400}  # 予想の後の頁は仮説の 5 枚まで入る高さが要る（試し撮りで決めた）
+SHOT_H = {"before": 1400, "after": 3400}  # 撮る高さの下限。足りない時は測った枠から伸ばす（need_height）
+# 使う枠の下に残す余白（CSS の px）。予想の欄へ寄った絵は、欄の下に枠の高さの半分ほど（約 330px）を映すため。
+SHOT_MARGIN = 400
 SCREEN_BG = (239, 232, 216)      # 画面の地の色（#efe8d8）。撮った枠の外をこの色で埋め、継ぎ目を見せない
 
 # 送る予想の例。誰の予想でもない事を文の頭で示す。どの仮説にも寄らない、ぼんやりした言い方にした
@@ -161,6 +164,26 @@ def _rects(chrome, tmp, base, html, height):
     return json.loads(r.stdout[start + 16:r.stdout.index("</pre>", start)])
 
 
+def _used(rects):
+    """動画で使う枠: 1 つ目の入力欄（予想の欄）・残った予想・仮説の札。頁の下の方の別の欄は映さない。"""
+    return rects["textarea"][:1] + rects["article"][:1] + rects["plate"]
+
+
+def need_height(rects, minimum):
+    """撮る窓の高さ（CSS の px）。使う枠の下端に寄りの余白を足す。決めた下限より低くはしない。
+
+    11-05 に頁を作り直して長くなり、決め打ちの高さでは札 D・E の下が欠けた（切り出しの外が黒くなる）。
+    頁が直されても追いつくよう、高さは測った枠から決める。
+    """
+    bottom = max((r[1] + r[3] for r in _used(rects)), default=0)
+    return max(minimum, math.ceil(bottom + SHOT_MARGIN))
+
+
+def shot_fits(rects, height):
+    """使う枠が、撮った高さの中に余白ごと収まるか。収まらなければ書き出さない（欠けた札を動画に出さない）。"""
+    return need_height(rects, 0) <= height
+
+
 def capture(cache, sid=SID):
     """play_server を一時の置き場で立て、予想の前と後を撮る。撮れない時は None。"""
     chrome = shutil.which("google-chrome") or shutil.which("chromium")
@@ -205,12 +228,22 @@ def capture(cache, sid=SID):
                         return None
                     html = urllib.request.urlopen(url, timeout=5).read().decode("utf-8")
                 png = out / f"{state}.png"
+                # 先に決めた高さで測り、枠が収まらなければ伸ばして測り直す。高さで組みが変わる頁もあるので、
+                # 撮るのは必ず測った時と同じ高さ。
+                height = SHOT_H[state]
+                for _ in range(3):
+                    rects[state] = _rects(chrome, tmp, base, html, height)
+                    if not rects[state] or not rects[state]["textarea"] or shot_fits(rects[state], height):
+                        break
+                    height = need_height(rects[state], height)
                 png.unlink(missing_ok=True)
-                _chrome(chrome, tmp, [f"--force-device-scale-factor={DPR}", f"--window-size={SHOT_W},{SHOT_H[state]}",
+                _chrome(chrome, tmp, [f"--force-device-scale-factor={DPR}", f"--window-size={SHOT_W},{height}",
                                       f"--screenshot={png}", url])
-                rects[state] = _rects(chrome, tmp, base, html, SHOT_H[state])
                 if not png.exists() or not rects[state] or not rects[state]["textarea"]:
                     print(f"検査できない: 画面が撮れない（{state}）", file=sys.stderr)
+                    return None
+                if not shot_fits(rects[state], height):
+                    print(f"検査できない: 使う枠が撮った画面に収まらない（{state}・高さ {height}）", file=sys.stderr)
                     return None
         finally:
             proc.terminate()
