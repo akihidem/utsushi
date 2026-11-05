@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_one_sheet.py
+# commit: ec615b1（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_one_sheet.py", line 30, in <module>
+    assert data.get("sheet") in ids, (path.name, data.get("sheet"), ids)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L-4.json', None, ['H-A', 'H-B'])
+rc=1
