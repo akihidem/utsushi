@@ -10,7 +10,8 @@ exit: 0 = 書き出せた / 4 = 画像が取れない・型紙が刷れない・
   動画の紙と、家で刷る紙が同じ物である事が、この場面の言いたい事だから。折り線の動きも同じ配置（layout）から引く。
 - 扇の開き方・動き方は見せない（紙で確かめる前に答えを見せない。J-013）。型紙は平らな紙のまま映し、矢印も動きも付けない。
   手順の紙も「遊び方」の手前で切り、閉じた時の中の様子の図は白く伏せる。
-- 仮説に順位を付けない（J-025）。大きく映す例は記号の順の先頭（A）で、ほかの仮説の紙も同じ大きさで横に並べる。
+- 見せる紙はたたき台の 1 組だけ（型紙は玩具に 1 枚。本人の決定 11-05 17:26、J-032）。組を並べる段とその字は外した。
+  字は書き換えず、足してもいない（#332）。順位を付けない（J-025）。
 - 組の版（SHEET_SET）は slider_fan.py から読む。文字で書き込むと、組を刷り直した時に動画だけ古くなる。
   試験の本数は撮る日の ./run.sh で数えて --tests で渡す。渡さない時は数を出さない（古い数を出さないため）。
 - frame(t) は時刻だけから 1 コマを描く純関数（flip.py と同じ）。合図は CUES の 1 か所だけを読む。
@@ -43,7 +44,6 @@ CUES = {
     "printed": (17.7, 19.2),     # 刷った PDF が線の下に現れる。糸車は消える
     "tejun": (19.4, 20.6),       # 手順の紙が右に現れ、朱の折り線は退く
     "labels": (20.6, 21.6),      # 刷った組の版と試験の札
-    "sets": (22.0, 23.2),        # 仮説ごとの組を同じ大きさで並べる
     "closing": (25.6, 27.4),     # 締めの字幕（30 秒まで止めて読ませる）
 }
 
@@ -51,10 +51,8 @@ CUES = {
 SHEET_BOX = (120, 200, 780)        # x, y, 高さ
 PERSP_H, PERSP_Y, PERSP_GAP = 600, 220, 40
 WHEEL_H, WHEEL_ASIDE_H = 760, 560
-TEJUN_BOX = (760, 200, 1080, 520)  # x, y, 幅の上限, 高さの上限。下に札の 1 行と、仮説ごとの組の列を置く
-THUMB_Y, THUMB_H, THUMB_GAP = 810, 150, 24
+TEJUN_BOX = (760, 200, 1080, 520)  # x, y, 幅の上限, 高さの上限。下に札の 1 行を置く
 SHEET_DPI = 150                    # 780px に縮めて字が潰れない程度。動画のためだけで、刷る紙には関わらない
-THUMB_DPI = 40
 
 
 def phase(t, cue):
@@ -184,21 +182,16 @@ def build_template(cache, recs):
     outdir = cache / "templates"
     hs = hypothesis_sheets(recs)
     example = next(h for h in hs if h["id"] == recs["template"]["example_hypothesis"])
-    out = {"thumbs": []}
-    for h in hs:
-        layout, failures = template_layout(h, source)
-        if not failures:
-            pdf = write_all(layout, outdir / f"{h['id']}")
-            failures = check_pdf(pdf, source) + check_image_count(pdf)
-        if failures:
-            for f in failures:
-                print(f.line(), file=sys.stderr)
-            print(f"検査できない: 型紙 {h['id']} が検査に落ちた", file=sys.stderr)
-            return None
-        out["thumbs"].append((h["letter"], _raster(pdf, THUMB_DPI)))
-        if h is example:
-            out["sheet"], out["segs"], out["page_mm"] = _raster(pdf, SHEET_DPI), template_segments(layout), (layout["page"].w, layout["page"].h)
-            out["pdf"] = pdf
+    layout, failures = template_layout(example, source)
+    if not failures:
+        pdf = write_all(layout, outdir / f"{example['id']}")
+        failures = check_pdf(pdf, source) + check_image_count(pdf)
+    if failures:
+        for f in failures:
+            print(f.line(), file=sys.stderr)
+        print(f"検査できない: 型紙 {example['id']} が検査に落ちた", file=sys.stderr)
+        return None
+    out = {"sheet": _raster(pdf, SHEET_DPI), "segs": template_segments(layout), "page_mm": (layout["page"].w, layout["page"].h), "pdf": pdf}
     layout, failures = tejun_layout(example, source)
     if failures:
         for f in failures:
@@ -250,7 +243,6 @@ class Scene:
         self.duration = DURATION
         self.set_label = f"刷った組 {SHEET_SET}"
         self.tests_label = f"試験 {tests}（./run.sh）" if tests else TESTS_DEFAULT
-        self.n_sets = len(tpl["thumbs"])
         self.example = tpl.get("example_letter", "A")
         # 三編: 和本は右の頁から読むが、画面では頁の並びのまま左右に置く（見開きの姿を崩さない）。
         self.persp = [ink_layer(edo[f"v3-R0000022/{k}"], PERSP_H / edo[f"v3-R0000022/{k}"].height) for k in ("left", "right")]
@@ -264,7 +256,6 @@ class Scene:
         tj = tpl["tejun"]
         scale = min(tw / tj.width, th / tj.height)
         self.tejun = tj.resize((round(tj.width * scale), round(tj.height * scale)), Image.LANCZOS)
-        self.thumbs = [(letter, _scaled(im, THUMB_H)) for letter, im in tpl["thumbs"]]
         self.segs = [(kind, (sx + a[0] * self.k, sy + a[1] * self.k), (sx + b[0] * self.k, sy + b[1] * self.k))
                      for kind, a, b in tpl["segs"]]
 
@@ -328,7 +319,7 @@ class Scene:
             img.paste(region, (x0, y0))
             draw.rectangle((x0 - 1, y0 - 1, x1, y1), outline=fade(SUMI, 0.35 * aside), width=1)
         self._lines(img, t)
-        # 手順の紙と、仮説ごとの組
+        # 手順の紙
         a_tj = phase(t, "tejun")
         if a_tj > 0:
             tx, ty = TEJUN_BOX[0], TEJUN_BOX[1]
@@ -336,18 +327,6 @@ class Scene:
             img.paste(Image.blend(region, self.tejun, a_tj), (tx, ty))
             draw.rectangle((tx - 1, ty - 1, tx + self.tejun.width, ty + self.tejun.height), outline=fade(SUMI, 0.35 * a_tj))
             text(draw, (tx, ty + self.tejun.height + 10), "手順の紙（組み方まで。中の様子の図は伏せた）", 26, fade(SUMI, 0.8 * a_tj))
-        a_sets = phase(t, "sets")
-        if a_sets > 0:
-            # 全部の組を同時に、同じ大きさで出す。1 つずつ出すと順番に意味があるように見える（J-025）。
-            x = TEJUN_BOX[0]
-            for letter, th in self.thumbs:
-                region = img.crop((x, THUMB_Y, x + th.width, THUMB_Y + th.height))
-                img.paste(Image.blend(region, th, a_sets), (x, THUMB_Y))
-                draw.rectangle((x - 1, THUMB_Y - 1, x + th.width, THUMB_Y + th.height), outline=fade(SUMI, 0.35 * a_sets))
-                text(draw, (x + th.width // 2, THUMB_Y + th.height + 8), f"仮説 {letter}", 24, fade(SUMI, a_sets), anchor="ma")
-                x += th.width + THUMB_GAP
-            text(draw, (x + 16, THUMB_Y + 30), f"仮説ごとに 1 組（{self.n_sets} 組）", 30, fade(SUMI, a_sets), True)
-            text(draw, (x + 16, THUMB_Y + 80), "並びは記号の順。順位ではない", 26, fade(SUMI, 0.8 * a_sets))
         a_lab = phase(t, "labels")
         if a_lab > 0:
             text(draw, (W - 80, 64), self.set_label, 40, fade(SHU, a_lab), True, "ra")
@@ -362,7 +341,7 @@ class Scene:
             head = ("型紙の線", "切る線（墨）と折る線（朱）。生成器が寸法から描く",
                     min(ease((t - CUES["edo_aside"][0] - 0.6) / 0.6), 1 - ease((t - CUES["tejun"][0] + 0.4) / 0.4)))
         else:
-            head = ("刷った PDF と手順の紙", f"例: 仮説 {self.example} の組。どの仮説も同じ形で、家で刷れる",
+            head = ("刷った PDF と手順の紙", f"例: 仮説 {self.example} の組。",
                     ease((t - CUES["tejun"][0]) / 0.6))
         if head[2] > 0:
             text(draw, (80, 60), head[0], 54, fade(SUMI, head[2]), True)
@@ -372,8 +351,7 @@ class Scene:
             veil = Image.new("RGBA", (W, H), PAPER + (round(235 * c),))
             img.paste(veil, (0, 0), veil)
             draw = ImageDraw.Draw(img)
-            text(draw, (W // 2, 440), "江戸の絵も、仕組みを図で残した。", 58, fade(SUMI, c), True, "ma")
-            text(draw, (W // 2, 530), "型紙は、仮説ごとに家で刷れる紙。", 58, fade(SUMI, c), True, "ma")
+            text(draw, (W // 2, 485), "江戸の絵も、仕組みを図で残した。", 58, fade(SUMI, c), True, "ma")
         text(draw, (80, H - 50), self.credit(t), 22, fade(SUMI, 0.7))
         return img
 

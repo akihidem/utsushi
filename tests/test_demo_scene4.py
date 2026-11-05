@@ -8,6 +8,7 @@ import inspect
 from PIL import Image, ImageDraw
 
 from demo import scene4
+from omochae import hypotheses
 from omochae.templates import slider_fan
 
 recs = scene4.load_records()
@@ -54,7 +55,6 @@ for pid, rec in recs["pages"].items():
         ImageDraw.Draw(g).rectangle((40, 40, 200, 200), fill=0)
         edo[f"{pid}/{c['id']}"] = g
 tpl = {"sheet": Image.new("RGB", (420, 594), (250, 250, 250)), "tejun": Image.new("RGB", (600, 300), (245, 245, 245)),
-       "thumbs": [(h["letter"], Image.new("RGB", (84, 119), (240, 240, 240))) for h in hs],
        "segs": segs, "page_mm": (layout["page"].w, layout["page"].h), "example_letter": example["letter"]}
 scene = scene4.Scene(edo, tpl, recs)
 assert scene.duration == scene4.DURATION
@@ -65,6 +65,14 @@ for t in (0.5, 6.0, 13.5, 16.0, 18.5, 21.0, 23.0, 28.0):
 f0 = scene4.CUES["folds"][0] + 0.5
 assert scene.frame(f0).tobytes() != scene.frame(f0 + 1.0).tobytes()
 
+# 見せる紙はたたき台の 1 組だけ（型紙は玩具に 1 枚。J-032）。組を並べる段と「仮説ごと」の字を出さない。字は書き換えず外した
+assert recs["template"]["example_hypothesis"] == hypotheses.sheet_of(recs["template"]["source_id"])["id"]
+assert "sets" not in scene4.CUES and not hasattr(scene, "thumbs")
+source_text = inspect.getsource(scene4)
+assert not any(s in source_text for s in ("仮説ごとに 1 組", "型紙は、仮説ごとに", "どの仮説も同じ形"))
+assert all(s in source_text for s in ("江戸の絵も、仕組みを図で残した。", "手順の紙（組み方まで。中の様子の図は伏せた）", " の組。"))
+# 組の列があった所は紙の地のまま（空いた段に何も残らない）
+assert len(scene.frame(23.5).crop((scene4.TEJUN_BOX[0], 800, scene4.W, 1000)).getcolors()) == 1
 # 組の版の札はコードから来る。文字で書き込むと、組を刷り直した時に動画だけ古くなる
 assert scene.set_label == f"刷った組 {slider_fan.SHEET_SET}"
 assert slider_fan.SHEET_SET not in inspect.getsource(scene4), "SHEET_SET の値を scene4.py に書き込まない"
