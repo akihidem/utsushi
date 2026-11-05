@@ -196,7 +196,10 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     shapes += tpl.diagram(diagram_x, top, DIAGRAM_W, DIAGRAM_H, p)
     texts.append(TextBox(diagram_x, top, DIAGRAM_W, DIAGRAM_H, None))
     # 図の説明は雛形が持てる（全部の玩具の線の報告）。御来迎の筒の言葉を、車や凧の図に刷らないため。無ければ今までの文。
-    _block(texts, [getattr(tpl, "DIAGRAM_CAPTION", "閉じた時の中の様子（破線は筒の中）")], diagram_x, top + DIAGRAM_H + 1, 2.8, DIAGRAM_W)
+    # 形で図が変わる雛形は diagram_caption(p) で持ち、空なら札を刷らない（#294。俵に車と台の札を刷らないため）。
+    caption = tpl.diagram_caption(p) if hasattr(tpl, "diagram_caption") else getattr(tpl, "DIAGRAM_CAPTION", "閉じた時の中の様子（破線は筒の中）")
+    if caption:
+        _block(texts, [caption], diagram_x, top + DIAGRAM_H + 1, 2.8, DIAGRAM_W)
     y = _block(texts, ["組み方"], page.x0, top, HEAD_SIZE, left_w)
     y = _block(texts, [f"{i}. {s}" for i, s in enumerate(tpl.steps(p), 1)], page.x0, y, BODY_SIZE, left_w)
     y = _block(texts, ["遊び方", how_it_moves, "力を入れすぎず、手でゆっくり動かす"], page.x0, y + 1, BODY_SIZE, left_w)
