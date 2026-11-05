@@ -5,6 +5,7 @@ import tempfile
 from types import SimpleNamespace
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tempfile.mkdtemp(), "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import ask, observe  # noqa: E402
 from omochae import loop, records  # noqa: E402

@@ -9,6 +9,7 @@ from types import SimpleNamespace as NS
 
 tmp = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = tmp
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import budget, generate as gen
 from omochae import hypotheses, loop, records
