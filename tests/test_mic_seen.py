@@ -20,6 +20,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("OMOCHAE_VOICE", None)
 
 from measure_tap import chrome  # noqa: E402
+from omochae import records  # noqa: E402
 from web import play_server  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -74,6 +75,9 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 for path, data in ((f"/toy/{G}/print", {"hypothesis": "H-A"}), (f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})):
     urllib.request.urlopen(urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base}), timeout=120)
+# 手帖の話す口は記録を残した画面にだけ開く。測る Chrome を、その画面として扱う
+records.claim(records.all_records(G)[-1]["id"], "a" * 24)
+play_server.Handler._rec_key = lambda self: "a" * 24
 try:
     with tempfile.TemporaryDirectory() as profile:
         out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=1400,900",
