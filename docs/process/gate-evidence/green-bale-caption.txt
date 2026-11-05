@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tpl_captions.py
+# commit: 381c602（回した時の HEAD）
+ok 9
+rc=0

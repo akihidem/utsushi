@@ -427,8 +427,8 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True, msg=""):
-    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。"""
+def page(sid, printed_ids, picture_url, uploads=True, msg="", own=()):
+    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。own は、この画面が作った本人の案（話した考えから作った紙）の番号で、札の先頭に出す。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
     hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
@@ -436,8 +436,10 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
     from .play_server import printed_versions
 
     # data-v: 開いた時に刷ってあった一番新しい版。作っている途中で別の人の版が刷られても、報告はこの版への物として残る。
+    mine = [h for h in hypotheses.own_hypotheses(sid) if h["id"] in own]
+    mine.sort(key=lambda h: own.index(h["id"]))
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
-                     f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
+                     f'{esc(h["name"]) if h in mine else "<span class=big>" + esc(hypotheses.letter(h)) + "</span>"}の紙</label>' for i, h in enumerate(mine + hyps))
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{result_icon(r, tpl.RESULTS)}{esc(r)}</label>' for r in tpl.RESULTS)
