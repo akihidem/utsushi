@@ -11,12 +11,12 @@ import os
 import pathlib
 import re
 import sys
-import tempfile
 import unicodedata
 from datetime import datetime, timedelta, timezone
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from . import store
 from .model import Failure
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -63,21 +63,8 @@ def _ensure_dirs():
 
 
 def _write_atomic(path, data, exclusive=False):
-    """途中の状態を読ませないよう、一時ファイルに書いてから確定する。exclusive は同じ番号を上書きしない。"""
-    payload = data if isinstance(data, bytes) else data.encode("utf-8")
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(payload)
-        os.chmod(tmp, 0o600)
-        if exclusive:
-            os.link(tmp, path)
-        else:
-            os.replace(tmp, path)
-            tmp = None
-    finally:
-        if tmp and os.path.exists(tmp):
-            os.unlink(tmp)
+    """持ち寄りの置き場は連絡先を持つので、同じ機械の他の利用者から読めない形で書く。"""
+    store.write_atomic(path, data, exclusive=exclusive, mode=0o600)
 
 
 def _dump(rec):

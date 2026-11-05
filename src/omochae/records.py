@@ -11,6 +11,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 
+from . import store
 from .contrib import check_pii
 from .hypotheses import load, own_hypotheses
 from .model import Failure
@@ -73,9 +74,7 @@ def add(rec):
         rid = f"R-{max(nums, default=0) + 1:04d}"
         out = {**rec, "id": rid, "by": "human", "recorded_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")}
         try:
-            with open(d / f"{rid}.json", "x", encoding="utf-8") as f:
-                json.dump(out, f, ensure_ascii=False, indent=2)
-                f.write("\n")
+            store.write_json(d / f"{rid}.json", out, exclusive=True)
             return rid, []
         except FileExistsError:
             nums.append(int(rid[2:]))
@@ -84,8 +83,8 @@ def add(rec):
 def all_records(source_id=None):
     out = []
     for p in sorted(folder().glob("R-*.json")):
-        rec = json.loads(p.read_text(encoding="utf-8"))
-        if source_id is None or rec.get("source_id") == source_id:
+        rec = store.read_json_or_skip(p)
+        if rec is not None and (source_id is None or rec.get("source_id") == source_id):
             out.append(rec)
     return out
 
