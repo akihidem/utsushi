@@ -1,0 +1,399 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_call_timeouts.py
+# commit: 5ad4f53（回した時の HEAD）
+[2026-11-05 22:55:03 +0900] POST /toy/NDL-1187053-R0000005-L/ask-json Claude の呼び出しの失敗（役 ask）: APITimeoutError: Request timed out or interrupted. This could be due to a network timeout, dropped connection, or request cancellation. See https://docs.anthropic.com/en/api/errors#long-requests for more details.
+APITimeoutError:
+  File "src/web/play_server.py", line 641, in _ask
+    return ask.answer(sid, hid, question)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/api/ask.py", line 108, in answer
+    response = client.messages.create(
+        model=config.MODELS["ask"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
+        messages=messages,
+        thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["ask"]},
+    )
+  File ".venv/lib/python3.14/site-packages/anthropic/_utils/_utils.py", line 294, in wrapper
+    return func(*args, **kwargs)
+  File ".venv/lib/python3.14/site-packages/anthropic/resources/messages/messages.py", line 1070, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/v1/messages",
+        ^^^^^^^^^^^^^^^
+    ...<30 lines>...
+        stream_cls=Stream[RawMessageStreamEvent],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1679, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1230, in request
+    return self._request(cast_to, options, stream=stream, stream_cls=stream_cls)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1264, in _request
+    response, prepared = self._attempt_request(
+                         ~~~~~~~~~~~~~~~~~~~~~^
+        model_copy(input_options), stream=stream, retries_taken=retries_taken, call=call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1446, in _attempt_request
+    raise APITimeoutError(request=request) from err
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1439, in _attempt_request
+    response = self._client.send(
+        request,
+        stream=stream or self._should_stream_response_body(request=request),
+        **kwargs,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 979, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1007, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1042, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1075, in _send_single_request
+    response = transport.handle_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 244, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 115, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 98, in map_httpcore_exceptions
+    yield
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 245, in handle_request
+    resp = self._pool.handle_request(req)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 242, in handle_request
+    raise exc from None
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 224, in handle_request
+    response = connection.handle_request(pool_request.request)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection.py", line 96, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 125, in handle_request
+    raise exc
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 97, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 167, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 200, in _receive_event
+    data = self._network_stream.read(self.READ_NUM_BYTES, timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_backends/sync.py", line 125, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_exceptions.py", line 17, in map_exceptions
+    raise to_exc(exc) from exc
+[2026-11-05 22:55:05 +0900] POST /toy/NDL-1187053-R0000005-L/ask Claude の呼び出しの失敗（役 ask）: APITimeoutError: Request timed out or interrupted. This could be due to a network timeout, dropped connection, or request cancellation. See https://docs.anthropic.com/en/api/errors#long-requests for more details.
+APITimeoutError:
+  File "src/web/play_server.py", line 641, in _ask
+    return ask.answer(sid, hid, question)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/api/ask.py", line 108, in answer
+    response = client.messages.create(
+        model=config.MODELS["ask"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
+        messages=messages,
+        thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["ask"]},
+    )
+  File ".venv/lib/python3.14/site-packages/anthropic/_utils/_utils.py", line 294, in wrapper
+    return func(*args, **kwargs)
+  File ".venv/lib/python3.14/site-packages/anthropic/resources/messages/messages.py", line 1070, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/v1/messages",
+        ^^^^^^^^^^^^^^^
+    ...<30 lines>...
+        stream_cls=Stream[RawMessageStreamEvent],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1679, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1230, in request
+    return self._request(cast_to, options, stream=stream, stream_cls=stream_cls)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1264, in _request
+    response, prepared = self._attempt_request(
+                         ~~~~~~~~~~~~~~~~~~~~~^
+        model_copy(input_options), stream=stream, retries_taken=retries_taken, call=call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1446, in _attempt_request
+    raise APITimeoutError(request=request) from err
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1439, in _attempt_request
+    response = self._client.send(
+        request,
+        stream=stream or self._should_stream_response_body(request=request),
+        **kwargs,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 979, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1007, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1042, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1075, in _send_single_request
+    response = transport.handle_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 244, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 115, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 98, in map_httpcore_exceptions
+    yield
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 245, in handle_request
+    resp = self._pool.handle_request(req)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 242, in handle_request
+    raise exc from None
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 224, in handle_request
+    response = connection.handle_request(pool_request.request)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection.py", line 96, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 125, in handle_request
+    raise exc
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 97, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 167, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 200, in _receive_event
+    data = self._network_stream.read(self.READ_NUM_BYTES, timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_backends/sync.py", line 125, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_exceptions.py", line 17, in map_exceptions
+    raise to_exc(exc) from exc
+[2026-11-05 22:55:07 +0900] POST /record/R-0001/ai-interpret Claude の呼び出しの失敗（役 interpret）: APITimeoutError: Request timed out or interrupted. This could be due to a network timeout, dropped connection, or request cancellation. See https://docs.anthropic.com/en/api/errors#long-requests for more details.
+APITimeoutError:
+  File "src/web/play_server.py", line 544, in _ai_reply
+    _, failures = draft_interpretation(rid, client=default_client("interpret"))
+                  ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/api/loop_agents.py", line 144, in draft_interpretation
+    result, trace = agent.run("interpret", INTERPRET_SYSTEM, user, [], INTERPRET_SCHEMA, execute, client=client)
+                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/api/agent.py", line 110, in run
+    response = client.beta.messages.create(
+        model=trace.model, max_tokens=config.MAX_TOKENS, system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+        tools=definitions, messages=messages, cache_control={"type": "ephemeral"},
+        output_config={"effort": config.EFFORT[role]}, thinking={"type": "adaptive"}, betas=BETAS, fallbacks="default",
+    )
+  File ".venv/lib/python3.14/site-packages/anthropic/_utils/_utils.py", line 294, in wrapper
+    return func(*args, **kwargs)
+  File ".venv/lib/python3.14/site-packages/anthropic/resources/beta/messages/messages.py", line 1266, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/v1/messages",
+        ^^^^^^^^^^^^^^^
+    ...<37 lines>...
+        stream_cls=Stream[BetaRawMessageStreamEvent],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1679, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1230, in request
+    return self._request(cast_to, options, stream=stream, stream_cls=stream_cls)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1264, in _request
+    response, prepared = self._attempt_request(
+                         ~~~~~~~~~~~~~~~~~~~~~^
+        model_copy(input_options), stream=stream, retries_taken=retries_taken, call=call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1446, in _attempt_request
+    raise APITimeoutError(request=request) from err
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1439, in _attempt_request
+    response = self._client.send(
+        request,
+        stream=stream or self._should_stream_response_body(request=request),
+        **kwargs,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 979, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1007, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1042, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1075, in _send_single_request
+    response = transport.handle_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 244, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 115, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 98, in map_httpcore_exceptions
+    yield
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 245, in handle_request
+    resp = self._pool.handle_request(req)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 242, in handle_request
+    raise exc from None
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 224, in handle_request
+    response = connection.handle_request(pool_request.request)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection.py", line 96, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 125, in handle_request
+    raise exc
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 97, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 167, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 200, in _receive_event
+    data = self._network_stream.read(self.READ_NUM_BYTES, timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_backends/sync.py", line 125, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_exceptions.py", line 17, in map_exceptions
+    raise to_exc(exc) from exc
+[2026-11-05 22:55:09 +0900] POST /record/R-0001/ai-observe Claude の呼び出しの失敗（役 observe）: APITimeoutError: Request timed out or interrupted. This could be due to a network timeout, dropped connection, or request cancellation. See https://docs.anthropic.com/en/api/errors#long-requests for more details.
+APITimeoutError:
+  File "src/web/play_server.py", line 553, in _ai_reply
+    _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
+             ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/api/observe.py", line 71, in observe
+    r = client.messages.create(model=config.MODELS["observe"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
+                               messages=[{"role": "user", "content": content}], thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["observe"]})
+  File ".venv/lib/python3.14/site-packages/anthropic/_utils/_utils.py", line 294, in wrapper
+    return func(*args, **kwargs)
+  File ".venv/lib/python3.14/site-packages/anthropic/resources/messages/messages.py", line 1070, in create
+    return self._post(
+           ~~~~~~~~~~^
+        "/v1/messages",
+        ^^^^^^^^^^^^^^^
+    ...<30 lines>...
+        stream_cls=Stream[RawMessageStreamEvent],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1679, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1230, in request
+    return self._request(cast_to, options, stream=stream, stream_cls=stream_cls)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1264, in _request
+    response, prepared = self._attempt_request(
+                         ~~~~~~~~~~~~~~~~~~~~~^
+        model_copy(input_options), stream=stream, retries_taken=retries_taken, call=call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1446, in _attempt_request
+    raise APITimeoutError(request=request) from err
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/anthropic/_base_client.py", line 1439, in _attempt_request
+    response = self._client.send(
+        request,
+        stream=stream or self._should_stream_response_body(request=request),
+        **kwargs,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 979, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1007, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1042, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_client.py", line 1075, in _send_single_request
+    response = transport.handle_request(request)
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 244, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 115, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+ReadTimeout:
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 98, in map_httpcore_exceptions
+    yield
+  File ".venv/lib/python3.14/site-packages/httpx2/_transports/default.py", line 245, in handle_request
+    resp = self._pool.handle_request(req)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 242, in handle_request
+    raise exc from None
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection_pool.py", line 224, in handle_request
+    response = connection.handle_request(pool_request.request)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/connection.py", line 96, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 125, in handle_request
+    raise exc
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 97, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 167, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_sync/http11.py", line 200, in _receive_event
+    data = self._network_stream.read(self.READ_NUM_BYTES, timeout=timeout)
+  File ".venv/lib/python3.14/site-packages/httpcore2/_backends/sync.py", line 125, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File ".venv/lib/python3.14/site-packages/httpcore2/_exceptions.py", line 17, in map_exceptions
+    raise to_exc(exc) from exc
+/tmp/tmpiuls2ptc/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpiuls2ptc/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpiuls2ptc/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+rc=0

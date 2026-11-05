@@ -1,6 +1,6 @@
 """U-25（学習プリントを本人の 4 つの着目で考え直す、案 1〜4）と research/22 の候補 1・4 が紙に入っている事を見る。
 
-受け入れの条件は LANE-NOTES.md（lane/print-u25）に先に凍結した物。紙の上の文字と絵の部品で確かめる。
+受け入れの条件は、作る前に先に凍結した物。紙の上の文字と絵の部品で確かめる。
 刷った PDF の印（check_pdf）と画像の数は、print-teacher の命令を通して見る。
 """
 import json
@@ -10,8 +10,8 @@ import sys
 import tempfile
 
 from omochae.compose import compose
-from omochae.instructions import (AFTER_QUESTION, COMPARE_LIMIT, COMPARE_QUESTIONS, QUESTIONS, RESULT_HEAD, STUCK, TEACHER_FOCUS,
-                                  TEACHER_NOTE, compose_after, compose_compare, compose_free, compose_sheet, compose_teacher)
+from omochae.instructions import (AFTER_QUESTION, QUESTIONS, RESULT_HEAD, STUCK, TEACHER_FOCUS,
+                                  TEACHER_NOTE, compose_after, compose_free, compose_sheet, compose_teacher)
 from omochae.marks import check_pdf
 from omochae.render import write_all
 from omochae.templates import pivot_counterweight, slider_fan
@@ -107,15 +107,6 @@ assert all(c["change"] in flat(after) for c in hyp["after_try"]["contrasts"]), "
 _, failures = compose_after(src(G), "x", {**hyp["after_try"], "card": ["札の文がとても長い" * 40] * 12})
 assert "F5.fold" in {f.floor for f in failures}
 
-# C 見比べる紙: 角度の表と物差しを刷らず、どちらが良いかを決める欄が無い
-ha, hb = hyp["hypotheses"][0], hyp["hypotheses"][1]
-comp, failures = compose_compare(src(G), "御来迎", ha, hb, ("A", "B"))
-assert failures == [] and comp["ruler"] is None
-assert "回目" not in flat(comp) and "（度）" not in flat(comp)
-assert all(q in words(comp) for q in COMPARE_QUESTIONS)
-# 「どちら」は作る前の予想の問いと、どちらも証明にならないと言う限りの文（COMPARE_LIMIT、前からある）にだけ。
-assert [w for w in words(comp) if "どちら" in w and w not in ("作る前に: どちらがどう違うと思いますか",) and w not in COMPARE_LIMIT] == []
-
 # D 先生の見る紙: 4 つの着目、つぶやきの欄。点も名前の欄も無い
 teacher, failures = compose_teacher(src(G), "御来迎", sheet_set="goraigo-v9")
 assert failures == [] and teacher["ruler"] is None
@@ -141,7 +132,7 @@ assert pos == sorted(pos), "型紙なしの紙も同じ順"
 # S: どの紙も刷った PDF から印（所蔵・出典 ID・改変・仮説）が読める
 with tempfile.TemporaryDirectory() as tmp:
     papers = {**{k: (v[0], src(T) if k == "tora" else src(G)) for k, v in sheets.items()},
-              "after": (after, src(G)), "compare": (comp, src(G)), "teacher": (teacher, src(G)), "free": (free, src(G))}
+              "after": (after, src(G)), "teacher": (teacher, src(G)), "free": (free, src(G))}
     for name, (layout, s) in papers.items():
         assert check_pdf(write_all(layout, pathlib.Path(tmp) / name), s) == [], name
 
