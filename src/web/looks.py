@@ -71,7 +71,7 @@ const st=document.createElement('style');st.textContent='section:not(#'+CSS.esca
 # 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
 def all_toys(prefix):
     """全部の玩具の一覧（本人の指示 11-05「88 種のおもちゃから 1 個選ぶ」。要件 L-02: 入口から試作の玩具にも入れる）。
-    必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、そのまま敷く
+    必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、全体が入る形で敷く
     （必須の 2 種は頁の半分の写しなので、額の敷き方 FRAMED で寄せる）。写しが無い玩具は名前だけにし、国立国会図書館への道を添える。
     仮説の名前と動き方は出さない（予想が先、F9.prediction）。名前は作る側の見立てで確かめ待ち（U-01）。動きは付けない。"""
     items = []
@@ -82,19 +82,17 @@ def all_toys(prefix):
         src = source(sid)
         main = hypotheses.stage(sid) == "必須"
         has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
-        frame = sid.split("-R")[1][:7].lstrip("0")
         if has:
-            pic = f'<div class="pic" style="{_bg(sid, framed_pos(sid), FRAMED) if main else _bg(sid, "50% 50%", "cover")}" role="img" aria-label="{esc(data["toy"])}の図"></div>'
+            pic = f'<div class="pic" style="{_bg(sid, framed_pos(sid), FRAMED) if main else _bg(sid, "50% 50%", "contain")}" role="img" aria-label="{esc(data["toy"])}の図"></div>'
         else:
             pic = '<div class="pic nopic">図は手元に無い</div>'
-        tag = "" if main else f'<small>試作 · コマ {esc(frame)}</small>'
         more = "" if has else f'<small><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></small>'
-        items.append(f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}{tag}</span></a>{more}</li>')
+        items.append(f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>')
     n = len(items)
     return (f'<section class="{prefix}-all" id="all-toys" aria-label="全部の玩具"><p class="chapter">おもちゃ</p>'
             f'<h2>{n} の玩具から、1 つ選ぶ</h2>'
             '<p class="cap">どれも図と歌だけが残った玩具。選んで、先に予想を書くと、仮説と型紙が出る。'
-            '<span class="lb">試作</span>の札は全部を型紙にする途中の玩具で、名前は作る側の見立てで、まだ確かめていません。</p>'
+            '先頭の 2 つのほかは全部を型紙にする途中の試作で、名前は作る側の見立てで、まだ確かめていません。</p>'
             f'<ul class="grid">{"".join(items)}</ul></section>')
 
 
@@ -142,7 +140,7 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all .pic{aspect-ratio:3/4;background:#141210 center/cover no-repeat;border:1px solid #6e5a35;outline:6px solid #141210;outline-offset:-7px;box-shadow:0 20px 40px rgba(0,0,0,.6)}
 .zn-all .big .pic{aspect-ratio:1600/2656}
 .zn-all .nopic{display:grid;place-items:center;font-size:11px;color:#9a8e76;letter-spacing:.15em}
-.zn-all .nm{display:block;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
+.zn-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
 .zn-all .nm small,.zn-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
@@ -239,7 +237,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-all .pic{aspect-ratio:3/4;background:#fffefc center/cover no-repeat;border:1px solid #d8cdb6;box-shadow:0 14px 22px -18px rgba(70,55,35,.4)}
 .tj-all .big .pic{aspect-ratio:1600/2656}
 .tj-all .nopic{display:grid;place-items:center;font-size:11px;color:#7a7164;letter-spacing:.15em}
-.tj-all .nm{display:block;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
+.tj-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .tj-all .nm small,.tj-all li > small{display:block;font-size:11px;letter-spacing:.15em;color:#7a7164}
 .tj-all li > small a{color:#6b4f2a;border-bottom:1px solid rgba(107,79,42,.35)}
 

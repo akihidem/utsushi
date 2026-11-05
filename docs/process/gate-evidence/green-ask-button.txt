@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_techo_site.py と、repo の外の道具で本物の Chrome を操作
+# commit: 766fa7f（このファイルを足した commit）
 $ PYTHONPATH=src .venv/bin/python tests/test_techo_site.py   # main 34644c3 に直しを載せた作業ツリー
 ok
 rc=0

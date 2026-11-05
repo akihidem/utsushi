@@ -26,7 +26,7 @@ for name in skin.SKINS:
     assert f'class="skin-{name}' in html and "IntersectionObserver" not in html
     assert "試作" in html and "確かめていません" in html
     # 必須の 2 種は大きく、先頭に
-    assert html.index('class="big"') < html.index("試作 · コマ")
+    assert re.findall(r'<li( class="big")?>', html)[:3] == [' class="big"', ' class="big"', ""]  # 必須の 2 種が先頭
 
 for f in (looks.tenji, looks.zine):
     html = f()
@@ -40,4 +40,14 @@ for f in (looks.tenji, looks.zine):
 for css, rule in ((skin.BASE, ".toys .big"), (looks.ZINE, ".zn-all li.big"), (looks.TENJI, ".tj-all li.big")):
     assert rule + "{grid-column:span 2;grid-row:span 2}" in css, rule
     assert "@media (max-width:680px){" + rule + "{grid-column:auto;grid-row:auto}}" in css, rule
+# 小さい札の図は全体が入る敷き方、字は名前だけ。コマの番号は選ぶ人に伝わらないので図鑑の頁に置く（#133）
+for html in (toys.page("tenji"), looks.tenji(), looks.zine()):
+    assert "試作 · コマ" not in html and "全部を型紙にする途中の試作" in html
+    small = [m for m in re.findall(r'<li><a href="/toy/[^"]+"><div class="pic"[^>]*>', html)]
+    assert not small or all("contain" in m and "cover" not in m for m in small), small[:1]
+# 写しの無い clone では上の札に図が出ないので、敷き方は生成する字の側でも見る
+assert 'if main else "contain"' in (ROOT / "src/web/toys.py").read_text(encoding="utf-8")
+assert '_bg(sid, "50% 50%", "contain")' in (ROOT / "src/web/looks.py").read_text(encoding="utf-8")
+for css, rule in ((skin.BASE, ".toys .nm"), (looks.ZINE, ".zn-all .nm"), (looks.TENJI, ".tj-all .nm")):
+    assert re.search(re.escape(rule) + r"\{[^}]*-webkit-line-clamp:2", css), rule
 print("ok")
