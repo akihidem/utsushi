@@ -38,7 +38,8 @@ def _pic(sid, main):
 
 def way_tags(names):
     """作り方の印の札。並べ替えや点数にしない（J-025）。"""
-    return f'<p class="ways">{"".join(f"<span class=\"lb\">{esc(n)}</span>" for n in names)}</p>' if names else ""
+    tags = "".join(f'<span class="lb">{esc(n)}</span>' for n in names)
+    return f'<p class="ways">{tags}</p>' if names else ""
 
 
 def card(sid):
@@ -46,11 +47,12 @@ def card(sid):
     main = hypotheses.stage(sid) == "必須"
     has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     more = "" if has else f'<p class="meta"><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></p>'
-    return f'<li{" class=\"big\"" if main else ""}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
+    big = ' class="big"' if main else ""
+    return f'<li{big}><a href="/toy/{esc(sid)}">{_pic(sid, main)}<span class="nm">{esc(data["toy"])}</span></a>{way_tags(ways.toy_labels(sid))}{more}</li>'
 
 
 def paper_only_sids(sids):
-    """紙 1 枚で作れる仮説を持つ玩具。札の印と同じ ways の「紙一枚」で絞る（#255 の頃は別の判定を持っていたが、
+    """たたき台が紙 1 枚で作れる玩具（J-032。紙一枚は必須の条件でなく、必須の 2 種は入らない）。札の印と同じ ways の「紙一枚」で絞る（#255 の頃は別の判定を持っていたが、
     main の ways（#261、エンジンとそろえた物）と二重になり、札と絞り込みが食い違いうるので ways に寄せた）。"""
     return [s for s in sids if "紙一枚" in ways.toy_labels(s)]
 
@@ -63,7 +65,7 @@ def page(skin, path="/toys", paper=False):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)))}</p><p class="meta">{esc(ways.NOTE)}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)) if main else NOTE.split("ほかは、", 1)[1])}</p><p class="meta">{esc(ways.NOTE)}</p>'
             + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

@@ -15,19 +15,29 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 - 試した記録の刷った組は、記録が持つ値か、刷った時の型紙の確定の記録から引く。分からない時は空（不明）の群に分ける。
   今の組に数えると、直す前の紙の記録が、直した後の紙の数に混ざる。
 - メモ（note）は束に入れない。記録を入れた人の覚え書きで、作った人の言葉とは限らないため。
+- 話した事（Issue #307。話す口 talk_log の記録）も束に入れる: 作る前の考え・作りながらの工夫（手順の番号つき）・できた後の話。
+  文の種類の名は、話す口の場面の名（think・craft・keep）と同じ。声は置き場にも束にも無い（話す口が字だけを残す）。
+  記録に結んだ話は、その記録と同じ群に数える（直す前の組の紙の話を、今の組に数えない）。記録の番号があるのに記録が無い話は入れない
+  （取り下げた人の言葉を、束で外へ出さない側に倒す）。記録に結んだ後に作る側が隠した字も入れない（名前は形で落とせないので、
+  作る側が読んで気づいた時に隠す。その字を、束からエンジンの側の下書きへ流さない）。見せる印・声から入れたかの印・その場限りの印の値は入れない。
+  見せてよいと選んだ話だけに絞らないのは、束を読むのが作る側だけで、git の外に置く物だから（エンジンの側の Issue の下書きは、
+  作った人の言葉を「Issue に写さない手元の材料」に分けて置く）。出す時に、話す口の入口の床（連絡先・名乗り・学校の形）をもう一度当てる。
 - 束の上の段に、群に出てくる雛形の「今の刷った組」を書く（current_sets。Issue #309）。エンジンの repo の雛形は組の名を持たないので、
   前の組の紙の記録から起きた案（もう直っている事がある）を、読む人が見分けられない。ここは今の組を並べるだけで、前の組の記録を
   束から外しはしない（直っていない困り事まで消え、直す前と後を並べて読めなくなる）。
-終了: 0 = できた / 4 = できない（書く先が決まりの外など）。
+- 手で置いた記録の形が決まりの外でも、束ごと止めない（Issue #313）。型の外の欄は読み飛ばし、その記録のほかの欄と数は数える。
+  1 件の崩れた記録のために、全部の記録の束が出なくなる方が困るため。
+終了: 0 = できた / 4 = できない（書く先が決まりの外・呼び方の誤り）。1 と 2 は使わない。
 """
 import argparse
+import itertools
 import json
 import pathlib
 import re
 import sys
 from datetime import datetime, timedelta, timezone
 
-from . import loop, making_log, records
+from . import loop, making_log, records, talk_log
 from .contrib import check_pii
 from .hypotheses import ROOT
 
@@ -35,15 +45,19 @@ from .hypotheses import ROOT
 SCHEMA = "omochae.making-bundle/1"
 FROM = "utsushi"
 TOP_KEYS = ("schema", "exported_at", "from", "dropped_pii", "current_sets", "groups")
-GROUP_KEYS = ("template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps",
+GROUP_KEYS = ("template", "sheet_set", "reports", "results", "moved_word", "not_moved_word", "stuck_steps", "quit_steps", "craft_steps",
               "minutes", "measures", "record_ids", "texts")
 TEXT_KEYS = ("kind", "step", "text", "count")
 # 文の種類: 止まった所・直した点（工夫）・思いつき（工夫）・感想・聞く口の質問・試した記録への人の説明。
-TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain")
+# 話した事の 3 つは、話す口の場面の名のまま: think 作る前の考え・craft 作りながらの工夫・keep できた後の話。
+TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep")
 MAX_TEXT = 300  # エンジンの入口の、文 1 つの上限。長い感想は頭だけを入れる（全文は記録の番号から人が読む）
+MAX_TEXTS = 2000  # エンジンの入口の、群 1 つの文の上限。超えると束ごと断られる
 MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
 MEASURE = re.compile(r"[a-z_]{1,30}")
+RECORD_ID = re.compile(r"R-[0-9]{4,8}")  # 記録の番号の形（エンジンの入口と同じ）。形の外の番号は束に入れない（自由な文をこの欄で運ばせない）
+JST = timezone(timedelta(hours=9))
 UNSURE = "わからない"  # 動いた側にも動かない側にも数えない札（records の頭の決まり）
 
 
@@ -60,27 +74,53 @@ def _name(value):
     return value if isinstance(value, str) and NAME.fullmatch(value) else ""
 
 
+def _when(text):
+    """時刻を時刻として読む。読めない時は None。文字のまま比べると、秒の有無や時差の書き方が違う時刻で、黙って誤る。"""
+    try:
+        t = datetime.fromisoformat(str(text))
+    except ValueError:
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=JST)
+
+
 def _sheet_set_of(rec):
     """その記録の紙の刷った組。記録が持てばそれ。無ければ、記録の時刻までに刷った型紙の確定の記録のうち、一番新しい物。
-    どちらも無ければ空（不明）。今の雛形の組は使わない（直した後の組に、直す前の記録を数えないため）。"""
+    どちらも無ければ空（不明）。今の雛形の組は使わない（直した後の組に、直す前の記録を数えないため）。
+    時刻の読めない記録と確定は、使わない側に倒す（不明の群に分ける）。確定の並びの順でなく、時刻で一番新しい物を選ぶ。"""
     if _name(rec.get("sheet_set")):
         return rec["sheet_set"]
-    at = str(rec.get("recorded_at") or "")
-    found = ""
-    for conf in loop.sheet_confirmations(rec.get("source_id")):
-        if conf and conf.get("hypothesis_id") == rec.get("hypothesis_id") and conf.get("version") == rec.get("sheet_version", 1):
-            for c in conf.get("confirmations", []):
-                if str(c.get("at") or "") <= at:
-                    found = _name(c.get("sheet_set")) or found
-    return found
+    at = _when(rec.get("recorded_at"))
+    best = None
+    for conf in loop.sheet_confirmations(rec.get("source_id")) if at else []:
+        if isinstance(conf, dict) and conf.get("hypothesis_id") == rec.get("hypothesis_id") and conf.get("version") == rec.get("sheet_version", 1):
+            confirmations = conf.get("confirmations")
+            for c in confirmations if isinstance(confirmations, list) else []:
+                when, name = (_when(c.get("at")), _name(c.get("sheet_set"))) if isinstance(c, dict) else (None, "")
+                if when and name and when <= at and (best is None or when >= best[0]):
+                    best = (when, name)
+    return best[1] if best else ""
 
 
 def _group(groups, template, sheet_set):
     key = (_name(template), _name(sheet_set))
     if key not in groups:
         groups[key] = {"template": key[0], "sheet_set": key[1], "reports": 0, "results": {}, "moved_word": "", "not_moved_word": "",
-                       "stuck": {}, "reached": {}, "finished": set(), "minutes": [], "measures": {}, "record_ids": [], "texts": {}}
+                       "stuck": {}, "craft": {}, "reached": {}, "finished": set(), "minutes": [], "measures": {}, "record_ids": [], "texts": {}}
     return groups[key]
+
+
+def _cap_texts(texts):
+    """群 1 つの文を上限までにする。超えた時は種類ごとに順に取る（並びのまま切ると、後ろの種類が丸ごと消える）。並びは元のまま返す。
+    全部を見たい時は、記録の番号から人が読む。超えなければ何も変えない。"""
+    if len(texts) <= MAX_TEXTS:
+        return texts
+    by_kind = {}
+    for i, t in enumerate(texts):
+        by_kind.setdefault(t["kind"], []).append(i)
+    turns = [i for row in itertools.zip_longest(*by_kind.values()) for i in row if i is not None]
+    kept = set(turns[:MAX_TEXTS])
+    print(f"文が多い群があるので、{len(texts) - MAX_TEXTS} 件を束に入れなかった", file=sys.stderr)
+    return [t for i, t in enumerate(texts) if i in kept]
 
 
 def _span(values):
@@ -94,24 +134,35 @@ def build():
 
     groups, dropped = {}, 0
 
-    def say(g, kind, text, step=None):
-        """文を 1 つ足す。連絡先の形があれば入れず、落とした数だけ数える。同じ文（同じ種類・同じ段）は回数にまとめる。"""
+    def say(g, kind, text, step=None, floor=None):
+        """文を 1 つ足す。床に当たれば入れず、落とした数だけ数える。同じ文（同じ種類・同じ段）は回数にまとめる。入れたら真。
+        床は、上限で切る前の全文に当てる（切った端に番号の半分が残る形を作らない）。既定は連絡先の形。話した事は、話す口の床。"""
         nonlocal dropped
-        text = _clean(text)
-        if text is None:
-            return
-        if check_pii({"body": text}):
+        if not isinstance(text, str):  # 文字でない欄（手で置いた記録の list など）は、文として読まない
+            return False
+        full = " ".join(text.split())
+        if not full:
+            return False
+        if floor(full) if floor else check_pii({"body": full}):
             dropped += 1
-            return
+            return False
+        text = _clean(full)
         step = step if isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP else None
         g["texts"][(kind, step, text)] = g["texts"].get((kind, step, text), 0) + 1
+        return True
 
     # 試した記録: 動きの札・測った値・止まった所・直した点・思いつき・感想と、人の説明。
+    group_of = {}  # 記録の番号 → その記録の群の鍵（記録に結んだ話を、同じ群に数えるため）
     for r in records.all_records():
+        if not isinstance(r, dict):  # 辞書でない物（手で置いたファイル）は、記録として数えない
+            continue
         template = making_log._engine(r.get("source_id"), r.get("hypothesis_id"))[0]
         g = _group(groups, template, _sheet_set_of(r))
         g["reports"] += 1
-        g["record_ids"].append(r["id"])
+        rid = r.get("id") if isinstance(r.get("id"), str) and RECORD_ID.fullmatch(r["id"]) else None
+        if rid:
+            group_of[rid] = (g["template"], g["sheet_set"])
+            g["record_ids"].append(rid)
         tpl = TEMPLATES.get(template)
         if tpl is not None:
             # 札の言葉は雛形が持つ物だけを数える（自由な文を札の欄で運ばせない）。先頭が動いた側。動かない側は、「わからない」を除いた最後の札。
@@ -127,21 +178,25 @@ def build():
         for k, v in r.items():
             if isinstance(v, (int, float)) and not isinstance(v, bool) and k != "sheet_version" and MEASURE.fullmatch(k):
                 (g["minutes"] if k == "minutes_to_try" else g["measures"].setdefault(k, [])).append(v)
-        answers = r.get("answers") or {}
+        # 欄は、決まった型の時だけ読む（answers は辞書・ideas と fixes は list・文は文字）。文字の欄を list として読むと、1 字ずつの文になる。
+        answers = r.get("answers") if isinstance(r.get("answers"), dict) else {}
         say(g, "stuck", answers.get("stuck"))
         say(g, "idea", answers.get("what_if"))
-        for idea in r.get("ideas") or []:
+        for idea in r.get("ideas") if isinstance(r.get("ideas"), list) else []:
             say(g, "idea", idea)
         say(g, "impression", r.get("impression"))
-        for f in r.get("fixes") or []:
-            if isinstance(f, dict) and all(str(f.get(k, "")).strip() for k in ("part", "change", "outcome")):
+        for f in r.get("fixes") if isinstance(r.get("fixes"), list) else []:
+            if isinstance(f, dict) and all(isinstance(f.get(k), str) and f[k].strip() for k in ("part", "change", "outcome")):
                 say(g, "fix", f'{f["part"]} / {f["change"]} / {f["outcome"]}')
-        told = loop.explanation(r["id"]) or {}  # 人が書いた説明だけ（Claude の読みは入れない）
+        told = (loop.explanation(rid) if rid else None) or {}  # 人が書いた説明だけ（Claude の読みは入れない）
+        told = told if isinstance(told, dict) else {}
         say(g, "explain", told.get("text"))
         say(g, "idea", told.get("next_idea"))
 
     # 手順の進み: 止まったの札と、途中でやめた段。人は、その場限りの印で数えるだけで、印の値は束に入れない。
     for e in making_log.steps():
+        if not isinstance(e, dict):
+            continue
         step = e.get("step")
         if not (isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP):
             continue
@@ -160,11 +215,39 @@ def build():
 
     # 聞く口の質問: 手順の番号つき。残す時に連絡先の形で落ちた物は、落とした数に足す。
     for a in making_log.asks():
+        if not isinstance(a, dict):
+            continue
         g = _group(groups, a.get("template"), a.get("sheet_set"))
         if a.get("dropped"):
             dropped += 1
             continue
         say(g, "question", a.get("question"), a.get("step"))
+
+    # 話した事（話す口の記録）。入口の床で落ちた物は文が残っていないので、落とした数にだけ足す。
+    dropped += sum(talk_log.dropped().values())
+    for t in talk_log.talks():
+        if not isinstance(t, dict):
+            continue
+        scene = t.get("scene")
+        if scene not in talk_log.SCENES:
+            continue
+        if t.get("record_id"):
+            if t["record_id"] not in group_of:
+                continue  # 記録が無い（取り下げた・消えた）。その人の言葉を束に入れない
+            if t.get("share") is not True:
+                continue  # 記録に結んだ後に、作る側が隠した字（読んで名前などに気づいた時に隠す）。束にも入れない
+            g = _group(groups, *group_of[t["record_id"]])
+        else:
+            g = _group(groups, t.get("template"), t.get("sheet_set"))
+        step = t.get("step") if scene == "craft" else None
+        step = step if isinstance(step, int) and not isinstance(step, bool) and 1 <= step <= MAX_STEP else None
+        if say(g, scene, t.get("text"), step, floor=talk_log.blocked) and step:
+            # 手順ごとの、束に入った工夫の数と人の数。人は、その場限りの印で数えるだけで、印の値は束に入れない。
+            slot = g["craft"].setdefault(step, {"talks": 0, "who": set()})
+            slot["talks"] += 1
+            who = making_log.clean_who(t.get("who"))
+            if who:
+                slot["who"].add(who)
 
     out = []
     for key in sorted(groups):
@@ -177,10 +260,11 @@ def build():
                     "moved_word": g["moved_word"], "not_moved_word": g["not_moved_word"],
                     "stuck_steps": {str(n): {"taps": s["taps"], "people": len(s["who"])} for n, s in sorted(g["stuck"].items())},
                     "quit_steps": {str(n): k for n, k in sorted(quit_steps.items())},
+                    "craft_steps": {str(n): {"talks": c["talks"], "people": len(c["who"])} for n, c in sorted(g["craft"].items())},
                     "minutes": _span(g["minutes"]), "measures": {k: _span(v) for k, v in sorted(g["measures"].items())},
                     "record_ids": g["record_ids"],
-                    "texts": [{"kind": kind, "step": step, "text": text, "count": n}
-                              for (kind, step, text), n in sorted(g["texts"].items(), key=lambda kv: (TEXT_KINDS.index(kv[0][0]), kv[0][1] or 0, kv[0][2]))]})
+                    "texts": _cap_texts([{"kind": kind, "step": step, "text": text, "count": n}
+                              for (kind, step, text), n in sorted(g["texts"].items(), key=lambda kv: (TEXT_KINDS.index(kv[0][0]), kv[0][1] or 0, kv[0][2]))])})
     # 雛形の id が分からない群（記録が壊れている等）は入れない。エンジンの入口が、束ごと断るため。
     out = [g for g in out if g["template"]]
     # 今の刷った組は、群に出てくる雛形の分だけ（記録の無い雛形の名を束に並べない）。組の名を持たない雛形と、形の外の名は入れない。
@@ -208,7 +292,10 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     ex = sub.add_parser("export", help="束を書く（git の外か out/ の下）")
     ex.add_argument("--out", default=None)
-    args = ap.parse_args(argv)
+    try:
+        args = ap.parse_args(argv)
+    except SystemExit as e:
+        return 0 if e.code == 0 else 4  # 呼び方の誤りは 4（argparse の既定の 2 は使わない）。--help は 0
     try:
         path = out_path(args.out)
         bundle = build()

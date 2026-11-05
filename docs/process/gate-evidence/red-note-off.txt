@@ -1,0 +1,7 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_page.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 5f4716b（回した時の HEAD）
+    assert data["note"] and data["note"] not in page, (sid, "断りを頁に出さない")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L', '断りを頁に出さない')
+試験 rc=1
+rc=0

@@ -543,8 +543,8 @@ def bom(p):
 def materials(p):
     rows = bom(p)
     extra = [r["material"] for r in rows if r["key"] not in ("sail", "patch", "board", "mover", "disc", "tail")]
-    base = "のり、はさみ、テープ、定規" + ("" if is_kite(p) else "、竹串（穴あけ）")
-    return [f"{rows[0]['material']}を 1 枚", base, *extra]
+    # 凧も人形も、手順で穴を竹串の先であける（#294。前は凧の時だけ書いていなかった）。
+    return [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規、竹串（穴あけ）", *extra]
 
 
 def steps(p):
