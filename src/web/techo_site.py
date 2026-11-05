@@ -153,6 +153,7 @@ def media_of(rid):
 # 色は皮の変数から取る（skin.py の SKINS。本人の指示 11-05: A′ 白の展示と C 黒のジンを一気通貫に）。
 # 手帖だけ書体をゴシックにし字を大きくするのは、机に置いて離れて読むため（本人の指定 11-04「文字は最小」）。骨（頭の帯・余白）は skin.shell が持つ。
 STYLE = """
+#up-status{scroll-margin-top:16px}
 body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
 .techo main:has(.gallery){max-width:960px}
@@ -215,22 +216,39 @@ if (!SR) { mic.hidden = true; } else {
   };
 }
 // 上げる: 先に記録を作り（見た事）、その R-番号に写真と動画を 1 つずつ送る。
+// 送った後は頁の中で一覧を入れ替える。同じ道へ移っても読み込まれず、「…」のまま残って押し直すと記録が 2 件になるため（#143）。読み込み直さないので、話している手順も切れない。
+const showMine = async () => {
+  const doc = new DOMParser().parseFromString(await (await fetch(location.pathname)).text(), 'text/html');
+  document.getElementById('mine').innerHTML = doc.getElementById('mine').innerHTML;
+};
 document.getElementById('up-form').onsubmit = async (e) => {
   e.preventDefault();
+  const form = e.target, go = form.querySelector('button.go');
+  if (go.disabled) return;
   const st = document.getElementById('up-status');
   const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
   const result = (document.querySelector('[name=result]:checked') || {}).value;
   const files = [...document.getElementById('files').files].slice(0, 3);
   if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
-  st.textContent = '…';
-  const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, result, note: document.getElementById('note').value }) });
-  const j = await r.json().catch(() => ({}));
-  if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
-  for (const f of files) {
-    const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
-    if (!m.ok) { st.textContent = (await m.text()) || '上げられませんでした'; return; }
-  }
-  location.href = `/toy/${sid}/techo#mine`;
+  go.disabled = true; st.textContent = '送っています…';
+  let done = '';
+  try {
+    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, result, note: document.getElementById('note').value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
+    // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
+    form.reset();
+    done = '上げました';
+    for (const f of files) {
+      const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+      if (!m.ok) { done = '記録は残しました。' + ((await m.text()) || '写真か動画を上げられませんでした'); break; }
+    }
+  } catch (err) {
+    done = done ? '記録は残しました。写真か動画を送れませんでした' : '送れませんでした。つながりを見て、もう一度押してください';
+  } finally { go.disabled = false; }
+  st.textContent = done;
+  try { await showMine(); } catch (err) { st.textContent = done + '（一覧は、読み込み直すと出ます）'; }
+  st.scrollIntoView({ block: 'start' });
 };
 })();
 </script>

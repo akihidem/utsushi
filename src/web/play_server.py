@@ -351,6 +351,9 @@ class Handler(BaseHTTPRequestHandler):
         form = self._form()
         if form is None:
             return self._send(403, "受け付けられない送り方です")
+        m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
+        if m and m.group(1) in sources():
+            return self._reprint(m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
         if m and m.group(1) in sources():
             return self._json_post(m.group(1), m.group(2), form)
@@ -419,33 +422,33 @@ class Handler(BaseHTTPRequestHandler):
             msg = "今は AI に聞けません"
         return self._done(sid, msg, form.get("back", ""))
 
+    def _reprint(self, sid, form):
+        """版の記録があって紙が無い版を刷り直す（#158）。「次の版を作る」は、同じ値では前の版と変わらないので通らない。"""
+        hid, v = form.get("hypothesis", ""), form.get("version", "")
+        if (hypotheses.need_prediction(sid) or hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
+                or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
+            return self._send(422, self._toy(sid, errors=["その版は採られていません"]))
+        if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
+            return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"]))
+        loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+        return self._done(sid, f"版 {v} を刷りました。100% で印刷します", see=hid, anchor="win")
+
     def _next_version(self, rid, form):
-        """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止める。"""
+        """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
         rec = loop.record(rid)
         sid, hid = rec["source_id"], rec["hypothesis_id"]
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に説明を書く"]))
-        by = form.get("by", "")
-        failures = loop.confirm_interpretation(rid, by, form.get("interpretation", "").strip() or None)
-        if failures:
-            return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
         to = _num(form.get("to"))
         if not isinstance(to, float):
             return self._send(422, self._toy(sid, errors=["新しい値は数で書く"]))
         # 折りの数のような整数の寸法は、整数で渡す（範囲の検査が小数の折り数を落とすため）。
         to = int(to) if to.is_integer() else to
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-        pid, failures = loop.save_proposal({"record_ids": [rid], "hypothesis_id": hid, "changes": [{"param": form.get("param"), "to": to, "why": form.get("why", "")}]}, source, "human")
+        change = {"param": form.get("param"), "to": to, "why": form.get("why", "")}
+        v, failures = loop.next_version(rid, form.get("by", ""), form.get("interpretation", "").strip() or None, change, source, out_dir(sid))
         if failures:
             return self._send(422, self._toy(sid, errors=[f.message for f in failures]))
-        made, failures = loop.adopt(pid, by, accept_params=[form.get("param")], source=source)
-        if failures or "version" not in made:
-            return self._send(422, self._toy(sid, errors=[f.message for f in failures] or ["次の版ができませんでした"]))
-        v = made["version"]
-        out_dir(sid).mkdir(parents=True, exist_ok=True)
-        if hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
-            return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"]))
-        loop.confirm_sheet(sid, hid, v, by, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
 
     def _ask(self, sid, hid, question):
@@ -563,12 +566,17 @@ def lan_addresses():
     return ips + [f"{socket.gethostname().split('.')[0]}.local"]
 
 
-def serve(port=8766, lan=False, public_key=None):
+def bind_host(lan):
+    return "0.0.0.0" if lan else "127.0.0.1"
+
+
+def serve(port=8766, lan=False, public_key=None, bind=None):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
     public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。"""
     if public_key is not None and len(public_key) < 16:
         raise ValueError("合言葉が短すぎる（16 字以上）")
-    server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
+    # bind は試験のため。--lan の番地の許しを試す間も、全部の網に口を開かない（#169）。
+    server = ThreadingHTTPServer((bind or bind_host(lan), port), Handler)
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     return server

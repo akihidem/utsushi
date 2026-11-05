@@ -1,0 +1,9 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_floors_hygiene.py   # 直す前の main。眠る試験が関門を固める
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['.venv/bin/python', '-c', '\nimport pathlib, sys\nsys.path.insert(0, sys.argv[1])\nimport run_floors as rf\nrf.ROOT = pathlib.Path(sys.argv[2])\nrf.PY = sys.execut
+rc=1
+
+# 直しの途中で足した分: 全部の試験を見ると、もう 1 本が全部の網に開いていた
+$ PYTHONPATH=src .venv/bin/python tests/test_floors_hygiene.py
+AssertionError: 試験が全部の網に口を開いている: ['test_demo_walk.py']
+rc=1

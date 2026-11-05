@@ -109,6 +109,7 @@
 | 64 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 | 65 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
 | 66 | [site-requirements](site-requirements.md) | サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで | 実装した（11-05 未明）。本人の採否はカード |
+| 67 | [J-031](decisions/J031-build-now.md) | 予想の段を無くし、開いたらすぐ作る。他の人の作った物のギャラリーを作る（本人の決定） | 本人の決定（11-05）。作りは #242 で進行中 |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）
