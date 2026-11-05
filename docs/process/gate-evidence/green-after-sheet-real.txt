@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_after_sheet_real.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: f028683（回した時の HEAD）
+ok: 本物の記録 2 件の札から、記録の案と版の紙が窓に出る
+試験 rc=0
+rc=0
