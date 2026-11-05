@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_ask_floor.py
+# commit: 3d4ed80（回した時の HEAD）
+/tmp/tmpwvott8h1/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpwvott8h1/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpwvott8h1/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_ask_floor.py", line 42, in <module>
+    assert code == 200 and j["text"] == making_log.ASK_NAME_VOICE and j["from"] == "floor", (q, j)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('電話は090-1234-5678', {'text': '答えの字', 'from': 'claude'})
+rc=1
