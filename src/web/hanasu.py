@@ -19,6 +19,7 @@
 - 床に落ちた時は、欄の字を消さずに理由を返す（直して残せる）。JS が無い時は、理由の頁を返す。
 - JS が無くても字で残せる（フォームの送信）。JS がある時は頁を読み直さない（作りながら見る頁の鏡と手順が切れないように）。
 - 釦と断りの出し分けは CSS で持つ（html に付く印）。手帖は記録の一覧を頁の中で入れ替えるので、後から来た部品にも同じ出し分けが効くように。
+  釦に hidden 属性を付けない: 指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が勝って、幅 1100 以下で釦が消える（tests/test_mic_seen.py が測る）。
   同じ理由で、釦の動きは頁に 1 回だけ置く script が、頁全体で受ける。
 - 聞く口の声（手帖・作りながら見る頁の #mic）と同時には聞かない。片方を押したら、もう片方を止める。読み上げの間に入った字は捨てる
   （端末が自分の答えを聞いた物なので）。
@@ -135,9 +136,11 @@ const listen=(root,onDevice)=>{
   if(window.speechSynthesis&&speechSynthesis.speaking)return;
   // 聞き始めた時の欄の字の後ろに、この回に聞いた字を置き直す（途中の字が来るたびに足すと、同じ字が重なる）。
   let said='',n=ev.results.length;for(let i=0;i<n;i++)said+=ev.results[i][0].transcript;said=said.trim();
-  if(said){box.value=(base?base+' ':'')+said;root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};
+  // 欄の長さで切る（script が入れた字には maxlength が効かない。見せた字と残る字を同じにする）。
+  if(said){box.value=((base?base+' ':'')+said).slice(0,box.maxLength);root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};
  r.onerror=(ev)=>{note(root,ev.error==='language-not-supported'?M.nolang:M.noheard)};
- r.onend=()=>{press(mic,false);if(rec===r)rec=null};
+ // 終わりの字が来ないまま止まる機種がある。止まった後に「聞いています」を残さない（途中の字が欄にあれば、読んで残せる）。
+ r.onend=()=>{press(mic,false);if(rec===r)rec=null;const n=root.querySelector('.hanasu-note');if(n.textContent===M.listening)n.textContent=box.value.trim()!==base?M.heard:''};
  rec=r;press(mic,true);note(root,M.listening);
  try{r.start()}catch(e){press(mic,false);rec=null;note(root,M.noheard)}};
 document.addEventListener('click',async(e)=>{
@@ -207,7 +210,7 @@ def box(sid, scene, hid="", version=None, step=None, rid="", hyps=(), with_asset
     return (f'<div class="hanasu" data-hanasu data-voice="{mode()}"><p class="hanasu-head">{esc(s["head"])}</p>'
             f'<form method="post" action="/toy/{esc(sid)}/talk{land}">{hidden}'
             f'<label class="sr" for="{key}">{esc(s["head"])}</label><textarea id="{key}" name="text" maxlength="{talk_log.MAX_TEXT}" {hint} required></textarea>'
-            '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false" hidden>話す</button>'
+            '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'
             '<button class="hanasu-go">残す</button></div></form>'
             '<p class="hanasu-note" aria-live="polite"></p><ul class="hanasu-said"></ul>'
             f'<p class="meta">{esc(NOTICE)}{how}</p></div>' + (assets() if with_assets else ""))

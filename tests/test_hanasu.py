@@ -271,7 +271,7 @@ assert [(r["record_id"], r["hypothesis_id"], r["sheet_version"], len(r["kufu"]))
 assert sm["via"] == {"voice": 3, "text": 8} and sm["dropped"] == {"pii": 2, "name": 1}, sm
 
 # ---- 頁: 3 つの場面に口がある。話す釦は既定で隠れている
-MIC = '<button type="button" class="hanasu-mic" aria-pressed="false" hidden>話す</button>'
+MIC = '<button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'
 code, toy = get(f"/toy/{G}")
 assert code == 200 and 'id="hanasu"' in toy and f'action="/toy/{G}/talk#hanasu"' in toy and 'name="scene" value="think"' in toy and MIC in toy
 assert hanasu.NOTICE in toy and toy.count("<script>(()=>{\nconst REC=") == 1
@@ -279,6 +279,9 @@ code, tsu = get(f"/toy/{G}/tsukuru?h=H-A&n=2")
 assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and MIC in tsu
 code, techo = get(f"/toy/{G}/techo")
 assert code == 200 and f'name="record" value="{RID}"' in techo and MIC in techo
+# 釦に hidden 属性を付けない。指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が CSS の出し分けに勝って、幅 1100 以下で釦が消えた。
+# 画面の結果は tests/test_mic_seen.py が測る（Chrome が無い機械では測れないので、原因の形をここでも字で見る）
+assert re.search(r'<button[^>]*class="hanasu-mic"[^>]*\bhidden\b', toy + tsu + techo) is None and ".hanasu-local .hanasu .hanasu-mic,.hanasu-browser .hanasu .hanasu-mic{display:block}" in hanasu.STYLE
 # ほかの人に見せるかの選び肢は、どの頁にも置かない（記録に入った字は、記録の感想と同じに出す。本人の決定 11-05）
 for page in (toy, tsu, techo):
     assert 'name="share"' not in page and 'name="sign"' not in page and "hanasu-sign" not in page and 'type="checkbox" name' not in page.split('id="mine"')[-1]
@@ -333,7 +336,9 @@ assert hanasu.SCRIPT.count("fetch(") == 1 and "fetch(form.action,{method:'POST',
 onresult = hanasu.SCRIPT[hanasu.SCRIPT.index("r.onresult"):hanasu.SCRIPT.index(" r.onerror")]
 assert "fetch" not in onresult and "submit" not in onresult and "box.value" in onresult
 # 聞き取った所は、欄に字を足して知らせるだけ。字の並びごと固定する（ここに、送る・押す・残すを足すと落ちる。「残すを押すまで送らない」が設計の要）
-assert onresult == "r.onresult=(ev)=>{\n  // 読み上げの間に入った字は、端末が自分の答えを聞いた物なので入れない。\n  if(window.speechSynthesis&&speechSynthesis.speaking)return;\n  // 聞き始めた時の欄の字の後ろに、この回に聞いた字を置き直す（途中の字が来るたびに足すと、同じ字が重なる）。\n  let said='',n=ev.results.length;for(let i=0;i<n;i++)said+=ev.results[i][0].transcript;said=said.trim();\n  if(said){box.value=(base?base+' ':'')+said;root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};\n", onresult
+assert onresult == "r.onresult=(ev)=>{\n  // 読み上げの間に入った字は、端末が自分の答えを聞いた物なので入れない。\n  if(window.speechSynthesis&&speechSynthesis.speaking)return;\n  // 聞き始めた時の欄の字の後ろに、この回に聞いた字を置き直す（途中の字が来るたびに足すと、同じ字が重なる）。\n  let said='',n=ev.results.length;for(let i=0;i<n;i++)said+=ev.results[i][0].transcript;said=said.trim();\n  // 欄の長さで切る（script が入れた字には maxlength が効かない。見せた字と残る字を同じにする）。\n  if(said){box.value=((base?base+' ':'')+said).slice(0,box.maxLength);root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};\n", onresult
+# 止まった後に「聞いています」を残さない。終わりの字が来ない機種でも、途中の字があれば読んで残せると知らせる
+assert "if(n.textContent===M.listening)n.textContent=box.value.trim()!==base?M.heard:''" in hanasu.SCRIPT
 # 送る所は、残すを押した時の所だけ。残す釦を code から押す所・フォームを code から送る所が無い（押すのは、聞く口の声を止める 1 か所だけ）
 SUBMIT = hanasu.SCRIPT.index("document.addEventListener('submit'")
 assert hanasu.SCRIPT.index("fetch(") > SUBMIT and hanasu.SCRIPT.count(".hanasu-go") == 1 and hanasu.SCRIPT.index(".hanasu-go") > SUBMIT
