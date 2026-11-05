@@ -8,7 +8,7 @@ import json
 
 from omochae import hypotheses, loop
 from omochae.compose import TEMPLATES, compose
-from omochae.contrib import check_pii
+from omochae.contrib import check_pii, too_long
 from omochae.model import Failure
 
 from . import agent
@@ -53,6 +53,9 @@ def check_result(result, source):
 def draft_words(source, text, name, evidence, by, client=None):
     """人の操作の後に 1 回だけ。案は人の確認待ちに置く。"""
     failures = [Failure("F9.own", field, f"{field} が空") for field, value in (("text", text), ("name", name), ("evidence", evidence), ("by", by)) if not (value or "").strip()]
+    long = too_long([("text", text), ("name", name), ("evidence", evidence)])
+    if long:
+        return None, failures + [Failure("F9.own", where, message) for where, message in long]
     failures += [Failure("F10.pii", "text", f.message) for f in check_pii({"body": f"{text} {name} {evidence}"})]
     if failures:
         return None, failures
