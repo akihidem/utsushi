@@ -71,7 +71,7 @@ cd utsushi
 
 ### デモ動画を作る
 
-要る物は上に足して、ffmpeg（`ffprobe` も。Ubuntu なら `sudo apt install ffmpeg`）と、`google-chrome` か `chromium` の名前で呼べるブラウザ。足りない物は、書き出しの最初に名前で出て exit 4 で止まる。
+要る物は上に足して、`google-chrome` か `chromium` の名前で呼べるブラウザ。ffmpeg も要る。足りない物は、書き出しの最初に名前で出て exit 4 で止まる。
 
 ```
 export PYTHONPATH=src
