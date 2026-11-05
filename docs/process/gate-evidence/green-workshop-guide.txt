@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_workshop_guide.py
+# commit: 9a9359a（回した時の HEAD）
+手引きの床: 通る
+rc=0

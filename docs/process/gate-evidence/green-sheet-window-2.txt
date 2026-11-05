@@ -1,0 +1,4 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_sheet_window.py | tail -1; exit ${PIPESTATUS[0]}'
+# commit: 52093fa（回した時の HEAD）
+ok
+rc=0

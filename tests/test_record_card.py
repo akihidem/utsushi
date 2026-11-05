@@ -39,7 +39,6 @@ def card(page, rid):
     return page.split(f'id="{rid}"', 1)[1].split("</article>", 1)[0]
 
 
-assert post(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"}) in (200, 303)
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) in (200, 303)
 written = {"first_moved": "外筒の先", "stuck": "折りの向き", "what_if": "折りの幅", "idea": "糊を減らす", "note": "紙が厚かった"}
 base_form = {"hypothesis": "H-A", "result": "動いた"}

@@ -11,7 +11,6 @@ from api.generate import generate  # noqa: E402
 from omochae import hypotheses  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-hypotheses.save_prediction(G, "試験の仮の予想")
 src = json.loads(open(f"data/sources/{G}.json", encoding="utf-8").read())
 
 

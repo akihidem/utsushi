@@ -3,10 +3,11 @@
 
 判断の芯: 案ごとに佇まい（表紙・見開きの構成・題の組み方）だけを変え、守る線は同じにする。
 新しい絵は作らず、NDL の図の頁とその寄りだけを使う。歌は人が確かめた読みだけを引用の印つきで出す。
-仮説は出さない（予想が先、F9.prediction）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
+入口には仮説を出さない（絵を先に見せるため）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
 """
 from omochae import hypotheses
 
+from . import skin
 from .play_server import ROOT, esc, page, source, sources
 
 # 残した 2 つの入口。大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
@@ -16,11 +17,9 @@ LOOKS = {
 }
 
 
-def switch(current):
-    """入口の頭の帯。順路の道（序・おもちゃ・上げた物と職人の言葉・図鑑）だけ。
-    皮の切り替えは置かない: 皮ごとに 1 サイト（本人の決定 11-05 朝）。current は呼び手の形を保つために残す。"""
-    links = '<a href="/about">序</a>｜<a href="/toys">おもちゃ</a>｜<a href="/gallery">上げた物と職人の言葉</a>｜<a href="/zukan">図鑑（ほかの玩具も）</a>'
-    return f'<nav class="switch">{links}</nav>'
+def switch(look):
+    """入口の頭の帯。内側の頁と同じ帯を使う（入口から入った所で帯が変わらないように。要件 2）。"""
+    return skin.nav(look, "/", "/")
 
 
 def toys():
@@ -60,20 +59,20 @@ QUOTE = "原文の引用。確かめた人: 本人"
 # 見比べるための写しを撮る補助。?only=<節の id> で、その節だけを画面の頭に出す。
 # なぜ: 縦に流れる案は、頭からしか写しを撮れず、途中の見開きを並べて比べられないため。ふだんの閲覧には効かない。
 ONLY = """<script>(()=>{const id=new URLSearchParams(location.search).get('only');if(!id)return;
-const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.switch,.ab-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
+const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.nav,.ab-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
 
 # ---------------------------------------------------------------- A 大判写真集（参照のルックブックの再現）
 # 本人の指示（2026-11-04）: 参照の X の投稿のルックブックの再現を、A の実装の基準にする。
 # 参照は、白いリングバインダーを真上から撮った見開きを縦に並べる形（research/19 に観察を書いた）。
 # 写したのは組み方だけ: 綴じ金具とバインダーの縁、見開きの型（全面の写真と白地の小物、平置きと番号の一覧、
 # 見開きをまたぐ 1 枚、文字の頁と色見本の列、余白の多い奥付）、細かい字の小さな文字組み。参照の写真と文は使わない。
-# 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。仮説は出さない（予想が先、F9.prediction）。
+# 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。
 # 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
 def all_toys(prefix):
     """全部の玩具の一覧（本人の指示 11-05「88 種のおもちゃから 1 個選ぶ」。要件 L-02: 入口から試作の玩具にも入れる）。
     必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、全体が入る形で敷く
     （必須の 2 種は頁の半分の写しなので、額の敷き方 FRAMED で寄せる）。写しが無い玩具は名前だけにし、国立国会図書館への道を添える。
-    仮説の名前と動き方は出さない（予想が先、F9.prediction）。名前は作る側の見立てで確かめ待ち（U-01）。動きは付けない。"""
+    仮説の名前と動き方は一覧に出さない（絵を先に見せるため）。名前は作る側の見立てで確かめ待ち（U-01）。動きは付けない。"""
     items = []
     # 必須の 2 種を先頭に（入口の主役のまま）、試作はコマの順。順位ではなく、記録の並び。
     sids = sorted(sources(), key=lambda s: (hypotheses.stage(s) != "必須", s))
@@ -91,7 +90,7 @@ def all_toys(prefix):
     n = len(items)
     return (f'<section class="{prefix}-all" id="all-toys" aria-label="全部の玩具"><p class="chapter">おもちゃ</p>'
             f'<h2>{n} の玩具から、1 つ選ぶ</h2>'
-            '<p class="cap">どれも図と歌だけが残った玩具。選んで、先に予想を書くと、仮説と型紙が出る。'
+            '<p class="cap">どれも図と歌だけが残った玩具。選ぶと、すぐ型紙を刷って作れる。型紙は正解ではなく、AI が考えた仮説。'
             '先頭の 2 つのほかは全部を型紙にする途中の試作で、名前は作る側の見立てで、まだ確かめていません。</p>'
             f'<ul class="grid">{"".join(items)}</ul></section>')
 
@@ -100,9 +99,6 @@ ZINE = """
 body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
  font-feature-settings:"palt" 1}
 body.zine a{color:#c9a96a;text-decoration:none;border-bottom:1px solid rgba(201,169,106,.45)}
-.zine .switch{position:relative;z-index:2;font-size:12px;letter-spacing:.2em;padding:14px 4vw;color:#8a806e}
-.zine .switch a{color:#c9a96a}.zine .switch b{color:#e9e1cf;font-weight:400}
-.zine .switch .cap{color:#827968}
 /* 細い字も 4.5:1 を割らないよう明るさだけ上げ、色相は保つ（research/24 の 2）。選んだ時は黒地に金の薄い面（同 5）。 */
 body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-cover{min-height:100vh;min-height:100svh;position:relative;display:grid;grid-template-columns:1fr minmax(0,44vh) 1fr;align-items:center;
@@ -165,7 +161,7 @@ def _label(t, src, cls="zn-label"):
 def zine():
     ts = toys()
     first = ts[0]["sid"] if ts else ""
-    body = switch("/look/zine")
+    body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
              f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1></section>')
     for i, t in enumerate(ts, 1):
@@ -177,11 +173,11 @@ def zine():
                  f'<div><p class="big">No. {i:02d}</p><h2>{esc(t["toy"])}</h2>{_label(t, src)}{_nopic(t)}</div>'
                  f'<div id="song-{i}"><div class="songs">{song}</div><p class="cap">{QUOTE} · {esc(t["holding"])}</p></div>'
                  f'<div><div class="zn-grid">{tiles}</div><p class="cap">図の細部</p></div>'
-                 f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">どこが動くと思いますか。</p><p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></p></div></div></section>')
+                 f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">紙で作って、確かめる。</p><p><a href="/toy/{t["sid"]}">型紙をひらく</a></p></div></div></section>')
     # 全部の玩具の一覧は、額装した 2 種の後、奥付の前（本人の指示 11-05）。黒地のジンの性格は保つ（U-23）。
     body += all_toys("zn")
     body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし · 縦読みのジン", body + ONLY, ZINE, "zine")
+    return page("うつし", body + ONLY, ZINE + skin.entrance_style("zine"), "zine")
 
 
 # ---------------------------------------------------------------- A′ 日本画展の展示（白の壁）
@@ -198,7 +194,6 @@ body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Not
    小さな字の灰は色相を保って明るさだけ下げ、白地で 4.5:1 を割らないようにした（同 2）。 */
 body.tenji ::selection{background:#e6e1d6;color:#1f1b17}
 body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107,79,42,.35)}
-.tenji .switch{font-size:12px;letter-spacing:.2em;padding:14px 5vw;color:#7a7164}.tenji .switch .cap{color:#7c7160}
 .tj-hall{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 5vw;box-sizing:border-box}
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
@@ -262,7 +257,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .fan-cap{min-width:8em}
 
 /* 「扇をひらく」（本人の頼みの (3) を静かにした物）。派手な 3D のねじれは持ち込まず、線の扇の開く角だけをノブで動かす。
-   筒の中の仕組みは描かない（仮説を出さないため。予想が先、F9.prediction）。--t は骨の位置（-0.5〜0.5）、--a が開く角。 */
+   筒の中の仕組みは描かない（入口で仕組みを語らないため）。--t は骨の位置（-0.5〜0.5）、--a が開く角。 */
 .tj-ogi{padding:6vh 5vw 10vh;text-align:center}
 .tj-ogi svg{width:min(360px,80vw);height:auto;display:block;margin:0 auto}
 .tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
@@ -369,7 +364,7 @@ def ogi_slider(n=13, start=150):
 
 def tenji():
     ts = toys()
-    body = switch("/look/tenji")
+    body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
     # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
@@ -386,9 +381,9 @@ def tenji():
         figs = "".join(f'<figure><div style="{_bg(t["sid"], p, "300%")}"></div><figcaption>部分 {k}</figcaption></figure>'
                        for k, p in enumerate(DETAIL_POS, 1))
         body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
-        body += (f'<section class="tj-exit"><p>どこが動くと思いますか。</p><a href="/toy/{t["sid"]}">予想を書いてひらく</a></section>')
+        body += (f'<section class="tj-exit"><p>紙で作って、確かめる。</p><a href="/toy/{t["sid"]}">型紙をひらく</a></section>')
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。扇の開く角を示す線の絵のほかに、新しい絵は作っていない。</p>'
-    return page("うつし · 日本画展の展示", body + ONLY + FAN_JS, TENJI, "tenji")
+    return page("うつし", body + ONLY + FAN_JS, TENJI + skin.entrance_style("tenji"), "tenji")
 
 
 PAGES = {"tenji": tenji, "zine": zine}

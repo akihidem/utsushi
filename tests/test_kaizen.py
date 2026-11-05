@@ -16,6 +16,7 @@ import urllib.request
 DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 
+from omochae.marks import without_premise  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -50,7 +51,6 @@ def post(path, data):
         return e.code, e.read().decode()
 
 
-assert post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"})[0] == 303
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 page = get(f"/toy/{G}")[1]
 # 報告の欄に感想がある。輪の節は、報告が無い時もその旨を出す
@@ -91,7 +91,7 @@ assert json.loads((pathlib.Path(DATA) / "records/R-0002.json").read_text(encodin
 code, lp = get("/loop")
 assert code == 200 and "改善の輪" in lp and "御来迎" in lp and f'href="/toy/{G}#kaizen"' in lp
 for w in ("成功", "失敗", "正解", "順位", "点数"):
-    assert w not in lp and w not in kz, w
+    assert w not in without_premise(lp) and w not in without_premise(kz), w
 # 学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）
 for path in ("/about", "/toys", "/", f"/toy/{G}"):
     assert 'href="/loop' not in get(path)[1], path

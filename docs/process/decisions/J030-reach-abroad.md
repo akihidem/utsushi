@@ -1,6 +1,6 @@
 # J-030 届け先はいろんな国の人（外国の人に届く形の方針）
 
-- **状態**: 本人の方針（2026-11-05、窓口を通して届いた）。段 1 は本人の指示「実装までやって」で作る。この文書は作る側が方針の形にした物で、紹介文の文面は本人の採否待ち
+- **状態**: 本人の方針（2026-11-05、窓口を通して届いた）。段 1 は本人の指示「実装までやって」で作る。この文書は作る側が方針の形にした物。紹介の頭と札の文は本人が採った（11-05、#318）。紹介の残りの段は、本人の方針（小学生・中学生にも分かる言葉）で同じ書き方にそろえた
 - **本人の言葉**: 「ぜっかく江戸時代のおもちゃを作れるようにするから、このおもちゃの存在を知って欲しい。いろんな国の人に知って欲しい。」
 - **範囲の決まり**: 凍結の床（必須 2 種の今の版の紙）を壊さない範囲で
 
@@ -45,7 +45,7 @@
 | 英語の皮を 3 つ目のサイトにする | 本人の決定（白と黒の 2 サイト）と別の軸で、組み合わせが増える。言葉はサイトの見た目と分ける |
 | 型紙の今の版に英語を足す | 凍結の床に当たる |
 
-## 英語の紹介文（案。本人の採否待ち）
+## 英語の紹介文（本人が採った頭と、同じ書き方にそろえた段）
 
 書名の読みは国立国会図書館の書誌の「エド ニシキ」に合わせた。数は記録の 83 種と本人の 88 種のどちらでも正しい「more than 80」にした。
 
@@ -53,21 +53,21 @@
 
 **一文**
 
-> The toys in a 1773 Japanese picture book come with drawings and short poems, but the book does not explain how they worked. Print a paper model, build it, and test an idea. A model that moves does not prove how the original was made.
+> The toys in a 1773 Japanese picture book come with pictures and short poems, but the book does not say how they worked. Print a paper model, build it, and test an idea. A model that moves does not prove how the original was made.
 
 **短い紹介（README の先頭・提出の概要）**
 
-> *Edo nishiki* (1773) is a Japanese picture book of toys. It has pictures and short poems, but it does not explain how the toys worked. utsushi turns those pictures into printable paper models, based on untested ideas about how they moved. Print one, build it, try it, and write down what you saw. The paper responds first, and after you have explained what you saw, AI can respond too. A paper model that moves does not prove how the original was made.
+> *Edo nishiki* is a Japanese picture book of toys from 1773. It has pictures and short poems, but it does not say how the toys worked. utsushi turns the pictures into paper models you can print. Each model is a guess about how the toy moved. Print one, build it, try it, and write down what you saw. The paper responds first. After you explain what you saw, AI can respond too. A paper model that moves does not prove how the original was made.
 
 **少し長い紹介（サイトの英語の頁）**
 
-> In 1773, the artist Kitao Shigemasa published a book of toys in Edo, today's Tokyo. The book, *Edo nishiki*, shows more than 80 toys with short poems, but it does not explain how they worked.
+> In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called *Edo nishiki*. It shows more than 80 toys with short poems, but it does not say how the toys worked.
 >
-> utsushi lets you test ideas with your hands. Pick a toy and print a paper template right away. Each idea has its own template, and none of them is the answer. Cut, fold, glue, and try it. If it does not move, that is a result too: write down what happened, change one thing, and print the next version. You can also see what other people have made.
+> With utsushi, you can test ideas with your hands. Pick a toy and print a paper template right away. Each idea has its own template, and none of them is the answer. Cut, fold, glue, and try it. If it does not move, that is a result too. Write down what happened, change one thing, and print the next version.
 >
-> Two toys have full templates, in Japanese only: the Goraigo (roughly, "welcoming descent"), a tube with a fan, and a tiger based on old papier-mâché toys. An earlier Goraigo moved in one trial with adults. No one has finished the tiger. The others are untested drafts, and their names are our guesses.
+> Two toys have full templates, in Japanese only. One is the Goraigo (roughly, "welcoming descent"), a tube with a fan. The other is a tiger based on old papier-mâché toys. An earlier Goraigo moved in one trial with adults. No one has finished the tiger yet. The other toys are untested drafts, and their names are our guesses.
 >
-> A paper model that moves does not prove how the original was made. These are versions for experimenting, not reconstructions.
+> A paper model that moves does not prove how the original was made. These models are for trying things out. They are not exact copies of the old toys.
 >
 > Pictures: 1931 facsimile of the 1773 book, National Diet Library, Japan (public domain). The drawings on the templates are redrawn.
 
@@ -93,7 +93,7 @@
 
 ## 本人に決めてもらう点
 
-1. 英語の紹介文の採否と直し。英語を母語とする人に読んでもらうか。
+1. 英語を母語とする人に読んでもらうか（紹介の文は本人が採った。#318）。
 2. 動画の英語: 字幕の別ファイルでよいか、英語の字幕を焼き込んだ版も作るか。推し: 別ファイル（作り直しの危険が無い。撮影の日程に当たらない）。
 
 ## 確かめていない事

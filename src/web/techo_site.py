@@ -281,7 +281,7 @@ document.getElementById('up-form').onsubmit = async (e) => {
   go.disabled = true; st.textContent = '送っています…';
   let done = '';
   try {
-    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value }) });
+    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value, fix_part: document.getElementById('fix-part').value, fix_change: document.getElementById('fix-change').value, fix_outcome: document.getElementById('fix-outcome').value }) });
     const j = await r.json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
@@ -315,7 +315,7 @@ def feedback(sid, r):
 
         body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
     else:
-        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain"><input type="hidden" name="back" value="techo">'
+        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
@@ -341,28 +341,42 @@ def ai_part(r):
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
     can_ask, can_watch, why = ai_offer(r["id"])
-    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
-               f'<form method="post" action="/record/{rid}/ai-observe"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>' if can_watch else "")
+    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
+               f'<form method="post" action="/record/{rid}/ai-observe#{rid}"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>' if can_watch else "")
     return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
 
 
-def gallery_page(sids):
-    """サイトの「上げた物のギャラリー」と「職人の言葉」の枠（本人の設計、11-04）。上げた物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。
-    並びは記録の順で、上下を付けない（J-025）。職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
+def made_item(sid, data, r, photos=True):
+    """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
+    photos=False は合言葉なしで開いた場。写真も人の書いた文も出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    ひとこと（note）は学ぶ人の頁に出してこなかった欄なので、ギャラリーにも出さない。
+    動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
+    if not photos:
+        return ""
+    files = media_of(r["id"])
+    pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
+                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
+    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict))
+    if not pics and not words:
+        return ""
+    h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+    # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
+    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
+            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
+
+
+def gallery_page(sids, photos=True):
+    """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
+    作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
+    職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
     cards = ""
     for sid in sids:
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
-            files = media_of(r["id"])
-            if not files:
-                continue
-            pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                            else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
-            h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-            # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-            cards += (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
-                      f'<div class="row">{pics}</div></div>')
-    cards = cards or '<p class="meta">まだ上げた物はありません。手帖の「上げる」から上げると、ここに並びます。</p>'
+            cards += made_item(sid, data, r, photos)
+    cards = cards or ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
+                      else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
     from .demo_samples import uploads_html, voice_html
     cards += uploads_html()
@@ -371,9 +385,9 @@ def gallery_page(sids):
     from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（STYLE の main:has(.gallery)）。
-    return ('<div class="gallery"><div class="top"><h1>上げた物と職人の言葉</h1><a href="/">入口へ</a></div>'
-            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">上げた物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
-            '<section class="panel" id="ageta"><h2 class="mark">上げた物</h2><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
+    return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
+            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
+            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
             '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
             f'{voices_html()}</section>'
@@ -383,8 +397,8 @@ def gallery_page(sids):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True):
-    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。予想の前は呼ばない（呼ぶ側が F9.prediction を見る）。"""
+def page(sid, printed_ids, picture_url, uploads=True, msg=""):
+    """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
     hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
@@ -394,11 +408,13 @@ def page(sid, printed_ids, picture_url, uploads=True):
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
-        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'
+        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
+    # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
-        files = media_of(r["id"])
+        files = media_of(r["id"]) if uploads else []  # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
@@ -423,7 +439,9 @@ def page(sid, printed_ids, picture_url, uploads=True):
                '<p class="meta">公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。</p>') +
             f'<div class="row" role="radiogroup" aria-label="見た事">{results}</div>'
             '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
+            # 工夫の欄（本人の言葉 11-05「工夫で乗り切る過程」）。作りながらなので畳んでおく。一部だけ書いても記録は落とさない（play_server.fixes_of）。
+            '<details><summary>工夫した所（あれば）</summary><p class="meta">ほかの人も読むので、名前や連絡先は書かないでください。</p><input type="text" id="fix-part" maxlength="100" placeholder="どの部品か"><input type="text" id="fix-change" maxlength="200" placeholder="どう工夫したか"><input type="text" id="fix-outcome" maxlength="200" placeholder="どうなったか"></details>'
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'
             '<p><button class="go">記録だけ残す</button></p></form><p class="meta" id="up-status" aria-live="polite"></p>'
-            f'<div id="mine">{mine}</div></section>')
+            f'<div id="mine">{note}{mine}</div></section>')
     return body + SCRIPT

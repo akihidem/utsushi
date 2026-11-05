@@ -1,0 +1,17 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: 9a9359a（回した時の HEAD）
+OK test_engine_bundle
+rc=0
+
+上は、直しを足した作業ツリー（HEAD の上に、まだ commit していない直し）で回した。
+
+道具を壊した版 3 つを repo の外の控えで回した結果（どれも試験が rc 1。元のままは rc 0）:
+- 全部の雛形の組を書く: rc 1
+- 記録の紙の組を、今の組として書く: rc 1
+- 今の組を書かない: rc 1
+
+11-04 の試行の記録 2 件の控えから出した束（書く先は repo の外）:
+束を書いた（群 1・文 4・連絡先の形で落とした文 0）。上の段の current_sets は slider_fan が goraigo-v10、群の刷った組は goraigo-v7。
+型紙エンジンの入口の検査（python -m omochae.engine_loop check）:
+- 今の組を受ける直し（その repo の Issue 68）の枝: rc 0。案の「なぜか」に「今の組は goraigo-v10。この記録は前の組の紙の物」と出た
+- その直しが入る前の main: rc 3（決まりの外の欄として、束ごと断る）。だから、エンジンの側が main に入ってから、こちらを main に入れる

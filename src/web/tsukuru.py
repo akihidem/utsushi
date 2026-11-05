@@ -29,7 +29,10 @@ from omochae import hypotheses, instructions, loop, making_log
 from omochae.compose import TEMPLATES
 
 from . import skin
-from .kazasu import PRIVACY
+
+# 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
+PRIVACY = "映像はこの端末の中だけで、送りも残しもしません。"
+CAMERA_PURPOSE = "カメラで見るのは、不完全な型紙を人が工夫で乗り切る所です。人の出来を見るためではありません。"
 from .play_server import esc, out_dir, printed_versions
 
 NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
@@ -78,7 +81,7 @@ a{color:var(--accent)}
 .live .mirror{display:block}
 #cam{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .mirror .line{position:absolute;left:0;right:0;top:55%;border-top:2px dashed var(--accent)}
-.mirror .cap{position:absolute;left:0;right:0;bottom:0;margin:0;padding:2px 6px;font-size:11px;color:var(--fg);background:color-mix(in srgb,var(--bg) 82%,transparent)}
+.mirror .cap{position:absolute;left:0;right:0;bottom:0;margin:0;padding:2px 6px;font-size:12px;color:var(--fg);background:color-mix(in srgb,var(--bg) 82%,transparent)}
 /* 横置き（机の端に立てた端末やタブレット）: 左に手本、右に札・返事・鏡。 */
 @media (min-width:860px) and (orientation:landscape){
  .stage{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
@@ -176,7 +179,7 @@ def count(sid, hid, version=None):
 
 
 def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
-    """作りながら見る頁。呼ぶ側（play_server）が、予想の後である事と、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
+    """作りながら見る頁。呼ぶ側（play_server）が、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
     data = hypotheses.load(sid)
     h = next(x for x in data["hypotheses"] if x["id"] == hid)
     s = skin.SKINS.get(look, skin.SKINS[skin.DEFAULT])
@@ -220,10 +223,12 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             '<input type="text" id="q" name="question" maxlength="300" placeholder="谷折りって？" enterkeyhint="send" required><button>聞く</button></form>'
             f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(NOTICE)}</p>'
             f'<p class="meta"><a href="/toy/{esc(sid)}/techo">声で聞く・写真を上げる（手帖）</a></p></div>'
+            # カメラの目的（本人の言葉 11-05「カメラで見るのはそういうとこだよ」）。人の出来を測らない事を、カメラのそばに書く。
+            f'<p class="meta">{esc(CAMERA_PURPOSE)}</p>'
             '<div class="mirror" id="mirror"><video id="cam" autoplay playsinline muted aria-hidden="true"></video>'
             '<span class="line" aria-hidden="true"></span><p class="cap">紙がこの線より下に入るように置く</p></div>'
             f'<p class="meta"><button type="button" id="on">鏡を出す</button><span id="mirror-note">自分と机の上が小さく映ります。{esc(PRIVACY)}鏡は出さなくても全部できます。</span></p>'
             '</section></main>')
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            f'<title>{esc(data["toy"])} · 作りながら見る</title><style>:root{{{root}}}{STYLE}</style>'
+            f'<title>{esc(data["toy"])} · 作りながら見る</title><style>:root{{{root}}}{STYLE}{skin.TAP_FLOOR}</style>'
             f'<body class="tsukuru skin-{esc(look)}">{body}{SCRIPT}</body></html>')
