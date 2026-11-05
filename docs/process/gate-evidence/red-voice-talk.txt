@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hanasu.py
+# commit: 0607371（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hanasu.py", line 26, in <module>
+    from omochae import making_log, records, talk_log  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'talk_log' from 'omochae' (src/omochae/__init__.py)
+rc=1

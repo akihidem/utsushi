@@ -77,10 +77,12 @@ assert f'<img class="sheet" src="/sheet/{G}/H-A_v1_tejun.png"' in t and get(f"/s
 assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and "できた" in t
 # 刷っていない紙は h で指しても開かない
 assert 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]
-# 映像は端末の中だけ: 画素を取り出す・録る・送る JS が無い。送るのは聞く口と札（form の欄）だけ
+# 映像は端末の中だけ: 画素を取り出す・録る・送る JS が無い。送るのは聞く口と札と話す口（どれも字のフォームの欄）だけ
 for w in ("canvas", "toBlob", "toDataURL", "MediaRecorder", "captureStream", "ImageCapture", "WebSocket", "sendBeacon", "XMLHttpRequest", "IntersectionObserver"):
     assert w not in t, w
-assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 2
+assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 3
+# 3 つ目は話す口（Issue #279）。送り先は部品のフォームの action（/toy/<印>/talk）で、形は字のフォームだけ
+assert t.count("fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}") == 1 and f'<form method="post" action="/toy/{G}/talk">' in t
 assert "audio:false" in t and "100svh" in t and "prefers-reduced-motion" in t
 # 仮説の名前と動かし方は出さない（字と版だけ）。成績の言葉と祝いの演出も無い
 for h in hypotheses.load(G)["hypotheses"]:
@@ -137,7 +139,9 @@ assert "document.cookie" not in t and "localStorage" not in t
 # 声は字にして送るだけ: 録る code・マイクを開く code が無い。鏡のカメラは 1 か所で audio:false のまま
 assert ("SpeechRecognition" in t and "audio:true" not in t and "audio: true" not in t and "MediaRecorder" not in t
         and t.count("getUserMedia(") == 1 and "getUserMedia({video:{facingMode:'user'},audio:false})" in t)
-assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 2
+assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 3
+# 3 つ目は話す口（Issue #279）。送り先は部品のフォームの action（/toy/<印>/talk）で、形は字のフォームだけ
+assert t.count("fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}") == 1 and f'<form method="post" action="/toy/{G}/talk">' in t
 # 止まった段に戻った頁（JS が無い時の戻り先）は、その段を名指しして聞く口を開く
 back = get(f"/toy/{G}/tsukuru?h=H-A&n=2&ev=stuck")[1]
 assert '<div class="henji open" id="henji"' in back and 'id="ask-head">手順 2 で止まった所を聞く</p>' in back
