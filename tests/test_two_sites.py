@@ -46,12 +46,12 @@ for look, other, title in (("tenji", "zine", "日本画展の展示"), ("zine", 
         code, body = get(path)
         assert code == 200 and f'class="skin-{look}' in body and f'skin-{other}' not in body and "?look=" not in body, (look, path)
 
-# 記録は 2 サイトで共有（本人の決定 11-05 朝、カード 083822 の判断 1）: 白の展示で書いた予想が、黒のジンの同じ玩具の頁で見える
+# 記録は 2 サイトで共有（本人の決定 11-05 朝、カード 083822 の判断 1）: 白の展示で残した自分の仮説が、黒のジンの同じ玩具の頁で見える
 
 tenji, zine = up("tenji"), up("zine")
-assert "先に、予想を書く" in zine(f"/toy/{G}")[1]
+assert "先に、予想を書く" not in zine(f"/toy/{G}")[1]
 from omochae import hypotheses  # noqa: E402
 
-hypotheses.save_prediction(G, "白の展示で書いた予想")  # 白のサーバと同じ置き場（OMOCHAE_DATA）に書く
-assert "白の展示で書いた予想" in zine(f"/toy/{G}")[1] and "白の展示で書いた予想" in tenji(f"/toy/{G}")[1]
+assert hypotheses.save_own(G, "白の展示で書いた仮説", "下から押す", "筒の下の線")[1] == []
+assert "白の展示で書いた仮説" in zine(f"/toy/{G}")[1] and "白の展示で書いた仮説" in tenji(f"/toy/{G}")[1]
 print("ok: 皮ごとに 1 サイト、記録は共有")

@@ -64,7 +64,6 @@ def post(path, data):
         return e.code, e.headers.get("Location", "")
 
 
-hypotheses.save_prediction(G, "押すと開く")
 post(f"/toy/{G}/print", {"hypothesis": "H-A"})
 page = urllib.request.urlopen(base + f"/toy/{G}/techo").read().decode()
 assert "Claude に聞く（何が起きたか）" in page and "観察（Claude の補助）" in page

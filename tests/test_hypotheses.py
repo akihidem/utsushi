@@ -1,4 +1,4 @@
-"""仮説を並べる入口の試験。既定の 1 案に戻らない事と、予想が先に要る事を見る。"""
+"""仮説を並べる入口の試験。既定の 1 案に戻らない事と、予想なしで並ぶ事（#242）を見る。"""
 import json
 import os
 import pathlib
@@ -31,13 +31,8 @@ def cli(*args):
 
 assert "dl.ndl.go.jp" in cli("picture").stdout and "H-A" not in cli("picture").stdout, "図は仮説の前に見られる"
 r = cli("list")
-assert r.returncode == 3 and "F9.prediction" in r.stderr and "H-A" not in r.stdout, "予想の前に仮説を見せない"
-assert cli("print", "H-A", "--out", f"{tmp}/x").returncode == 3 and not pathlib.Path(f"{tmp}/x.pdf").exists()
-assert cli("predict", "  ").returncode == 3
-assert cli("predict", "筒を押すと上の飾りが開く。動力は手").returncode == 0
-r = cli("list")
-assert r.returncode == 0 and "筒を押すと上の飾りが開く" in r.stdout
-assert r.stdout.index("筒を押すと") < r.stdout.index("H-A"), "予想を仮説より先に置く"
+assert r.returncode == 0, "予想の段は無い。開いたらすぐ並ぶ（#242）"
+assert cli("predict", "x").returncode != 0, "予想の口は外した"
 assert all(h["id"] in r.stdout for h in hs)
 assert cli("print", "H-Z").returncode == 4
 r = cli("print", "H-D", "--out", f"{tmp}/d")
@@ -45,10 +40,9 @@ assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", f"{tmp}/d.pdf", "-"], capture_output=True, text=True).stdout
 assert "仮説D" in "".join(text.split()) and "答えではありません" in "".join(text.split())
 
-# 自分の仮説から入る道（J-008）。別の置き場で、予想なしから始める
+# 自分の仮説から入る道（J-008）。別の置き場で始める
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 tmp2 = os.environ["OMOCHAE_DATA"]
-assert cli("list").returncode == 3
 r = cli("own", "筒を回すと開く")
 assert r.returncode == 3 and "F9.own" in r.stderr, "動かし方と根拠が要る"
 r = cli("own", "筒を回すと開く", "--how", "筒をねじる", "--evidence", "筒の 2 本線がねじれて見える")

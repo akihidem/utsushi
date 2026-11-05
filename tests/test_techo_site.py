@@ -1,4 +1,4 @@
-"""入口のサイトの中の手帖（本人の方向転換 11-04）。予想が先・仮説の名前と動き方を出さない・手順だけ答える・上げた物は記録に添い撮影情報を外す。"""
+"""入口のサイトの中の手帖（本人の方向転換 11-04）。仮説の名前と動き方を出さない・手順だけ答える・上げた物は記録に添い撮影情報を外す。"""
 import io
 import json
 import os
@@ -35,8 +35,7 @@ def req(path, data=None, ctype="application/x-www-form-urlencoded", origin=base)
 
 
 code, body = req(f"/toy/{G}/techo")
-assert code == 200 and "先に予想を書く" in body.decode(), "予想の前は手帖を開かない"
-assert req(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})[0] in (200, 303)
+assert code == 200 and "先に予想を書く" not in body.decode(), "予想の段は無い（#242）"
 assert req(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
 code, body = req(f"/toy/{G}/techo")
 page = body.decode()

@@ -16,7 +16,7 @@ assert demo_samples.NOTE in html, "作り物である事の一文"
 # どの見本の枠にも札がある（本物と取り違えない）
 for chunk in html.split('class="item is-sample"')[1:]:
     assert chunk.split("</div>")[0].count('<span class="sample">見本</span>') == 1, chunk[:80]
-assert "まだ上げた物はありません" in html, "本物が無い事は見本があっても隠さない"
+assert "まだ作った物の記録はありません" in html, "本物が無い事は見本があっても隠さない"
 assert "（準備中）" not in html, "職人の言葉の 3 枠に見本が入る"
 assert all("架空" in c["who"] for c in demo_samples.CONTRIBUTIONS + demo_samples.VOICES), "人の名前は架空と書く"
 for sid in sources():
