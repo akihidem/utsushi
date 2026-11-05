@@ -14,7 +14,7 @@ from PIL import Image  # noqa: E402
 
 from omochae import hypotheses  # noqa: E402
 from web.play_server import serve  # noqa: E402
-from web.techo_site import media_dir, strip_jpeg_meta  # noqa: E402
+from web.techo_site import MAX_MEDIA, media_dir, strip_jpeg_meta  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -53,6 +53,11 @@ assert "試して確かめる所" in j["text"]
 j = json.loads(req(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})[1])
 assert "手前にへこむ" in j["text"]
 assert req(f"/toy/{G}/ask-json", {"hypothesis": "H-B", "question": "谷折りって？"})[0] == 422
+# 上げる: 数と大きさの決まりを押す前に読める。写真を選ぶまで、釦の字は写真なしで起きる事を言う（#144）
+form = page.split('<form id="up-form"', 1)[1].split("</form>", 1)[0]
+assert "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form and f'data-max-bytes="{MAX_MEDIA}"' in form
+assert 'id="picked"' in form and 'id="thumbs"' in form
+assert '<button class="go">記録だけ残す</button>' in form and "大人の手元だけ・顔なし・声なし" in form
 # 上げる: 記録を作り、その R-番号に写真を添える。撮影情報（APP1）を外し、型と大きさと出所を見る
 code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない"})
 rid = json.loads(body)["id"]
