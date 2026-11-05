@@ -7,7 +7,7 @@ import json
 import pathlib
 import tempfile
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from demo import flip, scene7
 
@@ -41,7 +41,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 scene = scene7.Scene7(page, rec, template)
 assert len(scene.order) == 18 and scene.duration == scene7.DURATION
-for t in (0.5, 2.0, 4.0, 6.0, 9.0, 11.0, 15.0, 19.9):
+for t in (0.5, 2.0, 4.0, 6.0, 9.0, 11.0, 15.0, 18.0, 19.9, 25.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 # 並ぶ段の途中と並び終えた後で絵が違う（1 人ずつ現れる）
@@ -51,8 +51,15 @@ with_music = scene7.Scene7(page, rec, template, "試しの曲")
 assert with_music.frame(15.0).tobytes() != scene.frame(15.0).tobytes()
 assert with_music.frame(4.0).tobytes() == scene.frame(4.0).tobytes()
 
+# 動画は見ている人への問いで終える（本人の指示 11-05）。問いは字が収まり、最後のコマに残っている
+assert scene7.ASK.endswith("か。"), "問いの形"
+for s_, px in ((scene7.ASK_LEAD, 44), (scene7.ASK, 66)):
+    assert ImageFont.truetype(flip.SERIF_BOLD, px).getlength(s_) <= flip.W - 160, s_
+assert scene.frame(25.9).tobytes() == scene.frame(21.0).tobytes(), "問いの後は止めて考える間を置く"
+assert scene.frame(18.5).tobytes() != scene.frame(25.9).tobytes(), "届け先の 1 行の後に問いが出る"
+assert with_music.frame(25.9).tobytes() == scene.frame(25.9).tobytes(), "問いの札にクレジットが透けない"
+
 # 型紙の下の札は、どの行も動画の幅の中に収まる（組の名が長くなっても右の端で切れない。11-05 に v10 の「0」が切れた）
-from PIL import ImageFont
 lines = scene.sheet_label_lines()
 assert any("順位ではない" in s for s in lines) and any(scene.sheet_set in s for s in lines)
 font = ImageFont.truetype(flip.SERIF, scene7.SHEET_LABEL_PX)

@@ -26,6 +26,11 @@ from demo.flip import (FPS, H, PAPER, ROOT, SERIF, SERIF_BOLD, SHU, SUMI, W, Sce
 # 締めの字幕。文面は本人の採否待ち（plan.md の 6 の 2）なので、変える時はここ 1 か所だけを直す。
 CAPTION = "紙で動いても、昔の作り方の証明にはならない"
 
+# 見ている人への問い。本人の指示（11-05）で動画は問いで終える。材料は本人の言葉「誰のために今作ってるか？という質問に対しては、手を動かす楽しさを忘れた人のために作っている。」
+# 文面は作る側の案で、本人の確認待ち。変える時はここだけを直す。先に届け先を言い、最後の 1 行を問いにする（答えを言わずに終えるため）。
+ASK_LEAD = "手を動かす楽しさを忘れた人のために、作っています。"
+ASK = "最後に自分の手で何かを作ったのは、いつですか。"
+
 # クレジット（plan.md の 4 の行をそのまま）。役と名を分けて持ち、画面では役を右寄せ・名を左寄せで揃える。
 CREDITS = (
     ("図", "国立国会図書館（PDM）『北斎漫画』『江都二色』"),
@@ -45,9 +50,11 @@ CUES = {
     "sheet_in": (1.5, 3.5),    # 刷った型紙が右に現れる
     "caption": (5.0, 6.5),     # 締めの字幕
     "credits": (10.5, 12.0),   # 紙を覆ってクレジット
+    "ask": (17.0, 18.2),       # クレジットを覆って、届け先の 1 行
+    "question": (19.0, 20.2),  # 見ている人への問い。26 秒まで止めて考える間を置く（音もここでは鳴らさない。demo.beat）
 }
-DURATION = 20.0
-SHEET_TIMES = (0.6, 1.8, 3.6, 5.6, 8.0, 10.8, 11.4, 14.0, 19.5)
+DURATION = 26.0
+SHEET_TIMES = (0.6, 1.8, 3.6, 5.6, 8.0, 11.4, 14.0, 18.4, 25.0)
 
 # 並べ方: 左の枠に 6 列 3 段。和本の読む順に合わせ、1 人目を右上に置いて右から左へ並べる。
 GRID_COLS, GRID_ROWS = 6, 3
@@ -179,6 +186,21 @@ class Scene7:
             y += 84
         return draw
 
+    def _ask(self, img, t):
+        """届け先の 1 行と問い。覆いは不透明にして、クレジットの字と重ねない。"""
+        a = ease((t - CUES["ask"][0]) / (CUES["ask"][1] - CUES["ask"][0]))
+        if a <= 0:
+            return None
+        veil = Image.new("RGBA", (W, H), PAPER + (round(255 * a),))
+        img.paste(veil, (0, 0), veil)
+        draw = ImageDraw.Draw(img)
+        text(draw, (W // 2, 400), ASK_LEAD, 44, _fade(SUMI, a), False, "ma")
+        q = ease((t - CUES["question"][0]) / (CUES["question"][1] - CUES["question"][0]))
+        if q > 0:
+            draw.line((W // 2 - 60, 490, W // 2 + 60, 490), fill=_fade(SHU, q), width=3)
+            text(draw, (W // 2, 530), ASK, 66, _fade(SUMI, q), True, "ma")
+        return draw
+
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
@@ -196,6 +218,7 @@ class Scene7:
         c = ease((t - CUES["credits"][0]) / (CUES["credits"][1] - CUES["credits"][0]))
         if c > 0:
             draw = self._credits(img, c)
+        draw = self._ask(img, t) or draw
         # 隅の札: 出所と改変は毎コマ出す（場面 1 と同じ決まり）。字幕の帯の上に重ならないよう上の隅に置く。
         text(draw, (80, 50), f'図 {self.rec["title"]}（{self.rec["publication"]}）国立国会図書館（PDM）　{MODIFICATION}',
              22, _fade(SUMI, 0.7))

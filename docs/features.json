@@ -316,6 +316,8 @@
    "src/demo/scene5.py",
    "src/demo/scene6.py",
    "src/demo/scene7.py",
+   "src/demo/beat.py",
+   "tests/test_demo_beat.py",
    "src/demo/assemble.py",
    "tests/test_demo_flip.py",
    "tests/test_demo_scene2.py",
