@@ -57,8 +57,8 @@ assert "仮説の札を押すと、紙を作ってここに出します" in visi
 code, where, page = post(f"/toy/{G}/print", {"hypothesis": first})
 assert code == 200 and f"see={first}" in where and where.endswith("#win"), (code, where)
 w = win(page)
-# 「刷る」「印刷」は、紙に印刷する所にだけ出る
-rest = visible(w)
+# 「刷る」「印刷」は、紙に印刷する所にだけ出る。PDF の釦の下の案内（#297）も印刷する所なので除く
+rest = visible(re.sub(r'<details class="meta print-help">.*?</details>', "", w, flags=re.S))
 for printing in ("印刷する時は PDF を 100% で", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り"):
     assert printing in rest, printing
     rest = rest.replace(printing, "")

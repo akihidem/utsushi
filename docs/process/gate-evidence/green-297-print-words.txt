@@ -1,0 +1,21 @@
+# 命令: sh -c 'PYTHONPATH=src .venv/bin/python tests/test_print_help.py && PYTHONPATH=src .venv/bin/python tests/test_sheet_window.py'
+# commit: 987ecf1（回した時の HEAD）
+/tmp/tmpbdusplgw/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpbdusplgw/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpbdusplgw/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpbdusplgw/play/NDL-1187053-R0000004-L-4/H-A_v1.pdf
+/tmp/tmpbdusplgw/play/NDL-1187053-R0000004-L-4/H-A_v1_tejun.pdf
+/tmp/tmpbdusplgw/play/NDL-1187053-R0000004-L-4/H-A_v1_after.pdf
+ok
+FAIL F9.human [NDL-1187053-R0000005-L H-B] 必須 2 種の今の組は、たたき台（H-A）の紙だけを刷る
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000004-L-4/H-A_v1.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000004-L-4/H-A_v1_tejun.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000004-L-4/H-A_v1_after.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000004-L-4/H-B_v1.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000004-L-4/H-B_v1_tejun.pdf
+/tmp/tmpxmkhsxyh/play/NDL-1187053-R0000004-L-4/H-B_v1_after.pdf
+ok
+rc=0

@@ -23,6 +23,14 @@ G = "NDL-1187053-R0000005-L"
 # ほかの玩具の紙でも同じ文か見る。型紙は玩具ごとに 1 枚（#332）で、必須 2 種の今の組はたたき台しか刷れないので、仮説でなく玩具を替える
 T = next(p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("*.json")) if json.loads(p.read_text(encoding="utf-8")).get("stage") == "試作")
 SHEET = {sid: hypotheses.sheet_of(sid)["id"] for sid in (G, T)}
+# 本人が採った文（11-05）。一字も変えずに頁へ出す。変える時は本人の確認を通す
+ADOPTED_SUMMARY = "印刷できない時は"
+ADOPTED = (
+    ("大きさを 100% にするには", "印刷の画面で、倍率を 100% にします。「用紙に合わせる」を外すと、大きさがそのままになります。画面の言葉は、機械によってちがいます。"),
+    ("物差しが 10cm でない時は", "倍率が 100% になっているか、もう一度見ます。直したら、印刷し直します。それでも 10cm にならない時は、そのまま作ってもだいじょうぶです。"),
+    ("プリンタが無い時は", "学校の先生や家の人に、印刷をたのみましょう。コンビニの印刷機で印刷できる事もあります。その時も倍率を 100% にします。"),
+)
+WORDS = toy.PRINT_HELP_SUMMARY, toy.PRINT_HELP  # 試験が表を入れ替える前の、本物の文
 SAMPLE = (("見出し<1>", "文の 1"), ("見出し 2", "文の 2"), ("見出し 3", "文の 3"))
 
 
@@ -62,5 +70,13 @@ for look in ("tenji", "zine"):
     # どの紙でも同じ文
     assert help_part(get("kind=tejun")) == part, ("手順の紙", look)
     assert help_part(get("kind=sheet", T)) == part, ("ほかの玩具", look)
+
+    # 本物の文が、採った字のまま頁に出る
+    toy.PRINT_HELP_SUMMARY, toy.PRINT_HELP = WORDS
+    part = help_part(get("kind=sheet"))
+    assert f"<summary>{ADOPTED_SUMMARY}</summary>" in part, ("見出し", look)
+    for head, text in ADOPTED:
+        assert f"<b>{head}</b><br>{text}</p>" in part, (head, look)
+    assert part.count("<p>") == len(ADOPTED), ("案内の数", look)
     server.shutdown()
 print("ok")

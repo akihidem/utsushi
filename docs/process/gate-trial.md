@@ -938,6 +938,7 @@
 - ゴールの要件: 窓から 1 回の操作で全部の案内が読める。JS なしで開く。どの紙でも同じ文（`tests/test_print_help.py`）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-297-print-help.txt`、Green は `docs/process/gate-evidence/green-297-print-help.txt`
 - エビデンスゲート: 上の出力と `./run.sh`
+- 案内の文（本人の決定、11-05 夕、全部このまま）: 倍率の出し方、10cm でない時、プリンタが無い時の 3 つ。10cm にならない時は、そのまま作ってよいと決まった。文は試験で文字列を見る。Red は `docs/process/gate-evidence/red-297-print-words.txt`、Green は `docs/process/gate-evidence/green-297-print-words.txt`
 - まだの事: 書いた道を実機で確かめた記録は無い。人の手が要る
 - マージ後の書き戻し: #297 に書く
 
