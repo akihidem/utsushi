@@ -172,7 +172,7 @@ assert made_p["hypothesis_id"] == SHEET and made_p["record_ids"] == [rid2], made
 r = cli("propose", rid2, "--hypothesis", oid2, "--change", f"{param2}={to2}", "--why", "x")
 assert r.returncode == 3, r.stdout + r.stderr
 fs = loop.check_proposal({"record_ids": [rid2], "hypothesis_id": oid2, "changes": [{"param": param2, "to": to2, "why": "x"}]}, SOURCE)
-assert any(f.floor == "F8.references" and "たたき台" in f.message for f in fs), fs
+assert any(f.floor == "F7.revision" and "たたき台" in f.message for f in fs), fs
 
 
 # ── Claude の道の既定も、たたき台へ向く ──
@@ -199,10 +199,10 @@ assert not fs and pid3, fs
 assert len(client.calls) == 2, "OWN-n へ向けた案はやり直しになる"
 sent = client.calls[0]["messages"][0]["content"]
 context = json.loads(sent.split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
-assert context["change_target"] == SHEET and C3 in sent, "向く先と話した工夫を渡す"
+assert context["sheet"] == SHEET and C3 in sent, "向く先と話した工夫を渡す"
 assert context["own_paper"]["hypothesis_id"] == oid3 and context["own_paper"]["params"]["push_part"] == "stick", "試した紙の寸法を渡す"
 assert T3 not in json.dumps(context["own_paper"], ensure_ascii=False), "考えの字は案の材料に入れない"
-assert "change_target" in client.calls[0]["system"][0]["text"], "決まりの文に向く先がある"
+assert "own_paper" in client.calls[0]["system"][0]["text"], "決まりの文に、自分の紙の記録の読み方がある"
 saved = json.loads((loop.folder() / f"proposal-{pid3[2:]}.json").read_text(encoding="utf-8"))
 assert saved["hypothesis_id"] == SHEET and saved["record_ids"] == [rid3], saved
 
@@ -241,6 +241,14 @@ assert r.returncode == 3, r.stdout + r.stderr
 assert loop.confirm_interpretation(rid5, "確認者", {"human_text": "水で開いた"}) == []
 fs = loop.check_proposal({"record_ids": [rid5], "hypothesis_id": loop.next_target(G, oid5), "changes": [{"param": param5, "to": to5, "why": "x"}]}, SOURCE)
 assert fs, "Claude の道の既定でも、寸法の変更は床で断る"
+# Claude がたたき台の番号を書いて寸法を変えようとしても、型紙なしの紙の記録からは断り、変更の無い案だけを受ける
+keep = {"next_to_try": {"why": "比べる", "what_to_measure": "開いた角度"}, "references": []}
+free_client = Fake([{**keep, "hypothesis_id": SHEET, "changes": [{"param": param5, "to": to5, "why": "話した工夫から"}]}, keep])
+pid5, fs = loop_agents.draft_proposal(rid5, SOURCE, free_client)
+assert not fs and len(free_client.calls) == 2, (fs, len(free_client.calls))
+assert not json.loads((loop.folder() / f"proposal-{pid5[2:]}.json").read_text(encoding="utf-8")).get("changes"), "寸法の変更は残らない"
+own_paper = json.loads(free_client.calls[0]["messages"][0]["content"].split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])["own_paper"]
+assert own_paper["hypothesis_id"] == oid5 and not own_paper["params"], "型紙なしの紙だと分かる形で渡す"
 assert loop.latest_version(G, SHEET) == latest, "たたき台の版は増えない"
 server.shutdown()
 print("ok")
