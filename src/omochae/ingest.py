@@ -171,7 +171,11 @@ def images():
     targets = image_targets()
     failed = fetch_images(targets)
     print(f"ingest: 写し {len(targets) - len(failed)}/{len(targets)} 種が手元にある" + (f"。取れなかった: {' '.join(failed)}" if failed else ""))
-    return 4 if failed else 0
+    # 序の頁と黒のジンの章に出す北斎漫画の絵も同じ入口で取る（本人の決定 11-05）。玩具の写しの数には入れない。
+    from .hokusai import fetch as fetch_hokusai
+
+    hokusai_failed = fetch_hokusai()
+    return 4 if failed or hokusai_failed else 0
 
 
 if __name__ == "__main__":

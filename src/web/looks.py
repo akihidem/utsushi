@@ -164,6 +164,10 @@ def zine():
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
              f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1></section>')
+    # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
+    from .hokusai import scroll_section
+
+    body += scroll_section()
     for i, t in enumerate(ts, 1):
         src = source(t["sid"])
         song = "".join(f'<p class="song">{esc(x)}</p>' for x in t["song"])
