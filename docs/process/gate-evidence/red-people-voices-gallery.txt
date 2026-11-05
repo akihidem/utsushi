@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_people_voices.py
+# commit: d6700a4（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_people_voices.py", line 41, in <module>
+    assert "職人さん、おもちゃ屋さん、実際に遊んだ人の話を集めています。" in entry and FORM_URL in entry, kw
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {}
+rc=1

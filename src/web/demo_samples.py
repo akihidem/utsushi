@@ -81,6 +81,12 @@ VOICES = [
     {"who": "見本の理科の先生（架空）", "kind": "授業で使った事",
      "title": "1 コマで作るから記録まで", "text": "5 人の班で、作る 30 分・記録 15 分で回った。谷折りと山折りの絵があると最初の一歩が早い。",
      "rights": "自分の言葉（公開してよい）。生徒の名前は書かない"},
+    {"who": "見本のおもちゃ屋さん（架空）", "kind": "店で見てきた事",
+     "title": "手のひらでゆらしてから選ぶ", "text": "首ふりの虎は、たなに置くより、手のひらにのせて見せています。ゆれ方を見てから選ぶ人が多いです。",
+     "rights": "自分の言葉（公開してよい）"},
+    {"who": "見本の遊んだ人（架空）", "kind": "遊んだ時の事",
+     "title": "息で回して遊びました", "text": "風がない日は、息をふきかけて回しました。紙がしめると回りにくくなるので、かわいた日に外へ持ち出しました。",
+     "rights": "自分の言葉（公開してよい）"},
 ]
 
 
@@ -116,10 +122,11 @@ def voice_html(slot):
             f'<p><b>{esc(c["title"])}</b></p><p>{esc(c["text"])}</p><p class="meta">権利: {esc(c["rights"])}</p></div>')
 
 
-def voices_html():
-    """寄せられた声（持ち寄りの入口から来た物の見本）。見本を切った時は空の文だけ。架空である事の一文を先頭に置く。"""
+def voices_html(real=False):
+    """寄せられた声（持ち寄りの入口から来た物の見本）。見本を切った時は空の文だけ。架空である事の一文を先頭に置く。
+    real は本物か断りの文を先に出している時。本物があるのに「まだありません」と書かないため（#285）。"""
     if not enabled():
-        return '<p class="meta">まだ寄せられた声はありません。</p>'
+        return "" if real else '<p class="meta">まだ寄せられた声はありません。</p>'
     items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} {esc(v["who"])}　{esc(v["kind"])}</p>'
                     f'<p><b>{esc(v["title"])}</b></p><p>{esc(v["text"])}</p><p class="meta">権利: {esc(v["rights"])}</p></div>' for v in VOICES)
     return f'<div class="samples"><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'

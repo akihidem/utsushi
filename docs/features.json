@@ -181,9 +181,10 @@
    "tests/test_contrib.py",
    "src/omochae/form_import.py",
    "tests/test_form_import.py",
-   "docs/process/contributions-form.md"
+   "docs/process/contributions-form.md",
+   "tests/test_people_voices.py"
   ],
-  "unverified": "外の入口の取り込み口（Google フォームの CSV）は作った。フォームそのものは本人が作る。人が投稿した事はまだ無い"
+  "unverified": "外の入口の取り込み口（Google フォームの CSV）は作った。職人・玩具店・遊んだ人を同じ入口で受け、確認済みの本物をギャラリーに札つきで出す（#285）。公開中のフォームに新しい選び肢を足すのは本人か窓口の操作。人が投稿した事はまだ無い"
  },
  {
   "id": "f18",

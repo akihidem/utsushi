@@ -184,7 +184,7 @@ shop, fails = contrib.submit(base(role="shop", certainty="売っている", body
 assert shop and not fails, fails
 assert contrib.approve(played, "確認者") == [] and contrib.approve(shop, "確認者") == []
 page = get("/public")[1].decode()
-assert "遊んだ人" in page and "確かさ: 遊んだ" in page and "玩具店・お店" in page and "確かさ: 売っている" in page
+assert "遊んだ人" in page and "確かさ: 遊んだ" in page and "おもちゃ屋さん・お店" in page and "確かさ: 売っている" in page
 contrib.withdraw(played)
 contrib.withdraw(shop)
 # 1 件の壊れた記録で全体を止めない

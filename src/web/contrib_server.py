@@ -23,10 +23,10 @@ a{color:#7a3b1d}
 """
 FORM = """<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>おもちゃの持ち寄り</title><style>%s</style><main>
 <h1>おもちゃの持ち寄り</h1>
-<p>職人、玩具店、実際に遊んだ人の話を集めています。江戸の玩具について、手元の写真、知っている事、思い出、作り方を寄せてください。確認した物だけを<a href="/public">公開の頁</a>に載せます。</p>
+<p>職人さん、おもちゃ屋さん、実際に遊んだ人の話を集めています。江戸の玩具について、手元の写真、知っている事、思い出、作り方を寄せてください。確認した物だけを<a href="/public">公開の頁</a>に載せます。</p>
 <form id="f">
 <label>何を寄せますか<select name="kind"><option value="memory">思い出</option><option value="info">情報</option><option value="knowhow">作り方の知見</option><option value="photo">写真</option></select></label>
-<label>あなたの立場<select name="role"><option value="memory">思い出を持つ人</option><option value="craftsperson">職人</option><option value="shop">玩具店・お店</option><option value="played">遊んだ人</option><option value="scholar">調べている人</option><option value="other">その他</option></select></label>
+<label>あなたの立場<select name="role"><option value="memory">思い出を持つ人</option><option value="craftsperson">職人</option><option value="shop">おもちゃ屋さん・お店</option><option value="played">遊んだ人</option><option value="scholar">調べている人</option><option value="other">その他</option></select></label>
 <label>どの玩具ですか<input type="text" name="toy_name" maxlength="100"></label>
 <label>内容（公開されます）<textarea name="body" maxlength="2000" required></textarea></label>
 <label>それは、どうして知っていますか<select name="certainty"><option>見た</option><option>持っている</option><option>聞いた</option><option>覚えている</option><option>作っている</option><option>売っている</option><option>遊んだ</option><option>推測</option></select></label>
@@ -55,8 +55,6 @@ m.textContent=r.ok?('受け付けました（'+j.id+'）。確認の後に公開
 </script></html>""" % STYLE
 
 
-LICENSE_LABEL = {"display_only": "この場所での表示だけ", "CC-BY-4.0": "CC BY 4.0"}
-
 
 def public_page():
     rows = []
@@ -68,7 +66,7 @@ def public_page():
             f'<article id="{e(c["id"])}"><h2>{e(c.get("toy_name") or "玩具の名は未記入")}</h2>{img}<p>{e(c["body"])}</p>'
             f'<p class="meta">{e(c["id"])}・{e(contrib.KIND_LABEL[c["kind"]])}・{e(contrib.ROLE_LABEL[c["role"]])}・確かさ: {e(c["certainty"])}'
             f'・{e(c.get("where_when") or "時と所は未記入")}<br>出所: {e(c.get("origin") or "未記入")}・寄せた人: {e(c.get("display_name") or "匿名")}'
-            f'<br>権利: {e(rights.get("holder") or "未記入")}・条件: {e(LICENSE_LABEL.get(rights.get("license"), "未記入"))}</p></article>'
+            f'<br>権利: {e(rights.get("holder") or "未記入")}・条件: {e(contrib.LICENSE_LABEL.get(rights.get("license"), "未記入"))}</p></article>'
         )
     body = "".join(rows) or "<p>確認済みの投稿はまだありません。</p>"
     return f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>持ち寄られた事</title><style>{STYLE}</style><main><h1>持ち寄られた事</h1><p>寄せられた言葉をそのまま載せています。事実と確かめた物ではありません。<a href="{html.escape(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a>（手元の受付は <a href="/">こちら</a>）</p>{body}</main></html>'

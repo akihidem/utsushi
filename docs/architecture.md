@@ -34,7 +34,7 @@
 | `src/omochae/templates/pivot_counterweight.py` | 虎の雛形 |
 | `src/omochae/ingest.py` | NDL から出典の記録と原図の写し（切り出し）を作る。`images` は足りない写しだけを取る（起動の台本が毎回回す） |
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
-| `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
+| `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ。立場と確かさの札もここに持つ。確認済みの物はギャラリー（`src/web/techo_site.py`）でも読む（#285） |
 | `src/web/contrib_server.py` | 持ち寄りの手元の画面 |
 | `src/web/play_server.py` | 使い手の手元の画面の道と門（J-024）。皮はサーバごとに 1 つ（--look。皮ごとに 1 サイト）、刷った紙の口（PDF・PNG・SVG、インライン。試した後の紙は記録の後だけ）、合言葉の門 |
 | `src/web/failure_log.py` | 作る側が読む失敗の記録（stderr）。道・役・型・トレースバックを出し、学ぶ人の書いた文と合言葉は出さない |

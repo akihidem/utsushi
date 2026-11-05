@@ -198,6 +198,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .go{font:inherit;font-size:20px;letter-spacing:.05em;background:var(--accent);color:var(--onaccent);border:0;padding:16px 28px;border-radius:12px;cursor:pointer;margin:0}
 .techo .check{display:flex;gap:10px;align-items:center;font-size:15px;margin:0}.techo .check input{width:26px;height:26px}
 .techo .meta{font-size:12px;color:var(--mute)}
+.techo a.go{display:inline-block;text-align:center}
 .techo .item{border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:6px}
 .techo .item img,.techo .item video{height:110px;max-width:100%;border:1px solid var(--frame);border-radius:8px}
 .techo .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -366,10 +367,21 @@ def made_item(sid, data, r, photos=True):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
+def voice_item(c):
+    """確認済みの持ち寄りの 1 件（J-021）。立場と確かさを札で見せ、事実と言い切らない。連絡先は公開の記録に入っていない。
+    写真は出さない: このサーバに持ち寄りの写真の道が無く、公開の範囲は作った物の写真と分けて決める（#285）。"""
+    head = "　".join(x for x in (contrib.ROLE_LABEL[c["role"]], contrib.KIND_LABEL[c["kind"]], c.get("toy_name")) if x)
+    foot = [f'どうして知っているか: {c["certainty"]}', c.get("where_when"), f'どこで知ったか: {c["origin"]}' if c.get("origin") else "",
+            f'送った人: {c.get("display_name") or "名前なし"}', f'使い方: {contrib.LICENSE_LABEL.get(c["rights"].get("license"), "未記入")}']
+    return (f'<div class="item" id="{esc(c["id"])}"><p class="meta">{esc(head)}</p><p>{esc(c["body"])}</p>'
+            f'<p class="meta">{esc("　".join(x for x in foot if x))}</p></div>')
+
+
 def gallery_page(sids, photos=True):
     """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
-    職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
+    職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠を置く。
+    この頁は、職人・玩具店・実際に遊んだ人の話を集める入口も兼ねる（本人の決定 11-05「同じ入口」、#285）。受付はフォームの 1 本のまま。"""
     cards = ""
     for sid in sids:
         data = hypotheses.load(sid)
@@ -384,17 +396,23 @@ def gallery_page(sids, photos=True):
     # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
     from .demo_samples import voices_html
 
+    # 確認済みの本物は見本の前に置く。職人の話は「職人の言葉」へ、ほかは「寄せられた声」へ。並びは番号の順で、上下を付けない（J-025）。
+    # 開いた場は本物の文を出さない（J-028）。入口は開いたまま: 寄せられた物は確認を通るまで載らないため。
+    real = contrib.public_list() if photos else []
+    crafted = "".join(voice_item(c) for c in real if c["role"] == "craftsperson")
+    said = "".join(voice_item(c) for c in real if c["role"] != "craftsperson") if photos else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>'
+
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（STYLE の main:has(.gallery)）。
     return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
-            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
+            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a><a href="#yoseru">話を送る</a></nav>'
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
-            '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
-            f'{voices_html()}</section>'
-            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
-            f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
-            '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
-            f'{voices}</section></div>')
+            '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p>職人さん、おもちゃ屋さん、実際に遊んだ人の話を集めています。</p>'
+            f'<p id="yoseru"><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で話を送る</a></p>'
+            '<p class="meta">フォームは Google のフォームです。写真や動画をつける時は、Google にログインします。つけた人の名前とメールが、フォームの持ち主に伝わります。送られた話は、人がたしかめてからのせます。</p>'
+            f'{said}{voices_html(real=bool(said))}</section>'
+            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。話を送る口は、上の節と同じです。</p>'
+            f'{crafted}{voices}</section></div>')
 
 
 def page(sid, printed_ids, picture_url, uploads=True, msg=""):

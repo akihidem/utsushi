@@ -23,12 +23,13 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 # 頁に出す札。手元の画面とギャラリーで同じ語にするため、受付の決まりと一緒に持つ。
 KIND_LABEL = {"photo": "写真", "info": "情報", "memory": "思い出", "knowhow": "作り方の知見"}
 # 職人・玩具店・実際に遊んだ人を同じ入口で受ける（本人の決定 11-05、#285）。思い出のある人と遊んだ人を分けるのは、昔の思い出と今遊んだ話が混ざらないようにするため。
-ROLE_LABEL = {"craftsperson": "職人", "shop": "玩具店・お店", "played": "遊んだ人", "scholar": "調べている人", "memory": "思い出を持つ人", "other": "その他"}
+ROLE_LABEL = {"craftsperson": "職人", "shop": "おもちゃ屋さん・お店", "played": "遊んだ人", "scholar": "調べている人", "memory": "思い出を持つ人", "other": "その他"}
+LICENSE_LABEL = {"display_only": "このサイトで見せるだけ", "CC-BY-4.0": "CC BY 4.0"}
 KINDS = set(KIND_LABEL)
 ROLES = set(ROLE_LABEL)
 CERTAINTY = {"見た", "持っている", "聞いた", "覚えている", "作っている", "売っている", "遊んだ", "推測"}
 RIGHTS = {"own_work", "permission", "public_domain", "unknown"}
-LICENSES = {"CC-BY-4.0", "display_only"}
+LICENSES = set(LICENSE_LABEL)
 ATTESTS = ("agrees_terms", "adult_or_guardian", "no_identifiable_people")
 MAX_BODY = 2000
 MAX_FIELD = 300

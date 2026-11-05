@@ -48,7 +48,7 @@ with open(people, "w", encoding="utf-8", newline="") as fh:
     w = csv.DictWriter(fh, fieldnames=head)
     w.writeheader()
     w.writerow({"タイムスタンプ": "p1", **good, "投稿の種類": "思い出", "あなたの立場": "遊んだ人", "確かさの種類": "遊んだ", "いつ頃・どこで（思い出の時）": "昭和の頃"})
-    w.writerow({"タイムスタンプ": "p2", **good, "あなたの立場": "玩具店・お店", "確かさの種類": "売っている"})
+    w.writerow({"タイムスタンプ": "p2", **good, "あなたの立場": "おもちゃ屋さん・お店", "確かさの種類": "売っている"})
     w.writerow({"タイムスタンプ": "p3", **good, "あなたの立場": "店", "確かさの種類": "見た"})
 got3, fails3 = form_import.run(people)
 assert len(got3) == 3 and not fails3, (got3, fails3)
@@ -63,7 +63,7 @@ def choices(title):
     return row.split("|")[4].strip().split("／")
 
 
-assert {"職人", "玩具店・お店", "遊んだ人"} <= set(choices("あなたの立場")) and set(choices("あなたの立場")) <= set(form_import.ROLE)
+assert {"職人", "おもちゃ屋さん・お店", "遊んだ人"} <= set(choices("あなたの立場")) and set(choices("あなたの立場")) <= set(form_import.ROLE)
 assert {"売っている", "遊んだ"} <= set(choices("確かさの種類")) and set(choices("確かさの種類")) <= contrib.CERTAINTY
 # 題が表と違えば 1 行も入れない
 g = d / "wrong.csv"
