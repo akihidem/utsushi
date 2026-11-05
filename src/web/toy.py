@@ -203,9 +203,9 @@ def record_form(sid, data, own):
     seen = sorted({n for h in data["hypotheses"] for n in versions_of(sid, h["id"], printed_only=True)})
     version_field = ('<label>どの版の紙か（紙の題の横に刷ってあります）<select name="sheet_version"><option value="">いちばん新しい版</option>'
                      + "".join(f'<option value="{n}">版 {n}</option>' for n in seen) + '</select></label>') if len(seen) > 1 else ""
-    from .techo_site import ICONS
+    from .techo_site import result_icon
 
-    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}" required>{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>'
+    results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}" required>{result_icon(r, TEMPLATES[template].RESULTS)}{esc(r)}</label>'
                       for r in TEMPLATES[template].RESULTS)
     if template == "pivot_counterweight":
         extra = '<label>動かした物<select name="power"><option value="">—</option><option>手</option><option>息</option><option>団扇</option><option>風</option></select></label>'
@@ -394,9 +394,12 @@ def observations(sid, data, link=True):
 def media_html(rid, cls="shots", photos=True):
     """記録に添えた写真と動画（手帖の「上げる」で添えた物）。ギャラリーと同じ道（/record/<記録>/media/）から出す。
     photos=False は合言葉なしで開いた場。受け口が画像を出さないので、壊れた絵にしないよう枠ごと出さない（J-028）。"""
+    from omochae import media_review
+
     from .techo_site import media_of
 
-    files = media_of(rid) if photos else []
+    # 物だけと人が確かめた物だけを出す（本人の決定 11-05、#314）。この頁は他の人にも見えるので、ギャラリーと同じ線にする。
+    files = media_review.public(rid, media_of(rid)) if photos else []
     if not files:
         return ""
     pics = "".join((f'<video src="/record/{esc(rid)}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
@@ -409,11 +412,13 @@ def made_strip(sid, recs, photos=True):
     写真の小さな並びから、同じ頁の記録の札へ飛ぶ。photos=False は合言葉なしで開いた場で、写真は出さず札への道だけを出す（J-028）。"""
     if not recs:
         return ""
+    from omochae import media_review
+
     from .techo_site import media_of
 
     thumbs = ""
     for r in reversed(recs):
-        for f in (media_of(r["id"])[:1] if photos else []):
+        for f in (media_review.public(r["id"], media_of(r["id"]))[:1] if photos else []):
             tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">')
             thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(r["id"])} の記録へ">{tag}</a>'
