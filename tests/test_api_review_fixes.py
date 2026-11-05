@@ -13,6 +13,7 @@ import tempfile
 from types import SimpleNamespace as NS
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tempfile.mkdtemp(), "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import agent, ask, budget, config, generate as gen, loop_agents  # noqa: E402
 from omochae import hypotheses, loop, records  # noqa: E402
@@ -30,6 +31,7 @@ budget._today = lambda: "11-04"
 def fresh():
     """番号ごとに置き場を分ける。前の番号の費用や記録が次の番号の結果を変えないため。"""
     os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+    os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tempfile.mkdtemp(), "api-usage.jsonl")
 
 
 def floors(fs):

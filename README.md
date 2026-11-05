@@ -53,7 +53,7 @@
 - 先生の見る紙を刷る。4 つの着目（動いたか・楽しさ・仕組みの納得・哲学の効果）ごとに見た事を書き、点は付けない（`hypotheses print-teacher`）
 - 試した記録を 1 件 1 枚にして、記録の順に並べた再現ギャラリーを書き出す。順位と「再現できた」は書かない（`python -m omochae.gallery`、出来上がりは [docs/gallery/index.html](docs/gallery/index.html)）
 - 作っている途中の手順の質問に、聞かれた時だけ答える。仕組みとどの仮説かは答えない。よくある言葉（谷折り・山折り・糊代など）は刷った説明からその場で答え、それ以外は鍵がある時だけ Claude が答える（`src/api/ask.py`。AI の分は偽の応答でだけ確かめた）
-- 手帖: 入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、ブラウザの音声認識で話し続けて手順を聞き、答えを読み上げ、写真と動画を試した記録に添える。写真の撮影情報は保存の時に外す（`src/web/techo_site.py`。人が使った確認はまだ）
+- 手帖: 入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、ブラウザの音声認識で話し続けて手順を聞き、答えを読み上げ、写真と動画を試した記録に添える。写真と動画の撮影情報は保存の時に外し、中身が写真・動画として読めない物は置かない。動画に ffmpeg を使うので、無い機械では動画を受けない（`src/web/techo_site.py`。人が使った確認はまだ）
 - 型紙の折りの部品を Origami Simulator が読める SVG に書き出す。作り手用で、学ぶ人の画面には出さない（`python -m omochae.foldsim H-A`）
 - 手元のブラウザの画面で、玩具を選び、予想を書き、仮説を見て型紙を刷り、試した記録と説明を残す。予想の前は仮説を見せず、試した後の紙は記録の後に開く（`PYTHONPATH=src .venv/bin/python -m web.play_server`。人が使った確認はまだ）
 - 玩具の写真・情報・思い出・作り方の知見を手元の画面で受け付け、人が確認した物だけを公開の頁に出す（`PYTHONPATH=src .venv/bin/python -m web.contrib_server`。ssh で転送する時は手元と同じポート番号で）
@@ -75,10 +75,12 @@ cd utsushi
 
 ```
 export PYTHONPATH=src
+OUT_DIR="$HOME/utsushi-demo"                           # 書き出す置き場。repo の外にする
 .venv/bin/python -m demo.prepare                       # 前の日、網のある所で。道具を確かめ、江戸の絵を全部取り寄せて控えを残す
 .venv/bin/python -m demo.prepare --check               # 撮る日の朝、網なしで。写しが控えと合うか
-.venv/bin/python -m demo.build --out <repo の外> --offline          # 網を切って 7 場面を書き出す
-.venv/bin/python -m demo.build --out <repo の外> --run <前の置き場> --only scene3   # 1 場面だけ作り直してつなぎ直す
+.venv/bin/python -m demo.build --out "$OUT_DIR" --offline          # 網を切って 7 場面を書き出す
+PREV_DIR=$(ls -d "$OUT_DIR"/*/ | tail -1)              # 一番新しい書き出しの置き場（フォルダの名前は日時）
+.venv/bin/python -m demo.build --out "$OUT_DIR" --run "$PREV_DIR" --only scene3   # 1 場面だけ作り直してつなぎ直す
 ```
 
 動く仕組みの答えは 1 つに決めていない。自分の予想を先に書くと、仮説が並び、試したい仮説の型紙を刷れる。

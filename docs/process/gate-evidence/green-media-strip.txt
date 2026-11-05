@@ -1,0 +1,10 @@
+# Green: 直した後
+$ PYTHONPATH=src .venv/bin/python tests/test_media_strip.py
+ok png
+ok jpeg
+ok video
+ok mismatch
+ok no ffmpeg
+ok tidy
+ok
+rc 0
