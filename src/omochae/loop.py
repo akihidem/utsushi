@@ -108,31 +108,31 @@ TALK_LABEL = "作った人が話した事（字だけ・声は残していない
 TALK_FIELDS = ("when", "step", "text")
 
 
-def maker_talk(rid, outside=False):
+def maker_talk(rid):
     """記録に結んだ、作りながら話した工夫と上げた後に残した字（Issue #335 のループ2）。Returns {"label", "items": [{when, step, text}…]}。
 
     判断の芯:
     - どの字か: その記録に結ばれた字だけ（talk_log.kufu）。結ぶのは記録を残した時の talk_log.bind で、同じ玩具・同じ紙（仮説と版）・
       同じその場の印の物に限る。ここで印や紙を数え直して広げない（印なしで拾うと、ほかの人の話がこの記録の材料に入る）。
     - 場面は工夫（craft）と上げた後（keep）だけ。仮説を見て話した考え（think）はループ1（words の口で紙を生む側）の材料なので混ぜない。
-    - 床: 入口の床（talk_log.blocked）を通った字しか残っていないが、出す時にもう一度当てる（床を広げる前に残った字や、手で置いた字のため）。
-      床より強い絞りは足さない（2b で字は全部見せる決定。本人の指示 11-05 17:55）。
-    - outside=True は外（Claude の API）へ渡す時: 作る側が隠した字（talk_log.set_share）も渡さない。名前は形で落とせないので、
-      作る側が読んで隠した字を、学ぶ人の頁と同じに外へも出さない。作る側が自分で読む材料（outside=False）には出す（隠した事を知って直せるように）。
+    - 読み方: talk_log.kufu(出典, 記録, shared_only=True)。学ぶ人の頁と同じ字で、作る側が隠した字（set_share）と、入口の床にもう一度当たる字
+      （床を広げる前に残った字や、手で置いた字）が外れる。床をここで当て直さない（shared_only の中にある）。
+      これより強い絞りは足さない（2b で字は全部見せる決定。本人の指示 11-05 17:55）。
+    - 鍵の有無で読む字を変えない。人の道（material の命令）にも隠した字を出さない: 人が読んで書く解釈と案を通って、隠した字が輪に入るため。
+      作る側が隠した字を読むのは作る側の頁（hanasu.maker_section の「［隠している］」）。
     - 字を写した別のファイルは作らない。記録を取り下げると字も消える（talk_log.drop_for_record）ので、写しがあると消し残る。
     """
     from . import talk_log  # 使う時に読む（hypotheses の読み方と同じ。輪の置き場を読むだけの命令で、話す口の部品まで先に読まない）
 
     rec = record(rid)
-    items = [{k: t[k] for k in TALK_FIELDS} for t in talk_log.kufu(rec["source_id"], rid, shared_only=outside)
-             if t["when"] != talk_log.WHEN["think"] and not talk_log.blocked(t["text"])]
+    items = [{k: t[k] for k in TALK_FIELDS} for t in talk_log.kufu(rec["source_id"], rid, shared_only=True) if t["when"] != talk_log.WHEN["think"]]
     return {"label": TALK_LABEL, "items": items}
 
 
-def material(rid, outside=False):
+def material(rid):
     """輪の解釈と案の材料（記録・人の説明・作った人が話した事）。鍵のある道（api/loop_agents）も鍵の無い道（material の命令）も、ここから読む。
     同じ材料を両方の道に渡すのは、鍵の有無で、人が見る物と Claude が見る物が食い違わないため。"""
-    return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid, outside=outside)}
+    return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
 
 
 def material_text(rid):
@@ -147,7 +147,13 @@ def material_text(rid):
     for t in talk["items"]:
         where = f"手順 {t['step']}" if t["step"] else ("上げた後" if t["when"] == "made" else "作りながら")
         lines.append(f"  {where}: {t['text']}")
-    if not talk["items"]:
+    from . import talk_log
+
+    # 隠した字は出さず、数だけ知らせる。全部隠した記録を「字は無い」と読ませないため。
+    hidden = sum(1 for t in talk_log.kufu(rec["source_id"], rid) if not t["share"] and t["when"] != talk_log.WHEN["think"])
+    if hidden:
+        lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
+    elif not talk["items"]:
         lines.append("  （この記録に結んだ字は無い）")
     lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
     return "\n".join(lines)

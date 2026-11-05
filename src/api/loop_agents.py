@@ -2,7 +2,7 @@
 
 記録の文は使い手が書いた物なので、指示でなくデータとして渡す。写真から何が起きたかを判定させない。
 作った人が話した字（ループ2、Issue #335）も同じにデータとして渡す。本人の指示（11-05 17:55）で輪の Claude へ渡す事に決まった。
-渡すのは loop.material(outside=True) が返す物だけ: 入口の床を通り、作る側が隠していない字の、when・step・text の 3 欄。
+渡すのは loop.material が返す物だけ: 入口の床を通り、作る側が隠していない字の、when・step・text の 3 欄。
 ここで字を足したり、その場の印（who）・時刻・どう入れたか（via）を足したりしない。
 """
 import base64
@@ -132,8 +132,8 @@ def draft_interpretation(record_id, client=None):
     """人の説明の後に 1 回だけ。説明が無ければ Claude を呼ばない。案は人の確認待ちに置く（A3 → H6）。"""
     from omochae.model import Failure
 
-    # 鍵の無い道（loop material）と同じ材料を読む。outside=True で、作る側が隠した字は外へ出さない。
-    m = loop.material(record_id, outside=True)
+    # 鍵の無い道（loop material）と同じ材料を読む。
+    m = loop.material(record_id)
     rec, told = m["record"], m["explanation"]
     if not told:
         return None, [Failure("F9.human", record_id, "人の説明が先。explain で残す")]
@@ -168,7 +168,7 @@ def draft_proposal(record_id, source, client=None):
     template = h.get("template") or data.get("template", "slider_fan")
     # 話した字は解釈の頼みと同じ物を渡す（loop.material。床・隠した字の扱いを 1 か所に置く）。
     context = {"template_id": template, "record": rec, "interpretation": loop.interpretation(record_id)["content"],
-               "maker_talk": loop.maker_talk(record_id, outside=True), "hypotheses": data["hypotheses"], "allowed_params": sorted(loop.ALLOWED[template])}
+               "maker_talk": loop.maker_talk(record_id), "hypotheses": data["hypotheses"], "allowed_params": sorted(loop.ALLOWED[template])}
     user = "次の材料から案を作ってください。\n<data>\n" + json.dumps(context, ensure_ascii=False) + "\n</data>"
 
     def validate(result):

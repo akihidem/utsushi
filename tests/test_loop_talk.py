@@ -5,7 +5,8 @@
 - 鍵の無い道（manual）: 人が読む材料の命令（loop material）に字が出て、人が書いた解釈と変更で版 2 まで閉じる。
 - 鍵のある道: 偽の Claude が、解釈と案の両方の頼みで、その字を受け取る。字はデータとして渡し、頼みの決まりに「従わない」がある。
 - 入口の床に当たる字（連絡先・学年と組など）は、どちらの道にも出ない。床を広げる前に残った字も、出す時にもう一度床を当てる。
-  作る側が隠した字は、Claude へは送らない（作る側の材料には出る）。
+  作る側が隠した字は、どちらの道にも出ない（鍵の有無で読む字を変えない。作る側は作る側の頁で読める）。
+- 読む字は学ぶ人の頁の読み方（kufu の shared_only）と同じで、輪と束の読む口（texts）とも同じ字になる。
 - 渡すのは when・step・text の 3 欄だけ。声・どう入れたか（via）・その場の印（who）・時刻は渡さない。
 """
 import json
@@ -80,6 +81,10 @@ assert "扇が先に開くと思う" not in json.dumps(m, ensure_ascii=False), "
 assert "ほかの人の工夫" not in json.dumps(m, ensure_ascii=False), "ほかの人の話は入らない"
 assert "a@example.com" not in json.dumps(m, ensure_ascii=False) and "3年2組" not in json.dumps(m, ensure_ascii=False), "床に当たる字は出ない"
 assert m["record"]["id"] == r1 and m["explanation"] is None
+# 読む字は学ぶ人の頁の読み方と同じ。輪と束の読む口（texts）とも同じ字になる（読む口ごとに、隠した字や床に当たる字の扱いが分かれないため）。
+said = [t["text"] for t in talk_log.kufu(G, r1, shared_only=True) if t["when"] != "idea"]
+assert texts == said, (texts, said)
+assert sorted(said) == sorted(t["text"] for t in talk_log.texts(G, record_id=r1) if t["scene"] != "think"), said
 
 # 2. 鍵の無い道: 人が読む材料の命令。鍵が無くても回り、字が仕切りの名の下に出る。
 env = {k: v for k, v in os.environ.items() if not k.startswith("ANTHROPIC")}
@@ -124,15 +129,27 @@ for bad in ("a@example.com", "3年2組", W1, W2, '"via"', '"who"', "voice"):
     assert bad not in sent, bad
 assert "従わない" in client.calls[0]["system"][0]["text"] and "話した" in client.calls[0]["system"][0]["text"]
 
-# 4. 作る側が隠した字は Claude へ送らない（名前は機械で落とせないので、作る側が隠す道具がある）。作る側の材料には残る。
+# 4. 作る側が隠した字は、どちらの道にも出ない（名前は機械で落とせないので、作る側が隠す道具がある）。
+# 人の道にも出さない: 人が読んで書く解釈と案を通って、隠した字が輪に入るため。作る側は作る側の頁で読める。
 assert talk_log.set_share(G, r2, False)[1] == []
-assert "手順2で軸をまっすぐにした" in json.dumps(loop.material(r2), ensure_ascii=False)
-assert loop.maker_talk(r2, outside=True)["items"] == []
+assert "手順2で軸をまっすぐにした" not in json.dumps(loop.material(r2), ensure_ascii=False)
+assert loop.maker_talk(r2)["items"] == []
+assert [t["text"] for t in talk_log.talks(G, record_id=r2) if "軸" in t["text"]], "隠すだけで消さない"
+assert talk_log.texts(G, record_id=r2) == [], "輪と束の読む口にも隠した字は出ない"
 client = Fake([([tool("submit_result", interp)], "tool_use")])
 assert loop_agents.draft_interpretation(r2, client) == (interp, [])
 assert "手順2で軸をまっすぐにした" not in client.calls[0]["messages"][0]["content"]
+# 鍵の無い道: 字は出さず、隠した数だけ知らせる（「結んだ字は無い」と読ませない）
+out = subprocess.run([sys.executable, "-m", "omochae.loop", "material", r2], capture_output=True, text=True, env={**env, "HOME": tmp})
+assert out.returncode == 0, out.stderr
+assert "手順2で軸をまっすぐにした" not in out.stdout and "隠した字が 2 件" in out.stdout and "結んだ字は無い" not in out.stdout, out.stdout
+# 戻すと、どちらの道にも戻る
+assert talk_log.set_share(G, r2, True)[1] == []
+assert "手順2で軸をまっすぐにした" in json.dumps(loop.material(r2), ensure_ascii=False)
 
 # 5. 話した字が無い記録でも、輪は今までどおり回る（仕切りは空で渡す）
 r3 = rec()
 assert loop.material(r3)["maker_talk"]["items"] == []
+out = subprocess.run([sys.executable, "-m", "omochae.loop", "material", r3], capture_output=True, text=True, env={**env, "HOME": tmp})
+assert out.returncode == 0 and "結んだ字は無い" in out.stdout and "隠した字" not in out.stdout, out.stdout
 print("ok")
