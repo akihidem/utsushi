@@ -50,7 +50,6 @@ assert scene.frame(0.5).tobytes() != scene.frame(4.0).tobytes()
 with_music = scene7.Scene7(page, rec, template, "試しの曲")
 assert with_music.frame(15.0).tobytes() != scene.frame(15.0).tobytes()
 assert with_music.frame(4.0).tobytes() == scene.frame(4.0).tobytes()
-print("ok")
 
 # 型紙の下の札は、どの行も動画の幅の中に収まる（組の名が長くなっても右の端で切れない。11-05 に v10 の「0」が切れた）
 from PIL import ImageFont
@@ -64,3 +63,5 @@ for s in lines:
 # 札の 2 行目の下端は、締めの字幕の帯（y 940 から）より上
 assert scene7.SHEET_BOX[3] + 12 + (len(lines) - 1) * (scene7.SHEET_LABEL_PX + 6) + scene7.SHEET_LABEL_PX + 6 <= 940
 print("ok label")
+# 全部の検査の後に出す（途中で出すと、後の検査が落ちても成功に見えるため。独立のレビューの指摘、11-05）
+print("ok")
