@@ -122,8 +122,8 @@ assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "
 assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
 # 自分の仮説には型紙なしの紙を返す（本人の決定）
 code, at = where(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})
-assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を刷る」に着く
-assert re.search(r'id="own-OWN-1".*紙を刷る', get(f"/toy/{G}")[1].decode(), re.S)
+assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を作る」に着く
+assert re.search(r'id="own-OWN-1".*紙を作る', get(f"/toy/{G}")[1].decode(), re.S)
 assert post(f"/toy/{G}/print-own", {"id": "OWN-9"})[0] == 422
 assert post(f"/toy/{G}/print-own", {"id": "OWN-1"})[0] == 303
 assert "OWN-1_v1_free.pdf" in get(f"/toy/{G}")[1].decode()

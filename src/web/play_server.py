@@ -102,7 +102,6 @@ BOOK = """
 .pg.l{border-right:1px solid #e3d9c4}
 .pg.full{padding:24px}.pg.full img{width:100%;height:100%;max-height:76vh;object-fit:contain}
 .pg h2{font-size:clamp(28px,4vw,52px);font-weight:400;letter-spacing:.15em;margin:0 0 12px}
-.switch{max-width:1180px;margin:0 auto;padding:14px 20px;font-size:.85em;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 @media (max-width:760px){.sheet{grid-template-columns:1fr}.sheet::after{display:none}.pg.l{border-right:0;border-bottom:1px solid #e3d9c4}.pg{padding:24px}}
 """
 
@@ -308,7 +307,7 @@ class Handler(BaseHTTPRequestHandler):
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             hid = qs.get("h", [""])[0] or (printed[0] if printed else "")
             if hid not in printed:
-                return self._send(200, self._toy(sid, errors=["先に紙を刷ると、作りながら見る頁が開きます"]))
+                return self._send(200, self._toy(sid, errors=["先に紙を作ると、作りながら見る頁が開きます"]))
             from . import tsukuru
             try:
                 n = int(qs.get("n", ["1"])[0])
@@ -510,9 +509,9 @@ class Handler(BaseHTTPRequestHandler):
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"], at="win"))
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
-            return self._send(422, self._toy(sid, errors=[f"版 {v} を刷れませんでした（検査に落ちた）"], at="win"))
+            return self._send(422, self._toy(sid, errors=[f"版 {v} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-        return self._done(sid, f"版 {v} を刷りました。100% で印刷します", see=hid, anchor="win")
+        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", see=hid, anchor="win")
 
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
@@ -532,7 +531,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import toy
 
             return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"]), at=f"next-{rid}", filled=("next", form)))
-        return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
+        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
@@ -546,7 +545,7 @@ class Handler(BaseHTTPRequestHandler):
             return bad("先に予想を書く")
         hid, event = form.get("hypothesis", ""), form.get("event", "")
         if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]} or not printed_versions(sid, hid):
-            return bad("刷った紙をえらぶ")
+            return bad("作った紙をえらぶ")
         if event not in making_log.EVENTS:
             return bad("その札は無い")
         total = tsukuru.count(sid, hid, sheet_version_of(sid, hid, form))
@@ -585,7 +584,7 @@ class Handler(BaseHTTPRequestHandler):
             return out(422, {"error": "先に予想を書く"})
         hid = form.get("hypothesis", "")
         if not printed_versions(sid, hid):
-            return out(422, {"error": "刷った紙をえらぶ"})
+            return out(422, {"error": "作った紙をえらぶ"})
         if act == "ask-json":
             from api.budget import BudgetStop
 
@@ -615,7 +614,7 @@ class Handler(BaseHTTPRequestHandler):
 
             hid = form.get("hypothesis", "")
             if hypotheses.need_prediction(sid) or not printed_versions(sid, hid):
-                return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"], at="ask", filled=("ask", form)))
+                return self._send(422, self._toy(sid, errors=["作った紙について聞けます。先に予想を書いて、紙を作ってください"], at="ask", filled=("ask", form)))
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
@@ -630,7 +629,7 @@ class Handler(BaseHTTPRequestHandler):
             anchor = "kasetsu"
         elif act == "own":
             own, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
-            msg = "仮説を残しました。「紙を刷る」で、身の回りの紙と紐で作る型紙なしの紙が刷れます"
+            msg = "仮説を残しました。「紙を作る」で、身の回りの紙と紐で作る型紙なしの紙ができます"
             anchor = f"own-{own['id']}" if own else anchor
         elif act == "print-own":
             oid = form.get("id", "")
@@ -638,13 +637,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"], at="yosou"))
             out_dir(sid).mkdir(parents=True, exist_ok=True)
             if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
-                return self._send(422, self._toy(sid, errors=["紙を刷れませんでした（検査に落ちた）"], at=f"own-{oid}"))
-            failures, msg = [], "刷りました。100% で印刷します"
+                return self._send(422, self._toy(sid, errors=["紙を作れませんでした（検査に落ちた）"], at=f"own-{oid}"))
+            failures, msg = [], "紙を作りました。印刷する時は PDF を 100% で"
         elif act == "print":
             failures = hypotheses.need_prediction(sid)
             hid = form.get("hypothesis", "")
+            at = "win" if form.get("at") == "win" else "kasetsu"  # 窓の札から押した時は、通らない理由も窓で読む（#127）
             if not failures and hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
-                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at="kasetsu"))
+                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
             if not failures:
                 out_dir(sid).mkdir(parents=True, exist_ok=True)
                 # 刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、
@@ -653,11 +653,11 @@ class Handler(BaseHTTPRequestHandler):
                 # 一番新しい版が刷れない時は、1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。
                 while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
                     if v <= 1:
-                        return self._send(422, self._toy(sid, errors=["型紙を刷れませんでした（検査に落ちた）"], at="kasetsu"))
+                        return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
                     v -= 1
                 # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
                 loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-            msg = "刷りました。下の窓で絵を見て、PDF を 100% で印刷します"
+            msg = "紙を作りました。下の窓で絵を見て、印刷する時は PDF を 100% で"
             see = hid
         else:
             if hypotheses.need_prediction(sid):

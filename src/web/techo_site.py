@@ -394,7 +394,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg=""):
     sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
-        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'
+        sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を作る</a>'
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}">{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>' for r in tpl.RESULTS)
     # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。上げた後に一覧を入れ替えると一緒に消える。
     note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""

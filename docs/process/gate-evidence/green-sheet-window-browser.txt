@@ -1,0 +1,14 @@
+# 命令: repo の外の道具（playwright の Chromium）で、使い捨ての置き場のサーバを立てて窓を歩く。repo にブラウザの道具を入れない決まりなので、道具は repo に置いていない
+# commit: 52093fa（回した時の HEAD）
+# 手順: 予想を残す → 窓の札を押して最初の紙 → キーボードの Enter で次の紙 → 残りの札も窓で作る → 紙のある札の間を行き来 → 記録を残す
+白の展示 幅 390: 札の高さ [44] 字 [13] はみ出し 0 / empty_buttons=ok first_sheet=ok enter_sheet=ok switch=ok after_gate=ok no_overflow=ok tap=ok buttons_no_print=ok no_page_error=ok
+白の展示 幅 1440: 札の高さ [33] 字 [13] はみ出し 0 / empty_buttons=ok first_sheet=ok enter_sheet=ok switch=ok after_gate=ok no_overflow=ok tap=ok buttons_no_print=ok no_page_error=ok
+黒のジン 幅 390: 札の高さ [44] 字 [13] はみ出し 0 / empty_buttons=ok first_sheet=ok enter_sheet=ok switch=ok after_gate=ok no_overflow=ok tap=ok buttons_no_print=ok no_page_error=ok
+黒のジン 幅 1440: 札の高さ [33] 字 [13] はみ出し 0 / empty_buttons=ok first_sheet=ok enter_sheet=ok switch=ok after_gate=ok no_overflow=ok tap=ok buttons_no_print=ok no_page_error=ok
+# 頁の字のうち「刷」「印刷」を含む行（4 組とも同じ）。どれも紙に印刷する話
+- 100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。
+- PDF を開いて印刷する
+- 作った人の報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの
+- 刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。
+- 画面で見て、印刷する前に案を検討する所。並びは仮説の順で、上下はありません。
+rc=0
