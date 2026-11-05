@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_tap_size.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_tap_size.py", line 61, in <module>
+    assert back, "字の欄を持つ label を block に戻す行が無い"
+           ^^^^
+AssertionError: 字の欄を持つ label を block に戻す行が無い
+rc=1
