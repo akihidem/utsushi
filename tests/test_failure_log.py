@@ -22,7 +22,7 @@ from omochae import hypotheses, records  # noqa: E402
 from web import play_server  # noqa: E402
 
 KEY = "k" * 8 + "aikotoba" + "k" * 8  # 合言葉（16 字以上）
-SECRET = "だれにも見せない予想の文"
+WRITTEN = "だれにも見せない予想の文"
 G = "NDL-1187053-R0000005-L"
 
 server = play_server.serve(0, public_key=KEY)
@@ -50,7 +50,7 @@ def call(path, form=None):
 
 def clean(log):
     """どの記録にも、学ぶ人の書いた文と合言葉が入らない。"""
-    assert SECRET not in log, ("書いた文が記録に出た", log)
+    assert WRITTEN not in log, ("書いた文が記録に出た", log)
     assert KEY not in log and "?k=" not in log, ("合言葉が記録に出た", log)
 
 
@@ -65,7 +65,7 @@ def boom_add(rec):
 
 keep_add = records.add
 records.add = boom_add
-code, body, log = call(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": SECRET})
+code, body, log = call(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": WRITTEN})
 records.add = keep_add
 assert code == 500 and "受け付けられませんでした" in body, (code, body)
 clean(log)
@@ -76,7 +76,7 @@ assert "ValueError" in log and "boom_add" in log and "line " in log, ("型とト
 
 # 2. 例外を起こした GET も同じ
 def boom_page(sid, **kw):
-    raise KeyError(SECRET)
+    raise KeyError(WRITTEN)
 
 
 keep_page = play_server.toy_page
@@ -105,34 +105,34 @@ def fail_with(e):
     ask.answer = f
 
 
-fail_with(api_error("BadRequestError", f"Error code: 400 model: claude-nothing-5 not found / {SECRET} / {key_like}"))
-code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": SECRET})
+fail_with(api_error("BadRequestError", f"Error code: 400 model: claude-nothing-5 not found / {WRITTEN} / {key_like}"))
+code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": WRITTEN})
 got = json.loads(body)
 assert code == 200 and got["from"] == "error" and "今は AI に聞けません" in got["text"], got
 clean(log)
 assert key_like not in log, ("鍵らしい物が記録に出た", log)
 assert "ask" in log and "BadRequestError" in log and "claude-nothing-5" in log, ("役と型と文が無い", log)
 assert f"POST /toy/{G}/ask-json" in log, log
-code, body, log = call(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": SECRET})  # 玩具の頁の口も同じ
+code, body, log = call(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": WRITTEN})  # 玩具の頁の口も同じ
 assert code == 200 and "今は AI に聞けません" in body and "claude-nothing-5" not in body, code
 clean(log)
 assert "ask" in log and "BadRequestError" in log and "claude-nothing-5" in log, log
 
 # 引数の間違いの TypeError は、文に名前だけが入るので出す（最初の本番で落ちそうな所）
 fail_with(TypeError("create() got an unexpected keyword argument 'fallbacks'"))
-log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": SECRET})[2]
+log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": WRITTEN})[2]
 clean(log)
 assert "TypeError" in log and "fallbacks" in log, log
 
 # 文に値が入り得る例外は、型とトレースバックだけ
-fail_with(ValueError(f"読めない値: {SECRET}"))
+fail_with(ValueError(f"読めない値: {WRITTEN}"))
 log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "別の問い"})[2]
 clean(log)
 assert "ValueError" in log and "読めない値" not in log, log
 
 # 予算で止めた時は、画面では短い文だけ、記録には額まで残る（手帖では理由の文を捨てていた）
 fail_with(budget.BudgetStop("今日の見積もり $49.90 と次の 1 回の最大 $0.50 で日割りの上限 $50 に達する。本人の承認が要る", "day"))
-code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": SECRET})
+code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": WRITTEN})
 assert "$" not in json.loads(body)["text"] and json.loads(body)["from"] == "stop", body
 clean(log)
 assert "ask" in log and "BudgetStop" in log and "$49.90" in log, log
@@ -159,7 +159,7 @@ for act, role in (("ai-interpret", "interpret"), ("ai-observe", "observe")):
 
 # 5. 輪が止めた理由は、前の方の決まった文だけ（後ろには案の中身が入り得る）
 def stopped(*a, **k):
-    raise agent.AgentStopped(f"検査に落ち続けた: {SECRET}")
+    raise agent.AgentStopped(f"検査に落ち続けた: {WRITTEN}")
 
 
 agent.default_client = lambda role=None: None
@@ -173,21 +173,21 @@ server.shutdown()
 # 6. 型ごとの出し方。ファイルの失敗はどのファイルかまで。読めない JSON は文の中身を出さない。長すぎる名前は送られた値かも知れないので出さない
 from web import failure_log  # noqa: E402
 
-assert failure_log.safe_text(ValueError(SECRET)) == "" and failure_log.safe_text(KeyError(SECRET)) == ""
-assert failure_log.safe_text(RuntimeError(SECRET)) == ""
+assert failure_log.safe_text(ValueError(WRITTEN)) == "" and failure_log.safe_text(KeyError(WRITTEN)) == ""
+assert failure_log.safe_text(RuntimeError(WRITTEN)) == ""
 try:
-    json.loads('{"note": "' + SECRET)
+    json.loads('{"note": "' + WRITTEN)
 except json.JSONDecodeError as e:
     text = failure_log.safe_text(e)
-    assert SECRET not in text and "Unterminated" in text and "行" in text, text
+    assert WRITTEN not in text and "Unterminated" in text and "行" in text, text
 text = failure_log.safe_text(FileNotFoundError(2, "No such file or directory", "out/R-0001.json"))
 assert "out/R-0001.json" in text and "No such file" in text, text
-text = failure_log.safe_text(OSError(36, "File name too long", SECRET * 40))
-assert SECRET not in text and "File name too long" in text, text
+text = failure_log.safe_text(OSError(36, "File name too long", WRITTEN * 40))
+assert WRITTEN not in text and "File name too long" in text, text
 # 道の ? より後ろは、どの形でも出さない
 log = io.StringIO()
 with contextlib.redirect_stderr(log):
-    failure_log.request_failed("POST", f"/toy/{G}/ask?k={KEY}&note={SECRET}", ValueError("x"))
+    failure_log.request_failed("POST", f"/toy/{G}/ask?k={KEY}&note={WRITTEN}", ValueError("x"))
 clean(log.getvalue())
 assert f"POST /toy/{G}/ask の失敗" in log.getvalue(), log.getvalue()
 print("ok")
