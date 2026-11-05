@@ -172,7 +172,8 @@ def video_section(sid, paper):
             else:
                 head = (f'<form method="post" action="/loop/{esc(sid)}/shown"><input type="hidden" name="record" value="{esc(rid)}"><input type="hidden" name="video" value="{esc(v["file"])}">{_by()}'
                         f'<button class="quiet">{esc(v["file"])} に顔と声が入っていないと確かめた</button></form>')
-                who = "顔と声の確かめ待ちなので、映像とコマは出していません。"
+                # 顔や声が入った動画は確かめないまま置く。札の字だけで輪を回せる（本人の決定、カード 20261105-115602 の 1 点目）。
+                who = "映像とコマは出していません（顔と声の確かめ待ち。顔や声が入っている時は、このまま札の字だけで回します）。"
             out += f'{head}<p class="meta">{esc(v["file"])}（{_clock(v["duration"])}）。{who}動きの少なかった区間: {spans}（手が止まった候補で、止まったとは限りません）</p>'
         rows = ""
         for m in d["marks"]:
