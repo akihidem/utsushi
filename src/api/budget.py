@@ -43,9 +43,11 @@ class BudgetStop(Exception):
 
 
 def _path():
-    base = pathlib.Path(os.environ["OMOCHAE_DATA"]) if os.environ.get("OMOCHAE_DATA") else ROOT / "out"
-    base.mkdir(parents=True, exist_ok=True)
-    return base / "api-usage.jsonl"
+    """台帳は記録の置き場（OMOCHAE_DATA）から切り離して 1 本にする。置き場の中にあると、同じ鍵なのに上限を置き場ごとに別々に数え、
+    デモの --fresh（置き場を丸ごと消す）のたびに 0 に戻る（#151）。別の場所へ向ける OMOCHAE_USAGE_LEDGER は試験のための口。"""
+    path = pathlib.Path(os.environ.get("OMOCHAE_USAGE_LEDGER") or ROOT / "out/api-usage.jsonl")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def _today():

@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PY = str(ROOT / ".venv/bin/python")
@@ -44,6 +45,11 @@ def manifest_now(root):
     criteria = root / "tests/frozen/criteria.md"
     return {"criteria.md": _sha(criteria) if criteria.exists() else None, "scenarios": scenarios,
             "tests": sorted(p.stem for p in (root / "tests").glob("test_*.py"))}
+
+
+def ledger_env(env, folder, name):
+    """子に渡す環境。API の消費の台帳は記録の置き場で分かれないので、試験ごとに一時の台帳へ向け、本物に書かせない（#151）。"""
+    return {**env, "OMOCHAE_USAGE_LEDGER": str(pathlib.Path(folder) / f"{name}.jsonl")}
 
 
 def check_manifest(root):
@@ -112,11 +118,12 @@ def main():
     # 呼ぶ側の環境に残っていると、落ちるはずの試験が黙って通る（外の検品の指摘、11-04）。子は -O も付けずに起こす。
     env = {**{k: v for k, v in os.environ.items() if k != "PYTHONOPTIMIZE"}, "PYTHONPATH": str(ROOT / "src")}
     rows, bad, broken = [], 0, 0
+    ledgers = tempfile.TemporaryDirectory()
     for sc in sorted((ROOT / "tests/frozen/scenarios").glob("*.json")):
         expect = json.loads(sc.read_text(encoding="utf-8"))["expect"]
         out = ROOT / "out/scenarios" / sc.stem
         cmd = [PY, "-m", "omochae", "--scenario", str(sc), "--out", str(out)]
-        r = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True)
+        r = subprocess.run(cmd, cwd=ROOT, env=ledger_env(env, ledgers.name, sc.stem), capture_output=True, text=True)
         got = sorted(set(re.findall(r"^FAIL (\S+)", r.stderr, re.M)))
         ok = r.returncode == expect["rc"] and got == sorted(expect["floors"])
         broken += r.returncode == 4
@@ -125,11 +132,12 @@ def main():
         if not ok:
             print(f"NG {sc.stem}: rc={r.returncode} {r.stderr.strip()[:500]}", file=sys.stderr)
     for test in sorted((ROOT / "tests").glob("test_*.py")):
-        unit = subprocess.run([PY, str(test)], cwd=ROOT, env=env, capture_output=True, text=True)
+        unit = subprocess.run([PY, str(test)], cwd=ROOT, env=ledger_env(env, ledgers.name, test.stem), capture_output=True, text=True)
         bad += unit.returncode != 0
         rows.append((test.stem, unit.returncode, 0, "—", "—", "OK" if unit.returncode == 0 else "NG"))
         if unit.returncode:
             print(f"NG {test.stem}: {unit.stderr.strip()[:500]}", file=sys.stderr)
+    ledgers.cleanup()
     lines = ["# 床の実行結果", "", "| 段 | 命令 | rc | 期待 | 落ちた検査 | 期待の検査 | 判定 |", "|---|---|---|---|---|---|---|"]
     for n, rc, erc, g, e, v in rows:
         lines.append(f"| {n} | `python -m omochae --scenario {n}` | {rc} | {erc} | {g} | {e} | {v} |")
