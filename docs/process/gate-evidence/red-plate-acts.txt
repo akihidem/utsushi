@@ -1,0 +1,6 @@
+# 命令: repo の外の測る script（playwright で札の釦と足の大きさを読む。repo には playwright を入れない決まり）と、.venv/bin/python tests/test_plate_acts.py
+# commit: 不明（測った時の origin/main を写した木。ce38533 より後で 34644c3 まで。札の足の所はこの間で変わっていない）
+直す前: 仮説の札の釦とその足をブラウザで測った（白・黒とも同じ値）
+机 1440: 釦 146×76px（2 行に折れる）、足の padding 48px 72px 40px・中央寄せ・上に 1px の罫
+スマホ 390: 釦 216×51px、足の padding 48px 19.5px 40px・中央寄せ・上に 1px の罫
+tests/test_plate_acts.py: AssertionError で rc 1

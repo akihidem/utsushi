@@ -35,4 +35,9 @@ for f in (looks.tenji, looks.zine):
     assert "/toys" in html and "/about" in html and "/gallery" in html
     assert "仮説 A" not in html and "怠らし" not in html and "IntersectionObserver" not in html
     assert 'id="all-toys"' in html and "確かめていません" in html
+# 一覧の大きい札（必須 2 種）: 縦にも 2 段ぶんにして、横の小さい札の下に穴を作らない。
+# 3 列以下では 2 列ぶんの札の横に穴ができるので、狭い幅では 1 列ぶんに戻して 2 枚を横に並べる（#131）
+for css, rule in ((skin.BASE, ".toys .big"), (looks.ZINE, ".zn-all li.big"), (looks.TENJI, ".tj-all li.big")):
+    assert rule + "{grid-column:span 2;grid-row:span 2}" in css, rule
+    assert "@media (max-width:680px){" + rule + "{grid-column:auto;grid-row:auto}}" in css, rule
 print("ok")

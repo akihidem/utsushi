@@ -285,7 +285,7 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all h2{font-size:clamp(24px,2.6vw,36px);font-weight:300;letter-spacing:.25em;margin:0 0 18px}
 .zn-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#c9a96a;border:1px solid #6e5a35;padding:0 8px;margin:0 6px}
 .zn-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 18px}
-.zn-all li.big{grid-column:span 2}
+.zn-all li.big{grid-column:span 2;grid-row:span 2}
 .zn-all a{border:0;color:#e9e1cf}
 .zn-all .pic{aspect-ratio:3/4;background:#141210 center/cover no-repeat;border:1px solid #6e5a35;outline:6px solid #141210;outline-offset:-7px;box-shadow:0 20px 40px rgba(0,0,0,.6)}
 .zn-all .big .pic{aspect-ratio:1600/2656}
@@ -299,6 +299,7 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
  .zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:72vh;height:72svh}
  .zn-all .grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
  .zn-toy .songs{writing-mode:horizontal-tb;height:auto}}
+@media (max-width:680px){.zn-all li.big{grid-column:auto;grid-row:auto}}
 """
 
 
@@ -381,7 +382,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-all .cap{font-size:13px;line-height:2;letter-spacing:.06em;color:#4a4339;max-width:46em}
 .tj-all .lb{display:inline-block;font-size:12px;letter-spacing:.2em;color:#7a7164;border:1px solid #d8cdb6;padding:0 8px;margin:0 6px}
 .tj-all .grid{list-style:none;padding:0;margin:4vh 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:24px 16px}
-.tj-all li.big{grid-column:span 2}
+.tj-all li.big{grid-column:span 2;grid-row:span 2}
 .tj-all a{border:0;color:#2b2722}
 .tj-all .pic{aspect-ratio:3/4;background:#fffefc center/cover no-repeat;border:1px solid #d8cdb6;box-shadow:0 14px 22px -18px rgba(70,55,35,.4)}
 .tj-all .big .pic{aspect-ratio:1600/2656}
@@ -443,6 +444,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
  .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}
  .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}
  .tj-all .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
+@media (max-width:680px){.tj-all li.big{grid-column:auto;grid-row:auto}}
 """
 KANJI = "一二三四五六七八九十"
 DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
