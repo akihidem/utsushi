@@ -1044,6 +1044,7 @@
 - 検証ゲート: **済み**。Red: 今の main に試験だけを置いて rc 1（gate-evidence/red-one-sheet.txt）。Green: rc 0（gate-evidence/green-one-sheet.txt、gate-evidence/green-one-sheet-floor.txt）。負の対照は寸法 1・組の版 5・組み方の文 1
 - エビデンスゲート: 上の出力と `./run.sh`。残した 9 枚と `removed` の 22 枚を合わせると、直す前の控え 31 枚と値まで同じ
 - マージ後の書き戻し: #332 に書く
+
 ## デモの書き出しを頁の型紙 1 枚の形で止めない（デモの線、issue/332-demo-one-sheet、11-06 未明。#332）
 
 - 目的: 今の main で README の `demo.build --offline` が通る形にする。撮る日の入口が止まらないようにする
