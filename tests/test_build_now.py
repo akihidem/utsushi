@@ -58,8 +58,10 @@ def post(path, form):
 page = get(f"/toy/{G}")
 # すぐ作れる
 assert 'id="kasetsu"' in page and "すぐ作る" in page
-for h in hypotheses.load(G)["hypotheses"]:
-    assert f'value="{h["id"]}"' in page and h["name"] in page
+# 札はたたき台の 1 枚だけ（本人の決定 11-05、J-032）
+sheet = hypotheses.sheet_of(G)
+assert f'value="{sheet["id"]}"' in page and sheet["name"] in page
+assert not [h["id"] for h in hypotheses.load(G)["hypotheses"] if h["id"] != sheet["id"] and f'value="{h["id"]}"' in page]
 assert f'action="/toy/{G}/print#kasetsu"' in page
 # 予想の段が無い
 assert "/predict" not in page and "あなたの予想" not in page and "先に、予想を書く" not in page and "kazasu" not in page

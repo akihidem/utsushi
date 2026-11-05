@@ -35,11 +35,11 @@ def sentences(body):
 
 
 def hypothesis_words(sid):
-    data = hypotheses.load(sid)
-    return [w for h in data["hypotheses"] for w in (h["name"], wording.plain(h["how_it_moves"]))]
+    h = hypotheses.sheet_of(sid)
+    return [h["name"], wording.plain(h["how_it_moves"])]
 
 
-# 頁は開き、仮説の名前と動かし方も出る（予想の段を外した。#242）
+# 頁は開き、たたき台の仮説の名前と動かし方も出る（予想の段を外した。#242。ほかの仮説は出さない。J-032）
 code, idx = get("/zukan")
 assert code == 200 and "図鑑" in idx
 for sid in sources():
@@ -52,6 +52,7 @@ for sid in sources():
     assert "予想を書くと" not in body
     for w in hypothesis_words(sid):
         assert w in body, w
+    assert "仮説 B " not in body, (sid, "説を羅列しない")
 assert 'href="/gallery"' in idx
 assert get("/zukan/NDL-0-R0000001-L")[0] == 404
 

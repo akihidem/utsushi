@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_no_compare_sheet.py
+# commit: 4466a0e（回した時の HEAD）
+ok 見比べる紙を刷る道は無く、外した理由と前の PDF は残る
+rc=0

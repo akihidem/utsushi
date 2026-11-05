@@ -61,9 +61,12 @@ def asks_term(question):
 def sheet_context(source_id, hypothesis_id):
     """その紙の組み方・用意する物だけ。仮説の名前と動き方は入れない。"""
     data = hypotheses.load(source_id)
-    h = next(x for x in data["hypotheses"] if x["id"] == hypothesis_id)
+    # 話した考えから作った本人の案（OWN-n）も、その紙の寸法で答える（ループ1、#335）。名前と話した字は入れない。
+    h = next(x for x in data["hypotheses"] + hypotheses.own_hypotheses(source_id) if x["id"] == hypothesis_id)
     tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
-    p = {**tpl.DEFAULTS, **h.get("params", {})}
+    if hypothesis_id.startswith("OWN-") and not h.get("params"):  # 型紙なしの紙に、雛形の手順は無い。無い手順を答えさせない
+        return "組み方: 型紙の無い紙です。手順は刷った紙にあります。", h
+    p = {**tpl.DEFAULTS, **(h.get("params") or {})}
     steps = "\n".join(f"{i}. {s}" for i, s in enumerate(tpl.steps(p), 1))
     materials = "\n".join(f"・{m}" for m in tpl.materials(p))
     legend = "切る＝実線、谷折り＝破線（手前にへこむ）、山折り＝一点鎖線（手前に出る）、糊代＝斜線。線の無い面（外筒と扇）は色の境で折る"

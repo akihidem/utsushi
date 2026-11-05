@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_words.py
+# commit: 2e711d5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop1_words.py", line 67, in <module>
+    base_h, base_params = words.base_of(G)
+                          ^^^^^^^^^^^^^
+AttributeError: module 'api.words' has no attribute 'base_of'
+rc=1
