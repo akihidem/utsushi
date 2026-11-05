@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_record_card.py（直す前の木に、新しい試験だけを置いた）
+# commit: 165ae7c（回した時の HEAD）
+AssertionError: ><h3>R-0001 H-A: 動いた</h3><p class="meta">2026-11-05T13:55:55+09:00（版 1）</p><p class="meta">最初に動いた所: 外筒の先</p><p class="meta">引っかかった所: 折
+rc=1

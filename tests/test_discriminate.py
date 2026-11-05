@@ -47,8 +47,9 @@ assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", "-layout", r.stdout.strip(), "-"], capture_output=True, text=True).stdout
 assert "昔の作り方の証明にはなりません" in text
 # 答えを先に言わない。計算の上限も勝ち負けの語も刷らない
+# 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("284", "178", "正解", "成功", "失敗", "合格", "勝"):
-    assert word not in text, word
+    assert word not in text.replace("正解ではありません", ""), word
 assert "2 つの型紙" in text
 # 型紙が同じ組は 1 個で比べる。2 個作れと刷らない
 r = run(FAN, "print-compare", "H-C", "H-D", "--out", str(out))
