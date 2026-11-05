@@ -69,7 +69,7 @@ page = urllib.request.urlopen(base + f"/toy/{G}/techo").read().decode()
 # 鍵が無い時は、押しても断りが返るだけの釦を出さない（#130）。受け口の断りは古い頁から押された時のために残す
 assert "Claude に聞く（何が起きたか）" not in page and "AI の返事は、この場では使えません" in page and "観察（Claude の補助）" in page
 code, loc = post(f"/record/{rid}/ai-interpret", {"back": "techo"})
-assert code == 303 and "techo" in loc and urllib.parse.quote("鍵が置かれると") in loc
+assert code == 303 and "techo" in loc and urllib.parse.quote("AI の返事は、この場では使えません") in loc
 r2, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない"})
 assert post(f"/record/{r2}/ai-observe", {"back": "techo"})[0] == 422, "人の説明の前は呼ばない"
 server.shutdown()

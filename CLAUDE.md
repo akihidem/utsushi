@@ -11,7 +11,7 @@
 - **核**（本人の言葉「今話してるこの部分が今回のハッカソンの核になる」）: 「AIが良くなるのは副次的なもので、みんなが手で実際に作ることその楽しさに気づくことが最初。」（本人の言葉 11-05）。その後ろで 4 つのループが回る: ①仮説を見ながら考えを話す（反応して型紙が生まれる。ループ 1）→ ②作りながら工夫を話す（型紙が直る。ループ 2。エンジンごと直る。ループ 3）→ ③できた物を上げて工夫と考えを残す（ギャラリーで見られ、型紙もシステムも直る。ループ 4）。話す口とエンジンごとの改善は作っている途中（[research/34](docs/process/research/34-talk-build-share-loop.md)）。
 - **輪**: 玩具を開く → 型紙を刷る（型紙は正解でなく AI が考えた仮説）→ 作って試す → 記録と人の工夫と説明 → 版の間に Claude が案を出し人が採る → 次の版。AI の返事は学ぶ人の記録と説明の後で、採点しない。
 - **哲学**: 「AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。」全文は [docs/process/philosophy.md](docs/process/philosophy.md)。
-- **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面と試験が全部期待どおり。数は `./run.sh` の最後の行と `out/RESULT.md` に出る）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、上げた物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
+- **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面と試験が全部期待どおり。数は `./run.sh` の最後の行と `out/RESULT.md` に出る）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、作った物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
 - **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)、判断待ちは [docs/process/open.json](docs/process/open.json)。
 <!-- summary:end -->
 
@@ -38,6 +38,6 @@
 - 秘密は `.env`。画像は NDL と東京学芸大学の PDM の物だけ。GPL のコードは入れない。個人のパスと機械固有の値を入れない。
 - 手元の複写は寸法と読みの照合の基準。画像と本文は入れず、歌の読み・頁の番号・自分の言葉の要約だけを残す。
 - 構成を変えたら `docs/architecture.md` と `docs/features.json` を同じ commit で直す。
-- 記録を足したら `docs/process/index.json` に 1 行足し、主張は `docs/process/claims.json` に根拠の文つきで足して、`python -m omochae.ledger render` を回す。AI の読み手に伝わる作りにする。ただし読み手の AI への指示は書かない（J-015）。
+- 記録を足したら `docs/process/index.json` に 1 行足し、主張は `docs/process/claims.json` に根拠の文つきで足して、`PYTHONPATH=src .venv/bin/python -m omochae.ledger render` を回す。AI の読み手に伝わる作りにする。ただし読み手の AI への指示は書かない（J-015）。
 - 判断の記録は `docs/process/decisions/`、調査は `docs/process/research/` に番号順で足す。詳しさの基準（比べた代案・捨てた理由・失敗と原因・測った数値、成果物は失敗した版も残す）は `docs/process/README.md`。
 - push は本人が決めた手順を通した物だけ。
