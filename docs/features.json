@@ -370,5 +370,16 @@
    "docs/process/research/29-making-data-to-service.md"
   ],
   "unverified": "本人の決定（11-05 朝、J-027）。質問は名前と連絡先の形を落として残す（名前は機械では落とせないので断りで頼む）。集計は作る側の頁だけ。断りの文・残す期間は本人の判断待ち。先回りの答えなど、改善へ回す所は段 1 以降（research/29）"
+ },
+ {
+  "id": "f35",
+  "name": "かざして選ぶ（内カメラに原図を重ね、動かし方の札で予想を選ぶ）の試作",
+  "status": "doing",
+  "evidence": [
+   "src/web/kazasu.py",
+   "tests/test_kazasu.py",
+   "docs/process/research/30-kazasu-camera-choice.md"
+  ],
+  "unverified": "本人の案（11-05 朝）の試作。映像は端末の中だけ（送る・録る code が無い事を試験で固定）。予想の前に動かし方の文を見せるので、予想が先の線がその分緩む。採否は本人。iPhone の実機と本物のカメラ映像での見え方は未確認"
  }
 ]
