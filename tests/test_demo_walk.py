@@ -21,7 +21,7 @@ ask._key_present = lambda: False  # 鍵が置かれた機械でも、この試�
 
 from web.play_server import serve  # noqa: E402
 
-server = serve(0, lan=True)
+server = serve(0, lan=True, bind="127.0.0.1")  # 番地の許しは --lan のまま、試験の間は手元の口で待つ
 port = server.server_address[1]
 threading.Thread(target=server.serve_forever, daemon=True).start()
 host = f"{(server.lan_hosts or ('127.0.0.1',))[0]}:{port}"

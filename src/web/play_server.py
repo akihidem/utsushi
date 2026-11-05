@@ -690,7 +690,11 @@ def lan_addresses():
     return ips + [f"{socket.gethostname().split('.')[0]}.local"]
 
 
-def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_open=False):
+def bind_host(lan):
+    return "0.0.0.0" if lan else "127.0.0.1"
+
+
+def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_open=False, bind=None):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
     public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。
     look はこのサイトの皮（tenji 白の展示・zine 黒のジン）。皮ごとに 1 サイト（本人の決定 11-05 朝）なので、2 つ立てる時は port と look を変える。"""
@@ -698,7 +702,8 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
         raise ValueError("合言葉が短すぎる（16 字以上）")
     if look not in skinmod.SKINS:
         raise ValueError(f"皮が無い: {look}（{'・'.join(skinmod.SKINS)}）")
-    server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
+    # bind は試験のため。--lan の番地の許しを試す間も、全部の網に口を開かない（#169）。
+    server = ThreadingHTTPServer((bind or bind_host(lan), port), Handler)
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
