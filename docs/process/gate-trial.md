@@ -236,3 +236,15 @@
 - エビデンスゲート: 上の出力と、直した作業ツリーでの `./run.sh`。`tests/test_floor_pin.py` も通る（型紙と手順の紙は変えていない）。本物の API は呼んでいない（試験は、呼ぶ前の見張りだけを通す）
 - 確かめ待ち: 既定の額の読み（$50）。別の額が届いたら、DEFAULT_DAILY_CAP の 1 行だけを変える
 - マージ後の書き戻し: Issue #150 に書く（この帳面へは、次に帳面を書く取り込みで写す）
+
+## 道具が足りない機械で、落ちる（3）でなく検査できない（4）にする（Issue 対応の担当、issue/160-missing-tool-rc4、11-05 朝。#160）
+
+- 目的: まっさらな機械で README のとおりに進めた人が、足りない道具を名前で知らされる
+- なぜか: `tests/test_demo_assemble.py` と `tests/test_ai_feedback.py` は ffmpeg を直に呼ぶのに、README・`init.sh`・床の入口の一覧に ffmpeg が無かった。無い機械では `./run.sh` が rc 3 になり、不足が「落ちた」に見える。`.venv` が無い時に床の入口を直に呼ぶと、トレースバックの rc 1 になる
+- どうしたらいいか: 推し（#160 の推し）は、床の入口と `init.sh` の確かめに `ffmpeg`・`ffprobe` を足し、無ければ名前を言って 4。README にも書く。代案は、ffmpeg の要る試験だけ飛ばす形。全体が 4 にならない分、見落としやすいので採らない
+- 推しに足した物: 床の入口で `.venv` と字も見る（字が無い時も同じ形で 3 になり得るので、一覧をそろえた）。足りない物は 1 回で全部言う。uv は環境を作る時だけ使うので、床の入口では `.venv` を見る
+- 出していない範囲: デモ動画の書き出しに要る Chrome か Chromium。`./run.sh` では使わないので #168 で扱う
+- ゴールの要件: ffmpeg を PATH から外して `./run.sh` が「ffmpeg が無い」で rc 4。`.venv` が無い時に `python tests/run_floors.py` が rc 4。README・`init.sh`・`tests/run_floors.py` の一覧が同じ
+- 検証ゲート: **済み**。Red: 直す前の `./run.sh` が ffmpeg なしで 98 本中 96 本・rc 3（gate-evidence/red-required-tools.txt）。Green: 3 通りとも rc 4 で名指し（gate-evidence/green-required-tools.txt）。`tests/test_required_tools.py` を足した。確かめの呼び出しを消すと、この試験は落ちる
+- エビデンスゲート: 上の出力と、直した作業ツリーでの `./run.sh`（「実行した場面 99 本、期待どおり 99 本」）。`tests/test_floor_pin.py` も通る（型紙と手順の紙は変えていない）。凍結の場面と基準の文は変えていない
+- マージ後の書き戻し: Issue #160 に書く（この帳面へは、次に帳面を書く取り込みで写す）
