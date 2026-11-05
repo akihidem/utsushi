@@ -23,7 +23,9 @@ from measure_tap import chrome  # noqa: E402
 from web import play_server  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-PAGES = {"techo": f"/toy/{G}/techo?n=1", "tsukuru": f"/toy/{G}/tsukuru?h=H-A&n=2"}
+PAGES = {"techo": f"/toy/{G}/techo?n=1", "tsukuru": f"/toy/{G}/tsukuru?h=H-A&n=2", "kiroku": f"/toy/{G}/techo/kiroku?x=1"}
+# ブラウザの既定の字（Arial など）のままの入力の部品を集める（#87 の要件。頁の字を継いでいれば空）。
+FONTS = "[...document.querySelectorAll('button,input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]),textarea,select')].filter(e=>getComputedStyle(e).fontFamily!==getComputedStyle(document.body).fontFamily).map(e=>e.tagName+(e.id?'#'+e.id:''))"
 # 見本は頁の script より先に置く。音声認識・読み上げ・送信を差し替えて、起きた順を window.__log に書く（本物のサーバに記録を残さない）。
 STUB = r"""<script>
 window.__log=[];window.__posts=[];
@@ -67,8 +69,10 @@ await hear('もどる');R.fromkekka=te.dataset.scene;
 R.ops=asks().filter(q=>/^(つぎ|次。|もどる|もう一回|できた|のこす)$/.test(q));
 R.versions=[...new Set(__posts.map(p=>p.sheet_version))];
 __log.length=0;window.dispatchEvent(new Event('pagehide'));await wait();R.left=[__log.slice(),__rec.running];
+R.fonts=__FONTS__;
 parent.postMessage(JSON.stringify({page:'techo',R}),'*');
 })()</script>""",
+    "kiroku": r"""<script>(()=>{parent.postMessage(JSON.stringify({page:'kiroku',R:{fonts:__FONTS__,controls:document.querySelectorAll('select,textarea,input[type=text]').length}}),'*')})()</script>""",
     "tsukuru": r"""<script>(async()=>{
 const wait=(ms=30)=>new Promise(r=>setTimeout(r,ms)),mic=document.getElementById('mic'),R={};
 const hear=async(t)=>{__rec.onresult({results:[[{transcript:t}]]});await wait(60)};
@@ -101,7 +105,7 @@ send, get = play_server.Handler._send, play_server.Handler.do_GET
 def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
     m = re.search(r"[?&]walk=(\w+)", self.path)
     if m and isinstance(body, str) and ctype.startswith("text/html"):
-        body = re.sub(r"<html[^>]*>", lambda h: h.group(0) + STUB, body, count=1) + WALK[m.group(1)]
+        body = re.sub(r"<html[^>]*>", lambda h: h.group(0) + STUB, body, count=1) + WALK[m.group(1)].replace("__FONTS__", FONTS)
     return send(self, code, body, ctype, headers)
 
 
@@ -120,23 +124,46 @@ play_server.Handler._send, play_server.Handler.do_GET = wrapped, do_get
 server = play_server.serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
-urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), headers={"Origin": base}), timeout=120)
-try:
-    with tempfile.TemporaryDirectory() as profile:
-        out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=900,900",
-                              "--virtual-time-budget=20000", "--dump-dom", f"{base}/__wrap"], capture_output=True, text=True, timeout=150).stdout
-except subprocess.TimeoutExpired:
-    out = ""
+
+
+def post(path, data):
+    r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
+    with urllib.request.urlopen(r, timeout=120) as x:
+        return x.read().decode()
+
+
+post(f"/toy/{G}/print", {"hypothesis": "H-A"})
+# 記録の頁に、説明の後の欄（選ぶ欄と字の欄）まで出しておく
+rid = json.loads(post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "sheet_version": "1"}))["id"]
+post(f"/record/{rid}/explain", {"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"})
+post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない", "sheet_version": "1"})
+
+
+def walk():
+    try:
+        with tempfile.TemporaryDirectory() as profile:
+            out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=1300,900",
+                                  "--virtual-time-budget=20000", "--dump-dom", f"{base}/__wrap"], capture_output=True, text=True, timeout=150).stdout
+    except subprocess.TimeoutExpired:
+        out = ""
+    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
+    got = {}
+    for line in (found.group(1).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">") if found else "").splitlines():
+        if line.strip():
+            rec = json.loads(line)
+            got[rec["page"]] = rec["R"]
+    return got
+
+
+got = walk()
+if got and set(got) != set(PAGES):
+    got = walk()  # 一部の頁だけ答えた時は、1 度だけ回し直す（混んだ機械のため）
 server.shutdown()
-found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
-got = {}
-for line in (found.group(1).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">") if found else "").splitlines():
-    if line.strip():
-        rec = json.loads(line)
-        got[rec["page"]] = rec["R"]
-if set(got) != set(PAGES):
-    print(f"測れない: Chrome が {sorted(got)} しか答えなかった（混んだ機械では起きる）")
+# 1 つも答えない時だけ「測れない」にする。一部だけ答えない時は落とす: 頁の JS が壊れて答えなくなった時を、混んだ機械と取り違えないため。
+if not got:
+    print("測れない: Chrome が答えなかった（混んだ機械では起きる）")
     raise SystemExit(0)
+assert set(got) == set(PAGES), ("答えない頁がある（頁の JS が壊れた時もこうなる）", sorted(set(PAGES) - set(got)))
 
 QUESTION = "次の手順ってどうやるの"
 R = got["techo"]
@@ -164,6 +191,9 @@ assert R["ops"] == [], R["ops"]
 assert R["versions"] == ["1"], R["versions"]
 # 頁を離れたら止める
 assert "stop" in R["left"][0] and R["left"][1] is False, R["left"]
+# 入力の部品は頁の字を継ぐ（ブラウザの既定の字にしない）。手帖と、手帖の記録の頁
+assert R["fonts"] == [], ("既定の字のままの部品", R["fonts"])
+assert got["kiroku"]["fonts"] == [] and got["kiroku"]["controls"] >= 3, got["kiroku"]
 
 R = got["tsukuru"]
 assert R["started"] == [True, "true"], R["started"]

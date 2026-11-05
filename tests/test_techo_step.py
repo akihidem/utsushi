@@ -177,6 +177,12 @@ assert 'type="radio"' not in page and "<select" not in page, "紙を選ぶ札は
 for word in ("おめでとう", "すごい", "合格", "正解", "点数", "順位", "ランキング", "やったね", "_after", "confetti"):
     assert word not in page, word
 
+# ---- 入力の部品はブラウザの既定の字にしない（頁の字を継ぐ）。実際の字は tests/test_voice_walk.py がブラウザで測る
+assert "button,input,textarea,select{font-family:inherit}" in techo_step.STYLE
+# ---- 内部の番号（刷った組の版）は、どの雛形の物も頁に出さない
+for tpl in TEMPLATES.values():
+    assert tpl.SHEET_SET not in page, tpl.SHEET_SET
+
 # ---- 頁の骨: 帯なし（字を減らす）。マイクは 1 つ。録る口を持たない
 assert '<nav class="nav"' not in page and skin.TAP_FLOOR in page, "帯なし。指の床は届く"
 assert page.count('id="mic"') == 1 and "hanasu-mic" not in page, "マイクは 1 頁に 1 つ"
@@ -322,6 +328,8 @@ assert code == 200 and '<div id="mine">' in listed and j["id"] in listed and "�
 # 記録の頁は順路の帯を持ち、試した後の紙・説明・AI の順の札がここにある
 assert '<nav class="nav"' in listed and "試した後の紙" in listed and 'name="back" value="techo"' in listed
 assert listed.count("<script>(()=>{\nconst REC=") == 1
+for tpl in TEMPLATES.values():
+    assert tpl.SHEET_SET not in listed, ("記録の頁に内部の番号", tpl.SHEET_SET)
 assert talk_log.kufu(G, j["id"], shared_only=True)[0]["text"] == "紙を二重にした"
 # 手帖から説明を送ると、記録の頁へ戻る
 op = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))

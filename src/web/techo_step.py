@@ -67,6 +67,8 @@ STYLE = """
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans CJK JP","Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;font-size:18px;line-height:1.5}
 a{color:inherit;text-decoration:none}
+/* 入力の部品はブラウザの既定の字（Arial など）になるので、頁の字を継がせる（#87 の要件。大きさは部品ごとの決まりのまま）。 */
+button,input,textarea,select{font-family:inherit}
 .sr{position:absolute;left:-9999px}
 /* 指で触る機器の床（skin.TAP_FLOOR）が button を横並びの箱にするので、hidden を効かせる。 */
 [hidden]{display:none!important}
