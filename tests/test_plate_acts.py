@@ -16,11 +16,13 @@ for look in skin.SKINS:
     html = toy.toy_page(SID, look)
     plates = html[html.index('<div class="plates">'):html.index('id="win"')]
     n = plates.count('class="plate"')
-    assert n >= 2, look
+    assert n == 1, look  # 札はたたき台の 1 枚だけ（J-032）
     assert plates.count('<div class="acts">') == n, (look, n)
     assert 'class="foot"' not in plates, look
     assert len(re.findall(r'<p class="foot">', html)) == 1, look  # 頁の足は 1 つのまま
 assert ".plate .acts{" in skin.BASE and ".plate .foot" not in skin.BASE
+# 札が 1 枚だけの頁は、狭い 1 列に残さない（題が折れ、右が空く。撮った画面で見つけた）。一覧で札が並ぶ頁には効かない形にする
+assert ".plates>.plate:only-child{grid-column:1/-1;" in skin.BASE
 # 頁の足の決まりは変えていない（札の直しで頁の足の見た目を変えない）。字の 12px は字の大きさの床（#137）
 assert ".foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}" in skin.BASE
 print("ok")

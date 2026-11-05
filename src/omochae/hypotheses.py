@@ -282,6 +282,22 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template)
 
 
+def print_after(source_id, hypothesis_id, out):
+    """試した後の紙だけを刷る（#320）。場で配られた紙で作って記録を残した人に渡すため。
+    型紙と手順の紙は刷らない: 版の PDF があれば刷った案と読まれ、窓の最初の案や記録の欄の既定が、開いただけの案へ移る。題と印は型紙の組を刷る時と同じ。"""
+    from .marks import OWN_HYPOTHESIS
+
+    source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
+    match = [h for h in load(source_id)["hypotheses"] if h["id"] == hypothesis_id]
+    if match:
+        return _print_after(source, f"仮説 {letter(match[0])}「{match[0]['name']}」", out)
+    own = [h for h in own_hypotheses(source_id) if h["id"] == hypothesis_id]
+    if not own:
+        raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
+    source["hypothesis_mark"] = OWN_HYPOTHESIS  # 人が立てた仮説を「AI が考えた」と刷らない
+    return _print_after(source, f"自分の仮説「{own[0]['name']}」", out)
+
+
 def print_own(source_id, own_id, out, version=1):
     from .__main__ import generate
     from .marks import OWN_HYPOTHESIS  # 人が立てた仮説を「AI が考えた」と刷らない
