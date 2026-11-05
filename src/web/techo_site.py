@@ -426,7 +426,6 @@ def gallery_page(sids, photos=True):
             '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
-            f'<p class="meta">{esc(records.WITHDRAW_NOTICE)}</p>'
             f'{voices}</section></div>')
 
 

@@ -3,8 +3,9 @@
 本人が確かめた字を、一字も変えずに置く。一字でも変わったら落ちるように、ここに決定の文を書く（句点も足さない）。
 
 見る線:
-- サイトの頁で声・写真の扱いと取り下げを説明している所に出る: 話す口（玩具の頁・作りながら見る頁）、手帖の上げる節、ギャラリーの持ち寄りの説明、持ち寄りの form
+- 事実のとおりになる頁に出る: 話す口（玩具の頁・作りながら見る頁）、手帖の上げる節
 - 手帖は、記録が増えても 1 回だけ（記録ごとの口は、同じ節の中に並ぶ）
+- 持ち寄りの所（ギャラリーの説明と form）には出さない。持ち寄りは書き出す束に入らないので、文の後半が事実と合わない
 - 端末の案内に出る: README の取り下げの節、--talk-only の説明、根拠に使われて止めた時の文、取り下げた後の文。番号の打ち間違いには出さない
 """
 import os
@@ -59,12 +60,10 @@ techo = page(f"/toy/{G}/techo")
 assert f'id="up-notice">{hanasu.UPLOAD_NOTICE}</p>{PARA}' in techo and techo.count(DECIDED) == 1
 assert techo.count('name="scene" value="keep"') == 2, "記録ごとの口が並ぶ見本になっていない"
 
-# ギャラリー: 持ち寄りの写真と動画の扱いの説明のすぐ下
+# 持ち寄りの所には出さない（「前にエンジンへ渡した分は残ります」が事実と合わない）。説明の文がある事も見て、見本の取り違えで通らないようにする
 gallery = page("/gallery")
-assert f"送られた物は確かめてから載せます。</p>{PARA}" in gallery and gallery.count(DECIDED) == 1
-
-# 持ち寄りの form: 取り下げに同意する欄のすぐ下
-assert f"取り下げを申し出られる事に同意します</label>\n{PARA}" in contrib_server.FORM and contrib_server.FORM.count(DECIDED) == 1
+assert "送られた物は確かめてから載せます。" in gallery and DECIDED not in gallery
+assert "取り下げを申し出られる事に同意します" in contrib_server.FORM and DECIDED not in contrib_server.FORM
 
 # README: 取り下げの節に別の段落で置く（行末に句点が無い事まで見る）
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
