@@ -481,7 +481,7 @@ class Handler(BaseHTTPRequestHandler):
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
-            return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""), anchor=rid)
+            return self._done(sid, "AI の返事は、この場では使えません", form.get("back", ""), anchor=rid)
         try:
             from api.agent import default_client
 

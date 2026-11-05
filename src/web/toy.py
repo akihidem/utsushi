@@ -129,7 +129,7 @@ def window(sid, data, see, kind, v, recorded):
         _, adopted = loop.version_params(sid, see, v)
         if adopted:
             ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
-            cap = f'<p class="meta">版 {v}: 根拠 {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))}。変えた所: {esc(ch)}</p>'
+            cap = f'<p class="meta">版 {v}: {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))} をもとに直しました。変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
     cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
@@ -422,7 +422,7 @@ def made_strip(sid, recs, photos=True):
         for f in (media_review.public(r["id"], media_of(r["id"]))[:1] if photos else []):
             tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">')
-            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} の記録へ">{tag}</a>'
+            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} へ">{tag}</a>'
     return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 
@@ -486,7 +486,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
         free = f'{h["id"]}_v1_free.pdf'
         link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
-        body += (f'<article class="card" id="own-{esc(h["id"])}">{head("own-" + h["id"])}<h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
+        body += (f'<article class="card" id="own-{esc(h["id"])}">{head("own-" + h["id"])}<h3>あなたの仮説「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
                  f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を作る</button></form><p>{link}</p></article>')
     body += f'<details{" open" if fill("own") else ""}><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
     body += analogy_section(data)

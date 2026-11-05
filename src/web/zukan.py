@@ -68,7 +68,7 @@ def quote_lines(src):
 def record_title(r, data):
     """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
     return f"{who}・{r['result']}"
 
 
@@ -87,7 +87,7 @@ def observation_lines(sid, data):
 def hypothesis_lines(sid, data):
     """どれも試していない考えなので、仮説の印を付ける（status も添える）。"""
     out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"]]
-    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid)]
+    out += [{"text": f"あなたの仮説「{h['name']}」: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid)]
     return out
 
 
