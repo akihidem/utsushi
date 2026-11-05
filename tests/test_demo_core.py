@@ -2,6 +2,8 @@
 
 Chrome も網も使わない。画面の絵は偽物を渡す。画面を撮る所は書き出しの時に通り、そこで本物の口を通らなければ止まる。
 """
+import types
+
 from PIL import Image
 
 from demo import core, flip, script, words
@@ -86,6 +88,39 @@ keeping = core.build_scene("core_keep", dict(core.CUES_ALL["core_keep"]), shots=
 assert [s["shot"] for s in keeping.segs] == ["keep", "keep"] and keeping.segs[1]["to"][1] > keeping.segs[1]["from"][1]
 mark = core.CUES_ALL["core_keep"]["record"]
 assert keeping.frame(mark[0] + 0.05).crop(core.BOX).tobytes() == keeping.frame(mark[0] - 0.1).crop(core.BOX).tobytes()
+# 写真は確認の記録が無いとギャラリーに出ない（#314）。例の記録に一時の置き場で確認を残す。出なければ止まる（通った振りをしない）
+real_post, real_run, real_open = core._post, core.subprocess.run, core.urllib.request.urlopen
+answers = {"/print": (303, ""), "/record-json": (201, '{"id": "R-0001"}'), "/media": (201, "m1.jpg"), "/explain": (303, ""), "/next": (303, "")}
+core._post = lambda base, path, data, ctype=None: next(v for k, v in answers.items() if path.endswith(k))
+ran = []
+core.subprocess.run = lambda cmd, **k: ran.append((cmd, k["env"])) or types.SimpleNamespace(returncode=0, stderr="")
+
+
+class Page:
+    def __init__(self, text):
+        self.text = text
+
+    def read(self):
+        return self.text.encode("utf-8")
+
+
+core.urllib.request.urlopen = lambda url, timeout=0: Page('<img src="/record/R-0001/media/m1.jpg">')
+assert core.seed("http://x", {"OMOCHAE_DATA": "/tmp/一時"}) == "R-0001"
+assert ran[0][1]["OMOCHAE_DATA"] == "/tmp/一時" and ran[0][0][-2:] == ["R-0001", "m1.jpg"], ran
+core.urllib.request.urlopen = lambda url, timeout=0: Page("写真なし")
+try:
+    core.seed("http://x", {"OMOCHAE_DATA": "/tmp/一時"})
+    raise AssertionError("ギャラリーに写真が出ないのに通った")
+except OSError as e:
+    assert "ギャラリー" in str(e)
+core.urllib.request.urlopen = lambda url, timeout=0: Page('<img src="/record/R-0001/media/m1.jpg">')
+core.subprocess.run = lambda cmd, **k: types.SimpleNamespace(returncode=3, stderr="だめ")
+try:
+    core.seed("http://x", {"OMOCHAE_DATA": "/tmp/一時"})
+    raise AssertionError("確認が残らないのに通った")
+except OSError as e:
+    assert "確認" in str(e)
+core._post, core.subprocess.run, core.urllib.request.urlopen = real_post, real_run, real_open
 # 頁の頭から映す（題から読ませる）
 head = core._cam_page(1280)
 assert abs(head[1] - head[2] * core.ASPECT / 2) < 1e-6 and head[0] == 640

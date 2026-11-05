@@ -110,16 +110,28 @@ def _post(base, path, data, ctype="application/x-www-form-urlencoded"):
         return e.code, e.read().decode("utf-8", "ignore")
 
 
-def seed(base):
-    """一時の置き場に、例の記録・写真・説明・次の版を本物の口で入れる。通らない時は言って止める（通った振りをしない）。"""
+# 写真の確認の記録を残す（media_review）。人の確認の場の代わりではなく、作り物の記録を一時の置き場で撮るためだけの物。
+REVIEW_CODE = ("import sys; from omochae import media_review as m; "
+               "f = m.record(sys.argv[1], sys.argv[2], 'object', '確認者'); print(f, file=sys.stderr) if f else None; sys.exit(3 if f else 0)")
+
+
+def seed(base, env):
+    """一時の置き場に、例の記録・写真・説明・次の版を本物の口で入れる。通らない時は言って止める（通った振りをしない）。
+    写真は確認の記録が無いとギャラリーに出ない（#314）。env は画面の口と同じ置き場を指すので、repo の data/ には書かない。"""
     if _post(base, f"/toy/{SID}/print", {"hypothesis": HID})[0] != 303:
         raise OSError("型紙が刷れない")
     code, out = _post(base, f"/toy/{SID}/record-json", EXAMPLE)
     if code != 201:
         raise OSError(f"例の記録が入らない（{code}）")
     rid = json.loads(out)["id"]
-    if _post(base, f"/record/{rid}/media", PHOTO.read_bytes(), "image/jpeg")[0] != 201:
+    code, name = _post(base, f"/record/{rid}/media", PHOTO.read_bytes(), "image/jpeg")
+    if code != 201:
         raise OSError("写真が入らない")
+    r = subprocess.run([sys.executable, "-c", REVIEW_CODE, rid, name.strip()], cwd=ROOT, env=env, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise OSError(f"写真の確認の記録が残らない（{r.stderr.strip()[:200]}）")
+    if f"/record/{rid}/media/{name.strip()}" not in urllib.request.urlopen(base + "/gallery", timeout=30).read().decode("utf-8"):
+        raise OSError("ギャラリーに写真が出ない")
     if _post(base, f"/record/{rid}/explain", EXPLAIN)[0] != 303:
         raise OSError("説明が入らない")
     code, out = _post(base, f"/record/{rid}/next", NEXT)
@@ -173,7 +185,7 @@ def capture(cache):
                 print("検査できない: 画面の口が開かない", file=sys.stderr)
                 return None
             try:
-                seed(base)
+                seed(base, env)
             except OSError as e:
                 print(f"検査できない: {e}", file=sys.stderr)
                 return None
