@@ -90,7 +90,7 @@ post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impressio
 rid = records.all_records(G)[-1]["id"]
 post(f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})
 post(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"})
-post(f"/toy/{G}/own", {"name": "糸で引く", "how": "糸で引いて開く", "evidence": "糸らしい線"})
+assert not hypotheses.save_own(G, "糸で引く", "糸で引いて開く", "糸らしい線")[1]  # 前に書かれた仮説の形（頁の書く欄は外した。J-032 の点 2）。文は図鑑に出る
 post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "紙の端はどこまで切りますか"})
 # 説明を待つ記録と、頭の帯に出る写真（人が確かめた物だけが出る）
 post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})
@@ -111,14 +111,14 @@ assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）か
 assert "▲作った人の報告" in kz, "改善の輪の節の固定の文"
 assert "▲鍵が置かれると" in post(f"/record/{rid}/ai-interpret", {}), "鍵が無い時の AI の口"
 # 人が書いた文は表を通らない（記録の感想・説明・自分の仮説・歌の引用）
-for text in ("すっと開いた", "折りが固くて戻る", "糸で引いて開く", "本人が折った"):
+for text in ("すっと開いた", "折りが固くて戻る", "本人が折った"):
     assert text in page, text
     assert f"▲{text}" not in page, text
 song = next(e["text"] for e in hypotheses.json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))["transcription"]["entries"] if e.get("checked_by") and not e.get("rejected_by"))
 assert song in page and f"▲{song}" not in page, "歌の引用"
 zu = get(f"/zukan/{G}")
 assert song in zu and f"▲{song}" not in zu, "図鑑の歌の引用"
-assert "▲糸で引いて開く" not in get(f"/zukan/{G}"), "図鑑の自分の仮説"
+assert "糸で引いて開く" in zu and "▲糸で引いて開く" not in zu, "図鑑の自分の仮説"
 # 2 つの表は 1 か所に読める（#135・#317）。数える命令は内輪の言葉の表も読み、同じ語を両方に書かず、読む人の字にむずかしい語を戻さない
 keep_table = wording.TABLE
 wording.TABLE = ((re.compile("棚卸し"), "作る側"),)

@@ -26,7 +26,7 @@ for part in ("records", "loop"):
     shutil.copytree(ROOT / "data" / part, os.path.join(DATA, part))
 
 from api import ask  # noqa: E402
-from omochae import labels, records  # noqa: E402
+from omochae import hypotheses, labels, records  # noqa: E402
 from web import zukan  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 
@@ -137,7 +137,8 @@ see(white, f"/toy/{G}/techo", name="記録の後の手帖")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")
 see(white, f"/zukan/{G}", name="記録の後の図鑑")
 see(white, "/gallery", name="記録の後のギャラリー")
-see(white, f"/toy/{G}/own", {"name": "糸で引く", "how": "糸で引いて開く", "evidence": "糸らしい線"}, "自分の仮説の後")
+assert not hypotheses.save_own(G, "糸で引く", "糸で引いて開く", "糸らしい線")[1]  # 前に書かれた仮説の形（頁の書く欄は #409 で外れた）
+see(white, f"/toy/{G}", name="自分の仮説の後")
 see(white, f"/toy/{G}/record", {"hypothesis": "OWN-1", "result": "動いた", "impression": "開いた"}, "自分の仮説の記録の後")
 see(white, f"/zukan/{G}", name="自分の仮説の後の図鑑")
 asked = see(white, f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "紙の端はどこまで切りますか"}, "聞く口の答え")

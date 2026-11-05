@@ -214,14 +214,15 @@ def ask_form(sid, data, asked=None, note="", filled=None):
             f'<button>聞く</button><p class="meta">{esc(making_log.ASK_NOTICE)}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
 
 
-def record_form(sid, data, own, mine=()):
+def record_form(sid, data, mine=()):
+    """mine は、この画面が話した考えから作った本人の案（自分の仮説の記録の形）。"""
     template = data.get("template", "slider_fan")
     card = hypotheses.sheet_of(sid)
-    hyps = [(card["id"], f'仮説 {hypotheses.letter(card)}「{card["name"]}」')] + [(h["id"], f'あなたの仮説「{h["name"]}」') for h in own]
+    hyps = [(card["id"], f'仮説 {hypotheses.letter(card)}「{card["name"]}」')] + [(h["id"], f'あなたの仮説「{h["name"]}」') for h in mine]
     # 話した考えから作った本人の案は、選んだ形で出す。作った紙の記録として残すため（たたき台の記録に取り違えない）。
-    opts = "".join(f'<option value="{esc(i)}"{" selected" if i in mine else ""}>{esc(n)}</option>' for i, n in hyps)
-    # 紙はたたき台の 1 枚なので選ぶ欄を出さない。前に書いた自分の仮説がある時だけ、その紙の記録を残せるように欄を残す（話す形への直しまで）。
-    which = f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>' if own else f'<input type="hidden" name="hypothesis" value="{esc(card["id"])}">'
+    opts = "".join(f'<option value="{esc(i)}"{" selected" if i != card["id"] else ""}>{esc(n)}</option>' for i, n in hyps)
+    # 紙はたたき台の 1 枚なので選ぶ欄を出さない。話した本人の案がある時だけ、その紙の記録を残せるように欄を出す。書いて立てた仮説は並べない（J-032 の点 2）。
+    which = f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>' if mine else f'<input type="hidden" name="hypothesis" value="{esc(card["id"])}">'
     # 版が 2 つ以上ある時だけ、どの版の紙かを聞く（紙の題の横に刷ってある）。報告が版を取り違えないため（play_server.sheet_version_of）。
     seen = versions_of(sid, card["id"], printed_only=True)
     version_field = ('<label>どの版の紙か（紙の題の横に刷ってあります）<select name="sheet_version"><option value="">いちばん新しい版</option>'
@@ -361,10 +362,20 @@ def ai_block(r):
     return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
 
 
+def own_papers(sid, hid, ver):
+    """前に書かれた自分の仮説で刷った紙へのリンク。札を外したので（J-032 の点 2）、記録の札から開く。字は札と窓にあった物のまま。"""
+    links = [f'<a href="/sheet/{sid}/{esc(hid)}_v{esc(ver)}{kind}.pdf" target="_blank" rel="noopener">{label}</a>'
+             for kind, label in (("_free", "型紙なしの紙"), ("", "型紙"), ("_tejun", "手順の紙")) if (out_dir(sid) / f"{hid}_v{ver}{kind}.pdf").exists()]
+    return f'<p>{"・".join(links)}</p>' if links else ""
+
+
 def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
+    from api.words import spoken_own_ids
+
     from . import zukan
 
     data = hypotheses.load(sid)
+    spoken = spoken_own_ids(sid)
     out = "<p class='meta'>記録の順。上下はありません。紙の返事 → 自分の説明 → AI の返事、の順で開きます。</p>" if recs else ""
     for r in reversed(recs):
         told = loop.explanation(r["id"])
@@ -377,6 +388,9 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
         # 自分の仮説は窓に出ない（窓へ向けると、ほかの案の紙が出る）ので、字のリンクも PDF へ向ける（#320）。
         if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]):
             after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
+            # 話した案の紙は作った本人の画面からだけ開き、合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので道を出さない。
+            if photos and r["hypothesis_id"] not in spoken:
+                after = own_papers(sid, r["hypothesis_id"], ver) + after
         if told:
             nid = f'next-{r["id"]}'
             nxt = next_form(r)
@@ -494,11 +508,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
             + skin.artwork_label(data["toy"], src) + nopic
             + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a><a href="/toys">ほかのおもちゃ</a></p>'
             f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data)}{made_strip(sid, records.all_records(sid), photos)}</div></section>')
-    form_own = refill(f'<form method="post" action="/toy/{sid}/own#kasetsu" class="card"><h3>自分の仮説を立てる</h3><label>名前<input type="text" name="name" required></label>'
-                f'<label>動かし方<textarea name="how" required></textarea></label><label>図のどこを見たか<input type="text" name="evidence" required></label><button>仮説を残す</button></form>', fill("own"))
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
-    own = hypotheses.own_hypotheses(sid)
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。札はたたき台の 1 枚だけで、順位は学ぶ人の画面に出さない（J-013・J-025・J-032）。
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
@@ -512,17 +523,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                  f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
                  f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙を見る</button></form>'
                  '</div></div>')
-    body += "</div>"
-    from api.words import spoken_own_ids  # 話した考えから採った案は、札に出さない（ループ1、Issue #335）
-
-    spoken = spoken_own_ids(sid)
-    for h in (x for x in own if x["id"] not in spoken):
-        # 寸法の無い自分の仮説には、型紙なしの紙（身の回りの紙と紐で作る紙）を返す。本人の決定。
-        free = f'{h["id"]}_v1_free.pdf'
-        link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if photos and (out_dir(sid) / free).exists() else ""  # 合言葉なしの場では開かない紙の入口を出さない
-        body += (f'<article class="card" id="own-{esc(h["id"])}">{head("own-" + h["id"])}<h3>あなたの仮説「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を作る</button></form><p>{link}</p></article>')
-    body += f'<details{" open" if fill("own") else ""}><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
+    # 書いて立てた仮説の札と書く欄は外した（本人の決定 11-05 18:08「仮説は書かず、話すことができる」、J-032 の点 2）。考えは下の節で話す。
+    body += "</div></section>"
     # 仮説を見て、考えを話す（一周の 1、Issue #279）。仮説の節のすぐ後に置く。
     from . import hanasu
 
@@ -537,7 +539,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
              + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) or mine else "")
              + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"))}</section>')
-    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in own if h["id"] not in spoken or h["id"] in mine], mine), fill("record"))}</section>'
+    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine]), fill("record"))}</section>'
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{sample_records(data)}<p class="links"><a href="/gallery">全部の玩具の、作った物を見る</a></p></section>')

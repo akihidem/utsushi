@@ -503,7 +503,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, "This template could not be printed.", "text/plain; charset=utf-8")
             making_log.add_stage(sid, "print", form.get("who", ""))
             return self._send(303, "", headers=[("Location", f"/en/toy/{sid}?printed=1#ideas")])
-        m = re.fullmatch(rf"/toy/({SID})/(own|print|print-own|record|ask)", self.path)
+        m = re.fullmatch(rf"/toy/({SID})/(print|record|ask)", self.path)
         if m and m.group(1) in sources():
             sid, act = m.groups()
             return self._toy_post(sid, act, form)
@@ -686,7 +686,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
-        anchor = "kiroku"  # 自分の仮説は次の段へ戻す（要件 L-04）。試した記録の欄へ戻すのは記録だけ
+        anchor = "kiroku"  # 試した記録の欄へ戻すのは記録だけ
         if act == "ask":
             # 手順の質問は、試した記録（仮説への返事）には入れず、その場で答えを頁に出す。順（紙 → 記録と説明 → AI）には入らない。
             # 質問の文だけは工作の様子（omochae.making_log）に残す: 何で止まるかを、案内と答えを直す材料にする（本人の決定 11-05 朝）。
@@ -706,21 +706,7 @@ class Handler(BaseHTTPRequestHandler):
                 text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
-        if act == "own":
-            own, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
-            msg = "仮説を残しました。「紙を作る」で、身の回りの紙と紐で作る型紙なしの紙ができます"
-            anchor = f"own-{own['id']}" if own else anchor
-        elif act == "print-own":
-            oid = form.get("id", "")
-            from . import think_sheet
-
-            if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)} or not think_sheet.usable(self, sid, oid):
-                return self._send(422, self._toy(sid, errors=[f"仮説 {oid} は無い"], at="kasetsu"))
-            out_dir(sid).mkdir(parents=True, exist_ok=True)
-            if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
-                return self._send(422, self._toy(sid, errors=["紙を作れませんでした（検査に落ちた）"], at=f"own-{oid}"))
-            failures, msg = [], "紙を作りました。印刷する時は PDF を 100% で"
-        elif act == "print":
+        if act == "print":
             failures = []
             hid = form.get("hypothesis", "")
             at = "win" if form.get("at") == "win" else "kasetsu"  # 窓の札から押した時は、通らない理由も窓で読む（#127）
@@ -752,8 +738,7 @@ class Handler(BaseHTTPRequestHandler):
             # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
             anchor = rid or anchor
         if failures:
-            at = {"own": "kasetsu", "print": "kasetsu"}.get(act, "kiroku")
-            return self._send(422, self._toy(sid, errors=[f.message for f in failures], at=at, filled=(act, form)))
+            return self._send(422, self._toy(sid, errors=[f.message for f in failures], at="kiroku", filled=(act, form)))
         # 頁の段の進み（刷った・記録を残した）を工作の様子に残す（U-45 の段取り 2）。何を書いたかは写さない。
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
