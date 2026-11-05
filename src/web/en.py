@@ -94,7 +94,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
     req = _load("required.json")["toys"].get(sid, {}).get("hypotheses", {})
     note = '<p class="meta">Printed. Open the PDF and print it at 100%.</p>' if printed else ""
     cards = ""
-    for h in data["hypotheses"]:
+    for h in [hypotheses.sheet_of(sid)]:  # 頁に出す型紙はたたき台の 1 枚だけ（J-032）
         letter = hypotheses.letter(h)
         en = req.get(h["id"])
         head = f'Idea {esc(letter)}: {esc(en["name"])}' if en else f'Idea {esc(letter)}'

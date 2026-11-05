@@ -160,6 +160,11 @@ def withdraw(rid, media_only=False):
             shutil.rmtree(media)
         for p in files:
             p.unlink(missing_ok=True)
+        if not media_only:
+            # 記録に結んだ「話した事」も消す（Issue #279）。人の言葉を、取り下げた記録の外に残さないため。
+            from . import talk_log
+
+            gone += talk_log.drop_for_record(rid)
     return gone, []
 
 
