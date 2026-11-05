@@ -5,6 +5,7 @@
 iPhone と iPad だけ動画が再生できない見込み。実機で再生できるかは、この試験では分からない。
 """
 import http.client
+import json
 import os
 import tempfile
 import threading
@@ -22,6 +23,8 @@ d.mkdir(parents=True, exist_ok=True)
 for name in ("m1.mp4", "m2.mov", "m3.jpg"):
     (d / name).write_bytes(body)
 (d / "m4.mp4").write_bytes(b"")
+# 人の確認の後の形で見る（確認の前の物は上げた本人の画面にだけ出す。tests/test_photo_owner_only.py）
+(d / "review.json").write_text(json.dumps({n: {"shows": "object"} for n in ("m1.mp4", "m2.mov", "m3.jpg", "m4.mp4")}), encoding="utf-8")
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 port = server.server_address[1]

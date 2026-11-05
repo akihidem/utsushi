@@ -47,7 +47,6 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 MAX_FORM = 64 * 1024
 # トンネルの一時の名前の形（run-demo.sh の cloudflared）。本物の名前は repo に書かない（push の門の決まり）ので、形だけをここに 1 か所置く。
 TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
-REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
 def uploaded(rid):
@@ -179,6 +178,10 @@ def _num(v):
         return v  # 数でない物は記録の検査に落とさせ、理由を画面に返す
 
 
+UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
+REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
+
+
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
 
@@ -246,22 +249,6 @@ class Handler(BaseHTTPRequestHandler):
         なぜ切り替えないか: 本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」。1 つのサイトの中で
         見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
-
-    def _rec_key(self):
-        """この画面が記録を残した時に渡した鍵（records.claim）。無ければ None。who と同じ sessionStorage では GET に載らず、欄を出し分けられないので cookie に置く。"""
-        for part in self.headers.get("Cookie", "").split(";"):
-            name, _, value = part.strip().partition("=")
-            if name == REC_COOKIE and value:
-                return value
-        return None
-
-    def _rec_cookie(self, rid):
-        """記録を残した画面へ鍵を渡す行。cookie は 1 つで、次の記録が残ると上書きされ、前の記録には書けなくなる（記録を残すのが交代の区切り。机の端の 1 台を順に使う場）。
-        ブラウザを閉じれば消えるように Max-Age を付けない。期限はサーバの時刻で見る（records.OWNER_MINUTES）。外から開く場（合言葉付き）は https なので Secure を付ける。"""
-        key = secrets.token_urlsafe(18)
-        records.claim(rid, key)
-        secure = "; Secure" if getattr(self.server, "public_key", None) else ""
-        return ("Set-Cookie", f"{REC_COOKIE}={key}; Path=/; HttpOnly; SameSite=Lax{secure}")
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
@@ -378,13 +365,13 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             from . import think_sheet
             own = sorted(think_sheet.mine(self, sid), key=lambda o: int(o.rsplit("-", 1)[1]), reverse=True)  # 本人の案を先に（作っている紙の記録として残すため）
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, rec_key=self._rec_key()), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, up_key=self._up_key(), rec_key=self._rec_key()), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
-            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。
-            if f.exists() and media_review.visible(m.group(1), [m.group(2)]):
+            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。確認の前の物は、上げた本人の画面にだけ返す。
+            if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
                 data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
                 span = byte_range(self.headers.get("Range"), len(data))
@@ -456,6 +443,37 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
+    def _key_of(self, cookie):
+        """この画面が持つ鍵。無ければ None。who と同じ sessionStorage では絵の GET にも頁の GET にも載らないので、本人の画面の見分けは cookie に置く。"""
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == cookie and value:
+                return value
+        return None
+
+    def _key_cookie(self, cookie, key=""):
+        """鍵の cookie。ブラウザを閉じれば消えるように Max-Age を付けない。key が空なら消す。外から開く場（合言葉付き）は https なので Secure を付ける。"""
+        secure = "; Secure" if getattr(self.server, "public_key", None) else ""
+        return ("Set-Cookie", f"{cookie}={key}; Path=/; HttpOnly; SameSite=Lax{secure}" + ("" if key else "; Max-Age=0"))
+
+    def _up_key(self):
+        """この画面が写真を上げた時に渡した鍵（media_review.claim）。"""
+        return self._key_of(UP_COOKIE)
+
+    def _up_close(self):
+        """記録を残すのが交代の区切り（who を作り直すのと同じ）。同じ機械の次の人に、前の人の確認の前の写真を出さない。"""
+        return [self._key_cookie(UP_COOKIE)] if self._up_key() else []
+
+    def _rec_key(self):
+        """この画面が記録を残した時に渡した鍵（records.claim）。"""
+        return self._key_of(REC_COOKIE)
+
+    def _rec_cookie(self, rid):
+        """記録を残した画面へ鍵を渡す行。次の記録が残ると上書きされ、前の記録には書けなくなる（記録を残すのが交代の区切り。机の端の 1 台を順に使う場）。"""
+        key = secrets.token_urlsafe(18)
+        records.claim(rid, key)
+        return self._key_cookie(REC_COOKIE, key)
+
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False, headers=()):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
@@ -463,7 +481,7 @@ class Handler(BaseHTTPRequestHandler):
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
-        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}"), *headers])
+        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}"), *headers] + (self._up_close() if fresh else []))
 
     def _post(self):
         if not self._host_ok():
@@ -489,7 +507,11 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= techo_site.MAX_MEDIA:
                 return self._send(413, "1 つ 20MB まで")
             name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length))
-            return self._send(201 if name else 422, name or why, "text/plain; charset=utf-8")
+            if not name:
+                return self._send(422, why, "text/plain; charset=utf-8")
+            key = self._up_key() or secrets.token_urlsafe(18)
+            media_review.claim(m.group(1), name, key)
+            return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
         form = self._form()
         if form is None:
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
@@ -705,7 +727,7 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [self._rec_cookie(rid)])
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
