@@ -153,7 +153,9 @@
   "status": "done",
   "evidence": [
    "run.sh",
-   "tests/run_floors.py"
+   "tests/run_floors.py",
+   "tests/frozen/manifest.json",
+   "tests/test_frozen_manifest.py"
   ]
  },
  {

@@ -1,0 +1,15 @@
+直した後の tests/run_floors.py と照合の表を置いた写し
+
+1. 場面を 1 つ消す（neg_overlap.json）
+検査できない: 凍結の表と合わない … 消えた: tests/frozen/scenarios/neg_overlap.json
+凍結を変えたなら、理由を commit と docs/claude-usage.md に書き、python tests/run_floors.py --write-manifest で表も同じ commit で直す
+rc 4
+
+2. 場面を 1 字変える（neg_overlap.json の期待の rc を 3 から 0 に）
+検査できない: 凍結の表と合わない … 変わった: tests/frozen/scenarios/neg_overlap.json
+凍結を変えたなら、理由を commit と docs/claude-usage.md に書き、python tests/run_floors.py --write-manifest で表も同じ commit で直す
+rc 4
+
+3. 崩し方 6 通りと、足すだけなら落ちない事: tests/test_frozen_manifest.py
+ok 場面 30 本と基準の文、在るはずの試験 68 本。崩し方 6 通りを名指しで止めた
+rc 0
