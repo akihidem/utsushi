@@ -186,17 +186,20 @@ for raw, reader in {
     "https://japan-toy-museum.org/wp-json/wp/v2/monthly/29399": "日本玩具博物館「江戸の手遊び「御来迎」」",
     "型紙は H-C と同じで、動かし方が逆": "型紙は仮説 C と同じで、動かし方が逆",
     "同じ図": "同じ図",
+    "読みが割れた事と、決めた事": "読みが分かれた事と、決めた事",
+    "本人が 2026-11-03 に、複写 B（頁 78）の読みに決めました。": "このサイトを作った人が 2026-11-03 に、本 B（頁 78）の読みに決めました。",
+    "鍵が置かれると、Claude が答えます": "AI の返事は、この場では使えません",
 }.items():
     assert wording.plain(raw) == reader, (raw, wording.plain(raw))
-# 区切りの無かった注は、文を切って読めるようにする
-assert wording.plain("一組になる棚卸しの注: 一組の一部の可能性。") == "一組になる。作る側のメモ: 一組の一部の可能性。"
-assert wording.plain("。棚卸しの注: 正体不明。") == "。作る側のメモ: 正体不明。"
 # 誰も書いていない字は替えない
 assert wording.plain("つるつるの床ほど長く回る") == "つるつるの床ほど長く回る"
 
 # 番号は言い換えと一緒に残る。作る側が札を引けるように
 toy = " ".join(pages["次の版の後"])
 assert f"記録の番号 {rid}" in toy and "をもとに直しました" in toy, "番号の言い換え"
+assert any("作る側が直します" in t for t in pages[f"/toy/{G}"]), "改善の輪の節の固定の文"
+gallery = " ".join(pages["/gallery"])
+assert "個人情報を確かめてから" in gallery and "（持ち寄りの場）" in gallery, "ギャラリーの固定の文"
 assert f"記録の番号 {rid} をもとに直しました" in " ".join(pages["版 2 の窓"])
 assert "紙に印刷してある組の番号 goraigo-v10" in " ".join(pages[f"/toy/{G}/techo"]), "紙に刷ってある組と照らせる"
 

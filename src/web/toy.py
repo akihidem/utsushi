@@ -149,7 +149,7 @@ def window(sid, data, see, kind, v, recorded):
         _, adopted = loop.version_params(sid, see, v)
         if adopted:
             ch = "、".join(f"{PARAM_NAMES.get(c['param'], c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
-            cap = f'<p class="meta">版 {v}: {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))} をもとに直しました。変えた所: {esc(ch)}</p>'
+            cap = f'<p class="meta">版 {v}: {esc(wording.BASED_ON.format("、".join(wording.record_no(r) for r in adopted.get("record_ids", []))))}。変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
     cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
