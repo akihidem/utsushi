@@ -122,13 +122,20 @@ SCRIPT = """
 <script>
 (() => {
 const sid = document.querySelector('[data-sid]').dataset.sid;
-const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; speechSynthesis.speak(u); } catch (e) {} };
+// 読み上げの間は音声認識を止める: 止めないと端末が自分の答えを聞き取り、問いとして送り、それがまた読み上げられる（答えの文が質問として残り、費用もかかる）。
+// 読み上げの終わりの知らせが来ない機種があるので、長さから見た時間でも戻す。前の読み上げの取り消しの知らせで戻らないよう、番号で見分ける。
+let sayStart = () => {}, sayEnd = () => {}, sayId = 0;
+const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t), id = ++sayId; u.lang = 'ja-JP';
+  const fin = () => { if (id === sayId) sayEnd(); }; u.onend = fin; u.onerror = fin; setTimeout(fin, Math.min(60000, t.length * 400 + 3000)); sayStart(); speechSynthesis.speak(u); } catch (e) { sayEnd(); } };
+// 版（開いた時に刷ってあった一番新しい版）と、その場限りの印（skin.WHO_SCRIPT が持つ）を、出来事に添える。
+const paper = () => document.querySelector('[name=hypothesis]:checked') || {};
+const extra = (o) => { const b = new URLSearchParams(o); const el = paper(); if (el.dataset && el.dataset.v) b.set('sheet_version', el.dataset.v); try { const w = sessionStorage.getItem('utsushi-who'); if (w) b.set('who', w); } catch (e) {} return b; };
 const ans = document.getElementById('answer');
 async function ask(q) {
   const hid = (document.querySelector('[name=hypothesis]:checked') || {}).value;
   if (!q || !hid) return;
   ans.textContent = '…';
-  const r = await fetch(`/toy/${sid}/ask-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, question: q }) });
+  const r = await fetch(`/toy/${sid}/ask-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, question: q }) });
   const j = await r.json().catch(() => ({ text: '今は答えられません' }));
   ans.textContent = j.text; say(j.text);
 }
@@ -137,12 +144,14 @@ document.getElementById('ask-form').onsubmit = (e) => { e.preventDefault(); ask(
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const mic = document.getElementById('mic');
 if (!SR) { mic.hidden = true; } else {
-  let rec = null, on = false;
+  let rec = null, on = false, speaking = false;
+  sayStart = () => { speaking = true; if (on && rec) { try { rec.stop(); } catch (e) {} } };
+  sayEnd = () => { if (!speaking) return; speaking = false; if (on && rec) { try { rec.start(); } catch (e) {} } };
   mic.onclick = () => {
     if (on) { on = false; rec && rec.stop(); mic.setAttribute('aria-pressed', 'false'); return; }
     rec = new SR(); rec.lang = 'ja-JP'; rec.continuous = true; rec.interimResults = false;
-    rec.onresult = (ev) => { const t = ev.results[ev.results.length - 1][0].transcript.trim(); document.getElementById('q').value = t; ask(t); };
-    rec.onend = () => { if (on) { try { rec.start(); } catch (e) {} } };
+    rec.onresult = (ev) => { if (speaking) return; const t = ev.results[ev.results.length - 1][0].transcript.trim(); document.getElementById('q').value = t; ask(t); };
+    rec.onend = () => { if (on && !speaking) { try { rec.start(); } catch (e) {} } };
     on = true; mic.setAttribute('aria-pressed', 'true'); rec.start();
   };
 }
@@ -155,7 +164,7 @@ document.getElementById('up-form').onsubmit = async (e) => {
   const files = [...document.getElementById('files').files].slice(0, 3);
   if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
   st.textContent = '…';
-  const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ hypothesis: hid, result, note: document.getElementById('note').value }) });
+  const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value }) });
   const j = await r.json().catch(() => ({}));
   if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
   for (const f of files) {
@@ -252,7 +261,10 @@ def page(sid, printed_ids, picture_url, uploads=True):
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
     hyps = [h for h in data["hypotheses"] if h["id"] in printed_ids]
-    sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}"{" checked" if i == 0 else ""}>'
+    from .play_server import printed_versions  # 循環を避けて、ここで読む
+
+    # data-v: 開いた時に刷ってあった一番新しい版。作っている途中で別の人の版が刷られても、報告はこの版への物として残る。
+    sheets = "".join(f'<label class="tile"><input type="radio" name="hypothesis" value="{esc(h["id"])}" data-v="{(printed_versions(sid, h["id"]) or [1])[-1]}"{" checked" if i == 0 else ""}>'
                      f'<span class="big">{esc(hypotheses.letter(h))}</span>の紙</label>' for i, h in enumerate(hyps))
     if not hyps:
         sheets = f'<a class="tile" href="/toy/{esc(sid)}">紙を刷る</a>'

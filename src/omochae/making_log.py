@@ -219,11 +219,12 @@ def _span(values):
 def summary(source_id):
     """作る側が読む集計。学ぶ人の画面には出さない。数と幅だけで、上下を付ける形（多い順に仮説や玩具を並べる・点・割合の成績）は作らない。
     前からある鍵（asks・stuck・impressions・results_by_version・stuck_steps など）の意味は変えない。Issue #119 の 6 つの集計のために足した鍵:
-    - stuck_by_version: {版: {段: {"taps": 札の数, "people": 印のある人の数}}}（1 止まった段）
+    手順の番号は仮説ごとに別の文なので、段の表は仮説で分ける（混ぜると、直す紙を取り違える）。
+    - stuck_by_version: {仮説: {版: {段: {"taps": 札の数, "people": 印のある人の数}}}}（1 止まった段）
     - measures: {仮説: {版: {欄: [最小, 最大, 件数]}}}・fixes: 直した点の一覧（2 動きの結果）
     - words: {"hard": 分からなかった側の文, "fun": 面白かった側の文}（3 感想の言葉。感想・メモ・説明・次の思いつきから）
-    - asks_by_step: {段（無ければ None）: [(質問, 回数)…]}（4 聞く口の質問）
-    - completion: {"minutes": 最初に動くまでの分の幅, "moved": 動いた記録の数, "moved_word": その札の言葉, "quit_steps": {段: 人の数}, "people": 印のある人の数}（5 完成の様子）
+    - asks_by_step: {仮説: {段（無ければ None）: [(質問, 回数)…]}}（4 聞く口の質問）
+    - completion: {"minutes": 最初に動くまでの分の幅, "moved": 動いた記録の数, "moved_word": その札の言葉, "quit_steps": {仮説: {段: 人の数}}, "people": 印のある人の数}（5 完成の様子）
     - flow: {段: {"events": 出来事の数, "people": 印のある人の数}}（6 サイトの流れ。段は STAGES の順）"""
     from . import loop
 
@@ -263,17 +264,18 @@ def summary(source_id):
     for e in evs:
         if e.get("event") != "stuck":
             continue
-        slot = by_v.setdefault(e.get("sheet_version", 1), {}).setdefault(e["step"], {"taps": 0, "who": set()})
+        slot = by_v.setdefault(e.get("hypothesis_id", ""), {}).setdefault(e.get("sheet_version", 1), {}).setdefault(e["step"], {"taps": 0, "who": set()})
         slot["taps"] += 1
         if e.get("who"):
             slot["who"].add(e["who"])
-    stuck_by_version = {v: {n: {"taps": x["taps"], "people": len(x["who"])} for n, x in sorted(ss.items())} for v, ss in sorted(by_v.items())}
+    stuck_by_version = {h: {v: {n: {"taps": x["taps"], "people": len(x["who"])} for n, x in sorted(ss.items())} for v, ss in sorted(vs.items())}
+                        for h, vs in sorted(by_v.items())}
 
     by_step = {}
     for a in live:
-        by_step.setdefault(a.get("step"), []).append(a.get("question", ""))
+        by_step.setdefault(a.get("hypothesis_id", ""), {}).setdefault(a.get("step"), []).append(a.get("question", ""))
     # 段の番号の順。段なし（None）は最後。
-    asks_by_step = {k: _count_same(v) for k, v in sorted(by_step.items(), key=lambda kv: (kv[0] is None, kv[0] or 0))}
+    asks_by_step = {h: {k: _count_same(v) for k, v in sorted(ss.items(), key=lambda kv: (kv[0] is None, kv[0] or 0))} for h, ss in sorted(by_step.items())}
 
     # 途中でやめた段: 印のある人のうち、できたを押していない人が最後に居た段（進んだ先の段）。印の無い出来事は、人ごとに分けられないので入れない。
     reached, finished = {}, set()
@@ -281,16 +283,21 @@ def summary(source_id):
         w = e.get("who")
         if not w:
             continue
+        key = (w, e.get("hypothesis_id", ""))  # 同じ人が別の仮説の紙を作る事がある。できたは、その紙についてだけ数える
         if e.get("event") == "done":
-            finished.add(w)
-        reached[w] = max(reached.get(w, 0), e["step"] + (1 if e.get("event") == "next" else 0))
-    quit_steps = Counter(n for w, n in reached.items() if w not in finished)
+            finished.add(key)
+        reached[key] = max(reached.get(key, 0), e["step"] + (1 if e.get("event") == "next" else 0))
+    quit_steps = {}
+    for key, n in reached.items():
+        if key not in finished:
+            ss = quit_steps.setdefault(key[1], {})
+            ss[n] = ss.get(n, 0) + 1
     try:
         moved_word = records.results_for(source_id)[0]  # 雛形の RESULTS の先頭が、動いた側の言葉
     except Exception:
         moved_word = ""
     completion = {"minutes": _span([r.get("minutes_to_try") for r in recs]), "moved": sum(1 for r in recs if r["result"] == moved_word),
-                  "moved_word": moved_word, "quit_steps": dict(sorted(quit_steps.items())), "people": len(reached)}
+                  "moved_word": moved_word, "quit_steps": {h: dict(sorted(ss.items())) for h, ss in sorted(quit_steps.items())}, "people": len({w for w, _ in reached})}
 
     flow = {}
     st = stages(source_id)

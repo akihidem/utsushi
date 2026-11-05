@@ -95,14 +95,14 @@ for w in ("成功", "失敗", "正解", "順位", "点数", "紙吹雪", "confet
 code, body, _ = step(1, "start", json="1")
 assert code == 200 and json.loads(body) == {"ok": True, "step": 1}
 code, _, headers = step(1, "next")
-assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&n=2"
+assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&v=1&n=2"
 assert json.loads(step(2, "back", json="1")[1])["step"] == 1
 assert step(2, "stuck")[0] == 303 and step(2, "stuck", json="1")[0] == 200 and step(3, "stuck", json="1")[0] == 200
 assert step(len(texts), "next", json="1")[1] == json.dumps({"ok": True, "step": len(texts)}), "最後の手順より先へは進まない"
 code, _, headers = step(len(texts), "done")
 assert code == 303 and headers["Location"].endswith("&ev=done")
 files = sorted((pathlib.Path(DATA) / "making").glob("step-*.json"))
-assert len(files) == 8
+assert len(files) == 7, "最後の手順の次へは残さない（動かないので、途中でやめた段の数えを狂わせる）"
 for f in files:
     rec = json.loads(f.read_text(encoding="utf-8"))
     assert set(rec) == set(making_log.STEP_FIELDS), rec
@@ -123,7 +123,7 @@ assert "止まった手順" not in toy and "できたの札" not in toy and "2 �
 # 決まりの外は 422（知らない札・数でない番号・手順の数の外・無い仮説・刷っていない紙）。何も残らない
 for bad in (step(1, "win"), step("abc", "next"), step(0, "next"), step(999, "next"), step(1, "next", hid="H-Z"), step(1, "next", hid="H-B")):
     assert bad[0] == 422, bad[:2]
-assert len(list((pathlib.Path(DATA) / "making").glob("step-*.json"))) == 8
+assert len(list((pathlib.Path(DATA) / "making").glob("step-*.json"))) == 7
 # 別の出所からは受けない
 assert post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": "1", "event": "next"}, origin="http://evil.example")[0] == 403
 # 道具の側: 決まりの外は残さない
@@ -152,7 +152,7 @@ before = len(list((pathlib.Path(DATA) / "making").glob("step-*.json")))
 code, body, _ = step(4, "stuck", json="1", who=WHO)
 assert code == 200 and json.loads(body) == {"ok": True, "step": 4}
 code, _, headers = step(4, "stuck", who=WHO)
-assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&n=4&ev=stuck"
+assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&v=1&n=4&ev=stuck"
 new = sorted((pathlib.Path(DATA) / "making").glob("step-*.json"), key=lambda f: f.stat().st_mtime)[before:]
 assert len(new) == 2
 for f in new:
@@ -170,4 +170,20 @@ code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "�
 assert code == 200 and "試して確かめる所" in json.loads(body)["text"]
 # 決まりの外の印を添えられても、札は残る（印の形を見るのはサーバの側。ここでは落ちない事だけ）
 assert step(4, "next", json="1", who="x")[0] in (200, 422)
+# 検品の指摘の再発の見張り
+# 読み上げの間は聞き取らない（自分の答えを聞き取って、問いとして送らない）。作りながら見る頁と手帖の両方
+page_js = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+techo_js = get(f"/toy/{G}/techo")[1]
+for js in (page_js, techo_js):
+    assert "speaking" in js and "sayStart" in js and "sayEnd" in js, "読み上げの間は音声認識を止める"
+assert "if(speaking)return" in page_js and "if (speaking) return" in techo_js
+# 開いた時の版のまま作る: 版を言えばその版の文と札、札の記録もその版
+assert 'data-v="1"' in page_js and 'name="sheet_version" value="1"' in page_js and "b.set('sheet_version',ver)" in page_js
+assert "sheet_version" in techo_js and 'data-v="1"' in techo_js and "utsushi-who" in techo_js
+# 手順の番号は仮説ごとに別物。最後の手順の「次の手順へ」は残さない（無い手順が途中でやめた段に出ない）
+total = tsukuru.count(G, "H-A")
+before = len(making_log.steps(G))
+assert step(total, "next", json="1", who=WHO)[0] == 200
+assert len(making_log.steps(G)) == before, "最後の手順の次へは残さない"
+assert all(n <= total for ss in making_log.summary(G)["completion"]["quit_steps"].values() for n in ss)
 print("ok: 作りながら見る")

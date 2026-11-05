@@ -28,6 +28,13 @@ SKINS = {
 NAV = (("/", "うつし"), ("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "上げた物と職人の言葉"), ("/zukan", "図鑑"))
 
 
+# その場限りの無作為の印（U-45 の「人の数え方」、J-027）。タブごとの sessionStorage に英数字 10 桁を 1 つ持ち、頁の POST のフォームに添える。
+# cookie にしない・名前にしない・日をまたいで同じ人と分からない。持てない画面では添えない（頁は JS なしでも動く。人の数が「—」になるだけ）。
+WHO_SCRIPT = ("<script>(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){"
+              "const a=crypto.getRandomValues(new Uint8Array(10));w=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');sessionStorage.setItem('utsushi-who',w)}"
+              "document.querySelectorAll('form[method=post]').forEach(f=>{if(f.elements.who)return;const i=document.createElement('input');i.type='hidden';i.name='who';i.value=w;f.appendChild(i)})}catch(e){}})()</script>")
+
+
 def esc(s):
     return html.escape(str(s if s is not None else ""), quote=True)
 
@@ -136,7 +143,7 @@ def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(title)}</title><style>:root{{{root}}}{BASE}{extra_style}</style>{head}'
-            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}</body></html>')
+            f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path)}<main>{body}</main>{foot}{WHO_SCRIPT}</body></html>')
 
 
 def frame(sid, caption="", pos=None):

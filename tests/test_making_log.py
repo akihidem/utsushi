@@ -116,7 +116,7 @@ assert sm["stuck"] == ["3 枚目の折り目", "筒の口"] and sm["first_moved"
 assert sm["impressions"] == ["折るのは楽しかった"] and sm["reports"] == 2
 assert sm["results_by_version"] == {"H-A": {1: {"動かない": 1, "動いた": 1}}}
 assert making_log.asks("NDL-1187053-R0000014-R") == [] and making_log.summary("NDL-1187053-R0000014-R")["asks"] == []
-assert sm["asks_by_step"] == {None: sm["asks"]}, "段を送っていない質問は、段なしにまとまる"
+assert sm["asks_by_step"] == {"H-A": {None: sm["asks"]}}, "段を送っていない質問は、その紙の段なしにまとまる"
 
 # ---- 段取り 2: 頁の段の進み。予想・刷る・記録（2 件）が残る。落ちた送信（空の予想）は残らない。何を書いたかは写さない
 assert post(f"/toy/{G}/predict", {"text": "   "})[0] == 422
@@ -171,7 +171,7 @@ assert r4 and not fails, fails
 assert not loop.save_explanation(r3, "作った人", "扇が開くのが面白かった", "折りを減らす")
 sm = making_log.summary(G)
 # 1 止まった段: 版ごと・段ごとの札の数と、印のある人の数
-assert sm["stuck_by_version"] == {1: {2: {"taps": 3, "people": 2}}} and sm["stuck_steps"] == {2: 3} and sm["steps_done"] == 1
+assert sm["stuck_by_version"] == {"H-A": {1: {2: {"taps": 3, "people": 2}}}} and sm["stuck_steps"] == {2: 3} and sm["steps_done"] == 1
 # 2 動きの結果: 見た事の数・測った値の幅・直した点
 assert sm["results_by_version"] == {"H-A": {1: {"動かない": 1, "動いた": 3}}} and sm["reports"] == 4
 assert sm["measures"] == {"H-A": {1: {"opened_deg": [40, 90, 2]}}}, sm["measures"]
@@ -179,11 +179,12 @@ assert sm["fixes"] == [{"record_id": r3, "hypothesis_id": "H-A", "sheet_version"
 # 3 感想の言葉: 分からなかった側と面白かった側（感想・メモ・説明から）
 assert sm["words"] == {"hard": ["折り目がむずかしかった", "糸の所が分からなかった"], "fun": ["折るのは楽しかった", "扇が開くのが面白かった"]}, sm["words"]
 # 4 聞く口の質問: 段ごとに同じ問いを束ねる。段の番号の順で、段なしは最後
-assert list(sm["asks_by_step"]) == [3, None]
-assert len(sm["asks_by_step"][3]) == 1 and sm["asks_by_step"][3][0][1] == 2 and making_log._same(sm["asks_by_step"][3][0][0]) == "山折りって何"
-assert {making_log._same(q) for q, _ in sm["asks_by_step"][None]} >= {"谷折りって何", "糊代って何", "蛇腹って何"}
+by = sm["asks_by_step"]["H-A"]
+assert list(by) == [3, None]
+assert len(by[3]) == 1 and by[3][0][1] == 2 and making_log._same(by[3][0][0]) == "山折りって何"
+assert {making_log._same(q) for q, _ in by[None]} >= {"谷折りって何", "糊代って何", "蛇腹って何"}
 # 5 完成の様子: 時間の幅、動いた記録の数、途中でやめた段（印のある人だけ。A は 2 で止まったまま）
-assert sm["completion"] == {"minutes": [20, 40, 2], "moved": 3, "moved_word": "動いた", "quit_steps": {2: 1}, "people": 2}, sm["completion"]
+assert sm["completion"] == {"minutes": [20, 40, 2], "moved": 3, "moved_word": "動いた", "quit_steps": {"H-A": {2: 1}}, "people": 2}, sm["completion"]
 # 6 サイトの流れ: 作る頁を開いた 2 人が足される（直に足した記録は、画面を通っていないので段の進みに数えない）
 assert sm["flow"] == {"predict": {"events": 1, "people": 0}, "print": {"events": 1, "people": 0}, "make": {"events": 2, "people": 2},
                       "record": {"events": 2, "people": 0}}, sm["flow"]
@@ -194,21 +195,21 @@ code, page = get(f"/loop/{G}")
 assert code == 200 and "作る側の集計" in page and "公開しない頁" in page and "上下を付ける物ではありません" in page
 for i, h in enumerate(("止まった段", "動きの結果", "感想の言葉", "聞く口の質問", "完成の様子", "サイトの流れ"), 1):
     assert f'id="k{i}"' in page and f"<h2>{i} {h}</h2>" in page, h
-assert "<td>版 1</td><td>手順 2</td><td>3 回</td><td>2 人</td>" in page and "3 枚目の折り目" in page
+assert "<td>仮説 A の紙</td><td>版 1</td><td>手順 2</td><td>3 回</td><td>2 人</td>" in page and "3 枚目の折り目" in page
 assert "仮説 A の紙" in page and "動かない 1、動いた 3" in page and "開いた角度（度） 40〜90（2 件）" in page
 assert f"{r3}（仮説 A の紙・版 1）: 扇 / 折りを減らした / 前より開いた" in page
 assert "分からなかった・むずかしかった（2 件）" in page and "面白かった・楽しかった（2 件）" in page and "折るのは楽しかった" in page
-assert "<h3>手順 3</h3>" in page and "<h3>段なし</h3>" in page and page.index("<h3>手順 3</h3>") < page.index("<h3>段なし</h3>")
+assert "<h3>仮説 A の紙・手順 3</h3>" in page and "<h3>仮説 A の紙・段なし</h3>" in page and page.index("<h3>仮説 A の紙・手順 3</h3>") < page.index("<h3>仮説 A の紙・段なし</h3>")
 assert f"<td>{sm['asks'][0][0]}</td><td>2 回</td>" in page
 assert "連絡先の形があったので文を残さなかった質問: 1 件" in page and "090" not in page
 assert "最初に動くまでの分: 20〜40 分（2 件）" in page and "「動いた」の記録: 4 件のうち 3 件" in page and "できたの札: 1 回" in page
-assert "<td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
-assert "<td>予想を書いた</td><td>1 回</td><td>—</td>" in page and "<td>作る頁を開いた</td><td>2 回</td><td>2 人</td>" in page
+assert "<td>仮説 A の紙</td><td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
+assert "<td>予想を書いた</td><td>1 回</td><td>—</td>" in page and "<td>作りながら見る頁を開いた</td><td>2 回</td><td>2 人</td>" in page
 assert "<td>記録を残した</td><td>2 回</td><td>—</td>" in page
 for h in hypotheses.load(G)["hypotheses"]:
     assert h["name"] not in page and h["how_it_moves"] not in page, h["id"]
 # 上下を付ける形の言葉と記号が無い。その場限りの印そのものは頁に出さない
-main = page.split("<main>")[1]
+main = page.split("<main>")[1].split("</main>")[0]  # 頁の字だけを見る（後ろの印の script の % は字ではない）
 for w in ("成功", "失敗", "正解", "点数", "順位", "％", "%", A, B):
     assert w not in main, w
 assert "順位" not in page

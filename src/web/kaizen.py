@@ -11,7 +11,8 @@
   仮説は字（A・B）だけで指し、名前と動かし方は出さない（予想の前でも開ける頁なので、F9.prediction の線を守る）。
   出すのは Issue #119（U-45）の 6 つ（止まった段・動きの結果・感想の言葉・聞く口の質問・完成の様子・サイトの流れ）で、数と幅だけ。
   多い順に仮説や玩具を並べる・点・％の成績、のような上下を付ける形は作らない。人は、その場限りの無作為の印で数える。
-- /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の順路（頭の帯）には入れず、玩具の頁の節と序から行く。
+- /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）。
+  合言葉なしで開いたデモでは出さない（J-028）。学ぶ人の頁の節には、版と根拠だけを出し、採った人の名前は出さない（自由な文で、名前を書かない線に沿う）。
 - 受け持ち（本人の決定 11-05、カード 20261105-090458 の (b)）: 雛形そのものを直すための報告の入口と道具（報告の形・検査・集計）は
   エンジン（paper-to-toy）の側。ここが持つのは、学ぶ人の記録と感想、仮説ごとの版（寸法を 1 つ変えた次の版）、その表示まで。
   だから、報告から案を機械で出す道具はここに置かない。
@@ -63,7 +64,6 @@ def section(sid, data, recs):
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
             rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
                      + (f'（{why}）' if why else "") + f'。根拠: {"・".join(f"<a href=#{esc(r)}>{esc(r)}</a>" for r in v.get("record_ids", []))}'
-                     + f'。採った人: {esc(v.get("adopted_by", ""))}'
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
     ready, waiting = pending(sid, recs)
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
@@ -76,7 +76,7 @@ def section(sid, data, recs):
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
             '<p class="meta">作った人の報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
-            f'{lines}{todo}<p class="meta"><a href="/loop">全部の玩具の改善の輪</a></p></section>')
+            f'{lines}{todo}</section>')
 
 
 def page(look=skin.DEFAULT, path="/loop"):
@@ -85,8 +85,12 @@ def page(look=skin.DEFAULT, path="/loop"):
     asked = {}
     for a in making_log.asks():
         asked[a.get("source_id")] = asked.get(a.get("source_id"), 0) + 1
+    # 記録は 1 回で読んで玩具ごとに分ける（玩具ごとに読むと、1 回の表示で全部の記録のファイルを 83 回読む）。
+    by_toy = {}
+    for r in records.all_records():
+        by_toy.setdefault(r.get("source_id"), []).append(r)
     for sid in sources():
-        recs = records.all_records(sid)
+        recs = by_toy.get(sid, [])
         # 報告が無くても、聞かれた事がある玩具は載せる: 質問だけあって報告が無いのは「作りかけて止まった」かもしれない様子で、案内を直す材料になる。
         if not recs and not asked.get(sid):
             continue
@@ -95,13 +99,13 @@ def page(look=skin.DEFAULT, path="/loop"):
         vers = sum(len(versions(sid, h["id"])) for h in data["hypotheses"])
         ready, waiting = pending(sid, recs)
         items.append((len(ready), sid, data["toy"], len(recs), vers, len(waiting), asked.get(sid, 0)))
-    items.sort(key=lambda x: (-x[0], -x[3]))
+    # 並びは本の順のまま。待っている報告の多い順にすると、玩具に上下を付ける形になる（J-025）。
     rows = "".join(f'<tr><td><a href="/toy/{esc(sid)}#kaizen">{esc(toy)}</a>　<a href="/loop/{esc(sid)}">様子</a></td><td>{n}</td><td>{v}</td><td>{r}</td><td>{w}</td><td>{q}</td></tr>'
                    for r, sid, toy, n, v, w, q in items)
     table = (f'<table><thead><tr><th>玩具</th><th>報告</th><th>報告から直した版</th><th>次の版を待つ報告</th><th>説明を待つ報告</th><th>聞かれた事</th></tr></thead><tbody>{rows}</tbody></table>'
              if items else '<p class="meta">報告はまだありません。</p>')
     body = (f'<section class="hero"><div><h1>改善の輪</h1><p class="lead">作った人の報告を、型紙の改善に回す所。報告か質問のある玩具 {len(items)} 種、報告 {n_rep} 件。</p>'
-            '<p class="meta">輪: 報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。並びは待っている報告の多い順で、玩具の上下ではありません。</p></div></section>'
+            '<p class="meta">輪: 報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。並びは本の順です。</p></div></section>'
             f'<section class="sec">{table}</section>')
     return skin.shell("改善の輪", body, look, "", path, TABLE_STYLE)
 
@@ -111,7 +115,7 @@ TABLE_STYLE = "table{border-collapse:collapse;width:100%}th,td{text-align:left;p
 
 # 測った値の欄の、頁での呼び方。表に無い欄は、欄の名前のまま出す（雛形ごとに測る物が違うので、ここで全部は決めない）。
 MEASURE_NAMES = {"opened_deg": "開いた角度（度）", "ten_swings_sec": "10 往復の秒"}
-STAGE_NAMES = {"predict": "予想を書いた", "print": "型紙を刷った", "make": "作る頁を開いた", "record": "記録を残した"}
+STAGE_NAMES = {"predict": "予想を書いた", "print": "型紙を刷った", "make": "作りながら見る頁を開いた", "record": "記録を残した"}
 
 
 def _span(sp, unit=""):
@@ -139,9 +143,9 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
         return "<table><thead><tr>" + "".join(f"<th>{h}</th>" for h in head) + f"</tr></thead><tbody>{rows}</tbody></table>"
 
     # 1 止まった段: 版ごと・手順ごとの「止まった」の札の数と、印のある人の数。並びは版と手順の番号の順（多い順にすると手順の並びが読めない）。
-    rows = "".join(f'<tr><td>版 {esc(v)}</td><td>手順 {esc(n)}</td><td>{x["taps"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>'
-                   for v, ss in sm["stuck_by_version"].items() for n, x in ss.items())
-    s1 = table(("版", "手順の番号", "止まったの札", "止まった人（印のある分）"), rows) if rows else none("止まったの札はまだ押されていません。")
+    rows = "".join(f'<tr><td>{esc(paper(h))}</td><td>版 {esc(v)}</td><td>手順 {esc(n)}</td><td>{x["taps"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>'
+                   for h, vs in sm["stuck_by_version"].items() for v, ss in vs.items() for n, x in ss.items())
+    s1 = table(("紙", "版", "手順の番号", "止まったの札", "止まった人（印のある分）"), rows) if rows else none("止まったの札はまだ押されていません。")
     s1 += (f'<h3>止まった所の言葉</h3>{lines(sm["stuck"], "書かれた物はまだありません。")}'
            f'<h3>最初に動いた所</h3>{lines(sm["first_moved"], "書かれた物はまだありません。")}'
            f'<h3>何を変えると違いが出そうか</h3>{lines(sm["what_if"], "書かれた物はまだありません。")}')
@@ -165,9 +169,10 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
 
     # 4 聞く口の質問: 手順の段ごとに、同じ問いを束ねる。段の分からない質問は「段なし」。
     s4 = ""
-    for step, qs in sm["asks_by_step"].items():
-        name = f"手順 {esc(step)}" if step is not None else "段なし"
-        s4 += f"<h3>{name}</h3>" + table(("聞かれた事", "回数"), "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in qs))
+    for h, ss in sm["asks_by_step"].items():
+        for step, qs in ss.items():
+            name = f"{esc(paper(h))}・手順 {esc(step)}" if step is not None else f"{esc(paper(h))}・段なし"
+            s4 += f"<h3>{name}</h3>" + table(("聞かれた事", "回数"), "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in qs))
     s4 = s4 or none("聞かれた事はまだありません。")
     if sm["asks_dropped"]:
         s4 += f'<p class="meta">連絡先の形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
@@ -178,9 +183,9 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     s5 += f'<li>最初に動くまでの分: {_span(c["minutes"], " 分") if c["minutes"] else "書かれた物はまだありません"}</li>'
     s5 += f'<li>「{esc(c["moved_word"])}」の記録: {sm["reports"]} 件のうち {c["moved"]} 件</li>' if sm["reports"] else "<li>報告はまだありません</li>"
     s5 += f'<li>できたの札: {sm["steps_done"]} 回</li></ul>'
-    rows = "".join(f"<tr><td>手順 {esc(n)}</td><td>{k} 人</td></tr>" for n, k in c["quit_steps"].items())
+    rows = "".join(f"<tr><td>{esc(paper(h))}</td><td>手順 {esc(n)}</td><td>{k} 人</td></tr>" for h, ss in c["quit_steps"].items() for n, k in ss.items())
     s5 += "<h3>途中でやめた段（できたを押していない人が、最後に居た手順）</h3>" + (
-        table(("手順の番号", "人（印のある分）"), rows) if rows else none("印のある人の記録はまだありません。"))
+        table(("紙", "手順の番号", "人（印のある分）"), rows) if rows else none("印のある人の記録はまだありません。"))
 
     # 6 サイトの流れ: 順路の段（予想 → 型紙 → 作る → 記録）ごとの、先へ進んだ数。
     rows = "".join(f'<tr><td>{STAGE_NAMES[k]}</td><td>{x["events"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>' for k, x in sm["flow"].items())

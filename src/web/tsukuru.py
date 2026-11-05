@@ -92,17 +92,18 @@ a{color:var(--accent)}
 # 鏡: 押した時にだけカメラを求め、<video> に流すだけ（画素は取り出さない）。頁を離れる時に止める。
 # ?cam=1 は確かめの写しを撮るための口（開いた時にカメラを求める。許しの窓はいつもどおり出る）。
 SCRIPT = """<script>(()=>{
-const st=document.querySelector('.stage'),sid=st.dataset.sid,hid=st.dataset.hid;
+const st=document.querySelector('.stage'),sid=st.dataset.sid,hid=st.dataset.hid,ver=st.dataset.v;
+const wantCam=new URLSearchParams(location.search).get('cam')==='1';
 const items=[...document.querySelectorAll('#steps li')],num=document.getElementById('n'),stepIn=document.getElementById('step');
 const mStuck=document.getElementById('msg-stuck'),mDone=document.getElementById('msg-done');
 let n=+stepIn.value;
 const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;
- try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&n=${n}`)}catch(e){}};
+ try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
 const who=(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){
  const a=new Uint8Array(10);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<10;i++)a[i]=Math.floor(Math.random()*256);
  w=[...a].map(x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%%36]).join('');sessionStorage.setItem('utsushi-who',w)}return w}catch(e){return ''}})();
-const fields=(o)=>{const b=new URLSearchParams(o);if(who)b.set('who',who);return b};
+const fields=(o)=>{const b=new URLSearchParams(o);b.set('sheet_version',ver);if(who)b.set('who',who);return b};
 const send=(event)=>fetch(`/toy/${sid}/step`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
  body:fields({hypothesis:hid,step:n,event,json:'1'})}).then(r=>r.json()).catch(()=>({}));
 document.body.classList.add('js');show();
@@ -117,7 +118,11 @@ document.querySelectorAll('#tiles button').forEach(b=>b.addEventListener('click'
  else if(ev==='stuck'){mStuck.querySelector('.sn').textContent=n;mStuck.hidden=false;openAsk(true)}
  else if(ev==='done'){mDone.hidden=false}}));
 // 答えの読み上げ（手帖と同じ扱い。在る画面だけ）。手が紙でふさがっていても答えが届くようにする。
-const say=(t)=>{try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';speechSynthesis.speak(u)}catch(e){}};
+// 読み上げの間は音声認識を止める: 止めないと端末が自分の答えを聞き取り、問いとして送り、それがまた読み上げられる（答えの文が質問として残り、費用もかかる）。
+// 読み上げの終わりの知らせが来ない機種があるので、長さから見た時間でも戻す。前の読み上げの取り消しの知らせで戻らないよう、番号で見分ける。
+let sayStart=()=>{},sayEnd=()=>{},sayId=0;
+const say=(t)=>{try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t),id=++sayId;u.lang='ja-JP';
+ const fin=()=>{if(id===sayId)sayEnd()};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.min(60000,t.length*400+3000));sayStart();speechSynthesis.speak(u)}catch(e){sayEnd()}};
 const ans=document.getElementById('answer');
 // 問いには今の手順の番号（step）と、その場限りの印（who）を添える。サーバが受けない版では、余った欄は読まれないだけ。
 const ask=async(q)=>{if(!q)return;ans.textContent='…';
@@ -127,12 +132,14 @@ document.getElementById('ask-form').addEventListener('submit',(e)=>{e.preventDef
 // 声で聞く: ブラウザの音声認識で字にし、字になった問いだけを上の口へ送る（声は録らない・送らない）。1 回押すと話し続けられ、もう 1 回で止まる。
 // 使えない画面では釦を隠し、字の欄だけにする（手帖と同じ作り）。
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition,mic=document.getElementById('mic');
-if(SR){mic.hidden=false;let rec=null,listening=false;
+if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
+ sayStart=()=>{speaking=true;if(listening&&rec){try{rec.stop()}catch(e){}}};
+ sayEnd=()=>{if(!speaking)return;speaking=false;if(listening&&rec){try{rec.start()}catch(e){}}};
  mic.addEventListener('click',()=>{
   if(listening){listening=false;rec&&rec.stop();mic.setAttribute('aria-pressed','false');return}
   rec=new SR();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=false;
-  rec.onresult=(ev)=>{const t=ev.results[ev.results.length-1][0].transcript.trim();qIn.value=t;ask(t)};
-  rec.onend=()=>{if(listening){try{rec.start()}catch(e){}}};
+  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();qIn.value=t;ask(t)};
+  rec.onend=()=>{if(listening&&!speaking){try{rec.start()}catch(e){}}};
   rec.onerror=()=>{listening=false;mic.setAttribute('aria-pressed','false')};
   listening=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}})}
 if(henji.classList.contains('open'))head.textContent=`手順 ${n} で止まった所を聞く`;
@@ -142,12 +149,12 @@ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){on.hidden=true
 else{const start=async()=>{try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
  v.srcObject=s;document.body.classList.add('live');on.hidden=true;note.textContent='%s'}catch(e){note.textContent='カメラを使えませんでした。'+off}};
  on.addEventListener('click',start);
- if(new URLSearchParams(location.search).get('cam')==='1')start()}
+ if(wantCam)start()}
 addEventListener('pagehide',()=>{const s=v.srcObject;if(s)s.getTracks().forEach(t=>t.stop())});
 })()</script>""" % PRIVACY
 
 
-def step_texts(sid, hid):
+def step_texts(sid, hid, version=None):
     """その紙（刷ってある一番新しい版）の組み方の文。手順の紙が刷る文と同じ物（instructions.steps ＝ 雛形の steps）。
     版 2 以降は採った寸法で文が変わる事があるので、手順の紙と同じく、その版の寸法で作る。作れない時は空（頁は手順の紙の絵だけで動く）。"""
     data = hypotheses.load(sid)
@@ -156,26 +163,27 @@ def step_texts(sid, hid):
         return []
     vs = printed_versions(sid, hid)
     try:
-        params, _ = loop.version_params(sid, hid, vs[-1] if vs else 1)
+        params, _ = loop.version_params(sid, hid, version if version in vs else (vs[-1] if vs else 1))
         template = h.get("template") or data.get("template", "slider_fan")
         return [str(s) for s in instructions.steps({**TEMPLATES[template].DEFAULTS, **(params or h.get("params") or {})}, template)]
     except Exception:
         return []
 
 
-def count(sid, hid):
+def count(sid, hid, version=None):
     """手順の数。札の送信（step の番号）が手順の数の中かを、サーバが確かめる時に使う。"""
-    return len(step_texts(sid, hid))
+    return len(step_texts(sid, hid, version))
 
 
-def page(sid, hid, look=skin.DEFAULT, step=1, event=""):
+def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     """作りながら見る頁。呼ぶ側（play_server）が、予想の後である事と、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
     data = hypotheses.load(sid)
     h = next(x for x in data["hypotheses"] if x["id"] == hid)
     s = skin.SKINS.get(look, skin.SKINS[skin.DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
-    v = printed_versions(sid, hid)[-1]
-    steps = step_texts(sid, hid)
+    vs = printed_versions(sid, hid)
+    v = version if version in vs else vs[-1]  # 開いた時の版のまま作り続ける（別の人の報告で版が上がっても、手順の文を変えない）
+    steps = step_texts(sid, hid, v)
     total = max(len(steps), 1)
     n = min(max(step, 1), total)
     items = "".join(f'<li{" class=\"on\"" if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
@@ -192,14 +200,14 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event=""):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     done = (f'<p id="msg-done" class="msg"{"" if event == "done" else " hidden"}>組み上がった事を残しました。動かしてみて、'
             f'<a href="/toy/{esc(sid)}#kiroku">玩具の頁で記録を残します</a>。</p>')
-    body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}">'
+    body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
             f'<span>作りながら見る（試作）　{esc(hypotheses.letter(h))} の紙・版 {v}</span></p>'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}{done}'
             f'<form class="tiles" id="tiles" method="post" action="/toy/{esc(sid)}/step">'
-            f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="step" id="step" value="{n}">'
+            f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="step" id="step" value="{n}"><input type="hidden" name="sheet_version" value="{v}">'
             '<button name="event" value="next" class="go">次の手順へ</button>'
             '<button name="event" value="stuck">ここで止まった</button><button name="event" value="done">できた</button>'
             '<button name="event" value="back" class="small">戻る</button></form>'
@@ -208,7 +216,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event=""):
             f'<div class="henji{" open" if asking else ""}" id="henji" aria-label="返事"><p class="ask-head" id="ask-head">{esc(ask_head)}</p>'
             '<button type="button" class="mic" id="mic" aria-pressed="false" hidden>声で聞く（もう一度押すと止まる）</button>'
             f'<form id="ask-form" method="post" action="/toy/{esc(sid)}/ask">'
-            f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><label class="sr" for="q">聞きたい事</label>'
+            f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{v}"><label class="sr" for="q">聞きたい事</label>'
             '<input type="text" id="q" name="question" maxlength="300" placeholder="谷折りって？" enterkeyhint="send" required><button>聞く</button></form>'
             f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(NOTICE)}</p>'
             f'<p class="meta"><a href="/toy/{esc(sid)}/techo">声で聞く・写真を上げる（手帖）</a></p></div>'

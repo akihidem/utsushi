@@ -19,7 +19,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 
 from . import skin
-from .play_server import PARAM_NAMES, esc, out_dir, source, sources
+from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
 
 KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙"))
 
@@ -27,8 +27,8 @@ KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の
 def versions_of(sid, hid, printed_only=False):
     """刷ってある版の番号。版 2 以降は「次の版を作る」で人が採った時にできる。"""
     # printed_only=False の時は、無くても版 1 を入れる（窓の札の並びを空にしないため）。True は「本当に刷ってある版」だけ。
-    got = {int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))} if out_dir(sid).exists() else set()
-    return sorted(got if printed_only else got | {1})
+    got = printed_versions(sid, hid)
+    return got if printed_only else sorted(set(got) | {1})
 
 
 def sheet_links(sid, hid, recorded):
@@ -61,7 +61,7 @@ def window(sid, data, see, kind, v, recorded):
     if not ids:
         return '<p class="meta">仮説の札の「型紙と手順の紙を刷る」を押すと、ここに紙の絵が出ます。</p>'
     see = see if see in ids else (latest_printed(sid, data) or ids[0])
-    vs = versions_of(sid, see)
+    vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
     v = v if v in vs else vs[-1]
     kind = kind if kind in ("", "_tejun", "_after") else ""
     if kind == "_after" and see not in recorded:
@@ -71,7 +71,7 @@ def window(sid, data, see, kind, v, recorded):
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
     # 仮説の札（元の順）。順位ではない。
     hyps = "".join((f'<span>仮説 {esc(hypotheses.letter(x))}</span>' if x["id"] not in ids else
-                    f'<a href="{q(x["id"], "", 1)}" aria-current="{"true" if x["id"] == see else "false"}">仮説 {esc(hypotheses.letter(x))}</a>')
+                    f'<a href="{q(x["id"], "", versions_of(sid, x["id"], printed_only=True)[-1])}" aria-current="{"true" if x["id"] == see else "false"}">仮説 {esc(hypotheses.letter(x))}</a>')
                    for x in data["hypotheses"])
     kinds = ""
     for suffix, label in KINDS:
@@ -144,6 +144,10 @@ def record_form(sid, data, own):
     template = data.get("template", "slider_fan")
     hyps = [(h["id"], f'仮説 {hypotheses.letter(h)}「{h["name"]}」') for h in data["hypotheses"]] + [(h["id"], f'あなたの仮説「{h["name"]}」') for h in own]
     opts = "".join(f'<option value="{esc(i)}">{esc(n)}</option>' for i, n in hyps)
+    # 版が 2 つ以上ある時だけ、どの版の紙かを聞く（紙の題の横に刷ってある）。報告が版を取り違えないため（play_server.sheet_version_of）。
+    seen = sorted({n for h in data["hypotheses"] for n in versions_of(sid, h["id"], printed_only=True)})
+    version_field = ('<label>どの版の紙か（紙の題の横に刷ってあります）<select name="sheet_version"><option value="">いちばん新しい版</option>'
+                     + "".join(f'<option value="{n}">版 {n}</option>' for n in seen) + '</select></label>') if len(seen) > 1 else ""
     from .techo_site import ICONS
 
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}" required>{ICONS.get(r, ICONS["わからない"])}{esc(r)}</label>'
@@ -156,7 +160,7 @@ def record_form(sid, data, own):
     else:
         extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
     return (f'<form method="post" action="/toy/{sid}/record" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。記録はこの頁でほかの人も読むので、名前や連絡先は書かないでください。</p>'
-            f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
+            f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label>{version_field}<fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
             # 感想の欄（本人の方針 11-05「作ったものの感想と動きを報告してもらう」）。動きは上の札、感想は自由な文。空でもよい。
             '<label>作ってみてどうだったか（感想。動いた所、難しかった所、思った事）<textarea name="impression"></textarea></label>'
             '<label>最初に動いたのはどこか<input type="text" name="first_moved"></label><label>引っかかった所<input type="text" name="stuck"></label>'
@@ -282,7 +286,7 @@ def neighbours(sid):
     return '<p class="links">' + "".join(out) + "</p>"
 
 
-def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=1, path=None):
+def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None):
     data, src = hypotheses.load(sid), source(sid)
     path = path or f"/toy/{sid}"
     note = "".join(f'<p id="msg">{esc(e)}</p>' for e in errors) + (f'<p id="msg">{esc(msg)}</p>' if msg else "")

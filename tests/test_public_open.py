@@ -25,6 +25,18 @@ except ValueError:
     pass
 
 
+# 鍵のある所では開かない（誰でも費用のかかる呼び出しができてしまう）。この試験は鍵のある機械でも同じに動くよう、鍵の有無を固定する
+from api import ask  # noqa: E402
+
+ask._key_present = lambda: True
+try:
+    serve(0, public_open=True)
+    raise AssertionError("鍵のある所で開いてしまう")
+except ValueError:
+    pass
+ask._key_present = lambda: False
+
+
 def up(**kw):
     server = serve(0, **kw)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -58,6 +70,11 @@ assert techo_site.save_media(rid, "image/jpeg", jpeg)[0]
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 404
 # 別の出所からは書けない（開いていても）
 assert opened("POST", f"/toy/{G}/predict", "text=x", {"Content-Type": "application/x-www-form-urlencoded", "Origin": "https://evil.example"})[0] == 403
+# 作る側の頁は出さない（聞いた言葉と感想の文が読める頁で、名前は機械では落とせない）。開いていない時は出る
+assert opened("GET", "/loop")[0] == 404 and opened("GET", f"/loop/{G}")[0] == 404
+# 次の版を採る口と AI の口は閉じる（誰でも型紙の版を変えられる形にしない・費用をかけさせない）
+assert opened("POST", f"/record/{rid}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", form)[0] == 403
+assert opened("POST", f"/record/{rid}/ai-interpret", "x=1", form)[0] == 403 and opened("POST", f"/record/{rid}/ai-observe", "x=1", form)[0] == 403
 # 記録の欄に、名前を書かない断りがある
 assert "名前や連絡先は書かないでください" in opened("GET", f"/toy/{G}")[1]
 print("ok: 合言葉なしで開くデモ")

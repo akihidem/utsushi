@@ -59,4 +59,22 @@ calls.clear()
 assert ingest.fetch_images(targets) == []
 assert (root / "out/sources/b.jpg").exists()
 assert ingest.fetch_images(targets) == []  # 全部そろっていれば通信しない
+# 箱を変えたら取り直す（前は古い切り出しが残り続けた）。取れなかった時は前の写しを残す
+calls.clear()
+ingest._get = lambda url: calls.append(url) or b"new"
+assert ingest.fetch_images({"a": "https://x/a-new.jpg"}) == [] and calls == ["https://x/a-new.jpg"]
+assert (root / "out/sources/a.jpg").read_bytes() == b"new"
+assert ingest.fetch_images({"a": "https://x/a-new.jpg"}) == [] and calls == ["https://x/a-new.jpg"], "同じ箱なら取り直さない"
+# 網が無い時に起動を長く止めない: 続けて GIVE_UP 枚失敗したら、残りは試さない
+calls.clear()
+
+
+def down(url):
+    calls.append(url)
+    raise OSError("timeout")
+
+
+ingest._get = down
+many = {f"z{i}": f"https://x/z{i}.jpg" for i in range(10)}
+assert ingest.fetch_images(many) == list(many) and len(calls) == ingest.GIVE_UP
 print("ok: 全部の玩具に図の出典がある", len(sids))

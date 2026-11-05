@@ -74,7 +74,8 @@ code, body = post("/record/R-0001/next", {"interpretation": "折りが固い", "
 assert code in (200, 303), body[:300]
 page = get(f"/toy/{G}")[1]
 kz = page.split('id="kaizen"')[1]
-assert "仮説 A 版 2" in kz and "折りの数" in kz and "R-0001" in kz and "サイトの係" in kz and "次の版を待つ報告" not in kz
+assert "仮説 A 版 2" in kz and "折りの数" in kz and "R-0001" in kz and "次の版を待つ報告" not in kz
+assert "サイトの係" not in kz, "採った人の名前は学ぶ人の頁に出さない（自由な文で、名前を書かない線）"
 # 次に作る人: 刷ると直した版（版 2）が出る。窓も最新の版
 out = pathlib.Path(DATA) / "play" / G
 (out / "H-A_v2.pdf").unlink()
@@ -91,6 +92,34 @@ code, lp = get("/loop")
 assert code == 200 and "改善の輪" in lp and "御来迎" in lp and f'href="/toy/{G}#kaizen"' in lp
 for w in ("成功", "失敗", "正解", "順位", "点数"):
     assert w not in lp and w not in kz, w
-# 序から行ける。頭の帯（学ぶ人の順路）には入れない
-assert 'href="/loop"' in get("/about")[1] and 'href="/loop"' not in get("/toys")[1].split("</nav>")[0]
+# 学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）
+for path in ("/about", "/toys", "/", f"/toy/{G}"):
+    assert 'href="/loop' not in get(path)[1], path
+
+# 検品の指摘の再発の見張り: 窓は刷ってある版だけを出し、版を言わなければ一番新しい版
+page = get(f"/toy/{G}")[1]
+assert 'see=H-A&kind=sheet&v=2#win" aria-current' in page and 'see=H-A&kind=sheet&v=1#win" aria-current' not in page, "仮説の札は一番新しい版へ"
+(out / "H-A_v1.pdf").unlink()
+(out / "H-A_v1.png").unlink()
+only2 = get(f"/toy/{G}")[1]
+assert f"/sheet/{G}/H-A_v1.png" not in only2 and "<b>版 2</b>" in only2 and ">版 1<" not in only2.split('id="win"')[1].split('id="tsukuru"')[0], "刷っていない版を出さない"
+assert get(f"/toy/{G}?see=H-A&kind=sheet&v=1")[0] == 200 and f'<img src="/sheet/{G}/H-A_v2.png"' in get(f"/toy/{G}?see=H-A&kind=sheet&v=1")[1], "無い版を言われても一番新しい版へ"
+assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303  # 元に戻す（版 2 を刷り直す。版 1 は無いまま）
+# 報告の版: 版が 2 つある時は、どの版の紙かを聞き、言われた版の報告として残す（版 1 で作っていた人の報告が版 2 の記録にならない）
+assert post(f"/toy/{G}/print", {"hypothesis": "H-B"})[0] == 303
+from omochae import hypotheses  # noqa: E402
+
+hypotheses.print_sheet(G, "H-A", str(out / "H-A_v1"), 1)
+page = get(f"/toy/{G}")[1]
+assert 'name="sheet_version"' in page.split('id="record"')[1].split("</form>")[0]
+assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "sheet_version": "1", "result": "動かない", "impression": "版 1 で作っていた"})[0] == 303
+assert json.loads((pathlib.Path(DATA) / "records/R-0003.json").read_text(encoding="utf-8"))["sheet_version"] == 1
+assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "sheet_version": "9", "result": "動いた"})[0] == 303
+assert json.loads((pathlib.Path(DATA) / "records/R-0004.json").read_text(encoding="utf-8"))["sheet_version"] == 2, "刷っていない版を言われたら一番新しい版"
+# 一番新しい版が検査に落ちる時は、1 つ前の版を刷る（その仮説の紙が誰にも刷れなくならない）
+real = hypotheses.print_sheet
+hypotheses.print_sheet = lambda s, h, o, v=1: 3 if v == 2 else real(s, h, o, v)
+(out / "H-A_v1.pdf").unlink()
+assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303 and (out / "H-A_v1.pdf").exists()
+hypotheses.print_sheet = real
 print("ok: 改善の輪")

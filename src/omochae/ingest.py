@@ -47,8 +47,13 @@ def keep_human_fields(old, rec):
         dst[key] = src[key]
 
 
+# 1 枚あたりの待ち時間と、続けて失敗した時に諦める数。写しは起動の前に取るので、網が止まっていても数分で起動へ進むため（網が無ければ字だけで動く約束）。
+TIMEOUT = 20
+GIVE_UP = 3
+
+
 def _get(url):
-    with urllib.request.urlopen(url, timeout=60) as r:
+    with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
         return r.read()
 
 
@@ -139,18 +144,25 @@ def image_targets():
 
 def fetch_images(targets):
     """足りない写しだけを out/sources に取る。取れなかった玩具の印の一覧を返す（空なら全部そろった）。
-    1 枚取れなくても止めない: 1 枚の通信の失敗で残りの玩具まで字だけになるのを避ける。在る写しは取り直さない（箱を変えた時は消してから）。"""
+    1 枚取れなくても止めない: 1 枚の通信の失敗で残りの玩具まで字だけになるのを避ける。ただし続けて GIVE_UP 枚失敗したら網が無いと見て、残りは試さない。
+    在る写しは取り直さない。箱を変えた時だけ取り直す（取った時の URL を横の .url に控えて比べる。前は古い切り出しが残り続けた）。"""
     (ROOT / "out/sources").mkdir(parents=True, exist_ok=True)
-    failed = []
+    failed, streak = [], 0
     for sid, url in targets.items():
-        img = ROOT / "out/sources" / f"{sid}.jpg"
-        if img.exists():
+        img, note = ROOT / "out/sources" / f"{sid}.jpg", ROOT / "out/sources" / f"{sid}.url"
+        if img.exists() and note.exists() and note.read_text(encoding="utf-8") == url:
+            continue
+        if streak >= GIVE_UP:
+            failed.append(sid)
             continue
         try:
             img.write_bytes(_get(url))
+            note.write_text(url, encoding="utf-8")
+            streak = 0
         except Exception as e:
             print(f"ingest: 写しを取れない {sid}: {e}", file=sys.stderr)
             failed.append(sid)
+            streak += 1
     return failed
 
 

@@ -181,4 +181,10 @@ assert ev["stage"] == "predict" and set(ev) == {"source_id", "template", "stage"
 assert post(f"/toy/{T}/predict-choice", {"choice": "head"})[0] == 303
 trec = json.loads(hypotheses.predictions(T)[0].read_text(encoding="utf-8"))
 assert trec["text"] == "ここが動くと思う: 頭" and trec["kind"] == "choice" and trec["choice"] == "head"
+# 掛け合わせが映像に届く: .fig に z-index を付けると重なりの文脈ができ、白い面が顔を覆う（検品で再現。実際の色は人の手で実機で確かめる）
+fig = re.search(r"\.fig\{([^}]*)\}", kazasu.STYLE).group(1)
+assert "z-index" not in fig and "transform" not in fig and "opacity" not in fig and "filter" not in fig, fig
+assert "mix-blend-mode:multiply" in kazasu.STYLE
+# 人の数え方の印をフォームに添える（U-45。cookie にしない）
+assert "utsushi-who" in page and "document.cookie" not in page
 print("ok: かざして選ぶ（候補の絵）")

@@ -7,7 +7,7 @@
 文字で予想を書く今の道（/toy/<sid> の「先に、予想を書く」）は変えない。
 
 判断の芯:
-- **映像は端末の外へ出さない。** 子どもの顔や部屋が映る物を、送らず・録らず・残さない（CLAUDE.md「子どもの写真と声は扱わない」の線）。
+- **映像は端末の外へ出さない。** 子どもの顔や部屋が映る物を、送らず・録らず・残さない（決まり「子どもの写真・声は扱わない」（J-021・仕様書 I2）の線）。
   だから画素を写し取る・画像にする・録る・網へ送る code を置かない。サーバへ行くのは、押した候補の印（フォームの送信）だけ。
   試験（tests/test_kazasu.py）で、頁にその種の JS が無い事を固定する。
 - カメラは押した時だけ動かす。頁を開いただけで許可を求めない（何のためか読んでから決められるように）。使わなくても同じ候補で選べる。
@@ -48,7 +48,9 @@ a{color:var(--accent)}
 .top a,.top span{background:color-mix(in srgb,var(--bg) 78%,transparent);padding:4px 10px;text-decoration:none}
 /* 絵は画面の幅の 6 割ほど、中央やや上。カメラが動いている時は、紙の地を白へ寄せてから掛け合わせ（multiply）、線と色だけを映像の上に残す。
    白×映像＝映像なので、紙の地が抜けて、絵が自分と画面の間に浮いて見える。カメラが無い時は掛け合わせず、地の色の上にそのまま出す。 */
-.fig{position:relative;z-index:1;flex:1 1 auto;min-height:36svh;display:grid;place-items:center;padding:4px 0}
+/* z-index を付けない: 付けると .fig が重なりの文脈を作り、中の .pic の掛け合わせ（mix-blend-mode）が映像まで届かず、白い面が顔を覆う（検品で再現）。
+   並びは頁の順（#cam の後）で手前に出る。 */
+.fig{position:relative;flex:1 1 auto;min-height:36svh;display:grid;place-items:center;padding:4px 0}
 /* 指で動かす: 位置と大きさは CSS の変数で持ち、transform だけで動かす（画素には触らない）。touch-action:none は、絵を引く指で頁が巻かれないため。 */
 .pic{width:60vw;max-width:420px;max-height:44svh;background:center/contain no-repeat;transform:translate(var(--tx,0px),var(--ty,0px)) scale(var(--sc,1));
  touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
@@ -220,7 +222,7 @@ def page(sid, look=skin.DEFAULT, error=""):
             '絵は国立国会図書館デジタルコレクションの頁（パブリック・ドメイン）。</p></div></main>')
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             f'<title>{esc(data["toy"])} · かざして選ぶ</title><style>:root{{{root}}}{STYLE}</style>'
-            f'<body class="kazasu skin-{esc(look)}">{body}{SCRIPT}</body></html>')
+            f'<body class="kazasu skin-{esc(look)}">{body}{SCRIPT}{skin.WHO_SCRIPT}</body></html>')
 
 
 def choose(sid, cid):
