@@ -38,7 +38,6 @@ def post(path, data):
         return e.code, e.read().decode()
 
 
-assert post(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})[0] in (200, 303)
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] in (200, 303)
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})[0] in (200, 303)

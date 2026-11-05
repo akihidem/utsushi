@@ -44,9 +44,8 @@ def call(path, form=None, body=None, ctype=None):
 # 選ぶ
 code, top = call("/")
 assert code == 200 and f"/toy/{SID}".encode() in top
-# 予想が先（F9.prediction）。予想の前は手帖を開かない
-assert "先に予想を書く".encode() in call(f"/toy/{SID}/techo")[1]
-assert call(f"/toy/{SID}/predict", {"text": "筒を押すと扇が開くと思う"})[0] in (200, 303)
+# 予想の段は無い（#242）。開いたらすぐ手帖が開く
+assert call(f"/toy/{SID}/techo")[0] == 200
 # 型紙
 assert call(f"/toy/{SID}/print", {"hypothesis": "H-A"})[0] in (200, 303)
 code, pdf = call(f"/sheet/{SID}/H-A_v1.pdf")

@@ -63,14 +63,13 @@ assert 'href="/"' in body
 
 # 記録の前に試した後の紙を開く: 玩具の頁の記録の欄へ戻れる
 page.want = 403
-assert call(base, f"/toy/{G}/predict", data=b"text=x", headers=FORM)[0] == 303
 assert call(base, f"/toy/{G}/print", data=b"hypothesis=H-A", headers=FORM)[0] == 303
 code, body = call(base, f"/sheet/{G}/H-A_v1_after.pdf")
 page(code, body, "試した記録を残してから開きます")
 assert f'href="/toy/{G}#kiroku"' in body
 
 # 別のサイトからの送信を断る頁
-code, body = call(base, f"/toy/{G}/predict", data=b"text=x", headers={**FORM, "Origin": "http://evil.example"})
+code, body = call(base, f"/toy/{G}/print", data=b"hypothesis=H-A", headers={**FORM, "Origin": "http://evil.example"})
 page(code, body, "受け付けられない送り方です")
 
 # 手元の名前でない Host には、同じ名前へ戻るリンクを出さない

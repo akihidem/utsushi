@@ -3,18 +3,33 @@
 なぜ PDF から読み直すか: 「描く命令を出した」ではなく「刷られた紙に載っている」ことを保証するため。
 字が画像化された・隠れた・別の字に落ちた場合も、ここで落ちる。
 """
+import re
 import subprocess
 
 from .model import Failure, ToolMissing
 
 HOLDER = "国立国会図書館デジタルコレクション"
 HYPOTHESIS = "仮説: AI が考えた、試すための 1 つの翻案です。正解ではありません。作って、動きを確かめて、直していきます"
+# 使い手が自分で立てた仮説の紙の文。人の仮説を「AI が考えた」と刷らないため（print_own）。文の残りは上と揃える。
+OWN_HYPOTHESIS = "仮説: 自分で立てた、試すための 1 つの翻案です。正解ではありません。作って、動きを確かめて、直していきます"
+# 頁の「すぐ作る」の頭に出す文（本人の言葉 11-05「型紙が正解ではなくて、とりあえずAIが考えた仮説であるということを明示する」）。文の変更は本人の確認に回す。
+PREMISE_PAGE = "この型紙は正解ではありません。とりあえず AI が考えた仮説です。うまく動かない所が出ます。工夫して乗り切った所を記録に残すと、次の版を直す材料になります。"
+# 輪を回す Claude に渡す前提（本人の言葉 11-05「システム側もそれを認識した上でループを回す」）。同じ文を全部の担当に渡す事を tests/test_loop_premise.py が見る。
+LOOP_PREMISE = ("前提: 型紙は正解ではなく、とりあえず AI が考えた仮説です。不完全で、うまく動かない所が出ます。"
+                "動かない事は作った人の出来ではなく、仮説への返事です。人が工夫で乗り切った所（記録の fixes・止まった所）を、次の版の一番の材料にします。")
+
+
+def without_premise(text):
+    """成績の語の床（成功・失敗・正解を頁に出さない）の前に、本人の言葉の打ち消しの形だけを除く。
+    本人の言葉（11-05）は「型紙が正解ではなくて」で、人を採点する語でなく採点を打ち消す文なので、言葉のまま出す。
+    「正解です」「不正解」のような形は除かないので、床は残る。"""
+    return re.sub(r"(?<!不)正解では(?:なく|ありません)", "", text)
 
 
 def mark_lines(source, omit=None):
     if omit == "all":
         return []
-    lines = [f"所蔵: {source['holding']}", source["modification_note"], HYPOTHESIS]
+    lines = [f"所蔵: {source['holding']}", source["modification_note"], source.get("hypothesis_mark", HYPOTHESIS)]
     if omit != "source_id":
         lines.insert(2, f"出典ID: {source['source_id']}")
     return lines

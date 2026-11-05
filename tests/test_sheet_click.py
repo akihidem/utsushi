@@ -46,7 +46,6 @@ def post(path, data):
         return e.code
 
 
-assert post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"}) == 303
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303
 code, body, _ = get(f"/toy/{G}")
 body = body.decode()

@@ -49,7 +49,6 @@ def assert_nothing_added(before, why):
 
 
 # 版 1 を刷り、記録と説明まで進める。
-assert post(f"/toy/{G}/predict", {"text": "筒を押すと扇が開く"})[0] in (200, 303)
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
 assert post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない"})[0] == 201
 rid = next((DATA / "records").glob("R-*.json")).stem

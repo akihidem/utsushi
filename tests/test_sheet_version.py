@@ -57,7 +57,6 @@ def on_techo(**form):
     return post(f"/toy/{G}/record-json", hypothesis="H-A", result="動かない", **form)[0]
 
 
-assert hypotheses.save_prediction(G, "筒を押すと開く")[1] == []
 printed(1)
 for send in (on_page, on_techo):
     before = versions()

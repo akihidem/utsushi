@@ -1,4 +1,4 @@
-"""見比べる紙の試験。予想は使い捨ての置き場に書き、本物のデータに触らない。"""
+"""見比べる紙の試験。記録は使い捨ての置き場に書き、本物のデータに触らない。"""
 import json
 import os
 import pathlib
@@ -38,10 +38,6 @@ def run(*args):
 
 
 out = pathlib.Path(tmp) / "cmp"
-# 予想の前は刷らない（F9.prediction）
-r = run(FAN, "print-compare", "H-A", "H-E", "--out", str(out))
-assert r.returncode == 3 and "F9.prediction" in r.stderr
-assert run(FAN, "predict", "糸がいる").returncode == 0
 r = run(FAN, "print-compare", "H-A", "H-E", "--out", str(out))
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", "-layout", r.stdout.strip(), "-"], capture_output=True, text=True).stdout
@@ -56,7 +52,6 @@ r = run(FAN, "print-compare", "H-C", "H-D", "--out", str(out))
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", "-layout", r.stdout.strip(), "-"], capture_output=True, text=True).stdout
 assert "型紙は 1 つ" in text and "2 つの型紙" not in text
-assert run(TIGER, "predict", "重り").returncode == 0
 assert run(TIGER, "print-compare", "H-A", "H-B", "--out", str(out)).returncode == 3
 assert run(TIGER, "compare").returncode == 3
 lines = run(FAN, "compare")

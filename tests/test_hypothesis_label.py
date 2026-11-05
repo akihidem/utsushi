@@ -53,7 +53,6 @@ for p in paths:
 
 # 刷った PDF から読み直せる（必須 2 種）
 for sid, hid in REQUIRED.items():
-    assert subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", sid, "predict", "動くと思う"], capture_output=True).returncode == 0
     r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", sid, "print", hid, "--out", f"{tmp}/{sid}"], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     for pdf in (f"{tmp}/{sid}.pdf", f"{tmp}/{sid}_tejun.pdf"):
