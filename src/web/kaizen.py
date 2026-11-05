@@ -13,6 +13,7 @@
   多い順に仮説や玩具を並べる・点・％の成績、のような上下を付ける形は作らない。人は、その場限りの無作為の印で数える。
 - /loop は作る側（サイト側）が輪を回すための一覧。学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）。
   合言葉なしで開いたデモでは出さない（J-028）。学ぶ人の頁の節には、版と根拠だけを出し、採った人の名前は出さない（自由な文で、名前を書かない線に沿う）。
+- 新しく作られた版の型紙の歩み（本人の希望 11-06）は kaizen_versions が持ち、/loop と /loop/<印> に節を置く。どのループで走ったかも、そこで並べる。
 - 受け持ち（本人の決定 11-05、カード 20261105-090458 の (b)）: 雛形そのものを直すための報告の入口と道具（報告の形・検査・集計）は
   エンジン（paper-to-toy）の側。ここが持つのは、学ぶ人の記録と感想、仮説ごとの版（寸法を 1 つ変えた次の版）、その表示まで。
   だから、報告から案を機械で出す道具はここに置かない。
@@ -110,7 +111,11 @@ def page(look=skin.DEFAULT, path="/loop"):
     body = (f'<section class="hero"><div><h1>改善の輪</h1><p class="lead">作った人の報告を、型紙の改善に回す所。報告か質問のある玩具 {len(items)} 種、報告 {n_rep} 件。</p>'
             '<p class="meta">輪: 報告（動きと感想）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。並びは本の順です。</p></div></section>'
             f'<section class="sec">{table}</section>')
-    return skin.shell("改善の輪", body, look, "", path, TABLE_STYLE)
+    # 新しく作られた版の型紙の歩み（本人の希望 11-06）。表の後に置く。並べ方と字は kaizen_versions が持つ。
+    from . import kaizen_versions
+
+    body += kaizen_versions.section()
+    return skin.shell("改善の輪", body, look, "", path, TABLE_STYLE + kaizen_versions.STYLE)
 
 
 TABLE_STYLE = "table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}th{font-weight:normal;color:var(--mute);font-size:13px}"
@@ -194,6 +199,9 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     rows = "".join(f'<tr><td>{STAGE_NAMES[k]}</td><td>{x["events"]} 回</td><td>{str(x["people"]) + " 人" if x["people"] else "—"}</td></tr>' for k, x in sm["flow"].items())
     s6 = table(("段", "出来事の数", "人（印のある分）"), rows)
 
+    # 新しく作られた版の型紙の歩み（本人の希望 11-06）を、集計の前に置く。
+    from . import hanasu, kaizen_versions
+
     body = (f'<section class="hero"><div><h1>{esc(data["toy"])} の工作の様子</h1>'
             '<p class="lead">作る側の集計。学ぶ人の頁には出しません。公開しない頁です。上下を付ける物ではありません。</p>'
             f'<p class="premise">{esc(LOOP_PREMISE)}</p>'
@@ -201,6 +209,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
             f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
             f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a></p></div></section>'
+            f'{kaizen_versions.toy_section(sid, data)}'
             f'<section class="sec" id="k1"><h2>1 止まった段</h2><p class="meta">作りながら見る頁（机の端に置く・試作）の「止まった」の札を、版と手順の番号ごとに数えます（止まった手順）。映像は残していません。</p>{s1}</section>'
             f'<section class="sec" id="k2"><h2>2 動きの結果</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{s2}</section>'
             f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'
@@ -208,7 +217,5 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'<section class="sec" id="k5"><h2>5 完成の様子</h2><p class="meta">時間は幅で、動いた記録は件数で出します。</p>{s5}</section>'
             f'<section class="sec" id="k6"><h2>6 サイトの流れ</h2><p class="meta">型紙 → 作る → 記録の、どの段まで進んだか。何を書いたかは写していません。</p>{s6}</section>')
     # 7 話した事（一周の声の部分、Issue #279）。字だけ。並べ方と断りは hanasu.py が持つ。
-    from . import hanasu
-
     body += hanasu.maker_section(sid, data)
-    return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE)
+    return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE + kaizen_versions.STYLE)

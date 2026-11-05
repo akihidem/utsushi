@@ -1,0 +1,24 @@
+# 命令: .venv/bin/python tests/test_kaizen.py
+# commit: 0eaba97（回した時の HEAD）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: shared-findings.json（JSONDecodeError）
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/.tmp-o3jb_kvc/H-A_v2.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/.tmp-o3jb_kvc/H-A_v2_tejun.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/.tmp-o3jb_kvc/H-A_v2_after.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v2.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v2_tejun.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v2_after.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v2.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v2_tejun.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v2_after.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpsw_gzesf/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok: 改善の輪
+rc=0

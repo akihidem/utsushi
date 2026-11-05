@@ -1,0 +1,28 @@
+# 命令: .venv/bin/python tests/test_kaizen.py
+# commit: eb6348a（回した時の HEAD）
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/.tmp-p6cnlw_w/H-A_v2.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/.tmp-p6cnlw_w/H-A_v2_tejun.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/.tmp-p6cnlw_w/H-A_v2_after.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v2.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v2_tejun.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v2_after.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v2.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v2_tejun.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v2_after.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpo1wgqkse/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_kaizen.py", line 131, in <module>
+    from web import kaizen_versions as kv  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'kaizen_versions' from 'web' (src/web/__init__.py)
+rc=1
+
+上は、新しい試験に、直す前の src/web/kaizen.py を当てて回した（src/web/kaizen_versions.py はまだ無い）。
