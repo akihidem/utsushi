@@ -154,6 +154,11 @@ def generate(source, client=None, image=None, zoom=True):
         return None, failures
     preds = [json.loads(p.read_text(encoding="utf-8"))["text"] for p in hypotheses.predictions(sid)]
     own = hypotheses.own_hypotheses(sid)
+    if client is None:
+        # 鍵が無ければ、図を取り寄せる前に止める。先に取りに行くと、呼べない時にも網に出て out/sources に書く
+        client = agent.default_client()
+        if not (client.api_key or client.auth_token):
+            raise RuntimeError("API の鍵が無い")
     context = {"source_id": sid, "toy": source["toy"], "default_template": hypotheses.load(sid).get("template", "slider_fan"),
                "transcription": transcription_for_claude(source), "reader_predictions": preds[-1:], "reader_own_hypotheses": own}
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image if image is not None else source_image(source)}},

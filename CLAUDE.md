@@ -10,7 +10,7 @@
 - **足りない物**: 手元のトイモデルで自然とやりとりする体験。無いと、大型の装置や計算資源を使う科学にしか真理がないと思ってしまう（本人の言葉からの読み）。
 - **輪**: 予想か自分の仮説 → 型紙を刷る → 作って試す → 記録と人の説明 → 版の間に Claude が案を出し人が採る → 次の版。AI の返事は学ぶ人の記録と説明の後で、採点しない。
 - **哲学**: 「AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。」全文は [docs/process/philosophy.md](docs/process/philosophy.md)。
-- **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面 67 本が期待どおり。11-04 午後）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、上げた物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
+- **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面と試験が全部期待どおり。数は `./run.sh` の最後の行と `out/RESULT.md` に出る）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、上げた物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
 - **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)、判断待ちは [docs/process/open.json](docs/process/open.json)。
 <!-- summary:end -->
 

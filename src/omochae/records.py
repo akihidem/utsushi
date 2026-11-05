@@ -12,7 +12,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 from . import store
-from .contrib import check_pii
+from .contrib import check_pii, too_long
 from .hypotheses import load, own_hypotheses
 from .model import Failure
 
@@ -57,9 +57,14 @@ def check(rec):
     for i, fix in enumerate(rec.get("fixes", []), 1):
         if not all(str(fix.get(k, "")).strip() for k in ("part", "change", "outcome")):
             out.append(Failure("F3.result", f"fixes[{i}]", "直した点は部品名・変えた事・結果の 3 欄が要る"))
+    # 感想（impression）は本人の方針（11-05）「感想と動きの報告」の感想の欄。自由な文なので、他の文と同じく長さと連絡先の形を見る。
+    fields = [("note", rec.get("note", "")), ("impression", rec.get("impression", "")), *(("answers", v) for v in rec.get("answers", {}).values()),
+              *(("ideas", v) for v in rec.get("ideas", [])), *(("fixes", str(v)) for fix in rec.get("fixes", []) for v in fix.values())]
+    long = too_long(fields)
+    if long:
+        return out + [Failure("F3.result", where, message) for where, message in long]
     # 記録は公開の repo に入り得るので、連絡先の形を残さない。
-    # 感想（impression）は本人の方針（11-05）「感想と動きの報告」の感想の欄。自由な文なので、他の文と同じく連絡先の形を残さない。
-    for f in check_pii({"body": " ".join([rec.get("note", ""), rec.get("impression", ""), *rec.get("answers", {}).values(), *rec.get("ideas", []), *(str(v) for fix in rec.get("fixes", []) for v in fix.values())])}):
+    for f in check_pii({"body": " ".join(text for _, text in fields)}):
         out.append(Failure("F3.result", "note", f.message))
     return out
 

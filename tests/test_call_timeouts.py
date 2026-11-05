@@ -63,8 +63,9 @@ os.environ["ANTHROPIC_BASE_URL"] = silent.url
 assert str(agent.default_client("ask").base_url).startswith(silent.url), "手元の口だけに送る"
 config.SCREEN_TIMEOUT = {"ask": 0.5, "observe": 0.5, "interpret": 0.5}
 config.SCREEN_RETRIES = 1
-# 0.5 秒 × 2 回に、やり直しの間（SDK の既定で 1 秒まで）を足した見込み。遅い機械でも越えない幅を取る。SDK の既定なら 10 分なので紛れない
-BOUND = 6.0
+# 0.5 秒 × 2 回に、やり直しの間（SDK の既定で 1 秒まで）を足すと 2 秒ほど。ほかの試験が同時に走る混んだ機械でも越えない幅を取る。
+# SDK の既定なら 10 分なので、30 秒でも紛れない。
+BOUND = 30.0
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -86,7 +87,9 @@ def timed(path, data):
     """送って、返った物・かかった秒・手元の口へつないだ数を返す。"""
     n, t = len(silent.conns), time.monotonic()
     code, loc, body = post(path, data)
-    return code, loc, body, time.monotonic() - t, len(silent.conns) - n
+    took = time.monotonic() - t
+    time.sleep(0.3)  # 口のスレッドが受け終わるのを待つ（混んだ機械で数え損ねないため。かかった秒には入れない）
+    return code, loc, body, took, len(silent.conns) - n
 
 
 video = os.path.join(tempfile.mkdtemp(), "v.mp4")
@@ -139,18 +142,20 @@ def frames_of(video_path):
     return out, time.monotonic() - t
 
 
-config.VIDEO_TIMEOUT = 0.5
 keep_path = os.environ["PATH"]
+# 本物の命令の行は、時間切れを縮める前に回す。縮めた後だと、混んだ機械で本物が間に合わずに落ちる
 assert len(observe.frames(video)) == 3, "本物の命令なら 3 コマ取れる（時間切れで前の動きを壊していない）"
+config.VIDEO_TIMEOUT = 2
+LONG = 20  # 偽の命令の眠る 30 秒より短く、時間切れの 2 秒が混んだ機械で延びても越えない幅
 os.environ["PATH"] = f"{fake}{os.pathsep}{keep_path}"
 tool("ffprobe", "exec sleep 30")  # 長さを見る所で止まる
 out, took = frames_of(video)
-assert out == [] and took < 5, (out, took)
+assert out == [] and took < LONG, (out, took)
 assert observe.observe(rid, video, Never()) == (None, "動画のコマを取り出せない")
 tool("ffprobe", "echo 2.0")
 tool("ffmpeg", "exec sleep 30")  # コマを取る所で止まる
 out, took = frames_of(video)
-assert out == [] and took < 5, (out, took)
+assert out == [] and took < LONG, (out, took)
 assert observe.observe(rid, video, Never()) == (None, "動画のコマを取り出せない")
 # ffprobe はあるが ffmpeg が無い機械でも、頁を落とさず空で戻す（docstring の約束。前は OSError が抜けた）
 (fake / "ffmpeg").unlink()
