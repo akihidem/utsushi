@@ -78,12 +78,21 @@ files = lambda: sorted(making.glob("talk-*.json")) if making.exists() else []
 
 # ---- 入口の床（形だけを見る。工作の話は落とさない）
 for text in ("谷を先に折ったら、筒に入りやすかった", "この部品の名前は分からないけど、三角の所を先に折った", "名前は何ですか", "これは蛇腹といいます",
-             "私は小学校の時に同じ物を作った", "近くの中学校で見た", "2年前に組み立てた物と同じ", "扇の高さを 36 にした"):
+             "私は小学校の時に同じ物を作った", "近くの中学校で見た", "2年前に組み立てた物と同じ", "扇の高さを 36 にした",
+             # 声から字にした文は助詞が抜けやすい。学校の前の言葉が名前でない時は落とさない
+             "当時小学校で作った", "昔小学校で作った", "私小学校の時に作った", "私立中学校の文化祭で見た", "市立小学校の体育館で見た",
+             "作ったのは小学校の時です", "小学校の図工です", "谷折りと言います"):
     assert talk_log.blocked(text) == "", (text, talk_log.blocked(text))
 for text, shape in (("電話は 090-1234-5678 です", "連絡先"), ("a@example.com に送って", "連絡先"), ("〒100-0001 に住んでいます", "連絡先"),
                     ("田中と申します。扇を先に折りました", "名乗り"), ("私の名前は田中です", "名乗り"), ("名前は田中です", "名乗り"), ("僕は田中といいます", "名乗り"),
-                    ("3年2組の机で作った", "学年と組"), ("三年二組です", "学年と組"), ("３年２組で作った", "学年と組"), ("緑町小学校で作った", "学校の名前")):
+                    ("3年2組の机で作った", "学年と組"), ("三年二組です", "学年と組"), ("３年２組で作った", "学年と組"), ("緑町小学校で作った", "学校の名前"),
+                    # 1 字の名前の学校・片仮名の名前・名前でない言葉の後ろに名前が続く形・「○○学校の△△です」の名乗り（学校の名前がひらがなでも）
+                    ("東小学校で作った", "学校の名前"), ("南中学校で作った", "学校の名前"), ("ヒバリ高校の文化祭", "学校の名前"), ("昔東小学校で作った", "学校の名前"),
+                    ("緑町私立中学校で見た", "学校の名前"), ("東小学校の田中です", "名乗り"), ("さくら小学校の山田です", "名乗り")):
     assert talk_log.blocked(text) == shape, (text, talk_log.blocked(text))
+# 床の限り（形では落とせない物。落とせない事を、ここで分かる形に残す。だから画面は、字を本人が見てから残す）
+for text in ("田中です", "田中といいます", "さくら小学校で作った", "中3です"):
+    assert talk_log.blocked(text) == "", (text, talk_log.blocked(text))
 
 # ---- 頁の準備（予想を書いて、紙を刷る。予想の口の返事は見ない: 予想の段が無い作りでも、この先が同じに通るように）
 post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"})
@@ -278,8 +287,16 @@ for word in ("getUserMedia", "MediaRecorder", "AudioContext", "createMediaStream
 assert "processLocally:true" in hanasu.SCRIPT and "r.processLocally=true" in hanasu.SCRIPT and "REC.available({langs:[LANG],processLocally:true})" in hanasu.SCRIPT
 # 送る所は 1 つで、字のフォームの形だけ。聞き取った所（onresult）からは送らない
 assert hanasu.SCRIPT.count("fetch(") == 1 and "fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}" in hanasu.SCRIPT
-onresult = hanasu.SCRIPT[hanasu.SCRIPT.index("r.onresult"):hanasu.SCRIPT.index("r.onerror")]
+onresult = hanasu.SCRIPT[hanasu.SCRIPT.index("r.onresult"):hanasu.SCRIPT.index(" r.onerror")]
 assert "fetch" not in onresult and "submit" not in onresult and "box.value" in onresult
+# 聞き取った所は、欄に字を足して知らせるだけ。字の並びごと固定する（ここに、送る・押す・残すを足すと落ちる。「残すを押すまで送らない」が設計の要）
+assert onresult == "r.onresult=(ev)=>{\n  // 読み上げの間に入った字は、端末が自分の答えを聞いた物なので入れない。\n  if(window.speechSynthesis&&speechSynthesis.speaking)return;\n  for(let i=ev.resultIndex;i<ev.results.length;i++){if(!ev.results[i].isFinal)continue;const t=ev.results[i][0].transcript.trim();\n   if(t){box.value=(box.value?box.value+' ':'')+t;root.dataset.via='voice';note(root,M.heard)}}};\n", onresult
+# 送る所は、残すを押した時の所だけ。残す釦を code から押す所・フォームを code から送る所が無い（押すのは、聞く口の声を止める 1 か所だけ）
+SUBMIT = hanasu.SCRIPT.index("document.addEventListener('submit'")
+assert hanasu.SCRIPT.index("fetch(") > SUBMIT and hanasu.SCRIPT.count(".hanasu-go") == 1 and hanasu.SCRIPT.index(".hanasu-go") > SUBMIT
+assert hanasu.SCRIPT.count(".click()") == 1 and "if(ask)ask.click()" in hanasu.SCRIPT
+for word in ("requestSubmit", "dispatchEvent", ".submit()"):
+    assert word not in hanasu.SCRIPT, word
 # 既定の音声認識（声を外の認識のサービスへ送る事がある）は、切り替えが browser の時にしか使わない
 assert "if(how==='browser'){listen(root,false);return}" in hanasu.SCRIPT and hanasu.SCRIPT.count("listen(root,false)") == 1
 assert "let how=want==='off'?'none':feat?'local':(want==='browser'&&REC)?'browser':'none'" in hanasu.SCRIPT
@@ -321,6 +338,19 @@ left = {t["text"] for t in talk_log.talks(G)}
 assert len(talk_log.talks(G)) == before - 4 and {THINK, CRAFT_OTHER, CRAFT_NOWHO} <= left and not {CRAFT, CRAFT_QUIET} & left
 after = get(f"/loop/{G}")[1]
 assert KEEP_OPEN not in after and CRAFT not in after and CRAFT_OTHER in after
+
+# ---- 記録に結ぶ条件: 同じ玩具・同じ紙（仮説と版）・同じ印の物だけ。条件を 1 つ外した物は入らない
+W3, TORA = "uvwxyzabcd", "NDL-1187053-R0000014-R"
+for hid, ver, who, text in (("H-B", 1, W3, "別の仮説の紙の工夫"), ("H-A", 2, W3, "別の版の紙の工夫"), ("H-A", 1, "qrstuvwxyz", "別の画面の工夫"), ("H-A", 1, W3, "同じ紙の工夫")):
+    path, failures = talk_log.add(G, "craft", text, hypothesis_id=hid, sheet_version=ver, step=1, who=who)
+    assert path and not failures, failures
+assert talk_log.bind(TORA, "H-A", 1, W3, "R-0002") == 0, "別の玩具の記録には入らない"
+assert talk_log.bind(G, "H-A", 1, "", "R-0002") == 0 and talk_log.bind(G, "H-A", 1, "Tanaka Taro!", "R-0002") == 0, "印が無いと入らない"
+assert talk_log.bind(G, "H-A", 1, W3, "R-0002") == 1 and [k["text"] for k in talk_log.kufu(G, "R-0002")] == ["同じ紙の工夫"]
+assert talk_log.bind(G, "H-A", 1, W3, "R-0003") == 0, "1 回入った工夫は、次の記録に動かない"
+assert talk_log.bind(G, "H-B", 1, W3, "R-0003") == 1 and [k["text"] for k in talk_log.kufu(G, "R-0003")] == ["別の仮説の紙の工夫"]
+assert talk_log.bind(G, "H-A", 2, W3, "R-0003") == 1 and {k["text"] for k in talk_log.kufu(G, "R-0003")} == {"別の仮説の紙の工夫", "別の版の紙の工夫"}
+assert "別の画面の工夫" in {t["text"] for t in talk_log.talks(G, scene="craft") if not t["record_id"]}
 
 server.shutdown()
 open_server.shutdown()
