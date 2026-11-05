@@ -246,7 +246,10 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     shapes += tpl.diagram(diagram_x, top, DIAGRAM_W, DIAGRAM_H, p)
     texts.append(TextBox(diagram_x, top, DIAGRAM_W, DIAGRAM_H, None))
     # 図の説明は雛形が持てる（全部の玩具の線の報告）。御来迎の筒の言葉を、車や凧の図に刷らないため。無ければ今までの文。
-    _block(texts, [getattr(tpl, "DIAGRAM_CAPTION", "閉じた時の中の様子（破線は筒の中）")], diagram_x, top + DIAGRAM_H + 1, 2.8, DIAGRAM_W)
+    # 形で図が変わる雛形は diagram_caption(p) で持ち、空なら札を刷らない（#294。俵に車と台の札を刷らないため）。
+    caption = tpl.diagram_caption(p) if hasattr(tpl, "diagram_caption") else getattr(tpl, "DIAGRAM_CAPTION", "閉じた時の中の様子（破線は筒の中）")
+    if caption:
+        _block(texts, [caption], diagram_x, top + DIAGRAM_H + 1, 2.8, DIAGRAM_W)
     y = _block(texts, ["組み方"], page.x0, top, HEAD_SIZE, left_w)
     y = _block(texts, [f"{i}. {s}" for i, s in enumerate(tpl.steps(p), 1)], page.x0, y, BODY_SIZE, left_w)
     y = _block(texts, ["遊び方", how_it_moves, "力を入れすぎず、手でゆっくり動かす"], page.x0, y + 1, BODY_SIZE, left_w)
@@ -332,42 +335,6 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     # 物差しは型紙にある（刷りの倍率は型紙で確かめる）。この紙では測らないので刷らない（U-25）。
     failures = check_layout(page, [], texts)
     return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": None, "shapes": shapes, "images": images}, failures
-
-
-# どちらが良いかを決める問いは置かない（J-025、順位を付けない）。3 問目は次の試しを自分で決める余白（本人の「工夫の余白」）。
-COMPARE_QUESTIONS = ("それぞれ、どこがおもしろく動きましたか", "2 つで、動き方のどこが違いましたか", "もう 1 つ見比べるなら、何を変えますか")
-COMPARE_LIMIT = "どちらかがよく動いても、昔の作り方の証明にはなりません。紙で言えるのは、この紙がどう動くかまでです。"
-
-
-def compose_compare(source, toy, ha, hb, labels, page_name="A4"):
-    """2 つの仮説を見比べる紙（J-019）。計算の上限も、どちらが正しいかの欄も置かない。
-
-    判断の芯: 問うのは「どこが違ったか」で、勝ち負けを決めない（記録は観察で成績にしない。philosophy.md）。
-    """
-    page = PAGES[page_name]
-    width = page.x1 - page.x0
-    texts, shapes = [], []
-    y = _block(texts, [f"見比べる紙 {toy} 仮説 {labels[0]} と 仮説 {labels[1]}"], page.x0, page.y0, TITLE_SIZE, width)
-    y = _block(texts, mark_lines(source), page.x0, y + 1, BODY_SIZE, width)
-    # 型紙が同じ仮説の組（御来迎の C と D）は動かし方だけが違う。2 個作らせると、作りの差が動かし方の差に混ざる。
-    same = (ha.get("template"), ha.get("params")) == (hb.get("template"), hb.get("params"))
-    head = "型紙は 1 つ。1 個を作り、同じ物を 2 通りの動かし方で試す" if same else "2 つの型紙を同じ紙で刷って作り、同じ手で試す"
-    y = _block(texts, [head], page.x0, y + GAP, HEAD_SIZE, width)
-    for label, h in zip(labels, (ha, hb)):
-        y = _block(texts, [f"{label}: {h['name']}", h["how_it_moves"], f"見る物: {h['to_measure']}"], page.x0, y + 1, BODY_SIZE, width)
-    y = _block(texts, ["作る前に: どちらがどう違うと思いますか"], page.x0, y + GAP, HEAD_SIZE, width)
-    y += ANSWER_GAP
-    shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
-    # 各 3 回の角度の表は外した（角度は今回の課題でない、U-25 の案 3）。見るのは動き方のおもしろさと違い。
-    # 書く欄を広く取る。表が無くなった分、言葉か絵で書けるようにする。
-    y = _block(texts, ["見て考える"], page.x0, y + GAP, HEAD_SIZE, width)
-    for q in COMPARE_QUESTIONS:
-        y = _block(texts, [q], page.x0, y, BODY_SIZE, width) + ANSWER_GAP * 2
-        shapes.append({"kind": "line", "x1": page.x0, "y1": y - ANSWER_GAP - 1.5, "x2": page.x1, "y2": y - ANSWER_GAP - 1.5})
-        shapes.append({"kind": "line", "x1": page.x0, "y1": y - 1.5, "x2": page.x1, "y2": y - 1.5})
-    y = _block(texts, [COMPARE_LIMIT], page.x0, y + 1, BODY_SIZE, width)
-    failures = check_layout(page, [], texts)
-    return {"page": page, "parts": [], "texts": texts, "samples": [], "ruler": None, "shapes": shapes}, failures
 
 
 def compose_after(source, title, after, page_name="A4", sheet_set=None):

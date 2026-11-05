@@ -265,7 +265,10 @@ def post(handler, sid, form):
     version = step = None
     failures = []
     if scene == "craft":
-        if not printed_versions(sid, hid):
+        from . import think_sheet
+
+        # 話した考えから作った案に付く工夫は、作った本人の画面からだけ受ける（ループ1、#335）。
+        if not printed_versions(sid, hid) or not think_sheet.usable(handler, sid, hid):
             failures = [Failure("F8.references", "hypothesis_id", "刷った紙が無い")]
         else:
             from . import tsukuru

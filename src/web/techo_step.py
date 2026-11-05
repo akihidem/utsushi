@@ -340,6 +340,8 @@ const save = async (result) => {
     const j = await r.json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
     saved = true;
+    // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。残らなかった時は作り直さない。
+    if (window.utsushiNewWho) window.utsushiNewWho();
     form.reset(); chosen = []; showPicked();
     done = '上げました';
     for (const f of files) {
@@ -376,14 +378,18 @@ def _key(name, cls="key", attrs="", tag="button", extra=""):
     return f'<{tag}{kind} class="{cls}" {attrs}>{KEY_ICONS[name]}<span>{name}</span>{extra}</{tag}>'
 
 
-def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True):
+def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True, own=None):
     """手帖の頁。呼ぶ側（play_server）が刷ってある紙の一覧を渡す。作るのはたたき台の 1 枚だけ（J-032）。それが刷られていない時は、紙を作る道だけを出す（手順は紙と一緒に使う物なので）。"""
     data = hypotheses.load(sid)
     title = f'{data["toy"]} · 手帖'
     hid = hypotheses.sheet_of(sid)["id"]
+    # 話した考えから作った本人の紙（own）が刷ってあって、雛形の手順を持つ時は、その紙を作る（作っている紙の記録として残すため）。札で選ばせない。
+    mine = tsukuru._paper(sid, own) if own else None
+    if mine and mine.get("params") and printed_versions(sid, own):
+        hid, printed_ids = own, [own]
     if hid not in printed_ids:
         return _doc(title, look, f'<main class="te" data-scene="step"><h1 class="sr">手帖</h1><div class="end"><a class="key go" href="/toy/{esc(sid)}">紙を作る</a></div></main>')
-    h = next(x for x in data["hypotheses"] if x["id"] == hid)
+    h = tsukuru._paper(sid, hid)
     vs = printed_versions(sid, hid)
     v = version if version in vs else (vs[-1] if vs else 1)  # 開いた時の版のまま作り続ける（別の人の報告で版が上がっても、手順の文を変えない）
     template, p = _params(sid, data, h, v)

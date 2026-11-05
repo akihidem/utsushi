@@ -135,6 +135,18 @@ def material(rid):
     return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
 
 
+def next_target(source_id, hid):
+    """次の版を足す仮説。自分の紙（OWN-n）の記録から作る次の版は、たたき台へ向ける（根拠は OWN-n の記録のまま）。
+    なぜ: 型紙は玩具ごとに 1 枚（J-032）で、最新版が次の人の型紙になる。OWN-n に版を足しても紙は刷られず、次の人にも届かない。ループ1 を通った人の工夫がループ2（型紙の改善）に届くように。
+    型紙なしの紙（寸法の無い案）の記録は向く先が無いので、そのまま返す。組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らないため。欄も節の数も出ず、受け口と床が断る。
+    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。"""
+    from .hypotheses import sheet_of
+
+    if not str(hid).startswith("OWN-") or not (_hypothesis(source_id, hid) or {}).get("params"):
+        return hid
+    return sheet_of(source_id)["id"]
+
+
 def material_text(rid):
     """鍵の無い道で、人（作る側）が解釈と変更を書く前に読む材料の文。人の説明と、話した字を、別の仕切りで出す。"""
     m = material(rid)
@@ -155,6 +167,9 @@ def material_text(rid):
         lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
     elif not talk["items"]:
         lines.append("  （この記録に結んだ字は無い）")
+    target = next_target(rec["source_id"], rec["hypothesis_id"])
+    if target != rec["hypothesis_id"]:
+        lines += ["", f"次の版は {target} に足します（根拠はこの記録）"]
     lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
     return "\n".join(lines)
 
@@ -207,14 +222,16 @@ def confirm_interpretation(rid, by, content=None):
 
 
 def confirmed_records(source_id, known=None):
-    """前例として引ける記録。人が解釈を確定した物だけ。"""
+    """前例として引ける記録。人が解釈を確定した物だけ。動画の受け口の記録は外す（AI の道具に、上げた人の文を渡さない）。"""
+    from .records import UPLOADED
+
     out = []
     d = base() / "records"
     for p in sorted(d.glob("R-*.json")):
         if (d / "withdrawn" / p.name).exists():
             continue
         rec = store.read_json_or_skip(p)
-        if rec is not None and rec.get("source_id") == source_id and confirmed(rec["id"]):
+        if rec is not None and rec.get("source_id") == source_id and rec.get("via") != UPLOADED and confirmed(rec["id"]):
             out.append({**rec, "interpretation": interpretation(rec["id"])["content"]})
     return out
 
@@ -265,8 +282,11 @@ def latest_version(source_id, hid):
     return max(adopted_versions(source_id, hid), default=1)
 
 
-def check_proposal(p, source, will_confirm=()):
-    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。"""
+def check_proposal(p, source, will_confirm=(), need_why=True):
+    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。
+    need_why は変更ごとの理由を求めるか。採った新しい案を版にする時だけ外す（案の字は版の記録の new_case に残す。_new_as_changes）。"""
+    from .hypotheses import sheet_of
+
     out = []
     sid = source["source_id"]
     template = _template(sid)
@@ -291,6 +311,9 @@ def check_proposal(p, source, will_confirm=()):
         h = _hypothesis(sid, hid)
         if h is None:
             out.append(Failure("F8.references", str(hid), "その仮説は実在しない"))
+        elif hid != sheet_of(sid)["id"]:
+            # 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（J-032）。ほかの仮説に版を足しても次の人に届かず、必須 2 種では紙も刷れない。
+            out.append(Failure("F7.revision", str(hid), f"次の版はたたき台（{sheet_of(sid)['id']}）にだけ足す"))
         else:
             current, _ = version_params(sid, hid, latest_version(sid, hid))
             merged = dict(current)
@@ -299,7 +322,7 @@ def check_proposal(p, source, will_confirm=()):
                 if c.get("param") not in ALLOWED[template]:
                     out.append(Failure("F7.revision", str(c.get("param")), "変えてよい寸法の外"))
                     continue
-                if not c.get("why", "").strip():
+                if need_why and not c.get("why", "").strip():
                     out.append(Failure("F4.evidence", c["param"], "変える理由が無い"))
                 merged[c["param"]] = c.get("to")
             if not any(c.get("to") != {**TEMPLATES_DEFAULT(template), **current}.get(c.get("param")) for c in changes):
@@ -337,10 +360,15 @@ def TEMPLATES_DEFAULT(template):
 
 
 def save_proposal(proposal, source, drafted_by):
+    from .hypotheses import sheet_of
+
     failures = check_proposal(proposal, source)
     if failures:
         return None, failures
-    return save_numbered("proposal", "P", lambda pid: {**proposal, "id": pid, "source_id": source["source_id"], "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
+    sid = source["source_id"]
+    # 案を作った時のたたき台の版を持つ。採る時に、この版からの差だけを今の版に重ねるため（_new_as_changes）。
+    based = proposal.get("based_on_version") or latest_version(sid, sheet_of(sid)["id"])
+    return save_numbered("proposal", "P", lambda pid: {**proposal, "based_on_version": based, "id": pid, "source_id": sid, "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
 
 
 def _next_params(sid, hid, changes):
@@ -349,9 +377,44 @@ def _next_params(sid, hid, changes):
     return latest_version(sid, hid) + 1, {**current, **{c["param"]: c["to"] for c in changes}}
 
 
+def _write_version(p, pid, by, hid, changes, new_case=None):
+    """採った変更を次の版の記録にして、版の番号を返す。new_case は版にした案の字で、頁には出さない（変更の理由の欄は頁の輪の節に出る）。"""
+    sid = p["source_id"]
+    version, params = _next_params(sid, hid, changes)
+    _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": changes, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now(), **({"new_case": new_case} if new_case else {})})
+    return version
+
+
+def _new_as_changes(sid, hid, new, based_on):
+    """採った新しい案が、たたき台の寸法の差で言えるなら、次の版の変更にして返す。言えなければ空（J-032）。
+
+    なぜ版にするか: 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（本人の方針 11-05）。別の仮説として控えに入れると、次の人に届かない。
+    差は案を作った時の版（based_on）から見て、今の版に重ねる。案は全部の寸法を書くので、今の版と比べると、案が言っていない前の版の直しまで戻してしまう。
+    案を作った後に今の版で変わった寸法に触る案は、後の直しを黙って上書きしないよう、版にしない。雛形の違う案は、寸法を重ねる版の形に乗らない。
+    今の版と差が無い案は読みだけが違う案で、版にならない。変えてよい寸法の外（形の違い）と紙に乗らない差は、呼ぶ側の check_proposal が落とす。
+    理由の欄は空にする: 頁の輪の節に出る欄で、案の字は Claude の字なので頁に出さない（new_case に残す）。
+    """
+    template = _template(sid)
+    defaults = TEMPLATES_DEFAULT(template)
+    then, _ = version_params(sid, hid, based_on)
+    params = new.get("params")
+    if new.get("template", new.get("template_id", template)) != template or then is None or not isinstance(params, dict):
+        return []
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    then, now = {**defaults, **then}, {**defaults, **current}
+    said = {k: v for k, v in params.items() if then.get(k) != v}
+    if any(now.get(k) != then.get(k) and now.get(k) != v for k, v in said.items()):
+        return []
+    return [{"param": k, "to": v, "why": ""} for k, v in sorted(said.items()) if now.get(k) != v]
+
+
 @exclusive
 def adopt(pid, by, accept_params=(), accept_new=False, source=None):
-    """人の採否（H7）。採った物だけが版と仮説の一覧に入る。次に試す物の提案は、採っても並びを変えない。"""
+    """人の採否（H7）。採った物だけが版と作る側の控えに入る。次に試す物の提案は、採っても並びを変えない。
+    新しい案（accept_new）は道を閉じず、札にも出さない（J-032）: 寸法の差で言える案はたたき台の次の版にし、言えない案と紙に乗らない案は
+    作る側の控え（extra-hypotheses）に残す。人が採った案を捨てないため。たたき台は替えない（替えるのは本人が決めた時に記録の欄 sheet を直す）。"""
+    from .hypotheses import sheet_of
+
     path = folder() / f"proposal-{pid[2:]}.json"
     p = _read(path)
     if p is None:
@@ -372,11 +435,15 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
         return None, failures
     made = {}
     if chosen:
-        hid = p["hypothesis_id"]
-        version, params = _next_params(sid, hid, chosen)
-        _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": chosen, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
-        made["version"] = version
-    if accept_new and p.get("new_hypothesis"):
+        made["version"] = _write_version(p, pid, by, p["hypothesis_id"], chosen)
+    sheet = sheet_of(sid)["id"]
+    # 番号を持たない前の形の案は版 1 の時の案（前は Claude に版 1 の寸法だけを渡していた）。
+    as_version = _new_as_changes(sid, sheet, p["new_hypothesis"], p.get("based_on_version", 1)) if accept_new and p.get("new_hypothesis") else []
+    # 紙に乗らない差は版にしない（版の記録だけ残り、紙が刷れない形を作らない）。この時は下の控えに入る。
+    if as_version and not check_proposal({"record_ids": p["record_ids"], "hypothesis_id": sheet, "changes": as_version}, source, need_why=False):
+        new_case = {k: p["new_hypothesis"][k] for k in ("name", "how_it_moves")}
+        made["version"] = made["new_hypothesis_as_version"] = _write_version(p, pid, by, sheet, as_version, new_case)
+    elif accept_new and p.get("new_hypothesis"):
         extras_path = folder() / f"extra-hypotheses-{sid}.json"
         extras = _read(extras_path) or []
         new = {**p["new_hypothesis"], "id": f"H-N{len(extras) + 1}", "status": "untested", "evidence": p["new_hypothesis"].get("evidence", []) + [{"kind": "record", "where": rid, "what": "試した記録", "certainty": "記録"} for rid in p["record_ids"]], "proposal": pid, "adopted_by": by.strip()}
@@ -429,7 +496,7 @@ def next_version(rid, by, content, change, source, sheet_dir):
     if failures:
         return None, failures
     rec = record(rid)
-    sid, hid = rec["source_id"], rec["hypothesis_id"]
+    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"])
     proposal = {"record_ids": [rid], "hypothesis_id": hid, "changes": [change]}
     failures = check_proposal(proposal, source, will_confirm=[rid])
     if failures:
@@ -573,7 +640,7 @@ def main(argv=None):
                 for c in args.change:
                     k, v = c.split("=", 1)
                     changes.append({"param": k, "to": float(v), "why": args.why})
-                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or record(args.record)["hypothesis_id"], "changes": changes}, source, "human")
+                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"]), "changes": changes}, source, "human")
             else:
                 from api.loop_agents import draft_proposal
 
