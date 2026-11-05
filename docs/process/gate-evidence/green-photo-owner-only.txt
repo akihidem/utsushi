@@ -1,0 +1,9 @@
+# 命令: .venv/bin/python tests/test_photo_owner_only.py
+# commit: ff54436（回した時の HEAD）
+読めない記録を飛ばした: owners.json（JSONDecodeError）
+読めない記録を飛ばした: owners.json（JSONDecodeError）
+/tmp/tmpcfnqoi_g/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpcfnqoi_g/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpcfnqoi_g/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok: 確認の前の写真は、上げた本人の画面にだけ出す
+rc=0
