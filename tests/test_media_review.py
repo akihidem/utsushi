@@ -78,7 +78,7 @@ def fetch(path):
         return e.code, e.read()
 
 
-# 確認の前は、ギャラリーと玩具の頁の「他の人が作った物」に出ない。字は出る。手帖には出る（上げた人が受け取りを確かめる所）。
+# 確認の前は、ギャラリーと玩具の頁の「他の人が作った物」に出ない。字は出る。手帖には上げた本人の画面にだけ出る（上げた人が受け取りを確かめる所）。
 rid = new_record()
 assert techo_site.save_media(rid, "image/jpeg", jpeg())[0] == "m1.jpg"
 assert media_review.waiting() == [(rid, "m1.jpg")]
@@ -86,7 +86,10 @@ url = f"/record/{rid}/media/m1.jpg"
 assert url not in gallery(), "確認の前の写真をギャラリーに出さない"
 assert "首が長く揺れた" in gallery(), "字は出る"
 assert url not in toy.toy_page(G), "確認の前の写真を玩具の頁に出さない"
-assert url in techo_site.page(G, ["H-A"], "/picture"), "手帖には出る"
+assert url not in techo_site.page(G, ["H-A"], "/picture"), "別の人の手帖に確認の前の写真を出さない"
+media_review.claim(rid, "m1.jpg", "上げた画面の鍵")
+assert url in techo_site.page(G, ["H-A"], "/picture", up_key="上げた画面の鍵"), "上げた本人の手帖には出る（受け取りを確かめる）"
+assert url not in techo_site.page(G, ["H-A"], "/picture", up_key="別の鍵"), "別の鍵では出ない"
 
 # 物だけと確かめた物は出る。撮影の情報は外れている。
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []

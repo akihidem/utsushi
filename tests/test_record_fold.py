@@ -3,8 +3,8 @@
 なぜ: 欄の全部が刷る前の頁から開いていて、必須は見た事だけなのに「全部書くのか」と読める。すぐ作る形（#242）と逆の重さになる。
 見る線: 最初に見える欄は、見た事・感想・工夫の 3 つ。残りはその後ろに置き、見出しの文があれば素の details に畳む（閉じたままでも送られる）。
 記録の形と、試した後の紙が開く条件は変えない。
-紙はたたき台の 1 枚なので、ふだんは選ぶ欄が無く、記録はたたき台に入る（#332）。前に書いた自分の仮説がある時と、版が 2 つ以上ある時だけ選ぶ欄が出て、
-それは畳まない: 見えないまま先頭の物で送ると、記録と試した後の紙が別の案になる。
+紙はたたき台の 1 枚なので、ふだんは選ぶ欄が無く、記録はたたき台に入る（#332）。話した本人の案がある時と、版が 2 つ以上ある時だけ選ぶ欄が出て、
+それは畳まない: 見えないまま送ると、記録と試した後の紙が別の案になる。
 畳みの見出しは本人が採った文を入れる。入れる前の形（定数が空で畳まない）と畳んだ形は、試験の中で見出しの例を置いて見る。
 """
 import os
@@ -172,15 +172,11 @@ assert "sheet_version" in Fields(form).outer, form
 assert chosen(form, "sheet_version") is None
 print("ok: 版の欄は畳まない")
 
-# 前に書いた自分の仮説がある時だけ、どの紙かを選ぶ欄が出る。畳まない: 見えないまま先頭のたたき台で送ると、記録と試した後の紙が別の案になる。
-# 既定を作り込まない（#319）。先頭はたたき台で、通らなかった時は選んだ物が残る。
-assert post(f"/toy/{G}/own", name="糸で開く形", how="糸を引くと扇が開く", evidence="図の右の糸")[0] == 303
-form = form_of(get(f"/toy/{G}"))
+# 話した考えから作った本人の案がある時だけ、どの紙かを選ぶ欄が出る。畳まない: 見えないまま送ると、記録と試した後の紙が別の案になる。
+form = toy.record_form(G, hypotheses.load(G), [{"id": "OWN-1", "name": "糸で開く形"}])
 assert "hypothesis" in Fields(form).outer and "hypothesis" not in Fields(form).inner, form
-assert chosen(form) is None and re.search(r'<select name="hypothesis"><option value="([^"]+)"', form).group(1) == "H-A", form
-code, page = post(f"/toy/{G}/record", **{**bad, "hypothesis": "OWN-1"})
-assert code == 422 and chosen(form_of(page)) == "OWN-1", code
-print("ok: 自分の仮説がある時のどの紙かの欄は畳まない")
+assert chosen(form) == "OWN-1", "作った本人の案を選んだ形で出す（たたき台の記録に取り違えない）"
+print("ok: 本人の案がある時のどの紙かの欄は畳まない")
 
 # 見出しの文が無い時（本人の確認が済むまで）: 畳まず、全部の欄が見える。並びは同じで、残りが後ろに来る。
 toy.RECORD_MORE = ""
@@ -201,6 +197,6 @@ ADOPTED = "もっと書く（あれば）"
 assert SHIPPED == ADOPTED, SHIPPED
 toy.RECORD_MORE = SHIPPED
 f = Fields(form_of(get(f"/toy/{G}")))
-assert f.summary == ADOPTED and "open" not in f.details[0] and "hypothesis" in f.outer and REST <= f.inner, (f.summary, f.outer)
+assert f.summary == ADOPTED and "open" not in f.details[0] and FIRST <= f.outer and REST <= f.inner, (f.summary, f.outer)
 print("ok: 本人が採った見出しで畳まれる")
 print("ok")

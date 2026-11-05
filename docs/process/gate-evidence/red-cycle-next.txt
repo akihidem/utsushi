@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_cycle.py
+# commit: 5a05083（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_cycle.py", line 69, in <module>
+    assert OWN_NEXT in order, "自分の紙の記録から次の版を見る段が無い"
+           ^^^^^^^^^^^^^^^^^
+AssertionError: 自分の紙の記録から次の版を見る段が無い
+rc=1

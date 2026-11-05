@@ -11,6 +11,7 @@
 import json
 import os
 import pathlib
+import re
 import tempfile
 import threading
 import urllib.error
@@ -24,7 +25,8 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # �
 from api import words  # noqa: E402
 from omochae import engine_bundle, hypotheses, loop, records, talk_log  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
-from web import hanasu  # noqa: E402
+from api import ask  # noqa: E402
+from web import hanasu, think_sheet, tsukuru  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -91,10 +93,18 @@ oid, key = made(WHO, THINK, {"push_part": "stick", "pusher_height": 84})
 confirmed = [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
 assert confirmed and confirmed[0]["version"] == 1 and confirmed[0]["confirmations"][0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, confirmed
 
+# 節から作りながら見る頁へ行ける。字は玩具の頁の入口と同じ（新しい文を足さない）
+assert think_sheet.MAKE == "作りながら見る（机の端に置く・試作）" and think_sheet.MAKE in page(f"/toy/{G}")[1]
+done = page(f"/toy/{G}?at=think-{key.split('=', 1)[1]}", cookie=key)[1]
+assert f'/toy/{G}/tsukuru?h={oid}"' in done and think_sheet.MAKE in done, "節に、その紙の作りながら見る頁への道"
+
 # ── 作りながら見る: 本人には、その人の紙が開く ──
 code, body = page(f"/toy/{G}/tsukuru", cookie=key)
 assert code == 200 and f'data-hid="{oid}"' in body, "紙の印が無ければ、本人の紙を開く"
 assert f"{oid}_v1_tejun.png" in body and THINK not in body, "手順の紙の絵はその紙の物。話した字は頁に出さない"
+title = re.search(r'<p class="top">.*?<span>(.*?)</span>', body, re.S).group(1)
+assert hypotheses.own_hypotheses(G)[-1]["name"] in title and oid not in title, "頁の頭は案の名前で呼ぶ。番号は出さない"
+assert f"手順の紙（{hypotheses.own_hypotheses(G)[-1]['name']} の紙" in body and f"手順の紙（{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ"
 assert page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].count(f'data-hid="{oid}"') == 1
 assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 200
 total = body.count("<li")
@@ -110,7 +120,7 @@ assert send(f"/toy/{G}/ask-json", {"hypothesis": oid, "question": "谷折りっ�
 assert send(f"/toy/{G}/ask", {"hypothesis": oid, "question": "谷折りって？", "who": OTHER})[0] == 422
 assert send(f"/toy/{G}/record-json", {"hypothesis": oid, "result": "わからない", "who": OTHER})[0] == 422
 assert send(f"/toy/{G}/record", {"hypothesis": oid, "result": "わからない", "who": OTHER})[0] == 422
-assert send(f"/toy/{G}/print-own", {"id": oid})[0] == 422, "ほかの人は刷り直せない"
+assert send(f"/toy/{G}/print-own", {"id": oid})[0] == 404, "刷り直す口は閉じた（J-032 の点 2）"
 assert records.all_records(G) == [], "ほかの人の記録を残さない"
 
 # 本人の札・工夫・問いは、その紙に付く
@@ -168,6 +178,11 @@ code, body = page(f"/toy/{G}/tsukuru", cookie=k3)
 assert code == 200 and f'data-hid="{o3}"' in body and f"{o3}_v1_free.png" in body, "作りながら見る頁に、型紙なしの紙の絵"
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": o3, "sheet_version": 1, "text": C3, "who": W3}, cookie=k3)[0] == 200
 assert send(f"/toy/{G}/ask-json", {"hypothesis": o3, "question": "糊代はどこ？", "who": W3}, cookie=k3)[0] == 200
+assert tsukuru.step_texts(G, o3) == [] and f"{o3}_v1_free.png" in body and body.count("<li") == 1, "型紙なしの紙に雛形の手順を出さない"
+step_one = TEMPLATES["slider_fan"].steps(TEMPLATES["slider_fan"].DEFAULTS)[0]
+context, _ = ask.sheet_context(G, o3)
+assert step_one not in context and "組み方" in context, "聞く口にも、無い手順を渡さない"
+assert step_one in ask.sheet_context(G, SHEET)[0], "ほかの紙には手順を渡す（試験の見本が効いている事を見る）"
 assert send(f"/toy/{G}/record", {"hypothesis": o3, "sheet_version": 1, "result": "動いた", "who": W3}, cookie=k3)[0] == 303
 r3 = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == o3)
 assert {x["text"] for x in talk_log.kufu(G, r3)} == {T3, C3}

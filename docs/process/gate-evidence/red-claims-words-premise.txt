@@ -1,0 +1,6 @@
+# 命令: bash -c '.venv/bin/python tests/test_loop_premise.py 2>&1 | tail -2; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: b15ed40（回した時の HEAD）
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: words の担当に前提が渡っていない
+試験 rc=1
+rc=0
