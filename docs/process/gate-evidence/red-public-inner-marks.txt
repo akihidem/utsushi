@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_public_inner_marks.py
+# commit: 2a95e51（回した時の HEAD）
+/tmp/tmpjb1shjqe/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpjb1shjqe/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpjb1shjqe/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpjb1shjqe/play/NDL-1187053-R0000005-L/.tmp-qjehtniy/H-A_v2.pdf
+/tmp/tmpjb1shjqe/play/NDL-1187053-R0000005-L/.tmp-qjehtniy/H-A_v2_tejun.pdf
+/tmp/tmpjb1shjqe/play/NDL-1187053-R0000005-L/.tmp-qjehtniy/H-A_v2_after.pdf
+Traceback (most recent call last):
+  File "tests/test_public_inner_marks.py", line 87, in <module>
+    assert not NUM.findall(visible(page(opened, path))), (path, "記録の番号")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/toy/NDL-1187053-R0000005-L', '記録の番号')
+rc=1

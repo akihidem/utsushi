@@ -179,17 +179,37 @@ def _num(v):
         return v  # 数でない物は記録の検査に落とさせ、理由を画面に返す
 
 
+def without_notes(page):
+    """頁の style と script の注釈を外す。作る側の控え（決定や Issue の番号、内部の名前）なので、合言葉なしで開いた場には送らない（J-028）。
+    script は行の頭の // と、文の後ろの // だけを外す。字の中の // や URL を切らないため。"""
+    def clean(m):
+        tag, attrs, part = m.groups()
+        if tag == "style":
+            part = re.sub(r"/\*.*?\*/", "", part, flags=re.S)
+        else:
+            part = re.sub(r"(?m)^[ \t]*//[^\n]*\n?", "", part)
+            part = re.sub(r"(?m)(?<=[;{}])[ \t]*//[^\n'\"`]*$", "", part)
+        return f"<{tag}{attrs}>{part}</{tag}>"
+
+    return re.sub(r"<(style|script)\b([^>]*)>(.*?)</\1>", clean, page, flags=re.S)
+
+
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
+    # Server の見出しに Python の版を出さない（公開の前の点検）。
+    server_version = "utsushi"
+    sys_version = ""
 
     def log_message(self, *a):  # 記録の文を記録に残さない
         pass
 
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+        if isinstance(body, str) and ctype.startswith("text/html") and getattr(self.server, "public_open", False):
+            body = without_notes(body)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -654,7 +674,7 @@ class Handler(BaseHTTPRequestHandler):
         if failures:
             from . import toy
 
-            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"]), at=f"next-{rid}", filled=("next", form)))
+            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
         return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):

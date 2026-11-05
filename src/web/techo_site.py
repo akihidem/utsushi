@@ -204,7 +204,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.techo input[type=text]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
+.techo input[type=text],.techo input[type=number]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
 .techo #ask-form{display:flex;gap:10px;align-items:stretch}.techo #ask-form input{flex:1;min-width:0;margin:0}.techo #ask-form .go{white-space:nowrap}
 .techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:var(--onaccent);display:grid;place-items:center;cursor:pointer;justify-self:center;margin:0}
 .techo .mic svg{width:48px;height:48px;stroke:var(--onaccent);fill:none;stroke-width:3;stroke-linecap:round}
@@ -352,7 +352,7 @@ def feedback(sid, r, photos=True, up_key=None, can_tell=False):
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told and not photos:
-        body = '<p class="meta">説明を残しました。</p>' + ai_part(r, up_key)
+        body = '<p class="meta">説明を残しました。</p>' + ai_part(r, up_key, photos=False)
     elif told:
         from web.play_server import next_form
 
@@ -364,24 +364,28 @@ def feedback(sid, r, photos=True, up_key=None, can_tell=False):
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
+    # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
+    if not photos and str(r["hypothesis_id"]).startswith("OWN-"):
+        return body
     return f'<p><a href="{after}">試した後の紙</a></p>{body}'
 
 
-def ai_part(r, up_key=None):
-    """人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。"""
+def ai_part(r, up_key=None, photos=True):
+    """人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。
+    photos=False は合言葉なしで開いた場で、読みと観察の文を出さない（J-028）。"""
     from omochae import loop
     from api import observe
 
     rid = esc(r["id"])
     out = ""
-    i = loop.interpretation(r["id"])
+    i = loop.interpretation(r["id"]) if photos else None
     if i and isinstance(i.get("content"), dict):
         c = i["content"]
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
         out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
-    o = seen_observation(r["id"], up_key)
+    o = seen_observation(r["id"], up_key) if photos else None
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
@@ -485,7 +489,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
-        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"]))}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if uploads else ""}{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=uploads, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')

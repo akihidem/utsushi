@@ -42,7 +42,7 @@ const small={};for(const e of document.querySelectorAll('body *')){if(!vis(e)||!
 // 縦の中心が近い物を同じ段と数える。top で数えると、今いる項目の下の罫の分だけずれて、同じ段を別の段と数えた
 const rows=[];for(const a of document.querySelectorAll('.nav a')){if(!vis(a))continue;const r=a.getBoundingClientRect(),c=(r.top+r.bottom)/2,hit=rows.find(x=>Math.abs(x.c-c)<14);if(hit)hit.n++;else rows.push({c,n:1})}
 // 字の欄と選ぶ欄は、名前の下で箱の幅いっぱいに出す（#290）。箱は label の親の、枠と余白を除いた幅
-const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
+const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>input[type=number],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
 const narrow=wide.filter(f=>{const l=f.parentElement,p=l.parentElement,s=getComputedStyle(p),box=p.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight),r=f.getBoundingClientRect(),n=[...l.childNodes].find(x=>x.nodeType===3&&x.textContent.trim());if(r.width<box-1)return true;if(!n)return false;const t=document.createRange();t.selectNodeContents(n);return r.top<t.getBoundingClientRect().bottom-1}).map(f=>name(f.parentElement));
 parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth,nav:rows.map(x=>x.n),wide:wide.length,narrow}),'*');
 },800)</script>""" % (MIN_TAP, MIN_FONT)

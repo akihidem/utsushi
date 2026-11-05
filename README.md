@@ -64,7 +64,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 <!-- counts:start -->
 - 玩具: 83 件（`data/hypotheses` のファイルの数。必須の 2 種を含む）
 - 雛形: 9 本（`src/omochae/templates`。必須の 2 本を含む）
-- 凍結の場面: 31 本（`tests/frozen/scenarios`。うち 24 本は落ちるべき紙を入れる負の場面）
+- 凍結の場面: 34 本（`tests/frozen/scenarios`。うち 27 本は落ちるべき紙を入れる負の場面）
 <!-- counts:end -->
 
 - 用意した型紙に乗らない仮説には、寸法を作らず、身の回りの紙と紐で作るための「型紙なしの紙」を刷る

@@ -1,5 +1,5 @@
 """雛形の族によらない描く前の検査（印字域・重なり・文字）。"""
-from shapely.geometry import LineString, Polygon, box
+from shapely.geometry import LineString, Point, Polygon, box
 
 from .model import Failure
 
@@ -14,6 +14,8 @@ def text_poly(t):
 
 # 接するだけの境界を重なりと数えないための許し。計算の丸めで偽の失敗を出さない。
 EPS = 1e-6
+# SVG の stroke-miterlimit の既定。描画（render.py）は結合の形を指定しないので、刷られる角はこの限りまで尖る。
+SVG_MITER = 4
 
 
 def check_layout(page, parts, texts):
@@ -46,9 +48,22 @@ def check_layout(page, parts, texts):
     return out
 
 
-def check_bom(rows):
-    """素材が空の部品と、置き換えの根拠が無い部品を落とす。「不明」は正直な答えなので通す。"""
+def check_bom(rows, parts=()):
+    """素材が空の部品と、置き換えの根拠が無い部品と、部品表に載っていない部品を落とす。「不明」は正直な答えなので通す。"""
     out = []
+    listed = {}
+    for r in rows:
+        # 番号が重なると、どちらの行がどの部品か決まらない。
+        if r["number"] in listed:
+            out.append(Failure("F2.bom", r["name"], f"部品表の番号 {r['number']} が重なっている"))
+        listed.setdefault(r["number"], r)
+    for q in parts:
+        # 型紙に刷る部品は番号と key で部品表と結ぶ。番号だけだと、同じ番号の別の行でも通ってしまう。
+        r = listed.get(q.number)
+        if r is None:
+            out.append(Failure("F2.bom", q.name, f"部品 {q.number} が部品表に無い"))
+        elif r["key"] != q.key:
+            out.append(Failure("F2.bom", q.name, f"部品 {q.number} の部品表の行が別の物（{r['name']}）"))
     for r in rows:
         if not str(r.get("material", "")).strip():
             out.append(Failure("F2.bom", r["name"], "素材の欄が空"))
@@ -64,13 +79,37 @@ def check_art(parts):
         poly = part_poly(p)
         for item in p.art:
             pts = [(p.x + x, p.y + y) for x, y in item["pts"]]
-            geom = Polygon(pts).buffer(-0.01) if item["kind"] == "poly" else LineString(pts)
-            if not poly.buffer(0.05).contains(geom):
+            sw = item.get("sw", 0) if item.get("stroke") else 0
+            if item["kind"] == "poly":
+                geom = Polygon(pts).buffer(-0.01)
+                # 輪郭線つきの面は、線の太さの半分だけ外へ広がって刷られる。
+                ink = Polygon(pts).buffer(sw / 2, join_style=2, mitre_limit=SVG_MITER) if sw else geom
+            else:
+                geom = LineString(pts)
+                # 線は刷られる太さの帯で見る。中心線だけだと、太い線が糊代や折り線にはみ出しても通った。
+                # 端は SVG の既定（butt）と同じく平らに、角は SVG の既定（miter・限り 4）と同じく尖らせる。丸く見ると角の先を見逃す。
+                ink = geom.buffer(sw / 2, cap_style=2, join_style=2, mitre_limit=SVG_MITER)
+            # 部品の外かは、面なら塗りで見る。輪郭線が切る線の上に乗る絵（虎の頭）は、外へ出た半分を切り落とすので困らない。
+            # 折り線と糊代は、切り落とされないので輪郭線の太さまで見る。
+            inside = geom if item["kind"] == "poly" else ink
+            if not poly.buffer(0.05).contains(inside):
                 out.append(Failure("F5.image_box", p.name, "絵が部品の外に出ている"))
             for (x1, y1), (x2, y2) in p.valley + p.mountain:
-                if geom.intersects(LineString([(p.x + x1, p.y + y1), (p.x + x2, p.y + y2)])):
+                if ink.intersects(LineString([(p.x + x1, p.y + y1), (p.x + x2, p.y + y2)])):
                     out.append(Failure("F5.image_box", p.name, "絵が折り線をまたいでいる"))
             for g in p.glue:
-                if geom.intersection(Polygon([(p.x + x, p.y + y) for x, y in g])).area > EPS:
+                # 線も太さの帯（ink）にしたので、面積で見られる（中心線の面積は 0 で、線が糊代を横切っても通っていた）。
+                if ink.intersection(Polygon([(p.x + x, p.y + y) for x, y in g])).area > EPS:
                     out.append(Failure("F5.image_box", p.name, "絵が糊代にかかっている"))
+    return out
+
+
+def check_holes(parts):
+    """穴が部品の輪郭の中にある事を見る。雛形の式が穴を寸法から置くので、寸法によっては穴が紙の外に出る。"""
+    out = []
+    for p in parts:
+        poly = Polygon(p.outline)
+        for x, y, r in p.holes:
+            if not poly.buffer(EPS).contains(Point(x, y).buffer(r)):
+                out.append(Failure("F5.hole", p.name, f"穴 ({x:.1f}, {y:.1f}) が部品の外に出ている"))
     return out
