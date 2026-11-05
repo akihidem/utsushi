@@ -1,5 +1,5 @@
 {
- "criteria.md": "f412f5fbe94254a3aa38ca44c0cc831c8701ae96ead0f4b35077b8717c873dd9",
+ "criteria.md": "ec84642777d2b822a51d9b80ec89a2fc06e1c575ec00e1cee43825a9c1481f0b",
  "scenarios": {
   "neg_base_size.json": {
    "floors": [
@@ -233,7 +233,6 @@
   "test_demo_scene7",
   "test_demo_walk",
   "test_demo_walk_all",
-  "test_discriminate",
   "test_en",
   "test_engine_bundle",
   "test_error_pages",
@@ -277,6 +276,7 @@
   "test_nav_same",
   "test_next_form",
   "test_next_version_atomic",
+  "test_no_compare_sheet",
   "test_one_sheet",
   "test_one_sheet_loop",
   "test_one_sheet_page",
@@ -316,6 +316,7 @@
   "test_tap_size",
   "test_techo",
   "test_techo_site",
+  "test_techo_style_leak",
   "test_template_change",
   "test_toy_head",
   "test_toys",
@@ -329,6 +330,7 @@
   "test_tpl_string_pull",
   "test_tpl_wheel_cart",
   "test_transcription_filter",
+  "test_trial_video",
   "test_tsukuru",
   "test_tsukuru_last_step",
   "test_two_sites",

@@ -85,7 +85,7 @@ def to_svg(layout):
         else:
             kw = {"stroke_dasharray": dash} if dash else {}
             d.append(dw.Line(x, y, x + 7, y, stroke="black", stroke_width=0.25, **kw))
-    # 測らない紙（手順・試した後・見比べる・先生の見る紙。U-25）は物差しを持たない。型紙は今までどおり必ず持つ。
+    # 測らない紙（手順・試した後・先生の見る紙。U-25）は物差しを持たない。型紙は今までどおり必ず持つ。
     if layout.get("ruler"):
         rx, ry = layout["ruler"]
         d.append(dw.Line(rx, ry + 3, rx + 100, ry + 3, stroke="black", stroke_width=0.25))

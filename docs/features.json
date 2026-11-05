@@ -263,17 +263,6 @@
   "unverified": "人が図鑑の頁で読んだ確認はまだ。図鑑の頁（/zukan）はこの床を通してから描く（f15）"
  },
  {
-  "id": "f25",
-  "name": "仮説を見比べる紙と作り手用の表（案 B）",
-  "status": "doing",
-  "evidence": [
-   "src/omochae/discriminate.py",
-   "tests/test_discriminate.py",
-   "tests/test_sheet_u25.py"
-  ],
-  "unverified": "実物で未試行。Claude が見分ける試作を設計する所は未実装。虎は対象外"
- },
- {
   "id": "f26",
   "name": "作り手の工房（Claude Code の Skill・MCP・サブエージェント・フック）",
   "status": "doing",
@@ -506,5 +495,15 @@
    "tests/test_site_hokusai.py"
   ],
   "unverified": "絵は国立国会図書館の PDM（権利の記録は動画と同じ）。18 人は動く形でよい（本人の決定）。文は本人が採った（11-05、#318）。人が使った確認はまだ"
+ },
+ {
+  "id": "f43",
+  "name": "作成の過程の動画を記録に結ぶ入口（本人の指示 11-05、J-029、#337）: 音と撮影情報を落とし、止まった候補とコマの一覧を作り、札・人の確かめ・直しの案・エンジンの報告の形まで回す命令。repo の外の受け口から移す命令",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/trial_video.py",
+   "tests/test_trial_video.py"
+  ],
+  "unverified": "作り物の動画だけで通した。本物の動画での札の読みと、版の効き目はまだ。札を人が確かめるのは端末の命令で、頁は無い"
  }
 ]
