@@ -195,8 +195,8 @@ def ask_form(sid, data, asked=None, note="", filled=None):
             f'<button>聞く</button><p class="meta">{esc(making_log.ASK_NOTICE)}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
 
 
-# 記録の欄の畳みの見出し（#300）。利用者に見せる新しい文なので、本人の確認が済むまで入れない。空の間は畳まずに並べる。
-RECORD_MORE = ""
+# 記録の欄の畳みの見出し（#300）。本人が採った文（11-05）を一字も変えずに入れる。空にすると畳まずに並ぶ。
+RECORD_MORE = "もっと書く（あれば）"
 
 
 def record_form(sid, data, own, open_more=False):

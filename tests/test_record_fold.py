@@ -4,7 +4,7 @@
 見る線: 最初に見える欄は、どの紙かと、見た事・感想・工夫。残りはその後ろに置き、見出しの文があれば素の details に畳む（閉じたままでも送られる）。
 記録の形と、試した後の紙が開く条件は変えない。
 どの紙かの欄は畳まない: 配られた紙で作る人が見えないまま先頭の案で送ると、記録と試した後の紙が別の案になる（#332 で欄ごと無くなるまで）。
-畳みの見出しは利用者に見せる新しい文なので、本人の確認が済むまで入れない。入れるまで toy.RECORD_MORE は空で、畳まない。畳んだ形は、試験の中で見出しの例を置いて見る。
+畳みの見出しは本人が採った文を入れる。入れる前の形（定数が空で畳まない）と畳んだ形は、試験の中で見出しの例を置いて見る。
 """
 import os
 import re
@@ -111,8 +111,11 @@ def chosen(form, name="hypothesis"):
 toy.RECORD_MORE = EXAMPLE
 for sid in sources():
     data = hypotheses.load(sid)
-    f = Fields(toy.record_form(sid, data, []))
+    form = toy.record_form(sid, data, [])
+    f = Fields(form)
     assert f.outer == FIRST, (sid, f.outer)
+    # 既定は先頭の案で、どの玩具でも H-A。型紙は 1 枚で、たたき台は H-A（#332）。
+    assert re.search(r'<select name="hypothesis"><option value="([^"]+)"', form).group(1) == "H-A", sid
     assert REST <= f.inner, (sid, f.inner)
     assert not f.required_inner, (sid, f.required_inner)
     assert len(f.details) == 1 and "open" not in f.details[0] and f.summary == EXAMPLE, (sid, f.details, f.summary)
@@ -191,8 +194,11 @@ code, page = post(f"/toy/{G}/record", **bad)
 assert code == 422 and 'value="筒"' in form_of(page) and "<details" not in form_of(page)
 print("ok: 見出しの文が無い間は畳まず、全部の欄が見える")
 
-# 入っている見出し。本人の確認が済むまで、利用者に見せる新しい文を入れない。
-assert SHIPPED == "", SHIPPED
+# 入っている見出し。本人が採った文そのものを字で見る。
+ADOPTED = "もっと書く（あれば）"
+assert SHIPPED == ADOPTED, SHIPPED
 toy.RECORD_MORE = SHIPPED
-print("ok: 確認前の文は入っていない")
+f = Fields(form_of(get(f"/toy/{G}")))
+assert f.summary == ADOPTED and "open" not in f.details[0] and "hypothesis" in f.outer and REST <= f.inner, (f.summary, f.outer)
+print("ok: 本人が採った見出しで畳まれる")
 print("ok")
