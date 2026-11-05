@@ -66,7 +66,7 @@ def section(sid, data, recs):
             ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
             rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
-                     + (f'（{why}）' if why else "") + f'。根拠: {"・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", []))}'
+                     + (f'（{why}）' if why else "") + f'。{wording.BASED_ON.format("・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}'
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
     ready, waiting = pending(sid, recs)
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
@@ -79,7 +79,7 @@ def section(sid, data, recs):
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p>'
-            '<p class="meta">作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。</p>'
+            f'<p class="meta">{esc(wording.plain("作った人の報告（動きと感想と工夫）→ 人の説明 → 読み → 寸法を 1 つ変えて次の版 → 次に作る人はその版を刷る。版は答えではなく、報告をもとに直した翻案です。ここで変えるのはこの仮説の寸法で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます。"))}</p>'
             f'{lines}{todo}</section>')
 
 
