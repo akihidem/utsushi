@@ -200,6 +200,9 @@ js = techo_step.SCRIPT
 assert "WORDS[clean(t)]" in js, "声は全部が一致した時だけ操作にする"
 assert js.index("WORDS[clean(t)]") < js.index("ask(t)"), "操作の字は質問に送らない"
 assert "includes(" not in js.split("const heard")[1].split("};")[0] and "indexOf(" not in js.split("const heard")[1].split("};")[0], "部分一致で進めない"
+# 聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。問いは「こまった」の後の 1 つ、工夫は最後の画面でマイクを押した後だけ（歩いて見るのは tests/test_voice_walk.py）
+assert "if (s === 'henji' && armed) { armed = false; q.value = t; ask(t); return; }" in js and "if (s === 'end' && talking) {" in js
+assert js.count("ask(t)") == 1 and js.count("q.value = t") == 1, "聞いた字を問いにする所は 1 か所だけ"
 # 結果の札も声で選べる（字は値のまま残す）。どの雛形の値にも言い方がある
 for tpl in TEMPLATES.values():
     for r in tpl.RESULTS:

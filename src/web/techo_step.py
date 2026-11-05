@@ -11,7 +11,9 @@
 - **紙を選ぶ札は作らない。** 型紙は玩具ごとに 1 枚で、たたき台は記録の欄が指す（hypotheses.sheet_of、#332）。作る紙を頁が決める。
 - **絵は手順の紙と同じ形から描く（instructions.step_pictures）。** 字を入れず、紙と食い違わず、刷った PNG を切らないので小さなコマを大きくしても粗くならない。
 - **記録の札（試した後の紙 → 説明 → AI）はこの頁に置かない。** 頁の字に版の名・記録の番号・「の紙」を出さないため。のこした後に手帖の記録の頁（techo_site.records_page）へ移る。順（J-013・S-03）は変えない。
-- **声は全部が一致した時だけ操作にする。** 「次の手順ってどうやるの」で進まないように、部分一致を使わない。操作の字は送らず残さない。ほかの字は質問として扱い、最後の画面では工夫の欄に入れる。
+- **声は全部が一致した時だけ操作にする。** 「次の手順ってどうやるの」で進まないように、部分一致を使わない。操作の字は送らず残さない。
+- **聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。** 質問は「こまった」を押した（言った）後の 1 つだけ受ける。工夫は、最後の画面でマイクを押した後に話した事だけを欄に入れる。
+  教室の話し声が、問いや工夫として記録と Claude に入らないようにするため。字で打つ欄はいつでも使える。
 - **声を字にする所は話す口（hanasu）の切り替えのまま。** OMOCHAE_VOICE の browser（既定）・local・off を読み、どちらにも切り替えられる形を保つ（本人の決定待ち）。local と browser の見分けは hanasu.SCRIPT と同じ式。
   hanasu の部品は置かない: 話す釦と残す釦が増え、マイクが 1 頁に 2 つになるため。声そのものは録らず、受け取らない（マイクを開く code と録る code を持たない）。
 - **「のこす」の画面は声と動画が主で、字を打つのは畳んだ追加（本人の方針 11-05 19:45「文字で記入がオプションの扱い」、#335）。** 字を打たなくても残せる。押す所は とって・字の畳み・のこす の 3 つで、マイクを大きく出す。
@@ -159,8 +161,11 @@ const $ = (id) => document.getElementById(id);
 const items = [...document.querySelectorAll('#steps li')], koma = [...document.querySelectorAll('#koma svg')];
 const mic = $('mic'), note = $('note'), ans = $('answer'), q = $('q'), kufu = $('kufu'), fold = $('fold'), bar = $('bar');
 let n = +te.dataset.n;
+// 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。ほかの言葉を受けるのは、「こまった」の後の 1 つの問い（armed）と、
+// 最後の画面でマイクを押した後の工夫（talking）だけ。周りの話し声を、問いや工夫として拾わないため。画面を移ると、どちらも閉じる。
+let armed = false, talking = false;
 const scene = () => te.dataset.scene;
-const to = (s) => { te.dataset.scene = s; };
+const to = (s) => { te.dataset.scene = s; if (s !== 'henji') armed = false; if (s !== 'end') talking = false; press(); };
 // 版（開いた時に刷ってあった一番新しい版）と、その場限りの印（skin.WHO_SCRIPT が持つ）を、出来事に添える。
 const extra = (o) => { const b = new URLSearchParams(o); b.set('sheet_version', ver); try { const w = sessionStorage.getItem('utsushi-who'); if (w) b.set('who', w); } catch (e) {} return b; };
 const post = (path, o) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra(o) });
@@ -198,13 +203,13 @@ const ask = async (t) => {
   const text = j.text || j.error || '今は答えられません';
   ans.textContent = text; say(text);
 };
-const openAsk = () => { send('stuck'); to('henji'); if (!listening) q.focus(); };
+const openAsk = () => { send('stuck'); to('henji'); armed = true; if (!listening) q.focus(); };
 const act = (op) => {
   const s = scene();
   if (op === 'again') { if (n <= total) say(items[n - 1].textContent); return; }
   if (op === 'next') { if (s === 'step' || s === 'henji') goNext(); return; }
   if (op === 'back') { if (s === 'kekka') to('end'); else if (s === 'henji') to('step'); else goBack(); return; }
-  if (op === 'stuck') { if (s === 'step') openAsk(); return; }
+  if (op === 'stuck') { if (s === 'step') openAsk(); else if (s === 'henji') armed = true; return; }
   if (op === 'photo') { if (s === 'end') shoot(); return; }
   if (op === 'keep') { if (s === 'end') keepPress(); }
 };
@@ -214,10 +219,9 @@ const heard = (t) => {
   if (s === 'kekka') { const r = RESULT_WORDS[clean(t)]; if (r) { save(r); return; } }
   const op = WORDS[clean(t)];
   if (op) { act(op); return; }
-  if (s === 'kekka') return;
-  if (s === 'end') { kufu.value = (kufu.value ? `${kufu.value} ` : '') + t; kufu.dataset.via = 'voice'; fold.open = true; return; }
-  if (s === 'step') to('henji');
-  q.value = t; ask(t);
+  // 操作の言葉のほかは受けない。受けるのは次の 2 つの時だけ（問いは 1 つ受けたら閉じる）。
+  if (s === 'henji' && armed) { armed = false; q.value = t; ask(t); return; }
+  if (s === 'end' && talking) { kufu.value = (kufu.value ? `${kufu.value} ` : '') + t; kufu.dataset.via = 'voice'; fold.open = true; }
 };
 // 声を字にする所。切り替えと見分けは話す口（hanasu.SCRIPT）と同じ。頁を開いた時にはブラウザへ聞かない（聞くだけで頁ごと落ちる画面があった）。人が押した時だけ聞く。
 const REC = window.SpeechRecognition || window.webkitSpeechRecognition, LANG = 'ja-JP';
@@ -230,7 +234,8 @@ let rec = null, listening = false, speaking = false, onDevice = false;
 const CHECKING = 'utsushi-voice-local-check';
 const mem = (v) => { try { if (v === undefined) return localStorage.getItem(CHECKING) === '1'; if (v) localStorage.setItem(CHECKING, '1'); else localStorage.removeItem(CHECKING); } catch (e) {} return false; };
 if (how === 'local' && mem()) how = want === 'browser' ? 'browser' : 'none';
-const press = () => mic.setAttribute('aria-pressed', listening ? 'true' : 'false');
+// マイクの見た目: 最後の画面では「工夫を話している」時だけ、ほかの画面では「聞いている」時に、押した形にする。
+const press = () => mic.setAttribute('aria-pressed', (scene() === 'end' ? listening && talking : listening) ? 'true' : 'false');
 const mark = () => { te.classList.remove('te-local', 'te-browser', 'te-none'); te.classList.add(`te-${how}`); if (how === 'none') { mic.hidden = true; } else { mic.hidden = false; } };
 const begin = () => {
   rec = new REC(); rec.lang = LANG; rec.continuous = onDevice; rec.interimResults = false; if (onDevice) rec.processLocally = true;
@@ -261,7 +266,15 @@ const wake = async () => {
 };
 sayStart = () => { speaking = true; if (listening && rec) { try { rec.stop(); } catch (e) {} } };
 sayEnd = () => { if (!speaking) return; speaking = false; if (listening && rec) { try { rec.start(); } catch (e) {} } };
-mic.onclick = () => { if (listening) { listening = false; if (rec) rec.stop(); press(); return; } note.textContent = ''; wake(); };
+mic.onclick = () => {
+  // 最後の画面のマイクは、工夫を話す切り替え: 押してから話した事だけを欄に入れる。ほかの画面では、聞くのを止める・始める。
+  if (scene() === 'end') {
+    if (!listening) { talking = true; note.textContent = ''; wake(); return; }
+    talking = !talking; press(); return;
+  }
+  if (listening) { listening = false; if (rec) rec.stop(); press(); return; }
+  note.textContent = ''; wake();
+};
 addEventListener('pagehide', () => { listening = false; if (rec) { try { rec.stop(); } catch (e) {} } });
 // 隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
 let paused = false;

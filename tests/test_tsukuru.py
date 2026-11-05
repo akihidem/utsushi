@@ -180,6 +180,8 @@ assert "if(speaking)return" in page_js and "if (speaking) return" in techo_js
 # 声の操作は手帖と同じ表（#87）。言葉の全部が一致した時だけ札を押し、操作の字は問いに送らない。ほかは問いとして送る
 from web.voice_words import WORDS, clean  # noqa: E402
 assert "WORDS[clean(t)]" in page_js and page_js.index("if(op){act(op);return}") < page_js.index("qIn.value=t;ask(t)")
+# 聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。問いは、止まったか声で聞くを押した後の 1 つだけ（歩いて見るのは tests/test_voice_walk.py）
+assert "if(!armed)return;armed=false;qIn.value=t;ask(t)" in page_js and "listening=true;armed=true;" in page_js and "const openAsk=(on)=>{armed=on;" in page_js
 assert all(f'"{word}": "{op}"' in page_js for word, op in WORDS.items()) and "__WORDS__" not in page_js and "__CLEAN__" not in page_js
 assert WORDS[clean("つぎ。")] == "next" and WORDS[clean("もう 一回")] == "again" and clean("次の手順ってどうやるの") not in WORDS
 for v in ("back", "stuck", "next", "done"):

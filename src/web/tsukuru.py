@@ -24,6 +24,7 @@
   なぜ添えるか: どの段でどんな問いが出るかを束ねて、手順の紙の直しと先回りの答えの材料にするため（U-45）。
 - 声で聞く口は手帖と同じ作り（ブラウザの音声認識。使えない画面では釦を隠す）。**声そのものは録らず、送らない。** 送るのは字になった問いだけ。
   声の操作も手帖と同じ（本人の決定 11-05、#87。voice_words.py）: 1 回押した後は聞き続け、つぎ・もどる・もう一回などは言葉の全部が一致した時だけ札を押す。操作の字は送らない。
+  聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）: 問いは「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。周りの話し声を問いにしない。
   マイクを getUserMedia で開く code と録る code は書かない（鏡は audio:false のまま）。試験で固定する。
 - 出来事（札と問い）には、その場限りの無作為の印（who）を添える。sessionStorage に持つ英数字 10 桁で、タブを閉じると消える。
   なぜ持つか: 「同じ段で 3 人以上止まった」を数えるには、同じ人の押し直しを 1 人と数える印が要る（Issue #119 の「人は、その場限りの
@@ -126,7 +127,9 @@ document.body.classList.add('js');show();
 try{const k=`tsukuru-start-${sid}-${hid}`;if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');send('start')}}catch(e){}
 // 聞く口。「ここで止まった」を押した段では、見出しを「手順 N で止まった所を聞く」に変えて囲み、字の欄へ手を届かせる。段を進めたら元に戻す。
 const henji=document.getElementById('henji'),head=document.getElementById('ask-head'),qIn=document.getElementById('q');
-const openAsk=(on)=>{henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
+// 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。問いは、「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。
+let armed=false;
+const openAsk=(on)=>{armed=on;henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
  if(on){try{henji.scrollIntoView({block:'nearest'})}catch(e){}qIn.focus()}};
 document.querySelectorAll('#tiles button:not([value=done])').forEach(b=>b.addEventListener('click',async(e)=>{e.preventDefault();const ev=b.value;
  const j=await send(ev);mStuck.hidden=true;
@@ -157,10 +160,10 @@ if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
  mic.addEventListener('click',()=>{
   if(listening){listening=false;rec&&rec.stop();mic.setAttribute('aria-pressed','false');return}
   rec=new SR();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=false;
-  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();if(!t)return;const op=WORDS[clean(t)];if(op){act(op);return}qIn.value=t;ask(t)};
+  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();if(!t)return;const op=WORDS[clean(t)];if(op){act(op);return}if(!armed)return;armed=false;qIn.value=t;ask(t)};
   rec.onend=()=>{if(listening&&!speaking){try{rec.start()}catch(e){}}};
   rec.onerror=()=>{listening=false;mic.setAttribute('aria-pressed','false')};
-  listening=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
+  listening=true;armed=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
  // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
  addEventListener('pagehide',()=>{listening=false;if(rec){try{rec.stop()}catch(e){}}});
  let paused=false;
