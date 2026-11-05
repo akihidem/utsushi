@@ -199,11 +199,12 @@ def without_notes(page):
     return re.sub(r"<(style|script)\b([^>]*)>(.*?)</\1>", clean, page, flags=re.S)
 
 
-# 書き込みの口（話す口・記録の口・説明の口）の、同じ相手からの短い間の数の上限（公開の前の点検の 9、統括の頼み 11-06）。
+# 書き込みの口（話す口・記録の口・説明の口・聞く口・段の口）の、同じ相手からの短い間の数の上限（公開の前の点検の 9、統括の頼み 11-06）。
+# 聞く口と段の口も 1 回ごとに置き場へファイルを書くので数える（統括の足し 11-06）。
 # 合言葉付きの場で 5 人が同じ網（同じ番地）から同時に一周しても止まらない数: 1 人の一周の書き込みは 6〜12 回（話す回数による）で、
 # 作る間の数分にわたる。5 人が 1 分に 12 回ずつ書いても通り、それを超える速さだけを止める。
 WRITE_LIMIT, WRITE_WINDOW = 60, 60.0
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json)|/record/R-\d{{4,}}/explain")
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
 
 
@@ -278,6 +279,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(429, json.dumps({"error": BUSY}, ensure_ascii=False), "application/json; charset=utf-8", headers)
         if self.path.endswith("/talk") and form.get("json") == "1":
             return self._send(429, json.dumps({"kept": False, "why": BUSY}, ensure_ascii=False), "application/json; charset=utf-8", headers)
+        if self.path.endswith("/ask-json"):  # 手帖と作りながら見る頁は、答えの欄に text を出す
+            return self._send(429, json.dumps({"text": BUSY, "from": "busy"}, ensure_ascii=False), "application/json; charset=utf-8", headers)
         return self._send(429, skinmod.notice("送れませんでした", BUSY, getattr(self, "_look", skinmod.DEFAULT)), headers=headers)
 
     def _host_ok(self):
@@ -747,13 +750,19 @@ class Handler(BaseHTTPRequestHandler):
         # 組み上がりは最後の手順だけで受ける。途中の札は頁に出さないが、開いたままの古い頁からは届く。残すと作る様子の集計がずれる（#321）。
         if event == "done" and step < total:
             return bad("その札は無い")
+        # 次に見せる手順: 進む・戻るは 1 つ動かし、止まった・できた・開いたは同じ手順のまま。
+        nxt = min(step + 1, max(total, 1)) if event == "next" else max(step - 1, 1) if event == "back" else step
+        # 同じ相手からの数の上限（WRITE_LIMIT）。超えたら置き場へ書かずに断る。頁を読み直さない札（JS）は返事の step で進むので、
+        # 断りにも次の手順を添え、作りながら見る頁を止めない。
+        if (who := writer(self.client_address[0], self.headers)) and (wait := self.server.write_limit.wait(who)):
+            if as_json:
+                return self._send(429, json.dumps({"error": BUSY, "step": nxt}, ensure_ascii=False), "application/json; charset=utf-8", [("Retry-After", str(wait))])
+            return self._busy(wait, form)
         # 最後の手順の「次の手順へ」は頁に出さないが、開いたままの古い頁からは届く。動かないので残さない（残すと、途中でやめた段の数えで、無い手順が出る）。
         if not (event == "next" and step >= total):
             making_log.add_step(sid, hid, sheet_version_of(sid, hid, form), step, event, who=form.get("who", ""))
         if event == "start":
             making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
-        # 次に見せる手順: 進む・戻るは 1 つ動かし、止まった・できた・開いたは同じ手順のまま。
-        nxt = min(step + 1, max(total, 1)) if event == "next" else max(step - 1, 1) if event == "back" else step
         if as_json:
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
         if event == "done":  # どの紙かを渡して記録の欄へ送る。今の頁は JS の有無に関わらず、この道を通る（#321）。記録の欄の既定は変えない（紙を選ぶ欄は #332 で無くなる）

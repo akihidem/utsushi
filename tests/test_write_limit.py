@@ -1,4 +1,4 @@
-"""書き込みの口（話す口・記録の口・説明の口）に、同じ相手からの短い間の数の上限を置く（公開の前の点検の 9、統括の頼み 11-06）。
+"""書き込みの口（話す口・記録の口・説明の口・聞く口・段の口）に、同じ相手からの短い間の数の上限を置く（公開の前の点検の 9、統括の頼み 11-06）。
 
 なぜ: 合言葉なしの場は誰でも書けて、書き込みの回数に上限が無かった。上限を超えたら、今ある字「少し待って、もう一度送ってください」で 429 を返す。
 合言葉付きの場で 5 人が同じ網（同じ番地）から同時に一周しても止まらない数にする。
@@ -6,6 +6,7 @@
 """
 import json
 import os
+import pathlib
 import tempfile
 import threading
 import time
@@ -50,16 +51,21 @@ class Person:
         return self.post(f"/toy/{G}/talk", {"scene": scene, "hypothesis": "H-A", "text": text, "who": self.who, "json": "1", **more})
 
 
+def step(p, n, event, as_json=True):
+    return p.post(f"/toy/{G}/step", {"hypothesis": "H-A", "sheet_version": "1", "step": str(n), "event": event, "who": p.who} | ({"json": "1"} if as_json else {}))
+
+
 def loop_of(p, n, out):
-    """1 人の一周の書き込み 12 回: 考え 2・工夫 6・手帖の記録 1・上げた後 1・説明 1・記録の欄 1。"""
-    codes = [p.talk("think", f"{n}人目の考え{i}")[0] for i in range(2)]
-    codes += [p.talk("craft", f"{n}人目の工夫{i}", sheet_version="1", step=str(i + 1))[0] for i in range(6)]
+    """1 人の一周の書き込み 12 回: 考え 1・作る頁を開く 1・次の手順へ 4・工夫 2・聞く 1・手帖の記録 1・上げた後 1・説明 1。"""
+    codes = [p.talk("think", f"{n}人目の考え")[0], step(p, 1, "start")[0]]
+    codes += [step(p, i + 1, "next")[0] for i in range(4)]
+    codes += [p.talk("craft", f"{n}人目の工夫{i}", sheet_version="1", step=str(i + 1))[0] for i in range(2)]
+    codes.append(p.post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": f"{n}人目の問い"})[0])
     st, body, _ = p.post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "who": p.who})
     codes.append(st)
     rid = json.loads(body).get("id")
     codes.append(p.talk("keep", f"{n}人目の上げた後", record=rid)[0])
     codes.append(p.post(f"/record/{rid}/explain", {"text": f"{n}人目の説明", "next_idea": "幅を変える", "by": "作った人"})[0])
-    codes.append(p.post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "who": p.who})[0])
     out[n] = codes
 
 
@@ -90,10 +96,23 @@ st, body, _ = people[3].post("/record/R-0001/explain", {"text": "説明", "next_
 assert st == 429 and BUSY in body, (st, body[-300:])
 st, body, _ = people[4].post(f"/toy/{G}/talk", {"scene": "think", "hypothesis": "H-A", "text": "頁から送った字", "who": people[4].who})
 assert st == 429 and BUSY in body, ("話す口の頁の形", st)
+st, body, _ = people[0].post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})
+assert st == 429 and json.loads(body) == {"text": BUSY, "from": "busy"}, ("聞く口は答えの欄の形", st, body[:200])
+st, body, _ = people[1].post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "谷折りって？"})
+assert st == 429 and BUSY in body, ("聞く口の頁の形", st)
+# 段の口: 置き場へ書かずに断り、頁を読み直さない札が止まらないよう、次に見せる手順を添える
+making = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "making"
+before = sorted(making.rglob("*")) if making.exists() else []
+st, body, _ = step(people[2], 2, "next")
+assert st == 429 and json.loads(body) == {"error": BUSY, "step": 3}, (st, body[:200])
+st, body, _ = step(people[3], 2, "next", as_json=False)
+assert st == 429 and BUSY in body, ("段の口の頁の形", st)
+after = sorted(making.rglob("*")) if making.exists() else []
+assert before and before == after, ("断った段は置き場へ書かない（前に書いた段は在る）", len(before), len(after))
 
-# 3. 別の網の人は止まらない。数えない口（聞く口・刷る口）は同じ網でも止まらない
-assert Person(base, "198.51.100.20", "otherwhoaa").talk("think", "別の網の字")[0] == 200
-assert people[0].post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})[0] == 200
+# 3. 別の網の人は止まらない。数えない口（刷る口）は同じ網でも止まらない
+other = Person(base, "198.51.100.20", "otherwhoaa")
+assert other.talk("think", "別の網の字")[0] == 200 and step(other, 1, "next")[0] == 200
 assert people[0].post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
 
 # 4. 手元から直に来た物（見出しの無い 127.0.0.1）は数えない
