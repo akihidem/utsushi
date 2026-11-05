@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_call_timeouts.py
+# commit: 5ad4f53（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_call_timeouts.py", line 36, in <module>
+    assert set(config.SCREEN_TIMEOUT) == {"ask", "observe", "interpret", "words"}, config.SCREEN_TIMEOUT
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'ask': 45, 'observe': 60, 'interpret': 90}
+rc=1

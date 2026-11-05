@@ -87,11 +87,16 @@ assert f'<img src="/sheet/{G}/H-A_v2.png"' in page and "<b>版 2</b>" in page
 # その版への報告は、版 2 への返事として残る
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "前より開いた"})[0] == 303
 assert json.loads((pathlib.Path(DATA) / "records/R-0002.json").read_text(encoding="utf-8"))["sheet_version"] == 2
+assert post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": "2", "event": "stuck"})[0] == 303
+section = get(f"/toy/{G}")[1].split('id="kaizen"')[1].split("</section>")[0]
 # サイト側の一覧: 報告のある玩具・版・待っている報告
 code, lp = get("/loop")
 assert code == 200 and "改善の輪" in lp and "御来迎" in lp and f'href="/toy/{G}#kaizen"' in lp
 for w in ("成功", "失敗", "正解", "順位", "点数"):
     assert w not in without_premise(lp) and w not in without_premise(kz), w
+# 輪の節と一覧に、結果を数えた数を出さない（動いた・止まったの数は成績に見える。J-025）。数えられる記録と札を置いてから見る
+for w in ("動いた", "動かない", "止まった"):  # 一覧は画面に出る所だけを見る（頁の頭の CSS の注に同じ字がある）
+    assert w not in without_premise(section) and w not in without_premise(lp.rsplit("</style>", 1)[-1]), w
 # 学ぶ人の頁からは道を置かない（集計は学ぶ人の画面に出さない線。道を知っている作る側が開く）
 for path in ("/about", "/toys", "/", f"/toy/{G}"):
     assert 'href="/loop' not in get(path)[1], path

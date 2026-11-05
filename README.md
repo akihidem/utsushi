@@ -1,5 +1,21 @@
 # utsushi
 
+> 失われた玩具の動きを、紙で実験して確かめる道具
+
+「AIが良くなるのは副次的なもので、みんなが手で実際に作ることその楽しさに気づくことが最初。」（本人の言葉）
+
+<!-- 4 つのループの絵の置き場。序の頁に入れる案の絵で、本人の採否待ち。 -->
+<!-- デモ動画のリンクの置き場。上げた後に足す。 -->
+
+江戸の絵本『江都二色』（1773）には、玩具の図と歌だけが残っています。動く仕組みは書かれていません。
+
+AI が考えた型紙を紙に刷り、切って、折って、作って、動きを確かめます。
+
+型紙は正解ではなく、AI が考えた仮説です。作った人の工夫から、人が直しを選んで、次の版にします。
+
+<details>
+<summary>くわしい要約（10 項目）</summary>
+
 <!-- summary:start -->
 ## 30 秒の要約
 
@@ -14,6 +30,8 @@
 - **今の状態**: 型紙の生成と検査は動く（`./run.sh` の場面と試験が全部期待どおり。数は `./run.sh` の最後の行と `out/RESULT.md` に出る）。実物の試行は 1 回（11-04、本人の教え子の卒業生 5 人・全員成人。御来迎が筒から扇を開いて動いた。[記録](docs/process/trials/README.md)）。試した記録は[再現ギャラリー](docs/gallery/index.html)に記録の順で並ぶ。手帖は入口のサイトの中の頁（玩具の頁の「手帖をひらく」から入る）で、作りながら声で手順を聞き、写真と動画を記録に添え、フィードバックもそこで受ける（人が使った確認はまだ）。図鑑の頁と、上げた物と職人の言葉の頁もサイトの中にある。本物の Claude API は未実行。学習の効果は主張しない。成立の条件と今の状態は[仕様書](docs/process/spec.md)、取り込みの関門は[関門の試行の帳面](docs/process/gate-trial.md)。
 - **次に読む**: 主張と根拠は [docs/process/claims.md](docs/process/claims.md)、過程の地図は [docs/process/README.md](docs/process/README.md)、機能の状態は [docs/features.json](docs/features.json)、判断待ちは [docs/process/open.json](docs/process/open.json)。
 <!-- summary:end -->
+
+</details>
 
 ## 開発の過程
 
@@ -110,11 +128,12 @@ export PYTHONPATH=src
 .venv/bin/python -m omochae.ways --json
 ```
 
-手帖から上げた記録を消す時は、番号を渡す。記録と、添えた写真・動画・説明・解釈・観察をまとめて消し、番号だけを残す。提案や版の根拠に使われている記録は、その事を言って止まる。その時も `--media-only` で写真と動画と観察は消せる。デモの置き場の記録は `OMOCHAE_DATA` を同じにして打つ。git に入れた物は、履歴からは消えない。
+手帖から上げた記録を消す時は、番号を渡す。記録と、添えた写真・動画・説明・解釈・観察をまとめて消し、番号だけを残す。提案や版の根拠に使われている記録は、その事を言って止まる。その時も `--media-only` で写真と動画と観察は消せる。デモの置き場の記録は `OMOCHAE_DATA` を同じにして打つ。git に入れた物は、履歴からは消えない。話した字（考え・工夫・上げた後）と、字が刷られた紙と、解釈や案の文にある引用は `--talk-only` で消せる（記録の番号と寸法の根拠は残る）。
 
 ```
 .venv/bin/python -m omochae.records withdraw R-0003
 .venv/bin/python -m omochae.records withdraw R-0003 --media-only
+.venv/bin/python -m omochae.records withdraw R-0003 --talk-only
 ```
 
 仮説を自分で立てたい時は、図を見て自分の案を書き、型紙にして試し、比べたくなった時に一覧を見る。
