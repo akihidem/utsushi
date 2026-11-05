@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_techo_site.py（直す前の form に新しい検査だけを足した木）
+# commit: 4e3f820 に新しい検査を載せた作業ツリー。commit は作っていない
 $ PYTHONPATH=src .venv/bin/python tests/test_techo_site.py   # 直す前の form に、新しい検査だけを足して回した
 AssertionError
     assert "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form and f'data-max-bytes="{MAX_MEDIA}"' in

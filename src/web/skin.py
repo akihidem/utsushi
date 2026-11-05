@@ -100,7 +100,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .plate h3{margin:8px 0}.plate p{font-size:14px;line-height:1.9;margin:6px 0}.plate ul{padding-left:1.2em;font-size:13px;color:var(--mute);margin:6px 0}
 .plate .thumb{display:block;margin:12px 0 4px;border:1px solid var(--frame);background:#fff}
 .plate .thumb img{display:block;width:100%}
-.plate .foot{margin-top:auto}
+/* 札の足。頁の足 .foot と同じ名前だと、頁の足の余白と字の大きさが掛かり釦が 2 行に折れた（#124） */
+.plate .acts{margin-top:auto}.plate .acts form button{padding:12px 14px;white-space:nowrap}
 .win{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:4vw;align-items:start}
 .tabs{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;letter-spacing:.12em;margin:0 0 12px}
 .tabs a,.tabs span{border:1px solid var(--frame);padding:4px 12px}
@@ -128,7 +129,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys a{display:block;border:0;color:var(--fg)}
 .toys .pic{aspect-ratio:3/4;background:var(--soft) center/300% no-repeat;border:1px solid var(--frame);box-shadow:0 14px 22px -18px var(--shadow)}
 .toys .nm{font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
-.toys .big{grid-column:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
+.toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
+@media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
 .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:11px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
 .is-sample{border-top:1px dashed var(--frame)}
 .foot{padding:48px 5vw 40px;font-size:11px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
@@ -176,3 +178,13 @@ def artwork_label(toy, src):
     when = esc((src.get("original_publication") or {}).get("value", ""))
     rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
     return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
+
+
+def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"), ("/toys", "おもちゃの一覧へ")), bare=False):
+    """断りの頁（404・403・500）。何が起きたかと戻り方を、皮の地で 1 つの形で出す。bare は帯も足も出さない形で、合言葉の門のように中身を見せない所に使う（#136）。"""
+    back = "".join(f'<a href="{esc(p)}">{esc(n)}</a>' for p, n in links)
+    back = f'<p class="notice-back">{back}</p>' if back else ""
+    page = shell(title, f'<section class="sec notice"><h1>{esc(title)}</h1><p>{esc(reason)}</p>{back}</section>', skin,
+                 extra_style=".notice-back a{margin-right:1.2em}", foot=" " if bare else "")
+    # 骨は shell のまま使い、帯だけ抜く。foot は空だと既定の足が付くので、bare では空白を渡す
+    return page.replace(nav(skin), "", 1) if bare else page

@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_techo_site.py と、repo の外の道具で本物の Chrome を操作
+# commit: このファイルを足した commit（枝 issue/144-upload-selection）
 $ PYTHONPATH=src .venv/bin/python tests/test_techo_site.py   # main 4e3f820 に直しを載せた作業ツリー
 rc=0
 
