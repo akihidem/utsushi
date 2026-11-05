@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_loop_ayumi.py
+# commit: ff54436（回した時の HEAD）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+読めない記録を飛ばした: versions.json（JSONDecodeError）
+ok: 型紙の版の歩み
+rc=0

@@ -135,7 +135,7 @@ def _loose_changes():
 def _change_item(t):
     """表に行の無い雛形の直しの札。"""
     return _item(str(t.get("sheet_set", "")), kv.change_verdict([t]), (("どこを良くしたか", esc("、".join(str(c) for c in t.get("changes", [])))), ("どの知見から", _lines(kv.change_words([t])).removeprefix("<br>")),
-                                                                     ("記録", esc("・".join(str(r) for r in t.get("record_ids", []))))))
+                                                                     ("記録", "" if t.get("in_repo") else esc("・".join(str(r) for r in t.get("record_ids", []))))))
 
 
 def toy_block(sid, data):
