@@ -17,7 +17,7 @@ readme = scene5.TRIALS.read_text(encoding="utf-8")
 # 合図の表は時刻の順で、場面の長さの中（台本の 5 の行は 30 秒）
 spans = list(scene5.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene5.DURATION
-assert scene5.DURATION == 30.0 and scene5.Scene5.duration == scene5.DURATION
+assert scene5.DURATION == 22.0 and scene5.Scene5.duration == scene5.DURATION
 assert all(0 <= t <= scene5.DURATION for t in scene5.SHEET_TIMES)
 
 # 既定の写真は確かめ表と一致する。表を自前でも読み、scene5 の読み方と食い違わない事も見る
@@ -45,18 +45,15 @@ if "p06" not in scene5.allowed_photos():
 assert scene5.resolve_photos("") == []
 
 # 画面の数と言葉は README の文のまま（数の入った言葉を 1 つずつ照らす）
-for value in [v for _, v in scene5.FACTS] + list(scene5.NOTES) + [scene5.RECORD_SEEN]:
+for value in [v for _, v in scene5.FACTS] + list(scene5.NOTES) + ["わからない"]:
     assert value in readme, value
-for rid, hyp in scene5.RECORDS:
-    assert f"{rid}.json`（{hyp}）" in readme, rid  # 記録の番号と仮説の組が README の書き方のまま
 assert "教え子の卒業生" in readme and "1 人が 2 案ずつ" in readme
 assert "動画と写真がどちらの仮説か分からないため" in readme and "本人の答え" in readme
 nums = re.findall(r"R-\d{4}|\d+ 人|\d+ 案|\d\d-\d\d", " ".join(
-    [v for _, v in scene5.FACTS] + [r for r, _ in scene5.RECORDS] + list(scene5.CAPTION) + [scene5.SOURCE_NOTE]))
+    [v for _, v in scene5.FACTS] + list(scene5.CAPTION) + [scene5.SOURCE_NOTE]))
 assert nums and all(n in readme for n in nums), nums
-# 結果は「わからない」と正直に。2 枚の札は同じ見た事（片方だけを良く書かない）
+# 結果は「わからない」と正直に
 assert "「わからない」" in scene5.CAPTION[1]
-assert [h for _, h in scene5.RECORDS] == ["仮説 A", "仮説 C"]  # 番号の順
 
 # 写真の許可が空なら、写真のファイルを 1 つも開かない
 opened = []
@@ -71,14 +68,14 @@ def spy(fp, *a, **k):
 Image.open = spy
 try:
     scene = scene5.Scene5(scene5.resolve_photos("") or ())
-    for t in (0.5, 3.0, 10.6, 18.8, 25.0, 29.9):
+    for t in (0.5, 3.0, 8.6, 13.0, 18.0, 21.9):
         a, b = scene.frame(t), scene.frame(t)
         assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 finally:
     Image.open = real_open
 assert not any("photos" in p for p in opened), opened
 # 札の組は入れ替わる（同じ列に 2 組が重ならない）
-f5, f13, f20 = (scene.frame(t).tobytes() for t in (5.0, 13.0, 20.0))
+f5, f13, f20 = (scene.frame(t).tobytes() for t in (5.0, 10.0, 20.0))
 assert f5 != f13 and f13 != f20 and f5 != f20
 
 # 写真が渡された時だけ枠の中が変わる（偽の写真で。repo の写真は開かない）

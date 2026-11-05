@@ -1,40 +1,33 @@
-"""場面 6: 作った人の言葉で、次の版が変わる（本人の所見 → 雛形の直し T-0001 → v7 と今の紙の差 → 工作の手帖）。
+"""場面 6: 作った人の言葉で、次の版が変わる（本人の所見 → v7 と今の紙の差）。
 
 使い方: python -m demo.scene6 --out <repo の外の場所>/scene6.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
-exit: 0 = 書き出せた / 4 = 型紙が刷れない・pdftoppm か google-chrome か ffmpeg が無い（このリポの検査の決まりに合わせる）。
+exit: 0 = 書き出せた / 4 = 型紙が刷れない・pdftoppm か ffmpeg が無い（このリポの検査の決まりに合わせる）。
 
 決めた事と理由:
 - 本人の所見は docs/process/trials/README.md の文をそのまま引く（言い換えると「作った人の言葉」でなくなる）。
   床で、引いた文が README に一字一句ある事を見る。
-- 台帳の直し T-0001 は、git の外の data/loop を読まずに、README と sheets/README の文から書く。
-  撮る機械に data/loop が無くても同じ絵になるようにするため。
+- 本人の決定（11-05）「哲学よりの動画にして」で、台帳のつながりと工作の手帖の画面を外した。機能の説明と数を減らし、紙の差だけを見せるため。
 - 古い紙は作り直さない。11-04 の試行に渡した v7 の PDF（docs/process/trials/sheets/goraigo-v7、git にある）を
   そのまま映す。今の生成器で v7 は刷れないので、刷れない版を作った振りをしない。v8・v9 は紙を出さず、変えた事の字だけにする。
 - 今の紙は repo の生成器（compose → render.write_all）で撮る時に刷る。版の札は slider_fan.SHEET_SET から読む
   （字で書くと、刷り直した時に動画だけ古くなる）。差の朱の枠も、同じ配置（layout）の部品の形から引く。
 - 扇の開き方・動き方は描かない（F9）。型紙は平らなまま映し、矢印も付けない。
 - 仮説 A と C を並べるのは、本人の所見がこの 2 つについてだったから。順位ではない（J-025）。
-- 工作の手帖は src/web/techo.py の data() と頁の型から、cache の中に頁を書き出し、headless の Chrome で撮る。
-  techo.main() は out/techo/index.html に固定で書くので使わない（撮るための細工を足した頁を repo の out に残さない）。
-  撮るのは「よくある言葉」と「仕組みの質問を断る」の 2 つの答えだけ。どちらも AI を呼ばず、仕組みの説明を含まない。
-  頁の外の字（Google Fonts）は外し、網につながずに毎回同じ絵にする。
-- 顔と声は入れない（J-022）。手帖の読み上げは撮る前に切る。
+- 顔と声は入れない（J-022）。
 - frame(t) は時刻だけから 1 コマを描く純関数（flip.py と同じ）。合図は CUES の 1 か所だけを読む。
 """
 import argparse
-import json
 import pathlib
-import re
 import shutil
 import subprocess
 import sys
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
-from demo.flip import H, PAPER, ROOT, SERIF_BOLD, SHU, SUMI, W, contact_sheet, ease, fade, render, text
+from demo.flip import H, PAPER, ROOT, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 from omochae.templates.slider_fan import SHEET_SET
 
-DURATION = 30.0
+DURATION = 21.0
 
 # 本人の所見（docs/process/trials/README.md の表の文を一字一句そのまま。床で照らす）
 QUOTES = (
@@ -50,50 +43,29 @@ OLD_DIR = ROOT / "docs/process/trials/sheets/goraigo-v7"
 OLD_SET = OLD_DIR.name
 OLD_PDF = "goraigo_{hyp}_v7.pdf"
 
-# 台帳のつながり（README の「台帳での形」の段から）。
-CHAIN = ("記録 R-0001・R-0002", "本人の説明", "雛形の直し T-0001", "goraigo-v8（本人が採った）")
-# 版ごとに変えた事（sheets/README の表から縮めた）。( 版, 文, 床で sheets/README に有る事を見る語 )
-CHANGES = (
-    ("v8", "仮説 C にも内筒の土台（2 土台）を足した", "2 土台"),
-    ("v8", "仮説 A の溝は、くり抜かずに下の端から切り込む", "下の端からはさみで切り込む"),
-    ("v8", "扇の真ん中に足と糊代、台に貼る印", "扇の真ん中の 1 枚に足と糊代"),
-    ("v9", "見える面は折り線を刷らず、色の境で折る（観察者の意見から本人が決めた）", "絵の色の境で折る"),
-    ("v10", "手順の紙の問いを 4 つの着目に。型紙の部品は v9 と同じ", "型紙の部品は v9 と同じ"),
-)
 # 紙の差の朱の札。部品の形から枠を引く（下の change_regions）。
 LABEL_GROOVE, LABEL_BASE, LABEL_COLOR = "下からの切り込み", "土台", "色の境で折る"
 SHOWN_HYPS = ("H-A", "H-C")
 
-# 手帖で撮る 2 つの質問。左はよくある言葉（型紙の説明から答える）、右は仕組みの質問（答えない）。
-ASKS = (("谷折りって？", "よくある言葉は、型紙の説明から"), ("どう動くの？", "仕組みの質問は、答えない"))
-TECHO_LABEL = "手順だけ答える・仕組みは答えない"
-PHONE_PX = (430, 932)   # 撮る窓の大きさ（CSS の px）。手元の iPhone に近い縦長
-PHONE_SCALE = 2
-
-CAPTION = ("作った人の言葉で、次の版が変わる。", "作りながら聞ける。")
+CAPTION = ("作った人の言葉で、", "次の版が変わる。")
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
     "quote1": (0.0, 0.8),        # 1 つ目の所見
-    "quote2": (2.4, 3.2),        # 2 つ目の所見
-    "quotes_out": (6.4, 7.0),
-    "chain": (7.0, 7.8),         # 台帳のつながりと、版ごとに変えた事
-    "chain_out": (11.0, 11.5),
-    "pair_a": (11.5, 12.2),      # 仮説 A の紙: v7 と今
-    "boxes_a": (12.6, 13.6),     # 差の朱の枠
-    "pair_a_out": (16.0, 16.5),
-    "pair_c": (16.5, 17.2),      # 仮説 C の紙: v7 と今
-    "boxes_c": (17.6, 18.6),
-    "pair_c_out": (21.0, 21.5),
-    "techo": (21.5, 22.3),       # 工作の手帖の 2 つの画面
-    "techo_label": (22.8, 23.6),
-    "closing": (26.6, 28.0),     # 締めの字幕（30 秒まで止めて読ませる）
+    "quote2": (2.0, 2.8),        # 2 つ目の所見
+    "quotes_out": (5.6, 6.2),
+    "pair_a": (6.2, 6.9),        # 仮説 A の紙: v7 と今
+    "boxes_a": (7.2, 8.2),       # 差の朱の枠
+    "pair_a_out": (10.4, 10.9),
+    "pair_c": (10.9, 11.6),      # 仮説 C の紙: v7 と今
+    "boxes_c": (11.9, 12.9),
+    "pair_c_out": (15.1, 15.6),
+    "closing": (15.8, 17.2),     # 締めの字幕（21 秒まで止めて読ませる）
 }
 
 # 置き場（px）。紙は高さ 720px。左に v7、右に今の紙、間の帯に朱の札を置く。
 SHEET_H, SHEET_Y = 720, 210
 OLD_X, NEW_X = 120, 940
-PHONE_H = 780
 SHEET_DPI = 150
 
 
@@ -188,52 +160,6 @@ def build_sheets(cache):
     return pairs
 
 
-def techo_html(question):
-    """手帖の頁に、撮るための細工を足した HTML。中身は techo.data() と頁の型から作る（手帖と同じ物を撮る）。
-
-    細工は 3 つだけ: 外の字の読み込みを外す（網につながず毎回同じ絵）、読み上げを切る（声を入れない、J-022）、
-    質問を入れて送る（頁の中の同じ答え方を通す。答えを手で書き込まない）。
-    """
-    from web import techo
-
-    page = (ROOT / "src/web/techo_page.html").read_text(encoding="utf-8")
-    page = page.replace("/*TECHO_DATA*/null", json.dumps(techo.data(), ensure_ascii=False))
-    page = re.sub(r'<link [^>]*fonts\.(googleapis|gstatic)\.com[^>]*>\n?', "", page)
-    script = ("<script>window.addEventListener('load',()=>{document.getElementById('speak').checked=false;"
-              f"document.getElementById('q').value={json.dumps(question, ensure_ascii=False)};"
-              "document.getElementById('ask-form').requestSubmit();});</script>")
-    return page + script
-
-
-def capture_techo(cache):
-    chrome = shutil.which("google-chrome") or shutil.which("chromium")
-    if not chrome:
-        print("検査できない: google-chrome が無い", file=sys.stderr)
-        return None
-    d = cache / "techo"
-    d.mkdir(parents=True, exist_ok=True)
-    shots = []
-    for i, (q, _) in enumerate(ASKS):
-        html, png = d / f"ask{i}.html", d / f"ask{i}.png"
-        html.write_text(techo_html(q), encoding="utf-8")
-        png.unlink(missing_ok=True)
-        subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--user-data-dir={d / 'profile'}",
-                        f"--force-device-scale-factor={PHONE_SCALE}", f"--window-size={PHONE_PX[0]},{PHONE_PX[1]}",
-                        "--virtual-time-budget=3000", f"--screenshot={png}", html.resolve().as_uri()],
-                       capture_output=True, timeout=120)
-        if not png.exists():
-            print(f"検査できない: 手帖の画面が撮れない（{q}）", file=sys.stderr)
-            return None
-        shots.append(Image.open(png).convert("RGB"))
-    return shots
-
-
-# ---- 描く ----
-
-def _scaled(img, h):
-    return img.resize((max(1, round(img.width * h / img.height)), round(h)), Image.LANCZOS)
-
-
 def _blend_in(img, layer, xy, a):
     """layer を a の濃さで紙の上に置く（前のコマに依らず、今の img の上だけで混ぜる）。"""
     x, y = xy
@@ -241,24 +167,11 @@ def _blend_in(img, layer, xy, a):
     img.paste(Image.blend(region, layer, a), (x, y))
 
 
-def _phone(shot, h):
-    """スマホの枠。墨の縁と角の丸みだけ（機種の形は描かない）。"""
-    inner = _scaled(shot, h - 36)
-    w = inner.width + 36
-    frame = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(frame)
-    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=46, fill=SUMI + (255,))
-    mask = Image.new("L", inner.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, inner.width - 1, inner.height - 1), radius=30, fill=255)
-    frame.paste(inner, (18, 18), mask)
-    return frame.convert("RGB"), frame.getchannel("A")
-
-
 class Scene:
-    def __init__(self, pairs, shots):
+    def __init__(self, pairs):
         self.duration = DURATION
         self.new_label = SHEET_SET
-        self.tag = f"{OLD_SET} → {SHEET_SET}・T-0001"
+        self.tag = f"{OLD_SET} → {SHEET_SET}"
         self.pairs = []
         for p in pairs:
             pw, ph = p["page_mm"]
@@ -266,7 +179,6 @@ class Scene:
             size = (round(pw * k), SHEET_H)
             self.pairs.append({**p, "k": k, "old": p["old"].resize(size, Image.LANCZOS),
                                "new": p["new"].resize(size, Image.LANCZOS)})
-        self.phones = [_phone(s, PHONE_H) for s in shots]
 
     # 拍ごとの絵
 
@@ -289,28 +201,6 @@ class Scene:
             text(draw, (80, 132), "11-04 に成人 5 人が作って試した後の言葉（原文のまま）", 32, fade(SUMI, u))
             text(draw, (220, 860), "記録 R-0001（仮説 A）・R-0002（仮説 C）。見た事はどちらも「わからない」", 30,
                  fade(SUMI, 0.8 * phase(t, "quote2") * a))
-
-    def _chain(self, img, draw, t):
-        u = span(t, "chain", "chain_out")
-        if u <= 0:
-            return
-        text(draw, (80, 60), "台帳の直し T-0001", 54, fade(SUMI, u), True)
-        text(draw, (80, 132), "言葉が記録につながり、人が採った直しだけが次の版になる", 32, fade(SUMI, u))
-        x, y = 120, 250
-        for i, s in enumerate(CHAIN):
-            # 箱の幅は字の実際の幅から（英数字が混じると字数では測れず、右端からはみ出した）
-            w = 50 + round(draw.textlength(s, font=ImageFont.truetype(SERIF_BOLD, 30)))
-            color = SHU if s.startswith("雛形の直し") else SUMI
-            draw.rectangle((x, y, x + w, y + 90), outline=fade(color, u), width=3)
-            text(draw, (x + w // 2, y + 45), s, 30, fade(color, u), True, "mm")
-            x += w
-            if i < len(CHAIN) - 1:
-                text(draw, (x + 30, y + 45), "→", 40, fade(SUMI, u), anchor="mm")
-                x += 60
-        for i, (ver, s, _) in enumerate(CHANGES):
-            yy = 430 + i * 78
-            text(draw, (160, yy), ver, 36, fade(SHU, u), True)
-            text(draw, (290, yy), s, 36, fade(SUMI, u))
 
     def _pair(self, img, draw, t, p, cin, cbox, cout):
         u = span(t, cin, cout)
@@ -348,38 +238,15 @@ class Scene:
                 draw.line((box[2], ly, lx - 8, ly), fill=fade(SHU, b), width=2)
             text(draw, (lx, ly), label, 34, fade(SHU, b), True, anchor)
 
-    def _techo(self, img, draw, t):
-        u = phase(t, "techo") * (1 - phase(t, "closing"))
-        if u <= 0:
-            return
-        x = 200
-        y = (H - PHONE_H) // 2 + 10
-        for (rgb, alpha), (q, note) in zip(self.phones, ASKS):
-            region = img.crop((x, y, x + rgb.width, y + rgb.height))
-            mask = alpha.point(lambda v: round(v * u))
-            region.paste(rgb, (0, 0), mask)
-            img.paste(region, (x, y))
-            text(draw, (x + rgb.width // 2, y + PHONE_H + 14), note, 26, fade(SUMI, u), anchor="ma")
-            x += rgb.width + 90
-        v = phase(t, "techo_label") * u
-        text(draw, (x + 40, 330), "工作の手帖", 58, fade(SUMI, u), True)
-        text(draw, (x + 40, 420), "作りながら、スマホで聞く", 34, fade(SUMI, u))
-        first, _, second = TECHO_LABEL.partition("・")
-        text(draw, (x + 40, 520), first + "・", 46, fade(SHU, v), True)
-        text(draw, (x + 40, 584), second, 46, fade(SHU, v), True)
-        text(draw, (x + 40, 680), "仕組みは、紙で試して確かめる所だから", 30, fade(SUMI, v))
-
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
         draw = ImageDraw.Draw(img)
         self._quotes(img, draw, t)
-        self._chain(img, draw, t)
         for p, cues in zip(self.pairs, (("pair_a", "boxes_a", "pair_a_out"), ("pair_c", "boxes_c", "pair_c_out"))):
             self._pair(img, draw, t, p, *cues)
-        self._techo(img, draw, t)
-        # 札（右上）: 版の移りと台帳の ID。台帳の段からずっと出す。
-        lab = phase(t, "chain") * (1 - phase(t, "closing"))
+        # 札（右上）: 版の移り。紙の段からずっと出す。
+        lab = phase(t, "pair_a") * (1 - phase(t, "closing"))
         if lab > 0:
             text(draw, (W - 80, 64), self.tag, 36, fade(SHU, lab), True, "ra")
         c = phase(t, "closing")
@@ -394,15 +261,13 @@ class Scene:
 
     def credit(self, t):
         """隅の札は、いま映している物の出所に合わせる。"""
-        if t < CUES["chain_out"][1]:
-            return "出所: docs/process/trials/README.md（本人の所見・台帳の形）・trials/sheets/README.md（版ごとに変えた事）"
-        if t < CUES["pair_c_out"][1]:
-            return (f"左: git に残した {OLD_SET} の PDF（docs/process/trials/sheets）　右: 今の生成器（slider_fan）が刷った PDF。"
-                    "朱の枠は変えた所")
-        return "工作の手帖: src/web/techo.py の頁を手元のブラウザで撮った。2 つの答えは頁の中の決まりで出た物（AI は呼んでいない）"
+        if t < CUES["quotes_out"][1]:
+            return "出所: docs/process/trials/README.md（本人の所見）"
+        return (f"左: git に残した {OLD_SET} の PDF（docs/process/trials/sheets）　右: 今の生成器（slider_fan）が刷った PDF。"
+                "朱の枠は変えた所")
 
 
-SHEET_TIMES = (1.5, 5.0, 9.5, 12.3, 14.5, 17.4, 19.5, 22.5, 24.5, 26.0, 27.5, 29.5)
+SHEET_TIMES = (1.5, 4.5, 6.8, 8.6, 10.2, 11.4, 13.0, 15.0, 16.0, 18.0, 20.5)
 
 
 def main(argv=None):
@@ -414,13 +279,12 @@ def main(argv=None):
     cache = pathlib.Path(a.cache) / "scene6"
     try:
         pairs = build_sheets(cache)
-        shots = capture_techo(cache) if pairs else None
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
         print(f"検査できない: 素材が作れない（{e}）", file=sys.stderr)
         return 4
-    if not pairs or not shots:
+    if not pairs:
         return 4
-    scene = Scene(pairs, shots)
+    scene = Scene(pairs)
     if a.sheet:
         contact_sheet(scene, a.sheet, SHEET_TIMES)
     return render(scene, pathlib.Path(a.out))

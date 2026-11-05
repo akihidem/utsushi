@@ -15,7 +15,7 @@ exit: 0 = 書き出せた / 4 = ffmpeg が無い・写真が確かめ表で通�
   data/records と data/loop は git に入らないので読まない。README が言う事だけを言う。
 - 結果は正直に「わからない」と出す。記録 R-0001（仮説 A）と R-0002（仮説 C）のどちらも、
   動画と写真がどちらの仮説の紙か分からないため「わからない」と本人が答えた。
-  2 枚の札は同じ大きさで記録の番号の順に並べ、どちらが良いとも言わない（J-025）。
+- 本人の決定（11-05）「哲学よりの動画にして」で、記録の番号の札を外して短くした。数より、作っている手を見せるため。
 - 扇の開き方を図に描かない（F9）。矢印・動きの線も描かない。学びの効果も言わない。声は入れない（J-022）。
 - frame(t) は時刻だけから 1 コマを描く純関数（場面 1 と同じ）。曲を付ける時は CUES を拍に合わせて直す。
 """
@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from demo.flip import H, PAPER, ROOT, SERIF, SERIF_BOLD, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 
-DURATION = 30.0
+DURATION = 22.0
 TRIALS = ROOT / "docs/process/trials/README.md"
 PHOTO_DIR = ROOT / "docs/process/trials/photos/20261104"
 REVIEW = PHOTO_DIR / "review.md"
@@ -43,14 +43,12 @@ ACCEPT = ("載せる", "載せてよい", "公開してよい")  # 欄が丸ご�
 CUES = {
     "title_in": (0.0, 1.2),     # 題と写真の枠が現れる
     "facts": (1.5, 2.7),        # 試した人と案の札
-    "facts_out": (8.6, 9.2),
-    "notes": (9.4, 10.4),       # 本人の所見（原文のまま）
-    "notes_out": (16.6, 17.2),
-    "records": (17.4, 18.4),    # 記録 R-0001・R-0002 と「わからない」
-    "records_out": (23.2, 23.8),
-    "closing": (24.0, 25.4),    # 締めの字幕。30 秒まで止めて読ませる
+    "facts_out": (6.6, 7.2),
+    "notes": (7.4, 8.4),        # 本人の所見（原文のまま）
+    "notes_out": (13.6, 14.2),
+    "closing": (14.4, 15.8),    # 締めの字幕。22 秒まで止めて読ませる
 }
-SHEET_TIMES = (0.6, 3.0, 6.0, 10.6, 14.0, 18.8, 21.0, 25.0, 29.5)
+SHEET_TIMES = (0.6, 3.0, 6.0, 8.6, 11.0, 13.0, 15.0, 18.0, 21.5)
 
 # 画面の数は README の文をそのまま写す。床が 1 つずつ README に在るかを見る。
 FACTS = (
@@ -64,9 +62,6 @@ NOTES = (
     "ジャバラの固定に苦慮していた",
     "どちらの仮説も、内側の筒の土台があると良い",
 )
-RECORDS = (("R-0001", "仮説 A"), ("R-0002", "仮説 C"))
-RECORD_SEEN = "わからない"
-RECORD_WHY = "動画と写真がどちらの仮説か分からないため（本人の答え）"
 # 台本（plan.md の 4 の 5 の行）の字幕をそのまま 2 行に割る。
 CAPTION = ("紙で作って、動いた。", "どの仮説の紙かは記録で「わからない」")
 EMPTY_LABEL = ("写真は公開前の確かめの後に入る（U-24）",)
@@ -159,7 +154,7 @@ class Scene5:
                 draw.line((x1 - 24, y, x1 - 24, y + 12), fill=fade(SUMI, 0.35 * a_in), width=2)
             for i, line in enumerate(wrap(EMPTY_LABEL[0], 34, x1 - x0 - 120)):
                 text(draw, ((x0 + x1) // 2, (y0 + y1) // 2 - 24 + 50 * i), line, 34, fade(SUMI, 0.75 * a_in), anchor="ma")
-        # 右の列は 3 組を順に入れ替える: 試した人と案 → 本人の所見 → 記録と結果
+        # 右の列は 2 組を順に入れ替える: 試した人と案 → 本人の所見
         a = shown(t, "facts")
         if a > 0:
             y = 230
@@ -178,20 +173,6 @@ class Scene5:
                     text(draw, (RIGHT_X + (0 if j == 0 else 20), y), line, 38, fade(SUMI, a))
                     y += 56
                 y += 40
-        a = shown(t, "records")
-        if a > 0:
-            text(draw, (RIGHT_X, 230), "記録（番号の順。順位ではない）", 30, fade(SHU, a), True)
-            # 2 枚の札は同じ大きさ・同じ書き方。片方だけ色や太さを変えると優劣に見える（J-025）。
-            cw, ch, gap = 420, 300, 60
-            for i, (rid, hyp) in enumerate(RECORDS):
-                cx = RIGHT_X + i * (cw + gap)
-                draw.rectangle((cx, 300, cx + cw, 300 + ch), outline=fade(SUMI, 0.6 * a), width=2)
-                text(draw, (cx + 30, 330), rid, 44, fade(SUMI, a), True)
-                text(draw, (cx + 30, 400), hyp, 36, fade(SUMI, a))
-                text(draw, (cx + 30, 470), "見た事", 26, fade(SHU, a), True)
-                text(draw, (cx + 30, 510), f"「{RECORD_SEEN}」", 44, fade(SUMI, a), True)
-            for j, line in enumerate(wrap(RECORD_WHY, 30, RIGHT_W)):
-                text(draw, (RIGHT_X, 650 + 44 * j), line, 30, fade(SUMI, 0.8 * a))
         # 締め: 紙を薄く掛け、字幕だけを読ませる。
         c = phase(t, "closing")
         if c > 0:
