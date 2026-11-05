@@ -498,7 +498,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     own = hypotheses.own_hypotheses(sid)
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。札はたたき台の 1 枚だけで、順位は学ぶ人の画面に出さない（J-013・J-025・J-032）。
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
-                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(data["note"])}{esc(ways.NOTE)}</p><div class="plates">')
+                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
     for h in [hypotheses.sheet_of(sid)]:
         ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(e["what"])}（{esc(e["where"])}）</li>' for e in h["evidence"])
         last = versions_of(sid, h["id"], printed_only=True)
