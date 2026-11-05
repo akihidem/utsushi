@@ -300,11 +300,10 @@ NEXT_REASONS = {
     "F5.figure_height": "この値だと、像が扇より高くなります。",
     "F5.base_size": "この値だと、扇の台が内筒に入りません。",
     "F5.stroke": "この値だと、押し上げる動きが筒の中に収まりません。",
+    "F5.fan_leg": "この値だと、扇の足が短くて台に貼れません。",
+    "F5.figure_base": "この値だと、像の足が台より広くて貼れません。",
+    "F5.hole": "この値だと、穴が紙の外に出ます。",
 }
-# 文面を本人に確認してもらっている床（#164）。確認が済むまで検査の文を画面に出さず、下の「近い値を試す」の 1 行だけにする。文は確認の後に上の表へ足す。
-NEXT_REASONS_WAITING = {"F5.fan_leg", "F5.figure_base", "F5.hole"}
-
-
 def next_reasons(failures, sid, hid, param, to=None):
     """「次の版を作る」が通らなかった時に出す文。理由のあとに、今の値と次の一手を 1 行足す。"""
     template = hypotheses.load(sid).get("template", "slider_fan")
@@ -321,9 +320,6 @@ def next_reasons(failures, sid, hid, param, to=None):
                 on_paper = True
                 continue
             text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
-        elif f.floor in NEXT_REASONS_WAITING:
-            on_paper = True
-            continue
         elif f.floor.startswith("F5."):
             # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
             text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
