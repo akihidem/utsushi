@@ -22,6 +22,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "a
 from api import ask, observe  # noqa: E402
 from omochae import hypotheses, loop, records, store  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
+from web import wording  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 from web.toy import evidence_item  # noqa: E402
 
@@ -90,11 +91,12 @@ for path in (TOY, TECHO, ZUKAN, ZUKAN_ONE):
 assert f'href="#{used}"' in page(opened, TOY) and f'id="{used}"' in page(opened, TOY), "札へ飛ぶ道は残す"
 
 # 2. 改善の輪の節: 閉じた口へ案内しない。理由と根拠の番号を出さない。版が変わった事は読める
+BASED = wording.BASED_ON.split("{}")[1].strip()  # 根拠の番号を添える文の、番号の後ろの字
 kz = page(opened, TOY).split('id="kaizen"', 1)[1]
-assert "次の版を待つ報告" not in kz and "説明を待つ報告" not in kz and WHY not in kz and "根拠:" not in kz, kz[:400]
+assert "次の版を待つ報告" not in kz and "説明を待つ報告" not in kz and WHY not in kz and BASED not in kz, kz[:400]
 assert "仮説 A 版 2" in kz and f"/toy/{G}?see=H-A&amp;kind=sheet&amp;v=2" in kz.replace("&", "&amp;").replace("&amp;amp;", "&amp;"), kz[:400]
 kz = page(closed, TOY).split('id="kaizen"', 1)[1]
-assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and "根拠:" in kz, "対照: 合言葉の場の節は今までどおり"
+assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and BASED in kz, "対照: 合言葉の場の節は今までどおり"
 
 # 3. 読みと観察の文を出さない
 for path in (TOY, TECHO):
@@ -132,6 +134,6 @@ for port in (closed, opened):
 
 left = [(s, e) for s in sources() for h in hypotheses.load(s)["hypotheses"] for e in h.get("evidence", []) if "data/" in evidence_item(e)]
 assert not left, ("全部の玩具の根拠の行に置き場の道を出さない", left[:2])
-assert evidence_item({"certainty": "推測", "what": "見立て（data/x.json）の字", "where": "棚卸し（data/x.json）"}) == "<li>〔推測〕見立ての字（棚卸し）</li>"
+assert evidence_item({"certainty": "推測", "what": "目印（data/x.json）の字", "where": "場所（data/x.json）"}) == "<li>〔推測〕目印の字（場所）</li>"
 
 print("ok: 合言葉なしの場に、内部の番号と作る側の控えを出さない")

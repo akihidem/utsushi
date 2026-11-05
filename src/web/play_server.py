@@ -13,6 +13,7 @@ import json
 import os
 import pathlib
 import re
+import secrets
 import sys
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,6 +25,7 @@ from omochae.store import SID
 
 from . import failure_log
 from . import skin as skinmod
+from . import wording
 from .contrib_server import STYLE
 
 # 見た目はルックブックの様式（本人の指定、J-024）。絵が主役で、文字は添え。見開きのように絵と短い文を左右に置き、玩具ごとに左右を入れ替える。
@@ -190,6 +192,9 @@ def without_notes(page):
         return f"<{tag}{attrs}>{part}</{tag}>"
 
     return re.sub(r"<(style|script)\b([^>]*)>(.*?)</\1>", clean, page, flags=re.S)
+
+
+UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -380,13 +385,13 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             from . import think_sheet
             own = sorted(think_sheet.mine(self, sid), key=lambda o: int(o.rsplit("-", 1)[1]), reverse=True)  # 本人の案を先に（作っている紙の記録として残すため）
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, up_key=self._up_key()), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
-            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。
-            if f.exists() and media_review.visible(m.group(1), [m.group(2)]):
+            # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。確認の前の物は、上げた本人の画面にだけ返す。
+            if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
                 data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
                 span = byte_range(self.headers.get("Range"), len(data))
@@ -458,6 +463,23 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
+    def _up_key(self):
+        """この画面が写真を上げた時に渡した鍵（media_review.claim）。無ければ None。"""
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == UP_COOKIE and value:
+                return value
+        return None
+
+    def _up_cookie(self, key=""):
+        """鍵の cookie。ブラウザを閉じれば消えるように Max-Age を付けない。key が空なら消す。外から開く場（合言葉付き）は https なので Secure を付ける。"""
+        secure = "; Secure" if getattr(self.server, "public_key", None) else ""
+        return ("Set-Cookie", f"{UP_COOKIE}={key}; Path=/; HttpOnly; SameSite=Lax{secure}" + ("" if key else "; Max-Age=0"))
+
+    def _up_close(self):
+        """記録を残すのが交代の区切り（who を作り直すのと同じ）。同じ機械の次の人に、前の人の確認の前の写真を出さない。"""
+        return [self._up_cookie()] if self._up_key() else []
+
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
@@ -465,7 +487,7 @@ class Handler(BaseHTTPRequestHandler):
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
-        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
+        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")] + (self._up_close() if fresh else []))
 
     def _post(self):
         if not self._host_ok():
@@ -491,7 +513,11 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= techo_site.MAX_MEDIA:
                 return self._send(413, "1 つ 20MB まで")
             name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length))
-            return self._send(201 if name else 422, name or why, "text/plain; charset=utf-8")
+            if not name:
+                return self._send(422, why, "text/plain; charset=utf-8")
+            key = self._up_key() or secrets.token_urlsafe(18)
+            media_review.claim(m.group(1), name, key)
+            return self._send(201, name, "text/plain; charset=utf-8", [self._up_cookie(key)])
         form = self._form()
         if form is None:
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
@@ -569,7 +595,7 @@ class Handler(BaseHTTPRequestHandler):
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
-            return self._done(sid, "鍵が置かれると、Claude が答えます", form.get("back", ""), anchor=rid)
+            return self._done(sid, wording.plain("鍵が置かれると、Claude が答えます"), form.get("back", ""), anchor=rid)
         try:
             from api.agent import default_client
 
@@ -680,7 +706,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
-        out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
+        out = lambda code, obj, headers=(): self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8", headers)
         hid = form.get("hypothesis", "")
         from . import think_sheet
 
@@ -705,7 +731,7 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}))
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), self._up_close())
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):

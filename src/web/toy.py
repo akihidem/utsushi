@@ -152,7 +152,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
 
             ch = "、".join(f"{_param_name(sid, c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
             # 合言葉なしで開いた場には、記録の番号（内部の番号）を出さない（J-028）。
-            basis = f'根拠 {esc("、".join(wording.record_no(r) for r in adopted.get("record_ids", [])))}。' if photos else ""
+            basis = f'{esc(wording.BASED_ON.format("、".join(wording.record_no(r) for r in adopted.get("record_ids", []))))}。' if photos else ""
             cap = f'<p class="meta">版 {v}: {basis}変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
     cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
@@ -473,7 +473,7 @@ def made_strip(sid, recs, photos=True):
         for f in (media_review.public(r["id"], media_of(r["id"]))[:1] if photos else []):
             tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">')
-            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} の記録へ">{tag}</a>'
+            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} へ">{tag}</a>'
     return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 

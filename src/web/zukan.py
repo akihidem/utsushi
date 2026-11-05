@@ -68,7 +68,7 @@ def quote_lines(src):
 def record_title(r, data):
     """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
     return f"{who}・{r['result']}"
 
 
@@ -85,13 +85,15 @@ def observation_lines(sid, data, photos=True):
     return [{"text": f"{record_title(r, data)}（{record_date(r)}" + (f"・{wording.record_no(r['id'])}" if photos else "") + "）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
-def hypothesis_lines(sid, data):
+def hypothesis_lines(sid, data, photos=True):
     """どれも試していない考えなので、仮説の印を付ける（status も添える）。出すのはたたき台の 1 つだけ（J-032。説を羅列しない）。"""
     out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"] if h["id"] == data.get("sheet")]
     from api.words import spoken_own_ids  # 話した考えから採った案は出さない（ループ1、Issue #335。記録に結ぶ前の字は学ぶ人の頁に出さない決まり）
 
     spoken = spoken_own_ids(sid)
-    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in hypotheses.own_hypotheses(sid) if h["id"] not in spoken]
+    # 合言葉なしで開いた場では、書いて立てた仮説の文も出さない: 人ごとに分かれておらず、文の中の名前は機械で落とせない（J-028、#336）。
+    own = hypotheses.own_hypotheses(sid) if photos else []
+    out += [{"text": f"あなたの仮説「{h['name']}」: {h['how_it_moves']}", "label": HYPO} for h in own if h["id"] not in spoken]
     return out
 
 
@@ -99,7 +101,7 @@ def lines_for(sid, photos=True):
     """その玩具の図鑑の文を、印ごとに返す。予想の段を外した（本人の決定 11-05、#242）ので、仮説はいつも出す。"""
     data, src = hypotheses.load(sid), _source(sid)
     return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data, photos),
-            "hypotheses": hypothesis_lines(sid, data), "holding": src.get("holding", "")}
+            "hypotheses": hypothesis_lines(sid, data, photos), "holding": src.get("holding", "")}
 
 
 def guard(lines):
