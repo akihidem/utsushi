@@ -23,7 +23,7 @@ for name in ("core_map", "core_voice", "core_loop"):
 # 例の記録は字の頭が「（例）」。人の報告に見せかけない
 for key in ("note", "impression", "fix_part", "fix_change", "fix_outcome"):
     assert core.EXAMPLE[key].startswith("（例）"), key
-for rec in (core.EXPLAIN, core.NEXT):
+for rec in (core.EXPLAIN, {k: v for k, v in core.NEXT.items() if k not in ("param", "to")}):
     assert all(v.startswith("（例）") for v in rec.values()), rec
 assert "作り物" in core.EXAMPLE_NOTE
 

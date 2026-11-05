@@ -47,8 +47,9 @@ SOON = "これから作る"
 # 本物の口へ送る例の記録。どれも「（例）」で始める。
 EXAMPLE = {"hypothesis": HID, "result": "動いた", "note": "（例）動画のために入れた例の記録です", "impression": "（例）筒を押すと扇が開いた。切る所が難しかった",
            "fix_part": "（例）内筒", "fix_change": "（例）土台の紙を 2 枚重ねた", "fix_outcome": "（例）押しやすくなった"}
-EXPLAIN = {"text": "（例）押す量が足りず、開ききらないと読んだ", "next_idea": "（例）押す量を増やす", "by": "（例）作った人"}
-NEXT = {"interpretation": "（例）押す量が足りない", "why": "（例）押す量を増やして試す", "by": "（例）作った人"}
+EXPLAIN = {"text": "（例）扇の折りが多くて固く、開きにくいと読んだ", "next_idea": "（例）折りの数を減らす", "by": "（例）作った人"}
+# 次の版で変える寸法。床（扇が筒に隠れる・開ける）を通る値を実際に送って選んだ。ここが通らない時は止める（通った振りをしない）。
+NEXT = {"interpretation": "（例）折りが多くて固い", "param": "fold_count", "to": 24, "why": "（例）折りの数を減らして試す", "by": "（例）作った人"}
 
 # 撮る頁: (道, 窓の幅, 測る所)
 PAGES = {
@@ -106,11 +107,10 @@ def seed(base):
         raise OSError("写真が入らない")
     if _post(base, f"/record/{rid}/explain", EXPLAIN)[0] != 303:
         raise OSError("説明が入らない")
-    params = json.loads((ROOT / "data/hypotheses" / f"{SID}.json").read_text(encoding="utf-8"))["hypotheses"][0]["params"]
-    for param, to in (("push_amount", params.get("push_amount", 0) + 2), ("push_amount", params.get("push_amount", 0) - 2), ("fold_count", params.get("fold_count", 0) + 2)):
-        if _post(base, f"/record/{rid}/next", {**NEXT, "param": param, "to": to})[0] == 303:
-            return rid
-    raise OSError("次の版が刷れない")
+    code, out = _post(base, f"/record/{rid}/next", NEXT)
+    if code != 303:
+        raise OSError(f"次の版が刷れない（{code}）")
+    return rid
 
 
 def _measure(chrome, tmp, base, path, selectors, width):
