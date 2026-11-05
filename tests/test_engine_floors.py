@@ -14,7 +14,7 @@ import tempfile
 from omochae import floors
 from omochae.compose import TEMPLATES, compose
 from omochae.fan_model import shortest_free_thread
-from omochae.marks import OWN_HYPOTHESIS, check_pdf
+from omochae.marks import FROZEN_SETS, OWN_HYPOTHESIS, check_pdf
 from omochae.model import Failure, Part
 from omochae.render import write_all
 from omochae.templates import pivot_counterweight as pc
@@ -108,6 +108,12 @@ def marks_whole_text():
         _, layout, fails = compose("slider_fan", {"push_part": "tab"}, own)
         assert not fails
         assert check_pdf(write_all(layout, pathlib.Path(d) / "own"), own) == []
+        # 必須 2 種の今の組は凍結の文、ほかの玩具は新しい文を刷る。どちらの紙でも、刷った文を探す
+        sid, _, t, p = next(h for h in hypotheses() if h[0] not in FROZEN_SETS)
+        other = source(sid)
+        _, layout, fails = compose(t, p, other)
+        assert not fails, [f.line() for f in fails]
+        assert check_pdf(write_all(layout, pathlib.Path(d) / "other"), other) == []
 
 
 def image_box_line_across_glue():
