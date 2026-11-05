@@ -28,8 +28,7 @@ assert not any("並べる" in c or "案を選" in c or "並ぶ" in c for c in ca
 
 # 偽の画面: 測った枠の所に四角を置く（前提の札・仮説の札）
 premise = [210, 1100, 1000, 70]
-plates = [[210 + 300 * i, 1300, 280, 671] for i in range(4)] + [[210, 2001, 280, 486]]
-rects = {"premise": [premise], "plate": plates}
+rects = {"premise": [premise], "plate": [[210, 1216, 640, 392]]}
 dpr = 2
 shot = Image.new("RGB", (1600 * dpr, 3400 * dpr), (252, 252, 250))
 d = ImageDraw.Draw(shot)
@@ -41,6 +40,13 @@ for t in (0.5, 2.0, 4.0, 6.0, 7.0, 8.2, 10.0, 10.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (W, H) and a.tobytes() == b.tobytes(), t
 
+# 頁の札はたたき台の 1 枚だけ（J-032）。記録の仮説の数のまま 5 枚に戻ったら、頁が変わったので止まる
+assert scene3.plates_ok(1) and not scene3.plates_ok(0) and not scene3.plates_ok(2) and not scene3.plates_ok(5)
+# 寄った先に、前提の札と型紙の札の全部が切れずに入る（札は 1 枚なので、途中で切ると何の札か分からない）
+cam, view_h = scene.cam_premise, scene.cam_premise[2] * scene.aspect
+plate = rects["plate"][0]
+assert cam[1] - view_h / 2 <= premise[1] and plate[1] + plate[3] <= cam[1] + view_h / 2, cam
+assert cam[0] - cam[2] / 2 <= premise[0] and premise[0] + premise[2] <= cam[0] + cam[2] / 2, cam
 # 寄りが効いている（途中で絵が変わる）。頭は字を置かない（絵で分かる）。上の帯に字は 1 かたまりだけ
 assert scene.frame(1.5).tobytes() != scene.frame(5.0).tobytes() != scene.frame(10.0).tobytes()
 band = (0, 0, W, scene3.BOX[1] - 10)

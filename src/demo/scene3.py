@@ -8,12 +8,13 @@ exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無
   前の版の筋（予想が先）を残すと、動画が今の道具と食い違うため。
 - 型紙は正解でなく AI が考えた仮説である事（本人の言葉 11-05）を、画面の札に寄って見せる。
 - 本人の決定（11-05 17:26）「型紙は説を羅列せず、おもちゃ一個につき一個にする。理由はその型紙が完璧ではないから。その型紙をたたき台に色々試行錯誤する」。
-  頁の直しはこれからなので、今は今の画面のまま撮る。頁が 1 枚になったら撮り直す。札を 5 枚並べる段と、その字幕は外した。
+  頁の札はたたき台の 1 枚になった（J-032）。札を 5 枚並べる段と、その字幕は外した。
+- 字幕「型紙は正解ではなく、AI が考えた仮説」は 1 枚の形でも正しい。J-032 で紙に刷る仮説の印の文は今のままで、「たたき台」に替えないと本人が決めた。
 - 本人の方針（11-05 20:10）「認知負荷を減らす」「癒し系」で、字は 1 度に 1 かたまり。隅の札は外し、画面を撮った事と出所はクレジットへ寄せた（demo.scene7）。
 - 画面は描き直さず、本物の play_server を手元（127.0.0.1）で立てて headless の Chrome で撮る。
   描き直した画面では「この道具がそう動く」事の証拠にならない。撮るのは書き出しの度で、画面が直されれば動画も追いつく。
 - 置き場は一時の場所（OMOCHAE_DATA）にする。repo の data/ の記録が画面に混ざらないように。
-- 画面の札の数と data/hypotheses の記録が食い違えば書き出さない（頁が変わった事に気づくため）。
+- 画面の札が 1 枚でなければ書き出さない（plates_ok。頁が思わぬ形に変わった事に気づくため）。
 - 玩具の動き方は描かない。矢印・扇の絵・開く様子は足さない。画面に映るのは道具の字と
   江戸の図そのものだけで、足すのは寄りと字幕だけ。
 """
@@ -43,6 +44,9 @@ SHOT_W = 1600                    # 撮る窓の幅（CSS の px）。ルック�
 SHOT_H = 3400                    # 撮る高さの下限。足りない時は測った枠から伸ばす（need_height）
 # 使う枠の下に残す余白（CSS の px）。寄った絵は、枠の下に枠の高さの半分ほどを映すため。
 SHOT_MARGIN = 400
+# 寄った絵に入れる範囲（CSS の px）。上は前提の札の上の節の題まで、下は型紙の札の下の端まで。
+ABOVE_PREMISE = 120
+BELOW_PLATE = 4
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
@@ -59,15 +63,6 @@ CLOSING = ("開いたら、すぐ作る。",)
 CAPTIONS = (TITLE_PREMISE, *CLOSING)
 
 BOX = (160, 196, 1760, 936)  # 画面を映す枠（場面 1 の紙の地を周りに残す）。上に 1 行の余白
-
-
-def hypothesis_data(sid=SID):
-    """仮説の記録をそのまま読む。数と記号はここからだけ取る（動画に数を書き込まない）。"""
-    return json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
-
-
-def hypothesis_count(sid=SID):
-    return len(hypothesis_data(sid)["hypotheses"])
 
 
 def phase(t, cue):
@@ -145,6 +140,11 @@ def shot_fits(rects, height):
     return need_height(rects, 0) <= height
 
 
+def plates_ok(on_page):
+    """型紙は玩具に 1 枚（J-032）なので、頁の札はたたき台の 1 枚だけ。data には仮説が残るので、記録の数とは比べない。"""
+    return on_page == 1
+
+
 def capture(cache, sid=SID):
     """play_server を一時の置き場で立て、開いた頁を撮る。撮れない時は None。"""
     chrome = shutil.which("google-chrome") or shutil.which("chromium")
@@ -194,10 +194,9 @@ def capture(cache, sid=SID):
         finally:
             proc.terminate()
             proc.wait(timeout=10)
-    n = hypothesis_count(sid)
-    if len(rects["plate"]) != n:
-        # 記録と画面の数が違うと、動画の言う事と食い違うので書き出さない。
-        print(f'検査できない: 仮説の札の数が記録と合わない（画面 {len(rects["plate"])}・記録 {n}）', file=sys.stderr)
+    if not plates_ok(len(rects["plate"])):
+        # 札が 1 枚でない時は、動画の言う事と頁が食い違うので書き出さない。
+        print(f'検査できない: 型紙の札が 1 枚でない（画面 {len(rects["plate"])}）', file=sys.stderr)
         return None
     (out / "rects.json").write_text(json.dumps({"dpr": DPR, **rects}, ensure_ascii=False, indent=1), encoding="utf-8")
     return Image.open(png).convert("RGB"), rects
@@ -228,9 +227,12 @@ class Scene3:
         bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
         self.aspect = bh / bw
         # 寄りの位置は測った枠から決める（画面が直されても追いつく）。
-        pr = rects["premise"][0]
+        pr, pl = rects["premise"][0], rects["plate"][0]
         self.cam_page = _cam((SHOT_W / 2, 500), SHOT_W * 1.12)            # 頁の頭の見開き全体
-        self.cam_premise = _cam((pr[0] + pr[2] / 2, pr[1] + pr[3] / 2 + 60), pr[2] * 1.1)  # 前提の札
+        # 前提の札と、その下の札 1 枚を切らずに映す。札は 1 枚なので、途中で切ると何の札か分からない。
+        top, bottom = pr[1] - ABOVE_PREMISE, pl[1] + pl[3] + BELOW_PLATE
+        width = max(pr[2] * 1.1, (bottom - top) / self.aspect)
+        self.cam_premise = _cam((pr[0] + pr[2] / 2, top + width * self.aspect / 2), width)
 
     def view(self, shot, cam):
         """撮った画面の cam の所を、枠の大きさに写す。枠の外は画面の地の色で埋める。"""
