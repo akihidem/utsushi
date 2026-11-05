@@ -147,9 +147,11 @@ shown = window(body.decode())
 assert code == 200 and f"/sheet/{GO}/H-A_v1.png" in shown and "H-C_v1" not in shown.split('class="win"')[1], "開いただけの案へ移らない"
 
 # 自分の仮説: 窓に出ないので、字のリンクも PDF へ向ける（窓へ向けると、ほかの案の紙が出る）。型紙なしの紙の人にも試した後の紙を渡す
+# 頁の書く欄は外した（J-032 の点 2）。前に書かれた仮説と、それで刷った紙が置き場にある形で見る
 for name in ("糸で引く", "紙の張りで開く"):
-    assert post(f"/toy/{DEN}/own", {"name": name, "how": "下の紙を引くと、上が開く", "evidence": "図の右の糸"})[0] == 200
-assert post(f"/toy/{DEN}/print-own", {"id": "OWN-2"})[0] == 200
+    assert not hypotheses.save_own(DEN, name, "下の紙を引くと、上が開く", "図の右の糸")[1]
+out_dir(DEN).mkdir(parents=True, exist_ok=True)
+assert hypotheses.print_own(DEN, "OWN-2", str(out_dir(DEN) / "OWN-2_v1")) == 0
 for own in ("OWN-1", "OWN-2"):
     assert get(f"/sheet/{DEN}/{own}_v1_after.pdf")[0] == 403, ("記録の前に渡さない", own)
 page = record(DEN, "OWN-1")

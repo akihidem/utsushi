@@ -9,8 +9,9 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
+from omochae import hypotheses  # noqa: E402
 from omochae.marks import without_premise  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -77,8 +78,8 @@ assert "怠けらじ" in body and "怠らし" not in body
 # 別のサイトから・別の形で送らせない
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}, origin="http://evil.example")[0] == 403
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}, ctype="text/plain")[0] == 403
-# 札を主にし、自分の仮説の欄は札の後ろに畳む
-assert re.search(r"id=\"kasetsu\".*class=\"plates\".*<details><summary>自分の仮説を立てる", body, re.S), "畳んでいない"
+# 札を主にする。仮説を書く欄は出さない（本人の決定 11-05 18:08、J-032 の点 2）
+assert re.search(r"id=\"kasetsu\".*class=\"plates\"", body, re.S) and "自分の仮説を立てる" not in body
 # 順位を出さない。並びは元の記録の順
 assert "rank" not in body and "順位" not in body
 assert "仮説 A" in body and "仮説 B" not in body, "札はたたき台の 1 枚だけ（J-032）"
@@ -114,13 +115,10 @@ for word in ("成功", "失敗", "正解"):
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "", "by": "本人"})[0] == 422
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "強くしごく", "by": "本人"})[0] == 303
 assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
-# 自分の仮説には型紙なしの紙を返す（本人の決定）
-code, at = where(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})
-assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を作る」に着く
-assert re.search(r'id="own-OWN-1".*紙を作る', get(f"/toy/{G}")[1].decode(), re.S)
-assert post(f"/toy/{G}/print-own", {"id": "OWN-9"})[0] == 422
-assert post(f"/toy/{G}/print-own", {"id": "OWN-1"})[0] == 303
-assert "OWN-1_v1_free.pdf" in get(f"/toy/{G}")[1].decode()
+# 自分の仮説には型紙なしの紙を返す（本人の決定）。書く欄と刷る口は頁から外した（J-032 の点 2。tests/test_own_form_gone.py）ので、前に刷った紙の形で開く
+assert post(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})[0] == 404
+assert not hypotheses.save_own(G, "筒を回す", "ひねると紐が巻かれる", "筒の線")[1]
+assert hypotheses.print_own(G, "OWN-1", str(out_dir(G) / "OWN-1_v1")) == 0
 code, pdf = get(f"/sheet/{G}/OWN-1_v1_free.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
 # 手元の名前以外の Host は受けない
