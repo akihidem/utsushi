@@ -10,7 +10,7 @@ from omochae.compose import TEMPLATES, check_params
 from omochae.hypotheses import load
 
 from . import agent
-from .tools import list_contributions, zoom_source
+from .tools import check_source_id, list_contributions, zoom_source
 
 INTERPRET_SYSTEM = """江戸の玩具を紙で試した記録を読み、何が起きたかの解釈の案を作る担当です。
 決まり: 何が起きたかは人が入れた値をそのまま扱い、変えない。動かない記録を失敗と呼ばない。観察の記録です。人の説明と思いつきは書き換えず、正しさを評価しない。観察した事と、考えられる原因と、分からない事を分ける。
@@ -95,6 +95,8 @@ def _known_examples(source_id):
 
 
 def execute(name, args):
+    if args.get("source_id") is not None:  # 省ける道具（list_contributions）では、省いた時は確かめない
+        check_source_id(args["source_id"])
     if name == "list_records":
         return json.dumps(loop.confirmed_records(args["source_id"]), ensure_ascii=False)
     if name == "get_known_examples":

@@ -20,6 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from omochae import hypotheses, loop, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
+from omochae.store import SID
 
 from . import failure_log
 from . import skin as skinmod
@@ -45,8 +46,6 @@ body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 MAX_FORM = 64 * 1024
 # トンネルの一時の名前の形（run-demo.sh の cloudflared）。本物の名前は repo に書かない（push の門の決まり）ので、形だけをここに 1 か所置く。
 TUNNEL_HOST = r"[a-z0-9-]+\.trycloudflare\.com"
-# 1 頁に玩具が何個もある時は、頁の印の後に -2, -3 と番号を足す（全部の玩具を作る、本人の指示 11-04）。1 個目は今までどおり番号なし。
-SID = r"NDL-\d+-R\d+-[LR](?:-\d+)?"
 
 
 def byte_range(header, size):
