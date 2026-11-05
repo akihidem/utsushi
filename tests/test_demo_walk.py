@@ -56,6 +56,10 @@ assert call(f"/toy/{SID}/techo")[0] == 200
 code, ans = call(f"/toy/{SID}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})
 got = json.loads(ans)
 assert code == 200 and got["from"] == "glossary" and got["text"], got
+# 語が入っていても作り方を聞く問いには、語の説明だけを返さない（#287）
+code, ans = call(f"/toy/{SID}/ask-json", {"hypothesis": "H-A", "question": "蛇腹が固定できない。どうしたらいい？"})
+got = json.loads(ans)
+assert code == 200 and got["from"] == "no_key" and got["text"] != ask.GLOSSARY["蛇腹"], got
 # 上げる（記録 → 写真）
 code, rec = call(f"/toy/{SID}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": "筒を先に丸めた"})
 rid = json.loads(rec)["id"]
