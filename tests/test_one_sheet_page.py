@@ -217,6 +217,7 @@ for sid in sids:
     page = toy.toy_page(sid)
     assert data["note"] and data["note"] not in page, (sid, "断りを頁に出さない")
     assert "どれも試していない" not in page and "どれが正しいかは書かない" not in page, sid
+    assert not [part for part in data["note"].split("。") if part.strip() and part.strip() in page], (sid, "note のどの文も頁に出さない")
     assert ways.NOTE in page, (sid, "作り方の印の断りは残す")
     assert data["note"] in hypotheses.list_lines(data), (sid, "作る側の一覧の命令には残す")
 
