@@ -43,7 +43,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/instructions.py",
-   "tests/test_sheet_u25.py"
+   "tests/test_sheet_u25.py",
+   "tests/test_sheet_heads.py"
   ],
   "unverified": "実際の人が使っていない"
  },
@@ -240,7 +241,8 @@
   "evidence": [
    "src/omochae/instructions.py",
    "tests/test_words.py",
-   "tests/test_sheet_u25.py"
+   "tests/test_sheet_u25.py",
+   "tests/test_sheet_heads.py"
   ],
   "unverified": "実際の人が使っていない。札の文の確かさは式と一般の物理による"
  },
@@ -437,6 +439,7 @@
   "evidence": [
    "src/web/tsukuru.py",
    "tests/test_tsukuru.py",
+   "tests/test_tsukuru_last_step.py",
    "src/omochae/making_log.py",
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
