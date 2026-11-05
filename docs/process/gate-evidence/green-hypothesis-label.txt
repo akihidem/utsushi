@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「型紙は AI の仮説だと紙と頁に出す」を見る）
+# commit: 727b4fb（このファイルを足した commit）
 ok
 rc 0（tests/test_hypothesis_label.py）
 
