@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_loop_talk.py
+# commit: 5792935（回した時の HEAD）
+/tmp/tmp_o9o7vaa/sheets/.tmp-a0oy471b/H-A_v2.pdf
+/tmp/tmp_o9o7vaa/sheets/.tmp-a0oy471b/H-A_v2_tejun.pdf
+/tmp/tmp_o9o7vaa/sheets/.tmp-a0oy471b/H-A_v2_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop_talk.py", line 135, in <module>
+    assert "手順2で軸をまっすぐにした" not in json.dumps(loop.material(r2), ensure_ascii=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

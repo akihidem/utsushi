@@ -119,6 +119,21 @@ def printed_versions(sid, hid):
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+)\.pdf", p.name))}) if out_dir(sid).exists() else []
 
 
+def ensure_after(sid, hid, version):
+    """記録のある案と版の試した後の紙が無ければ、開く時に作る（#320）。場で配られた紙で作った人は「型紙を見る」を押さないので、置き場に紙が無い。
+    記録の時でなく開く時に作るのは、前に残した記録と、置き場が空になった後の記録も同じ道で開くため。記録の POST も重くならない。
+    記録の無い案と版では作らない（S-03）。作るのは試した後の紙だけで、型紙の確定（f09）も増やさない: 人が刷ると選んだ操作でないので、刷った案に数えない。
+    途中で落ちても半端な紙を残さない。作れない時は紙が無いだけにする（頁ごと落とさない）。"""
+    if not any(r["hypothesis_id"] == hid and r.get("sheet_version", 1) == version for r in records.all_records(sid)):
+        return
+    if (out_dir(sid) / f"{hid}_v{version}_after.pdf").exists():
+        return
+    try:
+        loop.print_after(sid, hid, version, out_dir(sid))
+    except Exception as e:
+        failure_log.request_failed("GET", f"/sheet/{sid}/{hid}_v{version}_after", e)
+
+
 def sheet_version_of(sid, hid, form):
     """この報告・質問・札が、どの版の紙への物か。画面が言った版（刷ってある物だけ）を使い、言わなければ一番新しい版。
     なぜ画面から受けるか: 版 1 で作っている間に、別の人の報告で版 2 が刷られる事がある。一番新しい版を決め打ちすると、版 1 の動きが版 2 の記録になり、
@@ -307,7 +322,8 @@ class Handler(BaseHTTPRequestHandler):
             # 刷った紙が無い時は開かない（手順は刷った版の物なので）。
             sid = m.group(1)
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
-            hid = qs.get("h", [""])[0] or (printed[0] if printed else "")
+            # 紙の印が無ければ、たたき台の 1 枚を開く（J-032）。刷った物の先頭を開くと、ほかの仮説だけを刷った置き場でその紙が開く。
+            hid = qs.get("h", [""])[0] or hypotheses.sheet_of(sid)["id"]
             if hid not in printed:
                 # 文が頁の頭より 1 画面下に出ないよう、#121 の手帖と同じく節へ送る（#289）
                 msg = urllib.parse.quote("先に紙を作ると、作りながら見る頁が開きます")
@@ -324,7 +340,8 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。
             sid = m.group(1)
-            printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
+            sheet = hypotheses.sheet_of(sid)["id"]
+            printed = [sheet] if printed_versions(sid, sheet) else []  # 手帖の紙もたたき台の 1 枚だけ（J-032）
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
             return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
@@ -351,7 +368,10 @@ class Handler(BaseHTTPRequestHandler):
                 v = int(qs.get("v", ["0"])[0])
             except ValueError:
                 v = 0
-            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=qs.get("see", [None])[0], kind=kind, v=v, path=path))
+            see = qs.get("see", [None])[0]
+            if kind == "_after" and see:
+                ensure_after(m.group(1), see, v)  # 札の「試した後の紙」の着く先。紙が無いと窓に出ない（#320）
+            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], see=see, kind=kind, v=v, path=path))
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
         if m:
             # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
@@ -370,6 +390,8 @@ class Handler(BaseHTTPRequestHandler):
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
                 return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
+            if stem.endswith("_after"):
+                ensure_after(sid, hid, int(re.search(r"_v(\d+)", stem).group(1)))
             if f.exists():
                 # インラインの印: ブラウザが PDF を表示できる機器では、落とさずにその場で開く（本人の指示 11-05「クリックで画面に型紙が出る形」）。
                 return self._send(200, f.read_bytes(), {"pdf": "application/pdf", "svg": "image/svg+xml", "png": "image/png"}[ext],
@@ -390,11 +412,13 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
-    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None):
+    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
             return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
+        # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
+        extra += "&fresh=1" if fresh else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")])
 
     def _post(self):
@@ -431,11 +455,16 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/step", self.path)
         if m and m.group(1) in sources():
             return self._step_post(m.group(1), form)
+        m = re.fullmatch(rf"/toy/({SID})/talk", self.path)
+        if m and m.group(1) in sources():
+            # 話す口（一周の声の部分、Issue #279）。ここに届くのは字のフォームだけ（上の _form が、音のファイルなど、ほかの形の本体を断る）。
+            from . import hanasu
+            return hanasu.post(self, m.group(1), form)
         m = re.fullmatch(rf"/en/toy/({SID})/print", self.path)
         if m and m.group(1) in sources():
             # 英語の頁から刷る（J-030 の段 1）。紙は同じ物で日本語のまま。聞く口と記録の口は英語の頁に置かない。
             sid, hid = m.group(1), form.get("hypothesis", "")
-            if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
+            if hid != hypotheses.sheet_of(sid)["id"]:  # 刷れるのは頁に出すたたき台だけ（J-032）
                 return self._send(422, "That idea does not exist.", "text/plain; charset=utf-8")
             if print_latest(sid, hid) is None:
                 return self._send(422, "This template could not be printed.", "text/plain; charset=utf-8")
@@ -524,6 +553,8 @@ class Handler(BaseHTTPRequestHandler):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
         rec = loop.record(rid)
         sid, hid = rec["source_id"], rec["hypothesis_id"]
+        if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
+            return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=rid))
         if loop.explanation(rid) is None:
             return self._send(422, self._toy(sid, errors=["先に説明を書く"], at=rid))
         to = _num(form.get("to"))
@@ -609,7 +640,11 @@ class Handler(BaseHTTPRequestHandler):
                                      "note": form.get("note", ""), "impression": form.get("impression", ""), "fixes": fixes_of(form), "via": "techo"})
         if rid:
             making_log.add_stage(sid, "record", form.get("who", ""))  # 頁の段の進み: 記録を残した（手帖から）
-        return out(201, {"id": rid}) if rid else out(422, {"error": "；".join(f.message for f in failures)})
+            # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
+            from omochae import talk_log
+            kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}))
+        return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
@@ -647,7 +682,7 @@ class Handler(BaseHTTPRequestHandler):
             failures = []
             hid = form.get("hypothesis", "")
             at = "win" if form.get("at") == "win" else "kasetsu"  # 窓の札から押した時は、通らない理由も窓で読む（#127）
-            if hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}:
+            if hid != hypotheses.sheet_of(sid)["id"]:  # 刷れるのは頁に出すたたき台だけ（J-032）
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
             if print_latest(sid, hid) is None:
                 return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
@@ -663,6 +698,10 @@ class Handler(BaseHTTPRequestHandler):
                    "answers": {k: form[k] for k in ("first_moved", "stuck", "what_if") if form.get(k, "").strip()},
                    "ideas": [form["idea"]] if form.get("idea", "").strip() else []}
             rid, failures = records.add(rec)
+            if rid:
+                # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279。手帖の記録を残す口と同じ）。
+                from omochae import talk_log
+                talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
             msg = "記録を残しました。試した後の紙が開けます"
             # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
             anchor = rid or anchor
@@ -673,7 +712,7 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else anchor)
+        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record")
 
 
 def print_latest(sid, hid):

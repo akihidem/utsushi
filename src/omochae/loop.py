@@ -7,6 +7,7 @@
 人の説明と次の思いつきを先に受ける。作っている人のアイディアより先に AI の原因と次の手が出ると、作る意味を奪うため（J-013）。
 変更には記録 ID が要り（F4）、式のある変更は向きを数え直す（F7）。
 API の鍵が無くても、人が解釈と変更を書けば同じ道で輪が閉じる（manual）。
+作りながら話した工夫の字（talk_log）も、記録・人の説明と並べて材料に入れる（ループ2、Issue #335）。鍵の有無で同じ材料（material）を読む。
 """
 import argparse
 import functools
@@ -98,6 +99,64 @@ def confirmed(rid):
 
 def explanation(rid):
     return store.read_json_or_skip(folder() / f"explanation-{rid}.json")
+
+
+# ループ2 の材料の仕切りの名（Issue #335）。人の説明（explanation）と混ぜずに、別の札で渡す。
+# 「声は残していない」まで書くのは、読む人（作る側と Claude）が、字の後ろに録った声があると思わないため。
+TALK_LABEL = "作った人が話した事（字だけ・声は残していない）"
+# 渡す欄はこの 3 つだけ。どう入れたか（via）・その場の印（who）・時刻は、誰がいつ話したかを辿る手がかりにしかならず、案の材料に要らない。
+TALK_FIELDS = ("when", "step", "text")
+
+
+def maker_talk(rid):
+    """記録に結んだ、作りながら話した工夫と上げた後に残した字（Issue #335 のループ2）。Returns {"label", "items": [{when, step, text}…]}。
+
+    判断の芯:
+    - どの字か: その記録に結ばれた字だけ（talk_log.kufu）。結ぶのは記録を残した時の talk_log.bind で、同じ玩具・同じ紙（仮説と版）・
+      同じその場の印の物に限る。ここで印や紙を数え直して広げない（印なしで拾うと、ほかの人の話がこの記録の材料に入る）。
+    - 場面は工夫（craft）と上げた後（keep）だけ。仮説を見て話した考え（think）はループ1（words の口で紙を生む側）の材料なので混ぜない。
+    - 読み方: talk_log.kufu(出典, 記録, shared_only=True)。学ぶ人の頁と同じ字で、作る側が隠した字（set_share）と、入口の床にもう一度当たる字
+      （床を広げる前に残った字や、手で置いた字）が外れる。床をここで当て直さない（shared_only の中にある）。
+      これより強い絞りは足さない（2b で字は全部見せる決定。本人の指示 11-05 17:55）。
+    - 鍵の有無で読む字を変えない。人の道（material の命令）にも隠した字を出さない: 人が読んで書く解釈と案を通って、隠した字が輪に入るため。
+      作る側が隠した字を読むのは作る側の頁（hanasu.maker_section の「［隠している］」）。
+    - 字を写した別のファイルは作らない。記録を取り下げると字も消える（talk_log.drop_for_record）ので、写しがあると消し残る。
+    """
+    from . import talk_log  # 使う時に読む（hypotheses の読み方と同じ。輪の置き場を読むだけの命令で、話す口の部品まで先に読まない）
+
+    rec = record(rid)
+    items = [{k: t[k] for k in TALK_FIELDS} for t in talk_log.kufu(rec["source_id"], rid, shared_only=True) if t["when"] != talk_log.WHEN["think"]]
+    return {"label": TALK_LABEL, "items": items}
+
+
+def material(rid):
+    """輪の解釈と案の材料（記録・人の説明・作った人が話した事）。鍵のある道（api/loop_agents）も鍵の無い道（material の命令）も、ここから読む。
+    同じ材料を両方の道に渡すのは、鍵の有無で、人が見る物と Claude が見る物が食い違わないため。"""
+    return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
+
+
+def material_text(rid):
+    """鍵の無い道で、人（作る側）が解釈と変更を書く前に読む材料の文。人の説明と、話した字を、別の仕切りで出す。"""
+    m = material(rid)
+    rec, told, talk = m["record"], m["explanation"], m["maker_talk"]
+    lines = [f"記録 {rid}（{rec['source_id']} の {rec['hypothesis_id']} 版 {rec.get('sheet_version', 1)}）: {rec.get('result', '')}"
+             + (f" ／ {rec['note']}" if rec.get("note") else "")]
+    lines += ["", "人の説明と次の思いつき:"]
+    lines += [f"  説明: {told['text']}", f"  次の思いつき: {told['next_idea']}"] if told else ["  （まだ無い。先に explain で残す）"]
+    lines += ["", f"{talk['label']}:"]
+    for t in talk["items"]:
+        where = f"手順 {t['step']}" if t["step"] else ("上げた後" if t["when"] == "made" else "作りながら")
+        lines.append(f"  {where}: {t['text']}")
+    from . import talk_log
+
+    # 隠した字は出さず、数だけ知らせる。全部隠した記録を「字は無い」と読ませないため。
+    hidden = sum(1 for t in talk_log.kufu(rec["source_id"], rid) if not t["share"] and t["when"] != talk_log.WHEN["think"])
+    if hidden:
+        lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
+    elif not talk["items"]:
+        lines.append("  （この記録に結んだ字は無い）")
+    lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
+    return "\n".join(lines)
 
 
 def save_explanation(rid, by, text, next_idea):
@@ -329,20 +388,31 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
     return made, []
 
 
-def print_version(sid, hid, version, sheet_dir, pending=None):
-    """版の紙の組を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。"""
-    from . import hypotheses
-
+def _print_into(sheet_dir, stem, printer):
+    """紙を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。"""
     sheet_dir.mkdir(parents=True, exist_ok=True)
-    stem = f"{hid}_v{version}"
     with tempfile.TemporaryDirectory(dir=sheet_dir, prefix=".tmp-") as tmp:
-        rc = hypotheses.print_sheet(sid, hid, f"{tmp}/{stem}", version, pending=pending)
+        rc = printer(f"{tmp}/{stem}")
         if rc:
             return rc
-        # 版の PDF があれば刷ってあると読む（web/toy.py の versions_of）ので、それを最後に置く。
-        for p in sorted(pathlib.Path(tmp).iterdir(), key=lambda p: p.name == f"{stem}.pdf"):
+        # PDF があれば刷ってあると読むので、絵の後に置く。版の PDF（web/toy.py の versions_of）は一番最後。
+        for p in sorted(pathlib.Path(tmp).iterdir(), key=lambda p: (p.suffix == ".pdf", p.name == f"{stem}.pdf")):
             p.replace(sheet_dir / p.name)
     return 0
+
+
+def print_version(sid, hid, version, sheet_dir, pending=None):
+    """版の紙の組を刷る。"""
+    from . import hypotheses
+
+    return _print_into(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_sheet(sid, hid, out, version, pending=pending))
+
+
+def print_after(sid, hid, version, sheet_dir):
+    """その版の試した後の紙だけを刷る（#320、hypotheses.print_after）。"""
+    from . import hypotheses
+
+    return _print_into(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_after(sid, hid, out))
 
 
 @exclusive
@@ -464,6 +534,8 @@ def main(argv=None):
     s.add_argument("--hypothesis")
     s.add_argument("--change", action="append", default=[], help="寸法=値")
     s.add_argument("--why", default="")
+    s = sub.add_parser("material", help="鍵の無い道で、解釈と変更を書く前に読む材料（記録・人の説明・作った人が話した事）")
+    s.add_argument("record")
     s = sub.add_parser("show")
     s.add_argument("proposal")
     s = sub.add_parser("adopt", help="提案を人が採る")
@@ -508,6 +580,9 @@ def main(argv=None):
                 pid, failures = draft_proposal(args.record, source)
             if not failures:
                 print(f"{pid} を作りました。show で見て adopt で採ります")
+        elif args.cmd == "material":
+            # 読むだけで何も書かない。字を写したファイルを作らないのは maker_talk の芯と同じ（取り下げで消し残さない）。
+            print(material_text(args.record))
         elif args.cmd == "show":
             print(json.dumps(_read(folder() / f"proposal-{args.proposal[2:]}.json"), ensure_ascii=False, indent=2))
         else:
