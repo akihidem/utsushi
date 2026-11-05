@@ -53,7 +53,7 @@ KEY_ICONS = {
     STUCK: _ICON.format('<path d="M16 17a8 8 0 1 1 11 8c-2 1-3 2-3 6"/><circle cx="24" cy="39" r="1.5"/>'),
     # 動画が主（本人の方針 19:45）なので、動画のカメラの形にする。写真も撮れる。
     SHOOT: _ICON.format('<rect x="5" y="13" width="27" height="22"/><path d="M32 21l11-7v20l-11-7z"/>'),
-    KEEP: _ICON.format('<path d="M24 7v22M14 20l10 10 10-10M8 40h32"/>'),
+    KEEP: _ICON.format('<path d="M24 7v22M14 20L24 30L34 20M8 40h32"/>'),
 }
 MIC = _ICON.format('<rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/>')
 CLOSE = _ICON.format('<path d="M12 12l24 24M36 12L12 36"/>')
