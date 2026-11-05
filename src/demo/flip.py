@@ -50,10 +50,12 @@ CUES = {
     "boxes": (2.0, 5.6),       # 18 人に 1 人ずつ枠が付く
     "page_aside": (5.8, 6.8),  # 頁が左へ退き、薄くなる
     "flip": (6.8, 12.8),       # 右で 18 人を順に重ねる
-    "closing": (12.8, 15.0),   # 締めの字幕
+    "closing": (12.8, 14.0),   # 締めの字幕。動画の初めと終わりに出す字なので、出きった後に止めて読ませる
 }
 FLIP_FPS = 6                   # 1 秒に 6 枚。速いと型の姿が読めず、遅いと動いて見えない（試し見で決めた）
-DURATION = 15.0
+DURATION = 17.0
+# 初めと終わりの字幕（本人の決定 11-05）。終わりの札（demo.words）もここから読み、字と置き場を食い違わせない。
+CLOSING = ("絵は動きを止めて残した。", "どう動いたかは、紙で作って確かめる。")
 
 
 def fetch_image(url, path):
@@ -140,6 +142,12 @@ def fade(color, a):
     return tuple(round(PAPER[i] + (color[i] - PAPER[i]) * a) for i in range(3))
 
 
+def draw_closing(draw, a):
+    """締めの字幕を描く。動画の初めと終わりで同じ字・同じ大きさ・同じ置き場にする。"""
+    text(draw, (W // 2, 440), CLOSING[0], 58, fade(SUMI, a), True, "ma")
+    text(draw, (W // 2, 530), CLOSING[1], 58, fade(SUMI, a), True, "ma")
+
+
 class Scene:
     def __init__(self, page, rec):
         self.rec = rec
@@ -203,8 +211,7 @@ class Scene:
             veil = Image.new("RGBA", (W, H), PAPER + (round(235 * c),))
             img.paste(veil, (0, 0), veil)
             draw = ImageDraw.Draw(img)
-            text(draw, (W // 2, 440), "絵は動きを止めて残した。", 58, fade(SUMI, c), True, "ma")
-            text(draw, (W // 2, 530), "どう動いたかは、紙で作って確かめる。", 58, fade(SUMI, c), True, "ma")
+            draw_closing(draw, c)
         text(draw, (80, H - 50), f'図 {self.rec["title"]}（{self.rec["publication"]}）国立国会図書館（PDM）'
              f'　{self.rec["modification_note"]}', 22, fade(SUMI, 0.7))
         return img
@@ -228,7 +235,7 @@ def render(scene, out):
     return 0 if p.wait() == 0 else 4
 
 
-def contact_sheet(scene, path, times=(0.8, 2.6, 4.0, 5.6, 6.3, 7.5, 9.0, 11.0, 14.0)):
+def contact_sheet(scene, path, times=(0.8, 2.6, 4.0, 5.6, 6.3, 7.5, 9.0, 11.0, 15.5)):
     """要のコマを並べた一覧。動画を開かずに検品できる（エビデンスの 1 つ）。"""
     tw, th = W // 3, H // 3
     sheet = Image.new("RGB", (tw * 3, th * ((len(times) + 2) // 3)), "white")

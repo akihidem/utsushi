@@ -19,8 +19,8 @@ for name, (lines, seconds, step) in words.CARDS.items():
     spans = list(words.cues_of(name).values())
     assert spans == sorted(spans) and spans[-1][1] < seconds - 3, f"{name} は最後の行の後に読む間を置く"
 
-# 3 番目の札は本人の言葉（11-05 夕）の全文。字は足さず引かず、行の切れ目だけで分ける
-TOUCH = "壊れても直せる、という要素よりも大事なのは、自分の手で実際に触れるものを作る楽しさを感じて欲しい。それが持ち寄られて、AIもその動きをエンハンスするのが面白いよね"
+# 3 番目の札は本人の言葉（11-05 夕、芯の順番）の全文。字は足さず引かず、行の切れ目だけで分ける
+TOUCH = "AIが良くなるのは副次的なもので、みんなが手で実際に作ることその楽しさに気づくことが最初。"
 assert script.SCENES[2] == "word_touch" and "".join(words.CARDS["word_touch"][0]) == TOUCH and TOUCH in rec_lines
 # 優先の順が変わったので、前の札は台本に出さない（記録の言葉は消さない）
 for gone in ("word_make", "word_fix", "word_who"):
@@ -28,9 +28,17 @@ for gone in ("word_make", "word_fix", "word_who"):
 
 # 一字でも違えば落ちる。短く切った文も落ちる（切った文を本人の言葉と書かない）
 lines = words.CARDS["word_touch"][0]
-assert not words.in_record((lines[0].replace("直せる", "なおせる"), *lines[1:]))
+assert not words.in_record((lines[0].replace("副次的", "二次的"), *lines[1:]))
 assert not words.in_record(lines[1:]), "切った文を通した"
 assert not words.in_record(("手を動かす楽しさを忘れた人のために作っている。",))
+
+# 終わりの字幕は初めと同じ字（本人の決定 11-05）。字幕 → 問いの順で終わる。言葉の記録の引用ではないので、言葉の札と分ける
+assert script.SCENES[-2:] == ["close", "ask"]
+assert flip.CLOSING == ("絵は動きを止めて残した。", "どう動いたかは、紙で作って確かめる。")
+assert "close" not in words.CARDS and script.load_scene("close").DURATION == words.CLOSE_SECONDS
+closing = words.CloseCard(words.cues_of("close"))
+assert closing.frame(0.0).tobytes() != closing.frame(3.0).tobytes()
+assert closing.frame(3.0).tobytes() == closing.frame(closing.duration - 0.05).tobytes(), "字幕の札は止まって読ませる"
 
 # 問いの文は本人の決定（11-05）。言葉の記録の引用ではないので、本人の言葉の札と分ける
 assert words.ASK == "あなたなら、何を作りますか。" and words.ASK not in rec_lines
