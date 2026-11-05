@@ -20,7 +20,7 @@ SCENES = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "talk_physics",
 # 3 分に入らないので外した場面（本人が戻すかを決める。コードは残すので、SCENES へ戻せば動く）。docs/demo/plan.md の 4 に書いた。
 LEFT_OUT = ("core_map", "core_voice", "scene6", "bridge")
 # 外へ出す前に片づける物（印のほか）。demo.build が build.json の not_for_release に載せる。
-BEFORE_RELEASE = ()
+BEFORE_RELEASE = ("クレジットの隅の札の行が本人の確認待ち（docs/demo/plan.md の 4）",)
 
 
 def load_scene(name):
