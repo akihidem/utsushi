@@ -117,7 +117,7 @@ PREV_DIR=$(ls -d "$OUT_DIR"/*/ | tail -1)              # 一番新しい書き�
 ```
 export PYTHONPATH=src
 .venv/bin/python -m omochae.hypotheses list
-.venv/bin/python -m omochae.hypotheses print H-A   # out/templates/H-A_v1.pdf と手順の紙 H-A_v1_tejun.pdf
+.venv/bin/python -m omochae.hypotheses print H-A   # out/templates/NDL-1187053-R0000005-L_H-A_v1.pdf と手順の紙 NDL-1187053-R0000005-L_H-A_v1_tejun.pdf
 .venv/bin/python -m omochae.records add --hypothesis H-A --result わからない --opened-deg 90 --opener 紙の力
 ```
 
