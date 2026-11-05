@@ -1032,6 +1032,19 @@
 - 検証ゲート: **済み**。Red: 今の main に試験だけを置いて rc 1（gate-evidence/red-one-sheet.txt）。Green: rc 0（gate-evidence/green-one-sheet.txt、gate-evidence/green-one-sheet-floor.txt）。負の対照は寸法 1・組の版 5・組み方の文 1
 - エビデンスゲート: 上の出力と `./run.sh`。残した 9 枚と `removed` の 22 枚を合わせると、直す前の控え 31 枚と値まで同じ
 - マージ後の書き戻し: #332 に書く
+## デモの書き出しを頁の型紙 1 枚の形で止めない（デモの線、issue/332-demo-one-sheet、11-06 未明。#332）
+
+- 目的: 今の main で README の `demo.build --offline` が通る形にする。撮る日の入口が止まらないようにする
+- なぜか: 頁の札がたたき台の 1 枚になったが、場面 3 の検査は記録の仮説の数（5）と比べるので、rc 4 で止まる。`./run.sh` はブラウザを使わないので気づけない
+- どうしたらいいか: 場面 3 の検査を「札が 1 枚」に直し、札を並べる段を外して、前提の札と札の全部が入る所へ寄る。場面 4 は組を並べる段を外し、たたき台の紙だけを刷る。場面 6 は紙の並びをたたき台の 1 組にする。枝 lane/demo-try の検査と寄りを、main の 7 場面に合わせて書き直した
+- 足した決め: 字は書き換えず、足さない。合わなくなった字は外す。撮った枠の外は撮った頁の地の色で埋める（皮が白になり、前の色の帯が出ていた）。`tests/test_generate.py` は原図の写し（git の外）が在る機械で落ちて書き出しを止めるので、その 2 行では原図を載せない
+- 出していない範囲: 新しい字。語りや問いなどの字は別の下書きの PR で本人の確認を待つ。場面 5・6 の「仮説 C」の字は 11-04 の試行の事実なので残した。場面 7 の札「仮説 B の紙」とクレジットの字は今の main のまま
+- ゴールの要件: 今の main の上で `demo.build --offline` が rc 0 で、3 分以内の動画ができる。札が 1 枚でなければ書き出さない。残した字は前の字のまま（試験で文字列を見る）
+- 文面: 利用者に見せる新しい文は無い
+- 検証ゲート: Red は `docs/process/gate-evidence/red-demo-one-sheet.txt`（場面 3 で止まる）と `docs/process/gate-evidence/red-generate-with-picture.txt`（原図の写しが在る時の試験）、Green は `docs/process/gate-evidence/green-demo-one-sheet.txt`。試験は `tests/test_demo_scene3.py`・`tests/test_demo_scene4.py`・`tests/test_demo_scene6.py`。要のコマは目で見た
+- エビデンスゲート: 上の出力と `./run.sh`
+- マージ後の書き戻し: #332 に書く
+
 ## 見比べる紙を外す: 作り・命令・試験・凍結の基準 F11.compare（Issue 対応の担当、issue/332-remove-compare、11-05 夜。#332）
 
 - 目的: 本人の決定「見比べる紙は外す」（#332 の点 2）を作りと凍結の基準に入れる
