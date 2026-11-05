@@ -70,7 +70,7 @@
    "src/api/generate.py",
    "tests/test_generate.py"
   ],
-  "unverified": "本物の API で未実行。偽の応答の試験のみ"
+  "unverified": "本物の API で未実行。偽の応答の試験のみ。仮説を 2〜3 通り作る形は J-032 の後の直しで見直す"
  },
  {
   "id": "f08",
@@ -79,7 +79,7 @@
   "evidence": [
    "src/omochae/hypotheses.py"
   ],
-  "unverified": "人が選んで刷る操作で代える。確定の記録は未実装"
+  "unverified": "たたき台を刷る操作で代える（前は人が選んで刷る操作。J-032 で置き換えた）。確定の記録は未実装"
  },
  {
   "id": "f09",
@@ -189,13 +189,13 @@
  },
  {
   "id": "f18",
-  "name": "仮説を並べて見せる入口",
+  "name": "仮説を並べて見せる入口（J-032 で置き換えた）",
   "status": "doing",
   "evidence": [
    "src/omochae/hypotheses.py",
    "tests/test_hypotheses.py"
   ],
-  "unverified": "実際の人が使っていない"
+  "unverified": "型紙を玩具ごとに 1 枚のたたき台にする決定（J-032）で、並べて見せる形は置き換えた。頁の札を 1 枚にするのは後の直し。実際の人が使っていない"
  },
  {
   "id": "f19",
@@ -207,7 +207,7 @@
   "id": "f20",
   "name": "自分の仮説を言葉から型紙にする口",
   "status": "doing",
-  "unverified": "本物の API で未実行。偽の応答の試験のみ",
+  "unverified": "自分の案は書く形をやめて話す形にする決定（J-032）で、書く欄は後の直しで話す口に置き換える（#335）。本物の API で未実行。偽の応答の試験のみ",
   "evidence": [
    "src/api/words.py",
    "tests/test_words.py"
@@ -465,7 +465,7 @@
    "src/web/toys.py",
    "tests/test_material_axes.py"
   ],
-  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中"
+  "unverified": "印は main の ways（#261）で部品表と用意する物から機械で出し、札と絞り込みで同じ判定を使う。紙一枚の形で実際に動くかは、紙で確かめていない。虎の紙一枚の形は #115 で検討中。紙一枚は必須の条件でない（本人の決定 11-05 19:44）。たたき台の中に紙一枚で作れる物が無くてもよい"
  },
  {
   "id": "f39",
