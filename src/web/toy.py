@@ -508,7 +508,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
 
     body += hanasu.think_section(sid, data, head("hanasu"))
     from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ1、Issue #335）
-    if photos:  # 合言葉なしの場（photos=False）では節を出さない。受け口も閉じている（J-028）
+    if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では節を出さない。受け口も閉じている（J-028）
         body += think_sheet.section(sid, at, head(at))
     body += analogy_section(data)
     body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded)}</section>'

@@ -164,6 +164,15 @@ def send(path, data=None):
 
 code, body, _ = send(f"/toy/{G}")
 assert code == 200 and think_sheet.GO in body and 'action="/toy/' + G + '/think-sheet"' in body
+# 節は、たたき台の寸法が全部読める玩具の頁だけ（今は必須 2 種。呼び名を足すと増える）。内部の名前（board_w など）を学ぶ人に見せないため
+T, P = "NDL-1187053-R0000014-R", "NDL-1187053-R0000004-L"
+assert [p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("NDL-*.json")) if think_sheet.ready(p.stem)] == [G, T]
+assert think_sheet.GO in send(f"/toy/{T}")[1]
+code, body, _ = send(f"/toy/{P}")
+assert code == 200 and think_sheet.GO not in body and think_sheet.LEAD not in body, "呼び名がそろっていない玩具には節を出さない"
+talk_log.add(P, "think", "呼び名の無い玩具の考え", who="pagewho000")
+assert send(f"/toy/{P}/think-sheet", {"who": "pagewho000"})[0] == 404, "受け口も無い"
+assert send(f"/toy/{P}/think-ok", {"t": "nothing"})[0] == 404
 assert SAID not in body and "割り箸の柄で押したい" not in body, "採った案の字を、玩具の頁の札に出さない"
 think("つまみを下に付けたい", who="pagewho123")
 code, body, _ = send(f"/toy/{G}/think-sheet", {"who": ""})

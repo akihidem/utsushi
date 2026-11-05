@@ -471,6 +471,8 @@ class Handler(BaseHTTPRequestHandler):
             if getattr(self.server, "public_open", False):  # 合言葉なしの場では開かない（J-028）
                 return self._send(403, "公開のデモでは使えません")
             from . import think_sheet
+            if not think_sheet.ready(m.group(1)):  # 節を出さない玩具には、受け口も無い
+                return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
             return think_sheet.post(self, m.group(1), m.group(2), form)
         m = re.fullmatch(rf"/en/toy/({SID})/print", self.path)
         if m and m.group(1) in sources():

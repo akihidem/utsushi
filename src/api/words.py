@@ -32,6 +32,12 @@ SCHEMA = {"type": "object", "properties": {
 }, "required": ["fits", "params", "from_words", "filled_in", "not_fit"]}
 
 
+def _data(value):
+    """頼みの区切り（<data>）の中に置く JSON。人の字の < を \\u003c にする（api.loop_agents と同じ形）。
+    JSON の文字列の中でも、字に </data> と書くと、区切りが閉じたように読めるため。JSON としては同じ字で、読む側には元の字が届く。"""
+    return json.dumps(value, ensure_ascii=False).replace("<", "\\u003c")
+
+
 def check_result(result, source):
     """決定的な検査。写し方の約束を文で頼まず、ここで落とす。"""
     sid = source["source_id"]
@@ -62,7 +68,7 @@ def draft_words(source, text, name, evidence, by, client=None):
     if failures:
         return None, failures
     sid = source["source_id"]
-    user = "次の仮説を雛形の寸法に写してください。\n<data>\n" + json.dumps({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"), "name": name, "how_it_moves": text, "where_in_the_picture": evidence}, ensure_ascii=False) + "\n</data>"
+    user = "次の仮説を雛形の寸法に写してください。\n<data>\n" + _data({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"), "name": name, "how_it_moves": text, "where_in_the_picture": evidence}) + "\n</data>"
     result, trace = agent.run("words", SYSTEM, user, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source)], client=client)
     return loop.save_numbered("words", "W", lambda wid: {"id": wid, "source_id": sid, "status": "pending_human", "name": name, "how_it_moves": text, "evidence": evidence, "typed_by": by.strip(), "result": result, "trace": {"model": trace.model, "tool_calls": trace.tool_calls, "retries": trace.retries, "input_tokens": trace.input_tokens, "output_tokens": trace.output_tokens}}), []
 
@@ -104,7 +110,8 @@ KEPT_AS_IS = "たたき台のまま"
 RANK_WORDS = ("順位", "点数", "推し", "おすすめ", "お勧め", "ランキング", "一番良", "いちばん良", "最も良", "より良い案", "★")
 THINK_NOTE = ("次の考えは、たたき台の型紙（base）を見た人が話した事です。たたき台の寸法から始めて、考えが言っている所だけを変えてください。"
               f"変えなかった寸法は filled_in に why「{KEPT_AS_IS}」で書き、考えから変えた寸法は from_words に書きます。"
-              "考えが雛形に無い機構を言う時は fits を false にして not_fit に書きます。考えが寸法を言っていない時は、たたき台のままを出します。")
+              "考えが雛形に無い機構を言う時は fits を false にして not_fit に書きます。考えが寸法を言っていない時は、たたき台のままを出します。"
+              "変えてよい寸法は can_change だけです。ほかの寸法を変えないと言っている事にならない時は fits を false にします。")
 
 
 def base_of(source_id):
@@ -213,11 +220,13 @@ def request_think(source, talk, talk_file, name, evidence, client=None, use_clau
     h, base_params = base_of(sid)
     result, trace, status = None, None, "waiting_maker"
     if use_claude:
-        user = (THINK_NOTE + "\n<data>\n" + json.dumps({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"),
+        from web import think_sheet
+
+        user = (THINK_NOTE + "\n<data>\n" + _data({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"), "can_change": think_sheet.changeable(sid),
                                                        "base": {"hypothesis_id": h["id"], "name": h["name"], "how_it_moves": h["how_it_moves"], "params": base_params},
-                                                       "what_they_said": text}, ensure_ascii=False) + "\n</data>")
+                                                       "what_they_said": text}) + "\n</data>")
         try:
-            result, t = agent.run("words", SYSTEM, user, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source) + check_no_rank(r)], client=client)
+            result, t = agent.run("words", SYSTEM, user, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source) + check_no_rank(r) + check_names(r, source, base_params)], client=client)
             trace = {"model": t.model, "tool_calls": t.tool_calls, "retries": t.retries, "input_tokens": t.input_tokens, "output_tokens": t.output_tokens}
             status = "pending_human"
         except Exception as e:  # 鍵が無い・通信できない・予算の上限・検査に落ちたまま。値は残さず、種類だけ
@@ -257,6 +266,19 @@ def check_no_rank(result):
     return [Failure("F9.own", "why", f"順位や推しの言葉は書かない: {w}") for w in RANK_WORDS if any(w in str(t) for t in texts)]
 
 
+def check_names(result, source, base):
+    """節を出す玩具で、たたき台から変えた寸法が、読める呼び名を持つかを見る。内部の名前（tube_height など）を学ぶ人に見せないため。
+    隠して刷ると、補った寸法は紙にする前に人が見る決まり（J-013）を崩すので、見せられない変更は案にしない。本人が呼び名を採れば、そのまま変えられるようになる。
+    たたき台のままと書いてあっても、値で見る。節を出さない玩具は、頁に何も出ないので見ない。呼び名は画面の側が持つ（web.think_sheet）。"""
+    from web import think_sheet
+
+    sid = source["source_id"]
+    if not think_sheet.ready(sid):
+        return []
+    template, base = hypotheses.load(sid).get("template", "slider_fan"), base or {}
+    return [Failure("F9.own", k, f"呼び名の無い寸法は変えられない: {k}") for k, v in (result.get("params") or {}).items() if base.get(k) != v and not think_sheet.readable(template, k, v)]
+
+
 def think_result(base_params, changed=None, not_fit=None):
     """作る側が書いた物を、Claude の返す形と同じ形にする。changed は話した考えから変えた寸法、残りはたたき台のまま。"""
     if not_fit:
@@ -280,7 +302,7 @@ def fill_think(wid, result, by):
     if w.get("status") != "waiting_maker":
         return None, [Failure("F9.human", wid, f"状態 {w.get('status')} の案には書けない")]
     source = json.loads((hypotheses.ROOT / "data/sources" / f"{w['source_id']}.json").read_text(encoding="utf-8"))
-    failures = check_result(result, source) + check_no_rank(result)
+    failures = check_result(result, source) + check_no_rank(result) + check_names(result, source, w.get("base_params"))
     if failures:
         return None, failures
     w.update(status="pending_human", result=result, filled_by=by.strip(), filled_at=loop._now())
@@ -305,10 +327,13 @@ def main(argv=None):
         args = ap.parse_args(argv)
     except SystemExit as e:
         return 0 if e.code == 0 else 4
+    from web import think_sheet
+
     if args.cmd == "waiting":
         for w in waiting():
             print(f"{w['id']} {w['source_id']} たたき台 {w['base']} {json.dumps(w.get('base_params'), ensure_ascii=False)}")
             print(f"  話した考え: {w['how_it_moves']}")
+            print(f"  変えられる寸法: {' '.join(think_sheet.changeable(w['source_id']))}")
         return 0
     w = loop._read(loop.folder() / f"words-{args.id[2:]}.json") if args.id.startswith("W-") else None
     if w is None:

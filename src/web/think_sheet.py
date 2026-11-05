@@ -9,6 +9,7 @@
 - どの考えか: 画面のその場限りの印（who。skin.WHO_SCRIPT が POST のフォームに足す）で、その人が最後に残した考えを選ぶ（words.latest_think）。印が無い画面（JS なし）では作れない。
 - 採った案の字は、玩具の頁の札に出さない（words.spoken_own_ids で外す）: 話した字は、記録に結ぶ前は学ぶ人の頁に出さない決まり（talk_log）。本人は印の URL で見る。
 - 頼んだ後の様子は、本人だけが持つ印（token）の URL で見る（/toy/<玩具>?at=think-<印>#think）。W-番号は数えられるので、番号では開かない。
+- 節は、たたき台の寸法が全部読める玩具の頁だけに出す（ready。今は必須 2 種）。雛形に呼び名の無い寸法が残っていても、それを変える案は作らない（api.words.check_names）。
 - 話した字が読める物（頼んだ後の頁・OWN-n の紙・字が刷られた手順の紙）は、作った本人の画面からしか開かない。その場限りの印（who）を確かめて頼んだ人に、印（token）を cookie で渡す。
   who は sessionStorage にあって GET に載らず、絵と別タブの PDF では送れないため、cookie にした。URL に載せないので、URL を渡されても開かない。ブラウザを閉じれば消える（押し直すと、同じ who の人は受け取り直せる）。
 - 1 台の機械を順に使う場のために、鍵には期限があり（api.words.key_live。2 時間）、記録を残すとその案は閉じる（api.words.key_open）。同じタブの who で押し直しても、閉じた案へは戻らない。
@@ -173,6 +174,27 @@ def _name(template, k):
 
 def _value(v):
     return VALUES.get(v, v) if isinstance(v, str) else v
+
+
+def readable(template, k, v):
+    """学ぶ人が読める形で出せるか。呼び名の無い寸法と、呼び名の無い字の値は、内部の名前になる。"""
+    return _name(template, k) != k and (not isinstance(v, str) or v in VALUES)
+
+
+def ready(sid):
+    """節を出す玩具か。たたき台の寸法が全部読める玩具だけ（今は必須 2 種）。内部の名前（board_w など）を学ぶ人に見せないため。
+    ほかの玩具の呼び名は新しい文で、足す時に本人の確認が要る。足せば、ここが自然に真になる。"""
+    template, params = hypotheses.load(sid).get("template", "slider_fan"), words.base_of(sid)[1]
+    return bool(params) and all(readable(template, k, v) for k, v in params.items())
+
+
+def changeable(sid):
+    """その玩具で変えられる寸法（呼び名のある物）。Claude と作る側へ先に見せる。"""
+    from omochae.compose import TEMPLATES
+
+    template = hypotheses.load(sid).get("template", "slider_fan")
+    t = TEMPLATES[template]
+    return sorted(k for k in {*getattr(t, "DEFAULTS", {}), *getattr(t, "RANGES", {})} if _name(template, k) != k)
 
 
 def _changes(sid, w, r):
