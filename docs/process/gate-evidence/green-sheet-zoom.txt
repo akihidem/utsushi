@@ -1,0 +1,25 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_sheet_zoom.py と、repo の外の道具で本物の Chrome を操作
+# commit: 38027ef（回した時の HEAD に直しを載せた作業ツリー）
+ok
+rc=0
+
+# Chrome（headless・幅 390）。キーボードで開き、大きさを変え、Esc・絵の外・閉じるの字・直に開いた時を通した。手元の一時の口と一時の置き場
+開く hash #zoom
+焦点 close
+SVG H-A_v1.svg
+読めた幅 True
+100% の幅 100
+300% の幅 300
+180% の幅 180
+Esc hash 
+見えない none
+戻った位置の差 0
+焦点2 拡大して見る
+2 回目 hash #zoom
+外 hash 
+外 display none
+閉じる hash 
+直 hash #win
+直 display none
+OK
+rc=0

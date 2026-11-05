@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_run_demo.py
+# commit: 38027ef（この上に直しを足した作業ツリーで回した）
+ok opens
+ok busy port
+ok server died at start
+ok tunnel unreachable
+ok open and stop
+ok fresh key
+ok server died later
+ok tunnel died later
+ok open without key
+ok
+rc=0
