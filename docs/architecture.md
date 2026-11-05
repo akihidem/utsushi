@@ -40,7 +40,7 @@
 | `src/web/techo_site.py` | 手帖の頁（聞く・上げる・フィードバック）と、上げた物と職人の言葉の頁 |
 | `src/omochae/loop.py` | 輪の後半。人の説明と思いつき、解釈の確定、提案の検査、人の採否、版・新しい仮説。順位は持たない（J-025） |
 | `src/omochae/metrics.py` | 変更の向きを数え直す式と、変えてよい寸法 |
-| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定 |
+| `src/api/agent.py`・`src/api/loop_agents.py`・`src/api/config.py` | 上限つきの Claude の輪（キャッシュ、送る物の下見 `--dry-run`）、頼みと道具、モデルの設定と、画面から呼ぶ役の時間切れ |
 | `src/api/generate.py` | 裏の制作の 1 段。図・歌・記録から仮説と寸法の案を作る |
 | `src/api/budget.py` | API の消費の見積もりと上限（日割りは、表に無い日は既定の額で続く。累計の停止線はどの日にも効く） |
 | `src/api/mcp_server.py`・`.mcp.json` | 工房の道具を Claude Code から呼ぶ MCP サーバ（API の輪と同じ道具） |

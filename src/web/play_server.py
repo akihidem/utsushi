@@ -400,7 +400,7 @@ class Handler(BaseHTTPRequestHandler):
             if act == "ai-interpret":
                 from api.loop_agents import draft_interpretation
 
-                _, failures = draft_interpretation(rid, client=default_client())
+                _, failures = draft_interpretation(rid, client=default_client("interpret"))
                 msg = "Claude の読みを出しました" if not failures else failures[0].message
             else:
                 from api import observe
@@ -409,7 +409,7 @@ class Handler(BaseHTTPRequestHandler):
                 videos = [f for f in techo_site.media_of(rid) if f.endswith(("mp4", "mov"))]
                 if not videos:
                     return self._done(sid, "動画を上げると、Claude が見えた事を返します", form.get("back", ""))
-                _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client())
+                _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
                 msg = "Claude が見えた事を出しました" if not why else why
         except BudgetStop as e:  # 今日の上限か累計の停止線かを言う（待てば聞けるのかが分かるように）
             msg = f"今は AI に聞けません（{e.note}）"
