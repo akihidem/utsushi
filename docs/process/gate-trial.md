@@ -674,3 +674,14 @@
 - 検証ゲート: **済み**。Red: 直す前の main で rc 1。文だけ直して頁を戻しても rc 1（gate-evidence/red-hypothesis-label.txt）。Green: rc 0（gate-evidence/green-hypothesis-label.txt）
 - エビデンスゲート: 上の出力。必須 2 種の 31 枚を 2 通りの字で比べ、仮説の文の 1 行の外に差が無い。指紋の取り直しの理由は `docs/claude-usage.md` の凍結の変更の記録。本物の API は呼んでいない
 - マージ後の書き戻し: Issue #258 に書く（この帳面へは、次に帳面を書く取り込みで写す）
+
+## test_run_demo の空きポートを、ほかの試験と取り合わない範囲から選ぶ（Issue 対応の担当、issue/274-run-demo-port、11-05 午後。#274）
+
+- 目的: 並行で回している時に、変更と関係の無い理由で関門が落ちないようにする
+- なぜか: 門の E が `Address already in use` で落ち、同じ commit で回し直すと通った。`free_port()` はほかの試験の `serve(0)` と同じ ephemeral の範囲から選び、閉じてから立てるまでの間に取られ得る
+- どうしたらいいか: 推し（#274 の推し）は、ephemeral の範囲の外から選ぶ事。比べた代案の、落ちたら立て直す形は本当に立たない失敗を隠しやすく、`run-demo.sh` をポート 0 にする形は撮影の前に動きを変える
+- 出していない範囲: `test_run_demo` 同士は今も取り合い得る（1 万 2 千の番号から選ぶので当たりにくいだけ）。この失敗が必ずこの試験から出たとは確かめていない（門は最後の 1 行しか残さない）。門のほかの落ち方は見ていない
+- ゴールの要件: `free_port()` の番号が ephemeral の範囲の外にある。`run-demo.sh` は変えない
+- 検証ゲート: **済み**。Red: 足した試験が直す前に rc 1（gate-evidence/red-run-demo-port.txt）。Green: rc 0（gate-evidence/green-run-demo-port.txt）
+- エビデンスゲート: 上の出力と `./run.sh`
+- マージ後の書き戻し: Issue #274 に書く
