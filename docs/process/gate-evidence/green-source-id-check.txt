@@ -1,0 +1,3 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_source_id_check.py
+ok source_id
+rc=0
