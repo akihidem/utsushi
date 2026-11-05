@@ -1,0 +1,92 @@
+"""紙を作る釦は、押した時に形が変わって押せなくなる。JS が無くても今までどおり刷れる（#301）。
+
+なぜ: 紙を作るのに数秒かかり、その間は釦が何も変わらなかった。もう一度押す人が出て、送信が 2 回出ていた。
+押した時の動きはブラウザが要る。./run.sh はブラウザなしで動く決まりなので、ここでは頁の字と JS なしの送信を見る。
+動きそのものは実物のブラウザで測った（gate-evidence/green-print-busy-browser.txt）。
+"""
+import os
+import re
+import tempfile
+import threading
+import urllib.parse
+import urllib.request
+
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "api-usage.jsonl")
+
+from omochae import hypotheses  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
+
+G = "NDL-1187053-R0000005-L"
+BUSY = " data-busy"
+# 紙を作る送信。記録や説明の送信は速く、押せなくすると書き直す道を狭めるので、印を付けない。
+SHEET = re.compile(rf"/toy/{G}/print(-own)?#|/record/R-\d+/next#")
+server = serve(0)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+base = f"http://127.0.0.1:{server.server_address[1]}"
+
+
+def get(path):
+    return urllib.request.urlopen(base + path).read().decode()
+
+
+def post(path, data):
+    r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
+    return urllib.request.urlopen(r).status
+
+
+def forms(page):
+    return re.findall(r'<form method="post" action="([^"]+)"[^>]*>(.*?)</form>', page, re.S)
+
+
+def marked(page):
+    """紙を作る釦にだけ印がある事を見て、印のある送信の行き先を返す。
+    型紙を玩具ごとに 1 枚にする決定（#332）で札の数が変わるので、札の数や字に結ばない。"""
+    made = []
+    for action, inner in forms(page):
+        assert (BUSY in inner) == bool(SHEET.match(action)), action
+        if BUSY in inner:
+            assert re.search(r"<button[^>]* data-busy>[^<]+</button>", inner), inner
+            made.append(action)
+    assert 'data-busy="on"' not in page  # 形を変えるのは押した時だけ
+    return made
+
+
+def busy_script(page):
+    found = [s for s in re.findall(r"<script>.*?</script>", page, re.S) if "button[data-busy]" in s]
+    assert len(found) == 1, len(found)  # 2 つあると、1 回の押しに 2 度当たる
+    return found[0]
+
+
+page = get(f"/toy/{G}")
+ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
+assert any("/print#" in a for a in marked(page))
+
+# 押した時の動き: 形を変える・押せなくする・戻る操作と時間切れで元に戻す
+js = busy_script(page)
+assert "addEventListener('submit'" in js and "dataset.busy='on'" in js and ".disabled=true" in js, js
+assert "addEventListener('pageshow'" in js and "setTimeout(" in js, js
+# 押した釦だけ輪が回る。動きを減らす設定では回さない
+assert "button[data-busy]:disabled{" in page and "button[data-busy=on]::after{" in page
+assert "@media (prefers-reduced-motion:reduce){button[data-busy=on]::after{animation:none}}" in page
+
+# JS なしの送信は今までどおり刷れる。押した後の頁で釦は元の形に戻っている
+assert post(f"/toy/{G}/print", {"hypothesis": ids[0]}) == 200
+assert (out_dir(G) / f"{ids[0]}_v1.pdf").exists()
+assert any("/print#" in a for a in marked(get(f"/toy/{G}")))
+
+# 自分の仮説の紙を作る釦
+assert post(f"/toy/{G}/own", {"name": "ためしの案", "how": "下から押す", "evidence": "手元の絵"}) == 200
+assert any("/print-own#" in a for a in marked(get(f"/toy/{G}")))
+
+# 次の版の紙を作る釦
+assert post(f"/toy/{G}/record", {"hypothesis": ids[0], "result": "動いた"}) == 200
+assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}) == 200
+assert any("/next#" in a for a in marked(get(f"/toy/{G}")))
+
+# 英語の頁の釦も同じ
+page = get(f"/en/toy/{G}")
+assert re.search(r"<button[^>]* data-busy>[^<]+</button>", page)
+busy_script(page)
+
+print("ok")

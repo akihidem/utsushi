@@ -99,7 +99,7 @@ def window(sid, data, see, kind, v, recorded):
     ids = printed_ids(sid, data)
     # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。見比べるのに仮説の節まで戻らなくてよい。
     make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
-                      f'<button>仮説 {esc(hypotheses.letter(x))}</button></form>')
+                      f'<button data-busy>仮説 {esc(hypotheses.letter(x))}</button></form>')
     if not ids:
         tabs = "".join(make(x) for x in data["hypotheses"])
         return f'<div class="tabs">{tabs}</div><p class="meta">仮説の札を押すと、紙を作ってここに出します。</p>'
@@ -305,7 +305,7 @@ def next_form(r, back=""):
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
             '<label>新しい値<input type="text" name="to" inputmode="decimal" required></label>'
             '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
-            '<button>次の版の紙を作る</button></form></details>')
+            '<button data-busy>次の版の紙を作る</button></form></details>')
 
 
 def ai_block(r):
@@ -473,7 +473,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(h["how_it_moves"])}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(h["to_measure"])}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
-                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙を見る</button></form>'
+                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>型紙を見る</button></form>'
                  '</div></div>')
     body += "</div>"
     for h in own:
@@ -481,7 +481,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         free = f'{h["id"]}_v1_free.pdf'
         link = f'<a href="/sheet/{sid}/{free}">型紙なしの紙</a>' if (out_dir(sid) / free).exists() else ""
         body += (f'<article class="card" id="own-{esc(h["id"])}">{head(f"own-{h['id']}")}<h3>あなたの仮説 {esc(h["id"])} {esc(h["name"])}</h3><p>{esc(h["how_it_moves"])}</p><p class="meta">根拠: {esc(h["evidence"])}</p>'
-                 f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet">紙を作る</button></form><p>{link}</p></article>')
+                 f'<form method="post" action="/toy/{sid}/print-own#own-{esc(h["id"])}"><input type="hidden" name="id" value="{esc(h["id"])}"><button class="quiet" data-busy>紙を作る</button></form><p>{link}</p></article>')
     body += f'<details{" open" if fill("own") else ""}><summary>自分の仮説を立てる</summary>{form_own}</details></section>'
     body += analogy_section(data)
     body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。並びは仮説の順で、上下はありません。</p>{window(sid, data, see, kind, v, recorded)}</section>'
