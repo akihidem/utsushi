@@ -178,3 +178,13 @@ def artwork_label(toy, src):
     when = esc((src.get("original_publication") or {}).get("value", ""))
     rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
     return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
+
+
+def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"), ("/toys", "おもちゃの一覧へ")), bare=False):
+    """断りの頁（404・403・500）。何が起きたかと戻り方を、皮の地で 1 つの形で出す。bare は帯も足も出さない形で、合言葉の門のように中身を見せない所に使う（#136）。"""
+    back = "".join(f'<a href="{esc(p)}">{esc(n)}</a>' for p, n in links)
+    back = f'<p class="notice-back">{back}</p>' if back else ""
+    page = shell(title, f'<section class="sec notice"><h1>{esc(title)}</h1><p>{esc(reason)}</p>{back}</section>', skin,
+                 extra_style=".notice-back a{margin-right:1.2em}", foot=" " if bare else "")
+    # 骨は shell のまま使い、帯だけ抜く。foot は空だと既定の足が付くので、bare では空白を渡す
+    return page.replace(nav(skin), "", 1) if bare else page
