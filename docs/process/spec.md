@@ -146,7 +146,7 @@
 ```
 git clone https://github.com/akihidem/utsushi.git && cd utsushi
 ./init.sh                      # 足りない物を名指しして 4 で止まる
-./run.sh                       # 67 本が期待どおり（11-04 午後）。結果は out/RESULT.md
+./run.sh                       # 全部が期待どおりなら rc 0。数は最後の行。結果は out/RESULT.md
 PYTHONPATH=src .venv/bin/python -m web.play_server   # http://127.0.0.1:8766/ で入口 A
 ```
 

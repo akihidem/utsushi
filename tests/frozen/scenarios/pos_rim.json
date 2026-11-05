@@ -5,8 +5,9 @@
     "hub": "rim",
     "push_amount": 36,
     "pusher_height": 40,
-    "fold_count": 18,
-    "fold_width": 8
+    "fold_count": 14,
+    "fold_width": 8,
+    "fold_height": 36
   },
   "inject": {},
   "expect": {

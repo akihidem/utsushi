@@ -99,8 +99,10 @@ def check_physics(p):
         # 中心が上がる分だけ、隠すための行程が要る。
         if d + h > s:
             out.append(Failure("F5.fan_height", "蛇腹の扇", f"中心の高さ {d}＋折りの高さ {h} が押し上げる量 {s} を超え、扇が隠れない"))
-    elif h > H - s:
-        out.append(Failure("F5.fan_height", "蛇腹の扇", f"畳んだ高さ {h} が筒の空き {H - s} を超える"))
+    elif h > s:
+        # 口の台の形も、静かな時の台から口までは押し上げる量 s（軸の形と同じ見方）。H − s は台の下の空きで、
+        # これと比べていたので、扇が口から出る寸法が通っていた（paper-to-toy の直しに合わせた。#163）。
+        out.append(Failure("F5.fan_height", "蛇腹の扇", f"畳んだ高さ {h} が押し上げる量 {s} を超え、静かな時に扇が口から出る"))
     bound, limit = opening_bound_deg(p["fold_count"], p["fold_width"], h), clearance_limit_deg(A, d)
     if bound > limit:
         out.append(Failure("F5.fan_clearance", "蛇腹の扇", f"帯の長さでは {bound:.0f}° 開くが、筒の口の角に当たって {limit:.0f}° までしか開けない"))
