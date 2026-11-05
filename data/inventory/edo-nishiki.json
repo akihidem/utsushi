@@ -377,7 +377,7 @@
    "id": "NDL-1187053-R0000010-L",
    "frame": 10,
    "side": "L",
-   "region": "pct:10,54,11,30",
+   "region": "pct:9,51,14,33",
    "name_guess": "蓑を着た人形（網を持つ）",
    "name_basis": "image",
    "text_seen": null,
@@ -387,7 +387,7 @@
    "family": "static",
    "paper_feasibility": "medium",
    "lane": "figure",
-   "notes": "歌は「百姓と…」と読めた。2と組の人形と思われる。"
+   "notes": "歌は「百姓と…」と読めた。2と組の人形と思われる。 箱は 11-05 に全コマの写しへ箱を描いて目で確かめ、熊手の先が上に切れていたので上と右を広げた（research/26）。"
   },
   {
    "id": "NDL-1187053-R0000010-L-2",

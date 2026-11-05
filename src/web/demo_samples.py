@@ -96,6 +96,17 @@ def uploads_html():
     return f'<div class="samples"><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
 
 
+def uploads_for(toy):
+    """玩具の頁に出す、その玩具の見本の記録（本人の指摘 11-05「制作した記録とおもちゃのページが関連してない。同じページで見れると良い」）。
+    見本の無い玩具と、見本を切った時は空。札と架空である事の一文は、ギャラリーと同じに付ける。"""
+    mine = [u for u in UPLOADS if u["toy"] == toy] if enabled() else []
+    if not mine:
+        return ""
+    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["sheet"])} の紙　{esc(u["result"])}</p>'
+                    f'<div class="row">{u["pic"]}</div><p>{esc(u["note"])}</p></div>' for u in mine)
+    return f'<div class="samples"><h3>見本の記録</h3><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
+
+
 def voice_html(slot):
     """職人の言葉の 1 枠。見本が無い枠や見本を切った時は、今までどおり（準備中）。"""
     c = next((c for c in CONTRIBUTIONS if c["slot"] == slot), None) if enabled() else None
