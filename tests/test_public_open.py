@@ -86,17 +86,17 @@ said = "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F"
 assert opened("POST", f"/toy/{G}/record", said, form)[0] == 303
 told_id = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{told_id}/explain", "text=TOLDWORDS&next_idea=NEXTWORDS&by=BYWORDS", form)[0] == 303
-for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A&v=1", f"/toy/{G}/techo"):
+for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("TOLDWORDS", "NEXTWORDS", "BYWORDS"):
         assert word not in page, (path, word)
-for path in (f"/toy/{G}", f"/toy/{G}/techo"):
+for path in (f"/toy/{G}", f"/toy/{G}/techo/kiroku"):
     page = opened("GET", path)[1]
     assert "説明を残しました。" in page and f"/record/{told_id}/next" not in page and 'name="interpretation"' not in page, path
 # 合言葉付きの場（ここでは手元の名前で開く）では、同じ記録の説明が今までどおり読めて、次の版を作れる
 local = {"Host": closed.local}
-for path in (f"/toy/{G}", f"/toy/{G}/techo"):
+for path in (f"/toy/{G}", f"/toy/{G}/techo/kiroku"):
     page = closed("GET", path, None, local)[1]
     assert "TOLDWORDS" in page and "NEXTWORDS" in page and f"/record/{told_id}/next" in page and 'name="interpretation"' in page, path
 made = closed("POST", f"/record/{told_id}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"})

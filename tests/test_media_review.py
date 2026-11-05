@@ -86,7 +86,7 @@ url = f"/record/{rid}/media/m1.jpg"
 assert url not in gallery(), "確認の前の写真をギャラリーに出さない"
 assert "首が長く揺れた" in gallery(), "字は出る"
 assert url not in toy.toy_page(G), "確認の前の写真を玩具の頁に出さない"
-assert url in techo_site.page(G, ["H-A"], "/picture"), "手帖には出る"
+assert url in techo_site.records_page(G), "手帖の記録の頁には出る"
 
 # 物だけと確かめた物は出る。撮影の情報は外れている。
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
@@ -105,7 +105,7 @@ assert url not in gallery() and media_review.waiting() == [(rid, "m1.jpg")]
 # 人や声が入るとされた物は、映像を出さず字だけ。返す道も返さない。手帖にも出さない。
 assert media_review.record(rid, "m1.jpg", "people", "確認者") == []
 assert url not in gallery() and "首が長く揺れた" in gallery()
-assert url not in toy.toy_page(G) and url not in techo_site.page(G, ["H-A"], "/picture")
+assert url not in toy.toy_page(G) and url not in techo_site.records_page(G)
 assert fetch(url)[0] == 404
 assert media_review.waiting() == [], "確かめ終わった物は待ちに残らない"
 

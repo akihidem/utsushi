@@ -288,9 +288,10 @@ for sid in sources():
 
 # ---- 紙: たたき台（先頭）を作る。先頭が無ければ刷ってある紙
 assert 'data-hid="H-A"' in page and 'data-v="1"' in page
-assert req(f"/toy/{G}/print", {"hypothesis": "H-C"})[0] in (200, 303)
-assert 'data-hid="H-A"' in req(f"/toy/{G}/techo")[1], "ほかの案が刷ってあっても、たたき台を作る"
-assert techo_step.sheet_of(data, ["H-C"]) == "H-C" and techo_step.sheet_of(data, ["H-C", "H-A"]) == "H-A" and techo_step.sheet_of(data, []) == ""
+# 作るのはたたき台の 1 枚だけ（J-032）。それが刷られていない時は、紙を作る道だけ
+assert hypotheses.sheet_of(G)["id"] == "H-A" and hypotheses.sheet_of(T)["id"] == "H-A", "必須 2 種のたたき台は H-A（本人の決定）"
+assert "紙を作る" in techo_step.page(G, ["H-C"]) and 'data-hid=' not in techo_step.page(G, [])
+assert 'data-hid="H-A"' in techo_step.page(G, ["H-C", "H-A"])
 
 # ---- 開く所を URL で持つ（場のリンク n=2）。最後の次は「とって・のこす」の画面
 assert 'data-n="2"' in req(f"/toy/{G}/techo?n=2")[1] and 'data-n="1"' in req(f"/toy/{G}/techo?n=abc")[1]

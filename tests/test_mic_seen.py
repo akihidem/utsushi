@@ -29,7 +29,8 @@ SHAPES = {
     "local": "class S{static async available(){return 'available'}start(){}stop(){}};S.prototype.processLocally=false;window.SpeechRecognition=S;window.webkitSpeechRecognition=S;",
     "none": "window.SpeechRecognition=undefined;window.webkitSpeechRecognition=undefined;",
 }
-TOY, MAKE, TECHO = f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A", f"/toy/{G}/techo"
+# 話す釦は手帖の記録の頁の札にある（作る頁のマイクは 1 つで、はじめるの後に出る。#87。tests/test_techo_step.py が見る）
+TOY, MAKE, TECHO = f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A", f"/toy/{G}/techo/kiroku"
 # （幅, 頁, 形, 釦が見えるはずか）。幅 390 は iPhone、820 は iPad。どちらも指で触る機器の床が効く幅
 CASES = [(w, page, "safari", True) for w in (390, 820) for page in (TOY, MAKE, TECHO)] + [(390, MAKE, "local", True), (390, MAKE, "none", False)]
 # 頁の終わりに足す。釦の大きさと、断りの何が出ているかを親へ送る。番号はサーバが書く（作りながら見る頁は住所の後ろを書き換えるので、住所から読めない）

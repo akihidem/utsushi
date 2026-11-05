@@ -8,7 +8,7 @@
 - **押す所の名前は本人が決めた 6 つ（NAMES）。** 一字も変えない（tests/test_techo_step.py が文字列で見る）。結果の札だけは別で、記録の値（凍結の床 F3 の語）の字を絵に添える:
   「よく動いた」と「少し動いた」のように、絵だけでは取り違えて記録が濁るため。既定の選びは置かない。
 - **頁の帯を置かない。** 帯の字だけで字のかたまりが 6 個増えるため。閉じる印で玩具の頁へ戻る（作りながら見る頁と同じ形）。
-- **紙を選ぶ札は作らない。** 型紙は玩具ごとに 1 枚で、たたき台は記録の先頭（#332）。作る紙を頁が決める。
+- **紙を選ぶ札は作らない。** 型紙は玩具ごとに 1 枚で、たたき台は記録の欄が指す（hypotheses.sheet_of、#332）。作る紙を頁が決める。
 - **絵は手順の紙と同じ形から描く（instructions.step_pictures）。** 字を入れず、紙と食い違わず、刷った PNG を切らないので小さなコマを大きくしても粗くならない。
 - **記録の札（試した後の紙 → 説明 → AI）はこの頁に置かない。** 頁の字に版の名・記録の番号・「の紙」を出さないため。のこした後に手帖の記録の頁（techo_site.records_page）へ移る。順（J-013・S-03）は変えない。
 - **声は全部が一致した時だけ操作にする。** 「次の手順ってどうやるの」で進まないように、部分一致を使わない。操作の字は送らず残さない。ほかの字は質問として扱い、最後の画面では工夫の欄に入れる。
@@ -29,7 +29,7 @@ from omochae.compose import TEMPLATES
 
 from . import hanasu, skin, tsukuru
 from .play_server import esc, printed_versions
-from .techo_site import ICONS, MAX_MEDIA, MAX_PER_RECORD
+from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
 from .voice_words import CLEAN, WORDS, clean  # noqa: F401  (clean は試験が読む)
 
 # 本人の決定 11-05: 押す所の名前。字を変える時は本人の確認が要る。
@@ -59,17 +59,6 @@ MIC = _ICON.format('<rect x="17" y="6" width="14" height="24" rx="7"/><path d="M
 CLOSE = _ICON.format('<path d="M12 12l24 24M36 12L12 36"/>')
 SEND = _ICON.format('<path d="M10 24h26M26 12l12 12-12 12"/>')
 PENCIL = _ICON.format('<path d="M10 38l2-9 19-19 7 7-19 19zM27 14l7 7"/>')
-_SMALL = _ICON.format('<path d="M14 30c5 0 9-3 12-9M20 19l6 2 1 6"/>')
-
-
-def result_icon(r):
-    """結果の札の絵。良し悪しに見えない線だけで、色を付けない。手順の紙の値は雛形ごとに違うので、手帖の絵（techo_site.ICONS）に無い値は形で寄せる。"""
-    if r in ICONS:
-        return ICONS[r]
-    if r.endswith("ない") or r == "倒れた":
-        return ICONS["動かない"]
-    return _SMALL if r.startswith("少し") else ICONS["動いた"]
-
 
 # 色は皮の変数から取る（skin.py）。絵の地だけ白に決める: 手順の紙の形は黒い線と紙の色で描いてあり、黒の皮でもそのまま読めるように（作りながら見る頁の紙の絵と同じ）。
 # 字の大きさは机の端に置いて少し離れて読むため。角丸の箱を並べない（本人の感想「AIの考えたUiって感じ」）。
@@ -347,14 +336,6 @@ mark(); paint(); to('start');
 </script>"""
 
 
-def sheet_of(data, printed_ids):
-    """手帖で作る紙。型紙は玩具ごとに 1 枚で、たたき台は記録の先頭（本人の決定 11-05、#332）。
-    #332 が入るまでは玩具の頁でほかの案を刷れるので、先頭が刷られていない時は、刷ってある紙の手順を出す（持っている紙と手順が食い違わないように）。"""
-    ids = [h["id"] for h in data["hypotheses"] if h["id"] in printed_ids]
-    head = data["hypotheses"][0]["id"]
-    return head if head in ids else (ids[0] if ids else "")
-
-
 def _params(sid, data, h, v):
     template = h.get("template") or data.get("template", "slider_fan")
     params, _ = loop.version_params(sid, h["id"], v)
@@ -375,15 +356,15 @@ def _key(name, cls="key", attrs="", tag="button", extra=""):
 
 
 def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True):
-    """手帖の頁。呼ぶ側（play_server）が刷ってある紙の一覧を渡す。刷った紙が無い時は、紙を作る道だけを出す（手順は紙と一緒に使う物なので）。"""
+    """手帖の頁。呼ぶ側（play_server）が刷ってある紙の一覧を渡す。作るのはたたき台の 1 枚だけ（J-032）。それが刷られていない時は、紙を作る道だけを出す（手順は紙と一緒に使う物なので）。"""
     data = hypotheses.load(sid)
     title = f'{data["toy"]} · 手帖'
-    hid = sheet_of(data, printed_ids)
-    if not hid:
+    hid = hypotheses.sheet_of(sid)["id"]
+    if hid not in printed_ids:
         return _doc(title, look, f'<main class="te" data-scene="step"><h1 class="sr">手帖</h1><div class="end"><a class="key go" href="/toy/{esc(sid)}">紙を作る</a></div></main>')
     h = next(x for x in data["hypotheses"] if x["id"] == hid)
     vs = printed_versions(sid, hid)
-    v = version if version in vs else vs[-1]  # 開いた時の版のまま作り続ける（別の人の報告で版が上がっても、手順の文を変えない）
+    v = version if version in vs else (vs[-1] if vs else 1)  # 開いた時の版のまま作り続ける（別の人の報告で版が上がっても、手順の文を変えない）
     template, p = _params(sid, data, h, v)
     texts = tsukuru.step_texts(sid, hid, v) or [""]
     total = len(texts)
@@ -394,7 +375,7 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     steps = "".join(f'<li data-k="{k}" class="on">{esc(t)}</li>' if i == n else f'<li data-k="{k}" hidden>{esc(t)}</li>'
                     for i, (t, k) in enumerate(zip(texts, which), 1))
     width = round(min(n, total) / total * 100)
-    tiles = "".join(f'<button type="button" class="tile" value="{esc(r)}">{result_icon(r)}<span>{esc(r)}</span></button>' for r in TEMPLATES[template].RESULTS)
+    tiles = "".join(f'<button type="button" class="tile" value="{esc(r)}">{result_icon(r, TEMPLATES[template].RESULTS)}<span>{esc(r)}</span></button>' for r in TEMPLATES[template].RESULTS)
     # 声の断りは、声がどこへ行くかをマイクが起きる前に言う文。声が使える時だけ出す。どちらの文を出すかは画面ごとに違うので、JS の印で切り替える。
     # 文は採られた文のまま（hanasu）。「話す」を「はじめる」に合わせた文は本人の確認待ちで、確認が済むまで入れない（本人の指示 11-05「新しい文は確認までマージしない」）。
     how = (f'<span class="how is-local">{esc(hanasu.HOW_LOCAL)}</span><span class="how is-browser">{esc(hanasu.HOW_BROWSER)}</span>'
