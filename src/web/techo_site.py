@@ -224,7 +224,8 @@ def gallery_page(sids):
             pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                             else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
             h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-            cards += (f'<div class="item"><p class="meta">{esc(data["toy"])}　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
+            # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
+            cards += (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(r["id"])}</p>'
                       f'<div class="row">{pics}</div></div>')
     cards = cards or '<p class="meta">まだ上げた物はありません。手帖の「上げる」から上げると、ここに並びます。</p>'
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。

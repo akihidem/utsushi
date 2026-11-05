@@ -106,6 +106,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .item{border-top:1px solid var(--rule);padding:14px 0;display:grid;gap:6px}
 .item img,.item video{height:120px;max-width:100%;border:1px solid var(--frame)}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.shots{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.shots img,.shots video{height:150px;max-width:100%;border:1px solid var(--frame);background:#fff}
+.strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.strip a{border:0}.strip img,.strip video{height:72px;border:1px solid var(--frame);background:#fff}
 .toys{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 14px}
 .toys a{display:block;border:0;color:var(--fg)}
 .toys .pic{aspect-ratio:3/4;background:var(--soft) center/300% no-repeat;border:1px solid var(--frame);box-shadow:0 14px 22px -18px var(--shadow)}

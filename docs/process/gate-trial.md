@@ -200,4 +200,5 @@
 - ゴールの要件: 報告に感想 → 説明 → 次の版 → 次に刷る人は最新の版 → どの報告がどの版を変えたかが見える。順位と成績は出さない
 - 検証ゲート: **当たる**（刷る口と記録の口の作り替え）。Red: 前の作りは版 2 があっても「刷る」が版 1 を刷り、記録は版 1 への返事になる（main b7efc51 の play_server の print と record が版 1 の決め打ち）。Green: `tests/test_kaizen.py`「ok: 改善の輪」。`test_play_server`・`test_techo_site`・`test_demo_walk`・`test_sheet_click`・`test_two_sites` 通る
 - エビデンスゲート: 作る側の機械で写しを見た（下に書く）。人で一周した確認は未
+- 同じ朝の続き: 作った記録を玩具の頁で見る（要件の 17）。Red: 前は記録の札に写真が無く、ギャラリーから玩具の頁へ道が無い。Green: `tests/test_made_records.py`「ok: 作った記録を玩具の頁で」。受け持ちの決定（カード 090458 の (b)）で、報告から寸法の案を出す道具は入れなかった（枝 lane/suggest）
 

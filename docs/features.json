@@ -345,5 +345,17 @@
    "docs/process/decisions/J026-site-side-loop.md"
   ],
   "unverified": "本人の方針（11-05 朝、J-026）。感想の欄・一番新しい版を刷る・輪の節と /loop を作った。雛形そのものの直しの報告の入口と道具はエンジンの側（本人の決定、カード 090458 の (b)）で、サイトは仮説ごとの版と表示まで。人で一周した確認はまだ"
+ },
+ {
+  "id": "f33",
+  "name": "作った記録を玩具の頁で見る（写真・感想・止まった所）",
+  "status": "doing",
+  "evidence": [
+   "src/web/toy.py",
+   "src/web/demo_samples.py",
+   "src/web/techo_site.py",
+   "tests/test_made_records.py"
+  ],
+  "unverified": "本人の指摘（11-05 朝）。記録の札に写真と動画・感想・止まった所、頁の頭の帯、ギャラリーからの道、その玩具の見本。予想の前は出さない。人が使った確認はまだ"
  }
 ]
