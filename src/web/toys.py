@@ -52,7 +52,7 @@ def card(sid):
 
 
 def paper_only_sids(sids):
-    """紙 1 枚で作れる仮説を持つ玩具。札の印と同じ ways の「紙一枚」で絞る（#255 の頃は別の判定を持っていたが、
+    """たたき台が紙 1 枚で作れる玩具（J-032。紙一枚は必須の条件でなく、必須の 2 種は入らない）。札の印と同じ ways の「紙一枚」で絞る（#255 の頃は別の判定を持っていたが、
     main の ways（#261、エンジンとそろえた物）と二重になり、札と絞り込みが食い違いうるので ways に寄せた）。"""
     return [s for s in sids if "紙一枚" in ways.toy_labels(s)]
 
@@ -65,7 +65,7 @@ def page(skin, path="/toys", paper=False):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)))}</p><p class="meta">{esc(ways.NOTE)}</p>'
+            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)) if main else NOTE.split("ほかは、", 1)[1])}</p><p class="meta">{esc(ways.NOTE)}</p>'
             + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)
