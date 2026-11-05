@@ -23,6 +23,6 @@ for look in skin.SKINS:
     assert 'class="foot"' not in plates, look
     assert len(re.findall(r'<p class="foot">', html)) == 1, look  # 頁の足は 1 つのまま
 assert ".plate .acts{" in skin.BASE and ".plate .foot" not in skin.BASE
-# 頁の足の決まりは変えていない（札の直しで頁の足の見た目を変えない）
-assert ".foot{padding:48px 5vw 40px;font-size:11px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}" in skin.BASE
+# 頁の足の決まりは変えていない（札の直しで頁の足の見た目を変えない）。字の 12px は字の大きさの床（#137）
+assert ".foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}" in skin.BASE
 print("ok")
