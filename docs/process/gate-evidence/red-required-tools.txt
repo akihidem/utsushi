@@ -1,0 +1,5 @@
+直す前（main 6da8073 の tests/run_floors.py）: ffmpeg と ffprobe を PATH から外し、まっさらな写しで ./run.sh
+NG test_ai_feedback: FileNotFoundError（ffmpeg）
+NG test_demo_assemble: FileNotFoundError（ffmpeg）
+実行した場面 98 本、期待どおり 96 本、未実装の床 0 本。
+rc 3 （道具の不足が「落ちる」に見える。ffmpeg の名前は、トレースバックの中にしか出ない）

@@ -21,6 +21,10 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 PY = str(ROOT / ".venv/bin/python")
 NOT_YET = []
 MANIFEST = "tests/frozen/manifest.json"
+# 要る物の一覧。README の「動かし方」と init.sh も同じ物を挙げる（tests/test_required_tools.py が照らす）。
+# uv は環境を作る時だけ使うので、ここでは作られた .venv を見る。
+TOOLS = ("pdftotext", "pdftoppm", "fc-match", "ffmpeg", "ffprobe")
+FONT = "Noto Serif CJK JP"
 
 
 def _sha(path):
@@ -80,6 +84,18 @@ def write_manifest(root):
     return 0
 
 
+def missing_needs():
+    """足りない物を全部、名前で返す（#160）。回してから試験が落ちると、道具の不足が「落ちた（3）」に見えるため。"""
+    out = [] if os.path.exists(PY) else [".venv が無い（./init.sh を先に）"]
+    out += [f"{tool} が無い" for tool in TOOLS if not shutil.which(tool)]
+    if shutil.which("fc-match"):
+        # 見分け方は src/omochae/textfit.py と同じ。ここは .venv の外でも動くので、あちらを読み込まない。
+        found = subprocess.run(["fc-match", FONT, "file"], capture_output=True, text=True).stdout
+        if "NotoSerifCJK" not in found:
+            out.append(f"字 {FONT} が無い")
+    return out
+
+
 def main():
     wrong = check_manifest(ROOT)
     if wrong:
@@ -87,10 +103,11 @@ def main():
             print(f"検査できない: 凍結の表と合わない … {line}", file=sys.stderr)
         print("凍結を変えたなら、理由を commit と docs/claude-usage.md に書き、python tests/run_floors.py --write-manifest で表も同じ commit で直す", file=sys.stderr)
         return 4
-    for tool in ("pdftotext", "pdftoppm", "fc-match"):
-        if not shutil.which(tool):
-            print(f"検査できない: {tool} が無い", file=sys.stderr)
-            return 4
+    needs = missing_needs()
+    if needs:
+        for line in needs:
+            print(f"検査できない: {line}", file=sys.stderr)
+        return 4
     # 試験は素の assert で検査するので、assert を消す設定（PYTHONOPTIMIZE）を子に渡さない。
     # 呼ぶ側の環境に残っていると、落ちるはずの試験が黙って通る（外の検品の指摘、11-04）。子は -O も付けずに起こす。
     env = {**{k: v for k, v in os.environ.items() if k != "PYTHONOPTIMIZE"}, "PYTHONPATH": str(ROOT / "src")}
