@@ -40,7 +40,7 @@ def req(path, data=None):
 class Page(html.parser.HTMLParser):
     """頁を読み、押す所と字のかたまりを、どの場面で出るか（data-on）といっしょに集める。"""
     VOID = {"input", "meta", "br", "img", "link", "path", "rect", "circle", "line", "polygon", "polyline"}
-    BLOCKS = {"p", "li", "h1", "h2", "button", "a", "label", "textarea"}
+    BLOCKS = {"p", "li", "h1", "h2", "button", "a", "label", "textarea", "summary"}
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -52,7 +52,7 @@ class Page(html.parser.HTMLParser):
             return
         cell = {"tag": tag, "attrs": a, "text": ""}
         self.stack.append(cell)
-        if tag in ("button", "a") or (tag == "label" and "key" in a.get("class", "")):
+        if tag in ("button", "a", "summary") or (tag == "label" and "key" in a.get("class", "")):
             self.targets.append(cell)
         if tag in self.BLOCKS and not any(c["tag"] in self.BLOCKS for c in self.stack[:-1]):
             self.blocks.append(cell)
@@ -131,7 +131,11 @@ for scene in ("start", "step", "end"):
     assert all(n in NAMES for n in names if n), (scene, names)
 assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"]
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
-assert sorted(c["text"].strip() for c in doc.shown_targets("end")) == sorted(["とって", "のこす", "もどる"])
+# 「のこす」の画面: 声と動画が主で、字は畳んだ追加（本人の方針 19:45、#335）。押す所は とって・畳み（字なしの形）・のこす
+assert sorted(c["text"].strip() for c in doc.shown_targets("end")) == sorted(["とって", "", "のこす"])
+fold = page.split('<details class="fold" id="fold">', 1)[1].split("</details>", 1)[0]
+assert '<textarea id="kufu"' in fold and "<summary" in fold and '<details class="fold" id="fold" open' not in page, "字の欄は畳んだ追加として残る"
+assert page.count("<textarea") == 1, "打つ欄はこの 1 つだけ"
 
 # ---- 1 画面に 3 つまで（閉じる印とマイクを除く）。結果の札も雛形の値の数（3 つまで）
 for scene in ("start", "step", "henji", "end", "kekka"):
@@ -227,7 +231,9 @@ assert hanasu.HOW_LOCAL in note and hanasu.HOW_BROWSER in note and making_log.AS
 # ---- 写真の決まりは前のまま: 手元だけの確かめ・数と大きさの決まり・内側のカメラを求めない
 form = page.split('<form id="up-form"', 1)[1].split("</form>", 1)[0]
 assert "大人の手元だけ・顔なし・声なし" in form and "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form
-assert 'capture="environment"' in form, "とっては外のカメラ（顔を写さない）"
+assert 'capture="environment"' in form and "video/mp4" in form, "とっては外のカメラ（顔を写さない）。動画が撮れる"
+# 聞いた字は畳みを開いて見せる（字は本人が見てから残す。隠したまま送らない）。床に落ちた時も開く
+assert js.count("fold.open = true") == 2
 assert 'id="picked"' in form and 'id="thumbs"' in form
 # 確かめの欄は写真を選んだ時に出る。押さないと送らない
 assert "ok.checked" in js
@@ -304,6 +310,9 @@ for ev in ("next", "back", "stuck", "done", "start"):
 assert req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": 1, "step": total, "text": "電話は090-1234-5678", "via": "voice", "who": who, "json": "1"})[0] == 422
 code, body = req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": 1, "step": total, "text": "紙を二重にした", "via": "voice", "who": who, "json": "1"})
 assert code == 200 and json.loads(body)["kept"]
+# 字を打たなくても残せる（本人の方針 19:45）。字の無い記録も、結果の札だけで残る
+code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "sheet_version": 1, "who": "nowords0000"})
+assert code == 201, body
 code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない", "sheet_version": 1, "who": who})
 j = json.loads(body)
 assert code == 201 and j["kufu"] == 1, body

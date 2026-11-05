@@ -14,7 +14,9 @@
 - **声は全部が一致した時だけ操作にする。** 「次の手順ってどうやるの」で進まないように、部分一致を使わない。操作の字は送らず残さない。ほかの字は質問として扱い、最後の画面では工夫の欄に入れる。
 - **声を字にする所は話す口（hanasu）の切り替えのまま。** OMOCHAE_VOICE の browser（既定）・local・off を読み、どちらにも切り替えられる形を保つ（本人の決定待ち）。local と browser の見分けは hanasu.SCRIPT と同じ式。
   hanasu の部品は置かない: 話す釦と残す釦が増え、マイクが 1 頁に 2 つになるため。声そのものは録らず、受け取らない（マイクを開く code と録る code を持たない）。
-- **工夫の字は「のこす」で送る。** 話す口の決まり「字は本人が見てから残す」を、この頁でも守る。先に床（talk_log）に通し、落ちたら記録を作らず、字を残して理由を見せる（押し直しで記録を増やさない。#143）。
+- **「のこす」の画面は声と動画が主で、字を打つのは畳んだ追加（本人の方針 11-05 19:45「文字で記入がオプションの扱い」、#335）。** 字を打たなくても残せる。押す所は とって・字の畳み・のこす の 3 つで、マイクを大きく出す。
+  閉じる印が「もどる」を兼ねる（最後の手順へ戻る）。1 画面に 3 つまでの決まりの中で、畳みを優先したため。声の「もどる」も効く。
+- **工夫の字は「のこす」で送る。** 話す口の決まり「字は本人が見てから残す」を、この頁でも守る。聞いた字が入ったら畳みを開いて見せる（隠したまま送らない）。先に床（talk_log）に通し、落ちたら記録を作らず、字を残して理由を見せる（押し直しで記録を増やさない。#143）。
 - **「もう一回」は今の手順の文を読み上げる。** 手順ごとに自動で読まない: 教室で 30 台が同時に読むと、紙の返事を聞く場が濁るため。
 - **「とって」は外のカメラを求める（capture="environment"）。** 顔を写さない線のため。写真を選んだ時は前と同じ確かめ（大人の手元だけ・顔なし・声なし）を通す。
 - 手順の文は雛形の steps のまま（tsukuru.step_texts。紙と画面で言う事を変えない）。札を押した事は作りながら見る頁と同じ口（/toy/<印>/step）に残す。
@@ -54,12 +56,14 @@ KEY_ICONS = {
     BACK: _ICON.format('<path d="M30 9L13 24l17 15"/>'),
     NEXT: _ICON.format('<path d="M18 9l17 15-17 15"/>'),
     STUCK: _ICON.format('<path d="M16 17a8 8 0 1 1 11 8c-2 1-3 2-3 6"/><circle cx="24" cy="39" r="1.5"/>'),
-    SHOOT: _ICON.format('<path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/>'),
+    # 動画が主（本人の方針 19:45）なので、動画のカメラの形にする。写真も撮れる。
+    SHOOT: _ICON.format('<rect x="5" y="13" width="27" height="22"/><path d="M32 21l11-7v20l-11-7z"/>'),
     KEEP: _ICON.format('<path d="M24 7v22M14 20l10 10 10-10M8 40h32"/>'),
 }
 MIC = _ICON.format('<rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/>')
 CLOSE = _ICON.format('<path d="M12 12l24 24M36 12L12 36"/>')
 SEND = _ICON.format('<path d="M10 24h26M26 12l12 12-12 12"/>')
+PENCIL = _ICON.format('<path d="M10 38l2-9 19-19 7 7-19 19zM27 14l7 7"/>')
 _SMALL = _ICON.format('<path d="M14 30c5 0 9-3 12-9M20 19l6 2 1 6"/>')
 
 
@@ -120,7 +124,15 @@ a{color:inherit;text-decoration:none}
 .send svg{width:34px;height:34px}
 .answer{font-size:24px;line-height:1.5;white-space:pre-wrap;min-height:1.5em}
 .answer:empty::before{content:"ここに答えが出ます";font-size:14px;color:var(--mute)}
-.end{padding:92px 12px 16px;display:grid;gap:10px}
+.end{padding:120px 12px 16px;display:grid;gap:10px}
+/* 「のこす」の画面は声が主なので、マイクを大きく出す（マイクは頁に 1 つのまま）。 */
+.te[data-scene=end] .mic,.te[data-scene=kekka] .mic{width:96px;height:96px}
+.te[data-scene=end] .mic svg,.te[data-scene=kekka] .mic svg{width:52px;height:52px}
+.fold summary{list-style:none;border-color:var(--frame);background:transparent}
+.fold summary::-webkit-details-marker{display:none}
+.fold textarea{margin-top:10px}
+/* 写真を選んだ後は確かめの欄が出るので、畳んだままの畳みはしまう（押す所を増やさないため）。 */
+.te.picked .fold:not([open]){display:none}
 .end form{display:grid;gap:10px;margin:0}
 .key.shot{min-height:38vh;min-height:38svh;border:3px dashed var(--accent);background:transparent;font-size:24px}
 .key.shot svg{width:72px;height:72px}
@@ -132,13 +144,12 @@ a{color:inherit;text-decoration:none}
 #kufu{display:block;width:100%;min-height:76px;margin:0;padding:10px 12px;font:inherit;font-size:18px;border:1px solid var(--frame);border-radius:0;background:var(--field);color:var(--fg)}
 .te .check{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 12px;margin:0;font-size:16px;border:1px solid var(--frame)}
 .check input{width:32px;height:32px;flex:none;margin:0}
-.te:not(.picked) .check,.te.picked #endback{display:none}
-.end .keys{grid-template-columns:1fr 2fr;padding:0}
-.te.picked .end .keys{grid-template-columns:1fr}
+.te:not(.picked) .check{display:none}
+.end .keys{grid-template-columns:1fr;padding:0}
 .call{outline:4px solid var(--accent);outline-offset:2px}
 #up-status{font-size:16px;margin:0}
 #up-status:empty{display:none}
-.kekka{padding:92px 12px 16px;display:grid;gap:12px;align-content:start}
+.kekka{padding:120px 12px 16px;display:grid;gap:12px;align-content:start}
 /* 結果の札は同じ大きさ（小さくすると、選ぶのをためらわせるため。手順の紙の欄と同じ考え）。色で良し悪しを付けない。 */
 .tile{min-height:96px;display:flex;align-items:center;justify-content:center;gap:14px;margin:0;padding:10px;font:inherit;font-size:24px;border:2px solid var(--frame);border-radius:0;background:var(--paper);color:var(--fg);cursor:pointer}
 .tile svg{width:56px;height:56px}
@@ -160,7 +171,7 @@ const WORDS = __WORDS__, RESULT_WORDS = __RESULT_WORDS__;
 const clean = (t) => t.replace(/__CLEAN__/g, '');
 const $ = (id) => document.getElementById(id);
 const items = [...document.querySelectorAll('#steps li')], koma = [...document.querySelectorAll('#koma svg')];
-const mic = $('mic'), note = $('note'), ans = $('answer'), q = $('q'), kufu = $('kufu'), bar = $('bar');
+const mic = $('mic'), note = $('note'), ans = $('answer'), q = $('q'), kufu = $('kufu'), fold = $('fold'), bar = $('bar');
 let n = +te.dataset.n;
 const scene = () => te.dataset.scene;
 const to = (s) => { te.dataset.scene = s; };
@@ -218,7 +229,7 @@ const heard = (t) => {
   const op = WORDS[clean(t)];
   if (op) { act(op); return; }
   if (s === 'kekka') return;
-  if (s === 'end') { kufu.value = (kufu.value ? `${kufu.value} ` : '') + t; kufu.dataset.via = 'voice'; return; }
+  if (s === 'end') { kufu.value = (kufu.value ? `${kufu.value} ` : '') + t; kufu.dataset.via = 'voice'; fold.open = true; return; }
   if (s === 'step') to('henji');
   q.value = t; ask(t);
 };
@@ -272,10 +283,9 @@ $('start').onclick = () => {
 };
 $('next').onclick = (e) => { e.preventDefault(); goNext(); };
 $('back').onclick = (e) => { e.preventDefault(); goBack(); };
-$('endback').onclick = (e) => { e.preventDefault(); goBack(); };
 $('stuck').onclick = (e) => { e.preventDefault(); openAsk(); };
-// 閉じる印: 開いている札を閉じる。何も開いていない時は玩具の頁へ戻る。
-$('close').onclick = (e) => { const s = scene(); if (s === 'henji') { e.preventDefault(); to('step'); } else if (s === 'kekka') { e.preventDefault(); to('end'); } };
+// 閉じる印: 今の画面を閉じて 1 つ前へ。札は元の画面へ、「のこす」の画面は最後の手順へ。手順の画面と最初の画面では玩具の頁へ戻る。
+$('close').onclick = (e) => { const s = scene(); if (s === 'henji') { e.preventDefault(); to('step'); } else if (s === 'kekka') { e.preventDefault(); to('end'); } else if (s === 'end') { e.preventDefault(); goBack(); } };
 $('ask-form').onsubmit = (e) => { e.preventDefault(); ask(q.value.trim()); };
 // 写真: 撮った物を足していく（1 つ撮るごとに選びが入れ替わる画面でも、前の 1 枚を落とさない）。写しはこの端末の中だけで作り、のこすまで送らない。
 const form = $('up-form'), picker = $('files'), thumbs = $('thumbs'), go = $('keep'), ok = $('ok'), st = $('up-status'), max = Number(form.dataset.maxN);
@@ -318,7 +328,7 @@ const save = async (result) => {
     if (said) {
       const t = await post(`/toy/${sid}/talk`, { scene: 'craft', hypothesis: hid, step: total, text: said, via: kufu.dataset.via === 'voice' ? 'voice' : 'text', json: '1' });
       const tj = await t.json().catch(() => ({}));
-      if (!tj.kept) { st.textContent = tj.why || '残せませんでした'; return; }
+      if (!tj.kept) { fold.open = true; st.textContent = tj.why || '残せませんでした'; return; }
       kufu.value = ''; kufu.dataset.via = '';
     }
     const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result });
@@ -427,10 +437,11 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(making_log.ASK_NAME_VOICE)}</p></section>'
             '<section class="end" data-on="end">'
             f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}">{shot}'
-            f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(craft["hint"])}"></textarea>'
+            # 字で書くのは選べる追加（畳んでおく）。名前は字で出さない（押す所の名前は 6 つ）ので、形だけにして、読み上げ用の名を持たせる。
+            f'<details class="fold" id="fold"><summary class="key" aria-label="字で書く">{PENCIL}</summary>'
+            f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(craft["hint"])}"></textarea></details>'
             '<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>'
-            '<div class="keys">' + _key(BACK, "key", f'id="endback" href="?v={v}&amp;n={total}"', "a")
-            + f'<button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
+            f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>')
