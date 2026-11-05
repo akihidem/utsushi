@@ -157,6 +157,8 @@ STYLE = """
 body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
 .techo main:has(.gallery){max-width:960px}
+.techo .gallery h1{font-size:clamp(19px,5vw,26px);letter-spacing:.2em}.techo .gallery .top a{white-space:nowrap}
+.techo .jump{display:flex;gap:6px 18px;flex-wrap:wrap;margin:8px 0 14px;font-size:14px;letter-spacing:.1em}.techo .jump a{color:var(--accent)}
 .techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
 .techo .top a{margin-left:auto;font-size:14px;color:var(--accent)}
@@ -323,12 +325,13 @@ def gallery_page(sids):
     from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（STYLE の main:has(.gallery)）。
-    return ('<div class="gallery"><div class="top"><h1>上げた物</h1><a href="/">入口へ</a></div>'
-            '<section class="panel" aria-label="上げた物"><p class="mark">上げた物</p><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
+    return ('<div class="gallery"><div class="top"><h1>上げた物と職人の言葉</h1><a href="/">入口へ</a></div>'
+            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">上げた物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
+            '<section class="panel" id="ageta"><h2 class="mark">上げた物</h2><p class="meta">記録の順に並べます。上下はありません。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
-            '<section class="panel" aria-label="寄せられた声"><p class="mark">寄せられた声</p><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
+            '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
             f'{voices_html()}</section>'
-            '<section class="panel" aria-label="職人の言葉"><p class="mark">職人の言葉</p><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
+            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section></div>')

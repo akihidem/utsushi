@@ -2,6 +2,7 @@
 import io
 import json
 import os
+import re
 import tempfile
 import threading
 import urllib.error
@@ -97,6 +98,15 @@ except urllib.error.HTTPError as e:
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
+# 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
+name = "上げた物と職人の言葉"
+assert f"<b>{name}</b>" in g and f"<title>{name}<" in g, g[:300]  # 帯の今いる所は b で出る
+assert re.findall(r"<h1[^>]*>(.*?)</h1>", g) == [name]
+for sec, label in (("ageta", "上げた物"), ("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
+    assert f'<a href="#{sec}">{label}</a>' in g and f'id="{sec}"' in g and f'<h2 class="mark">{label}</h2>' in g, sec
+# 見本は札と断りの一文で見分ける。縞の地と、皮によって白く浮く固定の色は使わない（#139）
+assert "repeating-linear-gradient" not in g and "#f4efe3" not in g and "#7a3b1d" not in g
+assert '<span class="sample">見本</span>' in g and "is-sample" in g
 # 上げた後は頁の中で一覧を入れ替える（#143）。同じ道へ location.href しても読み込まれず、「…」のまま残って、もう一度押すと記録が 2 件になっていた
 from web.techo_site import SCRIPT  # noqa: E402
 up = SCRIPT[SCRIPT.index("getElementById('up-form')"):]
