@@ -98,10 +98,16 @@ def window(sid, data, see, kind, v, recorded):
     # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。
     make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
                       f'<button>仮説 {esc(hypotheses.letter(x))}</button></form>')
-    if not ids:
+    # 紙を作らずに記録を残した人が札から来た時（#320）は、試した後の紙だけがある案も窓に出す。刷った案には数えない。
+    # 必須 2 種のたたき台でない案（前の試行の記録）は刷れないので、これが無いと記録の窓に別の案の紙が出る。
+    only_after = (kind == "_after" and see in recorded and any(x["id"] == see for x in data["hypotheses"])
+                  and (out_dir(sid) / f"{see}_v{v}_after.png").exists())
+    if not ids and not only_after:
         return f'<div class="tabs">{make(card)}</div><p class="meta">仮説の札を押すと、紙を作ってここに出します。</p>'
-    see = see if see in ids else (card["id"] if card["id"] in ids else ids[0])
+    see = see if see in ids or only_after else (card["id"] if card["id"] in ids else ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
+    if only_after and v not in vs:
+        vs = sorted([*vs, v])
     v = v if v in vs else vs[-1]
     kind = kind if kind in ("", "_tejun", "_after") else ""
     if kind == "_after" and see not in recorded:
@@ -289,9 +295,12 @@ def next_reasons(failures, sid, hid, param):
 
 def next_form(r, back=""):
     """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
-    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。"""
+    人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。
+    次の版はたたき台の記録からだけ（J-032）。ほかの仮説の記録に欄を出しても、版は刷れないか、札に出ない紙が増えるだけなので空を返す。"""
     from omochae.metrics import ALLOWED
 
+    if r["hypothesis_id"] != hypotheses.sheet_of(r["source_id"])["id"]:
+        return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
     now = _params_now(r["source_id"], r["hypothesis_id"], template)
     opts = "".join(_param_option(template, k, now) for k in sorted(ALLOWED[template]))
@@ -341,8 +350,12 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
         # 試した後の紙も字のリンクは窓へ（画面に出す）。PDF は添え。
         hid, ver = esc(r["hypothesis_id"]), r.get("sheet_version", 1)
+        pdf = f'/sheet/{sid}/{hid}_v{ver}_after.pdf'
         after = (f'<p><a href="/toy/{sid}?see={hid}&kind=after&v={ver}#win">試した後の紙</a>（先に開いて、次に変える条件を読む。'
-                 f'<a href="/sheet/{sid}/{hid}_v{ver}_after.pdf" target="_blank" rel="noopener">PDF</a>）</p>')
+                 f'<a href="{pdf}" target="_blank" rel="noopener">PDF</a>）</p>')
+        # 自分の仮説は窓に出ない（窓へ向けると、ほかの案の紙が出る）ので、字のリンクも PDF へ向ける（#320）。
+        if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]):
+            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>'
         if told:
             nid = f'next-{r["id"]}'
             nxt = next_form(r)
@@ -351,7 +364,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {})):
                 nxt = refill(next_form(r, filled[1].get("back", "")), filled[1]).replace("<details>", "<details open>", 1)
             # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。
             tail = (f'<div class="step"><p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p></div>'
-                    f'<div class="step">{ai_block(r)}</div><div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>')
+                    f'<div class="step">{ai_block(r)}</div>' + (f'<div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>' if nxt else ""))
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
             tail = refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
