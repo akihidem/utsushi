@@ -1001,8 +1001,8 @@
 - なぜか: 今の頭は題の次がすぐ 10 項目の箇条で、密だった
 - どうしたらいいか: 一言・本人の言葉・説明の 3 行を先に置き、要約は畳んで下に置く。本人の決定（11-05）で、この案を説明の 3 行を含めて採った。比べた案は要約を頭から外す事で、L.summary の塊と試験が要約の字を見ているので、塊は変えずに畳んだ
 - ゴールの要件: 採った字が一字も変わらず順に並び、頭に見える字を増やさない。畳んだ見出しの数が要約の項目の数と合う（`tests/test_readme_head.py`）
-- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-readme-head.txt`、Green は `docs/process/gate-evidence/green-readme-head.txt`
-- エビデンスゲート: 字を 1 字変える 5 通りと、頭に字を足す・見出しの数を変える・畳みを外すの 3 通りで試験が落ちた。動画のリンクの行を足す形は通った（入れる時に試験を直さなくてよい）。要約の塊は main と CLAUDE.md の塊と同じ字
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-readme-head.txt`・`docs/process/gate-evidence/red-readme-head-marks.txt`、Green は `docs/process/gate-evidence/green-readme-head.txt`・`docs/process/gate-evidence/green-readme-head-marks.txt`
+- エビデンスゲート: 字を 1 字変える 5 通りと、頭に字を足す・見出しの数を変える・畳みを外すの 3 通りで試験が落ちた。動画のリンクの行を足す形は通った（入れる時に試験を直さなくてよい）。要約の塊は main と CLAUDE.md の塊と同じ字。見直しで穴が 2 つ分かった。印の閉じ忘れ（GitHub の描画で説明の 3 行と畳みが消える事を見た）と、字と URL の行・印の後の字・絵の後の字のすり抜けで、前の試験はどれも rc 0 だった。今の試験はどれも落とす
 - マージ後の書き戻し: #276 に書く
 
 ## 作りながら話した工夫の字を、輪の解釈と案の材料に入れる（枝 issue/335-loop2、11-05 夕。#335 のループ2）
