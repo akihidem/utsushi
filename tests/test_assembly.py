@@ -93,12 +93,10 @@ for key in ("fan", "figure"):
             assert assembly.apply(closed[f"{key}:{i}"], point)[1] >= -P["tube_height"] / 2 - 1e-6, key
 
 # 今の紙: 言葉のとおりに折ると合わない所が 2 つある（11-04 の実物の写真 p07・p09 は逆の向きで作っている）
-# もう 1 つ: 蛇腹を動画のとおりに立てると、足の糊代が台の印の向きと合わない（足は 11-04 の後に足した物で、実物では未確認）
 found = lines(bench)
-assert len(found) == 3, found
+assert len(found) == 2, found
 assert any("手順 3" in x and "絵のある面（4 面）が筒の内側に入る" in x for x in found), found
 assert any("手順 7" in x and "印のある面が下を向く" in x for x in found), found
-assert any("手順 10" in x and "足の糊代が台の印から外れる" in x for x in found), found
 
 # 紙の線が山折りなら、この 2 つは出ない（検査が言葉でなく紙の線を見ている）
 parts = slider_fan.parts(P)
@@ -183,7 +181,7 @@ assert any("1 対 1" in x for x in lines(assembly.assemble(G)))
 instructions.steps = real_steps
 
 # 組み立ての書き方が無い物は、組み立てたふりをしない
-assert assembly.assemble("NDL-1187053-R0000014-R") is None, "虎はまだ"
+assert assembly.assemble("NDL-1187053-R0000009-R") is None, "台に立てる形はまだ"
 other = next(h for h in hypotheses.load(G)["hypotheses"] if (h.get("params") or {}).get("push_part") not in (None, "tab"))
 assert assembly.assemble(G, other["id"]) is None, "押し方が別の形はまだ"
 
@@ -191,7 +189,7 @@ assert assembly.assemble(G, other["id"]) is None, "押し方が別の形はま�
 out = io.StringIO()
 with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
     assert assembly.main([G, "--json"]) == 3
-    assert assembly.main(["NDL-1187053-R0000014-R"]) == 4
+    assert assembly.main(["NDL-1187053-R0000009-R"]) == 4
     assert assembly.main(["無い玩具"]) == 4
 assert len(json.loads(out.getvalue().splitlines()[0])) == len(words) + 1
 print("ok")

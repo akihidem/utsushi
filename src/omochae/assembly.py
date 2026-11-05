@@ -19,13 +19,14 @@ import pathlib
 import sys
 from dataclasses import dataclass, field
 
-from shapely.geometry import LineString, Polygon
-from shapely.ops import split
+from shapely.geometry import LineString, Point, Polygon, box
+from shapely.ops import polygonize, unary_union
 
 from . import hypotheses, instructions
 from .compose import TEMPLATES, compose
-from .model import Failure, ToolMissing
+from .model import Failure, Part, ToolMissing
 from .fan_model import clearance_limit_deg, opening_bound_deg
+from .templates.pivot_counterweight import NECK_BACK
 
 ROOT = pathlib.Path(hypotheses.__file__).resolve().parents[2]
 EPS = 1e-6
@@ -33,7 +34,6 @@ CLOSE_TOL = 1.0  # mm。糊代が相手の面に届いたと読む離れ。紙�
 LINE_TOL = 5.0  # 度。穴が一直線に並ぶと読む傾き
 THREAD_TOL = 1.5  # mm。糸の穴どうしがそろったと読む離れ
 RULER_ZERO = 4.0  # mm。定規の端から 0 の目盛りまで
-FOLD_PITCH = 1.0  # mm。畳んだ蛇腹の 1 枚あたりの広がり。11-04 の動画と写真 p02 で、28 折りが筒の幅いっぱいに並ぶ
 FAN_SHOWN = 180.0  # 度。できあがりの図で開く角。どこまで開くかは紙で確かめる物なので、図は半円までにする
 
 
@@ -104,6 +104,8 @@ class Sheet:
     """部品 1 つを、折り線で分けた面の集まりにした物。"""
     part: object
     extra: list = field(default_factory=list)  # 紙に刷っていないが、貼る時に折る線 [(線の 2 点, 種類)]
+    slits: list = field(default_factory=list)  # 紙に切る線が無いが、折るには切り離す所 [線の 2 点]
+    root_at: tuple = None  # 動かさない面の中の点。無ければ左端の面
     panels: list = field(default_factory=list)  # shapely の多角形（部品の座標、mm）
     tree: dict = field(default_factory=dict)  # 面 → (親の面, 折り線の番号)
     lines: list = field(default_factory=list)  # [(線の 2 点, "valley"|"mountain")]
@@ -111,14 +113,26 @@ class Sheet:
 
     def __post_init__(self):
         self.lines = [(tuple(s), "valley") for s in self.part.valley] + [(tuple(s), "mountain") for s in self.part.mountain] + list(self.extra)
-        shapes = [Polygon(self.part.outline).buffer(0)]
-        for (a, b), _ in self.lines:
-            d = _unit((b[0] - a[0], b[1] - a[1], 0))
-            cut = LineString([(a[0] - d[0], a[1] - d[1]), (b[0] + d[0], b[1] + d[1])])
-            shapes = [g for s in shapes for g in (split(s, cut).geoms if s.crosses(cut) else [s])]
-        self.panels = sorted(shapes, key=lambda s: (round(s.bounds[1], 3), round(s.bounds[0], 3)))
-        self.root = max(range(len(self.panels)), key=lambda i: self.panels[i].area) if self.part.key == "base" else self._first_panel()
+        whole = Polygon(self.part.outline).buffer(0)
+        ring = list(self.part.outline) + [self.part.outline[0]]
+        net = unary_union([LineString(ring)] + [LineString(seg) for seg, _ in self.lines] + [LineString(seg) for seg in self.slits])
+        faces = [g for g in polygonize(net) if whole.buffer(1e-6).contains(g.representative_point())]
+        for x, y, w, h in self.part.cuts:  # 中を切る四角は面の穴にする
+            faces = [g.difference(box(x, y, x + w, y + h)) for g in faces]
+        self.panels = sorted(faces, key=lambda s: (round(s.bounds[1], 3), round(s.bounds[0], 3)))
+        if self.root_at is not None:
+            self.root = self.at(*self.root_at)
+        else:
+            self.root = max(range(len(self.panels)), key=lambda i: self.panels[i].area) if self.part.key == "base" else self._first_panel()
         self._grow()
+
+    def at(self, x, y):
+        """部品の座標の点を含む面の番号。"""
+        p = Point(x, y)
+        for i, s in enumerate(self.panels):
+            if s.buffer(1e-3).contains(p):
+                return i
+        raise ValueError(f"{self.part.key}: ({x}, {y}) を含む面が無い")
 
     def _first_panel(self):
         return min(range(len(self.panels)), key=lambda i: (round(self.panels[i].bounds[0], 3), round(self.panels[i].bounds[1], 3)))
@@ -180,8 +194,8 @@ class Sheet:
 class Bench:
     """作業の机。手順ごとの形を frames に残し、合わない所を failures に残す。"""
 
-    def __init__(self, parts, extra=None):
-        self.sheets = {q.key: Sheet(q, (extra or {}).get(q.key, [])) for q in parts}
+    def __init__(self, parts, extra=None, slits=None, roots=None):
+        self.sheets = {q.key: Sheet(q, (extra or {}).get(q.key, []), (slits or {}).get(q.key, []), (roots or {}).get(q.key)) for q in parts}
         self.place = {q.key: identity() for q in parts}
         self.angles = {q.key: {} for q in parts}
         self.custom = {q.key: {} for q in parts}  # 面ごとの行列を直に置く物（硬い面の折りでは表せない形。扇を開いた形）
@@ -189,6 +203,7 @@ class Bench:
         self.visible = set()
         self.paper_on = False  # 刷った紙が机にあるか
         self.scrap = True  # 溝の切り落とす所が、まだ紙についているか
+        self.plug = True  # 面の中を切る四角が、まだ切られていないか
         self.paper = None  # 刷った紙の配置（compose の layout）
         self.poses = []  # 今の手順の途中の形
         self.frames = []
@@ -214,13 +229,7 @@ class Bench:
 
     def panel_at(self, key, x, y):
         """部品の座標の点を含む面の番号。"""
-        from shapely.geometry import Point
-
-        p = Point(x, y)
-        for i, s in enumerate(self.sheets[key].panels):
-            if s.buffer(1e-3).contains(p):
-                return i
-        raise ValueError(f"{key}: ({x}, {y}) を含む面が無い")
+        return self.sheets[key].at(x, y)
 
     def fail(self, where, message):
         self.failures.append(Failure("F13.assembly", f"手順 {self.step} {where}", message))
@@ -310,7 +319,7 @@ class Bench:
         state = {key: {"place": self.place[key], "turns": {i: sheet.turn(i, self.angles[key]) for i in sheet.tree}, "nudge": dict(self.nudge[key])}
                  for key, sheet in self.sheets.items() if key in self.visible and not self.custom[key]}
         self.poses.append({"panels": panels, "view": view or {}, "extras": dict(self.extras), "state": state, "dur": dur,
-                           "paper": self.paper_on, "scrap": self.scrap, **tool})
+                           "paper": self.paper_on, "scrap": self.scrap, "plug": self.plug, **tool})
 
     def snapshot(self, text, view=None, dur=None, **tool):
         """手順の終わりの形を残し、手順を閉じる。"""
@@ -378,6 +387,19 @@ def _cut_ms(path):
     return min(2400, 500 + 4 * sum(math.dist(a, b) for a, b in zip(path, path[1:])))
 
 
+def _ruler_step(b, paper, text, view, parts=None):
+    """手順 1。刷った紙を机に置き、定規を外から刷った物差しへ持ってくる。"""
+    b.visible = set(parts or b.sheets)
+    b.paper_on = bool(paper)
+    if paper:
+        rx0, ry0 = paper["ruler"]
+        at = (rx0 - paper["page"].w / 2 - RULER_ZERO, ry0 + 3.2 - paper["page"].h / 2)
+        b.beat(view, 500, ruler=(paper["page"].w / 2 + 8, at[1] + 30))
+        b.snapshot(text, view, 1400, ruler=at)
+    else:
+        b.snapshot(text, view)
+
+
 def _slider_fan(p, parts, paper=None):
     """御来迎（slider_fan）の組み立て。手順の文の順に、紙が実際に動く形を並べる。Returns Bench。押し方と中心の置き方が別の形は、まだ書いていないので None。
 
@@ -419,17 +441,8 @@ def _slider_fan(p, parts, paper=None):
         return words[k - 1]
 
     # 1 刷った紙を机に置き、定規を物差しに当てる
-    text = step(1)
-    b.visible = set(b.sheets)
-    b.paper_on = bool(paper)
     flat = {"rx": -8, "ry": 0}
-    if paper:
-        rx0, ry0 = paper["ruler"]
-        at = (rx0 - pw / 2 - RULER_ZERO, ry0 + 3.2 - ph_page / 2)
-        b.beat(flat, 500, ruler=(pw / 2 + 8, at[1] + 30))
-        b.snapshot(text, flat, 1400, ruler=at)
-    else:
-        b.snapshot(text, flat)
+    _ruler_step(b, paper, step(1), flat)
 
     # 2 外筒だけを切る。はさみは切る線を一周し、溝は下の端から切り込む。切った部品を紙から持ち上げる
     text = step(2)
@@ -530,7 +543,7 @@ def _slider_fan(p, parts, paper=None):
     b.nudge["base"] = {i: 0.3 for i in range(len(b.sheets["base"].panels)) if i != center}
     b.snapshot(text, view, 900)
 
-    # 8 扇を端から蛇腹に畳み、折り山が前に並ぶ向きに立てる（11-04 の動画と写真の向き。板の面は横を向き、折り山が幅いっぱいに並ぶ）
+    # 8 扇を端から蛇腹に畳む。真ん中の板は正面を向いたまま、ほかの板が前後に重なる。畳んだ厚みは紙の厚さの数のとおりにする
     text = step(8)
     b.visible = {"fan"}
     flat_fan = mul(rotate_z(-90), translate(-hub[0], -hub[1]))
@@ -539,14 +552,12 @@ def _slider_fan(p, parts, paper=None):
     pleats = [k for k, (seg, _) in enumerate(fan.lines) if abs(seg[0][1] - seg[1][1]) < EPS]
     leg_fold = next(k for k, (seg, _) in enumerate(fan.lines) if abs(seg[0][0] - seg[1][0]) < EPS)
     fold_x = fan.lines[leg_fold][0][0][0]
-    lean = math.degrees(math.acos(min(1.0, FOLD_PITCH / w)))
-    b.fold("fan", deg=2 * lean, only=pleats)
+    pleat = 180 - 2 * math.degrees(math.asin(min(1.0, p["paper_thickness"] / w)))
+    b.fold("fan", deg=pleat, only=pleats)
     strip = b.panel_at("fan", hub[0], hub[1])
     ends = list(range(m)) + list(range(n - 1, m, -1))  # 片方の端から真ん中へ、次に反対の端から真ん中へ
     order = {"fan": {b.panel_at("fan", 20, (k + 0.5) * w): i for i, k in enumerate(ends)}}
-    b.beat({"rx": -14, "ry": -16}, 4800, cam=1.0, order=order)
-    b.place["fan"] = mul(rotate_y(lean), flat_fan)
-    b.snapshot(text, {"rx": -14, "ry": -20}, 1100)
+    b.snapshot(text, {"rx": -12, "ry": -30}, 4800, cam=1.0, order=order)
 
     # 9 像を扇の前に持ってきて、穴の列に糸を通し、像の穴へ結ぶ
     text = step(9)
@@ -555,7 +566,7 @@ def _slider_fan(p, parts, paper=None):
     if len(fan.part.holes) < n:
         b.fail(fan.part.name, "糸を通す穴の列が折りの数より少ない")
     mark = by_key["base"].art[0]["pts"]
-    mark_z = (min(y for _, y in mark) + max(y for _, y in mark)) / 2 - (g + bs / 2)  # 扇の足を貼る印の中心（台の中心から）
+    mark_z = min(y for _, y in mark) - (g + bs / 2)  # 扇の足を貼る印の奥の端（台の中心から）。真ん中の板はここに立つ
     b.place["figure"] = translate(-hole[0], -hole[1], -mark_z)
     b.beat(view, 800)
     _row(b)
@@ -576,8 +587,7 @@ def _slider_fan(p, parts, paper=None):
     view = {"rx": -18, "ry": -32}
     foot_h = by_key["figure"].height - fh
     b.fold("fan", deg=90, only=[leg_fold])
-    sn, cs = FOLD_PITCH / w, math.sqrt(1 - (FOLD_PITCH / w) ** 2)
-    stand = [[-cs, sn, 0, 0], [0, 0, -1, 0], [-sn, -cs, 0, 0], [0, 0, 0, 1.0]]  # 糊代の面を上に、板は立てたまま横を向く
+    stand = [[0, 1, 0, 0], [0, 0, -1, 0], [-1, 0, 0, 0], [0, 0, 0, 1.0]]  # 糊代の面を上に、真ん中の板は立てて正面を向く。扇は外筒の 1 面目に平行に開く
     settle = mul(stand, translate(-fold_x, -hub[1]))
     b.place["fan"] = mul(translate(0, top - 24, mark_z), settle)
     b.place["figure"] = translate(-hole[0], top - 24 - fh - foot_h - 0.5, 0)
@@ -595,7 +605,7 @@ def _slider_fan(p, parts, paper=None):
     onto_mark = [apply(b.world("base", center), pt) for pt in mark]
     glued = Polygon([(x, z) for x, _, z in seen]).buffer(0)
     if glued.intersection(Polygon([(x, z) for x, _, z in onto_mark]).buffer(0)).area < 0.8 * glued.area:
-        b.fail(by_key["base"].name, "蛇腹の開く向きに立てると、足の糊代が台の印から外れる（印の向きが 90 度ちがう）")
+        b.fail(by_key["base"].name, "足の糊代が台の印から外れる")
     b.snapshot(text, view, 900)
 
     # 11 像の足を後ろへ折り、台の上に下ろして貼る
@@ -637,7 +647,7 @@ def _slider_fan(p, parts, paper=None):
     if above > EPS:
         b.fail(fan.part.name, f"畳んだ扇が外筒の口から {above:.1f}mm 出る")
     _slot_check(b, p)
-    b.snapshot(text, {"rx": -12, "ry": -30}, 1700, cam=1.0)
+    b.snapshot(text, {"rx": -12, "ry": -16}, 1700, cam=1.0)
 
     # 組み立ての最後の動き（本人の追加 11-06「上にスライドさせて蛇腹が開く所まで」）: 竹串のつまみを上へ動かすと、内筒が上がり、扇が口から出て開く。
     # 開いた形は硬い面の折りでは表せないので、面を要のまわりに並べる（紙の形はそのまま）。
@@ -647,10 +657,10 @@ def _slider_fan(p, parts, paper=None):
     for key in ("pusher", "base", "figure"):
         b.place[key] = mul(rise, b.place[key])
     _carry(b, "axle", rise)
-    opening = _open_fan(b, p, hub0, apply(rise, hub0), hub[0], fold_x, lean, -tall / 2)
+    opening = _open_fan(b, p, hub0, apply(rise, hub0), hub[0], fold_x, pleat, -tall / 2)
     del b.extras["row"]  # 開くと穴の列は要に集まる
     _thread(b, strip, hub, hole)
-    b.snapshot("", {"rx": -8, "ry": -24}, 3000, open=opening)
+    b.snapshot("", {"rx": -10, "ry": -10}, 3000, open=opening)
     return b
 
 
@@ -698,20 +708,23 @@ def _shift(p, dy):
 def fan_pose(o, rise):
     """押し上げた割合 rise（0〜1）の時の、扇の面ごとの行列。頁の動きも同じ計算をする（web.kumitate の openShape）。
 
+    真ん中の板は足で台に貼ってあるので正面を向いたまま。ほかの板は要の糸（前後の向き）のまわりに開き、外筒の 1 面目に平行な面に広がる。
     要が筒の口より下の間は、口の幅が許す分だけ開く（11-04 の動画: 扇の先が口の幅いっぱいに出てきて、上がるほど広がる）。
-    板は要を通る向きに放射に並び、開くほど面が前を向く。畳んだ時は穴の列が横に並ぶ。真ん中の板は足で台に貼ってあるので向きを変えない。
+    紙はばねのように開くので、筒の中でも口の幅まで広がる。最初の少しの間（筒に隠れている間）に、その形になる。
     """
     y = o["hub0"][1] + (o["hub1"][1] - o["hub0"][1]) * rise
     half = o["spread"] / 2
     below = y - o["rim"]
-    start = math.degrees(math.atan2(o["mouth"], o["hub0"][1] - o["rim"]))
     now = min(half, math.degrees(math.atan2(o["mouth"], below))) if below > 0 else half
-    t = max(0.0, min(1.0, (now - start) / (half - start)))
+    settle = min(1.0, rise / 0.08)
+    t = max(0.0, min(1.0, now / half)) * settle * settle * (3 - 2 * settle)
     out = {}
     for i, k in o["strips"].items():
-        lean = -o["closed"] if k == o["m"] else (1 if k % 2 else -1) * (o["closed"] + (o["tilt"] - o["closed"]) * t)
-        hub = (o["hub0"][0] + (k - o["m"]) * o["pitch"] * (1 - t), y, o["hub0"][2])
-        out[i] = mul(translate(*hub), mul(rotate_z(-90 + (k - o["m"]) * o["each"] * t), mul(rotate_x(lean), translate(-o["hole_x"], -(k + 0.5) * o["w"]))))
+        off = k - o["m"]
+        goal = 0.0 if k == o["m"] else (o["tilt"] if k % 2 else -o["tilt"])
+        lean = (o["closed"] if off % 2 else 0.0) * (1 - t) + goal * t
+        hub = (o["hub0"][0], y, o["hub0"][2] + off * o["pitch"] * (1 - t))
+        out[i] = mul(translate(*hub), mul(rotate_z(-90 + off * o["each"] * t), mul(rotate_x(lean), translate(-o["hole_x"], -(k + 0.5) * o["w"]))))
     out[o["tab"]] = mul(out[o["mid"]], rotate_axis((o["fold_x"], 0, 0), (0, 1, 0), 90))
     return out
 
@@ -725,14 +738,235 @@ def _open_fan(b, p, hub0, hub1, hole_x, fold_x, closed, rim):
     each = spread / (2 * max(m, n - 1 - m))  # 真ん中の板を立てたまま、両側が spread の半分の中に収まる刻み
     strips = {i: int(round(s.bounds[1] / w)) for i, s in enumerate(sheet.panels) if s.bounds[2] > fold_x + EPS}
     o = {"hub0": hub0, "hub1": hub1, "rim": rim, "mouth": p["tube_side"] / 2, "spread": spread, "each": each, "closed": closed,
-         "tilt": math.degrees(math.acos(min(1.0, (h - hole_x) * math.radians(each) / w))), "pitch": FOLD_PITCH, "w": w, "hole_x": hole_x, "fold_x": fold_x,
+         "tilt": math.degrees(math.acos(min(1.0, (h - hole_x) * math.radians(each) / w))), "pitch": p["paper_thickness"], "w": w, "hole_x": hole_x, "fold_x": fold_x,
          "m": m, "strips": strips, "tab": next(i for i in range(len(sheet.panels)) if i not in strips), "mid": next(i for i, k in strips.items() if k == m)}
     b.custom["fan"] = fan_pose(o, 1.0)
     b.place["fan"] = identity()
     return o
 
 
-RECIPES = {"slider_fan": _slider_fan}
+def _pivot_counterweight(p, parts, paper=None):
+    """張子の首振り虎（pivot_counterweight）の組み立て。手順の文の順に、紙が実際に動く形を並べる。首を穴に入れる形だけ書いた。Returns Bench か None。"""
+    if p["mount"] != "neck":
+        return None
+    by_key = {q.key: q for q in parts}
+    body = by_key["body"]
+    L, W, H, g = p["body_length"], p["body_width"], p["body_height"], p["glue"]
+    top0, top1 = g, g + W
+    b0, b1 = top1 + H, top1 + H + W
+    cx, cy = H + L / 2, (b0 + b1) / 2
+    words = instructions.steps(p, "pivot_counterweight")
+    sw, ax = p["strip_width"], p["axle_height"]
+    hw, hh = p["head_w"], p["head_h"]
+
+    # 紙に切る線が無いが、箱に折るには切り離す所。糊代の根元が側面につながっている
+    seams = [((H, b0 - g), (H, b0)), ((H + L, b0 - g), (H + L, b0)), ((H, b1), (H, b1 + g)), ((H + L, b1), (H + L, b1 + g))]
+    plain = Sheet(body, root_at=(cx, cy))
+    joined = plain.at(H - 1, b0 - 1) == plain.at(H + 1, b0 - 1)
+    # 粘土は紙に無いので、丸い形で足す。尾は折り線の無い帯を丸めるので、短い面に分けて曲げる
+    r = max(3.0, 5.0 * (p["weight_g"] / 3.0) ** (1 / 3))
+    circle = [(r * math.cos(i * math.pi / 8), r * math.sin(i * math.pi / 8)) for i in range(16)]
+    clay = Part(9, "clay", "粘土", circle, label="", art=[{"kind": "poly", "pts": circle, "fill": "#8d6b4a"}])
+    tail_len = by_key["tail"].height
+    each = tail_len / 8
+    curl = [(((0, each * i), (by_key["tail"].width, each * i)), "valley") for i in range(1, 8)]
+    b = Bench([*parts, clay], {"tail": curl}, {"body": seams}, {"body": (cx, cy)})
+    if paper:
+        pw, ph_page = paper["page"].w, paper["page"].h
+        laid = {q.key: translate(q.x - pw / 2, q.y - ph_page / 2) for q in parts}
+    else:
+        laid, x = {}, -120.0
+        for q in parts:
+            laid[q.key] = translate(x, -q.height / 2)
+            x += q.width + 6
+    b.place.update(laid)
+
+    def step(k):
+        b.step = k
+        return words[k - 1]
+
+    # 1 刷った紙を机に置き、定規を物差しに当てる
+    flat = {"rx": -8, "ry": 0}
+    _ruler_step(b, paper, step(1), flat, parts=by_key)
+
+    # 2 部品を切る。切った部品は紙から持ち上げ、胴の穴は竹串の先であける
+    text = step(2)
+    b.beat(flat, 300)
+    for key in ("body", "head", "strip", "drop", "tail"):
+        path = _outline(b, key)
+        b.beat(flat, _cut_ms(path), cut=path)
+        b.place[key] = mul(translate(0, 0, 8), laid[key])
+        b.beat(flat, 350)
+    for x, y, _ in body.holes:
+        tip = apply(b.world("body", b.panel_at("body", x, y)), (x, y))
+        b.extras["poke"] = (tip, (tip[0] + 8, tip[1] - 14, tip[2] + 34), "body")
+        b.beat(flat, 450)
+    del b.extras["poke"]
+    b.snapshot(text, flat, 300)
+
+    # 3 前の壁の四角い穴をカッターで切る。切った所が落ちる
+    text = step(3)
+    b.visible = {"body"}
+    b.paper_on = False
+    b.place["body"] = translate(-cx, -cy)
+    view = {"rx": -8, "ry": 0}
+    b.beat(view, 800)
+    x, y, w, h = body.cuts[0]
+    square = [apply(b.place["body"], pt)[:2] for pt in ((x, y), (x + w, y), (x + w, y + h), (x, y + h), (x, y))]
+    b.beat(view, 1500, cut=square, knife=True)
+    b.plug = False
+    b.snapshot(text, view, 600)
+
+    # 4 胴を箱に折る。まず文のとおり（谷折り）に組んで確かめ、図は絵を外にした形で折る。上の面はまだ閉じない
+    text = step(4)
+    if joined:
+        b.fail(body.name, "糊代の根元 4 か所に切る線が無く、側面につながっている（切り込まないと箱に折れない）")
+    side1, side2 = b.panel_at("body", cx, top1 + H / 2), b.panel_at("body", cx, b1 + H / 2)
+    wall = {b.panel_at("body", H / 2, cy), b.panel_at("body", H + L + H / 2, cy)}
+    flaps = [b.panel_at("body", H / 2, b0 - g / 2), b.panel_at("body", H / 2, b1 + g / 2), b.panel_at("body", H + L + H / 2, b0 - g / 2), b.panel_at("body", H + L + H / 2, b1 + g / 2)]
+    top_lines = [k for k, (seg, _) in enumerate(b.sheets["body"].lines) if seg[0][1] == seg[1][1] and seg[0][1] in (top0, top1)]
+    box_lines = [k for k in range(len(b.sheets["body"].lines)) if k not in top_lines]
+    b.fold("body", deg=90, only=box_lines)
+    lo, hi = b.bounds("body")
+    middle = tuple((x + y) / 2 for x, y in zip(lo, hi))
+    if b.faces_out("body", [side1, side2], middle):
+        b.fail(body.name, "文のとおりに谷折りすると、絵のある面が箱の内側に入る")
+    b.angles["body"] = {}
+    home = mul(translate(0, H / 2, 0), mul(rotate_x(-90), translate(-cx, -cy)))
+    b.place["body"] = home
+    view = {"rx": -30, "ry": 30}
+    b.beat(view, 1100)
+    b.fold_back("body")
+    for k in top_lines:
+        del b.angles["body"][k]
+    order = {"body": {**{i: 0 for i in flaps}, **{i: 1 for i in wall}, side1: 2, side2: 2}}
+    fronts = {flaps[0]: side1, flaps[1]: side2, flaps[2]: side1, flaps[3]: side2}
+    for flap, onto in fronts.items():
+        b.closes("body", flap, onto)
+        b.nudge["body"][flap] = -0.3
+    b.snapshot(text, {"rx": -24, "ry": 32}, cam=1.0, order=order)
+
+    # 5 首の帯を半分に折って貼る。穴が重なるか見る
+    text = step(5)
+    b.visible = {"strip"}
+    strip = by_key["strip"]
+    b.place["strip"] = translate(-strip.width / 2, -strip.height / 2)
+    b.beat({"rx": -10, "ry": -16}, 800)
+    b.fold("strip", deg=178)
+    first, second = [apply(b.world("strip", b.panel_at("strip", hx, hy)), (hx, hy)) for hx, hy, _ in strip.holes]
+    if math.dist(first, second) > THREAD_TOL:
+        b.fail(strip.name, "半分に折っても、帯の 2 つの穴が重ならない")
+    b.snapshot(text, {"rx": -14, "ry": -28}, 1300)
+
+    # 6 帯の前の端に頭を貼る。帯は胴の中で軸の高さに来る向きで持つ
+    text = step(6)
+    b.visible = {"strip", "head"}
+    hole_y = strip.holes[0][1]
+    ax_x, ax_y = -L / 2 + NECK_BACK, H / 2 - ax
+    strip_home = mul(translate(ax_x, ax_y, 0), mul(rotate_z(90), translate(-sw / 2, -hole_y)))
+    head_home = mul(translate(ax_x - (strip.height - hole_y), ax_y, 0), mul(rotate_y(-90), translate(-hw / 2, -hh / 2)))
+    away = translate(-60, 0, 0)
+    b.place["strip"] = mul(away, strip_home)
+    b.place["head"] = mul(translate(-30, 0, 0), mul(away, head_home))
+    view = {"rx": -14, "ry": 34}
+    b.beat(view, 1000)
+    b.place["head"] = mul(away, head_home)
+    b.snapshot(text, view, 900)
+
+    # 7 帯を前の壁の穴に入れ、竹串を外から胴の穴と帯の穴に通す
+    text = step(7)
+    b.visible = {"body", "strip", "head"}
+    view = {"rx": -16, "ry": 36}
+    b.beat(view, 900)
+    b.place["strip"], b.place["head"] = strip_home, head_home
+    b.beat(view, 1300)
+    line = b.holes_in_line("body", 0, 1)
+    if line:
+        if abs(line[0][1] - ax_y) > THREAD_TOL or abs(line[0][0] - ax_x) > THREAD_TOL:
+            b.fail(body.name, "胴の穴と帯の穴がそろわない（竹串が通らない）")
+        d = _unit(_sub(line[0], line[1]))
+        out = tuple(x + y * 10 for x, y in zip(line[0], d))
+        length = W + 20  # 用意する物の表と同じ長さ
+        start = tuple(x - y * length for x, y in zip(out, d))
+        b.extras["axle"] = (tuple(x + y * (length + 8) for x, y in zip(start, d)), tuple(x + y * (2 * length + 8) for x, y in zip(start, d)), "body")
+        b.beat(view, 500)
+        b.extras["axle"] = (start, out, "body")
+    b.snapshot(text, view, 1300)
+
+    # 8 重りの腕を上から入れて竹串に掛け、下の端に粘土を付ける。上の面が開いているので、上から見る
+    text = step(8)
+    b.visible = {"body", "strip", "head", "drop"}
+    drop = by_key["drop"]
+    hx, hy, _ = drop.holes[0]
+    arm_home = translate(ax_x - hx, ax_y - hy, 5)
+    if ax_y - hy + drop.height > H / 2:
+        b.fail(drop.name, "重りの腕が胴の底に当たる")
+    view = {"rx": -48, "ry": 22}
+    b.place["drop"] = mul(translate(0, -90, 0), arm_home)
+    b.beat(view, 900)
+    b.place["drop"] = arm_home
+    b.beat(view, 1100)
+    b.visible = {"body", "strip", "head", "drop", "clay"}
+    clay_home = translate(ax_x, ax_y + p["weight_below_axle"], 5.4)
+    b.place["clay"] = mul(translate(0, -90, 0), clay_home)
+    b.beat(view, 200)
+    b.place["clay"] = clay_home
+    b.snapshot(text, view, 1000)
+
+    # 9 頭の傾きを見る。軸のまわりに少し動かして止める
+    text = step(9)
+    moving = ("strip", "head", "drop", "clay")
+    homes = {key: b.place[key] for key in moving}
+
+    def nod(deg):
+        turn = mul(translate(ax_x, ax_y, 0), mul(rotate_z(deg), translate(-ax_x, -ax_y, 0)))
+        for key in moving:
+            b.place[key] = mul(turn, homes[key])
+
+    view = {"rx": -30, "ry": 34}
+    nod(7)
+    b.beat(view, 900)
+    nod(-4)
+    b.beat(view, 700)
+    nod(0)
+    b.snapshot(text, view, 600)
+
+    # 10 上の面を閉じる
+    text = step(10)
+    b.fold_back("body")
+    top_flap = b.panel_at("body", cx, g / 2)
+    b.closes("body", top_flap, side2)
+    b.nudge["body"][top_flap] = -0.3
+    b.snapshot(text, {"rx": -24, "ry": 32}, 1800)
+
+    # 11 尾を丸くして、後ろに貼る。絵を外にして丸める
+    text = step(11)
+    b.visible = {"body", "strip", "head", "drop", "clay", "tail"}
+    view = {"rx": -14, "ry": -38}
+    width = by_key["tail"].width
+    upward = [[0, 0, -1, 0], [0, -1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1.0]]  # 帯の長い辺を上へ、絵の面を胴の側へ
+    tail_home = mul(translate(L / 2 + 0.3, -H / 2 + 12, 0), mul(upward, translate(-width / 2, -each / 2)))
+    b.place["tail"] = mul(translate(36, 0, 0), tail_home)
+    b.beat(view, 900)
+    b.fold_back("tail", deg=45)
+    b.beat(view, 1300)
+    b.place["tail"] = tail_home
+    b.snapshot(text, view, 900)
+
+    # できあがり: 頭に触れると、軸のまわりに揺れて止まる。組み立ての最後の動き
+    b.step = len(words) + 1
+    view = {"rx": -12, "ry": 42}
+    nod(0)
+    b.beat(view, 1100)
+    for deg in (10, -8, 5, -3):
+        nod(deg)
+        b.beat(view, 620)
+    nod(0)
+    b.snapshot("", view, 500)
+    return b
+
+
+RECIPES = {"slider_fan": _slider_fan, "pivot_counterweight": _pivot_counterweight}
 
 
 def _paper(template, p, source_id):

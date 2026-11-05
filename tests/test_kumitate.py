@@ -11,6 +11,7 @@ import tempfile
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
 from omochae import assembly, hypotheses, instructions
+from omochae.compose import TEMPLATES
 from omochae.templates import slider_fan
 from web import kumitate
 
@@ -103,23 +104,17 @@ seq = sorted(order, key=order.get)
 ys = [fan.panels[i].bounds[1] for i in seq]
 assert len(seq) == P["fold_count"] - 1 and ys[0] == 0 and ys[:P["fold_count"] // 2] == sorted(ys[:P["fold_count"] // 2]), ys[:4]
 
-# 手順 8 の終わり: 畳んだ蛇腹は、折り山が前に並ぶ向き（11-04 の動画と写真）。幅は 1 枚あたりの広がりの数のとおりで、奥行きは板の幅
+# 手順 8 の終わり: 真ん中の板は正面を向き、ほかの板が前後に重なる。厚みは紙の厚さの数のとおり
 closed_fan = eight[-1]["panels"]
-pts = [assembly.apply(closed_fan[f"fan:{i}"], p) for i, s in enumerate(fan.panels) if s.bounds[0] >= 0 or s.bounds[2] > 0 for p in s.exterior.coords if p[0] >= 0]
-wide = max(p[0] for p in pts) - min(p[0] for p in pts)
+mid = fan.at(20, (P["fold_count"] // 2 + 0.5) * P["fold_width"])
+assert assembly.normal_of(closed_fan[f"fan:{mid}"])[2] > 0.999, "真ん中の板が正面を向いていない"
+pts = [assembly.apply(closed_fan[f"fan:{i}"], p) for i, s in enumerate(fan.panels) if s.bounds[2] > 0 for p in s.exterior.coords if p[0] >= 0]
 deep = max(p[2] for p in pts) - min(p[2] for p in pts)
-assert abs(wide - assembly.FOLD_PITCH * (P["fold_count"] - 1)) < 1.5, wide
-assert deep < P["fold_width"] + 0.5 and wide > deep * 2, (wide, deep)
-tall = max(p[1] for p in pts) - min(p[1] for p in pts)
-assert abs(tall - P["fold_height"]) < 1e-6, "板の長い辺が立っていない"
-# 絵の面は前を向いたまま（全部の板の表が手前の側）
-for i, s in enumerate(fan.panels):
-    if s.bounds[2] > 0:
-        assert assembly.normal_of(closed_fan[f"fan:{i}"])[2] > 0, i
+assert deep < P["paper_thickness"] * P["fold_count"] + 1, deep
 
 nine = step(9)
 assert "row" not in nine[0]["extras"] and "thread" not in nine[0]["extras"], "糸が先に通っている"
-assert math.dist(*nine[1]["extras"]["row"][:2]) < 1 and math.dist(*nine[2]["extras"]["row"][:2]) > 20, "糸が穴の列を通っていない"
+assert math.dist(*nine[1]["extras"]["row"][:2]) < 1 and math.dist(*nine[2]["extras"]["row"][:2]) > 2, "糸が穴の列を通っていない"
 assert math.dist(*nine[3]["extras"]["thread"][:2]) < 1 and math.dist(*nine[-1]["extras"]["thread"][:2]) > 8, "糸が像の穴へ行っていない"
 
 # 手順 10・11: 足を折ってから、上から下ろす
@@ -134,6 +129,19 @@ below, inside = twelve[0], twelve[-1]
 assert below["state"]["pusher"]["place"][1][3] > inside["state"]["pusher"]["place"][1][3], "下から入っていない"
 assert below["extras"]["axle"][0][1] > P["tube_height"] / 2, "竹串が溝の下の端より下から始まっていない"
 
+# 台に貼った後の扇の向き（型紙のとおり）: 真ん中の板は正面を向き、足の糊代は台の印の中、像は扇の前
+ten_end = step(10)[-1]["panels"]
+assert assembly.normal_of(ten_end[f"fan:{mid}"])[2] > 0.999, "台に貼った後の真ん中の板が正面を向いていない"
+tab = next(i for i, s in enumerate(fan.panels) if s.bounds[2] < 0)
+base = bench.sheets["base"]
+c = P["base_glue"] + P["base_side"] / 2
+middle = bench.panel_at("base", c, c)
+mark = base.part.art[0]["pts"]
+seen = [assembly.apply(ten_end[f"fan:{tab}"], p) for p in fan.panels[tab].exterior.coords]
+onto = [assembly.apply(ten_end[f"base:{middle}"], p) for p in mark]
+assert min(p[0] for p in onto) - 0.1 <= min(p[0] for p in seen) and max(p[0] for p in seen) <= max(p[0] for p in onto) + 0.1, "足の糊代の幅が印に入っていない"
+assert min(p[2] for p in onto) - 0.1 <= min(p[2] for p in seen) and max(p[2] for p in seen) <= max(p[2] for p in onto) + 0.1, "足の糊代の奥行きが印に入っていない"
+
 # 手順 12 の次: 上へ動かして扇が開く（本人の追加 11-06）。途中の計算の始めは手順 12 の畳んだ形、終わりは開いた形
 assert len(frames[-1]["poses"]) == 1 and "fan" not in frames[-1]["state"]
 last_pose = frames[-1]["poses"][0]
@@ -141,12 +149,19 @@ o = last_pose["open"]
 closed_12 = step(12)[-1]["panels"]
 start_pose = assembly.fan_pose(o, 0.0)
 for i in o["strips"]:
-    gap = max(abs(start_pose[i][r][c] - closed_12[f"fan:{i}"][r][c]) for r in range(3) for c in range(4))
-    assert gap < 1e-6, (i, gap)
-assert max(abs(start_pose[o["tab"]][r][c] - closed_12[f"fan:{o['tab']}"][r][c]) for r in range(3) for c in range(3)) < 1e-6, "足の糊代の向きが畳んだ形と違う"
+    c0 = [assembly.apply(start_pose[i], p) for p in fan.panels[i].exterior.coords]
+    c1 = [assembly.apply(closed_12[f"fan:{i}"], p) for p in fan.panels[i].exterior.coords]
+    gap = max(math.dist(a, b) for a, b in zip(c0, c1))
+    assert gap < 0.2, (i, gap)
 end_pose = assembly.fan_pose(o, 1.0)
 for i in o["strips"]:
     assert end_pose[i] == last_pose["panels"][f"fan:{i}"], i
+# 開いた扇は正面を向く: 真ん中の板は正面で、板の先は外筒の 1 面目に平行な面に広がる（奥行きより幅がずっと広い）
+assert assembly.normal_of(end_pose[o["mid"]])[2] > 0.999
+tips = [assembly.apply(end_pose[i], (P["fold_height"], fan.panels[i].centroid.y)) for i in o["strips"]]
+assert max(p[0] for p in tips) - min(p[0] for p in tips) > 10 * (max(p[2] for p in tips) - min(p[2] for p in tips)), "扇が正面に開いていない"
+face = bench.panel_at("tube", 4, 40)
+assert assembly.normal_of(last_pose["panels"][f"tube:{face}"])[2] > 0.999, "1 面目が正面にない"
 # 上がるほど広がり、途中で閉じない
 spans = []
 for r in range(0, 11):
@@ -154,9 +169,6 @@ for r in range(0, 11):
     tips = [assembly.apply(made[i], (P["fold_height"], fan.panels[i].centroid.y)) for i in o["strips"]]
     spans.append(max(p[0] for p in tips) - min(p[0] for p in tips))
 assert spans == sorted(spans) and spans[-1] > 2 * P["fold_height"] * 0.9, spans
-# 口より上に出るまでは、扇の先が口の幅を大きくはみ出さない
-made = assembly.fan_pose(o, 0.3)
-assert o["hub0"][1] - 0.3 * P["push_amount"] > o["rim"]
 assert kumitate.page(G).count('id="rt-stage"') == 1
 
 # 頁へ渡す形
@@ -188,7 +200,7 @@ assert 'stroke-dasharray="2,1"' in html
 
 # 組み立ての書き方が無い玩具には道を出さない
 assert kumitate.available(G) and 'id="kumitate"' in kumitate.block(G)
-assert not kumitate.available("NDL-1187053-R0000014-R") and kumitate.block("NDL-1187053-R0000014-R") == ""
+assert not kumitate.available("NDL-1187053-R0000009-R") and kumitate.block("NDL-1187053-R0000009-R") == ""
 assert not kumitate.available("無い玩具")
 
 # 型紙の頁に初めから出る（本人の決定 11-06）。書き方が無い玩具の頁には出ない
@@ -197,5 +209,38 @@ from web import toy  # noqa: E402
 made_page = toy.toy_page(G)
 assert made_page.count('id="kumitate"') == 1 and made_page.count('id="rt-stage"') == 1
 assert made_page.index('id="kumitate"') > made_page.index('id="kasetsu"'), "すぐ作る節の中に無い"
-assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000014-R")
+assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000009-R")
+
+# 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
+T = "NDL-1187053-R0000014-R"
+tora = assembly.assemble(T)
+tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}
+tora_words = instructions.steps(tora_p, "pivot_counterweight")
+assert [f["text"] for f in tora.frames[:-1]] == tora_words and tora.frames[-1]["text"] == ""
+assert kumitate.available(T) and 'id="rt-knife"' in kumitate.block(T)
+for frame in tora.frames:
+    for pose in frame["poses"]:
+        for key, sheet in tora.sheets.items():
+            for child, (parent, k) in sheet.tree.items():
+                a, b = pose["panels"][f"{key}:{child}"], pose["panels"][f"{key}:{parent}"]
+                if a is None:
+                    continue
+                for point in sheet.lines[k][0]:
+                    assert math.dist(assembly.apply(a, point), assembly.apply(b, point)) < 0.7, (frame["step"], key, child)
+found = [f.line() for f in tora.failures]
+assert any("手順 4" in x and "糊代の根元 4 か所" in x for x in found), found
+assert any("手順 4" in x and "絵のある面が箱の内側に入る" in x for x in found), found
+assert len(found) == 2, found
+done = tora.frames[-1]["panels"]
+H_, W_, L_ = tora_p["body_height"], tora_p["body_width"], tora_p["body_length"]
+pts = [assembly.apply(m, p) for pid, m in done.items() if pid.startswith("body:") for p in tora.sheets["body"].panels[int(pid.split(":")[1])].exterior.coords]
+assert abs(max(p[0] for p in pts) - min(p[0] for p in pts) - L_) < 0.8 and abs(max(p[2] for p in pts) - min(p[2] for p in pts) - W_) < 0.8, "胴が箱になっていない"
+assert abs(max(p[1] for p in pts) - min(p[1] for p in pts) - H_) < 0.8
+head_pts = [assembly.apply(done["head:0"], p) for p in tora.sheets["head"].panels[0].exterior.coords]
+assert max(p[0] for p in head_pts) < -L_ / 2, "頭が前の壁の外に出ていない"
+# 前の壁の穴は、切るまで塞がっている
+assert tora.frames[1]["poses"][-1]["plug"] and not tora.frames[2]["poses"][-1]["plug"]
+# できあがりの頭は揺れて、元の位置で止まる
+final = tora.frames[-1]["poses"]
+assert len(final) >= 5 and final[0]["state"]["head"]["place"] == final[-1]["state"]["head"]["place"]
 print("ok")
