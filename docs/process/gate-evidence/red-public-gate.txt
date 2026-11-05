@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「デモの一周を外の機器から開く合言葉の門」を見る）
+# commit: 4f5b12c（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_public_gate.py", line 17, in <module>
     serve(0, public_key="short")

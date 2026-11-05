@@ -1,3 +1,5 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_claude_code.py
+# commit: df5f16c（このファイルを足した commit）
 # Green: 直した後のフックで回した
 $ PYTHONPATH=src .venv/bin/python tests/test_claude_code.py
 ok

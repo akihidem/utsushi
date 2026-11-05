@@ -170,11 +170,13 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .techo input[type=text]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
+.techo #ask-form{display:flex;gap:10px;align-items:stretch}.techo #ask-form input{flex:1;min-width:0;margin:0}.techo #ask-form .go{white-space:nowrap}
 .techo .mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:var(--onaccent);display:grid;place-items:center;cursor:pointer;justify-self:center;margin:0}
 .techo .mic svg{width:48px;height:48px;stroke:var(--onaccent);fill:none;stroke-width:3;stroke-linecap:round}
 /* 聞いている間は地と字を入れ替える。緑などの別の色を足さず、どちらの皮でも「今は違う状態」と読めるようにするため。 */
 .techo .mic[aria-pressed="true"]{background:var(--fg);color:var(--bg)}.techo .mic[aria-pressed="true"] svg{stroke:var(--bg)}
-.techo .answer{font-size:26px;line-height:1.6;white-space:pre-wrap;min-height:1.6em}
+.techo .answer{font-size:26px;line-height:1.6;white-space:pre-wrap;min-height:1.6em;border-top:1px solid var(--frame);padding-top:12px}
+.techo .answer:empty::before{content:"ここに答えが出ます";font-size:14px;color:var(--mute)}
 .techo .shot{display:grid;place-items:center;gap:6px;border:2px dashed var(--accent);border-radius:16px;padding:22px;cursor:pointer;color:var(--accent);position:relative;margin:0}
 .techo .shot svg{width:56px;height:56px;stroke:var(--accent);fill:none;stroke-width:2.5}
 .techo .shot input{position:absolute;opacity:0;width:1px;height:1px}
@@ -357,7 +359,7 @@ def page(sid, printed_ids, picture_url):
     body = (f'<div data-sid="{esc(sid)}" hidden></div><div class="top">{pic}<h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(tpl.SHEET_SET)}</p>'
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
-            f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"></form>'
+            f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
             '<div class="answer" id="answer" aria-live="polite"></div></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
             '<form id="up-form"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'

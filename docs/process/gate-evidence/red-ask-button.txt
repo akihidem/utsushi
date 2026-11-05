@@ -1,0 +1,4 @@
+$ PYTHONPATH=src .venv/bin/python tests/test_techo_site.py   # 直す前の form に、新しい検査だけを足して回した
+AssertionError
+    assert 'id="q"' in form and '<button type="submit" class="go">聞く</button>' in form
+rc=1

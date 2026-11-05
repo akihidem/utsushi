@@ -1,0 +1,14 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_gate_evidence.py | tail -1; PYTHONPATH=src .venv/bin/python -m omochae.gate_evidence check; echo "頭の検査 rc=$?"; echo "push の後に書く: $(grep -c "push の後に書く" docs/process/gate-trial.md)"; echo "まだ（取り込みの後に書く）: $(grep -c "まだ（hack-main の取り込みの後に書く）" docs/process/gate-trial.md)"'
+# commit: c8a8c1d（回した時の HEAD）
+書かない: もうある（失敗した版も残す決まりなので上書きしない）: red-sample.txt
+書かない: 名前は小文字・数字・ハイフンだけ: '../outside'
+書かない: 名前は小文字・数字・ハイフンだけ: 'a/b'
+書かない: 名前は小文字・数字・ハイフンだけ: 'Red Sample'
+書かない: 名前は小文字・数字・ハイフンだけ: ''
+検査できない: 命令を回せない: FileNotFoundError
+検査できない: 命令を回せない: TimeoutExpired
+ok
+頭の検査 rc=0
+push の後に書く: 1
+まだ（取り込みの後に書く）: 0
+rc=0
