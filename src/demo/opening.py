@@ -28,7 +28,7 @@ from demo.flip import FPS, H, ROOT, SUMI, W, contact_sheet, ease, render, text
 QUESTION = "こんなおもちゃを知っていますか？"
 PLACEHOLDER = "（ここに職人のおもちゃの動画が入ります）"
 VIDEO = ROOT / "out/demo/opening/toys.mp4"     # 職人のおもちゃの動画の置き場（git に入れない）
-DURATION = 12.0
+DURATION = 8.6                                 # word_touch を戻す秒のために 12 秒から縮めた（本人の決定 11-06「同じ秒だけ他を削って」）
 MIN_WIDTH = 1280
 WHITE = (255, 255, 255)
 VIDEO_BOX = (178, 180, 1742, 1060)             # 動画を置く枠。16:9 で、上に問いの字の余白
@@ -61,7 +61,7 @@ def video_problem(path, probe=_probe):
     if width < MIN_WIDTH:
         return f"動画の幅が {MIN_WIDTH} より小さい（{width}）"
     if seconds < DURATION:
-        return f"動画が {DURATION:.0f} 秒より短い（{seconds:.1f} 秒）"
+        return f"動画が {DURATION:g} 秒より短い（{seconds:.1f} 秒）"
     return None
 
 

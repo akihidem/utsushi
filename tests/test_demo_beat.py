@@ -13,7 +13,7 @@ from demo.script import SCENES, load_scene
 
 seconds = {n: load_scene(n).DURATION for n in SCENES}
 points, total = beat.anchors(seconds)
-assert total == sum(seconds.values()) and total <= 180, total
+assert abs(total - sum(seconds.values())) < 1e-6 and total <= 180, total
 times = [p["t"] for p in points]
 assert times == sorted(times) and all(b - a >= beat.MIN_GAP for a, b in zip(times, times[1:]))
 

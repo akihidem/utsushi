@@ -33,7 +33,7 @@ assert not words.in_record((lines[0].replace("副次的", "二次的"), *lines[1
 assert not words.in_record(lines[1:]), "切った文を通した"
 assert not words.in_record(("手を動かす楽しさを忘れた人のために作っている。",))
 
-# 語り（本人の言葉 11-05 20:04）。使う 7 文は全文の中にそのままあり、全文の順に並ぶ。文の中の字は変えない
+# 語り（本人の言葉 11-05 20:04）。使う 6 文は全文の中にそのままあり、全文の順に並ぶ。文の中の字は変えない（最後の 1 文は word_touch を戻す秒のために外した。本人の決定 11-06）
 SENTENCES = (
     "江戸時代のおもちゃというものは、紙と木と竹と糸でできていて、子供が壊してもすぐ自分で直せる。",
     "そこに喜びがある。",
@@ -41,7 +41,6 @@ SENTENCES = (
     "今唯一残ってるのは、江都二色という、おもちゃが狂歌と一緒に書かれた書物だけで、そこにはおもちゃの絵とそのおもちゃの遊び方にちなんだ狂歌が書かれているけれども、どうやって遊ぶのか、またどんなものでできていたのかってことまではわからない。",
     "物理の世界では、トイモデルという風に言って、自分で扱えるおもちゃをこねくり回して、自分で作って、自分の手のひらで考えるというやり方が、考え方がある。",
     "そしてそこにクロードが寄り添っている。",
-    "そういうサービスを作りたいと思って、今回のサービスを作った。",
 )
 full = words.NARRATION.read_text(encoding="utf-8")
 places = [full.index(s) for s in SENTENCES]
@@ -49,7 +48,7 @@ assert places == sorted(places), "語りの順と違う"
 assert all(full[p - 1] in "。 " for p in places if p), "文の途中から始まっている"
 assert all(s.endswith("。") for s in SENTENCES)
 assert "".join(words.flat(words.TALKS[n]) for n in ("talk_toys", "talk_lost", "scene2", "talk_physics", "talk_claude")) == "".join(SENTENCES)
-assert len("".join(SENTENCES)) == 353
+assert len("".join(SENTENCES)) == 323
 for name, chunks in words.TALKS.items():
     assert words.in_narration(chunks), name
     assert all(full.count(s) == 1 and s in SENTENCES for s in words.sentences_of(chunks)), name
@@ -108,7 +107,7 @@ for name in [*words.CARDS, "talk_toys", "talk_lost", "talk_physics", "talk_claud
         assert showing <= 1, (name, t)
     # 字のそばに動く物を置かない（図が溶ける札のほかは、かたまりの間で絵が変わらない）
     if name not in words.PICTURED:
-        mid = (card.cues["c0"][0] + card.cues["c1"][0]) / 2
+        mid = (card.cues["c0"][0] + card.cues["c1"][0]) / 2 if n > 1 else card.duration / 2
         assert card.frame(mid).tobytes() == card.frame(mid + 0.05).tobytes(), name
 # 図の札: 失われる話の間に図が薄くなる
 lost = words.ChunkCard("talk_lost", words.cues_of("talk_lost"), pic)

@@ -12,7 +12,7 @@ from demo import flip, opening
 # 問いの字は本人の字のまま（本人の指示 11-05 20:07）
 assert opening.QUESTION == "こんなおもちゃを知っていますか？"
 assert opening.PLACEHOLDER == "（ここに職人のおもちゃの動画が入ります）"
-assert opening.DURATION == 12.0
+assert opening.DURATION == 8.6
 spans = list(opening.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= opening.DURATION
 

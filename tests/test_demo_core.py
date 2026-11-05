@@ -39,6 +39,9 @@ making = sum(script.load_scene(n).DURATION for n in ("scene3", "core_make", "cor
 ai = sum(script.load_scene(n).DURATION for n in ("word_ai", "core_loop"))
 assert making >= 30 and ai < 22.5 and making > ai, (making, ai)
 assert sum(script.load_scene(n).DURATION for n in script.SCENES) <= 179.5
+# 本人の言葉の札は手で作る場面の直前へ戻した。同じ秒だけ他を削ったので、全体は戻す前の 178.9 秒を越えない（本人の決定 11-06）
+assert order.index("talk_claude") + 1 == order.index("word_touch") and order.index("word_touch") + 1 == order.index("scene3")
+assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) <= 178.9
 
 # 例の記録は字の頭が「（例）」。人の報告に見せかけない
 for key in ("note", "impression", "fix_part", "fix_change", "fix_outcome"):
