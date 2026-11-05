@@ -152,14 +152,15 @@ class Handler(BaseHTTPRequestHandler):
         extra = getattr(self.server, "lan_hosts", ())
         host = self.headers.get("Host", "")
         # デモの一周を外の機器から開く時（public_key あり）は、トンネルの名前を足す。名前は毎回変わるので形で受け、合言葉の門（_gate）で絞る。
-        if getattr(self.server, "public_key", None) and re.fullmatch(TUNNEL_HOST, host):
+        # 合言葉なしで開くデモ（public_open、本人の許可 11-05「デモサイト 2 つを他の人でも見れるように公開していいよ」）でも、トンネルの名前を受ける。
+        if (getattr(self.server, "public_key", None) or getattr(self.server, "public_open", False)) and re.fullmatch(TUNNEL_HOST, host):
             return True
         return host in (f"127.0.0.1:{port}", f"localhost:{port}", *(f"{h}:{port}" for h in extra))
 
     def _origin_ok(self):
         # トンネルの先は https、手元は http。どちらも同じ Host の頁から来た物だけを受ける（別のサイトから送らせない）。
         host = self.headers.get("Host", "")
-        ok = {f"http://{host}"} | ({f"https://{host}"} if getattr(self.server, "public_key", None) else set())
+        ok = {f"http://{host}"} | ({f"https://{host}"} if getattr(self.server, "public_key", None) or getattr(self.server, "public_open", False) else set())
         return self.headers.get("Origin") in ok
 
     def _gate(self):
@@ -286,9 +287,9 @@ class Handler(BaseHTTPRequestHandler):
             printed = [h["id"] for h in hypotheses.load(sid)["hypotheses"] if printed_versions(sid, h["id"])]
             pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, uploads=not getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
-        if m:
+        if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
             if f.exists():
@@ -351,6 +352,10 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             if not self._origin_ok():
                 return self._send(403, "受け付けられない送り方です")
+            # 合言葉なしで開いたデモでは、写真と動画を受けない: 誰でも上げられると、確かめていない写真（顔・他人の物）がそのまま
+            # 皆に見える。持ち寄りは同意と権利を確かめてから載せる線（J-021）と、子どもの写真を扱わない線を、開いた場でも守るため。
+            if getattr(self.server, "public_open", False):
+                return self._send(403, "公開のデモでは、写真と動画は上げられません", "text/plain; charset=utf-8")
             try:
                 length = int(self.headers.get("Content-Length", ""))
             except ValueError:
@@ -613,7 +618,7 @@ def lan_addresses():
     return ips + [f"{socket.gethostname().split('.')[0]}.local"]
 
 
-def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT):
+def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_open=False):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
     public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。
     look はこのサイトの皮（tenji 白の展示・zine 黒のジン）。皮ごとに 1 サイト（本人の決定 11-05 朝）なので、2 つ立てる時は port と look を変える。"""
@@ -624,6 +629,11 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT):
     server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), Handler)
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
+    # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
+    # 開いた場では写真と動画を受けず、出しもしない（上の受け口と、下の /record/…/media の道）。
+    if public_open and public_key:
+        raise ValueError("合言葉付きと合言葉なしは同時に使えない")
+    server.public_open = bool(public_open)
     server.look = look
     return server
 
@@ -643,10 +653,11 @@ if __name__ == "__main__":
             i = argv.index("--look")
             look = argv[i + 1]
             del argv[i:i + 2]
-        args = [a for a in argv if a != "--lan"]
+        public_open = "--public" in argv  # 合言葉なしで開く（run-demo.sh --open）
+        args = [a for a in argv if a not in ("--lan", "--public")]
         lan = "--lan" in argv
         port = int(args[0]) if args else 8766
-        server = serve(port, lan=lan, public_key=key, look=look)
+        server = serve(port, lan=lan, public_key=key, look=look, public_open=public_open)
     except (ValueError, OSError, OverflowError, IndexError) as e:
         print(f"検査できない: 開けない: {e}", file=sys.stderr)
         sys.exit(4)

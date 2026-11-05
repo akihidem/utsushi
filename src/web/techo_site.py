@@ -247,7 +247,7 @@ def gallery_page(sids):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url):
+def page(sid, printed_ids, picture_url, uploads=True):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。予想の前は呼ばない（呼ぶ側が F9.prediction を見る）。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
@@ -277,7 +277,9 @@ def page(sid, printed_ids, picture_url):
             '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">聞いた言葉は字にして、案内を良くするために残します。声と映像は残しません。名前は言わないでください。</p></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
             '<form id="up-form"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
-            '<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple></label>'
+            # 合言葉なしで開いたデモ（uploads=False）では、写真と動画の口を閉じる（play_server の受け口も断る）。見た事とひとことは残せる。
+            + ('<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple></label>' if uploads else
+               '<input type="file" id="files" disabled></label><p class="meta">公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。</p>') +
             f'<div class="row" role="radiogroup" aria-label="見た事">{results}</div>'
             '<label class="sr" for="note">ひとこと</label><input type="text" id="note" maxlength="300" placeholder="ひとこと">'
             '<label class="check" for="ok"><input type="checkbox" id="ok" required> 大人の手元だけ・顔なし・声なし</label>'

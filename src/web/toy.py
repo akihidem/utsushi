@@ -155,7 +155,7 @@ def record_form(sid, data, own):
         extra = '<label>開いた力<select name="opener"><option value="">—</option><option>紙の力</option><option>糸</option><option>手</option></select></label>'
     else:
         extra = getattr(TEMPLATES[template], "RECORD_EXTRA", "")
-    return (f'<form method="post" action="/toy/{sid}/record" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。</p>'
+    return (f'<form method="post" action="/toy/{sid}/record" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。記録はこの頁でほかの人も読むので、名前や連絡先は書かないでください。</p>'
             f'<label>どの仮説の紙か<select name="hypothesis">{opts}</select></label><fieldset style="border:0;padding:0;margin:14px 0 0"><legend class="meta">見た事</legend><div class="tiles">{results}</div></fieldset>{extra}'
             # 感想の欄（本人の方針 11-05「作ったものの感想と動きを報告してもらう」）。動きは上の札、感想は自由な文。空でもよい。
             '<label>作ってみてどうだったか（感想。動いた所、難しかった所、思った事）<textarea name="impression"></textarea></label>'
