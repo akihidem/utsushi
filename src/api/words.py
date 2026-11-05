@@ -59,13 +59,10 @@ def draft_words(source, text, name, evidence, by, client=None):
     sid = source["source_id"]
     user = "次の仮説を雛形の寸法に写してください。\n<data>\n" + json.dumps({"source_id": sid, "template_id": hypotheses.load(sid).get("template", "slider_fan"), "name": name, "how_it_moves": text, "where_in_the_picture": evidence}, ensure_ascii=False) + "\n</data>"
     result, trace = agent.run("words", SYSTEM, user, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source)], client=client)
-    folder = loop.folder()
-    nums = [int(p.stem.rsplit("-", 1)[1]) for p in folder.glob("words-*.json")]
-    wid = f"W-{max(nums, default=0) + 1:04d}"
-    loop._write(folder / f"words-{wid[2:]}.json", {"id": wid, "source_id": sid, "status": "pending_human", "name": name, "how_it_moves": text, "evidence": evidence, "typed_by": by.strip(), "result": result, "trace": {"model": trace.model, "tool_calls": trace.tool_calls, "retries": trace.retries, "input_tokens": trace.input_tokens, "output_tokens": trace.output_tokens}})
-    return wid, []
+    return loop.save_numbered("words", "W", lambda wid: {"id": wid, "source_id": sid, "status": "pending_human", "name": name, "how_it_moves": text, "evidence": evidence, "typed_by": by.strip(), "result": result, "trace": {"model": trace.model, "tool_calls": trace.tool_calls, "retries": trace.retries, "input_tokens": trace.input_tokens, "output_tokens": trace.output_tokens}}), []
 
 
+@loop.exclusive
 def adopt_words(wid, by):
     """人が補った寸法を見て採る。乗らない仮説も、寸法なしの自分の仮説として残す。"""
     path = loop.folder() / f"words-{wid[2:]}.json"
