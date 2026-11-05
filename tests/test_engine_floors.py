@@ -62,6 +62,19 @@ def bom_neck_arm():
     assert pc.materials(neck) == pc.materials({**neck, "mount": "hang"})
 
 
+def bom_through_compose():
+    # 部品の照合が compose につながっている。floors.check_bom を直に呼ぶだけでは、compose が部品を渡さなくなっても通ってしまう
+    tiger = source("NDL-1187053-R0000014-R")
+    assert "F2.bom" not in floor_names(compose(pc.ID, {"mount": "neck"}, tiger)[2])
+    orig = pc.bom
+    pc.bom = lambda p: [r for r in orig(p) if r["number"] != 5]
+    try:
+        fails = compose(pc.ID, {"mount": "neck"}, tiger)[2]
+    finally:
+        pc.bom = orig
+    assert "F2.bom" in floor_names(fails), [f.line() for f in fails]
+
+
 def bom_every_hypothesis():
     bad = []
     for sid, hid, t, p in hypotheses():
@@ -113,6 +126,27 @@ def image_box_printed_width():
     assert floor_names(art({"kind": "line", "pts": [(10, 4), (28.0, 10), (10, 16)], "stroke": "#000", "sw": 1.5})) == ["F5.image_box"]
 
 
+def image_box_fold_at_printed_width():
+    # 折り線も刷られる太さで見る。中心線は届かなくても、帯が折り線にかかれば落とす
+    def on_fold(sw):
+        item = {"kind": "line", "pts": [(19.5, 2), (19.5, 18)], "stroke": "#000", "sw": sw}
+        return floors.check_art([Part(1, "t", "試し", SQUARE, valley=[((20, 0), (20, 20))], art=[item])])
+
+    assert floor_names(on_fold(2.0)) == ["F5.image_box"]
+    assert on_fold(0.3) == []
+
+
+def stand_figure_small_heights():
+    # 絵の高さは範囲の下の端まで許す。輪郭線の太さは縮尺で細らないので、小さい絵でも帯の線が折り線と糊代にかからない事を見る
+    tpl = TEMPLATES["stand_figure"]
+    low = tpl.RANGES["fig_h"][0]
+    bad = []
+    for motif in tpl.MOTIFS:
+        for fig_h in (low, 33):
+            bad += [f"{motif} {fig_h} {f.line()}" for f in compose(tpl.ID, {"motif": motif, "fig_h": fig_h}, source())[2] if f.floor == "F5.image_box"]
+    assert not bad, f"{len(bad)} 件。先頭: {bad[:3]}"
+
+
 def fan_leg():
     low = {"push_part": "tab", "pivot_above_rim": 0, "fold_count": 6, "fold_width": 5, "fold_height": 40}
     _, _, fails = compose("slider_fan", low, source())
@@ -159,8 +193,9 @@ def next_reasons_no_new_words():
         assert not any("検査の文" in line for line in out) and any("近い値を試す" in line for line in out), (floor, out)
 
 
-CASES = (bom_neck_arm, bom_every_hypothesis, bom_forms_without_hypothesis, marks_whole_text, image_box_line_across_glue,
-         image_box_printed_width, fan_leg, figure_base, hole_every_template, thread_from_hole, next_reasons_no_new_words)
+CASES = (bom_neck_arm, bom_through_compose, bom_every_hypothesis, bom_forms_without_hypothesis, marks_whole_text, image_box_line_across_glue,
+         image_box_printed_width, image_box_fold_at_printed_width, stand_figure_small_heights, fan_leg, figure_base, hole_every_template,
+         thread_from_hole, next_reasons_no_new_words)
 
 
 def main():

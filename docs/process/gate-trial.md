@@ -227,9 +227,10 @@
   - 穴の検査 F5.holes: こちらをあちらの F5.hole に置き換えた。あちらは全部の雛形を見るので、足す物は無い
   - 首の口の検査・吊る形の軸と重りの検査・筒の行程: こちらに前からある。あちらへ入れる
 - 一覧の外で見つけた差（入れない）: 扇の足の糊代の境の折り線を刷る直し（`print_folds`）は紙が変わり、必須 2 種の今の組の指紋が変わるので入れない。次の組で決める。ほかに、あちらの位置の印・形ごとの出典の床（F1.source）・FAIL の行まで見る場面の比べ方・PDF の時刻の固定は、こちらの床の意味に関わらないので入れていない。同じ名前の雛形 wheel_cart・stand_figure は別の実装のまま
-- 検証ゲート: **済み**。Red（`docs/process/gate-evidence/red-engine-floors.txt`）: 11 条件のうち 0 が通る。Green（`docs/process/gate-evidence/green-engine-floors.txt`）: 11 条件が全部通る。場面 3 本の FAIL の行はあちらと同じ
+- 検証ゲート: **済み**。Red（`docs/process/gate-evidence/red-engine-floors.txt`）: 11 条件のうち 0 が通る。Green（`docs/process/gate-evidence/green-engine-floors.txt`）: 11 条件が全部通る。場面 3 本の FAIL の行はあちらと同じ。合体の前の別の目の点検で 3 条件を足した。Red（`docs/process/gate-evidence/red-stand-small-height.txt`）: 14 条件のうち 13 が通り、小さい立つ姿だけ落ちる。Green（`docs/process/gate-evidence/green-stand-small-height.txt`）: 14 条件が全部通る。作りを壊す試しで、compose の照合を外すと `bom_through_compose` が、折り線を中心線で見ると `image_box_fold_at_printed_width` が、それぞれ 1 つだけ落ちる事を見た
 - エビデンスゲート: **済み**。全 171 仮説の型紙と手順の紙の SVG、用意する物、組み方の文、作り方の印を直す前後で比べ、違いは 0。実際に刷った 342 枚の PDF に新しい F1.marks を当て、落ちたのは 0。この 2 つは手元の字で回し、repo には入れていない。比べる道具は `tests/compare_engine.py` で、結果は `docs/process/gate-evidence/green-engine-compare.txt`
 - 気づき: 共通の場面は差の多くを踏まない。直す前でも 31 本のうち違うのは 2 本で、部品表の照合も線の帯も場面では見えなかった。全部の仮説に当てて初めて、族の雛形の部品表の抜けが分かった
+- 範囲の中で新しく断られる寸法（別の目の点検が 3648 件を今の main と比べた）: 2 件。stand_figure の絵の高さ 25〜33 は、帯の下の端と折り線の隙間が縮尺で狭まるのに輪郭線の太さが狭まらないためで、折り線の位置の計算を直した（高さ 34 以上の紙は変わらない）。虎の吊る形の ear_height 5 は、穴の円が耳の端から 0.2mm はみ出す本物の欠けで、あちらも同じく断るので、範囲も直さない（今の仮説の値は 8）
 - 文面: 利用者の画面と紙に出る前からの文は変えていない。新しい床の文は「次の版を作る」が検査で落ちた時に画面に出る道があるので、確認が済むまで出さず、前からある「近い値を試す」の 1 行だけにした（`NEXT_REASONS_WAITING`）。やさしい文の案と README の 1 行は別の枝に分け、本人の確認を待つ。ゴールの要件の「どちらが正かが README に書いてある」は、その確認の後に満たす
 - マージ後の書き戻し: #164 に書く
 
