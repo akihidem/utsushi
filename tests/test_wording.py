@@ -36,7 +36,8 @@ wording.sheet_set = lambda name: f"◆{name}"
 wording.frame = lambda sid: f"◇{sid}"
 
 from api import ask  # noqa: E402
-from omochae import hypotheses, records  # noqa: E402
+from omochae import hypotheses, media_review, records  # noqa: E402
+from web import techo_site  # noqa: E402
 from web.play_server import esc, serve, sources  # noqa: E402
 
 ask._key_present = lambda: False  # 手元に鍵があっても呼ばない
@@ -67,8 +68,8 @@ for want in (f"▲{esc(data['note'])}", f"▲{esc(h['how_it_moves'])}", f"試し
              f"〔{esc(h['evidence'][0]['certainty'])}〕▲{esc(h['evidence'][0]['what'])}（▲{esc(h['evidence'][0]['where'])}）",
              "確かめた人: ▲本人", f"▲{esc(data['analogy']['written_by'])}"):
     assert want in page, want
-# 作る側が残した試行の控えと、記録の番号
-assert "▼R-0001" in page and "メモ: ●" in page, "記録の札"
+# 作る側が残した試行の控えと、記録の札の番号（字が同じ行が頁の頭の一覧にもあるので、札の形で見る）
+assert "・版 1・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
 # 入口の引用の札、一覧の場所、手帖の組の版と記録の番号
 assert "確かめた人: ■" in get("/"), "入口の札"
 others = [s for s in sources() if hypotheses.stage(s) != "必須"]
@@ -79,7 +80,9 @@ assert "◆goraigo-v10" in techo and "▼R-0001" in techo, "手帖"
 zu = get(f"/zukan/{G}")
 assert "確かめた人: ▲本人" in zu and "▼R-0001" in zu and f"▲{esc(h['how_it_moves'])}" in zu, "図鑑"
 yomi = post(f"/zukan/{G}/yomi", {"mine": "ためしの読み"})
-assert "確かめた人: ▲本人" in yomi and "▲本人が 2026-11-03 に" in yomi and "■が" in yomi and "■は 2026-11-04" in yomi, "くずし字"
+assert "確かめた人: ▲本人" in yomi and "▲本人が 2026-11-03 に" in yomi and "■は 2026-11-04" in yomi, "くずし字"
+# 同じ役の名前が文ごとに表を通る。字が入ると言い方が変わる文もあるので、古い字が素で残らない事を見る
+assert re.search(r"■が(?:採ら|選ば)なかった", yomi) and "本人が確かめた表記" not in yomi, "くずし字の役の名前"
 # 紙を作って記録を残し、次の版まで進めた後の窓・改善の輪・ギャラリー
 post(f"/toy/{G}/print", {"hypothesis": "H-A"})
 post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた", "note": "本人が折った"})
@@ -88,10 +91,20 @@ post(f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea":
 post(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"})
 post(f"/toy/{G}/own", {"name": "糸で引く", "how": "糸で引いて開く", "evidence": "糸らしい線"})
 post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "紙の端はどこまで切りますか"})
+# 説明を待つ記録と、頭の帯に出る写真（人が確かめた物だけが出る）
+post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})
+waiting = records.all_records(G)[-1]["id"]
+folder = techo_site.media_dir(rid)
+folder.mkdir(parents=True, exist_ok=True)
+(folder / "m1.jpg").write_bytes(b"\xff\xd8\xff")
+assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 page = get(f"/toy/{G}?see=H-A&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
+assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
 kz = page.split('id="kaizen"', 1)[1]
-assert f">▼{rid}</a>" in kz and ">▼R-0001</a>" in kz, "改善の輪"
+assert f"<a href=#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
+assert re.search(r'次の版を待つ報告 \d+ 件: [^（]*<a href="#R-0001">▼R-0001</a>', kz), "改善の輪: 次の版を待つ報告"
+assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 assert f"▼{rid}" in get("/gallery"), "ギャラリー"
 # 人が書いた文は表を通らない（記録の感想・説明・自分の仮説・歌の引用）
 for text in ("すっと開いた", "折りが固くて戻る", "糸で引いて開く", "本人が折った"):

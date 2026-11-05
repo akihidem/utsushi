@@ -47,7 +47,7 @@ TABLE = [
     _w("糊代"), _w("蛇腹"), _w("角筒"), _w("外筒"), _w("内筒"), _w("錘"), _w("楊枝"),
 ]
 OWN_WORDS = {w["word"] for w in TABLE}
-TABLE += [_w(row.pattern, reader, row.pattern) for row, reader in wording.TABLE]
+TABLE += [_w(row.pattern, None, row.pattern) for row, _ in wording.TABLE]  # 言いかえは向こうの表が持つ。ここには書かない
 # 語を数えない所。「仮説」は語の数ではなく、頁の最初の 1 つで並ぶかを別に見る（消さずに並べる決まりなので、語としては残ってよい）
 NOT_A_WORD_HIT = {"仮説"}
 
