@@ -9,6 +9,7 @@ import math
 from shapely.geometry import Polygon, box
 from shapely.ops import unary_union
 
+from ._paper import paper_name
 from ..model import Failure, Part
 
 ID = "stand_figure"
@@ -728,7 +729,7 @@ def place(by_key, page, top, gap):
 
 
 def bom(p):
-    paper = f"紙（厚さ 0.15mm 前後・{p['paper_gsm']}g/m² の見込み）"
+    paper = paper_name(p["paper_gsm"])
     why = "家庭のプリンタで刷って作るため"
     orig = MOTIFS[p["motif"]][1]
     rows = [
@@ -746,7 +747,7 @@ def bom(p):
 
 
 def materials(p):
-    out = [f"紙（{p['paper_gsm']}g/m² 前後）を 1 枚", "のり、はさみ、定規"]
+    out = [f"{paper_name(p['paper_gsm'])}を 1 枚", "のり、はさみ、定規"]
     if p["form"] == "float":
         out += ["透明な梱包テープ", "水を張った盆か洗面器"]
     if p["form"] == "box":

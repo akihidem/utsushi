@@ -11,6 +11,7 @@ import math
 
 from shapely.geometry import LineString, Polygon, box
 
+from ._paper import paper_name
 from ..model import Failure, Part
 
 ID = "wheel_cart"
@@ -354,7 +355,7 @@ def place(by_key, page, top, gap):
 
 
 def bom(p):
-    paper = f"紙（厚さ 0.15mm 前後・{p['paper_gsm']}g/m² の見込み）"
+    paper = paper_name(p["paper_gsm"])
     why = "家庭のプリンタで刷って作るため"
     if p["body"] == "cart":
         rows = [

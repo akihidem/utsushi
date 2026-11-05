@@ -28,6 +28,7 @@
 | `src/omochae/foldsim.py` | 折りの部品を Origami Simulator が読める SVG に書き出す。作り手用で、学ぶ人の画面には道を作らない |
 | `src/omochae/gallery.py` | 再現ギャラリーの静的な頁を書き出す。記録の順に並べ、順位を付けない |
 | `src/omochae/templates/` のほかの雛形 | 試作の玩具の雛形（`balance_toy`・`den_den`・`spin_toy`・`stand_figure`・`stick_prop`・`string_pull`・`wheel_cart`）。図鑑から入る。足し方は下の「雛形を足す時」 |
+| `src/omochae/templates/_paper.py` | 用意する物の紙の字（`paper_name`）を 1 か所で持つ。試作の雛形だけが使う。必須 2 種の雛形は今の組の字のまま |
 | `src/omochae/templates/slider_fan.py` | 御来迎の雛形。寸法の初期値・範囲・式・部品・部品表 |
 | `src/omochae/fan_model.py` | 扇の開きの幾何（開く角度の上限・口の角との干渉・糸の長さ） |
 | `src/omochae/pivot_model.py` | 首振りの重心・傾き・周期の式 |

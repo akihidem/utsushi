@@ -13,6 +13,7 @@ from shapely import affinity
 from shapely.geometry import Point, Polygon
 from shapely.ops import unary_union
 
+from ._paper import paper_name
 from ..model import Failure, Part
 
 ID = "den_den"
@@ -63,6 +64,7 @@ PARAM_NAMES = {"head_d": "皮の径（mm）", "band_w": "胴の幅（mm）", "th
 SHU, AI, OCHRE, SUMI, GOFUN = "#c4553a", "#34507a", "#c9a25a", "#2e2a24", "#f1e9d6"
 BAND_COLORS = {"shu": SHU, "ochre": OCHRE, "ai": AI}
 HOLE_MARGIN = 4  # 穴から紙の端までの見込み。これより狭いと裂けやすい（pivot_counterweight と同じ値）
+GSM = 150  # 紙の重さの欄を持たない雛形。ほかの雛形の既定と同じ紙で作る読み
 GRIP = 60  # 柄の握る所。手のひらで挟んで回すのに要る長さの見込み
 HIT_MARGIN = 2  # 玉が皮の縁ぎりぎりに当たると、帯の角を打って鳴りが鈍いと見込む余裕
 STAND_POST = 20  # 台の上に出る柄の最小の長さ。これより短いと胴が台に触れて打てない
@@ -330,7 +332,7 @@ def place(by_key, page, top, gap):
 
 
 def bom(p):
-    paper = "紙（厚さ 0.15mm 前後の見込み）"
+    paper = paper_name(GSM)
     why = "家庭のプリンタで刷って作るため"
     rows = []
     for q in parts(p):
@@ -349,7 +351,7 @@ def bom(p):
 
 
 def materials(p):
-    out = [f"紙（厚さ 0.15mm 前後）を 1 枚", "のり、はさみ、定規、テープ"]
+    out = [f"{paper_name(GSM)}を 1 枚", "のり、はさみ、定規、テープ"]
     out += [r["material"] for r in bom(p) if r["key"] in ("handle", "bead", "rattle")]
     return out
 
