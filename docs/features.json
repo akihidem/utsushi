@@ -167,6 +167,7 @@
    "src/web/demo_check.py",
    "tests/test_play_server.py",
    "tests/test_public_open.py",
+   "tests/test_public_inner_marks.py",
    "tests/test_public_links.py",
    "tests/test_run_demo.py"
   ],

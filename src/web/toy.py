@@ -109,7 +109,7 @@ def print_help():
     return f'<details class="print-help"><summary>{esc(PRINT_HELP_SUMMARY)}</summary>{items}</details>'
 
 
-def window(sid, data, see, kind, v, recorded):
+def window(sid, data, see, kind, v, recorded, photos=True):
     """型紙の窓（要件の S-01〜S-05）。紙の種類と版を字の札で選び、絵（PNG）を出す。押すと拡大の窓（#zoom）。"""
     card = hypotheses.sheet_of(sid)
     ids = printed_ids(sid, data, recorded)
@@ -151,7 +151,9 @@ def window(sid, data, see, kind, v, recorded):
             from .kaizen import _param_name  # 呼び名の無い寸法は、内部の名前を出さない
 
             ch = "、".join(f"{_param_name(sid, c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
-            cap = f'<p class="meta">版 {v}: {esc(wording.BASED_ON.format("、".join(wording.record_no(r) for r in adopted.get("record_ids", []))))}。変えた所: {esc(ch)}</p>'
+            # 合言葉なしで開いた場には、記録の番号（内部の番号）を出さない（J-028）。
+            basis = f'{esc(wording.BASED_ON.format("、".join(wording.record_no(r) for r in adopted.get("record_ids", []))))}。' if photos else ""
+            cap = f'<p class="meta">版 {v}: {basis}変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
     cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
@@ -375,20 +377,21 @@ def next_form(r, back=""):
             f'<button>次の版の紙を作る</button></form>{step}</details>')
 
 
-def ai_block(r, up_key=None):
-    """人の説明の後に出す AI の返事（J-013 の順の最後）。読みと観察は案で、採点しない。鍵が無い時は play_server がその旨を返す。"""
+def ai_block(r, up_key=None, photos=True):
+    """人の説明の後に出す AI の返事（J-013 の順の最後）。読みと観察は案で、採点しない。鍵が無い時は play_server がその旨を返す。
+    photos=False は合言葉なしで開いた場で、読みと観察の文を出さない（記録の文から作った字なので。J-028）。"""
     from . import techo_site
 
     rid = esc(r["id"])
     out = ""
-    i = loop.interpretation(r["id"])
+    i = loop.interpretation(r["id"]) if photos else None
     if i and isinstance(i.get("content"), dict):
         c = i["content"]
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
         out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
-    o = techo_site.seen_observation(r["id"], up_key)
+    o = techo_site.seen_observation(r["id"], up_key) if photos else None
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
@@ -458,16 +461,16 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
             feel = ""
             if told:
                 # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
-                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r, up_key)
-        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}・{esc(wording.record_no(r["id"]))}</p>{feel}{after}{tail}</article>'
+                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r, up_key, photos=False)
+        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}{"・" + esc(wording.record_no(r["id"])) if photos else ""}</p>{feel}{after}{tail}</article>'
     return out
 
 
-def observations(sid, data, link=True):
+def observations(sid, data, link=True, photos=True):
     """記録を読む（順路の 2 段目）。文には印を付ける（J-016 の線。zukan と同じ作り）。"""
     from . import zukan
 
-    lines = zukan.observation_lines(sid, data)
+    lines = zukan.observation_lines(sid, data, photos)
     if not lines:
         return '<p class="meta"><span class="lb">観察</span>試した記録はまだありません。最初の記録を残す人になります。</p>'
     # 行から同じ頁の記録の札（写真・感想・説明）へ飛べる。
@@ -522,6 +525,13 @@ def neighbours(sid):
     return '<p class="links">' + "".join(out) + "</p>"
 
 
+def evidence_item(e):
+    """根拠の 1 行。置き場の道（data/…）は作る側の控えなので、読む人の頁に出さない（記録の中の道は照合に使うので消さない）。"""
+    what, where = (re.sub(r"（data/[^）]*）", "", str(e[k])) for k in ("what", "where"))
+    where = "" if where.startswith("data/") else f"（{esc(wording.plain(where))}）"
+    return f'<li>〔{esc(e["certainty"])}〕{esc(wording.plain(what))}{where}</li>'
+
+
 def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None, mine=(), up_key=None):
     """玩具の頁。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で、開いたら仮説の札と刷る口がすぐ見える。
     答えに読まれない事は、門でなく札で守る: 「型紙は正解ではなく、AI が考えた仮説」を作る節の頭に出す（本人の言葉 11-05）。
@@ -544,14 +554,14 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
             + (f'<div class="songs">{songs}</div><p class="meta">原文の引用。確かめた人: {esc(who)}</p>' if songs else "")
             + skin.artwork_label(data["toy"], src) + nopic
             + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a><a href="/toys">ほかのおもちゃ</a></p>'
-            f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data)}{made_strip(sid, records.all_records(sid), photos)}</div></section>')
+            f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</div></section>')
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。札はたたき台の 1 枚だけで、順位は学ぶ人の画面に出さない（J-013・J-025・J-032）。
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
     for h in [hypotheses.sheet_of(sid)]:
-        ev = "".join(f'<li>〔{esc(e["certainty"])}〕{esc(wording.plain(e["what"]))}（{esc(wording.plain(e["where"]))}）</li>' for e in h["evidence"])
+        ev = "".join(evidence_item(e) for e in h["evidence"])
         last = versions_of(sid, h["id"], printed_only=True)
         # 紙の種類と版を選ぶのは窓の札の役。札の下に字のリンクを並べると、版ごとに 3 つ増える（#127）。
         thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win" aria-label="仮説 {esc(hypotheses.letter(h))} の紙を窓で見る"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
@@ -570,7 +580,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では節を出さない。受け口も閉じている（J-028）
         body += think_sheet.section(sid, at, head(at))
     body += analogy_section(data)
-    body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded)}</section>'
+    body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded, photos)}</section>'
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
              f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
@@ -584,7 +594,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen
 
-    body += kaizen.section(sid, data, recs)
+    body += kaizen.section(sid, data, recs, photos)
     # 英語の短い紹介（本人の指示 11-05「実装までやって」、J-030）。頁の足に置く: 日本語の順路を押し下げないため。
     from . import en
 
