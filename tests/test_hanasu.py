@@ -370,7 +370,7 @@ os.environ.pop("OMOCHAE_VOICE")
 
 # ---- 利用者向けの文: 本人が採ったやさしい言葉の文（11-05、Issue #318）。一字でも変わったら落ちるように、ここに決定の文を書く
 ADOPTED = {
-    "NOTICE": "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。",
+    "NOTICE": "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。",
     "HOW_LOCAL": "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。",
     "HOW_BROWSER": "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。このサイトは声を受け取りません。",
     "HOW_NONE": "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。",
@@ -382,7 +382,13 @@ ADOPTED = {
 }
 for name, text in ADOPTED.items():
     assert getattr(hanasu, name) == text, name
-# 断りと、話す釦の説明 3 つは、3 つの頁の口に出る。名前などを書かないお願いは、断りの最後の文
+# 本人が採った字（一字も変えない）。話す口の断りの後に置く。断りは定数 1 か所で、話す口のある頁の全部に同じ物が出る
+AI_USE = "残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
+assert hanasu.NOTICE.endswith("書かないでください。" + AI_USE)
+for page in (toy, tsu, techo):
+    assert page.count(AI_USE) == page.count('<div class="hanasu" data-hanasu') >= 1, "話す口ごとに 1 回"
+    assert hanasu.NOTICE in page
+# 断りと、話す釦の説明 3 つは、3 つの頁の口に出る
 for page in (toy, tsu, techo):
     for name in ("NOTICE", "HOW_LOCAL", "HOW_BROWSER", "HOW_NONE"):
         assert ADOPTED[name] in page, name
