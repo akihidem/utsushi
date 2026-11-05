@@ -1,5 +1,5 @@
 # 命令: .venv/bin/python tests/test_min_python.py
-# commit: dabb992（回した時の HEAD）
+# commit: ec615b1（回した時の HEAD）
 Traceback (most recent call last):
   File "tests/test_min_python.py", line 133, in <module>
     assert not problems, "\n".join(problems)

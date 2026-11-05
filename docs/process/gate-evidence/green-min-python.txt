@@ -1,4 +1,4 @@
 # 命令: .venv/bin/python tests/test_min_python.py
-# commit: 887c072（回した時の HEAD）
+# commit: 64a61e8（回した時の HEAD）
 ok（3.11 の解釈系でも見た）
 rc=0

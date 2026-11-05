@@ -1,5 +1,5 @@
 # 命令: .venv/bin/python tests/test_ways.py
-# commit: dabb992（回した時の HEAD）
+# commit: ec615b1（回した時の HEAD）
 Traceback (most recent call last):
   File "tests/test_ways.py", line 33, in <module>
     assert marks_of(TORA, hid)["period"] is False, hid  # 油粘土は江戸の頃に無かったので、当時の材料に数えない（#311）
