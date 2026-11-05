@@ -109,7 +109,7 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "成功"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "abc"})[0] == 422
 code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
-assert code == 303 and at.endswith("#kiroku"), at
+assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の札に着く（#121）
 body = get(f"/toy/{G}")[1].decode()
 assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
 assert "仮説 A の紙・動かない・40°" in body

@@ -151,6 +151,7 @@
   "name": "使い手の画面（手元のブラウザ）",
   "status": "doing",
   "evidence": [
+   "tests/test_reply_visible.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",

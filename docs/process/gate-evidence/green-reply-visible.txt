@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_reply_visible.py（画面は repo の外の道具で Chromium を動かした）
+# commit: d720f76（この上に main を取り込んで PR にした）
+$ PYTHONPATH=src .venv/bin/python tests/test_reply_visible.py
+ok
+rc=0
+
+# Chromium で釦を押す一周（白の展示・黒のジン × 机 1440×900・スマホ 390×844）
+76 件のうち NG 0
