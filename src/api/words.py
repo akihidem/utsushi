@@ -6,6 +6,7 @@ Claude が返すのは寸法と、補った点と、乗らない点だけで、�
 """
 import json
 import secrets
+from datetime import datetime, timedelta
 
 from omochae import hypotheses, loop, making_log, store, talk_log
 from omochae.compose import TEMPLATES, compose
@@ -137,9 +138,41 @@ def _think_floor(text):
     return [Failure("F10.pii", "text", f"{shape}の形がある")] if shape else []
 
 
+# 話した字が読める物（頼んだ後の頁と紙）を開く鍵の期限。1 台の機械を順に使う場で、次の人に前の人の字を見せないため。
+# 時刻はサーバが見る: cookie の Max-Age は、付けるとブラウザを閉じても残る形になり、守らせる事もできない。cookie はブラウザを閉じれば消える形のままにする。
+KEY_HOURS = 2
+
+
+def _fresh(*times):
+    """時刻のうち一番新しい物が、期限の中か。読めない時は閉じる側に倒す。"""
+    try:
+        last = max(datetime.fromisoformat(t) for t in times if t)
+        return datetime.now(last.tzinfo) - last <= timedelta(hours=KEY_HOURS)
+    except (TypeError, ValueError):  # 時刻が 1 つも無い（max の ValueError）・読めない・形が混ざる
+        return False
+
+
+def key_live(w):
+    """鍵が期限の中か。頼んだ・作る側が書いた・採った時の一番新しい物から数える（待っていた人が、作る側の書いた後に受け取れるように）。"""
+    return _fresh(w.get("asked_at"), w.get("filled_at"), w.get("decided_at"))
+
+
+def key_open(w):
+    """話した字が読める物を開いてよいか。期限の中で、元の考えがまだ記録に結ばれていない時。
+    記録を残すのが交代の区切り: 1 人の作業は期限より短いので、期限だけでは次の人に間に合わない。記録の口は 2 つあるが、どちらも bind を呼ぶので、ここで見れば足りる。"""
+    talk = store.read_json_or_skip(making_log.folder() / f"{w.get('from_talk')}.json")
+    return key_live(w) and talk is not None and not talk.get("record_id")
+
+
+def think_fresh(talk):
+    """まだ頼んでいない考えから頼めるか。同じタブに座った次の人が、前の人の古い字で頼まないように。"""
+    return _fresh(talk.get("at"))
+
+
 def latest_think(source_id, who):
     """その印（who）の人が一番新しく残した考えと、そのファイルの名前（from_talk に入れる物）。無ければ (None, None)。
-    頁に考えの字を並べて選ばせないのは、記録に結ぶ前の考えは学ぶ人の頁に出さない決まり（talk_log）のため。印が無い画面では選べない（talk_log.bind と同じ見分け方）。"""
+    頁に考えの字を並べて選ばせないのは、記録に結ぶ前の考えは学ぶ人の頁に出さない決まり（talk_log）のため。印が無い画面では選べない（talk_log.bind と同じ見分け方）。
+    一番新しい考えが記録に結ばれていたら、その人の作りは区切りが付いたので、何も選ばない（古い考えへ戻らない。同じタブの次の人に前の人の字を渡さない）。"""
     who = making_log.clean_who(who)
     d = making_log.folder()
     if not who or not d.exists():
@@ -148,7 +181,7 @@ def latest_think(source_id, who):
     for p in sorted(d.glob("talk-*.json"), key=lambda q: q.stat().st_mtime_ns, reverse=True):
         t = store.read_json_or_skip(p)
         if t and t.get("scene") == "think" and t.get("source_id") == source_id and t.get("who") == who and not t.get("dropped") and t.get("text"):
-            return t, p.stem
+            return (None, None) if t.get("record_id") else (t, p.stem)
     return None, None
 
 

@@ -5,20 +5,25 @@
 - 鍵の無い人・別の案の鍵の人には、絵も PDF も SVG も手順の紙も開かない（在るかどうかも言わない）。頼んだ後の頁も、採る釦も同じ。
 - 同じ印の人が押し直すと、鍵を受け取り直せる。書いて立てた仮説の紙は今までどおり。
 - 合言葉なしの場: 書いた物も含めて OWN-n の紙は開かない。紙を作る節も受け口も閉じる。
+- 共用の機械（次の人が同じブラウザに座る）: 鍵は期限の中だけ効く（頼んだ・作る側が書いた・採った時の一番新しい物から 2 時間）。期限はサーバが見る。
+  記録を残すと、その案は閉じる（交代の区切り。1 人の作業は 2 時間より短いので、期限だけでは次の人に間に合わない）。同じタブの印でも受け取り直せない。
+  試した後の紙（話した字が刷られない）だけは、記録を残した後も期限の中は本人に開く。
 """
+import json
 import os
 import tempfile
 import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta, timezone
 
 DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # 本物の台帳に書かない（#151）
 
 from api import words  # noqa: E402
-from omochae import hypotheses, talk_log  # noqa: E402
+from omochae import hypotheses, loop, making_log, talk_log  # noqa: E402
 from web import think_sheet  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
@@ -110,6 +115,101 @@ assert code == 422 and not h.get("Set-Cookie"), "ほかの印には渡さない"
 typed, _ = hypotheses.save_own(G, "書いた案", "書いて立てた動かし方", "右の図")
 assert send(base, f"/toy/{G}/print-own", {"id": typed["id"]})[0] == 303
 assert send(base, f"/sheet/{G}/{typed['id']}_v1_free.pdf")[0] == 200
+
+
+# ── 共用の機械: 鍵の期限 ──
+def token_of(location):
+    return urllib.parse.parse_qs(urllib.parse.urlsplit(location).query)["at"][0][len("think-"):]
+
+
+def filled(token):
+    w = words.by_token(G, token)
+    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+
+
+def adopted(who, text):
+    """頼んで、作る側が書き、本人が採る。Returns (印, 鍵, OWN の番号, 頼んだ後の頁の道)。"""
+    location, k = ask(base, who, text)
+    t = token_of(location)
+    filled(t)
+    assert send(base, f"/toy/{G}/think-ok", {"t": t}, cookie=k)[0] == 303
+    return t, k, words.by_token(G, t)["own_id"], location.split("#")[0]
+
+
+def age(t, minutes=None, broken=False):
+    """その案の時刻を、今から minutes 分前にする。"""
+    w = words.by_token(G, t)
+    when = "こわれた" if broken else (datetime.now(timezone(timedelta(hours=9))) - timedelta(minutes=minutes)).isoformat(timespec="seconds")
+    times = {k: when for k in ("asked_at", "filled_at", "decided_at") if k in w}
+    (loop.folder() / f"words-{w['id'][2:]}.json").write_text(json.dumps({**w, **times}, ensure_ascii=False), encoding="utf-8")
+
+
+def opened(k, oid, kind=""):
+    return send(base, f"/sheet/{G}/{oid}_v1{kind}.pdf", cookie=k)[0]
+
+
+TEXT = "柄を太くすると押しやすいと思う"
+t1, k1, o1, p1 = adopted("expiry0001", TEXT)
+age(t1, 119)
+assert opened(k1, o1) == 200 and TEXT in send(base, p1, cookie=k1)[1].decode(), "期限の中は開く"
+age(t1, 121)
+assert opened(k1, o1) == 404 and opened(k1, o1, "_tejun") == 404, "期限を過ぎると、鍵があっても開かない"
+assert TEXT not in send(base, p1, cookie=k1)[1].decode(), "期限を過ぎると、話した字も見えない"
+code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": "expiry0001"})
+assert code == 422 and not h.get("Set-Cookie"), "同じ印で押し直しても、期限を過ぎた鍵は渡さない（同じタブの次の人）"
+age(t1, broken=True)
+assert opened(k1, o1) == 404, "時刻が読めない時は閉じる側に倒す"
+# 採る前の案も、期限を過ぎると採れない
+loc2, k2 = ask(base, "expiry0002", "筒を細くしたい")
+t2 = token_of(loc2)
+filled(t2)
+age(t2, 121)
+assert send(base, f"/toy/{G}/think-ok", {"t": t2}, cookie=k2)[0] == 422 and words.by_token(G, t2)["status"] == "pending_human"
+# 作る側が後から書くと、そこから 2 時間は開く（待っていた人が受け取れる）
+loc3, k3 = ask(base, "expiry0003", "折りを増やしたい")
+t3 = token_of(loc3)
+age(t3, 180)
+assert send(base, f"/toy/{G}/think-sheet", {"who": "expiry0003"})[0] == 422, "待ちの間も期限は同じ"
+filled(t3)
+code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": "expiry0003"})
+assert code == 303 and h["Set-Cookie"].split(";")[0] == k3
+assert "折りを増やしたい" in send(base, loc3.split("#")[0], cookie=k3)[1].decode()
+# 頼まないまま古くなった考えは、頼めない（同じタブの次の人が、前の人の字で頼まない）
+talk_log.add(G, "think", "古い考え", who="expiry0004")
+_, stem = words.latest_think(G, "expiry0004")
+talk_path = making_log.folder() / f"{stem}.json"
+talk_path.write_text(json.dumps({**json.loads(talk_path.read_text(encoding="utf-8")), "at": "2026-11-05T08:00+09:00"}, ensure_ascii=False), encoding="utf-8")
+assert send(base, f"/toy/{G}/think-sheet", {"who": "expiry0004"})[0] == 422 and "古い考え" not in str([w["how_it_moves"] for w in words.waiting()])
+
+# ── 共用の機械: 記録を残すと、その案は閉じる（交代の区切り） ──
+for route, want, who, text in (("record", 303, "handover01", "下から押したい"), ("record-json", 201, "handover02", "上から押したい")):
+    t, k, oid, p = adopted(who, text)
+    assert opened(k, oid) == 200 and opened(k, oid, "_tejun") == 200
+    assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who})[0] == want, route
+    assert opened(k, oid) == 404 and opened(k, oid, "_tejun") == 404, f"{route}: 記録を残すと、紙も手順の紙も閉じる"
+    assert text not in send(base, p, cookie=k)[1].decode(), f"{route}: 話した字も見えない"
+    assert opened(k, oid, "_after") == 200, f"{route}: 試した後の紙は、記録の後に本人が使う（話した字は刷られない）"
+    assert opened("", oid, "_after") == 404, f"{route}: 試した後の紙も、鍵の無い人には開かない"
+    code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": who})
+    assert code == 422 and not h.get("Set-Cookie"), f"{route}: 同じタブの次の人が押しても、前の人の案へ戻らない"
+    age(t, 121)
+    assert opened(k, oid, "_after") == 404, f"{route}: 試した後の紙も期限まで"
+    age(t, 1)
+# 次の人が同じタブで話せば、その人の案を作れる。前の人の案は閉じたまま
+loc4, k4 = ask(base, "handover01", "次の人の考え")
+t4 = token_of(loc4)
+assert words.by_token(G, t4)["how_it_moves"] == "次の人の考え" and k4 != k
+# 別の紙の記録でも、考えが結ばれれば閉じる（その人の作りの区切り）
+t5, k5, o5, p5 = adopted("handover03", "別の紙を試した")
+assert send(base, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "わからない", "who": "handover03"})[0] == 303
+assert opened(k5, o5) == 404
+# 頼まないまま記録に結ばれた考えからも、頼めない。その前の結ばれていない考えへも戻らない（同じタブの次の人が、前の人の字で頼まない）
+talk_log.add(G, "think", "別の仮説を見た前の考え", hypothesis_id="H-C", who="handover04")
+talk_log.add(G, "think", "記録に結ばれる考え", who="handover04")
+assert send(base, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "わからない", "who": "handover04"})[0] == 303
+code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": "handover04"})
+assert code == 422 and not h.get("Set-Cookie"), "結ばれた考えから頼めない"
+assert not {"記録に結ばれる考え", "別の仮説を見た前の考え"} & {w["how_it_moves"] for w in words.waiting()}, "案を作らない"
 server.shutdown()
 
 # ── 合言葉なしの場 ──

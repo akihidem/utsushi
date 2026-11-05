@@ -11,6 +11,8 @@
 - 頼んだ後の様子は、本人だけが持つ印（token）の URL で見る（/toy/<玩具>?at=think-<印>#think）。W-番号は数えられるので、番号では開かない。
 - 話した字が読める物（頼んだ後の頁・OWN-n の紙・字が刷られた手順の紙）は、作った本人の画面からしか開かない。その場限りの印（who）を確かめて頼んだ人に、印（token）を cookie で渡す。
   who は sessionStorage にあって GET に載らず、絵と別タブの PDF では送れないため、cookie にした。URL に載せないので、URL を渡されても開かない。ブラウザを閉じれば消える（押し直すと、同じ who の人は受け取り直せる）。
+- 1 台の機械を順に使う場のために、鍵には期限があり（api.words.key_live。2 時間）、記録を残すとその案は閉じる（api.words.key_open）。同じタブの who で押し直しても、閉じた案へは戻らない。
+  試した後の紙だけは、話した字が刷られず、記録の後に本人が使う紙なので、記録を残した後も期限の中は開く。
 - 合言葉なしの場では、節も受け口も閉じ、OWN-n の紙は開かない（J-028 の線。誰でも開ける場で、人の言葉を別の人に見せない）。
 - 鍵がある所では、押した 1 回で Claude に寸法を写させる。鍵が無い所・合言葉なしで開いた場（J-028: 費用のかかる呼び出しをさせない）・呼べなかった時は、
   作る側の待ちに置く（作る側が端末で python -m api.words fill を打つ）。どちらも、刷る前に本人がこの節で、変えた所と決めた所を見て「この紙にする」を押す。
@@ -77,18 +79,25 @@ def _key_header(handler, w):
     return ("Set-Cookie", f"{COOKIE}{w['id']}={w['token']}; Path=/; HttpOnly; SameSite=Lax{secure}")
 
 
-def opens(handler, sid, oid):
-    """OWN-n の紙を、この画面に開いてよいか。書いて立てた仮説の紙は今までどおり（合言葉なしの場を除く）。"""
+def _holds(handler, sid, token):
+    """その印の案を、この画面が今開いてよいか（鍵を持ち、期限の中で、まだ記録で区切っていない）。"""
+    w = words.by_token(sid, token) if token in _tokens(handler) else None
+    return bool(w and words.key_open(w))
+
+
+def opens(handler, sid, oid, after=False):
+    """OWN-n の紙を、この画面に開いてよいか。書いて立てた仮説の紙は今までどおり（合言葉なしの場を除く）。after は試した後の紙（記録で閉じない）。"""
     if getattr(handler.server, "public_open", False):
         return False
     if oid not in words.spoken_own_ids(sid):
         return True
-    return any((w := words.by_token(sid, t)) and w.get("own_id") == oid for t in _tokens(handler))
+    usable = words.key_live if after else words.key_open
+    return any((w := words.by_token(sid, t)) and w.get("own_id") == oid and usable(w) for t in _tokens(handler))
 
 
-def allowed_at(handler, at):
+def allowed_at(handler, sid, at):
     """頼んだ後の頁を開く at。本人の印でなければ、節を開かない（URL だけでは話した字を見せない）。"""
-    if at.startswith("think-") and (getattr(handler.server, "public_open", False) or at[len("think-"):] not in _tokens(handler)):
+    if at.startswith("think-") and (getattr(handler.server, "public_open", False) or not _holds(handler, sid, at[len("think-"):])):
         return ""
     return at
 
@@ -108,7 +117,9 @@ def request(sid, who, claude=False, client=None):
         return None, NONE
     w = words.asked_for(name)
     if w is not None:
-        return w, None
+        return (w, None) if words.key_open(w) else (None, NONE)  # 閉じた案の鍵は渡し直さない（同じタブの次の人）
+    if not words.think_fresh(talk):
+        return None, NONE
     source = json.loads((hypotheses.ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
     title, evidence = labels(words.base_of(sid)[0])
     w, failures = words.request_think(source, talk, name, title, evidence, client=client, use_claude=claude)
@@ -216,7 +227,7 @@ def post(handler, sid, act, form):
         token = form.get("t", "")
         w = None
         # 印を知っているだけでは採れない。本人の画面（cookie）からだけ。
-        _, why = confirm(sid, token) if token in _tokens(handler) else (None, FAILED)
+        _, why = confirm(sid, token) if _holds(handler, sid, token) else (None, FAILED)
         msg = why or ""  # できた時の文は節の中に出る（2 回並べない）
     if not token or (act == "think-ok" and why):
         return handler._send(422, handler._toy(sid, errors=[msg], at="think"))

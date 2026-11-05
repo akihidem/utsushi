@@ -369,7 +369,11 @@ class Handler(BaseHTTPRequestHandler):
             if kind == "_after" and see:
                 ensure_after(m.group(1), see, v)  # 札の「試した後の紙」の着く先。紙が無いと窓に出ない（#320）
             from . import think_sheet
-            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=think_sheet.allowed_at(self, qs.get("at", [""])[0]), see=see, kind=kind, v=v, path=path))
+            see = qs.get("see", [None])[0]
+            if kind == "_after" and see:
+                ensure_after(m.group(1), see, v)  # 札の「試した後の紙」の着く先。紙が無いと窓に出ない（#320）
+            from . import think_sheet
+            return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=think_sheet.allowed_at(self, m.group(1), qs.get("at", [""])[0]), see=see, kind=kind, v=v, path=path))
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
         if m:
             # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
@@ -388,7 +392,7 @@ class Handler(BaseHTTPRequestHandler):
             if hid.startswith("OWN-"):
                 # 話した字が刷られた紙は、作った本人の画面からだけ。合言葉なしの場では OWN-n の紙を開かない（J-028）。在るかどうかも言わない（下と同じ 404）。
                 from . import think_sheet
-                if not think_sheet.opens(self, sid, hid):
+                if not think_sheet.opens(self, sid, hid, after=stem.endswith("_after")):
                     return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
                 return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
