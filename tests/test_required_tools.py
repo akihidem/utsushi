@@ -3,9 +3,11 @@
 小さな tree に床の入口を写し、偽の道具だけを置いた PATH で回す。本物の場面は回らない。
 道具の確かめが消えても、偽の python で場面がすぐ終わるので、この試験が自分を呼び直す事は無い。
 """
+import importlib.metadata
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -77,4 +79,58 @@ for tool in run_floors.TOOLS:
     assert f"`{tool}`" in readme, tool
 assert "uv" in readme and run_floors.FONT in readme and run_floors.FONT in init
 assert "sudo apt install" in readme and "ffmpeg" in readme.split("sudo apt install")[1]
-print(f"ok 道具 {len(run_floors.TOOLS)} 個と .venv と字を、足りない時は 4 で名指しする")
+
+# Python の版（#227）。README・init.sh・固定した依存が同じ下限を言い、足りない時は init.sh が 4 で名指しする
+MIN_PY = re.search(r"^MIN_PY=(\d+\.\d+)$", init, re.M).group(1)
+assert f"Python {MIN_PY} 以上" in readme, readme
+
+
+def ver(text):
+    return tuple(int(x) for x in text.split("."))
+
+
+pins = re.findall(r"^([\w-]+)==", (ROOT / "requirements.txt").read_text(encoding="utf-8"), re.M)
+assert pins
+for name in pins:
+    floor = re.search(r">=\s*(\d+\.\d+)", importlib.metadata.metadata(name).get("Requires-Python") or "")
+    assert not floor or ver(floor.group(1)) <= ver(MIN_PY), (name, floor.group(1), MIN_PY)
+
+
+def runs_init(venv_python=None, uv_venv_rc=0, new_python="3.12"):
+    """偽の道具で init.sh を回し、(rc, stderr, uv が受けた引数の行) を返す。古い Python を試験の機械に置けないので、比べ方と止まる所だけを見る。"""
+    root = pathlib.Path(tempfile.mkdtemp(dir=BASE.name))
+    shutil.copy(ROOT / "init.sh", root / "init.sh")
+    (root / "requirements.txt").write_text("", encoding="utf-8")
+    for tool in run_floors.TOOLS:
+        stub(root / "bin" / tool)
+    stub(root / "bin/fc-list", f"#!/bin/sh\necho '{run_floors.FONT}'\n")
+    stub(root / "bin/uv", f"""#!/bin/bash
+echo "$*" >> "{root}/uv.log"
+if [ "$1" = venv ]; then
+  [ {uv_venv_rc} -eq 0 ] || exit {uv_venv_rc}
+  mkdir -p .venv/bin; printf '#!/bin/sh\\necho {new_python}\\n' > .venv/bin/python; chmod +x .venv/bin/python
+fi
+""")
+    if venv_python:
+        stub(root / ".venv/bin/python", f"#!/bin/sh\necho {venv_python}\n")
+    env = {**os.environ, "PATH": f"{root}/bin:/usr/bin:/bin"}
+    r = subprocess.run(["bash", str(root / "init.sh")], cwd=root, env=env, capture_output=True, text=True)
+    log = root / "uv.log"
+    return r.returncode, r.stderr, log.read_text(encoding="utf-8") if log.exists() else ""
+
+
+# 版の合う Python が無い: 4 で版を名指しし、依存を入れに進まない
+rc, err, uv = runs_init(uv_venv_rc=2)
+assert rc == 4 and f"Python {MIN_PY} 以上" in err and "pip install" not in uv, (rc, err, uv)
+# 版の合う Python がある: 範囲を渡し、黙って Python を落とさない形で作り、依存を入れる
+rc, err, uv = runs_init()
+assert rc == 0 and f">={MIN_PY}" in uv and "--no-python-downloads" in uv and "pip install" in uv, (rc, err, uv)
+# 前からある .venv の版も見る（3.9 と 3.11 を字の順で比べると逆になる）
+major, minor = ver(MIN_PY)
+for old in (f"{major}.{minor - 1}", "3.9"):
+    rc, err, uv = runs_init(venv_python=old)
+    assert rc == 4 and f"Python {MIN_PY} 以上" in err and old in err and "pip install" not in uv, (old, rc, err, uv)
+for good in (MIN_PY, f"{major}.{minor + 3}"):
+    rc, err, uv = runs_init(venv_python=good)
+    assert rc == 0 and not uv.startswith("venv"), (good, rc, err, uv)  # 前からある .venv を作り直さない
+print(f"ok 道具 {len(run_floors.TOOLS)} 個と .venv と字と Python の版を、足りない時は 4 で名指しする")
