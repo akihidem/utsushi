@@ -1,0 +1,7 @@
+# 命令: bash -c '.venv/bin/python tests/test_one_sheet_loop.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 046aa0c（回した時の HEAD）
+    assert shown["H-A"] == now and shown["H-C"] == params_of(G, "H-C"), "一覧のたたき台の寸法も今の版。ほかの仮説は記録のまま"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 一覧のたたき台の寸法も今の版。ほかの仮説は記録のまま
+試験 rc=1
+rc=0

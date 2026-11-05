@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: a888478（回した時の HEAD）
+F9.own: 自分の仮説「OWNNAME」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/.tmp-1wtfhu9_/H-A_v2.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/.tmp-1wtfhu9_/H-A_v2_tejun.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/.tmp-1wtfhu9_/H-A_v2_after.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/OWN-1_v1_free.pdf
+/tmp/tmp02tnjx6v/play/NDL-1187053-R0000005-L/.tmp-1be24tnc/OWN-1_v1_after.pdf
+ok: 合言葉なしで開くデモ
+rc=0

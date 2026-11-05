@@ -136,7 +136,8 @@
   "evidence": [
    "src/omochae/loop.py",
    "tests/test_loop.py",
-   "tests/test_next_version_atomic.py"
+   "tests/test_next_version_atomic.py",
+   "tests/test_one_sheet_loop.py"
   ],
   "unverified": "実際の記録で未実行"
  },
@@ -157,6 +158,8 @@
   "status": "doing",
   "evidence": [
    "tests/test_reply_visible.py",
+   "src/web/wording.py",
+   "tests/test_wording.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
    "tests/test_play_server.py",
@@ -214,7 +217,15 @@
   "unverified": "本物の API で未実行。偽の応答の試験のみ",
   "evidence": [
    "src/api/words.py",
-   "tests/test_words.py"
+   "tests/test_words.py",
+   "tests/test_loop1_words.py",
+   "src/web/think_sheet.py",
+   "tests/test_loop1_think.py",
+   "tests/test_loop1_withdraw.py",
+   "tests/test_loop1_own_private.py",
+   "tests/test_loop1_round.py",
+   "tests/test_loop1_next.py",
+   "tests/test_own_form_gone.py"
   ]
  },
  {
@@ -428,6 +439,16 @@
   "unverified": "Issue 278・309。命令 1 つで束（JSON）を書く所まで。束の上の段に、群に出てくる雛形の今の刷った組も書く（309）。話した事（考え・工夫・できた後の話）も束に入れる（307。工夫は手順の番号つきで、記録に結んだ話はその記録の群に数える）。話した事の入った束は見本の話でだけ通した（実の人が話した記録では、まだ出していない）。11-04 の試行の記録 2 件から出した束が、型紙エンジンの側の入口の検査を通る事は手元で確かめた。束から直しの案を起こす所・人の採否・次の版・版ごとの数の並びは、型紙エンジンの repo の側（その repo の Issue 63）で、この repo には無い。エンジンで採られた案と次の版を、作る側の頁に出す所はまだ無い。実の場の記録（多くの人の手順の進みと質問）で束を出した事はまだ無い。名前は形では落とせないので、束は git に入れず、人が読んでから使う"
  },
  {
+  "id": "f44",
+  "name": "鍵なしで 4 つのループを一周回す入口（#335）: 部品の無い段で名指しして止まり、部品が入ると通る段が増える",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/cycle.py",
+   "tests/test_cycle.py"
+  ],
+  "unverified": "今の main で全部の段が本物のエンジンまで通る（12 段。ループ 1 の紙で作って記録し、その記録からたたき台の次の版を作って次の人が刷る道は、本物の頁で通す）。ギャラリーの頁は開かない。本物の API と、人が実物で回した一周は未確認"
+ },
+ {
   "id": "f35",
   "name": "他の人が作った物のギャラリー（本人の決定 11-05、#242）: 玩具の頁と /gallery に写真・感想・工夫を記録の順で並べる",
   "status": "doing",
@@ -506,5 +527,17 @@
    "tests/test_trial_video.py"
   ],
   "unverified": "作り物の動画だけで通した。本物の動画での札の読みと、版の効き目はまだ。札を人が確かめるのは端末の命令で、頁は無い"
+ },
+ {
+  "id": "f45",
+  "name": "型紙の版の歩み（裏側の改善ループの頁）",
+  "status": "doing",
+  "evidence": [
+   "src/web/ayumi.py",
+   "src/web/kaizen_versions.py",
+   "tests/test_loop_ayumi.py",
+   "docs/process/trials/sheets/README.md"
+  ],
+  "unverified": "どのループかは記録から決める。寸法の版とエンジンの版の本物はまだ無く、試験の作り物で見た。良くなったかは判定しない。エンジンの版は別の repo の台帳を読むだけで、無い機械では読めませんと出す"
  }
 ]

@@ -301,6 +301,7 @@
   "test_next_version_atomic",
   "test_no_compare_sheet",
   "test_one_sheet",
+  "test_one_sheet_loop",
   "test_one_sheet_page",
   "test_pictures",
   "test_pii_speed",

@@ -1,0 +1,17 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_words.py
+# commit: 961f100（回した時の HEAD）
+F9.own: 自分の仮説「試験の案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+F9.own: 自分の仮説「試験の案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp9suyy6sb/OWN-1_v1.pdf
+/tmp/tmp9suyy6sb/OWN-1_v1_tejun.pdf
+/tmp/tmp9suyy6sb/OWN-1_v1_after.pdf
+/tmp/tmp9suyy6sb/OWN-2_v1_free.pdf
+/tmp/tmp9suyy6sb/OWN-1_v1.pdf
+/tmp/tmp9suyy6sb/OWN-1_v1_tejun.pdf
+/tmp/tmp9suyy6sb/OWN-1_v1_after.pdf
+/tmp/tmp9suyy6sb/OWN-3_v1.pdf
+/tmp/tmp9suyy6sb/OWN-3_v1_tejun.pdf
+/tmp/tmp9suyy6sb/OWN-3_v1_after.pdf
+/tmp/tmp9suyy6sb/OWN-4_v1_free.pdf
+ok
+rc=0

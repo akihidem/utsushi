@@ -92,7 +92,7 @@ def schema_errors(instance, schema):
 
 def run(role, system, user, tools, submit_schema, execute, validate=None, client=None):
     """Returns (result, trace)。execute(name, input) は道具の実行、validate(result) は失敗の文の一覧を返す。"""
-    client = client or default_client()
+    client = client or default_client(role)  # 役を渡す。画面の役の時間切れとやり直しの回数は、ここで client に届く
     trace = Trace(model=config.MODELS[role])
     definitions = tools + [{"name": "submit_result", "description": "最終結果を提出する。作業の最後に必ず 1 回呼ぶ。", "input_schema": submit_schema}]
     messages = [{"role": "user", "content": user}]
