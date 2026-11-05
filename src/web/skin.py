@@ -65,6 +65,7 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 # 高さを上げた字のリンクの下線は text-decoration で字に付ける。border-bottom のままだと箱の底に付き、字から 10〜16px 離れて、図鑑の一覧では隣の行の線に見える。
 # 当てるのは字の線を持つリンクだけ。.nav の今いる頁の印・.tabs の枠・.grid の絵の札（図鑑の .more は字だけの一覧）・.toys の中・.btn の釦・作りながら見る頁の頭は線の形が別なので当てない。
 # body .links a は図鑑の .zukan a に勝つ詳細度にするため（図鑑の頁では床より後に .zukan a が来る）。
+# :where(.top) a は手帖とギャラリーの頭の字のリンク。詳細度を下げて、線なしの作りながら見る頁の .top a に勝たせる。ここは全部の頁に載るので .techo の名前を書かない（手帖の皮を外へ漏らさない決まり、#126）。
 # 一括の text-decoration は Safari が太さと色を読まないので、1 つずつ書く。色は頁ごとの変数に頼らず、リンクの字の色から作る（開いた頁の見た目の組は --accent を持たない）。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
@@ -72,7 +73,7 @@ TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 label:not(.sr):has(>input[type=text]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 [hidden]{display:none!important}
-.meta>a:only-child:not(.toys a),.meta li>a,.more .grid li>a,body .links a:not(.btn),.jump a,td>a,.cap>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.notice-back a,.techo .top a,.gallery .top a,body .tj-exit a{border-bottom:0;text-decoration-line:underline;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor var(--line,40%),transparent);text-underline-offset:3px}
+.meta>a:only-child:not(.toys a),.meta li>a,.more .grid li>a,body .links a:not(.btn),.jump a,td>a,.cap>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.notice-back a,:where(.top) a,body .tj-exit a{border-bottom:0;text-decoration-line:underline;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor var(--line,40%),transparent);text-underline-offset:3px}
 a:hover{--line:100%}
 }
 """
