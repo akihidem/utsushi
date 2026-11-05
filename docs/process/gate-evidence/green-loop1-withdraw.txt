@@ -1,0 +1,22 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: 19a510a（回した時の HEAD）
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmpiw8fo170/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+ok
+rc=0

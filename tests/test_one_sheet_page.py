@@ -11,6 +11,7 @@
 5. 一覧の「紙 1 枚」の絞り込みは、たたき台の印で数える。必須 2 種は入らなくてよい（本人の決定 19:44）
 6. ways --json の行は sheet と reading_of を持つ（エンジンの形と同じ）。行は消さない
 7. 次の版の欄と「次の版を待つ報告」は、たたき台の記録だけに出す。ほかの仮説の記録の欄は、送っても理由の合わない失敗の文になるだけだった
+8. 札の上の断り（記録の note）は頁に出さない（本人の決定 11-05・案 A）。note は作る側の控えとして記録と一覧の命令に残す
 """
 import json
 import os
@@ -29,7 +30,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "a
 
 from omochae import hypotheses, making_log, records, ways  # noqa: E402
 from omochae.metrics import ALLOWED  # noqa: E402
-from web import toys  # noqa: E402
+from web import toy, toys  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -196,6 +197,17 @@ param = sorted(ALLOWED[result])[0]
 to = {**TEMPLATES[result].DEFAULTS, **rest[0]["params"]}[param] - 1
 assert post(f"/record/{rid}/next", {"interpretation": "x", "param": param, "to": str(to), "why": "x", "by": "x"})[0] == 422
 assert not list(out_dir(TRIAL).glob(f"{other}_v2*"))
+
+# 8. 札の上の断りは頁に出さない（本人の決定 11-05・案 A）。作る側の控えとしては残す
+sids = toys.sources()
+assert len(sids) == 83
+for sid in sids:
+    data = hypotheses.load(sid)
+    page = toy.toy_page(sid)
+    assert data["note"] and data["note"] not in page, (sid, "断りを頁に出さない")
+    assert "どれも試していない" not in page and "どれが正しいかは書かない" not in page, sid
+    assert ways.NOTE in page, (sid, "作り方の印の断りは残す")
+    assert data["note"] in hypotheses.list_lines(data), (sid, "作る側の一覧の命令には残す")
 
 server.shutdown()
 print("ok 頁に出る型紙はたたき台の 1 枚だけ。記録はその 1 枚の番号で残り、前の記録と紙は読める")
