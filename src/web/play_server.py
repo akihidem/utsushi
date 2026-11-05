@@ -22,6 +22,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.store import SID
 
+from . import failure_log
 from . import skin as skinmod
 from .contrib_server import STYLE
 
@@ -227,7 +228,7 @@ class Handler(BaseHTTPRequestHandler):
             if self._gate():
                 self._get()
         except Exception as e:
-            print(f"GET の失敗: {type(e).__name__}: {e}", file=sys.stderr)
+            failure_log.request_failed("GET", self.path, e)
             self._send(500, "うまく表示できませんでした")
 
     def do_POST(self):
@@ -236,7 +237,7 @@ class Handler(BaseHTTPRequestHandler):
             if self._gate():
                 self._post()
         except Exception as e:
-            print(f"POST の失敗: {type(e).__name__}: {e}", file=sys.stderr)
+            failure_log.request_failed("POST", self.path, e)
             self._send(500, "受け付けられませんでした")
 
     def _get(self):
@@ -484,8 +485,10 @@ class Handler(BaseHTTPRequestHandler):
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
                 msg = "Claude が見えた事を出しました" if not why else why
         except BudgetStop as e:  # 今日の上限か累計の停止線かを言う（待てば聞けるのかが分かるように）
+            failure_log.claude_failed(act.removeprefix("ai-"), "POST", self.path, e)
             msg = f"今は AI に聞けません（{e.note}）"
-        except Exception:
+        except Exception as e:  # 画面の文は変えない。理由は作る側の記録に残す
+            failure_log.claude_failed(act.removeprefix("ai-"), "POST", self.path, e)
             msg = "今は AI に聞けません"
         return self._done(sid, msg, form.get("back", ""))
 
@@ -552,6 +555,16 @@ class Handler(BaseHTTPRequestHandler):
         ev = f"&ev={event}" if event in ("stuck", "done") else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
+    def _ask(self, sid, hid, question):
+        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。"""
+        from api import ask
+
+        try:
+            return ask.answer(sid, hid, question)
+        except Exception as e:
+            failure_log.claude_failed("ask", "POST", self.path, e, private=(question,))
+            raise
+
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
         out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
@@ -561,11 +574,10 @@ class Handler(BaseHTTPRequestHandler):
         if not printed_versions(sid, hid):
             return out(422, {"error": "刷った紙をえらぶ"})
         if act == "ask-json":
-            from api import ask
             from api.budget import BudgetStop
 
             try:
-                text, how = ask.answer(sid, hid, form.get("question", ""))
+                text, how = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
@@ -581,6 +593,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
+        anchor = "kiroku"  # 予想と自分の仮説は次の段へ戻す（要件 L-04）。試した記録の欄へ戻すのは記録だけ
         if act == "ask":
             # 手順の質問は、試した記録（仮説への返事）には入れず、その場で答えを頁に出す。順（紙 → 記録と説明 → AI）には入らない。
             # 質問の文だけは工作の様子（omochae.making_log）に残す: 何で止まるかを、案内と答えを直す材料にする（本人の決定 11-05 朝）。
@@ -591,7 +604,7 @@ class Handler(BaseHTTPRequestHandler):
             if hypotheses.need_prediction(sid) or not printed_versions(sid, hid):
                 return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
             try:
-                text, how = ask.answer(sid, hid, form.get("question", ""))
+                text, how = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
@@ -601,9 +614,11 @@ class Handler(BaseHTTPRequestHandler):
         if act == "predict":
             _, failures = hypotheses.save_prediction(sid, form.get("text", ""))
             msg = "予想を残しました"
+            anchor = "kasetsu"
         elif act == "own":
-            _, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
+            own, failures = hypotheses.save_own(sid, form.get("name", ""), form.get("how", ""), form.get("evidence", ""))
             msg = "仮説を残しました。「紙を刷る」で、身の回りの紙と紐で作る型紙なしの紙が刷れます"
+            anchor = f"own-{own['id']}" if own else anchor
         elif act == "print-own":
             oid = form.get("id", "")
             if oid not in {h["id"] for h in hypotheses.own_hypotheses(sid)}:
@@ -651,7 +666,7 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("predict", "print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else "kiroku")
+        self._done(sid, msg, see=see, anchor="win" if see else anchor)
 
 
 def lan_addresses():

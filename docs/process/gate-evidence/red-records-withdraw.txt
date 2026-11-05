@@ -1,0 +1,6 @@
+  File "tests/test_records_withdraw.py", line 62, in <module>
+    assert r.returncode == 0, r.stderr
+AssertionError: usage: omochae.records [-h] [--source SOURCE] {add,summary} ...
+omochae.records: error: argument cmd: invalid choice: 'withdraw' (choose from 'add', 'summary')
+
+rc 1 （直す前の main ee9d492。取り下げの命令が無い。取り下げる前の、頁と集計に出る所の確かめは通っている）

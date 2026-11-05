@@ -22,7 +22,7 @@
 | Skill | `.claude/skills/backstage/SKILL.md` | 裏の制作の手順。API の鍵なしで仮説の案を作り、`hypotheses import-draft` で人が採る前の受付に入れる |
 | MCP | `.mcp.json`・`src/api/mcp_server.py` | API の輪と同じ道具（寸法の検査、図の拡大、前例）と、案の全体の検査 `check_draft` |
 | サブエージェント | `.claude/agents/second-eye.md` | 案の言葉と根拠を、作った者と別の目で読む。書き換えない |
-| フック | `.claude/settings.json`・`.claude/hooks/ledger-check.sh` | 記録や台帳を直した直後に台帳の検査を回し、落ちたら Claude に返す |
+| フック | `.claude/settings.json`・`.claude/hooks/ledger-check.sh` | 記録や台帳を直した直後に台帳の検査を回し、落ちた時と検査できない時は Claude に返す |
 
 試験は `tests/test_claude_code.py`（MCP の応答、受付の床、フックの負の対照）。工房で実際に案を作った事はまだ無い。MCP は Claude Code が認識したが、使う前の承認はまだ。
 
