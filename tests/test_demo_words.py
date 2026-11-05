@@ -59,6 +59,13 @@ ask = words.AskCard(words.cues_of("ask"))
 assert ask.frame(3.0).tobytes() == ask.frame(8.9).tobytes()
 assert ask.frame(0.0).tobytes() != ask.frame(3.0).tobytes()
 
+# 段の印は 3 つ。右上に収まる。本人の言葉の印は付けない（窓口が整理した文なので）
+from PIL import ImageFont
+assert [m for m, _ in words.STEPS] == ["①", "②", "③"]
+for mark, s in words.STEPS:
+    assert ImageFont.truetype(flip.SERIF_BOLD, 32).getlength(f"{mark} {s}") <= 800, s
+    assert s not in rec_lines
+
 # 記録を読む道も試す: 別のファイルの字と照らせる
 with tempfile.TemporaryDirectory() as tmp:
     p = pathlib.Path(tmp) / "p.md"

@@ -4,7 +4,8 @@ import importlib.util
 from demo import build
 
 # 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
-assert build.SCENES == ["flip", "scene2", "word_make", "scene3", "scene5", "word_fix", "scene6", "word_ai", "scene7", "word_who", "ask"]
+assert build.SCENES == ["flip", "scene2", "word_make", "core_map", "scene3", "core_make", "core_keep", "core_voice", "scene5", "core_gallery", "scene6",
+                        "word_ai", "core_loop", "word_fix", "scene7", "word_who", "ask"]
 # 試験の数は RESULT.md の行から読む。読めない時は None（古い数を出さない）
 assert build.count_tests("実行した 57 本（場面 30 本、試験 27 本）、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
 assert build.count_tests("何も無い") is None
@@ -219,6 +220,23 @@ with tempfile.TemporaryDirectory() as tmp:
     table = json.loads((run_dir / "beats.json").read_text(encoding="utf-8"))
     assert table["kind"] == "song" and table["commit"] == rec["commit"] and table["rights"] == "本人が作った" and table["moved"] == 5
     build.song.measure, build.song.align, build.song.apply_cues = real_measure, real_align, real_apply
+
+# 撮った動画で場面を差し替える口（声の取り込みとエンジンごとの輪は、撮れたら差し替える）。読めない物は 4
+with tempfile.TemporaryDirectory() as tmp:
+    clip = pathlib.Path(tmp) / "撮り足し.mp4"
+    clip.write_bytes(b"clip-bytes")
+    for bad in (["--clip", "無い場面=" + str(clip)], ["--clip", "core_loop=" + str(clip) + "x"]):
+        with contextlib.redirect_stderr(io.StringIO()):
+            assert build.main(["--out", tmp, "--skip-tests", *bad]) == 4, bad
+    seen_scene = []
+    build.importlib.import_module = lambda name: types.SimpleNamespace(main=lambda argv: seen_scene.append(pathlib.Path(argv[argv.index("--out") + 1]).stem) or pathlib.Path(argv[argv.index("--out") + 1]).write_bytes(b"x") and 0)
+    build.assemble.assemble = lambda made, out, audio=None, **k: 0
+    assert build.main(["--out", tmp, "--skip-tests", "--clip", "core_loop=" + str(clip)]) == 0
+    assert "core_loop" not in seen_scene and "core_map" in seen_scene, seen_scene
+    run_dir = sorted(p for p in pathlib.Path(tmp).iterdir() if p.is_dir())[-1]
+    assert (run_dir / "core_loop.mp4").read_bytes() == b"clip-bytes"
+    rec = json.loads((run_dir / "build.json").read_text(encoding="utf-8"))
+    assert rec["clips"]["core_loop"]["sha256"] and rec["clips"]["core_loop"]["file"] == "撮り足し.mp4", rec["clips"]
 
 # 曲が無い時は仮の拍を付け、クレジットにも仮と出す（Suno の曲に見せない）
 assert "仮の拍" in build.PROVISIONAL_CREDIT and "Suno の曲待ち" in build.PROVISIONAL_CREDIT

@@ -13,6 +13,7 @@ exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超え�
 - 曲は 1 本の命令で付ける。--song を渡すと、音の実物から拍を測り、合図を寄せて全場面を書き出し、音を重ねる。
   クレジットと権利の文が無い曲は受けない（曲の出所を動画と記録に残すため。本人の決定で曲は本人が Suno で作って渡す）。
   --song が無い間は、コードで作った仮の拍を付ける（demo.beat）。クレジットにも仮と出す。Suno の曲に見せないため。
+- まだ無い物（声の取り込み・エンジンごとの改善）は図で描き、撮れたら --clip で場面ごと差し替える。つなぐ時に映像だけを使うので、差し替えた動画の声は入らない（J-022）。
 - 音を作った commit を build.json と beats.json に残す（#268）。動画と同じく、音のコードも後から辿るため。
 - 要る道具は、試験（約 5 分）を回す前に全部を名前で言う。撮る日に場面の途中で初めて分かるのを避けるため。
 - 途中で落ちたら、--run で同じ置き場を指して作り直す。--only で場面を絞ると、ほかの場面の動画はそのまま使い、
@@ -28,6 +29,7 @@ import importlib  # noqa: F401  試験が場面の読み込みを差し替える
 import json
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -92,6 +94,8 @@ def main(argv=None):
     ap.add_argument("--song-start", type=float, default=0.0, help="曲のどこ（秒）から使うか。前奏を飛ばす時")
     ap.add_argument("--music", help="曲のクレジットの文（場面 7 に出す。--song の時は必ず）")
     ap.add_argument("--rights", help="曲の権利の文（作った人・道具・使ってよい範囲。build.json と beats.json に残す。--song の時は必ず）")
+    ap.add_argument("--clip", action="append", default=[], metavar="場面=ファイル",
+                    help="その場面を撮った動画に差し替える（声の取り込みやエンジンごとの輪が撮れた時）。映像だけを使い、音は捨てる。何度でも付けられる")
     ap.add_argument("--photos")
     ap.add_argument("--partial", action="store_true", help="無い場面を飛ばす（作りかけの確かめ用。本番では使わない）")
     ap.add_argument("--skip-tests", action="store_true", help="試験を回さない（数は出さない。確かめ用）")
@@ -108,6 +112,13 @@ def main(argv=None):
     if a.only and not a.run:
         print("検査できない: --only は --run（前の置き場）と一緒に使う", file=sys.stderr)
         return 4
+    clips = {}
+    for item in a.clip:
+        name, _, path = item.partition("=")
+        if name not in SCENES or not pathlib.Path(path).is_file():
+            print(f"検査できない: 差し替えが読めない: {item}（場面の名前=動画のファイル）", file=sys.stderr)
+            return 4
+        clips[name] = path
     if a.song and not (a.music and a.rights):
         print("検査できない: 曲には --music（クレジット）と --rights（権利）が要る", file=sys.stderr)
         return 4
@@ -179,12 +190,17 @@ def main(argv=None):
         # 合図を曲の拍へ寄せる。場面の表を書き換えるので、以後の書き出しの絵と字が曲に乗る。
         beats = [round(b - a.song_start, 4) for b in measured["beats"] if b >= a.song_start]
         bars = [round(b - a.song_start, 4) for b in measured["bars"] if b >= a.song_start]
-        fit = song.align({n: load_scene(n).DURATION for n in SCENES}, {n: dict(load_scene(n).CUES) for n in SCENES}, beats, bars)
+        lengths = {n: assemble.duration(clips[n]) if n in clips else load_scene(n).DURATION for n in SCENES}
+        fit = song.align(lengths, {n: dict(load_scene(n).CUES) for n in SCENES}, beats, bars)
         song.apply_cues(fit)
     made, skipped = [], []
     for name in SCENES:
         if name not in only:
             made.append(run / f"{name}.mp4")  # 前の動画をそのまま使う（上で在る事を確かめた）
+            continue
+        if name in clips:
+            shutil.copyfile(clips[name], run / f"{name}.mp4")
+            made.append(run / f"{name}.mp4")
             continue
         try:
             mod = load_scene(name)
@@ -234,6 +250,7 @@ def main(argv=None):
         return {"commit": old.get("commit", prev.get("commit")), "dirty": old.get("dirty", prev.get("dirty"))}
 
     record = {"commit": sha, "dirty": dirty, "tests": tests, "music": music, "audio": audio, "photos": photos, "skipped": skipped,
+              "clips": {n: {"file": pathlib.Path(p).name, "sha256": file_sha(p)} for n, p in clips.items()},
               "rebuilt": only if a.only else [], "offline": a.offline,
               "scenes": [{"name": p.stem, "seconds": assemble.duration(p), **made_by(p.stem)} for p in made],
               "total_seconds": assemble.duration(run / "demo.mp4"), "assemble_rc": rc}
