@@ -46,12 +46,12 @@ def TEMPLATES_NAMES(sid):
 
 
 def pending(sid, recs):
-    """まだ版に使っていない報告。(説明があって次の版に進める物, 説明を待つ物)。次の版はたたき台の記録からだけなので（J-032）、ほかの仮説の記録は数えない。"""
+    """まだ版に使っていない報告。(説明があって次の版に進める物, 説明を待つ物)。次の版はたたき台の記録と、たたき台へ向く自分の紙の記録からだけなので（J-032、loop.next_target）、ほかの仮説と型紙なしの紙の記録は数えない。"""
     sheet = hypotheses.sheet_of(sid)["id"]
     used = {rid for h in hypotheses.load(sid)["hypotheses"] for v in versions(sid, h["id"]) for rid in v.get("record_ids", [])}
     ready, waiting = [], []
     for r in recs:
-        if r["id"] in used or r["hypothesis_id"] != sheet:
+        if r["id"] in used or loop.next_target(sid, r["hypothesis_id"]) != sheet:  # 札の次の版の欄と同じ向く先で数える
             continue
         (ready if loop.explanation(r["id"]) else waiting).append(r)
     return ready, waiting

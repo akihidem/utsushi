@@ -315,13 +315,15 @@ def next_reasons(failures, sid, hid, param):
 def next_form(r, back=""):
     """次の版を作る口（本人の問いの (7)、11-04）。人の説明が先にある記録にだけ出す（J-013）。
     人が解釈を書いて確定し、変える寸法を 1 つ選んで採ると、台帳の床（F4・F7・F8・F9）を通った時だけ次の版を刷る。
-    次の版はたたき台の記録からだけ（J-032）。ほかの仮説の記録に欄を出しても、版は刷れないか、札に出ない紙が増えるだけなので空を返す。"""
+    次の版はたたき台の記録からだけ（J-032）。ほかの仮説の記録に欄を出しても、版は刷れないか、札に出ない紙が増えるだけなので空を返す。
+    自分の紙（OWN-n）の記録は、たたき台へ向けて欄を出す（loop.next_target。今の値もたたき台の物）。"""
     from omochae.metrics import ALLOWED
 
-    if r["hypothesis_id"] != hypotheses.sheet_of(r["source_id"])["id"]:
+    target = loop.next_target(r["source_id"], r["hypothesis_id"])
+    if target != hypotheses.sheet_of(r["source_id"])["id"]:
         return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
-    now = _params_now(r["source_id"], r["hypothesis_id"], template)
+    now = _params_now(r["source_id"], target, template)
     opts = "".join(_param_option(template, k, now) for k in sorted(ALLOWED[template]))
     # 解釈はすぐ上の説明とほぼ同じ問いなので、説明を初めから入れておく（#129）。そのまま採っても、書き直してもよい。
     told = (loop.explanation(r["id"]) or {}).get("text", "")
