@@ -276,7 +276,9 @@
    "tests/test_ask.py",
    "src/api/budget.py",
    "tests/test_budget_after_period.py",
-   "tests/test_call_timeouts.py"
+   "tests/test_call_timeouts.py",
+   "src/web/failure_log.py",
+   "tests/test_failure_log.py"
   ],
   "unverified": "AI の分は偽の応答の試験だけ。本物の API は本人が鍵を置くまで動かない（J-023）。人が使った事は無い"
  },

@@ -21,6 +21,7 @@ from omochae import hypotheses, loop, records
 from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 
+from . import failure_log
 from . import skin as skinmod
 from .contrib_server import STYLE
 
@@ -213,7 +214,7 @@ class Handler(BaseHTTPRequestHandler):
             if self._gate():
                 self._get()
         except Exception as e:
-            print(f"GET の失敗: {type(e).__name__}: {e}", file=sys.stderr)
+            failure_log.request_failed("GET", self.path, e)
             self._send(500, "うまく表示できませんでした")
 
     def do_POST(self):
@@ -222,7 +223,7 @@ class Handler(BaseHTTPRequestHandler):
             if self._gate():
                 self._post()
         except Exception as e:
-            print(f"POST の失敗: {type(e).__name__}: {e}", file=sys.stderr)
+            failure_log.request_failed("POST", self.path, e)
             self._send(500, "受け付けられませんでした")
 
     def _get(self):
@@ -412,8 +413,10 @@ class Handler(BaseHTTPRequestHandler):
                 _, why = observe.observe(rid, techo_site.media_dir(rid) / videos[0], default_client("observe"))
                 msg = "Claude が見えた事を出しました" if not why else why
         except BudgetStop as e:  # 今日の上限か累計の停止線かを言う（待てば聞けるのかが分かるように）
+            failure_log.claude_failed(act.removeprefix("ai-"), "POST", self.path, e)
             msg = f"今は AI に聞けません（{e.note}）"
-        except Exception:
+        except Exception as e:  # 画面の文は変えない。理由は作る側の記録に残す
+            failure_log.claude_failed(act.removeprefix("ai-"), "POST", self.path, e)
             msg = "今は AI に聞けません"
         return self._done(sid, msg, form.get("back", ""))
 
@@ -446,6 +449,16 @@ class Handler(BaseHTTPRequestHandler):
         loop.confirm_sheet(sid, hid, v, by, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"版 {v} を刷りました。100% で印刷します", form.get("back", ""), see=hid, anchor="win")
 
+    def _ask(self, sid, hid, question):
+        """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。"""
+        from api import ask
+
+        try:
+            return ask.answer(sid, hid, question)
+        except Exception as e:
+            failure_log.claude_failed("ask", "POST", self.path, e, private=(question,))
+            raise
+
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
         out = lambda code, obj: self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
@@ -455,11 +468,10 @@ class Handler(BaseHTTPRequestHandler):
         if not (out_dir(sid) / f"{hid}_v1.pdf").exists():
             return out(422, {"error": "刷った紙をえらぶ"})
         if act == "ask-json":
-            from api import ask
             from api.budget import BudgetStop
 
             try:
-                text, how = ask.answer(sid, hid, form.get("question", ""))
+                text, how = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
@@ -473,14 +485,13 @@ class Handler(BaseHTTPRequestHandler):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
         if act == "ask":
             # 手順の質問は記録に残さず、その場で答えを頁に出す。仮説への返事の順（紙 → 記録と説明 → AI）には入らない。
-            from api import ask
             from api.budget import BudgetStop
 
             hid = form.get("hypothesis", "")
             if hypotheses.need_prediction(sid) or not (out_dir(sid) / f"{hid}_v1.pdf").exists():
                 return self._send(422, self._toy(sid, errors=["刷った紙について聞けます。先に予想を書いて、紙を刷ってください"]))
             try:
-                text, _ = ask.answer(sid, hid, form.get("question", ""))
+                text, _ = self._ask(sid, hid, form.get("question", ""))
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
                 text = f"今は AI に聞けません（{e.note}）"
             except Exception:

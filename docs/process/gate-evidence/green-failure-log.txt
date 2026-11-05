@@ -1,0 +1,10 @@
+ok
+rc 0 （直した後。例外を起こした GET と POST で、時刻・メソッド・道・型・トレースバックが出る。送った文と合言葉は出ない。Claude の呼び出しの失敗で、役と型と文が出る。予算で止めた時は記録に額まで残り、画面には出ない。画面の文は前と同じ）
+記録の見本（送った文は int() に渡した物。例外の文を出さないので残らない）:
+[2026-11-05 11:35:16 +0900] POST /toy/NDL-1/ask-json の失敗: ValueError
+ValueError:
+  File "<stdin>", line 7, in <module>
+  File "<stdin>", line 5, in handler
+  File "<stdin>", line 3, in inner
+[2026-11-05 11:35:16 +0900] POST /toy/NDL-1/ask-json Claude の呼び出しの失敗（役 ask）: AuthenticationError: Error code: 401 invalid x-api-key
+直した木を 1 か所ずつ戻す書き換え 13 通りは、どれも試験で落ちる: 例外の文を全部出す / 道の ? より後ろも出す / 質問の文を伏せない / 鍵らしい物を伏せない / 輪の止めた理由を全部出す / 長いファイルの名前も出す / 読めない JSON の文を出す / 引数の間違いの文を出さない / トレースバックを出さない / 手順の質問の失敗を残さない / 手帖の Claude の返事の失敗を残さない / GET の失敗を残さない / POST の失敗を残さない
