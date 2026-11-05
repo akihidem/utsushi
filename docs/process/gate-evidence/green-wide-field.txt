@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_tap_size.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmp9zox33u5/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp9zox33u5/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp9zox33u5/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+rc=0
