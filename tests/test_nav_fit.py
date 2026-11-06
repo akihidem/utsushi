@@ -37,7 +37,8 @@ def room():
 # 帯の字の大きさは、スマホの幅で FONT_PX のまま
 assert f".nav{{font-size:{FONT_PX}px" in skin.TAP_FLOOR
 gap, spacing = narrow_rule()
-labels = [name for _, name in skin.NAV]
+# 帯は道しるべ（段 1）: えらぶ・つくる・のこす・もちよる と よむ
+labels = [*skin.ROAD, skin.YOMU[1]]
 # 「うつし」は margin-right:100% で 1 段目に置くので、残りの項目だけで 1 段に収める
 assert ".nav .brand{flex:none;white-space:nowrap;margin-right:100%}" in skin.NAV_STYLE
 assert row_width(labels, gap, spacing) <= room(), ("帯が 390 で 1 段に収まらない", labels, row_width(labels, gap, spacing), room())

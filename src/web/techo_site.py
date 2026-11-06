@@ -28,6 +28,10 @@ from . import wording
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
 MAX_MEDIA = 20 * 1024 * 1024
 MAX_PER_RECORD = 3
+# 合言葉なしで開いた場の写真と動画の置き場の合計（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。
+# 誰でも上げられる場なので、機械の空き（11-06 に 102G）を埋めさせない。2GB は空きの 2% で、20MB の動画なら 100 本・写真なら数百枚。
+# 記録を作る口は書き込みの数の上限が絞り、1 つの記録には MAX_PER_RECORD までなので、1 人で一気に埋める形にはなりにくい
+PUBLIC_MEDIA_TOTAL = 2 * 1024 * 1024 * 1024
 MISMATCH = "中身を写真か動画として読めません（JPEG・PNG・MP4・MOV だけ）"
 ICONS = {
     "動いた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 34c8 0 14-6 18-18M20 14l8 2 2 8"/></svg>',
@@ -53,6 +57,12 @@ def esc(s):
 
 def media_dir(rid):
     return records.folder() / "media" / rid
+
+
+def media_bytes():
+    """置き場の写真と動画の大きさの合計（確かめの控えの json は数えない）。公開の場の合計の上限を見る時に、受ける前に数える。"""
+    root = records.folder() / "media"
+    return sum(p.stat().st_size for p in root.glob("R-*/m*.*")) if root.exists() else 0
 
 
 def strip_jpeg_meta(data):
@@ -282,9 +292,11 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 """
 
 
-def made_item(sid, data, r, photos=True):
+def made_item(sid, data, r, photos=True, public=False):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
-    photos=False は合言葉なしで開いた場。写真も人の書いた文も出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    public=True は合言葉なしで開いた場。人が「物だけ」と確かめた写真と動画は出す（本人の決定 11-06「公開の場で上げた写真は、公開の場の
+    ギャラリーにも出します」）。人の書いた文と記録の番号は前と同じく出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    photos=False は写真も文も出さない前の開いた場の形（今は呼ぶ所が無い）。
     ひとこと（note）は学ぶ人の頁に出してこなかった欄なので、ギャラリーにも出さない。
     動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
     if not photos:
@@ -293,28 +305,56 @@ def made_item(sid, data, r, photos=True):
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
-    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
-    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict))
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and not public else ""
+    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and not public)
     if not pics and not words:
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}　{esc(wording.record_no(r["id"]))}</p>'
+    # 開いた場では記録の番号を画面に出さないので、道（#R-…）にも入れず、玩具の頁の頭へ行く（別の目の確かめで見つかった）
+    to = f"/toy/{esc(sid)}" + ("" if public else f"#{esc(r['id'])}")
+    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
-def gallery_page(sids, photos=True):
+def own_item(sid, data, r):
+    """今残した 1 つの札（持ち寄る駅の頭。窓口の決定 11-06 夜・案 A）。記録を残した画面にだけ出す。
+    ほかの札と違い、写真か言葉が無い記録も出す（今残した物が並んだ事を見せるため）。写真と動画は、ほかの札と同じく人が確かめた物だけ
+    （ギャラリーは確認の後だけ、#314。確認の前の物は、上げた本人が手帖の記録の頁で見る）。
+    記録の頁（説明と AI の札）へは記録の番号から、玩具の頁の同じ記録へは玩具の名前から行く（ほかの札と同じ。地図の 4。新しい字は足さない）。"""
+    files = media_review.public(r["id"], media_of(r["id"]))
+    pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
+                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
+    h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+    return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
+            f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　'
+            f'{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
+            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
+
+
+def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
     職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
-    cards = ""
+    cards, own = "", ""
     for sid in sids:
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
-            cards += made_item(sid, data, r, photos)
-    real = bool(cards)  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
-    cards = cards or ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
-                      else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
+            # 今残した 1 つ（記録を残した画面の鍵が合う記録）は頭に出し、並びの中には重ねて出さない。合言葉なしの場（public・photos=False）は鍵を見ない。
+            # 札に記録の番号と感想の字が出るので（J-028）。呼ぶ側（play_server）も合言葉なしの場では鍵を渡さず、二重に閉じる
+            if photos and not public and rec_key and not own and records.mine(r["id"], rec_key):
+                own = own_item(sid, data, r)
+                continue
+            cards += made_item(sid, data, r, photos, public)
+    real = bool(cards or own)
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）。
+    # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
+    # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
+    if not cards and not own:
+        cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
+                 "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
     from .demo_samples import uploads_html, voice_html
     # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
@@ -325,10 +365,12 @@ def gallery_page(sids, photos=True):
     from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
+    # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
+            '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
             '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{cards}</section>'
+            f'{note}{own}{cards}</section>'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
             f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
@@ -337,9 +379,13 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
-    作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。"""
+    作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
+    public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受け、確かめた物はギャラリーにも出す形）。写真と動画は合言葉付きの場と
+    同じ線（確かめる前は上げた本人の画面だけ・物だけの後は誰にでも・人や声は誰にも）。記録の番号・人の言葉・説明の文は前と同じく出さない。
+    uploads=False は写真の口ごと閉じた形（前の開いた場の形。今は呼ぶ所が無いが、試験が使う）。"""
+    closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
 
@@ -353,10 +399,10 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
-        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if uploads else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
-                 f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
-                 f'{feedback(sid, r, photos=uploads, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
+                 f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
+                 f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
