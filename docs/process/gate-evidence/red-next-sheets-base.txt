@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_next_sheets.py
+# commit: cc4bf09b（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_next_sheets.py", line 81, in <module>
+    assert len(new[key][1]) == count and not new[key][0], (sid, hid, key, "山折りでない", len(new[key][1]), len(new[key][0]))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', 'H-A', 'base', '山折りでない', 0, 4)
+rc=1

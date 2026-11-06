@@ -70,17 +70,18 @@ def words(layout):
 assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v11", "goraigo-v10"), FAN.SHEET_SET
 assert (TIGER.SHEET_SET, TIGER.FROZEN_SET) == ("tora-v4", "tora-v3"), TIGER.SHEET_SET
 
-# 2. 折り線: 外筒と胴だけが山折りになり、線の位置は前の組と同じ。ほかの部品は変わらない
-for sid, tpl, key, count in ((GORAIGO, FAN, "tube", 4), (TORA, TIGER, "body", 10)):
+# 2. 折り線: 外筒と扇の台（御来迎）と胴（虎）が山折りになり、線の位置は前の組と同じ。ほかの部品は変わらない
+# 扇の台は、真ん中の面（扇の足を貼る印のある面）を上にして蓋をする。谷折りだと印が下を向く（3D の組み立てで見つかった。11-04 の写真 p09 は印が上）
+for sid, tpl, keys in ((GORAIGO, FAN, {"tube": 4, "base": 4}), (TORA, TIGER, {"body": 10})):
     for hid, p in plans(sid, tpl):
-        new = part(tpl, p, key)
         with old_set(tpl):
-            old = part(tpl, p, key)
-            others = {q.key: (q.valley, q.mountain) for q in tpl.parts(p) if q.key != key}
-        assert len(new.mountain) == count and not new.valley, (sid, hid, "山折りでない", len(new.mountain), len(new.valley))
-        assert len(old.valley) == count and not old.mountain, (sid, hid, "前の組が変わった")
-        assert new.mountain == old.valley, (sid, hid, "線の位置が動いた")
-        assert {q.key: (q.valley, q.mountain) for q in tpl.parts(p) if q.key != key} == others, (sid, hid, "ほかの部品の折り線が変わった")
+            old = {q.key: (q.valley, q.mountain) for q in tpl.parts(p)}
+        new = {q.key: (q.valley, q.mountain) for q in tpl.parts(p)}
+        for key, count in keys.items():
+            assert len(new[key][1]) == count and not new[key][0], (sid, hid, key, "山折りでない", len(new[key][1]), len(new[key][0]))
+            assert len(old[key][0]) == count and not old[key][1], (sid, hid, key, "前の組が変わった")
+            assert new[key][1] == old[key][0], (sid, hid, key, "線の位置が動いた")
+        assert {k: v for k, v in new.items() if k not in keys} == {k: v for k, v in old.items() if k not in keys}, (sid, hid, "ほかの部品の折り線が変わった")
 
 # 3. 手順の文: 違いは 1 語と、本人が決めた文だけ。つまみの形は最後に 1 つ増える（前の手順の番号はずれない）
 for sid, tpl, want in ((GORAIGO, FAN, (TUBE_OLD, TUBE_NEW)), (TORA, TIGER, (BODY_OLD, BODY_NEW))):

@@ -280,6 +280,11 @@ def parts(p):
               [(g + b, g + b), (g + b - 1, g + b + g), (g + 1, g + b + g), (g, g + b)],
               [(g, g + b), (0, g + b - 1), (0, g + 1), (g, g)]],
         art=_base_mark(p)))
+    if not frozen():
+        # 扇の台は、真ん中の面（扇の足を貼る印のある面）を上にして内筒に蓋をするので、刷った面から見て山折り。谷折りのままだと
+        # 印が下を向いた（3D の組み立てで見つかった。11-04 の写真 p09 も印が上）。手順の文に折り方の語は無いので、文は変わらない。
+        base = out[-1]
+        base.mountain, base.valley = base.valley, []
     n, w, h = int(p["fold_count"]), p["fold_width"], p["fold_height"]
     outline = [(0, 0), (h, 0), (h, n * w), (0, n * w)]
     glue, leg_valley = [], []
