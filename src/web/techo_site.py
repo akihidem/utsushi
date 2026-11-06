@@ -203,6 +203,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .techo input[type=text],.techo input[type=number]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
 .techo .go{font:inherit;font-size:20px;letter-spacing:.05em;background:var(--accent);color:var(--onaccent);border:0;padding:16px 28px;border-radius:12px;cursor:pointer;margin:0}
+.techo a.go{display:inline-block;text-decoration:none;min-height:64px;box-sizing:border-box;letter-spacing:.3em}
 .techo .meta{font-size:12px;color:var(--mute)}
 .techo .item{border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:6px}
 .techo .item img,.techo .item video{height:110px;max-width:100%;border:1px solid var(--frame);border-radius:8px}
@@ -302,29 +303,57 @@ def made_item(sid, data, r, photos=True):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
-def gallery_page(sids, photos=True):
+def own_item(sid, data, r):
+    """今残した 1 つの札（持ち寄る駅の頭。窓口の決定 11-06 夜・案 A）。記録を残した画面にだけ出す。
+    ほかの札と違い、写真か言葉が無い記録も出す（今残した物が並んだ事を見せるため）。写真と動画は、ほかの札と同じく人が確かめた物だけ
+    （ギャラリーは確認の後だけ、#314。確認の前の物は、上げた本人が手帖の記録の頁で見る）。
+    記録の頁（説明と AI の札）へは記録の番号から、玩具の頁の同じ記録へは玩具の名前から行く（ほかの札と同じ。地図の 4。新しい字は足さない）。"""
+    files = media_review.public(r["id"], media_of(r["id"]))
+    pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
+                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
+    h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+    return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
+            f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　'
+            f'{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
+            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
+
+
+def gallery_page(sids, photos=True, msg="", rec_key=None):
     """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
     職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
-    cards = ""
+    cards, own = "", ""
     for sid in sids:
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
+            # 今残した 1 つ（記録を残した画面の鍵が合う記録）は頭に出し、並びの中には重ねて出さない。合言葉なしの場（photos=False）は鍵を見ない
+            if photos and rec_key and not own and records.mine(r["id"], rec_key):
+                own = own_item(sid, data, r)
+                continue
             cards += made_item(sid, data, r, photos)
-    cards = cards or ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
-                      else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
+    real = bool(cards or own)
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）
+    if not cards and not own:
+        cards = ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
+                 else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
     from .demo_samples import uploads_html, voice_html
-    cards += uploads_html()
+    # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
+    sample = uploads_html()
+    cards += f'<details class="samples-fold"><summary>見本</summary>{sample}</details>' if (real and sample) else sample
     voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
     # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
     from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
+    # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
+            '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
             '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{cards}</section>'
+            f'{note}{own}{cards}</section>'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
             f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
@@ -357,4 +386,8 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
-            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}{mine}</div></section>') + hanasu.assets()
+            # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
+            # 「のこす」の後はこの頁の #mine に着くので、返事の文のすぐ下に 1 つだけ置く。行き先はギャラリーの「他の人が作った物」
+            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}'
+            '<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>'
+            f'{mine}</div></section>') + hanasu.assets()
