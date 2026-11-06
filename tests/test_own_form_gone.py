@@ -147,7 +147,7 @@ assert f"{typed}_v1_free" not in card
 # 札を外しても、寸法つきの前の記録からの次の版はたたき台の紙になる。その人の案には版を足さない（細かい所は tests/test_loop1_next.py が見る）
 assert f"/record/{rid_typed}/next" in card
 assert post(f"/record/{rid_typed}/next", {"interpretation": "読み", "param": "fold_height", "to": "47.5", "why": "試す", "by": "書いた人"})[0] == 303
-assert (out_dir(G) / "H-A_v2.pdf").exists() and not list(out_dir(G).glob(f"{typed}_v2*"))
+assert (out_dir(G) / f"{hypotheses.sheet_of(G)['id']}_v2.pdf").exists() and not list(out_dir(G).glob(f"{typed}_v2*"))
 
 # 4. 話した案の札には紙へのリンクを出さない（紙は作った本人の画面からだけ開くので、ほかの人には行き止まりになる）
 spoken = written(G, "話した案")

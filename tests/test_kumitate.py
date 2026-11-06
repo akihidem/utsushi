@@ -16,6 +16,10 @@ from omochae.templates import slider_fan
 from web import kumitate
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎の今の組（goraigo-v14）は 3D で組まない（内筒を下から押し上げる形。この組み立てはつまみの形だけを書いてある。窓口の決定 案 A
+# 11-06: 3D の作り直しは提出の後）。3D の組み立ては、控えの組 goraigo-v10 に雛形を置いて前と同じに見る（v14 に上げても v10 の 3D が変わらない事も見る）
+assert slider_fan.SHEET_SET == "goraigo-v14" and assembly.assemble(G) is None
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 bench = assembly.assemble(G)
 frames = bench.frames
@@ -258,4 +262,5 @@ assert tora.frames[1]["poses"][-1]["plug"] and not tora.frames[2]["poses"][-1]["
 # できあがりの頭は揺れて、元の位置で止まる
 final = tora.frames[-1]["poses"]
 assert len(final) >= 5 and final[0]["state"]["head"]["place"] == final[-1]["state"]["head"]["place"]
+slider_fan.SHEET_SET = "goraigo-v14"
 print("ok")

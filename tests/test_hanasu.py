@@ -26,11 +26,14 @@ DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 os.environ.pop("OMOCHAE_VOICE", None)
 
-from omochae import making_log, records, talk_log  # noqa: E402
+from omochae import hypotheses, making_log, records, talk_log  # noqa: E402
 from web import hanasu  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
+GL = f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}"  # 頁と紙のたたき台の呼び名（次の組は「仮説 F」）
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -100,14 +103,14 @@ for text in ("田中です", "田中といいます", "さくら小学校で作�
 
 # ---- 頁の準備（予想を書いて、紙を刷る。予想の口の返事は見ない: 予想の段が無い作りでも、この先が同じに通るように）
 post(f"/toy/{G}/predict", {"text": "筒を持つと扇が開くと思う"})
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 assert not files()
 # その場限りの印（画面が持つ乱数）。W は作って記録まで残す画面、W2 は同じ紙を別の机で作る画面
 W, W2 = "abcdefghij", "klmnopqrst"
 
 # ---- 1 考え: 仮説を選んでも、選ばなくても残る。JS が無い時は玩具の頁へ戻る
 THINK = "筒を押すと、扇が上から開くと思う"
-code, j = talk(scene="think", hypothesis="H-A", text=THINK, via="voice", who=W)
+code, j = talk(scene="think", hypothesis=GS, text=THINK, via="voice", who=W)
 assert code == 200 and j["kept"] is True and "残しました" in j["note"], j
 code, _, head = post(f"/toy/{G}/talk", {"scene": "think", "text": "糸で引く所が気になる"})
 assert code == 303 and head["Location"].startswith(f"/toy/{G}?msg=") and head["Location"].endswith("&at=hanasu#hanasu"), head
@@ -126,23 +129,23 @@ assert talk(scene="think", hypothesis="H-B", text=THINK_OTHER, who=W)[0] == 200 
 # ---- 2 工夫: 刷った紙と手順の番号に結ぶ。手順の数の外の番号には結ばない（字は残す）。刷っていない紙は断る
 CRAFT, CRAFT_QUIET = "糊代を先に折り癖を付けたら、貼りやすかった", "扇の端を少し切った"
 CRAFT_OTHER, CRAFT_NOWHO, CRAFT_NOJS = "別の机で、筒を太く巻いた", "定規で折り目を押さえた", "折り目に爪で筋を付けた"
-code, j = talk(scene="craft", hypothesis="H-A", sheet_version="1", step="2", text=CRAFT, who=W, via="voice")
+code, j = talk(scene="craft", hypothesis=GS, sheet_version="1", step="2", text=CRAFT, who=W, via="voice")
 assert code == 200 and j["kept"] is True and j["note"] == hanasu.KEPT, j
-code, j = talk(scene="craft", hypothesis="H-A", sheet_version="1", step="99", text=CRAFT_QUIET, who=W)
+code, j = talk(scene="craft", hypothesis=GS, sheet_version="1", step="99", text=CRAFT_QUIET, who=W)
 assert code == 200 and j["kept"] is True, j
-assert talk(scene="craft", hypothesis="H-A", sheet_version="1", step="1", text=CRAFT_OTHER, who=W2)[0] == 200
+assert talk(scene="craft", hypothesis=GS, sheet_version="1", step="1", text=CRAFT_OTHER, who=W2)[0] == 200
 # 形の外の印は残さない。印が無いと記録に入れられない
-code, j = talk(scene="craft", hypothesis="H-A", sheet_version="1", step="3", text=CRAFT_NOWHO, who="Tanaka Taro!")
+code, j = talk(scene="craft", hypothesis=GS, sheet_version="1", step="3", text=CRAFT_NOWHO, who="Tanaka Taro!")
 assert code == 200 and j["kept"] is True and j["note"] == hanasu.KEPT, j
 code, j = talk(scene="craft", hypothesis="H-B", sheet_version="1", step="1", text="刷っていない紙")
 assert code == 422 and j["kept"] is False, j
 # JS が無い時は、戻る道の付いた頁で答える（戻り先は場面から作る）
-code, page, _ = post(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": "1", "step": "3", "text": CRAFT_NOJS})
-assert code == 200 and "残しました" in page and f'href="/toy/{G}/tsukuru?h=H-A&amp;v=1&amp;n=3"' in page, page[-600:]
+code, page, _ = post(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": "1", "step": "3", "text": CRAFT_NOJS})
+assert code == 200 and "残しました" in page and f'href="/toy/{G}/tsukuru?h={GS}&amp;v=1&amp;n=3"' in page, page[-600:]
 
 # ---- 記録を残す: 同じ画面で話した工夫（同じ紙の物）と考え（同じ仮説か、仮説を選ばなかった物）が、その記録に入る
 assert talk_log.talks(G, shared_only=True) == [], "記録に入る前の字は、学ぶ人の頁が読む口に出ない"
-code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": "", "who": W})
+code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "note": "", "who": W})
 assert code == 201 and json.loads(body) == {"id": "R-0001", "kufu": 2, "kangae": 2}, body
 RID = "R-0001"
 ku = talk_log.kufu(G, RID)
@@ -150,16 +153,16 @@ ku = talk_log.kufu(G, RID)
 assert {(k["when"], k["step"], k["text"]) for k in ku[:2]} == {("idea", None, THINK), ("idea", None, THINK_FREE)}, ku
 assert [(k["when"], k["step"], k["text"]) for k in ku[2:]] == [("making", 2, CRAFT), ("making", None, CRAFT_QUIET)] and all(k["share"] for k in ku), ku
 # 同じ画面で次の記録を残しても、前の記録に入った字は動かない（別の仮説の考えは、この紙の記録に入らない）。印の無い画面の記録には、何も入らない
-code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "who": W})
+code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "who": W})
 assert code == 201 and json.loads(body) == {"id": "R-0002"}, body
-code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動かない"})
+code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動かない"})
 assert code == 201 and json.loads(body) == {"id": "R-0003"}, body
 assert talk_log.kufu(G, "R-0002") == [] and talk_log.kufu(G, "R-0003") == [] and talk_log.kufu(G, RID) == ku
 # 玩具の頁の記録の欄（JS が無くても送れるフォーム）から残した時も、同じに入る。別の机の工夫は、その机の記録に入る
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "who": W2})[0] == 303
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "who": W2})[0] == 303
 assert talk_log.kufu(G, "R-0004") == [{"when": "making", "step": 1, "text": CRAFT_OTHER, "share": True}], talk_log.kufu(G, "R-0004")
 # 記録の欄に書いた直した点（部品・変えた事・結果）を持つ記録。話した字とは別に残り、記録の札では同じ節に並ぶ
-rid5, failures = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた",
+rid5, failures = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた",
                               "fixes": [{"part": "外筒", "change": "太く巻いた", "outcome": "内筒が入りやすくなった"}]})
 assert rid5 == "R-0005" and not failures and talk_log.kufu(G, rid5) == []
 
@@ -219,11 +222,11 @@ for p in files():
         assert rec["text"] == "" and rec["share"] is False and rec["dropped"] in ("pii", "name"), rec
     seen.append(rec)
 by_text = {r["text"]: r for r in seen if r["text"]}
-assert by_text[THINK] | {"at": ""} == {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "template": "slider_fan", "sheet_set": by_text[THINK]["sheet_set"],
+assert by_text[THINK] | {"at": ""} == {"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "template": "slider_fan", "sheet_set": by_text[THINK]["sheet_set"],
                                          "scene": "think", "step": None, "record_id": RID, "text": THINK, "via": "voice", "share": True, "who": "abcdefghij", "at": ""}
 assert by_text[THINK]["sheet_set"], "刷った組が空（エンジンの束と結べない）"
 assert by_text["糸で引く所が気になる"]["hypothesis_id"] is None and by_text["糸で引く所が気になる"]["via"] == "text"
-assert by_text[CRAFT] | {"at": "", "sheet_set": ""} == {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "template": "slider_fan", "sheet_set": "", "scene": "craft",
+assert by_text[CRAFT] | {"at": "", "sheet_set": ""} == {"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "template": "slider_fan", "sheet_set": "", "scene": "craft",
                                                        "step": 2, "record_id": RID, "text": CRAFT, "via": "voice", "share": True, "who": W, "at": ""}
 assert by_text[CRAFT_QUIET]["step"] is None and by_text[CRAFT_QUIET]["record_id"] == RID and by_text[CRAFT_QUIET]["share"] is True
 assert by_text[CRAFT_OTHER]["record_id"] == "R-0004" and by_text[CRAFT_OTHER]["who"] == W2 and by_text[CRAFT_OTHER]["share"] is True
@@ -233,7 +236,7 @@ assert by_text[CRAFT_NOWHO]["who"] == "" and by_text[CRAFT_NOWHO]["step"] == 3 a
 assert by_text[THINK_FREE]["record_id"] == RID and by_text[THINK_FREE]["hypothesis_id"] is None and by_text[THINK_FREE]["share"] is True
 assert by_text[THINK_OTHER]["record_id"] is None and by_text[THINK_OTHER]["share"] is False and by_text["糸で引く所が気になる"]["record_id"] is None
 assert by_text[CRAFT_NOWHO]["share"] is False, "記録に入っていない字には、出す印が付かない"
-assert by_text[KEEP_A]["record_id"] == RID and by_text[KEEP_A]["share"] is True and by_text[KEEP_A]["hypothesis_id"] == "H-A"
+assert by_text[KEEP_A]["record_id"] == RID and by_text[KEEP_A]["share"] is True and by_text[KEEP_A]["hypothesis_id"] == GS
 assert by_text[KEEP_B]["share"] is True and by_text[KEEP_B]["via"] == "voice"
 assert talk_log.dropped(G) == {"pii": 2, "name": 1}
 # 聞く口の質問の置き場には混ざらない（集計の数を変えない）
@@ -257,20 +260,20 @@ assert {t["text"] for t in every} == OPEN | {CRAFT_OTHER, "糸で引く所が気
 assert talk_log.texts() == every and talk_log.texts("NDL-1187053-R0000014-R") == []
 assert {t["text"] for t in talk_log.texts(G, scene="think")} == {THINK, "糸で引く所が気になる", THINK_OTHER, THINK_FREE}
 assert {t["text"] for t in talk_log.texts(G, scene="think", hypothesis_id="H-B")} == {THINK_OTHER}
-assert {(t["step"], t["text"]) for t in talk_log.texts(G, scene="craft", hypothesis_id="H-A", sheet_version=1)} == {(2, CRAFT), (None, CRAFT_QUIET), (1, CRAFT_OTHER), (3, CRAFT_NOWHO), (3, CRAFT_NOJS)}
+assert {(t["step"], t["text"]) for t in talk_log.texts(G, scene="craft", hypothesis_id=GS, sheet_version=1)} == {(2, CRAFT), (None, CRAFT_QUIET), (1, CRAFT_OTHER), (3, CRAFT_NOWHO), (3, CRAFT_NOJS)}
 assert talk_log.texts(G, scene="craft", sheet_version=2) == [] and {t["text"] for t in talk_log.texts(G, record_id=RID)} == OPEN
 assert {t["text"] for t in talk_log.texts(G, scene="keep")} == {KEEP_A, KEEP_B} and {t["record_id"] for t in talk_log.texts(G, scene="keep")} == {RID}
 # その画面で話した字だけ（その場限りの印で絞る。形の外の印では何も返さない）
 assert {t["text"] for t in talk_log.texts(G, scene="think", who=W)} == {THINK, THINK_OTHER, THINK_FREE} and {t["text"] for t in talk_log.texts(G, who=W2)} == {CRAFT_OTHER}
 assert talk_log.texts(G, who="") == [] and talk_log.texts(G, who="Tanaka Taro!") == []
 one = next(t for t in every if t["text"] == CRAFT)
-assert one == {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "template": "slider_fan", "sheet_set": one["sheet_set"], "scene": "craft", "step": 2,
+assert one == {"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "template": "slider_fan", "sheet_set": one["sheet_set"], "scene": "craft", "step": 2,
                "record_id": RID, "text": CRAFT, "at": one["at"]} and one["sheet_set"] and re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d\+09:00", one["at"])
 sm = talk_log.summary(G)
 assert {t["text"] for t in sm["think"]} == {THINK, "糸で引く所が気になる", THINK_OTHER, THINK_FREE}
-assert sm["craft"]["H-A"][1][1] == [CRAFT_OTHER] and sm["craft"]["H-A"][1][2] == [CRAFT] and set(sm["craft"]["H-A"][1][3]) == {CRAFT_NOWHO, CRAFT_NOJS}, sm["craft"]
-assert list(sm["craft"]["H-A"][1]) == [1, 2, 3, None] and sm["craft"]["H-A"][1][None] == [CRAFT_QUIET], sm["craft"]
-assert [(r["record_id"], r["hypothesis_id"], r["sheet_version"], len(r["kufu"])) for r in sm["records"]] == [(RID, "H-A", 1, 6), ("R-0004", "H-A", 1, 1)], sm["records"]
+assert sm["craft"][GS][1][1] == [CRAFT_OTHER] and sm["craft"][GS][1][2] == [CRAFT] and set(sm["craft"][GS][1][3]) == {CRAFT_NOWHO, CRAFT_NOJS}, sm["craft"]
+assert list(sm["craft"][GS][1]) == [1, 2, 3, None] and sm["craft"][GS][1][None] == [CRAFT_QUIET], sm["craft"]
+assert [(r["record_id"], r["hypothesis_id"], r["sheet_version"], len(r["kufu"])) for r in sm["records"]] == [(RID, GS, 1, 6), ("R-0004", GS, 1, 1)], sm["records"]
 assert sm["via"] == {"voice": 3, "text": 8} and sm["dropped"] == {"pii": 2, "name": 1}, sm
 
 # ---- 頁: 3 つの場面に口がある。話す釦は既定で隠れている
@@ -278,7 +281,7 @@ MIC = '<button type="button" class="hanasu-mic" aria-pressed="false">話す</but
 code, toy = get(f"/toy/{G}")
 assert code == 200 and 'id="hanasu"' in toy and f'action="/toy/{G}/talk#hanasu"' in toy and 'name="scene" value="think"' in toy and MIC in toy
 assert hanasu.NOTICE in toy and toy.count("<script>(()=>{\nconst REC=") == 1
-code, tsu = get(f"/toy/{G}/tsukuru?h=H-A&n=2")
+code, tsu = get(f"/toy/{G}/tsukuru?h={GS}&n=2")
 assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and MIC in tsu
 # 手帖の記録の札は記録の頁にある（作る頁は 1 手 1 画面にして、記録の番号を出さない。本人の決定 11-05、#87）
 code, techo = get(f"/toy/{G}/techo/kiroku")
@@ -318,9 +321,9 @@ for text in (THINK, THINK_OTHER, THINK_FREE, CRAFT, KEEP_A, KEEP_B):
     assert text in loop_page, text
 for text in (CRAFT_QUIET, CRAFT_OTHER, CRAFT_NOWHO, CRAFT_NOJS):
     assert text in loop_page, text
-assert "仮説 A の紙・版 1・手順 2" in loop_page and "連絡先の形 2 件・名乗りや学校の形 1 件" in loop_page
+assert f"{GL} の紙・版 1・手順 2" in loop_page and "連絡先の形 2 件・名乗りや学校の形 1 件" in loop_page
 # 記録ごとの「工夫した所（直した所）」: 作りながら話した物（手順の番号）と、上げた後の物。見せてよいの印は、選んだ物にだけ
-assert f"<h4>{RID}（仮説 A の紙・版 1）</h4>" in loop_page and "<h4>R-0004（仮説 A の紙・版 1）</h4>" in loop_page and "<h4>R-0002" not in loop_page
+assert f"<h4>{RID}（{GL} の紙・版 1）</h4>" in loop_page and f"<h4>R-0004（{GL} の紙・版 1）</h4>" in loop_page and "<h4>R-0002" not in loop_page
 assert f"<li>考え: {THINK}</li>" in loop_page and f"<li>手順 2: {CRAFT}</li>" in loop_page and f"<li>作りながら: {CRAFT_QUIET}</li>" in loop_page
 assert f"<li>上げた後: {KEEP_A}</li>" in loop_page and f"<li>手順 1: {CRAFT_OTHER}</li>" in loop_page and "［隠している］</li>" not in loop_page
 assert "声から字にした物 3 件・字で書いた物 8 件" in loop_page
@@ -400,7 +403,7 @@ assert '<p class="hanasu-head">工夫を話す</p>' in tsu and 'placeholder="『
 assert '<p class="hanasu-head">工夫した所や、思った事を足す</p>' in techo
 # 考えは、頁に出ているたたき台に結ぶ。仮説を選ぶ欄を置かない（型紙は玩具ごとに 1 枚。J-032）
 think_form = toy[toy.index('id="hanasu"'):toy.index("</form>", toy.index('id="hanasu"'))]
-assert '<input type="hidden" name="hypothesis" value="H-A">' in think_form and "<select" not in think_form and "どの案（仮説）" not in toy
+assert f'<input type="hidden" name="hypothesis" value="{GS}">' in think_form and "<select" not in think_form and "どの案（仮説）" not in toy
 assert '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>' in toy
 # 釦は「話す」「止める」「残す」のまま。声を聞いている時などの知らせ
 assert ">話す</button>" in toy and '<button class="hanasu-go">残す</button>' in toy and "mic.textContent=on?'止める':'話す'" in hanasu.SCRIPT
@@ -458,18 +461,18 @@ assert KEEP_B not in after and CRAFT not in after and CRAFT_OTHER in after
 
 # ---- 記録に結ぶ条件: 同じ玩具・同じ印の物だけ。工夫は同じ紙（仮説と版）、考えは同じ仮説か、仮説を選ばなかった物。条件を 1 つ外した物は入らない
 W3, TORA = "uvwxyzabcd", "NDL-1187053-R0000014-R"
-for hid, ver, who, text in (("H-B", 1, W3, "別の仮説の紙の工夫"), ("H-A", 2, W3, "別の版の紙の工夫"), ("H-A", 1, "qrstuvwxyz", "別の画面の工夫"), ("H-A", 1, W3, "同じ紙の工夫")):
+for hid, ver, who, text in (("H-B", 1, W3, "別の仮説の紙の工夫"), (GS, 2, W3, "別の版の紙の工夫"), (GS, 1, "qrstuvwxyz", "別の画面の工夫"), (GS, 1, W3, "同じ紙の工夫")):
     path, failures = talk_log.add(G, "craft", text, hypothesis_id=hid, sheet_version=ver, step=1, who=who)
     assert path and not failures, failures
 for hid, who, text in (("H-B", W3, "別の仮説の考え"), (None, W3, "仮説を選ばない考え"), (None, "qrstuvwxyz", "別の画面の考え")):
     path, failures = talk_log.add(G, "think", text, hypothesis_id=hid, who=who)
     assert path and not failures, failures
 assert talk_log.bind(TORA, "H-A", 1, W3, "R-0002") == (0, 0), "別の玩具の記録には入らない"
-assert talk_log.bind(G, "H-A", 1, "", "R-0002") == (0, 0) and talk_log.bind(G, "H-A", 1, "Tanaka Taro!", "R-0002") == (0, 0), "印が無いと入らない"
-assert talk_log.bind(G, "H-A", 1, W3, "R-0002") == (1, 1) and [k["text"] for k in talk_log.kufu(G, "R-0002")] == ["仮説を選ばない考え", "同じ紙の工夫"]
-assert talk_log.bind(G, "H-A", 1, W3, "R-0003") == (0, 0), "1 回入った字は、次の記録に動かない"
+assert talk_log.bind(G, GS, 1, "", "R-0002") == (0, 0) and talk_log.bind(G, GS, 1, "Tanaka Taro!", "R-0002") == (0, 0), "印が無いと入らない"
+assert talk_log.bind(G, GS, 1, W3, "R-0002") == (1, 1) and [k["text"] for k in talk_log.kufu(G, "R-0002")] == ["仮説を選ばない考え", "同じ紙の工夫"]
+assert talk_log.bind(G, GS, 1, W3, "R-0003") == (0, 0), "1 回入った字は、次の記録に動かない"
 assert talk_log.bind(G, "H-B", 1, W3, "R-0003") == (1, 1) and [k["text"] for k in talk_log.kufu(G, "R-0003")] == ["別の仮説の考え", "別の仮説の紙の工夫"]
-assert talk_log.bind(G, "H-A", 2, W3, "R-0003") == (1, 0) and {k["text"] for k in talk_log.kufu(G, "R-0003")} == {"別の仮説の考え", "別の仮説の紙の工夫", "別の版の紙の工夫"}
+assert talk_log.bind(G, GS, 2, W3, "R-0003") == (1, 0) and {k["text"] for k in talk_log.kufu(G, "R-0003")} == {"別の仮説の考え", "別の仮説の紙の工夫", "別の版の紙の工夫"}
 assert {"別の画面の工夫", "別の画面の考え"} <= {t["text"] for t in talk_log.talks(G) if not t["record_id"]}
 
 # ---- 出す時に、入口の床をもう一度当てる: 手で置いた字や、床を広げる前に残した字に連絡先の形があれば、学ぶ人の頁が読む口に出さない

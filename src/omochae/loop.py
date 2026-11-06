@@ -335,8 +335,9 @@ def check_proposal(p, source, will_confirm=(), need_why=True):
             current, _ = version_params(sid, hid, latest_version(sid, hid))
             merged = dict(current)
             before = values(template, current)
+            ok = allowed(template, {**TEMPLATES_DEFAULT(template), **current})
             for c in changes:
-                if c.get("param") not in ALLOWED[template]:
+                if c.get("param") not in ok:
                     out.append(Failure("F7.revision", str(c.get("param")), "変えてよい寸法の外"))
                     continue
                 if need_why and not c.get("why", "").strip():
@@ -388,6 +389,14 @@ def _trial_values(lo, hi, now):
     return [int(v) if float(v).is_integer() else v for v in sorted(values, key=lambda v: (abs(v - now), v))]
 
 
+def allowed(template, params):
+    """次の版で変えてよい寸法。表（metrics.ALLOWED）から、その形に効かない寸法（雛形の unused_params）を外す。"""
+    from .compose import TEMPLATES
+
+    unused = getattr(TEMPLATES[template], "unused_params", lambda p: set())(params)
+    return ALLOWED[template] - unused
+
+
 @functools.lru_cache(maxsize=256)
 def _movable(sid, current_json):
     """今の寸法（json の字）で、1 つ変えて通る値がある寸法と、その値の 1 つ。寸法が同じなら答えも同じなので、1 度だけ検査する。
@@ -398,7 +407,7 @@ def _movable(sid, current_json):
     template = _template(sid)
     tpl, now = TEMPLATES[template], {**TEMPLATES[template].DEFAULTS, **json.loads(current_json)}
     found = {}
-    for k in sorted(ALLOWED[template]):
+    for k in sorted(allowed(template, now)):
         for v in _trial_values(*tpl.RANGES[k], now[k]):
             trial = {**now, k: v}
             if not (tpl.check_range(trial) or tpl.check_physics(trial)):

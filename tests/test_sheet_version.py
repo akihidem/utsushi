@@ -18,6 +18,8 @@ from web import techo_site  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -42,7 +44,7 @@ def post(path, **data):
 
 def printed(v):
     out_dir(G).mkdir(parents=True, exist_ok=True)
-    (out_dir(G) / f"H-A_v{v}.pdf").write_bytes(b"%PDF-1.4\n")
+    (out_dir(G) / f"{GS}_v{v}.pdf").write_bytes(b"%PDF-1.4\n")
 
 
 def versions():
@@ -50,11 +52,11 @@ def versions():
 
 
 def on_page(**form):
-    return post(f"/toy/{G}/record", hypothesis="H-A", result="動かない", **form)[0]
+    return post(f"/toy/{G}/record", hypothesis=GS, result="動かない", **form)[0]
 
 
 def on_techo(**form):
-    return post(f"/toy/{G}/record-json", hypothesis="H-A", result="動かない", **form)[0]
+    return post(f"/toy/{G}/record-json", hypothesis=GS, result="動かない", **form)[0]
 
 
 printed(1)
@@ -76,7 +78,7 @@ assert set(versions()) == {1, 2}, "刷っていない版の番号が記録に残
 # 手帖の「試した後の紙」は、その記録の版の紙を指す
 for v in (1, 2):
     rec = next(r for r in records.all_records(G) if r["sheet_version"] == v)
-    assert f"H-A_v{v}_after.pdf" in techo_site.feedback(G, rec), v
+    assert f"{GS}_v{v}_after.pdf" in techo_site.feedback(G, rec), v
 # 頁は版が 2 つ以上ある時だけ聞く
 assert 'name="sheet_version"' in urllib.request.urlopen(base + f"/toy/{G}").read().decode()
 print("ok")

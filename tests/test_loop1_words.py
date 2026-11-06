@@ -73,8 +73,9 @@ assert base_h["id"] == hypotheses.sheet_of(G)["id"] and words.base_of(T)[0]["id"
 assert base_params and "push_part" in base_params, "たたき台の寸法がある"
 # たたき台は記録の欄（sheet）から読む。決め打ちしない（本人が別の仮説に替える時も 1 か所で済むように）
 real_load = hypotheses.load
-hypotheses.load = lambda sid: {**real_load(sid), "sheet": "H-C"}
-assert words.base_of(G)[0]["id"] == "H-C" and words.base_of(G)[1]["push_part"] == "stick", "欄を替えると、作り直す元も替わる"
+# 御来迎の今の組（goraigo-v14）のたたき台は H-C なので、替える先は柄の形の H-D にする（組ごとの欄 sheet_by_set も替える）
+hypotheses.load = lambda sid: {**real_load(sid), "sheet": "H-D", "sheet_by_set": {"goraigo-v14": "H-D"}}
+assert words.base_of(G)[0]["id"] == "H-D" and words.base_of(G)[1]["push_part"] == "stick", "欄を替えると、作り直す元も替わる"
 hypotheses.load = real_load
 # 元の寸法はたたき台の一番新しい版（最新版が次の人の型紙になる。本人の方針 11-05）。本人が見て話した紙から変える
 newer = loop.folder() / f"version-{G}-{base_h['id']}-2.json"
@@ -97,7 +98,7 @@ assert words.latest_think(T, WHO) == (None, None), "ほかの玩具の考えは�
 SAID = "つまみを 長い棒にしたら、もっと大きく開くと思う"
 w, fs = ask(G, SAID)
 assert w and not fs and w["status"] == "waiting_maker" and w["how_it_moves"] == SAID, "話した字は一字も変えない"
-assert w["base"] == "H-A" and w["base_params"] == base_params and w["name"] == NAME and w["evidence"] == EVIDENCE
+assert w["base"] == hypotheses.sheet_of(G)["id"] and w["base_params"] == base_params and w["name"] == NAME and w["evidence"] == EVIDENCE
 assert words.asked_for(w["from_talk"])["id"] == w["id"]
 assert len(w["token"]) >= 12 and w["token"] != w["id"], "番号でない印で開く"
 assert words.by_token(G, w["token"])["id"] == w["id"] and words.by_token(T, w["token"]) is None and words.by_token(G, "") is None
@@ -171,7 +172,7 @@ ok = {"fits": True, "params": {**base_params, **CHANGED}, "from_words": sorted(C
 before = len(hypotheses.own_hypotheses(G))
 client = Fake([ok])
 k, fs = ask(G, "割り箸の柄で押したらいいと思う", who=OTHER, hid="H-C", client=client, use_claude=True)  # 別の仮説を見て話しても、作り直す元はたたき台
-assert k and not fs and k["status"] == "pending_human" and k["base"] == "H-A" and k["result"]["from_words"] == sorted(CHANGED), fs
+assert k and not fs and k["status"] == "pending_human" and k["base"] == hypotheses.sheet_of(G)["id"] and k["result"]["from_words"] == sorted(CHANGED), fs
 sent = client.calls[0]["messages"][0]["content"]
 assert "<data>" in sent and json.dumps(base_params, ensure_ascii=False) in sent and "たたき台" in sent and "割り箸の柄で押したらいいと思う" in sent, "たたき台の寸法と話した字を送る"
 assert WHO not in sent and OTHER not in sent and "who" not in sent, "その場限りの印は送らない"
@@ -201,7 +202,8 @@ for send_it in (lambda c: ask(G, CUT, who=OTHER, client=c, use_claude=True), lam
 bad = {**ok, "from_words": [], "filled_in": []}
 k1, _ = ask(G, "軸をもっと上にしたい", who=OTHER, client=Fake([bad, bad, bad]), use_claude=True)
 assert k1["status"] == "waiting_maker" and k1["result"] is None, "隠れた補いは案にしない"
-ranked = {**ok, "filled_in": [{"param": f["param"], "why": "おすすめの値"} for f in ok["filled_in"]]}
+# 推しの言葉は、たたき台のままにした寸法の理由に入れる。たたき台の寸法が押す所だけ（御来迎の次の組の H-F）の時も 1 つは入るよう、軸の形の寸法を足す
+ranked = {**ok, "params": {**ok["params"], "hub": "axle"}, "filled_in": [{"param": f["param"], "why": "おすすめの値"} for f in ok["filled_in"]] + [{"param": "hub", "why": "おすすめの値"}]}
 k0, _ = ask(G, "柄を太くしたい", who=OTHER, client=Fake([ranked, ranked, ranked]), use_claude=True)
 assert k0["status"] == "waiting_maker" and k0["result"] is None, "推しの言葉のある案は人に見せない"
 # Claude を呼べなかった時も待ちに落ちる

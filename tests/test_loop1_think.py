@@ -60,8 +60,10 @@ ADOPTED = {"GO": "この考えから紙を作る", "LEAD": "残した考えに�
            "DONE": "紙ができました。", "SEE": "紙を見る", "FAILED": "紙を作れませんでした。もう一度押してください。"}
 for key, text in ADOPTED.items():
     assert getattr(think_sheet, key) == text, key
-assert think_sheet.NAMES == {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方"}
-assert think_sheet.VALUES == {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る"}
+# 御来迎の今の組（goraigo-v14）の 4 つと、押す所の値 rise（柄の字）は、窓口が本人の委任で選んだ案 A（2026-11-06）
+assert think_sheet.NAMES == {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方",
+                             "tube_height": "筒の高さ（mm）", "base_side": "台の一辺（mm）", "figure_w": "像の幅（mm）", "figure_h": "像の高さ（mm）"}
+assert think_sheet.VALUES == {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る", "rise": "柄"}
 assert think_sheet.labels({"id": "H-A"}) == ("仮説 A から変えた案", "仮説 A の紙を見て話した考え"), "紙に刷る名前と根拠"
 
 base_params = words.base_of(G)[1]

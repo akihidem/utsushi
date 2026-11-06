@@ -33,6 +33,8 @@ from web.play_server import serve, sources  # noqa: E402
 ask._key_present = lambda: False  # 手元に鍵があっても呼ばない。鍵が無い時の文も見る
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 INSIDE = (
     ("本人", r"本人"),
     ("採否待ち", r"採否"),
@@ -138,18 +140,18 @@ for site, tag in ((white, "白"), (black, "黒")):
 for s in (G, T):
     see(white, f"/zukan/{s}/yomi", {"mine": "ためしの読み"}, f"/zukan/{s}/yomi（読みの後）")
 # 3 番号の出る札まで進める: 紙 → 記録 → 説明 → 次の版 → 窓 → 手帖 → 自分の仮説 → 聞く口
-see(white, f"/toy/{G}/print", {"hypothesis": "H-A"}, "紙を作った後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた"}, "記録の後")
+see(white, f"/toy/{G}/print", {"hypothesis": GS}, "紙を作った後")
+see(white, f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "すっと開いた"}, "記録の後")
 rid = records.all_records(G)[-1]["id"]  # 今残した記録。説明は次の記録が残る前に、残した画面から書く。番号を決め打ちしない
 told = see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
 assert loop.explanation(rid) and "次の版を作る" in told, "説明の後の札まで届いていない"  # 通らないまま進むと、この先の見張りが空になる
 see(white, f"/record/{rid}/ai-interpret", {}, "鍵が無い時の AI の口")
 see(white, f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"}, "次の版の後")
-assert loop.latest_version(G, "H-A") == 2, "次の版の後の札まで届いていない"
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
-waiting = see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert loop.latest_version(G, GS) == 2, "次の版の後の札まで届いていない"
+see(white, f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
+waiting = see(white, f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"}, "説明を待つ記録の後")
 assert 'name="next_idea"' in waiting, "説明の欄まで届いていない"
-see(white, f"/toy/{G}?see=H-A&kind=sheet&v=2", name="版 2 の窓")
+see(white, f"/toy/{G}?see={GS}&kind=sheet&v=2", name="版 2 の窓")
 see(white, f"/toy/{G}/techo/kiroku", name="記録の後の手帖の記録の頁")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")
 see(white, f"/zukan/{G}", name="記録の後の図鑑")
@@ -158,7 +160,7 @@ assert not hypotheses.save_own(G, "糸で引く", "糸で引いて開く", "糸�
 see(white, f"/toy/{G}", name="自分の仮説の後")
 see(white, f"/toy/{G}/record", {"hypothesis": "OWN-1", "result": "動いた", "impression": "開いた"}, "自分の仮説の記録の後")
 see(white, f"/zukan/{G}", name="自分の仮説の後の図鑑")
-asked = see(white, f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "紙の端はどこまで切りますか"}, "聞く口の答え")
+asked = see(white, f"/toy/{G}/ask", {"hypothesis": GS, "question": "紙の端はどこまで切りますか"}, "聞く口の答え")
 assert "AI の答えは" in asked, "鍵が無い時の文まで届いていない"
 
 left = {}
@@ -235,8 +237,8 @@ yomi = " ".join(pages[f"/zukan/{G}/yomi（読みの後）"])
 assert f"確かめた人: {wording.MAKER}" in yomi and f"{wording.MAKER}が 2026-11-03 に" in yomi, "読みを決めた人の印"
 # 作る側が残した試行の控えは文ごと替わる。人が書いた文は替えない（記録のメモも自分の仮説も、書いたとおりに出す）
 assert any("見た事は、このサイトを作った人が答えました" in t for t in tp), "試行の控え"
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "note": "本人が H-A の紙で折った"}, "人の文")
-assert "メモ: 本人が H-A の紙で折った" in pages["人の文"], "人の文を替えない"
+see(white, f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "note": f"本人が {GS} の紙で折った"}, "人の文")
+assert f"メモ: 本人が {GS} の紙で折った" in pages["人の文"], "人の文を替えない"
 # 床は記録の値のままで見る。画面の字を替えても、人が確かめた線は動かない
 quotes = zukan.lines_for(G)["quotes"]
 assert quotes and quotes[0]["checked_by"] == "本人" and not labels.check(quotes)

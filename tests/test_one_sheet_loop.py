@@ -39,6 +39,8 @@ from web.play_server import out_dir, serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 TRIAL = "NDL-1187053-R0000004-L-4"  # 形（form）の違う仮説を持つ試作の玩具
 WHO = "abcd1234ef"
 RESULTS = TEMPLATES["slider_fan"].RESULTS
@@ -106,26 +108,26 @@ def extras(sid):
 
 
 # 1. 話した字つきの記録から版 2 がたたき台に付く。最新版が次の人の型紙で、古い版は消さない
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A", "who": WHO}) == 303
-assert talk_log.add(G, "craft", "手順3で折り目を二回なぞると開きやすい", hypothesis_id="H-A", sheet_version=1, step=3, who=WHO)[1] == []
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": RESULTS[1], "who": WHO}) in (200, 303)
+assert post(f"/toy/{G}/print", {"hypothesis": GS, "who": WHO}) == 303
+assert talk_log.add(G, "craft", "手順3で折り目を二回なぞると開きやすい", hypothesis_id=GS, sheet_version=1, step=3, who=WHO)[1] == []
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": RESULTS[1], "who": WHO}) in (200, 303)
 first = records.all_records(G)[0]["id"]
 assert "二回なぞると" in loop.material_text(first), "話した字が輪の材料に入る"
 assert post(f"/record/{first}/explain", {"text": "折りが固い", "next_idea": "折りを減らす", "by": "作った人"}) in (200, 303)
 assert post(f"/record/{first}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きやすく", "by": "作る側"}) in (200, 303)
-assert loop.adopted_versions(G, "H-A") == [2]
-assert f"/sheet/{G}/H-A_v2.png" in window(get(f"/toy/{G}")), "窓の最初は一番新しい版"
-assert f"/sheet/{G}/H-A_v1.png" in window(get(f"/toy/{G}?see=H-A&kind=sheet&v=1")), "前の版の紙は読める"
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303
-assert (out_dir(G) / "H-A_v2.pdf").exists() and not list(out_dir(G).glob("H-A_v3*")), "次の人が刷ると一番新しい版が出て、版は増えない"
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": RESULTS[0]}) in (200, 303)
+assert loop.adopted_versions(G, GS) == [2]
+assert f"/sheet/{G}/{GS}_v2.png" in window(get(f"/toy/{G}")), "窓の最初は一番新しい版"
+assert f"/sheet/{G}/{GS}_v1.png" in window(get(f"/toy/{G}?see={GS}&kind=sheet&v=1")), "前の版の紙は読める"
+assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
+assert (out_dir(G) / f"{GS}_v2.pdf").exists() and not list(out_dir(G).glob(f"{GS}_v3*")), "次の人が刷ると一番新しい版が出て、版は増えない"
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": RESULTS[0]}) in (200, 303)
 assert [r.get("sheet_version") for r in records.all_records(G)] == [1, 2], "記録は試した版の番号を持つ"
-assert f"/sheet/{G}/H-A_v1_after.png" in window(get(f"/toy/{G}?see=H-A&kind=after&v=1")), "前の版で試した記録の紙も読める"
+assert f"/sheet/{G}/{GS}_v1_after.png" in window(get(f"/toy/{G}?see={GS}&kind=after&v=1")), "前の版で試した記録の紙も読める"
 assert first in get(f"/toy/{G}")
 
 # 2. 形の違う案（雛形の寸法の差で言えない案）を採ると、作る側の控えに入る。札に出さない
-rid = confirmed(G, "H-A")
-pid = propose(G, rid, "H-A", new_hypothesis=new_case("柄で押す", params_of(G, "H-C")))
+rid = confirmed(G, GS)
+pid = propose(G, rid, GS, new_hypothesis=new_case("柄で押す", params_of(G, "H-C")))
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"new_hypothesis": "H-N1"}, (made, failures)
 page = get(f"/toy/{G}")
@@ -137,7 +139,7 @@ with contextlib.redirect_stderr(err):
     assert hypotheses.print_sheet(G, "H-N1", stem) == 3, "必須 2 種は、命令からも控えを刷らない"
 assert "F9.human" in err.getvalue() and not pathlib.Path(f"{stem}.pdf").exists()
 row = next(r for r in ways.table() if r["source_id"] == G and r["hypothesis_id"] == "H-N1")
-assert row["sheet"] is False and row["reading_of"] == "H-A", "控えも一覧の行には残る"
+assert row["sheet"] is False and row["reading_of"] == GS, "控えも一覧の行には残る"
 assert rid in page, "案のもとの記録は読める"
 # 試作の玩具は、作る側が命令から控えを刷れる（道は閉じない）。頁には出さない
 trial_rid = confirmed(TRIAL, "H-A")
@@ -147,15 +149,15 @@ assert hypotheses.print_sheet(TRIAL, "H-N1", f"{stem}-trial") == 0 and pathlib.P
 assert 'value="H-N1"' not in get(f"/toy/{TRIAL}") and post(f"/toy/{TRIAL}/print", {"hypothesis": "H-N1"}) == 422
 
 # 3. 寸法の差だけの案を採ると、たたき台の次の版になる。控えは増えない
-now, _ = loop.version_params(G, "H-A", loop.latest_version(G, "H-A"))
+now, _ = loop.version_params(G, GS, loop.latest_version(G, GS))
 assert now["fold_count"] == 24
-pid = propose(G, rid, "H-A", new_hypothesis=new_case("折りをさらに減らす", {**now, "fold_count": 22, "fold_height": 44}))
+pid = propose(G, rid, GS, new_hypothesis=new_case("折りをさらに減らす", {**now, "fold_count": 22, "fold_height": 44}))
 before = extras(G)
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 3, "new_hypothesis_as_version": 3}, (made, failures)
-assert extras(G) == before and loop.adopted_versions(G, "H-A") == [2, 3]
-params, version = loop.version_params(G, "H-A", 3)
-assert params["fold_count"] == 22 and params["fold_height"] == 44 and params["push_part"] == "tab"
+assert extras(G) == before and loop.adopted_versions(G, GS) == [2, 3]
+params, version = loop.version_params(G, GS, 3)
+assert params["fold_count"] == 22 and params["fold_height"] == 44 and params["push_part"] == hypotheses.sheet_of(G)["params"]["push_part"]
 assert version["record_ids"] == [rid] and {c["param"] for c in version["changes"]} == {"fold_count", "fold_height"}
 assert [c["from"] for c in version["changes"] if c["param"] == "fold_count"] == [24]
 # 案の字は版の記録の別の欄に置く。変更の理由の欄は頁の「型紙の改善の輪」に出るので、案の字も、本人の確認の外の字も入れない
@@ -165,28 +167,28 @@ assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["new_hypothesis"][
 page = get(f"/toy/{G}")
 assert "折りをさらに減らす" not in page and "採った案" not in page, "案の字を頁に出さない"
 assert "24→22" in page.split('id="kaizen"', 1)[1], "変えた寸法は頁に出す"
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303 and (out_dir(G) / "H-A_v3.pdf").exists(), "次の人はその版を刷る"
+assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303 and (out_dir(G) / f"{GS}_v3.pdf").exists(), "次の人はその版を刷る"
 # 寸法の案（changes）と一緒に採ると、順に版を重ねる
-pid = propose(G, rid, "H-A", changes=[{"param": "fold_count", "to": 21, "why": "少し減らす"}], new_hypothesis=new_case("低くする", {"fold_height": 42}))
+pid = propose(G, rid, GS, changes=[{"param": "fold_count", "to": 21, "why": "少し減らす"}], new_hypothesis=new_case("低くする", {"fold_height": 42}))
 made, failures = loop.adopt(pid, "作る側", ["fold_count"], True)
 assert not failures and made == {"version": 5, "new_hypothesis_as_version": 5}, (made, failures)
-assert loop.version_params(G, "H-A", 5)[0]["fold_count"] == 21 and loop.version_params(G, "H-A", 5)[0]["fold_height"] == 42
+assert loop.version_params(G, GS, 5)[0]["fold_count"] == 21 and loop.version_params(G, GS, 5)[0]["fold_height"] == 42
 # 今の版を見て作った案なら、版 1 の値へ戻す案も、はっきり書いた差なので次の版になる
-first = {**TEMPLATES["slider_fan"].DEFAULTS, **params_of(G, "H-A")}
+first = {**TEMPLATES["slider_fan"].DEFAULTS, **params_of(G, GS)}
 assert first["fold_height"] != 42
-pid = propose(G, rid, "H-A", new_hypothesis=new_case("扇の高さを元に戻す", {"fold_height": first["fold_height"]}))
+pid = propose(G, rid, GS, new_hypothesis=new_case("扇の高さを元に戻す", {"fold_height": first["fold_height"]}))
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 6, "new_hypothesis_as_version": 6}, (made, failures)
-assert [c["from"] for c in loop.version_params(G, "H-A", 6)[1]["changes"]] == [42]
+assert [c["from"] for c in loop.version_params(G, GS, 6)[1]["changes"]] == [42]
 # 版 1 の時に全部の寸法を書いた案を採っても、前の版の直しは戻らない。案を作った時の版からの差だけを、今の版に重ねる
-now, _ = loop.version_params(G, "H-A", 6)
-pid = propose(G, rid, "H-A", based_on_version=1, new_hypothesis=new_case("幅を少し広げる", {**first, "fold_width": 9}))
+now, _ = loop.version_params(G, GS, 6)
+pid = propose(G, rid, GS, based_on_version=1, new_hypothesis=new_case("幅を少し広げる", {**first, "fold_width": 9}))
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 7, "new_hypothesis_as_version": 7}, (made, failures)
-params, version = loop.version_params(G, "H-A", 7)
+params, version = loop.version_params(G, GS, 7)
 assert params == {**now, "fold_width": 9} and [c["param"] for c in version["changes"]] == ["fold_width"], (params, version["changes"])
 # 版の番号を持たない前の形の案は、版 1 の時の案と読む（前は Claude に版 1 の寸法だけを渡していた）
-pid = propose(G, rid, "H-A", new_hypothesis=new_case("前の形の案", {**first, "paper_thickness": 0.2}))
+pid = propose(G, rid, GS, new_hypothesis=new_case("前の形の案", {**first, "paper_thickness": 0.2}))
 path = loop.folder() / f"proposal-{pid[2:]}.json"
 saved = loop._read(path)
 assert saved["based_on_version"] == 7, "案を作った時の版を持つ"
@@ -194,19 +196,19 @@ del saved["based_on_version"]
 loop._write(path, saved)
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 8, "new_hypothesis_as_version": 8}, (made, failures)
-params, version = loop.version_params(G, "H-A", 8)
+params, version = loop.version_params(G, GS, 8)
 assert params == {**now, "fold_width": 9, "paper_thickness": 0.2} and [c["param"] for c in version["changes"]] == ["paper_thickness"]
 # 案の差のうち、今の版ともう同じ値の物は変更に混ぜない
-pid = propose(G, rid, "H-A", based_on_version=1, new_hypothesis=new_case("一部はもう直っている", {**first, "fold_count": params["fold_count"], "fold_height": 46}))
+pid = propose(G, rid, GS, based_on_version=1, new_hypothesis=new_case("一部はもう直っている", {**first, "fold_count": params["fold_count"], "fold_height": 46}))
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 9, "new_hypothesis_as_version": 9}, (made, failures)
-assert [c["param"] for c in loop.version_params(G, "H-A", 9)[1]["changes"]] == ["fold_height"]
+assert [c["param"] for c in loop.version_params(G, GS, 9)[1]["changes"]] == ["fold_height"]
 
 # 4. 版にならない案は、版を作らず、作る側の控えに入る（人が採った案を捨てない）
-now, _ = loop.version_params(G, "H-A", loop.latest_version(G, "H-A"))
+now, _ = loop.version_params(G, GS, loop.latest_version(G, GS))
 assert now["fold_height"] == 46 and first["fold_height"] != 46
 # 下の「後の直しとぶつかる」の値は紙に乗る。乗らない値だと、ぶつかる守りを外しても控えに入り、見張りにならない
-assert not loop.check_proposal({"record_ids": [rid], "hypothesis_id": "H-A", "changes": [{"param": "fold_height", "to": 44, "why": "試す"}]}, source(G))
+assert not loop.check_proposal({"record_ids": [rid], "hypothesis_id": GS, "changes": [{"param": "fold_height", "to": 44, "why": "試す"}]}, source(G))
 for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**now, "fold_width": 15}, {}),
                            ("読みだけ違う（差が無い）", dict(now), {}),
                            ("寸法を書いていない", None, {}),
@@ -222,10 +224,10 @@ for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**
                            ("雛形の無い案", {"fold_height": 44}, {"template": None}),
                            ("雛形に乗らない読み", {"fold_height": 44}, {"template_id": None})):
     based = {"based_on_version": more.pop("based_on_version")} if "based_on_version" in more else {}
-    pid = propose(G, rid, "H-A", new_hypothesis=new_case(name, params, **more), **based)
+    pid = propose(G, rid, GS, new_hypothesis=new_case(name, params, **more), **based)
     number = len(extras(G)) + 1
     made, failures = loop.adopt(pid, "作る側", accept_new=True)
-    assert not failures and made == {"new_hypothesis": f"H-N{number}"} and loop.latest_version(G, "H-A") == 9, (name, made, failures)
+    assert not failures and made == {"new_hypothesis": f"H-N{number}"} and loop.latest_version(G, GS) == 9, (name, made, failures)
 
 # 5. 次の版はたたき台にだけ足す。ほかの仮説と自分の仮説の寸法の案は断る
 other = confirmed(G, "H-C")
@@ -233,16 +235,16 @@ proposal = {"record_ids": [other], "hypothesis_id": "H-C", "changes": [{"param":
 pid, failures = loop.save_proposal(proposal, source(G), "human")
 assert pid is None and {f.floor for f in failures} == {"F7.revision"}, failures
 assert loop.adopted_versions(G, "H-C") == [] and "see=H-C&kind=sheet&v=2" not in get(f"/toy/{G}").split('id="kaizen"', 1)[1]
-mine, _ = hypotheses.save_own(G, "自分の案", "引くと開く", "図の折り目", dict(params_of(G, "H-A")))
+mine, _ = hypotheses.save_own(G, "自分の案", "引くと開く", "図の折り目", dict(params_of(G, GS)))
 own_rid = confirmed(G, mine["id"])
 pid, failures = loop.save_proposal({**proposal, "record_ids": [own_rid], "hypothesis_id": mine["id"]}, source(G), "human")
 assert pid is None and {f.floor for f in failures} == {"F7.revision"}, failures
 # ほかの仮説の記録を根拠に、たたき台の寸法を変える案は通る（R-0002「どちらの仮説も、内側の筒の土台があると良い」の形）
-assert propose(G, other, "H-A", changes=[{"param": "fold_count", "to": 20, "why": "H-C の記録から"}])
+assert propose(G, other, GS, changes=[{"param": "fold_count", "to": 20, "why": "H-C の記録から"}])
 
 # 6. たたき台は、案を採っても替わらない。替えるのは本人が決めた時に、記録の欄を直す時だけ
-assert hypotheses.sheet_of(G)["id"] == "H-A" and hypotheses.sheet_of(TRIAL)["id"] == "H-A"
-assert json.loads((ROOT / "data/hypotheses" / f"{G}.json").read_text(encoding="utf-8"))["sheet"] == "H-A"
+assert hypotheses.sheet_of(G)["id"] == GS and hypotheses.sheet_of(TRIAL)["id"] == "H-A"
+assert hypotheses.sheet_id(json.loads((ROOT / "data/hypotheses" / f"{G}.json").read_text(encoding="utf-8"))) == GS
 
 
 # 7. 案を作る Claude に、たたき台の番号を渡す。ほかの仮説の記録で寸法の案を出すと、直させる
@@ -268,10 +270,10 @@ client = Fake([([tool("submit_result", {"changes": [{"param": "fold_count", "to"
 pid, failures = loop_agents.draft_proposal(other, source(G), client)
 assert not failures and len(client.calls) == 2, (failures, len(client.calls))
 sent = json.loads(client.calls[0]["messages"][0]["content"].split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
-now, _ = loop.version_params(G, "H-A", 9)
-assert sent["sheet"] == "H-A" and sent["sheet_version"] == 9 and sent["sheet_params"] == now, "たたき台の番号と今の版の寸法を渡す"
+now, _ = loop.version_params(G, GS, 9)
+assert sent["sheet"] == GS and sent["sheet_version"] == 9 and sent["sheet_params"] == now, "たたき台の番号と今の版の寸法を渡す"
 shown = {h["id"]: h["params"] for h in sent["hypotheses"]}
-assert shown["H-A"] == now and shown["H-C"] == params_of(G, "H-C"), "一覧のたたき台の寸法も今の版。ほかの仮説は記録のまま"
+assert shown[GS] == now and shown["H-C"] == params_of(G, "H-C"), "一覧のたたき台の寸法も今の版。ほかの仮説は記録のまま"
 assert "たたき台" in client.calls[0]["system"][0]["text"] and "作る側の控え" in client.calls[0]["system"][0]["text"]
 assert "F7.revision" in json.dumps(client.calls[1]["messages"], ensure_ascii=False, default=str), "落ちた理由を読ませる"
 
@@ -283,11 +285,11 @@ assert not failures, failures
 assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["based_on_version"] == 9
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 10, "new_hypothesis_as_version": 10}, (made, failures)
-assert [c["param"] for c in loop.version_params(G, "H-A", 10)[1]["changes"]] == ["fold_width"]
+assert [c["param"] for c in loop.version_params(G, GS, 10)[1]["changes"]] == ["fold_width"]
 
 # 8. 寸法の無い控えや字の寸法の控えがあっても、一覧と頁は開く
 rows = ways.table()
-assert {r["hypothesis_id"] for r in rows if r["source_id"] == G} >= {"H-A", "H-N1"} and len({r["source_id"] for r in rows if r["sheet"]}) == 83
+assert {r["hypothesis_id"] for r in rows if r["source_id"] == G} >= {GS, "H-N1"} and len({r["source_id"] for r in rows if r["sheet"]}) == 83
 out = subprocess.run([sys.executable, "-m", "omochae.ways", "--json"], capture_output=True, text=True)
 assert out.returncode == 0 and len(json.loads(out.stdout)) == len(rows), out.stderr[-300:]
 for path in (f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", f"/en/toy/{G}", f"/zukan/{G}", "/toys", "/toys?paper=1", "/loop"):
@@ -364,22 +366,22 @@ for sid in (G, "NDL-1187053-R0000014-R", "NDL-1187053-R0000007-R", "NDL-1187053-
 
 # 案を作っている途中で版が増えても、案を作り始めた時の版から見るので、途中の直しは戻らない
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
-start = {**params_of(G, "H-A"), "fold_count": 24}
-loop._write(loop.folder() / f"version-{G}-H-A-2.json", {"source_id": G, "hypothesis_id": "H-A", "version": 2, "params": start, "changes": []})
+start = {**params_of(G, GS), "fold_count": 24}
+loop._write(loop.folder() / f"version-{G}-{GS}-2.json", {"source_id": G, "hypothesis_id": GS, "version": 2, "params": start, "changes": []})
 
 
 def bump():
-    loop._write(loop.folder() / f"version-{G}-H-A-3.json", {"source_id": G, "hypothesis_id": "H-A", "version": 3, "params": {**start, "fold_height": 44}, "changes": []})
+    loop._write(loop.folder() / f"version-{G}-{GS}-3.json", {"source_id": G, "hypothesis_id": GS, "version": 3, "params": {**start, "fold_height": 44}, "changes": []})
 
 
-reader = confirmed(G, "H-A")
+reader = confirmed(G, GS)
 assert loop.save_explanation(reader, "作った人", "説明", "次") == []
 pid, failures = loop_agents.draft_proposal(reader, source(G), Reading(lambda d: {**d["sheet_params"], "paper_thickness": 0.2}, bump))
 assert not failures, failures
 assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["based_on_version"] == 2, "案を作り始めた時の版を持つ"
 made, failures = loop.adopt(pid, "作る側", accept_new=True)
 assert not failures and made == {"version": 4, "new_hypothesis_as_version": 4}, (made, failures)
-params = loop.version_params(G, "H-A", 4)[0]
+params = loop.version_params(G, GS, 4)[0]
 assert params["fold_count"] == 24 and params["fold_height"] == 44 and params["paper_thickness"] == 0.2, params
 
 server.shutdown()

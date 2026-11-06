@@ -29,7 +29,6 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # �
 from api import loop_agents, words  # noqa: E402
 from omochae import engine_bundle, hypotheses, loop, records, talk_log  # noqa: E402
 from omochae.compose import TEMPLATES, compose  # noqa: E402
-from omochae.metrics import ALLOWED  # noqa: E402
 from web import kaizen  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
@@ -97,12 +96,14 @@ def one_change():
     """たたき台の今の版から、紙に組める形で寸法を 1 つ変える。"""
     now, _ = loop.version_params(G, SHEET, loop.latest_version(G, SHEET))
     current = {**TEMPLATES["slider_fan"].DEFAULTS, **now}
-    for param in sorted(ALLOWED["slider_fan"]):
+    # その形に効く寸法だけ（loop.allowed）を、小さくする方から試す。たたき台が内筒を下から押し上げる形（H-B）だと床が少なく、折りを増やす案が先に通り、
+    # 後で柄の形の案（STICK）に替えると筒の口の角の床で落ちた（cycle._one_change と同じ理由）
+    for param in sorted(loop.allowed("slider_fan", current)):
         value = current.get(param)
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             continue
         step = 1 if isinstance(value, int) else 0.5
-        for to in (value + step, value - step):
+        for to in (value - step, value + step):
             if not compose("slider_fan", {**now, param: to}, SOURCE)[2]:
                 return param, to
     raise AssertionError("組める変更が無い")
