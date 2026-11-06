@@ -4,7 +4,7 @@
 見る事:
 1. 組み立ての 3D（kumitate）を中に持ち、送る釦・鍵・声の言葉がつながっている。字を外へ送らない。組み立ての書き方が無い玩具は出さない
 2. 道: /toy/<玩具>/kasane（カメラに重ねる）と /toy/<玩具>/kasane/hmd（HMD）で開く。玩具を選ぶ頁は持たない（作る口は手帖 1 つ）。
-   手帖からの道は口の字が決まってから足すので、今はどの頁からも道を張らない
+   道は手帖の最初の画面からの 1 つだけ（口の名は本人の決定「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
 3. 1 手ごとに止まる（本人の感想 11-06）: 「つぎ」1 回で動くのは 1 手だけ。折り目 1 本の動きは 2 秒以上。「もどる」は 1 手もどる。
    声の約束（本人の決定 11-06・手帖の作り直しの案 2 と同じ）: 聞くのは「はじめる」の後だけ。操作の言葉の全部が一致した時だけ動く。
    教室の話し声の見本では動かない。最後の「つぎ」で、はじめに戻さない。隠れたら止め、見えたら戻し、離れたら止める
@@ -95,8 +95,16 @@ for sid in (G, T):
 assert '<video id="hmd-cam"' in get(f"/toy/{G}/kasane")[1] and '<video id="hmd-cam"' not in get(f"/toy/{G}/kasane/hmd")[1], "映像はカメラに重ねる形だけ"
 assert get("/toy/NDL-1187053-R0000004-L/kasane")[0] == 404 and get("/toy/NDL-1187053-R0000004-L/kasane/hmd")[0] == 404, "組み立ての書き方が無い玩具では開かない"
 assert get("/hmd")[0] == 404 and get(f"/hmd/{G}")[0] == 404, "玩具を選ぶ頁と試作の枝の番地は持たない"
-for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", f"/toy/{G}/techo", "/gallery"):
-    assert "/kasane" not in get(path)[1], ("手帖からの道は口の字が決まってから足す", path)
+# 道は手帖の最初の画面から 1 つだけ（作る口は手帖 1 つの決まり。口の名は本人の決定 11-07「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
+assert hmd.CAM_LINK == "カメラに重ねる"
+for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出すので、先に刷る
+    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120).read()
+for sid in (G, T):
+    techo = get(f"/toy/{sid}/techo")[1]
+    assert techo.count('/kasane') == 1 and f'<p class="meta kasane-go" data-on="start"><a href="/toy/{sid}/kasane">カメラに重ねる</a></p>' in techo, sid
+assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "組み立ての書き方が無い玩具の手帖には道を出さない"
+for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", "/gallery"):
+    assert "/kasane" not in get(path)[1], ("道は手帖からの 1 つだけ", path)
 
 # ---- 3〜6. Chrome で歩く
 # 見本は頁の script より先に置く。音声認識を差し替えて、始めた・止めたを window.__log に書く（マイクは使わない）。

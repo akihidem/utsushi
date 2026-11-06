@@ -30,7 +30,7 @@ from api import ask
 from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, skin, tsukuru
+from . import genga, hanasu, hmd, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -498,6 +498,9 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
             '<p class="meta" id="note" aria-live="polite"></p>'
             f'<p class="meta" id="start-note" data-on="start">{how}</p>'
+            # 重ねる頁への道（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に」。作る口は手帖 1 つの決まりの中で、手帖からの道 1 つ）。
+            # 大きいボタンは「はじめる」のまま、道は小さな字の 1 つ。組み立ての書き方がある玩具だけ（重ねる頁が開く玩具）
+            + (f'<p class="meta kasane-go" data-on="start"><a href="/toy/{esc(sid)}/kasane">{esc(hmd.CAM_LINK)}</a></p>' if hmd.available(sid) else '') +
             '<div class="keys" data-on="start step">'
             + _key(START, "key go", 'id="start" data-on="start"')
             + _key(BACK, "key", f'id="back" data-on="step" href="?v={v}&amp;n={max(n - 1, 1)}"', "a")
