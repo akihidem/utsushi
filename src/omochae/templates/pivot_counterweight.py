@@ -8,6 +8,7 @@ import math
 from shapely.geometry import LineString, Polygon
 
 from ..model import Failure, Part
+from ..textfit import text_width
 from ..pivot_model import center, paper_mass, period_s, rest_tilt_deg
 
 ID = "pivot_counterweight"
@@ -92,7 +93,7 @@ def axle_to_head_top(p):
     return 8
 
 
-# 5 重りの腕の下の穴（EP-0011、作成動画 R-0004 の札から採った案。2026-11-06）。型紙エンジン（paper-to-toy の issue/tora-v4 d1e5ba1）と同じ形で、
+# 5 重りの腕の下の穴（EP-0011、作成動画 R-0004 の札から採った案。2026-11-06）。型紙エンジン（paper-to-toy の issue/tora-v4 c1a3261）と同じ形で、
 # 必須 2 種の次の組（tora-v4）だけに入れる（前の組は紙を変えない）。穴は軸の穴から weight_below_axle 下（釣り合いの式の重りの位置）で、
 # 粘土はこの穴の所に付けるか、穴に糸を通して玉を下げる。糸で下げた玉の重さは、糸を通した穴にかかる（糸は引く力しか伝えないので、
 # 頭を傾ける力の腕は穴までの深さ）。なので釣り合いの式は変えず、糸の長さは玉が胴の底に当たるかだけに効く。
@@ -121,11 +122,6 @@ def hang_thread_mm(p):
         return None
     room = axle_z(p) - 3 - p["weight_below_axle"] - 2 * clay_r(p["weight_g"])
     return math.floor(room) if room >= HANG_MIN else None
-
-
-def _ring(cx, cy, r, n=24):
-    """位置の印の丸（閉じた点の線）の頂点。"""
-    return [(cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
 
 
 def axle_z(p):
@@ -209,7 +205,7 @@ def _scale(pts, x0, y0, sx, sy, ox, oy):
 
 def _flip(pts, x, y, w, h):
     """2 枚目の側面の絵。次の組は y だけを裏返す（本人のレビューから採った案 EP-0016、2026-11-06。前にも言われて直っていなかった所。
-    型紙エンジン issue/tora-v4 d1e5ba1 と同じ）。
+    型紙エンジン issue/tora-v4 c1a3261 と同じ）。
 
     前の組は x も裏返し（180° 回していた）、組むとその側の虎は後ろを向き、軸の穴が尾の側に来た。2 枚目の側面は箱の中で上が頁の下に
     なるので、y だけ裏返すと外から見て立ち、頭が 1 枚目と同じ前の端（軸の穴の側）に来る。前の組は紙を変えないので 180° のまま。
@@ -217,6 +213,22 @@ def _flip(pts, x, y, w, h):
     if frozen():
         return [(2 * x + w - a, 2 * y + h - b) for a, b in pts]
     return [(a, 2 * y + h - b) for a, b in pts]
+
+
+LABEL_SIZE = 2.8  # 札の字の大きさ（compose.LABEL_SIZE と同じ。雛形から compose を読むと読み込みの輪になるので、値を写す）
+
+
+def _strip_label(sw):
+    """次の組の 3 首の帯の札の字と x（型紙エンジン issue/tora-v4 c1a3261 と同じ）。帯の真ん中の谷折りの線（x = sw）が、字の「3」と「首」の
+    間の空きを通る所に置く（札の字が折り線にかかっていた）。「3 首の帯」は 10.7mm で、帯の片側（既定 10mm）には入らないので、番号と名の間で折る。
+    名が片側に入らない細い帯（sw が約 9mm より細い）は「3 帯」にする（「3 首の帯」は帯の枠に収まらず、配置の検査で落ちる）。
+    """
+    num, pre = text_width("3", LABEL_SIZE), text_width("3 ", LABEL_SIZE)
+    x0 = sw - (num + pre) / 2
+    for text in ("3 首の帯", "3 帯"):
+        if x0 + text_width(text, LABEL_SIZE) <= 2 * sw - 0.3:
+            return text, x0
+    return "3", 1
 
 
 def _side_art(x, y, L, H, flip):
@@ -294,9 +306,10 @@ def parts(p):
     sw = p["strip_width"]
     length = (p["neck_length"] + 12) if not hang else STRIP_HOLE + axle_to_head_top(p) + HEAD_OVERLAP
     # 帯は半分に折って 2 枚にする。1 枚では頭を支えるには柔らかいと見込むため。
-    # 次の組の札は名つきで、軸の穴の下に置く（穴の上の 1.5mm からだと、名の札が穴にかかる）
-    strip = Part(3, "strip", "首の帯", [(0, 0), (2 * sw, 0), (2 * sw, length), (0, length)], label_xy=(1, 1.5) if frozen() else (1, STRIP_HOLE + 2.5),
-                 label="3" if frozen() else "3 首の帯", valley=[((sw, 0), (sw, length))], holes=[(sw / 2, STRIP_HOLE, 1.0), (1.5 * sw, STRIP_HOLE, 1.0)])
+    # 次の組の札は名つきで、軸の穴の下に置き（穴の上の 1.5mm からだと、名の札が穴にかかる）、真ん中の谷折りの線が字の間の空きを通る x にする
+    tag, tag_x = ("3", 1) if frozen() else _strip_label(sw)
+    strip = Part(3, "strip", "首の帯", [(0, 0), (2 * sw, 0), (2 * sw, length), (0, length)], label_xy=(tag_x, 1.5) if frozen() else (tag_x, STRIP_HOLE + 2.5),
+                 label=tag, valley=[((sw, 0), (sw, length))], holes=[(sw / 2, STRIP_HOLE, 1.0), (1.5 * sw, STRIP_HOLE, 1.0)])
     tail = Part(4, "tail", "尾", [(0, 0), (8, 0), (8, 56), (0, 56)], label_xy=(1, 1.5), label="4" if frozen() else "4 尾",
                 art=[_panel(0.1, 0.1, 7.9, 55.9, TIGER)] + [{"kind": "line", "pts": [(0.3, y), (7.7, y)], "stroke": STRIPE, "sw": 0.5} for y in range(10, 54, 8)])
     out = [body, head, strip, tail]
@@ -377,7 +390,8 @@ def materials(p):
     hang = f"。糸で下げる時は、たこ糸も。玉の上は穴から {HANG_MIN}〜{L}mm" if L is not None else ""
     return [f"{by['body']['material']}を 1 枚", tools,
             f"{by['axle']['material']}（胴の 2 つの穴・3 首の帯の穴・5 腕の上の穴に通す。胴の上の面の点の線の下を通る）",
-            f"油粘土 {p['weight_g']:g}g（5 腕の下の穴の、点の線の所に付ける{hang}）",
+            f"油粘土 {p['weight_g']:g}g（" + (f"5 腕の下の穴の、点の線の所に付ける{hang}" if p["weight_below_axle"] >= LOWER_HOLE_MIN
+                                          else f"5 腕の上の穴の {p['weight_below_axle']:g}mm 下に付ける") + "）",
             "丸い印は穴（竹串の先であける）。4 尾は外に見えるので色を刷り、3 首の帯と 5 腕は胴の中に入るので白"]
 
 
@@ -395,7 +409,7 @@ def steps(p):
             out += ["5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める"]
         else:
             # 腕は仮に留めて、頭の傾きを見てから貼る（EP-0011: 作った人が帯と頭を胴の穴から何度も出し入れしていた）。手順の数と番号は変えない。
-            # 文はエンジン（issue/tora-v4 d1e5ba1）と同じ字
+            # 文はエンジン（issue/tora-v4 c1a3261）と同じ字
             L = hang_thread_mm(p)
             hang = f"か、下の穴に糸を通して粘土の玉を下げる（玉の上は穴から {HANG_MIN}〜{L}mm）" if L is not None else ""
             # 下の穴は weight_below_axle が LOWER_HOLE_MIN 以上の時だけある。無い時は、粘土の位置を軸の穴からの深さで言う

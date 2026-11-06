@@ -40,9 +40,8 @@ PICTURE_OLD, PICTURE_NEW = "まず筒を 1 つ作る（色の境で谷折り）"
 ARM_OLD = ("5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める")
 ARM_NEW = ("5 重りの腕の上の穴にも竹串を通す。下の穴（点の線）の所に粘土を付ける。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
            "頭の傾きを見て腕の位置を決めてから、腕を 3 首の帯に貼る")
-LEG_OLD, LEG_NEW = "4 扇の真ん中の足を、糊代の境の破線で折り、足の糊代を 3 台の印に貼る", "4 扇の真ん中の足の付け根（扇の下の端のすぐ下）に、8 帯を刷った面を外にして巻いて貼る。足を糊代の境の破線で折り、足の糊代を 3 台の印に貼る"
-FOOT_OLD = "5 像の足を 3 台に貼る"
-FOOT_NEW = "5 像の足を 3 台に貼る。開く糸 2 本（各 約 {:.0f}mm）を、1 外筒の口の下の 2 つの穴に外から通して結び、もう一方の端を筒の下から出して、4 扇の両端の穴に 1 本ずつ結ぶ"
+# 御来迎の作成動画の案（EP-0012: 開く糸・溝の矢印・足の帯）は、本人のレビュー（11-06「糸なしでやります」）で取り下げ、エンジンも外した（fae4887）。
+# 代わりに、筒を外すと扇が開く形（lift・EP-0017）を次の組の別の形として足した。今の仮説（H-A〜H-E）の形は変わらない
 SKEWER = "のり、はさみ、定規、竹串（穴あけ）"
 CUTTER = "のり、はさみ、定規、セロハンテープ、カッター"  # 虎の首の形は腕をテープで仮に留める（EP-0011）
 
@@ -94,11 +93,7 @@ for sid, tpl, keys in ((GORAIGO, FAN, {"tube": 4, "base": 4}), (TORA, TIGER, {"b
             assert len(new[key][1]) == count and not new[key][0], (sid, hid, key, "山折りでない", len(new[key][1]), len(new[key][0]))
             assert len(old[key][0]) == count and not old[key][1], (sid, hid, key, "前の組が変わった")
             assert new[key][1] == old[key][0], (sid, hid, key, "線の位置が動いた")
-        # 次の組で増えた部品（御来迎の 8 帯、EP-0012）は前の組に無いので比べない。帯は色の面を外にして巻くので山折りだけ
-        assert {k: v for k, v in new.items() if k not in keys and k in old} == {k: v for k, v in old.items() if k not in keys}, (sid, hid, "ほかの部品の折り線が変わった")
-        assert set(new) - set(old) == ({"band"} if tpl is FAN and p["hub"] == "axle" else set()), (sid, hid, set(new) - set(old))
-        if "band" in new:
-            assert len(new["band"][1]) == 2 and not new["band"][0], (sid, hid, "帯が山折りでない")
+        assert {k: v for k, v in new.items() if k not in keys} == {k: v for k, v in old.items() if k not in keys}, (sid, hid, "ほかの部品の折り線が変わった")
 
 # 3. 手順の文: 違いは 1 語と、本人が決めた文だけ。つまみの形は最後に 1 つ増える（前の手順の番号はずれない）
 for sid, tpl, want in ((GORAIGO, FAN, (TUBE_OLD, TUBE_NEW)), (TORA, TIGER, (BODY_OLD, BODY_NEW))):
@@ -109,8 +104,6 @@ for sid, tpl, want in ((GORAIGO, FAN, (TUBE_OLD, TUBE_NEW)), (TORA, TIGER, (BODY
         expect = [want]
         if sid == TORA and p["mount"] == "neck":
             expect += list(zip(ARM_OLD, ARM_NEW))
-        if sid == GORAIGO and p["hub"] == "axle":
-            expect += [(LEG_OLD, LEG_NEW), (FOOT_OLD, FOOT_NEW.format(FAN.thread_mm(p)))]
         if sid == GORAIGO and p["push_part"] in ("tab", "tube"):
             expect.append((INNER_OLD, INNER_NEW))
         if sid == GORAIGO and p["push_part"] == "stick":
@@ -177,9 +170,6 @@ for sid, tpl, adds in ((GORAIGO, FAN, lambda hid, p: SKEWER if hid in ("H-B", "H
         add = adds(hid, p)
         assert "のり、はさみ、定規" in was, (sid, hid, "前の組の道具の行が変わった", was)
         want = [add if m == "のり、はさみ、定規" and add else m for m in was]
-        if sid == GORAIGO and p["hub"] == "axle":
-            # 開く糸は作る物に入れた（手順 11 に結び方）ので、「試す時は」を外す
-            want = [f"たこ糸（軸に 1 本と、開く糸 2 本 各約 {FAN.thread_mm(p):.0f}mm ＋結ぶ分）" if m.startswith("たこ糸") else m for m in want]
         if sid == TORA and p["mount"] == "neck":
             # 竹串と粘土の置き所・丸い印は穴・4 尾だけ色がある理由を字で書く（EP-0016）。既定の寸法では糸で下げる形は出ない
             want = [f"{m}（胴の 2 つの穴・3 首の帯の穴・5 腕の上の穴に通す。胴の上の面の点の線の下を通る）" if m.startswith("竹串") else m for m in want]
@@ -232,8 +222,8 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
                 continue
             if any(t.text in m for m in mats):  # 用意する物の行の折り返し（字は 6 で見た）
                 continue
-            # 次の組で増えた物（御来迎の 8 帯の札、位置の印の凡例。EP-0011・EP-0012）は 10 で見る
-            if t.text in ("8 帯", "位置の印（切らない・折らない）", "2", "3", "4", "5", "2 頭", "3 首の帯", "4 尾", "5 腕"):  # 虎の札の名（EP-0016）は 10 で見る
+            # 次の組で増えた物（位置の印の凡例・虎の札の名。EP-0011・EP-0016）は 10 で見る
+            if t.text in ("位置の印（切らない・折らない）", "2", "3", "4", "5", "2 頭", "3 首の帯", "3 帯", "4 尾", "5 腕"):
                 continue
             if t.text in FOLD_NEW + LEGEND_OLD + ARROW_OLD + ("切る", "糊代"):  # 凡例の字は位置も変わる（字が長く、行を送る）。字は 9 で見る
                 continue
@@ -261,7 +251,7 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
     # 凡例が長くなり（御来迎は 2 行）、位置の印の行が増えるので、下の物差しの説明は縦にずれる。字と横の位置は同じ
     strip = lambda rows: [(x, text) for x, _, text in rows]
     assert strip(boxes(new_pattern)) == strip(boxes(old_pattern)), (sid, "型紙の字の差が見込みと違う")
-    # 部品は動かない。次の組で変わるのは、御来迎の 1 外筒の絵（溝の下の口の矢印が増える）と 8 帯（増える）、虎の 5 腕（下の穴と点の丸が増える）だけ
+    # 部品は動かない。次の組で変わるのは、虎の 5 腕（下の穴と点の線が増える）と胴の絵（10 で見る）だけ
     # 虎の胴の 2 枚目の側面の絵は y だけ裏返す（EP-0016）ので、胴の絵は 10 で見る
     seen = lambda layout: [(q.key, q.x, q.y, q.outline, q.glue, q.holes, [a for a in q.art if a["kind"] != "mark"] if not (tpl is TIGER and q.key == "body") else None)
                            for q in layout["parts"] if q.key != "band"]
@@ -367,32 +357,38 @@ ball = [f for f in TIGER.check_physics(both) if "粘土の玉" in f.message]
 assert len(ball) == 1 and "軸の竹串にかかる" in ball[0].message, [f.line() for f in TIGER.check_physics(both)]
 above = [f for f in TIGER.check_physics({**p, "weight_below_axle": -20}) if f.where == "重り"]
 assert above and not any("粘土の玉" in f.message for f in above), [f.line() for f in above]
-# 御来迎: 足のある形に 8 帯（山折り 2 本・糊代 1 つ）を像の右に置き、つまみの形の溝の下の口の左右に上向きの矢印（位置の印）。前の組には無い
+# 御来迎: 今の仮説（H-A〜H-E）の形は、開く糸・溝の矢印・足の帯（取り下げた EP-0012）を持たない
 data, source = load(GORAIGO)
 for h in data["hypotheses"]:
     q = {**FAN.DEFAULTS, **h["params"]}
-    keys = {x.key for x in FAN.parts(q)}
-    assert ("band" in keys) == (q["hub"] == "axle"), (h["id"], keys)
-    marks_ = [a for a in part(FAN, q, "tube").art if a["kind"] == "mark"]
-    assert len(marks_) == (4 if q["push_part"] == "tab" else 0), (h["id"], len(marks_))
-    with old_set(FAN):
-        assert "band" not in {x.key for x in FAN.parts(q)} and not [a for a in part(FAN, q, "tube").art if a["kind"] == "mark"]
-# 短い足（pivot_above_rim が 7 以下）は帯を足さず、部品表と手順 10 にも書かない。既定の扇では短い足は開く角の検査で落ちるので、
-# 検査に通る小さな扇（6 枚・幅 5・高さ 30）で見る（エンジンと同じ）
-short = {**FAN.DEFAULTS, "push_part": "tab", "hub": "axle", "fold_count": 6, "fold_width": 5, "fold_height": 30}
-for piv in (2, 4, 7):
-    q = {**short, "pivot_above_rim": piv}
-    assert not FAN.check_range(q) and not FAN.check_physics(q), (piv, [f.line() for f in FAN.check_physics(q)])
-    assert FAN.band_width(q) is None and "band" not in {x.key for x in FAN.parts(q)}, piv
-    assert not any(r["key"] == "band" for r in FAN.bom(q)) and not any("8 帯" in x for x in FAN.steps(q)), piv
-    assert any(x.startswith("4 扇の真ん中の足を、糊代の境の破線で折り") for x in FAN.steps(q)), FAN.steps(q)
-assert FAN.band_width({**short, "pivot_above_rim": 8}) == 4  # 8 から 4mm の帯（糊代より上 6mm から 2mm 残す）
+    assert "band" not in {x.key for x in FAN.parts(q)} and not [a for x in FAN.parts(q) for a in x.art if a["kind"] == "mark"], h["id"]
+    assert not any("開く糸 2 本（各" in w for w in FAN.steps(q)), h["id"]
+# 筒を外すと扇が開く形（lift・EP-0017。エンジン issue/goraigo-v11 5325586 と同じ）: 糸・穴・扇の足・内筒・竹串が無く、2 受け（U の字・刷った面は全部糊代）がある。
+# 台は山折りで、受けの底を貼る印がある。前の組には無い形（check_range が落とす）
 h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
-pattern = compose("slider_fan", h["params"], source)[1]
-band, fig = (next(x for x in pattern["parts"] if x.key == k) for k in ("band", "figure"))
-assert band.x > fig.x + fig.width and band.y == fig.y and "8 帯" in words(pattern), "帯が像の右に無い"
-assert "位置の印（切らない・折らない）" in words(pattern) and ("mark" in [d for _, _, d in pattern["samples"]])
+lift = {**FAN.DEFAULTS, **h["params"], "push_part": "lift"}
+assert not FAN.check_range(lift) and not FAN.check_physics(lift), [f.line() for f in FAN.check_range(lift) + FAN.check_physics(lift)]
+by = {x.key: x for x in FAN.parts(lift)}
+assert set(by) == {"tube", "base", "fan", "cradle", "figure"}, set(by)
+assert not any(x.holes for x in by.values()) and min(px for px, _ in by["fan"].outline) == 0, "lift に穴か扇の足がある"
+c = by["cradle"]
+assert c.label == "2 受け" and len(c.valley) == 2 and not c.mountain and len(c.glue) == 3, (c.label, c.valley, c.glue)
+assert by["base"].mountain and not by["base"].valley and by["base"].art, "台が山折りでないか、受けを貼る印が無い"
+words_lift = FAN.steps(lift)
+assert len(words_lift) == 9 and words_lift[-1] == "4 扇を手で畳み、上から 1 外筒をかぶせる。筒を上へ外すと、扇が開く", words_lift
+assert not any(w in "".join(words_lift + FAN.materials(lift)) for w in ("糸", "竹串", "内筒", "穴に通")), (words_lift, FAN.materials(lift))
+assert FAN.materials(lift)[1] == "のり、はさみ、定規" and [r["key"] for r in FAN.bom(lift)] == ["tube", "cradle", "base", "fan", "figure"]
+pat = compose("slider_fan", lift, source)
+assert not pat[2], [f.line() for f in pat[2]]
+fig = next(x for x in pat[1]["parts"] if x.key == "figure")
+cr = next(x for x in pat[1]["parts"] if x.key == "cradle")
+assert cr.x > fig.x + fig.width and cr.y == fig.y, "受けが像の右に無い"
+sheet_l, fl = compose_sheet("slider_fan", lift, source, h["name"], h["how_it_moves"])
+assert not fl, [f.line() for f in fl]
+# 手順の紙の問いと折る順の絵も、押す部品の無い形に合わせる（「押すと」のままだと組み方と合わない）
+assert "筒を外すと、どこがどう動くと思いますか（言葉か絵で）" in words(sheet_l) and not any(w.startswith("押すと") for w in words(sheet_l))
+assert sum(1 for x in sheet_l["shapes"] if x.get("tag") == "order_panel") == 3
 with old_set(FAN):
-    assert "位置の印（切らない・折らない）" not in words(compose("slider_fan", h["params"], source)[1])
+    assert any(f.floor == "F5.range" for f in FAN.check_range(lift)), "前の組で lift が通った"
 
 print("ok 次の組 goraigo-v11・tora-v4。折り線・手順の文・絵の見出しと矢じり・見出し・印の文・用意する物・凡例・作成動画の案")
