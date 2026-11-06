@@ -30,6 +30,9 @@ from web.play_server import serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
+# 1〜4 は、前の組（goraigo-v10）のつまみの形で、押し上げる量が型の拘束で 1 つに決まる事を見る。今の組（goraigo-v14）の内筒を下から
+# 押し上げる形は押し上げる量を動かせる（tests/test_goraigo_v14.py）ので、雛形を前の組に置いて、同じ頁の道で前と同じに見る
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
 GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
@@ -105,12 +108,14 @@ assert "label:not(.sr):has(>input[type=number])" in skin.TAP_FLOOR
 # JS が無い時や直に送った時: 床の文を頁に出さず、幅の中なので幅も言わない。今の値と次の一手だけを言い、書いた値を欄に戻す
 code, page = post("/record/R-0001/next", {**form, "param": "fold_count", "to": "31.4"})
 assert code == 422 and "折りの数は今 28 です。近い値を試すか、別の寸法を変えてください。" in page, page[:400]
-assert "折り数は整数" not in page and "6〜40 の間で" not in page, page[:400]
+# 折りの数の範囲は雛形の RANGES（v14 の折り 44 枚を書けるよう上限を 60 にした。型紙エンジンと同じ）から読む
+LO, HI = slider_fan.RANGES["fold_count"]
+assert "折り数は整数" not in page and f"{LO}〜{HI} の間で" not in page, page[:400]
 assert 'name="to" inputmode="decimal" required value="31.4"' in page
 assert loop.latest_version(G, GS) == 3
 # 幅の外は今ある字のまま
 code, page = post("/record/R-0001/next", {**form, "param": "fold_count", "to": "99"})
-assert code == 422 and "折りの数は 6〜40 の間で書いてください（今 28）。" in page, page[:400]
+assert code == 422 and f"折りの数は {LO}〜{HI} の間で書いてください（今 28）。" in page, page[:400]
 # 整数の決まりを持つほかの雛形も同じ。床の文（数は整数・枚数・本数なので整数）を出さない
 DEN, SPIN = "NDL-1187053-R0000007-R", "NDL-1187053-R0000020-R"
 for sid, tpl, param, to in ((DEN, den_den, "beads_inside", 1.5), (SPIN, spin_toy, "blade_count", 4.5)):

@@ -17,6 +17,10 @@ from omochae import hypotheses, loop, records
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+# この試験は輪（記録 → 説明 → 案 → 採る → 版）の作りを、前の組（goraigo-v10）のつまみの形の寸法で見る（値はその寸法で選んである）。
+# 今の組（goraigo-v14）の輪は tests/test_loop_talk.py・test_next_version_atomic.py・test_one_sheet_loop.py ほかが見る
+from omochae.templates import slider_fan as _fan  # noqa: E402
+_fan.SHEET_SET = _fan.FROZEN_SET
 GS = hypotheses.sheet_of(G)["id"]
 gs = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))
 ts = json.loads((ROOT / "data/sources" / f"{T}.json").read_text(encoding="utf-8"))
@@ -67,7 +71,7 @@ assert loop.confirmed_records(G) == [], "確定していない記録を前例に
 never = Fake([])
 pid, fs = loop_agents.draft_proposal(r1, gs, never)
 assert floors(fs) == {"F9.human"} and never.calls == [], "確定の前に Claude を呼ばない"
-assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_count", "to": 45, "why": "x"}]}, gs, "human")[1]) == {"F9.human"}
+assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 9, "why": "x"}]}, gs, "human")[1]) == {"F9.human"}
 assert floors(loop.confirm_interpretation(r1, " ")) == {"F9.human"}
 assert loop.confirm_interpretation(r1, "確認者") == []
 assert [x["id"] for x in loop.confirmed_records(G)] == [r1]
@@ -76,9 +80,9 @@ assert floors(loop.save_proposal({"record_ids": [], "hypothesis_id": GS, "change
 assert floors(loop.save_proposal({"record_ids": ["R-9999"], "hypothesis_id": GS}, gs, "human")[1]) == {"F8.references"}
 assert floors(loop.save_proposal({"record_ids": [r1], "references": ["KE-無い"]}, gs, "human")[1]) == {"F8.references"}
 assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "tube_glue", "to": 9, "why": "x"}]}, gs, "human")[1]) == {"F7.revision"}, "変えてよい寸法の外"
-assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 4, "why": "x"}]}, gs, "human")[1]) == {"F7.revision"}, "版 1 と同じ"
-assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_count", "to": 45, "why": " "}]}, gs, "human")[1]) == {"F4.evidence"}
-assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_count", "to": 43, "why": "短くする", "metric": "opening_bound_deg", "direction": "increase"}]}, gs, "human")[1]) == {"F7.revision"}, "式と逆向き"
+assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 8.5, "why": "x"}]}, gs, "human")[1]) == {"F7.revision"}, "版 1 と同じ"
+assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 9, "why": " "}]}, gs, "human")[1]) == {"F4.evidence"}
+assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 8, "why": "短くする", "metric": "opening_bound_deg", "direction": "increase"}]}, gs, "human")[1]) == {"F7.revision"}, "式と逆向き"
 # 順位は扱わない（J-025）。混ざれば黙って捨てず落とす。次に試す仮説は実在する物だけ
 assert floors(loop.save_proposal({"record_ids": [r1], "ranking": [{"hypothesis_id": "H-D", "rank_after": 1, "why": "x"}]}, gs, "human")[1]) == {"F4.evidence"}
 assert floors(loop.save_proposal({"record_ids": [r1], "next_to_try": {"hypothesis_id": "H-Z", "why": "x", "what_to_measure": "y"}}, gs, "human")[1]) == {"F8.references"}
@@ -89,7 +93,7 @@ assert floors(loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "c
 tp, fs = loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 18, "why": "速くする", "metric": "period_s", "direction": "decrease"}]}, ts, "human")
 assert not fs
 # エージェント: 前例を引き、床で直し、案を出す。落ちた案は直させる
-bad = {"hypothesis_id": GS, "changes": [{"param": "fold_count", "to": 43, "why": "長さを詰める", "metric": "opening_bound_deg", "direction": "increase"}], "next_to_try": {"why": "a", "what_to_measure": "b"}, "references": [r1]}
+bad = {"hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 8, "why": "長さを詰める", "metric": "opening_bound_deg", "direction": "increase"}], "next_to_try": {"why": "a", "what_to_measure": "b"}, "references": [r1]}
 # 9mm は検査（紙の外・口の角に当たる）で落ちるので、通る 8.6mm の案にする。
 good = {"hypothesis_id": GS, "changes": [{"param": "fold_width", "to": 8.6, "why": f"{r1} の 60° から長くする", "metric": "opening_bound_deg", "direction": "increase"}],
         "new_hypothesis": {"name": "糸で先に開く", "how_it_moves": "糸を引く", "params": {"push_part": "stick", "hub": "axle", "pusher_height": 84}, "against": ["未確認"], "to_measure": "角度", "evidence": []},
