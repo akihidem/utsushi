@@ -101,7 +101,8 @@ class Page(html.parser.HTMLParser):
         return self
 
     def shown_targets(self, scene):
-        return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("mic", "close")]
+        # 字を持たない形だけの押す所（マイク・閉じる印・原画と歌の小さな原画）は、押す所の名前に数えない。字を持たない事は下で見る
+        return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("mic", "close", "genga-thumb")]
 
     def shown_blocks(self, scene):
         return [c for c in self.blocks if self._shown(c, scene) and c["text"].strip()]
@@ -137,6 +138,14 @@ for scene in ("start", "step", "end"):
     assert all(n in NAMES for n in names if n), (scene, names)
 assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"]
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
+# 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
+# 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌
+thumbs = [c for c in doc.targets if c["attrs"].get("id") == "genga-thumb"]
+assert len(thumbs) == 1 and not thumbs[0]["text"].strip() and doc._shown(thumbs[0], "start") and doc._shown(thumbs[0], "step"), "原画は字の無い釦で、始める前と手順の画面に出る"
+assert not doc._shown(thumbs[0], "end") and not doc._shown(thumbs[0], "kekka"), "「のこす」と札の画面には出さない（押す所を増やさない）"
+dlg = page[page.index('<dialog class="te-genga" id="genga-dlg" hidden'):page.index("</dialog>", page.index('id="genga-dlg"'))]
+assert f'/picture/{G}/page' in dlg and 'class="genga-songs"' in dlg, "窓に頁の全体の原画と歌がある"
+assert "gDlg.showModal()" in techo_step.SCRIPT and "gDlg.close()" in techo_step.SCRIPT, "頁の中で重ねる（頁を離れない）"
 # 「のこす」の画面: 声と動画が主で、字は畳んだ追加（本人の方針 19:45、#335）。押す所は とって・畳み（字なしの形）・のこす
 assert sorted(c["text"].strip() for c in doc.shown_targets("end")) == sorted(["とって", "", "のこす"])
 fold = page.split('<details class="fold" id="fold">', 1)[1].split("</details>", 1)[0]

@@ -29,7 +29,8 @@ import json
 from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
 from omochae.compose import TEMPLATES
 
-from . import hanasu, skin, tsukuru
+from . import genga, hanasu, skin, tsukuru
+from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
 from .voice_words import CLEAN, WORDS, clean  # noqa: F401  (clean は試験が読む)
@@ -104,6 +105,14 @@ button,input,textarea,select{font-family:inherit}
 /* 聞いている間は地と字を入れ替える。別の色を足さず、どちらの皮でも「今は違う状態」と読めるようにする。 */
 .mic[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
 .close{position:absolute;top:12px;right:12px;width:64px;height:64px;display:grid;place-items:center;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3}
+/* 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）。閉じる印の下の小さな原画で、字は持たない
+   （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる */
+.genga-thumb{position:absolute;top:88px;right:12px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
+.genga-thumb img{display:block;width:100%;height:100%;object-fit:contain}
+.te-genga{max-width:96vw;max-height:96vh;max-height:96svh;overflow:auto;padding:10px;border:0;background:var(--paper);color:var(--fg)}
+.te-genga::backdrop{background:rgba(0,0,0,.82)}
+.te-genga .genga-pic{width:min(100%,calc(80vh * var(--genga-r)));width:min(100%,calc(80svh * var(--genga-r)))}
+.te-genga .genga-songs{font-size:16px;line-height:2;margin:8px 0}
 .close svg{width:32px;height:32px}
 .henji{padding:10px 12px 16px;display:grid;gap:10px}
 #ask-form{display:flex;gap:8px;margin:0}
@@ -292,6 +301,12 @@ $('stuck').onclick = (e) => { e.preventDefault(); openAsk(); };
 // 閉じる印: 今の画面を閉じて 1 つ前へ。札は元の画面へ、「のこす」の画面は最後の手順へ。手順の画面と最初の画面では玩具の頁へ戻る。
 $('close').onclick = (e) => { const s = scene(); if (s === 'henji') { e.preventDefault(); to('step'); } else if (s === 'kekka') { e.preventDefault(); to('end'); } else if (s === 'end') { e.preventDefault(); goBack(); } };
 $('ask-form').onsubmit = (e) => { e.preventDefault(); ask(q.value.trim()); };
+// 原画と歌: 小さな原画を押すと、頁の中で大きく重ねる（頁を離れると声の聞き取りが止まるため）。どこを押しても閉じる。重ねられない画面では原画の釦を隠す
+const gThumb = $('genga-thumb'), gDlg = $('genga-dlg');
+if (gThumb && gDlg) {
+  if (!gDlg.showModal) gThumb.hidden = true;
+  else { gThumb.onclick = () => { gDlg.hidden = false; gDlg.showModal(); }; gDlg.addEventListener('click', () => gDlg.close()); gDlg.addEventListener('close', () => { gDlg.hidden = true; }); }
+}
 // 写真: 撮った物を足していく（1 つ撮るごとに選びが入れ替わる画面でも、前の 1 枚を落とさない）。写しはこの端末の中だけで作り、のこすまで送らない。
 const form = $('up-form'), picker = $('files'), thumbs = $('thumbs'), go = $('keep'), ok = $('ok'), st = $('up-status'), max = Number(form.dataset.maxN);
 let chosen = [];
@@ -386,6 +401,26 @@ mark(); paint(); to('start');
 </script>"""
 
 
+def _genga(sid):
+    """原画と歌の釦と、押した時に重ねる窓（main の原画と歌の部品 web.genga を使う）。返すのは (釦, 窓)。原画が無い玩具は両方とも空。
+    釦は字を持たない形だけの押す所（マイクと閉じる印と同じ）で、名前は読み上げの字だけ（genga.alt。新しい字を足さない）。
+    窓は開くまで hidden にし、字（歌）を手順の画面の字に数えない。歌は人が確かめた読みだけ（genga._songs。読みが無い玩具は絵だけ）。"""
+    try:
+        src = genga._source(sid)
+    except FileNotFoundError:
+        return "", ""
+    pic, whole = genga._pic(sid, src, genga.alt(src), lazy=True)
+    if not pic:
+        return "", ""
+    lines, mark = genga._songs(src)
+    url = f"/picture/{esc(sid)}/page" if whole else f"/picture/{esc(sid)}"
+    thumb = (f'<button type="button" class="genga-thumb" id="genga-thumb" data-on="start step henji" aria-label="{esc(genga.alt(src))}">'
+             f'<img src="{url}" alt="" loading="lazy"></button>')
+    dlg = (f'<style>{genga.STYLE}</style><dialog class="te-genga" id="genga-dlg" hidden aria-label="{esc(GENGA_HEAD)}">'
+           f'<figure class="genga">{pic}{lines}{mark}</figure></dialog>')
+    return thumb, dlg
+
+
 def _params(sid, data, h, v):
     template = h.get("template") or data.get("template", "slider_fan")
     params, _ = loop.version_params(sid, h["id"], v)
@@ -442,11 +477,13 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     limits = (f'<p class="meta">{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで</p>' if uploads else
               '<p class="meta">公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。</p>')
     craft = hanasu.SCENES["craft"]
+    g_thumb, g_dlg = _genga(sid)
     body = (f'<main class="te" id="te" data-scene="{"end" if n > total else "step"}" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}" '
             f'data-total="{total}" data-n="{n}" data-voice="{hanasu.mode()}"><h1 class="sr">手帖</h1>'
             f'<div class="bar" id="bar" role="progressbar" aria-valuemin="1" aria-valuemax="{total}" aria-valuenow="{min(n, total)}"><span style="width:{width}%"></span></div>'
             f'<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）" data-on="step henji end kekka" hidden>{MIC}</button>'
             f'<a class="close" id="close" href="/toy/{esc(sid)}" aria-label="閉じる">{CLOSE}</a>'
+            + g_thumb +
             f'<figure class="koma" id="koma" data-on="start step henji">{koma}</figure>'
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
             '<p class="meta" id="note" aria-live="polite"></p>'
@@ -472,7 +509,7 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
-            f'<section class="kekka" data-on="kekka">{tiles}</section></main>')
+            f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
           .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
     return _doc(title, look, body + skin.WHO_SCRIPT + js)

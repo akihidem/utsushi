@@ -105,9 +105,10 @@ fold = genga.fold(G)
 assert f'<details class="genga genga-fold"><summary>{genga_words.HEAD}</summary>' in fold
 assert f'src="/picture/{G}/page"' in fold and 'loading="lazy"' in fold and "querySelector('.genga-pic')" in fold, "畳みの中の絵を押しても重ねて開く"
 assert "data-big" in fold and "<dialog" in fold and f'<a href="/picture/{G}/page"' not in fold, "頁を離れずに重ねて出す"
-# 手帖は作り直しで作る頁（techo_step）になった（#87）。作る頁は押す所の名前を 6 つにする決定（本人の決定 11-05）なので、
-# 原画と歌の畳み（「原画と歌」「大きく見る」を押す所が増える）は置かない。作る時の畳みは、作りながら見る頁にある。原画は玩具の頁の頭に出る
-assert "genga.fold(sid)" in inspect.getsource(tsukuru.page) and "genga." not in inspect.getsource(techo_step)
+# 手帖は作り直しで作る頁（techo_step）になった（#87）。作る頁は押す所の名前を 6 つにする決定（本人の決定 11-05）なので、畳み（「原画と歌」
+# 「大きく見る」の字の押す所）でなく、字の無い小さな原画を手順の画面に出し、押すと頁の中で頁の全体の原画と歌を重ねる（同じ部品の _pic と _songs）
+assert "genga.fold(sid)" in inspect.getsource(tsukuru.page)
+assert "genga._pic(" in inspect.getsource(techo_step._genga) and "genga._songs(" in inspect.getsource(techo_step._genga)
 
 # 4. 英語の頁・くずし字・額
 en_page = en.toy_page(G, "tenji") if "look" in inspect.signature(en.toy_page).parameters else en.toy_page(G)
