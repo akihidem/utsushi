@@ -29,7 +29,64 @@ def load(source_id):
     from .loop import overlay
 
     # 人が採った新しい仮説だけを重ねる（F9）。元の記録は書き換えない。順位は持たない（J-025）。
-    return overlay(json.loads(path.read_text(encoding="utf-8")))
+    data = overlay(json.loads(path.read_text(encoding="utf-8")))
+    # 組ごとの寸法（params_by_set）は、雛形の今の組の分を params に重ねる。頁・刷る口・輪・3D は今の組の寸法を見る。
+    # 前の組（凍結の床）を組む時は、雛形の組を前の名に置くので、記録の params のまま（tests/test_floor_pin.py は記録を直に読み、組ごとに引く）
+    now = current_set(data)
+    data["hypotheses"] = [{**h, "params": params_for(h, now)} if (h.get("params_by_set") or {}).get(now) is not None else h for h in data["hypotheses"]]
+    return without_hidden(data, now)
+
+
+# 組で出さない字を置く欄（記録の "hide_by_set"）。欄の名 → その欄の要素の字の並び（比べる事は change の字で見る）。
+# なぜ字で持つか: 番号で持つと、字の並びを直した時に黙って別の字が消える。字で持てば、元の字を直した時に外れて試験が落ちる。
+HIDE_FIELDS = ("questions", "after_try.contrasts", "after_try.card", "analogy.related")
+
+
+def without_hidden(data, sheet_set):
+    """その組で出さない字（"hide_by_set"）を外した記録。字は変えず、外すだけ（新しい字を作らない）。
+
+    なぜ要るか: 必須 2 種の次の組で押し方の形が変わると、玩具ごとの共通の字（問い・試した後の紙・たとえ）のうち、前の形を前提にした
+    字が合わなくなる。新しい字は本人の確認が要るので、その組では外すだけにする（統括の決め 11-06）。前の組は今のまま出す。"""
+    hide = (data.get("hide_by_set") or {}).get(sheet_set) or {}
+    if not hide:
+        return data
+    out = {**data}
+    for field in HIDE_FIELDS:
+        gone = set(hide.get(field) or [])
+        if not gone:
+            continue
+        top, _, sub = field.partition(".")
+        if sub:
+            box = dict(out.get(top) or {})
+            box[sub] = [x for x in box.get(sub, []) if (x.get("change") if isinstance(x, dict) else x) not in gone]
+            out[top] = box
+        else:
+            out[top] = [x for x in out.get(top, []) if x not in gone]
+    return out
+
+
+def current_set(data):
+    """その玩具の雛形の今の組の名前（例 tora-v4）。"""
+    from .compose import TEMPLATES  # compose は記録を読まないが、読み込みの順をこの関数の中に閉じる
+
+    return TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
+
+
+def sheet_id(data, sheet_set=None):
+    """記録の、その組（省くと雛形の今の組）のたたき台の仮説 id。組ごとに分ける時は "sheet_by_set" に書く。
+
+    なぜ組ごとか: 必須 2 種の次の組で押し方の形が変わると、たたき台の仮説も替わる事がある（御来迎の次の組は、前の組のつまみの
+    H-A と別の仮説になる見込み）。1 つの欄では両方の組を言えない。"sheet_by_set" に無い組は "sheet" のまま（今はどの玩具も）。"""
+    return (data.get("sheet_by_set") or {}).get(sheet_set or current_set(data), data.get("sheet"))
+
+
+def params_for(h, sheet_set):
+    """仮説のその組の寸法。"params_by_set" に組の分があればそれ、無ければ記録の params（前の組と、組で寸法の変わらない仮説）。
+
+    なぜ記録の欄か: 次の組の寸法（型紙エンジンの見本）は雛形の既定では検査に落ちる値の事があり、既定を替えると前の組の紙と
+    ほかの仮説の紙も変わる（統括の決め 11-06）。"""
+    got = (h.get("params_by_set") or {}).get(sheet_set)
+    return got if got is not None else h.get("params")
 
 
 def _pred_dir():
@@ -131,7 +188,7 @@ def sheet_of(source_id):
     本人が別の仮説に替える時も 1 か所で済む（御来迎は H-A と H-C で迷いがあった。#332 の点 1）。
     """
     data = load(source_id)
-    match = [h for h in data["hypotheses"] if h["id"] == data.get("sheet")]
+    match = [h for h in data["hypotheses"] if h["id"] == sheet_id(data)]
     if not match:
         raise ToolMissing(f"たたき台の紙の欄が無いか、指す仮説が無い: {source_id}")
     return match[0]
@@ -278,8 +335,8 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
     # 人が輪や生成で採って重ねた新しい仮説（H-N…）も作る側の控えなので、同じく刷らない。
     # 試作の玩具は、作る側がこの口から控えを刷れる（道は閉じない）。頁からは刷らない（web の /print の口が断る）。
-    if data.get("stage", "必須") == "必須" and hypothesis_id != data.get("sheet"):
-        print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{data.get('sheet')}）の紙だけを刷る").line(), file=sys.stderr)
+    if data.get("stage", "必須") == "必須" and hypothesis_id != sheet_id(data):
+        print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{sheet_id(data)}）の紙だけを刷る").line(), file=sys.stderr)
         return 3
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
     if params is None:
@@ -297,7 +354,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     # 刷るのは型紙だけ（本人の決まり 11-06「文章のプリントは廃止」・窓口の決定 推し A）。手順の紙と試した後の紙は組まない。
     # 前は型紙の後に手順の紙（_print_instructions）と試した後の紙を組み、手順の紙が A4 に入らないと型紙も刷れなかった（御来迎 v14 で当たる）。
     # 組み方は頁（web.kumitate の組み方の節）、試した後の紙は前に配った道で開く時にだけ作る（web.play_server.ensure_after・print_after）。
-    # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）は話す道の決めを待つので、ここでは変えない
+    # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）も同じ形にした（窓口の決定 2026-11-07 カード 012120）
     return generate(template, params, source_id, out, title=title, version=version)
 
 
@@ -335,10 +392,10 @@ def print_own(source_id, own_id, out, version=1):
     if not params or key not in params:
         return print_free(source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], h["evidence"], out, mark=OWN_HYPOTHESIS)
     data = load(source_id)
-    rc = generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version, mark=OWN_HYPOTHESIS)
-    if rc:
-        return rc
-    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version, template, mark=OWN_HYPOTHESIS)
+    # 自分の紙も刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120「print_own も型紙だけを組む（#493 と同じ形、本人の規則の直接の当てはめ）」）。
+    # 前は型紙の後に手順の紙と試した後の紙を組み、手順の紙が A4 に入らない寸法（御来迎の次の組の内筒を下から押し上げる形）から作った自分の紙は、
+    # 型紙も刷れなかった。組み方は頁、試した後の紙は前に配った道で開く時にだけ作る（print_after。自分の仮説の印で刷る）
+    return generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version, mark=OWN_HYPOTHESIS)
 
 
 def picture(source_id):

@@ -13,7 +13,8 @@ exit: 0 = 書き出せた / 4 = 型紙が刷れない・pdftoppm か google-chro
 - 今の紙は repo の生成器（compose → render.write_all）で撮る時に刷る。版の札は slider_fan.SHEET_SET から読む
   （字で書くと、刷り直した時に動画だけ古くなる）。差の朱の枠も、同じ配置（layout）の部品の形から引く。
 - 扇の開き方・動き方は描かない（F9）。型紙は平らなまま映し、矢印も付けない。
-- 仮説 A と C を並べるのは、本人の所見がこの 2 つについてだったから。順位ではない（J-025）。
+- 見せる紙はたたき台の 1 組だけ（型紙は玩具に 1 枚。本人の決定 11-05 17:26、J-032）。順位ではない（J-025）。
+  所見と版ごとの字は 11-04 の試行の事実なので、仮説 C の字も書き換えずに残す（#332）。
 - 工作の手帖は src/web/techo.py の data() と頁の型から、cache の中に頁を書き出し、headless の Chrome で撮る。
   techo.main() は out/techo/index.html に固定で書くので使わない（撮るための細工を足した頁を repo の out に残さない）。
   撮るのは「よくある言葉」と「仕組みの質問を断る」の 2 つの答えだけ。どちらも AI を呼ばず、仕組みの説明を含まない。
@@ -32,9 +33,10 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 from demo.flip import H, PAPER, ROOT, SERIF_BOLD, SHU, SUMI, W, contact_sheet, ease, fade, render, text
+from omochae.hypotheses import sheet_of
 from omochae.templates.slider_fan import SHEET_SET
 
-DURATION = 30.0
+DURATION = 25.0
 
 # 本人の所見（docs/process/trials/README.md の表の文を一字一句そのまま。床で照らす）
 QUOTES = (
@@ -62,7 +64,8 @@ CHANGES = (
 )
 # 紙の差の朱の札。部品の形から枠を引く（下の change_regions）。
 LABEL_GROOVE, LABEL_BASE, LABEL_COLOR = "下からの切り込み", "土台", "色の境で折る"
-SHOWN_HYPS = ("H-A", "H-C")
+SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2・3 と同じ
+SHOWN_HYPS = (sheet_of(SID)["id"],)
 
 # 手帖で撮る 2 つの質問。左はよくある言葉（型紙の説明から答える）、右は仕組みの質問（答えない）。
 ASKS = (("谷折りって？", "よくある言葉は、型紙の説明から"), ("どう動くの？", "仕組みの質問は、答えない"))
@@ -82,12 +85,9 @@ CUES = {
     "pair_a": (11.5, 12.2),      # 仮説 A の紙: v7 と今
     "boxes_a": (12.6, 13.6),     # 差の朱の枠
     "pair_a_out": (16.0, 16.5),
-    "pair_c": (16.5, 17.2),      # 仮説 C の紙: v7 と今
-    "boxes_c": (17.6, 18.6),
-    "pair_c_out": (21.0, 21.5),
-    "techo": (21.5, 22.3),       # 工作の手帖の 2 つの画面
-    "techo_label": (22.8, 23.6),
-    "closing": (26.6, 28.0),     # 締めの字幕（30 秒まで止めて読ませる）
+    "techo": (16.5, 17.3),       # 工作の手帖の 2 つの画面
+    "techo_label": (17.8, 18.6),
+    "closing": (21.6, 23.0),     # 締めの字幕（25 秒まで止めて読ませる）
 }
 
 # 置き場（px）。紙は高さ 720px。左に v7、右に今の紙、間の帯に朱の札を置く。
@@ -157,7 +157,7 @@ def change_regions(layout):
 
 
 def build_sheets(cache):
-    """仮説 A・C の紙を、v7（git にある PDF）と今（生成器で刷る）の 2 枚ずつ。刷った後の検査も通す。"""
+    """たたき台の紙を、v7（git にある PDF）と今（生成器で刷る）の 2 枚。刷った後の検査も通す。"""
     from omochae.marks import check_image_count, check_pdf
     from omochae.render import write_all
 
@@ -375,8 +375,7 @@ class Scene:
         draw = ImageDraw.Draw(img)
         self._quotes(img, draw, t)
         self._chain(img, draw, t)
-        for p, cues in zip(self.pairs, (("pair_a", "boxes_a", "pair_a_out"), ("pair_c", "boxes_c", "pair_c_out"))):
-            self._pair(img, draw, t, p, *cues)
+        self._pair(img, draw, t, self.pairs[0], "pair_a", "boxes_a", "pair_a_out")
         self._techo(img, draw, t)
         # 札（右上）: 版の移りと台帳の ID。台帳の段からずっと出す。
         lab = phase(t, "chain") * (1 - phase(t, "closing"))
@@ -396,13 +395,13 @@ class Scene:
         """隅の札は、いま映している物の出所に合わせる。"""
         if t < CUES["chain_out"][1]:
             return "出所: docs/process/trials/README.md（本人の所見・台帳の形）・trials/sheets/README.md（版ごとに変えた事）"
-        if t < CUES["pair_c_out"][1]:
+        if t < CUES["pair_a_out"][1]:
             return (f"左: git に残した {OLD_SET} の PDF（docs/process/trials/sheets）　右: 今の生成器（slider_fan）が刷った PDF。"
                     "朱の枠は変えた所")
         return "工作の手帖: src/web/techo.py の頁を手元のブラウザで撮った。2 つの答えは頁の中の決まりで出た物（AI は呼んでいない）"
 
 
-SHEET_TIMES = (1.5, 5.0, 9.5, 12.3, 14.5, 17.4, 19.5, 22.5, 24.5, 26.0, 27.5, 29.5)
+SHEET_TIMES = (1.5, 5.0, 9.5, 12.3, 14.5, 17.4, 19.5, 21.0, 22.5, 24.5)
 
 
 def main(argv=None):

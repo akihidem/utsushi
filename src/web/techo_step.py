@@ -30,7 +30,7 @@ from api import ask
 from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, skin, tsukuru
+from . import genga, hanasu, hmd, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -41,10 +41,13 @@ NAMES = ("つぎ", "もどる", "こまった", "とって", "のこす", "は�
 NEXT, BACK, STUCK, SHOOT, KEEP, START = NAMES
 
 # 結果の札を声で選ぶ言い方。値は雛形の RESULTS のまま（凍結の床 F3 の語）。
+# 前の札（OLD_RESULTS の左。「倒れた」「少し動いた」など）を言った時も、今の札へ読み替えて残す。前の札は記録を読むために
+# 受け付けに残っているので、声で前の札をそのまま送ると、選べないはずの札で新しい記録ができてしまう（#373、札を 3 つにそろえた時）
 RESULT_WORDS = {r: r for tpl in TEMPLATES.values() for r in tpl.RESULTS} | {
+    o: n for tpl in TEMPLATES.values() for o, n in getattr(tpl, "OLD_RESULTS", {}).items()} | {
     "うごいた": "動いた", "うごかない": "動かない", "分からない": "わからない", "ゆれた": "揺れた", "ゆれない": "揺れない", "もどった": "戻った", "もどらない": "戻らない",
-    "なった": "鳴った", "ならない": "鳴らない", "まわった": "回った", "まわらない": "回らない", "たった": "立った", "たおれた": "倒れた", "あそべた": "遊べた",
-    "すこしあそべた": "少し遊べた", "あそべない": "遊べない", "よくうごいた": "よく動いた", "すこしうごいた": "少し動いた", "ころがった": "転がった", "ころがらない": "転がらない"}
+    "なった": "鳴った", "ならない": "鳴らない", "まわった": "回った", "まわらない": "回らない", "たった": "立った", "たたない": "立たない", "たおれた": "立たない", "あそべた": "遊べた",
+    "すこしあそべた": "遊べた", "あそべない": "遊べない", "よくうごいた": "動いた", "すこしうごいた": "動いた", "ころがった": "転がった", "ころがらない": "転がらない"}
 
 # hanasu.SCRIPT の M と同じ文。声を字にするしくみを機械に入れている間の知らせ。
 INSTALL = "声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…"
@@ -505,6 +508,10 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # JS が無い時は、玩具の頁の聞く口へ行く。
             + _key(STUCK, "key", f'id="stuck" data-on="step" href="/toy/{esc(sid)}#ask"', "a")
             + '</div>'
+            # 重ねる頁への道（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に」。作る口は手帖 1 つの決まりの中で、手帖からの道 1 つ）。
+            # 大きいボタンは「はじめる」のまま、道は小さな字の 1 つ。組み立ての書き方がある玩具だけ（重ねる頁が開く玩具）。
+            # 「はじめる」の下に置く: 上に置くと、幅 320×568 で「はじめる」が最初の画面から 22px 出た（別の目の確かめ 11-07）
+            + (f'<p class="meta kasane-go" data-on="start"><a href="/toy/{esc(sid)}/kasane">{esc(hmd.CAM_LINK)}</a></p>' if hmd.available(sid) else '') +
 
             '<section class="henji" data-on="henji">'
             f'<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="send" aria-label="聞く">{SEND}</button></form>'

@@ -8,6 +8,7 @@ import inspect
 from PIL import Image
 
 from demo import scene6
+from omochae import hypotheses
 from omochae.templates import slider_fan
 
 # 本人の所見は、試行の索引の文に一字一句ある（言い換えると「作った人の言葉」でなくなる）
@@ -23,15 +24,19 @@ sheets_readme = scene6.SHEETS_README.read_text(encoding="utf-8")
 for ver, _, key in scene6.CHANGES:
     assert f"goraigo-{ver}" in sheets_readme and key in sheets_readme, (ver, key)
 
+# 型紙は玩具に 1 枚（J-032）。紙を並べて見せるのは、たたき台の 1 組だけ
+assert scene6.SHOWN_HYPS == (hypotheses.sheet_of(scene6.SID)["id"],) == ("H-A",)
+# 所見と版の字は 11-04 の試行の事実なので残す（字は書き換えない）
+assert any("仮説 C にも内筒の土台" in s for _, s, _ in scene6.CHANGES)
 # 古い紙は git にある PDF を使う（作り直さない）
 for hyp in scene6.SHOWN_HYPS:
     assert (scene6.OLD_DIR / scene6.OLD_PDF.format(hyp=hyp)).exists(), hyp
 
 # 合図の表は時刻の順で、動画の長さの中
 spans = list(scene6.CUES.values())
-assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 30.0
+assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 25.0
 
-# 朱の枠は今の配置の部品から引く。A には下からの切り込み、C には土台、どちらも色の境で折る
+# 朱の枠は今の配置の部品から引く。A には下からの切り込みと、色の境で折る所
 layouts, _ = scene6.current_layouts()
 regions = {}
 for hyp, (h, layout, failures) in layouts.items():
@@ -39,7 +44,6 @@ for hyp, (h, layout, failures) in layouts.items():
     regions[hyp] = layout, scene6.change_regions(layout)
 labels = {hyp: {lab for lab, _ in r} for hyp, (_, r) in regions.items()}
 assert scene6.LABEL_GROOVE in labels["H-A"] and scene6.LABEL_COLOR in labels["H-A"], labels
-assert scene6.LABEL_BASE in labels["H-C"] and scene6.LABEL_GROOVE not in labels["H-C"], labels
 for hyp, (layout, r) in regions.items():
     for lab, (x0, y0, x1, y1) in r:
         assert 0 <= x0 < x1 <= layout["page"].w and 0 <= y0 < y1 <= layout["page"].h, (hyp, lab)
@@ -59,7 +63,7 @@ pairs = [{"hyp": hyp, "letter": layouts[hyp][0]["letter"], "old": Image.new("RGB
 shots = [Image.new("RGB", (860, 1864), (240, 236, 228)) for _ in scene6.ASKS]
 scene = scene6.Scene(pairs, shots)
 assert scene.duration == scene6.DURATION
-for t in (0.5, 4.0, 9.0, 12.5, 14.5, 18.0, 20.0, 23.0, 25.0, 27.0, 29.9):
+for t in (0.5, 4.0, 9.0, 12.5, 14.5, 18.0, 20.0, 23.0, 24.9):
     a, b = scene.frame(t), scene.frame(t)
     assert a.size == (1920, 1080) and a.tobytes() == b.tobytes(), t
 # 枠の段では朱の枠が現れる（同じ絵が続かない）

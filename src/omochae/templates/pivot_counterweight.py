@@ -18,6 +18,8 @@ HYP_KEY = "mount"
 SHEET_SET = "tora-v4"
 # 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。
 FROZEN_SET = "tora-v3"
+# 紙を控えに残す前の組の並び（古い順。compose.kept_sets）。次の組に上げる時は、今の組をこの並びの後ろに足す（前の組の紙は変えない）
+KEPT_SETS = (FROZEN_SET,)
 
 
 def frozen():
@@ -469,7 +471,20 @@ def steps(p):
 
 
 # 虎の物差しは頭が揺れるかどうかで足りる（本人の判断、research/15）。周期の差で仮説を見分ける設計にしない。
-RESULTS = ("揺れた", "揺れない")
+# 「わからない」は物差しでなく、決められない時の札。どの玩具でも選べるようにした（#146）。
+RESULTS = ("揺れた", "揺れない", "わからない")
+# 手順の紙に刷る札は、刷る組で決める。本人の決め（11-06、#373）は「次の組の紙から 3 つの欄」。
+# 決めの前に紙の指紋を控えた組（tora-v3・tora-v4）は 2 つの欄のまま刷る。札は紙に刷るので、足すと控えた紙の指紋が変わり、
+# 控えは書き換えない決まり（tests/test_floor_pin.py）。それより後の組（tora-v6 など）は RESULTS の 3 つで刷る。
+# 1 つの値で持たないのは、控えた組と今の組を同じ雛形で刷り分けるため（前の組の紙は、雛形の SHEET_SET をその組に置いて組む）。
+# 控えた組を足すのは、決めの前に 2 つの欄で控えた組がほかにあった時だけ（tests/test_result_words.py が控えの有る組だけかを見る）。
+TWO_BOX_SETS = ("tora-v3", "tora-v4")
+PAPER_RESULTS = ("揺れた", "揺れない")
+
+
+def paper_results():
+    """今組んでいる組（SHEET_SET）の手順の紙に刷る札。frozen() と同じく、組を前の組に置いて組む時もその組の札になる。"""
+    return PAPER_RESULTS if SHEET_SET in TWO_BOX_SETS else RESULTS
 
 
 def measures(p):

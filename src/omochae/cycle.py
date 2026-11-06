@@ -511,7 +511,7 @@ def run(toy=TOY, keep_going=False, keep=None, engine_repo=None):
     stages = []
     with _sandbox(keep) as folder:
         data = hypotheses.load(toy)
-        c = Context(sid=toy, folder=folder, engine_repo=find_engine_repo(engine_repo), hid=data.get("sheet") or data["hypotheses"][0]["id"],
+        c = Context(sid=toy, folder=folder, engine_repo=find_engine_repo(engine_repo), hid=hypotheses.sheet_id(data) or data["hypotheses"][0]["id"],
                     source=json.loads((ROOT / "data/sources" / f"{toy}.json").read_text(encoding="utf-8")))
         for name, fn in STAGES:
             try:

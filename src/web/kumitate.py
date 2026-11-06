@@ -340,6 +340,8 @@ if(A.ruler&&B.ruler)lay(ruler,[lerp(A.ruler[0],B.ruler[0],e),lerp(A.ruler[1],B.r
 if(B.cut){const[x,y,a]=along(B.cut,u);(B.knife?knife:sci).style.transform=`translate3d(${x}px,${y}px,8px) rotate(${a}rad) translate(${-30*S}px,${-14*S}px)`}
 // 見る向きは先に変える。折って小さくなる時（cam）は、形が縮んでから寄る
 const c=ease(u/(B.cam||.4)),zc=B.cam&&B.z>A.z?ease((u-.5)/.5):c;cam=[lerp(A.rx,B.rx,c),lerp(A.ry,B.ry,c),A.c.map((v,k)=>lerp(v,B.c[k],zc)),lerp(A.z,B.z,zc)];view()};
+// 1 つの動きが終わった知らせ。作業しながら見る試作が、1 手ずつ止める進め方に使う。ふだんの頁は聞かない
+const beat=(k,n)=>document.dispatchEvent(new CustomEvent('kumitate-beat',{detail:{step:at,beat:k,beats:n}}));
 const stop=()=>{if(run){cancelAnimationFrame(run.raf);run=null}};
 const play=(A,seq,j)=>{const B=seq[j],pl=plan(A,B),me={raf:0};run=me;
 // この形に無い部品は消し、新しく出る部品は行き先に置いてから出す
@@ -348,8 +350,8 @@ for(const o of els)o.e.style.opacity=B.s[o.key]||(B.open&&o.key==='fan')?1:0;
 for(const r of rods){const b=B.r[r.dataset.r];if(!b){r.style.opacity=0;continue}r.style.opacity=1;if(!A.r[r.dataset.r])rod(r,b.s,b.e)}
 if(B.ruler&&!A.ruler)lay(ruler,B.ruler);misc(B);sci.style.opacity=B.cut&&!B.knife?1:0;knife.style.opacity=B.cut&&B.knife?1:0;
 const start=performance.now();
-const tick=now=>{if(run!==me)return;const t=Math.min(1,(now-start)/pl.dur);draw(A,B,pl,t);if(t<1){me.raf=requestAnimationFrame(tick);return}
-sci.style.opacity=0;knife.style.opacity=0;if(j+1<seq.length)play(B,seq,j+1);else{run=null;rest(B)}};
+const tick=now=>{if(run!==me)return;const t=Math.min(1,(now-start)/(pl.dur*(window.kumitateSlow||1)));draw(A,B,pl,t);if(t<1){me.raf=requestAnimationFrame(tick);return}
+sci.style.opacity=0;knife.style.opacity=0;if(j+1<seq.length)play(B,seq,j+1);else{run=null;rest(B)}beat(j+1,seq.length)};
 me.raf=requestAnimationFrame(tick)};
 const show=i=>{const to=Math.max(0,Math.min(L,i)),from=at;stop();at=to;words();
 // 前へ戻る時は動かさない。手順 12 の次は、上へ動かして扇が開く所まで動かす
@@ -362,6 +364,9 @@ stage.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY,dx,dy];stage.
 stage.addEventListener('pointermove',e=>{if(!drag)return;dx=drag[2]+(e.clientX-drag[0])*.5;dy=Math.max(-70,Math.min(70,drag[3]-(e.clientY-drag[1])*.4));if(cam)view()});
 const up=()=>{drag=null};stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
 words();rest(last(L));
+// 作業しながら見る試作の頁に、形の並びと動かす口を渡す。試作の頁は手順を「手」に分け、1 手ずつ動かして止める（本人の感想 11-06）。
+// ふだんの頁はこれを使わない。前は試作の枝で節の script の字を差し替えていたが、字が変わると黙って外れるので、口を開ける形にした
+window.kumitateParts={F,T,play,rest,stop,go:i=>{at=i;words()},view:()=>{if(cam)view()}};
 })();</script>
 """
 
