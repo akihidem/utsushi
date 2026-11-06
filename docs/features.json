@@ -675,5 +675,17 @@
    "tests/test_photo_attach_walk.py"
   ],
   "unverified": "手帖の作る頁の「のこす」の後はギャラリーの「他の人が作った物」に着き、記録を残した画面にだけ返事の文と今残した 1 つを頭に出す（記録の鍵で見分ける）。札の記録の番号から記録の頁（説明と AI）へ行く。写真は人が確かめた物だけ（確認の前の物は記録の頁で）。実機と人の目はまだ"
+ },
+ {
+  "id": "f56",
+  "name": "作業の頁に重ねる形の下地（本人の指示 11-07: HMD か iPhone カメラでオーバーレイする形での作業を前提に。試作の枝 try/hmd から移した）",
+  "status": "doing",
+  "evidence": [
+   "src/web/hmd.py",
+   "src/web/kumitate.py",
+   "src/web/play_server.py",
+   "tests/test_hmd.py"
+  ],
+  "unverified": "/toy/<玩具>/kasane（後ろのカメラの映像に手順の字と 3D を重ねる）と /toy/<玩具>/kasane/hmd（透けて見える画面向け）。1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。映像は機器の中だけで送らない。組み立ての 3D は今の kumitate の段（エンジンの JSON の読み口 assembly_json は別の PR の後）。映像の中の紙に 3D を合わせる所と、手帖からの道（口の字は本人の確かめ）はまだ。この機械の headless の Chrome では偽のカメラの映像を測れなかった。実機の iPhone・HMD と人の目はまだ"
  }
 ]
