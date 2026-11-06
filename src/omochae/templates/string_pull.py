@@ -517,20 +517,23 @@ def bom(p):
     why = "家庭のプリンタで刷って作るため"
     if is_kite(p):
         top, bottom = legs(p)
+        # 刷る部品は 1 つずつ行にする（F2.bom が番号と key で照らす）。刷らない物の番号は、尾の枚数で動く刷る部品の番号に重ねない。
+        n = 4 + tail_count(p)
         rows = [
             {"number": 1, "key": "sail", "name": "帆", "qty": 1, "material": paper, "substituted": True, "original_guess": "和紙（凧の通例から。この図では確かめていない）", "reason": why},
-            {"number": 2, "key": "patch", "name": "当て紙", "qty": 2, "material": paper, "substituted": False},
-            {"number": 7, "key": "spine", "name": "縦骨", "qty": 1, "material": f"竹ひご（長さ約 {p['sail_h']:g}mm）", "substituted": True, "original_guess": "割り竹（不明）", "reason": "家にあり、まっすぐなため"},
-            {"number": 8, "key": "spar", "name": "横骨", "qty": 1, "material": f"竹ひご（長さ約 {spar_len(p):.0f}mm）", "substituted": True, "original_guess": "割り竹（不明）", "reason": "同じ"},
-            {"number": 9, "key": "bridle", "name": "糸目と揚げ糸", "qty": 1, "material": f"木綿の糸（糸目 {top + bottom + 20:.0f}mm と、揚げ糸 数 m）", "substituted": True, "original_guess": "麻糸（不明）", "reason": "家にあるため"},
+            {"number": 2, "key": "patch1", "name": "当て紙", "qty": 1, "material": paper, "substituted": False},
+            {"number": 3, "key": "patch2", "name": "当て紙", "qty": 1, "material": paper, "substituted": False},
+            {"number": n, "key": "spine", "name": "縦骨", "qty": 1, "material": f"竹ひご（長さ約 {p['sail_h']:g}mm）", "substituted": True, "original_guess": "割り竹（不明）", "reason": "家にあり、まっすぐなため"},
+            {"number": n + 1, "key": "spar", "name": "横骨", "qty": 1, "material": f"竹ひご（長さ約 {spar_len(p):.0f}mm）", "substituted": True, "original_guess": "割り竹（不明）", "reason": "同じ"},
+            {"number": n + 2, "key": "bridle", "name": "糸目と揚げ糸", "qty": 1, "material": f"木綿の糸（糸目 {top + bottom + 20:.0f}mm と、揚げ糸 数 m）", "substituted": True, "original_guess": "麻糸（不明）", "reason": "家にあるため"},
         ]
-        if p["rig"] == "tail":
-            rows.append({"number": 4, "key": "tail", "name": "尾", "qty": tail_count(p), "material": paper, "substituted": True, "original_guess": "不明（図に尾は見えない）", "reason": why})
+        rows += [{"number": 4 + i, "key": f"tail{i + 1}", "name": "尾", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明（図に尾は見えない）", "reason": why} for i in range(tail_count(p))]
         return rows
     rows = [
         {"number": 1, "key": "board", "name": "台紙", "qty": 1, "material": f"{paper}を空き箱の厚紙に貼る", "substituted": True, "original_guess": "木か竹（棚卸しの見立てによる。確かめていない）", "reason": why},
         {"number": 2, "key": "mover", "name": "腕木", "qty": 1, "material": f"{paper}を厚紙に貼る", "substituted": True, "original_guess": "木（同じ）", "reason": why},
-        {"number": 3, "key": "disc", "name": "留め", "qty": 2, "material": paper, "substituted": False},
+        {"number": 3, "key": "disc1", "name": "留め", "qty": 1, "material": paper, "substituted": False},
+        {"number": 4, "key": "disc2", "name": "留め", "qty": 1, "material": paper, "substituted": False},
         {"number": 7, "key": "axle", "name": "軸", "qty": 1, "material": "楊枝（両端を少し残して切る）", "substituted": True, "original_guess": "竹釘（不明）", "reason": "家にあり、穴に通しやすいため"},
     ]
     if p["rig"] == "pull":
@@ -542,9 +545,11 @@ def bom(p):
 
 def materials(p):
     rows = bom(p)
-    extra = [r["material"] for r in rows if r["key"] not in ("sail", "patch", "board", "mover", "disc", "tail")]
-    base = "のり、はさみ、テープ、定規" + ("" if is_kite(p) else "、竹串（穴あけ）")
-    return [f"{rows[0]['material']}を 1 枚", base, *extra]
+    # 刷る部品の紙は 1 枚目の行で言う。ここに足すのは刷らない材料だけ。
+    printed = {q.key for q in parts(p)}
+    extra = [r["material"] for r in rows if r["key"] not in printed]
+    # 凧も人形も、手順で穴を竹串の先であける（#294。前は凧の時だけ書いていなかった）。
+    return [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規、竹串（穴あけ）", *extra]
 
 
 def steps(p):

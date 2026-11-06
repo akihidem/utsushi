@@ -359,14 +359,16 @@ def bom(p):
     if p["body"] == "cart":
         rows = [
             {"number": 1, "key": "deck", "name": "台", "qty": 1, "material": paper, "substituted": True, "original_guess": "木の板（絵の色と木目による推測）", "reason": why},
-            {"number": 2, "key": "rider", "name": "乗り手", "qty": 2, "material": paper, "substituted": True, "original_guess": "張子か土か木（不明）", "reason": why},
-            {"number": 4, "key": "wheel", "name": "車", "qty": 4, "material": paper, "substituted": True, "original_guess": "木の輪切り（推測）", "reason": why},
+            {"number": 2, "key": "rider", "name": "乗り手", "qty": 1, "material": paper, "substituted": True, "original_guess": "張子か土か木（不明）", "reason": why},
+            {"number": 3, "key": "rider_b", "name": "乗り手（裏）", "qty": 1, "material": paper, "substituted": True, "original_guess": "張子か土か木（不明）", "reason": why},
+            *[{"number": 4 + i, "key": f"wheel{i + 1}", "name": f"車 {i + 1}", "qty": 1, "material": paper, "substituted": True, "original_guess": "木の輪切り（推測）", "reason": why} for i in range(4)],
             {"number": 8, "key": "axle", "name": "軸", "qty": 2, "material": f"竹串（長さ約 {p['deck_width'] + 20}mm に切り、先を落とす）", "substituted": True, "original_guess": "不明", "reason": "家にあり、穴に通しやすいため"},
         ]
     else:
         rows = [
             {"number": 1, "key": "tube", "name": "俵の筒", "qty": 1, "material": paper, "substituted": True, "original_guess": "藁（俵の形による推測）", "reason": why},
-            {"number": 2, "key": "lid", "name": "蓋", "qty": 2, "material": paper, "substituted": True, "original_guess": "藁の桟俵（推測）", "reason": why},
+            {"number": 2, "key": "lid", "name": "蓋", "qty": 1, "material": paper, "substituted": True, "original_guess": "藁の桟俵（推測）", "reason": why},
+            {"number": 3, "key": "lid_b", "name": "蓋（2 枚目）", "qty": 1, "material": paper, "substituted": True, "original_guess": "藁の桟俵（推測）", "reason": why},
         ]
         if p["drive"] == "slope":
             rows.append({"number": 4, "key": "ramp", "name": "坂の溝", "qty": 1, "material": paper, "substituted": True, "original_guess": "絵に無い（試すための台）", "reason": why})
@@ -387,7 +389,9 @@ def materials(p):
 
 
 def steps(p):
-    out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を外の線で切る。穴は竹串の先であける（色の切れ目の細い白で折る）"]
+    # 坂で転がす俵は軸が無く、部品に穴が無い。穴あけの文を出すと、要らない竹串をそろえさせる（#294）。
+    cut = "部品を外の線で切る。穴は竹串の先であける（色の切れ目の細い白で折る）" if any(q.holes for q in parts(p)) else "部品を外の線で切る（色の切れ目の細い白で折る）"
+    out = ["刷った物差しに定規を当て、10cm か確かめる", cut]
     if p["body"] == "cart":
         out += ["1 台の縁を、絵を外にして下へ折る。前と後ろの壁の糊代を、横の縁の内側に貼る",
                 "2 と 3 の乗り手を背中合わせに貼る。下の糊代は左右に開き、台の真ん中に貼る",
@@ -413,6 +417,11 @@ def measures(p):
     if p["drive"] == "pull":
         return {"predict": "引くと、どう動くと思いますか（言葉か絵で）", "rows": [[("引いた所（床・畳・机）", 40)]]}
     return {"predict": "坂に置いて手を離すと、どう動くと思いますか（言葉か絵で）", "rows": [[("坂の高さ（本の冊数）", 30)]]}
+
+
+def diagram_caption(p):
+    """図の札。俵の図には車も台も無いので、札を刷らない（#294）。"""
+    return DIAGRAM_CAPTION if p["body"] == "cart" else ""
 
 
 def diagram(x, y, w, h, p):

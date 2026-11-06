@@ -26,6 +26,10 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 def post(path, data):
     r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), method="POST",
                                headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})

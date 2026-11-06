@@ -1,0 +1,23 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {
+    "pivot_above_rim": 0,
+    "fold_count": 6,
+    "fold_width": 5,
+    "fold_height": 40
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.fan_leg",
+      "F5.image_box"
+    ],
+    "lines": [
+      "F5.fan_leg [蛇腹の扇] 足の長さ # が糊代 # に足りず、糊代が扇に食い込む（中心の高さ # が # 未満）",
+      "F5.image_box [蛇腹の扇] 絵が折り線をまたいでいる",
+      "F5.image_box [蛇腹の扇] 絵が糊代にかかっている"
+    ]
+  }
+}

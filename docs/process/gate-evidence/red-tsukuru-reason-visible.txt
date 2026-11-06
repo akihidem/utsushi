@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_reply_visible.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_reply_visible.py", line 68, in <module>
+    page = landed(call(f"/toy/{G}/tsukuru"), "kasetsu")
+  File "tests/test_reply_visible.py", line 49, in landed
+    assert code == 303 and at.endswith(f"#{anchor}"), (code, at, anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (200, '', 'kasetsu')
+rc=1

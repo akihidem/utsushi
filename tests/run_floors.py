@@ -157,10 +157,21 @@ def main():
         scratch.cleanup()
 
 
+def progress(done, total, name):
+    """1 本ずつの進み（本数と名前）。全部で 8〜9 分かかるのに何も出ないと、止まったのと見分けがつかない。
+    端末にだけ出す: 合体の道は失敗の時に出力の末尾 15 行だけを見せるので、管に出すと進みの行が NG の行を押し流す。"""
+    if sys.stderr.isatty():
+        print(f"{done}/{total} {name}", file=sys.stderr, flush=True)
+
+
 def _run_all(env):
     rows, bad, broken = [], 0, 0
     ledgers = tempfile.TemporaryDirectory()
-    for sc in sorted((ROOT / "tests/frozen/scenarios").glob("*.json")):
+    scenarios = sorted((ROOT / "tests/frozen/scenarios").glob("*.json"))
+    tests = sorted((ROOT / "tests").glob("test_*.py"))
+    total = len(scenarios) + len(tests)
+    for sc in scenarios:
+        progress(len(rows) + 1, total, sc.stem)
         expect = json.loads(sc.read_text(encoding="utf-8"))["expect"]
         args = ["-m", "omochae", "--scenario", f"tests/frozen/scenarios/{sc.name}", "--out", f"out/scenarios/{sc.stem}"]
         r = run_child([PY, *args], ledger_env(env, ledgers.name, sc.stem))
@@ -172,7 +183,8 @@ def _run_all(env):
         if not ok:
             print(f"NG {sc.stem}: rc={r.returncode} {r.stderr.strip()[:500]}", file=sys.stderr)
     scenes = len(rows)
-    for test in sorted((ROOT / "tests").glob("test_*.py")):
+    for test in tests:
+        progress(len(rows) + 1, total, test.stem)
         args = [f"tests/{test.name}"]
         unit = run_child([PY, *args], ledger_env(env, ledgers.name, test.stem))
         broken += unit.returncode == 4

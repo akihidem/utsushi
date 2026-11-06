@@ -1,0 +1,6 @@
+# 命令: bash -c '.venv/bin/python tests/test_record_owner.py 2>&1 | tail -2 | cut -c1-200; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: ff54436（回した時の HEAD）
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('別の人の画面に欄が出ている', {}, (True, True, True))
+試験 rc=1
+rc=0

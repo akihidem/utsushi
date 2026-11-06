@@ -8,8 +8,8 @@
 - 残す欄は決めた物だけ（下の FIELDS・STEP_FIELDS・STAGE_FIELDS。試験が鍵の一致を見る）。
   **残さない物**: IP・ブラウザの名・cookie・名前・声・映像・写真・答えの文。誰が聞いたかを辿れる物は、作る様子の改善に要らない。
   時刻は分まで（秒まで持つと、ほかの記録と突き合わせて人を絞れる）。
-- 連絡先の形（メールアドレス・電話番号・郵便番号。持ち寄りと記録と同じ床 contrib.check_pii）がある質問は、文を残さない。
-  落とした事だけを dropped: "pii" で残す（どれくらい落ちているかが分からないと、床が効いているかも分からない）。
+- 連絡先の形（メールアドレス・電話番号・郵便番号）と、名乗り・学年と組・学校の名前の形（話す口と同じ床 talk_log.blocked）がある質問は、文を残さない。
+  落とした事だけを dropped: "pii"（連絡先）か "name"（ほかの形）で残す（どれくらい落ちているかが分からないと、床が効いているかも分からない）。
   名前は形では見分けられないので、機械では落とせない。だから頁で名前を聞かず、作る側が読む時に気づいたら消す（床の限り）。
 - 書けなくても例外を外へ出さない。聞く口の答えを、記録の都合で止めないため。
 - 集計は作る側が読む物で、学ぶ人の画面には出さない（J-025: 順位と成績を見せない）。出す所は kaizen の作る側の頁だけ。
@@ -18,7 +18,7 @@
   映像・写真・声はここに入らない（頁の鏡は端末の中だけ）。どの手順で止まるかを数えて、手順の紙と案内を直す材料にする（research/29 の 1）。
 - 蓄積の器（Issue #119・U-45 の段取り 1〜3、本人の指示 11-05「凍結の例外で入れる」）で足した物:
   - **人の数え方（who）**: 画面が sessionStorage に持つ乱数（英数字 8〜12 桁）を、その場限りの印として受ける。cookie にも名前にもせず、
-    サーバは形だけを確かめて残す。タブを閉じると消えるので、日をまたいで同じ人とは分からない（分からなくてよい。数えたいのは
+    サーバは形だけを確かめて残す。記録を残すと画面が作り直すので、1 回の作りに 1 つの印になる（Issue #279 の続き）。タブを閉じると消えるので、日をまたいで同じ人とは分からない（分からなくてよい。数えたいのは
     「同じ段で何人止まったか」で、人を追う事ではない）。形の外の値は空にする（名前や連絡先を who に入れさせないため）。
   - **エンジンとつなぐ欄（template・sheet_set）**: 型紙エンジンの報告は雛形と形で集める。玩具の印と版だけでは向こうの集計と
     突き合わせられないので、雛形の id と刷った組を出来事に残す。
@@ -35,7 +35,6 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 from . import records
-from .contrib import check_pii
 from .hypotheses import ROOT
 
 MAX_QUESTION = 200
@@ -126,9 +125,12 @@ def add_ask(source_id, hypothesis_id, sheet_version, question, answered_from, st
         template, sheet_set = _engine(source_id, hypothesis_id)
         rec = {"source_id": source_id, "hypothesis_id": hypothesis_id, "sheet_version": sheet_version, "template": template, "sheet_set": sheet_set,
                "question": text, "answered_from": str(answered_from or ""), "step": _step_no(step), "who": clean_who(who), "asked_at": _now()}
-        if check_pii({"body": text}):
-            # 連絡先の形がある文は残さない。落とした事だけを数えられるようにする。
-            rec.update(question="", dropped="pii")
+        # 連絡先の形と、名乗り・学年と組・学校の名前の形がある文は残さない（話す口と同じ床。#87）。落とした事だけを数えられるようにする。
+        from .talk_log import blocked  # talk_log がこの module を読むので、ここで読む
+
+        hit = blocked(text)
+        if hit:
+            rec.update(question="", dropped="pii" if hit == "連絡先" else "name")
         return _write("ask", rec)
     except Exception:
         return None
@@ -236,7 +238,9 @@ def summary(source_id):
     for r in recs:
         v = r.get("sheet_version", 1)
         slot = by_version.setdefault(r["hypothesis_id"], {}).setdefault(v, {})
-        slot[r["result"]] = slot.get(r["result"], 0) + 1
+        word = records.result_word(r)
+        if word:
+            slot[word] = slot.get(word, 0) + 1
         # 測った値: 記録の上の段にある数の欄（版の番号と、完成の様子で使う分は除く）。欄の名前を決め打ちしないのは、雛形ごとに測る物が違うため。
         for k, val in r.items():
             if k not in ("sheet_version", "minutes_to_try") and isinstance(val, (int, float)) and not isinstance(val, bool):
@@ -297,7 +301,7 @@ def summary(source_id):
         old = records.old_results_for(source_id)  # 前の札の記録も、今の札に読み替えて数える（#146）
     except Exception:
         moved_word, old = "", {}
-    completion = {"minutes": _span([r.get("minutes_to_try") for r in recs]), "moved": sum(1 for r in recs if old.get(r["result"], r["result"]) == moved_word),
+    completion = {"minutes": _span([r.get("minutes_to_try") for r in recs]), "moved": sum(1 for w in map(records.result_word, recs) if w and old.get(w, w) == moved_word),
                   "moved_word": moved_word, "quit_steps": {h: dict(sorted(ss.items())) for h, ss in sorted(quit_steps.items())}, "people": len({w for w, _ in reached})}
 
     flow = {}

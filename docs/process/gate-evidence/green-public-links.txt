@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_public_links.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: c1961d8（回した時の HEAD）
+ok: 合言葉なしの場のリンク 90 本はどれも開き、OWN-n の紙への道は札に出ない
+試験 rc=0
+rc=0

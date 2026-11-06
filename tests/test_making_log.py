@@ -23,6 +23,7 @@ os.environ["OMOCHAE_DATA"] = DATA
 
 from omochae.marks import without_premise  # noqa: E402
 from omochae import hypotheses, loop, making_log, records  # noqa: E402
+from web import tsukuru  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -87,7 +88,8 @@ for r in recs:
     raw = json.dumps(r, ensure_ascii=False)
     for leak in ("TestBrowser", "someone", "127.0.0.1", "手前にへこむ", "090"):
         assert leak not in raw, (leak, r)
-assert sorted(r["answered_from"] for r in recs) == ["glossary", "glossary", "refuse", "refuse"], [r["answered_from"] for r in recs]
+# 連絡先の形の問いは床で止まる（Claude へ送らない。#87）ので、答えの出所は floor
+assert sorted(r["answered_from"] for r in recs) == ["floor", "glossary", "glossary", "refuse"], [r["answered_from"] for r in recs]
 dropped = [r for r in recs if r.get("dropped")]
 assert len(dropped) == 1 and dropped[0]["question"] == "" and dropped[0]["dropped"] == "pii"
 assert all(len(r["question"]) <= making_log.MAX_QUESTION for r in recs)
@@ -152,8 +154,9 @@ def step(n, event, who=""):
     return post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": str(n), "event": event, "json": "1", **({"who": who} if who else {})})
 
 
-# A: 開いて、2 へ進み、2 で止まって、そのままやめた。B: 開いて、2 で止まり、3 へ進んで、できた。印の無い人も 2 で止まった
-for n, ev, w in ((1, "start", A), (1, "next", A), (2, "stuck", A), (1, "start", B), (1, "next", B), (2, "stuck", B), (2, "next", B), (3, "done", B),
+# A: 開いて、2 へ進み、2 で止まって、そのままやめた。B: 開いて、2 で止まり、3 へ進んで、最後の手順でできた（組み上がりは最後の手順だけで受ける。#321）。印の無い人も 2 で止まった
+last = tsukuru.count(G, "H-A")
+for n, ev, w in ((1, "start", A), (1, "next", A), (2, "stuck", A), (1, "start", B), (1, "next", B), (2, "stuck", B), (2, "next", B), (last, "done", B),
                  (2, "stuck", "")):
     assert step(n, ev, w)[0] == 200, (n, ev, w)
 for f in making.glob("step-*.json"):
@@ -200,7 +203,7 @@ assert f"{r3}（仮説 A の紙・版 1）: 扇 / 折りを減らした / 前よ
 assert "分からなかった・むずかしかった（2 件）" in page and "面白かった・楽しかった（2 件）" in page and "折るのは楽しかった" in page
 assert "<h3>仮説 A の紙・手順 3</h3>" in page and "<h3>仮説 A の紙・段なし</h3>" in page and page.index("<h3>仮説 A の紙・手順 3</h3>") < page.index("<h3>仮説 A の紙・段なし</h3>")
 assert f"<td>{sm['asks'][0][0]}</td><td>2 回</td>" in page
-assert "連絡先の形があったので文を残さなかった質問: 1 件" in page and "090" not in page
+assert "連絡先や名乗りの形があったので文を残さなかった質問: 1 件" in page and "090" not in page
 assert "最初に動くまでの分: 20〜40 分（2 件）" in page and "「動いた」の記録: 4 件のうち 3 件" in page and "できたの札: 1 回" in page
 assert "<td>仮説 A の紙</td><td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
 assert "<td>作りながら見る頁を開いた</td><td>2 回</td><td>2 人</td>" in page
