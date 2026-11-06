@@ -32,10 +32,15 @@ for word, answer in ask.GLOSSARY.items():
 server = src("src/web/play_server.py")
 assert '"今は AI に聞けません。型紙の凡例と、組み方の絵を見てください"' in server
 assert "型紙の凡例と手順の紙の絵を見てください" not in server
+# 別の道（鍵が無い時の、もう 1 つの口）も同じ呼び名にする（11-06 の決定。呼び名の漏れ 3 か所のうち、この 1 つだけを替える。
+# 手帖の「組み方と凡例を見てください」2 か所は今のまま）
+assert '"今は AI に聞けません。組み方の絵を見てください"' in server and "組み方の紙を見てください" not in server
 
 # 3. 手帖: 答えが空の時の字
 techo = src("src/web/techo_page.html")
 assert '"組み方の絵を見てください。"' in techo and "手順の紙の絵を見てください" not in techo
+# 「組み方と凡例を見てください」の 2 か所は今のまま（11-06 の決定。替えるのは play_server の別の道の 1 つだけ）
+assert techo.count("組み方と凡例を見てください") == 2
 
 # 4. 作りながら見る頁: 手順の文が無い時の案内と、絵の alt
 tsukuru = src("src/web/tsukuru.py")
