@@ -8,11 +8,11 @@
 - エンジンと違う所は 2 つだけ: 手順 4 の「線のとおり山折り」（窓口が本人の委任で選んだ字）と、紙の行の 4 つの名前（#295）
 - たたき台の紙（首の形・脚 4 本・角を落とした胴・両面の頭）が検査に通り、頁の凡例は次の組の字と位置の印の行
 - 前の組の作りでは v6 の寸法（脚・角・顔の数）を落とす（刷る紙に効かない寸法を通さない）
-- 丸い切り抜きの床（部品の外・折り線にかかる・印にかかる）。3D の組み立ては v6 では出さない
+- 丸い切り抜きの床（部品の外・折り線にかかる・印にかかる）。3D の組み立ては型紙エンジンの JSON で描く
 """
 import json
 
-from omochae import assembly, hypotheses, marks
+from omochae import assembly, assembly_json, hypotheses, marks
 from omochae.compose import FOLD_WORDS, TEMPLATES, compose
 from omochae.floors import check_art, check_holes
 from omochae.templates import _tora_v6
@@ -99,9 +99,12 @@ mx, my = axle["pts"][0]
 body.round_cuts = [(mx, my + 1, 2.0)]
 assert any("位置の印が中の切り込みにかかり" in f.message for f in check_art([body])), [f.line() for f in check_art([body])]
 
-# 7. 3D の組み立ては v6 では出さない（assembly の注）。控えの組 tora-v4 では前と同じに組む
-assert assembly.assemble(TORA) is None
+# 7. 3D の組み立ては、型紙エンジンが出した今の組の JSON（data/kumitate/tora-v6.json）で描く（assembly_json。形の確かめは test_tora_v6_3d）。
+#    控えの組 tora-v4 では、前と同じにサイトが自分で組む
+got = assembly.assemble(TORA)
+assert isinstance(got, assembly_json.Shown) and got.failures == [], got and [f.line() for f in got.failures]
 with at_set("tora-v4"):
-    assert assembly.assemble(TORA) is not None
+    old = assembly.assemble(TORA)
+    assert old is not None and not isinstance(old, assembly_json.Shown)
 
-print("ok 虎の今の組 tora-v6。組の替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D は出さない")
+print("ok 虎の今の組 tora-v6。組の替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D はエンジンの JSON")

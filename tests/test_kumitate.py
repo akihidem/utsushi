@@ -219,9 +219,11 @@ assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000009-R")
 T = "NDL-1187053-R0000014-R"
 from omochae.templates import pivot_counterweight  # noqa: E402
 
-# 虎の今の組（tora-v6）は 3D で組まない（丸い穴・角を落とした胴・立体の脚・両面の頭を、この組み立てはまだ組めない。assembly の注）。
-# 3D の組み立ては、控えの組 tora-v4 に雛形を置いて前と同じに見る（v6 に上げても v4 の 3D が変わらない事も見る）
-assert pivot_counterweight.SHEET_SET == "tora-v6" and assembly.assemble(T) is None
+# 虎の今の組（tora-v6）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_tora_v6_3d）。サイトが自分で組む作りは、
+# 控えの組 tora-v4 に雛形を置いて前と同じに見る（v6 に上げても v4 の 3D が変わらない事も見る）
+from omochae import assembly_json  # noqa: E402
+
+assert pivot_counterweight.SHEET_SET == "tora-v6" and isinstance(assembly.assemble(T), assembly_json.Shown)
 pivot_counterweight.SHEET_SET = "tora-v4"
 tora = assembly.assemble(T)
 tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}

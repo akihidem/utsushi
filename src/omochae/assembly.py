@@ -1020,7 +1020,7 @@ def _from_engine(template, tpl, p, source_id):
         return None
     paper = _paper(template, p, source_id)
     parts = paper["parts"] if paper else tpl.parts(p)
-    if assembly_json.same_parts(doc, parts):
+    if assembly_json.part_gaps(doc, parts):
         return None
     return assembly_json.bench_of(doc, parts, instructions.steps(p, template), paper)
 
