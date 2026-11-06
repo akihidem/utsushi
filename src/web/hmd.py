@@ -24,6 +24,11 @@
 - 作っている間、画面が消えないように頼む（断られても動く）。
 - 本人の追加（11-06）「普通にiPhoneのカメラのオーバーレイでもできるようにしたら」: /toy/<玩具>/kasane で、後ろのカメラの映像の上に
   手順の字と 3D を重ねる。映像は機械の中だけで、送りも残しもしない（作りながら見る頁の約束と同じ字）。
+- 映像の中の紙に 3D を合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付いたら、紙の 4 隅に置く印を 4 つ出す。
+  印を指で紙の角へ動かすと、3D の舞台を 4 隅の囲みの中へ動かして縮める（映像の中の紙の上に 3D が来る）。印は数字だけで、新しい字を足さない。
+  合わせ方は囲みに入れるだけで、紙の傾きに合わせて 3D を歪めない（歪めると、立った部品の形が崩れて見えるため。紙の座標の行列は
+  エンジンの JSON の paper.place が来た後に使う）。合わせた位置は頁の中だけに持ち、残さない（頁は送らず、残さない決まり）。
+  合わせた後は、頁の幅に合わせる縮尺（舞台に直に書く --hmd-zoom の zoom）を 1 に固定する。zoom は位置にも掛かり、囲みからずれるため。大きさは scale だけで決める。
 """
 import json
 
@@ -105,6 +110,9 @@ body.hmd-page{background:#14161a;color:#f3efe6}
 .hmd-acts button.hit{background:#ffe08a;border-color:#ffe08a;color:#14161a}
 body.hmd-cam{background:#000}
 #hmd-cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#000}
+#hmd-quad{display:none;position:fixed;inset:0;z-index:3;pointer-events:none}body.quad-on #hmd-quad{display:block}
+.hmd-corner{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid #fffaf0;background:rgba(0,0,0,.35);color:#fffaf0;font-weight:600;font-size:16px;line-height:40px;font-family:inherit;text-align:center;pointer-events:auto;touch-action:none;cursor:grab;user-select:none}
+body.quad-set .hmd-k .rt-stage{position:fixed;margin:0;z-index:2;transform-origin:0 0;zoom:1!important}
 body.hmd-cam .hmd{position:relative}
 body.hmd-cam .hmd-k #rt-text{background:rgba(0,0,0,.55);padding:8px 14px;border-radius:10px;text-shadow:0 1px 3px #000}
 body.hmd-cam .hmd-top{background:rgba(0,0,0,.45);padding:6px 12px;border-radius:10px}
@@ -242,11 +250,23 @@ const wake=()=>{try{if(navigator.wakeLock&&!document.hidden)navigator.wakeLock.r
 wake();
 const cam=$('hmd-cam'),camBtn=$('hmd-camera'),camNote=$('hmd-cam-note');
 if(cam&&camBtn){let tracks=null;
- const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera};
+ // 紙の 4 隅の印（左上・右上・右下・左下の順）。動かしたら、3D の舞台を 4 隅の囲みの中へ動かして縮める。位置は頁の中だけに持つ
+ const quad=$('hmd-quad'),C=quad?[...quad.querySelectorAll('.hmd-corner')]:[],Q=[];
+ const fit=()=>{if(Q.length<4)return;const xs=Q.map(q=>q[0]),ys=Q.map(q=>q[1]),x0=Math.min(...xs),y0=Math.min(...ys),bw=Math.max(...xs)-x0,bh=Math.max(...ys)-y0;
+  body.classList.add('quad-set');stage.style.transform='';const sw=stage.offsetWidth||1,sh=stage.offsetHeight||1,z=Math.max(.2,Math.min(bw/sw,bh/sh));
+  stage.style.left=(x0+(bw-sw*z)/2)+'px';stage.style.top=(y0+(bh-sh*z)/2)+'px';stage.style.transform='scale('+z+')'};
+ const put=()=>{C.forEach((c,i)=>{c.style.left=Q[i][0]+'px';c.style.top=Q[i][1]+'px'});fit()};
+ const home=()=>{const w=innerWidth,h=innerHeight,bw=Math.min(w*.7,h*.45),bh=bw*1.414,x=(w-bw)/2,y=Math.max(30,(h-bh)/2);Q.length=0;Q.push([x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]);put()};
+ C.forEach((c,i)=>{c.addEventListener('pointerdown',e=>{e.preventDefault();try{c.setPointerCapture(e.pointerId)}catch(_){}c.dataset.drag='1'});
+  c.addEventListener('pointermove',e=>{if(!c.dataset.drag)return;Q[i]=[Math.max(0,Math.min(innerWidth,e.clientX)),Math.max(0,Math.min(innerHeight,e.clientY))];put()});
+  const up=()=>{delete c.dataset.drag};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up)});
+ const quadOn=()=>{if(!quad)return;body.classList.add('quad-on');home()};
+ const quadOff=()=>{body.classList.remove('quad-on','quad-set');stage.style.left=stage.style.top=stage.style.transform=''};
+ const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera;quadOff()};
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camBtn.hidden=true;camNote.textContent=T.nocamera}
  camBtn.addEventListener('click',async()=>{if(tracks){off();return}
   try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});tracks=s.getTracks();cam.srcObject=s;
-   document.body.classList.add('cam-on');camBtn.textContent=T.cameraoff}catch(_){camNote.textContent=T.nocamera}});
+   document.body.classList.add('cam-on');camBtn.textContent=T.cameraoff;quadOn()}catch(_){camNote.textContent=T.nocamera}});
  addEventListener('pagehide',off);document.addEventListener('visibilitychange',()=>{if(document.hidden)off()})}
 // 隠れたら聞くのを止め、見えたら聞いていた時だけ戻す。頁を離れたら止める（手帖の作り直しと同じ）
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(rec)try{rec.stop()}catch(_){}}else{if(on&&rec)try{rec.start()}catch(_){}wake()}});
@@ -265,7 +285,9 @@ def page(sid, look="tenji", cam=False):
     toy = hypotheses.load(sid)["toy"]
     words = {"words": WORDS, "on": MIC_ON, "off": MIC_OFF, "none": NO_VOICE, "blocked": BLOCKED, "listen": LISTEN, "stop": STOP, "done": kumitate.DONE,
              "clean": CLEAN, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA}
-    camera = (f'<video id="hmd-cam" playsinline muted autoplay></video>' if cam else "")
+    # 紙の 4 隅の印は数字だけ（新しい字を足さない）。読み上げには出さない（指で動かす印で、押す所ではない）
+    corners = "".join(f'<span class="hmd-corner" data-i="{i}">{i + 1}</span>' for i in range(4))
+    camera = (f'<video id="hmd-cam" playsinline muted autoplay></video><div id="hmd-quad" aria-hidden="true">{corners}</div>' if cam else "")
     camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else "")
     camera_note = (f'<span id="hmd-cam-note">{esc(PRIVACY)}</span> ' if cam else "")
     params = json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False)
