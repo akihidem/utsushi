@@ -19,6 +19,9 @@ from omochae.model import Part
 from omochae.templates import slider_fan
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎の今の組（goraigo-v14）は 3D で組まない（窓口の決定 案 A 11-06）。この組み立ては、控えの組 goraigo-v10 に雛形を置いて前と同じに見る
+assert slider_fan.SHEET_SET == "goraigo-v14" and assembly.assemble(G) is None
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 
 

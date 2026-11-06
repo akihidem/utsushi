@@ -13,6 +13,7 @@ paper-to-toy の PR #106 1f4f0b1 と同じ形と字。手順 4 の「線のと�
 - 凡例は刷った面から見た言い方。位置の印のある紙は「位置の印（切らない・折らない）」も。御来迎の紙と前の組の紙は前の字
 - 粘土の玉の大きさの床: 軸の竹串にかかる浅い重りと、玉の下が底に当たる深い重りを落とす（先の 1 つだけを言う）
 """
+import contextlib
 import json
 
 from shapely.geometry import LineString, box
@@ -67,8 +68,19 @@ def words(layout):
 
 # 1. 組の名前。前の組の名前は控えを刷る道として残す。御来迎は今の組のまま（前の組を持たない）
 assert (TIGER.SHEET_SET, TIGER.FROZEN_SET) == ("tora-v4", "tora-v3"), TIGER.SHEET_SET
-assert FAN.SHEET_SET == "goraigo-v10" and not hasattr(FAN, "FROZEN_SET"), FAN.SHEET_SET
-assert marks.FROZEN_SETS == {GORAIGO: "goraigo-v10"}, marks.FROZEN_SETS
+# 御来迎も次の組（goraigo-v14）に上げた（tests/test_goraigo_v14.py）。この試験の御来迎の行は、前の組 goraigo-v10 に雛形を置いて前の字のままを見る
+assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v14", "goraigo-v10"), FAN.SHEET_SET
+assert marks.FROZEN_SETS == {}, marks.FROZEN_SETS
+
+
+class fan_old:
+    """御来迎の前の組（goraigo-v10）を組む。前の組の紙は前の印の文で刷る（tests/test_floor_pin.py と同じ渡し方）。"""
+
+    def __enter__(self):
+        self.keep, FAN.SHEET_SET = FAN.SHEET_SET, FAN.FROZEN_SET
+
+    def __exit__(self, *_):
+        FAN.SHEET_SET = self.keep
 
 # 2. 折り線: 胴が山折りになり、線の位置は前の組と同じ。ほかの部品の折り線は変わらない
 for hid, p in plans():
@@ -92,11 +104,14 @@ for sid in (GORAIGO, TORA):
     data, source = load(sid)
     h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
     tid = h.get("template") or data.get("template", "slider_fan")
-    now = "".join("".join(words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])).split())
     raised = sid == TORA
-    assert ("思った事" in now) == raised and ("作る前に" in now) != raised, sid
-    assert ("".join(marks.HYPOTHESIS.split()) in now) == raised and ("".join(marks.HYPOTHESIS_FROZEN.split()) in now) != raised, sid
-    assert f"刷った組 {TEMPLATES[tid].SHEET_SET}" in words(compose(tid, h["params"], source)[1]), sid
+    if not raised:
+        source = {**source, "hypothesis_mark": marks.HYPOTHESIS_FROZEN}  # 御来迎の前の組は前の印の文で刷る
+    with (fan_old() if not raised else contextlib.nullcontext()):
+        now = "".join("".join(words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])).split())
+        assert ("思った事" in now) == raised and ("作る前に" in now) != raised, sid
+        assert ("".join(marks.HYPOTHESIS.split()) in now) == raised and ("".join(marks.HYPOTHESIS_FROZEN.split()) in now) != raised, sid
+        assert f"刷った組 {TEMPLATES[tid].SHEET_SET}" in words(compose(tid, h["params"], source)[1]), sid
 
 # 5. 用意する物: 首の形は道具にセロハンテープとカッター、竹串と粘土の置き所・丸い印は穴・4 尾だけ色の理由。吊る形と前の組は前の字
 for hid, p in plans():
@@ -178,8 +193,9 @@ for h in data["hypotheses"]:
 assert MARK_LEGEND in words(compose("pivot_counterweight", {"mount": "neck"}, source)[1])
 gdata, gsource = load(GORAIGO)
 gh = next(x for x in gdata["hypotheses"] if x["id"] == gdata["sheet"])
-gwords = words(compose("slider_fan", gh["params"], gsource)[1])
-assert all(w in gwords for w in LEGEND_OLD) and MARK_LEGEND not in gwords, "御来迎の凡例が変わった"
+with fan_old():
+    gwords = words(compose("slider_fan", gh["params"], gsource)[1])
+assert all(w in gwords for w in LEGEND_OLD) and MARK_LEGEND not in gwords, "御来迎の前の組の凡例が変わった"
 
 # 10. 粘土の玉の大きさの床: 軸の竹串にかかる浅い重りと、玉の下が底に当たる深い重りを落とす。両方起きる寸法では先の 1 つだけ。重りの別の落ちがあれば言わない
 assert any("軸の竹串にかかる" in f.message for f in TIGER.check_physics({**p, "weight_below_axle": 5}))
