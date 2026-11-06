@@ -140,7 +140,7 @@ for public_open in (False, True):
         assert status == 200 and main_text(got) == expected, public_open
         # 3 の「合言葉なしで開く公開の場では、写真と動画はのせられません」は、本人の決定（11-06「公開のデモでも写真と動画を上げられるように
         # してください」）で今の作りと合わなくなった。前はここで受け口の 403 を見ていた。採られた字なので、外すかは本人に聞いている
-        # （カード 20261106-175129、推しは外す）。答えまで字は残し、この試験も今の字のまま見る。開いた場で受ける形は test_public_open が見る
+        # （推しは外す）。答えまで字は残し、この試験も今の字のまま見る。開いた場で受ける形は test_public_open が見る
     finally:
         server.shutdown()
         server.server_close()
