@@ -1,0 +1,10 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_landscape_fit.py
+# commit: c151b5e5（回した時の HEAD。この枝の直しを当てた木）
+tsukuru-goraigo-1024x768: 「次の手順へ」の下の端 227 / 画面の高さ 768
+tsukuru-goraigo-1180x820: 「次の手順へ」の下の端 205 / 画面の高さ 820
+tsukuru-goraigo-1440x900: 「次の手順へ」の下の端 205 / 画面の高さ 900
+tsukuru-tora-1024x768: 「次の手順へ」の下の端 227 / 画面の高さ 768
+tsukuru-tora-1180x820: 「次の手順へ」の下の端 205 / 画面の高さ 820
+tsukuru-tora-1440x900: 「次の手順へ」の下の端 205 / 画面の高さ 900
+ok 横置きと縦置き: 手帖 12 通りで手順の字が原画の釦・閉じる印・マイクと重ならず、作りながら見る 6 通りで「次の手順へ」が最初の画面に入る
+rc=0

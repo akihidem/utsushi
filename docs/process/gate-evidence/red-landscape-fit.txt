@@ -1,0 +1,96 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_landscape_fit.py
+# commit: c151b5e5（回した時の HEAD。試験のファイルだけを足し、直す前の頁で回した）
+tsukuru-goraigo-1024x768: 「次の手順へ」の下の端 863 / 画面の高さ 768
+tsukuru-goraigo-1180x820: 「次の手順へ」の下の端 896 / 画面の高さ 820
+tsukuru-goraigo-1440x900: 「次の手順へ」の下の端 885 / 画面の高さ 900
+tsukuru-tora-1024x768: 「次の手順へ」の下の端 863 / 画面の高さ 768
+tsukuru-tora-1180x820: 「次の手順へ」の下の端 896 / 画面の高さ 820
+tsukuru-tora-1440x900: 「次の手順へ」の下の端 885 / 画面の高さ 900
+Traceback (most recent call last):
+  File "tests/test_landscape_fit.py", line 144, in <module>
+    assert not bad, "\n".join(bad)
+           ^^^^^^^
+AssertionError: techo-goraigo-1024x768 手順 1: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 2: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 3: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 4: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 5: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 6: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 7: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 8: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 9: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 10: 字が thumb・close と重なる
+techo-goraigo-1024x768 手順 11: 字が thumb と重なる
+techo-goraigo-1024x768 手順 12: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 1: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 2: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 3: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 4: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 5: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 6: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 7: 字が thumb と重なる
+techo-goraigo-1180x820 手順 8: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 9: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 10: 字が thumb・close と重なる
+techo-goraigo-1180x820 手順 12: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 1: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 2: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 3: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 4: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 5: 字が thumb と重なる
+techo-goraigo-1440x900 手順 6: 字が thumb と重なる
+techo-goraigo-1440x900 手順 8: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 9: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 10: 字が thumb・close と重なる
+techo-goraigo-1440x900 手順 12: 字が thumb・close と重なる
+techo-goraigo-1920x1080 手順 1: 字が thumb と重なる
+techo-goraigo-1920x1080 手順 2: 字が thumb・close と重なる
+techo-goraigo-1920x1080 手順 3: 字が thumb・close と重なる
+techo-goraigo-1920x1080 手順 4: 字が thumb と重なる
+techo-goraigo-1920x1080 手順 8: 字が thumb・close と重なる
+techo-goraigo-1920x1080 手順 9: 字が thumb・close と重なる
+techo-goraigo-1920x1080 手順 10: 字が thumb・close と重なる
+techo-goraigo-1920x1080 手順 12: 字が thumb と重なる
+techo-tora-1024x768 手順 1: 字が thumb・close と重なる
+techo-tora-1024x768 手順 2: 字が thumb・close と重なる
+techo-tora-1024x768 手順 3: 字が thumb・close と重なる
+techo-tora-1024x768 手順 4: 字が thumb・close と重なる
+techo-tora-1024x768 手順 5: 字が thumb・close と重なる
+techo-tora-1024x768 手順 6: 字が thumb・close と重なる
+techo-tora-1024x768 手順 7: 字が thumb・close と重なる
+techo-tora-1024x768 手順 8: 字が thumb・close と重なる
+techo-tora-1024x768 手順 9: 字が thumb・close と重なる
+techo-tora-1024x768 手順 10: 字が thumb と重なる
+techo-tora-1024x768 手順 11: 字が thumb・close と重なる
+techo-tora-1180x820 手順 1: 字が thumb・close と重なる
+techo-tora-1180x820 手順 2: 字が thumb・close と重なる
+techo-tora-1180x820 手順 3: 字が thumb・close と重なる
+techo-tora-1180x820 手順 4: 字が thumb・close と重なる
+techo-tora-1180x820 手順 5: 字が thumb・close と重なる
+techo-tora-1180x820 手順 6: 字が thumb・close と重なる
+techo-tora-1180x820 手順 7: 字が thumb・close と重なる
+techo-tora-1180x820 手順 8: 字が thumb・close と重なる
+techo-tora-1180x820 手順 9: 字が thumb・close と重なる
+techo-tora-1180x820 手順 11: 字が thumb・close と重なる
+techo-tora-1440x900 手順 1: 字が thumb・close と重なる
+techo-tora-1440x900 手順 2: 字が thumb・close と重なる
+techo-tora-1440x900 手順 3: 字が thumb・close と重なる
+techo-tora-1440x900 手順 4: 字が thumb・close と重なる
+techo-tora-1440x900 手順 5: 字が thumb・close と重なる
+techo-tora-1440x900 手順 6: 字が thumb と重なる
+techo-tora-1440x900 手順 7: 字が thumb・close と重なる
+techo-tora-1440x900 手順 8: 字が thumb・close と重なる
+techo-tora-1440x900 手順 9: 字が thumb・close と重なる
+techo-tora-1920x1080 手順 1: 字が thumb と重なる
+techo-tora-1920x1080 手順 2: 字が thumb と重なる
+techo-tora-1920x1080 手順 3: 字が thumb・close と重なる
+techo-tora-1920x1080 手順 4: 字が thumb・close と重なる
+techo-tora-1920x1080 手順 5: 字が thumb・close と重なる
+techo-tora-1920x1080 手順 7: 字が thumb・close と重なる
+techo-tora-1920x1080 手順 8: 字が thumb・close と重なる
+techo-tora-1920x1080 手順 9: 字が thumb・close と重なる
+tsukuru-goraigo-1024x768: 「次の手順へ」の下の端 863 が画面の高さ 768 の外
+tsukuru-goraigo-1180x820: 「次の手順へ」の下の端 896 が画面の高さ 820 の外
+tsukuru-tora-1024x768: 「次の手順へ」の下の端 863 が画面の高さ 768 の外
+tsukuru-tora-1180x820: 「次の手順へ」の下の端 896 が画面の高さ 820 の外
+rc=1

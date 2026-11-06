@@ -96,6 +96,9 @@ a{color:var(--accent)}
 /* 横置き（机の端に立てた端末やタブレット）: 左に手本、右に札・返事・鏡。 */
 @media (min-width:860px) and (orientation:landscape){
  .stage{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
+ /* 原画と歌の畳み（genga.fold）は .stage の格子の 1 つの升に入るので、幅いっぱいにする。升に入ったままだと、畳みが左・手本が右に並び、
+    札の列（.side）が次の段へ落ちて、1024×768 で「次の手順へ」が最初の画面の外に出た */
+ .stage>.genga-fold{grid-column:1/-1}
  .side{border-top:0;border-left:1px solid var(--rule)}
  .sheet{max-height:58svh}
 }
