@@ -147,12 +147,20 @@ def _nearest(values, t):
     return min(near, key=lambda v: abs(v - t)) if near else None
 
 
-def align(seconds, cues, beats, bars):
+# 拍だけに寄せる形（本人の指示 11-07「音ハメも使ってみてください」と、秒の合計と決まった字は変えない線）。
+# 小節の頭へは寄せず、境目と合図を一番近い拍へだけ寄せる（半拍より動かさない）。動画の終わりの秒も動かさない（最後の場面で吸う）。
+# 小節の頭へ寄せる形（MAX_BAR_SHIFT 1.5 秒）だと、場面の秒が 2 秒ほど動き、本人が決めた場面の秒から離れたため。
+BEAT_ONLY_SHIFT = 0.4
+
+
+def align(seconds, cues, beats, bars, beat_only=False):
     """場面の長さと合図を、曲の拍へ寄せた表を返す（入力は変えない）。
 
     seconds: {場面: 秒}。cues: {場面: {合図: (始め, 終わり)}}。場面の順は SCENES。
+    beat_only: 小節の頭へは寄せず、境目と合図を一番近い拍へ半拍まで寄せ、動画の終わりの秒を変えない（BEAT_ONLY_SHIFT の注）。
     返す物: {"seconds": {場面: 秒}, "cues": {場面: {合図: (始め, 終わり)}}, "moved": 動かした数, "left": 寄せられなかった数}
     """
+    max_bar, max_cue = (0.0, BEAT_ONLY_SHIFT) if beat_only else (MAX_BAR_SHIFT, MAX_CUE_SHIFT)
     names = [n for n in SCENES if n in seconds]
     edges, t = [0.0], 0.0
     for n in names:
@@ -161,9 +169,12 @@ def align(seconds, cues, beats, bars):
     snapped = [0.0]
     for edge in edges[1:-1]:
         bar, beat = _nearest(bars, edge), _nearest(beats, edge)
-        to = bar if bar is not None and abs(bar - edge) <= MAX_BAR_SHIFT else beat if beat is not None and abs(beat - edge) <= MAX_CUE_SHIFT else edge
+        to = bar if bar is not None and max_bar and abs(bar - edge) <= max_bar else beat if beat is not None and abs(beat - edge) <= max_cue else edge
         snapped.append(max(to, snapped[-1] + 1.0))
-    snapped.append(snapped[-1] + seconds[names[-1]])  # 最後の場面（問いの札）は長さを変えない
+    if beat_only:
+        snapped.append(edges[-1])  # 動画の終わりの秒を変えない（最後の場面の問いの札が、寄せた分を吸う）
+    else:
+        snapped.append(snapped[-1] + seconds[names[-1]])  # 最後の場面（問いの札）は長さを変えない
     out, moved, left = {}, 0, 0
     for k, n in enumerate(names):
         start, length = snapped[k], snapped[k + 1] - snapped[k]
@@ -173,7 +184,7 @@ def align(seconds, cues, beats, bars):
                 out[n][cue] = (a, b)
                 continue
             near = _nearest(beats, start + a)
-            if near is not None and abs(near - (start + a)) <= MAX_CUE_SHIFT:
+            if near is not None and abs(near - (start + a)) <= max_cue:
                 moved += 1
                 a2 = near - start
             else:

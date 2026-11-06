@@ -220,6 +220,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="置き場（repo の外）。中に <日時>/ を作る")
     ap.add_argument("--song", help="曲のファイル。実物から拍を測り、合図を寄せて音を重ねる。動画の長さで切り、短ければ無音で足す")
     ap.add_argument("--song-start", type=float, default=0.0, help="曲のどこ（秒）から使うか。前奏を飛ばす時")
+    ap.add_argument("--beat-only", action="store_true", help="境目と合図を一番近い拍へだけ寄せ（半拍まで）、動画の終わりの秒を変えない（本人の指示 11-07 の音ハメの線）")
     ap.add_argument("--music", help="曲のクレジットの文（build.json にだけ残す。動画には出さない。本人の決定 11-06）")
     ap.add_argument("--rights", help="曲の権利の文（作った人・道具・使ってよい範囲。build.json と beats.json に残す。--song の時は必ず）")
     ap.add_argument("--clip", action="append", default=[], metavar="場面=ファイル",
@@ -329,7 +330,7 @@ def main(argv=None):
         beats = [round(b - a.song_start, 4) for b in measured["beats"] if b >= a.song_start]
         bars = [round(b - a.song_start, 4) for b in measured["bars"] if b >= a.song_start]
         lengths = {n: assemble.duration(clips[n]) if n in clips else load_scene(n).DURATION for n in SCENES}
-        fit = song.align(lengths, {n: dict(load_scene(n).CUES) for n in SCENES}, beats, bars)
+        fit = song.align(lengths, {n: dict(load_scene(n).CUES) for n in SCENES}, beats, bars, beat_only=a.beat_only)
         song.apply_cues(fit)
     made, skipped = [], []
     for name in SCENES:

@@ -117,3 +117,22 @@ song.apply_cues({"cues": {"ask": {"in": (0.0, 2.0)}}})
 assert load_scene("ask").CUES["in"] == (0.0, 2.0)
 song.apply_cues({"cues": {"ask": before["ask"]}})
 print("ok")
+
+# 拍だけに寄せる形（本人の指示 11-07 の音ハメ。秒の合計と決まった字は変えない）: 境目と合図は一番近い拍へ半拍までしか動かず、動画の終わりは動かない
+tight = song.align(seconds, cues, beats, bars, beat_only=True)
+names = [n for n in song.SCENES if n in seconds]
+edges, t = [0.0], 0.0
+for n in names:
+    t += seconds[n]
+    edges.append(t)
+got, t = [0.0], 0.0
+for n in names:
+    t += tight["seconds"][n]
+    got.append(t)
+assert abs(got[-1] - edges[-1]) < 1e-6, ("動画の終わりの秒が動いた", got[-1], edges[-1])
+assert all(abs(g - e) <= song.BEAT_ONLY_SHIFT + 1e-6 for g, e in zip(got[1:-1], edges[1:-1])), "境目は半拍までしか動かない"
+for n in names:
+    for cue, (a, b) in tight["cues"][n].items():
+        a0 = cues[n][cue][0]
+        assert abs(a - a0) <= song.BEAT_ONLY_SHIFT + 1e-6 or a == a0, (n, cue, a, a0)
+print("ok 拍だけに寄せる形は、境目と合図を半拍までしか動かさず、動画の終わりの秒を変えない")

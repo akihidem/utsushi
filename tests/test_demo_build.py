@@ -237,7 +237,7 @@ with tempfile.TemporaryDirectory() as tmp:
     assert ran == []
     build.song.measure = lambda path: {"bpm": 100.0, "beats": [0.5, 1.1], "bars": [0.5], "seconds": 200.0, "clarity": 3.0}
     fitted = {"seconds": {n: 10.0 for n in build.SCENES}, "cues": {n: {} for n in build.SCENES}, "moved": 5, "left": 1}
-    build.song.align = lambda *a: fitted
+    build.song.align = lambda *a, **k: fitted
     build.song.apply_cues = lambda t: None
     build.load_scene_real = build.load_scene
     build.load_scene = lambda n: types.SimpleNamespace(DURATION=10.0, CUES={}, main=lambda argv: pathlib.Path(argv[argv.index("--out") + 1]).write_bytes(b"x") and 0)
