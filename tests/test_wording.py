@@ -43,6 +43,8 @@ from web.play_server import esc, serve, sources  # noqa: E402
 ask._key_present = lambda: False  # 手元に鍵があっても呼ばない
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -91,21 +93,21 @@ assert "確かめた人: ▲本人" in yomi, "くずし字の確かめた人"
 for want in ("▲読みが割れた事", "▲手元の複写", "▲本人が 2026-11-03 に", "▲もう一方の読みは", "▲複写 B の頁", "▲上の「人が確かめた読み」"):
     assert want in yomi, want
 # 紙を作って記録を残し、次の版まで進めた後の窓・改善の輪・ギャラリー
-post(f"/toy/{G}/print", {"hypothesis": "H-A"})
-post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた", "note": "本人が折った"})
+post(f"/toy/{G}/print", {"hypothesis": GS})
+post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "すっと開いた", "note": "本人が折った"})
 rid = records.all_records(G)[-1]["id"]
 post(f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})
-post(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"})
+post(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "45", "why": "開きを見る", "by": "大人"})
 assert not hypotheses.save_own(G, "糸で引く", "糸で引いて開く", "糸らしい線")[1]  # 前に書かれた仮説の形（頁の書く欄は外した。J-032 の点 2）。文は図鑑に出る
-post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "紙の端はどこまで切りますか"})
+post(f"/toy/{G}/ask", {"hypothesis": GS, "question": "紙の端はどこまで切りますか"})
 # 説明を待つ記録と、頭の帯に出る写真（人が確かめた物だけが出る）
-post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})
+post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})
 waiting = records.all_records(G)[-1]["id"]
 folder = techo_site.media_dir(rid)
 folder.mkdir(parents=True, exist_ok=True)
 (folder / "m1.jpg").write_bytes(b"\xff\xd8\xff")
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
-page = get(f"/toy/{G}?see=H-A&kind=sheet&v=2")
+page = get(f"/toy/{G}?see={GS}&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
 assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
 kz = page.split('id="kaizen"', 1)[1]

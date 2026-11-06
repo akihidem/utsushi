@@ -343,7 +343,8 @@ assert f'data-hid="{GS}"' in techo_step.page(G, ["H-C", GS])
 
 # ---- 開く所を URL で持つ（場のリンク n=2）。最後の次は「とって・のこす」の画面
 assert 'data-n="2"' in req(f"/toy/{G}/techo?n=2")[1] and 'data-n="1"' in req(f"/toy/{G}/techo?n=abc")[1]
-total = len(tpl.steps(p))
+# 手帖の手順はたたき台の紙の物（御来迎の今の組 goraigo-v14 は H-C の 18 段）
+total = len(tpl.steps({**tpl.DEFAULTS, **hypotheses.sheet_of(G)["params"]}))
 assert f'data-n="{total + 1}"' in req(f"/toy/{G}/techo?n=99")[1], "範囲の外は最後の画面"
 
 # ---- 札を押した事は作りながら見る頁と同じ口に残す
