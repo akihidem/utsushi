@@ -27,9 +27,11 @@
   "evidence": [
    "src/omochae/templates/pivot_counterweight.py",
    "tests/test_floor_pin.py",
-   "tests/test_by_set.py"
+   "tests/test_by_set.py",
+   "src/omochae/templates/_tora_v6.py",
+   "tests/test_tora_v6.py"
   ],
-  "unverified": "実物で組んで揺れるかは未確認"
+  "unverified": "実物で組んで揺れるかは未確認（今の組 tora-v6 の脚・角を落とした胴・両面の頭は、紙でまだ組んでいない）"
  },
  {
   "id": "f04",

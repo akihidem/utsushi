@@ -217,6 +217,12 @@ assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000009-R")
 
 # 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
 T = "NDL-1187053-R0000014-R"
+from omochae.templates import pivot_counterweight  # noqa: E402
+
+# 虎の今の組（tora-v6）は 3D で組まない（丸い穴・角を落とした胴・立体の脚・両面の頭を、この組み立てはまだ組めない。assembly の注）。
+# 3D の組み立ては、控えの組 tora-v4 に雛形を置いて前と同じに見る（v6 に上げても v4 の 3D が変わらない事も見る）
+assert pivot_counterweight.SHEET_SET == "tora-v6" and assembly.assemble(T) is None
+pivot_counterweight.SHEET_SET = "tora-v4"
 tora = assembly.assemble(T)
 tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}
 tora_words = instructions.steps(tora_p, "pivot_counterweight")
@@ -235,8 +241,6 @@ found = [f.line() for f in tora.failures]
 assert any("手順 4" in x and "糊代の根元 4 か所" in x for x in found), found
 # 次の組（tora-v4）は胴を山折りにしたので、絵は箱の外に出る。前の組（谷折り）に戻すと内側に入る（検査が紙の線を見ている）
 assert not any("絵のある面が箱の内側に入る" in x for x in found), found
-from omochae.templates import pivot_counterweight  # noqa: E402
-
 _now = pivot_counterweight.SHEET_SET
 pivot_counterweight.SHEET_SET = pivot_counterweight.FROZEN_SET
 try:
@@ -258,4 +262,5 @@ assert tora.frames[1]["poses"][-1]["plug"] and not tora.frames[2]["poses"][-1]["
 # できあがりの頭は揺れて、元の位置で止まる
 final = tora.frames[-1]["poses"]
 assert len(final) >= 5 and final[0]["state"]["head"]["place"] == final[-1]["state"]["head"]["place"]
+pivot_counterweight.SHEET_SET = "tora-v6"
 print("ok")

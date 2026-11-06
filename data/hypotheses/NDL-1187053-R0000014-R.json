@@ -18,6 +18,17 @@
       "params": {
         "mount": "neck"
       },
+      "params_by_set": {
+        "tora-v6": {
+          "mount": "neck",
+          "axle_height": 32,
+          "head_w": 36,
+          "weight_below_axle": 20,
+          "leg_height": 10,
+          "body_round": 8,
+          "head_sides": 2
+        }
+      },
       "how_it_moves": "頭に指で触れて離す",
       "evidence": [
         {

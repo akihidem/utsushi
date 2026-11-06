@@ -1,5 +1,6 @@
 """凍結の床を試験で見る: 必須の 2 種（御来迎 goraigo-v10・張子の首振り虎 tora-v3）の紙が、控えた指紋と同じ（U-43、#115）。
-虎は次の組（tora-v4）に上げたので、前の組 tora-v3 も今の組 tora-v4 も比べる。前の組の控えは、次の組を足した後も残す（本人の指示）。
+虎は次の組（tora-v4）、その次の組（tora-v6。v5 は刷らずに飛ばした）に上げたので、前の組 tora-v3・tora-v4 も今の組 tora-v6 も比べる。
+前の組の控えは、次の組を足した後も残す（本人の指示）。
 御来迎は今の組 goraigo-v10 のまま（次の組は形を見直してから。雛形に前の組が無いので今の組だけを組む）。
 前の組は雛形の控えの並び（compose.kept_sets）の全部を組む。組を上げるたびに前の組が 1 つ増えるため（虎は v3 のあと v4 も刷った）。
 たたき台・寸法・出さない字は記録の組ごとの欄（sheet_by_set・params_by_set・hide_by_set）から組ごとに引く。欄の無い組は記録の sheet と params のまま。
@@ -178,8 +179,8 @@ def check():
     pin = json.loads(PIN.read_text(encoding="utf-8"))
     real, standin = both()
     # たたき台 2 枚 × 3 枚 ＋ 御来迎の原図つき 1 枚 ＋ 先生の紙 2 枚。前の下限 31 は 8 仮説の時の数（J-032 で 9 に直した）
-    # 虎の次の組の 4 枚を足して 13。前の下限は 9（J-032、1 組の時）・31（8 仮説の時）
-    assert len(pin["papers"]) >= 13, ("控えが減った", len(pin["papers"]))
+    # 虎の次の組の 4 枚を足して 13、その次の組（tora-v6）の 4 枚を足して 17。前の下限は 13（tora-v4 まで）・9（J-032、1 組の時）・31（8 仮説の時）
+    assert len(pin["papers"]) >= 17, ("控えが減った", len(pin["papers"]))
     assert len(pin["removed"]["papers"]) == 22 and not set(pin["removed"]["papers"]) & set(pin["papers"]), "外した紙は印つきで残し、比べる紙と混ぜない"
     assert "本人の決定" in pin["removed"]["why"], "外した理由の印を残す"
     gone, extra, diff = compare(pin, "standin", standin)

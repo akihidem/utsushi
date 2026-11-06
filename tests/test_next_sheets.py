@@ -1,5 +1,7 @@
 """必須 2 種のうち虎の次の組（tora-v4、#115）。前の組 tora-v3 の紙と指紋は変えない（tests/test_floor_pin.py が見る）。御来迎は今の組 goraigo-v10 のまま
 （次の組は本人の決定 11-06 で形を見直す。下から押し上げる形と内筒）。
+虎の今の組は tora-v6 に上げた（tests/test_tora_v6.py）。tora-v4 は控えの組として刷れるので、この試験は雛形の組を tora-v4 に置いて、
+tora-v3 との違いを前と同じに見る（v6 に上げても v4 の作りが変わらない事も見る）。
 
 なぜ次の組か: 本人の答え（11-05）は、色の面を外にして折った。手順の「谷折り」のとおりに折ると、虎の胴は色の面が箱の内に入る。
 本人の指示は「次の版で直し、今の版の紙と指紋は変えない」。次の組には、本人のレビューと作成動画の札から採った案も入る（型紙エンジン
@@ -65,8 +67,10 @@ def words(layout):
     return [t.text for t in layout["texts"] if t.text]
 
 
-# 1. 組の名前。前の組の名前は控えを刷る道として残す。御来迎は今の組のまま（前の組を持たない）
-assert (TIGER.SHEET_SET, TIGER.FROZEN_SET) == ("tora-v4", "tora-v3"), TIGER.SHEET_SET
+# 1. 組の名前。前の組の名前は控えを刷る道として残す。御来迎は今の組のまま（前の組を持たない）。
+# 虎の今の組は tora-v6 で、tora-v4 は控えの組。ここからは雛形の組を tora-v4 に置く（控えの組を刷る道と同じ）
+assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v6", "tora-v3", ("tora-v3", "tora-v4")), TIGER.SHEET_SET
+TIGER.SHEET_SET = "tora-v4"
 assert FAN.SHEET_SET == "goraigo-v10" and not hasattr(FAN, "FROZEN_SET"), FAN.SHEET_SET
 assert marks.FROZEN_SETS == {GORAIGO: "goraigo-v10"}, marks.FROZEN_SETS
 
