@@ -356,4 +356,5 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
-            f'<section class="panel" aria-label="上げる"><div id="mine">{note}{mine}</div></section>') + hanasu.assets()
+            # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
+            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}{mine}</div></section>') + hanasu.assets()

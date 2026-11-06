@@ -18,7 +18,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from omochae import hypotheses, instructions, making_log, render, talk_log  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
-from web import hanasu, skin, techo_step  # noqa: E402
+from web import genga, hanasu, skin, techo_step  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -140,11 +140,28 @@ assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌
-thumbs = [c for c in doc.targets if c["attrs"].get("id") == "genga-thumb"]
-assert len(thumbs) == 1 and not thumbs[0]["text"].strip() and doc._shown(thumbs[0], "start") and doc._shown(thumbs[0], "step"), "原画は字の無い釦で、始める前と手順の画面に出る"
-assert not doc._shown(thumbs[0], "end") and not doc._shown(thumbs[0], "kekka"), "「のこす」と札の画面には出さない（押す所を増やさない）"
-dlg = page[page.index('<dialog class="te-genga" id="genga-dlg" hidden'):page.index("</dialog>", page.index('id="genga-dlg"'))]
-assert f'/picture/{G}/page' in dlg and 'class="genga-songs"' in dlg, "窓に頁の全体の原画と歌がある"
+# 原画の写し（out/ の頁の絵と切り抜き）は git の外で ./init.sh も取らないので、まっさらな木には無い（#450 と同じ。関門の帳面の「写しが無い木でも通る形」）。
+# 写しの無い木: 釦も窓も出さない（頁は止めない）。写しのある形: 部品の絵だけを差し替えて、釦と窓の形を見る（写しの有る無しに関わらず見る）
+src_g = genga._source(G)
+if not genga._pic(G, src_g, genga.alt(src_g))[0]:
+    assert 'id="genga-thumb"' not in page and 'id="genga-dlg"' not in page, "写しが無い時は、原画の釦も窓も出さない"
+real_pic = genga._pic
+genga._pic = lambda sid, src, alt, lazy=False, href=None: (f'<span class="genga-pic" style="--genga-r:0.7000"><img src="/picture/{sid}/page" alt="{alt}"></span>', True)
+try:
+    shown_g = techo_step.page(G, ["H-A"])
+finally:
+    genga._pic = real_pic
+doc_g = read(shown_g)
+thumbs = [c for c in doc_g.targets if c["attrs"].get("id") == "genga-thumb"]
+assert len(thumbs) == 1 and not thumbs[0]["text"].strip() and doc_g._shown(thumbs[0], "start") and doc_g._shown(thumbs[0], "step"), "原画は字の無い釦で、始める前と手順の画面に出る"
+assert not doc_g._shown(thumbs[0], "end") and not doc_g._shown(thumbs[0], "kekka"), "「のこす」と札の画面には出さない（押す所を増やさない）"
+assert [c["text"].strip() for c in doc_g.shown_targets("step")] == ["もどる", "つぎ", "こまった"], "原画の釦があっても、押す所の名前は変わらない"
+# 置き場: マイクと閉じる印の並ぶ上の帯（64px の釦の下の端は 76px）。手順の絵は 84px より下に描くので、どの画面の大きさでも絵に掛からない
+assert ".genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;" in techo_step.STYLE and ".koma svg.on{display:block;position:absolute;left:12px;top:84px;" in techo_step.STYLE
+dlg = shown_g[shown_g.index('<dialog class="te-genga" id="genga-dlg" hidden'):shown_g.index("</dialog>", shown_g.index('id="genga-dlg"'))]
+assert f'/picture/{G}/page' in dlg and "<a " not in dlg, "窓に頁の全体の原画がある。窓にリンクは無い"
+if genga._songs(src_g)[0]:
+    assert 'class="genga-songs"' in dlg, "確かめた歌のある玩具は、窓に歌も出す"
 assert "gDlg.showModal()" in techo_step.SCRIPT and "gDlg.close()" in techo_step.SCRIPT, "頁の中で重ねる（頁を離れない）"
 # 「のこす」の画面: 声と動画が主で、字は畳んだ追加（本人の方針 19:45、#335）。押す所は とって・畳み（字なしの形）・のこす
 assert sorted(c["text"].strip() for c in doc.shown_targets("end")) == sorted(["とって", "", "のこす"])

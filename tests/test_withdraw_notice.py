@@ -62,7 +62,7 @@ for name, path in (("玩具の頁", f"/toy/{G}"), ("作りながら見る頁", f
     body = page(path)
     assert body.count(DECIDED) == 1 and re.search(re.escape(hanasu.NOTICE) + r"[^\n]*?</p>" + re.escape(PARA), body), name
 
-# 手帖: 作る頁の「のこす」の画面で、上げる時の説明のすぐ下（作り直した手帖、#87）。記録ごとの口は記録の頁に並び、そこには文を重ねない
+# 手帖: 作る頁の「のこす」の画面で、上げる時の説明のすぐ下（作り直した手帖、#87）。記録ごとの口が並ぶ記録の頁にも 1 回
 # 作る頁は、たたき台の紙が刷ってある時だけ「のこす」の画面を出す（刷っていない時は紙を作る道だけ）
 base = f"http://127.0.0.1:{server.server_address[1]}"
 urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), headers={"Origin": base}), timeout=120)
@@ -70,6 +70,7 @@ techo = page(f"/toy/{G}/techo")
 assert f'id="up-notice">{hanasu.UPLOAD_NOTICE}</p>{PARA}' in techo and techo.count(DECIDED) == 1
 kiroku = page(f"/toy/{G}/techo/kiroku")
 assert kiroku.count('name="scene" value="keep"') == 2, "記録ごとの口が並ぶ見本になっていない"
+assert kiroku.count(DECIDED) == 1 and PARA in kiroku, "記録の頁（記録ごとに足す口がある）にも、文を 1 回だけ置く"
 
 # 持ち寄りの所には出さない（「前にエンジンへ渡した分は残ります」が事実と合わない）。説明の文がある事も見て、見本の取り違えで通らないようにする
 gallery = page("/gallery")

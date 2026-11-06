@@ -105,9 +105,10 @@ button,input,textarea,select{font-family:inherit}
 /* 聞いている間は地と字を入れ替える。別の色を足さず、どちらの皮でも「今は違う状態」と読めるようにする。 */
 .mic[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
 .close{position:absolute;top:12px;right:12px;width:64px;height:64px;display:grid;place-items:center;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3}
-/* 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）。閉じる印の下の小さな原画で、字は持たない
-   （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる */
-.genga-thumb{position:absolute;top:88px;right:12px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
+/* 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）。閉じる印の左の小さな原画で、字は持たない
+   （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる。
+   置き場は、マイクと閉じる印の並ぶ上の帯（手順の絵は上から 84px より下に描く）。前は閉じる印の下に置き、375×667 で御来迎の手順 1〜3 の絵の角を隠した */
+.genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
 .genga-thumb img{display:block;width:100%;height:100%;object-fit:contain}
 .te-genga{max-width:96vw;max-height:96vh;max-height:96svh;overflow:auto;padding:10px;border:0;background:var(--paper);color:var(--fg)}
 .te-genga::backdrop{background:rgba(0,0,0,.82)}
