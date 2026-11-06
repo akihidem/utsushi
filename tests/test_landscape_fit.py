@@ -89,7 +89,7 @@ for name, sid in TOYS.items():
     for w, h in TECHO_SIZES:
         pages[f"techo-{name}-{w}x{h}"] = (f"/toy/{sid}/techo?v=1&n=1&walk=techo-{name}-{w}x{h}", w, h, TECHO_WALK)
     for w, h in TSUKURU_SIZES:
-        pages[f"tsukuru-{name}-{w}x{h}"] = (f"/toy/{sid}/tsukuru?h={hypotheses.sheet_of(sid)["id"]}&walk=tsukuru-{name}-{w}x{h}", w, h, TSUKURU_WALK)
+        pages[f"tsukuru-{name}-{w}x{h}"] = (f"/toy/{sid}/tsukuru?h={hypotheses.sheet_of(sid)['id']}&walk=tsukuru-{name}-{w}x{h}", w, h, TSUKURU_WALK)
 
 send, get = play_server.Handler._send, play_server.Handler.do_GET
 
