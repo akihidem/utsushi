@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_public_inner_marks.py
+# commit: f4ab45bd（回した時の HEAD）
+/tmp/tmpomvmiosj/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpomvmiosj/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpomvmiosj/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpomvmiosj/play/NDL-1187053-R0000005-L/.tmp-1x86svjj/H-A_v2.pdf
+/tmp/tmpomvmiosj/play/NDL-1187053-R0000005-L/.tmp-1x86svjj/H-A_v2_tejun.pdf
+/tmp/tmpomvmiosj/play/NDL-1187053-R0000005-L/.tmp-1x86svjj/H-A_v2_after.pdf
+ok: 合言葉なしの場に、内部の番号と作る側の控えを出さない
+rc=0

@@ -504,7 +504,7 @@ def main(argv=None):
         if args.cmd == "print-teacher":
             return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
-            return print_own(args.source, args.id, args.out or f"out/templates/{args.id}_v1")
+            return print_own(args.source, args.id, args.out or f"out/templates/{args.source}_{args.id}_v1")
         if args.cmd == "own":
             rec, failures = save_own(args.source, args.name, args.how, args.evidence, json.loads(args.params) if args.params else None)
             if not failures:
@@ -518,7 +518,8 @@ def main(argv=None):
             # 作り手が版を直す時は records summary と loop で見る。
             print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
-        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
+        # 既定の名前に玩具を入れる。御来迎と虎はどちらも H-A なので、入れないと後から刷った紙が前の紙を黙って消す。
+        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.source}_{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)
         return 4

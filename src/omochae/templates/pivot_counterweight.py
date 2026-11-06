@@ -268,7 +268,7 @@ def place(by_key, page, top, gap):
 def bom(p):
     paper = f"紙（厚さ 0.15mm 前後・{p['paper_gsm']}g/m² の見込み）"
     why = "家庭のプリンタで刷って作るため"
-    return [
+    rows = [
         {"number": 1, "key": "body", "name": "胴", "qty": 1, "material": paper, "substituted": True, "original_guess": "張子（手元の解説の呼び名による）", "reason": why},
         {"number": 2, "key": "head", "name": "頭", "qty": 1, "material": paper, "substituted": True, "original_guess": "張子（同じ）", "reason": why},
         {"number": 3, "key": "strip", "name": "首の帯", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why},
@@ -276,15 +276,20 @@ def bom(p):
         {"number": 7, "key": "axle", "name": "軸", "qty": 1, "material": f"竹串（長さ約 {p['body_width'] + 20}mm に切り、先を落とす）", "substituted": True, "original_guess": "不明", "reason": "家にあり、穴に通しやすいため"},
         {"number": 8, "key": "weight", "name": "重り", "qty": 1, "material": f"油粘土 {p['weight_g']:g}g", "substituted": True, "original_guess": "不明", "reason": "量を変えて試しやすいため"},
     ]
+    if p["mount"] == "neck":
+        # 首の形だけが刷る部品 5。部品表に無いと、型紙と部品表が食い違ったまま検査を通った。
+        rows.insert(4, {"number": 5, "key": "drop", "name": "重りの腕", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": "紙の頭は軽いので、重りを軸の真下に下げる腕が要るため"})
+    return rows
 
 
 def materials(p):
-    rows = bom(p)
+    # 行の位置でなく key で引く。形によって部品表の行が増えるので、位置で引くと別の行を刷る。
+    by = {r["key"]: r for r in bom(p)}
     # 胴に中を切り抜く所がある形（首の形の前の壁の四角い穴）は、カッターを道具に書く（手順に「カッターは大人がする」。#294、本人の確認 11-06）。
     # 前の組は紙を変えないので足さない。エンジン（paper-to-toy の e189dc6）と同じ結果になる事を tests/test_next_sheets.py が見る。
     # 部品を組まずに形の値で決める（slider_fan と同じ理由）。
     tools = "のり、はさみ、定規" + ("、カッター" if not frozen() and p["mount"] == "neck" else "")
-    return [f"{rows[0]['material']}を 1 枚", tools, rows[4]["material"], rows[5]["material"]]
+    return [f"{by['body']['material']}を 1 枚", tools, by["axle"]["material"], by["weight"]["material"]]
 
 
 def steps(p):

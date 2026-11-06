@@ -3,8 +3,8 @@
 なぜ要るか: 手順の文は雛形に書いた決まった文で、用意する物は部品表から出る。別々に書くので、片方を直しても
 もう片方は黙って食い違う。全部の案を刷って照らした時に、8 種 16 案で抜けていた。
 
-何を見るか: 全部の玩具の全部の案で、手順の字に出る語が、同じ案の用意する物の字にある事。語の一覧は手順の文を
-全部読んで決めた（手順に新しい道具を書く時は NAMES に足す）。紙一枚の印の案は、手順にも ways のほかの材料の語が
+何を見るか: 全部の玩具の全部の案で、手順の字と遊び方の字に出る語が、同じ案の用意する物の字にある事。語の一覧は手順の文を
+全部読んで決めた（手順に新しい道具を書く時は NAMES に足す）。遊び方は手順のすぐ下に刷るので、字が違うと同じ紙に 2 つの字が並ぶ。紙一枚の印の案は、手順にも ways のほかの材料の語が
 出ない事（札の字と手順を合わせる）。
 
 必須 2 種の今の組で抜けている案は、組の名前を条件に FROZEN に書く。組を上げると例外が外れてこの試験が落ちるので、
@@ -21,12 +21,13 @@ from omochae.hypotheses import ROOT
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 KOMA = "NDL-1187053-R0000026-L-3"
 KITES = {f"NDL-1187053-R0000024-L{s}" for s in ("", "-2", "-3")}
-# 手順の語 → 用意する物にこの字のどれかがあればよい。紐と玉は、用意する物では「糸」「ビーズ」と書く物の呼び名。
+# 手順の語 → 用意する物にこの字のどれかがあればよい。手順は用意する物と同じ字で書く。紐と玉は、呼び名として許すと
+# 用意する物の「糸」「ビーズ」と別の物に読めるので、同じ字の時だけ通す。
 # 本は「1 本」の数え方と分けるため、載せる所の形で見る。
 NAMES = {
     "竹串": ("竹串",), "竹ひご": ("竹ひご",), "楊枝": ("楊枝",), "つまようじ": ("つまようじ",), "割り箸": ("割り箸",),
     "カッター": ("カッター",), "はさみ": ("はさみ",), "のり": ("のり",), "定規": ("定規",), "テープ": ("テープ",),
-    "糸": ("糸",), "紐": ("紐", "糸"), "粘土": ("粘土",), "ビーズ": ("ビーズ",), "玉": ("玉", "ビーズ"), "厚紙": ("厚紙",),
+    "糸": ("糸",), "紐": ("紐",), "粘土": ("粘土",), "ビーズ": ("ビーズ",), "玉": ("玉",), "厚紙": ("厚紙",),
     "輪ゴム": ("輪ゴム",), "割りピン": ("割りピン", "割ピン"), "ストロー": ("ストロー",), "鈴": ("鈴",), "盆": ("盆",),
     "豆": ("豆",), "本に": ("本",), "目打ち": ("目打ち",), "下敷き": ("下敷き",), "鉛筆": ("鉛筆",), "ニッパー": ("ニッパー",),
     "紙やすり": ("紙やすり",), "硬貨": ("硬貨",), "千枚通し": ("千枚通し",), "ホチキス": ("ホチキス",), "接着剤": ("接着剤",),
@@ -51,6 +52,11 @@ def missing(tpl, p):
     """手順に出るのに、用意する物の字に無い語。"""
     listed, steps = " ".join(str(m) for m in tpl.materials(p)), steps_text(tpl, p)
     return sorted(w for w, names in NAMES.items() if w in steps and not any(n in listed for n in names))
+
+
+def how_missing(how, tpl, p):
+    """遊び方に出るのに、用意する物の字に無い語。"""
+    return missing(SimpleNamespace(steps=lambda _: [how], materials=tpl.materials), p)
 
 
 def says_missing_hole(tpl, p):
@@ -91,6 +97,12 @@ assert len(all_cases) > 100 and {tid for _, _, tid, _, _ in all_cases} == set(TE
 wrong = check()
 assert not wrong, ("手順に出る語が用意する物に無い、または例外が古い", wrong)
 
+# 遊び方も同じ。今の組の例外は要らない（必須 2 種の遊び方に抜けは無い）
+how_of = {(path.stem, h["id"]): h["how_it_moves"] for path in sorted((ROOT / "data/hypotheses").glob("*.json"))
+          for h in json.loads(path.read_text(encoding="utf-8"))["hypotheses"]}
+wrong = [(sid, hid, how_missing(how_of[sid, hid], tpl, p)) for sid, hid, _, tpl, p in all_cases if how_missing(how_of[sid, hid], tpl, p)]
+assert not wrong, ("遊び方に出る語が用意する物に無い", wrong)
+
 # 2. 穴あけの字は、部品に穴がある案だけに出す（穴の無い案に、要らない物をそろえさせない）。手順の穴の字も同じで、御来迎 E だけ今の組の例外
 for sid, hid, _, tpl, p in all_cases:
     if any("穴あけ" in str(m) for m in tpl.materials(p)):
@@ -122,8 +134,11 @@ assert missing(Stub(["穴は竹串の先であける"], ["竹串（穴あけ）"
 assert missing(Stub(["腕木の糸の穴に留める"], ["竹串"]), {}) == []  # 穴の呼び名は物の名前でない
 assert missing(Stub(["糸を腕木の糸の穴に結ぶ"], ["竹串"]), {}) == ["糸"]  # 本物の糸は隠さない
 assert missing(Stub(["内側で玉結びにする"], ["糸"]), {}) == [] and missing(Stub(["玉を通す"], ["糸"]), {}) == ["玉"]
-assert missing(Stub(["紐を巻く"], ["糸（長さ約 30cm）"]), {}) == [] and missing(Stub(["紐を巻く"], ["のり"]), {}) == ["紐"]
+assert missing(Stub(["玉を通す"], ["ビーズ（穴に芯が通る物）"]), {}) == ["玉"] and missing(Stub(["ビーズを通す"], ["ビーズ（穴に芯が通る物）"]), {}) == []
+assert missing(Stub(["紐を巻く"], ["糸（長さ約 30cm）"]), {}) == ["紐"] and missing(Stub(["糸を巻く"], ["糸（長さ約 30cm）"]), {}) == []
+assert missing(Stub(["紐を巻く"], ["木綿の糸か細い紐（80cm ほど）"]), {}) == [] and missing(Stub(["紐を巻く"], ["のり"]), {}) == ["紐"]
 assert missing(Stub(["2 本の先を結ぶ"], ["のり"]), {}) == [] and missing(Stub(["端を本に載せる"], ["のり"]), {}) == ["本に"]
+assert how_missing("紐を引く", Stub([], ["糸（長さ約 30cm）"]), {}) == ["紐"] and how_missing("糸を引く", Stub([], ["糸（長さ約 30cm）"]), {}) == []
 assert says_missing_hole(Stub(["穴は竹串の先であける"], [], [SimpleNamespace(holes=[])]), {})
 assert not says_missing_hole(Stub(["穴は竹串の先であける"], [], [SimpleNamespace(holes=[(1, 1, 1)])]), {})
 assert not says_missing_hole(Stub(["部品を実線で切る"], [], [SimpleNamespace(holes=[])]), {})
@@ -180,4 +195,4 @@ finally:
     fan.materials = keep
 assert named == [(GORAIGO, "H-E", [], ["竹串"])], named
 
-print(f"ok {len(all_cases)} 案で手順と用意する物が合う（今の組の例外 {sum(len(v) for v in FROZEN.values())} 案、文面の確認待ち {len(WORDING)} 案）")
+print(f"ok {len(all_cases)} 案で手順と遊び方と用意する物が合う（今の組の例外 {sum(len(v) for v in FROZEN.values())} 案、文面の確認待ち {len(WORDING)} 案）")

@@ -87,14 +87,14 @@ def split_lines(src):
     out = []
     if took and left:
         sets = "と".join(sorted({f"複写 {e.get('set')}" for e in entries if e.get("set")}))
-        out.append({"text": f"手元の複写（{sets}）では、この歌の一部の読みが割れていました（作る側の記録、research/16）。", "label": OBS})
+        out.append({"text": wording.plain(f"手元の複写（{sets}）では、この歌の一部の読みが割れていました（作る側の記録、research/16）。"), "label": OBS})
         for e in took:
-            out.append({"text": f"{wording.plain(e['checked_by'])}が {e.get('checked_at') or '日付不明'} に、複写 {e.get('set')}（頁 {e.get('page')}）の読みに決めました。", "label": OBS})
-        out.append({"text": f"もう一方の読みは出典の記録に残してありますが、{wording.MAKER}が採らなかった読みなので、この頁には出しません。", "label": OBS})
+            out.append({"text": wording.plain(f"{e['checked_by']}が {e.get('checked_at') or '日付不明'} に、複写 {e.get('set')}（頁 {e.get('page')}）の読みに決めました。"), "label": OBS})
+        out.append({"text": wording.plain("もう一方の読みは出典の記録に残してありますが、本人が採らなかった読みなので、この頁には出しません。"), "label": OBS})
     for e in took:
         if e.get("printed_text"):
-            out.append({"text": f"複写 {e.get('set')} の頁 {e.get('page')} の見出しの活字は「{e['printed_text']}」です（作る側が複写から読んだ文）。", "label": OBS})
-            out.append({"text": f"上の「人が確かめた読み」とは字が違う所があります。{wording.MAKER}は 2026-11-04 に、{wording.MAKER}が確かめた表記で出すと決め、活字の文は記録に残しました。", "label": OBS})
+            out.append({"text": wording.plain(f"複写 {e.get('set')} の頁 {e.get('page')} の見出しの活字は「{e['printed_text']}」です（作る側が複写から読んだ文）。"), "label": OBS})
+            out.append({"text": wording.plain("上の「人が確かめた読み」とは字が違う所があります。本人は 2026-11-04 に、本人が確かめた表記で出すと決め、活字の文は記録に残しました。"), "label": OBS})
     return out
 
 
@@ -175,7 +175,7 @@ def page(sid, mine=None, msg="", look=None):
                     ("線の付いた字は、ここが違って読めた所です。" if differs else "二つの読みは、同じ字の並びでした。") + "</p>")
     if not checked:
         rows.append('<ul class="pair">' + _li(reader) + '</ul><p class="meta">人が確かめた読みは、まだありません。</p>')
-    how = f'<p class="meta">読みが割れた事と、決めた事</p><ul>{"".join(_li(x) for x in splits)}</ul>' if splits else ""
+    how = f'<p class="meta">{esc(wording.plain("読みが割れた事と、決めた事"))}</p><ul>{"".join(_li(x) for x in splits)}</ul>' if splits else ""
     body = (f'<section class="yomi"><div>{pic}</div><div>{"".join(rows)}{how}'
             f'<p class="meta">もう一度書く</p>{_form(sid, mine)}</div></section>')
     return _page(f"うつし · くずし字を読む · {toy}", head + body, look, f"/zukan/{sid}/yomi")

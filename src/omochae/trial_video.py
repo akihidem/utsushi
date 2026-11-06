@@ -525,7 +525,8 @@ def report(rid, built, finish=None, minutes=None, gave_up=None, finish_notes="",
     except ValueError:
         params = h.get("params") or {}
     results = list(records.results_for(rec["source_id"]))
-    moved = moved or ("moved" if rec["result"] == results[0] else "partly" if rec["result"] in ("少し動いた", "少し遊べた") else "not" if rec["result"] in ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "倒れた") else None)
+    word = records.result_word(rec)
+    moved = moved or ("moved" if word == results[0] else "partly" if word in ("少し動いた", "少し遊べた") else "not" if word in ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "倒れた") else None)
     confirmed = [m for m in d["marks"] if m.get("confirmed_by")]
     # 形の名前はエンジンの雛形の FORM（この repo の雛形の写しには無いので、ここに持つ）。
     form = params.get({"slider_fan": "push_part", "pivot_counterweight": "mount"}.get(template, "form"))

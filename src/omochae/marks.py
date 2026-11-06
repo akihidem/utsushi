@@ -14,6 +14,8 @@ HYPOTHESIS = "仮説（ためしの案）: AI が考えた、ためしに作る�
 # 本人に「必須 2 種の今の版の紙は変えず、次の版から」と確かめて採ったので、前の組だけ前の文（#258 の決定の文）のまま刷る。
 # 次の組（goraigo-v11・tora-v4）は上の文。前の組の紙を組む時は、呼ぶ側が source の hypothesis_mark でこの文を渡す。
 HYPOTHESIS_FROZEN = "仮説: AI が考えた、試すための 1 つの翻案です。正解ではありません。作って、動きを確かめて、直していきます"
+# 前の文で刷る組の玩具。次の組（goraigo-v11・tora-v4）に上げたので空。前の組の紙を組む時は、呼ぶ側が source の hypothesis_mark で前の文を渡す。
+FROZEN_SETS = {}
 # 使い手が自分で立てた仮説の紙の文。人の仮説を「AI が考えた」と刷らないため（print_own）。文の残りは上と揃える。
 OWN_HYPOTHESIS = "仮説（ためしの案）: 自分で考えた、ためしに作るための案の 1 つです。正しい答えではありません。作って、動くか見て、直していきます。"
 # 頁の「すぐ作る」の頭に出す文（本人の言葉 11-05「型紙が正解ではなくて、とりあえずAIが考えた仮説であるということを明示する」）。文の変更は本人の確認に回す。
@@ -30,10 +32,15 @@ def without_premise(text):
     return re.sub(r"(?<!不)正解では(?:なく|ありません)", "", text)
 
 
+def hypothesis_line(source):
+    """紙に刷る仮説の文。刷る所（mark_lines）と刷った後の検査（check_pdf）が別の文を見ると、正しい紙を断るので 1 か所にする。"""
+    return source.get("hypothesis_mark", HYPOTHESIS_FROZEN if source.get("source_id") in FROZEN_SETS else HYPOTHESIS)
+
+
 def mark_lines(source, omit=None):
     if omit == "all":
         return []
-    lines = [f"所蔵: {source['holding']}", source["modification_note"], source.get("hypothesis_mark", HYPOTHESIS)]
+    lines = [f"所蔵: {source['holding']}", source["modification_note"], hypothesis_line(source)]
     if omit != "source_id":
         lines.insert(2, f"出典ID: {source['source_id']}")
     return lines
@@ -57,11 +64,13 @@ def check_pdf(pdf_path, source):
         raise ToolMissing(f"pdftotext で読めない: {e}")
     # 印が折り返されても読めるよう、空白と改行を全部取ってから探す。
     flat = "".join(out.split())
+    # 短い語だけを探すと、本文が欠けても化けても別の所に同じ語が残れば通ってしまう。刷った文をそのまま探す。
     need = {
         "所蔵": HOLDER,
+        "所蔵の文": source["holding"],
         "永続ID": source["persistent_id"],
-        "改変": "改変",
+        "改変": source["modification_note"],
         "出典ID": source["source_id"],
-        "仮説": "仮説",
+        "仮説": hypothesis_line(source),
     }
-    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if text not in flat]
+    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if "".join(text.split()) not in flat]

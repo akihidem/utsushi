@@ -68,8 +68,9 @@ def quote_lines(src):
 def record_title(r, data):
     """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-    who = f"仮説 {hypotheses.letter(h)} の紙" if h else f"自分の仮説 {r['hypothesis_id']} の紙"
-    return f"{who}・{r['result']}"
+    who = f"仮説 {hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
+    word = records.result_word(r)
+    return f"{who}・{word}" if word else who
 
 
 def record_date(r):
@@ -79,9 +80,10 @@ def record_date(r):
     return f"{int(m[1])} 月 {int(m[2])} 日" if m else when
 
 
-def observation_lines(sid, data):
-    """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。"""
-    return [{"text": f"{record_title(r, data)}（{record_date(r)}・{wording.record_no(r['id'])}）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
+def observation_lines(sid, data, photos=True):
+    """記録 1 件を観察の文 1 つにする。番号は札へ引けるように最後に残す。
+    photos=False は合言葉なしで開いた場で、内部の番号を字に出さない（札への道は record_id で残る。J-028）。"""
+    return [{"text": f"{record_title(r, data)}（{record_date(r)}" + (f"・{wording.record_no(r['id'])}" if photos else "") + "）", "label": OBS, "record_id": r["id"]} for r in records.all_records(sid)]
 
 
 def hypothesis_lines(sid, data, photos=True):
@@ -92,14 +94,14 @@ def hypothesis_lines(sid, data, photos=True):
     spoken = spoken_own_ids(sid)
     # 合言葉なしで開いた場では、書いて立てた仮説の文も出さない: 人ごとに分かれておらず、文の中の名前は機械で落とせない（J-028、#336）。
     own = hypotheses.own_hypotheses(sid) if photos else []
-    out += [{"text": f"あなたの仮説 {h['id']} {h['name']}: {h['how_it_moves']}", "label": HYPO} for h in own if h["id"] not in spoken]
+    out += [{"text": f"あなたの仮説「{h['name']}」: {h['how_it_moves']}", "label": HYPO} for h in own if h["id"] not in spoken]
     return out
 
 
 def lines_for(sid, photos=True):
     """その玩具の図鑑の文を、印ごとに返す。予想の段を外した（本人の決定 11-05、#242）ので、仮説はいつも出す。"""
     data, src = hypotheses.load(sid), _source(sid)
-    return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data),
+    return {"toy": data["toy"], "quotes": quote_lines(src), "observations": observation_lines(sid, data, photos),
             "hypotheses": hypothesis_lines(sid, data, photos), "holding": src.get("holding", "")}
 
 

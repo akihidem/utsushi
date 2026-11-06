@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_loop_odd_result.py
+# commit: 22527e6（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_odd_result.py", line 73, in <module>
+    assert "moved" not in trial_video.report(rid, True)[0], rid
+                          ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "src/omochae/trial_video.py", line 528, in report
+    moved = moved or ("moved" if rec["result"] == results[0] else "partly" if rec["result"] in ("少し動いた", "少し遊べた") else "not" if rec["result"] in ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "倒れた") else None)
+                                 ~~~^^^^^^^^^^
+KeyError: 'result'
+rc=1
