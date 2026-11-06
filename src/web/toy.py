@@ -201,7 +201,7 @@ def analogy_section(data):
             f'<article class="card"><h3>関連する事柄</h3><ul>{rel}</ul></article></section>')
 
 
-def ask_form(sid, data, asked=None, note="", filled=None):
+def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
     """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
     card = hypotheses.sheet_of(sid)
     if not versions_of(sid, card["id"], printed_only=True):
@@ -215,7 +215,7 @@ def ask_form(sid, data, asked=None, note="", filled=None):
             f'<input type="hidden" name="hypothesis" value="{esc(card["id"])}"><label>聞きたい事<input type="text" name="question" required maxlength="300"></label>'
             # 断り（本人の決定 11-05「工作の様子を蓄積してサービス全体の改善に回す。個人の情報は落とす」）: 質問の文を残すので、残す事と、
             # 名前を書かないでほしい事を、聞く口のすぐ下に出す。床が落とせるのは連絡先の形だけで、名前は機械では落とせないため。
-            f'<button>聞く</button><p class="meta">{esc(making_log.ASK_NOTICE)}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
+            f'<button>聞く</button><p class="meta">{esc(making_log.ask_notice(ai))}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
 
 
 # 記録の欄の畳みの見出し（#300）。本人が採った文（11-05）を一字も変えずに入れる。空にすると畳まずに並ぶ。
@@ -587,16 +587,18 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         body += think_sheet.section(sid, at, head(at))
     body += analogy_section(data)
     body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded, photos)}</section>'
+    from api import ask  # 聞く口の断りは、Claude を呼ぶ場だけ 1 文を足す（本人の決定 11-06）
+
     body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
              f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
              + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) or mine else "")
-             + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"))}</section>')
+             + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())}</section>')
     # 通らなかった時は畳みを開く。書いた字を隠さないため（#300）。
     body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>'
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
-             f'{sample_records(data)}<p class="links"><a href="/gallery">全部の玩具の、作った物を見る</a></p></section>')
+             f'{sample_records(data)}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen
 

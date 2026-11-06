@@ -439,7 +439,7 @@ def made_item(sid, data, r, photos=True):
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(records.result_word(r))}　{esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}　{esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
@@ -499,7 +499,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-        who = f"{hypotheses.letter(h)} の紙" if h else ""
+        who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
         mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if uploads else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
@@ -513,7 +513,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
             # 断り: この頁は ③ の上げる頁なので、聞く口の断りの文（「声と映像は残しません」）は使わない（本人の決定 11-05、Issue #275 の決める点 3。
             # 上げた写真と動画は残すので、同じ頁に並ぶと食い違う）。名前は言わないでほしい事は、聞く口のすぐ下に残す。
-            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc(making_log.ASK_NAME_VOICE) + '</p></section>'
+            '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc((making_log.ASK_AI if uploads and ask._key_present() else "") + making_log.ASK_NAME_VOICE) + '</p></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
             # ③ で上げる時の説明文（本人の決定 11-05。採られたやさしい言葉の文を、一字も変えずに出す。文は hanasu.UPLOAD_NOTICE の 1 か所）。
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p>'

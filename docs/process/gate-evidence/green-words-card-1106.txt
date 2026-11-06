@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_words_card_1106.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: c38531b0（回した時の HEAD）
+ok: 読めない字の 1〜8 と 16 は、本人が確かめた字のまま頁に出る
+試験 rc=0
+rc=0

@@ -56,7 +56,7 @@ DEFAULT_MODE = "browser"  # 本人の決定 11-05: iPhone・iPad でも話す釦
 NOTICE = "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
 HOW_LOCAL = "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。"
 # ブラウザの既定の音声認識で聞く時の断り（本人の決定 11-05: iPhone・iPad でも話す釦を出し、頁に断りを出す。文は、採られたやさしい言葉の文）。
-HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。このサイトは声を受け取りません。"
+HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
 # 釦を出さない時（切り替えが local か off の時と、音声認識の口が無い画面）。
 HOW_NONE = "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。"
 # ③ で上げる時の説明文（本人の決定 11-05、Issue #275 の決める点 3。採られたやさしい言葉の文）。文を変える時は、ここだけを変える。
@@ -75,7 +75,7 @@ REFUSED = "受け付けられません"  # 記録を残した画面の外から�
 NOHEARD = "聞き取れませんでした。もう一度押すか、字で書いてください。"
 # 入口の床に当たって残せなかった時の文。talk_log の理由（「名乗りの形がある」など）は作る人向けの言葉なので、そのまま出さない。
 # 連絡先の形の時も、この文を出す（採られた文は 1 つ。連絡先の時の言い分けは、文面の確認が要るので足していない）。
-BLOCKED = "名前や学校の名前のような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
+BLOCKED = "名前・学校の名前・住所・電話番号・メールのような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
 
 STYLE = """
 .hanasu{border:1px solid var(--frame);background:var(--paper);padding:14px 16px;margin:14px 0;display:grid;gap:8px}
@@ -218,7 +218,9 @@ def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
     # 玩具の頁の口は、JS が無い時に同じ節へ着く（返事の文もそこに出る。#121 と同じ形）。ほかの 2 つは、戻る道の付いた頁で答える。
     land = "#hanasu" if scene == "think" else ""
     hint = f' placeholder="{esc(s["hint"])}"' if s.get("hint") else ""
-    return (f'<div class="hanasu" data-hanasu data-voice="{mode()}"><p class="hanasu-head">{esc(s["head"])}</p>'
+    # 玩具の頁の考えの箱は、節の見出し「考えを話す」と同じ字が並ぶので、箱の見出しを出さない（本人の決定 11-06。読み上げの名前の label は残す）。
+    shown = "" if scene == "think" else f'<p class="hanasu-head">{esc(s["head"])}</p>'
+    return (f'<div class="hanasu" data-hanasu data-voice="{mode()}">{shown}'
             f'<form method="post" action="/toy/{esc(sid)}/talk{land}">{hidden}'
             f'<label class="sr" for="{key}">{esc(s["head"])}</label><textarea id="{key}" name="text" maxlength="{talk_log.MAX_TEXT}" {hint} required></textarea>'
             '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'

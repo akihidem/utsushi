@@ -438,6 +438,8 @@ class Handler(BaseHTTPRequestHandler):
                 # 文が頁の頭より 1 画面下に出ないよう、#121 の手帖と同じく節へ送る（#289）
                 msg = urllib.parse.quote("先に紙を作ると、作りながら見る頁が開きます")
                 return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={msg}&at=kasetsu#kasetsu")])
+            from api import ask
+
             from . import tsukuru
             try:
                 n = int(qs.get("n", ["1"])[0])
@@ -445,7 +447,7 @@ class Handler(BaseHTTPRequestHandler):
                 n = 1
             # 版は開いた時に決めて URL で持つ（作っている途中で別の人の版が刷られても、手順の文が変わらないように）。
             v = int(qs["v"][0]) if qs.get("v", [""])[0].isdigit() else None
-            return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0], version=v))
+            return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0], version=v, ai=ask._key_present() and not getattr(self.server, "public_open", False)))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
             # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。
@@ -734,7 +736,7 @@ class Handler(BaseHTTPRequestHandler):
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
             return self._send(422, self._toy(sid, errors=[f"版 {v} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", see=hid, anchor="win")
+        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
 
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
@@ -756,7 +758,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import toy
 
             return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
+        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
@@ -910,7 +912,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
             if print_latest(sid, hid) is None:
                 return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
-            msg = "紙を作りました。下の窓で絵を見て、印刷する時は PDF を 100% で"
+            msg = "紙を作りました。下の窓で絵を見てください。印刷する時は、PDF の大きさを 100% にしてください。"
             see = hid
         else:
             hid = form.get("hypothesis", "")
