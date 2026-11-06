@@ -216,6 +216,17 @@ late_owners = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "records" / "media" / w
 kept_owners = json.loads(late_owners.read_text(encoding="utf-8"))
 late_owners.write_text(json.dumps({k: {**v, "at": old} for k, v in kept_owners.items()}), encoding="utf-8")
 assert drop not in w.techo() and w.form(f"/record/{w_rid}/media/withdraw")[0] == 403, "期限を過ぎたら消す口も閉じる"
+# 次の記録を残すと、前の記録の釦は消え、消せない（保護者の頁の「押せるのは、上げてから2時間の間と、次の記録を残すまでです。」の裏付け。
+# 記録を残すと写真の鍵が外れる作り、_up_close。同じ機械の次の人に、前の人の写真を消させないため）
+n = Screen(opened)
+n_rid = n.record()
+n.photo(n_rid)
+n_drop = f'action="/record/{n_rid}/media/withdraw"'
+assert n_drop in n.techo(), "対照: 次の記録の前は出る"
+n.record()
+assert "utsushi_up" not in n.cookie and n_drop not in n.techo(), "次の記録を残すと、前の記録の釦は消える"
+assert n.form(f"/record/{n_rid}/media/withdraw")[0] == 403 and n.image(n_rid, "m1.jpg") == 404, "次の記録の後は消せない（写真は置き場に残る）"
+assert (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "records" / "media" / n_rid / "m1.jpg").exists()
 # 合言葉付きの場は、進行者に記録の番号を伝える形のまま（釦を出さず、受けない）
 c = Screen()
 c_rid = c.record()
