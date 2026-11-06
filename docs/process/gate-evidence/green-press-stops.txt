@@ -1,0 +1,26 @@
+# 命令: sh -c 'PYTHONPATH=src .venv/bin/python tests/test_press_stops.py && PYTHONPATH=src .venv/bin/python tests/test_loop1_think.py && PYTHONPATH=src .venv/bin/python tests/test_techo_site.py'
+# commit: ff54436（回した時の HEAD）
+ok 写真を選ばずに残せて、釦は断りの文のある節へ戻り、話した字は消えない
+F9.own: 自分の仮説「仮説 A から変えた案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-2_v1_free.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-3_v1.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-3_v1_tejun.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-3_v1_after.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmp8r7fg1l9/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+ok
+/tmp/tmpl_qome9x/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpl_qome9x/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpl_qome9x/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpl_qome9x/play/NDL-1187053-R0000005-L/.tmp-ilsmi4s7/H-A_v2.pdf
+/tmp/tmpl_qome9x/play/NDL-1187053-R0000005-L/.tmp-ilsmi4s7/H-A_v2_tejun.pdf
+/tmp/tmpl_qome9x/play/NDL-1187053-R0000005-L/.tmp-ilsmi4s7/H-A_v2_after.pdf
+ok
+rc=0

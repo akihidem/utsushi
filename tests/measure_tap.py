@@ -19,7 +19,7 @@ import urllib.request
 
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import play_server  # noqa: E402
 
 MIN_TAP, MIN_FONT = 44, 12
@@ -42,7 +42,7 @@ const small={};for(const e of document.querySelectorAll('body *')){if(!vis(e)||!
 // 縦の中心が近い物を同じ段と数える。top で数えると、今いる項目の下の罫の分だけずれて、同じ段を別の段と数えた
 const rows=[];for(const a of document.querySelectorAll('.nav a')){if(!vis(a))continue;const r=a.getBoundingClientRect(),c=(r.top+r.bottom)/2,hit=rows.find(x=>Math.abs(x.c-c)<14);if(hit)hit.n++;else rows.push({c,n:1})}
 // 字の欄と選ぶ欄は、名前の下で箱の幅いっぱいに出す（#290）。箱は label の親の、枠と余白を除いた幅
-const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
+const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>input[type=number],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
 const narrow=wide.filter(f=>{const l=f.parentElement,p=l.parentElement,s=getComputedStyle(p),box=p.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight),r=f.getBoundingClientRect(),n=[...l.childNodes].find(x=>x.nodeType===3&&x.textContent.trim());if(r.width<box-1)return true;if(!n)return false;const t=document.createRange();t.selectNodeContents(n);return r.top<t.getBoundingClientRect().bottom-1}).map(f=>name(f.parentElement));
 parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth,nav:rows.map(x=>x.n),wide:wide.length,narrow}),'*');
 },800)</script>""" % (MIN_TAP, MIN_FONT)
@@ -110,8 +110,7 @@ def main():
             urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
             # 説明まで残した記録に「次の版」の欄が出る（#290）
             rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-            told = urllib.parse.urlencode({"text": "途中で止まった", "next_idea": "軸を長くする", "by": "測る道具"}).encode()
-            urllib.request.urlopen(urllib.request.Request(f"{base}/record/{rid}/explain", data=told, headers={"Origin": base}), timeout=120)
+            assert loop.save_explanation(rid, "測る道具", "途中で止まった", "軸を長くする") == []
             printed = True
         for path in pages:
             got = measure(exe, base, path, width)

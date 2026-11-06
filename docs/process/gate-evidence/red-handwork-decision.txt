@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_handwork_words.py
+# commit: a2347bb（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_handwork_words.py", line 19, in <module>
+    assert lines.count(f"- {DECISION}") == 1, DECISION
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 本人の決定（11-05）: 外に出す文では継承を軸にし、復活を取り戻しの意味では使わない（案 A）
+rc=1

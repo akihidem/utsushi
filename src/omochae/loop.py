@@ -112,10 +112,13 @@ def explained(rid):
 TALK_LABEL = "作った人が話した事（字だけ・声は残していない）"
 # 渡す欄はこの 3 つだけ。どう入れたか（via）・その場の印（who）・時刻は、誰がいつ話したかを辿る手がかりにしかならず、案の材料に要らない。
 TALK_FIELDS = ("when", "step", "text")
+# 渡す話した字の上限（字数）。1 件は 400 字まで（talk_log.MAX_TEXT）だが件数に上限が無く、300 件で頼みが 13 万字になった。
+# ふつうの作りで話す量（手順ごとに数件）より十分大きくする。超えた分は数だけ渡す。
+TALK_MAX_CHARS = 6000
 
 
 def maker_talk(rid):
-    """記録に結んだ、作りながら話した工夫と上げた後に残した字（Issue #335 のループ2）。Returns {"label", "items": [{when, step, text}…]}。
+    """記録に結んだ、作りながら話した工夫と上げた後に残した字（Issue #335 のループ2）。Returns {"label", "items": [{when, step, text}…], "omitted": 上限で入れなかった字の数}。
 
     判断の芯:
     - どの字か: その記録に結ばれた字だけ（talk_log.kufu）。結ぶのは記録を残した時の talk_log.bind で、同じ玩具・同じ紙（仮説と版）・
@@ -126,13 +129,20 @@ def maker_talk(rid):
       これより強い絞りは足さない（2b で字は全部見せる決定。本人の指示 11-05 17:55）。
     - 鍵の有無で読む字を変えない。人の道（material の命令）にも隠した字を出さない: 人が読んで書く解釈と案を通って、隠した字が輪に入るため。
       作る側が隠した字を読むのは作る側の頁（hanasu.maker_section の「［隠している］」）。
+    - 字の数に上限がある（TALK_MAX_CHARS）。手順の順の前から入れ、超えた分は数だけ返す。切れた 1 件を途中で切らない（字の意味が変わるため）。
     - 字を写した別のファイルは作らない。記録を取り下げると字も消える（talk_log.drop_for_record）ので、写しがあると消し残る。
     """
     from . import talk_log  # 使う時に読む（hypotheses の読み方と同じ。輪の置き場を読むだけの命令で、話す口の部品まで先に読まない）
 
     rec = record(rid)
-    items = [{k: t[k] for k in TALK_FIELDS} for t in talk_log.kufu(rec["source_id"], rid, shared_only=True) if t["when"] != talk_log.WHEN["think"]]
-    return {"label": TALK_LABEL, "items": items}
+    said = [t for t in talk_log.kufu(rec["source_id"], rid, shared_only=True) if t["when"] != talk_log.WHEN["think"]]
+    items, used = [], 0
+    for t in said:
+        used += len(t["text"])
+        if used > TALK_MAX_CHARS:
+            break
+        items.append({k: t[k] for k in TALK_FIELDS})
+    return {"label": TALK_LABEL, "items": items, "omitted": len(said) - len(items)}
 
 
 def material(rid):
@@ -165,6 +175,8 @@ def material_text(rid):
     for t in talk["items"]:
         where = f"手順 {t['step']}" if t["step"] else ("上げた後" if t["when"] == "made" else "作りながら")
         lines.append(f"  {where}: {t['text']}")
+    if talk["omitted"]:
+        lines.append(f"  （ほかに {talk['omitted']} 件。字の数の上限で入れていない。読むのは作る側の頁）")
     from . import talk_log
 
     # 隠した字は出さず、数だけ知らせる。全部隠した記録を「字は無い」と読ませないため。
@@ -365,6 +377,45 @@ def TEMPLATES_DEFAULT(template):
     return TEMPLATES[template].DEFAULTS
 
 
+def _trial_values(lo, hi, now):
+    """1 つの寸法で試す値を、今の値から近い順に返す。通る値はたいてい今の値の近くにあるので、近くを細かく、遠くは粗く見る
+    （全部の玩具の版 1 と動かした後の版で、400 値の総当たりと同じ答えになった）。整数の寸法のために、近くの整数と幅の両端も入れる。"""
+    span = hi - lo
+    near = [now + sign * span * step for step in (0.00125, 0.0025, 0.005, 0.01, 0.02, 0.05) for sign in (1, -1)]
+    whole = [round(now) + d for d in (-3, -2, -1, 1, 2, 3)]
+    far = [lo + span * i / 20 for i in range(21)]
+    values = {round(v, 4) for v in near + whole + far + [round(v) for v in far] if lo <= v <= hi and v != now}
+    # 画面の口（play_server の次の版）と同じに、整数で言える値は整数で渡す。
+    return [int(v) if float(v).is_integer() else v for v in sorted(values, key=lambda v: (abs(v - now), v))]
+
+
+@functools.lru_cache(maxsize=256)
+def _movable(sid, current_json):
+    """今の寸法（json の字）で、1 つ変えて通る値がある寸法と、その値の 1 つ。寸法が同じなら答えも同じなので、1 度だけ検査する。
+    範囲と物理の床だけで決める。配置まで組むと、棒の玩具では 1 回 0.85 秒かかり、頁の最初の表示が 9 秒止まった。物理で通った値が配置で落ちる寸法は、
+    全部の玩具の版 1 と動かした後の版で見て無かった。もし出ても、断りの文が理由を言うので、欄が止まる事はない。"""
+    from .compose import TEMPLATES
+
+    template = _template(sid)
+    tpl, now = TEMPLATES[template], {**TEMPLATES[template].DEFAULTS, **json.loads(current_json)}
+    found = {}
+    for k in sorted(ALLOWED[template]):
+        for v in _trial_values(*tpl.RANGES[k], now[k]):
+            trial = {**now, k: v}
+            if not (tpl.check_range(trial) or tpl.check_physics(trial)):
+                found[k] = v
+                break
+    return found
+
+
+def movable_params(sid, hid):
+    """次の版の欄（寸法を 1 つ変える形）に出す寸法を、通る値の 1 つと一緒に返す。今の版の寸法で決める。
+    なぜ固定の表にしないか: 動かせない寸法は型の拘束で決まり、ほかの寸法を変えると通る幅が開く。例えば御来迎の押し上げる量は、扇を隠す床と内筒を収める床に
+    挟まれて今の寸法だと 69 ちょうどしか通らないが、扇を低くすると動かせる。Claude の案は寸法を同時に変えられるので、この絞りは掛けない（ALLOWED のまま）。"""
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    return _movable(sid, json.dumps(current, ensure_ascii=False, sort_keys=True))
+
+
 def save_proposal(proposal, source, drafted_by):
     from .hypotheses import sheet_of
 
@@ -462,7 +513,8 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
 
 
 def _print_into(sheet_dir, stem, printer):
-    """紙を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。"""
+    """紙を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。
+    読みに来た人にも書きかけを渡さない（#301）。"""
     sheet_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=sheet_dir, prefix=".tmp-") as tmp:
         rc = printer(f"{tmp}/{stem}")
@@ -486,6 +538,13 @@ def print_after(sid, hid, version, sheet_dir):
     from . import hypotheses
 
     return _print_into(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_after(sid, hid, out))
+
+
+def print_own(sid, oid, sheet_dir):
+    """自分の仮説の紙を刷る。"""
+    from . import hypotheses
+
+    return _print_into(sheet_dir, f"{oid}_v1", lambda out: hypotheses.print_own(sid, oid, out))
 
 
 @exclusive

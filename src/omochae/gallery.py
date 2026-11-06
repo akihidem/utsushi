@@ -46,7 +46,7 @@ def card(rec, data):
     sheet = esc(rec.get("sheet_set") or f'版 {rec.get("sheet_version", 1)}')
     when = esc(rec.get("tried_on") or rec.get("recorded_at", "")[:10])
     return (f'<article class="card" id="{esc(rec["id"])}"><h2>{esc(data["toy"])} {who}</h2>'
-            f'<p class="meta">{esc(rec["id"])}・試した日 {when}・紙 {sheet}</p><span class="res">{esc(rec["result"])}</span>{body}</article>')
+            f'<p class="meta">{esc(rec["id"])}・試した日 {when}・紙 {sheet}</p><span class="res">{esc(records.result_word(rec))}</span>{body}</article>')
 
 
 def build(base=""):
