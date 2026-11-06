@@ -127,7 +127,7 @@ const tap=async(op)=>{$('#hmd-'+op).click();await wait()};
 const idle=async()=>{for(let i=0;i<400&&b.dataset.busy==='1';i++)await wait(50)};
 const LAST=window.kumitateParts.F.length-1;
 try{
-R.total=Number(b.dataset.moves);
+R.total=Number(b.dataset.moves);R.plan=(b.dataset.plan||'').split(',').filter(x=>x!=='').map(Number);
 R.init=[at(),mv(),$('#hmd-prev').disabled,$('#hmd-mic').dataset.state];
 if(VOICE){
  R.before=[typeof window.__rec,__log.length];
@@ -155,9 +155,13 @@ if(VOICE){
  await tap('next');R.tap=[at(),mv()];await key('ArrowRight');R.key1=[at(),mv()];await key('ArrowLeft');R.key2=[at(),mv()];await key('r');R.key3=[at(),mv()];
  await tap('prev');R.first=[at(),mv(),$('#hmd-prev').disabled,$('#hmd-again').disabled];
 }
-// 大きさと置き場（手順 2 で測る: 字が長い手順）
+// 大きさと置き場（字が一番長い手順で測る。組が替わると手順の字も替わるので、段の字 F[i].t から選ぶ）
 for(let i=0;i<80&&mv()>0;i++)await tap('prev');
-await tap('next');await tap('next');
+const FF=window.kumitateParts.F,PL=(b.dataset.plan||'').split(',').map(Number);let LG=0;for(let i=0;i<FF.length-1;i++)if((FF[i].t||'').length>(FF[LG].t||'').length)LG=i;
+R.longest=LG;for(let i=0,n=PL.indexOf(LG)+1;i<n;i++)await tap('next');
+// 手順の字の行の数が替わると、頁は次の描画（requestAnimationFrame）で 3D の大きさを測り直す（fit）。時間を進める形の headless の Chrome では
+// 次の描画の合図が来ない事があるので、測り直しを聞いている resize を送ってから測る（本物のブラウザでは描画の合図で走る。11-07 に手で確かめた）
+dispatchEvent(new Event('resize'));await wait(200);
 const tx=$('#rt-text'),r=tx.getBoundingClientRect(),fam=getComputedStyle(b).fontFamily;
 R.size={vw:innerWidth,vh:innerHeight,sx:document.documentElement.scrollWidth,sy:document.documentElement.scrollHeight,text:parseFloat(getComputedStyle(tx).fontSize),textBottom:Math.round(r.bottom),textRight:Math.round(r.right),actsLeft:box('.hmd-acts')[0],
  textLen:tx.textContent.length,at:at(),stage:box('#rt-stage'),chips:['prev','again','next'].map(o=>box('#hmd-'+o)[3]),actsTop:box('.hmd-acts')[1],
@@ -208,6 +212,8 @@ const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.s
 
 # 中を見る: 分解した形の見本（今の手の終わりの形と同じ形を返す）を、組み立ての節の口と同じ名で置く。kumitateParts が出来た後に読まれる
 SPLITSTUB = "<script>window.kumitateSplit={get X(){const P=window.kumitateParts;return P&&P.F.at(-1).q.at(-1)}};</script>"
+# 分解した形の無い組の見本: 組み立ての節が分解した形を置いても入らない口を先に作る（御来迎 v14・虎 v6 のように、どちらの組にも分解した形が在るため）
+NOSPLITSTUB = "<script>Object.defineProperty(window,'kumitateSplit',{get:()=>undefined,set:()=>{},configurable:true});</script>"
 SPLITWALK = r"""<script>(async()=>{
 const wait=(ms=300)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body,s=$('#hmd-split');
 try{R.shown=[!s.hidden,s.textContent,s.getAttribute('aria-pressed')];
@@ -229,7 +235,7 @@ def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
         voice = "true" if kind == "voice" else "false"
         walk_js = (SPLITWALK if kind in ("split", "nosplit") else QUADWALK if kind == "quad" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
                    else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice))
-        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "quad" else "") + (SPLITSTUB if kind == "split" else "")
+        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "quad" else "") + (SPLITSTUB if kind == "split" else "") + (NOSPLITSTUB if kind == "nosplit" else "")
         body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
     return send(self, code, body, ctype, headers)
 
@@ -362,18 +368,26 @@ for name, got in runs.items():
         assert got["off"] == [False, False], (name, "止めると映像を外す", got)
         continue
     voice = "声あり" in name
-    assert 25 <= got["total"] <= 40, (name, "手順 12 を、手（切る・折り目 1 本・通す・置く）に分けている", got)
+    # 期待は頁の手の並び（data-plan: 手ごとの手順の番号）から出す。組が替わると手順と手の数が変わるため（前は組 v10 の手順 12 で決め打ちしていた）
+    plan = got["plan"]
+    at_after = lambda n: plan[n - 1] if n else 0
+    def dots_at(n):
+        i = at_after(n)
+        c = plan.count(i)
+        return [c, plan[:n].count(i)] if c > 1 else [0, 0]
+    assert len(plan) == got["total"] and got["total"] > len(set(plan)) >= 2, (name, "手順を、手（切る・折り目 1 本・通す・置く）に分けている", got)
+    assert plan == sorted(plan), (name, "手は手順の順に並ぶ", got)
     # 開いた時: 刷った紙のまま手順 1 で止まり、何も動かしていない
     assert got["init"] == [0, 0, True, "off" if voice else "none"], (name, got)
     if voice:
         assert got["before"] == ["undefined", 0], (name, "聞くのは「はじめる」の後だけ。押す前は、聞く物を作ってもいない", got)
         assert got["began"] == ["on", "start", "true"], (name, got)
-        assert (got["next0"], got["next1"], got["next2"]) == ([0, 1], [1, 2], [2, 3]), (name, "「つぎ」と「次。」で 1 手ずつ進む", got)
-        assert got["chatter"] == [2, 3], (name, "話し声の見本では動かない", got)
-        # 手順 3（外筒を角筒にする）は折り目 4 本。「つぎ」1 回で 1 本だけ折れて止まり、手順は替わらない。点は 4 つで、済んだ数だけ塗る
-        assert got["alt"] == [2, 4] and got["dots"] == [4, 2], (name, "1 つ目の読みが外れても、別の読みが操作の言葉なら動く。同じ手順の中で 1 手進む", got)
-        assert (got["back"], got["again"]) == ([2, 3], [2, 3]), (name, "「もどる」は 1 手もどり、「もう一回」は同じ手のまま", got)
-        assert got["fold"][0] >= 2000 and got["fold"][1:] == [2, 4], (name, "折り目 1 本の動きは 2 秒以上かけ、動き終わったら止まって待つ", got)
+        assert (got["next0"], got["next1"], got["next2"]) == ([at_after(1), 1], [at_after(2), 2], [at_after(3), 3]), (name, "「つぎ」と「次。」で 1 手ずつ進む", got)
+        assert got["chatter"] == [at_after(3), 3], (name, "話し声の見本では動かない", got)
+        # 「つぎ」1 回で 1 手だけ動いて止まる。点は今の手順の手の数で、済んだ数だけ塗る（手が 1 つの手順は点を出さない）
+        assert got["alt"] == [at_after(4), 4] and got["dots"] == dots_at(4), (name, "1 つ目の読みが外れても、別の読みが操作の言葉なら動く。1 手進む", got)
+        assert (got["back"], got["again"]) == ([at_after(3), 3], [at_after(3), 3]), (name, "「もどる」は 1 手もどり、「もう一回」は同じ手のまま", got)
+        assert got["fold"][0] >= 2000 and got["fold"][1:] == [at_after(4), 4], (name, "1 手の動きは 2 秒以上かけ、動き終わったら止まって待つ", got)
         assert (got["hid"], got["shown"]) == (False, True), (name, "隠れたら止め、見えたら戻す", got)
         assert got["end"] == [True, kumitate.DONE, True, kumitate.DONE, True], (name, "最後は、できあがり。「つぎ」は押せない", got)
         assert got["afterEnd"] and got["againEnd"], (name, "最後の「つぎ」で、はじめに戻さない", got)
@@ -382,10 +396,10 @@ for name, got in runs.items():
         assert got["left"] is False, (name, "頁を離れたら止める", got)
     else:
         # 声が使えない画面: 釦とキーボードで通れる
-        assert (got["tap"], got["key1"], got["key2"], got["key3"]) == ([0, 1], [1, 2], [0, 1], [0, 1]), (name, got)
+        assert (got["tap"], got["key1"], got["key2"], got["key3"]) == ([at_after(1), 1], [at_after(2), 2], [at_after(1), 1], [at_after(1), 1]), (name, got)
         assert got["first"] == [0, 0, True, True], (name, "はじめに戻ると、もどると、もう一回は押せない", got)
     size = got["size"]
-    assert size["at"] == 1 and size["textLen"] >= 30, (name, "手順 2 で測る", size)
+    assert size["at"] == got["longest"] and size["textLen"] >= 30, (name, "字が一番長い手順で測る", size)
     assert size["sx"] <= size["vw"], (name, "横にはみ出さない", size)
     assert size["text"] >= (28 if size["vw"] >= 1000 else 20), (name, "手順の字が大きい", size)
     # 横の画面は押す所の列が字の横に、縦の画面は字の下に来る。どちらでも重ならない
