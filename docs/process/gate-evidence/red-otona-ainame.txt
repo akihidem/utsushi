@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ai_name.py
+# commit: fa390113（回した時の HEAD。src/web/otona.py の 47 行の「出します」を「だします」に替えた木。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_ai_name.py", line 78, in <module>
+    assert not NAMELESS_JA.findall(text), (path, NAMELESS_JA.findall(text))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/otona', ['AI が読'])
+rc=1

@@ -1,0 +1,10 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_ux_stage0.py
+# commit: abebba5c の上の作業の木（段 0 の commit の中身。原画の写しを out/ に置いた木）
+/tmp/tmpc0oym_8s/play/NDL-1187053-R0000005-L/.tmp-vgvzpdnu/H-A_v1.pdf
+/tmp/tmpc0oym_8s/play/NDL-1187053-R0000005-L/.tmp-vgvzpdnu/H-A_v1_tejun.pdf
+/tmp/tmpc0oym_8s/play/NDL-1187053-R0000005-L/.tmp-vgvzpdnu/H-A_v1_after.pdf
+/tmp/tmpc0oym_8s/play/NDL-1187053-R0000014-R/.tmp-ib2wa228/H-A_v1.pdf
+/tmp/tmpc0oym_8s/play/NDL-1187053-R0000014-R/.tmp-ib2wa228/H-A_v1_tejun.pdf
+/tmp/tmpc0oym_8s/play/NDL-1187053-R0000014-R/.tmp-ib2wa228/H-A_v1_after.pdf
+ok 段 0 の道しるべ: 入口の「えらぶ」と玩具の頁の「つくる」が狭い幅（500×701）の最初の画面に入り、紙の後は 印刷 → つくる、残した後は もちよる。6 画面を測った
+rc=0

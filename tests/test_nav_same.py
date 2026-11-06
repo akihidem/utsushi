@@ -19,9 +19,11 @@ G = "NDL-1187053-R0000005-L"
 # 予想の段は #266 で外したので、予想を置かずに全部の頁が開く
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # 頁と、帯で印の付く項目（None は印なし。順路の外の頁）。kazasu と tsukuru は別の枝（#242）で形が変わるので入れない
-PAGES = {"/": "うつし", "/about": "序", "/toys": "おもちゃ", f"/toy/{G}": "おもちゃ", f"/toy/{G}/techo": "おもちゃ", "/gallery": "作った物と職人の言葉",
-         "/zukan": "図鑑", f"/zukan/{G}": "図鑑", f"/zukan/{G}/yomi": "図鑑", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "序", "おもちゃ", "作った物と職人の言葉", "図鑑", "English"]
+# 手帖の作る頁（/techo）は帯を置かない（本人の決定 11-05「文字情報がおおい」、#87。tests/test_techo_step.py が見る）。記録の頁は帯を持つ
+# 帯は道しるべ（UX の見直しの段 1、本人の決定 11-06）。印は今いる駅。序・図鑑は道の外の読み物で「よむ」に印
+PAGES = {"/": "うつし", "/about": "よむ", "/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる",
+         "/zukan": "よむ", f"/zukan/{G}": "よむ", f"/zukan/{G}/yomi": "よむ", "/loop": None, f"/loop/{G}": None}
+ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "English"]  # English は右の端の言語の切り替え（窓口の決定 11-06）
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)
@@ -38,7 +40,8 @@ for look in ("tenji", "zine"):
         navs = re.findall(r'<nav class="nav">(.*?)</nav>', page, re.S)
         assert len(navs) == 1, ("帯は 1 つ", where, len(navs))
         # 項目と順が全部の頁で同じ。「うつし」は 1 つ
-        names = re.findall(r"<a [^>]*>([^<]+)</a>", navs[0])
+        # 押せない段の印（玩具を選ぶ前の つくる・のこす）も帯の項目に数える
+        names = [a or b for a, b in re.findall(r'<a [^>]*>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', navs[0])]
         assert names == ITEMS, ("帯の項目と順", where, names)
         # 今いる所は色以外でも分かる（aria-current と、下の罫）
         current = re.findall(r'<a [^>]*aria-current="page"[^>]*>([^<]+)</a>', navs[0])

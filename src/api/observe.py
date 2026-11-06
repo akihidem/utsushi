@@ -60,7 +60,7 @@ def observation(rid):
 
 def observe(rid, video_path, client):
     """Returns (結果 or None, 断った理由)。結果は記録の横に置き、人が読む（観察の補助で、採点に使わない）。"""
-    if loop.explanation(rid) is None:
+    if not loop.explained(rid):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
         return None, "人の説明が先"
     imgs = frames(video_path)
     if not imgs:
@@ -83,5 +83,5 @@ def observe(rid, video_path, client):
     # 前提の文の否定の形（正解ではなく）を返事が引いても、成績の語とは数えない（marks.without_premise）。
     if any(w in without_premise(flat) for w in BANNED):
         return None, "成否や点の言葉が入っていたので出さない"
-    loop._write(path(rid), {"record_id": rid, "observed": result["observed"], "unclear": result["unclear"], "by": "claude", "label": "観察（Claude の補助）", "at": loop._now()})
+    loop._write(path(rid), {"record_id": rid, "observed": result["observed"], "unclear": result["unclear"], "video": pathlib.Path(video_path).name, "by": "claude", "label": "観察（Claude の補助）", "at": loop._now()})
     return result, ""

@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_ux_keep_gallery.py
+# commit: c517fb96（段 1 の枝の頭）の木に、この試験だけを置いた形
+Traceback (most recent call last):
+  File "tests/test_ux_keep_gallery.py", line 28, in <module>
+    assert moves and all(m == "/gallery?msg=${encodeURIComponent(done)}#ageta" for m in moves), ("のこした後はギャラリーへ", moves)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('のこした後はギャラリーへ', ['/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine', '/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine'])
+rc=1

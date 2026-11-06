@@ -3,7 +3,7 @@
 who は sessionStorage にあって、絵と動画の GET に載らない。なので上げた時に画面へ鍵を渡し、写真ごとに控える（話した考えの紙の鍵と同じ作り）。
 見る事:
 1. 上げた本人の手帖に出て、絵が開く。別の人の手帖には出ず、絵の道も 404。別の人の札の字はそのまま
-2. 別の人が同じ記録へ上げても、前の人の写真は見えない（鍵は写真ごと）
+2. 別の人は、番号を知っていても同じ記録へ上げられない（記録の鍵）。写真の鍵が違う画面には、同じ記録の写真でも見えない（鍵は写真ごと）
 3. 人の確認で「物だけ」になれば誰にでも出る。「人や声」は本人にも出ない
 4. 次の記録を残すと区切りになる（同じ機械の次の人に、前の人の写真を出さない）。期限を過ぎても閉じる
 5. 取り下げで鍵の控えも消える
@@ -61,10 +61,11 @@ class Screen:
         r = c.getresponse()
         data = r.read()
         c.close()
-        self.last = r.getheader("Set-Cookie", "")
-        if self.last:
-            name, _, value = self.last.split(";", 1)[0].partition("=")
-            if value and "Max-Age=0" not in self.last:
+        lines = r.headers.get_all("Set-Cookie") or []  # 記録の後は記録の鍵と写真の鍵の 2 行が来る。ブラウザと同じに全部読む
+        self.last = "\n".join(lines)
+        for line in lines:
+            name, _, value = line.split(";", 1)[0].partition("=")
+            if value and "Max-Age=0" not in line:
                 self.cookie[name] = value
             else:
                 self.cookie.pop(name, None)
@@ -87,7 +88,7 @@ class Screen:
         return data.decode()
 
     def techo(self):
-        st, data = self.call("GET", f"/toy/{G}/techo")
+        st, data = self.call("GET", f"/toy/{G}/techo/kiroku")
         assert st == 200, st
         return data.decode()
 
@@ -111,7 +112,10 @@ assert not b.cookie, "見ただけの人に鍵を渡さない"
 assert b.call("GET", f"/toy/{G}")[1].decode().count(src) == 0 and a.call("GET", f"/toy/{G}")[1].decode().count(src) == 0, "玩具の頁は確認の後だけ（今のまま）"
 assert src not in a.call("GET", "/gallery")[1].decode(), "ギャラリーも確認の後だけ（今のまま）"
 
-# 2. 別の人が同じ記録へ上げても、前の人の写真は見えない
+# 2. 別の人は、番号を知っていても同じ記録へ上げられない（記録を残した画面の鍵で照らす。tests/test_photo_attach.py）。
+# 写真の鍵は写真ごと: 記録の鍵が同じで写真の鍵が違う画面（同じ機械で写真の鍵だけ変わった形）には、前の写真は見えない
+assert b.call("POST", f"/record/{rid}/media", JPEG, "image/jpeg")[0] == 403 and not b.cookie, "受けず、鍵も渡さない"
+b.cookie = {"utsushi_rec": a.cookie["utsushi_rec"]}
 other = b.photo(rid)
 assert b.image(rid, other) == 200 and b.image(rid, name) == 404, "鍵は写真ごと"
 assert a.image(rid, name) == 200 and a.image(rid, other) == 404, "前の人にも後の人の写真は見えない"
@@ -149,12 +153,12 @@ assert e.image(late, n) == 404 and f"/record/{late}/media/{n}" not in e.techo(),
 key = kept[n]["key"]
 for bad in ("{壊れた", json.dumps({n: {"key": key}}), json.dumps({n: {"key": key, "at": "壊れた時刻"}}), json.dumps({n: {"key": 3, "at": old}}), json.dumps({n: "字"})):
     owners.write_text(bad, encoding="utf-8")
-    assert e.image(late, n) == 404 and e.call("GET", f"/toy/{G}/techo")[0] == 200, ("読めない控えは出さない方へ倒す", bad)
+    assert e.image(late, n) == 404 and e.call("GET", f"/toy/{G}/techo/kiroku")[0] == 200, ("読めない控えは出さない方へ倒す", bad)
 assert media_review.shown_to(late, [n]) == [] and media_review.shown_to(late, [n], "") == [], "鍵なしは確認の後の物だけ"
 
 g = Screen()
 g.cookie = {"utsushi_up": "é"}
-assert g.image(rid, other) == 404 and g.call("GET", f"/toy/{G}/techo")[0] == 200, "形の外の鍵でも落ちない"
+assert g.image(rid, other) == 404 and g.call("GET", f"/toy/{G}/techo/kiroku")[0] == 200, "形の外の鍵でも落ちない"
 
 # 5. 取り下げで鍵の控えも消える
 f = Screen()

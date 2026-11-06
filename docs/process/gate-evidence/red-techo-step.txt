@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_techo_step.py
+# commit: 2e711d5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_techo_step.py", line 20, in <module>
+    from web import hanasu, techo_step  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'techo_step' from 'web' (src/web/__init__.py)
+rc=1

@@ -30,6 +30,17 @@ TITLE = "型紙の版の歩み"
 LOOPS = (("1", "考えを話す → 紙が生まれる"), ("2", "作りながらの工夫 → 型紙が直る"), ("3", "エンジンごと直す → 同じ型の紙が全部直る"), ("4", "上げて残す → ギャラリーと次の版の材料"))
 SET_NAME = re.compile(r"[a-z_-]+-v\d+")
 WORK_NOTE = re.compile(r"（[^（）]*(?:カード|hack-|sub-|lane/)[^（）]*）")  # 作業の番号と線の名は頁に出さない
+# 本人が決めた字（11-06、読めない字の一覧の作る側の頁の分）。版の表の文書は作業の記録なので書き換えず、頁に出す時だけ替える。一字も変えない。
+SHOWN = (("本人の決定（11-05、#163）: 床 F5.fan_height を直したので、H-E を 14 折り・高さ 36mm にした。", "本人の決定（11-05）: 扇の高さの決まりを直したので、仮説 E を 14 折り・高さ 36mm にしました。"),
+         ("床の直し（#163）から。試行からではない", "決まりの直しから。試行からではありません"),
+         ("学習プリントの線の U-25 の案 1〜4 と research/22 の候補 1・4", "学習プリントの案と、調べた候補から"),
+         ("拡大した図の粗さと裏写り（v4 から v5、J-007）", "拡大した図の粗さと裏写り（v4 から v5）"),
+         ("組み立ての確かめと 11-04 の写真（J-033）。", "組み立ての確かめと 11-04 の写真。"),
+         ("型紙エンジンに入った（paper-to-toy #91・739167b）", "型紙エンジンに入りました"),
+         ("型紙エンジンの御来迎と虎に入った（paper-to-toy f6a40ed、main は #96 の e189dc6）", "型紙エンジンの御来迎と虎に入りました"))
+# 仮説の番号は「仮説 A」と出す。日本語の字の後の空白は詰める（「の H-E」→「の仮説 E」、「型紙が H-C」→「型紙が仮説 C」）
+HYPOTHESIS_NO = re.compile(r"(?:(?<=[^\x00-\x7f]) )?(?<![A-Za-z0-9])H-([A-Z])(?![A-Za-z0-9])")
+ENGINE_ONLY = "型紙エンジンには入りました。刷った紙にはまだ入っていません"  # 型紙エンジンに入って、サイトの紙にはまだの知見
 KINDS = {"slider_fan": "御来迎の型", "pivot_counterweight": "虎の型", "stand_figure": "立てる型", "stick_prop": "棒に付ける型", "string_pull": "糸や棒で動かす型",
          "spin_toy": "回す型", "den_den": "鳴らす型", "balance_toy": "つり合いの型", "wheel_cart": "車の型"}
 STYLE = TABLE_STYLE + """
@@ -46,7 +57,10 @@ STYLE = TABLE_STYLE + """
 def _plain(cell):
     """表の字を画面の字にする。リンクは字だけ、飾りの記号は外す。"""
     text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", cell)
-    return WORK_NOTE.sub("", text).replace("**", "").replace("`", "").strip()
+    text = WORK_NOTE.sub("", text).replace("**", "").replace("`", "").strip()
+    for before, after in SHOWN:
+        text = text.replace(before, after)
+    return HYPOTHESIS_NO.sub(r"仮説 \1", text)
 
 
 def _table(head):
@@ -115,7 +129,7 @@ def _set_item(row, prefix=""):
     changes = [t for t in kv.template_changes() if t.get("sheet_set") in names]
     know = esc(row["知見"]) + _lines(kv.change_words(changes))
     return _item(row["版"], kv.change_verdict(changes), (("どこを良くしたか", esc(row["前の版から変えた事と理由"])), ("どの知見から", know),
-                                                       ("その後に分かった事", esc(row["分かった問題、捨てた理由"])), ("記録", esc(row["記録"]))), next((n for n in names if SET_NAME.fullmatch(n) and n.startswith(prefix)), ""))
+                                                       ("その後に分かった事", esc(row["分かった問題、捨てた理由"]))), next((n for n in names if SET_NAME.fullmatch(n) and n.startswith(prefix)), ""))
 
 
 def _version_item(sid, hid, letter, v):
@@ -135,7 +149,7 @@ def _loose_changes():
 def _change_item(t):
     """表に行の無い雛形の直しの札。"""
     return _item(str(t.get("sheet_set", "")), kv.change_verdict([t]), (("どこを良くしたか", esc("、".join(str(c) for c in t.get("changes", [])))), ("どの知見から", _lines(kv.change_words([t])).removeprefix("<br>")),
-                                                                     ("記録", esc("・".join(str(r) for r in t.get("record_ids", []))))))
+                                                                     ("記録", "" if t.get("in_repo") else esc("・".join(str(r) for r in t.get("record_ids", []))))))
 
 
 def toy_block(sid, data):
@@ -181,7 +195,7 @@ def loop_summary(sids):
     data = kv.engine_ledger()
     released = "読めません" if data is None else f"{sum(3 in kv.engine_verdict(v)['loops'] for v in data.get('versions', []))} 版"
     return {"1": f"話した考えから生まれたその人の紙 {_spoken_count(sids)} 枚（たたき台は変えません）", "2": f"直した版: 寸法の版 {sum(2 in x['loops'] for x in verdicts)}",
-            "3": f"雛形の直し {len(kv.template_changes())}、案から刻んだエンジンの版: {released}", "4": f"上げた後の字も材料にした版 {sum(4 in x['loops'] for x in verdicts)}"}
+            "3": f"雛形の直し {len(kv.template_changes())}、案から刻んだエンジンの版: {released}", "4": f"上げた物も材料にした版 {sum(4 in x['loops'] for x in verdicts)}"}
 
 
 def _kinds():
@@ -217,7 +231,7 @@ def shared_block():
     for r in shared_rows():
         mark = r["見分け方"]
         if mark == "これから":
-            inside, outside = "まだ紙に入っていません", ""
+            inside, outside = (ENGINE_ONLY if "型紙エンジン" in r["どこから"] else "まだ紙に入っていません"), ""
         else:
             yes = [k for k in order if _has(mark, k)]
             no = [k for k in order if k not in yes]

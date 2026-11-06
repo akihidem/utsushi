@@ -15,7 +15,7 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import skin  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -23,9 +23,9 @@ MIN_FONT = 12
 G = "NDL-1187053-R0000005-L"
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
-PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
+PAGES = ["/", "/about", "/otona", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
 # BASE が全幅にする組。床の inline-flex が掛かると、名前の横に細く並ぶ（#290）。これだけを block に戻す
-WIDE = {"input[type=text]", "textarea", "select"}
+WIDE = {"input[type=text]", "input[type=number]", "textarea", "select"}
 # 札と隠した入力は今の形のまま。ここに無い形が label に入ったら、どちらかを決める
 KEEP = {"input[type=radio]", "input[type=checkbox]", "input[type=file]", "input[type=range]", "input[type=hidden]"}
 
@@ -89,8 +89,7 @@ for look in ("tenji", "zine"):
         urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120)
         # 説明まで残した記録に「次の版」の欄が出る（畳んであっても頁には入っている）
         rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-        told = urllib.parse.urlencode({"text": "途中で止まった", "next_idea": "軸を長くする", "by": "試験"}).encode()
-        urllib.request.urlopen(urllib.request.Request(f"{base}/record/{rid}/explain", data=told, headers={"Origin": base}), timeout=60)
+        assert loop.save_explanation(rid, "試験", "途中で止まった", "軸を長くする") == []
         printed = True
     for path in PAGES:
         page = urllib.request.urlopen(f"{base}{path}", timeout=60).read().decode()

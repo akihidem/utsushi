@@ -67,10 +67,18 @@ def own_hypotheses(source_id):
 
 
 def save_own(source_id, name, how, evidence, params=None):
-    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。"""
+    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。
+    文は紙に刷られ、図鑑にも出るので、記録と同じ床（長さと連絡先の形）を当てる。作る側の命令と話した字から作る道の両方がここを通る（J-028、#336）。"""
+    from .contrib import check_pii, too_long
+
     failures = [Failure("F9.own", field, f"{label}が空") for field, label, value in (("name", "仮説の名前", name), ("how", "動かし方", how), ("evidence", "図のどこを見たか", evidence)) if not value or not value.strip()]
     if params is not None and not isinstance(params, dict):
         failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
+    fields = (("name", name), ("how", how), ("evidence", evidence))
+    long = too_long(fields)
+    if long:
+        return None, failures + [Failure("F9.own", where, message) for where, message in long]
+    failures += [Failure("F10.pii", where, f.message) for where, text in fields for f in check_pii({"body": text or ""})]
     if failures:
         return None, failures
     folder = _pred_dir()
@@ -504,7 +512,7 @@ def main(argv=None):
         if args.cmd == "print-teacher":
             return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
-            return print_own(args.source, args.id, args.out or f"out/templates/{args.id}_v1")
+            return print_own(args.source, args.id, args.out or f"out/templates/{args.source}_{args.id}_v1")
         if args.cmd == "own":
             rec, failures = save_own(args.source, args.name, args.how, args.evidence, json.loads(args.params) if args.params else None)
             if not failures:
@@ -518,7 +526,8 @@ def main(argv=None):
             # 作り手が版を直す時は records summary と loop で見る。
             print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
-        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
+        # 既定の名前に玩具を入れる。御来迎と虎はどちらも H-A なので、入れないと後から刷った紙が前の紙を黙って消す。
+        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.source}_{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)
         return 4
