@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: 3dba91f2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 32, in <module>
+    from web import hmd, kumitate, play_server  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'hmd' from 'web' (src/web/__init__.py)
+rc=1

@@ -303,11 +303,10 @@ NEXT_REASONS = {
     "F5.figure_height": "この値だと、像が扇より高くなります。",
     "F5.base_size": "この値だと、扇の台が内筒に入りません。",
     "F5.stroke": "この値だと、押し上げる動きが筒の中に収まりません。",
+    "F5.fan_leg": "この値だと、扇の足が短くて台に貼れません。",
+    "F5.figure_base": "この値だと、像の足が台より広くて貼れません。",
+    "F5.hole": "この値だと、穴が紙の外に出ます。",
 }
-# 文面を本人に確認してもらっている床（#164）。確認が済むまで検査の文を画面に出さず、下の「近い値を試す」の 1 行だけにする。文は確認の後に上の表へ足す。
-NEXT_REASONS_WAITING = {"F5.fan_leg", "F5.figure_base", "F5.hole"}
-
-
 def next_reasons(failures, sid, hid, param, to=None):
     """「次の版を作る」が通らなかった時に出す文。理由のあとに、今の値と次の一手を 1 行足す。"""
     template = hypotheses.load(sid).get("template", "slider_fan")
@@ -324,9 +323,6 @@ def next_reasons(failures, sid, hid, param, to=None):
                 on_paper = True
                 continue
             text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
-        elif f.floor in NEXT_REASONS_WAITING:
-            on_paper = True
-            continue
         elif f.floor.startswith("F5."):
             # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
             text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
@@ -367,6 +363,7 @@ def next_form(r, back=""):
     # 解釈はすぐ上の説明とほぼ同じ問いなので、説明を初めから入れておく（#129）。そのまま採っても、書き直してもよい。
     told = (loop.explanation(r["id"]) or {}).get("text", "")
     hidden = f'<input type="hidden" name="back" value="{esc(back)}">' if back else ""
+    # 誰が採ったかの欄は、採る人が自分で打つ（#138）。説明の値で埋めると、別の人が作った時に記録が事実と違う。入れておくと、次に開いた別の人に前の人の値が見える。
     # 整数だけの寸法を選んだ時は step=1 にして、ブラウザの標準の吹き出しで断る（新しい字を足さない）。欄は 1 つで寸法は選ぶ物なので、JS で切り替える。JS が無ければ小数も通り、next_reasons が断る。
     # min と max は付けない: 幅の外は今ある字で断る。書いた値を欄に戻した時は value が step の起点になるので、起点が 0 に戻るように外す（値は残る）。
     whole = whole_params(template)
@@ -376,7 +373,7 @@ def next_form(r, back=""):
             f'<label>何が起きたと読むか（解釈）<textarea name="interpretation" required>{esc(told)}</textarea></label>'
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
             '<label>新しい値<input type="number" step="any" name="to" inputmode="decimal" required></label>'
-            '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
+            '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" autocomplete="off" required></label>'
             f'<button data-busy>次の版の紙を作る</button></form>{step}</details>')
 
 
@@ -442,9 +439,9 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
             tail = ((f'<div class="step">{said}</div>' if said else "") +
                     f'<div class="step">{ai_block(r, up_key)}</div>' + (f'<div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>' if nxt else ""))
         else:
-            # 人の説明が先。Claude の釦はこの後の段で出す。
+            # 人の説明が先。Claude の釦はこの後の段で出す。autocomplete: 同じ機器で、前の人の値を候補に出さない（#138）。
             tail = "" if not records.mine(r["id"], rec_key) else refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by"></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
+                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" autocomplete="off"></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
         here = note if at == r["id"] else ""
         # 感想（本人の方針 11-05「感想と動きの報告」）。動きの欄の次に、作った人の言葉として出す。
         feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""

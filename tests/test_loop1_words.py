@@ -129,7 +129,8 @@ assert words.adopt_words(w["id"], "本人")[1], "同じ案を 2 度は採らな�
 pdf = flat_pdf(printed(G, own["id"]))
 assert "".join(OWN_HYPOTHESIS.split()) in pdf, "紙に「自分で立てた」の印"
 assert "AIが考えた" not in pdf
-assert "".join(SAID.split()) in flat_pdf(OUT / f"{own['id']}_v1_tejun.pdf"), "話した字がそのまま手順の紙に"
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。話した字は手順の紙にだけ刷っていたので、紙には刷らない（型紙にも出ない）
+assert not (OUT / f"{own['id']}_v1_tejun.pdf").exists() and "".join(SAID.split()) not in pdf, "自分の紙は型紙だけで、話した字は刷らない"
 
 # 作る側が雛形に乗らないと書いた時は、型紙なしの紙
 w2, _ = ask(G, "水を入れた重さで開くのかも")

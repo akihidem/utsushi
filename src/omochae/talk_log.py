@@ -19,11 +19,11 @@
   字を記録のファイルに写さないのは、記録は 1 回書いたら書き換えない作り（説明・解釈・観察も、記録の番号で結ぶ別のファイル）に合わせるため。
   ただし取り下げ（records.withdraw の --talk-only）の時だけは、記録と説明に書いた字を空にする（番号・結果・寸法は残す）。
   今ある「直した点」（records の fixes。部品・変えた事・結果の 3 欄）は、そのまま別に残る: 話した字は 3 欄に分けられないので、混ぜない。
-- 見せる範囲（本人の決定 11-05）: 記録に結んだ字は、記録の感想などと同じに、ほかの人の頁に文で出す（talks と kufu の shared_only が、
-  学ぶ人の頁とギャラリーのための読み方）。名前は機械で落とせないので、入れないお願いの文で頼む（画面の断り。web/hanasu.py）。
-  記録に結ぶ前の字（考えと工夫）は、学ぶ人の頁に出さない（出す札が無い。作る側の頁だけ）。
-  出す時に、入口の床をもう一度当てる（床を広げる前に残した字や、手で置いた字のため）。
-  作る側が読んで名前などに気づいた時は、その記録の字を、消さずに隠せる（set_share。記録ごと消すのは records.withdraw）。
+- 見せる範囲（本人の決定 11-06、J-034。11-05 の「ほかの人の頁に文で出す」を変えた）: 話した字は、学ぶ人の頁に出さない。頁に出す字は
+  AI が整理した字だけで、話した字そのものは作る側だけが読む（作る側の頁と、輪と束の材料）。名前は機械で落とせないので、入れないお願いの文も
+  そのまま頼む（画面の断り。web/hanasu.py）。talks と kufu の shared_only は、輪と束と作る側の版の歩みが読む時の読み方: 記録に結ばれ、
+  作る側が隠していず、入口の床に当たらない物だけ。読む時に、入口の床をもう一度当てる（床を広げる前に残した字や、手で置いた字のため）。
+  作る側が読んで名前などに気づいた時は、その記録の字を、消さずに輪と束から外せる（set_share。記録ごと消すのは records.withdraw）。
 - 読む口は 3 つ: texts（輪と束が読む。渡してよい物だけを、印を外した欄で返す）・kufu（記録の札が読む。その記録に結んだ字）・
   talks（作る側の頁と集計が読む。出来事そのまま）。
 - 記録を取り下げたら、結んだ字も消す（drop_for_record。records.withdraw が呼ぶ）。
@@ -89,8 +89,8 @@ def _record_of(source_id, record_id):
 
 def add(source_id, scene, text, hypothesis_id=None, sheet_version=None, step=None, record_id=None, via="text", who=""):
     """話した事 1 件を残す。Returns (書いたファイルの path か None, Failure の一覧)。
-    見せる印（share）は、ここでは受けない: 記録に結んだ字は、ほかの人の頁に出す決まり（本人の決定 11-05）。上げた後に残す字（keep）は、
-    初めから記録に結ぶので、初めから出す。考えと工夫は、記録に結んだ時に出す（bind）。
+    印（share）は、ここでは受けない: 記録に結んだ字は、輪と束の材料に入る決まり（学ぶ人の頁には出さない。本人の決定 11-06、J-034）。
+    上げた後に残す字（keep）は、初めから記録に結ぶので、初めから印が付く。考えと工夫は、記録に結んだ時に付く（bind）。
 
     3（keep）は試した記録に結ぶ: 仮説と版は記録の値を使う（画面の値を信じない）。2（craft）は刷った紙の仮説が要る。1（think）は仮説を選ばなくてよい。
     床に落ちた文は残さず、落とした事だけを書く（path は None、Failure は F10.pii）。
@@ -133,7 +133,7 @@ def _all(source_id=None):
 
 def talks(source_id=None, scene=None, record_id=None, shared_only=False):
     """残した話（分の順）。床で落とした物は入れない。取り下げた記録に結んだ物は drop_for_record が消しているので、ここでは見ない。
-    shared_only は学ぶ人の頁とギャラリーのための読み方: 記録に結ばれ、作る側が隠していず、入口の床に当たらない物だけ。"""
+    shared_only は輪と束と作る側の版の歩みのための読み方（学ぶ人の頁には出さない。J-034）: 記録に結ばれ、作る側が隠していず、入口の床に当たらない物だけ。"""
     return [t for t in _all(source_id) if not t.get("dropped") and (scene is None or t.get("scene") == scene)
             and (record_id is None or t.get("record_id") == record_id)
             and (not shared_only or (t.get("record_id") and t.get("share") is True and not blocked(t.get("text", ""))))]
@@ -179,7 +179,7 @@ def bind(source_id, hypothesis_id, sheet_version, who, record_id):
     印が無い時（JS の無い画面）は結ばない: 印なしで結ぶと、ほかの人が話した事まで、この記録に入るため。
     話した考えから作った案（OWN-n）の紙の記録には、同じ印で元のたたき台に付いた字も結ぶ（どの版でも）。考えと、紙を採る前の工夫は、たたき台を見て話した物でたたき台に付いたままなので（ループ1、#335）。
     画面は記録を残すと印を作り直す（skin.WHO_SCRIPT）。限り: 記録を残さずに席を替わった時と、記録の後に前の人が続けて話した字は、同じタブの中では見分けられない。
-    結んだ字には、見せる印を付ける（記録に結んだ字は、記録の感想などと同じに、ほかの人の頁に出す。本人の決定 11-05）。
+    結んだ字には、輪と束に渡す印を付ける（作る側が外す時は set_share。学ぶ人の頁には出さない。本人の決定 11-06、J-034）。
     書けなくても例外は外へ出さない（記録を残す口を、話した字の都合で止めない）。"""
     who = making_log.clean_who(who)
     d = making_log.folder()
@@ -201,7 +201,7 @@ def bind(source_id, hypothesis_id, sheet_version, who, record_id):
 
 def kufu(source_id, record_id, shared_only=False):
     """その記録に結んだ字。仮説を見て話した考え、作りながら話した工夫（手順の番号の順。番号なしは後）、上げた後に残した物、の順。
-    Returns [{"when": "idea"・"making"・"made" のどれか, "step", "text", "share"}…]。shared_only は学ぶ人の頁とギャラリーのための読み方
+    Returns [{"when": "idea"・"making"・"made" のどれか, "step", "text", "share"}…]。shared_only は輪と束と作る側の版の歩みのための読み方
     （作る側が隠していず、入口の床に当たらない物だけ）。"""
     mine = talks(source_id, record_id=record_id, shared_only=shared_only)
     craft = sorted((t for t in mine if t["scene"] == "craft"), key=lambda t: (t.get("step") is None, t.get("step") or 0))
@@ -210,8 +210,8 @@ def kufu(source_id, record_id, shared_only=False):
 
 
 def set_share(source_id, record_id, on):
-    """作る側の道具: その記録に結んだ字を、ほかの人の頁から隠す（on=False）・戻す（on=True）。Returns (変えた数, Failure の一覧)。
-    なぜ要るか: 名前は機械で落とせない。作る側が読んで気づいた時に、字を消さずに、学ぶ人の頁から外せるように。画面からは呼ばない。
+    """作る側の道具: その記録に結んだ字を、輪と束の材料から外す（on=False）・戻す（on=True）。Returns (変えた数, Failure の一覧)。
+    なぜ要るか: 名前は機械で落とせない。作る側が読んで気づいた時に、字を消さずに、輪と束（Claude が読む材料）から外せるように。画面からは呼ばない。
     床で落とした出来事（文が無い）には触らない。"""
     d = making_log.folder()
     mine = []

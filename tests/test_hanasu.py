@@ -7,8 +7,9 @@
 - 頁は、マイクを開く code・録る code・声を送る code を持たない。受け口は字のフォームだけを受け、音のファイルは断る。聞いた字は、残すを押すまで送らない。
 - 話す釦は既定で隠れていて、音声認識の口がある画面でだけ出る。端末の中だけで字にできる画面ではその形で聞き、できない画面ではブラウザの既定の口で聞いて
   断りを出す（本人の決定 11-05: iPhone・iPad でも話す釦を出す。切り替えは OMOCHAE_VOICE）。
-- 記録に入った工夫の字は、記録の感想と同じに、手帖の記録の札に文で出る（本人の決定 11-05。選び肢は置かない）。記録に入る前の字は出ない。
-  合言葉なしで開いた場では、文は出ない（J-028）。作る側は、気づいた時に記録の字を隠せる。
+- 話した字は、記録に入っていても、学ぶ人の頁（手帖の記録の札も）に出ない（本人の決定 11-06、J-034。11-05 の「記録の感想と同じに出す」を変えた）。
+  記録の札の「工夫した所（直した所）」には、記録の欄に書いた直した点だけが出る。合言葉なしで開いた場では、節ごと出ない（J-028）。
+  作る側は、気づいた時に記録の字を輪と束から外せる。
 - 利用者向けの文は、本人が採ったやさしい言葉の文のまま（Issue #318）。一字でも変わったら落ちるように、ここに決定の文を書く。
 - 作る側の頁に、話した事が場面ごとと記録ごとに並ぶ。記録を取り下げると、結んだ字も消える。
 """
@@ -289,30 +290,23 @@ assert code == 200 and f'name="record" value="{RID}"' in techo and MIC in techo
 # 釦に hidden 属性を付けない。指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が CSS の出し分けに勝って、幅 1100 以下で釦が消えた。
 # 画面の結果は tests/test_mic_seen.py が測る（Chrome が無い機械では測れないので、原因の形をここでも字で見る）
 assert re.search(r'<button[^>]*class="hanasu-mic"[^>]*\bhidden\b', toy + tsu + techo) is None and ".hanasu-local .hanasu .hanasu-mic,.hanasu-browser .hanasu .hanasu-mic{display:block}" in hanasu.STYLE
-# ほかの人に見せるかの選び肢は、どの頁にも置かない（記録に入った字は、記録の感想と同じに出す。本人の決定 11-05）
+# ほかの人に見せるかの選び肢は、どの頁にも置かない（話した字は学ぶ人の頁に出さないので、選ぶ物が無い。J-034）
 for page in (toy, tsu, techo):
     assert 'name="share"' not in page and 'name="sign"' not in page and "hanasu-sign" not in page and 'type="checkbox" name' not in page.split('id="mine"')[-1]
 assert techo.count("<script>(()=>{\nconst REC=") == 1, "手帖には部品が何個あっても、動きは 1 回だけ置く"
 assert techo.index(f'name="record" value="{RID}"') < techo.index("</div></section>") and techo.rindex("const REC=") > techo.rindex('id="mine"')
 
-# ---- 見せる範囲: 記録に入った工夫の字は、手帖の記録の札に文で出る。記録に入っていない字と、考えは、学ぶ人の頁に出ない
+# ---- 見せる範囲（本人の決定 11-06、J-034）: 話した字は、記録に入っていても、学ぶ人の頁に出ない。頁に出す字は AI が整理した字だけで、
+# その置き場はまだ無い。記録の札の「工夫した所（直した所）」には、記録の欄に書いた直した点だけが出る
 code, gallery = get("/gallery")
 for page in (toy, tsu, techo, gallery):
-    for text in ("糸で引く所が気になる", THINK_OTHER, CRAFT_NOWHO, CRAFT_NOJS, THINK, THINK_FREE):
+    for text in OPEN | {"糸で引く所が気になる", THINK_OTHER, CRAFT_OTHER, CRAFT_NOWHO, CRAFT_NOJS}:
         assert text not in page, text
-# 玩具の頁・作りながら見る頁・上げた物の頁には、まだ出さない（予想の段を外す枝が入った後に、サイトの線が結ぶ）
-for page in (toy, tsu, gallery):
-    for text in OPEN | {CRAFT_OTHER}:
-        assert text not in page, text
-# 手帖の記録の札の「工夫した所（直した所）」: 作りながら話した物（手順の番号つき）→ 上げた後に残した物。選び肢は無い
-card = techo[techo.index(f"{RID}　"):techo.index('<div class="hanasu" data-hanasu', techo.index(f"{RID}　"))]
-assert '<p class="hanasu-kufu-head">工夫した所（直した所）</p>' in card and f'data-kufu="{RID}"' in card, card
-for line in (f"<li>手順 2: {CRAFT}</li>", f"<li>{CRAFT_QUIET}</li>", f"<li>{KEEP_A}</li>", f"<li>{KEEP_B}</li>"):
-    assert line in card, line
-assert card.index(CRAFT) < card.index(CRAFT_QUIET) < min(card.index(KEEP_A), card.index(KEEP_B)) and "<form" not in card and "件（" not in card
-# ほかの机の記録にも、その机の工夫が出る。何も入っていない記録には、節を出さない。記録の欄の直した点は、同じ節に文で出る
-assert f'data-kufu="R-0004"><p class="hanasu-kufu-head">工夫した所（直した所）</p><ul><li>手順 1: {CRAFT_OTHER}</li></ul></div>' in techo
-assert techo.count('class="hanasu-kufu"') == 3 and "<ul><li>外筒 / 太く巻いた / 内筒が入りやすくなった</li></ul></div>" in techo
+# 話した字が結んである記録（RID と、ほかの机の R-0004）の札に、節を出さない。記録の欄の直した点がある記録にだけ、節が 1 つ出る
+assert f'data-kufu="{RID}"' not in techo and 'data-kufu="R-0004"' not in techo and "手順 2: " not in techo
+assert techo.count('class="hanasu-kufu"') == 1 and f'data-kufu="{rid5}"><p class="hanasu-kufu-head">工夫した所（直した所）</p><ul><li>外筒 / 太く巻いた / 内筒が入りやすくなった</li></ul></div>' in techo
+# 字は消していない: 記録に結んだまま、輪の材料と作る側の頁が読む（下の作る側の頁の節が見る）
+assert {k["text"] for k in talk_log.kufu(G, RID, shared_only=True)} == OPEN and [k["text"] for k in talk_log.kufu(G, "R-0004", shared_only=True)] == [CRAFT_OTHER]
 
 # ---- 作る側の頁: 場面ごとに並ぶ。落とした文は無く、数だけ。順位と点の形が無い
 code, loop_page = get(f"/loop/{G}")
@@ -442,12 +436,12 @@ assert talk_log.set_share(G, RID, False) == (6, []) and talk_log.set_share(G, RI
 assert talk_log.kufu(G, RID, shared_only=True) == [] and len(talk_log.kufu(G, RID)) == 6 and {t["text"] for t in talk_log.talks(G, shared_only=True)} == {CRAFT_OTHER}
 assert talk_log.texts(G, record_id=RID) == [] and not OPEN & {t["text"] for t in talk_log.texts(G)}, "作る側が隠した字は、輪と束が読む口にも出ない"
 hidden = get(f"/toy/{G}/techo/kiroku")[1]
-assert not any(text in hidden for text in OPEN) and f'data-kufu="{RID}"' not in hidden and CRAFT_OTHER in hidden
+assert not any(text in hidden for text in OPEN | {CRAFT_OTHER}) and f'data-kufu="{RID}"' not in hidden, "隠しても隠さなくても、学ぶ人の頁には出ない"
 assert f"<li>手順 2: {CRAFT}［隠している］</li>" in get(f"/loop/{G}")[1]
 n, failures = talk_log.set_share(G, "R-0002", False)
 assert n == 0 and failures and failures[0].where == "record_id"  # 話した字の無い記録
 assert talk_log.set_share("NDL-1187053-R0000014-R", RID, True)[0] == 0 and talk_log.kufu(G, RID, shared_only=True) == [], "別の玩具の名では変えられない"
-assert talk_log.set_share(G, RID, True) == (6, []) and f"<li>手順 2: {CRAFT}</li>" in get(f"/toy/{G}/techo/kiroku")[1]
+assert talk_log.set_share(G, RID, True) == (6, []) and f"<li>手順 2: {CRAFT}</li>" in get(f"/loop/{G}")[1] and CRAFT not in get(f"/toy/{G}/techo/kiroku")[1]
 
 # ---- 記録を取り下げると、結んだ字も消える。ほかの場面の字は残る
 before = len(talk_log.talks(G))

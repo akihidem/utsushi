@@ -194,8 +194,8 @@ assert gone == [] and fs[0].floor == "F4.evidence" and "--media-only" in fs[0].m
 assert everywhere(SAID8) and everywhere(CRAFT8) and everywhere(KEEP8)
 # 写真と動画だけの取り下げでは、話した字は残る
 assert records.withdraw(rid8, media_only=True)[1] == [] and everywhere(SAID8) and everywhere(CRAFT8)
-tejun = d / f"{own8['id']}_v1_tejun.pdf"
-assert "".join(SAID8.split()) in pdf_text(tejun), "消す前は手順の紙に字が刷られている（下の確かめが効いている事を見る）"
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。話した字を刷っていた手順の紙は組まないので、消す前から紙に字は無い（型紙にも出ない）
+assert not (d / f"{own8['id']}_v1_tejun.pdf").exists() and "".join(SAID8.split()) not in pdf_text(d / f"{own8['id']}_v1.pdf")
 # 話した字だけを消す
 env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
 r = subprocess.run([sys.executable, "-m", "omochae.records", "withdraw", rid8, "--talk-only"], capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL)
@@ -224,7 +224,8 @@ assert extra[-1]["id"].startswith("H-N") and extra[-1]["how_it_moves"] == "" and
 assert any(e.get("where") == rid8 for e in extra[-1]["evidence"]), "根拠の番号は残る"
 assert extra[-1]["adopted_by"] == "採った人", "採った人の名は Claude の字ではないので残る"
 left = sorted(p.name for p in d.glob(f"{own8['id']}_v*"))
-assert f"{own8['id']}_v1.pdf" in left and f"{own8['id']}_v1_after.pdf" in left and not [n for n in left if "_tejun" in n or "_free" in n], left
+# 自分の紙は型紙だけ（試した後の紙は開く時にだけ作る。窓口の決定 2026-11-07 カード 012120）
+assert f"{own8['id']}_v1.pdf" in left and not [n for n in left if "_tejun" in n or "_free" in n], left
 for p in d.glob(f"{own8['id']}_v*.pdf"):
     flat = pdf_text(p)
     assert not any("".join(x.split()) in flat for x in (SAID8, CRAFT8, KEEP8)), p.name

@@ -12,27 +12,20 @@ from web import looks  # noqa: E402
 html = looks.tenji()
 ts = looks.toys()
 
-# 扇の札: 玩具ごとに図 1 枚と寄り 4 枚。中央の札は 1 つだけで、静かな扇として刷られている
-cards = re.findall(r'class="fan-card( is-c)?"', html)
-assert len(cards) == 5 * len(ts) and len(ts) >= 1, len(cards)
-assert sum(1 for c in cards if c) == 1, "中央は 1 枚"
-assert html.count('class="fan-prev"') == 1 and html.count('class="fan-next"') == 1
-assert "ArrowLeft" in html and "ArrowRight" in html and "pointerup" in html
-# 図の札は玩具の頁へ入る
-for t in ts:
-    assert f'class="fan-card' in html and f'href="/toy/{t["sid"]}" data-name' in html
-# JS が無くても開いた扇: 番手 --k は刷った時に入っている
-assert re.search(r'style="--k:-\d+;z-index:\d+"', html) and 'style="--k:0;' in html
-# 動きを減らす設定では動かさない。せり上がりはスクロール連動の CSS だけで、効く閲覧器だけ
-assert "@media (prefers-reduced-motion:reduce){.fan-card{transition:none}}" in html
+# 扇の札（扇の間）と扇をひらくノブは外した（本人の言葉 11-07「扇の間要らない」）。札も釦もノブも台本も刷らない
+assert 'class="fan-card' not in html and 'id="tj-fan"' not in html and "扇の間" not in html
+assert 'id="ogi-range"' not in html and "扇をひらく" not in html and "fan-prev" not in html
+# 扉の次は全部の玩具の一覧（間に扇の 1 室を挟まない）
+door, room = html.index('class="tj-door"'), html.index('<section class="tj-all" id="all-toys"')
+assert door < room and html[html.index("</section>", door) + len("</section>"):room].strip() == "", "扉と一覧の間に 1 室も無い"
+# 動きを減らす設定では動かさない（せり上がりは no-preference の中だけ）。スクロール連動の CSS だけで、効く閲覧器だけ
 assert "@supports (animation-timeline: view())" in html and "prefers-reduced-motion:no-preference" in html
 assert "animation-timeline:view()" in html
 # 見える状態から始める（中身を隠さない）
 kf = re.findall(r"@keyframes tj-rise[^{]*\{(.*?)\}\}", html, re.S)
 assert kf and all("opacity" not in k for k in kf)
 assert "IntersectionObserver" not in html and "whileInView" not in html
-# 扇をひらくノブ: 開く角だけ。仮説や仕組みの名を出さない
-assert 'id="ogi-range" type="range"' in html and "扇をひらく" in html
+# 仮説や仕組みの名を出さない
 assert "仮説 A" not in html and "H-A" not in html
 # 前からの線
 assert "原文の引用" in html and "100svh" in html

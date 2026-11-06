@@ -410,7 +410,7 @@ def steps(p):
     return out
 
 
-RESULTS = ("転がった", "転がらない")
+RESULTS = ("転がった", "転がらない", "わからない")
 
 
 def measures(p):

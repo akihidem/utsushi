@@ -87,8 +87,9 @@ flat = "".join(subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output
 assert TSID in flat and "張子の首振り虎" in flat
 assert add(base(source_id=TSID, hypothesis_id="H-C", power="団扇", ten_swings_sec=4.2, result="揺れた"))[1] == []
 assert floors(add(base(source_id=TSID, hypothesis_id="H-C", power="念力"))[1]) == {"F3.result"}
-# 虎の物差しは頭が揺れるかどうか（research/15）
-assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "わからない"})} == {"F3.result"}, "虎は 2 値"
+# 虎の物差しは頭が揺れるかどうか（research/15）。決められない時の「わからない」は選べる（#146）。札に無い言葉は断る
+assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "わからない"}) == []
+assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "たぶん揺れた"})} == {"F3.result"}
 assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "揺れない"}) == []
 # 記録は成績でなく観察（philosophy.md）。紙の文で成績に読ませない
 for tid, src, sid in (("slider_fan", source, "NDL-1187053-R0000005-L"), ("pivot_counterweight", tsource, TSID)):
