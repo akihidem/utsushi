@@ -349,11 +349,19 @@ def transcribe(slip_id):
     # 字にしている間に取り下げられていたら、字を書かない
     if (store.read_json_or_skip(path) or {}).get("state") != "done" or not voice.parent.is_dir():
         return False
-    store.write_json(_text_path(rid), data)
-    _text_path(rid).chmod(0o600)
+    try:
+        store.write_json(_text_path(rid), data)
+        _text_path(rid).chmod(0o600)
+    except FileNotFoundError:
+        # 書く直前に、別のプロセスの取り下げが置き場を消した。消えた置き場を作り直して字を残さない（取り下げは約束）
+        return False
     # 字にしたら、その場で声を消す（窓口の決定 11-06 夜）。字が空でも消す: 道具が聞いて言葉が無かった声で、置き続ける理由が無い。
     # 順は 字を書く → 声を消す → 受付に印。どこで止まっても、字の無いまま声が消える事は無く、消した声に印が無い時は上で付け直す
     voice.unlink(missing_ok=True)
+    # 書いた後に受付を読み直す。書く間に取り下げられていたら、書いた字を消す（上の確かめと書く所の間は数ミリ秒でも、取り下げた記録に字を残さない）
+    if (store.read_json_or_skip(path) or {}).get("state") != "done":
+        _text_path(rid).unlink(missing_ok=True)
+        return False
     _note_text(slip_id, "done", str(_text_path(rid)), dropped=True)
     return True
 

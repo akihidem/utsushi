@@ -776,13 +776,13 @@ assert slip_s["voice"] is False and not (tv._base(slip_s["record"]) / "voice").e
 # 立てた後で道具が無くなった時: 動画は受け取り、字にできていない事を残す。字にできない間は声を消さない（消すと話が残らない）
 del os.environ["OMOCHAE_ASR_PYTHON"]
 held = {}
-for name in ("rv3.mov", "rv4.mov", "rv5.mov", "rv6.mov"):
+for name in ("rv3.mov", "rv4.mov", "rv5.mov", "rv6.mov", "rv7.mov", "rv8.mov"):
     code, r = send(video(name), made_with="review", note=f"{name} の文")
     assert code == 200 and wait(r["token"])["state"] == "done", r
     s = wait_text(r["receipt"])
     assert s["text"] == "no-tool" and (tv._base(s["record"]) / "voice" / "voice.mka").exists(), s
     held[name] = (r, s["record"], tv._base(s["record"]) / "voice" / "voice.mka")
-(r3, rid3, voice3), (r4, _, _), (r5, _, voice5), (r6, rid6, voice6) = (held[n] for n in ("rv3.mov", "rv4.mov", "rv5.mov", "rv6.mov"))
+(r3, rid3, voice3), (r4, _, _), (r5, _, voice5), (r6, rid6, voice6), (r7, rid7, voice7), (r8, rid8, voice8) = (held[n] for n in ("rv3.mov", "rv4.mov", "rv5.mov", "rv6.mov", "rv7.mov", "rv8.mov"))
 # 字の前の drop-voice は断り、声を残す
 refused = cli("drop-voice", r3["receipt"], module="web.video_up")
 assert refused.returncode == 3 and "字がまだ無い" in refused.stderr and voice3.exists(), refused.stderr
@@ -816,6 +816,40 @@ video_up.subprocess.run = real_run
 slip_w = json.loads((folder / f'{r4["receipt"]}.json').read_text(encoding="utf-8"))
 assert slip_w["state"] == "withdrawn" and "note" not in slip_w and "record" not in slip_w, slip_w
 assert status(r4["token"])[r4["token"]]["word"] == video_up.REVIEW_WORDS["withdrawn"]
+# 字を書く直前に別のプロセスが取り下げても、取り下げた記録に字を残さない（取り下げは約束。数ミリ秒の重なりでも放っておかない）
+real_write = video_up.store.write_json
+
+
+def withdraw_before_text(path, obj, *a, **k):
+    if path.name == "transcript.json":
+        video_up.store.write_json = real_write
+        assert video_up.withdraw(r7["receipt"], force=True) == []
+    return real_write(path, obj, *a, **k)
+
+
+video_up.store.write_json = withdraw_before_text
+try:
+    assert video_up.transcribe(r7["receipt"]) is False, "取り下げた受付を字にできた事にしない"
+finally:
+    video_up.store.write_json = real_write
+assert not tv._base(rid7).exists() and not voice7.exists() and slip_of(r7["receipt"])["state"] == "withdrawn", "取り下げた記録に字も声も残さない"
+# 上は取り下げが置き場を先に消す形。受付が先に「取り下げた」になり、置き場がまだ在る形も見る（字を書いた後の読み直しが守る形）
+text8 = tv._base(rid8) / "voice" / "transcript.json"
+
+
+def slip_withdrawn_before_text(path, obj, *a, **k):
+    if path == text8:
+        video_up.store.write_json = real_write
+        (folder / f'{r8["receipt"]}.json').write_text(json.dumps({"id": r8["receipt"], "token": r8["token"], "state": "withdrawn", "at": loop._now()}), encoding="utf-8")
+    return real_write(path, obj, *a, **k)
+
+
+video_up.store.write_json = slip_withdrawn_before_text
+try:
+    assert video_up.transcribe(r8["receipt"]) is False, "取り下げた受付を字にできた事にしない（受付が先の形）"
+finally:
+    video_up.store.write_json = real_write
+assert not text8.exists() and not voice8.exists() and slip_of(r8["receipt"])["state"] == "withdrawn", "受付が先に取り下げになっても、字も声も残さない"
 # 取り下げで動画も声も字も札も消える
 assert cli("withdraw", r3["receipt"], module="web.video_up").returncode == 0
 gone_rid = slip_n["record"]

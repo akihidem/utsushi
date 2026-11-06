@@ -10,6 +10,8 @@ HTTP と ffmpeg を通さず、受付と記録と声のファイルを直に置�
   3 字にする道具が無い・確かめに落ちる時は、声を残す口が立たない
   4 字ができる前の drop-voice は断り、声を残す（--force の時だけ消す）
   5 案の根拠になった記録を取り下げても（記録の番号は残す道）、声と字が消える
+  6 字にしている間に別のプロセスが取り下げても、取り下げた記録に字を残さない（受付が先に「取り下げた」になった形）
+  7 同じ重なりで、取り下げが置き場を先に消した形（字を書く所で例外にせず、字にできていないと返す）
 使い方: PYTHONPATH=<src> .venv/bin/python tests/probe_voice_drop.py
 終了: 0 = 全部通る / 3 = 落ちた条件がある（名指しする）/ 4 = 確かめられない
 """
@@ -123,6 +125,41 @@ def c5(tmp):
     assert not voice.exists() and not video_up._text_path(rid).exists(), "声と字は消す"
 
 
+def overlap(tmp, case):
+    """取り下げは約束なので、字を書く所と重なっても字を残さない。重なりは、字を書く直前に別のプロセスが取り下げる形で作る。"""
+    video_up = setup(tmp)
+    import shutil
+
+    real = video_up.store.write_json
+    slip_id, rid, voice = slip_with_voice(video_up, 1)
+
+    def withdraw_now(path, obj, *a, slip_id=slip_id, rid=rid, case=case, **k):
+        if path == video_up._text_path(rid):
+            video_up.store.write_json = real
+            # 別のプロセスの取り下げ: 受付を「取り下げた」にする所と、置き場を消す所のどちらが先に見えても
+            if case == "dir-first":
+                shutil.rmtree(voice.parent.parent)
+            (video_up.folder() / f"{slip_id}.json").write_text(json.dumps({"id": slip_id, "token": "t" * 32, "state": "withdrawn"}), encoding="utf-8")
+        return real(path, obj, *a, **k)
+
+    video_up.store.write_json = withdraw_now
+    try:
+        assert video_up.transcribe(slip_id) is False, f"{case}: 取り下げた受付を字にできた事にしない"
+    finally:
+        video_up.store.write_json = real
+    assert not video_up._text_path(rid).exists(), f"{case}: 取り下げた記録に字を残さない"
+    assert not voice.exists(), f"{case}: 声も残さない"
+    assert read_slip(video_up, slip_id)["state"] == "withdrawn", f"{case}: 取り下げた受付を戻さない"
+
+
+def c6(tmp):
+    overlap(tmp, "slip-first")
+
+
+def c7(tmp):
+    overlap(tmp, "dir-first")
+
+
 def main():
     try:
         import web.video_up  # noqa: F401
@@ -131,7 +168,8 @@ def main():
         return 4
     failed = []
     for name, case in (("1 字にしたら声が消える", c1), ("2 止まった後も印を付け直す", c2), ("3 道具が無いと口が立たない", c3),
-                       ("4 字の前の drop-voice を断る", c4), ("5 根拠の記録の取り下げで声と字が消える", c5)):
+                       ("4 字の前の drop-voice を断る", c4), ("5 根拠の記録の取り下げで声と字が消える", c5),
+                       ("6 字を書く間の取り下げで字を残さない（受付が先）", c6), ("7 字を書く間の取り下げで字を残さない（置き場が先）", c7)):
         with tempfile.TemporaryDirectory() as d:
             try:
                 case(pathlib.Path(d))
@@ -140,7 +178,7 @@ def main():
                 failed.append(name)
                 where = traceback.extract_tb(e.__traceback__)[-1]
                 print(f"FAIL {name}: {type(e).__name__}: {e}（{pathlib.Path(where.filename).name}:{where.lineno}）")
-    print(f"{5 - len(failed)}/5 通る")
+    print(f"{7 - len(failed)}/7 通る")
     return 3 if failed else 0
 
 
