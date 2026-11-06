@@ -78,8 +78,9 @@ assert "送られた物は確かめてから載せます。" in gallery and DECI
 assert "取り下げを申し出られる事に同意します" in contrib_server.FORM and DECIDED not in contrib_server.FORM
 
 # README: 取り下げの節に別の段落で置く（行末に句点が無い事まで見る）
+# 節の終わりは、次の段落の頭の字で切る。その段落は本人が確かめた字（11-06、#453）に変わったので、新しい頭に合わせた
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-part = readme[readme.index("手帖から上げた記録を消す時は"):readme.index("仮説を自分で立てたい時は")]
+part = readme[readme.index("手帖から上げた記録を消す時は"):readme.index("自分の案を試したい時は")]
 assert f"\n{DECIDED}\n" in part and readme.count(DECIDED) == 1
 
 # 文を持つ所は 1 か所

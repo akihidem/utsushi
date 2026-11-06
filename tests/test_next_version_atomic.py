@@ -99,8 +99,9 @@ assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 code, page = post(f"/record/{rid}/next", form | {"to": "26"})
 assert code in (200, 303), page[-400:]
 assert loop.confirmed(rid) and loop.latest_version(G, "H-A") == 2
-for suffix in ("", "_tejun", "_after"):
-    assert (out_dir(G) / f"H-A_v2{suffix}.pdf").read_bytes()[:4] == b"%PDF", f"版 2 の紙 {suffix}"
+# 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+assert (out_dir(G) / "H-A_v2.pdf").read_bytes()[:4] == b"%PDF", "版 2 の型紙"
+assert not any((out_dir(G) / f"H-A_v2{s}.pdf").exists() for s in ("_tejun", "_after")), "版 2 の手順の紙と試した後の紙は組まない"
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 v = json.loads((DATA / "loop" / f"version-{G}-H-A-2.json").read_text(encoding="utf-8"))
 assert v["params"]["fold_count"] == 26 and v["changes"][0]["from"] != 26 and v["record_ids"] == [rid]

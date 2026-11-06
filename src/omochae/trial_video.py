@@ -169,13 +169,13 @@ def steps_of(sid, hid, version=1):
         return []
 
 
-def new_record(sid, hid, result, version=1, tried_on="", note="", via="video", upload=""):
+def new_record(sid, hid, result, version=1, tried_on="", note="", via="video", upload="", video_kind=""):
     """動画を結ぶ試行の記録を作る。刷った組（goraigo-v10 など）を一緒に残す: 版が上がった後に、どの紙の試行かが分かるように。"""
     data = hypotheses.load(sid)
     h = next((x for x in data["hypotheses"] if x["id"] == hid), None)
     template = (h or {}).get("template") or data.get("template", "slider_fan")
     return records.add({"source_id": sid, "hypothesis_id": hid, "sheet_version": version, "result": result, "sheet_set": TEMPLATES[template].SHEET_SET,
-                        **({"tried_on": tried_on} if tried_on else {}), "note": note, "fixes": [], "via": via, **({"upload": upload} if upload else {})})
+                        **({"tried_on": tried_on} if tried_on else {}), "note": note, "fixes": [], "via": via, **({"upload": upload} if upload else {}), **({"video_kind": video_kind} if video_kind else {})})
 
 
 def attach(rid, src, demuxer=None):

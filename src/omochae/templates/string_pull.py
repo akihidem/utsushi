@@ -8,6 +8,7 @@ import math
 
 from shapely.geometry import LineString, Point, Polygon, box
 
+from ._paper import paper_name
 from ..model import Failure, Part
 
 ID = "string_pull"
@@ -513,7 +514,7 @@ def place(by_key, page, top, gap):
 
 
 def bom(p):
-    paper = f"紙（{p['paper_gsm']}g/m² 前後の見込み）"
+    paper = paper_name(p["paper_gsm"])
     why = "家庭のプリンタで刷って作るため"
     if is_kite(p):
         top, bottom = legs(p)
@@ -548,8 +549,9 @@ def materials(p):
     # 刷る部品の紙は 1 枚目の行で言う。ここに足すのは刷らない材料だけ。
     printed = {q.key for q in parts(p)}
     extra = [r["material"] for r in rows if r["key"] not in printed]
+    # 人形の台紙と腕木は紙を厚紙に貼るので、厚紙を紙とは別の行に立てる（部品表の字をそのまま使うと「…に貼るを 1 枚」と崩れる）。
     # 凧も人形も、手順で穴を竹串の先であける（#294。前は凧の時だけ書いていなかった）。
-    return [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規、竹串（穴あけ）", *extra]
+    return [f"{paper_name(p['paper_gsm'])}を 1 枚", *([] if is_kite(p) else ["空き箱の厚紙"]), "のり、はさみ、テープ、定規、竹串（穴あけ）", *extra]
 
 
 def steps(p):

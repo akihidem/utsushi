@@ -64,11 +64,11 @@ stick = next(h for h in load(SID)["hypotheses"] if h["id"] == "H-C")
 from omochae.templates.slider_fan import DEFAULTS
 assert any("溝" in s for s in steps({**DEFAULTS, **tab["params"]}))
 assert not any("溝" in s for s in steps({**DEFAULTS, **stick["params"]})), "溝の無い形に溝の手順を出さない"
-# 型紙と一緒に手順の紙が刷られ、印が入っている
+# 刷るのは型紙だけ（窓口の決定 推し A・11-06）。型紙に印が入り、手順の紙は組まない
 r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", "--out", f"{tmp}/a"], capture_output=True, text=True)
 assert r.returncode == 0, r.stderr
-flat = "".join(subprocess.run(["pdftotext", f"{tmp}/a_tejun.pdf", "-"], capture_output=True, text=True).stdout.split())
-assert "手順の紙" in flat and SID in flat and "国立国会図書館デジタルコレクション" in flat and "わからない" in flat
+flat = "".join(subprocess.run(["pdftotext", f"{tmp}/a.pdf", "-"], capture_output=True, text=True).stdout.split())
+assert SID in flat and "国立国会図書館デジタルコレクション" in flat and not pathlib.Path(f"{tmp}/a_tejun.pdf").exists()
 # 虎: 手順と仮説
 TSID = "NDL-1187053-R0000014-R"
 tsource = json.loads((pathlib.Path(__file__).resolve().parents[1] / "data/sources" / f"{TSID}.json").read_text(encoding="utf-8"))

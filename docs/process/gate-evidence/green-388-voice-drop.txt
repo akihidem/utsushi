@@ -1,0 +1,10 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/probe_voice_drop.py; echo "確かめ rc=$?"'
+# commit: 603e102e（回した時の HEAD）
+PASS 1 字にしたら声が消える
+PASS 2 止まった後も印を付け直す
+PASS 3 道具が無いと口が立たない
+PASS 4 字の前の drop-voice を断る
+PASS 5 根拠の記録の取り下げで声と字が消える
+5/5 通る
+確かめ rc=0
+rc=0
