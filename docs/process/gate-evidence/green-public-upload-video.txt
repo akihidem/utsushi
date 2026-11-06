@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_media_strip.py
+# commit: b63b618d（回した時の HEAD）
+.venv/lib/python3.14/site-packages/PIL/JpegImagePlugin.py:898: UserWarning: Image appears to be a malformed MPO file, it will be interpreted as a base JPEG file
+  warnings.warn(
+ok png
+ok jpeg
+ok video
+ok mismatch
+ok no ffmpeg
+ok tidy
+ok open
+ok
+rc=0

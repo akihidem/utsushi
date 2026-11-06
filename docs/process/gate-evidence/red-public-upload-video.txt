@@ -1,0 +1,16 @@
+# 命令: .venv/bin/python tests/test_media_strip.py
+# commit: b63b618d（回した時の HEAD。作りの 4 ファイル（src/web/play_server.py src/web/techo_site.py src/web/techo_step.py src/omochae/media_review.py）を main の abebba5c に戻した木。試験は 93cd4c86 の物。試しのためで commit していない）
+.venv/lib/python3.14/site-packages/PIL/JpegImagePlugin.py:898: UserWarning: Image appears to be a malformed MPO file, it will be interpreted as a base JPEG file
+  warnings.warn(
+ok png
+ok jpeg
+ok video
+ok mismatch
+ok no ffmpeg
+ok tidy
+Traceback (most recent call last):
+  File "tests/test_media_strip.py", line 204, in <module>
+    assert code == 201, (code, text)
+           ^^^^^^^^^^^
+AssertionError: (403, '公開のデモでは、写真と動画は上げられません')
+rc=1

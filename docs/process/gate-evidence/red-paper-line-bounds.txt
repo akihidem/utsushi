@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_line.py
+# commit: c737167（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_paper_line.py", line 53, in <module>
+    assert lines(tid, {"paper_gsm": 109})[0] == "コピー用紙くらいの厚さの紙を 1 枚", tid
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: balance_toy
+rc=1
