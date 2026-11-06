@@ -58,6 +58,7 @@ if 'id="tatoe"' in before:
     assert before.index('id="minna"') < before.index('id="tatoe"') and '<section class="sec" id="tatoe"><details class="fold-sec"><summary><h2>' in before, "たとえは他の人が作った物の後ろで畳む"
 assert before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="tsukuru"') < before.index('id="kiroku"') < before.index('id="minna"'), "流れの順"
 assert '<details class="fold-sec samples-fold">' not in before, "本物の記録が無い時は、見本を畳まない"
+assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#kaizen など）"
 assert "genga-head" in hero, "原画と歌は頭のまま（畳まない）"
 
 # ---- 3・4 紙を作った後
@@ -78,6 +79,24 @@ for sid in (G, T):
 after = toy.toy_page(G, see=hypotheses.sheet_of(G)["id"], kind="", v=1)
 hero = after[after.index('<section class="hero">'):after.index("</section>", after.index('<section class="hero">'))]
 assert re.search(rf'<p class="road"><a class="btn" href="/toy/{G}\?see=H-A&amp;kind=sheet&amp;v=\d+#win">つくる</a></p>', hero), "紙がある時は、作り直さずに窓の紙へ"
+# 刷ってある紙が一番新しい版でない時（人が採った版 2 など）と、今の組でない時（雛形の次の組）は、窓へ行かずに刷る口へ送る（古い紙を出さない）
+from omochae import loop  # noqa: E402
+from omochae.compose import TEMPLATES  # noqa: E402
+
+real_latest = loop.latest_version
+loop.latest_version = lambda s, h: 2
+try:
+    assert re.search(r'<form method="post" action="/toy/[^"]+/print#win" class="road">', toy.make_go(G)), "版が上がった時は刷る口へ"
+finally:
+    loop.latest_version = real_latest
+tpl = TEMPLATES[hypotheses.load(G).get("template", "slider_fan")]
+real_set = tpl.SHEET_SET
+tpl.SHEET_SET = real_set + "-next"
+try:
+    assert re.search(r'<form method="post" action="/toy/[^"]+/print#win" class="road">', toy.make_go(G)), "組が上がった時は刷る口へ"
+finally:
+    tpl.SHEET_SET = real_set
+assert '<p class="road"><a class="btn"' in toy.make_go(G), "対照: 一番新しい版で今の組の紙なら窓へ"
 win = after[after.index('id="win"'):after.index("</section>", after.index('id="win"'))]
 assert win.index("PDF を開いて印刷する") < win.index(f'<a class="btn" href="/toy/{G}/techo">つくる</a>'), "窓は 印刷 → つくる（手帖）の順"
 assert f'href="/toy/{G}/tsukuru"' in after, "作りながら見るの釦は残す（11-07 の工作で使う。手帖から 1 手では行けない）"

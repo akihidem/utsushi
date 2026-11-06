@@ -123,7 +123,8 @@ assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
 name = "作った物と職人の言葉"
-assert f'aria-current="page">{name}</a>' in g and f"<title>{name} · うつし<" in g, g[:300]  # 帯の今いる所は aria-current で出る
+# 帯の今いる所は aria-current で出る。帯は道しるべ（段 1）なので、ギャラリーは「もちよる」の駅
+assert 'aria-current="page">もちよる</a>' in g and f"<title>{name} · うつし<" in g, g[:300]
 assert re.findall(r"<h1[^>]*>(.*?)</h1>", g) == [name]
 for sec, label in (("ageta", "他の人が作った物"), ("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
     assert f'<a href="#{sec}">{label}</a>' in g and f'id="{sec}"' in g and f'<h2 class="mark">{label}</h2>' in g, sec

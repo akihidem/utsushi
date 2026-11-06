@@ -154,7 +154,7 @@ body.zine a.road-go{display:inline-flex;align-items:center;justify-content:cente
 .zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;padding:8vh 8vw;gap:24px}
- .zn-cover .grow{grid-column:1;margin:0}
+ .zn-cover .grow{grid-column:1;margin:0;order:1}  /* 狭い幅は 題と えらぶ → 2 行 → 額 の順（2 行も額より先） */
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
  .zn-title{grid-column:1;justify-self:center;margin:0;align-items:center;gap:18px;order:1}.zn-cover .frame{order:2}
  .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
@@ -233,7 +233,7 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 .tj-door{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:10vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-door .tj-work{width:min(100%,46vh)}.tj-door .tj-work div{width:100%;height:100%}
 .tj-door .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
-.tj-hall .grow{grid-column:1/-1;grid-row:3;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
+.tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
