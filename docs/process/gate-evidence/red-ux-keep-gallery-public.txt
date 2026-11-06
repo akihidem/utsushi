@@ -1,9 +1,8 @@
-# 命令: PYTHONPATH=src .venv/bin/python tests/test_ux_keep_gallery.py
-# 木: 7fb1d58f（この枝の前の頭）の play_server.py のギャラリーの呼び方を、公開の場の見分けを別の引数に替える直しと誤って合わせた形（公開の場でも photos=True のまま、記録の鍵も渡す）にした物
-# 前の試験（鍵の無い画面だけを見る）: rc 0 で見逃す
-ok のこした後は持ち寄る駅に着き、今残した 1 つが頭に出て、その札から記録の頁へ行ける（地図の 4・5）
-rc=0
-# 新しい試験（公開の場で記録を残した同じ画面を見る）: rc 1 で捕まえる
+# 命令: .venv/bin/python tests/test_ux_keep_gallery.py
+# commit: 3e153848（回した時の HEAD）
+/tmp/tmphcp7mc2i/play/NDL-1187053-R0000005-L/.tmp-pyumbrza/H-A_v1.pdf
+/tmp/tmphcp7mc2i/play/NDL-1187053-R0000005-L/.tmp-pyumbrza/H-A_v1_tejun.pdf
+/tmp/tmphcp7mc2i/play/NDL-1187053-R0000005-L/.tmp-pyumbrza/H-A_v1_after.pdf
 Traceback (most recent call last):
   File "tests/test_ux_keep_gallery.py", line 90, in <module>
     assert 'id="ageta"' in seen and 'id="own"' not in seen, "合言葉なしの場では、記録を残した画面にも今残した 1 つを出さない"
