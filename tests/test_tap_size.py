@@ -15,7 +15,7 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import skin  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -89,8 +89,7 @@ for look in ("tenji", "zine"):
         urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120)
         # 説明まで残した記録に「次の版」の欄が出る（畳んであっても頁には入っている）
         rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-        told = urllib.parse.urlencode({"text": "途中で止まった", "next_idea": "軸を長くする", "by": "試験"}).encode()
-        urllib.request.urlopen(urllib.request.Request(f"{base}/record/{rid}/explain", data=told, headers={"Origin": base}), timeout=60)
+        assert loop.save_explanation(rid, "試験", "途中で止まった", "軸を長くする") == []
         printed = True
     for path in PAGES:
         page = urllib.request.urlopen(f"{base}{path}", timeout=60).read().decode()

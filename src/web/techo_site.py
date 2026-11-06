@@ -314,15 +314,26 @@ document.getElementById('up-form').onsubmit = async (e) => {
   // 約束の印なしに写真を送らない。上の数え直しが間に合わない形でも、ここで止める（字はブラウザの標準の吹き出し）。
   const promise = document.getElementById('ok');
   if (promise && files.length && !promise.checked) { promise.required = true; form.reportValidity(); return; }
-  if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
-  go.disabled = true; st.textContent = '送っています…';
+  const filled = { hypothesis: hid || '', result: result || '', note: document.getElementById('note').value, fix_part: document.getElementById('fix-part').value, fix_change: document.getElementById('fix-change').value, fix_outcome: document.getElementById('fix-outcome').value };
+  const post = (o) => fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra(o) });
+  // 写真や動画がある時は、先に「この画面が残した記録に足せるか」を聞く（玩具の頁の記録の欄には写真の口が無いので、そこで残した後に写真を足す人の道）。
+  // 足せる時は、新しい記録を作らず、見た事も求めない。番号は送らない。決めるのはサーバ（記録を残した画面か・欄に新しい中身が無いか）。
+  // 聞いている間に押し直されて、同じ写真が 2 度送られないよう、聞く前に押せなくする。
+  // 紙は最初から 1 つ選ばれているので、選び直した時と見た事を選んだ時だけ、選んだ紙として送る（選んでいないのに別の紙と読まれて、足せなくならないように）。
+  go.disabled = true;
+  let target = '';
+  if (files.length) {
+    const chose = result || paper().defaultChecked === false;
+    try { const a = await (await post({ ...filled, hypothesis: chose ? filled.hypothesis : '', attach: '1' })).json(); if (a.attached) target = a.id; } catch (err) {}
+  }
+  if (!target && (!hid || !result)) { go.disabled = false; st.textContent = '紙と見た事をえらぶ'; return; }
+  st.textContent = '送っています…';
   let done = '';
   try {
-    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value, fix_part: document.getElementById('fix-part').value, fix_change: document.getElementById('fix-change').value, fix_outcome: document.getElementById('fix-outcome').value }) });
-    const j = await r.json().catch(() => ({}));
+    const j = target ? { id: target } : await (await post(filled)).json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
-    // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。
-    if (window.utsushiNewWho) utsushiNewWho();
+    // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。足した時は、記録を残した時に作り直してある。
+    if (!target && window.utsushiNewWho) utsushiNewWho();
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
     form.reset(); showPicked();
     done = files.length ? '上げました' : '記録を残しました';
@@ -342,10 +353,11 @@ document.getElementById('up-form').onsubmit = async (e) => {
 """
 
 
-def feedback(sid, r, photos=True, up_key=None):
+def feedback(sid, r, photos=True, up_key=None, can_tell=False):
     """手帖で受けるフィードバック（本人「フィードバックも手帖」、11-04）。順は J-013 のまま: 紙の返事（試した後の紙）→ 人の説明 → 次の版。
     Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。
-    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。"""
+    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。
+    can_tell は、この画面がこの記録を残した時に真。説明の欄はその画面にだけ出す（受け口も断る。records.mine）。"""
     from omochae import loop
 
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
@@ -356,6 +368,8 @@ def feedback(sid, r, photos=True, up_key=None):
         from web.play_server import next_form
 
         body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r, up_key) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+    elif not can_tell:
+        body = ""
     else:
         body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
@@ -460,7 +474,7 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=None):
+def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=None, rec_key=None):
     """手帖の頁。仮説の名前と動き方は出さない（字と組の版だけ）。own は、この画面が作った本人の案（話した考えから作った紙）の番号で、札の先頭に出す。"""
     data = hypotheses.load(sid)
     tpl = TEMPLATES[data.get("template", "slider_fan")]
@@ -488,8 +502,8 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
         who = f"{hypotheses.letter(h)} の紙" if h else ""
         mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if uploads else ""}{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
-                 f'{hanasu.keep_box(sid, r, show_shared=uploads)}'
-                 f'{feedback(sid, r, photos=uploads, up_key=up_key)}</div>')
+                 f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
+                 f'{feedback(sid, r, photos=uploads, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')

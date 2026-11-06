@@ -247,6 +247,7 @@ class WriteLimit:
 
 
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
+REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -336,7 +337,7 @@ class Handler(BaseHTTPRequestHandler):
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), **kw)
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
 
     def do_GET(self):
         try:
@@ -416,6 +417,13 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
+        if m:
+            # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
+            from . import kumitate
+            if m.group(1) not in sources() or not kumitate.available(m.group(1)):
+                return self._send(404, "無い")
+            return self._send(200, kumitate.page(m.group(1), look, path))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
@@ -448,7 +456,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             from . import think_sheet
             own = sorted(think_sheet.mine(self, sid), key=lambda o: int(o.rsplit("-", 1)[1]), reverse=True)  # 本人の案を先に（作っている紙の記録として残すため）
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, up_key=self._up_key()), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, up_key=self._up_key(), rec_key=self._rec_key()), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
@@ -526,31 +534,45 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True).items()}
 
-    def _up_key(self):
-        """この画面が写真を上げた時に渡した鍵（media_review.claim）。無ければ None。"""
+    def _key_of(self, cookie):
+        """この画面が持つ鍵。無ければ None。who と同じ sessionStorage では絵の GET にも頁の GET にも載らないので、本人の画面の見分けは cookie に置く。"""
         for part in self.headers.get("Cookie", "").split(";"):
             name, _, value = part.strip().partition("=")
-            if name == UP_COOKIE and value:
+            if name == cookie and value:
                 return value
         return None
 
-    def _up_cookie(self, key=""):
+    def _key_cookie(self, cookie, key=""):
         """鍵の cookie。ブラウザを閉じれば消えるように Max-Age を付けない。key が空なら消す。外から開く場（合言葉付き）は https なので Secure を付ける。"""
         secure = "; Secure" if getattr(self.server, "public_key", None) else ""
-        return ("Set-Cookie", f"{UP_COOKIE}={key}; Path=/; HttpOnly; SameSite=Lax{secure}" + ("" if key else "; Max-Age=0"))
+        return ("Set-Cookie", f"{cookie}={key}; Path=/; HttpOnly; SameSite=Lax{secure}" + ("" if key else "; Max-Age=0"))
+
+    def _up_key(self):
+        """この画面が写真を上げた時に渡した鍵（media_review.claim）。"""
+        return self._key_of(UP_COOKIE)
 
     def _up_close(self):
         """記録を残すのが交代の区切り（who を作り直すのと同じ）。同じ機械の次の人に、前の人の確認の前の写真を出さない。"""
-        return [self._up_cookie()] if self._up_key() else []
+        return [self._key_cookie(UP_COOKIE)] if self._up_key() else []
 
-    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False):
+    def _rec_key(self):
+        """この画面が記録を残した時に渡した鍵（records.claim）。"""
+        return self._key_of(REC_COOKIE)
+
+    def _rec_cookie(self, rid):
+        """記録を残した画面へ鍵を渡す行。次の記録が残ると上書きされ、前の記録には書けなくなる（記録を残すのが交代の区切り。机の端の 1 台を順に使う場）。"""
+        key = secrets.token_urlsafe(18)
+        records.claim(rid, key)
+        return self._key_cookie(REC_COOKIE, key)
+
+    def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False, headers=()):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine")])
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine"), *headers])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
-        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}")] + (self._up_close() if fresh else []))
+        self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}"), *headers] + (self._up_close() if fresh else []))
 
     def _post(self):
         if not self._host_ok():
@@ -569,6 +591,9 @@ class Handler(BaseHTTPRequestHandler):
             # 皆に見える。持ち寄りは同意と権利を確かめてから載せる線（J-021）と、子どもの写真を扱わない線を、開いた場でも守るため。
             if getattr(self.server, "public_open", False):
                 return self._send(403, "公開のデモでは、写真と動画は上げられません", "text/plain; charset=utf-8")
+            # 記録を残した画面からだけ受ける（記録の鍵）。番号は札に出る連番なので、番号だけで受けると、別の人の記録に写真を足せる。
+            if not records.mine(m.group(1), self._rec_key()):
+                return self._send(403, "受け付けられない送り方です")
             try:
                 length = int(self.headers.get("Content-Length", ""))
             except ValueError:
@@ -580,7 +605,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, why, "text/plain; charset=utf-8")
             key = self._up_key() or secrets.token_urlsafe(18)
             media_review.claim(m.group(1), name, key)
-            return self._send(201, name, "text/plain; charset=utf-8", [self._up_cookie(key)])
+            return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
         form = self._form()
         if form is None:
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
@@ -635,6 +660,10 @@ class Handler(BaseHTTPRequestHandler):
         # 合言葉なしで開いたデモでは、次の版を採る口と AI の口を閉じる: 誰でも型紙の版を変えられる形にしない。費用のかかる呼び出しもさせない（J-028）。
         if getattr(self.server, "public_open", False) and re.fullmatch(r"/record/R-\d{4,}/(next|ai-interpret|ai-observe)", self.path):
             return self._send(403, "公開のデモでは使えません")
+        m = re.fullmatch(r"/record/(R-\d{4,})/(?:explain|next|ai-interpret|ai-observe)", self.path)
+        if m and not (records.folder() / f"{m.group(1)}.json").exists():
+            # 無い記録の番号（打ち間違いや、取り下げた後の古い頁）は 404 にする。記録を読む所で落ちて、送り直しを勧める 500 を返さないため
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         m = re.fullmatch(r"/record/(R-\d{4,})/(ai-interpret|ai-observe)", self.path)
         if m:
             return self._ai_reply(m.group(1), m.group(2), form)
@@ -645,6 +674,8 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             rid = m.group(1)
             rec = loop.record(rid)
+            if not records.mine(rid, self._rec_key()):  # 説明は記録を残した画面からだけ。1 回限りなので、別の人が書くと本人の欄が閉じる
+                return self._refuse(403, "受け付けられません")
             failures = loop.save_explanation(rid, form.get("by", ""), form.get("text", ""), form.get("next_idea", ""))
             if failures:
                 return self._send(422, self._toy(rec["source_id"], errors=[f.message for f in failures], at=rid, filled=("explain", form)))
@@ -789,12 +820,41 @@ class Handler(BaseHTTPRequestHandler):
             failure_log.claude_failed("ask", "POST", self.path, e, private=(question,))
             raise
 
+    def _photo_target(self, sid, form):
+        """写真を足す先: この画面が、写真の口の無い所（玩具の頁の記録の欄）で残した、同じ玩具の、写真の無い記録の番号（無ければ None）。
+        そこで残した後に手帖で写真を上げる人の記録を、1 つのままにするために引く。照らすのは記録の鍵だけ（records.mine）。
+        手帖の欄に新しい中身（字・別の見た事）がある時は足さない: 足すと、書いた事が残らないため。その時は今までどおり新しい記録になる。
+        別の紙や版を選んでいる時も足さない（見た事を選んでいなくても）: 別の紙の作りの写真を、前の紙の記録に付けないため。紙は頁で最初から 1 つ
+        選ばれているので、頁は、紙を選び直した時と見た事を選んだ時だけ紙を送る。紙が来ない時は、紙と版を見ない。
+        手帖で残した記録には足さない: 写真の口のある所で「記録だけ」を選んだ物で、机の端の 1 台を順に使う場では、次の人の写真が前の人の記録に付くため。"""
+        key = self._rec_key()
+        if not key or getattr(self.server, "public_open", False):
+            return None
+        from . import techo_site
+
+        r = next((r for r in reversed(records.all_records(sid)) if records.mine(r["id"], key)), None)
+        if r is None or r.get("via") or techo_site.media_of(r["id"]):
+            return None
+        if any(form.get(k, "").strip() for k in ("note", "impression", "fix_part", "fix_change", "fix_outcome")):
+            return None
+        hid = form.get("hypothesis", "")
+        if hid and (hid != r["hypothesis_id"] or sheet_version_of(sid, hid, form) != r.get("sheet_version", 1)):
+            return None
+        if form.get("result") and (not hid or form["result"] != r["result"]):
+            return None
+        return r["id"]
+
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
         out = lambda code, obj, headers=(): self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8", headers)
         hid = form.get("hypothesis", "")
         from . import think_sheet
 
+        if act == "record-json" and form.get("attach") == "1":
+            # 「写真あり」の合図（1 回の作りが 2 つの記録に割れる所の直し）: この画面が残した、写真の無い記録に足せる時は、新しい記録を作らずに
+            # その番号を返す。頁から番号は受けない（番号は札に出る連番なので、別の人が送れる）。鍵は作り直さない（期限の数え方がそのまま続く）。
+            rid = self._photo_target(sid, form)
+            return out(200, {"id": rid, "attached": True} if rid else {"attached": False})
         if not printed_versions(sid, hid) or not think_sheet.usable(self, sid, hid):
             return out(422, {"error": "作った紙をえらぶ"})
         if act == "ask-json":
@@ -816,12 +876,13 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), self._up_close())
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
         see = None  # 刷った時だけ、戻り先を型紙の窓にする
         anchor = "kiroku"  # 試した記録の欄へ戻すのは記録だけ
+        claim = ()  # 記録が残った時だけ、残した画面へ印を渡す
         if act == "ask":
             # 手順の質問は、試した記録（仮説への返事）には入れず、その場で答えを頁に出す。順（紙 → 記録と説明 → AI）には入らない。
             # 質問の文だけは工作の様子（omochae.making_log）に残す: 何で止まるかを、案内と答えを直す材料にする（本人の決定 11-05 朝）。
@@ -869,6 +930,7 @@ class Handler(BaseHTTPRequestHandler):
                 # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279。手帖の記録を残す口と同じ）。
                 from omochae import talk_log
                 talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
+                claim = (self._rec_cookie(rid),)
             msg = "記録を残しました。試した後の紙が開けます"
             # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
             anchor = rid or anchor
@@ -878,7 +940,7 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record")
+        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
 
 
 _making = {}  # 作っている最中の紙。（玩具, 案）→ その結果

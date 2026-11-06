@@ -19,7 +19,7 @@ import urllib.request
 
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import play_server  # noqa: E402
 
 MIN_TAP, MIN_FONT = 44, 12
@@ -110,8 +110,7 @@ def main():
             urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
             # 説明まで残した記録に「次の版」の欄が出る（#290）
             rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-            told = urllib.parse.urlencode({"text": "途中で止まった", "next_idea": "軸を長くする", "by": "測る道具"}).encode()
-            urllib.request.urlopen(urllib.request.Request(f"{base}/record/{rid}/explain", data=told, headers={"Origin": base}), timeout=120)
+            assert loop.save_explanation(rid, "測る道具", "途中で止まった", "軸を長くする") == []
             printed = True
         for path in pages:
             got = measure(exe, base, path, width)
