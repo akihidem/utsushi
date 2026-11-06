@@ -101,12 +101,14 @@ assert f'/toy/{G}/tsukuru?h={oid}"' in done and think_sheet.MAKE in done, "節�
 # ── 作りながら見る: 本人には、その人の紙が開く ──
 code, body = page(f"/toy/{G}/tsukuru", cookie=key)
 assert code == 200 and f'data-hid="{oid}"' in body, "紙の印が無ければ、本人の紙を開く"
-assert f"{oid}_v1_tejun.png" in body and THINK not in body, "手順の紙の絵はその紙の物。話した字は頁に出さない"
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。手順の紙の絵は無く、頁の組み方の絵を出す。話した字は頁に出さない
+assert "_tejun.png" not in body and THINK not in body, "手順の紙の絵を出さず、話した字は頁に出さない"
 title = re.search(r'<p class="top">.*?<span>(.*?)</span>', body, re.S).group(1)
 assert hypotheses.own_hypotheses(G)[-1]["name"] in title and oid not in title, "頁の頭は案の名前で呼ぶ。番号は出さない"
-assert f"組み方の絵（{hypotheses.own_hypotheses(G)[-1]['name']} の紙" in body and f"組み方の絵（{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ（字は 11-06 に「組み方の絵」へ）"
+# 手順の紙の絵の代わりに、手帖と同じ組み方の絵を出す（字の無い絵で、読み上げからは隠れる。#493 の作りながら見る頁と同じ）。番号は出さない
+assert 'aria-hidden="true"' in body and body.count('class="sheet koma on"') == 1 and f"{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ（字は 11-06 に「組み方の絵」へ）"
 assert page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].count(f'data-hid="{oid}"') == 1
-assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 200
+assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 404  # 自分の紙も手順の紙は組まない（窓口の決定 2026-11-07 カード 012120）
 total = body.count("<li")
 assert total >= 2, "その紙の手順の文が出る"
 # ほかの人には今のまま

@@ -297,7 +297,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     # 刷るのは型紙だけ（本人の決まり 11-06「文章のプリントは廃止」・窓口の決定 推し A）。手順の紙と試した後の紙は組まない。
     # 前は型紙の後に手順の紙（_print_instructions）と試した後の紙を組み、手順の紙が A4 に入らないと型紙も刷れなかった（御来迎 v14 で当たる）。
     # 組み方は頁（web.kumitate の組み方の節）、試した後の紙は前に配った道で開く時にだけ作る（web.play_server.ensure_after・print_after）。
-    # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）は話す道の決めを待つので、ここでは変えない
+    # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）も同じ形にした（窓口の決定 2026-11-07 カード 012120）
     return generate(template, params, source_id, out, title=title, version=version)
 
 
@@ -335,10 +335,10 @@ def print_own(source_id, own_id, out, version=1):
     if not params or key not in params:
         return print_free(source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], h["evidence"], out, mark=OWN_HYPOTHESIS)
     data = load(source_id)
-    rc = generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version, mark=OWN_HYPOTHESIS)
-    if rc:
-        return rc
-    return _print_instructions(params, source_id, f"自分の仮説「{h['name']}」", h["how_it_moves"], out, version, template, mark=OWN_HYPOTHESIS)
+    # 自分の紙も刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120「print_own も型紙だけを組む（#493 と同じ形、本人の規則の直接の当てはめ）」）。
+    # 前は型紙の後に手順の紙と試した後の紙を組み、手順の紙が A4 に入らない寸法（御来迎の次の組の内筒を下から押し上げる形）から作った自分の紙は、
+    # 型紙も刷れなかった。組み方は頁、試した後の紙は前に配った道で開く時にだけ作る（print_after。自分の仮説の印で刷る）
+    return generate(template, params, source_id, out, title=f"{data['toy']} 型紙 自分の仮説「{h['name']}」版 {version}", version=version, mark=OWN_HYPOTHESIS)
 
 
 def picture(source_id):
