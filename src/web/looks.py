@@ -116,6 +116,11 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-cover .frame div{width:100%;height:100%}
 .zn-cover h1{grid-column:3;justify-self:start;margin:0 0 0 6vw;writing-mode:vertical-rl;font-weight:300;
  font-size:clamp(40px,6.5vw,92px);letter-spacing:.5em;color:#efe6d2}
+/* 次へ進む釦（段 0）は、題と組にして 1 つだけ。広い幅は右の欄で縦書きの題の下、狭い幅は題のすぐ後（額より先）に置く。
+   額の下の段に置くと、表紙が画面の高さいっぱいなので、幅 1440×900 でも 846px（最初の画面の外）だった。押せる大きさ（64px）を守り、金の細い枠で黒地の性格を崩さない */
+.zn-title{grid-column:3;justify-self:start;margin:0 0 0 6vw;display:flex;flex-direction:column;align-items:flex-start;gap:28px}.zn-title h1{margin:0}
+.zn-title .road{margin:0}
+body.zine a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #c9a96a;border-radius:2px;color:#efe6d2;font-size:20px;letter-spacing:.5em}
 .zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
 .zn-cover .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}
 .zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
@@ -149,8 +154,9 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;padding:8vh 8vw;gap:24px}
- .zn-cover .grow{grid-column:1;margin:0}
+ .zn-cover .grow{grid-column:1;margin:0;order:1}  /* 狭い幅は 題と えらぶ → 2 行 → 額 の順（2 行も額より先） */
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
+ .zn-title{grid-column:1;justify-self:center;margin:0;align-items:center;gap:18px;order:1}.zn-cover .frame{order:2}
  .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
  .zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:72vh;height:72svh}
  .zn-all .grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
@@ -173,7 +179,7 @@ def zine():
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
-             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1>{growing()}</section>')
+             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{growing()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
 
@@ -202,6 +208,11 @@ def zine():
 # 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。
 # 動き: 本人の頼み（2026-11-04「この動き、デモサイトでやってみる？」）で、A′ だけに扇の札・スクロールのせり上がり・扇をひらくノブを足した
 # （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。C は動かさないまま。
+# 入口の最初の画面の次へ進む釦（UX の見直しの段 0、本人の決定 11-06。research/36 の「道しるべの言葉は えらぶ・つくる・のこす・もちよる」）。
+# 入口の最初の画面で押せる物は頭の帯だけで、最初の玩具は 1197px 下だった（幅 390、research/36 の数）。字は道しるべの 1 語だけで、新しい字は足さない。
+# 行き先は絵で選ぶ頁（/toys）。入口の中の一覧は額装した 2 種の後にあり遠いので、近い方へ向ける
+ROAD_GO = '<p class="road"><a class="road-go" href="/toys">えらぶ</a></p>'
+
 TENJI = """
 body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 /* 地は本人の言葉「白の背景」へ戻した（research/24 の 1）。前のクリーム #f6f3ec は作る側の手癖で、生成物の定番の見た目に寄っていた。
@@ -212,6 +223,11 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
 .tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:12px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
+/* 次へ進む釦（段 0）は題の 3 列の下の段に 1 つだけ。白の壁の展示に合わせ、塗らずに細い枠で示す */
+/* 字の並びは 題 → 釦 → 副題。幅の狭い画面（1 列に積む）では、副題まで積むと釦が最初の画面の外に出る（幅 390 で 1015px）ので、題のすぐ後に置く。
+   広い画面は 3 列の縦書きの下の段（2 行目）に置く */
+.tj-hall .road{grid-column:1/-1;grid-row:2;justify-self:center;margin:0}
+body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #6b4f2a;border-radius:2px;color:#1f1b17;font-size:20px;letter-spacing:.5em}
 .tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
@@ -301,7 +317,9 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 
 @media (max-width:820px){.tj-room{grid-template-columns:minmax(0,1fr);gap:6vh}.tj-work{width:72vw}.tj-songs{writing-mode:horizontal-tb;height:auto}
  .tj-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tj-hall{grid-template-columns:1fr;justify-items:center;gap:4vh;padding:10vh 5vw}
- .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}
+ .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}.tj-hall .road{grid-column:1;grid-row:auto}
+ /* 1 列に積む時は、英字の小さな 1 行だけ横書きにする（縦書きのままだと 246px を取り、375×667 で釦が最初の画面の外に出た）。題と副題は縦書きのまま */
+ .tj-hall .en{writing-mode:horizontal-tb}
  .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}
  .tj-all .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
 @media (max-width:680px){.tj-all li.big{grid-column:auto;grid-row:auto}}
@@ -381,7 +399,7 @@ def tenji():
     ts = toys()
     body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+             + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
     # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
     body += fan_deck(ts) + ogi_slider() + all_toys("tj")
     for i, t in enumerate(ts, 1):
