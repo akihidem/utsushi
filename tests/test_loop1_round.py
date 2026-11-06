@@ -142,7 +142,7 @@ assert {x["when"] for x in told} == {"idea", "making"} and any(x["text"] == CRAF
 assert {x["text"] for x in told} == {THINK, EARLY_THINK, CRAFT, EARLY_CRAFT}, "紙を採る前にたたき台に付いた同じ印の字も結ばれる。ほかの印の字は結ばれない"
 assert {x["text"] for x in loop.maker_talk(rid)["items"]} == {CRAFT, EARLY_CRAFT}, "輪の材料に工夫が入る（考えはループ1 の材料なので入れない）"
 body = page(f"/toy/{G}/techo/kiroku")[1]  # 記録の札は手帖の記録の頁（#87）
-assert CRAFT in body and hanasu.KUFU_HEAD in body and THINK not in body, "手帖の記録の札の「工夫した所」に出る。考えは出さない"
+assert CRAFT not in body and THINK not in body and rid in body, "記録の札に出るのは記録だけ。話した工夫も考えも頁に出さない（本人の決定 11-06、J-034）"
 groups = engine_bundle.build()["groups"]
 # 束の群は紙ごと（Issue 334）。自分の紙の記録は、その紙の群で、たたき台の刷った組に入る（組が外れない）
 mine = [g for g in groups if rid in g["record_ids"]]
