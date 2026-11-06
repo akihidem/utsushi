@@ -234,6 +234,12 @@
   "status": "決定"
  },
  {
+  "id": "J-030",
+  "path": "decisions/J030-reach-abroad.md",
+  "hook": "届け先はいろんな国の人。絵を先に、字の少ない道を太く。英語の紹介文の案と段",
+  "status": "本人の方針（11-05）。紹介の文は本人が採った（#318）。段の範囲は本人の採否待ち"
+ },
+ {
   "id": "claude-story",
   "path": "claude-story.md",
   "hook": "Claude の使い方の物語。機能の選び分けと開発の運転の形",

@@ -82,51 +82,52 @@
 | 37 | [J-023](decisions/J023-first-test-later.md) | 本物の API の最初の試験は作り込んでから。下見・キャッシュ・費用の数え方を足した | 決定 |
 | 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。ルックブックは A と C を残した（11-04）。画面は人がまだ使っていない |
 | 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
-| 40 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
-| 41 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
-| 42 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
-| 43 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |
-| 44 | [research/19](research/19-emil-skills-review.md) | 参照のルックブックの観察と A の再現、Skill 集から拾った物 | 評価。A は作り替えた。人の目はまだ |
-| 45 | [research/20](research/20-worksheet-rethink.md) | 学習プリントの問いかけを本人の 4 つの着目で考え直す案 | 案。採るかは本人（U-25） |
-| 46 | [research/21](research/21-prior-art-compare.md) | Wandy を含む先行事例と今の実装の比較 | 比較。Wandy の実物は未確認 |
-| 47 | [research/22](research/22-origami-papercraft-ai.md) | 折り紙・ペーパークラフトと AI の研究の系譜と取り入れる候補 | 調査。候補を採るかは本人（U-26） |
-| 48 | [research/23](research/23-phone-artifact.md) | iPhone で手順を聞き、できた物を上げるアーティファクトの案 | 案。決める点は U-35 |
-| 49 | [research/24](research/24-hallmark-impeccable-review.md) | デザインの Skill 2 つを入口の磨きの参考として評価 | 評価。拾った 1〜5 は A′・C・A に入れた |
-| 50 | [research/25](research/25-kuzushi-reading.md) | くずし字を読む頁: 先に書き、確かめた読みと並べる | 作った。印の当て方と保存は未決 |
-| 51 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
-| 52 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
-| 53 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
-| 54 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
-| 55 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
-| 56 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
-| 57 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
-| 58 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
-| 59 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
-| 60 | [contributions-form](contributions-form.md) | 外の入口の Google フォームの表と取り込みの流れ | 本人がフォームを作れば開く（f17） |
-| 61 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 62 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
-| 63 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
-| 64 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
-| 65 | [site-requirements](site-requirements.md) | サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで | 実装した（11-05 未明）。本人の採否はカード |
-| 66 | [workshop-design](workshop-design.md) | 場の全体デザイン。本線は型紙で作る道で、話す・作る・残すの一周を 1 コマに置く | 案（版 2、11-05 午後）。場はまだ開いていない |
-| 67 | [workshop-guide](workshop-guide.md) | 進行者の手引き。時間割と言う事・止まった人への段・場の後の 15 分を A4 両面の 1 枚に | 本人の覚え書き（本人の決定、11-05）。文面は確定しない |
-| 68 | [J-029](decisions/J029-trial-video.md) | 作成の過程の動画を記録に結び、札と人の確かめから型紙の版まで回す（本人の指示） | 本人の指示と決定（11-05）。作り物の動画で通した。本人の動画での 1 周はこれから |
-| 69 | [J-031](decisions/J031-build-now.md) | 予想の段を無くし、開いたらすぐ作る。他の人の作った物のギャラリーを作る（本人の決定） | 本人の決定（11-05）。作りは #242 の枝で入れた |
-| 70 | [research/26](research/26-picture-boxes.md) | 全部の玩具に図を付ける。38 種の写しが無かった原因（取り込みが 1 枚の失敗で止まる）と、83 の箱を目で確かめた記録 | 11-05 直した。人の確認（crop_status）はまだ |
-| 71 | [research/27](research/27-analogy-all-toys.md) | 全部の玩具に「たとえと、関連する事柄」。欄の形・出し方・分身 3 本の書き方・守った線 | 11-05 朝 83 種に入れた。文の人の確認はまだ |
-| 72 | [research/28](research/28-sheet-qa.md) | 全玩具の型紙 171 本を刷って検めた。刷れない物 0、印や字の欠け 7 種。雛形は直さず報告だけ | 11-05 朝に検めた。直しは型紙エンジンの側 |
-| 73 | [J-026](decisions/J026-site-side-loop.md) | 改善の輪はサイト側でも回す。報告（動きと感想）を型紙の改善に回し、次に作る人に直した版を渡す | 本人の方針（11-05 朝）。作った |
-| 74 | [research/29](research/29-making-data-to-service.md) | 工作の様子の蓄積を、サービス全体の何にどう回すか。蓄積する物・改善の行き先・段取り・決める点 | 本人の問いへの答え（11-05 朝）。段 0 は作業中 |
-| 75 | [research/30](research/30-kazasu-camera-choice.md) | かざして選ぶ（内カメラに原図を重ね、予想を選ぶ）の設計・守る線・重さの見積もり | 本人の案（11-05 朝）。タップの形は #242 で外した。観察 A は残した |
-| 76 | [J-027](decisions/J027-making-data.md) | 工作の様子（聞いた事・止まった所・動き・感想）を蓄積してサービス全体の改善に回す。残す物と残さない物、出し方の線 | 本人の決定（11-05 朝）。最初の一切れを作った |
-| 77 | [J-028](decisions/J028-open-demo.md) | デモの 2 サイトを合言葉なしで開く。開いた場では写真と動画を受けず、置き場を分ける | 本人の許可（11-05 朝）。開く操作は人の手か、許しが出た時 |
-| 78 | [research/31](research/31-observation-depth.md) | 観察の深さを運用の必要から決める。先行例つき。A を土台に、聞く時の 1 枚を次に | 本人の問いへの答え（11-05 朝）。決める点 3 つ |
-| 79 | [research/33](research/33-observe-from-picture.md) | 型紙なしで絵だけから作る過程を、机の端の端末のカメラで観察し、再生の知見を得る案 | 案。採否は本人（U-46） |
-| 80 | [research/32](research/32-contributor-recognition.md) | 型紙を直した人を示す案（本人の種）。J-025 との切り分けと形の 3 案 | 種の記録（11-05）。形は本人が決める |
-| 81 | [research/34](research/34-talk-build-share-loop.md) | 話す・作る・残すの一周とエンジンごとの改善。提出の核。今ある物と無い物 | 本人の言葉（11-05 昼）。音声とエンジンは別の担当で作る |
-| 82 | [J-033](decisions/J033-assembly-3d.md) | 手順どおりに 3D で組み立て、組めない所を自己検証の結果に残す。本線は紙のまま（本人の考え） | 芯と頁を作る（11-05〜06）。頁の文と置き場は本人の決定（11-06） |
-| 83 | [research/36](research/36-road-and-audience.md) | 使う人の道（6 工程）と、相手を全年齢・外国の人に広げる当てはめ。文書の直す案 | 道の設計は本人の決定（11-06）。持ち寄る場の設計と文書の直しは案。頁はまだ変えていない |
-| 84 | [J-032](decisions/J032-one-sheet-per-toy.md) | 型紙は玩具 1 つに 1 枚のたたき台。自分の案は話す形、見比べる紙は外す（本人の決定） | 本人の決定（11-05）。J-002・J-019・J-008 を置き換えた。作りは #332 で順に入れる |
+| 40 | [J-030](decisions/J030-reach-abroad.md) | 届け先はいろんな国の人。絵を先に、字の少ない道を太く。英語の紹介文の案と段 | 本人の方針（11-05）。紹介の文は本人が採った（#318）。段の範囲は本人の採否待ち |
+| 41 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
+| 42 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
+| 43 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
+| 44 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |
+| 45 | [research/19](research/19-emil-skills-review.md) | 参照のルックブックの観察と A の再現、Skill 集から拾った物 | 評価。A は作り替えた。人の目はまだ |
+| 46 | [research/20](research/20-worksheet-rethink.md) | 学習プリントの問いかけを本人の 4 つの着目で考え直す案 | 案。採るかは本人（U-25） |
+| 47 | [research/21](research/21-prior-art-compare.md) | Wandy を含む先行事例と今の実装の比較 | 比較。Wandy の実物は未確認 |
+| 48 | [research/22](research/22-origami-papercraft-ai.md) | 折り紙・ペーパークラフトと AI の研究の系譜と取り入れる候補 | 調査。候補を採るかは本人（U-26） |
+| 49 | [research/23](research/23-phone-artifact.md) | iPhone で手順を聞き、できた物を上げるアーティファクトの案 | 案。決める点は U-35 |
+| 50 | [research/24](research/24-hallmark-impeccable-review.md) | デザインの Skill 2 つを入口の磨きの参考として評価 | 評価。拾った 1〜5 は A′・C・A に入れた |
+| 51 | [research/25](research/25-kuzushi-reading.md) | くずし字を読む頁: 先に書き、確かめた読みと並べる | 作った。印の当て方と保存は未決 |
+| 52 | [how-it-was-built](how-it-was-built.md) | 本人は窓口を通して決める。待ちと取り違えも | 記録 |
+| 53 | [research/14](research/14-judging-criteria.md) | 審査基準の 4 項目で点検。現場と継続利用が欠けている | 判断待ち O-08〜O-11 |
+| 54 | [research/15](research/15-philosophy-review.md) | 哲学への批判。言葉は紙と紐、実装は型紙一式。虎は本人が回答 | 残りの 4 点は本人が決めた |
+| 55 | [open](open.json) | 今の判断待ちの一覧 | 機械可読 |
+| 56 | [decided-and-open](decided-and-open.md) | 決まったことと、まだ決まっていないこと（閉じる条件つき）の 1 枚 | 11-05 の凍結の前の一覧。提出前に数え直す |
+| 57 | [spec](spec.md) | 今回の実装が成立する条件の仕様書（哲学・決定・実装から起こした） | 11-05 の凍結に使う。決まっていない点は U-27〜U-31 |
+| 58 | [gate-trial](gate-trial.md) | 関門の試行（Red/Green・証拠・書き戻し）の帳面 | 試行中（11-04〜） |
+| 59 | [demo-notes](demo-notes.md) | デモ動画の準備の参考と当てはめの案 | 11-06〜07 に使う（U-19） |
+| 60 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
+| 61 | [contributions-form](contributions-form.md) | 外の入口の Google フォームの表と取り込みの流れ | 本人がフォームを作れば開く（f17） |
+| 62 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
+| 63 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 64 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
+| 65 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
+| 66 | [site-requirements](site-requirements.md) | サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで | 実装した（11-05 未明）。本人の採否はカード |
+| 67 | [workshop-design](workshop-design.md) | 場の全体デザイン。本線は型紙で作る道で、話す・作る・残すの一周を 1 コマに置く | 案（版 2、11-05 午後）。場はまだ開いていない |
+| 68 | [workshop-guide](workshop-guide.md) | 進行者の手引き。時間割と言う事・止まった人への段・場の後の 15 分を A4 両面の 1 枚に | 本人の覚え書き（本人の決定、11-05）。文面は確定しない |
+| 69 | [J-029](decisions/J029-trial-video.md) | 作成の過程の動画を記録に結び、札と人の確かめから型紙の版まで回す（本人の指示） | 本人の指示と決定（11-05）。作り物の動画で通した。本人の動画での 1 周はこれから |
+| 70 | [J-031](decisions/J031-build-now.md) | 予想の段を無くし、開いたらすぐ作る。他の人の作った物のギャラリーを作る（本人の決定） | 本人の決定（11-05）。作りは #242 の枝で入れた |
+| 71 | [research/26](research/26-picture-boxes.md) | 全部の玩具に図を付ける。38 種の写しが無かった原因（取り込みが 1 枚の失敗で止まる）と、83 の箱を目で確かめた記録 | 11-05 直した。人の確認（crop_status）はまだ |
+| 72 | [research/27](research/27-analogy-all-toys.md) | 全部の玩具に「たとえと、関連する事柄」。欄の形・出し方・分身 3 本の書き方・守った線 | 11-05 朝 83 種に入れた。文の人の確認はまだ |
+| 73 | [research/28](research/28-sheet-qa.md) | 全玩具の型紙 171 本を刷って検めた。刷れない物 0、印や字の欠け 7 種。雛形は直さず報告だけ | 11-05 朝に検めた。直しは型紙エンジンの側 |
+| 74 | [J-026](decisions/J026-site-side-loop.md) | 改善の輪はサイト側でも回す。報告（動きと感想）を型紙の改善に回し、次に作る人に直した版を渡す | 本人の方針（11-05 朝）。作った |
+| 75 | [research/29](research/29-making-data-to-service.md) | 工作の様子の蓄積を、サービス全体の何にどう回すか。蓄積する物・改善の行き先・段取り・決める点 | 本人の問いへの答え（11-05 朝）。段 0 は作業中 |
+| 76 | [research/30](research/30-kazasu-camera-choice.md) | かざして選ぶ（内カメラに原図を重ね、予想を選ぶ）の設計・守る線・重さの見積もり | 本人の案（11-05 朝）。タップの形は #242 で外した。観察 A は残した |
+| 77 | [J-027](decisions/J027-making-data.md) | 工作の様子（聞いた事・止まった所・動き・感想）を蓄積してサービス全体の改善に回す。残す物と残さない物、出し方の線 | 本人の決定（11-05 朝）。最初の一切れを作った |
+| 78 | [J-028](decisions/J028-open-demo.md) | デモの 2 サイトを合言葉なしで開く。開いた場では写真と動画を受けず、置き場を分ける | 本人の許可（11-05 朝）。開く操作は人の手か、許しが出た時 |
+| 79 | [research/31](research/31-observation-depth.md) | 観察の深さを運用の必要から決める。先行例つき。A を土台に、聞く時の 1 枚を次に | 本人の問いへの答え（11-05 朝）。決める点 3 つ |
+| 80 | [research/33](research/33-observe-from-picture.md) | 型紙なしで絵だけから作る過程を、机の端の端末のカメラで観察し、再生の知見を得る案 | 案。採否は本人（U-46） |
+| 81 | [research/32](research/32-contributor-recognition.md) | 型紙を直した人を示す案（本人の種）。J-025 との切り分けと形の 3 案 | 種の記録（11-05）。形は本人が決める |
+| 82 | [research/34](research/34-talk-build-share-loop.md) | 話す・作る・残すの一周とエンジンごとの改善。提出の核。今ある物と無い物 | 本人の言葉（11-05 昼）。音声とエンジンは別の担当で作る |
+| 83 | [J-033](decisions/J033-assembly-3d.md) | 手順どおりに 3D で組み立て、組めない所を自己検証の結果に残す。本線は紙のまま（本人の考え） | 芯と頁を作る（11-05〜06）。頁の文と置き場は本人の決定（11-06） |
+| 84 | [research/36](research/36-road-and-audience.md) | 使う人の道（6 工程）と、相手を全年齢・外国の人に広げる当てはめ。文書の直す案 | 道の設計は本人の決定（11-06）。持ち寄る場の設計と文書の直しは案。頁はまだ変えていない |
+| 85 | [J-032](decisions/J032-one-sheet-per-toy.md) | 型紙は玩具 1 つに 1 枚のたたき台。自分の案は話す形、見比べる紙は外す（本人の決定） | 本人の決定（11-05）。J-002・J-019・J-008 を置き換えた。作りは #332 で順に入れる |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

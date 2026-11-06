@@ -26,7 +26,7 @@
 """
 import json
 
-from omochae import hypotheses, instructions, loop, making_log, render, talk_log
+from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
 from omochae.compose import TEMPLATES
 
 from . import hanasu, skin, tsukuru
@@ -458,6 +458,7 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # JS が無い時は、玩具の頁の聞く口へ行く。
             + _key(STUCK, "key", f'id="stuck" data-on="step" href="/toy/{esc(sid)}#ask"', "a")
             + '</div>'
+
             '<section class="henji" data-on="henji">'
             f'<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="send" aria-label="聞く">{SEND}</button></form>'
             f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(making_log.ASK_NAME_VOICE)}</p></section>'
@@ -470,7 +471,7 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
-            f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
+            f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>')
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
           .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))

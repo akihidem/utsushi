@@ -218,13 +218,15 @@ def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
     # 玩具の頁の口は、JS が無い時に同じ節へ着く（返事の文もそこに出る。#121 と同じ形）。ほかの 2 つは、戻る道の付いた頁で答える。
     land = "#hanasu" if scene == "think" else ""
     hint = f' placeholder="{esc(s["hint"])}"' if s.get("hint") else ""
+    # 取り下げの説明文（本人の決定）。記録ごとの口は手帖の上げる節の中に並ぶので、そこでは節の 1 回に任せて、同じ文を重ねない。
+    withdraw = "" if scene == "keep" else f'<p class="meta">{esc(records.WITHDRAW_NOTICE)}</p>'
     return (f'<div class="hanasu" data-hanasu data-voice="{mode()}"><p class="hanasu-head">{esc(s["head"])}</p>'
             f'<form method="post" action="/toy/{esc(sid)}/talk{land}">{hidden}'
             f'<label class="sr" for="{key}">{esc(s["head"])}</label><textarea id="{key}" name="text" maxlength="{talk_log.MAX_TEXT}" {hint} required></textarea>'
             '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'
             '<button class="hanasu-go">残す</button></div></form>'
             '<p class="hanasu-note" aria-live="polite"></p><ul class="hanasu-said"></ul>'
-            f'<p class="meta">{esc(NOTICE)}{how}</p></div>' + (assets() if with_assets else ""))
+            f'<p class="meta">{esc(NOTICE)}{how}</p>{withdraw}</div>' + (assets() if with_assets else ""))
 
 
 def think_section(sid, data, note=""):

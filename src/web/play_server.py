@@ -398,6 +398,19 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/gallery":
             from . import techo_site
             return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
+        # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
+        m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
+        if m:
+            from . import zukan_hon
+            if int(m.group(1)) in zukan_hon.frames():
+                return self._send(200, zukan_hon.page(int(m.group(1)), look, path))
+        m = re.fullmatch(r"/zukan/hon/R(\d{7})-([LR])\.jpg", path)
+        if m:
+            from omochae import ingest
+            from . import zukan_hon
+            face = (int(m.group(1)), m.group(2))
+            if face in ingest.book_faces() and zukan_hon.face_file(*face).exists():
+                return self._send(200, zukan_hon.face_file(*face).read_bytes(), "image/jpeg")
         # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
@@ -506,6 +519,13 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) in hk.names() and hk.has(m.group(1)):
                 return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
             return self._send(404, "無い")
+        # 玩具が載る頁の全体（原画と歌。本人の指示 11-06）。合言葉なしの場でも出す（公開の古い本の絵で、人の写真ではない）
+        m = re.fullmatch(rf"/picture/({SID})/page", path)
+        if m and m.group(1) in sources():
+            from . import genga
+            page = genga.page_file(source(m.group(1)))
+            if page.exists():
+                return self._send(200, page.read_bytes(), "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
@@ -708,7 +728,7 @@ class Handler(BaseHTTPRequestHandler):
         # 確認の前の動画を、上げた本人でない画面から Claude に渡さない。頁に釦は出ないが、開いたままの古い頁から届く。
         if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
             return self._refuse(403, "受け付けられません")
-        if loop.explanation(rid) is None:
+        if not loop.explained(rid):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
             return self._done(sid, wording.plain("鍵が置かれると、Claude が答えます"), form.get("back", ""), anchor=rid)
@@ -1009,7 +1029,7 @@ def fixes_of(form):
     part, change, outcome = (form.get(k, "").strip() for k in ("fix_part", "fix_change", "fix_outcome"))
     if not (part or change or outcome):
         return []
-    blank = "書かれていない"
+    blank = records.FIX_BLANK
     return [{"part": part or blank, "change": change or blank, "outcome": outcome or blank}]
 
 

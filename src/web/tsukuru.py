@@ -35,7 +35,7 @@ import json
 from omochae import hypotheses, instructions, loop, making_log
 from omochae.compose import TEMPLATES
 
-from . import skin
+from . import genga, skin
 from .voice_words import CLEAN, WORDS
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
@@ -244,7 +244,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
-            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>'
+            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>{genga.fold(sid)}'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'
