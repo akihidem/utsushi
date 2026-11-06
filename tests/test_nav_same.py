@@ -23,7 +23,7 @@ records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result
 # 帯は道しるべ（UX の見直しの段 1、本人の決定 11-06）。印は今いる駅。序・図鑑は道の外の読み物で「よむ」に印
 PAGES = {"/": "うつし", "/about": "よむ", "/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる",
          "/zukan": "よむ", f"/zukan/{G}": "よむ", f"/zukan/{G}/yomi": "よむ", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ"]
+ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "English"]  # English は右の端の言語の切り替え（窓口の決定 11-06）
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)

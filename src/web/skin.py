@@ -33,7 +33,7 @@ SKINS = {
 # 作った物と職人の言葉・図鑑・English）はここから外し、行き先の頁は変えない
 ROAD = ("えらぶ", "つくる", "のこす", "もちよる")
 YOMU = ("/about", "よむ")
-YOMU_PATHS = ("/about", "/zukan", "/otona", "/hokusai")
+YOMU_PATHS = ("/about", "/zukan", "/otona")
 # 英語の頁の帯（J-030 の段 1）。全部の頁を訳さないので、道は入口と日本語の頁へだけ。
 NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
@@ -68,14 +68,15 @@ def esc(s):
 # 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
 # スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）
 # 道しるべの帯（段 1）の見た目: 玩具を選ぶ前の つくる・のこす は押せない段の印なので控えの色。よむ は道しるべの 4 つと別の物なので右へ離す。
+# English は言語の切り替えで、狭い幅（うつし が 1 段目を取る）では 1 段目の右の端に置く（2 段目の道しるべを 3 段にしないため。幅 320 で見た）。
 # 注は CSS の中に書かない（頁の字に混ざり、頁の字を見る試験に当たるため）
 NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 /* 頭の帯と足は骨の物なので、頁の本文の書体（手帖のゴシックなど）を受け継がない（#126） */
 .nav,.foot{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
-.nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}
-@media (max-width:480px){.nav{gap:8px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+.nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}.nav .nav-lang{font-size:12px;letter-spacing:.1em}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
@@ -238,7 +239,8 @@ def nav(skin, current="", path="/", lang="ja"):
     cur = lambda name: ' aria-current="page"' if name == station else ""  # noqa: E731
     item = lambda name: (f'<a href="{to[name]}"{cur(name)}>{esc(name)}</a>' if to[name]  # noqa: E731
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
-    items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span>'
+    # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない
+    items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="/en" lang="en">English</a>'
     # 「うつし」の印は入口だけ（呼び手が current="/" を渡す）。断りの頁などは道が "/" でも、どこにもいないので印を付けない（前の帯と同じ）
     brand = ' aria-current="page"' if current == "/" else ""
     return f'<nav class="nav"><a class="brand" href="/"{brand}>うつし</a>{items}</nav>'

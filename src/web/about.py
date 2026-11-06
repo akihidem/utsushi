@@ -31,8 +31,12 @@ LOOP = ("ここでは、おもちゃを選ぶと、すぐに紙の型紙を作�
         "どう工夫したかを記録に書いてください。次の型紙をよくするヒントになります。自分の考えを書いた後で、AI（Claude）からも返事をもらえます。"
         "紙で動いても、昔の作り方が分かったことにはなりません。昔の物をそのまま作り直した物ではなく、ためしに作るための案です。")
 
+# よむ の頁（段 1）: 狭い幅（1 列に積む）では、題と読み物への道（図鑑・保護者の方へ…・English）を額の絵より先に置く（order:-1）。
+# 前は額の絵（約 630px）の後で、幅 390 で道が 882px からと、最初の画面に入らなかった（別の目の確かめ 11-06）。広い幅は 2 列（額 | 題）のまま。
+# 注は CSS の中に書かない（頁の字に混ざるため）
 STYLE = """
 .about .hero{align-items:center}
+@media (max-width:820px){.about .hero>div:last-child{order:-1}}
 .about .concept{font-size:clamp(18px,2vw,24px);letter-spacing:.2em;line-height:2;margin:14px 0 0}
 .about blockquote{margin:12px 0;padding:0 0 0 16px;border-left:1px solid var(--frame);font-size:16px;line-height:2.1;letter-spacing:.06em}
 .about .sec h2{margin-bottom:.4em}
