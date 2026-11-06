@@ -129,7 +129,7 @@ def see(site, path, data=None, name=None):
 
 # 1 全部の玩具の頁。data/hypotheses の字はここに出る
 for s in sources():
-    for path in (f"/toy/{s}", f"/zukan/{s}", f"/toy/{s}/techo"):
+    for path in (f"/toy/{s}", f"/zukan/{s}", f"/toy/{s}/techo", f"/toy/{s}/techo/kiroku"):
         see(white, path)
 # 2 頁の作りの字。皮で作りが違う頁は両方を見る
 for site, tag in ((white, "白"), (black, "黒")):
@@ -150,7 +150,7 @@ see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "imp
 waiting = see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
 assert 'name="next_idea"' in waiting, "説明の欄まで届いていない"
 see(white, f"/toy/{G}?see=H-A&kind=sheet&v=2", name="版 2 の窓")
-see(white, f"/toy/{G}/techo", name="記録の後の手帖")
+see(white, f"/toy/{G}/techo/kiroku", name="記録の後の手帖の記録の頁")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")
 see(white, f"/zukan/{G}", name="記録の後の図鑑")
 see(white, "/gallery", name="記録の後のギャラリー")
@@ -219,7 +219,9 @@ assert any("作る側が直します" in t for t in pages[f"/toy/{G}"]), "改善
 gallery = " ".join(pages["/gallery"])
 assert "個人情報を確かめてから" in gallery and "（持ち寄りの場）" in gallery, "ギャラリーの固定の文"
 assert f"記録の番号 {rid} をもとに直しました" in " ".join(pages["版 2 の窓"])
-assert "紙に印刷してある組の番号 goraigo-v10" in " ".join(pages[f"/toy/{G}/techo"]), "紙に刷ってある組と照らせる"
+# 前の手帖の頁は、紙を選ぶ札の下に「紙に印刷してある組の番号」を出していた（#135）。作り直した手帖（#87）は紙を選ぶ札を持たず、作る頁に組の番号を出さない
+# （本人の決定 11-05・案 A）。この字はサイトのどこにも出なくなる。出さない事は本人が決めた（11-06 のカード 125158・推し A。PR #395 の本文に書いた）
+assert "goraigo-v10" not in " ".join(pages[f"/toy/{G}/techo"]), "作る頁に組の番号を出さない"
 
 # 誰が確かめたか・書いたかの印は残る（J-016）。言葉だけが替わる
 zu = pages[f"/zukan/{G}"]

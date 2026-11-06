@@ -88,7 +88,7 @@ class Screen:
         return data.decode()
 
     def techo(self):
-        st, data = self.call("GET", f"/toy/{G}/techo")
+        st, data = self.call("GET", f"/toy/{G}/techo/kiroku")
         assert st == 200, st
         return data.decode()
 
@@ -153,12 +153,12 @@ assert e.image(late, n) == 404 and f"/record/{late}/media/{n}" not in e.techo(),
 key = kept[n]["key"]
 for bad in ("{壊れた", json.dumps({n: {"key": key}}), json.dumps({n: {"key": key, "at": "壊れた時刻"}}), json.dumps({n: {"key": 3, "at": old}}), json.dumps({n: "字"})):
     owners.write_text(bad, encoding="utf-8")
-    assert e.image(late, n) == 404 and e.call("GET", f"/toy/{G}/techo")[0] == 200, ("読めない控えは出さない方へ倒す", bad)
+    assert e.image(late, n) == 404 and e.call("GET", f"/toy/{G}/techo/kiroku")[0] == 200, ("読めない控えは出さない方へ倒す", bad)
 assert media_review.shown_to(late, [n]) == [] and media_review.shown_to(late, [n], "") == [], "鍵なしは確認の後の物だけ"
 
 g = Screen()
 g.cookie = {"utsushi_up": "é"}
-assert g.image(rid, other) == 404 and g.call("GET", f"/toy/{G}/techo")[0] == 200, "形の外の鍵でも落ちない"
+assert g.image(rid, other) == 404 and g.call("GET", f"/toy/{G}/techo/kiroku")[0] == 200, "形の外の鍵でも落ちない"
 
 # 5. 取り下げで鍵の控えも消える
 f = Screen()

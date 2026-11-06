@@ -23,7 +23,7 @@ MIN_FONT = 12
 G = "NDL-1187053-R0000005-L"
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
-PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
+PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
 # BASE が全幅にする組。床の inline-flex が掛かると、名前の横に細く並ぶ（#290）。これだけを block に戻す
 WIDE = {"input[type=text]", "input[type=number]", "textarea", "select"}
 # 札と隠した入力は今の形のまま。ここに無い形が label に入ったら、どちらかを決める

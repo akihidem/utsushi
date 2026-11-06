@@ -60,7 +60,7 @@ class Screen:
 
     def forms(self, rid):
         """(玩具の頁の説明の欄, 手帖の説明の欄, 手帖の字を足す口)。"""
-        toy, techo = self.call(f"/toy/{G}")[1], self.call(f"/toy/{G}/techo")[1]
+        toy, techo = self.call(f"/toy/{G}")[1], self.call(f"/toy/{G}/techo/kiroku")[1]
         explain = f'action="/record/{rid}/explain'
         return explain in toy, explain in techo, f'name="record" value="{rid}"' in techo
 
@@ -111,7 +111,7 @@ for kw in ({}, {"public_open": True}):
     second = records.all_records(G)[-1]["id"]
     token = a.cookies[COOKIE]
     assert len(token) >= 20 and second not in token, a.cookies
-    assert token not in a.call(f"/toy/{G}")[1] and token not in a.call(f"/toy/{G}/techo")[1], "印を頁に書かない"
+    assert token not in a.call(f"/toy/{G}")[1] and token not in a.call(f"/toy/{G}/techo")[1] and token not in a.call(f"/toy/{G}/techo/kiroku")[1], "印を頁に書かない"
     kept = (records.folder() / f"{second}.json").read_text(encoding="utf-8") + (loop.folder() / f"owner-{second}.json").read_text(encoding="utf-8")
     assert WHO not in kept, "who を残さない"
     assert all("owner" not in k and "token" not in k for k in records.all_records(G)[-1]), "印は記録の中に置かない"

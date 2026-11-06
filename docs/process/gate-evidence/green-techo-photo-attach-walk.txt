@@ -1,0 +1,7 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_photo_attach_walk.py
+# commit: 1eaca460 の上の作業の木（この commit の中身）
+/tmp/tmperorljre/play/NDL-1187053-R0000005-L/.tmp-st9rvioi/H-A_v1.pdf
+/tmp/tmperorljre/play/NDL-1187053-R0000005-L/.tmp-st9rvioi/H-A_v1_tejun.pdf
+/tmp/tmperorljre/play/NDL-1187053-R0000005-L/.tmp-st9rvioi/H-A_v1_after.pdf
+ok 手帖の作る頁: 写真だけで「のこす」を押すと記録が 1 つのまま。写真のある記録・工夫の字がある時は今までどおり札を出す。2 度押しても写真は 1 つ
+rc=0

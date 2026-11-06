@@ -82,7 +82,8 @@ def explain_without_name(public):
     rid = json.loads(body)["id"]
     if not public:
         # 欄: 書いた人は任意。説明と次の思いつきは今までどおり要る
-        for path in (f"/toy/{G}", f"/toy/{G}/techo"):
+        # 手帖の説明の欄は、作り直した手帖では記録の頁にある（#87）
+        for path in (f"/toy/{G}", f"/toy/{G}/techo/kiroku"):
             by, nxt = by_input(b.call(path)[1], f"/record/{rid}/explain")
             assert "required" not in by and "required" in nxt, (path, by, nxt)
     st, page = b.call(f"/record/{rid}/explain", {"text": "筒が固かった", "next_idea": "幅を変える", "by": ""})

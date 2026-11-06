@@ -318,7 +318,7 @@ def post(handler, sid, form):
     if scene == "craft" and version:
         back = (f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={version}&n={step or 1}", "作りながら見る（机の端に置く・試作）")
     else:
-        back = (f"/toy/{sid}/techo#mine", "手帖をひらく（作りながら聞く・上げる）")
+        back = (f"/toy/{sid}/techo/kiroku#mine", "手帖をひらく（作りながら聞く・上げる）")
     return handler._send(200 if kept else 403 if refused else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else REFUSED if refused else reason(failures), handler._look, links=(back,)))
 
 

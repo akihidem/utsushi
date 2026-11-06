@@ -26,7 +26,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(tmp, "api-usage.jsonl")  # 本
 from api import words  # noqa: E402
 from omochae import engine_bundle, gallery, hypotheses, loop, making_log, records, talk_log  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
-from web import techo_site, zukan  # noqa: E402
+from web import techo_site, techo_step, zukan  # noqa: E402
 from web.toy import toy_page  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -234,7 +234,7 @@ assert own8["id"] in words.spoken_own_ids(G), "話した考えから作った案
 assert not words.key_open(words.by_token(G, w8["token"])), "鍵も閉じる"
 assert talk_log.kufu(G, rid8) == [] and loop.maker_talk(rid8)["items"] == [], "札と輪の材料からも消える"
 # 消した後も、記録の札と頁が開く。字は出ない
-for html in (toy_page(G), techo_site.page(G, [sheet], ""), json.dumps(zukan.lines_for(G), ensure_ascii=False)):
+for html in (toy_page(G), techo_step.page(G, [sheet]), techo_site.records_page(G), json.dumps(zukan.lines_for(G), ensure_ascii=False)):
     assert not any(x in html for x in (SAID8, CRAFT8, KEEP8)), html[:200]
 assert rid8 in toy_page(G), "記録の札は残る"
 # 話した字だけの時は、写真と動画を消さない（字と写真は別の用事）
@@ -507,12 +507,13 @@ pid20, fs = loop.save_proposal({"record_ids": [rid20], "hypothesis_id": sheet, "
 assert pid20 and not fs, fs
 pid20b, fs = loop.save_proposal({"record_ids": [rid20], "hypothesis_id": sheet, "next_to_try": {"why": TOLD20, "what_to_measure": IDEA_TOLD20}, "references": []}, SOURCE, "human")
 assert pid20b and not fs, fs
-pages20 = lambda: {"玩具の頁": toy_page(G), "手帖": techo_site.page(G, [sheet], ""), "ギャラリー": gallery.build()}
+# 手帖の記録の札（説明と Claude の読み）は、作り直した手帖では記録の頁にある（#87）
+pages20 = lambda: {"玩具の頁": toy_page(G), "手帖": techo_site.records_page(G), "ギャラリー": gallery.build()}
 assert all(x in pages20()["玩具の頁"] for x in (NOTE20, FEEL20, FIRST20, TOLD20, IDEA_TOLD20, HEAD20)), "消す前は頁に字がある（下の確かめが効いている事を見る）"
 assert TOLD20 in pages20()["手帖"] and HEAD20 in pages20()["手帖"] and TOLD20 in pages20()["ギャラリー"] and NAME20 in pages20()["ギャラリー"]
 heads20 = {k: v.count(HEAD20) for k, v in pages20().items()}
 LEFT20 = "説明を残しました。"
-open20 = lambda: (toy_page(G, photos=False).count(LEFT20), techo_site.page(G, [sheet], "", uploads=False).count(LEFT20))
+open20 = lambda: (toy_page(G, photos=False).count(LEFT20), techo_site.records_page(G, uploads=False).count(LEFT20))
 open_before20 = open20()
 rec20 = json.loads((records.folder() / f"{rid20}.json").read_text(encoding="utf-8"))
 assert records.withdraw(rid20, talk_only=True)[1] == []
@@ -522,7 +523,7 @@ for name, html in pages20().items():
     assert not any(x in html for x in (*WRITTEN20, NAME20)), name
     assert not any(x in html for x in ("<p>説明: </p>", "<p>次の思いつき: </p>", "次の思いつき: </p>", "<b>説明</b>（）", "<p></p>", f"{HEAD20}</p><ul></ul>", "工夫:  /  / ")), (name, "空の欄を並べない")
     assert rid20 in html or name == "手帖", name
-assert toy_page(G).count(HEAD20) == heads20["玩具の頁"] - 1 and techo_site.page(G, [sheet], "").count(HEAD20) == heads20["手帖"] - 1, "中身の無い読みの見出しは出さない"
+assert toy_page(G).count(HEAD20) == heads20["玩具の頁"] - 1 and techo_site.records_page(G).count(HEAD20) == heads20["手帖"] - 1, "中身の無い読みの見出しは出さない"
 assert open20() == (open_before20[0] - 1, open_before20[1] - 1), "合言葉なしの場でも、字が消えた説明を残したとは言わない"
 left20 = json.loads((records.folder() / f"{rid20}.json").read_text(encoding="utf-8"))
 assert left20 == {**rec20, "note": "", "impression": "", "answers": {}, "ideas": [], "fixes": []}, "番号・結果・寸法の欄は 1 つも変わらない"

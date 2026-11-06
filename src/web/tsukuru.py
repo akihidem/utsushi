@@ -23,15 +23,20 @@
   「手順 N で止まった所を聞く」に変わって、字の欄に手が届き、声の釦が出る。聞く口には今の手順の番号（step）を添えて送る。
   なぜ添えるか: どの段でどんな問いが出るかを束ねて、手順の紙の直しと先回りの答えの材料にするため（U-45）。
 - 声で聞く口は手帖と同じ作り（ブラウザの音声認識。使えない画面では釦を隠す）。**声そのものは録らず、送らない。** 送るのは字になった問いだけ。
+  声の操作も手帖と同じ（本人の決定 11-05、#87。voice_words.py）: 1 回押した後は聞き続け、つぎ・もどる・もう一回などは言葉の全部が一致した時だけ札を押す。操作の字は送らない。
+  聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）: 問いは「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。周りの話し声を問いにしない。
   マイクを getUserMedia で開く code と録る code は書かない（鏡は audio:false のまま）。試験で固定する。
 - 出来事（札と問い）には、その場限りの無作為の印（who）を添える。sessionStorage に持つ英数字 10 桁で、タブを閉じると消える。
   なぜ持つか: 「同じ段で 3 人以上止まった」を数えるには、同じ人の押し直しを 1 人と数える印が要る（Issue #119 の「人は、その場限りの
   無作為の印で数える」）。cookie にしない・名前や機器と結び付けない・次に開いた時は別の印になる、で人を追える物にしない。
 """
+import json
+
 from omochae import hypotheses, instructions, loop, making_log
 from omochae.compose import TEMPLATES
 
 from . import genga, skin
+from .voice_words import CLEAN, WORDS
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
 PRIVACY = "映像はこの端末の中だけで、送りも残しもしません。"
@@ -122,7 +127,9 @@ document.body.classList.add('js');show();
 try{const k=`tsukuru-start-${sid}-${hid}`;if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');send('start')}}catch(e){}
 // 聞く口。「ここで止まった」を押した段では、見出しを「手順 N で止まった所を聞く」に変えて囲み、字の欄へ手を届かせる。段を進めたら元に戻す。
 const henji=document.getElementById('henji'),head=document.getElementById('ask-head'),qIn=document.getElementById('q');
-const openAsk=(on)=>{henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
+// 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。問いは、「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。
+let armed=false;
+const openAsk=(on)=>{armed=on;henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
  if(on){try{henji.scrollIntoView({block:'nearest'})}catch(e){}qIn.focus()}};
 document.querySelectorAll('#tiles button:not([value=done])').forEach(b=>b.addEventListener('click',async(e)=>{e.preventDefault();const ev=b.value;
  const j=await send(ev);mStuck.hidden=true;
@@ -142,6 +149,10 @@ const ask=async(q)=>{if(!q)return;ans.textContent='…';
 document.getElementById('ask-form').addEventListener('submit',(e)=>{e.preventDefault();ask(qIn.value.trim())});
 // 声で聞く: ブラウザの音声認識で字にし、字になった問いだけを上の口へ送る（声は録らない・送らない）。1 回押すと話し続けられ、もう 1 回で止まる。
 // 使えない画面では釦を隠し、字の欄だけにする（手帖と同じ作り）。
+// 声の操作（手帖と同じ決まり。#87）。言葉の全部が一致した時だけ操作にし、操作の字は送らない。ほかは質問として聞く。この頁に無い操作（とって・のこす）は何もしない。
+const WORDS=__WORDS__,clean=(t)=>t.replace(/__CLEAN__/g,'');
+const tile=(v)=>document.querySelector(`#tiles [value=${v}]`);
+const act=(op)=>{if(op==='next'){const b=tile('next');(b.hidden?tile('done'):b).click()}else if(op==='back')tile('back').click();else if(op==='stuck')tile('stuck').click();else if(op==='again')say(items[n-1].textContent)};
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition,mic=document.getElementById('mic');
 if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
  sayStart=()=>{speaking=true;if(listening&&rec){try{rec.stop()}catch(e){}}};
@@ -149,10 +160,10 @@ if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
  mic.addEventListener('click',()=>{
   if(listening){listening=false;rec&&rec.stop();mic.setAttribute('aria-pressed','false');return}
   rec=new SR();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=false;
-  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();qIn.value=t;ask(t)};
+  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();if(!t)return;const op=WORDS[clean(t)];if(op){act(op);return}if(!armed)return;armed=false;qIn.value=t;ask(t)};
   rec.onend=()=>{if(listening&&!speaking){try{rec.start()}catch(e){}}};
   rec.onerror=()=>{listening=false;mic.setAttribute('aria-pressed','false')};
-  listening=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
+  listening=true;armed=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
  // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
  addEventListener('pagehide',()=>{listening=false;if(rec){try{rec.stop()}catch(e){}}});
  let paused=false;
@@ -169,6 +180,7 @@ else{const start=async()=>{try{const s=await navigator.mediaDevices.getUserMedia
  if(wantCam)start()}
 addEventListener('pagehide',()=>{const s=v.srcObject;if(s)s.getTracks().forEach(t=>t.stop())});
 })()</script>""" % PRIVACY
+SCRIPT = SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__CLEAN__", CLEAN)
 
 
 def _paper(sid, hid):

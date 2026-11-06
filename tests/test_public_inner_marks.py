@@ -86,7 +86,7 @@ media = records.folder() / "media" / ready
 media.mkdir(parents=True, exist_ok=True)
 (media / "m1.mp4").write_bytes(b"\0")
 store.write_json(media / "review.json", {"m1.mp4": {"shows": "object"}})
-TOY, TECHO, ZUKAN, ZUKAN_ONE = f"/toy/{G}", f"/toy/{G}/techo", "/zukan", f"/zukan/{G}"
+TOY, TECHO, ZUKAN, ZUKAN_ONE = f"/toy/{G}", f"/toy/{G}/techo/kiroku", "/zukan", f"/zukan/{G}"
 NUM = re.compile(r"R-\d{4,}")
 
 # 1. 記録の番号を字に出さない。札へ飛ぶ道は残す

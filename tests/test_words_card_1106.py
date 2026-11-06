@@ -140,7 +140,8 @@ oid_rid, failures = records.add({"source_id": G, "hypothesis_id": own["id"], "sh
 assert oid_rid, failures
 gallery = re.sub(r"<[^>]+>", "", get("/gallery"))
 assert f"御来迎　自分の仮説の紙　動いた　記録の番号 {oid_rid}" in gallery, "ギャラリーの札"
-techo = re.sub(r"<[^>]+>", "", get(f"/toy/{G}/techo"))
+# 手帖の札は、作り直した手帖では記録の頁にある（#87）
+techo = re.sub(r"<[^>]+>", "", get(f"/toy/{G}/techo/kiroku"))
 assert f"記録の番号 {oid_rid}　自分の仮説の紙　動いた" in techo, "手帖の札"
 assert "御来迎　　動いた" not in gallery and "　　動いた" not in techo
 

@@ -83,7 +83,7 @@ def reviewed(rid, shows):
 
 
 def pages(key=None):
-    return call(f"/toy/{G}", key)[1] + call(f"/toy/{G}/techo", key)[1]
+    return call(f"/toy/{G}", key)[1] + call(f"/toy/{G}/techo/kiroku", key)[1]
 
 
 def card(page, rid):
@@ -134,6 +134,6 @@ for key in (OWN_KEY, None):
 older = video_record()
 loop._write(observe.path(older), {"record_id": older, "observed": ["前の文の目印"], "unclear": [], "by": "claude", "label": "観察（Claude の補助）"})
 assert "前の文の目印" in card(call(f"/toy/{G}", OWN_KEY)[1], older) and "前の文の目印" not in card(call(f"/toy/{G}", OTHER_KEY)[1], older)
-assert "前の文の目印" in call(f"/toy/{G}/techo", OWN_KEY)[1] and "前の文の目印" not in call(f"/toy/{G}/techo")[1]
+assert "前の文の目印" in call(f"/toy/{G}/techo/kiroku", OWN_KEY)[1] and "前の文の目印" not in call(f"/toy/{G}/techo/kiroku")[1]
 
 print("ok: 確認の前の動画を Claude に渡す口と読んだ文は、上げた本人の画面だけ")
