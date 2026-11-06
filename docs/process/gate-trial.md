@@ -935,6 +935,7 @@
 - 検証ゲート: **済み**。`tests/test_after_sheet_open.py`。Red は直す前の木で「窓に試した後の紙が出ない」（gate-evidence/red-after-sheet-open.txt）と、紙の組を作る形で「開くと型紙までできる」（gate-evidence/red-after-sheet-only.txt）。Green は同じ試験が rc 0（gate-evidence/green-after-sheet-only.txt）。直しの部分を 1 つずつ外した 13 通りはどれも試験で落ちる。実物のブラウザで白の机の幅と黒のスマホの幅を歩いた。本物の記録で札から窓までをたどる `tests/test_after_sheet_real.py` は、直す前の main（7782ede）で「窓の紙の番号が記録と違う」（gate-evidence/red-after-sheet-real.txt）、直した後は rc 0（gate-evidence/green-after-sheet-real.txt）
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: Issue #320 に書く
+- 追記（小さな直し）: 桁の多い手作りの URL の版の数字で `int` が上限を超え、記録のある案なら 500 になっていた（#320 で入れた呼び口。前は 404）。道の正規表現で版を 6 桁までに絞った。Red は「桁の多い版の数字」（gate-evidence/red-sheet-version-digits.txt）、Green は `tests/test_after_sheet_open.py` が rc 0（gate-evidence/green-sheet-version-digits.txt）
 
 ## 型紙の拡大を SVG にし、大きさを 3 段にし、Esc と絵の外で閉じる（Issue 対応の担当、issue/128-zoom-svg、11-05 午後。#128）
 
