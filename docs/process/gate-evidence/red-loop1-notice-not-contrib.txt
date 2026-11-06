@@ -1,0 +1,8 @@
+# 命令: env -u ANTHROPIC_API_KEY PYTHONPATH=src .venv/bin/python tests/test_withdraw_notice.py
+# commit: 90839f34（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_withdraw_notice.py", line 65, in <module>
+    assert "送られた物は確かめてから載せます。" in gallery and DECIDED not in gallery
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

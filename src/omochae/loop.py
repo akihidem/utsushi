@@ -101,6 +101,12 @@ def explanation(rid):
     return store.read_json_or_skip(folder() / f"explanation-{rid}.json")
 
 
+def explained(rid):
+    """人の説明の字があるか。取り下げ（records.withdraw の --talk-only）で字が空になった説明は、説明があった印として次の版の床を通るが、
+    Claude を呼ぶ前の「人の説明が先」（J-013）は満たさない。その人の字が無いまま、記録だけを Claude に読ませないため。"""
+    return bool(((explanation(rid) or {}).get("text") or "").strip())
+
+
 # ループ2 の材料の仕切りの名（Issue #335）。人の説明（explanation）と混ぜずに、別の札で渡す。
 # 「声は残していない」まで書くのは、読む人（作る側と Claude）が、字の後ろに録った声があると思わないため。
 TALK_LABEL = "作った人が話した事（字だけ・声は残していない）"

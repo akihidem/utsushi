@@ -698,7 +698,7 @@ class Handler(BaseHTTPRequestHandler):
         # 確認の前の動画を、上げた本人でない画面から Claude に渡さない。頁に釦は出ないが、開いたままの古い頁から届く。
         if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
             return self._refuse(403, "受け付けられません")
-        if loop.explanation(rid) is None:
+        if not loop.explained(rid):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
             return self._done(sid, wording.plain("鍵が置かれると、Claude が答えます"), form.get("back", ""), anchor=rid)
@@ -999,7 +999,7 @@ def fixes_of(form):
     part, change, outcome = (form.get(k, "").strip() for k in ("fix_part", "fix_change", "fix_outcome"))
     if not (part or change or outcome):
         return []
-    blank = "書かれていない"
+    blank = records.FIX_BLANK
     return [{"part": part or blank, "change": change or blank, "outcome": outcome or blank}]
 
 
