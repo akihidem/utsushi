@@ -193,10 +193,9 @@ def material_text(rid):
 
 
 def save_explanation(rid, by, text, next_idea):
-    """人の説明と次の思いつき。「わからない」でも書けばよく、中身は評価しない。"""
+    """人の説明と次の思いつき。「わからない」でも書けばよく、中身は評価しない。
+    書いた人は書かなくてもよい（本人の決定 11-06。手帖の「名前や連絡先は書かないでください」と合わせる）。空の時は空のまま残す。"""
     record(rid)
-    if not by or not by.strip():
-        return [Failure("F9.human", rid, "説明した人の名前が無い")]
     if not (text or "").strip() or not (next_idea or "").strip():
         return [Failure("F9.human", rid, "説明と次の思いつきの両方が要る（わからない、と書いてもよい）")]
     long = too_long([("説明", text), ("次の思いつき", next_idea)])
@@ -205,7 +204,7 @@ def save_explanation(rid, by, text, next_idea):
     failures = [Failure("F3.result", rid, f.message) for f in check_pii({"body": f"{text} {next_idea}"})]
     if failures:
         return failures
-    _write(folder() / f"explanation-{rid}.json", {"record_id": rid, "text": text.strip(), "next_idea": next_idea.strip(), "by": by.strip(), "at": _now()})
+    _write(folder() / f"explanation-{rid}.json", {"record_id": rid, "text": text.strip(), "next_idea": next_idea.strip(), "by": (by or "").strip(), "at": _now()})
     return []
 
 

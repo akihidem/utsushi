@@ -445,7 +445,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
             tail = "" if not records.mine(r["id"], rec_key) else refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
+                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by"></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
         here = note if at == r["id"] else ""
         # 感想（本人の方針 11-05「感想と動きの報告」）。動きの欄の次に、作った人の言葉として出す。
         feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""

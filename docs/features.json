@@ -160,6 +160,7 @@
   "status": "doing",
   "evidence": [
    "tests/test_reply_visible.py",
+   "tests/test_explain_no_name.py",
    "src/web/wording.py",
    "tests/test_wording.py",
    "tests/test_reader_words.py",
