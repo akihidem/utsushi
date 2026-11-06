@@ -109,6 +109,7 @@ assert media_review.record(rid, "m1.jpg", "object", "試験の人") == []
 assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
 gallery = stranger("GET", "/gallery")[1]
 assert f"/record/{rid}/media/m1.jpg" in gallery and wording.record_no(rid) not in gallery
+assert f"#{rid}" not in gallery and f'href="/toy/{G}"' in gallery, "札の玩具の名の道にも記録の番号を入れない（玩具の頁の頭へ行く）"
 for path in (f"/toy/{G}", "/zukan", f"/zukan/{G}"):
     assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
 # 写真の札にも、人の書いた文は出さない（文の中の名前は機械で落とせない。J-028）
