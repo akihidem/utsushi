@@ -1,0 +1,17 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: 9229e4d1（回した時の HEAD）
+読めない記録を飛ばした: R-0096.json（形が違う）
+読めない記録を飛ばした: R-0096.json（形が違う）
+読めない記録を飛ばした: R-0096.json（形が違う）
+読めない記録を飛ばした: R-0096.json（形が違う）
+文が多い群があるので、1001 件を束に入れなかった
+読めない記録を飛ばした: R-0096.json（形が違う）
+読めない記録を飛ばした: R-0096.json（形が違う）
+Traceback (most recent call last):
+  File "tests/test_engine_bundle.py", line 265, in <module>
+    assert up["reports"] == 3 and up["record_ids"] == ["R-0080", "R-0081", "R-0082"], up  # R-0088 は外した札だけなので数えない
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'template': 'pivot_counterweight', 'sheet_set': 'tora-v8', 'paper': 'NDL-1187053-R0000014-R.H-C', 'reports': 2, 'results': {}, 'moved_word': '揺れた', 'not_moved_word': '揺れない', 'stuck_steps': {'2': {'taps': 3, 'people': 0}}, 'quit_steps': {}, 'craft_steps': {'4': {'talks': 1, 'people': 0}}, 'minutes': None, 'measures': {}, 'record_ids': ['R-0080', 'R-0081'], 'texts': [{'kind': 'stuck', 'step': None, 'text': '手順の分からない札', 'count': 1}, {'kind': 'stuck', 'step': 2, 'text': '折る前に裏から透かして見た', 'count': 1}, {'kind': 'stuck', 'step': 2, 'text': '首の帯の折り線が見えない', 'count': 1}, {'kind': 'stuck', 'step': 2, 'text': '首の帯をどちらへ折るのか迷った', 'count': 1}, {'kind': 'craft', 'step': 4, 'text': '粘土を少しずつ足して揺れを見た', 'count': 1}]}
+rc=1
+
+上は、新しい試験に、直す前の src/omochae/engine_bundle.py（人が確かめた札だけを読む門）を当てて回した。
