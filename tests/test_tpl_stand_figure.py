@@ -20,7 +20,7 @@ from omochae.templates import stand_figure as T  # noqa: E402
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 INV = json.loads((ROOT / "data/inventory/edo-nishiki.json").read_text(encoding="utf-8"))
 LANE = sorted(t["id"] for t in INV["toys"] if t.get("lane") == "figure")
-# 作らないと決めた件と理由。棚卸しは共有のファイルなので書き換えず、ここに残して返事で統合の担当へ渡す。
+# 作らないと決めた件と理由。棚卸しは共有のファイルなので書き換えず、ここに残して返事で統括の担当へ渡す。
 LEFT_OUT = {
     "NDL-1187053-R0000005-R-4": "刀の付属品（小柄・笄）と見る。単独の玩具と言える根拠が絵に無い",
     "NDL-1187053-R0000023-L-3": "羽子板の後ろの花の枝で、季節の添え物と見る",

@@ -114,7 +114,7 @@ assert code == 422 and not h.get("Set-Cookie"), "ほかの印には渡さない"
 
 # 書いて立てた仮説の紙は今までどおり（鍵なしで開く）
 typed, _ = hypotheses.save_own(G, "書いた案", "書いて立てた動かし方", "右の図")
-assert send(base, f"/toy/{G}/print-own", {"id": typed["id"]})[0] == 303
+assert hypotheses.print_own(G, typed["id"], str(hypotheses.play_dir(G) / f'{typed["id"]}_v1')) == 0
 assert send(base, f"/sheet/{G}/{typed['id']}_v1_free.pdf")[0] == 200
 
 
@@ -215,7 +215,7 @@ code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": "handover04"})
 assert code == 422 and not h.get("Set-Cookie"), "結ばれた考えから頼めない"
 assert not {"記録に結ばれる考え", "別の仮説を見た前の考え"} & {w["how_it_moves"] for w in words.waiting()}, "案を作らない"
 # 対照: 合言葉の場では、この鍵でこの案が開く（下の断りが、閉じた案を見ているだけにならないように）
-assert f'data-hid="{oid}"' in send(base, f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].decode() and f'value="{oid}"' in send(base, f"/toy/{G}/techo", cookie=key)[1].decode()
+assert f'data-hid="{oid}"' in send(base, f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].decode() and f'data-hid="{oid}"' in send(base, f"/toy/{G}/techo", cookie=key)[1].decode()
 server.shutdown()
 
 # ── 合言葉なしの場 ──
@@ -224,7 +224,7 @@ for name in (f"{oid}_v1.pdf", f"{oid}_v1.png", f"{oid}_v1_tejun.pdf", f"{typed['
     assert send(base, f"/sheet/{G}/{name}", cookie=key)[0] == 404, name
 assert send(base, f"/sheet/{G}/H-A_v1.pdf")[0] in (200, 404), "元の仮説の道は変えない"
 assert f'data-hid="{oid}"' not in send(base, f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].decode(), "鍵があっても、作りながら見る頁に本人の紙を開かない"
-assert f'value="{oid}"' not in send(base, f"/toy/{G}/techo", cookie=key)[1].decode(), "手帖の札にも出さない"
+assert oid not in send(base, f"/toy/{G}/techo", cookie=key)[1].decode(), "手帖にも出さない"
 code, body, _ = send(base, f"/toy/{G}")
 assert code == 200 and think_sheet.GO not in body.decode() and f"{typed['id']}_v1_free.pdf" not in body.decode(), "開かない紙の入口を出さない"
 talk_log.add(G, "think", "公開の場で話した考え", who="pubwho0001")

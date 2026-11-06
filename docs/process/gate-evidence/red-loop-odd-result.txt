@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_loop_odd_result.py
+# commit: f1537f5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_odd_result.py", line 38, in <module>
+    sm = making_log.summary(G)
+  File "src/omochae/making_log.py", line 239, in summary
+    slot[r["result"]] = slot.get(r["result"], 0) + 1
+                        ~~~~~~~~^^^^^^^^^^^^^^^^
+TypeError: cannot use 'list' as a dict key (unhashable type: 'list')
+rc=1

@@ -20,6 +20,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("OMOCHAE_VOICE", None)
 
 from measure_tap import chrome  # noqa: E402
+from omochae import records  # noqa: E402
 from web import play_server  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -29,7 +30,8 @@ SHAPES = {
     "local": "class S{static async available(){return 'available'}start(){}stop(){}};S.prototype.processLocally=false;window.SpeechRecognition=S;window.webkitSpeechRecognition=S;",
     "none": "window.SpeechRecognition=undefined;window.webkitSpeechRecognition=undefined;",
 }
-TOY, MAKE, TECHO = f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A", f"/toy/{G}/techo"
+# 話す釦は手帖の記録の頁の札にある（作る頁のマイクは 1 つで、はじめるの後に出る。#87。tests/test_techo_step.py が見る）
+TOY, MAKE, TECHO = f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A", f"/toy/{G}/techo/kiroku"
 # （幅, 頁, 形, 釦が見えるはずか）。幅 390 は iPhone、820 は iPad。どちらも指で触る機器の床が効く幅
 CASES = [(w, page, "safari", True) for w in (390, 820) for page in (TOY, MAKE, TECHO)] + [(390, MAKE, "local", True), (390, MAKE, "none", False)]
 # 頁の終わりに足す。釦の大きさと、断りの何が出ているかを親へ送る。番号はサーバが書く（作りながら見る頁は住所の後ろを書き換えるので、住所から読めない）
@@ -74,6 +76,9 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 for path, data in ((f"/toy/{G}/print", {"hypothesis": "H-A"}), (f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})):
     urllib.request.urlopen(urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base}), timeout=120)
+# 手帖の話す口は記録を残した画面にだけ開く。測る Chrome を、その画面として扱う
+records.claim(records.all_records(G)[-1]["id"], "a" * 24)
+play_server.Handler._rec_key = lambda self: "a" * 24
 try:
     with tempfile.TemporaryDirectory() as profile:
         out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=1400,900",

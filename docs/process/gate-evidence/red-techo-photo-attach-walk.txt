@@ -1,0 +1,12 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_photo_attach_walk.py
+# commit: 1eaca460 の上の作業の木で、作る頁（src/web/techo_step.py）の「足せるかを聞く」所だけを外した形（if (false && …)）
+# 出力の中の作業ツリーの道（機械の中の絶対の道）は、repo の中の道に直した
+/tmp/tmpix8ipwak/play/NDL-1187053-R0000005-L/.tmp-0cjckrst/H-A_v1.pdf
+/tmp/tmpix8ipwak/play/NDL-1187053-R0000005-L/.tmp-0cjckrst/H-A_v1_tejun.pdf
+/tmp/tmpix8ipwak/play/NDL-1187053-R0000005-L/.tmp-0cjckrst/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_photo_attach_walk.py", line 120, in <module>
+    assert got["a"] == "上げました" and got["a_asked"] == "H-A", got
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'scene': 'end', 'n': ['end', 0, False, True], 'who_a': ['ybuqcg23sl', 'ybuqcg23sl'], 'a_asked': None, 'a': 'kekka', 'b_asked': None, 'b': 'kekka', 'b_sent': 0, 'b_ready': True, 'c_sent': 0, 'c': 'kekka', 'who_e': ['ybuqcg23sl', 'o7y47cb1f5'], 'e_kekka': 'kekka', 'e_sent': 0, 'e': '上げました'}
+rc=1

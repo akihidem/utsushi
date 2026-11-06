@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_genga.py（out/sources の切り抜きが無い、使い捨ての clone の木で）
+# commit: 022c12f9（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_genga.py", line 129, in <module>
+    assert "url(/picture/" in listing and not re.search(r"/picture/[^)\"]*/page", listing), "一覧の小さい絵は今の切り抜きのまま"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 一覧の小さい絵は今の切り抜きのまま
+rc=1

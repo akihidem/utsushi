@@ -15,6 +15,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from api import ask  # noqa: E402
+from omochae.contrib import MAX_BODY  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web.toy import reply_note  # noqa: E402
 
@@ -29,7 +30,8 @@ class Stay(urllib.request.HTTPRedirectHandler):
         return None
 
 
-opener = urllib.request.build_opener(Stay)
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+opener = urllib.request.build_opener(Stay, urllib.request.HTTPCookieProcessor())
 
 
 def call(path, data=None):
@@ -68,16 +70,6 @@ assert call(f"/toy/{G}/techo")[0] == 200
 page = landed(call(f"/toy/{G}/tsukuru"), "kasetsu")
 assert "先に紙を作ると、作りながら見る頁が開きます" in note_at(page, "kasetsu", "status")
 
-# 自分の仮説: 通らないと作る節に、書いた中身つきで戻る（字は esc）。欄は畳まれているので、開いて戻す。
-code, _, page = call(f"/toy/{G}/own", {"name": "筒の<仮説>", "how": "", "evidence": "右の図"})
-assert code == 422 and note_at(page, "kasetsu", "alert")
-assert 'value="筒の&lt;仮説&gt;"' in page and 'value="右の図"' in page, "書いた中身を欄に戻す（字は esc）"
-assert "筒の<仮説>" not in page
-code, _, page = call(f"/toy/{G}/own", {"name": "筒の案", "how": "", "evidence": "右の図"})
-assert code == 422 and note_at(page, "kasetsu", "alert")
-assert '<details open><summary>自分の仮説を立てる' in page and 'value="筒の案"' in page
-page = landed(call(f"/toy/{G}/own", {"name": "筒の案", "how": "押す", "evidence": "右の図"}), "own-OWN-1")
-assert "仮説を残しました" in note_at(page, "own-OWN-1", "status")
 
 # 刷る: 通らないと仮説の節に、通ると型紙の窓に文が出る。
 code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
@@ -97,7 +89,7 @@ bad = {"hypothesis": "H-A", "note": "3 枚目で<止まった>", "first_moved": 
 code, _, page = call(f"/toy/{G}/record", bad)
 assert code == 422 and note_at(page, "kiroku", "alert")
 assert "3 枚目で&lt;止まった&gt;</textarea>" in page and 'name="first_moved" value="筒"' in page
-assert re.search(r"<option selected>糸</option>", page) and '<option value="H-A" selected>' in page
+assert re.search(r"<option selected>糸</option>", page) and 'name="hypothesis" value="H-A"' in page[page.index('id="record"'):]
 good = bad | {"result": "動かない", "note": "3 枚目で止まった"}
 code, _, page = call(f"/toy/{G}/record", good | {"result": "ない結果"})
 assert code == 422 and '" checked' not in page[page.index('id="record"'):page.index("</form>", page.index('id="record"'))], "無い値に印を付けない"
@@ -109,13 +101,15 @@ start = page.index(f'id="{rid}"')
 assert 'name="next_idea"' in page[start:start + 3000], "札の中に次の欄（説明）がある"
 
 # 説明: 札の中に戻る。AI の返事の文も札に出る。
-code, _, page = call(f"/record/{rid}/explain", {"by": "", "text": "筒が<支えた>", "next_idea": "折りを増やす"})
+# 断りの形は、長すぎる次の思いつきで見る（書いた人は書かなくてもよい欄になった。本人の決定 11-06）
+too = "折りを増やす" + "あ" * MAX_BODY
+code, _, page = call(f"/record/{rid}/explain", {"by": "", "text": "筒が<支えた>", "next_idea": too})
 assert code == 422 and note_at(page, rid, "alert")
-assert "筒が&lt;支えた&gt;</textarea>" in page and 'value="折りを増やす"' in page
+assert "筒が&lt;支えた&gt;</textarea>" in page and f'value="{too}"' in page
 page = landed(call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えた", "next_idea": "折りを増やす"}), rid)
 assert "説明を残しました" in note_at(page, rid, "status")
 page = landed(call(f"/record/{rid}/ai-interpret", {}), rid)
-assert "Claude が答えます" in note_at(page, rid, "status")
+assert "AI の返事は、この場では使えません" in note_at(page, rid, "status")
 page = landed(call(f"/record/{rid}/ai-observe", {}), rid)
 assert note_at(page, rid, "status")
 
@@ -137,11 +131,11 @@ assert "版 2 の紙を作りました" in note_at(page, "win", "status")
 
 # 手帖に戻る時は、手帖の頁に文が出る。
 page = landed(call(f"/record/{rid}/ai-interpret", {"back": "techo"}), "mine")
-assert "Claude が答えます" in note_at(page, "mine", "status")
+assert "AI の返事は、この場では使えません" in note_at(page, "mine", "status")
 
 # 通らなかった時に錨へ着くよう、欄の送り先に錨がある。
 page = call(f"/toy/{G}")[2]
-for want in (f"/toy/{G}/own#kasetsu", f"/toy/{G}/print#kasetsu", f"/toy/{G}/print-own#own-OWN-1", f"/toy/{G}/ask#ask",
+for want in (f"/toy/{G}/print#kasetsu", f"/toy/{G}/ask#ask",
              f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}"):
     assert f'action="{want}"' in page, want
 # AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。

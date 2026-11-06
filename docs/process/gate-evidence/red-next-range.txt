@@ -1,0 +1,7 @@
+# 命令: bash -c '.venv/bin/python tests/test_next_range.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: ff54436（回した時の HEAD）
+    assert "push_amount" not in shown, "選んでも必ず断られる寸法が欄に出ている"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 選んでも必ず断られる寸法が欄に出ている
+試験 rc=1
+rc=0

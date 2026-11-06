@@ -1,0 +1,26 @@
+# 命令: .venv/bin/python tests/test_gate_evidence.py
+# commit: eb6348a（回した時の HEAD）
+書かない: もうある（失敗した版も残す決まりなので上書きしない）: red-sample.txt
+書かない: 名前は小文字・数字・ハイフンだけ: '../outside'
+書かない: 名前は小文字・数字・ハイフンだけ: 'a/b'
+書かない: 名前は小文字・数字・ハイフンだけ: 'Red Sample'
+書かない: 名前は小文字・数字・ハイフンだけ: ''
+検査できない: 命令を回せない: FileNotFoundError
+検査できない: 命令を回せない: TimeoutExpired
+/tmp/tmpptu5_imq/red-sample.txt
+/tmp/tmpptu5_imq/no-git.txt
+FAIL 頭が無い: half.txt
+FAIL 頭が無い: text-not-sha.txt
+Traceback (most recent call last):
+  File "tests/test_gate_evidence.py", line 85, in <module>
+    assert real.returncode == 0, f"{real.stdout}証拠は python -m omochae.gate_evidence write <名前> -- <命令...> で書く（手で書かない）"
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: FAIL 頭が無い: green-hypothesis-label.txt
+FAIL 頭が無い: green-make-marks.txt
+FAIL 頭が無い: green-pictures.txt
+FAIL 頭が無い: red-analogy.txt
+FAIL 頭が無い: red-hypothesis-label.txt
+FAIL 頭が無い: red-make-marks.txt
+FAIL 頭が無い: red-pictures.txt
+証拠は python -m omochae.gate_evidence write <名前> -- <命令...> で書く（手で書かない）
+rc=1
