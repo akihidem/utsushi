@@ -23,6 +23,7 @@ Chrome が無い機械と、Chrome が何も答えなかった時は、測れな
 1 手ずつの進め方と歩く試験は、別の試作の枝（proto/hmd-work-view）の物を、この枝の頁の作りに合わせて移した（統括の決め 11-06）。
 """
 import json
+import math
 import os
 import re
 import subprocess
@@ -35,7 +36,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from measure_tap import chrome  # noqa: E402
-from omochae import hypotheses  # noqa: E402
+from omochae import assembly, hypotheses  # noqa: E402
 from web import hmd, kumitate, play_server  # noqa: E402
 
 G, T = hmd.TOYS
@@ -334,6 +335,36 @@ if all(v is None for v in runs.values()):
     print("ok 作業しながら見る試作の字と道。測れない: Chrome が答えなかった（混んだ機械では起きる）")
     raise SystemExit(0)
 unmeasured = []
+
+
+def fold_groups(sid):
+    """手順ごとの、1 つの動きで折る折り目の順の組の数の最大（頁の手の分け方と別に、組み立ての段ごとの形から数える）。
+    折る順は、段の形の折る順（o）が無ければ、根の面から遠い順（頁と同じ）。"""
+    bench = assembly.assemble(sid)
+    frames, trees = kumitate.frames_of(bench), kumitate.trees_of(bench)
+    pose, out = frames[0]["q"][0], []
+    for i, f in enumerate(frames):
+        most = 0
+        for j, B in enumerate(f["q"]):
+            if i == 0 and j == 0:
+                continue
+            A, pose = pose, B
+            orders = set()
+            for key, b in B["s"].items():
+                a = A["s"].get(key)
+                if not a:
+                    continue
+                for r, row in trees[key]["rows"].items():
+                    if abs(a["a"].get(str(r), 0) - b["a"].get(str(r), 0)) > .01:
+                        o = (B.get("o") or {}).get(key, {}).get(r)
+                        orders.add(o if o is not None else -row[5])
+            most = max(most, len(orders))
+        out.append(most)
+    return out
+
+
+FOLD_GROUPS = fold_groups(G)
+assert max(FOLD_GROUPS) >= 2, ("折り目の組が 2 つ以上ある手順が無く、手の数の照らしが何も見ない", FOLD_GROUPS)
 for name, got in runs.items():
     assert isinstance(got, dict), ("歩き始めたのに終わらなかった", name, got)
     assert "error" not in got, (name, got)
@@ -377,6 +408,12 @@ for name, got in runs.items():
         return [c, plan[:n].count(i)] if c > 1 else [0, 0]
     assert len(plan) == got["total"] and got["total"] > len(set(plan)) >= 2, (name, "手順を、手（切る・折り目 1 本・通す・置く）に分けている", got)
     assert plan == sorted(plan), (name, "手は手順の順に並ぶ", got)
+    # 頁の手の並びとは別の道で、手順ごとの手の数の下限を数えて照らす（data-plan から期待を作るだけだと、頁が分け方を崩しても気づかない。
+    # 確かめの指摘: 折り目が 2 本以上ある手順のうち 1 つだけを分ける誤りが通った）。折り目は順の組ごとに 1 手で、6 手まで（hmd の決まり）
+    for i, n in enumerate(FOLD_GROUPS):
+        if n > 1:
+            want = math.ceil(n / math.ceil(n / 6))
+            assert plan.count(i) >= want, (name, f"手順 {i + 1} の折り目の組 {n} を {want} 手以上に分けていない", plan.count(i), plan)
     # 開いた時: 刷った紙のまま手順 1 で止まり、何も動かしていない
     assert got["init"] == [0, 0, True, "off" if voice else "none"], (name, got)
     if voice:
