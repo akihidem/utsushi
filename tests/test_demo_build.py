@@ -19,7 +19,7 @@ assert sum(script.load_scene(n).DURATION for n in build.SCENES) <= 179.5
 assert build.count_tests("実行した 57 本（場面 30 本、試験 27 本）、期待どおり 57 本、未実装の床 0 本。") == (57, 57)
 assert build.count_tests("何も無い") is None
 # 引数: 曲は場面 7 にだけ、写真は場面 5 にだけ。試験の数は画面に出さない（本人の決定 11-05「哲学よりの動画にして」）
-assert build.scene_args("scene7", None, "曲 X", None) == ["--music", "曲 X"]
+assert build.scene_args("scene7", None, "曲 X", None) == [], "曲の字を場面 7 に渡さない（本人の決定 11-06: 曲のクレジットは動画の中に入れない）"
 assert build.scene_args("scene7", None, None, None) == []
 assert build.scene_args("scene5", None, None, "p01") == ["--photos", "p01"]
 assert build.scene_args("flip", (1, 1), "曲", "p01") == []
@@ -88,6 +88,12 @@ build.prepare.missing_tools = lambda *a, **k: []
 assert "docs/process/trials" in build.DIRTY_PATHS and "src" in build.DIRTY_PATHS
 
 # 場面ごとの作り直し: --only は --run（前の置き場）と一緒に。無い場面の動画があれば名指しして 4
+# 冒頭の動画（out/demo/opening/toys.mp4、git の外）は作業ツリーごとに有ったり無かったりする。有る作業ツリーで回すと、
+# 前の記録の「印あり」と食い違って opening を作り直せと止まり、この試験の見る事（場面ごとの作り直し）と関わりなく落ちた（11-06）。
+# なので作り直しの試験の間は、冒頭の動画が無い形に固定する。冒頭の動画が有る時の扱いは、下の shows_placeholder の所で別に見る。
+real_has = build.opening.has_video
+no_video = lambda path=None: False  # noqa: E731
+build.opening.has_video = no_video
 with tempfile.TemporaryDirectory() as tmp:
     err = io.StringIO()
     with contextlib.redirect_stderr(err):
@@ -127,11 +133,12 @@ with tempfile.TemporaryDirectory() as tmp:
     assert sorted(seen) == ["scene2", "scene5"], seen  # 言った場面だけを作り直す
     assert (run / "scene2.mp4").read_bytes() == b"new-scene2" and (run / "flip.mp4").read_bytes() == b"old-flip"
     assert made_for_assemble == [[f"{n}.mp4" for n in build.SCENES]], made_for_assemble  # つなぐのは全場面を台本の順で
-    # 試験の数は前の記録から引き継ぐ（5 分の試験を回し直さない）。曲と写真も言わなければ前のまま
+    # 試験の数は前の記録から引き継ぐ（5 分の試験を回し直さない）。写真も言わなければ前のまま
     assert ran == [], ran
     assert not any("--photos" in v for k, v in seen.items() if k != "scene5")
     rec = json.loads((run / "build.json").read_text(encoding="utf-8"))
-    assert rec["tests"] == [61, 61] and rec["music"] == "曲 Y" and rec["photos"] == "p01" and rec["rebuilt"] == ["scene2", "scene5"], rec
+    # 曲の文は前の記録から引き継がない。曲を付けない作り直しは仮の拍と記録する（音と記録を食い違わせない。本人の決定 11-06 で場面 7 に刷らなくなった）
+    assert rec["tests"] == [61, 61] and rec["music"] == build.PROVISIONAL_CREDIT and rec["photos"] == "p01" and rec["rebuilt"] == ["scene2", "scene5"], rec
     # 記録は場面ごとに、その動画を作った commit を持つ（残した場面を今の commit と言わない。動画のコードを辿るため）
     by_name = {r["name"]: r for r in rec["scenes"]}
     assert by_name["flip"]["commit"] == "old111" and by_name["flip"]["dirty"] is True, by_name["flip"]
@@ -139,14 +146,13 @@ with tempfile.TemporaryDirectory() as tmp:
     assert by_name["core_keep"]["commit"] == "abc123", by_name["core_keep"]  # 場面ごとの控えが無い古い記録は、全体の commit を使う
     # 職人の動画が無い間は、印が残っている事と外へ出せない事が記録に残る。opening を作り直さない間は前の記録のまま
     assert rec["placeholder"] is True and any("印" in w for w in rec["not_for_release"]), rec
-    assert build.shows_placeholder(["opening"], {}, {}) is (not build.opening.has_video())
-    real_has = build.opening.has_video
+    assert build.shows_placeholder(["opening"], {}, {}) is True  # 冒頭の動画が無い形に固定してある
     build.opening.has_video = lambda path=None: True
     assert build.shows_placeholder(["opening"], {}, {}) is False and build.shows_placeholder(["flip"], {}, {"placeholder": True}) is True
     assert build.shows_placeholder(["flip"], {"opening": "撮った.mp4"}, {"placeholder": True}) is False
     assert not any("印" in w for w in build.release_blockers(False)) and any("印" in w for w in build.release_blockers(True))
     assert set(script.BEFORE_RELEASE) <= set(build.release_blockers(False))
-    build.opening.has_video = real_has
+    build.opening.has_video = no_video  # この後の作り直しも、冒頭の動画が無い形で見る（下の注）
     # 音を作った commit が記録に残る（#268）
     assert rec["audio"]["kind"] == "仮の拍" and rec["audio"]["commit"] == "abc123" and rec["audio"]["dirty"] is False, rec["audio"]
     # 手元の変更があれば、前の試験の数は引き継がず回し直す
@@ -158,7 +164,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # 残す場面の動画に刷った物と食い違う時は、古い数や曲を出さないよう、作り直す場面を名指しして 4
     seen.clear()
     build.run_tests = lambda: ran.append("tests") or (0, (62, 62))
-    for extra, scene in ((["--music", "曲 Z"], "scene7"), (["--photos", "p02"], "scene5")):
+    for extra, scene in ((["--photos", "p02"], "scene5"),):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             assert build.main(["--out", tmp, "--run", str(run), "--only", "scene2", *extra]) == 4, extra
@@ -204,8 +210,9 @@ build.prepare.verify = real_verify
 with tempfile.TemporaryDirectory() as tmp:
     tune = pathlib.Path(tmp) / "曲.mp3"
     tune.write_bytes(b"not-really-audio")
-    for bad in (["--song", str(tune)], ["--song", str(tune), "--music", "曲 X"], ["--song", str(tune), "--rights", "権利"],
-                ["--song", str(tune), "--music", "曲 X", "--rights", "権利", "--only", "scene2"]):
+    # 権利の文は要る（曲の出所を記録に残す）。クレジットの文（--music）は要らない（本人の決定 11-06）
+    for bad in (["--song", str(tune)], ["--song", str(tune), "--music", "曲 X"],
+                ["--song", str(tune), "--rights", "権利", "--only", "scene2"]):
         with contextlib.redirect_stderr(io.StringIO()):
             assert build.main(["--out", tmp, "--skip-tests", *bad]) == 4, bad
     ran.clear()
@@ -219,6 +226,9 @@ with tempfile.TemporaryDirectory() as tmp:
     with contextlib.redirect_stderr(io.StringIO()):
         assert build.main(["--out", tmp, "--song", str(tune), "--music", "曲 X", "--rights", "権利"]) == 3
     assert ran == [], "曲が読めないのに試験を回した"
+    with contextlib.redirect_stderr(io.StringIO()):
+        assert build.main(["--out", tmp, "--song", str(tune), "--rights", "権利"]) == 3, "クレジットの文が無くても曲を受けて、拍を測る所まで進む"
+    assert ran == []
     build.song.measure = lambda path: {"bpm": 100.0, "beats": [0.5, 1.1], "bars": [0.5], "seconds": 200.0, "clarity": 3.0}
     fitted = {"seconds": {n: 10.0 for n in build.SCENES}, "cues": {n: {} for n in build.SCENES}, "moved": 5, "left": 1}
     build.song.align = lambda *a: fitted
@@ -257,8 +267,11 @@ with tempfile.TemporaryDirectory() as tmp:
     rec = json.loads((run_dir / "build.json").read_text(encoding="utf-8"))
     assert rec["clips"]["core_loop"]["sha256"] and rec["clips"]["core_loop"]["file"] == "撮り足し.mp4", rec["clips"]
 
-# 曲が無い時は仮の拍を付け、クレジットにも仮と出す（Suno の曲に見せない）
+# 曲が無い時は仮の拍を付け、記録（build.json）にだけ仮と残す。動画のクレジットには出さない（本人の決定 11-06）
 assert "仮の拍" in build.PROVISIONAL_CREDIT and "Suno の曲待ち" in build.PROVISIONAL_CREDIT
+from demo import scene7  # noqa: E402
+assert all(build.PROVISIONAL_CREDIT not in n and "曲" not in r for r, n in scene7.credit_lines())
 build.run_tests, build.importlib.import_module, build.prepare.missing_tools = real_run, real_import, real_missing
+build.opening.has_video = real_has
 build.make_beat = real_beat
 print("ok song")

@@ -1,6 +1,6 @@
 """場面 7: 槍の型の人物を薄く並べ、締めの字幕を出し、クレジットへ溶かす。
 
-使い方: python -m demo.scene7 --out <repo の外の場所>/scene7.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR] [--music 曲の札]
+使い方: python -m demo.scene7 --out <repo の外の場所>/scene7.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（このリポの検査の決まりに合わせる）。
 
 決めた事と理由:
@@ -12,6 +12,8 @@ exit: 0 = 書き出せた / 4 = 画像が取れない・ffmpeg が無い（こ�
 - まだ動かしていない事の断りもクレジットに置く（本人の決定 11-06 で採った。docs/demo/plan.md の 4）。場面ごとに言わないため。
 - 扇が開く所・動く所は映さない（紙で確かめる前に答えを見せない。J-013）。
 - 顔と声は入れない（J-022）。北斎の人物は版画の線で、人の顔の写真ではない。
+- 曲のクレジットは動画の中に入れない（本人の決定 11-06。ほかの所に本人が書く）。曲がある時も無い時も、仮の拍を使う時も、曲の行を出さない。
+  前は曲の文を --music で受けて「曲」の行に出し、曲が無い間は仮の拍の行を出していた。曲の文と仮の拍は、書き出しの記録（build.json）にだけ残る。
 - frame(t) は時刻だけから 1 コマを描く純関数（場面 1 と同じ）。曲を付ける時は CUES の時刻を拍に合わせて直すだけで済む。
 """
 import argparse
@@ -59,9 +61,9 @@ FIG_TALL = 200                    # 一番背の高い人を 200px に。全員�
 FIG_INK = 0.22                    # 字幕を先に読ませるので薄くする
 
 
-def credit_lines(music=None):
-    """画面に出すクレジットの行。曲は本人が決めた時だけ足す（無ければ書かない、plan.md の 4）。"""
-    return CREDITS + ((("曲", music),) if music else ())
+def credit_lines():
+    """画面に出すクレジットの行。曲の行は無い（本人の決定 11-06: 曲のクレジットは動画の中に入れない）。"""
+    return CREDITS
 
 
 def _alpha(layer, a):
@@ -77,7 +79,7 @@ def _fade(color, a):
 class Scene7:
     duration = DURATION
 
-    def __init__(self, page, rec, music=None):
+    def __init__(self, page, rec):
         self.rec = rec
         # 切り出しと読む順は場面 1 の Scene に任せる（同じ 18 人・同じ順で出すため、並べ替えを二重に書かない）
         base = Scene(page, rec)
@@ -85,7 +87,7 @@ class Scene7:
         figs = dict(base.figs)
         k = FIG_TALL / max(g.height for g in figs.values())
         self.fig_layers = {fid: ink_layer(g, k) for fid, g in figs.items()}
-        self.credits = credit_lines(music)
+        self.credits = credit_lines()
 
     def _grid(self, img, t, dim):
         x0, y0, x1, y1 = GRID_BOX
@@ -142,12 +144,11 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="mp4 の置き場（repo の外）")
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
     ap.add_argument("--cache", default=str(ROOT / "out/demo/cache"))
-    ap.add_argument("--music", help="曲のクレジットの文（本人が決めた時だけ。無ければ書かない）")
     a = ap.parse_args(argv)
     page, rec = load_page(pathlib.Path(a.cache))
     if page is None:
         return 4
-    scene = Scene7(page, rec, a.music)
+    scene = Scene7(page, rec)
     if a.sheet:
         contact_sheet(scene, a.sheet, SHEET_TIMES)
     return render(scene, pathlib.Path(a.out))

@@ -1,7 +1,7 @@
 """デモ動画を 1 つの命令で作り直す（撮る日の本番の入口）。
 
 使い方: python -m demo.build --out <repo の外の場所> [--photos p01,p02] [--partial] [--offline] [--run 前の置き場 [--only scene2,flip]]
-曲が来たら: python -m demo.build --out <置き場> --song 曲.mp3 --music "クレジットの文" --rights "権利の文" [--song-start 秒]
+曲が来たら: python -m demo.build --out <置き場> --song 曲.mp3 --rights "権利の文" [--music "クレジットの文（記録にだけ残る）"] [--song-start 秒]
 前の日: python -m demo.prepare で道具を確かめ、絵を全部取り寄せる。撮る日は --offline で網を切って書き出せる。
 流れ: ./run.sh で試験を確かめる → （曲の拍を測って合図を寄せる）→ 台本の順に場面を書き出す → 音を付けて demo.assemble でつなぎ 3 分の床を見る → 記録（build.json）を残す。
 exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超えた / 4 = 道具が無い・場面が無い・書き出せない（--partial なら無い場面を飛ばす）。
@@ -11,8 +11,10 @@ exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超え�
   本人の決定（11-05）「哲学よりの動画にして」で試験の数を画面に出すのはやめたが、書き出しの条件には残す。
 - 場面の順は demo.script、引数はここだけに書く。場面を足す・入れ替える時に、つなぐ順と書き出しの引数が食い違わないため。
 - 曲は 1 本の命令で付ける。--song を渡すと、音の実物から拍を測り、合図を寄せて全場面を書き出し、音を重ねる。
-  クレジットと権利の文が無い曲は受けない（曲の出所を動画と記録に残すため。本人の決定で曲は本人が Suno で作って渡す）。
-  --song が無い間は、コードで作った仮の拍を付ける（demo.beat）。クレジットにも仮と出す。Suno の曲に見せないため。
+  権利の文が無い曲は受けない（曲の出所を記録に残すため。本人の決定で曲は本人が Suno で作って渡す）。
+  曲のクレジットは動画の中に入れない（本人の決定 11-06。ほかの所に本人が書く）。--music は要らず、渡されたら build.json にだけ残す。
+  前は --music を必ず求め、その字を場面 7 の「曲」の行に出していた。
+  --song が無い間は、コードで作った仮の拍を付ける（demo.beat）。仮の拍である事は build.json の music と audio にだけ残し、動画には出さない。
 - まだ無い物（声の取り込み・エンジンごとの改善）は図で描き、撮れたら --clip で場面ごと差し替える。つなぐ時に映像だけを使うので、差し替えた動画の声は入らない（J-022）。
 - 音を作った commit を build.json と beats.json に残す（#268）。動画と同じく、音のコードも後から辿るため。
 - 要る道具は、試験（約 5 分）を回す前に全部を名前で言う。撮る日に場面の途中で初めて分かるのを避けるため。
@@ -63,8 +65,6 @@ def scene_args(name, tests, music, photos):
     """場面ごとに足す引数。どの場面がどの引数を取るかは、各場面の CLI に合わせる。"""
     if name == "scene5" and photos is not None:
         return ["--photos", photos]
-    if name == "scene7" and music:
-        return ["--music", music]
     return []
 
 
@@ -220,7 +220,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="置き場（repo の外）。中に <日時>/ を作る")
     ap.add_argument("--song", help="曲のファイル。実物から拍を測り、合図を寄せて音を重ねる。動画の長さで切り、短ければ無音で足す")
     ap.add_argument("--song-start", type=float, default=0.0, help="曲のどこ（秒）から使うか。前奏を飛ばす時")
-    ap.add_argument("--music", help="曲のクレジットの文（場面 7 に出す。--song の時は必ず）")
+    ap.add_argument("--music", help="曲のクレジットの文（build.json にだけ残す。動画には出さない。本人の決定 11-06）")
     ap.add_argument("--rights", help="曲の権利の文（作った人・道具・使ってよい範囲。build.json と beats.json に残す。--song の時は必ず）")
     ap.add_argument("--clip", action="append", default=[], metavar="場面=ファイル",
                     help="その場面を撮った動画に差し替える（声の取り込みやエンジンごとの輪が撮れた時）。映像だけを使い、音は捨てる。何度でも付けられる")
@@ -247,8 +247,8 @@ def main(argv=None):
             print(f"検査できない: 差し替えが読めない: {item}（場面の名前=動画のファイル）", file=sys.stderr)
             return 4
         clips[name] = path
-    if a.song and not (a.music and a.rights):
-        print("検査できない: 曲には --music（クレジット）と --rights（権利）が要る", file=sys.stderr)
+    if a.song and not a.rights:
+        print("検査できない: 曲には --rights（権利）が要る", file=sys.stderr)
         return 4
     if a.song and a.only:
         print("検査できない: 曲を付ける時は全部の場面を作り直す（合図が動くので）。--only を外す", file=sys.stderr)
@@ -286,7 +286,10 @@ def main(argv=None):
         except song.SongError as e:
             print(f"{'FAIL D.song' if e.code == 3 else '検査できない:'} {e}", file=sys.stderr)
             return e.code
-    music = a.music if a.music is not None else prev.get("music") or PROVISIONAL_CREDIT
+    # 記録にだけ残す曲の文。曲を付ける時は渡された字（無ければ None）、曲を付けない時は仮の拍の文。動画には出さない。
+    # 前の記録の曲の文は引き継がない: 場面 7 が曲の字を刷らなくなったので引き継ぐ要が無く、曲を付けずに作り直した時に
+    # 前の曲の文が残ると、音（仮の拍）と記録が食い違うため。
+    music = (a.music or None) if a.song else PROVISIONAL_CREDIT
     photos = a.photos if a.photos is not None else prev.get("photos")
     sha, dirty = head_sha(), is_dirty()
 

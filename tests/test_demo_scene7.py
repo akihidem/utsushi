@@ -15,13 +15,14 @@ spans = list(scene7.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene7.DURATION
 assert all(0 <= t <= scene7.DURATION for t in scene7.SHEET_TIMES)
 
-# クレジット: 図の出所・Claude・本人が要る。曲は渡した時だけ書く（plan.md の 4）
+# クレジット: 図の出所・Claude・本人が要る。曲の行は無い（本人の決定 11-06: 曲のクレジットは動画の中に入れない）
 joined = " ".join(r + " " + n for r, n in scene7.CREDITS)
 assert "国立国会図書館（PDM）" in joined and "Claude" in joined and "本人" in joined
 assert dict(scene7.CREDITS)["仮説の案・手順の質問・作る過程・動画のコード"] == "Claude（Claude Code）", "クレジットにはどの版で作ったかを書かない"
-assert not any("曲" == r for r, _ in scene7.credit_lines())
-assert scene7.credit_lines(None) == scene7.CREDITS and scene7.credit_lines("") == scene7.CREDITS
-assert scene7.credit_lines("試しの曲")[-1] == ("曲", "試しの曲")
+assert scene7.credit_lines() == scene7.CREDITS
+assert not any("曲" in r or "曲" in n or "仮の拍" in n for r, n in scene7.CREDITS), "曲の行も仮の拍の行も出さない"
+import inspect  # noqa: E402
+assert "music" not in inspect.signature(scene7.Scene7).parameters and "--music" not in inspect.getsource(scene7.main), "曲の字を受ける口を持たない"
 assert scene7.REPO_NAME == "utsushi" and "http" not in scene7.REPO_NAME  # URL は作らない
 assert scene7.CAPTION == "紙で動いても、昔の作り方の証明にはならない"
 
@@ -39,10 +40,6 @@ for t in (0.5, 2.0, 3.8, 5.0, 6.0, 7.0, 8.0, 8.9):
     assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 # 並ぶ段の途中と並び終えた後で絵が違う（1 人ずつ現れる）
 assert scene.frame(0.5).tobytes() != scene.frame(3.8).tobytes()
-# 曲を渡した時だけ、クレジットの画面が変わる
-with_music = scene7.Scene7(page, rec, "試しの曲")
-assert with_music.frame(8.0).tobytes() != scene.frame(8.0).tobytes()
-assert with_music.frame(3.8).tobytes() == scene.frame(3.8).tobytes()
 # 字幕の通り道（真ん中の段）に人物を置かない（字の後ろに絵を置かない）
 assert len(set(scene.frame(0.55).crop((0, 440, flip.W, 600)).getdata())) == 1, "真ん中の段に絵がある"
 # 字幕は読む間を置いてから消え、消えてからクレジットが現れる（字を重ねない。1 秒 5 字以下）
@@ -51,7 +48,7 @@ assert scene7.CUES["caption_out"][1] <= scene7.CUES["credits"][0]
 gap = (scene7.CUES["caption_out"][1] + scene7.CUES["credits"][0]) / 2
 assert len(scene.frame(gap).getcolors(flip.W * flip.H)) == 1, "字幕とクレジットの間は紙の地だけ"
 # クレジットは幅の中に収まる。各場面の隅の札を寄せた分（出所・複製の年・作り物の断り・未実行の断り）がある
-rows = scene7.credit_lines("試しの曲")
+rows = scene7.credit_lines()
 font = ImageFont.truetype(flip.SERIF, 30)
 assert max(font.getlength(r) for r, _ in rows) + 40 + max(font.getlength(n) for _, n in rows) <= flip.W - 120
 assert 262 + 60 * len(rows) <= flip.H - 30
