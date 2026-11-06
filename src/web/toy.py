@@ -390,7 +390,7 @@ def ai_block(r, up_key=None, photos=True):
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
-        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
+        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>' if lines else ""  # 取り下げで中身が消えた読みは、見出しも出さない
     o = techo_site.seen_observation(r["id"], up_key) if photos else None
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
@@ -438,13 +438,14 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
             if at == nid:
                 # 通らなかった時は、畳んだ欄を開いて、その上に理由を出す。手帖から来た印も保つ。
                 nxt = refill(next_form(r, filled[1].get("back", "")), filled[1]).replace("<details>", "<details open>", 1)
-            # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。
-            tail = (f'<div class="step"><p>説明: {esc(told["text"])}</p><p>次の思いつき: {esc(told["next_idea"])}</p></div>'
+            # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。取り下げた説明は字が空になるので、空の欄を並べない。
+            said = "".join(f"<p>{label}: {esc(told[key])}</p>" for label, key in (("説明", "text"), ("次の思いつき", "next_idea")) if told.get(key))
+            tail = ((f'<div class="step">{said}</div>' if said else "") +
                     f'<div class="step">{ai_block(r, up_key)}</div>' + (f'<div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>' if nxt else ""))
         else:
             # 人の説明が先。Claude の釦はこの後の段で出す。
             tail = "" if not records.mine(r["id"], rec_key) else refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" required></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
+                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by"></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
         here = note if at == r["id"] else ""
         # 感想（本人の方針 11-05「感想と動きの報告」）。動きの欄の次に、作った人の言葉として出す。
         feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""
@@ -462,7 +463,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
             feel = ""
             if told:
                 # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
-                tail = '<p class="meta">説明を残しました。</p>' + ai_block(r, up_key, photos=False)
+                tail = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_block(r, up_key, photos=False)
         out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}{"・" + esc(wording.record_no(r["id"])) if photos else ""}</p>{feel}{after}{tail}</article>'
     return out
 
@@ -552,9 +553,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     who = "・".join(sorted({wording.plain(e["checked_by"]) for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")}))
     stage = hypotheses.stage(sid)
     stage_note = '<p class="meta"><span class="lb">試作</span>全部の玩具を型紙にする途中の物。名前は作る側の見立てで、まだ確かめていません。</p>' if stage != "必須" else ""
-    hero = (f'<section class="hero">{skin.frame(sid, src.get("holding", ""))}<div>'
+    from . import genga  # 原画と歌（本人の指示 11-06）。頁の全体の絵と歌を 1 つの組にして頭に置く。歌はこの組の中に出す
+
+    hero = (f'<section class="hero">{genga.head(sid, src)}<div>'
             f'<h1>{esc(data["toy"])}</h1>{stage_note}'
-            + (f'<div class="songs">{songs}</div><p class="meta">原文の引用。確かめた人: {esc(who)}</p>' if songs else "")
             + skin.artwork_label(data["toy"], src) + nopic
             + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a><a href="/toys">ほかのおもちゃ</a></p>'
             f'<h3 style="margin-top:24px">これまでの記録</h3>{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</div></section>')

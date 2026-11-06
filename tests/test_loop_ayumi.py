@@ -123,7 +123,21 @@ for name in ("凡例に、谷折りと山折りの向きを言葉で添える", 
 for name in ("見える面の折り線を刷らず、絵の色の境で折る", "図を貼らず、色と線を描き直す", "最初に物差しを確かめてから切る", "色のある見える面は外を向くように折る", "手順で使う道具は、用意する物にも書く"):
     assert "ループの外" in item_of(shared, name), name
 for name in ("色のある見える面は外を向くように折る", "手順で使う道具は、用意する物にも書く"):  # 型紙エンジンに入った直し。サイトの紙にはまだ入っていない
-    assert "まだ紙に入っていません" in item_of(shared, name) and "paper-to-toy" in item_of(shared, name), name
+    assert "型紙エンジンには入りました。刷った紙にはまだ入っていません" in item_of(shared, name), name
+assert "まだ紙に入っていません" in item_of(shared, "折る向きは「絵が外になるように」と言う（谷と山の言葉を使わない）"), "エンジンにも入っていない、これからの物"
+
+# 4b. 本人が決めた字（11-06、読めない字の一覧の作る側の頁の分。一字も変えずに入れる）。版の表の文書は作業の記録なので書き換えず、頁に出す時に替える
+page = ayumi.page()
+for want in ("goraigo-v10 の仮説 E（例外）", "仮説 C にも内筒の土台", "仮説 A の溝は", "仮説 D は型紙が仮説 C と同じ",
+             "本人の決定（11-05）: 扇の高さの決まりを直したので、仮説 E を 14 折り・高さ 36mm にしました。", "決まりの直しから。試行からではありません",
+             "学習プリントの案と、調べた候補から: 手順の紙の問いを", "拡大した図の粗さと裏写り（v4 から v5）", "組み立ての確かめと 11-04 の写真。",
+             "型紙エンジンに入りました", "型紙エンジンの御来迎と虎に入りました", "入っている型</dt><dd>型紙エンジンには入りました。刷った紙にはまだ入っていません", "上げた物も材料にした版 "):
+    assert want in page, want
+for gone in ("H-A", "H-C", "H-D", "H-E", "F5.fan_height", "#163", "U-25", "research/22", "J-007", "J-033", "paper-to-toy", "#91", "739167b", "f6a40ed", "e189dc6", "上げた後の字も材料にした版"):
+    assert gone not in page, gone
+# 版の表から来る札には「記録」の欄を出さない。新しい版の札の記録の番号は出す
+assert "<dt>記録</dt>" not in article(page, "goraigo-v8") and "<dt>記録</dt>" not in article(page, "tora-v2")
+assert kaizen.toy_page(G).count("人が工夫で乗り切った所（記録に書いた工夫と、止まった所）を、次の版の一番の材料にします。") == 1 and "記録の fixes" not in kaizen.toy_page(G)
 
 # 5. 置き場に同じ番号の記録があっても、repo の直しの根拠は repo から読む。版の知見は、その版の根拠の記録の字だけ
 base = {"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない", "by": "human"}
@@ -153,7 +167,7 @@ def put_version(sid, hid, n, record_ids, param="fold_count", at="2026-11-06T02:0
 put_version(G, "H-A", 2, ["R-0011"])
 block = ayumi.toy_block(G, hypotheses.load(G))
 v2 = item_of(block, "仮説 A 版 2")
-assert "折りの数 70→72" in v2 and "変更の理由の字" in v2 and "根拠の記録の説明の字" in v2 and "ループ 2" in v2
+assert "折りの数 70→72" in v2 and "変更の理由の字" in v2 and "根拠の記録の説明の字" in v2 and "ループ 2" in v2 and "<dt>記録</dt><dd>R-0011</dd>" in v2
 assert "止まった所 R-0011: 止まった所の字" in v2 and "人の工夫 R-0011: 外筒 / 幅を広げた / 入った" in v2 and "次の思いつきの字" in v2
 assert "根拠でない記録の説明の字" not in block, "版の知見は版の根拠の記録から。組の知見は組の直しの根拠の記録から"
 assert "サイトの係" not in block, "採った人と説明した人の名前は出さない"
@@ -276,7 +290,7 @@ assert kv.change_verdict([]) == OUT and kv.tag(OUT) == "ループの外"
 assert kv.tag({"loops": [1, 2], "material": [], "review": False}) == "ループ 1・2"
 put_version(G, "H-A", 3, ["R-0022"], at="2026-11-06T03:00:00+09:00")
 summary = ayumi.loop_summary(sids)
-assert "寸法の版 1" in summary["2"] and "上げた後の字も材料にした版 1" in summary["4"], summary
+assert "寸法の版 1" in summary["2"] and "上げた物も材料にした版 1" in summary["4"], summary
 assert "ループ 4" in item_of(ayumi.toy_block(G, hypotheses.load(G)), "仮説 A 版 3")
 assert ayumi.toy_block(G, hypotheses.load(G)).index("仮説 A 版 3") < ayumi.toy_block(G, hypotheses.load(G)).index("仮説 A 版 2"), "日の新しい版が上"
 (LOOP / f"version-{G}-H-A-3.json").unlink()

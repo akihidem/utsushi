@@ -15,6 +15,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from api import ask  # noqa: E402
+from omochae.contrib import MAX_BODY  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web.toy import reply_note  # noqa: E402
 
@@ -100,9 +101,11 @@ start = page.index(f'id="{rid}"')
 assert 'name="next_idea"' in page[start:start + 3000], "札の中に次の欄（説明）がある"
 
 # 説明: 札の中に戻る。AI の返事の文も札に出る。
-code, _, page = call(f"/record/{rid}/explain", {"by": "", "text": "筒が<支えた>", "next_idea": "折りを増やす"})
+# 断りの形は、長すぎる次の思いつきで見る（書いた人は書かなくてもよい欄になった。本人の決定 11-06）
+too = "折りを増やす" + "あ" * MAX_BODY
+code, _, page = call(f"/record/{rid}/explain", {"by": "", "text": "筒が<支えた>", "next_idea": too})
 assert code == 422 and note_at(page, rid, "alert")
-assert "筒が&lt;支えた&gt;</textarea>" in page and 'value="折りを増やす"' in page
+assert "筒が&lt;支えた&gt;</textarea>" in page and f'value="{too}"' in page
 page = landed(call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えた", "next_idea": "折りを増やす"}), rid)
 assert "説明を残しました" in note_at(page, rid, "status")
 page = landed(call(f"/record/{rid}/ai-interpret", {}), rid)

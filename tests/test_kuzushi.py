@@ -17,7 +17,7 @@ DATA = pathlib.Path(tempfile.mkdtemp())
 os.environ["OMOCHAE_DATA"] = str(DATA)
 
 from omochae import hypotheses, labels  # noqa: E402
-from web import kuzushi  # noqa: E402
+from web import genga, kuzushi  # noqa: E402
 from web.play_server import serve, source, sources  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -86,9 +86,18 @@ for sid in sources():
     code, body = get(f"/zukan/{sid}/yomi")
     assert code == 200, sid
     # 原図の写しは git の外（out/sources）なので、まっさらな clone では絵の代わりに「手元に絵がありません」が出る
-    # 歌の枠（SONG_BOX）を決めた玩具だけが歌の所の絵を出す。試作の玩具は写しがあっても枠が無いので、絵の代わりの一文になる
-    has_pic = sid in kuzushi.SONG_BOX and (pathlib.Path(__file__).resolve().parents[1] / "out/sources" / f"{sid}.jpg").exists()
-    assert (f'src="/picture/{sid}"' in body if has_pic else "手元に絵がありません" in body) and 'name="mine"' in body, sid
+    # 歌の枠（SONG_BOX）を決めた玩具は歌の所の絵を出す。枠の無い玩具は、頁の全体の写し（out/sources/pages）があれば頁の全体を
+    # 箱なしで出す（原画の載せ方、統括の決め 11-06）。頁が無く玩具の写しだけなら、その写しを比のまま出す
+    root = pathlib.Path(__file__).resolve().parents[1]
+    if sid in kuzushi.SONG_BOX and (root / "out/sources" / f"{sid}.jpg").exists():
+        want = f'src="/picture/{sid}"'
+    elif genga.page_file(genga._source(sid)).exists():
+        want = f'src="/picture/{sid}/page"'
+    elif (root / "out/sources" / f"{sid}.jpg").exists():
+        want = f'src="/picture/{sid}"'
+    else:
+        want = "手元に絵がありません"
+    assert want in body and 'name="mine"' in body, sid
     for e in checked(sid):
         assert e["text"] not in body, (sid, "書く前に確かめた読みが出ている")
     for e in rejected(sid):
