@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_ux_fold_record.py
+# commit: 756b3273（回した時の HEAD）
+/tmp/tmprc04cd3e/play/NDL-1187053-R0000005-L/.tmp-3_kfuz48/H-A_v1.pdf
+/tmp/tmprc04cd3e/play/NDL-1187053-R0000005-L/.tmp-3_kfuz48/H-A_v1_tejun.pdf
+/tmp/tmprc04cd3e/play/NDL-1187053-R0000005-L/.tmp-3_kfuz48/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_ux_fold_record.py", line 78, in <module>
+    assert HEAD in kiroku, ("記録の節は、見出しのまま畳む", kiroku[:300])
+           ^^^^^^^^^^^^^^
+AssertionError: ('記録の節は、見出しのまま畳む', '<section class="sec" id="kiroku"><h2>試した記録を残す</h2><form method="post" action="/toy/NDL-1187053-R0000005-L/record#kiroku" class="card" id="record"><h3>試した記録</h3><p class="meta">見た事を残します。動かなかった記録も、そのまま紙の返事です。記録はこの頁でほかの人も読むので、名前や連絡先は書かないでください。</p><input type="hidden" name="hypothesis" value="H-A"><fiel')
+rc=1
