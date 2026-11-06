@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toys_genre.py
+# commit: 3a38460a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toys_genre.py", line 55, in <module>
+    assert h2 == [b for b, _ in genre.groups(rest)], (name, h2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('tenji', [])
+rc=1

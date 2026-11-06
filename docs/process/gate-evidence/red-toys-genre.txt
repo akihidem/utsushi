@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_toys_genre.py
+# commit: 3a38460a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toys_genre.py", line 16, in <module>
+    from web import genre, skin, toys  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'genre' from 'web' (src/web/__init__.py)
+rc=1
