@@ -203,6 +203,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .techo input[type=text],.techo input[type=number]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
 .techo .go{font:inherit;font-size:20px;letter-spacing:.05em;background:var(--accent);color:var(--onaccent);border:0;padding:16px 28px;border-radius:12px;cursor:pointer;margin:0}
+.techo a.go{display:inline-block;text-decoration:none;min-height:64px;box-sizing:border-box;letter-spacing:.3em}
 .techo .meta{font-size:12px;color:var(--mute)}
 .techo .item{border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:6px}
 .techo .item img,.techo .item video{height:110px;max-width:100%;border:1px solid var(--frame);border-radius:8px}
@@ -311,11 +312,14 @@ def gallery_page(sids, photos=True):
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
             cards += made_item(sid, data, r, photos)
+    real = bool(cards)  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
     cards = cards or ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
                       else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
     from .demo_samples import uploads_html, voice_html
-    cards += uploads_html()
+    # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
+    sample = uploads_html()
+    cards += f'<details class="samples-fold"><summary>見本</summary>{sample}</details>' if (real and sample) else sample
     voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
     # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
     from .demo_samples import voices_html
@@ -357,4 +361,8 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
-            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}{mine}</div></section>') + hanasu.assets()
+            # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
+            # 「のこす」の後はこの頁の #mine に着くので、返事の文のすぐ下に 1 つだけ置く。行き先はギャラリーの「他の人が作った物」
+            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}'
+            '<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>'
+            f'{mine}</div></section>') + hanasu.assets()
