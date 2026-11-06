@@ -20,7 +20,8 @@ def check(out, tpl, params, hid):
 
 ha = {"push_part": "tab", "hub": "axle", "pusher_height": 15}
 names = check(export("NDL-1187053-R0000005-L", "H-A", tempfile.mkdtemp()), slider_fan, ha, "H-A")
-assert names == ["H-A_base_foldsim.svg", "H-A_fan_foldsim.svg", "H-A_pusher_foldsim.svg", "H-A_tube_foldsim.svg"], names
+# 次の組（goraigo-v11）は扇の足の帯（8 帯、EP-0012）が折り線を持つ部品として増える
+assert names == ["H-A_band_foldsim.svg", "H-A_base_foldsim.svg", "H-A_fan_foldsim.svg", "H-A_pusher_foldsim.svg", "H-A_tube_foldsim.svg"], names
 names = check(export("NDL-1187053-R0000014-R", "H-A", tempfile.mkdtemp()), pivot_counterweight, {"mount": "neck"}, "H-A")
 assert names == ["H-A_body_foldsim.svg", "H-A_strip_foldsim.svg"], names
 only = export("NDL-1187053-R0000005-L", "H-A", tempfile.mkdtemp(), parts=("fan",))

@@ -70,6 +70,11 @@ def _art(part, x0, y0):
         if item["kind"] == "poly":
             stroke = f' stroke="{item["stroke"]}" stroke-width="{item.get("sw", .3)}"' if item.get("stroke") else ""
             out += f'<polygon points="{pts}" fill="{item["fill"]}"{stroke}/>'
+        elif item["kind"] == "mark":
+            # 位置の印（次の組の虎の腕の丸・御来迎の溝の矢印）。刷る紙と同じ色と点で描く（render.MARK_*）
+            tag = "polygon" if item.get("closed") else "polyline"
+            out += (f'<{tag} points="{pts}" fill="none" stroke="{render.MARK_COLOR}" stroke-width="{render.MARK_SW}" stroke-dasharray="{render.MARK_DASH}"'
+                    ' stroke-linecap="round"/>')
         else:
             out += f'<polyline points="{pts}" fill="none" stroke="{item["stroke"]}" stroke-width="{item.get("sw", .3)}"/>'
     return out

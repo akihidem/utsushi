@@ -67,6 +67,11 @@ THREAD_RADIUS = 35
 THREAD_DEPTH = 3
 # 溝が筒の端に近いと紙が裂けやすい。実物で確かめるまでの安全側の見込み。
 SLOT_MARGIN = 5
+# 扇の足の帯（EP-0012、作成動画 R-0003 の札から採った案。2026-11-06）。台に立てた扇は足の紙が曲がって片側へ傾き、作った人は畳んだ扇の根元に
+# 紙の帯を巻いて付け直した。帯は足の付け根（扇の下の端のすぐ下）に巻き、足の一番曲がりやすい所を 3 枚重ねにする。
+# 扇の板には巻かない（板は要のまわりに開くので、巻くと開かない）。幅は案の推しの 8mm、足の糊代より上の長さが足りない寸法は細くする。
+# 型紙エンジン（paper-to-toy の issue/goraigo-v11 4efef1c）と同じ形で、必須 2 種の次の組（goraigo-v11）だけに入れる（前の組は紙を変えない）
+BAND_W, BAND_GLUE, BAND_MIN = 8, 6, 4
 
 
 def spec():
@@ -202,6 +207,13 @@ def _tube_art(A, H, notch=None):
             art.append({"kind": "poly", "pts": [(notch[0], 4.5), (notch[1], 4.5), (notch[1], notch[2]), (notch[0], notch[2])], "fill": ground})
     art.append({"kind": "line", "pts": [(A - 1.2, 0), (A - 1.2, H)], "stroke": LINE, "sw": 0.5})
     art.append({"kind": "line", "pts": [(A + 1.2, 0), (A + 1.2, H)], "stroke": LINE, "sw": 0.5})
+    if notch and not frozen():
+        # 溝の下の口の左右に、下の端から上へ向かう矢印（位置の印）。作った人は溝を窓の形に切り抜き、下の帯の手前で止めた（EP-0012、
+        # 作成動画の札）。矢印は下の茶色の帯から地の色の所まで伸ばす（茶色の上だけだと印の色が見えにくい）。「ここから切る」の字は、
+        # 部品に置ける字が札の 1 つだけなので刷らない（手順 2 の文が「下の端からはさみで切り込む」と言う）。エンジンと同じ形
+        for x in (notch[0] - 1.5, notch[1] + 1.5):
+            art += [{"kind": "mark", "pts": [(x, H - 1.0), (x, H - 11.0)], "mark": "slot"},
+                    {"kind": "mark", "pts": [(x - 1.0, H - 9.6), (x, H - 11.0), (x + 1.0, H - 9.6)], "mark": "slot_head"}]
     return art
 
 
@@ -313,6 +325,14 @@ def parts(p):
         fan.holes += [(r_hole, (i + 0.5) * w, 0.6) for i in range(n)]
         fan.holes += [(r_hole + THREAD_RADIUS, 0.5 * w, 0.6), (r_hole + THREAD_RADIUS, (n - 0.5) * w, 0.6)]
     out.append(fan)
+    bw = band_width(p)
+    if bw is not None:
+        # 足の帯（EP-0012）。足の幅の 2 つ分と紙の厚みを回り、糊代で閉じる。色の面を外にして巻くので、刷った面から見て山折り
+        w2 = p["fold_width"] + p["paper_thickness"]
+        band = Part(8, "band", "扇の足の帯", [(0, 0), (2 * w2 + BAND_GLUE, 0), (2 * w2 + BAND_GLUE, bw), (0, bw)], label_xy=(1, (bw - 3.5) / 2),
+                    label="8 帯", mountain=[((w2, 0), (w2, bw)), ((2 * w2, 0), (2 * w2, bw))], glue=[[(2 * w2, 0), (2 * w2 + BAND_GLUE, 0), (2 * w2 + BAND_GLUE, bw), (2 * w2, bw)]])
+        band.art = [{"kind": "poly", "pts": [(x0 + 0.3, 0.3), (x1 - 0.3, 0.3), (x1 - 0.3, bw - 0.3), (x0 + 0.3, bw - 0.3)], "fill": FAN_A} for x0, x1 in ((0, w2), (w2, 2 * w2))]
+        out.append(band)
     fw, fh = p["figure_w"], p["figure_h"]
     pts = [(fw * x, fh * y) for x, y in FIGURE_OUTLINE]
     tab = 5  # 台に貼る足。絵には無いが、立てるのに要る。
@@ -335,6 +355,14 @@ FOOT = (0.3, 0.7)
 def leg_length(p):
     """扇の足の長さ。要（糸の穴）は像の足元から pivot_above_rim の高さにあり、そこから台まで届かせ、糊代を足す。"""
     return p["pivot_above_rim"] - 2 + LEG_GLUE
+
+
+def band_width(p):
+    """扇の足の帯の幅（足の長さの向き）。足の糊代より上の長さから 2mm 残す。BAND_MIN より細くなる寸法・足の無い形・前の組は None。"""
+    if frozen() or p["hub"] != "axle":
+        return None
+    w = min(BAND_W, leg_length(p) - LEG_GLUE - 2)
+    return w if w >= BAND_MIN else None
 
 
 def _base_mark(p):
@@ -366,7 +394,12 @@ def bom(p):
     if p["push_part"] == "stick":
         rows.append({"number": 6, "key": "stick", "name": "柄", "qty": 1, "material": f"割り箸（長さ約 {p['pusher_height']}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあり、押す力に耐えるため"})
     if p["hub"] == "axle":
-        rows.append({"number": 7, "key": "thread", "name": "糸", "qty": 3, "material": f"たこ糸（軸に 1 本。開く糸を試す時は、さらに 2 本 各約 {thread_mm(p):.0f}mm ＋結ぶ分）", "substituted": True, "original_guess": "不明", "reason": "家にあり、細い穴を通るため"})
+        # 次の組は開く糸を作る物に入れた（EP-0012: 作った人は扇の両端から筒へ 2 本張り、扇が開いた）。前の組は「試す時は」のまま
+        threads = f"たこ糸（軸に 1 本。開く糸を試す時は、さらに 2 本 各約 {thread_mm(p):.0f}mm ＋結ぶ分）" if frozen() else f"たこ糸（軸に 1 本と、開く糸 2 本 各約 {thread_mm(p):.0f}mm ＋結ぶ分）"
+        rows.append({"number": 7, "key": "thread", "name": "糸", "qty": 3, "material": threads, "substituted": True, "original_guess": "不明", "reason": "家にあり、細い穴を通るため"})
+    if band_width(p) is not None:
+        rows.append({"number": 8, "key": "band", "name": "扇の足の帯", "qty": 1, "material": paper, "substituted": True, "original_guess": "無し（作った人が足した。作成動画の札）",
+                     "reason": "台に立てた扇の足の紙が曲がって傾いたので、足の付け根を巻いて強くするため"})
     return rows
 
 
@@ -416,7 +449,13 @@ def place(by_key, page, top, gap):
     base, fig = by_key["base"], by_key["figure"]
     base.x, base.y = page.x0, left_y
     fig.x, fig.y = page.x0 + base.width + gap * 2, left_y
-    left_y += max(base.height, fig.height) + gap
+    row = max(base.height, fig.height)
+    if "band" in by_key:
+        # 足の帯（EP-0012）は小さいので、像の右に置く（左の列の高さを増やさない。文字と物差しの場所を減らさないため。エンジンと同じ）
+        band = by_key["band"]
+        band.x, band.y = fig.x + fig.width + gap * 2, left_y
+        row = max(row, band.height)
+    left_y += row + gap
     # 文字の列の幅は扇の本体まで取る。足は真ん中の 1 枚の高さにしか無く、文字と重なれば配置の検査（F5.overlap）が落とす。
     return left_y, fan.x - page.x0 - gap, page.x0
 
@@ -444,8 +483,17 @@ def steps(p):
     out.append("4 扇を色の境で、端から谷折り・山折りを交互にして蛇腹に畳む")
     if p["hub"] == "axle":
         out.append("糸を 5 像の穴と 4 扇の中心側の穴の列に通し、ゆるく結ぶ")
-        out.append("4 扇の真ん中の足を、糊代の境の破線で折り、足の糊代を 3 台の印に貼る")
-        out.append("5 像の足を 3 台に貼る")
+        if frozen():
+            out.append("4 扇の真ん中の足を、糊代の境の破線で折り、足の糊代を 3 台の印に貼る")
+            out.append("5 像の足を 3 台に貼る")
+        else:
+            # 足の帯と開く糸（EP-0012）。どちらも今の手順の文の中に足す（エンジン issue/goraigo-v11 4efef1c と同じ字）。手順 12・13 は 3D の確かめが
+            # 番号を持ち、作った人の記録も手順の番号を鍵にするので、段を足して番号をずらさない。開く糸は、内筒を入れる前に筒の口の下の穴と
+            # 扇の両端の穴に結ぶ（入れた後は扇に手が届かない）
+            band = "4 扇の真ん中の足の付け根（扇の下の端のすぐ下）に、8 帯を刷った面を外にして巻いて貼る。" if band_width(p) is not None else ""
+            out.append(band + ("足を" if band else "4 扇の真ん中の足を、") + "糊代の境の破線で折り、足の糊代を 3 台の印に貼る")
+            out.append(f"5 像の足を 3 台に貼る。開く糸 2 本（各 約 {thread_mm(p):.0f}mm）を、1 外筒の口の下の 2 つの穴に外から通して結び、"
+                       "もう一方の端を筒の下から出して、4 扇の両端の穴に 1 本ずつ結ぶ")
     else:
         out.append("4 扇の端を 3 台に貼り、5 像の足も台に貼る")
     if p["push_part"] == "tab":

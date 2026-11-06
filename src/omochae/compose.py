@@ -103,6 +103,9 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     # 谷と山の意味を添える（v8）。試行のつぶやき「谷折り、山折りがわからない」（11-04）。線の種類だけでは折る向きが伝わらなかった。
     valley, mountain = FOLD_WORDS if new_fold_words(tpl) else _OLD_SHEET_FOLD_WORDS
     legend = [("切る", None), (valley, "2,1"), (mountain, "3,1,0.6,1"), ("糊代", "hatch")]
+    # 位置の印のある紙だけ、凡例に足す（型紙エンジンと同じ字。印は必須 2 種の次の組にだけある）
+    if any(item["kind"] == "mark" for q in parts for item in q.art):
+        legend.append(("位置の印（切らない・折らない）", "mark"))
     samples, x = [], text_x
     for name, dash in legend:
         step = 9 + text_width(name, BODY_SIZE) + 3
