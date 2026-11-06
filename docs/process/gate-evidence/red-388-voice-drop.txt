@@ -1,0 +1,10 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/probe_voice_drop.py; echo "確かめ rc=$?"'
+# commit: 0fa057c4（回した時の HEAD）
+FAIL 1 字にしたら声が消える: AssertionError: 字にしたら声が消える（probe_voice_drop.py:70）
+FAIL 2 止まった後も印を付け直す: AssertionError: 止まった後でも字ができた事にする（probe_voice_drop.py:79）
+FAIL 3 道具が無いと口が立たない: AssertionError: 道具が無いのに making の口が立った（probe_voice_drop.py:94）
+FAIL 4 字の前の drop-voice を断る: AssertionError: 字の前は断る（probe_voice_drop.py:107）
+PASS 5 根拠の記録の取り下げで声と字が消える
+1/5 通る
+確かめ rc=3
+rc=0
