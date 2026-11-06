@@ -87,7 +87,7 @@ for tid, sids in SOURCES.items():
     tpl = TEMPLATES[tid]
     for sid in sids:
         for h in hypotheses.load(sid)["hypotheses"]:
-            assert boxes(tid, sid, h) == list(getattr(tpl, "PAPER_RESULTS", tpl.RESULTS)), (sid, h["id"])
+            assert boxes(tid, sid, h) == list(tpl.paper_results() if hasattr(tpl, "paper_results") else tpl.RESULTS), (sid, h["id"])
 
 # 5. 前の札の記録の数: 改善の頁とエンジンへ渡す束で、対応した今の札に数える
 PULL, PROP, STAND = (SOURCES[t][0] for t in ("string_pull", "stick_prop", "stand_figure"))
@@ -116,10 +116,20 @@ for tid in TEMPLATES:
     table = records.summarize(records.all_records(sid))[hypotheses.load(sid)["hypotheses"][0]["id"]]
     assert table[UNSURE] >= 1 and table[TEMPLATES[tid].RESULTS[1]] == 0, (tid, table)
 
-# 7. 虎: 記録では「わからない」を選べる。控えた組（tora-v3・tora-v4）の手順の紙は 2 つの欄のまま（札を紙に刷るので、足すと控えた紙の指紋が変わる）
-# 組の名前で見るのは、次の組を始めた PR がここで落ち、PAPER_RESULTS を外して 3 つの欄にする事に気づくため（本人の決め 11-06「次の組の紙から 3 つ」）
+# 7. 虎: 記録では「わからない」を選べる。手順の紙の札は刷る組で決まる（本人の決め 11-06「次の組の紙から 3 つの欄」）。
+# 決めの前に紙の指紋を控えた組（TWO_BOX_SETS）は 2 つの欄のまま、それより後の組は 3 つの欄。
+# 組を 1 つの値で見ない: 今の組が上がっても（tora-v6 など）、控えた組の紙は 2 つの欄のまま、今の組の紙は 3 つの欄になる事を、紙そのもので見る
 pc = TEMPLATES["pivot_counterweight"]
-assert pc.SHEET_SET == "tora-v4" and pc.FROZEN_SET == "tora-v3" and pc.PAPER_RESULTS == ("揺れた", "揺れない"), "次の組（tora-v4 の次）を始める時に PAPER_RESULTS を外し、3 つの欄の紙の指紋を足す"
+pinned = json.loads((ROOT / "tests" / "floor_pin.json").read_text(encoding="utf-8"))["papers"]
+assert pc.TWO_BOX_SETS and all(any(n.startswith(f"{s}/") for n in pinned) for s in pc.TWO_BOX_SETS), ("2 つの欄は、指紋を控えた組だけ", pc.TWO_BOX_SETS)
+tora_h = hypotheses.load(TORA)["hypotheses"][0]
+now_set = pc.SHEET_SET
+try:
+    for s, want in [*((s, pc.PAPER_RESULTS) for s in pc.TWO_BOX_SETS), ("tora-v99", pc.RESULTS)]:
+        pc.SHEET_SET = s
+        assert pc.paper_results() == want and boxes("pivot_counterweight", TORA, tora_h) == list(want), (s, want)
+finally:
+    pc.SHEET_SET = now_set
 assert records.check({"source_id": TORA, "hypothesis_id": "H-A", "result": UNSURE}) == []
 assert {f.floor for f in records.check({"source_id": TORA, "hypothesis_id": "H-A", "result": "たぶん揺れた"})} == {"F3.result"}
 

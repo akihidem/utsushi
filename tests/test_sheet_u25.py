@@ -55,7 +55,7 @@ for k, (layout, failures) in sheets.items():
     # A3 丸の欄は同じ大きさ
     assert RESULT_HEAD in ws
     boxes = [s for s in layout["shapes"] if s["kind"] == "rect" and s["w"] == 30]
-    assert len({(b["w"], b["h"]) for b in boxes}) == 1 and len(boxes) == len(pivot_counterweight.PAPER_RESULTS if k == "tora" else slider_fan.RESULTS)
+    assert len({(b["w"], b["h"]) for b in boxes}) == 1 and len(boxes) == len(pivot_counterweight.paper_results() if k == "tora" else slider_fan.RESULTS)
     # A4 4 問がこの順。折り返しても順は崩れない
     pos = [text.index(q) for q in QUESTIONS]
     assert pos == sorted(pos), k

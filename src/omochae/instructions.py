@@ -315,8 +315,8 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     head = getattr(tpl, "RESULT_HEAD", RESULT_HEAD)
     _block(texts, [head], page.x0, y, HEAD_SIZE, width)
     x = page.x0 + text_width(head, HEAD_SIZE) + 3
-    # 今の組の紙を変えないために、刷る札を記録の札と分けている雛形がある（虎の PAPER_RESULTS）。
-    printed = getattr(tpl, "PAPER_RESULTS", tpl.RESULTS)
+    # 控えた組の紙を変えないために、刷る札を記録の札と分け、組ごとに引く雛形がある（虎の paper_results）。
+    printed = tpl.paper_results() if hasattr(tpl, "paper_results") else tpl.RESULTS
     if x + 34 * len(printed) > page.x1:
         x, y = page.x0, y + HEAD_SIZE * LINE
     # 欄を同じ大きさにする。「わからない」を小さくすると、選ぶのをためらわせるため。
