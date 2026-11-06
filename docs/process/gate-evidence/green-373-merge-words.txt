@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_result_words.py
+# commit: 31e81a94（回した時の HEAD）
+ok
+rc=0
