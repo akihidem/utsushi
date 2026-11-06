@@ -73,10 +73,11 @@ for send in (on_page, on_techo):
         assert send(sheet_version=bad) in (201, 303) and versions()[-1] == 2, bad
 assert set(versions()) == {1, 2}, "刷っていない版の番号が記録に残った"
 
-# 手帖の「試した後の紙」は、その記録の版の紙を指す
+# 手帖の記録の札には、試した後の紙への道を出さない（11-06 から刷らない）。紙の道はその記録の版の紙を開く
 for v in (1, 2):
     rec = next(r for r in records.all_records(G) if r["sheet_version"] == v)
-    assert f"H-A_v{v}_after.pdf" in techo_site.feedback(G, rec), v
+    assert "_after.pdf" not in techo_site.feedback(G, rec), v
+    assert urllib.request.urlopen(base + f"/sheet/{G}/H-A_v{v}_after.pdf").status == 200, v
 # 頁は版が 2 つ以上ある時だけ聞く
 assert 'name="sheet_version"' in urllib.request.urlopen(base + f"/toy/{G}").read().decode()
 print("ok")

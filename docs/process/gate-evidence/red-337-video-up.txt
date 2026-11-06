@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_video_up.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_video_up.py", line 34, in <module>
+    from web import video_up  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'video_up' from 'web' (src/web/__init__.py)
+rc=1

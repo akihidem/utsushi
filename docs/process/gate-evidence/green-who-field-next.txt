@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_who_field.py
+# commit: eeb12ed（回した時の HEAD）
+/tmp/tmp8dr9q79e/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp8dr9q79e/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp8dr9q79e/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmp8dr9q79e/play/NDL-1187053-R0000005-L/.tmp-4ocuxive/H-A_v2.pdf
+/tmp/tmp8dr9q79e/play/NDL-1187053-R0000005-L/.tmp-4ocuxive/H-A_v2_tejun.pdf
+/tmp/tmp8dr9q79e/play/NDL-1187053-R0000005-L/.tmp-4ocuxive/H-A_v2_after.pdf
+ok: 次の版の欄は採る人が打ち、前の人の値を出さない
+rc=0

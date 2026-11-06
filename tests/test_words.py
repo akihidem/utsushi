@@ -76,4 +76,8 @@ for source, sid in ((gs, G), (ts, T)):
     assert "昔の職人" in " ".join(after["card"]), "歴史の問いを札で閉じない"
 stem = pathlib.Path(tmp) / "a"
 out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", "--out", str(stem)], capture_output=True, text=True)
-assert out.returncode == 0 and (pathlib.Path(tmp) / "a_after.pdf").exists(), out.stderr
+# 刷るのは型紙だけ（窓口の決定 推し A・11-06）。試した後の紙は、前に配った道で開く時に作る口（print_after）が残り、そこで作れる
+assert out.returncode == 0 and (pathlib.Path(tmp) / "a.pdf").exists() and not (pathlib.Path(tmp) / "a_after.pdf").exists(), out.stderr
+from omochae import hypotheses as _hyp  # noqa: E402
+
+assert _hyp.print_after("NDL-1187053-R0000005-L", "H-A", str(stem)) == 0 and (pathlib.Path(tmp) / "a_after.pdf").exists()

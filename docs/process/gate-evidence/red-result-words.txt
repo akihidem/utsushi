@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_result_words.py
+# commit: e089fbb（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_result_words.py", line 48, in <module>
+    assert len(tpl.RESULTS) == 3 and tpl.RESULTS[2] == UNSURE, (tid, tpl.RESULTS)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('balance_toy', ('戻った', '戻らない'))
+rc=1
