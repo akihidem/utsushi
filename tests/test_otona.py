@@ -12,13 +12,14 @@ import os
 import re
 import tempfile
 import threading
+import urllib.error
 import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from api import ask, observe  # noqa: E402
 from omochae import media_review, records, talk_log  # noqa: E402
-from web import about, otona, skin, techo_site, wording  # noqa: E402
+from web import about, otona, skin, wording  # noqa: E402
 from omochae.hypotheses import ROOT  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -138,6 +139,17 @@ for public_open in (False, True):
     try:
         status, got = fetch(server, "/otona")
         assert status == 200 and main_text(got) == expected, public_open
+        if public_open:
+            # 3 の「公開の場では、写真と動画はのせられません」の裏付け。前は手帖の頁の断りの字を見ていたが、手帖の作り直し（#395）で
+            # その字が消えた。字より強い裏付けとして、同じ出所から送っても、受け口が断る事を実際に送って見る
+            port = server.server_address[1]
+            req = urllib.request.Request(f"http://127.0.0.1:{port}/record/R-0001/media", data=b"x", method="POST",
+                                         headers={"Origin": f"http://127.0.0.1:{port}", "Content-Type": "image/jpeg"})
+            try:
+                urllib.request.urlopen(req, timeout=30)
+                raise AssertionError("公開の場で写真を受けた")
+            except urllib.error.HTTPError as e:
+                assert e.code == 403 and "写真と動画は上げられません" in e.read().decode("utf-8"), "公開の場では写真と動画はのせられない"
     finally:
         server.shutdown()
         server.server_close()
@@ -150,7 +162,6 @@ assert re.fullmatch(r"記録の番号 R-0003", wording.record_no("R-0003")), "�
 assert media_review.SHOWS == ("object", "people"), "物だけ / 人や声が入る、を人が確かめる"
 assert talk_log.blocked("山田小学校の田中です") and talk_log.blocked("電話は 090-1234-5678 です"), "名乗りや連絡先の形の言葉は機械が落とす"
 assert not talk_log.blocked("田中さんに教わった"), "全部を見分ける事はできない、と書く根拠。ここが変わったら文を確かめ直す"
-assert "公開のデモでは、写真と動画は上げられません。" in inspect.getsource(techo_site), "公開の場では写真と動画はのせられない"
 assert ask.REFUSE and ask.MECHANISM_WORDS, "動く仕組みの答えは言わない"
 assert "この 3 コマ" in inspect.getsource(observe) and "声は渡さない" in inspect.getsource(observe), "動画を見てもらう時は 3 枚の絵だけを渡す"
 print("ok 大人の方への頁は採られた文のままで、2 つの皮と合言葉なしの場で開き、約束の裏付けがある")
