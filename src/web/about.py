@@ -59,7 +59,9 @@ def page(skin_name, path="/about"):
     src = _source()
     quotes = "".join(f"<blockquote>「{esc(w)}」</blockquote>" for w in WORDS)
     body = (f'<div class="about"><section class="hero sec"><div>{skin.frame(SID, caption=src.get("holding", ""))}</div>'
-            f'<div><h1>うつし</h1><p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
+            # 道の外の読み物の入口（段 1、帯の「よむ」はこの頁）。前は頭の帯にあった 図鑑・English と、保護者の方へ、ファシリテーターの方へ の頁を、今の名前のまま並べる
+            f'<div><h1>うつし</h1><p class="links yomu"><a href="/zukan">図鑑</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a><a href="/en">English</a></p>'
+            f'<p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
             # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。黒のジンの案 2 は入口の章の頭（looks.py）。
             + (hokusai.flip_section() if skin_name == "tenji" else "") + hokusai.mechanism_section() +
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
