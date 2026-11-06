@@ -32,7 +32,14 @@ spans = list(scene6.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene6.DURATION == 30.0
 
 # 朱の枠は今の配置の部品から引く。A には下からの切り込み、C には土台、どちらも色の境で折る
-layouts, _ = scene6.current_layouts()
+# 場面 6 の字「C には土台」は、撮った時の組（goraigo-v10）の紙の事。デモは撮り直さない（本人の決定 11-06 夜）ので、枠は前の組の紙で見る。
+# 生成器は今の組の紙を刷るので、v14 の後に撮り直すなら、場面の字と枠を直す要がある（統括へ知らせた）
+from omochae.templates import slider_fan as _fan  # noqa: E402
+_now, _fan.SHEET_SET = _fan.SHEET_SET, _fan.FROZEN_SET
+try:
+    layouts, _ = scene6.current_layouts()
+finally:
+    _fan.SHEET_SET = _now
 regions = {}
 for hyp, (h, layout, failures) in layouts.items():
     assert not failures, [f.line() for f in failures]
