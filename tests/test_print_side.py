@@ -4,7 +4,7 @@
 線を刷らない部品（色の境で折る）でも、線の種類は検査と 3D の組み立てが読むので、手順の文と同じ向きでなければならない。
 形は、玩具の記録の案を全部と、雛形の選びの組を全部見る。必須 2 種（slider_fan・pivot_counterweight）は次の版の紙で直すので見ない。
 見ない部品と理由:
-- 絵の無い糊代だけを折る線（乗り手の下の糊代、幟の糊代、絵の無い吊り橋）。板の表は、背中合わせに貼るか 1 枚で立てて外に出る
+- 絵の無い糊代だけを折る線（乗り手と表裏の下の糊代、支えの糊代、幟の糊代、絵の無い吊り橋）。板の表は、背中合わせに貼るか 1 枚で立てて外に出る
 - 折らない部品（蓋、月、刀身など）
 """
 import collections
@@ -19,7 +19,7 @@ os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 from shapely.geometry import Polygon
 
 from omochae import assembly
-from omochae.templates import stick_prop, wheel_cart
+from omochae.templates import stand_figure, stick_prop, wheel_cart
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOOK = {}  # 雛形の ID → (雛形, 部品を見る関数, 選びの組)
@@ -128,6 +128,26 @@ def look_stick_prop(p):
 
 LOOK["stick_prop"] = (stick_prop, look_stick_prop, [{"shape": s, "hold": h} for s, hs in stick_prop.HOLDS.items() for h in hs])
 WANT |= {("stick_prop", "lantern"), ("stick_prop", "sleeve"), ("stick_prop", "tokin"), ("stick_prop", "fletch")}
+
+
+# --- stand_figure: 人形を立てる箱。台は伏せて外を見せ、器は上が開いて中を上から見る ---
+
+def look_stand_figure(p):
+    for q in stand_figure.parts(p):
+        if q.key != "tray":
+            continue
+        if p["form"] == "base":
+            # 台は伏せて置き、上の面に人形を貼る。天板と 4 つの壁の刷った面が箱の外
+            wrong("stand_figure", q, "色の面が伏せた箱の内を向く", outward(q, 90.0))
+        else:
+            # 浮かべる器と物を入れる器は、上が開いた器。人形や豆を中に置き、底と壁の内（刷った面）を上から見る
+            at = (p["base_h"] + p["base_w"] / 2, p["base_h"] + p["base_d"] / 2)
+            wrong("stand_figure", q, "壁が刷った面の裏へ折れ、器の内の色が上から見えない", leaning(q, at, want=1, only_colored=True))
+        seen.add(("stand_figure", f"tray/{p['form']}"))
+
+
+LOOK["stand_figure"] = (stand_figure, look_stand_figure, [{"form": f} for f in stand_figure.FORMS])
+WANT |= {("stand_figure", "tray/base"), ("stand_figure", "tray/float"), ("stand_figure", "tray/box")}
 
 
 def cases():

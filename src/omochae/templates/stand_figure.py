@@ -676,8 +676,8 @@ def _tray(p):
     pts = [(T, 0), (T + W, 0), (T + W + f, t), (T + W + f, T - t), (T + W, T), (2 * T + W, T), (2 * T + W, T + D), (T + W, T + D),
            (T + W + f, T + D + t), (T + W + f, 2 * T + D - t), (T + W, 2 * T + D), (T, 2 * T + D), (T - f, 2 * T + D - t), (T - f, T + D + t),
            (T, T + D), (0, T + D), (0, T), (T, T), (T - f, T - t), (T - f, t)]
-    valley = [((T, T), (T + W, T)), ((T, T + D), (T + W, T + D)), ((T, T), (T, T + D)), ((T + W, T), (T + W, T + D)),
-              ((T, 0), (T, T)), ((T + W, 0), (T + W, T)), ((T, T + D), (T, 2 * T + D)), ((T + W, T + D), (T + W, 2 * T + D))]
+    folds = [((T, T), (T + W, T)), ((T, T + D), (T + W, T + D)), ((T, T), (T, T + D)), ((T + W, T), (T + W, T + D)),
+             ((T, 0), (T, T)), ((T + W, 0), (T + W, T)), ((T, T + D), (T, 2 * T + D)), ((T + W, T + D), (T + W, 2 * T + D))]
     glue = [[(T + W, 0), (T + W + f, t), (T + W + f, T - t), (T + W, T)], [(T + W, T + D), (T + W + f, T + D + t), (T + W + f, 2 * T + D - t), (T + W, 2 * T + D)],
             [(T, T + D), (T, 2 * T + D), (T - f, 2 * T + D - t), (T - f, T + D + t)], [(T, 0), (T, T), (T - f, T - t), (T - f, t)]]
     i = 0.25
@@ -691,8 +691,11 @@ def _tray(p):
         # 壁に墨の細い縁を引く。塗りの台に見せるため。
         art += [L([(T + 1.5, T - 1.6), (T + W - 1.5, T - 1.6)], 0.4), L([(T + 1.5, T + D + 1.6), (T + W - 1.5, T + D + 1.6)], 0.4),
                 L([(T - 1.6, T + 1.5), (T - 1.6, T + D - 1.5)], 0.4), L([(T + W + 1.6, T + 1.5), (T + W + 1.6, T + D - 1.5)], 0.4)]
+    # 台は伏せて天板と外の壁を見せるので、刷った面を外に出す山折り。器は上が開いた形で、中の底と壁を上から見るので谷折り
+    # （谷は刷った面がへこむ向き。前は形によらず谷で、伏せた台の色が全部内に隠れた）。
+    kind = "mountain" if p["form"] == "base" else "valley"
     return Part(3, "tray", "台" if p["form"] == "base" else "器", pts, label_xy=(T + 2, T + 2), label="3 台" if p["form"] == "base" else "3 器",
-                valley=valley, glue=glue, art=art, hide_folds=True)
+                glue=glue, art=art, hide_folds=True, **{kind: folds})
 
 
 def _strut(p):
@@ -767,7 +770,7 @@ def steps(p):
                 f"4 の糊代を 2 の背中に貼る。折り目が絵の下の端から {strut_hinge(p):.0f}mm の高さに来るように",
                 f"支えを {STRUT_ANGLE}° くらい開き、机に立てる"]
         return out
-    out += [f"3 {'台' if form == 'base' else '器'}を切り、色の境で谷折りして箱にする。角の糊代は内側に貼る"]
+    out += [f"3 {'台' if form == 'base' else '器'}を切り、色の境で{'山' if form == 'base' else '谷'}折りして箱にする。角の糊代は内側に貼る"]
     if form == "base":
         out += ["台を伏せて置き、上の面の真ん中に 1・2 の糊代を貼る"]
     elif form == "float":
