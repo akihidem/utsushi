@@ -102,22 +102,47 @@ def only_the_head_changes():
         assert new_boxes == old_boxes and new_shapes == old_shapes, (sid, "試した後の紙の見出しのほかが変わった")
 
 
+def _frozen_set(tpl):
+    """その雛形で前の字のまま刷る組。前の組（FROZEN_SET）を持つ雛形（虎）はその組、持たない雛形（御来迎）は今の組（まだ上げていない）。"""
+    return getattr(tpl, "FROZEN_SET", tpl.SHEET_SET)
+
+
 def required_sets_keep_the_old_heads():
+    # 凍結の床の組（御来迎 goraigo-v10・虎の前の組 tora-v3）は前の字のまま
     for sid, source, h, tid in plans(REQUIRED):
-        got = words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])
-        assert OLD_BEFORE in got and ADOPTED_BEFORE not in got, (sid, h["id"], "必須 2 種の今の組の手順の紙が変わった")
+        tpl = TEMPLATES[tid]
+        now, tpl.SHEET_SET = tpl.SHEET_SET, _frozen_set(tpl)
+        try:
+            got = words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])
+        finally:
+            tpl.SHEET_SET = now
+        assert OLD_BEFORE in got and ADOPTED_BEFORE not in got, (sid, h["id"], "必須 2 種の凍結の組の手順の紙が変わった")
     for sid, data, source in REQUIRED:
-        sheet_set = TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
+        sheet_set = _frozen_set(TEMPLATES[data.get("template", "slider_fan")])
         got = words(compose_after(source, data["toy"], data["after_try"], sheet_set=sheet_set)[0])
-        assert OLD_NEXT in got and ADOPTED_NEXT not in got, (sid, "必須 2 種の今の組の試した後の紙が変わった")
+        assert OLD_NEXT in got and ADOPTED_NEXT not in got, (sid, "必須 2 種の凍結の組の試した後の紙が変わった")
+
+
+def raised_sets_have_the_adopted_heads():
+    # 次の組に上げた雛形（虎 tora-v4）は採った字（#302）
+    for sid, source, h, tid in plans(REQUIRED):
+        if not hasattr(TEMPLATES[tid], "FROZEN_SET"):
+            continue
+        got = words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])
+        assert ADOPTED_BEFORE in got and OLD_BEFORE not in got, (sid, h["id"], "次の組の手順の紙に採った見出しが無い")
+    for sid, data, source in REQUIRED:
+        tpl = TEMPLATES[data.get("template", "slider_fan")]
+        if not hasattr(tpl, "FROZEN_SET"):
+            continue
+        got = words(compose_after(source, data["toy"], data["after_try"], sheet_set=tpl.SHEET_SET)[0])
+        assert ADOPTED_NEXT in got and OLD_NEXT not in got, (sid, "次の組の試した後の紙に採った見出しが無い")
 
 
 def exceptions_match_the_current_sets():
-    # 組を上げたら、ここで落ちる。上げた組は採った字で刷られるので、表の前の行を消す（次の組の指紋は --add で足す）。
-    now = {TEMPLATES["slider_fan"].SHEET_SET, TEMPLATES["pivot_counterweight"].SHEET_SET}
-    stale = set(instructions.FROZEN_HEADS) - now
-    assert not stale, f"組を上げたので、instructions.FROZEN_HEADS から {sorted(stale)} の行を消す"
-    assert set(instructions.FROZEN_HEADS) == now, ("必須 2 種の今の組の例外が足りない", sorted(now))
+    # 例外の表は、凍結の床の組（前の組を持つ雛形はその前の組、持たない雛形は今の組）の行だけ。今の組の行が残ると上げた組を前の字で刷り、
+    # 凍結の組の行が無いと指紋が変わる
+    frozen = {_frozen_set(TEMPLATES["slider_fan"]), _frozen_set(TEMPLATES["pivot_counterweight"])}
+    assert set(instructions.FROZEN_HEADS) == frozen, ("例外の表と凍結の組が食い違う", sorted(instructions.FROZEN_HEADS), sorted(frozen))
     assert all(v == (OLD_BEFORE, OLD_NEXT) for v in instructions.FROZEN_HEADS.values()), "例外の字は前の字のまま"
     trial_sets = {TEMPLATES[tid].SHEET_SET for _, _, _, tid in plans(TRIAL)}
     assert not trial_sets & set(instructions.FROZEN_HEADS), "試作の玩具が必須 2 種の組を使っている"
@@ -140,7 +165,7 @@ def raising_a_set_drops_the_old_heads():
 
 
 fails = []
-for check in (trial_sheets_have_the_adopted_heads, trial_after_sheets_have_the_adopted_head, only_the_head_changes, required_sets_keep_the_old_heads,
+for check in (trial_sheets_have_the_adopted_heads, trial_after_sheets_have_the_adopted_head, only_the_head_changes, required_sets_keep_the_old_heads, raised_sets_have_the_adopted_heads,
               exceptions_match_the_current_sets, raising_a_set_drops_the_old_heads):
     try:
         check()
