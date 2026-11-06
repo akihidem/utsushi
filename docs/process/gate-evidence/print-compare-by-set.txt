@@ -1,0 +1,56 @@
+# 命令: OMOCHAE_DATA=<空の置き場> PYTHONPATH=src .venv/bin/python print_compare.py . <出す JSON>（下の写しの命令を、今の main の木とこの枝の木で 1 回ずつ。main の木は 2 回回して揺れを見た）
+# commit: 5d1358dd（回した時の HEAD。main の木は直す前、この枝の木は直しを入れた作業の木）
+刷り比べ: 全部の玩具の記録（hypotheses.load の返す物）・全部の仮説の型紙と手順の紙・試した後の紙と、必須 2 種の頁（玩具・組み立て・考えの節・図鑑の行）の SHA-256
+件数: main 599・この枝 599（紙 425・頁 8・記録 83・たたき台の id 83）
+main の 2 回で違った物: 無し
+main とこの枝で違った物: 無し
+rc=0
+
+## 写した命令（print_compare.py）
+```
+"""刷り比べ: 今の木の全部の玩具の紙（全部の仮説の型紙・手順の紙・試した後の紙）と、必須 2 種の頁を作り、指紋を JSON で出す。
+使い方: OMOCHAE_DATA=<空の置き場> PYTHONPATH=<木>/src python print_compare.py <木> <出す JSON>"""
+import hashlib, json, pathlib, sys
+root = pathlib.Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(root / "tests"))
+from test_floor_pin import normalize
+from omochae import hypotheses
+from omochae.compose import TEMPLATES, compose
+from omochae.instructions import compose_after, compose_sheet
+from omochae.render import to_svg
+out = {}
+def put(name, s):
+    out[name] = hashlib.sha256(s.encode("utf-8")).hexdigest()
+def svg(name, layout):
+    put(name, normalize(to_svg(layout)) if layout is not None else "None")
+for path in sorted((root / "data/hypotheses").glob("*.json")):
+    sid = path.stem
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    data = hypotheses.load(raw["source_id"])
+    put(f"{sid}/load", json.dumps(data, ensure_ascii=False, sort_keys=True))
+    try:
+        put(f"{sid}/sheet_of", hypotheses.sheet_of(raw["source_id"])["id"])
+    except Exception as e:
+        put(f"{sid}/sheet_of", repr(e))
+    srcp = root / "data/sources" / f"{raw['source_id']}.json"
+    if not srcp.exists():
+        continue
+    source = json.loads(srcp.read_text(encoding="utf-8"))
+    for h in data["hypotheses"]:
+        tid = h.get("template") or data.get("template", "slider_fan")
+        _, layout, _ = compose(tid, h["params"], source)
+        svg(f"{sid}/{h['id']}/型紙", layout)
+        svg(f"{sid}/{h['id']}/手順の紙", compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])
+    if data.get("after_try"):
+        svg(f"{sid}/試した後の紙", compose_after(source, data["toy"], data["after_try"], sheet_set=TEMPLATES[data.get("template", "slider_fan")].SHEET_SET)[0])
+from web import play_server, kumitate, tsukuru, think_sheet, zukan
+for sid in ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"):
+    hid = hypotheses.sheet_of(sid)["id"]
+    put(f"頁/{sid}/玩具", play_server.toy_page(sid))
+    put(f"頁/{sid}/組み立て", kumitate.page(sid))
+    # 作りながら見る頁は刷った版（data/loop）が要るので、空の置き場では開けない。比べない
+    put(f"頁/{sid}/考え", think_sheet.section(sid))
+    put(f"頁/{sid}/図鑑", json.dumps(zukan.lines_for(sid), ensure_ascii=False, sort_keys=True))
+pathlib.Path(sys.argv[2]).write_text(json.dumps(out, ensure_ascii=False, indent=1, sort_keys=True), encoding="utf-8")
+print(len(out), "件")
+```

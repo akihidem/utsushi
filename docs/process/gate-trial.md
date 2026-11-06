@@ -2026,6 +2026,15 @@
 - エビデンスゲート: 写しの木で、浮き物を例外から外す・うかべる の棚を戻す・決めた 10 本の 1 本を見立てで動かす、の 3 通りで rc 1、崩さない写しで rc 0。関わる試験 test_toys・test_ways・test_one_sheet_page・test_plain_words・test_two_sites・test_public_open・test_wording・test_tap_size は rc 0
 - 見出しを 3 つだけにした後の確かめ: 試験の頁の確かめを、h3 が無い事と、どの試作もすぐ前の見出しがその玩具の棚の字である事に替えた。写しの木で、中の見出しも出す・棚の中を名前の順に混ぜる・浮き物を例外から外す、の 3 通りで rc 1、崩さない写しで rc 0。Green は `green-genre-shelves.txt`
 
+## 記録の組ごとの欄と、雛形の控えの組の並びを先に入れる（型紙の次の組の担当、issue/115-by-set、11-06 夜。#115）
+
+- 目的: 必須 2 種の次の組（御来迎 goraigo-v13・虎 tora-v6）を 2 本の PR で足す前に、2 本が共に使う読み口だけを 1 本で入れる（統括の決め 11-06 夜）。2 本が同じ所を別々に書いてぶつからないため
+- 何をしたか: 記録の欄 sheet_by_set（その組のたたき台）・仮説の params_by_set（その組の寸法）・hide_by_set（その組で出さない共通の字。字で持ち、外すだけ）を読む口（hypotheses.sheet_id・params_for・without_hidden。load が雛形の今の組の分を重ねる）と、雛形の控えの組の並び（compose.kept_sets。虎は KEPT_SETS = (tora-v3,)）。たたき台を引く 4 か所（sheet_of・刷る口の断り・図鑑の行・輪の段）を sheet_id にし、凍結の床は控えの組の全部を、組ごとのたたき台・寸法・字で組む
+- 紙が変わらない事: どの記録にも組ごとの欄を書いていない。凍結の床の 13 枚の指紋は控えと同じ（代わりの字幅とこの機械の字の両方）。刷り比べ（`docs/process/gate-evidence/print-compare-by-set.txt`）で、全部の玩具の記録 83 件・紙 425 枚・必須 2 種の頁 8 つの SHA-256 が今の main と同じ（main は 2 回回して揺れが無い事も見た）
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-by-set.txt`（今の main の木にこの試験だけを置くと、読み口が無く rc 1）。Green は `green-by-set.txt`（tests/test_by_set.py と tests/test_floor_pin.py が rc 0）
+- エビデンスゲート: 写しの木で 4 通り崩して rc 1: 出さない字を外さない・外す時に元の記録を書き換える・虎の控えの並びを空にする（凍結の床も、控えた紙が刷れないと落ちる）・組を見ずに記録の sheet でたたき台を引く。崩さない写しは rc 0
+- 関わる試験（手元で回した。全部の試験は合体の道に任せる）: test_by_set・test_floor_pin・test_hypotheses・test_sheet_heads・test_next_sheets・test_hypothesis_label・test_cycle・test_kumitate・test_engine_floors・test_one_sheet・test_one_sheet_page・test_print_names・test_build_now・test_tsukuru・test_zukan・test_zukan_more・test_zukan_hon・test_loop・test_play_server・test_making_log・test_kaizen・test_techo_site・test_ways と、全体を見張る test_ai_name・test_loop_odd_result・test_min_python・test_reader_words・test_source_id_check、文書を見る test_gate_trial_merge・test_ledger・test_print_busy・test_techo_step・test_plate_acts。どれも rc 0
+- 限界: 組ごとの欄を書いた本物の記録はまだ無く、代わりの記録（試験の中で別の置き場に置く）でだけ確かめた。本物の欄は御来迎 v13 と虎 v6 の PR で書き、その PR で紙の指紋を `--add` で足す
 ## 横置きで手帖の手順の字が原画の釦の下に隠れる・作りながら見るの「次の手順へ」が画面の外（直しの担当、fix/techo-landscape-overlap、11-06 夜。11-07 の工作の前のまっさらな確かめの 1 と 3、縦置きの 390×844 の足し）
 
 - 目的: 横置きの画面（1024×768 の iPad 横〜1920）で、手帖の手順の字を原画の釦と閉じる印の下に隠さない。作りながら見る頁の 1024×768 で「次の手順へ」を最初の画面に入れる。続けて、明日の工作で虎の作りながら見る頁を使うので、縦置きの 390×844 でも入れる（統括の足し）。字は変えない

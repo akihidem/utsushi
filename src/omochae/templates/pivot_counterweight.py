@@ -18,6 +18,8 @@ HYP_KEY = "mount"
 SHEET_SET = "tora-v4"
 # 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。
 FROZEN_SET = "tora-v3"
+# 紙を控えに残す前の組の並び（古い順。compose.kept_sets）。次の組に上げる時は、今の組をこの並びの後ろに足す（前の組の紙は変えない）
+KEPT_SETS = (FROZEN_SET,)
 
 
 def frozen():
