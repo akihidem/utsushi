@@ -33,7 +33,7 @@ from web import techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 # 1. 画面から呼ぶ役は、config の時間切れとやり直しの回数で client を作る。命令から呼ぶ役は、待てるので SDK の既定のまま
-assert set(config.SCREEN_TIMEOUT) == {"ask", "observe", "interpret"}, config.SCREEN_TIMEOUT
+assert set(config.SCREEN_TIMEOUT) == {"ask", "observe", "interpret", "words"}, config.SCREEN_TIMEOUT
 for role, limit in config.SCREEN_TIMEOUT.items():
     c = agent.default_client(role)
     assert c.timeout == limit and c.max_retries == config.SCREEN_RETRIES, (role, c.timeout, c.max_retries)
@@ -61,7 +61,7 @@ class Silent:
 silent = Silent()
 os.environ["ANTHROPIC_BASE_URL"] = silent.url
 assert str(agent.default_client("ask").base_url).startswith(silent.url), "手元の口だけに送る"
-config.SCREEN_TIMEOUT = {"ask": 0.5, "observe": 0.5, "interpret": 0.5}
+config.SCREEN_TIMEOUT = {"ask": 0.5, "observe": 0.5, "interpret": 0.5, "words": 0.5}
 config.SCREEN_RETRIES = 1
 # 0.5 秒 × 2 回に、やり直しの間（SDK の既定で 1 秒まで）を足すと 2 秒ほど。ほかの試験が同時に走る混んだ機械でも越えない幅を取る。
 # SDK の既定なら 10 分なので、30 秒でも紛れない。
@@ -99,6 +99,8 @@ rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")
 techo_site.media_dir(rid).mkdir(parents=True, exist_ok=True)
 shutil.copy(video, techo_site.media_dir(rid) / "m1.mp4")
+# 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
+(techo_site.media_dir(rid) / "review.json").write_text(json.dumps({"m1.mp4": {"shows": "object"}}), encoding="utf-8")
 ask._key_present = lambda: True  # 鍵がある時の道を通す。送る先は手元の口だけ
 
 # 2. 画面の 4 つの口が、Claude が返らなくても決めた秒数の中で戻り、「今は AI に聞けません」と言う。つないだ数が 2 なら、やり直しの回数も届いている
@@ -184,8 +186,9 @@ class Slow:
 SCHEMA = {"type": "object", "properties": {"answer": {"type": "string"}}, "required": ["answer"]}
 ECHO = [{"name": "echo", "description": "", "input_schema": {"type": "object"}}]
 script = lambda: [[tool_use("echo", {}, "a")], [tool_use("submit_result", {"answer": "x"}, "b")]]  # noqa: E731
-assert set(config.RUN_TIME_LIMIT) == {"interpret"}, config.RUN_TIME_LIMIT
+assert set(config.RUN_TIME_LIMIT) == {"interpret", "words"}, config.RUN_TIME_LIMIT
 assert config.RUN_TIME_LIMIT["interpret"] >= config.SCREEN_TIMEOUT["interpret"]
+assert config.RUN_TIME_LIMIT["words"] >= config.SCREEN_TIMEOUT["words"]  # 話した考えから紙を作る釦（ループ1、#335）も画面から呼ぶ
 config.RUN_TIME_LIMIT = {"interpret": 0.2}
 slow = Slow(script(), 0.3)
 try:
@@ -197,4 +200,25 @@ assert len(slow.calls) == 1, "上限を越えたら次を呼ばない"
 slow = Slow(script(), 0.3)
 assert agent.run("generate", "指示", "問い", ECHO, SCHEMA, lambda n, i: "", client=slow)[0] == {"answer": "x"}
 assert len(slow.calls) == 2, "命令から呼ぶ役は止めない"
+# 話した考えから紙を作る釦（ループ1、#335）: Claude が返らなくても頁は決まった時間で戻り、押した 1 回は作る側の待ちに残る
+from api import words  # noqa: E402
+from omochae import talk_log  # noqa: E402
+
+ask._key_present = lambda: True  # 鍵がある形で回す（送る先は手元の口だけ）
+config.RUN_TIME_LIMIT = {"interpret": 0.2, "words": 5}
+page_server = serve(0)
+threading.Thread(target=page_server.serve_forever, daemon=True).start()
+page_base = f"http://127.0.0.1:{page_server.server_address[1]}"
+talk_log.add(G, "think", "返らない時の考え", who="silentwho1")
+before = len(silent.conns)
+started = time.monotonic()
+req = urllib.request.Request(f"{page_base}/toy/{G}/think-sheet", data=urllib.parse.urlencode({"who": "silentwho1"}).encode(), headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": page_base}, method="POST")
+try:
+    code = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None})).open(req, timeout=BOUND).status
+except urllib.error.HTTPError as e:
+    code = e.code
+assert code == 303 and time.monotonic() - started < BOUND, (code, time.monotonic() - started)
+assert len(silent.conns) > before, "手元の口へ呼んだ（鍵ありの道を通った）"
+assert [w["how_it_moves"] for w in words.waiting()] == ["返らない時の考え"], "押した 1 回は待ちに残る"
+page_server.shutdown()
 print("ok")

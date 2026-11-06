@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_engine_bundle.py
+# commit: d363231（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_engine_bundle.py", line 36, in <module>
+    assert (set(eb.TOP_KEYS), set(eb.GROUP_KEYS), set(eb.TEXT_KEYS), set(eb.TEXT_KINDS)) == (ENGINE_TOP, ENGINE_GROUP, ENGINE_TEXT, ENGINE_KINDS)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
+
+上は、新しい試験に、直す前の src/omochae/engine_bundle.py を当てて回した。

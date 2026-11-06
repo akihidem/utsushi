@@ -1,0 +1,7 @@
+# 命令: bash -c '.venv/bin/python tests/test_next_range.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: def0897f（回した時の HEAD）
+    assert '<input type="number" step="any" name="to" inputmode="decimal" required>' in box, box[:900]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ><label>何が起きたと読むか（解釈）<textarea name="interpretation" required>折りが固くて戻る</textarea></label><label>変える寸法<select name="param"><option value="fold_count">折りの数: 今 28（6〜40）</option><option value="fold_height">扇の高さ（mm）: 今 47.5（20〜60）</option><option value="fold_width">折りの幅（mm）: 今 8.5（5〜15）</option><option value="paper_thickness">紙の厚さ（mm）: 今 0.15（0.05〜1.5）</option><option value="pivot_above_rim">扇の中心の高さ（mm）: 今 21（0〜40）</option><option value="push_amount">押し上げる量（mm）: 今 68.6（10〜90）</option><option value="pusher_side">内筒の一辺（mm）: 今 26（15〜48）</option><option value="tube_side">外筒の一辺（mm）: 今 30（20〜50）</option></select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p><label>新しい値<input type="text" name="to" inputmode="decimal" required></label><label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label><button>次の版の紙を作る</button></form>
+試験 rc=1
+rc=0

@@ -458,6 +458,8 @@ def bom(p):
             {"number": 8, "key": "weight", "name": "錘", "qty": 2, "material": f"油粘土 {p['weight_g']:g}g を 2 つ", "substituted": True, "original_guess": "不明（絵の丸い物）", "reason": "量を変えて試しやすいため"},
         ]
         if p["hold"] == "arm":
+            # 腕の角度の型は、絵に無い、作るための道具。元の素材の見立てが無いので置き換えと書かない。
+            rows.append({"number": 4, "key": "gauge", "name": "腕の角度の型", "qty": 1, "material": paper, "substituted": False})
             rows.append({"number": 9, "key": "arm", "name": "腕", "qty": 2, "material": f"竹ひご {p['arm_len']:g}mm を 2 本", "substituted": True, "original_guess": "針金か竹（絵のまっすぐな線）", "reason": "まっすぐで軽いため"})
         else:
             rows.append({"number": 9, "key": "thread", "name": "糸", "qty": 2, "material": f"糸 {p['thread_len'] + 20:g}mm を 2 本", "substituted": True, "original_guess": "糸（絵の細い線の読み）", "reason": "錘を吊るため"})

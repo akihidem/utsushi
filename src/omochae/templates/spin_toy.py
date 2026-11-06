@@ -508,29 +508,32 @@ def bom(p):
     paper = paper_name(p["paper_gsm"])
     why = "家庭のプリンタで刷って作るため"
     shape = p["shape"]
-    rows = []
+
+    def guess(key):
+        """刷る部品の元の素材の見立て。部品の種類ごとに同じ。"""
+        if shape == "pinwheel":
+            return "細い竹の棒の先に紙を貼った物（図の見た目による）" if key.startswith("wheel") else "不明"
+        return "木（図の木目と色による）" if shape in ("disc", "cone") else "木（図の見た目による）"
+
+    # 刷る部品は 1 つずつ行にする（F2.bom が番号と key で照らす）。部品の数は形と寸法で動くので、刷らない物の番号はその後ろに続ける。
+    printed = parts(p)
+    rows = [{"number": q.number, "key": q.key, "name": q.name, "qty": 1, "material": paper, "substituted": True, "original_guess": guess(q.key), "reason": why} for q in printed]
+    others = []
     if shape == "pinwheel":
-        rows.append({"number": 1, "key": "wheel", "name": "羽の車", "qty": int(p["wheels"]), "material": paper, "substituted": True,
-                     "original_guess": "細い竹の棒の先に紙を貼った物（図の見た目による）", "reason": why})
-        rows.append({"number": 7, "key": "axle", "name": "車の芯", "qty": 1, "material": "つまようじか竹ひご（短く切る）", "substituted": True, "original_guess": "不明", "reason": "家にあり、穴に通しやすいため"})
-        rows.append({"number": 8, "key": "stick", "name": "柄", "qty": 1, "material": "竹ひごか割り箸（長さ 25cm 前後）", "substituted": True, "original_guess": "竹の棒（図の見た目による）", "reason": "家にあるため"})
-        rows.append({"number": 9, "key": "bead", "name": "車の間に挟む玉", "qty": 2, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "車が柄にこすれて止まらないため"})
-        if p["look"] == "kanko":
-            rows.append({"number": 2, "key": "drum", "name": "太鼓と鶏", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why})
+        others.append({"key": "axle", "name": "車の芯", "qty": 1, "material": "つまようじか竹ひご（短く切る）", "substituted": True, "original_guess": "不明", "reason": "家にあり、穴に通しやすいため"})
+        others.append({"key": "stick", "name": "柄", "qty": 1, "material": "竹ひごか割り箸（長さ 25cm 前後）", "substituted": True, "original_guess": "竹の棒（図の見た目による）", "reason": "家にあるため"})
+        others.append({"key": "bead", "name": "車の間に挟む玉", "qty": 2, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "車が柄にこすれて止まらないため"})
     elif shape in ("disc", "cone"):
-        rows.append({"number": 1, "key": "body", "name": "円盤" if shape == "disc" else "ふたと胴", "qty": 1, "material": paper, "substituted": True,
-                     "original_guess": "木（図の木目と色による）", "reason": why})
-        rows.append({"number": 7, "key": "axis", "name": "芯", "qty": 1, "material": f"{'つまようじ' if p['axis_len'] <= 65 else '竹ひご'}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
-                     "original_guess": "木か竹の心棒（図の見た目による）", "reason": "家にあるため"})
+        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"{'つまようじ' if p['axis_len'] <= 65 else '竹ひご'}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
+                       "original_guess": "木か竹の心棒（図の見た目による）", "reason": "家にあるため"})
     else:
-        rows.append({"number": 1, "key": "disc", "name": "円盤と芯の帯", "qty": 1, "material": paper, "substituted": True, "original_guess": "木（図の見た目による）", "reason": why})
-        rows.append({"number": 7, "key": "axis", "name": "芯", "qty": 1, "material": f"つまようじ（長さ約 {p['axis_len']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあるため"})
+        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"つまようじ（長さ約 {p['axis_len']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあるため"})
         if p["drive"] == "handle":
-            rows.append({"number": 9, "key": "bead", "name": "芯の止めの玉", "qty": 1, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "芯が柄から抜けないため"})
+            others.append({"key": "bead", "name": "芯の止めの玉", "qty": 1, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "芯が柄から抜けないため"})
     if p["drive"] in ("string", "yoyo", "handle"):
         length = p["string_len"] if shape == "yoyo" else round(p["string_turns"] * math.pi * AXIS_D + 250)
-        rows.append({"number": 10, "key": "string", "name": "紐", "qty": 1, "material": f"糸（長さ約 {length / 10:.0f}cm）", "substituted": True, "original_guess": "紐（図の見た目による）", "reason": "家にあるため"})
-    return rows
+        others.append({"key": "string", "name": "紐", "qty": 1, "material": f"糸（長さ約 {length / 10:.0f}cm）", "substituted": True, "original_guess": "紐（図の見た目による）", "reason": "家にあるため"})
+    return rows + [{"number": len(printed) + 1 + i, **r} for i, r in enumerate(others)]
 
 
 def materials(p):
@@ -551,11 +554,11 @@ def steps(p):
             out += ["太鼓の胴を丸めて輪にし、糊代で貼る。2 枚の面で挟み、縁をテープで止める",
                     "鶏の糊代を谷折りし、太鼓の上に貼る。胴の穴に柄の上の端を差し込む",
                     f"柄の、太鼓の下から {p['drum_gap']:g}mm の所に穴をあけ、竹ひごの芯を通す",
-                    "芯の両端に玉を通し、羽の車を貼る。2 つの車のひねりは同じ向きにそろえる"]
+                    "芯の両端にビーズを通し、羽の車を貼る。2 つの車のひねりは同じ向きにそろえる"]
             if drive == "beat":
-                out.append(f"打ち木の穴を芯に通して貼る。柄から玉 1 つ分離し、先が太鼓の縁に {p['striker_len'] - p['drum_gap']:g}mm かかるか見る")
+                out.append(f"打ち木の穴を芯に通して貼る。柄からビーズ 1 つ分離し、先が太鼓の縁に {p['striker_len'] - p['drum_gap']:g}mm かかるか見る")
         else:
-            out.append("芯を羽の車の穴に通し、玉を挟んで柄の先に刺す。車が軽く回るか見る")
+            out.append("芯を羽の車の穴に通し、ビーズを挟んで柄の先に刺す。車が軽く回るか見る")
     elif shape == "disc":
         out += ["円盤を穴をそろえて重ね、のりで貼る。絵の面を上と下にする",
                 f"つまようじを穴に通し、下に {p['axis_below']:g}mm 出してのりで止める"]
@@ -570,11 +573,11 @@ def steps(p):
             out.append("つまみの帯を、ふたの上の芯に巻いて貼る")
     else:
         out += ["円盤を半分ずつ、穴をそろえて重ねて貼る（2 組）", "芯の帯を色の境で半分に折り、つまようじに固く巻いて糊代で止める",
-                "芯の両端に円盤の組を通し、芯の帯を挟んで貼る", "紐の端を芯の帯に結び、溝に巻く"]
+                "芯の両端に円盤の組を通し、芯の帯を挟んで貼る", "糸の端を芯の帯に結び、溝に巻く"]
         if drive == "handle":
-            out.append("柄を色の境で半分に折って貼る。穴に芯の端を通し、反対の端に玉を付けて抜けないようにする")
+            out.append("柄を色の境で半分に折って貼る。穴に芯の端を通し、反対の端にビーズを付けて抜けないようにする")
     if drive == "string":
-        out.append(f"紐を上の芯に {int(p['string_turns'])} 回巻き、端を持つ")
+        out.append(f"糸を上の芯に {int(p['string_turns'])} 回巻き、端を持つ")
     return out
 
 

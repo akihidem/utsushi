@@ -1,0 +1,17 @@
+# 命令: .venv/bin/python tests/test_min_python.py
+# commit: ec615b1（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_min_python.py", line 133, in <module>
+    assert not problems, "\n".join(problems)
+           ^^^^^^^^^^^^
+AssertionError: src/web/looks.py:89: 3.11 で読めない f 文字列
+src/web/toy.py:483: 3.11 で読めない f 文字列
+src/web/toys.py:41: 3.11 で読めない f 文字列
+src/web/toys.py:49: 3.11 で読めない f 文字列
+src/web/tsukuru.py:192: 3.11 で読めない f 文字列
+3.11 の解釈系で rc 1:
+src/web/looks.py:89: f-string expression part cannot include a backslash
+src/web/toy.py:483: f-string: unterminated string
+src/web/toys.py:41: f-string expression part cannot include a backslash
+src/web/tsukuru.py:192: f-string expression part cannot include a backslash
+rc=1
