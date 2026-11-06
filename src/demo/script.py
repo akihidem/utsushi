@@ -49,6 +49,18 @@ SLOTS = {
     "talk_claude": {"voice": ("A6",)},
 }
 HANDS_EXT, VOICE_EXT = ".mp4", ".m4a"
+# 効果音（統括の頼み 11-07: 音楽の担当が公有の音から作った 切る・折る（の代わり）・塗る（の代わり）を、手の映像の音ハメに）。
+# (場面, 場面の頭からの秒, 音の名, 大きさ dB) の並び。置き場は SFX_DIR/<名>.wav（git の外。grove の state/demo-sfx から写す）。
+# 映像の中身に合う所だけに置く: 10 の写真の 1 枚目（切る）と 2 枚目（組む）、13 の手の D（虎の胴を組む）と E（筒から扇が開く）。
+# 塗る所は今の映像に無いので、塗るの代わりの音は置かない。語りと重なる 13 は 5 dB 下げる（音楽の担当の目安 4〜6 dB）。
+# どの候補を使うかは人が耳で選ぶ（切る cut-1・cut-2・cut-snip、折るの代わり fold-1・fold-2・fold-3）。名前を替えれば差し替わる
+SFX_DIR = "out/demo/slots/sfx"
+SFX = (
+    ("scene5", 0.5, "cut-1", 0.0),
+    ("scene5", 2.2, "fold-1", 0.0),
+    ("talk_physics", 1.0, "fold-2", -5.0),
+    ("talk_physics", 6.2, "fold-3", -5.0),
+)
 
 
 def load_scene(name):

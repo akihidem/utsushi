@@ -41,10 +41,11 @@ def duration(path):
         return None
 
 
-def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=None, voices=(), duck=()):
+def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=None, voices=(), duck=(), sfx=()):
     """seconds: 場面ごとの長さ（曲の小節に合わせる時）。余れば最後のコマで止め、足りなければ切る。どの場面も最後は止めて読む間なので。
     audio_start: 曲のどこから使うか。fade_at: 動画の何秒から音を 2 秒で消すか（問いの札の前で消すため）。
-    voices: 本人の声の語り [(ファイル, 動画の何秒から)]。duck: 曲を下げる (始め, 終わり) の並び（語りの声が鳴る間）。"""
+    voices: 本人の声の語り [(ファイル, 動画の何秒から)]。duck: 曲を下げる (始め, 終わり) の並び（語りの声が鳴る間）。
+    sfx: 効果音 [(ファイル, 動画の何秒から, 大きさ dB)]。声と同じく、その時刻まで遅らせて重ねる（曲は下げない）。"""
     if not (shutil.which("ffmpeg") and shutil.which("ffprobe")):
         print("検査できない: ffmpeg か ffprobe が無い", file=sys.stderr)
         return 4
@@ -86,6 +87,11 @@ def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=Non
         ms = round(at * 1000)
         fil += f";[{n_in}:a]aresample=48000,adelay={ms}:all=1,apad[s{i}]"
         mixed.append(f"[s{i}]")
+        n_in += 1
+    for i, (path, at, gain) in enumerate(sfx):
+        args += ["-i", str(path)]
+        fil += f";[{n_in}:a]aresample=48000,volume={gain:.1f}dB,adelay={round(at * 1000)}:all=1,apad[x{i}]"
+        mixed.append(f"[x{i}]")
         n_in += 1
     if mixed:
         # 混ぜる時に大きさを割らない（normalize=0）。割ると、声が入るたびに曲の大きさが変わる。

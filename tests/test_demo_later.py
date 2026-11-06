@@ -1,7 +1,7 @@
 """後入れの札（demo.later。本人の指示 11-07「本人の声の6文と、本物の Claude の返事の場面は後入れで空けておくこと」）の床。
 
-見る事: 本物の Claude の返事の札は場面 8 の聞く段からだけ出る／語りの札は、声が無い時は「本人の声は後入れ」、仮の読み上げの印がある時は
-「仮の読み上げ」、本人の声が入った（印が無い）時は出ない／札は画面の右上に重なり、字幕の所は変えない。
+見る事: 本物の Claude の返事の札は場面 8 の聞く段からだけ出る／語りの札は、声が無い時だけ「本人の声は後入れ」で、声が入れば出ない
+（読み上げは合成のまま本番。本人の決定 11-07）／札は画面の右上に重なり、字幕の所は変えない。
 """
 import pathlib
 import tempfile
@@ -20,10 +20,8 @@ with tempfile.TemporaryDirectory() as root:
     assert later.label("talk_toys", 1.0, root) == later.LABEL_VOICE, "声が無い時"
     for v in script.SLOTS["talk_toys"]["voice"]:
         (slot / f"{v}{script.VOICE_EXT}").write_bytes(b"x")
-    (slot / later.MARK).write_bytes(b"")
-    assert later.label("talk_toys", 1.0, root) == later.LABEL_VOICE_TMP, "仮の読み上げの時"
-    (slot / later.MARK).unlink()
-    assert later.label("talk_toys", 1.0, root) is None, "本人の声が入った時は出ない"
+    # 読み上げは合成のまま本番にする（本人の決定 11-07）ので、声が入っていれば札は出さない
+    assert later.label("talk_toys", 1.0, root) is None, "声が入った時は出ない"
 
 base = Image.new("RGB", (flip.W, flip.H), flip.PAPER)
 marked = later.overlay(base, "core_make", ask + 0.5)

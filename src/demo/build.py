@@ -161,6 +161,32 @@ def speed_voice(src, dst, factor):
     return dst if r.returncode == 0 and dst.exists() else None
 
 
+def place_sfx(order, lengths, beats=None, root=None):
+    """台本の効果音（script.SFX）を、場面の頭からの秒から動画の秒に直して置く。返す物: ([(ファイル, 秒, dB)], [置き場に無い名])。
+    曲の拍（beats）があれば、一番近い拍へ半拍（song.BEAT_ONLY_SHIFT）まで寄せる（音ハメ）。置き場に無い音は飛ばして名前を返す（無くても書き出せる）。"""
+    from demo.script import SFX, SFX_DIR
+
+    starts, t = {}, 0.0
+    for name, length in zip(order, lengths):
+        starts[name] = t
+        t += length
+    placed, missing = [], []
+    for scene, off, name, gain in SFX:
+        if scene not in starts:
+            continue
+        path = pathlib.Path(root or ROOT) / SFX_DIR / f"{name}.wav"
+        if not path.exists():
+            missing.append(name)
+            continue
+        at = starts[scene] + off
+        if beats:
+            near = song._nearest(beats, at)
+            if near is not None and abs(near - at) <= song.BEAT_ONLY_SHIFT:
+                at = near
+        placed.append((path, round(at, 3), gain))
+    return placed, missing
+
+
 def place_voices(order, lengths, root=None, into=None):
     """届いた声を場面の時刻に置く。(声の並び [(道, 秒, 速さ)], 曲を下げる所 [(始め, 終わり)], 入らない理由) を返す。
     into を渡すと、置く前に黙りを切った声をそこへ書き、その声を置く（書き出しはいつも渡す。置き方だけを見る試験は渡さない）。
@@ -376,6 +402,8 @@ def main(argv=None):
             print(f"検査できない: {problem}（速めない。秒は人が決める）", file=sys.stderr)
             return 4
         extra = {"voices": [(f, at) for f, at, _ in voices], "duck": duck} if voices else {}
+        sfx, sfx_missing = place_sfx(order, lengths, beats)
+        extra["sfx"] = sfx
         rc = assemble.assemble(made, run / "demo.mp4", a.song, seconds=lengths, audio_start=a.song_start, fade_at=fade_at, **extra)
     else:
         try:
@@ -404,6 +432,8 @@ def main(argv=None):
               "placeholder": placeholder, "not_for_release": blockers,
               "clips": {n: {"file": pathlib.Path(p).name, "sha256": file_sha(p)} for n, p in clips.items()},
               "slots": slots, "voices": [{"file": pathlib.Path(f).name, "at": at, "speed": sp} for f, at, sp in voices], "duck": duck,
+              "sfx": {"placed": [{"file": pathlib.Path(f).name, "at": at, "db": g} for f, at, g in extra.get("sfx", ())],
+                      "missing": sfx_missing if a.song else []},
               "rebuilt": only if a.only else [], "offline": a.offline,
               "scenes": [{"name": p.stem, "seconds": assemble.duration(p), **made_by(p.stem)} for p in made],
               "total_seconds": assemble.duration(run / "demo.mp4"), "assemble_rc": rc}
