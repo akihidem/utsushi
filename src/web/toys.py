@@ -2,6 +2,7 @@
 
 判断の芯:
 - 全部の玩具（仮説の記録がある物）を 1 頁で選べる。必須の 2 種を大きく、試作を小さな札で。並びは記録の印（コマ）の順で、順位ではない。
+  試作はジャンル（genre.py。作った後の楽しみ方の 2 段）の見出しで分け、見出しの中は記録の印の順のまま（本人の依頼 11-06）。
 - 一覧には仮説の名前と動き方を出さない（選ぶ頁を軽くするため）。出すのは玩具の名前・コマ・図だけ。
 - 試作の写し（out/sources）は棚卸しの箱で切り出した物なので、そのまま敷く。必須の 2 種は頁の半分の写しなので、綴じの影の反対側へ寄せる（looks.framed_pos と同じ）。
   写しが無い玩具は名前だけにし、国立国会図書館への道を添える（入口と同じ線。写しの有無で玩具が消えると選べなくなるため）。
@@ -12,6 +13,7 @@ import json
 from omochae import hypotheses, ways
 from omochae.hypotheses import ROOT
 
+from . import genre
 from . import skin as skinmod
 from .skin import esc
 
@@ -57,8 +59,29 @@ def paper_only_sids(sids):
     return [s for s in sids if "紙一枚" in ways.toy_labels(s)]
 
 
+def _list(sids, margin):
+    return f'<ul class="toys" style="list-style:none;padding:0;margin:{margin}">{"".join(card(s) for s in sids)}</ul>'
+
+
+def by_genre(sids):
+    """試作の玩具を、ジャンルの見出し（大きい側 → 中）で分けて並べる（本人の依頼 11-06「ジャンル分けしたい」、research/36 の決まった事）。
+    見出しの中の並びは記録の印の順のまま。中の字が大きい側と同じで、大きい側の最初の中の時（かざる の下の かざる）は、中の見出しを重ねて出さない。
+    字はジャンルの字だけで、説明の 1 行は添えない（決まった事「頁に断りの 1 行は添えない」）。
+    見出しの間合いは字の大きさ（em）と px で決める。vh だと窓の高さで間が変わり、縦に長い窓で見出しと札が離れすぎた（11-06 に縦 9000 で撮って見た）。"""
+    out = []
+    for big, mids in genre.groups(sids):
+        out.append(f'<h2 style="margin:2.4em 0 0">{esc(big)}</h2>')
+        for i, (mid, ss) in enumerate(mids):
+            if not (i == 0 and mid == big):  # 省くのは大きい側の見出しのすぐ後に来る時だけ（後ろに来る時は、前の中の札と分ける見出しが要る）
+                out.append(f'<h3 style="margin:1.4em 0 0">{esc(mid)}</h3>')
+            out.append(_list(ss, "14px 0 0"))
+    return "".join(out)
+
+
 def page(skin, path="/toys", paper=False):
-    """全部の玩具を選ぶ頁。skin は皮の名前（skin.SKINS の鍵）。paper は紙 1 枚で作れる玩具だけに絞る（本人の言葉 11-05「一枚の紙から作る選択肢もある」）。"""
+    """全部の玩具を選ぶ頁。skin は皮の名前（skin.SKINS の鍵）。paper は紙 1 枚で作れる玩具だけに絞る（本人の言葉 11-05「一枚の紙から作る選択肢もある」）。
+    必須の 2 種は今までどおり先頭に大きく置き、ジャンルの見出しには入れない（NOTE の「先頭の n つのほかは」と合わせるため。玩具は 1 度だけ出す）。
+    必須の 2 種は自分の並びに 2 枚だけなので、広い幅では右に札の無い所が残る（前は小さい札が埋めた）。先頭の 2 枚を分けて見せる所として、そのままにした。"""
     sids = sources()
     if paper:
         sids = paper_only_sids(sids)
@@ -67,5 +90,5 @@ def page(skin, path="/toys", paper=False):
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
             f'<p class="meta">{len(sids)} のおもちゃです。{esc(NOTE.format(n=len(main)) if main else NOTE.split("ほかは、", 1)[1])}</p><p class="meta">{esc(ways.NOTE)}</p>'
             + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p>') +
-            f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
+            (_list(main, "4vh 0 0") if main else "") + by_genre(rest) + '</section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)
