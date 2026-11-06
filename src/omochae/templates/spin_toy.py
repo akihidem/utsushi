@@ -503,6 +503,13 @@ def place(by_key, page, top, gap):
     return y + row_h + gap, page.x1 - page.x0, page.x0
 
 
+def axis_stick(p):
+    """円盤と円錐の芯にする棒の名前。つまようじは約 65mm なので、それより長い芯は竹ひごにする。
+    部品表と円盤の手順が同じ字を使うよう 1 か所で決める（独楽 B で、部品表が竹ひごなのに手順がつまようじと書いていた。#294）。
+    円錐の手順はまだ使わない。今の案の円錐は芯が全部つまようじの長さで、字を変えると本人の確認の要る新しい文になるため。"""
+    return "つまようじ" if p["axis_len"] <= 65 else "竹ひご"
+
+
 def bom(p):
     paper = f"紙（厚さ 0.2mm 前後・{p['paper_gsm']}g/m² の見込み）"
     why = "家庭のプリンタで刷って作るため"
@@ -523,7 +530,7 @@ def bom(p):
         others.append({"key": "stick", "name": "柄", "qty": 1, "material": "竹ひごか割り箸（長さ 25cm 前後）", "substituted": True, "original_guess": "竹の棒（図の見た目による）", "reason": "家にあるため"})
         others.append({"key": "bead", "name": "車の間に挟む玉", "qty": 2, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "車が柄にこすれて止まらないため"})
     elif shape in ("disc", "cone"):
-        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"{'つまようじ' if p['axis_len'] <= 65 else '竹ひご'}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
+        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"{axis_stick(p)}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
                        "original_guess": "木か竹の心棒（図の見た目による）", "reason": "家にあるため"})
     else:
         others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"つまようじ（長さ約 {p['axis_len']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあるため"})
@@ -537,7 +544,14 @@ def bom(p):
 
 def materials(p):
     rows = bom(p)
-    return [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規"] + [r["material"] for r in rows[1:] if r["material"] != rows[0]["material"]]
+    out = [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規"] + [r["material"] for r in rows[1:] if r["material"] != rows[0]["material"]]
+    # 芯の穴は手順 2 でつまようじの先であける。円盤の芯が竹ひごの長さだと用意する物につまようじが無くなるので、
+    # 穴あけの道具として足す（ほかの雛形の「竹串（穴あけ）」と同じ書き方。字は 2026-11-06 に本人が採った物）。
+    # 円錐は今の案に竹ひごの長さが無く、手順の芯の字も変えていないので足さない。足すと、円錐で芯の字が部品表と
+    # 食い違った時に、tests/test_steps_materials.py が拾えなくなる。
+    if p["shape"] == "disc" and axis_stick(p) == "竹ひご":
+        out.append("つまようじ（穴あけ）")
+    return out
 
 
 def steps(p):
@@ -560,7 +574,7 @@ def steps(p):
             out.append("芯を羽の車の穴に通し、ビーズを挟んで柄の先に刺す。車が軽く回るか見る")
     elif shape == "disc":
         out += ["円盤を穴をそろえて重ね、のりで貼る。絵の面を上と下にする",
-                f"つまようじを穴に通し、下に {p['axis_below']:g}mm 出してのりで止める"]
+                f"{axis_stick(p)}を穴に通し、下に {p['axis_below']:g}mm 出してのりで止める"]
     elif shape == "cone":
         if int(p["cone_pieces"]) == 2:
             out.append("胴の 2 枚を、継ぎ目の糊代で互いに貼って円錐にする（糊代が向かい合う）")
