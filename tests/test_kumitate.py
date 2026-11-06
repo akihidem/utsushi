@@ -233,8 +233,19 @@ for frame in tora.frames:
                     assert math.dist(assembly.apply(a, point), assembly.apply(b, point)) < 0.7, (frame["step"], key, child)
 found = [f.line() for f in tora.failures]
 assert any("手順 4" in x and "糊代の根元 4 か所" in x for x in found), found
-assert any("手順 4" in x and "絵のある面が箱の内側に入る" in x for x in found), found
-assert len(found) == 2, found
+# 次の組（tora-v4）は胴を山折りにしたので、絵は箱の外に出る。前の組（谷折り）に戻すと内側に入る（検査が紙の線を見ている）
+assert not any("絵のある面が箱の内側に入る" in x for x in found), found
+from omochae.templates import pivot_counterweight  # noqa: E402
+
+_now = pivot_counterweight.SHEET_SET
+pivot_counterweight.SHEET_SET = pivot_counterweight.FROZEN_SET
+try:
+    _old = [f.line() for f in assembly.assemble("NDL-1187053-R0000014-R").failures]
+finally:
+    pivot_counterweight.SHEET_SET = _now
+assert any("手順 4" in x and "絵のある面が箱の内側に入る" in x for x in _old) and len(_old) == 2, _old
+# 残るのは糊代の根元の 1 件（切る線を足すかは窓口の答え待ち）
+assert len(found) == 1, found
 done = tora.frames[-1]["panels"]
 H_, W_, L_ = tora_p["body_height"], tora_p["body_width"], tora_p["body_length"]
 pts = [assembly.apply(m, p) for pid, m in done.items() if pid.startswith("body:") for p in tora.sheets["body"].panels[int(pid.split(":")[1])].exterior.coords]
