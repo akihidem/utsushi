@@ -496,6 +496,13 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) in hk.names() and hk.has(m.group(1)):
                 return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
             return self._send(404, "無い")
+        # 玩具が載る頁の全体（原画と歌。本人の指示 11-06）。合言葉なしの場でも出す（公開の古い本の絵で、人の写真ではない）
+        m = re.fullmatch(rf"/picture/({SID})/page", path)
+        if m and m.group(1) in sources():
+            from . import genga
+            page = genga.page_file(source(m.group(1)))
+            if page.exists():
+                return self._send(200, page.read_bytes(), "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")

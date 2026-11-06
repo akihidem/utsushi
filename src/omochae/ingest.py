@@ -131,6 +131,35 @@ def main():
     return 4 if fetch_images(wanted) else 0
 
 
+# 頁の全体の写し（本人の指示 11-06「原画はアップでなくて、ページ全体を掲載して欲しい」）。玩具の写しは型紙の寸法を起こす切り抜きで、
+# 歌が入らないため、見せる原画は玩具が載る頁（見開きの片側）の全体にする。幅 1000 で 47 枚・約 16MB（設計の測り）。repo には入れない。
+PAGE_WIDTH = 1000
+PAGES = ROOT / "out/sources/pages"
+
+
+def page_name(src):
+    """頁の全体の写しの名前（R0000005-L の形）。出典の記録の canvas と side から作り、新しい欄は足さない。"""
+    return f"R{int(src['canvas']):07d}-{src['side']}"
+
+
+def page_url(src):
+    """頁の全体の URL。玩具の写しと同じ IIIF の道で、箱だけを見開きの片側（左 0〜50%・右 50〜100%）にする。"""
+    service = src["image_url"].rsplit("/", 4)[0]
+    region = "pct:0,0,50,100" if src["side"] == "L" else "pct:50,0,50,100"
+    return f"{service}/{region}/{PAGE_WIDTH},/0/default.jpg"
+
+
+def page_targets():
+    """頁の全体の写しを置く頁と、その URL。写しを置く玩具（image_targets と同じ玩具）が載る頁だけ。同じ頁に載る玩具は 1 枚を分け合う。"""
+    out = {}
+    for p in sorted((ROOT / "data/hypotheses").glob("NDL-*.json")):
+        rec = ROOT / "data/sources" / p.name
+        if rec.exists():
+            src = json.loads(rec.read_text(encoding="utf-8"))
+            out[page_name(src)] = page_url(src)
+    return out
+
+
 def image_targets():
     """写しを置く玩具と、その切り出しの URL。仮説の記録を置いた玩具の出典の記録（data/sources）から読む。
     manifest は読まない: 網が無くても「どの写しが足りないか」は手元の記録だけで分かり、起動のたびに NDL へ行かずに済む。"""
@@ -142,14 +171,15 @@ def image_targets():
     return out
 
 
-def fetch_images(targets):
+def fetch_images(targets, folder=None):
     """足りない写しだけを out/sources に取る。取れなかった玩具の印の一覧を返す（空なら全部そろった）。
     1 枚取れなくても止めない: 1 枚の通信の失敗で残りの玩具まで字だけになるのを避ける。ただし続けて GIVE_UP 枚失敗したら網が無いと見て、残りは試さない。
     在る写しは取り直さない。箱を変えた時だけ取り直す（取った時の URL を横の .url に控えて比べる。前は古い切り出しが残り続けた）。"""
-    (ROOT / "out/sources").mkdir(parents=True, exist_ok=True)
+    folder = folder or ROOT / "out/sources"
+    folder.mkdir(parents=True, exist_ok=True)
     failed, streak = [], 0
     for sid, url in targets.items():
-        img, note = ROOT / "out/sources" / f"{sid}.jpg", ROOT / "out/sources" / f"{sid}.url"
+        img, note = folder / f"{sid}.jpg", folder / f"{sid}.url"
         if img.exists() and note.exists() and note.read_text(encoding="utf-8") == url:
             continue
         if streak >= GIVE_UP:
@@ -175,7 +205,11 @@ def images():
     from .hokusai import fetch as fetch_hokusai
 
     hokusai_failed = fetch_hokusai()
-    return 4 if failed or hokusai_failed else 0
+    # 頁の全体（原画を見せる絵）も同じ入口で取る。取れなかった頁は、玩具の写しと国立国会図書館への道で出す（頁は止めない）
+    pages = page_targets()
+    pages_failed = fetch_images(pages, PAGES)
+    print(f"ingest: 頁の全体 {len(pages) - len(pages_failed)}/{len(pages)} 枚が手元にある" + (f"。取れなかった: {' '.join(pages_failed)}" if pages_failed else ""))
+    return 4 if failed or hokusai_failed or pages_failed else 0
 
 
 if __name__ == "__main__":

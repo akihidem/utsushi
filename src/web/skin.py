@@ -246,9 +246,12 @@ def frame(sid, caption="", pos=None):
     from omochae.hypotheses import ROOT
 
     if (ROOT / "out/sources" / f"{sid}.jpg").exists():
-        from .looks import framed_pos
+        from .genga import size
 
-        style = f"background-image:url(/picture/{esc(sid)});background-position:{pos or framed_pos(sid)}"
+        # 絵の比のまま敷く。前は額の比が必須 2 種の写しに固定で、ほかの玩具の切り抜きを縦横別々に伸ばしていた（59 種で 1.25 倍以上、
+        # 最大 5.5 倍。原画の確かめ 11-06）。pos は呼び手の互換のために受けるが、比が合うので寄せる所は無い
+        w, h = size(ROOT / "out/sources" / f"{sid}.jpg")
+        style = f"background-image:url(/picture/{esc(sid)});aspect-ratio:{w}/{h};background-size:contain;background-position:center"
     else:
         style = ""
     cap = f"<figcaption>{esc(caption)}</figcaption>" if caption else ""

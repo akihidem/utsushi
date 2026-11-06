@@ -45,6 +45,8 @@
 | `src/web/skin.py` | 骨と皮。皮は CSS の変数の表（白の展示 tenji・黒のジン zine）、骨は頭の帯と共通の部品。皮はサイトごとに 1 つで、頁の中に切り替えは無い（docs/process/site-requirements.md の 15） |
 | `src/web/toy.py` | 玩具の頁。開いたらすぐ仮説の札（#242。J-032 のたたき台の 1 枚だけ。#386）→ 型紙の窓（PNG・SVG を画面に出し、押すと拡大。版を並べる）→ 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る。たとえと関連する事柄の節（analogy_section、予想の後） |
 | `src/web/en.py` | 英語の頁（J-030 の段 1）。入口と玩具ごとの頁。文は data/en の下。紙は日本語のままで、刷る口は日本語の頁と同じ `print_latest`。聞く口と記録の口は置かない |
+| `src/web/genga.py` | 原画と歌（本人の指示 11-06）。玩具が載る頁の全体の絵（ingest が git の外に取る）と、人が確かめた歌の読みを 1 つの組にする部品。玩具の頁の頭（head）・作る時の畳み（fold。大きく見るは頁の中で重ねる）・英語の頁とくずし字（plain）。玩具の所は頁の絵の上の細い枠 |
+| `src/web/genga_words.py` | 原画と歌の部品の新しい字（本人が決めた見出しとリンク）を 1 か所に置く |
 | `src/web/hokusai.py` | 北斎漫画の節（本人の決定 11-05）。絵の取り込みは `src/omochae/hokusai.py`、権利と切り出しの枠は動画と同じ `src/demo/figures.json`・`src/demo/scene4_sources.json`。玩具の頁と一覧には置かない |
 | `src/web/kaizen.py` | 改善の輪（J-026）。玩具の頁の節（どの報告がどの版を変えたか・次の版を待つ報告）と、サイト側の一覧 /loop。台帳は omochae.loop の版の記録をそのまま読む。玩具ごとの様子の頁 /loop/<印>（作る側の集計） |
 | `src/web/ayumi.py` | 型紙の版の歩み（/loop/ayumi）。前の履歴・良くした所・知見・共通の知見・どのループかを、今ある台帳から並べる。頁に出す答えは repo の中の data だけで決まる |

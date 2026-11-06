@@ -110,7 +110,9 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
                   f'<form method="post" action="/en/toy/{esc(sid)}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>Print sheets</button></form>{links}</div></div>')
     gloss = "".join(f"<dt>{esc(a)}</dt><dd>{esc(b)}</dd>" for a, b in GLOSSARY)
     tag = "" if hypotheses.stage(sid) == "必須" else '<p class="meta"><span class="lb">Untested draft</span> The name is our guess from the picture. No one has built this one.</p>'
-    body = (f'<section class="hero">{_picture(sid)}<div><h1>{esc(t["name"])}</h1>{tag}<p class="lead">{esc(t["intro"])}</p>'
+    from . import genga  # 英語の頁は頁の全体の絵だけ（統括の決め 11-06: 歌の字も新しい字も出さない）
+
+    body = (f'<section class="hero">{genga.plain(sid, "Picture from the book") or _picture(sid)}<div><h1>{esc(t["name"])}</h1>{tag}<p class="lead">{esc(t["intro"])}</p>'
             f'<p class="meta"><span lang="ja">{esc(data["toy"])}</span>. {esc(DRAFT)} {esc(CREDIT)}</p>'
             f'<p class="links"><a href="/toy/{esc(sid)}">日本語の頁へ</a><a href="/en#toys">Other toys</a></p></div></section>'
             f'<section class="sec" id="ideas">{note}<h2>Make it now</h2><p class="premise" id="premise">{esc(PREMISE)}</p><p class="meta">{esc(JA_ONLY)} {esc(WAYS_NOTE)}</p>'
