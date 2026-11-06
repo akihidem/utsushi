@@ -1,0 +1,20 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/<試験>.py（下の 6 本を順に）
+# commit: 34b0e370（回した時の HEAD。この枝の直しを入れた作業の木）
+## test_loop1_own_private
+ok
+rc=0
+## test_loop1_words
+ok
+rc=0
+## test_loop1_round
+ok
+rc=0
+## test_loop1_withdraw
+ok
+rc=0
+## test_loop1_next
+ok
+rc=0
+## test_own_form_gone
+ok: 玩具の頁に書く欄は無く、前の自分の仮説の記録と紙は読める
+rc=0
