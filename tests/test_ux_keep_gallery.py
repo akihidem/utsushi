@@ -4,7 +4,7 @@
 1. 手帖の作る頁の「のこす」の後（新しい記録・足した記録の両方）は /gallery?msg=…#ageta へ移る。記録の頁へは移らない
 2. ギャラリーは、記録を残した画面（記録の鍵）にだけ、返事の文と今残した 1 つを「他の人が作った物」の頭に出す。並びの中には重ねない
 3. 今残した 1 つの札から、記録の頁（説明と AI の札。地図の 4）へ、記録の番号で行ける。写真か言葉が無い記録も札にする
-4. 別の画面・鍵の無い画面・合言葉なしの場には、今残した 1 つの札を出さない（記録の鍵の線、#441）
+4. 別の画面・鍵の無い画面・合言葉なしの場には、今残した 1 つの札を出さない（記録の鍵の線、#441）。合言葉なしの場は、記録を残した同じ画面でも出さない（J-028）
 5. 本物を先に、見本は畳む（地図の 5）: 今残した 1 つだけでも見本は「見本」の畳みに入る
 """
 import http.cookiejar
@@ -72,6 +72,22 @@ assert 'id="own"' not in get(screen(), "/gallery"), "鍵の無い画面には出
 server.shutdown()
 opened = play_server.serve(0, public_open=True)
 threading.Thread(target=opened.serve_forever, daemon=True).start()
-assert 'id="own"' not in urllib.request.urlopen(f"http://127.0.0.1:{opened.server_address[1]}/gallery", timeout=120).read().decode(), "合言葉なしの場には出さない"
+at = f"http://127.0.0.1:{opened.server_address[1]}"
+assert 'id="own"' not in urllib.request.urlopen(f"{at}/gallery", timeout=120).read().decode(), "合言葉なしの場には出さない"
+# 合言葉なしの場で、記録を残した同じ画面でも出さない（J-028: 公開の場では人の書いた字と記録の番号を出さない）。
+# 外の人はトンネルの名前（https）で開くので、その Host と出所で送る。鍵の cookie は Set-Cookie から手で読んで送り返す
+# （https の画面は Secure の cookie も送り返す。手元の http で CookieJar を使うと Secure の物を落とし、鍵の無い画面を見るだけになる）
+TUNNEL = "made-up-name.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分けて書く（test_public_open と同じ）
+q = urllib.request.Request(f"{at}/toy/{G}/record-json", headers={"Host": TUNNEL, "Origin": f"https://{TUNNEL}"},
+                           data=urllib.parse.urlencode({"hypothesis": "H-A", "result": "動いた", "sheet_version": "1", "impression": "公開の場で書いた感想"}).encode())
+with urllib.request.urlopen(q, timeout=120) as r:
+    left = json.loads(r.read().decode())["id"]
+    rec = [c.split(";")[0] for c in r.headers.get_all("Set-Cookie") or [] if c.startswith("utsushi_rec=")]
+assert rec and rec[0] != "utsushi_rec=", ("公開の場でも、記録を残した画面は鍵を持つ（この試験の前提）", rec)
+q = urllib.request.Request(f"{at}/gallery?msg=" + urllib.parse.quote("記録を残しました"), headers={"Host": TUNNEL, "Cookie": rec[0]})
+with urllib.request.urlopen(q, timeout=120) as r:
+    seen = r.read().decode()
+assert 'id="ageta"' in seen and 'id="own"' not in seen, "合言葉なしの場では、記録を残した画面にも今残した 1 つを出さない"
+assert f"記録の番号 {left}" not in seen and "公開の場で書いた感想" not in seen, "記録の番号と感想の字を出さない"
 opened.shutdown()
 print("ok のこした後は持ち寄る駅に着き、今残した 1 つが頭に出て、その札から記録の頁へ行ける（地図の 4・5）")

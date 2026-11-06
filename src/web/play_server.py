@@ -401,7 +401,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/gallery":
             from . import techo_site
             # のこした後はここに着く（窓口の決定 11-06 夜・案 A）。今残した 1 つは、記録を残した画面の鍵（記録の鍵）で見分けて頭に出す。返事の文は ?msg= で受ける
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False), msg=qs.get("msg", [""])[0], rec_key=self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
+            # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
+            opened = getattr(self.server, "public_open", False)
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:

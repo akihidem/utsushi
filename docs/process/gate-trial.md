@@ -1907,3 +1907,6 @@
 - 検証ゲート: **済み**。Red: 段 1 の枝の頭にこの試験だけを置くと rc 1（gate-evidence/red-ux-keep-gallery.txt。記録の頁へ移る）。Green: rc 0（gate-evidence/green-ux-keep-gallery.txt）。
   のこした後に記録の頁へ移る事を見ていた試験（tests/test_photo_attach_walk.py・test_techo_step.py・test_techo_site.py）を、ギャラリーへ移る形に直した
 - 確かめていない事: 実機と人の目。説明の欄まで 1 手増えた事が使う人にどう効くか（試行で見る）
+- 別の目の止め（11-06 夜）と直し: 公開の場の見分けを、写真を出すかの引数（photos）から別の引数に替える直しと合わせる時、解き方を誤ると、合言葉なしの場で記録を残した画面に、今残した 1 つの札（記録の番号と感想の字）が出る（J-028 に当たる）。前の試験は鍵の無い画面だけを見ていて、これを捕まえなかった。
+  直し: サーバが合言葉なしの場ではギャラリーに記録の鍵を渡さない（引数の形に頼らずに閉じる）。試験は、トンネルの名前の Host と出所で記録を残し、Set-Cookie の鍵を送り返した同じ画面のギャラリーに、今残した 1 つと記録の番号と感想が無い事を見る。
+  Red: 誤って合わせた形の木で、前の試験は rc 0、新しい試験は rc 1（gate-evidence/red-ux-keep-gallery-public.txt）。Green: rc 0（gate-evidence/green-ux-keep-gallery-public.txt）。直した後の木で写真の引数を公開の場でも真にしても、今残した 1 つは出なかった（並びの記録の番号と感想は、合わせる側の公開の場の引数が閉じる）
