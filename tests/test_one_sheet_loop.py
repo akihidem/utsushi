@@ -68,6 +68,14 @@ def get(path):
         return e.read().decode()
 
 
+def status_of(path):
+    """道が開くかの番号だけ（中身は読まない）。"""
+    try:
+        return urllib.request.urlopen(base + path, timeout=180).status
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
 def post(path, form):
     req = urllib.request.Request(base + path, urllib.parse.urlencode(form).encode(), {"Origin": base, "Content-Type": "application/x-www-form-urlencoded"})
     try:
@@ -120,7 +128,9 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303
 assert (out_dir(G) / "H-A_v2.pdf").exists() and not list(out_dir(G).glob("H-A_v3*")), "次の人が刷ると一番新しい版が出て、版は増えない"
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": RESULTS[0]}) in (200, 303)
 assert [r.get("sheet_version") for r in records.all_records(G)] == [1, 2], "記録は試した版の番号を持つ"
-assert f"/sheet/{G}/H-A_v1_after.png" in window(get(f"/toy/{G}?see=H-A&kind=after&v=1")), "前の版で試した記録の紙も読める"
+# 試した後の紙は 11-06 から刷らない（本人の決まり）。前の版で試した記録の紙は、残した /sheet の道で読める（窓には出さない）
+assert "_after" not in window(get(f"/toy/{G}?see=H-A&kind=after&v=1")), "窓は型紙だけ"
+assert status_of(f"/sheet/{G}/H-A_v1_after.pdf") == 200, "前の版で試した記録の紙も読める"
 assert first in get(f"/toy/{G}")
 
 # 2. 形の違う案（雛形の寸法の差で言えない案）を採ると、作る側の控えに入る。札に出さない
