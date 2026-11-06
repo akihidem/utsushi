@@ -34,7 +34,7 @@ def switch(look):
 
 
 def toys():
-    """図の写しが手元に無い玩具も並べる。A は入口なので、写しの有無で玩具が消えると入れなくなるため。
+    """図の写しが手元に無い玩具も並べる。入口なので、写しの有無で玩具が消えると入れなくなるため。
     入口の主役は必須の 2 種だけ。試作の玩具は図鑑から入る（hypotheses.stage）。"""
     out = []
     for s in (s for s in sources() if hypotheses.stage(s) == "必須"):
@@ -52,7 +52,7 @@ def _bg(sid, pos="50% 50%", size="cover"):
     return f"background-image:url(/picture/{sid});background-position:{pos};background-size:{size};background-repeat:no-repeat"
 
 
-# 額に入れる図は、複写の台の黒い縁が額の中に見えないよう、枠と同じ比のまま少し大きく敷く（A の全面の図と同じ考え）。
+# 額に入れる図は、複写の台の黒い縁が額の中に見えないよう、枠と同じ比のまま少し大きく敷く。
 FRAMED = "112% 112%"
 
 
@@ -72,13 +72,8 @@ QUOTE = f"原文の引用。確かめた人: {wording.MAKER}"
 ONLY = """<script>(()=>{const id=new URLSearchParams(location.search).get('only');if(!id)return;
 const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.nav,.ab-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
 
-# ---------------------------------------------------------------- A 大判写真集（参照のルックブックの再現）
-# 本人の指示（2026-11-04）: 参照の X の投稿のルックブックの再現を、A の実装の基準にする。
-# 参照は、白いリングバインダーを真上から撮った見開きを縦に並べる形（research/19 に観察を書いた）。
-# 写したのは組み方だけ: 綴じ金具とバインダーの縁、見開きの型（全面の写真と白地の小物、平置きと番号の一覧、
-# 見開きをまたぐ 1 枚、文字の頁と色見本の列、余白の多い奥付）、細かい字の小さな文字組み。参照の写真と文は使わない。
-# 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。
-# 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
+# ---------------------------------------------------------------- 全部の玩具の一覧（A′ と C の両方の入口で使う）
+# A 大判写真集の作りはここにあったが、本人の決定（2026-11-05 朝）で外した。参照のルックブックの観察は research/19、経過は J-024 に残る。
 def all_toys(prefix):
     """全部の玩具の一覧（本人の指示 11-05「88 種のおもちゃから 1 個選ぶ」。要件 L-02: 入口から試作の玩具にも入れる）。
     必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、全体が入る形で敷く
@@ -107,6 +102,7 @@ def all_toys(prefix):
             f'<ul class="grid">{"".join(items)}</ul></section>')
 
 
+# 2 つの入口の画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。
 ZINE = """
 body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
  font-feature-settings:"palt" 1}
@@ -205,7 +201,7 @@ def zine():
 # 展示の形を A′ として並べる。順路: 入口の題のパネル → 章ごとに 1 点を白い壁に掛け、作品の札と解説 → 細部 → 出口（玩具の頁へ）。
 # 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。
 # 動き: 本人の頼み（2026-11-04「この動き、デモサイトでやってみる？」）で、A′ だけに扇の札・スクロールのせり上がり・扇をひらくノブを足した
-# （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。A と C は動かさないまま。
+# （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。C は動かさないまま。
 TENJI = """
 body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 /* 地は本人の言葉「白の背景」へ戻した（research/24 の 1）。前のクリーム #f6f3ec は作る側の手癖で、生成物の定番の見た目に寄っていた。
