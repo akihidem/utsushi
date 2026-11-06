@@ -2,7 +2,7 @@
 「生徒の一人一台端末や iPhone を机の端に置いて、端末のカメラで生徒の上半身を写す形に。間に手と動画と紙があり、作成の様子を見れるようにする」。
 
 何をする頁か: 端末を机の端に立て、画面に手本（今の手順の文と、手順の紙の絵）と返事（聞いた事の答え）を出す。隅の小さな鏡に、
-自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順はできた）で残す。設計は docs/process/research/30 の「観察の置き方」。
+自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順は全部できた）で残す。設計は docs/process/research/30 の「観察の置き方」。
 
 判断の芯:
 - **一番浅い段（観察 A）だけを作る。映像は端末の中だけ。** 鏡は <video> に流すだけで、画素を取り出さない・録らない・送らない。
@@ -45,8 +45,8 @@ from .play_server import esc, out_dir, printed_versions
 
 NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
 # 最後の手順の札と、押した後に記録の欄の頭で出す案内（#321）。案内は play_server が記録の欄へ渡す。
-DONE_LABEL = "できた"
-DONE_NOTE = "組み上がった事を残しました。動かしてみて、玩具の頁で記録を残します。"
+DONE_LABEL = "全部できた"
+DONE_NOTE = "組み上がった事を残しました。動かしてみて、ここで記録を残します。"
 
 STYLE = """
 *{box-sizing:border-box}
@@ -214,7 +214,7 @@ def count(sid, hid, version=None):
     return len(step_texts(sid, hid, version))
 
 
-def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
+def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     """作りながら見る頁。呼ぶ側（play_server）が、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
     from . import hanasu  # 話す口（Issue #279）。循環を避けて、ここで読む
 
@@ -265,7 +265,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<form id="ask-form" method="post" action="/toy/{esc(sid)}/ask">'
             f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{v}"><label class="sr" for="q">聞きたい事</label>'
             '<input type="text" id="q" name="question" maxlength="300" placeholder="谷折りって？" enterkeyhint="send" required><button>聞く</button></form>'
-            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(NOTICE)}</p>'
+            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(making_log.ask_notice(ai) + making_log.ASK_NAME_VOICE)}</p>'
             f'<p class="meta"><a href="/toy/{esc(sid)}/techo">声で聞く・写真を上げる（手帖）</a></p></div>'
             # カメラの目的（本人の言葉 11-05「カメラで見るのはそういうとこだよ」）。人の出来を測らない事を、カメラのそばに書く。
             f'<p class="meta">{esc(CAMERA_PURPOSE)}</p>'

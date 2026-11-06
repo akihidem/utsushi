@@ -41,9 +41,6 @@ FROZEN = {
     (GORAIGO, "goraigo-v10"): {"H-B": ["竹串"], "H-C": ["竹串"], "H-D": ["竹串"], "H-E": ["竹串"]},
     (TORA, "tora-v3"): {"H-A": ["カッター"], "H-C": ["カッター"]},
 }
-# 直すと新しい文になるので、本人の文面の確認が済むまで直さない案。
-WORDING = {(KOMA, "H-B"): ["つまようじ"]}
-
 
 # 部品に穴があるのに、手順にあけ方の文が無い案。台の穴に竹串を通す形で、文を足すと新しい字になるので、今は足さない。
 NO_POKE_WORDS = {("NDL-1187053-R0000007-L", "H-A"), ("NDL-1187053-R0000007-L", "H-B")}
@@ -88,7 +85,7 @@ def cases():
 
 
 def allowed(sid, hid, tpl):
-    return FROZEN.get((sid, tpl.SHEET_SET), {}).get(hid) or WORDING.get((sid, hid), [])
+    return FROZEN.get((sid, tpl.SHEET_SET), {}).get(hid, [])
 
 
 def check():
@@ -189,4 +186,12 @@ finally:
     fan.materials = keep
 assert named == [(GORAIGO, h, [], ["竹串"]) for h in ("H-B", "H-C", "H-D", "H-E")], named
 
-print(f"ok {len(all_cases)} 案で手順と遊び方と用意する物が合う（今の組の例外 {sum(len(v) for v in FROZEN.values())} 案、文面の確認待ち {len(WORDING)} 案）")
+# 5. 独楽 B は、本人が採った字（2026-11-06）を一字も変えずに出す。芯が竹ひごの長さなので手順も竹ひごと書き、
+# 芯の穴をあけるつまようじを用意する物に足す。字を雛形の決まりから組むので、出来上がった字そのものを見る。
+# 採った案は「手順 4」と名指ししていたので、手順は位置まで見る（前に手順が入ってずれたら、確かめ直す）。
+spin = TEMPLATES["spin_toy"]
+koma = next(p for sid, hid, _, _, p in all_cases if (sid, hid) == (KOMA, "H-B"))
+assert spin.steps(koma)[3] == "竹ひごを穴に通し、下に 10mm 出してのりで止める", spin.steps(koma)
+assert "つまようじ（穴あけ）" in spin.materials(koma), spin.materials(koma)
+
+print(f"ok {len(all_cases)} 案で手順と遊び方と用意する物が合う（今の組の例外 {sum(len(v) for v in FROZEN.values())} 案）")

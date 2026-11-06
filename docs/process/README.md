@@ -83,7 +83,7 @@
 | 38 | [J-024](decisions/J024-entrance-and-workshop.md) | 使い手の入口は手元のブラウザの画面、作り手の工房は Claude Code の機能 | 決定。ルックブックは A と C を残した（11-04）。画面は人がまだ使っていない |
 | 39 | [J-025](decisions/J025-no-ranking.md) | 仮説の順位をやめ、記録は次に試す物の提案の材料だけにする | 決定 |
 | 40 | [J-030](decisions/J030-reach-abroad.md) | 届け先はいろんな国の人。絵を先に、字の少ない道を太く。英語の紹介文の案と段 | 本人の方針（11-05）。紹介の文は本人が採った（#318）。段の範囲は本人の採否待ち |
-| 41 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと開発の運転の形 | 本人が確認した |
+| 41 | [claude-story](claude-story.md) | Claude の使い方の物語。機能の選び分けと、Claude Code のセッションを並べる作り方 | 1・2 節は 11-03 に本人が確認し、後に直しあり。3 節は本人の決定（11-06）: C の下書きで、本人の確認待ち |
 | 42 | [research/16](research/16-scan-titles.md) | 複写 2 式の書名を特定し、本人が確認した。歌の読みは本人が決めた | 調査。書名と読みは本人の確認済み |
 | 43 | [research/17](research/17-field-and-continuers.md) | 現場の具体と続ける人を本人の言葉からまとめ、6 点の答えをそろえた | 調査。6 点とも本人の答えあり |
 | 44 | [research/18](research/18-field-evidence.md) | 現場の印象を補う調査。理科の職業を望む中 2 は日本 27%・国際 58% | 調査 |

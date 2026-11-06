@@ -26,6 +26,7 @@
 """
 import json
 
+from api import ask
 from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
 from omochae.compose import TEMPLATES
 
@@ -499,7 +500,8 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
 
             '<section class="henji" data-on="henji">'
             f'<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="send" aria-label="聞く">{SEND}</button></form>'
-            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(making_log.ASK_NAME_VOICE)}</p></section>'
+            # 聞く口の断り。鍵がある時は、聞いた言葉が Claude にも渡る事を先に言う（main の #458 の字。前の手帖の頁の聞く節と同じ出し方）
+            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc((making_log.ASK_AI if uploads and ask._key_present() else "") + making_log.ASK_NAME_VOICE)}</p></section>'
             '<section class="end" data-on="end">'
             f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}">{shot}'
             # 字で書くのは選べる追加（畳んでおく）。名前は字で出さない（押す所の名前は 6 つ）ので、形だけにして、読み上げ用の名を持たせる。
