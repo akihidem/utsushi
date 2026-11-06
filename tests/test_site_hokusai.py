@@ -55,7 +55,9 @@ assert hk.fetch() == [] and hk.path_of(hk.FLIP_PAGE).stat().st_mtime_ns == stamp
 # 案 1: 白の序の頁だけ。押すと動き、開いただけでは動かない
 white, black = about.page("tenji"), about.page("zine")
 assert 'id="hk-stack"' in white and 'id="hk-stack"' not in black
-assert white.count(f"/hokusai/{hk.FLIP_PAGE}-") == 18 and "18 人を順に重ねる" in white
+# 白の序の頁には案 2 の縦読みも入った（統括の決め 11-06）ので、18 人の絵は案 1 の節の中で数える
+flip = site.flip_section()
+assert flip in white and flip.count(f"/hokusai/{hk.FLIP_PAGE}-") == 18 and "18 人を順に重ねる" in white
 assert "addEventListener('click'" in site.FLIP_SCRIPT and "prefers-reduced-motion" in site.FLIP_SCRIPT
 assert "setInterval" not in site.FLIP_SCRIPT.split("addEventListener('click'")[0], "開いただけで動かさない"
 # 本人が採った文（11-05、#318）。一字でも変わったら落ちるように、ここに決定の文を書く
@@ -65,13 +67,14 @@ assert "江戸の人は、糸車のしくみも、平らな紙に奥ゆきを見
 for page in (white, black):
     assert 'id="hokusai-mech"' in page and f"/hokusai/{hk.WHEEL_PAGE}-wheel.jpg" in page and f"/hokusai/{hk.LINES_PAGE}-left.jpg" in page and f"/hokusai/{hk.LINES_PAGE}-right.jpg" in page
     assert "糸車" in page and "（PDM）" in page
-# 案 2: 入口の章の頭。玩具の章より前。前は黒の入口にだけあった。本人の決定（11-06）「ページは白案で統一します。黒案にだけある要素は白案に入れてください」で、
-# 白の入口にも同じ節を白の色で置く（字と動きは同じ）
+# 案 2: 縦読み。黒の入口の章の頭（玩具の章より前）は前のまま。本人の決定（11-06）「ページは白案で統一します。黒案にだけある要素は白案に入れてください」で
+# 白にも同じ節を白の色で置くが、白では入口でなく帯の「よむ」の先の序の頁に置く（統括の決め 11-06。地図の「読み物は道の外へ」）。字と動きは同じ
 zine, tenji = looks.PAGES["zine"](), looks.PAGES["tenji"]()
-for page in (zine, tenji):
-    assert 'id="zn-hokusai"' in page and page.index('id="zn-hokusai"') < page.index('id="look-1"') and "（PDM）" in page
-assert 'class="zn-hk tj-hk"' in tenji and 'class="zn-hk"' in zine and site.WHITE_SCROLL_STYLE in tenji and site.WHITE_SCROLL_STYLE not in zine
-assert tenji.index('class="tj-hall"') < tenji.index('id="zn-hokusai"'), "白の入口の最初の画面（題の間と えらぶ）の後"
+assert 'id="zn-hokusai"' in zine and zine.index('id="zn-hokusai"') < zine.index('id="look-1"') and "（PDM）" in zine
+assert 'class="zn-hk"' in zine and site.WHITE_SCROLL_STYLE not in zine
+assert 'id="zn-hokusai"' not in tenji, "白の入口には縦読みを置かない（序の頁へ）"
+assert white.count('id="zn-hokusai"') == 1 and 'class="zn-hk tj-hk"' in white and site.WHITE_SCROLL_STYLE in white, "白の序の頁に縦読み"
+assert 'id="zn-hokusai"' not in black, "黒の序の頁には足さない（黒は入口にある）"
 
 assert "prefers-reduced-motion" in site.SCROLL_SCRIPT and "IntersectionObserver" not in site.SCROLL_SCRIPT and "prefers-reduced-motion" in site.SCROLL_STYLE
 
