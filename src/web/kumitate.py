@@ -18,7 +18,7 @@ import re
 
 from shapely.geometry import LineString, Point, Polygon
 
-from omochae import assembly, hypotheses, render
+from omochae import assembly, hypotheses, instructions, render
 from omochae.model import ToolMissing
 
 from . import skin
@@ -32,6 +32,17 @@ PREV, NEXT = "前へ", "次へ"
 RESTART = "はじめから組み立てる"
 DONE = "できあがり"
 LABEL = "組み立てを立体で見る"
+# 組み方の節（立体で組む書き方が無い玩具。本人の決まり 11-06「文章のプリントは廃止。組み立て用のページだけでいい。組み立ての案内はサイトの
+# 組み立て頁に寄せてください」「文章のプリント廃止は他のおもちゃも同じ。全種の組み立て頁に寄せてください」）。字は本人の確かめ待ちの案。
+# 呼び名は「組み方」にそろえ、「組み立て」の語は立体の方だけに使う（取り違えないため。設計メモ版 3）。
+STEPS_LABEL = "組み方"
+STEPS_LEAD = "組み方の順に並べました。"
+STEPS_STYLE = """
+.kumi-steps{margin:14px 0 0;padding-left:1.8em;display:grid;gap:16px}
+.kumi-steps li{line-height:1.9}
+.kumi-steps li p{margin:0}
+.kumi-steps svg.kumi-pic{display:block;width:min(100%,420px);height:auto;max-height:60vh;margin:4px 0 10px;background:#fff;border:1px solid var(--frame)}
+"""
 
 STYLE = """
 .rt-stage{--rt-table:#ece6d8;position:relative;margin:18px auto 0;width:min(100%,420px);height:520px;perspective:1100px;touch-action:pan-y;cursor:grab;overflow:hidden;border:1px solid var(--frame);background:var(--rt-table)}
@@ -384,15 +395,69 @@ def _block_html(sid, params):
             f'<p class="meta">{esc(NOTE_SHAPE)}</p>{script}')
 
 
-def block(sid):
-    """型紙の頁に置く組み立ての節（本人の決定 11-06: 置き場所は型紙の頁）。組み立ての書き方が無い玩具は空。1 つの頁に 1 つだけ置く。"""
-    if not available(sid):
+def steps(sid):
+    """たたき台の紙の組み方の文と絵: (文の並び, 絵の並び, 手順ごとの絵の番号)。作れない時は ([], [], [])。
+    手帖・作りながら見る頁と同じ物を使う（文は雛形の steps、絵は instructions.step_pictures）。紙と画面で文と絵が食い違わないため。
+    版は、刷ってある一番新しい版（作りながら見る頁と同じ）。刷っていなければ版 1。文は版の寸法で変わる事があるので、その版で作る。
+    出すのはたたき台の紙だけ。自分の紙（OWN-n）は話した字が刷られ、作った本人の画面からしか開かないので出さない（設計メモ版 3）。"""
+    from . import techo_step, tsukuru
+    from .play_server import printed_versions
+
+    try:
+        data, h = hypotheses.load(sid), hypotheses.sheet_of(sid)
+    except (KeyError, ValueError, OSError, StopIteration, ToolMissing):  # 仮説の記録が無い玩具（available と同じ受け方）
+        return [], [], []
+    vs = printed_versions(sid, h["id"])
+    v = vs[-1] if vs else 1
+    texts = tsukuru.step_texts(sid, h["id"], v)
+    if not texts:
+        return [], [], []
+    try:
+        template, p = techo_step._params(sid, data, h, v)
+        pictures, which = instructions.step_pictures(template, p, texts)
+    except Exception:  # 絵が作れない時も、文だけで組める（文は手順の紙と同じ物）
+        return texts, [], [-1] * len(texts)
+    return texts, pictures, which
+
+
+def _steps_html(sid):
+    """組み方の節の中身。絵は、手順が前と違う絵を指す所でだけ出す（ほかの雛形は手順の紙の図 1 枚を全部の手順で使うので、頭に 1 度だけ出る）。
+    絵は読み上げの木から隠れている（render.shapes_svg）。中身は手順の文が言う。"""
+    texts, pictures, which = steps(sid)
+    if not texts:
         return ""
-    return f'<div class="kumitate" id="kumitate"><h3>{esc(LABEL)}</h3>{_block_html(sid, json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False))}</div>'
+    items, last = [], None
+    for t, k in zip(texts, which):
+        pic = render.shapes_svg(pictures[k], "kumi-pic") if k != last and 0 <= k < len(pictures) else ""
+        last = k
+        items.append(f"<li>{pic}<p>{esc(t)}</p></li>")
+    return f'<style>{STEPS_STYLE}</style><p class="lead">{esc(STEPS_LEAD)}</p><ol class="kumi-steps">{"".join(items)}</ol>'
+
+
+def has(sid):
+    """組み立ての頁を開ける玩具か（立体で組めるか、組み方の文があるか）。"""
+    return available(sid) or bool(steps(sid)[0])
+
+
+def label(sid):
+    return LABEL if available(sid) else STEPS_LABEL
+
+
+def block(sid, heading=True):
+    """型紙の頁に置く組み立ての節（本人の決定 11-06: 置き場所は型紙の頁）。1 つの頁に 1 つだけ置く。
+    立体で組める玩具は立体の組み立て、それ以外は組み方の文と絵（本人の決まり 11-06: 全種の組み立て頁に寄せる）。どちらも作れなければ空。
+    heading=False は組み立てだけの頁の時。頁の題が同じ呼び名を言うので、節の見出しを重ねない。"""
+    if available(sid):
+        head = f"<h3>{esc(LABEL)}</h3>" if heading else ""
+        return f'<div class="kumitate" id="kumitate">{head}{_block_html(sid, json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False))}</div>'
+    inner = _steps_html(sid)
+    head = f"<h3>{esc(STEPS_LABEL)}</h3>" if heading else ""
+    return f'<div class="kumitate kumi" id="kumitate">{head}{inner}</div>' if inner else ""
 
 
 def page(sid, look=skin.DEFAULT, path=None):
-    """組み立てだけの頁。開くと、まずできあがりの形を見せる。「はじめから」で刷った紙に戻り、手順を送るとまた組み上がる。"""
-    toy = hypotheses.load(sid)["toy"]
-    body = f'<section class="sec"><h1>{esc(toy)}: {esc(LABEL)}</h1>{block(sid)}<p class="links"><a href="/toy/{esc(sid)}">{esc(toy)}の頁へもどる</a></p></section>'
-    return skin.shell(f"{toy}: {LABEL}", body, look, path=path or f"/toy/{sid}/kumitate")
+    """組み立てだけの頁。立体の時は、開くと、まずできあがりの形を見せる。「はじめから」で刷った紙に戻り、手順を送るとまた組み上がる。
+    立体の無い玩具は、組み方の文と絵を順に並べる。"""
+    toy, name = hypotheses.load(sid)["toy"], label(sid)
+    body = f'<section class="sec"><h1>{esc(toy)}: {esc(name)}</h1>{block(sid, heading=False)}<p class="links"><a href="/toy/{esc(sid)}">{esc(toy)}の頁へもどる</a></p></section>'
+    return skin.shell(f"{toy}: {name}", body, look, path=path or f"/toy/{sid}/kumitate")

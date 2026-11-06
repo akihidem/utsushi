@@ -3,6 +3,7 @@
 手順ごとの途中の形が紙の動きのとおりに並ぶ事、折り線の角から作った形と組み立ての形が同じ事、頁が外の部品を読まない事を見る。
 """
 import json
+import html as html_mod
 import math
 import os
 import re
@@ -202,18 +203,37 @@ assert "10cm の物差し" in html
 assert bench.sheets["tube"].part.hide_folds and not bench.sheets["base"].part.hide_folds
 assert 'stroke-dasharray="2,1"' in html
 
-# 組み立ての書き方が無い玩具には道を出さない
+# 立体で組む書き方が無い玩具は、組み方の文と絵の節になる（本人の決まり 11-06「全種の組み立て頁に寄せてください」。前は道を出さなかった）
+PLAIN = "NDL-1187053-R0000009-R"
 assert kumitate.available(G) and 'id="kumitate"' in kumitate.block(G)
-assert not kumitate.available("NDL-1187053-R0000009-R") and kumitate.block("NDL-1187053-R0000009-R") == ""
-assert not kumitate.available("無い玩具")
+plain = kumitate.block(PLAIN)
+assert not kumitate.available(PLAIN) and kumitate.has(PLAIN)
+assert 'id="kumitate"' in plain and 'id="rt-stage"' not in plain and kumitate.STEPS_LABEL in plain and kumitate.STEPS_LEAD in plain
+# 文は手帖・作りながら見る頁と同じ物（たたき台の紙の、刷ってある一番新しい版。無ければ版 1）
+from web import tsukuru  # noqa: E402
 
-# 型紙の頁に初めから出る（本人の決定 11-06）。書き方が無い玩具の頁には出ない
+texts = tsukuru.step_texts(PLAIN, hypotheses.sheet_of(PLAIN)["id"], 1)
+assert texts and kumitate.steps(PLAIN)[0] == texts
+assert re.findall(r"<li>(?:<svg.*?</svg>)?<p>(.*?)</p></li>", plain, re.S) == [html_mod.escape(x, quote=True) for x in texts]
+# 絵は、手順が前と違う絵を指す所でだけ出る（ほかの雛形は図 1 枚を頭に 1 度だけ）。読み上げの木からは隠れる
+assert plain.count("<svg") == 1 and 'aria-hidden="true"' in plain
+assert not kumitate.available("無い玩具") and not kumitate.has("無い玩具") and kumitate.block("無い玩具") == ""
+# 全 83 種で開ける
+from web.play_server import sources  # noqa: E402
+
+assert all(kumitate.has(s) for s in sources()), [s for s in sources() if not kumitate.has(s)]
+# 組み立てだけの頁は、頁の題が呼び名を言うので、節の見出しを重ねない
+alone = kumitate.page(PLAIN)
+assert alone.count(kumitate.STEPS_LABEL) == 3 and "<h3>" not in alone, "題（title と h1）の 2 つと、頭の文「組み方の順に並べました。」の 1 つ"
+
+# 型紙の頁に初めから出る（本人の決定 11-06）。立体の無い玩具は組み方の節
 from web import toy  # noqa: E402
 
 made_page = toy.toy_page(G)
 assert made_page.count('id="kumitate"') == 1 and made_page.count('id="rt-stage"') == 1
 assert made_page.index('id="kumitate"') > made_page.index('id="kasetsu"'), "すぐ作る節の中に無い"
-assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000009-R")
+plain_page = toy.toy_page(PLAIN)
+assert plain_page.count('id="kumitate"') == 1 and 'id="rt-stage"' not in plain_page and kumitate.STEPS_LEAD in plain_page
 
 # 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
 T = "NDL-1187053-R0000014-R"
