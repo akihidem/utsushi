@@ -15,7 +15,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/templates/slider_fan.py",
-   "tests/test_floor_pin.py"
+   "tests/test_floor_pin.py",
+   "tests/test_by_set.py"
   ],
   "unverified": "実物で組んで開くかは未確認"
  },
@@ -25,7 +26,8 @@
   "status": "doing",
   "evidence": [
    "src/omochae/templates/pivot_counterweight.py",
-   "tests/test_floor_pin.py"
+   "tests/test_floor_pin.py",
+   "tests/test_by_set.py"
   ],
   "unverified": "実物で組んで揺れるかは未確認"
  },
