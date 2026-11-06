@@ -102,6 +102,15 @@ a{color:var(--accent)}
  .side{border-top:0;border-left:1px solid var(--rule)}
  .sheet{max-height:58svh}
 }
+/* 縦置き（手に持つ電話・縦に立てた端末）: 手本の箱の高さに上限を置き、余りを手順の紙の絵が使う（絵は縮んでも形の比を保つ）。
+   一番大きい札「次の手順へ」が、どの手順でも最初の画面に入るようにする（11-07 の前の確かめで、390×844 の虎で 15px 下、字の長い手順では
+   最大 120px ほど下に出た）。上限の 280px は、頭の行・原画の畳み・札の列の余白と札の高さの分（測った最大 257px に余りを足した）。
+   低すぎる画面では絵が無くならないよう 260px を下限にする。JS が無い時は手順が全部並ぶので当てない（.js だけ）。
+   絵の min-height:0 は、箱の中で絵が字の分だけ縮むための物（Chrome は無くても縮むが、絵の高さを中身の高さのまま保つ形の画面のため） */
+@media (orientation:portrait){
+ .js .tehon{display:flex;flex-direction:column;max-height:max(calc(100vh - 280px),260px);max-height:max(calc(100svh - 280px),260px)}
+ .js .tehon .sheet{flex:0 1 auto;min-height:0}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
 

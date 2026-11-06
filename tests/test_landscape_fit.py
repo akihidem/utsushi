@@ -1,11 +1,11 @@
-"""横置きの画面でも、手帖の手順の字が原画の釦と閉じる印の下に隠れず、作りながら見る頁の「次の手順へ」が最初の画面に入る。
+"""横置きでも縦置きでも、手帖の手順の字が原画の釦と閉じる印の下に隠れず、作りながら見る頁の一番大きい札が最初の画面に入る。
 
 なぜ: 11-07 の工作の前のまっさらな確かめで、幅 860 以上の横置き（1024×768 の iPad 横〜1920）だと、手帖の手順の字が右の列の頭に来て、
 絶対配置の原画の釦（top 12・right 88）と閉じる印（top 12・right 12）の下に隠れた（御来迎と虎のほぼ全部の手）。作りながら見る頁は
-1024×768 で「次の手順へ」が最初の画面の 11px 下にあった。縦置きの幅（390・768）では起きない。
+1024×768 で「次の手順へ」が最初の画面の 11px 下にあり、縦置きの 390×844 でも虎で 15px 下（字の長い手順では 120px ほど下）に出た。
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない（tests/test_voice_pause.py と同じ）。入っている Chrome で頁を
 その大きさの iframe に開き、頁の中で手順を順に送って測る。Chrome が無い機械と、時間内に答えなかった時は、測れないと出して通す。
-落ちるのは、測れて、字と釦が重なるか、押す所が最初の画面の外にある時だけ。
+落ちるのは、測れて、字と釦が重なるか、押す所が最初の画面の外にあるか、手順の紙の絵が低すぎる時だけ。
 """
 import json
 import os
@@ -40,9 +40,11 @@ genga._pic = _pic
 TOYS = {"goraigo": "NDL-1187053-R0000005-L", "tora": "NDL-1187053-R0000014-R"}
 # 縦置きの幅も入れる（直しで縦置きを崩さない事も見る）。横置きは iPad 横・机の幅・大きい画面
 TECHO_SIZES = [(390, 844), (768, 576), (1024, 768), (1180, 820), (1440, 900), (1920, 1080)]
-# 作りながら見る頁は横置き（机の端に立てたタブレット）の大きさで見る。縦置きの 390×844 は、虎で「次の手順へ」が 15px 下に出る
-# （手順の紙の絵が縦に長く、高さの上限 52svh まで使うため）。これは今回の直しの外で、別に知らせた
-TSUKURU_SIZES = [(1024, 768), (1180, 820), (1440, 900)]
+# 作りながら見る頁は、横置き（机の端に立てたタブレット）と縦置き（手に持つ電話）の両方で見る。縦置きの 390×844 は、直す前に虎で
+# 「次の手順へ」が 15px 下、字の長い手順では 120px ほど下に出た
+TSUKURU_SIZES = [(375, 667), (390, 844), (1024, 768), (1180, 820), (1440, 900)]
+# 手順の紙の絵は、札を画面に入れるために縮めても、これより低くしない（絵を消して通る直しを落とす）
+SHEET_MIN = 100
 
 # 手帖: はじめるの後、手順を 1 つずつ送り、今の手順の字の行の矩形が、原画の釦・閉じる印・マイクと重なるか、
 # 押す所（もどる・つぎ・こまった）の下の端が画面の外に出るかを測る。
@@ -59,11 +61,16 @@ for(let n=1;n<=total;n++){
 }
 parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,thumb:seen($('genga-thumb')),out}),'*');
 })</script>"""
-# 作りながら見る: 開いた最初の画面で、一番大きい札「次の手順へ」の下の端が画面の中にあるか。
+# 作りながら見る: 開いた最初の画面から手順を 1 つずつ送り、その手順の一番大きい札（次の手順へ。最後の手順は組み上がり）の下の端が画面の中か。
+# 札の位置は手順の字の長さで変わるので、全部の手順で見る。札を入れるために手順の紙の絵を消していない事も見る（絵の高さ）。
 TSUKURU_WALK = """<script>addEventListener('load',async()=>{
-await new Promise(r=>setTimeout(r,60));
-const b=document.querySelector('#tiles button[value=next]').getBoundingClientRect();
-parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,bottom:b.bottom,height:b.height}),'*');
+const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),items=[...document.querySelectorAll('#steps li')],out=[];await wait();
+for(let n=1;n<=items.length;n++){
+ const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=document.querySelector('.sheet');
+ out.push({n,bottom:r.bottom,height:r.height,sheet:img?img.getBoundingClientRect().height:0});
+ if(n<items.length){document.querySelector('#tiles [value=next]').click();await wait()}
+}
+parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,out}),'*');
 })</script>"""
 WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
 addEventListener('message',e=>{document.getElementById('measured').textContent+=e.data+'\\n'})</script>"""
@@ -136,11 +143,17 @@ for page, rec in sorted(got.items()):
                 bad.append(f"{page} 手順 {s['n']}: 字が {'・'.join(hits)} と重なる")
             if s["below"]:
                 bad.append(f"{page} 手順 {s['n']}: 押す所が最初の画面の外")
-    elif rec["height"] <= 0 or rec["bottom"] > h:
-        bad.append(f"{page}: 「次の手順へ」の下の端 {rec['bottom']:.0f} が画面の高さ {h} の外")
+    else:
+        assert rec["out"], (page, "手順が測れない")
+        for s in rec["out"]:
+            if s["height"] <= 0 or s["bottom"] > h:
+                bad.append(f"{page} 手順 {s['n']}: 一番大きい札の下の端 {s['bottom']:.0f} が画面の高さ {h} の外")
+            if s["sheet"] < SHEET_MIN:
+                bad.append(f"{page} 手順 {s['n']}: 手順の紙の絵の高さ {s['sheet']:.0f} が {SHEET_MIN} より低い")
 for page, rec in sorted(got.items()):
     if page.startswith("tsukuru-"):
-        print(f"{page}: 「次の手順へ」の下の端 {rec['bottom']:.0f} / 画面の高さ {rec['h']}")
+        print(f"{page}: 一番大きい札の下の端の最大 {max(x['bottom'] for x in rec['out']):.0f} / 画面の高さ {rec['h']}・"
+              f"手順の紙の絵の高さ {min(x['sheet'] for x in rec['out']):.0f}〜{max(x['sheet'] for x in rec['out']):.0f}（手順 {len(rec['out'])}）")
 assert not bad, "\n".join(bad)
 print(f"ok 横置きと縦置き: 手帖 {len(TOYS) * len(TECHO_SIZES)} 通りで手順の字が原画の釦・閉じる印・マイクと重ならず、"
-      f"作りながら見る {len(TOYS) * len(TSUKURU_SIZES)} 通りで「次の手順へ」が最初の画面に入る")
+      f"作りながら見る {len(TOYS) * len(TSUKURU_SIZES)} 通りの全部の手順で一番大きい札が最初の画面に入る")
