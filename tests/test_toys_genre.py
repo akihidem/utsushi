@@ -67,6 +67,10 @@ for name in skin.SKINS:
         # 中の見出しは、大きい側と同じ字の時だけ省く（かざる の下の かざる）。どちらでも、すぐ前の見出しの字が中の字になる
         word = [w for pos, w in heads if pos < at][-1]
         assert word == genre.middle(sid), (sid, word)
+    # 頁の上でも、見出しの中の並びは記録の印の順のまま（名前や数で並べ替えない）
+    order = [s for _, mids in genre.groups(rest) for _, ss in mids for s in ss]
+    at = [html.index(f'href="/toy/{s}"') for s in order]
+    assert at == sorted(at), (name, "見出しの中の並びを変えた")
     # 足す字はジャンルの字だけ。順位・数の印は付けない（J-025）
     for w in ("位", "人気", "おすすめ"):
         assert w not in re.sub(r"<[^>]+>", "", html[first:]), w
