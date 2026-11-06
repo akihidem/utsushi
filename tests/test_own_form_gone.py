@@ -63,10 +63,15 @@ def status(path):
         return e.code, ""
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+JAR = urllib.request.HTTPCookieProcessor()
+urllib.request.install_opener(urllib.request.build_opener(JAR))
+
+
 def post(path, form):
     req = urllib.request.Request(base + path, urllib.parse.urlencode(form).encode(), {"Origin": base, "Content-Type": "application/x-www-form-urlencoded"})
     try:
-        r = urllib.request.build_opener(NoRedirect).open(req, timeout=120)
+        r = urllib.request.build_opener(NoRedirect, JAR).open(req, timeout=120)
         return r.status, r.read().decode()
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode()

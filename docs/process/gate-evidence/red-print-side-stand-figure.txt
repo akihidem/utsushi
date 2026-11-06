@@ -1,0 +1,6 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_print_side.py 2>&1 | tail -2; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 899ca6ce（回した時の HEAD）
+AssertionError: 刷った面が見えない側に来る部品:
+stand_figure 台（tray）: 色の面が伏せた箱の内を向く（39 形）
+試験 rc=1
+rc=0

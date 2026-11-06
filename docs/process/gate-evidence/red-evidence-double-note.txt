@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_public_inner_marks.py
+# commit: f4ab45bd（回した時の HEAD）
+/tmp/tmpbbszd3ld/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpbbszd3ld/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpbbszd3ld/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpbbszd3ld/play/NDL-1187053-R0000005-L/.tmp-6ml1_ii3/H-A_v2.pdf
+/tmp/tmpbbszd3ld/play/NDL-1187053-R0000005-L/.tmp-6ml1_ii3/H-A_v2_tejun.pdf
+/tmp/tmpbbszd3ld/play/NDL-1187053-R0000005-L/.tmp-6ml1_ii3/H-A_v2_after.pdf
+Traceback (most recent call last):
+  File "tests/test_public_inner_marks.py", line 144, in <module>
+    assert evidence_item({"certainty": "推測", "what": "目印の字（棚卸しの見立て）", "where": "棚卸しの見立て（data/x.json）"}) == "<li>〔推測〕目印の字（作る側の考え）</li>", "同じ注を重ねない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 同じ注を重ねない
+rc=1

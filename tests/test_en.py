@@ -61,7 +61,7 @@ for sid, t in table.items():
 
 idx = get("/en")
 assert '<html lang="en"' in idx and all(f'href="/en/toy/{s}"' in idx for s in sources())
-assert en.DRAFT in idx and "does not prove how the original was made" in idx and "none of them is the answer" in idx and "Japanese only" in idx
+assert en.DRAFT in idx and "does not prove how the original was made" in idx and "It is not the answer" in idx and "Japanese only" in idx
 
 for sid in (G, T):
     page = get(f"/en/toy/{sid}")

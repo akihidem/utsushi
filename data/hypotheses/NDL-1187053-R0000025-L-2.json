@@ -21,7 +21,7 @@
         "drive": "yoyo",
         "disc_layers": 2
       },
-      "how_it_moves": "紐の端を指に掛け、手車を落として、戻ってくるか見る",
+      "how_it_moves": "糸の端を指に掛け、手車を落として、戻ってくるか見る",
       "evidence": [
         {
           "kind": "image",
@@ -52,7 +52,7 @@
         "drive": "handle",
         "disc_layers": 2
       },
-      "how_it_moves": "柄を持ち、芯に巻いた紐の端を引く",
+      "how_it_moves": "柄を持ち、芯に巻いた糸の端を引く",
       "evidence": [
         {
           "kind": "image",

@@ -26,7 +26,7 @@ for part in ("records", "loop"):
     shutil.copytree(ROOT / "data" / part, os.path.join(DATA, part))
 
 from api import ask  # noqa: E402
-from omochae import hypotheses, labels, records  # noqa: E402
+from omochae import hypotheses, labels, loop, records  # noqa: E402
 from web import zukan  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 
@@ -66,17 +66,24 @@ class Visible(html.parser.HTMLParser):
 
     def __init__(self):
         super().__init__()
-        self.out, self.skip = [], 0
+        self.out, self.skip, self.paper = [], 0, 0
 
     def handle_starttag(self, tag, attrs):
+        # 組み立ての頁の紙の絵（svg.rt-paper）は刷る紙そのものの絵で、中の字は紙の字。紙の字は頁で替えない（必須 2 種の指紋）。ほかの svg は飛ばさない
+        if self.paper or (tag == "svg" and "rt-paper" in (dict(attrs).get("class") or "").split()):
+            self.paper += tag == "svg"
+            return
         self.skip += tag in ("style", "script")
         self.out += [v for k, v in attrs if k in ("alt", "aria-label", "title", "placeholder") and v]
 
     def handle_endtag(self, tag):
+        if self.paper:
+            self.paper -= tag == "svg"
+            return
         self.skip -= tag in ("style", "script")
 
     def handle_data(self, data):
-        if not self.skip and data.strip():
+        if not self.skip and not self.paper and data.strip():
             self.out.append(data.strip())
 
 
@@ -84,6 +91,13 @@ def visible(page):
     v = Visible()
     v.feed(page)
     return v.out
+
+
+# 飛ばすのは紙の絵の中だけ。入れ子の後も閉じた所から数え直し、ほかの svg の字は見る
+assert visible('<svg class="rt-paper"><text>紙の字</text><svg><text>紙</text></svg><text>紙</text></svg><p>見える</p><svg><text>絵の字</text></svg>') == ["見える", "絵の字"]
+
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開くので、その字もここで見る）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 
 
 class Site:
@@ -115,7 +129,7 @@ def see(site, path, data=None, name=None):
 
 # 1 全部の玩具の頁。data/hypotheses の字はここに出る
 for s in sources():
-    for path in (f"/toy/{s}", f"/zukan/{s}", f"/toy/{s}/techo"):
+    for path in (f"/toy/{s}", f"/zukan/{s}", f"/toy/{s}/techo", f"/toy/{s}/techo/kiroku"):
         see(white, path)
 # 2 頁の作りの字。皮で作りが違う頁は両方を見る
 for site, tag in ((white, "白"), (black, "黒")):
@@ -126,14 +140,17 @@ for s in (G, T):
 # 3 番号の出る札まで進める: 紙 → 記録 → 説明 → 次の版 → 窓 → 手帖 → 自分の仮説 → 聞く口
 see(white, f"/toy/{G}/print", {"hypothesis": "H-A"}, "紙を作った後")
 see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた"}, "記録の後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
-rid = records.all_records(G)[-2]["id"]  # 本物の記録の後ろの 1 つ目。番号を決め打ちしない
-see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
+rid = records.all_records(G)[-1]["id"]  # 今残した記録。説明は次の記録が残る前に、残した画面から書く。番号を決め打ちしない
+told = see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
+assert loop.explanation(rid) and "次の版を作る" in told, "説明の後の札まで届いていない"  # 通らないまま進むと、この先の見張りが空になる
 see(white, f"/record/{rid}/ai-interpret", {}, "鍵が無い時の AI の口")
 see(white, f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"}, "次の版の後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert loop.latest_version(G, "H-A") == 2, "次の版の後の札まで届いていない"
+see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
+waiting = see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert 'name="next_idea"' in waiting, "説明の欄まで届いていない"
 see(white, f"/toy/{G}?see=H-A&kind=sheet&v=2", name="版 2 の窓")
-see(white, f"/toy/{G}/techo", name="記録の後の手帖")
+see(white, f"/toy/{G}/techo/kiroku", name="記録の後の手帖の記録の頁")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")
 see(white, f"/zukan/{G}", name="記録の後の図鑑")
 see(white, "/gallery", name="記録の後のギャラリー")
@@ -202,7 +219,9 @@ assert any("作る側が直します" in t for t in pages[f"/toy/{G}"]), "改善
 gallery = " ".join(pages["/gallery"])
 assert "個人情報を確かめてから" in gallery and "（持ち寄りの場）" in gallery, "ギャラリーの固定の文"
 assert f"記録の番号 {rid} をもとに直しました" in " ".join(pages["版 2 の窓"])
-assert "紙に印刷してある組の番号 goraigo-v10" in " ".join(pages[f"/toy/{G}/techo"]), "紙に刷ってある組と照らせる"
+# 前の手帖の頁は、紙を選ぶ札の下に「紙に印刷してある組の番号」を出していた（#135）。作り直した手帖（#87）は紙を選ぶ札を持たず、作る頁に組の番号を出さない
+# （本人の決定 11-05・案 A）。この字はサイトのどこにも出なくなる。出さない事は本人が決めた（11-06 のカード 125158・推し A。PR #395 の本文に書いた）
+assert "goraigo-v10" not in " ".join(pages[f"/toy/{G}/techo"]), "作る頁に組の番号を出さない"
 
 # 誰が確かめたか・書いたかの印は残る（J-016）。言葉だけが替わる
 zu = pages[f"/zukan/{G}"]

@@ -1,0 +1,8 @@
+# 命令: env -u ANTHROPIC_API_KEY PYTHONPATH=src .venv/bin/python tests/test_withdraw_notice.py
+# commit: 7e4ef1f0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_withdraw_notice.py", line 55, in <module>
+    assert body.count(DECIDED) == 1 and re.search(re.escape(hanasu.NOTICE) + r"[^\n]*?</p>" + re.escape(PARA), body), name
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 玩具の頁
+rc=1

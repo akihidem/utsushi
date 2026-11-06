@@ -1,6 +1,6 @@
 # 15 哲学の言葉への批判的レビュー
 
-本人の依頼で、[philosophy.md](../philosophy.md) の本人の言葉 2 つを、同じアカウントの別のセッション（Claude）に批判させた。[research/13](13-critical-review.md) と同じ形で、資料と本人の論点だけを渡し、書き手の結論は渡していない。
+本人の依頼で、[philosophy.md](../philosophy.md) の本人の言葉 2 つを、別のセッション（Claude）に批判させた。[research/13](13-critical-review.md) と同じ形で、資料と本人の論点だけを渡し、書き手の結論は渡していない。
 
 **読むときの注意**:
 

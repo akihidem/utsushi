@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_otona.py
+# commit: c567d642（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_otona.py", line 97, in <module>
+    assert main_text(page) == expected, (look, "採られた文と字が違う、または外の字がある")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('tenji', '採られた文と字が違う、または外の字がある')
+rc=1

@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_own_pii.py
+# commit: 5c74057（回した時の HEAD）
+ok: 自分の仮説を残す口に、記録と同じ床がある
+rc=0

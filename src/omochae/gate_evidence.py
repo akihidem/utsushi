@@ -6,8 +6,8 @@
     python -m omochae.gate_evidence write red-xxx -- .venv/bin/python tests/test_xxx.py
     python -m omochae.gate_evidence check
 
-なぜ ./run.sh に入れないか: 並行の枝が頭の無い証拠を足したまま main に入ると、main の試験が落ちて全部の枝が止まる。
-並行が落ち着いたら入れる。古い証拠で命令が残っていない物は「残っていない」と書く（推測で埋めない）。
+./run.sh が試験（tests/test_gate_evidence.py）から check を回す（#252）。頭の無い証拠を足すと、合体の時の試験で止まる。
+古い証拠で命令が残っていない物は「残っていない」と書く（推測で埋めない）。
 exit code: 0 = 書けた・頭がそろっている / 3 = 書かない（名前・上書き・呼び方）・頭の無い物がある / 4 = 命令を回せない。
 """
 import pathlib

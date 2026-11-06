@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_next_sheets.py
+# commit: 7d104dec（回した時の HEAD。この枝の直しを入れた作業の木）
+ok 虎の次の組 tora-v4。折り線・手順の文・見出し・印の文・用意する物・札・印・側面の向き・凡例・粘土の玉の床（御来迎は今の組のまま）
+rc=0

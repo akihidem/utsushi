@@ -28,7 +28,7 @@ WHY = ("日本の生徒は、ほかの国とくらべて、実験をとても多
 DEFINITION = "ここで言うおもちゃは、手で動かしてたしかめられる形（トイ＝モデル）のことです。買ってもらう完成品でも、本物そっくりに作った物でもありません。"
 LOOP = ("ここでは、おもちゃを選ぶと、すぐに紙の型紙を作れます。紙と糸で作って、動くかたしかめます。型紙は、正しい答えではありません。"
         "AI が「こうかな？」と考えた、ためしの案（仮説）です。まず紙が返事をします。動かなかった時の記録も、紙の返事の 1 つです。"
-        "どう工夫したかを記録に書いてください。次の型紙をよくするヒントになります。自分の考えを書いた後で、AI からも返事をもらえます。"
+        "どう工夫したかを記録に書いてください。次の型紙をよくするヒントになります。自分の考えを書いた後で、AI（Claude）からも返事をもらえます。"
         "紙で動いても、昔の作り方が分かったことにはなりません。昔の物をそのまま作り直した物ではなく、ためしに作るための案です。")
 
 STYLE = """
@@ -65,5 +65,5 @@ def page(skin_name, path="/about"):
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
-            '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a></p></section></div>')
+            '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
     return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)
