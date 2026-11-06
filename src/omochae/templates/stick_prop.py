@@ -15,6 +15,7 @@ import math
 from shapely.geometry import LineString, Point, Polygon, box as _box
 from shapely.ops import unary_union
 
+from ._paper import paper_name
 from ..model import Failure, Part
 from ..textfit import text_width
 
@@ -735,7 +736,7 @@ def place(by_key, page, top, gap):
 
 # ---- 部品表・手順 -------------------------------------------------------------------------------
 def _paper(p):
-    return f"紙（厚さ 0.15mm 前後・{p['paper_gsm']}g/m² の見込み）"
+    return paper_name(p["paper_gsm"])
 
 
 def bom(p):
