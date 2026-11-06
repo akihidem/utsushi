@@ -236,8 +236,8 @@
  {
   "id": "claude-story",
   "path": "claude-story.md",
-  "hook": "Claude の使い方の物語。機能の選び分けと開発の運転の形",
-  "status": "本人が確認した"
+  "hook": "Claude の使い方の物語。機能の選び分けと、Claude Code のセッションを並べる作り方",
+  "status": "1・2 節は 11-03 に本人が確認し、後に直しあり。3 節は本人の決定（11-06）: C の下書きで、本人の確認待ち"
  },
  {
   "id": "research/16",
