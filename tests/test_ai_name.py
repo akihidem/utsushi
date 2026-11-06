@@ -31,11 +31,27 @@ G = "NDL-1187053-R0000005-L"
 NAMELESS_JA = re.compile(r"AI(?!（Claude）| の Claude)[^。\n]{0,16}?(?:渡|送|読|使[いう]|からも返事)")
 NAMELESS_EN = re.compile(r"\bAI\b(?! \(Claude\))[^.\n]{0,24}?\b(?:reads?|sends?|sent|uses?|used|given)\b")
 
+# 本人が採った字のため外す 1 文（保護者の方へ、ファシリテーターの方への頁の 5 節。research/36 の「採られた文」、本人の決定 11-06）。
+# 39 行は本人が訂正を入れた形で採った物で、記録の注に「前に採られた行の「AI」は変えていない」とある。この行の「AI」もその形のまま。
+# 形の見張りは緩めず、この字と一字も違わない文だけを外す。字が変われば外れず、見張りに戻る。記録の注と文が無くなっても落とす
+ADOPTED_AS_AI = "記録と、作った人の説明の後で、AI が読みと次の案を出します。採るかどうかは、人が決めます。"
+_r36 = (ROOT / "docs/process/research/36-road-and-audience.md").read_text(encoding="utf-8")
+assert "前に採られた行の「AI」は変えていない。" in _r36, "外す根拠の注が research/36 から消えた。外すのをやめて本人に確かめ直す"
+assert f"\n- {ADOPTED_AS_AI}\n" in _r36.split("## 採られた文: 保護者の方へ、ファシリテーターの方へ", 1)[1].split("この文と作りの対応:", 1)[0], "外す文が採られた文に無い。外すのをやめる"
+
+
+def unexempt(text):
+    """採られた字のまま外す 1 文を除く。ほかの字は見張りにかける。"""
+    return text.replace(ADOPTED_AS_AI, "")
+
+
 # 見張りそのものの確かめ
 assert NAMELESS_JA.search("聞いた言葉は AI に送ります") and NAMELESS_JA.search("AI からも返事をもらえます") and NAMELESS_JA.search("AI が字を読みます")
 assert not NAMELESS_JA.search("AI（Claude）からも返事をもらえます") and not NAMELESS_JA.search("残した字は、AI（Claude）が読みます") and not NAMELESS_JA.search("参考として AI の Claude にも渡します")
 assert not NAMELESS_JA.search("AI が考えた仮説です") and not NAMELESS_JA.search("AI の返事は、この場では使えません") and not NAMELESS_JA.search("今は AI に聞けません")
 assert NAMELESS_EN.search("The AI reads your words") and not NAMELESS_EN.search("The AI (Claude) reads your words") and not NAMELESS_EN.search("It is a guess made by an AI.")
+# 外すのは見張りに当たる文だけ（当たらなくなったら外す要が無い）。外した後の同じ形の別の文は、まだ落ちる
+assert NAMELESS_JA.search(ADOPTED_AS_AI) and not NAMELESS_JA.search(unexempt(ADOPTED_AS_AI)) and NAMELESS_JA.search(unexempt("記録の後で、AI が読みと次の案を出します。"))
 
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -56,9 +72,9 @@ req = urllib.request.Request(base + f"/toy/{G}/print", urllib.parse.urlencode({"
 assert urllib.request.urlopen(req, timeout=120).status == 200
 
 # 1. 頁の字に、名前の無い断りの形が無い
-PAGES = ["/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}"]
+PAGES = ["/", "/toys", "/about", "/otona", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}"]
 for path in PAGES:
-    text = visible(get(path))
+    text = unexempt(visible(get(path)))
     assert not NAMELESS_JA.findall(text), (path, NAMELESS_JA.findall(text))
     assert not NAMELESS_EN.findall(text), (path, NAMELESS_EN.findall(text))
 
@@ -67,7 +83,7 @@ for path in sorted((ROOT / "src/web").glob("*.py")) + [ROOT / "src/omochae/makin
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if line.lstrip().startswith("#"):
             continue
-        assert not NAMELESS_JA.search(line), (path.name, n, line.strip()[:80])
+        assert not NAMELESS_JA.search(unexempt(line)), (path.name, n, line.strip()[:80])
         assert not NAMELESS_EN.search(line), (path.name, n, line.strip()[:80])
 
 # 2. 採った文
