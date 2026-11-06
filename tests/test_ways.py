@@ -102,6 +102,15 @@ assert f'仮説 {hypotheses.letter(hypotheses.sheet_of(TORA))}「' in page and "
 listing = toys.page("tenji")
 assert listing.count('class="ways"') >= 1 and "どれがえらい、ということはありません" in listing
 assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == []
+# 前の組（goraigo-v10）のたたき台 H-A は竹串と糸で作るので「当時の材料」が付く（主張 C-24 の根拠。前の組の紙は変えない）
+_fan = TEMPLATES["slider_fan"]
+_now, _fan.SHEET_SET = _fan.SHEET_SET, _fan.FROZEN_SET
+ways.toy_labels.cache_clear()  # 印は玩具ごとに覚えるので、組を置き替える前後で覚えを消す
+try:
+    assert ways.toy_labels(GORAIGO) == ["当時の材料"]
+finally:
+    _fan.SHEET_SET = _now
+    ways.toy_labels.cache_clear()
 # 並びは、必須 2 種 → ジャンルの見出しごと（genre.groups の順。本人の依頼 11-06）で、見出しの中は記録の順。印ではこの並びを変えない
 rest = [s for s in toys.sources() if hypotheses.stage(s) != "必須"]
 order = [s for s in toys.sources() if hypotheses.stage(s) == "必須"] + [s for _, mids in genre.groups(rest) for _, ss in mids for s in ss]

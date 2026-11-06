@@ -109,7 +109,7 @@ def one_change():
     raise AssertionError("組める変更が無い")
 
 
-STICK = {"push_part": "stick", "pusher_height": 84}
+STICK = {"push_amount": 62}
 
 # ── たたき台を誰も刷っていない場でも、手帖で本人の紙を選べる ──
 oid0, key0 = made("nextwho000", "刷る前に話した考え", STICK)
@@ -204,7 +204,7 @@ assert len(client.calls) == 2, "OWN-n へ向けた案はやり直しになる"
 sent = client.calls[0]["messages"][0]["content"]
 context = json.loads(sent.split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
 assert context["sheet"] == SHEET and C3 in sent, "向く先と話した工夫を渡す"
-assert context["own_paper"]["hypothesis_id"] == oid3 and context["own_paper"]["params"]["push_part"] == "stick", "試した紙の寸法を渡す"
+assert context["own_paper"]["hypothesis_id"] == oid3 and context["own_paper"]["params"]["push_amount"] == 62, "試した紙の寸法を渡す"
 assert T3 not in json.dumps(context["own_paper"], ensure_ascii=False), "考えの字は案の材料に入れない"
 assert "own_paper" in client.calls[0]["system"][0]["text"], "決まりの文に、自分の紙の記録の読み方がある"
 saved = json.loads((loop.folder() / f"proposal-{pid3[2:]}.json").read_text(encoding="utf-8"))

@@ -231,7 +231,9 @@ for w in ("原文の引用", "仮説", "観察", f"確かめた人: {wording.MAK
     assert w in zu, w
 tp = pages[f"/toy/{G}"]
 assert f"原文の引用。確かめた人: {wording.MAKER}" in tp
-assert any(t.startswith("〔観察〕") and "国立国会図書館の本の" in t for t in tp), "根拠の種類の印は消えない"
+# 頁が出すのはたたき台の仮説の根拠（御来迎の今の組 goraigo-v14 は H-C で、根拠は手元の複写の解説の〔解釈〕）
+_ev = hypotheses.sheet_of(G)["evidence"][0]
+assert any(t.startswith(f"〔{_ev['certainty']}〕") for t in tp), "根拠の種類の印は消えない"
 assert "作る側のたとえ" in tp and any("AI（Claude）が書いた下書きです" in t for t in tp), "たとえの印"
 yomi = " ".join(pages[f"/zukan/{G}/yomi（読みの後）"])
 assert f"確かめた人: {wording.MAKER}" in yomi and f"{wording.MAKER}が 2026-11-03 に" in yomi, "読みを決めた人の印"

@@ -28,6 +28,9 @@ from web.play_server import REC_COOKIE, serve  # noqa: E402
 ask._key_present = lambda: False  # 合言葉なしの場は鍵のある所で立たない。鍵のある機械でも同じに動かす
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -60,13 +63,13 @@ def key_of(cookies):
 
 def attach(sid, cookie="", **more):
     """手帖の「写真あり」の合図。返すのは (状態, 返事, 渡された鍵)。"""
-    code, body, cookies = send(f"/toy/{sid}/record-json", {"attach": "1", "hypothesis": "H-A"} | more, cookie=cookie)
+    code, body, cookies = send(f"/toy/{sid}/record-json", {"attach": "1", "hypothesis": hypotheses.sheet_of(sid)["id"]} | more, cookie=cookie)
     return code, json.loads(body), key_of(cookies)
 
 
 def toy_record(sid, result, cookie=""):
     """玩具の頁の記録の欄で残す（写真の口が無い所）。返すのは (記録の番号, 残した画面に渡った鍵)。"""
-    code, _, cookies = send(f"/toy/{sid}/record", {"hypothesis": "H-A", "result": result}, cookie=cookie)
+    code, _, cookies = send(f"/toy/{sid}/record", {"hypothesis": hypotheses.sheet_of(sid)["id"], "result": result}, cookie=cookie)
     assert code == 303 and key_of(cookies), (code, cookies)
     return records.all_records(sid)[-1]["id"], key_of(cookies)
 
@@ -77,7 +80,7 @@ def photo(rid, cookie=""):
 
 count = lambda sid: len(records.all_records(sid))
 for sid in (G, T):
-    assert send(f"/toy/{sid}/print", {"hypothesis": "H-A"})[0] in (200, 303)
+    assert send(f"/toy/{sid}/print", {"hypothesis": hypotheses.sheet_of(sid)["id"]})[0] in (200, 303)
 first, mine = toy_record(G, "動いた")
 assert first == "R-0001" and count(G) == 1
 
@@ -120,7 +123,7 @@ assert attach(G, mine)[1] == {"attached": False}
 assert photo(first, mine) == 201 and techo_site.media_of(first) == ["m1.jpg", "m2.jpg"]
 
 # ---- 今までの道は変わらない: 手帖で見た事を選んで残すと新しい記録ができ、その画面の鍵で写真を送れる
-code, body, cookies = send(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動かない"}, cookie=mine)
+code, body, cookies = send(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動かない"}, cookie=mine)
 second, second_key = json.loads(body)["id"], key_of(cookies)
 assert code == 201 and second == "R-0002" and second_key and second_key != mine, (code, body)
 # 手帖で残した記録には足さない（写真の口のある所で「記録だけ」を選んだ物。次の人の写真が前の人の記録に付かないように）

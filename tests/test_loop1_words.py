@@ -115,15 +115,15 @@ assert cli("fill", w["id"], "--by", "作る側", "--params", "[1]").returncode =
 assert cli("fill", w["id"], "--by", "作る側", "--params", "こわれた").returncode == 3
 assert cli("fill", "W-9999", "--by", "作る側").returncode == 4, "無い記録は検査できない"
 assert cli("fill", w["id"], "--by", "作る側", "--params", json.dumps({"nope": 1})).returncode == 3, "知らない寸法の名前は通さない"
-r = cli("fill", w["id"], "--by", "作る側", "--params", json.dumps({"push_part": "stick", "pusher_height": 84}))
+r = cli("fill", w["id"], "--by", "作る側", "--params", json.dumps({"push_amount": 62}))
 assert r.returncode == 0, r.stderr
 assert cli("fill", w["id"], "--by", "作る側").returncode == 3, "書いた後にもう一度は書けない"
 w = words.by_token(G, w["token"])
-assert w["status"] == "pending_human" and w["result"]["from_words"] == ["push_part", "pusher_height"] and w["result"]["params"]["push_part"] == "stick"
-assert {f["param"] for f in w["result"]["filled_in"]} == set(base_params) - {"push_part", "pusher_height"}, "変えなかった寸法は、たたき台のままと書く"
+assert w["status"] == "pending_human" and w["result"]["from_words"] == ["push_amount"] and w["result"]["params"]["push_amount"] == 62
+assert {f["param"] for f in w["result"]["filled_in"]} == set(base_params) - {"push_amount"}, "変えなかった寸法は、たたき台のままと書く"
 assert hypotheses.own_hypotheses(G) == [], "本人が採るまで残らない"
 own, fs = words.adopt_words(w["id"], "本人")
-assert own and not fs and own["how_it_moves"] == SAID and own["params"]["push_part"] == "stick"
+assert own and not fs and own["how_it_moves"] == SAID and own["params"]["push_amount"] == 62
 assert words.spoken_own_ids(G) == {own["id"]} and words.spoken_own_ids(T) == set()
 assert words.adopt_words(w["id"], "本人")[1], "同じ案を 2 度は採らない"
 pdf = flat_pdf(printed(G, own["id"]))
@@ -166,7 +166,7 @@ ownt, _ = words.adopt_words(wt["id"], "本人")
 assert "".join(OWN_HYPOTHESIS.split()) in flat_pdf(printed(T, ownt["id"])), "虎の紙にも「自分で立てた」の印"
 
 # ── 鍵ありの道（偽の Claude） ──
-CHANGED = {"push_part": "stick", "pusher_height": 84}
+CHANGED = {"push_amount": 62}
 ok = {"fits": True, "params": {**base_params, **CHANGED}, "from_words": sorted(CHANGED),
       "filled_in": [{"param": k, "why": words.KEPT_AS_IS} for k in base_params if k not in CHANGED], "not_fit": []}
 before = len(hypotheses.own_hypotheses(G))
@@ -178,7 +178,7 @@ assert "<data>" in sent and json.dumps(base_params, ensure_ascii=False) in sent 
 assert WHO not in sent and OTHER not in sent and "who" not in sent, "その場限りの印は送らない"
 assert len(hypotheses.own_hypotheses(G)) == before, "本人が採るまで残らない"
 ownk, _ = words.adopt_words(k["id"], "本人")
-assert ownk["params"]["push_part"] == "stick" and flat_pdf(printed(G, ownk["id"]))
+assert ownk["params"]["push_amount"] == 62 and flat_pdf(printed(G, ownk["id"]))
 assert '"can_change"' in sent and '"fold_count": ' in sent and "tube_height" not in sent, "変えられる寸法と今の値を先に渡す（やり直しの費用を減らす）"
 # 呼び名の無い寸法を変えた案は、人に見せず、待ちに落ちる。たたき台のままと偽っても同じ
 unnamed = {**ok, "params": {**base_params, "tube_height": 100}, "from_words": ["tube_height"], "filled_in": [{"param": k, "why": words.KEPT_AS_IS} for k in base_params]}

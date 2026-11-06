@@ -142,7 +142,8 @@ assert sorted([("goraigo-v10", 1), ("goraigo-v9", 1), ("", 1)], key=tv._version_
 
 # エンジンの報告の形に書き出す。確かめた札だけが困り事になる。欄はエンジンの決まりの中だけ
 rep, fails = tv.report(rid, True, finish=3, minutes=40)
-assert not fails and rep["template"] == "slider_fan" and rep["form"] == "tab" and rep["moved"] == "not" and rep["built"] is True and rep["finish"] == 3
+# 形は記録の紙の形（御来迎の今の組 goraigo-v14 のたたき台は内筒を下から押し上げる rise）
+assert not fails and rep["template"] == "slider_fan" and rep["form"] == "rise" and rep["moved"] == "not" and rep["built"] is True and rep["finish"] == 3
 # 寸法は、その記録の版の物（版 2 の報告に版 2 の寸法）
 assert tv.report(r2, True)[0]["params"].get("fold_count") == 20
 assert rep["problems"] == [{"kind": "fold", "step": 8, "note": "蛇腹の 3 枚目で手が止まった"}] and rep["stuck_step"] == 8

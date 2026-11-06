@@ -25,8 +25,11 @@ from measure_tap import chrome  # noqa: E402
 from web import play_server  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 # chatter は、送信を差し替えずに本物の受け口へ送る頁（話し声だけを流して、何も残らない事をサーバの側で見る）。
-PAGES = {"techo": f"/toy/{G}/techo?n=1", "tsukuru": f"/toy/{G}/tsukuru?h=H-A&n=2", "kiroku": f"/toy/{G}/techo/kiroku?x=1", "chatter": f"/toy/{G}/techo?n=1&real=1"}
+PAGES = {"techo": f"/toy/{G}/techo?n=1", "tsukuru": f"/toy/{G}/tsukuru?h={GS}&n=2", "kiroku": f"/toy/{G}/techo/kiroku?x=1", "chatter": f"/toy/{G}/techo?n=1&real=1"}
 # 教室の話し声の見本。操作の言葉に似た文・名乗りの形・連絡先の形を混ぜる。
 CHATTER = ["ねえ きょうの給食なんだっけ", "田中くん それ取って", "3年2組の田中です", "次の手順ってどうやるの", "電話は090-1234-5678"]
 # ブラウザの既定の字（Arial など）のままの入力の部品を集める（#87 の要件。頁の字を継いでいれば空）。
@@ -179,11 +182,11 @@ from omochae import making_log, records, talk_log  # noqa: E402
 
 asked = []
 ask.answer = lambda sid, hid, question: (asked.append(question), ("こたえ", "claude"))[1]
-post(f"/toy/{G}/print", {"hypothesis": "H-A"})
+post(f"/toy/{G}/print", {"hypothesis": GS})
 # 記録の頁に、説明の後の欄（選ぶ欄と字の欄）まで出しておく
-rid = json.loads(post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "sheet_version": "1"}))["id"]
+rid = json.loads(post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "sheet_version": "1"}))["id"]
 post(f"/record/{rid}/explain", {"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"})
-post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない", "sheet_version": "1"})
+post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "わからない", "sheet_version": "1"})
 
 
 def walk():

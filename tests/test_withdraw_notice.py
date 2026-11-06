@@ -28,6 +28,9 @@ from web.play_server import REC_COOKIE, serve  # noqa: E402
 DECIDED = "取り下げると、このサイトの中からは消えます。前にエンジンへ渡した分は残ります"
 PARA = f'<p class="meta">{DECIDED}</p>'
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -49,7 +52,7 @@ def cli(*args):
 
 
 def trial():
-    rid, failures = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない"})
+    rid, failures = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "わからない"})
     assert not failures, failures
     records.claim(rid, REC_KEY)
     return rid
@@ -58,14 +61,14 @@ def trial():
 rids = [trial(), trial()]
 
 # 話す口: 声の断りのすぐ下に出る。玩具の頁と、作りながら見る頁
-for name, path in (("玩具の頁", f"/toy/{G}"), ("作りながら見る頁", f"/toy/{G}/tsukuru?h=H-A&n=2")):
+for name, path in (("玩具の頁", f"/toy/{G}"), ("作りながら見る頁", f"/toy/{G}/tsukuru?h={GS}&n=2")):
     body = page(path)
     assert body.count(DECIDED) == 1 and re.search(re.escape(hanasu.NOTICE) + r"[^\n]*?</p>" + re.escape(PARA), body), name
 
 # 手帖: 作る頁の「のこす」の画面で、上げる時の説明のすぐ下（作り直した手帖、#87）。記録ごとの口が並ぶ記録の頁にも 1 回
 # 作る頁は、たたき台の紙が刷ってある時だけ「のこす」の画面を出す（刷っていない時は紙を作る道だけ）
 base = f"http://127.0.0.1:{server.server_address[1]}"
-urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), headers={"Origin": base}), timeout=120)
+urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": GS}).encode(), headers={"Origin": base}), timeout=120)
 techo = page(f"/toy/{G}/techo")
 assert f'id="up-notice">{hanasu.UPLOAD_NOTICE}</p>{PARA}' in techo and techo.count(DECIDED) == 1
 kiroku = page(f"/toy/{G}/techo/kiroku")

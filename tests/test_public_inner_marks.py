@@ -28,6 +28,8 @@ from web.toy import evidence_item  # noqa: E402
 
 ask._key_present = lambda: False  # 合言葉なしの場は鍵のある所で立たない。鍵のある機械でも同じに動かす
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 TRIAL = "NDL-1187053-R0000004-L"  # 試作の玩具。根拠の字に置き場の道が入っている
 WHY, READ, CAUSE, UNKNOWN, SEEN = "版の理由の目印", "読みの目印", "原因の目印", "分からない事の目印", "観察の目印"
 
@@ -67,13 +69,13 @@ def visible(html):
 
 def add_record():
     result = TEMPLATES[hypotheses.load(G).get("template", "slider_fan")].RESULTS[0]
-    rid, failures = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": result})
+    rid, failures = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": result})
     assert not failures, failures
     return rid
 
 
 # 版に使った記録・説明のある記録・説明を待つ記録の 3 つと、読みと観察の文を置く
-assert call(closed, f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
+assert call(closed, f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 used, ready, waiting = add_record(), add_record(), add_record()
 for rid in (used, ready):
     assert not loop.save_explanation(rid, "書いた人", "説明の字", "次の思いつきの字")
@@ -99,7 +101,7 @@ assert f'href="#{used}"' in page(opened, TOY) and f'id="{used}"' in page(opened,
 BASED = wording.BASED_ON.split("{}")[1].strip()  # 根拠の番号を添える文の、番号の後ろの字
 kz = page(opened, TOY).split('id="kaizen"', 1)[1]
 assert "次の版を待つ報告" not in kz and "説明を待つ報告" not in kz and WHY not in kz and BASED not in kz, kz[:400]
-assert "仮説 A 版 2" in kz and f"/toy/{G}?see=H-A&amp;kind=sheet&amp;v=2" in kz.replace("&", "&amp;").replace("&amp;amp;", "&amp;"), kz[:400]
+assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} 版 2" in kz and f"/toy/{G}?see={GS}&amp;kind=sheet&amp;v=2" in kz.replace("&", "&amp;").replace("&amp;amp;", "&amp;"), kz[:400]
 kz = page(closed, TOY).split('id="kaizen"', 1)[1]
 assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and BASED in kz, "対照: 合言葉の場の節は今までどおり"
 

@@ -114,7 +114,7 @@ assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": RESULTS[1], "who": 
 first = records.all_records(G)[0]["id"]
 assert "二回なぞると" in loop.material_text(first), "話した字が輪の材料に入る"
 assert post(f"/record/{first}/explain", {"text": "折りが固い", "next_idea": "折りを減らす", "by": "作った人"}) in (200, 303)
-assert post(f"/record/{first}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きやすく", "by": "作る側"}) in (200, 303)
+assert post(f"/record/{first}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "45", "why": "開きやすく", "by": "作る側"}) in (200, 303)
 assert loop.adopted_versions(G, GS) == [2]
 assert f"/sheet/{G}/{GS}_v2.png" in window(get(f"/toy/{G}")), "窓の最初は一番新しい版"
 assert f"/sheet/{G}/{GS}_v1.png" in window(get(f"/toy/{G}?see={GS}&kind=sheet&v=1")), "前の版の紙は読める"
@@ -169,7 +169,7 @@ assert "折りをさらに減らす" not in page and "採った案" not in page,
 assert "24→22" in page.split('id="kaizen"', 1)[1], "変えた寸法は頁に出す"
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303 and (out_dir(G) / f"{GS}_v3.pdf").exists(), "次の人はその版を刷る"
 # 寸法の案（changes）と一緒に採ると、順に版を重ねる
-pid = propose(G, rid, GS, changes=[{"param": "fold_count", "to": 21, "why": "少し減らす"}], new_hypothesis=new_case("低くする", {"fold_height": 42}))
+pid = propose(G, rid, GS, changes=[{"param": "fold_count", "to": 43, "why": "少し減らす"}], new_hypothesis=new_case("低くする", {"fold_height": 56.2}))
 made, failures = loop.adopt(pid, "作る側", ["fold_count"], True)
 assert not failures and made == {"version": 5, "new_hypothesis_as_version": 5}, (made, failures)
 assert loop.version_params(G, GS, 5)[0]["fold_count"] == 21 and loop.version_params(G, GS, 5)[0]["fold_height"] == 42
@@ -208,7 +208,7 @@ assert [c["param"] for c in loop.version_params(G, GS, 9)[1]["changes"]] == ["fo
 now, _ = loop.version_params(G, GS, loop.latest_version(G, GS))
 assert now["fold_height"] == 46 and first["fold_height"] != 46
 # 下の「後の直しとぶつかる」の値は紙に乗る。乗らない値だと、ぶつかる守りを外しても控えに入り、見張りにならない
-assert not loop.check_proposal({"record_ids": [rid], "hypothesis_id": GS, "changes": [{"param": "fold_height", "to": 44, "why": "試す"}]}, source(G))
+assert not loop.check_proposal({"record_ids": [rid], "hypothesis_id": GS, "changes": [{"param": "fold_height", "to": 56.7, "why": "試す"}]}, source(G))
 for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**now, "fold_width": 15}, {}),
                            ("読みだけ違う（差が無い）", dict(now), {}),
                            ("寸法を書いていない", None, {}),
@@ -231,7 +231,7 @@ for name, params, more in (("幅を広げすぎる（紙に乗らない）", {**
 
 # 5. 次の版はたたき台にだけ足す。ほかの仮説と自分の仮説の寸法の案は断る
 other = confirmed(G, "H-C")
-proposal = {"record_ids": [other], "hypothesis_id": "H-C", "changes": [{"param": "fold_count", "to": 24, "why": "試す"}], "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": []}
+proposal = {"record_ids": [other], "hypothesis_id": "H-C", "changes": [{"param": "fold_count", "to": 45, "why": "試す"}], "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": []}
 pid, failures = loop.save_proposal(proposal, source(G), "human")
 assert pid is None and {f.floor for f in failures} == {"F7.revision"}, failures
 assert loop.adopted_versions(G, "H-C") == [] and "see=H-C&kind=sheet&v=2" not in get(f"/toy/{G}").split('id="kaizen"', 1)[1]
@@ -240,7 +240,7 @@ own_rid = confirmed(G, mine["id"])
 pid, failures = loop.save_proposal({**proposal, "record_ids": [own_rid], "hypothesis_id": mine["id"]}, source(G), "human")
 assert pid is None and {f.floor for f in failures} == {"F7.revision"}, failures
 # ほかの仮説の記録を根拠に、たたき台の寸法を変える案は通る（R-0002「どちらの仮説も、内側の筒の土台があると良い」の形）
-assert propose(G, other, GS, changes=[{"param": "fold_count", "to": 20, "why": "H-C の記録から"}])
+assert propose(G, other, GS, changes=[{"param": "fold_count", "to": 42, "why": "H-C の記録から"}])
 
 # 6. たたき台は、案を採っても替わらない。替えるのは本人が決めた時に、記録の欄を直す時だけ
 assert hypotheses.sheet_of(G)["id"] == GS and hypotheses.sheet_of(TRIAL)["id"] == "H-A"
@@ -265,7 +265,7 @@ class Fake:
 
 assert loop.save_explanation(other, "作った人", "筒が足りない", "土台を足す") == []
 NEXT = {"why": "確かめる", "what_to_measure": "動くか"}
-client = Fake([([tool("submit_result", {"changes": [{"param": "fold_count", "to": 24, "why": "試す"}], "next_to_try": NEXT, "references": []}, "a")], "tool_use"),
+client = Fake([([tool("submit_result", {"changes": [{"param": "fold_count", "to": 45, "why": "試す"}], "next_to_try": NEXT, "references": []}, "a")], "tool_use"),
                ([tool("submit_result", {"next_to_try": NEXT, "references": []}, "b")], "tool_use")])
 pid, failures = loop_agents.draft_proposal(other, source(G), client)
 assert not failures and len(client.calls) == 2, (failures, len(client.calls))

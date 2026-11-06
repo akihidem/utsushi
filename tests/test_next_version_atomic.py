@@ -63,9 +63,9 @@ form = {"interpretation": "折りが多く、筒の口に当たって開き切�
 before = tree()
 
 # 通らない値: どの段で落ちても、ファイルが 1 つも増えず、解釈も確定で残らない。
-for bad, says in (({"to": "29"}, "筒の口の角に当たって"), ({"to": "abc"}, "新しい値は数で書く"), ({"to": "26", "why": " "}, "変える理由が無い"),
-                  ({"to": "26", "param": "no_such"}, "変えてよい寸法の外"), ({"to": "26", "by": " "}, "確定した人の名前が無い"),
-                  ({"to": "26", "interpretation": " "}, "解釈の案が無く")):
+for bad, says in (({"to": "46"}, "筒の口の角に当たって"), ({"to": "abc"}, "新しい値は数で書く"), ({"to": "45", "why": " "}, "変える理由が無い"),
+                  ({"to": "45", "param": "no_such"}, "変えてよい寸法の外"), ({"to": "45", "by": " "}, "確定した人の名前が無い"),
+                  ({"to": "45", "interpretation": " "}, "解釈の案が無く")):
     code, page = post(f"/record/{rid}/next", form | bad)
     assert code == 422 and says in page, (bad, code, page[-400:])
     assert_nothing_added(before, f"通らない値 {bad}")
@@ -86,11 +86,11 @@ def tool_gone(sid, hid, out, version=1, **kw):
 
 
 hypotheses.print_sheet = print_fails
-code, page = post(f"/record/{rid}/next", form | {"to": "26"})
+code, page = post(f"/record/{rid}/next", form | {"to": "45"})
 assert code == 422 and "版 2 の紙を作れませんでした" in page, (code, page[-400:])
 assert_nothing_added(before, "刷るのが検査に落ちた")
 hypotheses.print_sheet = tool_gone
-code, _ = post(f"/record/{rid}/next", form | {"to": "26"})
+code, _ = post(f"/record/{rid}/next", form | {"to": "45"})
 assert code >= 400, code
 assert_nothing_added(before, "刷る道具が無い")
 hypotheses.print_sheet = real_print
@@ -98,7 +98,7 @@ assert loop.latest_version(G, GS) == 1
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 
 # 通る値: 落ちた後に同じ値で送り直せて、全部が 1 組で揃う。
-code, page = post(f"/record/{rid}/next", form | {"to": "26"})
+code, page = post(f"/record/{rid}/next", form | {"to": "45"})
 assert code in (200, 303), page[-400:]
 assert loop.confirmed(rid) and loop.latest_version(G, GS) == 2
 for suffix in ("", "_tejun", "_after"):

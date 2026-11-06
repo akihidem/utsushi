@@ -51,7 +51,7 @@ def made(text, who=WHO, hid=None, not_fit=None):
     talk, name = words.latest_think(G, who)
     w, fs = words.request_think(SOURCE, talk, name, "案", "根拠")
     assert w and not fs, fs
-    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}, not_fit), "作る側")[1]
+    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_amount": 62}, not_fit), "作る側")[1]
     own, fs = words.adopt_words(w["id"], "本人")
     assert own and not fs, fs
     d = hypotheses.play_dir(G)
@@ -202,7 +202,7 @@ for text in (SAID8, CRAFT8, KEEP8):
 for part in (f"{PART_CRAFT}て押した", f"あ{PART_KEEP}", SAID8_SPACED, SAID8[:8]):
     assert everywhere(part) == [], (part, everywhere(part))
 w8_left = json.loads(w8_path.read_text(encoding="utf-8"))
-assert w8_left["how_it_moves"] == "" and w8_left["result"]["not_fit"] == [] and w8_left["result"]["params"]["push_part"] == "stick" and w8_left["result"]["from_words"] == w8_result["from_words"], w8_left["result"]
+assert w8_left["how_it_moves"] == "" and w8_left["result"]["not_fit"] == [] and w8_left["result"]["params"]["push_amount"] == 62 and w8_left["result"]["from_words"] == w8_result["from_words"], w8_left["result"]
 assert [f for f in w8_left["result"]["filled_in"] if f["param"] == "tube_side"][0]["why"] == "", "理由の文は消え、寸法の名前は残る"
 assert w8_left["base_params"] == w8_now["base_params"] and w8_left["id"] == w8["id"], "元の寸法と番号は残す"
 i8 = loop.interpretation(rid8)
@@ -229,7 +229,7 @@ assert any(x["id"] == rid8 for x in records.all_records(G)), "記録は残る"
 assert rid8 in json.loads((loop.folder() / f"version-{G}-{sheet}-{version}.json").read_text(encoding="utf-8"))["record_ids"], "版の根拠は残る"
 assert records.used_by(rid8), "根拠として読める"
 own_left = next(x for x in hypotheses.own_hypotheses(G) if x["id"] == own8["id"])
-assert own_left["how_it_moves"] == "" and own_left["params"]["push_part"] == "stick" and own_left["name"], "寸法は残り、字だけが消える"
+assert own_left["how_it_moves"] == "" and own_left["params"]["push_amount"] == 62 and own_left["name"], "寸法は残り、字だけが消える"
 assert own8["id"] in words.spoken_own_ids(G), "話した考えから作った案のままなので、札に出ず、紙は本人の画面の外に開かない"
 assert not words.key_open(words.by_token(G, w8["token"])), "鍵も閉じる"
 assert talk_log.kufu(G, rid8) == [] and loop.maker_talk(rid8)["items"] == [], "札と輪の材料からも消える"

@@ -65,7 +65,7 @@ def post(path, data):
 
 
 data = hypotheses.load(G)
-h = data["hypotheses"][0]
+h = hypotheses.sheet_of(G)  # 頁が出すのはたたき台の仮説の欄（御来迎の今の組 goraigo-v14 は H-C）
 page = get(f"/toy/{G}")
 # 玩具の頁: data/hypotheses の欄と確かめた人
 for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to_measure'])}",

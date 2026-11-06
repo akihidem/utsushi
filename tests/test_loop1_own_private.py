@@ -78,7 +78,7 @@ assert key.split("=", 1)[1] == token and token not in key.split("=", 1)[0], "鍵
 # 頼んだ後の頁は、鍵のある人だけに字を見せる（URL だけでは開かない）
 path = loc.split("#")[0]
 w = words.by_token(G, token)
-assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_amount": 62}), "作る側")[1]
 assert SAID in send(base, path, cookie=key)[1].decode(), "本人には見える"
 for c in ("", "utsushi_own_W-9999=nothing"):
     assert SAID not in send(base, path, cookie=c)[1].decode(), "URL を渡されても、話した字は見えない"
@@ -125,7 +125,7 @@ def token_of(location):
 
 def filled(token):
     w = words.by_token(G, token)
-    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_amount": 62}), "作る側")[1]
 
 
 def adopted(who, text):
