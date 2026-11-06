@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_genga.py
+# commit: 59a79631（回した時の HEAD）
+ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる
+rc=0
