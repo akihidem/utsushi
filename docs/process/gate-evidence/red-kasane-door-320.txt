@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: 1552c919（回した時の HEAD）
+/tmp/tmpuolri25o/play/NDL-1187053-R0000005-L/.tmp-5jkslif9/H-A_v1.pdf
+/tmp/tmpuolri25o/play/NDL-1187053-R0000014-R/.tmp-6dh2pby7/H-A_v1.pdf
+/tmp/tmpuolri25o/play/NDL-1187053-R0000005-L/.tmp-_hzjwaw4/H-A_v1.pdf
+/tmp/tmpuolri25o/play/NDL-1187053-R0000014-R/.tmp-oy5msddj/H-A_v1.pdf
+/tmp/tmpuolri25o/play/NDL-1187053-R0000004-L/.tmp-nx3yriiz/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 310, in <module>
+    assert f["start"] <= f["h"] and f["sx"] <= f["w"], ("「はじめる」が最初の画面に入り、横にはみ出さない", f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('「はじめる」が最初の画面に入り、横にはみ出さない', {'sid': 'NDL-1187053-R0000005-L', 'w': 320, 'h': 568, 'start': 590, 'go': [442, 486], 'sx': 305})
+rc=1

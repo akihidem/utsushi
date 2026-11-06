@@ -139,7 +139,7 @@ from web import hmd  # noqa: E402
 for scene in ("start", "step", "end"):
     names = [c["text"].strip() for c in doc.shown_targets(scene)]
     assert all(n in NAMES or (scene == "start" and n == hmd.CAM_LINK) for n in names if n), (scene, names)
-assert [c["text"].strip() for c in doc.shown_targets("start")] == ([hmd.CAM_LINK] if hmd.available(G) else []) + ["はじめる"]
+assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"] + ([hmd.CAM_LINK] if hmd.available(G) else []), "道は「はじめる」の下"
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌

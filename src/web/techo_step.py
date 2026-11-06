@@ -498,9 +498,6 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
             '<p class="meta" id="note" aria-live="polite"></p>'
             f'<p class="meta" id="start-note" data-on="start">{how}</p>'
-            # 重ねる頁への道（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に」。作る口は手帖 1 つの決まりの中で、手帖からの道 1 つ）。
-            # 大きいボタンは「はじめる」のまま、道は小さな字の 1 つ。組み立ての書き方がある玩具だけ（重ねる頁が開く玩具）
-            + (f'<p class="meta kasane-go" data-on="start"><a href="/toy/{esc(sid)}/kasane">{esc(hmd.CAM_LINK)}</a></p>' if hmd.available(sid) else '') +
             '<div class="keys" data-on="start step">'
             + _key(START, "key go", 'id="start" data-on="start"')
             + _key(BACK, "key", f'id="back" data-on="step" href="?v={v}&amp;n={max(n - 1, 1)}"', "a")
@@ -508,6 +505,10 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # JS が無い時は、玩具の頁の聞く口へ行く。
             + _key(STUCK, "key", f'id="stuck" data-on="step" href="/toy/{esc(sid)}#ask"', "a")
             + '</div>'
+            # 重ねる頁への道（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に」。作る口は手帖 1 つの決まりの中で、手帖からの道 1 つ）。
+            # 大きいボタンは「はじめる」のまま、道は小さな字の 1 つ。組み立ての書き方がある玩具だけ（重ねる頁が開く玩具）。
+            # 「はじめる」の下に置く: 上に置くと、幅 320×568 で「はじめる」が最初の画面から 22px 出た（別の目の確かめ 11-07）
+            + (f'<p class="meta kasane-go" data-on="start"><a href="/toy/{esc(sid)}/kasane">{esc(hmd.CAM_LINK)}</a></p>' if hmd.available(sid) else '') +
 
             '<section class="henji" data-on="henji">'
             f'<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="send" aria-label="聞く">{SEND}</button></form>'
