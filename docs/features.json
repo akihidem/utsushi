@@ -630,5 +630,19 @@
    "docs/process/research/36-road-and-audience.md"
   ],
   "unverified": "入口の最初の画面に「えらぶ」、玩具の頁の最初の画面に「つくる」、窓で紙ができた後は 印刷 → つくる（手帖へ）、手帖の記録の頁に「もちよる」（ギャラリーへ）。読み物と作る側の節は見出しのまま畳み、本物の記録がある時は見本を畳む。字は道しるべの言葉と今ある字だけ。幅 390×844・375×667 は Chromium で測った。実機と人の目、駅ごとに 1 画面の段 1 はまだ"
+ },
+ {
+  "id": "f52",
+  "name": "UX の見直しの段 1 の撮影の前の分（本人の決定 11-06・案 A）: 頭の帯を道しるべに、持ち寄る駅に「もう 1 つ つくる」、よむ に読み物への道",
+  "status": "doing",
+  "evidence": [
+   "src/web/skin.py",
+   "src/web/techo_site.py",
+   "src/web/about.py",
+   "tests/test_ux_stage1.py",
+   "tests/test_nav_same.py",
+   "docs/process/research/36-road-and-audience.md"
+  ],
+  "unverified": "帯は うつし｜えらぶ つくる のこす もちよる｜よむ。前の帯の名（序・おもちゃ・作った物と職人の言葉・図鑑・English）は外し、序の頁の頭に 図鑑・保護者の方へ、ファシリテーターの方へ・English への道を置いた。英語の入口は入口から 2 手（よむ → English）になった。駅ごとに 1 画面と、ジャンル分けの頁（別の担当）はこの分の外。実機と人の目はまだ"
  }
 ]
