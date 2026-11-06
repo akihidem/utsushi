@@ -41,10 +41,11 @@ TOYS = {"goraigo": "NDL-1187053-R0000005-L", "tora": "NDL-1187053-R0000014-R"}
 # 縦置きの幅も入れる（直しで縦置きを崩さない事も見る）。横置きは iPad 横・机の幅・大きい画面
 TECHO_SIZES = [(390, 844), (768, 576), (1024, 768), (1180, 820), (1440, 900), (1920, 1080)]
 # 作りながら見る頁は、横置き（机の端に立てたタブレット）と縦置き（手に持つ電話）の両方で見る。縦置きの 390×844 は、直す前に虎で
-# 「次の手順へ」が 15px 下、字の長い手順では 120px ほど下に出た
-TSUKURU_SIZES = [(375, 667), (390, 844), (1024, 768), (1180, 820), (1440, 900)]
-# 手順の紙の絵は、札を画面に入れるために縮めても、これより低くしない（絵を消して通る直しを落とす）
-SHEET_MIN = 100
+# 「次の手順へ」が 15px 下、字の長い手順では 120px ほど下に出た。320×568 と 360×640 は、絵を縮めすぎて消した形を落とすために見る
+TSUKURU_SIZES = [(320, 568), (360, 640), (375, 667), (390, 844), (1024, 768), (1180, 820), (1440, 900)]
+# 手順の紙の絵は、札を画面に入れるために縮めても、これより低くしない（tsukuru.py の縦置きの下限 120px。絵を消して通る直しを落とす）。
+# 絵がこの下限まで縮んでも札が入らない低い画面では、札が下へ出るのを受ける（その手順では札の位置を見ず、絵が残る事と字が見える事を見る）
+SHEET_MIN = 120
 
 # 手帖: はじめるの後、手順を 1 つずつ送り、今の手順の字の行の矩形が、原画の釦・閉じる印・マイクと重なるか、
 # 押す所（もどる・つぎ・こまった）の下の端が画面の外に出るかを測る。
@@ -63,12 +64,18 @@ parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,th
 })</script>"""
 # 作りながら見る: 開いた最初の画面から手順を 1 つずつ送り、その手順の一番大きい札（次の手順へ。最後の手順は組み上がり）の下の端が画面の中か。
 # 札の位置は手順の字の長さで変わるので、全部の手順で見る。札を入れるために手順の紙の絵を消していない事も見る（絵の高さ）。
+# 次へを押した後に、次の手順の番号と字が画面の中にある事も見る（押した後に字が画面の上の外へ出ない）。
 TSUKURU_WALK = """<script>addEventListener('load',async()=>{
 const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),items=[...document.querySelectorAll('#steps li')],out=[];await wait();
+const text=()=>{const a=document.querySelector('.num').getBoundingClientRect(),b=document.querySelector('#steps li.on').getBoundingClientRect();return {top:Math.min(a.top,b.top),end:b.bottom}};
 for(let n=1;n<=items.length;n++){
- const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=document.querySelector('.sheet');
- out.push({n,bottom:r.bottom,height:r.height,sheet:img?img.getBoundingClientRect().height:0});
- if(n<items.length){document.querySelector('#tiles [value=next]').click();await wait()}
+ const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=document.querySelector('.sheet'),t=text();
+ out.push({n,bottom:r.bottom,height:r.height,sheet:img?img.getBoundingClientRect().height:0,top:t.top,end:t.end});
+ if(n<items.length){
+  // 人は押す前に、札が画面に無ければ札まで送る（直す前の 1024×768 では、ここで頁が下へ送られたままになり、次の手順の字が画面の上の外に出た）
+  const nb=document.querySelector('#tiles [value=next]');if(nb.getBoundingClientRect().bottom>innerHeight)nb.scrollIntoView({block:'end'});
+  nb.click();await wait();
+ }
 }
 parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,out}),'*');
 })</script>"""
@@ -146,14 +153,18 @@ for page, rec in sorted(got.items()):
     else:
         assert rec["out"], (page, "手順が測れない")
         for s in rec["out"]:
-            if s["height"] <= 0 or s["bottom"] > h:
+            floor = s["sheet"] <= SHEET_MIN + 1  # 絵が下限まで縮んだ手順（低い画面）
+            if s["height"] <= 0 or (s["bottom"] > h and not floor):
                 bad.append(f"{page} 手順 {s['n']}: 一番大きい札の下の端 {s['bottom']:.0f} が画面の高さ {h} の外")
-            if s["sheet"] < SHEET_MIN:
+            if s["top"] < 0 or s["end"] > h:
+                bad.append(f"{page} 手順 {s['n']}: 手順の番号と字（{s['top']:.0f}〜{s['end']:.0f}）が画面の外")
+            if s["sheet"] < SHEET_MIN - 1:
                 bad.append(f"{page} 手順 {s['n']}: 手順の紙の絵の高さ {s['sheet']:.0f} が {SHEET_MIN} より低い")
 for page, rec in sorted(got.items()):
     if page.startswith("tsukuru-"):
         print(f"{page}: 一番大きい札の下の端の最大 {max(x['bottom'] for x in rec['out']):.0f} / 画面の高さ {rec['h']}・"
+              f"札が下へ出た手順 {sum(x['bottom'] > rec['h'] for x in rec['out'])}・"
               f"手順の紙の絵の高さ {min(x['sheet'] for x in rec['out']):.0f}〜{max(x['sheet'] for x in rec['out']):.0f}（手順 {len(rec['out'])}）")
 assert not bad, "\n".join(bad)
 print(f"ok 横置きと縦置き: 手帖 {len(TOYS) * len(TECHO_SIZES)} 通りで手順の字が原画の釦・閉じる印・マイクと重ならず、"
-      f"作りながら見る {len(TOYS) * len(TSUKURU_SIZES)} 通りの全部の手順で一番大きい札が最初の画面に入る")
+      f"作りながら見る {len(TOYS) * len(TSUKURU_SIZES)} 通りの全部の手順で、一番大きい札が最初の画面に入る（絵が下限まで縮む低い画面を除く）。次へで字が画面に残る")

@@ -102,14 +102,14 @@ a{color:var(--accent)}
  .side{border-top:0;border-left:1px solid var(--rule)}
  .sheet{max-height:58svh}
 }
-/* 縦置き（手に持つ電話・縦に立てた端末）: 手本の箱の高さに上限を置き、余りを手順の紙の絵が使う（絵は縮んでも形の比を保つ）。
+/* 縦置き（手に持つ電話・縦に立てた端末）: 手順の紙の絵の高さの上限を、画面の高さから手順の番号と字の高さ（--tx）と残りの分を引いた値にする。
    一番大きい札「次の手順へ」が、どの手順でも最初の画面に入るようにする（11-07 の前の確かめで、390×844 の虎で 15px 下、字の長い手順では
-   最大 120px ほど下に出た）。上限の 280px は、頭の行・原画の畳み・札の列の余白と札の高さの分（測った最大 257px に余りを足した）。
-   低すぎる画面では絵が無くならないよう 260px を下限にする。JS が無い時は手順が全部並ぶので当てない（.js だけ）。
-   絵の min-height:0 は、箱の中で絵が字の分だけ縮むための物（Chrome は無くても縮むが、絵の高さを中身の高さのまま保つ形の画面のため） */
+   最大 120px ほど下に出た）。326px は、頭の行・原画の畳み・手本の箱と札の列の余白と札の高さの分（390×844 の虎で測った）。--tx は頁の script が
+   手順を出すたびに測って入れる（字の長さは手順ごとに違い、CSS だけでは字の高さを引けないため）。絵は 120px より低くしない: 前は手本の箱に上限を
+   置いて絵を縮めたが、320×568 で字の長い手順の絵が 2px まで縮んで消えた。低い画面で字が長い時は、絵を残して札が下へ出るのを受ける。
+   JS が無い時は手順が全部並び --tx も無いので当てない（.js だけ） */
 @media (orientation:portrait){
- .js .tehon{display:flex;flex-direction:column;max-height:max(calc(100vh - 280px),260px);max-height:max(calc(100svh - 280px),260px)}
- .js .tehon .sheet{flex:0 1 auto;min-height:0}
+ .js .tehon .sheet{max-height:min(52vh,max(120px,calc(100vh - 326px - var(--tx,0px))));max-height:min(52svh,max(120px,calc(100svh - 326px - var(--tx,0px))))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
@@ -124,8 +124,11 @@ const items=[...document.querySelectorAll('#steps li')],num=document.getElementB
 const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg-stuck');
 const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');
 let n=+stepIn.value;
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;
+// 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
+const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
+addEventListener('resize',fit);
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
 const who=(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){
  const a=new Uint8Array(10);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<10;i++)a[i]=Math.floor(Math.random()*256);
