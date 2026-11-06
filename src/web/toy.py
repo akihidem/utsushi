@@ -115,7 +115,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     ids = printed_ids(sid, data, recorded)
     # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。
     make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
-                      f'<button>仮説 {esc(hypotheses.letter(x))}</button></form>')
+                      f'<button data-busy>仮説 {esc(hypotheses.letter(x))}</button></form>')
     # 紙を作らずに記録を残した人が札から来た時（#320）は、試した後の紙だけがある案も窓に出す。刷った案には数えない。
     # 必須 2 種のたたき台でない案（前の試行の記録）は刷れないので、これが無いと記録の窓に別の案の紙が出る。
     only_after = (kind == "_after" and see in recorded and any(x["id"] == see for x in data["hypotheses"])
@@ -155,7 +155,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             basis = f'{esc(wording.BASED_ON.format("、".join(wording.record_no(r) for r in adopted.get("record_ids", []))))}。' if photos else ""
             cap = f'<p class="meta">版 {v}: {basis}変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
-    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet">版 {n} の紙を作り直す</button></form>'
+    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet" data-busy>版 {n} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
     png = f"/sheet/{sid}/{name}.png"
     pdf = f"/sheet/{sid}/{name}.pdf"
@@ -374,7 +374,7 @@ def next_form(r, back=""):
             f'<label>変える寸法<select name="param">{opts}</select></label><p class="meta">かっこの中は変えてよい幅です。紙に組める値は、この幅より狭い事があります。</p>'
             '<label>新しい値<input type="number" step="any" name="to" inputmode="decimal" required></label>'
             '<label>変える理由<input type="text" name="why" required></label><label>採った人<input type="text" name="by" required></label>'
-            f'<button>次の版の紙を作る</button></form>{step}</details>')
+            f'<button data-busy>次の版の紙を作る</button></form>{step}</details>')
 
 
 def ai_block(r, up_key=None, photos=True):
@@ -561,6 +561,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。札はたたき台の 1 枚だけで、順位は学ぶ人の画面に出さない（J-013・J-025・J-032）。
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p><p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
+    from . import kumitate  # 手順どおりに組み立てる絵。型紙の絵の上に初めから出す（本人の決定 11-06。J-033）
+
+    body += kumitate.block(sid)
     for h in [hypotheses.sheet_of(sid)]:
         ev = "".join(evidence_item(e) for e in h["evidence"])
         last = versions_of(sid, h["id"], printed_only=True)
@@ -569,7 +572,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
         body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
-                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">型紙を見る</button></form>'
+                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>型紙を見る</button></form>'
                  '</div></div>')
     # 書いて立てた仮説の札と書く欄は外した（本人の決定 11-05 18:08「仮説は書かず、話すことができる」、J-032 の点 2）。考えは下の節で話す。
     body += "</div></section>"

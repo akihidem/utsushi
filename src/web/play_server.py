@@ -15,7 +15,9 @@ import pathlib
 import re
 import secrets
 import sys
+import threading
 import urllib.parse
+from concurrent.futures import Future
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from omochae import hypotheses, loop, making_log, media_review, records, store
@@ -354,6 +356,13 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
+        if m:
+            # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
+            from . import kumitate
+            if m.group(1) not in sources() or not kumitate.available(m.group(1)):
+                return self._send(404, "無い")
+            return self._send(200, kumitate.page(m.group(1), look, path))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
@@ -858,19 +867,53 @@ class Handler(BaseHTTPRequestHandler):
         self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
 
 
+_making = {}  # 作っている最中の紙。（玩具, 案）→ その結果
+_making_guard = threading.Lock()
+
+
+def _one_at_a_time(key, make):
+    """同じ案の紙を同時に作らない（#301）。作っている人がいれば作り直さず、その結果を待って同じ物を返す。
+    順に作り直すと、同じ釦に人が集まる場（#332）で、最後の人が人数分待つ。作る人が落ちたら、待っている人も同じ失敗を受け取る。"""
+    with _making_guard:
+        running = _making.get(key)
+        if running is None:
+            mine = _making[key] = Future()
+    if running is not None:
+        return running.result()
+    try:
+        result = make()
+    except BaseException as e:
+        mine.set_exception(e)
+        raise
+    else:
+        mine.set_result(result)
+        return result
+    finally:
+        with _making_guard:
+            del _making[key]
+
+
 def print_latest(sid, hid):
     """仮説の一番新しい版を刷る。日本語の頁と英語の頁で同じ物を使う（紙は同じ。J-030）。刷った版を返し、刷れなければ None。
     刷るのは一番新しい版（報告から直した版）。次に作る人に改善した型紙を渡すため（本人の方針 11-05「報告を型紙の改善に回し、より良い型紙を提供する」）。
     一番新しい版が刷れない時は 1 つ前の版へ戻る: 採った版が検査に落ちたまま残ると、その仮説の紙が誰にも刷れなくなるため。"""
-    out_dir(sid).mkdir(parents=True, exist_ok=True)
-    v = loop.latest_version(sid, hid)
-    while hypotheses.print_sheet(sid, hid, str(out_dir(sid) / f"{hid}_v{v}"), v) != 0:
-        if v <= 1:
-            return None
-        v -= 1
-    # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
-    loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-    return v
+
+    def make():
+        v = loop.latest_version(sid, hid)
+        while loop.print_version(sid, hid, v, out_dir(sid)) != 0:
+            if v <= 1:
+                return None
+            v -= 1
+        # 刷ると選んだ事が型紙の確定（f09）。名前の欄は画面に無いので、使い手として残す。
+        loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+        return v
+
+    return _one_at_a_time((sid, hid), make)
+
+
+def print_own(sid, oid):
+    """自分の仮説の紙を刷る。刷れたら 0。順番と置き換えは print_latest と同じ。"""
+    return _one_at_a_time((sid, oid), lambda: loop.print_own(sid, oid, out_dir(sid)))
 
 
 def fixes_of(form):

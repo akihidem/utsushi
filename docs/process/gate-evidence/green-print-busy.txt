@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_print_busy.py
+# commit: ec615b1（回した時の HEAD）
+/tmp/tmpkm5871p2/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpkm5871p2/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpkm5871p2/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok
+rc=0

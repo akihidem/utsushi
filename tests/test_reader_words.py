@@ -66,17 +66,24 @@ class Visible(html.parser.HTMLParser):
 
     def __init__(self):
         super().__init__()
-        self.out, self.skip = [], 0
+        self.out, self.skip, self.paper = [], 0, 0
 
     def handle_starttag(self, tag, attrs):
+        # 組み立ての頁の紙の絵（svg.rt-paper）は刷る紙そのものの絵で、中の字は紙の字。紙の字は頁で替えない（必須 2 種の指紋）。ほかの svg は飛ばさない
+        if self.paper or (tag == "svg" and "rt-paper" in (dict(attrs).get("class") or "").split()):
+            self.paper += tag == "svg"
+            return
         self.skip += tag in ("style", "script")
         self.out += [v for k, v in attrs if k in ("alt", "aria-label", "title", "placeholder") and v]
 
     def handle_endtag(self, tag):
+        if self.paper:
+            self.paper -= tag == "svg"
+            return
         self.skip -= tag in ("style", "script")
 
     def handle_data(self, data):
-        if not self.skip and data.strip():
+        if not self.skip and not self.paper and data.strip():
             self.out.append(data.strip())
 
 
@@ -85,6 +92,9 @@ def visible(page):
     v.feed(page)
     return v.out
 
+
+# 飛ばすのは紙の絵の中だけ。入れ子の後も閉じた所から数え直し、ほかの svg の字は見る
+assert visible('<svg class="rt-paper"><text>紙の字</text><svg><text>紙</text></svg><text>紙</text></svg><p>見える</p><svg><text>絵の字</text></svg>') == ["見える", "絵の字"]
 
 # 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開くので、その字もここで見る）
 urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
