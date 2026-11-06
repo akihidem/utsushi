@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tora_v7_3d.py
+# commit: 60af0a47（回した時の HEAD）
+ok 虎 v7 の作り方の 3D（エンジンの JSON）。写しの照らし・段と文・できあがりの形・見せ方・頁・崩し
+rc=0
