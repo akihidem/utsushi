@@ -21,16 +21,20 @@ KITES = ["NDL-1187053-R0000024-L", "NDL-1187053-R0000024-L-2", "NDL-1187053-R000
 # 1. 表: どの雛形にも中の 9 つのどれかがある（雛形を足して表を足し忘れると、ここで落ちる）
 assert set(genre.MIDDLE) == set(TEMPLATES), sorted(set(TEMPLATES) ^ set(genre.MIDDLE))
 assert set(genre.MIDDLE.values()) <= set(NINE) and set(genre.TOY.values()) <= set(NINE)
-# 中の 9 つは、大きい側のどれか 1 つにだけ入る。並びは決まった事の並びのまま
-assert [m for _, mids in genre.BIG for m in mids] == NINE, genre.BIG
+# 中の 9 つは、大きい側のどれか 1 つにだけ入る。どこへ入れるかは本人の答え待ちなので、入れ先と並びは固めない
+placed = [m for _, mids in genre.BIG for m in mids]
+assert sorted(placed) == sorted(NINE) and len(placed) == len(NINE), genre.BIG
 assert [b for b, _ in genre.BIG] == ["かざる", "あそぶ", "うごく"], "大きい側の字は本人の決定（11-06）の 3 つ"
 
 # 2. 玩具: 83 のどれも中の 9 つに入る。例外は台帳の動きの言葉が 1 つに決まっている凧の 3 本だけ
 sids = toys.sources()
 inv = {t["id"]: t for t in json.loads((ROOT / "data/inventory/edo-nishiki.json").read_text(encoding="utf-8"))["toys"]}
-assert sorted(genre.TOY) == sorted(KITES)
 for sid in KITES:
-    assert genre.middle(sid) == "あげる" and "揚げる" in inv[sid]["moves_guess"], sid
+    assert genre.TOY.get(sid) == "あげる" and genre.middle(sid) == "あげる" and "揚げる" in inv[sid]["moves_guess"], sid
+# 例外と答え待ちの表は、在る玩具だけを指し、同じ玩具を両方に置かない。答え待ちの別の読みは、今の中と違う（同じなら待つ事が無い）
+assert set(genre.TOY) <= set(sids) and set(genre.PENDING) <= set(sids) and not set(genre.TOY) & set(genre.PENDING)
+for sid, other in genre.PENDING.items():
+    assert other in NINE and other != genre.middle(sid), sid
 for sid in sids:
     want = genre.TOY.get(sid) or genre.MIDDLE[hypotheses.load(sid).get("template", "slider_fan")]
     assert genre.middle(sid) == want in NINE, sid
@@ -81,7 +85,7 @@ papers = toys.paper_only_sids(sids)
 assert re.findall(r"<h2[^>]*>([^<]+)</h2>", paper) == [b for b, _ in genre.groups(papers)]
 
 # 6. 大きい側と中の入れ先は BIG の 1 か所で差し替えられる（字は本人の決定 11-06 の 3 つ。中の入れ先は本人の答え待ち）
-keep = genre.BIG
+keep, keep_toy = genre.BIG, dict(genre.TOY)
 try:
     genre.BIG = (("見て たのしむ", ("かざる",)), ("うごかす", tuple(NINE[1:])))
     html = toys.page("tenji")
@@ -89,13 +93,35 @@ try:
     assert "<h3" in html and ">かざる</h3>" in html, "大きい側と字が違えば中の見出しを出す"
 finally:
     genre.BIG = keep
-# 中が大きい側のどれにも入っていなければ、黙って玩具を落とさずに止める
+# 答えの例: 浮き物を かざる の側に入れる（BIG だけを変える）・答え待ちの雀を うかべる へ移す（TOY に足すだけ）。どちらも試験を直さずに頁が出る
+try:
+    genre.BIG = (("かざる", ("かざる", "うかべる")), ("あそぶ", ("もって あそぶ", "あげる")), keep[2])
+    genre.TOY = {**keep_toy, "NDL-1187053-R0000013-L": "うかべる"}
+    html = toys.page("tenji")
+    assert re.findall(r"<h2[^>]*>([^<]+)</h2>", html) == ["かざる", "あそぶ", "うごく"]
+    k, u_, a_ = html.index(">かざる</h2>"), html.index(">うかべる</h3>"), html.index(">あそぶ</h2>")
+    assert k < html.index('href="/toy/NDL-1187053-R0000013-L"') and u_ < html.index('href="/toy/NDL-1187053-R0000013-L"') < a_
+    # 大きい側と同じ字の中が後ろに来る時は、前の中の札と分けるために中の見出しを出す
+    genre.BIG = (("かざる", ("うかべる", "かざる")), ("あそぶ", ("もって あそぶ", "あげる")), keep[2])
+    html = toys.page("tenji")
+    assert html.index(">うかべる</h3>") < html.index(">かざる</h3>") < html.index('href="/toy/NDL-1187053-R0000004-L-4"')
+finally:
+    genre.BIG, genre.TOY = keep, keep_toy
+# 中が大きい側のどれにも入っていない時と、2 つの大きい側に入った時は、黙って玩具を落とす・2 度出す代わりに止める
 try:
     genre.BIG = (("かざる", ("かざる",)),)
     genre.groups(sids)
     raise AssertionError("入れ先の無い中を黙って落とした")
 except ValueError as e:
     assert "もって あそぶ" in str(e)
+finally:
+    genre.BIG = keep
+try:
+    genre.BIG = keep + (("もう 1 つ", ("かざる",)),)
+    genre.groups(sids)
+    raise AssertionError("2 つの大きい側に入った中を黙って 2 度出した")
+except ValueError as e:
+    assert "かざる" in str(e)
 finally:
     genre.BIG = keep
 print("ok")
