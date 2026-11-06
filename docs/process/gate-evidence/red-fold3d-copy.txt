@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_fold3d.py
+# commit: 8d4ae2bf（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_fold3d.py", line 17, in <module>
+    from omochae import assembly, fold3d, hypotheses  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'fold3d' from 'omochae' (src/omochae/__init__.py)
+rc=1
