@@ -67,7 +67,7 @@ assert not any("g/m²" in str(m) or "見込み" in str(m) for m in TIGER.materia
 
 # 4. たたき台の紙: 首の形・脚 4 本（6〜9）・角を落とした胴・両面の頭・丸い首の穴。検査に通り、凡例は次の組の字と位置の印の行
 by = {q.key: q for q in TIGER.parts(p)}
-assert [by[k].label for k in ("body", "head", "strip", "tail", "drop", "leg1", "leg2", "leg3", "leg4")] == ["1 胴", "2 頭", "3 首の帯", "4 尾", "5 腕", "6 脚", "7 脚", "8 脚", "9 脚"]
+assert [by[k].label for k in ("body", "head", "strip", "tail", "drop", "leg1", "leg2", "leg3", "leg4")] == ["1 胴", "2 頭", "3 首の帯", "4 尾", "5 重りの腕", "6 脚", "7 脚", "8 脚", "9 脚"]
 assert len(by["body"].round_cuts) == 1 and not by["body"].cuts and len(by["head"].mountain) == 1, (by["body"].round_cuts, by["head"].mountain)
 _, layout, failures = compose("pivot_counterweight", h["params"], source)
 assert layout is not None and not failures, [f.line() for f in failures]

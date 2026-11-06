@@ -1,4 +1,4 @@
-"""虎の次の組 tora-v6 の作り（型紙エンジン paper-to-toy の main e7cf5f7 の雛形 pivot_counterweight の写し。#115）。
+"""虎の次の組 tora-v6 の作り（型紙エンジン paper-to-toy の main e7cf5f7 の雛形 pivot_counterweight の写しに、#135 957fcc2 の 5 重りの腕の札を足した物。#115）。
 
 名前が `_` で始まるので、雛形としては読まれない。pivot_counterweight が、刷る組が tora-v6 より後の時だけ、この関数に渡す
 （set_no）。前の組（tora-v3・tora-v4）の作りは pivot_counterweight に残し、1 バイトも変えない（凍結の床）。
@@ -527,8 +527,9 @@ def parts(p):
     if not hang:
         # 紙の頭は軽いので、重りは軸の真下に下げる。下げる腕が無いと寸法どおりに作れない。
         drop_len = max(p["weight_below_axle"] + 8, 20)
-        # 札は「5 腕」（幅 8mm に「5 重りの腕」は入らない。札は部品の枠の内に置く決まり）
-        drop = Part(5, "drop", "重りの腕", [(0, 0), (8, 0), (8, drop_len), (0, drop_len)], label_xy=(1, 8), label="5 腕", holes=[(4, 4, 1.0)])
+        label, lines = _drop_label(p)
+        drop = Part(5, "drop", "重りの腕", [(0, 0), (DROP_W, 0), (DROP_W, drop_len), (0, drop_len)], label_xy=DROP_LABEL_XY, label=label,
+                    label_lines=lines, holes=[(4, 4, 1.0)])
         if p["weight_below_axle"] >= LOWER_HOLE_MIN:
             # 下の穴（重りの位置。EP-0011）と、粘土を付ける高さの点の線（EP-0016）。
             # 前は「下の端に粘土を付ける」だけで、腕が 20mm の下限で長い寸法では、式の位置（軸から weight_below_axle）より下に付いた
@@ -541,6 +542,43 @@ def parts(p):
                          {"kind": "mark", "pts": [(4 + gap, wy), (7.4, wy)], "mark": "weight"}]
         out.append(drop)
     return out + legs_parts
+
+
+DROP_W = 8  # 5 重りの腕の幅 mm。軸の穴は真ん中（前と後ろに 4mm）で、軸は前の壁の NECK_BACK 後ろなので、前へ広げると壁に当たる
+LABEL_LINE = 1.25  # 札の行送りの倍率（compose.LINE と同じ。雛形から compose を読むと読み込みの輪になるので、値を写す）
+DROP_LABEL_TOP = 4 + 1.0 + 0.6  # 縦に並べる札の上の端（軸の穴の真ん中 4・半径 1.0 の下に 0.6mm 空ける）
+# 「5 腕」の 1 行の札の所（前と同じ、軸の穴の 4mm 下）。部品の label_xy と、行の並びの 1 行の所を、この 1 か所から取る（見直しの指摘:
+# 2 か所に同じ値を書くと、片方だけ直した時に札の所がずれる）
+DROP_LABEL_XY = (1, 8)
+
+
+def _drop_label(p):
+    """5 重りの腕の札の字と、行ごとの (字, x, y)。制作者の決定（2026-11-06）「部品の名前は案3: 型紙を「5 重りの腕」にそろえる。」による
+    （型紙エンジン #135 の写し。サイトではこの組 tora-v6 から。前の組 tora-v3・tora-v4 の紙は「5 腕」のまま）。
+
+    腕は幅 8mm（DROP_W）で、「5 重りの腕」（約 13.5mm）は 1 行に入らない。腕を広げると前の壁に当たるので幅は変えず、
+    「5 重」の下に「り」「の」「腕」を「重」の列にそろえて縦に並べる（字は立てたまま。横に倒すと読みにくい）。
+    並べるのは軸の穴の下から粘土の高さの点の線の上まで（下の穴の半径と 1mm の空きを残す）で、4 行がその間に入る時だけ
+    （粘土が軸の約 17.2mm より下。v5・v6 の見本は 20mm、既定は 28mm）。入らない寸法（粘土が軸に近い・下の穴が無い）は、
+    前と同じ「5 腕」の 1 行にする（3 首の帯の細い時の「3 帯」と同じ限り。用意する物と組み方の文は、どの寸法でも「5 重りの腕」と呼ぶ）。
+    「5 腕」の 1 行は前と同じ所（軸の穴の 4mm 下）に置くが、粘土が軸に近くて下の穴と点の線が札の高さに来る時は、その下へ置く
+    （見直しの指摘: 前は所が決まっていて、軽い粘土で軸の約 9mm より上の寸法では、札が下の穴と点の線に重なった。型紙の検査は
+    字と穴・印の重なりを見ないので、試験で見る）。
+    返り値は (札の字, 行の並び)。行の並びは 1 行でも、字と所を持つ。
+    """
+    head, rest = "5 重", ("り", "の", "腕")
+    pitch = LABEL_SIZE * LABEL_LINE
+    bottom = DROP_LABEL_TOP + (1 + len(rest)) * pitch
+    wb = p["weight_below_axle"]
+    band = THREAD_R + 1.0  # 下の穴の半径と、点の線との空き
+    if wb < LOWER_HOLE_MIN or bottom > 4 + wb - band:
+        y = DROP_LABEL_XY[1]
+        if wb >= LOWER_HOLE_MIN and y + pitch >= 4 + wb - band - 1e-9:  # 境（ちょうど触れる所）も下へ
+            y = 4 + wb + band
+        return "5 腕", [("5 腕", DROP_LABEL_XY[0], y)]
+    x0 = (DROP_W - text_width(head, LABEL_SIZE)) / 2
+    xc = x0 + text_width("5 ", LABEL_SIZE)  # 下の字は「重」の列にそろえる
+    return "5 重りの腕", [(head, x0, DROP_LABEL_TOP)] + [(c, xc, DROP_LABEL_TOP + (i + 1) * pitch) for i, c in enumerate(rest)]
 
 
 def place(by_key, page, top, gap):
@@ -615,10 +653,10 @@ def materials(p):
     L = hang_thread_mm(p)
     hang = f"。糸で下げる時は、たこ糸も。玉の上は穴から {HANG_MIN}〜{L}mm" if L is not None else ""
     return [f"{by['body']['material']}を 1 枚", tools,
-            f"{by['axle']['material']}（胴の 2 つの穴・3 首の帯の穴・5 腕の上の穴に通す。胴の上の面の点の線の下を通る）",
-            f"油粘土 {p['weight_g']:g}g（" + (f"5 腕の下の穴の、点の線の所に付ける{hang}" if p["weight_below_axle"] >= LOWER_HOLE_MIN
-                                          else f"5 腕の上の穴の {p['weight_below_axle']:g}mm 下に付ける") + "）",
-            "小さい丸い印は穴（竹串の先であける）。赤い縁の大きな丸は切り抜く。4 尾は外に見えるので色を刷り、3 首の帯と 5 腕は胴の中に入るので白"]
+            f"{by['axle']['material']}（胴の 2 つの穴・3 首の帯の穴・5 重りの腕の上の穴に通す。胴の上の面の点の線の下を通る）",
+            f"油粘土 {p['weight_g']:g}g（" + (f"5 重りの腕の下の穴の、点の線の所に付ける{hang}" if p["weight_below_axle"] >= LOWER_HOLE_MIN
+                                          else f"5 重りの腕の上の穴の {p['weight_below_axle']:g}mm 下に付ける") + "）",
+            "小さい丸い印は穴（竹串の先であける）。赤い縁の大きな丸は切り抜く。4 尾は外に見えるので色を刷り、3 首の帯と 5 重りの腕は胴の中に入るので白"]
 
 
 def steps(p):
