@@ -9,7 +9,7 @@
 4. 話す箱で名前のような言葉を断った時の返事
 5. 聞く口の断りに、聞いた言葉を AI（Claude）に使う事を足す。Claude を呼ぶ場（鍵がある・合言葉なしの場でない）だけに出す
 6. 紙を作った後の返事
-7. 作りながら見る頁で「できた」を押した後の返事
+7. 作りながら見る頁で「できた」を押した後の返事（一覧の 7 の字は、後から決まった #321 の字と食い違うので、main の #321 の字に譲り、本人に返した。ここでは前の字が戻っていない事だけを見る）
 8. ギャラリーと手帖の記録の札で、自分の仮説の紙の名前が空にならない（#427 が決めた字「自分の仮説の紙」）
 16. 英語の序の頁の 2 段落目
 """
@@ -116,8 +116,8 @@ opened_tsukuru = get(f"/toy/{G}/tsukuru", at=opened)
 assert KEEP + REST in opened_tsukuru and AI not in opened_tsukuru, "合言葉なしの場の作りながら見る頁"
 ask._key_present = lambda: False
 
-# 7. 「できた」の後の返事
-assert tsukuru.DONE_NOTE == "組み上がった事を残しました。動かしてみて、この頁で記録を残してください。"
+# 7. 「できた」の後の返事（字は #321 の物。11-06 昼の本人の決定「全部このまま」が一覧の 7 より後なので、そちらを残した）
+assert tsukuru.DONE_NOTE.startswith("組み上がった事を残しました。") and "玩具の頁" not in tsukuru.DONE_NOTE
 total = len(re.findall(r"<li", get(f"/toy/{G}/tsukuru").split('id="steps"', 1)[1].split("</ol>", 1)[0]))
 code, at, _ = post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": str(total), "event": "done", "sheet_version": "1"})
 assert code == 303 and tsukuru.DONE_NOTE in at and "玩具の頁で記録を残します" not in at, at

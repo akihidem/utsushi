@@ -25,6 +25,7 @@ from omochae import contrib, hypotheses, making_log, media_review, records
 from omochae.compose import TEMPLATES
 from omochae.form_import import FORM_URL
 
+from . import genga
 from . import wording
 
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
@@ -178,7 +179,12 @@ def ai_offer(rid, up_key=None):
     """AI の 2 つの口のうち、今押して進める物と、進めない時に出す 1 行を返す（#130）。
 
     押しても断りの文が返るだけの釦を出さないため。play_server の受け口の断りは、古い頁から押された時のために残す。
+    取り下げで説明の字が空になった記録は、人の説明が先（J-013）を満たさないので、どちらの口も出さない。
     """
+    from omochae import loop
+
+    if not loop.explained(rid):
+        return False, False, ""
     if not ask._key_present():
         return False, False, "AI の返事は、この場では使えません。"
     # 人や声が入ると確かめた動画は AI にも渡さない（#314）。確認の前の動画は、上げた本人の画面からだけ渡す。
@@ -363,17 +369,19 @@ def feedback(sid, r, photos=True, up_key=None, can_tell=False):
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told and not photos:
-        body = '<p class="meta">説明を残しました。</p>' + ai_part(r, up_key, photos=False)
+        body = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_part(r, up_key, photos=False)
     elif told:
         from web.play_server import next_form
 
-        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r, up_key) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+        # 取り下げた説明は字が空になるので、空の欄を並べない。
+        said = (f'<p>{esc(told["text"])}</p>' if told.get("text") else "") + (f'<p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' if told.get("next_idea") else "")
+        body = said + ai_part(r, up_key) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
     elif not can_tell:
         body = ""
     else:
         body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
-                '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
+                '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人">'
                 '<p><button class="go">残す</button></p></form>')
     # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
     if not photos and str(r["hypothesis_id"]).startswith("OWN-"):
@@ -395,7 +403,7 @@ def ai_part(r, up_key=None, photos=True):
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
-        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
+        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>' if lines else ""  # 取り下げで中身が消えた読みは、見出しも出さない
     o = seen_observation(r["id"], up_key) if photos else None
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
@@ -507,7 +515,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
     pic = f'<img src="{esc(picture_url)}" alt="">' if picture_url else ""
     mic = ('<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）">'
            '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/></svg></button>')
-    body = (f'<div data-sid="{esc(sid)}" hidden></div><div class="top">{pic}<h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
+    body = (f'<div data-sid="{esc(sid)}" hidden></div><div class="top">{pic}<h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>{genga.fold(sid)}'
             f'<div class="row" role="radiogroup" aria-label="紙">{sheets}</div><p class="meta">{esc(wording.sheet_set(tpl.SHEET_SET))}</p>'
             '<section class="panel" aria-label="聞く"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6M17 42h14"/></svg>聞く</p>'
             f'{mic}<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="go">聞く</button></form>'
@@ -516,7 +524,7 @@ def page(sid, printed_ids, picture_url, uploads=True, msg="", own=(), up_key=Non
             '<div class="answer" id="answer" aria-live="polite"></div><p class="meta">' + esc((making_log.ASK_AI if uploads and ask._key_present() else "") + making_log.ASK_NAME_VOICE) + '</p></section>'
             '<section class="panel" aria-label="上げる"><p class="mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="8"/></svg>上げる</p>'
             # ③ で上げる時の説明文（本人の決定 11-05。採られたやさしい言葉の文を、一字も変えずに出す。文は hanasu.UPLOAD_NOTICE の 1 か所）。
-            f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p>'
+            f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p>'
             f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}"><label class="shot" for="files"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M8 18h10l5-7h10l5 7h10v28H8z"/><circle cx="28" cy="31" r="9"/></svg>写真・動画'
             # 合言葉なしで開いたデモ（uploads=False）では、写真と動画の口を閉じる（play_server の受け口も断る）。見た事とひとことは残せる。
             + ('<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple>' if uploads else '<input type="file" id="files" disabled>')
