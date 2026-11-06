@@ -31,6 +31,8 @@ server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
 tmp = pathlib.Path(tempfile.mkdtemp())
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。写真の受け口は、その画面からだけ受ける）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 
 
 def req(path, data, ctype="application/x-www-form-urlencoded"):
@@ -184,7 +186,7 @@ print("ok no ffmpeg")
 rid = new_record()
 for i in range(techo_site.MAX_PER_RECORD):
     assert req(f"/record/{rid}/media", sample_mp4, "video/mp4")[0] == 201
-assert sorted(p.name for p in media_dir(rid).iterdir()) == ["m1.mp4", "m2.mp4", "m3.mp4"], "作業のファイルが残った"
+assert sorted(p.name for p in media_dir(rid).iterdir()) == ["m1.mp4", "m2.mp4", "m3.mp4", "owners.json"], "作業のファイルが残った"
 assert req(f"/record/{rid}/media", sample_mp4, "video/mp4")[0] == 422, "数の上限"
 print("ok tidy")
 

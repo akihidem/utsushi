@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_loop_ayumi.py
+# commit: c38531b0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_ayumi.py", line 126, in <module>
+    assert "型紙エンジンには入りました。刷った紙にはまだ入っていません" in item_of(shared, name), name
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 色のある見える面は外を向くように折る
+rc=1
+
+上は、本人が決めた字を見る試験に、直す前の src/web/ayumi.py と src/omochae/marks.py を当てて回した。

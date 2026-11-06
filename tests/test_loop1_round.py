@@ -141,11 +141,13 @@ told = talk_log.kufu(G, rid)
 assert {x["when"] for x in told} == {"idea", "making"} and any(x["text"] == CRAFT and x["step"] == 2 for x in told) and any(x["text"] == THINK for x in told), told
 assert {x["text"] for x in told} == {THINK, EARLY_THINK, CRAFT, EARLY_CRAFT}, "紙を採る前にたたき台に付いた同じ印の字も結ばれる。ほかの印の字は結ばれない"
 assert {x["text"] for x in loop.maker_talk(rid)["items"]} == {CRAFT, EARLY_CRAFT}, "輪の材料に工夫が入る（考えはループ1 の材料なので入れない）"
-body = page(f"/toy/{G}/techo")[1]
+body = page(f"/toy/{G}/techo/kiroku")[1]  # 記録の札は手帖の記録の頁（#87）
 assert CRAFT in body and hanasu.KUFU_HEAD in body and THINK not in body, "手帖の記録の札の「工夫した所」に出る。考えは出さない"
 groups = engine_bundle.build()["groups"]
-assert len(groups) == 1 and groups[0]["reports"] == 1 and groups[0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, "束で群が分かれず、紙の組に入る"
-assert {CRAFT, EARLY_CRAFT} <= {t["text"] for t in groups[0]["texts"]}, "束に工夫の字が入る"
+# 束の群は紙ごと（Issue 334）。自分の紙の記録は、その紙の群で、たたき台の刷った組に入る（組が外れない）
+mine = [g for g in groups if rid in g["record_ids"]]
+assert len(mine) == 1 and mine[0]["reports"] == 1 and mine[0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, "束で群が分かれず、紙の組に入る"
+assert {CRAFT, EARLY_CRAFT} <= {t["text"] for g in groups for t in g["texts"]}, "束に工夫の字が入る"
 # 記録の後は閉じる。作りながら見る頁も、工夫も
 assert f'data-hid="{oid}"' not in page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1]
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": oid, "sheet_version": 1, "step": 1, "text": "記録の後の工夫", "who": WHO}, cookie=key)[0] == 422
@@ -163,8 +165,8 @@ T2, C2 = "筒を細くしたら速く開くと思う", "内筒に蝋を塗ると
 W2 = "roundwho03"
 o2, k2 = made(W2, T2, {"push_part": "stick", "pusher_height": 84})
 body = page(f"/toy/{G}/techo", cookie=k2)[1]
-assert f'name="hypothesis" value="{o2}"' in body and body.index(f'value="{o2}"') < body.index(f'value="{SHEET}"'), "手帖の札に本人の紙が先に出る"
-assert f'value="{o2}"' not in page(f"/toy/{G}/techo")[1], "ほかの人の手帖には出ない"
+assert f'data-hid="{o2}"' in body, "手帖は本人の紙を作る（紙を選ばせない。#87）"
+assert o2 not in page(f"/toy/{G}/techo")[1], "ほかの人の手帖には出ない"
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": o2, "sheet_version": 1, "step": 1, "text": C2, "who": W2}, cookie=k2)[0] == 200
 code, body, _ = send(f"/toy/{G}/record-json", {"hypothesis": o2, "sheet_version": 1, "result": "動いた", "who": W2}, cookie=k2)
 assert code == 201 and json.loads(body)["kufu"] == 1 and json.loads(body)["kangae"] == 1, body

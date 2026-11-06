@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_otona.py
+# commit: e6fc74ca（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_otona.py", line 43, in <module>
+    assert 'href="/otona"' in about_page, "序の頁から来られる"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 序の頁から来られる
+rc=1

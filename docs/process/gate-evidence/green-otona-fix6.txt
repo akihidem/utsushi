@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_otona.py
+# commit: 9fa70384（回した時の HEAD）
+ok 大人の方への頁は採られた文のままで、2 つの皮と合言葉なしの場で開き、約束の裏付けがある
+rc=0

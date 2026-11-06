@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_handwork_words.py
+# commit: 3c65cbc（回した時の HEAD）
+ok 本人の言葉は字を変えずに見出しのすぐ下にある
+rc=0

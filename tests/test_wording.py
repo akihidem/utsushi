@@ -48,6 +48,10 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 def get(path):
     return urllib.request.urlopen(base + path).read().decode()
 
@@ -74,15 +78,18 @@ assert "・版 1・▼R-0001</p>" in page and "メモ: ●" in page, "記録の�
 assert "確かめた人: ■" in get("/"), "入口の札"
 others = [s for s in sources() if hypotheses.stage(s) != "必須"]
 assert f"◇{others[0]}" in get("/zukan"), "図鑑の一覧の場所"
+# 手帖の作る頁には、組の版も記録の番号も出さない（作る側の印を学ぶ人に見せない。#87）。記録の番号は、手帖の記録の頁に出る
 techo = get(f"/toy/{G}/techo")
-assert "◆goraigo-v10" in techo and "▼R-0001" in techo, "手帖"
+assert "goraigo-v10" not in techo and "R-0001" not in techo, "手帖の作る頁"
+assert "▼R-0001" in get(f"/toy/{G}/techo/kiroku"), "手帖の記録の頁"
 # 図鑑の頁とくずし字を読む頁
 zu = get(f"/zukan/{G}")
 assert "確かめた人: ▲本人" in zu and "▼R-0001" in zu and f"▲{esc(h['how_it_moves'])}" in zu, "図鑑"
 yomi = post(f"/zukan/{G}/yomi", {"mine": "ためしの読み"})
-assert "確かめた人: ▲本人" in yomi and "▲本人が 2026-11-03 に" in yomi and "■は 2026-11-04" in yomi, "くずし字"
-# 同じ役の名前が文ごとに表を通る。字が入ると言い方が変わる文もあるので、古い字が素で残らない事を見る
-assert re.search(r"■が(?:採ら|選ば)なかった", yomi) and "本人が確かめた表記" not in yomi, "くずし字の役の名前"
+assert "確かめた人: ▲本人" in yomi, "くずし字の確かめた人"
+# 読みが割れた事の文と見出しは、文ごと表を通る
+for want in ("▲読みが割れた事", "▲手元の複写", "▲本人が 2026-11-03 に", "▲もう一方の読みは", "▲複写 B の頁", "▲上の「人が確かめた読み」"):
+    assert want in yomi, want
 # 紙を作って記録を残し、次の版まで進めた後の窓・改善の輪・ギャラリー
 post(f"/toy/{G}/print", {"hypothesis": "H-A"})
 post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた", "note": "本人が折った"})
@@ -105,14 +112,19 @@ kz = page.split('id="kaizen"', 1)[1]
 assert f"<a href=#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
 assert re.search(r'次の版を待つ報告 \d+ 件: [^（]*<a href="#R-0001">▼R-0001</a>', kz), "改善の輪: 次の版を待つ報告"
 assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
-assert f"▼{rid}" in get("/gallery"), "ギャラリー"
+gallery = get("/gallery")
+assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）から" in gallery and "▲紙や玩具を作る人の言葉を" in gallery, "ギャラリー"
+assert "▲作った人の報告" in kz, "改善の輪の節の固定の文"
+assert "▲鍵が置かれると" in post(f"/record/{rid}/ai-interpret", {}), "鍵が無い時の AI の口"
 # 人が書いた文は表を通らない（記録の感想・説明・自分の仮説・歌の引用）
 for text in ("すっと開いた", "折りが固くて戻る", "本人が折った"):
     assert text in page, text
     assert f"▲{text}" not in page, text
 song = next(e["text"] for e in hypotheses.json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))["transcription"]["entries"] if e.get("checked_by") and not e.get("rejected_by"))
 assert song in page and f"▲{song}" not in page, "歌の引用"
-assert "糸で引いて開く" in get(f"/zukan/{G}") and "▲糸で引いて開く" not in get(f"/zukan/{G}"), "図鑑の自分の仮説"
+zu = get(f"/zukan/{G}")
+assert song in zu and f"▲{song}" not in zu, "図鑑の歌の引用"
+assert "糸で引いて開く" in zu and "▲糸で引いて開く" not in zu, "図鑑の自分の仮説"
 # 2 つの表は 1 か所に読める（#135・#317）。数える命令は内輪の言葉の表も読み、同じ語を両方に書かず、読む人の字にむずかしい語を戻さない
 keep_table = wording.TABLE
 wording.TABLE = ((re.compile("棚卸し"), "作る側"),)

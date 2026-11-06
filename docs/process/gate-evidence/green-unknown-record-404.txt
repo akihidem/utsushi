@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_unknown_record.py
+# commit: 5fab8dcf（回した時の HEAD）
+/tmp/tmpuderx4iz/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpuderx4iz/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpuderx4iz/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+ok: 無い記録の番号へ送った時は 404
+rc=0

@@ -1,0 +1,24 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {
+    "push_part": "tab",
+    "fold_count": 6,
+    "fold_width": 5,
+    "fold_height": 20,
+    "figure_h": 15,
+    "pivot_above_rim": 21
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.hole"
+    ],
+    "lines": [
+      "F5.hole [像] 穴 (#, #) が部品の外に出ている",
+      "F5.hole [蛇腹の扇] 穴 (#, #) が部品の外に出ている",
+      "F5.hole [蛇腹の扇] 穴 (#, #) が部品の外に出ている"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_print_busy.py
+# commit: 2304466（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_print_busy.py", line 73, in <module>
+    assert f"'{ADOPTED_JA}'" in js and f"'{ADOPTED_EN}'" in js and "documentElement.lang" in js, js
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: <script>(()=>{let t;const all=()=>document.querySelectorAll('button[data-busy]');const back=()=>{clearTimeout(t);all().forEach(b=>{b.dataset.busy='';b.removeAttribute('aria-busy');b.disabled=false})};document.addEventListener('submit',e=>{const b=e.target.querySelector('button[data-busy]');if(!b||e.defaultPrevented)return;all().forEach(x=>{x.disabled=true});b.dataset.busy='on';b.setAttribute('aria-busy','true');t=setTimeout(back,30000)});addEventListener('pageshow',back)})()</script>
+rc=1

@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_explain_no_name.py
+# commit: c38531b0（回した時の HEAD）
+/tmp/tmpmah0dv2x/play/NDL-1187053-R0000005-L/.tmp-ffd7u9_d/H-A_v1.pdf
+/tmp/tmpmah0dv2x/play/NDL-1187053-R0000005-L/.tmp-ffd7u9_d/H-A_v1_tejun.pdf
+/tmp/tmpmah0dv2x/play/NDL-1187053-R0000005-L/.tmp-ffd7u9_d/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_explain_no_name.py", line 97, in <module>
+    explain_without_name(True)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "tests/test_explain_no_name.py", line 89, in explain_without_name
+    assert st == 200 and "説明を残しました" in page, (public, st, page[-300:])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (True, 422, "tton[data-busy]');if(!b||e.defaultPrevented)return;all().forEach(x=>{x.disabled=true});b.dataset.was=b.textContent;b.textContent=word;b.dataset.busy='on';b.setAttribute('aria-busy','true');t=setTimeout(back,(+b.dataset.busyFor||30)*1000)});addEventListener('pageshow',back)})()</script></body></html>")
+rc=1

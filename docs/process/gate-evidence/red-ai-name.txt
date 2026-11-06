@@ -1,0 +1,8 @@
+# 命令: bash -c '.venv/bin/python tests/test_ai_name.py 2>&1 | tail -4 | cut -c1-190; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: e6fc74c（回した時の HEAD）
+  File "tests/test_ai_name.py", line 62, in <module>
+    assert not NAMELESS_JA.findall(text), (path, NAMELESS_JA.findall(text))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/about', ['AI からも返事'])
+試験 rc=1
+rc=0
