@@ -104,5 +104,6 @@ assert en.PREMISE in get(f"/en/toy/{G}")
 # 日本語の頁に帯と道
 ja = get(f"/toy/{G}")
 assert 'id="english"' in ja and f'href="/en/toy/{G}"' in ja and table[G]["name"] in ja
-assert 'href="/en"' in get("/")
+# 英語の入口へは、入口の帯の「よむ」（序の頁）から行く（段 1 で帯から English の名を外した。本人の決定 11-06・案 A）
+assert 'href="/about"' in re.search(r'<nav class="nav">.*?</nav>', get("/"), re.S).group(0) and 'href="/en"' in get("/about")
 print("ok")
