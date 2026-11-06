@@ -12,10 +12,10 @@ import tempfile
 DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 
-from omochae import engine_bundle, hypotheses, making_log, records  # noqa: E402
+from omochae import engine_bundle, hypotheses, making_log, records, trial_video  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
 from omochae.instructions import compose_sheet  # noqa: E402
-from web import techo_site, toy  # noqa: E402
+from web import techo_step, toy  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 UNSURE = "わからない"
@@ -60,11 +60,27 @@ assert TEMPLATES["stand_figure"].OLD_RESULTS == {"倒れた": "立たない"}
 for tid, sids in SOURCES.items():
     tpl, sid = TEMPLATES[tid], sids[0]
     data = hypotheses.load(sid)
-    for page in (toy.record_form(sid, data, []), techo_site.page(sid, [h["id"] for h in data["hypotheses"]], "")):
+    # 手帖は 1 手 1 画面に作り直され（#87）、札は記録の欄の radio でなく、手帖の段の釦（value に札の字）になった
+    for page, mark in ((toy.record_form(sid, data, []), 'name="result" value="{}"'),
+                       (techo_step.page(sid, [h["id"] for h in data["hypotheses"]]), 'class="tile" value="{}"')):
         for w in tpl.RESULTS:
-            assert f'name="result" value="{w}"' in page, (sid, w)
+            assert mark.format(w) in page, (sid, w)
         for w in getattr(tpl, "OLD_RESULTS", {}):
-            assert f'name="result" value="{w}"' not in page, (sid, w)
+            assert mark.format(w) not in page, (sid, w)
+
+# 3b. 声で選ぶ札: どの言い方も今の札のどれかに着く。前の札を言っても、前の札のまま送らず今の札に読み替える
+# （前の札は記録を読むために受け付けに残るので、声の道で前の札が新しく残るのを、ここで止める）
+NOW = {w for tpl in TEMPLATES.values() for w in tpl.RESULTS}
+assert set(techo_step.RESULT_WORDS.values()) <= NOW, set(techo_step.RESULT_WORDS.values()) - NOW
+for tpl in TEMPLATES.values():
+    for o, n in getattr(tpl, "OLD_RESULTS", {}).items():
+        assert techo_step.RESULT_WORDS[o] == n, (o, n)
+assert techo_step.RESULT_WORDS["たおれた"] == "立たない" and techo_step.RESULT_WORDS["すこしうごいた"] == "動いた"
+
+# 3c. 動画の報告: どの雛形も、打ち消しの札（2 つ目）が「動かなかった」として渡る。3 つ目の「わからない」は渡さない（None）
+for tid, tpl in TEMPLATES.items():
+    assert tpl.RESULTS[1] in trial_video.NOT_MOVED and tpl.RESULTS[2] == UNSURE, (tid, tpl.RESULTS)
+    assert UNSURE not in trial_video.NOT_MOVED + trial_video.PARTLY_MOVED
 
 # 4. 紙: 欄を足しても全部の玩具の全部の紙が検査を通る（欄が次の行へ送られて頁からはみ出さない）。欄は札の数だけある
 for tid, sids in SOURCES.items():
@@ -100,9 +116,10 @@ for tid in TEMPLATES:
     table = records.summarize(records.all_records(sid))[hypotheses.load(sid)["hypotheses"][0]["id"]]
     assert table[UNSURE] >= 1 and table[TEMPLATES[tid].RESULTS[1]] == 0, (tid, table)
 
-# 7. 虎: 記録では「わからない」を選べる。今の組の手順の紙は 2 つの欄のまま（札を紙に刷るので、足すと床の紙の指紋が変わる）
+# 7. 虎: 記録では「わからない」を選べる。控えた組（tora-v3・tora-v4）の手順の紙は 2 つの欄のまま（札を紙に刷るので、足すと控えた紙の指紋が変わる）
+# 組の名前で見るのは、次の組を始めた PR がここで落ち、PAPER_RESULTS を外して 3 つの欄にする事に気づくため（本人の決め 11-06「次の組の紙から 3 つ」）
 pc = TEMPLATES["pivot_counterweight"]
-assert pc.SHEET_SET == "tora-v3" and pc.PAPER_RESULTS == ("揺れた", "揺れない"), "次の組（tora-v4）を始める時に PAPER_RESULTS を外す"
+assert pc.SHEET_SET == "tora-v4" and pc.FROZEN_SET == "tora-v3" and pc.PAPER_RESULTS == ("揺れた", "揺れない"), "次の組（tora-v4 の次）を始める時に PAPER_RESULTS を外し、3 つの欄の紙の指紋を足す"
 assert records.check({"source_id": TORA, "hypothesis_id": "H-A", "result": UNSURE}) == []
 assert {f.floor for f in records.check({"source_id": TORA, "hypothesis_id": "H-A", "result": "たぶん揺れた"})} == {"F3.result"}
 

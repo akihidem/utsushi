@@ -389,10 +389,10 @@ assert code in (200, 303), body[:300]
 assert 'data-v="2"' in req(f"/toy/{G}/techo")[1] and 'data-v="1"' in req(f"/toy/{G}/techo?v=1")[1] and 'data-v="2"' in req(f"/toy/{G}/techo?v=9")[1]
 assert "?v=1&amp;n=3" in req(f"/toy/{G}/techo?v=1&n=2")[1], "JS が無い時のリンクも開いた時の版を持つ"
 
-# ---- 虎: 絵は手順の紙の図。結果の札は虎の値
+# ---- 虎: 絵は手順の紙の図。結果の札は虎の値（記録と手帖では「わからない」も選べる。刷った紙の欄は 2 つのまま。#373）
 page = req(f"/toy/{T}/techo")[1]
 doc = read(page)
-assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない"]
+assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない", "わからない"]
 assert "の紙" not in visible(page) and TEMPLATES["pivot_counterweight"].SHEET_SET not in page
 server.shutdown()
 print("ok")
