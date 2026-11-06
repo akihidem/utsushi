@@ -7,6 +7,7 @@
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない決まり（tests/test_mic_seen.py と同じ）。入っている Chrome で頁を iframe に開いて歩く。
 Chrome が無い機械と、1 つも答えなかった時は、測れないと出して通す。落ちるのは、歩けて、結果が違う時と、一部の頁だけ答えない時。マイクは使わない。
 """
+import http.cookiejar
 import json
 import os
 import re
@@ -162,9 +163,13 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 
 
+# 記録の鍵（main の #441）: 説明を送れるのは、その記録を残した画面だけ。同じ Cookie を持つ 1 つの画面として送る
+screen = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+
+
 def post(path, data):
     r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
-    with urllib.request.urlopen(r, timeout=120) as x:
+    with screen.open(r, timeout=120) as x:
         return x.read().decode()
 
 
