@@ -7,6 +7,8 @@ who は sessionStorage にあって、絵と動画の GET に載らない。な�
 3. 人の確認で「物だけ」になれば誰にでも出る。「人や声」は本人にも出ない
 4. 次の記録を残すと区切りになる（同じ機械の次の人に、前の人の写真を出さない）。期限を過ぎても閉じる
 5. 取り下げで鍵の控えも消える
+7. 合言葉なしの場の取り下げ（窓口の決定 11-06 夜・案 A）: 上げた画面にだけ「取り下げる」が出て、押すと写真と動画が置き場ごと消え、ギャラリーからも消える。
+   別の画面・鍵の無い画面・期限を過ぎた画面には釦を出さず、送っても断る。合言葉付きの場は進行者に番号を伝える形のまま（釦を出さない）
 6. 合言葉なしの場でも受け、合言葉付きの場と同じ線で出す（確かめる前は上げた本人の画面だけ・物だけの後は誰にでも・人や声は誰にも）。
    本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」「公開の場で上げた写真は、公開の場のギャラリーにも出します」。前は受けず、出さず、鍵も渡さなかった
 """
@@ -184,6 +186,40 @@ voice_rid = q.record()
 voice_name = q.photo(voice_rid)
 assert media_review.record(voice_rid, voice_name, "people", "試験の人") == []
 assert q.image(voice_rid, voice_name) == 404 and r.image(voice_rid, voice_name) == 404, "人や声が入ると確かめた物は、上げた本人にも出さない"
-assert f"/record/{voice_rid}/media/" not in q.techo() and f"/record/{voice_rid}/media/" not in r.techo()
+# 絵の道（/media/m…）だけを見る。上げた画面には、見えない物も消せるよう「取り下げる」の道（/media/withdraw）が出る（7）
+assert f"/record/{voice_rid}/media/m" not in q.techo() and f"/record/{voice_rid}/media/" not in r.techo()
 
-print("ok: 確認の前の写真は、上げた本人の画面にだけ出す")
+# 7. 合言葉なしの場の取り下げ
+w = Screen(opened)
+w_rid = w.record()
+w_name = w.photo(w_rid)
+w_src = f"/record/{w_rid}/media/{w_name}"
+drop = f'action="/record/{w_rid}/media/withdraw"'
+assert media_review.record(w_rid, w_name, "object", "試験の人") == []  # ギャラリーに出ている物も、上げた画面からなら消せる
+assert w_src in Screen(opened).call("GET", "/gallery")[1].decode(), "対照: 消す前はギャラリーに出ている"
+assert drop in w.techo() and "取り下げる</button>" in w.techo(), "上げた画面には釦を出す"
+o = Screen(opened)
+assert drop not in o.techo(), "別の画面には出さない"
+assert o.form(f"/record/{w_rid}/media/withdraw")[0] == 403 and w.image(w_rid, w_name) == 200, "別の画面からは消せない"
+nokey = Screen(opened)
+nokey.cookie = {"utsushi_rec": w.cookie["utsushi_rec"]}  # 記録の鍵だけを持つ画面（写真の鍵が無い）
+assert drop not in nokey.techo() and nokey.form(f"/record/{w_rid}/media/withdraw")[0] == 403, "写真の鍵の無い画面には出さず、消せない"
+st, _ = w.form(f"/record/{w_rid}/media/withdraw")
+assert st == 303, st
+assert not (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "records" / "media" / w_rid).exists(), "置き場ごと消える（確かめの控えも残らない）"
+assert w.image(w_rid, w_name) == 404 and w_src not in Screen(opened).call("GET", "/gallery")[1].decode() and drop not in w.techo(), "ギャラリーからも消え、釦も消える"
+assert records.all_records(G) and any(r["id"] == w_rid for r in records.all_records(G)), "消えるのは写真と動画だけで、記録は残る"
+again = w.photo(w_rid)
+assert again == "m1.jpg" and w.image(w_rid, again) == 200 and again and Screen(opened).image(w_rid, again) == 404, "上げ直した物は、前の確かめを引き継がない（確かめの前に戻る）"
+# 期限を過ぎた写真の鍵では、釦を出さず、消せない
+late_owners = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "records" / "media" / w_rid / "owners.json"
+kept_owners = json.loads(late_owners.read_text(encoding="utf-8"))
+late_owners.write_text(json.dumps({k: {**v, "at": old} for k, v in kept_owners.items()}), encoding="utf-8")
+assert drop not in w.techo() and w.form(f"/record/{w_rid}/media/withdraw")[0] == 403, "期限を過ぎたら消す口も閉じる"
+# 合言葉付きの場は、進行者に記録の番号を伝える形のまま（釦を出さず、受けない）
+c = Screen()
+c_rid = c.record()
+c.photo(c_rid)
+assert f'action="/record/{c_rid}/media/withdraw"' not in c.techo() and c.form(f"/record/{c_rid}/media/withdraw")[0] == 403, "合言葉付きの場には出さない"
+
+print("ok: 確認の前の写真は、上げた本人の画面にだけ出す。合言葉なしの場では、上げた画面から取り下げられる")

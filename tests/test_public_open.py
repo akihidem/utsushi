@@ -132,8 +132,9 @@ assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81
 voiced = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{voiced}/media", jpeg, up_media)[0] == 201 and media_review.record(voiced, "m1.jpg", "people", "試験の人") == []
 assert opened("GET", f"/record/{voiced}/media/m1.jpg")[0] == 404 and stranger("GET", f"/record/{voiced}/media/m1.jpg")[0] == 404
+# 絵の道（/media/m…）を見る。上げた画面の手帖の記録の頁には、見えない物も消せるよう「取り下げる」の道（/media/withdraw）が出る
 for page in (opened("GET", "/gallery")[1], stranger("GET", "/gallery")[1], opened("GET", f"/toy/{G}/techo/kiroku")[1]):
-    assert f"/record/{voiced}/media/" not in page
+    assert f"/record/{voiced}/media/m" not in page
 # 別の画面は、番号を知っていても同じ記録へ上げられない（記録の鍵と同じ出所の確かめは、開いた場でもそのまま）
 assert stranger("POST", f"/record/{rid}/media", jpeg, up_media)[0] == 403
 assert stranger("POST", f"/record/{rid}/media", jpeg, {**up_media, "Origin": "https://evil.example"})[0] == 403
