@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toys_genre.py
+# commit: f1c8a572（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toys_genre.py", line 42, in <module>
+    assert genre.TOY.get(sid) == "うかべる" and genre.middle(sid) == "うかべる" and "浮" in inv[sid]["moves_guess"], sid
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: NDL-1187053-R0000013-L
+rc=1

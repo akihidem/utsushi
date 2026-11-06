@@ -98,7 +98,7 @@ assert [k["text"] for k in talk_log.kufu(G, "R-0002")] == ["次の人の工夫"]
 # ---- 頁の script（字で見る）: 印の形は今のまま。作り直す口は 1 つ。手帖は、記録の番号が返った後にだけ呼ぶ
 assert "/^[a-z0-9]{10}$/" in skin.WHO_SCRIPT and "utsushiNewWho" in skin.WHO_SCRIPT and "searchParams.has('fresh')" in skin.WHO_SCRIPT
 techo = urllib.request.urlopen(f"{base}/toy/{G}/techo").read().decode()
-up = techo[techo.index("document.getElementById('up-form').onsubmit"):]
+up = techo[techo.index("const save"):]  # 手帖の残す所（1 手 1 画面の頁、#87）
 assert up.index("if (!j.id)") < up.index("utsushiNewWho()") < up.index("form.reset()"), "記録が残らなかった時は、印を作り直さない"
 
 # ---- 頁の script（Chrome で測る）

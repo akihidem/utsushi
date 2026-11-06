@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_explain_no_name.py
+# commit: c38531b0（回した時の HEAD）
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-ff40n64j/H-A_v1.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-ff40n64j/H-A_v1_tejun.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-ff40n64j/H-A_v1_after.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-1dyiu5xy/H-A_v1.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-1dyiu5xy/H-A_v1_tejun.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-1dyiu5xy/H-A_v1_after.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-8z66xuhs/H-A_v2.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-8z66xuhs/H-A_v2_tejun.pdf
+/tmp/tmpdt3ui2l1/play/NDL-1187053-R0000005-L/.tmp-8z66xuhs/H-A_v2_after.pdf
+ok: 説明の書いた人は、書かなくても送れる
+rc=0

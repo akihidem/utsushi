@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_own_pii.py
+# commit: c1961d8（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_own_pii.py", line 36, in <module>
+    assert rec is None and {(f.floor, f.where) for f in fails} == {("F10.pii", where)}, (shape, where, rec, fails)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('taro@example.com', 'name', {'id': 'OWN-1', 'source_id': 'NDL-1187053-R0000005-L', 'name': '案 taro@example.com', 'how_it_moves': '押す', 'evidence': '図の棒', 'params': None, 'by': 'human', 'written_at': '2026-11-06T01:51:23+09:00', 'status': 'untested'}, [])
+rc=1

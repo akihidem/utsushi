@@ -55,7 +55,7 @@ POLITE = re.compile(r"(です|ます|ました|でした|ません|でしょう|
 LONG = 40
 OPENING, CLOSING, ENDS = "（(「『", "）)」』", "。！？"
 # です・ますをそろえる頁（#317 のゴールの要件）。序・図鑑・改善の輪は書誌や作る側の字が多いので、一覧には出すが床にしない
-POLITE_PAGES = re.compile(r"/(toys|toy/[^/（]+(/tsukuru|/techo)?)?(（.*）)?")
+POLITE_PAGES = re.compile(r"/(toys|toy/[^/（]+(/tsukuru|/techo(/kiroku)?)?)?(（.*）)?")
 SKIP_TAGS = {"style", "blockquote", "noscript", "svg"}
 # 引用・歌・見本の声は、書いた人の言葉なので言いかえの相手にしない。足（foot）は書誌なので見ない
 SKIP_CLASSES = {"songs", "samples", "sample", "foot"}
@@ -212,9 +212,9 @@ def _open_pages(sids, walk):
     server = play_server.serve(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
-    paths = ["/", "/about", "/toys", "/gallery", "/zukan", "/loop", "/loop/ayumi"]
+    paths = ["/", "/about", "/otona", "/toys", "/gallery", "/zukan", "/loop", "/loop/ayumi"]
     for sid in sids:
-        paths += [f"/zukan/{sid}", f"/toy/{sid}", f"/toy/{sid}/tsukuru", f"/toy/{sid}/techo", f"/loop/{sid}"]
+        paths += [f"/zukan/{sid}", f"/toy/{sid}", f"/toy/{sid}/tsukuru", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku", f"/loop/{sid}"]
 
     def fetch(p):
         with urllib.request.urlopen(base + p, timeout=120) as r:
@@ -231,7 +231,7 @@ def _open_pages(sids, walk):
             send(f"/toy/{sid}/print", hypothesis=hid)
             send(f"/toy/{sid}/record", hypothesis=hid, result=records.results_for(sid)[0])
             pages[f"/toy/{sid}（記録の後）"] = fetch(f"/toy/{sid}?see={hid}&kind=after&v=1")
-            for tail in ("tsukuru", "techo"):
+            for tail in ("tsukuru", "techo", "techo/kiroku"):
                 pages[f"/toy/{sid}/{tail}（記録の後）"] = fetch(f"/toy/{sid}/{tail}")
     finally:
         server.shutdown()

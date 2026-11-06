@@ -26,6 +26,17 @@ TEMPLATES = _discover()
 TITLE_SIZE, BODY_SIZE, LABEL_SIZE = 5.0, 3.0, 2.8
 LINE = 1.25  # 行送りの倍率。CJK の字面より少し広く取る
 GAP = 4.0
+# 凡例の谷と山の言い方。前の字（v8）は「手前に」がどの面から見るかを言わず、型紙と手順の紙で山折りの言い方が 2 通りあった
+# （11-04 のつぶやき「谷折り、山折りがわからない」）。次の組から、刷った面から見た形の 1 通りにそろえる。
+# 窓口が本人の委任（2026-11-06「推しで大丈夫そうな時はそっちで推しを選択していいよ」）でカード 002247 の推しを選んだ。
+# 決めたのは必須 2 種の次の組の紙だけなので、前の組（凍結の床・指紋を変えない）と、FROZEN_SET を持たないほかの雛形は前の字のまま刷る。
+FOLD_WORDS = ("谷折り（刷った面が内がわになる）", "山折り（刷った面が外がわになる）")
+_OLD_SHEET_FOLD_WORDS = ("谷折り（手前にへこむ）", "山折り（手前に出る）")
+
+
+def new_fold_words(tpl):
+    """その雛形の今の組が、次の組の凡例の字で刷るか。必須 2 種（FROZEN_SET を持つ）の、凍結の床でない組だけ。"""
+    return hasattr(tpl, "FROZEN_SET") and tpl.SHEET_SET != tpl.FROZEN_SET
 
 
 def _block(texts, lines, x, y, size, width):
@@ -90,7 +101,11 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], text_x, left_y, BODY_SIZE, width)
     legend_y = y + 1
     # 谷と山の意味を添える（v8）。試行のつぶやき「谷折り、山折りがわからない」（11-04）。線の種類だけでは折る向きが伝わらなかった。
-    legend = [("切る", None), ("谷折り（手前にへこむ）", "2,1"), ("山折り（手前に出る）", "3,1,0.6,1"), ("糊代", "hatch")]
+    valley, mountain = FOLD_WORDS if new_fold_words(tpl) else _OLD_SHEET_FOLD_WORDS
+    legend = [("切る", None), (valley, "2,1"), (mountain, "3,1,0.6,1"), ("糊代", "hatch")]
+    # 位置の印のある紙だけ、凡例に足す（型紙エンジンと同じ字。印は必須 2 種の次の組にだけある）
+    if any(item["kind"] == "mark" for q in parts for item in q.art):
+        legend.append(("位置の印（切らない・折らない）", "mark"))
     samples, x = [], text_x
     for name, dash in legend:
         step = 9 + text_width(name, BODY_SIZE) + 3
@@ -100,16 +115,20 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
         samples.append((x, legend_y + BODY_SIZE * 0.6, dash))
         texts.append(TextBox(x + 9, legend_y, text_width(name, BODY_SIZE), BODY_SIZE * LINE, name, BODY_SIZE))
         x += step
-    ruler_y = legend_y + BODY_SIZE * LINE + 2
+    ruler_x, ruler_y = text_x, legend_y + BODY_SIZE * LINE + 2
+    if new_fold_words(tpl) and x + 100 <= text_x + width:
+        # 次の組の凡例は字が長く、御来迎の型紙では 2 行になる。物差しを凡例の最後の行の右に置き、下の端を前の組より下げない
+        # （長い内筒の形 H-B は、下に 1 行足すと物差しの説明が印字域から 3mm 出た）。前の組とほかの雛形は今までどおり凡例の下。
+        ruler_x, ruler_y = x, legend_y + (BODY_SIZE * LINE - 3) / 2
     # 物差しは 100mm。刷りの倍率を人が確かめる唯一の手がかりなので、印字域に収まらなければ検査で落とす。
-    texts.append(TextBox(text_x, ruler_y, 100, 3, None))
-    note_y = ruler_y + 4
+    texts.append(TextBox(ruler_x, ruler_y, 100, 3, None))
+    note_y = max(ruler_y + 4, legend_y + BODY_SIZE * LINE + 0.5)
     _block(texts, ["10cm の物差し。100% で刷る（用紙に合わせない）"], text_x, note_y, BODY_SIZE, width)
     failures += check_layout(page, parts, texts)
     failures += check_art(parts)
     failures += check_holes(parts)
     # paste_image は負の対照のためだけ。図を貼った PDF を、刷った後の検査が見つけられるか確かめる。
-    return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (text_x, ruler_y), "paste_image": bool(inject.get("paste_image"))}, failures
+    return p, {"page": page, "parts": parts, "texts": texts, "samples": samples, "ruler": (ruler_x, ruler_y), "paste_image": bool(inject.get("paste_image"))}, failures
 
 
 def check_params(template_id, params, source, page_name="A4"):

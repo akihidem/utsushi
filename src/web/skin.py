@@ -11,6 +11,7 @@
 - 成績・順位に見える物（点・票・数の回る表示・祝いの演出）は部品に入れない（J-025、philosophy.md）。
 """
 import html
+import re
 
 DEFAULT = "tenji"
 
@@ -26,7 +27,13 @@ SKINS = {
 
 # 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
 # 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
-NAV = (("/about", "序"), ("/toys", "おもちゃ"), ("/gallery", "作った物と職人の言葉"), ("/zukan", "図鑑"), ("/en", "English"))
+# 頭の帯は道しるべ（UX の見直しの段 1、本人の決定 11-06。research/36「道しるべの言葉は えらぶ・つくる・のこす・もちよる」「頭の帯を道しるべに替える」）。
+# 帯は今いる駅に印を付ける。つくる・のこすは玩具を選んだ後の駅なので、玩具の頁の中でだけ押せる（選ぶ前は押せない段の印として字だけ出す）。
+# 道の外の読み物（序・図鑑・保護者の方へ、ファシリテーターの方へ・English）は「よむ」（序の頁）にまとめる。前の帯の名（序・おもちゃ・
+# 作った物と職人の言葉・図鑑・English）はここから外し、行き先の頁は変えない
+ROAD = ("えらぶ", "つくる", "のこす", "もちよる")
+YOMU = ("/about", "よむ")
+YOMU_PATHS = ("/about", "/zukan", "/otona")
 # 英語の頁の帯（J-030 の段 1）。全部の頁を訳さないので、道は入口と日本語の頁へだけ。
 NAV_EN = (("/en", "utsushi"), ("/en#toys", "Toys"), ("/", "日本語"))
 
@@ -60,12 +67,16 @@ def esc(s):
 
 # 頭の帯の CSS。入口の頁も同じ物を使う（骨を 1 つにする、要件 2）。今いる所は色だけにしない（字の色と下の罫）
 # スマホの幅は字間を外し隙間を詰める。項目の字を長くすると、1 つだけ次の段に落ちるため（#303、tests/test_nav_fit.py）
+# 道しるべの帯（段 1）の見た目: 玩具を選ぶ前の つくる・のこす は押せない段の印なので控えの色。よむ は道しるべの 4 つと別の物なので右へ離す。
+# English は言語の切り替えで、狭い幅（うつし が 1 段目を取る）では 1 段目の右の端に置く（2 段目の道しるべを 3 段にしないため。幅 320 で見た）。
+# 注は CSS の中に書かない（頁の字に混ざり、頁の字を見る試験に当たるため）
 NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;padding:16px 5vw;font-size:12px;letter-spacing:.2em;color:var(--mute);border-bottom:1px solid var(--rule)}
 /* 頭の帯と足は骨の物なので、頁の本文の書体（手帖のゴシックなど）を受け継がない（#126） */
 .nav,.foot{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
-@media (max-width:480px){.nav{gap:8px;letter-spacing:0}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}}
+.nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}.nav .nav-lang{font-size:12px;letter-spacing:.1em}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
@@ -83,7 +94,7 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 # 一括の text-decoration は Safari が太さと色を読まないので、1 つずつ書く。色は頁ごとの変数に頼らず、リンクの字の色から作る（開いた頁の見た目の組は --accent を持たない）。
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
-.nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,.foot>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 label:not(.sr):has(>input[type=text]),label:not(.sr):has(>input[type=number]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 summary{list-style:none}
@@ -209,11 +220,30 @@ def nav(skin, current="", path="/", lang="ja"):
     if lang == "en":
         items = "".join(f'<a href="{p}">{esc(n)}</a>' for p, n in NAV_EN[1:])
         return f'<nav class="nav"><a class="brand" href="/en">utsushi</a>{items}</nav>'
-    # 玩具の頁と手帖は道から「おもちゃ」に印を付ける。呼び手が current を渡さない頁の分
-    here = current or ("/toys" if (path or "").startswith("/toy/") else "")
-    mark = lambda p: ' aria-current="page"' if p == here else ""  # noqa: E731
-    items = "".join(f'<a href="{p}"{mark(p)}>{esc(n)}</a>' for p, n in NAV)
-    return f'<nav class="nav"><a class="brand" href="/"{mark("/")}>うつし</a>{items}</nav>'
+    path = path or ""
+    m = re.match(r"/toy/([^/?#]+)", path)
+    sid = m.group(1) if m else ""
+    # 今いる駅。呼び手が渡す current（"/toys"・"/gallery"・"/about" など）か、頁の道から決める
+    here = current or path
+    if sid:
+        station = "のこす" if "/techo/kiroku" in path else "つくる"
+    elif here.startswith("/toys"):
+        station = "えらぶ"
+    elif here.startswith("/gallery"):
+        station = "もちよる"
+    elif here.startswith(YOMU_PATHS):
+        station = "よむ"
+    else:
+        station = ""
+    to = {"えらぶ": "/toys", "つくる": f"/toy/{sid}" if sid else "", "のこす": f"/toy/{sid}/techo/kiroku" if sid else "", "もちよる": "/gallery", "よむ": YOMU[0]}
+    cur = lambda name: ' aria-current="page"' if name == station else ""  # noqa: E731
+    item = lambda name: (f'<a href="{to[name]}"{cur(name)}>{esc(name)}</a>' if to[name]  # noqa: E731
+                         else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
+    # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない
+    items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="/en" lang="en">English</a>'
+    # 「うつし」の印は入口だけ（呼び手が current="/" を渡す）。断りの頁などは道が "/" でも、どこにもいないので印を付けない（前の帯と同じ）
+    brand = ' aria-current="page"' if current == "/" else ""
+    return f'<nav class="nav"><a class="brand" href="/"{brand}>うつし</a>{items}</nav>'
 
 
 def page_title(title):
@@ -235,7 +265,7 @@ def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_
     """頁の骨。皮の変数を :root に置き、頭の帯と足を付ける。中身（body）は皮を知らずに書けるようにする。"""
     s = SKINS.get(skin, SKINS[DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
-    foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。</p>'
+    foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。<br><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p>'
     return (f'<!doctype html><html lang="{esc(lang)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{esc(page_title(title))}</title><style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
             f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path, lang)}<main>{body}</main>{foot}{WHO_SCRIPT}{BUSY_SCRIPT}</body></html>')
@@ -246,9 +276,12 @@ def frame(sid, caption="", pos=None):
     from omochae.hypotheses import ROOT
 
     if (ROOT / "out/sources" / f"{sid}.jpg").exists():
-        from .looks import framed_pos
+        from .genga import size
 
-        style = f"background-image:url(/picture/{esc(sid)});background-position:{pos or framed_pos(sid)}"
+        # 絵の比のまま敷く。前は額の比が必須 2 種の写しに固定で、ほかの玩具の切り抜きを縦横別々に伸ばしていた（59 種で 1.25 倍以上、
+        # 最大 5.5 倍。原画の確かめ 11-06）。pos は呼び手の互換のために受けるが、比が合うので寄せる所は無い
+        w, h = size(ROOT / "out/sources" / f"{sid}.jpg")
+        style = f"background-image:url(/picture/{esc(sid)});aspect-ratio:{w}/{h};background-size:contain;background-position:center"
     else:
         style = ""
     cap = f"<figcaption>{esc(caption)}</figcaption>" if caption else ""

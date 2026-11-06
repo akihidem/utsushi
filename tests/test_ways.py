@@ -11,7 +11,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from omochae import hypotheses, ways  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
 from omochae.model import Part  # noqa: E402
-from web import toy, toys  # noqa: E402
+from web import genre, toy, toys  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -99,7 +99,10 @@ assert f'仮説 {hypotheses.letter(hypotheses.sheet_of(TORA))}「' in page and "
 listing = toys.page("tenji")
 assert listing.count('class="ways"') >= 1 and "どれがえらい、ということはありません" in listing
 assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == ["当時の材料"]
-at = [listing.index(f'href="/toy/{sid}"') for sid in sorted(toys.sources(), key=lambda s: hypotheses.stage(s) != "必須")]
+# 並びは、必須 2 種 → ジャンルの見出しごと（genre.groups の順。本人の依頼 11-06）で、見出しの中は記録の順。印ではこの並びを変えない
+rest = [s for s in toys.sources() if hypotheses.stage(s) != "必須"]
+order = [s for s in toys.sources() if hypotheses.stage(s) == "必須"] + [s for _, mids in genre.groups(rest) for _, ss in mids for s in ss]
+at = [listing.index(f'href="/toy/{sid}"') for sid in order]
 assert at == sorted(at), "印で一覧の並びを変えた"
 
 # 6. 入口: JSON で出す。間違った呼び方は 4

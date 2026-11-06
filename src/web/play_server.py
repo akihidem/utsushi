@@ -34,7 +34,7 @@ from . import wording
 from .contrib_server import STYLE
 
 # 見た目はルックブックの様式（本人の指定、J-024）。絵が主役で、文字は添え。見開きのように絵と短い文を左右に置き、玩具ごとに左右を入れ替える。
-# 参照の X の投稿の実物は 11-04 に見た（research/19）。入口の再現は looks.py の A にあり、この塊は玩具の頁の見た目だけを持つ。
+# 参照の X の投稿の実物は 11-04 に見た（research/19）。入口の見た目は looks.py にあり、この塊は玩具の頁の見た目だけを持つ。
 LOOK = STYLE + """
 body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 .wrap{max-width:1180px;margin:auto;padding:0 20px 64px}
@@ -376,6 +376,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
+        if path == "/otona":
+            from . import otona
+            return self._send(200, otona.page(look, path))
         # 作る側の頁は、合言葉なしで開いたデモには出さない: 聞いた言葉と感想の文がそのまま読める頁で、名前は機械では落とせないため（J-027・J-028）。
         if path.startswith("/loop") and getattr(self.server, "public_open", False):
             return self._send(404, "見つかりません")
@@ -397,7 +400,24 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
         if path == "/gallery":
             from . import techo_site
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            # のこした後はここに着く（窓口の決定 11-06 夜・案 A）。今残した 1 つは、記録を残した画面の鍵（記録の鍵）で見分けて頭に出す。返事の文は ?msg= で受ける
+            # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
+            # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
+            opened = getattr(self.server, "public_open", False)
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+        # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
+        m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
+        if m:
+            from . import zukan_hon
+            if int(m.group(1)) in zukan_hon.frames():
+                return self._send(200, zukan_hon.page(int(m.group(1)), look, path))
+        m = re.fullmatch(r"/zukan/hon/R(\d{7})-([LR])\.jpg", path)
+        if m:
+            from omochae import ingest
+            from . import zukan_hon
+            face = (int(m.group(1)), m.group(2))
+            if face in ingest.book_faces() and zukan_hon.face_file(*face).exists():
+                return self._send(200, zukan_hon.face_file(*face).read_bytes(), "image/jpeg")
         # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
@@ -438,6 +458,8 @@ class Handler(BaseHTTPRequestHandler):
                 # 文が頁の頭より 1 画面下に出ないよう、#121 の手帖と同じく節へ送る（#289）
                 msg = urllib.parse.quote("先に紙を作ると、作りながら見る頁が開きます")
                 return self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={msg}&at=kasetsu#kasetsu")])
+            from api import ask
+
             from . import tsukuru
             try:
                 n = int(qs.get("n", ["1"])[0])
@@ -445,18 +467,28 @@ class Handler(BaseHTTPRequestHandler):
                 n = 1
             # 版は開いた時に決めて URL で持つ（作っている途中で別の人の版が刷られても、手順の文が変わらないように）。
             v = int(qs["v"][0]) if qs.get("v", [""])[0].isdigit() else None
-            return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0], version=v))
+            return self._send(200, tsukuru.page(sid, hid, look, step=n, event=qs.get("ev", [""])[0], version=v, ai=ask._key_present() and not getattr(self.server, "public_open", False)))
         m = re.fullmatch(rf"/toy/({SID})/techo", path)
         if m and m.group(1) in sources():
-            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。
+            # 手帖は入口のサイトの中の一続きの頁（本人の方向転換、11-04）。1 手 1 画面で、頭の帯を置かない（本人の決定 11-05、#87。techo_step.py）。
             sid = m.group(1)
             sheet = hypotheses.sheet_of(sid)["id"]
             printed = [sheet] if printed_versions(sid, sheet) else []  # 手帖の紙もたたき台の 1 枚だけ（J-032）
-            pic = f"/picture/{sid}" if (ROOT / "out/sources" / f"{sid}.jpg").exists() else ""
+            from . import techo_step, think_sheet
+            # この画面が話した考えから作った本人の紙があれば、それを作る（一番新しい物。ほかの人の案は出さない。#335 ループ1）。
+            own = think_sheet.latest_mine(self, sid)
+            try:
+                n = int(qs.get("n", ["1"])[0])
+            except ValueError:
+                n = 1
+            # 版は開いた時に決めて URL で持つ（作りながら見る頁と同じ）。
+            v = int(qs["v"][0]) if qs.get("v", [""])[0].isdigit() else None
+            return self._send(200, techo_step.page(sid, printed, look, step=n, version=v, uploads=not getattr(self.server, "public_open", False), own=own))
+        m = re.fullmatch(rf"/toy/({SID})/techo/kiroku", path)
+        if m and m.group(1) in sources():
+            # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
-            from . import think_sheet
-            own = sorted(think_sheet.mine(self, sid), key=lambda o: int(o.rsplit("-", 1)[1]), reverse=True)  # 本人の案を先に（作っている紙の記録として残すため）
-            return self._send(200, skinmod.shell("手帖", techo_site.page(sid, printed, pic, msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), own=own, up_key=self._up_key(), rec_key=self._rec_key()), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key()), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
             from . import techo_site
@@ -496,6 +528,13 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) in hk.names() and hk.has(m.group(1)):
                 return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
             return self._send(404, "無い")
+        # 玩具が載る頁の全体（原画と歌。本人の指示 11-06）。合言葉なしの場でも出す（公開の古い本の絵で、人の写真ではない）
+        m = re.fullmatch(rf"/picture/({SID})/page", path)
+        if m and m.group(1) in sources():
+            from . import genga
+            page = genga.page_file(source(m.group(1)))
+            if page.exists():
+                return self._send(200, page.read_bytes(), "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
@@ -568,7 +607,7 @@ class Handler(BaseHTTPRequestHandler):
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False, headers=()):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo?msg={urllib.parse.quote(msg)}#mine"), *headers])
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}#mine"), *headers])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
@@ -698,7 +737,7 @@ class Handler(BaseHTTPRequestHandler):
         # 確認の前の動画を、上げた本人でない画面から Claude に渡さない。頁に釦は出ないが、開いたままの古い頁から届く。
         if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
             return self._refuse(403, "受け付けられません")
-        if loop.explanation(rid) is None:
+        if not loop.explained(rid):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
             return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
         if not ask._key_present():
             return self._done(sid, wording.plain("鍵が置かれると、Claude が答えます"), form.get("back", ""), anchor=rid)
@@ -734,7 +773,7 @@ class Handler(BaseHTTPRequestHandler):
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
             return self._send(422, self._toy(sid, errors=[f"版 {v} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", see=hid, anchor="win")
+        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
 
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
@@ -756,7 +795,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import toy
 
             return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は PDF を 100% で", form.get("back", ""), see=hid, anchor="win")
+        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
@@ -910,7 +949,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
             if print_latest(sid, hid) is None:
                 return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
-            msg = "紙を作りました。下の窓で絵を見て、印刷する時は PDF を 100% で"
+            msg = "紙を作りました。下の窓で絵を見てください。印刷する時は、PDF の大きさを 100% にしてください。"
             see = hid
         else:
             hid = form.get("hypothesis", "")
@@ -999,7 +1038,7 @@ def fixes_of(form):
     part, change, outcome = (form.get(k, "").strip() for k in ("fix_part", "fix_change", "fix_outcome"))
     if not (part or change or outcome):
         return []
-    blank = "書かれていない"
+    blank = records.FIX_BLANK
     return [{"part": part or blank, "change": change or blank, "outcome": outcome or blank}]
 
 

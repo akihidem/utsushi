@@ -1,4 +1,6 @@
-"""凍結の床を試験で見る: 必須の 2 種（御来迎 goraigo-v10・張子の首振り虎 tora-v3）の今の版の紙が、控えた指紋と同じ（U-43、#115）。
+"""凍結の床を試験で見る: 必須の 2 種（御来迎 goraigo-v10・張子の首振り虎 tora-v3）の紙が、控えた指紋と同じ（U-43、#115）。
+虎は次の組（tora-v4）に上げたので、前の組 tora-v3 も今の組 tora-v4 も比べる。前の組の控えは、次の組を足した後も残す（本人の指示）。
+御来迎は今の組 goraigo-v10 のまま（次の組は形を見直してから。雛形に FROZEN_SET が無いので今の組だけを組む）。
 
 なぜ要るか: 型紙の洗練（U-43）は、必須 2 種の今の版を変えず、次の版として足す決まり。今までは取り込みのたびに
 指紋を手で比べていて、比べる道具が repo に無かった（関門の帳面の記録）。手で比べる形は、比べ忘れた回に床が黙って崩れる。
@@ -33,7 +35,7 @@ import tempfile
 
 from PIL import Image
 
-from omochae import textfit
+from omochae import marks, textfit
 from omochae.compose import TEMPLATES, compose
 from omochae.hypotheses import ROOT, letter
 from omochae.instructions import compose_after, compose_sheet, compose_teacher
@@ -87,20 +89,29 @@ def papers(picture, strict):
         # 記録を直接読む。hypotheses.load は人が採った新しい仮説を data/loop から重ねるので、機械ごとに紙の数が変わる。
         data = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-        sheet_set = TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
-        # たたき台の 1 枚だけ（J-032）。ほかの仮説の紙は今の組で刷らないので、床でもない。
-        for h in [h for h in data["hypotheses"] if h["id"] == data["sheet"]]:
-            tid = h.get("template") or data.get("template", "slider_fan")
-            base = f"{TEMPLATES[tid].SHEET_SET}/{h['id']}"
-            name = f"仮説 {letter(h)}「{h['name']}」"
-            # 題と呼び方は hypotheses.print_sheet と同じ（版 1）。
-            _, layout, failures = compose(tid, h["params"], source, "A4", 1, f"{data['toy']} 型紙 {name}版 1")
-            put(f"{base}/型紙", layout, failures)
-            put(f"{base}/手順の紙", *compose_sheet(tid, h["params"], source, f"{name} 版 1", h["how_it_moves"]))
-            if tid == "slider_fan":  # 原図の写しを載せる道（goraigo-v8 から）。刷った組はこちら
-                put(f"{base}/手順の紙（原図つき）", *compose_sheet(tid, h["params"], source, f"{name} 版 1", h["how_it_moves"], picture=picture))
-            put(f"{base}/試した後の紙", *compose_after(source, name, data["after_try"], sheet_set=sheet_set))
-        put(f"{sheet_set}/先生の見る紙", *compose_teacher(source, data["toy"], sheet_set=sheet_set))
+        tpl = TEMPLATES[data.get("template", "slider_fan")]
+        now = tpl.SHEET_SET
+        # 前の組がある雛形（FROZEN_SET を持つ。今は虎）は、雛形の組を前の名前に置いて組む（前の版を刷れる道）。印の文も前の文のまま
+        # （#318 で本人が「今の版の紙は変えず、次の版から」と確かめた）。前の組の無い雛形（御来迎）は今の組だけ
+        sets = ([(tpl.FROZEN_SET, {**source, "hypothesis_mark": marks.HYPOTHESIS_FROZEN})] if hasattr(tpl, "FROZEN_SET") else []) + [(now, source)]
+        for sheet_set, src in sets:
+            tpl.SHEET_SET = sheet_set
+            try:
+                # たたき台の 1 枚だけ（J-032）。ほかの仮説の紙は今の組で刷らないので、床でもない。
+                for h in [h for h in data["hypotheses"] if h["id"] == data["sheet"]]:
+                    tid = h.get("template") or data.get("template", "slider_fan")
+                    base = f"{sheet_set}/{h['id']}"
+                    name = f"仮説 {letter(h)}「{h['name']}」"
+                    # 題と呼び方は hypotheses.print_sheet と同じ（版 1）。
+                    _, layout, failures = compose(tid, h["params"], src, "A4", 1, f"{data['toy']} 型紙 {name}版 1")
+                    put(f"{base}/型紙", layout, failures)
+                    put(f"{base}/手順の紙", *compose_sheet(tid, h["params"], src, f"{name} 版 1", h["how_it_moves"]))
+                    if tid == "slider_fan":  # 原図の写しを載せる道（goraigo-v8 から）。刷った組はこちら
+                        put(f"{base}/手順の紙（原図つき）", *compose_sheet(tid, h["params"], src, f"{name} 版 1", h["how_it_moves"], picture=picture))
+                    put(f"{base}/試した後の紙", *compose_after(src, name, data["after_try"], sheet_set=sheet_set))
+                put(f"{sheet_set}/先生の見る紙", *compose_teacher(src, data["toy"], sheet_set=sheet_set))
+            finally:
+                tpl.SHEET_SET = now
     return out
 
 
@@ -162,7 +173,8 @@ def check():
     pin = json.loads(PIN.read_text(encoding="utf-8"))
     real, standin = both()
     # たたき台 2 枚 × 3 枚 ＋ 御来迎の原図つき 1 枚 ＋ 先生の紙 2 枚。前の下限 31 は 8 仮説の時の数（J-032 で 9 に直した）
-    assert len(pin["papers"]) >= 9, ("控えが減った", len(pin["papers"]))
+    # 虎の次の組の 4 枚を足して 13。前の下限は 9（J-032、1 組の時）・31（8 仮説の時）
+    assert len(pin["papers"]) >= 13, ("控えが減った", len(pin["papers"]))
     assert len(pin["removed"]["papers"]) == 22 and not set(pin["removed"]["papers"]) & set(pin["papers"]), "外した紙は印つきで残し、比べる紙と混ぜない"
     assert "本人の決定" in pin["removed"]["why"], "外した理由の印を残す"
     gone, extra, diff = compare(pin, "standin", standin)
@@ -195,9 +207,14 @@ def check():
     # 3. 組み方の文: 虎の手順を 1 つ足す。虎の手順の紙だけが変わり、型紙は変わらない
     steps = tiger.steps
     gone, extra, diff3 = broken(lambda: setattr(tiger, "steps", lambda p: steps(p) + ["足した手順"]), lambda: setattr(tiger, "steps", steps))
-    assert not gone and not extra and diff3 == sorted(n for n in pin["papers"] if n.startswith(f"{tiger.SHEET_SET}/") and n.endswith("/手順の紙")), ("組み方の文", gone, extra, diff3)
+    # 前の組（tora-v3）の手順も同じ steps から作るので、虎の両方の組の手順の紙が変わる
+    assert not gone and not extra and diff3 == sorted(n for n in pin["papers"] if n.startswith("tora-") and n.endswith("/手順の紙")), ("組み方の文", gone, extra, diff3)
+    # 4. 虎の前の組の見分けを外す（次の組の直しが前の組の紙に漏れる形）。前の組の紙が変わり、次の組の紙は変わらない
+    was = tiger.frozen
+    gone, extra, diff4 = broken(lambda: setattr(tiger, "frozen", lambda: False), lambda: setattr(tiger, "frozen", was))
+    assert not gone and not extra and f"{tiger.FROZEN_SET}/H-A/型紙" in diff4 and not any(n.startswith(f"{tiger.SHEET_SET}/") for n in diff4), ("前の組の見分け", gone, extra, diff4)
     note = "" if same_font else "。字の版が控えた時と違うので、この機械の字での配置（real）は比べていない"
-    print(f"ok 紙 {len(standin)} 枚の指紋が控えと同じ。負の対照で拾った紙: 寸法 {len(diff1)}・組の版 {len(gone2)}・組み方の文 {len(diff3)}{note}")
+    print(f"ok 紙 {len(standin)} 枚の指紋が控えと同じ。負の対照で拾った紙: 寸法 {len(diff1)}・組の版 {len(gone2)}・組み方の文 {len(diff3)}・前の組の見分け {len(diff4)}{note}")
     return 0
 
 
