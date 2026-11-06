@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_steps_materials.py
+# commit: 04c2e70（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_steps_materials.py", line 89, in <module>
+    assert not wrong, ("手順に出る語が用意する物に無い、または例外が古い", wrong)
+           ^^^^^^^^^
+AssertionError: ('手順に出る語が用意する物に無い、または例外が古い', [('NDL-1187053-R0000007-R', 'H-A', ['玉'], []), ('NDL-1187053-R0000009-L-2', 'H-A', ['玉'], []), ('NDL-1187053-R0000014-L', 'H-A', ['玉'], []), ('NDL-1187053-R0000014-L', 'H-B', ['玉'], []), ('NDL-1187053-R0000020-R', 'H-A', ['玉'], []), ('NDL-1187053-R0000020-R', 'H-B', ['玉'], []), ('NDL-1187053-R0000021-L-2', 'H-B', ['紐'], []), ('NDL-1187053-R0000025-L-2', 'H-A', ['紐'], []), ('NDL-1187053-R0000025-L-2', 'H-B', ['玉', '紐'], []), ('NDL-1187053-R0000029-L', 'H-A', ['玉'], []), ('NDL-1187053-R0000029-R-2', 'H-A', ['紐'], [])])
+rc=1

@@ -20,9 +20,9 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import making_log  # noqa: E402
+from omochae import hypotheses, making_log  # noqa: E402
 from web import tsukuru  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 WHO = "ab12cd34ef"
@@ -118,9 +118,10 @@ def road_to_the_record():
 
 
 def passes_which_sheet():
-    # 必須 2 種はたたき台の紙だけを刷るので（#332）、2 枚目を刷れる試作の玩具で見る。
+    # 頁から刷れるのはたたき台だけ（J-032）。前に刷った別の紙で作っている人の形は、試作の玩具に紙の口で直に刷って見る。
     toy = "NDL-1187053-R0000019-L"
-    assert post(f"/toy/{toy}/print", {"hypothesis": "H-B"})[0] == 303
+    out_dir(toy).mkdir(parents=True, exist_ok=True)
+    assert hypotheses.print_sheet(toy, "H-B", str(out_dir(toy) / "H-B_v1"), 1) == 0
     code, _, headers = post(f"/toy/{toy}/step", {"hypothesis": "H-B", "step": str(tsukuru.count(toy, "H-B")), "event": "done"})
     assert code == 303 and "see=H-B" in headers["Location"], f"どの紙かを渡していない: {headers['Location']}"
 
@@ -148,6 +149,15 @@ def hidden_tile_stays_hidden_on_narrow_screens():
     assert "[hidden]{display:none!important}" in body, "幅の狭い画面で、隠した札が出る"
 
 
+def back_is_not_shown_on_the_first_step():
+    # 手順 1 の「戻る」は押しても何も起きない（実物のブラウザで見つけた）。#321 の最後の手順の札と同じ形で、出さない。
+    assert tile(get(f"/toy/{G}/tsukuru?h=H-A&n=1")[1], "back")[1], "手順 1 に戻るの札が出ている"
+    label, hidden, _ = tile(get(f"/toy/{G}/tsukuru?h=H-A&n=2")[1], "back")
+    assert label == "戻る" and not hidden, "手順 2 に戻るの札が無い"
+    body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+    assert "goBack.hidden=n<=1" in body, "JS で進んだ時に戻るの札が替わらない"
+
+
 def one_step_when_there_is_no_text():
     # 手順の文が作れない時（頁は手順の紙の絵だけで動く）は 1 段だけなので、その段が最後の手順。
     saved = tsukuru.step_texts
@@ -167,7 +177,7 @@ def no_praise():
 
 fails = []
 for check in (big_tile_on_the_last_step, not_shown_midway, midway_leaves_nothing, road_to_the_record, passes_which_sheet,
-              who_is_kept_so_nobody_counts_as_quit, js_takes_the_same_road, hidden_tile_stays_hidden_on_narrow_screens, one_step_when_there_is_no_text, no_praise):
+              who_is_kept_so_nobody_counts_as_quit, js_takes_the_same_road, hidden_tile_stays_hidden_on_narrow_screens, back_is_not_shown_on_the_first_step, one_step_when_there_is_no_text, no_praise):
     try:
         check()
     except Exception as e:  # 定数が無い直す前も、ほかの確かめを止めずに名前で出す

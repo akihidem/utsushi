@@ -58,8 +58,10 @@ def post(path, form):
 page = get(f"/toy/{G}")
 # すぐ作れる
 assert 'id="kasetsu"' in page and "すぐ作る" in page
-for h in hypotheses.load(G)["hypotheses"]:
-    assert f'value="{h["id"]}"' in page and h["name"] in page
+# 札はたたき台の 1 枚だけ（本人の決定 11-05、J-032）
+sheet = hypotheses.sheet_of(G)
+assert f'value="{sheet["id"]}"' in page and sheet["name"] in page
+assert not [h["id"] for h in hypotheses.load(G)["hypotheses"] if h["id"] != sheet["id"] and f'value="{h["id"]}"' in page]
 assert f'action="/toy/{G}/print#kasetsu"' in page
 # 予想の段が無い
 assert "/predict" not in page and "あなたの予想" not in page and "先に、予想を書く" not in page and "kazasu" not in page
@@ -72,10 +74,10 @@ except urllib.error.HTTPError as e:
     assert e.code == 404
 assert not hasattr(hypotheses, "need_prediction") and not hasattr(hypotheses, "save_prediction")
 # 前提の明示。頭の札が仮説の札より前にある
-assert 'id="premise"' in page and "AI が考えた仮説" in page and "正解ではありません" in page
+assert 'id="premise"' in page and "ためしの案（仮説）" in page and "正しい答えではありません" in page
 assert page.index('id="premise"') < page.index('class="plates"')
-# 自分の仮説の道は残す（J-008）
-assert f'action="/toy/{G}/own#kasetsu"' in page
+# 仮説を書く欄は外した（本人の決定 11-05 18:08、J-032 の点 2）。考えは話す節で話す
+assert f"/toy/{G}/own" not in page and f"/toy/{G}/talk" in page
 # 手帖は予想なしで開く
 assert "手帖" in get(f"/toy/{G}/techo")
 # 刷れて、作りながら見る頁が開く

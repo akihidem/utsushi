@@ -12,7 +12,7 @@ import urllib.request
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from omochae import hypotheses, labels, records  # noqa: E402
-from web import zukan  # noqa: E402
+from web import wording, zukan  # noqa: E402
 from web.play_server import serve, source, sources  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -35,11 +35,11 @@ def sentences(body):
 
 
 def hypothesis_words(sid):
-    data = hypotheses.load(sid)
-    return [w for h in data["hypotheses"] for w in (h["name"], h["how_it_moves"])]
+    h = hypotheses.sheet_of(sid)
+    return [h["name"], wording.plain(h["how_it_moves"])]
 
 
-# 頁は開き、仮説の名前と動かし方も出る（予想の段を外した。#242）
+# 頁は開き、たたき台の仮説の名前と動かし方も出る（予想の段を外した。#242。ほかの仮説は出さない。J-032）
 code, idx = get("/zukan")
 assert code == 200 and "図鑑" in idx
 for sid in sources():
@@ -52,6 +52,7 @@ for sid in sources():
     assert "予想を書くと" not in body
     for w in hypothesis_words(sid):
         assert w in body, w
+    assert "仮説 B " not in body, (sid, "説を羅列しない")
 assert 'href="/gallery"' in idx
 assert get("/zukan/NDL-0-R0000001-L")[0] == 404
 
@@ -75,7 +76,7 @@ assert all(q["label"] == labels.QUOTE for q in zukan.quote_lines(fake))
 rid, fail = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない", "tried_on": "2026-11-04"})
 assert not fail
 body = get(f"/zukan/{G}")[1]
-assert f"仮説 A の紙・わからない（11 月 4 日・{rid}）" in body
+assert f"仮説 A の紙・わからない（11 月 4 日・記録の番号 {rid}）" in body
 
 # 出た文はどれも 3 分類の印を持ち、組み立てた文の一覧は F6.label を通る
 for sid in sources():

@@ -1,0 +1,13 @@
+# 命令: bash -c 'rc=0; for t in test_steps_materials test_one_sheet test_ask test_zukan test_gallery test_hypothesis_label test_tpl_spin_toy test_tpl_den_den test_floor_pin test_ledger; do PYTHONPATH=src OMOCHAE_DATA=$(mktemp -d) .venv/bin/python tests/$t.py >/dev/null 2>&1; r=$?; echo "$t rc=$r"; [ $r -eq 0 ] || rc=1; done; exit $rc'
+# commit: 3792103（回した時の HEAD）
+test_steps_materials rc=0
+test_one_sheet rc=0
+test_ask rc=0
+test_zukan rc=0
+test_gallery rc=0
+test_hypothesis_label rc=0
+test_tpl_spin_toy rc=0
+test_tpl_den_den rc=0
+test_floor_pin rc=0
+test_ledger rc=0
+rc=0

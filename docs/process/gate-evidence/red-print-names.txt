@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_print_names.py
+# commit: e6fc74c（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_print_names.py", line 39, in <module>
+    assert len(made()) == 6, made()
+           ^^^^^^^^^^^^^^^^
+AssertionError: ['H-A_v1.pdf', 'H-A_v1_after.pdf', 'H-A_v1_tejun.pdf']
+rc=1

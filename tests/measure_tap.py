@@ -1,4 +1,4 @@
-"""幅 390 の画面で、押す所の高さと字の大きさを実測する（#137）。手で回す道具で、./run.sh の試験ではない。
+"""幅 390 の画面で、押す所の高さと字の大きさ（#137）、字の欄の幅（#290）を実測する。手で回す道具で、./run.sh の試験ではない。
 
 なぜ試験にしないか: ./run.sh はブラウザなしで動く決まり。ブラウザを操る道具（playwright など）も入れない決まりなので、
 入っている Chrome を headless で開き、頁に測る script を差し込んで、結果を DOM から読む。
@@ -19,7 +19,7 @@ import urllib.request
 
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import play_server  # noqa: E402
 
 MIN_TAP, MIN_FONT = 44, 12
@@ -29,18 +29,22 @@ PAGES = ["/", "/about", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/
 # 文の中のリンクは床の外（本文の要件）。親に字があって、自分が inline の物
 # load を待たない。図の読み込みが遅い頁で、時間切れの前に測れなくなる。押す所の高さと字の大きさは図に頼らない
 MEASURE = """<script>setTimeout(()=>{
+document.querySelectorAll('details').forEach(d=>{d.open=true}); // 畳んだ欄（次の版など）の中も測る
 const vis=e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'};
 const name=e=>e.tagName.toLowerCase()+(e.className&&e.className.baseVal===undefined&&e.className?'.'+String(e.className).trim().split(/\\s+/)[0]:'')+' '+(e.innerText||e.value||e.type||'').trim().replace(/\\s+/g,' ').slice(0,14);
 const inSentence=e=>{if(e.tagName!=='A'||getComputedStyle(e).display!=='inline')return false;return [...e.parentElement.childNodes].some(n=>n.nodeType===3&&n.textContent.trim())};
-// label の中の入力は、外の label が押す所なので label を測る。読み上げ用に隠した label（1px 四方に畳んだ物）は押す所でない
-const hiddenLabel=e=>e.tagName==='LABEL'&&e.getBoundingClientRect().height<=2;
+// label の中の入力は、外の label が押す所なので label を測る。読み上げ用に隠した label（1px 四方に畳んだ物、画面の外へ出した物）は押す所でない
+const hiddenLabel=e=>{if(e.tagName!=='LABEL')return false;const r=e.getBoundingClientRect();return r.height<=2||r.right<=0};
 const tap=[...document.querySelectorAll('a,button,input,select,summary,label,textarea')].filter(e=>e.type!=='hidden'&&vis(e)&&!inSentence(e)&&!(e.tagName==='INPUT'&&e.closest('label'))&&!hiddenLabel(e));
 const low=tap.map(e=>[name(e),Math.round(e.getBoundingClientRect().height)]).filter(x=>x[1]<%d);
 const small={};for(const e of document.querySelectorAll('body *')){if(!vis(e)||![...e.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()))continue;const f=parseFloat(getComputedStyle(e).fontSize);if(f<%d){const k=(e.className&&e.className.baseVal===undefined&&e.className?'.'+String(e.className).trim().split(/\\s+/)[0]:e.tagName.toLowerCase())+' '+f;small[k]=(small[k]||0)+1}}
 // 帯の段ごとの項目の数。1 つだけ次の行に落ちていないかを見る（#125）
 // 縦の中心が近い物を同じ段と数える。top で数えると、今いる項目の下の罫の分だけずれて、同じ段を別の段と数えた
 const rows=[];for(const a of document.querySelectorAll('.nav a')){if(!vis(a))continue;const r=a.getBoundingClientRect(),c=(r.top+r.bottom)/2,hit=rows.find(x=>Math.abs(x.c-c)<14);if(hit)hit.n++;else rows.push({c,n:1})}
-parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth,nav:rows.map(x=>x.n)}),'*');
+// 字の欄と選ぶ欄は、名前の下で箱の幅いっぱいに出す（#290）。箱は label の親の、枠と余白を除いた幅
+const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>input[type=number],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
+const narrow=wide.filter(f=>{const l=f.parentElement,p=l.parentElement,s=getComputedStyle(p),box=p.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight),r=f.getBoundingClientRect(),n=[...l.childNodes].find(x=>x.nodeType===3&&x.textContent.trim());if(r.width<box-1)return true;if(!n)return false;const t=document.createRange();t.selectNodeContents(n);return r.top<t.getBoundingClientRect().bottom-1}).map(f=>name(f.parentElement));
+parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth,nav:rows.map(x=>x.n),wide:wide.length,narrow}),'*');
 },800)</script>""" % (MIN_TAP, MIN_FONT)
 # Chrome の新しい headless は窓の幅が 500 より狭くならない。CSS の幅の判定は iframe の幅で働くので、幅を決めた iframe に入れて測り、結果を親へ渡す
 WRAP = """<!doctype html><body><iframe src="%s" width="%d" height="844" style="border:0"></iframe><script>
@@ -104,6 +108,9 @@ def main():
         if not printed:
             data = urllib.parse.urlencode({"hypothesis": "H-A"}).encode()
             urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
+            # 説明まで残した記録に「次の版」の欄が出る（#290）
+            rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+            assert loop.save_explanation(rid, "測る道具", "途中で止まった", "軸を長くする") == []
             printed = True
         for path in pages:
             got = measure(exe, base, path, width)
@@ -114,8 +121,8 @@ def main():
                 print(f"検査できない: 窓の幅が {got['w']} で {width} にならない", file=sys.stderr)
                 return 4
             kinds = sorted({re.sub(r" .*", "", x[0]) for x in got["low"]})
-            print(f"{look:6} {path[:28]:28} 押す所 {got['tap']:3}・{MIN_TAP} 未満 {len(got['low']):3} {kinds[:5]}  小さい字 {sum(got['small'].values()):3} {list(got['small'])[:4]}  横幅 {got['sx']}  帯の段 {got['nav']}")
-            bad += len(got["low"]) + sum(got["small"].values())
+            print(f"{look:6} {path[:28]:28} 押す所 {got['tap']:3}・{MIN_TAP} 未満 {len(got['low']):3} {kinds[:5]}  小さい字 {sum(got['small'].values()):3} {list(got['small'])[:4]}  横幅 {got['sx']}  帯の段 {got['nav']}  字の欄 {got['wide']}・細い {len(got['narrow'])} {got['narrow'][:2]}")
+            bad += len(got["low"]) + sum(got["small"].values()) + len(got["narrow"])
             bad += sum(1 for i, n in enumerate(got["nav"]) if i and n == 1)  # 2 段目より後に 1 つだけ落ちた項目
         server.shutdown()
     print(f"満たさない所 {bad}")

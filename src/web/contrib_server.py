@@ -37,7 +37,7 @@ FORM = """<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewp
 <label>写真（JPEG か PNG、5MB まで。人が写っていない物）<input type="file" name="image" accept="image/jpeg,image/png"></label>
 <label>写真や文の権利<select name="basis"><option value="own_work">自分で撮った・書いた</option><option value="permission">持ち主の許可がある</option><option value="public_domain">権利が切れている</option><option value="unknown">分からない（公開しません）</option></select></label>
 <label>権利の持ち主の名前（写真の時は必須。公開されます）<input type="text" name="holder" maxlength="100"></label>
-<label>公開の条件<select name="license"><option value="display_only">この場所での表示だけ（AI には渡しません）</option><option value="CC-BY-4.0">CC BY 4.0（出典を示せば誰でも使える。仮説づくりの参考として AI の Claude にも渡します）</option></select></label>
+<label>公開の条件<select name="license"><option value="display_only">この場所での表示だけ（AI（Claude）には渡しません）</option><option value="CC-BY-4.0">CC BY 4.0（出典を示せば誰でも使える。仮説づくりの参考として AI の Claude にも渡します）</option></select></label>
 <label>公開する名前（空なら匿名）<input type="text" name="display_name" maxlength="50"></label>
 <label>連絡先（任意。公開しません。確認や取り下げの連絡に使います）<input type="text" name="contact" maxlength="200"></label>
 <label class="check"><input type="checkbox" name="agrees_terms"> 確認の後に公開される事、取り下げを申し出られる事に同意します</label>

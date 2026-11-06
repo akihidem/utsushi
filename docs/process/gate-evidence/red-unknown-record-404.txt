@@ -1,0 +1,17 @@
+# 命令: .venv/bin/python tests/test_unknown_record.py
+# commit: 5fab8dcf（回した時の HEAD）
+[2026-11-06 06:53:13 +0900] POST /record/R-9999/explain の失敗: ValueError
+ValueError:
+  File "src/web/play_server.py", line 291, in do_POST
+    self._post()
+    ~~~~~~~~~~^^
+  File "src/web/play_server.py", line 580, in _post
+    rec = loop.record(rid)
+  File "src/omochae/loop.py", line 83, in record
+    raise ValueError(f"記録が無い: {rid}")
+Traceback (most recent call last):
+  File "tests/test_unknown_record.py", line 41, in <module>
+    assert st == 404 and "もう一度送って" not in body, (act, st, body[-200:])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('explain', 500, "torAll('form[method=post]').forEach(f=>{if(f.elements.who)return;const i=document.createElement('input');i.type='hidden';i.name='who';i.value=w;f.appendChild(i)})}catch(e){}})()</script></body></html>")
+rc=1
