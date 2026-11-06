@@ -36,7 +36,7 @@ ADOPTED = (
       "聞くのは、ボタンを押した後だけです。「はじめる」を押すと、「つぎ」「もどる」などの操作の言葉を聞きます。質問は「こまった」の後の 1 つだけ受けます。工夫は、マイクを押してから話した事だけを受けます。「こまった」やマイクを押していない間は、まわりの話し声は残りません。押した後は、近くの人の声が字になる事があります。",
       "残るのは字だけです。字は「のこす」を押した時に残ります。残す前に、読んで直せます。",
       "名前・学校の名前・住所・電話番号・メールは、言ったり書いたりしないでください。名乗りや連絡先の形の言葉は、機械が落とします。ただし、全部を見分ける事はできません。",
-      "残した工夫の字は、ほかの人も読めます。",
+      "残した工夫の字は、このサイトを作っている人だけが読みます。ほかの人の頁には、AI（Claude）が短くまとめた字だけを出します。",
       "質問の字は、案内をよくするために残します。質問に答える時に AI（Claude）に送るのは、質問の字だけです。",
       "残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。")),
     ("3 写真と動画",
@@ -109,7 +109,14 @@ def recorded():
     return tuple((h, tuple(lines)) for h, lines in out)
 
 
-assert recorded() == ADOPTED, "決定の記録の字と、この試験の字が違う。記録が直ったなら、頁と試験を記録から抜き直す"
+# 採られた後に替えた行（11-06 夜の窓口の決定・推しの字。話した字は頁に出さない決定、J-034 に合わせた）。記録の採られた文の節は書き換えず、
+# 節の末にこの行を替えた事を書いた。記録の字に替えた行を当てた字が、頁と一字も違わない事を見る
+REPLACED = {"2 声と字のあつかい": {"残した工夫の字は、ほかの人も読めます。": "残した工夫の字は、このサイトを作っている人だけが読みます。ほかの人の頁には、AI（Claude）が短くまとめた字だけを出します。"}}
+_r36 = (ROOT / "docs/process/research/36-road-and-audience.md").read_text(encoding="utf-8")
+assert "2 の 6 行目「残した工夫の字は、ほかの人も読めます。」は、11-06 夜の決め直しで「残した工夫の字は、このサイトを作っている人だけが読みます。ほかの人の頁には、AI（Claude）が短くまとめた字だけを出します。」に替えた" in _r36, "替えた事の記録が無い"
+assert all(set(REPLACED[h]) <= set(lines) for h, lines in recorded() if h in REPLACED), "替えた行が採られた文に無い（記録が変わった）"
+replaced = tuple((h, tuple(REPLACED.get(h, {}).get(x, x) for x in lines)) for h, lines in recorded())
+assert replaced == ADOPTED, "決定の記録の字と、この試験の字が違う。記録が直ったなら、頁と試験を記録から抜き直す"
 heads = [h for h, _ in ADOPTED]
 assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 32, "題と見出しと合わせて 39 行"
 expected = TITLE + "".join(heads) + "".join(h + "".join(lines) for h, lines in ADOPTED) + "".join(BUTTONS)
@@ -157,6 +164,12 @@ for public_open in (False, True):
 # 3. 約束の裏付け。消えたら、文を本人に確かめ直す
 assert set(inspect.signature(records.withdraw).parameters) >= {"media_only", "talk_only"}, "記録ごと・写真だけ・話した字だけを消せる"
 assert talk_log.drop_for_record, "記録を消すと話した字も消える"
+# 2 の 6 行目の裏付け: 話した字は、記録に結んでいても、ほかの人の頁（手帖の記録の札）に出さない（J-034）。AI がまとめた字の置き場はまだ無いので、何も出ない
+from omochae import loop  # noqa: E402
+from web import hanasu  # noqa: E402
+_rid, _ = records.add({"source_id": "NDL-1187053-R0000005-L", "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+assert talk_log.add("NDL-1187053-R0000005-L", "keep", "話した工夫の見本", record_id=_rid)[1] == []
+assert hanasu.kufu_block("NDL-1187053-R0000005-L", loop.record(_rid)) == "", "話した字は、ほかの人の頁に出さない"
 assert "used_by(rid)" in inspect.getsource(records.withdraw), "型紙を直す理由に使った記録は、記録そのものは残る"
 assert re.fullmatch(r"記録の番号 R-0003", wording.record_no("R-0003")), "番号は手帖の記録の頁に、この形で出る"
 assert media_review.SHOWS == ("object", "people"), "物だけ / 人や声が入る、を人が確かめる"
