@@ -160,15 +160,27 @@ def media_of(rid):
     return [p.name for p in sorted(d.glob("m*.*"))] if d.exists() else []
 
 
-def ai_offer(rid):
+def seen_observation(rid, up_key=None):
+    """その画面に出してよい観察の文。確認の前の動画を読んだ文は、その動画と同じに、上げた本人の画面にだけ出す（media_review.shown_to）。
+    どの動画を読んだかの控えが無い前の文は、その記録の動画を見られる画面にだけ出す。"""
+    from api import observe
+
+    o = observe.observation(rid)
+    if not o:
+        return None
+    read = [o["video"]] if o.get("video") else [f for f in media_of(rid) if f.endswith(("mp4", "mov"))]
+    return o if media_review.shown_to(rid, read, up_key) else None
+
+
+def ai_offer(rid, up_key=None):
     """AI の 2 つの口のうち、今押して進める物と、進めない時に出す 1 行を返す（#130）。
 
     押しても断りの文が返るだけの釦を出さないため。play_server の受け口の断りは、古い頁から押された時のために残す。
     """
     if not ask._key_present():
         return False, False, "AI の返事は、この場では使えません。"
-    # 人や声が入ると確かめた動画は AI にも渡さない（#314）。
-    has_video = any(f.endswith(("mp4", "mov")) for f in media_review.visible(rid, media_of(rid)))
+    # 人や声が入ると確かめた動画は AI にも渡さない（#314）。確認の前の動画は、上げた本人の画面からだけ渡す。
+    has_video = any(f.endswith(("mp4", "mov")) for f in media_review.shown_to(rid, media_of(rid), up_key))
     return True, has_video, "" if has_video else "動画を上げると、Claude が見えた事を返します。"
 
 
@@ -184,7 +196,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.techo input[type=text]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
+.techo input[type=text],.techo input[type=number]{font:inherit;font-size:22px;border:2px solid var(--frame);border-radius:12px;padding:14px 16px;width:100%;box-sizing:border-box;background:var(--field);color:var(--fg)}
 .techo .go{font:inherit;font-size:20px;letter-spacing:.05em;background:var(--accent);color:var(--onaccent);border:0;padding:16px 28px;border-radius:12px;cursor:pointer;margin:0}
 .techo .meta{font-size:12px;color:var(--mute)}
 .techo .item{border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:6px}
@@ -193,47 +205,54 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 """
 
-def feedback(sid, r, photos=True):
+def feedback(sid, r, photos=True, up_key=None, can_tell=False):
     """手帖で受けるフィードバック（本人「フィードバックも手帖」、11-04）。順は J-013 のまま: 紙の返事（試した後の紙）→ 人の説明 → 次の版。
     Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。
-    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。"""
+    photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。
+    can_tell は、この画面がこの記録を残した時に真。説明の欄はその画面にだけ出す（受け口も断る。records.mine）。"""
     from omochae import loop
 
     after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told and not photos:
-        body = '<p class="meta">説明を残しました。</p>' + ai_part(r)
+        body = '<p class="meta">説明を残しました。</p>' + ai_part(r, up_key, photos=False)
     elif told:
         from web.play_server import next_form
 
-        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+        body = f'<p>{esc(told["text"])}</p><p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' + ai_part(r, up_key) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+    elif not can_tell:
+        body = ""
     else:
         body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" required>'
                 '<p><button class="go">残す</button></p></form>')
+    # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
+    if not photos and str(r["hypothesis_id"]).startswith("OWN-"):
+        return body
     return f'<p><a href="{after}">試した後の紙</a></p>{body}'
 
 
-def ai_part(r):
-    """人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。"""
+def ai_part(r, up_key=None, photos=True):
+    """人の説明の後に出す AI の返事（J-013 の順の最後）。Claude の読みと、動画を見た観察の補助。どちらも案で、採点しない。
+    photos=False は合言葉なしで開いた場で、読みと観察の文を出さない（J-028）。"""
     from omochae import loop
     from api import observe
 
     rid = esc(r["id"])
     out = ""
-    i = loop.interpretation(r["id"])
+    i = loop.interpretation(r["id"]) if photos else None
     if i and isinstance(i.get("content"), dict):
         c = i["content"]
         lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
         lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
         lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
         out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>'
-    o = observe.observation(r["id"])
+    o = seen_observation(r["id"], up_key) if photos else None
     if o:
         lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
         out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
-    can_ask, can_watch, why = ai_offer(r["id"])
+    can_ask, can_watch, why = ai_offer(r["id"], up_key)
     buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}"><input type="hidden" name="back" value="techo"><button class="go">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
                f'<form method="post" action="/record/{rid}/ai-observe#{rid}"><input type="hidden" name="back" value="techo"><button class="go">動画を見てもらう</button></form>' if can_watch else "")
     return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
@@ -272,7 +291,7 @@ def made_item(sid, data, r, photos=True):
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(r["result"])}　{esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "")}　{esc(records.result_word(r))}　{esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
@@ -299,15 +318,15 @@ def gallery_page(sids, photos=True):
             '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{cards}</section>'
-            '<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。</p>'
+            f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
-            '<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。</p>'
+            f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section></div>')
 
 
-def records_page(sid, uploads=True, msg=""):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。"""
     data = hypotheses.load(sid)
@@ -317,16 +336,16 @@ def records_page(sid, uploads=True, msg=""):
     note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
-        # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた人が受け取りを確かめられるように出す（#314）。
-        files = media_review.visible(r["id"], media_of(r["id"])) if uploads else []
+        # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
+        files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else ""
-        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"]))}　{esc(who)}　{esc(r["result"])}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if uploads else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
-                 f'{hanasu.keep_box(sid, r, show_shared=uploads)}'
-                 f'{feedback(sid, r, photos=uploads)}</div>')
+                 f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
+                 f'{feedback(sid, r, photos=uploads, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'

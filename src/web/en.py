@@ -107,7 +107,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
         steps = "".join(f"<li>{esc(s)}</li>" for s in steps_for(sid, h, data)) if en else ""
         steps = f'<details><summary>Steps</summary><ol>{steps}</ol></details>' if steps else ""
         cards += (f'<div class="plate"><div class="letter">{esc(letter)}</div><h3>{head}</h3>{how}{_marks(data, h)}{steps}<div class="acts">'
-                  f'<form method="post" action="/en/toy/{esc(sid)}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet">Print sheets</button></form>{links}</div></div>')
+                  f'<form method="post" action="/en/toy/{esc(sid)}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>Print sheets</button></form>{links}</div></div>')
     gloss = "".join(f"<dt>{esc(a)}</dt><dd>{esc(b)}</dd>" for a, b in GLOSSARY)
     tag = "" if hypotheses.stage(sid) == "必須" else '<p class="meta"><span class="lb">Untested draft</span> The name is our guess from the picture. No one has built this one.</p>'
     body = (f'<section class="hero">{_picture(sid)}<div><h1>{esc(t["name"])}</h1>{tag}<p class="lead">{esc(t["intro"])}</p>'

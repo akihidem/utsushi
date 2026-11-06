@@ -29,6 +29,10 @@ host = f"{(server.lan_hosts or ('127.0.0.1',))[0]}:{port}"
 SID = "NDL-1187053-R0000005-L"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 def call(path, form=None, body=None, ctype=None):
     data = urllib.parse.urlencode(form).encode() if form is not None else body
     headers = {"Host": host}

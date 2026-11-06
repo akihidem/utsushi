@@ -15,13 +15,18 @@ from PIL import Image  # noqa: E402
 
 from omochae import hypotheses, media_review  # noqa: E402
 from web.play_server import serve  # noqa: E402
-from web.techo_site import MAX_MEDIA, media_dir, strip_jpeg_meta  # noqa: E402
+from web.techo_site import MAX_MEDIA, media_dir, save_media, strip_jpeg_meta  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
 port = server.server_address[1]
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{port}"
+
+
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+JAR = urllib.request.HTTPCookieProcessor()
+urllib.request.install_opener(urllib.request.build_opener(JAR))
 
 
 def req(path, data=None, ctype="application/x-www-form-urlencoded", origin=base):
@@ -68,12 +73,17 @@ jpeg = photo.getvalue()[:2] + b"\xff\xe1\x00\x08EXIF!!" + photo.getvalue()[2:]
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg")[0] == 201
 saved = (media_dir(rid) / "m1.jpg").read_bytes()
 assert b"EXIF" not in saved and saved == strip_jpeg_meta(jpeg)
-code, got = req(f"/record/{rid}/media/m1.jpg")
-assert code == 200 and got == saved
+try:  # 鍵を持たない別の人の画面（この試験の req は、上げた本人のブラウザとして cookie を持つ）
+    urllib.request.build_opener().open(base + f"/record/{rid}/media/m1.jpg")
+    raise AssertionError("確認の前の写真は、上げた本人の画面にだけ（tests/test_photo_owner_only.py）")
+except urllib.error.HTTPError as e:
+    assert e.code == 404, e.code
 assert req(f"/record/{rid}/media", b"x", "text/html")[0] == 422, "写真と動画の型だけ"
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg", origin="http://evil.example")[0] == 403
-assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 422, "記録の無い所には置かない"
-assert "m1.jpg" in req(f"/toy/{G}/techo/kiroku")[1].decode()
+# 記録を残した画面でなければ受けない。無い記録も同じ答え（在るか無いかを答えない）。置く所の床（無い記録には置かない）は下に残る
+assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 403, "記録の無い所には置かない"
+assert save_media("R-9999", "image/jpeg", jpeg)[0] is None and not media_dir("R-9999").exists()
+assert "m1.jpg" not in urllib.request.build_opener().open(base + f"/toy/{G}/techo/kiroku").read().decode(), "別の人の手帖に確認の前の写真を出さない"
 # 次の版（本人の問いの (7)）: 説明が先、数でない値は断る、床に通った時だけ版 2 を刷る
 code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
 assert code == 422 and "先に説明を書く" in body.decode()
@@ -95,7 +105,7 @@ page = req(f"/toy/{G}/techo/kiroku")[1].decode()
 assert "試した後の紙" in page and "次の版を作る" in page and 'name="back" value="techo"' in page
 assert "試した後の紙" not in req(f"/toy/{G}/techo")[1].decode()
 r2 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた"})[1])["id"]
-opener = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
+opener = urllib.request.build_opener(JAR, type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
 x = urllib.request.Request(base + f"/record/{r2}/explain", data=urllib.parse.urlencode({"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"}).encode(),
                            headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
 try:
@@ -105,6 +115,9 @@ except urllib.error.HTTPError as e:
 # サイトのギャラリー: 作った物と職人の言葉の枠
 assert "m1.jpg" not in req("/gallery")[1].decode(), "人の確認の前は出さない（#314）"
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
+code, got = req(f"/record/{rid}/media/m1.jpg")
+assert code == 200 and got == saved, "確かめた写真は誰にでも開く。撮影の情報を外した物"
+assert "m1.jpg" in req(f"/toy/{G}/techo")[1].decode()
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()

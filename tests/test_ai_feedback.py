@@ -48,7 +48,11 @@ import urllib.request  # noqa: E402
 
 from omochae import hypotheses  # noqa: E402
 from web.play_server import serve  # noqa: E402
+from web.techo_site import media_dir  # noqa: E402
 
+# 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
+media_dir(rid).mkdir(parents=True, exist_ok=True)
+(media_dir(rid) / "review.json").write_text('{"v.mp4": {"shows": "object"}}', encoding="utf-8")
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -69,7 +73,7 @@ page = urllib.request.urlopen(base + f"/toy/{G}/techo/kiroku").read().decode()
 # 鍵が無い時は、押しても断りが返るだけの釦を出さない（#130）。受け口の断りは古い頁から押された時のために残す
 assert "Claude に聞く（何が起きたか）" not in page and "AI の返事は、この場では使えません" in page and "観察（Claude の補助）" in page
 code, loc = post(f"/record/{rid}/ai-interpret", {"back": "techo"})
-assert code == 303 and "techo" in loc and urllib.parse.quote("鍵が置かれると") in loc
+assert code == 303 and "techo" in loc and urllib.parse.quote("AI の返事は、この場では使えません") in loc
 r2, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない"})
 assert post(f"/record/{r2}/ai-observe", {"back": "techo"})[0] == 422, "人の説明の前は呼ばない"
 server.shutdown()

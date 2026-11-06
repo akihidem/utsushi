@@ -49,7 +49,7 @@ def win(page):
 page = get(f"/toy/{G}")
 ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
 first, other = hypotheses.sheet_of(G)["id"], ids[1]
-making = lambda hid: f'<form method="post" action="/toy/{G}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button>'
+making = lambda hid: f'<form method="post" action="/toy/{G}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button data-busy>'
 # 窓の札はたたき台の 1 枚だけ（本人の決定 11-05、J-032）。最初の 1 枚も窓の中で作れる。上の節の札は「型紙を見る」で、印刷とは言わない
 assert "型紙を見る</button>" in page and making(first) in win(page) and making(other) not in win(page), win(page)[:600]
 assert "仮説の札を押すと、紙を作ってここに出します" in visible(win(page))

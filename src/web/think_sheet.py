@@ -26,10 +26,13 @@
 import json
 import urllib.parse
 
-from api import words
+from api import config, words
 from omochae import hypotheses, making_log, records
 
-from .play_server import esc, out_dir
+from .play_server import esc, out_dir, print_own
+
+# 考えから紙を作る釦は Claude を呼ぶので、呼び出しの上限より長く押せないままにする。途中で押し直せると、費用のかかる呼び出しが 2 回走る。
+GO_BUSY_FOR = config.RUN_TIME_LIMIT["words"] + 20
 
 # ── 利用者向けの文。本人の決定（11-05 21:5x・全部このまま）で採られた文 ──
 GO = "この考えから紙を作る"
@@ -167,8 +170,7 @@ def confirm(sid, token):
         oid = w.get("own_id", "")
     else:
         return None, FAILED
-    out_dir(sid).mkdir(parents=True, exist_ok=True)
-    if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
+    if print_own(sid, oid) != 0:
         return None, FAILED
     # 紙に刷った組を、刷る時に残す（たたき台を刷る時と同じ型紙の確定）。束が、この紙の記録を同じ組の札や工夫と同じ群に入れるため。記録の時の組では、版が上がった後に違う組になる。
     # 型紙なしの紙には組が無い。残すと、紙の組の報告に数えられる。
@@ -242,8 +244,8 @@ def _status(sid, w):
     if w["status"] == "waiting_maker":
         return f"<p>{esc(WAITING)}</p>"
     said = f'<blockquote>{esc(w["how_it_moves"])}</blockquote>'
-    ok = (f'<form method="post" action="/toy/{esc(sid)}/think-ok"><input type="hidden" name="t" value="{esc(w["token"])}">'
-          f"<button>{esc(OK)}</button></form>")
+    ok = (f'<form method="post" action="/toy/{esc(sid)}/think-ok#think"><input type="hidden" name="t" value="{esc(w["token"])}">'
+          f"<button data-busy>{esc(OK)}</button></form>")
     if w["status"] == "decided":
         name = sheet_of(sid, w.get("own_id", ""))
         if not name:  # 採った後に刷れなかった時。押せば刷り直す（confirm）
@@ -268,7 +270,7 @@ def section(sid, at="", note=""):
     w = words.by_token(sid, at[len("think-"):]) if at.startswith("think-") else None
     status = _status(sid, w) if w else ""
     # 確かめている間は頼む釦を出さない（押しても同じ案へ戻るだけで、押す釦が 2 つ並ぶと迷う）。
-    go = "" if w and w["status"] == "pending_human" else f'<form method="post" action="/toy/{esc(sid)}/think-sheet"><button class="quiet">{esc(GO)}</button></form>'
+    go = "" if w and w["status"] == "pending_human" else f'<form method="post" action="/toy/{esc(sid)}/think-sheet#think"><button class="quiet" data-busy data-busy-for="{GO_BUSY_FOR}">{esc(GO)}</button></form>'
     return f'<section class="sec" id="think">{note if at.startswith("think") else ""}<p class="lead">{esc(LEAD)}</p>{status}{go}</section>'
 
 

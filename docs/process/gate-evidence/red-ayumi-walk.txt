@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_loop_ayumi.py
+# commit: ff54436（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_ayumi.py", line 72, in <module>
+    assert any("くり抜く側面の穴を切るのが大変" in x and x.startswith(told) for x in got["words"]), (where, got["words"])
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('置き場が別', ['人の説明 R-0001: 仮説Aは、くり抜く側面の穴を切るのが大変で、下から切り取ることになった。ジャバラの固定に苦慮していた。 次の思いつき: どちらの仮説も、内側の筒の土台があると良い。', '人の説明 R-0002: どちらの仮説も、内側の筒の土台があると良い。ジャバラの固定に苦慮していた。 次の思いつき: 仮説Aにある土台が仮説Cにもあると、作りやすい。'])
+rc=1
+
+上は、手歩きの指摘を足した試験に、直す前の src/web/kaizen_versions.py と ayumi.py と kaizen.py を当てて回した。

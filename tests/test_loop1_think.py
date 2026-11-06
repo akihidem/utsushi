@@ -179,7 +179,7 @@ def send(path, data=None):
 
 
 code, body, _ = send(f"/toy/{G}")
-assert code == 200 and think_sheet.GO in body and 'action="/toy/' + G + '/think-sheet"' in body
+assert code == 200 and think_sheet.GO in body and 'action="/toy/' + G + '/think-sheet#think"' in body
 # 節は、たたき台の寸法が全部読める玩具の頁だけ（今は必須 2 種。呼び名を足すと増える）。内部の名前（board_w など）を学ぶ人に見せないため
 T, P = "NDL-1187053-R0000014-R", "NDL-1187053-R0000004-L"
 assert [p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("NDL-*.json")) if think_sheet.ready(p.stem)] == [G, T]

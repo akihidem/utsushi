@@ -3,6 +3,7 @@
 統括の決め（11-06）: どのループかは記録から決める。手で足した欄は使わない。答えは repo の中の data だけで決まり、置き場（OMOCHAE_DATA）を別にしても、
 隣の repo（paper-to-toy）が無くても変わらない。本物の API は呼ばない。
 """
+import io
 import json
 import os
 import pathlib
@@ -19,10 +20,12 @@ no_engine = tempfile.mkdtemp()  # 台帳の無い場所
 os.environ["OMOCHAE_DATA"] = data_dir
 os.environ["OMOCHAE_ENGINE_REPO"] = no_engine
 
+from PIL import Image  # noqa: E402
+
 from api import words  # noqa: E402
 from omochae import hypotheses, loop, records, talk_log  # noqa: E402
 from omochae.marks import without_premise  # noqa: E402
-from web import ayumi, kaizen, kaizen_versions as kv, play_server  # noqa: E402
+from web import ayumi, kaizen, kaizen_versions as kv, play_server, techo_site  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"  # 御来迎・首振り虎
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -67,9 +70,12 @@ for where, got in seen.items():
     assert got["ledger"] is None, where
     assert got["v8"] == V8 and got["tag8"] == "ループ 3（材料はループ 2）", (where, got["v8"])
     assert got["v9"] == OUT and got["v10"] == OUT and got["tora3"] == OUT and got["tag9"] == "ループの外", (where, got["v9"], got["v10"])
-    assert any("くり抜く側面の穴を切るのが大変" in x and x.startswith("人の説明 R-0001") for x in got["words"]), (where, got["words"])
+    # 置き場が同じ repo なら番号を出す。置き場が別なら、repo の記録の番号は出さない（置き場の同じ番号と、同じ記録に読めるため）
+    told = "人の説明 R-0001: " if where == "今の main の data" else "人の説明: "
+    assert any("くり抜く側面の穴を切るのが大変" in x and x.startswith(told) for x in got["words"]), (where, got["words"])
     page = got["page"]
-    assert "ループ 3（材料はループ 2）" in article(page, "goraigo-v8") and "人の説明 R-0001" in article(page, "goraigo-v8") and "人の説明 R-0002" in article(page, "goraigo-v8"), where
+    assert "ループ 3（材料はループ 2）" in article(page, "goraigo-v8") and told in article(page, "goraigo-v8"), where
+    assert ("R-0002" in article(page, "goraigo-v8")) == (where == "今の main の data"), where
     for anchor in ("goraigo-v9", "goraigo-v10", "tora-v2"):
         assert "ループの外" in article(page, anchor) and "人の説明" not in article(page, anchor), (where, anchor)
     assert "読めません" in page and "雛形の分からない直し" not in page, where
@@ -131,7 +137,7 @@ put("R-0001")
 assert not loop.save_explanation("R-0001", "サイトの係", "置き場の同じ番号の字", "わからない")
 assert kv.set_verdict(["goraigo-v8"]) == V8
 item8 = ayumi._set_item(next(r for r in rows if r["版"] == "goraigo-v8"))
-assert "人の説明 R-0001" in item8 and "くり抜く側面の穴を切るのが大変" in item8 and "置き場の同じ番号の字" not in item8
+assert "人の説明: " in item8 and "くり抜く側面の穴を切るのが大変" in item8 and "置き場の同じ番号の字" not in item8 and "R-0001" not in item8
 assert "人の説明" not in ayumi._set_item(next(r for r in rows if r["版"] == "goraigo-v9"))
 put("R-0011", answers={"stuck": "止まった所の字"}, fixes=[{"part": "外筒", "change": "幅を広げた", "outcome": "入った"}])
 put("R-0012")
@@ -152,6 +158,13 @@ assert "止まった所 R-0011: 止まった所の字" in v2 and "人の工夫 R
 assert "根拠でない記録の説明の字" not in block, "版の知見は版の根拠の記録から。組の知見は組の直しの根拠の記録から"
 assert "サイトの係" not in block, "採った人と説明した人の名前は出さない"
 assert block.index("仮説 A 版 2") < block.index("goraigo-v10"), "新しい版が上"
+# 置き場の R-0001 を根拠にした版と、repo の 11-04 の R-0001 が 1 つの頁に並んでも、同じ記録に読めない。番号が出るのは置き場の記録だけ
+put_version(G, "H-A", 3, ["R-0001"])
+block = ayumi.toy_block(G, hypotheses.load(G))
+assert "人の説明 R-0001: 置き場の同じ番号の字" in block and block.count("人の説明 R-0001") == 1 and "人の説明: 仮説A" in block, "番号の字が 2 つの記録を指さない"
+(LOOP / f"version-{G}-H-A-3.json").unlink()
+loose = ayumi._change_item({"sheet_set": "z-v1", "changes": ["字"], "record_ids": ["R-0001"], "in_repo": True})
+assert "R-0001" not in loose and "人の説明: 仮説A" in loose, "表に行の無い repo の直しも、番号を出さない"
 
 # 6. 表に行の無い雛形の直しを黙って消さない。根拠の記録の玩具の札に出す。組の名が雛形に当たらなくても出す。番号が repo と重なっても、repo の直しを消さない
 _, fails = loop.save_template_change(["R-0011"], "goraigo-v99", "abc1234", ["表にまだ無い直し <b>字</b>"], "サイトの係", "カード 20261104-103912")
@@ -211,6 +224,25 @@ assert kv.record_loops("R-0022") == ([4], False)
 # 置き場の同じ番号に話した字があっても、repo の記録の答えと知見には混ぜない
 assert talk_log.add(G, "keep", "置き場の同じ番号に話した字", record_id="R-0001")[1] == []
 assert kv.set_verdict(["goraigo-v8"]) == V8 and not any("置き場の同じ番号に話した字" in x for x in kv.record_words("R-0001", True))
+# 手帖で写真や動画を上げた記録もループ 4（via は techo）。上げていない手帖の記録はループ 2。受け口の動画（v1.mp4）は via で見るので、ここでは数えない
+put("R-0104", via="techo")
+assert kv.record_loops("R-0104") == ([2], False)
+shot = io.BytesIO()
+Image.new("RGB", (40, 30), "white").save(shot, "JPEG")
+assert techo_site.save_media("R-0104", "image/jpeg", shot.getvalue())[0] == "m1.jpg", "手帖の本物の口で上げる"
+assert kv.record_loops("R-0104") == ([4], False), "手帖・話なし・写真あり"
+assert kv.version_verdict({"record_ids": ["R-0104"]})["loops"] == [4]
+put("R-0105", via="techo")
+(RECS / "media/R-0105").mkdir(parents=True)
+(RECS / "media/R-0105/v1.mp4").write_bytes(b"x")
+assert kv.record_loops("R-0105") == ([2], False)
+put("R-0106", via="techo")
+assert techo_site.save_media("R-0106", "image/jpeg", shot.getvalue())[0] == "m1.jpg"
+assert talk_log.add(G, "craft", "写真と工夫の字", hypothesis_id="H-A", sheet_version=1, step=2, who="ayumitest02")[1] == []
+talk_log.bind(G, "H-A", 1, "ayumitest02", "R-0106")
+assert kv.record_loops("R-0106") == ([2, 4], False), "作りながらの話と写真"
+assert techo_site.save_media("R-0001", "image/jpeg", shot.getvalue())[0] == "m1.jpg"
+assert kv.set_verdict(["goraigo-v8"]) == V8, "置き場の同じ番号の写真を、repo の記録に数えない"
 put("R-0101", via=records.UPLOADED)
 assert kv.record_loops("R-0101") == ([4], False), "上げる口から来た記録"
 put("R-0102", via=records.UPLOADED, video_kind="review")
@@ -219,6 +251,24 @@ put("R-0103", hypothesis_id="OWN-1")
 assert kv.record_loops("R-0103") == ([2], False), "話した考えから作った紙でなければ ループ 1 を付けない"
 (LOOP / "words-W-0001.json").write_text(json.dumps({"source_id": G, "typed_by": words.THINK_BY, "own_id": "OWN-1"}, ensure_ascii=False), encoding="utf-8")
 assert kv.record_loops("R-0103") == ([1, 2], False)
+put("R-0107", hypothesis_id="OWN-1", via="techo")
+assert techo_site.save_media("R-0107", "image/jpeg", shot.getvalue())[0] == "m1.jpg"
+assert kv.record_loops("R-0107") == ([1, 4], False), "話した考えの紙・手帖・写真"
+# ループ 1 の版の知見に、話した考えの字も出す（/loop/<印> と同じく作る側の頁だけ）。隠した字は出さない。ループ 1 でない記録の考えは出さない
+assert talk_log.add(G, "think", "話した考えの字", who="ayumitest03")[1] == []
+talk_log.bind(G, "OWN-1", 1, "ayumitest03", "R-0103")
+assert "話した考え R-0103: 話した考えの字" in kv.record_words("R-0103")
+put_version(G, "H-A", 3, ["R-0103"])
+own_item = item_of(ayumi.toy_block(G, hypotheses.load(G)), "仮説 A 版 3")
+assert "ループ 1・2" in own_item and "話した考え R-0103: 話した考えの字" in own_item
+(LOOP / f"version-{G}-H-A-3.json").unlink()
+talk_log.set_share(G, "R-0103", False)
+assert not any("話した考えの字" in x for x in kv.record_words("R-0103"))
+talk_log.set_share(G, "R-0103", True)
+put("R-0108")
+assert talk_log.add(G, "think", "たたき台を見て話した字", hypothesis_id="H-A", who="ayumitest04")[1] == []
+talk_log.bind(G, "H-A", 1, "ayumitest04", "R-0108")
+assert kv.record_loops("R-0108") == ([2], False) and not any("たたき台を見て話した字" in x for x in kv.record_words("R-0108")), "考えはループ 1 の版にだけ"
 assert kv.version_verdict({"record_ids": ["R-0021"]}) == {"loops": [2, 4], "material": [], "review": False}
 assert kv.version_verdict({"record_ids": ["R-0102"]}) == {"loops": [], "material": [], "review": True} and kv.tag(kv.version_verdict({"record_ids": ["R-0102"]})) == "ループの外（材料は作る前のレビュー）"
 assert kv.version_verdict({"record_ids": ["無い記録"]})["loops"] == [2]
@@ -242,6 +292,13 @@ assert loop.confirm_interpretation("R-0022", "サイトの係") == []
 assert "読み R-0022: 案の見た事の字" in kv.record_words("R-0022") and "読み R-0022: 案の原因の字" in kv.record_words("R-0022")
 put("R-0023")
 assert loop.confirm_interpretation("R-0023", "サイトの係", "人が書いた読みの字") == [] and "読み R-0023: 人が書いた読みの字" in kv.record_words("R-0023")
+# 読みと人の説明が同じ字なら 1 行にする（頁の欄は説明の字を読みの欄へ入れて出す）。違う字なら両方
+put("R-0025")
+assert not loop.save_explanation("R-0025", "サイトの係", "同じ字の説明", "わからない")
+assert loop.confirm_interpretation("R-0025", "サイトの係", "同じ字の説明") == []
+assert kv.record_words("R-0025") == ["人の説明 R-0025: 同じ字の説明 次の思いつき: わからない"], kv.record_words("R-0025")
+assert loop.confirm_interpretation("R-0025", "サイトの係", "別の字の読み") == []
+assert kv.record_words("R-0025") == ["人の説明 R-0025: 同じ字の説明 次の思いつき: わからない", "読み R-0025: 別の字の読み"], kv.record_words("R-0025")
 PHONE = "090-1234-5678"
 put("R-0024", answers={"stuck": f"電話は {PHONE} です"}, fixes=[{"part": "外筒", "change": f"電話は {PHONE}", "outcome": "入った"}])
 (LOOP / "explanation-R-0024.json").write_text(json.dumps({"record_id": "R-0024", "text": f"電話は {PHONE} です", "next_idea": "わからない", "by": "x"}, ensure_ascii=False), encoding="utf-8")
@@ -317,6 +374,13 @@ ayumi.LEDGER = keep
 
 # 12. 道: 一覧と工作の様子から行ける。学ぶ人の頁には道を置かない。合言葉なしで開いたデモでは出さない
 assert '<a href="/loop/ayumi">' in kaizen.page() and f'<a href="/loop/ayumi#{G}">' in kaizen.toy_page(G)
+# 版の無い玩具の頁には、着く節の無い道を出さない。版ができたら出す
+OTHER = "NDL-1187053-R0000005-R"
+assert "/loop/ayumi" not in kaizen.toy_page(OTHER), "着く節の無い道"
+other_hid = hypotheses.sheet_of(OTHER)["id"]
+put_version(OTHER, other_hid, 2, ["R-9999"])
+assert f'<a href="/loop/ayumi#{OTHER}">' in kaizen.toy_page(OTHER) and f'id="{OTHER}"' in ayumi.page()
+(LOOP / f"version-{OTHER}-{other_hid}-2.json").unlink()
 for public, want in ((False, 200), (True, 404)):
     srv = play_server.serve(0, public_open=public)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
