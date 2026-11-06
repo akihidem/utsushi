@@ -45,8 +45,9 @@ def rigid(m):
 # 御来迎: 段と文が 1 対 1 で、できあがりが 1 つ続く
 bench = assembly.assemble(G)
 words = instructions.steps(P, "slider_fan")
-assert [f["text"] for f in bench.frames[:-1]] == words
-assert bench.frames[-1]["text"] == "" and bench.frames[-1]["step"] == len(words) + 1
+# 次の組は、最後の動き（押し上げて開く）が手順 13 の文になったので、最後の段がその手順になる（前の組は字の無いできあがりの段）
+assert [f["text"] for f in bench.frames] == words and len(words) == 13
+assert bench.frames[-1]["step"] == len(words)
 
 # 紙を切り分けても面積が変わらない（折り線で分けただけ）
 for key, sheet in bench.sheets.items():
@@ -84,26 +85,27 @@ fan = bench.sheets["fan"]
 tops = [assembly.apply(last[f"fan:{i}"], (P["fold_height"], s.centroid.y))[1] for i, s in enumerate(fan.panels) if s.bounds[2] > 0]
 assert len(tops) == P["fold_count"] and max(tops) <= -P["tube_height"] / 2 - P["pivot_above_rim"] + 1, "扇が要より下へ開いている"
 
-# 閉じた時（手順 12）、扇も像も外筒の口の中に隠れる
-closed = bench.frames[len(words) - 1]["panels"]
+# 閉じた時（手順 12）、扇も像も外筒の口の中に隠れる。次の組は手順 13（押し上げて開く）が後ろにあるので、番号で引く
+closed = next(f for f in bench.frames if f["step"] == 12)["panels"]
 for key in ("fan", "figure"):
     sheet = bench.sheets[key]
     for i, s in enumerate(sheet.panels):
         for point in s.exterior.coords:
             assert assembly.apply(closed[f"{key}:{i}"], point)[1] >= -P["tube_height"] / 2 - 1e-6, key
 
-# 今の紙: 言葉のとおりに折ると合わない所が 2 つある（11-04 の実物の写真 p07・p09 は逆の向きで作っている）
+# 次の組（goraigo-v11）: 外筒と扇の台を山折りにしたので、言葉のとおりに折って合わない所が無い。手順 13 の段も文と並ぶ
 found = lines(bench)
-assert len(found) == 2, found
-assert any("手順 3" in x and "絵のある面（4 面）が筒の内側に入る" in x for x in found), found
-assert any("手順 7" in x and "印のある面が下を向く" in x for x in found), found
+assert found == [], found
+assert bench.frames[-1]["step"] == 13 and bench.frames[-1]["text"] == words[12], "手順 13 の段が無い"
 
-# 紙の線が山折りなら、この 2 つは出ない（検査が言葉でなく紙の線を見ている）
+# 線を前の組の谷折りに戻すと、合わない所が 2 つ出る（11-04 の実物の写真 p07・p09 は逆の向きで作っている。検査が言葉でなく紙の線を見ている）
 parts = slider_fan.parts(P)
 for q in parts:
     if q.key in ("tube", "base"):
         q.mountain, q.valley = q.valley, q.mountain
-assert [x for x in lines(assembly._slider_fan(P, parts)) if "手順 3" in x or "手順 7" in x] == []
+found = lines(assembly._slider_fan(P, parts))
+assert any("手順 3" in x and "絵のある面（4 面）が筒の内側に入る" in x for x in found), found
+assert any("手順 7" in x and "印のある面が下を向く" in x for x in found), found
 
 
 def tube_part(widths, kinds="valley"):
@@ -185,11 +187,17 @@ assert assembly.assemble("NDL-1187053-R0000009-R") is None, "台に立てる形�
 other = next(h for h in hypotheses.load(G)["hypotheses"] if (h.get("params") or {}).get("push_part") not in (None, "tab"))
 assert assembly.assemble(G, other["id"]) is None, "押し方が別の形はまだ"
 
-# 命令: 落ちる 3・検査できない 4・JSON は全部の段
+# 命令: 通る 0・落ちる 3・検査できない 4・JSON は全部の段。次の組は合わない所が無いので 0、前の組（線が谷折り）は 3
 out = io.StringIO()
 with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
-    assert assembly.main([G, "--json"]) == 3
+    assert assembly.main([G, "--json"]) == 0
+    now = slider_fan.SHEET_SET
+    slider_fan.SHEET_SET = slider_fan.FROZEN_SET
+    try:
+        assert assembly.main([G]) == 3
+    finally:
+        slider_fan.SHEET_SET = now
     assert assembly.main(["NDL-1187053-R0000009-R"]) == 4
     assert assembly.main(["無い玩具"]) == 4
-assert len(json.loads(out.getvalue().splitlines()[0])) == len(words) + 1
+assert len(json.loads(out.getvalue().splitlines()[0])) == len(words)
 print("ok")

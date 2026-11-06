@@ -651,7 +651,10 @@ def _slider_fan(p, parts, paper=None):
 
     # 組み立ての最後の動き（本人の追加 11-06「上にスライドさせて蛇腹が開く所まで」）: 竹串のつまみを上へ動かすと、内筒が上がり、扇が口から出て開く。
     # 開いた形は硬い面の折りでは表せないので、面を要のまわりに並べる（紙の形はそのまま）。
-    b.step = len(words) + 1
+    # 次の組（goraigo-v11）は、この動きが手順 13 の文になった（本人の追加）。文がある時は、この最後の段をその手順として数える
+    # （頁は最後の段をできあがりとして描き、開く扇もこの段で動かすので、段を分けない）。前の組は字の無いできあがりの段のまま。
+    pushed = len(words) > 12
+    b.step = 13 if pushed else len(words) + 1
     rise = translate(0, -p["push_amount"])
     hub0 = apply(b.world("fan", strip), hub)
     for key in ("pusher", "base", "figure"):
@@ -660,7 +663,7 @@ def _slider_fan(p, parts, paper=None):
     opening = _open_fan(b, p, hub0, apply(rise, hub0), hub[0], fold_x, pleat, -tall / 2)
     del b.extras["row"]  # 開くと穴の列は要に集まる
     _thread(b, strip, hub, hole)
-    b.snapshot("", {"rx": -10, "ry": -10}, 3000, open=opening)
+    b.snapshot(step(13) if pushed else "", {"rx": -10, "ry": -10}, 3000, open=opening)
     return b
 
 
@@ -1022,7 +1025,8 @@ def main(argv=None):
         print(json.dumps(bench.frames, ensure_ascii=False))
     for f in bench.failures:
         print(f.line(), file=sys.stderr)
-    print(f"手順 {max(f['step'] for f in bench.frames) - 1} 段を組み立てた。合わない所 {len(bench.failures)} 件")
+    # 段の数は字のある段で数える。最後の段が手順の文を持つ形（御来迎の次の組の手順 13）と、字の無いできあがりの段の形の両方で合う
+    print(f"手順 {sum(1 for f in bench.frames if f['text'])} 段を組み立てた。合わない所 {len(bench.failures)} 件")
     return 3 if bench.failures else 0
 
 
