@@ -111,6 +111,9 @@ assert KEEP + AI + REST + "名前は書かないでください。" in keyed["�
 assert KEEP + AI + REST + "名前は言わないでください。" in keyed["作りながら見る頁"]
 assert AI + "名前は言わないでください。" in keyed["手帖"]
 assert AI not in get(f"/toy/{G}", at=opened) and AI not in get(f"/toy/{G}/techo", at=opened), "合言葉なしの場は Claude を呼ばない"
+# 作りながら見る頁も合言葉なしの場で開ける（紙は上の 6 で刷った）。頁が開いた事を断りの前半で確かめてから、1 文が無い事を見る
+opened_tsukuru = get(f"/toy/{G}/tsukuru", at=opened)
+assert KEEP + REST in opened_tsukuru and AI not in opened_tsukuru, "合言葉なしの場の作りながら見る頁"
 ask._key_present = lambda: False
 
 # 7. 「できた」の後の返事
@@ -125,6 +128,9 @@ rid = re.search(r"#(R-\d+)", at).group(1)
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] == 303
 code, at, _ = post(f"/record/{rid}/next", {"interpretation": "読み", "param": "fold_height", "to": "47.5", "why": "試す", "by": "書いた人"})
 assert code == 303 and "版 2 の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at, at
+# 刷り直し（#158）の返事も同じ字。ここだけ別の道（_reprint）で字を持つので、別に見る
+code, at, _ = post(f"/toy/{G}/reprint", {"hypothesis": "H-A", "version": "2"})
+assert code == 303 and "版 2 の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at and "PDF を 100% で" not in at, (code, at)
 
 # 8. 自分の仮説の記録の札の紙の名前（ギャラリーと手帖）
 own, failures = hypotheses.save_own(G, "前に書いた案", "動かし方", "図の所")
