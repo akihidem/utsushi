@@ -18,9 +18,11 @@ from web import kumitate
 from web.play_server import ROOT  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-# 御来迎の今の組（goraigo-v14）は 3D で組まない（内筒を下から押し上げる形。この組み立てはつまみの形だけを書いてある。窓口の決定 案 A
-# 11-06: 3D の作り直しは提出の後）。3D の組み立ては、控えの組 goraigo-v10 に雛形を置いて前と同じに見る（v14 に上げても v10 の 3D が変わらない事も見る）
-assert slider_fan.SHEET_SET == "goraigo-v14" and assembly.assemble(G) is None
+# 御来迎の今の組（goraigo-v14）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_goraigo_v14_3d）。サイトが自分で組む作り
+# （つまみの形だけを書いてある）は、控えの組 goraigo-v10 に雛形を置いて前と同じに見る（v14 に上げても v10 の 3D が変わらない事も見る）
+from omochae import assembly_json  # noqa: E402
+
+assert slider_fan.SHEET_SET == "goraigo-v14" and isinstance(assembly.assemble(G), assembly_json.Shown)
 slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 bench = assembly.assemble(G)

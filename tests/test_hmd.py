@@ -35,6 +35,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from measure_tap import chrome  # noqa: E402
+from omochae import hypotheses  # noqa: E402
 from web import hmd, kumitate, play_server  # noqa: E402
 
 G, T = hmd.TOYS
@@ -98,7 +99,10 @@ assert get("/hmd")[0] == 404 and get(f"/hmd/{G}")[0] == 404, "玩具を選ぶ頁
 # 道は手帖の最初の画面から 1 つだけ（作る口は手帖 1 つの決まり。口の名は本人の決定 11-07「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
 assert hmd.CAM_LINK == "カメラに重ねる"
 for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出すので、先に刷る
-    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120).read()
+    # 刷るのは、その玩具のたたき台（sheet_of）。御来迎の今の組 goraigo-v14 のたたき台は H-C で、必須 2 種の今の組はたたき台の紙だけを刷る
+    # （H-A と決め打ちすると 422 で断られる）
+    sheet = hypotheses.sheet_of(sid)["id"]
+    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={sheet}".encode(), headers={"Origin": base}), timeout=120).read()
 for sid in (G, T):
     techo = get(f"/toy/{sid}/techo")[1]
     assert techo.count('/kasane') == 1 and f'<p class="meta kasane-go" data-on="start"><a href="/toy/{sid}/kasane">カメラに重ねる</a></p>' in techo, sid
