@@ -1,5 +1,5 @@
-# 命令: bash -c '.venv/bin/python tests/test_print_side.py 2>&1 | tail -7; echo "試験 rc=${PIPESTATUS[0]}"'
-# commit: e606e8a9（回した時の HEAD）
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_print_side.py 2>&1 | tail -7; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 0c46604e（回した時の HEAD）
 AssertionError: 刷った面が見えない側に来る部品:
 stick_prop 兜巾（tokin）: 色の面が笠の内を向く（2 形）
 stick_prop 矢羽 1（fletch1）: 色の面が貼り合わせる側を向く（4 形）

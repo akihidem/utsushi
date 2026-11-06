@@ -1,5 +1,5 @@
-# 命令: bash -c '.venv/bin/python tests/test_print_side.py 2>&1 | tail -4; echo "試験 rc=${PIPESTATUS[0]}"'
-# commit: 6f5de90f（回した時の HEAD）
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_print_side.py 2>&1 | tail -4; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 5d7ee192（回した時の HEAD）
 AssertionError: 刷った面が見えない側に来る部品:
 spin_toy 柄（handle）: 色の面が貼り合わせる側を向く（7 形）
 spin_toy 胴（cone1）: 歯や糊代が絵の側（胴の外）へ折れる（16 形）

@@ -1543,7 +1543,7 @@
 - 直さない物と理由: wheel_cart は今の向きで合う（見張りだけ）。stand_figure の浮かべる器と物を入れる器は上が開いた器で、内を上から見る。spin_toy の羽の車の受け皿は開いた形で、芯の帯は円盤の間の溝で紐に巻かれて見えない。絵の無い糊代の線は、向きで色の見え方が変わらない
 - 刷る紙への効き: どれも線を刷らない部品なので、部品の紙は変わらない。台の刷る案 30 枚を直す前と後で刷って絵で比べると、型紙 30 本と試した後の紙 30 本は 1 画素も変わらず、手順の紙 30 本は 1 字（谷→山）だけが変わる
 - 出していない範囲: 必須 2 種（slider_fan・pivot_counterweight）と floor_pin の指紋は変えていない。手順に新しい文は足していない（胴を丸める向きの言葉は新しい文になるので入れていない）
-- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-print-side-stick-prop.txt`・`docs/process/gate-evidence/red-print-side-stand-figure.txt`・`docs/process/gate-evidence/red-print-side-spin-toy.txt`（直す前は、直した部品が全部落ちる）。Green は同じ名の green の 4 本（wheel_cart は Green だけ）。直しを 1 つずつ谷に戻した写し（7 通り）と、器まで山にした写しは、どれも部品の名前つきで落ちる
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-print-side-stick-prop.txt`・`docs/process/gate-evidence/red-print-side-stand-figure.txt`・`docs/process/gate-evidence/red-print-side-spin-toy.txt`（直す前は、直した部品が全部落ちる。直しの commit の木で、直した雛形のファイルだけ親の commit に戻して回した）。Green は同じ名の green の 4 本（wheel_cart は Green だけ）。直しを 1 つずつ谷に戻した写し（7 通り）と、器まで山にした写しは、どれも部品の名前つきで落ちる
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: 無し（Issue を立てていない。統括への知らせで返す）
 
