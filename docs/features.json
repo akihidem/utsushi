@@ -443,7 +443,8 @@
    "src/omochae/instructions.py",
    "src/omochae/render.py",
    "tests/test_techo_step.py",
-   "tests/test_photo_attach_walk.py"
+   "tests/test_photo_attach_walk.py",
+   "tests/test_landscape_fit.py"
   ],
   "unverified": "「のこす」の画面は声と動画が主で、字を打つ欄は畳んだ追加（本人の方針 11-05 19:45）。声の操作は作りながら見る頁のマイクにも同じ表で入れた。聞き続けるのは操作の言葉だけで、問いは「こまった」の後の 1 つ、工夫は最後の画面でマイクを押した後だけ受ける（本人の決定 11-06・案 2）。実際のブラウザ（Chromium）で、音声認識の口を差し替えた見本を使って歩いた。実機（iPhone・iPad）と本物の音声認識、字を読まずに通るかの人の確かめはまだ。手順の絵は段 1 で、折る順の 4 コマがあるのは御来迎だけ。ほかの雛形は手順の紙の図 1 枚を全部の手順で出す。断りは採られた文のまま（「話す」を押すと）で、「はじめる」に合わせた文は本人の確認待ちなので入れていない。声を字にする所（local か browser か）は本人の決定待ちで、今は話す口の既定のまま 「のこす」は、写真があって工夫の字が無い時、見た事の札の前に、玩具の頁で残した記録に足せるかを聞く（main の #443 の形）。実機のカメラでは確かめていない。"
  },
@@ -518,6 +519,7 @@
    "src/web/tsukuru.py",
    "tests/test_tsukuru.py",
    "tests/test_tsukuru_last_step.py",
+   "tests/test_landscape_fit.py",
    "src/omochae/making_log.py",
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
@@ -620,6 +622,19 @@
    "docs/process/trials/sheets/README.md"
   ],
   "unverified": "どのループかは記録から決める。寸法の版とエンジンの版の本物はまだ無く、試験の作り物で見た。良くなったかは判定しない。エンジンの版は別の repo の台帳を読むだけで、無い機械では読めませんと出す"
+ },
+ {
+  "id": "f54",
+  "name": "動画を上げる専用の口（本人の指示 11-05、J-029、#337）: 合言葉付きの頁から動画を複数上げると、音と撮影情報を外して記録に結び、コマの一覧まで作る。受付番号と状態が見える。声は非公開で残して手元のモデルで字にし、字にしたらその場で消す（窓口の決定 11-06 夜）。字にする道具が無いと口が立たない",
+  "status": "doing",
+  "evidence": [
+   "src/web/video_up.py",
+   "src/omochae/asr_worker.py",
+   "tests/test_video_up.py",
+   "tests/probe_voice_drop.py",
+   "tests/check_asr_real.py"
+  ],
+  "unverified": "本物の人のスマホから、レビュー 10 本と作る時 2 本が届いた（前の作りの時。レビューの声 10 本は、字が残っている事を確かめてから 11-06 夜に消した）。話を字にする精度は測っていない（本物の道具の確かめは機械の声だけで、字は少し崩れる）。字が空でも声を消すので、道具が話を聞き落とすと話が残らない。ネットへ出ない事は道具の指定までしか見ていない。頁の文は本人が採った（11-05）。声を消す時の 1 文は窓口の決定の言い換え"
  },
  {
   "id": "f51",

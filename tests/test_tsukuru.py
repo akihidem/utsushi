@@ -75,7 +75,9 @@ assert code == 200 and 'class="tsukuru' in t
 texts = tsukuru.step_texts(G, "H-A")
 assert len(texts) >= 3 and all(html.escape(s, quote=True) in t for s in texts)
 # 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、手帖と同じ組み方の絵を出す（字の無い絵で、読み上げからは隠れる）
-assert "_tejun.png" not in t and t.count('<svg xmlns="http://www.w3.org/2000/svg" class="sheet koma"') >= 1 and 'aria-hidden="true"' in t
+# 見せるのは今の手順の 1 枚だけ（手順ごとに置き、送る時に切り替える）
+assert "_tejun.png" not in t and 'aria-hidden="true"' in t
+assert t.count('class="sheet koma on"') == 1 and 'data-n="1" xmlns="http://www.w3.org/2000/svg" class="sheet koma on"' in t, "手順 1 の絵だけが見えている"
 assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and "できた" in t
 # 刷っていない紙は h で指しても開かない
 assert get(f"/toy/{G}/tsukuru?h=H-B")[0] == 303 and 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]

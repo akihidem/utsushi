@@ -66,7 +66,9 @@ a{color:var(--accent)}
 .js #steps li{display:none}
 .js #steps li.on{display:block;font-size:clamp(24px,3.6vw,44px);line-height:1.45}
 .sheet{display:block;width:100%;max-height:52svh;object-fit:contain;object-position:left top;background:#fff;border:1px solid var(--frame)}
-svg.sheet{height:auto;margin-bottom:8px}
+/* 組み方の絵（svg）は、手順の紙の絵（縦に長い img）と同じく高さの上限いっぱいを取り、絵は比を保って中に収める。
+   高さを幅から決めると、横に長いコマが低くなり、絵の高さの下限（120px）より低くなった（幅 320 の御来迎、tests/test_landscape_fit.py） */
+svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.koma.on{display:block}
 .side{padding:14px 16px;display:grid;gap:14px;align-content:start;min-width:0;border-top:1px solid var(--rule)}
 /* 札は手が紙でふさがっていても押せる大きさ。並びは進む順（次へか組み上がり・止まった・戻る）。色で良し悪しを付けない。 */
 .tiles{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0}
@@ -97,8 +99,20 @@ svg.sheet{height:auto;margin-bottom:8px}
 /* 横置き（机の端に立てた端末やタブレット）: 左に手本、右に札・返事・鏡。 */
 @media (min-width:860px) and (orientation:landscape){
  .stage{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
+ /* 原画と歌の畳み（genga.fold）は .stage の格子の 1 つの升に入るので、幅いっぱいにする。升に入ったままだと、畳みが左・手本が右に並び、
+    札の列（.side）が次の段へ落ちて、1024×768 で「次の手順へ」が最初の画面の外に出た */
+ .stage>.genga-fold{grid-column:1/-1}
  .side{border-top:0;border-left:1px solid var(--rule)}
  .sheet{max-height:58svh}
+}
+/* 縦置き（手に持つ電話・縦に立てた端末）: 手順の紙の絵の高さの上限を、画面の高さから手順の番号と字の高さ（--tx）と残りの分を引いた値にする。
+   一番大きい札「次の手順へ」が、どの手順でも最初の画面に入るようにする（11-07 の前の確かめで、390×844 の虎で 15px 下、字の長い手順では
+   最大 120px ほど下に出た）。326px は、頭の行・原画の畳み・手本の箱と札の列の余白と札の高さの分（390×844 の虎で測った）。--tx は頁の script が
+   手順を出すたびに測って入れる（字の長さは手順ごとに違い、CSS だけでは字の高さを引けないため）。絵は 120px より低くしない: 前は手本の箱に上限を
+   置いて絵を縮めたが、320×568 で字の長い手順の絵が 2px まで縮んで消えた。低い画面で字が長い時は、絵を残して札が下へ出るのを受ける。
+   JS が無い時は手順が全部並び --tx も無いので当てない（.js だけ） */
+@media (orientation:portrait){
+ .js .tehon .sheet{max-height:min(52vh,max(120px,calc(100vh - 326px - var(--tx,0px))));max-height:min(52svh,max(120px,calc(100svh - 326px - var(--tx,0px))))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
@@ -113,8 +127,11 @@ const items=[...document.querySelectorAll('#steps li')],num=document.getElementB
 const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg-stuck');
 const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');
 let n=+stepIn.value;
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;
+// 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
+const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
+addEventListener('resize',fit);
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
 const who=(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){
  const a=new Uint8Array(10);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<10;i++)a[i]=Math.floor(Math.random()*256);
@@ -243,8 +260,11 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
         try:
             template = h.get("template") or data.get("template", "slider_fan")
             params, _ = loop.version_params(sid, hid, v)
-            pictures, _ = instructions.step_pictures(template, {**TEMPLATES[template].DEFAULTS, **(params or h.get("params") or {})}, steps)
-            img = "".join(render.shapes_svg(x, "sheet koma") for x in pictures)
+            pictures, which = instructions.step_pictures(template, {**TEMPLATES[template].DEFAULTS, **(params or h.get("params") or {})}, steps)
+            # 前の手順の紙の絵と同じく、見せるのは 1 枚だけ（今の手順の絵）。手順ごとに 1 枚ずつ置き、送る時に JS が切り替える（JS が無い時は n の 1 枚）。
+            # 全部を縦に並べると、御来迎の 4 コマで札が最初の画面の外へ出た（幅 320、tests/test_landscape_fit.py）
+            img = "".join(render.shapes_svg(pictures[k], "sheet koma" + (" on" if i == n else "")).replace("<svg ", f'<svg data-n="{i}" ', 1)
+                          for i, k in enumerate(which, 1) if 0 <= k < len(pictures))
         except Exception:  # 絵が作れない時も、手順の文だけで進められる
             img = ""
     # 止まったの文は先に置いておき、押した時に出す（JS が無い時は ?ev= で出す）。
