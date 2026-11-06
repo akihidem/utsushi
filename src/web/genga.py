@@ -58,6 +58,11 @@ SCRIPT = """<script>(()=>{document.querySelectorAll('.genga-fold [data-big]').fo
 if(!d||!d.showModal){b.hidden=true;return}b.addEventListener('click',()=>d.showModal());d.addEventListener('click',()=>d.close())})})()</script>"""
 
 
+def alt(src):
+    """絵の読み上げの字。新しい字を足さず、玩具の名と本人が採った見出しにする（統括の決め 11-06）。"""
+    return f'{src["toy"]} {HEAD}'
+
+
 def _source(sid):
     return json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
 
@@ -129,7 +134,7 @@ def _songs(src):
 def head(sid, src=None):
     """玩具の頁の頭。絵 → 歌の順（広い幅は横に並ぶ）。「大きく見る」は頁の全体の絵そのものへ。"""
     src = src or _source(sid)
-    pic, whole = _pic(sid, src, f'{src["toy"]}の載る頁')
+    pic, whole = _pic(sid, src, alt(src))
     big = f'<a href="/picture/{esc(sid)}/page">{esc(BIG)}</a>' if whole else ""
     lines, mark = _songs(src)
     # 印の 1 行は絵の下の行に置く。歌の横の欄に置くと、横書きの字の幅で欄が広がり、広い幅で絵が細くなった
@@ -142,11 +147,11 @@ def head(sid, src=None):
 def fold(sid, src=None):
     """作る時の畳み。1 回押すと開く。絵は開くまで取らない。「大きく見る」は頁の中で重ねて出す（頁を離れない）。"""
     src = src or _source(sid)
-    pic, whole = _pic(sid, src, f'{src["toy"]}の載る頁', lazy=True)
+    pic, whole = _pic(sid, src, alt(src), lazy=True)
     if not pic:
         return ""
     big = (f'<button type="button" class="quiet" data-big>{esc(BIG)}</button>'
-           f'<dialog class="genga-dlg" aria-label="{esc(HEAD)}"><img src="/picture/{esc(sid)}/page" alt="{esc(src["toy"])}の載る頁" loading="lazy"></dialog>'
+           f'<dialog class="genga-dlg" aria-label="{esc(HEAD)}"><img src="/picture/{esc(sid)}/page" alt="{esc(alt(src))}" loading="lazy"></dialog>'
            if whole else "")
     lines, mark = _songs(src)
     return (f'<style>{STYLE}</style><details class="genga genga-fold"><summary>{esc(HEAD)}</summary>{pic}{lines}{mark}{big}</details>'

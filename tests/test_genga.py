@@ -78,6 +78,7 @@ for look in ("tenji", "zine"):
     assert 'class="genga-box"' not in hero, "頁の片側の全体の記録には枠を出さない"
     assert f'<a href="/picture/{G}/page">{genga_words.BIG}</a>' in hero, "玩具の頁は絵そのものへ"
     assert "background-image:url(/picture/" not in hero, "頭に切り抜きを敷かない"
+    assert f'alt="{src(G)["toy"]} {genga_words.HEAD}"' in hero and "の載る頁" not in hero, "絵の読み上げは玩具の名と本人が採った見出し（新しい字を足さない）"
 plain = toy_page(PLAIN, "tenji")
 hero = plain[plain.index('class="hero"'):plain.index('id="kasetsu"')]
 assert 'class="genga-box" style="left:' in hero and 'class="genga-songs"' not in hero and genga.QUOTE not in hero, "読みの無い玩具は字の歌も断りも出さない（本人の決定 11-06）"
