@@ -315,10 +315,12 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
     head = getattr(tpl, "RESULT_HEAD", RESULT_HEAD)
     _block(texts, [head], page.x0, y, HEAD_SIZE, width)
     x = page.x0 + text_width(head, HEAD_SIZE) + 3
-    if x + 34 * len(tpl.RESULTS) > page.x1:
+    # 控えた組の紙を変えないために、刷る札を記録の札と分け、組ごとに引く雛形がある（虎の paper_results）。
+    printed = tpl.paper_results() if hasattr(tpl, "paper_results") else tpl.RESULTS
+    if x + 34 * len(printed) > page.x1:
         x, y = page.x0, y + HEAD_SIZE * LINE
     # 欄を同じ大きさにする。「わからない」を小さくすると、選ぶのをためらわせるため。
-    for r in tpl.RESULTS:
+    for r in printed:
         shapes.append({"kind": "rect", "x": x, "y": y, "w": 30, "h": BODY_SIZE * LINE + 1})
         texts.append(TextBox(x + 2, y + 0.5, text_width(r, BODY_SIZE), BODY_SIZE * LINE, r, BODY_SIZE))
         x += 34
