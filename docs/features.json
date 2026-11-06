@@ -644,5 +644,18 @@
    "docs/process/research/36-road-and-audience.md"
   ],
   "unverified": "帯は うつし｜えらぶ つくる のこす もちよる｜よむ。前の帯の名（序・おもちゃ・作った物と職人の言葉・図鑑・English）は外し、序の頁の頭に 図鑑・保護者の方へ、ファシリテーターの方へ・English への道を置いた。英語の入口は入口から 2 手（よむ → English）になった。駅ごとに 1 画面と、ジャンル分けの頁（別の担当）はこの分の外。実機と人の目はまだ"
+ },
+ {
+  "id": "f53",
+  "name": "のこした後は持ち寄る駅に着く（窓口の決定 11-06 夜・案 A。地図の工程 4・5）",
+  "status": "doing",
+  "evidence": [
+   "src/web/techo_step.py",
+   "src/web/techo_site.py",
+   "src/web/play_server.py",
+   "tests/test_ux_keep_gallery.py",
+   "tests/test_photo_attach_walk.py"
+  ],
+  "unverified": "手帖の作る頁の「のこす」の後はギャラリーの「他の人が作った物」に着き、記録を残した画面にだけ返事の文と今残した 1 つを頭に出す（記録の鍵で見分ける）。札の記録の番号から記録の頁（説明と AI）へ行く。写真は人が確かめた物だけ（確認の前の物は記録の頁で）。実機と人の目はまだ"
  }
 ]
