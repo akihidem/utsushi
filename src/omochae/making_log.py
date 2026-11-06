@@ -8,8 +8,8 @@
 - 残す欄は決めた物だけ（下の FIELDS・STEP_FIELDS・STAGE_FIELDS。試験が鍵の一致を見る）。
   **残さない物**: IP・ブラウザの名・cookie・名前・声・映像・写真・答えの文。誰が聞いたかを辿れる物は、作る様子の改善に要らない。
   時刻は分まで（秒まで持つと、ほかの記録と突き合わせて人を絞れる）。
-- 連絡先の形（メールアドレス・電話番号・郵便番号。持ち寄りと記録と同じ床 contrib.check_pii）がある質問は、文を残さない。
-  落とした事だけを dropped: "pii" で残す（どれくらい落ちているかが分からないと、床が効いているかも分からない）。
+- 連絡先の形（メールアドレス・電話番号・郵便番号）と、名乗り・学年と組・学校の名前の形（話す口と同じ床 talk_log.blocked）がある質問は、文を残さない。
+  落とした事だけを dropped: "pii"（連絡先）か "name"（ほかの形）で残す（どれくらい落ちているかが分からないと、床が効いているかも分からない）。
   名前は形では見分けられないので、機械では落とせない。だから頁で名前を聞かず、作る側が読む時に気づいたら消す（床の限り）。
 - 書けなくても例外を外へ出さない。聞く口の答えを、記録の都合で止めないため。
 - 集計は作る側が読む物で、学ぶ人の画面には出さない（J-025: 順位と成績を見せない）。出す所は kaizen の作る側の頁だけ。
@@ -35,7 +35,6 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 from . import records
-from .contrib import check_pii
 from .hypotheses import ROOT
 
 MAX_QUESTION = 200
@@ -126,9 +125,12 @@ def add_ask(source_id, hypothesis_id, sheet_version, question, answered_from, st
         template, sheet_set = _engine(source_id, hypothesis_id)
         rec = {"source_id": source_id, "hypothesis_id": hypothesis_id, "sheet_version": sheet_version, "template": template, "sheet_set": sheet_set,
                "question": text, "answered_from": str(answered_from or ""), "step": _step_no(step), "who": clean_who(who), "asked_at": _now()}
-        if check_pii({"body": text}):
-            # 連絡先の形がある文は残さない。落とした事だけを数えられるようにする。
-            rec.update(question="", dropped="pii")
+        # 連絡先の形と、名乗り・学年と組・学校の名前の形がある文は残さない（話す口と同じ床。#87）。落とした事だけを数えられるようにする。
+        from .talk_log import blocked  # talk_log がこの module を読むので、ここで読む
+
+        hit = blocked(text)
+        if hit:
+            rec.update(question="", dropped="pii" if hit == "連絡先" else "name")
         return _write("ask", rec)
     except Exception:
         return None

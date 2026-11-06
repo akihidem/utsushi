@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_record_fold.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_record_fold.py", line 114, in <module>
+    assert f.outer == FIRST, (sid, f.outer)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L', {'impression', 'first_moved', 'note', 'fix_outcome', 'fix_change', 'hypothesis', 'what_if', 'idea', 'stuck', 'result', 'fix_part'})
+rc=1

@@ -31,6 +31,8 @@ server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
 tmp = pathlib.Path(tempfile.mkdtemp())
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。写真の受け口は、その画面からだけ受ける）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 
 
 def req(path, data, ctype="application/x-www-form-urlencoded"):

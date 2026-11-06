@@ -26,7 +26,7 @@ for part in ("records", "loop"):
     shutil.copytree(ROOT / "data" / part, os.path.join(DATA, part))
 
 from api import ask  # noqa: E402
-from omochae import hypotheses, labels, records  # noqa: E402
+from omochae import hypotheses, labels, loop, records  # noqa: E402
 from web import zukan  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 
@@ -66,17 +66,24 @@ class Visible(html.parser.HTMLParser):
 
     def __init__(self):
         super().__init__()
-        self.out, self.skip = [], 0
+        self.out, self.skip, self.paper = [], 0, 0
 
     def handle_starttag(self, tag, attrs):
+        # 組み立ての頁の紙の絵（svg.rt-paper）は刷る紙そのものの絵で、中の字は紙の字。紙の字は頁で替えない（必須 2 種の指紋）。ほかの svg は飛ばさない
+        if self.paper or (tag == "svg" and "rt-paper" in (dict(attrs).get("class") or "").split()):
+            self.paper += tag == "svg"
+            return
         self.skip += tag in ("style", "script")
         self.out += [v for k, v in attrs if k in ("alt", "aria-label", "title", "placeholder") and v]
 
     def handle_endtag(self, tag):
+        if self.paper:
+            self.paper -= tag == "svg"
+            return
         self.skip -= tag in ("style", "script")
 
     def handle_data(self, data):
-        if not self.skip and data.strip():
+        if not self.skip and not self.paper and data.strip():
             self.out.append(data.strip())
 
 
@@ -84,6 +91,13 @@ def visible(page):
     v = Visible()
     v.feed(page)
     return v.out
+
+
+# 飛ばすのは紙の絵の中だけ。入れ子の後も閉じた所から数え直し、ほかの svg の字は見る
+assert visible('<svg class="rt-paper"><text>紙の字</text><svg><text>紙</text></svg><text>紙</text></svg><p>見える</p><svg><text>絵の字</text></svg>') == ["見える", "絵の字"]
+
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開くので、その字もここで見る）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 
 
 class Site:
@@ -126,12 +140,15 @@ for s in (G, T):
 # 3 番号の出る札まで進める: 紙 → 記録 → 説明 → 次の版 → 窓 → 手帖 → 自分の仮説 → 聞く口
 see(white, f"/toy/{G}/print", {"hypothesis": "H-A"}, "紙を作った後")
 see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた"}, "記録の後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
-rid = records.all_records(G)[-2]["id"]  # 本物の記録の後ろの 1 つ目。番号を決め打ちしない
-see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
+rid = records.all_records(G)[-1]["id"]  # 今残した記録。説明は次の記録が残る前に、残した画面から書く。番号を決め打ちしない
+told = see(white, f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}, "説明の後")
+assert loop.explanation(rid) and "次の版を作る" in told, "説明の後の札まで届いていない"  # 通らないまま進むと、この先の見張りが空になる
 see(white, f"/record/{rid}/ai-interpret", {}, "鍵が無い時の AI の口")
 see(white, f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"}, "次の版の後")
-see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert loop.latest_version(G, "H-A") == 2, "次の版の後の札まで届いていない"
+see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "もう一度"}, "2 つ目の記録の後")
+waiting = see(white, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}, "説明を待つ記録の後")
+assert 'name="next_idea"' in waiting, "説明の欄まで届いていない"
 see(white, f"/toy/{G}?see=H-A&kind=sheet&v=2", name="版 2 の窓")
 see(white, f"/toy/{G}/techo", name="記録の後の手帖")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")

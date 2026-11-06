@@ -48,10 +48,16 @@ def up(**kw):
     threading.Thread(target=server.serve_forever, daemon=True).start()
     port = server.server_address[1]
 
+    jar = {}  # 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+
     def call(method, path, body=None, headers=None):
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=20)
-        c.request(method, path, body=body, headers={"Host": HOST, **(headers or {})})
+        sent = {"Host": HOST, **({"Cookie": "; ".join(f"{k}={v}" for k, v in jar.items())} if jar else {}), **(headers or {})}
+        c.request(method, path, body=body, headers=sent)
         r = c.getresponse()
+        for line in r.headers.get_all("Set-Cookie") or []:
+            name, _, value = line.split(";", 1)[0].partition("=")
+            jar[name.strip()] = value.strip()
         return r.status, r.read().decode("utf-8", "replace")
     call.local = f"127.0.0.1:{port}"
     return call

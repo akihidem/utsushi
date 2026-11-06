@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_record_owner.py 2>&1 | tail -1 | cut -c1-200; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: aac512d（回した時の HEAD）
+ok
+試験 rc=0
+rc=0

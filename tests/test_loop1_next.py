@@ -85,9 +85,11 @@ def recorded(who, oid, key, craft=None):
     """工夫を話して記録を残し、説明を足す。Returns 記録の番号。"""
     if craft:
         assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": oid, "sheet_version": 1, "step": 1, "text": craft, "who": who}, cookie=key)[0] == 200
-    assert send(f"/toy/{G}/record", {"hypothesis": oid, "sheet_version": 1, "result": "動いた", "who": who}, cookie=key)[0] == 303
+    code, _, sent = send(f"/toy/{G}/record", {"hypothesis": oid, "sheet_version": 1, "result": "動いた", "who": who}, cookie=key)
+    assert code == 303
     rid = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid)
-    assert send(f"/record/{rid}/explain", {"by": "試した人", "text": "柄で押すと大きく開いた", "next_idea": "折りを増やす"})[0] == 303
+    own = next(c.split(";")[0] for c in sent.get_all("Set-Cookie") if c.startswith("utsushi_rec="))  # 説明は記録を残した画面からだけ
+    assert send(f"/record/{rid}/explain", {"by": "試した人", "text": "柄で押すと大きく開いた", "next_idea": "折りを増やす"}, cookie=own)[0] == 303
     return rid
 
 
@@ -233,9 +235,9 @@ public.shutdown()
 oid5, key5 = made("nextwho005", "水の重さで開くのかも", not_fit=["水の重さで動く機構は雛形に無い"])
 assert not [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid5], "型紙なしは組を残さない"
 rid5 = recorded("nextwho005", oid5, key5, "紙コップで試した")
-for g in engine_bundle.build()["groups"]:
-    if g["sheet_set"] == SET:
-        assert rid5 not in g["record_ids"] and rid in g["record_ids"], g["record_ids"]
+# 束の群は紙ごと（Issue 334）。型紙なしの紙の記録はどの組の群にも入らず、組のある自分の紙の記録は組の群に入る
+in_set = [g for g in engine_bundle.build()["groups"] if g["sheet_set"] == SET]
+assert not any(rid5 in g["record_ids"] for g in in_set) and any(rid in g["record_ids"] for g in in_set), [g["record_ids"] for g in in_set]
 assert send(f"/sheet/{G}/{oid5}_v1_after.pdf", cookie=key5)[0] == 200, "型紙なしの紙の記録にも、試した後の紙が開く"
 # 次の版は、どの道からも作らない。節の数にも入れない（向く先が無い）
 assert loop.next_target(G, oid5) == oid5 and loop.next_target(G, oid) == SHEET, "型紙なしには向く先が無い"
