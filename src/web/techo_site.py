@@ -314,15 +314,26 @@ document.getElementById('up-form').onsubmit = async (e) => {
   // 約束の印なしに写真を送らない。上の数え直しが間に合わない形でも、ここで止める（字はブラウザの標準の吹き出し）。
   const promise = document.getElementById('ok');
   if (promise && files.length && !promise.checked) { promise.required = true; form.reportValidity(); return; }
-  if (!hid || !result) { st.textContent = '紙と見た事をえらぶ'; return; }
-  go.disabled = true; st.textContent = '送っています…';
+  const filled = { hypothesis: hid || '', result: result || '', note: document.getElementById('note').value, fix_part: document.getElementById('fix-part').value, fix_change: document.getElementById('fix-change').value, fix_outcome: document.getElementById('fix-outcome').value };
+  const post = (o) => fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra(o) });
+  // 写真や動画がある時は、先に「この画面が残した記録に足せるか」を聞く（玩具の頁の記録の欄には写真の口が無いので、そこで残した後に写真を足す人の道）。
+  // 足せる時は、新しい記録を作らず、見た事も求めない。番号は送らない。決めるのはサーバ（記録を残した画面か・欄に新しい中身が無いか）。
+  // 聞いている間に押し直されて、同じ写真が 2 度送られないよう、聞く前に押せなくする。
+  // 紙は最初から 1 つ選ばれているので、選び直した時と見た事を選んだ時だけ、選んだ紙として送る（選んでいないのに別の紙と読まれて、足せなくならないように）。
+  go.disabled = true;
+  let target = '';
+  if (files.length) {
+    const chose = result || paper().defaultChecked === false;
+    try { const a = await (await post({ ...filled, hypothesis: chose ? filled.hypothesis : '', attach: '1' })).json(); if (a.attached) target = a.id; } catch (err) {}
+  }
+  if (!target && (!hid || !result)) { go.disabled = false; st.textContent = '紙と見た事をえらぶ'; return; }
+  st.textContent = '送っています…';
   let done = '';
   try {
-    const r = await fetch(`/toy/${sid}/record-json`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra({ hypothesis: hid, result, note: document.getElementById('note').value, fix_part: document.getElementById('fix-part').value, fix_change: document.getElementById('fix-change').value, fix_outcome: document.getElementById('fix-outcome').value }) });
-    const j = await r.json().catch(() => ({}));
+    const j = target ? { id: target } : await (await post(filled)).json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
-    // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。
-    if (window.utsushiNewWho) utsushiNewWho();
+    // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。足した時は、記録を残した時に作り直してある。
+    if (!target && window.utsushiNewWho) utsushiNewWho();
     // 記録はできたので欄を空にする。この先の写真で止まっても、押し直しで記録を増やさない。
     form.reset(); showPicked();
     done = files.length ? '上げました' : '記録を残しました';

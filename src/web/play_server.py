@@ -530,6 +530,9 @@ class Handler(BaseHTTPRequestHandler):
             # 皆に見える。持ち寄りは同意と権利を確かめてから載せる線（J-021）と、子どもの写真を扱わない線を、開いた場でも守るため。
             if getattr(self.server, "public_open", False):
                 return self._send(403, "公開のデモでは、写真と動画は上げられません", "text/plain; charset=utf-8")
+            # 記録を残した画面からだけ受ける（記録の鍵）。番号は札に出る連番なので、番号だけで受けると、別の人の記録に写真を足せる。
+            if not records.mine(m.group(1), self._rec_key()):
+                return self._send(403, "受け付けられない送り方です")
             try:
                 length = int(self.headers.get("Content-Length", ""))
             except ValueError:
@@ -741,12 +744,41 @@ class Handler(BaseHTTPRequestHandler):
             failure_log.claude_failed("ask", "POST", self.path, e, private=(question,))
             raise
 
+    def _photo_target(self, sid, form):
+        """写真を足す先: この画面が、写真の口の無い所（玩具の頁の記録の欄）で残した、同じ玩具の、写真の無い記録の番号（無ければ None）。
+        そこで残した後に手帖で写真を上げる人の記録を、1 つのままにするために引く。照らすのは記録の鍵だけ（records.mine）。
+        手帖の欄に新しい中身（字・別の見た事）がある時は足さない: 足すと、書いた事が残らないため。その時は今までどおり新しい記録になる。
+        別の紙や版を選んでいる時も足さない（見た事を選んでいなくても）: 別の紙の作りの写真を、前の紙の記録に付けないため。紙は頁で最初から 1 つ
+        選ばれているので、頁は、紙を選び直した時と見た事を選んだ時だけ紙を送る。紙が来ない時は、紙と版を見ない。
+        手帖で残した記録には足さない: 写真の口のある所で「記録だけ」を選んだ物で、机の端の 1 台を順に使う場では、次の人の写真が前の人の記録に付くため。"""
+        key = self._rec_key()
+        if not key or getattr(self.server, "public_open", False):
+            return None
+        from . import techo_site
+
+        r = next((r for r in reversed(records.all_records(sid)) if records.mine(r["id"], key)), None)
+        if r is None or r.get("via") or techo_site.media_of(r["id"]):
+            return None
+        if any(form.get(k, "").strip() for k in ("note", "impression", "fix_part", "fix_change", "fix_outcome")):
+            return None
+        hid = form.get("hypothesis", "")
+        if hid and (hid != r["hypothesis_id"] or sheet_version_of(sid, hid, form) != r.get("sheet_version", 1)):
+            return None
+        if form.get("result") and (not hid or form["result"] != r["result"]):
+            return None
+        return r["id"]
+
     def _json_post(self, sid, act, form):
         """手帖の頁から呼ぶ口。頁を作り直さず、答えか記録の番号だけを返す。"""
         out = lambda code, obj, headers=(): self._send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8", headers)
         hid = form.get("hypothesis", "")
         from . import think_sheet
 
+        if act == "record-json" and form.get("attach") == "1":
+            # 「写真あり」の合図（1 回の作りが 2 つの記録に割れる所の直し）: この画面が残した、写真の無い記録に足せる時は、新しい記録を作らずに
+            # その番号を返す。頁から番号は受けない（番号は札に出る連番なので、別の人が送れる）。鍵は作り直さない（期限の数え方がそのまま続く）。
+            rid = self._photo_target(sid, form)
+            return out(200, {"id": rid, "attached": True} if rid else {"attached": False})
         if not printed_versions(sid, hid) or not think_sheet.usable(self, sid, hid):
             return out(422, {"error": "作った紙をえらぶ"})
         if act == "ask-json":

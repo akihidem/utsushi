@@ -15,7 +15,7 @@ from PIL import Image  # noqa: E402
 
 from omochae import hypotheses, media_review  # noqa: E402
 from web.play_server import serve  # noqa: E402
-from web.techo_site import MAX_MEDIA, media_dir, strip_jpeg_meta  # noqa: E402
+from web.techo_site import MAX_MEDIA, media_dir, save_media, strip_jpeg_meta  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -79,7 +79,9 @@ except urllib.error.HTTPError as e:
     assert e.code == 404, e.code
 assert req(f"/record/{rid}/media", b"x", "text/html")[0] == 422, "写真と動画の型だけ"
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg", origin="http://evil.example")[0] == 403
-assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 422, "記録の無い所には置かない"
+# 記録を残した画面でなければ受けない。無い記録も同じ答え（在るか無いかを答えない）。置く所の床（無い記録には置かない）は下に残る
+assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 403, "記録の無い所には置かない"
+assert save_media("R-9999", "image/jpeg", jpeg)[0] is None and not media_dir("R-9999").exists()
 assert "m1.jpg" not in urllib.request.build_opener().open(base + f"/toy/{G}/techo").read().decode(), "別の人の手帖に確認の前の写真を出さない"
 # 次の版（本人の問いの (7)）: 説明が先、数でない値は断る、床に通った時だけ版 2 を刷る
 code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
