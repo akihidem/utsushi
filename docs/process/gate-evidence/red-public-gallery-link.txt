@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: 57a286a1（回した時の HEAD。src/web/techo_site.py の札の道を、直す前の /toy/<印>#<記録の番号> の形に戻した木。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_public_open.py", line 112, in <module>
+    assert f"#{rid}" not in gallery and f'href="/toy/{G}"' in gallery, "札の玩具の名の道にも記録の番号を入れない（玩具の頁の頭へ行く）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 札の玩具の名の道にも記録の番号を入れない（玩具の頁の頭へ行く）
+rc=1

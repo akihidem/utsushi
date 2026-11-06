@@ -1,0 +1,5 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: 57a286a1（回した時の HEAD）
+F9.own: 自分の仮説「OWNNAME」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+ok: 合言葉なしで開くデモ
+rc=0
