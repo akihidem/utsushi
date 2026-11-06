@@ -178,7 +178,7 @@ def zine():
     ts = toys()
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
-    body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
+    body += (f'<section class="zn-cover"><p class="meta">{esc(DOOR_LINE)}</p>'
              f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{growing()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
@@ -212,6 +212,8 @@ def zine():
 # 入口の最初の画面で押せる物は頭の帯だけで、最初の玩具は 1197px 下だった（幅 390、research/36 の数）。字は道しるべの 1 語だけで、新しい字は足さない。
 # 行き先は絵で選ぶ頁（/toys）。入口の中の一覧は額装した 2 種の後にあり遠いので、近い方へ向ける
 ROAD_GO = '<p class="road"><a class="road-go" href="/toys">えらぶ</a></p>'
+# 黒のジンの表紙の 1 行（字は変えない）。白に統一した後は、白の扉の額の下に出す（本人の決定 11-06）。
+DOOR_LINE = "江都二色　安永二年　うしなわれた玩具"
 
 TENJI = """
 body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
@@ -228,6 +230,13 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
    広い画面は 3 列の縦書きの下の段（2 行目）に置く */
 .tj-hall .road{grid-column:1/-1;grid-row:2;justify-self:center;margin:0}
 body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #6b4f2a;border-radius:2px;color:#1f1b17;font-size:20px;letter-spacing:.5em}
+/* 入口の額（最初の玩具）。広い画面は 英字 | 額 | 題 | 副題 の並び。額の高さは題の縦書きに合わせ、札は額の下に置く */
+/* 額は玩具がある限り必ず出る（入口は玩具の一覧から作る）。並びは題の間に直に当てる（試験と頁が見る節の class は前のまま） */
+.tj-hall{grid-template-columns:1fr auto auto 1fr}
+.tj-hall h1{grid-column:3}.tj-hall .sub{grid-column:4}
+.tj-hallwork{grid-column:2;grid-row:1;margin:0 4vw 0 0;display:flex;flex-direction:column;align-items:center;gap:14px}
+.tj-hallwork .tj-work{width:auto;height:min(46vh,440px)}
+.tj-hallwork .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
 .tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
@@ -323,6 +332,15 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
  .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}
  .tj-all .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
 @media (max-width:680px){.tj-all li.big{grid-column:auto;grid-row:auto}}
+/* 狭い画面の入口の額（題の間の狭い幅の規則より後に置き、そちらを上書きする）: 額と題を横に並べ、額の高さを題の縦書きに合わせる（積むと「えらぶ」が最初の画面の外へ出るため）。
+   札は額の左に縦に置く（字は 12px。読む順は右の題から左の札へ）。320×568 でも「えらぶ」が最初の画面に入る高さにする */
+@media (max-width:820px){.tj-hall{grid-template-columns:auto auto;column-gap:6vw}
+ .tj-hall .en,.tj-hall .road,.tj-hall .sub,.tj-hall .grow{grid-column:1/-1}
+ .tj-hall h1{grid-column:2;grid-row:2}
+ .tj-hallwork{grid-column:1;grid-row:2;margin:0;flex-direction:row-reverse;align-items:flex-start;gap:8px}
+ .tj-hallwork .tj-work{width:auto;height:clamp(150px,32vh,250px)}
+ /* 札の長さは額の高さまで（縦書きの行の長さ＝高さ）。長い 1 行のままだと段が高くなり、320×568 で「えらぶ」が画面の外へ出た */
+ .tj-hallwork .meta{writing-mode:vertical-rl;font-size:12px;letter-spacing:.3em;height:clamp(150px,32vh,250px);word-break:keep-all}}
 """
 KANJI = "一二三四五六七八九十"
 DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
@@ -398,8 +416,18 @@ def ogi_slider(n=13, start=150):
 def tenji():
     ts = toys()
     body = switch("tenji")
-    body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
+    # 入口の最初の画面に、黒のジンの表紙にだけあった最初の玩具の額の絵を掛ける（ジャーニーマップの工程 1「絵 1 枚と 1 行とボタン 1 つ」。
+    # 本人の指示 11-06「サイトの残り 5 つに対応」と、本人の決定 11-06「黒案にだけある要素は白案に入れてください」）。
+    # 前は題の間を字だけにし、額は次の 1 室（扉）に掛けていたが、最初の画面に絵が無かった。黒の表紙の 1 行は、2 つ目の見出しでなく
+    # 絵の名札に読めるよう、額の札（figcaption）にする（UX の担当と合わせた）。額は押せる口にしない（大きいボタンは「えらぶ」1 つ）。
+    # 額の上に後から印（描いていない所の点線など）を重ねられるよう、絵は額の中の 1 枚の層にしておく。字は足さない。
+    first = ts[0]["sid"] if ts else ""
+    work = (f'<figure class="tj-hallwork"><div class="tj-work"><div style="{_bg(first, framed_pos(first), FRAMED)}" role="img" aria-label="{esc(ts[0]["toy"])}の図"></div></div>'
+            f'<figcaption class="meta">{esc(DOOR_LINE)}</figcaption></figure>') if first else ""
+    body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p>' + work + '<h1>うつし</h1>'
              + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+    # 北斎漫画の縦読みの節は、白では入口に置かず、帯の「よむ」の先の序の頁（/about）に置く（統括の決め 11-06。ジャーニーマップの
+    # 工程 1「読み物は道の外へ（よむ）」に合わせる。前は題の間のすぐ後に置き、入口が長くなっていた）。黒の入口の作りは残す。
     # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
     body += fan_deck(ts) + ogi_slider() + all_toys("tj")
     for i, t in enumerate(ts, 1):

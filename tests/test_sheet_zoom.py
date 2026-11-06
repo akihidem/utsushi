@@ -60,7 +60,8 @@ assert get(f"/sheet/{G}/H-A_v1_after.svg")[0] == 403
 assert "H-A_v1_after.svg" not in get(f"/toy/{G}?see=H-A&kind=after")[1]
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}) in (200, 303)
 assert get(f"/sheet/{G}/H-A_v1_after.svg")[0] == 200
-assert f"/sheet/{G}/H-A_v1_after.svg" in zoom_of(get(f"/toy/{G}?see=H-A&kind=after")[1])
+# 窓の拡大は型紙だけ（試した後の紙は 11-06 から刷らない。前に配った道は上のとおり開く）
+assert "_after.svg" not in zoom_of(get(f"/toy/{G}?see=H-A&kind=after")[1])
 
 server.shutdown()
 print("ok")

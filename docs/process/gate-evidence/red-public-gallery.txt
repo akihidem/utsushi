@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: 13e4bc2d（回した時の HEAD。作りの 3 ファイル（src/web/play_server.py src/web/techo_site.py src/omochae/media_review.py）を前の頭 8f3badc0 に戻した木。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_public_open.py", line 109, in <module>
+    assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

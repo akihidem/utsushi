@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_who_field.py
+# commit: eeb12ed（回した時の HEAD）
+/tmp/tmp2uq4jc_x/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmp2uq4jc_x/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmp2uq4jc_x/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_who_field.py", line 65, in <module>
+    field = who_field(box(page, "R-0001", "next"))
+  File "tests/test_who_field.py", line 47, in who_field
+    assert found, "打つ欄が要る"
+           ^^^^^
+AssertionError: 打つ欄が要る
+rc=1

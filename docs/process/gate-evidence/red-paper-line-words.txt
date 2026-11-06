@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_line.py
+# commit: 4473ae2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_paper_line.py", line 41, in <module>
+    assert got[0] in PAPER_LINES, (sid, hid, got[0])
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L', 'H-A', 'コピー用紙くらいの紙を 1 枚')
+rc=1
