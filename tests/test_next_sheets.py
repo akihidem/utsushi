@@ -17,6 +17,7 @@ from shapely.geometry import LineString, box
 
 from omochae import instructions, marks
 from omochae.compose import LABEL_SIZE, LINE, TEMPLATES, compose
+from omochae.floors import check_art
 from omochae.hypotheses import ROOT
 from omochae.instructions import compose_after, compose_sheet, compose_teacher
 from omochae.textfit import text_width
@@ -34,10 +35,10 @@ BODY_OLD, BODY_NEW = "1 胴を破線で谷折りし、糊代で貼って箱に�
 FOLD_NEW = ("谷折り（刷った面が内がわになる）", "山折り（刷った面が外がわになる）")
 LEGEND_OLD, ARROW_OLD = ("谷折り（手前にへこむ）", "山折り（手前に出る）"), ("谷折り（手前へ）", "山折り（向こうへ）")
 PICTURE_OLD, PICTURE_NEW = "まず筒を 1 つ作る（色の境で谷折り）", "まず筒を 1 つ作る（色の境で山折り）"
-# 作成動画の札から採った案（EP-0011・EP-0012。作る側が採り、型紙エンジンの issue/tora-v4 8d2f667・issue/goraigo-v11 50afc27 と同じ字にした。
+# 作成動画の札から採った案（EP-0011・EP-0012。作る側が採り、型紙エンジンの issue/tora-v4 d1e5ba1・issue/goraigo-v11 50afc27 と同じ字にした。虎は本人のレビューから採った案 EP-0016 も同じ形で入れた。
 # 本人の方針 11-06 で事前の人の確かめは無く、刷った紙を本人が見る）。手順の数と番号は変わらない
 ARM_OLD = ("5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める")
-ARM_NEW = ("5 重りの腕の上の穴にも竹串を通す。下の穴（点の丸）の所に粘土を付ける。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
+ARM_NEW = ("5 重りの腕の上の穴にも竹串を通す。下の穴（点の線）の所に粘土を付ける。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
            "頭の傾きを見て腕の位置を決めてから、腕を 3 首の帯に貼る")
 LEG_OLD, LEG_NEW = "4 扇の真ん中の足を、糊代の境の破線で折り、足の糊代を 3 台の印に貼る", "4 扇の真ん中の足の付け根（扇の下の端のすぐ下）に、8 帯を刷った面を外にして巻いて貼る。足を糊代の境の破線で折り、足の糊代を 3 台の印に貼る"
 FOOT_OLD = "5 像の足を 3 台に貼る"
@@ -179,6 +180,11 @@ for sid, tpl, adds in ((GORAIGO, FAN, lambda hid, p: SKEWER if hid in ("H-B", "H
         if sid == GORAIGO and p["hub"] == "axle":
             # 開く糸は作る物に入れた（手順 11 に結び方）ので、「試す時は」を外す
             want = [f"たこ糸（軸に 1 本と、開く糸 2 本 各約 {FAN.thread_mm(p):.0f}mm ＋結ぶ分）" if m.startswith("たこ糸") else m for m in want]
+        if sid == TORA and p["mount"] == "neck":
+            # 竹串と粘土の置き所・丸い印は穴・4 尾だけ色がある理由を字で書く（EP-0016）。既定の寸法では糸で下げる形は出ない
+            want = [f"{m}（胴の 2 つの穴・3 首の帯の穴・5 腕の上の穴に通す。胴の上の面の点の線の下を通る）" if m.startswith("竹串") else m for m in want]
+            want = [f"油粘土 {p['weight_g']:g}g（5 腕の下の穴の、点の線の所に付ける）" if m.startswith("油粘土") else m for m in want]
+            want.append("丸い印は穴（竹串の先であける）。4 尾は外に見えるので色を刷り、3 首の帯と 5 腕は胴の中に入るので白")
         assert got == want, (sid, hid, got, want)
 
 # 用意する物の条件はエンジンと同じ結果（部品に穴があって竹串の行が無い・胴に切り抜きがある）。雛形は部品を組まずに形の値で決めるので、部品と照らす
@@ -213,14 +219,21 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
     h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
     tid = h.get("template") or data.get("template", "slider_fan")
 
+    q_now = {**tpl.DEFAULTS, **h["params"]}
+    with old_set(tpl):
+        mats = tpl.materials(q_now)
+    mats += tpl.materials(q_now)
+
     def boxes(layout):
         """組の札・印の文・見出し・見込んだ文を除いた、字の箱の全部。"""
         out = []
         for t in layout["texts"]:
-            if not t.text or t.text.startswith(("刷った組", "仮説", "作る前に", "思った事", "・のり", "1 胴", "・たこ糸")):
+            if not t.text or t.text.startswith(("刷った組", "仮説", "作る前に", "思った事", "・のり", "1 胴", "・たこ糸", "・竹串", "・油粘土", "・丸い印")):
+                continue
+            if any(t.text in m for m in mats):  # 用意する物の行の折り返し（字は 6 で見た）
                 continue
             # 次の組で増えた物（御来迎の 8 帯の札、位置の印の凡例。EP-0011・EP-0012）は 10 で見る
-            if t.text in ("8 帯", "位置の印（切らない・折らない）"):
+            if t.text in ("8 帯", "位置の印（切らない・折らない）", "2", "3", "4", "5", "2 頭", "3 首の帯", "4 尾", "5 腕"):  # 虎の札の名（EP-0016）は 10 で見る
                 continue
             if t.text in FOLD_NEW + LEGEND_OLD + ARROW_OLD + ("切る", "糊代"):  # 凡例の字は位置も変わる（字が長く、行を送る）。字は 9 で見る
                 continue
@@ -249,7 +262,9 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
     strip = lambda rows: [(x, text) for x, _, text in rows]
     assert strip(boxes(new_pattern)) == strip(boxes(old_pattern)), (sid, "型紙の字の差が見込みと違う")
     # 部品は動かない。次の組で変わるのは、御来迎の 1 外筒の絵（溝の下の口の矢印が増える）と 8 帯（増える）、虎の 5 腕（下の穴と点の丸が増える）だけ
-    seen = lambda layout: [(q.key, q.x, q.y, q.outline, q.glue, q.holes, [a for a in q.art if a["kind"] != "mark"]) for q in layout["parts"] if q.key != "band"]
+    # 虎の胴の 2 枚目の側面の絵は y だけ裏返す（EP-0016）ので、胴の絵は 10 で見る
+    seen = lambda layout: [(q.key, q.x, q.y, q.outline, q.glue, q.holes, [a for a in q.art if a["kind"] != "mark"] if not (tpl is TIGER and q.key == "body") else None)
+                           for q in layout["parts"] if q.key != "band"]
     old_seen = seen(old_pattern)
     new_seen = [(k, x, y, o, g, (hs[:1] if k == "drop" else hs), a) for k, x, y, o, g, hs, a in seen(new_pattern)]
     assert new_seen == old_seen, (sid, "部品が動いた")
@@ -307,7 +322,8 @@ assert all(w in words(compose("wheel_cart", dict(other.DEFAULTS), wsrc)[1]) for 
 p = {**TIGER.DEFAULTS, "mount": "neck"}
 arm = part(TIGER, p, "drop")
 assert [h[:2] for h in arm.holes] == [(4, 4), (4, 4 + p["weight_below_axle"])], arm.holes
-assert [a["kind"] for a in arm.art] == ["mark"] and arm.art[0]["closed"], arm.art
+# 粘土の高さの点の線は、穴の左右の 2 本で、穴の高さにある（EP-0016 で丸から替えた。丸は「赤い斑点」に見えた）
+assert [a["kind"] for a in arm.art] == ["mark", "mark"] and all(y == arm.holes[1][1] for a in arm.art for _, y in a["pts"]), arm.art
 assert TIGER.hang_thread_mm(p) is None, "既定の寸法（玉 約 15mm）で糸で下げる形が出た"
 assert not any("糸で下げる" in w for w in TIGER.steps(p) + TIGER.materials(p))
 deep = {**p, "axle_height": 60, "body_height": 66, "weight_below_axle": 28}  # 玉の下が底から離れる寸法
@@ -315,6 +331,32 @@ L = TIGER.hang_thread_mm(deep)
 assert L is not None and L >= TIGER.HANG_MIN and f"玉の上は穴から {TIGER.HANG_MIN}〜{L}mm" in TIGER.steps(deep)[7] and "たこ糸" in TIGER.materials(deep)[3], (L, TIGER.steps(deep)[7])
 with old_set(TIGER):
     assert len(part(TIGER, p, "drop").holes) == 1 and not part(TIGER, p, "drop").art and TIGER.hang_thread_mm(deep) is None
+# EP-0016: 胴の 2 枚目の側面は y だけ裏返し、2 枚とも虎の鼻先が軸の穴の側（前の端）に来る。前の組は 180° 回したまま（頭が後ろの端）
+nose = min(range(len(TIGER._BODY)), key=lambda i: TIGER._BODY[i][0])
+for mount in ("neck", "hang"):
+    q = {**TIGER.DEFAULTS, "mount": mount, **({"axle_height": 50} if mount == "hang" else {})}
+    for now in (True, False):
+        def sides():
+            body = part(TIGER, q, "body")
+            return body, [a["pts"][nose][0] for a in body.art if a["kind"] == "poly" and a.get("fill") == TIGER.TIGER and a.get("stroke") == TIGER.STRIPE]
+        if now:
+            body, noses = sides()
+        else:
+            with old_set(TIGER):
+                body, noses = sides()
+        H, L = q["body_height"], q["body_length"]
+        front = [abs(n - H) < abs(n - (H + L)) for n in noses]
+        assert len(noses) == 2 and (front == [True, True] if now else front == [True, False]), (mount, now, noses)
+    assert not compose("pivot_counterweight", q, load(TORA)[1])[2], mount
+# 2〜5 番の名（前の組は番号だけ）、胴の上の面の軸の竹串の点の線（2 つの軸の穴と同じ x）、用意する物の置き所の字
+assert {x.key: x.label for x in TIGER.parts(p)} == {"body": "1 胴", "head": "2 頭", "strip": "3 首の帯", "tail": "4 尾", "drop": "5 腕"}
+with old_set(TIGER):
+    assert {x.key: x.label for x in TIGER.parts(p)} == {"body": "1 胴", "head": "2", "strip": "3", "tail": "4", "drop": "5"}
+    assert not [a for a in part(TIGER, p, "body").art if a["kind"] == "mark"]
+body = part(TIGER, p, "body")
+axle = [a for a in body.art if a["kind"] == "mark" and a.get("mark") == "axle"]
+assert len(axle) == 1 and all(x == body.holes[0][0] for x, _ in axle[0]["pts"]), axle
+assert check_art([body]) == [], [f.line() for f in check_art([body])]
 # 粘土の玉の大きさの床: 軸の竹串にかかる浅い重りと、玉の下が底に当たる深い重りを落とす（前の組でも同じ玉なので組で分けない）
 assert any("軸の竹串にかかる" in f.line() for f in TIGER.check_physics({**p, "weight_below_axle": 5}))
 assert any("玉の下が底に当たる" in f.line() for f in TIGER.check_physics({**p, "weight_below_axle": 36}))

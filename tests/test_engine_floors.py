@@ -58,8 +58,13 @@ def bom_neck_arm():
     assert floor_names(floors.check_bom(other, pc.parts(neck))) == ["F2.bom"]
     twice = pc.bom(neck) + [dict(pc.bom(neck)[0])]
     assert floor_names(floors.check_bom(twice, pc.parts(neck))) == ["F2.bom"]
-    # 行を足しても、紙に刷る「用意する物」は竹串と粘土のまま（行の位置で引くと別の行を刷る）。道具の行は首の形だけカッターが付く（次の組、#294）
-    assert pc.materials(neck)[2:] == pc.materials({**neck, "mount": "hang"})[2:]
+    # 行を足しても、紙に刷る「用意する物」は部品表の竹串と粘土の行のまま（行の位置で引くと別の行を刷る）。道具の行は首の形だけカッターが付く（次の組、#294）。
+    # 次の組の首の形は、竹串と粘土の置き所と印の意味を字で添える（EP-0016）ので、頭が部品表の字と同じ事を見る。吊る形は部品表の字のまま
+    by = {r["key"]: r["material"] for r in pc.bom(neck)}
+    hang = {**neck, "mount": "hang"}
+    got = pc.materials(neck)
+    assert got[2].startswith(by["axle"]) and got[3].startswith(f"油粘土 {neck['weight_g']:g}g"), got
+    assert pc.materials(hang)[2:] == [r["material"] for r in pc.bom(hang) if r["key"] in ("axle", "weight")]
 
 
 def bom_through_compose():
