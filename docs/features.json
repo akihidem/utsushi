@@ -398,9 +398,11 @@
    "src/web/toy.py",
    "src/web/play_server.py",
    "tests/test_kaizen.py",
-   "docs/process/decisions/J026-site-side-loop.md"
+   "docs/process/decisions/J026-site-side-loop.md",
+   "src/web/wa.py",
+   "tests/test_wa_ring.py"
   ],
-  "unverified": "本人の方針（11-05 朝、J-026）。感想の欄・一番新しい版を刷る・輪の節と /loop を作った。雛形そのものの直しの報告の入口と道具はエンジンの側（本人の決定、カード 090458 の (b)）で、サイトは仮説ごとの版と表示まで。人で一周した確認はまだ"
+  "unverified": "本人の方針（11-05 朝、J-026）。感想の欄・一番新しい版を刷る・輪の節と /loop を作った。雛形そのものの直しの報告の入口と道具はエンジンの側（本人の決定、カード 090458 の (b)）で、サイトは仮説ごとの版と表示まで。人で一周した確認はまだ。輪の図（web.wa、本人の言葉 11-06）の 4 つの段の字の並べ方は本人の確認待ち"
  },
  {
   "id": "f33",
