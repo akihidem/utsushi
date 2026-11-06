@@ -1,0 +1,8 @@
+# 命令: bash -c 'PYTHONPATH=src OMOCHAE_DATA=$(mktemp -d) .venv/bin/python tests/test_steps_materials.py'
+# commit: 2b3abdc2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_steps_materials.py", line 100, in <module>
+    assert not wrong, ("手順に出る語が用意する物に無い、または例外が古い", wrong)
+           ^^^^^^^^^
+AssertionError: ('手順に出る語が用意する物に無い、または例外が古い', [('NDL-1187053-R0000026-L-3', 'H-B', ['つまようじ'], [])])
+rc=1

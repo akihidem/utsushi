@@ -7,7 +7,8 @@ who は sessionStorage にあって、絵と動画の GET に載らない。な�
 3. 人の確認で「物だけ」になれば誰にでも出る。「人や声」は本人にも出ない
 4. 次の記録を残すと区切りになる（同じ機械の次の人に、前の人の写真を出さない）。期限を過ぎても閉じる
 5. 取り下げで鍵の控えも消える
-6. 合言葉なしの場は今のまま（受けず、出さず、鍵も渡さない）
+6. 合言葉なしの場でも受け、合言葉付きの場と同じ線で出す（確かめる前は上げた本人の画面だけ・物だけの後は誰にでも・人や声は誰にも）。
+   本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」「公開の場で上げた写真は、公開の場のギャラリーにも出します」。前は受けず、出さず、鍵も渡さなかった
 """
 import http.client
 import io
@@ -88,7 +89,7 @@ class Screen:
         return data.decode()
 
     def techo(self):
-        st, data = self.call("GET", f"/toy/{G}/techo")
+        st, data = self.call("GET", f"/toy/{G}/techo/kiroku")
         assert st == 200, st
         return data.decode()
 
@@ -153,12 +154,12 @@ assert e.image(late, n) == 404 and f"/record/{late}/media/{n}" not in e.techo(),
 key = kept[n]["key"]
 for bad in ("{壊れた", json.dumps({n: {"key": key}}), json.dumps({n: {"key": key, "at": "壊れた時刻"}}), json.dumps({n: {"key": 3, "at": old}}), json.dumps({n: "字"})):
     owners.write_text(bad, encoding="utf-8")
-    assert e.image(late, n) == 404 and e.call("GET", f"/toy/{G}/techo")[0] == 200, ("読めない控えは出さない方へ倒す", bad)
+    assert e.image(late, n) == 404 and e.call("GET", f"/toy/{G}/techo/kiroku")[0] == 200, ("読めない控えは出さない方へ倒す", bad)
 assert media_review.shown_to(late, [n]) == [] and media_review.shown_to(late, [n], "") == [], "鍵なしは確認の後の物だけ"
 
 g = Screen()
 g.cookie = {"utsushi_up": "é"}
-assert g.image(rid, other) == 404 and g.call("GET", f"/toy/{G}/techo")[0] == 200, "形の外の鍵でも落ちない"
+assert g.image(rid, other) == 404 and g.call("GET", f"/toy/{G}/techo/kiroku")[0] == 200, "形の外の鍵でも落ちない"
 
 # 5. 取り下げで鍵の控えも消える
 f = Screen()
@@ -167,11 +168,22 @@ f.photo(gone_rid)
 assert records.withdraw(gone_rid, media_only=True)[1] == []
 assert not (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "records" / "media" / gone_rid).exists(), "写真の置き場ごと消える"
 
-# 6. 合言葉なしの場は今のまま
+# 6. 合言葉なしの場（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）
 p = Screen(opened)
-assert p.call("POST", f"/record/{rid}/media", JPEG, "image/jpeg")[0] == 403 and not p.cookie, "受けず、鍵も渡さない"
-assert p.image(rid, name) == 404 and src not in p.techo(), "確認の後の写真も出さない"
-p.cookie = dict(a.cookie)
-assert p.image(rid, name) == 404, "鍵があっても出さない"
+assert p.call("POST", f"/record/{rid}/media", JPEG, "image/jpeg")[0] == 403 and not p.cookie, "別の人の記録へは上げられず、鍵も渡さない"
+assert p.image(rid, name) == 200, "物だけと確かめた後の写真は、開いた場でも誰にでも出す（合言葉付きの場と同じ）"
+q = Screen(opened)
+mine_rid = q.record()
+mine_name = q.photo(mine_rid)  # 自分の記録へは上げられる
+assert q.image(mine_rid, mine_name) == 200 and f"/record/{mine_rid}/media/{mine_name}" in q.techo(), "上げた本人の手帖と絵の道に出る"
+r = Screen(opened)
+assert r.image(mine_rid, mine_name) == 404 and f"/record/{mine_rid}/media/" not in r.techo(), "確かめる前は、別の画面には出さない"
+assert media_review.record(mine_rid, mine_name, "object", "試験の人") == []
+assert r.image(mine_rid, mine_name) == 200 and f"/record/{mine_rid}/media/{mine_name}" in r.techo(), "物だけと確かめた後は、別の画面にも出る"
+voice_rid = q.record()
+voice_name = q.photo(voice_rid)
+assert media_review.record(voice_rid, voice_name, "people", "試験の人") == []
+assert q.image(voice_rid, voice_name) == 404 and r.image(voice_rid, voice_name) == 404, "人や声が入ると確かめた物は、上げた本人にも出さない"
+assert f"/record/{voice_rid}/media/" not in q.techo() and f"/record/{voice_rid}/media/" not in r.techo()
 
 print("ok: 確認の前の写真は、上げた本人の画面にだけ出す")

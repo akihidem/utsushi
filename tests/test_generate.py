@@ -77,8 +77,17 @@ assert floors(gen.adopt_generated(gid, "確認者", [2])[1]) == {"F9.human"}, "2
 assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n0") == 3 and not pathlib.Path(f"{tmp}/n0.pdf").exists()
 TRIAL = "NDL-1187053-R0000004-L-4"
 loop._write(loop.folder() / f"extra-hypotheses-{TRIAL}.json", loop._read(loop.folder() / f"extra-hypotheses-{G}.json"))
-assert hypotheses.print_sheet(TRIAL, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
-assert hypotheses.print_sheet(TRIAL, "H-N2", f"{tmp}/n2") == 0 and not pathlib.Path(f"{tmp}/n2.pdf").exists() and pathlib.Path(f"{tmp}/n2_free.pdf").exists()
+# 手順の紙は out/sources に原図の写しが在る時だけ絵を載せる（git の外で、ingest を回した木にだけ在る）。
+# 写しの有無で結果が変わらないよう、data だけを本物に繋いだ空の根を向けて、まっさらな clone と同じ形で刷る
+bare = pathlib.Path(tmp) / "bare-root"
+bare.mkdir()
+(bare / "data").symlink_to(ROOT / "data")
+real_root, hypotheses.ROOT = hypotheses.ROOT, bare
+try:
+    assert hypotheses.print_sheet(TRIAL, "H-N1", f"{tmp}/n1") == 0 and pathlib.Path(f"{tmp}/n1.pdf").exists()
+    assert hypotheses.print_sheet(TRIAL, "H-N2", f"{tmp}/n2") == 0 and not pathlib.Path(f"{tmp}/n2.pdf").exists() and pathlib.Path(f"{tmp}/n2_free.pdf").exists()
+finally:
+    hypotheses.ROOT = real_root
 # 固定の仮説は受け皿として残る
 assert any(h["id"] == "H-A" for h in hypotheses.load(G)["hypotheses"])
 # 確定した記録が次の生成の前例になり、結果が記録で変わる

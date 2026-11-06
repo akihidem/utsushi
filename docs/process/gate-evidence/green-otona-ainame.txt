@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ai_name.py
+# commit: fa390113（回した時の HEAD）
+ok: 断りの AI には名前を添え、札と状態の AI は変えていない
+rc=0

@@ -113,8 +113,9 @@ STICK = {"push_part": "stick", "pusher_height": 84}
 # ── たたき台を誰も刷っていない場でも、手帖で本人の紙を選べる ──
 oid0, key0 = made("nextwho000", "刷る前に話した考え", STICK)
 body = send(f"/toy/{G}/techo", cookie=key0)[1].decode()
-assert f'name="hypothesis" value="{oid0}"' in body and 'checked' in body, "本人の紙を選べる"
-assert f'value="{oid0}"' not in send(f"/toy/{G}/techo")[1].decode(), "ほかの人には出ない"
+# 手帖は紙を選ばせず、本人の紙があればそれを作る（1 手 1 画面、#87）
+assert f'data-hid="{oid0}"' in body, "本人の紙を作る"
+assert oid0 not in send(f"/toy/{G}/techo")[1].decode(), "ほかの人には出ない"
 assert ">紙を作る<" in send(f"/toy/{G}/techo")[1].decode(), "紙の無い人には、紙を作る道"
 
 assert send(f"/toy/{G}/print", {"hypothesis": SHEET})[0] == 303
@@ -242,7 +243,7 @@ assert send(f"/sheet/{G}/{oid5}_v1_after.pdf", cookie=key5)[0] == 200, "型紙�
 # 次の版は、どの道からも作らない。節の数にも入れない（向く先が無い）
 assert loop.next_target(G, oid5) == oid5 and loop.next_target(G, oid) == SHEET, "型紙なしには向く先が無い"
 page = send(f"/toy/{G}")[1].decode()
-assert f'action="/record/{rid5}/next' not in page and f'action="/record/{rid5}/next' not in send(f"/toy/{G}/techo")[1].decode(), "欄を出さない"
+assert f'action="/record/{rid5}/next' not in page and f'action="/record/{rid5}/next' not in send(f"/toy/{G}/techo/kiroku")[1].decode(), "欄を出さない"
 assert not {rid5} & set(ids(kaizen.pending(G, records.all_records(G))[0]) + ids(kaizen.pending(G, records.all_records(G))[1])), "節の数に入れない"
 param5, to5 = one_change()
 latest = loop.latest_version(G, SHEET)

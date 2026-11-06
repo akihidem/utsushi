@@ -14,7 +14,7 @@ os.environ["OMOCHAE_DATA"] = DATA
 
 from omochae import engine_bundle, hypotheses, making_log, records  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
-from web import techo_site, toy  # noqa: E402
+from web import techo_site, techo_step, toy  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 UNSURE = "わからない"
@@ -25,7 +25,7 @@ assert set(SOURCES) == set(TEMPLATES), "どの雛形にも玩具がある（無�
 
 
 def tiles_of(page):
-    return dict(re.findall(r'name="result" value="([^"]+)"[^>]*>(<svg.*?</svg>)', page))
+    return dict(re.findall(r'(?:name="result"|class="tile") value="([^"]+)"[^>]*>(<svg.*?</svg>)', page))
 
 
 # 1. 札の絵: 「?」の絵は「わからない」だけ。動きの言葉まで分からない札に見せない。動く側と動かない側は別の絵
@@ -33,7 +33,7 @@ for tid, sids in SOURCES.items():
     tpl, sid = TEMPLATES[tid], sids[0]
     data = hypotheses.load(sid)
     sure = [w for w in tpl.RESULTS if w != UNSURE]
-    for page in (toy.record_form(sid, data, []), techo_site.page(sid, [h["id"] for h in data["hypotheses"]], "")):
+    for page in (toy.record_form(sid, data, []), techo_step.page(sid, [h["id"] for h in data["hypotheses"]])):
         tiles = tiles_of(page)
         assert list(tiles) == list(tpl.RESULTS), (sid, tiles)
         assert [w for w, svg in tiles.items() if svg == techo_site.ICONS[UNSURE]] == [w for w in tpl.RESULTS if w == UNSURE], (sid, tiles)
@@ -90,8 +90,8 @@ assert group["results"] == {MOVED: 2, STILL: 1} and group["reports"] == 4, group
 
 # 8. 頁: 前の札は選べない。記録の一覧には書いた言葉のまま出る
 data = hypotheses.load(SID)
-page = techo_site.page(SID, [h["id"] for h in data["hypotheses"]], "")
-assert OLD_MOVED not in tiles_of(page) and OLD_MOVED not in tiles_of(toy.record_form(SID, data, []))
+page = techo_site.records_page(SID)  # 記録の札は手帖の記録の頁にある（#87）。結果の札は作る頁と玩具の頁
+assert OLD_MOVED not in tiles_of(techo_step.page(SID, [h["id"] for h in data["hypotheses"]])) and OLD_MOVED not in tiles_of(toy.record_form(SID, data, []))
 assert rid_old in page and OLD_MOVED in page
 
 print("ok")

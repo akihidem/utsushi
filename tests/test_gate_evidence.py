@@ -1,4 +1,4 @@
-"""関門の証拠のファイルの頭に、回した命令と commit の番号を書く命令（#171）。
+"""関門の証拠のファイルの頭に、回した命令と commit の番号を書く命令（#171）と、頭がそろっている事の検査（#252）。
 
 なぜ要るか: 証拠のファイルの多くは出力だけで、どの命令をどの commit で回したかが後から引けなかった。手で書くと、抜けるか、個人のパスが混じる。
 """
@@ -74,4 +74,13 @@ def cli(*a):
 
 assert cli().returncode == 3 and cli("write").returncode == 3 and cli("write", "x").returncode == 3
 assert cli("nothing").returncode == 3
+# check の入口: 頭の無いファイルがあれば名指しして 3、そろえば 0（ここの置き場は 5 で残した見本）
+assert ge.main(["check"]) == 3
+(d / "half.txt").unlink()
+(d / "text-not-sha.txt").unlink()
+assert ge.main(["check"]) == 0
+
+# 7. 本物の証拠の置き場の頭も見る（#252）。./run.sh がこの試験を回すので、頭の無い証拠を足すと main に入らない
+real = cli("check")
+assert real.returncode == 0, f"{real.stdout}証拠は python -m omochae.gate_evidence write <名前> -- <命令...> で書く（手で書かない）"
 print("ok")

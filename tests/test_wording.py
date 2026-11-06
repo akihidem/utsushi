@@ -78,8 +78,10 @@ assert "・版 1・▼R-0001</p>" in page and "メモ: ●" in page, "記録の�
 assert "確かめた人: ■" in get("/"), "入口の札"
 others = [s for s in sources() if hypotheses.stage(s) != "必須"]
 assert f"◇{others[0]}" in get("/zukan"), "図鑑の一覧の場所"
+# 手帖の作る頁には、組の版も記録の番号も出さない（作る側の印を学ぶ人に見せない。#87）。記録の番号は、手帖の記録の頁に出る
 techo = get(f"/toy/{G}/techo")
-assert "◆goraigo-v10" in techo and "▼R-0001" in techo, "手帖"
+assert "goraigo-v10" not in techo and "R-0001" not in techo, "手帖の作る頁"
+assert "▼R-0001" in get(f"/toy/{G}/techo/kiroku"), "手帖の記録の頁"
 # 図鑑の頁とくずし字を読む頁
 zu = get(f"/zukan/{G}")
 assert "確かめた人: ▲本人" in zu and "▼R-0001" in zu and f"▲{esc(h['how_it_moves'])}" in zu, "図鑑"

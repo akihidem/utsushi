@@ -67,10 +67,18 @@ def own_hypotheses(source_id):
 
 
 def save_own(source_id, name, how, evidence, params=None):
-    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。"""
+    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。
+    文は紙に刷られ、図鑑にも出るので、記録と同じ床（長さと連絡先の形）を当てる。作る側の命令と話した字から作る道の両方がここを通る（J-028、#336）。"""
+    from .contrib import check_pii, too_long
+
     failures = [Failure("F9.own", field, f"{label}が空") for field, label, value in (("name", "仮説の名前", name), ("how", "動かし方", how), ("evidence", "図のどこを見たか", evidence)) if not value or not value.strip()]
     if params is not None and not isinstance(params, dict):
         failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
+    fields = (("name", name), ("how", how), ("evidence", evidence))
+    long = too_long(fields)
+    if long:
+        return None, failures + [Failure("F9.own", where, message) for where, message in long]
+    failures += [Failure("F10.pii", where, f.message) for where, text in fields for f in check_pii({"body": text or ""})]
     if failures:
         return None, failures
     folder = _pred_dir()

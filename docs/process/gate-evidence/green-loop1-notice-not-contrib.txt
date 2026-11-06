@@ -1,0 +1,4 @@
+# 命令: env -u ANTHROPIC_API_KEY PYTHONPATH=src .venv/bin/python tests/test_withdraw_notice.py
+# commit: 90839f34（回した時の HEAD）
+OK
+rc=0

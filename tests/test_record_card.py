@@ -89,15 +89,16 @@ try:
     (folder / "m1.mp4").unlink()
     (folder / "review.json").unlink()
     # 手帖の札も同じ
-    techo = get(f"/toy/{G}/techo")
+    techo = get(f"/toy/{G}/techo/kiroku")
     assert "Claude に聞く" in techo and "動画を上げると、Claude が見えた事を返します" in techo and "動画を見てもらう" not in techo
     ask._key_present = lambda: False
-    techo = get(f"/toy/{G}/techo")
+    techo = get(f"/toy/{G}/techo/kiroku")
     assert "Claude に聞く" not in techo and "AI の返事は、この場では使えません" in techo
 finally:
     ask._key_present = keep
-# 札の中は 紙の返事 → 自分の説明 → AI → 次の版 の順に区切る
-assert full.index("試した後の紙") < full.index("説明: 折りが固い") < full.index("Claude に聞く") < full.index("次の版を作る")
+# 札の中は 紙の返事（記録そのもの） → 自分の説明 → AI → 次の版 の順に区切る。試した後の紙は 11-06 から刷らないので札に道を出さない
+assert "試した後の紙" not in full
+assert full.index("・版 ") < full.index("説明: 折りが固い") < full.index("Claude に聞く") < full.index("次の版を作る")
 assert full.count('class="step"') == 3, full.count('class="step"')
 
 server.shutdown()

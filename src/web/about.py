@@ -31,8 +31,12 @@ LOOP = ("ここでは、おもちゃを選ぶと、すぐに紙の型紙を作�
         "どう工夫したかを記録に書いてください。次の型紙をよくするヒントになります。自分の考えを書いた後で、AI（Claude）からも返事をもらえます。"
         "紙で動いても、昔の作り方が分かったことにはなりません。昔の物をそのまま作り直した物ではなく、ためしに作るための案です。")
 
+# よむ の頁（段 1）: 狭い幅（1 列に積む）では、題と読み物への道（図鑑・保護者の方へ…・English）を額の絵より先に置く（order:-1）。
+# 前は額の絵（約 630px）の後で、幅 390 で道が 882px からと、最初の画面に入らなかった（別の目の確かめ 11-06）。広い幅は 2 列（額 | 題）のまま。
+# 注は CSS の中に書かない（頁の字に混ざるため）
 STYLE = """
 .about .hero{align-items:center}
+@media (max-width:820px){.about .hero>div:last-child{order:-1}}
 .about .concept{font-size:clamp(18px,2vw,24px);letter-spacing:.2em;line-height:2;margin:14px 0 0}
 .about blockquote{margin:12px 0;padding:0 0 0 16px;border-left:1px solid var(--frame);font-size:16px;line-height:2.1;letter-spacing:.06em}
 .about .sec h2{margin-bottom:.4em}
@@ -59,11 +63,14 @@ def page(skin_name, path="/about"):
     src = _source()
     quotes = "".join(f"<blockquote>「{esc(w)}」</blockquote>" for w in WORDS)
     body = (f'<div class="about"><section class="hero sec"><div>{skin.frame(SID, caption=src.get("holding", ""))}</div>'
-            f'<div><h1>うつし</h1><p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
+            # 道の外の読み物の入口（段 1、帯の「よむ」はこの頁）。前は頭の帯にあった 図鑑・English と、保護者の方へ、ファシリテーターの方へ の頁を、今の名前のまま並べる
+            f'<div><h1>うつし</h1><p class="links yomu"><a href="/zukan">図鑑</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a><a href="/en">English</a></p>'
+            f'<p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
             # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。黒のジンの案 2 は入口の章の頭（looks.py）。
-            + (hokusai.flip_section() if skin_name == "tenji" else "") + hokusai.mechanism_section() +
+            # 白の案 2（縦読み）は、入口でなく帯の「よむ」の先のこの頁に置く（統括の決め 11-06。地図の「読み物は道の外へ」）
+            + (hokusai.flip_section() + hokusai.scroll_section("tenji") if skin_name == "tenji" else "") + hokusai.mechanism_section() +
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
-            '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a></p></section></div>')
+            '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
     return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)

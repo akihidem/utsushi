@@ -97,7 +97,8 @@ assert seen[0] != _data.name and os.environ["OMOCHAE_DATA"] == _data.name and st
 # 刷って記録した後の字も数える: 空の置き場の頁には出ない紙の窓と記録の札が入る
 walked = pw.collect([G], walk=True)
 after = walked[f"/toy/{G}（記録の後）"]
-assert "_after.png" in after and "_after" not in pages[f"/toy/{G}"], "記録の後の頁を開いていない"
+# 記録の後の頁には記録の札の並びが出る（試した後の紙は 11-06 から窓に出さない）
+assert "記録の順。上下はありません" in after and "記録の順。上下はありません" not in pages[f"/toy/{G}"], "記録の後の頁を開いていない"
 assert f"/toy/{G}/tsukuru（記録の後）" in walked and f"/toy/{G}/techo（記録の後）" in walked
 assert stored() == before and os.environ["OMOCHAE_DATA"] == _data.name
 play_server.serve = real_serve

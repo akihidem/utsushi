@@ -51,7 +51,7 @@ def own_files(rid):
 # 取り下げると、記録と添えた物が全部消え、どの頁と集計にも出ない
 rid = trial()
 def pages():
-    return {"手帖": page(f"/toy/{G}/techo"), "玩具": page(f"/toy/{G}"), "ギャラリー": gallery.build()}
+    return {"手帖": page(f"/toy/{G}/techo/kiroku"), "玩具": page(f"/toy/{G}"), "ギャラリー": gallery.build()}
 
 
 for name, body in pages().items():
