@@ -24,7 +24,7 @@ source = json.loads((hypotheses.ROOT / "data/sources" / f"{TORA}.json").read_tex
 neck = dict(pc.DEFAULTS, mount="neck")
 sheet = dict(pc.DEFAULTS, **hypotheses.sheet_of(TORA)["params"])
 drop = lambda q: next(x for x in TIGER.parts(q) if x.key == "drop")
-assert TIGER.SHEET_SET == "tora-v6"
+assert TIGER.SHEET_SET == "tora-v7"  # 今の組（v6 は刷らずに飛ばした）
 
 # 1. 写した値は描く所と同じ
 assert pc.LABEL_LINE == LINE and pc.LABEL_SIZE == LABEL_SIZE, (pc.LABEL_LINE, LINE)

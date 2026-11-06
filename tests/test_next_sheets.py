@@ -69,7 +69,7 @@ def words(layout):
 
 # 1. 組の名前。前の組の名前は控えを刷る道として残す。御来迎は今の組のまま（前の組を持たない）。
 # 虎の今の組は tora-v6 で、tora-v4 は控えの組。ここからは雛形の組を tora-v4 に置く（控えの組を刷る道と同じ）
-assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v6", "tora-v3", ("tora-v3", "tora-v4")), TIGER.SHEET_SET
+assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v7", "tora-v3", ("tora-v3", "tora-v4")), TIGER.SHEET_SET
 TIGER.SHEET_SET = "tora-v4"
 assert FAN.SHEET_SET == "goraigo-v10" and not hasattr(FAN, "FROZEN_SET"), FAN.SHEET_SET
 assert marks.FROZEN_SETS == {GORAIGO: "goraigo-v10"}, marks.FROZEN_SETS

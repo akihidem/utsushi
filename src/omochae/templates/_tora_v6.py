@@ -1,18 +1,21 @@
-"""虎の次の組 tora-v6 の作り（型紙エンジン paper-to-toy の main e7cf5f7 の雛形 pivot_counterweight の写しに、#135 957fcc2 の 5 重りの腕の札を足した物。#115）。
+"""虎の今の組 tora-v7 の作り（型紙エンジン paper-to-toy の main 43b8a1d（#138・制作者の「#138を合体してよい。手順8の字も採る」2026-11-07 04:10） の雛形 pivot_counterweight の写し。#115）。
 
-名前が `_` で始まるので、雛形としては読まれない。pivot_counterweight が、刷る組が tora-v6 より後の時だけ、この関数に渡す
-（set_no）。前の組（tora-v3・tora-v4）の作りは pivot_counterweight に残し、1 バイトも変えない（凍結の床）。
+名前が `_` で始まるので、雛形としては読まれない。pivot_counterweight が、刷る組の番号が 6 より後の時だけ、この関数に渡す
+（set_no）。前の組（tora-v3・tora-v4）の作りは pivot_counterweight に残す（凍結の床）。ファイルの名は v6 の写しの時のまま
+（tora-v6 は刷らずに飛ばして tora-v7 にした。窓口の決定 2026-11-07。上に積んだ枝の衝突を減らすため名を変えない）。
 
-なぜ別の 1 本か: エンジンは v4 の後に、写真と照らした直し（#119）・立体の脚と角を落とした胴・端の壁の糊代の根元・両面の頭（#129）を
-入れ、胴の網と絵をほぼ全部描き直した。前の組の作りに 1 行ずつ「組で分ける」を足すと、v4 の紙に直しが漏れても見つけにくい。
-エンジンの雛形をそのまま写して、組の境で関数ごと替えれば、漏れる所が無い（雛形の正はエンジン）。
+なぜ別の 1 本か: エンジンは v4 の後に、写真と照らした直し・立体の脚と角を落とした胴・端の壁の糊代の根元・両面の頭・5 重りの腕の札・
+当たりの直し（v7）を入れ、胴の網と絵をほぼ全部描き直した。前の組の作りに 1 行ずつ「組で分ける」を足すと、前の組の紙に直しが漏れても
+見つけにくい。エンジンの雛形をそのまま写して、組の境で関数ごと替えれば、漏れる所が無い（雛形の正はエンジン）。
 
-エンジンと違う所は 2 つだけ（次にエンジンから写し直す時に、この 2 つを残す）:
+エンジンと違う所は 2 つだけ（次にエンジンから写し直す時に、この 2 つを残す。写す道具は state の make_tora_copy.py）:
 - 手順 4 の「破線で山折り」を「線のとおり山折り」にする。山折りの線は凡例では一点鎖線で、「破線で山折り」だと字と線が合わない
   （窓口が本人の委任 2026-11-06 でカード 002247 の推しを選んだ字。tora-v4 から同じ）
 - 紙の行を、本人が確かめた 4 つの名前（_paper.paper_name。#295）にする（統括の指示「虎の紙の行の 4 つの字は次の組の写しの時に」）
 
 以下はエンジンの雛形の注のまま:
+雛形 pivot_counterweight: 箱の胴に軸を通し、重りで頭を揺らす。張子の首振り虎の仮説を試す。
+
 頭の支え方の読みを描き分ける。玩具の型紙は 1 枚で、neck（首を胴の穴に入れる・元の repo の H-A）がたたき台、hang は試行錯誤のヒント
 （制作者の決定 2026-11-05「玩具 1 つに型紙 1 枚」「虎のたたき台は H-A」・omochae.sheets）。寸法は手元の複写の図の比から出した。
 どの値も実物では未確認。Claude が変えてよいのは RANGES の名前の値だけ。
@@ -39,6 +42,15 @@ DEFAULTS = {
     # 2 は、今の顔と、頭の上で折り返した鏡写しの顔を 1 つの部品にする（_head_part）。既定は 1（今の頭）で、凍結の場面の紙は変えない。
     # 次の組の見本（examples/tora_v6.json）だけが 2 を使う
     "head_sides": 1,
+    # 虎 v7 の当たりの直し（制作者の決定 2026-11-07「虎 v6 の当たり2つ（粘土の玉が前の壁・頭の角が腕）は、v7 で今直してください。撮影は v6 のまま。」）。
+    # clay_back: 5 重りの腕の下の穴（粘土を付ける所）を、軸の穴よりこの mm だけ後ろに刷る（腕も後ろへ同じだけ広げ、穴の縁の紙を残す）。
+    #   静かな時は重心が軸の真下に来るので、穴を後ろへ刷っても玉は軸の下へ戻り、頭の傾きが変わるだけ。頭を水平に近く止めるのに使う。
+    # axle_back: 首の形で、軸（竹串）を前の壁のこの mm 後ろに通す（既定は NECK_BACK と同じ 6）。粘土の玉と 5 重りの腕は軸の下に下がり、
+    #   頭が上がる向きに揺れると前へ出るので、前の壁との空きはこの距離で決まる（v6 の 6mm では、静かな時も揺れる時も当たった）。
+    # fit_check: 1 の時、頭が静かな時の傾きから ±MIN_SWING 揺れる間、粘土の玉・5 重りの腕・頭が前の壁に、首の帯が穴の縁に当たらない事を
+    #   検査で見る。clay_back か axle_back を既定から変えた寸法は、fit_check が 0 でも見る（fit_on）。
+    # どれも既定は今の値で、既定の寸法と v6 の紙は変わらない（凍結の場面と、撮影中の v6 の紙を変えないため）。次の組の見本 examples/tora_v7.json だけが使う
+    "clay_back": 0, "axle_back": 6, "fit_check": 0,
     # 紙の面密度は見込み。実物の紙を量ったら置き換える。
     "paper_gsm": 150,
 }
@@ -48,11 +60,18 @@ RANGES = {
     "opening": (10, 30), "neck_length": (5, 30), "strip_width": (5, 20),
     "head_w": (15, 45), "head_h": (15, 45),
     "weight_g": (0.2, 15), "weight_below_axle": (-20, 60), "weight_behind": (-10, 40),
-    "leg_height": (0, 15), "body_round": (0, 10),
-    "head_sides": (1, 2),
+    "leg_height": (0, 15), "body_round": (0, 10), "clay_back": (0, 10), "axle_back": (4, 20),
     "paper_gsm": (40, 400),
 }
 MOUNTS = ("neck", "hang")
+# 頭の顔の数は選ぶ値（1 か 2）。連続の範囲（RANGES）で出すと、間の 1.5 も通るように読めた（見直しの指摘）ので、mount と同じく
+# spec() に選ぶ値として出し、check_range もこの値のどれかかで見る
+HEAD_SIDES = (1, 2)
+# 当たりの検査（fit_check）は、するかしないかを選ぶ値。頭の顔の数と同じく、連続の範囲でなく選ぶ値で出す
+FIT_CHECKS = (0, 1)
+FIT_CLEAR = 0.5  # 当たりの検査で残す空き mm（粘土の玉・5 重りの腕・頭と、前の壁の間）
+# 両面の頭で、首の帯の上と下に残す貼り代 mm。帯を 2 枚の間に挟んで裏どうしを貼るので、帯の外に紙どうしが貼れる幅が要る
+HEAD_GLUE_MIN = 1
 # 刷る形を決める寸法（頭の支え方）。仮説の違いそのものなので、寸法を直に渡す入口（python -m omochae --params）では既定に頼らず必ず書かせる。
 FORM = "mount"
 FORMS = MOUNTS  # 刷る形の値の一覧（作りうる部品を数える時に使う）
@@ -95,7 +114,7 @@ def title(p):
 
 
 def spec():
-    return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "mount": MOUNTS}
+    return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "mount": MOUNTS, "head_sides": HEAD_SIDES, "fit_check": FIT_CHECKS}
 
 
 def check_range(p):
@@ -104,13 +123,18 @@ def check_range(p):
         if k == "mount":
             if v not in MOUNTS:
                 out.append(Failure("F5.range", k, f"{v} は {MOUNTS} のどれでもない"))
+        elif k == "fit_check":
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or v not in FIT_CHECKS:
+                out.append(Failure("F5.range", k, f"{v!r} は {FIT_CHECKS} のどれでもない（当たりの検査をするか）"))
+        elif k == "head_sides":
+            # True は 1 と等しく読めるので、真偽の値は別に落とす。値の等しさだけで見ると Decimal("1") や 1+0j も通り、後の揺れの式
+            # （mass_points）で例外になる（見直しの指摘）ので、数の型も int と float に限る
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or v not in HEAD_SIDES:
+                out.append(Failure("F5.range", k, f"{v!r} は {HEAD_SIDES} のどれでもない（顔の数）"))
         elif k not in RANGES:
             out.append(Failure("F5.range", k, "知らない寸法の名前"))
         elif not isinstance(v, (int, float)) or isinstance(v, bool) or not RANGES[k][0] <= v <= RANGES[k][1]:
             out.append(Failure("F5.range", k, f"{v} は範囲 {RANGES[k]} の外"))
-        elif k == "head_sides" and not float(v).is_integer():
-            # 範囲 (1, 2) の間の 1.5 などは、刷る頭の形が無い（顔は 1 つか 2 つ）
-            out.append(Failure("F5.range", k, f"{v} は 1 か 2 でない（顔の数は整数）"))
     return out
 
 
@@ -125,7 +149,10 @@ def mass_points(p):
         arm = axle_to_head_top(p)
         head = (head_m, 0, arm + p["head_h"] / 2)
         strip = (paper_mass(2 * p["strip_width"] * arm, p["paper_gsm"]), 0, arm / 2)
-    return [head, strip, (p["weight_g"], -p["weight_behind"], p["weight_below_axle"])]
+    # 粘土は、式の後ろへのずれ（weight_behind）に、首の形で下の穴を後ろへ刷った分（clay_back。v7 から）を足した所。
+    # 吊る形に 5 重りの腕は無いので足さない（見直しの指摘: 吊る形でも式だけが変わった。0 でない clay_back は check_physics が落とす）
+    back = p["weight_behind"] + (p["clay_back"] if p["mount"] == "neck" else 0)
+    return [head, strip, (p["weight_g"], -back, p["weight_below_axle"])]
 
 
 def axle_to_head_top(p):
@@ -188,6 +215,14 @@ def check_physics(p):
         # 重りは頭の裏に貼る（組み方の文）。両面の頭は裏どうしを貼り合わせるので、粘土を貼る裏が無い
         if p["head_sides"] == 2:
             out.append(Failure("F5.pivot", "頭", "吊る形は頭の裏に粘土を貼るので、頭を両面（head_sides 2）にできない"))
+        # 首の形だけの寸法（v7 から）。吊る形に 5 重りの腕は無く（粘土は頭の裏）、軸は耳の穴で決まり、当たりの式もまだ無い。
+        # 値を変えても刷る物は変わらないのに、式や検査だけが変わったように読める（見直しの指摘）ので落とす
+        if p["clay_back"]:
+            out.append(Failure("F5.pivot", "重り", "吊る形に 5 重りの腕は無く、粘土は頭の裏に貼るので、clay_back は 0 にする"))
+        if p["axle_back"] != NECK_BACK:
+            out.append(Failure("F5.pivot", "軸", f"吊る形の軸は耳の穴で決まるので、axle_back は {NECK_BACK} のままにする"))
+        if p["fit_check"] == 1:
+            out.append(Failure("F5.pivot", "当たり", "当たりの検査（fit_check 1）は首の形だけ（吊る形の当たりはまだ見ない）"))
         # 重りは頭の裏に貼る（組み方の文）。式の位置が頭の外なら、その文では作れない。
         arm = axle_to_head_top(p)
         if not arm <= p["weight_below_axle"] <= arm + p["head_h"]:
@@ -210,12 +245,20 @@ def check_physics(p):
                 out.append(Failure("F5.pivot", "頭", "頭の下端が床に近すぎる"))
     else:
         # 首の帯が穴の縁に当たらずに MIN_SWING まで揺れるか。帯の面は軸に直交する（軸は帯の面の穴を貫く）ので、
-        # 帯の幅は穴の中で縦に並ぶ。軸は前の壁の NECK_BACK 後ろ。θ 傾くと、壁の所で帯の中心は NECK_BACK·tanθ 動き、
+        # 帯の幅は穴の中で縦に並ぶ。軸は前の壁の axle_back（既定 NECK_BACK）後ろ。θ 傾くと、壁の所で帯の中心は axle_back·tanθ 動き、
         # 帯の縦の幅は sw/cosθ に広がる。前は帯の幅の 2 割しか引いておらず、穴より広い帯も通していた（穴 10・帯 20）。
         t = math.radians(MIN_SWING)
-        need = NECK_BACK * math.tan(t) + p["strip_width"] / (2 * math.cos(t))
+        need = strip_need(p, t)
         if need > p["opening"] / 2:
             out.append(Failure("F5.pivot", "首", f"首の帯（幅 {p['strip_width']}）が穴（{p['opening']}）の縁に当たるまで {MIN_SWING}° 揺れない"))
+        # 両面の頭は、首の帯の先を 2 枚の間の真ん中まで挟んで裏どうしを貼る（組み方の文）。頭の真ん中の高さに、帯の幅と上下の貼り代が
+        # 入らないと、帯が頭の外に出て貼れない（見直しの指摘: 頭の高さ 15・帯の幅 20 が通っていた）。頭の後ろの端の近くは頭が細く、
+        # 帯は必ず頭の外へ出る（胴へ続く首の所）ので、帯の先が来る真ん中で見る
+        if p["head_sides"] == 2:
+            span = head_span_mm(p)
+            if p["strip_width"] + 2 * HEAD_GLUE_MIN > span:
+                out.append(Failure("F5.pivot", "頭", f"首の帯（幅 {p['strip_width']}mm）を両面の頭の 2 枚の間に挟めない"
+                                                     f"（頭の真ん中の高さ {span:.1f}mm に、帯と上下の貼り代 {HEAD_GLUE_MIN}mm ずつが入らない）"))
         # 首の形の頭は前の壁より前にあり、胴の下の脚には当たらないので、脚がある時は床までが脚の高さだけ遠い
         if p["head_h"] / 2 > ax + p["leg_height"] - 3:
             out.append(Failure("F5.pivot", "頭", "頭の下端が床に近すぎる"))
@@ -248,6 +291,99 @@ def check_physics(p):
             out.append(Failure("F5.pivot", "軸の高さ", f"軸の穴が胴の角の面に来る（軸の高さ {ax}mm、側面の縦の所は {p['body_height'] - d:.1f}mm まで）"))
         if p["body_width"] - 2 * d < TAIL_W + 1.2:
             out.append(Failure("F5.pivot", "胴", f"胴の上の面（幅 {p['body_width'] - 2 * d:.1f}mm）に尾の糊代の四角（幅 {TAIL_W}mm）が入らない"))
+    # 当たりの検査（fit_check 1。v7 から）。3D で組んで見つかった当たり（サイトの試験で 2 つ、見直しで揺れる時の当たり）を、寸法から見る。
+    # ほかの検査の後に置き、ほかの落ちの行を止めない（粘土の玉の決まりは「重り」の別の落ちがある時に言わないので、その前には置かない）
+    if fit_on(p):
+        out += _fit_failures(p)
+    return out
+
+
+def strip_need(p, t):
+    """首の帯が θ（rad）傾いた時の、前の壁の所で帯の端が穴の真ん中から離れる長さ mm。軸は前の壁の axle_back 後ろなので、
+    壁の所で帯の中心は axle_back·tan|θ| 動き、帯の縦の幅は strip_width / cosθ に広がる（帯の面は軸に直交し、幅は穴の中で縦に並ぶ）。"""
+    return p["axle_back"] * math.tan(abs(t)) + p["strip_width"] / (2 * math.cos(t))
+
+
+def fit_on(p):
+    """当たりの検査をするか。fit_check 1 の時と、v7 から足した寸法（clay_back・axle_back）を既定から変えた首の形の時。
+    既定は見ない（凍結の場面と撮影中の v6 の紙・検査の結果を変えない）。新しい寸法を使えば必ず見るので、v7 の寸法で当たりを見ない抜け道は無い
+    （見直しの指摘: fit_check を書かないと、新しい寸法でも当たりを見なかった）。"""
+    return p["mount"] == "neck" and (p["fit_check"] == 1 or p["clay_back"] != 0 or p["axle_back"] != NECK_BACK)
+
+
+def swing_range(p):
+    """当たりを見る揺れの角の範囲 (θ0, θ1)。rad で、頭が上がる向きを正にする（軸より下の点が前へ出る向き）。
+
+    静かな時の傾き（重心が軸の真下に来る所）のまわりに ±MIN_SWING（首の帯が穴の縁に当たらない角と同じ数）。水平のまわりで見ると、
+    下の穴を後ろへ刷るだけの寸法が通るが、実物は静かな時に頭が上を向いて玉が軸の下へ戻るので、揺れると当たる（v7 を直す時に式で確かめた）。
+    傾きは刷る物の重さの所で見る（首の形の粘土は 5 重りの腕の下の穴。式だけのずれ weight_behind は入れない）。
+    """
+    th = -math.radians(rest_tilt_deg(mass_points(dict(p, weight_behind=0))))
+    t = math.radians(MIN_SWING)
+    return th - t, th + t
+
+
+def _sweep_x(x, y, t0, t1):
+    """軸のまわりに θ（t0〜t1、頭が上がる向きが正）回した点の、前後の所 x·cosθ − y·sinθ の (最小, 最大)。x は軸から後ろ、y は軸から下（mm）。
+    端の角か、間で点が軸の真後ろ（一番後ろ）・真前（一番前）に来る角で決まる（x·cosθ − y·sinθ = r·cos(θ + a)、a は点の向き）。"""
+    a, r = math.atan2(y, x), math.hypot(x, y)
+    inside = lambda v: any(t0 <= v + k * 2 * math.pi <= t1 for k in (-1, 0, 1))
+    ends = [x * math.cos(s) - y * math.sin(s) for s in (t0, t1)]
+    return (-r if inside(math.pi - a) else min(ends)), (r if inside(-a) else max(ends))
+
+
+def head_face(p):
+    """頭の 1 枚の顔の外形（_head_part と同じ縮め方。両面の頭は前の半分の、折る前の形）と、外接の箱の真ん中。
+    揺れの式と作り方の 3D は、この真ん中を帯の先（軸の neck_length + 6 前・軸の高さ）に置く。口の側（x の小さい側）が前。"""
+    w, h = p["head_w"], p["head_h"]
+    pts = _scale(_HEAD_FLAT if p["head_sides"] == 2 else _HEAD, 40, 232, w / (245 - 40), h / (445 - 232), 0, 0)
+    xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+    return pts, ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+
+
+def drop_outline(p):
+    """5 重りの腕の外形（部品の座標。軸の穴は (4, 4) で、x の大きい側が後ろ）。幅は DROP_W に clay_back を足し、長さは粘土の高さ＋8（20 以上）。"""
+    dw, length = DROP_W + p["clay_back"], max(p["weight_below_axle"] + 8, 20)
+    return [(0, 0), (dw, 0), (dw, length), (0, length)]
+
+
+def fit_gaps(p):
+    """当たりの検査の空き mm: (粘土の玉と前の壁, 5 重りの腕と前の壁, 頭と前の壁, 首の帯と穴の縁)。頭が静かな時の傾きから ±MIN_SWING
+    揺れる間で一番狭い所で、負は食い込み。前の壁は軸の axle_back 前。粘土の玉は、5 重りの腕の下の穴（軸の clay_back 後ろ・weight_below_axle 下）が
+    真ん中の球。腕と頭は外形の角の点で見る（回る多角形の一番前・一番後ろは角の点に来る）。首の帯は、揺れの両端のうち水平から遠い方で見る
+    （一般の検査は水平から MIN_SWING。静かな時の傾きが 0 でないと、片方の端はそれより傾く。見直しの指摘）。"""
+    t0, t1 = swing_range(p)
+    wall = -p["axle_back"]  # 軸から後ろを正にした、前の壁の所
+    clay = _sweep_x(p["clay_back"], p["weight_below_axle"], t0, t1)[0] - clay_r(p["weight_g"]) - wall
+    arm = min(_sweep_x(u - 4, v - 4, t0, t1)[0] for u, v in drop_outline(p)) - wall
+    face, (cx, cy) = head_face(p)
+    tip = -(p["neck_length"] + 6)
+    head = wall - max(_sweep_x(tip + u - cx, v - cy, t0, t1)[1] for u, v in face)
+    neck = p["opening"] / 2 - strip_need(p, max(abs(t0), abs(t1)))
+    return clay, arm, head, neck
+
+
+def _fit_failures(p):
+    """当たりの検査の落ちの行。式と刷る物の粘土の所のずれ（weight_behind）は、当たりと別の行で言う（当たりは刷る物の所で見る）。"""
+    mm = lambda v: f"{round(v, 1) + 0.0:.1f}"  # -0.0 と出さない
+    out = []
+    if p["weight_behind"]:
+        out.append(Failure("F5.pivot", "重り", f"揺れの式の粘土（軸の {p['weight_behind'] + p['clay_back']:g}mm 後ろ）が、刷る下の穴（軸の {p['clay_back']:g}mm 後ろ）"
+                                            "と違う（当たりを見る時は weight_behind を 0 にする）"))
+    clay, arm, head, neck = fit_gaps(p)
+    swing = f"頭が静かな時の傾きから ±{MIN_SWING}° 揺れる間に"
+    if clay < FIT_CLEAR:
+        out.append(Failure("F5.pivot", "重り", f"{swing}、粘土の玉（半径 {clay_r(p['weight_g']):.1f}mm）が前の壁に当たる"
+                                            f"（一番近い時の空き {mm(clay)}mm。{FIT_CLEAR}mm 以上に。軸を前の壁から離す: axle_back）"))
+    if arm < FIT_CLEAR:
+        out.append(Failure("F5.pivot", "腕", f"{swing}、5 重りの腕の前の端が前の壁に当たる"
+                                           f"（一番近い時の空き {mm(arm)}mm。{FIT_CLEAR}mm 以上に。軸を前の壁から離す: axle_back）"))
+    if head < FIT_CLEAR:
+        out.append(Failure("F5.pivot", "頭", f"{swing}、頭の後ろの端が前の壁に当たる"
+                                           f"（一番近い時の空き {mm(head)}mm。{FIT_CLEAR}mm 以上に。首の帯を長くするか頭を細くする）"))
+    if neck < FIT_CLEAR:
+        out.append(Failure("F5.pivot", "首", f"{swing}、首の帯（幅 {p['strip_width']:g}mm）が穴（{p['opening']:g}mm）の縁に当たる"
+                                           f"（一番近い時の空き {mm(neck)}mm。{FIT_CLEAR}mm 以上に。穴を大きくするか帯を細くする）"))
     return out
 
 
@@ -260,6 +396,16 @@ _HEAD_LINES = [[(100, 275), (120, 300)], [(125, 262), (140, 285)], [(155, 285), 
 # 最初の点 (172, 250) は輪郭の点、最後の点 (125, 250) は輪郭の辺 (95, 265)〜(135, 245) の上で、最後と最初を結ぶ辺が平らな頭の上。
 # 顔の絵（縞・斑・目・口）は y 262 より下にあり、外す所にかからない
 _HEAD_FLAT = [(172, 250), (195, 265), (235, 320), (245, 385), (215, 415), (150, 420), (100, 445), (70, 425), (58, 390), (40, 345), (60, 300), (95, 265), (125, 250)]
+
+
+def head_span_mm(p):
+    """両面の頭の、頭の幅の真ん中の縦の高さ mm（外形 _HEAD_FLAT を、頭の高さに合わせて縮めた物）。首の帯の先はここまで挟む
+    （組み方の文の「2 枚の間の真ん中まで」）。頭の幅の真ん中は、揺れの式が頭の真ん中を帯の先に置く所。"""
+    xm = (40 + 245) / 2  # 絵の点の x で、頭の幅の真ん中
+    pts = _HEAD_FLAT
+    ys = [y1 + (y2 - y1) * (xm - x1) / (x2 - x1) for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1])
+          if x1 != x2 and min(x1, x2) <= xm <= max(x1, x2)]
+    return (max(ys) - min(ys)) * p["head_h"] / (445 - 232)
 # 実物の頭の差し色（写真）: 赤い斑・白目の黒い瞳・口の先の白い歯。頭の絵と同じ点の座標で置く
 _HEAD_SPOTS = [(185, 300, 9), (212, 348, 7)]
 _PUPILS = [(85, 307), (129, 337)]
@@ -301,7 +447,13 @@ def _stripe(a, b, w0, w1):
                                     (bx - nx * w1 / 2, by - ny * w1 / 2), (ax - nx * w0 / 2, ay - ny * w0 / 2)], "fill": STRIPE}
 
 
-def _side_art(x, y, L, H, foot_at_top, legs=True):
+def _marks_from(start, stop):
+    """縞の所（前の端からの長さ）: start から STRIPE_STEP ずつ、stop の手前まで。軸の所（back）に小数が来ても、縞は軸と同じだけ動く
+    （見直しの指摘: 整数に丸めると、軸を 0.1mm 動かして縞が 1mm 動いた）。start と stop が整数なら range と同じ並び（既定の紙を変えない）。"""
+    return [start + k * STRIPE_STEP for k in range(max(0, math.ceil((stop - start) / STRIPE_STEP)))]
+
+
+def _side_art(x, y, L, H, foot_at_top, legs=True, back=NECK_BACK):
     """側面の絵: 黄の地に、背（上の辺）から下りる紺の縞と、下の白い帯と白い脚 2 本（実物の写真の直し C・F。前は横向きの虎 1 匹の絵で、
     実物は胴そのものが虎で、側面は縞と白い脚だった）。
 
@@ -318,8 +470,8 @@ def _side_art(x, y, L, H, foot_at_top, legs=True):
     m, band = 0.3, FOOT_BAND * H
     art = [poly([(m, 0), (L - m, 0), (L - m, H), (m, H)], TIGER)]
     # 縞は背から下りる。長い縞（白い帯の上まで）と短い縞（半ばまで）を交互にする（実物の縞の長さはそろっていない）。
-    # 前の端から NECK_BACK＋5mm までは描かない: 首の形の軸の穴（前の端から NECK_BACK）が紺の縞に乗ると、黒い穴の丸が見えなくなる
-    for i, u in enumerate(range(NECK_BACK + 5, int(L) - 5, STRIPE_STEP)):
+    # 前の端から back＋5mm までは描かない: 首の形の軸の穴（前の端から back。既定 NECK_BACK）が紺の縞に乗ると、黒い穴の丸が見えなくなる
+    for i, u in enumerate(_marks_from(back + 5, int(L) - 5)):
         low = band + 2 if i % 2 == 0 else H * 0.55
         art.append(_stripe(at(u, H - 1.6), at(u + 2.5, low), 2.6, 0.6))
     art.append(poly([(m, 0), (L - m, 0), (L - m, band), (m, band)], WHITE))
@@ -331,19 +483,20 @@ def _side_art(x, y, L, H, foot_at_top, legs=True):
     return art
 
 
-def _top_art(x, y, L, W):
+def _top_art(x, y, L, W, back=NECK_BACK):
     """上の面の絵: 黄の地に、幅をまたぐ紺の縞と、首の後ろの黒い斑（実物の写真）。前の端は x（前の壁の側）。
     前の端の近く（軸の竹串の線と黒い斑）と後ろの端（尾を貼る四角）には縞を描かない（印と斑が縞に紛れないように）。"""
     art = [_panel(x + 0.2, y, x + L - 0.2, y + W, TIGER)]
-    art += [_stripe((x + u, y + 1.6), (x + u + 2.5, y + W - 1.6), 2.4, 1.2) for u in range(18, int(L) - TAIL_BACK - TAIL_TAB - 6, STRIPE_STEP)]
-    art.append({"kind": "poly", "pts": _circle(x + NECK_BACK + 6, y + W / 2, min(3.0, W / 4)), "fill": INK})
+    # 縞は首の後ろの黒い斑（軸の 6mm 後ろ・半径 3mm まで）の 3mm 後ろから。既定（back 6）は前と同じ 18mm から（見直しの指摘: 斑だけが動き、縞と重なった）
+    art += [_stripe((x + u, y + 1.6), (x + u + 2.5, y + W - 1.6), 2.4, 1.2) for u in _marks_from(back + 12, int(L) - TAIL_BACK - TAIL_TAB - 6)]
+    art.append({"kind": "poly", "pts": _circle(x + back + 6, y + W / 2, min(3.0, W / 4)), "fill": INK})  # 首の後ろ（軸の 6mm 後ろ）
     return art
 
 
-def _bevel_art(x, y, L, C):
+def _bevel_art(x, y, L, C, back=NECK_BACK):
     """角の面（body_round）の絵: 上の面と側面の間の細い面。縞は側面の縞と同じ所から、面の幅をまたぐ。"""
     art = [_panel(x + 0.2, y, x + L - 0.2, y + C, TIGER)]
-    art += [_stripe((x + u, y + 0.6), (x + u + 1.2, y + C - 0.6), 2.6, 2.4) for u in range(NECK_BACK + 5, int(L) - 5, STRIPE_STEP)]
+    art += [_stripe((x + u, y + 0.6), (x + u + 1.2, y + C - 0.6), 2.6, 2.4) for u in _marks_from(back + 5, int(L) - 5)]
     return art
 
 
@@ -475,12 +628,14 @@ def parts(p):
     legs = p["leg_height"] > 0
     # 胴の絵（実物の写真の直し B・C・F）: 上の面は縞と黒い斑、側面は縞と白い帯と脚、前と後ろの壁は白い帯、底の面は白（実物は下が白い）。
     # 角の面にも縞を続ける。立体の脚がある時は、側面に脚を描かない
-    body.art = _top_art(H, top0 + 0.2, L, Wt - 0.4)
+    # 軸を前の壁の後ろに通す距離（首の形は axle_back。吊る形は耳の穴で決まり、絵は前と同じ所）。縞と首の後ろの黒い斑は軸の所に合わせる
+    ab = NECK_BACK if hang else p["axle_back"]
+    body.art = _top_art(H, top0 + 0.2, L, Wt - 0.4, ab)
     if c:
-        body.art += _bevel_art(H, top1 + 0.2, L, c - 0.4) + _bevel_art(H, ch2 + 0.2, L, c - 0.4)
+        body.art += _bevel_art(H, top1 + 0.2, L, c - 0.4, ab) + _bevel_art(H, ch2 + 0.2, L, c - 0.4, ab)
     body.art += [_panel(H + 0.2, b0 + 0.2, H + L - 0.2, b1 - 0.2, WHITE)]
     body.art += _wall_art(H - 0.2, b0 + 0.2, H - 0.4, W - 0.4, -1, d) + _wall_art(H + L + 0.2, b0 + 0.2, H - 0.4, W - 0.4, +1, d)
-    body.art += _side_art(H, ch1 + 0.2, L, Hs - 0.4, False, not legs) + _side_art(H, b1 + 0.2, L, Hs - 0.4, True, not legs)
+    body.art += _side_art(H, ch1 + 0.2, L, Hs - 0.4, False, not legs, ab) + _side_art(H, b1 + 0.2, L, Hs - 0.4, True, not legs, ab)
     if legs:
         # 脚を貼る四角（位置の印）: 胴の底の面（x が H〜H＋L・y が b0〜b1）の四隅から LEG_INSET 内。前の 2 本は前の壁の側（x = H）
         a = LEG_SIDE
@@ -495,7 +650,7 @@ def parts(p):
     if hang:
         body.holes = [(H - e + HOLE_MARGIN, top1 + HOLE_MARGIN, 1.2), (H - e + HOLE_MARGIN, bottom - HOLE_MARGIN, 1.2)]
     else:
-        back = NECK_BACK  # 前の壁の少し後ろに軸を通す。首の帯が壁に当たらないように
+        back = ab  # 前の壁の少し後ろに軸を通す。首の帯が壁に当たらないように（v7 から、粘土の玉と腕が揺れても壁に当たらないように離せる）
         # 軸の穴は側面の縦の所（床から Hs まで）。c = 0 の時は前と同じ式（top1 + H − ax・bottom − (H − ax)）になる
         body.holes = [(H + back, ch1 + Hs - ax, 1.2), (H + back, ch2 - (Hs - ax), 1.2)]
         # 軸の竹串が胴を横切る所の線（EP-0016: 竹串を通す位置の線）。上の面の、2 つの穴と同じ x に横切る点の線（位置の印）
@@ -526,25 +681,29 @@ def parts(p):
     legs_parts = [_leg_part(6 + i, p["leg_height"]) for i in range(4)] if legs else []
     if not hang:
         # 紙の頭は軽いので、重りは軸の真下に下げる。下げる腕が無いと寸法どおりに作れない。
-        drop_len = max(p["weight_below_axle"] + 8, 20)
         label, lines = _drop_label(p)
-        drop = Part(5, "drop", "重りの腕", [(0, 0), (DROP_W, 0), (DROP_W, drop_len), (0, drop_len)], label_xy=DROP_LABEL_XY, label=label,
+        # 腕の幅は DROP_W に、下の穴を後ろへ刷る分（clay_back）を足す。軸の穴は前の端から 4mm のまま（前へは広げない。前の壁に当たるので）。
+        # 外形は当たりの検査（fit_gaps）と同じ drop_outline から取る
+        outline = drop_outline(p)
+        dw = outline[1][0]
+        drop = Part(5, "drop", "重りの腕", outline, label_xy=DROP_LABEL_XY, label=label,
                     label_lines=lines, holes=[(4, 4, 1.0)])
         if p["weight_below_axle"] >= LOWER_HOLE_MIN:
             # 下の穴（重りの位置。EP-0011）と、粘土を付ける高さの点の線（EP-0016）。
             # 前は「下の端に粘土を付ける」だけで、腕が 20mm の下限で長い寸法では、式の位置（軸から weight_below_axle）より下に付いた
             wy = 4 + p["weight_below_axle"]
-            drop.holes.append((4, wy, THREAD_R))
+            hx = 4 + p["clay_back"]  # 下の穴は軸の穴の clay_back 後ろ（v6 までは真下）
+            drop.holes.append((hx, wy, THREAD_R))
             # 粘土を付ける高さの線（EP-0016: 点の丸は「赤い斑点」に見え、何の印か分からなかった）。起き上がり小法師の粘土の線と同じ
             # 位置の印の点の線で、腕を横切る。穴の左右で切る（印が穴にかかると切った時に消える）
             gap = THREAD_R + 1.0
-            drop.art += [{"kind": "mark", "pts": [(0.6, wy), (4 - gap, wy)], "mark": "weight"},
-                         {"kind": "mark", "pts": [(4 + gap, wy), (7.4, wy)], "mark": "weight"}]
+            drop.art += [{"kind": "mark", "pts": [(0.6, wy), (hx - gap, wy)], "mark": "weight"},
+                         {"kind": "mark", "pts": [(hx + gap, wy), (dw - 0.6, wy)], "mark": "weight"}]
         out.append(drop)
     return out + legs_parts
 
 
-DROP_W = 8  # 5 重りの腕の幅 mm。軸の穴は真ん中（前と後ろに 4mm）で、軸は前の壁の NECK_BACK 後ろなので、前へ広げると壁に当たる
+DROP_W = 8  # 5 重りの腕の幅 mm。軸の穴は真ん中（前と後ろに 4mm）で、軸は前の壁の axle_back（既定 NECK_BACK）後ろなので、前へ広げると壁に当たる
 LABEL_LINE = 1.25  # 札の行送りの倍率（compose.LINE と同じ。雛形から compose を読むと読み込みの輪になるので、値を写す）
 DROP_LABEL_TOP = 4 + 1.0 + 0.6  # 縦に並べる札の上の端（軸の穴の真ん中 4・半径 1.0 の下に 0.6mm 空ける）
 # 「5 腕」の 1 行の札の所（前と同じ、軸の穴の 4mm 下）。部品の label_xy と、行の並びの 1 行の所を、この 1 か所から取る（見直しの指摘:
@@ -553,8 +712,7 @@ DROP_LABEL_XY = (1, 8)
 
 
 def _drop_label(p):
-    """5 重りの腕の札の字と、行ごとの (字, x, y)。制作者の決定（2026-11-06）「部品の名前は案3: 型紙を「5 重りの腕」にそろえる。」による
-    （型紙エンジン #135 の写し。サイトではこの組 tora-v6 から。前の組 tora-v3・tora-v4 の紙は「5 腕」のまま）。
+    """5 重りの腕の札の字と、行ごとの (字, x, y)。制作者の決定（2026-11-06）「部品の名前は案3: 型紙を「5 重りの腕」にそろえる。」による。
 
     腕は幅 8mm（DROP_W）で、「5 重りの腕」（約 13.5mm）は 1 行に入らない。腕を広げると前の壁に当たるので幅は変えず、
     「5 重」の下に「り」「の」「腕」を「重」の列にそろえて縦に並べる（字は立てたまま。横に倒すと読みにくい）。
@@ -593,8 +751,14 @@ def place(by_key, page, top, gap):
     x += strip.width + gap
     if "drop" in by_key:
         drop = by_key["drop"]
-        drop.x, drop.y = x, y
-        x += drop.width + gap
+        # v7 から腕は後ろへ広がる（clay_back）。広い腕を下の段に並べると文字の列が細くなり、物差しが紙の右の外に出た。
+        # 帯の下（同じ列）に入る時は帯の下に置く。下は文字の列の左で、ほかの部品は無いので、紙の下の端までに入ればよい
+        # （前は尾の高さまでにしていて、首の帯を 23mm にした v7 で入らなくなった）。腕の幅が DROP_W の時（v6 まで・既定）は前と同じ所に置く（刷った紙を変えない）
+        if drop.width > DROP_W + 1e-9 and y + strip.height + gap + drop.height <= page.y1 and drop.width <= strip.width:
+            drop.x, drop.y = strip.x, y + strip.height + gap
+        else:
+            drop.x, drop.y = x, y
+            x += drop.width + gap
     tail.x, tail.y = x, y
     x += tail.width + gap
     # 立体の脚は、胴の網の外形の外の空き（前の壁と後ろの壁の上、上の面の帯の左右）に 2 本ずつ縦に置く。下の段に足すと、
@@ -663,7 +827,6 @@ def steps(p):
     out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る。胴の小さい穴は竹串の先であける"]
     if p["mount"] == "neck":
         out.append("1 胴の前の壁の丸い穴を切る（カッターは大人がする）")
-    # 「線のとおり」は窓口が本人の委任で選んだ字（エンジンは「破線で」。エンジンと違う所。tora-v4 から同じ）
     out += ["1 胴を線のとおり山折りし、糊代で貼って箱にする。上の面は後で閉じる", "3 首の帯を半分に折って貼る。穴は重ねたまま通す"]
     if p["mount"] == "neck":
         # 腕は仮に留めて、頭の傾きを見てから貼る（EP-0011: 作った人が帯と頭を胴の穴から何度も出し入れしていた）。手順の数と番号は変えない
@@ -679,7 +842,8 @@ def steps(p):
         head = ("2 頭を頭の上の山折りの線で後ろへ折る。3 首の帯の先を、口と反対の側から 2 枚の間の真ん中まで挟み、裏どうしを貼る"
                 if p["head_sides"] == 2 else "3 首の帯の前の端に 2 頭を貼る")
         out += [head, "帯を前の壁の穴に入れ、竹串を胴の穴と帯の穴に通す",
-                f"5 重りの腕の上の穴にも竹串を通す。{clay}。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
+                # 下の穴を後ろへ刷る腕（clay_back。v7 から）は向きがある。逆に下げると粘土の玉が前の壁に当たるので、向きを文で言う
+                f"5 重りの腕の上の穴にも竹串を通す{'（下の穴が後ろの尾の側に来る向きで）' if p['clay_back'] > 0 else ''}。{clay}。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
                 "頭の傾きを見て腕の位置を決めてから、腕を 3 首の帯に貼る"]
     else:
         # 式の「軸から頭の上の端まで」と重りの位置を文に書く。「下の端に貼る」「あごの近く」だけでは、式の寸法を実現できない。

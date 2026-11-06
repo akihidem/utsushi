@@ -55,8 +55,11 @@ SAME = "もとの紙のまま"
 # 軸の高さ・脚の高さ・胴の角を落とす幅・顔の数は、虎の今の組（tora-v6）のたたき台の寸法に入るので足した（窓口が本人の委任で推しの字を
 # 選んだ、2026-11-06）。呼び名の無い寸法がたたき台にあると ready が偽になり、考えの節が頁から消える。同じ時に選んだ頭の幅・軸から重りまでは、
 # 今ある呼び名（頭の幅（mm）・重りの軸からの下がり（mm））が先にあるので足さない（同じ寸法に 2 つの呼び名を作らない）
+# 重りの穴の後ろへのずれ・軸と前の壁の間は、虎の今の組（tora-v7）のたたき台の寸法に入るので足した（窓口の決定 2026-11-07 案 A）。
+# 同じ時に増えた当たりの検査（fit_check）は寸法でない印なので呼び名を作らず、節に出さない（雛形の UNSHOWN_PARAMS）
 NAMES = {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方",
-         "axle_height": "軸の高さ（mm）", "leg_height": "脚の高さ（mm）", "body_round": "胴の角を落とす幅（mm）", "head_sides": "顔の数"}
+         "axle_height": "軸の高さ（mm）", "leg_height": "脚の高さ（mm）", "body_round": "胴の角を落とす幅（mm）", "head_sides": "顔の数",
+         "clay_back": "重りの穴の後ろへのずれ（mm）", "axle_back": "軸と前の壁の間（mm）"}
 VALUES = {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る"}
 
 # 本人が画面で採った印（adopt_words の decided_by）。名前は受けない決まりなので、役の名前だけを残す。
@@ -214,7 +217,15 @@ def ready(sid):
     """節を出す玩具か。たたき台の寸法が全部読める玩具だけ（今は必須 2 種）。内部の名前（board_w など）を学ぶ人に見せないため。
     ほかの玩具の呼び名は新しい文で、足す時に本人の確認が要る。足せば、ここが自然に真になる。"""
     template, params = hypotheses.load(sid).get("template", "slider_fan"), words.base_of(sid)[1]
-    return bool(params) and all(readable(template, k, v) for k, v in params.items())
+    return bool(params) and all(readable(template, k, v) for k, v in params.items() if shown(template, k))
+
+
+def shown(template, k):
+    """学ぶ人に出す寸法か。雛形が「見せない寸法」と名指しした物（UNSHOWN_PARAMS。虎の当たりの検査の印 fit_check）は、呼び名を作らず節に出さない。
+    なぜ: 寸法でない 0・1 の印を学ぶ人に見せても、話して変える物にならない（窓口の決定 2026-11-07）。呼び名の無い寸法は変えられない決まり（words）で、変えられもしない"""
+    from omochae.compose import TEMPLATES
+
+    return k not in getattr(TEMPLATES.get(template), "UNSHOWN_PARAMS", ())
 
 
 def changeable(sid):

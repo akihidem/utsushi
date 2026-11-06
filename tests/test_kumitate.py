@@ -219,11 +219,11 @@ assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000009-R")
 T = "NDL-1187053-R0000014-R"
 from omochae.templates import pivot_counterweight  # noqa: E402
 
-# 虎の今の組（tora-v6）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_tora_v6_3d）。サイトが自分で組む作りは、
-# 控えの組 tora-v4 に雛形を置いて前と同じに見る（v6 に上げても v4 の 3D が変わらない事も見る）
+# 虎の今の組（tora-v7。v6 は刷らずに飛ばした）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_tora_v7_3d）。サイトが自分で組む作りは、
+# 控えの組 tora-v4 に雛形を置いて前と同じに見る（今の組に上げても v4 の 3D が変わらない事も見る）
 from omochae import assembly_json  # noqa: E402
 
-assert pivot_counterweight.SHEET_SET == "tora-v6" and isinstance(assembly.assemble(T), assembly_json.Shown)
+assert pivot_counterweight.SHEET_SET == "tora-v7" and isinstance(assembly.assemble(T), assembly_json.Shown)
 pivot_counterweight.SHEET_SET = "tora-v4"
 tora = assembly.assemble(T)
 tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}
@@ -264,5 +264,5 @@ assert tora.frames[1]["poses"][-1]["plug"] and not tora.frames[2]["poses"][-1]["
 # できあがりの頭は揺れて、元の位置で止まる
 final = tora.frames[-1]["poses"]
 assert len(final) >= 5 and final[0]["state"]["head"]["place"] == final[-1]["state"]["head"]["place"]
-pivot_counterweight.SHEET_SET = "tora-v6"
+pivot_counterweight.SHEET_SET = "tora-v7"
 print("ok")
