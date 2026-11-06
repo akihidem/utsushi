@@ -527,10 +527,12 @@ def neighbours(sid):
 
 
 def evidence_item(e):
-    """根拠の 1 行。置き場の道（data/…）は作る側の控えなので、読む人の頁に出さない（記録の中の道は照合に使うので消さない）。"""
+    """根拠の 1 行。置き場の道（data/…）は作る側の控えなので、読む人の頁に出さない（記録の中の道は照合に使うので消さない）。
+    出所が文の後ろの注と同じ字になる時は、出所を重ねない（読む人の字にすると「（作る側の考え）（作る側の考え）」と並ぶため）。"""
     what, where = (re.sub(r"（data/[^）]*）", "", str(e[k])) for k in ("what", "where"))
-    where = "" if where.startswith("data/") else f"（{esc(wording.plain(where))}）"
-    return f'<li>〔{esc(e["certainty"])}〕{esc(wording.plain(what))}{where}</li>'
+    what, shown = wording.plain(what), wording.plain(where)
+    where = "" if where.startswith("data/") or what.endswith(f"（{shown}）") else f"（{esc(shown)}）"
+    return f'<li>〔{esc(e["certainty"])}〕{esc(what)}{where}</li>'
 
 
 def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None, mine=(), up_key=None, rec_key=None):

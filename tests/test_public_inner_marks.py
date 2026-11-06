@@ -140,5 +140,13 @@ for port in (closed, opened):
 left = [(s, e) for s in sources() for h in hypotheses.load(s)["hypotheses"] for e in h.get("evidence", []) if "data/" in evidence_item(e)]
 assert not left, ("全部の玩具の根拠の行に置き場の道を出さない", left[:2])
 assert evidence_item({"certainty": "推測", "what": "目印（data/x.json）の字", "where": "場所（data/x.json）"}) == "<li>〔推測〕目印の字（場所）</li>"
+# 出所が文の後ろの注と同じ字になる時は重ねない（読む人の字にすると「（作る側の考え）（作る側の考え）」と並んでいた）。違う出所は残す
+assert evidence_item({"certainty": "推測", "what": "目印の字（棚卸しの見立て）", "where": "棚卸しの見立て（data/x.json）"}) == "<li>〔推測〕目印の字（作る側の考え）</li>", "同じ注を重ねない"
+assert evidence_item({"certainty": "推測", "what": "目印の字（作る側の考え）", "where": "場所"}) == "<li>〔推測〕目印の字（作る側の考え）（場所）</li>", "違う出所は残す"
+double = [(s, e["what"][:20]) for s in sources() for h in hypotheses.load(s)["hypotheses"] for e in h.get("evidence", []) if re.search(r"（([^（）]+)）（\1）", evidence_item(e))]
+assert not double, ("全部の玩具の根拠の行で、同じ注を重ねない", double[:2])
+# 置き場の道だけの出所は、字の表が読む人の字（作る側の一覧）に直しても出さない（直す前と同じ）
+hidden = [(s, str(e["where"])[:30]) for s in sources() for h in hypotheses.load(s)["hypotheses"] for e in h.get("evidence", []) if str(e["where"]).startswith("data/") and evidence_item(e).endswith(f"（{wording.plain(str(e['where']))}）</li>")]
+assert not hidden, ("置き場の道だけの出所は出さない", hidden[:2])
 
 print("ok: 合言葉なしの場に、内部の番号と作る側の控えを出さない")
