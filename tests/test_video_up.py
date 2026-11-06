@@ -32,16 +32,27 @@ if not shutil.which("ffmpeg"):  # 確かめられない時は 4（repo の決ま
 from PIL import Image  # noqa: E402
 
 from omochae import asr_worker, engine_bundle, gallery, hypotheses, loop, records, trial_video as tv  # noqa: E402
+from omochae.compose import TEMPLATES  # noqa: E402
 from web import video_up  # noqa: E402
 from web.play_server import serve as site_serve  # noqa: E402
 from web.toys import sources  # noqa: E402
 
 KEY = "test-key-0123456789abcdef"
 G = "NDL-1187053-R0000005-L"  # 御来迎（札に「わからない」がある）
-TORA = "NDL-1187053-R0000014-R"  # 張子の首振り虎（札に「わからない」が無い）
+TORA = "NDL-1187053-R0000014-R"  # 張子の首振り虎（刷ってある控えた組の紙の欄に「わからない」が無い。記録の札にはある。#373）
 PLACE = "+35.6000+139.7000"
 CHUNK = video_up.CHUNK = 64 * 1024  # 試験では小さく分ける
-assert "わからない" not in records.results_for(TORA) and "わからない" in records.results_for(G)
+# 札は組ごとに見る（#373）: 記録の札はどの玩具も「わからない」を持つ。虎の手順の紙は、決めの前に控えた組（TWO_BOX_SETS）だけ 2 つの欄で、
+# 「わからない」の欄が無い。受け口は、刷った紙に欄が無い組で作った人の動画も「わからない」で受ける（下の 2 本目）
+TIGER = TEMPLATES["pivot_counterweight"]
+assert "わからない" in records.results_for(TORA) and "わからない" in records.results_for(G)
+_now = TIGER.SHEET_SET
+try:
+    for _s in TIGER.TWO_BOX_SETS:
+        TIGER.SHEET_SET = _s
+        assert "わからない" not in TIGER.paper_results(), _s
+finally:
+    TIGER.SHEET_SET = _now
 
 # 字にする道具は作り物（本物は重いので ./run.sh に入れない。本物は tests/check_asr_real.py を手で回す）。
 # 声は字にしたらその場で消えるので、渡された声の写しと権限を作り物の道具が取っておき、試験はそこで声の中身を見る
@@ -380,7 +391,7 @@ assert call("GET", "/status?t=U-0001")[0] == 400
 assert status("d" * 32) == {}
 assert len(list(folder.glob("U-*.json"))) == 1 and len(records.all_records(uploads=True)) == 1
 
-# 複数: 2 本目は別の受付・別の記録。札に「わからない」が無い玩具でも受ける。自分のやり方で作った時は、読む人に分かるように文の頭に残す
+# 複数: 2 本目は別の受付・別の記録。刷った紙に「わからない」の欄が無い組の玩具（虎）でも受ける。自分のやり方で作った時は、読む人に分かるように文の頭に残す
 code, second = send(video("b.mp4"), toy=TORA, made_with="own", note="首の糸を太くしました" + "字" * (video_up.NOTE_MAX - 10))
 assert code == 200 and second["receipt"] == "U-0002", second
 assert wait(second["token"])["state"] == "done"
@@ -865,6 +876,7 @@ del os.environ["OMOCHAE_ASR_PYTHON"]
 for sid in sources():
     made, fails = tv.new_record(sid, hypotheses.sheet_of(sid)["id"], video_up.UNSURE, note="", via=records.UPLOADED)
     assert made and not fails, (sid, fails)
-# 手で結ぶ記録は今までどおり札の言葉だけ（受け口の外で「わからない」を増やさない）
-assert tv.new_record(TORA, "H-A", "わからない")[1]
+# 手で結ぶ記録は今までどおり札の言葉だけ（札に無い言葉は断る）。「わからない」は #373 でどの玩具の札にもなったので、虎でも手で残せる
+assert tv.new_record(TORA, "H-A", "たぶん揺れた")[1]
+assert not tv.new_record(TORA, "H-A", "わからない")[1]
 print("ok: 動画の受け口")
