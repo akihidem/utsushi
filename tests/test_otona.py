@@ -42,8 +42,7 @@ ADOPTED = (
      ("写してよいのは、作った物と、大人の手元だけです。顔、名札、子どもは写さないでください。",
       "写真と動画は、いつ・どこでとったかなどの情報を消してから残します。動画の音は消します。",
       "のせた写真と動画は、人が確かめてから、みんなの頁に出します。確かめる前は、のせた人の画面にだけ出ます。",
-      "人や声が入っていた時は、頁には出しません。",
-      "合言葉なしで開く公開の場では、写真と動画はのせられません。")),
+      "人や声が入っていた時は、頁には出しません。")),
     ("4 取り下げ（あとから消す）",
      ("残した記録、写真、話した字は、あとから消せます。",
       "消したい時は、場の進行者に、記録の番号を伝えてください。番号は、手帖の記録の頁に出ています（R-0003 のような形です）。",
@@ -108,9 +107,16 @@ def recorded():
     return tuple((h, tuple(lines)) for h, lines in out)
 
 
-assert recorded() == ADOPTED, "決定の記録の字と、この試験の字が違う。記録が直ったなら、頁と試験を記録から抜き直す"
+# 採られた後に外した行（11-06 夜の決め直し。公開の場でも写真と動画を上げられる形にしたため）。記録の採られた文の節は書き換えず、
+# 節の末にこの行を外した事を書いた。記録から外した行を除いた字が、頁と一字も違わない事を見る
+REMOVED = {"3 写真と動画": ("合言葉なしで開く公開の場では、写真と動画はのせられません。",)}
+_r36 = (ROOT / "docs/process/research/36-road-and-audience.md").read_text(encoding="utf-8")
+assert "3 の 5 行目「合言葉なしで開く公開の場では、写真と動画はのせられません。」は、11-06 夜の決め直しで外した" in _r36, "外した事の記録が無い"
+kept = tuple((h, tuple(x for x in lines if x not in REMOVED.get(h, ()))) for h, lines in recorded())
+assert all(set(REMOVED[h]) <= set(lines) for h, lines in recorded() if h in REMOVED), "外した行が採られた文に無い（記録が変わった）"
+assert kept == ADOPTED, "決定の記録の字と、この試験の字が違う。記録が直ったなら、頁と試験を記録から抜き直す"
 heads = [h for h, _ in ADOPTED]
-assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 32, "題と見出しと合わせて 39 行"
+assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 31, "題と見出しと合わせて 38 行（採られた 39 行から 1 行を外した）"
 expected = TITLE + "".join(heads) + "".join(h + "".join(lines) for h, lines in ADOPTED) + "".join(BUTTONS)
 
 # 1. 2 つの皮で、採られた文のまま（2 も同じ所で見る）
@@ -138,9 +144,8 @@ for public_open in (False, True):
     try:
         status, got = fetch(server, "/otona")
         assert status == 200 and main_text(got) == expected, public_open
-        # 3 の「合言葉なしで開く公開の場では、写真と動画はのせられません」は、本人の決定（11-06「公開のデモでも写真と動画を上げられるように
-        # してください」）で今の作りと合わなくなった。前はここで受け口の 403 を見ていた。採られた字なので、外すかは本人に聞いている
-        # （推しは外す）。答えまで字は残し、この試験も今の字のまま見る。開いた場で受ける形は test_public_open が見る
+        # 前はここで、3 の 5 行目「合言葉なしで開く公開の場では、写真と動画はのせられません」の裏付けとして受け口の 403 を見ていた。
+        # 本人の決定（11-06）で公開の場でも上げられる形にし、その行は外した。公開の場で受けて、確かめた物を出す形は test_public_open が見る
     finally:
         server.shutdown()
         server.server_close()
