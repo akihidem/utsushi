@@ -25,7 +25,8 @@
 - 本人の追加（11-06）「普通にiPhoneのカメラのオーバーレイでもできるようにしたら」: /toy/<玩具>/kasane で、後ろのカメラの映像の上に
   手順の字と 3D を重ねる。映像は機械の中だけで、送りも残しもしない（作りながら見る頁の約束と同じ字）。
 - 映像の中の紙に 3D を合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付いたら、紙の 4 隅に置く印を 4 つ出す。
-  印を指で紙の角へ動かすと、3D の舞台を 4 隅の囲みの中へ動かして縮める（映像の中の紙の上に 3D が来る）。印は数字だけで、新しい字を足さない。
+  印は画面の真ん中の既定の囲みに出て、3D の舞台もその囲みへ置く。印を指で紙の角へ動かすと、舞台を新しい囲みの中へ動かして縮める
+  （映像の中の紙の上に 3D が来る）。画面の向きや大きさが変わったら、印を既定の囲みへ置き直す。印は数字だけで、新しい字を足さない。
   合わせ方は囲みに入れるだけで、紙の傾きに合わせて 3D を歪めない（歪めると、立った部品の形が崩れて見えるため。紙の座標の行列は
   エンジンの JSON の paper.place が来た後に使う）。合わせた位置は頁の中だけに持ち、残さない（頁は送らず、残さない決まり）。
   合わせた後は、頁の幅に合わせる縮尺（舞台に直に書く --hmd-zoom の zoom）を 1 に固定する。zoom は位置にも掛かり、囲みからずれるため。大きさは scale だけで決める。
@@ -261,6 +262,8 @@ if(cam&&camBtn){let tracks=null;
   c.addEventListener('pointermove',e=>{if(!c.dataset.drag)return;Q[i]=[Math.max(0,Math.min(innerWidth,e.clientX)),Math.max(0,Math.min(innerHeight,e.clientY))];put()});
   const up=()=>{delete c.dataset.drag};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up)});
  const quadOn=()=>{if(!quad)return;body.classList.add('quad-on');home()};
+ // 画面の向きや大きさが変わったら、映像の敷きも変わるので、合わせた印を既定の囲みへ置き直す（ずれた印のまま 3D を置かない）
+ addEventListener('resize',()=>{if(body.classList.contains('quad-on'))home()});
  const quadOff=()=>{body.classList.remove('quad-on','quad-set');stage.style.left=stage.style.top=stage.style.transform=''};
  const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera;quadOff()};
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camBtn.hidden=true;camNote.textContent=T.nocamera}

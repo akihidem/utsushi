@@ -12,7 +12,8 @@
 5. 大きさと置き場: 手順の字は大きく、釦に掛からない。釦は 64px 以上、「つぎ」は 96px 以上。横にはみ出さない
 6. カメラに重ねる頁: 偽のカメラで映像が付き、画面いっぱいに敷かれる
 7. 映像の中の紙に合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付くと紙の 4 隅の印が 4 つ出て（字は数字だけ）、
-   印を動かすと 3D の舞台が 4 隅の囲みの中へ動いて縮む。カメラを止めると印を消し、舞台を元の置き場へ戻す。押すまで印は出ない
+   印は既定の囲みに出て 3D の舞台もその中、印を動かすと舞台が新しい囲みの中へ動いて縮む。画面の大きさが変わると印を既定の囲みへ置き直す。
+   カメラを止めると印を消し、舞台を元の置き場へ戻す。押すまで印は出ない
 
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない決まり（tests/test_mic_seen.py と同じ）。入っている Chrome で頁を開いて歩く。
 Chrome が無い機械と、Chrome が何も答えなかった時は、測れないと出して通す。落ちるのは、歩けて結果が違う時と、歩き始めたのに終わらなかった時。
@@ -183,6 +184,7 @@ const W=innerWidth,H=innerHeight,T=[[W*.5,H*.55],[W*.92,H*.55],[W*.92,H*.92],[W*
 const drag=(c,[x,y])=>{const o={bubbles:true,pointerId:7,clientX:x,clientY:y};c.dispatchEvent(new PointerEvent('pointerdown',o));c.dispatchEvent(new PointerEvent('pointermove',o));c.dispatchEvent(new PointerEvent('pointerup',o))};
 [...document.querySelectorAll('.hmd-corner')].forEach((c,i)=>drag(c,T[i]));await wait();
 R.target=T;R.moved=centers();R.stage2=box(stage);
+dispatchEvent(new Event('resize'));await wait();R.reset=centers();
 $('#hmd-camera').click();await wait();
 R.off=[document.body.classList.contains('quad-on'),document.body.classList.contains('quad-set'),stage.style.transform,getComputedStyle($('#hmd-quad')).display];
 }catch(e){R.error=String(e&&e.stack||e)}
@@ -260,6 +262,7 @@ for name, got in runs.items():
         assert inside(got["stage1"], got["home"]), (name, "印を出した時、3D の舞台は印の囲みの中", got)
         assert all(abs(a[0] - b[0]) <= 1 and abs(a[1] - b[1]) <= 1 for a, b in zip(got["moved"], got["target"])), (name, "印は指で動かした所へ動く", got)
         assert inside(got["stage2"], got["target"]) and got["stage2"] != got["stage1"], (name, "印を動かすと、3D の舞台が新しい囲みの中へ動く", got)
+        assert got["reset"] == got["home"], (name, "画面の大きさが変わると、印を既定の囲みへ置き直す", got)
         assert got["off"] == [False, False, "", "none"], (name, "カメラを止めると印を消し、舞台を元の置き場へ戻す", got)
         continue
     if "カメラ" in name:
