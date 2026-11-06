@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_hanasu.py
+# commit: 4d0be52（回した時の HEAD）
+/tmp/tmpp5l9rjvn/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpp5l9rjvn/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpp5l9rjvn/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+OK 話す口: 3 つの場面で字だけが残り、話した工夫と考えが記録に入り、入口の床・見せる範囲・採られた文・声を持たない code を確かめた
+rc=0

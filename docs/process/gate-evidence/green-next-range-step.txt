@@ -1,0 +1,5 @@
+# 命令: bash -c '.venv/bin/python tests/test_next_range.py 2>&1 | tail -1; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: def0897f（回した時の HEAD）
+ok 次の版の欄には、今の版で 1 つ変えて通る寸法だけが出る
+試験 rc=0
+rc=0

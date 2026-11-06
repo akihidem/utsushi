@@ -1,5 +1,5 @@
 {
- "criteria.md": "f412f5fbe94254a3aa38ca44c0cc831c8701ae96ead0f4b35077b8717c873dd9",
+ "criteria.md": "dc8aa39cadbfc8d0582ed8dbb3254e0cbd3f12d7bebdf0ec900fd41ae11ab6c3",
  "scenarios": {
   "neg_base_size.json": {
    "floors": [
@@ -43,6 +43,14 @@
    "rc": 3,
    "sha256": "639da5688839dcde9ea6cb95e421ee66033ea46e7dfa19f3c14d67cb04f1fedf"
   },
+  "neg_fan_leg.json": {
+   "floors": [
+    "F5.fan_leg",
+    "F5.image_box"
+   ],
+   "rc": 3,
+   "sha256": "17df22a44eaae08d34089599770596f2cebabf3212906d968e41433ac296a785"
+  },
   "neg_fan_length.json": {
    "floors": [
     "F5.fan_length"
@@ -57,12 +65,26 @@
    "rc": 3,
    "sha256": "d97925fd72a5e923ea8e14ea4a0c8937d4809248601a94685dd60f84072ef673"
   },
+  "neg_figure_base.json": {
+   "floors": [
+    "F5.figure_base"
+   ],
+   "rc": 3,
+   "sha256": "aeeecadc799358b720e73feeb0481a5fd34fc64a0b3516fcfd188ec0ca132260"
+  },
   "neg_figure_height.json": {
    "floors": [
     "F5.figure_height"
    ],
    "rc": 3,
    "sha256": "871d5d0f6c470195be916031018126b634f869e485115264af656ba35e0bee3b"
+  },
+  "neg_hole.json": {
+   "floors": [
+    "F5.hole"
+   ],
+   "rc": 3,
+   "sha256": "10c1a39f0f00da808ae2f9edafb9de21da8f714d896ef743ee28e4219f2345ac"
   },
   "neg_image_box.json": {
    "floors": [
@@ -207,6 +229,8 @@
  },
  "tests": [
   "test_about",
+  "test_after_sheet_open",
+  "test_after_sheet_real",
   "test_agent_sdk",
   "test_ai_feedback",
   "test_analogy",
@@ -231,9 +255,9 @@
   "test_demo_scene7",
   "test_demo_walk",
   "test_demo_walk_all",
-  "test_discriminate",
   "test_en",
   "test_engine_bundle",
+  "test_engine_floors",
   "test_error_pages",
   "test_failure_log",
   "test_fan_model",
@@ -248,6 +272,7 @@
   "test_gate_trial_merge",
   "test_generate",
   "test_generate_zoom_switch",
+  "test_hanasu",
   "test_hypotheses",
   "test_hypothesis_label",
   "test_ingest_keep",
@@ -261,16 +286,23 @@
   "test_loop_adopt_source",
   "test_loop_premise",
   "test_loop_record_source",
+  "test_loop_talk",
   "test_made_records",
   "test_making_log",
   "test_material_axes",
   "test_media_range",
   "test_media_review",
   "test_media_strip",
+  "test_mic_seen",
+  "test_min_python",
+  "test_nav_fit",
   "test_nav_same",
   "test_next_form",
   "test_next_version_atomic",
+  "test_no_compare_sheet",
   "test_one_sheet",
+  "test_one_sheet_loop",
+  "test_one_sheet_page",
   "test_pictures",
   "test_pii_speed",
   "test_pivot_hang_model",
@@ -279,6 +311,7 @@
   "test_plain_words",
   "test_plate_acts",
   "test_play_server",
+  "test_print_help",
   "test_public_gate",
   "test_public_open",
   "test_record_card",
@@ -290,6 +323,7 @@
   "test_result_table",
   "test_run_demo",
   "test_sheet_click",
+  "test_sheet_heads",
   "test_sheet_u25",
   "test_sheet_v8",
   "test_sheet_version",
@@ -300,10 +334,12 @@
   "test_slider_tube_stroke",
   "test_source_id_check",
   "test_source_scope",
+  "test_steps_materials",
   "test_store",
   "test_tap_size",
   "test_techo",
   "test_techo_site",
+  "test_techo_style_leak",
   "test_template_change",
   "test_toy_head",
   "test_toys",
@@ -317,9 +353,12 @@
   "test_tpl_string_pull",
   "test_tpl_wheel_cart",
   "test_transcription_filter",
+  "test_trial_video",
   "test_tsukuru",
+  "test_tsukuru_last_step",
   "test_two_sites",
   "test_ways",
+  "test_who_fresh",
   "test_words",
   "test_zoom",
   "test_zukan",

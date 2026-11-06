@@ -1,0 +1,14 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_print_help.py
+# commit: dabb992（回した時の HEAD）
+/tmp/tmpz_j2stfx/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpz_j2stfx/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpz_j2stfx/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmpz_j2stfx/play/NDL-1187053-R0000005-L/H-B_v1.pdf
+/tmp/tmpz_j2stfx/play/NDL-1187053-R0000005-L/H-B_v1_tejun.pdf
+/tmp/tmpz_j2stfx/play/NDL-1187053-R0000005-L/H-B_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_print_help.py", line 49, in <module>
+    assert part, ("案内が無い", look)
+           ^^^^
+AssertionError: ('案内が無い', 'tenji')
+rc=1

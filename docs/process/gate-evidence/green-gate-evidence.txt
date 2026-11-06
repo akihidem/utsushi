@@ -1,5 +1,6 @@
-# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_gate_evidence.py | tail -1; PYTHONPATH=src .venv/bin/python -m omochae.gate_evidence check; echo "頭の検査 rc=$?"; echo "push の後に書く: $(grep -c "push の後に書く" docs/process/gate-trial.md)"; echo "まだ（取り込みの後に書く）: $(grep -c "まだ（hack-main の取り込みの後に書く）" docs/process/gate-trial.md)"'
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_gate_evidence.py | tail -1; PYTHONPATH=src .venv/bin/python -m omochae.gate_evidence check; echo "頭の検査 rc=$?"; echo "push の後に書く: $(grep -c "push の後に書く" docs/process/gate-trial.md)"; echo "まだ（取り込みの後に書く）: $(grep -c "まだ（統括の担当の取り込みの後に書く）" docs/process/gate-trial.md)"'
 # commit: c8a8c1d（回した時の HEAD）
+# 注: 11-05 夜の本人の決定で、作業の窓の名前を役目の言葉に直した。命令の grep の語は、回した時は直す前の呼び名だった。下の出力は回した時のまま。
 書かない: もうある（失敗した版も残す決まりなので上書きしない）: red-sample.txt
 書かない: 名前は小文字・数字・ハイフンだけ: '../outside'
 書かない: 名前は小文字・数字・ハイフンだけ: 'a/b'
