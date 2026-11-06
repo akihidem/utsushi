@@ -35,7 +35,8 @@ for sid in TOYS:
         with contextlib.redirect_stdout(io.StringIO()):
             rc = hypotheses.print_sheet(sid, h["id"], str(out / f"{sid}_{h['id']}"))
         assert rc == 0, (sid, h["id"], rc)
-        assert (out / f"{sid}_{h['id']}.pdf").exists() and (out / f"{sid}_{h['id']}_tejun.pdf").exists()
+        # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+        assert (out / f"{sid}_{h['id']}.pdf").exists() and not (out / f"{sid}_{h['id']}_tejun.pdf").exists()
         count += 1
 assert count == 4
 

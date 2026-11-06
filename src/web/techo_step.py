@@ -153,9 +153,15 @@ button,input,textarea,select{font-family:inherit}
 .tile{min-height:96px;display:flex;align-items:center;justify-content:center;gap:14px;margin:0;padding:10px;font:inherit;font-size:24px;border:2px solid var(--frame);border-radius:0;background:var(--paper);color:var(--fg);cursor:pointer}
 .tile svg{width:56px;height:56px}
 /* 横置き（机の端に立てたタブレット）: 左に絵、右に文と押す所。 */
+/* 横置きで幅が 860px より狭い画面（768×576 など）は縦の並びのままなので、絵の欄の下限（画面の半分）を下げる。絵の欄は余りの高さへ伸びるので、
+   短い手順では絵は前と同じで、長い手順の時だけ絵が縮み、押す所が最初の画面に残る（御来迎 v14 の長い手順で押す所が下へ出た）。字は短くしない */
+@media (max-width:859px) and (orientation:landscape){.koma{min-height:34vh;min-height:34svh}}
 @media (min-width:860px) and (orientation:landscape){
  .te{display:grid;max-width:none;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);grid-auto-rows:min-content;align-content:start}
  .koma{grid-row:1/span 8;min-height:100vh;min-height:100svh}
+ /* 右の列の頭は、マイク・原画の釦・閉じる印の並ぶ上の帯（top 12px・高さ 64px）と同じ高さになる。手順の字をその帯の下（絵と同じ 84px）から始め、
+    字が釦の下に隠れないようにする（11-07 の前の確かめで、1024×768〜1920 の横置きで御来迎と虎のほぼ全部の手が隠れた）。縦置きは字が絵の下に来るので要らない */
+ #steps{padding-top:84px}
  .end,.kekka{grid-column:1/-1;max-width:820px;width:100%;margin:0 auto}
 }
 """
