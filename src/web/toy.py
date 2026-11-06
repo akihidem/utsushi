@@ -559,6 +559,12 @@ FOLD_STYLE = ("<style>.fold-sec>summary{display:flex;align-items:baseline;gap:0}
               ".hero>.genga-head>.genga-row,.hero>.genga-head>.genga-pic{order:1}.hero>.genga-head>.genga-row+div{order:2}.hero h1{order:3}"
               ".hero .road{order:4;margin:4px 0}.hero .genga-cap,.hero h1+.meta{order:5}}</style>")
 
+# 畳んだ節へ道（#kaizen など）で着いた時は、その畳みを開く。閉じた見出しだけに着くと、行き先の中身が見えないため（別の目の確かめ 11-06、#472 の輪の図の道）。
+# 着いた所が畳みの中か、畳みを持つ節なら開く。JS が無い時は、見出しに着き、押せば開く（今の畳みのまま）
+FOLD_SCRIPT = ("<script>(()=>{const open=()=>{const id=decodeURIComponent(location.hash.slice(1));if(!id)return;const t=document.getElementById(id);if(!t)return;"
+               "const d=t.matches('details')?t:t.querySelector(':scope>details.fold-sec')||t.closest('details');"
+               "for(let e=d;e;e=e.parentElement&&e.parentElement.closest('details'))e.open=true};open();addEventListener('hashchange',open)})()</script>")
+
 
 def fold(section, tag="h2"):
     """節（<section …><h2>見出し</h2>…</section>）を、見出しを畳みの見出しにした形にする。見出しが無い節はそのまま返す。"""
@@ -571,12 +577,24 @@ def fold(section, tag="h2"):
     return section[:i] + f'<details class="fold-sec"><summary>{section[i:j]}</summary>' + section[j:k] + "</details>" + section[k:]
 
 
+def printed_set(sid, hid, version):
+    """その版を刷った組（型紙の確定の台帳 loop.confirm_sheet に、刷る度に残る）。台帳に無ければ None。"""
+    for rec in loop.sheet_confirmations(sid):
+        if rec.get("hypothesis_id") == hid and rec.get("version") == version and rec.get("confirmations"):
+            return rec["confirmations"][-1].get("sheet_set")
+    return None
+
+
 def make_go(sid):
     """玩具の頁の最初の画面の「つくる」（段 0）。働きは型紙の札の「型紙を見る」と同じで、たたき台の紙を作って窓に出す。
-    紙がもうある時は、作り直さずに窓の紙へ行く（押す度に紙を刷らない）。"""
+    刷ってある紙が「一番新しい版（loop.latest_version）」で「今の組」の物の時だけ、作り直さずに窓の紙へ行く。
+    版が上がった時（人が採った版 2 など）と組が上がった時（雛形の次の組）は、刷る口へ送って一番新しい紙を刷る。
+    刷り残しの古い紙を、頁でいちばん目立つ釦が出さないため（本人の方針「最新版が次の人の型紙になる」、J-032。別の目の確かめ 11-06）。"""
     h = hypotheses.sheet_of(sid)
     last = versions_of(sid, h["id"], printed_only=True)
-    if last:
+    now = loop.latest_version(sid, h["id"])
+    this_set = TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET
+    if last and last[-1] == now and printed_set(sid, h["id"], now) == this_set:
         return f'<p class="road"><a class="btn" href="/toy/{sid}?see={h["id"]}&amp;kind=sheet&amp;v={last[-1]}#win">つくる</a></p>'
     return (f'<form method="post" action="/toy/{sid}/print#win" class="road"><input type="hidden" name="hypothesis" value="{esc(h["id"])}">'
             f'<input type="hidden" name="at" value="win"><button class="btn" data-busy>つくる</button></form>')
@@ -660,4 +678,4 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += f'<section class="sec">{neighbours(sid)}</section>'
     if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない
         body = body.replace('id="kasetsu">', f'id="kasetsu">{note}', 1)
-    return skin.shell(data["toy"], FOLD_STYLE + body, look, "", path)
+    return skin.shell(data["toy"], FOLD_STYLE + body + FOLD_SCRIPT, look, "", path)
