@@ -160,6 +160,27 @@ def page_targets():
     return out
 
 
+def book_faces():
+    """図鑑に置く本の頁（本人の決定 11-06「玩具の絵だけ。」）。棚卸しの玩具が載る頁を、本の順（見開きは右の面が先）に。
+    奥付の頁と玩具の無いコマ（1〜3・32〜35）は棚卸しに玩具が無いので入らない。[(コマ, "R" か "L")…]"""
+    inv = json.loads((ROOT / "data/inventory/edo-nishiki.json").read_text(encoding="utf-8"))
+    return sorted({(int(t["frame"]), t["side"]) for t in inv["toys"]}, key=lambda f: (f[0], f[1] != "R"))
+
+
+def face_name(frame, side):
+    return f"R{frame:07d}-{side}"
+
+
+def face_url(frame, side):
+    """本の頁の全体の URL。玩具の頁の頭（page_url）と同じ道・同じ幅で、名前も同じなので 1 枚を分け合う。"""
+    region = "pct:0,0,50,100" if side == "L" else "pct:50,0,50,100"
+    return f"{MANIFEST.rsplit('/', 1)[0]}/R{frame:07d}/{region}/{PAGE_WIDTH},/0/default.jpg"
+
+
+def book_targets():
+    return {face_name(*f): face_url(*f) for f in book_faces()}
+
+
 def image_targets():
     """写しを置く玩具と、その切り出しの URL。仮説の記録を置いた玩具の出典の記録（data/sources）から読む。
     manifest は読まない: 網が無くても「どの写しが足りないか」は手元の記録だけで分かり、起動のたびに NDL へ行かずに済む。"""
@@ -206,7 +227,7 @@ def images():
 
     hokusai_failed = fetch_hokusai()
     # 頁の全体（原画を見せる絵）も同じ入口で取る。取れなかった頁は、玩具の写しと国立国会図書館への道で出す（頁は止めない）
-    pages = page_targets()
+    pages = {**page_targets(), **book_targets()}  # 玩具の頁の頭の 47 頁と、図鑑の本の頁（玩具の絵がある頁）
     pages_failed = fetch_images(pages, PAGES)
     print(f"ingest: 頁の全体 {len(pages) - len(pages_failed)}/{len(pages)} 枚が手元にある" + (f"。取れなかった: {' '.join(pages_failed)}" if pages_failed else ""))
     return 4 if failed or hokusai_failed or pages_failed else 0

@@ -398,6 +398,19 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/gallery":
             from . import techo_site
             return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
+        # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
+        m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
+        if m:
+            from . import zukan_hon
+            if int(m.group(1)) in zukan_hon.frames():
+                return self._send(200, zukan_hon.page(int(m.group(1)), look, path))
+        m = re.fullmatch(r"/zukan/hon/R(\d{7})-([LR])\.jpg", path)
+        if m:
+            from omochae import ingest
+            from . import zukan_hon
+            face = (int(m.group(1)), m.group(2))
+            if face in ingest.book_faces() and zukan_hon.face_file(*face).exists():
+                return self._send(200, zukan_hon.face_file(*face).read_bytes(), "image/jpeg")
         # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
         m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
         if m and (m.group(1) is None or m.group(1) in sources()):
