@@ -4,8 +4,10 @@
 線を刷らない部品（色の境で折る）でも、線の種類は検査と 3D の組み立てが読むので、手順の文と同じ向きでなければならない。
 形は、玩具の記録の案を全部と、雛形の選びの組を全部見る。必須 2 種（slider_fan・pivot_counterweight）は次の版の紙で直すので見ない。
 見ない部品と理由:
-- 絵の無い糊代だけを折る線（乗り手と表裏の下の糊代、支えの糊代、幟の糊代、絵の無い吊り橋）。板の表は、背中合わせに貼るか 1 枚で立てて外に出る
-- 折らない部品（蓋、月、刀身など）
+- 絵の無い糊代だけを折る線（乗り手・表裏・鶏の下の糊代、支えの糊代、幟の糊代、絵の無い吊り橋）。板の表は、背中合わせに貼るか 1 枚で立てて外に出る
+- 折らない部品（蓋、月、刀身、円盤など）
+- 芯の帯（spin_toy）: 2 つ折りの 2 色は折る所の目印で、円盤の間の溝で紐に巻かれて見えない
+- 羽の車の受け皿（spin_toy）: 開いた形で、刷った面が受け皿の内（前）に来る
 """
 import collections
 import json
@@ -19,7 +21,7 @@ os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 from shapely.geometry import Polygon
 
 from omochae import assembly
-from omochae.templates import stand_figure, stick_prop, wheel_cart
+from omochae.templates import spin_toy, stand_figure, stick_prop, wheel_cart
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOOK = {}  # 雛形の ID → (雛形, 部品を見る関数, 選びの組)
@@ -148,6 +150,23 @@ def look_stand_figure(p):
 
 LOOK["stand_figure"] = (stand_figure, look_stand_figure, [{"form": f} for f in stand_figure.FORMS])
 WANT |= {("stand_figure", "tray/base"), ("stand_figure", "tray/float"), ("stand_figure", "tray/box")}
+
+
+# --- spin_toy: 回る玩具。円錐の胴は絵を外にして丸め、柄は 2 つ折りで貼る ---
+
+def look_spin_toy(p):
+    for q in spin_toy.parts(p):
+        if q.key.startswith("cone"):
+            # 円錐の胴は絵を外にして丸める（胴の面に折り線は無い）。上の縁の歯と継ぎ目の糊代は刷った面の裏（胴の中）へ折り、
+            # 歯をふたの裏に貼る。ふたは胴の口と同じ半径なので、歯が外へ出るとはみ出す
+            wrong("spin_toy", q, "歯や糊代が絵の側（胴の外）へ折れる", leaning(q))
+        elif q.key == "handle":
+            # 柄は色の境で 2 つ折りにして貼り合わせ、手に持つ
+            wrong("spin_toy", q, "色の面が貼り合わせる側を向く", outward(q, 170.0))
+
+
+LOOK["spin_toy"] = (spin_toy, look_spin_toy, [{"shape": s, "drive": d, "look": lk} for s, ds in spin_toy.DRIVES.items() for d in ds for lk in spin_toy.LOOKS])
+WANT |= {("spin_toy", "cone"), ("spin_toy", "handle")}
 
 
 def cases():
