@@ -361,7 +361,7 @@ const keepPress = async () => {
       let done = '';
       try { done = await sendFiles(target, files); } catch (err) { done = '記録は残しました。写真か動画を送れませんでした'; }
       go.disabled = false;
-      location.assign(`/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine`);
+      location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
       return;
     }
     go.disabled = false;
@@ -396,7 +396,8 @@ const save = async (result) => {
     if (!saved) { st.textContent = '送れませんでした。つながりを見て、もう一度押してください'; return; }
     done = '記録は残しました。写真か動画を送れませんでした';
   } finally { go.disabled = false; }
-  location.assign(`/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine`);
+  // のこした後は持ち寄る駅（ギャラリー）に着き、今残した 1 つが頭に出る（窓口の決定 11-06 夜・案 A。地図の 5）。記録の頁へは、その札の記録の番号から行く
+  location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
 };
 mark(); paint(); to('start');
 })();
@@ -442,7 +443,7 @@ def _key(name, cls="key", attrs="", tag="button", extra=""):
     return f'<{tag}{kind} class="{cls}" {attrs}>{KEY_ICONS[name]}<span>{name}</span>{extra}</{tag}>'
 
 
-def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True, own=None):
+def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True, own=None, public=False):
     """手帖の頁。呼ぶ側（play_server）が刷ってある紙の一覧を渡す。作るのはたたき台の 1 枚だけ（J-032）。それが刷られていない時は、紙を作る道だけを出す（手順は紙と一緒に使う物なので）。"""
     data = hypotheses.load(sid)
     title = f'{data["toy"]} · 手帖'
@@ -471,13 +472,14 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     # 文は採られた文のまま（hanasu）。「話す」を「はじめる」に合わせた文は本人の確認待ちで、確認が済むまで入れない（本人の指示 11-05「新しい文は確認までマージしない」）。
     how = (f'<span class="how is-local">{esc(hanasu.HOW_LOCAL)}</span><span class="how is-browser">{esc(hanasu.HOW_BROWSER)}</span>'
            f'<span class="how is-local is-browser">{esc(making_log.ASK_NAME_VOICE)}</span>')
-    # 合言葉なしで開いたデモ（uploads=False）では、写真と動画の口を閉じる（play_server の受け口も断る）。見た事と工夫の字は残せる。
+    # 合言葉なしで開いたデモ（public）でも、写真と動画の口は開く（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。
+    # 上げた物は上げた本人の画面にだけ出る（play_server の写真の道と手帖の記録の頁）。uploads=False は口ごと閉じた前の形で、今は呼ぶ所が無い。
     shot = (_key(SHOOT, "key shot", 'id="shot" for="files"', "label",
                  '<input type="file" id="files" accept="image/jpeg,image/png,video/mp4,video/quicktime" capture="environment" multiple>'
                  '<span class="picked" id="picked" aria-live="polite"></span><span class="thumbs" id="thumbs"></span>') if uploads else
             '<input type="file" id="files" disabled hidden><span class="picked" id="picked" hidden></span><span class="thumbs" id="thumbs" hidden></span>')
-    limits = (f'<p class="meta">{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで</p>' if uploads else
-              '<p class="meta">公開のデモでは、写真と動画は上げられません。見た事とひとことは残せます。</p>')
+    # 前は開いた場に「上げられません」の断りを出していた。上げられる形にしたので消し、合言葉付きの場と同じ数の字を出す（新しい字は足さない）
+    limits = f'<p class="meta">{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで</p>' if uploads else ""
     craft = hanasu.SCENES["craft"]
     g_thumb, g_dlg = _genga(sid)
     body = (f'<main class="te" id="te" data-scene="{"end" if n > total else "step"}" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}" '
@@ -501,13 +503,13 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             '<section class="henji" data-on="henji">'
             f'<form id="ask-form"><label class="sr" for="q">聞きたい事</label><input type="text" id="q" maxlength="300" placeholder="谷折りって？" enterkeyhint="send"><button type="submit" class="send" aria-label="聞く">{SEND}</button></form>'
             # 聞く口の断り。鍵がある時は、聞いた言葉が Claude にも渡る事を先に言う（main の #458 の字。前の手帖の頁の聞く節と同じ出し方）
-            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc((making_log.ASK_AI if uploads and ask._key_present() else "") + making_log.ASK_NAME_VOICE)}</p></section>'
+            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc((making_log.ASK_AI if uploads and not public and ask._key_present() else "") + making_log.ASK_NAME_VOICE)}</p></section>'
             '<section class="end" data-on="end">'
             f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}">{shot}'
             # 字で書くのは選べる追加（畳んでおく）。名前は字で出さない（押す所の名前は 6 つ）ので、形だけにして、読み上げ用の名を持たせる。
             f'<details class="fold" id="fold"><summary class="key" aria-label="字で書く">{PENCIL}</summary>'
             f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(craft["hint"])}"></textarea></details>'
-            # 約束の印は写真と動画の分。合言葉なしの場は写真の口が閉じているので出さない（main の #429 と同じ）。要るかどうかは、選んだ時に script が決める。
+            # 約束の印は写真と動画の分。写真の口がある所では、合言葉なしの場でも出す（main の #429 と同じ）。要るかどうかは、選んだ時に script が決める。
             + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'

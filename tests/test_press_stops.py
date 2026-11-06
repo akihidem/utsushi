@@ -1,6 +1,6 @@
 """押して止まる所（使い勝手の点検で見つけた 3 件）。新しい字は足さない。
 
-1. 手帖の約束の印は、写真か動画を選んだ時だけ要る。写真なしの「のこす」は印が無くても押せる。合言葉なしの場は写真の口が閉じているので、印を出さない
+1. 手帖の約束の印は、写真か動画を選んだ時だけ要る。写真なしの「のこす」は印が無くても押せる。合言葉なしの場も写真の口があるので、同じ印を出す（本人の決定 11-06 で口を開けた。前は口が閉じていて、印を出さなかった）
 2. 写真を選ばずに残した時の返事を「上げました」にしない（上げていないので）。字は頁の記録の返事に今ある字
 3. 「この考えから紙を作る」の戻り先は #think。断りの文はそこにあり、頁の頭に戻ると見えなかった（幅 390 で 2978px 下）
 4. 「残す」の前に釦を押しても、話した字を消さない。字はタブの中にだけ持ち、サーバへ送らない（送るのは「残す」の時だけ、hanasu の決まり）
@@ -65,8 +65,9 @@ keep = techo_step.SCRIPT[techo_step.SCRIPT.index("const keepPress"):techo_step.S
 guard = "if (chosen.length && !ok.checked) { ok.closest('label').classList.add('call'); return; }"
 assert guard in keep, "選んだ写真か動画がある時だけ要る（印の無い場は、写真を選べないので ok を見ない）"
 shown = get(public, f"/toy/{G}/techo")
-assert 'id="ok"' not in shown and "大人の手元だけ" not in shown, "写真の口が閉じている場に印を出さない"
-assert '<input type="file" id="files" disabled hidden>' in shown, "対照: 合言葉なしの場の頁を見ている"
+public_mark = re.search(r'<input type="checkbox" id="ok"[^>]*>', shown)
+assert public_mark and "required" not in public_mark.group(0) and "大人の手元だけ" in shown, "合言葉なしの場でも写真の口があるので、同じ印を出す"
+assert '<input type="file" id="files" disabled hidden>' not in shown and '<input type="file" id="files"' in shown, "対照: 合言葉なしの場の頁で、口が開いている"
 
 # 5. 選んだ写真は頁の中に持ち、選ぶ欄は空に戻す（ブラウザが戻す写真を作らない）。印なしには、記録の口へ何も送らない
 assert "picker.onchange = () => { chosen = chosen.concat([...picker.files]); picker.value = ''; showPicked(); };" in techo_step.SCRIPT, "選ぶ欄を空に戻す"

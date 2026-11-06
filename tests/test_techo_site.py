@@ -134,7 +134,7 @@ assert '<span class="sample">見本</span>' in g and "is-sample" in g
 # 上げた後は頁の中で一覧を入れ替える（#143）。同じ道へ location.href しても読み込まれず、「…」のまま残って、もう一度押すと記録が 2 件になっていた
 from web.techo_step import SCRIPT  # noqa: E402
 up = SCRIPT[SCRIPT.index("const save"):]
-assert "location.href" not in up and "/techo/kiroku" in up, "同じ道へは飛ばさない。のこした後は記録の頁へ移る"
+assert "location.href" not in up and "/gallery?msg=" in up, "同じ道へは飛ばさない。のこした後は持ち寄る駅（ギャラリー）へ移る（窓口の決定 11-06 夜・案 A）"
 assert "if (go.disabled) return" in up and "go.disabled = true" in up and "form.reset()" in up and "上げました" in up
 assert up.index("form.reset()") < up.index("sendFiles(j.id, files)"), "記録ができたら先に欄を空にする（写真で止まっても、押し直しで記録を増やさない）"
 # 入れ替える元は頁の #mine。今の記録と写真が、新しい順の頭に在る

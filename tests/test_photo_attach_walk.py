@@ -46,8 +46,8 @@ const doc=()=>f.contentDocument,te=()=>doc().getElementById('te'),keep=()=>doc()
 const jpeg=()=>new Promise(r=>{const c=document.createElement('canvas');c.width=c.height=8;c.getContext('2d').fillRect(0,0,8,8);c.toBlob(r,'image/jpeg')});
 const pick=async()=>{const w=f.contentWindow,dt=new w.DataTransfer();dt.items.add(new w.File([await jpeg()],'a.jpg',{type:'image/jpeg'}));
  const p=doc().getElementById('files');p.files=dt.files;p.dispatchEvent(new w.Event('change'))};
-// 押して、記録の頁へ移るか、見た事の札が出るまで待つ。移った時は頁に出す字（msg）を返す
-const settle=async()=>{for(let i=0;i<300;i++){await wait(50);let w;try{w=f.contentWindow;if(w.location.pathname.endsWith('/techo/kiroku')&&doc().readyState==='complete')return new URL(w.location.href).searchParams.get('msg');
+// 押して、持ち寄る駅（ギャラリー）へ移るか、見た事の札が出るまで待つ。移った時は頁に出す字（msg）を返す（のこした後はギャラリーへ。窓口の決定 11-06 夜・案 A）
+const settle=async()=>{for(let i=0;i<300;i++){await wait(50);let w;try{w=f.contentWindow;if(w.location.pathname==='/gallery'&&doc().readyState==='complete')return new URL(w.location.href).searchParams.get('msg');
  if(te()&&te().dataset.scene==='kekka'&&!keep().disabled)return 'kekka'}catch(e){}}return 'timeout'};
 const who=()=>sessionStorage.getItem('utsushi-who');
 try{
