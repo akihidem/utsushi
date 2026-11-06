@@ -25,6 +25,9 @@ class Part:
     outline: list  # 外形の頂点。切る線
     label_xy: tuple = (2, 2)
     label: str = ""
+    # 札を縦に 1 字ずつ積む（textfit.stack）。横書きでは枠に入らない細い部品に、長い名を入れる時だけ（虎の 5 重りの腕、本人の決定 11-07）。
+    # label_xy は積んだ札の左上。札の字（label）は横の時と同じ字のまま持つので、札の名を読む所（部品表の試験など）は変わらない。
+    label_vertical: bool = False
     valley: list = field(default_factory=list)  # ((x1,y1),(x2,y2))
     mountain: list = field(default_factory=list)
     glue: list = field(default_factory=list)  # 糊代の多角形
