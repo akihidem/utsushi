@@ -83,7 +83,7 @@ mine[G].append(spoken)
 # 1. 合言葉なしの場に、開けないリンクが無い。全部の札を出す頁を全部歩く
 checked = 0
 for sid in (G, T, TRIAL):
-    for path in (f"/toy/{sid}", f"/toy/{sid}/techo", f"/zukan/{sid}"):
+    for path in (f"/toy/{sid}", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku", f"/zukan/{sid}"):
         found = links(page_at(opened, path))
         assert found, path
         dead = [(x, code) for x in found if (code := status(opened, x)) >= 400]
@@ -100,12 +100,12 @@ for sid, owned in mine.items():
         card = card_of(page, rid)
         assert "自分の仮説" in card, (sid, rid)
         assert "/sheet/" not in card and "試した後の紙" not in card, (sid, rid, "開かない紙への道を出さない")
-    techo = page_at(opened, f"/toy/{sid}/techo")
+    techo = page_at(opened, f"/toy/{sid}/techo/kiroku")
     assert not [oid for oid, _ in owned if f"/sheet/{sid}/{oid}_" in techo], (sid, "手帖の札にも出さない")
 
 # 2. 同じ場で、たたき台とほかの仮説の前の記録の紙への道は残る
 page = page_at(opened, f"/toy/{G}")
-techo = page_at(opened, f"/toy/{G}/techo")
+techo = page_at(opened, f"/toy/{G}/techo/kiroku")
 for rid, hid in (("R-0001", "H-A"), ("R-0002", "H-C")):
     paper = f"/sheet/{G}/{hid}_v1_after.pdf"
     assert paper in card_of(page, rid) and paper in techo and status(opened, paper) == 200, (rid, paper)
@@ -113,7 +113,7 @@ for rid, hid in (("R-0001", "H-A"), ("R-0002", "H-C")):
 
 # 3. 合言葉のある場では、同じ札に紙への道があって開く
 for sid, owned in mine.items():
-    page, techo = page_at(closed, f"/toy/{sid}"), page_at(closed, f"/toy/{sid}/techo")
+    page, techo = page_at(closed, f"/toy/{sid}"), page_at(closed, f"/toy/{sid}/techo/kiroku")
     for oid, rid in owned:
         paper = f"/sheet/{sid}/{oid}_v1_after.pdf"
         assert paper in card_of(page, rid) and paper in techo and status(closed, paper) == 200, (sid, rid)

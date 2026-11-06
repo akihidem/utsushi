@@ -517,17 +517,17 @@ def _label_xy(outline, label, art=()):
     return first or (x0, y0)
 
 
-def _part(number, key, name, outline, art=(), valley=(), glue=(), holes=(), cuts=(), hide=False, label=None):
+def _part(number, key, name, outline, art=(), valley=(), mountain=(), glue=(), holes=(), cuts=(), hide=False, label=None):
     """部品を作り、外形の左上を原点にそろえる。place が幅と高さだけで並べられるようにするため。"""
     mx, my = min(x for x, _ in outline), min(y for _, y in outline)
     sh = lambda pts: [(x - mx, y - my) for x, y in pts]
-    region = _region(outline, valley, glue)
+    region = _region(outline, list(valley) + list(mountain), glue)
     art = _clip(list(art), region)
     label = label or str(number)
     o = sh(outline)
     sart = [{**a, "pts": sh(a["pts"])} for a in art]
     return Part(number, key, name, o, label_xy=_label_xy(o, label, sart), label=label,
-                valley=[tuple(sh([a, b])) for a, b in valley], glue=[sh(g) for g in glue],
+                valley=[tuple(sh([a, b])) for a, b in valley], mountain=[tuple(sh([a, b])) for a, b in mountain], glue=[sh(g) for g in glue],
                 holes=[(x - mx, y - my, r) for x, y, r in holes], cuts=[(x - mx, y - my, w, h) for x, y, w, h in cuts],
                 art=sart, hide_folds=hide)
 
@@ -574,7 +574,8 @@ def _slide_parts(p, d):
         glue = [[(2 * sw, 0), (2 * sw + GLUE, 2), (2 * sw + GLUE, L - 2), (2 * sw, L)]]
         sl_art = [_poly([(0, 0), (sw, 0), (sw, L), (0, L)], SUMI), _poly([(sw, 0), (2 * sw, 0), (2 * sw, L), (sw, L)], "#4a3a2e")]
         sl_art += [_poly(_circle(sw * (0.3 if k % 2 else 0.7), 4 + 5 * k, 0.9, 8), GOFUN) for k in range(int((L - 6) / 5))]
-        return [_part(1, "blade", "刀身", blade, art), _part(2, "sleeve", "鞘", o, sl_art, valley=folds, glue=glue, hide=True)]
+        # 鞘は外から見る筒なので、刷った面を外に出す山折り（谷は刷った面がへこむ向きで、色が筒の内に入る）。
+        return [_part(1, "blade", "刀身", blade, art), _part(2, "sleeve", "鞘", o, sl_art, mountain=folds, glue=glue, hide=True)]
     # 舌出し: 口の切れ目から舌の帯を出し入れする読み。帯は顔の裏の輪で押さえる。
     x, y, w, hh = _slit(p)
     face = _part(1, "front", "顔", d["outline"], d["art"], cuts=[(x, y, w, hh)])
@@ -601,9 +602,10 @@ def _pocket_parts(p, d):
     out = [_part(1, "front", "表", d["outline"], d["art"]), _part(2, "back", "裏", _mirror(d["outline"], W), glue=glue)]
     for i in range(int(p["arrows"])):
         # 矢羽は帯を半分に折ってつまようじを挟む。折り目は白と墨の色の境に置く（本人の決定 d）。
+        # 白と墨の面を外に出すので山折り（谷だと 2 色が貼り合わせる内に隠れる）。
         o = [(0, 0), (16, 0), (16, 12), (8, 9), (0, 12)]
         art = [_poly([(0, 0), (8, 0), (8, 9), (0, 12)], GOFUN), _poly([(8, 0), (16, 0), (16, 12), (8, 9)], SUMI)]
-        out.append(_part(3 + i, f"fletch{i + 1}", f"矢羽 {i + 1}", o, art, valley=[((8, 0), (8, 9))], hide=True))
+        out.append(_part(3 + i, f"fletch{i + 1}", f"矢羽 {i + 1}", o, art, mountain=[((8, 0), (8, 9))], hide=True))
     return out
 
 
@@ -646,7 +648,8 @@ def _andon_parts(p):
     r = ph * 0.18
     moon_g = Polygon(_circle(r, r, r, 32)).difference(Polygon(_circle(r * 1.45, r * 0.8, r * 0.9, 32)))
     moon = _outer(unary_union([moon_g, _box(r - 2.5, r * 1.6, r + 2.5, 2 * r + 12)]))
-    out = [_part(1, "lantern", "行灯", o, art, valley=folds, glue=glue, hide=True),
+    # 行灯は外から見る四角い筒なので、刷った面を外に出す山折り（谷は刷った面がへこむ向きで、色が筒の内に入る）。
+    out = [_part(1, "lantern", "行灯", o, art, mountain=folds, glue=glue, hide=True),
            _part(2, "moon", "月", _pts(moon), [_poly(_pts(moon_g), OCHRE, SUMI, 0.3)])]
     if p["hold"] == "hang":
         bl = pw + 2 * GLUE
@@ -684,7 +687,8 @@ def _tokin_parts(p):
             art.append(_line([(R + R * 0.25 * math.cos(t + dt), R + R * 0.25 * math.sin(t + dt)), (R + R * 0.7 * math.cos(t + dt), R + R * 0.7 * math.sin(t + dt))], SUMI, 0.9))
     art.append(dot)
     holes = [(*inset(v[2], hole_k), HOLE_R), (*inset(v[4], hole_k), HOLE_R)]
-    return [_part(1, "tokin", "兜巾", o, art, valley=folds, glue=glue, holes=holes, hide=True)]
+    # 笠は外から見るので、刷った面を外に出す山折り（谷だと色が笠の内に入る）。
+    return [_part(1, "tokin", "兜巾", o, art, mountain=folds, glue=glue, holes=holes, hide=True)]
 
 
 def parts(p):
@@ -774,7 +778,7 @@ def steps(p):
     cut = "部品を実線で切る。穴は竹串の先であける" if any(q.holes for q in parts(p)) else "部品を実線で切る"
     out = ["刷った物差しに定規を当て、10cm か確かめる", cut]
     if shape == "andon":
-        out += ["1 行灯を色の境で谷折りし、糊代で貼って四角い筒にする", "2 月の下の足を竹串の先にテープで巻く"]
+        out += ["1 行灯を色の境で山折りし、糊代で貼って四角い筒にする", "2 月の下の足を竹串の先にテープで巻く"]
         if h == "glue":
             out += ["竹串を筒の中の 1 つの角に通し、上と下をテープで留める"]
         else:
@@ -782,7 +786,7 @@ def steps(p):
         return out
     if shape == "tokin":
         if h == "cone":
-            out += ["色の境で谷折りし、切り落とした所を糊代に重ねて貼る。浅い笠になる"]
+            out += ["色の境で山折りし、切り落とした所を糊代に重ねて貼る。浅い笠になる"]
         out += ["2 つの穴に糸を通し、額に当てて頭の後ろで結ぶ（きつく締めない）"]
         return out
     if shape == "nobori":
@@ -792,7 +796,7 @@ def steps(p):
             out += ["1 幟の輪の帯を、竹串に巻いて先の糊代で帯どうしを貼る。竹串には貼らない"]
         return out + ["2 房を丸めて、竹串の先に貼る"]
     if h == "slide" and shape == "katana":
-        return out + ["2 鞘を色の境で谷折りし、糊代で貼って平たい筒にする", "竹串を 1 刀身の裏の真ん中にテープで貼る（先は切る）", "刀身を鞘に差し、抜いたり差したりする"]
+        return out + ["2 鞘を色の境で山折りし、糊代で貼って平たい筒にする", "竹串を 1 刀身の裏の真ん中にテープで貼る（先は切る）", "刀身を鞘に差し、抜いたり差したりする"]
     if h == "slide":
         return out + ["1 顔の口の切れ目を切る（カッターは大人がする）", "2 舌の帯を裏から切れ目に通し、朱の先を前に出す",
                       "3 輪を顔の裏の口の下に、両端の糊代で貼る。帯を輪に通す", "竹串を顔の裏の真ん中にテープで貼る"]

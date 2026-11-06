@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_reach_words.py
+# commit: a8374859（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_reach_words.py", line 16, in <module>
+    assert j030.count(f"- **本人の言葉**: 「{WORDS}」") == 1, "J-030 の本人の言葉の行"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: J-030 の本人の言葉の行
+rc=1

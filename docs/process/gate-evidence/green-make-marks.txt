@@ -1,4 +1,5 @@
 # 命令: PYTHONPATH=src .venv/bin/python tests/test_ways.py
+# commit: e1e5769（このファイルを足した commit）
 ok
 rc 0（tests/test_ways.py）
 

@@ -1,0 +1,15 @@
+# 命令: .venv/bin/python tests/test_gate_evidence.py
+# commit: 1554d88（回した時の HEAD）
+書かない: もうある（失敗した版も残す決まりなので上書きしない）: red-sample.txt
+書かない: 名前は小文字・数字・ハイフンだけ: '../outside'
+書かない: 名前は小文字・数字・ハイフンだけ: 'a/b'
+書かない: 名前は小文字・数字・ハイフンだけ: 'Red Sample'
+書かない: 名前は小文字・数字・ハイフンだけ: ''
+検査できない: 命令を回せない: FileNotFoundError
+検査できない: 命令を回せない: TimeoutExpired
+/tmp/tmpg1ajlook/red-sample.txt
+/tmp/tmpg1ajlook/no-git.txt
+FAIL 頭が無い: half.txt
+FAIL 頭が無い: text-not-sha.txt
+ok
+rc=0

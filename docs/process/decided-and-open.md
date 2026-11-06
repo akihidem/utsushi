@@ -58,7 +58,7 @@
 | くずし字とインタビュー活動は今週は書くだけで作らない | 同上 |
 | 現場の印象は本人の逸話でなく、記事と調査で補う | [research/18](research/18-field-evidence.md) |
 | 試し手は大人のテスター 1 人。現役の生徒には今は頼めない | [research/17](research/17-field-and-continuers.md) |
-| Claude の活用の物語（作品の側の機能の選び分けと、運転の形の 4 つの線） | [claude-story.md](claude-story.md) |
+| Claude の活用の物語（作品の側の機能の選び分けと、運転の形の線。11-06 に、並列の作り方を中心に書く形（C）に決めた） | [claude-story.md](claude-story.md) |
 | 動画を Claude が見る事の範囲と、週内の順（ギャラリー 11-04〜05、観察と有識者の欄は 11-06 以降） | [J-022](decisions/J022-video-gallery.md) |
 | 11-04 の試行の記録（成人 5 人のつぶやき・本人の所見・写真 9 枚）は全部 repo に載せる（11-04、U-09） | [trials](trials/README.md) |
 | 設計の前提: 工作の難しさで水準を上げない。見た目と、おもちゃとしての楽しさで上げる（11-04、試行の後の本人の省察） | [philosophy.md](philosophy.md) |

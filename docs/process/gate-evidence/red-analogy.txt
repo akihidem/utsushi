@@ -1,3 +1,5 @@
+# 命令: 残っていない（帳面の節「11-05 朝、デモを見た本人の 4 つの指示」を見る）
+# commit: 9e67f10（このファイルを足した commit）
 Traceback (most recent call last):
   File "tests/test_analogy.py", line 36, in <module>
     assert not missing, ("たとえが無い玩具", len(missing), missing[:10])

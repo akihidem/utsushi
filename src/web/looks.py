@@ -91,7 +91,7 @@ def all_toys(prefix):
         items.append(f'<li{big}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>')
     n = len(items)
     return (f'<section class="{prefix}-all" id="all-toys" aria-label="全部の玩具"><p class="chapter">おもちゃ</p>'
-            f'<h2>{n} の玩具から、1 つ選ぶ</h2>'
+            f'<h2>{n} のおもちゃから、1 つ選ぶ</h2>'
             '<p class="cap">どれも図と歌だけが残った玩具。選ぶと、すぐ型紙を刷って作れる。型紙は正解ではなく、AI が考えた仮説。'
             '先頭の 2 つのほかは全部を型紙にする途中の試作で、名前は作る側の見立てで、まだ確かめていません。</p>'
             f'<ul class="grid">{"".join(items)}</ul></section>')

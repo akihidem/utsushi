@@ -1,0 +1,8 @@
+# 命令: bash -c 'cd /tmp/utsushi-red-hon && PYTHONPATH=src .venv/bin/python tests/test_zukan_hon.py'
+# commit: 9b62898e（回した時の HEAD）
+Traceback (most recent call last):
+  File "/tmp/utsushi-red-hon/tests/test_zukan_hon.py", line 27, in <module>
+    from web import genga, genga_words, kumitate, zukan, zukan_hon  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'zukan_hon' from 'web' (/tmp/utsushi-red-hon/src/web/__init__.py)
+rc=1

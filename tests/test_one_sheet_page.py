@@ -124,7 +124,7 @@ assert re.findall(r'name="hypothesis" value="([^"]+)"', ask_form) == [sheet], "�
 
 # 手帖も、ほかの仮説の紙が刷ってあっても、たたき台の 1 枚だけを出す
 techo = get(f"/toy/{TRIAL}/techo")
-assert re.findall(r'name="hypothesis" value="([^"]+)"', techo) == [sheet], "手帖の紙もたたき台だけ"
+assert re.findall(r'data-hid="([^"]+)"', techo) == [sheet], "手帖の紙もたたき台だけ"
 
 # 3. 記録はその 1 枚の hypothesis_id で残る（頁の form が送る値のまま送る）
 sent = re.search(r'name="hypothesis" value="([^"]+)"', get(f"/toy/{TRIAL}").split('id="record"', 1)[1]).group(1)
@@ -134,7 +134,7 @@ from omochae.compose import TEMPLATES  # noqa: E402
 
 first_result = TEMPLATES[result].RESULTS[0]
 assert post(f"/toy/{TRIAL}/record", {"hypothesis": sent, "result": first_result})[0] in (200, 303)
-assert post(f"/toy/{TRIAL}/record-json", {"hypothesis": re.findall(r'name="hypothesis" value="([^"]+)"', techo)[0], "result": first_result, "json": "1"})[0] == 201
+assert post(f"/toy/{TRIAL}/record-json", {"hypothesis": re.findall(r'data-hid="([^"]+)"', techo)[0], "result": first_result, "json": "1"})[0] == 201
 got = [r["hypothesis_id"] for r in records.all_records(TRIAL) if r.get("source_id") == TRIAL]
 assert got == [sheet, sheet], got
 

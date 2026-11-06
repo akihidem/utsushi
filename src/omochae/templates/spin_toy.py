@@ -383,7 +383,9 @@ def _cone_piece(number, key, p, look):
     arc = [(s * math.cos(theta * i / k), s * math.sin(theta * i / k)) for i in range(k + 1)]
     inner = [(r_in * math.cos(theta * i / k), r_in * math.sin(theta * i / k)) for i in range(k, -1, -1)]
     body = Polygon(arc + inner)
-    pieces, glue, valley = [body], [], []
+    # 胴は絵を外にして丸めるので、歯と継ぎ目の糊代は刷った面の裏（胴の中）へ折る山折り。谷は刷った面がへこむ向きで、
+    # 歯が外へ出て、胴の口と同じ半径のふたからはみ出す（歯を中へ入れようとすると、絵が内になる）。
+    pieces, glue, folds = [body], [], []
     for (x1, y1), (x2, y2) in zip(arc, arc[1:]):
         # 歯は弦の外へ RIM_TAB。両端を少し絞ってふたの裏で歯どうしが重ならないようにする。
         nx, ny = (x1 + x2) / 2, (y1 + y2) / 2
@@ -393,12 +395,12 @@ def _cone_piece(number, key, p, look):
         tooth = [(x1, y1), (x2, y2), (x2 + ux - tx, y2 + uy - ty), (x1 + ux + tx, y1 + uy + ty)]
         pieces.append(Polygon(tooth))
         glue.append(tooth)
-        valley.append(((x1, y1), (x2, y2)))
+        folds.append(((x1, y1), (x2, y2)))
     # 継ぎ目の糊代は角度 0 の縁の外（下側）。
     seam = [(r_in, 0), (s, 0), (s - 2, -SEAM_TAB), (r_in + 1, -SEAM_TAB)]
     pieces.append(Polygon(seam))
     glue.append(seam)
-    valley.append(((r_in, 0), (s, 0)))
+    folds.append(((r_in, 0), (s, 0)))
     outline = unary_union(pieces).simplify(0.01)
     inside = body.buffer(-0.3)
     art = []
@@ -422,7 +424,7 @@ def _cone_piece(number, key, p, look):
     mid = theta / 2
     # 番号は縁に近い明るい塗りの所に置く。先の近くは墨で、番号が読めない。
     part = Part(number, key, "胴", _coords(outline), label_xy=(s * 0.8 * math.cos(mid) - 1, s * 0.8 * math.sin(mid) - 1.5),
-                label=str(number), art=art, glue=glue, valley=valley, hide_folds=True)
+                label=str(number), art=art, glue=glue, mountain=folds, hide_folds=True)
     return _normalize(part)
 
 
@@ -482,10 +484,11 @@ def parts(p):
         out.append(hub)
         if p["drive"] == "handle":
             # 柄はコマ 25 のへら形の板に倣い、上の端の穴に芯を通す片持ちにした。2 つ折りにして硬くし、折る線は 2 色の境に置く（決定 d）。
+            # 2 色の面を外に出すので山折り（谷だと 2 色が貼り合わせる内に隠れる）。
             hw, L = HANDLE_W, HANDLE_L
             out.append(Part(len(out) + 1, "handle", "柄", [(0, 0), (2 * hw, 0), (2 * hw, L), (0, L)], label_xy=(1, 12), label=str(len(out) + 1),
                             art=[_fill(box(0.2, 0.2, hw - 0.2, L - 0.2), OUDO), _fill(box(hw + 0.2, 0.2, 2 * hw - 0.2, L - 0.2), USUCHA)],
-                            valley=[((hw, 0), (hw, L))], holes=[(hw / 2, 6, HOLE_R + 0.3), (1.5 * hw, 6, HOLE_R + 0.3)], hide_folds=True))
+                            mountain=[((hw, 0), (hw, L))], holes=[(hw / 2, 6, HOLE_R + 0.3), (1.5 * hw, 6, HOLE_R + 0.3)], hide_folds=True))
     return out
 
 
@@ -502,6 +505,13 @@ def place(by_key, page, top, gap):
         x += q.width + gap
         row_h = max(row_h, q.height)
     return y + row_h + gap, page.x1 - page.x0, page.x0
+
+
+def axis_stick(p):
+    """円盤と円錐の芯にする棒の名前。つまようじは約 65mm なので、それより長い芯は竹ひごにする。
+    部品表と円盤の手順が同じ字を使うよう 1 か所で決める（独楽 B で、部品表が竹ひごなのに手順がつまようじと書いていた。#294）。
+    円錐の手順はまだ使わない。今の案の円錐は芯が全部つまようじの長さで、字を変えると本人の確認の要る新しい文になるため。"""
+    return "つまようじ" if p["axis_len"] <= 65 else "竹ひご"
 
 
 def bom(p):
@@ -524,7 +534,7 @@ def bom(p):
         others.append({"key": "stick", "name": "柄", "qty": 1, "material": "竹ひごか割り箸（長さ 25cm 前後）", "substituted": True, "original_guess": "竹の棒（図の見た目による）", "reason": "家にあるため"})
         others.append({"key": "bead", "name": "車の間に挟む玉", "qty": 2, "material": "ビーズ（穴に芯が通る物）", "substituted": True, "original_guess": "不明", "reason": "車が柄にこすれて止まらないため"})
     elif shape in ("disc", "cone"):
-        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"{'つまようじ' if p['axis_len'] <= 65 else '竹ひご'}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
+        others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"{axis_stick(p)}（長さ約 {p['axis_len']:g}mm）", "substituted": True,
                        "original_guess": "木か竹の心棒（図の見た目による）", "reason": "家にあるため"})
     else:
         others.append({"key": "axis", "name": "芯", "qty": 1, "material": f"つまようじ（長さ約 {p['axis_len']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "家にあるため"})
@@ -538,7 +548,14 @@ def bom(p):
 
 def materials(p):
     rows = bom(p)
-    return [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規"] + [r["material"] for r in rows[1:] if r["material"] != rows[0]["material"]]
+    out = [f"{rows[0]['material']}を 1 枚", "のり、はさみ、テープ、定規"] + [r["material"] for r in rows[1:] if r["material"] != rows[0]["material"]]
+    # 芯の穴は手順 2 でつまようじの先であける。円盤の芯が竹ひごの長さだと用意する物につまようじが無くなるので、
+    # 穴あけの道具として足す（ほかの雛形の「竹串（穴あけ）」と同じ書き方。字は 2026-11-06 に本人が採った物）。
+    # 円錐は今の案に竹ひごの長さが無く、手順の芯の字も変えていないので足さない。足すと、円錐で芯の字が部品表と
+    # 食い違った時に、tests/test_steps_materials.py が拾えなくなる。
+    if p["shape"] == "disc" and axis_stick(p) == "竹ひご":
+        out.append("つまようじ（穴あけ）")
+    return out
 
 
 def steps(p):
@@ -561,13 +578,13 @@ def steps(p):
             out.append("芯を羽の車の穴に通し、ビーズを挟んで柄の先に刺す。車が軽く回るか見る")
     elif shape == "disc":
         out += ["円盤を穴をそろえて重ね、のりで貼る。絵の面を上と下にする",
-                f"つまようじを穴に通し、下に {p['axis_below']:g}mm 出してのりで止める"]
+                f"{axis_stick(p)}を穴に通し、下に {p['axis_below']:g}mm 出してのりで止める"]
     elif shape == "cone":
         if int(p["cone_pieces"]) == 2:
             out.append("胴の 2 枚を、継ぎ目の糊代で互いに貼って円錐にする（糊代が向かい合う）")
         else:
             out.append("胴を丸め、継ぎ目の糊代で貼って円錐にする")
-        out += ["ふたを穴をそろえて重ねて貼る", "胴の上の縁の歯を谷折りし、ふたの裏に貼る",
+        out += ["ふたを穴をそろえて重ねて貼る", "胴の上の縁の歯を山折りし、ふたの裏に貼る",
                 f"つまようじをふたの穴から胴の先まで通し、先を {p['axis_below']:g}mm 出してのりで止める"]
         if p["knob_h"]:
             out.append("つまみの帯を、ふたの上の芯に巻いて貼る")

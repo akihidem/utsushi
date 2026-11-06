@@ -160,8 +160,10 @@
   "status": "doing",
   "evidence": [
    "tests/test_reply_visible.py",
+   "tests/test_explain_no_name.py",
    "src/web/wording.py",
    "tests/test_wording.py",
+   "tests/test_words_card_1106.py",
    "tests/test_reader_words.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",
@@ -232,7 +234,9 @@
    "tests/test_loop1_own_private.py",
    "tests/test_loop1_round.py",
    "tests/test_loop1_next.py",
-   "tests/test_own_form_gone.py"
+   "tests/test_own_form_gone.py",
+   "tests/test_loop1_quotes.py",
+   "tests/test_withdraw_notice.py"
   ]
  },
  {
@@ -425,6 +429,20 @@
   "unverified": "本人の設計と決定（11-05）。声そのものは残さず、字だけを残す。個人の情報は入口で落とす（連絡先・名乗り・学年と組・学校の名前の形。名前そのものは形で見分けられないので、字を本人が見てから残し、書かないお願いを出す）。記録に入った工夫の字は、記録の感想と同じに、手帖の記録の札に文で出す（選び肢は置かない。合言葉なしで開いた場では出さない）。iPhone・iPad でも話す釦を出し、ブラウザの既定の音声認識で聞いて断りを出す。利用者向けの文は、本人が採ったやさしい言葉の文（Issue 318）。実際のブラウザでは、音声認識の口を差し替えた見本で歩いた。実機（iPhone・iPad・パソコンの Chrome）で声を入れた確認はまだ。仮説を見て話した考えは記録に結ぶが、記録の札にはまだ出していない（見出しの文面が本人の確認待ち）。他の人が作った物の頁に出す所（サイトの線）、エンジンへ渡す束に入れる所（Issue 307）はまだ。輪の Claude の読みと案に渡す所は偽の Claude で試験した（Issue 335 のループ2、tests/test_loop_talk.py）。本物の API では未実行"
  },
  {
+  "id": "f48",
+  "name": "工作の手帖の 1 手 1 画面（本人の決定 11-05、Issue 87）: 今の手順の絵と 1 文、押す所は つぎ・もどる・こまった・とって・のこす・はじめる、声は全部が一致した時だけ操作",
+  "status": "doing",
+  "evidence": [
+   "src/web/techo_step.py",
+   "src/web/voice_words.py",
+   "src/omochae/instructions.py",
+   "src/omochae/render.py",
+   "tests/test_techo_step.py",
+   "tests/test_photo_attach_walk.py"
+  ],
+  "unverified": "「のこす」の画面は声と動画が主で、字を打つ欄は畳んだ追加（本人の方針 11-05 19:45）。声の操作は作りながら見る頁のマイクにも同じ表で入れた。聞き続けるのは操作の言葉だけで、問いは「こまった」の後の 1 つ、工夫は最後の画面でマイクを押した後だけ受ける（本人の決定 11-06・案 2）。実際のブラウザ（Chromium）で、音声認識の口を差し替えた見本を使って歩いた。実機（iPhone・iPad）と本物の音声認識、字を読まずに通るかの人の確かめはまだ。手順の絵は段 1 で、折る順の 4 コマがあるのは御来迎だけ。ほかの雛形は手順の紙の図 1 枚を全部の手順で出す。断りは採られた文のまま（「話す」を押すと）で、「はじめる」に合わせた文は本人の確認待ちなので入れていない。声を字にする所（local か browser か）は本人の決定待ちで、今は話す口の既定のまま 「のこす」は、写真があって工夫の字が無い時、見た事の札の前に、玩具の頁で残した記録に足せるかを聞く（main の #443 の形）。実機のカメラでは確かめていない。"
+ },
+ {
   "id": "f34",
   "name": "工作の様子の蓄積（U-45 の段取り 1〜3）: 蓄積の器・出来事・作る側の集計の頁",
   "status": "doing",
@@ -542,6 +560,39 @@
    "tests/test_site_hokusai.py"
   ],
   "unverified": "絵は国立国会図書館の PDM（権利の記録は動画と同じ）。18 人は動く形でよい（本人の決定）。文は本人が採った（11-05、#318）。人が使った確認はまだ"
+ },
+ {
+  "id": "f47",
+  "name": "保護者の方へ、ファシリテーターの方への頁 /otona（本人の決定 11-06）: 声や字の扱い・写真の載せ方・取り下げ・AI（Claude）の役目・場の進め方を 1 か所に",
+  "status": "doing",
+  "evidence": [
+   "src/web/otona.py",
+   "tests/test_otona.py"
+  ],
+  "unverified": "文は本人が採った（11-06）。頁は本人の指示（11-06「まだをやっちゃおう」）で、手帖の作り直し（#395）の後に入れた。文の 2 の聞き方と 4 の手帖の記録の頁は、その後の木で照らした。大人の読み手には読んでもらっていない"
+ },
+ {
+  "id": "f49",
+  "name": "原画と歌（本人の指示 11-06）: 玩具の頁の頭に、玩具が載る頁の全体と人が確かめた歌を組にして出す。作りながら見る頁と手帖に畳んで置く。額のゆがみの直し",
+  "status": "doing",
+  "evidence": [
+   "src/web/genga.py",
+   "src/web/genga_words.py",
+   "src/omochae/ingest.py",
+   "tests/test_genga.py"
+  ],
+  "unverified": "字は本人が決めた（見出し・大きく見るのみ）。頁の全体の写しは git の外（ingest）。玩具の所の枠は出典の記録の箱（crop_status は unverified）。図鑑の本の頁（玩具の絵がある頁）は続く PR。幅 390・1440 の白と黒で見た。本物のスマホと本物の人には見てもらっていない"
+ },
+ {
+  "id": "f50",
+  "name": "図鑑の本の頁 /zukan/hon/<コマ>（本人の決定 11-06）: 玩具の絵がある 54 頁を、図鑑から 1 コマずつ本の順に見る。サイトに型紙の無い玩具も原画として見える",
+  "status": "doing",
+  "evidence": [
+   "src/web/zukan_hon.py",
+   "src/omochae/ingest.py",
+   "tests/test_zukan_hon.py"
+  ],
+  "unverified": "置く頁は棚卸しの玩具が載る頁（棚卸しの箱は作る側の見立て）。新しい字は足していない。幅 390・1440 の白と黒で見た。本物のスマホと本物の人には見てもらっていない"
  },
  {
   "id": "f43",

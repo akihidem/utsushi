@@ -22,7 +22,7 @@ DRAFT = "Draft translation. A native speaker has not checked it yet."
 # J-030 の少し長い紹介と同じ文。文を変える時は J-030 も直す。本人の方針（11-05）の書き方: 短い文・やさしい語（#318）。
 INTRO = (
     "In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called <i>Edo nishiki</i>. It shows more than 80 toys with short poems, but it does not say how the toys worked.",
-    "With utsushi, you can test ideas with your hands. Pick a toy and print a paper template right away. Each idea has its own template, and none of them is the answer. Cut, fold, glue, and try it. If it does not move, that is a result too. Write down what happened, change one thing, and print the next version.",
+    "With utsushi, you can test ideas with your hands. Pick a toy and print a paper template right away. Each toy has one template to start from. It is not the answer. Cut, fold, glue, and try it. If it does not move, that is a result too. Write down what happened, change one thing, and print the next version.",
     "Two toys have full templates, in Japanese only. One is the Goraigo (roughly, \"welcoming descent\"), a tube with a fan. The other is a tiger based on old papier-mâché toys. An earlier Goraigo moved in one trial with adults. No one has finished the tiger yet. The other toys are untested drafts, and their names are our guesses.",
     "A paper model that moves does not prove how the original was made. These models are for trying things out. They are not exact copies of the old toys.",
 )
@@ -110,7 +110,9 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
                   f'<form method="post" action="/en/toy/{esc(sid)}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>Print sheets</button></form>{links}</div></div>')
     gloss = "".join(f"<dt>{esc(a)}</dt><dd>{esc(b)}</dd>" for a, b in GLOSSARY)
     tag = "" if hypotheses.stage(sid) == "必須" else '<p class="meta"><span class="lb">Untested draft</span> The name is our guess from the picture. No one has built this one.</p>'
-    body = (f'<section class="hero">{_picture(sid)}<div><h1>{esc(t["name"])}</h1>{tag}<p class="lead">{esc(t["intro"])}</p>'
+    from . import genga  # 英語の頁は頁の全体の絵だけ（統括の決め 11-06: 歌の字も新しい字も出さない）
+
+    body = (f'<section class="hero">{genga.plain(sid, "Picture from the book") or _picture(sid)}<div><h1>{esc(t["name"])}</h1>{tag}<p class="lead">{esc(t["intro"])}</p>'
             f'<p class="meta"><span lang="ja">{esc(data["toy"])}</span>. {esc(DRAFT)} {esc(CREDIT)}</p>'
             f'<p class="links"><a href="/toy/{esc(sid)}">日本語の頁へ</a><a href="/en#toys">Other toys</a></p></div></section>'
             f'<section class="sec" id="ideas">{note}<h2>Make it now</h2><p class="premise" id="premise">{esc(PREMISE)}</p><p class="meta">{esc(JA_ONLY)} {esc(WAYS_NOTE)}</p>'
