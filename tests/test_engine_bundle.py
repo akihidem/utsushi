@@ -323,6 +323,21 @@ assert r.returncode == 0 and json.loads((pathlib.Path(DATA) / "bundle4.json").re
 r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--from", "山田の束", "--out", str(pathlib.Path(DATA) / "bundle5.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
 assert r.returncode == 4 and not (pathlib.Path(DATA) / "bundle5.json").exists(), r.stderr
 assert eb.build()["from"] == "utsushi"
+# 札の文の中の動画の秒は外して渡す（束には時刻を入れない。数の多い所を連絡先の形と見るエンジンの入口の床で、文ごと落ちるため）。
+# 秒の書き方だけを外し、連絡先の床は緩めない
+review_up("R-0090", "tora-v2", [mark("M1", None, "fit", "糊代が細い（1682〜1701 秒）、と言っている。28 秒にも同じ声"), mark("M2", None, "fit", "台が倒れる（3925・3945 秒）"),
+                                mark("M3", None, "fit", "軸を回す所（4660〜4680・4745〜4784 秒）。4849.8 秒は頭が下"), mark("M4", None, "fit", f"291 秒から、分からない時は {PHONE} へ"),
+                                mark("M5", None, "fit", "291 秒から頭が揺れ続ける")])
+g90 = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v2")]
+said = [t["text"] for t in g90["texts"]]
+assert sorted(said) == sorted(["糊代が細い、と言っている。にも同じ声", "台が倒れる", "軸を回す所。は頭が下", "頭が揺れ続ける"]), said
+assert not any("秒" in t or re.search(r"[0-9]", t) for t in said) and PHONE not in json.dumps(g90, ensure_ascii=False), "秒を外し、連絡先の形の札は落としたまま"
+crowded = lambda t: any(sum(c.isdigit() for c in t[i:i + 24]) >= 7 for i in range(max(1, len(t))))  # エンジンの入口の床の「数字の多い所」の見方
+assert not any(crowded(t) for t in said)
+video_up("R-0091", "tora-v1", [mark("M1", 3, "fold", "首の帯を折る所（4084.5〜4086 秒）で手が止まる"), mark("M2", 4, trial_video.KUFU, "粘土を丸めて（4518〜4522 秒）重りにした")])
+g91 = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v1")]
+assert {(t["kind"], t["step"], t["text"]) for t in g91["texts"]} == {("stuck", 3, "首の帯を折る所で手が止まる"), ("craft", 4, "粘土を丸めて重りにした")}, g91["texts"]
+assert g91["stuck_steps"] == {"3": {"taps": 1, "people": 0}} and g91["craft_steps"] == {"4": {"talks": 1, "people": 0}}, "作る時の動画の札も、秒を外して数える"
 # 札の置き場は人が手で触るファイル。記録の番号が決まりの外の形でも、束ごと止めない（読み飛ばす。#313 の線）
 before = eb.build()["groups"]
 for i, odd in enumerate((["R-0086"], {"a": 1}, 86, None)):
