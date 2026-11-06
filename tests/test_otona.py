@@ -12,7 +12,6 @@ import os
 import re
 import tempfile
 import threading
-import urllib.error
 import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
@@ -139,17 +138,9 @@ for public_open in (False, True):
     try:
         status, got = fetch(server, "/otona")
         assert status == 200 and main_text(got) == expected, public_open
-        if public_open:
-            # 3 の「公開の場では、写真と動画はのせられません」の裏付け。前は手帖の頁の断りの字を見ていたが、手帖の作り直し（#395）で
-            # その字が消えた。字より強い裏付けとして、同じ出所から送っても、受け口が断る事を実際に送って見る
-            port = server.server_address[1]
-            req = urllib.request.Request(f"http://127.0.0.1:{port}/record/R-0001/media", data=b"x", method="POST",
-                                         headers={"Origin": f"http://127.0.0.1:{port}", "Content-Type": "image/jpeg"})
-            try:
-                urllib.request.urlopen(req, timeout=30)
-                raise AssertionError("公開の場で写真を受けた")
-            except urllib.error.HTTPError as e:
-                assert e.code == 403 and "写真と動画は上げられません" in e.read().decode("utf-8"), "公開の場では写真と動画はのせられない"
+        # 3 の「合言葉なしで開く公開の場では、写真と動画はのせられません」は、本人の決定（11-06「公開のデモでも写真と動画を上げられるように
+        # してください」）で今の作りと合わなくなった。前はここで受け口の 403 を見ていた。採られた字なので、外すかは本人に聞いている
+        # （カード 20261106-175129、推しは外す）。答えまで字は残し、この試験も今の字のまま見る。開いた場で受ける形は test_public_open が見る
     finally:
         server.shutdown()
         server.server_close()

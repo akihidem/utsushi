@@ -28,6 +28,10 @@ from . import wording
 MEDIA_TYPES = {"image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov"}
 MAX_MEDIA = 20 * 1024 * 1024
 MAX_PER_RECORD = 3
+# 合言葉なしで開いた場の写真と動画の置き場の合計（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。
+# 誰でも上げられる場なので、機械の空き（11-06 に 102G）を埋めさせない。2GB は空きの 2% で、20MB の動画なら 100 本・写真なら数百枚。
+# 記録を作る口は書き込みの数の上限が絞り、1 つの記録には MAX_PER_RECORD までなので、1 人で一気に埋める形にはなりにくい
+PUBLIC_MEDIA_TOTAL = 2 * 1024 * 1024 * 1024
 MISMATCH = "中身を写真か動画として読めません（JPEG・PNG・MP4・MOV だけ）"
 ICONS = {
     "動いた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 34c8 0 14-6 18-18M20 14l8 2 2 8"/></svg>',
@@ -53,6 +57,12 @@ def esc(s):
 
 def media_dir(rid):
     return records.folder() / "media" / rid
+
+
+def media_bytes():
+    """置き場の写真と動画の大きさの合計（確かめの控えの json は数えない）。公開の場の合計の上限を見る時に、受ける前に数える。"""
+    root = records.folder() / "media"
+    return sum(p.stat().st_size for p in root.glob("R-*/m*.*")) if root.exists() else 0
 
 
 def strip_jpeg_meta(data):
@@ -333,9 +343,12 @@ def gallery_page(sids, photos=True):
             f'{voices}</section></div>')
 
 
-def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
-    作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。"""
+    作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
+    public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受ける形）。上げた本人の画面の物だけを出し、記録の番号・人の言葉・
+    説明の文は前と同じく出さない。uploads=False は写真の口ごと閉じた形（前の開いた場の形。今は呼ぶ所が無いが、試験が使う）。"""
+    closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
 
@@ -344,15 +357,16 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None):
     mine = ""
     for r in reversed(records.all_records(sid)):
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
-        files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
+        # 開いた場では、確かめた後の物でも、ほかの人の画面には出さない（mine_only。写真の道も同じ線で返す）。
+        files = [] if not uploads else (media_review.mine_only if public else media_review.shown_to)(r["id"], media_of(r["id"]), up_key)
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
-        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if uploads else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
-                 f'{hanasu.keep_box(sid, r, show_shared=uploads, can_add=records.mine(r["id"], rec_key))}'
-                 f'{feedback(sid, r, photos=uploads, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
+                 f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
+                 f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'

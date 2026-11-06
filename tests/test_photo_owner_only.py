@@ -7,7 +7,7 @@ who は sessionStorage にあって、絵と動画の GET に載らない。な�
 3. 人の確認で「物だけ」になれば誰にでも出る。「人や声」は本人にも出ない
 4. 次の記録を残すと区切りになる（同じ機械の次の人に、前の人の写真を出さない）。期限を過ぎても閉じる
 5. 取り下げで鍵の控えも消える
-6. 合言葉なしの場は今のまま（受けず、出さず、鍵も渡さない）
+6. 合言葉なしの場でも受けるが、上げた本人の画面にだけ出す。人が確かめた後でも、別の画面には出さない（本人の決定 11-06。前は受けず、出さず、鍵も渡さなかった）
 """
 import http.client
 import io
@@ -167,11 +167,20 @@ f.photo(gone_rid)
 assert records.withdraw(gone_rid, media_only=True)[1] == []
 assert not (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "records" / "media" / gone_rid).exists(), "写真の置き場ごと消える"
 
-# 6. 合言葉なしの場は今のまま
+# 6. 合言葉なしの場（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）
 p = Screen(opened)
-assert p.call("POST", f"/record/{rid}/media", JPEG, "image/jpeg")[0] == 403 and not p.cookie, "受けず、鍵も渡さない"
-assert p.image(rid, name) == 404 and src not in p.techo(), "確認の後の写真も出さない"
+assert p.call("POST", f"/record/{rid}/media", JPEG, "image/jpeg")[0] == 403 and not p.cookie, "別の人の記録へは上げられず、鍵も渡さない"
+assert p.image(rid, name) == 404 and src not in p.techo(), "確認の後の写真も、別の画面には出さない"
 p.cookie = dict(a.cookie)
-assert p.image(rid, name) == 404, "鍵があっても出さない"
+assert p.image(rid, name) == 200, "上げた本人の画面（同じ鍵）には出す"
+q = Screen(opened)
+mine_rid = q.record()
+mine_name = q.photo(mine_rid)  # 自分の記録へは上げられる
+assert q.image(mine_rid, mine_name) == 200 and f"/record/{mine_rid}/media/{mine_name}" in q.techo(), "上げた本人の手帖と絵の道に出る"
+r = Screen(opened)
+assert r.image(mine_rid, mine_name) == 404 and f"/record/{mine_rid}/media/" not in r.techo(), "別の画面には出さない"
+assert media_review.record(mine_rid, mine_name, "object", "試験の人") == []
+assert r.image(mine_rid, mine_name) == 404 and f"/record/{mine_rid}/media/" not in r.techo(), "人が確かめた後でも、開いた場では別の画面に出さない"
+assert q.image(mine_rid, mine_name) == 200, "本人には出したまま"
 
 print("ok: 確認の前の写真は、上げた本人の画面にだけ出す")
