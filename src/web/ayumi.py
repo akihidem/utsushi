@@ -213,7 +213,8 @@ def _has(mark, template):
     if mark == "hide_folds":
         return any(q.hide_folds for q in parts)
     if mark == "no_cuts":
-        return not any(q.cuts for q in parts)
+        # 丸い切り抜き（虎の次の組 tora-v6 の首の穴）も中の切り込み。矩形だけを見ると、切り抜く型を「切り込みなし」と言ってしまう
+        return not any(q.cuts or q.round_cuts for q in parts)
     if mark == "redraw":
         return any(q.art for q in parts)
     if mark == "ruler_first":
