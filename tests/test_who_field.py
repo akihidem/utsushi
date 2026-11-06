@@ -25,17 +25,29 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 
 
-def get(path):
-    return urllib.request.urlopen(base + path).read().decode()
+class Browser:
+    """1 つのブラウザ。記録を残した画面の鍵（cookie）を持つ。
+    なぜ分けるか: 説明の欄は記録を残した画面にだけ出る（records.mine）。前の人の値が「次に開いた別の人」に見えないかは、
+    鍵を持たない別のブラウザで見るのが事実に近い。"""
+
+    def __init__(self):
+        self.op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
+
+    def get(self, path):
+        with self.op.open(base + path) as x:
+            return x.read().decode()
+
+    def post(self, path, data):
+        r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
+        try:
+            with self.op.open(r) as x:
+                return x.status, x.read().decode()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read().decode()
 
 
-def post(path, data):
-    r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
-    try:
-        x = urllib.request.urlopen(r)
-        return x.status, x.read().decode()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode()
+maker, other = Browser(), Browser()
+post = maker.post
 
 
 def box(page, rid, act):
@@ -56,12 +68,13 @@ def adopted_by(version):
 WHO, ADOPTER = "3 班の目印", "4 班の目印"
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] == 200
-pages = lambda: (("玩具の頁", get(f"/toy/{G}")), ("手帖", get(f"/toy/{G}/techo")))
+# 手帖の説明と次の版の欄は、作り直した手帖では記録の頁にある（#87）
+pages = lambda b=maker: (("玩具の頁", b.get(f"/toy/{G}")), ("手帖の記録の頁", b.get(f"/toy/{G}/techo/kiroku")))
 
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": WHO})[0] == 200
 
-# 次の版の欄に、採る人が打つ空の欄がある。説明で書いた値は欄にも頁にも出ない
-for where, page in pages():
+# 次の版の欄に、採る人が打つ空の欄がある。説明で書いた値は、次に開いた別の人の欄にも頁にも出ない
+for where, page in pages(other):
     field = who_field(box(page, "R-0001", "next"))
     assert "value=" not in field and "required" in field and 'autocomplete="off"' in field, (where, field)
     assert WHO not in page, f"{where}: 前の人の値を、次に開いた別の人に見せない"
@@ -83,12 +96,12 @@ assert conf[("H-A", 2)][-1]["by"] == ADOPTER, conf
 # 通らなかった時に打った値が戻るのは、送った本人への返事だけ。次に開く人の頁には出ない
 code, page = post("/record/R-0001/next", {**form, "to": "abc", "by": ADOPTER})
 assert code == 422 and f'value="{ADOPTER}"' in page, code
-for where, page in pages():
+for where, page in pages(other):
     field = who_field(box(page, "R-0001", "next"))
     assert "value=" not in field and ADOPTER not in page and WHO not in page, where
 
-# 説明の欄にも、前の人の値を候補に出さない印がある
+# 説明の欄にも、前の人の値を候補に出さない印がある（説明の欄は、記録を残した画面にだけ出る）
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] == 200
-for where, page in pages():
+for where, page in pages(maker):
     assert 'autocomplete="off"' in who_field(box(page, "R-0002", "explain")), where
 print("ok: 次の版の欄は採る人が打ち、前の人の値を出さない")
