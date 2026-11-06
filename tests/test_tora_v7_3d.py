@@ -1,10 +1,11 @@
-"""虎の今の組 tora-v6 の作り方の 3D（型紙エンジンの JSON を data/kumitate/tora-v6.json に写した物。決定 2026-11-07）。
+"""虎の今の組 tora-v7 の作り方の 3D（型紙エンジンの JSON を data/kumitate/tora-v7.json に写した物。決定 2026-11-07。v6 は刷らずに飛ばした）。
 
 エンジンの試験（作った形のずれ・刷った面が外ほか）と別の目で、サイトの側から次を見る:
 1. 写した JSON: 形の名・出所の commit・寸法がたたき台の紙と同じ・部品の形がサイトの紙と同じ・紙の上の置き場が同じ・机の面の行列
 2. 段と文: 手順の文 12 と 1 対 1 で、最後にできあがりの動き。サイトが place と turns から組んだ面の行列が、JSON の面の行列と同じ
-3. できあがりの形: 胴の色の面が外・糊代が相手の面に寝る・首の帯と頭が前の壁の丸い穴を縁に当たらずに通る（揺れる間も）・
-   竹串が胴の 2 つの穴を通る・粘土の玉が胴の中・脚の色の面が外で上の糊代が胴の底を向く・両面の頭の顔が両側の外・尾が上の面から上へ立つ
+3. できあがりの形: 胴の色の面が外・糊代が相手の面に寝る・首の帯が前の壁の丸い穴を通る・
+   竹串が胴の 2 つの穴を通る・粘土の玉が胴の中・脚の色の面が外で上の糊代が胴の底を向く・両面の頭の顔が両側の外・尾が上の面から上へ立つ・
+   揺れる間（できあがりの動きと ±10°）も、重りの腕と粘土の玉が前の壁に、帯と頭が丸い穴の縁に、0.5mm 以上の空きで当たらない
 4. サイトが決める見せ方: はさみは紙の上の部品を 1 つずつ一周・カッターは首の丸い穴を一周して切れ端が落ちる・重なる面のずらし
 5. 頁: 机の面の層・丸い切れ端・5 重りの腕の札の 4 行・止まった形の口（still）と作業の頁の口（scene）・分解して見せる形（split）
 6. 崩す: 丸い穴の置き場が紙と違う JSON は使わない
@@ -32,12 +33,12 @@ T = "NDL-1187053-R0000014-R"
 TIGER = TEMPLATES["pivot_counterweight"]
 p = {**TIGER.DEFAULTS, **hypotheses.sheet_of(T)["params"]}
 words = instructions.steps(p, "pivot_counterweight")
-doc = assembly_json.load("tora-v6")
+doc = assembly_json.load("tora-v7")
 apply, sub, dot, normal_of = assembly.apply, assembly._sub, assembly._dot, assembly.normal_of
 
 # 1. 写した JSON
-assert TIGER.SHEET_SET == "tora-v6" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "tora-v6"
-assert re.fullmatch(r"[0-9a-f]{40}", doc["engine"]["commit"]) and "examples/tora_v6.json" in doc["engine"]["command"]
+assert TIGER.SHEET_SET == "tora-v7" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "tora-v7"
+assert re.fullmatch(r"[0-9a-f]{7,40}", doc["engine"]["commit"]) and "examples/tora_v7.json" in doc["engine"]["command"]
 assert all(assembly._same(p.get(k), v) for k, v in doc["params"].items()), {k: (p.get(k), v) for k, v in doc["params"].items()}
 bench = assembly.assemble(T)
 assert isinstance(bench, Shown) and bench.failures == [], [f.line() for f in bench.failures]
@@ -115,33 +116,11 @@ hx, hy, hr = body.part.round_cuts[0]
 wall = next(i for i, s in enumerate(body.panels) if Polygon(s.exterior).contains(Polygon(assembly.round_ring(hx, hy, hr)).centroid))
 
 
-def through(mats):
-    wm = mats["body"][wall]
-    c, n = apply(wm, (hx, hy)), normal_of(wm)
-    far, crossed = 0.0, {"strip": 0, "head": 0}
-    for key in ("strip", "head"):
-        for i, m in mats[key].items():
-            q = pts(key, i, m)
-            for a, b in zip(q, q[1:]):
-                sa, sb = dot(sub(a, c), n), dot(sub(b, c), n)
-                if sa * sb < 0:
-                    x = tuple(u + (v - u) * sa / (sa - sb) for u, v in zip(a, b))
-                    far, crossed[key] = max(far, math.dist(x, c)), crossed[key] + 1
-    return far, crossed
-
-
-far, crossed = through(M)
-assert crossed["strip"] >= 2 and far < hr, (far, crossed)  # 帯は穴を通り、頭の後ろの端も穴の内に入る
-for got in doc["finale"]["poses"]:
-    mats = {key: {int(i): rows_of(m) for i, m in mine["panels"].items()} for key, mine in got["parts"].items()}
-    far, crossed = through(mats)
-    assert crossed["strip"] >= 2 and far < hr, ("揺れる間", far, crossed)
-
 # 竹串は、胴の 2 つの穴を通る（穴の真ん中から竹串の線まで、穴の半径の内）
 rod = end["rods"]["skewer"]
 s, e = rod["from"], rod["to"]
 d = assembly._unit(sub(e, s))
-holes = [apply(M["body"][next(i for i, sh in enumerate(body.panels) if sh.buffer(1e-3).contains(Polygon(assembly.round_ring(x, y, r)).centroid))], (x, y)) for x, y, r in body.part.holes]
+holes = [apply(M["body"][next(i for i, sh in enumerate(body.panels) if sh.buffer(1e-3).contains(Polygon(assembly.round_ring(x, y, rr)).centroid))], (x, y)) for x, y, rr in body.part.holes]
 for h in holes:
     v = sub(h, s)
     off = math.dist(h, tuple(a + b * dot(v, d) for a, b in zip(s, d)))
@@ -152,11 +131,45 @@ lo = [min(q[k] for i in M["body"] for q in pts("body", i)) for k in range(3)]
 hi = [max(q[k] for i in M["body"] for q in pts("body", i)) for k in range(3)]
 ball, r = end["balls"]["clay"]["at"], doc["balls"]["clay"]["r"]
 assert lo[2] + r <= ball[2] <= hi[2] - r and ball[1] + r < hi[1], (ball, lo, hi)
-# 見つけた事（エンジンへ知らせた。直すかはエンジンの側）: 玉の真ん中は竹串の真下で、前の壁から竹串までの 6mm（NECK_BACK）の所にあり、
-# 玉（3g・半径 7.4mm）を球と見ると前の壁の外へ約 1.4mm 出る。寸法の検査（check_physics）は竹串と底との間だけを見る。
-# 粘土は腕の穴に押し付けて平たくもできるので、紙で組めない事とは言えない。値が変わったら、この行を見直す
-inside = -dot(sub(ball, apply(M["body"][wall], (hx, hy))), normal_of(M["body"][wall]))
-assert abs(inside - TIGER.NECK_BACK) < 1e-6 and abs((r - inside) - 1.355) < 0.01, (inside, r)
+
+# 前の壁に当たらない（空きは床 FLOOR 以上）: 重りの腕と粘土の玉は壁の内に、首の帯は丸い穴の縁の内を通り、頭は穴の縁の内を通るか壁の外にある。
+# 見る形は、できあがり・できあがりの動きのどの形・できあがりの形から竹串のまわりに ±10° を 0.5° ずつ回した形。
+# v6 では、揺れると玉と腕が前の壁に当たった（エンジンの v7 の検品で見つけた。この試験の v6 の版は帯と頭が穴を通るかだけを見て、見落とした）
+FLOOR = 0.5
+
+
+def gaps(mats, at):
+    """Returns (腕の空き, 玉の空き, 帯と頭が穴の縁から離れる最小, 頭が穴を通るか, 頭が壁の外にある離れの最小, 帯が壁を横切る数)。"""
+    wm = mats["body"][wall]
+    c, n = apply(wm, (hx, hy)), normal_of(wm)
+    inward = lambda q: -dot(sub(q, c), n)
+    arm = min(inward(q) for i, m in mats["drop"].items() for q in pts("drop", i, m))
+    far, crossed = 0.0, {"strip": 0, "head": 0}
+    for key in ("strip", "head"):
+        for i, m in mats[key].items():
+            q = pts(key, i, m)
+            for a, b in zip(q, q[1:]):
+                sa, sb = dot(sub(a, c), n), dot(sub(b, c), n)
+                if sa * sb < 0:
+                    x = tuple(u + (v - u) * sa / (sa - sb) for u, v in zip(a, b))
+                    far, crossed[key] = max(far, math.dist(x, c)), crossed[key] + 1
+    outside = min(-inward(q) for i, m in mats["head"].items() for q in pts("head", i, m))
+    return arm, inward(at) - r, hr - far, crossed["head"] > 0, outside, crossed["strip"]
+
+
+shapes = [("できあがり", M, ball)]
+for k, got in enumerate(doc["finale"]["poses"]):
+    shapes.append((f"できあがりの動き {k}", {key: {int(i): rows_of(m) for i, m in mine["panels"].items()} for key, mine in got["parts"].items()}, got["balls"]["clay"]["at"]))
+for k in range(-20, 21):
+    turn = assembly.rotate_axis(tuple(s), sub(e, s), k * 0.5)
+    mats = {key: ({i: assembly.mul(turn, m) for i, m in ms.items()} if key in ("strip", "head", "drop") else ms) for key, ms in M.items()}
+    shapes.append((f"{k * 0.5:+.1f}°", mats, apply(turn, ball)))
+least = [math.inf] * 3
+for name, mats, at in shapes:
+    arm, gap, hole, through, outside, strip = gaps(mats, at)
+    assert strip >= 2 and min(arm, gap, hole) >= FLOOR and (through or outside >= FLOOR), (name, arm, gap, hole, through, outside, strip)
+    least = [min(a, b) for a, b in zip(least, (arm, gap, hole))]
+assert len(shapes) == 1 + len(doc["finale"]["poses"]) + 41, len(shapes)
 
 # 脚: 角筒の色の面が外。横の糊代は角筒の面に寝て、上の 2 つの糊代は刷った面が胴の底を向く（胴の底に貼れる）
 floor = next(i for i, sh in enumerate(body.panels) if abs(dot(normal_of(M["body"][i]), (0, 1, 0)) - 1) < 1e-6)  # 刷った面が下（外）を向く底
@@ -201,7 +214,8 @@ html = kumitate._block_html(T, kumitate._key(T))
 assert html.count('class="rt-table"') == 2 and html.count('<circle class="rt-plug"') == 2  # 紙と道具の層・丸い切れ端の表と裏
 assert re.search(r'class="rt-plug" cx="[^"]+" cy="[^"]+" r="9.00" fill="#cc3326"', html), "切れ端の色が首の穴の赤い縁の色でない"
 drop = re.findall(r'<svg class="rt-p" data-p="drop:0".*?</svg>', html, re.S)[0]
-assert [t for t in re.findall(r">([^<>]+)</text>", drop)] == [t for t, _, _ in bench.sheets["drop"].part.label_lines] == ["5 重", "り", "の", "腕"]
+lines = [t for t, _, _ in bench.sheets["drop"].part.label_lines]
+assert [t for t in re.findall(r">([^<>]+)</text>", drop)] == lines and "".join(lines).replace(" ", "") == "5重りの腕", lines
 still = kumitate.still(T)
 assert "<script" not in still and still.count('<svg style="transform:matrix3d(') == 2 * sum(len(s.panels) for s in bench.sheets.values())
 assert 'rt-rod rt-axle" style="opacity:1' in still and f'aria-label="{kumitate.DONE}"' in still
@@ -236,8 +250,8 @@ try:
     assembly_json.DIR = pathlib.Path(tempfile.mkdtemp())
     bad = copy.deepcopy(doc)
     next(jp for jp in bad["parts"] if jp["key"] == "body")["round_cuts"][0][0] += 1
-    assembly_json.path_of("tora-v6").write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+    assembly_json.path_of("tora-v7").write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
     assert assembly.assemble(T) is None
 finally:
     assembly_json.DIR = keep
-print("ok 虎 v6 の作り方の 3D（エンジンの JSON）。写しの照らし・段と文・できあがりの形・見せ方・頁・崩し")
+print("ok 虎 v7 の作り方の 3D（エンジンの JSON）。写しの照らし・段と文・できあがりの形・見せ方・頁・崩し")

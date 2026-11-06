@@ -67,7 +67,7 @@
 | `src/web/failure_log.py` | 作る側が読む失敗の記録（stderr）。道・役・型・トレースバックを出し、学ぶ人の書いた文と合言葉は出さない |
 | `src/web/kumitate.py` | 手順どおりに組み立てる絵（型紙の頁と /toy/<sid>/kumitate）。`src/omochae/assembly.py` が組んだ途中の形を、外の部品なしの CSS の立体で動かす（J-033） |
 | `src/omochae/assembly_json.py` | 型紙エンジン（paper-to-toy）が出す作り方の 3D の JSON（形 omochae-assembly-3d/1）を、組み立ての頁が読む形にする（決定 2026-11-07: エンジンが JSON で出し、サイトは読んで描く）。置き場は `data/kumitate/<組の名>.json`（エンジンの出力を写す）。今の組の JSON があれば `assembly.assemble` がそれを読み、無ければ前の組の書き方で組む。絵と刷った線はサイトの部品から描き、JSON の部品の外形・穴・折り線・面の広さ・寸法がサイトの紙と違えば組み立てを出さない。手順の文はサイトの文で、JSON の段とは数を合わせる |
-| `data/kumitate/` | 今の組の作り方の 3D の JSON（型紙エンジンの `python -m omochae.assembly3d` の出力を写す。組の名.json。出所の commit は JSON の engine）。今は虎 tora-v6。頁（`src/web/kumitate.py`）は、刷った紙を机の面の層に置いて描き、できあがりの止まった形の口（`still`。JS なし）と、作業の頁が段ごとに描く材料の口（`scene`）を持つ。道具の道・切れ端・重なる面のずらしは、エンジンとの決めでサイトが決める（`assembly_json._fill`）。動いているサイトに JSON を置いた時は立て直す（頁は組み立てを出せるかを寸法と組ごとに覚える） |
+| `data/kumitate/` | 今の組の作り方の 3D の JSON（型紙エンジンの `python -m omochae.assembly3d` の出力を写す。組の名.json。出所の commit は JSON の engine）。今は虎 tora-v7（v6 は刷らずに飛ばした）。頁（`src/web/kumitate.py`）は、刷った紙を机の面の層に置いて描き、できあがりの止まった形の口（`still`。JS なし）と、作業の頁が段ごとに描く材料の口（`scene`）を持つ。道具の道・切れ端・重なる面のずらしは、エンジンとの決めでサイトが決める（`assembly_json._fill`）。動いているサイトに JSON を置いた時は立て直す（頁は組み立てを出せるかを寸法と組ごとに覚える） |
 | `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（必須 2 を大きく、試作をジャンルの見出しごとに札で） |
 | `src/web/genre.py` | おもちゃのジャンル（作った後の楽しみ方の 2 段。大きい側 かざる・あそぶ・うごく、中の 8 つ）。玩具の雛形から表で引き、合わない玩具（凧の 3 本と、本人が あそぶ と決めた浮き物の 5 つ）だけを例外に置く。大きい側と中の入れ先は 1 か所の表（research/36） |
 | `src/web/about.py` | 序（コンセプト・『江都二色』の解説・動機）。文面は本人の言葉の引用と書誌の値だけ。採否は本人 |
