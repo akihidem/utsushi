@@ -77,10 +77,14 @@ for look in ("tenji", "zine"):
     assert all(e["text"] in hero for e in genga.songs(src(G))) and genga.QUOTE in hero, "確かめた歌が絵の後に"
     assert 'class="genga-box"' not in hero, "頁の片側の全体の記録には枠を出さない"
     assert f'<a href="/picture/{G}/page">{genga_words.BIG}</a>' in hero, "玩具の頁は絵そのものへ"
+    assert f'<a class="genga-pic" href="/picture/{G}/page"' in hero, "絵そのものも押せる（UX の見直し）"
+    assert 'class="genga-crop"' not in hero, "枠の無い玩具（頁の片側の全体）には切り抜きを置かない"
     assert "background-image:url(/picture/" not in hero, "頭に切り抜きを敷かない"
     assert f'alt="{src(G)["toy"]} {genga_words.HEAD}"' in hero and "の載る頁" not in hero, "絵の読み上げは玩具の名と本人が採った見出し（新しい字を足さない）"
 plain = toy_page(PLAIN, "tenji")
 hero = plain[plain.index('class="hero"'):plain.index('id="kasetsu"')]
+if (ROOT / "out/sources" / f"{PLAIN}.jpg").exists():
+    assert f'<span class="genga-crop"><img src="/picture/{PLAIN}"' in hero, "頁を分け合う玩具は、狭い幅で切り抜きを右に"
 assert 'class="genga-box" style="left:' in hero and 'class="genga-songs"' not in hero and genga.QUOTE not in hero, "読みの無い玩具は字の歌も断りも出さない（本人の決定 11-06）"
 b = genga.box(src(PLAIN))
 assert b and all(0 <= v <= 100 for v in b) and b[2] * b[3] / 100 < genga.WHOLE
@@ -91,11 +95,15 @@ narrow = css[css.index("@media (max-width:820px)"):]
 assert "calc(var(--genga-h) * var(--genga-r))" in narrow and "writing-mode:horizontal-tb" in narrow, "狭い幅は絵の高さに上限、歌は絵の真下に横書き"
 assert 'style="--genga-r:0.6024"' in hero or "--genga-r:" in hero, "包みの幅を絵の比から決める（枠の % がずれない）"
 assert "writing-mode:vertical-rl" in css[:css.index("@media")], "広い幅は絵の横に縦書き"
+# UX の見直し（幅 390）: 押せる所は 44px 以上。作りながら見る頁の畳みに余白と頁の皮の釦。英語の頁にも高さの上限。狭い幅だけ切り抜きを右に
+assert ".genga-cap a{display:inline-flex;align-items:center;min-height:44px" in css
+assert ".stage .genga-fold{padding:0 16px}" in css and re.search(r"\.genga-fold \[data-big\]\{[^}]*min-height:44px[^}]*border:1px solid var\(--accent\)", css)
+assert ".genga-plain .genga-pic" in narrow and ".genga-head .genga-crop{display:block}" in narrow and ".genga-crop{display:none" in css[:css.index("@media")]
 
 # 3. 作る時の畳み
 fold = genga.fold(G)
 assert f'<details class="genga genga-fold"><summary>{genga_words.HEAD}</summary>' in fold
-assert f'src="/picture/{G}/page"' in fold and 'loading="lazy"' in fold
+assert f'src="/picture/{G}/page"' in fold and 'loading="lazy"' in fold and "querySelector('.genga-pic')" in fold, "畳みの中の絵を押しても重ねて開く"
 assert "data-big" in fold and "<dialog" in fold and f'<a href="/picture/{G}/page"' not in fold, "頁を離れずに重ねて出す"
 assert "genga.fold(sid)" in inspect.getsource(tsukuru.page) and "genga.fold(sid)" in inspect.getsource(techo_site.page)
 
@@ -104,7 +112,7 @@ en_page = en.toy_page(G, "tenji") if "look" in inspect.signature(en.toy_page).pa
 assert f'src="/picture/{G}/page"' in en_page and 'alt="Picture from the book"' in en_page and genga_words.HEAD not in en_page and 'class="genga-songs"' not in en_page
 assert "/page" not in en._picture(G), "英語の一覧の札は今の額のまま"
 body = kuzushi.page(PLAIN)
-assert f'src="/picture/{PLAIN}/page"' in body and "crop" not in body.split("<h1>", 1)[1].split("name=\"mine\"", 1)[0].split('class="genga', 1)[0][-200:], "歌の箱の無い玩具は、頁の全体を歌の箱で切らずに出す（くずし字の頁）"
+assert f'src="/picture/{PLAIN}/page"' in body and '<div class="crop"' not in body, "歌の箱の無い玩具は、頁の全体を歌の箱で切らずに出す（くずし字の頁）"
 crop = ROOT / "out/sources" / f"{PLAIN}.jpg"
 if crop.exists():
     w, h = genga.size(crop)

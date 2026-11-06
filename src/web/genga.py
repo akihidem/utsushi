@@ -38,9 +38,16 @@ STYLE = """
 .genga-head .genga-songs{writing-mode:vertical-rl;max-height:min(70vh,620px);font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .genga-cap{grid-column:1/-1;font-size:12px;color:var(--mute);letter-spacing:.1em;line-height:1.9;margin:0}
 .genga-cap p{margin:0 0 4px}
-.genga-cap a{margin-right:1.2em}
+.genga-cap a{display:inline-flex;align-items:center;min-height:44px;margin-right:1.2em}
+a.genga-pic{cursor:zoom-in}
+.genga-row{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.genga-crop{display:none;flex:1 1 0;min-width:0;line-height:0}
+.genga-crop img{display:block;width:100%;height:auto;max-height:var(--genga-h);object-fit:contain;object-position:left top}
 .genga-fold{margin:10px 0}
 .genga-fold summary{cursor:pointer;min-height:44px;display:flex;align-items:center;letter-spacing:.12em}
+.stage .genga-fold{padding:0 16px}
+.genga-fold .genga-pic{cursor:zoom-in}
+.genga-fold [data-big]{font:inherit;font-size:15px;letter-spacing:.08em;min-height:44px;padding:0 18px;margin:8px 0;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--fg);cursor:pointer}
 .genga-fold .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)))}
 .genga-fold .genga-songs{font-size:15px;line-height:2;margin:8px 0}
 .genga-dlg{border:0;padding:0;background:transparent;max-width:98vw;max-height:98vh}
@@ -48,14 +55,16 @@ STYLE = """
 .genga-dlg img{display:block;max-width:98vw;max-height:98vh;width:auto;height:auto}
 @media (max-width:820px){
 .genga-head{grid-template-columns:minmax(0,1fr)}
-.genga-head .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)))}
+.genga-head .genga-pic,.genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)));flex:0 0 auto}
+.genga-head .genga-crop{display:block}
 .genga-head .genga-songs{writing-mode:horizontal-tb;max-height:none;font-size:16px;line-height:2}
 }
 """
 
-# 作る時の畳みの「大きく見る」。頁を離れずに重ねて出し、押すか Esc で閉じる
+# 作る時の畳みの「大きく見る」。頁を離れずに重ねて出し、押すか Esc で閉じる。畳みの中の絵を押しても同じに開く
 SCRIPT = """<script>(()=>{document.querySelectorAll('.genga-fold [data-big]').forEach(b=>{const d=b.parentElement.querySelector('dialog');
-if(!d||!d.showModal){b.hidden=true;return}b.addEventListener('click',()=>d.showModal());d.addEventListener('click',()=>d.close())})})()</script>"""
+if(!d||!d.showModal){b.hidden=true;return}const open=()=>d.showModal();b.addEventListener('click',open);
+const p=b.parentElement.querySelector('.genga-pic');if(p)p.addEventListener('click',open);d.addEventListener('click',()=>d.close())})})()</script>"""
 
 
 def alt(src):
@@ -102,9 +111,11 @@ def songs(src):
     return [e for e in labels.source_lines(src) if e.get("checked_by")]
 
 
-def _pic(sid, src, alt, lazy=False):
-    """頁の全体の絵と玩具の所の枠。頁の写しが無ければ玩具の写し（比は保つ）。どちらも無ければ空。"""
+def _pic(sid, src, alt, lazy=False, href=None):
+    """頁の全体の絵と玩具の所の枠。頁の写しが無ければ玩具の写し（比は保つ）。どちらも無ければ空。
+    href があれば絵そのものを、そのリンクにする（押せば大きく見られる。字のリンクと同じ所）。"""
     load = ' loading="lazy"' if lazy else ""
+    tag, link = ("a", f' href="{esc(href)}"') if href else ("span", "")
     page = page_file(src)
     if page.exists():
         w, h = size(page)
@@ -112,8 +123,8 @@ def _pic(sid, src, alt, lazy=False):
         frame = (f'<span class="genga-box" style="left:{b[0]:.2f}%;top:{b[1]:.2f}%;width:{b[2]:.2f}%;height:{b[3]:.2f}%" aria-hidden="true"></span>'
                  if b else "")
         # 包みの幅を絵の比から決める（--genga-r）。高さの上限で絵が細くなっても、包みと絵の大きさが同じなので、枠の % がずれない
-        return (f'<span class="genga-pic" style="--genga-r:{w / h:.4f}"><img src="/picture/{esc(sid)}/page" width="{w}" height="{h}" alt="{esc(alt)}"{load}>'
-                f'{frame}</span>'), True
+        return (f'<{tag} class="genga-pic"{link} style="--genga-r:{w / h:.4f}"><img src="/picture/{esc(sid)}/page" width="{w}" height="{h}" alt="{esc(alt)}"{load}>'
+                f'{frame}</{tag}>'), True
     crop = ROOT / "out/sources" / f"{sid}.jpg"
     if crop.exists():
         w, h = size(crop)
@@ -131,10 +142,21 @@ def _songs(src):
     return f'<div class="genga-songs">{body}</div>', f'<p class="meta">{esc(QUOTE + who)}</p>'
 
 
+def crop(sid, src):
+    """頁を分け合う玩具（枠がある玩具）の今の切り抜き。狭い幅で、頁の絵の右の空きに小さく置く（UX の見直し・統括の決め 11-06）。
+    頁の絵の中では玩具がとても小さくなるため。字は足さない（読み上げは隣の頁の絵と同じ玩具なので空）。"""
+    path = ROOT / "out/sources" / f"{sid}.jpg"
+    if not box(src) or not path.exists():
+        return ""
+    w, h = size(path)
+    return f'<span class="genga-crop"><img src="/picture/{esc(sid)}" width="{w}" height="{h}" alt="" loading="lazy"></span>'
+
+
 def head(sid, src=None):
-    """玩具の頁の頭。絵 → 歌の順（広い幅は横に並ぶ）。「大きく見る」は頁の全体の絵そのものへ。"""
+    """玩具の頁の頭。絵 → 歌の順（広い幅は横に並ぶ）。「大きく見る」と絵そのものは、頁の全体の絵へ。"""
     src = src or _source(sid)
-    pic, whole = _pic(sid, src, alt(src))
+    pic, whole = _pic(sid, src, alt(src), href=f"/picture/{sid}/page" if page_file(src).exists() else None)
+    pic = f'<div class="genga-row">{pic}{crop(sid, src) if whole else ""}</div>' if pic else ""
     big = f'<a href="/picture/{esc(sid)}/page">{esc(BIG)}</a>' if whole else ""
     lines, mark = _songs(src)
     # 印の 1 行は絵の下の行に置く。歌の横の欄に置くと、横書きの字の幅で欄が広がり、広い幅で絵が細くなった
@@ -161,4 +183,4 @@ def fold(sid, src=None):
 def plain(sid, alt):
     """絵だけ（英語の頁）。歌の字も新しい字も出さない。"""
     pic, _ = _pic(sid, _source(sid), alt)
-    return f'<style>{STYLE}</style><figure class="genga">{pic}</figure>' if pic else ""
+    return f'<style>{STYLE}</style><figure class="genga genga-plain">{pic}</figure>' if pic else ""
