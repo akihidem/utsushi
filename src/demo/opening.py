@@ -28,7 +28,7 @@ from demo.flip import FPS, H, ROOT, SUMI, W, contact_sheet, ease, render, text
 QUESTION = "こんなおもちゃを知っていますか？"
 PLACEHOLDER = "（ここに職人のおもちゃの動画が入ります）"
 VIDEO = ROOT / "out/demo/opening/toys.mp4"     # 職人のおもちゃの動画の置き場（git に入れない）
-DURATION = 8.6                                 # word_touch を戻す秒のために 12 秒から縮めた（本人の決定 11-06「同じ秒だけ他を削って」）
+DURATION = 11.6                                # word_touch を戻す秒のために 8.6 秒にし、場面 5 の字幕を消して浮いた 3 秒で戻した（本人の決定 11-06）
 MIN_WIDTH = 1280
 WHITE = (255, 255, 255)
 VIDEO_BOX = (178, 180, 1742, 1060)             # 動画を置く枠。16:9 で、上に問いの字の余白

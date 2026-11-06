@@ -17,7 +17,8 @@ readme = scene5.TRIALS.read_text(encoding="utf-8")
 # 合図の表は時刻の順で、場面の長さの中
 spans = list(scene5.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene5.DURATION
-assert scene5.DURATION == 8.0 and scene5.Scene5.duration == scene5.DURATION
+assert scene5.DURATION == 5.0 and scene5.Scene5.duration == scene5.DURATION
+assert scene5.CAPTION == ("紙で作って、動いた。",), "2 つ目の字幕は消した（本人の決定 11-06）"
 assert all(0 <= t <= scene5.DURATION for t in scene5.SHEET_TIMES)
 
 # 既定の写真は確かめ表と一致する。表を自前でも読み、scene5 の読み方と食い違わない事も見る
@@ -44,12 +45,12 @@ if "p06" not in scene5.allowed_photos():
     assert scene5.resolve_photos("p06") is None
 assert scene5.resolve_photos("") == []
 
-# 字幕の言葉は README が言う事だけ。結果は「わからない」と正直に
+# 字幕の言葉は README が言う事だけ。「わからない」の字幕は本人の決定（11-06）で消した（型紙 1 枚の形では案がいくつもあるように聞こえるため）。
+# 記録の答えは README に残っている
 assert "わからない" in readme and "動画と写真がどちらの仮説か分からないため" in readme and "本人の答え" in readme
-assert "「わからない」" in scene5.CAPTION[1]
-# 1 度に 1 かたまり、1 秒 5 字以下（本人の方針 11-05）
-assert scene5.CUES["line1"][0] - scene5.CUES["line0"][0] >= len(scene5.CAPTION[0]) / 5
-assert scene5.DURATION - scene5.CUES["line1"][0] >= len(scene5.CAPTION[1]) / 5
+assert not any("わからない" in c for c in scene5.CAPTION)
+# 1 かたまり、1 秒 5 字以下（本人の方針 11-05）。現れてから場面の終わりまで読める
+assert scene5.DURATION - scene5.CUES["line0"][0] >= len(scene5.CAPTION[0]) / 5
 # 既定の写真は確かめ表で通った物だけ。多く見せない
 assert set(scene5.SHOWN) <= set(scene5.PHOTOS) and len(scene5.SHOWN) <= 3
 
@@ -66,14 +67,14 @@ def spy(fp, *a, **k):
 Image.open = spy
 try:
     scene = scene5.Scene5(scene5.resolve_photos("") or ())
-    for t in (0.5, 2.2, 3.0, 4.4, 6.0, 7.9):
+    for t in (0.5, 2.2, 3.0, 3.6, 4.4, 4.9):
         a, b = scene.frame(t), scene.frame(t)
         assert a.size == (flip.W, flip.H) and a.tobytes() == b.tobytes(), t
 finally:
     Image.open = real_open
 assert not any("photos" in p for p in opened), opened
-# 字幕は入れ替わる（2 つのかたまりが重ならない）
-assert scene.frame(3.0).tobytes() != scene.frame(6.0).tobytes()
+# 字幕が現れる（1 かたまり。現れる前と後で絵が変わる）
+assert scene.frame(1.0).tobytes() != scene.frame(3.0).tobytes()
 
 # 写真が渡された時だけ枠の中が変わる（偽の写真で。repo の写真は開かない）
 with tempfile.TemporaryDirectory() as tmp:

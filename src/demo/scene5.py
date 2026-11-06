@@ -28,7 +28,7 @@ from PIL import Image, ImageDraw, ImageOps
 
 from demo.flip import H, PAPER, ROOT, SUMI, W, contact_sheet, ease, fade, render, text
 
-DURATION = 8.0
+DURATION = 5.0  # 2 つ目の字幕を消した（本人の決定 11-06）。浮いた 3 秒は始まりの場面へ戻した
 TRIALS = ROOT / "docs/process/trials/README.md"
 PHOTO_DIR = ROOT / "docs/process/trials/photos/20261104"
 REVIEW = PHOTO_DIR / "review.md"
@@ -45,14 +45,14 @@ CUES = {
     "title_in": (0.0, 1.0),     # 写真が現れる
     "photo1": (1.6, 2.6),       # 次の写真へ溶ける
     "line0": (2.0, 2.5),        # 字幕の前半
-    "photo2": (3.4, 4.4),       # 動いた紙の写真へ溶ける
-    "line1": (4.2, 4.7),        # 字幕の後半。8 秒まで止めて読ませる
+    "photo2": (3.0, 3.8),       # 動いた紙の写真へ溶ける。5 秒まで止めて見せる
 }
-SHEET_TIMES = (0.6, 1.5, 2.2, 3.0, 3.8, 4.4, 5.2, 6.5, 7.8)
+SHEET_TIMES = (0.6, 1.5, 2.2, 3.0, 3.6, 4.2, 4.9)
 # 切る → 組む → 動いた、の順に 3 枚。多く見せると速いカットになるので減らした。縦の写真でそろえ、溶ける時に形が崩れないようにする。確かめ表で通った物だけ（resolve_photos）。
 SHOWN = ("p05", "p02", "p07")
 # 台本（plan.md の 4）の字幕。1 かたまりずつ出す。
-CAPTION = ("紙で作って、動いた。", "どの仮説の紙かは記録で「わからない」")
+# 本人の決定（11-06）: 2 つ目の字幕「どの仮説の紙かは記録で「わからない」」は消す。型紙 1 枚の形では案がいくつもあるように聞こえ、読む負担にもなるため
+CAPTION = ("紙で作って、動いた。",)
 FRAME_BOX = (360, 56, 1560, 856)   # 写真の枠。下に字幕の余白
 
 def phase(t, cue):
@@ -115,14 +115,10 @@ class Scene5:
                 sheet = Image.blend(Image.new("RGB", sheet.size, PAPER), sheet, a_in)
             img.paste(sheet, FRAME_BOX[:2])
         draw = ImageDraw.Draw(img)
-        # 字幕は 1 かたまりずつ。前が消えてから次が現れる。
-        c0, c1 = CUES["line0"][0], CUES["line1"][0]
-        v0 = ease((t - c0) / 0.5) * (1 - ease((t - (c1 - 0.5)) / 0.5))
-        v1 = ease((t - c1) / 0.5)
+        # 字幕は 1 かたまり。現れたら場面の終わり（溶け）まで止めて読ませる。
+        v0 = ease((t - CUES["line0"][0]) / 0.5)
         if v0 > 0:
             text(draw, (W // 2, 900), CAPTION[0], 52, fade(SUMI, v0), False, "ma")
-        if v1 > 0:
-            text(draw, (W // 2, 900), CAPTION[1], 52, fade(SUMI, v1), False, "ma")
         return img
 
 
