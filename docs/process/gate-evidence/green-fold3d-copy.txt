@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_fold3d.py
+# commit: 9b3fb5c7（回した時の HEAD）
+ok
+rc=0
