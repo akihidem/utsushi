@@ -250,9 +250,18 @@ class _Screen:
         try:
             conn.request(method, path, body, headers)
             r = conn.getresponse()
+            self._keep(r.headers.get_all("Set-Cookie") or [])
             return r.status, r.read().decode("utf-8", "replace")
         finally:
             conn.close()
+
+    def _keep(self, lines):
+        """ブラウザと同じに、受け取った cookie を持ち続ける（記録を残した画面の鍵など）。"""
+        jar = dict(p.strip().partition("=")[::2] for p in self.cookie.split(";") if p.strip())
+        for line in lines:
+            name, _, value = line.split(";", 1)[0].partition("=")
+            jar.pop(name.strip(), None) if "Max-Age=0" in line else jar.update({name.strip(): value.strip()})
+        self.cookie = "; ".join(f"{k}={v}" for k, v in jar.items())
 
     def get(self, path):
         return self._open("GET", path)
@@ -295,6 +304,7 @@ def _walk_own_paper(c, port):
         raise Failed(f"工夫と考えの字が、自分の紙の記録に結ばれない（{sorted(said)}）")
     if first in mine.get(path)[1]:
         raise Failed("記録の後も、自分の紙が開いたまま（次の人に見える）")
+    c.own_cookie = mine.cookie  # 説明は記録を残した画面からだけ受ける。その鍵を次の段へ渡す
     return rid
 
 

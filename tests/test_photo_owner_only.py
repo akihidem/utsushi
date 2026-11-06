@@ -61,10 +61,11 @@ class Screen:
         r = c.getresponse()
         data = r.read()
         c.close()
-        self.last = r.getheader("Set-Cookie", "")
-        if self.last:
-            name, _, value = self.last.split(";", 1)[0].partition("=")
-            if value and "Max-Age=0" not in self.last:
+        lines = r.headers.get_all("Set-Cookie") or []  # 記録の後は記録の鍵と写真の鍵の 2 行が来る。ブラウザと同じに全部読む
+        self.last = "\n".join(lines)
+        for line in lines:
+            name, _, value = line.split(";", 1)[0].partition("=")
+            if value and "Max-Age=0" not in line:
                 self.cookie[name] = value
             else:
                 self.cookie.pop(name, None)

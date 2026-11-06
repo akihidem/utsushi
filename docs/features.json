@@ -416,6 +416,7 @@
    "src/omochae/talk_log.py",
    "src/web/hanasu.py",
    "tests/test_hanasu.py",
+   "tests/test_record_owner.py",
    "tests/test_mic_seen.py",
    "tests/test_who_fresh.py"
   ],

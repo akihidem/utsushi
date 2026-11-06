@@ -24,6 +24,11 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{port}"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+JAR = urllib.request.HTTPCookieProcessor()
+urllib.request.install_opener(urllib.request.build_opener(JAR))
+
+
 def req(path, data=None, ctype="application/x-www-form-urlencoded", origin=base):
     body = urllib.parse.urlencode(data).encode() if isinstance(data, dict) else data
     r = urllib.request.Request(base + path, data=body, method="POST" if body is not None else "GET", headers={"Content-Type": ctype, "Origin": origin})
@@ -67,11 +72,15 @@ jpeg = photo.getvalue()[:2] + b"\xff\xe1\x00\x08EXIF!!" + photo.getvalue()[2:]
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg")[0] == 201
 saved = (media_dir(rid) / "m1.jpg").read_bytes()
 assert b"EXIF" not in saved and saved == strip_jpeg_meta(jpeg)
-assert req(f"/record/{rid}/media/m1.jpg")[0] == 404, "確認の前の写真は、上げた本人の画面にだけ（tests/test_photo_owner_only.py）"
+try:  # 鍵を持たない別の人の画面（この試験の req は、上げた本人のブラウザとして cookie を持つ）
+    urllib.request.build_opener().open(base + f"/record/{rid}/media/m1.jpg")
+    raise AssertionError("確認の前の写真は、上げた本人の画面にだけ（tests/test_photo_owner_only.py）")
+except urllib.error.HTTPError as e:
+    assert e.code == 404, e.code
 assert req(f"/record/{rid}/media", b"x", "text/html")[0] == 422, "写真と動画の型だけ"
 assert req(f"/record/{rid}/media", jpeg, "image/jpeg", origin="http://evil.example")[0] == 403
 assert req("/record/R-9999/media", jpeg, "image/jpeg")[0] == 422, "記録の無い所には置かない"
-assert "m1.jpg" not in req(f"/toy/{G}/techo")[1].decode(), "別の人の手帖に確認の前の写真を出さない"
+assert "m1.jpg" not in urllib.request.build_opener().open(base + f"/toy/{G}/techo").read().decode(), "別の人の手帖に確認の前の写真を出さない"
 # 次の版（本人の問いの (7)）: 説明が先、数でない値は断る、床に通った時だけ版 2 を刷る
 code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "本人"})
 assert code == 422 and "先に説明を書く" in body.decode()
@@ -91,7 +100,7 @@ assert ("H-A", 1) in conf and conf[("H-A", 2)][-1]["by"] == "本人" and conf[("
 page = req(f"/toy/{G}/techo")[1].decode()
 assert "試した後の紙" in page and "次の版を作る" in page and 'name="back" value="techo"' in page
 r2 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた"})[1])["id"]
-opener = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
+opener = urllib.request.build_opener(JAR, type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
 x = urllib.request.Request(base + f"/record/{r2}/explain", data=urllib.parse.urlencode({"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"}).encode(),
                            headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
 try:
