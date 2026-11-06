@@ -443,7 +443,8 @@
    "src/omochae/instructions.py",
    "src/omochae/render.py",
    "tests/test_techo_step.py",
-   "tests/test_photo_attach_walk.py"
+   "tests/test_photo_attach_walk.py",
+   "tests/test_landscape_fit.py"
   ],
   "unverified": "「のこす」の画面は声と動画が主で、字を打つ欄は畳んだ追加（本人の方針 11-05 19:45）。声の操作は作りながら見る頁のマイクにも同じ表で入れた。聞き続けるのは操作の言葉だけで、問いは「こまった」の後の 1 つ、工夫は最後の画面でマイクを押した後だけ受ける（本人の決定 11-06・案 2）。実際のブラウザ（Chromium）で、音声認識の口を差し替えた見本を使って歩いた。実機（iPhone・iPad）と本物の音声認識、字を読まずに通るかの人の確かめはまだ。手順の絵は段 1 で、折る順の 4 コマがあるのは御来迎だけ。ほかの雛形は手順の紙の図 1 枚を全部の手順で出す。断りは採られた文のまま（「話す」を押すと）で、「はじめる」に合わせた文は本人の確認待ちなので入れていない。声を字にする所（local か browser か）は本人の決定待ちで、今は話す口の既定のまま 「のこす」は、写真があって工夫の字が無い時、見た事の札の前に、玩具の頁で残した記録に足せるかを聞く（main の #443 の形）。実機のカメラでは確かめていない。"
  },
@@ -518,6 +519,7 @@
    "src/web/tsukuru.py",
    "tests/test_tsukuru.py",
    "tests/test_tsukuru_last_step.py",
+   "tests/test_landscape_fit.py",
    "src/omochae/making_log.py",
    "docs/process/research/30-kazasu-camera-choice.md"
   ],
