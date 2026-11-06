@@ -10,6 +10,7 @@ from shapely.affinity import rotate, translate
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
+from ._paper import paper_name
 from ..model import Failure, Part
 
 ID = "spin_toy"
@@ -514,7 +515,7 @@ def axis_stick(p):
 
 
 def bom(p):
-    paper = f"紙（厚さ 0.2mm 前後・{p['paper_gsm']}g/m² の見込み）"
+    paper = paper_name(p["paper_gsm"])
     why = "家庭のプリンタで刷って作るため"
     shape = p["shape"]
 
