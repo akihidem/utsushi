@@ -391,6 +391,11 @@ def tenji():
     body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
+    # 北斎漫画の縦読みの節（黒のジンの章の頭と同じ。本人の決定 11-06「ページは白案で統一します。黒案にだけある要素は白案に入れてください」）。
+    # 黒と同じく、玩具の章より先に「絵は動きを止めて残した」の筋を見せるため、題の間のすぐ後に置く。色は白の壁に合わせる
+    from .hokusai import scroll_section
+
+    body += scroll_section("tenji")
     # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
     body += fan_deck(ts) + ogi_slider() + all_toys("tj")
     for i, t in enumerate(ts, 1):
