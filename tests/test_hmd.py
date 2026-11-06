@@ -39,6 +39,16 @@ for sid in (G, T):
     for key in ("ArrowRight", "ArrowLeft", "PageDown", "PageUp"):
         assert key in hmd.SCRIPT, key
 
+# 本人の感想（11-06）: ゆっくり、1 手ごとに止める。「つぎ」は止まった手を先に進める
+assert "window.kumitateSlow=T.slow;window.kumitateHold=true;" in hmd.SCRIPT and hmd.SLOW >= 2
+assert "window.kumitateNext&&window.kumitateNext()" in hmd.SCRIPT and "kumitate-beat" in hmd.SCRIPT
+assert "window.kumitateNext=" in kumitate.SCRIPT and "window.kumitateSlow||1" in kumitate.SCRIPT and "window.kumitateHold" in kumitate.SCRIPT
+# 本人の追加（11-06）: カメラに重ねる頁。後ろのカメラ、映像は機械の中だけ（作りながら見る頁と同じ約束の字）
+cam = hmd.page(G, cam=True)
+assert '<video id="hmd-cam" playsinline muted autoplay></video>' in cam and 'id="hmd-camera"' in cam and hmd.PRIVACY in cam
+assert "facingMode:{ideal:'environment'}" in hmd.SCRIPT and "audio:false" in hmd.SCRIPT and "addEventListener('pagehide',off)" in hmd.SCRIPT
+assert '<video' not in hmd.page(G), "カメラは重ねる頁だけ"
+assert not re.search(r"fetch\(|XMLHttpRequest|sendBeacon|MediaRecorder|toDataURL|getImageData", hmd.SCRIPT), "映像を外へ送らない・残さない"
 assert not hmd.available("NDL-1187053-R0000004-L"), "組み立ての書き方が無い玩具は出さない"
 index = hmd.index()
 assert all(f'href="/hmd/{sid}"' in index for sid in (G, T))

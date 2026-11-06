@@ -12,6 +12,10 @@
 - 開いたら手順 1 から始める。できあがりで「つぎ」を言うと、はじめから組み立て直す。
 - 暗い地にする。透けて見える HMD の画面では、明るい地が目に強いため（試作の読みで、機械では確かめていない）。
 - 文は全部、試作の文（本人の確認の前）。採られた字（つぎ・もどる・もう一回・はじめる）だけは手帖と同じ。
+- 本人の感想（11-06）「折る操作などが早く再生されどうしたらいいかわからない」: 動きを SLOW 倍ゆっくりにし、1 手（折る・切るの
+  1 動き）ごとに止める。「つぎ」は、止まった手があれば次の手へ、手順の終わりなら次の手順へ進む。
+- 本人の追加（11-06）「普通にiPhoneのカメラのオーバーレイでもできるようにしたら」: /hmd/<玩具>/cam で、後ろのカメラの映像の上に
+  手順の字と 3D を重ねる。映像は機械の中だけで、送りも残しもしない（作りながら見る頁の約束と同じ字）。
 """
 import json
 
@@ -19,6 +23,13 @@ from omochae import hypotheses
 
 from . import kumitate, skin
 from .skin import esc
+from .tsukuru import PRIVACY
+
+SLOW = 2.5  # 組み立ての動きを何倍ゆっくりにするか（本人の感想 11-06）
+CAMERA, CAMERA_OFF = "カメラを出す", "カメラを止める"
+NO_CAMERA = "この機械ではカメラを使えません。"
+HOLD = "止まっています。「つぎ」で次の手へ。"  # 1 手ごとに止まった時の案内
+CAM_LINK = "カメラに重ねる（iPhone 向け）"
 
 TOYS = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")  # 組み立ての書き方がある玩具（御来迎・虎）
 TITLE = "作業しながら見る（試作）"
@@ -63,6 +74,15 @@ body.hmd-page{background:#14161a;color:#f3efe6}
 @media (max-aspect-ratio:1/1){.hmd-k{grid-template-columns:minmax(0,1fr);grid-template-areas:"text" "stage" "acts" "note"}.hmd-acts{flex-direction:row;flex-wrap:wrap}.hmd-acts button{flex:1 1 40%}}
 @media (prefers-reduced-motion:reduce){.hmd-acts button{transition:none}}
 .hmd-list{display:flex;flex-wrap:wrap;gap:18px;margin:18px 0}
+.hmd-hold{color:#ffe08a;font-size:clamp(16px,1.4vw,24px);min-height:1.4em;margin:0}
+body.hmd-cam{background:#000}
+#hmd-cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#000}
+body.hmd-cam .hmd{position:relative}
+body.hmd-cam .hmd-k #rt-text{background:rgba(0,0,0,.55);padding:8px 14px;border-radius:10px;text-shadow:0 1px 3px #000}
+body.hmd-cam .hmd-top{background:rgba(0,0,0,.45);padding:6px 12px;border-radius:10px}
+body.hmd-cam .hmd-k .rt-stage{--rt-table:transparent;background:rgba(20,22,26,.35);border-color:rgba(255,255,255,.25)}
+body.hmd-cam .hmd-acts button{background:rgba(34,38,45,.8)}
+body.hmd-cam .hmd-note{background:rgba(0,0,0,.55);padding:6px 10px;border-radius:8px}
 .hmd-list a{display:inline-flex;align-items:center;min-height:96px;padding:0 34px;font-size:clamp(26px,2.6vw,42px);border:2px solid #7fd1a8;border-radius:14px;color:#f3efe6;text-decoration:none}
 """
 
@@ -73,8 +93,11 @@ const mic=$('hmd-mic'),heard=$('hmd-heard'),listen=$('hmd-listen'),shown=$('hmd-
 const T=JSON.parse($('hmd-words').textContent);
 if(!next||!prev)return;
 const at=()=>Number(stage.dataset.at||0),done=()=>!count.textContent;
+window.kumitateSlow=T.slow;window.kumitateHold=true;
+const hold=$('hmd-hold');
+document.addEventListener('kumitate-beat',e=>{const d=e.detail;hold.textContent=d.beat<d.beats?`${d.beat} / ${d.beats} 手　${T.hold}`:''});
 const act={
- next:()=>next.click(),
+ next:()=>{if(window.kumitateNext&&window.kumitateNext())return;next.click()},
  prev:()=>{if(!prev.disabled)prev.click()},
  again:()=>{if(done())return;if(prev.disabled){next.click();prev.click()}else{prev.click();next.click()}},
  top:()=>{if(done()){next.click();return}let n=0;while(!prev.disabled&&n++<99)prev.click()},
@@ -116,6 +139,14 @@ function startListen(){
  on=true;say(T.on,'on');listen.textContent=T.stop;listen.setAttribute('aria-pressed','true')}
 listen.addEventListener('click',()=>on?stopListen():startListen());
 if(!SR)say(T.none,'none');
+const cam=$('hmd-cam'),camBtn=$('hmd-camera'),camNote=$('hmd-cam-note');
+if(cam&&camBtn){let tracks=null;
+ const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera};
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camBtn.hidden=true;camNote.textContent=T.nocamera}
+ camBtn.addEventListener('click',async()=>{if(tracks){off();return}
+  try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});tracks=s.getTracks();cam.srcObject=s;
+   document.body.classList.add('cam-on');camBtn.textContent=T.cameraoff}catch(_){camNote.textContent=T.nocamera}});
+ addEventListener('pagehide',off);document.addEventListener('visibilitychange',()=>{if(document.hidden)off()})}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&on)stopListen()});
 })()</script>"""
 
@@ -124,23 +155,31 @@ def available(sid):
     return sid in TOYS and kumitate.available(sid)
 
 
-def page(sid, look="tenji", base="/hmd"):
-    """1 つの玩具の、作業しながら見る頁。帯と足は出さない（見る所を手順と 3D だけにする）。"""
+def page(sid, look="tenji", base="/hmd", cam=False):
+    """1 つの玩具の、作業しながら見る頁。帯と足は出さない（見る所を手順と 3D だけにする）。
+    cam=True はカメラに重ねる頁（後ろのカメラの映像の上に手順と 3D）。"""
     toy = hypotheses.load(sid)["toy"]
-    words = {"words": WORDS, "on": MIC_ON, "off": MIC_OFF, "none": NO_VOICE, "blocked": BLOCKED, "listen": LISTEN, "stop": STOP, "done": kumitate.DONE}
+    words = {"words": WORDS, "on": MIC_ON, "off": MIC_OFF, "none": NO_VOICE, "blocked": BLOCKED, "listen": LISTEN, "stop": STOP, "done": kumitate.DONE,
+             "slow": SLOW, "hold": HOLD, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA}
+    camera = (f'<video id="hmd-cam" playsinline muted autoplay></video>' if cam else "")
+    camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else "")
+    camera_note = (f'<span id="hmd-cam-note">{esc(PRIVACY)}</span> ' if cam else "")
     params = json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False)
     body = (f'<div class="hmd"><div class="hmd-top"><b>{esc(toy)}</b><span id="hmd-count"></span><span id="hmd-heard" aria-live="polite"></span>'
             f'<span class="hmd-mic" id="hmd-mic" data-state="off" aria-live="polite">{esc(MIC_OFF)}</span></div>'
+            f'<p class="hmd-hold" id="hmd-hold" aria-live="polite"></p>'
             f'<div class="hmd-k">{kumitate._block_html(sid, params)}'
             f'<div class="hmd-acts"><button type="button" id="hmd-next">{esc(NEXT)}</button><button type="button" id="hmd-prev">{esc(PREV)}</button>'
-            f'<button type="button" id="hmd-again">{esc(AGAIN)}</button><button type="button" id="hmd-listen" aria-pressed="false">{esc(LISTEN)}</button></div></div>'
-            f'<p class="hmd-note">{esc(HOW)} {esc(TRIAL)} <a href="{esc(base)}">玩具を選びなおす</a></p></div>'
+            f'<button type="button" id="hmd-again">{esc(AGAIN)}</button><button type="button" id="hmd-listen" aria-pressed="false">{esc(LISTEN)}</button>{camera_btn}</div></div>'
+            f'<p class="hmd-note">{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="{esc(base)}">玩具を選びなおす</a></p></div>{camera}'
             f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False)}</script>{SCRIPT}')
-    return skin.shell(f"{toy}: {TITLE}", body, look, path=f"{base}/{sid}", extra_style=STYLE, body_class="hmd-page")
+    return skin.shell(f"{toy}: {TITLE}", body, look, path=f"{base}/{sid}" + ("/cam" if cam else ""), extra_style=STYLE,
+                      body_class="hmd-page hmd-cam" if cam else "hmd-page")
 
 
 def index(look="tenji", base="/hmd"):
-    links = "".join(f'<a href="{esc(base)}/{esc(sid)}">{esc(hypotheses.load(sid)["toy"])}</a>' for sid in TOYS if available(sid))
+    links = "".join(f'<a href="{esc(base)}/{esc(sid)}">{esc(hypotheses.load(sid)["toy"])}</a><a href="{esc(base)}/{esc(sid)}/cam">{esc(hypotheses.load(sid)["toy"])}: {esc(CAM_LINK)}</a>'
+                    for sid in TOYS if available(sid))
     body = (f'<div class="hmd"><h1>{esc(TITLE)}</h1><p class="hmd-note">{esc(TRIAL)}</p><div class="hmd-list">{links}</div>'
             f'<p class="hmd-note">{esc(HOW)}</p></div>')
     return skin.shell(TITLE, body, look, path=base, extra_style=STYLE, body_class="hmd-page")
