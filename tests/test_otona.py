@@ -18,7 +18,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from api import ask, observe  # noqa: E402
 from omochae import media_review, records, talk_log  # noqa: E402
-from web import about, otona, skin, wording  # noqa: E402
+from web import about, otona, play_server, skin, techo_site, wording  # noqa: E402
 from omochae.hypotheses import ROOT  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -48,7 +48,8 @@ ADOPTED = (
       "消したい時は、場の進行者に、記録の番号を伝えてください。番号は、手帖の記録の頁に出ています（R-0003 のような形です）。",
       "合言葉なしで開く公開の場には、進行者がいません。そこで残した字は、ほかの人の頁には出しません。消してほしい時の伝え先は、まだありません。",
       "記録ごと消す事も、写真だけ、話した字だけを消す事もできます。",
-      "型紙を直す理由に使った記録は、記録そのものは残ります。その時も、写真と動画と、話した字は消せます。")),
+      "型紙を直す理由に使った記録は、記録そのものは残ります。その時も、写真と動画と、話した字は消せます。",
+      "公開の場では、上げた画面の「取り下げる」で消せます。")),
     ("5 AI（Claude）の役目",
      ("型紙は、AI が絵と歌から考えた案を、決まった検査に通して作っています。",
       "作っている途中の質問に答えます。答えるのは、言葉の意味と手順です。動く仕組みの答えは言いません。確かめるのは作る人です。",
@@ -110,13 +111,16 @@ def recorded():
 # 採られた後に外した行（11-06 夜の決め直し。公開の場でも写真と動画を上げられる形にしたため）。記録の採られた文の節は書き換えず、
 # 節の末にこの行を外した事を書いた。記録から外した行を除いた字が、頁と一字も違わない事を見る
 REMOVED = {"3 写真と動画": ("合言葉なしで開く公開の場では、写真と動画はのせられません。",)}
+# 採られた後に足した行（同じ夜の決め直し。公開の場では、上げた画面にだけ「取り下げる」の釦を置く形にしたため）。節の末に足す
+ADDED = {"4 取り下げ（あとから消す）": ("公開の場では、上げた画面の「取り下げる」で消せます。",)}
 _r36 = (ROOT / "docs/process/research/36-road-and-audience.md").read_text(encoding="utf-8")
 assert "3 の 5 行目「合言葉なしで開く公開の場では、写真と動画はのせられません。」は、11-06 夜の決め直しで外した" in _r36, "外した事の記録が無い"
-kept = tuple((h, tuple(x for x in lines if x not in REMOVED.get(h, ()))) for h, lines in recorded())
+assert "4 の最後に「公開の場では、上げた画面の「取り下げる」で消せます。」を、11-06 夜の決め直しで足した" in _r36, "足した事の記録が無い"
+kept = tuple((h, tuple(x for x in lines if x not in REMOVED.get(h, ())) + ADDED.get(h, ())) for h, lines in recorded())
 assert all(set(REMOVED[h]) <= set(lines) for h, lines in recorded() if h in REMOVED), "外した行が採られた文に無い（記録が変わった）"
 assert kept == ADOPTED, "決定の記録の字と、この試験の字が違う。記録が直ったなら、頁と試験を記録から抜き直す"
 heads = [h for h, _ in ADOPTED]
-assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 31, "題と見出しと合わせて 38 行（採られた 39 行から 1 行を外した）"
+assert len(heads) == 6 and sum(len(lines) for _, lines in ADOPTED) == 32, "題と見出しと合わせて 39 行（採られた 39 行から 1 行を外し、1 行を足した）"
 expected = TITLE + "".join(heads) + "".join(h + "".join(lines) for h, lines in ADOPTED) + "".join(BUTTONS)
 
 # 1. 2 つの皮で、採られた文のまま（2 も同じ所で見る）
@@ -159,5 +163,7 @@ assert media_review.SHOWS == ("object", "people"), "物だけ / 人や声が入�
 assert talk_log.blocked("山田小学校の田中です") and talk_log.blocked("電話は 090-1234-5678 です"), "名乗りや連絡先の形の言葉は機械が落とす"
 assert not talk_log.blocked("田中さんに教わった"), "全部を見分ける事はできない、と書く根拠。ここが変わったら文を確かめ直す"
 assert ask.REFUSE and ask.MECHANISM_WORDS, "動く仕組みの答えは言わない"
+assert media_review.uploaded_here and "取り下げる</button>" in inspect.getsource(techo_site) and "/media/withdraw" in inspect.getsource(play_server), \
+    "公開の場では、上げた画面の「取り下げる」で消せる（押した時の動きは test_photo_owner_only の 7 が見る）"
 assert "この 3 コマ" in inspect.getsource(observe) and "声は渡さない" in inspect.getsource(observe), "動画を見てもらう時は 3 枚の絵だけを渡す"
 print("ok 大人の方への頁は採られた文のままで、2 つの皮と合言葉なしの場で開き、約束の裏付けがある")
