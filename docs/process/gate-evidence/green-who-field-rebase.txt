@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_who_field.py
+# commit: ff09fa25（回した時の HEAD）
+/tmp/tmpd6bmeaea/play/NDL-1187053-R0000005-L/.tmp-rxpjl9oe/H-A_v1.pdf
+/tmp/tmpd6bmeaea/play/NDL-1187053-R0000005-L/.tmp-rxpjl9oe/H-A_v1_tejun.pdf
+/tmp/tmpd6bmeaea/play/NDL-1187053-R0000005-L/.tmp-rxpjl9oe/H-A_v1_after.pdf
+/tmp/tmpd6bmeaea/play/NDL-1187053-R0000005-L/.tmp-ysjcf0b_/H-A_v2.pdf
+/tmp/tmpd6bmeaea/play/NDL-1187053-R0000005-L/.tmp-ysjcf0b_/H-A_v2_tejun.pdf
+/tmp/tmpd6bmeaea/play/NDL-1187053-R0000005-L/.tmp-ysjcf0b_/H-A_v2_after.pdf
+ok: 次の版の欄は採る人が打ち、前の人の値を出さない
+rc=0
