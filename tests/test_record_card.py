@@ -96,8 +96,9 @@ try:
     assert "Claude に聞く" not in techo and "AI の返事は、この場では使えません" in techo
 finally:
     ask._key_present = keep
-# 札の中は 紙の返事 → 自分の説明 → AI → 次の版 の順に区切る
-assert full.index("試した後の紙") < full.index("説明: 折りが固い") < full.index("Claude に聞く") < full.index("次の版を作る")
+# 札の中は 紙の返事（記録そのもの） → 自分の説明 → AI → 次の版 の順に区切る。試した後の紙は 11-06 から刷らないので札に道を出さない
+assert "試した後の紙" not in full
+assert full.index("・版 ") < full.index("説明: 折りが固い") < full.index("Claude に聞く") < full.index("次の版を作る")
 assert full.count('class="step"') == 3, full.count('class="step"')
 
 server.shutdown()

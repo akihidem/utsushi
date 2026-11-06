@@ -69,11 +69,12 @@ for sid in (G, T):
     assert page.index('id="premise"') < page.index('class="plates"')
     d = hypotheses.load(sid)
     assert sorted(required["toys"][sid]["hypotheses"]) == sorted(h["id"] for h in d["hypotheses"])
+    # 英語の頁は組み方への道を出さない（本人の決定 11-06、6 点の 6）。手順の一覧（Steps）も Instruction sheet も無い。
+    # 手順の訳がそろっているかは、提出の後の英語の組み方の頁で見る（原文の組が替わっても、ここでは止めない）
+    assert "<summary>Steps</summary>" not in page and "Instruction sheet" not in page
     for h in d["hypotheses"]:
         tpl = TEMPLATES[h.get("template") or d.get("template", "slider_fan")]
-        for s in tpl.steps({**tpl.DEFAULTS, **h["params"]}):
-            assert s in required["steps"], ("手順の訳が無い。原文が変わったら訳し直す", s)
-        assert not any(x.startswith("See step") for x in en.steps_for(sid, h, d))
+        assert not any(esc_s in page for esc_s in tpl.steps({**tpl.DEFAULTS, **h["params"]})), "日本語の手順の文も出さない"
     # 結果の札の訳（将来の記録の口と文を揃える）
     for r in tpl.RESULTS:
         assert r in required["results"], r
@@ -89,7 +90,8 @@ assert "Untested draft" in page and "described in Japanese on the sheet" in page
 code, at = post(f"/en/toy/{G}/print", {"hypothesis": "H-A"})
 assert code == 303 and at.startswith(f"/en/toy/{G}") and at.endswith("#ideas"), (code, at)
 page = get(at)
-assert "Printed." in page and f"/sheet/{G}/H-A_v1.pdf" in page and f"/sheet/{G}/H-A_v1_tejun.pdf" in page
+# 手順の紙は 11-06 から刷らない（本人の決まり）。英語の頁の Instruction sheet への道は外した（本人の決定、6 点の 6）
+assert "Printed." in page and f"/sheet/{G}/H-A_v1.pdf" in page and "_tejun.pdf" not in page and "Instruction sheet" not in page
 assert post(f"/en/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 
 # 作り方の印を分けて出す。上下を付けない。印の語は日本語の札（omochae.ways）の全部に当たる

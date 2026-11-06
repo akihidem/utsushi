@@ -51,21 +51,23 @@ code, body, _ = get(f"/toy/{G}")
 body = body.decode()
 # 紙を選ぶ字の札は窓へ。PDF へ直に飛ぶ字のリンクは置かない（窓の押し釦だけ）
 assert f'href="/toy/{G}?see=H-A&kind=sheet&v=1#win" aria-current="true">型紙</a>' in body
-assert f'href="/toy/{G}?see=H-A&kind=tejun&v=1#win" aria-current="false">手順の紙</a>' in body
+# 刷るのは型紙だけ（本人の決まり 11-06）。手順の紙の札は出ない
+assert "kind=tejun" not in body and ">手順の紙</a>" not in body
 assert body.count(f'href="/sheet/{G}/H-A_v1.pdf"') == 1 and 'target="_blank"' in body.split(f'href="/sheet/{G}/H-A_v1.pdf"')[1][:40]
 # 窓: 絵が出て、押すと拡大の窓
+# 前の札のリンク（kind=tejun）で来ても、窓は型紙を出す。手順の紙の絵の道は、作りながら見る頁のために残る
 code, win, _ = get(f"/toy/{G}?see=H-A&kind=tejun&v=1")
 win = win.decode()
-assert f'<img src="/sheet/{G}/H-A_v1_tejun.png"' in win and 'href="#zoom"' in win and 'id="zoom"' in win
+assert f'<img src="/sheet/{G}/H-A_v1.png"' in win and "_tejun.png" not in win and 'href="#zoom"' in win and 'id="zoom"' in win
 assert get(f"/sheet/{G}/H-A_v1_tejun.png")[0] == 200
 # PDF はインラインの印付きで、ブラウザが開ける
 code, pdf, headers = get(f"/sheet/{G}/H-A_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF" and headers.get("Content-Disposition", "").startswith("inline;"), headers
-# 記録の後: 試した後の紙の字のリンクも窓へ。記録の前は窓にも字にも出ない
+# 記録の前も後も、試した後の紙の字のリンクは出ない（11-06 から刷らない）
 assert "kind=after" not in body
 assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目"}) == 303
 code, body, _ = get(f"/toy/{G}")
 body = body.decode()
-assert f'href="/toy/{G}?see=H-A&kind=after&v=1#win" aria-current="false">試した後の紙</a>' in body
-assert f'<img src="/sheet/{G}/H-A_v1_after.png"' in get(f"/toy/{G}?see=H-A&kind=after&v=1")[1].decode()
+assert "kind=after" not in body and ">試した後の紙</a>" not in body
+assert "_after.png" not in get(f"/toy/{G}?see=H-A&kind=after&v=1")[1].decode()
 print("ok: 型紙はクリックで画面に出る")

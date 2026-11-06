@@ -82,12 +82,12 @@ assert "おすすめ" not in w and "順位" not in w
 assert post(f"/toy/{G}/print", {"hypothesis": other, "at": "win"})[0] == 422 and not list(out_dir(G).glob(f"{other}_v1*")), "断った紙を残さない"
 # 型紙の確定の記録は、押した紙の分だけ残る（線は変えない）
 assert {c["hypothesis_id"] for c in loop.sheet_confirmations(G)} == {first}
-# 試した後の紙は、記録の前は渡さず、理由を字で出す
-assert "試した後の紙は、記録を残すと開きます" in visible(win(page))
+# 試した後の紙は 11-06 から刷らないので、窓に出さず、理由の字も出さない
+assert "試した後の紙" not in visible(win(page))
 assert f"{first}_v1_after" not in win(page)
 assert post(f"/toy/{G}/record", {"hypothesis": first, "result": "動いた"})[0] in (200, 303)
 page = get(f"/toy/{G}?see={first}")
-assert "試した後の紙は、記録を残すと開きます" not in visible(win(page)), "開いた後は言わない"
+assert "試した後の紙" not in visible(win(page)) and f"{first}_v1_after" not in win(page), "記録の後も窓は型紙だけ"
 
 server.shutdown()
 print("ok")
