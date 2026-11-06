@@ -16,6 +16,7 @@ def text_poly(t):
 EPS = 1e-6
 # SVG の stroke-miterlimit の既定。描画（render.py）は結合の形を指定しないので、刷られる角はこの限りまで尖る。
 SVG_MITER = 4
+MARK_SW = 0.35  # render.MARK_SW と同じ。floors は描く所に頼らない（検査だけを速く回すため）ので値を写す（型紙エンジンと同じ形）
 
 
 def check_layout(page, parts, texts):
@@ -79,7 +80,11 @@ def check_art(parts):
         poly = part_poly(p)
         for item in p.art:
             pts = [(p.x + x, p.y + y) for x, y in item["pts"]]
-            sw = item.get("sw", 0) if item.get("stroke") else 0
+            mark = item["kind"] == "mark"
+            if mark and item.get("closed"):
+                pts = pts + pts[:1]  # 閉じた印は戻る辺も刷る。開いた線で見ると、戻る辺が部品の外を通っても通る
+            # 位置の印は、描く所が決めた太さ（render.MARK_SW）で刷る（型紙エンジンと同じ見方）
+            sw = MARK_SW if mark else (item.get("sw", 0) if item.get("stroke") else 0)
             if item["kind"] == "poly":
                 geom = Polygon(pts).buffer(-0.01)
                 # 輪郭線つきの面は、線の太さの半分だけ外へ広がって刷られる。
@@ -89,6 +94,15 @@ def check_art(parts):
                 # 線は刷られる太さの帯で見る。中心線だけだと、太い線が糊代や折り線にはみ出しても通った。
                 # 端は SVG の既定（butt）と同じく平らに、角は SVG の既定（miter・限り 4）と同じく尖らせる。丸く見ると角の先を見逃す。
                 ink = geom.buffer(sw / 2, cap_style=2, join_style=2, mitre_limit=SVG_MITER)
+                if mark:  # 印は丸い端で刷る（render の stroke-linecap="round"）。平らな端で見ると、端の半円が折り線にかかっても通る
+                    ink = geom.buffer(sw / 2, cap_style=1, join_style=1)
+                    # 印が穴や中の切り込みにかかると、切った時に消える
+                    for hx, hy, r in p.holes:
+                        if ink.intersects(Point(p.x + hx, p.y + hy).buffer(r)):
+                            out.append(Failure("F5.image_box", p.name, "位置の印が穴にかかり、切ると消える"))
+                    for x0, y0, w, h in p.cuts:
+                        if ink.intersects(box(p.x + x0, p.y + y0, p.x + x0 + w, p.y + y0 + h)):
+                            out.append(Failure("F5.image_box", p.name, "位置の印が中の切り込みにかかり、切ると消える"))
             # 部品の外かは、面なら塗りで見る。輪郭線が切る線の上に乗る絵（虎の頭）は、外へ出た半分を切り落とすので困らない。
             # 折り線と糊代は、切り落とされないので輪郭線の太さまで見る。
             inside = geom if item["kind"] == "poly" else ink

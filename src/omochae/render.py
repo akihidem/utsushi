@@ -12,6 +12,9 @@ from .model import ToolMissing
 from .textfit import FAMILY
 
 STROKE = {"stroke": "black", "fill": "none"}
+# 位置の印（切らない・折らない線）。型紙エンジン（paper-to-toy）と同じ色・点・太さ。必須 2 種の次の組（虎の重りの腕の下の穴の丸、
+# 御来迎の溝の下の口の矢印。作成動画の札から採った案 EP-0011・EP-0012）で使う。切る線（黒の実線）と見分けるため、色を変えて点で刷る
+MARK_COLOR, MARK_DASH, MARK_SW = "#b0503c", "0.2,0.8", 0.35
 VALLEY, MOUNTAIN = "2,1", "3,1,0.6,1"
 
 
@@ -42,6 +45,9 @@ def to_svg(layout):
             if item["kind"] == "poly":
                 kw = {"stroke": item["stroke"], "stroke_width": item["sw"]} if item.get("stroke") else {}
                 d.append(dw.Lines(*pts, close=True, fill=item["fill"], **kw))
+            elif item["kind"] == "mark":
+                d.append(dw.Lines(*pts, close=item.get("closed", False), fill="none", stroke=MARK_COLOR, stroke_width=MARK_SW,
+                                  stroke_dasharray=MARK_DASH, stroke_linecap="round"))
             else:
                 d.append(dw.Lines(*pts, close=False, fill="none", stroke=item["stroke"], stroke_width=item["sw"]))
     # 手順の紙の完成のイメージ（原図、v8）。型紙の部品には貼らない（J-007）。
@@ -82,6 +88,8 @@ def to_svg(layout):
     for x, y, dash in layout["samples"]:
         if dash == "hatch":
             _hatch(d, [(x, y - 1.5), (x + 7, y - 1.5), (x + 7, y + 1), (x, y + 1)])
+        elif dash == "mark":
+            d.append(dw.Line(x, y, x + 7, y, stroke=MARK_COLOR, stroke_width=MARK_SW, stroke_dasharray=MARK_DASH, stroke_linecap="round"))
         else:
             kw = {"stroke_dasharray": dash} if dash else {}
             d.append(dw.Line(x, y, x + 7, y, stroke="black", stroke_width=0.25, **kw))
