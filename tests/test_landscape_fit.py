@@ -65,11 +65,12 @@ parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,th
 # 作りながら見る: 開いた最初の画面から手順を 1 つずつ送り、その手順の一番大きい札（次の手順へ。最後の手順は組み上がり）の下の端が画面の中か。
 # 札の位置は手順の字の長さで変わるので、全部の手順で見る。札を入れるために手順の紙の絵を消していない事も見る（絵の高さ）。
 # 次へを押した後に、次の手順の番号と字が画面の中にある事も見る（押した後に字が画面の上の外へ出ない）。
+# 測る絵は見えている 1 枚（作りながら見る頁は、刷った手順の紙の絵が無い時に手順ごとの組み方の絵を置き、今の 1 枚だけを見せる。11-06 夜）
 TSUKURU_WALK = """<script>addEventListener('load',async()=>{
 const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),items=[...document.querySelectorAll('#steps li')],out=[];await wait();
 const text=()=>{const a=document.querySelector('.num').getBoundingClientRect(),b=document.querySelector('#steps li.on').getBoundingClientRect();return {top:Math.min(a.top,b.top),end:b.bottom}};
 for(let n=1;n<=items.length;n++){
- const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=document.querySelector('.sheet'),t=text();
+ const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=[...document.querySelectorAll('.sheet')].find(e=>e.getClientRects().length),t=text();
  out.push({n,bottom:r.bottom,height:r.height,sheet:img?img.getBoundingClientRect().height:0,top:t.top,end:t.end});
  if(n<items.length){
   // 人は押す前に、札が画面に無ければ札まで送る（直す前の 1024×768 では、ここで頁が下へ送られたままになり、次の手順の字が画面の上の外に出た）

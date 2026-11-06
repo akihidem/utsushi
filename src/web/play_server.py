@@ -445,6 +445,15 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) not in sources() or not kumitate.has(m.group(1)):
                 return self._send(404, "無い")
             return self._send(200, kumitate.page(m.group(1), look, path))
+        # 作業の頁に重ねる形（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）。
+        # 下地は試作の枝 try/hmd の頁（hmd.py）。/toy/<玩具>/kasane は後ろのカメラの映像に重ねる形、/toy/<玩具>/kasane/hmd は透けて見える画面の形。
+        # 組み立ての書き方がある玩具だけ。手帖からの道は、口の字が決まってから足す（新しい字は本人の確かめ）
+        m = re.fullmatch(rf"/toy/({SID})/kasane(/hmd)?", path)
+        if m:
+            from . import hmd
+            if m.group(1) not in sources() or not hmd.available(m.group(1)):
+                return self._send(404, "見つかりません")
+            return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2)))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
@@ -709,6 +718,20 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
         if m:
             return self._next_version(m.group(1), form)
+        m = re.fullmatch(r"/record/(R-\d{4,})/media/withdraw", self.path)
+        if m:
+            # 合言葉なしの場の、上げた画面からの取り下げ（窓口の決定 11-06 夜・案 A）。公開の場には進行者がいないので、上げた人が自分で消す。
+            # 見分けは写真の鍵（上げた画面・期限 2 時間）で、釦を出す手帖の記録の頁と同じ条件。消すのは記録の写真と動画だけ（records.withdraw の
+            # media_only。置き場ごと消すので、確かめの控えも残らず、ギャラリーからも消える）。合言葉付きの場は進行者に番号を伝える形のまま
+            from . import techo_site
+            rid = m.group(1)
+            rec = loop.record(rid)
+            if not (getattr(self.server, "public_open", False) and rec and media_review.uploaded_here(rid, techo_site.media_of(rid), self._up_key())):
+                return self._refuse(403, "受け付けられません")
+            _, failures = records.withdraw(rid, media_only=True)
+            if failures:
+                return self._refuse(422, failures[0].message)
+            return self._send(303, "", headers=[("Location", f"/toy/{rec['source_id']}/techo/kiroku#mine")])
         m = re.fullmatch(r"/record/(R-\d{4,})/explain", self.path)
         if m:
             rid = m.group(1)

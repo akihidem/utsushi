@@ -133,10 +133,13 @@ doc = read(page)
 assert techo_step.NAMES == NAMES
 for name in NAMES:
     assert any(c["text"].strip() == name for c in doc.targets), name
+# 最初の画面の小さな道「カメラに重ねる」は、本人が採った口の名（11-07）。重ねる頁が開く玩具（組み立ての書き方がある玩具）だけに出る。大きいボタンは「はじめる」のまま
+from web import hmd  # noqa: E402
+
 for scene in ("start", "step", "end"):
     names = [c["text"].strip() for c in doc.shown_targets(scene)]
-    assert all(n in NAMES for n in names if n), (scene, names)
-assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"]
+    assert all(n in NAMES or (scene == "start" and n == hmd.CAM_LINK) for n in names if n), (scene, names)
+assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"] + ([hmd.CAM_LINK] if hmd.available(G) else []), "道は「はじめる」の下"
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌
@@ -352,7 +355,7 @@ assert (1, "start") in got and (2, "stuck") in got and (total, "done") in got
 for ev in ("next", "back", "stuck", "done", "start"):
     assert f"'{ev}'" in js, ev
 
-# ---- 残す: 記録の値だけで残り、話した工夫がその記録に入り、記録の頁に出る。床に当たる字は残らない
+# ---- 残す: 記録の値だけで残り、話した工夫がその記録に入る。話した字は記録の頁に出さない（本人の決定 11-06、J-034）。床に当たる字は残らない
 assert req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": 1, "step": total, "text": "電話は090-1234-5678", "via": "voice", "who": who, "json": "1"})[0] == 422
 code, body = req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": 1, "step": total, "text": "紙を二重にした", "via": "voice", "who": who, "json": "1"})
 assert code == 200 and json.loads(body)["kept"]
@@ -363,7 +366,8 @@ code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わ�
 j = json.loads(body)
 assert code == 201 and j["kufu"] == 1, body
 code, listed = req(f"/toy/{G}/techo/kiroku?msg=" + urllib.parse.quote("上げました"))
-assert code == 200 and '<div id="mine">' in listed and j["id"] in listed and "紙を二重にした" in listed and "上げました" in listed
+assert code == 200 and '<div id="mine">' in listed and j["id"] in listed and "上げました" in listed
+assert "紙を二重にした" not in listed and [t["text"] for t in talk_log.kufu(G, j["id"])] == ["紙を二重にした"], "記録には結ぶが、頁には出さない"
 # 記録の頁は順路の帯を持ち、試した後の紙・説明・AI の順の札がここにある
 # 試した後の紙は 11-06 から刷らないので、札に道を出さない（説明・AI の順の札はここにある）
 assert '<nav class="nav"' in listed and "試した後の紙" not in listed and 'name="back" value="techo"' in listed
@@ -390,10 +394,10 @@ assert code in (200, 303), body[:300]
 assert 'data-v="2"' in req(f"/toy/{G}/techo")[1] and 'data-v="1"' in req(f"/toy/{G}/techo?v=1")[1] and 'data-v="2"' in req(f"/toy/{G}/techo?v=9")[1]
 assert "?v=1&amp;n=3" in req(f"/toy/{G}/techo?v=1&n=2")[1], "JS が無い時のリンクも開いた時の版を持つ"
 
-# ---- 虎: 絵は手順の紙の図。結果の札は虎の値
+# ---- 虎: 絵は手順の紙の図。結果の札は虎の値（記録と手帖では「わからない」も選べる。刷った紙の欄は 2 つのまま。#373）
 page = req(f"/toy/{T}/techo")[1]
 doc = read(page)
-assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない"]
+assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない", "わからない"]
 assert "の紙" not in visible(page) and TEMPLATES["pivot_counterweight"].SHEET_SET not in page
 server.shutdown()
 print("ok")

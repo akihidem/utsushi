@@ -508,9 +508,17 @@ def effect(sid):
     return out
 
 
+# 記録の札の字 → エンジンへ渡す「動いたか」。どの雛形の RESULTS も、2 つ目（打ち消し）がここに入る事を tests/test_result_words.py が見る
+# （札を変えた時に、ここを直し忘れると、動かなかった記録が「分からない」として渡るため。#373 で「立たない」を足した時に見つけた）。
+# 「少し動いた」「少し遊べた」「倒れた」は前の札。前の札で残った記録を読むために残す。
+PARTLY_MOVED = ("少し動いた", "少し遊べた")
+NOT_MOVED = ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "立たない", "倒れた")
+
+
 def report(rid, built, finish=None, minutes=None, gave_up=None, finish_notes="", moved=None):
     """確かめた札を、エンジンの報告の形に書き出す（入口と道具はエンジンの側。J-026）。組み上がったか・仕上がりは動画から決めず、人が言う。
-    動いたかは記録の見た事から読む。雛形の RESULTS の先頭が動いた側、末尾が動かない側（「わからない」は少し動いた扱いにしない）。
+    動いたかは記録の見た事から読む。雛形の RESULTS の先頭が動いた側、2 つ目が動かない側、3 つ目が「わからない」（少し動いた扱いにしない）。
+    前の札で残った記録（「少し動いた」「倒れた」など）も、前の札のまま読む。
     moved は、記録に書いてない時に人が動画を見て選ぶ値（値を作らない）。"""
     d = load(rid)
     if d is None:
@@ -526,7 +534,7 @@ def report(rid, built, finish=None, minutes=None, gave_up=None, finish_notes="",
         params = h.get("params") or {}
     results = list(records.results_for(rec["source_id"]))
     word = records.result_word(rec)
-    moved = moved or ("moved" if word == results[0] else "partly" if word in ("少し動いた", "少し遊べた") else "not" if word in ("動かない", "揺れない", "戻らない", "回らない", "鳴らない", "遊べない", "転がらない", "倒れた") else None)
+    moved = moved or ("moved" if word == results[0] else "partly" if word in PARTLY_MOVED else "not" if word in NOT_MOVED else None)
     confirmed = [m for m in d["marks"] if m.get("confirmed_by")]
     # 形の名前はエンジンの雛形の FORM（この repo の雛形の写しには無いので、ここに持つ）。
     form = params.get({"slider_fan": "push_part", "pivot_counterweight": "mount"}.get(template, "form"))

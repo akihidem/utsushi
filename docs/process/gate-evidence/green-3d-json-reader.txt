@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_assembly_json.py
+# commit: aa274320（回した時の HEAD）
+ok 作り方の 3D の JSON を読む口。書いて読み戻すと同じ・形の照らし・段の数・角の向き・assemble の口
+rc=0

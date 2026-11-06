@@ -1,4 +1,5 @@
 """デモ動画の場面 4（demo.scene4）の床: 出所の記録がそろい、1 コマが時刻だけで決まり、組の版の札がコードから来る事を見る。
+刷って映すのは型紙だけで、手順の紙を刷らず映さない事も見る（本人の決まり「刷るのは型紙だけ」11-06・窓口の決定 11-07）。
 
 画像は取りに行かない（試験を網につながずに回すため）。北斎の頁の代わりに黒い四角の絵を、刷った紙の代わりに無地の絵を渡す。
 型紙の配置（compose）だけは本物を使う。PDF を作らず速く、折り線が配置から引ける事をここで確かめられるため。
@@ -8,6 +9,7 @@ import inspect
 from PIL import Image, ImageDraw
 
 from demo import scene4
+from omochae import hypotheses
 from omochae.templates import slider_fan
 
 recs = scene4.load_records()
@@ -39,12 +41,11 @@ assert not failures, [f.line() for f in failures]
 segs = scene4.template_segments(layout)
 kinds = {k for k, _, _ in segs}
 assert {"cut", "valley"} <= kinds, kinds
-# 手順の紙は「遊び方」の行より上で切る（扇の動かし方を先に見せない、F9）
-tl, tf = scene4.tejun_layout(example, source)
-assert not tf
-crop, hide = scene4.tejun_view_mm(tl)
-play = next(t for t in tl["texts"] if t.text == "遊び方")
-assert crop[3] <= play.y and hide[0] > 0 and hide[3] == crop[3]
+# 手順の紙を組む部品・置き場・合図を持たない（家で刷る紙が型紙だけになり、動画だけが手順の紙を見せると筋が崩れる）
+assert not any(hasattr(scene4, n) for n in ("tejun_layout", "tejun_view_mm", "TEJUN_BOX")), "手順の紙を刷って映す部品が残っている"
+assert not any("tejun" in k for k in scene4.CUES), scene4.CUES
+# 場面 6 が借りる形（current_layouts が id・letter・params・title を読む）。手順の紙の題と動かし方は持たない
+assert all(set(h) == {"id", "letter", "params", "title"} for h in hs), [sorted(h) for h in hs]
 
 # 偽の絵: 北斎の切り出しの代わりに黒い四角、刷った紙の代わりに無地
 edo = {}
@@ -53,8 +54,7 @@ for pid, rec in recs["pages"].items():
         g = Image.new("L", (400, 300) if pid.startswith("v3") else (300, 420), 255)
         ImageDraw.Draw(g).rectangle((40, 40, 200, 200), fill=0)
         edo[f"{pid}/{c['id']}"] = g
-tpl = {"sheet": Image.new("RGB", (420, 594), (250, 250, 250)), "tejun": Image.new("RGB", (600, 300), (245, 245, 245)),
-       "thumbs": [(h["letter"], Image.new("RGB", (84, 119), (240, 240, 240))) for h in hs],
+tpl = {"sheet": Image.new("RGB", (420, 594), (250, 250, 250)),
        "segs": segs, "page_mm": (layout["page"].w, layout["page"].h), "example_letter": example["letter"]}
 scene = scene4.Scene(edo, tpl, recs)
 assert scene.duration == scene4.DURATION
@@ -65,6 +65,17 @@ for t in (0.5, 6.0, 13.5, 16.0, 18.5, 21.0, 23.0, 28.0):
 f0 = scene4.CUES["folds"][0] + 0.5
 assert scene.frame(f0).tobytes() != scene.frame(f0 + 1.0).tobytes()
 
+# 見せる紙はたたき台の 1 組だけ（型紙は玩具に 1 枚。J-032）。組を並べる段と「仮説ごと」の字を出さない。字は書き換えず外した
+assert recs["template"]["example_hypothesis"] == hypotheses.sheet_of(recs["template"]["source_id"])["id"]
+assert "sets" not in scene4.CUES and not hasattr(scene, "thumbs")
+source_text = inspect.getsource(scene4)
+assert not any(s in source_text for s in ("仮説ごとに 1 組", "型紙は、仮説ごとに", "どの仮説も同じ形"))
+assert all(s in source_text for s in ("江戸の絵も、仕組みを図で残した。", " の組。"))
+assert "手順の紙（組み方まで。中の様子の図は伏せた）" not in source_text and "compose_sheet" not in source_text, "手順の紙の絵と札を出さない"
+# 刷った紙が出た後、型紙の右は紙の地のまま（手順の紙も組の列も映らない）。上の題と札の行、下の出所の札の行は除く
+for t in (20.0, 21.0, 23.5, 25.0):
+    right = scene.frame(t).crop((scene.sheet_rect[2] + 40, 200, scene4.W, scene4.H - 80))
+    assert len(right.getcolors()) == 1, (t, right.getcolors()[:3])
 # 組の版の札はコードから来る。文字で書き込むと、組を刷り直した時に動画だけ古くなる
 assert scene.set_label == f"刷った組 {slider_fan.SHEET_SET}"
 assert slider_fan.SHEET_SET not in inspect.getsource(scene4), "SHEET_SET の値を scene4.py に書き込まない"

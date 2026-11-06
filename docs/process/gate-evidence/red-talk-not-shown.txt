@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src:tests .venv/bin/python tests/test_talk_not_shown.py
+# commit: 17dd4004（main の頭）の木に、この試験だけを置いた形
+Traceback (most recent call last):
+  File "tests/test_talk_not_shown.py", line 61, in <module>
+    assert text not in pages[path], ("話した字が学ぶ人の頁に出た", path, text)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('話した字が学ぶ人の頁に出た', '/toy/NDL-1187053-R0000005-L/techo/kiroku', '糊代を先に折ったら貼りやすかった')
+rc=1
