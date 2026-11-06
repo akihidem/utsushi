@@ -938,7 +938,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
+                text, how = "今は AI に聞けません。型紙の凡例と、組み方の絵を見てください", "error"  # 呼び名は ask.NO_KEY とそろえる（組み方の絵）
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "print":

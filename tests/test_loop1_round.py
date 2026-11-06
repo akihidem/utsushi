@@ -104,7 +104,7 @@ assert code == 200 and f'data-hid="{oid}"' in body, "紙の印が無ければ、
 assert f"{oid}_v1_tejun.png" in body and THINK not in body, "手順の紙の絵はその紙の物。話した字は頁に出さない"
 title = re.search(r'<p class="top">.*?<span>(.*?)</span>', body, re.S).group(1)
 assert hypotheses.own_hypotheses(G)[-1]["name"] in title and oid not in title, "頁の頭は案の名前で呼ぶ。番号は出さない"
-assert f"手順の紙（{hypotheses.own_hypotheses(G)[-1]['name']} の紙" in body and f"手順の紙（{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ"
+assert f"組み方の絵（{hypotheses.own_hypotheses(G)[-1]['name']} の紙" in body and f"組み方の絵（{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ"
 assert page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].count(f'data-hid="{oid}"') == 1
 assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 200
 total = body.count("<li")

@@ -230,11 +230,11 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     on = ' class="on"'
     items = "".join(f'<li{on if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
     if not steps:
-        items = '<li class="on">手順の紙の絵を見て、番号の順に進めます。</li>'
+        items = '<li class="on">組み方の絵を見て、番号の順に進めます。</li>'  # 絵の元は手順の紙の PNG だが、頁の呼び名は「組み方の絵」（紙は刷らなくなった）
     name = f"{hid}_v{v}_tejun.png"
     if not (out_dir(sid) / name).exists():  # 型紙なしの紙には手順の紙が無い。その紙そのものを出す
         name = f"{hid}_v{v}_free.png"
-    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="手順の紙（{esc(_label(h))} の紙・版 {v}）">'
+    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・版 {v}）">'
            if (out_dir(sid) / name).exists() else "")
     # 止まったの文は先に置いておき、押した時に出す（JS が無い時は ?ev= で出す）。
     stuck = (f'<p id="msg-stuck" class="msg"{"" if event == "stuck" else " hidden"}>止まった所を残しました（手順 <span class="sn">{n}</span>）。'

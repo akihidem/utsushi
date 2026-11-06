@@ -212,7 +212,7 @@ $("ask-form").onsubmit = async (e) => {
   showAnswer("考えています…", "Claude");
   try {
     const r = await sample(`${DATA.system}\n\n${context}\n\n質問: ${q}`, { onText: ({ text }) => showAnswer(text, "Claude（手順だけ）") });
-    const said = r.text.trim() || "手順の紙の絵を見てください。";
+    const said = r.text.trim() || "組み方の絵を見てください。";
     showAnswer(said, "Claude（手順だけ）"); speak(said);
   } catch (err) {
     showAnswer(err && err.code === "not_granted" ? "AI に聞く許可が無いので答えられません。組み方と凡例を見てください。" : "今は AI に聞けません。少し待ってからもう一度聞いてください。", "—");

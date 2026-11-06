@@ -1934,3 +1934,12 @@
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-genre-floats.txt`（直す前の main で、BIG に うかべる が残って rc 1）。取り消した決定（うかべる へ移す）で書いた試験を main に当てた版は `red-genre-floats-ukaberu.txt` に残した。Green は `green-genre-floats.txt`
 - エビデンスゲート: 写しの木で、浮き物を例外から外す・うかべる の棚を戻す・決めた 10 本の 1 本を見立てで動かす、の 3 通りで rc 1、崩さない写しで rc 0。関わる試験 test_toys・test_ways・test_one_sheet_page・test_plain_words・test_two_sites・test_public_open・test_wording・test_tap_size は rc 0
 - 見出しを 3 つだけにした後の確かめ: 試験の頁の確かめを、h3 が無い事と、どの試作もすぐ前の見出しがその玩具の棚の字である事に替えた。写しの木で、中の見出しも出す・棚の中を名前の順に混ぜる・浮き物を例外から外す、の 3 通りで rc 1、崩さない写しで rc 0。Green は `green-genre-shelves.txt`
+
+## 聞く口・手帖・作りながら見る頁の字を「組み方の絵」にそろえる（Issue 対応の担当、issue/kumikata-words、11-06。文章のプリント廃止の設計の PR 3）
+
+- 目的: 刷らなくなる手順の紙を見に行かせる字を、組み方の呼び名にそろえる
+- なぜか: 本人の決まり（11-06）「文章のプリントは廃止。組み立て用のページだけでいい。組み立ての案内はサイトの組み立て頁に寄せてください。」。呼び名は 1 つにそろえる（手順ごとの文と絵の節は「組み方」、その絵は「組み方の絵」。「組み立て」の語は 3D の方だけ）。字は設計メモの字の表のとおりで、本人の確認済み（11-06、本人に聞いた 6 点の答えが全部推しのとおり）
+- 何をしたか: 字の表のうち、聞く口・play_server・手帖・作りながら見る頁の 8 か所だけを直した（`src/api/ask.py` の NO_KEY・Claude へ渡す頼みの文・語の表の蛇腹とジャバラ、`src/web/play_server.py` の鍵が無い時の字、`src/web/techo_page.html` の答えが空の時の字、`src/web/tsukuru.py` の手順の文が無い時の案内と絵の alt）。組み立ての頁（`kumitate.py`）と刷る口の字は別の PR の持ち分なので触っていない。`tsukuru.py` の説明の文の「手順の紙」は絵の元のファイル（`_tejun.png`）を指す作る側の言葉なので残した
+- 字の表に無く、直していない所（同じ聞く口で呼び名が割れている）: `src/web/play_server.py` の別の道の「今は AI に聞けません。組み方の紙を見てください」、`src/web/techo_page.html` の「組み方と凡例を見てください」（2 か所）
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-kumikata-words.txt`（直す前の main で、NO_KEY が古い字で rc 1）、Green は `green-kumikata-words.txt`。絵の alt を見ていた `tests/test_loop1_round.py` の 1 行を新しい字に合わせた
+- エビデンスゲート: 写しの木で、鍵が無い時の字・画面の道の字・手帖の字・作りながら見る頁の alt・蛇腹の答えを 1 つずつ元に戻して rc 1、崩さない写しで rc 0。関わる試験 test_ask・test_loop1_round・test_tsukuru・test_tsukuru_last_step・test_call_timeouts・test_failure_log・test_budget_after_period・test_ai_name・test_plain_words・test_reader_words・test_wording・test_techo_site・test_record_card は rc 0
