@@ -60,7 +60,7 @@ RANGES = {
 }
 PUSH_PARTS = ("tab", "tube", "stick", "lift")
 # lift（筒を外す形）: 本人のレビュー（2026-11-06）から採った案 EP-0017 の、御来迎の次の組（goraigo-v11）の形。型紙エンジン（paper-to-toy の
-# issue/goraigo-v11 5325586）と同じ形と字。扇は糸を一切使わず（本人「糸なしでやります」）、扇の下の端を 2 受け（小さい U の字の部品）に貼って束ね、
+# issue/goraigo-v11 c8bbad3）と同じ形と字。扇は糸を一切使わず（本人「糸なしでやります」）、扇の下の端を 2 受け（小さい U の字の部品）に貼って束ね、
 # 両端の板も受けに貼る。蛇腹の折り目のばねで扇は「基本は開いている」形になり、1 外筒をかぶせると扇は畳まれ、筒を上へ外すと開く
 # （本人「この形で開くなら、内筒を下から押す仕組みも竹串も要らない」）。内筒・竹串・糸・穴は無い。
 # 前の組（goraigo-v10）には無い形（check_range が落とす）。今の仮説の記録（H-A〜H-E）はこの形を使わず、型紙の 1 枚は tab のまま。
@@ -189,9 +189,10 @@ def _check_lift(p):
     out = []
     H, A, h, g, b = p["tube_height"], p["tube_side"], p["fold_height"], p["base_glue"], p["base_side"]
     thick = p["fold_count"] * p["paper_thickness"]
-    # 台は糊代を下へ折った浅い箱で、高さは糊代の長さ。その上に、受けの底（紙 1 枚）と畳んだ扇が立つ
-    if g + h > H - 2:
-        out.append(Failure("F5.fan_height", "蛇腹の扇", f"台の高さ {g}＋扇の高さ {h} が筒の高さ {H}−2 を超え、筒をかぶせられない"))
+    # 台は糊代を下へ折った浅い箱で、高さは糊代の長さ。その上に、受けの底（紙 1 枚）と畳んだ扇が立つ（紙の厚さも足す。エンジン c8bbad3 と同じ）
+    t = p["paper_thickness"]
+    if g + t + h > H - 2:
+        out.append(Failure("F5.fan_height", "蛇腹の扇", f"台の高さ {g}＋受けの底の紙 {t:g}＋扇の高さ {h} が筒の高さ {H}−2 を超え、筒をかぶせられない"))
     if thick > A - 2 - 2 * CRADLE_ROOM:
         out.append(Failure("F5.fan_thickness", "蛇腹の扇", f"畳んだ厚さ {thick:.1f} が筒の一辺 {A} に収まらず、受けごと筒に入らない"))
     if b > A - 1:
@@ -205,6 +206,11 @@ def _check_lift(p):
     foot = p["figure_w"] * (FOOT[1] - FOOT[0])
     if foot > b:
         out.append(Failure("F5.figure_base", "像", f"像の足の糊代 {foot:.1f} が扇の台 {b} より広く、台に貼れない"))
+    # 筒をかぶせるので、像の幅と畳んだ扇の幅も筒の内に入る（足の糊代だけ見ると、幅 30 の像が一辺 20 の筒を通った）
+    if p["figure_w"] > A - 2:
+        out.append(Failure("F5.figure_base", "像", f"像の幅 {p['figure_w']} が筒の一辺 {A}−2 を超え、筒をかぶせられない"))
+    if p["fold_width"] > A - 2:
+        out.append(Failure("F5.fan_thickness", "蛇腹の扇", f"畳んだ扇の幅 {p['fold_width']} が筒の一辺 {A}−2 を超え、筒をかぶせられない"))
     return out
 
 

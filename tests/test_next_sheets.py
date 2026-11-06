@@ -363,7 +363,7 @@ for h in data["hypotheses"]:
     q = {**FAN.DEFAULTS, **h["params"]}
     assert "band" not in {x.key for x in FAN.parts(q)} and not [a for x in FAN.parts(q) for a in x.art if a["kind"] == "mark"], h["id"]
     assert not any("開く糸 2 本（各" in w for w in FAN.steps(q)), h["id"]
-# 筒を外すと扇が開く形（lift・EP-0017。エンジン issue/goraigo-v11 5325586 と同じ）: 糸・穴・扇の足・内筒・竹串が無く、2 受け（U の字・刷った面は全部糊代）がある。
+# 筒を外すと扇が開く形（lift・EP-0017。エンジン issue/goraigo-v11 c8bbad3 と同じ）: 糸・穴・扇の足・内筒・竹串が無く、2 受け（U の字・刷った面は全部糊代）がある。
 # 台は山折りで、受けの底を貼る印がある。前の組には無い形（check_range が落とす）
 h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
 lift = {**FAN.DEFAULTS, **h["params"], "push_part": "lift"}
@@ -390,5 +390,12 @@ assert "筒を外すと、どこがどう動くと思いますか（言葉か絵
 assert sum(1 for x in sheet_l["shapes"] if x.get("tag") == "order_panel") == 3
 with old_set(FAN):
     assert any(f.floor == "F5.range" for f in FAN.check_range(lift)), "前の組で lift が通った"
+# 筒がかぶさる床: 像の幅・畳んだ扇の幅が筒の一辺 −2 を超える寸法と、台＋受けの底の紙＋扇の高さが筒を超える寸法を落とす（エンジン c8bbad3 と同じ）
+A = lift["tube_side"]
+assert any("像の幅" in f.message for f in FAN.check_physics({**lift, "figure_w": A - 1}))
+assert any("畳んだ扇の幅" in f.message for f in FAN.check_physics({**lift, "fold_width": A - 1}))
+assert any("受けの底の紙" in f.message for f in FAN.check_physics({**lift, "fold_height": lift["tube_height"] - 2 - lift["base_glue"]}))
+# 虎の札の字の大きさは、描く所（compose.LABEL_SIZE）と同じ（雛形が写して持つので、食い違うと札の幅の見込みがずれる）
+assert TIGER.LABEL_SIZE == LABEL_SIZE
 
 print("ok 次の組 goraigo-v11・tora-v4。折り線・手順の文・絵の見出しと矢じり・見出し・印の文・用意する物・凡例・作成動画の案")
