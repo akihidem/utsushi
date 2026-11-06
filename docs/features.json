@@ -625,7 +625,6 @@
   "evidence": [
    "src/web/video_up.py",
    "src/omochae/asr_worker.py",
-   "requirements-asr.txt",
    "tests/test_video_up.py",
    "tests/probe_voice_drop.py",
    "tests/check_asr_real.py"
