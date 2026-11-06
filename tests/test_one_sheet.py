@@ -72,8 +72,8 @@ for sid in (G, T):
     stem = f"{tmp}/{sid}_sheet"
     r = cli("--source", sid, "print", hypotheses.sheet_of(sid)["id"], "--out", stem)
     assert r.returncode == 0, r.stderr
-    for suffix in ("", "_tejun", "_after"):
-        assert pathlib.Path(f"{stem}{suffix}.pdf").exists(), (sid, suffix, "型紙と対の手順の紙と試した後の紙")
+    # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+    assert pathlib.Path(f"{stem}.pdf").exists() and not any(pathlib.Path(f"{stem}{s}.pdf").exists() for s in ("_tejun", "_after")), (sid, "型紙だけ")
 # 試作の玩具は今の作りのまま（この決定の作りの変更は必須 2 種の今の組から。ほかの玩具の頁と輪は次の直しで）
 trial = next(p.stem for p in files if json.loads(p.read_text(encoding="utf-8")).get("stage") == "試作"
              and len(json.loads(p.read_text(encoding="utf-8"))["hypotheses"]) > 1)

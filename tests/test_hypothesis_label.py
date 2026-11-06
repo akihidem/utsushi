@@ -62,7 +62,9 @@ for p in paths:
 for sid, hid in REQUIRED.items():
     r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", sid, "print", hid, "--out", f"{tmp}/{sid}"], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-    for pdf in (f"{tmp}/{sid}.pdf", f"{tmp}/{sid}_tejun.pdf"):
+    # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙の字は上の組んだ形（layout）で見る
+    assert not pathlib.Path(f"{tmp}/{sid}_tejun.pdf").exists()
+    for pdf in (f"{tmp}/{sid}.pdf",):
         text = subprocess.run(["pdftotext", pdf, "-"], capture_output=True, text=True, check=True).stdout
         # 前の文で刷るのは、今の組が凍結の組の玩具（marks.FROZEN_SETS。今は御来迎だけ。虎は次の組 tora-v4 に上げた）
         want = marks.HYPOTHESIS_FROZEN if sid in marks.FROZEN_SETS else WORDS

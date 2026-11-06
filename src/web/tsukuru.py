@@ -32,7 +32,7 @@
 """
 import json
 
-from omochae import hypotheses, instructions, loop, making_log
+from omochae import hypotheses, instructions, loop, making_log, render
 from omochae.compose import TEMPLATES
 
 from . import genga, skin
@@ -66,6 +66,9 @@ a{color:var(--accent)}
 .js #steps li{display:none}
 .js #steps li.on{display:block;font-size:clamp(24px,3.6vw,44px);line-height:1.45}
 .sheet{display:block;width:100%;max-height:52svh;object-fit:contain;object-position:left top;background:#fff;border:1px solid var(--frame)}
+/* 組み方の絵（svg）は、手順の紙の絵（縦に長い img）と同じく高さの上限いっぱいを取り、絵は比を保って中に収める。
+   高さを幅から決めると、横に長いコマが低くなり、絵の高さの下限（120px）より低くなった（幅 320 の御来迎、tests/test_landscape_fit.py） */
+svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.koma.on{display:block}
 .side{padding:14px 16px;display:grid;gap:14px;align-content:start;min-width:0;border-top:1px solid var(--rule)}
 /* 札は手が紙でふさがっていても押せる大きさ。並びは進む順（次へか組み上がり・止まった・戻る）。色で良し悪しを付けない。 */
 .tiles{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0}
@@ -126,7 +129,7 @@ const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[va
 let n=+stepIn.value;
 // 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
 const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
 addEventListener('resize',fit);
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
@@ -251,6 +254,19 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
         name = f"{hid}_v{v}_free.png"
     img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・版 {v}）">'
            if (out_dir(sid) / name).exists() else "")
+    if not img and steps:
+        # 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、前に刷った紙の絵が無い時は、手帖・組み方の頁と同じ組み方の絵
+        # （instructions.step_pictures）を出す。字を入れない絵で、読み上げからは隠れる（手順の文は横の並びが言う）
+        try:
+            template = h.get("template") or data.get("template", "slider_fan")
+            params, _ = loop.version_params(sid, hid, v)
+            pictures, which = instructions.step_pictures(template, {**TEMPLATES[template].DEFAULTS, **(params or h.get("params") or {})}, steps)
+            # 前の手順の紙の絵と同じく、見せるのは 1 枚だけ（今の手順の絵）。手順ごとに 1 枚ずつ置き、送る時に JS が切り替える（JS が無い時は n の 1 枚）。
+            # 全部を縦に並べると、御来迎の 4 コマで札が最初の画面の外へ出た（幅 320、tests/test_landscape_fit.py）
+            img = "".join(render.shapes_svg(pictures[k], "sheet koma" + (" on" if i == n else "")).replace("<svg ", f'<svg data-n="{i}" ', 1)
+                          for i, k in enumerate(which, 1) if 0 <= k < len(pictures))
+        except Exception:  # 絵が作れない時も、手順の文だけで進められる
+            img = ""
     # 止まったの文は先に置いておき、押した時に出す（JS が無い時は ?ev= で出す）。
     stuck = (f'<p id="msg-stuck" class="msg"{"" if event == "stuck" else " hidden"}>止まった所を残しました（手順 <span class="sn">{n}</span>）。'
              'このまま下で、声か字で聞けます。</p>')

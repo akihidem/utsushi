@@ -62,7 +62,7 @@ assert body.count(f'href="/sheet/{G}/{GS}_v1.pdf"') == 1 and 'target="_blank"' i
 code, win, _ = get(f"/toy/{G}?see={GS}&kind=tejun&v=1")
 win = win.decode()
 assert f'<img src="/sheet/{G}/{GS}_v1.png"' in win and "_tejun.png" not in win and 'href="#zoom"' in win and 'id="zoom"' in win
-assert get(f"/sheet/{G}/{GS}_v1_tejun.png")[0] == 200
+assert get(f"/sheet/{G}/{GS}_v1_tejun.png")[0] == 404, "11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）"
 # PDF はインラインの印付きで、ブラウザが開ける
 code, pdf, headers = get(f"/sheet/{G}/{GS}_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF" and headers.get("Content-Disposition", "").startswith("inline;"), headers

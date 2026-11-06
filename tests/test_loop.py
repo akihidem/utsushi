@@ -129,8 +129,9 @@ assert all("rank" not in h for h in data["hypotheses"]) and any(h["id"] == "H-N1
 assert hypotheses.print_sheet(G, GS, f"{tmp}/v2", version=2) == 0
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/v2.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert "版2" in flat and r1 in flat
-flat = "".join(subprocess.run(["pdftotext", f"{tmp}/v2_tejun.pdf", "-"], capture_output=True, text=True).stdout.split())
-assert "fold_width" in flat or "折り幅" in flat
+# 前の版から変えた所は、手順の紙でなく版の記録と頁の窓が持つ（11-06 から刷る時に手順の紙を組まない。窓口の決定 推し A）
+assert not pathlib.Path(f"{tmp}/v2_tejun.pdf").exists()
+assert any(c["param"] == "fold_width" for c in loop.version_params(G, GS, 2)[1]["changes"])
 assert hypotheses.print_sheet(G, GS, f"{tmp}/v3", version=3) == 3, "採っていない版は刷らない"
 assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n1") == 3, "採った新しい仮説は作る側の控えで、必須 2 種では刷らない（J-032。試作の玩具は tests/test_one_sheet_loop.py）"
 # 上限
