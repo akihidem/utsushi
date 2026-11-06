@@ -205,6 +205,16 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
 @media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
+/* えらぶ の棚の中の敷き詰め。CSS の列だけ。1 列 96px 以上で 7 列まで。絵と絵の間は --ma の 1 か所。狭い幅でも頁の左右は 24px 以上 */
+.narabi{display:block;columns:7 96px;column-gap:var(--ma,16px)}
+.narabi li{break-inside:avoid;margin:0 0 var(--ma,16px)}
+.narabi .pic{display:block;width:100%;height:auto;box-sizing:border-box}
+.narabi .nopic{aspect-ratio:3/4}
+/* 名前は絵の下に小さく 1 行 */
+.narabi .nm{font-size:12px;margin-top:6px;-webkit-line-clamp:1}
+/* 頭の 1 行は幅 390 で 1 行に入る大きさ */
+.erabu h1{font-size:clamp(19px,4.6vw,30px);letter-spacing:.14em}
+@media (max-width:820px){.erabu{padding-left:8px;padding-right:8px}}
 .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
 .is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
 .foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}

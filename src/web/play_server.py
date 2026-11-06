@@ -542,6 +542,13 @@ class Handler(BaseHTTPRequestHandler):
             page = genga.page_file(source(m.group(1)))
             if page.exists():
                 return self._send(200, page.read_bytes(), "image/jpeg")
+        # えらぶ の敷き詰めの小さい写し（toys.small_picture。幅 1600px の切り抜きを 83 枚読まないため）
+        m = re.fullmatch(rf"/picture/({SID})/small", path)
+        if m:
+            from . import toys
+            small = toys.small_picture(m.group(1))
+            if small:
+                return self._send(200, small, "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")

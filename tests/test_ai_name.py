@@ -94,7 +94,8 @@ assert "この場所での表示だけ（AI（Claude）には渡しません）"
 toy = visible(get(f"/toy/{G}"))
 assert "AI が「こうかな？」と考えた、ためしの案（仮説）です" in toy and "AI（Claude）が「こうかな" not in toy
 assert "仮説は、AI が考えたためしの案です" in toy
-assert "型紙は正解ではなく、AI が考えた仮説です" in visible(get("/toys"))
+# えらぶ の頭の断りの段は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）。見張りも行き先へ移す
+assert "型紙は正解ではなく、AI が考えた仮説です" in visible(get("/about"))
 assert "It is a guess made by an AI." in visible(get(f"/en/toy/{G}"))
 
 print("ok: 断りの AI には名前を添え、札と状態の AI は変えていない")
