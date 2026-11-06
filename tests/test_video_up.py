@@ -43,6 +43,67 @@ PLACE = "+35.6000+139.7000"
 CHUNK = video_up.CHUNK = 64 * 1024  # 試験では小さく分ける
 assert "わからない" not in records.results_for(TORA) and "わからない" in records.results_for(G)
 
+# 字にする道具は作り物（本物は重いので ./run.sh に入れない。本物は tests/check_asr_real.py を手で回す）。
+# 声は字にしたらその場で消えるので、渡された声の写しと権限を作り物の道具が取っておき、試験はそこで声の中身を見る
+fakes = pathlib.Path(tempfile.mkdtemp())
+os.environ["FAKE_ASR_SEEN"] = str(fakes / "seen")
+fake_asr = fakes / "fake_asr.py"
+fake_asr.write_text("""import hashlib, json, os, pathlib, shutil, stat, sys
+if sys.argv[1] == "--check":
+    sys.exit(0)
+voice = pathlib.Path(sys.argv[1])
+assert voice.name == "voice.mka"
+seen = pathlib.Path(os.environ["FAKE_ASR_SEEN"]) / hashlib.sha256(sys.argv[1].encode()).hexdigest()[:16]
+seen.mkdir(parents=True, exist_ok=True)
+shutil.copyfile(voice, seen / "voice.mka")
+(seen / "mode.json").write_text(json.dumps([stat.S_IMODE(voice.stat().st_mode), stat.S_IMODE(voice.parent.stat().st_mode)]))
+json.dump({"model": sys.argv[2], "language": "ja", "segments": [{"start": 1.0, "end": 2.0, "text": "手順 3 の折り線が薄くて見えません"}]}, sys.stdout, ensure_ascii=False)
+""", encoding="utf-8")
+no_check = fakes / "no_check.py"
+no_check.write_text('import sys\nprint("字にする道具かモデルが手元に無い（作り物）", file=sys.stderr)\nsys.exit(4)\n', encoding="utf-8")
+
+
+def seen_voice(voice):
+    """作り物の道具が字にする時に受け取った声の写しと、その時の権限（声・置き場）。"""
+    d = pathlib.Path(os.environ["FAKE_ASR_SEEN"]) / hashlib.sha256(str(voice).encode()).hexdigest()[:16]
+    return d / "voice.mka", json.loads((d / "mode.json").read_text(encoding="utf-8"))
+
+
+def wait_text(slip_id):
+    """字にする段が終わるまで待つ（受け取りの後に回る）。Returns 受付。"""
+    for _ in range(300):
+        slip = json.loads((video_up.folder() / f"{slip_id}.json").read_text(encoding="utf-8"))
+        if slip.get("text"):
+            return slip
+        time.sleep(0.1)
+    raise AssertionError(f"字にする段が終わらない: {slip}")
+
+
+# 声を残す口は、字にする道具が無いと立たない（窓口の決定 11-06 夜）。立てると、字にできないまま声を置き続けるため
+os.environ.pop("OMOCHAE_ASR_PYTHON", None)
+for kind in video_up.KINDS:
+    try:
+        video_up.serve(0, KEY, worker=False, kind=kind)
+    except ValueError as e:
+        assert "字にする道具が無い" in str(e), e
+    else:
+        raise AssertionError(f"道具が無いのに {kind} の口が立った")
+os.environ["OMOCHAE_ASR_PYTHON"] = sys.executable
+video_up.ASR_WORKER = no_check
+try:
+    video_up.serve(0, KEY, worker=False)
+except ValueError as e:
+    assert "作り物" in str(e), "確かめに落ちた理由を出す"
+else:
+    raise AssertionError("道具の確かめに落ちたのに口が立った")
+# 端末から立てる時も同じ（本物の道具の道。手元に無いモデルの名で、どの機械でも確かめに落とす）
+key_file = fakes / "key"
+key_file.write_text(KEY, encoding="utf-8")
+refused = subprocess.run([sys.executable, "-m", "web.video_up", "serve", "--port", "0", "--key-file", str(key_file)], cwd=pathlib.Path(__file__).resolve().parents[1],
+                         env={**os.environ, "PYTHONPATH": "src", "OMOCHAE_ASR_MODEL": "no-such/model"}, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=120)
+assert refused.returncode == 4 and "字にする道具が無い" in refused.stderr, (refused.returncode, refused.stderr)
+video_up.ASR_WORKER = fake_asr
+
 # 合言葉が無いサーバは立たない
 for bad in ("", None, "short"):
     try:
@@ -125,12 +186,12 @@ def video(name, audio=True):
     return data
 
 
-# 本人が採った文（11-05）。一字も変えない
+# 本人が採った文（11-05）。一字も変えない。声を消す時の 1 文だけは、窓口の決定（11-06 夜「声の消す合図は字にしたら」）で替えた
 ADOPTED = (
     "動画を送る",
     "『江都二色』のおもちゃを作った時の動画を送る頁です。型紙のたたき台を直すために使います。",
     "いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
-    "声は、字にして整理するために、この機械の中にだけ置きます。整理が終わったら消します。",
+    "声は、字にして整理するために、この機械の中にだけ置きます。字にしたら消します。",
     "声と動画そのものは、サイトの頁に出しません。切り出した絵（紙と手の所）と、話した言葉の一部を、名前などを除いて、サイトに載せる事があります。載せる前に人が見ます。",
     "字にした言葉と、動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、手が止まった所と工夫した所です。",
     "型紙を直すかどうかは、人が決めます。作った人の出来に点は付けません。",
@@ -153,13 +214,14 @@ REVIEW_ADOPTED = (
     "型紙のレビューの動画を送る",
     "『江都二色』のおもちゃの型紙を、作る前に見て話した動画を送る頁です。型紙のたたき台を直すために使います。",
     "いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
-    "声は、字にして整理するために、この機械の中にだけ置きます。整理が終わったら消します。",
+    "声は、字にして整理するために、この機械の中にだけ置きます。字にしたら消します。",
     "声と動画そのものは、サイトの頁に出しません。切り出した絵（紙と手の所）と、話した言葉の一部を、名前などを除いて、サイトに載せる事があります。載せる前に人が見ます。",
     "字にした言葉と、動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、型紙のどこをどう直すとよいかです。",
     "型紙を直すかどうかは、人が決めます。話した人に点は付けません。",
     "取り下げたい時は、受付番号を、リンクを渡した人に伝えてください。動画も声も字も消します。",
     "どのおもちゃの型紙ですか",
 )
+assert not any("整理が終わったら" in line for line in (*video_up.PROMISES, *video_up.REVIEW_PROMISES)), "消す時の約束を作りと合わせる（字にしたら消す）"
 
 # 門: 合言葉なしでは頁も玩具の名前も見せない。合言葉は Cookie に移して URL から消す
 code, body, _ = call("GET", "/", cookie=None)
@@ -286,6 +348,10 @@ assert slip["source_id"] == G and slip["state"] == "done"
 assert slip["keep_voice"] is True and slip["voice"] is True, slip
 assert video_up._keeps_voice({"kind": "making"}) is False and video_up._keeps_voice({"kind": "review"}) is True
 assert video_up._keeps_voice({"kind": "making", "keep_voice": True}) is True and video_up._keeps_voice({"kind": "review", "keep_voice": False}) is False
+# 字にしたら声はその場で消える（窓口の決定 11-06 夜）。字は残り、受付に消した印が付く
+slip = wait_text("U-0001")
+assert slip["text"] == "done" and slip.get("voice_dropped"), slip
+assert not (tv._base(rid) / "voice" / "voice.mka").exists() and (tv._base(rid) / "voice" / "transcript.json").exists()
 assert not ({"name", "filename", "file", "ip", "address", "agent", "user_agent"} & set(slip)), "ファイルの名前と、誰が上げたかを残さない"
 assert "a.mov" not in json.dumps(slip)
 assert not list((folder / "tmp").iterdir()), "上げた元は消す"
@@ -422,8 +488,10 @@ half_slip = json.loads((folder / f'{half["receipt"]}.json').read_text(encoding="
 assert call("POST", f'/chunk?id={half_slip["upload"]}&n=0', body=b"x" * 10)[0] == 200 and (folder / "tmp" / half_slip["upload"]).exists()
 assert cli("withdraw", half["receipt"], module="web.video_up").returncode == 0 and not (folder / "tmp" / half_slip["upload"]).exists()
 # 案の根拠になった記録は残すが、動画とコマと札は消える（顔や声を根拠の話のために残さない。records.withdraw の media_only）
+assert records.used_by(rid) and (tv._base(rid) / "voice" / "transcript.json").exists(), "根拠の記録で、字がある形で取り下げる"
 done = cli("withdraw", "U-0001", module="web.video_up")
 assert done.returncode == 0, done.stderr
+assert not (tv._base(rid) / "voice").exists(), "根拠の記録でも、声と字は消す"
 assert not tv._base(rid).exists() and not (loop.folder() / f"video-{rid}.json").exists(), "動画とコマと札は消す"
 assert (records.folder() / f"{rid}.json").exists(), "案の根拠の指す先を残す"
 assert WORDS not in (records.folder() / f"{rid}.json").read_text(encoding="utf-8"), "上げた人の文も消す"
@@ -638,14 +706,10 @@ assert slip_of(cut["receipt"])["state"] == "failed", "欠けた動画"
 broken.shutdown()
 broken.server_close()
 
-# もう 1 つの口: 作る前の型紙のレビュー（本人の指示 20:35）。声を非公開で残し、この機械の中で字にする。声も字も頁に出さない
+# もう 1 つの口: 作る前の型紙のレビュー（本人の指示 20:35）。声を非公開で残し、この機械の中で字にし、字にしたらその場で消す。声も字も頁に出さない
 review_data = pathlib.Path(tempfile.mkdtemp())
 os.environ["OMOCHAE_DATA"] = env["OMOCHAE_DATA"] = str(review_data)
 folder = video_up.folder()
-fake_asr = tmp / "fake_asr.py"
-fake_asr.write_text('import json, sys\nassert sys.argv[1].endswith("voice.mka")\njson.dump({"model": sys.argv[2], "language": "ja", "segments": [{"start": 1.0, "end": 2.0, "text": "手順 3 の折り線が薄くて見えません"}]}, sys.stdout, ensure_ascii=False)\n', encoding="utf-8")
-video_up.ASR_WORKER = fake_asr
-os.environ["OMOCHAE_ASR_PYTHON"] = sys.executable
 rev = video_up.serve(0, KEY, kind="review")
 threading.Thread(target=rev.serve_forever, daemon=True).start()
 port = rev.server_address[1]
@@ -662,20 +726,20 @@ code, r1 = send(video("rv1.mov"), made_with="review", note="見た感想です")
 assert code == 200, r1
 now = wait(r1["token"])
 assert now["state"] == "done" and now["word"] == video_up.REVIEW_WORDS["done"], now
-for _ in range(100):
-    slip_r = json.loads((folder / f'{r1["receipt"]}.json').read_text(encoding="utf-8"))
-    if slip_r.get("text"):
-        break
-    time.sleep(0.1)
+slip_r = wait_text(r1["receipt"])
 assert slip_r["text"] == "done" and slip_r["voice"] is True, slip_r
 rid_r = slip_r["record"]
 rec_r = loop.record(rid_r)
 assert rec_r["video_kind"] == "review" and rec_r["via"] == records.UPLOADED and rec_r["note"].startswith(video_up.MADE_WITH["review"]) and "見た感想です" in rec_r["note"]
 voice = tv._base(rid_r) / "voice" / "voice.mka"
-assert stat.S_IMODE(voice.stat().st_mode) == 0o600 and stat.S_IMODE(voice.parent.stat().st_mode) == 0o700
-kinds = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(voice)], capture_output=True, text=True, check=True).stdout)
+# 字にしたら声はその場で消える（窓口の決定 11-06 夜）。字は残り、受付に消した印が付く
+assert not voice.exists() and slip_r.get("voice_dropped"), slip_r
+# 字にする前の声は、作り物の道具が受け取った写しで見る: 声だけ・撮影情報なし・本人だけが読める権限
+copy, modes = seen_voice(voice)
+assert modes == [0o600, 0o700], modes
+kinds = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(copy)], capture_output=True, text=True, check=True).stdout)
 assert [s["codec_type"] for s in kinds["streams"]] == ["audio"], "声だけ"
-assert b"secret-place" not in voice.read_bytes() and PLACE.encode() not in voice.read_bytes(), "声の写しにも撮影情報を残さない"
+assert b"secret-place" not in copy.read_bytes() and PLACE.encode() not in copy.read_bytes(), "声の写しにも撮影情報を残さない"
 stored_r = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(tv._base(rid_r) / "v1.mp4")], capture_output=True, text=True, check=True).stdout)
 assert [s["codec_type"] for s in stored_r["streams"]] == ["video"], "動画の方に音を残さない"
 text_file = tv._base(rid_r) / "voice" / "transcript.json"
@@ -696,31 +760,47 @@ for path in (f"/toy/{G}", "/gallery", f"/zukan/{G}", f"/toy/{G}/techo"):
 for path in (f"/record/{rid_r}/media/voice.mka", f"/record/{rid_r}/media/voice/voice.mka", f"/record/{rid_r}/media/voice/transcript.json"):
     assert site_get(path)[0] == 404, path
 site2.shutdown()
+# 字を書いて声を消した後、受付に書く前に止まった時: 次に字にする時に、字を残したまま印を付け直す
+stopped = {**slip_of(r1["receipt"]), "text": "failed"}
+stopped.pop("voice_dropped")
+video_up._save(stopped)
+assert video_up.transcribe(r1["receipt"]) is True
+again = slip_of(r1["receipt"])
+assert again["text"] == "done" and again.get("voice_dropped") and "折り線" in text_file.read_text(encoding="utf-8"), again
 # 音の無い動画は、字にする物が無い
 silent = video("rv2.mov", audio=False)
 code, r2 = send(silent, made_with="review")
 assert code == 200 and wait(r2["token"])["state"] == "done"
 slip_s = json.loads((folder / f'{r2["receipt"]}.json').read_text(encoding="utf-8"))
 assert slip_s["voice"] is False and not (tv._base(slip_s["record"]) / "voice").exists()
-# 道具が無い機械: 動画は受け取り、字にできていない事を残す。後で字にし直せる
+# 立てた後で道具が無くなった時: 動画は受け取り、字にできていない事を残す。字にできない間は声を消さない（消すと話が残らない）
 del os.environ["OMOCHAE_ASR_PYTHON"]
-code, r3 = send(video("rv3.mov"), made_with="review")
-assert code == 200 and wait(r3["token"])["state"] == "done"
-for _ in range(100):
-    slip_n = json.loads((folder / f'{r3["receipt"]}.json').read_text(encoding="utf-8"))
-    if slip_n.get("text"):
-        break
-    time.sleep(0.1)
-assert slip_n["text"] == "no-tool", slip_n
+held = {}
+for name in ("rv3.mov", "rv4.mov", "rv5.mov", "rv6.mov"):
+    code, r = send(video(name), made_with="review", note=f"{name} の文")
+    assert code == 200 and wait(r["token"])["state"] == "done", r
+    s = wait_text(r["receipt"])
+    assert s["text"] == "no-tool" and (tv._base(s["record"]) / "voice" / "voice.mka").exists(), s
+    held[name] = (r, s["record"], tv._base(s["record"]) / "voice" / "voice.mka")
+(r3, rid3, voice3), (r4, _, _), (r5, _, voice5), (r6, rid6, voice6) = (held[n] for n in ("rv3.mov", "rv4.mov", "rv5.mov", "rv6.mov"))
+# 字の前の drop-voice は断り、声を残す
+refused = cli("drop-voice", r3["receipt"], module="web.video_up")
+assert refused.returncode == 3 and "字がまだ無い" in refused.stderr and voice3.exists(), refused.stderr
+# 字にせずに消すと人が決めた時だけ、--force で消す
+assert cli("drop-voice", r5["receipt"], "--force", module="web.video_up").returncode == 0 and not voice5.exists() and slip_of(r5["receipt"]).get("voice_dropped")
+assert cli("drop-voice", "U-9999", module="web.video_up").returncode == 3
+# 案の根拠になった記録を取り下げても（記録の番号は残す道）、預かっている声は消える
+m6, fails = tv.add_mark(rid6, 1, 3, "mark", "手順 3 で迷った", "読み手")
+assert m6 and not fails and not tv.judge_mark(rid6, m6, "確かめた人") and not loop.save_explanation(rid6, "確かめた人", "線が薄い", "線を濃くする")
+fix6, fails = tv.propose(rid6, [m6], "線を濃くする", "作る側", "fold_count", 20)
+assert fix6 and not fails and records.used_by(rid6), fails
+assert cli("withdraw", r6["receipt"], module="web.video_up").returncode == 0
+assert (records.folder() / f"{rid6}.json").exists() and not voice6.exists() and not (tv._base(rid6) / "voice").exists(), "根拠の記録でも、声は消す"
+# 道具が戻れば字にし直せる。字にしたら、その場で声が消える
 os.environ["OMOCHAE_ASR_PYTHON"] = sys.executable
-assert video_up.transcribe(r3["receipt"]) is True and json.loads((folder / f'{r3["receipt"]}.json').read_text(encoding="utf-8"))["text"] == "done"
+assert video_up.transcribe(r3["receipt"]) is True and slip_of(r3["receipt"])["text"] == "done" and not voice3.exists() and slip_of(r3["receipt"]).get("voice_dropped")
+slip_n = slip_of(r3["receipt"])
 # 字にしている間に取り下げられたら、受付を元に戻さない（道具が落ちる形でも）
-code, r4 = send(video("rv4.mov"), made_with="review", note="字にする間に取り下げる文")
-assert code == 200 and wait(r4["token"])["state"] == "done"
-for _ in range(100):
-    if json.loads((folder / f'{r4["receipt"]}.json').read_text(encoding="utf-8")).get("text"):
-        break
-    time.sleep(0.1)
 real_run = video_up.subprocess.run
 
 
@@ -736,9 +816,6 @@ video_up.subprocess.run = real_run
 slip_w = json.loads((folder / f'{r4["receipt"]}.json').read_text(encoding="utf-8"))
 assert slip_w["state"] == "withdrawn" and "note" not in slip_w and "record" not in slip_w, slip_w
 assert status(r4["token"])[r4["token"]]["word"] == video_up.REVIEW_WORDS["withdrawn"]
-# 整理が終わったら声を消す。字は残る
-assert cli("drop-voice", r1["receipt"], module="web.video_up").returncode == 0 and not voice.exists() and text_file.exists()
-assert cli("drop-voice", "U-9999", module="web.video_up").returncode == 3
 # 取り下げで動画も声も字も札も消える
 assert cli("withdraw", r3["receipt"], module="web.video_up").returncode == 0
 gone_rid = slip_n["record"]

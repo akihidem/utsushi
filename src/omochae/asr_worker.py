@@ -4,10 +4,13 @@
 ネットへ行かない指定で、手元のモデルだけを読む。声を外へ送らない。
 
 使い方: <faster-whisper の入った python> -I asr_worker.py <声のファイル> <モデル>
+       <faster-whisper の入った python> -I asr_worker.py --check <モデル>   道具とモデルが手元にあるかだけを見る（終わり 0 = ある / 4 = 無い）
 出力: {"model": …, "language": …, "segments": [{"start": 秒, "end": 秒, "text": 字}, …]} の JSON。
+道具の作り方は repo の根の requirements-asr.txt に書いた（版を固めた物）。
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -28,6 +31,23 @@ def read_voice(path):
     return numpy.frombuffer(raw, dtype=numpy.int16).astype(numpy.float32) / 32768.0
 
 
+def check(name):
+    """道具とモデルが手元にあるか。動画の専用の口は、立てる前にこれを呼び、落ちたら立たない（窓口の決定 11-06 夜）。
+    重いモデルは読み込まず、手元の置き場にある事だけを見る（口を立てるたびに数 GB を読まないため）。Returns 終わりの値。"""
+    if not shutil.which("ffmpeg"):
+        print("字にする道具が無い: ffmpeg", file=sys.stderr)
+        return 4
+    try:
+        import numpy  # noqa: F401
+        from faster_whisper.utils import download_model
+
+        download_model(name, local_files_only=True)
+    except Exception as e:  # 入っていない・版が違う・モデルが手元に無い、のどれでも立てない
+        print(f"字にする道具かモデルが手元に無い（{type(e).__name__}）", file=sys.stderr)
+        return 4
+    return 0
+
+
 def main(path, name):
     from faster_whisper import WhisperModel
 
@@ -41,4 +61,6 @@ def main(path, name):
 
 
 if __name__ == "__main__":
+    if sys.argv[1] == "--check":
+        sys.exit(check(sys.argv[2]))
     main(sys.argv[1], sys.argv[2])

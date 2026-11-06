@@ -31,3 +31,4 @@ data/loop/*
 .venv
 # 作る側の機械ごとの設定。共有の設定 .claude/settings.json は入れる。
 .claude/settings.local.json
+.venv-asr/

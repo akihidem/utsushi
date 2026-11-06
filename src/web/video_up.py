@@ -4,8 +4,9 @@
 自動で撮影情報を外し、試行の動画の入口（omochae.trial_video。札とコマ読み）を通して、各玩具のたたき台の改善の輪へ回す。上げた人に受け取りが見える。
 もう 1 つの形（本人の指示 20:35「作る前の型紙のレビューを、江戸二色を再現したことのある教え子にしてもらった動画の入り口も作って」）: 同じ仕組みの別の口（--kind review）。
 レビューは話が本体なので、声を非公開で残し、この機械の中で字にする（omochae.asr_worker）。字を作る側のセッションが読んで札の案を書き、人が確かめる（本物の API はまだ動かしていない）。
-声は整理が終わったら消す（drop-voice）。声と動画そのものは頁に出さない。
-本人の決定（11-06）: 作る時の動画の声も同じ形にする（声を残す → 字にする → 整理が終わったら消す）。決定の前に送られた受付は、読んだ文のとおり声を残さない。
+声は字にしたら、その場で消す（窓口の決定 11-06 夜。前は整理が終わってから手で消す形で、手の命令を待つ間に声が残り続けた）。声と動画そのものは頁に出さない。
+字にする道具が無い時は、声を残す口を立てない（同じ窓口の決定）。立てると、字にできないまま声を置き続けるため。
+本人の決定（11-06）: 作る時の動画の声も同じ形にする（声を残す → 字にする → 消す）。決定の前に送られた受付は、読んだ文のとおり声を残さない。
 
 判断の芯:
 - サイトの道に足さず、小さなサーバを別に立てる。リンクを渡した相手に、記録や写真の頁を見せる道を作らないため。合言葉が無いと立たない。
@@ -65,12 +66,13 @@ BOXES = (b"ftyp", b"moov", b"mdat", b"free", b"skip", b"wide", b"pnot")  # MP4 �
 FORMAT = "mov"  # ffmpeg の読み手の名前（MP4 と MOV は同じ読み手）
 
 # 頁の文。本人が採った文（11-05、#337）。一字も変えない。tests/test_video_up.py が文字列で見る。
+# 声を消す時の 1 文だけは、窓口の決定（11-06 夜「声の消す合図は字にしたら」）で「整理が終わったら消します」を「字にしたら消します」に替えた。作りと頁の約束を合わせるため。
 # 載せる事の 1 文は、本人の決まり（11-05「コマ切りでの写真や語られた言葉で印象的な物は、引用してHPにのせてok」「これからあがるすべての動画も同様」）に合わせて、本人が採った文。
 TITLE = "動画を送る"
 LEAD = "『江都二色』のおもちゃを作った時の動画を送る頁です。型紙のたたき台を直すために使います。"
 PROMISES = (
     "いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
-    "声は、字にして整理するために、この機械の中にだけ置きます。整理が終わったら消します。",
+    "声は、字にして整理するために、この機械の中にだけ置きます。字にしたら消します。",
     "声と動画そのものは、サイトの頁に出しません。切り出した絵（紙と手の所）と、話した言葉の一部を、名前などを除いて、サイトに載せる事があります。載せる前に人が見ます。",
     "字にした言葉と、動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、手が止まった所と工夫した所です。",
     "型紙を直すかどうかは、人が決めます。作った人の出来に点は付けません。",
@@ -93,7 +95,7 @@ REVIEW_TITLE = "型紙のレビューの動画を送る"
 REVIEW_LEAD = "『江都二色』のおもちゃの型紙を、作る前に見て話した動画を送る頁です。型紙のたたき台を直すために使います。"
 REVIEW_PROMISES = (
     "いつ・どこでとったかなどの情報は、受け取る時に自動で消します。",
-    "声は、字にして整理するために、この機械の中にだけ置きます。整理が終わったら消します。",
+    "声は、字にして整理するために、この機械の中にだけ置きます。字にしたら消します。",
     "声と動画そのものは、サイトの頁に出しません。切り出した絵（紙と手の所）と、話した言葉の一部を、名前などを除いて、サイトに載せる事があります。載せる前に人が見ます。",
     "字にした言葉と、動画から切り出した絵を、作る側の人と AI（Claude）が読みます。見るのは、型紙のどこをどう直すとよいかです。",
     "型紙を直すかどうかは、人が決めます。話した人に点は付けません。",
@@ -108,6 +110,7 @@ KINDS = {
 MADE_WITH = {"sheet": "", "own": "自分のやり方で作った動画。", "review": "作る前の型紙のレビューの動画。"}
 ASR_WORKER = pathlib.Path(__file__).resolve().parents[1] / "omochae" / "asr_worker.py"
 ASR_MODEL = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"  # 手元のモデル。環境変数 OMOCHAE_ASR_MODEL で替えられる
+CHECK_TIMEOUT = 120  # 秒。道具の確かめは読み込みだけなので短い。重いモデルは読まない
 MADE_WITH_LABEL = {"sheet": "うつしの型紙", "own": "自分のやり方"}
 NOTE_MAX = MAX_BODY - max(len(v) for v in MADE_WITH.values())  # 文の頭に残す字の分を引く。記録の長さの床で、送った後に落とさない
 _lock = threading.Lock()
@@ -287,15 +290,35 @@ def _text_path(rid):
     return trial_video._base(rid) / "voice" / "transcript.json"
 
 
-def _note_text(slip_id, state, text_file=""):
-    """字の様子を受付に書く。Returns False（字はできていない時の返り値に使う）。読み直して書くので、取り下げた受付を元に戻さない。"""
+def _note_text(slip_id, state, text_file="", dropped=False):
+    """字の様子を受付に書く。dropped は声を消した印（時刻）を付けるか。Returns False（字はできていない時の返り値に使う）。読み直して書くので、取り下げた受付を元に戻さない。"""
     slip = store.read_json_or_skip(folder() / f"{slip_id}.json")
     if slip and slip.get("state") == "done":
         slip["text"] = state
         if text_file:
             slip["text_file"] = text_file
+        if dropped and not slip.get("voice_dropped"):
+            slip["voice_dropped"] = loop._now()
         _save(slip)
     return False
+
+
+def tool_missing():
+    """字にする道具が使えるか。Returns 使えない理由（使えれば空の字）。
+
+    窓口の決定（11-06 夜）: 道具が無い時は、声を残す口を立てない。立てると、声を字にできないまま置き続け、頁の「字にしたら消します」が守れない。
+    確かめは字にするのと同じ道（同じ python・同じ omochae.asr_worker）で回す。別の道で確かめると、確かめは通るのに字にできない形が残るため。
+    """
+    python = os.environ.get("OMOCHAE_ASR_PYTHON")
+    if not python:
+        return "OMOCHAE_ASR_PYTHON が無い"
+    try:
+        r = subprocess.run([python, "-I", str(ASR_WORKER), "--check", os.environ.get("OMOCHAE_ASR_MODEL", ASR_MODEL)], capture_output=True, text=True, timeout=CHECK_TIMEOUT)
+    except (OSError, subprocess.SubprocessError) as e:
+        return f"確かめを回せない（{type(e).__name__}）"
+    if r.returncode == 0:
+        return ""
+    return (r.stderr.strip().splitlines() or [f"確かめに落ちた（rc={r.returncode}）"])[-1][:200]
 
 
 def transcribe(slip_id):
@@ -304,8 +327,13 @@ def transcribe(slip_id):
     slip = store.read_json_or_skip(path)
     if not slip or slip.get("state") != "done" or not slip.get("record"):
         return False
-    voice = trial_video._base(slip["record"]) / "voice" / "voice.mka"
+    rid = slip["record"]
+    voice = trial_video._base(rid) / "voice" / "voice.mka"
     if not voice.exists():
+        # 字を書いて声を消した後、受付に書く前に止まった時。字は残っているので、印だけ付け直す（字を「無い」と書き換えない）
+        if _text_path(rid).exists():
+            _note_text(slip_id, "done", str(_text_path(rid)), dropped=True)
+            return True
         return _note_text(slip_id, "no-voice")
     python = os.environ.get("OMOCHAE_ASR_PYTHON")
     if not python:
@@ -321,20 +349,30 @@ def transcribe(slip_id):
     # 字にしている間に取り下げられていたら、字を書かない
     if (store.read_json_or_skip(path) or {}).get("state") != "done" or not voice.parent.is_dir():
         return False
-    store.write_json(_text_path(slip["record"]), data)
-    _text_path(slip["record"]).chmod(0o600)
-    _note_text(slip_id, "done", str(_text_path(slip["record"])))
+    store.write_json(_text_path(rid), data)
+    _text_path(rid).chmod(0o600)
+    # 字にしたら、その場で声を消す（窓口の決定 11-06 夜）。字が空でも消す: 道具が聞いて言葉が無かった声で、置き続ける理由が無い。
+    # 順は 字を書く → 声を消す → 受付に印。どこで止まっても、字の無いまま声が消える事は無く、消した声に印が無い時は上で付け直す
+    voice.unlink(missing_ok=True)
+    _note_text(slip_id, "done", str(_text_path(rid)), dropped=True)
     return True
 
 
-def drop_voice(slip_id):
-    """整理が終わった声を消す。字と動画は残る。Returns 失敗の一覧。"""
+def drop_voice(slip_id, force=False):
+    """声を手で消す。字と動画は残る。Returns 失敗の一覧。
+
+    字にできた声は transcribe がその場で消すので、これは字にできなかった声の後始末に使う。字の前は断る: 消すと話が残らないため。
+    force は、字にせずに消すと人が決めた時。
+    """
     if not (isinstance(slip_id, str) and SLIP.fullmatch(slip_id)):
         return [Failure("F8.references", str(slip_id), "受付番号の形が違う")]
     slip = store.read_json_or_skip(folder() / f"{slip_id}.json")
     if slip is None or not slip.get("record"):
         return [Failure("F8.references", slip_id, "その受付に記録が無い")]
-    (trial_video._base(slip["record"]) / "voice" / "voice.mka").unlink(missing_ok=True)
+    voice = trial_video._base(slip["record"]) / "voice" / "voice.mka"
+    if voice.exists() and slip.get("text") != "done" and not force:
+        return [Failure("F8.references", slip_id, "字がまだ無い。消すと話が残らない（字にせずに消すなら --force）")]
+    voice.unlink(missing_ok=True)
     slip["voice_dropped"] = loop._now()
     _save(slip)
     return []
@@ -842,6 +880,8 @@ def serve(port=8794, key=None, worker=True, kind="making"):
     """口は手元だけに開く。外からはトンネルだけが入る。合言葉が無いと立たない（リンクを渡した人だけが開く口のため）。"""
     if not (isinstance(key, str) and len(key) >= 16):
         raise ValueError("合言葉が要る（16 字以上）")
+    if KINDS[kind]["keep_voice"] and (why := tool_missing()):
+        raise ValueError(f"声を字にする道具が無い（{why}）。声を残す口は、字にする道具が無いと立てない")
     folder()
     sweep()
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
@@ -873,8 +913,9 @@ def main(argv=None):
     w.add_argument("--force", action="store_true", help="サーバを止めてから、読み取り中のまま残った受付に使う")
     t = sub.add_parser("transcribe", help="声を字にし直す（レビューの口）")
     t.add_argument("slip")
-    v = sub.add_parser("drop-voice", help="整理が終わった声を消す（字と動画は残る）")
+    v = sub.add_parser("drop-voice", help="字にできなかった声を手で消す（字と動画は残る。字にできた声は、その場で消える）")
     v.add_argument("slip")
+    v.add_argument("--force", action="store_true", help="字にせずに消す（字の前は、これが無いと断る）")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
@@ -897,7 +938,7 @@ def main(argv=None):
     if args.cmd == "transcribe":
         return 0 if transcribe(args.slip) else 3
     if args.cmd == "drop-voice":
-        failures = drop_voice(args.slip)
+        failures = drop_voice(args.slip, args.force)
     else:
         failures = withdraw(args.slip, args.force)
     for f in failures:
