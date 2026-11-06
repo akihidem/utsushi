@@ -65,10 +65,14 @@ assert "江戸の人は、糸車のしくみも、平らな紙に奥ゆきを見
 for page in (white, black):
     assert 'id="hokusai-mech"' in page and f"/hokusai/{hk.WHEEL_PAGE}-wheel.jpg" in page and f"/hokusai/{hk.LINES_PAGE}-left.jpg" in page and f"/hokusai/{hk.LINES_PAGE}-right.jpg" in page
     assert "糸車" in page and "（PDM）" in page
-# 案 2: 黒の入口の章の頭。玩具の章より前。白の入口には無い
-zine = looks.PAGES["zine"]()
-assert 'id="zn-hokusai"' in zine and zine.index('id="zn-hokusai"') < zine.index('id="look-1"') and "（PDM）" in zine
-assert 'id="zn-hokusai"' not in looks.PAGES["tenji"]()
+# 案 2: 入口の章の頭。玩具の章より前。前は黒の入口にだけあった。本人の決定（11-06）「ページは白案で統一します。黒案にだけある要素は白案に入れてください」で、
+# 白の入口にも同じ節を白の色で置く（字と動きは同じ）
+zine, tenji = looks.PAGES["zine"](), looks.PAGES["tenji"]()
+for page in (zine, tenji):
+    assert 'id="zn-hokusai"' in page and page.index('id="zn-hokusai"') < page.index('id="look-1"') and "（PDM）" in page
+assert 'class="zn-hk tj-hk"' in tenji and 'class="zn-hk"' in zine and site.WHITE_SCROLL_STYLE in tenji and site.WHITE_SCROLL_STYLE not in zine
+assert tenji.index('class="tj-hall"') < tenji.index('id="zn-hokusai"'), "白の入口の最初の画面（題の間と えらぶ）の後"
+
 assert "prefers-reduced-motion" in site.SCROLL_SCRIPT and "IntersectionObserver" not in site.SCROLL_SCRIPT and "prefers-reduced-motion" in site.SCROLL_STYLE
 
 # 玩具の頁と一覧には置かない
