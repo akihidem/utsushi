@@ -160,8 +160,9 @@ assert words.check_names({"params": {"board_w": 90}}, src(P), {"board_w": 80}) =
 # 虎（必須のもう 1 種）も同じ道で紙になる
 t_base = words.base_of(T)[1]
 wt, _ = ask(T, "重りを軽くしたら、風で揺れると思う")
-# 軽くする値は、虎の今の組（tora-v6）の寸法で床に通る 1.5g（0.8g は静かな時に 15° より傾く。前の組の寸法の時は 0.8g・28mm だった）
-assert not words.fill_think(wt["id"], words.think_result(t_base, {"weight_g": 1.5}), "作る側")[1]
+# 軽くする値は、虎の今の組（tora-v7）の寸法で床に通る 2.5g（2g から下は、揺れる間に頭の後ろの端が前の壁に当たる。v6 の寸法の時は 1.5g、
+# 前の組の寸法の時は 0.8g・28mm だった）
+assert not words.fill_think(wt["id"], words.think_result(t_base, {"weight_g": 2.5}), "作る側")[1]
 ownt, _ = words.adopt_words(wt["id"], "本人")
 assert "".join(OWN_HYPOTHESIS.split()) in flat_pdf(printed(T, ownt["id"])), "虎の紙にも「自分で立てた」の印"
 

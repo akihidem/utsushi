@@ -52,6 +52,8 @@ def _by_set(fn):
 
 # tora-v6 から（脚・角・顔の数）と tora-v7 から（粘土の下の穴を後ろへ・軸を前の壁から離す・当たりの検査）の寸法の既定。型紙エンジンと同じ
 NEXT_DEFAULTS = {"leg_height": 0, "body_round": 0, "head_sides": 1, "clay_back": 0, "axle_back": 6, "fit_check": 0}
+# 学ぶ人の考えの節に出さない寸法（web.think_sheet.shown）。当たりの検査の印は寸法でないので（窓口の決定 2026-11-07）
+UNSHOWN_PARAMS = ("fit_check",)
 
 DEFAULTS = {
     "mount": "neck",
