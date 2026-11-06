@@ -218,7 +218,6 @@ def feedback(sid, r, photos=True, up_key=None, can_tell=False):
     can_tell は、この画面がこの記録を残した時に真。説明の欄はその画面にだけ出す（受け口も断る。records.mine）。"""
     from omochae import loop
 
-    after = f"/sheet/{esc(sid)}/{esc(r['hypothesis_id'])}_v{esc(r.get('sheet_version', 1))}_after.pdf"
     told = loop.explanation(r["id"])
     if told and not photos:
         body = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_part(r, up_key, photos=False)
@@ -235,10 +234,8 @@ def feedback(sid, r, photos=True, up_key=None, can_tell=False):
                 '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人">'
                 '<p><button class="go">残す</button></p></form>')
-    # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
-    if not photos and str(r["hypothesis_id"]).startswith("OWN-"):
-        return body
-    return f'<p><a href="{after}">試した後の紙</a></p>{body}'
+    # 試した後の紙は刷らなくなった（本人の決まり 11-06・6 点の 1）ので、札に紙への道を出さない。紙の返事は、作った紙の玩具そのもの
+    return body
 
 
 def ai_part(r, up_key=None, photos=True):

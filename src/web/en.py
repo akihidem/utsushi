@@ -102,8 +102,9 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
         last = versions_of(sid, h["id"], printed_only=True)
         links = ""
         if last:
-            links = (f'<p class="links"><a href="/sheet/{esc(sid)}/{esc(h["id"])}_v{last[-1]}.pdf" target="_blank" rel="noopener">Template (PDF, Japanese)</a>'
-                     f'<a href="/sheet/{esc(sid)}/{esc(h["id"])}_v{last[-1]}_tejun.pdf" target="_blank" rel="noopener">Instruction sheet (PDF, Japanese)</a></p>')
+            # 手順の紙は刷らなくなった（本人の決まり 11-06）ので、Instruction sheet への道は外した。英語の組み方は、提出の後に
+            # 「英語の組み方の頁」として作る（本人の決定 11-06、6 点の 6。J-030 の計画を替えた）
+            links = f'<p class="links"><a href="/sheet/{esc(sid)}/{esc(h["id"])}_v{last[-1]}.pdf" target="_blank" rel="noopener">Template (PDF, Japanese)</a></p>'
         steps = "".join(f"<li>{esc(s)}</li>" for s in steps_for(sid, h, data)) if en else ""
         steps = f'<details><summary>Steps</summary><ol>{steps}</ol></details>' if steps else ""
         cards += (f'<div class="plate"><div class="letter">{esc(letter)}</div><h3>{head}</h3>{how}{_marks(data, h)}{steps}<div class="acts">'

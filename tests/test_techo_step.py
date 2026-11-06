@@ -365,7 +365,8 @@ assert code == 201 and j["kufu"] == 1, body
 code, listed = req(f"/toy/{G}/techo/kiroku?msg=" + urllib.parse.quote("上げました"))
 assert code == 200 and '<div id="mine">' in listed and j["id"] in listed and "紙を二重にした" in listed and "上げました" in listed
 # 記録の頁は順路の帯を持ち、試した後の紙・説明・AI の順の札がここにある
-assert '<nav class="nav"' in listed and "試した後の紙" in listed and 'name="back" value="techo"' in listed
+# 試した後の紙は 11-06 から刷らないので、札に道を出さない（説明・AI の順の札はここにある）
+assert '<nav class="nav"' in listed and "試した後の紙" not in listed and 'name="back" value="techo"' in listed
 assert listed.count("<script>(()=>{\nconst REC=") == 1
 for tpl in TEMPLATES.values():
     assert tpl.SHEET_SET not in listed, ("記録の頁に内部の番号", tpl.SHEET_SET)
