@@ -60,7 +60,7 @@ def observation(rid):
 
 def observe(rid, video_path, client):
     """Returns (結果 or None, 断った理由)。結果は記録の横に置き、人が読む（観察の補助で、採点に使わない）。"""
-    if loop.explanation(rid) is None:
+    if not loop.explained(rid):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
         return None, "人の説明が先"
     imgs = frames(video_path)
     if not imgs:

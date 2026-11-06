@@ -166,7 +166,12 @@ def ai_offer(rid):
     """AI の 2 つの口のうち、今押して進める物と、進めない時に出す 1 行を返す（#130）。
 
     押しても断りの文が返るだけの釦を出さないため。play_server の受け口の断りは、古い頁から押された時のために残す。
+    取り下げで説明の字が空になった記録は、人の説明が先（J-013）を満たさないので、どちらの口も出さない。
     """
+    from omochae import loop
+
+    if not loop.explained(rid):
+        return False, False, ""
     if not ask._key_present():
         return False, False, "AI の返事は、この場では使えません。"
     # 人や声が入ると確かめた動画は AI にも渡さない（#314）。

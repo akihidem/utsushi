@@ -563,4 +563,81 @@ assert pid23 and not fs, fs
 assert records.withdraw(rid23, talk_only=True)[1] == []
 assert everywhere("わからない時の Claude の読みの文") == [], "「わからない」だけの説明でも、Claude の文は消す"
 assert loop_json(f"proposal-{pid23[2:]}.json")["changes"][0]["why"] == "動くかわからないので測る", "人の文を消し過ぎない"
+
+# ── 書いた字は 7 字を超える物だけを比べる。短い答えは部品や寸法の名前になりやすいので、記録から空にするだけ（別の人の文を消す誤りの方が重い） ──
+rid24, fs = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない", "note": "ひとことは筒を回すと楽しい",
+                         "answers": {"first_moved": "外筒の先", "what_if": "折りの幅"}, "ideas": ["糊を減らす"], "fixes": [{"part": "外筒", "change": "長くした", "outcome": records.FIX_BLANK}]})
+assert rid24 and not fs, fs
+assert loop.save_explanation(rid24, "作った子", "説明は折りが固かった事", "幅を変える") == []
+assert loop.confirm_interpretation(rid24, "確認者", {"human_text": "席の人の読みは軸が低かった"}) == []
+ADOPT24 = "外筒の長さを伸ばすと開きが安定するから"
+to24, _ = next_value(rid24)
+pid24, fs = loop.save_proposal({"record_ids": [rid24], "hypothesis_id": sheet, "changes": [{"param": "fold_width", "to": to24, "why": ADOPT24, "metric": "", "direction": ""}],
+                                "next_to_try": {"why": "幅を変えると折り目が揃うと考えたから", "what_to_measure": "ひとことは筒を回すと楽しい"}, "references": []}, SOURCE, "human")
+assert pid24 and not fs, fs
+got24, fs = loop.adopt(pid24, "採った人", accept_params=["fold_width"], source=SOURCE)
+assert got24.get("version") and not fs, (got24, fs)
+_, card24 = keep_card(rid24, "human", {"name": "採った人の案", "how_it_moves": ADOPT24, "against": [f"{records.FIX_BLANK}所は見ない"]})
+assert records.withdraw(rid24, talk_only=True)[1] == []
+left24 = json.loads((records.folder() / f"{rid24}.json").read_text(encoding="utf-8"))
+assert (left24["note"], left24["answers"], left24["ideas"], left24["fixes"]) == ("", {}, [], []), "短い答えも記録からは空にする"
+p24, v24 = loop_json(f"proposal-{pid24[2:]}.json"), loop_json(f"version-{G}-{sheet}-{got24['version']}.json")
+assert v24["changes"][0]["why"] == ADOPT24 and p24["changes"][0]["why"] == ADOPT24, "部品の名前（外筒）を含むだけの、採った人の文は消さない"
+assert p24["next_to_try"]["why"] == "幅を変えると折り目が揃うと考えたから", "短い思いつき（幅を変える）は比べない（写した文が残る方を取る）"
+assert p24["next_to_try"]["what_to_measure"] == "", "7 字を超える書いた字の引用は消す"
+assert card(card24)["how_it_moves"] == ADOPT24 and card(card24)["against"] == [f"{records.FIX_BLANK}所は見ない"], "控えの札も同じ"
+assert loop.interpretation(rid24)["content"]["human_text"] == "席の人の読みは軸が低かった", "短い字の頭がそろうだけの人の文は消さない"
+# 比べる字の決まり: 話した字は全部、書いた字は 7 字を超える物だけ。欄が勧める決まった字（わからない・書かれていない）は、境を変えても比べない
+assert records._compared(["動いた", records.UNSURE], ["1234567", "12345678", "外筒"]) == ["12345678", "動いた"]
+assert records.WRITTEN_CHARS == 7
+records.WRITTEN_CHARS = 0
+assert records._compared([], [records.FIX_BLANK, records.UNSURE, "外筒"]) == ["外筒"], "決まった字は、境を変えても比べない"
+records.WRITTEN_CHARS = 7
+
+# ── 説明の字が空になった記録では、Claude を呼ばない（J-013: 人の説明が先）。説明があった印で、次の版の床は通る ──
+from api import ask, loop_agents, observe  # noqa: E402
+
+
+class Never(Fake):
+    """呼ばれたら、その場で落とす。返事の尽きた所（IndexError）で落ちると、どの床を見落としたかが読めないため。"""
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        raise AssertionError("人の説明の字が無いのに Claude を呼んだ")
+
+
+never = Never([])
+assert loop_agents.draft_interpretation(rid24, client=never)[1][0].floor == "F9.human" and never.calls == [], "読みを頼まない"
+assert loop_agents.draft_proposal(rid24, SOURCE, client=never)[1][0].floor == "F9.human" and never.calls == [], "案も頼まない"
+assert observe.observe(rid24, pathlib.Path(tmp) / "無い動画.mp4", never) == (None, "人の説明が先") and never.calls == [], "動画も見せない"
+key_present = ask._key_present
+ask._key_present = lambda: True
+try:
+    assert techo_site.ai_offer(rid24) == (False, False, ""), "Claude の釦を出さない"
+    assert techo_site.ai_offer(rid20)[0] is False and techo_site.ai_offer(rid8)[0] is False, "書いた字を消した記録も同じ"
+    rid25, _ = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない"})
+    assert loop.save_explanation(rid25, "試した人", "まだ取り下げていない説明", "次") == [] and techo_site.ai_offer(rid25)[0] is True, "説明の字がある記録では釦を出す"
+    card25 = toy_page(G).split(f'id="{rid24}"', 1)[1].split("</article>", 1)[0]
+    assert "Claude に聞く" not in card25 and "動画を見てもらう" not in card25, card25[:300]
+finally:
+    ask._key_present = key_present
+assert loop.explained(rid25) and not loop.explained(rid24) and loop.explanation(rid24) is not None
+# 古い頁から押されても、受け口が断る（説明を書く欄へ戻す）
+import threading  # noqa: E402
+import urllib.error  # noqa: E402
+import urllib.request  # noqa: E402
+
+from web.play_server import serve  # noqa: E402
+
+server = serve(0)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+base = f"http://127.0.0.1:{server.server_address[1]}"
+for act in ("ai-interpret", "ai-observe"):
+    req = urllib.request.Request(f"{base}/record/{rid24}/{act}", data=b"back=techo", method="POST", headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
+    try:
+        code = urllib.request.urlopen(req).status
+    except urllib.error.HTTPError as e:
+        code = e.code
+    assert code == 422 and never.calls == [], (act, code)
+server.shutdown()
 print("ok")

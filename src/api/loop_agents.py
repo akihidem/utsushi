@@ -139,7 +139,7 @@ def draft_interpretation(record_id, client=None):
     # 鍵の無い道（loop material）と同じ材料を読む。
     m = loop.material(record_id)
     rec, told = m["record"], m["explanation"]
-    if not told:
+    if not loop.explained(record_id):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
         return None, [Failure("F9.human", record_id, "人の説明が先。explain で残す")]
     # 話した字は人の説明と別の欄（maker_talk）に置く。説明は確定前に人が書いた物で、話した字は作りの最中の観察なので、混ぜると出所が読めなくなる。
     user = ("次の記録の解釈の案を作ってください。\n<record>\n"
@@ -157,7 +157,7 @@ def draft_proposal(record_id, source, client=None):
     if not loop.confirmed(record_id):
         return None, [Failure("F9.human", record_id, "解釈を人が確定していない")]
     told = loop.explanation(record_id)
-    if not told:
+    if not loop.explained(record_id):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
         return None, [Failure("F9.human", record_id, "人の説明と次の思いつきが先。explain で残す")]
     rec = {**loop.record(record_id), "human_next_idea": told["next_idea"]}
     sid = source["source_id"]

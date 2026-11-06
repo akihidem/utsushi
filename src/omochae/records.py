@@ -25,6 +25,7 @@ OWN = ("explanation", "interpretation", "observation", "video")  # 記録ごと�
 # 動画の受け口（web/video_up.py）から来た記録の印。上げた人に「頁に出さない」と約束した物で、紙も人が確かめていないので、all_records は既定で外す。
 UPLOADED = "video-up"
 UNSURE = "わからない"
+FIX_BLANK = "書かれていない"  # 工夫の 3 欄のうち、欠けた欄に入れる字（web.play_server.fixes_of）
 # 取り下げの説明文（本人の決定、Issue #335）。本人が確かめた字を、一字も変えずに出す（tests/test_withdraw_notice.py が文字列で見る）。
 # 消せるのはこのサイトの中だけで、書き出した束やエンジンに渡した字には届かないので、そう言う。文を変える時は、ここだけを変える。
 # 持ち寄りの所には置かない。持ち寄りは書き出す束に入らないので、文の後半が事実と合わない。
@@ -178,6 +179,9 @@ def _drop_loose_talk(sid, oid, talks):
 # 要約はどの比べ方でも拾えないので、Claude が書いた文は引用の有無によらず消す（_claude_keys）。人が言い換えた文は消せない。
 QUOTE_CHARS = 6
 DROP_TAIL_FROM = 4
+# 書いた字（ひとこと・答え・工夫・手書きの説明）は、この長さを超える物だけを比べる（統括の決め）。短い答えは部品や寸法の名前になりやすく（「外筒」「折りの幅」）、
+# 話した字と同じ決まりで比べると、引用でない別の人の文を消す。短い思いつきを写した文が残る方を取る（別の人の文を消す誤りの方が重い）。短い答えも記録からは空にする。
+WRITTEN_CHARS = 7
 # 文でない欄。番号と名前と寸法の字なので、話した字と重なっても消さない。時刻（*_at と at）も（話した字「11」が時刻に当たる）。
 # 名前（*_by と by。話した字「作る人」が当たる。drafted_by を消すと Claude の文を見分けられなくなる）、呼び出しの記録（trace）、字の値の寸法（to・from）、採った物の番号と札も同じ。
 NOT_TEXT = frozenset(("id", "source_id", "hypothesis_id", "record_id", "record_ids", "references", "param", "params", "from_words", "proposal", "status", "kind", "at",
@@ -188,6 +192,13 @@ RECORD_NO = re.compile(r"R-[0-9]{4,}")  # 記録の番号だけの字は文で�
 
 def _not_text(key):
     return key in NOT_TEXT or key.endswith(("_at", "_by"))
+
+
+def _compared(talk, written):
+    """引用を探す字（_flat した物）。話した字は全部、書いた字は WRITTEN_CHARS を超える物だけ。欄が勧める決まった字は、その人の言葉ではないので外す
+    （「わからない」は説明の欄が勧める字、「書かれていない」は工夫の欠けた欄に入る字。引用と読むと、人の文を消し過ぎる）。"""
+    out = {_flat(x) for x in talk if x} | {f for x in written if len(f := _flat(x)) > WRITTEN_CHARS}
+    return sorted(out - {UNSURE, FIX_BLANK})
 
 
 def _flat(text):
@@ -326,14 +337,14 @@ def _scrub_spoken(rid):
     said = [t.get("text") for t in talks.values() if t.get("record_id") == rid or (t.get("hypothesis_id") in own_ids and not t.get("record_id"))]
     said += [t.get("text") for _, w in made if (t := talks.get(w["from_talk"])) and t.get("record_id") in (None, rid)]
     said += [w.get("how_it_moves") for _, w in made]
-    said += _written(rec, told)
-    spoken = {_flat(x) for x in said if x}
-    # 字の無い記録からは何も消さない。「わからない」は説明の欄が勧める字で、その人の言葉ではない（引用と読むと、人の文を消し過ぎる）。
-    gone = _scrub_quotes(rid, sorted(spoken - {UNSURE})) if spoken else []
+    written = _written(rec, told)
+    spoken = _compared(said, written)
+    # 字の無い記録からは何も消さない。字があれば、比べる字が無くても Claude の文は消す（その人の字から書いた文なので）。
+    gone = _scrub_quotes(rid, spoken) if [x for x in said if x] or written else []
     for p, w in made:
         sid, oid, stem = w.get("source_id"), w.get("own_id"), w["from_talk"]
         # 先に写しを消す。途中で落ちても、回し直しで残りを見つけられる。理由の欄（not_fit・filled_in の why）は、Claude が書いた結果なら全部（言い換えで残るため）、作る側が書いた結果なら引用だけ（寸法と名前は残す）。
-        result = _blank(w.get("result")) if w.get("trace") and not w.get("filled_by") else _without_quotes(w.get("result"), sorted(spoken))
+        result = _blank(w.get("result")) if w.get("trace") and not w.get("filled_by") else _without_quotes(w.get("result"), spoken)
         scrubbed = {**w, "how_it_moves": "", "result": result}
         if scrubbed != w:
             loop._write(p, scrubbed)
