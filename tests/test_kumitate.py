@@ -304,11 +304,12 @@ assert tora.frames[1]["poses"][-1]["plug"] and not tora.frames[2]["poses"][-1]["
 # できあがりの頭は揺れて、元の位置で止まる
 final = tora.frames[-1]["poses"]
 assert len(final) >= 5 and final[0]["state"]["head"]["place"] == final[-1]["state"]["head"]["place"]
-# 5 重りの腕の札は、型紙と同じ並び（compose.label_boxes）で 1 字ずつ縦に積んで面に出す（本人の決定 11-07）。
-# 横書きの描き方に戻すと、約 13.5mm の字が幅 8mm の腕の面からはみ出して切れる（別の目の確かめで、この頁の札を見る試験が無いと分かった）
+# 5 重りの腕の札は、型紙と同じく行ごと（label_lines の「5 重」「り」「の」「腕」）に面に出す（本人の決定 11-07、型紙エンジン #135 と同じ形）。
+# label だけを 1 行で描く形に戻すと、約 13.5mm の字が幅 8mm の腕の面からはみ出して切れる（別の目の確かめで、この頁の札を見る試験が無いと分かった）
 arm = tora.sheets["drop"]
 drawn = re.findall(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)</text>', kumitate._marks(arm.part, 0, 0, arm.panels[0]))
-assert arm.part.label == "5 重りの腕" and [t for _, _, t in drawn] == list("5重りの腕"), drawn
-assert all(float(x) + 2.8 <= arm.part.width + 1e-6 for x, _, _ in drawn), ("札の字が腕の面からはみ出す", drawn)
+assert arm.part.label == "5 重りの腕" and [t for _, _, t in drawn] == ["5 重", "り", "の", "腕"], drawn
+from omochae.textfit import text_width  # noqa: E402
+assert all(float(x) + text_width(t, 2.8) <= arm.part.width + 1e-6 for x, _, t in drawn), ("札の字が腕の面からはみ出す", drawn)
 assert [float(y) for _, y, _ in drawn] == sorted(float(y) for _, y, _ in drawn), ("札の字が上から順に並ばない", drawn)
 print("ok")

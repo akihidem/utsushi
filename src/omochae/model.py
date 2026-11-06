@@ -25,9 +25,10 @@ class Part:
     outline: list  # 外形の頂点。切る線
     label_xy: tuple = (2, 2)
     label: str = ""
-    # 札を縦に 1 字ずつ積む（textfit.stack）。横書きでは枠に入らない細い部品に、長い名を入れる時だけ（虎の 5 重りの腕、本人の決定 11-07）。
-    # label_xy は積んだ札の左上。札の字（label）は横の時と同じ字のまま持つので、札の名を読む所（部品表の試験など）は変わらない。
-    label_vertical: bool = False
+    # 札を何行かに分けて刷る時の [(字, x, y), ...]（部品の左上からの mm）。空なら label を label_xy に 1 行で刷る（今までと同じ）。
+    # 細い部品に長い名を縦に並べるため（虎の 5 重りの腕は幅 8mm で、名が 1 行に入らない。本人の決定 2026-11-06「5 重りの腕」にそろえる。
+    # 型紙エンジン #135 と同じ）。label は部品の名の札の字として持ち続ける（試験と知らせが読む）
+    label_lines: list = field(default_factory=list)
     valley: list = field(default_factory=list)  # ((x1,y1),(x2,y2))
     mountain: list = field(default_factory=list)
     glue: list = field(default_factory=list)  # 糊代の多角形

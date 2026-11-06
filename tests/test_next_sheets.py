@@ -9,19 +9,19 @@ paper-to-toy の PR #106 1f4f0b1 と同じ形と字。手順 4 の「線のと�
 - 胴の折り線は刷った面から見て山折り。前の組は谷折りのまま。ほかの部品の折り線は変わらない
 - 手順の文の違いは、手順 4（線のとおり山折り）と、重りの腕の手順 8・9（EP-0011）だけ。手順の数と番号は変わらない
 - 札の名（2 頭・3 首の帯・4 尾・5 重りの腕）・胴の上の面の竹串の点の線・5 重りの腕の粘土の高さの点の線・2 枚目の側面は y だけ裏返す（EP-0016）
-- 5 重りの腕の札は、名を 1 字ずつ縦に積み、軸の穴と下の穴の間の腕の枠の内に置く。用意する物の字も「5 重りの腕」
-  （本人の決定 11-07「部品の名前は、型紙を「5 重りの腕」にそろえる（紙が変わる形で）」。前は札も用意する物も「5 腕」で、組み方の文と違った）。
-  縦の札が入らない浅い重りの寸法だけは、前の札「5 腕」に戻る（3 首の帯の「3 帯」と同じ扱い）
+- 5 重りの腕の札は「5 重」の下に「り」「の」「腕」を縦に並べた 4 行（型紙エンジン #135 と同じ行ごとの形）で、軸の穴と粘土の線の間の
+  腕の枠の内に置く。用意する物の字も「5 重りの腕」（本人の決定 11-07「v4 の紙も「5 重りの腕」に替える」。前は札も用意する物も「5 腕」で、
+  組み方の文と違った）。4 行が入らない浅い重りの寸法だけは「5 腕」の 1 行（3 首の帯の「3 帯」と同じ扱い）
 - 用意する物: 道具にセロハンテープとカッター、竹串と粘土の置き所・丸い印は穴・4 尾だけ色の理由
 - 凡例は刷った面から見た言い方。位置の印のある紙は「位置の印（切らない・折らない）」も。御来迎の紙と前の組の紙は前の字
 - 粘土の玉の大きさの床: 軸の竹串にかかる浅い重りと、玉の下が底に当たる深い重りを落とす（先の 1 つだけを言う）
 """
 import json
 
-from shapely.geometry import LineString, Point, box
+from shapely.geometry import LineString, box
 
 from omochae import marks
-from omochae.compose import LABEL_SIZE, LINE, TEMPLATES, compose, label_boxes
+from omochae.compose import LABEL_SIZE, LINE, TEMPLATES, compose
 from omochae.floors import check_art
 from omochae.hypotheses import ROOT
 from omochae.instructions import compose_after, compose_sheet
@@ -156,39 +156,50 @@ assert L is not None and f"玉の上は穴から {TIGER.HANG_MIN}〜{L}mm" in TI
 with old_set():
     assert len(part(p, "drop").holes) == 1 and not part(p, "drop").art and not [a for a in part(p, "body").art if a["kind"] == "mark"]
 
-# 7b. 5 重りの腕の縦の札（本人の決定 11-07「部品の名前は、型紙を「5 重りの腕」にそろえる（紙が変わる形で）」）。刷る紙と同じ字の箱で見る:
-# 上から 1 字ずつ「5重りの腕」と積み、どの箱も腕の枠の内で、軸の穴・下の穴（縁から 1mm の内）と粘土の点の線にかからない。
-# 前の組は横の「5」のまま。浅い重り（縦の札が下の穴にかかる寸法）は前の札「5 腕」の横書きに戻り、枠の内に収まる。用意する物の呼び方は変わらない
-def arm_boxes(q):
+# 7b. 5 重りの腕の札（本人の決定 11-07「v4 の紙も「5 重りの腕」に替える」。札の刷る作りは型紙エンジン #135 と同じ行ごとの形・窓口の決定）。
+# 刷る紙と同じ字の箱で見る: 札は「5 重」の下に「り」「の」「腕」を「重」の列にそろえた 4 行。どの行も腕の枠の内で、軸の穴の下（縁から 0.6mm）から
+# 粘土の高さの点の線の上（下の穴の半径と 1mm の空き）までに入り、行どうしが重ならない。型紙の検査も通り、刷る札は 4 行のまま。
+# 4 行が入らない浅い重り（約 17.2mm より軸に近い）は「5 腕」の 1 行で、下の穴と点の線に重ならない。前の組 tora-v3 は「5」の 1 行のまま
+def arm_lines(q):
     arm = part(q, "drop")
-    return arm, [(box(x, y, x + w, y + h), s) for x, y, w, h, s in label_boxes(arm)]
+    h = LABEL_SIZE * LINE
+    return arm, [(box(x, y, x + text_width(t, LABEL_SIZE), y + h), t) for t, x, y in arm.label_lines]
 
 
-def touches(a, b):
-    return a.intersection(b).area > 1e-9
-
-
-arm, boxes = arm_boxes(p)
-frame = box(0, 0, arm.width, arm.height)
-assert arm.label_vertical and "".join(s for _, s in boxes) == "5重りの腕", (arm.label_vertical, boxes)
-assert [b.bounds[1] for b, _ in boxes] == sorted(b.bounds[1] for b, _ in boxes), "札の字が上から順に並ばない"
-assert all(frame.contains(b) for b, _ in boxes), ("札が腕の枠をまたぐ", [b.bounds for b, _ in boxes])
-# 穴の縁から 1mm・点の線から 0.5mm は字を置かない（竹串の先であけると縁が広がる。雛形の間の値を借りずに、決まった値で見る）
-near = [Point(x, y).buffer(r + 1.0) for x, y, r in arm.holes] + [LineString(a["pts"]).buffer(0.5) for a in arm.art if a["kind"] == "mark"]
-assert len(near) == 4 and not any(touches(b, n) for b, _ in boxes for n in near), "札が穴か粘土の点の線にかかる"
-assert not any(touches(a, b) for i, (a, _) in enumerate(boxes) for b, _ in boxes[i + 1:]), "札の字の箱どうしが重なる"
-# 字の箱は字の大きさより低くしない（箱どうしが接するだけでも、箱が字より低いと刷った字どうしが触れる）
-assert all(b.bounds[3] - b.bounds[1] >= LABEL_SIZE for b, _ in boxes), ("札の字が詰まって触れる", [round(b.bounds[3] - b.bounds[1], 2) for b, _ in boxes])
+arm, boxes = arm_lines(p)
+wy = 4 + p["weight_below_axle"]
+assert arm.label == "5 重りの腕" and [t for _, t in boxes] == ["5 重", "り", "の", "腕"], (arm.label, arm.label_lines)
+assert all(box(0, 0, arm.width, arm.height).contains(b) for b, _ in boxes), ("札が腕の枠をまたぐ", [b.bounds for b, _ in boxes])
+assert all(b.bounds[1] >= 4 + 1.0 and b.bounds[3] <= wy - (TIGER.THREAD_R + 1.0) for b, _ in boxes), ("札が軸の穴か粘土の線にかかる", [b.bounds for b, _ in boxes])
+assert all(n.bounds[1] >= m.bounds[3] - 1e-9 for (m, _), (n, _) in zip(boxes, boxes[1:])), "札の行どうしが重なる"
+col = boxes[0][0].bounds[0] + text_width("5 ", LABEL_SIZE)
+assert all(abs(b.bounds[0] - col) < 1e-9 for b, _ in boxes[1:]), ("下の 3 字が「重」の列にそろわない", [b.bounds for b, _ in boxes])
+data, source = load(TORA)
+_, sheet_layout, sheet_fails = compose("pivot_counterweight", data["hypotheses"][0]["params"], source)
+placed = next(x for x in sheet_layout["parts"] if x.key == "drop")
+drawn = [t.text for t in sorted((t for t in sheet_layout["texts"] if t.owner == "drop"), key=lambda t: t.y)]
+assert not sheet_fails and drawn == ["5 重", "り", "の", "腕"], ([f.line() for f in sheet_fails], drawn)
 with old_set():
     old_arm = part(p, "drop")
-    assert old_arm.label == "5" and not old_arm.label_vertical, (old_arm.label, old_arm.label_vertical)
-for shallow in (10, 19):
-    q = {**p, "weight_below_axle": shallow}
-    arm, boxes = arm_boxes(q)
-    assert arm.label == "5 腕" and not arm.label_vertical and all(box(0, 0, arm.width, arm.height).contains(b) for b, _ in boxes), (shallow, arm.label, boxes)
-    assert "5 重りの腕の下の穴" in TIGER.materials(q)[3], (shallow, TIGER.materials(q)[3])
-arm, _ = arm_boxes({**p, "weight_below_axle": 21})
-assert arm.label_vertical, "縦の札が入る深さなのに、前の札に戻った"
+    assert old_arm.label == "5" and not old_arm.label_lines and old_arm.label_xy == (1, 8), (old_arm.label, old_arm.label_lines)
+for wb, want in ((17.3, "5 重りの腕"), (17.1, "5 腕"), (10, "5 腕"), (TIGER.LOWER_HOLE_MIN - 0.5, "5 腕")):
+    q = {**p, "weight_below_axle": wb}
+    arm, boxes = arm_lines(q)
+    assert arm.label == want and len(boxes) == (4 if want == "5 重りの腕" else 1), (wb, arm.label, arm.label_lines)
+    assert "5 重りの腕" in "".join(TIGER.materials(q)) and "5 腕" not in "".join(TIGER.materials(q)), (wb, TIGER.materials(q))
+    if want == "5 腕" and wb >= TIGER.LOWER_HOLE_MIN:
+        (b, _), = boxes
+        band = TIGER.THREAD_R + 1.0
+        assert b.bounds[3] <= 4 + wb - band + 1e-6 or b.bounds[1] >= 4 + wb + band - 1e-6, ("「5 腕」の 1 行が下の穴か点の線にかかる", wb, b.bounds)
+# 「5 腕」の 1 行は、下の穴のある浅い寸法を 0.07mm ずつ全部見る（粘土が軸に近いと、札を下の穴の下へ逃がす。#484 の試験と同じ見方）
+for i in range(400):
+    wb = round(TIGER.LOWER_HOLE_MIN + i * 0.07, 3)
+    if wb >= 17.2:
+        break
+    arm, ((b, t),) = arm_lines({**p, "weight_below_axle": wb})
+    band = TIGER.THREAD_R + 1.0
+    assert t == "5 腕" and (b.bounds[3] <= 4 + wb - band + 1e-6 or b.bounds[1] >= 4 + wb + band - 1e-6), ("「5 腕」の 1 行が下の穴か点の線にかかる", wb, b.bounds)
+    assert b.bounds[1] >= 4 + 1.0 and b.bounds[3] <= arm.height, ("「5 腕」の 1 行が軸の穴にかかるか腕の外", wb, b.bounds)
 
 # 8. 2 枚目の側面は y だけ裏返し、2 枚とも虎の鼻先が軸の穴の側（前の端）に来る。前の組は 180° 回したまま（頭が後ろの端）
 nose = min(range(len(TIGER._BODY)), key=lambda i: TIGER._BODY[i][0])

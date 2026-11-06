@@ -8,7 +8,7 @@ import pkgutil
 
 from . import templates as _templates
 from .templates import pivot_counterweight, slider_fan
-from .textfit import V_PITCH, stack, text_width, wrap
+from .textfit import text_width, wrap
 
 def _discover():
     """templates/ に置いた雛形を全部載せる（本人「なるべく並列ですべて作ろう」、11-04）。並列の線が、この表を手で書き足して
@@ -37,18 +37,6 @@ _OLD_SHEET_FOLD_WORDS = ("谷折り（手前にへこむ）", "山折り（手�
 def new_fold_words(tpl):
     """その雛形の今の組が、次の組の凡例の字で刷るか。必須 2 種（FROZEN_SET を持つ）の、凍結の床でない組だけ。"""
     return hasattr(tpl, "FROZEN_SET") and tpl.SHEET_SET != tpl.FROZEN_SET
-
-
-def label_boxes(q, size=LABEL_SIZE):
-    """部品 q の札の字の箱。Returns [(dx, dy, 幅, 高さ, 字)]。座標は部品の左上から（mm）。
-    型紙（下の compose）と組み立ての頁（web/kumitate.py）が同じ置き方で描くため、ここ 1 か所で決める。
-    縦の札（q.label_vertical）は 1 字ずつ積み、字の大きさの幅の列の真ん中に寄せる。箱は字どうしで接するだけにして、重なりの床（F5.text_overlap）に掛けない。"""
-    x, y = q.label_xy
-    # 字の無い札も、前と同じく幅 0 の箱を 1 つ返す（紙の配置と床の結果を、縦の札を足す前と変えないため）
-    if not q.label_vertical or not q.label:
-        return [(x, y, text_width(q.label, size), size * LINE, q.label)]
-    chars, _ = stack(q.label, size)
-    return [(x + (size - w) / 2, y + dy, w, size * V_PITCH, ch) for dy, ch, w in chars]
 
 
 def _block(texts, lines, x, y, size, width):
@@ -108,8 +96,9 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     if move:  # 負の対照のためだけ。
         by_key[move["name"]].x, by_key[move["name"]].y = move["x"], move["y"]
     for q in parts:
-        for dx, dy, w, h, s in label_boxes(q):
-            texts.append(TextBox(q.x + dx, q.y + dy, w, h, s, LABEL_SIZE, owner=q.key))
+        # 札は 1 行（label を label_xy に）か、label_lines の行ごと。行ごとの札も、部品の枠の内に収まるかを F5.text_overlap が見る（エンジン #135 と同じ）
+        for text, dx, dy in q.label_lines or [(q.label, *q.label_xy)]:
+            texts.append(TextBox(q.x + dx, q.y + dy, text_width(text, LABEL_SIZE), LABEL_SIZE * LINE, text, LABEL_SIZE, owner=q.key))
     y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], text_x, left_y, BODY_SIZE, width)
     legend_y = y + 1
     # 谷と山の意味を添える（v8）。試行のつぶやき「谷折り、山折りがわからない」（11-04）。線の種類だけでは折る向きが伝わらなかった。
