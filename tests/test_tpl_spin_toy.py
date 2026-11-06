@@ -39,7 +39,8 @@ for sid in lane:
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
             rc = hypotheses.print_sheet(sid, h["id"], str(out_dir / f"{sid}_{h['id']}"), version=1)
         assert rc == 0, (sid, h["id"], err.getvalue())
-        assert (out_dir / f"{sid}_{h['id']}.pdf").exists() and (out_dir / f"{sid}_{h['id']}_tejun.pdf").exists()
+        # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+        assert (out_dir / f"{sid}_{h['id']}.pdf").exists() and not (out_dir / f"{sid}_{h['id']}_tejun.pdf").exists()
         printed += 1
 assert printed == 12, printed
 

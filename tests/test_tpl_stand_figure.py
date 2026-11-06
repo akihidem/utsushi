@@ -58,9 +58,9 @@ with ProcessPoolExecutor(max_workers=min(8, os.cpu_count() or 2), mp_context=mul
     results = list(ex.map(_one, jobs))
 bad = [(s, h, rc) for s, h, rc in results if rc != 0]
 assert not bad, bad
+# 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
 for _, _, stem in jobs:
-    for suffix in ("", "_tejun", "_after"):
-        assert pathlib.Path(f"{stem}{suffix}.pdf").exists(), stem + suffix
+    assert pathlib.Path(f"{stem}.pdf").exists() and not any(pathlib.Path(f"{stem}{s}.pdf").exists() for s in ("_tejun", "_after")), stem
 print(f"ok 刷れた {len(MADE)} 件・{len(jobs)} 仮説")
 
 # ---- 床に落ちる値 ----

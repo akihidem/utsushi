@@ -129,7 +129,8 @@ assert post(f"/toy/{GO}/print", {"hypothesis": "H-A"})[0] == 200
 made = files(GO, "H-A")
 record(GO, "H-A")
 assert get(f"/sheet/{GO}/H-A_v1_after.pdf")[0] == 200
-assert files(GO, "H-A") == made, "作り直した"
+# 型紙は作り直さない（試した後の紙は 11-06 から刷る時に組まないので、道を開いた時にそれだけが足される）
+assert {k: v for k, v in files(GO, "H-A").items() if k in made} == made, "作り直した"
 assert [(c["hypothesis_id"], len(c["confirmations"])) for c in loop.sheet_confirmations(GO)] == [("H-A", 1)]
 
 # 紙の組で刷った物と、試した後の紙だけを作った物は同じ文になる（題と印を分けて持たない）
