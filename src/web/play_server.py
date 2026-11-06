@@ -7,8 +7,10 @@
 家の網に開く切り替え（--lan、U-36）と、デモの一周を外の機器から開く合言葉の門（--public-key-file、11-04 の本人の決定 A）は
 本人の決定で足した。後者は口を 127.0.0.1 のままにし、外からはトンネル（run-demo.sh）だけが入る。
 """
+import collections
 import hmac
 import html
+import ipaddress
 import json
 import os
 import pathlib
@@ -16,6 +18,7 @@ import re
 import secrets
 import sys
 import threading
+import time
 import urllib.parse
 from concurrent.futures import Future
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -196,6 +199,53 @@ def without_notes(page):
     return re.sub(r"<(style|script)\b([^>]*)>(.*?)</\1>", clean, page, flags=re.S)
 
 
+# 書き込みの口（話す口・記録の口・説明の口・聞く口）の、同じ相手からの短い間の数の上限（公開の前の点検の 9、統括の頼み 11-06）。
+# 聞く口も 1 回ごとに置き場へファイルを書くので数える（統括の足し 11-06）。段の口は別の数で数える（STEP_LIMIT）。
+# 合言葉付きの場で 5 人が同じ網（同じ番地）から同時に一周しても止まらない数: 1 人の一周の書き込みは 6〜12 回（話す回数による）で、
+# 作る間の数分にわたる。5 人が 1 分に 12 回ずつ書いても通り、それを超える速さだけを止める。
+WRITE_LIMIT, WRITE_WINDOW = 60, 60.0
+# 段の口（作りながら見る頁の札）の数。書き込みの口と別に数え、手順を押す数で記録や話す口を断らない（統括の決め 11-06）。
+# 5 人が同じ網から、手順を全部同じ 1 分で押しても（1 人 13〜20 回）断らない数。超えても頁は止めず、段を置き場へ書かないだけ。
+STEP_LIMIT = 120
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
+BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
+
+
+def writer(peer, headers):
+    """書き込みを数える相手の番地。None は数えない（手元から直に来た物。試験と手元の確かめ）。
+    外からはトンネル（cloudflared）越しにしか入らず、どの人も手元の番地から来るので、トンネルが付ける見出しの番地を使う。
+    見出しを信じるのは手元から来た時だけ: 家の網から直に来る機器（--lan）が、見出しを変えて数を逃れないため。"""
+    try:
+        local = ipaddress.ip_address(peer).is_loopback
+    except ValueError:
+        local = False
+    if not local:
+        return peer
+    return (headers.get("Cf-Connecting-Ip") or (headers.get("X-Forwarded-For") or "").split(",")[0]).strip() or None
+
+
+class WriteLimit:
+    """同じ相手からの、短い間の書き込みの数。持つのは相手の番地と時刻だけで、送られた字は持たない。"""
+
+    def __init__(self, limit=WRITE_LIMIT, window=WRITE_WINDOW, keys=4096):
+        self.limit, self.window, self.keys = limit, window, keys
+        self.times, self.lock = {}, threading.Lock()
+
+    def wait(self, who, now=None):
+        """この相手が今書いてよければ 0、まだなら待つ秒数。"""
+        now = time.monotonic() if now is None else now
+        with self.lock:
+            if len(self.times) > self.keys:  # 覚える相手の数を限る。間が過ぎた相手から忘れる
+                self.times = {k: q for k, q in self.times.items() if q and now - q[-1] < self.window}
+            q = self.times.setdefault(who, collections.deque())
+            while q and now - q[0] >= self.window:
+                q.popleft()
+            if len(q) >= self.limit:
+                return max(1, int(self.window - (now - q[0])) + 1)
+            q.append(now)
+            return 0
+
+
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
@@ -225,6 +275,17 @@ class Handler(BaseHTTPRequestHandler):
     def _refuse(self, code, reason, title="開けません", **kw):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
         self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
+
+    def _busy(self, wait, form):
+        """書き込みが多すぎる時の断り（429）。字は全体の受け皿と同じ物で、新しい字を足さない。JSON で受ける口には、その口の形で返す。"""
+        headers = [("Retry-After", str(wait))]
+        if self.path.endswith("/record-json"):
+            return self._send(429, json.dumps({"error": BUSY}, ensure_ascii=False), "application/json; charset=utf-8", headers)
+        if self.path.endswith("/talk") and form.get("json") == "1":
+            return self._send(429, json.dumps({"kept": False, "why": BUSY}, ensure_ascii=False), "application/json; charset=utf-8", headers)
+        if self.path.endswith("/ask-json"):  # 手帖と作りながら見る頁は、答えの欄に text を出す
+            return self._send(429, json.dumps({"text": BUSY, "from": "busy"}, ensure_ascii=False), "application/json; charset=utf-8", headers)
+        return self._send(429, skinmod.notice("送れませんでした", BUSY, getattr(self, "_look", skinmod.DEFAULT)), headers=headers)
 
     def _host_ok(self):
         # DNS rebinding で外のサイトから手元の記録を読み書きさせないため、手元の名前だけを受ける。
@@ -294,7 +355,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._post()
         except Exception as e:
             failure_log.request_failed("POST", self.path, e)
-            self._refuse(500, "受け付けられませんでした。少し待って、もう一度送ってください。", "送れませんでした")
+            self._refuse(500, BUSY, "送れませんでした")
 
     def _get(self):
         if not self._host_ok():
@@ -548,6 +609,10 @@ class Handler(BaseHTTPRequestHandler):
         form = self._form()
         if form is None:
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
+        if WRITE_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
+            wait = self.server.write_limit.wait(who)
+            if wait:
+                return self._busy(wait, form)
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
@@ -719,13 +784,20 @@ class Handler(BaseHTTPRequestHandler):
         # 組み上がりは最後の手順だけで受ける。途中の札は頁に出さないが、開いたままの古い頁からは届く。残すと作る様子の集計がずれる（#321）。
         if event == "done" and step < total:
             return bad("その札は無い")
-        # 最後の手順の「次の手順へ」は頁に出さないが、開いたままの古い頁からは届く。動かないので残さない（残すと、途中でやめた段の数えで、無い手順が出る）。
-        if not (event == "next" and step >= total):
-            making_log.add_step(sid, hid, sheet_version_of(sid, hid, form), step, event, who=form.get("who", ""))
-        if event == "start":
-            making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
         # 次に見せる手順: 進む・戻るは 1 つ動かし、止まった・できた・開いたは同じ手順のまま。
         nxt = min(step + 1, max(total, 1)) if event == "next" else max(step - 1, 1) if event == "back" else step
+        # 同じ相手からの段の数の上限（STEP_LIMIT。書き込みの口と別に数える）。超えたら置き場へ書かない。頁は止めない:
+        # 頁を読み直さない札（JS）は返事の step で進むので、断りにも次の手順を添える。フォーム（JS の無い頁と、組み上がりの札）は、
+        # 断りの頁で止めず、書かずに成功の時と同じ行き先へ返す。
+        busy = (who := writer(self.client_address[0], self.headers)) and self.server.step_limit.wait(who)
+        if busy and as_json:
+            return self._send(429, json.dumps({"error": BUSY, "step": nxt}, ensure_ascii=False), "application/json; charset=utf-8", [("Retry-After", str(busy))])
+        if not busy:
+            # 最後の手順の「次の手順へ」は頁に出さないが、開いたままの古い頁からは届く。動かないので残さない（残すと、途中でやめた段の数えで、無い手順が出る）。
+            if not (event == "next" and step >= total):
+                making_log.add_step(sid, hid, sheet_version_of(sid, hid, form), step, event, who=form.get("who", ""))
+            if event == "start":
+                making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
         if as_json:
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
         if event == "done":  # どの紙かを渡して記録の欄へ送る。今の頁は JS の有無に関わらず、この道を通る（#321）。記録の欄の既定は変えない（紙を選ぶ欄は #332 で無くなる）
@@ -979,6 +1051,8 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
             raise ValueError("鍵（.env）がある所では、合言葉なしで開けない")
     server.public_open = bool(public_open)
     server.look = look
+    server.write_limit = WriteLimit()
+    server.step_limit = WriteLimit(limit=STEP_LIMIT)
     return server
 
 
