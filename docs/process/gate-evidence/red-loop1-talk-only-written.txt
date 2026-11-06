@@ -1,0 +1,41 @@
+# 命令: env -u ANTHROPIC_API_KEY PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: 9de0b166（回した時の HEAD）
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-8_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-8_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-8_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-9_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-9_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-9_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/.tmp-9emnyul_/H-A_v2.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/.tmp-9emnyul_/H-A_v2_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/.tmp-9emnyul_/H-A_v2_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-10_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-10_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-10_v1_after.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-11_v1.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-11_v1_tejun.pdf
+/tmp/tmp3boqdp21/play/NDL-1187053-R0000005-L/OWN-11_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_withdraw.py", line 297, in <module>
+    assert told["record_id"] == rid12 and told["at"] and (told["text"], told["next_idea"], told["by"]) == ("", "", ""), "手書きの説明は、説明があった印だけを残して字を空にする"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 手書きの説明は、説明があった印だけを残して字を空にする
+rc=1

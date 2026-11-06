@@ -382,7 +382,9 @@ def _cone_piece(number, key, p, look):
     arc = [(s * math.cos(theta * i / k), s * math.sin(theta * i / k)) for i in range(k + 1)]
     inner = [(r_in * math.cos(theta * i / k), r_in * math.sin(theta * i / k)) for i in range(k, -1, -1)]
     body = Polygon(arc + inner)
-    pieces, glue, valley = [body], [], []
+    # 胴は絵を外にして丸めるので、歯と継ぎ目の糊代は刷った面の裏（胴の中）へ折る山折り。谷は刷った面がへこむ向きで、
+    # 歯が外へ出て、胴の口と同じ半径のふたからはみ出す（歯を中へ入れようとすると、絵が内になる）。
+    pieces, glue, folds = [body], [], []
     for (x1, y1), (x2, y2) in zip(arc, arc[1:]):
         # 歯は弦の外へ RIM_TAB。両端を少し絞ってふたの裏で歯どうしが重ならないようにする。
         nx, ny = (x1 + x2) / 2, (y1 + y2) / 2
@@ -392,12 +394,12 @@ def _cone_piece(number, key, p, look):
         tooth = [(x1, y1), (x2, y2), (x2 + ux - tx, y2 + uy - ty), (x1 + ux + tx, y1 + uy + ty)]
         pieces.append(Polygon(tooth))
         glue.append(tooth)
-        valley.append(((x1, y1), (x2, y2)))
+        folds.append(((x1, y1), (x2, y2)))
     # 継ぎ目の糊代は角度 0 の縁の外（下側）。
     seam = [(r_in, 0), (s, 0), (s - 2, -SEAM_TAB), (r_in + 1, -SEAM_TAB)]
     pieces.append(Polygon(seam))
     glue.append(seam)
-    valley.append(((r_in, 0), (s, 0)))
+    folds.append(((r_in, 0), (s, 0)))
     outline = unary_union(pieces).simplify(0.01)
     inside = body.buffer(-0.3)
     art = []
@@ -421,7 +423,7 @@ def _cone_piece(number, key, p, look):
     mid = theta / 2
     # 番号は縁に近い明るい塗りの所に置く。先の近くは墨で、番号が読めない。
     part = Part(number, key, "胴", _coords(outline), label_xy=(s * 0.8 * math.cos(mid) - 1, s * 0.8 * math.sin(mid) - 1.5),
-                label=str(number), art=art, glue=glue, valley=valley, hide_folds=True)
+                label=str(number), art=art, glue=glue, mountain=folds, hide_folds=True)
     return _normalize(part)
 
 
@@ -481,10 +483,11 @@ def parts(p):
         out.append(hub)
         if p["drive"] == "handle":
             # 柄はコマ 25 のへら形の板に倣い、上の端の穴に芯を通す片持ちにした。2 つ折りにして硬くし、折る線は 2 色の境に置く（決定 d）。
+            # 2 色の面を外に出すので山折り（谷だと 2 色が貼り合わせる内に隠れる）。
             hw, L = HANDLE_W, HANDLE_L
             out.append(Part(len(out) + 1, "handle", "柄", [(0, 0), (2 * hw, 0), (2 * hw, L), (0, L)], label_xy=(1, 12), label=str(len(out) + 1),
                             art=[_fill(box(0.2, 0.2, hw - 0.2, L - 0.2), OUDO), _fill(box(hw + 0.2, 0.2, 2 * hw - 0.2, L - 0.2), USUCHA)],
-                            valley=[((hw, 0), (hw, L))], holes=[(hw / 2, 6, HOLE_R + 0.3), (1.5 * hw, 6, HOLE_R + 0.3)], hide_folds=True))
+                            mountain=[((hw, 0), (hw, L))], holes=[(hw / 2, 6, HOLE_R + 0.3), (1.5 * hw, 6, HOLE_R + 0.3)], hide_folds=True))
     return out
 
 
@@ -580,7 +583,7 @@ def steps(p):
             out.append("胴の 2 枚を、継ぎ目の糊代で互いに貼って円錐にする（糊代が向かい合う）")
         else:
             out.append("胴を丸め、継ぎ目の糊代で貼って円錐にする")
-        out += ["ふたを穴をそろえて重ねて貼る", "胴の上の縁の歯を谷折りし、ふたの裏に貼る",
+        out += ["ふたを穴をそろえて重ねて貼る", "胴の上の縁の歯を山折りし、ふたの裏に貼る",
                 f"つまようじをふたの穴から胴の先まで通し、先を {p['axis_below']:g}mm 出してのりで止める"]
         if p["knob_h"]:
             out.append("つまみの帯を、ふたの上の芯に巻いて貼る")

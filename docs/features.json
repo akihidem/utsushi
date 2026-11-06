@@ -160,6 +160,7 @@
   "status": "doing",
   "evidence": [
    "tests/test_reply_visible.py",
+   "tests/test_explain_no_name.py",
    "src/web/wording.py",
    "tests/test_wording.py",
    "tests/test_reader_words.py",
@@ -232,7 +233,9 @@
    "tests/test_loop1_own_private.py",
    "tests/test_loop1_round.py",
    "tests/test_loop1_next.py",
-   "tests/test_own_form_gone.py"
+   "tests/test_own_form_gone.py",
+   "tests/test_loop1_quotes.py",
+   "tests/test_withdraw_notice.py"
   ]
  },
  {
@@ -542,6 +545,29 @@
    "tests/test_site_hokusai.py"
   ],
   "unverified": "絵は国立国会図書館の PDM（権利の記録は動画と同じ）。18 人は動く形でよい（本人の決定）。文は本人が採った（11-05、#318）。人が使った確認はまだ"
+ },
+ {
+  "id": "f49",
+  "name": "原画と歌（本人の指示 11-06）: 玩具の頁の頭に、玩具が載る頁の全体と人が確かめた歌を組にして出す。作りながら見る頁と手帖に畳んで置く。額のゆがみの直し",
+  "status": "doing",
+  "evidence": [
+   "src/web/genga.py",
+   "src/web/genga_words.py",
+   "src/omochae/ingest.py",
+   "tests/test_genga.py"
+  ],
+  "unverified": "字は本人が決めた（見出し・大きく見るのみ）。頁の全体の写しは git の外（ingest）。玩具の所の枠は出典の記録の箱（crop_status は unverified）。図鑑の本の頁（玩具の絵がある頁）は続く PR。幅 390・1440 の白と黒で見た。本物のスマホと本物の人には見てもらっていない"
+ },
+ {
+  "id": "f50",
+  "name": "図鑑の本の頁 /zukan/hon/<コマ>（本人の決定 11-06）: 玩具の絵がある 54 頁を、図鑑から 1 コマずつ本の順に見る。サイトに型紙の無い玩具も原画として見える",
+  "status": "doing",
+  "evidence": [
+   "src/web/zukan_hon.py",
+   "src/omochae/ingest.py",
+   "tests/test_zukan_hon.py"
+  ],
+  "unverified": "置く頁は棚卸しの玩具が載る頁（棚卸しの箱は作る側の見立て）。新しい字は足していない。幅 390・1440 の白と黒で見た。本物のスマホと本物の人には見てもらっていない"
  },
  {
   "id": "f43",

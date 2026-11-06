@@ -1,0 +1,8 @@
+# 命令: bash -c 'cd /tmp/utsushi-red-genga && PYTHONPATH=src .venv/bin/python tests/test_genga.py'
+# commit: 59a79631（回した時の HEAD）
+Traceback (most recent call last):
+  File "/tmp/utsushi-red-genga/tests/test_genga.py", line 28, in <module>
+    from web import en, genga, genga_words, kuzushi, skin, techo_site, toys, tsukuru  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'genga' from 'web' (/tmp/utsushi-red-genga/src/web/__init__.py)
+rc=1

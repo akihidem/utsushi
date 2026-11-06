@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_genga.py（out/sources の切り抜きが無い、使い捨ての clone の木で）
+# commit: 431ae8a1（回した時の HEAD）
+ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる
+rc=0

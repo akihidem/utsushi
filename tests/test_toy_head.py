@@ -20,11 +20,14 @@ for look in ("tenji", "zine"):
     for sid in (GORAIGO, TORA):
         page = toy_page(sid, look)
         hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
-        # 歌を右に浮かせるので、後に続く札とリンクが題のすぐ下へ上がる。歌が札より後にあると効かない
-        assert hero.index("<h1>") < hero.index('class="songs"') < hero.index('class="label"') < hero.index('class="links"'), (look, sid)
-    # 歌の無い玩具は札が題のすぐ下のまま
+        # 原画と歌（本人の指示 11-06）: 歌は頁の全体の絵と組にして左の欄に置く。右の欄は題・札・リンクが空きなく続くので、#134 の空きは出ない
+        assert (hero.index('class="genga genga-head"') < hero.index('class="genga-songs"') < hero.index("<h1>")
+                < hero.index('class="label"') < hero.index('class="links"')), (look, sid)
+        assert 'class="songs"' not in hero, (look, sid)
+    # 歌の読みの無い玩具は字の歌を出さない（断りの 1 行だけ）。札は題のすぐ下のまま
     page = toy_page(PLAIN, look)
-    assert 'class="songs"' not in page[page.index('class="hero"'):page.index('id="kasetsu"')], look
+    hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
+    assert 'class="songs"' not in hero and 'class="genga-songs"' not in hero and hero.index("<h1>") < hero.index('class="label"'), look
 
 css = skin.BASE
 wide = css[:css.index("@media (max-width:820px)")]

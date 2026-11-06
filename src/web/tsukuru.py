@@ -2,7 +2,7 @@
 「生徒の一人一台端末や iPhone を机の端に置いて、端末のカメラで生徒の上半身を写す形に。間に手と動画と紙があり、作成の様子を見れるようにする」。
 
 何をする頁か: 端末を机の端に立て、画面に手本（今の手順の文と、手順の紙の絵）と返事（聞いた事の答え）を出す。隅の小さな鏡に、
-自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順はできた）で残す。設計は docs/process/research/30 の「観察の置き方」。
+自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順は全部できた）で残す。設計は docs/process/research/30 の「観察の置き方」。
 
 判断の芯:
 - **一番浅い段（観察 A）だけを作る。映像は端末の中だけ。** 鏡は <video> に流すだけで、画素を取り出さない・録らない・送らない。
@@ -31,7 +31,7 @@
 from omochae import hypotheses, instructions, loop, making_log
 from omochae.compose import TEMPLATES
 
-from . import skin
+from . import genga, skin
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
 PRIVACY = "映像はこの端末の中だけで、送りも残しもしません。"
@@ -40,8 +40,8 @@ from .play_server import esc, out_dir, printed_versions
 
 NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
 # 最後の手順の札と、押した後に記録の欄の頭で出す案内（#321）。案内は play_server が記録の欄へ渡す。
-DONE_LABEL = "できた"
-DONE_NOTE = "組み上がった事を残しました。動かしてみて、玩具の頁で記録を残します。"
+DONE_LABEL = "全部できた"
+DONE_NOTE = "組み上がった事を残しました。動かしてみて、ここで記録を残します。"
 
 STYLE = """
 *{box-sizing:border-box}
@@ -232,7 +232,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
-            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>'
+            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>{genga.fold(sid)}'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'

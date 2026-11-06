@@ -129,7 +129,7 @@ def toy_section(sid, link_title=False, photos=True):
     title = f'<a href="/zukan/{esc(sid)}">{esc(z["toy"])}</a>' if link_title else esc(z["toy"])
     return (f'<section class="toy" id="{esc(sid)}">{pic}<div><h2>{title}</h2>{songs}'
             f'<p class="meta">試した記録</p>{obs}<p class="meta">仮説</p>{hyp}'
-            f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">作った物</a></p></div></section>')
+            f'<p class="links"><a href="/toy/{esc(sid)}">玩具の頁</a><a href="{_hon(sid)}">{esc(wording.frame(sid))}</a><a href="/zukan/{esc(sid)}/yomi">くずし字を読む</a><a href="/toy/{esc(sid)}/techo">手帖</a><a href="/gallery">作った物</a></p></div></section>')
 
 
 def _page(title, body, look=None, path="/zukan"):
@@ -147,6 +147,12 @@ NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="
 LEAD = '<p class="meta">文にはどれも印があります。原文の引用は人が確かめた読み、仮説は試していない考え、観察は人が残した記録です。</p>'
 
 
+def _hon(sid):
+    """その玩具が載る本の頁（図鑑の本の頁の、その面）への道。"""
+    src = _source(sid)
+    return f"/zukan/hon/{int(src['canvas'])}#R{int(src['canvas']):07d}-{src['side']}"
+
+
 def index_page(sids, look=None, photos=True):
     """必須の 2 種は今までどおり 1 つずつ大きく並べる。全部を作る線で足した試作の玩具（本人の指示 11-04）は、その下に小さな札で並べる。
     100 を超える玩具を全部大きく並べると、入口から見たい物に届かないため。試作の札は名前が確かめ待ちである事も添える。"""
@@ -154,10 +160,16 @@ def index_page(sids, look=None, photos=True):
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = "".join(toy_section(s, link_title=True, photos=photos) for s in main)
     if rest:
-        cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <span class="meta">{esc(wording.frame(s))}</span></li>' for s in rest)
+        # 「本の n コマ目」の字から、その本の頁へ（本人の決定 11-06。字は足さない）
+        cards = "".join(f'<li><a href="/zukan/{esc(s)}">{esc(hypotheses.load(s)["toy"])}</a> <a class="meta" href="{_hon(s)}">{esc(wording.frame(s))}</a></li>' for s in rest)
         body += (f'<section class="more" aria-label="ほかの玩具"><h2>ほかの玩具</h2><p class="meta"><span class="lb">試作</span>'
                  f'全部の玩具を型紙にする途中の {len(rest)} 種。名前は作る側の見立てで、まだ確かめていません。</p><ul class="grid">{cards}</ul></section>')
-    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}" + body, look)
+    # 本の頁の入口（本人の決定 11-06: 玩具の絵がある頁を 1 コマずつ）。字は本人が決めた「原画と歌」
+    from .genga_words import HEAD
+    from .zukan_hon import frames
+
+    hon = f'<p class="links"><a href="/zukan/hon/{frames()[0]}">{esc(HEAD)}</a></p>'
+    return _page("うつし · 図鑑", f"<h1>図鑑</h1>{NAV}{LEAD}{hon}" + body, look)
 
 
 def toy_zukan(sid, look=None, photos=True):
