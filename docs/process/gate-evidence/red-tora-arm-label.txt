@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_next_sheets.py
+# commit: 34b0e370 の木に、この枝の compose.py・textfit.py・model.py・web/kumitate.py と試験だけを置き、雛形 src/omochae/templates/pivot_counterweight.py は main の物のまま（直す前の雛形）
+Traceback (most recent call last):
+  File "tests/test_next_sheets.py", line 112, in <module>
+    assert got[2] == f"{was[2]}（胴の 2 つの穴・3 首の帯の穴・5 重りの腕の上の穴に通す。胴の上の面の点の線の下を通る）", (hid, got[2])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('H-A', '竹串（長さ約 48mm に切り、先を落とす）（胴の 2 つの穴・3 首の帯の穴・5 腕の上の穴に通す。胴の上の面の点の線の下を通る）')
+rc=1
