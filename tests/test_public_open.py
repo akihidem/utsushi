@@ -64,6 +64,7 @@ def up(**kw):
             jar[name.strip()] = value.strip()
         return r.status, r.read().decode("utf-8", "replace")
     call.local = f"127.0.0.1:{port}"
+    call.jar = jar
     return call
 
 
@@ -118,6 +119,14 @@ worded = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{worded}/media", jpeg, up_media)[0] == 201 and media_review.record(worded, "m1.jpg", "object", "試験の人") == []
 gallery = stranger("GET", "/gallery")[1]
 assert f"/record/{worded}/media/m1.jpg" in gallery and "PHOTOWORDS" not in gallery
+# のこした後に着くギャラリーの「今残した 1 つ」（#480）は、開いた場では記録を残した同じ画面にも出さない。札に記録の番号と感想の字が出るため（J-028）。
+# 閉じ方は 2 つ（呼ぶ側が鍵を渡さない・gallery_page が public で鍵を見ない）なので、頁と gallery_page の両方で見る
+mine_view = opened("GET", "/gallery?msg=x")[1]
+assert 'id="own"' not in mine_view and "PHOTOWORDS" not in mine_view and wording.record_no(worded) not in mine_view, "同じ画面にも今残した 1 つを出さない"
+rec_key = opened.jar["utsushi_rec"]
+assert records.mine(worded, rec_key), "対照: この鍵は今残した記録の物"
+assert 'id="own"' in techo_site.gallery_page([G], rec_key=rec_key), "対照: 合言葉付きの場の形なら今残した 1 つが出る"
+assert 'id="own"' not in techo_site.gallery_page([G], public=True, rec_key=rec_key), "gallery_page も開いた場では鍵を見ない"
 # 「人や声」と確かめた物は、上げた本人にも、ギャラリーにも出さない
 assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
 voiced = records.all_records(G)[-1]["id"]
