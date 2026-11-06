@@ -7,7 +7,7 @@
 - 合言葉なしの場: 書いた物も含めて OWN-n の紙は開かない。紙を作る節も受け口も閉じる。
 - 共用の機械（次の人が同じブラウザに座る）: 鍵は期限の中だけ効く（頼んだ・作る側が書いた・採った時の一番新しい物から 2 時間）。期限はサーバが見る。
   記録を残すと、その案は閉じる（交代の区切り。1 人の作業は 2 時間より短いので、期限だけでは次の人に間に合わない）。同じタブの印でも受け取り直せない。
-  試した後の紙（話した字が刷られない）だけは、記録を残した後も期限の中は本人に開く。
+  試した後の紙は話した字が刷られないので、記録があれば誰にも開く（tests/test_loop1_next.py）。
 """
 import json
 import os
@@ -114,7 +114,7 @@ assert code == 422 and not h.get("Set-Cookie"), "ほかの印には渡さない"
 
 # 書いて立てた仮説の紙は今までどおり（鍵なしで開く）
 typed, _ = hypotheses.save_own(G, "書いた案", "書いて立てた動かし方", "右の図")
-assert send(base, f"/toy/{G}/print-own", {"id": typed["id"]})[0] == 303
+assert hypotheses.print_own(G, typed["id"], str(hypotheses.play_dir(G) / f'{typed["id"]}_v1')) == 0
 assert send(base, f"/sheet/{G}/{typed['id']}_v1_free.pdf")[0] == 200
 
 
@@ -184,24 +184,21 @@ assert send(base, f"/toy/{G}/think-sheet", {"who": "expiry0004"})[0] == 422 and 
 
 # ── 共用の機械: 記録を残すと、その案は閉じる（交代の区切り） ──
 for route, want, who, text in (("record", 303, "handover01", "下から押したい"), ("record-json", 201, "handover02", "上から押したい")):
-    t, k, oid, p = adopted(who, text)
-    assert opened(k, oid) == 200 and opened(k, oid, "_tejun") == 200
+    t, k, used, p = adopted(who, text)
+    assert opened(k, used) == 200 and opened(k, used, "_tejun") == 200
     # 記録の form: 本人にだけ、その案の選び肢が出て、選ばれている（作った紙の記録として残すため）。ほかの人の案は並べない（型紙は玩具ごとに 1 枚。J-032）
-    label = f'<option value="{oid}" selected>'
+    label = f'<option value="{used}" selected>'
     assert label in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 本人の form に自分の案"
-    assert f'value="{oid}"' not in send(base, f"/toy/{G}")[1].decode(), f"{route}: ほかの人の form に出さない"
-    assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who})[0] == 422, f"{route}: 鍵の無い人の記録は受けない"
-    assert send(base, f"/toy/{G}/{route}", {"hypothesis": oid, "result": "わからない", "who": who}, cookie=k)[0] == want, route
-    assert opened(k, oid) == 404 and opened(k, oid, "_tejun") == 404, f"{route}: 記録を残すと、紙も手順の紙も閉じる"
+    assert f'value="{used}"' not in send(base, f"/toy/{G}")[1].decode(), f"{route}: ほかの人の form に出さない"
+    assert send(base, f"/toy/{G}/{route}", {"hypothesis": used, "result": "わからない", "who": who})[0] == 422, f"{route}: 鍵の無い人の記録は受けない"
+    assert send(base, f"/toy/{G}/{route}", {"hypothesis": used, "result": "わからない", "who": who}, cookie=k)[0] == want, route
+    assert opened(k, used) == 404 and opened(k, used, "_tejun") == 404, f"{route}: 記録を残すと、紙も手順の紙も閉じる"
     assert text not in send(base, p, cookie=k)[1].decode(), f"{route}: 話した字も見えない"
-    assert opened(k, oid, "_after") == 200, f"{route}: 試した後の紙は、記録の後に本人が使う（話した字は刷られない）"
-    assert opened("", oid, "_after") == 404, f"{route}: 試した後の紙も、鍵の無い人には開かない"
+    assert opened(k, used, "_after") == 200, f"{route}: 試した後の紙は、記録の後に本人が使う（話した字は刷られない）"
+    assert opened("", used, "_after") == 200, f"{route}: 記録があれば別の人にも開く（話した字が無い紙。tests/test_loop1_next.py）"
     code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": who})
     assert code == 422 and not h.get("Set-Cookie"), f"{route}: 同じタブの次の人が押しても、前の人の案へ戻らない"
-    assert f'value="{oid}"' not in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 閉じた案は form にも出さない"
-    age(t, 121)
-    assert opened(k, oid, "_after") == 404, f"{route}: 試した後の紙も期限まで"
-    age(t, 1)
+    assert f'value="{used}"' not in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 閉じた案は form にも出さない"
 # 次の人が同じタブで話せば、その人の案を作れる。前の人の案は閉じたまま
 loc4, k4 = ask(base, "handover01", "次の人の考え")
 t4 = token_of(loc4)
@@ -217,6 +214,8 @@ assert send(base, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "わから
 code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": "handover04"})
 assert code == 422 and not h.get("Set-Cookie"), "結ばれた考えから頼めない"
 assert not {"記録に結ばれる考え", "別の仮説を見た前の考え"} & {w["how_it_moves"] for w in words.waiting()}, "案を作らない"
+# 対照: 合言葉の場では、この鍵でこの案が開く（下の断りが、閉じた案を見ているだけにならないように）
+assert f'data-hid="{oid}"' in send(base, f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].decode() and f'data-hid="{oid}"' in send(base, f"/toy/{G}/techo", cookie=key)[1].decode()
 server.shutdown()
 
 # ── 合言葉なしの場 ──
@@ -224,6 +223,8 @@ server, base = start(public_open=True)
 for name in (f"{oid}_v1.pdf", f"{oid}_v1.png", f"{oid}_v1_tejun.pdf", f"{typed['id']}_v1_free.pdf"):
     assert send(base, f"/sheet/{G}/{name}", cookie=key)[0] == 404, name
 assert send(base, f"/sheet/{G}/H-A_v1.pdf")[0] in (200, 404), "元の仮説の道は変えない"
+assert f'data-hid="{oid}"' not in send(base, f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].decode(), "鍵があっても、作りながら見る頁に本人の紙を開かない"
+assert oid not in send(base, f"/toy/{G}/techo", cookie=key)[1].decode(), "手帖にも出さない"
 code, body, _ = send(base, f"/toy/{G}")
 assert code == 200 and think_sheet.GO not in body.decode() and f"{typed['id']}_v1_free.pdf" not in body.decode(), "開かない紙の入口を出さない"
 talk_log.add(G, "think", "公開の場で話した考え", who="pubwho0001")

@@ -2,7 +2,7 @@
 「生徒の一人一台端末や iPhone を机の端に置いて、端末のカメラで生徒の上半身を写す形に。間に手と動画と紙があり、作成の様子を見れるようにする」。
 
 何をする頁か: 端末を机の端に立て、画面に手本（今の手順の文と、手順の紙の絵）と返事（聞いた事の答え）を出す。隅の小さな鏡に、
-自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順はできた）で残す。設計は docs/process/research/30 の「観察の置き方」。
+自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順は全部できた）で残す。設計は docs/process/research/30 の「観察の置き方」。
 
 判断の芯:
 - **一番浅い段（観察 A）だけを作る。映像は端末の中だけ。** 鏡は <video> に流すだけで、画素を取り出さない・録らない・送らない。
@@ -23,25 +23,30 @@
   「手順 N で止まった所を聞く」に変わって、字の欄に手が届き、声の釦が出る。聞く口には今の手順の番号（step）を添えて送る。
   なぜ添えるか: どの段でどんな問いが出るかを束ねて、手順の紙の直しと先回りの答えの材料にするため（U-45）。
 - 声で聞く口は手帖と同じ作り（ブラウザの音声認識。使えない画面では釦を隠す）。**声そのものは録らず、送らない。** 送るのは字になった問いだけ。
+  声の操作も手帖と同じ（本人の決定 11-05、#87。voice_words.py）: 1 回押した後は聞き続け、つぎ・もどる・もう一回などは言葉の全部が一致した時だけ札を押す。操作の字は送らない。
+  聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）: 問いは「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。周りの話し声を問いにしない。
   マイクを getUserMedia で開く code と録る code は書かない（鏡は audio:false のまま）。試験で固定する。
 - 出来事（札と問い）には、その場限りの無作為の印（who）を添える。sessionStorage に持つ英数字 10 桁で、タブを閉じると消える。
   なぜ持つか: 「同じ段で 3 人以上止まった」を数えるには、同じ人の押し直しを 1 人と数える印が要る（Issue #119 の「人は、その場限りの
   無作為の印で数える」）。cookie にしない・名前や機器と結び付けない・次に開いた時は別の印になる、で人を追える物にしない。
 """
-from omochae import hypotheses, instructions, loop, making_log
+import json
+
+from omochae import hypotheses, instructions, loop, making_log, render
 from omochae.compose import TEMPLATES
 
-from . import skin
+from . import genga, skin
+from .voice_words import CLEAN, WORDS
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
 PRIVACY = "映像はこの端末の中だけで、送りも残しもしません。"
-CAMERA_PURPOSE = "カメラで見るのは、不完全な型紙を人が工夫で乗り切る所です。人の出来を見るためではありません。"
+CAMERA_PURPOSE = "カメラで見るのは、うまくいかない型紙を、どう工夫して作ったかです。じょうずかどうかを見るためではありません。"
 from .play_server import esc, out_dir, printed_versions
 
 NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
 # 最後の手順の札と、押した後に記録の欄の頭で出す案内（#321）。案内は play_server が記録の欄へ渡す。
-DONE_LABEL = "できた"
-DONE_NOTE = "組み上がった事を残しました。動かしてみて、玩具の頁で記録を残します。"
+DONE_LABEL = "全部できた"
+DONE_NOTE = "組み上がった事を残しました。動かしてみて、ここで記録を残します。"
 
 STYLE = """
 *{box-sizing:border-box}
@@ -61,6 +66,9 @@ a{color:var(--accent)}
 .js #steps li{display:none}
 .js #steps li.on{display:block;font-size:clamp(24px,3.6vw,44px);line-height:1.45}
 .sheet{display:block;width:100%;max-height:52svh;object-fit:contain;object-position:left top;background:#fff;border:1px solid var(--frame)}
+/* 組み方の絵（svg）は、手順の紙の絵（縦に長い img）と同じく高さの上限いっぱいを取り、絵は比を保って中に収める。
+   高さを幅から決めると、横に長いコマが低くなり、絵の高さの下限（120px）より低くなった（幅 320 の御来迎、tests/test_landscape_fit.py） */
+svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.koma.on{display:block}
 .side{padding:14px 16px;display:grid;gap:14px;align-content:start;min-width:0;border-top:1px solid var(--rule)}
 /* 札は手が紙でふさがっていても押せる大きさ。並びは進む順（次へか組み上がり・止まった・戻る）。色で良し悪しを付けない。 */
 .tiles{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0}
@@ -91,8 +99,20 @@ a{color:var(--accent)}
 /* 横置き（机の端に立てた端末やタブレット）: 左に手本、右に札・返事・鏡。 */
 @media (min-width:860px) and (orientation:landscape){
  .stage{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
+ /* 原画と歌の畳み（genga.fold）は .stage の格子の 1 つの升に入るので、幅いっぱいにする。升に入ったままだと、畳みが左・手本が右に並び、
+    札の列（.side）が次の段へ落ちて、1024×768 で「次の手順へ」が最初の画面の外に出た */
+ .stage>.genga-fold{grid-column:1/-1}
  .side{border-top:0;border-left:1px solid var(--rule)}
  .sheet{max-height:58svh}
+}
+/* 縦置き（手に持つ電話・縦に立てた端末）: 手順の紙の絵の高さの上限を、画面の高さから手順の番号と字の高さ（--tx）と残りの分を引いた値にする。
+   一番大きい札「次の手順へ」が、どの手順でも最初の画面に入るようにする（11-07 の前の確かめで、390×844 の虎で 15px 下、字の長い手順では
+   最大 120px ほど下に出た）。326px は、頭の行・原画の畳み・手本の箱と札の列の余白と札の高さの分（390×844 の虎で測った）。--tx は頁の script が
+   手順を出すたびに測って入れる（字の長さは手順ごとに違い、CSS だけでは字の高さを引けないため）。絵は 120px より低くしない: 前は手本の箱に上限を
+   置いて絵を縮めたが、320×568 で字の長い手順の絵が 2px まで縮んで消えた。低い画面で字が長い時は、絵を残して札が下へ出るのを受ける。
+   JS が無い時は手順が全部並び --tx も無いので当てない（.js だけ） */
+@media (orientation:portrait){
+ .js .tehon .sheet{max-height:min(52vh,max(120px,calc(100vh - 326px - var(--tx,0px))));max-height:min(52svh,max(120px,calc(100svh - 326px - var(--tx,0px))))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
@@ -105,10 +125,13 @@ const st=document.querySelector('.stage'),sid=st.dataset.sid,hid=st.dataset.hid,
 const wantCam=new URLSearchParams(location.search).get('cam')==='1';
 const items=[...document.querySelectorAll('#steps li')],num=document.getElementById('n'),stepIn=document.getElementById('step');
 const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg-stuck');
-const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]');
+const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');
 let n=+stepIn.value;
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;
+// 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
+const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
+addEventListener('resize',fit);
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
 const who=(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){
  const a=new Uint8Array(10);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<10;i++)a[i]=Math.floor(Math.random()*256);
@@ -122,7 +145,9 @@ document.body.classList.add('js');show();
 try{const k=`tsukuru-start-${sid}-${hid}`;if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');send('start')}}catch(e){}
 // 聞く口。「ここで止まった」を押した段では、見出しを「手順 N で止まった所を聞く」に変えて囲み、字の欄へ手を届かせる。段を進めたら元に戻す。
 const henji=document.getElementById('henji'),head=document.getElementById('ask-head'),qIn=document.getElementById('q');
-const openAsk=(on)=>{henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
+// 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。問いは、「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。
+let armed=false;
+const openAsk=(on)=>{armed=on;henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
  if(on){try{henji.scrollIntoView({block:'nearest'})}catch(e){}qIn.focus()}};
 document.querySelectorAll('#tiles button:not([value=done])').forEach(b=>b.addEventListener('click',async(e)=>{e.preventDefault();const ev=b.value;
  const j=await send(ev);mStuck.hidden=true;
@@ -142,6 +167,10 @@ const ask=async(q)=>{if(!q)return;ans.textContent='…';
 document.getElementById('ask-form').addEventListener('submit',(e)=>{e.preventDefault();ask(qIn.value.trim())});
 // 声で聞く: ブラウザの音声認識で字にし、字になった問いだけを上の口へ送る（声は録らない・送らない）。1 回押すと話し続けられ、もう 1 回で止まる。
 // 使えない画面では釦を隠し、字の欄だけにする（手帖と同じ作り）。
+// 声の操作（手帖と同じ決まり。#87）。言葉の全部が一致した時だけ操作にし、操作の字は送らない。ほかは質問として聞く。この頁に無い操作（とって・のこす）は何もしない。
+const WORDS=__WORDS__,clean=(t)=>t.replace(/__CLEAN__/g,'');
+const tile=(v)=>document.querySelector(`#tiles [value=${v}]`);
+const act=(op)=>{if(op==='next'){const b=tile('next');(b.hidden?tile('done'):b).click()}else if(op==='back')tile('back').click();else if(op==='stuck')tile('stuck').click();else if(op==='again')say(items[n-1].textContent)};
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition,mic=document.getElementById('mic');
 if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
  sayStart=()=>{speaking=true;if(listening&&rec){try{rec.stop()}catch(e){}}};
@@ -149,10 +178,16 @@ if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
  mic.addEventListener('click',()=>{
   if(listening){listening=false;rec&&rec.stop();mic.setAttribute('aria-pressed','false');return}
   rec=new SR();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=false;
-  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();qIn.value=t;ask(t)};
+  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();if(!t)return;const op=WORDS[clean(t)];if(op){act(op);return}if(!armed)return;armed=false;qIn.value=t;ask(t)};
   rec.onend=()=>{if(listening&&!speaking){try{rec.start()}catch(e){}}};
   rec.onerror=()=>{listening=false;mic.setAttribute('aria-pressed','false')};
-  listening=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}})}
+  listening=true;armed=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
+ // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
+ addEventListener('pagehide',()=>{listening=false;if(rec){try{rec.stop()}catch(e){}}});
+ let paused=false;
+ document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){if(listening){paused=true;listening=false;mic.setAttribute('aria-pressed','false');try{rec.stop()}catch(e){}}return}
+  if(paused){paused=false;listening=true;mic.setAttribute('aria-pressed','true');if(!speaking){try{rec.start()}catch(e){}}}})}
 if(henji.classList.contains('open'))head.textContent=`手順 ${n} で止まった所を聞く`;
 const v=document.getElementById('cam'),on=document.getElementById('on'),note=document.getElementById('mirror-note');
 const off='鏡は出さなくても全部できます。';
@@ -163,6 +198,7 @@ else{const start=async()=>{try{const s=await navigator.mediaDevices.getUserMedia
  if(wantCam)start()}
 addEventListener('pagehide',()=>{const s=v.srcObject;if(s)s.getTracks().forEach(t=>t.stop())});
 })()</script>""" % PRIVACY
+SCRIPT = SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__CLEAN__", CLEAN)
 
 
 def _paper(sid, hid):
@@ -196,7 +232,7 @@ def count(sid, hid, version=None):
     return len(step_texts(sid, hid, version))
 
 
-def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
+def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     """作りながら見る頁。呼ぶ側（play_server）が、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
     from . import hanasu  # 話す口（Issue #279）。循環を避けて、ここで読む
 
@@ -212,12 +248,25 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     on = ' class="on"'
     items = "".join(f'<li{on if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
     if not steps:
-        items = '<li class="on">手順の紙の絵を見て、番号の順に進めます。</li>'
+        items = '<li class="on">組み方の絵を見て、番号の順に進めます。</li>'
     name = f"{hid}_v{v}_tejun.png"
     if not (out_dir(sid) / name).exists():  # 型紙なしの紙には手順の紙が無い。その紙そのものを出す
         name = f"{hid}_v{v}_free.png"
-    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="手順の紙（{esc(_label(h))} の紙・版 {v}）">'
+    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・版 {v}）">'
            if (out_dir(sid) / name).exists() else "")
+    if not img and steps:
+        # 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、前に刷った紙の絵が無い時は、手帖・組み方の頁と同じ組み方の絵
+        # （instructions.step_pictures）を出す。字を入れない絵で、読み上げからは隠れる（手順の文は横の並びが言う）
+        try:
+            template = h.get("template") or data.get("template", "slider_fan")
+            params, _ = loop.version_params(sid, hid, v)
+            pictures, which = instructions.step_pictures(template, {**TEMPLATES[template].DEFAULTS, **(params or h.get("params") or {})}, steps)
+            # 前の手順の紙の絵と同じく、見せるのは 1 枚だけ（今の手順の絵）。手順ごとに 1 枚ずつ置き、送る時に JS が切り替える（JS が無い時は n の 1 枚）。
+            # 全部を縦に並べると、御来迎の 4 コマで札が最初の画面の外へ出た（幅 320、tests/test_landscape_fit.py）
+            img = "".join(render.shapes_svg(pictures[k], "sheet koma" + (" on" if i == n else "")).replace("<svg ", f'<svg data-n="{i}" ', 1)
+                          for i, k in enumerate(which, 1) if 0 <= k < len(pictures))
+        except Exception:  # 絵が作れない時も、手順の文だけで進められる
+            img = ""
     # 止まったの文は先に置いておき、押した時に出す（JS が無い時は ?ev= で出す）。
     stuck = (f'<p id="msg-stuck" class="msg"{"" if event == "stuck" else " hidden"}>止まった所を残しました（手順 <span class="sn">{n}</span>）。'
              'このまま下で、声か字で聞けます。</p>')
@@ -226,7 +275,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
-            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>'
+            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>{genga.fold(sid)}'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'
@@ -236,7 +285,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<button name="event" value="next" class="go"{" hidden" if n >= total else ""}>次の手順へ</button>'
             f'<button name="event" value="done" class="go"{"" if n >= total else " hidden"}>{esc(DONE_LABEL)}</button>'
             '<button name="event" value="stuck">ここで止まった</button>'
-            '<button name="event" value="back" class="small">戻る</button></form>'
+            # 手順 1 の「戻る」は行き先が無く、押しても何も起きないので出さない。
+            f'<button name="event" value="back" class="small"{" hidden" if n <= 1 else ""}>戻る</button></form>'
             # 作りながら、工夫を話す（一周の 2、Issue #279）。札のすぐ下に置き、今の手順の番号に結ぶ。声は字にして、字だけを残す（hanasu.py）。
             f'{hanasu.craft_box(sid, hid, v, n)}'
             # 聞く口: JS がある時は手帖と同じ口（ask-json）で答えをここに出す。無い時は玩具の頁の聞く口へ送る。
@@ -246,7 +296,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<form id="ask-form" method="post" action="/toy/{esc(sid)}/ask">'
             f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{v}"><label class="sr" for="q">聞きたい事</label>'
             '<input type="text" id="q" name="question" maxlength="300" placeholder="谷折りって？" enterkeyhint="send" required><button>聞く</button></form>'
-            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(NOTICE)}</p>'
+            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(making_log.ask_notice(ai) + making_log.ASK_NAME_VOICE)}</p>'
             f'<p class="meta"><a href="/toy/{esc(sid)}/techo">声で聞く・写真を上げる（手帖）</a></p></div>'
             # カメラの目的（本人の言葉 11-05「カメラで見るのはそういうとこだよ」）。人の出来を測らない事を、カメラのそばに書く。
             f'<p class="meta">{esc(CAMERA_PURPOSE)}</p>'

@@ -1,0 +1,61 @@
+# 命令: env -u ANTHROPIC_API_KEY PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: 1b08553f（回した時の HEAD）
+F9.own: 自分の仮説「案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-8_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-8_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-8_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-9_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-9_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-9_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/.tmp-mf85_3e0/H-A_v2.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/.tmp-mf85_3e0/H-A_v2_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/.tmp-mf85_3e0/H-A_v2_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-10_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-10_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-10_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-11_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-11_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-11_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-12_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-12_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-12_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-13_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-13_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-13_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-14_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-14_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-14_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-15_v1_free.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-16_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-16_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-16_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-17_v1.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-17_v1_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/OWN-17_v1_after.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/.tmp-tywlhp9l/H-A_v9.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/.tmp-tywlhp9l/H-A_v9_tejun.pdf
+/tmp/tmpwcibnw7b/play/NDL-1187053-R0000005-L/.tmp-tywlhp9l/H-A_v9_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_withdraw.py", line 585, in <module>
+    assert v24["changes"][0]["why"] == ADOPT24 and p24["changes"][0]["why"] == ADOPT24, "部品の名前（外筒）を含むだけの、採った人の文は消さない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 部品の名前（外筒）を含むだけの、採った人の文は消さない
+rc=1

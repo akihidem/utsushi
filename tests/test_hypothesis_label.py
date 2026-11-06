@@ -1,4 +1,5 @@
-"""型紙は正解でなく AI が考えた仮説だと、紙と頁に出す（#258、本人の決定）。文はエンジン（paper-to-toy）とそろえる。"""
+"""型紙は正しい答えでなく AI が考えた仮説だと、紙と頁に出す（#258、本人の決定）。
+文はやさしい言葉の文（#318、本人の決定 11-05）。必須 2 種の今の組（凍結の床）だけは前の文（marks.HYPOTHESIS_FROZEN）のまま刷る。"""
 import json
 import os
 import pathlib
@@ -18,11 +19,15 @@ from omochae.instructions import compose_after, compose_sheet  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-WORDS = "仮説: AI が考えた、試すための 1 つの翻案です。正解ではありません。作って、動きを確かめて、直していきます"
+WORDS = "仮説（ためしの案）: AI が考えた、ためしに作るための案の 1 つです。正しい答えではありません。作って、動くか見て、直していきます。"
 REQUIRED = {"NDL-1187053-R0000005-L": "H-A", "NDL-1187053-R0000014-R": "H-A"}
 assert marks.HYPOTHESIS == WORDS
 # 語の見張りで外すのは打ち消しの文だけ。文から「正解」を外したら、もう残っていない
 assert "正解" not in WORDS.replace("正解ではありません", "")
+# 前の文を刷るのは、雛形の今の組が凍結の組の玩具だけ。組を上げて FROZEN_SETS を直し忘れると、ここで落ちる
+from omochae.compose import TEMPLATES  # noqa: E402
+for sid, sheet_set in marks.FROZEN_SETS.items():
+    assert TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET == sheet_set, (sid, sheet_set)
 
 
 def flat(s):
@@ -49,15 +54,20 @@ for p in paths:
     after, failures = compose_after(source, h["name"], data["after_try"])
     assert not failures, (sid, [f.line() for f in failures])
     for name, lay in (("型紙", layout), ("手順の紙", sheet), ("試した後の紙", after)):
-        assert flat(WORDS) in printed(lay), (sid, name)
+        want = marks.HYPOTHESIS_FROZEN if sid in marks.FROZEN_SETS else WORDS
+        assert flat(want) in printed(lay), (sid, name)
 
 # 刷った PDF から読み直せる（必須 2 種）
 for sid, hid in REQUIRED.items():
     r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "--source", sid, "print", hid, "--out", f"{tmp}/{sid}"], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-    for pdf in (f"{tmp}/{sid}.pdf", f"{tmp}/{sid}_tejun.pdf"):
+    # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙の字は上の組んだ形（layout）で見る
+    assert not pathlib.Path(f"{tmp}/{sid}_tejun.pdf").exists()
+    for pdf in (f"{tmp}/{sid}.pdf",):
         text = subprocess.run(["pdftotext", pdf, "-"], capture_output=True, text=True, check=True).stdout
-        assert flat(WORDS) in flat(text), pdf
+        # 前の文で刷るのは、今の組が凍結の組の玩具（marks.FROZEN_SETS。今は御来迎だけ。虎は次の組 tora-v4 に上げた）
+        want = marks.HYPOTHESIS_FROZEN if sid in marks.FROZEN_SETS else WORDS
+        assert flat(want) in flat(text), pdf
 
 # 頁の型紙の窓に同じ文が出る
 server = serve(0)

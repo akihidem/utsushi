@@ -49,7 +49,7 @@ def win(page):
 page = get(f"/toy/{G}")
 ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
 first, other = hypotheses.sheet_of(G)["id"], ids[1]
-making = lambda hid: f'<form method="post" action="/toy/{G}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button>'
+making = lambda hid: f'<form method="post" action="/toy/{G}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button data-busy>'
 # 窓の札はたたき台の 1 枚だけ（本人の決定 11-05、J-032）。最初の 1 枚も窓の中で作れる。上の節の札は「型紙を見る」で、印刷とは言わない
 assert "型紙を見る</button>" in page and making(first) in win(page) and making(other) not in win(page), win(page)[:600]
 assert "仮説の札を押すと、紙を作ってここに出します" in visible(win(page))
@@ -66,7 +66,7 @@ assert code == 200 and f"see={first}" in where and where.endswith("#win"), (code
 w = win(page)
 # 「刷る」「印刷」は、紙に印刷する所にだけ出る。PDF の釦の下の案内（#297）も印刷する所なので除く
 rest = visible(re.sub(r'<details class="print-help">.*?</details>', "", w, flags=re.S))
-for printing in ("印刷する時は PDF を 100% で", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り"):
+for printing in ("印刷する時は、PDF の大きさを 100% にしてください。", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り"):
     assert printing in rest, printing
     rest = rest.replace(printing, "")
 assert "刷" not in rest and "印刷" not in rest, rest[:400]
@@ -82,12 +82,12 @@ assert "おすすめ" not in w and "順位" not in w
 assert post(f"/toy/{G}/print", {"hypothesis": other, "at": "win"})[0] == 422 and not list(out_dir(G).glob(f"{other}_v1*")), "断った紙を残さない"
 # 型紙の確定の記録は、押した紙の分だけ残る（線は変えない）
 assert {c["hypothesis_id"] for c in loop.sheet_confirmations(G)} == {first}
-# 試した後の紙は、記録の前は渡さず、理由を字で出す
-assert "試した後の紙は、記録を残すと開きます" in visible(win(page))
+# 試した後の紙は 11-06 から刷らないので、窓に出さず、理由の字も出さない
+assert "試した後の紙" not in visible(win(page))
 assert f"{first}_v1_after" not in win(page)
 assert post(f"/toy/{G}/record", {"hypothesis": first, "result": "動いた"})[0] in (200, 303)
 page = get(f"/toy/{G}?see={first}")
-assert "試した後の紙は、記録を残すと開きます" not in visible(win(page)), "開いた後は言わない"
+assert "試した後の紙" not in visible(win(page)) and f"{first}_v1_after" not in win(page), "記録の後も窓は型紙だけ"
 
 server.shutdown()
 print("ok")

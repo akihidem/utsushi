@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_assembly.py
+# commit: 18212d2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_assembly.py", line 17, in <module>
+    from omochae import assembly, hypotheses, instructions
+ImportError: cannot import name 'assembly' from 'omochae' (src/omochae/__init__.py)
+rc=1

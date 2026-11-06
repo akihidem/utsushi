@@ -31,6 +31,8 @@ server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
 tmp = pathlib.Path(tempfile.mkdtemp())
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。写真の受け口は、その画面からだけ受ける）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 
 
 def req(path, data, ctype="application/x-www-form-urlencoded"):
@@ -184,9 +186,25 @@ print("ok no ffmpeg")
 rid = new_record()
 for i in range(techo_site.MAX_PER_RECORD):
     assert req(f"/record/{rid}/media", sample_mp4, "video/mp4")[0] == 201
-assert sorted(p.name for p in media_dir(rid).iterdir()) == ["m1.mp4", "m2.mp4", "m3.mp4"], "作業のファイルが残った"
+assert sorted(p.name for p in media_dir(rid).iterdir()) == ["m1.mp4", "m2.mp4", "m3.mp4", "owners.json"], "作業のファイルが残った"
 assert req(f"/record/{rid}/media", sample_mp4, "video/mp4")[0] == 422, "数の上限"
 print("ok tidy")
+
+# 7 合言葉なしで開いた場の受け口も、同じ道で音を落とす（本人の決定 11-06 で、開いた場でも写真と動画を受ける形にした）
+from api import ask  # noqa: E402
+
+ask._key_present = lambda: False  # 開いた場は鍵のある所で立たない。鍵のある機械でも同じに動かす（test_public_open と同じ）
+opened = serve(0, public_open=True)
+threading.Thread(target=opened.serve_forever, daemon=True).start()
+base = f"http://127.0.0.1:{opened.server_address[1]}"  # req と upload は、ここから開いた場へ送る
+sample = make_video("open.mp4")
+assert "audio" in [s["codec_type"] for s in probe(sample, "mp4")["streams"]], "見本に音の流れがある"
+assert req(f"/toy/{G}/print", b"hypothesis=H-A")[0] in (200, 303)
+code, text, saved = upload(sample, "video/mp4")
+assert code == 201, (code, text)
+assert sorted(s["codec_type"] for s in probe(saved, "mp4")["streams"]) == ["video"], "開いた場で受けた動画に音の流れが残った"
+opened.shutdown()
+print("ok open")
 
 server.shutdown()
 shutil.rmtree(tmp, ignore_errors=True)

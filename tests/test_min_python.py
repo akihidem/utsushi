@@ -22,7 +22,8 @@ import tokenize
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SKIP = {".venv", "out", "__pycache__"}
+# .venv-asr は声を字にする道具の環境（requirements-asr.txt の作り方で repo の根に作る）。他人の部品で、3.11 で読む対象でない
+SKIP = {".venv", ".venv-asr", "out", "__pycache__"}
 # （文, 3.11 で読めるか）
 SAMPLES = [
     ("x = f'{\"\\n\".join(y)}'\n", False),  # 式の中の逆斜線

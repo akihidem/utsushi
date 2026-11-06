@@ -15,7 +15,7 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import skin  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -23,9 +23,9 @@ MIN_FONT = 12
 G = "NDL-1187053-R0000005-L"
 records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
-PAGES = ["/", "/about", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
+PAGES = ["/", "/about", "/otona", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
 # BASE が全幅にする組。床の inline-flex が掛かると、名前の横に細く並ぶ（#290）。これだけを block に戻す
-WIDE = {"input[type=text]", "textarea", "select"}
+WIDE = {"input[type=text]", "input[type=number]", "textarea", "select"}
 # 札と隠した入力は今の形のまま。ここに無い形が label に入ったら、どちらかを決める
 KEEP = {"input[type=radio]", "input[type=checkbox]", "input[type=file]", "input[type=range]", "input[type=hidden]"}
 
@@ -65,6 +65,19 @@ assert skin.TAP_FLOOR.index("label:not(.sr){display:inline-flex") < back.start()
 targets = [s.strip() for s in back.group(1).split(",")]
 assert sorted(targets) == sorted([f"label:not(.sr):has(>{kind})" for kind in WIDE] + ["label:not(.sr)>select"]), targets
 
+# 床で高さを上げた字のリンクの下線は、箱の底でなく字に付ける。border-bottom のままだと字から 10〜16px 離れ、図鑑の一覧では隣の行の線に見える
+lifted = re.search(r"([^{}]*)\{border-bottom:0;text-decoration-line:underline;", skin.TAP_FLOOR)
+assert lifted, "床で高さを上げたリンクの下線を字に付ける行が無い"
+underlined = [s.strip() for s in lifted.group(1).split(",")]
+for selector in (".meta>a:only-child:not(.toys a)", ".more .grid li>a", ".meta li>a", "body .links a:not(.btn)", ".jump a", "td>a", ".cap>a:only-child", ".item p>a:only-child", ".zn-toy p>a:only-child", ".notice-back a", ":where(.top) a", "body .tj-exit a"):
+    assert selector in underlined, selector
+# 字の線を持たない札には当てない: 今いる頁の印（.nav）・枠の札（.tabs）・絵の札（.grid の全部）・.toys の中（.toys a は線なし）・釦（.btn）・作りながら見る頁の頭（線なし）
+for selector in (".nav a", ".tabs a", ".grid li>a", "li>.meta>a", ".top a", ".meta>a:only-child", ".links a"):
+    assert selector not in underlined, selector
+assert "text-decoration:" not in skin.TAP_FLOOR.split("border-bottom:0;text-decoration-line:underline;", 1)[1].split("}", 1)[0], "太さまで書く一括の指定は Safari が読まないので、1 つずつ書く"
+assert "min-height:44px" in skin.TAP_FLOOR.split(lifted.group(1), 1)[0], "床の高さの行は残す"
+assert ".techo" not in skin.TAP_FLOOR, "床は全部の頁に載るので、手帖の名前を書かない（#126）"
+
 printed = False
 seen = set()
 for look in ("tenji", "zine"):
@@ -76,8 +89,7 @@ for look in ("tenji", "zine"):
         urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120)
         # 説明まで残した記録に「次の版」の欄が出る（畳んであっても頁には入っている）
         rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-        told = urllib.parse.urlencode({"text": "途中で止まった", "next_idea": "軸を長くする", "by": "試験"}).encode()
-        urllib.request.urlopen(urllib.request.Request(f"{base}/record/{rid}/explain", data=told, headers={"Origin": base}), timeout=60)
+        assert loop.save_explanation(rid, "試験", "途中で止まった", "軸を長くする") == []
         printed = True
     for path in PAGES:
         page = urllib.request.urlopen(f"{base}{path}", timeout=60).read().decode()

@@ -67,10 +67,18 @@ def own_hypotheses(source_id):
 
 
 def save_own(source_id, name, how, evidence, params=None):
-    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。"""
+    """人が立てた仮説を残す。根拠を求めるのは、絵のどこから考えたかが後で比べる材料になるため。
+    文は紙に刷られ、図鑑にも出るので、記録と同じ床（長さと連絡先の形）を当てる。作る側の命令と話した字から作る道の両方がここを通る（J-028、#336）。"""
+    from .contrib import check_pii, too_long
+
     failures = [Failure("F9.own", field, f"{label}が空") for field, label, value in (("name", "仮説の名前", name), ("how", "動かし方", how), ("evidence", "図のどこを見たか", evidence)) if not value or not value.strip()]
     if params is not None and not isinstance(params, dict):
         failures.append(Failure("F9.own", "params", "寸法は JSON の物で渡す"))
+    fields = (("name", name), ("how", how), ("evidence", evidence))
+    long = too_long(fields)
+    if long:
+        return None, failures + [Failure("F9.own", where, message) for where, message in long]
+    failures += [Failure("F10.pii", where, f.message) for where, text in fields for f in check_pii({"body": text or ""})]
     if failures:
         return None, failures
     folder = _pred_dir()
@@ -96,6 +104,21 @@ def drop_own(source_id, own_id):
         gone.append(path.name)
     d = play_dir(source_id)
     for p in sorted(d.glob(f"{own_id}_v*")) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
+
+
+def scrub_own(source_id, own_id):
+    """自分の仮説から話した字だけを消す（記録の --talk-only から呼ぶ）。動かし方の字と、字が刷られた紙（手順の紙・型紙なしの紙）。名前と寸法と、字の無い紙は残す。消した物の名前を返す。"""
+    gone = []
+    path = _pred_dir() / f"own-{source_id}-{own_id.rsplit('-', 1)[1]}.json"
+    rec = store.read_json_or_skip(path)
+    if rec and rec.get("how_it_moves"):
+        store.write_json(path, {**rec, "how_it_moves": ""})
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted([*d.glob(f"{own_id}_v*_tejun*"), *d.glob(f"{own_id}_v*_free*")]) if d.exists() else []:
         p.unlink()
         gone.append(f"play/{p.name}")
     return gone
@@ -263,20 +286,19 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
         return 3
     label = f"版 {version}"
-    how = h["how_it_moves"]
     if adopted:
         # 紙から根拠の記録へ戻れるように刷る（F7）。
         label += "・根拠 " + "、".join(adopted["record_ids"])
-        how += "。前の版から変えた所: " + "、".join(f"{c['param']} {c['from']}→{c['to']}" for c in adopted["changes"])
     title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
         return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
-    rc = generate(template, params, source_id, out, title=title, version=version)
-    if rc:
-        return rc
-    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template)
+    # 刷るのは型紙だけ（本人の決まり 11-06「文章のプリントは廃止」・窓口の決定 推し A）。手順の紙と試した後の紙は組まない。
+    # 前は型紙の後に手順の紙（_print_instructions）と試した後の紙を組み、手順の紙が A4 に入らないと型紙も刷れなかった（御来迎 v14 で当たる）。
+    # 組み方は頁（web.kumitate の組み方の節）、試した後の紙は前に配った道で開く時にだけ作る（web.play_server.ensure_after・print_after）。
+    # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）は話す道の決めを待つので、ここでは変えない
+    return generate(template, params, source_id, out, title=title, version=version)
 
 
 def print_after(source_id, hypothesis_id, out):
@@ -489,7 +511,7 @@ def main(argv=None):
         if args.cmd == "print-teacher":
             return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
-            return print_own(args.source, args.id, args.out or f"out/templates/{args.id}_v1")
+            return print_own(args.source, args.id, args.out or f"out/templates/{args.source}_{args.id}_v1")
         if args.cmd == "own":
             rec, failures = save_own(args.source, args.name, args.how, args.evidence, json.loads(args.params) if args.params else None)
             if not failures:
@@ -503,7 +525,8 @@ def main(argv=None):
             # 作り手が版を直す時は records summary と loop で見る。
             print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
-        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
+        # 既定の名前に玩具を入れる。御来迎と虎はどちらも H-A なので、入れないと後から刷った紙が前の紙を黙って消す。
+        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.source}_{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)
         return 4

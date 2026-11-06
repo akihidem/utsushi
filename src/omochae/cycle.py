@@ -73,6 +73,7 @@ def _module(name):
 PARTS = {
     "talk_log": {"stage": "話した字", "label": "omochae.talk_log（話す口、#308）", "there": _module("omochae.talk_log")},
     "think_sheet": {"stage": "ループ1 の紙", "label": "web.think_sheet（考えから紙、#335 のループ1）", "there": _module("web.think_sheet")},
+    "own_next": {"stage": "自分の紙の記録から次の版", "label": "loop.next_target（自分の紙の記録の次の版、#410）", "there": lambda: hasattr(loop, "next_target")},
     "material": {"stage": "ループ2 の材料", "label": "loop.material（#335 のループ2）", "there": lambda: hasattr(loop, "material")},
     "bundle_talk": {"stage": "ループ3 の束", "label": "束の話した事（#307）", "there": lambda: "craft" in engine_bundle.TEXT_KINDS},
 }
@@ -143,7 +144,7 @@ class Result:
 def _one_change(c):
     """紙に組める形で寸法を 1 つ変える案を探す。値に意味は無く、輪が閉じるかだけを見るので、床を通る最初の物でよい。"""
     template = hypotheses.load(c.sid).get("template", "slider_fan")
-    params = loop.version_params(c.sid, c.hid, 1)[0]
+    params = loop.version_params(c.sid, c.hid, loop.latest_version(c.sid, c.hid))[0]  # 次の版は今の版の上に足す
     current = {**TEMPLATES[template].DEFAULTS, **params}
     for param in sorted(ALLOWED[template]):
         value = current.get(param)
@@ -158,7 +159,7 @@ def _one_change(c):
 
 def stage_first_sheet(c):
     """最初の紙を刷り、刷った組を確定する。画面で刷る時と同じ順で、これが無いと束の群の組が「不明」になる。"""
-    if loop.print_version(c.sid, c.hid, 1, c.folder / "sheets" / c.sid):
+    if loop.print_version(c.sid, c.hid, 1, hypotheses.play_dir(c.sid)):  # 頁と同じ置き場。頁の道の段が同じ紙を見るため
         raise Failed("最初の紙を刷れない")
     template = hypotheses.load(c.sid).get("template", "slider_fan")
     loop.confirm_sheet(c.sid, c.hid, 1, BY, TEMPLATES[template].SHEET_SET)
@@ -223,6 +224,18 @@ def stage_think_sheet(c):
     return name
 
 
+@contextlib.contextmanager
+def _page_server():
+    """本物の頁を手元の口で開く。置き場は呼ぶ時の環境の値のまま（一時の場所）。"""
+    server = importlib.import_module("web.play_server").serve(0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield server.server_address[1]
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 class _Screen:
     """手元の口に開いた 1 人の画面。その人の印（cookie）を持って頁を開き、フォームを送る。"""
 
@@ -237,9 +250,18 @@ class _Screen:
         try:
             conn.request(method, path, body, headers)
             r = conn.getresponse()
+            self._keep(r.headers.get_all("Set-Cookie") or [])
             return r.status, r.read().decode("utf-8", "replace")
         finally:
             conn.close()
+
+    def _keep(self, lines):
+        """ブラウザと同じに、受け取った cookie を持ち続ける（記録を残した画面の鍵など）。"""
+        jar = dict(p.strip().partition("=")[::2] for p in self.cookie.split(";") if p.strip())
+        for line in lines:
+            name, _, value = line.split(";", 1)[0].partition("=")
+            jar.pop(name.strip(), None) if "Max-Age=0" in line else jar.update({name.strip(): value.strip()})
+        self.cookie = "; ".join(f"{k}={v}" for k, v in jar.items())
 
     def get(self, path):
         return self._open("GET", path)
@@ -282,6 +304,7 @@ def _walk_own_paper(c, port):
         raise Failed(f"工夫と考えの字が、自分の紙の記録に結ばれない（{sorted(said)}）")
     if first in mine.get(path)[1]:
         raise Failed("記録の後も、自分の紙が開いたまま（次の人に見える）")
+    c.own_cookie = mine.cookie  # 説明は記録を残した画面からだけ受ける。その鍵を次の段へ渡す
     return rid
 
 
@@ -290,15 +313,57 @@ def stage_own_paper(c):
     _need("think_sheet")
     if c.own_id is None:
         raise Skipped("ループ1 の紙がまだ無い")
-    play_server = importlib.import_module("web.play_server")
-    server = play_server.serve(0)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    try:
-        c.own_rid = _walk_own_paper(c, server.server_address[1])
-    finally:
-        server.shutdown()
-        server.server_close()
+    with _page_server() as port:
+        c.own_rid = _walk_own_paper(c, port)
     return f"{c.own_id} で記録 {c.own_rid}、工夫と考えを結んだ"
+
+
+def _walk_own_next(c, port):
+    """自分の紙の記録 → 説明 → 次の版 → 次の人が刷る、を本物の受け口で通す。Returns 変えた寸法の字。"""
+    base, oid, rid = c.hid, c.own_id, c.own_rid
+    toy = f"/toy/{c.sid}"
+    mine, next_person = _Screen(port, c.own_cookie), _Screen(port)
+    before = loop.version_params(c.sid, base, 1)[0]
+    status, _ = mine.post(f"/record/{rid}/explain", text=EXPLAIN, next_idea=NEXT_IDEA, by=BY)
+    if status != 303:
+        raise Failed(f"自分の紙の記録の説明を受けない（{status}）")
+    if f"/record/{rid}/next" not in mine.get(toy)[1]:
+        raise Failed("自分の紙の記録に、次の版の欄が出ない")
+    change = _one_change(c)
+    status, _ = mine.post(f"/record/{rid}/next", interpretation=INTERPRET, param=change["param"], to=str(change["to"]), why=WHY, by=BY)
+    if status != 303:
+        raise Failed(f"自分の紙の記録から次の版を受けない（{status}）")
+    # たたき台の版 2 になる。足すのは選んだ寸法だけで、根拠は自分の紙の記録のまま。自分の紙には版を足さない
+    if loop.adopted_versions(c.sid, oid):
+        raise Failed(f"自分の紙 {oid} に版が足された")
+    if loop.latest_version(c.sid, base) != 2:
+        raise Failed(f"たたき台 {base} が版 2 にならない（{loop.latest_version(c.sid, base)}）")
+    params, made = loop.version_params(c.sid, base, 2)
+    if params != {**before, change["param"]: change["to"]}:
+        raise Failed("たたき台の版 2 に、選んだ寸法のほかの違いが入った")
+    if rid not in (made or {}).get("record_ids", []):
+        raise Failed("たたき台の版 2 の根拠が、自分の紙の記録でない")
+    # 次の人（別の画面）が、最新の版を刷る。前の版の紙は残る
+    if next_person.post(f"{toy}/print", hypothesis=base)[0] != 303:
+        raise Failed("次の人が紙を刷れない")
+    printed = [x for x in loop.sheet_confirmations(c.sid) if x["hypothesis_id"] == base and x["version"] == 2]
+    if len(printed) != 1 or len(printed[0]["confirmations"]) != 2:
+        raise Failed("次の人が刷った紙が、たたき台の版 2 でない")
+    for version in (2, 1):
+        if next_person.get(f"/sheet/{c.sid}/{base}_v{version}.pdf")[0] != 200:
+            raise Failed(f"次の人の画面で、たたき台の版 {version} の紙が開かない")
+    return f"{change['param']} を {change['to']:g} に"
+
+
+def stage_own_next(c):
+    """自分の紙の記録から作る次の版は、たたき台の版になり（根拠は自分の紙の記録のまま）、次の人がそれを刷る（型紙は玩具ごとに 1 枚、最新版が次の人の型紙）。"""
+    _need("think_sheet")
+    _need("own_next")
+    if c.own_rid is None:
+        raise Skipped("自分の紙の記録がまだ無い")
+    with _page_server() as port:
+        changed = _walk_own_next(c, port)
+    return f"たたき台 {c.hid} の版 2（{changed}）を次の人が刷った"
 
 
 def stage_material(c):
@@ -321,12 +386,13 @@ def stage_material(c):
 def stage_next(c):
     """人の解釈と案から次の版の紙まで。画面の「次の版を作る」と同じ 1 操作。前の版は消えず、最新の版が次の人の型紙になる。"""
     before, _ = loop.version_params(c.sid, c.hid, 1)
+    latest = loop.latest_version(c.sid, c.hid)
     change = _one_change(c)
-    sheets = c.folder / "sheets" / c.sid
+    sheets = hypotheses.play_dir(c.sid)
     version, failures = loop.next_version(c.rid, BY, INTERPRET, change, c.source, sheets)
     _ok(failures, "次の版")
-    if version != 2 or loop.latest_version(c.sid, c.hid) != 2:
-        raise Failed(f"版が 2 にならない（{version}）")
+    if version != latest + 1 or loop.latest_version(c.sid, c.hid) != version:
+        raise Failed(f"版が {latest + 1} にならない（{version}）")
     if not (sheets / f"{c.hid}_v{version}.pdf").exists():
         raise Failed("次の版の紙が無い")
     if loop.version_params(c.sid, c.hid, 1)[0] != before or not (sheets / f"{c.hid}_v1.pdf").exists():
@@ -407,6 +473,7 @@ def stage_floor(c):
 # 段の順は作る人の順（紙を刷る → 話す → 考えから紙 → 作って記録 → 説明 → 直し）。考えを記録に結ぶと、その人の作りは区切りが付く（api.words の決まり）ので、
 # ループ1 の紙は記録より先に置く。
 STAGES = (("最初の紙", stage_first_sheet), ("話した字", stage_talk), ("ループ1 の紙", stage_think_sheet), ("自分の紙で作って記録", stage_own_paper),
+          ("自分の紙の記録から次の版", stage_own_next),
           ("記録", stage_record), ("人の説明", stage_explain),
           ("ループ2 の材料", stage_material), ("人の解釈と次の版の紙", stage_next), ("ループ3 の束", stage_bundle),
           ("エンジンの入口と下書き", stage_engine), ("床と声", stage_floor))

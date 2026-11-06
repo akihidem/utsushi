@@ -80,10 +80,10 @@ assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "c
 # 順位は扱わない（J-025）。混ざれば黙って捨てず落とす。次に試す仮説は実在する物だけ
 assert floors(loop.save_proposal({"record_ids": [r1], "ranking": [{"hypothesis_id": "H-D", "rank_after": 1, "why": "x"}]}, gs, "human")[1]) == {"F4.evidence"}
 assert floors(loop.save_proposal({"record_ids": [r1], "next_to_try": {"hypothesis_id": "H-Z", "why": "x", "what_to_measure": "y"}}, gs, "human")[1]) == {"F8.references"}
-# 虎: 周期の向き（重りを軸に近づけると短い）
+# 虎: 周期の向き（重りを軸に近づけると短い）。遠ざける値は、粘土の玉の下が底に当たらない 31（36 は玉の大きさの床 F5.pivot でも落ちる。型紙エンジンと同じ床）
 tr = rec(T, "H-A", opener=None, opened_deg=None, ten_swings_sec=4.1, result="揺れた")
 assert loop.confirm_interpretation(tr, "確認者", {"human_text": "ゆっくりで見えにくい"}) == []
-assert floors(loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 36, "why": "x", "metric": "period_s", "direction": "decrease"}]}, ts, "human")[1]) == {"F7.revision"}
+assert floors(loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 31, "why": "x", "metric": "period_s", "direction": "decrease"}]}, ts, "human")[1]) == {"F7.revision"}
 tp, fs = loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 18, "why": "速くする", "metric": "period_s", "direction": "decrease"}]}, ts, "human")
 assert not fs
 # エージェント: 前例を引き、床で直し、案を出す。落ちた案は直させる
@@ -123,8 +123,9 @@ assert all("rank" not in h for h in data["hypotheses"]) and any(h["id"] == "H-N1
 assert hypotheses.print_sheet(G, "H-A", f"{tmp}/v2", version=2) == 0
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/v2.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert "版2" in flat and r1 in flat
-flat = "".join(subprocess.run(["pdftotext", f"{tmp}/v2_tejun.pdf", "-"], capture_output=True, text=True).stdout.split())
-assert "fold_width" in flat or "折り幅" in flat
+# 前の版から変えた所は、手順の紙でなく版の記録と頁の窓が持つ（11-06 から刷る時に手順の紙を組まない。窓口の決定 推し A）
+assert not pathlib.Path(f"{tmp}/v2_tejun.pdf").exists()
+assert any(c["param"] == "fold_width" for c in loop.version_params(G, "H-A", 2)[1]["changes"])
 assert hypotheses.print_sheet(G, "H-A", f"{tmp}/v3", version=3) == 3, "採っていない版は刷らない"
 assert hypotheses.print_sheet(G, "H-N1", f"{tmp}/n1") == 3, "採った新しい仮説は作る側の控えで、必須 2 種では刷らない（J-032。試作の玩具は tests/test_one_sheet_loop.py）"
 # 上限

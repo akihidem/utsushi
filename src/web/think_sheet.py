@@ -13,7 +13,7 @@
 - 話した字が読める物（頼んだ後の頁・OWN-n の紙・字が刷られた手順の紙）は、作った本人の画面からしか開かない。その場限りの印（who）を確かめて頼んだ人に、印（token）を cookie で渡す。
   who は sessionStorage にあって GET に載らず、絵と別タブの PDF では送れないため、cookie にした。URL に載せないので、URL を渡されても開かない。ブラウザを閉じれば消える（押し直すと、同じ who の人は受け取り直せる）。
 - 1 台の機械を順に使う場のために、鍵には期限があり（api.words.key_live。2 時間）、記録を残すとその案は閉じる（api.words.key_open）。同じタブの who で押し直しても、閉じた案へは戻らない。
-  試した後の紙だけは、話した字が刷られず、記録の後に本人が使う紙なので、記録を残した後も期限の中は開く。
+  試した後の紙は話した字が刷られないので、記録があれば誰にも開く（合言葉なしの場を除く）。
 - 合言葉なしの場では、節も受け口も閉じ、OWN-n の紙は開かない（J-028 の線。誰でも開ける場で、人の言葉を別の人に見せない）。
 - 鍵がある所では、押した 1 回で Claude に寸法を写させる。鍵が無い所・合言葉なしで開いた場（J-028: 費用のかかる呼び出しをさせない）・呼べなかった時は、
   作る側の待ちに置く（作る側が端末で python -m api.words fill を打つ）。どちらも、刷る前に本人がこの節で、変えた所と決めた所を見て「この紙にする」を押す。
@@ -26,10 +26,13 @@
 import json
 import urllib.parse
 
-from api import words
-from omochae import hypotheses, making_log
+from api import config, words
+from omochae import hypotheses, making_log, records
 
-from .play_server import esc, out_dir
+from .play_server import esc, out_dir, print_own
+
+# 考えから紙を作る釦は Claude を呼ぶので、呼び出しの上限より長く押せないままにする。途中で押し直せると、費用のかかる呼び出しが 2 回走る。
+GO_BUSY_FOR = config.RUN_TIME_LIMIT["words"] + 20
 
 # ── 利用者向けの文。本人の決定（11-05 21:5x・全部このまま）で採られた文 ──
 GO = "この考えから紙を作る"
@@ -106,13 +109,15 @@ def usable(handler, sid, hid):
 
 
 def opens(handler, sid, oid, after=False):
-    """OWN-n の紙を、この画面に開いてよいか。書いて立てた仮説の紙は今までどおり（合言葉なしの場を除く）。after は試した後の紙（記録で閉じない）。"""
+    """OWN-n の紙を、この画面に開いてよいか。書いて立てた仮説の紙は今までどおり（合言葉なしの場を除く）。
+    after は試した後の紙。話した字が刷られず（tests/test_loop1_next.py が PDF の字で見る）、記録の札から誰でも着く紙なので、記録があれば開く。記録の前は、在るかどうかも言わない。"""
     if getattr(handler.server, "public_open", False):
         return False
     if oid not in words.spoken_own_ids(sid):
         return True
-    usable = words.key_live if after else words.key_open
-    return any((w := words.by_token(sid, t)) and w.get("own_id") == oid and usable(w) for t in _tokens(handler))
+    if after and any(r["hypothesis_id"] == oid for r in records.all_records(sid)):
+        return True
+    return any((w := words.by_token(sid, t)) and w.get("own_id") == oid and words.key_open(w) for t in _tokens(handler))
 
 
 def allowed_at(handler, sid, at):
@@ -165,15 +170,17 @@ def confirm(sid, token):
         oid = w.get("own_id", "")
     else:
         return None, FAILED
-    out_dir(sid).mkdir(parents=True, exist_ok=True)
-    if hypotheses.print_own(sid, oid, str(out_dir(sid) / f"{oid}_v1")) != 0:
+    if print_own(sid, oid) != 0:
         return None, FAILED
     # 紙に刷った組を、刷る時に残す（たたき台を刷る時と同じ型紙の確定）。束が、この紙の記録を同じ組の札や工夫と同じ群に入れるため。記録の時の組では、版が上がった後に違う組になる。
+    # 型紙なしの紙には組が無い。残すと、紙の組の報告に数えられる。
     from omochae import loop
     from omochae.compose import TEMPLATES
 
-    loop.confirm_sheet(sid, oid, 1, BY_PAGE, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-    return sheet_of(sid, oid), None
+    name = sheet_of(sid, oid)
+    if not name.endswith("_free.pdf"):
+        loop.confirm_sheet(sid, oid, 1, BY_PAGE, TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
+    return name, None
 
 
 def sheet_of(sid, oid):
@@ -237,8 +244,8 @@ def _status(sid, w):
     if w["status"] == "waiting_maker":
         return f"<p>{esc(WAITING)}</p>"
     said = f'<blockquote>{esc(w["how_it_moves"])}</blockquote>'
-    ok = (f'<form method="post" action="/toy/{esc(sid)}/think-ok"><input type="hidden" name="t" value="{esc(w["token"])}">'
-          f"<button>{esc(OK)}</button></form>")
+    ok = (f'<form method="post" action="/toy/{esc(sid)}/think-ok#think"><input type="hidden" name="t" value="{esc(w["token"])}">'
+          f"<button data-busy>{esc(OK)}</button></form>")
     if w["status"] == "decided":
         name = sheet_of(sid, w.get("own_id", ""))
         if not name:  # 採った後に刷れなかった時。押せば刷り直す（confirm）
@@ -263,7 +270,7 @@ def section(sid, at="", note=""):
     w = words.by_token(sid, at[len("think-"):]) if at.startswith("think-") else None
     status = _status(sid, w) if w else ""
     # 確かめている間は頼む釦を出さない（押しても同じ案へ戻るだけで、押す釦が 2 つ並ぶと迷う）。
-    go = "" if w and w["status"] == "pending_human" else f'<form method="post" action="/toy/{esc(sid)}/think-sheet"><button class="quiet">{esc(GO)}</button></form>'
+    go = "" if w and w["status"] == "pending_human" else f'<form method="post" action="/toy/{esc(sid)}/think-sheet#think"><button class="quiet" data-busy data-busy-for="{GO_BUSY_FOR}">{esc(GO)}</button></form>'
     return f'<section class="sec" id="think">{note if at.startswith("think") else ""}<p class="lead">{esc(LEAD)}</p>{status}{go}</section>'
 
 

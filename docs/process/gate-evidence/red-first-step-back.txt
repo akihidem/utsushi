@@ -1,0 +1,15 @@
+# 命令: .venv/bin/python tests/test_tsukuru_last_step.py
+# commit: 9aa327c（回した時の HEAD）
+/tmp/tmphwrkz9o0/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmphwrkz9o0/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmphwrkz9o0/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmphwrkz9o0/play/NDL-1187053-R0000019-L/H-B_v1.pdf
+/tmp/tmphwrkz9o0/play/NDL-1187053-R0000019-L/H-B_v1_tejun.pdf
+/tmp/tmphwrkz9o0/play/NDL-1187053-R0000019-L/H-B_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_tsukuru_last_step.py", line 184, in <module>
+    assert not fails, "\n" + "\n".join(fails)
+           ^^^^^^^^^
+AssertionError: 
+back_is_not_shown_on_the_first_step: AssertionError: 手順 1 に戻るの札が出ている
+rc=1

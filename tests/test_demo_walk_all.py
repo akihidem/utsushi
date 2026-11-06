@@ -27,6 +27,10 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 host = f"127.0.0.1:{port}"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 def call(path, form=None):
     data = urllib.parse.urlencode(form).encode() if form is not None else None
     headers = {"Host": host} | ({"Origin": f"http://{host}", "Content-Type": "application/x-www-form-urlencoded"} if data else {})
@@ -37,7 +41,8 @@ def call(path, form=None):
         return e.code, e.read().decode("utf-8", "replace")
 
 
-assert 'href="/zukan"' in call("/")[1], "入口から図鑑へ行ける"
+# 図鑑へは、入口の帯の「よむ」（序の頁）から行く（段 1 で帯から図鑑の名を外した。本人の決定 11-06・案 A）
+assert 'href="/about"' in call("/")[1] and 'href="/zukan"' in call("/about")[1], "入口から図鑑へ行ける"
 zukan = call("/zukan")[1]
 picked = {}
 for sid in sources():

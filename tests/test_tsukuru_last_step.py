@@ -1,7 +1,7 @@
 """作りながら見るの最後の手順（#321）。手順の最後まで来た人が次にする事を迷わず、途中で押した札が組み上がりとして残らない事を見る。
 
 見る線:
-- 最後の手順の一番大きい札は組み上がりの札で、押すと記録の欄へ進む。途中の手順には出さない。札と案内の字は tsukuru の定数で見る。
+- 最後の手順の一番大きい札は組み上がりの札で、押すと記録の欄へ進む。途中の手順には出さない。札と案内の字は tsukuru の定数で見て、本人が採った文（2026-11-06）と一字ずつ照らす。
 - 途中の手順の組み上がりの出来事は受けない（作る様子の集計がずれるため）。
 - JS が無くても同じ道を通る。この試験は JS を動かさずに札を送るので、その道そのものを見ている。JS がある時も同じフォームで送る事を、頁の字で見る。
 - 祝いの言葉にしない。組み上がりを成績にしない（J-025）。
@@ -149,6 +149,15 @@ def hidden_tile_stays_hidden_on_narrow_screens():
     assert "[hidden]{display:none!important}" in body, "幅の狭い画面で、隠した札が出る"
 
 
+def back_is_not_shown_on_the_first_step():
+    # 手順 1 の「戻る」は押しても何も起きない（実物のブラウザで見つけた）。#321 の最後の手順の札と同じ形で、出さない。
+    assert tile(get(f"/toy/{G}/tsukuru?h=H-A&n=1")[1], "back")[1], "手順 1 に戻るの札が出ている"
+    label, hidden, _ = tile(get(f"/toy/{G}/tsukuru?h=H-A&n=2")[1], "back")
+    assert label == "戻る" and not hidden, "手順 2 に戻るの札が無い"
+    body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+    assert "goBack.hidden=n<=1" in body, "JS で進んだ時に戻るの札が替わらない"
+
+
 def one_step_when_there_is_no_text():
     # 手順の文が作れない時（頁は手順の紙の絵だけで動く）は 1 段だけなので、その段が最後の手順。
     saved = tsukuru.step_texts
@@ -161,6 +170,13 @@ def one_step_when_there_is_no_text():
         tsukuru.step_texts = saved
 
 
+def words_are_the_ones_the_person_chose():
+    # 定数で見るだけだと、字を誰かが書き換えても通ってしまう。本人が採った文（2026-11-06・本人のカード「直しで出た新しい文 5 つ」の 3）を一字ずつ見る
+    assert tsukuru.DONE_LABEL == "全部できた", tsukuru.DONE_LABEL
+    assert tsukuru.DONE_NOTE == "組み上がった事を残しました。動かしてみて、ここで記録を残します。", tsukuru.DONE_NOTE
+    assert tile(get(f"/toy/{G}/tsukuru?h=H-A&n={total}")[1], "done")[0] == "全部できた", "頁の札が本人の採った字でない"
+
+
 def no_praise():
     for word in ("おめでとう", "すごい", "よくでき", "合格", "成功", "正解", "点数", "順位"):
         assert word not in tsukuru.DONE_LABEL + tsukuru.DONE_NOTE, word
@@ -168,7 +184,7 @@ def no_praise():
 
 fails = []
 for check in (big_tile_on_the_last_step, not_shown_midway, midway_leaves_nothing, road_to_the_record, passes_which_sheet,
-              who_is_kept_so_nobody_counts_as_quit, js_takes_the_same_road, hidden_tile_stays_hidden_on_narrow_screens, one_step_when_there_is_no_text, no_praise):
+              who_is_kept_so_nobody_counts_as_quit, js_takes_the_same_road, hidden_tile_stays_hidden_on_narrow_screens, back_is_not_shown_on_the_first_step, one_step_when_there_is_no_text, words_are_the_ones_the_person_chose, no_praise):
     try:
         check()
     except Exception as e:  # 定数が無い直す前も、ほかの確かめを止めずに名前で出す

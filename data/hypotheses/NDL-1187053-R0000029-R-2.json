@@ -22,7 +22,7 @@
         "cone_r": 26,
         "drive": "string"
       },
-      "how_it_moves": "上の芯に紐を巻き、独楽を床に置いて紐を引く",
+      "how_it_moves": "上の芯に糸を巻き、独楽を床に置いて糸を引く",
       "evidence": [
         {
           "kind": "image",

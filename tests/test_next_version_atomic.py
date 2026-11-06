@@ -26,6 +26,10 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 def post(path, data):
     r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), method="POST",
                                headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
@@ -95,8 +99,9 @@ assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 code, page = post(f"/record/{rid}/next", form | {"to": "26"})
 assert code in (200, 303), page[-400:]
 assert loop.confirmed(rid) and loop.latest_version(G, "H-A") == 2
-for suffix in ("", "_tejun", "_after"):
-    assert (out_dir(G) / f"H-A_v2{suffix}.pdf").read_bytes()[:4] == b"%PDF", f"版 2 の紙 {suffix}"
+# 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+assert (out_dir(G) / "H-A_v2.pdf").read_bytes()[:4] == b"%PDF", "版 2 の型紙"
+assert not any((out_dir(G) / f"H-A_v2{s}.pdf").exists() for s in ("_tejun", "_after")), "版 2 の手順の紙と試した後の紙は組まない"
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 v = json.loads((DATA / "loop" / f"version-{G}-H-A-2.json").read_text(encoding="utf-8"))
 assert v["params"]["fold_count"] == 26 and v["changes"][0]["from"] != 26 and v["record_ids"] == [rid]

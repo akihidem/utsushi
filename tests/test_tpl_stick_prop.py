@@ -50,8 +50,8 @@ with multiprocessing.get_context("fork").Pool(4) as pool, contextlib.redirect_st
     rcs = pool.map(_print, jobs)
 for job, rc in zip(jobs, rcs):
     assert rc == 0, (job, rc)
-    for stem in (job[2], f"{job[2]}_tejun", f"{job[2]}_after"):
-        assert pathlib.Path(f"{stem}.pdf").exists(), stem
+    # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+    assert pathlib.Path(f"{job[2]}.pdf").exists() and not any(pathlib.Path(f"{job[2]}{s}.pdf").exists() for s in ("_tejun", "_after")), job
 printed = len(jobs)
 assert not (ROOT / "data/hypotheses" / "NDL-1187053-R0000005-R-3.json").exists()
 print(f"ok 刷れた {len(made)} 件 {printed} 仮説")
@@ -82,4 +82,8 @@ assert fails({"shape": "uchiwa_l", "hold": "glue", "size": 999})[0].startswith("
 bad = f"{tmp}/bad"
 assert generate(T.ID, {"shape": "katana", "hold": "slide", "size": 170, "slide_gap": 0.5}, "NDL-1187053-R0000005-R", bad) == 3
 assert not pathlib.Path(f"{bad}.pdf").exists()
+# 刷った後の検査で落ちた紙も、正しい名前で残さない（場面 neg_marks_all と同じ形。PDF は .rejected.pdf へ移し、PNG は作らない）
+bad = f"{tmp}/bad_marks"
+assert generate("slider_fan", {}, "NDL-1187053-R0000005-L", bad, inject={"omit_marks": "all"}) == 3
+assert not pathlib.Path(f"{bad}.pdf").exists() and not pathlib.Path(f"{bad}.png").exists() and pathlib.Path(f"{bad}.rejected.pdf").exists()
 print("ok 床")

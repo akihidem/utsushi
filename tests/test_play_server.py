@@ -9,8 +9,9 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
+from omochae import hypotheses  # noqa: E402
 from omochae.marks import without_premise  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 server = serve(0)
@@ -24,7 +25,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-opener = urllib.request.build_opener(NoRedirect)
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor())
 
 
 def get(path):
@@ -77,8 +79,8 @@ assert "怠けらじ" in body and "怠らし" not in body
 # 別のサイトから・別の形で送らせない
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}, origin="http://evil.example")[0] == 403
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}, ctype="text/plain")[0] == 403
-# 札を主にし、自分の仮説の欄は札の後ろに畳む
-assert re.search(r"id=\"kasetsu\".*class=\"plates\".*<details><summary>自分の仮説を立てる", body, re.S), "畳んでいない"
+# 札を主にする。仮説を書く欄は出さない（本人の決定 11-05 18:08、J-032 の点 2）
+assert re.search(r"id=\"kasetsu\".*class=\"plates\"", body, re.S) and "自分の仮説を立てる" not in body
 # 順位を出さない。並びは元の記録の順
 assert "rank" not in body and "順位" not in body
 assert "仮説 A" in body and "仮説 B" not in body, "札はたたき台の 1 枚だけ（J-032）"
@@ -86,7 +88,8 @@ assert "仮説 A" in body and "仮説 B" not in body, "札はたたき台の 1 �
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 body = get(f"/toy/{G}")[1].decode()
 # 字のリンクは画面の窓へ（本人の指示 11-05「型紙はクリックすると表示される形に」）。PDF は窓の押し釦。試した後の紙はどちらも出ない
-assert "see=H-A&kind=sheet&v=1#win" in body and "see=H-A&kind=tejun&v=1#win" in body and "kind=after" not in body
+# 刷るのは型紙だけ（本人の決まり 11-06）。手順の紙の札は出ない
+assert "see=H-A&kind=sheet&v=1#win" in body and "kind=tejun" not in body and "kind=after" not in body and "_tejun.pdf" not in body
 assert "H-A_v1.pdf" in body and "H-A_v1_after.pdf" not in body
 code, pdf = get(f"/sheet/{G}/H-A_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
@@ -105,7 +108,8 @@ assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", 
 code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
 assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の札に着く（#121）
 body = get(f"/toy/{G}")[1].decode()
-assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
+# 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
+assert "H-A_v1_after.pdf" not in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
 assert "仮説 A の紙・動かない・40°" in body
 # 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("成功", "失敗", "正解"):
@@ -114,13 +118,10 @@ for word in ("成功", "失敗", "正解"):
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "", "by": "本人"})[0] == 422
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "強くしごく", "by": "本人"})[0] == 303
 assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
-# 自分の仮説には型紙なしの紙を返す（本人の決定）
-code, at = where(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})
-assert code == 303 and at.endswith("#own-OWN-1"), at  # 残した仮説の札と「紙を作る」に着く
-assert re.search(r'id="own-OWN-1".*紙を作る', get(f"/toy/{G}")[1].decode(), re.S)
-assert post(f"/toy/{G}/print-own", {"id": "OWN-9"})[0] == 422
-assert post(f"/toy/{G}/print-own", {"id": "OWN-1"})[0] == 303
-assert "OWN-1_v1_free.pdf" in get(f"/toy/{G}")[1].decode()
+# 自分の仮説には型紙なしの紙を返す（本人の決定）。書く欄と刷る口は頁から外した（J-032 の点 2。tests/test_own_form_gone.py）ので、前に刷った紙の形で開く
+assert post(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})[0] == 404
+assert not hypotheses.save_own(G, "筒を回す", "ひねると紐が巻かれる", "筒の線")[1]
+assert hypotheses.print_own(G, "OWN-1", str(out_dir(G) / "OWN-1_v1")) == 0
 code, pdf = get(f"/sheet/{G}/OWN-1_v1_free.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
 # 手元の名前以外の Host は受けない

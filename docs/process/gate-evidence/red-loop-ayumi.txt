@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_loop_ayumi.py
+# commit: cf195e5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_ayumi.py", line 25, in <module>
+    from web import ayumi, kaizen, kaizen_versions as kv, play_server  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'ayumi' from 'web' (src/web/__init__.py)
+rc=1
+
+上は、新しい試験に、直す前の木（#419 の前の頭。頁 ayumi.py はまだ無く、kaizen_versions は /loop の節の形）を当てて回した。

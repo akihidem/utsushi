@@ -1,0 +1,19 @@
+# 命令: .venv/bin/python tests/test_print_together.py
+# commit: f1537f5（回した時の HEAD）
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+/tmp/tmphmkjpd0k/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_print_together.py", line 92, in <module>
+    assert len(hold.calls) == 1 and hold.most == 1, (hold.calls, hold.most)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (['H-A', 'H-A', 'H-A', 'H-A'], 4)
+rc=1

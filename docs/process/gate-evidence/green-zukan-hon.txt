@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_zukan_hon.py
+# commit: 9b62898e（回した時の HEAD）
+ok 図鑑の本の頁は、玩具の絵がある 54 頁を 1 コマずつ本の順に、新しい字を足さずに出す
+rc=0

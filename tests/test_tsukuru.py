@@ -74,7 +74,10 @@ code, t = get(f"/toy/{G}/tsukuru")
 assert code == 200 and 'class="tsukuru' in t
 texts = tsukuru.step_texts(G, "H-A")
 assert len(texts) >= 3 and all(html.escape(s, quote=True) in t for s in texts)
-assert f'<img class="sheet" src="/sheet/{G}/H-A_v1_tejun.png"' in t and get(f"/sheet/{G}/H-A_v1_tejun.png")[0] == 200
+# 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、手帖と同じ組み方の絵を出す（字の無い絵で、読み上げからは隠れる）
+# 見せるのは今の手順の 1 枚だけ（手順ごとに置き、送る時に切り替える）
+assert "_tejun.png" not in t and 'aria-hidden="true"' in t
+assert t.count('class="sheet koma on"') == 1 and 'data-n="1" xmlns="http://www.w3.org/2000/svg" class="sheet koma on"' in t, "手順 1 の絵だけが見えている"
 assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and "できた" in t
 # 刷っていない紙は h で指しても開かない
 assert get(f"/toy/{G}/tsukuru?h=H-B")[0] == 303 and 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]
@@ -178,6 +181,16 @@ techo_js = get(f"/toy/{G}/techo")[1]
 for js in (page_js, techo_js):
     assert "speaking" in js and "sayStart" in js and "sayEnd" in js, "読み上げの間は音声認識を止める"
 assert "if(speaking)return" in page_js and "if (speaking) return" in techo_js
+# 声の操作は手帖と同じ表（#87）。言葉の全部が一致した時だけ札を押し、操作の字は問いに送らない。ほかは問いとして送る
+from web.voice_words import WORDS, clean  # noqa: E402
+assert "WORDS[clean(t)]" in page_js and page_js.index("if(op){act(op);return}") < page_js.index("qIn.value=t;ask(t)")
+# 聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。問いは、止まったか声で聞くを押した後の 1 つだけ（歩いて見るのは tests/test_voice_walk.py）
+assert "if(!armed)return;armed=false;qIn.value=t;ask(t)" in page_js and "listening=true;armed=true;" in page_js and "const openAsk=(on)=>{armed=on;" in page_js
+assert all(f'"{word}": "{op}"' in page_js for word, op in WORDS.items()) and "__WORDS__" not in page_js and "__CLEAN__" not in page_js
+assert WORDS[clean("つぎ。")] == "next" and WORDS[clean("もう 一回")] == "again" and clean("次の手順ってどうやるの") not in WORDS
+for v in ("back", "stuck", "next", "done"):
+    assert f'value="{v}"' in page_js, v
+assert "tile('done')" in page_js and "say(items[n-1].textContent)" in page_js
 # 開いた時の版のまま作る: 版を言えばその版の文と札、札の記録もその版
 assert 'data-v="1"' in page_js and 'name="sheet_version" value="1"' in page_js and "b.set('sheet_version',ver)" in page_js
 assert "sheet_version" in techo_js and 'data-v="1"' in techo_js and "utsushi-who" in techo_js

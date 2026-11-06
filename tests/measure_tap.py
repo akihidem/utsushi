@@ -19,13 +19,13 @@ import urllib.request
 
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
-from omochae import records  # noqa: E402
+from omochae import loop, records  # noqa: E402
 from web import play_server  # noqa: E402
 
 MIN_TAP, MIN_FONT = 44, 12
 G = "NDL-1187053-R0000005-L"
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
-PAGES = ["/", "/about", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}", "/no-such-page"]
+PAGES = ["/", "/about", "/otona", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}", "/no-such-page"]
 # 文の中のリンクは床の外（本文の要件）。親に字があって、自分が inline の物
 # load を待たない。図の読み込みが遅い頁で、時間切れの前に測れなくなる。押す所の高さと字の大きさは図に頼らない
 MEASURE = """<script>setTimeout(()=>{
@@ -42,7 +42,7 @@ const small={};for(const e of document.querySelectorAll('body *')){if(!vis(e)||!
 // 縦の中心が近い物を同じ段と数える。top で数えると、今いる項目の下の罫の分だけずれて、同じ段を別の段と数えた
 const rows=[];for(const a of document.querySelectorAll('.nav a')){if(!vis(a))continue;const r=a.getBoundingClientRect(),c=(r.top+r.bottom)/2,hit=rows.find(x=>Math.abs(x.c-c)<14);if(hit)hit.n++;else rows.push({c,n:1})}
 // 字の欄と選ぶ欄は、名前の下で箱の幅いっぱいに出す（#290）。箱は label の親の、枠と余白を除いた幅
-const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
+const wide=[...document.querySelectorAll('label:not(.sr)>input[type=text],label:not(.sr)>input[type=number],label:not(.sr)>textarea,label:not(.sr)>select')].filter(vis);
 const narrow=wide.filter(f=>{const l=f.parentElement,p=l.parentElement,s=getComputedStyle(p),box=p.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight),r=f.getBoundingClientRect(),n=[...l.childNodes].find(x=>x.nodeType===3&&x.textContent.trim());if(r.width<box-1)return true;if(!n)return false;const t=document.createRange();t.selectNodeContents(n);return r.top<t.getBoundingClientRect().bottom-1}).map(f=>name(f.parentElement));
 parent.postMessage(JSON.stringify({w:innerWidth,tap:tap.length,low,small,sx:document.documentElement.scrollWidth,nav:rows.map(x=>x.n),wide:wide.length,narrow}),'*');
 },800)</script>""" % (MIN_TAP, MIN_FONT)
@@ -98,7 +98,7 @@ def main():
     inject(play_server.Handler)
     # 頁の予想の段と手帖は、置き場の記録で形が変わる（#242 で予想の段が外れるまで）。1 回だけ作り、皮ごとのサーバで同じ記録を見る
     records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-    pages = PAGES + [f"/toy/{G}/techo", f"/toy/{G}/tsukuru"]
+    pages = PAGES + [f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku", f"/toy/{G}/tsukuru"]
     printed, bad = False, 0
     for look in ("tenji", "zine"):
         # 皮はサーバごとに 1 つ（本人の決定 11-05）。?look= は効かない
@@ -110,8 +110,7 @@ def main():
             urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=data, headers={"Origin": base}), timeout=120)
             # 説明まで残した記録に「次の版」の欄が出る（#290）
             rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
-            told = urllib.parse.urlencode({"text": "途中で止まった", "next_idea": "軸を長くする", "by": "測る道具"}).encode()
-            urllib.request.urlopen(urllib.request.Request(f"{base}/record/{rid}/explain", data=told, headers={"Origin": base}), timeout=120)
+            assert loop.save_explanation(rid, "測る道具", "途中で止まった", "軸を長くする") == []
             printed = True
         for path in pages:
             got = measure(exe, base, path, width)
