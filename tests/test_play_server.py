@@ -75,7 +75,7 @@ for name, look in (("tenji", get("/look/tenji")[1].decode()), ("zine", looks.zin
 assert get("/look/none")[0] == 404
 # 開いたら仮説と刷る口がすぐ見える（本人の決定 11-05、#242）
 body = get(f"/toy/{G}")[1].decode()
-assert "仮説 A" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#kasetsu"' in body
+assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#kasetsu"' in body
 # 採らなかった歌の読みは出さない
 assert "怠けらじ" in body and "怠らし" not in body
 # 別のサイトから・別の形で送らせない
@@ -112,7 +112,7 @@ assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の�
 body = get(f"/toy/{G}")[1].decode()
 # 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
 assert f"{GS}_v1_after.pdf" not in body and get(f"/sheet/{G}/{GS}_v1_after.pdf")[0] == 200
-assert "仮説 A の紙・動かない・40°" in body
+assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} の紙・動かない・40°" in body
 # 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("成功", "失敗", "正解"):
     assert word not in without_premise(body), word

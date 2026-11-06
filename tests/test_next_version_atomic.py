@@ -106,7 +106,7 @@ assert (out_dir(G) / f"{GS}_v2.pdf").read_bytes()[:4] == b"%PDF", "版 2 の型�
 assert not any((out_dir(G) / f"{GS}_v2{s}.pdf").exists() for s in ("_tejun", "_after")), "版 2 の手順の紙と試した後の紙は組まない"
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 v = json.loads((DATA / "loop" / f"version-{G}-{GS}-2.json").read_text(encoding="utf-8"))
-assert v["params"]["fold_count"] == 26 and v["changes"][0]["from"] != 26 and v["record_ids"] == [rid]
+assert v["params"]["fold_count"] == 45 and v["changes"][0]["from"] != 45 and v["record_ids"] == [rid]
 proposal = json.loads((DATA / "loop" / f"{v['proposal'].replace('P-', 'proposal-')}.json").read_text(encoding="utf-8"))
 assert proposal["status"] == "decided" and proposal["accepted"] == {"version": 2}
 assert any(c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の確定も同じ操作で残る"
