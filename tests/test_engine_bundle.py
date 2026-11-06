@@ -54,7 +54,7 @@ rid3, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 
 rid4, _ = records.add({"source_id": G, "hypothesis_id": "H-B", "sheet_version": 1, "result": "動いた", "sheet_set": "goraigo-v7", "fixes": []})
 rid5, _ = records.add({"source_id": G, "hypothesis_id": "H-C", "sheet_version": 1, "result": "動いた", "fixes": []})
 rid6, _ = records.add({"source_id": T, "hypothesis_id": "H-A", "sheet_version": 1, "result": "揺れた", "ten_swings_sec": 8.5, "fixes": []})
-# 間の札（少し動いた）を持つ雛形の玩具。動かない側の札を 2 番目と決めない事を見る
+# 前の札（少し動いた）で残った記録を持つ玩具。今の札に読み替えて数える事を見る（#146）
 S = next(p.stem for p in sorted((ROOT / "data/hypotheses").glob("*.json")) if json.loads(p.read_text(encoding="utf-8")).get("template") == "string_pull")
 rid7, fails = records.add({"source_id": S, "hypothesis_id": hypotheses.load(S)["hypotheses"][0]["id"], "sheet_version": 1, "result": "少し動いた", "fixes": []})
 assert fails == [], [f.line() for f in fails]
@@ -126,9 +126,9 @@ assert now["results"] == {"動かない": 2, "わからない": 1, "動いた": 
 assert groups[("slider_fan", "goraigo-v7")]["record_ids"] == [rid4] and groups[("slider_fan", "")]["record_ids"] == [rid5]
 tora = groups[("pivot_counterweight", "")]
 assert tora["results"] == {"揺れた": 1} and tora["measures"] == {"ten_swings_sec": [8.5, 8.5, 1]} and tora["not_moved_word"] == "揺れない"
-# 間の札を持つ雛形は、動かない側を 2 番目と決めない（「少し動いた」を動かない側に数えない）
+# 前の札の記録は今の札で数える。エンジンは今の札の言葉で数を引くので、前の札のままだと数から落ちる
 pull = groups[("string_pull", "")]
-assert pull["results"] == {"少し動いた": 1} and (pull["moved_word"], pull["not_moved_word"]) == ("よく動いた", "動かない"), pull
+assert pull["results"] == {"動いた": 1} and (pull["moved_word"], pull["not_moved_word"]) == ("動いた", "動かない"), pull
 
 # 3b. 今の刷った組（Issue 309）: 群に出てくる雛形だけ。エンジンの側が、前の組の紙の記録から起きた案を見分けるのに使う。
 # 記録の無い雛形の組は入れない（読む物を増やさない）。値は雛形が持つ今の組の名で、記録の紙の組（goraigo-v7 など）ではない

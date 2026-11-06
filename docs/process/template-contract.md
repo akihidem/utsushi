@@ -33,7 +33,7 @@
 - `HYP_KEY`: 仮説を分ける寸法の名前。DEFAULTS に既定の値を置く
 - `ALLOWED`: 次の版で変えてよい寸法。RANGES にある物だけ
 - `metrics(p)`: 台帳の式（F7）。数を返す
-- `RESULTS`: 人が見た事の言葉（2〜3 個）
+- `RESULTS`: 人が見た事の言葉。「動きの言葉・その打ち消し・わからない」の 3 個。度合いの言葉を入れない（出来ばえの段に読めるため。#146、`tests/test_result_words.py`）
 - `title`、`spec`、`check_range`、`check_physics`: 床。落ちる時は Failure の一覧を返す
 - `parts`、`place`、`bom`、`materials`、`steps`、`measures`、`diagram`
 - 無くてもよい物（無ければ今までの文や欄になる）
@@ -41,6 +41,7 @@
   - `RECORD_EXTRA`: 記録の足しの欄
   - `DIAGRAM_CAPTION`: 手順の紙の図の説明。1 行に収める
   - `RESULT_HEAD`: 結果の欄の見出し
+  - `PAPER_RESULTS`: 手順の紙に刷る札。記録の札と分ける時だけ置く（凍結の床の紙を変えないため。虎の今の組）
   - `OLD_RESULTS`: 札を直した時の、前の札から今の札への対応。前の札で残った記録を読むための受け口で、紙にも画面にも出さない
 
 ## 玩具ごとの仮説の記録

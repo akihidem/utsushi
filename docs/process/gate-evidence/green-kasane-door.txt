@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: 8ef88277（回した時の HEAD）
+/tmp/tmprnbk7adm/play/NDL-1187053-R0000005-L/.tmp-kh7wizfx/H-A_v1.pdf
+/tmp/tmprnbk7adm/play/NDL-1187053-R0000014-R/.tmp-_ezubhwu/H-A_v1.pdf
+ok 作業しながら見る試作: 1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。送らない。カメラは押した時だけ付く。8 つの画面で歩いた。測れない: カメラの映像（この機械の headless の Chrome では偽のカメラが付かない）
+rc=0

@@ -53,3 +53,4 @@
 | C-33 | 日本の中 2 で「理科を使うことが含まれる職業につきたい」は 27%、国際平均は 58%（TIMSS 2023） | 文献 | [18-field-evidence.md](research/18-field-evidence.md) |
 | C-34 | 「大きな装置にしか真理がない」と生徒が思っている事を測った調査は見つからなかった。本人の印象のまま | 未確認 | [18-field-evidence.md](research/18-field-evidence.md) |
 | C-35 | 型紙は正解でなく AI が考えた仮説である前提を、輪を回す担当の全部（仮説・読み・案・言葉・観察）に渡す（本人の言葉 11-05） | 自動試験 | [test_loop_premise.py](../../tests/test_loop_premise.py) |
+| C-36 | 話した字は、記録に結んでいても学ぶ人の頁に出さない。頁に出す字は AI が整理した字だけで、話した字は作る側の頁と輪の材料だけが読む（本人の決定 11-06、J-034） | 自動試験 | [test_talk_not_shown.py](../../tests/test_talk_not_shown.py) |
