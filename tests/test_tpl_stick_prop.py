@@ -50,8 +50,8 @@ with multiprocessing.get_context("fork").Pool(4) as pool, contextlib.redirect_st
     rcs = pool.map(_print, jobs)
 for job, rc in zip(jobs, rcs):
     assert rc == 0, (job, rc)
-    for stem in (job[2], f"{job[2]}_tejun", f"{job[2]}_after"):
-        assert pathlib.Path(f"{stem}.pdf").exists(), stem
+    # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+    assert pathlib.Path(f"{job[2]}.pdf").exists() and not any(pathlib.Path(f"{job[2]}{s}.pdf").exists() for s in ("_tejun", "_after")), job
 printed = len(jobs)
 assert not (ROOT / "data/hypotheses" / "NDL-1187053-R0000005-R-3.json").exists()
 print(f"ok 刷れた {len(made)} 件 {printed} 仮説")

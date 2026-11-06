@@ -75,6 +75,11 @@ MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
 MEASURE = re.compile(r"[a-z_]{1,30}")
 RECORD_ID = re.compile(r"R-[0-9]{4,8}")  # 記録の番号の形（エンジンの入口と同じ）。形の外の番号は束に入れない（自由な文をこの欄で運ばせない）
+# 札の文の中の動画の秒（「1234.5 秒」「1234.5〜1240.0 秒」「3925・3945 秒」「291 秒から」）。束には時刻を入れないので、文からも外す。
+# 残すと、数の多い所を連絡先の形と見るエンジンの入口の床に当たり、文ごと落ちる（11-06 に作る時の動画の札が 8 件とも落ちた）。秒の書き方だけを外す。
+# 秒のすぐ後の「から・にも・に・は」も一緒に外す。秒だけを外すと「4849.8 秒は頭が下で、4850.0 秒に上へ移り」が「は頭が下で、に上へ移り」になり、
+# エンジンの側で読む人に文の意味が届かない（11-06 の束で見つけた）。「で」「の」は外さない（「3 秒で回る」の様に、秒の後の文の芯になる事がある）。
+SECONDS = re.compile(r"(?:[0-9]+(?:\.[0-9]+)?\s*[〜・]\s*)*[0-9]+(?:\.[0-9]+)?\s*秒(?:から|にも|に|は)?\s*")
 # 機械が拾った札の案（動きの少ない区間など）の読み手の印。意味を付けていない候補なので、確かめなしでは束に入れない。
 MACHINE = "機械"
 JST = timezone(timedelta(hours=9))
@@ -101,6 +106,11 @@ def _when(text):
     except ValueError:
         return None
     return t if t.tzinfo else t.replace(tzinfo=JST)
+
+
+def _without_seconds(text):
+    """札の文から、動画の秒の書き方を外す。外して空になった括弧も外す。字でない欄はそのまま返す（say が読み飛ばす）。"""
+    return re.sub(r"（\s*）", "", SECONDS.sub("", text)) if isinstance(text, str) else text
 
 
 def _sheet_set_of(rec):
@@ -153,15 +163,18 @@ def _cap_texts(texts):
 
 
 def _count_result(g, rec, tpl):
-    """動きの札を数える。札の言葉は雛形が持つ物だけ（自由な文を札の欄で運ばせない）。先頭が動いた側。動かない側は、「わからない」を除いた最後の札
-    （「少し動いた」のような間の札を持つ雛形があるので、2 番目とは決めない）。「わからない」はどちらにも数えない。
+    """動きの札を数える。札の言葉は雛形が持つ物だけ（自由な文を札の欄で運ばせない）。先頭が動いた側。動かない側は、「わからない」を除いた最後の札。
+    「わからない」はどちらにも数えない。
     前の札の記録は今の札に読み替える（#146）。エンジンは moved_word と not_moved_word で数を引くので、前の札のままだと数から落ちる。
     手で置かれた記録の札は字とは限らないので、辞書を直に引かない。"""
     if tpl is None:
         return
     word, old = rec.get("result"), getattr(tpl, "OLD_RESULTS", {})
     word = old[word] if word in tuple(old) else word
-    if word in tpl.RESULTS:
+    # 動画の受け口の記録の「わからない」は、動いたかを聞いていない時の置き字で、見た事の札ではない。上げた人が選んだ札は数える。
+    # 前は、札に「わからない」の無い雛形（虎）だけがこれで外れていた。どの雛形も「わからない」を持つ形（#146）では、ここで分ける。
+    asked = not (rec.get("via") == records.UPLOADED and word == UNSURE)
+    if asked and word in tpl.RESULTS:
         g["results"][word] = g["results"].get(word, 0) + 1
     sure = [w for w in tpl.RESULTS if w != UNSURE]
     g["moved_word"], g["not_moved_word"] = sure[0], (sure[-1] if len(sure) > 1 else "")
@@ -314,12 +327,12 @@ def build(origin=FROM):
             if uploads.get(rid, {}).get("video_kind") == REVIEW:
                 # レビューで読んでいるのは紙なので、案内の札（題や組み方の文の読みにくさ）も紙への指摘。聞く口とサイトの話は紙の外
                 if m.get("kind") not in REVIEW_OUTSIDE:
-                    say(g, REVIEW, m.get("note"), step, floor=talk_log.blocked)
+                    say(g, REVIEW, _without_seconds(m.get("note")), step, floor=talk_log.blocked)
                 continue
             if m.get("kind") in SERVICE_MARKS:
                 continue
             craft = m.get("kind") == trial_video.KUFU
-            if say(g, "craft" if craft else "stuck", m.get("note"), step, floor=talk_log.blocked) and step:
+            if say(g, "craft" if craft else "stuck", _without_seconds(m.get("note")), step, floor=talk_log.blocked) and step:
                 if craft:
                     g["craft"].setdefault(step, {"talks": 0, "who": set()})["talks"] += 1
                 else:

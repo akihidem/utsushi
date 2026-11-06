@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src:tests .venv/bin/python tests/test_talk_not_shown.py
+# commit: 17dd4004 の上の作業の木（この commit の中身）
+ok 話した字は学ぶ人の頁に出ない（3 つの場面・7 つの頁）。記録の欄の直した点は札に出る。作る側の頁と輪の材料には残る
+rc=0

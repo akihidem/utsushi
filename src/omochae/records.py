@@ -1,6 +1,6 @@
 """試した記録の入口。成績でなく観察の記録で、人が入れた物だけを残す（philosophy.md）。
 
-判断の芯: 何が起きたかは人が決める値で、写真から判定しない。「動かない」は失敗でなく自然の返事。「わからない」を「動いた」に数えない。値は雛形が持つ（虎は揺れた／揺れない）。
+判断の芯: 何が起きたかは人が決める値で、写真から判定しない。「動かない」は失敗でなく自然の返事。「わからない」を「動いた」に数えない。値は雛形が持つ（虎は揺れた／揺れない／わからない）。
 札を直しても、前の札で残った記録の中身は書き換えない（読み手が読めるように、雛形の OLD_RESULTS が今の札との対応を持つ。#146）。
 直した点は 3 欄が揃った物だけを残す。次の版や次に試す物の提案の根拠になるので、あいまいな記録を混ぜないため。
 """
@@ -487,7 +487,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("add")
     a.add_argument("--hypothesis", required=True)
-    a.add_argument("--result", required=True, help="御来迎は動いた／動かない／わからない、虎は揺れた／揺れない")
+    a.add_argument("--result", required=True, help="御来迎は動いた／動かない／わからない、虎は揺れた／揺れない／わからない")
     a.add_argument("--opened-deg", type=float)
     a.add_argument("--opener", help="紙の力／糸／手")
     a.add_argument("--predicted-deg", type=float)

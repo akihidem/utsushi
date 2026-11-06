@@ -197,12 +197,12 @@ def thread_from_hole():
 
 
 def next_reasons_no_new_words():
-    # 入れた床の文は学ぶ人にまだ見せない（利用者に見せる新しい文は本人の確認の後）。前からある「近い値を試す」の 1 行だけを出す
-    from web.toy import next_reasons
+    # 入れた床は「次の版を作る」が落ちた時に画面に出る。検査の言葉と数でなく、学ぶ人の言葉で言う（#129）
+    from web.toy import NEXT_REASONS, next_reasons
 
     for floor in ("F5.fan_leg", "F5.figure_base", "F5.hole"):
         out = next_reasons([Failure(floor, "蛇腹の扇", "検査の文")], GORAIGO, "H-A", "pivot_above_rim")
-        assert not any("検査の文" in line for line in out) and any("近い値を試す" in line for line in out), (floor, out)
+        assert NEXT_REASONS[floor] in out and not any("検査の文" in line for line in out), (floor, out)
 
 
 CASES = (bom_neck_arm, bom_through_compose, bom_every_hypothesis, bom_forms_without_hypothesis, marks_whole_text, image_box_line_across_glue,

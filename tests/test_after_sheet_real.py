@@ -55,16 +55,13 @@ for p in real:
     h = next(x for x in hypotheses.load(sid)["hypotheses"] if x["id"] == hid)
     code, body = get(f"/toy/{sid}")
     assert code == 200, code
-    # 札のリンクは頁から読む
-    link = re.search(rf'<a href="(/toy/{sid}\?see={hid}&kind=after&v={ver})#win">試した後の紙</a>', body.decode())
-    assert link, ("札に字のリンクが無い", rec["id"])
-    code, body = get(link.group(1))
+    # 11-06 から試した後の紙は刷らない（本人の決まり「文章のプリントは廃止」）。札に紙への道は出さない
+    assert "kind=after" not in body.decode() and f"{hid}_v{ver}_after" not in body.decode(), ("札に試した後の紙への道がある", rec["id"])
+    # 前の札のリンクで窓へ来ても、ほかの案の試した後の紙が黙って出ない（窓は型紙だけ）
+    code, body = get(f"/toy/{sid}?see={hid}&kind=after&v={ver}")
     shown = window(body.decode())
-    # 窓の紙の番号が、記録の案と版と同じ。ほかの案の紙が黙って出ない
-    assert code == 200 and f"/sheet/{sid}/{hid}_v{ver}_after.png" in shown, ("窓の紙の番号が記録と違う", rec["id"])
-    assert set(re.findall(r"/sheet/[^/]+/(H-[A-Z0-9]+)_v", shown)) == {hid}, ("ほかの案の紙が出ている", rec["id"], shown[:200])
-    assert f"仮説 {hypotheses.letter(h)}「{h['name']}」の試した後の紙" in shown, ("見出しが記録の案でない", rec["id"])
-    # 札の PDF も開く
+    assert code == 200 and "_after" not in shown, ("窓に試した後の紙が出ている", rec["id"])
+    # 前に配ったリンクのために残した /sheet の道は、記録の案と版の紙を開く
     code, body = get(f"/sheet/{sid}/{hid}_v{ver}_after.pdf")
     assert code == 200 and body[:4] == b"%PDF", ("札の PDF", rec["id"], code)
     # 開いても刷った案にならず、型紙の確定も増えない
@@ -73,4 +70,4 @@ for p in real:
 assert "H-C" in seen, "前の試行の H-C の記録が無い（この試験の芯）"
 
 server.shutdown()
-print("ok: 本物の記録", len(real), "件の札から、記録の案と版の紙が窓に出る")
+print("ok: 本物の記録", len(real), "件の札に試した後の紙への道は出ず、残した道は記録の案と版の紙を開く")
