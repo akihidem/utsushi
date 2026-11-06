@@ -4,8 +4,8 @@
 線を刷らない部品（色の境で折る）でも、線の種類は検査と 3D の組み立てが読むので、手順の文と同じ向きでなければならない。
 形は、玩具の記録の案を全部と、雛形の選びの組を全部見る。必須 2 種（slider_fan・pivot_counterweight）は次の版の紙で直すので見ない。
 見ない部品と理由:
-- 絵の無い糊代だけを折る線（乗り手の下の糊代など）。板の表は、背中合わせに貼るか 1 枚で立てて外に出る
-- 折らない部品（蓋など）
+- 絵の無い糊代だけを折る線（乗り手の下の糊代、幟の糊代、絵の無い吊り橋）。板の表は、背中合わせに貼るか 1 枚で立てて外に出る
+- 折らない部品（蓋、月、刀身など）
 """
 import collections
 import json
@@ -19,7 +19,7 @@ os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 from shapely.geometry import Polygon
 
 from omochae import assembly
-from omochae.templates import wheel_cart
+from omochae.templates import stick_prop, wheel_cart
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOOK = {}  # 雛形の ID → (雛形, 部品を見る関数, 選びの組)
@@ -104,6 +104,30 @@ def look_wheel_cart(p):
 
 LOOK["wheel_cart"] = (wheel_cart, look_wheel_cart, [{"body": b, "drive": d} for b in wheel_cart.BODIES for d in wheel_cart.DRIVES])
 WANT |= {("wheel_cart", "deck"), ("wheel_cart", "wheel"), ("wheel_cart", "tube"), ("wheel_cart", "ramp")}
+
+
+# --- stick_prop: 持ち物の玩具。閉じる筒と笠と 2 つ折りの羽は、外から見る ---
+
+def look_stick_prop(p):
+    for q in stick_prop.parts(p):
+        if not (q.valley or q.mountain):
+            continue
+        if q.key == "lantern":
+            # 行灯は 4 面を折り、糊代で閉じる四角い筒
+            wrong("stick_prop", q, "色の面が筒の内を向く", outward(q, 90.0))
+        elif q.key == "sleeve":
+            # 鞘は 2 面を折り、糊代で閉じる平たい筒。刀身を中に差す
+            wrong("stick_prop", q, "色の面が筒の内を向く", outward(q, 170.0))
+        elif q.key == "tokin":
+            # 兜巾の笠は、1 区切りを切り落として閉じる浅い六角の笠。額に当てる
+            wrong("stick_prop", q, "色の面が笠の内を向く", outward(q, 20.0))
+        elif q.key.startswith("fletch"):
+            # 矢羽は白と墨の境で 2 つ折りにし、つまようじの頭を挟んで貼る
+            wrong("stick_prop", q, "色の面が貼り合わせる側を向く", outward(q, 170.0))
+
+
+LOOK["stick_prop"] = (stick_prop, look_stick_prop, [{"shape": s, "hold": h} for s, hs in stick_prop.HOLDS.items() for h in hs])
+WANT |= {("stick_prop", "lantern"), ("stick_prop", "sleeve"), ("stick_prop", "tokin"), ("stick_prop", "fletch")}
 
 
 def cases():
