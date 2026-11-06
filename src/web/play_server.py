@@ -768,7 +768,7 @@ class Handler(BaseHTTPRequestHandler):
         hid = form.get("hypothesis", "")
         if hid and (hid != r["hypothesis_id"] or sheet_version_of(sid, hid, form) != r.get("sheet_version", 1)):
             return None
-        if form.get("result") and (not hid or form["result"] != r["result"]):
+        if form.get("result") and (not hid or form["result"] != records.result_word(r)):
             return None
         return r["id"]
 
