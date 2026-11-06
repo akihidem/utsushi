@@ -1,0 +1,14 @@
+# 命令: ./run.sh
+# commit: dabb992（回した時の HEAD）
+NG test_claude_code: Traceback (most recent call last):
+  File "tests/test_claude_code.py", line 78, in <module>
+    assert run_hook(ROOT, ROOT / "docs/progress.md").returncode == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+NG test_ledger: Traceback (most recent call last):
+  File "tests/test_ledger.py", line 9, in <module>
+    assert ledger.check() == [], [f.line() for f in ledger.check()]
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['FAIL L.modules [src/omochae/templates/_paper.py] architecture.md にも features.json にも出ていない']
+実行した 145 本（場面 31 本、試験 114 本）、期待どおり 143 本、未実装の床 0 本。
+rc=3
