@@ -4,7 +4,7 @@
 見る事:
 1. 組み立ての 3D（kumitate）を中に持ち、送る釦・鍵・声の言葉がつながっている。字を外へ送らない。組み立ての書き方が無い玩具は出さない
 2. 道: /toy/<玩具>/kasane（カメラに重ねる）と /toy/<玩具>/kasane/hmd（HMD）で開く。玩具を選ぶ頁は持たない（作る口は手帖 1 つ）。
-   手帖からの道は口の字が決まってから足すので、今はどの頁からも道を張らない
+   道は手帖の最初の画面からの 1 つだけ（口の名は本人の決定「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
 3. 1 手ごとに止まる（本人の感想 11-06）: 「つぎ」1 回で動くのは 1 手だけ。折り目 1 本の動きは 2 秒以上。「もどる」は 1 手もどる。
    声の約束（本人の決定 11-06・手帖の作り直しの案 2 と同じ）: 聞くのは「はじめる」の後だけ。操作の言葉の全部が一致した時だけ動く。
    教室の話し声の見本では動かない。最後の「つぎ」で、はじめに戻さない。隠れたら止め、見えたら戻し、離れたら止める
@@ -95,8 +95,16 @@ for sid in (G, T):
 assert '<video id="hmd-cam"' in get(f"/toy/{G}/kasane")[1] and '<video id="hmd-cam"' not in get(f"/toy/{G}/kasane/hmd")[1], "映像はカメラに重ねる形だけ"
 assert get("/toy/NDL-1187053-R0000004-L/kasane")[0] == 404 and get("/toy/NDL-1187053-R0000004-L/kasane/hmd")[0] == 404, "組み立ての書き方が無い玩具では開かない"
 assert get("/hmd")[0] == 404 and get(f"/hmd/{G}")[0] == 404, "玩具を選ぶ頁と試作の枝の番地は持たない"
-for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", f"/toy/{G}/techo", "/gallery"):
-    assert "/kasane" not in get(path)[1], ("手帖からの道は口の字が決まってから足す", path)
+# 道は手帖の最初の画面から 1 つだけ（作る口は手帖 1 つの決まり。口の名は本人の決定 11-07「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
+assert hmd.CAM_LINK == "カメラに重ねる"
+for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出すので、先に刷る
+    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120).read()
+for sid in (G, T):
+    techo = get(f"/toy/{sid}/techo")[1]
+    assert techo.count('/kasane') == 1 and f'<p class="meta kasane-go" data-on="start"><a href="/toy/{sid}/kasane">カメラに重ねる</a></p>' in techo, sid
+assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "組み立ての書き方が無い玩具の手帖には道を出さない"
+for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", "/gallery"):
+    assert "/kasane" not in get(path)[1], ("道は手帖からの 1 つだけ", path)
 
 # ---- 3〜6. Chrome で歩く
 # 見本は頁の script より先に置く。音声認識を差し替えて、始めた・止めたを window.__log に書く（マイクは使わない）。
@@ -257,6 +265,54 @@ if not exe:
     server.shutdown()
     print("ok 作業しながら見る試作の字と道。測れない: Chrome が無いので、声と大きさとカメラは歩いていない")
     raise SystemExit(0)
+# 手帖の最初の画面: 道を置いても、大きいボタン「はじめる」が狭い画面の最初の画面に入る（別の目の確かめ 11-07: 道を上に置くと 320×568 で 22px 出た）。
+# headless の Chrome は窓を 500px より狭くできないので、その大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ測り方）
+FIT_SIZES, FIT_TOYS = ((320, 568), (375, 667)), (G, T, "NDL-1187053-R0000004-L")
+FIT_WRAP = """<!doctype html><meta charset="utf-8"><body>__FRAMES__<pre id="measured"></pre><script>
+addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const d=f.contentDocument,w=f.contentWindow;
+const st=d.getElementById('start'),go=d.querySelector('.kasane-go');const r=st.getBoundingClientRect(),g=go&&go.getBoundingClientRect();
+out.push({sid:f.dataset.sid,w:w.innerWidth,h:w.innerHeight,start:Math.round(r.bottom),go:g?[Math.round(g.top),Math.round(g.bottom)]:null,sx:d.documentElement.scrollWidth})}
+document.getElementById('measured').textContent=JSON.stringify(out)},800))</script>"""
+
+
+def techo_fit():
+    def do_wrap(self):
+        if self.path == "/__fit":
+            frames = "".join(f'<iframe data-sid="{sid}" src="/toy/{sid}/techo?v=1&amp;n=1" width="{w}" height="{h}" style="border:0;display:block"></iframe>'
+                             for w, h in FIT_SIZES for sid in FIT_TOYS)
+            return send(self, 200, FIT_WRAP.replace("__FRAMES__", frames))
+        return getter(self)
+
+    play_server.Handler.do_GET = do_wrap
+    try:
+        with tempfile.TemporaryDirectory() as profile:
+            out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=1600,1200",
+                                  "--virtual-time-budget=20000", "--dump-dom", f"{base}/__fit"], capture_output=True, text=True, timeout=170).stdout
+    except subprocess.TimeoutExpired:
+        return None
+    finally:
+        play_server.Handler.do_GET = getter
+    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
+    return json.loads(found.group(1).replace("&quot;", '"')) if found and found.group(1).strip() else None
+
+
+from omochae import hypotheses  # noqa: E402
+
+for sid in FIT_TOYS:  # 手帖は刷った紙がある時だけ「はじめる」を出すので、測る玩具は全部刷る
+    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={hypotheses.sheet_of(sid)['id']}".encode(),
+                                                  headers={"Origin": base}), timeout=120).read()
+fits = techo_fit() or techo_fit()
+if fits is None:
+    unmeasured_fit = "手帖の最初の画面の大きさ（Chrome が答えなかった）"
+else:
+    unmeasured_fit = ""
+    for f in fits:
+        assert f["start"] <= f["h"] and f["sx"] <= f["w"], ("「はじめる」が最初の画面に入り、横にはみ出さない", f)
+        if f["sid"] == "NDL-1187053-R0000004-L":
+            assert f["go"] is None, ("組み立ての書き方が無い玩具には道が無い", f)
+        else:
+            assert f["go"] and f["go"][0] >= f["start"], ("道は「はじめる」の下に置き、重ならない", f)
+
 runs = {}
 for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
     got = walk(w, h, kind)
@@ -333,5 +389,7 @@ for name, got in runs.items():
     assert min(size["chips"]) >= 64 and size["chips"][2] >= 96, (name, "釦は 64px 以上、「つぎ」は 96px 以上", size)
     assert size["font"] == 0, (name, "釦がブラウザの既定の字のまま", size)
     assert size["reach"] and size["stageBottom"] <= size["vh"], (name, "押す所と 3D は、頁を動かさずに全部見える", size)
+if unmeasured_fit:
+    unmeasured.append(unmeasured_fit)
 note = f"。測れない: {'・'.join(unmeasured)}" if unmeasured else ""
 print(f"ok 作業しながら見る試作: 1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。送らない。カメラは押した時だけ付く。{len(runs)} つの画面で歩いた{note}")
