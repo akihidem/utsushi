@@ -219,7 +219,10 @@ assert any("作る側が直します" in t for t in pages[f"/toy/{G}"]), "改善
 gallery = " ".join(pages["/gallery"])
 assert "個人情報を確かめてから" in gallery and "（持ち寄りの場）" in gallery, "ギャラリーの固定の文"
 assert f"記録の番号 {rid} をもとに直しました" in " ".join(pages["版 2 の窓"])
-assert "紙に印刷してある組の番号 goraigo-v10" in " ".join(pages[f"/toy/{G}/techo"]), "紙に刷ってある組と照らせる"
+# 組の名前は雛形の今の組（次の組に上げると名前も変わる）
+from omochae.compose import TEMPLATES  # noqa: E402
+
+assert f"紙に印刷してある組の番号 {TEMPLATES['slider_fan'].SHEET_SET}" in " ".join(pages[f"/toy/{G}/techo"]), "紙に刷ってある組と照らせる"
 
 # 誰が確かめたか・書いたかの印は残る（J-016）。言葉だけが替わる
 zu = pages[f"/zukan/{G}"]
