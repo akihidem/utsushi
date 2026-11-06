@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toys_genre.py
+# commit: f1c8a572（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toys_genre.py", line 33, in <module>
+    assert sorted(placed) == sorted(NINE) and len(placed) == len(NINE), genre.BIG
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('かざる', ('かざる',)), ('あそぶ', ('もって あそぶ', 'うかべる', 'あげる')), ('うごく', ('ひく おす', 'まわす', 'ならす', 'ゆれる', 'ころがす')))
+rc=1
