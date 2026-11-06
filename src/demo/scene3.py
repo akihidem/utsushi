@@ -1,4 +1,4 @@
-"""場面 3: 使い手の画面（play_server、J-024）を開くと、仮説 A〜E の札と型紙を刷る口がすぐ並ぶ所を見せる。
+"""場面 3: 使い手の画面（play_server、J-024）を開くと、たたき台の札と型紙を刷る口がすぐ見える所を見せる。
 
 使い方: python -m demo.scene3 --out <repo の外の場所>/scene3.mp4 [--sheet 要のコマの一覧.jpg] [--cache DIR]
 exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無い（このリポの検査の決まりに合わせる）。
@@ -10,8 +10,8 @@ exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無
 - 画面は描き直さず、本物の play_server を手元（127.0.0.1）で立てて headless の Chrome で撮る。
   描き直した画面では「この道具がそう動く」事の証拠にならない。撮るのは書き出しの度で、画面が直されれば動画も追いつく。
 - 置き場は一時の場所（OMOCHAE_DATA）にする。repo の data/ の記録が画面に混ざらないように。
-- 仮説の数の札は data/hypotheses の記録から数える（書き込まない）。画面の札の数と記録が食い違えば
-  書き出さない。並びは記号の順で、5 枚を同じ倍率で同時に出す（順に 1 枚ずつ出すと順位に見える、J-025）。
+- 型紙は玩具に 1 枚（本人の決定 11-05 17:26、J-032）。頁の札はたたき台の 1 枚だけで、1 枚でなければ書き出さない（plates_ok）。
+  data には仮説が残るので、記録の数とは比べない。札を並べる段とその字は外した。字は書き換えず、足してもいない（#332）。
 - 玩具の動き方は描かない。矢印・扇の絵・開く様子は足さない。画面に映るのは道具の字と
   江戸の図そのものだけで、足すのは寄り・重ね・字幕だけ。
 """
@@ -34,21 +34,21 @@ from demo.flip import FPS, H, PAPER, SHU, SUMI, W, contact_sheet, ease, fade, re
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2 と同じ頁
-DURATION = 25.0
+DURATION = 16.0
 DPR = 2                          # 撮る時の画素の倍率。寄った時に字がぼけないよう、2 倍で撮って縮める
 SHOT_W = 1600                    # 撮る窓の幅（CSS の px）。ルックブックの頁が 1180px で真ん中に来る
 SHOT_H = 3400                    # 撮る高さの下限。足りない時は測った枠から伸ばす（need_height）
 # 使う枠の下に残す余白（CSS の px）。寄った絵は、枠の下に枠の高さの半分ほどを映すため。
 SHOT_MARGIN = 400
-SCREEN_BG = (239, 232, 216)      # 画面の地の色（#efe8d8）。撮った枠の外をこの色で埋め、継ぎ目を見せない
+# 寄った絵に入れる範囲（CSS の px）。上は前提の札の上の節の題まで、下は型紙の札の下の端まで。
+ABOVE_PREMISE = 120
+BELOW_PLATE = 4
 
 # 合図の表。絵の動きも字幕もここだけを読む。曲を付ける時は拍に合わせてこの時刻を直す。
 CUES = {
     "page_in": (0.0, 1.2),      # 開いた画面が現れる（頭は江戸の図と歌の見開き）
     "to_premise": (3.0, 4.6),   # 前提の札の所へ寄る
-    "to_list": (9.0, 10.4),     # 仮説の札の所へ下がる
-    "plates_in": (12.0, 13.0),  # 画面の 5 枚を切り出し、同じ大きさで 1 列に並べる（同時に出す）
-    "closing": (20.6, 22.0),    # 締めの字幕。25 秒まで止めて読ませる
+    "closing": (12.6, 14.0),    # 締めの字幕。16 秒まで止めて読ませる
 }
 
 # 頭の 2 行。時刻の区切りは CUES から作り、別に時刻を持たない（合図の表を 1 つにするため）。
@@ -56,30 +56,12 @@ TITLE_TOY = "玩具の頁（utsushi の画面）"
 SUB_OPEN = "開いたら、すぐ作れる"
 TITLE_PREMISE = "型紙は正解ではなく、AI が考えた仮説"
 SUB_PREMISE = "うまく動かない所が出る。人の工夫が、次の版の材料になる"
-TITLE_LIST = "作りたい案を選んで、刷る"
-SUB_READY = "予想を書かなくても開く"
-LABEL = "仮説 {n}（{toy}）"
-SUB_LIST = "並びは記号の順。順位ではない"
-CLOSING = ("開いたら、すぐ作る。", "仕組みは 1 つに決めず、仮説として並べる。")
+CLOSING = ("開いたら、すぐ作る。",)
 SHOT_NOTE = "画面: utsushi の使い手の画面（play_server）を手元で動かして撮った"
-MOD_NOTE = "改変: 画面に寄った。仮説の {n} 枚は切り出して 1 列に並べた"
-CAPTIONS = (TITLE_TOY, SUB_OPEN, TITLE_PREMISE, SUB_PREMISE, TITLE_LIST, SUB_READY, LABEL, SUB_LIST, *CLOSING, SHOT_NOTE, MOD_NOTE)
+MOD_NOTE = "改変: 画面に寄った。"
+CAPTIONS = (TITLE_TOY, SUB_OPEN, TITLE_PREMISE, SUB_PREMISE, *CLOSING, SHOT_NOTE, MOD_NOTE)
 
 BOX = (160, 196, 1760, 936)  # 画面を映す枠（場面 1 の紙の地を周りに残す）。上に 2 行、下に札の余白
-
-
-def hypothesis_data(sid=SID):
-    """仮説の記録をそのまま読む。数と記号はここからだけ取る（動画に数を書き込まない）。"""
-    return json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
-
-
-def hypothesis_count(sid=SID):
-    return len(hypothesis_data(sid)["hypotheses"])
-
-
-def label(sid=SID):
-    d = hypothesis_data(sid)
-    return LABEL.format(n=len(d["hypotheses"]), toy=d["toy"])
 
 
 def credit():
@@ -168,6 +150,11 @@ def shot_fits(rects, height):
     return need_height(rects, 0) <= height
 
 
+def plates_ok(on_page):
+    """型紙は玩具に 1 枚（J-032）なので、頁の札はたたき台の 1 枚だけ。data には仮説が残るので、記録の数とは比べない。"""
+    return on_page == 1
+
+
 def capture(cache, sid=SID):
     """play_server を一時の置き場で立て、開いた頁を撮る。撮れない時は None。"""
     chrome = shutil.which("google-chrome") or shutil.which("chromium")
@@ -217,16 +204,21 @@ def capture(cache, sid=SID):
         finally:
             proc.terminate()
             proc.wait(timeout=10)
-    n = hypothesis_count(sid)
-    if len(rects["plate"]) != n:
-        # 記録と画面の数が違うと、動画の言う事と食い違うので書き出さない。
-        print(f'検査できない: 仮説の札の数が記録と合わない（画面 {len(rects["plate"])}・記録 {n}）', file=sys.stderr)
+    if not plates_ok(len(rects["plate"])):
+        # 札が 1 枚でない時は、動画の言う事と頁が食い違うので書き出さない。
+        print(f'検査できない: 型紙の札が 1 枚でない（画面 {len(rects["plate"])}）', file=sys.stderr)
         return None
     (out / "rects.json").write_text(json.dumps({"dpr": DPR, **rects}, ensure_ascii=False, indent=1), encoding="utf-8")
     return Image.open(png).convert("RGB"), rects
 
 
 # ---- 描く所（時刻だけで決まる） ----
+
+def page_color(shot):
+    """撮った画面の地の色。枠の外をこの色で埋め、継ぎ目を見せない。
+    皮の色は main で変わる（生成りから白へ替わった時、書き込んだ色のまま枠の外に帯が出た）ので、撮った絵の隅から読む。"""
+    return shot.getpixel((2, shot.height - 3))
+
 
 def _cam(center, width):
     return (center[0], center[1], width)
@@ -240,31 +232,18 @@ def _lerp_cam(c0, c1, u):
 class Scene3:
     duration = DURATION
 
-    def __init__(self, shot, rects, sid=SID, dpr=DPR):
+    def __init__(self, shot, rects, dpr=DPR):
         self.shot, self.dpr = shot, dpr
-        self.label = label(sid)
-        self.mod_note = MOD_NOTE.format(n=hypothesis_count(sid))  # 枚数も記録から（書き込まない）
         self.credit = credit()
         bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
         self.aspect = bh / bw
         # 寄りの位置は測った枠から決める（画面が直されても追いつく）。
-        pr = rects["premise"][0]
+        pr, pl = rects["premise"][0], rects["plate"][0]
         self.cam_page = _cam((SHOT_W / 2, 500), SHOT_W * 1.12)            # 頁の頭の見開き全体
-        self.cam_premise = _cam((pr[0] + pr[2] / 2, pr[1] + pr[3] / 2 + 60), pr[2] * 1.1)  # 前提の札
-        plates = rects["plate"]
-        x0 = min(p[0] for p in plates)
-        x1 = max(p[0] + p[2] for p in plates)
-        y0 = min(p[1] for p in plates)
-        self.cam_list = _cam(((x0 + x1) / 2, y0 + (x1 - x0) * 1.08 * self.aspect / 2 - 60), (x1 - x0) * 1.08)
-        # 仮説の札: 画面から切り出し、どれも同じ倍率で 1 列に。記号の順は画面の並び（元の記録の順）のまま。
-        gap = 24
-        s = min((BOX[3] - BOX[1]) / max(p[3] for p in plates), (W - 160 - gap * (len(plates) - 1)) / sum(p[2] for p in plates))
-        self.plates = []
-        x = (W - (sum(p[2] for p in plates) * s + gap * (len(plates) - 1))) / 2
-        for p in plates:
-            crop = shot.crop(tuple(round(v * dpr) for v in (p[0], p[1], p[0] + p[2], p[1] + p[3])))
-            self.plates.append((round(x), BOX[1], crop.resize((round(p[2] * s), round(p[3] * s)), Image.LANCZOS)))
-            x += p[2] * s + gap
+        # 前提の札と、その下の札 1 枚を切らずに映す。札は 1 枚なので、途中で切ると何の札か分からない。
+        top, bottom = pr[1] - ABOVE_PREMISE, pl[1] + pl[3] + BELOW_PLATE
+        width = max(pr[2] * 1.1, (bottom - top) / self.aspect)
+        self.cam_premise = _cam((pr[0] + pr[2] / 2, top + width * self.aspect / 2), width)
 
     def view(self, shot, cam):
         """撮った画面の cam の所を、枠の大きさに写す。枠の外は画面の地の色で埋める。"""
@@ -272,36 +251,23 @@ class Scene3:
         bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
         k = bw / (cw * self.dpr)  # 撮った画素 → 動画の画素
         x0, y0 = (cx - cw / 2) * self.dpr, (cy - cw * self.aspect / 2) * self.dpr
-        return shot.transform((bw, bh), Image.AFFINE, (1 / k, 0, x0, 0, 1 / k, y0), resample=Image.BICUBIC, fillcolor=SCREEN_BG)
+        return shot.transform((bw, bh), Image.AFFINE, (1 / k, 0, x0, 0, 1 / k, y0), resample=Image.BICUBIC, fillcolor=page_color(shot))
 
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
         draw = ImageDraw.Draw(img)
         a_in = phase(t, "page_in")
-        a_plates = phase(t, "plates_in")
-        a_screen = a_in * (1 - a_plates)
-        if a_screen > 0:
-            u = phase(t, "to_list")
-            cam = _lerp_cam(_lerp_cam(self.cam_page, self.cam_premise, phase(t, "to_premise")), self.cam_list, u)
-            shot = self.view(self.shot, cam)
-            if a_screen < 1:
-                shot = Image.blend(Image.new("RGB", shot.size, PAPER), shot, a_screen)
+        if a_in > 0:
+            shot = self.view(self.shot, _lerp_cam(self.cam_page, self.cam_premise, phase(t, "to_premise")))
+            if a_in < 1:
+                shot = Image.blend(Image.new("RGB", shot.size, PAPER), shot, a_in)
             img.paste(shot, BOX[:2])
-            draw.rectangle((BOX[0] - 1, BOX[1] - 1, BOX[2], BOX[3]), outline=fade(SUMI, 0.35 * a_screen), width=2)
-        # 仮説の札: 5 枚を同時に、同じ倍率で。1 枚ずつ出さない（出す順が順位に見えるため、J-025）。
-        if a_plates > 0:
-            for x, y, p in self.plates:
-                if a_plates < 1:
-                    p = Image.blend(Image.new("RGB", p.size, PAPER), p, a_plates)
-                img.paste(p, (x, y))
-                draw.rectangle((x - 1, y - 1, x + p.width, y + p.height), outline=fade(SUMI, 0.3 * a_plates), width=1)
+            draw.rectangle((BOX[0] - 1, BOX[1] - 1, BOX[2], BOX[3]), outline=fade(SUMI, 0.35 * a_in), width=2)
         # 頭の 2 行: 段ごとに替える。区切りは CUES から。
         rows = (
             (0.0, CUES["to_premise"][0], TITLE_TOY, SUB_OPEN, SUMI),
-            (CUES["to_premise"][0], CUES["to_list"][0], TITLE_PREMISE, SUB_PREMISE, SHU),
-            (CUES["to_list"][0], CUES["plates_in"][0], TITLE_LIST, SUB_READY, SUMI),
-            (CUES["plates_in"][0], CUES["closing"][0] + 0.4, self.label, SUB_LIST, SHU),
+            (CUES["to_premise"][0], CUES["closing"][0] + 0.4, TITLE_PREMISE, SUB_PREMISE, SHU),
         )
         for a, b, title, sub, color in rows:
             al = window(t, a, b) * (a_in if a == 0.0 else 1)
@@ -313,11 +279,10 @@ class Scene3:
             veil = Image.new("RGBA", (W, H), PAPER + (round(235 * c),))
             img.paste(veil, (0, 0), veil)
             draw = ImageDraw.Draw(img)
-            text(draw, (W // 2, 440), CLOSING[0], 58, fade(SUMI, c), True, "ma")
-            text(draw, (W // 2, 530), CLOSING[1], 58, fade(SUMI, c), True, "ma")
+            text(draw, (W // 2, 485), CLOSING[0], 58, fade(SUMI, c), True, "ma")
         # 隅の札: 画面を撮った事、江戸の図の出所、手を入れた事。場面 1・2 と同じ大きさ。
         # 1 行では画面の幅を越えるので 3 行に分ける。
-        for i, s in enumerate((SHOT_NOTE, self.credit, self.mod_note)):
+        for i, s in enumerate((SHOT_NOTE, self.credit, MOD_NOTE)):
             text(draw, (80, H - 112 + 30 * i), s, 22, fade(SUMI, 0.7))
         return img
 
@@ -336,7 +301,7 @@ def main(argv=None):
         return 4
     scene = Scene3(*shots)
     if a.sheet:
-        contact_sheet(scene, a.sheet, times=(0.8, 2.5, 4.0, 6.0, 8.5, 10.5, 12.5, 16.0, 23.0))
+        contact_sheet(scene, a.sheet, times=(0.8, 2.5, 4.0, 6.0, 8.5, 10.5, 12.5, 14.5, 15.8))
     return render(scene, pathlib.Path(a.out))
 
 

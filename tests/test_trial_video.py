@@ -204,10 +204,18 @@ assert done.returncode == 0 and json.loads(done.stdout)["minutes"] == 40 and isi
 assert cli("report", rid, "--built", "yes", "--minutes", "40.5").returncode == 4
 # 受け口の記録（web/video_up の印）: 学ぶ人の頁と束の読みから外れ、版の輪の表には数える。札に「わからない」が無い雛形でも、受け口の記録だけ受ける
 TORA = "NDL-1187053-R0000014-R"
-assert records.UNSURE not in records.results_for(TORA)
-assert tv.new_record(TORA, "H-A", records.UNSURE)[1], "手で結ぶ記録は札の言葉だけ"
-up, fails = tv.new_record(TORA, "H-A", records.UNSURE, note="上げた人の文", via=records.UPLOADED)
-assert up and not fails, fails
+# どの雛形も「わからない」を持つ形にした（#146）ので、札に無い雛形の道は、虎の札から「わからない」を外した形で見る。
+# 外すのはこの 4 行の間だけで、後ろの試験は今の札で回す。
+from omochae.compose import TEMPLATES  # noqa: E402
+_tora_results = TEMPLATES["pivot_counterweight"].RESULTS
+TEMPLATES["pivot_counterweight"].RESULTS = tuple(w for w in _tora_results if w != records.UNSURE)
+try:
+    assert records.UNSURE not in records.results_for(TORA)
+    assert tv.new_record(TORA, "H-A", records.UNSURE)[1], "手で結ぶ記録は札の言葉だけ"
+    up, fails = tv.new_record(TORA, "H-A", records.UNSURE, note="上げた人の文", via=records.UPLOADED)
+    assert up and not fails, fails
+finally:
+    TEMPLATES["pivot_counterweight"].RESULTS = _tora_results
 assert up not in {r["id"] for r in records.all_records()} and up in {r["id"] for r in records.all_records(uploads=True)}
 assert up not in {r["id"] for r in records.all_records(TORA)} and tv.effect(TORA)["H-A"]["reports"], "版の輪の表には数える"
 assert tv.attach(up, src, "mov")[1] == [], "入れ物を決め打って読める"

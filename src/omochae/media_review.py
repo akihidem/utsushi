@@ -84,6 +84,12 @@ def shown_to(rid, files, key=None):
     return [f for f in files if _shows(rid, f) == "object" or (_shows(rid, f) != "people" and _mine(rid, f, key))]
 
 
+def uploaded_here(rid, files, key=None):
+    """その画面が、この記録の写真か動画を上げた画面か（期限の中）。合言葉なしの場の取り下げの釦と受け口が、同じこの見分けを使う
+    （窓口の決定 11-06 夜・案 A）。記録の写真は記録を残した画面からだけ上がる（記録の鍵）ので、1 つでも合えば、その記録の物はこの画面の物。"""
+    return any(_mine(rid, f, key) for f in files)
+
+
 def waiting():
     """確認を待つ物。[(記録の番号, ファイル)]。置き場の順で、順位ではない。"""
     root = records.folder() / "media"

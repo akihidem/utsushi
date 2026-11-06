@@ -30,6 +30,10 @@
   合わせ方は囲みに入れるだけで、紙の傾きに合わせて 3D を歪めない（歪めると、立った部品の形が崩れて見えるため。紙の座標の行列は
   エンジンの JSON の paper.place が来た後に使う）。合わせた位置は頁の中だけに持ち、残さない（頁は送らず、残さない決まり）。
   合わせた後は、頁の幅に合わせる縮尺（舞台に直に書く --hmd-zoom の zoom）を 1 に固定する。zoom は位置にも掛かり、囲みからずれるため。大きさは scale だけで決める。
+- 中を見る（本人の言葉 11-07「AI が 3D で表示して中身をそこで分解できる構造表示」）: 組み立ての節が分解した形（window.kumitateSplit の X。
+  3D の担当が kumitate に足す口）を持つ時だけ釦を出す。開く時は今の手の終わりの形から分解した形へ動かし、とじる時は戻す。
+  開いている間に手順を送ったら、先にとじた事にしてから送る（送りは手の終わりの形に置き直してから動くので、形は取り違えない）。
+  口が無い時（分解した形の無い組）は釦を出さない。分解は形と中身を見せるだけで、動きの答えは出さない（J-013）。
 """
 import json
 
@@ -40,8 +44,11 @@ from .skin import esc
 from .tsukuru import PRIVACY
 
 CAMERA, CAMERA_OFF = "カメラを出す", "カメラを止める"
+# 分解の釦（本人の決定 11-07: 開く「中を見る」・戻す「とじる」。「もどる」は手順を戻す釦と同じ字なので使わない）
+SPLIT_OPEN, SPLIT_CLOSE = "中を見る", "とじる"
 NO_CAMERA = "この機械ではカメラを使えません。"
-CAM_LINK = "カメラに重ねる（iPhone 向け）"
+# 手帖の最初の画面から重ねる頁へ行く道の名（本人の決定 11-07「口の名「カメラに重ねる」」）
+CAM_LINK = "カメラに重ねる"
 
 TOYS = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")  # 組み立ての書き方がある玩具（御来迎・虎）
 TITLE = "作業しながら見る（試作）"
@@ -183,8 +190,13 @@ body.dataset.moves=moves.length}
 const ok=P&&moves.length>0;
 const halt=()=>{token++;onDone=null;P.stop()};
 const endOf=k=>k<0?P.F[0].q[0]:moves[k].end;
+// 中を見る: 分解した形（kumitateSplit.X）が在る時だけ釦を出す。開くと今の手の終わりの形から分解した形へ、とじると戻す
+const split=$('hmd-split'),SP=window.kumitateSplit;let opened=false;
+function shut(){if(!opened)return;opened=false;split.textContent=T.splitopen;split.setAttribute('aria-pressed','false');body.classList.remove('split-on')}
+if(split){if(!SP||!SP.X)split.hidden=true;else split.addEventListener('click',()=>{halt();body.dataset.busy='';const now=endOf(done-1);
+ if(opened){shut();P.play(SP.X,[now],0)}else{opened=true;split.textContent=T.splitclose;split.setAttribute('aria-pressed','true');body.classList.add('split-on');P.play(now,[SP.X],0)}})}
 // 1 手を動かす。動きの途中で次の言葉が来たら、その手の終わりの形にしてから次へ進む
-const run=(k,read)=>{halt();const me=token,chain=moves[k].chain;P.rest(endOf(k-1));
+const run=(k,read)=>{shut();halt();const me=token,chain=moves[k].chain;P.rest(endOf(k-1));
  if(still){P.rest(moves[k].end);return}
  let n=0;const step=()=>{if(me!==token)return;if(n===chain.length){body.dataset.busy='';return}
   const c=chain[n++];window.kumitateSlow=c[2];onDone=step;P.play(c[0],[c[1]],0)};
@@ -196,7 +208,7 @@ const paint=()=>{const i=moves[Math.max(done-1,0)].i;P.go(i);
  chip.prev.disabled=done===0;chip.again.disabled=done===0;chip.next.disabled=done===moves.length;body.dataset.at=i;body.dataset.move=done;
  // 手順の字の行の数が替わると 3D の置き場が動くので、描いた後に大きさを測り直す
  requestAnimationFrame(()=>fit())};
-const back=k=>{halt();done=k;P.rest(endOf(done-1));body.dataset.busy='';paint()};
+const back=k=>{shut();halt();done=k;P.rest(endOf(done-1));body.dataset.busy='';paint()};
 // 操作。kumitate の口が無い時（節の作りが変わった時）は、前の進め方（kumitate の釦を押す・手順ごと）で動く
 const act={
  next:()=>{if(!ok){next.click();return}
@@ -287,7 +299,7 @@ def page(sid, look="tenji", cam=False):
     道は玩具ごとに置く: 作る口は手帖 1 つの決まり（地図の 1）なので、玩具を選ぶ頁は持たず、選びなおす時は えらぶ（/toys）へ戻す。"""
     toy = hypotheses.load(sid)["toy"]
     words = {"words": WORDS, "on": MIC_ON, "off": MIC_OFF, "none": NO_VOICE, "blocked": BLOCKED, "listen": LISTEN, "stop": STOP, "done": kumitate.DONE,
-             "clean": CLEAN, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA}
+             "clean": CLEAN, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA, "splitopen": SPLIT_OPEN, "splitclose": SPLIT_CLOSE}
     # 紙の 4 隅の印は数字だけ（新しい字を足さない）。読み上げには出さない（指で動かす印で、押す所ではない）
     corners = "".join(f'<span class="hmd-corner" data-i="{i}">{i + 1}</span>' for i in range(4))
     camera = (f'<video id="hmd-cam" playsinline muted autoplay></video><div id="hmd-quad" aria-hidden="true">{corners}</div>' if cam else "")
@@ -299,7 +311,8 @@ def page(sid, look="tenji", cam=False):
             f'<p id="hmd-dots" aria-hidden="true"></p>'
             f'<div class="hmd-k">{kumitate._block_html(sid, params)}'
             f'<div class="hmd-acts"><button type="button" id="hmd-next">{esc(NEXT)}</button><button type="button" id="hmd-prev">{esc(PREV)}</button>'
-            f'<button type="button" id="hmd-again">{esc(AGAIN)}</button><button type="button" id="hmd-listen" aria-pressed="false">{esc(LISTEN)}</button>{camera_btn}</div></div>'
+            f'<button type="button" id="hmd-again">{esc(AGAIN)}</button><button type="button" id="hmd-listen" aria-pressed="false">{esc(LISTEN)}</button>{camera_btn}'
+            f'<button type="button" id="hmd-split" aria-pressed="false">{esc(SPLIT_OPEN)}</button></div></div>'
             f'<p class="hmd-note">{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="/toys">玩具を選びなおす</a></p></div>{camera}'
             f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False)}</script>{SCRIPT}')
     return skin.shell(f"{toy}: {TITLE}", body, look, path=f"/toy/{sid}/kasane" + ("" if cam else "/hmd"), extra_style=STYLE,

@@ -133,10 +133,13 @@ doc = read(page)
 assert techo_step.NAMES == NAMES
 for name in NAMES:
     assert any(c["text"].strip() == name for c in doc.targets), name
+# 最初の画面の小さな道「カメラに重ねる」は、本人が採った口の名（11-07）。重ねる頁が開く玩具（組み立ての書き方がある玩具）だけに出る。大きいボタンは「はじめる」のまま
+from web import hmd  # noqa: E402
+
 for scene in ("start", "step", "end"):
     names = [c["text"].strip() for c in doc.shown_targets(scene)]
-    assert all(n in NAMES for n in names if n), (scene, names)
-assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"]
+    assert all(n in NAMES or (scene == "start" and n == hmd.CAM_LINK) for n in names if n), (scene, names)
+assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"] + ([hmd.CAM_LINK] if hmd.available(G) else []), "道は「はじめる」の下"
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌
@@ -391,10 +394,10 @@ assert code in (200, 303), body[:300]
 assert 'data-v="2"' in req(f"/toy/{G}/techo")[1] and 'data-v="1"' in req(f"/toy/{G}/techo?v=1")[1] and 'data-v="2"' in req(f"/toy/{G}/techo?v=9")[1]
 assert "?v=1&amp;n=3" in req(f"/toy/{G}/techo?v=1&n=2")[1], "JS が無い時のリンクも開いた時の版を持つ"
 
-# ---- 虎: 絵は手順の紙の図。結果の札は虎の値
+# ---- 虎: 絵は手順の紙の図。結果の札は虎の値（記録と手帖では「わからない」も選べる。刷った紙の欄は 2 つのまま。#373）
 page = req(f"/toy/{T}/techo")[1]
 doc = read(page)
-assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない"]
+assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない", "わからない"]
 assert "の紙" not in visible(page) and TEMPLATES["pivot_counterweight"].SHEET_SET not in page
 server.shutdown()
 print("ok")

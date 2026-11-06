@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_photo_owner_only.py
+# commit: 12eecc55（回した時の HEAD）
+読めない記録を飛ばした: owners.json（JSONDecodeError）
+読めない記録を飛ばした: owners.json（JSONDecodeError）
+ok: 確認の前の写真は、上げた本人の画面にだけ出す。合言葉なしの場では、上げた画面から取り下げられる
+rc=0

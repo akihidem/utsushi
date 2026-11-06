@@ -725,6 +725,20 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
         if m:
             return self._next_version(m.group(1), form)
+        m = re.fullmatch(r"/record/(R-\d{4,})/media/withdraw", self.path)
+        if m:
+            # 合言葉なしの場の、上げた画面からの取り下げ（窓口の決定 11-06 夜・案 A）。公開の場には進行者がいないので、上げた人が自分で消す。
+            # 見分けは写真の鍵（上げた画面・期限 2 時間）で、釦を出す手帖の記録の頁と同じ条件。消すのは記録の写真と動画だけ（records.withdraw の
+            # media_only。置き場ごと消すので、確かめの控えも残らず、ギャラリーからも消える）。合言葉付きの場は進行者に番号を伝える形のまま
+            from . import techo_site
+            rid = m.group(1)
+            rec = loop.record(rid)
+            if not (getattr(self.server, "public_open", False) and rec and media_review.uploaded_here(rid, techo_site.media_of(rid), self._up_key())):
+                return self._refuse(403, "受け付けられません")
+            _, failures = records.withdraw(rid, media_only=True)
+            if failures:
+                return self._refuse(422, failures[0].message)
+            return self._send(303, "", headers=[("Location", f"/toy/{rec['source_id']}/techo/kiroku#mine")])
         m = re.fullmatch(r"/record/(R-\d{4,})/explain", self.path)
         if m:
             rid = m.group(1)

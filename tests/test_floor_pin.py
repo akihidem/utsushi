@@ -1,6 +1,8 @@
 """凍結の床を試験で見る: 必須の 2 種（御来迎 goraigo-v10・張子の首振り虎 tora-v3）の紙が、控えた指紋と同じ（U-43、#115）。
 虎は次の組（tora-v4）に上げたので、前の組 tora-v3 も今の組 tora-v4 も比べる。前の組の控えは、次の組を足した後も残す（本人の指示）。
-御来迎は今の組 goraigo-v10 のまま（次の組は形を見直してから。雛形に FROZEN_SET が無いので今の組だけを組む）。
+御来迎は今の組 goraigo-v10 のまま（次の組は形を見直してから。雛形に前の組が無いので今の組だけを組む）。
+前の組は雛形の控えの並び（compose.kept_sets）の全部を組む。組を上げるたびに前の組が 1 つ増えるため（虎は v3 のあと v4 も刷った）。
+たたき台・寸法・出さない字は記録の組ごとの欄（sheet_by_set・params_by_set・hide_by_set）から組ごとに引く。欄の無い組は記録の sheet と params のまま。
 
 なぜ要るか: 型紙の洗練（U-43）は、必須 2 種の今の版を変えず、次の版として足す決まり。今までは取り込みのたびに
 指紋を手で比べていて、比べる道具が repo に無かった（関門の帳面の記録）。手で比べる形は、比べ忘れた回に床が黙って崩れる。
@@ -36,8 +38,8 @@ import tempfile
 from PIL import Image
 
 from omochae import marks, textfit
-from omochae.compose import TEMPLATES, compose
-from omochae.hypotheses import ROOT, letter
+from omochae.compose import TEMPLATES, compose, kept_sets
+from omochae.hypotheses import ROOT, letter, params_for, sheet_id, without_hidden
 from omochae.instructions import compose_after, compose_sheet, compose_teacher
 from omochae.render import to_svg
 
@@ -91,14 +93,17 @@ def papers(picture, strict):
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
         tpl = TEMPLATES[data.get("template", "slider_fan")]
         now = tpl.SHEET_SET
-        # 前の組がある雛形（FROZEN_SET を持つ。今は虎）は、雛形の組を前の名前に置いて組む（前の版を刷れる道）。印の文も前の文のまま
-        # （#318 で本人が「今の版の紙は変えず、次の版から」と確かめた）。前の組の無い雛形（御来迎）は今の組だけ
-        sets = ([(tpl.FROZEN_SET, {**source, "hypothesis_mark": marks.HYPOTHESIS_FROZEN})] if hasattr(tpl, "FROZEN_SET") else []) + [(now, source)]
+        # 前の組がある雛形（控えの並びを持つ。今は虎）は、雛形の組を前の名前に置いて組む（前の版を刷れる道）。前の字で刷る最初の組
+        # （FROZEN_SET）は印の文も前の文のまま（#318 で本人が「今の版の紙は変えず、次の版から」と確かめた）。前の組の無い雛形（御来迎）は今の組だけ
+        frozen_mark = {**source, "hypothesis_mark": marks.HYPOTHESIS_FROZEN}
+        sets = [(s, frozen_mark if s == getattr(tpl, "FROZEN_SET", None) else source) for s in kept_sets(tpl)] + [(now, source)]
+        raw = data
         for sheet_set, src in sets:
             tpl.SHEET_SET = sheet_set
+            data = without_hidden(raw, sheet_set)  # その組で出さない字を外す（欄の無い組は記録のまま）
             try:
-                # たたき台の 1 枚だけ（J-032）。ほかの仮説の紙は今の組で刷らないので、床でもない。
-                for h in [h for h in data["hypotheses"] if h["id"] == data["sheet"]]:
+                # たたき台の 1 枚だけ（J-032）。ほかの仮説の紙は今の組で刷らないので、床でもない。たたき台と寸法は組ごとに引く
+                for h in [{**h, "params": params_for(h, sheet_set)} for h in data["hypotheses"] if h["id"] == sheet_id(data, sheet_set)]:
                     tid = h.get("template") or data.get("template", "slider_fan")
                     base = f"{sheet_set}/{h['id']}"
                     name = f"仮説 {letter(h)}「{h['name']}」"
