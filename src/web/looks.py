@@ -182,7 +182,7 @@ def zine():
     ts = toys()
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
-    body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
+    body += (f'<section class="zn-cover"><p class="meta">{esc(DOOR_LINE)}</p>'
              f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{growing()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
@@ -216,6 +216,8 @@ def zine():
 # 入口の最初の画面で押せる物は頭の帯だけで、最初の玩具は 1197px 下だった（幅 390、research/36 の数）。字は道しるべの 1 語だけで、新しい字は足さない。
 # 行き先は絵で選ぶ頁（/toys）。入口の中の一覧は額装した 2 種の後にあり遠いので、近い方へ向ける
 ROAD_GO = '<p class="road"><a class="road-go" href="/toys">えらぶ</a></p>'
+# 黒のジンの表紙の 1 行（字は変えない）。白に統一した後は、白の扉の額の下に出す（本人の決定 11-06）。
+DOOR_LINE = "江都二色　安永二年　うしなわれた玩具"
 
 TENJI = """
 body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
@@ -232,6 +234,9 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
    広い画面は 3 列の縦書きの下の段（2 行目）に置く */
 .tj-hall .road{grid-column:1/-1;grid-row:2;justify-self:center;margin:0}
 body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #6b4f2a;border-radius:2px;color:#1f1b17;font-size:20px;letter-spacing:.5em}
+.tj-door{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:10vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
+.tj-door .tj-work{width:min(100%,46vh)}.tj-door .tj-work div{width:100%;height:100%}
+.tj-door .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
 .tj-hall .grow{grid-column:1/-1;grid-row:3;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
@@ -404,6 +409,13 @@ def tenji():
     body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+    # 扉: 黒のジンの表紙にだけあった、最初の玩具の額の絵と「江都二色　安永二年　うしなわれた玩具」の 1 行（本人の決定 11-06「ページは白案で
+    # 統一します。黒案にだけある要素は白案に入れてください」）。白の題の間は字だけの作り（美術館の入口の題のパネル）なので、間には入れず、
+    # すぐ後の 1 室に、白の展示と同じ額（tj-work）で掛ける。字は黒の表紙の字のまま。
+    first = ts[0]["sid"] if ts else ""
+    if first:
+        body += (f'<section class="tj-door"><div class="tj-work"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div>'
+                 f'<p class="meta">{esc(DOOR_LINE)}</p></section>')
     # 北斎漫画の縦読みの節（黒のジンの章の頭と同じ。本人の決定 11-06「ページは白案で統一します。黒案にだけある要素は白案に入れてください」）。
     # 黒と同じく、玩具の章より先に「絵は動きを止めて残した」の筋を見せるため、題の間のすぐ後に置く。色は白の壁に合わせる
     from .hokusai import scroll_section
