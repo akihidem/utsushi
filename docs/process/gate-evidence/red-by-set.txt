@@ -1,0 +1,7 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_by_set.py
+# commit: 5d1358dd（回した時の HEAD。今の main の木に、この試験だけを置いて回した＝直す前）
+Traceback (most recent call last):
+  File "tests/test_by_set.py", line 23, in <module>
+    from omochae.compose import TEMPLATES, kept_sets
+ImportError: cannot import name 'kept_sets' from 'omochae.compose' (src/omochae/compose.py)
+rc=1
