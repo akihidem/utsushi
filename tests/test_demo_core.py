@@ -67,6 +67,7 @@ for name, cues in core.CUES_ALL.items():
 fake = {
     "make1": (Image.new("RGB", (2560, 2000), (251, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
     "make2": (Image.new("RGB", (2560, 2000), (249, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
+    "make3": (Image.new("RGB", (2560, 2000), (248, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
     "make": (Image.new("RGB", (2560, 2000), (250, 250, 250)), {"stage": [0, 0, 1280, 900], "henji": [700, 200, 500, 400], "h": 1000}, 1280),
     "keep": (Image.new("RGB", (2000, 3000), (245, 245, 245)), {"up": [100, 200, 800, 1200], "record": [120, 900, 760, 300], "h": 1500}, 1000),
     "gallery": (Image.new("RGB", (2800, 2400), (240, 240, 240)), {"made": [100, 100, 1200, 900], "first_made": [100, 700, 1200, 120], "h": 1200}, 1400),
@@ -86,9 +87,15 @@ gal_end = gal.segs[0]["to"]
 assert gal_end[1] > gal.segs[0]["from"][1] and gal_end[1] + gal_end[2] * core.ASPECT / 2 <= 700 + 120 + core.SAMPLE_GAP, gal_end
 assert gal.segs[0]["line"] == core.GALLERY_LINE and "持ちよ" in core.GALLERY_LINE
 assert gal.segs[0]["to"][1] > gal.segs[0]["from"][1]
-# 作りながら見る頁は手順を順に映す。字は上の 1 行だけで、同じ字が続く段では点滅しない
+# 場面 8 は手帖の 1 手 1 画面を順に映し、「こまった」を押した後の聞く画面で止まる（統括の決め 11-06。前は作りながら見る頁）。
+# 字は上の 1 行だけで、同じ字が続く段では点滅しない
 stepping = core.build_scene("core_make", dict(core.CUES_ALL["core_make"]), shots=fake)
-assert [s["shot"] for s in stepping.segs] == ["make1", "make2", "make", "make"]
+assert [s["shot"] for s in stepping.segs] == ["make1", "make2", "make3", "make"]
+assert all("/techo?" in core.PAGES[s["shot"]][0] for s in stepping.segs), "作る場面は手帖だけを映す（作る口は手帖 1 つ）"
+assert not any("tsukuru" in v[0] for v in core.PAGES.values()), "作りながら見る頁は撮らない"
+assert "data-scene=henji" in core.PAGES["make"][2]["henji"], "聞く画面に替わった時だけ当たる形で測る（押せていない画面を撮らない）"
+# 手帖は 1 手 1 画面なので、頁の全体を映したまま送る（寄らない）
+assert len({(s["from"], s["to"]) for s in stepping.segs}) == 1 and stepping.segs[0]["from"] == stepping.segs[0]["to"]
 at = core.CUES_ALL["core_make"]["step2"]
 band = (0, 0, flip.W, core.BOX[1] - 10)
 assert stepping.frame(at[0] + 0.05).crop(band).tobytes() == stepping.frame(at[0] - 0.5).crop(band).tobytes()

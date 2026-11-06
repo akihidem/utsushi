@@ -57,11 +57,18 @@ EXPLAIN = {"text": "（例）扇の折りが多くて固く、開きにくいと
 # 次の版で変える寸法。床（扇が筒に隠れる・開ける）を通る値を実際に送って選んだ。ここが通らない時は止める（通った振りをしない）。
 NEXT = {"interpretation": "（例）折りが多くて固い", "param": "fold_count", "to": 24, "why": "（例）折りの数を減らして試す", "by": "（例）作った人"}
 
-# 撮る頁: (道, 窓の幅, 測る所)
+# 撮る頁: (道, 窓の幅, 測る所[, 撮る前に頁で押す所])
+# 場面 8（作る）は手帖（1 手 1 画面・「こまった」で聞ける所）を映す（統括の決め 11-06。ジャーニーマップの「作る口は手帖 1 つ」に合わせる）。
+# 前は作りながら見る頁（/toy/<印>/tsukuru）を映していた。作りながら見る頁は、場の進行者が渡すリンクとして残る（地図の道しるべ）。
+# 手帖は指で触る小さな画面の作りなので、窓の幅をスマホほどにして撮る。「こまった」の後の聞く画面は頁の中の JS で切り替わるので、
+# 写しの頁で「こまった」の釦を押してから撮る（人が押した時と同じ画面。頁の字と作りには手を入れない）。
+TECHO_W = 720
 PAGES = {
-    "make1": (f"/toy/{SID}/tsukuru?h={HID}&n=1", 1280, {"stage": ".stage"}),
-    "make2": (f"/toy/{SID}/tsukuru?h={HID}&n=2", 1280, {"stage": ".stage"}),
-    "make": (f"/toy/{SID}/tsukuru?h={HID}&n=3&ev=stuck", 1280, {"stage": ".stage", "henji": "#henji"}),
+    "make1": (f"/toy/{SID}/techo?n=1", TECHO_W, {"stage": "#te"}),
+    "make2": (f"/toy/{SID}/techo?n=2", TECHO_W, {"stage": "#te"}),
+    "make3": (f"/toy/{SID}/techo?n=3", TECHO_W, {"stage": "#te"}),
+    # 聞く画面の節は頁にいつも在り、隠れているだけなので、手帖が聞く画面に切り替わった時だけ当たる形で測る（押せていなければ測れずに止まる）
+    "make": (f"/toy/{SID}/techo?n=3", TECHO_W, {"stage": "#te", "henji": "#te[data-scene=henji] section.henji"}, "document.getElementById('stuck').click()"),
     # 手帖の「上げる」の枠は、手帖の作り直し（#395）で手帖の記録の頁へ移った（前は /toy/<印>/techo の中）
     "keep": (f"/toy/{SID}/techo/kiroku", 1000, {"up": '[aria-label="上げる"]', "record": '[aria-label="上げる"] .item'}),
     # 止める所は、台本が作った本物の作った物の札（#ageta の最初の札。例の記録で、写真と確認の記録つき）。
@@ -91,7 +98,8 @@ VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記�
 SECONDS = {"core_map": 9.0, "core_make": 12.0, "core_keep": 7.0, "core_voice": 4.0, "core_gallery": 5.0, "core_loop": seconds_of("core_loop")}
 CUES_ALL = {
     "core_map": {"title": (0.0, 0.8), "l1": (0.8, 1.6), "l2": (1.8, 2.6), "l3": (2.8, 3.6), "l4": (3.8, 4.6), "sub": (5.2, 6.0)},
-    "core_make": {"in": (0.0, 0.8), "step2": (3.0, 4.0), "step3": (6.0, 7.0), "move": (7.2, 8.2), "ask": (8.2, 8.7)},
+    # 手帖は頁の全体を映したまま手順を送るので、前の寄る合図（"move": (7.2, 8.2)）は外した。聞く画面へ替わる秒は前のまま
+    "core_make": {"in": (0.0, 0.8), "step2": (3.0, 4.0), "step3": (6.0, 7.0), "ask": (8.2, 8.7)},
     "core_keep": {"in": (0.0, 0.8), "move": (0.8, 2.0), "record": (3.2, 3.4), "move2": (3.4, 4.6)},
     "core_voice": {"in": (0.0, 0.4), "b1": (0.4, 0.8), "b2": (0.9, 1.3), "b3": (1.4, 1.8)},
     "core_gallery": {"in": (0.0, 0.8), "pan": (1.0, 4.2)},
@@ -151,16 +159,28 @@ def seed(base, env):
     return rid
 
 
-def _measure(chrome, tmp, base, path, selectors, width):
-    """同じ HTML を Chrome に読ませ、測る所と頁の高さを返す（CSS の px）。本物の頁には手を入れず、写しに測る script を足す。"""
+def _copy(tmp, base, path, js, name="copy.html"):
+    """頁の写しを作り、終わりに script を足す（本物の頁には手を入れない）。写しの道を返す。"""
     html = urllib.request.urlopen(base + path, timeout=30).read().decode("utf-8")
+    head = html.replace('<meta charset="utf-8">', f'<meta charset="utf-8"><base href="{base}/">', 1)
+    copy = pathlib.Path(tmp) / name
+    copy.write_text(head.replace("</body>", js + "</body>") if "</body>" in head else head + js, encoding="utf-8")
+    return copy
+
+
+def _act_js(act):
+    """撮る前に頁で押す所（「こまった」など）。頁の JS が読み込まれた後に押す。"""
+    return f'<script>addEventListener("load",()=>{{{act}}})</script>' if act else ""
+
+
+def _measure(chrome, tmp, base, path, selectors, width, act=None):
+    """同じ HTML を Chrome に読ませ、測る所と頁の高さを返す（CSS の px）。本物の頁には手を入れず、写しに測る script を足す。
+    act があれば、測る前に頁で押す（押した後の画面を測る）。"""
     pick = json.dumps(selectors, ensure_ascii=False)
-    js = (f'<script>addEventListener("load",()=>{{const o={{h:document.documentElement.scrollHeight}},s={pick};for(const k in s){{const e=document.querySelector(s[k]);'
+    js = (_act_js(act) + f'<script>addEventListener("load",()=>{{setTimeout(()=>{{const o={{h:document.documentElement.scrollHeight}},s={pick};for(const k in s){{const e=document.querySelector(s[k]);'
           'if(e){const b=e.getBoundingClientRect();o[k]=[b.x,b.y+scrollY,b.width,b.height]}}'
-          'const p=document.createElement("pre");p.id="rects";p.textContent=JSON.stringify(o);document.body.appendChild(p)})</script>')
-    copy = pathlib.Path(tmp) / "copy.html"
-    copy.write_text(html.replace('<meta charset="utf-8">', f'<meta charset="utf-8"><base href="{base}/">', 1).replace("</body>", js + "</body>") if "</body>" in html
-                    else html.replace('<meta charset="utf-8">', f'<meta charset="utf-8"><base href="{base}/">', 1) + js, encoding="utf-8")
+          'const p=document.createElement("pre");p.id="rects";p.textContent=JSON.stringify(o);document.body.appendChild(p)},0)})</script>')
+    copy = _copy(tmp, base, path, js)
     r = _chrome(chrome, tmp, [f"--window-size={width},1200", "--dump-dom", copy.as_uri()])
     start = r.stdout.find('<pre id="rects">')
     if start < 0:
@@ -201,14 +221,17 @@ def capture(cache):
                 print(f"検査できない: {e}", file=sys.stderr)
                 return None
             shots = {}
-            for name, (path, width, selectors) in PAGES.items():
-                rects = _measure(chrome, tmp, base, path, selectors, width)
+            for name, (path, width, selectors, *act) in PAGES.items():
+                act = act[0] if act else None
+                rects = _measure(chrome, tmp, base, path, selectors, width, act)
                 if not rects or any(k not in rects for k in selectors):
                     print(f"検査できない: 頁の所が測れない（{name}）", file=sys.stderr)
                     return None
                 png = out / f"{name}.png"
                 png.unlink(missing_ok=True)
-                _chrome(chrome, tmp, [f"--force-device-scale-factor={DPR}", f"--window-size={width},{math.ceil(rects['h'])}", f"--screenshot={png}", base + path])
+                # 押す所がある頁は、押した写しを撮る（押した後の画面）。無い頁は本物の道をそのまま撮る
+                where = _copy(tmp, base, path, _act_js(act), f"shot-{name}.html").as_uri() if act else base + path
+                _chrome(chrome, tmp, [f"--force-device-scale-factor={DPR}", f"--window-size={width},{math.ceil(rects['h'])}", f"--screenshot={png}", where])
                 if not png.exists():
                     print(f"検査できない: 画面が撮れない（{name}）", file=sys.stderr)
                     return None
@@ -244,6 +267,12 @@ def _cam_page(page_w, margin=1.04, aspect=ASPECT):
     """頁の頭から全体の幅を映すカメラ。題から読ませる（途中から映すと、何の頁か分からない）。"""
     cw = page_w * margin
     return (page_w / 2, cw * aspect / 2, cw)
+
+
+def _cam_fit(page_w, page_h, margin=1.04, aspect=ASPECT):
+    """頁の 1 画面を丸ごと映すカメラ（手帖の 1 手 1 画面のように、縦に長くない頁）。高さに合わせ、幅は余白になる。"""
+    cw = max(page_w, page_h / aspect) * margin
+    return (page_w / 2, page_h / 2, cw)
 
 
 class Screens:
@@ -457,14 +486,14 @@ def build_scene(name, cues, cache=None, shots=None):
     if not shots:
         return None
     if name == "core_make":
-        rects = shots["make"][1]
-        head, stuck = _cam_page(shots["make"][2]), _cam_on(rects["henji"], 1.5)
+        # 手帖は 1 手 1 画面なので、頁の全体を映したまま手順を送り、「こまった」を押した後の聞く画面で止める（字幕は前のまま）
+        head = _cam_fit(shots["make1"][2], shots["make1"][1]["h"])
         line = "手順を見ながら作る。"
         return Screens(name, cues, shots, [
             {"at": None, "shot": "make1", "from": head, "to": head, "line": line},
             {"at": "step2", "shot": "make2", "from": head, "to": head, "line": line},
-            {"at": "step3", "shot": "make", "move": "move", "from": head, "to": stuck, "line": line},
-            {"at": "ask", "shot": "make", "from": stuck, "to": stuck, "line": "止まったら、そのまま声か字で聞ける"}])
+            {"at": "step3", "shot": "make3", "from": head, "to": head, "line": line},
+            {"at": "ask", "shot": "make", "from": head, "to": head, "line": "止まったら、そのまま声か字で聞ける"}])
     if name == "core_keep":
         rects = shots["keep"][1]
         up = _cam_on(rects["up"], 1.95)  # 写真を上げる所の頭から映す。字幕がそこを言っているので
