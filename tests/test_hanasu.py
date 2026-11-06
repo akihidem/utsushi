@@ -42,11 +42,12 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 opener = urllib.request.build_opener(NoRedirect)
+REC_KEY = "a" * 24  # この画面が記録を残した時の鍵。上げた後に足す口は、その画面にだけ開く（records.mine）
 
 
 def get(path, at=None):
     try:
-        r = opener.open((at or base) + path)
+        r = opener.open(urllib.request.Request((at or base) + path, headers={"Cookie": f"utsushi_rec={REC_KEY}"}))
         return r.status, r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "replace")
@@ -56,7 +57,7 @@ def send(path, body, ctype="application/x-www-form-urlencoded", origin=None, at=
     # 送る側がブラウザの名と cookie を付けても、記録に入らない事を見るために付ける
     at = at or base
     req = urllib.request.Request(at + path, data=body, method="POST",
-                                 headers={"Content-Type": ctype, "Origin": origin or at, "User-Agent": "TestBrowser/1.0", "Cookie": "name=someone"})
+                                 headers={"Content-Type": ctype, "Origin": origin or at, "User-Agent": "TestBrowser/1.0", "Cookie": f"name=someone; utsushi_rec={REC_KEY}"})
     try:
         r = opener.open(req)
         return r.status, r.read().decode(), dict(r.headers)
@@ -164,6 +165,8 @@ assert rid5 == "R-0005" and not failures and talk_log.kufu(G, rid5) == []
 
 # ---- 3 できた物: 試した記録に結ぶ。記録に入るので、ほかの人の頁にも出る（選び肢は無い。送っても受けない）
 KEEP_A, KEEP_B = "内筒が固かったので、角を丸く切った", "扇の根元を糸で留めたら、開いたままになった"
+records.claim(RID, REC_KEY)  # 受け口の形を見る。別の人が断られる事は tests/test_record_owner.py が見る
+records.claim("R-0002", REC_KEY)
 code, j = talk(scene="keep", record=RID, text=KEEP_A, share="0")
 assert code == 200 and j["kept"] is True and j["note"] == hanasu.KEPT, j
 # JS が無い時は、戻る道の付いた頁で答える。戻る道の字は、玩具の頁の入口と同じ字
@@ -175,7 +178,7 @@ for p in files():  # この先の数を変えないよう、見本を片づけ�
         p.unlink()
 assert talk(scene="keep", record=RID, text=KEEP_B, via="voice")[0] == 200
 code, j = talk(scene="keep", record="R-9999", text="無い記録")
-assert code == 422 and j["why"] == hanasu.FAILED, j
+assert code == 403 and j["why"] == hanasu.REFUSED, j
 # 前にあった、記録ごとの合図の受け口は無い（選び肢と、既定で出さない形はやめた。本人の決定 11-05）
 n = len(files())
 assert post(f"/toy/{G}/talk", {"signing": "1", "record": RID})[0] == 422 and len(files()) == n
@@ -368,7 +371,7 @@ os.environ.pop("OMOCHAE_VOICE")
 
 # ---- 利用者向けの文: 本人が採ったやさしい言葉の文（11-05、Issue #318）。一字でも変わったら落ちるように、ここに決定の文を書く
 ADOPTED = {
-    "NOTICE": "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。",
+    "NOTICE": "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。",
     "HOW_LOCAL": "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。",
     "HOW_BROWSER": "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。このサイトは声を受け取りません。",
     "HOW_NONE": "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。",
@@ -380,7 +383,13 @@ ADOPTED = {
 }
 for name, text in ADOPTED.items():
     assert getattr(hanasu, name) == text, name
-# 断りと、話す釦の説明 3 つは、3 つの頁の口に出る。名前などを書かないお願いは、断りの最後の文
+# 本人が採った字（一字も変えない）。話す口の断りの後に置く。断りは定数 1 か所で、話す口のある頁の全部に同じ物が出る
+AI_USE = "残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
+assert hanasu.NOTICE.endswith("書かないでください。" + AI_USE)
+for page in (toy, tsu, techo):
+    assert page.count(AI_USE) == page.count('<div class="hanasu" data-hanasu') >= 1, "話す口ごとに 1 回"
+    assert hanasu.NOTICE in page
+# 断りと、話す釦の説明 3 つは、3 つの頁の口に出る
 for page in (toy, tsu, techo):
     for name in ("NOTICE", "HOW_LOCAL", "HOW_BROWSER", "HOW_NONE"):
         assert ADOPTED[name] in page, name

@@ -106,10 +106,13 @@ def explanation(rid):
 TALK_LABEL = "作った人が話した事（字だけ・声は残していない）"
 # 渡す欄はこの 3 つだけ。どう入れたか（via）・その場の印（who）・時刻は、誰がいつ話したかを辿る手がかりにしかならず、案の材料に要らない。
 TALK_FIELDS = ("when", "step", "text")
+# 渡す話した字の上限（字数）。1 件は 400 字まで（talk_log.MAX_TEXT）だが件数に上限が無く、300 件で頼みが 13 万字になった。
+# ふつうの作りで話す量（手順ごとに数件）より十分大きくする。超えた分は数だけ渡す。
+TALK_MAX_CHARS = 6000
 
 
 def maker_talk(rid):
-    """記録に結んだ、作りながら話した工夫と上げた後に残した字（Issue #335 のループ2）。Returns {"label", "items": [{when, step, text}…]}。
+    """記録に結んだ、作りながら話した工夫と上げた後に残した字（Issue #335 のループ2）。Returns {"label", "items": [{when, step, text}…], "omitted": 上限で入れなかった字の数}。
 
     判断の芯:
     - どの字か: その記録に結ばれた字だけ（talk_log.kufu）。結ぶのは記録を残した時の talk_log.bind で、同じ玩具・同じ紙（仮説と版）・
@@ -120,19 +123,38 @@ def maker_talk(rid):
       これより強い絞りは足さない（2b で字は全部見せる決定。本人の指示 11-05 17:55）。
     - 鍵の有無で読む字を変えない。人の道（material の命令）にも隠した字を出さない: 人が読んで書く解釈と案を通って、隠した字が輪に入るため。
       作る側が隠した字を読むのは作る側の頁（hanasu.maker_section の「［隠している］」）。
+    - 字の数に上限がある（TALK_MAX_CHARS）。手順の順の前から入れ、超えた分は数だけ返す。切れた 1 件を途中で切らない（字の意味が変わるため）。
     - 字を写した別のファイルは作らない。記録を取り下げると字も消える（talk_log.drop_for_record）ので、写しがあると消し残る。
     """
     from . import talk_log  # 使う時に読む（hypotheses の読み方と同じ。輪の置き場を読むだけの命令で、話す口の部品まで先に読まない）
 
     rec = record(rid)
-    items = [{k: t[k] for k in TALK_FIELDS} for t in talk_log.kufu(rec["source_id"], rid, shared_only=True) if t["when"] != talk_log.WHEN["think"]]
-    return {"label": TALK_LABEL, "items": items}
+    said = [t for t in talk_log.kufu(rec["source_id"], rid, shared_only=True) if t["when"] != talk_log.WHEN["think"]]
+    items, used = [], 0
+    for t in said:
+        used += len(t["text"])
+        if used > TALK_MAX_CHARS:
+            break
+        items.append({k: t[k] for k in TALK_FIELDS})
+    return {"label": TALK_LABEL, "items": items, "omitted": len(said) - len(items)}
 
 
 def material(rid):
     """輪の解釈と案の材料（記録・人の説明・作った人が話した事）。鍵のある道（api/loop_agents）も鍵の無い道（material の命令）も、ここから読む。
     同じ材料を両方の道に渡すのは、鍵の有無で、人が見る物と Claude が見る物が食い違わないため。"""
     return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
+
+
+def next_target(source_id, hid):
+    """次の版を足す仮説。自分の紙（OWN-n）の記録から作る次の版は、たたき台へ向ける（根拠は OWN-n の記録のまま）。
+    なぜ: 型紙は玩具ごとに 1 枚（J-032）で、最新版が次の人の型紙になる。OWN-n に版を足しても紙は刷られず、次の人にも届かない。ループ1 を通った人の工夫がループ2（型紙の改善）に届くように。
+    型紙なしの紙（寸法の無い案）の記録は向く先が無いので、そのまま返す。組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らないため。欄も節の数も出ず、受け口と床が断る。
+    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。"""
+    from .hypotheses import sheet_of
+
+    if not str(hid).startswith("OWN-") or not (_hypothesis(source_id, hid) or {}).get("params"):
+        return hid
+    return sheet_of(source_id)["id"]
 
 
 def material_text(rid):
@@ -147,6 +169,8 @@ def material_text(rid):
     for t in talk["items"]:
         where = f"手順 {t['step']}" if t["step"] else ("上げた後" if t["when"] == "made" else "作りながら")
         lines.append(f"  {where}: {t['text']}")
+    if talk["omitted"]:
+        lines.append(f"  （ほかに {talk['omitted']} 件。字の数の上限で入れていない。読むのは作る側の頁）")
     from . import talk_log
 
     # 隠した字は出さず、数だけ知らせる。全部隠した記録を「字は無い」と読ませないため。
@@ -155,6 +179,9 @@ def material_text(rid):
         lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
     elif not talk["items"]:
         lines.append("  （この記録に結んだ字は無い）")
+    target = next_target(rec["source_id"], rec["hypothesis_id"])
+    if target != rec["hypothesis_id"]:
+        lines += ["", f"次の版は {target} に足します（根拠はこの記録）"]
     lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
     return "\n".join(lines)
 
@@ -267,8 +294,11 @@ def latest_version(source_id, hid):
     return max(adopted_versions(source_id, hid), default=1)
 
 
-def check_proposal(p, source, will_confirm=()):
-    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。"""
+def check_proposal(p, source, will_confirm=(), need_why=True):
+    """提案の検査。Claude にも人の手書きにも同じ床を当てる。will_confirm は、通った時に同じ操作で確定する記録（#158）。
+    need_why は変更ごとの理由を求めるか。採った新しい案を版にする時だけ外す（案の字は版の記録の new_case に残す。_new_as_changes）。"""
+    from .hypotheses import sheet_of
+
     out = []
     sid = source["source_id"]
     template = _template(sid)
@@ -293,6 +323,9 @@ def check_proposal(p, source, will_confirm=()):
         h = _hypothesis(sid, hid)
         if h is None:
             out.append(Failure("F8.references", str(hid), "その仮説は実在しない"))
+        elif hid != sheet_of(sid)["id"]:
+            # 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（J-032）。ほかの仮説に版を足しても次の人に届かず、必須 2 種では紙も刷れない。
+            out.append(Failure("F7.revision", str(hid), f"次の版はたたき台（{sheet_of(sid)['id']}）にだけ足す"))
         else:
             current, _ = version_params(sid, hid, latest_version(sid, hid))
             merged = dict(current)
@@ -301,7 +334,7 @@ def check_proposal(p, source, will_confirm=()):
                 if c.get("param") not in ALLOWED[template]:
                     out.append(Failure("F7.revision", str(c.get("param")), "変えてよい寸法の外"))
                     continue
-                if not c.get("why", "").strip():
+                if need_why and not c.get("why", "").strip():
                     out.append(Failure("F4.evidence", c["param"], "変える理由が無い"))
                 merged[c["param"]] = c.get("to")
             if not any(c.get("to") != {**TEMPLATES_DEFAULT(template), **current}.get(c.get("param")) for c in changes):
@@ -338,11 +371,55 @@ def TEMPLATES_DEFAULT(template):
     return TEMPLATES[template].DEFAULTS
 
 
+def _trial_values(lo, hi, now):
+    """1 つの寸法で試す値を、今の値から近い順に返す。通る値はたいてい今の値の近くにあるので、近くを細かく、遠くは粗く見る
+    （全部の玩具の版 1 と動かした後の版で、400 値の総当たりと同じ答えになった）。整数の寸法のために、近くの整数と幅の両端も入れる。"""
+    span = hi - lo
+    near = [now + sign * span * step for step in (0.00125, 0.0025, 0.005, 0.01, 0.02, 0.05) for sign in (1, -1)]
+    whole = [round(now) + d for d in (-3, -2, -1, 1, 2, 3)]
+    far = [lo + span * i / 20 for i in range(21)]
+    values = {round(v, 4) for v in near + whole + far + [round(v) for v in far] if lo <= v <= hi and v != now}
+    # 画面の口（play_server の次の版）と同じに、整数で言える値は整数で渡す。
+    return [int(v) if float(v).is_integer() else v for v in sorted(values, key=lambda v: (abs(v - now), v))]
+
+
+@functools.lru_cache(maxsize=256)
+def _movable(sid, current_json):
+    """今の寸法（json の字）で、1 つ変えて通る値がある寸法と、その値の 1 つ。寸法が同じなら答えも同じなので、1 度だけ検査する。
+    範囲と物理の床だけで決める。配置まで組むと、棒の玩具では 1 回 0.85 秒かかり、頁の最初の表示が 9 秒止まった。物理で通った値が配置で落ちる寸法は、
+    全部の玩具の版 1 と動かした後の版で見て無かった。もし出ても、断りの文が理由を言うので、欄が止まる事はない。"""
+    from .compose import TEMPLATES
+
+    template = _template(sid)
+    tpl, now = TEMPLATES[template], {**TEMPLATES[template].DEFAULTS, **json.loads(current_json)}
+    found = {}
+    for k in sorted(ALLOWED[template]):
+        for v in _trial_values(*tpl.RANGES[k], now[k]):
+            trial = {**now, k: v}
+            if not (tpl.check_range(trial) or tpl.check_physics(trial)):
+                found[k] = v
+                break
+    return found
+
+
+def movable_params(sid, hid):
+    """次の版の欄（寸法を 1 つ変える形）に出す寸法を、通る値の 1 つと一緒に返す。今の版の寸法で決める。
+    なぜ固定の表にしないか: 動かせない寸法は型の拘束で決まり、ほかの寸法を変えると通る幅が開く。例えば御来迎の押し上げる量は、扇を隠す床と内筒を収める床に
+    挟まれて今の寸法だと 69 ちょうどしか通らないが、扇を低くすると動かせる。Claude の案は寸法を同時に変えられるので、この絞りは掛けない（ALLOWED のまま）。"""
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    return _movable(sid, json.dumps(current, ensure_ascii=False, sort_keys=True))
+
+
 def save_proposal(proposal, source, drafted_by):
+    from .hypotheses import sheet_of
+
     failures = check_proposal(proposal, source)
     if failures:
         return None, failures
-    return save_numbered("proposal", "P", lambda pid: {**proposal, "id": pid, "source_id": source["source_id"], "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
+    sid = source["source_id"]
+    # 案を作った時のたたき台の版を持つ。採る時に、この版からの差だけを今の版に重ねるため（_new_as_changes）。
+    based = proposal.get("based_on_version") or latest_version(sid, sheet_of(sid)["id"])
+    return save_numbered("proposal", "P", lambda pid: {**proposal, "based_on_version": based, "id": pid, "source_id": sid, "status": "pending_human", "drafted_by": drafted_by, "drafted_at": _now()}), []
 
 
 def _next_params(sid, hid, changes):
@@ -351,9 +428,44 @@ def _next_params(sid, hid, changes):
     return latest_version(sid, hid) + 1, {**current, **{c["param"]: c["to"] for c in changes}}
 
 
+def _write_version(p, pid, by, hid, changes, new_case=None):
+    """採った変更を次の版の記録にして、版の番号を返す。new_case は版にした案の字で、頁には出さない（変更の理由の欄は頁の輪の節に出る）。"""
+    sid = p["source_id"]
+    version, params = _next_params(sid, hid, changes)
+    _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": changes, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now(), **({"new_case": new_case} if new_case else {})})
+    return version
+
+
+def _new_as_changes(sid, hid, new, based_on):
+    """採った新しい案が、たたき台の寸法の差で言えるなら、次の版の変更にして返す。言えなければ空（J-032）。
+
+    なぜ版にするか: 型紙は玩具ごとに 1 枚で、最新版が次の人の型紙（本人の方針 11-05）。別の仮説として控えに入れると、次の人に届かない。
+    差は案を作った時の版（based_on）から見て、今の版に重ねる。案は全部の寸法を書くので、今の版と比べると、案が言っていない前の版の直しまで戻してしまう。
+    案を作った後に今の版で変わった寸法に触る案は、後の直しを黙って上書きしないよう、版にしない。雛形の違う案は、寸法を重ねる版の形に乗らない。
+    今の版と差が無い案は読みだけが違う案で、版にならない。変えてよい寸法の外（形の違い）と紙に乗らない差は、呼ぶ側の check_proposal が落とす。
+    理由の欄は空にする: 頁の輪の節に出る欄で、案の字は Claude の字なので頁に出さない（new_case に残す）。
+    """
+    template = _template(sid)
+    defaults = TEMPLATES_DEFAULT(template)
+    then, _ = version_params(sid, hid, based_on)
+    params = new.get("params")
+    if new.get("template", new.get("template_id", template)) != template or then is None or not isinstance(params, dict):
+        return []
+    current, _ = version_params(sid, hid, latest_version(sid, hid))
+    then, now = {**defaults, **then}, {**defaults, **current}
+    said = {k: v for k, v in params.items() if then.get(k) != v}
+    if any(now.get(k) != then.get(k) and now.get(k) != v for k, v in said.items()):
+        return []
+    return [{"param": k, "to": v, "why": ""} for k, v in sorted(said.items()) if now.get(k) != v]
+
+
 @exclusive
 def adopt(pid, by, accept_params=(), accept_new=False, source=None):
-    """人の採否（H7）。採った物だけが版と仮説の一覧に入る。次に試す物の提案は、採っても並びを変えない。"""
+    """人の採否（H7）。採った物だけが版と作る側の控えに入る。次に試す物の提案は、採っても並びを変えない。
+    新しい案（accept_new）は道を閉じず、札にも出さない（J-032）: 寸法の差で言える案はたたき台の次の版にし、言えない案と紙に乗らない案は
+    作る側の控え（extra-hypotheses）に残す。人が採った案を捨てないため。たたき台は替えない（替えるのは本人が決めた時に記録の欄 sheet を直す）。"""
+    from .hypotheses import sheet_of
+
     path = folder() / f"proposal-{pid[2:]}.json"
     p = _read(path)
     if p is None:
@@ -374,11 +486,15 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
         return None, failures
     made = {}
     if chosen:
-        hid = p["hypothesis_id"]
-        version, params = _next_params(sid, hid, chosen)
-        _write(folder() / f"version-{sid}-{hid}-{version}.json", {"source_id": sid, "hypothesis_id": hid, "version": version, "params": params, "changes": chosen, "record_ids": p["record_ids"], "proposal": pid, "adopted_by": by.strip(), "adopted_at": _now()})
-        made["version"] = version
-    if accept_new and p.get("new_hypothesis"):
+        made["version"] = _write_version(p, pid, by, p["hypothesis_id"], chosen)
+    sheet = sheet_of(sid)["id"]
+    # 番号を持たない前の形の案は版 1 の時の案（前は Claude に版 1 の寸法だけを渡していた）。
+    as_version = _new_as_changes(sid, sheet, p["new_hypothesis"], p.get("based_on_version", 1)) if accept_new and p.get("new_hypothesis") else []
+    # 紙に乗らない差は版にしない（版の記録だけ残り、紙が刷れない形を作らない）。この時は下の控えに入る。
+    if as_version and not check_proposal({"record_ids": p["record_ids"], "hypothesis_id": sheet, "changes": as_version}, source, need_why=False):
+        new_case = {k: p["new_hypothesis"][k] for k in ("name", "how_it_moves")}
+        made["version"] = made["new_hypothesis_as_version"] = _write_version(p, pid, by, sheet, as_version, new_case)
+    elif accept_new and p.get("new_hypothesis"):
         extras_path = folder() / f"extra-hypotheses-{sid}.json"
         extras = _read(extras_path) or []
         new = {**p["new_hypothesis"], "id": f"H-N{len(extras) + 1}", "status": "untested", "evidence": p["new_hypothesis"].get("evidence", []) + [{"kind": "record", "where": rid, "what": "試した記録", "certainty": "記録"} for rid in p["record_ids"]], "proposal": pid, "adopted_by": by.strip()}
@@ -391,7 +507,8 @@ def adopt(pid, by, accept_params=(), accept_new=False, source=None):
 
 
 def _print_into(sheet_dir, stem, printer):
-    """紙を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。"""
+    """紙を一時の場所で刷り、全部できた時だけ置き場へ移す（#158）。途中で落ちても、半端な紙を正しい名前で残さない。
+    読みに来た人にも書きかけを渡さない（#301）。"""
     sheet_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=sheet_dir, prefix=".tmp-") as tmp:
         rc = printer(f"{tmp}/{stem}")
@@ -417,6 +534,13 @@ def print_after(sid, hid, version, sheet_dir):
     return _print_into(sheet_dir, f"{hid}_v{version}", lambda out: hypotheses.print_after(sid, hid, out))
 
 
+def print_own(sid, oid, sheet_dir):
+    """自分の仮説の紙を刷る。"""
+    from . import hypotheses
+
+    return _print_into(sheet_dir, f"{oid}_v1", lambda out: hypotheses.print_own(sid, oid, out))
+
+
 @exclusive
 def next_version(rid, by, content, change, source, sheet_dir):
     """画面の「次の版を作る」の 1 操作: 解釈の確定 → 変更の案 → 人の採用 → 刷る → 型紙の確定（#158）。
@@ -431,7 +555,7 @@ def next_version(rid, by, content, change, source, sheet_dir):
     if failures:
         return None, failures
     rec = record(rid)
-    sid, hid = rec["source_id"], rec["hypothesis_id"]
+    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"])
     proposal = {"record_ids": [rid], "hypothesis_id": hid, "changes": [change]}
     failures = check_proposal(proposal, source, will_confirm=[rid])
     if failures:
@@ -575,7 +699,7 @@ def main(argv=None):
                 for c in args.change:
                     k, v = c.split("=", 1)
                     changes.append({"param": k, "to": float(v), "why": args.why})
-                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or record(args.record)["hypothesis_id"], "changes": changes}, source, "human")
+                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"]), "changes": changes}, source, "human")
             else:
                 from api.loop_agents import draft_proposal
 

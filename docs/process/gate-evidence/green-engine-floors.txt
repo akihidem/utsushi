@@ -1,0 +1,15 @@
+# 命令: .venv/bin/python tests/test_engine_floors.py
+# commit: 1ee870c（回した時の HEAD）
+ok   bom_neck_arm
+ok   bom_every_hypothesis
+ok   bom_forms_without_hypothesis
+ok   marks_whole_text
+ok   image_box_line_across_glue
+ok   image_box_printed_width
+ok   fan_leg
+ok   figure_base
+ok   hole_every_template
+ok   thread_from_hole
+ok   next_reasons_no_new_words
+11 条件のうち 11 が通った
+rc=0

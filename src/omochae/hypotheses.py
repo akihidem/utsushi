@@ -101,6 +101,21 @@ def drop_own(source_id, own_id):
     return gone
 
 
+def scrub_own(source_id, own_id):
+    """自分の仮説から話した字だけを消す（記録の --talk-only から呼ぶ）。動かし方の字と、字が刷られた紙（手順の紙・型紙なしの紙）。名前と寸法と、字の無い紙は残す。消した物の名前を返す。"""
+    gone = []
+    path = _pred_dir() / f"own-{source_id}-{own_id.rsplit('-', 1)[1]}.json"
+    rec = store.read_json_or_skip(path)
+    if rec and rec.get("how_it_moves"):
+        store.write_json(path, {**rec, "how_it_moves": ""})
+        gone.append(path.name)
+    d = play_dir(source_id)
+    for p in sorted([*d.glob(f"{own_id}_v*_tejun*"), *d.glob(f"{own_id}_v*_free*")]) if d.exists() else []:
+        p.unlink()
+        gone.append(f"play/{p.name}")
+    return gone
+
+
 def sheet_of(source_id):
     """玩具のたたき台の仮説を返す。ほかの所（頁・輪・デモ）がたたき台を知る時は、ここだけを読む。
 
@@ -253,11 +268,9 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
     h = match[0]
     # 必須 2 種の今の組（goraigo-v10・tora-v3）は、たたき台の 1 枚（と対の手順の紙）だけを刷る（本人の決定 11-05 の点 3、J-032）。
-    # 断るのは記録（data/hypotheses）にある仮説のうち、たたき台でない物。人が輪や生成で採って重ねた新しい仮説（H-N…）は、
-    # 輪を 1 枚の形に直す時に一緒に扱うので、ここではまだ止めない（#332 の後の直し）。
-    # 試作の玩具は今の作りのまま。頁が 1 枚だけを出す直しと一緒に揃える。
-    recorded = {x["id"] for x in json.loads((ROOT / "data/hypotheses" / f"{source_id}.json").read_text(encoding="utf-8"))["hypotheses"]}
-    if data.get("stage", "必須") == "必須" and hypothesis_id in recorded and hypothesis_id != data.get("sheet"):
+    # 人が輪や生成で採って重ねた新しい仮説（H-N…）も作る側の控えなので、同じく刷らない。
+    # 試作の玩具は、作る側がこの口から控えを刷れる（道は閉じない）。頁からは刷らない（web の /print の口が断る）。
+    if data.get("stage", "必須") == "必須" and hypothesis_id != data.get("sheet"):
         print(Failure("F9.human", f"{source_id} {hypothesis_id}", f"必須 2 種の今の組は、たたき台（{data.get('sheet')}）の紙だけを刷る").line(), file=sys.stderr)
         return 3
     params, adopted = (pending["params"], pending) if pending else version_params(source_id, hypothesis_id, version)
@@ -491,7 +504,7 @@ def main(argv=None):
         if args.cmd == "print-teacher":
             return print_teacher(args.source, args.out or f"out/templates/teacher_{args.source}")
         if args.cmd == "print-own":
-            return print_own(args.source, args.id, args.out or f"out/templates/{args.id}_v1")
+            return print_own(args.source, args.id, args.out or f"out/templates/{args.source}_{args.id}_v1")
         if args.cmd == "own":
             rec, failures = save_own(args.source, args.name, args.how, args.evidence, json.loads(args.params) if args.params else None)
             if not failures:
@@ -505,7 +518,8 @@ def main(argv=None):
             # 作り手が版を直す時は records summary と loop で見る。
             print("\n".join(list_lines(load(args.source), own_hypotheses(args.source))))
             return 0
-        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.hypothesis}_v{args.version}", args.version)
+        # 既定の名前に玩具を入れる。御来迎と虎はどちらも H-A なので、入れないと後から刷った紙が前の紙を黙って消す。
+        return print_sheet(args.source, args.hypothesis, args.out or f"out/templates/{args.source}_{args.hypothesis}_v{args.version}", args.version)
     except (ToolMissing, OSError, ValueError, KeyError) as e:
         print(f"検査できない: {e}", file=sys.stderr)
         return 4

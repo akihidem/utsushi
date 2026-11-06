@@ -56,7 +56,7 @@
 | 11 | [research/06](research/06-rederive-defaults.md) | 初期値を絵の測定と紙面の制約から出し直した | 調査 |
 | 12 | [research/07](research/07-own-scans.md) | 手元の複写を基準に寸法と読みを照合した | 調査 |
 | 13 | [research/08](research/08-fan-axle.md) | 台に載せる形は 180° で筒にぶつかると計算 | 調査 |
-| 14 | [J-005](decisions/J005-axle-default.md) | 扇の中心の置き方を比べた。実物で未確定 | 仮の決定 |
+| 14 | [J-005](decisions/J005-axle-default.md) | 扇の中心の置き方を比べた。中心の軸で開くのを試行で確かめた | 試行で確かめた |
 | 15 | [research/09](research/09-contributions-design.md) | 持ち寄りの場の受付と権利の線の設計 | 調査 |
 | 16 | [J-006](decisions/J006-contributions-minimum.md) | 持ち寄りは確認つきの受付を先に作る | 決定。外の入口は判断待ち |
 | 17 | [research/10](research/10-redraw-colors.md) | 図を描き直すための色と線を調べた | 調査 |
@@ -124,7 +124,9 @@
 | 79 | [research/33](research/33-observe-from-picture.md) | 型紙なしで絵だけから作る過程を、机の端の端末のカメラで観察し、再生の知見を得る案 | 案。採否は本人（U-46） |
 | 80 | [research/32](research/32-contributor-recognition.md) | 型紙を直した人を示す案（本人の種）。J-025 との切り分けと形の 3 案 | 種の記録（11-05）。形は本人が決める |
 | 81 | [research/34](research/34-talk-build-share-loop.md) | 話す・作る・残すの一周とエンジンごとの改善。提出の核。今ある物と無い物 | 本人の言葉（11-05 昼）。音声とエンジンは別の担当で作る |
-| 82 | [J-032](decisions/J032-one-sheet-per-toy.md) | 型紙は玩具 1 つに 1 枚のたたき台。自分の案は話す形、見比べる紙は外す（本人の決定） | 本人の決定（11-05）。J-002・J-019・J-008 を置き換えた。作りは #332 で順に入れる |
+| 82 | [J-033](decisions/J033-assembly-3d.md) | 手順どおりに 3D で組み立て、組めない所を自己検証の結果に残す。本線は紙のまま（本人の考え） | 芯と頁を作る（11-05〜06）。頁の文と置き場は本人の決定（11-06） |
+| 83 | [research/36](research/36-road-and-audience.md) | 使う人の道（6 工程）と、相手を全年齢・外国の人に広げる当てはめ。文書の直す案 | 道の設計は本人の決定（11-06）。持ち寄る場の設計と文書の直しは案。頁はまだ変えていない |
+| 84 | [J-032](decisions/J032-one-sheet-per-toy.md) | 型紙は玩具 1 つに 1 枚のたたき台。自分の案は話す形、見比べる紙は外す（本人の決定） | 本人の決定（11-05）。J-002・J-019・J-008 を置き換えた。作りは #332 で順に入れる |
 <!-- map:end -->
 
 ## 事前の検討との関係（正直に書く所）

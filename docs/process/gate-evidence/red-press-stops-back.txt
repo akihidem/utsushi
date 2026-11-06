@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_press_stops.py
+# commit: 18959c7（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_press_stops.py", line 68, in <module>
+    assert "picker.onchange = showPicked;\naddEventListener('pageshow', showPicked);" in techo_site.SCRIPT, "戻った時も数え直す"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 戻った時も数え直す
+rc=1

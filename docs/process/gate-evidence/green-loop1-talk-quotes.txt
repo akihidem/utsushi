@@ -1,0 +1,36 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: 558bb0f（回した時の HEAD）
+F9.own: 自分の仮説「案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-8_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-8_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-8_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-9_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-9_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-9_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/.tmp-1n652sww/H-A_v2.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/.tmp-1n652sww/H-A_v2_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/.tmp-1n652sww/H-A_v2_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-10_v1.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-10_v1_tejun.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-10_v1_after.pdf
+/tmp/tmp_wlq9ho2/play/NDL-1187053-R0000005-L/OWN-11_v1_free.pdf
+ok
+rc=0

@@ -1,0 +1,8 @@
+# 命令: bash -c '.venv/bin/python tests/test_public_links.py 2>&1 | tail -4 | cut -c1-200; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: c1961d8（回した時の HEAD）
+  File "tests/test_public_links.py", line 90, in <module>
+    assert not dead, (path, dead)
+           ^^^^^^^^
+AssertionError: ('/toy/NDL-1187053-R0000005-L', [('/sheet/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf', 404), ('/sheet/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf', 404), ('/sheet/NDL-1187053-R0000005-L/O
+試験 rc=1
+rc=0

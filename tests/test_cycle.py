@@ -19,7 +19,8 @@ os.environ["OMOCHAE_DATA"] = WATCH
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(WATCH, "api-usage.jsonl")
 os.environ["ANTHROPIC_API_KEY"] = "x"  # 鍵の値は使われないはず。入口の間は環境から外れる
 
-from omochae import cycle, engine_bundle, hypotheses, loop  # noqa: E402
+from omochae import cycle, engine_bundle, hypotheses, loop, records  # noqa: E402
+from omochae.model import Failure  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
@@ -62,16 +63,40 @@ for name in ("最初の紙", "記録", "人の説明", "人の解釈と次の版
     assert res.stage(name).status == cycle.PASSED, res.stages
 engine = res.stage("エンジンの入口と下書き")
 assert engine.status == cycle.SKIPPED and "手元に無い" in engine.detail, engine
+OWN_STAGE = "自分の紙で作って記録"
+assert OWN_STAGE in order, "ループ1 で作った紙で作って記録する段が無い"
+OWN_NEXT = "自分の紙の記録から次の版"
+assert OWN_NEXT in order, "自分の紙の記録から次の版を見る段が無い"
+if cycle.has("think_sheet"):
+    assert res.stage(OWN_STAGE).status == cycle.PASSED, res.stages
+    assert res.stage(OWN_NEXT).status == (cycle.PASSED if cycle.has("own_next") else cycle.NOT_YET), res.stages
 
 # 4. 次の版の紙が刷れて、次の人の型紙になる。前の版と記録は残る（本人の方針 11-05）
 os.environ["OMOCHAE_DATA"] = str(kept / "data")
 hid = hypotheses.load(G).get("sheet") or hypotheses.load(G)["hypotheses"][0]["id"]
-assert loop.latest_version(G, hid) == 2
+# 自分の紙の記録がたたき台の版 2 を作ると、たたき台で進む人の次の版は版 3 になる
+walked = res.stage(OWN_NEXT).status == cycle.PASSED
+assert loop.latest_version(G, hid) == (3 if walked else 2), (walked, loop.latest_version(G, hid))
 assert loop.version_params(G, hid, 1)[0] == next(h for h in hypotheses.load(G)["hypotheses"] if h["id"] == hid)["params"], "前の版が変わった"
-assert (kept / "sheets" / G / f"{hid}_v2.pdf").exists() and (kept / "sheets" / G / f"{hid}_v1.pdf").exists(), "前の版の紙は残る"
+assert (hypotheses.play_dir(G) / f"{hid}_v2.pdf").exists() and (hypotheses.play_dir(G) / f"{hid}_v1.pdf").exists(), "前の版の紙は残る"
+if walked:
+    made = loop.version_params(G, hid, 2)[1]
+    assert made["record_ids"] == [res.context.own_rid], made
+    assert (hypotheses.play_dir(G) / f"{hid}_v3.pdf").exists() and loop.version_params(G, hid, 3)[1]["record_ids"] == [res.context.rid]
+    assert loop.adopted_versions(G, res.context.own_id) == [], "自分の紙に版が足された"
 rid = res.context.rid
 assert loop.confirmed(rid), "人の解釈が確定していない"
 assert loop.explanation(rid)["by"] == cycle.BY
+# ループ1 で作った紙の記録に、その紙で話した工夫と元の考えが結ばれる。たたき台の記録には混ざらない
+if cycle.has("think_sheet"):
+    from omochae import talk_log  # noqa: E402
+
+    mine = [r for r in records.all_records(G) if r["hypothesis_id"].startswith("OWN-")]
+    assert len(mine) == 1 and mine[0]["id"] == res.context.own_rid and mine[0]["sheet_version"] == 1, mine
+    said = {t["when"]: t["text"] for t in talk_log.kufu(G, mine[0]["id"])}
+    assert said.get("making") == cycle.OWN_CRAFT and said.get("idea") == cycle.OWN_THINK, said
+    base_said = [t["text"] for t in talk_log.kufu(G, rid)]
+    assert cycle.CRAFT in base_said and cycle.OWN_CRAFT not in base_said, base_said
 
 # 5. 束に記録が入る。束はエンジンの入口の形（欄の一覧）を外れない
 bundle = json.loads((kept / "bundle.json").read_text(encoding="utf-8"))
@@ -81,6 +106,8 @@ assert len(groups) == 1 and {t["kind"] for t in groups[0]["texts"]} >= {"fix", "
 if cycle.has("bundle_talk") and cycle.has("talk_log"):
     said = {t["text"] for t in groups[0]["texts"]}
     assert {cycle.CRAFT, cycle.KEEP} <= said, said
+    if cycle.has("think_sheet"):
+        assert cycle.OWN_CRAFT in {t["text"] for g in bundle["groups"] for t in g["texts"]}, "自分の紙で話した工夫が束に無い"
 os.environ["OMOCHAE_DATA"] = WATCH
 
 # 6. 話した字は床を通った物だけが輪へ渡る。声そのものは残らない。鍵を使わない（台帳が無い）
@@ -95,6 +122,24 @@ assert not list(kept.rglob("api-usage*")), "鍵なしの入口が API を呼ん�
 other = cycle.run(toy="NDL-1187053-R0000004-L", keep_going=True, engine_repo=NO_ENGINE)
 assert {s.status for s in other.stages} <= {cycle.PASSED, cycle.NOT_YET, cycle.SKIPPED}, other.stages
 assert other.stage("人の解釈と次の版の紙").status == cycle.PASSED, other.stages
+# 節を出さない玩具には受け口も無いので、ループ1 の 2 つの段は飛ばす印を出す（節を出す玩具では通る）
+if cycle.has("think_sheet"):
+    from web import think_sheet  # noqa: E402
+
+    want = cycle.PASSED if think_sheet.ready("NDL-1187053-R0000004-L") else cycle.SKIPPED
+    assert other.stage("ループ1 の紙").status == want and other.stage(OWN_STAGE).status == want and other.stage(OWN_NEXT).status == want, other.stages
+
+# ここから後は、段の式を見る試験を何度も回す。紙を本当に刷ると 1 回ごとに数秒かかり、./run.sh の 1 本の上限（300 秒）に混んだ機械で届く。
+# 紙は 3 と 7 の本物の一周が刷っているので、ここでは刷った形の空のファイルを置くだけにする。
+
+
+def light_print(source_id, hid, out, version=1, pending=None):
+    pathlib.Path(f"{out}.pdf").write_bytes(b"%PDF-1.4")
+    return 0
+
+
+light = mock.patch.multiple(hypotheses, print_sheet=light_print, print_own=light_print)
+light.start()
 
 # 8. 部品が抜けると、その段で止まる（今ある部品を 1 つずつ抜いて見る。入るたびに、ここの数が増える）
 for part in [p for p in cycle.PARTS if cycle.has(p)]:
@@ -107,6 +152,76 @@ with mock.patch.object(cycle, "has", lambda p: False):
     r = cycle.run(engine_repo=NO_ENGINE)
 assert [s.name for s in r.stages] == order[: order.index("話した字") + 1] and r.rc == 4, r.stages
 
+# 頁の道が切れたら、その段で落ちる。関数だけを通すと気づけない所（自分の紙の頁が開かない形が、実際に通ってしまった）
+if cycle.has("think_sheet") and cycle.has("material") and cycle.has("bundle_talk"):
+    from api import words  # noqa: E402
+    from omochae import making_log  # noqa: E402
+    from web import toy  # noqa: E402
+
+    real_talk, real_build = loop.maker_talk, engine_bundle.build
+
+    def no_own_talk(rid):  # 自分の紙の記録だけ、話した字が材料に渡らない形
+        return {**real_talk(rid), "items": []} if records.all_records(G)[0]["id"] == rid else real_talk(rid)
+
+    def no_own_bundle():  # 自分の紙で話した工夫だけ、束に入らない形
+        b = real_build()
+        return {**b, "groups": [{**g, "texts": [t for t in g["texts"] if t["text"] != cycle.OWN_CRAFT]} for g in b["groups"]]}
+
+    MATERIAL, BUNDLE = "ループ2 の材料", "ループ3 の束"
+    cuts = (("自分の紙の頁が開かない", mock.patch.object(think_sheet, "mine", lambda handler, sid: set()), OWN_STAGE, "開かない"),
+            ("ほかの人の画面にも開く", mock.patch.object(think_sheet, "mine", lambda handler, sid: {"OWN-1"}), OWN_STAGE, "ほかの人"),
+            ("記録の後も開く", mock.patch.object(words, "key_open", lambda w: True), OWN_STAGE, "記録の後"),
+            ("工夫を記録に結ばない", mock.patch.object(talk_log, "bind", lambda *a: (0, 0)), OWN_STAGE, "結ばれ"),
+            ("札を受けない", mock.patch.object(making_log, "EVENTS", ()), OWN_STAGE, "札を受けない"),
+            ("工夫を受けない", mock.patch.object(think_sheet, "usable", lambda handler, sid, hid: False), OWN_STAGE, "工夫を受けない"),
+            ("記録の欄に出ない", mock.patch.object(toy, "record_form", lambda *a, **k: ""), OWN_STAGE, "記録の欄"),
+            ("工夫が材料に渡らない", mock.patch.object(loop, "maker_talk", no_own_talk), MATERIAL, "材料に無い"),
+            ("工夫が束に渡らない", mock.patch.object(engine_bundle, "build", no_own_bundle), BUNDLE, "束に無い"))
+    if cycle.has("own_next"):
+        from web import play_server  # noqa: E402
+
+        real_versions, real_params = loop.adopted_versions, loop.version_params
+
+        def versions_on_own(sid, h):  # 自分の紙に版が足された形
+            return [2] if str(h).startswith("OWN-") else real_versions(sid, h)
+
+        def wrong_evidence(sid, h, version):  # 版 2 の根拠が別の記録の形
+            params, made = real_params(sid, h, version)
+            return (params, {**made, "record_ids": ["R-9999"]}) if version == 2 and made else (params, made)
+
+        def extra_param(sid, h, version):  # たたき台の版 2 に、選んだ寸法のほかの違いが入った形
+            params, made = real_params(sid, h, version)
+            return ({**params, "混ざった": 1}, made) if version == 2 and made else (params, made)
+
+        def no_paper(missing):  # その版の紙だけ、刷ったのにファイルが無い形
+            return lambda source_id, hid, out, version=1, pending=None: 0 if version == missing else light_print(source_id, hid, out, version, pending)
+
+        real_next = loop.next_version
+
+        def two_versions(rid, by, content, change, source, sheet_dir):  # 1 回の操作で版が 2 つ足された形
+            out = real_next(rid, by, content, change, source, sheet_dir)
+            sid, base = source["source_id"], loop.next_target(source["source_id"], loop.record(rid)["hypothesis_id"])
+            done = loop.folder() / f"version-{sid}-{base}-2.json"
+            (loop.folder() / f"version-{sid}-{base}-3.json").write_text(done.read_text(encoding="utf-8"), encoding="utf-8")
+            return out
+
+        cuts += (("次の版を自分の紙へ向ける", mock.patch.object(loop, "next_target", lambda sid, h: h), OWN_NEXT, "次の版の欄が出ない"),
+                 ("説明を受けない", mock.patch.object(loop, "save_explanation", lambda *a: [Failure("F9.human", "x", "受けない")]), OWN_NEXT, "説明を受けない"),
+                 ("次の版の欄が出ない", mock.patch.object(toy, "next_form", lambda *a, **k: ""), OWN_NEXT, "欄が出ない"),
+                 ("自分の紙に版が足される", mock.patch.object(loop, "adopted_versions", versions_on_own), OWN_NEXT, "版が足された"),
+                 ("版 2 の根拠が別の記録", mock.patch.object(loop, "version_params", wrong_evidence), OWN_NEXT, "根拠"),
+                 ("版 2 にほかの違いが入る", mock.patch.object(loop, "version_params", extra_param), OWN_NEXT, "ほかの違い"),
+                 ("次の人が刷れない", mock.patch.object(play_server, "print_latest", lambda sid, h: None), OWN_NEXT, "刷れない"),
+                 ("次の版が床に落ちる", mock.patch.object(loop, "next_version", lambda *a: (None, [Failure("F7.revision", "x", "落ちた")])), OWN_NEXT, "次の版を受けない"),
+                 ("次の人が刷っても版を残さない", mock.patch.object(play_server, "print_latest", lambda sid, h: 2), OWN_NEXT, "版 2 でない"),
+                 ("版 2 の紙が無い", mock.patch.object(hypotheses, "print_sheet", no_paper(2)), OWN_NEXT, "版 2 の紙が開かない"),
+                 ("前の版の紙が無い", mock.patch.object(hypotheses, "print_sheet", no_paper(1)), OWN_NEXT, "版 1 の紙が開かない"),
+                 ("版が 2 つ足される", mock.patch.object(loop, "next_version", two_versions), OWN_NEXT, "版 2 にならない"))
+    for why, cut, where, word in cuts:
+        with cut:
+            r = cycle.run(engine_repo=NO_ENGINE)
+        assert r.rc == 3 and r.stages[-1].status == cycle.FAILED and r.stages[-1].name == where and word in r.stages[-1].detail, (why, r.stages)
+
 # 段の間は、鍵が環境に無く、置き場は一時の場所
 inside = {}
 with mock.patch.object(cycle, "STAGES", (("見る", lambda c: inside.update(key=os.environ.get("ANTHROPIC_API_KEY"), data=os.environ["OMOCHAE_DATA"])),)):
@@ -115,9 +230,9 @@ assert inside["key"] is None, "鍵が環境に残っている"
 assert not pathlib.Path(inside["data"]).is_relative_to(WATCH) and not pathlib.Path(inside["data"]).is_relative_to(ROOT), inside
 
 # 部品の形が変わって例外が出ても、段の名前と一緒に知らせて 3 で止まる
-with mock.patch.object(cycle.loop, "next_version", side_effect=TypeError("形が違う")):
+with mock.patch.object(cycle.engine_bundle, "build", side_effect=TypeError("形が違う")):
     r = cycle.run(keep_going=True, engine_repo=NO_ENGINE)
-assert r.rc == 3 and r.stages[-1].status == cycle.FAILED and r.stages[-1].name == "人の解釈と次の版の紙" and "形が違う" in r.stages[-1].detail, r.stages
+assert r.rc == 3 and r.stages[-1].status == cycle.FAILED and r.stages[-1].name == "ループ3 の束" and "形が違う" in r.stages[-1].detail, r.stages
 
 # 落ちた段では、後ろの段を回さない（--keep-going でも。後ろの段が前の結果を使うため）
 ran = []
@@ -184,6 +299,8 @@ if cycle.has("talk_log"):
             assert "床に当たる" in str(e), e
     assert set(tried) & set(cycle.PROBES), tried
     assert all(any(mark in probe for probe in cycle.PROBES) for mark in cycle.PROBE_MARKS), "探す字と試す字が合っていない"
+
+light.stop()
 
 # 9. エンジンの入口の呼び方。偽の repo で、置き場の向け先と鍵を見る。本物の repo の置き場と台帳に書かない
 fake = pathlib.Path(tempfile.mkdtemp()) / "engine"

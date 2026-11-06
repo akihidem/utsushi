@@ -38,6 +38,7 @@ PARAM_NAMES = {"fig_h": "絵の高さ", "base_w": "台の幅", "base_d": "台の
 TITLES = {"base": "台に立てて飾る", "easel": "支えで立てかける", "float": "器に立てて水に浮かべる", "box": "器の前に立てて物を入れる"}
 
 MARGIN = 1.5  # 絵の外の白い縁。絵の際で切らずに済むようにし、少しずれて切っても絵が欠けない
+OUTLINE_SW = 0.2  # 絵の面の輪郭線の太さ（mm）。縮尺で細らない
 STRUT_W = 14
 STRUT_ANGLE = 30  # 支えを開く角度（度）の見込み。手順に刷る高さと倒れの式が同じ角度を使う
 FLAP_TAPER = 1.5
@@ -529,7 +530,7 @@ def figure(p):
     for it in art:
         if it["kind"] == "poly":
             it.setdefault("stroke", SUMI)
-            it.setdefault("sw", 0.2)
+            it.setdefault("sw", OUTLINE_SW)
     polys = [Polygon(it["pts"]).buffer(0) for it in art if it["kind"] == "poly"]
     body = unary_union(polys)
     margin = MARGIN
@@ -539,7 +540,8 @@ def figure(p):
         margin += 0.5
         shape = body.buffer(margin)
     x0, x1 = f0 * s - margin, f1 * s + margin
-    fold_y = 99.7 * s
+    # 帯の下の端（99.4）と折り線の隙間は縮尺で狭まるが、輪郭線の太さは狭まらない。小さい絵でも線が折り線に届かない所まで下げる。
+    fold_y = max(99.7 * s, 99.4 * s + OUTLINE_SW / 2 + 0.001)
     shape = shape.intersection(box(-1e3, -1e3, 1e3, fold_y))
     tab = Polygon([(x0, fold_y), (x1, fold_y), (x1 - 1.5, fold_y + g), (x0 + 1.5, fold_y + g)])
     shape = unary_union([shape, tab])
