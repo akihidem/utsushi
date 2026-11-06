@@ -404,7 +404,7 @@ class Handler(BaseHTTPRequestHandler):
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -483,17 +483,18 @@ class Handler(BaseHTTPRequestHandler):
                 n = 1
             # 版は開いた時に決めて URL で持つ（作りながら見る頁と同じ）。
             v = int(qs["v"][0]) if qs.get("v", [""])[0].isdigit() else None
-            return self._send(200, techo_step.page(sid, printed, look, step=n, version=v, uploads=not getattr(self.server, "public_open", False), own=own))
+            return self._send(200, techo_step.page(sid, printed, look, step=n, version=v, own=own, public=getattr(self.server, "public_open", False)))
         m = re.fullmatch(rf"/toy/({SID})/techo/kiroku", path)
         if m and m.group(1) in sources():
             # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], uploads=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key()), look, "", path, techo_site.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
-        if m and not getattr(self.server, "public_open", False):  # 開いたデモでは、置き場に写真が在っても出さない
+        if m:
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
             # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。確認の前の物は、上げた本人の画面にだけ返す。
+            # 合言葉なしで開いたデモも同じ線（本人の決定 11-06「公開の場で上げた写真は、公開の場のギャラリーにも出します」）。
             if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
                 data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
@@ -626,10 +627,6 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             if not self._origin_ok():
                 return self._send(403, "受け付けられない送り方です")
-            # 合言葉なしで開いたデモでは、写真と動画を受けない: 誰でも上げられると、確かめていない写真（顔・他人の物）がそのまま
-            # 皆に見える。持ち寄りは同意と権利を確かめてから載せる線（J-021）と、子どもの写真を扱わない線を、開いた場でも守るため。
-            if getattr(self.server, "public_open", False):
-                return self._send(403, "公開のデモでは、写真と動画は上げられません", "text/plain; charset=utf-8")
             # 記録を残した画面からだけ受ける（記録の鍵）。番号は札に出る連番なので、番号だけで受けると、別の人の記録に写真を足せる。
             if not records.mine(m.group(1), self._rec_key()):
                 return self._send(403, "受け付けられない送り方です")
@@ -639,6 +636,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(411, "大きさが分かりません")
             if not 0 < length <= techo_site.MAX_MEDIA:
                 return self._send(413, "1 つ 20MB まで")
+            # 合言葉なしで開いたデモでも受ける（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。前は 403 で断っていた。
+            # 誰でも上げられる場なので、置き場の合計に上限を置く。断る時は本文を空にし、手帖は今ある字（写真か動画を上げられませんでした）を出す。
+            # 確かめていない写真が皆に見える形にはしない線（J-021）は、出す側で守る（確かめる前は上げた本人の画面だけ。合言葉付きの場と同じ shown_to）。
+            # 同時に送られた分は数え合わないので、合計は送られた数 × 20MB まで上限を越えうる（止めるより、機械を埋めない事が目的）。
+            if getattr(self.server, "public_open", False) and techo_site.media_bytes() + length > techo_site.PUBLIC_MEDIA_TOTAL:
+                return self._send(507, b"", "text/plain; charset=utf-8")
             name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length))
             if not name:
                 return self._send(422, why, "text/plain; charset=utf-8")
@@ -1080,7 +1083,7 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
-    # 開いた場では写真と動画を受けず、出しもしない（上の受け口と、下の /record/…/media の道）。
+    # 開いた場でも写真と動画は受ける（本人の決定 11-06）。確かめる前は上げた本人の画面にだけ、物だけと確かめた後はギャラリーにも出す（合言葉付きの場と同じ線）。
     if public_open and public_key:
         raise ValueError("合言葉付きと合言葉なしは同時に使えない")
     if public_open:
