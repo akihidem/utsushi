@@ -361,7 +361,7 @@ const keepPress = async () => {
       let done = '';
       try { done = await sendFiles(target, files); } catch (err) { done = '記録は残しました。写真か動画を送れませんでした'; }
       go.disabled = false;
-      location.assign(`/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine`);
+      location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
       return;
     }
     go.disabled = false;
@@ -396,7 +396,8 @@ const save = async (result) => {
     if (!saved) { st.textContent = '送れませんでした。つながりを見て、もう一度押してください'; return; }
     done = '記録は残しました。写真か動画を送れませんでした';
   } finally { go.disabled = false; }
-  location.assign(`/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine`);
+  // のこした後は持ち寄る駅（ギャラリー）に着き、今残した 1 つが頭に出る（窓口の決定 11-06 夜・案 A。地図の 5）。記録の頁へは、その札の記録の番号から行く
+  location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
 };
 mark(); paint(); to('start');
 })();

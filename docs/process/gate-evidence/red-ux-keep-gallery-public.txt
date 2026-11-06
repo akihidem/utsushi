@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_ux_keep_gallery.py
+# commit: 3e153848（回した時の HEAD）
+/tmp/tmphcp7mc2i/play/NDL-1187053-R0000005-L/.tmp-pyumbrza/H-A_v1.pdf
+/tmp/tmphcp7mc2i/play/NDL-1187053-R0000005-L/.tmp-pyumbrza/H-A_v1_tejun.pdf
+/tmp/tmphcp7mc2i/play/NDL-1187053-R0000005-L/.tmp-pyumbrza/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_ux_keep_gallery.py", line 90, in <module>
+    assert 'id="ageta"' in seen and 'id="own"' not in seen, "合言葉なしの場では、記録を残した画面にも今残した 1 つを出さない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 合言葉なしの場では、記録を残した画面にも今残した 1 つを出さない
+rc=1
