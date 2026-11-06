@@ -35,7 +35,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-opener = urllib.request.build_opener(NoRedirect)
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。写真の受け口は、その画面からだけ受ける）
+opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor())
 
 
 def get(path):

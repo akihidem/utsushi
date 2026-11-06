@@ -30,7 +30,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-opener = urllib.request.build_opener(NoRedirect)
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+opener = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor())
 
 
 def get(path):
@@ -124,7 +125,7 @@ assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "sheet_version": "9", "res
 assert json.loads((pathlib.Path(DATA) / "records/R-0004.json").read_text(encoding="utf-8"))["sheet_version"] == 2, "刷っていない版を言われたら一番新しい版"
 # 一番新しい版が検査に落ちる時は、1 つ前の版を刷る（その仮説の紙が誰にも刷れなくならない）
 real = hypotheses.print_sheet
-hypotheses.print_sheet = lambda s, h, o, v=1: 3 if v == 2 else real(s, h, o, v)
+hypotheses.print_sheet = lambda s, h, o, v=1, pending=None: 3 if v == 2 else real(s, h, o, v)
 (out / "H-A_v1.pdf").unlink()
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303 and (out / "H-A_v1.pdf").exists()
 hypotheses.print_sheet = real

@@ -1,0 +1,24 @@
+# 命令: .venv/bin/python tests/test_print_together.py
+# commit: f1537f5（回した時の HEAD）
+F9.own: 自分の仮説「ためしの案」 は今の雛形に乗らないので型紙にはせず、型紙なしの紙を刷った
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-izcwmlsr/H-A_v1.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-izcwmlsr/H-A_v1_tejun.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-izcwmlsr/H-A_v1_after.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-9hlxaa5i/H-A_v1.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-9hlxaa5i/H-A_v1_tejun.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-9hlxaa5i/H-A_v1_after.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-nykcy7ex/H-A_v1.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-nykcy7ex/H-A_v1_tejun.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-nykcy7ex/H-A_v1_after.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-pcbq9gfx/OWN-1_v1_free.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-jgr4njmy/H-A_v1.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-jgr4njmy/H-A_v1_tejun.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-jgr4njmy/H-A_v1_after.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-8h8tvo8p/H-A_v1.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-8h8tvo8p/H-A_v1_tejun.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-8h8tvo8p/H-A_v1_after.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-5fq8xu1j/H-A_v1.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-5fq8xu1j/H-A_v1_tejun.pdf
+/tmp/tmpsj6qh16e/play/NDL-1187053-R0000005-L/.tmp-5fq8xu1j/H-A_v1_after.pdf
+ok
+rc=0

@@ -1,0 +1,11 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_voice_pause.py
+# commit: 3d4ed80（回した時の HEAD）
+/tmp/tmpasxco4u4/play/NDL-1187053-R0000005-L/H-A_v1.pdf
+/tmp/tmpasxco4u4/play/NDL-1187053-R0000005-L/H-A_v1_tejun.pdf
+/tmp/tmpasxco4u4/play/NDL-1187053-R0000005-L/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_voice_pause.py", line 93, in <module>
+    assert R["hidden"] == [["stop"], "false", False], (page, R["hidden"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('techo', [[], 'true', True])
+rc=1

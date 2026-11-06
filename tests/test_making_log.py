@@ -88,7 +88,8 @@ for r in recs:
     raw = json.dumps(r, ensure_ascii=False)
     for leak in ("TestBrowser", "someone", "127.0.0.1", "手前にへこむ", "090"):
         assert leak not in raw, (leak, r)
-assert sorted(r["answered_from"] for r in recs) == ["glossary", "glossary", "refuse", "refuse"], [r["answered_from"] for r in recs]
+# 連絡先の形の問いは床で止まる（Claude へ送らない。#87）ので、答えの出所は floor
+assert sorted(r["answered_from"] for r in recs) == ["floor", "glossary", "glossary", "refuse"], [r["answered_from"] for r in recs]
 dropped = [r for r in recs if r.get("dropped")]
 assert len(dropped) == 1 and dropped[0]["question"] == "" and dropped[0]["dropped"] == "pii"
 assert all(len(r["question"]) <= making_log.MAX_QUESTION for r in recs)
@@ -202,7 +203,7 @@ assert f"{r3}（仮説 A の紙・版 1）: 扇 / 折りを減らした / 前よ
 assert "分からなかった・むずかしかった（2 件）" in page and "面白かった・楽しかった（2 件）" in page and "折るのは楽しかった" in page
 assert "<h3>仮説 A の紙・手順 3</h3>" in page and "<h3>仮説 A の紙・段なし</h3>" in page and page.index("<h3>仮説 A の紙・手順 3</h3>") < page.index("<h3>仮説 A の紙・段なし</h3>")
 assert f"<td>{sm['asks'][0][0]}</td><td>2 回</td>" in page
-assert "連絡先の形があったので文を残さなかった質問: 1 件" in page and "090" not in page
+assert "連絡先や名乗りの形があったので文を残さなかった質問: 1 件" in page and "090" not in page
 assert "最初に動くまでの分: 20〜40 分（2 件）" in page and "「動いた」の記録: 4 件のうち 3 件" in page and "できたの札: 1 回" in page
 assert "<td>仮説 A の紙</td><td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
 assert "<td>作りながら見る頁を開いた</td><td>2 回</td><td>2 人</td>" in page

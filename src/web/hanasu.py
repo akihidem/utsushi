@@ -32,14 +32,14 @@
   記録に入る前の字は、学ぶ人の頁に出さない（作る側の頁だけ）。作る側が読んで名前などに気づいた時は、その記録の字を隠せる（talk_log.set_share。画面からは呼ばない）。
   仮説を見て話した考えも記録に結ぶが、記録の札にはまだ出さない（札で工夫と見分ける見出しの文が要り、文面は本人の確認が要るため）。作る側の頁には出す。
 - 利用者向けの文は、本人が採ったやさしい言葉の文を、一字も変えずに置く（本人の方針と決定 11-05、Issue #318）。新しい文は、ここで足さない
-  （文面は本人の確認が要る。足したい文は、統合の担当へ知らせる）。採られた文で言えない場合は、一番近い採られた文で答える（仕組みと文を分けるため）。
+  （文面は本人の確認が要る。足したい文は、統括の担当へ知らせる）。採られた文で言えない場合は、一番近い採られた文で答える（仕組みと文を分けるため）。
   節の名「工夫した所（直した所）」だけは、本人の言葉のまま置く。
 """
 import json
 import os
 import urllib.parse
 
-from omochae import hypotheses, making_log, talk_log
+from omochae import hypotheses, making_log, records, talk_log
 from omochae.model import Failure
 
 from . import skin
@@ -52,10 +52,11 @@ DEFAULT_MODE = "browser"  # 本人の決定 11-05: iPhone・iPad でも話す釦
 # 断りの文。どの場面でも同じ物を出す。名前は床で落とせない（落とせるのは形だけ）ので、入れないお願いを添える。
 # 頭の 3 つの文は、本人が決め直した文（11-05）: 前の「声は録音しないし、どこにも送りません」は、ブラウザの音声認識で聞く画面では本当でなかった
 # （声がブラウザの会社に送られる事がある）。どの画面でも本当の文にした。
-NOTICE = "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。"
+# 最後の文も本人が採った字（話した字を輪の Claude へ渡す事を、残す前に知らせる）。一字も変えない。
+NOTICE = "残るのは字だけです。声は録音しません。このサイトは声を受け取りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
 HOW_LOCAL = "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。"
 # ブラウザの既定の音声認識で聞く時の断り（本人の決定 11-05: iPhone・iPad でも話す釦を出し、頁に断りを出す。文は、採られたやさしい言葉の文）。
-HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。このサイトは声を受け取りません。"
+HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
 # 釦を出さない時（切り替えが local か off の時と、音声認識の口が無い画面）。
 HOW_NONE = "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。"
 # ③ で上げる時の説明文（本人の決定 11-05、Issue #275 の決める点 3。採られたやさしい言葉の文）。文を変える時は、ここだけを変える。
@@ -70,10 +71,11 @@ SCENES = {
 KUFU_HEAD = "工夫した所（直した所）"
 KEPT = "残しました。型紙や説明をよくするのに使います。"
 FAILED = "残せませんでした。インターネットにつながっているか見て、もう一度押してください。"
+REFUSED = "受け付けられません"  # 記録を残した画面の外から足す字を断る時。つながりの案内は誤りになる（開いたままのタブ、15 分の後）。説明の受け口と同じ字
 NOHEARD = "聞き取れませんでした。もう一度押すか、字で書いてください。"
 # 入口の床に当たって残せなかった時の文。talk_log の理由（「名乗りの形がある」など）は作る人向けの言葉なので、そのまま出さない。
 # 連絡先の形の時も、この文を出す（採られた文は 1 つ。連絡先の時の言い分けは、文面の確認が要るので足していない）。
-BLOCKED = "名前や学校の名前のような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
+BLOCKED = "名前・学校の名前・住所・電話番号・メールのような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
 
 STYLE = """
 .hanasu{border:1px solid var(--frame);background:var(--paper);padding:14px 16px;margin:14px 0;display:grid;gap:8px}
@@ -216,13 +218,17 @@ def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
     # 玩具の頁の口は、JS が無い時に同じ節へ着く（返事の文もそこに出る。#121 と同じ形）。ほかの 2 つは、戻る道の付いた頁で答える。
     land = "#hanasu" if scene == "think" else ""
     hint = f' placeholder="{esc(s["hint"])}"' if s.get("hint") else ""
-    return (f'<div class="hanasu" data-hanasu data-voice="{mode()}"><p class="hanasu-head">{esc(s["head"])}</p>'
+    # 取り下げの説明文（本人の決定）。記録ごとの口は手帖の上げる節の中に並ぶので、そこでは節の 1 回に任せて、同じ文を重ねない。
+    withdraw = "" if scene == "keep" else f'<p class="meta">{esc(records.WITHDRAW_NOTICE)}</p>'
+    # 玩具の頁の考えの箱は、節の見出し「考えを話す」と同じ字が並ぶので、箱の見出しを出さない（本人の決定 11-06。読み上げの名前の label は残す）。
+    shown = "" if scene == "think" else f'<p class="hanasu-head">{esc(s["head"])}</p>'
+    return (f'<div class="hanasu" data-hanasu data-voice="{mode()}">{shown}'
             f'<form method="post" action="/toy/{esc(sid)}/talk{land}">{hidden}'
             f'<label class="sr" for="{key}">{esc(s["head"])}</label><textarea id="{key}" name="text" maxlength="{talk_log.MAX_TEXT}" {hint} required></textarea>'
             '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'
             '<button class="hanasu-go">残す</button></div></form>'
             '<p class="hanasu-note" aria-live="polite"></p><ul class="hanasu-said"></ul>'
-            f'<p class="meta">{esc(NOTICE)}{how}</p></div>' + (assets() if with_assets else ""))
+            f'<p class="meta">{esc(NOTICE)}{how}</p>{withdraw}</div>' + (assets() if with_assets else ""))
 
 
 def think_section(sid, data, note=""):
@@ -254,10 +260,11 @@ def kufu_block(sid, r, show_shared=True):
     return f'<div class="hanasu-kufu" data-kufu="{esc(r["id"])}"><p class="hanasu-kufu-head">{esc(KUFU_HEAD)}</p><ul>{lines}</ul></div>'
 
 
-def keep_box(sid, r, show_shared=True):
+def keep_box(sid, r, show_shared=True, can_add=False):
     """手帖の記録の札に置く物（3 できた物を上げた後に、工夫した所と考えを残す）。上に、その記録の「工夫した所（直した所）」
-    （作りながら話した工夫が、記録を残した時にここへ入る）。下に、足す口。show_shared=False は合言葉なしで開いた場。"""
-    return kufu_block(sid, r, show_shared) + box(sid, "keep", rid=r["id"], with_assets=False)
+    （作りながら話した工夫が、記録を残した時にここへ入る）。下に、足す口。show_shared=False は合言葉なしで開いた場。
+    can_add は、この画面がこの記録を残した時に真。足す口はその画面にだけ出す（受け口の post も断る）。"""
+    return kufu_block(sid, r, show_shared) + (box(sid, "keep", rid=r["id"], with_assets=False) if can_add else "")
 
 
 def reason(failures):
@@ -290,6 +297,10 @@ def post(handler, sid, form):
     elif scene == "think" and hid:
         vs = printed_versions(sid, hid)
         version = vs[-1] if vs else None
+    # 上げた後に足す字は、記録を残した画面からだけ受ける。別の人の字が前の人の記録に結ばれないように（字は残さない）。
+    refused = scene == "keep" and not records.mine(form.get("record"), handler._rec_key())
+    if refused:
+        failures = [Failure("F8.references", "record_id", "記録を残した画面でない")]
     who = form.get("who", "")
     path = None
     if not failures:
@@ -297,8 +308,8 @@ def post(handler, sid, form):
                                       record_id=form.get("record") or None, via=form.get("via", "text"), who=who)
     kept = path is not None
     if form.get("json") == "1":
-        body = {"kept": True, "note": KEPT} if kept else {"kept": False, "why": reason(failures)}
-        return handler._send(200 if kept else 422, json.dumps(body, ensure_ascii=False), "application/json; charset=utf-8")
+        body = {"kept": True, "note": KEPT} if kept else {"kept": False, "why": REFUSED if refused else reason(failures)}
+        return handler._send(200 if kept else 403 if refused else 422, json.dumps(body, ensure_ascii=False), "application/json; charset=utf-8")
     if scene == "think":
         if kept:
             return handler._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(KEPT)}&at=hanasu#hanasu")])
@@ -307,8 +318,8 @@ def post(handler, sid, form):
     if scene == "craft" and version:
         back = (f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={version}&n={step or 1}", "作りながら見る（机の端に置く・試作）")
     else:
-        back = (f"/toy/{sid}/techo#mine", "手帖をひらく（作りながら聞く・上げる）")
-    return handler._send(200 if kept else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else reason(failures), handler._look, links=(back,)))
+        back = (f"/toy/{sid}/techo/kiroku#mine", "手帖をひらく（作りながら聞く・上げる）")
+    return handler._send(200 if kept else 403 if refused else 422, skin.notice("残しました" if kept else "残せませんでした", KEPT if kept else REFUSED if refused else reason(failures), handler._look, links=(back,)))
 
 
 def maker_section(sid, data):

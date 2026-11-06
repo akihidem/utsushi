@@ -21,7 +21,7 @@ OWN_HYPOTHESIS = "仮説（ためしの案）: 自分で考えた、ためしに
 PREMISE_PAGE = "この型紙は、正しい答えではありません。AI が「こうかな？」と考えた、ためしの案（仮説）です。うまく動かない所も出てきます。どう工夫したかを記録に書いてください。次の型紙をよくするヒントになります。"
 # 輪を回す Claude に渡す前提（本人の言葉 11-05「システム側もそれを認識した上でループを回す」）。同じ文を全部の担当に渡す事を tests/test_loop_premise.py が見る。
 LOOP_PREMISE = ("前提: 型紙は正解ではなく、とりあえず AI が考えた仮説です。不完全で、うまく動かない所が出ます。"
-                "動かない事は作った人の出来ではなく、仮説への返事です。人が工夫で乗り切った所（記録の fixes・止まった所）を、次の版の一番の材料にします。")
+                "動かない事は作った人の出来ではなく、仮説への返事です。人が工夫で乗り切った所（記録に書いた工夫と、止まった所）を、次の版の一番の材料にします。")
 
 
 def without_premise(text):
@@ -31,10 +31,15 @@ def without_premise(text):
     return re.sub(r"(?<!不)正解では(?:なく|ありません)", "", text)
 
 
+def hypothesis_line(source):
+    """紙に刷る仮説の文。刷る所（mark_lines）と刷った後の検査（check_pdf）が別の文を見ると、正しい紙を断るので 1 か所にする。"""
+    return source.get("hypothesis_mark", HYPOTHESIS_FROZEN if source.get("source_id") in FROZEN_SETS else HYPOTHESIS)
+
+
 def mark_lines(source, omit=None):
     if omit == "all":
         return []
-    lines = [f"所蔵: {source['holding']}", source["modification_note"], source.get("hypothesis_mark", HYPOTHESIS_FROZEN if source.get("source_id") in FROZEN_SETS else HYPOTHESIS)]
+    lines = [f"所蔵: {source['holding']}", source["modification_note"], hypothesis_line(source)]
     if omit != "source_id":
         lines.insert(2, f"出典ID: {source['source_id']}")
     return lines
@@ -58,11 +63,13 @@ def check_pdf(pdf_path, source):
         raise ToolMissing(f"pdftotext で読めない: {e}")
     # 印が折り返されても読めるよう、空白と改行を全部取ってから探す。
     flat = "".join(out.split())
+    # 短い語だけを探すと、本文が欠けても化けても別の所に同じ語が残れば通ってしまう。刷った文をそのまま探す。
     need = {
         "所蔵": HOLDER,
+        "所蔵の文": source["holding"],
         "永続ID": source["persistent_id"],
-        "改変": "改変",
+        "改変": source["modification_note"],
         "出典ID": source["source_id"],
-        "仮説": "仮説",
+        "仮説": hypothesis_line(source),
     }
-    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if text not in flat]
+    return [Failure("F1.marks", name, f"PDF から「{text}」を取り出せない") for name, text in need.items() if "".join(text.split()) not in flat]

@@ -25,9 +25,11 @@ JSON 1 つに束ねる。本人の言葉（2026-11-05）: 作る過程の記録�
 - 束の上の段に、群に出てくる雛形の「今の刷った組」を書く（current_sets。Issue #309）。エンジンの repo の雛形は組の名を持たないので、
   前の組の紙の記録から起きた案（もう直っている事がある）を、読む人が見分けられない。ここは今の組を並べるだけで、前の組の記録を
   束から外しはしない（直っていない困り事まで消え、直す前と後を並べて読めなくなる）。
-- 動画の札（試行の動画の入口 trial_video。Issue #335）も束に入れる。読むのは人が確かめた札だけで、案のまま・外した札は入れない。自分のやり方の動画や、
+- 動画の札（試行の動画の入口 trial_video。Issue #335）も束に入れる。札は事前の人の確かめなしで渡す（本人の方針 11-06「こういう確認は不用です。
+  版管理してるから。できた型紙をみて、どうするか後で指示出せると思います」）。人が外した札と、意味を付けていない機械の候補（MACHINE）は入れない。
+  サイトに人の言葉や写真を載せる時の人の確かめは、外に出る所なので、今までどおり残る（ここは束の門だけ）。自分のやり方の動画や、
   手順の困り事に当たらない物は、人が確かめる段で外れる。止まった段の数と文にし、人の工夫の札は作りながらの工夫に写す。案内・聞く口・サイトの札は
-  エンジンの案にしない。受け口の記録（all_records の既定で外れる記録）も、確かめた札があれば群に数える。動きの札は、上げた人が結果を選んだ記録だけ数える。
+  エンジンの案にしない。受け口の記録（all_records の既定で外れる記録）も、札があれば群に数える。動きの札は、上げた人が結果を選んだ記録だけ数える。
   なぜエンジンの報告の形で渡さないか: 報告は「動いたか」と「仕上がりの点」が要り、聞いていない値を作る事になるため。
   人の数は数えない: 1 人が何本上げるか分からず、札の読み手は作った本人でないため（エンジンの側は、印の無い札は 3 回からの線で見る）。
   作る前の型紙のレビューの動画（video_kind が review）は作っていないので、札を種類 review の文にして、止まった段・工夫・報告の数に入れない。
@@ -62,7 +64,7 @@ GROUP_KEYS = ("template", "sheet_set", "paper", "reports", "results", "moved_wor
 TEXT_KEYS = ("kind", "step", "text", "count")
 # 文の種類: 止まった所・直した点（工夫）・思いつき（工夫）・感想・聞く口の質問・試した記録への人の説明。
 # 話した事の 3 つは、話す口の場面の名のまま: think 作る前の考え・craft 作りながらの工夫・keep できた後の話。
-# review は作る前の型紙のレビューの指摘（人が確かめた札から）。作っていないので、止まった段・工夫・報告の数と混ぜない。
+# review は作る前の型紙のレビューの指摘（動画の札から）。作っていないので、止まった段・工夫・報告の数と混ぜない。
 TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep", "review")
 REVIEW = "review"  # 受け口の記録の video_kind の値（作る前の型紙のレビューの動画。作った時の動画には、この欄が無い）
 REVIEW_OUTSIDE = ("answer", "site")
@@ -73,6 +75,8 @@ MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
 MEASURE = re.compile(r"[a-z_]{1,30}")
 RECORD_ID = re.compile(r"R-[0-9]{4,8}")  # 記録の番号の形（エンジンの入口と同じ）。形の外の番号は束に入れない（自由な文をこの欄で運ばせない）
+# 機械が拾った札の案（動きの少ない区間など）の読み手の印。意味を付けていない候補なので、確かめなしでは束に入れない。
+MACHINE = "機械"
 JST = timezone(timedelta(hours=9))
 UNSURE = "わからない"  # 動いた側にも動かない側にも数えない札（records の頭の決まり）
 
@@ -278,14 +282,14 @@ def build(origin=FROM):
             if who:
                 slot["who"].add(who)
 
-    # 動画の札。人が確かめた札だけ。札の文は作る側の読みなので、話した事と同じ入口の床を当てる。
+    # 動画の札。事前の確かめなしで渡す（本人の方針 11-06）。人が外した札と、機械の候補は入れない。札の文は作る側の読みなので、話した事と同じ入口の床を当てる。
     uploads = {r["id"]: r for r in records.all_records(uploads=True) if r.get("via") == records.UPLOADED}
     for d in trial_video.all_for():
         rid = d.get("record_id")
         if not isinstance(rid, str):  # 札の置き場は人が手で触るファイル。形の外でも束ごと止めない
             continue
         marks = d.get("marks") if isinstance(d.get("marks"), list) else []
-        marks = [m for m in marks if isinstance(m, dict) and m.get("confirmed_by") and not m.get("rejected_by")]
+        marks = [m for m in marks if isinstance(m, dict) and not m.get("rejected_by") and not str(m.get("read_by") or "").startswith(MACHINE)]
         if not marks:
             continue
         if rid in group_of:  # 手で結んだ記録は、上の試した記録で数えてある。2 重に数えない

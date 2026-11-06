@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/compare_engine.py out/p2t
+# commit: 1ee870c（回した時の HEAD）
+共通の場面 34 本、違う所 0 件。
+rc=0

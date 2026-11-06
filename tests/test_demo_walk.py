@@ -29,6 +29,10 @@ host = f"{(server.lan_hosts or ('127.0.0.1',))[0]}:{port}"
 SID = "NDL-1187053-R0000005-L"
 
 
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+
+
 def call(path, form=None, body=None, ctype=None):
     data = urllib.parse.urlencode(form).encode() if form is not None else body
     headers = {"Host": host}
@@ -70,7 +74,7 @@ code, name = call(f"/record/{rid}/media", body=buf.getvalue(), ctype="image/jpeg
 assert code == 201, name
 # フィードバック（人の説明が先）
 assert call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えになった", "next_idea": "折りを増やす", "back": "techo"})[0] in (200, 303)
-code, techo = call(f"/toy/{SID}/techo")
+code, techo = call(f"/toy/{SID}/techo/kiroku")
 assert "次の版".encode() in techo, "説明の後に次の版の口が出る"
 # 次の版
 form = {"interpretation": "折りが多く、筒の口に当たって開き切らない", "param": "fold_count", "why": "口に当たらないように", "by": "本人", "back": "techo"}

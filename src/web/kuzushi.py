@@ -153,7 +153,13 @@ def page(sid, mine=None, msg="", look=None):
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
     toy = data["toy"]
     has_pic = sid in SONG_BOX and (ROOT / "out/sources" / f"{sid}.jpg").exists()
-    pic = crop_html(sid, toy) if has_pic else '<p class="meta">手元に絵がありません</p>'
+    if has_pic:
+        pic = crop_html(sid, toy)
+    else:
+        # 歌の所の箱が無い玩具は、頁の全体を箱なしで出す（統括の決め 11-06。箱を人が足すのは別の仕事）
+        from . import genga
+
+        pic = genga.plain(sid, genga.alt(src)) or '<p class="meta">手元に絵がありません</p>'
     z = zoom_link(src, sid) if sid in SONG_BOX else ""
     pic += f'<p class="meta">{esc(src.get("holding", ""))}' + (f'　<a href="{esc(z)}">同じ所を大きく（国立国会図書館）</a>' if z else "") + "</p>"
     head = f'<h1>くずし字を読む</h1>{NAV}<p class="meta"><a href="/zukan/{esc(sid)}">{esc(toy)}</a>の絵の、歌の所です。</p>'

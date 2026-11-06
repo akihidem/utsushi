@@ -58,17 +58,18 @@ def pending(sid, recs):
     return ready, waiting
 
 
-def section(sid, data, recs):
-    """玩具の頁の節「型紙の改善の輪」。記録の後に置く。"""
+def section(sid, data, recs, photos=True):
+    """玩具の頁の節「型紙の改善の輪」。記録の後に置く。
+    photos=False は合言葉なしで開いた場。次の版の口が閉じているので案内せず、人の書いた理由と記録の番号も出さない（J-028）。"""
     rows = ""
     for h in data["hypotheses"]:
         for v in versions(sid, h["id"]):
             ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
             rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
-                     + (f'（{why}）' if why else "") + f'。{wording.BASED_ON.format("・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}'
+                     + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
-    ready, waiting = pending(sid, recs)
+    ready, waiting = pending(sid, recs) if photos else ([], [])
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
     todo = ""
     if ready:
@@ -180,7 +181,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             s4 += f"<h3>{name}</h3>" + table(("聞かれた事", "回数"), "".join(f"<tr><td>{esc(q)}</td><td>{n} 回</td></tr>" for q, n in qs))
     s4 = s4 or none("聞かれた事はまだありません。")
     if sm["asks_dropped"]:
-        s4 += f'<p class="meta">連絡先の形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
+        s4 += f'<p class="meta">連絡先や名乗りの形があったので文を残さなかった質問: {sm["asks_dropped"]} 件</p>'
 
     # 5 完成の様子: 時間は幅、動いた記録は「何件のうち何件」。割合の％にしない。途中でやめた段は、印のある人の分だけ。
     c = sm["completion"]

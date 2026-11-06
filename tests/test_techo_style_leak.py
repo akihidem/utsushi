@@ -40,7 +40,7 @@ assert all(v.strip() == "0" for v in radius), radius
 assert '<div class="gallery">' in gallery and 'class="panel" id="ageta"' in gallery
 
 # 手帖の本文のゴシックは本人の指定（11-04）なので残す
-techo = get(f"/toy/{G}/techo")
+techo = get(f"/toy/{G}/techo/kiroku")  # 頭の帯を持つのは手帖の記録の頁（作る頁は帯なしの 1 手 1 画面、#87）
 assert re.search(r'<body class="[^"]*\btecho\b', techo) and 'body.techo{font-family:"Noto Sans JP"' in techo
 server.shutdown()
 print("ok")
