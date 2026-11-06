@@ -430,7 +430,9 @@ class LoopCard:
         if v > 0:
             near = ease((t - self.cues[f"c{n - 1}"][0]) / 0.5)
             _rings(d, LOOP_Y, [v] * len(LOOPS), dash=0.5 + 0.5 * near)
-        return img
+        from demo.words import draw_stat  # 公的調査の数の 1 行（本人の決定 11-06・置き場 A）。字の札と同じ下の帯に置く
+
+        return draw_stat(img, "core_loop", t)
 
 
 def build_scene(name, cues, cache=None, shots=None):

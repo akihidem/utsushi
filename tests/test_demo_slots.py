@@ -54,14 +54,15 @@ with tempfile.TemporaryDirectory() as tmp:
         frames.append(p)
     card = words.ChunkCard("talk_physics", words.cues_of("talk_physics"), hands=[(frames, 0.0, 5.0), (frames, 5.0, 8.0)])
     assert card.cx == words.HANDS_STYLE["cx"] and card.size == words.HANDS_STYLE["size"], "手を敷く札は字を左に寄せる"
+    # 見る点は高さ 300。上の帯（0〜112）は公的調査の数の行の所で、手の映像の時は紙の色を掛けるため（本人の決定 11-06・置き場 A）
     on = card.frame(2.0)
     assert on.tobytes() == card.frame(2.0).tobytes(), "1 コマは時刻だけで決まる"
-    right, left = on.getpixel((1800, 100)), on.getpixel((20, 100))
+    right, left = on.getpixel((1800, 300)), on.getpixel((20, 300))
     assert abs(right[0] - flip.PAPER[0]) > 60, ("右に手の映像が出る", right)
     assert all(abs(left[k] - flip.PAPER[k]) < 30 for k in range(3)), ("左は紙の色が掛かる", left)
-    assert card.frame(0.0).getpixel((1800, 100)) == flip.PAPER, "紙の地から溶けて現れる"
+    assert card.frame(0.0).getpixel((1800, 300)) == flip.PAPER, "紙の地から溶けて現れる"
     late = card.frame(card.duration - 0.1)
-    assert late.getpixel((1800, 100)) == flip.PAPER and late.getpixel((20, 100)) == flip.PAPER, "使い切った後は今の地"
+    assert late.getpixel((1800, 300)) == flip.PAPER and late.getpixel((20, 300)) == flip.PAPER, "使い切った後は今の地"
     # 図を右に置く札でも、手が届けば図の代わりに手を敷く（両方は置かない）
     pic = Image.new("RGBA", (300, 600), flip.SUMI + (255,))
     toys = words.ChunkCard("talk_toys", words.cues_of("talk_toys"), pic, hands=[(frames, 0.0, 6.0)])

@@ -79,6 +79,51 @@ PIC_H, PIC_X = 860, 1470                  # 図の高さと真ん中
 # 左は紙の色を薄く掛けて字を読めるようにし（WASH）、右へ向けて消す。手の映像は紙の地から溶けて現れ、紙の地へ溶けて消える
 # （場面の替わり目と同じ紙の地を挟む形。癒し系の本人の方針 11-05 20:10）。映像の音は使わない。
 HANDS_STYLE = {"size": 60, "cx": 640}
+# 公的調査の数（本人の決定 11-06: 使う数は 3 つ・カード 125857。置き場は A「秒は増やさず、裏の部の場面に小さく 1 行ずつ重ねる」）。
+# 数と出所は原典で確かめた物だけ（grove の state/survey-research-20261106 の 01・02。原典の頁つき）。GitHub に上げてよいのは公的調査だけ。
+# 原典で言い切れない事（紙工作の学習の効果・郷土玩具の担い手の減り方）は言わない。出典の 1 行（調べた所と年）を小さく添える。
+# 並べ方（どの場面にどの数か）と字の切り方は案で、本人の確認に回す。順は「実験は多い → それでも理科を使う職業につきたいは少ない →
+# 学校の外で手を動かして作る高校生は少ない」で、手で作る話（物理のトイモデルの語り）・輪・本人の言葉の札に 1 つずつ重ねる。
+# 原典の値: TIMSS2023 小 4 の実験「少なくとも週 1 回」日本 59.6%・国際平均 31.5%（資料の頁 16）、中 2「理科を使うことが含まれる職業につきたい」
+# 日本 27%・国際平均 58%（資料の頁 12）。国立青少年教育振興機構 文化 2026 の「ハンドクラフト・DIY・模型制作」13.5%（全体版 紙面 37 図 4-1。
+# 回答者全体の値。第 3 章の 15.0% は分母が違うので混ぜない）・「米中とは 20 ポイント以上の差」（同じ所の本文）。
+# 数の行は、場面の中で読める秒（1 秒 5 字）に入る長さにする。「米国・中国」と書くと本人の言葉の札で 0.2 秒あふれたので、本文の言い方の「米中」にした。
+TIMSS = "出典: 文部科学省・国立教育政策研究所「TIMSS2023 のポイント」（2024）"
+STATS = {
+    "talk_physics": ("理科の実験が週 1 回以上ある小学 4 年生　日本 59.6％・国際平均 31.5％", TIMSS),
+    "core_loop": ("理科を使う職業につきたい中学 2 年生　日本 27％・国際平均 58％", TIMSS),
+    "word_ai": ("学校の外でハンドクラフト・DIY・模型制作をした高校生　日本 13.5％（米中と 20 ポイント以上の差）",
+                "出典: 国立青少年教育振興機構「高校生の文化に関する意識調査報告書」（2026）"),
+}
+# 置き場は帯（上か下）。本人の言葉の印（下から 130）のある札（語りと本人の言葉の札）は上の帯にする: 下に置くと、印のすぐ下に数が来て、
+# 数まで本人の言葉に見えた（11-06 に絵で見た）。印の無い札（輪の図）は下の帯。字は読める大きさの下限として 30（出所は 22）。
+STAT_SIZE, SRC_SIZE = 30, 22
+BANDS = {"bottom": (H - 78, H - 40, H - 92, H), "top": (40, 78, 0, 112)}   # 数の行・出所の行の上の端、帯の上と下
+STAT_IN = (0.4, 1.4)        # 場面の頭で現れて、その後は動かさない（字のそばに動く物を置かない線）
+STRIP_INK = 0.88            # 手の映像を敷く時だけ、帯に紙の色を掛ける濃さ
+
+
+def stat_band(name):
+    return "top" if name in MARKED else "bottom"
+
+
+def draw_stat(img, name, t, hands=False):
+    """場面 name に重ねる数の 1 行と出所の 1 行。無い場面では何もしない。"""
+    if name not in STATS:
+        return img
+    a, b = STAT_IN
+    v = ease((t - a) / (b - a))
+    if v <= 0:
+        return img
+    y_line, y_src, b0, b1 = BANDS[stat_band(name)]
+    if hands:
+        band = Image.new("RGB", (W, b1 - b0), PAPER)
+        img.paste(Image.blend(img.crop((0, b0, W, b1)), band, STRIP_INK * v), (0, b0))
+    line, src = STATS[name]
+    draw = ImageDraw.Draw(img)
+    text(draw, (W // 2, y_line), line, STAT_SIZE, fade(SUMI, 0.85 * v), False, "ma")
+    text(draw, (W // 2, y_src), src, SRC_SIZE, fade(SUMI, 0.6 * v), False, "ma")
+    return img
 WASH = (0.9, 1000, 1450)                  # 掛ける紙の濃さ、濃いままの右端、消える所
 
 
@@ -224,7 +269,7 @@ class ChunkCard:
                 draw_chunk(draw, lines, self.cx, H // 2 - 30, self.size, v)
         if self.name in MARKED:
             draw_from(draw, self.cx)
-        return img
+        return draw_stat(img, self.name, t, hands=bool(self.hands))
 
 
 class AskCard:
