@@ -392,9 +392,11 @@
    "docs/process/site-requirements.md",
    "tests/test_tap_size.py",
    "tests/measure_tap.py",
-   "tests/test_nav_same.py"
+   "tests/test_nav_same.py",
+   "src/web/genre.py",
+   "tests/test_toys_genre.py"
   ],
-  "unverified": "人がブラウザで使った確認と本物のスマホはまだ。11-05 朝の本人の決定で大判を外し、皮ごとに 1 サイト（--look）にした。序の文面は本人の採否待ち"
+  "unverified": "人がブラウザで使った確認と本物のスマホはまだ。11-05 朝の本人の決定で大判を外し、皮ごとに 1 サイト（--look）にした。序の文面は本人の採否待ち。一覧のジャンル（2 段）は本人の依頼（11-06）で入れた。大きい側の字は本人の決定、中をどの大きい側に入れるかと、台帳の言葉の別の読みが別の中を指す 15 本（genre.PENDING）の入れ先は本人の答え待ち（今は雛形の表のまま）"
  },
  {
   "id": "f31",
@@ -633,5 +635,18 @@
    "docs/process/trials/sheets/README.md"
   ],
   "unverified": "どのループかは記録から決める。寸法の版とエンジンの版の本物はまだ無く、試験の作り物で見た。良くなったかは判定しない。エンジンの版は別の repo の台帳を読むだけで、無い機械では読めませんと出す"
+ },
+ {
+  "id": "f51",
+  "name": "UX の見直しの段 0（道をつなぐ・たたむ・並べ替える。本人の決定 11-06、research/36）: 道しるべの言葉 えらぶ・つくる・のこす・もちよる",
+  "status": "doing",
+  "evidence": [
+   "src/web/looks.py",
+   "src/web/toy.py",
+   "src/web/techo_site.py",
+   "tests/test_ux_stage0.py",
+   "docs/process/research/36-road-and-audience.md"
+  ],
+  "unverified": "入口の最初の画面に「えらぶ」、玩具の頁の最初の画面に「つくる」、窓で紙ができた後は 印刷 → つくる（手帖へ）、手帖の記録の頁に「もちよる」（ギャラリーへ）。読み物と作る側の節は見出しのまま畳み、本物の記録がある時は見本を畳む。字は道しるべの言葉と今ある字だけ。幅 390×844・375×667 は Chromium で測った。実機と人の目、駅ごとに 1 画面の段 1 はまだ"
  }
 ]

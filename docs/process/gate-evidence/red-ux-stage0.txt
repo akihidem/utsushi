@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_ux_stage0.py
+# commit: abebba5c（段 0 の前の main）の木に、この試験だけを置いた形
+Traceback (most recent call last):
+  File "tests/test_ux_stage0.py", line 45, in <module>
+    assert first.count('class="road-go"') == 1 and '<a class="road-go" href="/toys">えらぶ</a>' in first, (name, "入口の最初の節に「えらぶ」が 1 つ")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('tenji', '入口の最初の節に「えらぶ」が 1 つ')
+rc=1
