@@ -34,7 +34,7 @@ BODY_OLD, BODY_NEW = "1 胴を破線で谷折りし、糊代で貼って箱に�
 FOLD_NEW = ("谷折り（刷った面が内がわになる）", "山折り（刷った面が外がわになる）")
 LEGEND_OLD, ARROW_OLD = ("谷折り（手前にへこむ）", "山折り（手前に出る）"), ("谷折り（手前へ）", "山折り（向こうへ）")
 PICTURE_OLD, PICTURE_NEW = "まず筒を 1 つ作る（色の境で谷折り）", "まず筒を 1 つ作る（色の境で山折り）"
-# 作成動画の札から採った案（EP-0011・EP-0012。作る側が採り、型紙エンジンの issue/tora-v4 0554023・issue/goraigo-v11 4efef1c と同じ字にした。
+# 作成動画の札から採った案（EP-0011・EP-0012。作る側が採り、型紙エンジンの issue/tora-v4 8d2f667・issue/goraigo-v11 50afc27 と同じ字にした。
 # 本人の方針 11-06 で事前の人の確かめは無く、刷った紙を本人が見る）。手順の数と番号は変わらない
 ARM_OLD = ("5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める")
 ARM_NEW = ("5 重りの腕の上の穴にも竹串を通す。下の穴（点の丸）の所に粘土を付ける。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
@@ -319,6 +319,12 @@ with old_set(TIGER):
 assert any("軸の竹串にかかる" in f.line() for f in TIGER.check_physics({**p, "weight_below_axle": 5}))
 assert any("玉の下が底に当たる" in f.line() for f in TIGER.check_physics({**p, "weight_below_axle": 36}))
 assert not TIGER.check_physics(p)
+# 玉が軸にかかり、底にも当たる寸法は、玉の決まりの行を 1 つだけ出す（エンジンと同じ）。重りの別の落ちがある時は玉の行を足さない
+both = {**p, "axle_height": 15, "weight_below_axle": 5, "weight_g": 15, "weight_behind": 0}
+ball = [f for f in TIGER.check_physics(both) if "粘土の玉" in f.message]
+assert len(ball) == 1 and "軸の竹串にかかる" in ball[0].message, [f.line() for f in TIGER.check_physics(both)]
+above = [f for f in TIGER.check_physics({**p, "weight_below_axle": -20}) if f.where == "重り"]
+assert above and not any("粘土の玉" in f.message for f in above), [f.line() for f in above]
 # 御来迎: 足のある形に 8 帯（山折り 2 本・糊代 1 つ）を像の右に置き、つまみの形の溝の下の口の左右に上向きの矢印（位置の印）。前の組には無い
 data, source = load(GORAIGO)
 for h in data["hypotheses"]:
@@ -329,6 +335,16 @@ for h in data["hypotheses"]:
     assert len(marks_) == (4 if q["push_part"] == "tab" else 0), (h["id"], len(marks_))
     with old_set(FAN):
         assert "band" not in {x.key for x in FAN.parts(q)} and not [a for a in part(FAN, q, "tube").art if a["kind"] == "mark"]
+# 短い足（pivot_above_rim が 7 以下）は帯を足さず、部品表と手順 10 にも書かない。既定の扇では短い足は開く角の検査で落ちるので、
+# 検査に通る小さな扇（6 枚・幅 5・高さ 30）で見る（エンジンと同じ）
+short = {**FAN.DEFAULTS, "push_part": "tab", "hub": "axle", "fold_count": 6, "fold_width": 5, "fold_height": 30}
+for piv in (2, 4, 7):
+    q = {**short, "pivot_above_rim": piv}
+    assert not FAN.check_range(q) and not FAN.check_physics(q), (piv, [f.line() for f in FAN.check_physics(q)])
+    assert FAN.band_width(q) is None and "band" not in {x.key for x in FAN.parts(q)}, piv
+    assert not any(r["key"] == "band" for r in FAN.bom(q)) and not any("8 帯" in x for x in FAN.steps(q)), piv
+    assert any(x.startswith("4 扇の真ん中の足を、糊代の境の破線で折り") for x in FAN.steps(q)), FAN.steps(q)
+assert FAN.band_width({**short, "pivot_above_rim": 8}) == 4  # 8 から 4mm の帯（糊代より上 6mm から 2mm 残す）
 h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
 pattern = compose("slider_fan", h["params"], source)[1]
 band, fig = (next(x for x in pattern["parts"] if x.key == k) for k in ("band", "figure"))

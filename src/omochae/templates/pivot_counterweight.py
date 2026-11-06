@@ -92,7 +92,7 @@ def axle_to_head_top(p):
     return 8
 
 
-# 5 重りの腕の下の穴（EP-0011、作成動画 R-0004 の札から採った案。2026-11-06）。型紙エンジン（paper-to-toy の issue/tora-v4 0554023）と同じ形で、
+# 5 重りの腕の下の穴（EP-0011、作成動画 R-0004 の札から採った案。2026-11-06）。型紙エンジン（paper-to-toy の issue/tora-v4 8d2f667）と同じ形で、
 # 必須 2 種の次の組（tora-v4）だけに入れる（前の組は紙を変えない）。穴は軸の穴から weight_below_axle 下（釣り合いの式の重りの位置）で、
 # 粘土はこの穴の所に付けるか、穴に糸を通して玉を下げる。糸で下げた玉の重さは、糸を通した穴にかかる（糸は引く力しか伝えないので、
 # 頭を傾ける力の腕は穴までの深さ）。なので釣り合いの式は変えず、糸の長さは玉が胴の底に当たるかだけに効く。
@@ -171,14 +171,18 @@ def check_physics(p):
             out.append(Failure("F5.pivot", "首", f"首の帯（幅 {p['strip_width']}）が穴（{p['opening']}）の縁に当たるまで {MIN_SWING}° 揺れない"))
         if p["head_h"] / 2 > ax - 3:
             out.append(Failure("F5.pivot", "頭", "頭の下端が床に近すぎる"))
-    # 粘土の玉の大きさで見る床（エンジンと同じ）。首の形の玉は腕に付くので、静かな時（一番低い）の玉の上と下の端で見る。
-    # 前の組でも同じ玉なので、組で分けない（刷る紙は変わらない）
-    if p["mount"] == "neck" and p["weight_below_axle"] < clay_r(p["weight_g"]) + AXLE_CLEAR:
+    # 粘土の玉の大きさで見る床（エンジン issue/tora-v4 8d2f667 と同じ）。前の組でも同じ玉なので、組で分けない（刷る紙は変わらない）。
+    # 2 つの決まり（軸の竹串・底）は、重りの別の落ち（重心が軸より上・傾き）が無い時だけ言う。1 つの崩れに別の行が続くと狙いが読めなくなり、
+    # 凍結の負の場面が 1 行で落ちる決まりも崩れる
+    ball_ok = not any(f.where == "重り" for f in out)
+    if ball_ok and p["mount"] == "neck":
         r = clay_r(p["weight_g"])
-        out.append(Failure("F5.pivot", "重り", f"粘土の玉（半径 {r:.1f}mm）が軸の竹串にかかる（玉の真ん中は軸の下 {p['weight_below_axle']}mm。{r + AXLE_CLEAR:.1f}mm 以上下に）"))
-    if p["mount"] == "neck" and p["weight_below_axle"] <= ax - 3 < p["weight_below_axle"] + clay_r(p["weight_g"]):
-        # 真ん中が底に近すぎる時は、下の今の決まりが落とすので、ここでは重ねて言わない
-        out.append(Failure("F5.pivot", "重り", f"粘土の玉の下が底に当たる（玉の下は軸の下 {p['weight_below_axle'] + clay_r(p['weight_g']):.1f}mm、軸の高さ {ax}mm）"))
+        # 2 つは 1 つの寸法で両方起きうる（軸の高さ 15・重り 5mm 下・15g）ので、先の 1 つだけを言う
+        if p["weight_below_axle"] < r + AXLE_CLEAR:
+            out.append(Failure("F5.pivot", "重り", f"粘土の玉（半径 {r:.1f}mm）が軸の竹串にかかる（玉の真ん中は軸の下 {p['weight_below_axle']}mm。{r + AXLE_CLEAR:.1f}mm 以上下に）"))
+        elif p["weight_below_axle"] <= ax - 3 < p["weight_below_axle"] + r:
+            # 首の形の粘土の玉は腕に付くので、静かな時（一番低い）の玉の下の端で見る。真ん中が底に近すぎる時は、下の今の決まりが落とすので重ねて言わない
+            out.append(Failure("F5.pivot", "重り", f"粘土の玉の下が底に当たる（玉の下は軸の下 {p['weight_below_axle'] + r:.1f}mm、軸の高さ {ax}mm）"))
     if p["weight_below_axle"] > ax - 3:
         out.append(Failure("F5.pivot", "重り", f"重りが底に当たる（軸の下 {p['weight_below_axle']}mm、軸の高さ {ax}mm）"))
     if p["strip_width"] > p["body_width"] - 6:
@@ -365,7 +369,7 @@ def steps(p):
             out += ["5 重りの腕の穴にも竹串を通し、下の端に粘土を付ける。腕は 3 首の帯に貼る", "頭の傾きを見て、腕を貼る位置を決める"]
         else:
             # 腕は仮に留めて、頭の傾きを見てから貼る（EP-0011: 作った人が帯と頭を胴の穴から何度も出し入れしていた）。手順の数と番号は変えない。
-            # 文はエンジン（issue/tora-v4 0554023）と同じ字
+            # 文はエンジン（issue/tora-v4 8d2f667）と同じ字
             L = hang_thread_mm(p)
             hang = f"か、下の穴に糸を通して粘土の玉を下げる（玉の上は穴から {HANG_MIN}〜{L}mm）" if L is not None else ""
             # 下の穴は weight_below_axle が LOWER_HOLE_MIN 以上の時だけある。無い時は、粘土の位置を軸の穴からの深さで言う
