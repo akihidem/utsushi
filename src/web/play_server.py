@@ -34,7 +34,7 @@ from . import wording
 from .contrib_server import STYLE
 
 # 見た目はルックブックの様式（本人の指定、J-024）。絵が主役で、文字は添え。見開きのように絵と短い文を左右に置き、玩具ごとに左右を入れ替える。
-# 参照の X の投稿の実物は 11-04 に見た（research/19）。入口の再現は looks.py の A にあり、この塊は玩具の頁の見た目だけを持つ。
+# 参照の X の投稿の実物は 11-04 に見た（research/19）。入口の見た目は looks.py にあり、この塊は玩具の頁の見た目だけを持つ。
 LOOK = STYLE + """
 body{background:#efe8d8;padding:0}main{max-width:none;margin:0}
 .wrap{max-width:1180px;margin:auto;padding:0 20px 64px}

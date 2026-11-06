@@ -18,13 +18,23 @@ LOOKS = {
 }
 
 
+# 表紙の題の下の 2 行（本人の決定 11-06。サイトを見た人の意見「最初の表紙が綺麗なので、コンテンツも完成されたものと勘違いしてしまう。
+# 今後も発展・進化していくし、その担い手はユーザーだというメッセージは、最初に言った方がいいのでは」から作った案 1 を本人が採った）。
+# 字を変えない。両方の表紙（白の展示と黒のジン）で同じ物を読む。題の縦書きの流れを崩さないよう、表紙の下に横書きで小さく置く。
+GROWING = ("このサイトは、まだ育っている途中です。", "型紙をよくしていくのは、作ってみるあなたです。")
+
+
+def growing():
+    return f'<p class="grow">{esc(GROWING[0])}<br>{esc(GROWING[1])}</p>'
+
+
 def switch(look):
     """入口の頭の帯。内側の頁と同じ帯を使う（入口から入った所で帯が変わらないように。要件 2）。"""
     return skin.nav(look, "/", "/")
 
 
 def toys():
-    """図の写しが手元に無い玩具も並べる。A は入口なので、写しの有無で玩具が消えると入れなくなるため。
+    """図の写しが手元に無い玩具も並べる。入口なので、写しの有無で玩具が消えると入れなくなるため。
     入口の主役は必須の 2 種だけ。試作の玩具は図鑑から入る（hypotheses.stage）。"""
     out = []
     for s in (s for s in sources() if hypotheses.stage(s) == "必須"):
@@ -42,7 +52,7 @@ def _bg(sid, pos="50% 50%", size="cover"):
     return f"background-image:url(/picture/{sid});background-position:{pos};background-size:{size};background-repeat:no-repeat"
 
 
-# 額に入れる図は、複写の台の黒い縁が額の中に見えないよう、枠と同じ比のまま少し大きく敷く（A の全面の図と同じ考え）。
+# 額に入れる図は、複写の台の黒い縁が額の中に見えないよう、枠と同じ比のまま少し大きく敷く。
 FRAMED = "112% 112%"
 
 
@@ -62,13 +72,8 @@ QUOTE = f"原文の引用。確かめた人: {wording.MAKER}"
 ONLY = """<script>(()=>{const id=new URLSearchParams(location.search).get('only');if(!id)return;
 const st=document.createElement('style');st.textContent='section:not(#'+CSS.escape(id)+'),.nav,.ab-end,main>p{display:none!important}';document.head.appendChild(st)})();</script>"""
 
-# ---------------------------------------------------------------- A 大判写真集（参照のルックブックの再現）
-# 本人の指示（2026-11-04）: 参照の X の投稿のルックブックの再現を、A の実装の基準にする。
-# 参照は、白いリングバインダーを真上から撮った見開きを縦に並べる形（research/19 に観察を書いた）。
-# 写したのは組み方だけ: 綴じ金具とバインダーの縁、見開きの型（全面の写真と白地の小物、平置きと番号の一覧、
-# 見開きをまたぐ 1 枚、文字の頁と色見本の列、余白の多い奥付）、細かい字の小さな文字組み。参照の写真と文は使わない。
-# 図は国立国会図書館の頁とその寄りだけ（新しい絵は作らない）。
-# 画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。動きは足さない（何度も開く入口のため）。
+# ---------------------------------------------------------------- 全部の玩具の一覧（A′ と C の両方の入口で使う）
+# A 大判写真集の作りはここにあったが、本人の決定（2026-11-05 朝）で外した。参照のルックブックの観察は research/19、経過は J-024 に残る。
 def all_toys(prefix):
     """全部の玩具の一覧（本人の指示 11-05「88 種のおもちゃから 1 個選ぶ」。要件 L-02: 入口から試作の玩具にも入れる）。
     必須の 2 種を大きく、試作の 81 種を小さな札で並べる。試作の写し（out/sources）は棚卸しの箱で切り出した物なので、全体が入る形で敷く
@@ -97,6 +102,7 @@ def all_toys(prefix):
             f'<ul class="grid">{"".join(items)}</ul></section>')
 
 
+# 2 つの入口の画面いっぱいの高さは svh（スマホで URL の帯の裏に隠れないため）。
 ZINE = """
 body.zine{background:#0b0a09;color:#e9e1cf;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
  font-feature-settings:"palt" 1}
@@ -111,6 +117,7 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-cover h1{grid-column:3;justify-self:start;margin:0 0 0 6vw;writing-mode:vertical-rl;font-weight:300;
  font-size:clamp(40px,6.5vw,92px);letter-spacing:.5em;color:#efe6d2}
 .zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
+.zn-cover .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}
 .zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
 .zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
 .zn-toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid #1f1b16}
@@ -141,7 +148,8 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
 .zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
-@media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
+@media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;padding:8vh 8vw;gap:24px}
+ .zn-cover .grow{grid-column:1;margin:0}
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
  .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
  .zn-toy{grid-template-columns:1fr}.zn-toy .pin{position:relative;height:72vh;height:72svh}
@@ -165,7 +173,7 @@ def zine():
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
-             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1></section>')
+             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><h1>うつし</h1>{growing()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
 
@@ -193,7 +201,7 @@ def zine():
 # 展示の形を A′ として並べる。順路: 入口の題のパネル → 章ごとに 1 点を白い壁に掛け、作品の札と解説 → 細部 → 出口（玩具の頁へ）。
 # 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。
 # 動き: 本人の頼み（2026-11-04「この動き、デモサイトでやってみる？」）で、A′ だけに扇の札・スクロールのせり上がり・扇をひらくノブを足した
-# （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。A と C は動かさないまま。
+# （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。C は動かさないまま。
 TENJI = """
 body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 /* 地は本人の言葉「白の背景」へ戻した（research/24 の 1）。前のクリーム #f6f3ec は作る側の手癖で、生成物の定番の見た目に寄っていた。
@@ -204,6 +212,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
 .tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:12px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
+.tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -372,7 +381,7 @@ def tenji():
     ts = toys()
     body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
     # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
     body += fan_deck(ts) + ogi_slider() + all_toys("tj")
     for i, t in enumerate(ts, 1):

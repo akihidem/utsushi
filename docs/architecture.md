@@ -62,7 +62,8 @@
 | `src/omochae/cycle.py` | 鍵なしで 4 つのループを一周回す入口（#335）。紙 → 話した字 → 考えから紙 → 自分の紙で作って記録 → その記録からたたき台の次の版 → 記録 → 説明 → 材料 → 次の版 → 束 → エンジンの下書き。まだ無い部品の段で名指しして止まる。置き場は毎回一時の場所 |
 | `src/web/failure_log.py` | 作る側が読む失敗の記録（stderr）。道・役・型・トレースバックを出し、学ぶ人の書いた文と合言葉は出さない |
 | `src/web/kumitate.py` | 手順どおりに組み立てる絵（型紙の頁と /toy/<sid>/kumitate）。`src/omochae/assembly.py` が組んだ途中の形を、外の部品なしの CSS の立体で動かす（J-033） |
-| `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（必須 2 を大きく、試作を札で） |
+| `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（必須 2 を大きく、試作をジャンルの見出しごとに札で） |
+| `src/web/genre.py` | おもちゃのジャンル（作った後の楽しみ方の 2 段。大きい側 かざる・あそぶ・うごく、中の 9 つ）。玩具の雛形から表で引き、合わない玩具（凧の 3 本）だけを例外に置く。大きい側と中の入れ先は 1 か所の表（research/36） |
 | `src/web/about.py` | 序（コンセプト・『江都二色』の解説・動機）。文面は本人の言葉の引用と書誌の値だけ。採否は本人 |
 | `src/web/looks.py` | 入口。A′ 日本画展の展示と C 縦読みのジン（どちらのサイトかは --look）。全部の玩具の一覧の節を持つ。大判（A）は 11-05 朝に外した |
 | `src/web/kuzushi.py` | くずし字を読む頁（f14）。先に自分の読みを書き、確かめた読みと並べる。書いた読みは保存しない |
@@ -85,7 +86,7 @@
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
-| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の今の版（goraigo-v10・tora-v3）のたたき台 H-A の紙と先生の見る紙の 9 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
+| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の凍結の組（goraigo-v10・虎の前の組 tora-v3）と虎の今の組（tora-v4）のたたき台 H-A の紙と先生の見る紙の 13 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `tests/compare_engine.py` | エンジンの共通の場面を、この repo と paper-to-toy の両方で回して結果を比べる。相手の repo が無い所でも `./run.sh` を回せるように、手で回す（#164） |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |

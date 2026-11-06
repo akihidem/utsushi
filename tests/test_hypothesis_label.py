@@ -63,7 +63,9 @@ for sid, hid in REQUIRED.items():
     assert r.returncode == 0, r.stderr
     for pdf in (f"{tmp}/{sid}.pdf", f"{tmp}/{sid}_tejun.pdf"):
         text = subprocess.run(["pdftotext", pdf, "-"], capture_output=True, text=True, check=True).stdout
-        assert flat(marks.HYPOTHESIS_FROZEN) in flat(text), pdf
+        # 前の文で刷るのは、今の組が凍結の組の玩具（marks.FROZEN_SETS。今は御来迎だけ。虎は次の組 tora-v4 に上げた）
+        want = marks.HYPOTHESIS_FROZEN if sid in marks.FROZEN_SETS else WORDS
+        assert flat(want) in flat(text), pdf
 
 # 頁の型紙の窓に同じ文が出る
 server = serve(0)
