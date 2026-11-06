@@ -1,0 +1,8 @@
+# 命令: bash -c 'OMOCHAE_ASR_PYTHON=.venv-asr/bin/python PYTHONPATH=src .venv/bin/python tests/check_asr_real.py; echo "確かめ rc=$?"'
+# commit: 603e102e（回した時の HEAD）
+字にした: True・14 秒・モデル mobiuslabsgmbh/faster-whisper-large-v3-turbo・言語 ja
+読ませた文: かたがみの さんまいめの おりせんが うすくて みえません
+字: カタガミのサンマイメノオリセンガウスクルテ見えません?
+通った
+確かめ rc=0
+rc=0

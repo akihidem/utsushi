@@ -1,0 +1,12 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/probe_voice_drop.py; echo "確かめ rc=$?"'
+# commit: 077092e5（回した時の HEAD）
+PASS 1 字にしたら声が消える
+PASS 2 止まった後も印を付け直す
+PASS 3 道具が無いと口が立たない
+PASS 4 字の前の drop-voice を断る
+PASS 5 根拠の記録の取り下げで声と字が消える
+FAIL 6 字を書く間の取り下げで字を残さない（受付が先）: AssertionError: slip-first: 取り下げた受付を字にできた事にしない（probe_voice_drop.py:147）
+FAIL 7 字を書く間の取り下げで字を残さない（置き場が先）: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp0cwpv0is/records/media/R-0001/voice/.tmp-a9p2865c'（tempfile.py:255）
+5/7 通る
+確かめ rc=3
+rc=0

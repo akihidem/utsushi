@@ -88,7 +88,8 @@ assert "仮説 A" in body and "仮説 B" not in body, "札はたたき台の 1 �
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
 body = get(f"/toy/{G}")[1].decode()
 # 字のリンクは画面の窓へ（本人の指示 11-05「型紙はクリックすると表示される形に」）。PDF は窓の押し釦。試した後の紙はどちらも出ない
-assert "see=H-A&kind=sheet&v=1#win" in body and "see=H-A&kind=tejun&v=1#win" in body and "kind=after" not in body
+# 刷るのは型紙だけ（本人の決まり 11-06）。手順の紙の札は出ない
+assert "see=H-A&kind=sheet&v=1#win" in body and "kind=tejun" not in body and "kind=after" not in body and "_tejun.pdf" not in body
 assert "H-A_v1.pdf" in body and "H-A_v1_after.pdf" not in body
 code, pdf = get(f"/sheet/{G}/H-A_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
@@ -107,7 +108,8 @@ assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", 
 code, at = where(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
 assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の札に着く（#121）
 body = get(f"/toy/{G}")[1].decode()
-assert "H-A_v1_after.pdf" in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
+# 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
+assert "H-A_v1_after.pdf" not in body and get(f"/sheet/{G}/H-A_v1_after.pdf")[0] == 200
 assert "仮説 A の紙・動かない・40°" in body
 # 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("成功", "失敗", "正解"):

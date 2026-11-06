@@ -21,6 +21,8 @@ data/records/*
 # 11-04 の試行の記録だけは、本人の決定で repo に載せる（U-09・U-28・U-32）。ほかの記録は個人の物なので入れない。
 !data/records/R-0001.json
 !data/records/R-0002.json
+# 動画の受け口の受付と、受け取りの途中の小分け（#337）
+data/video_uploads/
 data/loop/*
 !data/loop/.gitkeep
 !data/loop/explanation-R-0001.json
@@ -29,3 +31,4 @@ data/loop/*
 .venv
 # 作る側の機械ごとの設定。共有の設定 .claude/settings.json は入れる。
 .claude/settings.local.json
+.venv-asr/

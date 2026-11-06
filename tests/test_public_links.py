@@ -103,21 +103,21 @@ for sid, owned in mine.items():
     techo = page_at(opened, f"/toy/{sid}/techo/kiroku")
     assert not [oid for oid, _ in owned if f"/sheet/{sid}/{oid}_" in techo], (sid, "手帖の札にも出さない")
 
-# 2. 同じ場で、たたき台とほかの仮説の前の記録の紙への道は残る
+# 2. 同じ場で、たたき台とほかの仮説の前の記録の試した後の紙: 11-06 から刷らないので札と手帖に道は出さず、前に配った道は開く
 page = page_at(opened, f"/toy/{G}")
 techo = page_at(opened, f"/toy/{G}/techo/kiroku")
 for rid, hid in (("R-0001", "H-A"), ("R-0002", "H-C")):
     paper = f"/sheet/{G}/{hid}_v1_after.pdf"
-    assert paper in card_of(page, rid) and paper in techo and status(opened, paper) == 200, (rid, paper)
-    assert f"/toy/{G}?see={hid}&kind=after&v=1#win" in card_of(page, rid), rid
+    assert paper not in card_of(page, rid) and paper not in techo and status(opened, paper) == 200, (rid, paper)
+    assert "kind=after" not in card_of(page, rid), rid
 
-# 3. 合言葉のある場では、同じ札に紙への道があって開く
+# 3. 合言葉のある場では、前に配った紙の道が開く。試した後の紙と型紙なしの紙は 11-06 から刷らないので、札と手帖に道は出さない
 for sid, owned in mine.items():
     page, techo = page_at(closed, f"/toy/{sid}"), page_at(closed, f"/toy/{sid}/techo/kiroku")
     for oid, rid in owned:
         paper = f"/sheet/{sid}/{oid}_v1_after.pdf"
-        assert paper in card_of(page, rid) and paper in techo and status(closed, paper) == 200, (sid, rid)
+        assert paper not in card_of(page, rid) and paper not in techo and status(closed, paper) == 200, (sid, rid)
 free_paper = f"/sheet/{G}/{mine[G][0][0]}_v1_free.pdf"
-assert free_paper in card_of(page_at(closed, f"/toy/{G}"), mine[G][0][1]) and status(closed, free_paper) == 200
+assert free_paper not in card_of(page_at(closed, f"/toy/{G}"), mine[G][0][1]) and status(closed, free_paper) == 200
 
 print(f"ok: 合言葉なしの場のリンク {checked} 本はどれも開き、OWN-n の紙への道は札に出ない")

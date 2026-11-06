@@ -343,20 +343,19 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
         return 3
     label = f"版 {version}"
-    how = h["how_it_moves"]
     if adopted:
         # 紙から根拠の記録へ戻れるように刷る（F7）。
         label += "・根拠 " + "、".join(adopted["record_ids"])
-        how += "。前の版から変えた所: " + "、".join(f"{c['param']} {c['from']}→{c['to']}" for c in adopted["changes"])
     title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
         return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
-    rc = generate(template, params, source_id, out, title=title, version=version)
-    if rc:
-        return rc
-    return _print_instructions(params, source_id, f"仮説 {letter(h)}「{h['name']}」", how, out, version, template)
+    # 刷るのは型紙だけ（本人の決まり 11-06「文章のプリントは廃止」・窓口の決定 推し A）。手順の紙と試した後の紙は組まない。
+    # 前は型紙の後に手順の紙（_print_instructions）と試した後の紙を組み、手順の紙が A4 に入らないと型紙も刷れなかった（御来迎 v14 で当たる）。
+    # 組み方は頁（web.kumitate の組み方の節）、試した後の紙は前に配った道で開く時にだけ作る（web.play_server.ensure_after・print_after）。
+    # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）は話す道の決めを待つので、ここでは変えない
+    return generate(template, params, source_id, out, title=title, version=version)
 
 
 def print_after(source_id, hypothesis_id, out):

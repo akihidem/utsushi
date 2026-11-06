@@ -1,4 +1,5 @@
-"""サイトで紙を作っていない案の記録でも、札の「試した後の紙」と「PDF」が開く（#320）。
+"""サイトで紙を作っていない案の記録でも、試した後の紙の道（/sheet/…_after）が開く（#320）。
+11-06 から試した後の紙は刷らない（本人の決まり「文章のプリントは廃止」）。札・知らせ・窓からの道は外し、/sheet の道と作る仕組みだけを残す。
 
 なぜ: 場で配られた紙で作った人は「型紙を見る」を押さないので、置き場に紙が無い。札のリンクは紙があるかを見ずに出すので、PDF は 404 で、
 字のリンクの窓には紙が出なかった。試した後の紙は次に変える条件と札を渡す所なので、ここで止まると輪の次の段に進みにくい。
@@ -46,7 +47,7 @@ def post(path, data):
 def record(sid, hid):
     """記録を残し、着いた頁を返す。"""
     code, page = post(f"/toy/{sid}/record", {"hypothesis": hid, "result": records.results_for(sid)[0]})
-    assert code == 200 and "試した後の紙が開けます" in page, (sid, hid, code)
+    assert code == 200 and "記録を残しました。" in page and "試した後の紙が開けます" not in page, (sid, hid, code)
     return page
 
 
@@ -72,21 +73,18 @@ assert get(f"/sheet/{DEN}/H-A_v1_after.pdf")[0] == 403
 code, body = get(f"/toy/{DEN}?see=H-A&kind=after&v=1")
 assert code == 200 and "H-A_v1_after" not in body.decode() and not files(DEN, "H-A"), "記録の前に作らない"
 
-# 紙を作らずに記録を残す（場で配られた紙で作った人）。札のリンクは頁から読み、本当に開くかを見る
+# 紙を作らずに記録を残す（場で配られた紙で作った人）。札にも知らせにも、試した後の紙への道は出さない（11-06）
 page = record(DEN, "H-A")
-link = re.search(r'<a href="(/toy/[^"]*kind=after[^"]*)">試した後の紙</a>', page).group(1)
-pdf = re.search(r'<a href="(/sheet/[^"]*_after\.pdf)"[^>]*>PDF</a>', page).group(1)
-assert pdf == f"/sheet/{DEN}/H-A_v1_after.pdf" and "see=H-A&" in link, (link, pdf)
-
-# 字のリンク: 窓に試した後の紙が出て、窓の絵も拡大も PDF も開く
-code, body = get(link.split("#")[0])
-shown = window(body.decode())
-assert code == 200 and f"/sheet/{DEN}/H-A_v1_after.png" in shown, "窓に試した後の紙が出ない"
-assert "仮説の札を押すと、紙を作ってここに出します" not in shown
-for ext in ("png", "svg"):
-    assert get(f"/sheet/{DEN}/H-A_v1_after.{ext}")[0] == 200, ext
+assert "kind=after" not in page and "_after.pdf" not in page, "札に試した後の紙への道を出さない"
+pdf = f"/sheet/{DEN}/H-A_v1_after.pdf"
+# 前の札のリンク（kind=after）で窓へ来ても、試した後の紙は出さず、開いただけで作らない
+code, body = get(f"/toy/{DEN}?see=H-A&kind=after&v=1")
+assert code == 200 and "H-A_v1_after" not in window(body.decode()) and not files(DEN, "H-A"), "窓は試した後の紙を出さない"
+# 前に配ったリンクのために残した /sheet の道は開く（PDF・絵・拡大）
 code, body = get(pdf)
 assert code == 200 and body[:4] == b"%PDF", code
+for ext in ("png", "svg"):
+    assert get(f"/sheet/{DEN}/H-A_v1_after.{ext}")[0] == 200, ext
 
 # 開いても刷った案にならない。型紙と手順の紙を作らず、紙を選ぶ口と聞く口の線も変わらない
 assert only_after(DEN, "H-A"), sorted(files(DEN, "H-A"))
@@ -97,7 +95,7 @@ try:
 except urllib.error.HTTPError as e:
     assert e.code == 422, e.code
 
-# PDF を先に開いても開く（手帖のリンクは PDF だけ）
+# 道の PDF を直に開いても開く（手帖からの道は 11-06 に外した）
 record(DEN, "H-B")
 code, body = get(f"/sheet/{DEN}/H-B_v1_after.pdf")
 assert code == 200 and body[:4] == b"%PDF" and only_after(DEN, "H-B"), code
@@ -131,7 +129,8 @@ assert post(f"/toy/{GO}/print", {"hypothesis": "H-A"})[0] == 200
 made = files(GO, "H-A")
 record(GO, "H-A")
 assert get(f"/sheet/{GO}/H-A_v1_after.pdf")[0] == 200
-assert files(GO, "H-A") == made, "作り直した"
+# 型紙は作り直さない（試した後の紙は 11-06 から刷る時に組まないので、道を開いた時にそれだけが足される）
+assert {k: v for k, v in files(GO, "H-A").items() if k in made} == made, "作り直した"
 assert [(c["hypothesis_id"], len(c["confirmations"])) for c in loop.sheet_confirmations(GO)] == [("H-A", 1)]
 
 # 紙の組で刷った物と、試した後の紙だけを作った物は同じ文になる（題と印を分けて持たない）
@@ -140,13 +139,13 @@ with tempfile.TemporaryDirectory() as tmp:
     with open(f"{tmp}/x_after.pdf", "rb") as f:
         assert pdf_text(f.read()) == pdf_text(get(f"/sheet/{GO}/H-A_v1_after.pdf")[1])
 
-# ほかの案を刷った後に、紙を作っていない案の試した後の紙を開いても、窓の最初の案は刷った案のまま（記録の欄の既定もこれを読む）。
-# 開いた案の札からは、その案の試した後の紙が窓に出る。刷れない案（前の試行の H-C など）の記録でも開く
+# ほかの案を刷った後に、紙を作っていない案の前の札のリンクで窓へ来ても、窓の最初の案は刷った案のまま（記録の欄の既定もこれを読む）。
+# 窓は試した後の紙を出さず、開いただけで作らない（11-06）。刷れない案（前の試行の H-C など）の記録でも同じ
 record(GO, "H-C")
 time.sleep(1.1)  # 置き場の時刻の刻みで、後から作った事が分かるように
 code, body = get(f"/toy/{GO}?see=H-C&kind=after&v=1")
 shown = window(body.decode())
-assert code == 200 and f"/sheet/{GO}/H-C_v1_after.png" in shown and only_after(GO, "H-C"), "刷った案があっても窓に出る"
+assert code == 200 and "H-C_v1_after" not in shown and not files(GO, "H-C"), "窓は試した後の紙を出さず、作らない"
 code, body = get(f"/toy/{GO}")
 shown = window(body.decode())
 assert code == 200 and f"/sheet/{GO}/H-A_v1.png" in shown and "H-C_v1" not in shown.split('class="win"')[1], "開いただけの案へ移らない"
@@ -160,7 +159,7 @@ assert hypotheses.print_own(DEN, "OWN-2", str(out_dir(DEN) / "OWN-2_v1")) == 0
 for own in ("OWN-1", "OWN-2"):
     assert get(f"/sheet/{DEN}/{own}_v1_after.pdf")[0] == 403, ("記録の前に渡さない", own)
 page = record(DEN, "OWN-1")
-assert f'<a href="/sheet/{DEN}/OWN-1_v1_after.pdf"' in page and "see=OWN-1" not in page
+assert "OWN-1_v1_after" not in page and "see=OWN-1" not in page, "札に試した後の紙への道を出さない（11-06）"
 code, body = get(f"/sheet/{DEN}/OWN-1_v1_after.pdf")
 assert code == 200 and body[:4] == b"%PDF", code
 text = pdf_text(body)
