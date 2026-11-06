@@ -324,13 +324,13 @@ r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--
 assert r.returncode == 4 and not (pathlib.Path(DATA) / "bundle5.json").exists(), r.stderr
 assert eb.build()["from"] == "utsushi"
 # 札の文の中の動画の秒は外して渡す（束には時刻を入れない。数の多い所を連絡先の形と見るエンジンの入口の床で、文ごと落ちるため）。
-# 秒の書き方だけを外し、連絡先の床は緩めない
+# 秒の書き方だけを外し、連絡先の床は緩めない。秒のすぐ後の「は・に・にも」も外す（残すと「は頭が下で、に上へ移る」の様に、文が読めなくなる）
 review_up("R-0090", "tora-v2", [mark("M1", None, "fit", "糊代が細い（1682〜1701 秒）、と言っている。28 秒にも同じ声"), mark("M2", None, "fit", "台が倒れる（3925・3945 秒）"),
-                                mark("M3", None, "fit", "軸を回す所（4660〜4680・4745〜4784 秒）。4849.8 秒は頭が下"), mark("M4", None, "fit", f"291 秒から、分からない時は {PHONE} へ"),
+                                mark("M3", None, "fit", "軸を回す所（4660〜4680・4745〜4784 秒）。4849.8 秒は頭が下で、4850.0 秒に上へ移る"), mark("M4", None, "fit", f"291 秒から、分からない時は {PHONE} へ"),
                                 mark("M5", None, "fit", "291 秒から頭が揺れ続ける")])
 g90 = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v2")]
 said = [t["text"] for t in g90["texts"]]
-assert sorted(said) == sorted(["糊代が細い、と言っている。にも同じ声", "台が倒れる", "軸を回す所。は頭が下", "頭が揺れ続ける"]), said
+assert sorted(said) == sorted(["糊代が細い、と言っている。同じ声", "台が倒れる", "軸を回す所。頭が下で、上へ移る", "頭が揺れ続ける"]), said
 assert not any("秒" in t or re.search(r"[0-9]", t) for t in said) and PHONE not in json.dumps(g90, ensure_ascii=False), "秒を外し、連絡先の形の札は落としたまま"
 crowded = lambda t: any(sum(c.isdigit() for c in t[i:i + 24]) >= 7 for i in range(max(1, len(t))))  # エンジンの入口の床の「数字の多い所」の見方
 assert not any(crowded(t) for t in said)
