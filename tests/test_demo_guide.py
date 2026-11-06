@@ -68,7 +68,11 @@ try:
     # 書き出しの口: 案内役の出る場面の名前なら包み、ほかの名前はそのまま
     card = words.ChunkCard("border", words.cues_of("border"))
     real_root = flip.ROOT
-    assert isinstance(flip.guided(card, "border"), guide.Guided) and flip.guided(card, "word_ai") is card
+    # 書き出しの通り道は、どの場面も後入れの札の包み（demo.later）を重ね、案内役の出る場面だけ案内役を重ねる
+    from demo import later
+
+    assert isinstance(flip.guided(card, "border").scene, guide.Guided) and flip.guided(card, "word_ai").scene is card
+    assert isinstance(flip.guided(card, "word_ai"), later.Later) and flip.guided(flip.guided(card, "border"), "border").scene.scene is card, "2 度重ねない"
     wrapped = guide.Guided(card, "border", key)
     assert wrapped.duration == card.duration and getattr(wrapped, "ground", flip.PAPER) == getattr(card, "ground", flip.PAPER)
 finally:

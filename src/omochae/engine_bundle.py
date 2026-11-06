@@ -75,6 +75,11 @@ MAX_STEP = 40
 NAME = re.compile(r"[A-Za-z0-9_.-]{1,80}")  # 雛形の id と刷った組の形（エンジンの入口と同じ）
 MEASURE = re.compile(r"[a-z_]{1,30}")
 RECORD_ID = re.compile(r"R-[0-9]{4,8}")  # 記録の番号の形（エンジンの入口と同じ）。形の外の番号は束に入れない（自由な文をこの欄で運ばせない）
+# 札の文の中の動画の秒（「1234.5 秒」「1234.5〜1240.0 秒」「3925・3945 秒」「291 秒から」）。束には時刻を入れないので、文からも外す。
+# 残すと、数の多い所を連絡先の形と見るエンジンの入口の床に当たり、文ごと落ちる（11-06 に作る時の動画の札が 8 件とも落ちた）。秒の書き方だけを外す。
+# 秒のすぐ後の「から・にも・に・は」も一緒に外す。秒だけを外すと「4849.8 秒は頭が下で、4850.0 秒に上へ移り」が「は頭が下で、に上へ移り」になり、
+# エンジンの側で読む人に文の意味が届かない（11-06 の束で見つけた）。「で」「の」は外さない（「3 秒で回る」の様に、秒の後の文の芯になる事がある）。
+SECONDS = re.compile(r"(?:[0-9]+(?:\.[0-9]+)?\s*[〜・]\s*)*[0-9]+(?:\.[0-9]+)?\s*秒(?:から|にも|に|は)?\s*")
 # 機械が拾った札の案（動きの少ない区間など）の読み手の印。意味を付けていない候補なので、確かめなしでは束に入れない。
 MACHINE = "機械"
 JST = timezone(timedelta(hours=9))
@@ -101,6 +106,11 @@ def _when(text):
     except ValueError:
         return None
     return t if t.tzinfo else t.replace(tzinfo=JST)
+
+
+def _without_seconds(text):
+    """札の文から、動画の秒の書き方を外す。外して空になった括弧も外す。字でない欄はそのまま返す（say が読み飛ばす）。"""
+    return re.sub(r"（\s*）", "", SECONDS.sub("", text)) if isinstance(text, str) else text
 
 
 def _sheet_set_of(rec):
@@ -314,12 +324,12 @@ def build(origin=FROM):
             if uploads.get(rid, {}).get("video_kind") == REVIEW:
                 # レビューで読んでいるのは紙なので、案内の札（題や組み方の文の読みにくさ）も紙への指摘。聞く口とサイトの話は紙の外
                 if m.get("kind") not in REVIEW_OUTSIDE:
-                    say(g, REVIEW, m.get("note"), step, floor=talk_log.blocked)
+                    say(g, REVIEW, _without_seconds(m.get("note")), step, floor=talk_log.blocked)
                 continue
             if m.get("kind") in SERVICE_MARKS:
                 continue
             craft = m.get("kind") == trial_video.KUFU
-            if say(g, "craft" if craft else "stuck", m.get("note"), step, floor=talk_log.blocked) and step:
+            if say(g, "craft" if craft else "stuck", _without_seconds(m.get("note")), step, floor=talk_log.blocked) and step:
                 if craft:
                     g["craft"].setdefault(step, {"talks": 0, "who": set()})["talks"] += 1
                 else:

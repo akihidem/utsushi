@@ -3,6 +3,7 @@
 手順ごとの途中の形が紙の動きのとおりに並ぶ事、折り線の角から作った形と組み立ての形が同じ事、頁が外の部品を読まない事を見る。
 """
 import json
+import html as html_mod
 import math
 import os
 import re
@@ -14,6 +15,7 @@ from omochae import assembly, hypotheses, instructions
 from omochae.compose import TEMPLATES
 from omochae.templates import slider_fan
 from web import kumitate
+from web.play_server import ROOT  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
@@ -185,7 +187,10 @@ for f in data:
 html = kumitate.page(G)
 body = re.sub(r'xmlns(:\w+)?="[^"]*"', "", html)
 assert not re.search(r'https?://', body), re.search(r'https?://[^"\' )]*', body)
-assert "<img" not in html and "fetch(" not in html and "import(" not in html
+assert "fetch(" not in html and "import(" not in html
+# 立体の節は絵を読み込まない（CSS の立体だけ）。組み立てだけの頁の頭の原図は、同じサイトの写し（/picture/<印>）だけ（写しがある時）
+assert "<img" not in kumitate.block(G)
+assert all(src.startswith("/picture/") for src in re.findall(r'<img[^>]*src="([^"]+)"', html)), re.findall(r'<img[^>]*src="([^"]+)"', html)
 for mark in ('id="rt-paper"', 'id="rt-ruler"', 'id="rt-sci"', 'class="rt-scrap"', 'data-r="poke"', 'data-r="row"', 'data-r="thread"', 'data-r="axle"'):
     assert mark in html, mark
 assert html.count('class="rt-p"') == 2 * sum(len(s.panels) for s in bench.sheets.values())
@@ -202,18 +207,59 @@ assert "10cm の物差し" in html
 assert bench.sheets["tube"].part.hide_folds and not bench.sheets["base"].part.hide_folds
 assert 'stroke-dasharray="2,1"' in html
 
-# 組み立ての書き方が無い玩具には道を出さない
+# 組み方の節は全 83 種（本人の決まり 11-06「全種の組み立て頁に寄せてください」）。立体で組める玩具にも出す（立体の断りが「組み方の絵」を指すため）
+PLAIN = "NDL-1187053-R0000009-R"
 assert kumitate.available(G) and 'id="kumitate"' in kumitate.block(G)
-assert not kumitate.available("NDL-1187053-R0000009-R") and kumitate.block("NDL-1187053-R0000009-R") == ""
-assert not kumitate.available("無い玩具")
+assert not kumitate.available(PLAIN) and kumitate.block(PLAIN) == "" and kumitate.has(PLAIN), "立体の節は立体で組める玩具だけ"
+plain = kumitate.section(PLAIN)
+assert 'id="kumikata"' in plain and 'id="rt-stage"' not in plain and kumitate.STEPS_LABEL in plain and kumitate.STEPS_LEAD in plain
+assert 'id="kumikata"' in kumitate.section(G), "立体で組める玩具にも組み方の節"
+assert "手順の紙" not in kumitate.NOTE_SHAPE and "組み方の絵" in kumitate.NOTE_SHAPE, "断りの指し先は頁の組み方の絵（手順の紙は刷らない）"
+# 文は手帖・作りながら見る頁と同じ物（たたき台の紙の、刷ってある一番新しい版。無ければ版 1）
+from web import play_server, tsukuru  # noqa: E402
 
-# 型紙の頁に初めから出る（本人の決定 11-06）。書き方が無い玩具の頁には出ない
+texts = tsukuru.step_texts(PLAIN, hypotheses.sheet_of(PLAIN)["id"], 1)
+assert texts and kumitate.steps(PLAIN)[0] == texts
+assert re.findall(r"<li>(?:<svg.*?</svg>)?<p>(.*?)</p></li>", plain, re.S) == [html_mod.escape(x, quote=True) for x in texts]
+# 刷った一番新しい版の組み方を出す（版 1 を決め打ちしない。刷っていなければ版 1）
+seen, real_texts, real_versions = [], tsukuru.step_texts, play_server.printed_versions
+tsukuru.step_texts = lambda sid, hid, version=None: seen.append(version) or real_texts(sid, hid, 1)
+try:
+    play_server.printed_versions = lambda sid, hid: [1, 3]
+    kumitate.steps(PLAIN)
+    play_server.printed_versions = lambda sid, hid: []
+    kumitate.steps(PLAIN)
+finally:
+    tsukuru.step_texts, play_server.printed_versions = real_texts, real_versions
+assert seen == [3, 1], seen
+# 絵は、手順が前と違う絵を指す所でだけ出る（ほかの雛形は図 1 枚を頭に 1 度だけ）。読み上げの木からは隠れる
+assert plain.count("<svg") == 1 and 'aria-hidden="true"' in plain
+# 頭に、手順の紙にあった遊び方の文（字は紙のまま。本人の答え 11-06、6 点の 2）
+how = hypotheses.sheet_of(PLAIN)["how_it_moves"]
+assert f"<b>{kumitate.PLAY_HEAD}</b>" in plain and kumitate.PLAY_NOTE in plain and kumitate.PLAY_HEAD == "遊び方" and kumitate.PLAY_NOTE == "力を入れすぎず、手でゆっくり動かす"
+assert plain.index(kumitate.PLAY_NOTE) < plain.index(kumitate.STEPS_LEAD), "遊び方は組み方の頭"
+assert "。。" not in plain
+assert not kumitate.available("無い玩具") and not kumitate.has("無い玩具") and kumitate.block("無い玩具") == "" and kumitate.section("無い玩具") == ""
+# 全 83 種で開ける
+from web.play_server import sources  # noqa: E402
+
+assert all(kumitate.has(s) for s in sources()), [s for s in sources() if not kumitate.has(s)]
+# 組み立てだけの頁は、頁の題が呼び名を言うので、節の見出しを重ねない（立体の無い玩具）。原図は組み立てだけの頁にだけ出す（写しがある時）
+alone = kumitate.page(PLAIN)
+assert alone.count(kumitate.STEPS_LABEL) == 3 and "<h2>" not in alone and "<h3>" not in alone, "題（title と h1）の 2 つと、頭の文「組み方の順に並べました。」の 1 つ"
+assert ('class="kumi-genga"' in alone) == (ROOT / "out/sources" / f"{PLAIN}.jpg").exists()
+assert 'class="kumi-genga"' not in plain, "玩具の頁の組み方の節には原図を重ねない（頁の頭に原図がある）"
+
+# 型紙の頁: 立体は「すぐ作る」の中（本人の決定 11-06。J-033）。組み方の節は「作る」の節の後（刷る口を押し下げない。統括の決め 11-06）
 from web import toy  # noqa: E402
 
 made_page = toy.toy_page(G)
-assert made_page.count('id="kumitate"') == 1 and made_page.count('id="rt-stage"') == 1
+assert made_page.count('id="kumitate"') == 1 and made_page.count('id="rt-stage"') == 1 and made_page.count('id="kumikata"') == 1
 assert made_page.index('id="kumitate"') > made_page.index('id="kasetsu"'), "すぐ作る節の中に無い"
-assert 'id="kumitate"' not in toy.toy_page("NDL-1187053-R0000009-R")
+plain_page = toy.toy_page(PLAIN)
+assert plain_page.count('id="kumikata"') == 1 and 'id="kumitate"' not in plain_page and 'id="rt-stage"' not in plain_page
+for pg in (made_page, plain_page):
+    assert pg.index('id="win"') < pg.index('id="tsukuru"') < pg.index('id="kumikata"') < pg.index('id="kiroku"'), "刷る口と手帖の口の後、記録の前"
 
 # 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
 T = "NDL-1187053-R0000014-R"

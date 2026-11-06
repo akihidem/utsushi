@@ -209,9 +209,14 @@ def guided(scene, name):
     場面の名前は書き出す道の名（demo.build は <置き場>/<場面>.mp4 と <場面>-sheet.jpg に書く）。"""
     from demo import guide
 
-    if name not in guide.PLANS or isinstance(scene, guide.Guided):
+    from demo import later
+
+    if isinstance(scene, later.Later):  # もう包んである（書き出しとコマの一覧の両方がここを通る）
         return scene
-    return guide.Guided(scene, name, ROOT / "out/demo/cache")
+    if name in guide.PLANS and not isinstance(scene, guide.Guided):
+        scene = guide.Guided(scene, name, ROOT / "out/demo/cache")
+    # 後入れの札（本人の指示 11-07）。語りの声と本物の Claude の返事の所に、後入れと分かる札を重ねる（demo.later）
+    return later.Later(scene, name)
 
 
 def render(scene, out):

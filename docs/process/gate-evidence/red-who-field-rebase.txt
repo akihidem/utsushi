@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_who_field.py
+# commit: 45c1bdf1（回した時の HEAD）
+/tmp/tmphzhro75e/play/NDL-1187053-R0000005-L/.tmp-lrt3qvf0/H-A_v1.pdf
+/tmp/tmphzhro75e/play/NDL-1187053-R0000005-L/.tmp-lrt3qvf0/H-A_v1_tejun.pdf
+/tmp/tmphzhro75e/play/NDL-1187053-R0000005-L/.tmp-lrt3qvf0/H-A_v1_after.pdf
+Traceback (most recent call last):
+  File "tests/test_who_field.py", line 79, in <module>
+    assert "value=" not in field and "required" in field and 'autocomplete="off"' in field, (where, field)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('玩具の頁', '<input type="text" name="by" required>')
+rc=1

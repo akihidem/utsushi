@@ -1,7 +1,13 @@
 """demo.build の床: 台本の順・試験の数の読み方・場面ごとの引数を見る（書き出しはしない。遅いので）。"""
 import importlib.util
 
-from demo import build
+import tempfile
+
+from demo import build, script as _script
+
+# 手と声の置き場は、手元の本物の置き場（out/demo/slots）でなく空の置き場を見る（届いた物があると、試験の偽の秒で声が入らず落ちた）
+_EMPTY_SLOTS = tempfile.mkdtemp()
+build.SLOT_DIR = _script.SLOT_DIR = _EMPTY_SLOTS
 
 # 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
 # 前半は表、境目の札の後が裏（本人の決定 11-06、カード 125217）。語りの後ろの 2 文は文の順のまま後半の頭へ
