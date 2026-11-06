@@ -315,10 +315,40 @@ function showPicked() {
 picker.onchange = () => { chosen = chosen.concat([...picker.files]); picker.value = ''; showPicked(); };
 // 声の「とって」: 画面によっては人が押さないとカメラを開けないので、開けない時は「とって」を目立たせて手を呼ぶ。
 const shoot = () => { const shot = $('shot'); if (!shot) return; shot.classList.add('call'); setTimeout(() => shot.classList.remove('call'), 2000); try { picker.click(); } catch (e) {} };
+// 写真と動画を、残した記録に 1 つずつ送る。返すのは頁に出す字。
+const sendFiles = async (id, files) => {
+  for (const f of files) {
+    const m = await fetch(`/record/${id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+    if (!m.ok) return '記録は残しました。' + ((await m.text()) || '写真か動画を上げられませんでした');
+  }
+  return '上げました';
+};
 // 「のこす」: 写真があれば手元だけの確かめを通してから、見た事の札を出す。既定の選びは置かない。
-const keepPress = () => {
+// 写真があって工夫の字が無い時は、札を出す前に「この画面が残した記録に足せるか」を聞く（main の #443 と同じ聞き方）。
+// 作りながら見る頁の「できた」の後は、玩具の頁の記録の欄（写真の口が無い）に着く。そこで残した後にこの頁で写真を上げると、
+// 見た事をもう一度選んで 2 つ目の記録ができていた。足せる時は、新しい記録を作らず、見た事の札も出さない。番号は送らない。決めるのはサーバ
+// （記録を残した画面か・同じ紙と版か・写真の無い記録か）。この頁の紙は開いた時に決まっているので、紙と版はいつも送る（別の紙の作りの写真を足さない）。
+// 工夫の字がある時は聞かない: 足すと書いた事が記録に残らないため、今までどおり新しい記録にする。約束の印の前には聞かない（何も送らない）。
+const keepPress = async () => {
   if (go.disabled) return;
   if (chosen.length && !ok.checked) { ok.closest('label').classList.add('call'); return; }
+  if (chosen.length && !kufu.value.trim()) {
+    // 聞いている間に押し直されて、同じ写真が 2 度送られないよう、聞く前に押せなくする
+    go.disabled = true;
+    let target = '';
+    try { const a = await (await post(`/toy/${sid}/record-json`, { hypothesis: hid, attach: '1' })).json(); if (a.attached) target = a.id; } catch (err) {}
+    if (target) {
+      const files = chosen.slice(0, max);
+      st.textContent = '送っています…';
+      form.reset(); chosen = []; showPicked();
+      let done = '';
+      try { done = await sendFiles(target, files); } catch (err) { done = '記録は残しました。写真か動画を送れませんでした'; }
+      go.disabled = false;
+      location.assign(`/toy/${sid}/techo/kiroku?msg=${encodeURIComponent(done)}#mine`);
+      return;
+    }
+    go.disabled = false;
+  }
   to('kekka');
 };
 form.onsubmit = (e) => { e.preventDefault(); keepPress(); };
@@ -343,11 +373,8 @@ const save = async (result) => {
     // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。残らなかった時は作り直さない。
     if (window.utsushiNewWho) window.utsushiNewWho();
     form.reset(); chosen = []; showPicked();
-    done = '上げました';
-    for (const f of files) {
-      const m = await fetch(`/record/${j.id}/media`, { method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
-      if (!m.ok) { done = '記録は残しました。' + ((await m.text()) || '写真か動画を上げられませんでした'); break; }
-    }
+    // 写真を選ばずに残した時は「上げました」と言わない（上げていないので）。字は頁の記録の返事に今ある字（main の #429 と同じ）
+    done = files.length ? await sendFiles(j.id, files) : '記録を残しました';
   } catch (err) {
     if (!saved) { st.textContent = '送れませんでした。つながりを見て、もう一度押してください'; return; }
     done = '記録は残しました。写真か動画を送れませんでした';
@@ -439,7 +466,8 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # 字で書くのは選べる追加（畳んでおく）。名前は字で出さない（押す所の名前は 6 つ）ので、形だけにして、読み上げ用の名を持たせる。
             f'<details class="fold" id="fold"><summary class="key" aria-label="字で書く">{PENCIL}</summary>'
             f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(craft["hint"])}"></textarea></details>'
-            '<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>'
+            # 約束の印は写真と動画の分。合言葉なしの場は写真の口が閉じているので出さない（main の #429 と同じ）。要るかどうかは、選んだ時に script が決める。
+            + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'

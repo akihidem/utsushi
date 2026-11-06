@@ -4,6 +4,7 @@
 大きさと、押して進む事は、手元のブラウザで別に測った（gate-trial の節に書く）。
 """
 import html.parser
+import http.cookiejar
 import json
 import os
 import re
@@ -26,12 +27,17 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 
 
+# 記録の鍵（main の #441）: 説明の欄と札は、その記録を残した画面にだけ出る。同じ Cookie を持つ 1 つの画面として送る
+jar = http.cookiejar.CookieJar()
+screen = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+
 def req(path, data=None):
     body = urllib.parse.urlencode(data).encode() if data is not None else None
     r = urllib.request.Request(base + path, data=body, method="POST" if body is not None else "GET",
                                headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
     try:
-        x = urllib.request.urlopen(r)
+        x = screen.open(r)
         return x.status, x.read().decode()
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode()
@@ -249,9 +255,12 @@ assert "ok.checked" in js
 
 # ---- 上げる順: 工夫の字を床に通す → 記録 → 欄を空に → 写真。押し直しで記録を増やさない（#143）
 up = js[js.index("const save"):]
-assert up.index("/talk") < up.index("record-json") < up.index("form.reset()") < up.index("/media")
+# 写真を送る所は、足せる記録へ送る道（main の #443 の形）と共に使うので、sendFiles に 1 つにした
+files_send = js[js.index("const sendFiles"):js.index("const keepPress")]
+assert "/media" in files_send and "/media" not in up
+assert up.index("/talk") < up.index("record-json") < up.index("form.reset()") < up.index("sendFiles(j.id, files)")
 assert "if (go.disabled) return" in up and "go.disabled = true" in up
-assert "上げました" in up and "に入りました" not in up, "工夫の数を知らせる文は本人の確認が済むまで出さない"
+assert "上げました" in files_send and "に入りました" not in js, "工夫の数を知らせる文は本人の確認が済むまで出さない"
 assert "/techo/kiroku" in up
 
 # ---- 絵: 御来迎は折る順の 4 コマ（手順の紙と同じ形）。手順の順に進み、最後は 4 コマ目
@@ -335,7 +344,7 @@ for tpl in TEMPLATES.values():
     assert tpl.SHEET_SET not in listed, ("記録の頁に内部の番号", tpl.SHEET_SET)
 assert talk_log.kufu(G, j["id"], shared_only=True)[0]["text"] == "紙を二重にした"
 # 手帖から説明を送ると、記録の頁へ戻る
-op = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))
+op = urllib.request.build_opener(type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}), urllib.request.HTTPCookieProcessor(jar))
 x = urllib.request.Request(base + f"/record/{j['id']}/explain", data=urllib.parse.urlencode({"text": "開いた", "next_idea": "速く押す", "by": "本人", "back": "techo"}).encode(),
                            headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base})
 try:

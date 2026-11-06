@@ -117,7 +117,7 @@ assert "m1.jpg" not in req("/gallery")[1].decode(), "人の確認の前は出さ
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 code, got = req(f"/record/{rid}/media/m1.jpg")
 assert code == 200 and got == saved, "確かめた写真は誰にでも開く。撮影の情報を外した物"
-assert "m1.jpg" in req(f"/toy/{G}/techo")[1].decode()
+assert "m1.jpg" in req(f"/toy/{G}/techo/kiroku")[1].decode()
 g = req("/gallery")[1].decode()
 assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
@@ -135,7 +135,7 @@ from web.techo_step import SCRIPT  # noqa: E402
 up = SCRIPT[SCRIPT.index("const save"):]
 assert "location.href" not in up and "/techo/kiroku" in up, "同じ道へは飛ばさない。のこした後は記録の頁へ移る"
 assert "if (go.disabled) return" in up and "go.disabled = true" in up and "form.reset()" in up and "上げました" in up
-assert up.index("form.reset()") < up.index("/media"), "記録ができたら先に欄を空にする（写真で止まっても、押し直しで記録を増やさない）"
+assert up.index("form.reset()") < up.index("sendFiles(j.id, files)"), "記録ができたら先に欄を空にする（写真で止まっても、押し直しで記録を増やさない）"
 # 入れ替える元は頁の #mine。今の記録と写真が、新しい順の頭に在る
 r3 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": "x"})[1])["id"]
 mine = req(f"/toy/{G}/techo/kiroku")[1].decode().split('<div id="mine">')[1]
