@@ -126,10 +126,12 @@ for sid in (G, T, TRIAL):
     card = card_of(get(f"/toy/{sid}"), rid)
     assert "自分の仮説の紙" in card and "感想: 前の感想" in card and "説明: 前の感想の説明" in card and "次の思いつき: 前の感想の次" in card, card
     paper = f"/sheet/{sid}/{oid}_v1_free.pdf"
-    assert f'<a href="{paper}"' in card and "型紙なしの紙" in card, (sid, "刷った紙への道")
+    # 型紙なしの紙は 11-06 から刷らない（本人の決まり「文章のプリントは廃止」）ので、札に道は出さない。前に刷った紙の道は残す
+    assert f'<a href="{paper}"' not in card and "型紙なしの紙" not in card, (sid, "型紙なしの紙への道を出さない")
     assert status(paper) == (200, "application/pdf"), (sid, paper)
     after = f"/sheet/{sid}/{oid}_v1_after.pdf"
-    assert f'<a href="{after}"' in card and status(after) == (200, "application/pdf"), (sid, after)
+    # 試した後の紙も 11-06 から刷らないので札に道は出さない。前に配った道は開く
+    assert f'<a href="{after}"' not in card and status(after) == (200, "application/pdf"), (sid, after)
     assert f"/record/{rid}/next" not in card, (sid, "型紙なしの紙の記録に、次の版の向く先は無い")
     # 記録の無い紙は頁に出ないが、道そのものは消さない
     alone = written(sid, "記録の無い案")
@@ -139,8 +141,10 @@ for sid in (G, T, TRIAL):
 typed = written(G, "寸法つきの案", {"push_part": "tab", "hub": "axle", "pusher_height": 15})
 rid_typed = recorded(G, typed, "寸法つきの感想")
 card = card_of(get(f"/toy/{G}"), rid_typed)
-for stem, label in ((f"{typed}_v1", "型紙"), (f"{typed}_v1_tejun", "手順の紙")):
-    assert re.search(rf'<a href="/sheet/{G}/{stem}\.pdf"[^>]*>{label}</a>', card), (stem, card)
+# 刷るのは型紙だけ（本人の決まり 11-06）。札の道は型紙だけで、手順の紙の道は出さない（前に配った道は開く）
+assert re.search(rf'<a href="/sheet/{G}/{typed}_v1\.pdf"[^>]*>型紙</a>', card), card
+assert f"{typed}_v1_tejun" not in card and "手順の紙" not in card
+for stem in (f"{typed}_v1", f"{typed}_v1_tejun"):
     assert status(f"/sheet/{G}/{stem}.pdf") == (200, "application/pdf"), stem
 assert f"{typed}_v1_free" not in card
 

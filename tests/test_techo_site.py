@@ -104,7 +104,8 @@ assert (GS, 1) in conf and conf[(GS, 2)][-1]["by"] == "本人" and conf[(GS, 2)]
 # フィードバックも手帖で（本人 11-04）: 試した後の紙・説明・次の版が手帖の記録に出て、送った後は手帖へ戻る
 # 札は作る頁から記録の頁へ分けた（作る頁の字に記録の番号を出さない。本人の決定 11-05、#87）。試した後の紙は記録の前に渡さない（S-03）
 page = req(f"/toy/{G}/techo/kiroku")[1].decode()
-assert "試した後の紙" in page and "次の版を作る" in page and 'name="back" value="techo"' in page
+# 試した後の紙は 11-06 から刷らないので、記録の札に道を出さない
+assert "試した後の紙" not in page and "次の版を作る" in page and 'name="back" value="techo"' in page
 assert "試した後の紙" not in req(f"/toy/{G}/techo")[1].decode()
 r2 = json.loads(req(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた"})[1])["id"]
 opener = urllib.request.build_opener(JAR, type("NoRedirect", (urllib.request.HTTPRedirectHandler,), {"redirect_request": lambda *a, **k: None}))

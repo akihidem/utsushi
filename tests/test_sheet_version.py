@@ -18,7 +18,7 @@ from web import techo_site  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
 GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -75,10 +75,11 @@ for send in (on_page, on_techo):
         assert send(sheet_version=bad) in (201, 303) and versions()[-1] == 2, bad
 assert set(versions()) == {1, 2}, "刷っていない版の番号が記録に残った"
 
-# 手帖の「試した後の紙」は、その記録の版の紙を指す
+# 手帖の記録の札には、試した後の紙への道を出さない（11-06 から刷らない）。紙の道はその記録の版の紙を開く
 for v in (1, 2):
     rec = next(r for r in records.all_records(G) if r["sheet_version"] == v)
-    assert f"{GS}_v{v}_after.pdf" in techo_site.feedback(G, rec), v
+    assert "_after.pdf" not in techo_site.feedback(G, rec), v
+    assert urllib.request.urlopen(base + f"/sheet/{G}/{GS}_v{v}_after.pdf").status == 200, v
 # 頁は版が 2 つ以上ある時だけ聞く
 assert 'name="sheet_version"' in urllib.request.urlopen(base + f"/toy/{G}").read().decode()
 print("ok")

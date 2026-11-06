@@ -156,6 +156,9 @@ button,input,textarea,select{font-family:inherit}
 @media (min-width:860px) and (orientation:landscape){
  .te{display:grid;max-width:none;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);grid-auto-rows:min-content;align-content:start}
  .koma{grid-row:1/span 8;min-height:100vh;min-height:100svh}
+ /* 右の列の頭は、マイク・原画の釦・閉じる印の並ぶ上の帯（top 12px・高さ 64px）と同じ高さになる。手順の字をその帯の下（絵と同じ 84px）から始め、
+    字が釦の下に隠れないようにする（11-07 の前の確かめで、1024×768〜1920 の横置きで御来迎と虎のほぼ全部の手が隠れた）。縦置きは字が絵の下に来るので要らない */
+ #steps{padding-top:84px}
  .end,.kekka{grid-column:1/-1;max-width:820px;width:100%;margin:0 auto}
 }
 """

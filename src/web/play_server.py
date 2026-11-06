@@ -441,7 +441,8 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
             from . import kumitate
-            if m.group(1) not in sources() or not kumitate.available(m.group(1)):
+            # 立体の無い玩具も、組み方の文と絵の頁として開く（本人の決まり 11-06: 全種の組み立て頁に寄せる）
+            if m.group(1) not in sources() or not kumitate.has(m.group(1)):
                 return self._send(404, "無い")
             return self._send(200, kumitate.page(m.group(1), look, path))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
@@ -514,12 +515,8 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:
                 v = 0
             see = qs.get("see", [None])[0]
-            if kind == "_after" and see:
-                ensure_after(m.group(1), see, v)  # 札の「試した後の紙」の着く先。紙が無いと窓に出ない（#320）
-            from . import think_sheet
-            see = qs.get("see", [None])[0]
-            if kind == "_after" and see:
-                ensure_after(m.group(1), see, v)  # 札の「試した後の紙」の着く先。紙が無いと窓に出ない（#320）
+            # 窓は型紙だけを出す（本人の決まり 11-06「文章のプリントは廃止」）。前は kind=after で試した後の紙をここで作って窓に出した（#320）。
+            # 前に配ったリンクのために /sheet/…_after の道は残し、紙はそこで開く時にだけ作る（ensure_after）
             from . import think_sheet
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=think_sheet.allowed_at(self, m.group(1), qs.get("at", [""])[0]), see=see, kind=kind, v=v, path=path))
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
@@ -975,7 +972,8 @@ class Handler(BaseHTTPRequestHandler):
                 from omochae import talk_log
                 talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
                 claim = (self._rec_cookie(rid),)
-            msg = "記録を残しました。試した後の紙が開けます"
+            # 試した後の紙は刷らなくなった（本人の決まり 11-06）ので、後ろの「試した後の紙が開けます」を外した（字は足していない）
+            msg = "記録を残しました。"
             # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
             anchor = rid or anchor
         if failures:
