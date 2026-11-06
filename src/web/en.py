@@ -22,7 +22,7 @@ DRAFT = "Draft translation. A native speaker has not checked it yet."
 # J-030 の少し長い紹介と同じ文。文を変える時は J-030 も直す。本人の方針（11-05）の書き方: 短い文・やさしい語（#318）。
 INTRO = (
     "In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called <i>Edo nishiki</i>. It shows more than 80 toys with short poems, but it does not say how the toys worked.",
-    "With utsushi, you can test ideas with your hands. Pick a toy and print a paper template right away. Each idea has its own template, and none of them is the answer. Cut, fold, glue, and try it. If it does not move, that is a result too. Write down what happened, change one thing, and print the next version.",
+    "With utsushi, you can test ideas with your hands. Pick a toy and print a paper template right away. Each toy has one template to start from. It is not the answer. Cut, fold, glue, and try it. If it does not move, that is a result too. Write down what happened, change one thing, and print the next version.",
     "Two toys have full templates, in Japanese only. One is the Goraigo (roughly, \"welcoming descent\"), a tube with a fan. The other is a tiger based on old papier-mâché toys. An earlier Goraigo moved in one trial with adults. No one has finished the tiger yet. The other toys are untested drafts, and their names are our guesses.",
     "A paper model that moves does not prove how the original was made. These models are for trying things out. They are not exact copies of the old toys.",
 )

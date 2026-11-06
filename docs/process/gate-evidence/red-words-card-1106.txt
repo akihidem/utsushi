@@ -1,0 +1,8 @@
+# 命令: bash -c '.venv/bin/python tests/test_words_card_1106.py 2>&1 | tail -4 | cut -c1-200; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: c38531b0（回した時の HEAD）
+  File "tests/test_words_card_1106.py", line 72, in <module>
+    assert "83 のおもちゃから、1 つ選ぶ" in entrance and "の玩具から、1 つ選ぶ" not in entrance, look
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: tenji
+試験 rc=1
+rc=0

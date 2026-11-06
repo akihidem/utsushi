@@ -163,6 +163,7 @@
    "tests/test_explain_no_name.py",
    "src/web/wording.py",
    "tests/test_wording.py",
+   "tests/test_words_card_1106.py",
    "tests/test_reader_words.py",
    "src/web/play_server.py",
    "src/web/demo_check.py",

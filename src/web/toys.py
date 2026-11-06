@@ -65,7 +65,7 @@ def page(skin, path="/toys", paper=False):
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
     body = (f'<section class="sec"><h1>おもちゃ</h1><p class="lead">{esc(LEAD)}</p>'
-            f'<p class="meta">{len(sids)} の玩具。{esc(NOTE.format(n=len(main)) if main else NOTE.split("ほかは、", 1)[1])}</p><p class="meta">{esc(ways.NOTE)}</p>'
-            + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れる玩具だけを見る</a></p>') +
+            f'<p class="meta">{len(sids)} のおもちゃです。{esc(NOTE.format(n=len(main)) if main else NOTE.split("ほかは、", 1)[1])}</p><p class="meta">{esc(ways.NOTE)}</p>'
+            + ('<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p>') +
             f'<ul class="toys" style="list-style:none;padding:0;margin:4vh 0 0">{"".join(card(s) for s in main + rest)}</ul></section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

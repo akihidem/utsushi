@@ -202,7 +202,7 @@ def count(sid, hid, version=None):
     return len(step_texts(sid, hid, version))
 
 
-def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
+def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     """作りながら見る頁。呼ぶ側（play_server）が、その仮説の紙が刷ってある事を確かめてから呼ぶ。"""
     from . import hanasu  # 話す口（Issue #279）。循環を避けて、ここで読む
 
@@ -253,7 +253,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None):
             f'<form id="ask-form" method="post" action="/toy/{esc(sid)}/ask">'
             f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{v}"><label class="sr" for="q">聞きたい事</label>'
             '<input type="text" id="q" name="question" maxlength="300" placeholder="谷折りって？" enterkeyhint="send" required><button>聞く</button></form>'
-            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(NOTICE)}</p>'
+            f'<div class="answer" id="answer" aria-live="polite"></div><p class="meta">{esc(making_log.ask_notice(ai) + making_log.ASK_NAME_VOICE)}</p>'
             f'<p class="meta"><a href="/toy/{esc(sid)}/techo">声で聞く・写真を上げる（手帖）</a></p></div>'
             # カメラの目的（本人の言葉 11-05「カメラで見るのはそういうとこだよ」）。人の出来を測らない事を、カメラのそばに書く。
             f'<p class="meta">{esc(CAMERA_PURPOSE)}</p>'
