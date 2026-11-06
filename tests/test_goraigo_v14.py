@@ -89,4 +89,14 @@ with old_set():
     assert all("".join(t.split()) in after_words(then) for t in FIVE["after_try.contrasts"] + FIVE["after_try.card"])
     assert all(t in toy.toy_page(G) for t in FIVE["analogy.related"]), "前の組の頁のたとえが外れた"
 
-print("ok 御来迎の次の組 goraigo-v14。組ごとのたたき台と寸法・考えの節の呼び名・糸の前提の字 5 つを v14 で出さない")
+# 4. 押し方の違う紙の記録からは次の版を作らない（窓口が本人の委任で決めた案 A 11-06）。11-04 の R-0002 は goraigo-v7 の H-C（柄を差す形）の紙。
+# 今の組の H-C は割り箸で押し上げる形なので、向く先が無い。今の組の記録・組を持たない記録・前の組で同じ形の記録は今までどおり
+from omochae import loop  # noqa: E402
+
+assert loop.next_target(G, "H-C", "goraigo-v7") is None and loop.next_target(G, "H-A", "goraigo-v7") is None
+assert loop.next_target(G, "H-C", "goraigo-v14") == "H-C" and loop.next_target(G, "H-C") == "H-C"
+with old_set():
+    assert loop.next_target(G, "H-A", "goraigo-v7") == "H-A", "前の組では 11-04 の H-A の記録から次の版に進める（前と同じ）"
+    assert loop.next_target(G, "H-C", "goraigo-v7") is None
+
+print("ok 御来迎の次の組 goraigo-v14。組ごとのたたき台と寸法・考えの節の呼び名・糸の前提の字 5 つを v14 で出さない・押し方の違う記録から次の版を作らない")

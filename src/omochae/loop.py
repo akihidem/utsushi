@@ -151,16 +151,39 @@ def material(rid):
     return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
 
 
-def next_target(source_id, hid):
+def next_target(source_id, hid, sheet_set=None):
     """次の版を足す仮説。自分の紙（OWN-n）の記録から作る次の版は、たたき台へ向ける（根拠は OWN-n の記録のまま）。
     なぜ: 型紙は玩具ごとに 1 枚（J-032）で、最新版が次の人の型紙になる。OWN-n に版を足しても紙は刷られず、次の人にも届かない。ループ1 を通った人の工夫がループ2（型紙の改善）に届くように。
     型紙なしの紙（寸法の無い案）の記録は向く先が無いので、そのまま返す。組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らないため。欄も節の数も出ず、受け口と床が断る。
-    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。"""
+    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。
+    sheet_set は記録の紙の組。その組の紙の押し方（雛形の HYP_KEY）が今のたたき台の形と違う記録は、向く先が無い（None）。
+    なぜ: 組を上げてたたき台の形が変わると、同じ仮説の id の前の紙（御来迎の R-0002 は goraigo-v7 の柄を差す形の H-C）からの観察で、
+    今の形（goraigo-v14 の割り箸で押し上げる H-C）の版を作ってしまう。窓口が本人の委任で決めた案 A（2026-11-06）: 形の違う記録には
+    次の版の欄を出さず、待つ報告にも数えない。組を持たない記録と、同じ形の組の記録は今までどおり"""
     from .hypotheses import sheet_of
 
     if not str(hid).startswith("OWN-") or not (_hypothesis(source_id, hid) or {}).get("params"):
+        if sheet_set and not _same_form(source_id, hid, sheet_set):
+            return None
         return hid
     return sheet_of(source_id)["id"]
+
+
+def _same_form(source_id, hid, sheet_set):
+    """記録の組の紙（sheet_set の寸法）の押し方が、今のたたき台の紙の押し方と同じか。押し方の名の無い雛形は同じと見る。"""
+    from .compose import TEMPLATES
+    from .hypotheses import ROOT, load, params_for, sheet_of
+
+    tpl = TEMPLATES[load(source_id).get("template", "slider_fan")]
+    # 組の寸法は記録を直に読む（load は今の組の寸法を params に重ねるので、前の組の紙の寸法が読めない）。人が採った仮説は記録に無いので load の物
+    path = ROOT / "data/hypotheses" / f"{source_id}.json"
+    raw = json.loads(path.read_text(encoding="utf-8"))["hypotheses"] if path.exists() else []
+    key, h = getattr(tpl, "HYP_KEY", None), next((x for x in raw if x["id"] == hid), None) or _hypothesis(source_id, hid)
+    if not key or not h:
+        return True
+    then = {**tpl.DEFAULTS, **(params_for(h, sheet_set) or {})}
+    now = {**tpl.DEFAULTS, **(sheet_of(source_id).get("params") or {})}
+    return then.get(key) == now.get(key)
 
 
 def material_text(rid):
@@ -185,8 +208,10 @@ def material_text(rid):
         lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
     elif not talk["items"]:
         lines.append("  （この記録に結んだ字は無い）")
-    target = next_target(rec["source_id"], rec["hypothesis_id"])
-    if target != rec["hypothesis_id"]:
+    target = next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))
+    if target is None:
+        lines += ["", "この記録の紙は今のたたき台と押し方が違うので、次の版には使わない"]
+    elif target != rec["hypothesis_id"]:
         lines += ["", f"次の版は {target} に足します（根拠はこの記録）"]
     lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
     return "\n".join(lines)
@@ -569,7 +594,7 @@ def next_version(rid, by, content, change, source, sheet_dir):
     if failures:
         return None, failures
     rec = record(rid)
-    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"])
+    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))
     proposal = {"record_ids": [rid], "hypothesis_id": hid, "changes": [change]}
     failures = check_proposal(proposal, source, will_confirm=[rid])
     if failures:
@@ -713,7 +738,7 @@ def main(argv=None):
                 for c in args.change:
                     k, v = c.split("=", 1)
                     changes.append({"param": k, "to": float(v), "why": args.why})
-                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"]), "changes": changes}, source, "human")
+                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"], record(args.record).get("sheet_set")), "changes": changes}, source, "human")
             else:
                 from api.loop_agents import draft_proposal
 

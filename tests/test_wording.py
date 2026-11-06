@@ -107,12 +107,17 @@ folder = techo_site.media_dir(rid)
 folder.mkdir(parents=True, exist_ok=True)
 (folder / "m1.jpg").write_bytes(b"\xff\xd8\xff")
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
+# 次の版を待つ報告は、説明のある今のたたき台の記録。11-04 の R-0001・R-0002 は前の組の押し方の違う紙なので数えない（窓口の決定 案 A 11-06）
+post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない"})
+ready = records.all_records(G)[-1]["id"]
+post(f"/record/{ready}/explain", {"text": "途中で止まった", "next_idea": "折りを減らす", "by": "大人"})
 page = get(f"/toy/{G}?see={GS}&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
 assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
 kz = page.split('id="kaizen"', 1)[1]
 assert f"<a href=#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
-assert re.search(r'次の版を待つ報告 \d+ 件: [^（]*<a href="#R-0001">▼R-0001</a>', kz), "改善の輪: 次の版を待つ報告"
+assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
+assert 'href="#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
 assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
 assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）から" in gallery and "▲紙や玩具を作る人の言葉を" in gallery, "ギャラリー"
