@@ -22,7 +22,7 @@ os.environ.pop("OMOCHAE_VOICE", None)
 
 from omochae import records  # noqa: E402
 from web import contrib_server, hanasu  # noqa: E402
-from web.play_server import serve  # noqa: E402
+from web.play_server import REC_COOKIE, serve  # noqa: E402
 
 DECIDED = "取り下げると、このサイトの中からは消えます。前にエンジンへ渡した分は残ります"
 PARA = f'<p class="meta">{DECIDED}</p>'
@@ -32,8 +32,13 @@ server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 
 
+# 上げた後に足す口は、記録を残した画面にだけ開く（records.mine）。記録ごとの口が並ぶ見本にするため、2 つの記録をこの画面の物として控える
+REC_KEY = "b" * 24
+
+
 def page(path):
-    with urllib.request.urlopen(f"http://127.0.0.1:{server.server_address[1]}{path}") as r:
+    req = urllib.request.Request(f"http://127.0.0.1:{server.server_address[1]}{path}", headers={"Cookie": f"{REC_COOKIE}={REC_KEY}"})
+    with urllib.request.urlopen(req) as r:
         return r.read().decode()
 
 
@@ -45,6 +50,7 @@ def cli(*args):
 def trial():
     rid, failures = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない"})
     assert not failures, failures
+    records.claim(rid, REC_KEY)
     return rid
 
 
