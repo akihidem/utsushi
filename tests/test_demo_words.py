@@ -112,10 +112,11 @@ for name in [*words.CARDS, "talk_toys", "talk_lost", "talk_physics", "talk_claud
     if name not in words.PICTURED:
         mid = (card.cues["c0"][0] + card.cues["c1"][0]) / 2 if n > 1 else card.duration / 2
         assert card.frame(mid).tobytes() == card.frame(mid + 0.05).tobytes(), name
-# 図の札: 失われる話の間に図が薄くなる
+# 図の札: 失われる話の間も、図は薄くせずに止める（統括の決め 11-06 夜。前は薄くしていた）
 lost = words.ChunkCard("talk_lost", words.cues_of("talk_lost"), pic)
 box = (words.PIC_X - 100, 300, words.PIC_X + 100, 700)
-assert lost.frame(0.0).crop(box).getextrema()[0][0] < lost.frame(lost.duration - 0.1).crop(box).getextrema()[0][0]
+assert lost.frame(1.0).crop(box).tobytes() == lost.frame(lost.duration - 0.1).crop(box).tobytes(), "図は場面の間ずっと同じ濃さ"
+assert words.STYLES["talk_lost"]["ink"][0] == words.STYLES["talk_lost"]["ink"][1]
 
 # 問いの札は止まっている（考える間に動く物を置かない）
 ask = words.AskCard(words.cues_of("ask"))
