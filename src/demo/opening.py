@@ -28,7 +28,7 @@ from demo.flip import FPS, H, ROOT, SUMI, W, contact_sheet, ease, render, text
 QUESTION = "こんなおもちゃを知っていますか？"
 PLACEHOLDER = "（ここに職人のおもちゃの動画が入ります）"
 VIDEO = ROOT / "out/demo/opening/toys.mp4"     # 職人のおもちゃの動画の置き場（git に入れない）
-DURATION = 11.6                                # word_touch を戻す秒のために 8.6 秒にし、場面 5 の字幕を消して浮いた 3 秒で戻した（本人の決定 11-06）
+DURATION = 8.6                                 # 表と裏の境目の札の 3 秒を、ここから作った（本人の決定 11-06、カード 125217）。前は 11.6 秒（場面 5 の字幕を消して戻した秒）
 MIN_WIDTH = 1280
 WHITE = (255, 255, 255)
 VIDEO_BOX = (178, 180, 1742, 1060)             # 動画を置く枠。16:9 で、上に問いの字の余白
@@ -110,7 +110,7 @@ def main(argv=None):
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
     ap.add_argument("--video", default=str(VIDEO), help="職人のおもちゃの動画（省くと決まった置き場）")
     a = ap.parse_args(argv)
-    times = (0.4, 1.0, 1.6, 2.4, 4.0, 6.0, 8.0, 10.0, 11.8)
+    times = (0.4, 1.0, 1.6, 2.4, 4.0, 5.5, 7.0, 8.0, 8.5)
     video = pathlib.Path(a.video)
     if not video.exists():
         print("注意: 職人のおもちゃの動画が無いので、印を出す。この動画は外へ出せない", file=sys.stderr)

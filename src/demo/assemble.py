@@ -7,6 +7,10 @@ exit: 0 = つないで 3 分以内 / 3 = 3 分を超えた（つないだ物は�
 - 長さの床をここに置く。提出の要項が 3 分までで、場面を足すたびに手で足し算すると漏れるため。
 - つなぐ時に作り直す（再エンコード）。画面の録画とコードの場面は大きさや fps が違う事があり、
   そのままの連結（-c copy）だと途中で崩れる。どの場面も 1920x1080・30fps にそろえる。
+- 本人の声の語り（本人の決定 11-06「語りは本人が自分の声で読む」）は voices で 1 文ずつ重ねる。場面の動画の音は今までどおり使わない。
+- 語りの声が鳴る間だけ、曲（仮の拍も）を DUCK_DB まで下げる（ダッキング）。声を曲に埋もれさせないため。
+  下げる所の前後 DUCK_RAMP 秒で、なだらかに下げて戻す（急に変えると、曲が切れたように聞こえる）。声の大きさは変えない。
+  値は一般的な目安（語りの下の曲を 10〜15dB 下げる）から取った見込みで、本物の曲と本人の声ではまだ聞いていない。
 """
 import argparse
 import pathlib
@@ -16,6 +20,16 @@ import sys
 
 LIMIT = 180.0
 W, H, FPS = 1920, 1080, 30
+DUCK_DB, DUCK_RAMP = -12.0, 0.4     # 語りの間の曲の下げ幅（dB）と、下げて戻す秒
+
+
+def duck_gain(windows, db=DUCK_DB, ramp=DUCK_RAMP):
+    """曲の音の大きさの式（ffmpeg の volume の eval=frame の式）。windows: 声が鳴る (始め, 終わり) の並び。無ければ None。"""
+    if not windows:
+        return None
+    low = 10 ** (db / 20)
+    terms = [f"(1-{1 - low:.4f}*clip(min((t-{a - ramp:.3f})/{ramp},({b + ramp:.3f}-t)/{ramp}),0,1))" for a, b in windows]
+    return "*".join(terms)
 
 
 def duration(path):
@@ -27,9 +41,10 @@ def duration(path):
         return None
 
 
-def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=None):
+def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=None, voices=(), duck=()):
     """seconds: 場面ごとの長さ（曲の小節に合わせる時）。余れば最後のコマで止め、足りなければ切る。どの場面も最後は止めて読む間なので。
-    audio_start: 曲のどこから使うか。fade_at: 動画の何秒から音を 2 秒で消すか（問いの札の前で消すため）。"""
+    audio_start: 曲のどこから使うか。fade_at: 動画の何秒から音を 2 秒で消すか（問いの札の前で消すため）。
+    voices: 本人の声の語り [(ファイル, 動画の何秒から)]。duck: 曲を下げる (始め, 終わり) の並び（語りの声が鳴る間）。"""
     if not (shutil.which("ffmpeg") and shutil.which("ffprobe")):
         print("検査できない: ffmpeg か ffprobe が無い", file=sys.stderr)
         return 4
@@ -55,11 +70,26 @@ def assemble(scenes, out, audio=None, seconds=None, audio_start=0.0, fade_at=Non
     chain = "".join(f"[v{i}]" for i in range(len(scenes)))
     fil = ";".join(parts) + f";{chain}concat=n={len(scenes)}:v=1:a=0[v]"
     sound = []
+    n_in = len(scenes)
     if audio:
         args += ["-i", str(audio)]
         cut = f"atrim=start={audio_start:.3f},asetpts=PTS-STARTPTS," if audio_start else ""
         gone = f",afade=t=out:st={fade_at:.3f}:d=2" if fade_at is not None else ""
-        fil += f";[{len(scenes)}:a]{cut}apad{gone}[a]"
+        gain = duck_gain(duck)
+        down = f",volume='{gain}':eval=frame" if gain else ""
+        fil += f";[{n_in}:a]{cut}apad{down}{gone}[m]"
+        n_in += 1
+    mixed = ["[m]"] if audio else []
+    for i, (path, at) in enumerate(voices):
+        # 声は 1 文ずつ、その場面の時刻まで遅らせて重ねる。大きさは変えない（下げるのは曲の方だけ）。
+        args += ["-i", str(path)]
+        ms = round(at * 1000)
+        fil += f";[{n_in}:a]aresample=48000,adelay={ms}:all=1,apad[s{i}]"
+        mixed.append(f"[s{i}]")
+        n_in += 1
+    if mixed:
+        # 混ぜる時に大きさを割らない（normalize=0）。割ると、声が入るたびに曲の大きさが変わる。
+        fil += f";{''.join(mixed)}amix=inputs={len(mixed)}:normalize=0[a]" if len(mixed) > 1 else f";{mixed[0]}anull[a]"
         sound = ["-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-t", f"{sum(seconds or lens):.3f}"]
     r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *args, "-filter_complex", fil, "-map", "[v]", *sound,
                         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", str(out)], capture_output=True, text=True)

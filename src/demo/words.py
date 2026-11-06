@@ -28,7 +28,7 @@ import types
 
 from PIL import Image, ImageDraw, ImageFont
 
-from demo.flip import CLOSING, H, PAPER, ROOT, SERIF, SHU, SUMI, W, contact_sheet, ease, fade, render, text
+from demo.flip import CLOSING, FPS, H, PAPER, ROOT, SERIF, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 
 PHILOSOPHY = ROOT / "docs/process/philosophy.md"
 NARRATION = ROOT / "docs/demo/opening-narration.txt"
@@ -60,7 +60,9 @@ TALKS = {
 BRIDGE = (("むかしの子どもも、今の子どもも、",), ("もらったおもちゃより、",), ("それを包んでいた紙や", "リボンのひもで"), ("遊んでしまうことがあります。",))
 BRIDGE2 = (("作ったものを持ちよると、",), ("Claude もそれを見て、",), ("次の型紙を少しずつ", "よくしていきます。"))
 NOW_LINE = "いま作っているところです"      # AI はまだ動いていないので、つなぎ 2 と一緒に出す（本人の決定 11-05）
-ALL = {**CARDS, **TALKS, "bridge": BRIDGE, "close": ((CLOSING[0],), (CLOSING[1],)), "core_loop": (*BRIDGE2, (NOW_LINE,))}
+# 表と裏の境目の札（本人の決定 11-06、カード 125217）。字を変えない。本人の言葉の記録の引用ではないので、言葉の札の印は付けない。
+BORDER = (("ここからは、裏のしくみ。",),)
+ALL = {**CARDS, **TALKS, "bridge": BRIDGE, "close": ((CLOSING[0],), (CLOSING[1],)), "core_loop": (*BRIDGE2, (NOW_LINE,)), "border": BORDER}
 MARKED = (*CARDS, *TALKS)      # 本人の言葉の印を付ける札
 # デモと外に出す文で使わない言い方（本人の決定 11-05）。継承を軸にし、「復活」を「昔の作り方を取り戻した」の意味で使わない。
 # 前からの線「失われた技術を取り戻すとは書かない」を残す。語りの全文には「復活」の文があるが、札に選ばない。
@@ -72,6 +74,12 @@ STYLES = {"talk_toys": {"size": 60, "cx": 640, "ink": (0.85, 0.85)}, "talk_lost"
           "talk_physics": {"size": 64}, "close": {"size": 64}, "bridge": {"size": 64}}
 PICTURED = ("talk_toys", "talk_lost")     # 図（場面 2 と同じ御来迎の頁）を右に置く札。職人の動画が来るまで、作り物で埋めない
 PIC_H, PIC_X = 860, 1470                  # 図の高さと真ん中
+# 手だけの映像を敷く札の置き方（本人の決定 11-06「手だけを撮って、語りの場面の後ろに敷く」）。撮る物の一覧で、手は画面の右 3 分の 2、
+# 左 3 分の 1 は空けた机にしてもらう。字はその左に寄せ、図を右に置く札と同じ大きさにする（読む所を札ごとに動かさない）。
+# 左は紙の色を薄く掛けて字を読めるようにし（WASH）、右へ向けて消す。手の映像は紙の地から溶けて現れ、紙の地へ溶けて消える
+# （場面の替わり目と同じ紙の地を挟む形。癒し系の本人の方針 11-05 20:10）。映像の音は使わない。
+HANDS_STYLE = {"size": 60, "cx": 640}
+WASH = (0.9, 1000, 1450)                  # 掛ける紙の濃さ、濃いままの右端、消える所
 
 
 def flat(chunks):
@@ -169,20 +177,43 @@ def picture(layer):
     return layer.resize((round(layer.width * PIC_H / layer.height), PIC_H), Image.LANCZOS)
 
 
-class ChunkCard:
-    """紙の地に字を 1 かたまりずつ出す札。pic を渡すと右に図を置く。"""
+def _wash():
+    """左に掛ける紙の濃さの面（L）。255 で紙の色、0 で手の映像のまま。"""
+    v, keep, gone = WASH
+    row = [round(255 * v * (1.0 if x < keep else max(0.0, 1 - (x - keep) / (gone - keep)))) for x in range(W)]
+    return Image.frombytes("L", (W, 1), bytes(row)).resize((W, H))
 
-    def __init__(self, name, cues, pic=None):
+
+class ChunkCard:
+    """紙の地に字を 1 かたまりずつ出す札。pic を渡すと右に図を置く。
+    hands を渡すと、その間は手の映像を地に敷く: [(1 秒 FPS 枚に割った絵の道の並び, 始め, 終わり)]。図より手を先にする（手が図の代わり）。"""
+
+    def __init__(self, name, cues, pic=None, hands=()):
         self.name, self.cues, self.pic = name, cues, pic
+        self.hands = [(list(f), a, b) for f, a, b in hands if f]
         self.chunks = chunks_of(name)
         self.duration = seconds_of(name)
-        style = STYLES.get(name, {})
+        style = {**STYLES.get(name, {}), **(HANDS_STYLE if self.hands else {})}
         self.size, self.cx, self.ink = style.get("size", 72), style.get("cx", W // 2), style.get("ink", (1.0, 1.0))
+        self._mask = _wash() if self.hands else None
+
+    def _hands(self, t):
+        """時刻 t の手の映像の絵と濃さ。敷いていない時は (None, 0)。"""
+        for frames, a, b in self.hands:
+            if a <= t < b:
+                v = min(ease((t - a) / DISSOLVE), ease((b - t) / DISSOLVE))
+                with Image.open(frames[min(len(frames) - 1, int((t - a) * FPS))]) as im:
+                    return im.convert("RGB").resize((W, H)), v
+        return None, 0.0
 
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
-        if self.pic is not None:
+        shot, hv = self._hands(t) if self.hands else (None, 0.0)
+        if shot is not None and hv > 0:
+            shot = Image.composite(img, shot, self._mask)
+            img = Image.blend(img, shot, hv)
+        elif self.pic is not None and not self.hands:
             a, b = self.ink
             lay = _ink(self.pic, a + (b - a) * ease(t / self.duration))
             img.paste(lay, (PIC_X - lay.width // 2, (H - lay.height) // 2), lay)
@@ -220,7 +251,53 @@ def fits():
         f = ImageFont.truetype(SERIF, style.get("size", 72))
         room = 2 * style["cx"] - 160 if "cx" in style else W - 160
         out[name] = room - max(f.getlength(s) for lines in chunks_of(name) for s in lines)
+    from demo import script  # 手を敷く札は HANDS_STYLE の置き方でも収まるか（届いた時に字が切れないため）
+
+    hf = ImageFont.truetype(SERIF, HANDS_STYLE["size"])
+    for name in script.SLOTS:
+        if script.SLOTS[name].get("hands"):
+            out[f"{name}+hands"] = 2 * HANDS_STYLE["cx"] - 160 - max(hf.getlength(s) for lines in chunks_of(name) for s in lines)
     return out
+
+
+def hands_problem(path, seconds, probe=None):
+    """手の映像が決まり（横 16:9・幅 1280 以上・使う秒以上）に合わないなら、その理由。合えば None。"""
+    from demo import opening
+
+    got = (probe or opening._probe)(path)
+    if got is None:
+        return "動画が読めない"
+    width, height, secs = got
+    if width < opening.MIN_WIDTH:
+        return f"動画の幅が {opening.MIN_WIDTH} より小さい（{width}）"
+    if abs(width / height - 16 / 9) > 0.02:
+        return f"横 16:9 でない（{width}×{height}）"
+    if secs < seconds:
+        return f"動画が {seconds:g} 秒より短い（{secs:.1f} 秒）"
+    return None
+
+
+def hands_slots(name, root=ROOT):
+    """場面に敷く手の映像の置き場の並び [(撮る物の名前, 道, 始め, 終わり)]。届いていない物も並べる（その間は今の地）。"""
+    from demo import script
+
+    out, t = [], 0.0
+    for shot, secs in script.SLOTS.get(name, {}).get("hands", ()):
+        out.append((shot, pathlib.Path(root) / script.SLOT_DIR / f"{shot}{script.HANDS_EXT}", t, round(t + secs, 3)))
+        t += secs
+    return out
+
+
+def split_frames(path, seconds, into):
+    """手の映像の頭から seconds 秒を、1 秒 FPS 枚の絵に割る。大きさは W×H に切りそろえる（縦横を別々に伸ばさない）。"""
+    import subprocess
+
+    into.mkdir(parents=True, exist_ok=True)
+    r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-t", f"{seconds}", "-i", str(path), "-an",
+                        "-vf", f"fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H}", "-q:v", "2",
+                        f"{into}/%05d.jpg"], capture_output=True, text=True)
+    frames = sorted(into.glob("*.jpg"))
+    return frames if r.returncode == 0 and frames else None
 
 
 def _render(name, cues, argv=None):
@@ -241,8 +318,28 @@ def _render(name, cues, argv=None):
         if name in ALL and says_restored(ALL[name]):
             print(f"検査できない: 札 {name} に使わない言い方がある（{'・'.join(NOT_SAID)}）", file=sys.stderr)
             return 4
-        pic = None
-        if name in PICTURED:
+        pic, hands = None, []
+        here = [(shot, path, t0, t1) for shot, path, t0, t1 in hands_slots(name) if path.exists()]
+        for shot, path, t0, t1 in here:
+            problem = hands_problem(path, t1 - t0)
+            if problem:
+                print(f"検査できない: 手の映像 {shot}（{name}）: {problem}", file=sys.stderr)
+                return 4
+        if here:
+            import shutil
+            import tempfile
+
+            if not shutil.which("ffmpeg"):
+                print("検査できない: ffmpeg が無い", file=sys.stderr)
+                return 4
+            tmp = tempfile.TemporaryDirectory(prefix="hands-")
+            for shot, path, t0, t1 in here:
+                frames = split_frames(path, t1 - t0, pathlib.Path(tmp.name) / shot)
+                if frames is None:
+                    print(f"検査できない: 手の映像 {shot}（{name}）を割れない", file=sys.stderr)
+                    return 4
+                hands.append((frames, t0, t1))
+        if name in PICTURED and not hands:
             from demo import scene2  # 場面 2 がこの札の字を読むので、ここで読む
 
             rec, _ = scene2.load_record()
@@ -250,7 +347,7 @@ def _render(name, cues, argv=None):
             if spread is None:
                 return 4
             pic = picture(scene2.page_layer(spread, rec))
-        scene = ChunkCard(name, cues, pic)
+        scene = ChunkCard(name, cues, pic, hands)
     if a.sheet:
         d = scene.duration
         contact_sheet(scene, a.sheet, tuple(round(d * k, 2) for k in (0.1, 0.25, 0.4, 0.55, 0.7, 0.8, 0.9, 0.95, 0.99)))

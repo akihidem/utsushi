@@ -87,6 +87,9 @@ assert words.flat(words.BRIDGE) == BRIDGE1 and "bridge" not in words.CARDS and B
 assert words.flat(words.BRIDGE2) == "作ったものを持ちよると、Claude もそれを見て、次の型紙を少しずつよくしていきます。"
 assert words.NOW_LINE == "いま作っているところです"
 assert not {"bridge", "close", "core_loop"} & set(words.MARKED)
+# 境目の札の字は本人の決定（11-06、カード 125217）のまま。本人の言葉の記録の引用ではないので、言葉の札の印を付けない。3 秒に入る
+assert words.flat(words.BORDER) == "ここからは、裏のしくみ。" and words.ALL["border"] == words.BORDER
+assert "border" not in words.MARKED and words.seconds_of("border") == 3.0
 assert set(words.CARDS) | set(words.TALKS) == set(words.MARKED)
 
 # 終わりの字幕は初めと同じ字（本人の決定 11-05）。字幕 → 問いの順で終わる
@@ -96,7 +99,7 @@ assert words.flat(words.ALL["close"]) == "".join(flip.CLOSING)
 
 # 1 コマは時刻だけで決まる。1 度に 1 かたまりだけ（字は前が消えてから次が現れる）
 pic = Image.new("RGBA", (300, 600), flip.SUMI + (255,))
-for name in [*words.CARDS, "talk_toys", "talk_lost", "talk_physics", "talk_claude", "bridge", "close"]:
+for name in [*words.CARDS, "talk_toys", "talk_lost", "talk_physics", "talk_claude", "bridge", "close", "border"]:
     card = words.ChunkCard(name, words.cues_of(name), pic if name in words.PICTURED else None)
     for t in (0.0, 0.8, 3.0, card.duration - 0.1):
         a, b = card.frame(t), card.frame(t)

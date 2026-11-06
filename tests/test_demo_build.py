@@ -4,11 +4,13 @@ import importlib.util
 from demo import build
 
 # 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
-assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "talk_physics", "talk_claude", "word_touch", "scene3", "core_make", "core_keep", "scene5", "core_gallery",
-                        "core_loop", "word_ai", "scene7", "close", "ask"]
+# 前半は表、境目の札の後が裏（本人の決定 11-06、カード 125217）。語りの後ろの 2 文は文の順のまま後半の頭へ
+assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "core_keep", "scene5", "core_gallery",
+                        "border", "talk_physics", "talk_claude", "core_loop", "word_ai", "scene7", "close", "ask"]
 # 外した場面は本人が戻すかを決める。コードは残すので、読み込める
 from demo import script  # noqa: E402
 assert set(script.LEFT_OUT) == {"core_map", "core_voice", "scene6", "bridge"} and not set(script.LEFT_OUT) & set(build.SCENES)
+assert build.SCENES.index("border") == len(script.FRONT) and script.FRONT[-1] == "core_gallery"
 for name in script.LEFT_OUT:
     assert callable(script.load_scene(name).main), name
 # 全体は 179.5 秒以内

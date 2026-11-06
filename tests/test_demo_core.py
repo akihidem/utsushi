@@ -8,11 +8,14 @@ from PIL import Image
 
 from demo import core, flip, script, words
 
-# 手で作る → 持ち寄り → AI は後、の順。つなぎ 2 は持ち寄りの場面の次（本人の決定 11-05）
+# 手で作る → 持ち寄り → AI は後、の順（本人の言葉 11-05 夕）。
+# つなぎ 2 は前は持ち寄りの場面の次だった（本人の決定 11-05）。表と裏に分けた（本人の決定 11-06、カード 125217）ので、
+# 持ち寄りの後に境目の札と語りの後ろの 2 文が入り、その次につなぎ 2 の輪が来る
 order = script.SCENES
 assert order.index("scene3") < order.index("core_make") < order.index("core_keep") < order.index("scene5") \
     < order.index("core_gallery") < order.index("core_loop") < order.index("word_ai") < order.index("ask")
-assert order.index("core_loop") == order.index("core_gallery") + 1
+assert order.index("border") == order.index("core_gallery") + 1
+assert order.index("border") < order.index("talk_physics") < order.index("talk_claude") and order.index("core_loop") == order.index("talk_claude") + 1
 
 # まだ無い物の場面は図で描く。画面として撮らない
 assert core.SOON == "これから作る"
@@ -40,7 +43,8 @@ ai = sum(script.load_scene(n).DURATION for n in ("word_ai", "core_loop"))
 assert making >= 30 and ai < 22.5 and making > ai, (making, ai)
 assert sum(script.load_scene(n).DURATION for n in script.SCENES) <= 179.5
 # 本人の言葉の札は手で作る場面の直前へ戻した。同じ秒だけ他を削ったので、全体は戻す前の 178.9 秒を越えない（本人の決定 11-06）
-assert order.index("talk_claude") + 1 == order.index("word_touch") and order.index("word_touch") + 1 == order.index("scene3")
+# 表と裏に分けた後も、word_touch は手で作る場面の直前（前は語りの後。今は「絵は止めて残した」の後）。境目の 3 秒は始まりから取った
+assert order.index("flip") + 1 == order.index("word_touch") and order.index("word_touch") + 1 == order.index("scene3")
 assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) <= 178.9
 
 # 例の記録は字の頭が「（例）」。人の報告に見せかけない

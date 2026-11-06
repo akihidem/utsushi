@@ -9,23 +9,47 @@
 本人の指示（11-05 20:07）と語り（20:04）で、始まりを問いと職人のおもちゃ、その後に語りの形にした。
 本人の方針（11-05 20:10）「たくさん見る審査員の認知負荷を減らす方針が1番最初。癒し系で。」が一番の決め方。足りない時は速めずに減らす。
 本人の決定（11-06）「本人の言葉の札は戻す。同じ秒だけ他を削って入れて」で、word_touch を手で作る場面の直前（外す前と同じ所）へ戻した。
+本人の決定（11-06、カード 125217）で、前半を表（サイトと作る体験）、後半を「では裏でどう動いているか」（型紙の生まれ方・工夫が次の版になる輪・作り方）にした。
+本人の言葉（11-06）「最初にフロントを見せて、では裏でどうシステムがうごいているか見て行こう、という構成がわかりやすいかも」が元。
+境目の札（border）の字は「ここからは、裏のしくみ。」、その 3 秒は始まり（opening）を 11.6 → 8.6 秒に縮めて作った（どちらも本人の決定）。
+語りの後ろの 2 文（talk_physics・talk_claude）は、文の順を変えずに後半の頭へ移した。どの場面の字も変えていない。
 """
 import importlib
 
 # 語りの札（talk_*）・言葉の札（word_*）・つなぎの字幕の札（bridge）・終わりの字幕の札（close）・問いの札（ask）は demo.words、核の一周の図と画面（core_*）は demo.core で描く。
-# 始まりは本人の指示（11-05 20:07）の問いと職人のおもちゃ（opening）。つなぎ 2 の輪（core_loop）は持ち寄り（core_gallery）の次（本人の決定 11-05）。
+# 始まりは本人の指示（11-05 20:07）の問いと職人のおもちゃ（opening）。つなぎ 2 の輪（core_loop）は、前は持ち寄り（core_gallery）の次だった（本人の決定 11-05）。
+# 表と裏に分けた（本人の決定 11-06）ので、今は持ち寄りの後に境目と語りの後ろの 2 文が入り、その次になる。
 # 終わりは、初めと同じ字幕（close）→ 問い（ask）の順（本人の決定 11-05）。
-SCENES = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "talk_physics", "talk_claude", "word_touch", "scene3", "core_make", "core_keep", "scene5", "core_gallery",
-          "core_loop", "word_ai", "scene7", "close", "ask"]
+# 前半・表: 始まり → 語り（玩具と失われた事・江都二色）→ 絵は止めて残した → 本人の言葉 → 開く・作る・残す・動いた・持ち寄る。
+# 境目: border。後半・裏: 語りの後ろの 2 文 → 輪 → 本人の言葉 → 断りとクレジット。終わり: 初めと同じ字幕 → 問い。
+FRONT = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "core_keep", "scene5", "core_gallery"]
+BACK = ["talk_physics", "talk_claude", "core_loop", "word_ai", "scene7"]
+SCENES = [*FRONT, "border", *BACK, "close", "ask"]
 # 3 分に入らないので外した場面（本人が戻すかを決める。コードは残すので、SCENES へ戻せば動く）。docs/demo/plan.md の 4 に書いた。
 LEFT_OUT = ("core_map", "core_voice", "scene6", "bridge")
 # 外へ出す前に片づける物（印のほか）。demo.build が build.json の not_for_release に載せる。
 BEFORE_RELEASE = ()  # 字幕とクレジットの隅の札の行は本人が決めた（11-06）
 
+# 届いたら差し込む物の置き場（本人の決定 11-06: 手だけの映像を語りの場面の後ろに敷く・語りは本人が自分の声で読む）。
+# まだ届いていない間は、今の映す物のまま書き出し、build.json の slots に「待ち」と残す（置き場の印）。外へ出す事は止めない:
+# 手と声は動画を良くする物で、無くても台本は組める（撮る物の一覧のとおり）。職人のおもちゃの動画（opening）だけが外へ出す前に要る。
+# 名前は撮る物の一覧と語りを読む 1 枚の名前のまま（手 A〜E、声 A1〜A6）。置き場は git の外（画像・動画・声は repo に入れない）。
+# hands: (撮る物の名前, 使う秒) の並び。場面の頭から順に敷き、使い切った後は今の地（紙の地・図）に戻る。
+# voice: 1 文ずつのファイル。場面の頭から順に流す。場面の秒に入らない時は名指しして止める（速めない）。
+SLOT_DIR = "out/demo/slots"
+SLOTS = {
+    "talk_toys": {"hands": (("A", 6.0), ("B", 5.8)), "voice": ("A1", "A2")},
+    "talk_lost": {"hands": (("C", 12.2),), "voice": ("A3",)},
+    "scene2": {"voice": ("A4",)},
+    "talk_physics": {"hands": (("D", 5.0), ("E", 3.0)), "voice": ("A5",)},
+    "talk_claude": {"voice": ("A6",)},
+}
+HANDS_EXT, VOICE_EXT = ".mp4", ".m4a"
+
 
 def load_scene(name):
     """場面の名前から、CUES・DURATION・main を持つ物を返す。"""
-    if name.startswith(("word_", "talk_")) or name in ("bridge", "close", "ask"):
+    if name.startswith(("word_", "talk_")) or name in ("bridge", "close", "ask", "border"):
         mod = importlib.import_module("demo.words")
         return mod.scene_module(name) if hasattr(mod, "scene_module") else mod
     if name.startswith("core_"):

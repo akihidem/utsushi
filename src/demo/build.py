@@ -21,6 +21,11 @@ exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超え�
   残す場面の動画に刷った物（試験の数・曲・写真）と今の値が違う時は、古い数を出さないよう 4 で止めて場面を名指しする。
 - 最初の場面に職人のおもちゃの動画が入っていない間は、印（demo.opening）が画面に残る。本人だけが見る試作なので、build.json の placeholder と
   not_for_release に載せ、終わりにも言う。書き出しは止めない（試作を本人に見てもらうため）。外へ出す前に not_for_release が空である事を見る。
+- 届いたら差し込む物（本人の決定 11-06: 手だけの映像・本人の声の語り）は demo.script の SLOTS の置き場から読む。
+  手の映像は語りの札が自分で地に敷き（demo.words）、声はつなぐ時に場面の時刻へ置いて重ね、声の間だけ曲を下げる（demo.assemble）。
+  届いていない物は build.json の slots に「待ち」と残し、終わりに名前を言う。外へ出す事は止めない（無くても台本は組めるため）。
+  声が場面の秒に入らない時は、速めずに名指しして 4 で止める（本人の方針「速めない」。秒を場面に合わせるのは人が決める）。
+  前の置き場の場面を残す時、その場面の手の映像が替わっていたら、古い動画が残るので 4 で止めて場面を名指しする。
 - 記録に commit の SHA と各場面の長さを残す。出した動画がどのコードから出たかを後で辿れるようにする（エビデンスゲート）。
   場面ごとにも commit を持つ。--only で残した場面は、前の commit のコードから出た物なので。
 """
@@ -37,7 +42,7 @@ import sys
 import time
 
 from demo import assemble, beat, opening, prepare, song
-from demo.script import BEFORE_RELEASE, SCENES, load_scene
+from demo.script import BEFORE_RELEASE, HANDS_EXT, SCENES, SLOT_DIR, SLOTS, VOICE_EXT, load_scene
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 # 動画に効く物。場面 5・6 は docs/process/trials の記録を読み、言葉の札は哲学の記録を読むので、そこの手の変更も印に数える。
@@ -94,6 +99,56 @@ def shows_placeholder(only, clips, prev):
 def release_blockers(placeholder):
     """外へ出せない理由の一覧。空なら出してよい。"""
     return ([f"最初の場面に印「{opening.PLACEHOLDER}」が残っている（職人のおもちゃの動画が入っていない）"] if placeholder else []) + list(BEFORE_RELEASE)
+
+
+VOICE_LEAD, VOICE_GAP, VOICE_TAIL = 0.4, 0.3, 0.2   # 場面の頭から声までの間・文と文の間・場面の終わりの余り（札の LEAD・TAIL と同じ考え）
+
+
+def slot_path(name, kind, root=None):
+    """届いた物の置き場の道（git の外）。"""
+    return pathlib.Path(root or ROOT) / SLOT_DIR / f"{name}{HANDS_EXT if kind == 'hands' else VOICE_EXT}"
+
+
+def slot_record(root=None):
+    """届いたら差し込む物の今の様子: {場面: {"hands"|"voice": {名前: {"file", "sha256"} か "待ち"}}}。"""
+    out = {}
+    for scene, kinds in SLOTS.items():
+        out[scene] = {}
+        for kind in ("hands", "voice"):
+            names = [n for n, _ in kinds.get("hands", ())] if kind == "hands" else list(kinds.get("voice", ()))
+            if names:
+                out[scene][kind] = {n: ({"file": slot_path(n, kind, root).name, "sha256": file_sha(slot_path(n, kind, root))}
+                                        if slot_path(n, kind, root).is_file() else "待ち") for n in names}
+    return out
+
+
+def waiting(slots):
+    """まだ届いていない物の名前の一覧（場面つき）。"""
+    return [f"{'手' if kind == 'hands' else '声'} {n}（{scene}）" for scene, kinds in slots.items()
+            for kind, got in kinds.items() for n, v in got.items() if v == "待ち"]
+
+
+def place_voices(order, lengths, root=None):
+    """届いた声を場面の時刻に置く。(声の並び [(道, 秒)], 曲を下げる所 [(始め, 終わり)], 入らない理由) を返す。"""
+    voices, duck, start = [], [], 0.0
+    for name, length in zip(order, lengths):
+        files = [slot_path(v, "voice", root) for v in SLOTS.get(name, {}).get("voice", ())]
+        files = [f for f in files if f.is_file()]
+        t = start + VOICE_LEAD
+        first = t
+        for f in files:
+            d = assemble.duration(f)
+            if d is None:
+                return [], [], f"声 {f.stem} が読めない"
+            voices.append((f, round(t, 3)))
+            t += d + VOICE_GAP
+        if files:
+            end = t - VOICE_GAP
+            if end > start + length - VOICE_TAIL + 1e-6:
+                return [], [], f"声 {'・'.join(f.stem for f in files)} が場面 {name} の {length:.1f} 秒に入らない（{end - (start + length - VOICE_TAIL):.1f} 秒超える）"
+            duck.append((round(first, 3), round(end, 3)))
+        start += length
+    return voices, duck, None
 
 
 def make_beat(run, made, sha, dirty):
@@ -197,6 +252,11 @@ def main(argv=None):
              != scene_args(n, tests if tests else prev.get("tests"), music, photos)]
     if "opening" not in only and "opening" not in clips and prev.get("placeholder") and opening.has_video():
         stale.append("opening")  # 動画を置いたのに、前の印の場面を残すと印が消えない
+    slots = slot_record()
+    old_slots = prev.get("slots") or {}
+    # 前の記録に slots が無い（差し込む口を足す前の置き場）時は、手は全部「待ち」だった物と読む。
+    stale += [n for n in SLOTS if n in SCENES and n not in only and n not in clips and (slots.get(n) or {}).get("hands")
+              and (old_slots.get(n) or {}).get("hands", {k: "待ち" for k in slots[n]["hands"]}) != slots[n]["hands"]]
     if stale:
         print(f"検査できない: 残す場面に刷った物と今の値が違う: {'、'.join(stale)}（--only に足して作り直す）", file=sys.stderr)
         return 4
@@ -250,14 +310,24 @@ def main(argv=None):
         audio = {"kind": "song", "file": pathlib.Path(a.song).name, "sha256": file_sha(a.song), "credit": music, "rights": a.rights,
                  "bpm": measured["bpm"], "start": a.song_start, "commit": sha, "dirty": dirty, "moved": fit["moved"], "left": fit["left"]}
         (run / "beats.json").write_text(song.table_json(measured, fit, **{k: audio[k] for k in ("sha256", "credit", "rights", "start", "commit", "dirty")}), encoding="utf-8")
-        rc = assemble.assemble(made, run / "demo.mp4", a.song, seconds=lengths, audio_start=a.song_start, fade_at=fade_at)
+        voices, duck, problem = place_voices(order, lengths)
+        if problem:
+            print(f"検査できない: {problem}（速めない。秒は人が決める）", file=sys.stderr)
+            return 4
+        extra = {"voices": voices, "duck": duck} if voices else {}
+        rc = assemble.assemble(made, run / "demo.mp4", a.song, seconds=lengths, audio_start=a.song_start, fade_at=fade_at, **extra)
     else:
         try:
             audio, sound = make_beat(run, made, sha, dirty)
         except (OSError, ValueError, KeyError) as e:
             print(f"検査できない: 仮の拍が作れない（{e}）", file=sys.stderr)
             return 4
-        rc = assemble.assemble(made, run / "demo.mp4", sound)
+        voices, duck, problem = place_voices([p.stem for p in made], [assemble.duration(p) or 0.0 for p in made])
+        if problem:
+            print(f"検査できない: {problem}（速めない。秒は人が決める）", file=sys.stderr)
+            return 4
+        extra = {"voices": voices, "duck": duck} if voices else {}
+        rc = assemble.assemble(made, run / "demo.mp4", sound, **extra)
     before = {r.get("name"): r for r in prev.get("scenes", [])}
 
     def made_by(name):
@@ -272,6 +342,7 @@ def main(argv=None):
     record = {"commit": sha, "dirty": dirty, "tests": tests, "music": music, "audio": audio, "photos": photos, "skipped": skipped,
               "placeholder": placeholder, "not_for_release": blockers,
               "clips": {n: {"file": pathlib.Path(p).name, "sha256": file_sha(p)} for n, p in clips.items()},
+              "slots": slots, "voices": [{"file": pathlib.Path(f).name, "at": at} for f, at in voices], "duck": duck,
               "rebuilt": only if a.only else [], "offline": a.offline,
               "scenes": [{"name": p.stem, "seconds": assemble.duration(p), **made_by(p.stem)} for p in made],
               "total_seconds": assemble.duration(run / "demo.mp4"), "assemble_rc": rc}
@@ -279,6 +350,9 @@ def main(argv=None):
     print(f"置き場 {run}")
     for why in blockers:
         print(f"外へ出せない: {why}")
+    left = waiting(slots)
+    if left:
+        print(f"まだ届いていない（無くても出せる・今の映す物のまま）: {'、'.join(left)}")
     if rc != 0:
         return rc
     # 場面が欠けた動画は、--partial で最後まで作っても通ったとは言わない（4）。
