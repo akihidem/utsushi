@@ -333,6 +333,12 @@ def own_item(sid, data, r):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
+# 合言葉なしの場で上げた直後の返事に続ける 1 行（窓口の決定 11-06 夜・案 A。字はその決定の字のまま）。上げた物は、確かめる前は上げた画面にだけ出て
+# ギャラリーには出ないので、並ばない理由を上げた時に言う。合言葉付きの場も同じ線だが、決定は合言葉なしの場の分なので、そこだけに出す
+PUBLIC_UPLOADED = "写真は、人が確かめてから、みんなの所に出ます。"
+UPLOADED = "上げました"  # 手帖の script（techo_step）が上げた後に渡す返事の字
+
+
 def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
@@ -348,7 +354,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 continue
             cards += made_item(sid, data, r, photos, public)
     real = bool(cards or own)
-    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
     # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない

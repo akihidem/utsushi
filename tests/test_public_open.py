@@ -12,13 +12,14 @@ import io
 import os
 import tempfile
 import threading
+import urllib.parse
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from PIL import Image  # noqa: E402
 
 from omochae import hypotheses, media_review, records  # noqa: E402
-from web import techo_site, wording  # noqa: E402
+from web import techo_site, techo_step, wording  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -209,4 +210,11 @@ assert opened("POST", f"/record/{rid}/next", "interpretation=x&param=fold_count&
 assert opened("POST", f"/record/{rid}/ai-interpret", "x=1", form)[0] == 403 and opened("POST", f"/record/{rid}/ai-observe", "x=1", form)[0] == 403
 # 記録の欄に、名前を書かない断りがある
 assert "名前や連絡先は書かないでください" in opened("GET", f"/toy/{G}")[1]
+# 上げた直後の返事（窓口の決定 11-06 夜・案 A）: 手帖は上げた後に「上げました」をギャラリーへ渡す。合言葉なしの場では、確かめる前はギャラリーに
+# 並ばない理由の 1 行を続ける。写真なしで残した時（記録を残しました）と、合言葉付きの場には出さない
+assert f"return '{techo_site.UPLOADED}'" in techo_step.SCRIPT and "location.assign(`/gallery?msg=${encodeURIComponent(done)}" in techo_step.SCRIPT
+uploaded = f"/gallery?msg={urllib.parse.quote(techo_site.UPLOADED)}"
+assert techo_site.PUBLIC_UPLOADED == "写真は、人が確かめてから、みんなの所に出ます。" and techo_site.PUBLIC_UPLOADED in opened("GET", uploaded)[1]
+assert techo_site.PUBLIC_UPLOADED not in opened("GET", f"/gallery?msg={urllib.parse.quote('記録を残しました')}")[1], "写真なしの返事には出さない"
+assert techo_site.PUBLIC_UPLOADED not in closed("GET", uploaded, None, local)[1], "合言葉付きの場には出さない"
 print("ok: 合言葉なしで開くデモ")
