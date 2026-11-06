@@ -1,0 +1,7 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_video_up.py 2>&1 | tail -3; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 603e102e（回した時の HEAD）
+U-0024: 結べない: 動画の中身が足りない（外を指す動画か、後ろが欠けた動画かもしれない）
+U-0004: 字にできない（OSError）
+ok: 動画の受け口
+試験 rc=0
+rc=0

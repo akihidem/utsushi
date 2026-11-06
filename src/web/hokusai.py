@@ -92,13 +92,23 @@ let q=false;const go=()=>{q=false;const r=w.getBoundingClientRect(),d=r.height-i
 addEventListener('scroll',()=>{if(!q){q=true;requestAnimationFrame(go)}},{passive:true});go()})()</script>"""
 
 
-def scroll_section():
-    """案 2。黒のジンの縦読みの章の頭。絵が無ければ節ごと出さない（縦読みの筋は玩具の章から続くため）。"""
+# 白の展示の色（本人の決定 11-06「ページは白案で統一します。黒案にだけある要素は白案に入れてください」）。縦読みの節の形と動きは黒と同じで、色だけを白の壁に合わせる
+WHITE_SCROLL_STYLE = """
+.tj-hk{border-top:1px solid #ebe8e2}
+.tj-hk .stack{border-color:#d8cdb6;outline-color:#fffefc}
+.tj-hk .chapter{color:#6b4f2a}.tj-hk h2{font-weight:400;color:#1f1b17}.tj-hk .cap{color:#7a7164}
+"""
+
+
+def scroll_section(look="zine"):
+    """案 2。入口の縦読みの章の頭。絵が無ければ節ごと出さない（縦読みの筋は玩具の章から続くため）。
+    前は黒のジンにだけあった。本人の決定（11-06）で白の展示にも入れる（look="tenji" で白の色）。字と動きは同じ。"""
     rec = hk.pages()[hk.FLIP_PAGE]
     ids = hk.figure_ids()
     if not all(hk.has(f"{hk.FLIP_PAGE}-{i}") for i in ids):
         return ""
-    return (f'<style>{SCROLL_STYLE}</style><section class="zn-hk" id="zn-hokusai" aria-label="北斎漫画"><div class="pin"><div class="stack">{_stack(ids)}</div>'
+    white = f"<style>{WHITE_SCROLL_STYLE}</style>" if look == "tenji" else ""
+    return (f'<style>{SCROLL_STYLE}</style>{white}<section class="zn-hk{" tj-hk" if look == "tenji" else ""}" id="zn-hokusai" aria-label="北斎漫画"><div class="pin"><div class="stack">{_stack(ids)}</div>'
             f'<div><p class="chapter">北斎漫画</p><h2>絵は動きを止めて残した</h2><p>{esc(LEAD)}</p><p class="cap">下へ送ると、{len(ids)} 人が 1 人ずつ入れ替わります。{esc(credit(rec))}</p></div></div></section>{SCROLL_SCRIPT}')
 
 

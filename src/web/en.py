@@ -54,7 +54,9 @@ def toy_text(sid):
 
 
 def steps_for(sid, h, data=None):
-    """手順の英語。原文の文を鍵に引く。無ければ紙の番号へ案内する（勝手に作らない）。"""
+    """手順の英語。原文の文を鍵に引く。無ければ紙の番号へ案内する（勝手に作らない）。
+    11-06 から英語の頁には出さない（本人の決定、文章のプリント廃止の 6 点の 6「英語の頁は今回は組み方への道を外す」）。
+    提出の後に作る英語の組み方の頁（J-030 の替えた計画）のために、訳の表と引き方は残す。"""
     data = data or hypotheses.load(sid)
     tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
     table = _load("required.json")["steps"]
@@ -102,11 +104,10 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
         last = versions_of(sid, h["id"], printed_only=True)
         links = ""
         if last:
-            links = (f'<p class="links"><a href="/sheet/{esc(sid)}/{esc(h["id"])}_v{last[-1]}.pdf" target="_blank" rel="noopener">Template (PDF, Japanese)</a>'
-                     f'<a href="/sheet/{esc(sid)}/{esc(h["id"])}_v{last[-1]}_tejun.pdf" target="_blank" rel="noopener">Instruction sheet (PDF, Japanese)</a></p>')
-        steps = "".join(f"<li>{esc(s)}</li>" for s in steps_for(sid, h, data)) if en else ""
-        steps = f'<details><summary>Steps</summary><ol>{steps}</ol></details>' if steps else ""
-        cards += (f'<div class="plate"><div class="letter">{esc(letter)}</div><h3>{head}</h3>{how}{_marks(data, h)}{steps}<div class="acts">'
+            # 手順の紙は刷らなくなった（本人の決まり 11-06）ので、Instruction sheet への道は外した。英語の組み方は、提出の後に
+            # 「英語の組み方の頁」として作る（本人の決定 11-06、6 点の 6。J-030 の計画を替えた）
+            links = f'<p class="links"><a href="/sheet/{esc(sid)}/{esc(h["id"])}_v{last[-1]}.pdf" target="_blank" rel="noopener">Template (PDF, Japanese)</a></p>'
+        cards += (f'<div class="plate"><div class="letter">{esc(letter)}</div><h3>{head}</h3>{how}{_marks(data, h)}<div class="acts">'
                   f'<form method="post" action="/en/toy/{esc(sid)}/print"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>Print sheets</button></form>{links}</div></div>')
     gloss = "".join(f"<dt>{esc(a)}</dt><dd>{esc(b)}</dd>" for a, b in GLOSSARY)
     tag = "" if hypotheses.stage(sid) == "必須" else '<p class="meta"><span class="lb">Untested draft</span> The name is our guess from the picture. No one has built this one.</p>'

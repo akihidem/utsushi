@@ -2,7 +2,7 @@
 
 御来迎と虎はどちらも H-A なので、前は同じ out/templates/H-A_v1.pdf に書き、後から刷った玩具の紙が前の紙を黙って消していた。
 見る事:
-1. 2 つの玩具の H-A を既定の名前で刷ると、紙が別々に残る（型紙・手順の紙・試した後の紙）
+1. 2 つの玩具の H-A を既定の名前で刷ると、紙が別々に残る（型紙。11-06 から刷る時に手順の紙と試した後の紙を組まない。窓口の決定 推し A）
 2. 自分の案（どの玩具でも OWN-1 から数える）も別々に残る
 3. --out を渡した時は、その名前のまま
 """
@@ -36,12 +36,11 @@ def made():
 for sid in (G, T):
     r = cli("--source", sid, "print", "H-A")
     assert r.returncode == 0, r.stderr
-assert len(made()) == 6, made()
+assert len(made()) == 2, made()
 for sid, toy in ((G, "御来迎"), (T, "張子の首振り虎")):
     assert toy in words(here / "out/templates" / f"{sid}_H-A_v1.pdf"), (toy, "後から刷った玩具の紙で上書きされていない")
-for end in ("", "_tejun", "_after"):
-    first, second = (words(here / "out/templates" / f"{sid}_H-A_v1{end}.pdf") for sid in (G, T))
-    assert first != second, (end, "玩具ごとに別の紙")
+first, second = (words(here / "out/templates" / f"{sid}_H-A_v1.pdf") for sid in (G, T))
+assert first != second, "玩具ごとに別の紙"
 # --source を付けない時は御来迎の名前
 before = made()
 assert cli("print", "H-A").returncode == 0 and made() == before

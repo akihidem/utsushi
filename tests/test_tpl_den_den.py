@@ -41,8 +41,8 @@ for sid in made:
         with redirect_stdout(io.StringIO()), redirect_stderr(err):
             rc = hypotheses.print_sheet(sid, h["id"], out)
         assert rc == 0, (sid, h["id"], err.getvalue())
-        for suffix in ("", "_tejun", "_after"):
-            assert pathlib.Path(f"{out}{suffix}.pdf").exists(), (sid, h["id"], suffix)
+        # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
+        assert pathlib.Path(f"{out}.pdf").exists() and not any(pathlib.Path(f"{out}{s}.pdf").exists() for s in ("_tejun", "_after")), (sid, h["id"])
         assert all(isinstance(v, float) for v in values("den_den", h["params"]).values())
         count += 1
 assert count == 10, count

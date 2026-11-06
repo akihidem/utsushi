@@ -1,4 +1,5 @@
-"""玩具の頁（順路の真ん中: 記録を読む → 仮説と型紙の窓 → 作る → 記録 → 試した後の紙 → 人の説明 → AI → 次の版 → 戻る）。
+"""玩具の頁（順路の真ん中: 記録を読む → 仮説と型紙の窓 → 作る → 組み方 → 記録 → 人の説明 → AI → 次の版 → 戻る）。
+刷るのは型紙だけ（本人の決まり 11-06「文章のプリントは廃止」）。前は記録の後に試した後の紙を開いた。
 要件は docs/process/site-requirements.md の 2・3・6。見た目は skin.py の骨と皮に任せ、この頁は中身だけを組む。
 
 判断の芯（play_server の前の玩具の頁から引き継いだ線）:
@@ -24,7 +25,10 @@ from . import skin, wording
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
 from .toys import way_tags
 
-KINDS = (("", "型紙"), ("_tejun", "手順の紙"), ("_after", "試した後の紙"))
+# 窓で見て刷る紙は型紙だけ（本人の決まり 11-06「文章のプリントは廃止。組み立て用のページだけでいい」・6 点の 1）。
+# 前は手順の紙と試した後の紙も札にあった。組み方は頁の「組み方」の節、試した事の欄と予想の欄は紙から外した（6 点の 2）。
+# 書き出し（PDF・PNG・SVG）は残す: 作りながら見る頁が手順の紙の PNG を使い、「刷った」は PDF の有無で読むため（設計メモ版 3）。
+KINDS = (("", "型紙"),)
 
 
 def reply_note(errors, msg):
@@ -116,20 +120,13 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。
     make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
                       f'<button data-busy>仮説 {esc(hypotheses.letter(x))}</button></form>')
-    # 紙を作らずに記録を残した人が札から来た時（#320）は、試した後の紙だけがある案も窓に出す。刷った案には数えない。
-    # 必須 2 種のたたき台でない案（前の試行の記録）は刷れないので、これが無いと記録の窓に別の案の紙が出る。
-    only_after = (kind == "_after" and see in recorded and any(x["id"] == see for x in data["hypotheses"])
-                  and (out_dir(sid) / f"{see}_v{v}_after.png").exists())
-    if not ids and not only_after:
+    # 前の札や記録の後の知らせのリンク（kind=tejun・after）で来ても、型紙を出す（文章の紙は刷らなくなった。本人の決まり 11-06）
+    kind = ""
+    if not ids:
         return f'<div class="tabs">{make(card)}</div><p class="meta">仮説の札を押すと、紙を作ってここに出します。</p>'
-    see = see if see in ids or only_after else (card["id"] if card["id"] in ids else ids[0])
+    see = see if see in ids else (card["id"] if card["id"] in ids else ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
-    if only_after and v not in vs:
-        vs = sorted([*vs, v])
     v = v if v in vs else vs[-1]
-    kind = kind if kind in ("", "_tejun", "_after") else ""
-    if kind == "_after" and see not in recorded:
-        kind = ""
     h = next(x for x in data["hypotheses"] if x["id"] == see)
     name = f"{see}_v{v}{kind}"
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
@@ -138,10 +135,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">仮説 {esc(hypotheses.letter(card))}</a>')
     kinds = ""
     for suffix, label in KINDS:
-        if suffix == "_after" and see not in recorded:
-            # 記録の前は名前も出さない（絵も PDF も渡さない線を、字の上でも守る）。
-            kinds += '<span title="記録を残すと開きます">試した後の紙（記録の後）</span>'
-        elif (out_dir(sid) / f"{see}_v{v}{suffix}.png").exists():
+        if (out_dir(sid) / f"{see}_v{v}{suffix}.png").exists():
             kinds += f'<a href="{q(see, suffix, v)}" aria-current="{"true" if suffix == kind else "false"}">{label}</a>'
     vers = "".join(f"<b>版 {n}</b>" if n == v else f'<a href="{q(see, kind, n)}">版 {n}</a>' for n in vs)
     cap = ""
@@ -177,7 +171,6 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     # 押せない札の理由は title だけだとスマホで読めないので、字で出す（#127）。
     why = "仮説の点線の札は、押すと紙を作ってここに出します。" if card["id"] not in ids else ""
-    why += "試した後の紙は、記録を残すと開きます。" if see not in recorded else ""
     why = f'<p class="meta">{why}</p>' if why else ""
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div>{why}<div class="win">{fig}{side}</div>'
 
@@ -414,7 +407,8 @@ def ai_block(r, up_key=None, photos=True):
 def own_papers(sid, hid, ver):
     """前に書かれた自分の仮説で刷った紙へのリンク。札を外したので（J-032 の点 2）、記録の札から開く。字は札と窓にあった物のまま。"""
     links = [f'<a href="/sheet/{sid}/{esc(hid)}_v{esc(ver)}{kind}.pdf" target="_blank" rel="noopener">{label}</a>'
-             for kind, label in (("_free", "型紙なしの紙"), ("", "型紙"), ("_tejun", "手順の紙")) if (out_dir(sid) / f"{hid}_v{ver}{kind}.pdf").exists()]
+             # 刷るのは型紙だけ（本人の決まり 11-06・6 点の 1）。前は型紙なしの紙と手順の紙も並べた
+             for kind, label in (("", "型紙"),) if (out_dir(sid) / f"{hid}_v{ver}{kind}.pdf").exists()]
     return f'<p>{"・".join(links)}</p>' if links else ""
 
 
@@ -430,18 +424,13 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
     for r in reversed(recs):
         told = loop.explanation(r["id"])
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
-        # 試した後の紙も字のリンクは窓へ（画面に出す）。PDF は添え。
-        hid, ver = esc(r["hypothesis_id"]), r.get("sheet_version", 1)
-        pdf = f'/sheet/{sid}/{hid}_v{ver}_after.pdf'
-        after = (f'<p><a href="/toy/{sid}?see={hid}&kind=after&v={ver}#win">試した後の紙</a>（先に開いて、次に変える条件を読む。'
-                 f'<a href="{pdf}" target="_blank" rel="noopener">PDF</a>）</p>')
-        # 自分の仮説は窓に出ない（窓へ向けると、ほかの案の紙が出る）ので、字のリンクも PDF へ向ける（#320）。
-        if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]):
-            # 合言葉なしの場では OWN-n の紙を開かない（think_sheet.opens）。行き止まりになるので、札に紙への道を出さない。
-            after = f'<p><a href="{pdf}" target="_blank" rel="noopener">試した後の紙</a>（先に開いて、次に変える条件を読む）</p>' if photos else ""
-            # 話した案の刷った紙は、作った本人の画面からだけ開く。これも道を出さない。
-            if photos and r["hypothesis_id"] not in spoken:
-                after = own_papers(sid, r["hypothesis_id"], ver) + after
+        # 試した後の紙は刷らなくなった（本人の決まり 11-06・6 点の 1。試した事の欄は紙から外した、6 点の 2）ので、記録の札に紙への道を出さない。
+        # 前は「試した後の紙（先に開いて、次に変える条件を読む）」を窓と PDF へ向けていた。次に変える条件は、説明と次の版の欄が受ける。
+        ver = r.get("sheet_version", 1)
+        after = ""
+        # 自分の仮説の刷った紙（型紙）は、作った本人の画面からだけ開く（合言葉なしの場では OWN-n の紙を開かない。think_sheet.opens）。
+        if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]) and photos and r["hypothesis_id"] not in spoken:
+            after = own_papers(sid, r["hypothesis_id"], ver)
         if told:
             nid = f'next-{r["id"]}'
             nxt = next_form(r)
@@ -634,7 +623,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     from . import wa
 
     ring = wa.ring(wa.current_version(sid, data))
-    body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙と手順の紙を刷ります。切って、折って、組みます。</p>'
+    body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
     from . import kumitate  # 手順どおりに組み立てる絵。型紙の絵の上に初めから出す（本人の決定 11-06。J-033）
 
@@ -666,6 +655,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
              + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) or mine else "")
              + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())}</section>')
+    # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置く（刷る口を押し下げない）
+    body += kumitate.section(sid)
     # 通らなかった時は畳みを開く。書いた字を隠さないため（#300）。
     body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>'
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
