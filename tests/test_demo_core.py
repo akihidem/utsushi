@@ -69,7 +69,7 @@ fake = {
     "make2": (Image.new("RGB", (2560, 2000), (249, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
     "make": (Image.new("RGB", (2560, 2000), (250, 250, 250)), {"stage": [0, 0, 1280, 900], "henji": [700, 200, 500, 400], "h": 1000}, 1280),
     "keep": (Image.new("RGB", (2000, 3000), (245, 245, 245)), {"up": [100, 200, 800, 1200], "record": [120, 900, 760, 300], "h": 1500}, 1000),
-    "gallery": (Image.new("RGB", (2800, 2400), (240, 240, 240)), {"made": [100, 100, 1200, 900], "first_sample": [100, 700, 1200, 120], "h": 1200}, 1400),
+    "gallery": (Image.new("RGB", (2800, 2400), (240, 240, 240)), {"made": [100, 100, 1200, 900], "first_made": [100, 700, 1200, 120], "h": 1200}, 1400),
 }
 for name in core.SECONDS:
     scene = core.build_scene(name, dict(core.CUES_ALL[name]), shots=fake)
@@ -81,7 +81,7 @@ for name in core.SECONDS:
     assert scene.frame(0.0).tobytes() != scene.frame(d - 0.05).tobytes(), name
 # ギャラリーの字幕は持ち寄りを言う。寄りは持ち寄られた物の列を下へ動く（1 つの記録だけに見せない）
 gal = core.build_scene("core_gallery", dict(core.CUES_ALL["core_gallery"]), shots=fake)
-# 見本の 2 つ目（別の仮説の紙の名が付く）を枠に入れない。列は 1 つ目の見本の下で止まる（型紙は玩具に 1 枚。J-032）
+# 列は台本が作った本物の作った物の札の下で止まる（見本の畳みは開かない。統括の決め 11-06。前は 1 つ目の見本の下で止めていた）
 gal_end = gal.segs[0]["to"]
 assert gal_end[1] > gal.segs[0]["from"][1] and gal_end[1] + gal_end[2] * core.ASPECT / 2 <= 700 + 120 + core.SAMPLE_GAP, gal_end
 assert gal.segs[0]["line"] == core.GALLERY_LINE and "持ちよ" in core.GALLERY_LINE

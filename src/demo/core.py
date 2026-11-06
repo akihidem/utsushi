@@ -21,6 +21,7 @@ exit: 0 = 書き出せた / 4 = 画面が撮れない・chrome か ffmpeg が無
 - frame(t) は時刻だけから 1 コマを描く純関数（場面 1 と同じ）。合図は CUES だけを読むので、曲の拍に寄せられる。
 """
 import argparse
+import http.cookiejar
 import json
 import math
 import os
@@ -61,8 +62,12 @@ PAGES = {
     "make1": (f"/toy/{SID}/tsukuru?h={HID}&n=1", 1280, {"stage": ".stage"}),
     "make2": (f"/toy/{SID}/tsukuru?h={HID}&n=2", 1280, {"stage": ".stage"}),
     "make": (f"/toy/{SID}/tsukuru?h={HID}&n=3&ev=stuck", 1280, {"stage": ".stage", "henji": "#henji"}),
-    "keep": (f"/toy/{SID}/techo", 1000, {"up": '[aria-label="上げる"]', "record": '[aria-label="上げる"] .item'}),
-    "gallery": ("/gallery", 1400, {"made": "#ageta", "first_sample": "#ageta .samples .item"}),
+    # 手帖の「上げる」の枠は、手帖の作り直し（#395）で手帖の記録の頁へ移った（前は /toy/<印>/techo の中）
+    "keep": (f"/toy/{SID}/techo/kiroku", 1000, {"up": '[aria-label="上げる"]', "record": '[aria-label="上げる"] .item'}),
+    # 止める所は、台本が作った本物の作った物の札（#ageta の最初の札。例の記録で、写真と確認の記録つき）。
+    # 前は 1 つ目の見本の札で止めていたが、UX の段 0（#475）で、本物が 1 つでもあると見本は閉じた「見本」の畳みに入るようになった。
+    # 畳みを開いて撮らず、本物を先に見せる（統括の決め 11-06。ジャーニーマップの「持ち寄る: 残したら持ち寄る場に着く。本物を先に」と合う）
+    "gallery": ("/gallery", 1400, {"made": "#ageta", "first_made": "#ageta .item"}),
 }
 
 # 本人のループの定義（11-05 17:57）を輪の形にした。(上の字, 輪の中の字, 輪の形)。形は done = 実線 / now = 点線 / half = 半分が点線。
@@ -80,7 +85,7 @@ MAP_TITLE = "真ん中は、手で作る所。"
 MAP_SUB = "点線は、これから作る所。"
 GALLERY_LINE = "作った物を、持ちよる。"
 GALLERY_PAN = 620                # ギャラリーの列を下へ動く量（CSS の px）。節の高さを越えない所で止める。速く見えない量にした
-SAMPLE_GAP = 6                   # 列を止める時に、1 つ目の見本の下に残す余白（CSS の px）。次の札の頭が入らない量
+SAMPLE_GAP = 6                   # 列を止める時に、本物の作った物の札の下に残す余白（CSS の px）。次の札の頭が入らない量
 VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記録へ")
 
 SECONDS = {"core_map": 9.0, "core_make": 12.0, "core_keep": 7.0, "core_voice": 4.0, "core_gallery": 5.0, "core_loop": seconds_of("core_loop")}
@@ -100,12 +105,17 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+# 送る時の cookie を持つ箱。今の main の口は、写真と動画を「記録を残した画面からだけ」受ける（記録を残した時に渡す鍵の cookie で見分ける）。
+# 前は cookie を持たずに送っていたので、例の記録に写真を足す所で断られ、台本が止まった（11-06。今の main を取り込んで分かった）。
+_JAR = http.cookiejar.CookieJar()
+
+
 def _post(base, path, data, ctype="application/x-www-form-urlencoded"):
-    """本物の口へ送る。(番号, 中身) を返す。別のサイトからの送信を断る門を通すため Origin を付ける。"""
+    """本物の口へ送る。(番号, 中身) を返す。別のサイトからの送信を断る門を通すため Origin を付ける。記録の鍵の cookie を持ち回る。"""
     body = urllib.parse.urlencode(data).encode() if isinstance(data, dict) else data
     req = urllib.request.Request(base + path, data=body, headers={"Origin": base, "Content-Type": ctype})
     try:
-        r = urllib.request.build_opener(NoRedirect).open(req, timeout=120)
+        r = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor(_JAR)).open(req, timeout=120)
         return r.status, r.read().decode("utf-8", "ignore")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "ignore")
@@ -464,10 +474,10 @@ def build_scene(name, cues, cache=None, shots=None):
             {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, "line": "できた物の写真と、"},
             {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "line": "工夫した所を記録に添える"}])
     if name == "core_gallery":
-        made, sample = shots["gallery"][1]["made"], shots["gallery"][1]["first_sample"]
+        made, sample = shots["gallery"][1]["made"], shots["gallery"][1]["first_made"]
         top = _cam_on([made[0], made[1] + 10, made[2], made[3]], 1.1)  # 節の上の見出しの下線を枠に入れない
         # 持ち寄られた物の列を下へ動く。1 つの記録だけに見せず、何人もの物が集まる場だと分かるように。
-        # 1 つ目の見本の下で止める。頁の 2 つ目の見本には別の仮説の紙の名（C の紙）があり、型紙を玩具に 1 枚とする形（J-032）と合わない。
+        # 台本が作った本物の作った物の札の下で止める（見本の畳みは開かない。統括の決め 11-06）。前は 1 つ目の見本の下で止めていた
         room = sample[1] + sample[3] + SAMPLE_GAP - (top[1] + top[2] * ASPECT / 2)
         lower = (top[0], top[1] + min(GALLERY_PAN, max(0, room)), top[2])
         return Screens(name, cues, shots, [{"at": None, "shot": "gallery", "move": "pan", "from": top, "to": lower, "line": GALLERY_LINE}])
