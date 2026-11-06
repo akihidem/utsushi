@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_ux_stage1.py
+# commit: 9233663f（段 0 の枝の頭。段 1 の前）の木に、この試験だけを置いた形
+Traceback (most recent call last):
+  File "tests/test_ux_stage1.py", line 55, in <module>
+    assert [x[0] for x in got] == ["うつし", *ROAD, "よむ"], (path, "帯は道しるべ", got)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/toys', '帯は道しるべ', [('うつし', '/', False), ('序', '/about', False), ('おもちゃ', '/toys', True), ('作った物と職人の言葉', '/gallery', False), ('図鑑', '/zukan', False), ('English', '/en', False)])
+rc=1

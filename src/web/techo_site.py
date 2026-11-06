@@ -317,19 +317,42 @@ def made_item(sid, data, r, photos=True, public=False):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
-def gallery_page(sids, photos=True, public=False):
+def own_item(sid, data, r):
+    """今残した 1 つの札（持ち寄る駅の頭。窓口の決定 11-06 夜・案 A）。記録を残した画面にだけ出す。
+    ほかの札と違い、写真か言葉が無い記録も出す（今残した物が並んだ事を見せるため）。写真と動画は、ほかの札と同じく人が確かめた物だけ
+    （ギャラリーは確認の後だけ、#314。確認の前の物は、上げた本人が手帖の記録の頁で見る）。
+    記録の頁（説明と AI の札）へは記録の番号から、玩具の頁の同じ記録へは玩具の名前から行く（ほかの札と同じ。地図の 4。新しい字は足さない）。"""
+    files = media_review.public(r["id"], media_of(r["id"]))
+    pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
+                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
+    h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
+    return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
+            f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　'
+            f'{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
+            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
+
+
+def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
     職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
-    cards = ""
+    cards, own = "", ""
     for sid in sids:
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
+            # 今残した 1 つ（記録を残した画面の鍵が合う記録）は頭に出し、並びの中には重ねて出さない。合言葉なしの場（public・photos=False）は鍵を見ない。
+            # 札に記録の番号と感想の字が出るので（J-028）。呼ぶ側（play_server）も合言葉なしの場では鍵を渡さず、二重に閉じる
+            if photos and not public and rec_key and not own and records.mine(r["id"], rec_key):
+                own = own_item(sid, data, r)
+                continue
             cards += made_item(sid, data, r, photos, public)
-    real = bool(cards)  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    real = bool(cards or own)
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
-    if not cards:
+    if not cards and not own:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
@@ -342,10 +365,12 @@ def gallery_page(sids, photos=True, public=False):
     from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
+    # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
+            '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
             '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{cards}</section>'
+            f'{note}{own}{cards}</section>'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
             f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
