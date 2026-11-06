@@ -18,6 +18,16 @@ LOOKS = {
 }
 
 
+# 表紙の題の下の 2 行（本人の決定 11-06。サイトを見た人の意見「最初の表紙が綺麗なので、コンテンツも完成されたものと勘違いしてしまう。
+# 今後も発展・進化していくし、その担い手はユーザーだというメッセージは、最初に言った方がいいのでは」から作った案 1 を本人が採った）。
+# 字を変えない。両方の表紙（白の展示と黒のジン）で同じ物を読む。題の縦書きの流れを崩さないよう、表紙の下に横書きで小さく置く。
+GROWING = ("このサイトは、まだ育っている途中です。", "型紙をよくしていくのは、作ってみるあなたです。")
+
+
+def growing():
+    return f'<p class="grow">{esc(GROWING[0])}<br>{esc(GROWING[1])}</p>'
+
+
 def switch(look):
     """入口の頭の帯。内側の頁と同じ帯を使う（入口から入った所で帯が変わらないように。要件 2）。"""
     return skin.nav(look, "/", "/")
@@ -116,6 +126,7 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-title .road{margin:0}
 body.zine a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #c9a96a;border-radius:2px;color:#efe6d2;font-size:20px;letter-spacing:.5em}
 .zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
+.zn-cover .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}
 .zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
 .zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
 .zn-toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid #1f1b16}
@@ -146,7 +157,8 @@ body.zine a.road-go{display:inline-flex;align-items:center;justify-content:cente
 .zn-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:10px}
 .zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
-@media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto;padding:8vh 8vw;gap:24px}
+@media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;padding:8vh 8vw;gap:24px}
+ .zn-cover .grow{grid-column:1;margin:0}
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
  .zn-title{grid-column:1;justify-self:center;margin:0;align-items:center;gap:18px;order:1}.zn-cover .frame{order:2}
  .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
@@ -171,7 +183,7 @@ def zine():
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">江都二色　安永二年　うしなわれた玩具</p>'
-             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div></section>')
+             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{growing()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
 
@@ -220,6 +232,7 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
    広い画面は 3 列の縦書きの下の段（2 行目）に置く */
 .tj-hall .road{grid-column:1/-1;grid-row:2;justify-self:center;margin:0}
 body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #6b4f2a;border-radius:2px;color:#1f1b17;font-size:20px;letter-spacing:.5em}
+.tj-hall .grow{grid-column:1/-1;grid-row:3;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -308,7 +321,7 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 
 @media (max-width:820px){.tj-room{grid-template-columns:minmax(0,1fr);gap:6vh}.tj-work{width:72vw}.tj-songs{writing-mode:horizontal-tb;height:auto}
  .tj-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tj-hall{grid-template-columns:1fr;justify-items:center;gap:4vh;padding:10vh 5vw}
- .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}.tj-hall .road{grid-column:1;grid-row:auto}
+ .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}.tj-hall .road{grid-column:1;grid-row:auto}.tj-hall .grow{grid-column:1;grid-row:auto;margin:0}
  /* 1 列に積む時は、英字の小さな 1 行だけ横書きにする（縦書きのままだと 246px を取り、375×667 で釦が最初の画面の外に出た）。題と副題は縦書きのまま */
  .tj-hall .en{writing-mode:horizontal-tb}
  .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}
@@ -390,7 +403,7 @@ def tenji():
     ts = toys()
     body = switch("tenji")
     body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p></section>')
+             + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
     # 北斎漫画の縦読みの節（黒のジンの章の頭と同じ。本人の決定 11-06「ページは白案で統一します。黒案にだけある要素は白案に入れてください」）。
     # 黒と同じく、玩具の章より先に「絵は動きを止めて残した」の筋を見せるため、題の間のすぐ後に置く。色は白の壁に合わせる
     from .hokusai import scroll_section
