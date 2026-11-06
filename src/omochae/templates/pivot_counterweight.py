@@ -18,13 +18,14 @@ ID = "pivot_counterweight"
 # 刷った組の版（U-31）。slider_fan.SHEET_SET と同じ意味。
 # 仮説を分ける寸法の名前（words・generate が、仮説の寸法にこれがあるかを見る）。
 HYP_KEY = "mount"
-# tora-v5 は刷らずに飛ばした（型紙エンジンは v5 の直しの上に v6 の両面の頭を足した。v5 の紙は誰にも配っていない。統括の読み 11-06）
-SHEET_SET = "tora-v6"
+# tora-v5 と tora-v6 は刷らずに飛ばした（v5 は統括の読み 11-06。v6 は当たり 2 つを v7 で直したので、窓口の決定 2026-11-07 で飛ばした。
+# どちらもサイトでは誰にも刷っていない）
+SHEET_SET = "tora-v7"
 # 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。前の字（凡例・印の文・手順）で刷る最初の組
 FROZEN_SET = "tora-v3"
 # 紙を控えに残す前の組の並び（古い順。compose.kept_sets）。次の組に上げる時は、今の組をこの並びの後ろに足す（前の組の紙は変えない）
 KEPT_SETS = (FROZEN_SET, "tora-v4")
-# この組から、作りを型紙エンジンの写し（_tora_v6）に替える。前の組の作りはこの雛形に残す
+# この番号から、作りを型紙エンジンの写し（_tora_v6。中身は今の組 tora-v7 の写し）に替える。前の組の作りはこの雛形に残す
 V6 = 6
 
 
@@ -49,7 +50,8 @@ def _by_set(fn):
     return run
 
 
-NEXT_DEFAULTS = {"leg_height": 0, "body_round": 0, "head_sides": 1}
+# tora-v6 から（脚・角・顔の数）と tora-v7 から（粘土の下の穴を後ろへ・軸を前の壁から離す・当たりの検査）の寸法の既定。型紙エンジンと同じ
+NEXT_DEFAULTS = {"leg_height": 0, "body_round": 0, "head_sides": 1, "clay_back": 0, "axle_back": 6, "fit_check": 0}
 
 DEFAULTS = {
     "mount": "neck",
@@ -70,7 +72,8 @@ RANGES = {
     "opening": (10, 30), "neck_length": (5, 30), "strip_width": (5, 20),
     "head_w": (15, 45), "head_h": (15, 45),
     "weight_g": (0.2, 15), "weight_below_axle": (-20, 60), "weight_behind": (-10, 40),
-    "leg_height": (0, 15), "body_round": (0, 10), "head_sides": (1, 2),
+    # 顔の数（head_sides）と当たりの検査（fit_check）は、連続の範囲でなく選ぶ値（型紙エンジンと同じ。_tora_v6 の HEAD_SIDES・FIT_CHECKS）
+    "leg_height": (0, 15), "body_round": (0, 10), "clay_back": (0, 10), "axle_back": (4, 20),
     "paper_gsm": (40, 400),
 }
 MOUNTS = ("neck", "hang")
@@ -103,13 +106,14 @@ def check_range(p):
         if k == "mount":
             if v not in MOUNTS:
                 out.append(Failure("F5.range", k, f"{v} は {MOUNTS} のどれでもない"))
+        elif k in NEXT_DEFAULTS:
+            # 前の組の作りはこの寸法を読まない。通すと、刷った紙と記録の寸法が食い違う（既定の値だけを通す）
+            if v != NEXT_DEFAULTS[k]:
+                out.append(Failure("F5.range", k, f"{v} は前の組（{SHEET_SET}）の作りでは使えない（tora-v6 からの寸法）"))
         elif k not in RANGES:
             out.append(Failure("F5.range", k, "知らない寸法の名前"))
         elif not isinstance(v, (int, float)) or isinstance(v, bool) or not RANGES[k][0] <= v <= RANGES[k][1]:
             out.append(Failure("F5.range", k, f"{v} は範囲 {RANGES[k]} の外"))
-        elif k in NEXT_DEFAULTS and v != NEXT_DEFAULTS[k]:
-            # 前の組の作りはこの寸法を読まない。通すと、刷った紙と記録の寸法が食い違う
-            out.append(Failure("F5.range", k, f"{v} は前の組（{SHEET_SET}）の作りでは使えない（tora-v6 からの寸法）"))
     return out
 
 

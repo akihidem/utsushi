@@ -1,4 +1,4 @@
-"""虎の今の組 tora-v6（#115）。型紙エンジン paper-to-toy の main e7cf5f7 の雛形を写した _tora_v6 で刷る。v5 は刷らずに飛ばした。
+"""虎の今の組 tora-v7（#115）。型紙エンジン paper-to-toy の v7（#138）の雛形を写した _tora_v6 で刷る。v5 と v6 は刷らずに飛ばした（ファイルと試験の名は v6 の写しの時のまま）。
 
 前の組（tora-v3・tora-v4）の紙と指紋は変えない（tests/test_floor_pin.py。tora-v4 の作りは tests/test_next_sheets.py が前と同じに見る）。
 寸法は記録の H-A の組ごとの寸法（エンジンの見本 examples/tora_v6.json と同じ。tests/test_by_set.py）。
@@ -7,8 +7,8 @@
 - 組の名前と控えの組の並び。組の番号が 6 から作りを写しに替え、v4 に置くと前の作りに戻る（関数ごとに替わる）
 - エンジンと違う所は 2 つだけ: 手順 4 の「線のとおり山折り」（窓口が本人の委任で選んだ字）と、紙の行の 4 つの名前（#295）
 - たたき台の紙（首の形・脚 4 本・角を落とした胴・両面の頭）が検査に通り、頁の凡例は次の組の字と位置の印の行
-- 前の組の作りでは v6 の寸法（脚・角・顔の数）を落とす（刷る紙に効かない寸法を通さない）
-- 丸い切り抜きの床（部品の外・折り線にかかる・印にかかる）。3D の組み立ては v6 では出さない
+- 前の組の作りでは v6・v7 からの寸法（脚・角・顔の数・重りの穴のずれ・軸と前の壁の間・当たりの検査）を落とす（刷る紙に効かない寸法を通さない）
+- 丸い切り抜きの床（部品の外・折り線にかかる・印にかかる）。3D の組み立ては今の組では出さない
 """
 import json
 
@@ -44,7 +44,8 @@ def words(layout):
 
 
 # 1. 組の名前と並び。御来迎の凍結の組はそのまま
-assert (TIGER.SHEET_SET, TIGER.set_no(), TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v6", 6, "tora-v3", ("tora-v3", "tora-v4"))
+# 今の組は tora-v7（v6 は当たり 2 つを v7 で直したので、刷らずに飛ばした。窓口の決定 2026-11-07）。試験の名は v6 の写しの時のまま
+assert (TIGER.SHEET_SET, TIGER.set_no(), TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v7", 7, "tora-v3", ("tora-v3", "tora-v4"))
 assert marks.FROZEN_SETS == {"NDL-1187053-R0000005-L": "goraigo-v10"}, marks.FROZEN_SETS
 assert h["id"] == "H-A" and {k: p[k] for k in ("leg_height", "body_round", "head_sides")} == {"leg_height": 10, "body_round": 8, "head_sides": 2}
 
@@ -72,11 +73,11 @@ assert len(by["body"].round_cuts) == 1 and not by["body"].cuts and len(by["head"
 _, layout, failures = compose("pivot_counterweight", h["params"], source)
 assert layout is not None and not failures, [f.line() for f in failures]
 got = words(layout)
-assert all(w in got for w in FOLD_WORDS) and MARK_LEGEND in got and "刷った組 tora-v6" in got, got
+assert all(w in got for w in FOLD_WORDS) and MARK_LEGEND in got and "刷った組 tora-v7" in got, got
 # 手順は 12 段（脚を貼る段を、上の面を閉じる前に足した。エンジンと同じ）
 assert len(steps) == 12 and steps[9].startswith("6〜9 脚を") and steps[11].startswith("4 尾の糊代を山折りし"), steps
 
-# 5. 前の組の作りは v6 の寸法を読まないので、既定のほかの値を落とす。v6 では通る。顔の数は整数（エンジンの床）
+# 5. 前の組の作りは v6・v7 からの寸法を読まないので、既定のほかの値を落とす。今の組では通る。顔の数は整数（エンジンの床）
 for k, v in (("leg_height", 10), ("body_round", 8), ("head_sides", 2)):
     with at_set("tora-v4"):
         assert [f.where for f in TIGER.check_range({"mount": "neck", k: v})] == [k], k
@@ -99,9 +100,9 @@ mx, my = axle["pts"][0]
 body.round_cuts = [(mx, my + 1, 2.0)]
 assert any("位置の印が中の切り込みにかかり" in f.message for f in check_art([body])), [f.line() for f in check_art([body])]
 
-# 7. 3D の組み立ては v6 では出さない（assembly の注）。控えの組 tora-v4 では前と同じに組む
+# 7. 3D の組み立ては今の組では出さない（assembly の注）。控えの組 tora-v4 では前と同じに組む
 assert assembly.assemble(TORA) is None
 with at_set("tora-v4"):
     assert assembly.assemble(TORA) is not None
 
-print("ok 虎の今の組 tora-v6。組の替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D は出さない")
+print("ok 虎の今の組 tora-v7。組の替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D は出さない")

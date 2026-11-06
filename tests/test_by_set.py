@@ -2,7 +2,7 @@
 
 なぜ要るか: 必須 2 種の次の組（御来迎 goraigo-v13・虎 tora-v6）は、たたき台・寸法・出す字が前の組と違う。前の組の紙は変えない決まりなので、
 記録の 1 つの欄を書き換えず、組ごとの欄に足す。2 つの組を 2 本の PR で別に足すので、読み口を先に 1 本で入れる（統括の決め 11-06）。
-欄を書いた本物の記録は、虎の H-A の tora-v6 の寸法だけ（型紙エンジンの見本 examples/tora_v6.json）。前の組の紙が変わらない事は
+欄を書いた本物の記録は、虎の H-A の tora-v7 の寸法だけ（型紙エンジンの見本 examples/tora_v7.json）。前の組の紙が変わらない事は
 tests/test_floor_pin.py の指紋で見る。
 
 見る線:
@@ -31,7 +31,8 @@ FIELDS = ("sheet_by_set", "params_by_set", "hide_by_set")
 # 1. 組ごとの欄を持たない記録は、load が前と同じ（人が採った仮説を重ねるだけ）。たたき台は記録の sheet のまま。
 # 欄を書いたのは虎の H-A の tora-v6 の寸法だけで、load はその仮説の寸法だけを替える（たたき台・字・ほかの仮説は記録のまま）
 TORA = "NDL-1187053-R0000014-R"
-V6 = {"mount": "neck", "axle_height": 32, "head_w": 36, "weight_below_axle": 20, "leg_height": 10, "body_round": 8, "head_sides": 2}
+V7 = {"mount": "neck", "axle_height": 32, "head_w": 36, "weight_below_axle": 20, "leg_height": 10, "body_round": 8, "head_sides": 2,
+      "neck_length": 23, "clay_back": 2.5, "axle_back": 9, "weight_behind": 0, "fit_check": 1}
 for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     raw = json.loads(path.read_text(encoding="utf-8"))
     got = hypotheses.load(raw["source_id"])
@@ -39,8 +40,8 @@ for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     want = overlay(copy.deepcopy(raw))
     if raw["source_id"] == TORA:
         assert [h["id"] for h in raw["hypotheses"] if "params_by_set" in h] == ["H-A"], "虎の欄は H-A だけ"
-        assert raw["hypotheses"][0]["params_by_set"] == {"tora-v6": V6}, "型紙エンジンの見本 examples/tora_v6.json と同じ寸法"
-        want["hypotheses"][0]["params"] = V6
+        assert raw["hypotheses"][0]["params_by_set"] == {"tora-v7": V7}, "型紙エンジンの見本 examples/tora_v7.json と同じ寸法"
+        want["hypotheses"][0]["params"] = V7
     else:
         assert not any("params_by_set" in h for h in raw["hypotheses"]), (path.name, "組ごとの寸法を書いたのは虎の H-A だけ")
     assert got == want, (path.name, "組ごとの欄で load が変わった所が、今の組の寸法のほかにある")
@@ -120,4 +121,4 @@ for tpl in (TIGER, FAN):
     for s in kept_sets(tpl) + (tpl.SHEET_SET,):
         assert any(n.startswith(f"{s}/") for n in pin["papers"]), (s, "凍結の床の控えに、その組の紙が無い")
 
-print("ok 組ごとの欄（たたき台・寸法・出さない字）と控えの組の並び。欄の無い記録は load が前と同じ・虎は H-A の寸法だけが v6 の分")
+print("ok 組ごとの欄（たたき台・寸法・出さない字）と控えの組の並び。欄の無い記録は load が前と同じ・虎は H-A の寸法だけが v7 の分")
