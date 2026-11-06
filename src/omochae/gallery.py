@@ -40,8 +40,9 @@ def card(rec, data):
     h = next((x for x in data["hypotheses"] if x["id"] == rec["hypothesis_id"]), None)
     who = f"仮説 {letter(h)}" if h else esc(rec["hypothesis_id"])
     told = loop.explanation(rec["id"])
-    # 書いた人は書かなくてもよい欄なので、空の時は括弧ごと出さない
-    body = (f'<p><b>説明</b>{"（" + esc(told["by"]) + "）" if told.get("by") else ""}: {esc(told["text"])}</p><p><b>次の思いつき</b>: {esc(told["next_idea"])}</p>' if told
+    # 取り下げた説明は字が空になるので、空の欄を並べない。書いた人は書かなくてもよい欄なので、空の時は括弧ごと出さない。
+    body = ((f'<p><b>説明</b>{"（" + esc(told["by"]) + "）" if told.get("by") else ""}: {esc(told["text"])}</p>' if told.get("text") else "")
+            + (f'<p><b>次の思いつき</b>: {esc(told["next_idea"])}</p>' if told.get("next_idea") else "") if told
             else '<p class="meta">人の説明はまだ無い</p>')
     sheet = esc(rec.get("sheet_set") or f'版 {rec.get("sheet_version", 1)}')
     when = esc(rec.get("tried_on") or rec.get("recorded_at", "")[:10])

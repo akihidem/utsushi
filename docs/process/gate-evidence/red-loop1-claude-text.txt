@@ -1,0 +1,35 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_withdraw.py
+# commit: cd425cd（回した時の HEAD）
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-1_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-1_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-1_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-2_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-2_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-2_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-4_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-4_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-4_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-5_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-5_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-5_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-6_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-6_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-6_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-7_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-7_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-7_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-8_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-8_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-8_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-9_v1.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-9_v1_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/OWN-9_v1_after.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/.tmp-1ax2q6c5/H-A_v2.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/.tmp-1ax2q6c5/H-A_v2_tejun.pdf
+/tmp/tmpbfzj9aav/play/NDL-1187053-R0000005-L/.tmp-1ax2q6c5/H-A_v2_after.pdf
+Traceback (most recent call last):
+  File "tests/test_loop1_withdraw.py", line 202, in <module>
+    assert p8["next_to_try"]["why"] == "" and p8["next_to_try"]["what_to_measure"] == "" and p8["new_hypothesis"]["how_it_moves"] == "" and p8["new_hypothesis"]["name"] == "" and p8["drafted_by"] == "claude", p8
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'record_ids': ['R-0009'], 'hypothesis_id': 'H-A', 'changes': [{'param': 'fold_width', 'to': 8.4, 'why': '', 'formula_check': 'no_formula', 'from': 8.5}], 'next_to_try': {'why': '', 'what_to_measure': '開いた角度'}, 'references': [], 'new_hypothesis': {'name': '控えの案', 'how_it_moves': '', 'evidence': [{'kind': 'record', 'where': 'R-0009', 'what': '試した記録', 'certainty': '記録'}], 'against': [], 'to_measure': '開いた角度', 'params': None}, 'based_on_version': 2, 'id': 'P-0002', 'source_id': 'NDL-1187053-R0000005-L', 'status': 'decided', 'drafted_by': 'claude', 'drafted_at': '2026-11-06T02:17:38+09:00', 'decided_by': '採った人', 'decided_at': '2026-11-06T02:17:38+09:00', 'accepted': {'new_hypothesis': 'H-N1'}, 'accepted_params': []}
+rc=1
