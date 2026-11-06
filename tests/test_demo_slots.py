@@ -76,7 +76,8 @@ assert "16:9" in words.hands_problem("x", 6.0, probe=lambda p: (1920, 1440, 20.0
 assert "短い" in words.hands_problem("x", 6.0, probe=lambda p: (1920, 1080, 3.0))
 assert "読めない" in words.hands_problem("x", 6.0, probe=lambda p: None)
 
-# 5. 声の置き方: 場面の頭から順に置き、場面の秒に入らない時は名指しして止める（速めない）
+# 5. 声の置き方: 場面の頭から順に置く。入らない時は、その場面の声を同じ倍率で 1.08 倍まで速める（統括の決め 11-06）。
+#    それでも入らない時は名指しして止める
 with tempfile.TemporaryDirectory() as tmp:
     slot = pathlib.Path(tmp) / script.SLOT_DIR
     slot.mkdir(parents=True)
@@ -90,13 +91,57 @@ with tempfile.TemporaryDirectory() as tmp:
         secs = [8.6, 11.8, 12.2, 24.0]
         got, duck, problem = build.place_voices(order, secs, tmp)
         assert problem is None, problem
-        assert [(pathlib.Path(f).stem, at) for f, at in got] == [("A1", 9.0), ("A2", 17.3), ("A4", 33.0)], got
-        assert duck == [(9.0, 19.3), (33.0, 55.0)], duck
-        lengths["A4"] = 24.0  # 場面 2 の 24 秒に入らない
+        assert [(pathlib.Path(f).stem, at, sp) for f, at, sp in got] == [("A1", 8.8, 1.0), ("A2", 17.1, 1.0), ("A4", 32.8, 1.0)], got
+        assert duck == [(8.8, 19.1), (32.8, 54.8)], duck
+        lengths["A4"] = 25.0  # 場面 2 の 24 秒に入らないが、1.05 倍で入る
         got, duck, problem = build.place_voices(order, secs, tmp)
-        assert got == [] and "A4" in problem and "scene2" in problem, problem
+        assert problem is None and math.isclose(got[-1][2], 25.0 / 23.8, abs_tol=1e-3) and duck[-1] == (32.8, 56.6), (got, duck)
+        lengths["A4"] = 26.0  # 1.08 倍でも入らない
+        got, duck, problem = build.place_voices(order, secs, tmp)
+        assert got == [] and "A4" in problem and "scene2" in problem and "1.08" in problem, problem
     finally:
         assemble.duration = keep
+
+# 5b. 本物の ffmpeg で、本人に頼んだ録り方の 2 つの形を見る（作り物の音）
+#   形 1: 録り始めと終わりに 2 秒ずつ黙った声。黙りを切ると入る（切らないと 1.08 倍でも入らない長さ）
+#   形 2: 語りを読む 1 枚の目安（1 秒 5 字）ちょうどの声に、前後 2 秒の黙り。6 文とも、今の台本の秒に入る
+if shutil.which("ffmpeg"):
+    def padded(path, seconds, pad=2.0):
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=mono:d={pad}",
+                        "-f", "lavfi", "-i", f"sine=f=330:d={seconds}:sample_rate=48000", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=mono:d={pad}",
+                        "-filter_complex", "[0][1][2]concat=n=3:v=0:a=1", "-c:a", "aac", str(path)], check=True)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        slot = pathlib.Path(tmp) / script.SLOT_DIR
+        slot.mkdir(parents=True)
+        padded(slot / "A3.m4a", 11.0)
+        assert assemble.duration(slot / "A3.m4a") > 14.9, "黙りつきの長さは 15 秒（talk_lost の 12.2 秒に 1.08 倍でも入らない）"
+        cut = build.trim_voice(slot / "A3.m4a", pathlib.Path(tmp) / "cut.wav")
+        assert cut is not None and 10.9 < assemble.duration(cut) < 11.0 + 2 * build.SILENCE_KEEP + 0.15, assemble.duration(cut)
+        got, duck, problem = build.place_voices(["talk_lost"], [12.2], tmp, into=pathlib.Path(tmp) / "voice")
+        assert problem is None and pathlib.Path(got[0][0]).parent.name == "voice" and got[0][2] <= build.MAX_SPEED, (got, problem)
+        _, _, problem = build.place_voices(["talk_lost"], [12.2], tmp)  # 黙りを切らない置き方なら止まる
+        assert problem and "A3" in problem, problem
+
+    with tempfile.TemporaryDirectory() as tmp:
+        slot = pathlib.Path(tmp) / script.SLOT_DIR
+        slot.mkdir(parents=True)
+        target = {}
+        for name, kinds in script.SLOTS.items():
+            sents = words.sentences_of(words.TALKS[name])
+            for v, sent in zip(kinds.get("voice", ()), sents):
+                target[v] = round(words.reading_chars(sent) / words.RATE, 1)
+                padded(slot / f"{v}.m4a", target[v])
+        assert target == {"A1": 9.2, "A2": 1.8, "A3": 11.6, "A4": 23.4, "A5": 14.8, "A6": 3.8}, target
+        lengths = [script.load_scene(n).DURATION for n in script.SCENES]
+        got, duck, problem = build.place_voices(script.SCENES, lengths, tmp, into=pathlib.Path(tmp) / "voice")
+        assert problem is None, problem
+        assert [pathlib.Path(f).stem.split("-")[0] for f, _, _ in got] == ["A1", "A2", "A3", "A4", "A5", "A6"]
+        assert all(sp <= 1.02 for _, _, sp in got), [sp for _, _, sp in got]  # 目安ちょうどなら、ほとんど速めない
+        # 速めた声は、その倍率の長さになっている（高さを変えない atempo）
+        for f, _, sp in got:
+            if sp > 1.0:
+                assert "-x" in pathlib.Path(f).name and abs(assemble.duration(f) * sp - assemble.duration(pathlib.Path(tmp) / "voice" / f"{pathlib.Path(f).stem.split('-')[0]}.wav")) < 0.1
 
 # 6. 曲を下げる式: 声の間は DUCK_DB、離れた所は元の大きさ、前後はなだらか
 assert assemble.duck_gain([]) is None

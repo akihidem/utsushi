@@ -24,7 +24,9 @@ exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超え�
 - 届いたら差し込む物（本人の決定 11-06: 手だけの映像・本人の声の語り）は demo.script の SLOTS の置き場から読む。
   手の映像は語りの札が自分で地に敷き（demo.words）、声はつなぐ時に場面の時刻へ置いて重ね、声の間だけ曲を下げる（demo.assemble）。
   届いていない物は build.json の slots に「待ち」と残し、終わりに名前を言う。外へ出す事は止めない（無くても台本は組めるため）。
-  声が場面の秒に入らない時は、速めずに名指しして 4 で止める（本人の方針「速めない」。秒を場面に合わせるのは人が決める）。
+  声は置く前に頭と終わりの黙りを切る（語りを読む 1 枚が前後に 2 秒ずつ黙ってと頼んでいるため）。切った声は置き場の voice/ に残す。
+  黙りを切って余白を詰めても入らない時だけ、声の高さを変えずに MAX_SPEED（1.08）倍まで速める（統括の決め 11-06）。
+  それでも場面の秒に入らない時は、名指しして 4 で止める（どこを削るかは人が決める）。
   前の置き場の場面を残す時、その場面の手の映像が替わっていたら、古い動画が残るので 4 で止めて場面を名指しする。
 - 記録に commit の SHA と各場面の長さを残す。出した動画がどのコードから出たかを後で辿れるようにする（エビデンスゲート）。
   場面ごとにも commit を持つ。--only で残した場面は、前の commit のコードから出た物なので。
@@ -101,7 +103,18 @@ def release_blockers(placeholder):
     return ([f"最初の場面に印「{opening.PLACEHOLDER}」が残っている（職人のおもちゃの動画が入っていない）"] if placeholder else []) + list(BEFORE_RELEASE)
 
 
-VOICE_LEAD, VOICE_GAP, VOICE_TAIL = 0.4, 0.3, 0.2   # 場面の頭から声までの間・文と文の間・場面の終わりの余り（札の LEAD・TAIL と同じ考え）
+# 場面の頭から声までの間・文と文の間・場面の終わりの余り。語りを読む 1 枚の目安（1 秒 5 字）で読んだ声が、5 場面とも入る値にした
+# （前は 0.4・0.3・0.2 で、目安ちょうどだと 3 場面が 0.1〜0.4 秒あふれた。別の目の確かめ 11-06）。
+# 頭は字の現れ（札の LEAD 0.4 秒）より 0.2 秒早いが、声が字より少し先に出るのは読む妨げにならないと見た。終わりは場面の溶けに重ねてよい。
+VOICE_LEAD, VOICE_GAP, VOICE_TAIL = 0.2, 0.3, 0.0
+# 録った声の頭と終わりの黙りを切る決まり。語りを読む 1 枚は「録り始めと終わりに 2 秒ずつ黙る」と頼んでいるので、切らずに置くと
+# 5 場面とも入らない（別の目の確かめ 11-06）。この大きさより小さい音を黙りと見て、言葉の前後に KEEP 秒だけ残す（息を切らないため）。
+# 値は静かな部屋のスマホの録音の見込みで、本人の声ではまだ試していない。
+SILENCE_DB, SILENCE_KEEP = -45, 0.1
+# 黙りを切って余白を詰めても場面に入らない時だけ、声の高さを変えずに速める上限（統括の決め 11-06）。
+# 速めない方針（本人 11-05 20:10）は字幕の読む速さの決まりで、声は語りを読む 1 枚に「長くなっても、こちらで合わせる」と書いた。
+# 1.08 倍を超えるなら、声が速く聞こえるので速めずに名指しして止める（どこを削るかは人が決める）。
+MAX_SPEED = 1.08
 
 
 def slot_path(name, kind, root=None):
@@ -128,25 +141,69 @@ def waiting(slots):
             for kind, got in kinds.items() for n, v in got.items() if v == "待ち"]
 
 
-def place_voices(order, lengths, root=None):
-    """届いた声を場面の時刻に置く。(声の並び [(道, 秒)], 曲を下げる所 [(始め, 終わり)], 入らない理由) を返す。"""
+def trim_voice(src, dst):
+    """声の頭と終わりの黙りを切って dst（wav）に書く。切れた時は dst、切れない時は None。
+    頭を切る → 裏返す → 頭を切る → 戻す、で終わりも切る（silenceremove は頭から読むため）。"""
+    cut = f"silenceremove=start_periods=1:start_duration=0:start_threshold={SILENCE_DB}dB:start_silence={SILENCE_KEEP}"
+    dst = pathlib.Path(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    # 撮影の情報（-map_metadata -1）も、ここで落とす。受け取りでも外すが、置き場に残った物が動画へ移らないように。
+    r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-vn", "-map_metadata", "-1", "-af", f"{cut},areverse,{cut},areverse",
+                        "-ar", "48000", "-ac", "1", str(dst)], capture_output=True, text=True)
+    return dst if r.returncode == 0 and dst.exists() else None
+
+
+def speed_voice(src, dst, factor):
+    """声の高さを変えずに factor 倍の速さにして dst（wav）に書く（atempo。0.5〜2 倍の内）。書けた時は dst、書けない時は None。"""
+    dst = pathlib.Path(dst)
+    r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-af", f"atempo={factor:.4f}", "-ar", "48000", "-ac", "1", str(dst)],
+                       capture_output=True, text=True)
+    return dst if r.returncode == 0 and dst.exists() else None
+
+
+def place_voices(order, lengths, root=None, into=None):
+    """届いた声を場面の時刻に置く。(声の並び [(道, 秒, 速さ)], 曲を下げる所 [(始め, 終わり)], 入らない理由) を返す。
+    into を渡すと、置く前に黙りを切った声をそこへ書き、その声を置く（書き出しはいつも渡す。置き方だけを見る試験は渡さない）。
+    黙りを切っても場面に入らない時は、その場面の声を同じ倍率で MAX_SPEED 倍まで速める。into が無い時は、速めた長さで置き方だけを見る。"""
     voices, duck, start = [], [], 0.0
     for name, length in zip(order, lengths):
         files = [slot_path(v, "voice", root) for v in SLOTS.get(name, {}).get("voice", ())]
         files = [f for f in files if f.is_file()]
-        t = start + VOICE_LEAD
-        first = t
+        if into is not None:
+            trimmed = []
+            for f in files:
+                got = trim_voice(f, pathlib.Path(into) / f"{f.stem}.wav")
+                if got is None:
+                    return [], [], f"声 {f.stem} の黙りを切れない（読めない音か、ffmpeg が無い）"
+                trimmed.append(got)
+            files = trimmed
+        durs = []
         for f in files:
             d = assemble.duration(f)
             if d is None:
                 return [], [], f"声 {f.stem} が読めない"
-            voices.append((f, round(t, 3)))
-            t += d + VOICE_GAP
+            if d < 0.2:
+                return [], [], f"声 {f.stem} が黙りだけ（言葉が入っていない）"
+            durs.append(d)
         if files:
-            end = t - VOICE_GAP
-            if end > start + length - VOICE_TAIL + 1e-6:
-                return [], [], f"声 {'・'.join(f.stem for f in files)} が場面 {name} の {length:.1f} 秒に入らない（{end - (start + length - VOICE_TAIL):.1f} 秒超える）"
-            duck.append((round(first, 3), round(end, 3)))
+            room = length - VOICE_LEAD - VOICE_TAIL - VOICE_GAP * (len(files) - 1)
+            speed = max(1.0, sum(durs) / room) if room > 0 else float("inf")
+            if speed > MAX_SPEED + 1e-9:
+                over = sum(durs) - room
+                return [], [], (f"声 {'・'.join(f.stem for f in files)} が場面 {name} の {length:.1f} 秒に入らない"
+                                f"（{over:.1f} 秒超える。{MAX_SPEED:g} 倍まで速めても入らない）")
+            if speed > 1.0 and into is not None:
+                fast = [speed_voice(f, pathlib.Path(into) / f"{f.stem}-x{speed:.3f}.wav", speed) for f in files]
+                if any(x is None for x in fast):
+                    return [], [], f"声 {'・'.join(f.stem for f in files)} を速められない（ffmpeg）"
+                files = fast
+            durs = [d / speed for d in durs]
+            t = start + VOICE_LEAD
+            first = t
+            for f, d in zip(files, durs):
+                voices.append((f, round(t, 3), round(speed, 4)))
+                t += d + VOICE_GAP
+            duck.append((round(first, 3), round(t - VOICE_GAP, 3)))
         start += length
     return voices, duck, None
 
@@ -310,11 +367,11 @@ def main(argv=None):
         audio = {"kind": "song", "file": pathlib.Path(a.song).name, "sha256": file_sha(a.song), "credit": music, "rights": a.rights,
                  "bpm": measured["bpm"], "start": a.song_start, "commit": sha, "dirty": dirty, "moved": fit["moved"], "left": fit["left"]}
         (run / "beats.json").write_text(song.table_json(measured, fit, **{k: audio[k] for k in ("sha256", "credit", "rights", "start", "commit", "dirty")}), encoding="utf-8")
-        voices, duck, problem = place_voices(order, lengths)
+        voices, duck, problem = place_voices(order, lengths, into=run / "voice")
         if problem:
             print(f"検査できない: {problem}（速めない。秒は人が決める）", file=sys.stderr)
             return 4
-        extra = {"voices": voices, "duck": duck} if voices else {}
+        extra = {"voices": [(f, at) for f, at, _ in voices], "duck": duck} if voices else {}
         rc = assemble.assemble(made, run / "demo.mp4", a.song, seconds=lengths, audio_start=a.song_start, fade_at=fade_at, **extra)
     else:
         try:
@@ -322,11 +379,11 @@ def main(argv=None):
         except (OSError, ValueError, KeyError) as e:
             print(f"検査できない: 仮の拍が作れない（{e}）", file=sys.stderr)
             return 4
-        voices, duck, problem = place_voices([p.stem for p in made], [assemble.duration(p) or 0.0 for p in made])
+        voices, duck, problem = place_voices([p.stem for p in made], [assemble.duration(p) or 0.0 for p in made], into=run / "voice")
         if problem:
             print(f"検査できない: {problem}（速めない。秒は人が決める）", file=sys.stderr)
             return 4
-        extra = {"voices": voices, "duck": duck} if voices else {}
+        extra = {"voices": [(f, at) for f, at, _ in voices], "duck": duck} if voices else {}
         rc = assemble.assemble(made, run / "demo.mp4", sound, **extra)
     before = {r.get("name"): r for r in prev.get("scenes", [])}
 
@@ -342,7 +399,7 @@ def main(argv=None):
     record = {"commit": sha, "dirty": dirty, "tests": tests, "music": music, "audio": audio, "photos": photos, "skipped": skipped,
               "placeholder": placeholder, "not_for_release": blockers,
               "clips": {n: {"file": pathlib.Path(p).name, "sha256": file_sha(p)} for n, p in clips.items()},
-              "slots": slots, "voices": [{"file": pathlib.Path(f).name, "at": at} for f, at in voices], "duck": duck,
+              "slots": slots, "voices": [{"file": pathlib.Path(f).name, "at": at, "speed": sp} for f, at, sp in voices], "duck": duck,
               "rebuilt": only if a.only else [], "offline": a.offline,
               "scenes": [{"name": p.stem, "seconds": assemble.duration(p), **made_by(p.stem)} for p in made],
               "total_seconds": assemble.duration(run / "demo.mp4"), "assemble_rc": rc}
