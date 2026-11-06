@@ -28,7 +28,11 @@ TUBE_OLD, TUBE_NEW = "1 外筒を色の境で谷折りし、糊代で貼って�
 INNER_OLD, INNER_NEW = "2 内筒も同じように角筒にする", "2 内筒は破線で谷折りし、糊代で貼って角筒にする"
 BASE_OLD, BASE_NEW = "2 土台も同じように角筒にし、割り箸の先を下から差し込んで貼る", "2 土台は破線で谷折りし、糊代で貼って角筒にし、割り箸の先を下から差し込んで貼る"
 PUSH = "竹串の端を溝に沿って上に押し上げると、4 扇が 1 外筒の口から出て、蛇腹が開く"
-BODY_OLD, BODY_NEW = "1 胴を破線で谷折りし、糊代で貼って箱にする。上の面は後で閉じる", "1 胴を破線で山折りし、糊代で貼って箱にする。上の面は後で閉じる"
+# 「線のとおり」は、窓口が本人の委任（2026-11-06）でカード 002247 の推しを選んだ字。山折りの線は凡例では一点鎖線なので「破線で」と合わない
+BODY_OLD, BODY_NEW = "1 胴を破線で谷折りし、糊代で貼って箱にする。上の面は後で閉じる", "1 胴を線のとおり山折りし、糊代で貼って箱にする。上の面は後で閉じる"
+# 凡例の字（同じ委任で選んだ推し）。型紙の凡例と手順の紙の矢じりの見本を、刷った面から見た 1 通りの言い方にそろえる
+FOLD_NEW = ("谷折り（刷った面が内がわになる）", "山折り（刷った面が外がわになる）")
+LEGEND_OLD, ARROW_OLD = ("谷折り（手前にへこむ）", "山折り（手前に出る）"), ("谷折り（手前へ）", "山折り（向こうへ）")
 PICTURE_OLD, PICTURE_NEW = "まず筒を 1 つ作る（色の境で谷折り）", "まず筒を 1 つ作る（色の境で山折り）"
 SKEWER = "のり、はさみ、定規、竹串（穴あけ）"
 CUTTER = "のり、はさみ、定規、カッター"
@@ -195,6 +199,8 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
         for t in layout["texts"]:
             if not t.text or t.text.startswith(("刷った組", "仮説", "作る前に", "思った事", "・のり", "1 胴")):
                 continue
+            if t.text in FOLD_NEW + LEGEND_OLD + ARROW_OLD + ("切る", "糊代"):  # 凡例の字は位置も変わる（字が長く、行を送る）。字は 9 で見る
+                continue
             out.append((round(t.x, 3), round(t.y, 3), t.text if not any(c in t.text for c in changed) else "(見込んだ文)"))
         return out
 
@@ -210,7 +216,12 @@ for sid, tpl, changed in ((GORAIGO, FAN, {TUBE_OLD, TUBE_NEW, INNER_OLD, INNER_N
         assert [t.text for t in new_sheet["texts"] if t.text and t.text.startswith("13.")] == [f"13. {PUSH}"], "手順 13 が刷られていない"
     else:
         assert boxes(new_sheet) == boxes(old_sheet), (sid, "手順の紙の字の差が見込みと違う")
-    assert boxes(new_pattern) == boxes(old_pattern), (sid, "型紙の字の差が見込みと違う")
+    if tpl is FAN:
+        # 御来迎の型紙は凡例が 2 行になり、下の物差しの説明が 1 行分下がる。字と横の位置は同じ
+        strip = lambda rows: [(x, text) for x, _, text in rows]
+        assert strip(boxes(new_pattern)) == strip(boxes(old_pattern)), (sid, "型紙の字の差が見込みと違う")
+    else:
+        assert boxes(new_pattern) == boxes(old_pattern), (sid, "型紙の字の差が見込みと違う")
     assert [(q.key, q.x, q.y, q.outline, q.glue, q.holes, q.art) for q in new_pattern["parts"]] == [(q.key, q.x, q.y, q.outline, q.glue, q.holes, q.art) for q in old_pattern["parts"]], (sid, "部品が動いた")
     # 線や絵の種類と大きさ。矢じりの塗りと縦の位置のほかは同じ（虎は位置まで同じ）。「直した点」の表は頁の残りの分だけ行を引くので、御来迎は行の数を比べない
     drop = {"fill", "y", "y1", "y2", "pts"} if tpl is FAN else {"fill"}
@@ -237,4 +248,28 @@ assert any(t.text == "直した点（部品・変えた事・結果）" for t in
 question_y = [t.y for t in wide["texts"] if t.text in instructions.QUESTIONS]
 assert round(question_y[1] - question_y[0], 3) == round(question_y[2] - question_y[1], 3) and question_y[1] - question_y[0] > instructions.ANSWER_GAP, question_y
 
-print("ok 次の組 goraigo-v11・tora-v4。折り線・手順の文・絵の見出しと矢じり・見出し・印の文・用意する物")
+# 9. 凡例: 次の組は型紙の凡例と手順の紙の矢じりの見本が同じ字。前の組（凍結の床）と、FROZEN_SET を持たないほかの雛形は前の字のまま。
+# 字が長くなっても、全部の案の型紙と手順の紙が頁に収まる（検査の失敗が無い）
+for sid, tpl in ((GORAIGO, FAN), (TORA, TIGER)):
+    data, source = load(sid)
+    tid = data.get("template", "slider_fan")
+    for h in data["hypotheses"]:
+        t = h.get("template") or tid
+        pattern = compose(t, h["params"], source)
+        assert not pattern[2], (sid, h["id"], [f.line() for f in pattern[2]])
+        assert all(w in words(pattern[1]) for w in FOLD_NEW) and not any(w in words(pattern[1]) for w in LEGEND_OLD), (sid, h["id"], "型紙の凡例")
+        with old_set(tpl):
+            assert all(w in words(compose(t, h["params"], source)[1]) for w in LEGEND_OLD), (sid, h["id"], "前の組の凡例が変わった")
+    h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
+    sheet, failures = compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])
+    assert not failures, (sid, [f.line() for f in failures])
+    if tpl is FAN:  # 矢じりの見本は御来迎の手順の紙だけにある
+        assert all(w in words(sheet) for w in FOLD_NEW) and not any(w in words(sheet) for w in ARROW_OLD), "手順の紙の矢じりの見本"
+        with old_set(tpl):
+            assert all(w in words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0]) for w in ARROW_OLD), "前の組の矢じりの見本が変わった"
+other = TEMPLATES["wheel_cart"]
+assert not hasattr(other, "FROZEN_SET")
+wsrc = {**load(GORAIGO)[1], "toy": "試し"}
+assert all(w in words(compose("wheel_cart", dict(other.DEFAULTS), wsrc)[1]) for w in LEGEND_OLD), "ほかの雛形の凡例が変わった"
+
+print("ok 次の組 goraigo-v11・tora-v4。折り線・手順の文・絵の見出しと矢じり・見出し・印の文・用意する物・凡例")

@@ -3,7 +3,7 @@
 判断の芯: 答えを先に言わない。計算の開く角度の上限は刷らない（作る前の予想と、測った数を比べるのが目的なので）。
 結果は雛形ごとの値で、同じ大きさの欄で、既定の選択を置かない。
 """
-from .compose import GAP, LINE, TEMPLATES, TITLE_SIZE, _block, set_label
+from .compose import FOLD_WORDS, GAP, LINE, TEMPLATES, TITLE_SIZE, _block, new_fold_words, set_label
 from .floors import check_layout
 from .marks import mark_lines
 from .model import Failure, TextBox
@@ -65,7 +65,11 @@ def _arc_arrow(shapes, x1, y, x2, rise, head):
     shapes.append({"kind": "poly", "pts": tri, "fill": head, "sw": 0.25, "tag": "arrowhead"})
 
 
-def _first_steps(x, y, shapes, texts, fold):
+# 手順の紙の矢じりの見本の前の字。次の組は型紙の凡例と同じ FOLD_WORDS（compose.FOLD_WORDS の注）。
+_OLD_ARROW_FOLD_WORDS = ("谷折り（手前へ）", "山折り（向こうへ）")
+
+
+def _first_steps(x, y, shapes, texts, fold, words=_OLD_ARROW_FOLD_WORDS):
     """最初の一歩と蛇腹の畳み方の小さな絵（v8、U-25 で色と矢印を足した）。幅 50mm に収め、絵の下の y を返す。
 
     試行で手が止まったのは平面から立体への最初の一歩で（本人の補足所見）、「ジャバラに折る発想が出てこない」
@@ -107,7 +111,7 @@ def _first_steps(x, y, shapes, texts, fold):
     # 3) 矢じりの見本。塗った矢じり＝谷（手前へ）、白い矢じり＝山（向こうへ）。
     # 見本は縦に 2 段。横に並べると、右の原図の写しの説明と重なる（検査 F5.text_overlap で分かった）。
     end = zz + 8
-    for name, head in (("谷折り（手前へ）", VALLEY_HEAD), ("山折り（向こうへ）", MOUNTAIN_HEAD)):
+    for name, head in zip(words, (VALLEY_HEAD, MOUNTAIN_HEAD)):
         _arc_arrow(shapes, x, end + 3, x + 6, 1.2, head)
         texts.append(TextBox(x, end, 7, 4.5, None))  # 矢じりの先は弧の終わりより下へ約 0.9mm 出るので、その分まで取る
         end = max(end + 4.5, _block(texts, [name], x + 7.5, end, PICTURE_SIZE, text_width(name, PICTURE_SIZE) + 0.5))
@@ -240,7 +244,7 @@ def compose_sheet(template_id, params, source, title, how_it_moves, page_name="A
             y += BODY_SIZE * LINE + 2
     if fan:
         px = page.x1 - PICTURES_W
-        pics_end = _first_steps(px, pics_y, shapes, texts, tpl.tube_fold())
+        pics_end = _first_steps(px, pics_y, shapes, texts, tpl.tube_fold(), FOLD_WORDS if new_fold_words(tpl) else _OLD_ARROW_FOLD_WORDS)
         if picture:
             # 完成のイメージとして原図を試しに載せる（本人の決定、11-04）。縮めた写しを埋め込み、PDF を重くしない。
             import io
