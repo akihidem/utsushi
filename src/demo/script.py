@@ -22,7 +22,9 @@ import importlib
 # 終わりは、初めと同じ字幕（close）→ 問い（ask）の順（本人の決定 11-05）。
 # 前半・表: 始まり → 語り（玩具と失われた事・江都二色）→ 絵は止めて残した → 本人の言葉 → 開く・作る・残す・動いた・持ち寄る。
 # 境目: border。後半・裏: 語りの後ろの 2 文 → 輪 → 本人の言葉 → 断りとクレジット。終わり: 初めと同じ字幕 → 問い。
-FRONT = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "core_keep", "scene5", "core_gallery"]
+# 「紙で作って、動いた。」（scene5）は作る頁（core_make）のすぐ後（窓口の決定 11-07。デモが教育の原形をどこで見せるかの確かめの推し 2）:
+# 作る → 動いた → 残す → 持ちよる の順になり、画面が 40 秒続く塊が割れる。前は 残す（core_keep）の後だった
+FRONT = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep", "core_gallery"]
 BACK = ["talk_physics", "talk_claude", "core_loop", "word_ai", "scene7"]
 SCENES = [*FRONT, "border", *BACK, "close", "ask"]
 # 3 分に入らないので外した場面（本人が戻すかを決める。コードは残すので、SCENES へ戻せば動く）。docs/demo/plan.md の 4 に書いた。
@@ -41,7 +43,9 @@ SLOTS = {
     "talk_toys": {"hands": (("A", 6.0), ("B", 5.8)), "voice": ("A1", "A2")},
     "talk_lost": {"hands": (("C", 12.2),), "voice": ("A3",)},
     "scene2": {"voice": ("A4",)},
-    "talk_physics": {"hands": (("D", 5.0), ("E", 3.0)), "voice": ("A5",)},
+    # 13 の手は 8 → 10.4 秒にし、後ろの画面を 原画 → 型紙 の 2 枚にした（窓口の決定 11-07。確かめの推し 1。字と 16 秒は変えない）:
+    # D 切る・折る・組む → E 手で動かす → F 作った物を手のひらに（「自分の手のひらで考える」の下）→ H 原画 → I 型紙（原画を写した型紙＝まねぶ）
+    "talk_physics": {"hands": (("D", 5.0), ("E", 3.8), ("F", 1.6), ("H", 2.8), ("I", 2.8)), "voice": ("A5",)},
     "talk_claude": {"voice": ("A6",)},
 }
 HANDS_EXT, VOICE_EXT = ".mp4", ".m4a"

@@ -18,7 +18,9 @@ from demo import assemble, build, flip, script, words
 # 1. 置き場の名前は、撮る物の一覧（手 A〜E）と語りを読む 1 枚（声 A1〜A6）のまま。どの場面も台本にある
 hands = [n for kinds in script.SLOTS.values() for n, _ in kinds.get("hands", ())]
 voices = [n for kinds in script.SLOTS.values() for n in kinds.get("voice", ())]
-assert hands == ["A", "B", "C", "D", "E"] and voices == ["A1", "A2", "A3", "A4", "A5", "A6"]
+# 13 の手は D・E に加えて、作った物の手のひら（F）と、原画（H）→ 型紙（I）の 2 枚（窓口の決定 11-07。13 の 16 秒は変えない）
+assert hands == ["A", "B", "C", "D", "E", "F", "H", "I"] and voices == ["A1", "A2", "A3", "A4", "A5", "A6"]
+assert sum(s for _, s in script.SLOTS["talk_physics"]["hands"]) == script.load_scene("talk_physics").DURATION
 assert set(script.SLOTS) <= set(script.SCENES)
 # 声は語りの場面だけ。文の数は札の文の数と同じ（1 文 1 ファイル）
 for name, kinds in script.SLOTS.items():

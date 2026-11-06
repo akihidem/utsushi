@@ -12,7 +12,8 @@ from demo import core, flip, script, words
 # つなぎ 2 は前は持ち寄りの場面の次だった（本人の決定 11-05）。表と裏に分けた（本人の決定 11-06、カード 125217）ので、
 # 持ち寄りの後に境目の札と語りの後ろの 2 文が入り、その次につなぎ 2 の輪が来る
 order = script.SCENES
-assert order.index("scene3") < order.index("core_make") < order.index("core_keep") < order.index("scene5") \
+# 「紙で作って、動いた。」は作る頁のすぐ後（窓口の決定 11-07）: 作る → 動いた → 残す → 持ちよる
+assert order.index("scene3") < order.index("core_make") < order.index("scene5") < order.index("core_keep") \
     < order.index("core_gallery") < order.index("core_loop") < order.index("word_ai") < order.index("ask")
 assert order.index("border") == order.index("core_gallery") + 1
 assert order.index("border") < order.index("talk_physics") < order.index("talk_claude") and order.index("core_loop") == order.index("talk_claude") + 1

@@ -12,7 +12,8 @@ from PIL import Image, ImageDraw
 from demo import flip, guide, prepare, scene7, script, words
 
 # 出る場面
-assert set(guide.PLANS) == {"scene3", "core_make", "border", "core_loop"}
+# 持ちよる（core_gallery）は窓口の決定 11-07 で足した（他の人が作った物の列を照らす）
+assert set(guide.PLANS) == {"scene3", "core_make", "core_gallery", "border", "core_loop"}
 assert set(guide.PLANS) <= set(script.SCENES)
 for name in (*words.CARDS, "close", "ask", "opening", "talk_toys", "talk_lost", "talk_physics", "talk_claude", "scene2"):
     assert name not in guide.PLANS, name
