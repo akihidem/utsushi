@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_line.py
+# commit: dabb992（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_paper_line.py", line 38, in <module>
+    assert LINE.fullmatch(got[0]), (sid, hid, got[0])
+           ~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L-4', 'H-A', '紙（150g/m² 前後）を 1 枚')
+rc=1

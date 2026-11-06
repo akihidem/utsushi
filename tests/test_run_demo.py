@@ -178,8 +178,9 @@ with tempfile.TemporaryDirectory() as tmp:
     link = wait_for_link(proc, base)
     key = (base / "out/demo-key").read_text(encoding="utf-8").strip()
     assert link == f"https://{SAMPLE}/?k={key}", link
-    assert (base / "out/demo-url-tenji").read_text(encoding="utf-8").strip() == link and (base / "out/demo-url-zine").read_text(encoding="utf-8").strip() == link, "2 サイトのリンク"
-    assert demo_check.opens(f"http://127.0.0.1:{port + 1}", key) is None, "黒のジンのサーバも開く"
+    # 白の 1 サイトだけ（本人の決定 11-06「ページは白案で統一します」）。前は白と黒の 2 サイトを立て、リンクを 2 本出していた
+    assert (base / "out/demo-url-tenji").read_text(encoding="utf-8").strip() == link and not (base / "out/demo-url-zine").exists(), "白のリンクだけ"
+    assert closed(port + 1), "黒のジンのサーバは立てない"
     (base / "out/demo-data/keep").touch()
     out, err, rc = stop(proc)
     assert rc == 0, (rc, err)
@@ -225,7 +226,8 @@ with tempfile.TemporaryDirectory() as tmp:
     # 9 合言葉なしで開く形: 合言葉の無いリンクを案内し、置き場は別。門が無いので、合言葉付きの見方でなく入口で見る
     proc = start(base, port, "--open", via=f"http://127.0.0.1:{port}")
     assert wait_for_link(proc, base) == f"https://{SAMPLE}/", "合言葉の無いリンク"
-    assert (base / "out/demo-data-open").is_dir() and demo_check.opens_public(f"http://127.0.0.1:{port + 1}") is None
+    # 白の 1 サイトだけ（本人の決定 11-06）。前は黒のジン（port + 1）の口でも見ていた
+    assert (base / "out/demo-data-open").is_dir() and demo_check.opens_public(f"http://127.0.0.1:{port}") is None and closed(port + 1)
     assert demo_check.opens_public(f"http://127.0.0.1:{free_port()}"), "誰もいない口は開かない"
     stop(proc)
     assert closed(port) and closed(port + 1)

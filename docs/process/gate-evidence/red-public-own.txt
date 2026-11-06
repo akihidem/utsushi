@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_public_open.py
+# commit: a0558e6b（回した時の HEAD。今残した 1 つの閉じ方を 2 つとも外した木: src/web/techo_site.py の gallery_page の not public と、src/web/play_server.py の合言葉なしの場で鍵を渡さない形。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_public_open.py", line 125, in <module>
+    assert 'id="own"' not in mine_view and "PHOTOWORDS" not in mine_view and wording.record_no(worded) not in mine_view, "同じ画面にも今残した 1 つを出さない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 同じ画面にも今残した 1 つを出さない
+rc=1

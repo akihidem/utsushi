@@ -3,8 +3,9 @@
 # どれからでも開ける形で立てる（本人の決定 A、11-04「AWS でトンネルを立ててよい。合言葉付きのリンクで、3台がどの網でも開ける形で」）。
 # なぜトンネルか: 3 台が同じ網にいるとは限らず、iPhone の音声認識は https でないと動かないため。cloudflared の一時の名前（https）で出す。
 # なぜ合言葉か: 一時の名前でも URL を知れば誰でも開ける。合言葉付きのリンクを知る人だけが入れる（play_server の _gate）。
-# なぜ 2 つ立てるか: 本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」。皮ごとに 1 サイト（--look）で、
-#   白の展示（tenji）と黒のジン（zine）を別の port・別のトンネルで立て、リンクを 2 本出す。合言葉は 2 つで同じ。
+# なぜ白の 1 つだけか: 本人の決定（11-06）「ページは白案で統一します。黒案にだけある要素は白案に入れてください」。
+#   前は本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」で、白の展示（tenji）と黒のジン（zine）を
+#   別の port・別のトンネルで立て、リンクを 2 本出していた。黒の皮の作りは残すが（--look zine で立てれば見られる）、デモでは立てない。
 # なぜ置き場が 1 つか: 本人の決定（11-05 朝、カード 083822 の判断 1）「記録は共有。片方で書いた記録がもう片方でも読める形」。まだデモなので仮の形で、
 #   2 つのサーバが同じ out/demo-data を読み書きする（記録の印 R-番号は exclusive create で付け直すのでぶつからない）。
 # なぜ data/ と別か: デモで上げた物と予想を、本物の記録（data/）と混ぜないため。置き場は out/demo-data（git の外）。
@@ -23,7 +24,7 @@ PORT=${DEMO_PORT:-8767}          # 白の展示。黒のジンは次の番号
 [ -x .venv/bin/python ] || ./init.sh >/dev/null || exit 4
 command -v cloudflared >/dev/null || { echo "cloudflared が無いので外の機器からは開けません" >&2; exit 4; }
 check() { PYTHONPATH=src .venv/bin/python -m web.demo_check "$@"; }
-LOOKS="tenji zine"
+LOOKS="tenji"  # 白の 1 つだけ（本人の決定 11-06）。黒も立てる時は "tenji zine" に戻す
 port_of() { if [ "$1" = zine ]; then echo $((PORT + 1)); else echo "$PORT"; fi; }
 # 何より先に、2 つの port を見る。塞いでいるのが動いているデモなら、そのリンク・合言葉・置き場に触らずに止めるため。
 for look in $LOOKS; do check --port-free "$(port_of "$look")" || exit 4; done
@@ -94,7 +95,7 @@ for pair in $LINKS; do
 done
 # 前からの置き場（out/demo-url）は白の展示のリンクを指す。
 cp out/demo-url-tenji out/demo-url
-echo "外の機器から開くリンクは out/demo-url-tenji（白の展示）と out/demo-url-zine（黒のジン）にあります（--open の時は合言葉なし）。渡す時はこのリンクだけを渡す"
+echo "外の機器から開くリンクは out/demo-url-tenji（白の展示）にあります（--open の時は合言葉なし）。渡す時はこのリンクだけを渡す"
 while :; do
   for pid in $SRV; do alive "$pid" || give_up "サーバが止まりました。リンクはもう開きません" out/demo-server-tenji.log; done
   for pid in $TUN; do alive "$pid" || give_up "トンネルが止まりました。リンクはもう開きません" out/demo-tunnel-tenji.log; done
