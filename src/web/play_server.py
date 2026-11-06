@@ -441,7 +441,8 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
             from . import kumitate
-            if m.group(1) not in sources() or not kumitate.available(m.group(1)):
+            # 立体の無い玩具も、組み方の文と絵の頁として開く（本人の決まり 11-06: 全種の組み立て頁に寄せる）
+            if m.group(1) not in sources() or not kumitate.has(m.group(1)):
                 return self._send(404, "無い")
             return self._send(200, kumitate.page(m.group(1), look, path))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
