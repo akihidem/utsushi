@@ -125,8 +125,14 @@ genga.page_file(src(PLAIN)).unlink()
 plain = toy_page(PLAIN, "tenji")
 assert "<h1>" in plain and f"/picture/{PLAIN}/page" not in plain
 assert genga.fold(PLAIN) == "" or f"/picture/{PLAIN}/page" not in genga.fold(PLAIN)
+# 一覧の札の絵は out/sources の切り抜きがある時だけ出る（toys._pic）。使い捨ての clone（合体の道の試験）には切り抜きが無く、
+# 札は全部「図は手元に無い」になるので、描いた頁で「切り抜きを出す」を見られるのは切り抜きがある木だけ。
+# どの木でも見られるように、一覧の絵の道に頁の全体（/page）を使っていない事は、作りの字でも見る（英語の一覧の札の見方と同じ）。
+assert "/page" not in inspect.getsource(toys._pic) and "genga" not in inspect.getsource(toys._pic), "一覧の小さい絵は今の切り抜きのまま"
 listing = toys.page("tenji")
-assert "url(/picture/" in listing and not re.search(r"/picture/[^)\"]*/page", listing), "一覧の小さい絵は今の切り抜きのまま"
+assert not re.search(r"/picture/[^)\"]*/page", listing), "一覧の小さい絵は今の切り抜きのまま"
+if any((ROOT / "out/sources" / f"{s}.jpg").exists() for s in toys.sources()):
+    assert "url(/picture/" in listing, "切り抜きがある木では、一覧は今の切り抜きを出す"
 
 
 def get(server, path):
