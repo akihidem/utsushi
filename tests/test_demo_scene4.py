@@ -7,9 +7,11 @@ import inspect
 
 from PIL import Image, ImageDraw
 
-from demo import scene4
-from omochae import hypotheses
-from omochae.templates import slider_fan
+# デモの場面 4 は撮った時の組（goraigo-v10）の紙を映す。デモは撮り直さない（本人の決定 11-06 夜）ので、場面を読み込む前に雛形を前の組に置く
+from omochae.templates import slider_fan  # noqa: E402
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
+from demo import scene4  # noqa: E402
+from omochae import hypotheses  # noqa: E402
 
 recs = scene4.load_records()
 

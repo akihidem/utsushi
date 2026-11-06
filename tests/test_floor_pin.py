@@ -47,9 +47,9 @@ PIN = pathlib.Path(__file__).with_name("floor_pin.json")
 # 必須の 2 種。玩具を増やす線は記録に stage "試作" を書くので、ここには足さない（床は必須 2 種の完成）。
 REQUIRED = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")
 # 手順の紙の指紋を控える組。11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A・#493）ので、その前に手順の紙を控えた組だけ。
-# 後の組（御来迎 goraigo-v14）は手順の紙を刷らず、内筒を下から押し上げる形の手順の紙は A4 に収まらない（組み方は頁が持つ）。
+# 後の組（御来迎 goraigo-v14・虎 tora-v7）は手順の紙を刷らない（組み方は頁が持つ）。
 # 控えた組の手順の紙の指紋は変えない（組む仕組み instructions.compose_sheet は残す）
-STEP_SHEET_SETS = ("goraigo-v10", "tora-v3", "tora-v4", "tora-v6")
+STEP_SHEET_SETS = ("goraigo-v10", "tora-v3", "tora-v4")
 # 字の版を見分ける文字。和文は全角で版に依らず、版で変わりうるのは欧文と数字と約物の幅。
 PROBE = "".join(chr(c) for c in range(0x20, 0x7F)) + "あア一、。「」（）・ー〔〕"
 
@@ -214,7 +214,8 @@ def check():
     assert not gone and not extra and any(n.endswith("/型紙") for n in diff1) and set(diff1) <= {n for n in pin["papers"] if n.startswith("goraigo-")}, ("寸法", gone, extra, diff1)
     # 2. 組の版の名前だけを上げる（今の版を直接直す形。U-43 で採らなかった代案）。御来迎の今の版が 1 枚も刷れなくなる
     gone2, extra, diff = broken(lambda: setattr(fan, "SHEET_SET", "goraigo-v11"), lambda: setattr(fan, "SHEET_SET", now))
-    assert gone2 == goraigo and len(extra) == len(goraigo) and not diff, ("組の版", gone2, extra, diff)
+    # 後の組の名には手順の紙を控えない（STEP_SHEET_SETS）ので、増えるのは手順の紙のほかの紙
+    assert gone2 == goraigo and all(n.startswith("goraigo-v11/") for n in extra) and sorted(n.rsplit("/", 1)[1] for n in extra) == sorted(n.rsplit("/", 1)[1] for n in goraigo if "/手順の紙" not in n) and not diff, ("組の版", gone2, extra, diff)
     # 3. 組み方の文: 虎の手順を 1 つ足す。虎の手順の紙だけが変わり、型紙は変わらない
     steps = tiger.steps
     gone, extra, diff3 = broken(lambda: setattr(tiger, "steps", lambda p: steps(p) + ["足した手順"]), lambda: setattr(tiger, "steps", steps))

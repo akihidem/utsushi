@@ -145,15 +145,16 @@ assert words.fill_think(w3["id"], words.think_result(w3["base_params"], {}), " "
 # 順位・点・推しを付けない（#145 の要件を話す道でも）: 作る側の文も Claude の文も入口で止める
 assert words.fill_think(w3["id"], words.think_result(w3["base_params"], not_fit=["この案がおすすめです"]), "作る側")[1], "作る側の文でも止める"
 
-# 必須 2 種で呼び名の無い寸法は変えない。呼び名が採られれば、そのまま変えられるようになる
-wn, _ = ask(G, "筒を長くしたい")
-fs = words.fill_think(wn["id"], words.think_result(wn["base_params"], {"tube_height": 100}), "作る側")[1]
-assert any(f.where == "tube_height" and "呼び名" in f.message for f in fs), fs
-r = cli("fill", wn["id"], "--by", "作る側", "--params", json.dumps({"tube_height": 100}))
-assert r.returncode == 3 and "tube_height" in r.stderr, r.stderr
+# 必須 2 種で呼び名の無い寸法は変えない。呼び名が採られれば、そのまま変えられるようになる（筒の高さは v14 で呼び名が付いたので、
+# 呼び名の無い外筒の糊代 tube_glue で見る）
+wn, _ = ask(G, "筒の糊代を広くしたい")
+fs = words.fill_think(wn["id"], words.think_result(wn["base_params"], {"tube_glue": 9}), "作る側")[1]
+assert any(f.where == "tube_glue" and "呼び名" in f.message for f in fs), fs
+r = cli("fill", wn["id"], "--by", "作る側", "--params", json.dumps({"tube_glue": 9}))
+assert r.returncode == 3 and "tube_glue" in r.stderr, r.stderr
 r = cli("waiting")
 listed = r.stdout.split(wn["id"], 1)[1]
-assert r.returncode == 0 and f"fold_count={TEMPLATES['slider_fan'].DEFAULTS['fold_count']}" in listed and "tube_height" not in listed and "=None" not in listed, "作る側に変えられる寸法と今の値を見せる"
+assert r.returncode == 0 and f"fold_count={wn['base_params']['fold_count']}" in listed and "tube_glue" not in listed and "=None" not in listed, "作る側に変えられる寸法と今の値を見せる"
 assert not words.fill_think(wn["id"], words.think_result(wn["base_params"], not_fit=["筒の高さの呼び名がまだ無い"]), "作る側")[1], "乗らない形には書ける"
 # ほかの玩具には当てない（頁に出ないので、内部の名前を見せる事が無い）
 P = "NDL-1187053-R0000004-L"
@@ -180,9 +181,9 @@ assert WHO not in sent and OTHER not in sent and "who" not in sent, "その場�
 assert len(hypotheses.own_hypotheses(G)) == before, "本人が採るまで残らない"
 ownk, _ = words.adopt_words(k["id"], "本人")
 assert ownk["params"]["push_amount"] == 62 and flat_pdf(printed(G, ownk["id"]))
-assert '"can_change"' in sent and '"fold_count": ' in sent and "tube_height" not in sent, "変えられる寸法と今の値を先に渡す（やり直しの費用を減らす）"
+assert '"can_change"' in sent and '"fold_count": ' in sent and "tube_glue" not in sent, "変えられる寸法と今の値を先に渡す（やり直しの費用を減らす）。呼び名の無い寸法（外筒の糊代）は渡さない"
 # 呼び名の無い寸法を変えた案は、人に見せず、待ちに落ちる。たたき台のままと偽っても同じ
-unnamed = {**ok, "params": {**base_params, "tube_height": 100}, "from_words": ["tube_height"], "filled_in": [{"param": k, "why": words.KEPT_AS_IS} for k in base_params]}
+unnamed = {**ok, "params": {**base_params, "tube_glue": 9}, "from_words": ["tube_glue"], "filled_in": [{"param": k, "why": words.KEPT_AS_IS} for k in base_params]}
 lied = {**ok, "params": {**ok["params"], "knob_width": 5}, "filled_in": ok["filled_in"] + [{"param": "knob_width", "why": words.KEPT_AS_IS}]}
 for answer in (unnamed, lied):
     assert not compose("slider_fan", answer["params"], src(G))[2], "紙には組める形（呼び名の検査だけで落ちる事を見る）"

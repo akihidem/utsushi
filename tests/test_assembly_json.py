@@ -100,6 +100,8 @@ assert any(s.interiors for s in shown.sheets["body"].panels), "前の壁の四�
 tora_bench, tora_doc, tora_parts, tora_words = bench, doc, parts, words
 
 # 1. 書いて読み戻す（御来迎 goraigo-v10）。最後のできあがり（扇が開く所）は頁の計算で動かすので、書き出さない段の前まで同じ
+# 御来迎の今の組（goraigo-v14）は 3D で組まない（立体は 3D の枝が JSON で入れる）。3D の書き出しは控えの組 goraigo-v10 で前と同じに見る
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 bench, doc, parts, words, shown = round_trip(G, "slider_fan")
 assert shown.failures == [], [f.line() for f in shown.failures]
 assert assembly_json.same_parts(doc, parts) == []

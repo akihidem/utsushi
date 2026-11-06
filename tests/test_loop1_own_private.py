@@ -207,7 +207,7 @@ t4 = token_of(loc4)
 assert words.by_token(G, t4)["how_it_moves"] == "次の人の考え" and k4 != k
 # 別の紙の記録でも、考えが結ばれれば閉じる（その人の作りの区切り）
 t5, k5, o5, p5 = adopted("handover03", "別の紙を試した")
-assert send(base, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "わからない", "who": "handover03"})[0] == 303
+assert send(base, f"/toy/{G}/record", {"hypothesis": hypotheses.sheet_of(G)["id"], "result": "わからない", "who": "handover03"})[0] == 303
 assert opened(k5, o5) == 404
 # 頼まないまま記録に結ばれた考えからも、頼めない。その前の結ばれていない考えへも戻らない（同じタブの次の人が、前の人の字で頼まない）
 talk_log.add(G, "think", "別の仮説を見た前の考え", hypothesis_id="H-C", who="handover04")

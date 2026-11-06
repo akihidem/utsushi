@@ -112,7 +112,8 @@ assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 404  # 自分の
 total = body.count("<li")
 assert total >= 2, "その紙の手順の文が出る"
 # ほかの人には今のまま
-assert 'data-hid="H-A"' in page(f"/toy/{G}/tsukuru")[1], "鍵の無い人には、たたき台の頁"
+SHEET_ID = hypotheses.sheet_of(G)["id"]  # たたき台（御来迎の今の組 goraigo-v14 は H-C）
+assert f'data-hid="{SHEET_ID}"' in page(f"/toy/{G}/tsukuru")[1], "鍵の無い人には、たたき台の頁"
 assert f'data-hid="{oid}"' not in page(f"/toy/{G}/tsukuru?h={oid}")[1], "番号を知っていても開かない"
 # ほかの人の札・工夫・問い・記録は、その紙に付かない
 assert send(f"/toy/{G}/step", {"hypothesis": oid, "event": "next", "step": 1, "who": OTHER})[0] == 422
