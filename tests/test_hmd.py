@@ -14,6 +14,9 @@
 7. 映像の中の紙に合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付くと紙の 4 隅の印が 4 つ出て（字は数字だけ）、
    印は既定の囲みに出て 3D の舞台もその中、印を動かすと舞台が新しい囲みの中へ動いて縮む。画面の大きさが変わると印を既定の囲みへ置き直す。
    カメラを止めると印を消し、舞台を元の置き場へ戻す。押すまで印は出ない
+8. 中を見る（本人の言葉 11-07「中身をそこで分解できる構造表示」・字は本人の決定「中を見る」「とじる」）: 組み立ての節が分解した形
+   （window.kumitateSplit）を持つ時だけ釦が出て、押すと「とじる」に替わり、もう一度押すと戻る。開いたまま手順を送ると、先にとじる。
+   分解した形の無い組では釦を出さない（分解した形は 3D の担当が kumitate に足す口。ここでは見本の形で歩く）
 
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない決まり（tests/test_mic_seen.py と同じ）。入っている Chrome で頁を開いて歩く。
 Chrome が無い機械と、Chrome が何も答えなかった時は、測れないと出して通す。落ちるのは、歩けて結果が違う時と、歩き始めたのに終わらなかった時。
@@ -191,17 +194,30 @@ R.off=[document.body.classList.contains('quad-on'),document.body.classList.conta
 const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
 })();</script>"""
 
+# 中を見る: 分解した形の見本（今の手の終わりの形と同じ形を返す）を、組み立ての節の口と同じ名で置く。kumitateParts が出来た後に読まれる
+SPLITSTUB = "<script>window.kumitateSplit={get X(){const P=window.kumitateParts;return P&&P.F.at(-1).q.at(-1)}};</script>"
+SPLITWALK = r"""<script>(async()=>{
+const wait=(ms=300)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body,s=$('#hmd-split');
+try{R.shown=[!s.hidden,s.textContent,s.getAttribute('aria-pressed')];
+if(!s.hidden){s.click();await wait();R.open=[s.textContent,s.getAttribute('aria-pressed'),b.classList.contains('split-on')];
+s.click();await wait();R.closed=[s.textContent,s.getAttribute('aria-pressed'),b.classList.contains('split-on')];
+s.click();await wait();$('#hmd-next').click();await wait();R.sent=[s.textContent,b.classList.contains('split-on'),Number(b.dataset.move)];
+R.size=Math.round(s.getBoundingClientRect().height)}
+}catch(e){R.error=String(e&&e.stack||e)}
+const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+})();</script>"""
+
 send, getter = play_server.Handler._send, play_server.Handler.do_GET
 
 
 def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-    m = re.search(r"[?&]walk=(voice|plain|cam|quad)", self.path)
+    m = re.search(r"[?&]walk=(voice|plain|cam|quad|split|nosplit)", self.path)
     if m and isinstance(body, str) and "/kasane" in self.path:
         kind = m.group(1)
         voice = "true" if kind == "voice" else "false"
-        walk_js = (QUADWALK if kind == "quad" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
+        walk_js = (SPLITWALK if kind in ("split", "nosplit") else QUADWALK if kind == "quad" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
                    else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice))
-        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "quad" else "")
+        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "quad" else "") + (SPLITSTUB if kind == "split" else "")
         body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
     return send(self, code, body, ctype, headers)
 
@@ -242,7 +258,7 @@ if not exe:
     print("ok 作業しながら見る試作の字と道。測れない: Chrome が無いので、声と大きさとカメラは歩いていない")
     raise SystemExit(0)
 runs = {}
-for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad")}.items():
+for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
     got = walk(w, h, kind)
     if not isinstance(got, dict):
         got = walk(w, h, kind)  # 混んだ機械では答えない事があるので、1 度だけ回し直す
@@ -255,6 +271,16 @@ unmeasured = []
 for name, got in runs.items():
     assert isinstance(got, dict), ("歩き始めたのに終わらなかった", name, got)
     assert "error" not in got, (name, got)
+    if "中を見る" in name:
+        assert got["shown"] == [True, hmd.SPLIT_OPEN, "false"], (name, "分解した形がある時だけ「中を見る」が出る", got)
+        assert got["open"] == [hmd.SPLIT_CLOSE, "true", True], (name, "押すと開いて「とじる」になる", got)
+        assert got["closed"] == [hmd.SPLIT_OPEN, "false", False], (name, "もう一度押すと戻る", got)
+        assert got["sent"] == [hmd.SPLIT_OPEN, False, 1], (name, "開いたまま手順を送ると、先にとじて 1 手進む", got)
+        assert got["size"] >= 64, (name, "釦は 64px 以上", got)
+        continue
+    if "分解の形が無い" in name:
+        assert got["shown"][0] is False, (name, "分解した形の無い組では釦を出さない", got)
+        continue
     if "紙に合わせる" in name:
         inside = lambda b, pts, pad=3: b[0] >= min(p[0] for p in pts) - pad and b[1] >= min(p[1] for p in pts) - pad and b[2] <= max(p[0] for p in pts) + pad and b[3] <= max(p[1] for p in pts) + pad
         assert got["before"][0] == "none", (name, "押すまで印は出ない", got)
