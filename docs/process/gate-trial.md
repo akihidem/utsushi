@@ -832,6 +832,7 @@
 - 検証ゲート: **済み**。Red: gate-evidence/red-otona-adopted.txt（前の版の頁で落ちる）。Green: gate-evidence/green-otona-adopted.txt
 - 訂正の取り込み（11-06）: 採られた文の訂正（6 点とも推し A、39 行）を、控え（research/36）から抜き直した。Red: gate-evidence/red-otona-fix6.txt（35 行の頁で落ちる）。Green: gate-evidence/green-otona-fix6.txt
 - 手帖の作り直し（#395）の後の取り込み（11-06）: 3 の「公開の場では、写真と動画はのせられません」の裏付けを見ていた手帖の頁の断りの字が、作り直しで消えた。受け口の断り（合言葉なしの場の /record/<番号>/media は 403）は残っているので、試験を、実際に送って断られる事を見る形に替えた。Red: gate-evidence/red-otona-upload.txt（受け口の断りを外した木で落ちる）。Green: gate-evidence/green-otona-upload.txt
+- AI の名前の見張り（11-06）: 5 節の「…AI が読みと次の案を出します。…」が tests/test_ai_name.py の形の見張りに当たり、別の目の確かめで止まった（手元で回す試験の選び方の漏れ。src/web の全部を見る試験を入れていなかった）。39 行は本人が訂正を入れた形で採った物で、research/36 の注に「前に採られた行の「AI」は変えていない」とある。統括の決めで、見張りの形は緩めず、この 1 文だけを字の一致で外した。Red: gate-evidence/red-otona-ainame.txt（頁の字を一字変えた木で落ちる）。Green: gate-evidence/green-otona-ainame.txt
 - エビデンスゲート: 上の出力と、実物のブラウザ（幅 390・1280、白と黒）
 - 合体: 本人の指示（11-06「まだをやっちゃおう」）で、#395 の後に。前は凍結の後に駅ごとに 1 画面にする段と一緒に入れる見込みで、それまで下書きだった
 - マージ後の書き戻し: 窓口へ
