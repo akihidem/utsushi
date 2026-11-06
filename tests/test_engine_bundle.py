@@ -233,8 +233,8 @@ capped = eb._cap_texts(many)
 assert len(capped) == eb.MAX_TEXTS and {t["kind"] for t in capped} == {"stuck", "craft", "keep"}
 assert [t for t in many if t in capped] == capped  # 並びは元のまま
 
-# 13. 動画の札（試行の動画の入口 trial_video）: 人が確かめた札だけが束に入る。動画の受け口の記録（学ぶ人の頁に出さない約束の記録）も、
-# 確かめた札があれば群に数える。動いたかは聞いていないので、動きの札には数えない。人の数は数えない（1 人が何本上げるか分からない）
+# 13. 動画の札（試行の動画の入口 trial_video）: 札は事前の人の確かめなしで束に入る（本人の方針 11-06「こういう確認は不用です。版管理してるから」）。
+# 人が外した札と、意味を付けていない機械の候補は入らない。動画の受け口の記録（学ぶ人の頁に出さない約束の記録）も、札があれば群に数える。動いたかは聞いていないので、動きの札には数えない。人の数は数えない（1 人が何本上げるか分からない）
 def mark(mid, step, kind, note, ok=True, dropped=False):
     return {"id": mid, "video": "v1.mp4", "at": 12.0, "step": step, "kind": kind, "note": note, "read_by": "読んだ山田", "confirmed_by": "確かめた田中" if ok else None, "rejected_by": "外した佐藤" if dropped else None}
 
@@ -250,9 +250,10 @@ video_up("R-0080", "tora-v8", [mark("M1", 2, "fold", "首の帯の折り線が�
                                mark("M4", 2, "cut", "案のままの札", ok=False), mark("M5", 2, "cut", "人が外した札", ok=False, dropped=True), mark("M6", 3, "site", "画面の字が小さい札"), mark("M7", None, "other", "手順の分からない札"),
                                mark("M8", 2, "fold", f"分からない時は {PHONE} へ")])
 video_up("R-0081", "tora-v8", [mark("M1", 2, "fold", "首の帯をどちらへ折るのか迷った")])
-video_up("R-0082", "tora-v8", [mark("M1", 5, "fold", "案のままの札 2", ok=False)])  # 確かめた札が無い記録は、数えない
+video_up("R-0082", "tora-v8", [mark("M1", 5, "fold", "案のままの札 2", ok=False)])  # 確かめの印の無い札だけの記録も数える
+video_up("R-0088", "tora-v8", [mark("M1", 5, "fold", "外した札だけ", ok=False, dropped=True)])  # 外した札だけの記録は、数えない
 video_up("R-0083", "tora-v7", [mark("M1", 1, "cut", "切る線が細い")], result="揺れた")  # 上げた人が結果を選んだ記録は、動きの札に数える
-# 機械が作った札の案（止まった候補）は、人が確かめるまで束に入らない
+# 機械が作った札の案（止まった候補。意味を付けていない）は、確かめなしでは束に入らない
 video_up("R-0084", "tora-v6", [{**mark("M1", None, "other", "動きの少ない区間 25〜49 秒（機械が拾った候補。意味はまだ付けていない）", ok=False), "read_by": "機械（止まった候補）"}], result="揺れた")
 # 手で結んだ記録（本人の動画など。via が video）の札も同じに扱う。記録は今までどおり数えるので、2 重に数えない
 hand_rid, _ = records.add({"source_id": T, "hypothesis_id": "H-B", "sheet_version": 1, "result": "揺れた", "sheet_set": "tora-v9", "fixes": []})
@@ -261,13 +262,14 @@ b3 = eb.build()
 text3 = json.dumps(b3, ensure_ascii=False)
 g3 = {(g["template"], g["sheet_set"]): g for g in b3["groups"]}
 up = g3[("pivot_counterweight", "tora-v8")]
-assert up["reports"] == 2 and up["record_ids"] == ["R-0080", "R-0081"], up  # R-0082 は確かめた札が無いので数えない
+assert up["reports"] == 3 and up["record_ids"] == ["R-0080", "R-0081", "R-0082"], up  # R-0088 は外した札だけなので数えない
 assert up["results"] == {}, up["results"]  # 動いたかを聞いていない記録を、動きの札に数えない
-assert up["stuck_steps"] == {"2": {"taps": 3, "people": 0}}, up["stuck_steps"]  # 確かめた札だけ。番号の形の札は入らない。人は 0
+assert up["stuck_steps"] == {"2": {"taps": 4, "people": 0}, "5": {"taps": 1, "people": 0}}, up["stuck_steps"]  # 外した札と番号の形の札は入らない。人は 0
 assert up["craft_steps"] == {"4": {"talks": 1, "people": 0}}, up["craft_steps"]  # 人の工夫の札は、止まった段に数えず、工夫へ
 assert {(t["kind"], t["step"], t["text"]) for t in up["texts"]} == {("stuck", 2, "首の帯の折り線が見えない"), ("stuck", 2, "折る前に裏から透かして見た"), ("stuck", 2, "首の帯をどちらへ折るのか迷った"),
+                                                                    ("stuck", 2, "案のままの札"), ("stuck", 5, "案のままの札 2"),
                                                                     ("craft", 4, "粘土を少しずつ足して揺れを見た"), ("stuck", None, "手順の分からない札")}, up["texts"]
-for hidden in ("案のままの札", "人が外した札", "画面の字が小さい札", "上げた人の文", "読んだ山田", "確かめた田中", "外した佐藤", "v1.mp4", '"at"', PHONE):
+for hidden in ("外した札だけ", "人が外した札", "画面の字が小さい札", "上げた人の文", "読んだ山田", "確かめた田中", "外した佐藤", "v1.mp4", '"at"', PHONE):
     assert hidden not in text3, hidden
 chose = g3[("pivot_counterweight", "tora-v7")]
 assert chose["results"] == {"揺れた": 1} and (chose["moved_word"], chose["not_moved_word"]) == ("揺れた", "揺れない"), chose
@@ -275,14 +277,14 @@ assert ("pivot_counterweight", "tora-v6") not in g3 and "動きの少ない区�
 hg = g3[("pivot_counterweight", "tora-v9")]
 assert hg["record_ids"] == [hand_rid] and hg["reports"] == 1 and hg["results"] == {"揺れた": 1} and hg["stuck_steps"] == {"7": {"taps": 1, "people": 0}}, hg
 # 受け口の記録の、札の無い分は、今までどおり束に出ない。取り下げると、札のファイルごと消えるので束からも落ちる
-assert not [g for g in b3["groups"] if "R-0082" in g["record_ids"]]
+assert not [g for g in b3["groups"] if "R-0088" in g["record_ids"]]
 assert records.withdraw("R-0081")[1] == []
 gone = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v8")]
-assert gone["record_ids"] == ["R-0080"] and gone["stuck_steps"] == {"2": {"taps": 2, "people": 0}} and "首の帯をどちらへ折るのか迷った" not in json.dumps(gone, ensure_ascii=False)
+assert gone["record_ids"] == ["R-0080", "R-0082"] and gone["stuck_steps"] == {"2": {"taps": 3, "people": 0}, "5": {"taps": 1, "people": 0}} and "首の帯をどちらへ折るのか迷った" not in json.dumps(gone, ensure_ascii=False)
 r = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--out", str(pathlib.Path(DATA) / "bundle3.json")], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
 assert r.returncode == 0, r.stderr
 
-# 14. 作る前の型紙のレビューの動画（本人の指示 11-05 20:35）: 作っていないので、確かめた札は止まった段にも工夫の数にも入れず、種類 review の文にする。
+# 14. 作る前の型紙のレビューの動画（本人の指示 11-05 20:35）: 作っていないので、札は止まった段にも工夫の数にも入れず、種類 review の文にする。
 # 報告の数にも入れない（作った人の数と混ぜない）。字の全文は記録の置き場にあるが、束には入れない
 def review_up(rid, sheet_set, marks):
     video_up(rid, sheet_set, marks)
@@ -297,8 +299,9 @@ media.mkdir(parents=True, exist_ok=True)
 r5 = {(g["template"], g["sheet_set"]): g for g in eb.build()["groups"]}[("pivot_counterweight", "tora-v5")]
 assert r5["reports"] == 0 and r5["record_ids"] == ["R-0085"] and r5["results"] == {} and r5["stuck_steps"] == {} and r5["craft_steps"] == {}, r5
 # 読んでいるのは紙なので、案内の札（題や組み方の文の読みにくさ）も、紙への指摘として入れる。サイトの札は入れない
-assert {(t["kind"], t["step"], t["text"]) for t in r5["texts"]} == {("review", 8, "軸の穴が紙の厚みに比べて小さく見える"), ("review", None, "竹ひごの太さで揺れの速さが変わるはず"), ("review", None, "題の言葉の意味が分かりづらい")}, r5["texts"]
-assert "字の全文" not in json.dumps(eb.build(), ensure_ascii=False) and "案のままの指摘" not in json.dumps(r5, ensure_ascii=False) and "山田です" not in json.dumps(r5, ensure_ascii=False)  # 名乗りの形の札は、確かめてあっても入れない
+assert {(t["kind"], t["step"], t["text"]) for t in r5["texts"]} == {("review", 8, "軸の穴が紙の厚みに比べて小さく見える"), ("review", None, "竹ひごの太さで揺れの速さが変わるはず"), ("review", None, "題の言葉の意味が分かりづらい"),
+                                                                    ("review", 2, "案のままの指摘")}, r5["texts"]
+assert "字の全文" not in json.dumps(eb.build(), ensure_ascii=False) and "案のままの指摘" in json.dumps(r5, ensure_ascii=False) and "山田です" not in json.dumps(r5, ensure_ascii=False)  # 名乗りの形の札は入れない
 
 # 15. 映っている紙が、受付で選ばれた玩具の紙と違う時（1 本目がそうだった。エンジンの repo の雛形の紙を読んでいた）: 人が決めて札の置き場に書いた紙に数える。
 # 形の外の値は読まない（自由な文をこの欄で運ばせない）。元の玩具の群には数えない

@@ -14,6 +14,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "api-usage.jsonl")
 
 from api import ask  # noqa: E402
+from omochae import loop  # noqa: E402
 from web import techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
@@ -21,6 +22,10 @@ G = "NDL-1187053-R0000005-L"
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
+
+
+# 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 
 
 def get(path):
@@ -63,7 +68,7 @@ assert "成功" not in full + bare and "失敗" not in full + bare
 assert "仮説 A の紙・動いた（" in get(f"/zukan/{G}"), "図鑑の見出しの書き方"
 
 # 押しても進めない釦は出さず、1 行の文にする
-assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "幅を変える", "by": "大人"}) in (200, 303)
+assert loop.save_explanation("R-0001", "大人", "折りが固い", "幅を変える") == []  # 次の記録が残った後なので、作る側の道で足す
 keep = ask._key_present
 try:
     ask._key_present = lambda: False
@@ -84,10 +89,10 @@ try:
     (folder / "m1.mp4").unlink()
     (folder / "review.json").unlink()
     # 手帖の札も同じ
-    techo = get(f"/toy/{G}/techo")
+    techo = get(f"/toy/{G}/techo/kiroku")
     assert "Claude に聞く" in techo and "動画を上げると、Claude が見えた事を返します" in techo and "動画を見てもらう" not in techo
     ask._key_present = lambda: False
-    techo = get(f"/toy/{G}/techo")
+    techo = get(f"/toy/{G}/techo/kiroku")
     assert "Claude に聞く" not in techo and "AI の返事は、この場では使えません" in techo
 finally:
     ask._key_present = keep

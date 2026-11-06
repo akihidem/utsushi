@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_next_sheets.py
+# commit: 7d104dec（回した時の HEAD。雛形 src/omochae/templates/pivot_counterweight.py だけを main の物に戻して回した＝直す前）
+Traceback (most recent call last):
+  File "tests/test_next_sheets.py", line 69, in <module>
+    assert (TIGER.SHEET_SET, TIGER.FROZEN_SET) == ("tora-v4", "tora-v3"), TIGER.SHEET_SET
+                             ^^^^^^^^^^^^^^^^
+AttributeError: module 'omochae.templates.pivot_counterweight' has no attribute 'FROZEN_SET'
+rc=1

@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_loop1_quotes.py
+# commit: cd425cd（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop1_quotes.py", line 24, in <module>
+    assert found("B") == (20, 20), "長い一部の引用は全部拾う"
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 長い一部の引用は全部拾う
+rc=1

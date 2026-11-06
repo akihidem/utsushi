@@ -12,6 +12,9 @@ from .model import ToolMissing
 from .textfit import FAMILY
 
 STROKE = {"stroke": "black", "fill": "none"}
+# 位置の印（切らない・折らない線）。型紙エンジン（paper-to-toy）と同じ色・点・太さ。必須 2 種の次の組（虎の重りの腕の下の穴の丸、
+# 御来迎の溝の下の口の矢印。作成動画の札から採った案 EP-0011・EP-0012）で使う。切る線（黒の実線）と見分けるため、色を変えて点で刷る
+MARK_COLOR, MARK_DASH, MARK_SW = "#b0503c", "0.2,0.8", 0.35
 VALLEY, MOUNTAIN = "2,1", "3,1,0.6,1"
 
 
@@ -42,6 +45,9 @@ def to_svg(layout):
             if item["kind"] == "poly":
                 kw = {"stroke": item["stroke"], "stroke_width": item["sw"]} if item.get("stroke") else {}
                 d.append(dw.Lines(*pts, close=True, fill=item["fill"], **kw))
+            elif item["kind"] == "mark":
+                d.append(dw.Lines(*pts, close=item.get("closed", False), fill="none", stroke=MARK_COLOR, stroke_width=MARK_SW,
+                                  stroke_dasharray=MARK_DASH, stroke_linecap="round"))
             else:
                 d.append(dw.Lines(*pts, close=False, fill="none", stroke=item["stroke"], stroke_width=item["sw"]))
     # 手順の紙の完成のイメージ（原図、v8）。型紙の部品には貼らない（J-007）。
@@ -82,6 +88,8 @@ def to_svg(layout):
     for x, y, dash in layout["samples"]:
         if dash == "hatch":
             _hatch(d, [(x, y - 1.5), (x + 7, y - 1.5), (x + 7, y + 1), (x, y + 1)])
+        elif dash == "mark":
+            d.append(dw.Line(x, y, x + 7, y, stroke=MARK_COLOR, stroke_width=MARK_SW, stroke_dasharray=MARK_DASH, stroke_linecap="round"))
         else:
             kw = {"stroke_dasharray": dash} if dash else {}
             d.append(dw.Line(x, y, x + 7, y, stroke="black", stroke_width=0.25, **kw))
@@ -92,6 +100,40 @@ def to_svg(layout):
         for i in range(11):
             d.append(dw.Line(rx + i * 10, ry + 3, rx + i * 10, ry + (0.5 if i % 5 == 0 else 1.5), stroke="black", stroke_width=0.2))
     return d.as_svg()
+
+
+def shapes_svg(shapes, css_class=""):
+    """手順の紙の絵の形（rect・poly・line）を、画面に出す SVG にする。手帖の 1 手 1 画面の絵（#87）。
+    描く範囲は形の外枠から取る。紙の余白を持ち込むと、画面いっぱいに出した時に絵が小さくなるため。線の太さは範囲に合わせる（小さなコマを大きく出しても太りすぎない）。
+    字は入れない（手順の文は頁の側に 1 文だけ置く）。頁の文の代わりにならないので、読み上げの木からは隠す。"""
+    xs, ys = [], []
+    for s in shapes:
+        if s["kind"] == "rect":
+            xs += [s["x"], s["x"] + s["w"]]
+            ys += [s["y"], s["y"] + s["h"]]
+        elif s["kind"] == "poly":
+            xs += [x for x, _ in s["pts"]]
+            ys += [y for _, y in s["pts"]]
+        else:
+            xs += [s["x1"], s["x2"]]
+            ys += [s["y1"], s["y2"]]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    span = max(x1 - x0, y1 - y0, 1.0)
+    pad, sw = span * 0.05, span / 110
+    out = []
+    for s in shapes:
+        dash = f' stroke-dasharray="{s["dash"]}"' if s.get("dash") else ""
+        if s["kind"] == "rect":
+            out.append(f'<rect x="{s["x"]:.3f}" y="{s["y"]:.3f}" width="{s["w"]:.3f}" height="{s["h"]:.3f}"{dash}/>')
+        elif s["kind"] == "poly":
+            pts = " ".join(f"{x:.3f},{y:.3f}" for x, y in s["pts"])
+            line = f' stroke="{s.get("stroke", "#222")}"' if s.get("sw") else ' stroke="none"'
+            out.append(f'<polygon points="{pts}" fill="{s.get("fill", "none")}"{line}/>')
+        else:
+            out.append(f'<line x1="{s["x1"]:.3f}" y1="{s["y1"]:.3f}" x2="{s["x2"]:.3f}" y2="{s["y2"]:.3f}"{dash}/>')
+    cls = f' class="{css_class}"' if css_class else ""
+    return (f'<svg xmlns="http://www.w3.org/2000/svg"{cls} viewBox="{x0 - pad:.3f} {y0 - pad:.3f} {x1 - x0 + pad * 2:.3f} {y1 - y0 + pad * 2:.3f}" aria-hidden="true">'
+            f'<g fill="none" stroke="#222" stroke-width="{sw:.3f}" stroke-linecap="round" stroke-linejoin="round">{"".join(out)}</g></svg>')
 
 
 def write_all(layout, out_stem):
