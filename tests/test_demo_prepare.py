@@ -35,7 +35,8 @@ with tempfile.TemporaryDirectory() as tmp:
     for pid in scene4.load_records()["pages"]:
         assert cache / f"{pid}.jpg" in paths, pid
     assert sources / f"{scene3.SID}.jpg" in paths
-    assert len(want) == len(paths) == 5 and all(w["url"].startswith("https://") for w in want)
+    # 6 枚目は案内役の頁（北斎漫画 1 編 R0000013。本人の決定 11-06 で足した）
+    assert len(want) == len(paths) == 6 and all(w["url"].startswith("https://") for w in want)
 
     def image_bytes(color):
         buf = io.BytesIO()

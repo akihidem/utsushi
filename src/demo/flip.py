@@ -204,6 +204,16 @@ def faded(scene, t):
     return Image.blend(Image.new("RGB", img.size, ground), img, k)
 
 
+def guided(scene, name):
+    """案内役の出る場面なら、案内役を重ねた場面にする（本人の決定 11-06。demo.guide）。どの場面も書き出しはここを通るので、場面ごとに書かない。
+    場面の名前は書き出す道の名（demo.build は <置き場>/<場面>.mp4 と <場面>-sheet.jpg に書く）。"""
+    from demo import guide
+
+    if name not in guide.PLANS or isinstance(scene, guide.Guided):
+        return scene
+    return guide.Guided(scene, name, ROOT / "out/demo/cache")
+
+
 def render(scene, out):
     """どの場面も frame(t) と duration を持てば、この 1 つで書き出せる（場面ごとに書き出しを作らない）。"""
     if not shutil.which("ffmpeg"):
@@ -213,6 +223,7 @@ def render(scene, out):
         print("検査できない: 字（Noto Serif CJK）が無い。別の字で書き出すと日本語が読めない", file=sys.stderr)
         return 4
     out.parent.mkdir(parents=True, exist_ok=True)
+    scene = guided(scene, out.stem)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS),
            "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", str(out)]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -224,6 +235,7 @@ def render(scene, out):
 
 def contact_sheet(scene, path, times=(0.3, 0.9, 1.6, 2.3, 2.9, 3.4, 4.2, 5.4, 6.5)):
     """要のコマを並べた一覧。動画を開かずに検品できる（エビデンスの 1 つ）。"""
+    scene = guided(scene, pathlib.Path(path).stem.removesuffix("-sheet"))
     tw, th = W // 3, H // 3
     sheet = Image.new("RGB", (tw * 3, th * ((len(times) + 2) // 3)), "white")
     for i, t in enumerate(times):

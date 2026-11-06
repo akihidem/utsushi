@@ -61,6 +61,9 @@ def wanted(cache, sources):
 
     rec = json.loads(flip.FIGURES.read_text(encoding="utf-8"))["pages"][flip.PAGE]
     add(f"cache/{flip.PAGE}.jpg", f'{rec["iiif"]}/full/full/0/default.jpg', cache / f"{flip.PAGE}.jpg")
+    from demo import guide  # 案内役の頁（本人の決定 11-06）。撮る日に網を切って書き出すため、前の日にこれも取り寄せる
+
+    add(f"cache/{guide.PAGE}.jpg", guide.page_url(), cache / f"{guide.PAGE}.jpg")
     rec2, _ = scene2.load_record()
     add("cache/1187053-R0000005-2400.jpg", rec2["image_url"], cache / "1187053-R0000005-2400.jpg")
     for pid, r in scene4.load_records()["pages"].items():

@@ -351,6 +351,9 @@
    "tests/test_demo_build.py",
    "tests/test_demo_prepare.py",
    "tests/test_demo_slots.py",
+   "src/demo/guide.py",
+   "tests/test_demo_guide.py",
+   "tests/test_demo_numbers.py",
    "docs/demo/plan.md"
   ],
   "unverified": "曲は本人が Suno で作って渡す待ちで、本物の曲の拍では試していない（合成のクリック音まで）。字幕の案は本人の確認待ち（問いの文面は本人が決めた、11-05）。最初の場面の職人のおもちゃの動画が無く、印が残っている間は外へ出せない（build.json の not_for_release）。場面 5 の写真は U-24 の表が埋まり、9 枚とも通る（どれを映すかは撮影の中身で決める）。手だけの映像と本人の声は届いていない（置き場の印。作り物の絵と音でだけ通した）。声の間に曲を下げる値は本物の曲と声で聞いていない。並びの案の新しい画面（図鑑・型紙の生まれ方・Claude Code・版の歩み）はまだ撮る作りが無い。本人と審査の人に見せていない"

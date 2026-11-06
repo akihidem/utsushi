@@ -35,6 +35,24 @@
         {"id": "R3b", "box_pct": [67.1, 71.6, 15.0, 18.4]},
         {"id": "R3c", "box_pct": [77.1, 70.8, 11.4, 18.0]}
       ]
+    },
+    "v1-R0000013": {
+      "title": "北斎漫画. １編",
+      "creator": "葛飾北斎 画",
+      "publisher": "片野東四郎",
+      "publication": "明11（1878）",
+      "persistent_id": "info:ndljp/pid/851646",
+      "doi": "10.11501/851646",
+      "canvas": "R0000013",
+      "iiif": "https://dl.ndl.go.jp/api/iiif/851646/R0000013",
+      "rights": "PDM",
+      "rights_basis": "IIIF の manifest の metadata「Access Restrictions: PDM」（2026-11-06 に読んだ）",
+      "attribution": "国立国会図書館 National Diet Library, JAPAN",
+      "modification_note": "改変: 頁から人物を 1 人切り出し（隣の人の線は外した）、デモの案内役としていくつかの場面に重ねて動かした（平行移動・左右の向き・小さな揺れと傾き）。絵の線は描き直していない",
+      "what": "提灯を高く掲げて歩く人（左の頁の下）。デモの案内役（本人の決定 11-06）",
+      "figures": [
+        {"id": "guide", "box_pct": [30.1, 55.0, 8.8, 34.0], "seeds": [[0.45, 0.65], [0.2, 0.12], [0.25, 0.3], [0.4, 0.85], [0.5, 0.95], [0.35, 0.92], [0.55, 0.8]]}
+      ]
     }
   }
 }
