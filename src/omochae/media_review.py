@@ -84,13 +84,6 @@ def shown_to(rid, files, key=None):
     return [f for f in files if _shows(rid, f) == "object" or (_shows(rid, f) != "people" and _mine(rid, f, key))]
 
 
-def mine_only(rid, files, key=None):
-    """上げた本人の画面の物だけ（期限の中）。人が「物だけ」と確かめた物でも、ほかの画面には出さない。人や声が入ると確かめた物は本人にも出さない。
-    合言葉なしで開いた場で使う（本人の決定 11-06、J-028 の追記）。開いた場では頁もギャラリーも写真を出さないので、確かめた後の物も
-    写真の道からほかの画面へ返さない。shown_to との違いはそこだけ。"""
-    return [f for f in files if _shows(rid, f) != "people" and _mine(rid, f, key)]
-
-
 def waiting():
     """確認を待つ物。[(記録の番号, ファイル)]。置き場の順で、順位ではない。"""
     root = records.folder() / "media"

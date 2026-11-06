@@ -1,8 +1,10 @@
 """合言葉なしで開くデモ（本人の許可 11-05「デモサイト 2 つを他の人でも見れるように公開していいよ」）。本物の API は呼ばない。
 
-見る線: 開いた時はトンネルの名前で合言葉なしに開ける。写真と動画は受けるが、上げた本人の画面にだけ出し、別の画面・頁・ギャラリー・図鑑には
-人が確かめた後でも出さない（誰でも上げられる場に、確かめていない写真を皆に見せない。J-021 の持ち寄りの線と、子どもの写真を扱わない線）。
-受ける形は本人の決定（11-06「公開のデモでも写真と動画を上げられるようにしてください」）。前は受けず、置き場に在っても出さなかった。
+見る線: 開いた時はトンネルの名前で合言葉なしに開ける。写真と動画は受け、合言葉付きの場と同じ線で出す: 確かめる前は上げた本人の画面だけ、
+人が「物だけ」と確かめた後はギャラリーにも、「人や声」は誰にも出さない（誰でも上げられる場に、確かめていない写真を皆に見せない。J-021 の
+持ち寄りの線と、子どもの写真を扱わない線）。人の書いた文と記録の番号は出さない。玩具の頁と図鑑には写真を出さない。
+受ける形と出す形は本人の決定（11-06「公開のデモでも写真と動画を上げられるようにしてください」「公開の場で上げた写真は、公開の場のギャラリーにも
+出します」）。前は受けず、置き場に在っても出さなかった。
 置き場の合計に上限を置く。合言葉付きと同時には立たない。開いていない時は、トンネルの名前を断る。
 """
 import http.client
@@ -16,7 +18,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from PIL import Image  # noqa: E402
 
 from omochae import hypotheses, media_review, records  # noqa: E402
-from web import techo_site  # noqa: E402
+from web import techo_site, wording  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -84,7 +86,7 @@ assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" in te
 # 上げた本人の画面には出す（受け取りを確かめられるように。手帖の記録の頁と絵の道）
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
 assert f"/record/{rid}/media/m1.jpg" in opened("GET", f"/toy/{G}/techo/kiroku")[1]
-# 本人の画面でも、玩具の頁・ギャラリー・図鑑には出さない（開いた場の頁は写真を出さない形のまま。#242 のギャラリー）
+# 確かめる前は、本人の画面でも、玩具の頁・ギャラリー・図鑑には出さない（ギャラリーは物だけと確かめた物だけ。#242・#314）
 for path in (f"/toy/{G}", "/gallery", "/zukan", f"/zukan/{G}"):
     assert f"/record/{rid}/media/" not in opened("GET", path)[1], path
 port = int(opened.local.split(":")[1])
@@ -98,18 +100,38 @@ def stranger(method, path, body=None, headers=None):
     return r.status, r.read().decode("utf-8", "replace")
 
 
-# 別の画面には、絵の道も手帖の記録の頁も出さない。人が「物だけ」と確かめた後も、開いた場では出さない（確かめずに皆に見える道を作らない）
-for stage in ("確かめる前", "確かめた後"):
-    assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 404, stage
-    for path in (f"/toy/{G}", "/gallery", "/zukan", f"/zukan/{G}", f"/toy/{G}/techo/kiroku"):
-        assert f"/record/{rid}/media/" not in stranger("GET", path)[1], (stage, path)
-    assert media_review.record(rid, "m1.jpg", "object", "試験の人") == []
+# 確かめる前は、別の画面に、絵の道も頁の道も出さない（確かめずに皆に見える道を作らない）
+assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 404
+for path in (f"/toy/{G}", "/gallery", "/zukan", f"/zukan/{G}", f"/toy/{G}/techo/kiroku"):
+    assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
+# 人が「物だけ」と確かめた後は、開いた場のギャラリーにも出る（合言葉付きの場と同じ線）。札に記録の番号は出さない（J-028）。玩具の頁と図鑑は出さないまま
+assert media_review.record(rid, "m1.jpg", "object", "試験の人") == []
+assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
+gallery = stranger("GET", "/gallery")[1]
+assert f"/record/{rid}/media/m1.jpg" in gallery and wording.record_no(rid) not in gallery
+for path in (f"/toy/{G}", "/zukan", f"/zukan/{G}"):
+    assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
+# 写真の札にも、人の書いた文は出さない（文の中の名前は機械で落とせない。J-028）
+assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=PHOTOWORDS", form)[0] == 303
+worded = records.all_records(G)[-1]["id"]
+assert opened("POST", f"/record/{worded}/media", jpeg, up_media)[0] == 201 and media_review.record(worded, "m1.jpg", "object", "試験の人") == []
+gallery = stranger("GET", "/gallery")[1]
+assert f"/record/{worded}/media/m1.jpg" in gallery and "PHOTOWORDS" not in gallery
+# 「人や声」と確かめた物は、上げた本人にも、ギャラリーにも出さない
+assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
+voiced = records.all_records(G)[-1]["id"]
+assert opened("POST", f"/record/{voiced}/media", jpeg, up_media)[0] == 201 and media_review.record(voiced, "m1.jpg", "people", "試験の人") == []
+assert opened("GET", f"/record/{voiced}/media/m1.jpg")[0] == 404 and stranger("GET", f"/record/{voiced}/media/m1.jpg")[0] == 404
+for page in (opened("GET", "/gallery")[1], stranger("GET", "/gallery")[1], opened("GET", f"/toy/{G}/techo/kiroku")[1]):
+    assert f"/record/{voiced}/media/" not in page
 # 別の画面は、番号を知っていても同じ記録へ上げられない（記録の鍵と同じ出所の確かめは、開いた場でもそのまま）
 assert stranger("POST", f"/record/{rid}/media", jpeg, up_media)[0] == 403
 assert stranger("POST", f"/record/{rid}/media", jpeg, {**up_media, "Origin": "https://evil.example"})[0] == 403
-# 1 つの記録に 3 つまで（今の数のまま）
-assert [opened("POST", f"/record/{rid}/media", jpeg, up_media)[0] for _ in range(2)] == [201, 201]
-code, body = opened("POST", f"/record/{rid}/media", jpeg, up_media)
+# 1 つの記録に 3 つまで（今の数のまま）。次の記録を残すと前の記録の鍵は外れるので、新しい記録で見る
+assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
+three = records.all_records(G)[-1]["id"]
+assert [opened("POST", f"/record/{three}/media", jpeg, up_media)[0] for _ in range(3)] == [201, 201, 201]
+code, body = opened("POST", f"/record/{three}/media", jpeg, up_media)
 assert code == 422 and "3 つまで" in body, (code, body)
 # 置き場の合計の上限: 越える時は 507 で、本文は空（手帖は今ある字「写真か動画を上げられませんでした」を出す）。置き場に足さない
 assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303

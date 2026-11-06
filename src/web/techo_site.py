@@ -291,9 +291,11 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 """
 
 
-def made_item(sid, data, r, photos=True):
+def made_item(sid, data, r, photos=True, public=False):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
-    photos=False は合言葉なしで開いた場。写真も人の書いた文も出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    public=True は合言葉なしで開いた場。人が「物だけ」と確かめた写真と動画は出す（本人の決定 11-06「公開の場で上げた写真は、公開の場の
+    ギャラリーにも出します」）。人の書いた文と記録の番号は前と同じく出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    photos=False は写真も文も出さない前の開いた場の形（今は呼ぶ所が無い）。
     ひとこと（note）は学ぶ人の頁に出してこなかった欄なので、ギャラリーにも出さない。
     動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
     if not photos:
@@ -302,17 +304,17 @@ def made_item(sid, data, r, photos=True):
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
-    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
-    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict))
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and not public else ""
+    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and not public)
     if not pics and not words:
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
-    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}　{esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
-def gallery_page(sids, photos=True):
+def gallery_page(sids, photos=True, public=False):
     """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
     職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
@@ -320,9 +322,12 @@ def gallery_page(sids, photos=True):
     for sid in sids:
         data = hypotheses.load(sid)
         for r in records.all_records(sid):
-            cards += made_item(sid, data, r, photos)
-    cards = cards or ('<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>' if photos
-                      else '<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>')
+            cards += made_item(sid, data, r, photos, public)
+    # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
+    # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
+    if not cards:
+        cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
+                 "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
     from .demo_samples import uploads_html, voice_html
     cards += uploads_html()
@@ -346,8 +351,9 @@ def gallery_page(sids, photos=True):
 def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
-    public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受ける形）。上げた本人の画面の物だけを出し、記録の番号・人の言葉・
-    説明の文は前と同じく出さない。uploads=False は写真の口ごと閉じた形（前の開いた場の形。今は呼ぶ所が無いが、試験が使う）。"""
+    public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受け、確かめた物はギャラリーにも出す形）。写真と動画は合言葉付きの場と
+    同じ線（確かめる前は上げた本人の画面だけ・物だけの後は誰にでも・人や声は誰にも）。記録の番号・人の言葉・説明の文は前と同じく出さない。
+    uploads=False は写真の口ごと閉じた形（前の開いた場の形。今は呼ぶ所が無いが、試験が使う）。"""
     closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
@@ -357,8 +363,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     mine = ""
     for r in reversed(records.all_records(sid)):
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
-        # 開いた場では、確かめた後の物でも、ほかの人の画面には出さない（mine_only。写真の道も同じ線で返す）。
-        files = [] if not uploads else (media_review.mine_only if public else media_review.shown_to)(r["id"], media_of(r["id"]), up_key)
+        files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)

@@ -400,7 +400,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
         if path == "/gallery":
             from . import techo_site
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), photos=not getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), public=getattr(self.server, "public_open", False)), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -490,10 +490,8 @@ class Handler(BaseHTTPRequestHandler):
             from . import techo_site
             f = techo_site.media_dir(m.group(1)) / m.group(2)
             # 人や声が入ると確かめた物は、どの頁からも返さない（本人の決定 11-05、#314）。確認の前の物は、上げた本人の画面にだけ返す。
-            # 合言葉なしで開いたデモでは、上げた本人の画面にだけ返す（本人の決定 11-06 で上げられる形にした時の線）。人が確かめた後の物も、
-            # ほかの画面には返さない: 開いた場の頁とギャラリーは写真を出さない形のままなので、道だけ開けておく理由が無い。
-            seen = media_review.mine_only if getattr(self.server, "public_open", False) else media_review.shown_to
-            if f.exists() and seen(m.group(1), [m.group(2)], self._up_key()):
+            # 合言葉なしで開いたデモも同じ線（本人の決定 11-06「公開の場で上げた写真は、公開の場のギャラリーにも出します」）。
+            if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
                 kind = {"jpg": "image/jpeg", "png": "image/png", "mp4": "video/mp4", "mov": "video/quicktime"}[f.suffix[1:]]
                 data, plain = f.read_bytes(), (("Accept-Ranges", "bytes"),)
                 span = byte_range(self.headers.get("Range"), len(data))
@@ -636,7 +634,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(413, "1 つ 20MB まで")
             # 合言葉なしで開いたデモでも受ける（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。前は 403 で断っていた。
             # 誰でも上げられる場なので、置き場の合計に上限を置く。断る時は本文を空にし、手帖は今ある字（写真か動画を上げられませんでした）を出す。
-            # 確かめていない写真が皆に見える形にはしない線（J-021）は、出す側（写真の道・手帖の記録の頁は本人の画面だけ、ほかの頁は出さない）で守る。
+            # 確かめていない写真が皆に見える形にはしない線（J-021）は、出す側で守る（確かめる前は上げた本人の画面だけ。合言葉付きの場と同じ shown_to）。
             # 同時に送られた分は数え合わないので、合計は送られた数 × 20MB まで上限を越えうる（止めるより、機械を埋めない事が目的）。
             if getattr(self.server, "public_open", False) and techo_site.media_bytes() + length > techo_site.PUBLIC_MEDIA_TOTAL:
                 return self._send(507, b"", "text/plain; charset=utf-8")
@@ -1081,7 +1079,7 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
-    # 開いた場でも写真と動画は受ける（本人の決定 11-06）。出すのは上げた本人の画面にだけ（上の受け口の合計の上限と、/record/…/media の道）。
+    # 開いた場でも写真と動画は受ける（本人の決定 11-06）。確かめる前は上げた本人の画面にだけ、物だけと確かめた後はギャラリーにも出す（合言葉付きの場と同じ線）。
     if public_open and public_key:
         raise ValueError("合言葉付きと合言葉なしは同時に使えない")
     if public_open:
