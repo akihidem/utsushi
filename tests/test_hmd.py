@@ -11,6 +11,9 @@
 4. 声が使えない画面でも、釦とキーボードで通れる
 5. 大きさと置き場: 手順の字は大きく、釦に掛からない。釦は 64px 以上、「つぎ」は 96px 以上。横にはみ出さない
 6. カメラに重ねる頁: 偽のカメラで映像が付き、画面いっぱいに敷かれる
+7. 映像の中の紙に合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付くと紙の 4 隅の印が 4 つ出て（字は数字だけ）、
+   印は既定の囲みに出て 3D の舞台もその中、印を動かすと舞台が新しい囲みの中へ動いて縮む。画面の大きさが変わると印を既定の囲みへ置き直す。
+   カメラを止めると印を消し、舞台を元の置き場へ戻す。押すまで印は出ない
 
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない決まり（tests/test_mic_seen.py と同じ）。入っている Chrome で頁を開いて歩く。
 Chrome が無い機械と、Chrome が何も答えなかった時は、測れないと出して通す。落ちるのは、歩けて結果が違う時と、歩き始めたのに終わらなかった時。
@@ -167,16 +170,39 @@ document.getElementById('hmd-camera').click();await wait();R.off=[!!v.srcObject,
 const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
 })();</script>"""
 
+# 紙の 4 隅の印: カメラの口を差し替えた見本（空の映像を返す）で押し、印を紙の角に見立てた所へ動かす。この機械の偽のカメラは映像が付かないので、口を差し替える
+QUADSTUB = "<script>if(navigator.mediaDevices)navigator.mediaDevices.getUserMedia=async()=>new MediaStream();</script>"
+QUADWALK = r"""<script>(async()=>{
+const wait=(ms=80)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),stage=document.getElementById('rt-stage');
+const box=e=>{const r=e.getBoundingClientRect();return[r.left,r.top,r.right,r.bottom].map(Math.round)};
+const centers=()=>[...document.querySelectorAll('.hmd-corner')].map(c=>{const r=c.getBoundingClientRect();return[Math.round(r.left+r.width/2),Math.round(r.top+r.height/2)]});
+try{R.before=[getComputedStyle($('#hmd-quad')).display,box(stage)];
+$('#hmd-camera').click();await wait(300);
+R.on=[document.body.classList.contains('quad-on'),getComputedStyle($('#hmd-quad')).display,[...document.querySelectorAll('.hmd-corner')].map(c=>c.textContent).join('')];
+R.home=centers();R.stage1=box(stage);
+const W=innerWidth,H=innerHeight,T=[[W*.5,H*.55],[W*.92,H*.55],[W*.92,H*.92],[W*.5,H*.92]].map(p=>p.map(Math.round));
+const drag=(c,[x,y])=>{const o={bubbles:true,pointerId:7,clientX:x,clientY:y};c.dispatchEvent(new PointerEvent('pointerdown',o));c.dispatchEvent(new PointerEvent('pointermove',o));c.dispatchEvent(new PointerEvent('pointerup',o))};
+[...document.querySelectorAll('.hmd-corner')].forEach((c,i)=>drag(c,T[i]));await wait();
+R.target=T;R.moved=centers();R.stage2=box(stage);
+dispatchEvent(new Event('resize'));await wait();R.reset=centers();
+$('#hmd-camera').click();await wait();
+R.off=[document.body.classList.contains('quad-on'),document.body.classList.contains('quad-set'),stage.style.transform,getComputedStyle($('#hmd-quad')).display];
+}catch(e){R.error=String(e&&e.stack||e)}
+const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+})();</script>"""
+
 send, getter = play_server.Handler._send, play_server.Handler.do_GET
 
 
 def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-    m = re.search(r"[?&]walk=(voice|plain|cam)", self.path)
+    m = re.search(r"[?&]walk=(voice|plain|cam|quad)", self.path)
     if m and isinstance(body, str) and "/kasane" in self.path:
         kind = m.group(1)
         voice = "true" if kind == "voice" else "false"
-        walk_js = CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam" else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice)
-        body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + STUB.replace("__VOICE__", voice), 1).replace("</body>", walk_js + "</body>", 1)
+        walk_js = (QUADWALK if kind == "quad" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
+                   else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice))
+        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "quad" else "")
+        body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
     return send(self, code, body, ctype, headers)
 
 
@@ -194,7 +220,7 @@ def walk(width, height, kind):
 
     play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
     flags = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] if kind == "cam" else []
-    path = f"/toy/{G}/kasane" if kind == "cam" else f"/toy/{G}/kasane/hmd"
+    path = f"/toy/{G}/kasane" if kind in ("cam", "quad") else f"/toy/{G}/kasane/hmd"
     try:
         with tempfile.TemporaryDirectory() as profile:
             out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", f"--window-size={width},{height}", *flags,
@@ -216,7 +242,7 @@ if not exe:
     print("ok 作業しながら見る試作の字と道。測れない: Chrome が無いので、声と大きさとカメラは歩いていない")
     raise SystemExit(0)
 runs = {}
-for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam")}.items():
+for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad")}.items():
     got = walk(w, h, kind)
     if not isinstance(got, dict):
         got = walk(w, h, kind)  # 混んだ機械では答えない事があるので、1 度だけ回し直す
@@ -229,6 +255,16 @@ unmeasured = []
 for name, got in runs.items():
     assert isinstance(got, dict), ("歩き始めたのに終わらなかった", name, got)
     assert "error" not in got, (name, got)
+    if "紙に合わせる" in name:
+        inside = lambda b, pts, pad=3: b[0] >= min(p[0] for p in pts) - pad and b[1] >= min(p[1] for p in pts) - pad and b[2] <= max(p[0] for p in pts) + pad and b[3] <= max(p[1] for p in pts) + pad
+        assert got["before"][0] == "none", (name, "押すまで印は出ない", got)
+        assert got["on"] == [True, "block", "1234"], (name, "カメラが付くと、数字だけの印が 4 つ出る", got)
+        assert inside(got["stage1"], got["home"]), (name, "印を出した時、3D の舞台は印の囲みの中", got)
+        assert all(abs(a[0] - b[0]) <= 1 and abs(a[1] - b[1]) <= 1 for a, b in zip(got["moved"], got["target"])), (name, "印は指で動かした所へ動く", got)
+        assert inside(got["stage2"], got["target"]) and got["stage2"] != got["stage1"], (name, "印を動かすと、3D の舞台が新しい囲みの中へ動く", got)
+        assert got["reset"] == got["home"], (name, "画面の大きさが変わると、印を既定の囲みへ置き直す", got)
+        assert got["off"] == [False, False, "", "none"], (name, "カメラを止めると印を消し、舞台を元の置き場へ戻す", got)
+        continue
     if "カメラ" in name:
         assert got["before"] == [False, hmd.CAMERA], (name, "押すまでカメラは付けない", got)
         assert got["cover"] == [True, True, "fixed"], (name, "映像は画面いっぱいに敷く", got)
