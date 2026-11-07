@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_naoru.py
+# commit: b82ab108（main）の木に、このブランチの src/web/naoru.py・data/kaizen/highlight.json・試験だけを置き、2 つの頁（src/web/techo_step.py・src/web/techo_site.py）は main の物のまま（枠を呼ぶ前の頁）
+Traceback (most recent call last):
+  File "tests/test_naoru.py", line 54, in <module>
+    assert page.count('class="naoru"') == 1, (sid, public, "枠が 1 回でない")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000014-R', False, '枠が 1 回でない')
+rc=1

@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_techo_site.py
+# commit: 92c26176（main）の木に、このブランチの試験だけを置き、頁（src/web/techo_site.py・about.py・play_server.py）は main の物のまま（移す前の頁）
+/tmp/tmphtysl_jp/play/NDL-1187053-R0000005-L/.tmp-smina3ye/H-A_v1.pdf
+/tmp/tmphtysl_jp/play/NDL-1187053-R0000005-L/.tmp-5hbawb9l/H-A_v2.pdf
+Traceback (most recent call last):
+  File "tests/test_techo_site.py", line 126, in <module>
+    assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "紙と折りの職人" in yomu  # 枠の中身は見本（demo_samples）か（準備中）
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
