@@ -463,6 +463,12 @@ class Handler(BaseHTTPRequestHandler):
             from . import kaizen_ws
             data = kaizen_ws.photo_bytes(int(m.group(1)), urllib.parse.unquote(m.group(2)))
             return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
+        m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
+        if m:
+            # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）
+            from . import loop_figure
+            data = loop_figure.image_bytes(urllib.parse.unquote(m.group(1)))
+            return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))

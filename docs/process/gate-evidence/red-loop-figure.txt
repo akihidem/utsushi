@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_loop_figure.py
+# commit: be745a96（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_figure.py", line 12, in <module>
+    from web import loop_figure as f
+ImportError: cannot import name 'loop_figure' from 'web' (src/web/__init__.py)
+rc=1
