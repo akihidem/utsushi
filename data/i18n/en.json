@@ -2314,6 +2314,7 @@
   "木菟（張子のみみずく）: 組み方 · うつし": "Eared owl (papier-mâché owl): Assembly · utsushi",
   "木菟（張子のみみずく）の図": "Picture: Yellow owl",
   "木菟（張子のみみずく）の頁へもどる": "Back to the eared owl (papier-mâché owl) page",
+  "本でよむ": "Read in the book",
   "本の {0} コマ目": "Frame {0} of the book",
   "本の情報は、国立国会図書館の記録から取っています。": "The information about the book comes from the records of the National Diet Library.",
   "本人の判断: 虎の物差しは頭が揺れるかどうかで足りる": "The creator’s judgment: for the tiger, “does the head swing” is enough as a measure",
@@ -3610,7 +3611,6 @@
   "）では、この歌の一部の読みが割れていました（作る側の記録、research/{0}）。": ") read part of this poem in two different ways (the makers' record, research note {0}).",
   "）にだけ足す": ")",
   "）の読みに決めました。": ") reading was chosen.",
-  "［隠している］": "[hidden]",
-  "本でよむ": "Read in the book"
+  "［隠している］": "[hidden]"
  }
 }
