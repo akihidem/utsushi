@@ -378,8 +378,11 @@ def tenji(photos=True):
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
+    # 浮かぶ玩具の試作（本人の言葉 11-07 夜「試作」・枝だけ。web.ukabu）。輪郭の絵が無い場（まっさらな clone）では何も置かない
+    from . import ukabu
+    body += ukabu.block(set(sources()))
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
+    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + ukabu.UKABU + skin.entrance_style("tenji"), "tenji")
 
 
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
