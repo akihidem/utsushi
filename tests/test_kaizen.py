@@ -59,7 +59,8 @@ def post(path, data):
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 page = get(f"/toy/{G}")[1]
 # 報告の欄に感想がある。輪の節は、報告が無い時もその旨を出す
-assert 'name="impression"' in page and 'id="kaizen"' in page and "報告はまだありません" in page
+# 玩具の頁には記録の欄が無く、のこす（記録の頁）への道が 1 本（本人の答え 11-07 夕の Q3 で、玩具の頁の記録の欄は のこす へ寄せた。受け口は残る）
+assert 'name="impression"' not in page and f'href="/toy/{G}/techo/kiroku"' in page and 'id="kaizen"' in page and "報告はまだありません" in page
 # 感想にも連絡先の形は残さない
 code, body = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "電話は 090-1234-5678 です"})
 assert code == 422, code
@@ -125,7 +126,7 @@ from omochae import hypotheses  # noqa: E402
 
 hypotheses.print_sheet(G, GS, str(out / f"{GS}_v1"), 1)
 page = get(f"/toy/{G}")[1]
-assert 'name="sheet_version"' in page.split('id="record"')[1].split("</form>")[0]
+assert 'id="record"' not in page, "玩具の頁に記録の欄は無い（版の番号は受け口へ送る値で残る）"
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "sheet_version": "1", "result": "動かない", "impression": "版 1 で作っていた"})[0] == 303
 assert json.loads((pathlib.Path(DATA) / "records/R-0003.json").read_text(encoding="utf-8"))["sheet_version"] == 1
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "sheet_version": "9", "result": "動いた"})[0] == 303

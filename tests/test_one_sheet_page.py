@@ -128,8 +128,8 @@ assert re.findall(r'name="hypothesis" value="([^"]+)"', ask_form) == [sheet], "�
 techo = get(f"/toy/{TRIAL}/techo")
 assert re.findall(r'data-hid="([^"]+)"', techo) == [sheet], "手帖の紙もたたき台だけ"
 
-# 3. 記録はその 1 枚の hypothesis_id で残る（頁の form が送る値のまま送る）
-sent = re.search(r'name="hypothesis" value="([^"]+)"', get(f"/toy/{TRIAL}").split('id="record"', 1)[1]).group(1)
+# 3. 記録はその 1 枚の hypothesis_id で残る（手帖が送る値のまま送る。玩具の頁の記録の欄は のこす へ寄せた）
+sent = re.search(r'data-hid="([^"]+)"', get(f"/toy/{TRIAL}/techo")).group(1)
 assert sent == sheet
 result = hypotheses.load(TRIAL).get("template")
 from omochae.compose import TEMPLATES  # noqa: E402
