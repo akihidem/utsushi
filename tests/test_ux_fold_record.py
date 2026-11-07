@@ -1,13 +1,13 @@
-"""玩具の頁の記録の欄を、見出しのまま畳む（地図 state/journey-map.md の工程 4「声と動画が主で、字は畳んだ追加。残す口は 1 つ」）。
+"""玩具の頁の「試した記録を残す」を、のこす（手帖の最後と記録の頁）へ寄せる（本人の答え 11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」）。
 
-なぜ: 玩具の頁に記録の欄が 13 開いたままで、「全部書くのか」と読める。残す口は手帖の「のこす」で、玩具の頁の欄は字で残したい人と
-JS の無い画面のための追加。欄そのものは残し、見出し「試した記録を残す」を畳みの見出しにする（新しい字は無い）。
+前は、玩具の頁の記録の欄（13 の欄）を見出しのまま畳んで置いた（地図の工程 4「残す口は 1 つ」）。本人の答えで欄を外し、
+同じ所（錨 #kiroku）に記録の頁への道を 1 本だけ置く。受け口 /toy/<印>/record は残す（前からの道と作る側の道具のため）。
 
 見る事:
-1. ふだんは閉じている。畳みの外（玩具の頁で最初から見える所）に、記録の欄が 1 つも無い。欄と送る釦は畳みの中に全部ある
-2. 送って通らなかった時は開いて、書いた字が欄に戻る（#300 と同じ線: 書いた字を隠さない）
-3. 残せた時の返事の文は、畳みに隠れない所に出る（残した記録の札へ戻る）。#kiroku の道で着いた時に畳みを開く動き（FOLD_SCRIPT）が頁にある
-4. 送る形は変えない: 畳んだままの欄から残せる
+1. 玩具の頁に記録の欄が無い（欄・送る釦・畳みの見出し「試した記録を残す」）。#kiroku の節は 1 つで、のこす（記録の頁）への道が 1 本
+2. 道の行き先の記録の頁は、記録の無い人にも開く
+3. 受け口は残る: 通らなかった時は、返事の文が #kiroku の節に出る（欄が無いので書いた字は戻らない）。残せた時は残した記録の札へ戻り、返事の文が出る
+記録が残せる事・結果の札の字が読める事は、手帖の側の試験が守る（tests/test_techo_step.py・tests/test_result_readers.py・tests/test_result_words.py）
 """
 import os
 import re
@@ -55,45 +55,29 @@ def section(page):
     return page[i:page.index("</section>", i) + len("</section>")]
 
 
-def outside_details(html):
-    """畳み（details）の外の字。入れ子の details も外す。"""
-    out, depth, pos = [], 0, 0
-    for m in re.finditer(r"<details\b|</details>", html):
-        if depth == 0:
-            out.append(html[pos:m.start()])
-        depth += 1 if m.group(0) != "</details>" else -1
-        pos = m.end()
-    if depth == 0:
-        out.append(html[pos:])
-    return "".join(out)
-
-
 FIELD = re.compile(r'<(?:input(?![^>]*type="hidden")|textarea|select)\b[^>]*>')
-HEAD = '<details class="fold-sec"><summary><h2>試した記録を残す</h2></summary>'
+OLD_HEAD = "<h2>試した記録を残す</h2>"
+LINK = f'<a href="/toy/{G}/techo/kiroku">{toy.KIROKU_TO_NOKOSU}</a>'
 
-# ---- 1 ふだんは閉じている
+# ---- 1 欄が無く、のこすへの道が 1 本
 post(f"/toy/{G}/print", hypothesis="H-A")
 page = get(f"/toy/{G}")
 kiroku = section(page)
-assert HEAD in kiroku, ("記録の節は、見出しのまま畳む", kiroku[:300])
-assert not FIELD.findall(outside_details(kiroku)) and "<button>記録を残す</button>" not in outside_details(kiroku), "畳みの外に記録の欄を出さない"
-inside = kiroku[kiroku.index(HEAD):]
-assert len(FIELD.findall(inside)) >= 8 and '<form method="post" action="/toy/' in inside and "<button>記録を残す</button>" in inside, "欄と送る釦は畳みの中に全部ある"
-assert toy.FOLD_SCRIPT in page, "#kiroku の道で着いた時に畳みを開く"
+assert page.count('id="kiroku"') == 1 and LINK in kiroku, ("のこすへの道", kiroku[:300])
+assert not FIELD.findall(kiroku) and "<form" not in kiroku and OLD_HEAD not in page and 'id="record"' not in page, "玩具の頁に記録の欄は無い"
 
-# ---- 2 通らなかった時は開いて、書いた字を戻す（見た事の札を選ばずに送る）
+# ---- 2 道の行き先は、記録の無い人にも開く
+assert urllib.request.urlopen(base + f"/toy/{G}/techo/kiroku", timeout=120).status == 200
+
+# ---- 3 受け口は残る
 code, body, _ = post(f"/toy/{G}/record", hypothesis="H-A", impression="糊がはみ出した")
-assert code >= 400 or "糊がはみ出した" in body, code
+assert code == 422, code
 kiroku = section(body)
-assert '<details class="fold-sec" open><summary><h2>試した記録を残す</h2></summary>' in kiroku, ("通らなかった時は開く", kiroku[:300])
-assert "糊がはみ出した" in kiroku, "書いた字が欄に戻る"
-
-# ---- 3・4 畳んだままの欄から残せる。返事の文は畳みの外
+assert LINK in kiroku and "糊がはみ出した" not in kiroku, "通らなかった時は、返事の文と道だけ（書いた字を戻す欄は無い）"
 code, _, where = post(f"/toy/{G}/record", hypothesis="H-A", result="動いた", sheet_version="1")
 assert code == 303 and "msg=" in where, (code, where)
 msg = urllib.parse.parse_qs(urllib.parse.urlsplit(where).query)["msg"][0]
 back = get(where.split("#")[0].replace(base, ""))
-# 残せた後は、残した記録の札（#R-…）へ戻る。返事の文は、畳みに隠れない所に出る
-assert HEAD in section(back) and msg in outside_details(back), ("返事の文は畳みの外に出る", msg)
+assert msg in back and 'id="record"' not in back, ("残せた時は返事の文が出る", msg)
 server.shutdown()
-print("ok 玩具の頁の記録の欄は見出しのまま畳み、通らなかった時は開いて書いた字を戻し、返事の文は畳みの外に出る（地図の工程 4）")
+print("ok 玩具の頁に記録の欄は無く、のこすへの道が 1 本。受け口は残り、返事の文が出る（本人の答え Q3）")

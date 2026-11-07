@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kumikata_text.py
+# commit: cda050ed（回した時の HEAD）
+ok 組み方の節は文だけ（83 種で図なし・3D は文より上・遊び方の文は残す・断りは組み方を指す）
+rc=0

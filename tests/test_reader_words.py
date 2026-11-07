@@ -217,7 +217,8 @@ assert wording.plain("つるつるの床ほど長く回る") == "つるつるの
 # 番号は言い換えと一緒に残る。作る側が札を引けるように
 toy = " ".join(pages["次の版の後"])
 assert f"記録の番号 {rid}" in toy and "をもとに直しました" in toy, "番号の言い換え"
-assert any("作る側が直します" in t for t in pages[f"/toy/{G}"]), "改善の輪の節の固定の文"
+# 改善の輪の節は学ぶ人の頁から外した（本人の答え 11-07 夕の Q5。作る側の様子の頁へ移した）ので、その固定の文は玩具の頁に出ない
+assert not any("作る側が直します" in t for t in pages[f"/toy/{G}"]), "改善の輪の節は玩具の頁に無い"
 gallery = " ".join(pages["/gallery"])
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。固定の文はそこで見る
 yomu = " ".join(pages["/about"])

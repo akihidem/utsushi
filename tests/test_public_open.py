@@ -212,8 +212,14 @@ assert opened("GET", "/loop")[0] == 404 and opened("GET", f"/loop/{G}")[0] == 40
 # 次の版を採る口と AI の口は閉じる（誰でも型紙の版を変えられる形にしない・費用をかけさせない）
 assert opened("POST", f"/record/{rid}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", form)[0] == 403
 assert opened("POST", f"/record/{rid}/ai-interpret", "x=1", form)[0] == 403 and opened("POST", f"/record/{rid}/ai-observe", "x=1", form)[0] == 403
-# 記録の欄に、名前を書かない断りがある
-assert "名前や連絡先は書かないでください" in opened("GET", f"/toy/{G}")[1]
+# 記録を書く所に、名前を書かない断りがある。玩具の頁の記録の欄は のこす へ寄せた（本人の答え 11-07 夕の Q3）ので、
+# 記録の字を書くのは手帖の のこす の画面で、そこに話す口と同じ断り（hanasu.NOTICE。名前・学校の名前…は書かない）が出る
+import html  # noqa: E402
+
+from web import hanasu  # noqa: E402
+
+assert "名前や連絡先は書かないでください" not in opened("GET", f"/toy/{G}")[1], "玩具の頁に記録の欄は無い"
+assert html.escape(hanasu.NOTICE, quote=False) in opened("GET", f"/toy/{G}/techo")[1] or hanasu.NOTICE in opened("GET", f"/toy/{G}/techo")[1]
 # 上げた直後の返事（窓口の決定 11-06 夜・案 A）: 手帖は上げた後に「上げました」をギャラリーへ渡す。合言葉なしの場では、確かめる前はギャラリーに
 # 並ばない理由の 1 行を続ける。写真なしで残した時（記録を残しました）と、合言葉付きの場には出さない
 assert f"return '{techo_site.UPLOADED}'" in techo_step.SCRIPT and "location.assign(`/gallery?msg=${encodeURIComponent(done)}" in techo_step.SCRIPT

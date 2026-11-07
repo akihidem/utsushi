@@ -70,8 +70,13 @@ def _box(x, y, label):
     return f'<rect class="wa-box" x="{x - BOX_W / 2}" y="{y - BOX_H / 2}" width="{BOX_W}" height="{BOX_H}" rx="8"/>{texts}'
 
 
-def ring(version=1, href="#kaizen"):
-    """輪の図の HTML。version は真ん中に出す今の型紙の版。href は真ん中を押した時の行き先（頁の下の「型紙の改善の輪」）。"""
+# 輪の図の真ん中を押した時の行き先。説明の頁（序の頁）の改善の歴史の節の錨（web.kaizen_rekishi）。前は玩具の頁の足の「型紙の改善の輪」（#kaizen）で、
+# 本人の答え（11-07 夕の Q5）「型紙の改善の輪は外して、説明の頁と のこす だけにする」で節を外したので、行き先を替えた（輪の図は残す。窓口の決め 11-07）
+HREF = "/about#kaizen-rekishi"
+
+
+def ring(version=1, href=HREF):
+    """輪の図の HTML。version は真ん中に出す今の型紙の版。href は真ん中を押した時の行き先（説明の頁の改善の歴史）。"""
     arcs = "".join(_arc(SPOTS[i], SPOTS[(i + 1) % len(SPOTS)]) for i in range(len(SPOTS)))
     boxes = "".join(_box(x, y, s) for (x, y), s in zip(SPOTS, STEPS))
     said = " → ".join((*STEPS, STEPS[0]))

@@ -32,6 +32,10 @@ SKINS = {
 # 道の外の読み物（序・図鑑・保護者の方へ、ファシリテーターの方へ・English）は「よむ」（序の頁）にまとめる。前の帯の名（序・おもちゃ・
 # 作った物と職人の言葉・図鑑・English）はここから外し、行き先の頁は変えない
 ROAD = ("えらぶ", "つくる", "のこす", "もちよる")
+# 駅と駅の間の印（夕方のレビュー 11-07 の 11「えらぶ の後は つくる、つくる の後は のこす、と流れが分かるように」）。
+# 駅の名と並びは替えず（本人の決定 11-06）、間に印を置くだけ。印の形は窓口の確かめ（替える時はこの 1 か所）。
+# 読み上げでは駅の名だけが続けて読めるよう aria-hidden にし、押す所にもしない。よむ・English の前には置かない（道の外のため）
+ROAD_ARROW = "→"
 YOMU = ("/about", "よむ")
 YOMU_PATHS = ("/about", "/zukan", "/otona")
 # 英語の頁の帯（J-030 の段 1）。全部の頁を訳さないので、道は入口と日本語の頁へだけ。
@@ -76,7 +80,10 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
 .nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}.nav .nav-lang{font-size:12px;letter-spacing:.1em}
-@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}}
+/* 駅の間の印は、隙間を少し詰めて駅に寄せる（帯の段を増やさない。幅 320 でも 1 段に収める見積もりは tests/test_nav_arrow.py）。
+   英語の帯（全頁の英語・#538）は駅の名が長く、幅 320 で余りが 6px しかなかった（手元の Chrome）ので、幅 480 以下では英語の頁だけ横の隙間（column-gap）を 6px にする。段の間（row-gap）は替えない */
+.nav .nav-arrow{color:var(--mute);letter-spacing:0;margin:0 -8px}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}.nav .nav-arrow{margin:0 -4px}html[lang=en] .nav{column-gap:6px}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
@@ -252,7 +259,8 @@ def nav(skin, current="", path="/", lang="ja"):
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
     # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない。
     # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）。前は英語の入口 /en へ飛んだ。英語の頁では web.i18n が「日本語」へ戻る口に替える
-    items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="?lang=en" lang="en">English</a>'
+    arrow = f'<span class="nav-arrow" aria-hidden="true">{esc(ROAD_ARROW)}</span>'
+    items = arrow.join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="?lang=en" lang="en">English</a>'
     # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
     # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
     brand = ""
