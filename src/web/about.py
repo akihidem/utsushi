@@ -5,6 +5,8 @@
 - 書誌は data/sources の御来迎の記録から読む（手で写さない。記録の値が直れば頁も直る）。
 - 仕組みの答え・仮説の名前は書かない（序の頁は仕組みを語る所でないため）。成功・失敗・正解の言葉を使わない（philosophy.md）。
 - 図は国立国会図書館の頁の写しを額に入れて 1 点だけ。新しい絵は作らない。
+- 足には、寄せられた声と職人の言葉の 2 つの節（持ち寄りの入口のフォームを含む）を置く（techo_site.voices_sections）。上の「本人の言葉の引用と書誌の値だけ」は
+  序の本文の決まりで、足の 2 つの節は前のギャラリーの節を字を変えずに移した物（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
 """
 import json
 
@@ -58,7 +60,7 @@ def book_paragraph(src):
 
 
 def page(skin_name, path="/about"):
-    from . import hokusai, toys
+    from . import hokusai, techo_site, toys  # techo_site は寄せられた声と職人の言葉の節（循環を避けて、ここで読む）
 
     src = _source()
     quotes = "".join(f"<blockquote>「{esc(w)}」</blockquote>" for w in WORDS)
@@ -74,5 +76,8 @@ def page(skin_name, path="/about"):
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
             # えらぶ の頭にあった断りの段（窓口の決定 11-07 の ②「よむ へ移す」）。字は変えずに、おもちゃを選ぶ釦のすぐ前に置く
             + toys.yomu_section() +
+            # 寄せられた声と職人の言葉（持ち寄りの入口のフォームを含む）。前はギャラリーにあったが、のこす（作った記録を残す）と分けるためにここへ移した
+            # （本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D。techo_site.voices_sections）
+            f'<section class="sec">{techo_site.voices_sections()}</section>'
             '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
-    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)
+    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE + techo_site.VOICES_STYLE)

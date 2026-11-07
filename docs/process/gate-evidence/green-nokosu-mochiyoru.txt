@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_techo_site.py
+# commit: f125bef9（回した時の HEAD）
+/tmp/tmp7odhovz8/play/NDL-1187053-R0000005-L/.tmp-zdbpf08y/H-A_v1.pdf
+/tmp/tmp7odhovz8/play/NDL-1187053-R0000005-L/.tmp-pqr1fko1/H-A_v2.pdf
+ok
+rc=0
