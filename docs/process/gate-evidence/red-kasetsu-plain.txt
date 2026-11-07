@@ -1,5 +1,5 @@
 # 命令: .venv/bin/python tests/test_kasetsu_plain.py
-# commit: 今の main 0bc6d816 の木に tests/test_kasetsu_plain.py だけを当てた（git の外の写し・頁と紙の作りは 0bc6d816 の物のまま）
+# commit: 0bc6d816（今の main）の木に tests/test_kasetsu_plain.py だけを当てた（git の外の写し・頁と紙の作りは 0bc6d816 の物のまま）
 Traceback (most recent call last):
   File "tests/test_kasetsu_plain.py", line 62, in <module>
     assert not left, ("仮説の印が見える字に残る", path, left[:3])
