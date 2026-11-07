@@ -3,7 +3,7 @@
 
 見る事:
 1. 玩具の頁の節の見出しは「これまでの復元」。前の見出し「他の人が作った物と、自分の記録」は、どの玩具の頁にも残らない
-   （頁の頭の「これまでの記録」の畳みの 1 文はこの直しの外。見るのはこの節の中）
+   （頁の頭の「これまでの記録」の畳みの記録が無い時の 1 文も、並びの記録が無い時の字にそろえる）
 2. 記録が無い時の 1 文と、記録がある時の並びの頭の 1 文に、人を主にした字（「最初の記録を残す人」「自分の説明」）が残らない
 3. 置き場と並びは変えない: 節の錨 #minna は 1 つで、ギャラリーへの道も残る。ギャラリーの見出しは今のまま（この直しの外）
 """
@@ -25,9 +25,11 @@ for sid in (G, T, other):
     assert page.count('id="minna"') == 1 and f'<section class="sec" id="minna"><h2>{toy.MINNA_HEAD}</h2>' in page, sid
     minna = page[page.index('id="minna"'):]
     minna = minna[:minna.index("</section>")]
-    # 見るのはこの節の中（頁の頭の「これまでの記録」の 1 文は、この直しの外。レビューの 6 が指したのはこの節）
-    assert OLD[0] not in page and not [w for w in OLD if w in minna], (sid, [w for w in OLD if w in minna])
+    # 頁の頭の「これまでの記録」の畳みの 1 文も、並びの記録が無い時の字にそろえた（同じ頁に同じ意味の文を 2 通り置かない）
+    assert not [w for w in OLD if w in page], (sid, [w for w in OLD if w in page])
     assert 'href="/gallery"' in minna, "ギャラリーへの道は残す"
+    if "試した記録は" in page:
+        assert f"試した記録は{toy.MINNA_EMPTY}" in page, "頭の畳みの 1 文は並びと同じ字"
 
 # 2. 記録が無い時と、記録がある時の 1 文（記録は使い手と同じ道で残す: 刷ってから記録の口へ送る）
 assert toy.MINNA_EMPTY in toy.toy_page(other), "記録の無い玩具では、記録が無い時の 1 文"
