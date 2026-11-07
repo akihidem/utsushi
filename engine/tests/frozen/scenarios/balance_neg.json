@@ -1,0 +1,16 @@
+{
+  "template": "balance",
+  "source_id": "NDL-1187053-R0000007-L-balance",
+  "params": {
+    "kind": "yajirobe",
+    "arm_angle": 15,
+    "arm_length": 60
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.balance"
+    ]
+  }
+}

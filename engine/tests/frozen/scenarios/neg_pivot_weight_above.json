@@ -1,0 +1,15 @@
+{
+  "template": "pivot_counterweight",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {
+    "mount": "neck",
+    "weight_below_axle": -15
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pivot"
+    ]
+  }
+}

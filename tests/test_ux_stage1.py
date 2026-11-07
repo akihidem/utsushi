@@ -53,7 +53,8 @@ EXPECT = {"/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kirok
 for path, station in EXPECT.items():
     nav = nav_of(get(path))
     got = items(nav)
-    assert [x[0] for x in got] == ["うつし", *ROAD, "よむ", "English"], (path, "帯は道しるべと、右の端の言語の切り替え", got)
+    # 右の端の言語の切り替えは やさしい（やさしい日本語・11-07 夜）と English
+    assert [x[0] for x in got] == ["うつし", *ROAD, "よむ", "やさしい", "English"], (path, "帯は道しるべと、右の端の言語の切り替え", got)
     assert [x[0] for x in got if x[2]] == [station], (path, "今いる駅に印", got)
     # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）
     assert '<a class="nav-lang" href="?lang=en" lang="en">English</a>' in nav, (path, "English は言語の切り替え（窓口の決定 11-06）。駅の印は付けない")

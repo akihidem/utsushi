@@ -1,0 +1,17 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000006-L-pull_nod",
+  "params": {
+    "kind": "bow",
+    "post_height": 56,
+    "stop_height": 5,
+    "torso_len": 41
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ]
+  }
+}

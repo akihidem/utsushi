@@ -1,0 +1,14 @@
+{
+  "template": "popup_jar",
+  "source_id": "NDL-1187053-R0000022-L-popup_jar",
+  "params": {"jar": "square", "box_height": 10},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.popup"],
+    "lines": [
+      "F5.popup [人形] 袖の先（半分の幅 #＋傾き #＋余り #）が壺の内の半分 # を超え、壁に擦れる",
+      "F5.popup [人形の足] 押し上げる途中の足の端（#＋傾き #＋余り #）が壺の内の半分 # を超え、壁に擦れる"
+    ]
+  }
+}

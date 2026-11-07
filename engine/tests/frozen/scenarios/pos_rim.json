@@ -1,0 +1,17 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {
+    "hub": "rim",
+    "push_amount": 36,
+    "pusher_height": 40,
+    "fold_count": 14,
+    "fold_width": 8,
+    "fold_height": 36
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

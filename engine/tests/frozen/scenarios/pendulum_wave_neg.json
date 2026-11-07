@@ -1,0 +1,16 @@
+{
+  "template": "pendulum_wave",
+  "source_id": "PRINCIPLE-pendulum-wave",
+  "params": {
+    "kind": "wave",
+    "spacing": 14,
+    "v_span": 6
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.range"
+    ]
+  }
+}

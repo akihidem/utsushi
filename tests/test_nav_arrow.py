@@ -15,7 +15,7 @@ for path, current in PATHS.items():
     # 先に並び: 駅の間にだけ印がある（印の字は下で見る。前の形では印が無く、ここで落ちる）
     # 帯の題の字「うつし」は釦でない span.brand（行き先が同じ釦を 1 つにそろえる窓口の決め 11-07）。並びの中の字として数える
     seq = [a or b or d or ("ARROW" if c else "") for a, b, c, d in re.findall(r'<a [^>]*>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>|(<span class="nav-arrow")|<span class="brand">([^<]+)</span>', nav)]
-    assert seq == ["うつし", "えらぶ", "ARROW", "つくる", "ARROW", "のこす", "ARROW", "もちよる", "よむ", "English"], (path, seq)
+    assert seq == ["うつし", "えらぶ", "ARROW", "つくる", "ARROW", "のこす", "ARROW", "もちよる", "よむ", "やさしい", "English"], (path, seq)  # やさしい は 11-07 夜
     ARROW = f'<span class="nav-arrow" aria-hidden="true">{skin.ROAD_ARROW}</span>'
     assert nav.count(ARROW) == len(skin.ROAD) - 1, (path, "印は読み上げない飾りで、駅の間にだけ")
     assert not re.search(r"<a [^>]*>[^<]*" + re.escape(skin.ROAD_ARROW), nav), (path, "印はリンクの中に入れない")

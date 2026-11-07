@@ -1,0 +1,13 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000011-L-stand_figure",
+  "params": {
+    "figure": "fukumen",
+    "stand": "base"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

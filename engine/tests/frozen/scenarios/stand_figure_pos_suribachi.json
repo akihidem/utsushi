@@ -1,0 +1,16 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000021-L-stand_figure",
+  "params": {
+    "figure": "suribachi",
+    "stand": "easel",
+    "tab_width": 10,
+    "tab_length": 28,
+    "tab_glue": 25
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

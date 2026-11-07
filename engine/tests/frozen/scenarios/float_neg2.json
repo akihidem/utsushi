@@ -1,0 +1,14 @@
+{
+  "template": "float",
+  "source_id": "NDL-1187053-R0000028-R-float",
+  "params": {"vane": "none", "tray_length": 40, "tray_width": 22, "wall_height": 35, "figure_height": 30, "leaf_radius": 10, "ballast_g": 0, "paper_gsm": 300},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.float"],
+    "lines": [
+      "F5.float [人形] 壁の上端より下の人形の半幅 #mm が、底の半幅 #mm に入らず、壁に当たる",
+      "F5.float [重心] GM が #mm で、傾いて戻らない（#mm 以上。KB # + BM # − KG #）"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "template": "helix",
+  "source_id": "SCI-DNA-B",
+  "params": {
+    "kind": "bdna",
+    "n_bp": 12,
+    "radius": 28,
+    "skewer_len": 120
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.range"
+    ]
+  }
+}
