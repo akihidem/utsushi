@@ -52,6 +52,13 @@ LONG = 2400  # px。HEIC を描き直す時の長い辺の上限。頁は小さ�
 QUALITY = 88
 HEIC_BRANDS = (b"heic", b"heix", b"heim", b"heis", b"mif1", b"msf1", b"hevc", b"hevx")
 SET_NAME = re.compile(r"[a-z_]+-v\d+")
+# 作例の写真の種類（本人の言葉で届いた事例の写真）。種類の付いた写真は玩具の札（examples）に入れず、それぞれの段が読む（cases・versions）。
+# 同じ物が頁に 2 回出ないように（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）
+KINDS = {
+    "versions": "型紙で改善したおもちゃ 3 バージョン",  # 本人の言葉 11-07。R-1019 御来迎・R-1020 虎
+    "loop": "改善ループの例",  # 本人の言葉 11-07「手前から使う型紙の版が変わっている。改善ループの例として使って欲しい」
+    "kufu": "参加者の工夫",  # 本人の言葉 11-07「参加者の型紙の改善例その1。…事例としてサイトに載せて」
+}
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 UNKNOWN = "不明"  # 仕分けで日か玩具が決まらない物の印（人の確かめへ残す。統括の頼み 11-07 の字のまま）
 JST = timezone(timedelta(hours=9))  # ワークショップの場の時（撮影の日時の日をこの時で読む）
@@ -126,12 +133,42 @@ def examples():
 
     out = []
     for r in workshop_records():
-        if r["source_id"] == records.WORKSHOP_ALL:
-            continue  # 報告の顔の写真は札にしない（faces）
+        if r["source_id"] == records.WORKSHOP_ALL or r.get("kind"):
+            continue  # 報告の顔の写真（faces）と事例の写真（cases）は玩具の札にしない
         shown = media_review.public(r["id"], techo_site.media_of(r["id"]))
         if shown:
             out.append({"day": r["made_on"], "sid": r["source_id"], "rid": r["id"], "photos": shown, "set": r.get("sheet_set")})
     return sorted(out, key=lambda e: (e["day"], e["rid"]))
+
+
+def cases(kind):
+    """事例の写真（KINDS の種類）。人が「物だけ」と確かめた物だけ・記録の順。Returns [{"sid", "rid", "url"}]。"""
+    from omochae import media_review
+
+    from . import techo_site
+
+    return [{"sid": r["source_id"], "rid": r["id"], "url": f"/record/{r['id']}/media/{name}/small"} for r in workshop_records() if r.get("kind") == kind
+            for name in media_review.public(r["id"], techo_site.media_of(r["id"]))]
+
+
+def versions():
+    """型紙で改善したおもちゃ 3 バージョンの写真の、玩具ごとの 1 枚（同じ玩具に 2 枚あれば記録の順であとの方）。Returns {玩具の印: 道}。
+    審査用の頁の「型紙で改善したおもちゃ」の段が読む（窓口の決め 11-07 152530）。"""
+    return {c["sid"]: c["url"] for c in cases("versions")}
+
+
+def set_kind(rid, kind):
+    """取り込んだ作例の記録に事例の写真の種類を書く。Returns 断りの理由 or None。作例の記録だけ（ほかの記録は書き換えない）。"""
+    from omochae import records, store
+
+    if kind not in KINDS:
+        return f"種類は {'・'.join(sorted(KINDS))} のどれか"
+    path = records.folder() / f"{rid}.json"
+    rec = next((r for r in workshop_records() if r["id"] == rid), None)
+    if rec is None or not path.exists():
+        return "作例の記録に無い"
+    store.write_json(path, {**rec, "kind": kind})
+    return None
 
 
 def faces():
@@ -160,7 +197,7 @@ def days():
     return {e["day"][5:7] + e["day"][8:10] for e in examples()}
 
 
-def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
+def add(paths, sid, day, sheet_set=None, hypothesis_id=None, kind=None):
     """写真を作例として取り込む。Returns ([(記録の番号, 名, 元のファイル)], [(元のファイル, 理由)], 検査できない理由 or None)。
     1 枚に 1 つの記録（できた物 1 つに 1 枚の札）。"""
     from omochae import hypotheses, records
@@ -183,6 +220,8 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
         return [], [("", f"作った日がワークショップの日（{'・'.join(d[5:] for d in WORKSHOP_DAYS)}）でない: {day}")], None
     if sheet_set is not None and not SET_NAME.fullmatch(sheet_set):
         return [], [("", f"型紙の組は「名前-v番号」の形: {sheet_set}")], None
+    if kind is not None and kind not in KINDS:
+        return [], [("", f"事例の写真の種類は {'・'.join(sorted(KINDS))} のどれか: {kind}")], None
     if outside:
         if hypothesis_id:
             return [], [("", f"83 の外の玩具の作例は仮説を持たない: {hypothesis_id}")], None
@@ -208,17 +247,17 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
             data = to_jpeg(raw)
             if data is None:
                 return done, refused, f"HEIC を読めない（jpeg の段を、pillow-heif のある python で先に回す）: {p.name}"
-        kind = _kind(data)
-        if kind is None:
+        ctype = _kind(data)  # 写真の型（content type）。事例の写真の種類の kind と別の物
+        if ctype is None:
             refused.append((p.name, "写真（JPEG・PNG・HEIC）として読めない"))
             continue
         rec = {"source_id": sid, "hypothesis_id": hid, "result": records.UNSURE, "via": records.WORKSHOP, "made_on": made.isoformat(),
-               "workshop_from": mark, **({"sheet_set": sheet_set} if sheet_set else {})}
+               "workshop_from": mark, **({"sheet_set": sheet_set} if sheet_set else {}), **({"kind": kind} if kind else {})}
         rid, failures = records.add(rec)
         if failures:
             refused.append((p.name, "; ".join(f.message for f in failures)))
             continue
-        name, why = techo_site.save_media(rid, kind, data)
+        name, why = techo_site.save_media(rid, ctype, data)
         if not name:
             # 写真を置けなかった記録は残さない（写真の無い作例の札を作らない）
             records.withdraw(rid)
@@ -327,7 +366,7 @@ def sort(folder, like=None):
         d.mkdir(parents=True, exist_ok=True)
         (d / f"{fp}.jpg").write_bytes(jpeg)
         item = {"fp": fp, "name": p.name, "day": workshop_day(raw), "toy": UNKNOWN}
-        item.update({k: known[fp][k] for k in ("day", "toy", "set") if k in known.get(fp, {})})
+        item.update({k: known[fp][k] for k in ("day", "toy", "set", "kind") if k in known.get(fp, {})})
         items.append(item)
         seen.add(fp)
         held.append(p.name)
@@ -335,7 +374,7 @@ def sort(folder, like=None):
     return held, videos, skipped, None
 
 
-def set_toy(keys, sid, day=None, sheet_set=None):
+def set_toy(keys, sid, day=None, sheet_set=None, kind=None):
     """仕分けの置き場の写真の玩具（と、人が決めた日・刷った組）を書く。keys は指紋か元の名。sid は玩具の印か不明。
     Returns ([書いた指紋], [(key, 理由)])。"""
     if sid != UNKNOWN:
@@ -350,6 +389,8 @@ def set_toy(keys, sid, day=None, sheet_set=None):
         return [], [("", f"日はワークショップの日（{'・'.join(d[5:] for d in WORKSHOP_DAYS)}）か不明: {day}")]
     if sheet_set is not None and not SET_NAME.fullmatch(sheet_set):
         return [], [("", f"型紙の組は「名前-v番号」の形: {sheet_set}")]
+    if kind is not None and kind not in KINDS:
+        return [], [("", f"事例の写真の種類は {'・'.join(sorted(KINDS))} のどれか: {kind}")]
     items = _hold_list()
     done, refused = [], []
     for key in keys:
@@ -363,6 +404,8 @@ def set_toy(keys, sid, day=None, sheet_set=None):
             it["day"] = day
         if sheet_set is not None:
             it["set"] = sheet_set
+        if kind is not None:
+            it["kind"] = kind
         done.append(it["fp"])
     _hold_save(items)
     return done, refused
@@ -377,7 +420,7 @@ def place():
         if it.get("rid") or UNKNOWN in (it["day"], it["toy"]):
             continue
         path = hold_dir() / f"{it['fp']}.jpg"
-        got, why, cannot = add([path], it["toy"], it["day"], it.get("set"))
+        got, why, cannot = add([path], it["toy"], it["day"], it.get("set"), kind=it.get("kind"))
         if got:
             it["rid"] = got[0][0]
             path.unlink(missing_ok=True)
@@ -409,6 +452,10 @@ def main(argv=None):
     ty.add_argument("--toy", required=True, help=f"玩具の印（NDL-…）か {UNKNOWN}。報告の顔の写真（玩具が 1 つに決まらない写真）は workshop-all")
     ty.add_argument("--day", help=f"人が決めた日 YYYY-MM-DD か {UNKNOWN}（撮影の日時から決まらない物）")
     ty.add_argument("--set", dest="sheet_set", help="刷った型紙の組（分かる時だけ）")
+    ty.add_argument("--kind", choices=sorted(KINDS), help="本人の言葉で届いた事例の写真の種類（versions・loop・kufu）")
+    ki = sub.add_parser("kind", help="取り込んだ作例の記録に、事例の写真の種類を書く（仕分けの置き場で付け忘れた時）")
+    ki.add_argument("rid")
+    ki.add_argument("kind", choices=sorted(KINDS))
     sub.add_parser("place", help="日と玩具の両方が決まった物を作例の記録に入れる")
     sub.add_parser("hold", help="仕分けの置き場に残っている物（不明・人の確かめ待ち）")
     try:
@@ -447,12 +494,19 @@ def main(argv=None):
             return 4
         return 3 if skipped else 0
     if args.cmd == "toy":
-        done, refused = set_toy(args.keys, args.toy, args.day, args.sheet_set)
+        done, refused = set_toy(args.keys, args.toy, args.day, args.sheet_set, args.kind)
         for fp in done:
             print("書いた", fp, args.toy)
         for key, why in refused:
             print(f"受けない: {key} {why}".strip(), file=sys.stderr)
         return 3 if refused else 0
+    if args.cmd == "kind":
+        why = set_kind(args.rid, args.kind)
+        if why:
+            print(f"受けない: {args.rid} {why}", file=sys.stderr)
+            return 3
+        print("書いた", args.rid, args.kind)
+        return 0
     if args.cmd == "place":
         done, refused = place()
         for rid, name in done:
