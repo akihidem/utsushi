@@ -1,5 +1,7 @@
-# 命令: for i in $(seq 1 20); do PYTHONPATH=src .venv/bin/python tests/test_video_up.py; echo $?; done
-# commit: 62dd1119 にこの枝の直しを当てた木（回した機械の / の空きは 39G のまま。受け口の空きの床 40GB を切っている）
-rc（20 回）: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-20 回とも最後の行は「ok: 動画の受け口」。rc 1 は 0 回
+# 命令: for i in $(seq 1 20); do PYTHONPATH=src .venv/bin/python tests/test_video_up.py; echo $?; done（本物の空き）と、shutil.disk_usage の空きだけを 39GB に見せかけて同じ 20 回
+# commit: a3c48316 にこの枝の直しを当てた木（試験の差はこの頭 470f5bf9 と同じ）
+本物の空き: rc（20 回）0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0。20 回とも「ok: 動画の受け口」
+  回している間に、機械の / の空きが 39G から 108G に増えた（ほかの作業の片付け）。なので 20 回の全部が空きの少ない時ではない
+空き 39GB に見せかけた形: rc（20 回）0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0。rc 1 は 0 回
+  同じ見せかけで直す前の試験は rc 1（328 行の rmdir の FileNotFoundError・red の証拠と同じ落ち方）
 rc=0
