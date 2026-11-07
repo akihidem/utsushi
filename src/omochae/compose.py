@@ -104,8 +104,9 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     if move:  # 負の対照のためだけ。
         by_key[move["name"]].x, by_key[move["name"]].y = move["x"], move["y"]
     for q in parts:
-        texts.append(TextBox(q.x + q.label_xy[0], q.y + q.label_xy[1], text_width(q.label, LABEL_SIZE),
-                             LABEL_SIZE * LINE, q.label, LABEL_SIZE, owner=q.key))
+        # 札は 1 行（label を label_xy に）か、label_lines の行ごと。行ごとの札も、部品の枠の内に収まるかを F5.text_overlap が見る（エンジン #135 と同じ）
+        for text, dx, dy in q.label_lines or [(q.label, *q.label_xy)]:
+            texts.append(TextBox(q.x + dx, q.y + dy, text_width(text, LABEL_SIZE), LABEL_SIZE * LINE, text, LABEL_SIZE, owner=q.key))
     y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], text_x, left_y, BODY_SIZE, width)
     legend_y = y + 1
     # 谷と山の意味を添える（v8）。試行のつぶやき「谷折り、山折りがわからない」（11-04）。線の種類だけでは折る向きが伝わらなかった。

@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_landscape_fit.py
+# commit: e6e20eb1（回した時の HEAD。src/web/tsukuru.py だけを直す前の物に戻して回した）
+           ^^^^^^^
+AssertionError: tsukuru-tora-320x568 手順 9: 手順の番号と字（-18〜141）が画面の外
+tsukuru-tora-320x568 手順 10: 手順の番号と字（-18〜245）が画面の外
+tsukuru-tora-320x568 手順 11: 手順の番号と字（-18〜71）が画面の外
+tsukuru-tora-320x568 手順 12: 手順の番号と字（-18〜176）が画面の外
+rc=1

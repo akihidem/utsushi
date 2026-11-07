@@ -33,7 +33,9 @@ assert G not in papers and T not in papers and len(papers) == 33 and len(toys.so
 assert f'href="/toy/{G}"' not in listed and f'href="/toy/{T}"' not in listed and f'href="/toy/{papers[0]}"' in listed and "全部の玩具を見る" in listed
 assert "紙 1 枚で作れるおもちゃだけを見る" in toys.page("tenji")
 # 絞った一覧の断りは、並んでいる必須の玩具の数に合わせる（必須の 2 種が並ばないのに「先頭の 2 つ」は嘘になる）
-assert "先頭の" not in listed and "先頭の 2 つのほかは" in toys.page("tenji")
+# えらぶ の頭の断りの段は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）。絞った一覧にも全部の一覧にも断りは出ず、序の頁は全部の数で言う
+from web import about  # noqa: E402
+assert "先頭の" not in listed and "先頭の" not in toys.page("tenji") and "先頭の 2 つのほかは" in about.page("tenji")
 # 寸法（params）の無い仮説は印を出さずに頁が開く（#255 の頃の判定が持っていた守りを、ways に寄せた後も保つ）
 import copy  # noqa: E402
 from omochae import hypotheses  # noqa: E402

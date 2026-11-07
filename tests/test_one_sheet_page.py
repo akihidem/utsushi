@@ -167,7 +167,8 @@ assert len(papers) == 33 and G not in papers and T not in papers, len(papers)
 table = ways.table()
 assert sorted(papers) == sorted(r["source_id"] for r in table if r["sheet"] and r["one_sheet"])
 listed = toys.page("tenji", "/toys", paper=True)
-assert f'href="/toy/{G}"' not in listed and "先頭の 0 つ" not in listed and "全部を型紙にする途中の試作です" in listed
+# 断りの段は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）ので、絞った一覧には出ない
+assert f'href="/toy/{G}"' not in listed and "先頭の 0 つ" not in listed and "全部を型紙にする途中の試作です" not in listed
 assert "紙一枚" not in ways.toy_labels(G) and "紙一枚" not in ways.toy_labels(T)
 
 # 6. ways の行は sheet と reading_of と source_id を持つ（エンジンの形）。ほかの仮説の行も消さない

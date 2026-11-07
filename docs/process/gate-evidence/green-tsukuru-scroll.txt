@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_landscape_fit.py ; tests/test_tsukuru.py ; tests/test_tsukuru_last_step.py
+# commit: e6e20eb1（回した時の HEAD。この枝の直しを入れた作業の木）
+ok 横置きと縦置き: 手帖 12 通りで手順の字が原画の釦・閉じる印・マイクと重ならず、作りながら見る 14 通りの全部の手順で、一番大きい札が最初の画面に入る（絵が下限まで縮む低い画面を除く）。次へで字が画面に残�
+rc=0
+ok: 作りながら見る
+rc=0
+ok: 作りながら見るの最後の手順
+rc=0
