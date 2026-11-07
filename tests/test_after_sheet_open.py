@@ -124,31 +124,33 @@ assert post(f"/toy/{DEN}/print", {"hypothesis": "H-A"})[0] == 200
 assert printed_versions(DEN, "H-A") == [1] and "H-A_v1.png" in files(DEN, "H-A")
 assert [(c["hypothesis_id"], len(c["confirmations"])) for c in loop.sheet_confirmations(DEN)] == [("H-A", 1)]
 
-# サイトで紙を作った案は、作り直さない。確定は押した 1 回のまま（必須 2 種の今の組で刷れるのは、たたき台の H-A。#332）
-assert post(f"/toy/{GO}/print", {"hypothesis": "H-A"})[0] == 200
-made = files(GO, "H-A")
-record(GO, "H-A")
-assert get(f"/sheet/{GO}/H-A_v1_after.pdf")[0] == 200
+GS = hypotheses.sheet_of(GO)["id"]  # 御来迎の今の組（goraigo-v14）のたたき台は H-C
+# サイトで紙を作った案は、作り直さない。確定は押した 1 回のまま（必須 2 種の今の組で刷れるのは、たたき台の 1 枚だけ。#332）
+assert post(f"/toy/{GO}/print", {"hypothesis": GS})[0] == 200
+made = files(GO, GS)
+record(GO, GS)
+assert get(f"/sheet/{GO}/{GS}_v1_after.pdf")[0] == 200
 # 型紙は作り直さない（試した後の紙は 11-06 から刷る時に組まないので、道を開いた時にそれだけが足される）
-assert {k: v for k, v in files(GO, "H-A").items() if k in made} == made, "作り直した"
-assert [(c["hypothesis_id"], len(c["confirmations"])) for c in loop.sheet_confirmations(GO)] == [("H-A", 1)]
+assert {k: v for k, v in files(GO, GS).items() if k in made} == made, "作り直した"
+assert [(c["hypothesis_id"], len(c["confirmations"])) for c in loop.sheet_confirmations(GO)] == [(GS, 1)]
 
 # 紙の組で刷った物と、試した後の紙だけを作った物は同じ文になる（題と印を分けて持たない）
 with tempfile.TemporaryDirectory() as tmp:
-    assert hypotheses.print_after(GO, "H-A", f"{tmp}/x") == 0
+    assert hypotheses.print_after(GO, GS, f"{tmp}/x") == 0
     with open(f"{tmp}/x_after.pdf", "rb") as f:
-        assert pdf_text(f.read()) == pdf_text(get(f"/sheet/{GO}/H-A_v1_after.pdf")[1])
+        assert pdf_text(f.read()) == pdf_text(get(f"/sheet/{GO}/{GS}_v1_after.pdf")[1])
 
 # ほかの案を刷った後に、紙を作っていない案の前の札のリンクで窓へ来ても、窓の最初の案は刷った案のまま（記録の欄の既定もこれを読む）。
-# 窓は試した後の紙を出さず、開いただけで作らない（11-06）。刷れない案（前の試行の H-C など）の記録でも同じ
-record(GO, "H-C")
+OTHER = "H-A" if GS != "H-A" else "H-C"  # 今の組で刷れない案
+# 窓は試した後の紙を出さず、開いただけで作らない（11-06）。刷れない案（今の組 goraigo-v14 では、前の組のたたき台 H-A など）の記録でも同じ
+record(GO, OTHER)
 time.sleep(1.1)  # 置き場の時刻の刻みで、後から作った事が分かるように
-code, body = get(f"/toy/{GO}?see=H-C&kind=after&v=1")
+code, body = get(f"/toy/{GO}?see={OTHER}&kind=after&v=1")
 shown = window(body.decode())
-assert code == 200 and "H-C_v1_after" not in shown and not files(GO, "H-C"), "窓は試した後の紙を出さず、作らない"
+assert code == 200 and f"{OTHER}_v1_after" not in shown and not files(GO, OTHER), "窓は試した後の紙を出さず、作らない"
 code, body = get(f"/toy/{GO}")
 shown = window(body.decode())
-assert code == 200 and f"/sheet/{GO}/H-A_v1.png" in shown and "H-C_v1" not in shown.split('class="win"')[1], "開いただけの案へ移らない"
+assert code == 200 and f"/sheet/{GO}/{GS}_v1.png" in shown and f"{OTHER}_v1" not in shown.split('class="win"')[1], "開いただけの案へ移らない"
 
 # 自分の仮説: 窓に出ないので、字のリンクも PDF へ向ける（窓へ向けると、ほかの案の紙が出る）。型紙なしの紙の人にも試した後の紙を渡す
 # 頁の書く欄は外した（J-032 の点 2）。前に書かれた仮説と、それで刷った紙が置き場にある形で見る

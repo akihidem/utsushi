@@ -117,13 +117,11 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     """型紙の窓（要件の S-01〜S-05）。紙の種類と版を字の札で選び、絵（PNG）を出す。押すと拡大の窓（#zoom）。"""
     card = hypotheses.sheet_of(sid)
     ids = printed_ids(sid, data, recorded)
-    # まだ紙の無い札は、窓の中で押して紙を作る釦にする（#127）。
-    make = lambda x: (f'<form method="post" action="/toy/{sid}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(x["id"])}"><input type="hidden" name="at" value="win">'
-                      f'<button data-busy>仮説 {esc(hypotheses.letter(x))}</button></form>')
+    # 紙を作るのは頭の「つくる」だけ（刷る口を 1 つに。本人のサイト体験レビュー 11-07 の 3）。前は、まだ紙の無い札を窓の中で押して紙を作る釦にしていた（#127）。
     # 前の札や記録の後の知らせのリンク（kind=tejun・after）で来ても、型紙を出す（文章の紙は刷らなくなった。本人の決まり 11-06）
     kind = ""
     if not ids:
-        return f'<div class="tabs">{make(card)}</div><p class="meta">仮説の札を押すと、紙を作ってここに出します。</p>'
+        return ""
     see = see if see in ids else (card["id"] if card["id"] in ids else ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
     v = v if v in vs else vs[-1]
@@ -131,7 +129,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     name = f"{see}_v{v}{kind}"
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
     # たたき台の札だけ。前の記録の紙を見ている時は、ここから戻る。
-    hyps = (make(card) if card["id"] not in ids else
+    hyps = ("" if card["id"] not in ids else
             f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">仮説 {esc(hypotheses.letter(card))}</a>')
     kinds = ""
     for suffix, label in KINDS:
@@ -171,10 +169,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
-    # 押せない札の理由は title だけだとスマホで読めないので、字で出す（#127）。
-    why = "仮説の点線の札は、押すと紙を作ってここに出します。" if card["id"] not in ids else ""
-    why = f'<p class="meta">{why}</p>' if why else ""
-    return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div>{why}<div class="win">{fig}{side}</div>'
+    return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
 
 def sample_records(data):
@@ -352,7 +347,7 @@ def next_form(r, back=""):
     自分の紙（OWN-n）の記録は、たたき台へ向けて欄を出す（loop.next_target。今の値もたたき台の物）。"""
     from omochae.metrics import ALLOWED
 
-    target = loop.next_target(r["source_id"], r["hypothesis_id"])
+    target = loop.next_target(r["source_id"], r["hypothesis_id"], r.get("sheet_set"))
     if target != hypotheses.sheet_of(r["source_id"])["id"]:
         return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
@@ -519,7 +514,9 @@ def neighbours(sid):
     out = []
     if prev_:
         out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
-    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物と職人の言葉</a>', '<a href="/">入口へ</a>']
+    # ギャラリーの呼び名は、職人の言葉と寄せられた声の節を序の頁（よむ）へ移した後の題「作った物」にそろえる（のこす と もちよる を分ける直し #519。
+    # 本人のサイト体験レビュー 11-07 の 6）。字は #519 の頁の題のまま（新しい字は足さない）
+    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物</a>', '<a href="/">入口へ</a>']
     if next_:
         out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
     return '<p class="links">' + "".join(out) + "</p>"
@@ -617,50 +614,55 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
             f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
-    # 作る節を頭に置く。開いたらすぐ刷れる形（#242）。札はたたき台の 1 枚だけで、順位は学ぶ人の画面に出さない（J-013・J-025・J-032）。
-    # 札の字（ためしの案 → 工夫を記録に書く → 次の型紙をよくする）のすぐ後に、同じ輪を図で出す（本人の言葉 11-06「サイトにその仕組みが
-    # わかりやすくあるといいよね」）。真ん中は今の型紙の版で、押すと頁の下の「型紙の改善の輪」へ行く（web.wa）。
-    from . import wa
+    # 頁の本体は 原画と立体 → つくる → 型紙 の順だけにする（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」）。
+    # 前は「すぐ作る」の節（見出し・説明・断り・輪の図・立体・仮説の札）と「型紙の窓」の節が別にあり、作る節と型紙の置き場が 2 つに見えた。
+    # 立体は頭の原画のすぐ後へ（核の体験「絵が立体のおもちゃとなって自分の手のひらで遊べる」）、断りと輪の図と仮説の札は型紙の窓の頭へ寄せる。
+    # 「すぐ作る」の見出しは外し、説明の文（輪の図の「切って、折って、組む」の字の出所）は型紙の窓の頭へ移した（新しい字は足さない）。
+    # 節の錨 #kasetsu は残す（紙を作れなかった時の文を受ける錨・試験の並び）。
+    from . import kumitate, wa  # 立体の組み立て（本人の決定 11-06。J-033）と、輪の図（本人の言葉 11-06。web.wa）
 
+    stage = kumitate.block(sid)
+    told = head("kasetsu") or ("" if at else note)
+    body = hero + (f'<section class="sec" id="kasetsu">{told}{stage}</section>' if stage or told else '<div id="kasetsu"></div>')
+    # 型紙の窓の頭: 断り（「型紙は正解ではなく、AI が考えた仮説」、本人の言葉 11-05）→ 輪の図（真ん中は今の型紙の版で、押すと頁の下の「型紙の改善の輪」へ）
+    # → 仮説の札（たたき台の 1 枚だけで、順位は学ぶ人の画面に出さない。J-013・J-025・J-032）→ 紙。輪の図は版の印と並ぶ所なので本体に残す（設計の担当の答え 11-07）
     # 真ん中は型紙の版（組の番号。本人の言葉 11-07「バージョンをサイトで明示したい」、窓口の決定 カード 084426）。前は寸法の刻み（wa.current_version）
     ban = wa.set_version(sid, data)
     ring = wa.ring(ban)
-    body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
-                   f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
-    from . import kumitate  # 手順どおりに組み立てる絵。型紙の絵の上に初めから出す（本人の決定 11-06。J-033）
-
-    body += kumitate.block(sid)
+    plate = ""
     for h in [hypotheses.sheet_of(sid)]:
         ev = "".join(evidence_item(e) for e in h["evidence"])
-        last = versions_of(sid, h["id"], printed_only=True)
-        # 紙の種類と版を選ぶのは窓の札の役。札の下に字のリンクを並べると、版ごとに 3 つ増える（#127）。
-        thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win" aria-label="仮説 {esc(hypotheses.letter(h))} の紙を窓で見る"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
-                 if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
+        # 型紙の絵は型紙の窓の 1 か所だけに出し、刷る口は頭の「つくる」1 つにする（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。
+        # 前はこの札にも紙の小さな絵と「型紙を見る」（紙を作る釦）があり、型紙が 2 か所、刷る口が 3 つ（頭・この札・窓の札）あった。札は仮説の字だけ
         # 札の脇に型紙の版（設計 0.7「型紙の札の脇に、今の版の印を 1 つ」）。字は「型紙の版」と数だけ（エンジンの版と言い分ける。カード 084426）
-        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3>'
-                 f'<p class="meta"><span class="lb ban">型紙の版 {ban}</span></p><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
-                 f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
-                 f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>型紙を見る</button></form>'
-                 '</div></div>')
+        plate += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3>'
+                  f'<p class="meta"><span class="lb ban">型紙の版 {ban}</span></p><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
+                  f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}'
+                  '</div>')
     # 書いて立てた仮説の札と書く欄は外した（本人の決定 11-05 18:08「仮説は書かず、話すことができる」、J-032 の点 2）。考えは下の節で話す。
-    body += "</div></section>"
-    # 仮説を見て、考えを話す（一周の 1、Issue #279）。仮説の節のすぐ後に置く。
+    # 紙がまだ無い時は、窓の節に断りと輪の図と札だけを出す（紙を作るのは頭の「つくる」。作れなかった時の文は窓の錨の所で読む、#121）
+    body += (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p><p class="meta">画面で見て、印刷する前に案を検討する所。</p>'
+             f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">{plate}</div>'
+             f'{window(sid, data, see, kind, v, recorded, photos)}</section>')
+    # 仮説を見て、考えを話す（一周の 1、Issue #279）。仮説の札（型紙の窓の頭）のすぐ後に置く。
     from . import hanasu
 
     body += hanasu.think_section(sid, data, head("hanasu"))
     from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ1、Issue #335）
     if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では節を出さない。受け口も閉じている（J-028）
         body += think_sheet.section(sid, at, head(at))
-    body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded, photos)}</section>'
     from api import ask  # 聞く口の断りは、Claude を呼ぶ場だけ 1 文を足す（本人の決定 11-06）
 
-    body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
-             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
-             # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
-             + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) or mine else "")
-             + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())}</section>')
-    # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置く（刷る口を押し下げない）
-    body += kumitate.section(sid)
+    # 作る口は 1 つ（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」、地図の道しるべ「作る口は
+    # 手帖 1 つ」）: 頭の「つくる」で型紙の窓へ、窓の「つくる」で手帖へ、の 1 本の道にする。前はこの節にも見出し「作る」と手帖への釦と作りながら見る
+    # 頁への釦があり、手帖へ行く口が 2 つ、作る節が「すぐ作る」と 2 つあった。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）。
+    # 節の錨（#tsukuru）は残す: 作りながら見る頁の「← 玩具」と試験の並びがこの錨を指すため。中身は困った時に聞く口だけ。刷る前は聞く口も無いので、
+    # 空の節の余白を出さず錨だけを置く。
+    making = ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())
+    body += f'<section class="sec" id="tsukuru">{making}</section>' if making else '<div id="tsukuru"></div>'
+    # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置き、見出しのまま畳む:
+    # 作る時の組み方は手帖が 1 手ずつ出すので、頁の本体には置かない（本人のサイト体験レビュー 11-07 の 3。組み方が 頁の立体・この節・手帖 と重なっていた）
+    body += fold(kumitate.section(sid))
     # 記録の欄の節は、見出しのまま畳む（地図の工程 4「声と動画が主で、字は畳んだ追加。残す口は 1 つ」。残す口は手帖の「のこす」）。
     # 欄は 13 あり、開いたままだと玩具の頁で「全部書くのか」と読ませる。字で残したい人と JS の無い画面のために、欄そのものは残す。
     # 開く時: 送って通らなかった時（書いた字を隠さないため、#300）と、#kiroku の道で着いた時（FOLD_SCRIPT）。返事の文（head）は畳みの外に出る。

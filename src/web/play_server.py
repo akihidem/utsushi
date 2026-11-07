@@ -396,15 +396,19 @@ class Handler(BaseHTTPRequestHandler):
             from . import kaizen
             return self._send(200, kaizen.toy_page(m.group(1), look, path))
         if path == "/toys":
+            # 入口を えらぶ にした（本人のサイト体験レビュー 11-07 の 4「入口と選ぶは分けない」）ので、えらぶ の頁は入口へ送る。
+            # 紙 1 枚の絞り込み（本人の言葉 11-05 の口）は、絞った並びの頁として残す（入口に同じ絞り込みは置かない）
+            if qs.get("paper", [""])[0] != "1":
+                return self._send(302, "", headers=[("Location", "/")])
             from . import toys
-            return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
+            return self._send(200, toys.page(look, path, paper=True))
         if path == "/gallery":
             from . import techo_site
             # のこした後はここに着く（窓口の決定 11-06 夜・案 A）。今残した 1 つは、記録を残した画面の鍵（記録の鍵）で見分けて頭に出す。返事の文は ?msg= で受ける
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -542,6 +546,13 @@ class Handler(BaseHTTPRequestHandler):
             page = genga.page_file(source(m.group(1)))
             if page.exists():
                 return self._send(200, page.read_bytes(), "image/jpeg")
+        # えらぶ の敷き詰めの小さい写し（toys.small_picture。幅 1600px の切り抜きを 83 枚読まないため）
+        m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
+        if m:
+            from . import toys
+            small = toys.small_picture(m.group(1), m.group(2))
+            if small:
+                return self._send(200, small, "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
@@ -801,7 +812,9 @@ class Handler(BaseHTTPRequestHandler):
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
         rec = loop.record(rid)
-        sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"])  # 自分の紙の記録からの次の版は、たたき台へ向ける
+        sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))  # 自分の紙の記録からの次の版は、たたき台へ向ける
+        if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
+            return self._send(422, self._toy(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
             return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=rid))
         if loop.explanation(rid) is None:
@@ -927,7 +940,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
+                text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return out(200, {"text": text, "from": how})
@@ -961,7 +974,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
+                text, how = "今は AI に聞けません。型紙の凡例と、組み方の絵を見てください", "error"  # 呼び名は ask.NO_KEY とそろえる（組み方の絵）
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "print":

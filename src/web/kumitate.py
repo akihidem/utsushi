@@ -19,6 +19,7 @@ import re
 from shapely.geometry import LineString, Point, Polygon
 
 from omochae import assembly, hypotheses, instructions, render
+from omochae.compose import TEMPLATES
 from omochae.model import ToolMissing
 
 from . import skin
@@ -59,6 +60,7 @@ STYLE = """
 .rt-axle{height:8px;margin-top:-4px;background:#8a6a3a}
 .rt-thread{height:2.4px;margin-top:-1.2px;background:#7a2f2a}
 .rt-paper,.rt-ruler,.rt-sci{position:absolute;left:0;top:0;transform-origin:0 0;transition:opacity .4s ease;opacity:0}
+.rt-table{position:absolute;left:0;top:0;transform-origin:0 0;transform-style:preserve-3d}
 .rt-hole{fill:var(--rt-table)}
 .rt-scrap,.rt-plug{transition:opacity .4s ease}
 .rt-acts{display:flex;gap:10px;align-items:center;margin-top:10px}
@@ -122,14 +124,20 @@ def _marks(part, x0, y0, near):
                 out += f'<line x1="{x1 - x0:.2f}" y1="{y1 - y0:.2f}" x2="{x2 - x0:.2f}" y2="{y2 - y0:.2f}" stroke="#222" stroke-width=".18" stroke-dasharray="{dash}"/>'
     out += "".join(f'<circle cx="{x - x0:.2f}" cy="{y - y0:.2f}" r="{r:.2f}" fill="#fffdf8" stroke="#55492c" stroke-width=".2"/>'
                    for x, y, r in part.holes if near.contains(Point(x, y)))
-    lx, ly = part.label_xy
-    if part.label and near.contains(Point(lx, ly)):
-        out += f'<text x="{lx - x0:.2f}" y="{ly - y0 + 2.6:.2f}" font-size="2.8" fill="#3a2c12">{esc(part.label)}</text>'
+    # 札は型紙と同じく、label_lines があれば行ごと（虎の 5 重りの腕の「5 重」「り」「の」「腕」。compose と同じ読み方）、無ければ label を 1 行
+    for text, lx, ly in (part.label_lines or [(part.label, *part.label_xy)]) if part.label else []:
+        if near.contains(Point(lx, ly)):
+            out += f'<text x="{lx - x0:.2f}" y="{ly - y0 + 2.6:.2f}" font-size="2.8" fill="#3a2c12">{esc(text)}</text>'
     return out
 
 
 def _panel_html(key, i, sheet):
     """面 1 枚の表と裏。表は紙の絵と線と番号と穴を面の形で切り抜く。裏は無地。"""
+    return "".join(_faces(key, i, sheet))
+
+
+def _faces(key, i, sheet):
+    """面 1 枚の表と裏の svg（2 つ）。止まった形の口（still）が、それぞれに置き方を書き込む。"""
     part = sheet.part
     s = sheet.panels[i]
     x0, y0, x1, y1 = s.bounds
@@ -146,13 +154,19 @@ def _panel_html(key, i, sheet):
             ground = next((item["fill"] for item in part.art if item["kind"] == "poly" and Polygon(item["pts"]).contains(Point(cx + cw / 2, cy + ch / 2))), "#fffdf8")
             front_plug += f'<rect class="rt-plug" x="{cx - x0:.2f}" y="{cy - y0:.2f}" width="{cw}" height="{ch}" fill="{ground}" stroke="#222" stroke-width=".25"/>'
             back_plug += f'<rect class="rt-plug" x="{x1 - cx - cw:.2f}" y="{cy - y0:.2f}" width="{cw}" height="{ch}" fill="#f3ecdc"/>'
+    for cx, cy, r in getattr(part, "round_cuts", ()):  # 丸い穴も、切るまで面についている（虎の今の組の首の穴）
+        if Polygon(s.exterior).contains(Point(cx, cy)):
+            # 切れ端の色は、刷った紙のその所の色（絵は後の物が上に刷られるので、真ん中を含む最後の絵。首の穴は赤い縁の丸の中）
+            ground = next((item["fill"] for item in reversed(part.art) if item["kind"] == "poly" and Polygon(item["pts"]).buffer(0).contains(Point(cx, cy))), "#fffdf8")
+            front_plug += f'<circle class="rt-plug" cx="{cx - x0:.2f}" cy="{cy - y0:.2f}" r="{r:.2f}" fill="{ground}" stroke="#222" stroke-width=".25"/>'
+            back_plug += f'<circle class="rt-plug" cx="{x1 - cx:.2f}" cy="{cy - y0:.2f}" r="{r:.2f}" fill="#f3ecdc"/>'
     front = (f'<svg {data} {box}><defs><clipPath id="c{pid}"><path d="{shape}" clip-rule="evenodd"/></clipPath></defs>'
              f'<path d="{shape}" fill-rule="evenodd" fill="#fffdf8" stroke="#55492c" stroke-width=".3"/>'
              f'<g clip-path="url(#c{pid})">{_art(part, x0, y0)}{_marks(part, x0, y0, near)}</g>{front_plug}{shade.format(shape)}</svg>')
     mirror = _path(s, x0, y0, flip=x1)
     back = (f'<svg {data} data-back="{w:.3f}" {box}><path d="{mirror}" fill-rule="evenodd" fill="#f3ecdc" stroke="#55492c" stroke-width=".3"/>'
             f'{back_plug}{shade.format(mirror)}</svg>')
-    return front + back
+    return front, back
 
 
 def paper_html(layout):
@@ -252,7 +266,8 @@ def _pose(bench, pose, whole):
             pts += [s, e]
         if pose["paper"] and bench.paper:
             w, h = bench.paper["page"].w / 2, bench.paper["page"].h / 2
-            pts += [(-w, -h, 0), (w, -h, 0), (w, h, 0), (-w, h, 0)]
+            table = getattr(bench, "table", None) or assembly.identity()  # 紙は机の面にある（前の組は x-y の面）
+            pts += [assembly.apply(table, c) for c in ((-w, -h, 0), (w, -h, 0), (w, h, 0), (-w, h, 0))]
     center, zoom = _fit(pts, pose["view"])
     out = {"rx": pose["view"].get("rx", -10), "ry": pose["view"].get("ry", -20), "c": [round(c * SCALE, 1) for c in center], "z": round(zoom, 3),
            "r": {name: {"s": _px(s), "e": _px(e)} for name, (s, e, owner) in pose["extras"].items() if f"{owner}:0" in panels},
@@ -274,6 +289,12 @@ def _pose(bench, pose, whole):
                        "pitch": o["pitch"] * SCALE, "w": o["w"] * SCALE, "hx": o["hole_x"] * SCALE, "fx": o["fold_x"] * SCALE, "m": o["m"], "k": {str(i): k for i, k in o["strips"].items()}, "tab": o["tab"], "mid": o["mid"]}
     if whole:
         out["p"] = panels
+    else:
+        # 折りで表せない形の部品（型紙エンジンの JSON の custom。御来迎 v14 の扇が開く所と畳む所）は、置き場と角（s）を持たないので、
+        # 面の行列を x で渡す（頁は x の面を前の形との間で補って置く）。p は「全部の面をこれで置く」形（できあがり）なので混ぜない
+        custom = {pid: m for pid, m in panels.items() if pid.split(":")[0] not in pose["state"]}
+        if custom:
+            out["x"] = custom
     return out
 
 
@@ -325,7 +346,7 @@ for(const i in o.k){const k=o.k[i],off=k-o.m,goal=k===o.m?0:(k%2?o.tilt:-o.tilt)
 out[o.tab]=mul(out[o.mid],hinge(o.fx,0,0,1,90));return out};
 const flatPlan=B=>{const out={};for(const key in B.s){const q=toQ(B.s[key].m);out[key]={levels:[],at:{},q0:q,q1:q}}return out};
 const rest=B=>{const pl=B.p?null:flatPlan(B),made={};if(pl)for(const key in pl)made[key]=shape(B,B,key,pl[key],1);
-for(const o of els){const m=B.p?B.p[o.id]:made[o.key]&&made[o.key][o.i];if(!m){o.e.style.opacity=0;continue}o.e.style.opacity=1;put(o,m)}
+for(const o of els){const m=B.p?B.p[o.id]:(made[o.key]&&made[o.key][o.i])||(B.x&&B.x[o.id]);if(!m){o.e.style.opacity=0;continue}o.e.style.opacity=1;put(o,m)}
 for(const r of rods){const a=B.r[r.dataset.r];if(!a){r.style.opacity=0;continue}r.style.opacity=1;rod(r,a.s,a.e)}
 sci.style.opacity=0;knife.style.opacity=0;if(B.ruler)lay(ruler,B.ruler);misc(B);cam=[B.rx,B.ry,B.c,B.z];view()};
 const words=()=>{const f=F[at];text.textContent=f.t||text.dataset.done;count.textContent=at<L?`${at+1} / ${L}`:'';prev.disabled=at===0;next.textContent=at===L?next.dataset.again:next.dataset.go;stage.dataset.at=at};
@@ -334,6 +355,8 @@ const along=(path,t)=>{let total=0;const seg=[];for(let i=1;i<path.length;i++){c
 const draw=(A,B,pl,u)=>{const made={};for(const key in pl.sheets)made[key]=shape(A,B,key,pl.sheets[key],u);
 if(B.open)made.fan=openShape(B.open,ease(u));
 for(const o of els){const m=made[o.key];if(m)put(o,m[o.i])}
+// 折りで表せない形の面（x）は、前の形の行列との間を補って置く（形の数が多いので、補っても硬い面がほぼ崩れない）
+if(B.x){const ex=ease(u);for(const o of els){const b=B.x[o.id];if(!b)continue;const a=A.x&&A.x[o.id];put(o,a?a.map((v,k)=>lerp(v,b[k],ex)):b)}}
 const e=ease(u);for(const r of rods){const a=A.r[r.dataset.r],b=B.r[r.dataset.r];if(a&&b)rod(r,a.s.map((v,k)=>lerp(v,b.s[k],e)),a.e.map((v,k)=>lerp(v,b.e[k],e)))}
 if(A.ruler&&B.ruler)lay(ruler,[lerp(A.ruler[0],B.ruler[0],e),lerp(A.ruler[1],B.ruler[1],e)]);
 if(B.cut){const[x,y,a]=along(B.cut,u);(B.knife?knife:sci).style.transform=`translate3d(${x}px,${y}px,8px) rotate(${a}rad) translate(${-30*S}px,${-14*S}px)`}
@@ -345,7 +368,7 @@ const stop=()=>{if(run){cancelAnimationFrame(run.raf);run=null}};
 const play=(A,seq,j)=>{const B=seq[j],pl=plan(A,B),me={raf:0};run=me;
 // この形に無い部品は消し、新しく出る部品は行き先に置いてから出す
 const fresh=flatPlan(B);for(const key in fresh){if(A.s[key])continue;const m=shape(B,B,key,fresh[key],1);for(const o of els)if(o.key===key)put(o,m[o.i])}
-for(const o of els)o.e.style.opacity=B.s[o.key]||(B.open&&o.key==='fan')?1:0;
+for(const o of els){if(B.x&&B.x[o.id]&&!(A.x&&A.x[o.id]))put(o,B.x[o.id]);o.e.style.opacity=B.s[o.key]||(B.open&&o.key==='fan')||(B.x&&B.x[o.id])?1:0}
 for(const r of rods){const b=B.r[r.dataset.r];if(!b){r.style.opacity=0;continue}r.style.opacity=1;if(!A.r[r.dataset.r])rod(r,b.s,b.e)}
 if(B.ruler&&!A.ruler)lay(ruler,B.ruler);misc(B);sci.style.opacity=B.cut&&!B.knife?1:0;knife.style.opacity=B.cut&&B.knife?1:0;
 const start=performance.now();
@@ -378,17 +401,26 @@ def _can(sid, params):
         return False
 
 
+def _key(sid):
+    """覚える鍵: 紙の寸法と、雛形の今の組の名。同じ寸法でも、組を替えると立体が替わる（前の組は自分で組み、今の組はエンジンの JSON で描く。
+    試験は控えの組に替えて見る）。組の名の無い雛形は寸法だけ。"""
+    data = hypotheses.load(sid)
+    h = hypotheses.sheet_of(sid)
+    tpl = TEMPLATES.get(h.get("template") or data.get("template", "slider_fan"))
+    return json.dumps({"params": h.get("params") or {}, "set": getattr(tpl, "SHEET_SET", None)}, sort_keys=True, ensure_ascii=False)
+
+
 def available(sid):
     """組み立ての書き方がある玩具か。"""
     try:
-        return _can(sid, json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False))
+        return _can(sid, _key(sid))
     except (KeyError, ValueError, OSError, StopIteration, ToolMissing):
         return False
 
 
 @functools.lru_cache(maxsize=8)
 def _block_html(sid, params):
-    """組み立ての絵と送る釦。組むのに 1 秒ほどかかるので、紙の寸法が同じ間は作り直さない。"""
+    """組み立ての絵と送る釦。組むのに 1 秒ほどかかるので、紙の寸法と組が同じ間は作り直さない（_key）。"""
     bench = assembly.assemble(sid)
     if bench is None:
         return ""
@@ -397,13 +429,34 @@ def _block_html(sid, params):
     script = SCRIPT.replace("__FRAMES__", dump(frames_of(bench))).replace("__TREES__", dump(trees_of(bench))).replace("__SCALE__", str(SCALE))
     paper = paper_html(bench.paper) if bench.paper else ""
     tools = ruler_html() + SCISSORS.format(w=46 * SCALE, h=28 * SCALE) + KNIFE.format(w=46 * SCALE, h=28 * SCALE)
+    table = getattr(bench, "table", None)
+    if table:
+        # 型紙エンジンの JSON は、刷った紙を机の面（水平な面）に置く。紙と定規・はさみ・カッターは机の座標で動かすので、机の面の行列の層に入れる。
+        # 前の組の組み立ては机が x-y の面なので、層を置かない（頁は前と同じ）
+        layer = f'<div class="rt-table" style="transform:matrix3d({",".join(str(v) for v in _css(table))})">'
+        paper, tools = layer + paper + "</div>", layer + tools + "</div>"
     return (f'<style>{STYLE}</style><p class="lead">{esc(LEAD)}</p>'
             f'<div class="rt-stage" id="rt-stage" role="img" aria-label="組み立ての絵。指で回せます。"><div class="rt-scene" id="rt-scene">{paper}{panels}'
             f'<div class="rt-rod rt-axle" data-r="axle"></div><div class="rt-rod rt-axle" data-r="poke"></div><div class="rt-rod rt-thread" data-r="row"></div><div class="rt-rod rt-thread" data-r="thread"></div>{tools}</div></div>'
             f'<p id="rt-text" aria-live="polite" data-done="{esc(DONE)}"></p>'
             f'<div class="rt-acts"><button type="button" class="quiet" id="rt-prev">{esc(PREV)}</button>'
             f'<button type="button" id="rt-next" data-go="{esc(NEXT)}" data-again="{esc(RESTART)}"></button><span id="rt-count"></span></div>'
-            f'<p class="meta">{esc(NOTE_SHAPE)}</p>{script}')
+            f'<p class="meta">{esc(NOTE_SHAPE)}</p>{script}{_split_script(bench, dump)}')
+
+
+def split_of(bench):
+    """中身を分解して見せる形（assembly_json.Shown の split）。Returns {"X": できあがりから部品を離した形（frames の段の中の形と同じ形）,
+    "cut": 内側を見る時に外す面（"部品:面"）, "inside": 中の部品 → 入れ物} か None（分解の形が無い組み立て）。"""
+    if getattr(bench, "split", None) is None:
+        return None
+    return {"X": _pose(bench, bench.split, True), "cut": list(bench.cutaway), "inside": dict(bench.inside)}
+
+
+def _split_script(bench, dump):
+    """分解して見せる形を、作業の頁へ渡す口（window.kumitateSplit）。組み立ての節の動かす口（window.kumitateParts）の play で、
+    できあがりの形と X の間を動かせる。ふだんの頁は使わない（押した時だけ開く・閉じるのは、作業の頁の釦）。動かす口の script とは別にした"""
+    got = split_of(bench)
+    return f"<script>window.kumitateSplit={dump(got)};</script>" if got else ""
 
 
 def steps(sid):
@@ -480,7 +533,7 @@ def block(sid, heading=True):
     if not available(sid):
         return ""
     head = f"<h3>{esc(LABEL)}</h3>" if heading else ""
-    return f'<div class="kumitate" id="kumitate">{head}{_block_html(sid, json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False))}</div>'
+    return f'<div class="kumitate" id="kumitate">{head}{_block_html(sid, _key(sid))}</div>'
 
 
 def section(sid, level=2, genga=False):
@@ -492,6 +545,75 @@ def section(sid, level=2, genga=False):
         return ""
     head = f"<h{level}>{esc(STEPS_LABEL)}</h{level}>" if level else ""
     return f'<style>{STEPS_STYLE}</style><section class="sec kumi" id="kumikata">{head}{_play_html(sid, genga)}{inner}</section>'
+
+
+LIGHT = (-.35, -.6, .72)  # 面の陰の光の向き（頁の JS の LIGHT と同じ）
+STILL_W, STILL_H = 340, 480  # 止まった形の既定の大きさ（px。組み立ての舞台と同じ）
+
+
+def _rod_css(s, e):
+    """棒（竹串・糸）の置き方。頁の JS の rod と同じ計算: 長さの向きを x、それに直交する 2 つを y と z にする。"""
+    v = [b - a for a, b in zip(s, e)]
+    n = math.hypot(*v) or 1.0
+    d = [c / n for c in v]
+    u = (0, 1, 0) if abs(d[1]) < .9 else (1, 0, 0)
+    cr = lambda a, b: [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    z = cr(d, u)
+    zl = math.hypot(*z)
+    z = [c / zl for c in z]
+    y = cr(z, d)
+    return n, [d[0], d[1], d[2], 0, y[0], y[1], y[2], 0, z[0], z[1], z[2], 0, s[0], s[1], s[2], 1]
+
+
+def still(sid, w=STILL_W, h=STILL_H):
+    """できあがりの止まった形を、決まった大きさ（w×h px）の CSS の立体の HTML 片で返す。JS も釦も使わない（玩具の頁の最初の画面・
+    作業の頁の頭に置く口。作業の頁の設計の頼み 11-07）。組み立てが無い玩具は空。
+
+    形は組み立ての頁と同じ物（最後の段の最後の形）で、見る向きも同じ。面の置き方・陰・棒は頁の JS と同じ計算を、ここで済ませて書き込む。
+    紙を直すと一緒に変わる（絵を別に描かない）。"""
+    if not available(sid):
+        return ""
+    bench = assembly.assemble(sid)
+    pose = frames_of(bench)[-1]["q"][-1]
+    k = min(w / STAGE_W, h / STAGE_H) * pose["z"]
+    cx, cy, cz = pose["c"]
+    cam = f"scale3d({k},{k},{k}) rotateX({pose['rx']}deg) rotateY({pose['ry']}deg) translate3d({-cx}px,{-cy}px,{-cz}px)"
+    out = []
+    for key, sheet in bench.sheets.items():
+        for i in range(len(sheet.panels)):
+            m = pose["p"].get(f"{key}:{i}")
+            if m is None:
+                continue
+            front, back = _faces(key, i, sheet)
+            x0, y0, x1, _ = sheet.panels[i].bounds
+            for face, flip in ((front, ""), (back, f" translate3d({(x1 - x0) * SCALE:.3f}px,0,0) rotateY(180deg)")):
+                n = (m[8] * LIGHT[0] + m[9] * LIGHT[1] + m[10] * LIGHT[2]) * (-1 if flip else 1)
+                place = f"matrix3d({','.join(str(v) for v in m)}) translate3d({x0 * SCALE:.3f}px,{y0 * SCALE:.3f}px,0){flip}"
+                face = face.replace('fill-opacity="0"', f'fill-opacity="{.3 * (1 - max(0.0, n)):.3f}"', 1)
+                if not pose["plug"]:  # 切った後の形では、切れ端を描かない（頁は JS で消すが、止まった形には JS が無い）
+                    face = re.sub(r'<(?:circle|rect) class="rt-plug"[^>]*/>', "", face)
+                out.append(face.replace("<svg ", f'<svg style="transform:{place}" ', 1))
+    for name, rod in pose["r"].items():
+        n, m = _rod_css(rod["s"], rod["e"])
+        kind = "rt-thread" if name in ("row", "thread") else "rt-axle"
+        out.append(f'<div class="rt-rod {kind}" style="opacity:1;width:{n:.2f}px;transform:matrix3d({",".join(f"{v:.4f}" for v in m)})"></div>')
+    return (f'<style>{STYLE}</style><div class="rt-still" role="img" aria-label="{esc(DONE)}" style="position:relative;width:{w}px;height:{h}px;'
+            f'perspective:1100px;overflow:hidden"><div class="rt-scene" style="transform:{cam}">{"".join(out)}</div></div>')
+
+
+def scene(sid):
+    """作業の頁（カメラの映像に重ねる頁など）が、組み立ての段を自分で描くための材料。組み立てが無い玩具は None。
+
+    Returns dict: frames（手順ごとの形。frames_of と同じ。行列は CSS の matrix3d の列の順の 16 個で、平行移動は px）・trees（面のつながり。
+    trees_of と同じ）・scale（1mm の px）・table（刷った紙の机の面の行列。16 個・px。None は x-y の面）・split（分解して見せる形。split_of）・panels（面の表と裏の svg。
+    data-p が frames の面の名）・paper（刷った紙の svg。机の面の座標で、紙の真ん中が 0）。頁の組み立ての節と同じ物を、JS なしで渡す。"""
+    if not available(sid):
+        return None
+    bench = assembly.assemble(sid)
+    table = getattr(bench, "table", None)
+    return {"frames": frames_of(bench), "trees": trees_of(bench), "scale": SCALE, "table": _css(table) if table else None, "split": split_of(bench),
+            "panels": "".join(_panel_html(key, i, sheet) for key, sheet in bench.sheets.items() for i in range(len(sheet.panels))),
+            "paper": paper_html(bench.paper) if bench.paper else ""}
 
 
 def page(sid, look=skin.DEFAULT, path=None):

@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_goraigo_v14_3d.py
+# commit: b1280ee1（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_goraigo_v14_3d.py", line 41, in <module>
+    assert FAN.SHEET_SET == "goraigo-v14" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "goraigo-v14"
+                                              ~~~^^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+rc=1

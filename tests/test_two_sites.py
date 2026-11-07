@@ -43,7 +43,8 @@ for look, other, title in (("tenji", "zine", '<body class="tenji"'), ("zine", "t
     assert code == 200 and title in home and f"/toy/{G}" in home and "大判写真集" not in home, look
     assert get(f"/look/{look}")[0] == 200 and get(f"/look/{other}")[0] == 404 and get("/look/taiban")[0] == 404, look
     # 内側の頁は全部この皮。?look= を付けても変わらず、切り替えのリンクも無い
-    for path in ("/about", "/toys", "/gallery", "/zukan", f"/toy/{G}", f"/toys?look={other}"):
+    # /toys は入口へ送る（入口が えらぶ。本人のサイト体験レビュー 11-07 の 4）。内側の頁として残るのは紙 1 枚の絞り込み
+    for path in ("/about", "/toys?paper=1", "/gallery", "/zukan", f"/toy/{G}", f"/toys?paper=1&look={other}"):
         code, body = get(path)
         assert code == 200 and f'class="skin-{look}' in body and f'skin-{other}' not in body and "?look=" not in body, (look, path)
 

@@ -1,0 +1,7 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tora_v7_3d.py
+# commit: 66f87300（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_tora_v7_3d.py", line 26, in <module>
+    from omochae import assembly, assembly_json, hypotheses, instructions
+ImportError: cannot import name 'assembly_json' from 'omochae' (src/omochae/__init__.py)
+rc=1

@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_kumikata_words.py
+# commit: d3309c26（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kumikata_words.py", line 37, in <module>
+    assert '"今は AI に聞けません。組み方の絵を見てください"' in server and "組み方の紙を見てください" not in server
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

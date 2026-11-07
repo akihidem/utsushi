@@ -188,6 +188,8 @@ F.forEach((f,i)=>{const list=[];
   parts.forEach((part,x)=>{const chain=[...(x===0?pre:[]),part,...(x===parts.length-1?post:[])];moves.push({i,chain,end:chain[chain.length-1][1]})})}});
 body.dataset.moves=moves.length}
 const ok=P&&moves.length>0;
+// 手の並び（どの手がどの手順か）を頁の印に出す。試験が、組の手順と手の数を決め打ちせずに期待を出すため（字ではない。組が替わっても同じに測る）
+body.dataset.plan=moves.map(m=>m.i).join(',');
 const halt=()=>{token++;onDone=null;P.stop()};
 const endOf=k=>k<0?P.F[0].q[0]:moves[k].end;
 // 中を見る: 分解した形（kumitateSplit.X）が在る時だけ釦を出す。開くと今の手の終わりの形から分解した形へ、とじると戻す
@@ -305,7 +307,8 @@ def page(sid, look="tenji", cam=False):
     camera = (f'<video id="hmd-cam" playsinline muted autoplay></video><div id="hmd-quad" aria-hidden="true">{corners}</div>' if cam else "")
     camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else "")
     camera_note = (f'<span id="hmd-cam-note">{esc(PRIVACY)}</span> ' if cam else "")
-    params = json.dumps(hypotheses.sheet_of(sid).get("params") or {}, sort_keys=True, ensure_ascii=False)
+    # 組み立ての節を覚える鍵は、組み立ての節と同じ物（紙の寸法と組の名。kumitate._key）。寸法だけだと、組が替わっても前の組の立体を覚えている
+    params = kumitate._key(sid)
     body = (f'<div class="hmd"><div class="hmd-top"><b>{esc(toy)}</b><span id="hmd-count"></span><span id="hmd-heard" aria-live="polite"></span>'
             f'<span class="hmd-mic" id="hmd-mic" data-state="off" aria-live="polite">{esc(MIC_OFF)}</span></div>'
             f'<p id="hmd-dots" aria-hidden="true"></p>'

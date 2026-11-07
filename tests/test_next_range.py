@@ -30,6 +30,11 @@ from web.play_server import serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
+# 1〜4 は、前の組（goraigo-v10）のつまみの形で、押し上げる量が型の拘束で 1 つに決まる事を見る。今の組（goraigo-v14）の内筒を下から
+# 押し上げる形は押し上げる量を動かせる（tests/test_goraigo_v14.py）ので、雛形を前の組に置いて、同じ頁の道で前と同じに見る
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -62,15 +67,15 @@ def source(sid):
 
 
 # 1. 欄に出ない。御来迎で動かせない寸法は押し上げる量だけで、ほかの 7 つは出る
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] in (200, 303)
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})[0] in (200, 303)
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})[0] in (200, 303)
 shown = options(get(f"/toy/{G}"))
 assert "push_amount" not in shown, "選んでも必ず断られる寸法が欄に出ている"
 assert sorted(shown) == sorted(ALLOWED["slider_fan"] - {"push_amount"}), shown
 
 # 2. 動かせない理由は型の拘束。69 より小さいと扇が隠れず、大きいと内筒が収まらない。検査の誤りで落ちているなら、ここが崩れる
-now = {**slider_fan.DEFAULTS, **loop.version_params(G, "H-A", 1)[0]}
+now = {**slider_fan.DEFAULTS, **loop.version_params(G, GS, 1)[0]}
 assert now["pivot_above_rim"] + now["fold_height"] == now["push_amount"] == now["tube_height"] - now["pusher_height"], now
 for s in range(*slider_fan.RANGES["push_amount"]):
     floors = {f.floor for f in slider_fan.check_physics({**now, "push_amount": s})}
@@ -79,15 +84,15 @@ for s in range(*slider_fan.RANGES["push_amount"]):
 # 3. 直に送っても断る（欄に出さないだけで、床は同じ）。断りの文は今までどおりで、版は増えない
 form = {"interpretation": "折りが固い", "why": "開きを見る", "by": "大人"}
 code, page = post("/record/R-0001/next", {**form, "param": "push_amount", "to": "70"})
-assert code == 422 and "押し上げる動きが筒の中に収まりません" in page and loop.latest_version(G, "H-A") == 1, (code, page[:300])
+assert code == 422 and "押し上げる動きが筒の中に収まりません" in page and loop.latest_version(G, GS) == 1, (code, page[:300])
 
 # 4. ほかの寸法を変えて幅が開くと、欄に出て通る。表で固定しない
 assert post("/record/R-0001/next", {**form, "param": "fold_height", "to": "47.5"})[0] in (200, 303)
-assert loop.latest_version(G, "H-A") == 2
+assert loop.latest_version(G, GS) == 2
 page = get(f"/toy/{G}")
 assert "push_amount" in options(page) and "押し上げる量（mm）: 今 69（" in page, options(page)
 assert post("/record/R-0001/next", {**form, "param": "push_amount", "to": "68.6"})[0] in (200, 303)
-assert loop.latest_version(G, "H-A") == 3 and loop.version_params(G, "H-A", 3)[0]["push_amount"] == 68.6
+assert loop.latest_version(G, GS) == 3 and loop.version_params(G, GS, 3)[0]["push_amount"] == 68.6
 
 # 5. 整数だけの寸法は、欄が整数だけを受ける。数の欄で、既定は小数も通し（step=any）、選んだ寸法が整数だけの時に JS が step=1 にする。min と max は付けない（幅の外は今ある字で断る）
 page = get(f"/toy/{G}")
@@ -103,12 +108,14 @@ assert "label:not(.sr):has(>input[type=number])" in skin.TAP_FLOOR
 # JS が無い時や直に送った時: 床の文を頁に出さず、幅の中なので幅も言わない。今の値と次の一手だけを言い、書いた値を欄に戻す
 code, page = post("/record/R-0001/next", {**form, "param": "fold_count", "to": "31.4"})
 assert code == 422 and "折りの数は今 28 です。近い値を試すか、別の寸法を変えてください。" in page, page[:400]
-assert "折り数は整数" not in page and "6〜40 の間で" not in page, page[:400]
+# 折りの数の範囲は雛形の RANGES（v14 の折り 44 枚を書けるよう上限を 60 にした。型紙エンジンと同じ）から読む
+LO, HI = slider_fan.RANGES["fold_count"]
+assert "折り数は整数" not in page and f"{LO}〜{HI} の間で" not in page, page[:400]
 assert 'name="to" inputmode="decimal" required value="31.4"' in page
-assert loop.latest_version(G, "H-A") == 3
+assert loop.latest_version(G, GS) == 3
 # 幅の外は今ある字のまま
 code, page = post("/record/R-0001/next", {**form, "param": "fold_count", "to": "99"})
-assert code == 422 and "折りの数は 6〜40 の間で書いてください（今 28）。" in page, page[:400]
+assert code == 422 and f"折りの数は {LO}〜{HI} の間で書いてください（今 28）。" in page, page[:400]
 # 整数の決まりを持つほかの雛形も同じ。床の文（数は整数・枚数・本数なので整数）を出さない
 DEN, SPIN = "NDL-1187053-R0000007-R", "NDL-1187053-R0000020-R"
 for sid, tpl, param, to in ((DEN, den_den, "beads_inside", 1.5), (SPIN, spin_toy, "blade_count", 4.5)):
@@ -125,7 +132,7 @@ for tid, tpl in TEMPLATES.items():
         assert not tpl.check_range({**tpl.DEFAULTS, k: lo}), (tid, k, lo)
 assert toy.whole_params("slider_fan") == ["fold_count"] and toy.whole_params("pivot_counterweight") == []
 # 整数だけの寸法を持たない玩具には、JS を付けない（虎。欄は小数も通す）
-assert "<script" not in toy.next_form({**loop.record("R-0001"), "source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A"})
+assert "<script" not in toy.next_form({**loop.record("R-0001"), "source_id": "NDL-1187053-R0000014-R", "hypothesis_id": GS})
 
 # 6. 欄に出す寸法には、配置の検査まで通る値がある（画面の判定は範囲と物理の床だけなので、ここで compose と照らす）。雛形ごとに 1 つと、動かない寸法を持つ玩具で見る
 seen, sample = set(), [G, "NDL-1187053-R0000021-L-2", "NDL-1187053-R0000029-R-2"]
@@ -169,7 +176,8 @@ fixed = set()
 for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     sid, hid = path.stem, hypotheses.sheet_of(path.stem)["id"]
     fixed |= {(sid, k) for k in ALLOWED[hypotheses.load(sid).get("template", "slider_fan")] - set(loop.movable_params(sid, hid))}
-assert fixed == {("NDL-1187053-R0000021-L-2", "cone_pieces"), ("NDL-1187053-R0000029-R-2", "cone_pieces")}, sorted(fixed)
+# 虎の今の組（tora-v7）は当たりを検査で見る（fit_check 1）ので、重りの後ろへのずれ（weight_behind）は 0 のまま動かせない（エンジンと同じ決まり）
+assert fixed == {("NDL-1187053-R0000021-L-2", "cone_pieces"), ("NDL-1187053-R0000029-R-2", "cone_pieces"), ("NDL-1187053-R0000014-R", "weight_behind")}, sorted(fixed)
 
 server.shutdown()
 print("ok 次の版の欄には、今の版で 1 つ変えて通る寸法だけが出る")

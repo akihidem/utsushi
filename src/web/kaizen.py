@@ -52,7 +52,7 @@ def pending(sid, recs):
     used = {rid for h in hypotheses.load(sid)["hypotheses"] for v in versions(sid, h["id"]) for rid in v.get("record_ids", [])}
     ready, waiting = [], []
     for r in recs:
-        if r["id"] in used or loop.next_target(sid, r["hypothesis_id"]) != sheet:  # 札の次の版の欄と同じ向く先で数える
+        if r["id"] in used or loop.next_target(sid, r["hypothesis_id"], r.get("sheet_set")) != sheet:  # 札の次の版の欄と同じ向く先で数える
             continue
         (ready if loop.explanation(r["id"]) else waiting).append(r)
     return ready, waiting

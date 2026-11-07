@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_goraigo_v14_3d.py
+# commit: ca5245ca（回した時の HEAD）
+ok 御来迎 v14 の作り方の 3D（エンジンの JSON）。写しの照らし・段と文・組んだ形・開いて畳む所・見せ方と頁・崩し
+rc=0

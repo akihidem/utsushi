@@ -67,7 +67,7 @@ def without_hidden(data, sheet_set):
 
 
 def current_set(data):
-    """その玩具の雛形の今の組の名前（例 tora-v4）。"""
+    """その玩具の雛形の今の組の名前（例 tora-v6）。"""
     from .compose import TEMPLATES  # compose は記録を読まないが、読み込みの順をこの関数の中に閉じる
 
     return TEMPLATES[data.get("template", "slider_fan")].SHEET_SET

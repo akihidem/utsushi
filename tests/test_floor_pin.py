@@ -1,6 +1,7 @@
 """凍結の床を試験で見る: 必須の 2 種（御来迎 goraigo-v10・張子の首振り虎 tora-v3）の紙が、控えた指紋と同じ（U-43、#115）。
-虎は次の組（tora-v4）に上げたので、前の組 tora-v3 も今の組 tora-v4 も比べる。前の組の控えは、次の組を足した後も残す（本人の指示）。
-御来迎は今の組 goraigo-v10 のまま（次の組は形を見直してから。雛形に前の組が無いので今の組だけを組む）。
+虎は次の組（tora-v4）、その次の組（tora-v7。v5・v6 は刷らずに飛ばした）に上げたので、前の組 tora-v3・tora-v4 も今の組 tora-v7 も比べる。
+前の組の控えは、次の組を足した後も残す（本人の指示）。
+御来迎は今の組 goraigo-v14 に上げたので、前の組 goraigo-v10 も今の組 goraigo-v14 も比べる（v11〜v13 は刷らずに飛ばした）。
 前の組は雛形の控えの並び（compose.kept_sets）の全部を組む。組を上げるたびに前の組が 1 つ増えるため（虎は v3 のあと v4 も刷った）。
 たたき台・寸法・出さない字は記録の組ごとの欄（sheet_by_set・params_by_set・hide_by_set）から組ごとに引く。欄の無い組は記録の sheet と params のまま。
 
@@ -46,6 +47,10 @@ from omochae.render import to_svg
 PIN = pathlib.Path(__file__).with_name("floor_pin.json")
 # 必須の 2 種。玩具を増やす線は記録に stage "試作" を書くので、ここには足さない（床は必須 2 種の完成）。
 REQUIRED = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")
+# 手順の紙の指紋を控える組。11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A・#493）ので、その前に手順の紙を控えた組だけ。
+# 後の組（御来迎 goraigo-v14・虎 tora-v7）は手順の紙を刷らない（組み方は頁が持つ）。
+# 控えた組の手順の紙の指紋は変えない（組む仕組み instructions.compose_sheet は残す）
+STEP_SHEET_SETS = ("goraigo-v10", "tora-v3", "tora-v4")
 # 字の版を見分ける文字。和文は全角で版に依らず、版で変わりうるのは欧文と数字と約物の幅。
 PROBE = "".join(chr(c) for c in range(0x20, 0x7F)) + "あア一、。「」（）・ー〔〕"
 
@@ -111,8 +116,9 @@ def papers(picture, strict):
                     # 前の組（控えの並び）は前の題の「版 1」のまま（窓口の決定 11-07。今の組の型紙 2 枚だけ控えを取り直した。理由は docs/claude-usage.md）
                     _, layout, failures = compose(tid, h["params"], src, "A4", 1, f"{data['toy']} 型紙 {name}{paper_label(data, 1)}")
                     put(f"{base}/型紙", layout, failures)
-                    put(f"{base}/手順の紙", *compose_sheet(tid, h["params"], src, f"{name} 版 1", h["how_it_moves"]))
-                    if tid == "slider_fan":  # 原図の写しを載せる道（goraigo-v8 から）。刷った組はこちら
+                    if sheet_set in STEP_SHEET_SETS:
+                        put(f"{base}/手順の紙", *compose_sheet(tid, h["params"], src, f"{name} 版 1", h["how_it_moves"]))
+                    if tid == "slider_fan" and sheet_set in STEP_SHEET_SETS:  # 原図の写しを載せる道（goraigo-v8 から）。刷った組はこちら
                         put(f"{base}/手順の紙（原図つき）", *compose_sheet(tid, h["params"], src, f"{name} 版 1", h["how_it_moves"], picture=picture))
                     put(f"{base}/試した後の紙", *compose_after(src, name, data["after_try"], sheet_set=sheet_set))
                 put(f"{sheet_set}/先生の見る紙", *compose_teacher(src, data["toy"], sheet_set=sheet_set))
@@ -179,8 +185,9 @@ def check():
     pin = json.loads(PIN.read_text(encoding="utf-8"))
     real, standin = both()
     # たたき台 2 枚 × 3 枚 ＋ 御来迎の原図つき 1 枚 ＋ 先生の紙 2 枚。前の下限 31 は 8 仮説の時の数（J-032 で 9 に直した）
-    # 虎の次の組の 4 枚を足して 13。前の下限は 9（J-032、1 組の時）・31（8 仮説の時）
-    assert len(pin["papers"]) >= 13, ("控えが減った", len(pin["papers"]))
+    # 虎の次の組の 4 枚を足して 13、虎の今の組（tora-v7）と御来迎の今の組（goraigo-v14）の 3 枚ずつ（どちらも手順の紙は控えない）を足して 19。
+    # 前の下限は 16（今の組を 1 つ足した時）・13（tora-v4 まで）・9（J-032、1 組の時）・31（8 仮説の時）
+    assert len(pin["papers"]) >= 19, ("控えが減った", len(pin["papers"]))
     assert len(pin["removed"]["papers"]) == 22 and not set(pin["removed"]["papers"]) & set(pin["papers"]), "外した紙は印つきで残し、比べる紙と混ぜない"
     assert "本人の決定" in pin["removed"]["why"], "外した理由の印を残す"
     gone, extra, diff = compare(pin, "standin", standin)
@@ -206,10 +213,12 @@ def check():
     # 1. 寸法: 御来迎の扇の折り幅の既定を変える。既定に頼る仮説の型紙が変わり、虎は変わらない
     old = fan.DEFAULTS["fold_width"]
     gone, extra, diff1 = broken(lambda: fan.DEFAULTS.update(fold_width=old - 1), lambda: fan.DEFAULTS.update(fold_width=old))
-    assert not gone and not extra and any(n.endswith("/型紙") for n in diff1) and set(diff1) <= set(goraigo), ("寸法", gone, extra, diff1)
+    # 御来迎の今の組（goraigo-v14）のたたき台は寸法を記録の組ごとの欄に全部書くので、既定を変えて動くのは前の組（goraigo-v10）の型紙
+    assert not gone and not extra and any(n.endswith("/型紙") for n in diff1) and set(diff1) <= {n for n in pin["papers"] if n.startswith("goraigo-")}, ("寸法", gone, extra, diff1)
     # 2. 組の版の名前だけを上げる（今の版を直接直す形。U-43 で採らなかった代案）。御来迎の今の版が 1 枚も刷れなくなる
     gone2, extra, diff = broken(lambda: setattr(fan, "SHEET_SET", "goraigo-v11"), lambda: setattr(fan, "SHEET_SET", now))
-    assert gone2 == goraigo and len(extra) == len(goraigo) and not diff, ("組の版", gone2, extra, diff)
+    # 後の組の名には手順の紙を控えない（STEP_SHEET_SETS）ので、増えるのは手順の紙のほかの紙
+    assert gone2 == goraigo and all(n.startswith("goraigo-v11/") for n in extra) and sorted(n.rsplit("/", 1)[1] for n in extra) == sorted(n.rsplit("/", 1)[1] for n in goraigo if "/手順の紙" not in n) and not diff, ("組の版", gone2, extra, diff)
     # 3. 組み方の文: 虎の手順を 1 つ足す。虎の手順の紙だけが変わり、型紙は変わらない
     steps = tiger.steps
     gone, extra, diff3 = broken(lambda: setattr(tiger, "steps", lambda p: steps(p) + ["足した手順"]), lambda: setattr(tiger, "steps", steps))

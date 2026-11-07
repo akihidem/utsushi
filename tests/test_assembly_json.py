@@ -88,7 +88,7 @@ with at_set(pivot_counterweight, "tora-v4"):
     bench, doc, parts, words, shown = round_trip(T, "pivot_counterweight")
 assert doc["format"] == assembly_json.FORMAT and len(doc["steps"]) == len(words) and doc["finale"]["poses"]
 assert shown.failures == [], [f.line() for f in shown.failures]
-assert assembly_json.same_parts(doc, parts) == [], assembly_json.same_parts(doc, parts)
+assert assembly_json.part_gaps(doc, parts) == [], assembly_json.part_gaps(doc, parts)
 miss = close(ball_at(kumitate.frames_of(shown)), ball_at(kumitate.frames_of(bench)), "frames")
 assert miss is None, miss
 miss = close(kumitate.trees_of(shown), kumitate.trees_of(bench), "trees")
@@ -100,9 +100,11 @@ assert any(s.interiors for s in shown.sheets["body"].panels), "前の壁の四�
 tora_bench, tora_doc, tora_parts, tora_words = bench, doc, parts, words
 
 # 1. 書いて読み戻す（御来迎 goraigo-v10）。最後のできあがり（扇が開く所）は頁の計算で動かすので、書き出さない段の前まで同じ
+# 御来迎の今の組（goraigo-v14）は 3D で組まない（立体は 3D の枝が JSON で入れる）。3D の書き出しは控えの組 goraigo-v10 で前と同じに見る
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 bench, doc, parts, words, shown = round_trip(G, "slider_fan")
 assert shown.failures == [], [f.line() for f in shown.failures]
-assert assembly_json.same_parts(doc, parts) == []
+assert assembly_json.part_gaps(doc, parts) == []
 got, want = kumitate.frames_of(shown), kumitate.frames_of(bench)
 for pose in [q for f in got + want for q in f["q"]]:
     # 御来迎の部品には中を切る所が無く、切れ端の印（plug）は頁で何もしない。前の組の作りは印を立てたままにしている
@@ -117,26 +119,26 @@ doc, parts = tora_doc, tora_parts
 bad = copy.deepcopy(doc)
 body = next(jp for jp in bad["parts"] if jp["key"] == "body")
 body["outline"] = [[x + 1, y] for x, y in body["outline"]]
-assert any("外形が違う" in x for x in assembly_json.same_parts(bad, parts))
+assert any("外形が違う" in x for x in assembly_json.part_gaps(bad, parts))
 bad = copy.deepcopy(doc)
 next(jp for jp in bad["parts"] if jp["key"] == "body")["holes"].pop()
-assert any("holes が違う" in x for x in assembly_json.same_parts(bad, parts))
+assert any("holes が違う" in x for x in assembly_json.part_gaps(bad, parts))
 bad = copy.deepcopy(doc)
 row = next(iter(next(jp for jp in bad["parts"] if jp["key"] == "strip")["tree"]["rows"].values()))
 row["hinge"] = [[x + 3, y] for x, y in row["hinge"]]
-assert any("刷る折り線" in x for x in assembly_json.same_parts(bad, parts))
+assert any("刷る折り線" in x for x in assembly_json.part_gaps(bad, parts))
 bad = copy.deepcopy(doc)
 next(jp for jp in bad["parts"] if jp["key"] == "drop")["panels"][0]["poly"][0][0] += 2
-assert any("面を合わせた広さ" in x for x in assembly_json.same_parts(bad, parts))
+assert any("面を合わせた広さ" in x for x in assembly_json.part_gaps(bad, parts))
 bad = copy.deepcopy(doc)
 bad["parts"] = [jp for jp in bad["parts"] if jp["key"] != "tail"]
-assert any("tail: サイトの部品が JSON に無い" in x for x in assembly_json.same_parts(bad, parts))
+assert any("tail: サイトの部品が JSON に無い" in x for x in assembly_json.part_gaps(bad, parts))
 # 面の中の穴を JSON が書いていなくても、サイトの部品の中を切る所を面から抜く（穴が塞がって見えない）
 bad = copy.deepcopy(doc)
 for jp in bad["parts"]:
     for pn in jp["panels"]:
         pn.pop("inner")
-assert assembly_json.same_parts(bad, parts) == []
+assert assembly_json.part_gaps(bad, parts) == []
 assert any(s.interiors for s in assembly_json.bench_of(bad, parts, tora_words).sheets["body"].panels)
 
 # 3. 段の数が手順の文と合わなければ落とす（多くても少なくても）
@@ -200,7 +202,7 @@ try:
             raise AssertionError("形の名の違う JSON を読んだ")
         except ValueError as e:
             assert "omochae-assembly-3d/1" in str(e)
-    # 御来迎の今の組には JSON が無いので、前の組の書き方で組む（置き場が空の間、頁は変わらない）
+    # 置き場（一時の所）に御来迎の組の JSON が無いので、前の組の書き方で組む（この時の御来迎は控えの組 goraigo-v10）
     assert not isinstance(assembly.assemble(G), Shown) and assembly.assemble(G) is not None
 finally:
     assembly_json.DIR = keep

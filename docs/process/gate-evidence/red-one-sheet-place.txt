@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_one_sheet_place.py
+# commit: 92c26176（回した時の HEAD。試験だけを足し、直す前の頁で回した）
+Traceback (most recent call last):
+  File "tests/test_one_sheet_place.py", line 39, in <module>
+    assert len(re.findall(prints, before)) == 1 and len(re.findall(prints, hero)) == 1, (sid, re.findall(prints, before))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', ['<form method="post" action="/toy/NDL-1187053-R0000005-L/print#win"', '<form method="post" action="/toy/NDL-1187053-R0000005-L/print#kasetsu"', '<form method="post" action="/toy/NDL-1187053-R0000005-L/print#win"'])
+rc=1

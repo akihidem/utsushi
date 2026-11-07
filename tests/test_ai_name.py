@@ -27,6 +27,9 @@ from web.play_server import serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 # 「AI」の後に（Claude）が無く、同じ文の近くに人の字の使い方の動詞が続く形。「AI の Claude」も名前が分かるので通す（持ち寄りの入口の前からの字）
 NAMELESS_JA = re.compile(r"AI(?!（Claude）| の Claude)[^。\n]{0,16}?(?:渡|送|読|使[いう]|からも返事)")
 NAMELESS_EN = re.compile(r"\bAI\b(?! \(Claude\))[^.\n]{0,24}?\b(?:reads?|sends?|sent|uses?|used|given)\b")
@@ -68,7 +71,7 @@ def visible(page):
     return html.unescape(re.sub(r"<[^>]+>", " ", page))
 
 
-req = urllib.request.Request(base + f"/toy/{G}/print", urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), {"Origin": base})
+req = urllib.request.Request(base + f"/toy/{G}/print", urllib.parse.urlencode({"hypothesis": GS}).encode(), {"Origin": base})
 assert urllib.request.urlopen(req, timeout=120).status == 200
 
 # 1. 頁の字に、名前の無い断りの形が無い
@@ -94,7 +97,8 @@ assert "この場所での表示だけ（AI（Claude）には渡しません）"
 toy = visible(get(f"/toy/{G}"))
 assert "AI が「こうかな？」と考えた、ためしの案（仮説）です" in toy and "AI（Claude）が「こうかな" not in toy
 assert "仮説は、AI が考えたためしの案です" in toy
-assert "型紙は正解ではなく、AI が考えた仮説です" in visible(get("/toys"))
+# えらぶ の頭の断りの段は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）。見張りも行き先へ移す
+assert "型紙は正解ではなく、AI が考えた仮説です" in visible(get("/about"))
 assert "It is a guess made by an AI." in visible(get(f"/en/toy/{G}"))
 
 print("ok: 断りの AI には名前を添え、札と状態の AI は変えていない")

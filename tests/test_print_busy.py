@@ -68,7 +68,8 @@ def busy_script(page):
 
 
 page = get(f"/toy/{G}")
-ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
+# 刷れるのは今の組のたたき台の紙だけ（J-032）。御来迎の今の組 goraigo-v14 は H-C なので、たたき台を先頭に並べる
+ids = [hypotheses.sheet_of(G)["id"]] + [h["id"] for h in hypotheses.load(G)["hypotheses"] if h["id"] != hypotheses.sheet_of(G)["id"]]
 assert any("/print#" in a for a in marked(page))
 
 # 押した時の動き: 形を変える・押せなくする・戻る操作と時間切れで元に戻す
@@ -89,7 +90,8 @@ assert "@media (prefers-reduced-motion:reduce){button[data-busy=on]::after{anima
 # JS なしの送信は今までどおり刷れる。押した後の頁で釦は元の形に戻っている
 assert post(f"/toy/{G}/print", {"hypothesis": ids[0]}) == 200
 assert (out_dir(G) / f"{ids[0]}_v1.pdf").exists()
-assert any("/print#" in a for a in marked(get(f"/toy/{G}")))
+# 紙がある時は、頭の「つくる」は窓の紙へ行くリンクで、刷る欄は頁に無い（刷る口は 1 つ。本人のサイト体験レビュー 11-07 の 3）
+assert not any("/print#" in a for a in marked(get(f"/toy/{G}")))
 
 # 話した考えから紙を作る釦と、「この紙にする」の釦
 page = get(f"/toy/{G}")
