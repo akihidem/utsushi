@@ -18,7 +18,7 @@ import tempfile
 os.environ.setdefault("OMOCHAE_DATA", tempfile.mkdtemp())
 
 from omochae import hypotheses  # noqa: E402
-from web import naoru, techo_site, techo_step  # noqa: E402
+from web import naoru, techo_site, techo_step, wa  # noqa: E402
 
 TORA = "NDL-1187053-R0000014-R"
 GORAIGO = "NDL-1187053-R0000005-L"
@@ -33,7 +33,10 @@ data = json.loads(naoru.HIGHLIGHT.read_text(encoding="utf-8"))
 # 表の字（改善の歴史の表の、張子の首振り虎の型紙の版 v7 の行）。表は repo の外にあるので、写した字をここで留める（写し違い・作り替えを拾う）
 assert (data["line"], data["toy"], data["sheet_version"]) == ("3D で組んで見つかった当たりを直し、頭が揺れても前の壁に当たらない", "張子の首振り虎", 7), data
 assert data["source"] and data["why_this_one"], data
-assert naoru.highlight() == f"{data['line']}（{data['toy']} 型紙の版 v{data['sheet_version']}）", naoru.highlight()
+# 型紙の版は玩具の頁の札の脇・輪の図の真ん中と同じ形（v を付けない組の番号。窓口の決定 (a)、#513）。数も、その玩具の今の組の番号と同じ
+assert naoru.highlight() == f"{data['line']}（{data['toy']} 型紙の版 {data['sheet_version']}）", naoru.highlight()
+assert "型紙の版 v" not in naoru.highlight(), naoru.highlight()
+assert wa.set_version(TORA) == data["sheet_version"], (wa.set_version(TORA), data["sheet_version"])
 raw = naoru.HIGHLIGHT.read_text(encoding="utf-8")
 assert "/home/" not in raw and "~/" not in raw, "data に個人のパスが入っている"
 box = naoru.box()
@@ -62,7 +65,7 @@ for sid in (TORA, GORAIGO):
         assert naoru.highlight() not in page and naoru.LINES[1] not in page, (sid, public, "手帖に版の名か「の紙」が出た")
 keep_lines = naoru.TECHO_LINES
 try:
-    for bad in (("次に作る人の紙", "x"), ("型紙の版 v7", "x"), ("R-0001", "x")):
+    for bad in (("次に作る人の紙", "x"), ("型紙の版 7", "x"), ("R-0001", "x")):
         naoru.TECHO_LINES = bad
         assert naoru.box(techo=True) == "", bad
         sheet = hypotheses.sheet_of(TORA)["id"]
