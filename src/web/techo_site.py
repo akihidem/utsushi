@@ -297,7 +297,7 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .sakurei-row figure{margin:0;display:grid;gap:6px;align-content:start}
 .gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-row figcaption{font-size:14px}
-.gallery .sakurei-row .ban{white-space:nowrap}
+.gallery .sakurei-row .ban{white-space:nowrap;margin-left:.6em}
 .gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
 .gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-report{margin:0;padding-left:1.2em;display:grid;gap:4px}.gallery .sakurei-report .meta{display:block}
@@ -365,7 +365,8 @@ def _ban(sheet_set):
     """作例の札の型紙の版（刷った組の番号。例 goraigo-v10 は 10）。組の分かる作例だけ。分からない時は空（推して書かない）。
     字は「型紙の版」と数だけ（型紙の版は組の番号で言いそろえる決め 11-07。玩具の頁の型紙の札の脇に出す #513 と同じ形）。"""
     m = re.fullmatch(r"[a-z_]+-v(\d+)", sheet_set or "")
-    return f'　<span class="ban">型紙の版 {int(m.group(1))}</span>' if m else ""
+    # 名との間は全角の空白の字でなく余白で空ける（空白だけの字の塊は、英語の頁の訳の表で引けない日本語として残るため）
+    return f' <span class="ban">型紙の版 {int(m.group(1))}</span>' if m else ""
 
 
 def _report():

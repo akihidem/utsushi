@@ -3362,6 +3362,15 @@
   "）では、この歌の一部の読みが割れていました（作る側の記録、research/{0}）。": ") read part of this poem in two different ways (the makers' record, research note {0}).",
   "）にだけ足す": ")",
   "）の読みに決めました。": ") reading was chosen.",
-  "［隠している］": "[hidden]"
+  "［隠している］": "[hidden]",
+  "ワークショップで作られた物": "Things made at the workshops",
+  "参加者の型紙の改善例": "A participant's improvement to the template",
+  "作った物の写真": "Photo of a made toy",
+  "猫と鼠の箱（鼠捕りからくり）": "Cat and mouse box (mousetrap mechanism)",
+  "水からくり（浮き人形と水盤）": "Water mechanism (floating doll and basin)",
+  "ワークショップの様子と、改善の輪": "The workshops and the improvement loop",
+  "{0} 月 {1}・{2}・{3}・{4} 日のワークショップで作られた物です。上下はありません。": "These were made at the workshops on November {1}, {2}, {3} and {4}. There is no ranking.",
+  "{0} 日間のワークショップで作ったおもちゃたち": "The toys made over the {0} days of workshops",
+  "「参加者の型紙の改善例その{0}。手前が型紙通り。しかし、奥の工作のように、からくりがあると推測した参加者が蓋の開閉でネズミが箱の中に仕舞われるようにした。」": "“A participant's improvement to the template, example {0}. The one in front follows the template. But, as in the piece at the back, a participant who guessed there was a mechanism made it so that opening and closing the lid tucks the mouse away inside the box.”"
  }
 }

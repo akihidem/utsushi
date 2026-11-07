@@ -148,6 +148,12 @@ for opened in (False, True):
         srv.shutdown()
         srv.server_close()
 
+# 英語の頁: 作例の節の字は全頁の英語の表にある（表に無い日本語が残らない。83 の外の玩具の名も）
+from web import i18n  # noqa: E402
+miss = []
+i18n.to_en(sec, miss)
+assert miss == [], miss
+
 # 5. 場
 pub = techo_site.gallery_page(SIDS, public=True)
 assert section(pub) == sec, "合言葉なしで開いた場で、作例の節が違う"
