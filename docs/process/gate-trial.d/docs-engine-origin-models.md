@@ -8,3 +8,4 @@
 - エビデンスゲート: README の頭・字・Claude の名・届く言葉・台帳・公開の場の道・#527 の節・エンジンをまとめる段落の試験が rc 0
 - 確かめていない事: 字と置き場（窓口と本人の確かめ待ち）。エンジンの README の「刷る所までできていて」とは、utsushi では「刷る所まで試作した」と言い分けた
 - マージ後の書き戻し: Issue は立てていない（新しい Issue は提出を止める物だけ）。engine/ をまとめる PR で、置き場の欄を engine/ の中に直す
+- 追い（11-08 朝）: engine/ を main にまとめた後、節の終わりの「まとめた後は engine/ の中にある（置き場の欄はまとめる PR で直す）」が古くなった。事実の直しとして今の置き場（`engine/src/omochae/templates/pendulum_wave.py` と `engine/src/omochae/templates/helix.py`）に替えた（意味は替えない。統括の確かめ）。表の「エンジンの repo」の欄は別の repo の PR へのリンクなので替えていない。試験に、節の中の engine/ の置き場が在るファイルを指す事を足した。Red: 773ba8e9 の README で rc 1（`docs/process/gate-evidence/red-readme-origin-engine-place.txt`）。Green: rc 0（`green-readme-origin-engine-place.txt`、434a7dd5）。README を読む試験 14 本と台帳・凍結の表の試験が rc 0
