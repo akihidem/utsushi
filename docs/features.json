@@ -900,5 +900,17 @@
    "tests/test_ukabu.py"
   ],
   "unverified": "切り抜きは機械で取り、縁の紙の地を外から伝って外した（直す前と後を並べた絵は grove の state/float-toys-20261107/cutout-check/・本人の OK「この4つと縁でよい」11-07 夜）。押しても飛ばない揺れるだけの飾り（本人の言葉「リンクにはせず揺れる」）。絵は WebP で 4 枚合わせて約 33KB。輪郭の下に原画の地面の線が残る物がある。幅 1440・390・320 で題の字と重ならない事をブラウザで測った。実機と人の目はまだ"
+ },
+ {
+  "id": "f82",
+  "name": "公開の場のギャラリーの札に、人が確かめた後だけ作った人の感想と工夫の行を出す（窓口の決め A・11-08。本人 11-08「…感想も見れるように」）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/words_review.py",
+   "src/web/techo_site.py",
+   "tests/test_words_review.py",
+   "docs/process/workshop-guide.md"
+  ],
+  "unverified": "進め役が本物の置き場で確かめる手順は、場で通していない。人の分かる言葉かの見分けは人の目だけ（機械は連絡先の形だけを見る）"
  }
 ]

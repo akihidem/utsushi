@@ -20,7 +20,7 @@ import tempfile
 from PIL import Image
 
 from api import ask, config
-from omochae import contrib, hypotheses, media_review, records
+from omochae import contrib, hypotheses, media_review, records, words_review
 from omochae.form_import import FORM_URL
 
 from . import wording
@@ -310,7 +310,8 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 def made_item(sid, data, r, photos=True, public=False):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
     public=True は合言葉なしで開いた場。人が「物だけ」と確かめた写真と動画は出す（本人の決定 11-06「公開の場で上げた写真は、公開の場の
-    ギャラリーにも出します」）。人の書いた文と記録の番号は前と同じく出さない: 文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由（J-028）。
+    ギャラリーにも出します」）。人の書いた文（感想と工夫の行）は、人が確かめた字だけを出す（窓口の決め A・11-08。前は出さなかった:
+    文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由・J-028。確かめが人の目になる）。記録の番号は前と同じく出さない。
     photos=False は写真も文も出さない前の開いた場の形（今は呼ぶ所が無い）。
     ひとこと（note）は学ぶ人の頁に出してこなかった欄なので、ギャラリーにも出さない。
     動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
@@ -321,8 +322,11 @@ def made_item(sid, data, r, photos=True, public=False):
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
-    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and not public else ""
-    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and not public)
+    # 人の書いた文（感想と工夫の行）は、公開の場では人が確かめた字だけを出す（窓口の決め A・11-08。omochae.words_review）。
+    # 確かめていない・確かめた後に字が替わった・連絡先の床に当たる物は、前と同じく出さない。合言葉付きの場は今までどおり出す
+    say = not public or words_review.checked(r["id"])
+    words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and say else ""
+    words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and say)
     if not pics and not words:
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
