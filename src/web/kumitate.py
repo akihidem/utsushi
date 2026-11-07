@@ -67,7 +67,8 @@ STYLE = """
 .rt-table{position:absolute;left:0;top:0;transform-origin:0 0;transform-style:preserve-3d}
 .rt-hole{fill:var(--rt-table)}
 .rt-scrap,.rt-plug{transition:opacity .4s ease}
-.rt-acts{display:flex;gap:10px;align-items:center;margin-top:10px}
+.rt-acts{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.rt-acts .rt-hint{flex-basis:100%;margin:2px 0 0}
 .rt-acts [disabled]{opacity:.4}
 .rt-acts [hidden]{display:none}
 #rt-count{font-size:14px;color:var(--mute);margin-left:auto}
@@ -444,8 +445,9 @@ def _block_html(sid, params):
             f'<div class="rt-rod rt-axle" data-r="axle"></div><div class="rt-rod rt-axle" data-r="poke"></div><div class="rt-rod rt-thread" data-r="row"></div><div class="rt-rod rt-thread" data-r="thread"></div>{tools}</div></div>'
             f'<p id="rt-text" aria-live="polite" data-done="{esc(DONE)}"></p>'
             f'<div class="rt-acts"><button type="button" class="quiet" id="rt-prev">{esc(PREV)}</button>'
-            f'<button type="button" id="rt-next" data-go="{esc(NEXT)}" data-again="{esc(RESTART)}"></button><span id="rt-count"></span></div>'
-            f'<p class="meta rt-hint">{esc(HINT)}</p>'
+            # 手引きは釦の並びの中に置く。釦を隠す頁（重ねる頁の hmd など）は .rt-acts ごと隠すので、押せない釦を名指す手引きが残らない（別の目の止め 11-07）
+            f'<button type="button" id="rt-next" data-go="{esc(NEXT)}" data-again="{esc(RESTART)}"></button><span id="rt-count"></span>'
+            f'<p class="meta rt-hint">{esc(HINT)}</p></div>'
             f'<p class="meta">{esc(NOTE_SHAPE)}</p>{script}{_split_script(bench, dump)}')
 
 
