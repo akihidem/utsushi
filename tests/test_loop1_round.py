@@ -93,10 +93,12 @@ oid, key = made(WHO, THINK, {"push_part": "stick", "pusher_height": 84})
 confirmed = [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
 assert confirmed and confirmed[0]["version"] == 1 and confirmed[0]["confirmations"][0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, confirmed
 
-# 節から作りながら見る頁へ行ける。字は玩具の頁の入口と同じ（新しい文を足さない）
-assert think_sheet.MAKE == "作りながら見る（机の端に置く・試作）" and think_sheet.MAKE in page(f"/toy/{G}")[1]
+# 節から手帖へ行ける。字は玩具の頁の作る口と同じ（新しい文を足さない）。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）
+assert think_sheet.MAKE == "つくる" and think_sheet.MAKE in page(f"/toy/{G}")[1]
 done = page(f"/toy/{G}?at=think-{key.split('=', 1)[1]}", cookie=key)[1]
-assert f'/toy/{G}/tsukuru?h={oid}"' in done and think_sheet.MAKE in done, "節に、その紙の作りながら見る頁への道"
+assert f'<a class="btn quiet" href="/toy/{G}/techo">{think_sheet.MAKE}</a>' in done and "/tsukuru" not in done, "節に、その紙の手帖への道"
+# 手帖は、本人の画面にはその人の紙を開く（ほかの人には、たたき台の紙）
+assert f'data-hid="{oid}"' in page(f"/toy/{G}/techo", cookie=key)[1] and f'data-hid="{oid}"' not in page(f"/toy/{G}/techo")[1]
 
 # ── 作りながら見る: 本人には、その人の紙が開く ──
 code, body = page(f"/toy/{G}/tsukuru", cookie=key)

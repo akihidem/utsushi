@@ -648,11 +648,13 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded, photos)}</section>'
     from api import ask  # 聞く口の断りは、Claude を呼ぶ場だけ 1 文を足す（本人の決定 11-06）
 
-    body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
-             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
-             # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
-             + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) or mine else "")
-             + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())}</section>')
+    # 作る口は 1 つ（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」、地図の道しるべ「作る口は
+    # 手帖 1 つ」）: 頭の「つくる」で型紙の窓へ、窓の「つくる」で手帖へ、の 1 本の道にする。前はこの節にも見出し「作る」と手帖への釦と作りながら見る
+    # 頁への釦があり、手帖へ行く口が 2 つ、作る節が「すぐ作る」と 2 つあった。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）。
+    # 節の錨（#tsukuru）は残す: 作りながら見る頁の「← 玩具」と試験の並びがこの錨を指すため。中身は困った時に聞く口だけ。刷る前は聞く口も無いので、
+    # 空の節の余白を出さず錨だけを置く。
+    making = ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())
+    body += f'<section class="sec" id="tsukuru">{making}</section>' if making else '<div id="tsukuru"></div>'
     # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置く（刷る口を押し下げない）
     body += kumitate.section(sid)
     # 記録の欄の節は、見出しのまま畳む（地図の工程 4「声と動画が主で、字は畳んだ追加。残す口は 1 つ」。残す口は手帖の「のこす」）。

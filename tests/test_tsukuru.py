@@ -67,7 +67,8 @@ body = urllib.request.urlopen(base + f"/toy/{G}/tsukuru").read().decode()
 assert "先に紙を作ると、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body
 assert step(1, "next")[0] == 422 and f'href="/toy/{G}/tsukuru"' not in get(f"/toy/{G}")[1]
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
-assert f'href="/toy/{G}/tsukuru"' in get(f"/toy/{G}")[1]
+# 刷った後も、玩具の頁に入口を出さない: 作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4。玩具の頁の作る口は手帖 1 つ）。頁そのものは開く
+assert f'href="/toy/{G}/tsukuru"' not in get(f"/toy/{G}")[1]
 
 # 開く: 手順の文（手順の紙と同じ物）と、手順の紙の絵、断り
 code, t = get(f"/toy/{G}/tsukuru")

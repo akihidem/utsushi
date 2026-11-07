@@ -46,7 +46,9 @@ NO_FIT = "今の型紙には合わないので、型紙なしの紙（身の回�
 OK = "この紙にする"
 DONE = "紙ができました。"
 SEE = "紙を見る"
-MAKE = "作りながら見る（机の端に置く・試作）"  # 玩具の頁の入口と同じ字（新しい文を足さない）
+# 作る口の字。玩具の頁の作る口と同じ字（新しい文を足さない）。前は作りながら見る頁の口の字だったが、作りながら見る頁を手帖へ寄せたので
+# （窓口の決め 11-07 の 4）、窓の「つくる」と同じ字にする。手帖は、この画面が話した考えから作った紙を自分で開く（play_server の手帖の口）
+MAKE = "つくる"
 ASKED = "頼みました。"
 FAILED = "紙を作れませんでした。もう一度押してください。"
 
@@ -253,8 +255,8 @@ def _status(sid, w):
         # 紙を作った直後に、その紙の絵を画面に出す（#145 の要件を話す道でも）。絵は刷る時に PDF と一緒にできる。押すと PDF を開く。
         pic = name[:-len(".pdf")] + ".png"
         fig = f'<figure class="own-sheet" style="margin:12px 0"><a href="/sheet/{esc(sid)}/{esc(name)}"><img src="/sheet/{esc(sid)}/{esc(pic)}" alt="{esc(w["name"])}" style="display:block;width:100%;border:1px solid var(--frame)"></a></figure>' if (out_dir(sid) / pic).exists() else ""
-        # 次の段（作る）への道。その紙の手順の頁を開き、工夫がこの紙に付く（本人の描く一周の順）。
-        make = f'<p><a class="btn quiet" href="/toy/{esc(sid)}/tsukuru?h={esc(w.get("own_id", ""))}">{esc(MAKE)}</a></p>'
+        # 次の段（作る）への道。手帖を開くと、この画面が話した考えから作った紙を作り、工夫がこの紙に付く（本人の描く一周の順）。
+        make = f'<p><a class="btn quiet" href="/toy/{esc(sid)}/techo">{esc(MAKE)}</a></p>'
         return f'{said}<p>{esc(DONE)} <a href="/sheet/{esc(sid)}/{esc(name)}">{esc(SEE)}</a></p>{fig}{make}'
     r = w.get("result") or {}
     if r.get("fits"):
