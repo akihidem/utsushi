@@ -439,10 +439,10 @@ class Handler(BaseHTTPRequestHandler):
         # 入口はこのサイトの皮の入口（白の展示か黒のジン、--look）。別の皮の入口はこのサイトには無い（404）。
         # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
-            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
-            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
         if m:
             # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）

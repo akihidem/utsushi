@@ -70,7 +70,10 @@ def page(skin_name, path="/about"):
             f'<p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
             # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。黒のジンの案 2 は入口の章の頭（looks.py）。
             # 白の案 2（縦読み）は、入口でなく帯の「よむ」の先のこの頁に置く（統括の決め 11-06。地図の「読み物は道の外へ」）
-            + (hokusai.flip_section() + hokusai.scroll_section("tenji") if skin_name == "tenji" else "") + hokusai.mechanism_section() +
+            # 北斎漫画の縦読み（案 2）は、白と暗い版の両方の序の頁に置く（暗い版の入口を白と同じ作りにしたので、前に黒の入口にあった縦読みは
+            # 白と同じく序の頁へ来る。本人の決め 11-08「もう1つ立てる」・統括の頼み「入口も白と同じ作りで色だけ暗く」。縦読みの色は皮ごと）。
+            # 押すと重なる案 1 は前のとおり白の序の頁だけ
+            + (hokusai.flip_section() if skin_name == "tenji" else "") + hokusai.scroll_section("tenji" if skin_name == "tenji" else "zine") + hokusai.mechanism_section() +
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'

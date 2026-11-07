@@ -49,7 +49,7 @@ def roads(page):
 for name, make in looks.PAGES.items():
     page = make()
     first = re.search(r'<section class="(?:zn-cover|tj-hall)".*?</section>', page, re.S).group(0)
-    if name == "tenji":
+    if name in ("tenji", "zine"):  # 暗い版（zine）の入口も白と同じ作り（本人の決め 11-08「もう1つ立てる」）
         # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。えらぶ の釦は無く（押させない）、題の間のすぐ次に
         # 「まずはここから」の 2 枚（御来迎・張子の首振り虎）が、その玩具の頁への口として並ぶ
         body = page.split("</style>")[-1]
@@ -185,7 +185,7 @@ for key, r in measured.items():
         continue
     assert "go" in r, (key, "次へ進む釦が頁にある", r)
     top, bottom, height, word = r["go"]
-    if key[1].startswith("/look/tenji"):
+    if key[1].startswith(("/look/tenji", "/look/zine")):  # 暗い版（zine）の入口も白と同じ作り（本人の決め 11-08「もう1つ立てる」）
         # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。次へ進む釦の代わりに、まずはここから の札（玩具の名前）がある。
         # 前は札が最初の画面で押せる（札の上の 64px が画面の中）事も見ていたが、本人の決め（11-07 夜）「縦の組みに戻す」で題の間が 11-06 夜の
         # 画面いっぱいの縦の組みに戻り、札は 1 回 下へ送ると見える所になった（1440 と 390 で札の頭が約 1040px）。札があって押せる大きさかだけを見る
