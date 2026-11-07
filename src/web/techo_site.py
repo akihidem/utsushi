@@ -370,7 +370,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
-    return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
+    # 頭の「入口へ」は外した（窓口の決め 11-07）。入口へ直した「もう 1 つ つくる」と同じ所へ行く対になったため（本人のサイト体験レビュー 11-07 の 3）
+    return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1></div>'
             # 選ぶ所は入口（えらぶ）。/toys は入口へ送るので、直に入口へ向ける（本人のサイト体験レビュー 11-07 の 3）
             '<p class="road"><a class="go" href="/">もう 1 つ つくる</a></p>'
             '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
