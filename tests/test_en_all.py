@@ -6,6 +6,7 @@
 - ?lang=en で英語になり、cookie で続き、?lang=ja で戻る。道は日本語の頁と同じ。頭に下書きの札が 1 つ出る。
 - 前からの英語の頁（/en・本人が採った英文）は替えない。
 - 人が書いた字（記録の感想）は訳さない。表の値は数の印（{0}…）が鍵と同じで、内輪の言葉（data/・.json・OWN-）を入れない。
+- 訳の表に同じ鍵が 2 つ無い（別々の枝が同じ字の英語を別の所に足すと、git は衝突を出さずに 2 行が並び、値の違う方が黙って後勝ちになる。11-07 夜に 3 回重なりかけた）。
 """
 import json
 import os
@@ -26,6 +27,17 @@ from web.play_server import serve, sources  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 table = i18n.table()
+_twice = []
+
+
+def _pairs(p):
+    seen = [k for k, _ in p]
+    _twice.extend(sorted({k for k in seen if seen.count(k) > 1}))
+    return dict(p)
+
+
+json.loads((ROOT / "data/i18n/en.json").read_text(encoding="utf-8"), object_pairs_hook=_pairs)
+assert not _twice, ("訳の表に同じ鍵が 2 つある（後から入った方の行を消す）", _twice[:8])
 PH = re.compile(r"\{\d+\}")
 for k, v in table.items():
     # 値の数の印は鍵の中の物だけ（無い印を作ると頁が落ちる）。玩具の名の「（2つ目）」のように、名の英語が数を言わない物は落としてよい
