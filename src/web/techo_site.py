@@ -305,9 +305,10 @@ def made_item(sid, data, r, photos=True, public=False):
     if not photos:
         return ""
     # 物だけと人が確かめた写真と動画だけを出す。ほかは字だけになる（本人の決定 11-05、#314）。
+    # 写真は小さい写し（/small）を出し、押すと元の写真を開く（玩具の頁の記録の札と同じ。元の写真は 1 枚 3.7MB ほどで、並ぶと重い・#521）
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and not public else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and not public)
     if not pics and not words:
@@ -327,7 +328,7 @@ def own_item(sid, data, r):
     記録の頁（説明と AI の札）へは記録の番号から、玩具の頁の同じ記録へは玩具の名前から行く（ほかの札と同じ。地図の 4。新しい字は足さない）。"""
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
@@ -431,7 +432,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
         files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                        else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
+                        else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="上げた写真" loading="lazy" decoding="async"></a>') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
         # 合言葉なしの場には進行者がいないので、上げた画面にだけ「取り下げる」を置く（窓口の決定 11-06 夜・案 A）。押すと、この記録の写真と動画が
