@@ -624,6 +624,7 @@
   "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。": "This device cannot turn your voice into text only inside the device. So we do not show the “Speak” button. If you press the microphone mark on the keyboard, what you say goes in as text. (How your voice is used depends on the settings of your device.)",
   "この機械ではカメラを使えません。": "This device cannot use the camera.",
   "この機械では動画を受けられません（撮影情報を外す ffmpeg が無い）": "This machine cannot take videos (it has no ffmpeg, the tool that removes shooting information)",
+  "この版の絵は残っていない": "No picture of this version remains",
   "この玩具の頁": "This toy's page",
   "この玩具の頁の輪": "This toy's page loop",
   "この紙にする": "Use this sheet",
