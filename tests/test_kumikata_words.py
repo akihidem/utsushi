@@ -45,5 +45,6 @@ assert techo.count("組み方と凡例を見てください") == 2
 # 4. 作りながら見る頁: 手順の文が無い時の案内と、絵の alt
 tsukuru = src("src/web/tsukuru.py")
 assert "組み方の絵を見て、番号の順に進めます。" in tsukuru and "手順の紙の絵を見て、番号の順に進めます。" not in tsukuru
-assert 'alt="組み方の絵（{esc(_label(h))} の紙・版 {v}）"' in tsukuru and 'alt="手順の紙（' not in tsukuru
+# 版の字は組の番号の呼び方（#513 の (a)。tsukuru の ban）
+assert 'alt="組み方の絵（{esc(_label(h))} の紙・{esc(ban)}）"' in tsukuru and 'alt="手順の紙（' not in tsukuru
 print("ok")

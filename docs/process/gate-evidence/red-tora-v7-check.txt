@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tora_v7_3d.py
+# commit: 973a4881（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_tora_v7_3d.py", line 204, in <module>
+    assert low[0] >= -0.5, ("机の面より下へ出る", low)
+           ^^^^^^^^^^^^^^
+AssertionError: ('机の面より下へ出る', (-16.0, 12, 'tail'))
+rc=1
