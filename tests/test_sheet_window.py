@@ -51,9 +51,9 @@ ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
 first, other = hypotheses.sheet_of(G)["id"], ids[1]
 making = lambda hid: f'<form method="post" action="/toy/{G}/print#win" class="inline"><input type="hidden" name="hypothesis" value="{hid}"><input type="hidden" name="at" value="win"><button data-busy>'
 # 紙を作る口は頭の「つくる」1 つ（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。前は窓の中の札と、上の節の「型紙を見る」でも作れた。
-# 紙が無い時は窓の節を出さず錨だけ。頭の「つくる」は窓の錨へ紙を作る（at=win）
+# 紙が無い時は窓に紙の絵を出さない（窓の頭の仮説の札だけ）。頭の「つくる」は窓の錨へ紙を作る（at=win）
 assert "型紙を見る</button>" not in page and making(first) not in page and making(other) not in page
-assert '<div id="win"></div>' in page and "仮説の札を押すと、紙を作ってここに出します" not in visible(page)
+assert '<figure class="sheet">' not in win(page) and "仮説の札を押すと、紙を作ってここに出します" not in visible(page)
 assert re.search(rf'<form method="post" action="/toy/{G}/print#win" class="road"><input type="hidden" name="hypothesis" value="{first}"><input type="hidden" name="at" value="win">', page)
 # 窓の札から押して紙を作れない時は、理由も窓で読める。上の節の札から押した時は、上の節で読む（#121 の線）
 real = hypotheses.print_sheet
@@ -68,7 +68,8 @@ assert code == 200 and f"see={first}" in where and where.endswith("#win"), (code
 w = win(page)
 # 「刷る」「印刷」は、紙に印刷する所にだけ出る。PDF の釦の下の案内（#297）も印刷する所なので除く
 rest = visible(re.sub(r'<details class="print-help">.*?</details>', "", w, flags=re.S))
-for printing in ("印刷する時は、PDF の大きさを 100% にしてください。", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り"):
+# 「型紙を刷ります。」は、型紙の窓の頭へ移した説明の文（前は「すぐ作る」の頭。本人のサイト体験レビュー 11-07 の 3）。窓は紙に印刷する所なので並べる
+for printing in ("印刷する時は、PDF の大きさを 100% にしてください。", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り", "型紙を刷ります。"):
     assert printing in rest, printing
     rest = rest.replace(printing, "")
 assert "刷" not in rest and "印刷" not in rest, rest[:400]
