@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_workshop_gallery.py
+# commit: 161b966c（回した時の HEAD）
+ok ワークショップの写真: これまでの復元（玩具 3）と他の人が作った物（15 枚）・公開の場も同じ
+rc=0
