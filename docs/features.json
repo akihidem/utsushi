@@ -652,6 +652,7 @@
    "src/web/toy.py",
    "src/web/techo_site.py",
    "tests/test_ux_stage0.py",
+   "tests/test_one_make_door.py",
    "docs/process/research/36-road-and-audience.md"
   ],
   "unverified": "入口の最初の画面に「えらぶ」、玩具の頁の最初の画面に「つくる」、窓で紙ができた後は 印刷 → つくる（手帖へ）、手帖の記録の頁に「もちよる」（ギャラリーへ）。読み物と作る側の節は見出しのまま畳み、本物の記録がある時は見本を畳む。字は道しるべの言葉と今ある字だけ。幅 390×844・375×667 は Chromium で測った。実機と人の目、駅ごとに 1 画面の段 1 はまだ"
