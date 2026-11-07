@@ -198,7 +198,8 @@ def page_easy(page, miss=None):
     """頁をやさしい日本語にし（表に無い字は元のまま）、頭の帯の後に下書きの札を 1 つ置く。やさしい の切り替えは日本語へ戻る口にする。"""
     page = to_en(page, miss, lang="easy")
     page = page.replace(EASY_LINK, '<a class="nav-lang nav-easy" href="?lang=ja" lang="ja">日本語</a>')
-    note = f'<p class="easy-draft" style="margin:0;padding:6px 12px;font-size:12px;letter-spacing:.04em;color:var(--mute,#6b6358)">{ruby_html(html.escape(EASY_NOTE))}</p>'
+    # 字は 14px（英語の札は 12px）。ルビは字の半分ほどになり、12px だと 6px で読みにくい（UX の担当の気づき・設計の「小さい札は下限を上げる」）
+    note = f'<p class="easy-draft" style="margin:0;padding:6px 12px;font-size:14px;letter-spacing:.04em;color:var(--mute,#6b6358)">{ruby_html(html.escape(EASY_NOTE))}</p>'
     return _after_main(page, note)
 
 
