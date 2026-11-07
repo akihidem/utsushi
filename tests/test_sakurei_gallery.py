@@ -5,7 +5,7 @@
 2. 出す物: 人が「物だけ」と確かめた写真だけ。「人が入る」と確かめた写真は出ない。写真は小さい写し（/small）で、元の写真の道は並べない
 3. 並び: 日の順の小見出し（id は sakurei-MMDD・web.sakurei.days() と同じ日だけ）。日の中は玩具ごとに寄せる。作った日は札に重ねない
 4. 札: 玩具の名から玩具の頁へ行く。刷った組が分かる時だけ型紙の版（組の番号）。記録の番号の字は出さない。作例は「他の人が作った物」の並びに混ざらない
-5. 場: 合言葉なしで開いた場も同じ物を出す。写真を出さない形（photos=False）は出さない。作例だけがある時も見本は畳む
+5. 場: 原画の隣の作ってみた実物にも作例が出る。小さい写しの道は確かめた写真だけを返す。合言葉なしで開いた場も同じ物を出す。写真を出さない形（photos=False）は出さない。作例だけがある時も見本は畳む
 """
 import io
 import os
@@ -85,7 +85,7 @@ text = re.sub(r"<[^>]+>", " ", sec)
 assert not re.search(r"R-\d{4}", text), "記録の番号を字で出した"
 assert "記録の番号" not in text and "goraigo-v10" not in sec
 # 型紙の版は、刷った組が分かる作例の札にだけ、組の番号で出す（玩具の頁の型紙の札の脇と同じ「型紙の版 10」の形）
-card = lambda rid: re.search(rf'<figure class="item">(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', sec, re.S).group(0)  # noqa: E731
+card = lambda rid: re.search(rf'<figure>(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', sec, re.S).group(0)  # noqa: E731
 assert "型紙の版 10" in card(g1), card(g1)
 assert "型紙の版" not in card(t1) and "型紙の版" not in card(t2), "組の分からない作例に版を出した"
 assert sec.count("型紙の版") == 1
@@ -93,6 +93,39 @@ ageta = html.split('id="ageta"')[1]
 assert not any(r in ageta for r in (g1, t1, t2)), "作例が他の人が作った物に混ざった"
 assert html.index('id="sakurei"') < html.index('id="ageta"'), "作例の節が頁の頭でない"
 assert "まだ作った物の記録はありません" not in html, "作例が並んでいるのに「まだ…ありません」"
+
+# 玩具の頁の原画の隣の作ってみた実物（web.made）にも、その玩具の作例が出る（置き場は 1 つ）。確かめた物だけ・一番新しい 1 枚
+from web import made  # noqa: E402
+assert made.photo(G) == f"/record/{g1}/media/{gn1}/small", made.photo(G)
+assert made.photo(T) == f"/record/{t2}/media/{tn2}/small", "記録の順で一番新しい確かめた作例でない（#521 と同じ選び方。作った日の順ではない）"
+# 小さい写しの道が、作例の写真を返す（人が入る写真と確かめ待ちの写真は返さない）
+import threading  # noqa: E402
+import urllib.error  # noqa: E402
+import urllib.request  # noqa: E402
+
+from web.play_server import serve  # noqa: E402
+
+
+def get(server, path):
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{server.server_address[1]}{path}", timeout=30) as r:
+            return r.status, r.headers.get("Content-Type"), r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, None, b""
+
+
+for opened in (False, True):
+    srv = serve(0, public_open=opened)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        st, kind, body = get(srv, f"/record/{g1}/media/{gn1}/small")
+        assert st == 200 and kind == "image/jpeg" and body[:3] == b"\xff\xd8\xff", (opened, st, kind)
+        assert get(srv, f"/record/{g2}/media/{gn2}/small")[0] == 404 and get(srv, f"/record/{g3}/media/{gn3}/small")[0] == 404, opened
+        st, _, page = get(srv, "/gallery")
+        assert st == 200 and 'id="sakurei"' in page.decode() and f"/record/{g1}/media/{gn1}/small" in page.decode(), opened
+    finally:
+        srv.shutdown()
+        srv.server_close()
 
 # 5. 場
 pub = techo_site.gallery_page(SIDS, public=True)

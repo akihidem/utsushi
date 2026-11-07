@@ -291,6 +291,7 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .sakurei-row figure{margin:0;display:grid;gap:6px;align-content:start}
 .gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-row figcaption{font-size:14px}
+.gallery .sakurei-row .ban{white-space:nowrap}
 """
 
 
@@ -375,7 +376,7 @@ def sakurei_section(sids, photos=True):
     body = ""
     for day, items in days.items():
         cards = "".join(
-            f'<figure class="item">'
+            '<figure>'  # 他の人が作った物の札（.item）の上の線は付けない: 写真の板が並ぶだけの所で、線が写真ごとに切れて見えるため
             + "".join(f'<img src="/record/{esc(e["rid"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in e["photos"])
             + f'<figcaption><a href="/toy/{esc(e["sid"])}">{esc(names[e["sid"]])}</a>{_ban(e["set"])}</figcaption></figure>'
             for e in items)

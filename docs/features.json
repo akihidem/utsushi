@@ -817,13 +817,16 @@
  },
  {
   "id": "f66",
-  "name": "ワークショップで作られたおもちゃ（作例）の受け口",
+  "name": "ワークショップで作られたおもちゃ（作例）の受け口と、作った物の頁の作例の節",
   "status": "doing",
   "evidence": [
    "src/web/sakurei.py",
    "src/omochae/records.py",
-   "tests/test_sakurei.py"
+   "src/web/techo_site.py",
+   "src/web/made.py",
+   "tests/test_sakurei.py",
+   "tests/test_sakurei_gallery.py"
   ],
-  "unverified": "受け口だけで、作った物の頁の作例の節は次の PR。本人の写真はまだ取り込んでいない（Drive の届け口の folder はまだ無い）。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）"
+  "unverified": "本人の写真はまだ取り込んでいない（Drive の届け口の folder はまだ無い）ので、頁には作例の節がまだ出ない（写真が来る前の形）。節の形と並びは作り物の写真の試験と画面の写しで見た。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）。実機と人の目はまだ"
  }
 ]
