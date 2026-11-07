@@ -395,6 +395,25 @@ class Handler(BaseHTTPRequestHandler):
             # その玩具の工作の様子（聞かれた事・止まった所・感想・動きの札）。作る側が読む集計で、学ぶ人の頁には出さない。
             from . import kaizen
             return self._send(200, kaizen.toy_page(m.group(1), look, path))
+        # 試作の層（入口と玩具の頁ひとつの別案。web.tameshi）。環境の OMOCHAE_TAMESHI=1 の時だけ開く。本線の頁は変えない
+        if path.startswith("/tameshi"):
+            from . import tameshi
+            if not tameshi.enabled():
+                return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
+            if path == "/tameshi":
+                return self._send(200, tameshi.entrance(look, path))
+            m = re.fullmatch(rf"/tameshi/up/({SID})", path)
+            if m and m.group(1) in sources():
+                return self._send(200, tameshi.up(m.group(1)))
+            m = re.fullmatch(rf"/tameshi/toy/({SID})", path)
+            if m and m.group(1) in sources():
+                return self._send(200, tameshi.toy_page(m.group(1), look, path))
+            if path == "/tameshi/guide.png" and tameshi.GUIDE.exists():
+                return self._send(200, tameshi.GUIDE.read_bytes(), "image/png")
+            m = re.fullmatch(r"/tameshi/ban/([a-z_]+(?:-[a-z_]+)*-v\d{1,3})\.png", path)
+            if m and (tameshi.BAN_DIR / f"{m.group(1)}.png").exists():
+                return self._send(200, (tameshi.BAN_DIR / f"{m.group(1)}.png").read_bytes(), "image/png")
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         if path == "/toys":
             from . import toys
             return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
