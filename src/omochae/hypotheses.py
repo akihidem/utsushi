@@ -80,6 +80,25 @@ def set_number(data):
     return int(m.group(1)) if m else 1
 
 
+def label_of(sheet_set, version=1):
+    """組の番号での版の呼び方（窓口の決定 11-07: 版の数は組の番号で統一し、組の中で人が採った直しがある時だけ「（直し N）」を添える）。
+    例: goraigo-v10 の版 1 は「版 10」、版 2 は「版 10（直し 2）」。組の名前に -v<数> が無い雛形は 1。"""
+    m = re.search(r"-v(\d+)$", sheet_set or "")
+    n = int(m.group(1)) if m else 1
+    return f"版 {n}" + (f"（直し {int(version)}）" if int(version) >= 2 else "")
+
+
+def paper_label(data, version=1):
+    """紙の題に刷る版の字。今の組は組の番号（label_of）。前の組（compose.kept_sets。凍結の床が控えている紙）は前の題「版 N」のまま刷る
+    （窓口の決定 11-07: 今の組だけ題の分の控えを取り直し、前の組の紙は前の題のまま）。"""
+    from .compose import TEMPLATES, kept_sets
+
+    now = current_set(data)
+    if now in kept_sets(TEMPLATES[data.get("template", "slider_fan")]):
+        return f"版 {version}"
+    return label_of(now, version)
+
+
 def sheet_id(data, sheet_set=None):
     """記録の、その組（省くと雛形の今の組）のたたき台の仮説 id。組ごとに分ける時は "sheet_by_set" に書く。
 
@@ -350,7 +369,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     if params is None:
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
         return 3
-    label = f"版 {version}"
+    label = paper_label(data, version)
     if adopted:
         # 紙から根拠の記録へ戻れるように刷る（F7）。
         label += "・根拠 " + "、".join(adopted["record_ids"])

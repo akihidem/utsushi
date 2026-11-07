@@ -54,6 +54,21 @@ try:
     assert f"版 {n}</text>" in toy.toy_page(G, "tenji") and ">版 3</text>" not in toy.toy_page(G, "tenji"), "真ん中は寸法の刻みでなく型紙の版"
 finally:
     kaizen.versions = keep
+# 版の呼び方は組の番号で統一（窓口の決定 11-07）。組の中で人が採った直しがある時だけ「（直し N）」
+assert hypotheses.label_of("goraigo-v10") == "版 10" and hypotheses.label_of("goraigo-v10", 2) == "版 10（直し 2）"
+assert hypotheses.label_of("tora-v4", 1) == "版 4" and hypotheses.label_of("spin-v1", 1) == "版 1"
+# 紙の題: 今の組は組の番号、前の組（凍結の床の控え）は前の題「版 N」のまま
+from omochae.compose import TEMPLATES, kept_sets  # noqa: E402
+gd, td = hypotheses.load(G), hypotheses.load(T)
+assert hypotheses.paper_label(gd, 1) == f"版 {hypotheses.set_number(gd)}" and hypotheses.paper_label(gd, 3) == f"版 {hypotheses.set_number(gd)}（直し 3）"
+tiger = TEMPLATES[td.get("template")]
+now = tiger.SHEET_SET
+try:
+    tiger.SHEET_SET = kept_sets(tiger)[0]
+    assert hypotheses.paper_label(td, 1) == "版 1" and hypotheses.paper_label(td, 2) == "版 2", "前の組の紙は前の題のまま"
+finally:
+    tiger.SHEET_SET = now
+assert hypotheses.paper_label(td, 1) == f"版 {hypotheses.set_number(td)}"
 # 組の名前に -v<数> が無い雛形は 1
 keep_cs = hypotheses.current_set
 hypotheses.current_set = lambda data: "plain"
