@@ -388,7 +388,8 @@ const up=()=>{drag=null};stage.addEventListener('pointerup',up);stage.addEventLi
 words();rest(last(L));
 // 作業しながら見る試作の頁に、形の並びと動かす口を渡す。試作の頁は手順を「手」に分け、1 手ずつ動かして止める（本人の感想 11-06）。
 // ふだんの頁はこれを使わない。前は試作の枝で節の script の字を差し替えていたが、字が変わると黙って外れるので、口を開ける形にした
-window.kumitateParts={F,T,play,rest,stop,go:i=>{at=i;words()},view:()=>{if(cam)view()}};
+// show は作りながら見る頁（web.tsukuru）が、その頁の手順の番号に 3D の段を合わせるのに使う（本人のサイトレビュー 11-07 昼過ぎの 4）
+window.kumitateParts={F,T,play,rest,stop,show,go:i=>{at=i;words()},view:()=>{if(cam)view()}};
 })();</script>
 """
 

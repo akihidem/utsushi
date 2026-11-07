@@ -528,9 +528,10 @@
    "tests/test_tsukuru_last_step.py",
    "tests/test_landscape_fit.py",
    "src/omochae/making_log.py",
-   "docs/process/research/30-kazasu-camera-choice.md"
+   "docs/process/research/30-kazasu-camera-choice.md",
+   "src/web/kumitate.py"
   ],
-  "unverified": "「ここで止まった」を押すと、その段のまま声か字で聞け、止まった段が残る（Issue 118）。映像は端末の中だけ、声は録らず字になった問いだけ送る。実機・本物の音声認識・人が使った確認はまだ。観察 B と C は本人の判断待ち"
+  "unverified": "「ここで止まった」を押すと、その段のまま声か字で聞け、止まった段が残る（Issue 118）。映像は端末の中だけ、声は録らず字になった問いだけ送る。実機・本物の音声認識・人が使った確認はまだ。観察 B と C は本人の判断待ち 11-07: 組み立ての 3D がある玩具（御来迎・虎）は、手本を 3D にしてその手順の段で止める（本人のサイトレビュー 11-07 昼過ぎの 4「左側に出てくる図がほとんど同じ」）。幅 320×568 と 375×667 の縦置きでは、3D の下の断りの 1 行の分、一番大きい札が下へ出る手順が 1 つ増えた（絵が下限の 120px の手順。試験の線の中）"
  },
  {
   "id": "f37",

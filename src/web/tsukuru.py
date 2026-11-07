@@ -69,6 +69,10 @@ a{color:var(--accent)}
 /* 組み方の絵（svg）は、手順の紙の絵（縦に長い img）と同じく高さの上限いっぱいを取り、絵は比を保って中に収める。
    高さを幅から決めると、横に長いコマが低くなり、絵の高さの下限（120px）より低くなった（幅 320 の御来迎、tests/test_landscape_fit.py） */
 svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.koma.on{display:block}
+/* 3D の手本（kumitate）。送る釦と段の字は頁の札と手順の字が持つので隠し、3D の舞台だけを手本の絵の場所に置く。高さは手順の紙の絵と同じ上限 */
+.k3d .lead,.k3d .rt-acts,.k3d #rt-text{display:none}
+.k3d .rt-stage{margin:0;width:100%;height:52vh;height:52svh;min-height:120px}
+.k3d .meta{margin:4px 0 0;font-size:12px;line-height:1.5}
 .side{padding:14px 16px;display:grid;gap:14px;align-content:start;min-width:0;border-top:1px solid var(--rule)}
 /* 札は手が紙でふさがっていても押せる大きさ。並びは進む順（次へか組み上がり・止まった・戻る）。色で良し悪しを付けない。 */
 .tiles{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0}
@@ -113,6 +117,8 @@ svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.k
    JS が無い時は手順が全部並び --tx も無いので当てない（.js だけ） */
 @media (orientation:portrait){
  .js .tehon .sheet{max-height:min(52vh,max(120px,calc(100vh - 326px - var(--tx,0px))));max-height:min(52svh,max(120px,calc(100svh - 326px - var(--tx,0px))))}
+ /* 3D の下には「だいたいの絵です」の断り（kumitate.NOTE_SHAPE）が 2 行ほど付くので、その分（56px）を引く。断りは落とさない（形の正しさを言わない線） */
+ .js .tehon .k3d .rt-stage{height:min(52vh,max(120px,calc(100vh - 382px - var(--tx,0px))));height:min(52svh,max(120px,calc(100svh - 382px - var(--tx,0px))))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
@@ -129,7 +135,7 @@ const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[va
 let n=+stepIn.value;
 // 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
 const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));const kp=window.kumitateParts;if(kp&&kp.show&&document.querySelector('.k3d'))kp.show(n-1);document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}
  // 次の手順の番号と字が画面の上の外にある時は、番号の行を画面の頭へ送る。低い画面で字の長い手順（虎 v7 の手順 10 は 62 字）では、
  // 「次の手順へ」が下へ出て、人が札まで送ってから押すと、頁が下へ送られたままで次の手順の字が画面の上の外に出た（320×568。tests/test_landscape_fit.py）。
@@ -253,11 +259,22 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     items = "".join(f'<li{on if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
     if not steps:
         items = '<li class="on">組み方の絵を見て、番号の順に進めます。</li>'
+    # 3D の組み立てがある玩具（御来迎・虎）は、左の手本を組み立ての 3D にし、頁の手順の番号の段で止める（本人のサイトレビュー 11-07 昼過ぎの 4
+    # 「つくる、を押した先の作業ステップで左側に出てくる図がほとんど同じだし参考にならない」）。前は前に刷った手順の紙の絵 1 枚か、
+    # 組み方の絵（多くの雛形で全部の手順が同じ 1 枚）で、12 の手順の間ずっと同じ絵だった。3D の段の文は手順の文と同じ物（雛形の steps）で、
+    # 段 i は手順 i+1。文が食い違う時（開いた時の版が 3D の版と違う時）は 3D を出さず、前の絵のままにする（別の段を見せない）
+    from . import kumitate
+
+    stage = ""
+    if not hid.startswith("OWN-") and kumitate.available(sid) and kumitate.steps(sid)[0] == steps:
+        stage = f'<div class="k3d">{kumitate.block(sid, heading=False)}</div>'
     name = f"{hid}_v{v}_tejun.png"
     if not (out_dir(sid) / name).exists():  # 型紙なしの紙には手順の紙が無い。その紙そのものを出す
         name = f"{hid}_v{v}_free.png"
     img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・版 {v}）">'
            if (out_dir(sid) / name).exists() else "")
+    if stage:
+        img = stage
     if not img and steps:
         # 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、前に刷った紙の絵が無い時は、手帖・組み方の頁と同じ組み方の絵
         # （instructions.step_pictures）を出す。字を入れない絵で、読み上げからは隠れる（手順の文は横の並びが言う）
