@@ -235,12 +235,14 @@ def draw_chunk(draw, lines, cx, cy, size, v):
 # 字幕の帯（ファイナリストから借りた点 1・2。state の demo-rebuild）: 画面の下の真ん中に暗い帯、白い字の日本語（1〜2 行）、その下に英語を小さく
 # 1 かたまり。焼き込み。3 本のファイナリストの型（下の真ん中・黒地に白・大きめ）と、窓口の決め（11-07 の (3)「日本語の下に小さく英語・1 かたまり」）。
 # 全画面の題の札（借りた点 6）は帯にせず真ん中に大きく出す: 字の札 2 つ（word_touch・word_ai）と、境目・終わりの問い・締め（close）
-BAND_JA = 44                 # 帯の日本語の大きさ（px）
+BAND_JA = 48                 # 帯の日本語の大きさ（px）。44 だと英語（6 割の大きさ）が 26px で、通しの止めの絵で小さく見えた（11-07）
 BAND_PAD = (40, 18)          # 帯の中の左右と上下の余白（px）
 BAND_BOTTOM = 34             # 画面の下の端から帯の下の端（px）
 BAND_INK = 0.66              # 帯の暗さ（v=1 の時の不透明さ）
 BAND_COLOR, BAND_JA_INK, BAND_EN_INK = (24, 21, 18), (255, 253, 248), (232, 226, 214)
-TITLE_CARDS = ("word_touch", "word_ai", "border", "close")
+# talk_claude は語りの 1 行だけで、後ろに映す画面がまだ無い（Claude Code の画面は後入れ）。帯だけだと紙の地に下の帯だけの画面に
+# なった（11-07 の止めの絵）ので、画面が来るまでは真ん中の大きな 1 行（借りた点 6）にする
+TITLE_CARDS = ("word_touch", "word_ai", "border", "close", "talk_claude")
 
 
 def band_height(lines, en_lines=None):
