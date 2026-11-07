@@ -359,7 +359,7 @@ SAKUREI_FACES = "4 日間のワークショップで作ったおもちゃたち"
 SAKUREI_KUFU = "参加者の型紙の改善例"
 SAKUREI_KUFU_WORDS = "参加者の型紙の改善例その1。手前が型紙通り。しかし、奥の工作のように、からくりがあると推測した参加者が蓋の開閉でネズミが箱の中に仕舞われるようにした。"
 # 報告の段の道の字（UX の担当の案・窓口の確かめ待ち）。回の一覧が main に無い間は段ごと出ないので、この字も出ない
-SAKUREI_REPORT_GO = "ワークショップの様子と、改善の輪"
+SAKUREI_REPORT_GO = "ワークショップの様子と、うつしの輪"  # 11-08 呼び名を 1 本の輪の名にそろえた（前は「改善の輪」）
 
 
 def _ban(sheet_set):
@@ -526,7 +526,9 @@ def manabi_box():
     のこした後は #mine に着くので、頭のこの節は上げる手の邪魔にならない。公開の場でも出す（人の言葉も記録の番号も入らない説明の字と図だけなので）"""
     from . import loop_figure  # 循環を避けて、ここで読む（naoru と同じ）
 
-    return f'<section class="panel manabi" id="manabi"><p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}</section>'
+    # 11-08 の組み直し（本人の決め「この案で組み直す」）: 見出しは 1 本の輪の名、図は 1 本の輪。説明の頁の学びの輪の段と同じ形
+    return (f'<section class="panel manabi" id="manabi"><h2>{esc(loop_figure.NAME)}</h2><p>{esc(loop_figure.ADOPTED)}</p>'
+            f'{loop_figure.svg()}</section>')
 
 
 def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):

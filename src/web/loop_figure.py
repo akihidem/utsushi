@@ -1,4 +1,13 @@
-"""説明の頁（このサイトについて）の学びの輪の図: 二つの輪を、手書きの風合いで重ねる（窓口の決め 155253・UX の担当が作る）。
+"""説明の頁（このサイトについて）と のこす の頁の輪の図。11-08 から 1 本の輪（うつしの輪）: 作る → のこす → 直す → 刷る。
+
+組み直し（11-08・本人の決め「この案で組み直す」・本人の言葉「構造単純でいきたい」・統括の案 grove の state/one-loop-20261108.md）:
+- 輪は 1 本・駅は 4 つ。駅ごとに誰がするかの印（作る・のこす は人、直す は Claude、刷る は人が版を決める）。真ん中に輪の名「うつしの輪」
+- 学ぶ人の経験学習の輪（本人が採った文 ADOPTED）は、同じ輪を人の側から見た物として、図の下の 1 行に収める（ADOPTED の文は頁にそのまま残す）
+- 正直に言う所: 直す は今、作る側が記録を Claude に渡して回している（作品の中の Claude API がひとりでに回してはいない）。図の下の 1 行で言う
+- 前の二つの輪の図（a・b の 2 形）と、それを下絵にした生成の絵は使わない（生成の絵の道は、置き場の確かめた絵を返すだけで、頁からは呼ばない）
+- 新しい字（駅・誰の印・駅の説明・真ん中・下の 2 行）は本人の確かめ待ち
+
+前の形（11-07）: 二つの輪を、手書きの風合いで重ねる（窓口の決め 155253・UX の担当が作る）。
 
 もと: 本人の言葉（ワークショップの設計の考え）「経験学習の輪はワークショップではファシリテーターと一周だけ回るが、うつし があるとその後も一人で回り続ける。
 記録が次の導入になり、ファシリテーターの役割は型紙と記録の形の中に残る」と、本人が採った文（11-07「案 1 の字でよい」・下の ADOPTED）。
@@ -31,6 +40,14 @@ ADOPTED = ("作って、確かめて、ふり返って、次を考える。こ�
 WORDS = {"ws": "ワークショップ", "fac1": "進め役（ファシリテーター）と", "fac2": "いっしょに一周", "ut": "うつし", "alone": "一人で回り続けられます",
          "make": "作って", "check": "確かめて", "look": "ふり返って", "next": "次を考える", "rec": "のこした記録", "door": "次に作る時の入り口",
          "form": "型紙と記録の形"}
+# 1 本の輪の字（11-08 の組み直し・本人の確かめ待ち）。駅は時計回りに 作る（上）→ のこす（右）→ 直す（下）→ 刷る（左）
+STATIONS = (("make1", "作る", "人", "紙で作って試す"), ("keep1", "のこす", "人", "手帖に写真・声・字"),
+            ("fix1", "直す", "Claude", "記録から型紙を直す"), ("print1", "刷る", "人が版を決める", "新しい版の型紙"))
+NAME = "うつしの輪"
+CENTER = "1 周で 1 つ版が上がる"
+LEARNER = "学ぶ人から見ると: 作って、確かめて、ふり返って、次を考える"
+HONEST = "直すは今、記録を Claude に渡して回しています。"
+RING_LABEL = NAME + ": " + " → ".join(f"{n}（{w}）" for _, n, w, _ in STATIONS) + " → " + STATIONS[0][1]
 INK, SHU, MUTE = "#2b2722", "#b04030", "#6f665a"
 
 
@@ -134,48 +151,38 @@ def _labels(variant):
             + _t("form", 186, 190, 12, SHU) + _t("rec", 252, 348, 12, SHU) + _t("door", 110, 348, 12, SHU)), 356
 
 
-def svg(variant="b"):
-    """説明の頁に置く図。確かめた生成の絵があれば、その上に字を重ねた形（img と字だけの SVG）。無ければ線の絵。"""
-    name = f"loop-{variant}.jpg"
-    if image_ok(name):
-        labels, h = _labels(variant)
-        # 下絵（線の絵・幅 360・高さ h）は 1024×1024 の正方形の中に上寄せで置いて描かせたので、字の SVG は 360×360 の正方形で重ねる
-        return (f'<div class="loop-fig" style="position:relative;width:100%;max-width:420px">'
-                f'<img src="/about/loop-figure/{name}" alt="" style="width:100%;height:auto;display:block" loading="lazy">'
-                f'<svg viewBox="0 0 360 360" role="img" aria-label="{esc(ADOPTED)}" style="position:absolute;inset:0;width:100%;height:100%;font-family:inherit">{labels}</svg></div>')
-    return drawn(variant)
+def svg(variant=None):
+    """説明の頁と のこす の頁に置く 1 本の輪の図（11-08 の組み直し）。下に正直に言う 1 行を添える。variant は前の 2 形の名残で、使わない。"""
+    return (f'<figure class="loop-fig" style="margin:12px auto;max-width:460px">{drawn()}'
+            f'<figcaption class="meta" style="text-align:center">{esc(HONEST)}</figcaption></figure>')
 
 
-def drawn(variant="b"):
-    """図の SVG（頁の幅に合わせて縮む）。variant は "a"（二つの輪を横に重ねる）か "b"（大きい輪の左上に一周目を重ねる）。
-    どちらも、回り続ける輪の上に 作って → 確かめて → ふり返って → 次を考える（時計回り）、下に 次を考える → のこした記録 → 次に作る時の入り口 → 作って の戻り。"""
-    if variant == "a":
-        h = 345
-        small = _ring(100, 170, 58, 3, start=-2.2)
-        big = _ring(226, 178, 104, 7, start=-0.9)
-        big2 = _ring(226, 178, 112, 11, start=-0.5, sweep=2 * math.pi * 0.62, wob=0.8)
-        back = _path_pts((256, 318), (96, 318), (66, 292), (70, 252), (112, 214))
-        body = (_stroke(small, MUTE, 2.2, 3) + _arrow(small, MUTE, 2.0)
-                + _stroke(big, INK, 2.6, 7) + _arrow(big, INK, 2.4) + _stroke(big2, INK, 1.2, 11, twice=False)
-                + _stroke(back, SHU, 2.2, 5) + _arrow(back, SHU, 2.0)
-                + _t("ws", 100, 50, 14, MUTE, weight="bold") + _t("fac1", 100, 70, 11, MUTE) + _t("fac2", 100, 86, 11, MUTE)
-                + _t("ut", 300, 36, 16, INK, weight="bold") + _t("alone", 300, 54, 11, INK)
-                + _t("make", 178, 148) + _t("check", 318, 96) + _t("look", 356, 282, anchor="end") + _t("next", 226, 302)
-                + _t("form", 238, 184, 12, SHU)
-                + _t("rec", 262, 336, 12, SHU) + _t("door", 112, 336, 12, SHU))
-    else:
-        h = 356
-        big = _ring(186, 184, 112, 21, start=-1.3)
-        big2 = _ring(186, 184, 120, 25, start=-0.9, sweep=2 * math.pi * 0.6, wob=0.8)
-        first = _ring(90, 118, 42, 17, start=-2.4)
-        back = _path_pts((246, 330), (70, 330), (40, 296), (40, 232))
-        body = (_stroke(big, INK, 2.6, 21) + _arrow(big, INK, 2.4) + _stroke(big2, INK, 1.2, 25, twice=False)
-                + _stroke(first, MUTE, 2.2, 17) + _arrow(first, MUTE, 2.0)
-                + _t("ws", 90, 30, 13, MUTE, weight="bold") + _t("fac1", 90, 46, 10, MUTE) + _t("fac2", 90, 60, 10, MUTE)
-                + _t("ut", 292, 36, 16, INK, weight="bold") + _t("alone", 292, 54, 11, INK)
-                + _t("make", 40, 212) + _t("check", 322, 122) + _t("look", 352, 272, anchor="end") + _t("next", 186, 318)
-                + _t("form", 186, 190, 12, SHU)
-                + _stroke(back, SHU, 2.2, 23) + _arrow(back, SHU, 2.0)
-                + _t("rec", 252, 348, 12, SHU) + _t("door", 110, 348, 12, SHU))
-    return (f'<svg class="loop-fig" viewBox="0 0 360 {h}" role="img" aria-label="{esc(ADOPTED)}" '
-            f'style="width:100%;max-width:420px;height:auto;display:block;font-family:inherit">{body}</svg>')
+def drawn(variant=None):
+    """1 本の輪の SVG（頁の幅に合わせて縮む）。4 つの駅を時計回りに置き、駅の間を手書きの風合いの弧と矢でつなぐ。字は text の要素に 1 つずつ。"""
+    W, H, CX, CY, R = 540, 470, 270, 228, 120
+    ang = (-90, 0, 90, 180)
+    body = ""
+    for i in range(4):
+        a0, sw = math.radians(ang[i] + 24), math.radians(90 - 48)
+        # 短い弧は揺れが目立つので、揺れを小さくし、なぞりは 1 度にする（11-08 に絵で見た。前の値では波打って矢に見えにくかった）
+        arc = _ring(CX, CY, R, 31 + i, start=a0, sweep=sw, wob=0.25, n=24)
+        body += _stroke(arc, SHU, 2.6, 31 + i, twice=False) + _arrow(arc, SHU, 2.4)
+    for (key, name, who, what), d in zip(STATIONS, ang):
+        x, y = CX + R * math.cos(math.radians(d)), CY + R * math.sin(math.radians(d))
+        body += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="31" fill="var(--paper,#fbf8f2)" stroke="{INK}" stroke-width="2"/>'
+        body += f'<text x="{x:.1f}" y="{y + 6:.1f}" text-anchor="middle" font-size="19" font-weight="bold" fill="{INK}">{esc(name)}</text>'
+        if d == -90:
+            tx, ty, anchor = x, y - 62, "middle"
+        elif d == 90:
+            tx, ty, anchor = x, y + 52, "middle"
+        elif d == 0:
+            tx, ty, anchor = x + 42, y - 4, "start"
+        else:
+            tx, ty, anchor = x - 42, y - 4, "end"
+        body += f'<text x="{tx:.1f}" y="{ty:.1f}" text-anchor="{anchor}" font-size="13" fill="{SHU if who == "Claude" else MUTE}">{esc(who)}</text>'
+        body += f'<text x="{tx:.1f}" y="{ty + 15:.1f}" text-anchor="{anchor}" font-size="11" fill="{MUTE}">{esc(what)}</text>'
+    body += f'<text x="{CX}" y="{CY - 6}" text-anchor="middle" font-size="16" fill="{INK}">{esc(NAME)}</text>'
+    body += f'<text x="{CX}" y="{CY + 14}" text-anchor="middle" font-size="11" fill="{MUTE}">{esc(CENTER)}</text>'
+    body += f'<text x="{CX}" y="{H - 14}" text-anchor="middle" font-size="11" fill="{MUTE}">{esc(LEARNER)}</text>'
+    return (f'<svg class="loop-ring" viewBox="0 0 {W} {H}" role="img" aria-label="{esc(RING_LABEL)}" '
+            f'style="width:100%;height:auto;display:block;font-family:inherit">{body}</svg>')
