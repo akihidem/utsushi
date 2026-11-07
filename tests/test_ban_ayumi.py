@@ -41,8 +41,7 @@ try:
         (kh.PICTURES / f"sheets/{name}.png").write_bytes(b"\x89PNG" + name.encode())
 
     # 1. 古い順に並び、最後が今の版。印は今の版だけ
-    for sid, tpl, want in ((T, TIGER, ["tora-v3", "tora-v4", "tora-v5", "tora-v6", "tora-v7"]),
-                           (G, FAN, ["goraigo-v10", "goraigo-v11", "goraigo-v12", "goraigo-v13", "goraigo-v14"])):
+    for sid, tpl, want in ((T, TIGER, [f"tora-v{n}" for n in range(1, 8)]), (G, FAN, [f"goraigo-v{n}" for n in range(1, 15)])):
         html = ban_ayumi.section(sid)
         rows = kh.versions(tpl.__name__.rsplit(".", 1)[1])
         assert [r["set"] for r in rows] == want and rows[-1]["set"] == tpl.SHEET_SET, [r["set"] for r in rows]
@@ -58,8 +57,8 @@ try:
         assert html.count('class="ban-to"') == len(rows) - 1 and ban_ayumi.ARROW not in got[0][1] and 'aria-hidden="true"' in ban_ayumi.ARROW
         assert "→" not in re.sub(r"<[^>]+>", "", html), "→ は字でなく印"
         assert ban_ayumi.SCRIPT in html and "e.scrollLeft=e.scrollWidth" in ban_ayumi.SCRIPT and "resize" in ban_ayumi.SCRIPT, "開いた時と幅が替わった時は今の版の側から"
-        # 4. 前の版がある事と、数の 1 行
-        assert ban_ayumi.BEFORE in html, "表の最初が版 1 でないので、前にも版がある"
+        # 4. 表は版 1 から持つので「この前にも版があります」は出ない。数の 1 行は表から
+        assert rows[0]["sheet_version"] == 1 and ban_ayumi.BEFORE not in html, "版 1 から並ぶ時は、前の版のつなぎを出さない"
         assert ban_ayumi.COUNT.format(first=rows[0]["sheet_version"], last=rows[-1]["sheet_version"], n=len(rows)) in html
 
     tiger = ban_ayumi.section(T)
@@ -70,7 +69,8 @@ try:
 
     # 5. 絵は置いた版だけ img。無い版は空の額
     imgs = re.findall(r'<img class="ban-pic" src="([^"]+)"', tiger)
-    assert imgs == ["/history/sheets/tora-v7.png"] and tiger.count('<span class="ban-pic" aria-hidden="true"></span>') == 4, imgs
+    assert imgs == ["/history/sheets/tora-v7.png"] and tiger.count('<span class="ban-pic" aria-hidden="true"></span>') == 6, imgs
+    assert ban_ayumi.COUNT.format(first=1, last=7, n=7) in tiger and ban_ayumi.COUNT.format(first=1, last=14, n=14) in ban_ayumi.section(G)
     assert ban_ayumi.picture_file("tora-v7") == kh.PICTURES / "sheets/tora-v7.png"
     assert ban_ayumi.picture_file("tora-v6") is None and ban_ayumi.picture_file("../x") is None and ban_ayumi.picture_file("tora-v7.png/..") is None
     server = play_server.serve(0)
@@ -93,9 +93,16 @@ try:
         assert ban_ayumi.section(T) == "", "表に無い組を今の版と言わない"
         TIGER.SHEET_SET = TIGER.FROZEN_SET
         old = frames(ban_ayumi.section(T))
-        assert len(old) == 1 and old[0][0] and "型紙の版 3" in old[0][1], old
+        assert len(old) == 3 and old[-1][0] and "型紙の版 3" in old[-1][1] and not old[0][0], old
     finally:
         TIGER.SHEET_SET = keep
+    keep_load = kh.load
+    cut = {**data, "toys": [{**t, "versions": [v for v in t["versions"] if not v.get("before_loop")]} for t in data["toys"]]}
+    kh.load = lambda path=None: cut
+    try:
+        assert ban_ayumi.BEFORE in ban_ayumi.section(T), "表の最初が版 1 でない時は、前にも版がある事を書く"
+    finally:
+        kh.load = keep_load
     other = next(p.stem for p in (kh.ROOT / "data/hypotheses").glob("*.json") if p.stem not in (G, T))
     assert ban_ayumi.section(other) == "", other
     # 同じ雛形の別の玩具（雛形の名の欄が無い記録は御来迎の雛形と読む）でも、表の玩具の名と違えば出さない
