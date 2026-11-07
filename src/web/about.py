@@ -128,8 +128,16 @@ def kami_section():
 
 
 def manabi_section():
-    """学びの輪の段（なぜ紙の型紙なのか の後、AI がしている事 の前。見出しは付けない）。"""
-    return f'<section class="sec" id="manabi"><p class="lead">{esc(MANABI)}</p></section>'
+    """学びの輪の段（なぜ紙の型紙なのか の後、AI がしている事 の前。見出しは付けない）。
+
+    文の後に、学びの輪の図（二つの輪を重ねた絵。窓口の決め 11-07 夕。UX の担当の部品 web/loop_figure.py の svg()、字は案 1 の言葉だけ）を置く。
+    部品は別の PR で入るので、まだ無い時は文だけにする（頁を壊さない。入った後は 1 行の呼び出しのまま図が出る）"""
+    try:
+        from . import loop_figure
+        fig = loop_figure.svg()
+    except ImportError:
+        fig = ""
+    return f'<section class="sec" id="manabi"><p class="lead">{esc(MANABI)}</p>{fig}</section>'
 
 
 def ai_section():

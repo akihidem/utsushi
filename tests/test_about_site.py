@@ -45,8 +45,14 @@ for k in ("tenji", "zine"):
         assert pos == sorted(pos), (k, heads[i])
     assert len(about.KAMI) == 4 and len(about.AI_LINES) == 2
     # 学びの輪の段: なぜ紙の節の後・AI の節の前に 1 回。見出しは付けない。字は本人が採った案 1 のまま
-    manabi = f'<section class="sec" id="manabi"><p class="lead">{esc(about.MANABI)}</p></section>'
-    assert h.count(manabi) == 1 and at[2] < h.index(manabi) < at[3], (k, "学びの輪の段の置き場")
+    # 文の後に学びの輪の図（UX の担当の部品 loop_figure.svg()。部品がまだ無い木では文だけ）
+    try:
+        from web import loop_figure
+        fig = loop_figure.svg()
+    except ImportError:
+        fig = ""
+    manabi = f'<section class="sec" id="manabi"><p class="lead">{esc(about.MANABI)}</p>{fig}</section>'
+    assert h.count(manabi) == 1 and at[2] < h.index(manabi) < at[3], (k, "学びの輪の段の置き場（文の後に図）")
     assert about.MANABI.startswith("作って、確かめて、ふり返って、次を考える。") and about.MANABI.endswith("進め役の役目は、型紙と記録の形の中に残っています。"), about.MANABI
     # 4. 見出しとテーマの字
     assert "<h1>うつし</h1>" in h, k
