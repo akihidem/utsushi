@@ -439,10 +439,10 @@ class Handler(BaseHTTPRequestHandler):
         # 入口はこのサイトの皮の入口（白の展示か黒のジン、--look）。別の皮の入口はこのサイトには無い（404）。
         # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
-            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
-            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
         if m:
             # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）
@@ -498,12 +498,8 @@ class Handler(BaseHTTPRequestHandler):
             face = (int(m.group(1)), m.group(2))
             if face in ingest.book_faces() and zukan_hon.face_file(*face).exists():
                 return self._send(200, zukan_hon.face_file(*face).read_bytes(), "image/jpeg")
-        # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
-        m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
-        if m and (m.group(1) is None or m.group(1) in sources()):
-            from . import zukan
-            photos = not getattr(self.server, "public_open", False)
-            return self._send(200, zukan.toy_zukan(m.group(1), look, photos) if m.group(1) else zukan.index_page(sources(), look, photos))
+        # 図鑑の目次（/zukan）と玩具ごとの図鑑の頁（/zukan/<印>）は外した（本人の言葉 11-08「図鑑のページ要らない」）。道は無い（断りの 404）。
+        # 図鑑の本の頁（上の /zukan/hon）と、くずし字を読む（下の /zukan/<印>/yomi・道の名はそのまま）は残す
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
         if path == "/en":
             # 英語の入口と玩具の頁（J-030 の段 1）。
@@ -643,6 +639,14 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) in hk.names() and hk.has(m.group(1)):
                 return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
             return self._send(404, "無い")
+        # ワークショップで作られた物の写真の小さい写し（web.workshop。表に載った物だけ・合言葉なしの場でも返す。本人の言葉 11-07 夜）
+        m = re.fullmatch(r"/workshop/(\d{8}/p\d{2}\.jpg)/small", path)
+        if m:
+            from . import workshop
+            small = workshop.small(m.group(1))
+            if small:
+                return self._send(200, small, "image/jpeg")
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         # 玩具が載る頁の全体（原画と歌。本人の指示 11-06）。合言葉なしの場でも出す（公開の古い本の絵で、人の写真ではない）
         m = re.fullmatch(rf"/picture/({SID})/page", path)
         if m and m.group(1) in sources():
@@ -651,6 +655,10 @@ class Handler(BaseHTTPRequestHandler):
             if page.exists():
                 return self._send(200, page.read_bytes(), "image/jpeg")
         # えらぶ の敷き詰めの小さい写し（toys.small_picture。幅 1600px の切り抜きを 83 枚読まないため）
+        # 浮かぶ玩具の試作の輪郭の絵（web.ukabu・out/ukabu の生成物）
+        m = re.fullmatch(rf"/ukabu/({SID})\.webp", path)
+        if m and (ROOT / "out/ukabu" / f"{m.group(1)}.webp").exists():
+            return self._send(200, (ROOT / "out/ukabu" / f"{m.group(1)}.webp").read_bytes(), "image/webp")
         m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
         if m:
             from . import toys

@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_page_tate.py
+# commit: 2fae8d51（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toy_page_tate.py", line 35, in <module>
+    assert "確かめた人" not in head and "原文の引用" not in head, (sid, "原文の引用の確かめた人が残った")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '原文の引用の確かめた人が残った')
+rc=1

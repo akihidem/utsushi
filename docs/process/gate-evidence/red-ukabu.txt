@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_ukabu.py
+# commit: 8090cd59（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ukabu.py", line 20, in <module>
+    from web import looks, ukabu  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'ukabu' from 'web' (src/web/__init__.py)
+rc=1

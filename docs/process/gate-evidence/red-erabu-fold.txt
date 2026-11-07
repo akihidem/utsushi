@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_erabu_fold.py
+# commit: c48ea397（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_erabu_fold.py", line 22, in <module>
+    n, shelves = looks.erabu_counts(ALL)
+                 ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'web.looks' has no attribute 'erabu_counts'
+rc=1

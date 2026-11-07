@@ -88,11 +88,11 @@ media = records.folder() / "media" / ready
 media.mkdir(parents=True, exist_ok=True)
 (media / "m1.mp4").write_bytes(b"\0")
 store.write_json(media / "review.json", {"m1.mp4": {"shows": "object"}})
-TOY, TECHO, ZUKAN, ZUKAN_ONE = f"/toy/{G}", f"/toy/{G}/techo/kiroku", "/zukan", f"/zukan/{G}"
+TOY, TECHO = f"/toy/{G}", f"/toy/{G}/techo/kiroku"  # 前は図鑑の目次と玩具ごとの図鑑の頁も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 NUM = re.compile(r"R-\d{4,}")
 
 # 1. 記録の番号を字に出さない。札へ飛ぶ道は残す
-for path in (TOY, TECHO, ZUKAN, ZUKAN_ONE):
+for path in (TOY, TECHO):
     assert not NUM.findall(visible(page(opened, path))), (path, "記録の番号")
     assert NUM.search(visible(page(closed, path))), (path, "対照: 合言葉の場では番号が出る")
 assert f'href="#{used}"' in page(opened, TOY) and f'id="{used}"' in page(opened, TOY), "札へ飛ぶ道は残す"
@@ -115,7 +115,7 @@ for path in (TOY, TECHO):
     assert not [w for w in (READ, CAUSE, UNKNOWN, SEEN) if w not in body], (path, "対照: 合言葉の場では読める")
 
 # 4. 注釈を送らない。動く所は切らない
-for path in ("/", TOY, TECHO, f"/toy/{G}/tsukuru", ZUKAN, "/gallery", f"/en/toy/{G}"):
+for path in ("/", TOY, TECHO, f"/toy/{G}/tsukuru", "/gallery", f"/en/toy/{G}"):
     body = page(opened, path)
     for tag, part in re.findall(r"<(style|script)\b[^>]*>(.*?)</\1>", body, re.S):
         assert "/*" not in part or tag == "script", (path, re.search(r"/\*.{0,60}", part).group(0))
