@@ -45,8 +45,10 @@ for sid in (G, T, PLAIN):
     page = toy.toy_page(sid, "tenji")
     fig_at = page.index('id="wa"')
     assert f'<text class="wa-v" x="{wa.CX}" y="{wa.CY + 22}" text-anchor="middle">版 {n}</text>' in page[fig_at:page.index("</figure>", fig_at)], sid
-    # 型紙の札の脇にも同じ数を「型紙の版」の字で 1 つ。「エンジンの版」とは言い分ける（エンジンの版はここに出さない）
-    assert page.count(f'<span class="lb ban">型紙の版 {n}</span>') == 1 and "エンジンの版" not in page, sid
+    # 型紙の札の脇にも同じ数を「型紙の版」の字で 1 つ。「エンジンの版」とは言い分ける（エンジンの版はここに出さない）。
+    # 版の歩みの節（#ban-ayumi）の額の下には、型紙の版とエンジンの版を言い分けて出す（設計 0.7 節）ので、その節を外して見る
+    outside = re.sub(r'<section[^>]*id="ban-ayumi".*?</section>', "", page, flags=re.S)
+    assert page.count(f'<span class="lb ban">型紙の版 {n}</span>') == 1 and "エンジンの版" not in outside, sid
 assert wa.current_version(G, None) == 1
 keep = kaizen.versions
 kaizen.versions = lambda sid, hid: [{"version": 2}, {"version": 3}]

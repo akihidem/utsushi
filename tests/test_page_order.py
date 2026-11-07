@@ -20,7 +20,8 @@ from web.toy import toy_page  # noqa: E402
 TOYS = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")
 # たとえは型紙の窓のすぐ後（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」）
 # 頁の足の「型紙の改善の輪」（#kaizen）は外した（本人の答え 11-07 夕の Q5。作る側の様子の頁へ移した）
-ORDER = ("kasetsu", "win", "tatoe", "hanasu", "tsukuru", "kumikata", "kiroku", "minna", "english")
+# 版の歩みは型紙の窓のすぐ後（2 画面目の頭。本人の指示 11-07・設計の置き場 ①）、たとえはその後
+ORDER = ("kasetsu", "win", "ban-ayumi", "tatoe", "hanasu", "tsukuru", "kumikata", "kiroku", "minna", "english")
 GONE = ("<h2>すぐ作る</h2>",)
 
 
@@ -37,7 +38,7 @@ for sid in TOYS:
             assert print_latest(sid, hypotheses.sheet_of(sid)["id"]) is not None, (sid, "紙を作れない")
         page = toy_page(sid)
         where = f"{sid} {'刷った後' if printed else '刷る前'}"
-        # 並び: 頭（題と つくる）→ 立体 → 型紙の窓 → たとえ → 考えを話す → 困った時 → 組み方 → 記録 → 他の人が作った物 → 英語
+        # 並び: 頭（題と つくる）→ 立体 → 型紙の窓 → 版の歩み → たとえ → 考えを話す → 困った時 → 組み方 → 記録 → 他の人が作った物 → 英語
         at = [page.index(f'id="{name}"') for name in ORDER]
         assert page.index("<h1>") < at[0] and at == sorted(at), (where, dict(zip(ORDER, at)))
         for gone in GONE:
