@@ -90,7 +90,8 @@ assert "@media (prefers-reduced-motion:reduce){button[data-busy=on]::after{anima
 # JS なしの送信は今までどおり刷れる。押した後の頁で釦は元の形に戻っている
 assert post(f"/toy/{G}/print", {"hypothesis": ids[0]}) == 200
 assert (out_dir(G) / f"{ids[0]}_v1.pdf").exists()
-assert any("/print#" in a for a in marked(get(f"/toy/{G}")))
+# 紙がある時は、頭の「つくる」は窓の紙へ行くリンクで、刷る欄は頁に無い（刷る口は 1 つ。本人のサイト体験レビュー 11-07 の 3）
+assert not any("/print#" in a for a in marked(get(f"/toy/{G}")))
 
 # 話した考えから紙を作る釦と、「この紙にする」の釦
 page = get(f"/toy/{G}")

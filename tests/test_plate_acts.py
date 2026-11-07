@@ -17,7 +17,8 @@ for look in skin.SKINS:
     plates = html[html.index('<div class="plates">'):html.index('id="win"')]
     n = plates.count('class="plate"')
     assert n == 1, look  # 札はたたき台の 1 枚だけ（J-032）
-    assert plates.count('<div class="acts">') == n, (look, n)
+    # 札の足（acts）にあった「型紙を見る」は外した（刷る口は頭の「つくる」1 つ。本人のサイト体験レビュー 11-07 の 3）。札は仮説の字だけで、足を持たない
+    assert plates.count('<div class="acts">') == 0 and "型紙を見る" not in plates, (look, n)
     assert 'class="foot"' not in plates, look
     assert len(re.findall(r'<p class="foot">', html)) == 1, look  # 頁の足は 1 つのまま
 assert ".plate .acts{" in skin.BASE and ".plate .foot" not in skin.BASE
