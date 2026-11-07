@@ -116,7 +116,9 @@ def road_to_the_record():
     code, body = get(f"{to.path}?{to.query}")
     assert code == 200, code
     sec = body[body.index('<section class="sec" id="kiroku">'):]
-    assert html.escape(tsukuru.DONE_NOTE) in sec and sec.index(html.escape(tsukuru.DONE_NOTE)) < sec.index('id="record"'), "案内が記録の欄の頭に無い"
+    # 着いた #kiroku の節は、のこす（記録の頁）への道 1 本（玩具の頁の記録の欄は、本人の答え 11-07 夕の Q3 で のこす へ寄せた）。案内はその道の上
+    road = f'href="/toy/{G}/techo/kiroku"'
+    assert html.escape(tsukuru.DONE_NOTE) in sec and road in sec and sec.index(html.escape(tsukuru.DONE_NOTE)) < sec.index(road), "案内が、のこすへの道の上に無い"
 
 
 def passes_which_sheet():

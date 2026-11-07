@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kaizen_rekishi.py
+# commit: 1b656726（回した時の HEAD）
+ok 序の頁の改善の歴史（置き場・型紙の版・エンジンの版と直し・作り手の言い方・読めない時）
+rc=0

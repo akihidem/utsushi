@@ -6,7 +6,9 @@
 
 判断の芯:
 - 外の部品を読まない。CSS の立体だけで動かす（学校の網で止まらない）。
-- 開いただけで動かし始めない。手順を送るのも回すのも見る人（認知負荷を減らす。静かに）。
+- 開いた時に 1 回だけ、手順 1 から続けて動かして見せる（本人の答え 11-07「組み立ての 3D は開いた時に 1 回動かして見せる」。前の線は
+  「開いただけで動かし始めない」・夕方のレビューの Q6）。その後に手順を送るのも回すのも見る人（認知負荷を減らす。静かに）。
+  動きを減らす設定の人と、作業の頁（重ねる頁・作りながら見る頁。声と釦で 1 手ずつ送る）は動かさない。
 - 折る所は、面を折り線のまわりに本当に回して描く。面と面は途中でも離れない。行列どうしの補間は面が離れるので使わない。
   形は Python が決め、頁は角の途中を計算するだけにする。
 - 組み立ての最後に、つまみを上へ動かして扇が開く所まで見せる（本人の追加 11-06）。前の線「閉じた形と開いた形だけ」を本人が変えた。
@@ -28,10 +30,22 @@ from .skin import esc
 SCALE = 4.0  # 1mm を何 px で描くか（要素の大きさ。見た目の大きさは場面の縮尺で決める。小さいと立体の時に絵が粗くなる）
 STAGE_W, STAGE_H = 340, 480  # 図を収める大きさ（px）
 LEAD = "手順どおりに組み立てます。指で回して見られます。"
-# 手順の紙を刷らなくなった（本人の決まり 11-06）ので、断りの指し先は頁の「組み方の絵」にした（字は本人が確かめた 6 点の 3）
-NOTE_SHAPE = "これは、形を思い浮かべるための、だいたいの絵です。作る時は型紙と、組み方の絵を見てください。"
+# 手順の紙を刷らなくなった（本人の決まり 11-06）ので、断りの指し先は頁の「組み方の絵」にした（字は本人が確かめた 6 点の 3）。
+# 本人の答え（11-07 夕の Q2）「組み方は 3D を基本として文字で見る。図は要らない」で組み方の節の図を外したので、指し先の「組み方の絵」は
+# 頁から無くなる。設計の担当の案（「の絵」を外すだけ）にし、本人が「この字でよい」と決めた（11-07 夕）
+NOTE_SHAPE = "これは、形を思い浮かべるための、だいたいの絵です。作る時は型紙と、組み方を見てください。"
 PREV, NEXT = "前へ", "次へ"
 RESTART = "はじめから組み立てる"
+# 釦の隣の手引き（夕方のレビュー 11-07 の 10「釦を押さないと組み立て方が分からない」）。開いただけで動かし始めない決まり（上の判断の芯）は
+# 替えず、押すと動く事を字で添えるだけにする。字は窓口の確かめ。開いた時は できあがり の形で、見える釦は「はじめから組み立てる」なので、
+# その釦と、始めた後に出る「次へ」の両方を名指しする。釦の字（RESTART・NEXT）から作り、釦の字を替えた時に手引きだけ古くならないようにする
+HINT = f"「{RESTART}」を押すと、1 手目から組み立てます。「{NEXT}」で 1 手ずつ進みます。"
+# 開いた時の 1 回の動き（判断の芯の 2 つ目）。どこまで動かすか: 動き方を見せる手順（形に open・x・p を持つ手順。御来迎は割り箸を
+# 押し上げて扇が開く所と、できあがりの形。虎はできあがりの首の動き）は、試す前に動き方を見せる事になる（J-013「試す前は条件だけ」）ので、
+# 窓口の確かめ待ち。推しの「その手前（組み立て終えた形）で止める」を既定にし、答えが「最後まで」ならこの 1 つを True にする。
+# 前の組の御来迎は open（扇の開き）で表していたが、今の組（v14）は x（自由な形）と p（決まった形）で表すので、3 つとも見る
+TOUR_SHOWS_MOVE = False
+TOUR_MS = 20000  # 自動で動かす全部の長さ（ミリ秒）。手順の長さの和がこれより長い時だけ、同じ割合で速める
 DONE = "できあがり"
 LABEL = "組み立てを立体で見る"
 # 組み方の節（全 83 種。本人の決まり 11-06「文章のプリントは廃止。組み立て用のページだけでいい。組み立ての案内はサイトの
@@ -46,7 +60,6 @@ STEPS_STYLE = """
 .kumi-steps{margin:14px 0 0;padding-left:1.8em;display:grid;gap:16px}
 .kumi-steps li{line-height:1.9}
 .kumi-steps li p{margin:0}
-.kumi-steps svg.kumi-pic{display:block;width:min(100%,420px);height:auto;max-height:60vh;margin:4px 0 10px;background:#fff;border:1px solid var(--frame)}
 .kumi-play{margin:10px 0 0;line-height:1.9}.kumi-play b{font-weight:600;margin-right:.6em}
 .kumi-genga{margin:12px 0 0}.kumi-genga img{display:block;width:min(100%,280px);height:auto;border:1px solid var(--frame)}
 """
@@ -63,7 +76,8 @@ STYLE = """
 .rt-table{position:absolute;left:0;top:0;transform-origin:0 0;transform-style:preserve-3d}
 .rt-hole{fill:var(--rt-table)}
 .rt-scrap,.rt-plug{transition:opacity .4s ease}
-.rt-acts{display:flex;gap:10px;align-items:center;margin-top:10px}
+.rt-acts{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.rt-acts .rt-hint{flex-basis:100%;margin:2px 0 0}
 .rt-acts [disabled]{opacity:.4}
 .rt-acts [hidden]{display:none}
 #rt-count{font-size:14px;color:var(--mute);margin-left:auto}
@@ -312,7 +326,7 @@ const els=[...scene.querySelectorAll('.rt-p')].map(e=>({e,id:e.dataset.p,key:e.d
 const rods=[...scene.querySelectorAll('.rt-rod')];
 const still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const last=i=>F[i].q[F[i].q.length-1];
-let at=L,dx=0,dy=0,run=null,cam=null;
+let at=L,dx=0,dy=0,run=null,cam=null,tour=false,pace=1;
 // 行列は列の順の 16 個
 const mul=(a,b)=>{const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o};
 const hinge=(px,py,ax,ay,deg)=>{const n=Math.hypot(ax,ay),x=ax/n,y=ay/n,a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a),t=1-c,r=[t*x*x+c,t*x*y,-s*y,0,t*x*y,t*y*y+c,s*x,0,s*y,-s*x,c,0,0,0,0,1];r[12]=px-(r[0]*px+r[4]*py);r[13]=py-(r[1]*px+r[5]*py);r[14]=-(r[2]*px+r[6]*py);return r};
@@ -372,7 +386,7 @@ for(const o of els){if(B.x&&B.x[o.id]&&!(A.x&&A.x[o.id]))put(o,B.x[o.id]);o.e.st
 for(const r of rods){const b=B.r[r.dataset.r];if(!b){r.style.opacity=0;continue}r.style.opacity=1;if(!A.r[r.dataset.r])rod(r,b.s,b.e)}
 if(B.ruler&&!A.ruler)lay(ruler,B.ruler);misc(B);sci.style.opacity=B.cut&&!B.knife?1:0;knife.style.opacity=B.cut&&B.knife?1:0;
 const start=performance.now();
-const tick=now=>{if(run!==me)return;const t=Math.min(1,(now-start)/(pl.dur*(window.kumitateSlow||1)));draw(A,B,pl,t);if(t<1){me.raf=requestAnimationFrame(tick);return}
+const tick=now=>{if(run!==me)return;const t=Math.min(1,(now-start)/(pl.dur*(window.kumitateSlow||1)*pace));draw(A,B,pl,t);if(t<1){me.raf=requestAnimationFrame(tick);return}
 sci.style.opacity=0;knife.style.opacity=0;if(j+1<seq.length)play(B,seq,j+1);else{run=null;rest(B)}beat(j+1,seq.length)};
 me.raf=requestAnimationFrame(tick)};
 const show=i=>{const to=Math.max(0,Math.min(L,i)),from=at;stop();at=to;words();
@@ -380,12 +394,23 @@ const show=i=>{const to=Math.max(0,Math.min(L,i)),from=at;stop();at=to;words();
 if(still||to<from&&!(from===L&&to===0))return rest(last(to));
 const seq=F[to].q;if(to===0){rest(seq[0]);if(seq.length>1)play(seq[0],seq,1);return}
 rest(last(from));play(last(from),seq,0)};
-prev.addEventListener('click',()=>show(at-1));next.addEventListener('click',()=>show(at===L?0:at+1));
+// 見る人が押したら、開いた時の自動の動きはやめて、いつもの送り方にする
+const quit=()=>{if(tour)stage.dataset.tour='stopped';tour=false;pace=1};
+prev.addEventListener('click',()=>{quit();show(at-1)});next.addEventListener('click',()=>{quit();show(at===L?0:at+1)});
 let drag=null;
 stage.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY,dx,dy];stage.setPointerCapture(e.pointerId)});
 stage.addEventListener('pointermove',e=>{if(!drag)return;dx=drag[2]+(e.clientX-drag[0])*.5;dy=Math.max(-70,Math.min(70,drag[3]-(e.clientY-drag[1])*.4));if(cam)view()});
 const up=()=>{drag=null};stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
 words();rest(last(L));
+// 開いた時に 1 回だけ、手順 1 から UNTIL（動き方を見せる手順の手前・TOUR_SHOWS_MOVE なら最後）まで続けて動かして止める（本人の答え 11-07）。3D が画面に半分入った時に始める（頁の下の方の立体を、
+// 見る前に動かし終えない）。1 つの手順が終わった知らせ（beat の最後）で次の手順へ進む。動きを減らす設定の人と、作業の頁（TOUR=0）は動かさない
+const TOUR=__TOUR__,MOVE=F.findIndex(f=>f.q.some(b=>b.open||b.x||b.p)),UNTIL=__TOUR_MOVE__||MOVE<1?L:MOVE-1;
+// 動きの長さの和（手順の間の待ちは入らない。待ちの分は pace の側で引く）
+const tourLen=()=>{let n=0;for(let k=0;k<=UNTIL;k++){const q=F[k].q;let p=k===0?q[0]:last(k-1);for(let j=k===0?1:0;j<q.length;j++){n+=plan(p,q[j]).dur;p=q[j]}}return n};
+const step=()=>{if(!tour)return;if(at>=UNTIL){tour=false;pace=1;stage.dataset.tour='done';return}show(at+1);if(!run)setTimeout(step,400)};
+document.addEventListener('kumitate-beat',e=>{if(tour&&e.detail.beat===e.detail.beats)setTimeout(step,250)});
+if(TOUR&&!still&&'IntersectionObserver' in window){const io=new IntersectionObserver(es=>{if(!es.some(x=>x.isIntersecting))return;io.disconnect();
+pace=Math.min(1,Math.max(1000,__TOUR_MS__-250*UNTIL)/Math.max(1,tourLen()));tour=true;stage.dataset.tour='1';show(0);if(!run)setTimeout(step,400)},{threshold:.5});io.observe(stage)}
 // 作業しながら見る試作の頁に、形の並びと動かす口を渡す。試作の頁は手順を「手」に分け、1 手ずつ動かして止める（本人の感想 11-06）。
 // ふだんの頁はこれを使わない。前は試作の枝で節の script の字を差し替えていたが、字が変わると黙って外れるので、口を開ける形にした
 window.kumitateParts={F,T,play,rest,stop,go:i=>{at=i;words()},view:()=>{if(cam)view()}};
@@ -418,15 +443,22 @@ def available(sid):
         return False
 
 
+def _block_html(sid, params, tour=False):
+    """組み立ての絵と送る釦。tour は、開いた時に 1 回動かして見せるか（玩具の頁と組み立ての頁だけ True。作業の頁は動かさない）。
+    重い所（組む）は _block_core が覚え置くので、tour の違いで組み直さない。"""
+    return _block_core(sid, params).replace("__TOUR__", "1" if tour else "0")
+
+
 @functools.lru_cache(maxsize=8)
-def _block_html(sid, params):
-    """組み立ての絵と送る釦。組むのに 1 秒ほどかかるので、紙の寸法と組が同じ間は作り直さない（_key）。"""
+def _block_core(sid, params):
+    """組み立ての絵と送る釦。組むのに 1 秒ほどかかるので、紙の寸法と組が同じ間は作り直さない（_key）。開いた時に動かすかの印（__TOUR__）は残す。"""
     bench = assembly.assemble(sid)
     if bench is None:
         return ""
     panels = "".join(_panel_html(key, i, sheet) for key, sheet in bench.sheets.items() for i in range(len(sheet.panels)))
     dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))
-    script = SCRIPT.replace("__FRAMES__", dump(frames_of(bench))).replace("__TREES__", dump(trees_of(bench))).replace("__SCALE__", str(SCALE))
+    script = (SCRIPT.replace("__FRAMES__", dump(frames_of(bench))).replace("__TREES__", dump(trees_of(bench))).replace("__SCALE__", str(SCALE))
+              .replace("__TOUR_MOVE__", "true" if TOUR_SHOWS_MOVE else "false").replace("__TOUR_MS__", str(TOUR_MS)))
     paper = paper_html(bench.paper) if bench.paper else ""
     tools = ruler_html() + SCISSORS.format(w=46 * SCALE, h=28 * SCALE) + KNIFE.format(w=46 * SCALE, h=28 * SCALE)
     table = getattr(bench, "table", None)
@@ -440,7 +472,9 @@ def _block_html(sid, params):
             f'<div class="rt-rod rt-axle" data-r="axle"></div><div class="rt-rod rt-axle" data-r="poke"></div><div class="rt-rod rt-thread" data-r="row"></div><div class="rt-rod rt-thread" data-r="thread"></div>{tools}</div></div>'
             f'<p id="rt-text" aria-live="polite" data-done="{esc(DONE)}"></p>'
             f'<div class="rt-acts"><button type="button" class="quiet" id="rt-prev">{esc(PREV)}</button>'
-            f'<button type="button" id="rt-next" data-go="{esc(NEXT)}" data-again="{esc(RESTART)}"></button><span id="rt-count"></span></div>'
+            # 手引きは釦の並びの中に置く。釦を隠す頁（重ねる頁の hmd など）は .rt-acts ごと隠すので、押せない釦を名指す手引きが残らない（別の目の止め 11-07）
+            f'<button type="button" id="rt-next" data-go="{esc(NEXT)}" data-again="{esc(RESTART)}"></button><span id="rt-count"></span>'
+            f'<p class="meta rt-hint">{esc(HINT)}</p></div>'
             f'<p class="meta">{esc(NOTE_SHAPE)}</p>{script}{_split_script(bench, dump)}')
 
 
@@ -459,11 +493,13 @@ def _split_script(bench, dump):
     return f"<script>window.kumitateSplit={dump(got)};</script>" if got else ""
 
 
-def steps(sid):
+def steps(sid, pictures=True):
     """たたき台の紙の組み方の文と絵: (文の並び, 絵の並び, 手順ごとの絵の番号)。作れない時は ([], [], [])。
     手帖・作りながら見る頁と同じ物を使う（文は雛形の steps、絵は instructions.step_pictures）。紙と画面で文と絵が食い違わないため。
     版は、刷ってある一番新しい版（作りながら見る頁と同じ）。刷っていなければ版 1。文は版の寸法で変わる事があるので、その版で作る。
-    出すのはたたき台の紙だけ。自分の紙（OWN-n）は話した字が刷られ、作った本人の画面からしか開かないので出さない（設計メモ版 3）。"""
+    出すのはたたき台の紙だけ。自分の紙（OWN-n）は話した字が刷られ、作った本人の画面からしか開かないので出さない（設計メモ版 3）。
+    pictures=False は文だけを要る所（組み方の節・開けるかの見分け）。11-07 夕から組み方の節は図を出さないので、使わない絵を組まない
+    （絵は 1 手ずつ図を描くので、開くたびに組むと頁が重くなる）。返す形は同じで、絵の並びは空・番号は -1。"""
     from . import techo_step, tsukuru
     from .play_server import printed_versions
 
@@ -476,6 +512,8 @@ def steps(sid):
     texts = tsukuru.step_texts(sid, h["id"], v)
     if not texts:
         return [], [], []
+    if not pictures:
+        return texts, [], [-1] * len(texts)
     try:
         template, p = techo_step._params(sid, data, h, v)
         pictures, which = instructions.step_pictures(template, p, texts)
@@ -485,17 +523,14 @@ def steps(sid):
 
 
 def _steps_html(sid):
-    """組み方の文と絵の並び。絵は、手順が前と違う絵を指す所でだけ出す（ほかの雛形は手順の紙の図 1 枚を全部の手順で使うので、頭に 1 度だけ出る）。
-    絵は読み上げの木から隠れている（render.shapes_svg）。中身は手順の文が言う。"""
-    texts, pictures, which = steps(sid)
+    """組み方の文の並び。本人の答え（11-07 夕の Q2）「組み方は 3D を基本として文字で見る。図は要らない」で、手順の間の平らな図を外した。
+    3D のある玩具（御来迎・虎）は組み立ての 3D がこの節より上にあり、ここは文だけ。3D の無い玩具も文だけになる（本人の言葉のとおり）。
+    頭の遊び方の文と原図（_play_html）は組み方の図でないので残す。steps() は絵も返すが（手帖が使う）、ここでは文だけを読む。"""
+    texts = steps(sid, pictures=False)[0]
     if not texts:
         return ""
-    items, last = [], None
-    for t, k in zip(texts, which):
-        pic = render.shapes_svg(pictures[k], "kumi-pic") if k != last and 0 <= k < len(pictures) else ""
-        last = k
-        items.append(f"<li>{pic}<p>{esc(t)}</p></li>")
-    return f'<p class="lead">{esc(STEPS_LEAD)}</p><ol class="kumi-steps">{"".join(items)}</ol>'
+    items = "".join(f"<li><p>{esc(t)}</p></li>" for t in texts)
+    return f'<p class="lead">{esc(STEPS_LEAD)}</p><ol class="kumi-steps">{items}</ol>'
 
 
 def _play_html(sid, genga=False):
@@ -520,24 +555,24 @@ def _play_html(sid, genga=False):
 
 def has(sid):
     """組み立ての頁を開ける玩具か（立体で組めるか、組み方の文があるか）。"""
-    return available(sid) or bool(steps(sid)[0])
+    return available(sid) or bool(steps(sid, pictures=False)[0])
 
 
 def label(sid):
     return LABEL if available(sid) else STEPS_LABEL
 
 
-def block(sid, heading=True):
+def block(sid, heading=True, tour=False):
     """型紙の頁の「すぐ作る」に置く立体の組み立て（本人の決定 11-06: 型紙の絵の上に初めから出す。J-033）。立体で組めない玩具は空。
     heading=False は組み立てだけの頁の時。頁の題が同じ呼び名を言うので、節の見出しを重ねない。"""
     if not available(sid):
         return ""
     head = f"<h3>{esc(LABEL)}</h3>" if heading else ""
-    return f'<div class="kumitate" id="kumitate">{head}{_block_html(sid, _key(sid))}</div>'
+    return f'<div class="kumitate" id="kumitate">{head}{_block_html(sid, _key(sid), tour)}</div>'
 
 
 def section(sid, level=2, genga=False):
-    """組み方の節（全 83 種。立体で組める玩具も、立体の断りが指す「組み方の絵」をここに出す）。作れなければ空。
+    """組み方の節（全 83 種。立体で組める玩具も、立体の断りが指す「組み方」をここに出す。11-07 夕から文だけで、図は無い）。作れなければ空。
     玩具の頁では「作る」の節の後に置く（型紙の札と刷る口を押し下げないため。統括の決め 11-06。前は「すぐ作る」の中で、幅 390 で刷る口が約 1 画面下がった）。
     level=None は、頁の題が同じ呼び名を言う時（立体の無い玩具の組み立てだけの頁）。節の見出しを重ねない。"""
     inner = _steps_html(sid)
@@ -619,6 +654,6 @@ def scene(sid):
 def page(sid, look=skin.DEFAULT, path=None):
     """組み立てだけの頁。立体で組める玩具は、立体の組み立て（開くとまずできあがりの形）の後に組み方の節。それ以外は組み方の節だけ。"""
     toy, name = hypotheses.load(sid)["toy"], label(sid)
-    body = (f'<section class="sec"><h1>{esc(toy)}: {esc(name)}</h1>{block(sid, heading=False)}</section>{section(sid, level=2 if available(sid) else None, genga=True)}'
+    body = (f'<section class="sec"><h1>{esc(toy)}: {esc(name)}</h1>{block(sid, heading=False, tour=True)}</section>{section(sid, level=2 if available(sid) else None, genga=True)}'
             f'<section class="sec"><p class="links"><a href="/toy/{esc(sid)}">{esc(toy)}の頁へもどる</a></p></section>')
     return skin.shell(f"{toy}: {name}", body, look, path=path or f"/toy/{sid}/kumitate")

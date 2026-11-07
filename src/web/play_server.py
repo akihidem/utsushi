@@ -221,8 +221,10 @@ WRITE_LIMIT, WRITE_WINDOW = 60, 60.0
 # 5 人が同じ網から、手順を全部同じ 1 分で押しても（1 人 13〜20 回）断らない数。超えても頁は止めず、段を置き場へ書かないだけ。
 STEP_LIMIT = 120
 # 写真と動画の口の数（セキュリティの点検 U1）。この口はフォームを読む前に本体のまま受けるので、書き込みの数（WRITE_PATHS）が届かず、上限が無かった。
-# 1 つ 20MB まで。5 人が同じ網（同じ番地）から同じ 1 分に 3〜4 枚ずつ上げても断らない数。
-MEDIA_LIMIT = 20
+# 1 つ 20MB まで。1 つの網（学校の網など、トンネル越しの番地が 1 つ）から同じ 1 分に、20 人が 3 つずつ（のこす時の上限 MAX_PER_RECORD）
+# 上げても断らない数（窓口の決め 11-07・案 b。前は 20 で、7 人目から断りが出えた）。機械を埋めない守りは、公開の場の合計の上限
+# （PUBLIC_MEDIA_TOTAL）と、写した動画の大きさの上限（techo_site.VIDEO_ROOM）の方で効く。
+MEDIA_LIMIT = 60
 WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
@@ -382,8 +384,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
-        from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+        # 話した本人の案（think_sheet.mine）は、玩具の頁の記録の欄が選ぶ口に使っていた。欄はのこすへ寄せたので渡さない（本人の答え Q3）
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
 
     def _pick_lang(self):
         """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、cookie に持つ。道は日本語の頁と同じ。
@@ -505,6 +507,16 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/splat(?:/(\d{{1,2}})\.jpg)?", path)
+        if m and m.group(1) in sources():
+            # 作った実物の立体とエンジンの 3D を並べて一緒に回す頁と、実物の絵（本人の決定 11-07・web/splat_pair.py）。
+            # 絵は人が確かめた物だけ（サーバの記録の置き場）。無い玩具・確かめていない玩具は 404
+            from . import splat_pair
+            if m.group(2) is not None:
+                data = splat_pair.frame_bytes(m.group(1), int(m.group(2)))
+                return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
+            body = splat_pair.page(m.group(1), look, path)
+            return self._send(200, body) if body else self._send(404, "無い")
         m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
@@ -607,6 +619,13 @@ class Handler(BaseHTTPRequestHandler):
             # 前に配ったリンクのために /sheet/…_after の道は残し、紙はそこで開く時にだけ作る（ensure_after）
             from . import think_sheet
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=think_sheet.allowed_at(self, m.group(1), qs.get("at", [""])[0]), see=see, kind=kind, v=v, path=path))
+        # 型紙の版の歩みの額の絵（エンジンが組ごとに出した、刷った紙の 1 枚目を縮めた物。生成物なので repo の外の out/history に置く）。
+        # 組の名の形だけを受け、置き場の外のファイルを開かない（ban_ayumi.picture_file）。合言葉なしの場でも出す（刷った型紙で、人の写真ではない）
+        m = re.fullmatch(r"/history/sheets/([a-z]+-v[0-9]{1,3})\.png", path)
+        if m:
+            from . import ban_ayumi
+            f = ban_ayumi.picture_file(m.group(1))
+            return self._send(200, f.read_bytes(), "image/png") if f else self._send(404, "無い")
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
         if m:
             # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
@@ -642,7 +661,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not think_sheet.opens(self, sid, hid, after=stem.endswith("_after")):
                     return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
-                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
+                # 道の行き先は記録の頁（のこす）。玩具の頁の記録の欄は本人の答え 11-07 夕の Q3 で のこす へ寄せたので、#kiroku に着いても欄が無い
+                # （道 1 本だけ）。1 回で着くよう直接向ける（字は替えない。別の目の指摘 11-07）
+                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}/techo/kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
             if stem.endswith("_after"):
                 ensure_after(sid, hid, int(re.search(r"_v(\d+)", stem).group(1)))

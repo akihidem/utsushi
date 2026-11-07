@@ -186,7 +186,8 @@ try:
         assert isinstance(got, Shown) and got.failures == [], got
         assert close(ball_at(kumitate.frames_of(got)), ball_at(kumitate.frames_of(tora_bench))) is None
         # 頁の組み立ての節も、JSON から読んだ組み立てで組める
-        html = kumitate._block_html.__wrapped__(T, "{}")
+        # 覚え置く重い所は _block_core（開いた時に動かすかの印は外の _block_html が差し替える。PR-J で分けた）
+        html = kumitate._block_core.__wrapped__(T, "{}")
         assert html.count('class="rt-p"') == 2 * sum(len(s.panels) for s in got.sheets.values()) and 'id="rt-knife"' in html
         bad = copy.deepcopy(doc)
         bad["params"]["body_length"] += 1

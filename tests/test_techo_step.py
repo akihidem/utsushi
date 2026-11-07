@@ -161,8 +161,9 @@ thumbs = [c for c in doc_g.targets if c["attrs"].get("id") == "genga-thumb"]
 assert len(thumbs) == 1 and not thumbs[0]["text"].strip() and doc_g._shown(thumbs[0], "start") and doc_g._shown(thumbs[0], "step"), "原画は字の無い釦で、始める前と手順の画面に出る"
 assert not doc_g._shown(thumbs[0], "end") and not doc_g._shown(thumbs[0], "kekka"), "「のこす」と札の画面には出さない（押す所を増やさない）"
 assert [c["text"].strip() for c in doc_g.shown_targets("step")] == ["もどる", "つぎ", "こまった"], "原画の釦があっても、押す所の名前は変わらない"
-# 置き場: マイクと閉じる印の並ぶ上の帯（64px の釦の下の端は 76px）。手順の絵は 84px より下に描くので、どの画面の大きさでも絵に掛からない
-assert ".genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;" in techo_step.STYLE and ".koma svg.on{display:block;position:absolute;left:12px;top:84px;" in techo_step.STYLE
+# 置き場: マイクと閉じる印の並ぶ上の帯（64px の釦の下の端は 76px）。3D の段は 84px より下に置くので、どの画面の大きさでも 3D に掛からない
+# （前は平らな図の svg を 84px より下に描いていた。図は本人の答え 11-07 夕「組み方は 3D を基本として文字で見る。図は要らない」で外した）
+assert ".genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;" in techo_step.STYLE and ".koma.k3 .rt-stage{position:absolute;top:84px;" in techo_step.STYLE
 dlg = shown_g[shown_g.index('<dialog class="te-genga" id="genga-dlg" hidden'):shown_g.index("</dialog>", shown_g.index('id="genga-dlg"'))]
 assert f'/picture/{G}/page' in dlg and "<a " not in dlg, "窓に頁の全体の原画がある。窓にリンクは無い"
 if genga._songs(src_g)[0]:
@@ -189,9 +190,24 @@ rest = [c for c in first if c["tag"] != "li"]
 assert len(rest) <= 3, [c["text"][:20] for c in rest]
 assert len([c for c in first if c["tag"] == "li"]) == 1, "手順の文は今の 1 つだけ"
 
-# ---- 一番大きい物は今の手順の絵。絵の枠は画面の高さの半分以上（CSS で持つ。実物の大きさは手元のブラウザで測る）
+# ---- 3D の組み立てがある玩具（御来迎・虎）は、一番大きい物が今の手の 3D の段。枠は画面の高さの半分以上（CSS で持つ。実物の大きさは手元のブラウザで測る）
 assert re.search(r"\.koma\{[^}]*min-height:50svh", techo_step.STYLE), "絵の枠の床"
-assert page.index('id="koma"') < page.index('id="steps"') < page.index('id="start"'), "絵 → 文 → 押す所の順"
+assert page.index('id="koma"') < page.index('id="steps"') < page.index('id="start"'), "3D → 文 → 押す所の順"
+assert page.count('class="koma k3"') == 1 and page.count('id="rt-stage"') == 1, "御来迎は 3D の段"
+# 3D の節の送る釦・説明の字・断りは手帖では hidden（押す所は手帖の 3 つ・字のかたまりを増やさない。上の数え方が hidden を数えない）
+for mark in ('<div class="rt-acts" hidden>', '<p id="rt-text" hidden', '<p class="lead" hidden>'):
+    assert page.count(mark) == 1, mark
+# 3D の机の上の刷った紙の題（版の名・仮説の動き方）と刷った組の名は出さない（作る頁の決まり。部品の名は残す）
+shown_text = "".join(re.findall(r"<text\b[^>]*>(.*?)</text>", page, flags=re.S))
+assert "版 " not in shown_text and "刷った組" not in shown_text and "1 外筒" in shown_text, "紙の題を外し、部品の名を残す"
+# 3D の段の字は手帖の手順の文と 1 対 1（段 k の字は手順 k+1 の文）。食い違う時は 3D を出さない
+assert techo_step._three(G, ["食い違う手順"]) == "", "手順の文が 3D の段と違う時は 3D を出さない"
+# 3D の無い玩具は手順の文だけ（絵の枠を出さない）。文 → 押す所の順
+NO3D = "NDL-1187053-R0000004-L"
+assert req(f"/toy/{NO3D}/print", {"hypothesis": hypotheses.sheet_of(NO3D)["id"]})[0] in (200, 303)
+p3 = req(f"/toy/{NO3D}/techo")[1]
+assert 'id="koma"' not in p3 and '<main class="te te-text"' in p3 and p3.index('id="steps"') < p3.index('id="start"'), "3D の無い玩具は文だけ"
+assert len([c for c in read(p3).shown_targets("step")]) == 3, "文だけの玩具も押す所は 3 つ"
 # ---- 押す所は 64px 以上、「つぎ」と「はじめる」は 96px 以上
 assert re.search(r"\.key\{[^}]*min-height:64px", techo_step.STYLE) and re.search(r"\.key\.go\{[^}]*min-height:96px", techo_step.STYLE)
 for sel in (r"\.mic\{", r"\.close\{", r"\.tile\{"):
@@ -321,7 +337,8 @@ for rect, shapes in zip(rects, pictures):
 # 絵に字を入れない。線と塗りだけ
 svg = render.shapes_svg(pictures[0])
 assert svg.startswith("<svg") and "<text" not in svg and 'viewBox="' in svg
-assert page.count("<svg") >= 4 and page.count('class="on"') >= 1
+# 手帖には平らな図を出さない（本人の答え 11-07 夕。手順の紙と同じ図は、作りながら見る頁と組み方の節が使う）
+assert svg not in page and page.count('class="on"') >= 1
 # 全部の玩具: たたき台の紙に絵があり、手順ごとに絵が決まる。ほかの雛形は手順の紙の図を出す（段 2 まで）
 from web.play_server import sources  # noqa: E402
 

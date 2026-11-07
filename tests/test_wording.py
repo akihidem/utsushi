@@ -117,11 +117,12 @@ post(f"/record/{ready}/explain", {"text": "途中で止まった", "next_idea": 
 page = get(f"/toy/{G}?see={GS}&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
 assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
-kz = page.split('id="kaizen"', 1)[1]
-assert f"<a href=#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
-assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
-assert 'href="#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
-assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
+# 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）。札への道は玩具の頁の札（/toy/<印>#R-…）を指す
+kz = get(f"/loop/{G}").split('id="kaizen"', 1)[1]
+assert f"<a href=/toy/{G}#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
+assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
+assert f'href="/toy/{G}#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
+assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
 yomu = get("/about")

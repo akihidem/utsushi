@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_techo_step.py
+# commit: a28373e5（回した時の HEAD）
+ok
+rc=0

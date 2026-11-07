@@ -97,13 +97,14 @@ for path in (TOY, TECHO, ZUKAN, ZUKAN_ONE):
     assert NUM.search(visible(page(closed, path))), (path, "対照: 合言葉の場では番号が出る")
 assert f'href="#{used}"' in page(opened, TOY) and f'id="{used}"' in page(opened, TOY), "札へ飛ぶ道は残す"
 
-# 2. 改善の輪の節: 閉じた口へ案内しない。理由と根拠の番号を出さない。版が変わった事は読める
+# 2. 改善の輪の節は、玩具の頁に無い（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）。作る側の様子の頁は合言葉なしの場で閉じる（理由と根拠の番号が出ない）。
+# 合言葉の場の作る側の頁には今までどおり出る（対照）
 BASED = wording.BASED_ON.split("{}")[1].strip()  # 根拠の番号を添える文の、番号の後ろの字
-kz = page(opened, TOY).split('id="kaizen"', 1)[1]
-assert "次の版を待つ報告" not in kz and "説明を待つ報告" not in kz and WHY not in kz and BASED not in kz, kz[:400]
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} 版 2" in kz and f"/toy/{G}?see={GS}&amp;kind=sheet&amp;v=2" in kz.replace("&", "&amp;").replace("&amp;amp;", "&amp;"), kz[:400]
-kz = page(closed, TOY).split('id="kaizen"', 1)[1]
-assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and BASED in kz, "対照: 合言葉の場の節は今までどおり"
+assert 'id="kaizen"' not in page(opened, TOY) and 'id="kaizen"' not in page(closed, TOY), "玩具の頁に輪の節は無い"
+assert WHY not in page(opened, TOY) and BASED not in page(opened, TOY)
+kz = page(closed, f"/loop/{G}").split('id="kaizen"', 1)[1]
+assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and BASED in kz, "対照: 合言葉の場の作る側の頁の節は今までどおり"
+assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} 版 2" in kz
 
 # 3. 読みと観察の文を出さない
 for path in (TOY, TECHO):
