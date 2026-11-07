@@ -157,4 +157,48 @@ for public_open in (False, True):
     finally:
         server.shutdown()
         server.server_close()
-print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる")
+
+# 作ってみた実物（本人のサイト体験レビュー 11-07 の 2・web.made）: 原画のすぐ後に、人が確かめた写真を 1 枚。無ければ組み立ての止まった形を
+# 頁が開いた後に読む（/toy/<印>/still）。どちらも無い玩具は何も置かない。入口の まずはここから の札は写真がある時だけ右下に小さく重ねる
+from omochae import media_review, records  # noqa: E402
+from web import kumitate, looks, made, play_server  # noqa: E402
+
+GOR = "NDL-1187053-R0000005-L"
+TOYS3 = [s for s in toys.sources() if kumitate.available(s)][:1] + [s for s in toys.sources() if not kumitate.available(s)][:1]
+with_3d, without = TOYS3
+assert made.photo(with_3d) is None
+fig = made.figure(with_3d)
+assert f'data-still="/toy/{with_3d}/still"' in fig and "fetch(" in fig and "<img" not in fig, "写真が無ければ止まった形を後から読む"
+assert made.figure(without) == "" and made.still_html(without) == "", "どちらも無い玩具は何も置かない"
+assert 'class="rt-still"' in made.still_html(with_3d) and made.STILL in made.still_html(with_3d)
+page = genga.head(with_3d)
+assert "data-still=" in page and (page.index('class="genga-row"') < page.index("data-still=") if 'class="genga-row"' in page else True), "原画のすぐ後"
+srv = play_server.serve(0, look="tenji")
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+try:
+    def code(path):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{srv.server_address[1]}{path}", timeout=60) as r:
+                return r.status, r.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:
+            return e.code, ""
+    st, frag = code(f"/toy/{with_3d}/still")
+    assert st == 200 and 'class="rt-still"' in frag, st
+    assert code(f"/toy/{without}/still")[0] == 404 and code("/toy/NDL-0000000-R0000000-L/still")[0] == 404
+finally:
+    srv.shutdown()
+    srv.server_close()
+# 人が物だけと確かめた写真があれば、その 1 枚（確かめる前は出さない。#314）。入口の札にも小さく重なる
+assert "tj-made" not in looks.tenji().split("</style>")[-1]
+records.add({"source_id": GOR, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+rid = records.all_records(GOR)[-1]["id"]
+d = techo_site.media_dir(rid)
+d.mkdir(parents=True, exist_ok=True)
+(d / "m1.jpg").write_bytes(b"\xff\xd8\xff")
+assert made.photo(GOR) is None, "確かめる前の写真は出さない"
+assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
+assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg"
+assert f'<img src="/record/{rid}/media/m1.jpg" alt="{made.PHOTO}の写真"' in made.figure(GOR) and "data-still" not in made.figure(GOR)
+entrance = looks.tenji().split("</style>")[-1]
+assert entrance.count('class="tj-made"') == 1 and f'src="/record/{rid}/media/m1.jpg"' in entrance, "入口の札に写真が重なる"
+print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる。原画の隣に作ってみた実物（写真か止まった形）")

@@ -43,6 +43,9 @@ a.genga-pic{cursor:zoom-in}
 .genga-row{display:flex;gap:10px;align-items:flex-start;min-width:0}
 .genga-crop{display:none;flex:1 1 0;min-width:0;line-height:0}
 .genga-crop img{display:block;width:100%;height:auto;max-height:var(--genga-h);object-fit:contain;object-position:left top}
+.genga-made{margin:14px 0 0;width:min(240px,60%);line-height:0}
+.genga-made img{display:block;width:100%;height:auto;border:1px solid var(--frame);background:var(--soft)}
+.genga-made figcaption{line-height:1.6;font-size:12px;letter-spacing:.2em;color:var(--mute);margin-top:6px}
 .genga-fold{margin:10px 0}
 .genga-fold summary{cursor:pointer;min-height:44px;display:flex;align-items:center;letter-spacing:.12em}
 .stage .genga-fold{padding:0 16px}
@@ -152,11 +155,15 @@ def crop(sid, src):
     return f'<span class="genga-crop"><img src="/picture/{esc(sid)}" width="{w}" height="{h}" alt="" loading="lazy"></span>'
 
 
-def head(sid, src=None):
+def head(sid, src=None, photos=True):
     """玩具の頁の頭。絵 → 歌の順（広い幅は横に並ぶ）。「大きく見る」と絵そのものは、頁の全体の絵へ。"""
     src = src or _source(sid)
     pic, whole = _pic(sid, src, alt(src), href=f"/picture/{sid}/page" if page_file(src).exists() else None)
     pic = f'<div class="genga-row">{pic}{crop(sid, src) if whole else ""}</div>' if pic else ""
+    # 原画のすぐ後に、作ってみた実物（人が確かめた写真。無ければ組み立ての止まった形）を 1 枚（本人のサイト体験レビュー 11-07 の 2。web.made）
+    from . import made
+
+    pic += made.figure(sid, "made genga-made", photos=photos)
     big = f'<a href="/picture/{esc(sid)}/page">{esc(BIG)}</a>' if whole else ""
     lines, mark = _songs(src)
     # 印の 1 行は絵の下の行に置く。歌の横の欄に置くと、横書きの字の幅で欄が広がり、広い幅で絵が細くなった

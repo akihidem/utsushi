@@ -441,6 +441,12 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        # 原画の隣の止まった形（web.made。頁が開いた後に別に読む片）。組み立ての無い玩具は 404
+        m = re.fullmatch(rf"/toy/({SID})/still", path)
+        if m and m.group(1) in sources():
+            from . import made
+            frag = made.still_html(m.group(1))
+            return self._send(200, frag) if frag else self._send(404, "")
         m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。

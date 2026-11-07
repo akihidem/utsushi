@@ -330,7 +330,15 @@ def _mazu(ts):
         under = f"background:#d9d2c3 url({toys_page.tiny_picture(sid)}) {x} 50%/{FRAMED} no-repeat"  # 額の敷き方と同じ大きさ（黒い縁を出さない）
         return (f'<span class="pic" style="{under}"><img src="/picture/{esc(sid)}/mid" alt="{esc(t["toy"])}の図" fetchpriority="high" decoding="async" '
                 f'style="object-position:{x} 50%;transform-origin:{x} 50%"></span>')
-    cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}</span>'
+    from . import made
+
+    def photo(t):
+        # 作ってみた実物の写真（本人のサイト体験レビュー 11-07 の 2）。人が確かめた写真がある時だけ、額の右下に小さく重ねる。
+        # 写真が無い時の組み立ての止まった形（made.figure の代わり）は入口には置かない: 1 枚 240〜450KB の頁の字になり、
+        # 最初の画面の絵が届くのが遅れる（統括の合格の線「入口の絵は 1 枚 100KB 以下」）。止まった形は玩具の頁の頭に出る
+        url = made.photo(t["sid"])
+        return f'<span class="tj-made"><img src="{esc(url)}" alt="{esc(made.PHOTO)}の写真" decoding="async"></span>' if url else ""
+    cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}{photo(t)}</span>'
                     f'<span class="nm">{esc(t["toy"])}</span></a>' for t in ts)
     head = f"<h2>{esc(MAZU)}</h2>" if MAZU else ""
     # 黒の表紙にだけあった 1 行（額の絵の下の「江都二色　安永二年　うしなわれた玩具」。本人の決定 11-06「黒案にだけある要素は白案に入れて」）は、
@@ -391,7 +399,9 @@ ERABU = """
 .tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
 .tj-mazu .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,4vw,56px)}
 body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
-.tj-mazu-card .tj-work{display:block;width:100%;margin:0}
+.tj-mazu-card .tj-work{display:block;width:100%;margin:0;position:relative}
+.tj-made{position:absolute;right:-6px;bottom:-10px;width:42%;line-height:0;background:#fffefc;padding:4px;box-shadow:0 10px 18px -10px rgba(70,55,35,.5);border:1px solid #d8cdb6}
+.tj-made img{display:block;width:100%;height:auto}
 .tj-mazu-card .pic{display:block;aspect-ratio:1600/2656;border:1px solid #d8cdb6;box-shadow:0 18px 30px -22px rgba(70,55,35,.5);overflow:hidden;background:#d9d2c3}
 .tj-mazu-card .pic img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.12)}
 .tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}
