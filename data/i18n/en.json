@@ -2907,6 +2907,7 @@
   "記録を残す": "Save the record",
   "試した記録": "Records of trying it",
   "試した記録はまだありません": "There are no records of trying it yet",
+  "試した記録はまだありません。作って残すと、ここに並びます。": "No records of tries yet. When you make one and leave a record, it will show up here.",
   "試した記録はまだありません。最初の記録を残す人になります。": "No records of trying it yet. You would be the first to leave a record.",
   "試した記録を残してから開きます。": "Your try record is saved first, then it opens.",
   "試した記録を残す": "Record what you tried",
