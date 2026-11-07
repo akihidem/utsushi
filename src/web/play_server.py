@@ -216,6 +216,29 @@ STEP_LIMIT = 120
 # 1 つ 20MB まで。5 人が同じ網（同じ番地）から同じ 1 分に 3〜4 枚ずつ上げても断らない数。
 MEDIA_LIMIT = 20
 WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
+# 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
+# 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
+# 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
+# 機械の重さは全体の同時の数（PRINT_SLOTS）の方で守るので、相手ごとの数は、1 つの相手が空きを独り占めしない程度でよい。
+PRINT_LIMIT = 30
+PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint)|/en/toy/{SID}/print")
+# 全体: 同時に刷るのは 2 本まで。番地を替えて送られても、描画の処理が機械を埋めないため。空きは少し待ち、待っても空かなければ断る。
+PRINT_SLOTS, PRINT_WAIT = 2, 20.0
+_print_slots = threading.BoundedSemaphore(PRINT_SLOTS)
+
+
+class PrintBusy(Exception):
+    """刷る空きを待っても取れなかった。受けた口で、書き込みが多すぎる時と同じ断り（429）を返す。"""
+
+
+def _printing(make):
+    """全体の刷る空きを 1 つ取ってから make を動かす。同じ案を同時に頼んだ人は _one_at_a_time で待つので、空きを取るのは作る人だけ。"""
+    if not _print_slots.acquire(timeout=PRINT_WAIT):
+        raise PrintBusy
+    try:
+        return make()
+    finally:
+        _print_slots.release()
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
 
 
@@ -361,6 +384,8 @@ class Handler(BaseHTTPRequestHandler):
             self._pick_look()
             if self._gate():
                 self._post()
+        except PrintBusy:
+            self._busy(int(PRINT_WAIT), {})
         except Exception as e:
             failure_log.request_failed("POST", self.path, e)
             self._refuse(500, BUSY, "送れませんでした")
@@ -693,6 +718,10 @@ class Handler(BaseHTTPRequestHandler):
             wait = self.server.write_limit.wait(who)
             if wait:
                 return self._busy(wait, form)
+        if PRINT_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
+            wait = self.server.print_limit.wait(who)
+            if wait:
+                return self._busy(wait, form)
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
@@ -825,7 +854,7 @@ class Handler(BaseHTTPRequestHandler):
         if (hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"], at="win"))
-        if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
+        if _printing(lambda: loop.print_version(sid, hid, int(v), out_dir(sid))) != 0:
             return self._send(422, self._toy(sid, errors=[f"{_ban(sid, v)} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
@@ -1081,7 +1110,7 @@ def print_latest(sid, hid):
         loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return v
 
-    return _one_at_a_time((sid, hid), make)
+    return _one_at_a_time((sid, hid), lambda: _printing(make))
 
 
 def print_own(sid, oid):
@@ -1150,6 +1179,7 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.look = look
     server.write_limit = WriteLimit()
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
+    server.print_limit = WriteLimit(limit=PRINT_LIMIT)
     server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
     return server
 
