@@ -9,7 +9,8 @@
   - 写真の道（/workshop/<日>/<p>/small）は、分けの表の写真も返す（p28 は返さない）
   - 職人の言葉の節（箱・見出し・入口の字・フォームの道）を techo_site.shokunin_section として もちよるの頁の足へ移し、序の頁からは外した（寄せられた声は序の頁のまま）。箱の中身は声の担当の demo_samples.craft_html を呼ぶ（中身の直しは声の担当・分担 11-08）
   - 新しい字 4 つ（「ワークショップの様子」は本人の言葉・「ワークショップでできたおもちゃ」「作っている様子の写真」「感想を見る」は案）は web.workshop の定数で、英語とやさしい日本語の表にも足した
+- 土台の進み: 声の担当の枝が af91862d に進み（職人の言葉の中身を型紙レビュー 10 本の言葉に・見本を外した）、その頭から切り直して 2 つの commit を載せた（取り込みでなく載せ直し）。test_media_review の順位の形の見張りは、人の話した字の引用（感想と職人の言葉の札）を外して見る形に（レビューの字に「パーツ点数」がある）
 - 試験の替え: 職人の言葉の節が序の頁にある事を見ていた試験（test_techo_site・test_form_import・test_demo_samples・test_reader_words・test_withdraw_notice・test_wording・test_workshop_records）は、もちよるの頁で見る形に。本物の無い形を作る試験（test_demo_samples・test_build_now・test_sakurei_gallery・test_ux_stage0）は、分けの表と感想の札も外す。test_workshop_gallery は、写真が他の人が作った物でなく 2 つの節に 1 回ずつ出る事を見る形に
-- 検証ゲート: **済み**。Red: 土台の枝（声の担当の voice/workshop-records の `cce5d492`）に新しい試験だけを置くと rc 1（gate-evidence/red-mochiyoru-workshop.txt）。Green: この枝で rc 0（gate-evidence/green-mochiyoru-workshop.txt）
-- エビデンスゲート: もちよる・序の頁・作例・写真・英語・やさしい日本語・全体を見る試験の 130 本のうち 129 本が rc 0。落ちる test_ux_keep_gallery は土台の枝（cce5d492）でも同じに落ちる（demo_samples.uploads_html を外した土台の差）
+- 検証ゲート: **済み**。Red: 土台の枝（声の担当の voice/workshop-records の `af91862d`）に新しい試験だけを置くと rc 1（gate-evidence/red-mochiyoru-workshop.txt）。Green: この枝で rc 0（gate-evidence/green-mochiyoru-workshop.txt）
+- エビデンスゲート: もちよる・序の頁・作例・写真・英語・やさしい日本語・全体を見る試験の 130 本のうち 129 本が rc 0。落ちる test_ux_keep_gallery は土台の枝（af91862d）でも同じに落ちる（demo_samples.uploads_html を外した土台の差）
 - 確かめていない事: 全部の試験（`./run.sh`）。写真の分けの人の確かめ。できたおもちゃの札で写真があるのは表で結べた 2 つの玩具だけ（ほかは名と感想だけ）。デモの場の作例の写真（サーバの記録の置き場）と同じ玩具が 2 つの節に出る事。新しい字 3 つの本人の確かめ
