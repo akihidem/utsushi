@@ -1,11 +1,14 @@
-"""説明の頁（このサイトについて）と のこす の頁の輪の図。11-08 から 1 本の輪（うつしの輪）: 作る → のこす → 直す → 刷る。
+"""説明の頁（このサイトについて）と のこす の頁の輪の図。11-08 から 1 本の輪（うつしの輪）。字は型紙の窓の輪の図（web/wa.py）と同じ言い方。
 
-組み直し（11-08・本人の決め「この案で組み直す」・本人の言葉「構造単純でいきたい」・統括の案 grove の state/one-loop-20261108.md）:
-- 輪は 1 本・駅は 4 つ。駅ごとに誰がするかの印（作る・のこす は人、直す は Claude、刷る は人が版を決める）。真ん中に輪の名「うつしの輪」
-- 学ぶ人の経験学習の輪（本人が採った文 ADOPTED）は、同じ輪を人の側から見た物として、図の下の 1 行に収める（ADOPTED の文は頁にそのまま残す）
-- 正直に言う所: 直す は今、作る側が記録を Claude に渡して回している（作品の中の Claude API がひとりでに回してはいない）。図の下の 1 行で言う
+組み直し（11-08）:
+- 本人の決め「この案で組み直す」・本人の言葉「構造単純でいきたい」: 輪は 1 本・駅は 4 つ（統括の案 grove の state/one-loop-20261108.md）
+- 本人の言葉「なおす、わかりにくい」と「…と図がわかりにくい」「型紙の窓のこれまでの説明のほうがわかりやすい」: 駅の字は前の 作る・のこす・直す・刷る を
+  やめ、型紙の窓の輪の図の字（wa.STEPS・2 行の分け方 wa.LINES・真ん中の wa.NOW）をそのまま読む。同じ輪の字が頁ごとに違わないよう、ここでは字を持たない
+- 図の字は減らす。駅の説明の行と、図の下の「学ぶ人から見ると」の行は外した（学ぶ人の側の言い方は、図のすぐ上の本人が採った文 ADOPTED が持つ）。
+  誰がするかは字の札でなく、駅の外の小さな絵（人の形と Claude の印）で見せる。ためしの案と次の型紙は Claude、切って組むと記録に書くは人。
+  次の型紙をよくする所は、Claude が案を出し人が採る（CLAUDE.md の輪）ので、Claude と人の 2 つを並べる
+- 正直に言う所: 次の型紙をよくするのは今、作る側が記録を Claude に渡して回している（作品の中の Claude API がひとりでに回してはいない）。図の下の 1 行で言う
 - 前の二つの輪の図（a・b の 2 形）と、それを下絵にした生成の絵は使わない（生成の絵の道は、置き場の確かめた絵を返すだけで、頁からは呼ばない）
-- 新しい字（駅・誰の印・駅の説明・真ん中・下の 2 行）は本人の確かめ待ち
 
 前の形（11-07）: 二つの輪を、手書きの風合いで重ねる（窓口の決め 155253・UX の担当が作る）。
 
@@ -33,6 +36,7 @@ import random
 
 from omochae.hypotheses import ROOT
 
+from . import wa
 from .skin import esc
 
 ADOPTED = ("作って、確かめて、ふり返って、次を考える。この経験から学ぶ輪（経験学習の輪）は、ワークショップでは、進め役（ファシリテーター）といっしょに一周だけ回ります。"
@@ -40,14 +44,13 @@ ADOPTED = ("作って、確かめて、ふり返って、次を考える。こ�
 WORDS = {"ws": "ワークショップ", "fac1": "進め役（ファシリテーター）と", "fac2": "いっしょに一周", "ut": "うつし", "alone": "一人で回り続けられます",
          "make": "作って", "check": "確かめて", "look": "ふり返って", "next": "次を考える", "rec": "のこした記録", "door": "次に作る時の入り口",
          "form": "型紙と記録の形"}
-# 1 本の輪の字（11-08 の組み直し・本人の確かめ待ち）。駅は時計回りに 作る（上）→ のこす（右）→ 直す（下）→ 刷る（左）
-STATIONS = (("make1", "作る", "人", "紙で作って試す"), ("keep1", "のこす", "人", "手帖に写真・声・字"),
-            ("fix1", "直す", "Claude", "記録から型紙を直す"), ("print1", "刷る", "人が版を決める", "新しい版の型紙"))
+# 1 本の輪の駅（11-08）。字は型紙の窓の輪の図と同じ物を読む（wa.STEPS）。駅ごとに誰がするか（駅の外の小さな絵）。時計回りに 上 → 右 → 下 → 左
+WHO = (("Claude",), ("人",), ("人",), ("Claude", "人"))
+STATIONS = tuple(zip(wa.STEPS, WHO))
 NAME = "うつしの輪"
 CENTER = "1 周で 1 つ版が上がる"
-LEARNER = "学ぶ人から見ると: 作って、確かめて、ふり返って、次を考える"
-HONEST = "直すは今、記録を Claude に渡して回しています。"
-RING_LABEL = NAME + ": " + " → ".join(f"{n}（{w}）" for _, n, w, _ in STATIONS) + " → " + STATIONS[0][1]
+HONEST = "次の型紙をよくするのは今、記録を Claude に渡して回しています。"
+RING_LABEL = NAME + ": " + " → ".join(f"{n}（{'と'.join(w)}）" for n, w in STATIONS) + " → " + STATIONS[0][0]
 INK, SHU, MUTE = "#2b2722", "#b04030", "#6f665a"
 
 
@@ -157,32 +160,84 @@ def svg(variant=None):
             f'<figcaption class="meta" style="text-align:center">{esc(HONEST)}</figcaption></figure>')
 
 
+def _person(x, y):
+    """人の形の小さな絵（頭の丸と肩の線）と、右に「人」。x, y は絵の真ん中。返すのは (SVG, 横の幅)。"""
+    return (f'<circle cx="{x:.1f}" cy="{y - 5:.1f}" r="5" fill="none" stroke="{INK}" stroke-width="2"/>'
+            f'<path d="M{x - 9:.1f} {y + 10:.1f} Q{x:.1f} {y - 3:.1f} {x + 9:.1f} {y + 10:.1f}" fill="none" stroke="{INK}" stroke-width="2" stroke-linecap="round"/>'
+            f'<text x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{MUTE}">人</text>'), 14 + WHO_FS
+
+
+def _claude(x, y):
+    """Claude の印の小さな絵（画面の四角と、中の 4 つの光の先）と、右に「Claude」。会社の標章は描かない。返すのは (SVG, 横の幅)。"""
+    star = " ".join(f"{x + dx:.1f},{y + dy:.1f}" for dx, dy in ((0, -6), (1.8, -1.8), (6, 0), (1.8, 1.8), (0, 6), (-1.8, 1.8), (-6, 0), (-1.8, -1.8)))
+    return (f'<rect x="{x - 10:.1f}" y="{y - 9:.1f}" width="20" height="18" rx="5" fill="none" stroke="{SHU}" stroke-width="2"/>'
+            f'<polygon points="{star}" fill="{SHU}"/>'
+            f'<text x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{SHU}">Claude</text>'), 14 + WHO_FS * 3.4
+
+
+def _sheet(x, y):
+    """真ん中の型紙の小さな絵（紙の角を折った四角と、点線の折り線）。"""
+    return (f'<path d="M{x - 15:.1f} {y - 20:.1f} H{x + 7:.1f} L{x + 15:.1f} {y - 12:.1f} V{y + 20:.1f} H{x - 15:.1f} Z" fill="var(--paper,#fbf8f2)" stroke="{INK}" stroke-width="1.6"/>'
+            f'<path d="M{x - 9:.1f} {y:.1f} H{x + 9:.1f}" stroke="{SHU}" stroke-width="1.4" stroke-dasharray="3 3"/>')
+
+
+def _bend(p0, c, p1, seed, n=18):
+    """2 つの札の間の曲がった矢の線（2 次の曲線を、手で描いたように少し揺らした点の並び）。"""
+    rnd = random.Random(seed)
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * c[0] + t * t * p1[0]
+        y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * c[1] + t * t * p1[1]
+        j = 0 if i in (0, n) else 0.5
+        pts.append((x + rnd.uniform(-j, j), y + rnd.uniform(-j, j)))
+    return pts
+
+
+# 図の字の大きさ（viewBox の中の px）。幅 390 の画面では図が約 320px に縮むので、駅の字 20 は約 13px・誰の名 15 は約 10px で出る
+# （前の 15 では約 8px で読めなかった。11-08 に 390 の幅で撮って見た）
+STEP_FS, WHO_FS = 20, 15
+
+
 def drawn(variant=None):
-    """1 本の輪の SVG（頁の幅に合わせて縮む）。4 つの駅を時計回りに置き、駅の間を手書きの風合いの弧と矢でつなぐ。字は text の要素に 1 つずつ。"""
-    W, H, CX, CY, R = 540, 470, 270, 228, 120
-    ang = (-90, 0, 90, 180)
+    """1 本の輪の SVG（頁の幅に合わせて縮む）。4 つの駅を時計回り（上 → 右 → 下 → 左）に角の丸い札で置き、札の間を手書きの風合いの曲がった矢でつなぐ。
+    誰がするかの小さな絵は札の中の上の段（札の外に置くと図の横幅が広がり、狭い画面で字が小さくなりすぎた）。字は text の要素に 1 つずつ。"""
+    PAD, RH, RV = 10, 172, 140  # 真ん中から左右の札・上下の札までの長さ
+    boxes = []
+    for name, who in STATIONS:
+        lines = wa.LINES.get(name, (name,))
+        widths = [(_claude if w == "Claude" else _person)(0, 0)[1] + 16 for w in who]
+        row = sum(widths) + 12 * (len(widths) - 1)
+        bw = max(max(len(t) for t in lines) * STEP_FS, row) + 28
+        bh = 30 + len(lines) * (STEP_FS + 6) + 12
+        boxes.append((name, who, lines, bw, bh, widths))
+    CX = PAD + boxes[3][3] / 2 + RH
+    W = CX + RH + boxes[1][3] / 2 + PAD
+    CY = PAD + boxes[0][4] / 2 + RV
+    H = CY + RV + boxes[2][4] / 2 + PAD
+    spots = ((CX, CY - RV), (CX + RH, CY), (CX, CY + RV), (CX - RH, CY))
+    (tx, ty), (rx, ry), (bx, by), (lx, ly) = spots
+    tw, rw, bw_, lw = (b[3] / 2 for b in boxes)
+    th, rh, bh_, lh = (b[4] / 2 for b in boxes)
+    g = 7
     body = ""
-    for i in range(4):
-        a0, sw = math.radians(ang[i] + 24), math.radians(90 - 48)
-        # 短い弧は揺れが目立つので、揺れを小さくし、なぞりは 1 度にする（11-08 に絵で見た。前の値では波打って矢に見えにくかった）
-        arc = _ring(CX, CY, R, 31 + i, start=a0, sweep=sw, wob=0.25, n=24)
-        body += _stroke(arc, SHU, 2.6, 31 + i, twice=False) + _arrow(arc, SHU, 2.4)
-    for (key, name, who, what), d in zip(STATIONS, ang):
-        x, y = CX + R * math.cos(math.radians(d)), CY + R * math.sin(math.radians(d))
-        body += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="31" fill="var(--paper,#fbf8f2)" stroke="{INK}" stroke-width="2"/>'
-        body += f'<text x="{x:.1f}" y="{y + 6:.1f}" text-anchor="middle" font-size="19" font-weight="bold" fill="{INK}">{esc(name)}</text>'
-        if d == -90:
-            tx, ty, anchor = x, y - 62, "middle"
-        elif d == 90:
-            tx, ty, anchor = x, y + 52, "middle"
-        elif d == 0:
-            tx, ty, anchor = x + 42, y - 4, "start"
-        else:
-            tx, ty, anchor = x - 42, y - 4, "end"
-        body += f'<text x="{tx:.1f}" y="{ty:.1f}" text-anchor="{anchor}" font-size="13" fill="{SHU if who == "Claude" else MUTE}">{esc(who)}</text>'
-        body += f'<text x="{tx:.1f}" y="{ty + 15:.1f}" text-anchor="{anchor}" font-size="11" fill="{MUTE}">{esc(what)}</text>'
-    body += f'<text x="{CX}" y="{CY - 6}" text-anchor="middle" font-size="16" fill="{INK}">{esc(NAME)}</text>'
-    body += f'<text x="{CX}" y="{CY + 14}" text-anchor="middle" font-size="11" fill="{MUTE}">{esc(CENTER)}</text>'
-    body += f'<text x="{CX}" y="{H - 14}" text-anchor="middle" font-size="11" fill="{MUTE}">{esc(LEARNER)}</text>'
-    return (f'<svg class="loop-ring" viewBox="0 0 {W} {H}" role="img" aria-label="{esc(RING_LABEL)}" '
+    # 矢: 上の札の右の端 → 右の札の上の端、右の札の下の端 → 下の札の右の端…と、札の端の真ん中どうしを角の側へふくらむ曲線でつなぐ（4 本で 1 周）
+    for k, (p0, c, p1) in enumerate((((tx + tw + g, ty), (rx, ty), (rx, ry - rh - g)), ((rx, ry + rh + g), (rx, by), (bx + bw_ + g, by)),
+                                     ((bx - bw_ - g, by), (lx, by), (lx, ly + lh + g)), ((lx, ly - lh - g), (lx, ty), (tx - tw - g, ty)))):
+        pts = _bend(p0, c, p1, 41 + k)
+        body += _stroke(pts, SHU, 2.6, 41 + k, twice=False) + _arrow(pts, SHU, 2.4)
+    for (name, who, lines, w, h, widths), (x, y) in zip(boxes, spots):
+        body += f'<rect x="{x - w / 2:.1f}" y="{y - h / 2:.1f}" width="{w:.0f}" height="{h:.0f}" rx="10" fill="var(--paper,#fbf8f2)" stroke="{INK}" stroke-width="1.8"/>'
+        # 上の段: 誰がするかの絵（2 つの時は並べる）。札の真ん中にそろえる
+        ix = x - (sum(widths) + 12 * (len(widths) - 1)) / 2
+        for w_, wd in zip(who, widths):
+            body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22)[0]
+            ix += wd + 12
+        top = y - h / 2 + 30 + STEP_FS + 4
+        body += "".join(f'<text x="{x:.1f}" y="{top + i * (STEP_FS + 6):.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(t)}</text>'
+                        for i, t in enumerate(lines))
+    body += _sheet(CX, CY - 30)
+    body += f'<text x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(wa.NOW)}</text>'
+    body += f'<text x="{CX:.1f}" y="{CY + 40:.1f}" text-anchor="middle" font-size="13" fill="{MUTE}">{esc(CENTER)}</text>'
+    return (f'<svg class="loop-ring" viewBox="0 0 {W:.0f} {H:.0f}" role="img" aria-label="{esc(RING_LABEL)}" '
             f'style="width:100%;height:auto;display:block;font-family:inherit">{body}</svg>')

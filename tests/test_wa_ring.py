@@ -18,9 +18,9 @@ from web import kaizen, toy, wa  # noqa: E402
 
 G, T, PLAIN = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R", "NDL-1187053-R0000009-L-2"
 
-# 1. 字は 1 本の輪（うつしの輪）の 4 つの駅（11-08 の組み直し・本人の決め「この案で組み直す」）。説明の頁と のこす の頁の輪の図と同じ字・同じ順
-from web import loop_figure  # noqa: E402
-assert wa.STEPS == ("作る", "のこす", "直す", "刷る") == tuple(n for _, n, _, _ in loop_figure.STATIONS)
+# 1. 字は頁に既にある字から
+assert wa.STEPS == ("ためしの案（仮説）", "切って、折って、組む", "どう工夫したかを記録に書く", "次の型紙をよくする")
+assert "ためしの案（仮説）" in PREMISE_PAGE and "どう工夫したかを記録に書" in PREMISE_PAGE and "次の型紙をよくする" in PREMISE_PAGE
 for label, lines in wa.LINES.items():
     assert "".join(lines) == label, "2 行に分けるのは置き方だけで、字は変えない"
 
