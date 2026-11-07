@@ -11,6 +11,7 @@
 import argparse
 import base64
 import json
+import re
 import os
 import pathlib
 import sys
@@ -70,6 +71,13 @@ def current_set(data):
     from .compose import TEMPLATES  # compose は記録を読まないが、読み込みの順をこの関数の中に閉じる
 
     return TEMPLATES[data.get("template", "slider_fan")].SHEET_SET
+
+
+def set_number(data):
+    """今の組の番号（goraigo-v14 なら 14）。頁に「型紙の版」として出す数（窓口の決定 11-07、カード 084426: 型紙の版は紙の題に刷る数と同じ）。
+    組の名前の末に -v<数> が無い時は 1（組を 1 つしか持たない雛形）。"""
+    m = re.search(r"-v(\d+)$", current_set(data))
+    return int(m.group(1)) if m else 1
 
 
 def sheet_id(data, sheet_set=None):
