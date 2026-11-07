@@ -486,7 +486,6 @@ VOICES_STYLE = """
 .voices .mark{font-size:22px;letter-spacing:.15em;margin:0}
 .voices p{margin:0}
 .voices .samples{display:grid;gap:10px;margin:0}
-.voices .is-sample{border:1px dashed var(--frame);padding:10px}
 .voices .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
 """
 

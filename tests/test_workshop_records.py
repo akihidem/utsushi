@@ -82,6 +82,13 @@ for sid in (KOMA, "NDL-1187053-R0000029-R-2", "NDL-1187053-R0000021-L-2", "NDL-1
     sec = minna(sid)
     assert not any(f"<span>{esc(x)}</span>" in sec for x in open_texts), (sid, "候補だった玩具の頁にも出ない")
 
+# 型紙レビューの言葉は、玩具の頁では「職人の言葉」の札で出る（本人の言葉 11-08「改善のために撮影し上た型紙レビュー10本は職人の言葉です。」）
+KAZA = "NDL-1187053-R0000020-R"
+sec = minna(KAZA)
+rev = [s for s in demo_samples.SPOKEN if s["where"] == "review" and s["toy"] == "風車"]
+assert rev and all(esc(s["text"]) in sec for s in rev) and esc(demo_samples.CRAFT_WHO) in sec, "風車の頁に、レビューの言葉が職人の言葉の札で出る"
+assert sec.count(esc(demo_samples.SPOKEN_WHO)) == 0, "レビューの言葉をワークショップで話された言葉の札で出さない"
+
 # 3. 序の頁の寄せられた声には全部出る（結べない・迷う物も）
 about = get("/about")
 assert all(esc(t) in about for v in demo_samples.VOICES for _, t in v["fields"]), "寄せられた声は 17 件とも序の頁に出る"

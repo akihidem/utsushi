@@ -1,5 +1,6 @@
 """デモ用の見本（本人の指示、11-04「デモ用の作り物と分かる形で」サイトに出す。11-05「過去の人のギャラリーや職人の声なども、デモなので想定の内容で作っておく」）。
-職人の言葉の見本（寄せられた声は、11-07 夜から見本でなく参加者の実際の感想。下の VOICES の注）。
+寄せられた声（ワークショップの参加者の感想と、ワークショップの場で話された言葉）と、職人の言葉（型紙レビュー 10 本の言葉）。どちらも見本でなく本物。
+職人の言葉の見本（見本の職人 甲・乙・丙）は、11-08 に外した（本人の言葉「改善のために撮影し上た型紙レビュー10本は職人の言葉です。見本と取り替えて、もちよる、に掲載してください。」）。
 上げた物の見本（UPLOADS・線画の作り物 8 件）は、11-08 に外した（本人の言葉「見本の記録をワークショップのデータで作成して欲しい。」）。
 玩具の頁には、代わりにワークショップの感想と話された言葉を、序の頁の寄せられた声と同じ札で出す（workshop_for）。
 
@@ -26,19 +27,6 @@ def esc(s):
 
 
 
-# フォーム（持ち寄りの入口、J-021）に寄せられる情報提供の見本。項目は form_import が受ける形（種類・題・本文・権利）に合わせる。
-# slot のある物は「職人の言葉」の枠に入る（枠は 3 つ、本人の設計 11-04）。slot の無い物は「寄せられた声」に並ぶ。
-CONTRIBUTIONS = [
-    {"who": "見本の職人 甲（架空）", "slot": "紙と折りの職人", "kind": "作り方の知恵",
-     "title": "筒の糊しろは内側へ", "text": "糊しろを内に折り込むと、外から継ぎ目が見えず、丸めた時の段差も出にくい。",
-     "rights": "自分の言葉（公開してよい）"},
-    {"who": "見本の職人 乙（架空）", "slot": "からくりの職人", "kind": "仕掛けの見方",
-     "title": "首振りは重さの釣り合い", "text": "首の付け根を少し後ろにずらすと、揺れが長く続く。重りより支点の位置が先。",
-     "rights": "自分の言葉（公開してよい）"},
-    {"who": "見本の作り手 丙（架空）", "slot": "郷土玩具の作り手", "kind": "写真の添付",
-     "title": "手元の古い扇の玩具", "text": "家にある古い玩具の写真を添えます（見本なので写真はありません）。",
-     "rights": "権利の確かめ待ち（確かめるまで載せない）"},
-]
 # 寄せられた声は、見本でなく、11 月のワークショップの参加者の実際の感想（本人の見直しの ⑧「ワークショップのアンケート記録をもとにコメントも反映させる。」と
 # 本人の言葉 11-07 夜「とりあえず感想は全て反映させたい。その上で微妙そうなのを聞いて」）。アンケートの答え 18 件のうち、本人が見送ると決めた 1 件
 # （うきにんぎょの回答・11-07 夜）を除く 17 件を、1 件を 1 枚の札にする。
@@ -77,6 +65,9 @@ VOICES_NOTE = "参加者の感想から抜き出した（名前は外した）"
 # where は、どの録画から拾ったか（ワークショップの場の録音か、作る前の型紙のレビューか）の控えで、頁には出さない。並びは録画の順（順位・点は付けない。J-025）。
 # 札の 11 は数の印に替えて訳の表を引く（訳の表の鍵は数を {n} で持つ）
 SPOKEN_WHO = "{0} 月のワークショップで話された言葉".format(11)
+# 型紙レビュー 10 本の言葉（where が review の 22 か所）は、職人の言葉（本人の言葉 11-08「改善のために撮影し上た型紙レビュー10本は職人の言葉です。」）。
+# 寄せられた声には出さず（同じ言葉を 2 か所に出さない）、職人の言葉の節と、玩具の頁の札（札の字は節の見出しと同じ「職人の言葉」）に出す
+CRAFT_WHO = "職人の言葉"
 SPOKEN_NOTE = "話された言葉は、録画の声をこの機械の中で字にして抜き出しました（話した人の名前は出しません）。"
 SPOKEN = [
     {"where": "workshop", "toy": "御来迎", "text": "御来迎も内筒がめっちゃでかくなった。"},
@@ -112,23 +103,19 @@ SPOKEN = [
 ]
 
 
-def badge():
-    return '<span class="sample">見本</span>'
-
-
-def voice_html(slot):
-    """職人の言葉の 1 枠。見本が無い枠や見本を切った時は、今までどおり（準備中）。"""
-    c = next((c for c in CONTRIBUTIONS if c["slot"] == slot), None) if enabled() else None
-    if c is None:
-        return f'<div class="item"><p class="meta">{esc(slot)}</p><p>（準備中）</p></div>'
-    return (f'<div class="item is-sample"><p class="meta">{badge()} {esc(slot)}　{esc(c["who"])}　{esc(c["kind"])}</p>'
-            f'<p><b>{esc(c["title"])}</b></p><p>{esc(c["text"])}</p><p class="meta">権利: {esc(c["rights"])}</p></div>')
-
-
 def craft_html():
     """職人の言葉の節の、箱の中身（札の並び）。節の箱と見出しと入口は、それを置く頁が持つ（今は序の頁・techo_site.voices_sections）。
-    中身を作る所を 1 つにして、節を別の頁へ移す直しと、中身を替える直しがぶつからないようにする（11-08 の分担）。今は 3 つの枠の見本のまま。"""
-    return "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    中身を作る所を 1 つにして、節を別の頁へ移す直しと、中身を替える直しがぶつからないようにする（11-08 の分担）。
+    中身は型紙レビュー 10 本の言葉（本人の言葉 11-08「改善のために撮影し上た型紙レビュー10本は職人の言葉です。見本と取り替えて、もちよる、に掲載してください。」）。
+    レビュー 1 本（玩具）に 1 枚の札で、字は話したまま（SPOKEN の where が review の物）。名前は出さない。並びは録画の順（順位・点は付けない）。
+    動画は出さない（顔と名札の写るコマがあった。出すかは本人の答えの後）。"""
+    groups = {}
+    for s in SPOKEN:
+        if s["where"] == "review":
+            groups.setdefault(s["toy"], []).append(s["text"])
+    cards = "".join(f'<div class="item"><p class="meta"><span>{esc(toy)}</span></p>' + "".join(f'<p><span>{esc(x)}</span></p>' for x in texts) + "</div>"
+                    for toy, texts in groups.items())
+    return f'<div class="voices-real"><p class="meta">{esc(SPOKEN_NOTE)}</p>{cards}</div>' if cards else ""
 
 
 def voices_html():
@@ -138,8 +125,8 @@ def voices_html():
         return '<p class="meta">まだ寄せられた声はありません。</p>'
     items = "".join(_voice_card(v) for v in VOICES)
     # 話された言葉は、感想の札の後に同じ札の形で並べる。玩具の名が字から決められない札（しくみの感想など）は、玩具の名を出さない
-    spoken = "".join(_spoken_card(s) for s in SPOKEN)
-    note = f'<p class="meta">{esc(SPOKEN_NOTE)}</p>' if SPOKEN else ""
+    spoken = "".join(_spoken_card(s) for s in SPOKEN if s["where"] == "workshop")
+    note = f'<p class="meta">{esc(SPOKEN_NOTE)}</p>' if spoken else ""
     return f'<div class="voices-real"><p class="meta">{esc(VOICES_NOTE)}</p>{items}{note}{spoken}</div>'
 
 
@@ -152,10 +139,11 @@ def _voice_card(v):
 
 
 def _spoken_card(s):
-    """話された言葉 1 か所の札。序の頁と玩具の頁で同じ形・同じ字。"""
+    """話された言葉 1 か所の札。序の頁と玩具の頁で同じ形・同じ字。型紙レビューの言葉は、札の字を「職人の言葉」にする。"""
+    who = CRAFT_WHO if s["where"] == "review" else SPOKEN_WHO
     return ('<div class="item"><p class="meta">'
             + (f'<span>{esc(s["toy"])}</span> · ' if s["toy"] else "")
-            + f'<span>{esc(SPOKEN_WHO)}</span></p><p><span>{esc(s["text"])}</span></p></div>')
+            + f'<span>{esc(who)}</span></p><p><span>{esc(s["text"])}</span></p></div>')
 
 
 def workshop_for(sid, toy):

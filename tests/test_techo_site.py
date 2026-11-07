@@ -126,7 +126,7 @@ g = req("/gallery")[1].decode()
 assert "m1.jpg" in g
 # 職人の言葉と寄せられた声の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。ギャラリーは作った記録の並びだけ
 yomu = req("/about")[1].decode()
-assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "紙と折りの職人" in yomu  # 枠の中身は見本（demo_samples）か（準備中）
+assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "（準備中）" not in yomu  # 中身は型紙レビュー 10 本の言葉（demo_samples.craft_html・11-08）
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
 name = "作った物"
