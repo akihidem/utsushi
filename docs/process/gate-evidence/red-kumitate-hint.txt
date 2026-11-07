@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kumitate_hint.py
+# commit: f46a5c2a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kumitate_hint.py", line 16, in <module>
+    assert re.search(r'<div class="rt-acts">.*?</div><p class="meta rt-hint">[^<]+</p>', kumitate.block(sid), re.S), (sid, "釦の並びのすぐ後に手引きの行が無い")
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '釦の並びのすぐ後に手引きの行が無い')
+rc=1
