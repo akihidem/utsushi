@@ -200,7 +200,9 @@ assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 # 写真は小さい写しの道（上げた元の写真は 3.7MB ほどある。入口の絵 100KB の線）
 assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg/small"
 assert f'<img src="/record/{rid}/media/m1.jpg/small" alt="{made.PHOTO}の写真"' in made.figure(GOR) and "data-still" not in made.figure(GOR)
-assert made.figure(GOR, photos=False) == made.figure(with_3d if with_3d == GOR else GOR, photos=False) and "/media/" not in made.figure(GOR, photos=False), "開いた場の玩具の頁は写真を置かない"
+# 開いた場の玩具の頁は写真を置かない（写真が確かめてあっても、止まった形の口だけになる）
+closed = made.figure(GOR, photos=False)
+assert "/media/" not in closed and (f'data-still="/toy/{GOR}/still"' in closed) == bool(kumitate.available(GOR)), "開いた場の玩具の頁は写真を置かない"
 entrance = looks.tenji().split("</style>")[-1]
 assert entrance.count('class="tj-made"') == 1 and f'src="/record/{rid}/media/m1.jpg/small"' in entrance, "入口の札に写真が重なる"
 assert "/media/" not in looks.tenji(photos=False).split("</style>")[-1], "開いた場の入口は写真を置かない"

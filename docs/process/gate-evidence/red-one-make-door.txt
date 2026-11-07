@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_one_make_door.py
+# commit: b82ab108（回した時の HEAD。試験だけを足し、直す前の頁で回した）
+Traceback (most recent call last):
+  File "tests/test_one_make_door.py", line 37, in <module>
+    assert before.count(techo) == 0, (sid, "刷る前に手帖への口がある")
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '刷る前に手帖への口がある')
+rc=1
