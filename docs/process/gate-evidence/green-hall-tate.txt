@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_hall_tate.py
+# commit: 45ad0d67（回した時の HEAD）
+ok 入口の題の間は縦の組み（11-06 夜の形）。字と下の札は今のまま
+rc=0

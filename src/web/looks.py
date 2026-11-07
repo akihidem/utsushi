@@ -371,8 +371,8 @@ def tenji(photos=True):
     """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。"""
     ts = toys()
     body = switch("tenji")
-    # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
-    # 幅 390 の最初の画面に 2 つの大きな札の頭が入るようにする（「最初から選べる形」）
+    # 題の間: 題と副題と「このサイトについて」だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。組みは縦に戻した（本人の決め 11-07 夜
+    # 「縦の組みに戻す」。ERABU の上の注）。前は画面いっぱいの高さにせず、幅 390 の最初の画面に 2 つの大きな札の頭が入るようにしていた
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link() + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
@@ -389,17 +389,13 @@ const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.
 big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
 
 
+# 題の間（tj-hall）は縦の組み（TENJI の .tj-hall の形）に戻した: 本人の決め（11-07 夜）「縦の組みに戻す」。11-06 夜の main 5d1358dd の最初の画面
+# （題字を縦に大きく・英字は題の左に縦・副題 3 行は題の右に縦。幅 390 は英字が題の上に横・副題は下に縦）。前（#517・11-07）はここで #hall を
+# 横書きで短くしていた（縦書きは幅 390 で 2 つの札が 1 画面目の外に出た。札の頭が 855px）。字は 1 字も替えない。「このサイトについて」と
+# まずはここから の 2 枚は今のまま（えらぶ の入口の決めは残る）。CSS の注は頁に出るので、理由はここに書く
 # 入口の えらぶ の形（白の展示）。札の中身は toys.card（#508 の小さい写し・縦横つき）なので、その札が要る CSS をここに置く（入口は skin.BASE を読まない）。
 # 「控えめに」: ほかの玩具は 1 列 72px 以上・9 列まで（えらぶ の頁の 96px・7 列より小さく）。2 つの大きな札は横に並べ、幅 390 で 1 枚 160px ほど。
 ERABU = """
-/* 題の間は横書きで短く（前の B の間の縦書きは、幅 390 で 2 つの札が 1 画面目の外に出た。11-07 に測った: 札の頭が 855px）。
-   字は前の題の間の字のまま（英字・題・副題・表紙の 2 行） */
-#hall.tj-hall{min-height:auto;display:block;text-align:center;padding:5vh 5vw 3vh}
-#hall.tj-hall .en,#hall.tj-hall h1,#hall.tj-hall .sub{writing-mode:horizontal-tb;margin:0 auto}
-#hall.tj-hall .en{margin-bottom:2vh}
-#hall.tj-hall h1{font-size:clamp(30px,4.4vw,56px);letter-spacing:.5em;margin-left:.5em}
-#hall.tj-hall .sub{margin-top:2.4vh;line-height:2;letter-spacing:.2em}
-#hall.tj-hall .about-go{margin:2.4vh 0 0;font-size:13px}
 .tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
 .tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
 .tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
