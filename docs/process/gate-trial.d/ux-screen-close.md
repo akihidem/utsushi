@@ -1,8 +1,8 @@
 ## のこした後の「この画面をとじる」（UX の担当、ux/screen-close、11-08）
 
 - 目的: のこすの流れの設計の別の目の気づき 9（1 台を順に使う場では、前の人の確かめる前の写真が写真の鍵で 2 時間、今残した 1 つの札が記録の鍵で、次の人が記録を残すまでその画面に残る）と、統括の決め「推しどおり別の PR で、ギャラリーの『この画面をとじる』で鍵を消す形」
-- どうしたか: web/techo_site.py の close_form（のこした直後の返事の下だけ・素のフォーム・道しるべの釦にしない・公開の場だけ取り下げの 1 行）と、web/play_server.py の POST /close（フォームの Origin の照らしの後・写真の鍵と記録の鍵を Max-Age=0 で消す・fresh でその場限りの印も作り直す・鍵が無くても同じ返事・書き込みの数に足す）。新しい字 3 つは英語とやさしい日本語の表にも足した（本人の確かめ待ち）
-- 検証ゲート: **済み**。Red: main の頭 ace2a5f0 に新しい試験 tests/test_screen_close.py だけを置くと rc 1（/close が 404。gate-evidence/red-screen-close.txt）。Green: gate-evidence/green-screen-close.txt
+- どうしたか: web/techo_site.py の close_form（のこした直後の返事の下だけ・素のフォーム・道しるべの釦にしない・公開の場だけの断りは置かない＝本人 11-08「公開デモだけのものはいらない。なにかあれば僕が対応するので。」）と、web/play_server.py の POST /close（フォームの Origin の照らしの後・写真の鍵と記録の鍵を Max-Age=0 で消す・fresh でその場限りの印も作り直す・鍵が無くても同じ返事・書き込みの数に足す）。新しい字 2 つは英語とやさしい日本語の表にも足した（本人の確かめ待ち）
+- 検証ゲート: **済み**。Red: main の頭 ace2a5f0 に新しい試験 tests/test_screen_close.py だけを置くと rc 1（/close が 404。gate-evidence/red-screen-close.txt）。Green: gate-evidence/green-screen-close.txt（公開の場だけの断りを外した後は green-screen-close-no-public-note.txt）
 
 | 決めの行 | 照らし | 根拠 |
 |---|---|---|

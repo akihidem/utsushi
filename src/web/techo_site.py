@@ -443,14 +443,13 @@ UPLOADED = "上げました"  # 手帖の script（techo_step）が上げた後�
 # 残すまでその画面に残る。のこした直後（返事のある時）にだけ釦を出し、POST /close で 2 つの鍵を消す。字は新しい字で、本人の確かめ待ち
 CLOSE = "この画面をとじる"
 CLOSED = "とじました。次の人が使えます。"
-# 合言葉なしの場の取り下げは写真の鍵で見分ける（上げた画面からだけ）ので、とじると取り下げの釦が出なくなる事を、押す前に言う
-CLOSE_PUBLIC = "とじると、この画面からは取り下げられません。"
+# 公開の場だけの断り（とじると、その画面からは取り下げられない）は置かない（本人 11-08「公開デモだけのものはいらない。なにかあれば僕が対応するので。」）。
+# 公開の場の取り下げは写真の鍵で見分けるので、とじた後に取り下げたい人は、本人が受ける
 
 
-def close_form(public=False):
+def close_form():
     """「この画面をとじる」の素のフォーム（台本なしでも動く）。道しるべの釦（.go）にしない: 帯の駅の道しるべは 1 つの決まり（test_ux_stage0）"""
-    return (f'<form method="post" action="/close" class="close-screen"><button type="submit">{esc(CLOSE)}</button></form>'
-            + (f'<p class="meta">{esc(CLOSE_PUBLIC)}</p>' if public else ""))
+    return f'<form method="post" action="/close" class="close-screen"><button type="submit">{esc(CLOSE)}</button></form>'
 
 
 def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
@@ -477,7 +476,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     real = bool(cards or own or sak or ws)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     # とじた後の返事（CLOSED）には釦を出さない（押した後に同じ釦がまた出ると、とじていないように見えるため）
-    shut = close_form(public) if msg and msg != CLOSED else ""
+    shut = close_form() if msg and msg != CLOSED else ""
     note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>{shut}' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので

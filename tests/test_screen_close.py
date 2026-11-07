@@ -3,7 +3,7 @@
 なぜ: 1 台を順に使う場では、前の人の写真の鍵（確かめる前の写真を上げた画面に 2 時間見せる）と記録の鍵（今残した 1 つの札と、字を足す口）が、
 次の人が記録を残すまでその画面に残り、次の人に前の人の確かめる前の写真と札が見えた（のこすの流れの設計の別の目の気づき 9）。
 見る事は 4 つ: 1 とじると 2 つの鍵が消える／2 外の頁からはとじさせない（Origin）／3 とじた後は前の確かめる前の写真が見えない／
-4 釦はのこした直後の返事の下だけで、道しるべの釦にしない（公開の場だけ取り下げの 1 行）。
+4 釦はのこした直後の返事の下だけで、道しるべの釦にしない（公開の場も同じ形で、公開の場だけの断りは置かない・本人 11-08）。
 """
 import http.cookiejar
 import io
@@ -84,16 +84,15 @@ assert call(photo)[0] in (403, 404), "とじた後は、確かめる前の写真
 code, _, page = call(f"/gallery?msg={urllib.parse.quote(techo_site.CLOSED)}")
 assert code == 200 and 'id="own"' not in page, "とじた後のギャラリーに、前の人の今残した 1 つの札を出さない"
 
-# 4 釦はのこした直後の返事の下だけ・道しるべの釦（.go）にしない・公開の場だけ取り下げの 1 行
+# 4 釦はのこした直後の返事の下だけ・道しるべの釦（.go）にしない・公開の場も同じ形（本人 11-08「公開デモだけのものはいらない。なにかあれば僕が対応するので。」）
 shut = f'<form method="post" action="/close" class="close-screen"><button type="submit">{techo_site.CLOSE}</button></form>'
 done = techo_site.gallery_page(play_server.sources(), msg="上げました")
 assert shut in done and done.index('id="msg"') < done.index(shut), "のこした直後の返事のすぐ下に、とじる釦"
-assert techo_site.CLOSE_PUBLIC not in done, "合言葉付きの場では取り下げの 1 行を出さない（取り下げは進め役の道）"
 assert shut not in techo_site.gallery_page(play_server.sources()), "返事の無い時（ふつうに開いた時）は出さない"
 assert shut not in techo_site.gallery_page(play_server.sources(), msg=techo_site.CLOSED), "とじた後の返事には出さない"
 opened = techo_site.gallery_page(play_server.sources(), public=True, msg="上げました")
-assert shut in opened and opened.index(shut) < opened.index(techo_site.CLOSE_PUBLIC), "公開の場は、釦の下に取り下げの 1 行"
-assert 'class="go"' not in techo_site.close_form(True), "道しるべの釦にしない（帯の駅の道しるべは 1 つ）"
+assert shut in opened and "取り下げられません" not in opened and "取り下げられません" not in done, "公開の場も同じ釦だけで、公開の場だけの断りの字は出さない"
+assert 'class="go"' not in techo_site.close_form(), "道しるべの釦にしない（帯の駅の道しるべは 1 つ）"
 assert shut in call(f"/gallery?msg={urllib.parse.quote('上げました')}")[2], "サーバの頁にも出る"
 server.shutdown()
 print("ok: のこした後の「この画面をとじる」で、この画面の写真の鍵と記録の鍵が消える")
