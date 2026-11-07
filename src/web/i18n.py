@@ -19,15 +19,20 @@
   訳し漏れは試験（tests/test_en_all.py）が全部の頁の道を英語で回して止める。人の書いた字は試験の場（空の記録の置き場）には出ない。
 - 台本（<script>）と CSS の中の字は替えない（台本の字を置き換えると動きを壊しうる）。台本が後から出す字は日本語のまま（残りの課題）。
 - 型紙の PDF は日本語のまま（凍結の床を替えない。web/en.py の JA_ONLY と同じ断り）。
-- 訳は作る側（Claude）の下書きで、英語を母語とする人に読んでもらうまで、英語の頁の頭に en.DRAFT の札を出す（本人が採った字、#318）。
+- 訳は作る側（Claude）の下書き（英語を母語とする人はまだ読んでいない）。頁の頭の断りの札は出さない（本人の言葉 11-07「これ要らない。
+  Draft translation. A native speaker has not checked it yet.」。前は en.DRAFT の札を頭の帯の後に 1 つ出した。やさしい日本語の「下書きです」と同じ扱い）。
 
 やさしい日本語（3 つ目の言葉・lang=easy。本人の言葉 11-07 夜「サイト、言語でやさしい日本語選べるように。このモードはルビつけてやさしい日本語に
 全体の文が変換されるモード」「まだひつようなところは実装しよう」。設計は grove の state/yasashii-mode-20261107.md・UX の担当）:
 - 同じ出口の置き換えで、表を data/i18n/yasashii.json に替える（鍵の形は英語と同じ）。値は ｜漢字《よみ》 の形でルビを書き、出口で <ruby> にする
   （実行の時に形態素解析をしない。読みの誤りを表の中で直せるように）。属性（alt など）にはルビを入れられないので、ルビの印を外した字にする
+- ルビは全部の漢字に振る（本人の言葉 11-07 夜「ルビも全ての漢字にふる」）。表の値はルビの印の外に漢字を置かない（tests/test_easy_ruby.py が全部の表で見る）。
+  要素を入れられない所（<title>・<option>）と、画面に出る placeholder は、ルビの代わりに 漢字（よみ） の形で読みを添える（PAREN）。
+  画面に出ない属性（alt・aria-label など。読み上げは漢字のまま読める）と、送る値（value。替えると受け口の字と合わなくなる）は印を外した字のまま
 - 表に無い鍵は元の日本語のまま出す（英語と違い、全部がそろわなくても頁は壊れない。表の中身は 3 つの窓が分けて書く・state/yasashii-keys/）
 - 頁は日本語なので html の lang="ja" は替えない。替えない所の印は translate="no" だけ（英語の時の lang="ja" は、日本語の頁では頁の全体に付くため）
-- 頁の頭に「このページのやさしい日本語は、下書きです。」の札を 1 つ（英語の Draft の札と同じ所・同じ見た目）。本人の言葉の引用と人の記録は書き直さず、表でルビだけを振る
+- 頁の頭の断りの札は出さない（本人の言葉 11-07 夜「下書きです、はとる」。前は「このページのやさしい日本語は、下書きです。」を英語の Draft の札と同じ所に出していた）。
+  本人の言葉の引用と人の記録は書き直さず、表でルビだけを振る（字は同じで、ルビの印を足した値。"=" にするとルビが付かない）
 """
 import html
 import json
@@ -42,11 +47,13 @@ TABLES = {"en": TABLE, "easy": ROOT / "data/i18n/yasashii.json"}
 # やさしい日本語の表は 3 つの窓が並べて書くので、窓ごとの置き場（yasashii.d/<分け>.json・同じ {"note", "strings"} の形）も読んで重ねる。
 # 1 つのファイルを 3 つの PR が書き足すと、1 本入るたびに残りが衝突するため（関門の帳面の gate-trial.d と同じ考え）
 EXTRA = {"easy": ROOT / "data/i18n/yasashii.d"}
-# 頁の頭の断り（UX の担当の知らせ 11-07 夜・本人の言葉「ひとがたしかめてないは書かなくて良い」）。英語の Draft の札と同じ所・同じ見た目
-EASY_NOTE = "このページのやさしい｜日本語《にほんご》は、｜下書《したが》きです。"
 RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
-MAIN_OPEN = re.compile(r"<main\b[^>]*>")
-PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語のルビは印を外した字で入れる）
+PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語は 漢字（よみ） の形で読みを添える。PAREN）
+PAREN_ATTRS = {"placeholder"}  # 画面に出る属性のうち、やさしい日本語で 漢字（よみ） にする物（value は送る値なので替えない）
+# SVG の字（text・tspan・textPath。TAG は名を小さい字にそろえる）。中に <ruby> を入れるとブラウザが SVG の外へ追い出し、学びの輪の図の字が
+# 図の下に縦に並んだ（別の目が のこす の頁で撮って確かめた・11-07 夜）。ルビの印を外した字にする（<title>・<option> の 漢字（よみ） にはしない）。読みを 漢字（よみ） で添える形も撮って見たが、
+# 図の札が図の外へはみ出し、札どうしが重なった（grove の state/easy-svg-text-20261107/）。図の字の読みは、図のすぐ上の文（同じ言葉にルビ）が持つ
+SVG_TEXT = {"text", "tspan", "textpath"}
 KEEP = "="           # 訳さずに日本語のまま出す印
 CJK = re.compile(r"[぀-ヿ㐀-鿿＀-￯　-〿]")
 NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -96,6 +103,11 @@ def ruby_html(escaped):
     return RUBY.sub(r"<ruby>\1<rt>\2</rt></ruby>", escaped)
 
 
+def ruby_paren(text):
+    """ルビを入れられない所の字。｜漢字《よみ》 を 漢字（よみ） にする（全部の漢字に読みを添える。本人の言葉 11-07 夜）。"""
+    return RUBY.sub("\\1（\\2）", text)
+
+
 def ruby_plain(text):
     """属性に入れる字。ルビの印を外して漢字だけにする（属性に要素は入らない）。"""
     return RUBY.sub(r"\1", text)
@@ -113,7 +125,7 @@ def lookup(text, lang="en"):
         return None
 
 
-def _swap_text(raw, miss, lang="en", plain=False):
+def _swap_text(raw, miss, lang="en", plain=False, svg=False):
     text = html.unescape(raw)
     if not CJK.search(text):
         return raw
@@ -127,7 +139,10 @@ def _swap_text(raw, miss, lang="en", plain=False):
         return f'{lead}<span lang="ja">{raw.strip()}</span>{tail}' if lang == "en" else raw
     if lang == "easy":
         # 要素を入れられない所（<title>・<option>）では、属性と同じくルビの印を外した字にする（タブの題に <ruby> が字のまま出たため・別の窓の指摘）
-        return lead + (html.escape(ruby_plain(en), quote=False) if plain else ruby_html(html.escape(en, quote=False))) + tail
+        # SVG の字は印を外した字（読みを添えると図の札がはみ出す・SVG_TEXT の注）。<title>・<option> は 漢字（よみ）。ほかの字の節は <ruby>
+        if svg:
+            return lead + html.escape(ruby_plain(en), quote=False) + tail
+        return lead + (html.escape(ruby_paren(en), quote=False) if plain else ruby_html(html.escape(en, quote=False))) + tail
     return lead + html.escape(en, quote=False) + tail
 
 
@@ -138,7 +153,7 @@ def _swap_attrs(tag, miss, lang="en"):
             return m.group(0)
         en = lookup(text, lang)
         if en is not None and en != KEEP and lang == "easy":
-            en = ruby_plain(en)
+            en = ruby_paren(en) if m.group(1).strip()[:-2] in PAREN_ATTRS else ruby_plain(en)
         if en is None:
             miss.append(" ".join(text.split()))
             return m.group(0)
@@ -181,42 +196,28 @@ def to_en(page, miss=None, lang="en"):
                 stack.append((name, name in RAW or (name != "html" and bool(frozen_mark.search(tok)))))
             out.append(tok)
             continue
-        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY))
+        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY, svg=bool(stack) and stack[-1][0] in SVG_TEXT))
     return "".join(out)
 
 
-def draft_note():
-    from .en import DRAFT
-
-    return f'<p class="en-draft" lang="en" style="margin:0;padding:6px 12px;font-size:12px;letter-spacing:.04em;color:var(--mute,#6b6358)">{html.escape(DRAFT)}</p>'
-
-
-def _after_main(page, note):
-    """下書きの札を、頁の本体（<main …>）の頭に 1 つ置く。作りながら見る頁と手帖は <main class="…"> なので、属性つきの main も受ける。"""
-    return MAIN_OPEN.sub(lambda m: m.group(0) + note, page, count=1)
-
-
 def page_easy(page, miss=None):
-    """頁をやさしい日本語にし（表に無い字は元のまま）、頭の帯の後に下書きの札を 1 つ置く。やさしい の切り替えは日本語へ戻る口にする。"""
+    """頁をやさしい日本語にする（表に無い字は元のまま）。やさしい の切り替えは日本語へ戻る口にする。
+    頭の下書きの札は出さない（本人の言葉 11-07 夜「下書きです、はとる」）。戻る口の 日本語 にもルビを振る（全部の漢字に。同じ言葉）"""
     page = to_en(page, miss, lang="easy")
-    page = page.replace(EASY_LINK, '<a class="nav-lang nav-easy" href="?lang=ja" lang="ja">日本語</a>')
-    # 字は 14px（英語の札は 12px）。ルビは字の半分ほどになり、12px だと 6px で読みにくい（UX の担当の気づき・設計の「小さい札は下限を上げる」）
-    note = f'<p class="easy-draft" style="margin:0;padding:6px 12px;font-size:14px;letter-spacing:.04em;color:var(--mute,#6b6358)">{ruby_html(html.escape(EASY_NOTE))}</p>'
-    return _after_main(page, note)
+    return page.replace(EASY_LINK, '<a class="nav-lang nav-easy" href="?lang=ja" lang="ja"><ruby>日本語<rt>にほんご</rt></ruby></a>')
 
 
 def page_en(page, miss=None):
-    """頁を英語にし、頭の帯の後に下書きの札を 1 つ置く。言語の切り替えは日本語へ戻る口にする。"""
+    """頁を英語にする。言語の切り替えは日本語へ戻る口にする。頭の下書きの札は出さない（本人の言葉 11-07「これ要らない」）。"""
     page = to_en(page, miss)
-    page = page.replace('<a class="nav-lang" href="?lang=en" lang="en">English</a>', '<a class="nav-lang" href="?lang=ja" lang="ja">日本語</a>')
-    return _after_main(page, draft_note())
+    return page.replace('<a class="nav-lang" href="?lang=en" lang="en">English</a>', '<a class="nav-lang" href="?lang=ja" lang="ja">日本語</a>')
 
 
 def routes(sids):
     """英語で回す頁の道（試験と collect が使う）。全部の玩具の頁と、玩具に依らない頁。POST の後の知らせは、別に流して見る。"""
-    out = ["/", "/about", "/otona", "/loop", "/loop/ayumi", "/toys?paper=1", "/gallery", "/zukan", "/kaizen", "/no-such-page"]
+    out = ["/", "/about", "/otona", "/loop", "/loop/ayumi", "/toys?paper=1", "/gallery", "/kaizen", "/no-such-page"]
     for s in sids:
-        out += [f"/loop/{s}", f"/zukan/{s}", f"/zukan/{s}/yomi", f"/toy/{s}", f"/toy/{s}/kumitate", f"/toy/{s}/tsukuru",
+        out += [f"/loop/{s}", f"/zukan/{s}/yomi", f"/toy/{s}", f"/toy/{s}/kumitate", f"/toy/{s}/tsukuru",
                 f"/toy/{s}/techo", f"/toy/{s}/techo/kiroku", f"/toy/{s}/kasane", f"/toy/{s}/kasane/hmd"]
     return out
 
@@ -246,9 +247,11 @@ def prime(base, sids):
     return picked
 
 
-def collect(base, paths, cookie="utsushi_lang=ja", workers=6):
+def collect(base, paths, cookie="utsushi_lang=ja", workers=6, lang="en", pages=None):
     """道ごとに日本語の頁を読んで英語に通し、表に無かった日本語の字を {字: 初めに出た道} で返す。404 の頁（断りの頁）も読む。
-    英語の頁をもう一度通すと、原文を残した値（本人の言葉の引用）の日本語も拾ってしまうので、日本語の頁を通す。"""
+    英語の頁をもう一度通すと、原文を残した値（本人の言葉の引用）の日本語も拾ってしまうので、日本語の頁を通す。
+    lang="easy" はやさしい日本語の表で引く。pages に dict を渡すと {道: [表に無かった字…]} も入れる（やさしい日本語の落ちた字を
+    頁ごとに数える一覧の材料。本人の言葉 11-07 夜「やさしい日本語は全部のページに反映させる」）"""
     import concurrent.futures as cf
     import urllib.error
     import urllib.request
@@ -269,9 +272,11 @@ def collect(base, paths, cookie="utsushi_lang=ja", workers=6):
             if not ctype.startswith("text/html"):
                 continue
             miss = []
-            to_en(body, miss)
+            to_en(body, miss, lang=lang)
             for t in miss:
                 found.setdefault(t, p)
+            if pages is not None:
+                pages[p] = miss
     return found
 
 
@@ -283,11 +288,17 @@ def main(argv=None):
     ap.add_argument("collect", nargs="?")
     ap.add_argument("--base", required=True, help="回してあるサーバ（http://127.0.0.1:<port>）")
     ap.add_argument("--out", required=True, help="表に無い字の JSON の置き場（repo の外）")
+    ap.add_argument("--lang", default="en", choices=sorted(TABLES), help="どの表で引くか（easy はやさしい日本語）")
+    ap.add_argument("--pages", help="頁ごとの表に無い字 {道: [字…]} の JSON の置き場（repo の外。やさしい日本語の落ちた字の一覧の材料）")
     a = ap.parse_args(argv)
     from .play_server import sources
 
     prime(a.base, sources())
-    found = collect(a.base, routes(sources()))
+    pages = {} if a.pages else None
+    found = collect(a.base, routes(sources()), lang=a.lang, pages=pages)
+    if pages is not None:
+        with open(a.pages, "w", encoding="utf-8") as f:
+            json.dump(pages, f, ensure_ascii=False, indent=0)
     keyed = {}
     for t, p in found.items():
         keyed.setdefault(key_of(t)[0], p)

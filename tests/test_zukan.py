@@ -1,6 +1,13 @@
-"""図鑑の頁の試験（J-016、f15）。印の無い文を出さない・採らなかった読みを出さない・引用は確かめた読みだけ、を見る。
+"""図鑑の頁を外した形（本人の言葉 11-08「図鑑のページ要らない」・本人の決め 11-08「本の頁は残す」）と、文の印の床（J-016）。
 
-本物の記録を汚さないよう、OMOCHAE_DATA を空の一時の置き場にしてから読み込む。
+見る線:
+1. 図鑑の目次（/zukan）と玩具ごとの図鑑の頁（/zukan/<印>）は無い（断りの 404）
+2. 図鑑の本の頁（/zukan/hon/<n>）と、くずし字を読む（/zukan/<印>/yomi・道の名はそのまま）は残る
+3. 図鑑の頁への道は、どの頁にも無い（玩具の頁・序の頁・くずし字を読む の頁の帯と玩具の名）。本の頁の入口は序の頁に、本人の決めの字「本でよむ」で
+4. 文の印の床（zukan.guard）は残る: 印の無い文・飾りの印・裏付けの無い引用を描かずに止める（くずし字を読む の頁が使う）
+
+前は図鑑の頁そのものの試験（印の無い文を出さない・採らなかった読みを出さない）だった。その線は、くずし字を読む の頁（test_kuzushi）と、
+文の印の床（下の 4）で見る。
 """
 import os
 import re
@@ -11,11 +18,12 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import hypotheses, labels, records  # noqa: E402
-from web import wording, zukan  # noqa: E402
-from web.play_server import serve, source, sources  # noqa: E402
+from omochae import labels  # noqa: E402
+from web import about as about_mod  # noqa: E402
+from web import zukan, zukan_hon  # noqa: E402
+from web.play_server import serve  # noqa: E402
 
-G = "NDL-1187053-R0000005-L"
+G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -29,86 +37,32 @@ def get(path):
         return e.code, e.read().decode()
 
 
-def sentences(body):
-    """画面に出た文（li と歌）を取り出す。文の数え方を画面の組みに合わせ、印の有無を外から確かめるため。"""
-    return re.findall(r"<li>(.*?)</li>", body)
+try:
+    # 1
+    for path in ("/zukan", f"/zukan/{G}", f"/zukan/{T}"):
+        assert get(path)[0] == 404, path
+    # 2
+    first = zukan_hon.frames()[0]
+    assert get(f"/zukan/hon/{first}")[0] == 200, "本の頁が無い"
+    assert get(f"/zukan/{G}/yomi")[0] == 200, "くずし字を読む が無い"
+    # 3
+    for path in ("/", "/about", f"/toy/{G}", f"/toy/{T}", f"/zukan/{G}/yomi", f"/zukan/hon/{first}", "/gallery"):
+        body = get(path)[1]
+        assert not re.search(r'href="/zukan(?:/NDL-[^"/]*)?"', body), (path, "図鑑の頁への道が残った")
+    about = get("/about")[1]
+    assert f'<a href="/zukan/hon/{first}">本でよむ</a>' in about and about_mod.BOOK_GO == "本でよむ", "序の頁に本の頁の入口が無い（字は本人の決め「本でよむ」）"
+    yomi = get(f"/zukan/{G}/yomi")[1]
+    assert f'<a href="/toy/{G}">' in yomi, "くずし字を読む の玩具の名から玩具の頁へ行かない"
+finally:
+    server.shutdown()
 
-
-def hypothesis_words(sid):
-    h = hypotheses.sheet_of(sid)
-    return [h["name"], wording.plain(h["how_it_moves"])]
-
-
-# 頁は開き、たたき台の仮説の名前と動かし方も出る（予想の段を外した。#242。ほかの仮説は出さない。J-032）
-code, idx = get("/zukan")
-assert code == 200 and "図鑑" in idx
-for sid in sources():
-    # 必須の 2 種は大きな節で玩具の頁と手帖へ直に行ける。試作の玩具は一覧の札から、その玩具の図鑑の頁へ入る（test_zukan_more）
-    assert f'href="/zukan/{sid}"' in idx, sid
-    if hypotheses.stage(sid) == "必須":
-        assert f'href="/toy/{sid}"' in idx and f'href="/toy/{sid}/techo"' in idx, sid
-    code, body = get(f"/zukan/{sid}")
-    assert code == 200, sid
-    assert "予想を書くと" not in body
-    for w in hypothesis_words(sid):
-        assert w in body, w
-    assert "仮説 B " not in body, (sid, "説を羅列しない")
-assert 'href="/gallery"' in idx
-assert get("/zukan/NDL-0-R0000001-L")[0] == 404
-
-# 採らなかった読み「怠らし」はどこにも出ない。引用は人が確かめた読みだけ
-for sid in sources():
-    src = source(sid)
-    body = get(f"/zukan/{sid}")[1]
-    for e in src["transcription"]["entries"]:
-        if e.get("checked_by") and not e.get("rejected_by"):
-            assert e["text"] in body, e["text"]
-        else:
-            assert e["text"] not in body, e["text"]
-assert "怠らし" not in idx and "怠らし" not in get(f"/zukan/{G}")[1]
-# 確かめていない読み・採らなかった読みは引用の候補から外れる（頁ごと落とさないため、ここで絞る）
-fake = {"transcription": {"entries": [{"text": "確かめた", "checked_by": "人", "read_by": "Claude"}, {"text": "未確認", "read_by": "Claude"},
-                                      {"text": "採らない", "checked_by": "人", "rejected_by": "人"}]}}
-assert [q["text"] for q in zukan.quote_lines(fake)] == ["確かめた"]
-assert all(q["label"] == labels.QUOTE for q in zukan.quote_lines(fake))
-
-# 記録の後: 観察の文が増える
-rid, fail = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "わからない", "tried_on": "2026-11-04"})
-assert not fail
-body = get(f"/zukan/{G}")[1]
-assert f"仮説 A の紙・わからない（11 月 4 日・記録の番号 {rid}）" in body
-
-# 出た文はどれも 3 分類の印を持ち、組み立てた文の一覧は F6.label を通る
-for sid in sources():
-    body = get(f"/zukan/{sid}")[1]
-    li = sentences(body)
-    assert li or sid != G, sid  # もう 1 つの玩具は記録が無い
-    for s in li:
-        assert re.match(rf'<span class="lb">({"|".join(labels.LABELS)})</span>', s), s
-    # 歌の直後には引用の印がある
-    assert body.count('<p class="song">') == len(re.findall(rf'class="song">[^<]*</p><p class="meta"><span class="lb">{labels.QUOTE}</span>', body))
-    z = zukan.lines_for(sid)
-    assert not labels.check(z["quotes"] + z["observations"] + z["hypotheses"]), sid
-
-# 印の無い文が混ざれば描かない（公開の前の床）。画面は 500 で、文は出ない
+# 4
 for bad in ([{"text": "印の無い文"}], [{"text": "飾り", "label": "演出"}], [{"text": "裏付けの無い引用", "label": labels.QUOTE}]):
     try:
         zukan.guard(bad)
         raise AssertionError(bad)
     except zukan.Unlabeled:
         pass
-orig = zukan.observation_lines
-zukan.observation_lines = lambda sid, data: [{"text": "印の無い文"}]
-try:
-    code, body = get(f"/zukan/{G}")
-    assert code == 500 and "印の無い文" not in body
-    assert get("/zukan")[0] == 500
-finally:
-    zukan.observation_lines = orig
-assert get(f"/zukan/{G}")[0] == 200
-
-# 順位を付けない（J-025）
-for word in ("順位", "1 位", "成功", "失敗", "再現できた"):
-    assert word not in get("/zukan")[1], word
-server.shutdown()
-print("ok")
+z = zukan.lines_for(G)
+assert not labels.check(z["quotes"] + z["observations"] + z["hypotheses"])
+print("ok 図鑑の頁は無い・本の頁とくずし字を読む は残る・図鑑への道は無い・文の印の床は残る")

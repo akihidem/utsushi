@@ -75,7 +75,7 @@ req = urllib.request.Request(base + f"/toy/{G}/print", urllib.parse.urlencode({"
 assert urllib.request.urlopen(req, timeout=120).status == 200
 
 # 1. 頁の字に、名前の無い断りの形が無い
-PAGES = ["/", "/toys", "/about", "/otona", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}"]
+PAGES = ["/", "/toys", "/about", "/otona", "/gallery", f"/zukan/{G}/yomi", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}"]
 for path in PAGES:
     text = unexempt(visible(get(path)))
     assert not NAMELESS_JA.findall(text), (path, NAMELESS_JA.findall(text))

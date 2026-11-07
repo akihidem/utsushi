@@ -32,6 +32,9 @@ for k, h in pages.items():
     for v in demo_samples.VOICES:
         for _, text in v["fields"]:
             own = own.replace(html.escape(text, quote=False), "").replace(html.escape(text), "")
+    # 話された言葉（録画の声を字にした人の言葉・話したまま）も人の字なので、同じく外して見る
+    for s in demo_samples.SPOKEN:
+        own = own.replace(html.escape(s["text"], quote=False), "").replace(html.escape(s["text"]), "")
     for w in ("成功", "失敗", "正解", "仮説 A", "H-A", "つまみ", "内筒"):
         assert w not in without_premise(own), (k, w)
     assert "IntersectionObserver" not in h and "<blockquote>" in h, k

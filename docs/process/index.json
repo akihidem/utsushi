@@ -348,12 +348,6 @@
   "status": "試行中（11-04〜）"
  },
  {
-  "id": "demo-notes",
-  "path": "demo-notes.md",
-  "hook": "デモ動画の準備の参考と当てはめの案",
-  "status": "11-06〜07 に使う（U-19）"
- },
- {
   "id": "api-test-plan",
   "path": "api-test-plan.md",
   "hook": "本物の API の最初の試験 7 回の手順書",
@@ -374,8 +368,8 @@
  {
   "id": "trials",
   "path": "trials/README.md",
-  "hook": "試行の索引（11-04・11-06）。直しの順は感想 17 件から（18 件のうち 1 件は本人の決めで使わない）",
-  "status": "2 回"
+  "hook": "試行の索引（4 回のうち 11-04・11-06）。直しの順は感想 17 件から（1 件は本人の決めで外す）",
+  "status": "4 回のうち 2 回の記録"
  },
  {
   "id": "trials/sheets",

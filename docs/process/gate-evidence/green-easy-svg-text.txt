@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_easy_svg_text.py
+# commit: 6e0880ed（回した時の HEAD）
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000004-L/.tmp-ae952jxq/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000004-L-4/.tmp-wzoczsp7/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000005-L/.tmp-5wu948wn/H-C_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000005-L-3/.tmp-tba8cvv3/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000007-L/.tmp-pw2wqulw/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000007-R/.tmp-iq61til_/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000014-L/.tmp-jmyzo3rv/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000014-R/.tmp-txveoruz/H-A_v1.pdf
+/tmp/tmprwu8wv6h/play/NDL-1187053-R0000019-L/.tmp-kklujx0n/H-A_v1.pdf
+ok やさしい日本語: SVG の text・tspan の中にルビを入れない
+rc=0

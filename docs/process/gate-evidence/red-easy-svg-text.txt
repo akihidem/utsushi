@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_easy_svg_text.py
+# commit: 6e0880ed（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_easy_svg_text.py", line 28, in <module>
+    assert "<ruby>" not in svg, svg
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: <svg viewBox="0 0 10 10"><text x="1" y="1"><ruby>御来迎<rt>ごらいごう</rt></ruby></text><text><tspan><ruby>御来迎<rt>ごらいごう</rt></ruby></tspan></text></svg>
+rc=1

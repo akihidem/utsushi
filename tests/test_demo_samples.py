@@ -27,12 +27,25 @@ assert html.count('class="item is-sample"') == len(demo_samples.UPLOADS) + len(d
 yose = voices[voices.index('id="yose"'):voices.index('id="shokunin"')]
 assert len(demo_samples.VOICES) == 17 and all(v["toy"] and v["fields"] for v in demo_samples.VOICES)
 assert '<span class="sample">見本</span>' not in yose and demo_samples.VOICES_NOTE in yose, "寄せられた声は見本の札でなく、抜き出した一文"
-assert yose.count('<div class="item">') == len(demo_samples.VOICES)
+assert yose.count('<div class="item">') == len(demo_samples.VOICES) + len(demo_samples.SPOKEN), "感想 1 件 1 枚と、話された言葉 1 か所 1 枚"
 import html as _h  # noqa: E402
 for v in demo_samples.VOICES:
     assert all(_h.escape(t) in yose for _, t in v["fields"]), v["toy"]
     assert all(t not in ("", "なし", "特になし") for _, t in v["fields"]), "空や「なし」の欄は出さない"
 assert demo_samples.VOICES_WHO in yose and not any(x in yose for x in ("回: A", "回: B", "（A）", "（B）")), "名前・回を出さない"
+# 話された言葉（本人の言葉 11-07 夜: 62 分の音源の言葉は「載せてよい」、レビューは「話した人に了承を得ているので大丈夫です」）。
+# 1 か所 1 枚の札で、字は話したまま。話し手の名は出さず、出所の札だけを付ける（本人の言葉 11-08「全てがワークショップです。」で札は 1 つ）
+from omochae import contrib  # noqa: E402
+assert {s["where"] for s in demo_samples.SPOKEN} == {"workshop", "review"} and len(demo_samples.SPOKEN) == 30, len(demo_samples.SPOKEN)
+assert sum(s["where"] == "workshop" for s in demo_samples.SPOKEN) == 8 and sum(s["where"] == "review" for s in demo_samples.SPOKEN) == 22
+assert demo_samples.SPOKEN_NOTE in yose and yose.count(demo_samples.SPOKEN_WHO) == len(demo_samples.SPOKEN), "30 枚とも同じ出所の札（本人の言葉「全てがワークショップです。」）と、抜き出した事の一文"
+assert "レビューで話された言葉" not in yose, "レビューを別の札にしない"
+for s in demo_samples.SPOKEN:
+    assert s["text"].strip() and _h.escape(s["text"]) in yose, s["text"][:20]
+    assert s["toy"] is None or _h.escape(s["toy"]) in yose
+    # 名乗り・連絡先の形が無い（持ち寄りの入口と同じ見張り）。話し手の名は字に入れない
+    assert not contrib.check_pii({"body": s["text"]}), s["text"][:20]
+assert '<span class="sample">見本</span>' not in yose, "話された言葉も見本の札でない"
 assert demo_samples.NOTE in html, "作り物である事の一文"
 # どの見本の枠にも札がある（本物と取り違えない）
 for chunk in html.split('class="item is-sample"')[1:]:

@@ -170,19 +170,9 @@ cd utsushi
 
 ほかの入口: `./run-home.sh` は家のパソコンで手元の画面を開く（`--lan` で家の網に開く）。`./run-demo.sh` はデモの一周の画面（入口と手帖。置き場は本物の記録と分けた `out/demo-data`）を立て、パソコン・iPad・iPhone から開ける合言葉付きの https のリンクを作る（cloudflared が要る。止めるとリンクは変わる）。合言葉とリンクは git の外の `out/demo-key`・`out/demo-url` にだけ置く。commit に入れない。
 
-### デモ動画を作る
+### デモ動画
 
-要る物は上に足して、`google-chrome` か `chromium` の名前で呼べるブラウザ。ffmpeg も要る。足りない物は、書き出しの最初に名前で出て exit 4 で止まる。
-
-```
-export PYTHONPATH=src
-OUT_DIR="$HOME/utsushi-demo"                           # 書き出す置き場。repo の外にする
-.venv/bin/python -m demo.prepare                       # 前の日、網のある所で。道具を確かめ、江戸の絵を全部取り寄せて控えを残す
-.venv/bin/python -m demo.prepare --check               # 撮る日の朝、網なしで。写しが控えと合うか
-.venv/bin/python -m demo.build --out "$OUT_DIR" --offline          # 網を切って 7 場面を書き出す
-PREV_DIR=$(ls -d "$OUT_DIR"/*/ | tail -1)              # 一番新しい書き出しの置き場（フォルダの名前は日時）
-.venv/bin/python -m demo.build --out "$OUT_DIR" --run "$PREV_DIR" --only scene3   # 1 場面だけ作り直してつなぎ直す
-```
+提出のデモ動画（YouTube）の作り（台本・場面を描くコード・その試験）は、この repo に入れず作り手の手元で作った（2026-11-08。動画は repo に入れない決まりと同じ考え）。この repo の公開デモのサイト（`./run-demo.sh`）はそのまま使える。
 
 デモ動画の読み上げは、AivisSpeech（声のモデル「まお」）による合成の声です。
 
