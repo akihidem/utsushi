@@ -120,7 +120,8 @@ try:
 finally:
     kh.PICTURES = keep_pictures
 
-# 7. 玩具の頁の置き場: 原画と立体 → つくる → 型紙の窓 のすぐ後（2 画面目の頭。設計の担当の置き場 11-07）。たとえ（本人の答え Q4 で窓の近く）はその後。
+# 7. 玩具の頁の置き場: 型紙の窓 のすぐ後（設計の担当の置き場 11-07）。たとえは、本人の言葉 11-08「…これまでの復元、仮説、組み立てを立体で見る、
+# たとえと関連する事柄、型紙の順で」で型紙の窓の前へ移ったので、後ろに来るのは 考えを話す（と同じ窓の困ったら）。
 # 表に無い玩具の頁には出ない
 from web import toy  # noqa: E402
 
@@ -128,7 +129,7 @@ for sid in (G, T):
     page = toy.toy_page(sid)
     at = page.index('id="ban-ayumi"')
     win = page.index('id="win"')
-    after = [page.index(m) for m in ('id="tatoe"', 'id="hanasu"', 'id="tsukuru"') if m in page]
+    after = [page.index(m) for m in ('id="hanasu"', 'id="tsukuru"') if m in page]
     assert page.count('id="ban-ayumi"') == 1 and win < at < min(after), (sid, win, at, after)
     assert page.index("</section>", win) < at, "型紙の窓の節の中でなく、その後"
     assert "版の歩み" in page and wa.NOW in page[at:]

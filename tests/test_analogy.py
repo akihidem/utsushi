@@ -40,8 +40,9 @@ sid = "NDL-1187053-R0000005-L"
 after = toy.toy_page(sid)
 a = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))["analogy"]
 assert "作る側のたとえ" in after and "答えではありません" in after and a["like"] in after and a["related"][0] in after
-# 順路: たとえは型紙の窓のすぐ後に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」）。型紙と一緒に考えられるように。前は頁の足の畳み（段 0）
-assert after.index('id="kasetsu"') < after.index('id="win"') < after.index('id="tatoe"') < after.index('id="minna"')
+# 順路: たとえは型紙の窓のすぐ前に、畳まずに出す。本人の言葉 11-08「つくるのページ、これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、
+# 型紙の順で」（前は本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」で窓のすぐ後。型紙の近くは変わらない）。前は頁の足の畳み（段 0）
+assert after.index('id="minna"') < after.index('id="kasetsu"') < after.index('id="tatoe"') < after.index('id="win"')
 assert '<section class="sec" id="tatoe"><h2>たとえと、関連する事柄</h2>' in after, "畳まずに出す"
 for w in BAD:
     assert w not in after.split('id="tatoe"')[1].split("</section>")[0], w
