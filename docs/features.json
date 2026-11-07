@@ -496,12 +496,10 @@
   "name": "型紙エンジン（paper-to-toy）を、提出のために履歴ごと engine/ にまとめる（本人の決定 11-07・運営の求め「提出は 1 つの repo」）",
   "status": "doing",
   "evidence": [
-   "engine/run.sh",
-   "engine/README.md",
-   "SECURITY.md",
-   "README.md"
+   "README.md",
+   "tests/test_readme_engine.py"
   ],
-  "unverified": "まとめたのは提出の直前のエンジンの main の頭で、その後のエンジンの直しは自動では入らない。engine/ の試験は engine/run.sh で別に回し、この repo の ./run.sh は流さない。src/omochae/ は両方にあり、正はエンジンの側（両方を比べるのは tests/compare_engine.py で、engine/ を相手にはまだ回していない）"
+  "unverified": "まとめたのは提出の直前のエンジンの main の頭で、その後のエンジンの直しは自動では入らない。engine/ の試験は engine/run.sh（engine/ の中の入口）で別に回し、この repo の ./run.sh は流さない。src/omochae/ は両方にあり、正はエンジンの側（両方を比べるのは tests/compare_engine.py で、engine/ を相手にはまだ回していない）"
  },
  {
   "id": "f44",
