@@ -88,7 +88,8 @@ out = pathlib.Path(DATA) / "play" / G
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 assert (out / f"{GS}_v2.pdf").exists(), "刷るのは一番新しい版"
 page = get(f"/toy/{G}")[1]
-assert f'<img src="/sheet/{G}/{GS}_v2.png"' in page and "<b>版 2</b>" in page
+# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」
+assert f'<img src="/sheet/{G}/{GS}_v2.png"' in page and f"<b>{hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)}</b>" in page
 # その版への報告は、版 2 への返事として残る
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "前より開いた"})[0] == 303
 assert json.loads((pathlib.Path(DATA) / "records/R-0002.json").read_text(encoding="utf-8"))["sheet_version"] == 2
@@ -112,7 +113,9 @@ assert f'see={GS}&kind=sheet&v=2#win" aria-current' in page and f'see={GS}&kind=
 (out / f"{GS}_v1.pdf").unlink()
 (out / f"{GS}_v1.png").unlink()
 only2 = get(f"/toy/{G}")[1]
-assert f"/sheet/{G}/{GS}_v1.png" not in only2 and "<b>版 2</b>" in only2 and ">版 1<" not in only2.split('id="win"')[1].split('id="tsukuru"')[0], "刷っていない版を出さない"
+# 組の番号の呼び方（#513 の (a)）。版 1 は「版 14」で、型紙の窓の頭の輪の図の真ん中（型紙の版）と同じ字になるので、版の札は札の道（v=1）で見分ける
+ban = lambda n: hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), n)
+assert f"/sheet/{G}/{GS}_v1.png" not in only2 and f"<b>{ban(2)}</b>" in only2 and f'v=1#win">{ban(1)}</a>' not in only2.split('id="win"')[1].split('id="tsukuru"')[0], "刷っていない版を出さない"
 assert get(f"/toy/{G}?see={GS}&kind=sheet&v=1")[0] == 200 and f'<img src="/sheet/{G}/{GS}_v2.png"' in get(f"/toy/{G}?see={GS}&kind=sheet&v=1")[1], "無い版を言われても一番新しい版へ"
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303  # 元に戻す（版 2 を刷り直す。版 1 は無いまま）
 # 報告の版: 版が 2 つある時は、どの版の紙かを聞き、言われた版の報告として残す（版 1 で作っていた人の報告が版 2 の記録にならない）

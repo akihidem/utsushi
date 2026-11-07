@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_gate_trial_merge.py
+# commit: d2307338（回した時の HEAD。この枝の試験だけを置き、今の置き場 docs/process/gate-trial.d を置かない木）
+Traceback (most recent call last):
+  File "tests/test_gate_trial_merge.py", line 99, in <module>
+    assert in_dir, "今の置き場に節が 1 つも無い（この試験の置き場の読みを見られない）"
+           ^^^^^^
+AssertionError: 今の置き場に節が 1 つも無い（この試験の置き場の読みを見られない）
+rc=1
