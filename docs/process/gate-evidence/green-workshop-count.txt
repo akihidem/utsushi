@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_workshop_count.py
+# commit: 4eb431f3（回した時の HEAD）
+ok ワークショップの回数の数え方（要約・できることの見出し・日付で呼ぶ・11-04 の回の中身・データの扱いが記録の日付 2 つと合う）
+rc=0
