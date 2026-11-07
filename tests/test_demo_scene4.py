@@ -74,10 +74,18 @@ source_text = inspect.getsource(scene4)
 assert not any(s in source_text for s in ("仮説ごとに 1 組", "型紙は、仮説ごとに", "どの仮説も同じ形"))
 assert all(s in source_text for s in ("江戸の絵も、仕組みを図で残した。", " の組。"))
 assert "手順の紙（組み方まで。中の様子の図は伏せた）" not in source_text and "compose_sheet" not in source_text, "手順の紙の絵と札を出さない"
-# 刷った紙が出た後、型紙の右は紙の地のまま（手順の紙も組の列も映らない）。上の題と札の行、下の出所の札の行は除く
-for t in (20.0, 21.0, 23.5, 25.0):
-    right = scene.frame(t).crop((scene.sheet_rect[2] + 40, 200, scene4.W, scene4.H - 80))
-    assert len(right.getcolors()) == 1, (t, right.getcolors()[:3])
+# 型紙は、刷った紙が出るまでは左の置き場、折り線が退いた後は画面の真ん中（本人の決定 11-07）
+sw = scene.sheet_rect[2] - scene.sheet_rect[0]
+assert scene.sheet_x(15.0) == scene4.SHEET_BOX[0] and scene.sheet_x(scene4.CUES["folds_out"][0]) == scene4.SHEET_BOX[0]
+assert scene.sheet_x(25.0) == (scene4.W - sw) // 2, scene.sheet_x(25.0)
+# 真ん中へ寄った後、型紙の左右は紙の地のまま（手順の紙も組の列も映らない）。上の題と札の行、下の出所の札の行は除く
+for t in (21.0, 23.5, 25.0):
+    f, x = scene.frame(t), scene.sheet_x(t)
+    for side in ((0, 200, x - 40, scene4.H - 80), (x + sw + 40, 200, scene4.W, scene4.H - 80)):
+        assert len(f.crop(side).getcolors()) == 1, (t, side, f.crop(side).getcolors()[:3])
+# 題と隅の札の字（本人の決定 11-07「推しでよい」）。前の字から「と手順の紙」を外しただけ
+assert '"刷った PDF"' in source_text and "刷った PDF と手順の紙" not in source_text and "型紙と手順の紙:" not in source_text
+assert scene.credit(25.0).startswith("型紙: utsushi の生成器が寸法から刷った PDF"), scene.credit(25.0)
 # 組の版の札はコードから来る。文字で書き込むと、組を刷り直した時に動画だけ古くなる
 assert scene.set_label == f"刷った組 {slider_fan.SHEET_SET}"
 assert slider_fan.SHEET_SET not in inspect.getsource(scene4), "SHEET_SET の値を scene4.py に書き込まない"

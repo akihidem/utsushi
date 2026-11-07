@@ -2,7 +2,7 @@
 
 なぜ: 本人のサイト体験レビュー（11-07）の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」。前は型紙の絵が
 「すぐ作る」の札（小さな絵）と型紙の窓の 2 か所に出て、紙を作る口も 頭の「つくる」・札の「型紙を見る」・窓の中の札 の 3 つあった。
-札は仮説の字だけを持つ。紙が無い時は窓の節（見出しと説明）も出さない。作れなかった時の文は、今までどおり窓の錨の所で読める。
+札は仮説の字だけを持つ（札は型紙の窓の頭にある）。紙が無い時は窓に紙の絵を出さない。作れなかった時の文は、今までどおり窓の錨の所で読める。
 """
 import os
 import re
@@ -38,7 +38,8 @@ for sid in TOYS:
     hero = before[:before.index('id="kasetsu"')]
     assert len(re.findall(prints, before)) == 1 and len(re.findall(prints, hero)) == 1, (sid, re.findall(prints, before))
     assert f'<img src="/sheet/{sid}/' not in before, (sid, "紙が無いのに型紙の絵")
-    assert '<div id="win"></div>' in before and "<h2>型紙の窓</h2>" not in before, (sid, "中身の無い窓の節")
+    # 窓の節は、紙が無い時も、説明・断り・輪の図・仮説の札を出す（「すぐ作る」の節を窓へ寄せた。C3）。紙の絵と紙の種類の札は無い
+    assert "<h2>型紙の窓</h2>" in before and '<figure class="sheet">' not in win(before), (sid, "紙が無いのに紙の窓")
     for gone in GONE:
         assert gone not in before, (sid, gone)
 
@@ -52,6 +53,6 @@ for sid in TOYS:
     assert not re.findall(prints, page), (sid, re.findall(prints, page))
     for gone in GONE:
         assert gone not in page, (sid, gone)
-    # 札は仮説の字を持ったまま（字は変えない）
-    assert hypotheses.sheet_of(sid)["name"] in page[page.index('id="kasetsu"'):page.index('id="win"')], sid
+    # 札は仮説の字を持ったまま（字は変えない）。札は型紙の窓の頭
+    assert hypotheses.sheet_of(sid)["name"] in w, sid
 print(f"ok 玩具の頁の型紙: {len(TOYS)} 種で、型紙の絵は窓の 1 か所、紙を作る口は頭の「つくる」1 つ（紙が無い時は窓の節を出さない）")
