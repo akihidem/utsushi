@@ -30,17 +30,6 @@ INTRO = (
 PREMISE = "This template is not the answer. It is a guess made by an AI. Some parts may not work. Tell us how you fixed them. That helps us make the next version better."
 JA_ONLY = "The templates print in Japanese only. Part numbers, line styles, and the steps here are what you need to follow them."
 CREDIT = "Pictures: 1931 facsimile of the 1773 book, National Diet Library, Japan (public domain). The drawings on the templates are redrawn."
-# 序の頁の「うつしと paper to toy」の節と同じ形の節（窓口の決め 11-07「英語の 3 文は英語の頁に入れる。序の頁は #527 で作る形にそろえる」）。
-# 字は型紙エンジンの README から作った材料の英語の 3 文（統括 11-07）。2 文目の 3D の所は、日本語の 3 文目を和らげた窓口の決めに合わせて
-# 「to check that nothing collides」を「to check for collisions, and notes near misses for people to review」にした（検品は近い板を所見として残す作りのため）
-ENGINE_HEAD_EN = "utsushi and paper to toy"
-ENGINE_EN = (
-    "Paper to toy is an engine for designing mechanisms with internal structure from flat materials like paper.",
-    "Give it a toy's dimensions, and it lays out the parts, checks them before and after printing, and outputs a printable PDF template; "
-    "for the two featured toys it also folds and assembles the parts in 3D to check for collisions, and notes near misses for people to review.",
-    "Makers' reports and workshop feedback become improvement proposals, and when people adopt one and the fix is in, "
-    "the template version and the engine version go up.",
-)
 FOOT = f'<p class="foot">{CREDIT} A paper model that moves does not prove how the original was made.</p>'
 GLOSSARY = (
     ("Solid line", "Cut here."),
@@ -95,8 +84,6 @@ def index_page(look=skin.DEFAULT, path="/en"):
     intro = "".join(f"<p>{x}</p>" for x in INTRO)
     body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
-            # 序の頁の「うつしと paper to toy」の節と同じ置き場（案内の後・玩具を選ぶ前）
-            f'<section class="sec" id="engine"><h2>{esc(ENGINE_HEAD_EN)}</h2>' + "".join(f"<p>{esc(x)}</p>" for x in ENGINE_EN) + '</section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
     return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)
 
