@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_print_limit.py
+# commit: 62dd1119（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_print_limit.py", line 53, in <module>
+    assert code == 429 and headers.get("Retry-After"), (code, headers)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (200, {'Server': 'utsushi ', 'Date': 'Sat, 07 Nov 2026 04:27:24 GMT', 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': '43166', 'X-Content-Type-Options': 'nosniff'})
+rc=1
