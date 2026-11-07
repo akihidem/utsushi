@@ -29,11 +29,12 @@ for v in demo_samples.VOICES:
     assert all(t not in ("", "なし", "特になし") for _, t in v["fields"]), "空や「なし」の欄は出さない"
 assert demo_samples.VOICES_WHO in yose and not any(x in yose for x in ("回: A", "回: B", "（A）", "（B）")), "名前・回を出さない"
 # 話された言葉（本人の言葉 11-07 夜: 62 分の音源の言葉は「載せてよい」、レビューは「話した人に了承を得ているので大丈夫です」）。
-# 1 か所 1 枚の札で、字は話したまま。話し手の名は出さず、出所（ワークショップの場の録音か、作る前の型紙のレビューか）の札だけを付ける
+# 1 か所 1 枚の札で、字は話したまま。話し手の名は出さず、出所の札だけを付ける（本人の言葉 11-08「全てがワークショップです。」で札は 1 つ）
 from omochae import contrib  # noqa: E402
 assert {s["where"] for s in demo_samples.SPOKEN} == {"workshop", "review"} and len(demo_samples.SPOKEN) == 30, len(demo_samples.SPOKEN)
 assert sum(s["where"] == "workshop" for s in demo_samples.SPOKEN) == 8 and sum(s["where"] == "review" for s in demo_samples.SPOKEN) == 22
-assert demo_samples.SPOKEN_NOTE in yose and all(w in yose for w in demo_samples.SPOKEN_WHO.values()), "出所の札と、抜き出した事の一文"
+assert demo_samples.SPOKEN_NOTE in yose and yose.count(demo_samples.SPOKEN_WHO) == len(demo_samples.SPOKEN), "30 枚とも同じ出所の札（本人の言葉「全てがワークショップです。」）と、抜き出した事の一文"
+assert "レビューで話された言葉" not in yose, "レビューを別の札にしない"
 for s in demo_samples.SPOKEN:
     assert s["text"].strip() and _h.escape(s["text"]) in yose, s["text"][:20]
     assert s["toy"] is None or _h.escape(s["toy"]) in yose
