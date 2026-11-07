@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_easy_part1.py
+# commit: 0d7ca29f（回した時の HEAD）
+ok やさしい日本語の表の分け 1（827 鍵・漢字は全部ルビ・読みはひらがな・数の印・= の扱い・玩具の名は替えない）
+rc=0
