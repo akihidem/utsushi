@@ -20,6 +20,9 @@ from web.play_server import serve  # noqa: E402
 from web.toy import reply_note  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -74,7 +77,7 @@ assert "先に紙を作ると、作りながら見る頁が開きます" in note
 # 刷る: 通らないと仮説の節に、通ると型紙の窓に文が出る。
 code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
 assert code == 422 and "仮説 H-ZZ は無い" in note_at(page, "kasetsu", "alert")
-page = landed(call(f"/toy/{G}/print", {"hypothesis": "H-A"}), "win")
+page = landed(call(f"/toy/{G}/print", {"hypothesis": GS}), "win")
 assert "紙を作りました" in note_at(page, "win", "status")
 # 別の仮説の紙がある時でも、頼んだ仮説の紙が無ければ同じ所に着く。
 page = landed(call(f"/toy/{G}/tsukuru?h=H-B"), "kasetsu")
@@ -85,11 +88,11 @@ code, _, page = call(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折�
 assert code == 422 and note_at(page, "ask", "alert") and 'value="谷折りって？"' in page
 
 # 記録: 通らないと欄の上に理由が出て、中身が戻る。通ると、今残した記録の札に着く。
-bad = {"hypothesis": "H-A", "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}
+bad = {"hypothesis": GS, "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}
 code, _, page = call(f"/toy/{G}/record", bad)
 assert code == 422 and note_at(page, "kiroku", "alert")
 assert "3 枚目で&lt;止まった&gt;</textarea>" in page and 'name="first_moved" value="筒"' in page
-assert re.search(r"<option selected>糸</option>", page) and 'name="hypothesis" value="H-A"' in page[page.index('id="record"'):]
+assert re.search(r"<option selected>糸</option>", page) and f'name="hypothesis" value="{GS}"' in page[page.index('id="record"'):]
 good = bad | {"result": "動かない", "note": "3 枚目で止まった"}
 code, _, page = call(f"/toy/{G}/record", good | {"result": "ない結果"})
 assert code == 422 and '" checked' not in page[page.index('id="record"'):page.index("</form>", page.index('id="record"'))], "無い値に印を付けない"
@@ -115,18 +118,18 @@ assert note_at(page, rid, "status")
 
 # 次の版: 欄を開いて、その上に理由を出し、書いた中身を戻す。手帖から来た印も保つ。
 form = {"interpretation": "折りが<多い>", "param": "fold_count", "why": "口に当たる", "by": "本人", "back": "techo"}
-for to, says in (("29", "筒の口の角に当たって"), ("abc", "新しい値は数で書く")):
+for to, says in (("46", "筒の口の角に当たって"), ("abc", "新しい値は数で書く")):
     code, _, page = call(f"/record/{rid}/next", form | {"to": to})
     assert code == 422 and says in note_at(page, f"next-{rid}", "alert"), (to, code)
     box = page[page.index(f'id="next-{rid}"'):]
     assert "<details open>" in box[:400] and "折りが&lt;多い&gt;</textarea>" in box
     assert f'name="to" inputmode="decimal" required value="{to}"' in box and 'value="口に当たる"' in box and 'value="本人"' in box
     assert '<option value="fold_count" selected>' in box and 'name="back" value="techo"' in box
-code, _, page = call(f"/record/{rid}/next", form | {"to": "29", "why": " ", "by": " "})
+code, _, page = call(f"/record/{rid}/next", form | {"to": "46", "why": " ", "by": " "})
 assert code == 422 and page.count('id="msg"') == 1
 two = reply_note(["理由 1", "理由 <2>"], "")
 assert two.count("id=") == 1 and "理由 1" in two and "理由 &lt;2&gt;" in two, "理由が何個でも id は 1 つ"
-page = landed(call(f"/record/{rid}/next", {k: v for k, v in form.items() if k != "back"} | {"to": "26"}), "win")
+page = landed(call(f"/record/{rid}/next", {k: v for k, v in form.items() if k != "back"} | {"to": "45"}), "win")
 assert "版 2 の紙を作りました" in note_at(page, "win", "status")
 
 # 手帖に戻る時は、手帖の頁に文が出る。

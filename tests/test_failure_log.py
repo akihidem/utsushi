@@ -24,6 +24,8 @@ from web import play_server  # noqa: E402
 KEY = "k" * 8 + "aikotoba" + "k" * 8  # 合言葉（16 字以上）
 WRITTEN = "だれにも見せない予想の文"
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 
 server = play_server.serve(0, public_key=KEY)
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -54,7 +56,7 @@ def clean(log):
     assert KEY not in log and "?k=" not in log, ("合言葉が記録に出た", log)
 
 
-assert call(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
+assert call(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 
 
 # 1. 例外を起こした POST: 時刻・メソッド・道・型・トレースバックが出て、例外の文に入った送った文は出ない。画面の文は前と同じ
@@ -64,7 +66,7 @@ def boom_add(rec):
 
 keep_add = records.add
 records.add = boom_add
-code, body, log = call(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": WRITTEN})
+code, body, log = call(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "note": WRITTEN})
 records.add = keep_add
 assert code == 500 and "受け付けられませんでした" in body, (code, body)
 clean(log)
@@ -105,33 +107,33 @@ def fail_with(e):
 
 
 fail_with(api_error("BadRequestError", f"Error code: 400 model: claude-nothing-5 not found / {WRITTEN} / {key_like}"))
-code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": WRITTEN})
+code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": WRITTEN})
 got = json.loads(body)
 assert code == 200 and got["from"] == "error" and "今は AI に聞けません" in got["text"], got
 clean(log)
 assert key_like not in log, ("鍵らしい物が記録に出た", log)
 assert "ask" in log and "BadRequestError" in log and "claude-nothing-5" in log, ("役と型と文が無い", log)
 assert f"POST /toy/{G}/ask-json" in log, log
-code, body, log = call(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": WRITTEN})  # 玩具の頁の口も同じ
+code, body, log = call(f"/toy/{G}/ask", {"hypothesis": GS, "question": WRITTEN})  # 玩具の頁の口も同じ
 assert code == 200 and "今は AI に聞けません" in body and "claude-nothing-5" not in body, code
 clean(log)
 assert "ask" in log and "BadRequestError" in log and "claude-nothing-5" in log, log
 
 # 引数の間違いの TypeError は、文に名前だけが入るので出す（最初の本番で落ちそうな所）
 fail_with(TypeError("create() got an unexpected keyword argument 'fallbacks'"))
-log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": WRITTEN})[2]
+log = call(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": WRITTEN})[2]
 clean(log)
 assert "TypeError" in log and "fallbacks" in log, log
 
 # 文に値が入り得る例外は、型とトレースバックだけ
 fail_with(ValueError(f"読めない値: {WRITTEN}"))
-log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "別の問い"})[2]
+log = call(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "別の問い"})[2]
 clean(log)
 assert "ValueError" in log and "読めない値" not in log, log
 
 # 予算で止めた時は、画面では短い文だけ、記録には額まで残る（手帖では理由の文を捨てていた）
 fail_with(budget.BudgetStop("今日の見積もり $49.90 と次の 1 回の最大 $0.50 で日割りの上限 $50 に達する。本人の承認が要る", "day"))
-code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": WRITTEN})
+code, body, log = call(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": WRITTEN})
 assert "$" not in json.loads(body)["text"] and json.loads(body)["from"] == "stop", body
 clean(log)
 assert "ask" in log and "BudgetStop" in log and "$49.90" in log, log
@@ -142,7 +144,7 @@ from api import agent, loop_agents  # noqa: E402
 from omochae import loop  # noqa: E402
 from web import techo_site  # noqa: E402
 
-rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+rid, _ = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた"})
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")
 techo_site.media_dir(rid).mkdir(parents=True, exist_ok=True)
 (techo_site.media_dir(rid) / "m1.mp4").write_bytes(b"not a video")

@@ -28,6 +28,9 @@ from web import hanasu, techo_step, think_sheet  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 shut = []
 
@@ -54,7 +57,7 @@ def post(base, path, data):
 
 base, public = start(), start(public_open=True)
 # 作り直した手帖は、たたき台の紙が刷ってある時だけ作る画面を出す（刷っていない時は紙を作る道だけ）
-assert post(base, f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
+assert post(base, f"/toy/{G}/print", {"hypothesis": GS})[0] == 200
 
 # 1. 約束の印
 page = get(base, f"/toy/{G}/techo")

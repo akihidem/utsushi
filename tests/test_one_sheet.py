@@ -35,12 +35,23 @@ for path in files:
     assert len(ids) == len(set(ids)), path.name
 for sid in (G, T):
     assert json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))["sheet"] == "H-A", sid
+# 御来迎の次の組（goraigo-v14）のたたき台は、柄を下から押し上げる H-C（本人の決定 2026-11-06）。前の組は "sheet" の H-A のまま（hypotheses.sheet_id）
+assert json.loads((ROOT / "data/hypotheses" / f"{G}.json").read_text(encoding="utf-8"))["sheet_by_set"] == {"goraigo-v14": "H-C"}
+assert "sheet_by_set" not in json.loads((ROOT / "data/hypotheses" / f"{T}.json").read_text(encoding="utf-8"))
 
 # 2. sheet_of は記録の欄の仮説を返す。順位の欄は持たない（J-025）
-for sid in (G, T):
+for sid, want in ((G, "H-C"), (T, "H-A")):
     h = hypotheses.sheet_of(sid)
-    assert h["id"] == "H-A" and "rank" not in h, (sid, h["id"])
-assert "つまみ" in hypotheses.sheet_of(G)["name"] or "つまみ" in hypotheses.sheet_of(G)["how_it_moves"], "御来迎のたたき台はつまみの形（本人の決定）"
+    assert h["id"] == want and "rank" not in h, (sid, h["id"])
+assert hypotheses.sheet_of(G)["params"]["push_part"] == "rise", "御来迎の次の組のたたき台は内筒を下から押し上げる形（本人の決定 2026-11-06）"
+# 前の組（凍結の床）を刷る時は、つまみの形の H-A（本人の決定 11-05）
+from omochae.templates import slider_fan  # noqa: E402
+keep = slider_fan.SHEET_SET
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
+try:
+    assert hypotheses.sheet_of(G)["id"] == "H-A" and "つまみ" in hypotheses.sheet_of(G)["name"], "前の組の御来迎のたたき台はつまみの形"
+finally:
+    slider_fan.SHEET_SET = keep
 assert "首" in hypotheses.sheet_of(T)["name"], "虎のたたき台は首を通す形で、吊る形でない（本人の決定）"
 # ほかの仮説は消していない（記録が仮説の番号で結ばれている）
 assert {h["id"] for h in hypotheses.load(G)["hypotheses"]} >= {"H-A", "H-B", "H-C", "H-D", "H-E"}
@@ -52,14 +63,14 @@ def cli(*args):
 
 
 # 3. 必須 2 種は、たたき台だけを刷る
-for sid, other in ((G, "H-C"), (G, "H-E"), (T, "H-B")):
+for sid, other in ((G, "H-B"), (G, "H-E"), (T, "H-B")):
     stem = f"{tmp}/{sid}_{other}"
     r = cli("--source", sid, "print", other, "--out", stem)
     assert r.returncode == 3 and "F9.human" in r.stderr and "たたき台" in r.stderr, (sid, other, r.returncode, r.stderr)
     assert not list(pathlib.Path(tmp).glob(f"{sid}_{other}*")), "断った紙を残さない"
 for sid in (G, T):
     stem = f"{tmp}/{sid}_sheet"
-    r = cli("--source", sid, "print", "H-A", "--out", stem)
+    r = cli("--source", sid, "print", hypotheses.sheet_of(sid)["id"], "--out", stem)
     assert r.returncode == 0, r.stderr
     # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
     assert pathlib.Path(f"{stem}.pdf").exists() and not any(pathlib.Path(f"{stem}{s}.pdf").exists() for s in ("_tejun", "_after")), (sid, "型紙だけ")

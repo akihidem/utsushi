@@ -39,6 +39,8 @@ from web.toys import sources  # noqa: E402
 
 KEY = "test-key-0123456789abcdef"
 G = "NDL-1187053-R0000005-L"  # 御来迎（札に「わからない」がある）
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 TORA = "NDL-1187053-R0000014-R"  # 張子の首振り虎（刷ってある控えた組の紙の欄に「わからない」が無い。記録の札にはある。#373）
 PLACE = "+35.6000+139.7000"
 CHUNK = video_up.CHUNK = 64 * 1024  # 試験では小さく分ける
@@ -442,7 +444,7 @@ assert site_get(f"/record/{rid}/media/v1.mp4")[0] == 404 and site_get(f"/record/
 assert records.all_records(G) == [] and {r["id"] for r in records.all_records(G, uploads=True)} == {rid}
 assert rid not in gallery.build() and WORDS not in gallery.build()
 assert WORDS not in json.dumps(engine_bundle.build(), ensure_ascii=False)
-assert tv.effect(G)["H-A"]["reports"], "版の輪の表には数える"
+assert tv.effect(G)[GS]["reports"], "版の輪の表には数える"
 
 # 上げた記録はサイトの口で触れない。前例の読みにも出ない（上げた人の文を AI の道具に渡さない）
 c = http.client.HTTPConnection("127.0.0.1", site_port, timeout=60)

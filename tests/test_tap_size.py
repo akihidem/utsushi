@@ -21,7 +21,10 @@ from web.play_server import serve  # noqa: E402
 
 MIN_FONT = 12
 G = "NDL-1187053-R0000005-L"
-records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
+records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた"})
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
 PAGES = ["/", "/about", "/otona", "/toys", f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku", f"/toy/{G}/tsukuru", "/en", f"/en/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}"]
 # BASE が全幅にする組。床の inline-flex が掛かると、名前の横に細く並ぶ（#290）。これだけを block に戻す
@@ -86,9 +89,9 @@ for look in ("tenji", "zine"):
     base = f"http://127.0.0.1:{server.server_address[1]}"
     threading.Thread(target=server.serve_forever, daemon=True).start()
     if not printed:
-        urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=b"hypothesis=H-A", headers={"Origin": base}), timeout=120)
+        urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=f"hypothesis={GS}".encode(), headers={"Origin": base}), timeout=120)
         # 説明まで残した記録に「次の版」の欄が出る（畳んであっても頁には入っている）
-        rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+        rid, _ = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた"})
         assert loop.save_explanation(rid, "試験", "途中で止まった", "軸を長くする") == []
         printed = True
     for path in PAGES:
