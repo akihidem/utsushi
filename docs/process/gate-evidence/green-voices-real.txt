@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_demo_samples.py
+# commit: a189fbb2（回した時の HEAD）
+ok
+rc=0
