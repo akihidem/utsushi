@@ -187,7 +187,10 @@ def pending_loop(hist=None):
 
 
 def page(look=skin.DEFAULT, path="/kaizen"):
+    from . import kaizen_ws
     hist = _load(HISTORY) or {}
+    # ワークショップの節は題のすぐ下（本人の言葉 11-07 昼「ウリ」。設計の案 A）。回の一覧が無い間は出ない
     body = (f'<section class="sec"><h1>{esc(TITLE)}</h1><p class="lead">{esc(LEAD)}</p><p class="meta">{esc(NOT_YET)}</p></section>'
+            + kaizen_ws.section(lambda s: _sheet(hist, s))
             + site_loop(hist) + engine_loop(hist) + peak_loop(hist) + pending_loop(hist))
-    return skin.shell(TITLE, body, look, "", path, STYLE)
+    return skin.shell(TITLE, body, look, "", path, STYLE + kaizen_ws.STYLE)

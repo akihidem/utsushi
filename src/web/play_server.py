@@ -377,6 +377,12 @@ class Handler(BaseHTTPRequestHandler):
             # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
             from . import kaizen_judge
             return self._send(200, kaizen_judge.page(look, path))
+        m = re.fullmatch(r"/kaizen/photo/(\d{1,2})/([^/]+)", path)
+        if m:
+            # 審査用の頁のワークショップの写真（サーバの記録の置き場の、人が確かめた物だけ。web/kaizen_ws.py）。出さない物はどれも 404
+            from . import kaizen_ws
+            data = kaizen_ws.photo_bytes(int(m.group(1)), urllib.parse.unquote(m.group(2)))
+            return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
