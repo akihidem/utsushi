@@ -755,5 +755,17 @@
    "tests/test_goraigo_v14_3d.py"
   ],
   "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で組めるか・iPhone の実機は、まだ確かめていない。扇が開く所と畳む所は折りで表せない形で、エンジンの面の行列のまま描く（途中の形は板ごとに回した近い形）"
+ },
+ {
+  "id": "f63",
+  "name": "改善の進み方の表（型紙の版とエンジンの版。本人の言葉 11-07「どう改善が進むかは山場なのでデモにも載せたいところ。サイトにも記載したい」）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/kaizen_history.py",
+   "data/history/kaizen-history.json",
+   "src/omochae/ledger.py",
+   "tests/test_kaizen_history.py"
+  ],
+  "unverified": "今の段は表を repo に写す口と読み口、README の数の欄の 2 行（型紙の版・エンジンの版）まで。玩具の頁の「版の歩み」の額の並び（置き場 ①）・輪の図のエンジンの行（②）・序の頁の表（③）は後の段。README の 2 行の字は窓口の確かめ待ち。版ごとの紙の絵はこの機械の out/ に置いた物だけで、サイトの機械に置くのは別"
  }
 ]
