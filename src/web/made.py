@@ -46,9 +46,7 @@ def photo(sid):
     """その玩具の、人が物だけと確かめた写真のうち一番新しい物の小さい写しの道（/record/<記録>/media/<名前>/small）。無ければ None。"""
     from .techo_site import media_of
 
-    # ワークショップで作られた物（作例。via="workshop"）も読む: 原画の隣の作ってみた実物にも、その玩具の作例が出る（置き場は 1 つ。地図の工程 5）。
-    # 作例は記録の既定の一覧（束・輪の数・他の人が作った物）から外してあるので、ここだけ入れて読む
-    for r in reversed(records.all_records(sid, workshop=True)):
+    for r in reversed(records.all_records(sid)):
         files = [f for f in media_review.public(r["id"], media_of(r["id"])) if f.lower().endswith(IMAGE)]
         if files:
             return f"/record/{r['id']}/media/{files[-1]}/small"

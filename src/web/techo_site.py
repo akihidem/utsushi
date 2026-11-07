@@ -298,6 +298,10 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-row figcaption{font-size:14px}
 .gallery .sakurei-row .ban{white-space:nowrap}
+.gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .sakurei-report{margin:0;padding-left:1.2em;display:grid;gap:4px}.gallery .sakurei-report .meta{display:block}
+.gallery .sakurei-kufu figure{margin:0;display:grid;gap:6px;max-width:520px}
 """
 
 
@@ -343,11 +347,18 @@ def own_item(sid, data, r):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
-# ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案のまま）
+# ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案から）。
+# 1 行は決めた字から「日の順に並べます。」だけを外した（本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない」で、札を玩具ごとにしたため）
 SAKUREI_TITLE = "ワークショップで作られた物"
+SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。上下はありません。"
 # 報告の顔の写真（web.sakurei.faces）の札。本人の言葉のまま（窓口を通して 11-07「札は本人の言葉『4 日間のワークショップで作ったおもちゃたち』のままで」）
 SAKUREI_FACES = "4 日間のワークショップで作ったおもちゃたち"
-SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。日の順に並べます。上下はありません。"
+# 参加者の工夫の事例（web.sakurei.cases("kufu")）。題も文も本人の言葉から取り、言い換えない（統括 11-07「字は本人の説明のまま（本人の言葉として引用）」）。
+# この工夫が型紙の次の版に入ったとは書かない（記録に無い。UX の担当の設計の「言わない事」）
+SAKUREI_KUFU = "参加者の型紙の改善例"
+SAKUREI_KUFU_WORDS = "参加者の型紙の改善例その1。手前が型紙通り。しかし、奥の工作のように、からくりがあると推測した参加者が蓋の開閉でネズミが箱の中に仕舞われるようにした。"
+# 報告の段の道の字（UX の担当の案・窓口の確かめ待ち）。回の一覧が main に無い間は段ごと出ないので、この字も出ない
+SAKUREI_REPORT_GO = "ワークショップの様子と、改善の輪"
 
 
 def _ban(sheet_set):
@@ -357,42 +368,66 @@ def _ban(sheet_set):
     return f'　<span class="ban">型紙の版 {int(m.group(1))}</span>' if m else ""
 
 
+def _report():
+    """ワークショップの報告の段（4 回の 1 行ずつと、審査用の頁への道）。字の元は審査用の頁の回の一覧（web.kaizen_ws.workshops()）1 か所で、
+    同じ物を読む（UX の担当の設計「字の元を 1 つにする」）。その口が無い・読めない時は空（段を出さない。回の一覧は #518 の作り直しで main に入る）。"""
+    try:
+        from . import kaizen_ws
+
+        rows = kaizen_ws.workshops()
+    except (ImportError, AttributeError, OSError, ValueError, TypeError):
+        return ""
+    lines = "".join(f'<li>{esc(str(w.get("date", "")))}　{esc(str(w.get("did", "")))}'
+                    + (f'<span class="meta">{esc(str(w["line"]))}</span>' if w.get("line") else "") + "</li>"
+                    for w in rows if isinstance(w, dict) and w.get("date") and w.get("did"))
+    if not lines:
+        return ""
+    return f'<ul class="sakurei-report">{lines}</ul><p class="meta"><a href="/kaizen#ws">{esc(SAKUREI_REPORT_GO)}</a></p>'
+
+
 def sakurei_section(sids, photos=True):
     """ワークショップで作られた物（作例）の節。持ち寄る駅（/gallery）の頭、「他の人が作った物」の上に置く（地図の工程 5）。
 
     判断の芯:
-    - 出すのは web.sakurei.examples()（人が「物だけ」と確かめた写真がある作例）だけ。1 枚も無い時は節ごと出さない
-      （写真が来る前の形。断りの字を足さない）。
-    - 日ごとの小見出しの id は sakurei-MMDD。審査用の頁のワークショップの節は、出す物がある日にだけそこへ道を張る（web.sakurei.days()）。
-      日の中は玩具ごとに寄せる（頁の玩具の並び＝sids の順、同じ玩具の中は記録の順）。上下は付けない（J-025）。
-    - 札は 1 つの記録に 1 枚: 写真の小さい写し（/small。元の写真 3MB ほどを並べて読まない）と玩具の名（玩具の頁へ行く。他の人が作った物の札と同じ）と、
-      刷った組が分かる時だけ型紙の版（_ban）。
-      作った日は小見出しにあるので札に重ねない（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。作った人の名と感想は記録に持たない。
-    - 合言葉なしで開いた場も同じ物を出す（人が確かめた写真は開いた場のギャラリーにも出す、本人の決定 11-06）。記録の番号は字にしない。
+    - 並び（UX の担当の設計 11-07・state の workshop-link）: 題と 1 行 → 報告の顔の写真（sakurei.faces）と札 → 報告の 4 回の段（回の一覧がある時だけ）
+      → 参加者の型紙の改善例（sakurei.cases("kufu")・本人の言葉の引用）→ 玩具ごとの作例の札。
+    - 札は玩具ごと（日ごとにしない。本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない」。写真の撮影の日は作った日と限らない）。
+      玩具の並びは頁の玩具の並び（sids の順）、同じ玩具の中は記録の順。83 の外の玩具（猫と鼠の箱など）は後ろに、棚卸しの名で、道を付けずに置く
+      （窓口の決め 11-07 144403）。上下は付けない（J-025）。
+    - 出すのは人が「物だけ」と確かめた写真だけ（examples・faces・cases が確かめた物だけを返す）。どれも無い時は節ごと出さない（写真が来る前の形）。
+    - 札は 1 つの記録に 1 枚: 写真の小さい写し（/small。元の写真を並べて読まない）と玩具の名（玩具の頁へ行く。他の人が作った物の札と同じ）と、
+      刷った組が分かる時だけ型紙の版（_ban）。作った人の名と感想は記録に持たない。記録の番号は字にしない。
+    - 合言葉なしで開いた場も同じ物を出す（人が確かめた写真は開いた場のギャラリーにも出す、本人の決定 11-06）。
       photos=False（写真を出さない前の開いた場の形）は出さない。"""
     if not photos:
         return ""
+    from omochae import records
+
     from . import sakurei  # sakurei は techo_site を読むので、ここで読む
 
     order = {sid: i for i, sid in enumerate(sids)}
-    shown = [e for e in sakurei.examples() if e["sid"] in order]
-    if not shown:
+    shown = [e for e in sakurei.examples() if e["sid"] in order or records.outside_toy(e["sid"])]
+    faces, kufu = sakurei.faces(), sakurei.cases("kufu")
+    if not (shown or faces or kufu):
         return ""
-    names = {sid: hypotheses.load(sid)["toy"] for sid in {e["sid"] for e in shown}}
-    days = {}
-    for e in sorted(shown, key=lambda e: (e["day"], order[e["sid"]], e["rid"])):
-        days.setdefault(e["day"], []).append(e)
-    body = ""
-    for day, items in days.items():
-        cards = "".join(
-            '<figure>'  # 他の人が作った物の札（.item）の上の線は付けない: 写真の板が並ぶだけの所で、線が写真ごとに切れて見えるため
-            + "".join(f'<img src="/record/{esc(e["rid"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in e["photos"])
-            + f'<figcaption><a href="/toy/{esc(e["sid"])}">{esc(names[e["sid"]])}</a>{_ban(e["set"])}</figcaption></figure>'
-            for e in items)
-        body += (f'<h3 class="day" id="sakurei-{day[5:7]}{day[8:10]}">{int(day[5:7])} 月 {int(day[8:10])} 日</h3>'
-                 f'<div class="sakurei-row">{cards}</div>')
+    img = lambda url, alt="作った物の写真": f'<img src="{esc(url)}" alt="{esc(alt)}" loading="lazy" decoding="async">'  # noqa: E731
+    head = (f'<figure class="sakurei-faces"><div>{"".join(img(u, SAKUREI_FACES) for u in faces)}</div>'
+            f'<figcaption>{esc(SAKUREI_FACES)}</figcaption></figure>') if faces else ""
+    case = (f'<div class="sakurei-kufu"><h3 class="day">{esc(SAKUREI_KUFU)}</h3><figure>{"".join(img(c["url"]) for c in kufu)}'
+            f'<figcaption>「{esc(SAKUREI_KUFU_WORDS)}」</figcaption></figure></div>') if kufu else ""
+    names = {sid: sakurei.toy_name(sid) for sid in {e["sid"] for e in shown}}
+
+    def name(sid):
+        return f'<a href="/toy/{esc(sid)}">{esc(names[sid])}</a>' if sid in order else esc(names[sid])  # 83 の外の玩具は玩具の頁が無い
+
+    cards = "".join(
+        '<figure>'  # 他の人が作った物の札（.item）の上の線は付けない: 写真の板が並ぶだけの所で、線が写真ごとに切れて見えるため
+        + "".join(img(f"/record/{e['rid']}/media/{f}/small") for f in e["photos"])
+        + f'<figcaption>{name(e["sid"])}{_ban(e["set"])}</figcaption></figure>'
+        for e in sorted(shown, key=lambda e: (order.get(e["sid"], len(order)), e["sid"], e["rid"])))
     return (f'<section class="panel" id="sakurei"><h2 class="mark">{esc(SAKUREI_TITLE)}</h2>'
-            f'<p class="meta">{esc(SAKUREI_LEAD)}</p>{body}</section>')
+            f'<p class="meta">{esc(SAKUREI_LEAD)}</p>{head}{_report()}{case}'
+            + (f'<div class="sakurei-row">{cards}</div>' if cards else "") + '</section>')
 
 
 # 合言葉なしの場で上げた直後の返事に続ける 1 行（窓口の決定 11-06 夜・案 A。字はその決定の字のまま）。上げた物は、確かめる前は上げた画面にだけ出て
