@@ -33,6 +33,10 @@ MAX_PER_RECORD = 3
 # 記録を作る口は書き込みの数の上限が絞り、1 つの記録には MAX_PER_RECORD までなので、1 人で一気に埋める形にはなりにくい
 PUBLIC_MEDIA_TOTAL = 2 * 1024 * 1024 * 1024
 MISMATCH = "中身を写真か動画として読めません（JPEG・PNG・MP4・MOV だけ）"
+# 動画を写す時に、元より増えてよい量（セキュリティの点検 U1）。絵の流れを写すだけで音と撮影情報を外すので、ふつうは元より小さい。
+# 同じコマを何度も指す小さな動画は、写すと何倍にも膨らみ、合言葉なしの場でも一時の置き場とメモリを埋められた。動画の受け口（trial_video.ROOM）と同じ考えで、
+# 1 つ 20MB までのこの口に合わせて小さく取る。
+VIDEO_ROOM = 4 * 1024 * 1024
 ICONS = {
     "動いた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 34c8 0 14-6 18-18M20 14l8 2 2 8"/></svg>',
     "動かない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 24h28"/></svg>',
@@ -129,13 +133,15 @@ def clean_video(data, ext):
     with tempfile.TemporaryDirectory() as tmp:
         src, dst = pathlib.Path(tmp) / "in", pathlib.Path(tmp) / f"out.{ext}"
         src.write_bytes(data)
+        # -protocol_whitelist file: 読むのは置いたファイルだけ（ほかの道を開かない）。-fs: 書き出しの大きさの上限。-fs は超えても 0 で終わるので、後で比べる。
+        limit = len(data) + VIDEO_ROOM
         try:
-            r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-f", "mov", "-i", str(src),
+            r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-protocol_whitelist", "file", "-f", "mov", "-i", str(src),
                                 "-map", "0:V", "-an", "-map_metadata", "-1", "-map_metadata:s", "-1", "-map_chapters", "-1",
-                                "-c", "copy", "-f", ext, str(dst)], capture_output=True, timeout=config.VIDEO_TIMEOUT)
+                                "-c", "copy", "-fs", str(limit), "-f", ext, str(dst)], capture_output=True, timeout=config.VIDEO_TIMEOUT)
         except (OSError, subprocess.TimeoutExpired):
             return None, MISMATCH
-        if r.returncode != 0 or not dst.exists():
+        if r.returncode != 0 or not dst.exists() or dst.stat().st_size >= limit:
             return None, MISMATCH
         return dst.read_bytes(), ""
 
@@ -299,9 +305,10 @@ def made_item(sid, data, r, photos=True, public=False):
     if not photos:
         return ""
     # 物だけと人が確かめた写真と動画だけを出す。ほかは字だけになる（本人の決定 11-05、#314）。
+    # 写真は小さい写し（/small）を出し、押すと元の写真を開く（玩具の頁の記録の札と同じ。元の写真は 1 枚 3.7MB ほどで、並ぶと重い・#521）
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and not public else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and not public)
     if not pics and not words:
@@ -321,7 +328,7 @@ def own_item(sid, data, r):
     記録の頁（説明と AI の札）へは記録の番号から、玩具の頁の同じ記録へは玩具の名前から行く（ほかの札と同じ。地図の 4。新しい字は足さない）。"""
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
@@ -425,7 +432,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
         files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                        else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
+                        else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="上げた写真" loading="lazy" decoding="async"></a>') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
         # 合言葉なしの場には進行者がいないので、上げた画面にだけ「取り下げる」を置く（窓口の決定 11-06 夜・案 A）。押すと、この記録の写真と動画が
