@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_demo_scene4.py
+# commit: 5634bc47（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_demo_scene4.py", line 79, in <module>
+    assert scene.sheet_x(15.0) == scene4.SHEET_BOX[0] and scene.sheet_x(scene4.CUES["folds_out"][0]) == scene4.SHEET_BOX[0]
+           ^^^^^^^^^^^^^
+AttributeError: 'Scene' object has no attribute 'sheet_x'. Did you mean: 'sheet'?
+rc=1
