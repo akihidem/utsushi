@@ -46,6 +46,7 @@ EXTRA = {"easy": ROOT / "data/i18n/yasashii.d"}
 EASY_NOTE = "このページのやさしい｜日本語《にほんご》は、｜下書《したが》きです。"
 RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
 MAIN_OPEN = re.compile(r"<main\b[^>]*>")
+PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語のルビは印を外した字で入れる）
 KEEP = "="           # 訳さずに日本語のまま出す印
 CJK = re.compile(r"[぀-ヿ㐀-鿿＀-￯　-〿]")
 NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -112,7 +113,7 @@ def lookup(text, lang="en"):
         return None
 
 
-def _swap_text(raw, miss, lang="en"):
+def _swap_text(raw, miss, lang="en", plain=False):
     text = html.unescape(raw)
     if not CJK.search(text):
         return raw
@@ -125,7 +126,8 @@ def _swap_text(raw, miss, lang="en"):
     if en == KEEP:
         return f'{lead}<span lang="ja">{raw.strip()}</span>{tail}' if lang == "en" else raw
     if lang == "easy":
-        return lead + ruby_html(html.escape(en, quote=False)) + tail
+        # 要素を入れられない所（<title>・<option>）では、属性と同じくルビの印を外した字にする（タブの題に <ruby> が字のまま出たため・別の窓の指摘）
+        return lead + (html.escape(ruby_plain(en), quote=False) if plain else ruby_html(html.escape(en, quote=False))) + tail
     return lead + html.escape(en, quote=False) + tail
 
 
@@ -179,7 +181,7 @@ def to_en(page, miss=None, lang="en"):
                 stack.append((name, name in RAW or (name != "html" and bool(frozen_mark.search(tok)))))
             out.append(tok)
             continue
-        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang))
+        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY))
     return "".join(out)
 
 
@@ -198,7 +200,8 @@ def page_easy(page, miss=None):
     """頁をやさしい日本語にし（表に無い字は元のまま）、頭の帯の後に下書きの札を 1 つ置く。やさしい の切り替えは日本語へ戻る口にする。"""
     page = to_en(page, miss, lang="easy")
     page = page.replace(EASY_LINK, '<a class="nav-lang nav-easy" href="?lang=ja" lang="ja">日本語</a>')
-    note = f'<p class="easy-draft" style="margin:0;padding:6px 12px;font-size:12px;letter-spacing:.04em;color:var(--mute,#6b6358)">{ruby_html(html.escape(EASY_NOTE))}</p>'
+    # 字は 14px（英語の札は 12px）。ルビは字の半分ほどになり、12px だと 6px で読みにくい（UX の担当の気づき・設計の「小さい札は下限を上げる」）
+    note = f'<p class="easy-draft" style="margin:0;padding:6px 12px;font-size:14px;letter-spacing:.04em;color:var(--mute,#6b6358)">{ruby_html(html.escape(EASY_NOTE))}</p>'
     return _after_main(page, note)
 
 
