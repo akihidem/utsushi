@@ -214,6 +214,7 @@ body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
 .techo .top a{margin-left:auto;font-size:14px;color:var(--accent)}
 .techo .row{display:flex;gap:12px;flex-wrap:wrap}
+.techo .manabi .loop-fig{margin:0 auto}
 .techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
@@ -293,10 +294,10 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .is-sample{border:1px dashed var(--frame);padding:10px}
 .gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
 .gallery .day{font-size:17px;letter-spacing:.1em;margin:4px 0 0}
-.gallery .sakurei-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.gallery .sakurei-row figure{margin:0;display:grid;gap:6px;align-content:start}
-.gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
-.gallery .sakurei-row figcaption{font-size:14px}
+.gallery .sakurei-row,.gallery .workshop-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.gallery .sakurei-row figure,.gallery .workshop-row figure{margin:0;display:grid;gap:6px;align-content:start}
+.gallery .sakurei-row img,.gallery .workshop-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .sakurei-row figcaption,.gallery .workshop-row figcaption{font-size:14px}
 .gallery .sakurei-row .ban{white-space:nowrap;margin-left:.6em}
 .gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
 .gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
@@ -453,14 +454,18 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 continue
             cards += made_item(sid, data, r, photos, public)
     sak = sakurei_section(sids, photos)
+    # ワークショップの試行の写真（web.workshop。本人の見直し 11-07 夜の ⑦）。他の人が作った物なので、この節の記録の札の前に置く。
+    # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示）
+    from . import workshop
+    ws = workshop.gallery(sids)
     # ワークショップで作られた物も本物の作った物なので、それだけがある時も見本を畳む（本物を先に、見本は畳む。地図の工程 5）
-    real = bool(cards or own or sak)
+    real = bool(cards or own or sak or ws)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
-    if not cards and not own and not sak:
+    if not cards and not own and not sak and not ws:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
@@ -477,7 +482,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{note}{own}{cards}</section></div>')
+            f'{note}{own}{ws}{cards}</section></div>')
 
 
 VOICES_STYLE = """
@@ -510,6 +515,18 @@ def voices_sections():
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section></div>')
+
+
+def manabi_box():
+    """学びの輪の文と図の節。のこす の頁（手帖の記録の頁）の頭の「のこすと型紙が直る事の枠」（naoru.box）の後に置く。
+    本人のサイトの見直し（11-07 22:16）の ⑤「ここに輪の説明ある方がいいよね。」と、本人の決め「輪の説明は のこす の頁に置く」による。
+    字は新しく書かず、本人が採った学びの輪の文（11-07 夕「学びの輪の文は案 1 の字でよい」・loop_figure.ADOPTED）をそのまま使う。
+    説明の頁（このサイトについて）の学びの輪の段と同じ形（文の後に同じ部品 loop_figure.svg() の図）にして、2 つの頁で字と絵が食い違わないようにする。
+    のこす の頁に置くのは、文の「のこした記録が、次に作る時の入り口になります。」が、この頁でする事（作った記録をのこす）の意味を言っているため。
+    のこした後は #mine に着くので、頭のこの節は上げる手の邪魔にならない。公開の場でも出す（人の言葉も記録の番号も入らない説明の字と図だけなので）"""
+    from . import loop_figure  # 循環を避けて、ここで読む（naoru と同じ）
+
+    return f'<section class="panel manabi" id="manabi"><p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}</section>'
 
 
 def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
@@ -545,6 +562,8 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。頁の頭に 1 回
             + naoru.box() +
+            # 学びの輪の文と図（本人の見直し 11-07 22:16 の ⑤・manabi_box）。枠の後、手帖をひらく道の前
+            manabi_box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
