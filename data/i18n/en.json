@@ -1562,7 +1562,7 @@
   "図が意味不明で組み立てる時に考えるのがめんどくさかった": "=",
   "図の比と、頭の支え方の読み": "Ratios from the picture, and a reading of how the head is supported",
   "図は国立国会図書館デジタルコレクションの頁（米山堂・{0} 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。": "The pictures are pages from the National Diet Library Digital Collections (Yoneyamadō, reproduced in {0}, public domain). A paper model that moves does not prove how the original was made.",
-  "図は国立国会図書館デジタルコレクションの頁（米山堂・{0} 年の複製）。新しい絵は作っていない。": "The pictures are pages from the National Diet Library Digital Collections (Yoneyamadō, reproduced in {0}). We did not make any new pictures.",
+  "図は国立国会図書館デジタルコレクションの頁（米山堂・{0} 年の複製）。": "The pictures are pages from the National Diet Library Digital Collections (Yoneyamadō, reproduced in {0}).",
   "図は手元に無い": "The picture is not on this computer",
   "図を見る（国立国会図書館）": "See the picture (National Diet Library)",
   "図を読んで、押し方を {0} 通りに分けた": "We read the picture and split the ways of pushing into {0} kinds",
