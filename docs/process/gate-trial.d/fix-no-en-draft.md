@@ -8,3 +8,4 @@
 - 検証ゲート: **済み**。Red: 直す前の頁で 2 つの試験が rc 1（gate-evidence/red-no-en-draft.txt）。Green: 直した後 rc 0（gate-evidence/green-no-en-draft.txt）
 - エビデンスゲート: 上の 2 つの出力と、`./run.sh` の 270 本すべて期待どおり（rc 0）
 - マージ後の書き戻し: Issue は立てていない（新しい Issue は提出を止める物だけ）
+- 載せ直し（11-08、合体の道が main との衝突で止めた後）: #583 が入った今の main を取り込んだ。衝突は `docs/features.json` の 1 文だけで、main の文に英語の札の直しだけを当てた。英語とやさしい日本語の両方の頭の札が無くなったので、札を置く所（`src/web/i18n.py` の `_after_main` と `MAIN_OPEN`）も外した。`test_en`・`test_en_all`・`test_easy_all`・`test_easy_part1`・`test_easy_ruby`・`test_reader_words`・`test_gate_trial_merge`・`test_ledger` が rc 0

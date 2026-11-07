@@ -48,7 +48,6 @@ TABLES = {"en": TABLE, "easy": ROOT / "data/i18n/yasashii.json"}
 # 1 つのファイルを 3 つの PR が書き足すと、1 本入るたびに残りが衝突するため（関門の帳面の gate-trial.d と同じ考え）
 EXTRA = {"easy": ROOT / "data/i18n/yasashii.d"}
 RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
-MAIN_OPEN = re.compile(r"<main\b[^>]*>")
 PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語は 漢字（よみ） の形で読みを添える。PAREN）
 PAREN_ATTRS = {"placeholder"}  # 画面に出る属性のうち、やさしい日本語で 漢字（よみ） にする物（value は送る値なので替えない）
 # SVG の字（text・tspan・textPath。TAG は名を小さい字にそろえる）。中に <ruby> を入れるとブラウザが SVG の外へ追い出し、学びの輪の図の字が
@@ -199,11 +198,6 @@ def to_en(page, miss=None, lang="en"):
             continue
         out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY, svg=bool(stack) and stack[-1][0] in SVG_TEXT))
     return "".join(out)
-
-
-def _after_main(page, note):
-    """下書きの札を、頁の本体（<main …>）の頭に 1 つ置く。作りながら見る頁と手帖は <main class="…"> なので、属性つきの main も受ける。"""
-    return MAIN_OPEN.sub(lambda m: m.group(0) + note, page, count=1)
 
 
 def page_easy(page, miss=None):
