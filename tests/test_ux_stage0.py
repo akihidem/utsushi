@@ -28,6 +28,11 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 from measure_tap import chrome  # noqa: E402
 from omochae import hypotheses, records  # noqa: E402
 from web import looks, play_server, techo_site, toy  # noqa: E402
+# ワークショップの試行の写真（web.workshop・repo に在る）は、ここが見る「本物の記録が無い時」の形を変えるので、この試験では表を空にする
+# （写真が出る形は tests/test_workshop_gallery.py が見る。本人の見直し 11-07 夜の ②⑦）
+from web import workshop as _workshop  # noqa: E402
+
+_workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 # 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
