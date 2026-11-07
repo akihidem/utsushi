@@ -1,6 +1,6 @@
 {
  "title": "型紙とエンジンの改善の歴史",
- "made_at": "2026-11-07T11:42+09:00",
+ "made_at": "2026-11-07T12:29+09:00",
  "source": "paper-to-toy の記録（main c4f1d49）と、改善の輪より前の版はサイトの repo の版の表（docs/process/trials/sheets/README.md）。写真と作った人の文は使っていない",
  "terms": {
   "型紙の版": "玩具ごとの型紙の組の番号（虎 v7・御来迎 v14 など）。紙の題にも「版 N」と刷る（PR #141。虎 v7 は版 7・御来迎 v14 は版 14。撮影中の虎 v6 は版 1 のまま）",
@@ -248,14 +248,14 @@
      "engine_version": null,
      "engine_version_text": "改善の輪より前の版（型紙はサイトの repo で作り、エンジンの版はまだ無い）",
      "before_loop": true,
-     "line": "手元の複写を基準に寸法を直した",
+     "line": "作る側が読んだ本を基準に寸法を直した",
      "changed": [
-      "手元の複写を基準に寸法を直した"
+      "作る側が読んだ本を基準に寸法を直した"
      ],
      "why": [
       {
        "kind": "サイトの repo の版の表",
-       "text": "手元の複写で測り直した寸法"
+       "text": "作る側が読んだ本で測り直した寸法"
       }
      ],
      "sheet_image": "sheets/goraigo-v3.png"
