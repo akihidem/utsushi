@@ -71,7 +71,7 @@ assert ">日本語<" in nav_of(get("/en")) and ">えらぶ<" not in nav_of(get("
 
 # ---- 4 もう 1 つ つくる
 gallery = get("/gallery")
-assert gallery.count(">もう 1 つ つくる<") == 1 and '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>' in gallery, "持ち寄る駅の頭に 1 つ"
+assert gallery.count(">もう 1 つ つくる<") == 1 and '<p class="road"><a class="go" href="/">もう 1 つ つくる</a></p>' in gallery, "持ち寄る駅の頭に 1 つ"
 assert gallery.index("もう 1 つ つくる") < gallery.index('id="ageta"'), "頭に置く"
 
 # ---- 5 よむ（序の頁）

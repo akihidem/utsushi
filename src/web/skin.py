@@ -308,7 +308,8 @@ def artwork_label(toy, src):
     return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
 
 
-def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"), ("/toys", "おもちゃの一覧へ")), bare=False):
+# 断りの頁の戻り方は入口への 1 つ。前の「おもちゃの一覧へ」（/toys）は外した（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）
+def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"),), bare=False):
     """断りの頁（404・403・500）。何が起きたかと戻り方を、皮の地で 1 つの形で出す。bare は帯も足も出さない形で、合言葉の門のように中身を見せない所に使う（#136）。"""
     back = "".join(f'<a href="{esc(p)}">{esc(n)}</a>' for p, n in links)
     back = f'<p class="notice-back">{back}</p>' if back else ""

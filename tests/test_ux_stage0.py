@@ -54,7 +54,7 @@ for name, make in looks.PAGES.items():
         main = [s for s in looks.sources() if looks.hypotheses.stage(s) == "必須"]
         assert re.findall(r'class="tj-mazu-card" href="/toy/([^"]+)"', mazu) == main, (name, "まずはここから は必須の 2 種")
         continue
-    assert first.count('class="road-go"') == 1 and '<a class="road-go" href="/toys">えらぶ</a>' in first, (name, "入口の最初の節に「えらぶ」が 1 つ")
+    assert first.count('class="road-go"') == 1 and '<a class="road-go" href="/">えらぶ</a>' in first, (name, "入口の最初の節に「えらぶ」が 1 つ")
     assert page.count('class="road-go"') == 1, (name, "入口の次へ進む釦は 1 つだけ")
 
 # ---- 3・6・7 玩具の頁（紙の前）

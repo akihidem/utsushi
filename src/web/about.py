@@ -72,7 +72,8 @@ def page(skin_name, path="/about"):
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
-            # えらぶ の頭にあった断りの段（窓口の決定 11-07 の ②「よむ へ移す」）。字は変えずに、おもちゃを選ぶ釦のすぐ前に置く
+            # えらぶ の頭にあった断りの段（窓口の決定 11-07 の ②「よむ へ移す」）。字は変えずに、入口へ戻る釦のすぐ前に置く
             + toys.yomu_section() +
-            '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
+            # 「おもちゃを選ぶ」（/toys）は外し、入口へ戻る釦の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）。残る 1 つを大きい釦にする
+            '<section class="sec"><p class="links"><a class="btn" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
     return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE)

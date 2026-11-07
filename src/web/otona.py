@@ -79,5 +79,6 @@ def page(skin_name, path="/otona"):
     body = ('<div class="otona"><section class="sec"><h1>' + "".join(f"<span>{esc(w)}</span>" for w in re.split(r"(?<=、)", TITLE)) + "</h1>"
             '<nav class="jump" aria-label="この頁の節">' + "".join(f'<a href="#{sid}">{esc(head)}</a>' for sid, head, _ in SECTIONS) + "</nav></section>"
             + "".join(_section(i, sid, head, lines) for i, (sid, head, lines) in enumerate(SECTIONS))
-            + '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a></p></section></div>')
+            # 「おもちゃを選ぶ」（/toys）は外し、入口へ戻る釦の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）。残る 1 つを大きい釦にする
+            + '<section class="sec"><p class="links"><a class="btn" href="/">入口へ戻る</a></p></section></div>')
     return skin.shell(TITLE, body, skin_name, path=path, extra_style=STYLE)

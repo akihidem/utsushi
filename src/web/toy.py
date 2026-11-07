@@ -517,7 +517,8 @@ def neighbours(sid):
     out = []
     if prev_:
         out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
-    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物と職人の言葉</a>', '<a href="/">入口へ</a>']
+    # 「おもちゃの一覧」（/toys）は外し、入口へ の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）
+    out += ['<a href="/gallery">作った物と職人の言葉</a>', '<a href="/">入口へ</a>']
     if next_:
         out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
     return '<p class="links">' + "".join(out) + "</p>"
@@ -611,7 +612,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     hero = (f'<section class="hero">{genga.head(sid, src)}<div>'
             f'<h1>{esc(data["toy"])}</h1>{stage_note}{make_go(sid)}'
             + skin.artwork_label(data["toy"], src) + nopic
-            + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a><a href="/toys">ほかのおもちゃ</a></p>'
+            + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a></p>'
             f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
