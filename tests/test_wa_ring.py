@@ -70,15 +70,19 @@ try:
 finally:
     tiger.SHEET_SET = now
 assert hypotheses.paper_label(td, 1) == f"版 {hypotheses.set_number(td)}"
-# 玩具の頁の 3D の机の上の紙の題も、刷る紙と同じ組の番号（窓口の決定 (a)「紙の題と窓の札も組の番号に」。前は compose の既定の題で「版 1」が残った）。
-# 題の形（玩具の名 型紙（雛形の呼び名））は替えない（長くすると部品の配置が動き、型紙エンジンの 3D の JSON と合わなくなる）
+# 玩具の頁の 3D の机の上の紙の題（assembly._sheet_title）: 刷る紙の題から「…」の仮説の名を外した「玩具の名 型紙 仮説 A 版 N」。
+# 前は雛形の呼び名の括弧（御来迎は「内筒を下から押し上げる」＝今のたたき台と違う仮説の名で、動き方の答え）が出た（J-013・11-07 夕の気づき）。
+# 版は組の番号（窓口の決定 (a)）。題は前より短く、型紙エンジンの 3D の JSON と部品の配置が合うまま（test_tora_v7_3d・test_goraigo_v14_3d）
 from omochae import assembly  # noqa: E402
 
 for sid in (G, T):
     bench = assembly.assemble(sid)
-    titles = [t.text for t in bench.paper["texts"] if "型紙（" in (getattr(t, "text", None) or "")]
-    n = hypotheses.set_number(hypotheses.load(sid))
-    assert titles and titles[0].endswith(f"）版 {n}"), (sid, titles[:1])
+    data = hypotheses.load(sid)
+    h = hypotheses.sheet_of(sid)
+    want = f"{data['toy']} 型紙 仮説 {hypotheses.letter(h)} 版 {hypotheses.set_number(data)}"
+    texts = [getattr(t, "text", None) or "" for t in bench.paper["texts"]]
+    assert want in texts, (sid, texts[:2])
+    assert not any("（" in x and "型紙" in x for x in texts) and not any(h["name"] in x for x in texts), (sid, "動き方の字（雛形の呼び名・仮説の名）を出さない")
 # 組の名前に -v<数> が無い雛形は 1
 keep_cs = hypotheses.current_set
 hypotheses.current_set = lambda data: "plain"
