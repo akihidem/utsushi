@@ -650,6 +650,7 @@
   "evidence": [
    "src/web/looks.py",
    "src/web/toy.py",
+   "tests/test_one_sheet_place.py",
    "src/web/techo_site.py",
    "tests/test_ux_stage0.py",
    "tests/test_one_make_door.py",
@@ -805,5 +806,18 @@
    "tests/test_kaizen_rekishi.py"
   ],
   "unverified": "今の段は表を repo に写す口と読み口、README の数の欄の 2 行（型紙の版・エンジンの版）と、版の歩みの額の並びの部品（ban_ayumi）と額の絵の道まで。序の頁の表（③）も置いた。額の並びを玩具の頁に置く事（置き場 ①）・輪の図のエンジンの行（②）は後の段。表は 11-07 11:42 の版で、改善の輪より前の版（虎 v1・v2、御来迎 v1〜v9）の行と絵も持つ（その版の engine_version_text の 2 つの字は本人が採った 11-07）。版ごとの紙の絵はこの機械の out/ に置いた物だけで、サイトの機械に置くのは別。並びの形は幅 390 の白と黒の皮の絵で見た（実機はまだ）"
+ },
+ {
+  "id": "f65",
+  "name": "作ってみた実物を原画の隣に見せる（本人のサイト体験レビュー 11-07 の 2「作ってみた実物（御来迎など）を見せる」）",
+  "status": "doing",
+  "evidence": [
+   "src/web/made.py",
+   "src/web/genga.py",
+   "src/web/looks.py",
+   "src/web/play_server.py",
+   "tests/test_genga.py"
+  ],
+  "unverified": "人が物だけと確かめた写真の一番新しい 1 枚を、玩具の頁の頭（原画のすぐ後）と入口の まずはここから の札（右下に小さく）に出す。写真が無い玩具には何も置かない（窓口の決め 125731・(b)。前は組み立ての止まった形を置いていたが、C3 の動く 3D と 2 回出た）。合言葉なしの場の玩具の頁は、前の決まりのとおり記録の写真を出さない（何も置かない）。写真はまだ届いていない（本人の御来迎と虎の写真をどれにするかは答え待ち）。実機と人の目はまだ"
  }
 ]
