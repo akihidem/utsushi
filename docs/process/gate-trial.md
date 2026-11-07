@@ -2323,6 +2323,6 @@
 - どうしたか: 序の頁の題の下の一言のすぐ後（根幹の「型紙生成システム」と同じ段）に位置づけの 2 文、なぜ の節の玩具の定義の後に相手の 2 文、English の頭に同じ中身。paper to toy は、サイトの中で型紙エンジンと呼ぶ仕組みと読んだ（窓口へ確かめた）
 - 比べた案: 入口の最初の画面にも 1 行置く案。入口の頭は『江都二色』の話だけという本人の決め（#517）を崩すので採らない。English の紹介の文（INTRO、J-030 と同じ文）に足す案は、J-030 の文が変わるので、別の段にした
 - ゴールの要件: 序の頁と English に 1 回ずつ（合言葉なしの場でも）、入口には足さない。字は新しい字なので、本人が採るまで合体しない
-- 検証ゲート: Red: main（f8873d89）にこの試験だけを置くと rc 1（gate-evidence/red-paper-to-toy.txt。字が無い）。Green: gate-evidence/green-paper-to-toy.txt
+- 検証ゲート: **済み**。Red: main（f8873d89）にこの試験だけを置くと rc 1（gate-evidence/red-paper-to-toy.txt。字が無い）。Green: gate-evidence/green-paper-to-toy.txt
 - エビデンスゲート: 上の 2 つの記録と `tests/test_paper_to_toy.py`
 - 確かめていない事: 字（本人の確かめ）。English の文は英語を母語にする人が見ていない（頁の断りのとおり）。README の頭に足すかは窓口の決め
