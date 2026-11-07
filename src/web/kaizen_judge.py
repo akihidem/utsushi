@@ -101,7 +101,7 @@ def site_loop(hist=None):
     v_from, v_to = rec.get("sheet_set", ""), ch.get("sheet_set", "")
     vt = _version(hist or {}, "御来迎", v_to)
     ver = f"型紙の版 v{int(vt['sheet_version']) - 1} → v{int(vt['sheet_version'])}" if vt and vt.get("sheet_version") else f"{v_from} → {v_to}"
-    steps = (_step("human", "作った記録", _p(f'{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・刷った組 {v_from}'))
+    steps = (_step("human", "作った記録", _p(f'{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・{_tried(hist, v_from)}'))
              + _step("human", "人の説明", _p(ex.get("text", "")) + (_p("次の思いつき: " + ex["next_idea"]) if ex.get("next_idea") else ""))
              + _step("human", "直しの案", _ul(ch.get("changes", [])))
              + _step("human", "人が決める", _p(f'{MAKER}が採った（{str(ch.get("at", ""))[:10]}）'))
@@ -113,6 +113,17 @@ def site_loop(hist=None):
 def _version(hist, toy_word, set_name):
     toy = next((t for t in hist.get("toys", []) if toy_word in t.get("toy", "")), None)
     return next((v for v in (toy or {}).get("versions", []) if v.get("set") == set_name), None) if toy else None
+
+
+def _sheet(hist, set_name):
+    """組の名を、表の行があれば「型紙の版 vN」で言う（窓口の決め 11-07。同じ頁の中で版の言い方をそろえる）。行の無い写しでは組の名のまま。"""
+    v = next((v for t in (hist or {}).get("toys", []) for v in t.get("versions", []) if v.get("set") == set_name), None)
+    return f"型紙の版 v{int(v['sheet_version'])}" if v and v.get("sheet_version") else set_name
+
+
+def _tried(hist, set_name):
+    word = _sheet(hist, set_name)
+    return f"刷った{word}" if word != set_name else f"刷った組 {set_name}"
 
 
 def _merged(v):
@@ -154,7 +165,7 @@ def peak_loop(hist):
     return f'<section class="sec kz-loop" id="peak"><h2>{esc(LOOPS[2])}</h2><p class="kz-state">{esc(DONE)}</p>{story}<ol class="kz-steps">{steps}</ol></section>'
 
 
-def pending_loop():
+def pending_loop(hist=None):
     """いま回っている一周: Claude が記録 R-0001 を読んだ案（人の確認待ち）。済んだ一周と、札の色と字で分ける。
     記録と人の説明は記録の字のまま。Claude の読みは原因の読み（確からしさつき）と分からない事。人が確かめる段と次の版は「まだ」と出す。
     分からない事のうち、作る側の決定の番号が入った物は出さない（学ぶ人の頁と同じく内輪の番号を出さない）。"""
@@ -165,7 +176,8 @@ def pending_loop():
     from .wording import record_no
     causes = "<ul>" + "".join(f'<li>{esc(_maker(c.get("text", "")))}（{esc(CONF)}: {esc(c.get("confidence", ""))}）</li>' for c in pend["content"].get("causes", [])) + "</ul>"
     unknown = [u for u in pend["content"].get("unknown", []) if not re.search(r"(?<![A-Za-z0-9])[JUTWH]-\d+", u)]
-    steps = (_step("human", "作った記録", _p(f'{record_no(pend["record_id"])}・{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・刷った組 {rec.get("sheet_set", "")}'))
+    v_from = rec.get("sheet_set", "")
+    steps = (_step("human", "作った記録", _p(f'{record_no(pend["record_id"])}・{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・{_tried(hist, v_from)}'))
              + _step("human", "人の説明", _p(ex.get("text", "")) + (_p("次の思いつき: " + ex["next_idea"]) if ex.get("next_idea") else ""))
              + _step("claude", "Claude の読み", causes + ("<p>分からない事:</p>" + _ul(unknown) if unknown else ""))
              + _step("human", "人が確かめる", _p(WAIT)).replace("<li>", '<li class="wait">', 1)
@@ -177,5 +189,5 @@ def pending_loop():
 def page(look=skin.DEFAULT, path="/kaizen"):
     hist = _load(HISTORY) or {}
     body = (f'<section class="sec"><h1>{esc(TITLE)}</h1><p class="lead">{esc(LEAD)}</p><p class="meta">{esc(NOT_YET)}</p></section>'
-            + site_loop(hist) + engine_loop(hist) + peak_loop(hist) + pending_loop())
+            + site_loop(hist) + engine_loop(hist) + peak_loop(hist) + pending_loop(hist))
     return skin.shell(TITLE, body, look, "", path, STYLE)

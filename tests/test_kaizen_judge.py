@@ -70,6 +70,13 @@ else:
 row = {"toys": [{"toy": "御来迎", "versions": [{"set": "goraigo-v8", "sheet_version": "8"}]}]}
 assert "型紙の版 v7 → v8" in text(k.site_loop(row)) and "goraigo-v7 → goraigo-v8" in text(k.site_loop({})), "表の行があれば番号、無ければ組の名"
 assert "エンジンの版" not in text(k.site_loop(row)), "この版にエンジンの版は無いので言わない"
+# 同じ頁の中で版の言い方をそろえる（作った記録の「刷った」版も、いま回っている一周も。別の目の気づき 11-07）
+if k._version(hist, "御来迎", "goraigo-v7"):
+    assert "goraigo-v7" not in t and t.count("刷った型紙の版 v7") == 2, "1 周目といま回っている一周の、刷った版の言い方"
+else:
+    assert t.count("刷った組 goraigo-v7") == 2
+row7 = {"toys": [{"toy": "御来迎", "versions": [{"set": "goraigo-v7", "sheet_version": "7"}, {"set": "goraigo-v8", "sheet_version": "8"}]}]}
+assert "刷った型紙の版 v7" in text(k.site_loop(row7)) and "刷った型紙の版 v7" in text(k.pending_loop(row7)) and "刷った組 goraigo-v7" in text(k.pending_loop({}))
 assert f'/utsushi/commit/{ch["commit"]}' in page and "/paper-to-toy/pull/106" in page and "/paper-to-toy/pull/138" in page, "直しを作った commit と PR へ行ける"
 
 # ---- 4 済んだ一周の Claude の印は直しを作る段だけ。読む段の札は済んだ一周には無い
