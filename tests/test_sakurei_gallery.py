@@ -4,7 +4,7 @@
 1. 空の時: 作例が無い時と、人が確かめる前は、節ごと出ない（字も id も無い）。頁の前の形（他の人が作った物・まだ…の 1 行・見本）は変わらない
 2. 出す物: 人が「物だけ」と確かめた写真だけ。「人が入る」と確かめた写真は出ない。写真は小さい写し（/small）で、元の写真の道は並べない
 3. 並び: 日の順の小見出し（id は sakurei-MMDD・web.sakurei.days() と同じ日だけ）。日の中は玩具ごとに寄せる。作った日は札に重ねない
-4. 札: 玩具の名から玩具の頁へ行く。記録の番号の字は出さない。作例は「他の人が作った物」の並びに混ざらない
+4. 札: 玩具の名から玩具の頁へ行く。刷った組が分かる時だけ型紙の版（組の番号）。記録の番号の字は出さない。作例は「他の人が作った物」の並びに混ざらない
 5. 場: 合言葉なしで開いた場も同じ物を出す。写真を出さない形（photos=False）は出さない。作例だけがある時も見本は畳む
 """
 import io
@@ -84,6 +84,11 @@ assert f'<a href="/toy/{G}">{techo_site.esc(names[G])}</a>' in sec and f'<a href
 text = re.sub(r"<[^>]+>", " ", sec)
 assert not re.search(r"R-\d{4}", text), "記録の番号を字で出した"
 assert "記録の番号" not in text and "goraigo-v10" not in sec
+# 型紙の版は、刷った組が分かる作例の札にだけ、組の番号で出す（玩具の頁の型紙の札の脇と同じ「型紙の版 10」の形）
+card = lambda rid: re.search(rf'<figure class="item">(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', sec, re.S).group(0)  # noqa: E731
+assert "型紙の版 10" in card(g1), card(g1)
+assert "型紙の版" not in card(t1) and "型紙の版" not in card(t2), "組の分からない作例に版を出した"
+assert sec.count("型紙の版") == 1
 ageta = html.split('id="ageta"')[1]
 assert not any(r in ageta for r in (g1, t1, t2)), "作例が他の人が作った物に混ざった"
 assert html.index('id="sakurei"') < html.index('id="ageta"'), "作例の節が頁の頭でない"

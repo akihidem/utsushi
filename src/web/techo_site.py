@@ -335,10 +335,16 @@ def own_item(sid, data, r):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
-# ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」）。
-# 新しい字なので、決まるまでは案の字（決まったらここだけを替える）
+# ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案のまま）
 SAKUREI_TITLE = "ワークショップで作られた物"
 SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。日の順に並べます。上下はありません。"
+
+
+def _ban(sheet_set):
+    """作例の札の型紙の版（刷った組の番号。例 goraigo-v10 は 10）。組の分かる作例だけ。分からない時は空（推して書かない）。
+    字は「型紙の版」と数だけ（型紙の版は組の番号で言いそろえる決め 11-07。玩具の頁の型紙の札の脇に出す #513 と同じ形）。"""
+    m = re.fullmatch(r"[a-z_]+-v(\d+)", sheet_set or "")
+    return f'　<span class="ban">型紙の版 {int(m.group(1))}</span>' if m else ""
 
 
 def sakurei_section(sids, photos=True):
@@ -349,7 +355,8 @@ def sakurei_section(sids, photos=True):
       （写真が来る前の形。断りの字を足さない）。
     - 日ごとの小見出しの id は sakurei-MMDD。審査用の頁のワークショップの節は、出す物がある日にだけそこへ道を張る（web.sakurei.days()）。
       日の中は玩具ごとに寄せる（頁の玩具の並び＝sids の順、同じ玩具の中は記録の順）。上下は付けない（J-025）。
-    - 札は 1 つの記録に 1 枚: 写真の小さい写し（/small。元の写真 3MB ほどを並べて読まない）と玩具の名（玩具の頁へ行く。他の人が作った物の札と同じ）。
+    - 札は 1 つの記録に 1 枚: 写真の小さい写し（/small。元の写真 3MB ほどを並べて読まない）と玩具の名（玩具の頁へ行く。他の人が作った物の札と同じ）と、
+      刷った組が分かる時だけ型紙の版（_ban）。
       作った日は小見出しにあるので札に重ねない（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。作った人の名と感想は記録に持たない。
     - 合言葉なしで開いた場も同じ物を出す（人が確かめた写真は開いた場のギャラリーにも出す、本人の決定 11-06）。記録の番号は字にしない。
       photos=False（写真を出さない前の開いた場の形）は出さない。"""
@@ -370,7 +377,7 @@ def sakurei_section(sids, photos=True):
         cards = "".join(
             f'<figure class="item">'
             + "".join(f'<img src="/record/{esc(e["rid"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in e["photos"])
-            + f'<figcaption><a href="/toy/{esc(e["sid"])}">{esc(names[e["sid"]])}</a></figcaption></figure>'
+            + f'<figcaption><a href="/toy/{esc(e["sid"])}">{esc(names[e["sid"]])}</a>{_ban(e["set"])}</figcaption></figure>'
             for e in items)
         body += (f'<h3 class="day" id="sakurei-{day[5:7]}{day[8:10]}">{int(day[5:7])} 月 {int(day[8:10])} 日</h3>'
                  f'<div class="sakurei-row">{cards}</div>')
