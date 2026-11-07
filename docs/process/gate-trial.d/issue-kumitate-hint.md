@@ -10,3 +10,4 @@
 - 検証ゲート: **済み**。Red: 今の main（`f46a5c2a`）にこの試験だけを置くと「釦の並びのすぐ後に手引きの行が無い」で rc 1（gate-evidence/red-kumitate-hint.txt）。Green: この枝で rc 0（gate-evidence/green-kumitate-hint.txt）
 - エビデンスゲート: 手元の Chrome で組み立ての頁（御来迎）を幅 390 で撮り、釦の並びのすぐ下に手引きが出るのを目で見た
 - 確かめていない事: 本物のスマホと iPad での見え方。玩具の頁の頭の 3D での見え方（同じ block で描くので同じ形の見込み）
+- 別の目の止め（11-07）と直し: 重ねる頁（/toy/<玩具>/kasane と /kasane/hmd）は 3D の釦の並びを隠す（hmd.py）が、並びの外に置いた手引きは隠れず、釦が 0 の画面に押せない釦を名指す手引きが出た（Chrome の checkVisibility で確かめた止め）。手引きを釦の並びの中に移し、並びごと隠れる形にした。試験は、重ねる頁で手引きが全部釦の並びの中にある事も見る。Red: 前の頭 `f943b7d3` にこの試験を置くと「釦の並びの中に手引きの行が無い」で rc 1（gate-evidence/red-kumitate-hint-outside.txt）。Green: gate-evidence/green-kumitate-hint-inside.txt
