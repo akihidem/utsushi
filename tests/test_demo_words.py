@@ -19,8 +19,8 @@ assert words.MARKED == (), "本人の言葉の印を付ける札は無い"
 for name, chunks in {**words.CARDS, **words.TALKS}.items():
     assert all(s.strip() == s and s for lines in chunks for s in lines), name
     assert not any(w in words.flat(chunks) for w in ("僕", "ぼく", "私たち")), (name, "一人称で語らない")
-# 職人の 1 文は本人の決定（11-07 の (2) B）で前の言い方のまま
-assert "職人も、もうほとんど残っていない" in words.flat(words.TALKS["talk_lost"])
+# 職人の 1 文は本人の言葉（11-07 の (2) の決着）の字のまま
+assert "職人も少なくなり、子供が簡単に手に入り遊べるおもちゃではなくなった。知らない大人がほとんどだ。" in words.flat(words.TALKS["talk_lost"])
 
 
 # 語りの文を 1 字でも変えると落ちる。文の途中で終わるのも落ちる

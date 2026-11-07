@@ -41,10 +41,12 @@ EN = {
     "紙と木と竹と糸でできていた。": "were made of paper, wood, bamboo, string.",  # 案
     "子どもが壊しても、自分で直せた。": "Children who broke them could mend them.",  # 案
     "そこに、遊ぶ喜びがあった。": "That was part of the joy.",  # 案
-    # 3 talk_lost（声 A3。職人の 1 文は本人の決定 11-07 の (2) B で前の言い方のまま）
+    # 3 talk_lost（声 A3。職人の 1 文は本人の言葉 11-07 の (2) の決着の字）
     "しかし、その多くは、": "But most of those toys",  # 案
     "もう残っていない。": "are gone.",  # 案
-    "それを作る職人も、もうほとんど残っていない。": "And hardly any craftsmen who made them remain.",  # 案
+    "職人も少なくなり、": "Craftsmen grew few,",  # 案（日本語は本人の字）
+    "子供が簡単に手に入り遊べるおもちゃではなくなった。": "and they stopped being toys children could easily get and play with.",  # 案（日本語は本人の字）
+    "知らない大人がほとんどだ。": "Most adults have never seen them.",  # 案（日本語は本人の字）
     # 4 scene2（声 A4）
     "残っているのは、": "What survives",  # 案
     "『江都二色』（1773）という一冊の本。": "is one picture book, Edo Nishiki (1773).",  # 案
