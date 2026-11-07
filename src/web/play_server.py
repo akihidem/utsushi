@@ -659,6 +659,10 @@ class Handler(BaseHTTPRequestHandler):
             if page.exists():
                 return self._send(200, page.read_bytes(), "image/jpeg")
         # えらぶ の敷き詰めの小さい写し（toys.small_picture。幅 1600px の切り抜きを 83 枚読まないため）
+        # 浮かぶ玩具の試作の輪郭の絵（web.ukabu・out/ukabu の生成物）
+        m = re.fullmatch(rf"/ukabu/({SID})\.webp", path)
+        if m and (ROOT / "out/ukabu" / f"{m.group(1)}.webp").exists():
+            return self._send(200, (ROOT / "out/ukabu" / f"{m.group(1)}.webp").read_bytes(), "image/webp")
         m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
         if m:
             from . import toys
