@@ -30,8 +30,9 @@ from web import genga, play_server  # noqa: E402
 _real_pic = genga._pic
 
 
-def _pic(sid, src, alt, lazy=False, href=None):
-    got = _real_pic(sid, src, alt, lazy=lazy, href=href)
+def _pic(sid, src, alt, lazy=False, href=None, **kw):
+    # 部品の引数が増えても（作る時の畳みの new_tab・11-08）、本物へそのまま渡す。受けないと作りながら見る頁が落ちて測れない
+    got = _real_pic(sid, src, alt, lazy=lazy, href=href, **kw)
     return got if got[0] else (f'<span class="genga-pic" style="--genga-r:0.7000"><img src="data:," width="700" height="1000" alt="{html.escape(alt)}"></span>', True)
 
 
