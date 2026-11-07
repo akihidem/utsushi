@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_nav_same.py
+# commit: 71ea5259（回した時の HEAD）
+/tmp/tmp_mks1faw/play/NDL-1187053-R0000005-L/.tmp-kug5y0v8/H-C_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_nav_same.py", line 50, in <module>
+    assert navs[0].count('href="/"') == 1 and '<span class="brand">うつし</span>' in navs[0], ("帯で入口へ行く釦は 1 つ", where)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('帯で入口へ行く釦は 1 つ', ('tenji', '/'))
+rc=1
