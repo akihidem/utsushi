@@ -230,7 +230,8 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None, kind=None):
         hid = hypothesis_id or hypotheses.sheet_of(sid)["id"]
         if hid not in {h["id"] for h in data_["hypotheses"]}:
             return [], [("", f"知らない仮説: {hid}")], None
-    seen = {r.get("workshop_from") for r in workshop_records()}
+    # 同じ写真を同じ玩具に 2 度入れない（2 つの玩具が写る写真は、玩具ごとに 1 度ずつ入る）
+    seen = {(r.get("workshop_from"), r.get("source_id")) for r in workshop_records()}
     done, refused = [], []
     for path in paths:
         p = pathlib.Path(path)
@@ -239,7 +240,7 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None, kind=None):
         except OSError as e:
             return done, refused, f"読めない: {p.name}: {e}"
         mark = fingerprint(raw)
-        if mark in seen:
+        if (mark, sid) in seen:
             refused.append((p.name, "同じ写真をもう取り込んである"))
             continue
         data = raw
@@ -263,7 +264,7 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None, kind=None):
             records.withdraw(rid)
             refused.append((p.name, why))
             continue
-        seen.add(mark)
+        seen.add((mark, sid))
         done.append((rid, name, p.name))
     return done, refused, None
 
@@ -376,15 +377,20 @@ def sort(folder, like=None):
 
 def set_toy(keys, sid, day=None, sheet_set=None, kind=None):
     """仕分けの置き場の写真の玩具（と、人が決めた日・刷った組）を書く。keys は指紋か元の名。sid は玩具の印か不明。
+    2 つ以上の玩具が写る写真は、印を「,」でつないで渡すと、それぞれの玩具の作例になる（本人の言葉 11-07「両方の玩具の作例に載せる」）。
     Returns ([書いた指紋], [(key, 理由)])。"""
-    if sid != UNKNOWN:
+    sids = [s.strip() for s in sid.split(",") if s.strip()] if sid != UNKNOWN else [UNKNOWN]
+    if not sids or (len(sids) > 1 and UNKNOWN in sids) or len(set(sids)) != len(sids):
+        return [], [("", f"玩具の印の並びが読めない: {sid}")]
+    if sids != [UNKNOWN]:
         from omochae import hypotheses, records
         from omochae.model import ToolMissing
 
-        try:
-            sid == records.WORKSHOP_ALL or records.outside_toy(sid) or hypotheses.load(sid)
-        except (KeyError, OSError, ValueError, ToolMissing):
-            return [], [("", f"知らない玩具: {sid}")]
+        for one in sids:
+            try:
+                one == records.WORKSHOP_ALL or records.outside_toy(one) or hypotheses.load(one)
+            except (KeyError, OSError, ValueError, ToolMissing):
+                return [], [("", f"知らない玩具: {one}")]
     if day is not None and day not in WORKSHOP_DAYS + (UNKNOWN,):
         return [], [("", f"日はワークショップの日（{'・'.join(d[5:] for d in WORKSHOP_DAYS)}）か不明: {day}")]
     if sheet_set is not None and not SET_NAME.fullmatch(sheet_set):
@@ -399,7 +405,7 @@ def set_toy(keys, sid, day=None, sheet_set=None, kind=None):
             refused.append((key, "元の名が 2 つ以上に当たる（指紋で選ぶ）" if hit else "仕分けの置き場に無い（取り込み済みか、名か指紋の誤り）"))
             continue
         it = hit[0]
-        it["toy"] = sid
+        it["toy"] = ",".join(sids)  # 帳面は 1 つの字で持つ（--like で写す時も同じ形）
         if day is not None:
             it["day"] = day
         if sheet_set is not None:
@@ -420,13 +426,22 @@ def place():
         if it.get("rid") or UNKNOWN in (it["day"], it["toy"]):
             continue
         path = hold_dir() / f"{it['fp']}.jpg"
-        got, why, cannot = add([path], it["toy"], it["day"], it.get("set"), kind=it.get("kind"))
-        if got:
-            it["rid"] = got[0][0]
-            path.unlink(missing_ok=True)
-            done.append((it["rid"], it["name"]))
+        rids, whys = list(it.get("rids", [])), []
+        # 2 つの玩具が写る写真は玩具ごとに 1 つの記録（同じ写真を両方の札に）。途中で断られても、入った分は帳面に残す（2 度入れない）
+        for sid in it["toy"].split(","):
+            got, why, cannot = add([path], sid, it["day"], it.get("set"), kind=it.get("kind"))
+            if got:
+                rids.append(got[0][0])
+                done.append((got[0][0], it["name"]))
+            else:
+                whys.append(cannot or "; ".join(w for _, w in why))
+        if rids:
+            it["rids"] = rids
+        if whys:
+            refused.append((it["name"], "; ".join(whys)))
         else:
-            refused.append((it["name"], cannot or "; ".join(w for _, w in why)))
+            it["rid"] = rids[0]
+            path.unlink(missing_ok=True)
     _hold_save(items)
     return done, refused
 

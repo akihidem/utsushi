@@ -173,6 +173,20 @@ again_recs = sorted((r["source_id"], r["made_on"], r.get("sheet_set")) for r in 
 assert again_recs == sorted([(G, "2026-11-06", "goraigo-v14"), (T, "2026-11-05", None), (G, "2026-11-04", None), (G, "2026-11-07", None),
                              (OUT, "2026-11-06", None)]), again_recs
 assert sorted(it["name"] for it in sakurei._hold_list() if not it.get("rid")) == ["IMG_0105.jpg"], "不明の物が写しで決まった"
-assert all(set(it) <= {"fp", "name", "day", "toy", "set", "rid"} for it in sakurei._hold_list()), "前の置き場の記録の番号を写した"
+assert all(set(it) <= {"fp", "name", "day", "toy", "set", "kind", "rid", "rids"} for it in sakurei._hold_list()), "知らない欄が帳面に入った"
+# 2 つの玩具が写る写真は、両方の玩具の作例になる（本人の言葉 11-07「両方の玩具の作例に載せる」）。同じ写真を同じ玩具に 2 度は入れない
+two = pathlib.Path(tempfile.mkdtemp())
+extra2 = shot("IMG_0201.jpg", "2026:11:07 11:00:00", "+09:00", color=(7, 77, 177)).rename(two / "IMG_0201.jpg")
+assert sakurei.sort(two)[0] == ["IMG_0201.jpg"]
+assert sakurei.set_toy(["IMG_0201.jpg"], f"{G},{G}")[1] and sakurei.set_toy(["IMG_0201.jpg"], f"{G},{sakurei.UNKNOWN}")[1], "重なる印か不明の混ざった並びを受けた"
+assert sakurei.set_toy(["IMG_0201.jpg"], f"{G},NDL-0000000-R0000000-L")[1], "知らない玩具の混ざった並びを受けた"
+assert sakurei.set_toy(["IMG_0201.jpg"], f"{G},{T}")[0]
+done2, refused2 = sakurei.place()
+assert refused2 == [] and len(done2) == 2 and {n for _, n in done2} == {"IMG_0201.jpg"}, (done2, refused2)
+pair = [r for r in sakurei.workshop_records() if r["id"] in {d[0] for d in done2}]
+assert sorted(r["source_id"] for r in pair) == sorted([G, T]) and len({r["workshop_from"] for r in pair}) == 1, pair
+it2 = next(it for it in sakurei._hold_list() if it["name"] == "IMG_0201.jpg")
+assert it2["rids"] == [d[0] for d in done2] and it2["rid"] == done2[0][0] and not (sakurei.hold_dir() / f"{it2['fp']}.jpg").exists()
+assert sakurei.place() == ([], []) and sakurei.add([sakurei.hold_dir().parent / "nai.jpg"], G, "2026-11-07")[2], "2 度入れたか、無い写真を読めた"
 assert run("sort", str(up), "--like", str(up / "nai.json")).returncode == 4, "読めない帳面は 4"
 print("ok 作例の仕分け: 撮影の日で 4 回に振る・撮影の情報を残さない・動画を分ける・玩具は人が決める・両方決まった物だけ入れる")
