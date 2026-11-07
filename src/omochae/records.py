@@ -13,7 +13,7 @@ import re
 import shutil
 import sys
 import unicodedata
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from . import store
 from .contrib import check_pii, too_long
@@ -27,6 +27,10 @@ OWN = ("explanation", "interpretation", "observation", "video", "owner")  # 記�
 OWNER_MINUTES = 15
 # 動画の受け口（web/video_up.py）から来た記録の印。上げた人に「頁に出さない」と約束した物で、紙も人が確かめていないので、all_records は既定で外す。
 UPLOADED = "video-up"
+# ワークショップの作例の受け口（web.sakurei）の記録。本人の言葉（11-07）「サイトにワークショップで作られたおもちゃを掲載したい。写真データはこれから上げる」。
+# 写真から作った記録で、学ぶ人の観察と説明が無い。動画の受け口と同じく all_records の既定から外す（エンジンへ渡す束・輪の数・審査用の頁・
+# ギャラリーの「他の人が作った物」に、観察の無い作例を混ぜない。作例はギャラリーの作例の節だけが読む）
+WORKSHOP = "workshop"
 UNSURE = "わからない"
 FIX_BLANK = "書かれていない"  # 工夫の 3 欄のうち、欠けた欄に入れる字（web.play_server.fixes_of）
 # 取り下げの説明文（本人の決定、Issue #335）。本人が確かめた字を、一字も変えずに出す（tests/test_withdraw_notice.py が文字列で見る）。
@@ -71,10 +75,19 @@ def check(rec):
     results = results_for(rec["source_id"])
     # 前の札も受ける。札を直す前に開いた頁から送られても、記録を断らないため。断りの文には今の札だけを出す。
     # 受け口は動いたかを聞かない（動画だけが届く）。雛形の札に「わからない」が無くても、決めつけずにこの字で受ける。束はこの字を数えない
-    if rec.get("result") not in (*results, *old_results_for(rec["source_id"])) and not (rec.get("via") == UPLOADED and rec.get("result") == UNSURE):
+    # 作例の受け口も「わからない」で受ける（写真から動いたかは分からない）
+    if rec.get("result") not in (*results, *old_results_for(rec["source_id"])) and not (rec.get("via") in (UPLOADED, WORKSHOP) and rec.get("result") == UNSURE):
         out.append(Failure("F3.result", "result", f"結果は {'／'.join(results)} のどれか"))
     if not known_hypothesis(rec["source_id"], rec.get("hypothesis_id")):
         out.append(Failure("F8.references", "hypothesis_id", f"仮説 {rec.get('hypothesis_id')} は実在しない"))
+    if rec.get("via") == WORKSHOP:
+        # 作例の札は作った日（ワークショップの日）で並べるので、日が無い・読めない作例は受けない
+        try:
+            made = date.fromisoformat(rec.get("made_on") or "")
+        except (TypeError, ValueError):
+            made = None
+        if made is None or not date(2026, 1, 1) <= made <= date.today() + timedelta(days=1):
+            out.append(Failure("F3.result", "made_on", "作った日は YYYY-MM-DD（ワークショップの日）"))
     deg = rec.get("opened_deg")
     if deg is not None and not (isinstance(deg, (int, float)) and not isinstance(deg, bool) and 0 <= deg <= 360):
         out.append(Failure("F3.result", "opened_deg", "開いた角度は 0〜360"))
@@ -121,8 +134,9 @@ def add(rec):
             nums.append(int(rid[2:]))
 
 
-def all_records(source_id=None, uploads=False):
-    """記録の一覧。uploads は動画の受け口の記録も含める形で、版の輪の表（trial_video.effect）だけが使う。
+def all_records(source_id=None, uploads=False, workshop=False):
+    """記録の一覧。uploads は動画の受け口の記録も含める形で、版の輪の表（trial_video.effect）だけが使う。workshop は作例の受け口の記録も含める形で、
+    作例の節（web.sakurei）だけが使う。
     なぜここで外すか: 読む所は学ぶ人の頁・ギャラリー・束など多く、1 つずつ外すと、新しく読む所が足された時に約束が崩れる。
     この関数を通らない所（loop.confirmed_records とサイトの /record の口）は、それぞれで外す。"""
     out = []
@@ -130,7 +144,8 @@ def all_records(source_id=None, uploads=False):
         if (withdrawn_folder() / p.name).exists():
             continue
         rec = store.read_json_or_skip(p)
-        if rec is not None and (source_id is None or rec.get("source_id") == source_id) and (uploads or rec.get("via") != UPLOADED):
+        if rec is not None and (source_id is None or rec.get("source_id") == source_id) and (uploads or rec.get("via") != UPLOADED) \
+                and (workshop or rec.get("via") != WORKSHOP):
             out.append(rec)
     return out
 
