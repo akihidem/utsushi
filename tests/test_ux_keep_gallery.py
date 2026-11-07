@@ -58,7 +58,8 @@ mine = json.loads(post(a, f"/toy/{G}/record-json", {"hypothesis": GS, "result": 
 
 # ---- 2・3 記録を残した画面
 g = get(a, "/gallery?msg=" + urllib.parse.quote("記録を残しました"))
-ageta = g[g.index('id="ageta"'):g.index('id="yose"')]
+# 他の人が作った物の節の終わりまで（寄せられた声と職人の言葉の節は序の頁へ移したので、次の節は無い。本人のサイト体験レビュー 11-07 の言葉 6）
+ageta = g[g.index('id="ageta"'):g.index("</section>", g.index('id="ageta"'))]
 assert ageta.index('<p id="msg">記録を残しました</p>') < ageta.index('id="own"'), "返事の文のすぐ後に今残した 1 つ"
 own = re.search(r'<div class="item mine" id="own">.*?</div>', ageta, re.S).group(0)
 assert f'<a href="/toy/{G}/techo/kiroku#mine">記録の番号 {mine}</a>' in own, "札の記録の番号から記録の頁へ（地図の 4）"
