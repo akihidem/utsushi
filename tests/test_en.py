@@ -87,11 +87,11 @@ page = get(f"/en/toy/{trial}")
 assert "Untested draft" in page and "described in Japanese on the sheet" in page
 
 # 予想なしで刷れて、英語の頁に戻る
-code, at = post(f"/en/toy/{G}/print", {"hypothesis": "H-A"})
+code, at = post(f"/en/toy/{G}/print", {"hypothesis": hypotheses.sheet_of(G)["id"]})  # 刷れるのは今の組のたたき台だけ（御来迎 v14 は H-C）
 assert code == 303 and at.startswith(f"/en/toy/{G}") and at.endswith("#ideas"), (code, at)
 page = get(at)
 # 手順の紙は 11-06 から刷らない（本人の決まり）。英語の頁の Instruction sheet への道は外した（本人の決定、6 点の 6）
-assert "Printed." in page and f"/sheet/{G}/H-A_v1.pdf" in page and "_tejun.pdf" not in page and "Instruction sheet" not in page
+assert "Printed." in page and f"/sheet/{G}/{hypotheses.sheet_of(G)['id']}_v1.pdf" in page and "_tejun.pdf" not in page and "Instruction sheet" not in page
 assert post(f"/en/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 
 # 作り方の印を分けて出す。上下を付けない。印の語は日本語の札（omochae.ways）の全部に当たる

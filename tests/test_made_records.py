@@ -21,6 +21,9 @@ from web import demo_samples, techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -71,8 +74,8 @@ assert mine and rest.count('class="item is-sample"') == len(mine) and demo_sampl
 for u in demo_samples.UPLOADS:
     assert (u["note"] in rest) == (u["toy"] == "張子の首振り虎"), u["no"]
 # 御来迎: 画面から記録して、止まった所の答えも札に出る
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "stuck": "3 枚目の折り目", "impression": "折るのは楽しかった"}) == 303
+assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "stuck": "3 枚目の折り目", "impression": "折るのは楽しかった"}) == 303
 page = get(f"/toy/{G}")[1]
 g_rid = sorted(r["id"] for r in records.all_records(G))[-1]
 assert "引っかかった所: 3 枚目の折り目" in page and "感想: 折るのは楽しかった" in page

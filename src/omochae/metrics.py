@@ -5,6 +5,14 @@ from .pivot_model import period_s, rest_tilt_deg
 
 
 def _slider(p):
+    if p.get("push_part") == "rise":
+        # 内筒を下から押し上げる形（御来迎の次の組のたたき台）: 扇の下の端（要）は台の上の受けの底の紙の上にあり、台の縁と口の角に当たる
+        # （slider_fan._check_rise と同じ見方）。内筒の遊びは外筒と内筒の差
+        t = p["paper_thickness"]
+        return {"opening_bound_deg": opening_bound_deg(p["fold_count"], p["fold_width"], p["fold_height"]),
+                "clearance_limit_deg": min(clearance_limit_deg(p["tube_side"], t), clearance_limit_deg(p["base_side"], t)),
+                "fold_thickness_mm": p["fold_count"] * t,
+                "slide_gap_mm": p["tube_side"] - p["pusher_side"]}
     d = p["pivot_above_rim"] if p["hub"] == "axle" else 0
     return {
         "opening_bound_deg": opening_bound_deg(p["fold_count"], p["fold_width"], p["fold_height"]),

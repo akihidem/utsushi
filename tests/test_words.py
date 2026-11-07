@@ -69,15 +69,16 @@ for source, sid in ((gs, G), (ts, T)):
     fold = next(s["y1"] for s in layout["shapes"] if s.get("dash"))
     card = [t for t in layout["texts"] if t.y >= fold]
     above = [t for t in layout["texts"] if t.y < fold]
-    assert any(t.text and t.text.startswith("札") for t in card) and len(after["contrasts"]) == 3
+    # 御来迎の今の組（goraigo-v14）は、糸で引く時と比べる 1 つを出さない（記録の hide_by_set）ので 2 つ
+    assert any(t.text and t.text.startswith("札") for t in card) and len(after["contrasts"]) == (2 if sid == G else 3), (sid, len(after["contrasts"]))
     height = max(t.y + t.h for t in card) - fold
     assert not any(t.y + t.h > fold - height for t in above), "折り上げた札が上の文字に重なる"
     assert not any(t.text and "昔の職人" in t.text for t in above), "説明を札の外に出さない"
     assert "昔の職人" in " ".join(after["card"]), "歴史の問いを札で閉じない"
 stem = pathlib.Path(tmp) / "a"
-out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", "--out", str(stem)], capture_output=True, text=True)
+out = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", hypotheses.sheet_of(G)["id"], "--out", str(stem)], capture_output=True, text=True)
 # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。試した後の紙は、前に配った道で開く時に作る口（print_after）が残り、そこで作れる
 assert out.returncode == 0 and (pathlib.Path(tmp) / "a.pdf").exists() and not (pathlib.Path(tmp) / "a_after.pdf").exists(), out.stderr
 from omochae import hypotheses as _hyp  # noqa: E402
 
-assert _hyp.print_after("NDL-1187053-R0000005-L", "H-A", str(stem)) == 0 and (pathlib.Path(tmp) / "a_after.pdf").exists()
+assert _hyp.print_after("NDL-1187053-R0000005-L", _hyp.sheet_of("NDL-1187053-R0000005-L")["id"], str(stem)) == 0 and (pathlib.Path(tmp) / "a_after.pdf").exists()

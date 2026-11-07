@@ -350,7 +350,7 @@ def next_form(r, back=""):
     自分の紙（OWN-n）の記録は、たたき台へ向けて欄を出す（loop.next_target。今の値もたたき台の物）。"""
     from omochae.metrics import ALLOWED
 
-    target = loop.next_target(r["source_id"], r["hypothesis_id"])
+    target = loop.next_target(r["source_id"], r["hypothesis_id"], r.get("sheet_set"))
     if target != hypotheses.sheet_of(r["source_id"])["id"]:
         return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")

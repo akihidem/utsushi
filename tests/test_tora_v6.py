@@ -43,10 +43,10 @@ def words(layout):
     return [t.text for t in layout["texts"] if t.text]
 
 
-# 1. 組の名前と並び。御来迎の凍結の組はそのまま
+# 1. 組の名前と並び。御来迎も今の組 goraigo-v14 に上げたので、凍結の組の印の表は空（前の組の紙は、呼ぶ側が前の印の文を渡す）
 # 今の組は tora-v7（v6 は当たり 2 つを v7 で直したので、刷らずに飛ばした。窓口の決定 2026-11-07）。試験の名は v6 の写しの時のまま
 assert (TIGER.SHEET_SET, TIGER.set_no(), TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v7", 7, "tora-v3", ("tora-v3", "tora-v4"))
-assert marks.FROZEN_SETS == {"NDL-1187053-R0000005-L": "goraigo-v10"}, marks.FROZEN_SETS
+assert marks.FROZEN_SETS == {}, marks.FROZEN_SETS
 assert h["id"] == "H-A" and {k: p[k] for k in ("leg_height", "body_round", "head_sides")} == {"leg_height": 10, "body_round": 8, "head_sides": 2}
 
 # 2. 組の番号が 6 から写しの関数に替わり、v4 に置くと前の作りに戻る。DEFAULTS と RANGES は写しと同じ（どちらで引いても同じ寸法）

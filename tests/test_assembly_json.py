@@ -100,6 +100,8 @@ assert any(s.interiors for s in shown.sheets["body"].panels), "前の壁の四�
 tora_bench, tora_doc, tora_parts, tora_words = bench, doc, parts, words
 
 # 1. 書いて読み戻す（御来迎 goraigo-v10）。最後のできあがり（扇が開く所）は頁の計算で動かすので、書き出さない段の前まで同じ
+# 御来迎の今の組（goraigo-v14）は 3D で組まない（立体は 3D の枝が JSON で入れる）。3D の書き出しは控えの組 goraigo-v10 で前と同じに見る
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 bench, doc, parts, words, shown = round_trip(G, "slider_fan")
 assert shown.failures == [], [f.line() for f in shown.failures]
 assert assembly_json.part_gaps(doc, parts) == []
@@ -200,7 +202,7 @@ try:
             raise AssertionError("形の名の違う JSON を読んだ")
         except ValueError as e:
             assert "omochae-assembly-3d/1" in str(e)
-    # 御来迎の今の組には JSON が無いので、前の組の書き方で組む（置き場が空の間、頁は変わらない）
+    # 置き場（一時の所）に御来迎の組の JSON が無いので、前の組の書き方で組む（この時の御来迎は控えの組 goraigo-v10）
     assert not isinstance(assembly.assemble(G), Shown) and assembly.assemble(G) is not None
 finally:
     assembly_json.DIR = keep

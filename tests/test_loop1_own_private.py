@@ -78,7 +78,7 @@ assert key.split("=", 1)[1] == token and token not in key.split("=", 1)[0], "鍵
 # 頼んだ後の頁は、鍵のある人だけに字を見せる（URL だけでは開かない）
 path = loc.split("#")[0]
 w = words.by_token(G, token)
-assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_amount": 62}), "作る側")[1]
 assert SAID in send(base, path, cookie=key)[1].decode(), "本人には見える"
 for c in ("", "utsushi_own_W-9999=nothing"):
     assert SAID not in send(base, path, cookie=c)[1].decode(), "URL を渡されても、話した字は見えない"
@@ -126,7 +126,7 @@ def token_of(location):
 
 def filled(token):
     w = words.by_token(G, token)
-    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+    assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_amount": 62}), "作る側")[1]
 
 
 def adopted(who, text):
@@ -207,7 +207,7 @@ t4 = token_of(loc4)
 assert words.by_token(G, t4)["how_it_moves"] == "次の人の考え" and k4 != k
 # 別の紙の記録でも、考えが結ばれれば閉じる（その人の作りの区切り）
 t5, k5, o5, p5 = adopted("handover03", "別の紙を試した")
-assert send(base, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "わからない", "who": "handover03"})[0] == 303
+assert send(base, f"/toy/{G}/record", {"hypothesis": hypotheses.sheet_of(G)["id"], "result": "わからない", "who": "handover03"})[0] == 303
 assert opened(k5, o5) == 404
 # 頼まないまま記録に結ばれた考えからも、頼めない。その前の結ばれていない考えへも戻らない（同じタブの次の人が、前の人の字で頼まない）
 talk_log.add(G, "think", "別の仮説を見た前の考え", hypothesis_id="H-C", who="handover04")

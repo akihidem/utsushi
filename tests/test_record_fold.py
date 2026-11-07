@@ -24,6 +24,8 @@ from web import skin, toy  # noqa: E402
 from web.play_server import out_dir, serve, sources  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 T = "NDL-1187053-R0000014-R"
 FIRST = {"result", "impression", "fix_part", "fix_change", "fix_outcome"}  # 見た事・感想・工夫の 3 つ
 REST = {"first_moved", "stuck", "what_if", "idea", "note"}
@@ -114,8 +116,9 @@ for sid in sources():
     form = toy.record_form(sid, data, [])
     f = Fields(form)
     assert f.outer == FIRST, (sid, f.outer)
-    # 紙を選ぶ欄は無く、記録はたたき台に入る。どの玩具でも H-A（#332）。
-    assert re.search(r'<input type="hidden" name="hypothesis" value="([^"]+)"', form).group(1) == hypotheses.sheet_of(sid)["id"] == "H-A", sid
+    # 紙を選ぶ欄は無く、記録はたたき台に入る。御来迎の次の組は H-C（柄を下から押し上げる形・本人の決定 2026-11-06）、ほかの玩具は H-A（#332）
+    want = "H-C" if sid == "NDL-1187053-R0000005-L" else "H-A"
+    assert re.search(r'<input type="hidden" name="hypothesis" value="([^"]+)"', form).group(1) == hypotheses.sheet_of(sid)["id"] == want, sid
     assert REST <= f.inner, (sid, f.inner)
     assert not f.required_inner, (sid, f.required_inner)
     assert len(f.details) == 1 and "open" not in f.details[0] and f.summary == EXAMPLE, (sid, f.details, f.summary)
@@ -133,12 +136,12 @@ assert "▶" not in skin.TAP_FLOOR, "iPhone で絵文字になる事がある"
 assert skin.TAP_FLOOR in get(f"/toy/{G}")
 
 # 試した後の紙が開く条件は変えない（S-03）。畳みは閉じたまま、見た事だけで残せて、開くのは記録のある案の紙だけ。
-assert post(f"/toy/{G}/print", hypothesis="H-A")[0] == 303
-for hid in ("H-A", "H-B"):
+assert post(f"/toy/{G}/print", hypothesis=GS)[0] == 303
+for hid in (GS, "H-B"):
     assert status(f"/sheet/{G}/{hid}_v1_after.pdf") == 403
-assert post(f"/toy/{G}/record", hypothesis="H-A", result="動いた")[0] == 303
-assert records.all_records(G)[-1]["hypothesis_id"] == "H-A"
-assert status(f"/sheet/{G}/H-A_v1_after.pdf") == 200
+assert post(f"/toy/{G}/record", hypothesis=GS, result="動いた")[0] == 303
+assert records.all_records(G)[-1]["hypothesis_id"] == GS
+assert status(f"/sheet/{G}/{GS}_v1_after.pdf") == 200
 assert status(f"/sheet/{G}/H-B_v1_after.pdf") == 403
 print("ok: 試した後の紙が開く条件は前と同じ（記録のある案の紙だけ開く）")
 
@@ -146,9 +149,9 @@ print("ok: 試した後の紙が開く条件は前と同じ（記録のある案
 form = form_of(get(f"/toy/{G}"))
 written = {"first_moved": "外筒の先", "stuck": "折りの向き", "what_if": "折りの幅", "idea": "糊を減らす", "note": "紙が厚かった", "opener": "糸"}
 assert set(written) <= Fields(form).inner, "畳んだ欄が同じ form の中にある（閉じたままでも送られる）"
-assert post(f"/toy/{G}/record", hypothesis="H-A", result="動いた", impression="楽しかった", fix_part="扇", fix_change="糊を減らした", fix_outcome="開いた", **written)[0] == 303
+assert post(f"/toy/{G}/record", hypothesis=GS, result="動いた", impression="楽しかった", fix_part="扇", fix_change="糊を減らした", fix_outcome="開いた", **written)[0] == 303
 rec = records.all_records(G)[-1]
-assert rec["hypothesis_id"] == "H-A" and rec["result"] == "動いた" and rec["impression"] == "楽しかった" and rec["opener"] == "糸", rec
+assert rec["hypothesis_id"] == GS and rec["result"] == "動いた" and rec["impression"] == "楽しかった" and rec["opener"] == "糸", rec
 assert rec["answers"] == {"first_moved": "外筒の先", "stuck": "折りの向き", "what_if": "折りの幅"}, rec
 assert rec["ideas"] == ["糊を減らす"] and rec["note"] == "紙が厚かった", rec
 assert rec["fixes"] == [{"part": "扇", "change": "糊を減らした", "outcome": "開いた"}], rec
@@ -156,7 +159,7 @@ assert {"source_id", "hypothesis_id", "sheet_version", "result", "impression", "
 print("ok: 畳んだ欄に書いた字も送られ、記録の形は前と同じ")
 
 # 通らなかった時は畳みを開いて、書いた字と選んだ物を見せる。最初の頁は閉じたまま。
-bad = {"hypothesis": "H-A", "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}  # 見た事を選んでいない
+bad = {"hypothesis": GS, "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}  # 見た事を選んでいない
 code, page = post(f"/toy/{G}/record", **bad)
 assert code == 422, code
 form = form_of(page)
@@ -166,7 +169,7 @@ assert "open" not in Fields(form_of(get(f"/toy/{G}"))).details[0]
 print("ok: 通らなかった時は畳みを開き、書いた字を隠さない")
 
 # 版が 2 つ以上ある時の欄は畳まない。見えないまま送ると、別の版の記録になる。版を言わなければ前と同じ「いちばん新しい版」。
-(out_dir(G) / "H-A_v2.pdf").write_bytes(b"%PDF-1.4\n")
+(out_dir(G) / f"{GS}_v2.pdf").write_bytes(b"%PDF-1.4\n")
 form = form_of(get(f"/toy/{G}"))
 assert "sheet_version" in Fields(form).outer, form
 assert chosen(form, "sheet_version") is None

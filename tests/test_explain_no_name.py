@@ -23,6 +23,8 @@ from omochae.compose import TEMPLATES  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 SOURCE = json.loads((hypotheses.ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))
 
 
@@ -77,8 +79,8 @@ def explain_without_name(public):
     server = serve(0, public_open=public)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     b = Browser(f"http://127.0.0.1:{server.server_address[1]}")
-    assert b.call(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
-    st, body = b.call(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた"})
+    assert b.call(f"/toy/{G}/print", {"hypothesis": GS})[0] == 200
+    st, body = b.call(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた"})
     rid = json.loads(body)["id"]
     if not public:
         # 欄: 書いた人は任意。説明と次の思いつきは今までどおり要る

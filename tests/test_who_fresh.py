@@ -28,6 +28,9 @@ from omochae import talk_log  # noqa: E402
 from web import play_server, skin  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 A, B = "abcdefghij", "klmnopqrst"  # 前の人の印と、作り直した後の印
 
 
@@ -72,26 +75,26 @@ def post(path, data):
 
 
 def talk(text, who):
-    code, body, _ = post(f"/toy/{G}/talk", {"json": "1", "scene": "craft", "hypothesis": "H-A", "sheet_version": "1", "step": "1", "text": text, "who": who})
+    code, body, _ = post(f"/toy/{G}/talk", {"json": "1", "scene": "craft", "hypothesis": GS, "sheet_version": "1", "step": "1", "text": text, "who": who})
     assert code == 200 and json.loads(body)["kept"] is True, body
 
 
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 
 # ---- 玩具の頁の記録の欄: 残せた時だけ、戻る先に合図が付く。通らなかった時と、ほかの送り先には付かない
 talk("前の人の工夫", A)
-code, _, head = post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "who": A})
+code, _, head = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "who": A})
 assert code == 303 and re.search(r"[?&]fresh=1(&|#)", head["Location"]), head
 assert [k["text"] for k in talk_log.kufu(G, "R-0001")] == ["前の人の工夫"], "印は、結んだ後に作り直す"
-code, _, head = post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "成功", "who": A})
+code, _, head = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "成功", "who": A})
 assert code == 422 and "Location" not in head
-code, _, head = post(f"/toy/{G}/print", {"hypothesis": "H-A"})
+code, _, head = post(f"/toy/{G}/print", {"hypothesis": GS})
 assert code == 303 and "fresh" not in head["Location"], head
 
 # ---- 作り直した後: 次の人の字は次の記録に入り、前の記録と前の印の字に混ざらない
 talk("次の人の工夫", B)
 assert {t["text"] for t in talk_log.texts(G, who=B)} == {"次の人の工夫"} and {t["text"] for t in talk_log.texts(G, who=A)} == {"前の人の工夫"}
-code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "who": B})
+code, body, _ = post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "who": B})
 assert code == 201 and json.loads(body)["id"] == "R-0002", body
 assert [k["text"] for k in talk_log.kufu(G, "R-0002")] == ["次の人の工夫"] and [k["text"] for k in talk_log.kufu(G, "R-0001")] == ["前の人の工夫"]
 

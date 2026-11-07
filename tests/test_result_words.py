@@ -35,7 +35,17 @@ def add(sid, word):
 def boxes(tid, sid, h):
     """手順の紙の丸の欄の札。欄は幅 30 の枠で、札はその枠の中の字。"""
     source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-    layout, fails = compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])
+    tpl = TEMPLATES[tid]
+    # 御来迎の今の組（goraigo-v14）は 11-06 から手順の紙を刷らず、内筒を下から押し上げる形の手順の紙は A4 に収まらない。
+    # 札の欄は手順の紙を控えた前の組（goraigo-v10）で見る（tests/test_floor_pin.py の STEP_SHEET_SETS と同じ線）
+    now = tpl.SHEET_SET
+    if tid == "slider_fan":
+        tpl.SHEET_SET = tpl.FROZEN_SET
+        h = next(x for x in hypotheses.load(sid)["hypotheses"] if x["id"] == h["id"])
+    try:
+        layout, fails = compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])
+    finally:
+        tpl.SHEET_SET = now
     assert not fails, (sid, h["id"], [f.line() for f in fails])
     frames = [s for s in layout["shapes"] if s["kind"] == "rect" and s["w"] == 30]
     return [t.text for f in frames for t in layout["texts"] if t.text and abs(t.x - f["x"] - 2) < 0.01 and abs(t.y - f["y"] - 0.5) < 0.01]

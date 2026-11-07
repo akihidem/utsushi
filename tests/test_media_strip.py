@@ -27,6 +27,9 @@ PLACE = b"+35.6895+139.6917"  # 見本の位置の値（東京の役所の辺り
 STREAM_MARK = b"STREAM-MARK-1187"
 SUBTITLE_MARK = b"SUBTITLE-MARK-1187"
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -45,11 +48,11 @@ def req(path, data, ctype="application/x-www-form-urlencoded"):
 
 
 # 記録の口は、紙を刷った後に開く
-assert req(f"/toy/{G}/print", b"hypothesis=H-A")[0] in (200, 303)
+assert req(f"/toy/{G}/print", f"hypothesis={GS}".encode())[0] in (200, 303)
 
 
 def new_record():
-    return json.loads(req(f"/toy/{G}/record-json", b"hypothesis=H-A&result=%E3%82%8F%E3%81%8B%E3%82%89%E3%81%AA%E3%81%84")[1])["id"]
+    return json.loads(req(f"/toy/{G}/record-json", f"hypothesis={GS}&result=%E3%82%8F%E3%81%8B%E3%82%89%E3%81%AA%E3%81%84".encode())[1])["id"]
 
 
 def upload(data, ctype):
@@ -199,7 +202,7 @@ threading.Thread(target=opened.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{opened.server_address[1]}"  # req と upload は、ここから開いた場へ送る
 sample = make_video("open.mp4")
 assert "audio" in [s["codec_type"] for s in probe(sample, "mp4")["streams"]], "見本に音の流れがある"
-assert req(f"/toy/{G}/print", b"hypothesis=H-A")[0] in (200, 303)
+assert req(f"/toy/{G}/print", f"hypothesis={GS}".encode())[0] in (200, 303)
 code, text, saved = upload(sample, "video/mp4")
 assert code == 201, (code, text)
 assert sorted(s["codec_type"] for s in probe(saved, "mp4")["streams"]) == ["video"], "開いた場で受けた動画に音の流れが残った"

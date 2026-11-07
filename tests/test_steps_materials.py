@@ -40,6 +40,9 @@ NOT_TOOL = re.compile(r"糸の穴|玉結び")
 FROZEN = {
     (GORAIGO, "goraigo-v10"): {"H-B": ["竹串"], "H-C": ["竹串"], "H-D": ["竹串"], "H-E": ["竹串"]},
     (TORA, "tora-v3"): {"H-A": ["カッター"], "H-C": ["カッター"]},
+    # 御来迎の次の組（goraigo-v14）でも、E は刷らないヒントの形のまま（たたき台は H-C）。手順の穴あけの文を外すと新しい字になるので、
+    # E を使う時まで今の字を残す（型紙エンジンの字と同じ）
+    (GORAIGO, "goraigo-v14"): {"H-E": ["竹串"]},
 }
 
 # 部品に穴があるのに、手順にあけ方の文が無い案。台の穴に竹串を通す形で、文を足すと新しい字になるので、今は足さない。
@@ -110,7 +113,7 @@ for sid, hid, _, tpl, p in all_cases:
     if any("穴あけ" in str(m) for m in tpl.materials(p)):
         assert any(q.holes for q in tpl.parts(p)), ("穴の無い案に穴あけの字がある", sid, hid)
     if says_missing_hole(tpl, p):
-        assert (sid, hid, tpl.SHEET_SET) == (GORAIGO, "H-E", "goraigo-v10"), ("穴の無い案の手順に穴の字がある", sid, hid)
+        assert (sid, hid) == (GORAIGO, "H-E") and tpl.SHEET_SET in ("goraigo-v10", "goraigo-v14"), ("穴の無い案の手順に穴の字がある", sid, hid)
 # 反対の向き: 部品に穴がある案は、あけ方の文を消さない
 named = {(sid, hid) for sid, hid, _, tpl, p in all_cases if lacks_poke_words(tpl, p)}
 assert named == NO_POKE_WORDS, ("穴があるのにあけ方の文が無い、または例外が古い", named ^ NO_POKE_WORDS)
@@ -168,23 +171,33 @@ finally:
     kite.materials = keep
 assert {sid for sid, _, got, _ in named if got == ["竹串"]} >= KITES, named
 
-# 組を上げると例外が外れ、次の組で直す案を名指しする
+# 組を上げると例外が外れ、次の組で直す案を名指しする。B〜D は次の組から竹串の行が付く（雛形の materials）ので、残るのは穴の無い E だけ
+# （例外の表に無い組の名に置く。前の組 goraigo-v10 に戻すと、B〜D の例外も効いて何も出ない事も見る）
 now = fan.SHEET_SET
-fan.SHEET_SET = "goraigo-v11"
+fan.SHEET_SET = "goraigo-v99"
 try:
     named = check()
 finally:
     fan.SHEET_SET = now
-assert named == [(GORAIGO, h, ["竹串"], []) for h in ("H-B", "H-C", "H-D", "H-E")], named
+assert named == [(GORAIGO, "H-E", ["竹串"], [])], named
+fan.SHEET_SET = fan.FROZEN_SET
+try:
+    assert check() == [], check()
+finally:
+    fan.SHEET_SET = now
 
-# 例外に書いた抜けを直すと、例外が古いと言って落ちる
+# 例外に書いた抜けを直すと、例外が古いと言って落ちる。今の組（goraigo-v14）の例外は E だけ、前の組（goraigo-v10）は B〜E
 keep = fan.materials
 fan.materials = lambda p: [*keep(p), "竹串（穴あけ）"]
 try:
     named = check()
+    fan.SHEET_SET = fan.FROZEN_SET
+    named_old = check()
 finally:
     fan.materials = keep
-assert named == [(GORAIGO, h, [], ["竹串"]) for h in ("H-B", "H-C", "H-D", "H-E")], named
+    fan.SHEET_SET = now
+assert named == [(GORAIGO, "H-E", [], ["竹串"])], named
+assert named_old == [(GORAIGO, h, [], ["竹串"]) for h in ("H-B", "H-C", "H-D", "H-E")], named_old
 
 # 5. 独楽 B は、本人が採った字（2026-11-06）を一字も変えずに出す。芯が竹ひごの長さなので手順も竹ひごと書き、
 # 芯の穴をあけるつまようじを用意する物に足す。字を雛形の決まりから組むので、出来上がった字そのものを見る。
