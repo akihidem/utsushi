@@ -651,6 +651,7 @@
    "src/web/looks.py",
    "src/web/toy.py",
    "tests/test_one_sheet_place.py",
+   "tests/test_page_order.py",
    "src/web/techo_site.py",
    "tests/test_ux_stage0.py",
    "tests/test_one_make_door.py",
