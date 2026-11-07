@@ -1,12 +1,14 @@
-"""審査用の頁（/kaizen）のワークショップの節（本人の言葉 11-07 昼）の試験。回の一覧と写真は試験の中で作る（本物の写真は使わない）。
+"""審査用の頁（/kaizen）のワークショップの節（本人の言葉 11-07 昼）の試験。
 
 見る事:
 1. 回の一覧が無い間は節を出さない（回数を作り話にしない）
-2. 一覧があれば、題の下に「ワークショップ N 回」（N は一覧の数）と、回ごとの札を日付の順に。札に刷った型紙の版（「型紙の版 vN」の言い方）・直った所・下の一周への道
-3. 出す写真は、人が確かめた印があり、種類が「物だけ」の物だけ（前からの本人の決め「人や声が入る物は、字だけにする」）。確かめていない物・人が入る物・名の危ない物・無い物・置き場の外を指す印（symlink）は出さない。回の番号が整数でない行は外す
-4. 写真の道は、出してよい物だけ 200 の JPEG で、撮影の情報が無い。ほかは 404（置き場の外を指す名も）
-5. 頭の敷き詰めは 12 枚まで。幅 390 で 3 列、間 16px（えらぶ の敷き詰めと同じ間）
+2. 一覧があれば、題の下に「ワークショップ N 回」（N は一覧の数）と、回ごとの札を回の番号の順に。札の名は日付。刷った型紙の版（「型紙の版 vN」の言い方）・直った所・下の一周への道
+3. 写真は試行の記録の写しの置き場（docs/process/trials/photos/<箱>/）から。確かめ表（review.md）の本人の判断が「公開してよい」の写真だけ。
+   欄が空・外す・表に無い・無いファイル・動画・名の危ない物・箱の外を指す印（symlink）・置き場の外を指す箱は出さない
+4. 写真の道は、出してよい物だけ 200 の JPEG で、撮影の情報が無い。ほかは 404
+5. 頭の敷き詰めは 12 枚までで、回をまたいで順に取る（写真の多い回だけで埋まらない）。札は 9 枚を開き、残りは畳む。幅 390 で 3 列、間 16px
 6. 合言葉なしの場でも同じ
+7. 本物の一覧と写真: 4 回。11 月 4 日の写真 9 枚・11 月 6 日の写真 34 枚が、確かめ表のとおりに出る（本人の答え 11-07「全部使っていい」）
 """
 import io
 import json
@@ -25,9 +27,7 @@ from PIL import Image  # noqa: E402
 from web import kaizen_judge as k, kaizen_ws as ws  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
-base = pathlib.Path(os.environ["OMOCHAE_DATA"]) / "kaizen-ws"
-lst = pathlib.Path(tempfile.mkdtemp()) / "workshops.json"
-ws.LIST = lst
+REAL_LIST, REAL_PHOTOS = ws.LIST, ws.PHOTOS
 
 
 def get(srv, path):
@@ -39,38 +39,51 @@ def get(srv, path):
 
 
 # ---- 1 一覧が無い間は出さない
+ws.LIST = pathlib.Path(tempfile.mkdtemp()) / "workshops.json"
 assert ws.section(str) == "" and 'id="ws"' not in k.page(), "一覧が無ければ節を出さない"
 
-# 一覧と写真（試験の中で作る）
-lst.write_text(json.dumps({"workshops": [
-    {"n": 2, "date": "2026-11-06", "name": "2 回目", "printed": [["御来迎", "goraigo-v10"], ["虎", "tora-v3"]], "line": "感想から次の版の案", "loop": "engine"},
-    {"n": 1, "date": "2026-11-04", "name": "1 回目", "printed": [["御来迎", "goraigo-v7"]], "line": "溝をはさみで切る形に", "loop": "site"},
-    {"n": 3, "date": "2026-11-07", "name": "3 回目"},
-    {"n": 4, "date": "2026-11-07", "name": "4 回目"},
-    {"date": "2026-11-08", "name": "番号の無い行"}, {"n": "5", "name": "番号が字の行"}, {"n": True, "name": "番号が真偽の行"}, "行でない物"]}, ensure_ascii=False), encoding="utf-8")
-assert [w["n"] for w in ws.workshops()] == [1, 2, 3, 4], "回の番号が整数でない行は外す（頁ごと止めない）"
-rows = []
-for n in (1, 2, 3, 4):
-    (base / str(n)).mkdir(parents=True, exist_ok=True)
-for i in range(16):  # 物だけ・確かめた写真を 16 枚（敷き詰めの上限 12 を越える数）
-    n = 1 + i % 4
+# 試験の置き場（試行の写真の置き場の形）
+top = pathlib.Path(tempfile.mkdtemp())
+ws.PHOTOS = top / "photos"
+for box in ("a", "b"):
+    (ws.PHOTOS / box).mkdir(parents=True)
+rows = {"a": [], "b": []}
+for i in range(20):  # a に 14 枚・b に 6 枚（a だけで敷き詰めが埋まらない事を見る）
+    box = "a" if i < 14 else "b"
     ex = Image.Exif(); ex[0x010F] = "made-up-camera"  # 撮影の情報（作り直しで落ちる事を見る）
-    Image.new("RGB", (1600, 1200), (200, 120 + i, 40)).save(base / str(n) / f"o{i}.jpg", exif=ex)
-    rows.append({"ws": n, "name": f"o{i}.jpg", "shows": "object", "checked_by": "確かめた人", "at": "2026-11-07T12:00+09:00"})
-for name, row in (("p.jpg", {"shows": "people", "checked_by": "確かめた人"}), ("u.jpg", {"shows": "object"}), ("gone.jpg", {"shows": "object", "checked_by": "x"})):
-    if name != "gone.jpg":
-        Image.new("RGB", (100, 100)).save(base / "1" / name)
-    rows.append(dict(row, ws=1, name=name))
-(base / "secret.jpg").write_bytes((base / "1" / "o0.jpg").read_bytes())
-rows.append({"ws": 1, "name": "../secret.jpg", "shows": "object", "checked_by": "x"})
-# 箱の中の印（symlink）が置き場の外を指す時も出さない（別の目の気づき 11-07）
-(base / "1" / "link.jpg").symlink_to(base / "secret.jpg")
-rows.append({"ws": 1, "name": "link.jpg", "shows": "object", "checked_by": "x"})
-(base / "photos.json").write_text(json.dumps({"photos": rows}, ensure_ascii=False), encoding="utf-8")
+    Image.new("RGB", (1600, 1200), (200, 120 + i, 40)).save(ws.PHOTOS / box / f"p{i:02d}.jpg", exif=ex)
+    rows[box].append(f"| p{i:02d}.jpg | 物 | 無し | 無し | 公開してよい |")
+for name, judge in (("blank.jpg", ""), ("drop.jpg", "外す"), ("later.jpg", "まだ")):
+    Image.new("RGB", (100, 100)).save(ws.PHOTOS / "a" / name)
+    rows["a"].append(f"| {name} | 物 | 無し | 無し | {judge} |")
+Image.new("RGB", (100, 100)).save(ws.PHOTOS / "a" / "unlisted.jpg")
+rows["a"].append("| gone.jpg | 物 | 無し | 無し | 公開してよい |")
+(ws.PHOTOS / "a" / "clip.mp4").write_bytes(b"\0" * 10)
+rows["a"].append("| clip.mp4 | 動画 | 無し | 無し | 公開してよい |")
+(top / "secret.jpg").write_bytes((ws.PHOTOS / "a" / "p00.jpg").read_bytes())
+(ws.PHOTOS / "a" / "link.jpg").symlink_to(top / "secret.jpg")
+rows["a"].append("| link.jpg | 物 | 無し | 無し | 公開してよい |")
+rows["a"].append("| ../secret.jpg | 物 | 無し | 無し | 公開してよい |")
+for box in ("a", "b"):
+    (ws.PHOTOS / box / "review.md").write_text("| ファイル | 写っている物 | 顔 | 気になる所 | 本人の判断 |\n|---|---|---|---|---|\n" + "\n".join(rows[box]) + "\n", encoding="utf-8")
+(top / "outside").mkdir()
+# 箱そのものが置き場の外を指す印（symlink）の時も出さない（外の箱に確かめ表と写真があっても）
+Image.new("RGB", (100, 100)).save(top / "outside" / "p00.jpg")
+(top / "outside" / "review.md").write_text("| p00.jpg | 物 | 無し | 無し | 公開してよい |\n", encoding="utf-8")
+(ws.PHOTOS / "c").symlink_to(top / "outside")
+ws.LIST.write_text(json.dumps({"workshops": [
+    {"n": 2, "date": "11 月 6 日", "did": "いろいろ作った", "printed": [["御来迎", "goraigo-v10"], ["虎", "tora-v3"]], "line": "感想から次の版の案", "loop": "engine", "photos": "b"},
+    {"n": 1, "date": "11 月 4 日", "did": "御来迎を作った", "printed": [["御来迎", "goraigo-v7"]], "line": "溝をはさみで切る形に", "loop": "site", "photos": "a"},
+    {"n": 3, "date": "11 月 10 日", "did": "動画で感想", "photos": "../outside"},
+    {"n": 4, "date": "11 月 11 日", "photos": "nothing"},
+    {"n": 5, "date": "11 月 12 日", "photos": "c"},
+    {"date": "番号の無い行"}, {"n": "5", "date": "番号が字の行"}, {"n": True, "date": "番号が真偽の行"}, "行でない物"]}, ensure_ascii=False), encoding="utf-8")
 
 # ---- 3 出す写真
-assert ws.photos(1) == ["o0.jpg", "o4.jpg", "o8.jpg", "o12.jpg"], ws.photos(1)
-assert "p.jpg" not in ws.photos(1), "人が入る写真は出さない（前からの本人の決め）"
+assert [w["n"] for w in ws.workshops()] == [1, 2, 3, 4, 5], "回の番号の順。番号が整数でない行は外す"
+assert ws.photos(1) == [f"p{i:02d}.jpg" for i in range(14)], ws.photos(1)
+assert ws.photos(2) == [f"p{i:02d}.jpg" for i in range(14, 20)]
+assert ws.photos(3) == [] and ws.photos(4) == [] and ws.photos(5) == [] and ws.photos(9) == [], "置き場の外を指す箱（名・印）・無い箱・一覧に無い回は出さない"
 
 for opened in (False, True):
     srv = serve(0, public_open=opened)
@@ -80,34 +93,46 @@ for opened in (False, True):
     assert code == 200
     # ---- 2 節と札
     assert page.index('id="ws"') < page.index('id="site"'), "題の下、一周の前"
-    assert "ワークショップ 4 回" in page
+    assert "ワークショップ 5 回" in page and "回目" not in page[page.index('id="ws"'):page.index('id="site"')], "札の名は日付"
     order = [page.index(f'id="ws-{n}"') for n in (1, 2, 3, 4)]
-    assert order == sorted(order), "日付の順"
+    assert order == sorted(order), "回の番号の順（11 月 10 日が 11 月 4 日より前に来ない）"
     hist = json.loads(k.HISTORY.read_text(encoding="utf-8"))
     for toy, s in (("御来迎", "goraigo-v7"), ("御来迎", "goraigo-v10"), ("虎", "tora-v3")):
         assert f"{toy} {k._sheet(hist, s)}" in page, (toy, s)
-    assert 'href="#site"' in page and 'href="#engine"' in page and "溝をはさみで切る形に" in page
-    # ---- 5 敷き詰め
+    assert 'href="#site"' in page and 'href="#engine"' in page and "溝をはさみで切る形に" in page and "御来迎を作った" in page
+    assert "番号の無い行" not in page and "番号が字の行" not in page
+    # ---- 5 敷き詰めと畳み
     mosaic = page[page.index('class="ws-mosaic"'):]
     mosaic = mosaic[:mosaic.index("</div>")]
     assert mosaic.count("<img") == ws.MOSAIC == 12
+    assert mosaic.count("/kaizen/photo/2/") == 6, "写真の少ない回も頭に出る（回をまたいで順に取る）"
+    card1 = page[page.index('id="ws-1"'):page.index('id="ws-2"')]
+    assert card1.index("<details>") > card1.index('class="ws-photos"') and card1.count("<img") == 14 and ws.MORE.format(n=14 - ws.SHOWN) in card1, "9 枚を開き、残りは畳む"
     assert ".ws-mosaic{display:grid;grid-template-columns:repeat(3,1fr);gap:16px" in page
-    assert "番号の無い行" not in page and "番号が字の行" not in page
-    for bad in ("p.jpg", "u.jpg", "gone.jpg", "secret.jpg", "link.jpg"):
+    for bad in ("blank.jpg", "drop.jpg", "later.jpg", "unlisted.jpg", "gone.jpg", "clip.mp4", "link.jpg", "secret.jpg"):
         assert bad not in page, bad
     # ---- 4 写真の道
-    code, ctype, data = get(srv, "/kaizen/photo/1/o0.jpg")
+    code, ctype, data = get(srv, "/kaizen/photo/1/p00.jpg")
     assert code == 200 and ctype == "image/jpeg"
     im = Image.open(io.BytesIO(data))
-    assert im.format == "JPEG" and max(im.size) <= ws.SMALL_W * 2 and im.size[0] <= ws.SMALL_W and not dict(im.getexif()), "小さい写しで、撮影の情報が無い"
-    for path in ("/kaizen/photo/1/p.jpg", "/kaizen/photo/1/u.jpg", "/kaizen/photo/1/gone.jpg", "/kaizen/photo/1/..%2Fsecret.jpg",
-                 "/kaizen/photo/1/%2E%2E%2Fsecret.jpg", "/kaizen/photo/1/link.jpg", "/kaizen/photo/2/o0.jpg", "/kaizen/photo/9/o0.jpg", "/kaizen/photo/1/nothing.jpg"):
+    assert im.format == "JPEG" and im.size[0] <= ws.SMALL_W and not dict(im.getexif()), "小さい写しで、撮影の情報が無い"
+    for path in ("/kaizen/photo/1/blank.jpg", "/kaizen/photo/1/drop.jpg", "/kaizen/photo/1/unlisted.jpg", "/kaizen/photo/1/gone.jpg",
+                 "/kaizen/photo/1/clip.mp4", "/kaizen/photo/1/link.jpg", "/kaizen/photo/1/..%2Fsecret.jpg", "/kaizen/photo/1/%2E%2E%2Fsecret.jpg",
+                 "/kaizen/photo/2/p00.jpg", "/kaizen/photo/3/p00.jpg", "/kaizen/photo/5/p00.jpg", "/kaizen/photo/9/p00.jpg", "/kaizen/photo/1/review.md"):
         assert get(srv, path)[0] == 404, path
     srv.shutdown()
 
-# ---- 人が入る写真を出す決めになった時（SHOWS_OK に people を足す）だけ出る
-ws.SHOWS_OK = ("object", "people")
-assert "p.jpg" in ws.photos(1) and "u.jpg" not in ws.photos(1), "確かめていない物は、どの決めでも出さない"
-ws.SHOWS_OK = ("object",)
+# ---- 7 本物の一覧と写真
+ws.LIST, ws.PHOTOS = REAL_LIST, REAL_PHOTOS
+real = ws.workshops()
+assert len(real) == 4 and "ワークショップ 4 回" in k.page(), "本人の答え（11-07）の 4 回"
+counts = {w["date"]: len(ws.photos(w["n"])) for w in real}
+assert counts == {"11 月 4 日": 9, "11 月 5 日": 0, "11 月 6 日": 34, "11 月 7 日": 0}, counts
+for w in real:
+    box = ws._box(w["n"])
+    if box:
+        judged = ws._judged(box)
+        files = {p.name for p in box.iterdir() if p.suffix.lower() in ws.IMAGE}
+        assert judged >= files == set(ws.photos(w["n"])), ("確かめ表の全部の写真が公開してよいで、全部出る", w["date"])
 
-print("ok 審査用の頁のワークショップの節: 一覧があれば回数と回ごとの札、写真は人が確かめた物だけの物だけ、写真の道はそれ以外 404")
+print("ok 審査用の頁のワークショップの節: 4 回の札（日付の名）・写真は試行の記録の写しのうち確かめ表で公開してよい物だけ・写真の道はそれ以外 404")
