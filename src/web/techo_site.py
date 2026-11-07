@@ -206,9 +206,10 @@ def ai_offer(rid, up_key=None):
 
 
 # 色は皮の変数から取る（skin.py の SKINS。本人の指示 11-05: A′ 白の展示と C 黒のジンを一気通貫に）。
-# 手帖だけ書体をゴシックにし字を大きくするのは、机に置いて離れて読むため（本人の指定 11-04「文字は最小」）。骨（頭の帯・余白）は skin.shell が持つ。
+# 手帖の字を大きくするのは、机に置いて離れて読むため（本人の指定 11-04「文字は最小」）。書体は他の頁と同じ明朝にした（本人のサイトの見直し 11-07 22:16
+# 「のこす、手帖、のフォントが違う。」。前は手帖だけゴシック）。骨（頭の帯・余白）は skin.shell が持つ。
 STYLE = """
-body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
+body.techo{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
 .techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
@@ -350,7 +351,8 @@ def own_item(sid, data, r):
 # ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案から）。
 # 1 行は決めた字から「日の順に並べます。」だけを外した（本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない」で、札を玩具ごとにしたため）
 SAKUREI_TITLE = "ワークショップで作られた物"
-SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。上下はありません。"
+# 「上下はありません」は外した（本人のサイトの見直し 11-07 22:16「もちよる、の上下はありません、は要らない。」。もちよる の頁＝作った物の頁の字）
+SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。"
 # 報告の顔の写真（web.sakurei.faces）の札。本人の言葉のまま（窓口を通して 11-07「札は本人の言葉『4 日間のワークショップで作ったおもちゃたち』のままで」）
 SAKUREI_FACES = "4 日間のワークショップで作ったおもちゃたち"
 # 参加者の工夫の事例（web.sakurei.cases("kufu")）。題も文も本人の言葉から取り、言い換えない（統括 11-07「字は本人の説明のまま（本人の言葉として引用）」）。
@@ -476,7 +478,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
-            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
+            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
             f'{note}{own}{cards}</section></div>')
 
 
@@ -550,5 +552,6 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
             # 「のこす」の後はこの頁の #mine に着くので、返事の文のすぐ下に 1 つだけ置く。行き先はギャラリーの「他の人が作った物」
             f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}'
-            '<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>'
+            # 釦の字は のこす（本人のサイトの見直し 11-07 22:16「もちよる、でなくのこす、というボタンにする。」）。行き先は前のまま、残した物が並ぶ所
+            '<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>'
             f'{mine}</div></section>') + hanasu.assets()

@@ -123,8 +123,8 @@ rid, fs = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, 
 assert not fs, fs
 kiroku = techo_site.records_page(G, msg="上げました")
 mine = kiroku[kiroku.index('<div id="mine">'):]
-assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
-assert roads(kiroku) == ["もちよる"], roads(kiroku)
+assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
+assert roads(kiroku) == ["のこす"], roads(kiroku)  # 釦の字は のこす（本人のサイトの見直し 11-07 22:16）。行き先は前のまま
 
 # ---- 7 本物の記録がある時は見本を畳む
 withrec = toy.toy_page(G)
