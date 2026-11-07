@@ -24,9 +24,10 @@ assert sum(s for _, s in script.SLOTS["talk_physics"]["hands"]) == script.load_s
 assert set(script.SLOTS) <= set(script.SCENES)
 # 声は語りの場面だけ。どの語りの場面にも声がある（11-07 に一般的な言い方にし、文の数と声のファイルの数は合わなくなった:
 # A1 は 2 文。声の字は grove の state/demo-voice-aivis-general の台本と同じ）
+# 場面 14 をエンジンの仕組みの場面に替えた（窓口の決め 120643）ので、その場面（engine）にも声がある（A6。字幕の文を読む）
 for name, kinds in script.SLOTS.items():
-    assert name.startswith("talk_") or name == "scene2", name
-    assert kinds.get("voice") and name in words.TALKS, name
+    assert name.startswith("talk_") or name in ("scene2", "engine"), name
+    assert kinds.get("voice") and (name in words.TALKS or name == "engine"), name
     # 手の映像の秒の和は場面の秒に入る（手は場面の頭から敷く）
     assert sum(s for _, s in kinds.get("hands", ())) <= script.load_scene(name).DURATION + 1e-9, name
 # 置き場は git の外
@@ -135,7 +136,9 @@ if shutil.which("ffmpeg"):
         target = {}
         # 声ごとの字（11-07 の一般的な言い方。A1 は札の頭の 3 かたまり、A2 は最後のかたまり。声の台本は grove の demo-voice-aivis-general）
         T = words.TALKS
-        said = {"A1": T["talk_toys"][:3], "A2": T["talk_toys"][3:], "A3": T["talk_lost"], "A4": T["scene2"], "A5": T["talk_physics"], "A6": T["talk_claude"]}
+        # A6 は場面 14 がエンジンの仕組みに替わった（窓口の決め 120643）ので、その場面の字幕の文
+        from demo import engine
+        said = {"A1": T["talk_toys"][:3], "A2": T["talk_toys"][3:], "A3": T["talk_lost"], "A4": T["scene2"], "A5": T["talk_physics"], "A6": engine.CHUNKS}
         for v, chunks in said.items():
             target[v] = round(words.reading_chars(words.flat(chunks)) / words.RATE, 1)
             padded(slot / f"{v}.m4a", target[v])
@@ -144,7 +147,9 @@ if shutil.which("ffmpeg"):
         got, duck, problem = build.place_voices(script.SCENES, lengths, tmp, into=pathlib.Path(tmp) / "voice")
         assert problem is None, problem
         assert [pathlib.Path(f).stem.split("-")[0] for f, _, _ in got] == ["A1", "A2", "A3", "A4", "A5", "A6"]
-        assert all(sp <= 1.02 for _, _, sp in got), [sp for _, _, sp in got]  # 目安ちょうどなら、ほとんど速めない
+        # 目安ちょうどなら、ほとんど速めない。ですます調（11-07 昼）で talk_toys が字の秒ちょうど（余りの秒が無い）になり、作り物の声の前後の
+        # 余白の分だけ 1.025 倍ほど速める。上限は前の 1.02 から 1.03 にした（本物の声 A1・A2 は 11.47 秒で、速めずに入る）
+        assert all(sp <= 1.03 for _, _, sp in got), [sp for _, _, sp in got]
         # 速めた声は、その倍率の長さになっている（高さを変えない atempo）
         for f, _, sp in got:
             if sp > 1.0:

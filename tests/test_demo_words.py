@@ -19,8 +19,12 @@ assert words.MARKED == (), "本人の言葉の印を付ける札は無い"
 for name, chunks in {**words.CARDS, **words.TALKS}.items():
     assert all(s.strip() == s and s for lines in chunks for s in lines), name
     assert not any(w in words.flat(chunks) for w in ("僕", "ぼく", "私たち")), (name, "一人称で語らない")
-# 職人の 1 文は本人の言葉（11-07 の (2) の決着）の字のまま
-assert "職人も少なくなり、子供が簡単に手に入り遊べるおもちゃではなくなった。知らない大人がほとんどだ。" in words.flat(words.TALKS["talk_lost"])
+# 職人の 1 文は本人の言葉（11-07 の (2) の決着）の字を、本人の直し（11-07 昼）の (1)「ですます調にする」で文末だけ直した物
+assert "職人も少なくなり、子供が簡単に手に入り遊べるおもちゃではなくなりました。知らない大人がほとんどです。" in words.flat(words.TALKS["talk_lost"])
+# ですます調（11-07 昼の本人の直しの (1)）: 語りと字の札の文は「です」「ます」で終わる
+for name, chunks in {**words.TALKS, **words.CARDS}.items():
+    for sentence in words.sentences_of(chunks):
+        assert sentence.endswith(("です。", "ます。", "ません。", "ました。", "でした。")), (name, sentence)
 
 
 # 語りの文を 1 字でも変えると落ちる。文の途中で終わるのも落ちる
@@ -63,14 +67,15 @@ assert words.flat(words.BRIDGE) == BRIDGE1 and "bridge" not in words.CARDS and B
 assert words.flat(words.BRIDGE2) == "作ったものを持ちよると、Claude もそれを見て、次の型紙を少しずつよくしていきます。"
 assert words.NOW_LINE == "いま作っているところです"
 assert not {"bridge", "close", "core_loop"} & set(words.MARKED)
-# 境目の札の字は本人の決定（11-06、カード 125217）のまま。本人の言葉の記録の引用ではないので、言葉の札の印を付けない。3 秒に入る
-assert words.flat(words.BORDER) == "ここからは、裏のしくみ。" and words.ALL["border"] == words.BORDER
-assert "border" not in words.MARKED and words.seconds_of("border") == 3.0
+# 境目の札の字は本人の決定（11-06、カード 125217）の字をですます調にした物（11-07 昼）。言葉の札の印を付けない。字の秒は 3.4 秒
+assert words.flat(words.BORDER) == "ここからは、裏のしくみです。" and words.ALL["border"] == words.BORDER
+assert "border" not in words.MARKED and words.seconds_of("border") == 3.4
 assert words.MARKED == (), "一般的な言い方にした（11-07）ので、本人の言葉の印を付ける札は無い"
 
-# 終わりの字幕は初めと同じ字（本人の決定 11-05）。字幕 → 問いの順で終わる
-assert script.SCENES[-2:] == ["close", "ask"]
-assert flip.CLOSING == ("絵は動きを止めて残した。", "どう動いたかは、紙で作って確かめる。")
+# 終わりの字幕（close）は、本人の決定（11-07「引く候補 5 つ全部でよい（179.3 秒）」の 場面 18 −6.6）で外した。締めの字とクレジット（scene7）→ 問い。
+# 札（close）は台本へ戻せるよう残し、字は flip の 1 か所から読むまま
+assert script.SCENES[-2:] == ["scene7", "ask"] and "close" not in script.SCENES
+assert flip.CLOSING == ("江戸の人は動きを絵に残しました。", "動きは、紙で作って確かめます。")
 assert words.flat(words.ALL["close"]) == "".join(flip.CLOSING)
 
 # 1 コマは時刻だけで決まる。1 度に 1 かたまりだけ（字は前が消えてから次が現れる）

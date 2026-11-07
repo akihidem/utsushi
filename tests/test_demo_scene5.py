@@ -17,8 +17,9 @@ readme = scene5.TRIALS.read_text(encoding="utf-8")
 # 合図の表は時刻の順で、場面の長さの中
 spans = list(scene5.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= scene5.DURATION
-assert scene5.DURATION == 5.0 and scene5.Scene5.duration == scene5.DURATION
-assert scene5.CAPTION == ("紙で作って、動いた。",), "2 つ目の字幕は消した（本人の決定 11-06）"
+# 台本はワークショップの写真の場面（本人の決定 11-07「引く候補 5 つ全部でよい（179.3 秒）」で入れた。12 秒）。前の 3 枚の場面（5 秒）も残す
+assert scene5.WORKSHOP and scene5.DURATION == scene5.WORKSHOP_SECONDS == scene5.WorkshopScene.duration == 12.0 and scene5.Scene5.duration == 5.0
+assert scene5.CAPTION == ("紙で作って、動きました。",), "2 つ目の字幕は消した（本人の決定 11-06）。ですます調（11-07 昼）"
 assert all(0 <= t <= scene5.DURATION for t in scene5.SHEET_TIMES)
 
 # 既定の写真は確かめ表と一致する。表を自前でも読み、scene5 の読み方と食い違わない事も見る

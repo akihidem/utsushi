@@ -12,13 +12,14 @@ from PIL import Image, ImageDraw
 from demo import flip, guide, prepare, scene7, script, words
 
 # 出る場面
-# 持ちよる（core_gallery）は窓口の決定 11-07 で足した（他の人が作った物の列を照らす）
-assert set(guide.PLANS) == {"scene3", "core_make", "core_gallery", "border", "core_loop"}
+# 持ちよる（core_gallery）は窓口の決定 11-07 で足した（他の人が作った物の列を照らす）。持ちよるをワークショップの写真の場面（scene5）へまとめた
+# （本人の決定 11-07・179.3 秒）ので、その出方は scene5 へ移した
+assert set(guide.PLANS) == {"scene3", "core_make", "scene5", "border", "core_loop"}
 assert set(guide.PLANS) <= set(script.SCENES)
-for name in (*words.CARDS, "close", "ask", "opening", "talk_toys", "talk_lost", "talk_physics", "talk_claude", "scene2"):
+for name in (*words.CARDS, "close", "ask", "opening", "talk_toys", "talk_lost", "talk_physics", "talk_claude", "engine", "scene2"):
     assert name not in guide.PLANS, name
 # 秒は足さない
-assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) == 178.9
+assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) == 179.3  # 本人の決定（11-07・179.3 秒）
 for name, plan in guide.PLANS.items():
     (t0, _), (t1, _) = plan["walk"]
     assert 0 <= t0 < t1 <= script.load_scene(name).DURATION, name

@@ -23,14 +23,15 @@ from demo.flip import SERIF  # noqa: E402
 scene = engine.Engine()
 for t in (0.2, 3.0, 9.0, 15.0, engine.DURATION - 0.1):
     assert scene.frame(t).tobytes() == scene.frame(t).tobytes(), t
-assert engine.ROW_AT == tuple(sorted(engine.ROW_AT)) and engine.ROW_AT[1] == engine.CUES["c1"][0] and engine.ROW_AT[2] == engine.CUES["c2"][0]
+# 3 かたまりに縮めた（窓口の決め 120530・120643。合計 179.3 秒）ので、型紙の流れと 3D の流れは 1 つ目のかたまりの中、改善の輪は 2 つ目の頭
+assert engine.ROW_AT == tuple(sorted(engine.ROW_AT)) and engine.ROW_AT[1] < engine.CUES["c1"][0] and engine.ROW_AT[2] == engine.CUES["c1"][0]
 row = lambda k: (0, engine.ROW_Y[k] + engine.BOX_DY, words.W, engine.ROW_Y[k] + engine.BOX_DY + engine.BOX_H)  # noqa: E731
 early = scene.frame(engine.ROW_AT[1] - 0.05)
-assert len(set(early.crop(row(1)).getdata())) == 1, "3D の段は 2 つ目のかたまりまで出ない"
+assert len(set(early.crop(row(1)).getdata())) == 1, "3D の段は型紙の流れの後に出る"
 late = scene.frame(engine.DURATION - 0.1)
 assert all(len(set(late.crop(row(k)).getdata())) > 1 for k in range(3)), "最後には 3 段とも出ている"
 # 現れた後は動かさない（字のそばに動く物を置かない線）
-a, b = scene.frame(engine.CUES["c3"][0] + 1.0), scene.frame(engine.DURATION - 0.2)
+a, b = scene.frame(engine.CUES["c2"][0] + 1.0), scene.frame(engine.DURATION - 0.2)
 assert a.crop((0, 0, words.W, engine.EXAMPLE_Y + 60)).tobytes() == b.crop((0, 0, words.W, engine.EXAMPLE_Y + 60)).tobytes()
 
 # 2. 読む秒
@@ -39,7 +40,8 @@ for i, lines in enumerate(engine.CHUNKS):
     span = starts[i + 1] - starts[i]
     assert span >= words.MIN_CHUNK - 1e-9 and words.reading_chars("".join(lines)) / span <= words.RATE + 1e-6, lines
     assert "".join(lines)[-1] in "、。", lines
-assert engine.DURATION == 21.6, engine.DURATION  # 案の 12 秒には入らない（4 かたまりを読む秒）
+assert engine.DURATION == 16.5, engine.DURATION  # 3 かたまりを読む秒（前の 4 かたまりは 21.6 秒で、合計に入らなかった）
+assert "みんなが使えるサービスとして作りました" in words.flat(engine.CHUNKS) and "具体例" in words.flat(engine.CHUNKS), "窓口の決め 120530・120643 の位置づけ"
 
 # 3. 英語
 for s in engine.drawn():
@@ -54,13 +56,14 @@ for lines in engine.CHUNKS:
 # 4. 書かなかった事の線
 assert "御来迎" in engine.ROWS[1][0] and "首振り虎" in engine.ROWS[1][0], "3D で組んで確かめるのは 2 つの玩具だけ"
 assert any(label == "人が採る" for label, _ in engine.ROWS[2][1]), "直しの案を採るのは人"
+# 「みんなが使えるサービスとして作りました」は本人の言い方（11-07「これからというよりは、みんなが使えるサービスとして作った」・窓口の決め 120643）で、
+# 作った物を言う。まだ作っていない物（DNA の紙のモデル・公開の仕組み）は言わない線のまま
 assert not any(w in "".join(engine.drawn()) for w in ("DNA", "公開", "だれでも")), "まだ作っていない物を言わない"
 
-# 5. 台本は今のまま。入れ替えた時の秒は数えて出す
-assert script.ENGINE_SCENE is False and "engine" not in script.SCENES and len(script.SCENES) == 19
+# 5. 台本に入れた（窓口の決め 120643「場面 14 をエンジンの仕組みの場面に替え」）。前の並び（talk_claude）にも戻せる
+assert script.ENGINE_SCENE is True and "engine" in script.SCENES and "talk_claude" not in script.SCENES and len(script.SCENES) == 17
 now = round(sum(script.load_scene(n).DURATION for n in script.SCENES), 2)
-assert now == 178.9, now
-swapped = script.scenes(engine=True)
-assert swapped[script.SCENES.index("talk_claude")] == "engine" and "talk_claude" not in swapped
-total = round(sum(script.load_scene(n).DURATION for n in swapped), 2)
-print(f"ok エンジンの場面 {engine.DURATION} 秒。台本 {now} 秒、入れ替えると {total} 秒（179.5 秒の床まで {round(total - 179.5, 1)} 秒多い）")
+assert now == 179.3, now  # 本人の決定（11-07）「引く候補 5 つ全部でよい（179.3 秒）」
+back = script.scenes(engine=False)
+assert back[script.SCENES.index("engine")] == "talk_claude" and "engine" not in back
+print(f"ok エンジンの場面 {engine.DURATION} 秒。台本 {now} 秒")

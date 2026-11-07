@@ -11,12 +11,14 @@ build.SLOT_DIR = _script.SLOT_DIR = _EMPTY_SLOTS
 
 # 台本の場面がこの順で、重ならない。最後は問いの札（本人の指示 11-05）
 # 前半は表、境目の札の後が裏（本人の決定 11-06、カード 125217）。語りの後ろの 2 文は文の順のまま後半の頭へ
-assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep", "core_gallery",
-                        "border", "talk_physics", "talk_claude", "core_loop", "word_ai", "scene7", "close", "ask"]
+# 本人の決定（11-07「引く候補 5 つ全部でよい（179.3 秒）」）で core_gallery（ワークショップの写真の場面へまとめた）と close を外し、
+# 窓口の決め 120643 で talk_claude をエンジンの仕組みの場面（engine）に替えた
+assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep",
+                        "border", "talk_physics", "engine", "core_loop", "word_ai", "scene7", "ask"]
 # 外した場面は本人が戻すかを決める。コードは残すので、読み込める
 from demo import script  # noqa: E402
-assert set(script.LEFT_OUT) == {"core_map", "core_voice", "scene6", "bridge"} and not set(script.LEFT_OUT) & set(build.SCENES)
-assert build.SCENES.index("border") == len(script.FRONT) and script.FRONT[-1] == "core_gallery"
+assert set(script.LEFT_OUT) == {"core_map", "core_voice", "scene6", "bridge", "core_gallery", "close"} and not set(script.LEFT_OUT) & set(build.SCENES)
+assert build.SCENES.index("border") == len(script.FRONT) and script.FRONT[-1] == "core_keep"  # 持ちよる（core_gallery）はワークショップの写真の場面へまとめた（11-07）
 for name in script.LEFT_OUT:
     assert callable(script.load_scene(name).main), name
 # 全体は 179.5 秒以内
@@ -100,6 +102,8 @@ assert "docs/process/trials" in build.DIRTY_PATHS and "src" in build.DIRTY_PATHS
 real_has = build.opening.has_video
 no_video = lambda path=None: False  # noqa: E731
 build.opening.has_video = no_video
+# 冒頭を問いだけにした（本人の決定 11-07・opening.QUESTION_ONLY）が、動画の形（印の扱い）の見張りは残す。問いだけの形は下で別に見る
+build.opening.QUESTION_ONLY = False
 with tempfile.TemporaryDirectory() as tmp:
     err = io.StringIO()
     with contextlib.redirect_stderr(err):
@@ -156,6 +160,9 @@ with tempfile.TemporaryDirectory() as tmp:
     build.opening.has_video = lambda path=None: True
     assert build.shows_placeholder(["opening"], {}, {}) is False and build.shows_placeholder(["flip"], {}, {"placeholder": True}) is True
     assert build.shows_placeholder(["flip"], {"opening": "撮った.mp4"}, {"placeholder": True}) is False
+    build.opening.QUESTION_ONLY = True  # 問いだけの冒頭には印が無いので、前の記録が「印あり」でも外へ出せない理由にしない
+    assert build.shows_placeholder(["opening"], {}, {}) is False and build.shows_placeholder(["flip"], {}, {"placeholder": True}) is False
+    build.opening.QUESTION_ONLY = False
     assert not any("印" in w for w in build.release_blockers(False)) and any("印" in w for w in build.release_blockers(True))
     assert set(script.BEFORE_RELEASE) <= set(build.release_blockers(False))
     build.opening.has_video = no_video  # この後の作り直しも、冒頭の動画が無い形で見る（下の注）
@@ -267,7 +274,7 @@ with tempfile.TemporaryDirectory() as tmp:
     build.importlib.import_module = lambda name: types.SimpleNamespace(main=lambda argv: seen_scene.append(pathlib.Path(argv[argv.index("--out") + 1]).stem) or pathlib.Path(argv[argv.index("--out") + 1]).write_bytes(b"x") and 0)
     build.assemble.assemble = lambda made, out, audio=None, **k: 0
     assert build.main(["--out", tmp, "--skip-tests", "--clip", "core_loop=" + str(clip)]) == 0
-    assert "core_loop" not in seen_scene and "core_gallery" in seen_scene, seen_scene
+    assert "core_loop" not in seen_scene and "core_keep" in seen_scene, seen_scene
     run_dir = sorted(p for p in pathlib.Path(tmp).iterdir() if p.is_dir())[-1]
     assert (run_dir / "core_loop.mp4").read_bytes() == b"clip-bytes"
     rec = json.loads((run_dir / "build.json").read_text(encoding="utf-8"))

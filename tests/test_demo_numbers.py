@@ -18,9 +18,9 @@ assert words.STATS["talk_physics"][1] == words.STATS["core_loop"][1] == words.TI
 for line, src in words.STATS.values():
     assert not any(w in line for w in ("効果", "上がる", "担い手", "減", "復活", "取り戻")), line
 
-# 裏の部の場面だけに 1 つずつ。秒は足さない（全体は 178.9 秒のまま）
+# 裏の部の場面だけに 1 つずつ。秒は足さない（全体は本人の決定 11-07 の 179.3 秒）
 assert set(words.STATS) <= set(script.BACK) and len(words.STATS) == 3
-assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) == 178.9
+assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) == 179.3
 
 # 読める秒と幅
 f = ImageFont.truetype(flip.SERIF, words.STAT_SIZE)

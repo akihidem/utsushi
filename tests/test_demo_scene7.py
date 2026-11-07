@@ -6,7 +6,7 @@ import json
 
 from PIL import Image, ImageDraw, ImageFont
 
-from demo import flip, scene7
+from demo import flip, scene7, words
 
 rec = json.loads(flip.FIGURES.read_text(encoding="utf-8"))["pages"][flip.PAGE]
 
@@ -24,7 +24,9 @@ assert not any("曲" in r or "曲" in n or "仮の拍" in n for r, n in scene7.C
 import inspect  # noqa: E402
 assert "music" not in inspect.signature(scene7.Scene7).parameters and "--music" not in inspect.getsource(scene7.main), "曲の字を受ける口を持たない"
 assert scene7.REPO_NAME == "utsushi" and "http" not in scene7.REPO_NAME  # URL は作らない
-assert scene7.CAPTION == "紙で動いても、昔の作り方の証明にはならない"
+# 締めは本人の直し（11-07 昼）の (8) の字（案）。前の断りの 1 行は、クレジットの小さな行へ移した（落とさない）
+assert scene7.CAPTION == "作った人の工夫から、Claude が次の型紙を直します。"
+assert dict(scene7.CREDITS)["断り"] == scene7.DISCLAIMER and "証明にはなりません" in scene7.DISCLAIMER
 
 # 偽の頁: 枠ごとに黒い四角（人物の代わり）
 page = Image.new("L", (1400, 1200), 255)
@@ -41,9 +43,11 @@ for t in (0.5, 2.0, 3.8, 5.0, 6.0, 7.0, 8.0, 8.9):
 # 並ぶ段の途中と並び終えた後で絵が違う（1 人ずつ現れる）
 assert scene.frame(0.5).tobytes() != scene.frame(3.8).tobytes()
 # 字幕の通り道（真ん中の段）に人物を置かない（字の後ろに絵を置かない）
-assert len(set(scene.frame(0.55).crop((0, 440, flip.W, 600)).getdata())) == 1, "真ん中の段に絵がある"
+# （締めの字幕は 11-07 昼に 0.3 秒から出す形にした。字幕が出る前の 0.25 秒で見る）
+assert len(set(scene.frame(0.25).crop((0, 440, flip.W, 600)).getdata())) == 1, "真ん中の段に絵がある"
 # 字幕は読む間を置いてから消え、消えてからクレジットが現れる（字を重ねない。1 秒 5 字以下）
-assert scene7.CUES["caption_out"][0] - scene7.CUES["caption"][0] >= len(scene7.CAPTION) / 5 - 0.01
+# 字の数は demo.words と同じ数え方（半角の字は半分。「Claude」は仮名 6 字ほど読む手間がかからない）。締めの字に「Claude」が入った（11-07 昼）
+assert scene7.CUES["caption_out"][0] - scene7.CUES["caption"][0] >= words.reading_chars(scene7.CAPTION) / 5 - 0.01
 assert scene7.CUES["caption_out"][1] <= scene7.CUES["credits"][0]
 gap = (scene7.CUES["caption_out"][1] + scene7.CUES["credits"][0]) / 2
 assert len(scene.frame(gap).getcolors(flip.W * flip.H)) == 1, "字幕とクレジットの間は紙の地だけ"

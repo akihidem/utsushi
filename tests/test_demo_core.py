@@ -13,10 +13,12 @@ from demo import core, flip, script, words
 # 持ち寄りの後に境目の札と語りの後ろの 2 文が入り、その次につなぎ 2 の輪が来る
 order = script.SCENES
 # 「紙で作って、動いた。」は作る頁のすぐ後（窓口の決定 11-07）: 作る → 動いた → 残す → 持ちよる
+# 本人の決定（11-07「引く候補 5 つ全部でよい（179.3 秒）」）で、持ちよる（core_gallery）はワークショップの写真の場面（scene5）へまとめた。
+# 窓口の決め 120643 で、語りの後ろの 1 文（talk_claude）はエンジンの仕組みの場面（engine）に替えた
 assert order.index("scene3") < order.index("core_make") < order.index("scene5") < order.index("core_keep") \
-    < order.index("core_gallery") < order.index("core_loop") < order.index("word_ai") < order.index("ask")
-assert order.index("border") == order.index("core_gallery") + 1
-assert order.index("border") < order.index("talk_physics") < order.index("talk_claude") and order.index("core_loop") == order.index("talk_claude") + 1
+    < order.index("core_loop") < order.index("word_ai") < order.index("ask")
+assert "core_gallery" not in order and order.index("border") == order.index("core_keep") + 1
+assert order.index("border") < order.index("talk_physics") < order.index("engine") and order.index("core_loop") == order.index("engine") + 1
 
 # まだ無い物の場面は図で描く。画面として撮らない
 assert core.SOON == "これから作る"
@@ -43,12 +45,14 @@ for s in (core.MAP_TITLE, core.MAP_SUB, core.GALLERY_LINE):
 # AI の場面の上限を前の 22.5 秒から 27 秒にした。作る 3 場面より長くしない線は前のまま
 making = sum(script.load_scene(n).DURATION for n in ("scene3", "core_make", "core_keep"))
 ai = sum(script.load_scene(n).DURATION for n in ("word_ai", "core_loop"))
-assert making >= 30 and ai < 27.0 and making > ai, (making, ai)
+# 11-07 昼にですます調にした（本人の直しの (1)）ので、AI の場面の字の秒が延びた（26.8 → 28.1 秒）。上限を 28.5 秒にした。作る 3 場面より長くしない線は前のまま
+assert making >= 30 and ai < 28.5 and making > ai, (making, ai)
 assert sum(script.load_scene(n).DURATION for n in script.SCENES) <= 179.5
 # 本人の言葉の札は手で作る場面の直前へ戻した。同じ秒だけ他を削ったので、全体は戻す前の 178.9 秒を越えない（本人の決定 11-06）
 # 表と裏に分けた後も、word_touch は手で作る場面の直前（前は語りの後。今は「絵は止めて残した」の後）。境目の 3 秒は始まりから取った
 assert order.index("flip") + 1 == order.index("word_touch") and order.index("word_touch") + 1 == order.index("scene3")
-assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) <= 178.9
+# 11-07 昼の組み直しの合計は本人の決定「引く候補 5 つ全部でよい（179.3 秒）」の 179.3 秒（前は 178.9 秒を越えない線だった）
+assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 1) <= 179.3
 
 # 例の記録は字の頭が「（例）」。人の報告に見せかけない
 for key in ("note", "impression", "fix_part", "fix_change", "fix_outcome"):
@@ -104,7 +108,7 @@ assert len({(s["from"], s["to"]) for s in stepping.segs[:3]}) == 1 and all(s["fr
 at = core.CUES_ALL["core_make"]["step2"]
 band = (0, 0, flip.W, core.BOX[1] - 10)
 assert stepping.frame(at[0] + 0.05).crop(band).tobytes() == stepping.frame(at[0] - 0.5).crop(band).tobytes()
-assert stepping.segs[-1]["line"] == "止まったら、そのまま声か字で聞ける"
+assert stepping.segs[-1]["line"] == core.MAKE_LINES[1] == "止まったら、そのまま声か字で聞けます。"  # ですます調（11-07 昼）
 # 手帖は上げる欄から、上げた記録へ動く。同じ頁の中なので段の替わり目で絵が変わらない
 keeping = core.build_scene("core_keep", dict(core.CUES_ALL["core_keep"]), shots=fake)
 assert [s["shot"] for s in keeping.segs] == ["keep", "keep"] and keeping.segs[1]["to"][1] > keeping.segs[1]["from"][1]

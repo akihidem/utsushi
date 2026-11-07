@@ -31,8 +31,10 @@ assert [n for _, n in core_loop_ban.VERSIONS] == [10, 11, 12, 13, 14], "御来�
 assert core_loop_ban.LABEL.format(n=14) == "型紙の版 14" and core_loop_ban.ENGINE_LABEL.format(n=7) == "エンジンの版 7"
 
 # 2. 台本の順は今のまま。既定の差し替えは場面 15 の版の並び（窓口の決定 11-07、084919 の ①）。--swap core_loop=core_loop で前の輪の図に戻る
-assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep", "core_gallery",
-                        "border", "talk_physics", "talk_claude", "core_loop", "word_ai", "scene7", "close", "ask"]
+# 本人の決定（11-07「引く候補 5 つ全部でよい（179.3 秒）」）で core_gallery（ワークショップの写真の場面へまとめた）と close を外し、
+# 窓口の決め 120643 で talk_claude をエンジンの仕組みの場面（engine）に替えた
+assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep",
+                        "border", "talk_physics", "engine", "core_loop", "word_ai", "scene7", "ask"]
 assert "core_loop_ban" not in build.SCENES and build.parse_swaps([]) == {}
 assert build.DEFAULT_SWAPS == {"core_loop": "core_loop_ban"}
 for name in build.SCENES:

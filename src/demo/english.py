@@ -38,68 +38,35 @@ EN = {
     "（ここに職人のおもちゃの動画が入ります）": "(A craftsman's toy video will go here)",  # 案
     # 2 talk_toys（声 A1・A2。一般的な言い方・案。窓口の決め 11-07 の (1) A）
     "江戸時代のおもちゃは、": "Toys in the Edo period",  # 案
-    "紙と木と竹と糸でできていた。": "were made of paper, wood, bamboo, string.",  # 案
-    "子どもが壊しても、自分で直せた。": "Children who broke them could mend them.",  # 案
-    "そこに、遊ぶ喜びがあった。": "That was part of the joy.",  # 案
     # 3 talk_lost（声 A3。職人の 1 文は本人の言葉 11-07 の (2) の決着の字）
     "しかし、その多くは、": "But most of those toys",  # 案
-    "もう残っていない。": "are gone.",  # 案
     "職人も少なくなり、": "Craftsmen grew few,",  # 案（日本語は本人の字）
-    "子供が簡単に手に入り遊べるおもちゃではなくなった。": "and they stopped being toys children could easily get and play with.",  # 案（日本語は本人の字）
-    "知らない大人がほとんどだ。": "Most adults have never seen them.",  # 案（日本語は本人の字）
     # 4 scene2（声 A4）
-    "残っているのは、": "What survives",  # 案
-    "『江都二色』（1773）という一冊の本。": "is one picture book, Edo Nishiki (1773).",  # 案
-    "おもちゃの絵と、遊び方にちなんだ狂歌が載っている。": "It shows each toy with a comic poem about how it was played.",  # 案
-    "けれども、どう遊ぶのか、": "But it never says how to play them,",  # 案
-    "何でできていたのかは、書かれていない。": "or what they were made of.",  # 案
     # 5 flip・18 close（決まった字）
-    "絵は動きを止めて残した。": "The pictures froze the motion.",  # 案
-    "どう動いたかは、紙で作って確かめる。": "To learn how it moved, build it in paper.",  # 案
     # 6 word_touch（名前の無い字の札・案。窓口の決め 11-07 の (3)）
-    "まず大事なのは、": "What matters first",  # 案
-    "手で作る楽しさに気づくこと。": "is finding the joy of making by hand.",  # 案
-    "AI がよくなるのは、その後。": "Better AI comes after that.",  # 案
     # 7 scene3
-    "型紙は正解ではなく、Claude が考えた仮説": "The pattern is not the answer. It is Claude's hypothesis.",  # 案
-    "開いたら、すぐ作る。": "Open it and start building.",  # 案
     # 8 core_make
-    "手順を見ながら作る。": "Build it step by step.",  # 案
-    "止まったら、そのまま声か字で聞ける": "Stuck? Ask by voice or text.",  # 案
     # 9 scene5
-    "紙で作って、動いた。": "Built in paper, and it moved.",  # 案
     "4 回のワークショップで、作って、感想を返してもらいました。": "Over four workshops, people built them and gave us feedback.",  # 案（ワークショップの写真の場面）
     # 10 core_keep
     "できた物の写真と、": "Add a photo of what you made,",  # 案
-    "工夫した所を記録に添える": "and note what you changed.",  # 案
     # 11 core_gallery
-    "作った物を、持ちよる。": "Bring what you made together.",  # 案
     # 12 border
-    "ここからは、裏のしくみ。": "Now, behind the scenes.",  # 案
     # 13 talk_physics（声 A5）
-    "物理には「トイモデル」という考え方がある。": 'Physics has an idea called the "toy model":',  # 案
     "手で扱える小さな模型を自分で作り、": "build a small model you can hold,",  # 案
-    "動かしながら、手のひらで考える。": "and think it through in your own hands.",  # 案
     # 14 talk_claude（声 A6）
-    "その横で、Claude が手伝う。": "And Claude is there to help.",  # 案
     # 15 core_loop（つなぎ 2・いま作っているところです）
     "作ったものを持ちよると、": "When people share what they made,",  # 案
     "Claude もそれを見て、": "Claude looks at it too,",  # 案
     "次の型紙を少しずつよくしていきます。": "and improves the next pattern, bit by bit.",  # 案
-    "ワークショップを 2 回して、型紙の版を重ねた。": "Two workshops, and the pattern went through new versions.",  # 案（窓口の決定 084919 の ③ 案 1）
     "いま作っているところです": "(Still being built)",  # 案
     # 16 word_ai（名前の無い字の札・案）
-    "型紙は完全ではない。": "The patterns are not perfect.",  # 案
-    "うまく動かない所を、人が工夫で乗り切る。": "People work around what fails.",  # 案
-    "その過程を AI に返すと、": "It goes back to the AI,",  # 案
-    "次の型紙が直る。": "and the next pattern improves.",  # 案
     # つなぎ 1（今の台本では外した札。words.ALL に残るので英語も置く）
     "むかしの子どもも、今の子どもも、": "Children long ago and children today",  # 案
     "もらったおもちゃより、": "often skip the toy they got",  # 案
     "それを包んでいた紙やリボンのひもで": "and play with the paper and ribbon",  # 案
     "遊んでしまうことがあります。": "it came wrapped in.",  # 案
     # 17 scene7
-    "紙で動いても、昔の作り方の証明にはならない": "Working in paper does not prove how it was made back then.",  # 案
     # 19 ask
     "あなたなら、何を作りますか。": "What would you make?",  # 案
     # 数の 1 行と出所（13・15・16。数と出典の名は原典のまま訳した）
@@ -233,10 +200,6 @@ def all_sources():
 # デモとサイトで説明した方がいい」。英語は grove の state/engine-explain-20261107.md の (3) を元にした案。台本の字の表（上の EN）と
 # 別の所に置く（同じ時に台本の字を直す枝と取り合わないため）
 EN.update({
-    "型紙を作っているのは、paper to toy というエンジンです。": "The patterns come from an engine called paper to toy.",  # 案
-    "部品を並べて、刷る前と後に確かめ、3D で組んで当たりを見ます。": "It lays out the parts, checks before and after printing, and test-assembles in 3D.",  # 案
-    "作った人の報告から直すと、型紙の版とエンジンの版が上がります。": "Fixes from makers' reports raise the pattern version and the engine version.",  # 案
-    "うつしは、その一つの具体例です。": "utsushi is one example of it.",  # 案
     "うつし ＝ paper to toy の一つの具体例": "utsushi: one example of paper to toy",  # 案
     "型紙の流れ": "Pattern flow",  # 案
     "入力（寸法・出典）": "Input (sizes, source)",  # 案
@@ -258,4 +221,44 @@ EN.update({
     "版を刻む": "New versions",  # 案
     "型紙の版・エンジンの版": "pattern / engine",  # 案
     "次の型紙": "Next pattern",  # 案
+})
+
+
+# 11-07 昼の組み直し（本人の直しの (1) ですます調・(4) コンセプト・(6) つなぎ・(8) 締め・本人の決定「引く候補 5 つ全部でよい（179.3 秒）」・
+# 窓口の決め 120530・120643）で替えた字の英語。全部 案。日本語が替わった所だけを足し、前の字の英語は前の字のまま残す（外した場面の字も試験が読むため）
+EN.update({
+    "作るのは人の手です。": "People make them, by hand.",  # 案
+    "その記録から、Claude が次の型紙を直します。": "From those records, Claude fixes the next pattern.",  # 案
+    "型紙は完全ではありません。": "The patterns are not perfect.",  # 案
+    "うまく動かない所を、人が工夫で乗り切ります。": "People find ways around what does not work.",  # 案
+    "その過程を Claude に返すと、": "When that goes back to Claude,",  # 案
+    "次の型紙が直ります。": "the next pattern gets better.",  # 案
+    "紙と木と竹と糸でできていました。": "were made of paper, wood, bamboo, and string.",  # 案
+    "子どもが壊しても、自分で直せました。": "If children broke them, they could fix them.",  # 案
+    "そこに、遊ぶ喜びがありました。": "That was part of the joy of play.",  # 案
+    "もう残っていません。": "are gone now.",  # 案
+    "子供が簡単に手に入り遊べるおもちゃではなくなりました。": "and they are no longer toys children can easily get and play with.",  # 案（日本語は本人の字をですます調にした物）
+    "知らない大人がほとんどです。": "Most adults have never seen them.",  # 案（同上）
+    "残っているのは、『江都二色』（1773）という一冊の本です。": "What survives is one picture book, Edo Nishiki (1773).",  # 案
+    "おもちゃの絵と狂歌は載っていますが、": "It has pictures of the toys and comic poems,",  # 案
+    "遊び方と材料は書かれていません。": "but not how to play or what they were made of.",  # 案（1 秒 15 字の内）
+    "手で作って考えるやり方は、科学にもあります。": "Science also thinks by making things by hand.",  # 案（(6) つなぎ）
+    "物理には「トイモデル」という考え方があります。": 'Physics has an idea called the "toy model":',  # 案
+    "動かしながら、手のひらで考えます。": "and think it through in your own hands.",  # 案
+    "その横で、Claude が支えます。": "And Claude is there to support it.",  # 案
+    "江戸の人は動きを絵に残しました。": "People in Edo kept motion in pictures.",  # 案
+    "動きは、紙で作って確かめます。": "We test the motion by building it in paper.",  # 案
+    "4 回のワークショップで、型紙の版を重ねました。": "Over four workshops, the patterns went through new versions.",  # 案
+    "ここからは、裏のしくみです。": "Now, behind the scenes.",  # 案
+    "型紙は正解ではなく、Claude が考えた仮説です。": "The pattern is not the answer. It is Claude's hypothesis.",  # 案
+    "開いたら、すぐ作れます。": "Open it and start building right away.",  # 案
+    "紙で作って、動きました。": "Built in paper, and it moved.",  # 案
+    "作った人の工夫から、Claude が次の型紙を直します。": "From what makers figured out, Claude fixes the next pattern.",  # 案（(8) 締め）
+    "3D の手順を見ながら作ります。": "Build it while watching the 3D steps.",  # 案
+    "止まったら、そのまま声か字で聞けます。": "Stuck? Ask right there, by voice or text.",  # 案
+    "工夫した所を記録に添えます。": "and note what you changed.",  # 案
+    "作った物を、持ちよります。": "Bring what you made together.",  # 案
+    "型紙は、paper to toy というエンジンが作ります。": "The patterns come from an engine called paper to toy.",  # 案（窓口の決め 120530 の 1 文目から）
+    "直すたびに、型紙とエンジンの版が上がります。": "Each fix raises the pattern version and the engine version.",  # 案（同 5 文目から）
+    "うつしはその一つの具体例で、みんなが使えるサービスとして作りました。": "utsushi is one example of it, built as a service anyone can use.",  # 案（窓口の決め 120530・120643）
 })

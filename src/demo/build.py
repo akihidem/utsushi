@@ -122,6 +122,8 @@ def shows_placeholder(only, clips, prev):
     """最初の場面の動画に印が残っているか。作り直さない時は、前の記録のまま（作り直すまで動画に印が残るため）。"""
     if "opening" in clips:
         return False
+    if opening.QUESTION_ONLY:  # 問いだけの場面（本人の決定 11-07）には印を出さない
+        return False
     if "opening" in only:
         return not opening.has_video()
     return prev.get("placeholder", True)
@@ -383,7 +385,7 @@ def main(argv=None):
     stale = [n for n in SCENES if n not in only
              and scene_args(n, prev.get("tests"), prev.get("music"), prev.get("photos"))
              != scene_args(n, tests if tests else prev.get("tests"), music, photos)]
-    if "opening" not in only and "opening" not in clips and prev.get("placeholder") and opening.has_video():
+    if "opening" not in only and "opening" not in clips and prev.get("placeholder") and (opening.has_video() or opening.QUESTION_ONLY):
         stale.append("opening")  # 動画を置いたのに、前の印の場面を残すと印が消えない
     slots = slot_record()
     old_slots = prev.get("slots") or {}

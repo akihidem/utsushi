@@ -57,10 +57,10 @@ except english.MissingEnglish:
 else:
     raise AssertionError("英語の無い字を黙って描いた")
 
-# 5. 台本は変わらない
+# 5. 台本の並び（11-07 昼の組み直し: 本人の決定「引く候補 5 つ全部でよい（179.3 秒）」と窓口の決め 120643）
 assert script.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep",
-                         "core_gallery", "border", "talk_physics", "talk_claude", "core_loop", "word_ai", "scene7", "close", "ask"]
-assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 2) == 178.9
+                         "border", "talk_physics", "engine", "core_loop", "word_ai", "scene7", "ask"]
+assert round(sum(script.load_scene(n).DURATION for n in script.SCENES), 2) == 179.3  # 本人の決定（11-07「引く候補 5 つ全部でよい（179.3 秒）」）
 # 秒と合図は日本語のかたまりだけで決まる（英語は秒を足さない）
 import inspect  # noqa: E402
 for fn in (words.seconds_of, words.cues_of, words.chunk_seconds):

@@ -24,23 +24,26 @@ import importlib
 # 境目: border。後半・裏: 語りの後ろの 2 文 → 輪 → 本人の言葉 → 断りとクレジット。終わり: 初めと同じ字幕 → 問い。
 # 「紙で作って、動いた。」（scene5）は作る頁（core_make）のすぐ後（窓口の決定 11-07。デモが教育の原形をどこで見せるかの確かめの推し 2）:
 # 作る → 動いた → 残す → 持ちよる の順になり、画面が 40 秒続く塊が割れる。前は 残す（core_keep）の後だった
-FRONT = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep", "core_gallery"]
+# 本人の決定（11-07「引く候補 5 つ全部でよい（179.3 秒）」）で、場面 11 の持ちよる（core_gallery）をワークショップの写真の場面（scene5 の
+# WORKSHOP）にまとめて外し、場面 18 の締め（close。場面 5 と同じ字の繰り返し）を外した。終わりは 締めの字とクレジット（scene7）→ 問い（ask）
+FRONT = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep"]
 BACK = ["talk_physics", "talk_claude", "core_loop", "word_ai", "scene7"]
 # 場面「エンジンの仕組み」（demo.engine・案）。本人の言葉（11-07）「paper to toy の一つの具体例であるとか、エンジンの仕組みとかは
 # デモとサイトで説明した方がいい」。入れるなら場面 14（talk_claude）と入れ替える（デモの担当の案）。窓口の決めが来るまで入れない（False）
-ENGINE_SCENE = False
+# 窓口の決め 120643「場面 14 をエンジンの仕組みの場面に替え、…秒は決めた引き方で」で入れる（True）
+ENGINE_SCENE = True
 
 
 def scenes(engine=None):
     """台本の場面の並び。engine=True で talk_claude を engine と入れ替えた並び（省くと ENGINE_SCENE）。"""
     engine = ENGINE_SCENE if engine is None else engine
-    order = [*FRONT, "border", *BACK, "close", "ask"]
+    order = [*FRONT, "border", *BACK, "ask"]
     return [("engine" if n == "talk_claude" else n) for n in order] if engine else order
 
 
 SCENES = scenes()
 # 3 分に入らないので外した場面（本人が戻すかを決める。コードは残すので、SCENES へ戻せば動く）。docs/demo/plan.md の 4 に書いた。
-LEFT_OUT = ("core_map", "core_voice", "scene6", "bridge")
+LEFT_OUT = ("core_map", "core_voice", "scene6", "bridge", "core_gallery", "close")
 # 外へ出す前に片づける物（印のほか）。demo.build が build.json の not_for_release に載せる。
 BEFORE_RELEASE = ()  # 字幕とクレジットの隅の札の行は本人が決めた（11-06）
 
@@ -57,8 +60,11 @@ SLOTS = {
     "scene2": {"voice": ("A4",)},
     # 13 の手は 8 → 10.4 秒にし、後ろの画面を 原画 → 型紙 の 2 枚にした（窓口の決定 11-07。確かめの推し 1。字と 16 秒は変えない）:
     # D 切る・折る・組む → E 手で動かす → F 作った物を手のひらに（「自分の手のひらで考える」の下）→ H 原画 → I 型紙（原画を写した型紙＝まねぶ）
-    "talk_physics": {"hands": (("D", 5.0), ("E", 3.8), ("F", 1.6), ("H", 2.8), ("I", 2.8)), "voice": ("A5",)},
-    "talk_claude": {"voice": ("A6",)},
+    # 11-07 昼に頭へつなぎの 1 かたまり（本人の直しの (6)）を足し、場面は字の秒の 16.4 秒になった。延びた 0.4 秒は最後の型紙（I）に足した
+    "talk_physics": {"hands": (("D", 5.0), ("E", 3.8), ("F", 1.6), ("H", 2.8), ("I", 3.2)), "voice": ("A5",)},
+    # 場面 14 をエンジンの仕組みに替えた（窓口の決め 120643）ので、A6 は talk_claude の 1 行でなく、エンジンの場面の字幕の文を読む
+    # （grove の state/demo-voice-aivis-general の表）。talk_claude を台本へ戻す時は、A6 の文も戻す
+    "engine": {"voice": ("A6",)},
 }
 HANDS_EXT, VOICE_EXT = ".mp4", ".m4a"
 # 効果音（統括の頼み 11-07: 音楽の担当が公有の音から作った 切る・折る（の代わり）・塗る（の代わり）を、手の映像の音ハメに）。

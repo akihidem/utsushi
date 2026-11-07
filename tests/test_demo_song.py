@@ -91,7 +91,9 @@ starts, t = {}, 0.0
 for n in SCENES:
     starts[n] = t
     t += table["seconds"][n]
-assert abs(t - sum(seconds.values())) < 3 * song.MAX_BAR_SHIFT and t <= 180
+# 小節へ寄せる形は合計が小節の分だけ動く。合計が 179.3 秒（本人の決定 11-07）になってから、この作り物の 100 BPM の小節では 180.3 秒になった。
+# 書き出しは拍だけに寄せる形（--beat-only・下で見る。動画の終わりの秒を変えない）なので、180 秒の線はそちらで見る
+assert abs(t - sum(seconds.values())) < 3 * song.MAX_BAR_SHIFT and t <= 180 + song.MAX_BAR_SHIFT
 # 場面の境目は小節の頭（最初を除く）
 for n in SCENES[1:]:
     assert min(abs(starts[n] - b) for b in bars) < 1e-3, n
@@ -130,6 +132,7 @@ for n in names:
     t += tight["seconds"][n]
     got.append(t)
 assert abs(got[-1] - edges[-1]) < 1e-6, ("動画の終わりの秒が動いた", got[-1], edges[-1])
+assert got[-1] <= 179.5, ("書き出しの形で 179.5 秒を超える", got[-1])
 assert all(abs(g - e) <= song.BEAT_ONLY_SHIFT + 1e-6 for g, e in zip(got[1:-1], edges[1:-1])), "境目は半拍までしか動かない"
 for n in names:
     for cue, (a, b) in tight["cues"][n].items():
