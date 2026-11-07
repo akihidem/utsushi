@@ -22,7 +22,7 @@ from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
 from . import naoru, skin, wording
-from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
+from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source
 from .toys import way_tags
 
 # 窓で見て刷る紙は型紙だけ（本人の決まり 11-06「文章のプリントは廃止。組み立て用のページだけでいい」・6 点の 1）。
@@ -484,19 +484,12 @@ def made_strip(sid, recs, photos=True):
     return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 
-def neighbours(sid):
-    ss = sources()
-    i = ss.index(sid)
-    prev_, next_ = ss[i - 1] if i > 0 else None, ss[i + 1] if i + 1 < len(ss) else None
-    out = []
-    if prev_:
-        out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
+def foot_links():
+    """頁の足の道。前と次の玩具への道と「おもちゃの一覧」は外した（本人の答え 11-08「つくるの頁の一番下の前と次のおもちゃと一覧への道は外す」。
+    最初の言葉は「ほかのおもちゃ、のリンク要らない」）。作った物と入口への道は答えに無いので残す。"""
     # ギャラリーの呼び名は、職人の言葉と寄せられた声の節を序の頁（よむ）へ移した後の題「作った物」にそろえる（のこす と もちよる を分ける直し #519。
     # 本人のサイト体験レビュー 11-07 の 6）。字は #519 の頁の題のまま（新しい字は足さない）
-    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物</a>', '<a href="/">入口へ</a>']
-    if next_:
-        out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
-    return '<p class="links">' + "".join(out) + "</p>"
+    return '<p class="links"><a href="/gallery">作った物</a><a href="/">入口へ</a></p>'
 
 
 def evidence_item(e):
@@ -675,7 +668,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     from . import en
 
     body += en.band(sid)
-    body += f'<section class="sec">{neighbours(sid)}</section>'
+    body += f'<section class="sec">{foot_links()}</section>'
     # 国立国会図書館デジタルコレクションの出典の字（所蔵・コマ・権利）は頁の一番下（本人の言葉 11-08「国立図書館デジタルコレクションの文言はページの一番下に」）
     body += genga.ndl_credit(sid, src)
     if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない

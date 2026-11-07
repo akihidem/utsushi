@@ -3,7 +3,8 @@
 見る事（設計メモの試験の節と、統括の決め）:
 1. 頁の全体の目当ては 47 枚で、左右の箱が正しい。必須 2 種の頁は今の切り抜きと同じ箱。取る道は今の写しと同じ入口
 2. 玩具の頁の頭: 頁の全体の絵が歌より先、確かめた歌がその後。玩具の所は細い枠（頁の片側の全体の記録には出さない）。比は絵のまま
-3. 作る時の畳み: 1 回押すと開き、絵は開くまで取らない。「大きく見る」は頁を離れない（リンクでなく、頁の中に重ねる）
+3. 作る時の畳み: 1 回押すと開き、絵は開くまで取らない。道は頭と同じ 1 つ（図を見る（国立国会図書館））で、別のタブで開く（本人の答え 11-08。
+   前は「大きく見る」で頁の中に重ねた。作りながら見る頁は頁を離れると声の聞き取りが止まるので、別のタブ）
 4. 英語の頁は絵だけ。くずし字は箱の無い玩具に頁の全体。額（skin.frame）は縦横を別々に伸ばさない
 5. 頁の写しが無くても頁は止まらない。一覧の小さい絵は今の切り抜きのまま。合言葉なしの場でも頁の全体を出す
 """
@@ -103,14 +104,17 @@ assert 'style="--genga-r:0.6024"' in hero or "--genga-r:" in hero, "包みの幅
 assert "writing-mode:vertical-rl" in css[:css.index("@media")], "広い幅は絵の横に縦書き"
 # UX の見直し（幅 390）: 押せる所は 44px 以上。作りながら見る頁の畳みに余白と頁の皮の釦。英語の頁にも高さの上限。狭い幅だけ切り抜きを右に
 assert ".genga-cap a{display:inline-flex;align-items:center;min-height:44px" in css
-assert ".stage .genga-fold{padding:0 16px}" in css and re.search(r"\.genga-fold \[data-big\]\{[^}]*min-height:44px[^}]*border:1px solid var\(--accent\)", css)
+assert ".stage .genga-fold{padding:0 16px}" in css and re.search(r"\.genga-fold \.genga-go\{[^}]*min-height:44px[^}]*border:1px solid var\(--accent\)", css)
 assert ".genga-plain .genga-pic" in narrow and ".genga-head .genga-crop{display:block}" in narrow and ".genga-crop{display:none" in css[:css.index("@media")]
 
 # 3. 作る時の畳み
 fold = genga.fold(G)
 assert f'<details class="genga genga-fold"><summary>{genga_words.HEAD}</summary>' in fold
-assert f'src="/picture/{G}/page"' in fold and 'loading="lazy"' in fold and "querySelector('.genga-pic')" in fold, "畳みの中の絵を押しても重ねて開く"
-assert "data-big" in fold and "<dialog" in fold and f'<a href="/picture/{G}/page"' not in fold, "頁を離れずに重ねて出す"
+assert f'src="/picture/{G}/page"' in fold and 'loading="lazy"' in fold, "絵は開くまで取らない"
+# 本人の答え（11-08）「作りながら見る頁の大きく見るも国会図書館への道にそろえる」: 頁の中に重ねる窓は無く、絵も字も国立国会図書館のその絵の頁へ、別のタブで
+assert "data-big" not in fold and "<dialog" not in fold and f'<a href="/picture/{G}/page"' not in fold, "頁の中に重ねる窓が残った"
+assert re.search(r'<a class="genga-pic" href="https://dl\.ndl\.go\.jp/pid/1187053/1/\d+" target="_blank" rel="noopener"', fold), "絵が国立国会図書館へ行かない"
+assert f'target="_blank" rel="noopener" class="genga-go">{genga.NDL}</a>' in fold, "図を見る（国立国会図書館）の道が無い"
 # 手帖は作り直しで作る頁（techo_step）になった（#87）。作る頁は押す所の名前を 6 つにする決定（本人の決定 11-05）なので、畳み（「原画と歌」
 # 「大きく見る」の字の押す所）でなく、字の無い小さな原画を手順の画面に出し、押すと頁の中で頁の全体の原画と歌を重ねる（同じ部品の _pic と _songs）
 assert "genga.fold(sid)" in inspect.getsource(tsukuru.page)
@@ -217,7 +221,7 @@ small = made.small_photo(d / "m1.jpg")
 with Image.open(io.BytesIO(small)) as im:
     assert im.width == made.SMALL_W and len(small) <= 100_000, (im.size, len(small))
 assert made.small_photo(d / "nai.jpg") is None
-print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる。原画の隣に作ってみた実物（写真か止まった形）")
+print("ok 原画は頁の全体で歌と組になり、作る時の畳みは国立国会図書館への道 1 つ（別のタブ）。原画の隣に作ってみた実物（写真か止まった形）")
 
 # 入口の棚の札の角（本人の言葉 11-07「入口にギャラリーを足す」「いまのものに実際に作ったものを足す」・窓口の決め 163132）:
 # 作った実物の写真（人が確かめた物。作例 via=workshop の記録も読む）がある玩具の札にだけ、原画の右下に小さな角。無い玩具の札は前のまま。

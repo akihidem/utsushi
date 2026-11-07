@@ -583,9 +583,10 @@
    "src/web/genga.py",
    "src/web/genga_words.py",
    "src/omochae/ingest.py",
-   "tests/test_genga.py"
+   "tests/test_genga.py",
+   "tests/test_toy_foot_ndl.py"
   ],
-  "unverified": "字は本人が決めた（見出し・大きく見るのみ）。頁の全体の写しは git の外（ingest）。玩具の所の枠は出典の記録の箱（crop_status は unverified）。図鑑の本の頁（玩具の絵がある頁）は続く PR。幅 390・1440 の白と黒で見た。本物のスマホと本物の人には見てもらっていない"
+  "unverified": "字は本人が決めた（見出し・大きく見るのみ。大きく見るは 11-08 から図鑑の本の頁だけ。作りながら見る頁の畳みは本人の答えで図を見る（国立国会図書館）の 1 つの道・別のタブ）。頁の全体の写しは git の外（ingest）。玩具の所の枠は出典の記録の箱（crop_status は unverified）。図鑑の本の頁（玩具の絵がある頁）は続く PR。幅 390・1440 の白と黒で見た。本物のスマホと本物の人には見てもらっていない"
  },
  {
   "id": "f50",

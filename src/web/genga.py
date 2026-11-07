@@ -12,8 +12,8 @@
   読みが無い玩具は、歌は絵の中に書かれているので、字は出さない（断りも足さない。本人の決定 11-06）。
 - 狭い幅の絵の高さの上限は CSS の変数 1 つ（--genga-h、44svh から）。段 0 の「最初の画面にボタン 1 つ」の余地を残すため。
 - 出し方は 3 つ。head（玩具の頁の頭。絵そのものと「図を見る（国立国会図書館）」の 1 つの道は、国立国会図書館のその絵の頁へ行く・本人の言葉 11-08）、
-  fold（作る時の畳み。「大きく見る」は頁の中で重ねて出す。
-  作りながら見る頁は、頁を離れると声の聞き取りと鏡が止まるため）、plain（英語の頁。絵だけで、字は足さない）。
+  fold（作る時の畳み。道は head と同じ 1 つで国立国会図書館へ・本人の答え 11-08「作りながら見る頁の大きく見るも国会図書館への道にそろえる」。
+  作りながら見る頁は、頁を離れると声の聞き取りと鏡が止まるので、別のタブで開く）、plain（英語の頁。絵だけで、字は足さない）。
 - 頁の写しが無い所（取れなかった・取る前の木）は、玩具の写しを比を保って出す。頁は止めない。
 """
 import functools
@@ -23,7 +23,7 @@ from omochae import ingest, labels
 from omochae.hypotheses import ROOT
 
 from . import wording
-from .genga_words import BIG, HEAD
+from .genga_words import HEAD
 from .skin import esc
 
 QUOTE = "原文の引用。確かめた人: "  # 今の玩具の頁の頭と同じ字
@@ -54,13 +54,9 @@ a.genga-pic{cursor:zoom-in}
 .genga-fold{margin:10px 0}
 .genga-fold summary{cursor:pointer;min-height:44px;display:flex;align-items:center;letter-spacing:.12em}
 .stage .genga-fold{padding:0 16px}
-.genga-fold .genga-pic{cursor:zoom-in}
-.genga-fold [data-big]{font:inherit;font-size:15px;letter-spacing:.08em;min-height:44px;padding:0 18px;margin:8px 0;border:1px solid var(--accent);border-radius:4px;background:transparent;color:var(--fg);cursor:pointer}
+.genga-fold .genga-go{display:inline-flex;align-items:center;font-size:15px;letter-spacing:.08em;min-height:44px;padding:0 18px;margin:8px 0;border:1px solid var(--accent);border-radius:4px;color:var(--fg);text-decoration:none}
 .genga-fold .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)))}
 .genga-fold .genga-songs{font-size:15px;line-height:2;margin:8px 0}
-.genga-dlg{border:0;padding:0;background:transparent;max-width:98vw;max-height:98vh}
-.genga-dlg::backdrop{background:rgba(0,0,0,.82)}
-.genga-dlg img{display:block;max-width:98vw;max-height:98vh;width:auto;height:auto}
 @media (max-width:820px){
 .genga-head{grid-template-columns:minmax(0,1fr)}
 .genga-head .genga-pic,.genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)));flex:0 0 auto}
@@ -70,12 +66,6 @@ a.genga-pic{cursor:zoom-in}
 .genga-head .genga-songs{font-size:16px;line-height:2.1}
 }
 """
-
-# 作る時の畳みの「大きく見る」。頁を離れずに重ねて出し、押すか Esc で閉じる。畳みの中の絵を押しても同じに開く
-SCRIPT = """<script>(()=>{document.querySelectorAll('.genga-fold [data-big]').forEach(b=>{const d=b.parentElement.querySelector('dialog');
-if(!d||!d.showModal){b.hidden=true;return}const open=()=>d.showModal();b.addEventListener('click',open);
-const p=b.parentElement.querySelector('.genga-pic');if(p)p.addEventListener('click',open);d.addEventListener('click',()=>d.close())})})()</script>"""
-
 
 def alt(src):
     """絵の読み上げの字。新しい字を足さず、玩具の名と本人が採った見出しにする（統括の決め 11-06）。"""
@@ -121,11 +111,11 @@ def songs(src):
     return [e for e in labels.source_lines(src) if e.get("checked_by")]
 
 
-def _pic(sid, src, alt, lazy=False, href=None):
+def _pic(sid, src, alt, lazy=False, href=None, new_tab=False):
     """頁の全体の絵と玩具の所の枠。頁の写しが無ければ玩具の写し（比は保つ）。どちらも無ければ空。
-    href があれば絵そのものを、そのリンクにする（押せば大きく見られる。字のリンクと同じ所）。"""
+    href があれば絵そのものを、そのリンクにする（押せば大きく見られる。字のリンクと同じ所）。new_tab は別のタブで開く（頁を離れない所の畳み）。"""
     load = ' loading="lazy"' if lazy else ""
-    tag, link = ("a", f' href="{esc(href)}"') if href else ("span", "")
+    tag, link = ("a", f' href="{esc(href)}"' + (' target="_blank" rel="noopener"' if new_tab else "")) if href else ("span", "")
     page = page_file(src)
     if page.exists():
         w, h = size(page)
@@ -194,17 +184,21 @@ def ndl_credit(sid, src=None):
 
 
 def fold(sid, src=None):
-    """作る時の畳み。1 回押すと開く。絵は開くまで取らない。「大きく見る」は頁の中で重ねて出す（頁を離れない）。"""
+    """作る時の畳み。1 回押すと開く。絵は開くまで取らない。道は玩具の頁の頭と同じ 1 つ（図を見る（国立国会図書館））で、絵そのものも同じ所へ。
+
+    前は「大きく見る」で頁の中に重ねて出した。本人の答え（11-08）「作りながら見る頁の大きく見るも国会図書館への道にそろえる」で、頭と同じ道にした。
+    作りながら見る頁は、頁を離れると声の聞き取りと鏡が止まるので、道は別のタブで開く（前の「頁を離れない」の理由は、この形で残す）。
+    原文の引用の「確かめた人」の行も出さない（11-08 の最初の言葉「原文の引用確かめた人要らない」を頭とそろえる）。"""
+    from .skin import ndl_page
+
     src = src or _source(sid)
-    pic, whole = _pic(sid, src, alt(src), lazy=True)
+    ndl = ndl_page(src)
+    pic, _ = _pic(sid, src, alt(src), lazy=True, href=ndl or None, new_tab=True)
     if not pic:
         return ""
-    big = (f'<button type="button" class="quiet" data-big>{esc(BIG)}</button>'
-           f'<dialog class="genga-dlg" aria-label="{esc(HEAD)}"><img src="/picture/{esc(sid)}/page" alt="{esc(alt(src))}" loading="lazy"></dialog>'
-           if whole else "")
-    lines, mark = _songs(src)
-    return (f'<style>{STYLE}</style><details class="genga genga-fold"><summary>{esc(HEAD)}</summary>{pic}{lines}{mark}{big}</details>'
-            + (SCRIPT if whole else ""))
+    lines, _ = _songs(src)
+    go = f'<p><a href="{esc(ndl)}" target="_blank" rel="noopener" class="genga-go">{esc(NDL)}</a></p>' if ndl else ""
+    return f'<style>{STYLE}</style><details class="genga genga-fold"><summary>{esc(HEAD)}</summary>{pic}{lines}{go}</details>'
 
 
 def plain(sid, alt):
