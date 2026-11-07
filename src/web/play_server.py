@@ -384,8 +384,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
-        from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+        # 話した本人の案（think_sheet.mine）は、玩具の頁の記録の欄が選ぶ口に使っていた。欄はのこすへ寄せたので渡さない（本人の答え Q3）
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
 
     def _pick_lang(self):
         """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、cookie に持つ。道は日本語の頁と同じ。
@@ -661,7 +661,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not think_sheet.opens(self, sid, hid, after=stem.endswith("_after")):
                     return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
-                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
+                # 道の行き先は記録の頁（のこす）。玩具の頁の記録の欄は本人の答え 11-07 夕の Q3 で のこす へ寄せたので、#kiroku に着いても欄が無い
+                # （道 1 本だけ）。1 回で着くよう直接向ける（字は替えない。別の目の指摘 11-07）
+                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}/techo/kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
             if stem.endswith("_after"):
                 ensure_after(sid, hid, int(re.search(r"_v(\d+)", stem).group(1)))

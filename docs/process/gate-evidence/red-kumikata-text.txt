@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_kumikata_text.py
+# commit: 2e5c80a0（回した時の HEAD。今の main に新しい試験だけを置いた）
+  File "tests/test_kumikata_text.py", line 29, in <module>
+    assert "<svg" not in sec and "kumi-pic" not in sec, (sid, "組み方の節に図が残っている")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000004-L', '組み方の節に図が残っている')
+rc=1

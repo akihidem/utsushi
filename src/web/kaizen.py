@@ -59,7 +59,9 @@ def pending(sid, recs):
 
 
 def section(sid, data, recs, photos=True):
-    """玩具の頁の節「型紙の改善の輪」。記録の後に置く。
+    """節「型紙の改善の輪」（報告から直した版と、次の版を待つ報告）。作る側の玩具ごとの様子の頁（toy_page）に置く。
+    前は玩具の頁の足に置いたが、本人の答え（11-07 夕の Q5）「型紙の改善の輪は外して、説明の頁と のこす だけにする」で外し、ここへ移した
+    （作る側が版を直す時に読む物なので、作る側の頁に残す）。記録への道は、玩具の頁の記録の札（/toy/<印>#R-…）を指す。
     photos=False は合言葉なしで開いた場。次の版の口が閉じているので案内せず、人の書いた理由と記録の番号も出さない（J-028）。"""
     rows = ""
     for h in data["hypotheses"]:
@@ -67,15 +69,15 @@ def section(sid, data, recs, photos=True):
             ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
             rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
-                     + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
+                     + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=/toy/{esc(sid)}#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
     ready, waiting = pending(sid, recs) if photos else ([], [])
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
     todo = ""
     if ready:
-        todo += f'<p>次の版を待つ報告 {len(ready)} 件: ' + "・".join(f'<a href="#{esc(r["id"])}">{esc(wording.record_no(r["id"]))}</a>' for r in ready) + '（記録の「次の版を作る」から、寸法を 1 つ変えて紙を作ります）</p>'
+        todo += f'<p>次の版を待つ報告 {len(ready)} 件: ' + "・".join(f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(wording.record_no(r["id"]))}</a>' for r in ready) + '（記録の「次の版を作る」から、寸法を 1 つ変えて紙を作ります）</p>'
     if waiting:
-        todo += f'<p class="meta">説明を待つ報告 {len(waiting)} 件: ' + "・".join(f'<a href="#{esc(r["id"])}">{esc(wording.record_no(r["id"]))}</a>' for r in waiting) + '（人の説明が先。説明が付くと次の版に進めます）</p>'
+        todo += f'<p class="meta">説明を待つ報告 {len(waiting)} 件: ' + "・".join(f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(wording.record_no(r["id"]))}</a>' for r in waiting) + '（人の説明が先。説明が付くと次の版に進めます）</p>'
     if not recs:
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'
@@ -105,7 +107,7 @@ def page(look=skin.DEFAULT, path="/loop"):
         ready, waiting = pending(sid, recs)
         items.append((len(ready), sid, data["toy"], len(recs), vers, len(waiting), asked.get(sid, 0)))
     # 並びは本の順のまま。待っている報告の多い順にすると、玩具に上下を付ける形になる（J-025）。
-    rows = "".join(f'<tr><td><a href="/toy/{esc(sid)}#kaizen">{esc(toy)}</a>　<a href="/loop/{esc(sid)}">様子</a></td><td>{n}</td><td>{v}</td><td>{r}</td><td>{w}</td><td>{q}</td></tr>'
+    rows = "".join(f'<tr><td><a href="/toy/{esc(sid)}">{esc(toy)}</a>　<a href="/loop/{esc(sid)}">様子</a></td><td>{n}</td><td>{v}</td><td>{r}</td><td>{w}</td><td>{q}</td></tr>'
                    for r, sid, toy, n, v, w, q in items)
     table = (f'<table><thead><tr><th>玩具</th><th>報告</th><th>報告から直した版</th><th>次の版を待つ報告</th><th>説明を待つ報告</th><th>聞かれた事</th></tr></thead><tbody>{rows}</tbody></table>'
              if items else '<p class="meta">報告はまだありません。</p>')
@@ -207,7 +209,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
             f'<p class="meta">聞く口の質問、手順の進み、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。'
             f'名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。'
             f'声・映像・写真はここに入りません。報告 {sm["reports"]} 件。</p>'
-            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}#kaizen">この玩具の頁の輪</a>{to_ayumi}</p></div></section>'
+            f'<p class="links"><a href="/loop">改善の輪の一覧</a><a href="/toy/{esc(sid)}">この玩具の頁</a>{to_ayumi}</p></div></section>'
             f'<section class="sec" id="k1"><h2>1 止まった段</h2><p class="meta">作りながら見る頁（机の端に置く・試作）の「止まった」の札を、版と手順の番号ごとに数えます（止まった手順）。映像は残していません。</p>{s1}</section>'
             f'<section class="sec" id="k2"><h2>2 動きの結果</h2><p class="meta">版を直す前と後を見比べる材料です。紙で動いても、昔の作り方の証明にはなりません。</p>{s2}</section>'
             f'<section class="sec" id="k3"><h2>3 感想の言葉</h2><p class="meta">感想・メモ・説明・次の思いつきから、言葉で拾います。拾い方は荒いので、読む時に確かめます。</p>{s3}</section>'
@@ -218,4 +220,6 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     from . import hanasu
 
     body += hanasu.maker_section(sid, data)
+    # 型紙の改善の輪（報告から直した版と、次の版を待つ報告）。玩具の頁から移した（本人の答え Q5）。作る側の頁なので、人の書いた理由も出す
+    body += section(sid, data, records.all_records(sid))
     return skin.shell(f'{data["toy"]} の工作の様子', body, look, "", path or f"/loop/{sid}", TABLE_STYLE)

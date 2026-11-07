@@ -64,12 +64,12 @@ code, body = call(base, "/mada/nai", data=b"a=1", headers=FORM)
 page(code, body, "見つかりません")
 assert 'href="/"' in body
 
-# 記録の前に試した後の紙を開く: 玩具の頁の記録の欄へ戻れる
+# 記録の前に試した後の紙を開く: 記録の頁（のこす）へ行ける（玩具の頁の記録の欄は本人の答え Q3 で のこす へ寄せた）
 page.want = 403
 assert call(base, f"/toy/{G}/print", data=f"hypothesis={GS}".encode(), headers=FORM)[0] == 303
 code, body = call(base, f"/sheet/{G}/{GS}_v1_after.pdf")
 page(code, body, "試した記録を残してから開きます")
-assert f'href="/toy/{G}#kiroku"' in body
+assert f'href="/toy/{G}/techo/kiroku"' in body
 
 # 別のサイトからの送信を断る頁
 code, body = call(base, f"/toy/{G}/print", data=f"hypothesis={GS}".encode(), headers={**FORM, "Origin": "http://evil.example"})
