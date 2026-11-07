@@ -7,4 +7,4 @@
 - ゴールの要件: 御来迎・虎・ほかの 1 種の玩具の頁で、道 1 の字と意義が窓の「つくる」のすぐ下に 1 回、道 2 の見出しと意義が #kiroku の道の上に 1 回。道の字と行き先は今のまま。手帖の最初の画面には足さない。字を空にすると頁は前と同じ
 - 検証ゲート: **済み**。Red: 今の main（`ed6646b6`）に新しい試験だけを置くと rc 1（gate-evidence/red-nokosu-route.txt）。Green: この枝で rc 0（gate-evidence/green-nokosu-route.txt）
 - エビデンスゲート: 玩具の頁・手帖・のこす・英語・全体を見る試験の 131 本が rc 0（test_techo_step・test_hmd・test_en_all・test_landscape_fit・test_tap_size を含む）
-- 確かめていない事: 全部の試験（`./run.sh`）。新しい字 2 つの本人の確かめ。iPhone の実機
+- 確かめていない事: 全部の試験（`./run.sh`）。iPhone の実機。新しい字 2 つは本人の言葉「今夜①②③を入れる・字は案のとおり・意義は今ある字で」（11-07 夜）で確かめ済み
