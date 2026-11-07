@@ -19,8 +19,18 @@ gone = ["src/demo", "docs/demo", "docs/process/demo-notes.md"] + [
     f"tests/test_demo_{n}.py" for n in ("assemble", "build", "flip", "prepare", "scene2", "scene3", "scene4", "scene5", "scene6", "scene7")]
 # 見るのは git が追うファイル。手元の作業の木には、前に回した時の src/demo/__pycache__（git の外・.gitignore の物）が残る事があり、
 # 在るかどうかで見ると、合体の道（新しい木）では通るのに担当の ./run.sh だけが毎回落ちた（3 人の担当で起きた・統括の知らせ 11-08）
-tracked = subprocess.run(["git", "ls-files", "--", *gone], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
-left = sorted(tracked)
+# git の無い木（GitHub の zip を開いた物・git archive）では git ls-files が落ちるので、前の「在るか」の見方に戻す。その時は
+# __pycache__ だけの所を除く（別の目の気づき 11-08: zip で回す審査の人でも通り、追うファイルが残れば落ちるのは同じ）
+ls = subprocess.run(["git", "ls-files", "--", *gone], cwd=ROOT, capture_output=True, text=True)
+if ls.returncode == 0:
+    left = sorted(ls.stdout.split())
+else:
+    def real_files(p):
+        path = ROOT / p
+        if path.is_file():
+            return [p]
+        return [str(f.relative_to(ROOT)) for f in path.rglob("*") if f.is_file() and "__pycache__" not in f.parts] if path.is_dir() else []
+    left = sorted(f for p in gone for f in real_files(p))
 assert not left, ("repo に残っている動画の作り", left)
 
 kept = ["run-demo.sh", "src/web/demo_check.py", "src/web/demo_samples.py", "tests/test_run_demo.py", "tests/test_demo_samples.py",
