@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_sakurei.py
+# commit: 5cefd896（回した時の HEAD）
+ok 作例の受け口: 空の時・撮影の情報を落とす・記録の既定から外す・人の確かめ・断る・命令
+rc=0
