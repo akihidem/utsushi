@@ -1,0 +1,14 @@
+.env
+.env.*
+*.pem
+*.key
+.venv/
+out/
+# README の手順で作る寸法の見本（--params に渡す JSON）
+/tiger.json
+# 作る過程の記録の束と直しの案（omochae.engine_loop）、作った人の報告の受付箱と受け入れた物（omochae.intake）。作った人の文を repo に入れない
+local/
+__pycache__/
+# 作業の頼みの文（作る過程の覚え書き）は repo の中身ではないので入れない
+LANE-*.md
+lane-issues/

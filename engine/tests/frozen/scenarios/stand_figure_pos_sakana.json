@@ -1,0 +1,14 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000012-R-stand_figure",
+  "params": {
+    "figure": "sakana",
+    "stand": "base",
+    "slot_length": 8
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

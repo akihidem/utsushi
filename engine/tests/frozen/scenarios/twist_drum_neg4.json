@@ -1,0 +1,10 @@
+{
+  "template": "twist_drum",
+  "source_id": "NDL-1187053-R0000007-R-twist_drum",
+  "params": {"face": "kiku", "cord_length": 20},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.drum"]
+  }
+}

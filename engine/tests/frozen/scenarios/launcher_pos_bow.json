@@ -1,0 +1,12 @@
+{
+  "template": "launcher",
+  "source_id": "NDL-1187053-R0000029-L-launcher",
+  "params": {
+    "form": "bow"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

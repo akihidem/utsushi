@@ -1,0 +1,10 @@
+{
+  "template": "float",
+  "source_id": "NDL-1187053-R0000028-R-float",
+  "params": {"vane": "cups", "tray_width": 30, "wall_height": 8, "glue": 5, "figure_height": 30, "leaf_radius": 10, "cup_width": 30, "cup_height": 60, "ballast_g": 0},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.float"]
+  }
+}

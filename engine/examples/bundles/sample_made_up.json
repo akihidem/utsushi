@@ -1,0 +1,73 @@
+{
+ "schema": "omochae.making-bundle/1",
+ "exported_at": "2026-11-05T15:00+09:00",
+ "from": "made-up-sample",
+ "dropped_pii": 0,
+ "current_sets": {"slider_fan": "goraigo-v10", "pivot_counterweight": "tora-v3", "den_den": "den_den-v2"},
+ "groups": [
+  {
+   "template": "slider_fan",
+   "sheet_set": "goraigo-v10",
+   "reports": 5,
+   "results": {"動いた": 2, "動かない": 2, "わからない": 1},
+   "moved_word": "動いた",
+   "not_moved_word": "動かない",
+   "stuck_steps": {"3": {"taps": 4, "people": 2}, "5": {"taps": 1, "people": 1}},
+   "quit_steps": {"3": 1},
+   "craft_steps": {"3": {"talks": 2, "people": 2}, "5": {"talks": 1, "people": 1}, "6": {"talks": 2, "people": 2}},
+   "minutes": [20, 40, 3],
+   "measures": {"opened_deg": [60, 120, 3]},
+   "record_ids": ["R-0001", "R-0002"],
+   "texts": [
+    {"kind": "stuck", "step": 3, "text": "扇の足をどちらへ折るのか、折り線の向きが分からなかった", "count": 2},
+    {"kind": "question", "step": 3, "text": "足は山折りですか", "count": 2},
+    {"kind": "fix", "step": null, "text": "内筒 / 溝を 1mm 広げた / 引っかからずに動いた", "count": 1},
+    {"kind": "impression", "step": null, "text": "扇が開いた時にうれしかった", "count": 1},
+    {"kind": "explain", "step": null, "text": "内筒が外筒にきつくて、押しても扇が出なかった", "count": 1},
+    {"kind": "think", "step": null, "text": "筒を押すと、中の扇が上に出て開くと思う", "count": 1},
+    {"kind": "craft", "step": 3, "text": "足を先に全部折ってから、扇を畳んだ", "count": 1},
+    {"kind": "craft", "step": 3, "text": "折る前に、定規で折り線をなぞった", "count": 1},
+    {"kind": "craft", "step": 5, "text": "つまみは最後に付けた", "count": 1},
+    {"kind": "craft", "step": 6, "text": "内筒に糊が付かないよう、紙をはさんで貼った", "count": 2},
+    {"kind": "keep", "step": null, "text": "扇の紙を薄い紙に替えたら、開きやすかった", "count": 1},
+    {"kind": "review", "step": 8, "text": "このつまみの幅だと、大人の指では押しにくそう", "count": 1}
+   ]
+  },
+  {
+   "template": "pivot_counterweight",
+   "sheet_set": "tora-v3",
+   "reports": 2,
+   "results": {"揺れた": 2},
+   "moved_word": "揺れた",
+   "not_moved_word": "揺れない",
+   "stuck_steps": {"2": {"taps": 3, "people": 0}},
+   "quit_steps": {},
+   "craft_steps": {"4": {"talks": 3, "people": 0}},
+   "minutes": [15, 15, 1],
+   "measures": {"ten_swings_sec": [8, 9, 2]},
+   "record_ids": ["R-0003"],
+   "texts": [
+    {"kind": "stuck", "step": 2, "text": "首の帯の折り線が薄くて見えなかった", "count": 1},
+    {"kind": "idea", "step": null, "text": "粘土を増やすと、ゆっくり揺れそう", "count": 1},
+    {"kind": "craft", "step": 4, "text": "粘土は少しずつ足して、揺れを見ながら決めた", "count": 3}
+   ]
+  },
+  {
+   "template": "den_den",
+   "sheet_set": "den_den-v1",
+   "paper": "sample-toy.H-A",
+   "reports": 1,
+   "results": {"鳴った": 1},
+   "moved_word": "鳴った",
+   "not_moved_word": "鳴らない",
+   "stuck_steps": {},
+   "quit_steps": {},
+   "minutes": null,
+   "measures": {},
+   "record_ids": [],
+   "texts": [
+    {"kind": "question", "step": 4, "text": "糸はどこに貼るのですか", "count": 1}
+   ]
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000023-L-stand_figure",
+  "params": {
+    "figure": "hagoita",
+    "stand": "base",
+    "slot_length": 30
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.stand"
+    ]
+  }
+}

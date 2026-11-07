@@ -1,0 +1,15 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000020-L-stand_figure",
+  "params": {
+    "figure": "hebi",
+    "stand": "base",
+    "base_depth": 40,
+    "slot_length": 10
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "template": "spinner",
+  "source_id": "NDL-1187053-R0000029-R-spinner",
+  "params": {
+    "kind": "cone",
+    "cone_h": 5
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.spin"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "template": "pivot_counterweight",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {
+    "mount": "neck",
+    "axle_height": 32,
+    "head_w": 36,
+    "weight_below_axle": 20,
+    "leg_height": 10,
+    "body_round": 8,
+    "head_sides": 2,
+    "neck_length": 23,
+    "clay_back": 2.5,
+    "axle_back": 9,
+    "weight_behind": 0,
+    "fit_check": 1
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

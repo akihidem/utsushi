@@ -1,0 +1,10 @@
+{
+  "template": "popup_jar",
+  "source_id": "NDL-1187053-R0000022-L-popup_jar",
+  "params": {"jar": "hex", "box_side": 44},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.jar_seat"]
+  }
+}

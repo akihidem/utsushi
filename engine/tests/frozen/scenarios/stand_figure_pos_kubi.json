@@ -1,0 +1,14 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000017-R-stand_figure",
+  "params": {
+    "figure": "kubi",
+    "stand": "base",
+    "slot_length": 6
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}
