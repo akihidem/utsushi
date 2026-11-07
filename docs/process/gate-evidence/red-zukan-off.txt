@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_zukan.py
+# commit: da532ccf（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_zukan.py", line 42, in <module>
+    assert get(path)[0] == 404, path
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: /zukan
+rc=1

@@ -66,16 +66,17 @@ try:
 
     page, cookies = get("/?lang=en")
     assert any(c.startswith("utsushi_lang=en;") for c in cookies), cookies
-    assert '<html lang="en"' in page and page.count('class="en-draft"') == 1 and en.DRAFT in page
+    # 頭の断り（下書きの札）は出さない（本人の言葉 11-07「これ要らない。Draft translation. A native speaker has not checked it yet.」）
+    assert '<html lang="en"' in page and 'class="en-draft"' not in page and "Draft translation" not in page and "native speaker" not in page
     assert 'class="nav-lang" href="?lang=ja" lang="ja">日本語</a>' in page, "英語の頁の切り替えは日本語へ戻る口"
     toy, _ = get(f"/toy/{G}", "utsushi_lang=en")
     assert "Goraigo" in toy and "御来迎の図" not in toy
     ja, cookies = get(f"/toy/{G}?lang=ja", "utsushi_lang=en")
     assert '<html lang="ja"' in ja and "en-draft" not in ja and any(c.startswith("utsushi_lang=ja;") for c in cookies)
     assert '<a class="nav-lang" href="?lang=en" lang="en">English</a>' in get("/about")[0], "日本語の頁の切り替えは今の頁の英語へ"
-    # 前からの英語の頁は替えない（本人が採った英文。下書きの札も en.py が自分で 1 つ出す）
+    # 前からの英語の頁は替えない（本人が採った英文）。前からの頁も頭の断りを出さない
     plain, _ = get("/en")
-    assert get("/en", "utsushi_lang=en")[0] == plain and plain.count(en.DRAFT) == 1
+    assert get("/en", "utsushi_lang=en")[0] == plain and "Draft translation" not in plain
     # 人が書いた字は訳さない（機械で訳した他人の言葉を出さない）。札の字は英語になる
     records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "impression": "すっと開いた"})
     mine, _ = get(f"/toy/{G}", "utsushi_lang=en")
