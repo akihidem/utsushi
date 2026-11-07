@@ -1,0 +1,10 @@
+{
+  "template": "slide_box",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {"form": "sleeve"},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F1.source"]
+  }
+}

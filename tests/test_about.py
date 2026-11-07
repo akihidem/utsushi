@@ -7,7 +7,7 @@ import tempfile
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from omochae.marks import without_premise  # noqa: E402
-from web import about  # noqa: E402
+from web import about, demo_samples  # noqa: E402
 
 pages = {k: about.page(k) for k in ("tenji", "zine")}
 for k, h in pages.items():
@@ -26,9 +26,18 @@ for k, h in pages.items():
               "本の情報は、国立国会図書館の記録から取っています。"):
         assert html.escape(w, quote=False) in h or w in h, (k, w)
     assert "採否待ち" not in h and "本人" not in h, k
-    # 仕組みの答えと仮説の名前を書かない。成績の言葉を使わない
+    # 仕組みの答えと仮説の名前を書かない。成績の言葉を使わない（序の頁の作る側の字の床）。
+    # 寄せられた声（ワークショップの参加者の感想・回答のまま。本人の言葉 11-07 夜「とりあえず感想は全て反映させたい」）は人の字なので、
+    # この床から外して見る（字を替えない。どれを出すかは本人が決める）
+    own = h
+    for v in demo_samples.VOICES:
+        for _, text in v["fields"]:
+            own = own.replace(html.escape(text, quote=False), "").replace(html.escape(text), "")
+    # 話された言葉（録画の声を字にした人の言葉・話したまま）も人の字なので、同じく外して見る
+    for s in demo_samples.SPOKEN:
+        own = own.replace(html.escape(s["text"], quote=False), "").replace(html.escape(s["text"]), "")
     for w in ("成功", "失敗", "正解", "仮説 A", "H-A", "つまみ", "内筒"):
-        assert w not in without_premise(h), (k, w)
+        assert w not in without_premise(own), (k, w)
     assert "IntersectionObserver" not in h and "<blockquote>" in h, k
 # 末尾は入口へ戻る釦の 1 つ（前は「おもちゃを選ぶ」と 2 つで、同じ所へ行く対だった（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。/toys は入口へ送るので、/toys へ向く道は置かない））。釦の形にする: 字のリンクを並べると、
 # 並びの高さに伸びて縦長の押す所になり、下線が字から離れる（#141）

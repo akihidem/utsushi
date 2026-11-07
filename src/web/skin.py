@@ -79,11 +79,11 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 .nav,.foot{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif}
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
-.nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}.nav .nav-lang{font-size:12px;letter-spacing:.1em}
+.nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}.nav .nav-lang{font-size:12px;letter-spacing:.1em}.nav .nav-easy{margin-right:-4px}
 /* 駅の間の印は、隙間を少し詰めて駅に寄せる（帯の段を増やさない。幅 320 でも 1 段に収める見積もりは tests/test_nav_arrow.py）。
    英語の帯（全頁の英語・#538）は駅の名が長く、幅 320 で余りが 6px しかなかった（手元の Chrome）ので、幅 480 以下では英語の頁だけ横の隙間（column-gap）を 6px にする。段の間（row-gap）は替えない */
 .nav .nav-arrow{color:var(--mute);letter-spacing:0;margin:0 -8px}
-@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}.nav .nav-arrow{margin:0 -4px}html[lang=en] .nav{column-gap:6px}}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}.nav .nav-easy{right:calc(5vw + 70px)}.nav .nav-arrow{margin:0 -4px}html[lang=en] .nav{column-gap:6px}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
@@ -258,9 +258,11 @@ def nav(skin, current="", path="/", lang="ja"):
     item = lambda name: (f'<a href="{to[name]}"{cur(name)}>{esc(name)}</a>' if to[name]  # noqa: E731
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
     # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない。
-    # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）。前は英語の入口 /en へ飛んだ。英語の頁では web.i18n が「日本語」へ戻る口に替える
+    # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）。前は英語の入口 /en へ飛んだ。英語の頁では web.i18n が「日本語」へ戻る口に替える。
+    # その前に やさしい（やさしい日本語・?lang=easy。本人の言葉 11-07 夜）。lang="ja" を付けて、英語の頁でも訳さずに やさしい のまま出す
     arrow = f'<span class="nav-arrow" aria-hidden="true">{esc(ROAD_ARROW)}</span>'
-    items = arrow.join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="?lang=en" lang="en">English</a>'
+    items = (arrow.join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span>'
+             '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい</a><a class="nav-lang" href="?lang=en" lang="en">English</a>')
     # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
     # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
     brand = ""
@@ -315,6 +317,28 @@ def artwork_label(toy, src):
     when = esc((src.get("original_publication") or {}).get("value", ""))
     rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
     return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
+
+
+def artwork_title(toy, src):
+    """作品の札の題の塊（玩具の名・『書名』より・作者・刊年）。玩具の頁の頭で、狂歌の左に縦書きで置く（本人の言葉 11-08「絵の左横に縦で狂歌、
+    その左横に御来迎 江都二色よりーの部分を置く」）。字は artwork_label の前の 3 行と同じ（出典の記録の値だけ）。"""
+    who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
+    when = esc((src.get("original_publication") or {}).get("value", ""))
+    return f'<p><b>{esc(toy)}</b></p><p>『{esc(src.get("title", ""))}』より</p><p>{who}</p><p>{when}</p>'
+
+
+def artwork_credit(src):
+    """作品の札の出典の字（所蔵・権利）。玩具の頁では頁の一番下に置く（本人の言葉 11-08「国立図書館デジタルコレクションの文言はページの一番下に」）。
+    字は artwork_label の後ろの 2 行と同じ（替えない）。"""
+    rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
+    return f'{esc(src.get("holding", ""))}<br>{rights}'
+
+
+def ndl_page(src):
+    """国立国会図書館デジタルコレクションのその絵の頁（コマ）の道。出典の記録の persistent_id と canvas から作る。作れない時は絵の写しの道（image_url）。"""
+    pid = str(src.get("persistent_id", "")).rsplit("/", 1)[-1]
+    canvas = src.get("canvas")
+    return f"https://dl.ndl.go.jp/pid/{pid}/1/{canvas}" if pid.isdigit() and isinstance(canvas, int) else src.get("image_url", "")
 
 
 # 断りの頁の戻り方は入口への 1 つ。前の「おもちゃの一覧へ」（/toys）は外した（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）

@@ -1,0 +1,10 @@
+{
+  "template": "wheel_cart",
+  "source_id": "NDL-1187053-R0000019-L-wheel_cart",
+  "params": {"ride": "rat", "body_length": 80, "inset_front": 45, "inset_rear": 10, "wheel_r": 10, "rider_at": 0.25},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.wheel"]
+  }
+}

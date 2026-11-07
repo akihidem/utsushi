@@ -25,7 +25,7 @@
 | A2 | 刷った紙はすべて、所蔵・永続 ID・改変の注記・出典 ID・「仮説（復元ではない）」の印を、PDF から読み直せる | F1.marks | `src/omochae/marks.py` | 場面 `neg_marks_*` | 満たす |
 | A3 | 型紙の部品の絵は原図を貼らず描き直す。手順の紙だけ、完成のイメージとして原図を小さく載せてよい（11-04 の例外） | J-007、本人の決定（v8） | `templates/slider_fan.py`、`instructions.py` | F5.image_count、F5.image_box | 満たす |
 | A5 | くずし字を読む頁: 先に自分の読みを書き、人が確かめた読みと並べ、違って読めた字に線を引く。点と正誤は出さず、書いた読みは残さない | 本人の決定 11-04（f14） | `src/web/kuzushi.py` | `tests/test_kuzushi.py` | 一部（人が使った確認はまだ） |
-| A4 | 歌の読みは本人が確かめた形（御来迎「怠けらじ」）で出す | 本人の決定 11-04（U-01） | `src/web/` | `tests/test_play_server.py` | 満たす |
+| A4 | 歌の読みは本人が確かめた形（御来迎「怠らじ」）で出す | 本人の決定 11-04（U-01）を、本人の決め 11-08「御来迎の歌の読みは「怠らじ」」で替えた（前は本人の表記「怠けらじ」） | `src/web/` | `tests/test_play_server.py`・`tests/test_kuzushi_notes.py` | 満たす |
 
 ### B 仮説
 

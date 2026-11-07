@@ -1,0 +1,15 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {
+    "push_part": "tube",
+    "pusher_height": 60
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.stroke"
+    ]
+  }
+}

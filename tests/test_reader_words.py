@@ -42,7 +42,9 @@ INSIDE = (
     ("記録の番号", r"(?<![A-Za-z0-9])R-\d+"),
     ("自分の仮説の番号", r"(?<![A-Za-z0-9])OWN-\d+"),
     ("決定の番号", r"(?<![A-Za-z0-9])[JUTW]-\d+"),
-    ("調べの番号", r"research"),
+    # 調べの記録の番号（research/22・docs/process/research/36 の形）。英語の頁の言葉の research（研究）は内輪の番号でないので当てない
+    # （本人が採った英文 "from schools, research, and museums to homes" が当たった。11-07）
+    ("調べの番号", r"research/\d"),
     ("ファイルの道", r"data/|docs/|\.json"),
     ("API の URL", r"wp-json"),
     ("箱の座標", r"pct:"),
@@ -131,11 +133,11 @@ def see(site, path, data=None, name=None):
 
 # 1 全部の玩具の頁。data/hypotheses の字はここに出る
 for s in sources():
-    for path in (f"/toy/{s}", f"/zukan/{s}", f"/toy/{s}/techo", f"/toy/{s}/techo/kiroku"):
+    for path in (f"/toy/{s}", f"/toy/{s}/techo", f"/toy/{s}/techo/kiroku"):
         see(white, path)
 # 2 頁の作りの字。皮で作りが違う頁は両方を見る
 for site, tag in ((white, "白"), (black, "黒")):
-    for path in ("/", "/about", "/toys", "/gallery", "/zukan", "/en", f"/toy/{G}", f"/toy/{T}"):
+    for path in ("/", "/about", "/toys", "/gallery", "/en", f"/toy/{G}", f"/toy/{T}"):
         see(site, path, name=path if site is white else f"{path}（{tag}）")
 for s in (G, T):
     see(white, f"/zukan/{s}/yomi", {"mine": "ためしの読み"}, f"/zukan/{s}/yomi（読みの後）")
@@ -154,12 +156,12 @@ assert 'name="next_idea"' in waiting, "説明の欄まで届いていない"
 see(white, f"/toy/{G}?see={GS}&kind=sheet&v=2", name="版 2 の窓")
 see(white, f"/toy/{G}/techo/kiroku", name="記録の後の手帖の記録の頁")
 see(white, f"/toy/{G}/tsukuru", name="作りながら見る")
-see(white, f"/zukan/{G}", name="記録の後の図鑑")
+# 前は記録の後の図鑑の頁も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 see(white, "/gallery", name="記録の後のギャラリー")
 assert not hypotheses.save_own(G, "糸で引く", "糸で引いて開く", "糸らしい線")[1]  # 前に書かれた仮説の形（頁の書く欄は #409 で外れた）
 see(white, f"/toy/{G}", name="自分の仮説の後")
 see(white, f"/toy/{G}/record", {"hypothesis": "OWN-1", "result": "動いた", "impression": "開いた"}, "自分の仮説の記録の後")
-see(white, f"/zukan/{G}", name="自分の仮説の後の図鑑")
+# 前は自分の仮説の後の図鑑の頁も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 asked = see(white, f"/toy/{G}/ask", {"hypothesis": GS, "question": "紙の端はどこまで切りますか"}, "聞く口の答え")
 assert "AI の答えは" in asked, "鍵が無い時の文まで届いていない"
 
@@ -230,11 +232,10 @@ assert f"記録の番号 {rid} をもとに直しました" in " ".join(pages["�
 assert "goraigo-v10" not in " ".join(pages[f"/toy/{G}/techo"]), "作る頁に組の番号を出さない"
 
 # 誰が確かめたか・書いたかの印は残る（J-016）。言葉だけが替わる
-zu = pages[f"/zukan/{G}"]
-for w in ("原文の引用", "仮説", "観察", f"確かめた人: {wording.MAKER}"):
-    assert w in zu, w
+# 前は図鑑の頁で 原文の引用・仮説・観察・確かめた人 の印を見ていた。図鑑の頁は外した（本人の言葉 11-08）。確かめた人の印は、下のくずし字を読む の頁で見る
 tp = pages[f"/toy/{G}"]
-assert f"原文の引用。確かめた人: {wording.MAKER}" in tp
+# 玩具の頁の原文の引用の「確かめた人」は、本人の言葉（11-08）「原文の引用確かめた人要らない」で外した（図鑑・くずし字の頁の印は残る）
+assert not any("原文の引用。確かめた人" in t for t in tp), "玩具の頁に原文の引用の確かめた人が残った"
 # 頁が出すのはたたき台の仮説の根拠（御来迎の今の組 goraigo-v14 は H-C で、根拠は手元の複写の解説の〔解釈〕）
 _ev = hypotheses.sheet_of(G)["evidence"][0]
 assert any(t.startswith(f"〔{_ev['certainty']}〕") for t in tp), "根拠の種類の印は消えない"

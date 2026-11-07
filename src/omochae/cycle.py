@@ -20,7 +20,7 @@
 - 作る人は 2 人に分ける（印が 2 つ）。ループ1 の紙で作る人と、たたき台で次の版まで進む人。記録を残すと同じ印の作りは区切りが付く決まりなので、1 人では両方の道を通れない。
 
 使い方: PYTHONPATH=src python -m omochae.cycle [--toy <玩具の ID>] [--keep-going] [--keep <置き場>] [--engine-repo <paper-to-toy の場所>]
-エンジンの repo は --engine-repo・環境の値 OMOCHAE_ENGINE_REPO・この repo の隣の paper-to-toy の順に探す。
+エンジンの repo は --engine-repo・環境の値 OMOCHAE_ENGINE_REPO・この repo の中の engine/・この repo の隣の paper-to-toy の順に探す。
 終わりの値: 0 = 全部の段が通った（エンジンを飛ばした時を含む）/ 3 = 部品はあるのに落ちた / 4 = まだ main に無い部品で止まった・呼び方の誤り。
 """
 import argparse
@@ -423,8 +423,10 @@ def stage_bundle(c):
 
 
 def find_engine_repo(given=None):
-    """エンジンの repo の場所。渡された時はそこだけを見る（渡した場所が無いのに隣の repo を呼ばないため）。"""
-    places = [given] if given else [os.environ.get("OMOCHAE_ENGINE_REPO"), ROOT.parent / "paper-to-toy"]
+    """エンジンの repo の場所。渡された時はそこだけを見る（渡した場所が無いのに隣の repo を呼ばないため）。
+    渡されなければ、環境の値・この repo の中の engine/・隣の paper-to-toy の順（engine/ は提出のために入れたエンジンの頭。
+    審査の人は utsushi だけを clone し、隣の repo が無いので、隣より先に見る）。"""
+    places = [given] if given else [os.environ.get("OMOCHAE_ENGINE_REPO"), ROOT / "engine", ROOT.parent / "paper-to-toy"]
     for place in places:
         if place and (pathlib.Path(place) / "src/omochae/engine_loop.py").exists():
             return pathlib.Path(place)

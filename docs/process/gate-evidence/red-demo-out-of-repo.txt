@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_demo_out_of_repo.py
+# commit: 2b973590（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_demo_out_of_repo.py", line 21, in <module>
+    assert not left, ("repo に残っている動画の作り", left)
+           ^^^^^^^^
+AssertionError: ('repo に残っている動画の作り', ['src/demo', 'docs/demo', 'docs/process/demo-notes.md', 'tests/test_demo_assemble.py', 'tests/test_demo_build.py', 'tests/test_demo_flip.py', 'tests/test_demo_prepare.py', 'tests/test_demo_scene2.py', 'tests/test_demo_scene3.py', 'tests/test_demo_scene4.py', 'tests/test_demo_scene5.py', 'tests/test_demo_scene6.py', 'tests/test_demo_scene7.py'])
+rc=1

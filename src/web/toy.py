@@ -21,7 +21,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
-from . import skin, wording
+from . import naoru, skin, wording
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
 from .toys import way_tags
 
@@ -167,6 +167,9 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             # 刷った後に次へ進む口（段 0）。印刷 → つくる（手帖）の順に置く。作る口は手帖（research/36 の本人の決定）
             f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
+            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）。行き先は上の「つくる」と同じ手帖なので、道は増やさず字だけを
+            # 釦のすぐ下に置く（釦の位置は変わらない）。意義は のこす の画面と同じ字（naoru.purpose）
+            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
@@ -514,10 +517,13 @@ FOLD_STYLE = ("<style>.fold-sec>summary{display:flex;align-items:baseline;gap:0}
               # 狭い幅（1 列）の頭の並び: 原画 → 歌 → 題 → つくる → 原画の出所の字 → 書誌と道 → これまでの記録。原画と歌は頭のまま畳まない（#450 の形）。
               # 原画の部品の中の順（絵・歌・出所）は変えず、題と「つくる」を出所の字の前へ差し込む。幅 390×844 で、前は「つくる」が 873px（最初の画面の外）だった。
               # 広い幅は 2 列（原画 | 題と釦）のままで、ここは効かない
+              # 広い幅: 原画の部品に 題の塊と狂歌の縦の段が入ったので、頭の 2 列のうち原画の側を広くする（前の 1 : 1.2 のままだと幅 1440 で絵が 126px に細った）
+              "@media (min-width:821px){.hero{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}"
               "@media (max-width:820px){.hero{row-gap:10px;padding-top:20px}.hero>.genga-head,.hero>div{display:contents}.hero>*>*{order:6}"
               # 歌は原画の部品の中で名の無い div に包まれている（genga.head）ので、絵の次の div を歌の段として扱う。試作の玩具の断りは釦の後ろ
-              ".hero>.genga-head>.genga-row,.hero>.genga-head>.genga-pic{order:1}.hero>.genga-head>.genga-row+div{order:2}.hero h1{order:3}"
-              ".hero .road{order:4;margin:4px 0}.hero .genga-cap,.hero h1+.meta{order:5}}</style>")
+              # 11-08: 原画の部品は 題の塊と狂歌の縦の段（.genga-tate）と、絵と道の段（.genga-main）の 2 つ。狭い幅は 絵 → 題 → つくる → 縦の段 の順
+              # （縦の段を釦の前に置くと、幅 390 で「つくる」が最初の画面の外に出る）
+              ".hero>.genga-head>.genga-main{order:1}.hero h1{order:2}.hero .road{order:3;margin:4px 0}.hero h1+.meta{order:4}.hero>.genga-head>.genga-tate{order:5}}</style>")
 
 # 畳んだ節へ道（#kaizen など）で着いた時は、その畳みを開く。閉じた見出しだけに着くと、行き先の中身が見えないため（別の目の確かめ 11-06、#472 の輪の図の道）。
 # 着いた所が畳みの中か、畳みを持つ節なら開く。JS が無い時は、見出しに着き、押せば開く（今の畳みのまま）
@@ -572,21 +578,22 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     filled = filled or (None, {})
     head = lambda name: note if at == name else ""
     fill = lambda name: filled[1] if filled[0] == name else {}
-    has_pic = (ROOT / "out/sources" / f"{sid}.jpg").exists()
-    nopic = "" if has_pic else f'<p class="meta"><a href="{esc(src["image_url"])}">図を見る（国立国会図書館）</a></p>'
     songs = "".join(f'<p>{esc(e["text"])}</p>' for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by"))
     who = "・".join(sorted({wording.plain(e["checked_by"]) for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")}))
     stage = hypotheses.stage(sid)
     stage_note = '<p class="meta"><span class="lb">試作</span>全部の玩具を型紙にする途中の物。名前は作る側の見立てで、まだ確かめていません。</p>' if stage != "必須" else ""
+    from . import workshop  # ワークショップで作られた物の写真（本人の言葉 11-07 夜）。公開の場にも出すので photos の線を掛けない
     from . import genga  # 原画と歌（本人の指示 11-06）。頁の全体の絵と歌を 1 つの組にして頭に置く。歌はこの組の中に出す
 
     # 題のすぐ後に次へ進む釦を 1 つ（段 0）。前は最初の「型紙を見る」が机で約 1.8 画面、スマホで約 2.6 画面下にあった（#292）。
     # 書誌と図鑑への道は「知る」の読み物として釦の後に残し、これまでの記録は見出しのまま畳む（記録が無い時も 1 行の節が場所を取っていた）
     hero = (f'<section class="hero">{genga.head(sid, src, photos=photos)}<div>'
             f'<h1>{esc(data["toy"])}</h1>{stage_note}{make_go(sid)}'
-            + skin.artwork_label(data["toy"], src) + nopic
-            + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a></p>'
-            f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
+            # 作品の札は、題の塊を原画の部品の縦の段へ、出典の字を頁の一番下の段へ分けた（本人の言葉 11-08。genga.head・genga.ndl_credit）。
+            # 図を見る（国立国会図書館）は原画の部品の 1 つの道にまとめた。図鑑の頁とほかのおもちゃの道は外した（本人の言葉「図鑑のページ要らない」
+            # 「ほかのおもちゃ、のリンク要らない」）。くずし字を読む は残す
+            + f'<p class="links"><a href="/zukan/{sid}/yomi">くずし字を読む</a></p>'
+            f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{workshop.strip(sid)}{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
     # 頁の本体は 原画と立体 → つくる → 型紙 の順だけにする（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」）。
@@ -651,12 +658,17 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 試した記録を残す口は、のこす（記録の頁）へ寄せた（本人の答え 11-07 夕の Q3）。同じ所に記録の頁への道を 1 本だけ置く。
     # 錨 #kiroku と返事の文（head）は残す: 作りながら見る頁の組み上がりの札・試した後の紙の断りの「記録の欄へ」・受け口の返事が、この錨へ戻るため
     # （道の直しは増やさない。着いた所から 1 本でのこすへ行ける）。JS の無い画面で記録を残す道は無くなる（手帖の のこす は JS で送る）
-    body += (f'<section class="sec" id="kiroku">{head("kiroku")}'
+    # のこすへの道 2（本人の言葉 11-07 夜「できたはのこそう」）。今の道の上に見出しと意義の 1 文を足す。道の字（KIROKU_TO_NOKOSU）・行き先・錨は替えない
+    done = (f'<h2>{esc(naoru.ROUTE_DONE)}</h2>' if naoru.ROUTE_DONE else "") + (f'<p class="meta">{esc(naoru.purpose())}</p>' if naoru.ROUTE_DONE and naoru.purpose() else "")
+    body += (f'<section class="sec" id="kiroku">{head("kiroku")}{done}'
              f'<p class="links"><a href="/toy/{esc(sid)}/techo/kiroku">{esc(KIROKU_TO_NOKOSU)}</a></p></section>')
     # 作った物の並び（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     # 見出しは MINNA_HEAD（夕方のレビューの 6 で、人ごとの呼び方をやめた）
-    body += (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or f"<p class=meta>{esc(MINNA_EMPTY)}</p>"}'
-             f'{fold_samples(sample_records(data), bool(recs))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
+    # ワークショップの試行の写真も、これまでの復元の 1 つとして並びの頭に置く（本人の見直し 11-07 夜の ②「これまでの復元にワークショップの写真がない。」）。
+    # 写真がある時は「まだありません」を出さず、見本を畳む（本物が 1 つでもあれば見本は畳む、と同じ考え）
+    wsp = workshop.strip(sid)
+    body += (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if wsp else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
+             f'{fold_samples(sample_records(data), bool(recs) or bool(wsp))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
     # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5「型紙の改善の輪は外して、説明の頁と のこす だけにする」。
     # 夕方のレビューの 8「型紙改善の輪と型紙の窓の情報が重なる」）。報告から直した版と次の版を待つ報告は、作る側の様子の頁（/loop/<印>）へ移した。
     # 学ぶ人には、版の歩み（ban_ayumi）が版の並びを、型紙の窓の小さな輪の図が輪の形を見せる。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）
@@ -665,6 +677,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
 
     body += en.band(sid)
     body += f'<section class="sec">{neighbours(sid)}</section>'
+    # 国立国会図書館デジタルコレクションの出典の字（所蔵・コマ・権利）は頁の一番下（本人の言葉 11-08「国立図書館デジタルコレクションの文言はページの一番下に」）
+    body += genga.ndl_credit(sid, src)
     if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない
         body = body.replace('id="kasetsu">', f'id="kasetsu">{note}', 1)
     return skin.shell(data["toy"], FOLD_STYLE + body + FOLD_SCRIPT, look, "", path)

@@ -1,0 +1,15 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000006-L-pull_nod",
+  "params": {
+    "kind": "bow",
+    "weight_g": 0.2
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ]
+  }
+}

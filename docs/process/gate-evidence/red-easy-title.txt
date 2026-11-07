@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_easy_part1.py
+# commit: 6c304cde（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_easy_part1.py", line 64, in <module>
+    assert not changed, ("入口の題字と副題は、ルビだけを振る（字を足さない・言い換えない）", changed)
+           ^^^^^^^^^^^
+AssertionError: ('入口の題字と副題は、ルビだけを振る（字を足さない・言い換えない）', ['うしなわれた玩具の動きを', '紙で実験して確かめる'])
+rc=1

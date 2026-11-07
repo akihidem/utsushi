@@ -1,0 +1,14 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000028-L-stand_figure",
+  "params": {
+    "figure": "torisao_hoso",
+    "stand": "base",
+    "slot_length": 7
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}
