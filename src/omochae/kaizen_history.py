@@ -15,12 +15,24 @@
 - 版ごとの紙の絵（刷った紙の 1 枚目を縮めた物）は生成物なので repo に入れない（画像は NDL と東京学芸大学の PDM の物だけの決まり）。
   out/history/ の下に置き、表の行の sheet_image（sheets/<組の名>.png）で引く。版の並びの絵（strip）は切らない（統括の決め 11-07。
   並びの配置が替わっても崩れないよう、エンジンが組ごとに 1 枚ずつ出した物を使う）。
+- 置き場に絵が無い版は、repo の中から作る（本人の見直し 11-07 22:16「過去の版が表示されていない。」。repo の clone だけで動く公開の場は
+  out/ が空なので、全部の額が空だった）。作れるのは 2 つ: 改善の輪より前の版は、刷って渡した紙の PDF（docs/process/trials/sheets/<組>/ の
+  仮説 A の型紙。v1〜v4 は仮説 A に当たる tab の紙。エンジンが出した絵と同じ紙なのを 11-07 に絵の差で確かめた）の 1 枚目。今の組は、
+  今の雛形でたたき台を刷った 1 枚目（サイトが今刷る紙と同じ）。間の版（御来迎 v11〜v13・虎 v4〜v6）はエンジンの repo の記録にしか無く、
+  repo の中からは作れないので、頁は「この版の絵は残っていない」と出す（作り直した絵を、その版の紙として見せない）。
+  作った絵は小さい写し（幅 298）にして out/history/sheets に置く（生成物なので repo に入れない決まりはそのまま）。作るのは絵が求められた時で、
+  頁を返す時は作れるかだけを見る（頁を遅くしない）
 """
+import contextlib
+import io
 import json
 import pathlib
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
+import threading
 
 from .compose import TEMPLATES
 from .hypotheses import ROOT
@@ -77,13 +89,98 @@ def engine_now(data=None):
     return next((e for e in data["engine_versions"] if e["engine_version"] == max(nos)), None)
 
 
-def picture(row):
-    """版の行の紙の絵のパス。置いていない・名が決まりの外の時は None（頁は絵の無い額にする）。"""
+TRIAL_SHEETS = ROOT / "docs/process/trials/sheets"
+THUMB_W = 298  # 額の小さい写しの幅（額は幅 596 の半分の大きさで並ぶ。2 倍の画面でもぼけすぎない所）
+_build_lock = threading.Lock()
+
+
+def _name(row):
     name = row.get("sheet_image") or ""
-    if not IMAGE.fullmatch(name):
+    return name if IMAGE.fullmatch(name) else None
+
+
+def trial_pdf(set_name):
+    """改善の輪より前の版の、刷って渡した型紙の PDF（仮説 A。v1〜v4 は仮説 A に当たる tab）。無い時は None。"""
+    folder = TRIAL_SHEETS / set_name
+    if not re.fullmatch(r"[a-z]+-v\d{1,3}", set_name or "") or not folder.is_dir():
+        return None
+    toy = set_name.split("-v")[0]
+    for stem in (f"{toy}_H-A_v{set_no(set_name)}", f"{toy}_tab_v{set_no(set_name)}"):
+        if (folder / f"{stem}.pdf").is_file():
+            return folder / f"{stem}.pdf"
+    return None
+
+
+def _current_source(set_name):
+    """今の組なら、その雛形で刷る玩具の出典の ID。今の組でない・玩具が見つからない時は None。"""
+    for name, template, _row in toys():
+        if TEMPLATES[template].SHEET_SET != set_name:
+            continue
+        for f in sorted((ROOT / "data/hypotheses").glob("*.json")):
+            d = json.loads(f.read_text(encoding="utf-8"))
+            if d.get("toy") == name and d.get("template", "slider_fan") == template:
+                return d["source_id"]
+    return None
+
+
+def can_picture(row):
+    """額に絵を出せるか（置き場に在る・repo の中から作れる）。頁を返す時に見る（ここでは作らない）。"""
+    name = _name(row)
+    if name is None:
+        return False
+    set_name = name[len("sheets/"):-len(".png")]
+    return (PICTURES / name).is_file() or trial_pdf(set_name) is not None or _current_source(set_name) is not None
+
+
+def _thumb(pdf, dest):
+    """PDF の 1 枚目を幅 THUMB_W の PNG にして dest に置く（一時のファイルから置き換える）。"""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as d:
+        base = pathlib.Path(d) / "p"
+        subprocess.run(["pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png", "-scale-to-x", str(THUMB_W), "-scale-to-y", "-1",
+                        str(pdf), str(base)], check=True, capture_output=True, timeout=60)
+        tmp = dest.with_name(f".{dest.name}.tmp")
+        shutil.copyfile(base.with_suffix(".png"), tmp)
+        tmp.replace(dest)
+
+
+def build_picture(set_name):
+    """repo の中から版の絵を作って置き場に置く。作れた時はパス、作れない時は None。"""
+    dest = PICTURES / "sheets" / f"{set_name}.png"
+    pdf = trial_pdf(set_name)
+    sid = None if pdf else _current_source(set_name)
+    if pdf is None and sid is None:
+        return None
+    with _build_lock:  # 同じ絵を同時に 2 度作らない（額が並ぶ頁は絵を一度に求める）
+        if dest.is_file():
+            return dest
+        try:
+            if pdf is not None:
+                _thumb(pdf, dest)
+            else:
+                from . import hypotheses
+                data = hypotheses.load(sid)
+                with tempfile.TemporaryDirectory() as d:
+                    out = pathlib.Path(d) / "sheet.pdf"
+                    with contextlib.redirect_stdout(io.StringIO()):  # 刷った一時の置き場のパスを、サーバの出力に出さない
+                        rc = hypotheses.print_sheet(sid, hypotheses.sheet_id(data), str(out))
+                    if rc != 0 or not out.is_file():
+                        return None
+                    _thumb(out, dest)
+        except (OSError, subprocess.SubprocessError):
+            return None
+    return dest
+
+
+def picture(row):
+    """版の行の紙の絵のパス。置き場に無ければ repo の中から作る。作れない・名が決まりの外の時は None。"""
+    name = _name(row)
+    if name is None:
         return None
     path = PICTURES / name
-    return path if path.is_file() else None
+    if path.is_file():
+        return path
+    return build_picture(name[len("sheets/"):-len(".png")])
 
 
 def copy(src):
