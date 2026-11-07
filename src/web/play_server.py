@@ -174,6 +174,11 @@ def next_form(r, back=""):
     return toy.next_form(r, back)
 
 
+def _ban(sid, v):
+    """刷った後の知らせの版の字。玩具の頁の窓の札・刷り直しの釦と同じ組の番号の呼び方にする（窓口の決定 11-07・#513 の (a)）。
+    知らせだけ「版 2」のままだと、同じ画面の札「版 14（直し 2）」と別の版に読めるため。"""
+    return hypotheses.label_of(hypotheses.current_set(hypotheses.load(sid)), int(v))
+
 def _num(v):
     v = (v or "").strip()
     if not v:
@@ -805,9 +810,9 @@ class Handler(BaseHTTPRequestHandler):
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"], at="win"))
         if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
-            return self._send(422, self._toy(sid, errors=[f"版 {v} の紙を作れませんでした（検査に落ちた）"], at="win"))
+            return self._send(422, self._toy(sid, errors=[f"{_ban(sid, v)} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
+        return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
 
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
@@ -831,7 +836,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import toy
 
             return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
+        return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
