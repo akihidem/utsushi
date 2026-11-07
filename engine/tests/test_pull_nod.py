@@ -175,3 +175,42 @@ for p in (bow, jaw, peck):
 
 print(round(pn.swing_deg(bow), 1), round(pn.swing_deg(jaw), 1), round(pn.bird_swing(peck, 'cock'), 1), round(pn.pull_gf(bow)), round(pn.pull_gf(jaw)), round(pn.pull_gf(peck)))
 print("ok")
+
+# EP-0008（作る前のレビューの指摘から採った案。2026-11-06）: 振り獅子の下顎に、顎を動かす糸を付ける所と、口が開くための重りを付ける所を
+# 示してほしいという声があった。位置の印（赤茶の点の線。凡例に「切らない・折らない」）で 2 つを刷った。
+# - 重り: 顎の先の点の丸。真ん中は、戻る力の式が粘土を置く所（軸から jaw_len − CLAY_IN 前・軸の高さ）と同じ。粘土は丸の裏に付ける
+# - 糸: 舌の端の糸の穴を囲む点の丸（軸の穴と見分ける）
+# - 印は部品の内にあり、穴・折り線・糊代にかからない（check_art）。寸法の範囲の端の組でも同じ
+# - 組み方の文が、2 つの丸を言う
+from shapely.geometry import Point, Polygon
+from omochae.__main__ import load_source
+from omochae.compose import compose
+from omochae.floors import check_art
+seen = 0
+for jl in (pn.RANGES["jaw_len"][0], jaw["jaw_len"], pn.RANGES["jaw_len"][1]):
+    for jh in (pn.RANGES["jaw_h"][0], jaw["jaw_h"], pn.RANGES["jaw_h"][1]):
+        for tl in (pn.RANGES["tab_len"][0], jaw["tab_len"], pn.RANGES["tab_len"][1]):
+            q = {**jaw, "jaw_len": jl, "jaw_h": jh, "tab_len": tl}
+            if pn.check_range(q) or pn.check_physics(q):
+                continue  # 検査で落ちる寸法は刷らない
+            seen += 1
+            part = next(x for x in pn.parts(q) if x.key == "jaw")
+            clay = [a for a in part.art if a["kind"] == "mark" and a.get("mark") == "clay"]
+            ring = [a for a in part.art if a["kind"] == "mark" and a.get("mark") == "string"]
+            assert len(clay) == 1 and len(ring) == 1, (q, len(clay), len(ring))
+            c = Polygon(clay[0]["pts"]).centroid
+            # 戻る力の式（lever）の粘土の点: 軸から前へ d・軸の高さ。軸の穴は顎の先から jaw_len なので、顎の紙の上では x = jaw_len − d
+            d = pn.lever(q)[0][1][1]
+            assert math.dist((c.x, c.y), (jl - d, jh / 2)) < 0.05, (q, c, jl - d)
+            hx, hy, hr = part.holes[1]  # 舌の端の糸の穴
+            rc = Polygon(ring[0]["pts"]).centroid
+            assert math.dist((rc.x, rc.y), (hx, hy)) < 0.05, (q, rc, (hx, hy))
+            assert check_art([part]) == [], (q, [f.line() for f in check_art([part])])
+assert seen >= 5, seen
+_, layout, fails = compose("pull_nod", jaw, load_source(pn.SOURCES["jaw"]))
+assert not fails, [f.line() for f in fails]
+assert any("位置の印" in x.text for x in layout["texts"]), "凡例に位置の印の行が無い"
+st = pn.steps(jaw)
+assert any("点の丸" in x and "重りの粘土" in x for x in st), st
+assert any("点の丸で囲んだ" in x and "糸" in x for x in st), st
+print("ok 振り獅子の糸と重りの印")

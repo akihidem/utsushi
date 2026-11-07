@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kaizen_ws.py
+# commit: abf074d8（回した時の HEAD）
+ok 審査用の頁のワークショップの節: 一覧があれば回数と回ごとの札、写真は人が確かめた物だけの物だけ、写真の道はそれ以外 404
+rc=0

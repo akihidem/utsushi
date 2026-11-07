@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ban_ayumi.py
+# commit: 23dd3927（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ban_ayumi.py", line 77, in <module>
+    assert imgs == [f"/history/sheets/tora-v{n}.png" for n in (1, 2, 3, 5, 6, 7)], imgs
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['/history/sheets/tora-v1.png', '/history/sheets/tora-v2.png', '/history/sheets/tora-v3.png', '/history/sheets/tora-v7.png']
+rc=1
