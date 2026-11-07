@@ -1,0 +1,5 @@
+# 命令: for i in $(seq 1 20); do PYTHONPATH=src .venv/bin/python tests/test_print_together.py; echo $?; done
+# commit: 973a4881 にこの枝の直しを当てた木
+rc（20 回）: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+rc 134 は 20 回のうち 0 回。どの回も ok を出した
+rc=0

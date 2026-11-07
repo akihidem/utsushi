@@ -52,7 +52,9 @@ assert not f.exists()
 # サイトの頁から作ったフォームへつなぐ（本人の指示 11-04）
 from omochae.form_import import FORM_URL  # noqa: E402
 from web.contrib_server import public_page  # noqa: E402
-from web.techo_site import gallery_page  # noqa: E402
+from web.techo_site import gallery_page, voices_sections  # noqa: E402
 
-assert FORM_URL.startswith("https://docs.google.com/forms/") and FORM_URL in gallery_page([]) and FORM_URL in public_page()
+# 持ち寄りの入口（フォーム）は、職人の言葉の節ごと序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
+assert FORM_URL.startswith("https://docs.google.com/forms/") and FORM_URL in voices_sections() and FORM_URL in public_page()
+assert FORM_URL not in gallery_page([]), "ギャラリーに持ち寄りの入口が残る"
 print("ok")

@@ -76,8 +76,9 @@ assert kiroku.count('name="scene" value="keep"') == 2, "記録ごとの口が並
 assert kiroku.count(DECIDED) == 1 and PARA in kiroku, "記録の頁（記録ごとに足す口がある）にも、文を 1 回だけ置く"
 
 # 持ち寄りの所には出さない（「前にエンジンへ渡した分は残ります」が事実と合わない）。説明の文がある事も見て、見本の取り違えで通らないようにする
-gallery = page("/gallery")
-assert "送られた物は確かめてから載せます。" in gallery and DECIDED not in gallery
+# 持ち寄りの入口（職人の言葉の節）は序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。そこにも、ギャラリーにも出さない
+gallery, yomu = page("/gallery"), page("/about")
+assert "送られた物は確かめてから載せます。" in yomu and DECIDED not in yomu and DECIDED not in gallery
 assert "取り下げを申し出られる事に同意します" in contrib_server.FORM and DECIDED not in contrib_server.FORM
 
 # README: 取り下げの節に別の段落で置く（行末に句点が無い事まで見る）
