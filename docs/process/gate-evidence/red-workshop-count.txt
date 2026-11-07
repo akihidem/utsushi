@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_workshop_count.py
+# commit: 62dd1119（main）の木に tests/test_workshop_count.py だけを置き、README.md と CLAUDE.md は main の物のまま（git の外の写し）
+Traceback (most recent call last):
+  File "tests/test_workshop_count.py", line 21, in <module>
+    assert "ワークショップは 4 回（11 月 4・5・6・7 日）" in summary, (name, "4 回の数え方")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('README.md', '4 回の数え方')
+rc=1
