@@ -32,6 +32,11 @@ for k, v in table.items():
     assert v == i18n.KEEP or set(PH.findall(v)) <= set(PH.findall(k)), ("鍵に無い数の印", k, v)
     assert not re.search(r"data/|\.json|OWN-\d", v), ("内輪の言葉", k, v)
     assert k == " ".join(k.split()) and not re.search(r"\d", PH.sub("", k)), ("鍵の形（空白 1 つ・数は {n}）でない", k)
+# repo に入っている記録（11-04 の試行）の人の字（窓口の決め 135434）: 本人の説明は原文を残して英訳を添え、参加者のつぶやきを含む字は訳さない
+said = [k for k in table if k.startswith("人の説明:")]
+murmurs = [k for k in table if "つぶやき" in k]
+assert said and all(table[k].startswith(k) for k in said), "本人の説明は原文を残す"
+assert murmurs and all(table[k] == i18n.KEEP for k in murmurs), "参加者のつぶやきは訳さない"
 
 srv = serve(0, look="tenji")
 threading.Thread(target=srv.serve_forever, daemon=True).start()
