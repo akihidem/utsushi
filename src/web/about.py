@@ -233,4 +233,4 @@ def page(skin_name, path="/about"):
             # （本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D。techo_site.voices_sections）
             f'<section class="sec">{techo_site.voices_sections()}</section>'
             '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
-    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE + techo_site.VOICES_STYLE)
+    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE + techo_site.VOICES_STYLE, description=PREMISE[0])

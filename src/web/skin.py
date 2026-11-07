@@ -284,13 +284,24 @@ def entrance_style(skin):
     return f":root{{{root}}}{NAV_STYLE}.nav{{border-bottom:0}}body .nav a:not([aria-current=page]){{border-bottom:0;text-decoration:none;color:var(--accent)}}{TAP_FLOOR}"
 
 
-def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot="", lang="ja"):
+def meta_head(title, description=""):
+    """頁の中身を AI と検索に言う head の字（本人の言葉 11-08「まずはAIフレンドリーに。…AIにも選んでもらいたい」）。
+    description には、その頁（か同じサイトの頁）にもう出ている字の全体だけを渡す。新しい字を作らない（統括の決め 11-08）。
+    字の全体にするのは、訳の表（web.i18n）が content の属性も鍵で訳すため: 頁の字と同じ鍵で、英語とやさしい日本語でも同じ字になる。
+    読み手の AI への頼みや評価の字は書かない（J-015）。合う字が無い頁は空のままにし、何も足さない（空けた頁の一覧は tests/test_page_description.py）。"""
+    if not description:
+        return ""
+    return (f'<meta name="description" content="{esc(description)}">'
+            f'<meta property="og:title" content="{esc(page_title(title))}"><meta property="og:description" content="{esc(description)}">')
+
+
+def shell(title, body, skin=DEFAULT, current="", path="/", extra_style="", body_class="", head="", foot="", lang="ja", description=""):
     """頁の骨。皮の変数を :root に置き、頭の帯と足を付ける。中身（body）は皮を知らずに書けるようにする。"""
     s = SKINS.get(skin, SKINS[DEFAULT])
     root = ";".join(f"--{k}:{v}" for k, v in s.items() if k != "name")
     foot = foot or '<p class="foot">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製、パブリック・ドメイン）。紙で動いても、昔の作り方の証明にはなりません。<br><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p>'
     return (f'<!doctype html><html lang="{esc(lang)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{esc(page_title(title))}</title><style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
+            f'<title>{esc(page_title(title))}</title>{meta_head(title, description)}<style>:root{{{root}}}{BASE}{NAV_STYLE}{TAP_FLOOR}{extra_style}</style>{head}'
             f'<body class="skin-{esc(skin)}{" " + esc(body_class) if body_class else ""}">{nav(skin, current, path, lang)}<main>{body}</main>{foot}{WHO_SCRIPT}{BUSY_SCRIPT}</body></html>')
 
 

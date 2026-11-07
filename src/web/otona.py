@@ -80,4 +80,5 @@ def page(skin_name, path="/otona"):
             '<nav class="jump" aria-label="この頁の節">' + "".join(f'<a href="#{sid}">{esc(head)}</a>' for sid, head, _ in SECTIONS) + "</nav></section>"
             + "".join(_section(i, sid, head, lines) for i, (sid, head, lines) in enumerate(SECTIONS))
             + '<section class="sec"><p class="links"><a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a></p></section></div>')
-    return skin.shell(TITLE, body, skin_name, path=path, extra_style=STYLE)
+    # description は 1 節の 1 行目（採られた文のまま）
+    return skin.shell(TITLE, body, skin_name, path=path, extra_style=STYLE, description=SECTIONS[0][2][0])

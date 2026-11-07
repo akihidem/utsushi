@@ -440,6 +440,9 @@ PUBLIC_UPLOADED = "写真は、人が確かめてから、みんなの所に出�
 UPLOADED = "上げました"  # 手帖の script（techo_step）が上げた後に渡す返事の字
 
 
+# ギャラリーの頭の説明の文。頁と、頁の description（skin.meta_head）が同じ字を引く（description に新しい字を作らないため・11-08）
+GALLERY_LEAD = "記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。"
+
 def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     """他の人が作った物のギャラリー（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
@@ -483,7 +486,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
-            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
+            f'<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">{esc(GALLERY_LEAD)}</p>'
             f'{note}{own}{ws}{cards}</section></div>')
 
 
