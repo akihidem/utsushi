@@ -31,9 +31,13 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 BASE = ROOT / "local" / "reports"
 MAX_PROBLEMS = 3
 MAX_BODY = 20_000  # 送られる文の上限（バイト）。長すぎる物は読まずに断る
-# 返す全部の頁に付ける守りの見出し。画面は手元の機械だけで開くが、ほかのサイトの枠に入れて押させる形（clickjacking）を止める
+# 返す全部の頁に付ける守りの見出し。画面は手元の機械だけで開くが、ほかのサイトの枠に入れて押させる形（clickjacking）を止める。
+# Referrer-Policy は same-origin（同じサイトへの送りにだけ送り元を出し、ほかのサイトへは出さない）。no-referrer にすると、
+# ブラウザは同じサイトへの form の POST にも「Origin: null」を付け（POST の Origin は referrer の決まりに従う）、Origin を見る
+# 受付（_same_site）がブラウザからの送りを全部断った（制作者の決め 2026-11-08「今夜のうちに直してください」）。
+# null を通す形にはしない（ほかのサイトからの送りも null になり、止められなくなるため）
 SECURITY_HEADERS = {"X-Frame-Options": "DENY", "Content-Security-Policy": "frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
-                    "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
+                    "X-Content-Type-Options": "nosniff", "Referrer-Policy": "same-origin"}
 
 
 def visible(text):
@@ -211,7 +215,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
-        # ほかのページの枠に入れさせない・形を読み替えさせない・送り元の URL を出さない（セキュリティの点検 2026-11-07）
+        # ほかのページの枠に入れさせない・形を読み替えさせない・ほかのサイトへ送り元の URL を出さない（セキュリティの点検 2026-11-07）
         for k, v in SECURITY_HEADERS.items():
             self.send_header(k, v)
         self.end_headers()

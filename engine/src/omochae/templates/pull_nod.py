@@ -75,6 +75,7 @@ MU = 0.4  # 竹串と紙の摩擦係数の見込み（量っていない）
 SAFETY = 3  # 戻る力が摩擦の何倍あれば戻ると見るか。紙のたわみ・糸の擦れを入れていないので余裕を取る
 POST_GAP = 6  # 2 本の柱の間。体の紙（2 枚重ね）が擦れずに入る幅の見込み
 CLAY_IN = 3  # 粘土の中心を紙の端からこれだけ内側に付ける
+CLAY_MARK_R = 2.0  # 振り獅子の顎の先に刷る、重りの位置の点の丸の半径（顎の高さの下限 8mm でも、紙の縁と先の角の落としから離れる）
 # 竹串の抜け止め・鶏の位置決めに串へ付ける粘土（1 本の串あたり、見込み）。重り（weight_g）とは別に用意する。
 # 同じ粘土から取ると、振れる部品に付く量が式の weight_g より減るため（部品表でも別の行にする）。軸の上に付くので戻るモーメントは 0、摩擦の質量にだけ入れる。
 STOP_CLAY_G = 0.3
@@ -642,6 +643,11 @@ def _bow_parts(p):
     return [plank, posts, torso, stop, mortar]
 
 
+def _ring(cx, cy, r, n=24):
+    """位置の印の丸（閉じた点の線）の頂点。"""
+    return [(cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
+
+
 def _jaw_parts(p):
     head = _head_part(p)
     jl, jh, tl = p["jaw_len"], p["jaw_h"], p["tab_len"]
@@ -652,6 +658,12 @@ def _jaw_parts(p):
     jaw.art = [{"kind": "poly", "pts": [(3.3, 0.4), (jl - 2, 0.4), (jl - 2, jh * 0.45), (0.6, jh * 0.45), (0.6, 3.2)], "fill": MOUTH},
                {"kind": "poly", "pts": [(0.6, jh * 0.55), (jl - 2, jh * 0.55), (jl - 2, jh - 0.4), (0.6, jh - 0.4)], "fill": FACE}]
     jaw.art += [{"kind": "line", "pts": [(x, 0.8), (x + 1.2, jh * 0.4), (x + 2.4, 0.8)], "stroke": "#ffffff", "sw": 0.3} for x in range(4, int(jl) - 5, 3)]
+    # 位置の印（作る前のレビューの指摘から採った案 EP-0008、2026-11-06: 下顎に、糸を付ける所と重りを付ける所を示してほしい）。
+    # 重りは顎の先の点の丸。真ん中は戻る力の式（lever）が粘土を置く所（軸から jaw_len − CLAY_IN 前・軸の高さ）と同じで、粘土は丸の裏に付ける。
+    # 糸は舌の端の穴を点の丸で囲む（軸の穴と見分けるため）。丸は穴の縁から 1.2mm 離す（印が穴にかかると、切った時に消える）
+    sx, sy, sr = jaw.holes[1]
+    jaw.art += [{"kind": "mark", "pts": _ring(CLAY_IN, jh / 2, CLAY_MARK_R), "closed": True, "mark": "clay"},
+                {"kind": "mark", "pts": _ring(sx, sy, sr + 1.2), "closed": True, "mark": "string"}]
     # 3 棒: 2 枚重ね。頭を上の端に貼り、糸は裏に沿わせて下の端から出す。
     sl, s = p["stick_len"], p["stick_w"]
     stick = Part(3, "stick", "棒", [(0, 0), (sl, 0), (sl, 2 * s), (0, 2 * s)], label_xy=(2, 1), label="3",
@@ -781,8 +793,8 @@ def steps(p):
                 "1 頭の裏の下を 3 棒の上の端に貼る",
                 "2 下顎を頭の口に重ね、短く切った竹串を両方の穴に通し、竹串の両端の外側（頭の裏と顎の表）に抜け止めの粘土を付ける（重りの粘土は使わない）",
                 f"4 こぶを破線で三角に折り、糊代で閉じて柱にする。左の面を頭に刷った小さい四角（軸の穴から {p['jaw_h'] / 2 + p['stop_gap']:g}mm 上・{jaw_contact_back(p):.0f}mm 後ろ）に合わせて貼る",
-                f"顎の先の裏に重りの粘土を {p['weight_g']:g}g 付ける。口が開いて舌がこぶに当たるか見る",
-                f"糸を舌の穴に結び、棒の裏に沿わせて下の端から出す。引くと約 {pull_gf(p):.0f}gf（見込み）で口が閉じる"]
+                f"顎の先の点の丸（位置の印）の裏に、重りの粘土を {p['weight_g']:g}g 付ける。口が開いて舌がこぶに当たるか見る",
+                f"糸を、舌の端の点の丸で囲んだ穴に結び、棒の裏に沿わせて下の端から出す。引くと約 {pull_gf(p):.0f}gf（見込み）で口が閉じる"]
     return out
 
 

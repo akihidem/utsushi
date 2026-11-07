@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kaizen_kata.py
+# commit: 6fc6dbf6（回した時の HEAD）
+ok 型紙で改善したおもちゃの段: 作例の部品の写真がある時だけ、御来迎の写真の隣に確かめた動画。動画の道は確かめた物だけ（Range も）
+rc=0

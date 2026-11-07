@@ -1,0 +1,6 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_easy_all.py と、yasashii.d/kaizen.json のルビの外の漢字を数える python（帳面の節「審査用の頁のやさしい日本語の落ちた字」）
+# commit: 890eccac（kaizen.json を足した commit）
+ok やさしい日本語の土台: 全部の頁が開く・ルビの形・切り替えと cookie・英語の頁は替えない
+rc 0
+kaizen.json 77 鍵・ルビの外の漢字と = の値 0
+rc 0

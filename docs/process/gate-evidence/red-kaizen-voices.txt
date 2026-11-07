@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kaizen_ws.py
+# commit: 22010825（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kaizen_ws.py", line 174, in <module>
+    assert ws.VOICES and all(_h.count(f'<p class="lead ws-voices">{t}</p>') == 1 for t in ws.VOICES), "2 文が 1 回ずつ"
+           ^^^^^^^^^
+AttributeError: module 'web.kaizen_ws' has no attribute 'VOICES'
+rc=1

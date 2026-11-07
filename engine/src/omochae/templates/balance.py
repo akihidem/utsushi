@@ -13,11 +13,12 @@
 
 動きの見込み（F5.balance）の前提（質量は g、長さは mm。pivot_model と同じく下を z の正にする）:
 - 弥次郎兵衛: 支点は V の先。質量の点は、紙の体 2 枚（外形の面積 × 坪量、外形の重心）、先の当て紙、
-  竹串の腕 2 本（太さ 3mm の竹串の線密度の見込み × 長さ、腕の真ん中）、玉 2 つ。紙の曲がり・糊の重さ・摩擦は入れない。
+  竹串の腕 2 本（太さ 3mm の竹串の線密度の見込み × 長さ、腕の真ん中）、真ん中の軸の竹串 1 本（同じく。支点の真上の線の上）、玉 2 つ。
+  紙の曲がり・糊の重さ・摩擦は入れない。
   ・重心が支点より MIN_DROP 以上下にある（上にあれば倒れる。真下に近いと少しの風で回って落ちる）。
   ・玉の粘土を手で量る差（CLAY_TOL）だけ左右が違っても、静かな時の傾きが MAX_TILT 以下（重心が低いほど傾きは小さい）。
   ・傾けた時に玉が台の竹串に当たるまで MIN_SWING 以上振れる。玉の下が机に当たらない。
-  ・腕の竹串の差し込みが体の中に収まり、左右の腕が体の中で交わらない。竹串 1 本の長さで足りる。
+  ・腕の竹串の差し込みが体の中に収まり、左右の腕が体の中で交わらない。真ん中の軸の竹串と腕の竹串が重ならない。竹串 1 本の長さで足りる。
   ・支点の先は紙を重ねて厚くする（当て紙）。表裏 2 枚と当て紙の厚みの和が MIN_TIP_T 以上（薄い縁は串の先が滑るか刺さる）。
 - 起き上がり小法師: 底の半球の曲がりの中心は、底から半径 R の高さにある。重心がそれより下なら、傾けた時に
   重心が上がるので戻る（半球の上で転がる限り。円錐の側が床に付くほど倒すと、ここの式は外れる）。
@@ -25,7 +26,7 @@
   （半球の底を満たす球の欠けの形と見る。油粘土の密度の見込み CLAY_DENSITY）。
   ・重心が曲がりの中心より MIN_MARGIN × R 以上下にある（紙の継ぎ目の段や床の摩擦の分の余裕の見込み）。
   ・粘土が底の半分の高さに収まる（それより多いと赤道の継ぎ目を押し広げる見込み）。
-  底の切れには、粘土を平らに詰める高さの線を刷る（重心の式は、粘土が底の真ん中に平らに詰まる形に頼るため）。
+  底の切れには、粘土を平らに詰める高さの線を位置の印（点の線）で刷る（重心の式は、粘土が底の真ん中に平らに詰まる形に頼るため）。
   ・円錐を開いた形が半円より開かない（開くと型紙の扇が重なり、上がすぼまった形にならない）。
 """
 import math
@@ -85,6 +86,8 @@ MIN_SWING = 20  # 玉が台の竹串に当たるまでに振れてよい角度
 TABLE_CLEAR = 10  # 玉の下と机の間の余裕 mm
 MIN_TIP_T = 1.0  # 支点の先の紙の厚みの下限 mm（串の先が座る見込みの厚み）
 PAD = 8  # 当て紙の 1 枚の大きさ mm（貼ってから V の線で切りそろえる）
+SLIT_W, SLIT_KEEP = 0.5, 1.5  # 起き上がり小法師の帯のくし形の切り込みの口の幅と、赤道の折り線の手前に残す長さ mm
+SLIT_EDGE = 0.2  # 継ぎ目の糊代の端と切り込みの間に残す紙の幅 mm。これより近い切り込みは、糊代の端の角を落とす形にする
 MIN_MARGIN = 0.25  # 起き上がりの重心が曲がりの中心より下にあるべき量（半径の割合）
 MAX_CLAY_FILL = 0.5  # 粘土の高さの上限（半径の割合）
 
@@ -121,13 +124,20 @@ def check_range(p):
 # ---------------------------------------------------------------- 弥次郎兵衛
 
 # コマ 7 の奴を 1205 幅に縮めた図で手で取った点（画素は使っていない）。帽子 → 袖の横棒 → 胴 → V の先。
-_YAKKO = [(410, 828), (486, 828), (480, 806), (592, 735), (607, 748), (601, 800), (590, 828), (668, 828), (668, 890), (632, 890),
-          (655, 978), (582, 978), (565, 1060), (549, 985), (480, 985), (503, 890), (410, 890)]
+# 袖の横棒の左右の端は、支点（V の先 x = 565）の真上の線から同じ 129（袖の幅 258 の半分）にそろえた。図の袖は左が 155・右が 103 で、
+# 作る前のレビューで「体の両手の長さが左右でずれている。合わせると釣り合いを取りやすい」と言われた（採った案 EP-0002、2026-11-06）。
+# 帽子・襟・裾・V と肩は図のまま（肩の左右の差は腕の床が玉ごとに見る）
+_YAKKO = [(436, 828), (486, 828), (480, 806), (592, 735), (607, 748), (601, 800), (590, 828), (694, 828), (694, 890), (632, 890),
+          (655, 978), (582, 978), (565, 1060), (549, 985), (480, 985), (503, 890), (436, 890)]
 _HAT = [(486, 828), (480, 806), (592, 735), (607, 748), (601, 800), (590, 828)]
 _COLLAR = [[(548, 830), (562, 902), (578, 842)]]
 _HEM = [[(492, 940), (642, 935)]]
-_X0, _Y0, _PX_W, _PX_H = 410, 735, 668 - 410, 1060 - 735
+_X0, _Y0, _PX_W, _PX_H = 436, 735, 694 - 436, 1060 - 735
 _TIP, _SHOULDERS = (565, 1060), ((480, 985), (655, 978))
+# 真ん中の軸の竹串（EP-0002）の上の端は、袖の横棒の高さの真ん中（828 と 890 の間）。下の端は、竹串の太さと片側の余りが V の内に
+# 収まる一番低い所（center_stick で求める）。重りの重さは肩から V を通って支点へかかるので、V の首から袖までを 1 本で支える
+CENTER_TOP_PX = (828 + 890) / 2
+CENTER_MARGIN = 0.5
 _V_TOP = ((549, 985), (582, 978))
 
 
@@ -156,6 +166,25 @@ def arm_geometry(p):
     return out
 
 
+def center_stick(p):
+    """真ん中の軸の竹串の (下の端, 上の端)。支点を原点・下を正。支点の真上の線（x = 0）に置く（EP-0002）。
+
+    上の端は袖の横棒の高さの真ん中。下の端は、竹串の太さと片側の余り（CENTER_MARGIN）が体の内に収まる一番低い所
+    （V は先ほど細いので、それより下へ伸ばすと竹串が紙の外に出る）。
+    """
+    inner = Polygon([_rel(p, q) for q in _YAKKO]).buffer(-(SKEWER_R + CENTER_MARGIN))
+    top = _rel(p, (_TIP[0], CENTER_TOP_PX))[1]
+    cut = LineString([(0, 0), (0, top)]).intersection(inner)
+    pieces = [cut] if cut.geom_type == "LineString" else list(cut.geoms)
+    seg = next(g for g in pieces if any(abs(y - top) < 1e-9 for _, y in g.coords))  # 上の端を含む 1 本
+    return (0.0, max(y for _, y in seg.coords)), (0.0, top)
+
+
+def center_len(p):
+    (_, lo), (_, hi) = center_stick(p)
+    return abs(lo - hi)
+
+
 def ball_r(g):
     return (3 * g / (4 * math.pi * CLAY_DENSITY)) ** (1 / 3)
 
@@ -172,6 +201,9 @@ def yajirobe_points(p, extra_left=0.0):
         stick = SKEWER_G_PER_MM * (p["arm_length"] + p["arm_insert"])
         pts.append((stick, (inner[0] + ball[0]) / 2, (inner[1] + ball[1]) / 2))
         pts.append((p["ball_g"] + (extra_left if i == 0 else 0), ball[0], ball[1]))
+    # 真ん中の軸の竹串（EP-0002）。支点より上にあるので重心を上げる。長さ × 1mm あたりの重さを、線の真ん中に置く
+    (_, lo), (_, hi) = center_stick(p)
+    pts.append((SKEWER_G_PER_MM * abs(lo - hi), 0, (lo + hi) / 2))
     return pts
 
 
@@ -215,6 +247,10 @@ def _check_yajirobe(p):
             out.append(Failure("F5.balance", f"{side}の腕", f"竹串の差し込みの奥 {p['arm_insert']}mm が体の外に出る"))
     if LineString(arms[0][:2]).intersects(LineString(arms[1][:2])):
         out.append(Failure("F5.balance", "腕", "左右の竹串が体の中で交わる"))
+    # 真ん中の軸の竹串（EP-0002）が腕の竹串に重なると、表と裏の紙が平らに合わない。竹串の太さ 2 本分を離す
+    mid = LineString(center_stick(p))
+    if any(mid.distance(LineString(a[:2])) <= 2 * SKEWER_R for a in arms):
+        out.append(Failure("F5.balance", "真ん中の軸", f"真ん中の竹串が腕の竹串に重なる（腕の差し込み {p['arm_insert']}mm を浅く）"))
     if p["arm_length"] + p["arm_insert"] > SKEWER_LEN:
         out.append(Failure("F5.balance", "腕", f"腕に竹串が {p['arm_length'] + p['arm_insert']}mm 要り、{SKEWER_LEN}mm の竹串で足りない"))
     if tip_thickness(p) < MIN_TIP_T:
@@ -247,6 +283,12 @@ def _back_part(p):
         x1, y1 = sh[0] + tx, sh[1] + ty
         k = 1 - 1 / math.hypot(x1 - x0, y1 - y0)
         art.append({"kind": "line", "pts": [(x0, y0), (x0 + (x1 - x0) * k, y0 + (y1 - y0) * k)], "stroke": ARM_MARK, "sw": 0.6, "role": "arm"})
+        art.append({"kind": "poly", "pts": [(x0 - 0.8, y0 - 0.8), (x0 + 0.8, y0 - 0.8), (x0 + 0.8, y0 + 0.8), (x0 - 0.8, y0 + 0.8)], "fill": ARM_MARK})
+    # 真ん中の軸の竹串を置く縦の線と、両端の四角い印（EP-0002: 「真ん中の軸にも竹串を貼る線があると良い。重りに耐える強さが要る」）
+    (cx0, lo), (cx1, hi) = center_stick(p)
+    ends = [(cx0 + tx, lo + ty), (cx1 + tx, hi + ty)]
+    art.append({"kind": "line", "pts": ends, "stroke": ARM_MARK, "sw": 0.6, "role": "center"})
+    for x0, y0 in ends:
         art.append({"kind": "poly", "pts": [(x0 - 0.8, y0 - 0.8), (x0 + 0.8, y0 - 0.8), (x0 + 0.8, y0 + 0.8), (x0 - 0.8, y0 + 0.8)], "fill": ARM_MARK})
     return Part(2, "back", "体（裏）", outline, label_xy=(p["body_w"] * 0.93, p["body_h"] * 0.33), label="2", art=art)
 
@@ -357,7 +399,8 @@ def _shell_part(p):
     half = max(s * math.sin(min(a1, math.pi / 2)), 0)
     cx = half
     outline = _sector(cx, s, a0, a1)
-    part = Part(1, "shell", "胴（円錐）", outline, label_xy=(cx - 1, s * 0.82), label="1")
+    # 札に部品の名を入れる（EP-0001。2 番の札「2 底」と対にする）。札が長くなった分、扇の真ん中にそろえて左へ寄せる
+    part = Part(1, "shell", "胴（円錐）", outline, label_xy=(cx - 2.5, s * 0.82), label="1 胴")
     part.glue = [_sector(cx, s, a1 - dl, a1, 8)]
     ea = 0.4 / s  # 糊代と切る線から絵を少し離す
     mid = a0 + th / 2  # 本体の扇の真ん中が正面（継ぎ目は背中）
@@ -399,20 +442,54 @@ def _dome_part(p):
     R, n, b, g = p["base_r"], int(p["gores"]), p["band"], p["seam_glue"]
     C = 2 * math.pi * R
     w = C / n
-    pts = [(0, 0), (C + g, 0), (C + g, b)]
+    # 帯の上の縁に、くし形の切り込み（EP-0001 に足した声、2026-11-06: 「曲線の胴に直線の 2 番を貼るのがとても難しい」）。
+    # 帯は円錐の底の内に差し込むが、円錐は上ほど細いので、まっすぐな帯では上の縁が余ってしわになる（既定の寸法で、帯の高さの間に
+    # 周りが約 17mm 短くなる）。切り込みの間を少しずつ重ねて沿わせる。切り込みは切れの半分ごと、赤道の折り線の 1.5mm 手前まで。
+    # 幅 0 の線は外形にできないので、口の幅 SLIT_W の細い V にする（風車の切り込みと同じ考え）
+    depth = b - SLIT_KEEP
+    top = [(0, 0)]
+    for j in range(1, 2 * n):
+        xs = j * w / 2
+        top += [(xs - SLIT_W / 2, 0), (xs, depth), (xs + SLIT_W / 2, 0)]
+    # 継ぎ目の糊代にも、帯の頭の g mm にある切り込みと同じ所（C + xs）に切り込みを入れる。輪にすると糊代が帯の頭に重なるので、
+    # 切り込みの無い糊代だと、重なった所の切り込みを塞いで沿わせにくくなる（検品の指摘: 半径 15・切れ 12・糊代 10 で 2 本塞いだ）
+    # 糊代の端に SLIT_EDGE より近い切り込みは、細い V にすると端との間に紙の筋が残るので、糊代の端の角を切り込みの深さまで斜めに落とす
+    # （2 回目の検品の指摘: 前の条件 xs < g − SLIT_W は、糊代に収まる切り込みまで落としていた。半径 15・切れ 7・糊代 7 で 1 本）
+    # 落とす線は切り込みの縁に沿わせる（3 回目の検品の指摘: 端の角から V の頂点を通らずに斜めに落とすと、切り込みの半分ほどを
+    # 糊代が塞いだ）。頂点が糊代の中なら、左の縁を頂点まで下り、その深さで糊代の端まで横へ。頂点が糊代の外なら、左の縁を糊代の端まで下る
+    end = [(C + g, 0)]
+    for j in range(1, 2 * n):
+        xs = j * w / 2
+        lo, hi = xs - SLIT_W / 2, xs + SLIT_W / 2
+        if hi + SLIT_EDGE <= g:
+            top += [(C + lo, 0), (C + xs, depth), (C + hi, 0)]
+        elif lo < g:
+            end = ([(C + lo, 0), (C + xs, depth), (C + g, depth)] if xs <= g
+                   else [(C + lo, 0), (C + g, depth * (g - lo) / (xs - lo))])
+            break
+    pts = top + end + [(C + g, b)]
     for i in reversed(range(n)):
         pts += _gore(p, (i + 0.5) * w, b)[:-1] if i else _gore(p, (i + 0.5) * w, b)
-    part = Part(2, "dome", "底（半球の切れ）", pts, label_xy=(1, b + 1.5), label="2")
-    # 帯は円錐の底の内側に貼る。円錐の側が内へ傾く分だけ、赤道の線で軽く谷に折る。
-    part.valley = [((0, b), (C, b))]
-    part.glue = [[(0, 0), (C, 0), (C, b), (0, b)], [(C, 0), (C + g, 0), (C + g, b), (C, b)]]
+    # 札に部品の名を入れ、どちらが底かを紙で分かるようにする（作る前のレビューの指摘から採った案 EP-0001、2026-11-06:
+    # 「2 番をどうしたらいいか分からない」）。「2 底（下）」は、切れの数が多く半径が小さい寸法で 1 枚目の切れに収まらない（13.5mm）
+    part = Part(2, "dome", "底（半球の切れ）", pts, label_xy=(1, b + 1.5), label="2 底")
+    # 帯は円錐の底の内側に貼る。円錐の側が内へ傾く分だけ、赤道の線で軽く内へ折る。お椀は刷った面（色）を外にするので、内へ折るのは
+    # 刷った面の裏へ折る山折り（EP-0001 で直した。前の谷折りの破線では、凡例どおりに折ると帯が外へ開いた）。帯の糊代の刷った面も、
+    # 山折りなら外を向いて円錐の内の面に着く
+    part.mountain = [((0, b), (C, b))]
+    # 帯の糊代は、切り込みを除いた形にする（糊代の斜線が切り込みの上に刷られると、切る所が見えなくなる）
+    # 重心の式は帯を切り込みの無い長方形の重さで見る（切り込みの細い V は帯の 2% ほどで、重い側に見るので安全側。検品の指摘）
+    band = Polygon([(0, 0), (C, 0), (C, b), (0, b)]).intersection(Polygon(pts))
+    seam = Polygon([(C, 0), (C + g, 0), (C + g, b), (C, b)]).intersection(Polygon(pts))
+    part.glue = [list(band.exterior.coords)[:-1], list(seam.exterior.coords)[:-1]]
     part.art = [{"kind": "poly", "pts": _gore(p, (i + 0.5) * w, b + 0.3, 0.3), "fill": DOME} for i in range(n)]
     # 粘土を詰める高さの線。底の極から切れの上を arc だけ戻った所（高さ h の緯度）。全部の切れに引くと、詰めた粘土が真ん中に平らか見える。
+    # 位置の印（赤茶の点の線。凡例に「切らない・折らない」）で刷る。前は濃い実線で、切る線と取り違えて切った人がいた（EP-0001）
     h, _ = clay_cap(p)
     t = math.pi * R / 2 - R * math.acos(1 - h / R)
     hw = gore_half_width(p, t) - 0.6
     if hw > 0.3:
-        part.art += [{"kind": "line", "pts": [((i + 0.5) * w - hw, b + t), ((i + 0.5) * w + hw, b + t)], "stroke": INK, "sw": 0.3, "role": "clay"} for i in range(n)]
+        part.art += [{"kind": "mark", "pts": [((i + 0.5) * w - hw, b + t), ((i + 0.5) * w + hw, b + t)], "mark": "clay", "role": "clay"} for i in range(n)]
     return part
 
 
@@ -454,6 +531,8 @@ def bom(p):
             {"number": 8, "key": "ball", "name": "玉", "qty": 2, "material": f"油粘土 {p['ball_g']:g}g（直径 約 {2 * ball_r(p['ball_g']):.0f}mm）", "substituted": True, "original_guess": "不明（図では白い玉）", "reason": "量を変えて試しやすいため"},
             {"number": 9, "key": "stand", "name": "台の柱", "qty": 1, "material": f"竹串（{SKEWER_LEN}mm の見込み）", "substituted": True, "original_guess": "棒の上の板と人形（図による）", "reason": "台の人形を作る手間を省き、先の尖った支えにするため"},
             {"number": 10, "key": "base", "name": "台の土台", "qty": 1, "material": "油粘土 30g ほどか消しゴム", "substituted": True, "original_guess": "不明", "reason": "竹串をまっすぐ立てるため"},
+            {"number": 11, "key": "center", "name": "真ん中の軸", "qty": 1, "material": f"竹串（{center_len(p):.0f}mm に切る）", "substituted": True,
+             "original_guess": "無し（図には描かれていない。作る前のレビューの声で足した）", "reason": "重りの重さで体の紙が V の所で曲がらないよう、真ん中を支えるため"},
         ]
     return [
         {"number": 1, "key": "shell", "name": "胴（円錐）", "qty": 1, "material": paper, "substituted": True, "original_guess": "張子か土（推定）", "reason": why},
@@ -467,7 +546,8 @@ def materials(p):
     # 行の位置でなく key で引く。形によって部品表の行が違うので、位置で引くと別の行を刷る。
     by = {r["key"]: r for r in bom(p)}
     if p["kind"] == "yajirobe":
-        return [f"{by['front']['material']}を 1 枚", "のり、はさみ、定規", f"{by['arm']['material']}を 2 本", f"{by['ball']['material']}を 2 つ",
+        return [f"{by['front']['material']}を 1 枚", "のり、はさみ、定規", f"{by['arm']['material']}を 2 本と、{by['center']['material']}を 1 本（真ん中の軸）",
+                f"{by['ball']['material']}を 2 つ",
                 f"台: {by['stand']['material']}と{by['base']['material']}"]
     return [f"{by['shell']['material']}を 1 枚", "のり、はさみ、定規", by["tape"]["material"], by["weight"]["material"]]
 
@@ -476,18 +556,18 @@ def steps(p):
     out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る"]
     if p["kind"] == "yajirobe":
         out += [f"3 先の当て紙を蛇腹に折って {int(p['tip_layers'])} 枚に重ね、糊で貼る",
-                f"竹串 2 本を {p['arm_length'] + p['arm_insert']}mm に切る。4 腕の物差しの左の端に竹串の端を合わせ、"
+                f"竹串 2 本を {p['arm_length'] + p['arm_insert']}mm に、もう 1 本を {center_len(p):.0f}mm（真ん中の軸）に切る。4 腕の物差しの左の端に竹串の端を合わせ、"
                 f"肩の印（端から {p['arm_insert']}mm）と玉の印（端から {p['arm_insert'] + p['arm_length']}mm＝竹串の先）をペンで写す",
-                f"2 体（裏）の刷った面を上にし、竹串を赤い線に沿って置く。竹串の端を四角い印に、肩の印を肩の角に合わせる"
-                f"（差し込み {p['arm_insert']}mm、水平から {p['arm_angle']}° 下）",
+                f"2 体（裏）の刷った面を上にし、腕の竹串を斜めの赤い線に沿って置く。竹串の端を四角い印に、肩の印を肩の角に合わせる"
+                f"（差し込み {p['arm_insert']}mm、水平から {p['arm_angle']}° 下）。真ん中の軸の竹串は、縦の赤い線に沿って両端を四角い印に合わせて置く",
                 "3 当て紙を V の先に置き、糊を塗って 1 体（表）を、刷った面を上にしたまま（裏返さない）重ねて外形をそろえて貼る。乾いたら当て紙を V の線で切りそろえる",
                 f"竹串の先に油粘土を {p['ball_g']:g}g ずつ丸め、玉の中心が竹串の先（肩から {p['arm_length']}mm）に来るように付ける",
                 "竹串を土台に立て、V の先を竹串の先か指先に乗せる。傾いたら軽い側の粘土を足す"]
     else:
         out += ["1 胴を丸め、糊代を反対の縁の内に入れて貼り、円錐にする",
-                "2 底の切れを帯の所で輪にして貼り、切れの縁どうしを突き合わせてテープで留め、お椀にする",
-                f"お椀の底（切れの先が集まる所）に油粘土 {p['bottom_g']:g}g を押し込み、切れの線（底から高さ約 {clay_cap(p)[0]:.0f}mm）まで平らに詰める",
-                "帯を赤道の破線で軽く内へ折り、円錐の底の内に差し込んで貼る",
+                "2 底を、刷った面を外にして帯の所で輪にして貼り、切れの縁どうしを突き合わせてテープで留め、お椀にする",
+                f"お椀の底（切れの先が集まる所）に油粘土 {p['bottom_g']:g}g を押し込み、切れに刷った点の線（底から高さ約 {clay_cap(p)[0]:.0f}mm）まで平らに詰める",
+                "帯を赤道の山折りの線で軽く内へ折り、円錐の底の内に差し込んで貼る。帯の切り込みの間を少しずつ重ねて、円錐の内の面に沿わせる",
                 "倒して手を離し、起き上がるか見る"]
     return out
 
