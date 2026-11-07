@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_erabu_fold.py
+# commit: c48ea397（回した時の HEAD）
+ok 選ぶのは 2 回目から: 入口は 2 枚の下で 83 を畳み（数は棚から）・開いた時だけ写しを読む・印を残さない・のこすの後に 2 回目の道
+rc=0

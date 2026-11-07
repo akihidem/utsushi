@@ -512,6 +512,16 @@ def voices_sections():
             f'{voices}</section></div>')
 
 
+NEXT_ERABU = "次は、{n} のおもちゃから えらぶ"
+
+
+def next_erabu():
+    """のこすの後の道の字（数は入口の畳みの札と同じ数え方）。"""
+    from .looks import erabu_counts
+    from .play_server import sources
+    return NEXT_ERABU.format(n=erabu_counts(list(sources()))[0])
+
+
 def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
@@ -551,4 +561,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
             # 「のこす」の後はこの頁の #mine に着くので、返事の文のすぐ下に 1 つだけ置く。行き先はギャラリーの「他の人が作った物」
             f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}'
             '<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>'
+            # 2 回目の入口（本人の決め 11-08「A＋Cでよい」の C）。のこした人（返事の文が出た時）にだけ、入口の畳みが開いた形 /#erabu への道を出す。
+            # 印は持たない（道を見せるだけ）。数は入口の畳みの札と同じく、棚の分けから数える
+            + (f'<p class="road"><a class="go" href="/#erabu">{esc(next_erabu())}</a></p>' if msg else '') +
             f'{mine}</div></section>') + hanasu.assets()
