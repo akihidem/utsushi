@@ -1,0 +1,11 @@
+# 命令: bash -c 'for t in test_demo_samples test_about test_en_all test_easy_all; do PYTHONPATH=src .venv/bin/python tests/$t.py 2>&1 | tail -1; echo "$t rc=${PIPESTATUS[0]}"; done'
+# commit: ed1e79b9（回した時の HEAD）
+ok
+test_demo_samples rc=0
+ok
+test_about rc=0
+ok 全頁の英語: 表に無い日本語 0・切り替え・前からの英語の頁・人の字
+test_en_all rc=0
+ok やさしい日本語の土台: 全部の頁が開く・ルビの形・切り替えと cookie・英語の頁は替えない
+test_easy_all rc=0
+rc=0
