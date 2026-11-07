@@ -12,8 +12,9 @@
   回の一覧の omit に挙げた写真は、確かめ表で公開してよい物でも審査用の頁には出さない（窓口の決め 11-07: 11-06 の p28 は他社の AI の画面が写るので外す。表の本人の判断は替えない）。
 - 写真の道は /kaizen/photo/<回>/<名> の 1 本。出さない物はどれも 404。置き場の外は、名の形とたどった先（symlink の先）の両方で見る（別の目の気づき 11-07）。
   小さい写しにして出す（作り直しで撮影の情報は入らない。向きだけ直す）。
-- 作例（ワークショップで作られたおもちゃ・もちよる /gallery#sakurei の節。作るのは修正の担当 d）へ、札から日ごとの道（/gallery#sakurei-<月日 4 桁>）を張る。
-  張るのは、作例の部品（web.sakurei.days()）が「人が物だけと確かめた作例の写真がある日」として返す日だけ。作例の部品が入る前と、作例の無い日は張らない（行き止まりを作らない）。
+- 作例（ワークショップで作られたおもちゃ・もちよる /gallery#sakurei の節。作るのは修正の担当 d）へ、節の末から 1 本の道を張る。
+  作例の節は玩具ごとの並びで、日ごとの見出しは無い（作例の担当の #558・日は記録に無いため）ので、日ごとの道は張らない。
+  張るのは、作例の部品（web.sakurei.examples()）が人の確かめた作例を 1 つでも返す時だけ（作例の部品が入る前・作例の無い場では張らない＝行き止まりを作らない）。
 - 新しい字は定数にまとめた（本人の確かめ・窓口へ）。
 """
 import functools
@@ -41,7 +42,7 @@ PRINTED = "刷った型紙"
 FROM = "この回から直った所"
 TO_LOOP = "この一周を見る"
 MORE = "ほかの写真（{n} 枚）"
-SAKUREI = "この日に作られたおもちゃを見る"
+SAKUREI = "ワークショップで作られたおもちゃを見る"
 FACES = "4 日間のワークショップで作ったおもちゃたち"  # 本人の言葉のまま（11-07「4 日間のワークショップで作ったおもちゃたち」。報告の顔の写真の札）
 
 STYLE = """
@@ -153,13 +154,13 @@ def _faces():
         return []
 
 
-def _sakurei_days():
-    """作例の部品が返す、作例のある日（月日 4 桁）。部品がまだ無い・読めない時は空（道を張らない）。"""
+def _has_sakurei():
+    """作例の節に、人の確かめた作例が 1 つでもあるか。部品がまだ無い・読めない時は無い（道を張らない）。"""
     try:
         from . import sakurei
-        return set(sakurei.days())
+        return bool(sakurei.examples())
     except Exception:  # 作例の部品は別の PR。無い間・壊れた時に審査用の頁ごと止めない
-        return set()
+        return False
 
 
 def _img(n, name, alt):
@@ -181,7 +182,6 @@ def section(sheet):
     if not ws:
         return ""
     each = [(w, photos(w["n"])) for w in ws]
-    days = _sakurei_days()
     cards = ""
     for w, names in each:
         alt = w.get("date", "")
@@ -195,7 +195,7 @@ def section(sheet):
                   + (f'<p class="ws-ver">{esc(PRINTED)}: {printed}</p>' if printed else "")
                   + (f'<p>{esc(FROM)}: {esc(w["line"])}</p>' if w.get("line") else "")
                   + (f'<p><a href="#{esc(w["loop"])}">{esc(TO_LOOP)}</a></p>' if w.get("loop") else "")
-                  + (f'<p><a href="/gallery#sakurei-{esc(w["md"])}">{esc(SAKUREI)}</a></p>' if w.get("md") in days else "")
+
                   + "</li>")
     mosaic = _mosaic(each)
     faces = _faces()
@@ -203,4 +203,6 @@ def section(sheet):
             f'<figcaption>{esc(FACES)}</figcaption></figure>') if faces else ""
     return (f'<section class="sec ws" id="ws"><h2 class="ws-n">{esc(TITLE.format(n=len(ws)))}</h2>{face}<p class="lead">{esc(LEAD)}</p>'
             + (f'<div class="ws-mosaic">{"".join(_img(n, x, alt) for n, x, alt in mosaic)}</div>' if mosaic else "")
-            + f'<ol class="ws-row">{cards}</ol></section>')
+            + f'<ol class="ws-row">{cards}</ol>'
+            + (f'<p class="links"><a href="/gallery#sakurei">{esc(SAKUREI)}</a></p>' if _has_sakurei() else "")
+            + "</section>")

@@ -9,7 +9,7 @@
 5. 頭の敷き詰めは 12 枚までで、回をまたいで順に取る（写真の多い回だけで埋まらない）。札は 9 枚を開き、残りは畳む。幅 390 で 3 列、間 16px
 6. 合言葉なしの場でも同じ
 7. 本物の一覧と写真: 4 回。11 月 4 日の写真 9 枚・11 月 6 日の写真 33 枚（34 枚から p28 を外す。窓口の決め 11-07）が、確かめ表のとおりに出る（本人の答え 11-07「全部使っていい」）
-8. 作例（/gallery#sakurei）への日ごとの道は、作例の部品が返す日だけ。部品が無い・壊れた時は張らない
+8. 作例（/gallery#sakurei）への道は、作例の部品が人の確かめた作例を返す時だけ節の末に 1 本（作例の節は玩具ごとで日ごとの見出しが無いため）。部品が無い・空・壊れた時は張らない
 9. 報告の顔の写真（本人「4 日間のワークショップで作ったおもちゃたち」）は、作例の部品の faces() の記録の写真の道だけを節の頭に。無い・壊れた時は出さない
 """
 import io
@@ -124,18 +124,21 @@ for opened in (False, True):
         assert get(srv, path)[0] == 404, path
     srv.shutdown()
 
-# ---- 8 作例への道: 作例の部品が返す日だけ張る。部品が無い・壊れた時は張らない（頁は止めない）
+# ---- 8 作例への道: 作例の部品が人の確かめた作例を返す時だけ、節の末に /gallery#sakurei へ 1 本。部品が無い・空・壊れた時は張らない（頁は止めない）
 import sys  # noqa: E402
 import types  # noqa: E402
 ws.LIST.write_text(json.dumps({"workshops": [{"n": 1, "date": "11 月 4 日", "md": "1104"}, {"n": 2, "date": "11 月 6 日", "md": "1106"}]}, ensure_ascii=False), encoding="utf-8")
 assert "/gallery#sakurei" not in ws.section(str), "作例の部品が無い間は張らない"
-fake = types.ModuleType("web.sakurei"); fake.days = lambda: {"1104"}
+fake = types.ModuleType("web.sakurei"); fake.examples = lambda: []
 sys.modules["web.sakurei"] = fake
 import web  # noqa: E402
 web.sakurei = fake
+assert "/gallery#sakurei" not in ws.section(str), "作例が無ければ張らない"
+fake.examples = lambda: [{"sid": "x", "url": "/record/R-1001/media/m1.jpg/small"}]
 h = ws.section(str)
-assert h.count('href="/gallery#sakurei-1104"') == 1 and "sakurei-1106" not in h and ws.SAKUREI in h, "作例のある日だけ"
-fake.days = lambda: (_ for _ in ()).throw(RuntimeError("壊れた"))
+assert h.count('href="/gallery#sakurei"') == 1 and "sakurei-1104" not in h and ws.SAKUREI in h, "節の末に 1 本だけ（日ごとの道は無い）"
+assert h.index('class="ws-row"') < h.index('href="/gallery#sakurei"'), "札の並びの後"
+fake.examples = lambda: (_ for _ in ()).throw(RuntimeError("壊れた"))
 assert "/gallery#sakurei" not in ws.section(str), "壊れた時は張らず、頁は止めない"
 del sys.modules["web.sakurei"]; del web.sakurei
 
