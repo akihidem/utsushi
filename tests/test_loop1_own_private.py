@@ -89,7 +89,8 @@ assert hypotheses.own_hypotheses(G) == [] and not out_dir(G).exists()
 assert send(base, f"/toy/{G}/think-ok", {"t": token}, cookie=key)[0] == 303
 oid = words.by_token(G, token)["own_id"]
 names = sorted(p.name for p in out_dir(G).glob(f"{oid}_v*"))
-assert {f"{oid}_v1.pdf", f"{oid}_v1.png", f"{oid}_v1_tejun.pdf", f"{oid}_v1_tejun.png"} <= set(names), names
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。手順の紙と試した後の紙は組まない
+assert {f"{oid}_v1.pdf", f"{oid}_v1.png"} <= set(names) and not [n for n in names if "_tejun" in n or "_after" in n], names
 
 # 紙は、作った本人にだけ開く
 _, other_key = ask(base, OTHER, SAID2)
@@ -185,7 +186,8 @@ assert send(base, f"/toy/{G}/think-sheet", {"who": "expiry0004"})[0] == 422 and 
 # ── 共用の機械: 記録を残すと、その案は閉じる（交代の区切り） ──
 for route, want, who, text in (("record", 303, "handover01", "下から押したい"), ("record-json", 201, "handover02", "上から押したい")):
     t, k, used, p = adopted(who, text)
-    assert opened(k, used) == 200 and opened(k, used, "_tejun") == 200
+    # 自分の紙も型紙だけ（窓口の決定 2026-11-07 カード 012120）。手順の紙は組まないので開く物が無い
+    assert opened(k, used) == 200 and opened(k, used, "_tejun") == 404
     # 記録の form: 本人にだけ、その案の選び肢が出て、選ばれている（作った紙の記録として残すため）。ほかの人の案は並べない（型紙は玩具ごとに 1 枚。J-032）
     label = f'<option value="{used}" selected>'
     assert label in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 本人の form に自分の案"

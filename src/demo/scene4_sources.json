@@ -42,12 +42,11 @@
     }
   },
   "template": {
-    "what": "御来迎の型紙（slider_fan）と、対の手順の紙。repo の生成器（compose → render.write_all）で撮る時に刷る",
+    "what": "御来迎の型紙（slider_fan）。repo の生成器（compose → render.write_all）で撮る時に刷る。手順の紙は刷らない（本人の決まり「刷るのは型紙だけ」11-06）",
     "source_id": "NDL-1187053-R0000005-L",
     "hypotheses_file": "data/hypotheses/NDL-1187053-R0000005-L.json",
     "example_hypothesis": "H-A",
-    "example_why": "大きく映す例は記号の順の先頭（A）にした。順位ではない。並べた仮説は全部、同じ大きさの小さな紙で横に並べる（J-025）",
-    "tejun_crop_rule": "手順の紙は、題から「組み方」の終わりまでを映す（「遊び方」の行の上で切る）。閉じた時の中の様子の図とその説明は白く伏せる。扇の開き方を見せない決まり（F9）のため。図の左で縦に切ると題と所蔵の行が途中で切れるので、切らずに伏せた。座標は撮る時に配置の字の箱から計算する",
-    "modification_note": "型紙と手順の紙は utsushi の生成器が寸法から描いた。原図の写しは貼っていない"
+    "example_why": "大きく映す例は、玩具のたたき台の紙（記録の欄 sheet。J-032）。順位ではない（J-025）",
+    "modification_note": "型紙は utsushi の生成器が寸法から描いた。原図の写しは貼っていない"
   }
 }

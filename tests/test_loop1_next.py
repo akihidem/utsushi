@@ -219,9 +219,10 @@ now6 = {**TEMPLATES["slider_fan"].DEFAULTS, **loop.version_params(G, SHEET, loop
 assert now6 != to6 and f"今 {now6:g}" in form and f"今 {to6:g}" not in form, form[:400]
 
 # ── 試した後の紙: 話した字が無いので、記録があれば別の人にも開く ──
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。試した後の紙は刷る時に組まず、前に配った道で開く時に作る（print_after）
+assert send(f"/sheet/{G}/{oid}_v1_after.pdf")[0] == 200, "記録があれば別の人にも開く"
 after = out_dir(G) / f"{oid}_v1_after.pdf"
 assert after.exists() and "".join(THINK.split()) not in flat_pdf(after) and "".join(CRAFT.split()) not in flat_pdf(after), "試した後の紙に話した字が刷られない"
-assert send(f"/sheet/{G}/{oid}_v1_after.pdf")[0] == 200, "記録があれば別の人にも開く"
 assert send(f"/sheet/{G}/{oid}_v1_after.png")[0] == 200
 assert send(f"/sheet/{G}/{oid}_v1.pdf")[0] == 404 and send(f"/sheet/{G}/{oid}_v1_tejun.pdf")[0] == 404, "ほかの紙は開かない"
 oid4, key4 = made("nextwho004", "記録の前の案", STICK)
