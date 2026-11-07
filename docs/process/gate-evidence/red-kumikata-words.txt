@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_kumikata_words.py
+# commit: c151b5e5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kumikata_words.py", line 23, in <module>
+    assert ask.NO_KEY == "AI の答えは、この場では使えません。型紙の凡例と、組み方の絵を見てください。", ask.NO_KEY
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: AI の答えは、この場では使えません。型紙の凡例と手順の紙の絵を見てください。
+rc=1

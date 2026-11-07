@@ -30,7 +30,7 @@ from api import ask
 from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, hmd, skin, tsukuru
+from . import genga, hanasu, hmd, naoru, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -525,6 +525,9 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # 約束の印は写真と動画の分。写真の口がある所では、合言葉なしの場でも出す（main の #429 と同じ）。要るかどうかは、選んだ時に script が決める。
             + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
+            # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。「のこす」の釦のすぐ下に置く。
+            # 釦の上に置くと、320×568 と 768×576 で「のこす」が最初の画面の外へ押し出された（11-07 に Chromium で測った。1 手 1 画面・押す所は最初の画面の決まり）
+            + naoru.box(techo=True) +
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
