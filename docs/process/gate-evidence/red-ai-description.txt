@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_page_description.py
+# commit: 4d27c36c（回した時の HEAD。src/web/kumitate.py の description を、いつも LEAD にした木。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_page_description.py", line 64, in <module>
+    assert meta(page, "name", "description") == want, (public_open, path, meta(page, "name", "description"))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (False, '/toy/NDL-1187053-R0000004-L/kumitate', '手順どおりに組み立てます。指で回して見られます。')
+rc=1
