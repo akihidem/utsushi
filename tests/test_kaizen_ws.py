@@ -11,11 +11,13 @@
 7. 本物の一覧と写真: 4 回。11 月 4 日の写真 9 枚・11 月 6 日の写真 33 枚（34 枚から p28 を外す。窓口の決め 11-07）が、確かめ表のとおりに出る（本人の答え 11-07「全部使っていい」）
 8. 作例（/gallery#sakurei）への道は、作例の部品が人の確かめた作例を返す時だけ節の末に 1 本（作例の節は玩具ごとで日ごとの見出しが無いため）。部品が無い・空・壊れた時は張らない
 9. 報告の顔の写真（本人「4 日間のワークショップで作ったおもちゃたち」）は、作例の部品の faces() の記録の写真の道だけを節の頭に。無い・壊れた時は出さない
+10. 感想の分析の 2 文（本人の答え「全部入れる」の 2）は、節の説明（LEAD）のすぐ後に 1 回ずつ。数は件で言い、割合（%・割）を書かない。回答の字（「」の引用）を入れない
 """
 import io
 import json
 import os
 import pathlib
+import re
 import tempfile
 import threading
 import urllib.error
@@ -166,5 +168,13 @@ for w in real:
         judged = ws._judged(box)
         files = {p.name for p in box.iterdir() if p.suffix.lower() in ws.IMAGE}
         assert judged >= files and set(ws.photos(w["n"])) == files - set(w.get("omit", [])), ("確かめ表の全部の写真が公開してよいで、外す物の他は全部出る", w["date"])
+
+# ---- 10 感想の分析の 2 文（本人の答え「全部入れる」の 2・統括の決め: 件で言い割合にしない）
+_h = ws.section(str)
+assert ws.VOICES and all(_h.count(f'<p class="lead ws-voices">{t}</p>') == 1 for t in ws.VOICES), "2 文が 1 回ずつ"
+_at = [_h.index(f'<p class="lead">{ws.LEAD}</p>')] + [_h.index(t) for t in ws.VOICES]
+assert _at == sorted(_at), "LEAD のすぐ後に、2 文の順で"
+assert not any(re.search(r"[%％]|\d+ ?割|半分", t) for t in ws.VOICES), "割合にしない"
+assert not any("「" in t for t in ws.VOICES), "回答の字を引かない"
 
 print("ok 審査用の頁のワークショップの節: 4 回の札（日付の名）・写真は試行の記録の写しのうち確かめ表で公開してよい物だけ・写真の道はそれ以外 404")
