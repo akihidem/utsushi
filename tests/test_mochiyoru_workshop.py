@@ -1,7 +1,7 @@
-"""もちよるの頁（/gallery）の、ワークショップの様子と、できたおもちゃの敷き詰めと、職人の言葉の節（本人の言葉 11-08）。
+"""もちよるの頁（/gallery）の、頭の並べた写真 1 枚と、みんながつくったおもちゃ・つくっている様子の敷き詰めと、職人の言葉の節（本人の言葉 11-08）。
 
 本人の言葉: 「もちよる、ワークショップの様子、として作っている様子をあげるのと、できたおもちゃはギャラリーの形で並べる。感想も見れるように」
-「職人の言葉、はもちよるに移動」。
+「職人の言葉、はもちよるに移動」「冒頭におもちゃが並べてある写真一枚。みんながつくったおもちゃに、おもちゃの単体の写真。つくっている様子に、ワークショップの様子。日付毎にしなくていい。」。
 見る線:
 - 写真の分けの表（data/workshop_photo_kinds.json）は、各日の review.md の「写っている物」の字のままで、43 枚から p28 だけを外した 42 枚
 - 様子の節は作っている途中の写真だけ、できたおもちゃの節はできた物の写真だけ。同じ写真を 2 つの節に出さない
@@ -38,7 +38,10 @@ for day in ("20261104", "20261106"):
             seen[f"{day}/{m.group(1)}"] = m.group(2).strip()
 assert len(seen) == 43 and len(kinds) == 42, (len(seen), len(kinds))
 assert {r["file"] for r in kinds} == set(seen) - {"20261106/p28.jpg"}, "p28 だけを外す（他社の AI の対話の画面が写る・統括の決め 11-08）"
-assert all(r["kind"] in ("making", "made") and r["seen"] == seen[r["file"]] for r in kinds), "写っている物の字のまま・分けは 2 つ"
+# 分けは本人の言葉（11-08）の 3 つ（並べた・単体・様子）と、どれにも入らない物
+assert all(r["kind"] in ("lineup", "single", "making", "none") and r["seen"] == seen[r["file"]] for r in kinds), "写っている物の字のまま・分けは 3 つと none"
+none = [r["file"] for r in kinds if r["kind"] == "none"]
+lineup = [r["file"] for r in kinds if r["kind"] == "lineup"]
 assert all((workshop.PHOTOS / r["file"]).exists() for r in kinds)
 
 # 様子の節
@@ -48,21 +51,26 @@ assert scene.count('id="yousu"') == 1 and f'<h2 class="mark">{workshop.SCENE_HEA
 assert shown and all(workshop.kind_of(f) == "making" for f in shown) and len(shown) == sum(r["kind"] == "making" for r in kinds), shown
 assert scene.count(f'alt="{workshop.SCENE_ALT}"') == len(shown)
 
-# できたおもちゃの節
+# 頭の 1 枚（おもちゃが並べてある写真）
+top = workshop.top()
+assert workshop.TOP in lineup and re.findall(r'src="/workshop/([^"]+)/small"', top) == [workshop.TOP] and f'alt="{workshop.TOP_ALT}"' in top
+# みんながつくったおもちゃの節（おもちゃの単体の写真）
 made = workshop.made(SIDS)
 pics = re.findall(r'src="/workshop/([^"]+)/small"', made)
 assert made.count('id="dekita"') == 1 and f'<h2 class="mark">{workshop.MADE_HEAD}</h2>' in made
-assert pics and all(workshop.kind_of(f) == "made" for f in pics), pics
+assert pics and all(workshop.kind_of(f) == "single" for f in pics), pics
 assert not set(pics) & set(shown), "同じ写真を 2 つの節に出さない"
-# 42 枚が、様子とできたおもちゃのどちらかに 1 回ずつ出る（本人の決め 11-07「ワークショップの写真は…ギャラリーの全部の置き場に置く」）
-assert sorted(pics + shown) == sorted(r["file"] for r in kinds) and len(pics) == len(set(pics)), "どこにも出ない写真か、2 回出る写真がある"
+# 単体と様子の写真は全部、どちらかの節に 1 回ずつ出る。並べた写真は頭の 1 枚だけで、どれにも入らない写真は出さない
+assert sorted(pics + shown) == sorted(r["file"] for r in kinds if r["kind"] in ("single", "making")) and len(pics) == len(set(pics)), "単体か様子で、どこにも出ない写真か 2 回出る写真がある"
+assert not set(none) & set(pics + shown) and not (set(lineup) - {workshop.TOP}) & set(pics + shown)
+assert not any(workshop.known(f) for f in none) and not workshop.known("20261106/p28.jpg"), "出さない写真は道でも返さない"
 by_toy = {r["file"]: r["toy"] for r in workshop.rows()}
 order = []
 for sid in SIDS:
     name = hypotheses.load(sid)["toy"]
     card = re.search(r'<figure class="workshop">((?:(?!</figure>).)*?<a href="/toy/' + re.escape(sid) + r'">.*?)</figure>', made, re.S)
     voices = demo_samples.workshop_for(sid, name)
-    photos = [f for f in workshop.files(sid) if workshop.kind_of(f) == "made"]
+    photos = [f for f in workshop.files(sid) if workshop.kind_of(f) == "single"]
     if not (photos or voices):
         assert not card, ("札の要らない玩具に札", sid)
         continue
@@ -81,13 +89,15 @@ assert not re.search(r"R-\d{4}", made)
 
 # 頁の並びと、前の写真の札が残っていない事
 g = techo_site.gallery_page(SIDS)
-at = [g.index(f'id="{x}"') for x in ("yousu", "dekita", "ageta", "shokunin")]
-assert at == sorted(at) and all(g.count(f'id="{x}"') == 1 for x in ("yousu", "dekita", "ageta", "shokunin")), at
+# 並び: 頭の 1 枚 → みんながつくったおもちゃ → つくっている様子 → 他の人が作った物 → 職人の言葉（本人の言葉 11-08 の順）
+ORDER = ("narabe", "dekita", "yousu", "ageta", "shokunin")
+at = [g.index(f'id="{x}"') for x in ORDER]
+assert at == sorted(at) and all(g.count(f'id="{x}"') == 1 for x in ORDER), at
 ageta = g[g.index('id="ageta"'):g.index('id="shokunin"')]
 assert "/workshop/" not in ageta, "他の人が作った物の中に、前の写真の札（workshop.gallery）が残っている"
 # 合言葉なしの場でも 2 つの節は出る
 pub = techo_site.gallery_page(SIDS, photos=False, public=True)
-assert 'id="yousu"' in pub and 'id="dekita"' in pub
+assert 'id="yousu"' in pub and 'id="dekita"' in pub and 'id="narabe"' in pub
 
 # 職人の言葉は もちよる、寄せられた声は序の頁
 yomu = about.page("tenji")
@@ -96,7 +106,7 @@ assert '<h2 class="mark">職人の言葉</h2>' in g and demo_samples.craft_html(
 
 # 新しい字の英語とやさしい日本語
 en, easy = i18n.table("en"), i18n.table("easy")
-for t in (workshop.SCENE_HEAD, workshop.MADE_HEAD, workshop.SCENE_ALT, workshop.OPEN_VOICES):
+for t in (workshop.SCENE_HEAD, workshop.MADE_HEAD, workshop.SCENE_ALT, workshop.TOP_ALT, workshop.OPEN_VOICES):
     assert t in en and t in easy, t
     assert not re.findall(r"[一-龥々]", i18n.RUBY.sub("", easy[t])), ("ルビの無い漢字", t)
 print(f"ok もちよる: 様子 {len(shown)} 枚・できたおもちゃ {made.count('<figure')} 枚の札・職人の言葉は もちよる")

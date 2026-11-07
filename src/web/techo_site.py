@@ -299,6 +299,8 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .sakurei-row img,.gallery .workshop-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-row figcaption,.gallery .workshop-row figcaption{font-size:14px}
 .gallery .tiles figure:has(details[open]){grid-column:1/-1}
+.gallery .workshop-top{margin:0}
+.gallery .workshop-top img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .voices-fold summary{cursor:pointer;color:var(--accent);font-size:14px}
 .gallery .voices-fold .item{display:grid;gap:4px;border-top:1px solid var(--frame);padding-top:8px;margin-top:8px}
 .gallery .voices-fold p{margin:0}
@@ -466,7 +468,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     # （workshop.gallery）を置いていたが、できたおもちゃの節が同じ写真を玩具ごとに出すので、2 回出さないよう外した。
     # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示・前と同じ）
     from . import workshop
-    ws = workshop.scene() + workshop.made(sids)
+    ws = workshop.made(sids) + workshop.scene()
+    narabe = workshop.top()
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
@@ -481,9 +484,9 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     return ('<div class="gallery"><div class="top"><h1>作った物</h1><a href="/">入口へ</a></div>'
             '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
+            # 頭のおもちゃが並べてある写真 1 枚 → みんながつくったおもちゃ → つくっている様子（本人の言葉 11-08「冒頭におもちゃが並べてある写真一枚。…」）
+            f'{narabe}{ws}'
             f'{sak}'
-            # ワークショップの様子と、できたおもちゃ（作例の節の後、他の人が作った物の前）
-            f'{ws}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'

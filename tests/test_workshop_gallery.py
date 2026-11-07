@@ -57,10 +57,10 @@ for kw in ({}, {"public_open": True}):
         # 前は「他の人が作った物」（#ageta）の中の玩具ごとの札だったので、そこには出さない。表の写真は、2 つの節のどちらかに 1 回ずつ出る
         g = get(base, "/gallery")
         ageta = part(g, 'id="ageta"', "</section>")
-        both = part(g, 'id="yousu"', "</section>") + part(g, 'id="dekita"', "</section>")
+        both = part(g, 'id="narabe"', "</figure>") + part(g, 'id="dekita"', "</section>") + part(g, 'id="yousu"', "</section>")
         assert not re.findall(IMG, ageta), (kw, re.findall(IMG, ageta))
         assert all(re.findall(IMG, both).count(r["file"]) == 1 for r in rows), (kw, re.findall(IMG, both))
-        for sid in {r["toy"] for r in rows if workshop.kind_of(r["file"]) == "made"}:
+        for sid in {r["toy"] for r in rows if workshop.kind_of(r["file"]) == "single"}:
             assert f'<a href="/toy/{sid}">' in part(g, 'id="dekita"', "</section>"), (sid, kw)
     finally:
         srv.shutdown()
