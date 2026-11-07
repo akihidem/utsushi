@@ -126,8 +126,16 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
                "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
 
 
+# 仮説の印の形（紙を返す口 /sheet/... の形と同じ）。フォームから来る値は、この形の物だけを刷った紙の探しに使う。
+HID_FORM = re.compile(r"H-[A-Z0-9]+|OWN-\d+")
+
+
 def printed_versions(sid, hid):
     """刷ってある版の番号（小さい順）。無ければ空。版 1 を決め打ちしない: 報告から直した版 2 以降を、次に作る人が最初に刷る事があるため。"""
+    # 印の形でない値は探さずに空を返す。hid はフォーム（talk・record-json・ask）から検査なしで来るので、
+    # glob の形にそのまま入れると、「..」や「**」で置き場の外まで広く探させられ、合言葉なしの場でもサーバを詰まらせられた（セキュリティの点検 U16）。
+    if not isinstance(hid, str) or not HID_FORM.fullmatch(hid):
+        return []
     # 自分の仮説は、型紙なしの紙（_free）も刷った紙に数える。作りながら見る頁と話す口が、その紙に付くように（ループ1、#335）。
     free = "(?:_free)?" if str(hid).startswith("OWN-") else ""
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+){free}\.pdf", p.name))}) if out_dir(sid).exists() else []
@@ -293,6 +301,12 @@ class Handler(BaseHTTPRequestHandler):
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
         if isinstance(body, str) and ctype.startswith("text/html") and getattr(self.server, "public_open", False):
             body = without_notes(body)
+        if isinstance(body, str) and ctype.startswith("text/html") and getattr(self, "_lang", "ja") == "en" and not re.match(r"/en(?:[/?#]|$)", self.path):
+            from . import i18n  # 全頁の英語（窓口の決め 130735 の案 B）。作る側は日本語のまま作り、出口で表を引いて替える
+
+            body = i18n.page_en(body)
+        if getattr(self, "_lang_cookie", None):
+            headers = (*headers, self._lang_cookie)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -364,11 +378,28 @@ class Handler(BaseHTTPRequestHandler):
         なぜ切り替えないか: 本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」。1 つのサイトの中で
         見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
+        self._pick_lang()
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         from . import think_sheet
         return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+
+    def _pick_lang(self):
+        """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、cookie に持つ。道は日本語の頁と同じ。
+        前からの英語の頁（/en と /en/toy/<印>）は別の作りで、ここでは替えない（もう英語なので）。"""
+        _, _, query = self.path.partition("?")
+        pick = urllib.parse.parse_qs(query).get("lang", [""])[0]
+        self._lang_cookie = None
+        if pick in ("en", "ja"):
+            self._lang = pick
+            self._lang_cookie = ("Set-Cookie", f"utsushi_lang={pick}; Max-Age=31536000; Path=/; SameSite=Lax")
+            return
+        self._lang = "ja"
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == "utsushi_lang" and value == "en":
+                self._lang = "en"
 
     def do_GET(self):
         try:
