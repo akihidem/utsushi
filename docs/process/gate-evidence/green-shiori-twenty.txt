@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori.py
+# commit: 23da7a26（回した時の HEAD）
+ok しおりの台帳: 決まった番地の無い時は作らない・印と順は残さない・3 つの止め（10 分 5 回・同じ相手 10 回・しおりごと 20 回）・20 分・取り下げと使えなくする
+rc=0
