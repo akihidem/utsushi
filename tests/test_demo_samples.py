@@ -8,6 +8,11 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from omochae import records  # noqa: E402
 from web import demo_samples, techo_site  # noqa: E402
 from web.play_server import sources  # noqa: E402
+# ワークショップの試行の写真（web.workshop・repo に在る）は、ここが見る「本物の記録が無い時」の形を変えるので、この試験では表を空にする
+# （写真が出る形は tests/test_workshop_gallery.py が見る。本人の見直し 11-07 夜の ②⑦）
+from web import workshop as _workshop  # noqa: E402
+
+_workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
 
 # 上げた物の見本はギャラリーに、職人の言葉と寄せられた声の見本は序の頁の節（voices_sections）に出る
 # （職人の言葉と寄せる話の入口を序の頁へ移した。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
