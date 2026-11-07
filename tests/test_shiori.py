@@ -21,7 +21,7 @@ os.environ.pop("OMOCHAE_SHIORI_BASE", None)
 from omochae import shiori  # noqa: E402
 
 # ---- 1 番地
-for bad in ("", "http://example.org", "https://abc-def.trycloudflare.com", "https://localhost:8767", "https://example.org/x"):
+for bad in ("", "http://example.org", "https://abc-def.trycloudflare.com", "https://tenmoto:8767", "https://example.org/x"):
     os.environ[shiori.BASE_ENV] = bad
     try:
         shiori.make()
@@ -35,15 +35,15 @@ s = shiori.make(records=["R-1001"], now=1000.0)
 assert shiori.TOKEN.fullmatch(s["token"]) and s["url"] == "https://utsushi.example.org/s/" + s["token"]
 assert len(s["order"]) == 3 and len(set(s["order"])) == 3 and all(0 <= i < 9 for i in s["order"])
 blob = "".join(p.read_text(encoding="utf-8", errors="replace") for p in shiori.folder().glob("*.json"))
-assert s["token"] not in blob and json.dumps(list(s["order"])) not in blob and "10.0.0.7" not in blob
+assert s["token"] not in blob and json.dumps(list(s["order"])) not in blob and "peer-one" not in blob
 assert (shiori.folder() / ".secret").stat().st_mode & 0o077 == 0, "秘密の値は持ち主だけが読める"
 
 # ---- 3 照らし
 other = tuple(i for i in range(9) if i not in s["order"])[:3]
-assert shiori.check(s["token"], other, "10.0.0.7", now=1001) == "wrong"
-assert shiori.check(s["token"], s["order"], "10.0.0.7", now=1002) == "ok"
-assert shiori.check("x" * 22, s["order"], "10.0.0.7") == "unknown" and shiori.check("bad/../x", s["order"], "p") == "unknown"
-assert "10.0.0.7" not in "".join(p.read_text(encoding="utf-8") for p in shiori.folder().glob("*.json")), "相手の番地はハッシュで持つ"
+assert shiori.check(s["token"], other, "peer-one", now=1001) == "wrong"
+assert shiori.check(s["token"], s["order"], "peer-one", now=1002) == "ok"
+assert shiori.check("x" * 22, s["order"], "peer-one") == "unknown" and shiori.check("bad/../x", s["order"], "p") == "unknown"
+assert "peer-one" not in "".join(p.read_text(encoding="utf-8") for p in shiori.folder().glob("*.json")), "相手の番地はハッシュで持つ"
 orders = {tuple(shiori.make(now=1.0)["order"]) for _ in range(30)}
 assert len(orders) > 1, "順はしおりごとに違いうる"
 

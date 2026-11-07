@@ -34,8 +34,8 @@ IDLE = 1200                       # さわらない 20 分で切れる（共用�
 PICTURES = 9                      # しおりに刷る玩具の小さな絵の数（どの絵かは紙の版の PR で決める）
 ORDER = 3                         # 押す数
 TOKEN = re.compile(r"[A-Za-z0-9_-]{22}")
-# 替わる番地（立てるたびに名前が替わる一時のトンネル）。しおりに刷らない
-CHANGING = ("trycloudflare.com", "localhost", "127.0.0.1")
+# 替わる番地（立てるたびに名前が替わる一時のトンネル）。しおりに刷らない。手元の名前（点の無い名）と数の番地も刷らない（下の base_url の形で断る）
+CHANGING = ("trycloudflare.com",)
 
 
 class NoBase(RuntimeError):
@@ -45,7 +45,8 @@ class NoBase(RuntimeError):
 def base_url():
     """決まった番地。無い・https でない・替わる番地の時は None（しおりを作らない）。"""
     b = os.environ.get(BASE_ENV, "").strip().rstrip("/")
-    if not re.fullmatch(r"https://[a-z0-9.-]+(?::\d+)?", b) or any(c in b for c in CHANGING):
+    if (not re.fullmatch(r"https://[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?", b) or re.fullmatch(r"https://[\d.]+(?::\d+)?", b)
+            or any(c in b for c in CHANGING)):
         return None
     return b
 

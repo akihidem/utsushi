@@ -1,4 +1,4 @@
 # 命令: .venv/bin/python tests/test_shiori.py
-# commit: 80b1395f（回した時の HEAD）
+# commit: 5037c66e（回した時の HEAD）
 ok しおりの台帳: 決まった番地の無い時は作らない・印と順は残さない・3 つの止め（10 分 5 回・同じ相手 10 回・しおりごと 50 回）・20 分・取り下げと使えなくする
 rc=0
