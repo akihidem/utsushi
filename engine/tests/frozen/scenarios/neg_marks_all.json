@@ -1,0 +1,22 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {},
+  "inject": {
+    "omit_marks": "all"
+  },
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F1.marks"
+    ],
+    "lines": [
+      "F1.marks [仮説] PDF から「仮説: AI が考えた、試すための # つの翻案です。正解ではありません。作って、動きを確かめて、直していきます」を取り出せない",
+      "F1.marks [出典ID] PDF から「NDL#-R#-L」を取り出せない",
+      "F1.marks [所蔵] PDF から「国立国会図書館デジタルコレクション」を取り出せない",
+      "F1.marks [所蔵の文] PDF から「国立国会図書館デジタルコレクション info:ndljp/pid/#（米山堂・# 年の複製）」を取り出せない",
+      "F1.marks [改変] PDF から「改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません」を取り出せない",
+      "F1.marks [永続ID] PDF から「info:ndljp/pid/#」を取り出せない"
+    ]
+  }
+}

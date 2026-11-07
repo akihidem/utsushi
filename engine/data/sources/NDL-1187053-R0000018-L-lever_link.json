@@ -1,0 +1,21 @@
+{
+  "source_id": "NDL-1187053-R0000018-L-lever_link",
+  "toy": "木偶の相撲人形（推定）",
+  "persistent_id": "info:ndljp/pid/1187053",
+  "doi": "10.11501/1187053",
+  "title": "江都二色",
+  "creator_as_cataloged": "[弄籟子] [作]||北尾重政 画||稀書複製会 [編]",
+  "publisher": "米山堂",
+  "publication": "1931",
+  "canvas": 18,
+  "side": "L",
+  "crop_region": "pct:0,0,50,100",
+  "crop_status": "unverified",
+  "image_url": "https://dl.ndl.go.jp/api/iiif/1187053/R0000018/pct:0,0,50,100/1600,/0/default.jpg",
+  "holding": "国立国会図書館デジタルコレクション info:ndljp/pid/1187053（米山堂・1931 年の複製）",
+  "rights": "PDM",
+  "license_url": "https://dl.ndl.go.jp/ja/help_iiif#api-%E3%81%AE%E5%88%A9%E7%94%A8%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6",
+  "attribution": "国立国会図書館 National Diet Library, JAPAN",
+  "modification_note": "改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません",
+  "fetched_at": "2026-11-04T23:09:03+09:00"
+}

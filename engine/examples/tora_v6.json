@@ -1,0 +1,6 @@
+{
+  "template": "pivot_counterweight",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {"mount": "neck", "axle_height": 32, "head_w": 36, "weight_below_axle": 20, "leg_height": 10, "body_round": 8, "head_sides": 2},
+  "inject": {}
+}

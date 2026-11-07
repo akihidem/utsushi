@@ -1,0 +1,13 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000019-R-stand_figure",
+  "params": {
+    "figure": "fumei_tsutsu",
+    "stand": "base"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

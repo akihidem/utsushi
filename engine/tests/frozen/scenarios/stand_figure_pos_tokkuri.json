@@ -1,0 +1,16 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000015-L-stand_figure",
+  "params": {
+    "figure": "tokkuri",
+    "stand": "easel",
+    "tab_width": 12,
+    "tab_length": 36,
+    "tab_glue": 33
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

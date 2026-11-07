@@ -1,0 +1,14 @@
+{
+  "template": "balance",
+  "source_id": "NDL-1187053-R0000007-L-balance",
+  "params": {
+    "kind": "okiagari"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F1.source"
+    ]
+  }
+}
