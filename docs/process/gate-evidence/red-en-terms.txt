@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_en_terms.py
+# commit: 6f5e05ce（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 42, in <module>
+    assert not bad, (why, bad[:5])
+           ^^^^^^^
+AssertionError: ('仮説の札は Guess A', ['goraigo-v{0} の仮説 E（例外）', 'お宮（社殿の玩具） 仮説 A の型紙', 'この置き場に仮説 E の紙は無く、試行でも使っていない。実物は未確認', 'でんでん太鼓 仮説 A の型紙', 'のぼり猿 仮説 A の型紙'])
+rc=1

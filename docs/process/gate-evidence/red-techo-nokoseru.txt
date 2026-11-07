@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_techo_step.py
+# commit: ace2a5f0（回した時の HEAD）
+/tmp/tmpz9ufq3yd/play/NDL-1187053-R0000005-L/.tmp-1qqa1k6q/H-C_v1.pdf
+/tmp/tmpz9ufq3yd/play/NDL-1187053-R0000014-R/.tmp-317rtefj/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_techo_step.py", line 143, in <module>
+    assert all(n in NAMES for n in names if n), (scene, names)
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('start', ['はじめる', 'カメラに重ねる'])
+rc=1

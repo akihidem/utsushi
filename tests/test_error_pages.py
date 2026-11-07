@@ -58,7 +58,7 @@ for look in ("tenji", "zine"):
     skin = re.search(r"skin-(\w+)", call(base, "/about", headers=headers)[1]).group(1)
     code, body = call(base, "/mada/nai", headers=headers)
     page(code, body, "見つかりません", skin)
-    assert 'href="/"' in body and 'href="/toys"' in body
+    assert 'href="/"' in body and 'href="/toys"' not in body  # 戻り方は入口への 1 つ（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。/toys は入口へ送るので、/toys へ向く道は置かない）
 # 無い道への POST も同じ頁
 code, body = call(base, "/mada/nai", data=b"a=1", headers=FORM)
 page(code, body, "見つかりません")

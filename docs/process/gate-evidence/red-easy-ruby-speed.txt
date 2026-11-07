@@ -1,0 +1,4 @@
+# 命令: bash -c 's=$(date +%s); PYTHONPATH=src timeout 300 .venv/bin/python tests/test_easy_ruby.py; r=$?; echo "秒: $(( $(date +%s) - s ))（run_floors の 1 本の上限は 300 秒。timeout の 124 は時間切れ）"; exit $r'
+# commit: ace2a5f0（回した時の HEAD）
+秒: 300（run_floors の 1 本の上限は 300 秒。timeout の 124 は時間切れ）
+rc=124

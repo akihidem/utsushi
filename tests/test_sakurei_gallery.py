@@ -174,7 +174,7 @@ assert miss == [], miss
 en_sec = i18n.to_en(sec, [])
 for words in (techo_site.SAKUREI_FACES, techo_site.SAKUREI_KUFU_WORDS):
     assert words in en_sec, (words, "英語の頁で本人の言葉の原文が消えた")
-assert "(“The toys made over the 4 days of workshops”)" in en_sec and "(“A participant's improvement to the template, example 1." in en_sec
+assert "(“The toys made over the 4 days of workshops”)" in en_sec and "(“A participant’s improvement to the template, example 1." in en_sec
 
 # 5. 場
 pub = techo_site.gallery_page(SIDS, public=True)
