@@ -493,7 +493,7 @@
  },
  {
   "id": "f70",
-  "name": "型紙エンジン（paper-to-toy）を、提出のために履歴ごと engine/ にまとめる（本人の決定 11-07・運営の求め「提出は 1 つの repo」）",
+  "name": "型紙エンジン（paper-to-toy）を、提出のために engine/ にまとめる（中身だけ。履歴は paper-to-toy の repo）（本人の決定 11-07・運営の求め「提出は 1 つの repo」）",
   "status": "doing",
   "evidence": [
    "README.md",
