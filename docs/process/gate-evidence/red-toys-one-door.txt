@@ -1,0 +1,6 @@
+# 命令: sh -c 'f=0; for t in test_about test_error_pages test_ux_stage1; do env PYTHONPATH=src .venv/bin/python tests/$t.py >/dev/null 2>&1; r=$?; echo "$t rc=$r"; [ $r -eq 0 ] || f=1; done; exit $f'
+# commit: e3533e16（回した時の HEAD）
+test_about rc=1
+test_error_pages rc=1
+test_ux_stage1 rc=1
+rc=1

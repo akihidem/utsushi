@@ -25,7 +25,8 @@ text = re.sub(r"<[^>]+>", " ", html)
 # 1. 置き場と題
 page = about.page("tenji")
 at = page.index('id="kaizen-rekishi"')
-assert page.count('id="kaizen-rekishi"') == 1 and page.index("<h2>なぜ</h2>") < at < page.index('href="/toys"'), "なぜ の後、選ぶ釦の前"
+# 序の頁の「おもちゃを選ぶ」（/toys）は、同じ所へ行く釦の対を 1 つにした直し（#522）で「入口へ戻る」（/）の 1 つになったので、その釦の前を見る
+assert page.count('id="kaizen-rekishi"') == 1 and page.index("<h2>なぜ</h2>") < at < page.index('<a class="btn" href="/">入口へ戻る</a>'), "なぜ の後、入口へ戻る釦の前"
 assert f"<h2>{data['title']}</h2>" in html and kaizen_rekishi._maker(data["story"]) in html
 
 # 2. 玩具ごとの型紙の版は出さない（玩具の頁の版の歩みが持つ）。序の頁の決まり（仕組みの答えと仮説の名前を書かない）に当たる字も無い
