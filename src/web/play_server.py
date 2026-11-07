@@ -126,8 +126,16 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
                "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
 
 
+# 仮説の印の形（紙を返す口 /sheet/... の形と同じ）。フォームから来る値は、この形の物だけを刷った紙の探しに使う。
+HID_FORM = re.compile(r"H-[A-Z0-9]+|OWN-\d+")
+
+
 def printed_versions(sid, hid):
     """刷ってある版の番号（小さい順）。無ければ空。版 1 を決め打ちしない: 報告から直した版 2 以降を、次に作る人が最初に刷る事があるため。"""
+    # 印の形でない値は探さずに空を返す。hid はフォーム（talk・record-json・ask）から検査なしで来るので、
+    # glob の形にそのまま入れると、「..」や「**」で置き場の外まで広く探させられ、合言葉なしの場でもサーバを詰まらせられた（セキュリティの点検 U16）。
+    if not isinstance(hid, str) or not HID_FORM.fullmatch(hid):
+        return []
     # 自分の仮説は、型紙なしの紙（_free）も刷った紙に数える。作りながら見る頁と話す口が、その紙に付くように（ループ1、#335）。
     free = "(?:_free)?" if str(hid).startswith("OWN-") else ""
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+){free}\.pdf", p.name))}) if out_dir(sid).exists() else []
@@ -212,7 +220,33 @@ WRITE_LIMIT, WRITE_WINDOW = 60, 60.0
 # 段の口（作りながら見る頁の札）の数。書き込みの口と別に数え、手順を押す数で記録や話す口を断らない（統括の決め 11-06）。
 # 5 人が同じ網から、手順を全部同じ 1 分で押しても（1 人 13〜20 回）断らない数。超えても頁は止めず、段を置き場へ書かないだけ。
 STEP_LIMIT = 120
+# 写真と動画の口の数（セキュリティの点検 U1）。この口はフォームを読む前に本体のまま受けるので、書き込みの数（WRITE_PATHS）が届かず、上限が無かった。
+# 1 つ 20MB まで。5 人が同じ網（同じ番地）から同じ 1 分に 3〜4 枚ずつ上げても断らない数。
+MEDIA_LIMIT = 20
 WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
+# 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
+# 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
+# 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
+# 機械の重さは全体の同時の数（PRINT_SLOTS）の方で守るので、相手ごとの数は、1 つの相手が空きを独り占めしない程度でよい。
+PRINT_LIMIT = 30
+PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint)|/en/toy/{SID}/print")
+# 全体: 同時に刷るのは 2 本まで。番地を替えて送られても、描画の処理が機械を埋めないため。空きは少し待ち、待っても空かなければ断る。
+PRINT_SLOTS, PRINT_WAIT = 2, 20.0
+_print_slots = threading.BoundedSemaphore(PRINT_SLOTS)
+
+
+class PrintBusy(Exception):
+    """刷る空きを待っても取れなかった。受けた口で、書き込みが多すぎる時と同じ断り（429）を返す。"""
+
+
+def _printing(make):
+    """全体の刷る空きを 1 つ取ってから make を動かす。同じ案を同時に頼んだ人は _one_at_a_time で待つので、空きを取るのは作る人だけ。"""
+    if not _print_slots.acquire(timeout=PRINT_WAIT):
+        raise PrintBusy
+    try:
+        return make()
+    finally:
+        _print_slots.release()
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
 
 
@@ -267,6 +301,12 @@ class Handler(BaseHTTPRequestHandler):
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
         if isinstance(body, str) and ctype.startswith("text/html") and getattr(self.server, "public_open", False):
             body = without_notes(body)
+        if isinstance(body, str) and ctype.startswith("text/html") and getattr(self, "_lang", "ja") == "en" and not re.match(r"/en(?:[/?#]|$)", self.path):
+            from . import i18n  # 全頁の英語（窓口の決め 130735 の案 B）。作る側は日本語のまま作り、出口で表を引いて替える
+
+            body = i18n.page_en(body)
+        if getattr(self, "_lang_cookie", None):
+            headers = (*headers, self._lang_cookie)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -338,11 +378,28 @@ class Handler(BaseHTTPRequestHandler):
         なぜ切り替えないか: 本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」。1 つのサイトの中で
         見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
+        self._pick_lang()
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         from . import think_sheet
         return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+
+    def _pick_lang(self):
+        """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、cookie に持つ。道は日本語の頁と同じ。
+        前からの英語の頁（/en と /en/toy/<印>）は別の作りで、ここでは替えない（もう英語なので）。"""
+        _, _, query = self.path.partition("?")
+        pick = urllib.parse.parse_qs(query).get("lang", [""])[0]
+        self._lang_cookie = None
+        if pick in ("en", "ja"):
+            self._lang = pick
+            self._lang_cookie = ("Set-Cookie", f"utsushi_lang={pick}; Max-Age=31536000; Path=/; SameSite=Lax")
+            return
+        self._lang = "ja"
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == "utsushi_lang" and value == "en":
+                self._lang = "en"
 
     def do_GET(self):
         try:
@@ -358,6 +415,8 @@ class Handler(BaseHTTPRequestHandler):
             self._pick_look()
             if self._gate():
                 self._post()
+        except PrintBusy:
+            self._busy(int(PRINT_WAIT), {})
         except Exception as e:
             failure_log.request_failed("POST", self.path, e)
             self._refuse(500, BUSY, "送れませんでした")
@@ -663,6 +722,8 @@ class Handler(BaseHTTPRequestHandler):
             # 記録を残した画面からだけ受ける（記録の鍵）。番号は札に出る連番なので、番号だけで受けると、別の人の記録に写真を足せる。
             if not records.mine(m.group(1), self._rec_key()):
                 return self._send(403, "受け付けられない送り方です")
+            if (who := writer(self.client_address[0], self.headers)) and (wait := self.server.media_limit.wait(who)):
+                return self._busy(wait, {})
             try:
                 length = int(self.headers.get("Content-Length", ""))
             except ValueError:
@@ -686,6 +747,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
         if WRITE_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
             wait = self.server.write_limit.wait(who)
+            if wait:
+                return self._busy(wait, form)
+        if PRINT_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
+            wait = self.server.print_limit.wait(who)
             if wait:
                 return self._busy(wait, form)
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
@@ -820,7 +885,7 @@ class Handler(BaseHTTPRequestHandler):
         if (hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"], at="win"))
-        if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
+        if _printing(lambda: loop.print_version(sid, hid, int(v), out_dir(sid))) != 0:
             return self._send(422, self._toy(sid, errors=[f"{_ban(sid, v)} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
@@ -1076,7 +1141,7 @@ def print_latest(sid, hid):
         loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return v
 
-    return _one_at_a_time((sid, hid), make)
+    return _one_at_a_time((sid, hid), lambda: _printing(make))
 
 
 def print_own(sid, oid):
@@ -1145,6 +1210,8 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.look = look
     server.write_limit = WriteLimit()
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
+    server.print_limit = WriteLimit(limit=PRINT_LIMIT)
+    server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
     return server
 
 

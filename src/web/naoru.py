@@ -38,10 +38,14 @@ HIGHLIGHT = ROOT / "data/kaizen/highlight.json"
 
 
 def highlight():
-    """山場の 1 行（表の字に、玩具と型紙の版を添えた形）。data が無いか読めない時は空（枠の説明だけを出す）。"""
+    """山場の 1 行（表の字に、玩具と型紙の版を添えた形）。data が無いか読めない時は空（枠の説明だけを出す）。
+
+    型紙の版は「型紙の版 7」の形（v を付けない）。玩具の頁の型紙の札の脇と輪の図の真ん中が出す形（組の番号・紙の題に刷る数と同じ。
+    窓口の決定 (a)、#513）にそろえる。前は「型紙の版 v7」で、同じサイトの中で書き方が 2 つあった
+    """
     try:
         h = json.loads(HIGHLIGHT.read_text(encoding="utf-8"))
-        return f"{h['line']}（{h['toy']} 型紙の版 v{h['sheet_version']}）"
+        return f"{h['line']}（{h['toy']} 型紙の版 {h['sheet_version']}）"
     except (OSError, ValueError, KeyError, TypeError):
         return ""
 
