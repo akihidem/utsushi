@@ -1,5 +1,5 @@
 """デモ用の見本（本人の指示、11-04）。ギャラリーに上げた物と職人の言葉（フォームの情報提供）の見本が、作り物と分かる札付きで出る。
-寄せられた声は 11-07 夜から見本でなく、ワークショップの参加者の実際の感想（18 件・1 件 1 枚の札）。
+寄せられた声は 11-07 夜から見本でなく、ワークショップの参加者の実際の感想（18 件のうち本人が見送ると決めた 1 件を除く 17 件・1 件 1 枚の札）。
 本物の記録の置き場には書かない。OMOCHAE_SAMPLES=0 で消える。"""
 import os
 import tempfile
@@ -20,7 +20,7 @@ assert html.count('class="item is-sample"') == len(demo_samples.UPLOADS) + len(d
 # 寄せられた声は見本でなく、11 月のワークショップの参加者の実際の感想（本人の言葉 11-07 夜「とりあえず感想は全て反映させたい」）。
 # 1 件 1 枚の札で、見本の札は付けない。字は回答のまま。名前・番号・回（A/B）は出さない。抜き出した事と名前を外した事の一文が先頭
 yose = voices[voices.index('id="yose"'):voices.index('id="shokunin"')]
-assert len(demo_samples.VOICES) == 18 and all(v["toy"] and v["fields"] for v in demo_samples.VOICES)
+assert len(demo_samples.VOICES) == 17 and all(v["toy"] and v["fields"] for v in demo_samples.VOICES)
 assert '<span class="sample">見本</span>' not in yose and demo_samples.VOICES_NOTE in yose, "寄せられた声は見本の札でなく、抜き出した一文"
 assert yose.count('<div class="item">') == len(demo_samples.VOICES)
 import html as _h  # noqa: E402
