@@ -76,7 +76,8 @@ for name, look in (("tenji", get("/look/tenji")[1].decode()), ("zine", looks.zin
 assert get("/look/none")[0] == 404
 # 開いたら仮説と刷る口がすぐ見える（本人の決定 11-05、#242）
 body = get(f"/toy/{G}")[1].decode()
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#kasetsu"' in body
+# 刷る口は頭の「つくる」1 つ（本人のサイト体験レビュー 11-07 の 3）。札の字は今のたたき台の字で見る（#511）
+assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#win"' in body
 # 採らなかった歌の読みは出さない
 assert "怠けらじ" in body and "怠らし" not in body
 # 別のサイトから・別の形で送らせない
