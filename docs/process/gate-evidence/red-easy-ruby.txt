@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_easy_ruby.py
+# commit: c4c11b48（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_easy_ruby.py", line 45, in <module>
+    assert "<title>御来迎（ごらいごう）</title>" in out and "<option>御来迎（ごらいごう）</option>" in out, out
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: <html lang="ja"><head><title>御来迎</title></head><main><p class="easy-draft" style="margin:0;padding:6px 12px;font-size:14px;letter-spacing:.04em;color:var(--mute,#6b6358)">このページのやさしい<ruby>日本語<rt>にほんご</rt></ruby>は、<ruby>下書<rt>したが</rt></ruby>きです。</p><select><option>御来迎</option></select><input placeholder="御来迎" alt="御来迎"><p><ruby>御来迎<rt>ごらいごう</rt></ruby></p></main></html>
+rc=1

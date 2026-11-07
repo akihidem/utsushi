@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_easy_ruby.py
+# commit: c4c11b48（回した時の HEAD）
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000004-L/.tmp-_u20zuoz/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000004-L-4/.tmp-xl31zish/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000005-L/.tmp-sfi9xzh4/H-C_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000005-L-3/.tmp-gtqt3n5j/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000007-L/.tmp-9vcyo7ve/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000007-R/.tmp-9bjzt2ff/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000014-L/.tmp-singiupw/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000014-R/.tmp-1kjrbi0t/H-A_v1.pdf
+/tmp/tmpqvgnz69e/play/NDL-1187053-R0000019-L/.tmp-lubfduvu/H-A_v1.pdf
+ok やさしい日本語: 表の値は全部の漢字にルビ・頁でルビの外に残る漢字は表に無い字だけ・下書きの札なし
+rc=0

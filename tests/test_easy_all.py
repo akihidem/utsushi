@@ -5,7 +5,7 @@
 - 全部の頁の道（雛形ごとに 1 種を刷った後の作りながら見る頁・手帖も）が、やさしい日本語で 200 で開く。表に無い字は元の日本語のまま
   （全部そろわなくても壊れない）
 - 表の値の ｜漢字《よみ》 が、字の節では <ruby>漢字<rt>よみ</rt></ruby> に、属性ではルビの印を外した字になる。ルビの形が崩れない
-- ?lang=easy で cookie が付き、頁は日本語のまま（html の lang="ja"）、頭に「このページのやさしい日本語は、下書きです。」の札が 1 つ、帯の やさしい が 日本語 へ戻る口に替わる。
+- ?lang=easy で cookie が付き、頁は日本語のまま（html の lang="ja"）、頭の「下書きです」の札は出さない（本人の言葉 11-07 夜「下書きです、はとる」）、帯の やさしい が 日本語 へ戻る口に替わる。
   ?lang=ja で戻る。英語の頁では やさしい の切り替えは訳さずにそのまま出る
 - 表の形: 鍵は空白 1 つ・数は {n}、値の数の印は鍵の中の物だけ、ルビの印は ｜ と《》がそろう
 """
@@ -44,9 +44,10 @@ assert '<p title="御来迎"><ruby>御来迎<rt>ごらいごう</rt></ruby></p>'
 assert "<p>表に無い字</p>" in out and '<script>"御来迎"</script>' in out and '<html lang="ja">' in out
 # <title> と <option> の中は要素を入れられないので、ルビの印を外した字（タブの題に <ruby> が字のまま出ないように）
 titled = i18n.page_easy('<html lang="ja"><head><title>御来迎</title></head><main><select><option>御来迎</option></select><p>御来迎</p></main></html>')
-assert "<title>御来迎</title>" in titled and "<option>御来迎</option>" in titled, titled
+# 本人の言葉 11-07 夜「ルビも全ての漢字にふる」で、ルビの代わりに 漢字（よみ） の形で読みを添える（前は印を外した字だけ。tests/test_easy_ruby.py も見る）
+assert "<title>御来迎（ごらいごう）</title>" in titled and "<option>御来迎（ごらいごう）</option>" in titled, titled
 assert "<p><ruby>御来迎<rt>ごらいごう</rt></ruby></p>" in titled, "字の節にはルビ"
-assert out.count('class="easy-draft"') == 1 and "このページのやさしい<ruby>日本語<rt>にほんご</rt></ruby>は、<ruby>下書<rt>したが</rt></ruby>きです。" in out
+assert "easy-draft" not in out and "下書" not in out, "頭の下書きの札は出さない（本人の言葉 11-07 夜）"
 
 srv = serve(0, look="tenji")
 threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -71,14 +72,14 @@ try:
             continue
         if code == 200 and ctype.startswith("text/html"):
             head = body.split("</title>")[0] if "</title>" in body else ""
-            if "<ruby>" in head or body.count('class="easy-draft"') != 1 or "<ruby><ruby>" in body or "｜" in re.sub(r"<script.*?</script>|<textarea.*?</textarea>", "", body, flags=re.S):
+            if "<ruby>" in head or 'class="easy-draft"' in body or "<ruby><ruby>" in body or "｜" in re.sub(r"<script.*?</script>|<textarea.*?</textarea>", "", body, flags=re.S):
                 bad.append((path, "ルビか札の形"))
     assert not bad, bad[:8]
     code, top, cookies, _ = get("/?lang=easy")
     assert code == 200 and any(c.startswith("utsushi_lang=easy;") for c in cookies)
-    assert '<html lang="ja"' in top and top.count('class="easy-draft"') == 1
+    assert '<html lang="ja"' in top and 'class="easy-draft"' not in top
     assert '<ruby>御来迎<rt>ごらいごう</rt></ruby>' in top, "入口の札の玩具の名にルビ"
-    assert 'class="nav-lang nav-easy" href="?lang=ja" lang="ja">日本語</a>' in top and '<a class="nav-lang" href="?lang=en" lang="en">English</a>' in top
+    assert 'class="nav-lang nav-easy" href="?lang=ja" lang="ja"><ruby>日本語<rt>にほんご</rt></ruby></a>' in top and '<a class="nav-lang" href="?lang=en" lang="en">English</a>' in top
     code, ja, cookies, _ = get("/?lang=ja", "utsushi_lang=easy")
     assert "easy-draft" not in ja and "<ruby>御来迎" not in ja and any(c.startswith("utsushi_lang=ja;") for c in cookies)
     assert i18n.EASY_LINK in ja, "日本語の頁の帯に やさしい の切り替え"
