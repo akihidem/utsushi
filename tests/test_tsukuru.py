@@ -80,7 +80,24 @@ assert len(texts) >= 3 and all(html.escape(s, quote=True) in t for s in texts)
 # 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、手帖と同じ組み方の絵を出す（字の無い絵で、読み上げからは隠れる）
 # 見せるのは今の手順の 1 枚だけ（手順ごとに置き、送る時に切り替える）
 assert "_tejun.png" not in t and 'aria-hidden="true"' in t
-assert t.count('class="sheet koma on"') == 1 and 'data-n="1" xmlns="http://www.w3.org/2000/svg" class="sheet koma on"' in t, "手順 1 の絵だけが見えている"
+# 3D の組み立てがある玩具は、左の手本が組み立ての 3D（本人のサイトレビュー 11-07 昼過ぎの 4「左側に出てくる図がほとんど同じ」）。
+# 段は頁の手順の番号に合わせる（kumitateParts.show(n-1)）。組み方の絵（koma）は出さない
+from web import kumitate  # noqa: E402
+
+assert kumitate.available(G) and t.count('class="k3d"') == 1 and 'id="rt-stage"' in t and 'class="sheet koma' not in t, "3D の玩具の手本は 3D"
+assert "kp.show(n-1)" in t and "show,go:" in t, "頁の手順の番号で 3D の段を止める"
+# 3D の送る釦と段の字と、釦の後の手引き（.rt-hint）は隠す（頁の札が持つ。手引きは隠した釦を名指すので、出すと押せない釦の話になる）
+assert ".k3d .lead,.k3d .rt-acts,.k3d #rt-text,.k3d .rt-hint{display:none}" in t
+t3d = t
+# 3D の無い玩具（と同じ形）では、前のとおり今の手順の組み方の絵を 1 枚だけ見せる
+keep_av = kumitate.available
+kumitate.available = lambda sid: False
+try:
+    t = get(f"/toy/{G}/tsukuru")[1]
+    assert 'class="k3d"' not in t
+    assert t.count('class="sheet koma on"') == 1 and 'data-n="1" xmlns="http://www.w3.org/2000/svg" class="sheet koma on"' in t, "手順 1 の絵だけが見えている"
+finally:
+    kumitate.available = keep_av
 assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and "できた" in t
 # 刷っていない紙は h で指しても開かない
 assert get(f"/toy/{G}/tsukuru?h=H-B")[0] == 303 and 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]

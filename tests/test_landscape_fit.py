@@ -71,7 +71,7 @@ TSUKURU_WALK = """<script>addEventListener('load',async()=>{
 const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),items=[...document.querySelectorAll('#steps li')],out=[];await wait();
 const text=()=>{const a=document.querySelector('.num').getBoundingClientRect(),b=document.querySelector('#steps li.on').getBoundingClientRect();return {top:Math.min(a.top,b.top),end:b.bottom}};
 for(let n=1;n<=items.length;n++){
- const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=[...document.querySelectorAll('.sheet')].find(e=>e.getClientRects().length),t=text();
+ const go=[...document.querySelectorAll('#tiles .go')].find(b=>!b.hidden),r=go.getBoundingClientRect(),img=[...document.querySelectorAll('.sheet,.k3d .rt-stage')].find(e=>e.getClientRects().length),t=text();
  out.push({n,bottom:r.bottom,height:r.height,sheet:img?img.getBoundingClientRect().height:0,top:t.top,end:t.end});
  if(n<items.length){
   // 人は押す前に、札が画面に無ければ札まで送る（直す前の 1024×768 では、ここで頁が下へ送られたままになり、次の手順の字が画面の上の外に出た）
