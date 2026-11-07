@@ -3,12 +3,12 @@
 
 本人の答え（11-08）:
 - つくるの頁の一番下の前と次のおもちゃと一覧への道は「外す」
-- スマホは絵と狂歌を縦に積む形で「この形でよい」
 - 作りながら見る頁の「大きく見る」も「国会図書館への道にそろえる」
 
 見る線:
 1. 玩具の頁の足に、前と次の玩具への道（「← 名」「名 →」）と「おもちゃの一覧」（/toys）が無い。作った物と入口への道は残る（答えに無いので替えない）
-2. 狭い幅（スマホ）の頭の並びは今のまま（絵 → 玩具の名 → つくる → 名の下の 1 行 → 題の塊と狂歌の縦の段）
+2. （外した）狭い幅の頭の並びは、本人の答え「スマホは…この形でよい」の後に、本人の言葉「縦書きは失敗なので前の形に戻す」で替わった。
+   並びは頭を戻す PR の試験（test_toy_head_back）が見るので、ここでは見ない
 3. 作りながら見る頁の原画と歌の畳みに「大きく見る」も頁の中に重ねる窓も無い。道は玩具の頁の頭と同じ 1 つ（図を見る（国立国会図書館））で、
    行き先は国立国会図書館のその絵の頁。絵そのものも同じ所へ。どちらも別のタブで開く（作りながら見る頁は、頁を離れると声の聞き取りと鏡が止まる）
 4. 畳みにも「原文の引用。確かめた人」の行が無い（11-08 の最初の言葉「原文の引用確かめた人要らない」を、作りながら見る頁にもそろえる）
@@ -59,13 +59,6 @@ for sid in (G, T, QUIET, SIDS[0], SIDS[-1]):
     assert '<a href="/gallery">作った物</a>' in tail and '<a href="/">入口へ</a>' in tail, (sid, "作った物と入口への道は残す")
     assert page.rindex('class="sec ndl-credit"') > page.rindex('<a href="/">入口へ</a>'), (sid, "出典の字は頁の一番下のまま")
 
-# 2. 狭い幅の並び（この形でよい）
-narrow = toy.FOLD_STYLE[toy.FOLD_STYLE.index("@media (max-width:820px){.hero{"):]
-for want in (".hero>.genga-head>.genga-main{order:1}", ".hero h1{order:2}", ".hero .road{order:3", ".hero h1+.meta{order:4}",
-             ".hero>.genga-head>.genga-tate{order:5}"):
-    assert want in narrow, want
-assert "writing-mode:horizontal-tb" not in genga.STYLE[genga.STYLE.index("@media (max-width:820px)"):], "狭い幅も題の塊と狂歌は縦のまま"
-
 # 3・4. 作りながら見る頁の畳み
 for sid in (G, T, QUIET):
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -81,4 +74,4 @@ for sid in (G, T, QUIET):
     assert "確かめた人" not in fold and "原文の引用" not in fold, (sid, "畳みに確かめた人の行が残った")
 assert ("<ul" in genga.fold(G) or 'class="genga-songs"' in genga.fold(G)) and 'class="genga-songs"' not in genga.fold(QUIET), "歌の字は読みのある玩具だけ（前のまま）"
 assert ".genga-fold [data-big]" not in genga.STYLE and not hasattr(genga, "SCRIPT"), "重ねる窓の CSS と JS が残った"
-print("ok 玩具の頁の足に前と次と一覧の道が無い・狭い幅は今のまま・作りながら見る頁の畳みは国立国会図書館への道 1 つ（別のタブ）")
+print("ok 玩具の頁の足に前と次と一覧の道が無い・作りながら見る頁の畳みは国立国会図書館への道 1 つ（別のタブ）")
