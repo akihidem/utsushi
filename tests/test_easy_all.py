@@ -42,6 +42,10 @@ sample = '<!doctype html><html lang="ja"><main><p title="御来迎">御来迎</p
 out = i18n.page_easy(sample)
 assert '<p title="御来迎"><ruby>御来迎<rt>ごらいごう</rt></ruby></p>' in out, out
 assert "<p>表に無い字</p>" in out and '<script>"御来迎"</script>' in out and '<html lang="ja">' in out
+# <title> と <option> の中は要素を入れられないので、ルビの印を外した字（タブの題に <ruby> が字のまま出ないように）
+titled = i18n.page_easy('<html lang="ja"><head><title>御来迎</title></head><main><select><option>御来迎</option></select><p>御来迎</p></main></html>')
+assert "<title>御来迎</title>" in titled and "<option>御来迎</option>" in titled, titled
+assert "<p><ruby>御来迎<rt>ごらいごう</rt></ruby></p>" in titled, "字の節にはルビ"
 assert out.count('class="easy-draft"') == 1 and "このページのやさしい<ruby>日本語<rt>にほんご</rt></ruby>は、<ruby>下書<rt>したが</rt></ruby>きです。" in out
 
 srv = serve(0, look="tenji")
@@ -66,7 +70,8 @@ try:
             bad.append((path, code, ja_code))
             continue
         if code == 200 and ctype.startswith("text/html"):
-            if body.count('class="easy-draft"') != 1 or "<ruby><ruby>" in body or "｜" in re.sub(r"<script.*?</script>|<textarea.*?</textarea>", "", body, flags=re.S):
+            head = body.split("</title>")[0] if "</title>" in body else ""
+            if "<ruby>" in head or body.count('class="easy-draft"') != 1 or "<ruby><ruby>" in body or "｜" in re.sub(r"<script.*?</script>|<textarea.*?</textarea>", "", body, flags=re.S):
                 bad.append((path, "ルビか札の形"))
     assert not bad, bad[:8]
     code, top, cookies, _ = get("/?lang=easy")
