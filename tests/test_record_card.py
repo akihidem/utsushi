@@ -56,7 +56,8 @@ assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない"}) in
 page = get(f"/toy/{G}")
 full, bare = card(page, "R-0001"), card(page, "R-0002")
 # 見出しは学ぶ人の言葉。番号は見出しの外の小さな字。日付は読める形
-assert f"<h3>仮説 {hypotheses.letter(hypotheses.sheet_of(G))} の紙・動いた</h3>" in full and f"R-0001 {GS}" not in full, full[:300]
+# 記録の札の題の仮説は印なし（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
+assert "<h3>仮説の紙・動いた</h3>" in full and f"R-0001 {GS}" not in full, full[:300]
 meta = re.search(r'<p class="meta">([^<]*R-0001[^<]*)</p>', full)
 assert meta and re.search(r"\d+ 月 \d+ 日", meta.group(1)) and "T" not in meta.group(1), full[:300]
 # 書いた欄は全部読める。書いていない欄の名前は出さない
@@ -64,7 +65,7 @@ for label, value in (("最初に動いた所", "外筒の先"), ("引っかか�
     assert f"{label}: {value}" in full, label
     assert label not in bare, label
 # 動かない記録も同じ大きさの見出しで並ぶ（L-07）。成功・失敗の言葉を足さない
-assert f"<h3>仮説 {hypotheses.letter(hypotheses.sheet_of(G))} の紙・動かない</h3>" in bare
+assert "<h3>仮説の紙・動かない</h3>" in bare
 assert "成功" not in full + bare and "失敗" not in full + bare
 
 # 前は図鑑の行も同じ書き方かを見ていた。図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）

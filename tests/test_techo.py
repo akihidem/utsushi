@@ -10,7 +10,7 @@ blob = json.dumps(d, ensure_ascii=False)
 for t in d["toys"]:
     for h in hypotheses.load(t["sid"])["hypotheses"]:
         assert h["how_it_moves"] not in blob and h["name"] not in blob, h["id"]
-    assert all(s["label"].startswith("仮説 ") and s["steps"] for s in t["sheets"])
+    assert all(s["label"] == "仮説の紙" and s["steps"] for s in t["sheets"])  # 紙の呼び名は印なし（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
 assert [s["id"] for s in d["toys"][0]["sheets"]] == ["H-A", "H-C", "H-D"], "試行で配った紙だけ"
 assert "手前にへこむ" in d["glossary"]["谷折り"] and "仕組み" in d["mechanism"]
 # 頁も src/api/ask.py と同じ線: 語そのものを尋ねる短い問いだけを語の説明で答える。形は data から読み、頁に二重に持たない（#287）
