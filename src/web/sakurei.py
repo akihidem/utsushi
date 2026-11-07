@@ -132,6 +132,13 @@ def examples():
     return sorted(out, key=lambda e: (e["day"], e["rid"]))
 
 
+def toy_name(sid):
+    """作例の札の玩具の名。83 の玩具はその名、83 の外の玩具は棚卸しの名（records.outside_toy）。"""
+    from omochae import hypotheses, records
+
+    return records.outside_toy(sid) or hypotheses.load(sid)["toy"]
+
+
 def days():
     """作例を出している日の月日 4 桁の集まり（例 {"1104", "1106"}）。審査用の頁が、作例の節の日の見出し（/gallery#sakurei-MMDD）へ道を張る時に、
     出す物がある日だけに張るため（行き止まりを作らない）。"""
@@ -146,8 +153,9 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
 
     from . import techo_site
 
+    outside = records.outside_toy(sid)  # 83 の外で棚卸しにだけある玩具（猫と鼠の箱など。作例の節にだけ出す）
     try:
-        data_ = hypotheses.load(sid)
+        data_ = None if outside else hypotheses.load(sid)
     except (KeyError, OSError, ValueError, ToolMissing):
         return [], [("", f"知らない玩具: {sid}")], None
     try:
@@ -159,9 +167,14 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
         return [], [("", f"作った日がワークショップの日（{'・'.join(d[5:] for d in WORKSHOP_DAYS)}）でない: {day}")], None
     if sheet_set is not None and not SET_NAME.fullmatch(sheet_set):
         return [], [("", f"型紙の組は「名前-v番号」の形: {sheet_set}")], None
-    hid = hypothesis_id or hypotheses.sheet_of(sid)["id"]
-    if hid not in {h["id"] for h in data_["hypotheses"]}:
-        return [], [("", f"知らない仮説: {hid}")], None
+    if outside:
+        if hypothesis_id:
+            return [], [("", f"83 の外の玩具の作例は仮説を持たない: {hypothesis_id}")], None
+        hid = None
+    else:
+        hid = hypothesis_id or hypotheses.sheet_of(sid)["id"]
+        if hid not in {h["id"] for h in data_["hypotheses"]}:
+            return [], [("", f"知らない仮説: {hid}")], None
     seen = {r.get("workshop_from") for r in workshop_records()}
     done, refused = [], []
     for path in paths:
@@ -310,11 +323,11 @@ def set_toy(keys, sid, day=None, sheet_set=None):
     """仕分けの置き場の写真の玩具（と、人が決めた日・刷った組）を書く。keys は指紋か元の名。sid は玩具の印か不明。
     Returns ([書いた指紋], [(key, 理由)])。"""
     if sid != UNKNOWN:
-        from omochae import hypotheses
+        from omochae import hypotheses, records
         from omochae.model import ToolMissing
 
         try:
-            hypotheses.load(sid)
+            records.outside_toy(sid) or hypotheses.load(sid)
         except (KeyError, OSError, ValueError, ToolMissing):
             return [], [("", f"知らない玩具: {sid}")]
     if day is not None and day not in WORKSHOP_DAYS + (UNKNOWN,):

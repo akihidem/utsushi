@@ -6,7 +6,8 @@
 2. 撮影の情報: 仕分けの置き場の写しにも帳面にも、日時・位置・機種は残らない（日だけ）。元の folder には書かない
 3. 動画は写真と分けて名を挙げるだけ（置き場に置かない）。写真でない物は受けない。同じ写真は 2 度置かない
 4. 玩具: 人が決めるまで不明。知らない玩具・4 回でない日・形の違う組は受けない。不明は書いてよい
-5. 入れる: 日と玩具の両方が決まった物だけが作例の記録に入り（人の確かめ待ち）、写しは消える。不明の物は残り、hold に出る
+5. 入れる: 日と玩具の両方が決まった物だけが作例の記録に入り（人の確かめ待ち）、写しは消える。不明の物は残り、hold に出る。
+   作例の記録の番号は R-1001 からの帯で、学ぶ人の記録（R-0001 から）の番号を押し上げない
 6. 命令の終わりの値。別の置き場へ同じ取り込みを回すと、前の決めを写して同じ記録ができる（不明は不明のまま）
 """
 import io
@@ -22,6 +23,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from PIL import Image  # noqa: E402
 
 from omochae import media_review, records  # noqa: E402
+from omochae.model import ToolMissing as sakurei_tool_missing  # noqa: E402
 from web import sakurei  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -110,6 +112,10 @@ assert (by["IMG_0101.jpg"]["source_id"], by["IMG_0101.jpg"]["made_on"], by["IMG_
 assert (by["IMG_0102.jpg"]["source_id"], by["IMG_0102.jpg"]["made_on"]) == (T, "2026-11-05") and "sheet_set" not in by["IMG_0102.jpg"]
 assert by["IMG_0106.png"]["made_on"] == "2026-11-04"
 assert all(r["via"] == records.WORKSHOP for r in recs.values()) and len(recs) == 3
+# 作例の記録の番号は R-1001 からの帯（repo の 11-04 の R-0001・R-0002 と同じ番号の札にしない）。学ぶ人の記録は下の帯のまま続く
+assert sorted(recs) == ["R-1001", "R-1002", "R-1003"], sorted(recs)
+own, fails = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": records.results_for(G)[0]})
+assert fails == [] and own == "R-0001", (own, fails)
 assert sakurei.examples() == [], "人の確かめの前に出た"
 assert all((rid, name) in media_review.waiting() for rid in recs for name in __import__("web.techo_site", fromlist=["x"]).media_of(rid))
 left = [it for it in sakurei._hold_list() if not it.get("rid")]
@@ -119,11 +125,28 @@ assert not any((hd / f"{it['fp']}.jpg").exists() for it in sakurei._hold_list() 
 assert sakurei.place() == ([], []), "2 度入れた"
 assert sakurei.sort(up)[0] == [], "入れた後に同じ写真をまた置いた"
 
+# 83 の外の玩具（棚卸しにだけある・猫と鼠の箱）: 作例の節にだけ出す形で入る（窓口の決め 11-07）。仮説は持たず、札は「わからない」
+OUT = "NDL-1187053-R0000025-R"
+assert records.outside_toy(OUT) == "猫と鼠の箱（鼠捕りからくり）" and records.outside_toy(G) is None and records.outside_toy("NDL-0000000-R0000000-L") is None
+assert sakurei.toy_name(OUT) == "猫と鼠の箱（鼠捕りからくり）" and sakurei.toy_name(G) == "御来迎"
+assert sakurei.set_toy(["IMG_0104.jpg"], OUT, day="2026-11-06")[0], "83 の外の玩具を書けない"
+done_out, refused_out = sakurei.place()
+assert refused_out == [] and [n for _, n in done_out] == ["IMG_0104.jpg"], (done_out, refused_out)
+rec_out = next(r for r in sakurei.workshop_records() if r["id"] == done_out[0][0])
+assert rec_out["source_id"] == OUT and rec_out["hypothesis_id"] is None and rec_out["result"] == records.UNSURE and rec_out["id"] == "R-1004"
+assert records.check({**rec_out, "result": "動いた"}) and records.check({**rec_out, "hypothesis_id": "H-A"}), "83 の外の作例に札か仮説を許した"
+try:  # 作例でない記録は前のまま、83 の外の玩具を知らない玩具として扱う（check が落ちるか、断る）
+    assert records.check({**rec_out, "via": None}), "作例でない記録に 83 の外の玩具を許した"
+except sakurei_tool_missing:
+    pass
+extra = shot("IMG_0108.jpg", "2026:11:06 10:00:00", "+09:00", color=(1, 99, 7)).rename(pathlib.Path(tempfile.mkdtemp()) / "IMG_0108.jpg")  # 上がった folder の外へ
+assert sakurei.add([extra], OUT, "2026-11-06", hypothesis_id="H-A")[1], "83 の外の玩具に仮説を付けられた"
+
 # 6. 命令
 cli = [sys.executable, "-m", "web.sakurei"]
 run = lambda *x: subprocess.run([*cli, *x], capture_output=True, text=True, env={**os.environ})  # noqa: E731
 h = run("hold")
-assert h.returncode == 0 and h.stdout.count("\n") == 3 and "IMG_0105.jpg" in h.stdout and "IMG_0101.jpg" not in h.stdout, h
+assert h.returncode == 0 and h.stdout.count("\n") == 2 and "IMG_0105.jpg" in h.stdout and "IMG_0101.jpg" not in h.stdout, h
 assert run("toy", "IMG_0103.jpg", "--toy", "NDL-0000000-R0000000-L").returncode == 3
 assert run("toy", "IMG_0103.jpg", "--toy", G).returncode == 0
 p = run("place")
@@ -147,8 +170,9 @@ assert r2.returncode == 3, r2  # memo.txt だけ受けない
 p2 = run("place")
 assert p2.returncode == 0, p2
 again_recs = sorted((r["source_id"], r["made_on"], r.get("sheet_set")) for r in sakurei.workshop_records())
-assert again_recs == sorted([(G, "2026-11-06", "goraigo-v14"), (T, "2026-11-05", None), (G, "2026-11-04", None), (G, "2026-11-07", None)]), again_recs
-assert sorted(it["name"] for it in sakurei._hold_list() if not it.get("rid")) == ["IMG_0104.jpg", "IMG_0105.jpg"], "不明の物が写しで決まった"
+assert again_recs == sorted([(G, "2026-11-06", "goraigo-v14"), (T, "2026-11-05", None), (G, "2026-11-04", None), (G, "2026-11-07", None),
+                             (OUT, "2026-11-06", None)]), again_recs
+assert sorted(it["name"] for it in sakurei._hold_list() if not it.get("rid")) == ["IMG_0105.jpg"], "不明の物が写しで決まった"
 assert all(set(it) <= {"fp", "name", "day", "toy", "set", "rid"} for it in sakurei._hold_list()), "前の置き場の記録の番号を写した"
 assert run("sort", str(up), "--like", str(up / "nai.json")).returncode == 4, "読めない帳面は 4"
 print("ok 作例の仕分け: 撮影の日で 4 回に振る・撮影の情報を残さない・動画を分ける・玩具は人が決める・両方決まった物だけ入れる")

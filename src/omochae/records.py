@@ -31,6 +31,10 @@ UPLOADED = "video-up"
 # 写真から作った記録で、学ぶ人の観察と説明が無い。動画の受け口と同じく all_records の既定から外す（エンジンへ渡す束・輪の数・審査用の頁・
 # ギャラリーの「他の人が作った物」に、観察の無い作例を混ぜない。作例はギャラリーの作例の節だけが読む）
 WORKSHOP = "workshop"
+# 作例の記録の番号は R-1001 から数える（学ぶ人の記録は R-0001 から）。repo に載せた 11-04 の試行の記録 R-0001・R-0002 を審査用の頁が
+# 「記録 R-0001」として見せるので、公開デモの置き場の作例が同じ番号の札にならないように、番号の帯を分ける（統括の確かめ 11-07）。
+# 頭の字を替える（W- など）形にしないのは、写真の道（/record/R-…/media）と試験が R- の形で決め打ちしているため
+WORKSHOP_FROM = 1000
 UNSURE = "わからない"
 FIX_BLANK = "書かれていない"  # 工夫の 3 欄のうち、欠けた欄に入れる字（web.play_server.fixes_of）
 # 取り下げの説明文（本人の決定、Issue #335）。本人が確かめた字を、一字も変えずに出す（tests/test_withdraw_notice.py が文字列で見る）。
@@ -66,20 +70,40 @@ def old_results_for(source_id):
     return getattr(TEMPLATES[load(source_id).get("template", "slider_fan")], "OLD_RESULTS", {})
 
 
+def outside_toy(source_id):
+    """サイトの玩具の一覧（data/hypotheses の 83）に無く、棚卸し（data/inventory/edo-nishiki.json）にだけある玩具の名。無ければ None。
+    作例だけが使う（窓口の決め 11-07 144403: 猫と鼠の箱は作った物の頁の作例の節にだけ出し、玩具の頁は作らない・83 に足さない）。
+    仮説も雛形も無いので、作例の記録は仮説を持たず、動きの札は「わからない」だけ。"""
+    if not isinstance(source_id, str) or (ROOT / "data/hypotheses" / f"{source_id}.json").exists():
+        return None
+    try:
+        toys = json.loads((ROOT / "data/inventory/edo-nishiki.json").read_text(encoding="utf-8"))["toys"]
+    except (OSError, ValueError, KeyError):
+        return None
+    return next((t.get("name_guess") for t in toys if t.get("id") == source_id), None)
+
+
 def known_hypothesis(source_id, hypothesis_id):
     return any(h["id"] == hypothesis_id for h in load(source_id)["hypotheses"]) or any(h["id"] == hypothesis_id for h in own_hypotheses(source_id))
 
 
 def check(rec):
     out = []
-    results = results_for(rec["source_id"])
-    # 前の札も受ける。札を直す前に開いた頁から送られても、記録を断らないため。断りの文には今の札だけを出す。
-    # 受け口は動いたかを聞かない（動画だけが届く）。雛形の札に「わからない」が無くても、決めつけずにこの字で受ける。束はこの字を数えない
-    # 作例の受け口も「わからない」で受ける（写真から動いたかは分からない）
-    if rec.get("result") not in (*results, *old_results_for(rec["source_id"])) and not (rec.get("via") in (UPLOADED, WORKSHOP) and rec.get("result") == UNSURE):
-        out.append(Failure("F3.result", "result", f"結果は {'／'.join(results)} のどれか"))
-    if not known_hypothesis(rec["source_id"], rec.get("hypothesis_id")):
-        out.append(Failure("F8.references", "hypothesis_id", f"仮説 {rec.get('hypothesis_id')} は実在しない"))
+    if rec.get("via") == WORKSHOP and outside_toy(rec.get("source_id")):
+        # 83 の外の玩具の作例（outside_toy）。雛形の札も仮説も無いので、札は「わからない」だけ、仮説は持たない
+        if rec.get("result") != UNSURE:
+            out.append(Failure("F3.result", "result", f"83 の外の玩具の作例の結果は {UNSURE}"))
+        if rec.get("hypothesis_id") is not None:
+            out.append(Failure("F8.references", "hypothesis_id", "83 の外の玩具の作例は仮説を持たない"))
+    else:
+        results = results_for(rec["source_id"])
+        # 前の札も受ける。札を直す前に開いた頁から送られても、記録を断らないため。断りの文には今の札だけを出す。
+        # 受け口は動いたかを聞かない（動画だけが届く）。雛形の札に「わからない」が無くても、決めつけずにこの字で受ける。束はこの字を数えない
+        # 作例の受け口も「わからない」で受ける（写真から動いたかは分からない）
+        if rec.get("result") not in (*results, *old_results_for(rec["source_id"])) and not (rec.get("via") in (UPLOADED, WORKSHOP) and rec.get("result") == UNSURE):
+            out.append(Failure("F3.result", "result", f"結果は {'／'.join(results)} のどれか"))
+        if not known_hypothesis(rec["source_id"], rec.get("hypothesis_id")):
+            out.append(Failure("F8.references", "hypothesis_id", f"仮説 {rec.get('hypothesis_id')} は実在しない"))
     if rec.get("via") == WORKSHOP:
         # 作例の札は作った日（ワークショップの日）で並べるので、日が無い・読めない作例は受けない
         try:
@@ -124,8 +148,11 @@ def add(rec):
     d.mkdir(parents=True, exist_ok=True)
     # 取り下げた番号も数える。使い回すと、残った根拠や控えが別の記録を指してしまう
     nums = [int(m.group(1)) for p in (*d.glob("R-*.json"), *withdrawn_folder().glob("R-*.json")) if (m := re.fullmatch(r"R-(\d{4,})\.json", p.name))]
+    # 作例は作例の帯（WORKSHOP_FROM より上）、ほかは下の帯の中で数える。片方の番号が、もう片方の続きの番号を押し上げないように
+    base = WORKSHOP_FROM if rec.get("via") == WORKSHOP else 0
+    nums = [n for n in nums if (n > WORKSHOP_FROM) == bool(base)]
     while True:
-        rid = f"R-{max(nums, default=0) + 1:04d}"
+        rid = f"R-{max(nums, default=base) + 1:04d}"
         out = {**rec, "id": rid, "by": "human", "recorded_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")}
         try:
             store.write_json(d / f"{rid}.json", out, exclusive=True)
