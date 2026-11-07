@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_gate_trial_merge.py
+# commit: d2307338（回した時の HEAD）
+ok 帳面の節 197 個（前の帳面 196・今の置き場 1）。枝ごとのファイルは属性なしでも衝突しない
+rc=0
