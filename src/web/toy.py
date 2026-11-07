@@ -21,7 +21,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
-from . import skin, wording
+from . import naoru, skin, wording
 from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
 from .toys import way_tags
 
@@ -167,6 +167,9 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             # 刷った後に次へ進む口（段 0）。印刷 → つくる（手帖）の順に置く。作る口は手帖（research/36 の本人の決定）
             f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
+            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）。行き先は上の「つくる」と同じ手帖なので、道は増やさず字だけを
+            # 釦のすぐ下に置く（釦の位置は変わらない）。意義は のこす の画面と同じ字（naoru.purpose）
+            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
@@ -650,7 +653,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 試した記録を残す口は、のこす（記録の頁）へ寄せた（本人の答え 11-07 夕の Q3）。同じ所に記録の頁への道を 1 本だけ置く。
     # 錨 #kiroku と返事の文（head）は残す: 作りながら見る頁の組み上がりの札・試した後の紙の断りの「記録の欄へ」・受け口の返事が、この錨へ戻るため
     # （道の直しは増やさない。着いた所から 1 本でのこすへ行ける）。JS の無い画面で記録を残す道は無くなる（手帖の のこす は JS で送る）
-    body += (f'<section class="sec" id="kiroku">{head("kiroku")}'
+    # のこすへの道 2（本人の言葉 11-07 夜「できたはのこそう」）。今の道の上に見出しと意義の 1 文を足す。道の字（KIROKU_TO_NOKOSU）・行き先・錨は替えない
+    done = (f'<h2>{esc(naoru.ROUTE_DONE)}</h2>' if naoru.ROUTE_DONE else "") + (f'<p class="meta">{esc(naoru.purpose())}</p>' if naoru.ROUTE_DONE and naoru.purpose() else "")
+    body += (f'<section class="sec" id="kiroku">{head("kiroku")}{done}'
              f'<p class="links"><a href="/toy/{esc(sid)}/techo/kiroku">{esc(KIROKU_TO_NOKOSU)}</a></p></section>')
     # 作った物の並び（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     # 見出しは MINNA_HEAD（夕方のレビューの 6 で、人ごとの呼び方をやめた）
