@@ -29,7 +29,11 @@ from demo.flip import FPS, H, ROOT, SUMI, W, contact_sheet, ease, render, text
 QUESTION = "こんなおもちゃを知っていますか？"
 PLACEHOLDER = "（ここに職人のおもちゃの動画が入ります）"
 VIDEO = ROOT / "out/demo/opening/toys.mp4"     # 職人のおもちゃの動画の置き場（git に入れない）
-DURATION = 8.6                                 # 表と裏の境目の札の 3 秒を、ここから作った（本人の決定 11-06、カード 125217）。前は 11.6 秒（場面 5 の字幕を消して戻した秒）
+# 問いだけの場面にする（本人の決定 11-07「引く候補 5 つ全部でよい（179.3 秒）」の 場面 1 −3.6）。職人のおもちゃの動画は届いていないので、
+# 動画の枠と印を出さず、白い地に問いの字だけを置く。秒は 8.6 → 5.0。動画が届いて戻す時は QUESTION_ONLY を False にし、秒を 8.6 に戻す
+QUESTION_ONLY = True
+VIDEO_DURATION = 8.6                           # 動画の形の秒。表と裏の境目の札の 3 秒を作った後の秒（本人の決定 11-06、カード 125217）
+DURATION = 5.0 if QUESTION_ONLY else VIDEO_DURATION
 MIN_WIDTH = 1280
 WHITE = (255, 255, 255)
 VIDEO_BOX = (178, 180, 1742, 1060)             # 動画を置く枠。16:9 で、上に問いの字の余白
@@ -41,7 +45,8 @@ CUES = {
 
 
 def has_video(path=VIDEO):
-    return pathlib.Path(path).exists()
+    """動画を使うか。問いだけの場面（QUESTION_ONLY）では、置き場に物があっても使わない。"""
+    return not QUESTION_ONLY and pathlib.Path(path).exists()
 
 
 def _probe(path):
@@ -61,8 +66,8 @@ def video_problem(path, probe=_probe):
         return f"動画の縦横が 16:9 でない（{width}×{height}）"
     if width < MIN_WIDTH:
         return f"動画の幅が {MIN_WIDTH} より小さい（{width}）"
-    if seconds < DURATION:
-        return f"動画が {DURATION:g} 秒より短い（{seconds:.1f} 秒）"
+    if seconds < VIDEO_DURATION:  # 置いた動画は、動画の形（QUESTION_ONLY を外した時）の秒で見る
+        return f"動画が {VIDEO_DURATION:g} 秒より短い（{seconds:.1f} 秒）"
     return None
 
 
@@ -88,6 +93,10 @@ class Opening:
         draw = ImageDraw.Draw(img)
         a, v = self._p(t, "in"), self._p(t, "video")
         if not self.frames:
+            if QUESTION_ONLY:
+                if a > 0:
+                    text_en(draw, (W // 2, H // 2 - 70), QUESTION, 72, _ink(a), False, "ma")
+                return img
             if a > 0:
                 text_en(draw, (W // 2, H // 2 - 130), QUESTION, 72, _ink(a), False, "ma")
             if v > 0:
@@ -112,8 +121,13 @@ def main(argv=None):
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
     ap.add_argument("--video", default=str(VIDEO), help="職人のおもちゃの動画（省くと決まった置き場）")
     a = ap.parse_args(argv)
-    times = (0.4, 1.0, 1.6, 2.4, 4.0, 5.5, 7.0, 8.0, 8.5)
+    times = tuple(t for t in (0.4, 1.0, 1.6, 2.4, 4.0, 5.5, 7.0, 8.0, 8.5) if t < DURATION)
     video = pathlib.Path(a.video)
+    if QUESTION_ONLY:
+        scene = Opening()
+        if a.sheet:
+            contact_sheet(scene, a.sheet, times)
+        return render(scene, pathlib.Path(a.out))
     if not video.exists():
         print("注意: 職人のおもちゃの動画が無いので、印を出す。この動画は外へ出せない", file=sys.stderr)
         scene = Opening()

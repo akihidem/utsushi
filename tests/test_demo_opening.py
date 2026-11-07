@@ -12,7 +12,8 @@ from demo import flip, opening
 # 問いの字は本人の字のまま（本人の指示 11-05 20:07）
 assert opening.QUESTION == "こんなおもちゃを知っていますか？"
 assert opening.PLACEHOLDER == "（ここに職人のおもちゃの動画が入ります）"
-assert opening.DURATION == 8.6  # 境目の札の 3 秒を始まりから取った（本人の決定 11-06、カード 125217）
+# 問いだけの場面にした（本人の決定 11-07「引く候補 5 つ全部でよい（179.3 秒）」の 場面 1 −3.6）。動画の形に戻すと 8.6 秒（境目の札の 3 秒を取った後）
+assert opening.QUESTION_ONLY and opening.DURATION == 5.0 and not opening.has_video()
 spans = list(opening.CUES.values())
 assert all(a < b for a, b in spans) and spans == sorted(spans) and spans[-1][1] <= opening.DURATION
 
