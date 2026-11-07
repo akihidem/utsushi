@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: 12f96b67（回した時の HEAD）
+ok 現代語訳と言葉の意味 2 つ（頁の字 28）・御来迎の読みは怠らじ
+rc=0
