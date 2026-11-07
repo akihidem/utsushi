@@ -60,6 +60,9 @@ ROWS = (
     ("改善の輪", (("作った人の報告・感想", None), ("直しの案", None), ("人が採る", None), ("版を刻む", "型紙の版・エンジンの版"), ("次の型紙", None))),
 )
 EXAMPLE = "うつし ＝ paper to toy の一つの具体例"   # 最後のかたまりで出す札（字幕ではない）。案
+# 札は出さない（SHOW_EXAMPLE）: 具体例の文に位置づけを入れて字幕が 2 行になり（窓口の決め 120530・120643）、帯の上の端が札（EXAMPLE_Y）に
+# 重なった（11-07 の止めの絵）。同じ事は字幕が言うので、札を描かない。札の字は戻す時のために残す
+SHOW_EXAMPLE = False
 # 段が現れる時刻: 型紙の流れと 3D の流れは 1 つ目のかたまりの中（字幕はエンジンが型紙を作る事を言い、段が中の確かめを見せる）、
 # 改善の輪は 2 つ目のかたまり（版が上がる）の頭
 ROW_AT = (CUES["c0"][0] + 0.6, CUES["c0"][0] + 2.4, CUES["c1"][0])
@@ -78,7 +81,7 @@ EXAMPLE_Y, EXAMPLE_SIZE = 782, 32
 
 def drawn():
     """この場面が描く日本語の字（英語字幕の試験が、どれにも英語がある事を見る）。"""
-    out = ["".join(lines) for lines in CHUNKS] + [EXAMPLE]
+    out = ["".join(lines) for lines in CHUNKS] + ([EXAMPLE] if SHOW_EXAMPLE else [])
     for title, boxes in ROWS:
         out.append(title)
         for label, sub in boxes:
@@ -157,7 +160,7 @@ class Engine:
             self._row(d, k, t)
         last = len(CHUNKS) - 1
         v = ease((t - CUES[f"c{last}"][0]) / APPEAR)
-        if v > 0:
+        if v > 0 and SHOW_EXAMPLE:
             text_en(d, (W // 2, EXAMPLE_Y), EXAMPLE, EXAMPLE_SIZE, fade(SHU, v), True, "ma")
         n = len(CHUNKS)
         for i, lines in enumerate(CHUNKS):

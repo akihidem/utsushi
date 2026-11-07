@@ -200,7 +200,6 @@ def all_sources():
 # デモとサイトで説明した方がいい」。英語は grove の state/engine-explain-20261107.md の (3) を元にした案。台本の字の表（上の EN）と
 # 別の所に置く（同じ時に台本の字を直す枝と取り合わないため）
 EN.update({
-    "うつし ＝ paper to toy の一つの具体例": "utsushi: one example of paper to toy",  # 案
     "型紙の流れ": "Pattern flow",  # 案
     "入力（寸法・出典）": "Input (sizes, source)",  # 案
     "部品を並べる": "Lay out parts",  # 案
