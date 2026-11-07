@@ -1,11 +1,11 @@
-"""入口に浮かぶ玩具の試作（本人の言葉 11-07 夜「試作」: 輪郭で切り取った玩具がぷかぷか浮かんで、押すとその玩具の頁へ飛ぶ案）。
+"""入口に浮かぶ玩具（本人の言葉 11-07 夜「試作」: 輪郭で切り取った玩具がぷかぷか浮かぶ案。押すと頁へ飛ぶ形は、本人の言葉「リンクにはせず揺れる」で外した）。
 
-本人の決め（11-07 夜）で採った。切り抜きを本人が絵で見て OK を出すまで合体しない。判断の芯:
+本人の決め（11-07 夜）で採った。切り抜きは本人の OK「この4つと縁でよい」（11-07 夜）。判断の芯:
 - 絵は原画の切り抜き（out/sources/<印>.jpg。国立国会図書館の PDM の頁の写し）から、紙の地の色を外して玩具の輪郭だけを残した透けた PNG を作る。
   作った絵は生成物なので repo に入れず out/ukabu/ に置く。輪郭は機械で取った物で、人は確かめていない（玩具の線の外の字や汚れが残ることがある）。
 - 取り方: 縮めた絵で、紙の地の色（縁の色の中ほど）から離れた画素と濃い線を「絵」とし、太らせて細らせる（隙間を埋める）→ 縁から届く地を外す
   （中の穴を埋める）→ いちばん大きい塊だけ残す（歌の字を外す）→ 元の大きさへ戻して縁をぼかす。numpy と Pillow だけで作る（repo の依存を増やさない）。
-- 頁の側（looks の入口）は、絵がある玩具だけを 4 つ、入口の最初の画面（題の間）の余白にゆっくり浮かべる（本人の決め 11-07 夜「これをうつしの一番最初の
+- 頁の側（looks の入口）は、絵がある玩具だけを 4 つ、揺れるだけの飾りとして（本人の言葉「リンクにはせず揺れる」）、入口の最初の画面（題の間）の余白にゆっくり浮かべる（本人の決め 11-07 夜「これをうつしの一番最初の
   余白に浮かばせる」・窓口の条件: 数は少なく・動きはとてもゆっくり・静けさと間を壊さない）。
 - 切り抜きは人の目で直してから（本人の決め 11-07 夜）。機械の輪郭の縁に残る紙の地を fringe で外し、直す前と後を並べた絵（compare）で本人が見て決める。
 """
@@ -18,7 +18,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = ROOT / "out/sources"
 OUT = ROOT / "out/ukabu"
 SMALL = 420  # 輪郭を取る時の幅（px）。塊を数える手間を小さくするため
-TALL = 360  # 浮かべる絵の高さの上限（px）
+BOX = (208, 330)  # 浮かべる絵の大きさの上限（px）。見せる幅 104px（狭い幅は 56px）の 2 倍まで。前の高さ 360 の PNG は 4 枚で約 415KB を最初の画面で読んだ
+# （入口の絵は 100KB 以下の線・統括 11-07）。透けを持てる WebP で保存して、4 枚を合わせて 150KB より下にする
+QUALITY = 82
 
 
 def mask_of(im):
@@ -116,7 +118,7 @@ def fringe(im, m):
 
 
 def cut(sid, clean=True):
-    """その玩具の輪郭の透けた PNG（バイト）と、絵の中で玩具が占める割合。切り抜きが無ければ (None, 0)。
+    """その玩具の輪郭の透けた WebP（バイト）と、絵の中で玩具が占める割合。切り抜きが無ければ (None, 0)。
     clean=False は直す前の機械の輪郭（直す前と後を並べる絵のため）。"""
     from PIL import Image
 
@@ -132,9 +134,9 @@ def cut(sid, clean=True):
         box = m.point(lambda v: 255 if v > 24 else 0).getbbox()
         if box:
             im = im.crop(box)
-        im.thumbnail((TALL * 2, TALL))
+        im.thumbnail(BOX)
         buf = io.BytesIO()
-        im.save(buf, "PNG", optimize=True)
+        im.save(buf, "WEBP", quality=QUALITY, method=6)
         return buf.getvalue(), share
 
 
@@ -149,7 +151,7 @@ def main(argv=None):
         if data is None:
             print(f"切り抜きが無い: {sid}", file=sys.stderr)
             continue
-        (OUT / f"{sid}.png").write_bytes(data)
+        (OUT / f"{sid}.webp").write_bytes(data)
         print(sid, f"{share:.2f}", len(data))
     return 0
 
@@ -166,32 +168,32 @@ PICKS = ("NDL-1187053-R0000026-L", "NDL-1187053-R0000030-L-2", "NDL-1187053-R000
 # 浮かぶ形。CSS の注は頁に出るので、理由はここに書く（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」）:
 # - 置き場は入口の最初の画面（題の間・縦の組み・画面いっぱい）の四隅の余白。題字・英字・副題 3 列と札の字（このサイトについて）に重ならない所
 #   （幅 1440 で題の塊は真ん中の約 560〜980px・390 では真ん中の約 150〜240px の縦の帯なので、左右の端と上下の端に寄せる）
-# - 数と動きは試作のまま（4 つ・16〜25 秒で 1 往復・上下 12px と傾き 1.5 度）。動きを減らす設定では止める。キーボードで押せる
-# - 浮かぶ絵は題の間の字より後ろの層で、字の上で押す所を取らない（pointer-events は絵の a だけ）
+# - 数と動きは試作のまま（4 つ・16〜25 秒で 1 往復・上下 12px と傾き 1.5 度）。動きを減らす設定では止める
+# - 押しても頁へ飛ばない、揺れるだけの飾り（本人の言葉 11-07 夜「リンクにはせず揺れる」）。リンクにせず、焦点に入れず、読み上げでは飛ばす
+#   （aria-hidden・alt は空）。押す所も取らない（pointer-events は全部 none）。浮かぶ絵は題の間の字より後ろの層
+# - 読み込みは題字より後（loading=lazy・fetchpriority=low・decoding=async）
+# - 狭い幅の左下（uk3）は上からの位置で置く（下からだと、題の間が画面より少し高い 390 で画面の下の端に切れた・確かめの気づき 11-07）
 UKABU = """
 .tj-hall{position:relative}
 .ukabu{position:absolute;inset:0;pointer-events:none;z-index:0}
 .tj-hall>*:not(.ukabu){position:relative;z-index:1}
-.uk{position:absolute;display:block;width:104px;line-height:0;border:0;pointer-events:auto;animation:uk-float 19s ease-in-out infinite}
+.uk{position:absolute;display:block;width:104px;line-height:0;animation:uk-float 19s ease-in-out infinite}
 .uk img{width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(70,55,35,.16))}
-.uk:focus-visible{outline:2px solid #5d554a;outline-offset:6px;border-radius:6px}
 .uk1{left:9vw;top:16vh;animation-duration:17s}.uk2{right:10vw;top:22vh;animation-duration:23s;animation-delay:-6s}
 .uk3{left:14vw;bottom:14vh;animation-duration:20s;animation-delay:-11s}.uk4{right:15vw;bottom:18vh;animation-duration:25s;animation-delay:-3s}
 @keyframes uk-float{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-12px) rotate(1.5deg)}}
-@media (max-width:820px){.uk{width:56px}.uk1{left:3vw;top:30vh}.uk2{right:3vw;top:40vh}.uk3{left:4vw;bottom:12vh}.uk4{right:4vw;bottom:20vh}}
+@media (max-width:820px){.uk{width:56px}.uk1{left:3vw;top:30vh}.uk2{right:3vw;top:40vh}.uk3{left:4vw;top:64vh;bottom:auto}.uk4{right:4vw;bottom:20vh}}
 @media (prefers-reduced-motion:reduce){.uk{animation:none}}
 """
 
 
 def block(sids):
-    """浮かぶ玩具の塊（入口の題の間の中に置く）。輪郭の絵（out/ukabu/<印>.png）がある玩具だけ。1 つも無ければ空。"""
-    from omochae import hypotheses
-
+    """浮かぶ玩具の塊（入口の題の間の中に置く・揺れるだけの飾り）。輪郭の絵（out/ukabu/<印>.webp）がある玩具だけ。1 つも無ければ空。"""
     from .skin import esc
 
-    have = [s for s in PICKS if s in sids and (OUT / f"{s}.png").exists()]
+    have = [s for s in PICKS if s in sids and (OUT / f"{s}.webp").exists()]
     if not have:
         return ""
-    links = "".join(f'<a class="uk uk{i}" href="/toy/{esc(s)}"><img src="/ukabu/{esc(s)}.png" alt="{esc(hypotheses.load(s)["toy"])}" loading="lazy" decoding="async"></a>'
-                    for i, s in enumerate(have, 1))
-    return f'<div class="ukabu">{links}</div>'
+    toys = "".join(f'<span class="uk uk{i}"><img src="/ukabu/{esc(s)}.webp" alt="" loading="lazy" decoding="async" fetchpriority="low"></span>'
+                   for i, s in enumerate(have, 1))
+    return f'<div class="ukabu" aria-hidden="true">{toys}</div>'

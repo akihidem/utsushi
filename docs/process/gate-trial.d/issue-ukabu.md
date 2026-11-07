@@ -7,3 +7,4 @@
 - ゴールの要件: `tests/test_ukabu.py`（絵が無い場は置かない・題の間に 4 つ・名は玩具の名・1 往復 16 秒以上・動きを減らす設定で止まる・押す印・縁の紙の地を外し白い面は残す）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-ukabu.txt`（#575 の頭で、浮かぶ玩具が無く rc 1）
 - エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-ukabu.txt`。合体は本人が切り抜きの絵を見て OK を出してから
+- 直し（11-07 夜）: 本人の OK「この4つと縁でよい」。統括の頼みで絵を軽くした（見せる幅の 2 倍まで・透けを持てる WebP・4 枚で約 415KB → 約 33KB・読み込みは lazy と fetchpriority=low で題字の後）。本人の言葉「リンクにはせず揺れる」で、押すと頁へ飛ぶ形を外し、揺れるだけの飾りにした（リンクにしない・焦点に入らない・aria-hidden・alt は空・押す所を取らない）。幅 390 の左下は上からの位置にした（画面の下の端で切れた・確かめの気づき）。Green は `docs/process/gate-evidence/green-ukabu-2.txt`
