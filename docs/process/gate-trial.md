@@ -2293,3 +2293,14 @@
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-3d-goraigo-v14.txt`（#510 の頭 b1280ee1 で rc 1。御来迎の JSON が無い）、Green は `green-3d-goraigo-v14.txt`
 - エビデンスゲート: **済み**。半円の幅を 1mm ずらして比べる・畳み終わりを 1 つ前の形と比べる、の 2 通りで `test_goraigo_v14_3d` が rc 1。組み立ての頁・止まった形・分解の形をブラウザで開いて見た
 - 合体の順: #503（虎 v7 と 3D）が先。#503 が入ったら、#510 の枝が main を取り込み（紙の側の衝突を直す）、この枝をその頭の上に載せ直す（写した 3D の作りは #503 と同じ行なので、取り込みで重なる）
+
+## 同時に刷る試験が終わりで rc 134 に揺れるのを止める（直しの担当、fix/print-together-flake、11-07。合体の道の門の揺れ）
+
+- 目的: `tests/test_print_together.py` が「ok」を出した後、終わりで rc 134（Fatal Python error）に揺れるのを止める。試験の守る物（同じ案の紙は 1 回分だけ作り、書き終えてから置き換える。#301）は変えない
+- なぜか: 11-07 の main で 10 回に 3 回、20 回に 5 回 rc 134 で落ち、合体の道の ./run.sh を揺らす恐れがあった。原因: 試験の post() が応答（刷った後に着く玩具の頁・約 670KB）を読まずに閉じるので、書いている途中の server の糸が BrokenPipe を stderr に書く。その書き込みが試験の終わり（Python の後始末）とぶつかり、daemon の糸が stderr の鍵を持ったまま止まって abort した
+- どうしたか: post() で応答を読み切ってから閉じる。試験の終わりに server.shutdown() と server_close() で糸を止めてから終える。試験の中身（同時に送る数・見る事）は変えない
+- 比べた案: server の BrokenPipe を握りつぶす案は、本物の server の失敗の記録（failure_log）を消すので採らない。daemon をやめて糸を join する案は、serve_forever の糸を止めるには結局 shutdown が要るので、shutdown だけにした
+- ゴールの要件: 直した木で 20 回回して rc 134 が 0 回。試験の見る事は前と同じ
+- 検証ゲート: **済み**。Red: 直す前の試験で 20 回のうち 5 回 rc 134（gate-evidence/red-print-together-flake.txt）。Green: 直した木で 20 回とも rc 0（gate-evidence/green-print-together-flake.txt）。揺れなので、直しの片方だけを外して必ず落ちる形は作れない（外しても落ちない回がある）
+- エビデンスゲート: 上の 2 つの記録と `tests/test_print_together.py`
+- マージ後の書き戻し: Issue は立てていない（新しい Issue は提出を止める物だけ）
