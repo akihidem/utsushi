@@ -5,8 +5,8 @@
 （クリックジャッキング）を防げない。
 
 見る事:
-1. 頁（入口・玩具の頁・断りの頁）の応答に、共有の溜め置きを止める頭（private, no-store）・枠に入れさせない頭（X-Frame-Options と
-   CSP の frame-ancestors）・Referrer-Policy・nosniff が付く
+1. 頁（入口・玩具の頁・断りの頁）の応答に、共有の溜め置きを止める頭（private, no-store）・ほかのサイトの枠に入れさせない頭（X-Frame-Options:
+   SAMEORIGIN と CSP の frame-ancestors 'self'。同じ origin の枠は開く。試験が手帖を同じ origin の枠で開くため）・Referrer-Policy・nosniff が付く
 2. 絵と紙は、同じ人の端末では溜めてよい（private だけ。no-store にしない）。JSON は頁と同じく no-store
 3. Referrer-Policy は same-origin（no-referrer にすると、ブラウザは同じ頁からのフォームの POST に Origin: null を付け、書き込みの口の
    Origin の照らしが全部断るため）
@@ -44,7 +44,7 @@ try:
         code, h = head_of(path)
         assert code == want, (path, code)
         assert h.get("cache-control") == "private, no-store", (path, h.get("cache-control"))
-        assert h.get("x-frame-options") == "DENY" and "frame-ancestors 'none'" in h.get("content-security-policy", ""), (path, h)
+        assert h.get("x-frame-options") == "SAMEORIGIN" and "frame-ancestors 'self'" in h.get("content-security-policy", ""), (path, h)
         assert h.get("referrer-policy") == "same-origin" and h.get("x-content-type-options") == "nosniff", (path, h)
 finally:
     server.shutdown()

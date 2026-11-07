@@ -295,14 +295,15 @@ REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記�
 # - 途中で溜め置かせない: トンネルの先（Cloudflare）は写真や PDF の拡張子を既定で溜めうる。溜めると、上げた人にだけ出す確かめる前の
 #   写真や、その人だけの紙が、同じ URL を開いた別の人に返る。private は共有の溜め置きを止め、頁と JSON は人ごとに替わるので
 #   no-store も付ける。絵と紙は同じ人の端末では溜めてよい（private だけ）ので、読み込みは遅くしない
-# - 枠に入れさせない: このサイトは自分の頁を iframe に入れないので、どの頁からも枠に入れさせない（クリックジャッキングの備え）
+# - ほかのサイトの枠に入れさせない（クリックジャッキングの備え）。同じ origin の枠は開く（SAMEORIGIN・'self'）: 試験は手帖を同じ origin の
+#   親の頁の iframe で開いて本物の順で押す（test_photo_attach_walk ほか）ので、DENY・'none' にするとその枠が開かず止まった（別の目の指摘）
 # - Referrer-Policy は same-origin にする。no-referrer にすると、ブラウザは同じ頁からのフォームの POST に Origin: null を付け、
 #   書き込みの口の Origin の照らし（同じ頁から来た物だけを受ける）が全部断る形になるため
 def guard_headers(ctype):
     dynamic = ctype.startswith("text/html") or ctype.startswith("application/json")
     return (("Cache-Control", "private, no-store" if dynamic else "private"),
-            ("X-Frame-Options", "DENY"),
-            ("Content-Security-Policy", "frame-ancestors 'none'"),
+            ("X-Frame-Options", "SAMEORIGIN"),
+            ("Content-Security-Policy", "frame-ancestors 'self'"),
             ("Referrer-Policy", "same-origin"))
 
 
