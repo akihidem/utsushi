@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_splat_pair.py
+# commit: 164ca13a（回した時の HEAD）
+ok 実物の立体とエンジンの 3D: 確かめた絵がある時だけ、2 つの窓と回す口 1 つで、同じ角だけ回る。絵の道は一覧の中だけ
+rc=0

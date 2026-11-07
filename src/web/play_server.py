@@ -531,6 +531,16 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/splat(?:/(\d{{1,2}})\.jpg)?", path)
+        if m and m.group(1) in sources():
+            # 作った実物の立体とエンジンの 3D を並べて一緒に回す頁と、実物の絵（本人の決定 11-07・web/splat_pair.py）。
+            # 絵は人が確かめた物だけ（サーバの記録の置き場）。無い玩具・確かめていない玩具は 404
+            from . import splat_pair
+            if m.group(2) is not None:
+                data = splat_pair.frame_bytes(m.group(1), int(m.group(2)))
+                return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
+            body = splat_pair.page(m.group(1), look, path)
+            return self._send(200, body) if body else self._send(404, "無い")
         m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。

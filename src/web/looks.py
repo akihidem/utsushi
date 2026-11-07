@@ -349,12 +349,14 @@ def _mazu(ts, photos=True):
     return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
 
 
-def _erabu(sids):
-    """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。"""
-    from . import genre
+def _erabu(sids, photos=True):
+    """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。
+    photos=True の時は、作った実物の写真（人が確かめた物・web.made.photo）がある玩具の札にだけ、原画の右下に小さな角を重ねる（窓口の決め 163132）。
+    photos=False（合言葉なしで開いた場）は置かない（入口と玩具の頁に記録の写真を出さない前の決まり・test_public_open）"""
+    from . import genre, made
     from . import toys as toys_page
 
-    shelves = "".join(f'<h3>{esc(big)}</h3><ul class="tj-narabi">{"".join(toys_page.card(s) for _, ss in mids for s in ss)}</ul>'
+    shelves = "".join(f'<h3>{esc(big)}</h3><ul class="tj-narabi">{"".join(toys_page.card(s, made.photo(s) if photos else None) for _, ss in mids for s in ss)}</ul>'
                       for big, mids in genre.groups(sids))
     # 並びの小さい写しは、まずはここから の 2 枚が届いてから読む（data-src を src に替える台本 ERABU_JS）。遅い回線（下り 1.6Mbps・往復 150ms・
     # トンネル越し）で、2 枚と並びの 20 枚ほどを一度に読むと、2 枚が届くのに 5.6 秒かかった（11-07 に Chromium で測った。本人の答え 11-07 の (a)）。
@@ -375,7 +377,7 @@ def tenji(photos=True):
              '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link() + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
-    body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"])
+    body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
     return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
 
@@ -406,6 +408,9 @@ body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
 .tj-mazu-card .tj-work{display:block;width:100%;margin:0;position:relative}
 .tj-made{position:absolute;right:-6px;bottom:-10px;width:42%;line-height:0;background:#fffefc;padding:4px;box-shadow:0 10px 18px -10px rgba(70,55,35,.5);border:1px solid #d8cdb6}
 .tj-made img{display:block;width:100%;height:auto}
+.tj-narabi .made-wrap{position:relative;display:block;line-height:0}
+.tj-narabi .made-corner{position:absolute;right:-4px;bottom:-6px;width:40%;line-height:0;background:#fffefc;padding:3px;box-shadow:0 8px 14px -8px rgba(70,55,35,.5);border:1px solid #d8cdb6}
+.tj-narabi .made-corner img{display:block;width:100%;height:auto}
 .tj-mazu-card .pic{display:block;aspect-ratio:1600/2656;border:1px solid #d8cdb6;box-shadow:0 18px 30px -22px rgba(70,55,35,.5);overflow:hidden;background:#d9d2c3}
 .tj-mazu-card .pic img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.12)}
 .tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}
