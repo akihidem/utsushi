@@ -9,7 +9,7 @@
    作る側の言葉（「雛形」「型紙エンジン」）を頁に出さない事は tests/test_reader_words.py が見る
 4. README は、頭（本人が採った一言・言葉・説明の 3 行と畳んだ要約。tests/test_readme_head.py）の後の最初の節に同じ字を置く: 見出し・具体例の 1 文
    （paper to toy は型紙エンジンの repo へのリンク）・5 文（README の中は「AI」を「Claude」と書く本人の決定 11-06）・段の図 3 本・図の言葉。位置づけは README の言葉で、教育分野（学校の理科・研究・博物館）と、
-   公開してみんなが使えるサービスへの思いを書く
+   作った物そのものがみんなが使えるサービスである事を書く（本人の直し 11-07）
 5. 仕組みの 3 文目は、ぶつかりそうな所を人が見るために書き残す事まで言う（窓口の決め 11-07。3D 検品は近い板を所見として残す作りなので、言い切らない）
 6. 英語の頁（/en）にも同じ形の節（窓口の決め 11-07「英語の 3 文は英語の頁に入れる。序の頁は #527 で作る形にそろえる」）: 案内の後・玩具を選ぶ前に 1 回、
    英語の 3 文が順のまま。2 文目の 3D の所も、ぶつかりそうな所を人が見るために残す言い方
@@ -63,7 +63,11 @@ assert all(f"{i}. {t.replace('AI が', 'Claude が')}" in head for i, t in enume
 for name, items in about.FLOWS:
     assert f"{name}:" in head and "\n  → ".join(items) in head, name
 assert about.FLOW_NOTE in head
-assert "教育分野" in head and "理科" in head and "博物館" in head and "みんなが使えるサービス" in head, "位置づけ"
+assert "教育分野" in head and "理科" in head and "博物館" in head and "みんなが使えるサービスとして作りました" in head, "位置づけ"
+# 位置づけは、作った物そのものがみんなが使えるサービスという言い方（本人の直し 11-07「これからというよりは、みんなが使えるサービスとして作った」）。
+# これからの思いの言い方（「したいと考えています」「していきたい」）に戻さない
+for text in (about.POSITION, head):
+    assert "みんなが使えるサービスとして作りました" in text and "したいと考えて" not in text and "していきたい" not in text, text[:80]
 # 5. 3 文目は言い切らない
 assert "（ぶつかりそうな所は、人が見るために書き残します）" in about.ENGINE_STEPS[2], about.ENGINE_STEPS[2]
 
