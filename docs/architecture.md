@@ -109,6 +109,7 @@
 | `tests/test_by_set.py` | 記録の組ごとの欄（たたき台・寸法・出さない字）と雛形の控えの組の並びの見張り。今の記録では load が前と同じ物を返す事も見る（#115） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `tests/compare_engine.py` | エンジンの共通の場面を、この repo と paper-to-toy の両方で回して結果を比べる。相手の repo が無い所でも `./run.sh` を回せるように、手で回す（#164） |
+| `engine/` | 型紙エンジン（paper-to-toy）を、提出のために履歴ごとまとめた物（`git subtree add --prefix=engine`。まとめた時のエンジンの main の頭は README の「開発基盤と提出物の切り分け」の節）。試験は `engine/run.sh` で別に回し、この repo の `./run.sh` は流さない。正はエンジンの側 |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |
 | `src/omochae/ledger.py` | 台帳の検査と、地図と主張の表の描画 |

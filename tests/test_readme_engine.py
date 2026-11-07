@@ -5,7 +5,8 @@
 見る事:
 1. 節の中に、別の repo の paper-to-toy へのリンクがある（まとめた後も残す、本人の訂正）
 2. 置き場の字（engine/・エンジンの版の台帳・版の歩みの表）があり、この repo に在るはずの表（data/history/kaizen-history.json）が在る
-3. 時の書き方: engine/ がまだ無い間は「まとめる」の形で、「まとめた」と書かない（まとめる PR が、この試験ごと「まとめた」の形に替える）
+3. 時の書き方: engine/ がまだ無い間は「まとめる」の形で、「まとめた」と書かない。engine/ が在る（まとめた）後は、commit の欄に
+   subtree で入れたエンジンの頭を書き、それが合わせの commit の印（git-subtree-split）と同じ
 4. エンジンも今回のハッカソンのために作っている事と、うつしとエンジンの両方を審査の対象にしてほしい事（本人の言葉 11-07「これでいいけど、
    今回のハッカソンのためにエンジンも作ってると書いて。どっちもハッカソンの審査対象にして欲しい」）。段落の前からの字は替えない
 5. 同じ節の 2 段落目（11-04 の切り出し）は「paper-to-toy は単独の提出物ではなく、1 つの提出物の中に入る」の向き（窓口の決め 11-07）。
@@ -31,6 +32,20 @@ assert (ROOT / "data/history/kaizen-history.json").exists(), "書いた表の置
 if not (ROOT / "engine").exists():
     assert "にまとめる" in sec and "にまとめた" not in sec, "まだまとめていないので「まとめる」の形"
     assert "その commit は、まとめる時にここへ書く" in sec, "engine/ の commit の欄は、まとめる時に埋める"
+else:
+    # まとめた後は、書いた commit を、subtree の合わせの commit の印と照らす（40 字の写し違いは、目でもほかの試験でも気づきにくいため）。
+    # subtree で取り直した時は新しい合わせが先に出るので、いちばん新しい印と同じかを見る。git の履歴が無い写し（tar など）では字の形だけを見る
+    import re
+    import subprocess
+    m = re.search(r"エンジンの main の頭 `([0-9a-f]{40})`", sec)
+    assert m and "まとめる時にここへ書く" not in sec, "まとめたので、engine/ の commit の欄を埋める"
+    try:
+        log = subprocess.run(["git", "log", "--format=%(trailers:key=git-subtree-split,valueonly)", "--grep=git-subtree-dir: engine", "HEAD"],
+                             cwd=ROOT, capture_output=True, text=True, timeout=120)
+        heads = [ln.strip() for ln in log.stdout.splitlines() if ln.strip()] if log.returncode == 0 else []
+    except (OSError, subprocess.TimeoutExpired):
+        heads = []
+    assert not heads or m.group(1) == heads[0], ("README の commit が、subtree で入れたエンジンの頭と違う", m.group(1), heads[:1])
 # 4. エンジンも今回のために作った事と、両方を審査の対象に
 # 本人は「これでいいけど」と前の字を採った上で足すと言ったので、前の字の最後の文の後ろに続く事まで見る（前の字を書き替えて足すと落ちる）
 assert "エンジンも、今回のハッカソンのために開発期間の中で作っている" in sec, "エンジンも今回のハッカソンのために作っている事"
@@ -39,4 +54,4 @@ assert "一つの具体例にあたる。エンジンも、今回のハッカソ
 # 5. 切り出しの段落の字の向き
 assert "paper-to-toy は単独の提出物ではなく、1 つの提出物の中に入る" in sec, "1 つの提出物の中に入る向き"
 assert "単独の提出物ではない。" not in sec, "単独の提出物ではない、で文を切らない"
-print("ok README のエンジンを 1 つの repo にまとめる段落（リンクを残す・置き場・まとめる前の時の書き方・エンジンも今回のために作り、両方を審査の対象に・1 つの提出物の中に入る）")
+print("ok README のエンジンを 1 つの repo にまとめる段落（リンクを残す・置き場・まとめる前の時の書き方とまとめた後の commit・エンジンも今回のために作り、両方を審査の対象に・1 つの提出物の中に入る）")
