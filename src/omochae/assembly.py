@@ -991,11 +991,13 @@ def _pivot_counterweight(p, parts, paper=None):
 RECIPES = {"slider_fan": _slider_fan, "pivot_counterweight": _pivot_counterweight}
 
 
-def _paper(template, p, source_id):
-    """刷った紙の配置（compose の layout）。読めない時は None。組み立ての書き方があるかは呼ぶ側が見る（JSON で描く雛形は書き方が無くてもよい）。"""
+def _paper(template, p, source_id, title=None):
+    """刷った紙の配置（compose の layout）。読めない時は None。組み立ての書き方があるかは呼ぶ側が見る（JSON で描く雛形は書き方が無くてもよい）。
+    title は机の上の紙に刷られる題（_sheet_title）。前は compose の既定の題のままで、玩具の頁の 3D の紙に「版 1」が残った
+    （窓口の決定 (a)「紙の題と窓の札も組の番号に」・#513）。"""
     try:
         source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
-        return compose(template, p, source)[1]
+        return compose(template, p, source, title=title)[1]
     except (OSError, ValueError, KeyError, TypeError):
         return None
 
@@ -1006,7 +1008,19 @@ def _same(a, b):
     return a == b
 
 
-def _from_engine(template, tpl, p, source_id):
+def _sheet_title(data, tpl, p, h=None):
+    """3D の机の上の紙の題。刷る紙の題（hypotheses.print_sheet「玩具の名 型紙 仮説 A「…」版 N」）から、「…」の仮説の名を外した形
+    （玩具の名 型紙 仮説 A 版 N）。版の字は hypotheses.paper_label（今の組は組の番号・前の組は前の題「版 1」）。
+    なぜ: 前は compose の既定の題「玩具の名 型紙（雛形の呼び名）版 N」で、雛形の呼び名（御来迎は「内筒を下から押し上げる」）が
+    今のたたき台（H-C「柄を下から押し上げる」）と違う仮説の名に読め、しかも括弧の中が動き方の答えを言っていた（学ぶ人に動き方を先に見せない
+    決まり J-013 に当たる。別の系統の検品の気づき 11-07 夕）。仮説の名（「…」）も動き方を言うので外す。
+    題を長くすると部品の配置が動き、型紙エンジンの 3D の JSON と寸法が合わなくなる（tests/test_tora_v7_3d が部品の位置で見る）。
+    この形は前の題より短く、1 行のまま収まる"""
+    letter = f" 仮説 {hypotheses.letter(h)}" if h else ""
+    return f"{data['toy']} 型紙{letter} {hypotheses.paper_label(data, 1)}"
+
+
+def _from_engine(template, tpl, p, source_id, title=None):
     """今の組の作り方の 3D を、型紙エンジンが出した JSON（data/kumitate/<組の名>.json）から読む（決定 2026-11-07。assembly_json の注）。
     Returns 組み立て（assembly_json.Shown）・None（JSON はあるが、刷る紙と寸法か形が違う）・False（今の組の JSON が無い。前の組の書き方で組む）。
 
@@ -1018,7 +1032,7 @@ def _from_engine(template, tpl, p, source_id):
         return False
     if any(not _same(p.get(k), v) for k, v in (doc.get("params") or {}).items()):
         return None
-    paper = _paper(template, p, source_id)
+    paper = _paper(template, p, source_id, title)
     parts = paper["parts"] if paper else tpl.parts(p)
     if assembly_json.part_gaps(doc, parts):
         return None
@@ -1034,12 +1048,13 @@ def assemble(source_id, hypothesis_id=None):
         return None
     tpl = TEMPLATES[template]
     p = {**tpl.DEFAULTS, **(h.get("params") or {})}
-    shown = _from_engine(template, tpl, p, source_id)
+    title = _sheet_title(data, tpl, p, h)
+    shown = _from_engine(template, tpl, p, source_id, title)
     if shown is not False:
         return shown
     if template not in RECIPES:
         return None
-    paper = _paper(template, p, source_id)
+    paper = _paper(template, p, source_id, title)
     bench = RECIPES[template](p, paper["parts"] if paper else tpl.parts(p), paper)
     if bench is None:
         return None

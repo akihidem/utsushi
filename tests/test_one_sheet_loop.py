@@ -177,7 +177,7 @@ assert version["new_case"] == {"name": "折りをさらに減らす", "how_it_mo
 assert loop._read(loop.folder() / f"proposal-{pid[2:]}.json")["new_hypothesis"]["name"] == "折りをさらに減らす", "案の字は採った案の記録に残る"
 page = get(f"/toy/{G}")
 assert "折りをさらに減らす" not in page and "採った案" not in page, "案の字を頁に出さない"
-assert "24→22" in page.split('id="kaizen"', 1)[1], "変えた寸法は頁に出す"
+assert "24→22" in get(f"/loop/{G}").split('id="kaizen"', 1)[1], "変えた寸法は作る側の頁の輪の節に出す"  # （本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
 assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303 and (out_dir(G) / "H-A_v3.pdf").exists(), "次の人はその版を刷る"
 # 寸法の案（changes）と一緒に採ると、順に版を重ねる
 pid = propose(G, rid, "H-A", changes=[{"param": "fold_count", "to": 21, "why": "少し減らす"}], new_hypothesis=new_case("低くする", {"fold_height": 42}))
@@ -245,7 +245,7 @@ other = confirmed(G, "H-C")
 proposal = {"record_ids": [other], "hypothesis_id": "H-C", "changes": [{"param": "fold_count", "to": 24, "why": "試す"}], "next_to_try": {"why": "x", "what_to_measure": "y"}, "references": []}
 pid, failures = loop.save_proposal(proposal, source(G), "human")
 assert pid is None and {f.floor for f in failures} == {"F7.revision"}, failures
-assert loop.adopted_versions(G, "H-C") == [] and "see=H-C&kind=sheet&v=2" not in get(f"/toy/{G}").split('id="kaizen"', 1)[1]
+assert loop.adopted_versions(G, "H-C") == [] and "see=H-C&kind=sheet&v=2" not in get(f"/loop/{G}").split('id="kaizen"', 1)[1]
 mine, _ = hypotheses.save_own(G, "自分の案", "引くと開く", "図の折り目", dict(params_of(G, "H-A")))
 own_rid = confirmed(G, mine["id"])
 pid, failures = loop.save_proposal({**proposal, "record_ids": [own_rid], "hypothesis_id": mine["id"]}, source(G), "human")

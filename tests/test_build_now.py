@@ -30,7 +30,7 @@ os.chdir(tmp.name)
 
 from omochae import hypotheses, making_log, media_review, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
-from web import techo_site  # noqa: E402
+from web import techo_site, toy  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
@@ -59,12 +59,14 @@ def post(path, form):
 
 page = get(f"/toy/{G}")
 # すぐ作れる
-assert 'id="kasetsu"' in page and "すぐ作る" in page
+# 「すぐ作る」の見出しは外し、説明の文は型紙の窓の頭へ移した（本人のサイト体験レビュー 11-07 の 3。作る節が 2 つに見えた）。錨は残る
+assert 'id="kasetsu"' in page and "<h2>すぐ作る</h2>" not in page and "型紙を刷ります。切って、折って、組みます。" in page.split('id="win"', 1)[1]
 # 札はたたき台の 1 枚だけ（本人の決定 11-05、J-032）
 sheet = hypotheses.sheet_of(G)
 assert f'value="{sheet["id"]}"' in page and sheet["name"] in page
 assert not [h["id"] for h in hypotheses.load(G)["hypotheses"] if h["id"] != sheet["id"] and f'value="{h["id"]}"' in page]
-assert f'action="/toy/{G}/print#kasetsu"' in page
+# 刷る口は頭の「つくる」1 つ（本人のサイト体験レビュー 11-07 の 3。前は札の「型紙を見る」も刷る口だった）
+assert f'action="/toy/{G}/print#win"' in page and f'action="/toy/{G}/print#kasetsu"' not in page
 # 予想の段が無い
 assert "/predict" not in page and "あなたの予想" not in page and "先に、予想を書く" not in page and "kazasu" not in page
 assert post(f"/toy/{G}/predict", {"text": "x"}) == 404
@@ -86,11 +88,11 @@ assert "手帖" in get(f"/toy/{G}/techo")
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
 assert GS in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/tsukuru")
 # 他の人の作った物。写真が無くても言葉で並ぶ
-assert "他の人が作った物" in get(f"/toy/{G}")
+assert toy.MINNA_HEAD in get(f"/toy/{G}")  # 玩具の頁の見出しは「これまでの復元」（夕方のレビュー 11-07 の 6。ギャラリーの見出しは今のまま）
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "扇が引っかかった", "fix_part": "扇", "fix_change": "折り目を深くした", "fix_outcome": "少し開いた"}) == 303
 page = get(f"/toy/{G}")
 assert "工夫: 扇 / 折り目を深くした / 少し開いた" in page and "扇が引っかかった" in page
-assert page.index('id="minna"') < page.index('id="kaizen"')
+assert 'id="minna"' in page and 'id="kaizen"' not in page  # 輪の節は玩具の頁に無い（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
 gallery = get("/gallery")
 assert "他の人が作った物" in gallery and "扇が引っかかった" in gallery and "折り目を深くした" in gallery
 for word in ("順位", "1 位", "人気", "ランキング", "予想"):

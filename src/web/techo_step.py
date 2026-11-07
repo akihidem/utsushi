@@ -9,7 +9,11 @@
   「よく動いた」と「少し動いた」のように、絵だけでは取り違えて記録が濁るため。既定の選びは置かない。
 - **頁の帯を置かない。** 帯の字だけで字のかたまりが 6 個増えるため。閉じる印で玩具の頁へ戻る（作りながら見る頁と同じ形）。
 - **紙を選ぶ札は作らない。** 型紙は玩具ごとに 1 枚で、たたき台は記録の欄が指す（hypotheses.sheet_of、#332）。作る紙を頁が決める。
-- **絵は手順の紙と同じ形から描く（instructions.step_pictures）。** 字を入れず、紙と食い違わず、刷った PNG を切らないので小さなコマを大きくしても粗くならない。
+- **組み方は 3D を基本に、文字で見る。平らな図は出さない（本人の答え 11-07 夕「組み方は 3D を基本として文字で見る。図は要らない」、夕方のレビューの 13）。**
+  3D の組み立てがある玩具（御来迎と虎）は、今の手の 3D の段（作業の頁 kasane と同じ材料の kumitate._block_html）を絵の枠に出し、つぎ・もどるで
+  同じ段へ送る。3D の段の字は手帖の手順の文と 1 対 1（エンジンの JSON は手順の文と同じ段を持つ）なので、字が食い違う時は 3D を出さず文だけにする。
+  ほかの玩具は手順の文だけ。3D の節の送る釦・説明の字・断りは手帖では hidden にする（押す所は 1 画面 3 つまで・字のかたまりを増やさない）。
+  開いただけで動かし始めない（組み立ての 3D の決まり）。開いた時はその手の形で止め、つぎで進んだ時だけその手の動きを見せる。
 - **記録の札（試した後の紙 → 説明 → AI）はこの頁に置かない。** 頁の字に版の名・記録の番号・「の紙」を出さないため。のこした後に手帖の記録の頁（techo_site.records_page）へ移る。順（J-013・S-03）は変えない。
 - **声は全部が一致した時だけ操作にする。** 「次の手順ってどうやるの」で進まないように、部分一致を使わない。操作の字は送らず残さない。
 - **聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。** 質問は「こまった」を押した（言った）後の 1 つだけ受ける。工夫は、最後の画面でマイクを押した後に話した事だけを欄に入れる。
@@ -24,13 +28,16 @@
 - 手順の文は雛形の steps のまま（tsukuru.step_texts。紙と画面で言う事を変えない）。札を押した事は作りながら見る頁と同じ口（/toy/<印>/step）に残す。
 - 祝う演出と順位の言葉は入れない（J-025）。JS が無い時は、つぎ・もどるがリンクとして手順を送る。
 """
+import functools
+import html
 import json
+import re
 
 from api import ask
-from omochae import hypotheses, instructions, loop, making_log, records, render, talk_log
+from omochae import assembly, hypotheses, loop, making_log, records, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, hmd, skin, tsukuru
+from . import genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -87,9 +94,14 @@ button,input,textarea,select{font-family:inherit}
 .bar{position:absolute;top:0;left:0;right:0;height:6px;background:var(--rule);z-index:2}
 .bar span{display:block;height:100%;background:var(--accent)}
 .koma{flex:1 0 auto;position:relative;min-height:50vh;min-height:50svh;margin:0;background:#fff}
-.koma svg{display:none}
-.koma svg.on{display:block;position:absolute;left:12px;top:84px;width:calc(100% - 24px);height:calc(100% - 94px)}
+/* 3D の組み立てがある玩具は、絵の枠に今の手の 3D の段（本人の答え 11-07 夕）。マイク・原画の釦・閉じる印の並ぶ上の帯（84px）の下から置き、
+   枠に収まるよう script が舞台を zoom で縮める（作業の頁 kasane と同じ縮め方）。前の平らな図の svg の決まりは、3D の節の svg まで隠すので外した */
+/* 舞台は枠の中に浮かせる（枠の高さを舞台の高さで伸ばさない。前の平らな図の svg と同じ置き方。伸ばすと 768×576 などで押す所が最初の画面の外へ出た） */
+.koma.k3{overflow:hidden}
+.koma.k3 .rt-stage{position:absolute;top:84px;left:0;right:0;margin:0 auto}
 #steps{list-style:none;margin:0;padding:12px 16px 6px;font-size:clamp(22px,5.6vw,32px);line-height:1.4;font-weight:600}
+/* 3D の無い玩具は手順の文だけ（図は要らない、本人の答え 11-07 夕）。字を上の帯の下から始め、余りの高さは字に回して押す所を画面の下に残す */
+.te-text #steps{flex:1 0 auto;padding-top:96px}
 .meta{margin:0;font-size:13px;color:var(--mute);line-height:1.7}
 #start-note{padding:6px 16px}
 #note{padding:0 16px}
@@ -166,6 +178,8 @@ button,input,textarea,select{font-family:inherit}
     字が釦の下に隠れないようにする（11-07 の前の確かめで、1024×768〜1920 の横置きで御来迎と虎のほぼ全部の手が隠れた）。縦置きは字が絵の下に来るので要らない */
  #steps{padding-top:84px}
  .end,.kekka{grid-column:1/-1;max-width:820px;width:100%;margin:0 auto}
+ /* 文だけの玩具は左の絵の列が無いので、縦置きと同じ 1 列 */
+ .te.te-text{display:flex;max-width:820px;margin:0 auto}
 }
 """
 
@@ -178,7 +192,26 @@ const te = document.getElementById('te'), sid = te.dataset.sid, hid = te.dataset
 const WORDS = __WORDS__, RESULT_WORDS = __RESULT_WORDS__;
 const clean = (t) => t.replace(/__CLEAN__/g, '');
 const $ = (id) => document.getElementById(id);
-const items = [...document.querySelectorAll('#steps li')], koma = [...document.querySelectorAll('#koma svg')];
+const items = [...document.querySelectorAll('#steps li')];
+// 3D の段（3D の組み立てがある玩具だけ。節の script が window.kumitateParts を開ける）。手順 n の 3D の段は F[n - 1]（段の字は手順の文と 1 対 1）。
+// 開いた時はその手の形で止める（開いただけで動かし始めない）。つぎで 1 つ進んだ時だけ、その手の動きを見せる。もどる・声の飛びは形だけ替える
+const K = window.kumitateParts, box3 = $('koma'), stage3 = $('rt-stage');
+const still3 = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let at3 = -1;
+const end3 = (i) => { const q = K.F[i].q; return q[q.length - 1]; };
+const show3 = () => {
+  if (!K || !K.F || !K.F.length) return;
+  const i = Math.max(0, Math.min(K.F.length - 1, Math.min(n, total) - 1));
+  if (i === at3) return;
+  K.stop();
+  if (!still3 && at3 >= 0 && i === at3 + 1) K.play(end3(at3), K.F[i].q, 0); else K.rest(end3(i));
+  K.go(i); at3 = i;
+};
+// 舞台（420×520px）を絵の枠に収める。作業の頁と同じ zoom で縮める（位置も一緒に縮むので、枠の中の真ん中に置いたまま）
+const fit3 = () => { if (!stage3 || !box3) return; const w = box3.clientWidth - 24, h = box3.clientHeight - 92;
+  const z = Math.max(.35, Math.min(1.6, w / 420, h / 520)); stage3.style.zoom = z.toFixed(2);
+  // zoom は top にも掛かるので、上の帯の下（84px）に置くよう割り戻す
+  stage3.style.top = `${(84 / z).toFixed(1)}px`; if (K && K.view) K.view(); };
 const mic = $('mic'), note = $('note'), ans = $('answer'), q = $('q'), kufu = $('kufu'), fold = $('fold'), bar = $('bar');
 let n = +te.dataset.n;
 // 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。ほかの言葉を受けるのは、「こまった」の後の 1 つの問い（armed）と、
@@ -192,8 +225,7 @@ const post = (path, o) => fetch(path, { method: 'POST', headers: { 'Content-Type
 const send = (event) => { post(`/toy/${sid}/step`, { hypothesis: hid, step: Math.min(n, total), event, json: '1' }).catch(() => {}); };
 const paint = () => {
   items.forEach((li, i) => { const on = i + 1 === n; li.hidden = !on; li.classList.toggle('on', on); });
-  const k = n > total ? -1 : +items[n - 1].dataset.k;
-  koma.forEach((s, i) => s.classList.toggle('on', i === k));
+  show3();
   bar.firstElementChild.style.width = `${Math.round(Math.min(n, total) / total * 100)}%`;
   bar.setAttribute('aria-valuenow', Math.min(n, total));
   $('back').href = `?v=${ver}&n=${Math.max(n - 1, 1)}`; $('next').href = `?v=${ver}&n=${n + 1}`;
@@ -409,8 +441,48 @@ const save = async (result) => {
   location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
 };
 mark(); paint(); to('start');
+fit3(); requestAnimationFrame(fit3); window.addEventListener('resize', fit3);
 })();
 </script>"""
+
+
+@functools.lru_cache(maxsize=8)
+def _frame_texts(sid, key):
+    """3D の組み立ての段の字（kumitate.frames_of の t）。組むのに 1 秒ほどかかるので、組み立ての節と同じ鍵（紙の寸法と組の名）で覚える。"""
+    return tuple(f.get("t", "") for f in kumitate.frames_of(assembly.assemble(sid)))
+
+
+def _three(sid, texts):
+    """手帖の絵の枠に出す 3D の段の HTML（3D の組み立てがある玩具だけ。無ければ空の文字列で、頁は文だけになる）。
+
+    材料は作業の頁（kasane）と同じ kumitate._block_html。3D の段の字が手帖の手順の文と 1 対 1 で同じ時だけ出す（刷った版が今の組と違って
+    手順の文が替わっている時に、別の手の形を見せないため）。節の送る釦・説明の字・断りは hidden にする: 送るのは手帖の つぎ・もどる で、
+    押す所は 1 画面に 3 つまで、字のかたまりを増やさないため。節の script はその釦と字の要素を読むので、外さずに hidden にする。
+    印の付け方が組み立ての節で替わって 1 つでも当たらない時は、3D を出さない（釦が手帖に出てしまうより、文だけの方が決まりを崩さない）。"""
+    if not texts or not kumitate.available(sid):
+        return ""
+    key = kumitate._key(sid)
+    if list(_frame_texts(sid, key)[:len(texts)]) != list(texts):
+        return ""
+    block = kumitate._block_html(sid, key)
+    for old, new in ((f'<p class="lead">{esc(kumitate.LEAD)}</p>', f'<p class="lead" hidden>{esc(kumitate.LEAD)}</p>'),
+                     ('<p id="rt-text"', '<p id="rt-text" hidden'),
+                     ('<div class="rt-acts">', '<div class="rt-acts" hidden>'),
+                     (f'<p class="meta">{esc(kumitate.NOTE_SHAPE)}</p>', f'<p class="meta" hidden>{esc(kumitate.NOTE_SHAPE)}</p>')):
+        if block.count(old) != 1:
+            return ""
+        block = block.replace(old, new)
+    # 3D の机に置いた刷った紙（paper の svg）は、紙の題（玩具の名・仮説の動き方・版の番号）と刷った組の名を字で持つ。手帖の作る頁の決まり
+    # （記録の番号・「の紙」・版の名を出さない。本人の決定 11-05、#87）と、仮説の名前と動き方を出さない線に当たる字の <text> だけを外す
+    # （部品の名「1 胴」・物差しの目盛り・線の見方の字は残す。作る時に紙と見比べる字なので）
+    data = hypotheses.load(sid)
+    names = [t for h in data.get("hypotheses", []) for t in (h.get("name"), h.get("how_it_moves")) if t]
+
+    def keep(m):
+        t = html.unescape(re.sub(r"<[^>]+>", "", m.group(1)))
+        bad = (not naoru.techo_ok((t,)) or "刷った組" in t or any(x in t for x in names))
+        return "" if bad else m.group(0)
+    return re.sub(r"<text\b[^>]*>(.*?)</text>", keep, block, flags=re.S)
 
 
 def _genga(sid):
@@ -470,11 +542,10 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     texts = tsukuru.step_texts(sid, hid, v) or [""]
     total = len(texts)
     n = min(max(step, 1), total + 1)
-    pictures, which = instructions.step_pictures(template, p, texts)
-    now = which[n - 1] if n <= total else -1
-    koma = "".join(render.shapes_svg(s, "on" if i == now else "") for i, s in enumerate(pictures))
-    steps = "".join(f'<li data-k="{k}" class="on">{esc(t)}</li>' if i == n else f'<li data-k="{k}" hidden>{esc(t)}</li>'
-                    for i, (t, k) in enumerate(zip(texts, which), 1))
+    # 組み方は 3D を基本に文字で見る（本人の答え 11-07 夕）。3D がある玩具は今の手の 3D の段、ほかは手順の文だけ（平らな図は出さない）
+    three = _three(sid, texts)
+    koma = f'<figure class="koma k3" id="koma" data-on="start step henji">{three}</figure>' if three else ""
+    steps = "".join(f'<li class="on">{esc(t)}</li>' if i == n else f'<li hidden>{esc(t)}</li>' for i, t in enumerate(texts, 1))
     width = round(min(n, total) / total * 100)
     tiles = "".join(f'<button type="button" class="tile" value="{esc(r)}">{result_icon(r, TEMPLATES[template].RESULTS)}<span>{esc(r)}</span></button>' for r in TEMPLATES[template].RESULTS)
     # 声の断りは、声がどこへ行くかをマイクが起きる前に言う文。声が使える時だけ出す。どちらの文を出すかは画面ごとに違うので、JS の印で切り替える。
@@ -491,13 +562,12 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     limits = f'<p class="meta">{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで</p>' if uploads else ""
     craft = hanasu.SCENES["craft"]
     g_thumb, g_dlg = _genga(sid)
-    body = (f'<main class="te" id="te" data-scene="{"end" if n > total else "step"}" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}" '
+    body = (f'<main class="te{"" if three else " te-text"}" id="te" data-scene="{"end" if n > total else "step"}" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}" '
             f'data-total="{total}" data-n="{n}" data-voice="{hanasu.mode()}"><h1 class="sr">手帖</h1>'
             f'<div class="bar" id="bar" role="progressbar" aria-valuemin="1" aria-valuemax="{total}" aria-valuenow="{min(n, total)}"><span style="width:{width}%"></span></div>'
             f'<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）" data-on="step henji end kekka" hidden>{MIC}</button>'
             f'<a class="close" id="close" href="/toy/{esc(sid)}" aria-label="閉じる">{CLOSE}</a>'
-            + g_thumb +
-            f'<figure class="koma" id="koma" data-on="start step henji">{koma}</figure>'
+            + g_thumb + koma +
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
             '<p class="meta" id="note" aria-live="polite"></p>'
             f'<p class="meta" id="start-note" data-on="start">{how}</p>'
@@ -521,10 +591,14 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<form id="up-form" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}">{shot}'
             # 字で書くのは選べる追加（畳んでおく）。名前は字で出さない（押す所の名前は 6 つ）ので、形だけにして、読み上げ用の名を持たせる。
             f'<details class="fold" id="fold"><summary class="key" aria-label="字で書く">{PENCIL}</summary>'
-            f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(craft["hint"])}"></textarea></details>'
+            # 欄の手引きは のこす の字の置き場（naoru.KEEP_HINT・夕方のレビュー 11-07 の 15）から。空なら作りながら見る頁と同じ hanasu の手引き
+            f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(naoru.KEEP_HINT or craft["hint"])}"></textarea></details>'
             # 約束の印は写真と動画の分。写真の口がある所では、合言葉なしの場でも出す（main の #429 と同じ）。要るかどうかは、選んだ時に script が決める。
             + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
+            # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。「のこす」の釦のすぐ下に置く。
+            # 釦の上に置くと、320×568 と 768×576 で「のこす」が最初の画面の外へ押し出された（11-07 に Chromium で測った。1 手 1 画面・押す所は最初の画面の決まり）
+            + naoru.box(techo=True) +
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)

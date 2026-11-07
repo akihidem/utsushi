@@ -1,0 +1,8 @@
+# 命令: for i in $(seq 1 20); do PYTHONPATH=src .venv/bin/python tests/test_print_together.py; echo $?; done
+# commit: 973a4881（回した時の HEAD。直す前の試験で 20 回回した）
+rc（20 回）: 134 134 0 0 134 0 0 134 0 0 0 0 0 0 0 0 0 0 0 134
+rc 134 の回の出力（どれも ok を出した後）:
+Fatal Python error: _enter_buffered_busy: could not acquire lock for <_io.BufferedWriter name='<stderr>'> at interpreter shutdown, possibly due to daemon threads
+GET /toy/NDL-1187053-R0000005-L の失敗: BrokenPipeError: Broken pipe
+rc 134 は 20 回のうち 5 回
+rc=1

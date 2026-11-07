@@ -18,14 +18,16 @@ LOOKS = {
 }
 
 
-# 表紙の題の下の 2 行（本人の決定 11-06。サイトを見た人の意見「最初の表紙が綺麗なので、コンテンツも完成されたものと勘違いしてしまう。
-# 今後も発展・進化していくし、その担い手はユーザーだというメッセージは、最初に言った方がいいのでは」から作った案 1 を本人が採った）。
-# 字を変えない。両方の表紙（白の展示と黒のジン）で同じ物を読む。題の縦書きの流れを崩さないよう、表紙の下に横書きで小さく置く。
-GROWING = ("このサイトは、まだ育っている途中です。", "型紙をよくしていくのは、作ってみるあなたです。")
+# 表紙の題の下（白の展示は副題のすぐ下）に、説明の頁（序の頁 /about を「このサイトについて」の頁にする）への道を 1 つ。
+# 本人のサイトレビュー 11-07 午後の 1「…サイトの目的や AI でやっていることや仕組みについて説明するページを作ってそのリンクを添えた方が良いかも？
+# そうするなら、トップページの『このサイトは、まだ育っている途中です。型紙をよくしていくのは、作ってみるあなたです。』もいらなそう」と、
+# 窓口の決め 132926 の ③④（UX の担当の設計 state/site-review-123-20261107.md）。前はここに表紙の 2 行（本人の決定 11-06）があったので外した。
+# 小さな字の道にし、大きいボタンにしない（入口の大きいボタンは「えらぶ」1 つの決まり）。題の縦書きの流れを崩さないよう、横書きで小さく置く（前の 2 行と同じ場所）。
+ABOUT = "このサイトについて"
 
 
-def growing():
-    return f'<p class="grow">{esc(GROWING[0])}<br>{esc(GROWING[1])}</p>'
+def about_link():
+    return f'<p class="about-go"><a href="/about">{esc(ABOUT)}</a></p>'
 
 
 def switch(look):
@@ -122,7 +124,8 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-title .road{margin:0}
 body.zine a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #c9a96a;border-radius:2px;color:#efe6d2;font-size:20px;letter-spacing:.5em}
 .zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
-.zn-cover .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}
+.zn-cover .about-go{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}.zn-cover .about-go a{color:inherit;text-underline-offset:.3em}
+@media (max-width:1100px),(pointer:coarse){body .about-go a{display:inline-flex;align-items:center;min-height:44px;border-bottom:0;text-decoration-line:underline;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:.35em}}  /* 触る画面の押す所の床（skin.TAP_FLOOR と同じ 44px）。字の下の線は箱の下の端でなく字のすぐ下に（線は字の線で引く） */
 .zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
 .zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
 .zn-toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid #1f1b16}
@@ -154,7 +157,7 @@ body.zine a.road-go{display:inline-flex;align-items:center;justify-content:cente
 .zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;padding:8vh 8vw;gap:24px}
- .zn-cover .grow{grid-column:1;margin:0;order:1}  /* 狭い幅は 題と えらぶ → 2 行 → 額 の順（2 行も額より先） */
+ .zn-cover .about-go{grid-column:1;margin:0;order:1}  /* 狭い幅は 題と えらぶ → 説明の頁への道 → 額 の順（道も額より先） */
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
  .zn-title{grid-column:1;justify-self:center;margin:0;align-items:center;gap:18px;order:1}.zn-cover .frame{order:2}
  .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
@@ -179,7 +182,7 @@ def zine():
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">{esc(DOOR_LINE)}</p>'
-             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{growing()}</section>')
+             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{about_link()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
 
@@ -236,7 +239,8 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 .tj-door{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:10vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-door .tj-work{width:min(100%,46vh)}.tj-door .tj-work div{width:100%;height:100%}
 .tj-door .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
-.tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
+.tj-hall .about-go{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}.tj-hall .about-go a{color:inherit;text-underline-offset:.3em}
+@media (max-width:1100px),(pointer:coarse){body .about-go a{display:inline-flex;align-items:center;min-height:44px;border-bottom:0;text-decoration-line:underline;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:.35em}}  /* 触る画面の押す所の床（skin.TAP_FLOOR と同じ 44px）。字の下の線は箱の下の端でなく字のすぐ下に（線は字の線で引く） */
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -313,7 +317,7 @@ DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
 MAZU = "まずはここから"  # 2 つの大きな札の見出し（本人の言葉そのもの。本人の「反映してください。レビューの要点の通りで」と窓口の決め 11-07）
 
 
-def _mazu(ts):
+def _mazu(ts, photos=True):
     """「まずはここから」の 2 枚（必須の 2 種）。札そのものが玩具の頁（つくる）への口。額の敷き方は前の章の部屋と同じ（FRAMED）。"""
     # 絵は中くらいの写し（/picture/<印>/mid）を img で、先に読む（fetchpriority="high"）。元の写しは最初の画面で読まない（toys.SIZES の注）。
     # 前は背景の絵（CSS）にしていたが、遅い回線（下り 1.6Mbps・往復 150ms、トンネル越し）で、下の並びの小さい写しと取り合って 2 枚が届くのに
@@ -330,7 +334,14 @@ def _mazu(ts):
         under = f"background:#d9d2c3 url({toys_page.tiny_picture(sid)}) {x} 50%/{FRAMED} no-repeat"  # 額の敷き方と同じ大きさ（黒い縁を出さない）
         return (f'<span class="pic" style="{under}"><img src="/picture/{esc(sid)}/mid" alt="{esc(t["toy"])}の図" fetchpriority="high" decoding="async" '
                 f'style="object-position:{x} 50%;transform-origin:{x} 50%"></span>')
-    cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}</span>'
+    from . import made
+
+    def photo(t):
+        # 作ってみた実物の写真（本人のサイト体験レビュー 11-07 の 2）。人が確かめた写真がある時だけ、額の右下に小さく重ねる。
+        # 写真が無い時は何も置かない（玩具の頁の頭と同じ。窓口の決め 125731・(b)）
+        url = made.photo(t["sid"]) if photos else None
+        return f'<span class="tj-made"><img src="{esc(url)}" alt="{esc(made.PHOTO)}の写真" decoding="async"></span>' if url else ""
+    cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}{photo(t)}</span>'
                     f'<span class="nm">{esc(t["toy"])}</span></a>' for t in ts)
     head = f"<h2>{esc(MAZU)}</h2>" if MAZU else ""
     # 黒の表紙にだけあった 1 行（額の絵の下の「江都二色　安永二年　うしなわれた玩具」。本人の決定 11-06「黒案にだけある要素は白案に入れて」）は、
@@ -338,12 +349,14 @@ def _mazu(ts):
     return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
 
 
-def _erabu(sids):
-    """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。"""
-    from . import genre
+def _erabu(sids, photos=True):
+    """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。
+    photos=True の時は、作った実物の写真（人が確かめた物・web.made.photo）がある玩具の札にだけ、原画の右下に小さな角を重ねる（窓口の決め 163132）。
+    photos=False（合言葉なしで開いた場）は置かない（入口と玩具の頁に記録の写真を出さない前の決まり・test_public_open）"""
+    from . import genre, made
     from . import toys as toys_page
 
-    shelves = "".join(f'<h3>{esc(big)}</h3><ul class="tj-narabi">{"".join(toys_page.card(s) for _, ss in mids for s in ss)}</ul>'
+    shelves = "".join(f'<h3>{esc(big)}</h3><ul class="tj-narabi">{"".join(toys_page.card(s, made.photo(s) if photos else None) for _, ss in mids for s in ss)}</ul>'
                       for big, mids in genre.groups(sids))
     # 並びの小さい写しは、まずはここから の 2 枚が届いてから読む（data-src を src に替える台本 ERABU_JS）。遅い回線（下り 1.6Mbps・往復 150ms・
     # トンネル越し）で、2 枚と並びの 20 枚ほどを一度に読むと、2 枚が届くのに 5.6 秒かかった（11-07 に Chromium で測った。本人の答え 11-07 の (a)）。
@@ -354,16 +367,17 @@ def _erabu(sids):
             '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></section>')
 
 
-def tenji():
+def tenji(photos=True):
+    """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。"""
     ts = toys()
     body = switch("tenji")
     # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
     # 幅 390 の最初の画面に 2 つの大きな札の頭が入るようにする（「最初から選べる形」）
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link() + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
-    body += _mazu(main)
-    body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"])
+    body += _mazu(main, photos)
+    body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
     return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
 
@@ -371,7 +385,7 @@ def tenji():
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
 # 見えた時に起こす仕掛けは使わない（入口の決まり。research/19）。
 ERABU_JS = """<script>(()=>{let go=false;const run=()=>{if(go)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
-const big=[...document.querySelectorAll('.tj-mazu-card img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
+const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
 big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
 
 
@@ -385,13 +399,18 @@ ERABU = """
 #hall.tj-hall .en{margin-bottom:2vh}
 #hall.tj-hall h1{font-size:clamp(30px,4.4vw,56px);letter-spacing:.5em;margin-left:.5em}
 #hall.tj-hall .sub{margin-top:2.4vh;line-height:2;letter-spacing:.2em}
-#hall.tj-hall .grow{margin:2.4vh 0 0;font-size:13px}
+#hall.tj-hall .about-go{margin:2.4vh 0 0;font-size:13px}
 .tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
 .tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
 .tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
 .tj-mazu .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,4vw,56px)}
 body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
-.tj-mazu-card .tj-work{display:block;width:100%;margin:0}
+.tj-mazu-card .tj-work{display:block;width:100%;margin:0;position:relative}
+.tj-made{position:absolute;right:-6px;bottom:-10px;width:42%;line-height:0;background:#fffefc;padding:4px;box-shadow:0 10px 18px -10px rgba(70,55,35,.5);border:1px solid #d8cdb6}
+.tj-made img{display:block;width:100%;height:auto}
+.tj-narabi .made-wrap{position:relative;display:block;line-height:0}
+.tj-narabi .made-corner{position:absolute;right:-4px;bottom:-6px;width:40%;line-height:0;background:#fffefc;padding:3px;box-shadow:0 8px 14px -8px rgba(70,55,35,.5);border:1px solid #d8cdb6}
+.tj-narabi .made-corner img{display:block;width:100%;height:auto}
 .tj-mazu-card .pic{display:block;aspect-ratio:1600/2656;border:1px solid #d8cdb6;box-shadow:0 18px 30px -22px rgba(70,55,35,.5);overflow:hidden;background:#d9d2c3}
 .tj-mazu-card .pic img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.12)}
 .tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}

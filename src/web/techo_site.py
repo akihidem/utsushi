@@ -33,6 +33,10 @@ MAX_PER_RECORD = 3
 # 記録を作る口は書き込みの数の上限が絞り、1 つの記録には MAX_PER_RECORD までなので、1 人で一気に埋める形にはなりにくい
 PUBLIC_MEDIA_TOTAL = 2 * 1024 * 1024 * 1024
 MISMATCH = "中身を写真か動画として読めません（JPEG・PNG・MP4・MOV だけ）"
+# 動画を写す時に、元より増えてよい量（セキュリティの点検 U1）。絵の流れを写すだけで音と撮影情報を外すので、ふつうは元より小さい。
+# 同じコマを何度も指す小さな動画は、写すと何倍にも膨らみ、合言葉なしの場でも一時の置き場とメモリを埋められた。動画の受け口（trial_video.ROOM）と同じ考えで、
+# 1 つ 20MB までのこの口に合わせて小さく取る。
+VIDEO_ROOM = 4 * 1024 * 1024
 ICONS = {
     "動いた": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 34c8 0 14-6 18-18M20 14l8 2 2 8"/></svg>',
     "動かない": '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 24h28"/></svg>',
@@ -129,13 +133,15 @@ def clean_video(data, ext):
     with tempfile.TemporaryDirectory() as tmp:
         src, dst = pathlib.Path(tmp) / "in", pathlib.Path(tmp) / f"out.{ext}"
         src.write_bytes(data)
+        # -protocol_whitelist file: 読むのは置いたファイルだけ（ほかの道を開かない）。-fs: 書き出しの大きさの上限。-fs は超えても 0 で終わるので、後で比べる。
+        limit = len(data) + VIDEO_ROOM
         try:
-            r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-f", "mov", "-i", str(src),
+            r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-protocol_whitelist", "file", "-f", "mov", "-i", str(src),
                                 "-map", "0:V", "-an", "-map_metadata", "-1", "-map_metadata:s", "-1", "-map_chapters", "-1",
-                                "-c", "copy", "-f", ext, str(dst)], capture_output=True, timeout=config.VIDEO_TIMEOUT)
+                                "-c", "copy", "-fs", str(limit), "-f", ext, str(dst)], capture_output=True, timeout=config.VIDEO_TIMEOUT)
         except (OSError, subprocess.TimeoutExpired):
             return None, MISMATCH
-        if r.returncode != 0 or not dst.exists():
+        if r.returncode != 0 or not dst.exists() or dst.stat().st_size >= limit:
             return None, MISMATCH
         return dst.read_bytes(), ""
 
@@ -299,9 +305,10 @@ def made_item(sid, data, r, photos=True, public=False):
     if not photos:
         return ""
     # 物だけと人が確かめた写真と動画だけを出す。ほかは字だけになる（本人の決定 11-05、#314）。
+    # 写真は小さい写し（/small）を出し、押すと元の写真を開く（玩具の頁の記録の札と同じ。元の写真は 1 枚 3.7MB ほどで、並ぶと重い・#521）
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and not public else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and not public)
     if not pics and not words:
@@ -321,7 +328,7 @@ def own_item(sid, data, r):
     記録の頁（説明と AI の札）へは記録の番号から、玩具の頁の同じ記録へは玩具の名前から行く（ほかの札と同じ。地図の 4。新しい字は足さない）。"""
     files = media_review.public(r["id"], media_of(r["id"]))
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
@@ -337,9 +344,10 @@ UPLOADED = "上げました"  # 手帖の script（techo_step）が上げた後�
 
 
 def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
-    """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
+    """他の人が作った物のギャラリー（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
+    前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
-    職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
+    """
     cards, own = "", ""
     for sid in sids:
         data = hypotheses.load(sid)
@@ -360,23 +368,47 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
-    from .demo_samples import uploads_html, voice_html
+    from .demo_samples import uploads_html
     # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
     sample = uploads_html()
     cards += f'<details class="samples-fold"><summary>見本</summary>{sample}</details>' if (real and sample) else sample
-    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
-    # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
-    from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     # 頭の「入口へ」は外した（窓口の決め 11-07）。入口へ直した「もう 1 つ つくる」と同じ所へ行く対になったため（本人のサイト体験レビュー 11-07 の 3）
-    return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1></div>'
+    return ('<div class="gallery"><div class="top"><h1>作った物</h1></div>'
             # 選ぶ所は入口（えらぶ）。/toys は入口へ送るので、直に入口へ向ける（本人のサイト体験レビュー 11-07 の 3）
             '<p class="road"><a class="go" href="/">もう 1 つ つくる</a></p>'
-            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
+            # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
+            # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{note}{own}{cards}</section>'
+            f'{note}{own}{cards}</section></div>')
+
+
+VOICES_STYLE = """
+.voices{display:grid;gap:22px}
+.voices .panel{border:1px solid var(--frame);border-radius:0;padding:18px;display:grid;gap:14px;background:var(--paper)}
+.voices .mark{font-size:22px;letter-spacing:.15em;margin:0}
+.voices p{margin:0}
+.voices .samples{display:grid;gap:10px;margin:0}
+.voices .is-sample{border:1px dashed var(--frame);padding:10px}
+.voices .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
+"""
+
+
+def voices_sections():
+    """寄せられた声と職人の言葉の 2 つの節（持ち寄りの入口のフォームを含む）。序の頁（よむ。about.page）の足に置く。
+    本人のサイト体験レビュー（11-07）の言葉 6「残すと持ち寄るが同じに聞こえて分かりにくい。残す＝作った記録を残す事、に寄せる。
+    職人の言葉や、昔遊んだ人の寄せる話の入口は、作る側へ合体してもよい。」と、本人の答え「反映してください。…要点の通りで進めてください。」による
+    （直しの設計の D。UX の担当の読み ②: のこす は作った記録を残す事に寄せ、職人の言葉と寄せる話の入口を作る側へ。帯の駅は替えない）。
+    移し先を序の頁にしたのは、直しの設計の「玩具の頁の足の畳みか よむ」のうち、玩具の頁は別の直しの担当が持つため（統括の分担 11-07）。
+    字は前のギャラリーの節のまま（id も yose・shokunin のまま。前のギャラリーの #yose と #shokunin への道は、序の頁で同じ節に着く）。
+    見た目はギャラリーと同じ。ギャラリーの CSS は .gallery の下と頁の幅（main:has(.gallery)）を持つので、序の頁の幅を変えないよう、
+    この 2 つの節だけを包む VOICES_STYLE を別に持つ。"""
+    from .demo_samples import voice_html, voices_html
+
+    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    return ('<div class="voices">'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
             f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
@@ -402,7 +434,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
         files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                        else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
+                        else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="上げた写真" loading="lazy" decoding="async"></a>') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
         # 合言葉なしの場には進行者がいないので、上げた画面にだけ「取り下げる」を置く（窓口の決定 11-06 夜・案 A）。押すと、この記録の写真と動画が
@@ -414,7 +446,10 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
+    from . import naoru  # 循環を避けて、ここで読む（hanasu と同じ）
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
+            # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。頁の頭に 1 回
+            + naoru.box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。

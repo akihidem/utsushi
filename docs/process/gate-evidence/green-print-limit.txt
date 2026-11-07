@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_print_limit.py
+# commit: 806e2f2a（回した時の HEAD）
+ok: 紙を刷る口に、相手ごとの数と全体で同時に刷る数の上限がある
+rc=0

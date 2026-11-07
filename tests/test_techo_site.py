@@ -95,7 +95,8 @@ code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "p
 assert code in (200, 303), body[:300]
 page = req(f"/toy/{G}")[1].decode()
 # 版を言わずに開くと窓は最新の版（PDF の押し釦は版 2）。字の札は窓へ（本人の指示 11-05）
-assert f"{GS}_v2.pdf" in page and "<b>版 2</b>" in page and f"see={GS}&kind=sheet&v=2#win" in page
+# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」
+assert f"{GS}_v2.pdf" in page and f"<b>{hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)}</b>" in page and f"see={GS}&kind=sheet&v=2#win" in page
 assert req(f"/sheet/{G}/{GS}_v2.pdf")[1][:4] == b"%PDF"
 # 型紙の確定の記録（f09）: 刷った版ごとに、誰が・どの組で確定したかが台帳に残る
 from omochae import loop  # noqa: E402
@@ -122,15 +123,20 @@ code, got = req(f"/record/{rid}/media/m1.jpg")
 assert code == 200 and got == saved, "確かめた写真は誰にでも開く。撮影の情報を外した物"
 assert "m1.jpg" in req(f"/toy/{G}/techo/kiroku")[1].decode()
 g = req("/gallery")[1].decode()
-assert "m1.jpg" in g and "職人の言葉" in g and "紙と折りの職人" in g  # 枠の中身は見本（demo_samples）か（準備中）
+assert "m1.jpg" in g
+# 職人の言葉と寄せられた声の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。ギャラリーは作った記録の並びだけ
+yomu = req("/about")[1].decode()
+assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "紙と折りの職人" in yomu  # 枠の中身は見本（demo_samples）か（準備中）
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
-name = "作った物と職人の言葉"
+name = "作った物"
 # 帯の今いる所は aria-current で出る。帯は道しるべ（段 1）なので、ギャラリーは「もちよる」の駅
 assert 'aria-current="page">もちよる</a>' in g and f"<title>{name} · うつし<" in g, g[:300]
 assert re.findall(r"<h1[^>]*>(.*?)</h1>", g) == [name]
-for sec, label in (("ageta", "他の人が作った物"), ("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
-    assert f'<a href="#{sec}">{label}</a>' in g and f'id="{sec}"' in g and f'<h2 class="mark">{label}</h2>' in g, sec
+# ギャラリーの節は 1 つになったので、節へ飛ぶ口は無い。序の頁へ移した 2 つの節は、前と同じ id と見出しで着く（前の #yose・#shokunin への道のため）
+assert 'id="ageta"' in g and '<h2 class="mark">他の人が作った物</h2>' in g and 'class="jump"' not in g
+for sec, label in (("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
+    assert f'id="{sec}"' in yomu and f'<h2 class="mark">{label}</h2>' in yomu and f'id="{sec}"' not in g, sec
 # 見本は札と断りの一文で見分ける。縞の地と、皮によって白く浮く固定の色は使わない（#139）
 assert "repeating-linear-gradient" not in g and "#f4efe3" not in g and "#7a3b1d" not in g
 assert '<span class="sample">見本</span>' in g and "is-sample" in g

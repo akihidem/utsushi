@@ -126,8 +126,16 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
                "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
 
 
+# 仮説の印の形（紙を返す口 /sheet/... の形と同じ）。フォームから来る値は、この形の物だけを刷った紙の探しに使う。
+HID_FORM = re.compile(r"H-[A-Z0-9]+|OWN-\d+")
+
+
 def printed_versions(sid, hid):
     """刷ってある版の番号（小さい順）。無ければ空。版 1 を決め打ちしない: 報告から直した版 2 以降を、次に作る人が最初に刷る事があるため。"""
+    # 印の形でない値は探さずに空を返す。hid はフォーム（talk・record-json・ask）から検査なしで来るので、
+    # glob の形にそのまま入れると、「..」や「**」で置き場の外まで広く探させられ、合言葉なしの場でもサーバを詰まらせられた（セキュリティの点検 U16）。
+    if not isinstance(hid, str) or not HID_FORM.fullmatch(hid):
+        return []
     # 自分の仮説は、型紙なしの紙（_free）も刷った紙に数える。作りながら見る頁と話す口が、その紙に付くように（ループ1、#335）。
     free = "(?:_free)?" if str(hid).startswith("OWN-") else ""
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+){free}\.pdf", p.name))}) if out_dir(sid).exists() else []
@@ -174,6 +182,11 @@ def next_form(r, back=""):
     return toy.next_form(r, back)
 
 
+def _ban(sid, v):
+    """刷った後の知らせの版の字。玩具の頁の窓の札・刷り直しの釦と同じ組の番号の呼び方にする（窓口の決定 11-07・#513 の (a)）。
+    知らせだけ「版 2」のままだと、同じ画面の札「版 14（直し 2）」と別の版に読めるため。"""
+    return hypotheses.label_of(hypotheses.current_set(hypotheses.load(sid)), int(v))
+
 def _num(v):
     v = (v or "").strip()
     if not v:
@@ -207,7 +220,35 @@ WRITE_LIMIT, WRITE_WINDOW = 60, 60.0
 # 段の口（作りながら見る頁の札）の数。書き込みの口と別に数え、手順を押す数で記録や話す口を断らない（統括の決め 11-06）。
 # 5 人が同じ網から、手順を全部同じ 1 分で押しても（1 人 13〜20 回）断らない数。超えても頁は止めず、段を置き場へ書かないだけ。
 STEP_LIMIT = 120
+# 写真と動画の口の数（セキュリティの点検 U1）。この口はフォームを読む前に本体のまま受けるので、書き込みの数（WRITE_PATHS）が届かず、上限が無かった。
+# 1 つ 20MB まで。1 つの網（学校の網など、トンネル越しの番地が 1 つ）から同じ 1 分に、20 人が 3 つずつ（のこす時の上限 MAX_PER_RECORD）
+# 上げても断らない数（窓口の決め 11-07・案 b。前は 20 で、7 人目から断りが出えた）。機械を埋めない守りは、公開の場の合計の上限
+# （PUBLIC_MEDIA_TOTAL）と、写した動画の大きさの上限（techo_site.VIDEO_ROOM）の方で効く。
+MEDIA_LIMIT = 60
 WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
+# 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
+# 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
+# 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
+# 機械の重さは全体の同時の数（PRINT_SLOTS）の方で守るので、相手ごとの数は、1 つの相手が空きを独り占めしない程度でよい。
+PRINT_LIMIT = 30
+PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint)|/en/toy/{SID}/print")
+# 全体: 同時に刷るのは 2 本まで。番地を替えて送られても、描画の処理が機械を埋めないため。空きは少し待ち、待っても空かなければ断る。
+PRINT_SLOTS, PRINT_WAIT = 2, 20.0
+_print_slots = threading.BoundedSemaphore(PRINT_SLOTS)
+
+
+class PrintBusy(Exception):
+    """刷る空きを待っても取れなかった。受けた口で、書き込みが多すぎる時と同じ断り（429）を返す。"""
+
+
+def _printing(make):
+    """全体の刷る空きを 1 つ取ってから make を動かす。同じ案を同時に頼んだ人は _one_at_a_time で待つので、空きを取るのは作る人だけ。"""
+    if not _print_slots.acquire(timeout=PRINT_WAIT):
+        raise PrintBusy
+    try:
+        return make()
+    finally:
+        _print_slots.release()
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
 
 
@@ -262,6 +303,12 @@ class Handler(BaseHTTPRequestHandler):
     def _send(self, code, body, ctype="text/html; charset=utf-8", headers=()):
         if isinstance(body, str) and ctype.startswith("text/html") and getattr(self.server, "public_open", False):
             body = without_notes(body)
+        if isinstance(body, str) and ctype.startswith("text/html") and getattr(self, "_lang", "ja") == "en" and not re.match(r"/en(?:[/?#]|$)", self.path):
+            from . import i18n  # 全頁の英語（窓口の決め 130735 の案 B）。作る側は日本語のまま作り、出口で表を引いて替える
+
+            body = i18n.page_en(body)
+        if getattr(self, "_lang_cookie", None):
+            headers = (*headers, self._lang_cookie)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -333,11 +380,28 @@ class Handler(BaseHTTPRequestHandler):
         なぜ切り替えないか: 本人の決定（11-05 朝）「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」。1 つのサイトの中で
         見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
+        self._pick_lang()
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
-        from . import think_sheet
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), mine=think_sheet.mine(self, sid), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+        # 話した本人の案（think_sheet.mine）は、玩具の頁の記録の欄が選ぶ口に使っていた。欄はのこすへ寄せたので渡さない（本人の答え Q3）
+        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+
+    def _pick_lang(self):
+        """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、cookie に持つ。道は日本語の頁と同じ。
+        前からの英語の頁（/en と /en/toy/<印>）は別の作りで、ここでは替えない（もう英語なので）。"""
+        _, _, query = self.path.partition("?")
+        pick = urllib.parse.parse_qs(query).get("lang", [""])[0]
+        self._lang_cookie = None
+        if pick in ("en", "ja"):
+            self._lang = pick
+            self._lang_cookie = ("Set-Cookie", f"utsushi_lang={pick}; Max-Age=31536000; Path=/; SameSite=Lax")
+            return
+        self._lang = "ja"
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == "utsushi_lang" and value == "en":
+                self._lang = "en"
 
     def do_GET(self):
         try:
@@ -353,6 +417,8 @@ class Handler(BaseHTTPRequestHandler):
             self._pick_look()
             if self._gate():
                 self._post()
+        except PrintBusy:
+            self._busy(int(PRINT_WAIT), {})
         except Exception as e:
             failure_log.request_failed("POST", self.path, e)
             self._refuse(500, BUSY, "送れませんでした")
@@ -369,10 +435,10 @@ class Handler(BaseHTTPRequestHandler):
         # 入口はこのサイトの皮の入口（白の展示か黒のジン、--look）。別の皮の入口はこのサイトには無い（404）。
         # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
-            return self._send(200, PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
-            return self._send(200, PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
@@ -408,7 +474,7 @@ class Handler(BaseHTTPRequestHandler):
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -441,6 +507,16 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/splat(?:/(\d{{1,2}})\.jpg)?", path)
+        if m and m.group(1) in sources():
+            # 作った実物の立体とエンジンの 3D を並べて一緒に回す頁と、実物の絵（本人の決定 11-07・web/splat_pair.py）。
+            # 絵は人が確かめた物だけ（サーバの記録の置き場）。無い玩具・確かめていない玩具は 404
+            from . import splat_pair
+            if m.group(2) is not None:
+                data = splat_pair.frame_bytes(m.group(1), int(m.group(2)))
+                return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
+            body = splat_pair.page(m.group(1), look, path)
+            return self._send(200, body) if body else self._send(404, "無い")
         m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
@@ -503,6 +579,17 @@ class Handler(BaseHTTPRequestHandler):
             # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
             return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+        # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
+        # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
+        m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
+        if m:
+            from . import made, techo_site
+            f = techo_site.media_dir(m.group(1)) / m.group(2)
+            if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
+                small = made.small_photo(f)
+                if small:
+                    return self._send(200, small, "image/jpeg")
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m:
             from . import techo_site
@@ -532,6 +619,13 @@ class Handler(BaseHTTPRequestHandler):
             # 前に配ったリンクのために /sheet/…_after の道は残し、紙はそこで開く時にだけ作る（ensure_after）
             from . import think_sheet
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=think_sheet.allowed_at(self, m.group(1), qs.get("at", [""])[0]), see=see, kind=kind, v=v, path=path))
+        # 型紙の版の歩みの額の絵（エンジンが組ごとに出した、刷った紙の 1 枚目を縮めた物。生成物なので repo の外の out/history に置く）。
+        # 組の名の形だけを受け、置き場の外のファイルを開かない（ban_ayumi.picture_file）。合言葉なしの場でも出す（刷った型紙で、人の写真ではない）
+        m = re.fullmatch(r"/history/sheets/([a-z]+-v[0-9]{1,3})\.png", path)
+        if m:
+            from . import ban_ayumi
+            f = ban_ayumi.picture_file(m.group(1))
+            return self._send(200, f.read_bytes(), "image/png") if f else self._send(404, "無い")
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
         if m:
             # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
@@ -567,7 +661,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not think_sheet.opens(self, sid, hid, after=stem.endswith("_after")):
                     return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
-                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
+                # 道の行き先は記録の頁（のこす）。玩具の頁の記録の欄は本人の答え 11-07 夕の Q3 で のこす へ寄せたので、#kiroku に着いても欄が無い
+                # （道 1 本だけ）。1 回で着くよう直接向ける（字は替えない。別の目の指摘 11-07）
+                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}/techo/kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
             if stem.endswith("_after"):
                 ensure_after(sid, hid, int(re.search(r"_v(\d+)", stem).group(1)))
@@ -647,6 +743,8 @@ class Handler(BaseHTTPRequestHandler):
             # 記録を残した画面からだけ受ける（記録の鍵）。番号は札に出る連番なので、番号だけで受けると、別の人の記録に写真を足せる。
             if not records.mine(m.group(1), self._rec_key()):
                 return self._send(403, "受け付けられない送り方です")
+            if (who := writer(self.client_address[0], self.headers)) and (wait := self.server.media_limit.wait(who)):
+                return self._busy(wait, {})
             try:
                 length = int(self.headers.get("Content-Length", ""))
             except ValueError:
@@ -670,6 +768,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
         if WRITE_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
             wait = self.server.write_limit.wait(who)
+            if wait:
+                return self._busy(wait, form)
+        if PRINT_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
+            wait = self.server.print_limit.wait(who)
             if wait:
                 return self._busy(wait, form)
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
@@ -804,10 +906,10 @@ class Handler(BaseHTTPRequestHandler):
         if (hid not in {h["id"] for h in hypotheses.load(sid)["hypotheses"]}
                 or not (v.isascii() and v.isdigit() and int(v) in loop.adopted_versions(sid, hid))):
             return self._send(422, self._toy(sid, errors=["その版は採られていません"], at="win"))
-        if loop.print_version(sid, hid, int(v), out_dir(sid)) != 0:
-            return self._send(422, self._toy(sid, errors=[f"版 {v} の紙を作れませんでした（検査に落ちた）"], at="win"))
+        if _printing(lambda: loop.print_version(sid, hid, int(v), out_dir(sid))) != 0:
+            return self._send(422, self._toy(sid, errors=[f"{_ban(sid, v)} の紙を作れませんでした（検査に落ちた）"], at="win"))
         loop.confirm_sheet(sid, hid, int(v), "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
+        return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", see=hid, anchor="win")
 
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
@@ -831,7 +933,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import toy
 
             return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
-        return self._done(sid, f"版 {v} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
+        return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
         """作りながら見る頁の札（次の手順へ・戻る・止まった・できた）と、頁を開いた事。残すのは手順の番号と出来事だけ（making_log.add_step）。
@@ -940,7 +1042,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
+                text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return out(200, {"text": text, "from": how})
@@ -974,7 +1076,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
+                text, how = "今は AI に聞けません。型紙の凡例と、組み方の絵を見てください", "error"  # 呼び名は ask.NO_KEY とそろえる（組み方の絵）
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "print":
@@ -1060,7 +1162,7 @@ def print_latest(sid, hid):
         loop.confirm_sheet(sid, hid, v, "画面の使い手", TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET)
         return v
 
-    return _one_at_a_time((sid, hid), make)
+    return _one_at_a_time((sid, hid), lambda: _printing(make))
 
 
 def print_own(sid, oid):
@@ -1129,6 +1231,8 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.look = look
     server.write_limit = WriteLimit()
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
+    server.print_limit = WriteLimit(limit=PRINT_LIMIT)
+    server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
     return server
 
 
