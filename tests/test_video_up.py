@@ -439,7 +439,7 @@ def site_get(path):
     return code, body.decode(errors="replace")
 
 
-for path in (f"/toy/{G}", f"/toy/{TORA}", "/gallery", f"/zukan/{G}", f"/toy/{G}/techo", f"/toy/{TORA}/techo"):
+for path in (f"/toy/{G}", f"/toy/{TORA}", "/gallery", f"/toy/{G}/techo", f"/toy/{TORA}/techo"):
     code, text = site_get(path)
     assert code == 200, path
     for word in ("v1.mp4", WORDS, "首の糸を太くしました", rid, r2):
@@ -771,7 +771,7 @@ assert asr_worker.inside([{"start": 109.5, "text": "以上です"}, {"start": 11
 site2 = site_serve(0)
 threading.Thread(target=site2.serve_forever, daemon=True).start()
 site_port = site2.server_address[1]
-for path in (f"/toy/{G}", "/gallery", f"/zukan/{G}", f"/toy/{G}/techo"):
+for path in (f"/toy/{G}", "/gallery", f"/toy/{G}/techo"):
     # 探す字は、ほかの枝が頁に足す字に当たらない長さにする（「voice」「transcript」「折り線」は話す口と手順の文に出る）
     assert "折り線が薄くて見えません" not in site_get(path)[1] and "voice.mka" not in site_get(path)[1] and "transcript.json" not in site_get(path)[1] and rid_r not in site_get(path)[1], path
 for path in (f"/record/{rid_r}/media/voice.mka", f"/record/{rid_r}/media/voice/voice.mka", f"/record/{rid_r}/media/voice/transcript.json"):

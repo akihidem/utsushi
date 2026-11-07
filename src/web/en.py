@@ -124,7 +124,8 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
 
 
 def band(sid):
-    """日本語の玩具の頁に出す、英語の短い紹介の帯（本人の指示「おもちゃの頁に英語の短い紹介」）。"""
+    """日本語の玩具の頁に出す、英語の短い紹介の帯（本人の指示「おもちゃの頁に英語の短い紹介」）。
+    英語への入口に括弧の断り「（英語の文は案です）」は付けない（本人の決め 11-07「外してよい」。頭の断り DRAFT を外したのと同じ扱い）。"""
     t = toy_text(sid)
     return (f'<section class="sec" id="english" lang="en"><p class="meta"><span class="lb">English</span> <b>{esc(t["name"])}</b>. {esc(t["intro"])} '
-            f'<a href="/en/toy/{esc(sid)}">Read and print in English</a>（英語の文は案です）</p></section>')
+            f'<a href="/en/toy/{esc(sid)}">Read and print in English</a></p></section>')

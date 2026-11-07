@@ -1,5 +1,5 @@
 """増やした雛形の玩具にもデモで触れる（本人の決定 Q3 (b)、11-04）。雛形ごとに試作の玩具を 1 つ選び、
-入口 → 図鑑 → 玩具の頁 → 型紙 → 手帖 → 質問 → 記録 → 説明 → 次の版 を通す。鍵は使わない。
+入口 → 玩具の頁 → 型紙 → 手帖 → 質問 → 記録 → 説明 → 次の版 を通す。鍵は使わない。
 試作の玩具がまだ無い雛形は飛ばす（線を取り込むたびに、この試験が増えた雛形を通す）。"""
 import json
 import os
@@ -41,9 +41,8 @@ def call(path, form=None):
         return e.code, e.read().decode("utf-8", "replace")
 
 
-# 図鑑へは、入口の帯の「よむ」（序の頁）から行く（段 1 で帯から図鑑の名を外した。本人の決定 11-06・案 A）
-assert 'href="/about"' in call("/")[1] and 'href="/zukan"' in call("/about")[1], "入口から図鑑へ行ける"
-zukan = call("/zukan")[1]
+# 前は入口 → 序の頁 → 図鑑の一覧 → 玩具の頁 と通した。図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）ので、入口（えらぶ）の棚から玩具の頁へ入る
+entrance = call("/")[1]
 picked = {}
 for sid in sources():
     d = hypotheses.load(sid)
@@ -53,7 +52,7 @@ walked = []
 for tid, sid in sorted(picked.items()):
     tpl = TEMPLATES[tid]
     h = hypotheses.load(sid)["hypotheses"][0]
-    assert f"/zukan/{sid}" in zukan, (tid, "図鑑の一覧から入れる")
+    assert f'href="/toy/{sid}"' in entrance, (tid, "入口の棚から入れる")
     assert call(f"/toy/{sid}")[0] == 200, (tid, sid)
     assert call(f"/toy/{sid}/print", {"hypothesis": h["id"]})[0] in (200, 303), (tid, sid)
     with urllib.request.urlopen(urllib.request.Request(f"http://{host}/sheet/{sid}/{h['id']}_v1.pdf", headers={"Host": host})) as r:
