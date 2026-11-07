@@ -147,6 +147,28 @@ def _form(sid, mine=""):
             f'<button type="submit">書いた読みと並べる</button></form>')
 
 
+NOTES = ROOT / "data/kuzushi_notes"  # 歌の現代語訳と言葉の意味（玩具ごとに 1 つの json。書くのは別の担当・本人の言葉 11-08）
+
+
+def notes(sid):
+    """歌の現代語訳と、関連する言葉の意味の段（本人の言葉 11-08「ぐずし字を読む、のところは、現代語訳や関連する言葉の意味を書く」）。
+    data/kuzushi_notes/<印>.json（{"gendaigo": 訳の文, "words": [{"word": 言葉, "meaning": 意味}…]}）がある時だけ出す。無い玩具は何も置かない
+    （書く前の断りの字は足さない）。見出しの字は本人の言葉の「現代語訳」「言葉の意味」。"""
+    try:
+        d = json.loads((NOTES / f"{sid}.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    if not isinstance(d, dict):
+        return ""
+    out = ""
+    if isinstance(d.get("gendaigo"), str) and d["gendaigo"].strip():
+        out += f'<h2>現代語訳</h2><p>{esc(d["gendaigo"])}</p>'
+    words = [w for w in d.get("words", []) if isinstance(w, dict) and str(w.get("word", "")).strip() and str(w.get("meaning", "")).strip()]
+    if words:
+        out += "<h2>言葉の意味</h2><dl>" + "".join(f'<dt>{esc(w["word"])}</dt><dd>{esc(w["meaning"])}</dd>' for w in words) + "</dl>"
+    return f'<section class="yomi-notes" id="yomi-notes">{out}</section>' if out else ""
+
+
 def page(sid, mine=None, msg="", look=None):
     """mine が None なら、書く前の頁（確かめた読みを出さない）。文字があれば、並べて見せる頁。"""
     data = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -165,7 +187,7 @@ def page(sid, mine=None, msg="", look=None):
     head = f'<h1>くずし字を読む</h1>{NAV}<p class="meta"><a href="/zukan/{esc(sid)}">{esc(toy)}</a>の絵の、歌の所です。</p>'
     note = f'<p class="meta">{esc(msg)}</p>' if msg else ""
     if mine is None:
-        body = f'<section class="yomi"><div>{pic}</div><div>{note}{_form(sid)}</div></section>'
+        body = f'<section class="yomi"><div>{pic}</div><div>{note}{_form(sid)}</div></section>' + notes(sid)
         return _page(f"うつし · くずし字を読む · {toy}", head + body, look, f"/zukan/{sid}/yomi")
 
     checked = _checked(src)
@@ -183,5 +205,5 @@ def page(sid, mine=None, msg="", look=None):
         rows.append('<ul class="pair">' + _li(reader) + '</ul><p class="meta">人が確かめた読みは、まだありません。</p>')
     how = f'<p class="meta">{esc(wording.plain("読みが割れた事と、決めた事"))}</p><ul>{"".join(_li(x) for x in splits)}</ul>' if splits else ""
     body = (f'<section class="yomi"><div>{pic}</div><div>{"".join(rows)}{how}'
-            f'<p class="meta">もう一度書く</p>{_form(sid, mine)}</div></section>')
+            f'<p class="meta">もう一度書く</p>{_form(sid, mine)}</div></section>') + notes(sid)
     return _page(f"うつし · くずし字を読む · {toy}", head + body, look, f"/zukan/{sid}/yomi")

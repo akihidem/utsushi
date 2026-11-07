@@ -69,11 +69,13 @@ def post(path, data):
 data = hypotheses.load(G)
 h = hypotheses.sheet_of(G)  # 頁が出すのはたたき台の仮説の欄（御来迎の今の組 goraigo-v14 は H-C）
 page = get(f"/toy/{G}")
-# 玩具の頁: data/hypotheses の欄と確かめた人
+# 玩具の頁: data/hypotheses の欄。原文の引用の「確かめた人」は、本人の言葉（11-08）「原文の引用確かめた人要らない」で玩具の頁から外した
+# （図鑑とくずし字の頁の確かめた人の印は下で見る）
 for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to_measure'])}",
              f"〔{esc(h['evidence'][0]['certainty'])}〕▲{esc(h['evidence'][0]['what'])}（▲{esc(h['evidence'][0]['where'])}）",
-             "確かめた人: ▲本人", f"▲{esc(data['analogy']['written_by'])}"):
+             f"▲{esc(data['analogy']['written_by'])}"):
     assert want in page, want
+assert "原文の引用。確かめた人" not in page, "玩具の頁に原文の引用の確かめた人が残った"
 # 作る側が残した試行の控えと、記録の札の番号（字が同じ行が頁の頭の一覧にもあるので、札の形で見る）
 # 札の版は記録を刷った組の番号（窓口の決定 11-07・#513 の (a)。R-0001 は 11-04 の前の組の紙なので、その組の番号）
 r1 = next(r for r in records.all_records(G) if r["id"] == "R-0001")

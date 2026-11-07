@@ -20,14 +20,16 @@ for look in ("tenji", "zine"):
     for sid in (GORAIGO, TORA):
         page = toy_page(sid, look)
         hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
-        # 原画と歌（本人の指示 11-06）: 歌は頁の全体の絵と組にして左の欄に置く。右の欄は題・札・リンクが空きなく続くので、#134 の空きは出ない
-        assert (hero.index('class="genga genga-head"') < hero.index('class="genga-songs"') < hero.index("<h1>")
-                < hero.index('class="label"') < hero.index('class="links"')), (look, sid)
+        # 原画と歌（本人の指示 11-06）: 歌は頁の全体の絵と組にして左の欄に置く。11-08 の本人の言葉「絵の左横に縦で狂歌、その左横に御来迎 江都二色よりーの部分を置く」で、
+        # 左から 題の塊 → 狂歌 → 絵。作品の札（class="label"）は、題の塊を原画の部品へ、出典の字を頁の一番下へ分けたので頭に無い
+        assert (hero.index('class="genga genga-head"') < hero.index('class="genga-title"') < hero.index('class="genga-songs"')
+                < hero.index('class="genga-pic"') < hero.index("<h1>") < hero.index('class="links"')), (look, sid)
+        assert 'class="label"' not in hero and 'class="sec ndl-credit"' in page, (look, sid)
         assert 'class="songs"' not in hero, (look, sid)
     # 歌の読みの無い玩具は字の歌を出さない（断りの 1 行だけ）。札は題のすぐ下のまま
     page = toy_page(PLAIN, look)
     hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
-    assert 'class="songs"' not in hero and 'class="genga-songs"' not in hero and hero.index("<h1>") < hero.index('class="label"'), look
+    assert 'class="songs"' not in hero and 'class="genga-songs"' not in hero and hero.index('class="genga-title"') < hero.index("<h1>"), look
 
 css = skin.BASE
 wide = css[:css.index("@media (max-width:820px)")]

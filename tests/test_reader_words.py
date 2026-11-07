@@ -234,7 +234,8 @@ zu = pages[f"/zukan/{G}"]
 for w in ("原文の引用", "仮説", "観察", f"確かめた人: {wording.MAKER}"):
     assert w in zu, w
 tp = pages[f"/toy/{G}"]
-assert f"原文の引用。確かめた人: {wording.MAKER}" in tp
+# 玩具の頁の原文の引用の「確かめた人」は、本人の言葉（11-08）「原文の引用確かめた人要らない」で外した（図鑑・くずし字の頁の印は残る）
+assert not any("原文の引用。確かめた人" in t for t in tp), "玩具の頁に原文の引用の確かめた人が残った"
 # 頁が出すのはたたき台の仮説の根拠（御来迎の今の組 goraigo-v14 は H-C で、根拠は手元の複写の解説の〔解釈〕）
 _ev = hypotheses.sheet_of(G)["evidence"][0]
 assert any(t.startswith(f"〔{_ev['certainty']}〕") for t in tp), "根拠の種類の印は消えない"
