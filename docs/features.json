@@ -823,8 +823,9 @@
   "evidence": [
    "src/web/sakurei.py",
    "src/omochae/records.py",
-   "tests/test_sakurei.py"
+   "tests/test_sakurei.py",
+   "tests/test_sakurei_sort.py"
   ],
-  "unverified": "受け口だけで、作った物の頁の作例の節は次の PR。本人の写真はまだ取り込んでいない（Drive の届け口の folder はまだ無い）。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）"
+  "unverified": "受け口と仕分けの段だけで、作った物の頁の作例の節は別の PR。本人のチャットの 5 枚（11-07）は仕分けまで（日は 5 枚とも 11-07・玩具は 4 枚を見て決め 1 枚は不明）。記録への取り込みと人の確かめはまだ。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）"
  }
 ]
