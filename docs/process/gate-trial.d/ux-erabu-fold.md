@@ -6,3 +6,4 @@
 - 字: 新しい字 2 つは本人の決めで OK（統括の知らせ 11-08・止めの行は無し）
 - 検証ゲート: **済み**。Red: #588 の頭 c48ea397 に新しい試験 tests/test_erabu_fold.py だけを置くと rc 1（gate-evidence/red-erabu-fold.txt）。Green: gate-evidence/green-erabu-fold.txt。幅 390 の Chromium で、閉じた形（写しを読んだ数 0）と /#erabu で開いた形（81 枚を読んだ）を見た
 - 確かめていない事: 初めての人が畳みを「選べない」と受け取らないか（使った人の確かめ）。実機
+- ./run.sh の 1 度目で test_ux_stage0 が落ちた（rc 3）: のこすの後の道しるべは「もちよる」1 つの決まり（段 0・research/36）なのに、C の道を道しるべの釦（class road）で足していた。C の道を もちよる の下のふつうの道（p.links）に替え、試験 test_erabu_fold にも「道しるべの釦を増やさない」を足した

@@ -7,7 +7,8 @@
    畳みを開いた時だけ読む）。錨は前からの #all-toys と、開いた形で着く #erabu
 3. 台本: 畳みを開いた時（toggle）か、道が #erabu・#all-toys の時に開いて読む。印を残さない（localStorage・sessionStorage・cookie を使わない）
 4. 題の間（縦の組み・浮かぶ玩具）は替えない（前からの試験 test_hall_tate・test_ukabu が見る）
-5. のこすの後の道（C）: 手帖の記録の頁に返事の文が出た時だけ、/#erabu への道「次は、{全部} のおもちゃから えらぶ」。返事の無い時は出さない
+5. のこすの後の道（C）: 手帖の記録の頁に返事の文が出た時だけ、/#erabu への道「次は、{全部} のおもちゃから えらぶ」。返事の無い時は出さない。
+   道しるべの釦（class road）にはせず、もちよる の下のふつうの道（のこすの後の道しるべは もちよる 1 つ・test_ux_stage0）
 """
 import os
 import re
@@ -46,6 +47,7 @@ assert not re.search(r"localStorage|sessionStorage|document\.cookie", js), "印�
 G = "NDL-1187053-R0000005-L"
 said = techo_site.records_page(G, msg="残しました")
 quiet = techo_site.records_page(G)
-go = f'<a class="go" href="/#erabu">{techo_site.NEXT_ERABU.format(n=n)}</a>'
+go = f'<p class="links next-erabu"><a href="/#erabu">{techo_site.NEXT_ERABU.format(n=n)}</a></p>'
 assert said.count(go) == 1 and go not in quiet, "返事の文が出た時だけ"
+assert said.index('<a class="go" href="/gallery#ageta">もちよる</a>') < said.index(go), "道しるべの もちよる の下（道しるべの釦は増やさない）"
 print("ok 選ぶのは 2 回目から: 入口は 2 枚の下で 83 を畳み（数は棚から）・開いた時だけ写しを読む・印を残さない・のこすの後に 2 回目の道")
