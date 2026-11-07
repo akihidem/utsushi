@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toys_genre.py
+# commit: ff2d3522（回した時の HEAD）
+ok
+rc=0

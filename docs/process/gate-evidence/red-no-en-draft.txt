@@ -1,0 +1,23 @@
+# 命令: sh -c 'PYTHONPATH=src .venv/bin/python tests/test_en.py; a=$?; PYTHONPATH=src .venv/bin/python tests/test_en_all.py; b=$?; echo "test_en rc=$a test_en_all rc=$b"; [ $a -eq 0 ] && [ $b -eq 0 ]'
+# commit: 6a45acce（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en.py", line 66, in <module>
+    assert not any(w in idx for w in NO_DRAFT) and "does not prove how the original was made" in idx and "It is not the answer" in idx and "Japanese only" in idx
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000004-L/.tmp-l7j65zo9/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000004-L-4/.tmp-snaigffg/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000005-L/.tmp-kt_11y0q/H-C_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000005-L-3/.tmp-zlwkoqp2/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000007-L/.tmp-1yqh3ddn/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000007-R/.tmp-5ng5woge/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000014-L/.tmp-y7ojvihj/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000014-R/.tmp-2kb9orja/H-A_v1.pdf
+/tmp/tmpws_bmwix/play/NDL-1187053-R0000019-L/.tmp-zj7kqxhv/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_en_all.py", line 58, in <module>
+    assert '<html lang="en"' in page and 'class="en-draft"' not in page and "Draft translation" not in page and "native speaker" not in page
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+test_en rc=1 test_en_all rc=1
+rc=1
