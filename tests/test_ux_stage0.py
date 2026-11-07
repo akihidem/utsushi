@@ -128,8 +128,8 @@ rid, fs = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, 
 assert not fs, fs
 kiroku = techo_site.records_page(G, msg="上げました")
 mine = kiroku[kiroku.index('<div id="mine">'):]
-assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
-assert roads(kiroku) == ["もちよる"], roads(kiroku)
+assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
+assert roads(kiroku) == ["のこす"], roads(kiroku)  # 釦の字は のこす（本人のサイトの見直し 11-07 22:16）。行き先は前のまま
 
 # ---- 7 本物の記録がある時は見本を畳む
 withrec = toy.toy_page(G)
@@ -186,9 +186,10 @@ for key, r in measured.items():
     assert "go" in r, (key, "次へ進む釦が頁にある", r)
     top, bottom, height, word = r["go"]
     if key[1].startswith("/look/tenji"):
-        # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。次へ進む釦の代わりに、まずはここから の札（玩具の名前）が
-        # 最初の画面で押せる（札の上の 64px が画面の中にある）。札は縦に長い絵なので、下の端まで入るとは限らない
-        assert word not in ("えらぶ", "つくる") and height >= 64 and top + 64 <= r["vh"], (key, "まずはここから の札が最初の画面で押せる", r)
+        # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。次へ進む釦の代わりに、まずはここから の札（玩具の名前）がある。
+        # 前は札が最初の画面で押せる（札の上の 64px が画面の中）事も見ていたが、本人の決め（11-07 夜）「縦の組みに戻す」で題の間が 11-06 夜の
+        # 画面いっぱいの縦の組みに戻り、札は 1 回 下へ送ると見える所になった（1440 と 390 で札の頭が約 1040px）。札があって押せる大きさかだけを見る
+        assert word not in ("えらぶ", "つくる") and height >= 64 and top > 0, (key, "まずはここから の札が頁にあり押せる大きさ", r)
         assert r["sx"] <= r["vw"], (key, "横にはみ出さない", r)
         continue
     assert word in ("えらぶ", "つくる") and height >= 64, (key, "押せる大きさ", r)
