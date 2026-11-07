@@ -192,6 +192,10 @@ export PYTHONPATH=src
 
 依存: cairosvg（LGPL-3）、shapely（BSD-3）、drawsvg（MIT）、fontTools（MIT）、jsonschema（MIT）、anthropic（Apache-2.0）、pillow（MIT-CMU）。版は `requirements.txt`。
 
+## セキュリティ
+
+どう守っているか、まだしていない事、弱い所を見つけた時の知らせ方は [SECURITY.md](SECURITY.md) にまとめました。弱い所は公開の Issue に書かず、そこにある非公開の道で知らせてください。公開の前の点検（2026-11-07）は、コードと依存の静的解析だけで、動かしての攻撃の確かめはしていません。
+
 ## ライセンス
 
 コードと文書は [MIT](LICENSE)。NDL の図と歌は上の出典の表のとおりで、MIT の対象ではない。
