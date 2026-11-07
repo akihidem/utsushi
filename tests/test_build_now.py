@@ -30,7 +30,7 @@ os.chdir(tmp.name)
 
 from omochae import hypotheses, making_log, media_review, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
-from web import techo_site  # noqa: E402
+from web import techo_site, toy  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
@@ -88,7 +88,7 @@ assert "手帖" in get(f"/toy/{G}/techo")
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
 assert GS in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/tsukuru")
 # 他の人の作った物。写真が無くても言葉で並ぶ
-assert "他の人が作った物" in get(f"/toy/{G}")
+assert toy.MINNA_HEAD in get(f"/toy/{G}")  # 玩具の頁の見出しは「これまでの復元」（夕方のレビュー 11-07 の 6。ギャラリーの見出しは今のまま）
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "扇が引っかかった", "fix_part": "扇", "fix_change": "折り目を深くした", "fix_outcome": "少し開いた"}) == 303
 page = get(f"/toy/{G}")
 assert "工夫: 扇 / 折り目を深くした / 少し開いた" in page and "扇が引っかかった" in page
