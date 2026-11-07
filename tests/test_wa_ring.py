@@ -28,7 +28,8 @@ for label, lines in wa.LINES.items():
 for sid in (G, T, PLAIN):
     for look in ("tenji", "zine"):
         page = toy.toy_page(sid, look)
-        assert "切って、折って、組みます" in page, "「切って、折って、組む」は「すぐ作る」の頭の文の字"
+        # 「すぐ作る」の頭の文は、見出しを外した後、型紙の窓の頭へ移した（本人のサイト体験レビュー 11-07 の 3）。輪の図も窓の頭の札の前
+        assert "切って、折って、組みます" in page, "「切って、折って、組む」は型紙の窓の頭の文の字"
         assert page.count('id="wa"') == 1, (sid, look)
         at, premise = page.index('id="wa"'), page.index('id="premise"')
         assert premise < at and page.index("</p>", premise) < at < page.index('class="plates"'), "札のすぐ後"
