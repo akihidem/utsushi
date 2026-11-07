@@ -2353,3 +2353,4 @@
 - 検証ゲート: **済み**。Red: 今の main（`8aa03f8c`）に新しい試験だけを置くと、部品が無く rc 1（gate-evidence/red-ban-ayumi.txt・red-kaizen-rekishi.txt）。Green: 同じ試験がこの枝で rc 0（gate-evidence/green-ban-ayumi.txt・green-kaizen-rekishi.txt）
 - エビデンスゲート: 全体を見る試験・README と台帳・play_server と序の頁を使う試験の 127 本が rc 0。幅 390 で白と黒の皮の部品の絵を撮り、御来迎の 14 枚・虎の 7 枚の並びが開いた時に今の版から見える事を見た
 - 確かめていない事: 全部の試験（`./run.sh`）。玩具の頁に置いた形（C3 の後の PR）。iPhone の実機。サイトの機械の out/ に絵を置く事
+- 追い（11-07 13:5x、窓口の決め (a)）: 序の頁のエンジンの行 2 つ（エンジンの版 3・直し #96）に御来迎の動き方の字（「下から押し上げる」「押し上げて扇が開く」）が出ていた（検品の担当が見つけた。見張りの決まった語の外）。表の作り手が仕組みを言わない字で出し直した 13:47 の表に写し直し、試験に「押し上げ」「扇が開く」が無い事と、表の spoiler の印のきっかけを序の頁に出さない事を足した。Red: 12:29 の表のまま新しい試験を回すと「序の頁の改善の歴史に動き方の字」で rc 1（gate-evidence/red-kaizen-rekishi-motion.txt）。Green: 13:47 の表で rc 0（gate-evidence/green-kaizen-rekishi-motion.txt）。関わる 127 本が rc 0

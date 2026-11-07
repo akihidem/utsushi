@@ -5,7 +5,8 @@
 1. 序の頁の「なぜ」の後、おもちゃを選ぶ断りの段の前に、節が 1 つ（<section id="kaizen-rekishi">）。題と山場の流れは表の字
 2. 玩具ごとの型紙の版は出さない（玩具の頁の版の歩みが持つ。序の頁の「仕組みの答えと仮説の名前を書かない」決まりのため。窓口の決定 11-07 案 A）
 3. エンジンの版は全部（刷った型紙の組つき・PR つき）、エンジンそのものの直しも全部
-4. 表の作り手の言い方「制作者」「本人」は「このサイトを作った人」に替え、作る側の言葉（表の「言葉」の欄・採った案の番号）は出さない
+4. 表の作り手の言い方「制作者」「本人」は「このサイトを作った人」に替え、作る側の言葉（表の「言葉」の欄・採った案の番号）は出さない。
+   動き方の字（「押し上げ」「扇が開く」）と、表の spoiler の印のきっかけも出さない
 5. 表が読めない時は節を出さず、序の頁はほかの節だけで開く
 """
 import os
@@ -31,6 +32,12 @@ assert f"<h2>{data['title']}</h2>" in html and kaizen_rekishi._maker(data["story
 # 2. 玩具ごとの型紙の版は出さない（玩具の頁の版の歩みが持つ）。序の頁の決まり（仕組みの答えと仮説の名前を書かない）に当たる字も無い
 assert "（型紙の版）" not in html and "<b>型紙の版" not in html
 assert not [w for w in ("成功", "失敗", "正解", "仮説 A", "H-A", "つまみ", "内筒") if w in text], "序の頁の決まりの字"
+
+# 2 の続き. エンジンの行にも御来迎の動き方の字を出さない（窓口の決め (a) で表の作り手が出し直した 2 行。見張りの決まった語の外の字なので、ここで見る）
+assert "押し上げ" not in text and "扇が開く" not in text, "序の頁の改善の歴史に動き方の字"
+# 本人の言葉で仕組みを含むきっかけ（表の spoiler の印）は、動き方を見せない頁に出さない（統括の決め 11-07）
+spoilers = [w["text"] for t in data["toys"] for v in t["versions"] for w in v.get("why", []) if w.get("spoiler")]
+assert spoilers and not [w for w in spoilers if kaizen_rekishi._maker(w) in page or w in page], "spoiler の付いたきっかけが序の頁に出た"
 
 # 3. エンジンの版と、エンジンそのものの直し
 assert len(re.findall(r"<b>エンジンの版 \d+</b>", html)) == len(data["engine_versions"]) == 7
