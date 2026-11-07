@@ -7,3 +7,4 @@
 - ゴールの要件: `tests/test_nav_same.py`（帯で入口へ行く釦は 1 つ・帯に同じ所へ行く釦が 2 つ無い）・`tests/test_ux_stage1.py`・`tests/test_nav_arrow.py`・`tests/test_nav_fit.py`・`tests/test_en_all.py`
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-nav-one-door.txt`（今の main 71ea5259 に、この枝の test_nav_same を置いて回すと rc 1「帯で入口へ行く釦は 1 つ」）
 - エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-nav-one-door.txt`
+- 確かめの気づきの直し（21 時台）: 「うつし」が釦の 44px の箱を持たなくなり、幅 480 以下で帯が 122 → 105px に縮み、右上の English が 8px ほど下に見えた。題の字にも同じ 44px の箱を持たせ、幅 320・390 で帯 122px・うつし と English の真ん中の高さが同じ（38px）に戻った（ブラウザで測った）

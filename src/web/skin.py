@@ -99,9 +99,12 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 # body .links a は図鑑の .zukan a に勝つ詳細度にするため（図鑑の頁では床より後に .zukan a が来る）。
 # :where(.top) a は手帖とギャラリーの頭の字のリンク。詳細度を下げて、線なしの作りながら見る頁の .top a に勝たせる。ここは全部の頁に載るので .techo の名前を書かない（手帖の皮を外へ漏らさない決まり、#126）。
 # 一括の text-decoration は Safari が太さと色を読まないので、1 つずつ書く。色は頁ごとの変数に頼らず、リンクの字の色から作る（開いた頁の見た目の組は --accent を持たない）。
+# 帯の題の字「うつし」（span.brand）は釦でないが、釦だった時と同じ 44px の高さの箱を持たせる。帯の高さと、幅 480 以下で右上に置く English の
+# 高さのそろいを、釦だった時のまま保つため（確かめの気づき 11-07: 箱が無いと帯が 122 → 105px に縮み、English が うつし より 8px 下に見えた）
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
 .nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,.foot>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav .brand{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 label:not(.sr):has(>input[type=text]),label:not(.sr):has(>input[type=number]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 summary{list-style:none}
