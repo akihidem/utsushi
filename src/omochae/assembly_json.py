@@ -18,10 +18,13 @@
 - 絵と刷った線はサイトの部品（刷った紙と同じ物）から描き、JSON からは面の形と動きだけを取る。JSON の部品の形がサイトの部品と
   違えば（外形・穴・折り線）、3D を出さずに文と絵だけにする（tests/test_assembly_json.py が見る）。違う紙の立体を見せないため
 - 手順の文はサイトの文を使い、JSON の段とは数だけを合わせる（サイトとエンジンで字の違う手順がある）。数が違えば F13.assembly で落とす
+- 見せ方だけの値（道具の道・切れ端・重なる面のずらし）は、エンジンとの決めでサイトが決める（_fill）。JSON に書いてあればそれを使う
+
+限り: 頁（web.kumitate）は、組み立てを出せるかを紙の寸法ごとに覚える。動いているサイトに JSON を後から置いた時は、サーバを立て直す。
 """
+import copy
 import json
 import math
-import pathlib
 from dataclasses import dataclass, field
 
 from shapely.geometry import Polygon, box
@@ -91,6 +94,12 @@ class Shown:
     paper: object = None
     failures: list = field(default_factory=list)
     params: dict = field(default_factory=dict)
+    table: list = None  # 刷った紙の机の面の行列（机の座標 → 世界の座標）。頁は紙と道具をこの面に置く。None は前の組と同じ（x-y の面）
+    # 中身を分解して見せる形（本人の言葉 11-07「AI が 3D で表示して中身をそこで分解できる構造表示と、自分が作った実物がオーバーレイする。」）。
+    # split はできあがりから部品を入れた道の逆向きに離した 1 枚（POSE の形）、cutaway は内側を見る時に外す面（"部品:面"）、inside は中の部品 → 入れ物
+    split: dict = None
+    cutaway: list = field(default_factory=list)
+    inside: dict = field(default_factory=dict)
 
 
 def _plate(jp, part):
@@ -194,8 +203,152 @@ def _pose(sheets, got, owner0, rods0):
     return pose
 
 
+LIFT_GLUE = 0.3  # 貼って重なる糊代を、自分の部品の真ん中の側へずらす mm（見せる時だけ。前の組の作りの nudge と同じ大きさ）
+# 180° 近くまで折って 2 枚が重なる所のずらし。山折り（刷った面が両側の外。両面の頭）は外の皮なので大きく、谷折り（刷った面どうしが
+# 内。半分に折った首の帯）は皮の中に挟まるので小さくする（帯の 2 枚が頭の 2 枚の内に来る）
+LIFT_MOUNTAIN, LIFT_VALLEY = 0.6, -0.3
+FLAT_FOLD = 10.0  # 度。折った角が 180° からこの内なら、2 枚が重なると読む
+
+
+def table_of(doc):
+    """刷った紙の机の面の行列（机の座標 → 世界の座標）。机の座標は、紙の真ん中を 0 にした紙の座標（x 右・y 下・z は刷った面の側）。
+    JSON の paper.place が無ければ、紙の上にある部品の置き場と、その部品の紙の上の位置から出す（部品の座標 = 紙の座標 − 位置）。
+    紙の置き場が分からない JSON は None（前の組と同じく、x-y の面を机と見る）。"""
+    paper = doc.get("paper") or {}
+    if not paper.get("w"):
+        return None
+    if paper.get("place"):
+        sheet = rows_of(paper["place"])
+    else:
+        sheet = None
+        for st in doc.get("steps") or []:
+            for got in st["poses"]:
+                for key, (ax, ay) in (paper.get("at") or {}).items():
+                    mine = (got.get("parts") or {}).get(key)
+                    if got.get("on_paper") and mine and mine.get("place"):
+                        sheet = assembly.mul(rows_of(mine["place"]), assembly.translate(-ax, -ay))
+                        break
+                if sheet:
+                    break
+            if sheet:
+                break
+        if sheet is None:
+            return None
+    return assembly.mul(sheet, assembly.translate(paper["w"] / 2, paper["h"] / 2))
+
+
+def _poses(doc):
+    split = ((doc.get("structure") or {}).get("exploded"))
+    return [got for st in (doc.get("steps") or []) for got in st["poses"]] + list((doc.get("finale") or {}).get("poses") or []) + ([split] if split else [])
+
+
+def _glue_panels(plate):
+    """糊代の面（刷る糊代の多角形の中に、面の中の点がある面）。"""
+    glue = [Polygon(g).buffer(1e-3) for g in plate.part.glue]
+    return {i for i, s in enumerate(plate.panels) if any(g.contains(s.representative_point()) for g in glue)}
+
+
+def _lifts(plate, ms, turns, glue):
+    """貼って重なる面の前後のずらし（面の向きへの mm）。エンジンの JSON には無いので、形から決める（見せる時だけで、形の検査には使わない）。
+    - 糊代の面: 自分の部品の真ん中の側へ LIFT_GLUE（箱の糊代は箱の内、脚の上の糊代は脚の中、尾の糊代は尾の側。貼る相手の面の内に来る）
+    - 180° 近くまで折った 2 枚: 山折りは両方を自分の表の向きへ、谷折りは裏の向きへ（2 枚が離れる向き）"""
+    out = {}
+    pts = [assembly.apply(ms[i], q) for i, s in enumerate(plate.panels) for q in s.exterior.coords]
+    mid = tuple((min(p[k] for p in pts) + max(p[k] for p in pts)) / 2 for k in range(3))
+    for i in glue:
+        c = plate.panels[i].centroid
+        d = assembly._dot(assembly._sub(mid, assembly.apply(ms[i], (c.x, c.y))), assembly.normal_of(ms[i]))
+        if abs(d) > 0.5:
+            out[i] = LIFT_GLUE if d > 0 else -LIFT_GLUE
+    for child, (parent, k) in plate.tree.items():
+        t = turns.get(child, 0.0)
+        if abs(abs(t) - 180) > FLAT_FOLD:
+            continue
+        # 線の種類のとおりに折ったか（90° で向きを見る。180° では向きが決まらない）
+        along = (plate.turn(child, {k: 90.0}) > 0) == (t > 0)
+        mountain = (plate.lines[k][1] == "mountain") == along
+        for i in (child, parent):
+            out[i] = out.get(i, 0.0) + (LIFT_MOUNTAIN if mountain else LIFT_VALLEY)
+    return out
+
+
+def _fill(doc, sheets, parts, paper, table):
+    """エンジンの JSON に無い、見せ方だけの値をサイトの決め方で足す（型紙エンジンとの決め: tool の道・lift・attached はサイトで決める）。
+    JSON に書いてある値は替えない。どの POSE にも無い時だけ足す（前の組の書き出しは全部書くので、読み戻しが変わらない）。
+    - 切れ端（attached）: 中を切る所のある部品の切れ端は、カッターで切る POSE まで面についている
+    - 道具の道（tool.path）: はさみは紙の上の部品の外形を 1 つずつ一周する（POSE を部品の数に分ける）。カッターは寄って見る部品の
+      中を切る所を一周し、切った後の POSE を 1 つ足す。定規は刷った物差しへ外から持ってくる（前の組の _ruler_step と同じ置き場）
+    - 重なる面のずらし（lift）: _lifts"""
+    doc = copy.deepcopy(doc)
+    poses = _poses(doc)
+    by = {q.key: q for q in parts}
+    if not any("attached" in got for got in poses):
+        cut = [f"{k}:cut" for k, s in sheets.items() if s.part.cuts or rounds(s.part)]
+        done = False
+        for got in poses:
+            got["attached"] = [] if done else list(cut)
+            done = done or (got.get("tool") or {}).get("kind") == "knife"
+    if not any("lift" in mine for got in poses for mine in (got.get("parts") or {}).values()):
+        glue = {k: _glue_panels(s) for k, s in sheets.items()}
+        for got in poses:
+            for key, mine in (got.get("parts") or {}).items():
+                plate = sheets.get(key)
+                if plate is None or mine.get("custom") or "place" not in mine:
+                    continue
+                turns = _turns(plate, mine)
+                lift = _lifts(plate, _place_of(plate, mine, turns), turns, glue[key])
+                mine["lift"] = {str(i): d for i, d in lift.items() if d}
+    inv = assembly._invert_rigid(table) if table else assembly.identity()
+    w, h = (paper["page"].w, paper["page"].h) if paper else (0, 0)
+
+    def on_table(p):
+        return list(assembly.apply(inv, p)[:2])
+
+    for st in list(doc.get("steps") or []) + ([doc["finale"]] if doc.get("finale") else []):
+        out = []
+        for got in st["poses"]:
+            tool = got.get("tool")
+            if not tool or tool.get("path"):
+                out.append(got)
+                continue
+            kind = tool.get("kind")
+            if kind == "scissors" and paper:
+                keys = [k for k in (got.get("parts") or {}) if k in by and k not in (got.get("hidden") or [])]
+                for k in keys:
+                    q = by[k]
+                    path = [[q.x + x - w / 2, q.y + y - h / 2, 0.0] for x, y in q.outline]
+                    out.append({**got, "tool": {"kind": "scissors", "path": path + path[:1]}, "dur": got.get("dur") or assembly._cut_ms([p[:2] for p in path + path[:1]])})
+                out.append({**got, "tool": None})
+            elif kind == "knife":
+                k = next(iter((got.get("view") or {}).get("focus") or []), None) or next((k for k, s in sheets.items() if s.part.cuts or rounds(s.part)), None)
+                plate, mine = sheets.get(k), (got.get("parts") or {}).get(k)
+                if plate is None or mine is None:
+                    out.append({**got, "tool": None})
+                    continue
+                q = plate.part
+                rings = [assembly.round_ring(x, y, r) for x, y, r in rounds(q)] + [[(x, y), (x + cw, y), (x + cw, y + ch), (x, y + ch)] for x, y, cw, ch in q.cuts]
+                ms = _place_of(plate, mine, _turns(plate, mine))
+                path = []
+                if rings:
+                    # 穴は面から抜いてあるので、穴のある面は、面の外の輪が穴の真ん中を含む面
+                    ring = rings[0]
+                    i = next(i for i, s in enumerate(plate.panels) if Polygon(s.exterior).contains(Polygon(ring).centroid))
+                    path = [on_table(assembly.apply(ms[i], p)) + [0.0] for p in ring + ring[:1]]
+                out.append({**got, "tool": {"kind": "knife", "path": path}, "dur": got.get("dur") or 1500})
+                out.append({**got, "tool": None, "attached": []})
+            elif kind == "ruler" and paper and paper.get("ruler"):
+                rx0, ry0 = paper["ruler"]
+                at = [rx0 - w / 2 - assembly.RULER_ZERO, ry0 + 3.2 - h / 2, 0.0]
+                out.append({**got, "tool": {"kind": "ruler", "path": [[w / 2 + 8, at[1] + 30, 0.0]]}, "dur": 500})
+                out.append({**got, "tool": {"kind": "ruler", "path": [at]}, "dur": got.get("dur") or 1400})
+            else:
+                out.append({**got, "tool": None})
+        st["poses"] = out
+    return doc
+
+
 def bench_of(doc, parts, words, paper=None):
-    """JSON（doc）とサイトの部品（parts）から、頁が読む組み立てを作る。words はサイトの手順の文。"""
+    """JSON（doc）とサイトの部品（parts）から、頁が読む組み立てを作る。words はサイトの手順の文。paper はサイトの刷った紙の配置。"""
     by = {q.key: q for q in parts}
     shown = Shown({}, [], paper, params=dict(doc.get("params") or {}))
     for jp in doc["parts"]:
@@ -208,6 +361,8 @@ def bench_of(doc, parts, words, paper=None):
         shown.sheets["clay"] = _ball(len(parts) + 1, float(ball["r"]), ball.get("color") or CLAY)
     owner0 = next(iter(shown.sheets), "")
     rods0 = doc.get("rods") or {}
+    shown.table = table_of(doc)
+    doc = _fill(doc, shown.sheets, parts, paper, shown.table)
     steps = doc.get("steps") or []
     for n, st in enumerate(steps, 1):
         poses = [_pose(shown.sheets, got, owner0, rods0) for got in st["poses"]]
@@ -219,13 +374,18 @@ def bench_of(doc, parts, words, paper=None):
         last = poses[-1]
         shown.frames.append({"step": len(steps) + 1, "text": "", "poses": poses, "panels": last["panels"], "view": last["view"],
                              "extras": last["extras"], "state": last["state"]})
+    structure = doc.get("structure") or {}
+    if structure.get("exploded"):
+        shown.split = _pose(shown.sheets, structure["exploded"], owner0, rods0)
+    shown.cutaway = [f"{k}:{i}" for k, ids in (structure.get("cutaway") or {}).items() if k in shown.sheets for i in ids]
+    shown.inside = dict(structure.get("inside") or {})
     if len(steps) != len(words):
         shown.failures.append(Failure("F13.assembly", "手順", f"JSON の段が {len(steps)} で、手順の文 {len(words)} と 1 対 1 に並ばない"))
     return shown
 
 
-def same_parts(doc, parts, tol=0.05):
-    """JSON の部品の形が、サイトの部品（刷る紙）と同じか。Returns 違う所の一覧（空なら同じ）。外形・穴・丸い穴・折り線を見る。
+def part_gaps(doc, parts, tol=0.05):
+    """JSON の部品の形と、サイトの部品（刷る紙）の違う所。Returns 違う所の一覧（空なら同じ）。外形・穴・丸い穴・折り線を見る。
     面の形は、面を合わせた広さが外形と同じか（中の穴を除く）と、折り線が刷る線と同じかで見る（面の分け方はエンジンに任せる）。"""
     by = {q.key: q for q in parts}
     out = []

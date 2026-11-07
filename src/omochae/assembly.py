@@ -26,6 +26,7 @@ from . import hypotheses, instructions
 from .compose import TEMPLATES, compose
 from .model import Failure, Part, ToolMissing
 from .fan_model import clearance_limit_deg, opening_bound_deg
+from .templates import pivot_counterweight
 from .templates.pivot_counterweight import NECK_BACK
 
 ROOT = pathlib.Path(hypotheses.__file__).resolve().parents[2]
@@ -765,6 +766,11 @@ def _pivot_counterweight(p, parts, paper=None):
     """張子の首振り虎（pivot_counterweight）の組み立て。手順の文の順に、紙が実際に動く形を並べる。首を穴に入れる形だけ書いた。Returns Bench か None。"""
     if p["mount"] != "neck":
         return None
+    # 虎の次の組（tora-v6 から）は 3D で組まない。この組み立ては前の組の胴（四角い首の穴・角のある箱・丸めた尾・片面の頭）の形で書いてあり、
+    # v6 の丸い穴・角を落とした胴・立体の脚・両面の頭・上の面に立てる尾を組めない。組み立ての頁は文と絵だけを出す（御来迎の次の組と同じ扱い）。
+    # 型紙エンジンには v6 を 3D で折る確かめ（fold3d）があるが、サイトの組み立ての頁に写すのは別の仕事
+    if pivot_counterweight.set_no() >= pivot_counterweight.V6:
+        return None
     by_key = {q.key: q for q in parts}
     body = by_key["body"]
     L, W, H, g = p["body_length"], p["body_width"], p["body_height"], p["glue"]
@@ -1014,7 +1020,7 @@ def _from_engine(template, tpl, p, source_id):
         return None
     paper = _paper(template, p, source_id)
     parts = paper["parts"] if paper else tpl.parts(p)
-    if assembly_json.same_parts(doc, parts):
+    if assembly_json.part_gaps(doc, parts):
         return None
     return assembly_json.bench_of(doc, parts, instructions.steps(p, template), paper)
 

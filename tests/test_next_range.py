@@ -169,7 +169,8 @@ fixed = set()
 for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     sid, hid = path.stem, hypotheses.sheet_of(path.stem)["id"]
     fixed |= {(sid, k) for k in ALLOWED[hypotheses.load(sid).get("template", "slider_fan")] - set(loop.movable_params(sid, hid))}
-assert fixed == {("NDL-1187053-R0000021-L-2", "cone_pieces"), ("NDL-1187053-R0000029-R-2", "cone_pieces")}, sorted(fixed)
+# 虎の今の組（tora-v7）は当たりを検査で見る（fit_check 1）ので、重りの後ろへのずれ（weight_behind）は 0 のまま動かせない（エンジンと同じ決まり）
+assert fixed == {("NDL-1187053-R0000021-L-2", "cone_pieces"), ("NDL-1187053-R0000029-R-2", "cone_pieces"), ("NDL-1187053-R0000014-R", "weight_behind")}, sorted(fixed)
 
 server.shutdown()
 print("ok 次の版の欄には、今の版で 1 つ変えて通る寸法だけが出る")
