@@ -10,6 +10,7 @@
 3. 値の数の印（{0}{1}…）は鍵と同じ
 4. 値が "=" の物は、英語の表でも "=" の物（人の記録・感想は替えない）
 5. 玩具の名（仮説の記録の toy）がそのまま鍵の物は、ルビを外すと一字も同じ（玩具の名は替えない・ルビだけ）
+6. 入口の縦の題字と副題の 3 行は、字を足さず言い換えず、ルビだけ（本人の言葉 11-07 夜「これ、良かった」。最後まで崩さない決め）
 """
 import json
 import pathlib
@@ -57,4 +58,8 @@ for f in (ROOT / "data/hypotheses").glob("*.json"):
         names.add(toy)
 renamed = [k for k in strings if k in names and strings[k] != "=" and RUBY.sub(lambda m: m.group(1), strings[k]) != k]
 assert names and not renamed, renamed
-print(f"ok やさしい日本語の表の分け 1（{len(strings)} 鍵・漢字は全部ルビ・読みはひらがな・数の印・= の扱い・玩具の名は替えない）")
+# 6. 入口の題字と副題の 3 行は、ルビを外すと鍵と一字も同じ
+TITLE = ("江都二色より", "うしなわれた玩具の動きを", "紙で実験して確かめる")
+changed = [k for k in TITLE if k not in strings or RUBY.sub(lambda m: m.group(1), strings[k]) != k]
+assert not changed, ("入口の題字と副題は、ルビだけを振る（字を足さない・言い換えない）", changed)
+print(f"ok やさしい日本語の表の分け 1（{len(strings)} 鍵・漢字は全部ルビ・読みはひらがな・数の印・= の扱い・玩具の名と入口の題字は替えない）")
