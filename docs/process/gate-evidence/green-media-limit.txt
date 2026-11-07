@@ -1,0 +1,5 @@
+# 命令: .venv/bin/python tests/test_media_limit.py
+# commit: 417a0239（回した時の HEAD）
+/tmp/tmpcawbf34f/play/NDL-1187053-R0000005-L/.tmp-df5n2fsm/H-C_v1.pdf
+ok: 写真と動画の口は、写した動画の大きさと、同じ相手からの数に上限がある
+rc=0
