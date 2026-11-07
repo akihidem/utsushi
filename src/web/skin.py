@@ -250,8 +250,9 @@ def nav(skin, current="", path="/", lang="ja"):
     cur = lambda name: ' aria-current="page"' if name == station else ""  # noqa: E731
     item = lambda name: (f'<a href="{to[name]}"{cur(name)}>{esc(name)}</a>' if to[name]  # noqa: E731
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
-    # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない
-    items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="/en" lang="en">English</a>'
+    # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない。
+    # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）。前は英語の入口 /en へ飛んだ。英語の頁では web.i18n が「日本語」へ戻る口に替える
+    items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="?lang=en" lang="en">English</a>'
     # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
     # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
     brand = ""
