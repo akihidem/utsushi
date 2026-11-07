@@ -1,0 +1,15 @@
+{
+  "template": "lever_link",
+  "source_id": "NDL-1187053-R0000023-R-lever_link",
+  "params": {
+    "kind": "hashigo",
+    "travel": 30
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.link"
+    ]
+  }
+}

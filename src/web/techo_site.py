@@ -292,6 +292,16 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .samples{display:grid;gap:10px;margin:0}
 .gallery .is-sample{border:1px dashed var(--frame);padding:10px}
 .gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
+.gallery .day{font-size:17px;letter-spacing:.1em;margin:4px 0 0}
+.gallery .sakurei-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.gallery .sakurei-row figure{margin:0;display:grid;gap:6px;align-content:start}
+.gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .sakurei-row figcaption{font-size:14px}
+.gallery .sakurei-row .ban{white-space:nowrap;margin-left:.6em}
+.gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .sakurei-report{margin:0;padding-left:1.2em;display:grid;gap:4px}.gallery .sakurei-report .meta{display:block}
+.gallery .sakurei-kufu figure{margin:0;display:grid;gap:6px;max-width:360px}
 """
 
 
@@ -337,6 +347,90 @@ def own_item(sid, data, r):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
+# ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案から）。
+# 1 行は決めた字から「日の順に並べます。」だけを外した（本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない」で、札を玩具ごとにしたため）
+SAKUREI_TITLE = "ワークショップで作られた物"
+SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。上下はありません。"
+# 報告の顔の写真（web.sakurei.faces）の札。本人の言葉のまま（窓口を通して 11-07「札は本人の言葉『4 日間のワークショップで作ったおもちゃたち』のままで」）
+SAKUREI_FACES = "4 日間のワークショップで作ったおもちゃたち"
+# 参加者の工夫の事例（web.sakurei.cases("kufu")）。題も文も本人の言葉から取り、言い換えない（統括 11-07「字は本人の説明のまま（本人の言葉として引用）」）。
+# この工夫が型紙の次の版に入ったとは書かない（記録に無い。UX の担当の設計の「言わない事」）
+SAKUREI_KUFU = "参加者の型紙の改善例"
+SAKUREI_KUFU_WORDS = "参加者の型紙の改善例その1。手前が型紙通り。しかし、奥の工作のように、からくりがあると推測した参加者が蓋の開閉でネズミが箱の中に仕舞われるようにした。"
+# 報告の段の道の字（UX の担当の案・窓口の確かめ待ち）。回の一覧が main に無い間は段ごと出ないので、この字も出ない
+SAKUREI_REPORT_GO = "ワークショップの様子と、改善の輪"
+
+
+def _ban(sheet_set):
+    """作例の札の型紙の版（刷った組の番号。例 goraigo-v10 は 10）。組の分かる作例だけ。分からない時は空（推して書かない）。
+    字は「型紙の版」と数だけ（型紙の版は組の番号で言いそろえる決め 11-07。玩具の頁の型紙の札の脇に出す #513 と同じ形）。"""
+    m = re.fullmatch(r"[a-z_]+-v(\d+)", sheet_set or "")
+    # 名との間は全角の空白の字でなく余白で空ける（空白だけの字の塊は、英語の頁の訳の表で引けない日本語として残るため）
+    return f' <span class="ban">型紙の版 {int(m.group(1))}</span>' if m else ""
+
+
+def _report():
+    """ワークショップの報告の段（4 回の 1 行ずつと、審査用の頁への道）。字の元は審査用の頁の回の一覧（web.kaizen_ws.workshops()）1 か所で、
+    同じ物を読む（UX の担当の設計「字の元を 1 つにする」）。その口が無い・読めない時は空（段を出さない。回の一覧は #518 の作り直しで main に入る）。"""
+    try:
+        from . import kaizen_ws
+
+        rows = kaizen_ws.workshops()
+    except (ImportError, AttributeError, OSError, ValueError, TypeError):
+        return ""
+    lines = "".join(f'<li>{esc(str(w.get("date", "")))}　{esc(str(w.get("did", "")))}'
+                    + (f'<span class="meta">{esc(str(w["line"]))}</span>' if w.get("line") else "") + "</li>"
+                    for w in rows if isinstance(w, dict) and w.get("date") and w.get("did"))
+    if not lines:
+        return ""
+    return f'<ul class="sakurei-report">{lines}</ul><p class="meta"><a href="/kaizen#ws">{esc(SAKUREI_REPORT_GO)}</a></p>'
+
+
+def sakurei_section(sids, photos=True):
+    """ワークショップで作られた物（作例）の節。持ち寄る駅（/gallery）の頭、「他の人が作った物」の上に置く（地図の工程 5）。
+
+    判断の芯:
+    - 並び（UX の担当の設計 11-07・state の workshop-link）: 題と 1 行 → 報告の顔の写真（sakurei.faces）と札 → 報告の 4 回の段（回の一覧がある時だけ）
+      → 参加者の型紙の改善例（sakurei.cases("kufu")・本人の言葉の引用）→ 玩具ごとの作例の札。
+    - 札は玩具ごと（日ごとにしない。本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない」。写真の撮影の日は作った日と限らない）。
+      玩具の並びは頁の玩具の並び（sids の順）、同じ玩具の中は記録の順。83 の外の玩具（猫と鼠の箱など）は後ろに、棚卸しの名で、道を付けずに置く
+      （窓口の決め 11-07 144403）。上下は付けない（J-025）。
+    - 出すのは人が「物だけ」と確かめた写真だけ（examples・faces・cases が確かめた物だけを返す）。どれも無い時は節ごと出さない（写真が来る前の形）。
+    - 札は 1 つの記録に 1 枚: 写真の小さい写し（/small。元の写真を並べて読まない）と玩具の名（玩具の頁へ行く。他の人が作った物の札と同じ）と、
+      刷った組が分かる時だけ型紙の版（_ban）。作った人の名と感想は記録に持たない。記録の番号は字にしない。
+    - 合言葉なしで開いた場も同じ物を出す（人が確かめた写真は開いた場のギャラリーにも出す、本人の決定 11-06）。
+      photos=False（写真を出さない前の開いた場の形）は出さない。"""
+    if not photos:
+        return ""
+    from omochae import records
+
+    from . import sakurei  # sakurei は techo_site を読むので、ここで読む
+
+    order = {sid: i for i, sid in enumerate(sids)}
+    shown = [e for e in sakurei.examples() if e["sid"] in order or records.outside_toy(e["sid"])]
+    faces, kufu = sakurei.faces(), sakurei.cases("kufu")
+    if not (shown or faces or kufu):
+        return ""
+    img = lambda url, alt="作った物の写真": f'<img src="{esc(url)}" alt="{esc(alt)}" loading="lazy" decoding="async">'  # noqa: E731
+    head = (f'<figure class="sakurei-faces"><div>{"".join(img(u, SAKUREI_FACES) for u in faces)}</div>'
+            f'<figcaption>{esc(SAKUREI_FACES)}</figcaption></figure>') if faces else ""
+    case = (f'<div class="sakurei-kufu"><h3 class="day">{esc(SAKUREI_KUFU)}</h3><figure>{"".join(img(c["url"]) for c in kufu)}'
+            f'<figcaption>「{esc(SAKUREI_KUFU_WORDS)}」</figcaption></figure></div>') if kufu else ""
+    names = {sid: sakurei.toy_name(sid) for sid in {e["sid"] for e in shown}}
+
+    def name(sid):
+        return f'<a href="/toy/{esc(sid)}">{esc(names[sid])}</a>' if sid in order else esc(names[sid])  # 83 の外の玩具は玩具の頁が無い
+
+    cards = "".join(
+        '<figure>'  # 他の人が作った物の札（.item）の上の線は付けない: 写真の板が並ぶだけの所で、線が写真ごとに切れて見えるため
+        + "".join(img(f"/record/{e['rid']}/media/{f}/small") for f in e["photos"])
+        + f'<figcaption>{name(e["sid"])}{_ban(e["set"])}</figcaption></figure>'
+        for e in sorted(shown, key=lambda e: (order.get(e["sid"], len(order)), e["sid"], e["rid"])))
+    return (f'<section class="panel" id="sakurei"><h2 class="mark">{esc(SAKUREI_TITLE)}</h2>'
+            f'<p class="meta">{esc(SAKUREI_LEAD)}</p>{head}{_report()}{case}'
+            + (f'<div class="sakurei-row">{cards}</div>' if cards else "") + '</section>')
+
+
 # 合言葉なしの場で上げた直後の返事に続ける 1 行（窓口の決定 11-06 夜・案 A。字はその決定の字のまま）。上げた物は、確かめる前は上げた画面にだけ出て
 # ギャラリーには出ないので、並ばない理由を上げた時に言う。合言葉付きの場も同じ線だが、決定は合言葉なしの場の分なので、そこだけに出す
 PUBLIC_UPLOADED = "写真は、人が確かめてから、みんなの所に出ます。"
@@ -358,13 +452,15 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 own = own_item(sid, data, r)
                 continue
             cards += made_item(sid, data, r, photos, public)
-    real = bool(cards or own)
+    sak = sakurei_section(sids, photos)
+    # ワークショップで作られた物も本物の作った物なので、それだけがある時も見本を畳む（本物を先に、見本は畳む。地図の工程 5）
+    real = bool(cards or own or sak)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
-    # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）。
+    # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
-    if not cards and not own:
+    if not cards and not own and not sak:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
@@ -377,6 +473,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     return ('<div class="gallery"><div class="top"><h1>作った物</h1><a href="/">入口へ</a></div>'
             '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
+            f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'

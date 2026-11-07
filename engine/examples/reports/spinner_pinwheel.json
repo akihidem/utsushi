@@ -1,0 +1,24 @@
+{
+ "template": "spinner",
+ "form": "pinwheel",
+ "source_id": "NDL-1187053-R0000014-L-spinner",
+ "built": true,
+ "moved": "partly",
+ "finish": 3,
+ "motion_notes": "息を吹くと回るが、扇風機の弱では止まる",
+ "finish_notes": "羽の角を軸へ寄せる所がよれた",
+ "problems": [
+  {
+   "kind": "fit",
+   "step": 4,
+   "note": "柄と羽の間が狭く、羽が柄に擦れた"
+  },
+  {
+   "kind": "mark",
+   "step": 3,
+   "note": "寄せる角の橙が薄くて見えにくい"
+  }
+ ],
+ "reported_at": "2026-11-05T09:00:00+09:00",
+ "reviewed_at": "2026-11-05T09:00:00+09:00"
+}

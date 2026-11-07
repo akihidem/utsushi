@@ -9,6 +9,8 @@
   もう英語なので、表は触らない（表は日本語の字だけを引く）。
 - 表の鍵は字の空白を 1 つにそろえ、数を {0}{1}… に置いた形（「版 14（直し 2）」も「版 7」も 1 つの鍵で引く）。値は英語。
   値が "=" の字は訳さずに日本語のまま出す（lang="ja" を付ける）。本人の言葉の引用は原文を残して英訳を添えた値にする（UX の担当の推し）。
+  ただし文の中の引用（「本人の所見「…」」のように、字の一部だけが引用の物）は英訳だけにする。原文＋英訳は、字の全部が引用の独立した引用だけ
+  （窓口の決め 11-07 夜・英語の引用 (a)。本人が 17:50 に決めたとおり）。
 - 頁の字は、機械の置き場の有る無し（原画の写し out/sources・隣のエンジンの repo）で替わる所がある（「図は手元に無い」など）。表には両方の字を入れる。
   足す時は、手元の木と、まっさらな clone（out/ もエンジンの repo も無い木）の両方で collect を回す（審査する人は repo だけを clone して回す）。
 - 人が書いた記録・感想・寄せられた声は訳さない（機械で訳した他人の言葉を出さない。窓口への推し (2)）。表に無い字は日本語のまま出る。
@@ -18,15 +20,33 @@
 - 台本（<script>）と CSS の中の字は替えない（台本の字を置き換えると動きを壊しうる）。台本が後から出す字は日本語のまま（残りの課題）。
 - 型紙の PDF は日本語のまま（凍結の床を替えない。web/en.py の JA_ONLY と同じ断り）。
 - 訳は作る側（Claude）の下書きで、英語を母語とする人に読んでもらうまで、英語の頁の頭に en.DRAFT の札を出す（本人が採った字、#318）。
+
+やさしい日本語（3 つ目の言葉・lang=easy。本人の言葉 11-07 夜「サイト、言語でやさしい日本語選べるように。このモードはルビつけてやさしい日本語に
+全体の文が変換されるモード」「まだひつようなところは実装しよう」。設計は grove の state/yasashii-mode-20261107.md・UX の担当）:
+- 同じ出口の置き換えで、表を data/i18n/yasashii.json に替える（鍵の形は英語と同じ）。値は ｜漢字《よみ》 の形でルビを書き、出口で <ruby> にする
+  （実行の時に形態素解析をしない。読みの誤りを表の中で直せるように）。属性（alt など）にはルビを入れられないので、ルビの印を外した字にする
+- 表に無い鍵は元の日本語のまま出す（英語と違い、全部がそろわなくても頁は壊れない。表の中身は 3 つの窓が分けて書く・state/yasashii-keys/）
+- 頁は日本語なので html の lang="ja" は替えない。替えない所の印は translate="no" だけ（英語の時の lang="ja" は、日本語の頁では頁の全体に付くため）
+- 頁の頭に「このページのやさしい日本語は、下書きです。」の札を 1 つ（英語の Draft の札と同じ所・同じ見た目）。本人の言葉の引用と人の記録は書き直さず、表でルビだけを振る
 """
 import html
 import json
+import pathlib
 import re
 from functools import lru_cache
 
 from omochae.hypotheses import ROOT
 
 TABLE = ROOT / "data/i18n/en.json"
+TABLES = {"en": TABLE, "easy": ROOT / "data/i18n/yasashii.json"}
+# やさしい日本語の表は 3 つの窓が並べて書くので、窓ごとの置き場（yasashii.d/<分け>.json・同じ {"note", "strings"} の形）も読んで重ねる。
+# 1 つのファイルを 3 つの PR が書き足すと、1 本入るたびに残りが衝突するため（関門の帳面の gate-trial.d と同じ考え）
+EXTRA = {"easy": ROOT / "data/i18n/yasashii.d"}
+# 頁の頭の断り（UX の担当の知らせ 11-07 夜・本人の言葉「ひとがたしかめてないは書かなくて良い」）。英語の Draft の札と同じ所・同じ見た目
+EASY_NOTE = "このページのやさしい｜日本語《にほんご》は、｜下書《したが》きです。"
+RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
+MAIN_OPEN = re.compile(r"<main\b[^>]*>")
+PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語のルビは印を外した字で入れる）
 KEEP = "="           # 訳さずに日本語のまま出す印
 CJK = re.compile(r"[぀-ヿ㐀-鿿＀-￯　-〿]")
 NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -37,6 +57,8 @@ VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "met
         "line", "polyline", "polygon", "ellipse", "use", "stop"}
 RAW = {"script", "style", "textarea"}  # 中の字を替えない（台本・CSS・人が書く欄）
 NO = re.compile(r'\stranslate="no"|\slang="ja"')
+NO_EASY = re.compile(r'\stranslate="no"')
+EASY_LINK = '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい</a>'  # 頭の帯の やさしい の切り替え（web.skin.nav）
 
 
 def key_of(text):
@@ -50,21 +72,39 @@ def key_of(text):
     return NUM.sub(put, " ".join(text.split())), nums
 
 
-@lru_cache(maxsize=1)
-def _table(mtime=None):
-    if not TABLE.exists():
+@lru_cache(maxsize=4)
+def _table(path=None, mtime=None):
+    path = pathlib.Path(path) if path else TABLE
+    if not path.exists():
         return {}
-    return json.loads(TABLE.read_text(encoding="utf-8")).get("strings", {})
+    return json.loads(path.read_text(encoding="utf-8")).get("strings", {})
 
 
-def table():
-    return _table(TABLE.stat().st_mtime if TABLE.exists() else None)
+def table(lang="en"):
+    path = TABLES[lang]
+    out = _table(str(path), path.stat().st_mtime if path.exists() else None)
+    extra = EXTRA.get(lang)
+    if extra is not None and extra.is_dir():
+        out = dict(out)
+        for f in sorted(extra.glob("*.json")):
+            out.update(_table(str(f), f.stat().st_mtime))
+    return out
 
 
-def lookup(text):
-    """日本語の字 1 つの英語。表に無ければ None。KEEP は KEEP のまま返す。"""
+def ruby_html(escaped):
+    """字の節の値（html.escape 済み）の ｜漢字《よみ》 を <ruby>漢字<rt>よみ</rt></ruby> にする。"""
+    return RUBY.sub(r"<ruby>\1<rt>\2</rt></ruby>", escaped)
+
+
+def ruby_plain(text):
+    """属性に入れる字。ルビの印を外して漢字だけにする（属性に要素は入らない）。"""
+    return RUBY.sub(r"\1", text)
+
+
+def lookup(text, lang="en"):
+    """日本語の字 1 つの訳（英語か、やさしい日本語）。表に無ければ None。KEEP は KEEP のまま返す。"""
     k, nums = key_of(text)
-    en = table().get(k)
+    en = table(lang).get(k)
     if en is None or en == KEEP:
         return en
     try:
@@ -73,27 +113,32 @@ def lookup(text):
         return None
 
 
-def _swap_text(raw, miss):
+def _swap_text(raw, miss, lang="en", plain=False):
     text = html.unescape(raw)
     if not CJK.search(text):
         return raw
-    en = lookup(text)
+    en = lookup(text, lang)
     if en is None:
         miss.append(" ".join(text.split()))
         return raw
     lead = raw[: len(raw) - len(raw.lstrip())]
     tail = raw[len(raw.rstrip()):]
     if en == KEEP:
-        return f'{lead}<span lang="ja">{raw.strip()}</span>{tail}'
+        return f'{lead}<span lang="ja">{raw.strip()}</span>{tail}' if lang == "en" else raw
+    if lang == "easy":
+        # 要素を入れられない所（<title>・<option>）では、属性と同じくルビの印を外した字にする（タブの題に <ruby> が字のまま出たため・別の窓の指摘）
+        return lead + (html.escape(ruby_plain(en), quote=False) if plain else ruby_html(html.escape(en, quote=False))) + tail
     return lead + html.escape(en, quote=False) + tail
 
 
-def _swap_attrs(tag, miss):
+def _swap_attrs(tag, miss, lang="en"):
     def one(m):
         text = html.unescape(m.group(2))
         if not CJK.search(text):
             return m.group(0)
-        en = lookup(text)
+        en = lookup(text, lang)
+        if en is not None and en != KEEP and lang == "easy":
+            en = ruby_plain(en)
         if en is None:
             miss.append(" ".join(text.split()))
             return m.group(0)
@@ -102,10 +147,11 @@ def _swap_attrs(tag, miss):
     return ATTR.sub(one, tag)
 
 
-def to_en(page, miss=None):
-    """日本語の頁の HTML を英語にする。miss に表に無かった字を足す（試験と collect が使う）。
-    translate="no" か lang="ja" の付いた要素の中と、script・style・textarea の中は替えない。"""
+def to_en(page, miss=None, lang="en"):
+    """日本語の頁の HTML を英語（lang="easy" ならやさしい日本語）にする。miss に表に無かった字を足す（試験と collect が使う）。
+    translate="no" か lang="ja" の付いた要素の中と、script・style・textarea の中は替えない（やさしい日本語では translate="no" だけ）。"""
     miss = [] if miss is None else miss
+    frozen_mark = NO if lang == "en" else NO_EASY
     out, stack = [], []   # stack: (要素の名, この要素から下を替えないか)
     for m in TOKEN.finditer(page):
         tok = m.group(0)
@@ -127,14 +173,15 @@ def to_en(page, miss=None):
                 out.append(tok)
                 continue
             if name == "html":
-                tok = re.sub(r'\slang="ja"', ' lang="en"', tok, count=1)
+                if lang == "en":
+                    tok = re.sub(r'\slang="ja"', ' lang="en"', tok, count=1)
             elif not frozen:
-                tok = _swap_attrs(tok, miss)
+                tok = _swap_attrs(tok, miss, lang)
             if name not in VOID and not tok.rstrip().endswith("/>"):
-                stack.append((name, name in RAW or bool(NO.search(tok))))
+                stack.append((name, name in RAW or (name != "html" and bool(frozen_mark.search(tok)))))
             out.append(tok)
             continue
-        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss))
+        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY))
     return "".join(out)
 
 
@@ -144,11 +191,25 @@ def draft_note():
     return f'<p class="en-draft" lang="en" style="margin:0;padding:6px 12px;font-size:12px;letter-spacing:.04em;color:var(--mute,#6b6358)">{html.escape(DRAFT)}</p>'
 
 
+def _after_main(page, note):
+    """下書きの札を、頁の本体（<main …>）の頭に 1 つ置く。作りながら見る頁と手帖は <main class="…"> なので、属性つきの main も受ける。"""
+    return MAIN_OPEN.sub(lambda m: m.group(0) + note, page, count=1)
+
+
+def page_easy(page, miss=None):
+    """頁をやさしい日本語にし（表に無い字は元のまま）、頭の帯の後に下書きの札を 1 つ置く。やさしい の切り替えは日本語へ戻る口にする。"""
+    page = to_en(page, miss, lang="easy")
+    page = page.replace(EASY_LINK, '<a class="nav-lang nav-easy" href="?lang=ja" lang="ja">日本語</a>')
+    # 字は 14px（英語の札は 12px）。ルビは字の半分ほどになり、12px だと 6px で読みにくい（UX の担当の気づき・設計の「小さい札は下限を上げる」）
+    note = f'<p class="easy-draft" style="margin:0;padding:6px 12px;font-size:14px;letter-spacing:.04em;color:var(--mute,#6b6358)">{ruby_html(html.escape(EASY_NOTE))}</p>'
+    return _after_main(page, note)
+
+
 def page_en(page, miss=None):
     """頁を英語にし、頭の帯の後に下書きの札を 1 つ置く。言語の切り替えは日本語へ戻る口にする。"""
     page = to_en(page, miss)
     page = page.replace('<a class="nav-lang" href="?lang=en" lang="en">English</a>', '<a class="nav-lang" href="?lang=ja" lang="ja">日本語</a>')
-    return page.replace("<main>", "<main>" + draft_note(), 1)
+    return _after_main(page, draft_note())
 
 
 def routes(sids):

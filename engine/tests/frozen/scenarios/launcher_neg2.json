@@ -1,0 +1,19 @@
+{
+  "template": "launcher",
+  "source_id": "NDL-1187053-R0000029-L-launcher",
+  "params": {
+    "form": "bow",
+    "ball_d": 14
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.launch"
+    ],
+    "lines": [
+      "F5.launch [玉] 玉 #mm が物差しの穴（#・#mm）に合わない（#〜#mm）",
+      "F5.launch [玉] 玉の先の太さ #mm が #mm より細い"
+    ]
+  }
+}

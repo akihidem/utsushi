@@ -1,0 +1,20 @@
+{
+  "template": "pivot_counterweight",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {
+    "mount": "hang",
+    "axle_height": 50,
+    "ear_length": 7
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pivot"
+    ],
+    "lines": [
+      "F5.pivot [耳] 耳が短く、穴の前後に #mm 取れない",
+      "F5.pivot [頭] 頭が胴に当たるまで #° 揺れない"
+    ]
+  }
+}

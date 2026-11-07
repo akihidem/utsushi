@@ -1,0 +1,18 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000023-L-stand_figure",
+  "params": {
+    "figure": "hagoita",
+    "stand": "base",
+    "base_height": 12,
+    "paper_thickness": 0.25,
+    "base_glue": 12
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.stand"
+    ]
+  }
+}
