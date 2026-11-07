@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_nokosu_what.py
+# commit: f46a5c2a（main）の木に tests/test_nokosu_what.py だけを置き、naoru.py と techo_step.py は main の物のまま（git の外の写し）
+Traceback (most recent call last):
+  File "tests/test_nokosu_what.py", line 39, in <module>
+    assert naoru.WHAT.strip() and naoru.KEEP_HINT.strip()
+           ^^^^^^^^^^
+AttributeError: module 'web.naoru' has no attribute 'WHAT'
+rc=1

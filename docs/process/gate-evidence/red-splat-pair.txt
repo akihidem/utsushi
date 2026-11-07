@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_splat_pair.py
+# commit: 62dd1119（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_splat_pair.py", line 28, in <module>
+    from web import kumitate, splat_pair as sp  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'splat_pair' from 'web' (src/web/__init__.py)
+rc=1

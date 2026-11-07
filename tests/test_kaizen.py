@@ -59,7 +59,10 @@ def post(path, data):
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 page = get(f"/toy/{G}")[1]
 # 報告の欄に感想がある。輪の節は、報告が無い時もその旨を出す
-assert 'name="impression"' in page and 'id="kaizen"' in page and "報告はまだありません" in page
+# 玩具の頁には記録の欄が無く、のこす（記録の頁）への道が 1 本（本人の答え 11-07 夕の Q3 で、玩具の頁の記録の欄は のこす へ寄せた。受け口は残る）
+assert 'name="impression"' not in page and f'href="/toy/{G}/techo/kiroku"' in page and 'id="kaizen"' not in page
+# 輪の節は作る側の様子の頁にある（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
+assert 'id="kaizen"' in get(f"/loop/{G}")[1] and "報告はまだありません" in get(f"/loop/{G}")[1]
 # 感想にも連絡先の形は残さない
 code, body = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "電話は 090-1234-5678 です"})
 assert code == 422, code
@@ -69,18 +72,19 @@ rec = json.loads((pathlib.Path(DATA) / "records/R-0001.json").read_text(encoding
 assert rec["impression"] == "折るのは楽しかったが、扇が半分で止まった" and rec["sheet_version"] == 1
 page = get(f"/toy/{G}")[1]
 assert "感想: 折るのは楽しかったが、扇が半分で止まった" in page and 'id="R-0001"' in page
-# 説明の前は「説明を待つ報告」。説明の後は「次の版を待つ報告」
-assert "説明を待つ報告 1 件" in page and "次の版を待つ報告" not in page
+# 説明の前は「説明を待つ報告」。説明の後は「次の版を待つ報告」（輪の節は作る側の様子の頁。本人の答え Q5）
+loop_page = get(f"/loop/{G}")[1]
+assert "説明を待つ報告 1 件" in loop_page and "次の版を待つ報告" not in loop_page
+assert f'href="/toy/{G}#R-0001"' in loop_page, "待つ報告から、玩具の頁の記録の札へ行ける"
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る力が足りない", "next_idea": "折りを減らす", "by": "作った人"})[0] in (200, 303)
-page = get(f"/toy/{G}")[1]
-assert "次の版を待つ報告 1 件" in page and "報告から直した版はまだありません" in page
+loop_page = get(f"/loop/{G}")[1]
+assert "次の版を待つ報告 1 件" in loop_page and "報告から直した版はまだありません" in loop_page
 # 輪を回す: 寸法を 1 つ変えて次の版
 code, body = post("/record/R-0001/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "サイトの係"})
 assert code in (200, 303), body[:300]
-page = get(f"/toy/{G}")[1]
-kz = page.split('id="kaizen"')[1]
+kz = get(f"/loop/{G}")[1].split('id="kaizen"')[1]  # 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
 assert f"{GL} 版 2" in kz and "折りの数" in kz and "R-0001" in kz and "次の版を待つ報告" not in kz
-assert "サイトの係" not in kz, "採った人の名前は学ぶ人の頁に出さない（自由な文で、名前を書かない線）"
+assert "サイトの係" not in kz, "採った人の名前は出さない（自由な文で、名前を書かない線）"
 # 次に作る人: 刷ると直した版（版 2）が出る。窓も最新の版
 out = pathlib.Path(DATA) / "play" / G
 (out / f"{GS}_v2.pdf").unlink()
@@ -94,10 +98,10 @@ assert f'<img src="/sheet/{G}/{GS}_v2.png"' in page and f"<b>{hypotheses.label_o
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "前より開いた"})[0] == 303
 assert json.loads((pathlib.Path(DATA) / "records/R-0002.json").read_text(encoding="utf-8"))["sheet_version"] == 2
 assert post(f"/toy/{G}/step", {"hypothesis": GS, "step": "2", "event": "stuck"})[0] == 303
-section = get(f"/toy/{G}")[1].split('id="kaizen"')[1].split("</section>")[0]
+section = get(f"/loop/{G}")[1].split('id="kaizen"')[1].split("</section>")[0]
 # サイト側の一覧: 報告のある玩具・版・待っている報告
 code, lp = get("/loop")
-assert code == 200 and "改善の輪" in lp and "御来迎" in lp and f'href="/toy/{G}#kaizen"' in lp
+assert code == 200 and "改善の輪" in lp and "御来迎" in lp and f'href="/toy/{G}"' in lp and "#kaizen" not in lp
 for w in ("成功", "失敗", "正解", "順位", "点数"):
     assert w not in without_premise(lp) and w not in without_premise(kz), w
 # 輪の節と一覧に、結果を数えた数を出さない（動いた・止まったの数は成績に見える。J-025）。数えられる記録と札を置いてから見る
@@ -125,7 +129,7 @@ from omochae import hypotheses  # noqa: E402
 
 hypotheses.print_sheet(G, GS, str(out / f"{GS}_v1"), 1)
 page = get(f"/toy/{G}")[1]
-assert 'name="sheet_version"' in page.split('id="record"')[1].split("</form>")[0]
+assert 'id="record"' not in page, "玩具の頁に記録の欄は無い（版の番号は受け口へ送る値で残る）"
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "sheet_version": "1", "result": "動かない", "impression": "版 1 で作っていた"})[0] == 303
 assert json.loads((pathlib.Path(DATA) / "records/R-0003.json").read_text(encoding="utf-8"))["sheet_version"] == 1
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "sheet_version": "9", "result": "動いた"})[0] == 303

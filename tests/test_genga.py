@@ -212,3 +212,26 @@ with Image.open(io.BytesIO(small)) as im:
     assert im.width == made.SMALL_W and len(small) <= 100_000, (im.size, len(small))
 assert made.small_photo(d / "nai.jpg") is None
 print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる。原画の隣に作ってみた実物（写真か止まった形）")
+
+# 入口の棚の札の角（本人の言葉 11-07「入口にギャラリーを足す」「いまのものに実際に作ったものを足す」・窓口の決め 163132）:
+# 作った実物の写真（人が確かめた物。作例 via=workshop の記録も読む）がある玩具の札にだけ、原画の右下に小さな角。無い玩具の札は前のまま。
+# 合言葉なしで開いた場（photos=False）は置かない（入口と玩具の頁に記録の写真を出さない前の決まり）
+from omochae import hypotheses as _hyp  # noqa: E402
+
+other = next(s for s in toys.sources() if _hyp.stage(s) != "必須" and _hyp.sheet_of(s))
+before = looks.tenji().split("</style>")[-1]
+assert "made-corner" not in before, "写真が無ければ角は無い"
+w_rid, w_fail = records.add({"source_id": other, "hypothesis_id": _hyp.sheet_of(other)["id"], "result": records.UNSURE,
+                             "via": records.WORKSHOP, "made_on": "2026-11-06"})
+assert not w_fail, w_fail
+wd = techo_site.media_dir(w_rid)
+wd.mkdir(parents=True, exist_ok=True)
+(wd / "m1.jpg").write_bytes(b"\xff\xd8\xff")
+assert "made-corner" not in looks.tenji().split("</style>")[-1], "確かめる前の写真は角にしない"
+assert media_review.record(w_rid, "m1.jpg", "object", "確認者") == []
+assert made.photo(other) == f"/record/{w_rid}/media/m1.jpg/small", "作例の記録の写真も読む"
+shelf = looks.tenji().split("</style>")[-1].split('id="all-toys"')[1]
+card = shelf.split(f'href="/toy/{other}"')[1].split("</li>")[0]
+assert f'<span class="made-corner"><img src="/record/{w_rid}/media/m1.jpg/small"' in card, "写真のある玩具の札に角"
+assert shelf.count("made-corner") == 1, "写真のある玩具の札だけ"
+assert "made-corner" not in looks.tenji(photos=False).split("</style>")[-1], "開いた場の入口は角を置かない"

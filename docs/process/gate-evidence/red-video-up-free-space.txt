@@ -1,0 +1,10 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_video_up.py
+# commit: 62dd1119（回した時の HEAD。直す前の試験。回した機械の / の空きは 39G（df -h、97% 使用）で、受け口の空きの床 40GB を切っていた）
+受け口: BrokenPipeError
+Traceback (most recent call last):
+  File "tests/test_video_up.py", line 328, in <module>
+    (folder / "tmp" / cut_id).rmdir()
+  File "<Python>/pathlib/__init__.py", line 1051, in rmdir
+    os.rmdir(self)
+FileNotFoundError: [Errno 2] No such file or directory: '<置き場>/video_uploads/tmp/99999999999999999999999999999999'
+rc=1

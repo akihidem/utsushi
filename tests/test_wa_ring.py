@@ -33,7 +33,8 @@ for sid in (G, T, PLAIN):
         assert page.count('id="wa"') == 1, (sid, look)
         at, premise = page.index('id="wa"'), page.index('id="premise"')
         assert premise < at and page.index("</p>", premise) < at < page.index('class="plates"'), "札のすぐ後"
-        assert 'href="#kaizen"' in page[at:page.index("</figure>", at)] and 'id="kaizen"' in page, "真ん中から改善の輪の節へ飛べる"
+        # 真ん中の行き先は説明の頁（序の頁）の改善の歴史の錨（窓口の決め 11-07。輪の図は残し、頁の足の「型紙の改善の輪」の節は外した）（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
+        assert f'href="{wa.HREF}"' in page[at:page.index("</figure>", at)] and wa.HREF == "/about#kaizen-rekishi" and 'id="kaizen"' not in page, "真ん中から説明の頁の改善の歴史へ飛べる"
 
 # 3. 真ん中の数は今の型紙の版だけ。型紙の版は組の番号（紙の題に刷る数と同じ。本人の言葉 11-07・窓口の決定 カード 084426）で、
 #    寸法の刻み（kaizen の版・ループ 2）は真ん中に出さない（作る側の版の歩みの頁に残す）
@@ -44,8 +45,10 @@ for sid in (G, T, PLAIN):
     page = toy.toy_page(sid, "tenji")
     fig_at = page.index('id="wa"')
     assert f'<text class="wa-v" x="{wa.CX}" y="{wa.CY + 22}" text-anchor="middle">版 {n}</text>' in page[fig_at:page.index("</figure>", fig_at)], sid
-    # 型紙の札の脇にも同じ数を「型紙の版」の字で 1 つ。「エンジンの版」とは言い分ける（エンジンの版はここに出さない）
-    assert page.count(f'<span class="lb ban">型紙の版 {n}</span>') == 1 and "エンジンの版" not in page, sid
+    # 型紙の札の脇にも同じ数を「型紙の版」の字で 1 つ。「エンジンの版」とは言い分ける（エンジンの版はここに出さない）。
+    # 版の歩みの節（#ban-ayumi）の額の下には、型紙の版とエンジンの版を言い分けて出す（設計 0.7 節）ので、その節を外して見る
+    outside = re.sub(r'<section[^>]*id="ban-ayumi".*?</section>', "", page, flags=re.S)
+    assert page.count(f'<span class="lb ban">型紙の版 {n}</span>') == 1 and "エンジンの版" not in outside, sid
 assert wa.current_version(G, None) == 1
 keep = kaizen.versions
 kaizen.versions = lambda sid, hid: [{"version": 2}, {"version": 3}]
@@ -70,15 +73,19 @@ try:
 finally:
     tiger.SHEET_SET = now
 assert hypotheses.paper_label(td, 1) == f"版 {hypotheses.set_number(td)}"
-# 玩具の頁の 3D の机の上の紙の題も、刷る紙と同じ組の番号（窓口の決定 (a)「紙の題と窓の札も組の番号に」。前は compose の既定の題で「版 1」が残った）。
-# 題の形（玩具の名 型紙（雛形の呼び名））は替えない（長くすると部品の配置が動き、型紙エンジンの 3D の JSON と合わなくなる）
+# 玩具の頁の 3D の机の上の紙の題（assembly._sheet_title）: 刷る紙の題から「…」の仮説の名を外した「玩具の名 型紙 仮説 A 版 N」。
+# 前は雛形の呼び名の括弧（御来迎は「内筒を下から押し上げる」＝今のたたき台と違う仮説の名で、動き方の答え）が出た（J-013・11-07 夕の気づき）。
+# 版は組の番号（窓口の決定 (a)）。題は前より短く、型紙エンジンの 3D の JSON と部品の配置が合うまま（test_tora_v7_3d・test_goraigo_v14_3d）
 from omochae import assembly  # noqa: E402
 
 for sid in (G, T):
     bench = assembly.assemble(sid)
-    titles = [t.text for t in bench.paper["texts"] if "型紙（" in (getattr(t, "text", None) or "")]
-    n = hypotheses.set_number(hypotheses.load(sid))
-    assert titles and titles[0].endswith(f"）版 {n}"), (sid, titles[:1])
+    data = hypotheses.load(sid)
+    h = hypotheses.sheet_of(sid)
+    want = f"{data['toy']} 型紙 仮説 {hypotheses.letter(h)} 版 {hypotheses.set_number(data)}"
+    texts = [getattr(t, "text", None) or "" for t in bench.paper["texts"]]
+    assert want in texts, (sid, texts[:2])
+    assert not any("（" in x and "型紙" in x for x in texts) and not any(h["name"] in x for x in texts), (sid, "動き方の字（雛形の呼び名・仮説の名）を出さない")
 # 組の名前に -v<数> が無い雛形は 1
 keep_cs = hypotheses.current_set
 hypotheses.current_set = lambda data: "plain"

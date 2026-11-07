@@ -293,11 +293,13 @@ def _walk_own_paper(c, port):
     status, body = mine.post(f"{toy}/talk", scene="craft", step="1", text=OWN_CRAFT, json="1", **paper)
     if status != 200:
         raise Failed(f"自分の紙で話した工夫を受けない（{status}: {body[:80]}）")
-    if f'value="{oid}" selected' not in mine.get(toy)[1]:
-        raise Failed(f"記録の欄に自分の紙 {oid} が選ばれて出ない")
-    status, _ = mine.post(f"{toy}/record", result=records.results_for(c.sid)[0], **paper)
+    # 記録は手帖の のこす で残す（本人の答え 11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」で、玩具の頁の記録の欄は外した）。
+    # 手帖が自分の紙を開き（作った本人の画面だけ）、手帖と同じ受け口（record-json）で送る。前は玩具の頁の欄で自分の紙が選ばれるかを見た
+    if f'data-hid="{oid}"' not in mine.get(f"{toy}/techo")[1]:
+        raise Failed(f"手帖に自分の紙 {oid} が出ない")
+    status, _ = mine.post(f"{toy}/record-json", result=records.results_for(c.sid)[0], **paper)
     kept = [r for r in records.all_records(c.sid) if r["hypothesis_id"] == oid]
-    if status != 303 or len(kept) != 1:
+    if status != 201 or len(kept) != 1:
         raise Failed(f"自分の紙の記録を受けない（{status}・{len(kept)} 件）")
     rid = kept[0]["id"]
     said = {t["when"]: t["text"] for t in talk_log.kufu(c.sid, rid)}

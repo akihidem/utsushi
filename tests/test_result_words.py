@@ -71,8 +71,8 @@ for tid, sids in SOURCES.items():
     tpl, sid = TEMPLATES[tid], sids[0]
     data = hypotheses.load(sid)
     # 手帖は 1 手 1 画面に作り直され（#87）、札は記録の欄の radio でなく、手帖の段の釦（value に札の字）になった
-    for page, mark in ((toy.record_form(sid, data, []), 'name="result" value="{}"'),
-                       (techo_step.page(sid, [h["id"] for h in data["hypotheses"]]), 'class="tile" value="{}"')):
+    # 結果の札は手帖の のこす にある（玩具の頁の記録の欄は、本人の答え 11-07 夕の Q3 で のこす へ寄せた）
+    for page, mark in ((techo_step.page(sid, [h["id"] for h in data["hypotheses"]]), 'class="tile" value="{}"'),):
         for w in tpl.RESULTS:
             assert mark.format(w) in page, (sid, w)
         for w in getattr(tpl, "OLD_RESULTS", {}):
