@@ -137,9 +137,18 @@ if WORKSHOP:
 PHOTO_DIR_06 = ROOT / "docs/process/trials/photos/20261106"
 REVIEW_06 = PHOTO_DIR_06 / "review.md"
 # 写る物で選んだ（手と作りかけ・できた物。画面の写る物は外した）。日付の札の字は日付だけ（回の呼び名は窓口から来たら替える）
-DAYS = (("11 月 4 日", "Nov 4", PHOTO_DIR, REVIEW, ("p05", "p02", "p07")),
-        ("11 月 6 日", "Nov 6", PHOTO_DIR_06, REVIEW_06, ("p11", "p14", "p20", "p21", "p30", "p33")))
-WORKSHOP_LINE = "4 回のワークショップで、作って、感想を返してもらいました。"   # 案（窓口の確かめ待ち）
+DAYS = (("11 月 4 日", "Nov 4", PHOTO_DIR, REVIEW, ("p05", "p07")),
+        ("11 月 6 日", "Nov 6", PHOTO_DIR_06, REVIEW_06, ("p11", "p14", "p21", "p33")))
+# 頭と終わりの 2 枚（本人の言葉 11-07「4 日間のワークショップで作ったおもちゃたち」。ワークショップの報告の顔になる写真）。置き場の W1・W2
+# （script.SLOTS の scene5 の still。take_in で撮影の情報を外した物）。この 2 枚の間は、左の 4 つの日付を全部濃くする（4 日間の物なので）。
+# 2 枚を足したので、日付の写真は 9 枚から 6 枚に減らした（作りかけの p02・p20・p30 を外し、11-04 の完成形と 11-06 の作る手と完成形を残した）
+FACE_SECONDS = 2.2
+ALL_DAYS = "4 日間"
+# 字は 2 かたまり（本人の言葉 11-07「ワークショップをやりまくってコーディングはクロードで、オフラインで紙をたくさんの人たちと触ってた時間の方が長い」を
+# 一般的な言い方にした案。窓口の確かめ待ち）。前の 1 かたまり「4 回のワークショップで、作って、感想を返してもらいました。」の感想から型紙が直る事は、
+# 場面 15（core_loop）が言う
+WORKSHOP_LINES = ("4 回のワークショップで、たくさんの人と紙で作りました。", "コードは Claude に任せ、紙と人に向かう時間を長く取りました。")
+WORKSHOP_LINE = WORKSHOP_LINES[0]   # 前の名前（英語の表の集め方・試験が読む）
 # 4 回の日付（本人の言葉 11-07「ワークショップ 4 回は 11 月 4・5・6・7 日でよい。回数の数え方と改善の歴史の表はこの 4 回でそろえてください」）。
 # 左の余白に 4 つとも縦に並べ、今の写真の日だけを濃くする。写真があるのは 11-04 と 11-06 だけ（11-05・11-07 は感想の動画の回で、
 # 動画は渡された写真の外なので使わない）。4 つを並べるのは、字幕の「4 回」と画面の日付の数を食い違わせないため
@@ -149,9 +158,18 @@ XF = 0.5          # 写真の溶ける秒
 LABEL_XY = (60, FRAME_BOX[1] + 14)   # 写真の枠の外（左の余白）。横長の写真に重ねない
 
 
+def face_photos():
+    """頭と終わりの 2 枚の道（置き場の W1・W2）。届いていない物は外す（その時は日付の写真だけで組む）。"""
+    from demo.script import SLOT_DIR
+
+    return [p for p in (ROOT / SLOT_DIR / "W1.jpg", ROOT / SLOT_DIR / "W2.jpg") if p.exists()]
+
+
 def workshop_photos():
-    """(日付の札, 英語, 写真の道) の並び。確かめ表で通っていない写真・無い写真は None（使わずに止める）。"""
-    out = []
+    """(日付の札, 英語, 写真の道) の並び。確かめ表で通っていない写真・無い写真は None（使わずに止める）。
+    頭と終わりに 4 日間の 2 枚（届いていれば）を置く。その 2 枚の札は ALL_DAYS（4 つの日付を全部濃くする）。"""
+    faces = face_photos()
+    out = [(ALL_DAYS, "4 days", faces[0])] if faces else []
     for ja, en_label, folder, review, names in DAYS:
         ok = set(allowed_photos(review))
         for n in names:
@@ -160,6 +178,8 @@ def workshop_photos():
                 print(f"検査できない: 写真 {folder.name}/{n} が確かめ表で通っていないか、無い", file=sys.stderr)
                 return None
             out.append((ja, en_label, path))
+    if len(faces) > 1:
+        out.append((ALL_DAYS, "4 days", faces[1]))
     return out
 
 
@@ -170,16 +190,24 @@ class WorkshopScene(Scene5):
     def __init__(self, items):
         super().__init__([p for _, _, p in items])
         self.labels = [(ja, en_label) for ja, en_label, _ in items]
-        self.step = (self.duration - 0.6) / max(1, len(self.sheets))
+        # 1 枚ずつの秒: 4 日間の 2 枚は FACE_SECONDS、残りは日付の写真で等しく分ける。starts は各写真の始まりの秒
+        faces = sum(1 for ja, _ in self.labels if ja == ALL_DAYS)
+        rest = (self.duration - 0.6 - FACE_SECONDS * faces) / max(1, len(self.labels) - faces)
+        self.lengths = [FACE_SECONDS if ja == ALL_DAYS else rest for ja, _ in self.labels]
+        self.starts = [sum(self.lengths[:k]) for k in range(len(self.lengths))]
+        self.step = rest
+
+    def index_at(self, t):
+        return max([k for k, s0 in enumerate(self.starts) if s0 <= t] or [0])
 
     def sheet_at(self, t):
         if not self.sheets:
             return None
-        i = min(len(self.sheets) - 1, int(t // self.step))
+        i = self.index_at(t)
         out = self.sheets[i]
         nxt = i + 1
         if nxt < len(self.sheets):
-            v = ease((t - (nxt * self.step - XF)) / XF)
+            v = ease((t - (self.starts[nxt] - XF)) / XF)
             if v > 0:
                 out = Image.blend(out, self.sheets[nxt], v)
         return out
@@ -192,16 +220,25 @@ class WorkshopScene(Scene5):
             if a_in < 1:
                 sheet = Image.blend(Image.new("RGB", sheet.size, PAPER), sheet, a_in)
             img.paste(sheet, FRAME_BOX[:2])
-            i = min(len(self.labels) - 1, int(t // self.step))
+            i = self.index_at(t)
             from demo.english import text_en
 
             d = ImageDraw.Draw(img)
             for k, (ja, en_label) in enumerate(WORKSHOP_DAYS):
-                on = ja == self.labels[i][0]
+                on = ja == self.labels[i][0] or self.labels[i][0] == ALL_DAYS
                 text_en(d, (LABEL_XY[0], LABEL_XY[1] + k * DAY_GAP), ja, 34, fade(SUMI, (0.85 if on else 0.22) * a_in), False, "la", english=en_label)
         from demo.words import band
 
-        return band(img, (WORKSHOP_LINE,), ease((t - 0.8) / 0.5))
+        # 2 かたまりを順に（1 度に 1 かたまり）。後半は、字を読む秒の比で分けた所から（1 秒 5 字の決まり）
+        n0, n1 = (len(x) for x in WORKSHOP_LINES)
+        cut = 0.8 + (self.duration - 1.4) * n0 / (n0 + n1)
+        v0 = ease((t - 0.8) / 0.5) * (1 - ease((t - (cut - 0.4)) / 0.4))
+        v1 = ease((t - cut) / 0.5)
+        if v0 > 0:
+            img = band(img, (WORKSHOP_LINES[0],), v0)
+        if v1 > 0:
+            img = band(img, (WORKSHOP_LINES[1],), v1)
+        return img
 
 
 def resolve_photos(arg):

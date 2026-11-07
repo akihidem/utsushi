@@ -47,7 +47,9 @@ EN = {
     # 7 scene3
     # 8 core_make
     # 9 scene5
-    "4 回のワークショップで、作って、感想を返してもらいました。": "Over four workshops, people built them and gave us feedback.",  # 案（ワークショップの写真の場面）
+    "4 回のワークショップで、たくさんの人と紙で作りました。": "Over four workshops, many people built them in paper.",  # 案（窓口の確かめ待ち）
+    "コードは Claude に任せ、紙と人に向かう時間を長く取りました。": "Claude wrote the code, so we spent most of our time with paper and people.",  # 案（同）
+    "4 日間": "4 days",
     # 10 core_keep
     "できた物の写真と、": "Add a photo of what you made,",  # 案
     # 11 core_gallery
@@ -181,7 +183,8 @@ def all_sources():
     out += [(c, "flip") for c in CLOSING]
     out += [(scene3.TITLE_PREMISE, "scene3"), *[(c, "scene3") for c in scene3.CLOSING]]
     out += [(c, "scene5") for c in scene5.CAPTION]
-    out += [(scene5.WORKSHOP_LINE, "scene5")]  # ワークショップの写真の場面（11-07。scene5.WORKSHOP の時に描く）
+    out += [(x, "scene5") for x in scene5.WORKSHOP_LINES]  # ワークショップの写真の場面（11-07。2 かたまり）
+    out += [(scene5.ALL_DAYS, "scene5")]  # 4 日間の 2 枚の札（英語は場面が渡す）
     out += [(scene7.CAPTION, "scene7")]
     out += [(words.ASK, "ask")]  # 本人の言葉の印（words.FROM）は、一般的な言い方にした（11-07）ので描かない
     for name, (line, src) in words.STATS.items():

@@ -27,8 +27,10 @@ assert set(script.SLOTS) <= set(script.SCENES)
 # 場面 14 をエンジンの仕組みの場面に替えた（窓口の決め 120643）ので、その場面（engine）にも声がある（A6。字幕の文を読む）
 # 場面 flip には、声でなく紙の御来迎が開く映像（open の G）だけを置く（本人の言葉 11-07「御来迎が開く動画として使う。デモとサイト」）
 assert script.SLOTS["flip"] == {"open": (("G", 1.9),)}
+# 場面 scene5（ワークショップの写真）には、頭と終わりの 4 日間の写真 2 枚（still の W1・W2）だけを置く（本人の言葉 11-07「4 日間のワークショップで作ったおもちゃたち」）
+assert script.SLOTS["scene5"] == {"still": ("W1", "W2")}
 for name, kinds in script.SLOTS.items():
-    if name == "flip":
+    if name in ("flip", "scene5"):
         continue
     assert name.startswith("talk_") or name in ("scene2", "engine"), name
     assert kinds.get("voice") and (name in words.TALKS or name == "engine"), name

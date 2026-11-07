@@ -26,6 +26,8 @@ from demo.script import HANDS_EXT, SCENES, SLOT_DIR, SLOTS, VOICE_EXT, load_scen
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 VIDEO_IN = (".mp4", ".mov", ".m4v")
+STILL_IN = (".jpg", ".jpeg", ".png")
+STILL_EXT = ".jpg"
 AUDIO_IN = (".m4a", ".mp3", ".wav", ".aac")
 
 
@@ -39,12 +41,14 @@ def expected():
             out[n] = "voice"
         for n, _ in kinds.get("open", ()):
             out[n] = "open"
+        for n in kinds.get("still", ()):
+            out[n] = "still"
     return out
 
 
 def candidates(folder, name, kind):
     """届いた所の中の、その名前に当たる物。名前ちょうどの物と、撮り直し・分けて撮った物（名前-数字）を分けて返す。"""
-    exts = AUDIO_IN if kind == "voice" else VIDEO_IN
+    exts = AUDIO_IN if kind == "voice" else STILL_IN if kind == "still" else VIDEO_IN
     files = [p for p in sorted(pathlib.Path(folder).iterdir()) if p.is_file() and p.suffix.lower() in exts]
     exact = [p for p in files if p.stem == name]
     more = [p for p in files if re.fullmatch(rf"{re.escape(name)}-\d+", p.stem)]
@@ -61,7 +65,9 @@ def convert(srcs, dst, kind):
             listing.write_text("".join(f"file '{pathlib.Path(s).resolve()}'\n" for s in srcs), encoding="utf-8")
             src = listing
         head = ["ffmpeg", "-v", "error", "-y"] + (["-f", "concat", "-safe", "0"] if len(srcs) > 1 else []) + ["-i", str(src), "-map_metadata", "-1"]
-        if kind in ("hands", "open"):  # 映像は音も外す（open も手の映像と同じく、撮った時の音を入れない）
+        if kind == "still":  # 写真は撮影の情報（位置を含む）を外して JPEG に作り直す
+            cmd = head + ["-frames:v", "1", "-q:v", "2", str(dst)]
+        elif kind in ("hands", "open"):  # 映像は音も外す（open も手の映像と同じく、撮った時の音を入れない）
             cmd = head + ["-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-movflags", "+faststart", str(dst)]
         else:
             cmd = head + ["-vn", "-c:a", "aac", "-b:a", "192k", str(dst)]
@@ -106,7 +112,7 @@ def main(argv=None):
             if not srcs:
                 (choose if more else waiting).append(f"{name}" + (f"（候補: {'・'.join(p.name for p in more)}。--pick {name}=… で選ぶ）" if more else ""))
                 continue
-            dst = stage / f"{name}{VOICE_EXT if kind == 'voice' else HANDS_EXT}"
+            dst = stage / f"{name}{VOICE_EXT if kind == 'voice' else STILL_EXT if kind == 'still' else HANDS_EXT}"
             err = convert(srcs, dst, kind)
             if err:
                 bad.append(f"{name}: 作り直せない（{err}）")
