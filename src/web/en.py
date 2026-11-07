@@ -19,6 +19,10 @@ from . import skin
 from .play_server import esc, sources
 
 DRAFT = "Draft translation. A native speaker has not checked it yet."
+# 序の頁の POSITION と AUDIENCE と同じ中身（本人の言葉 11-07 昼・作り直しの設計 0.8）。J-030 の紹介（INTRO）の文は変えず、別の段として頭に置く。
+# 本の名はすぐ後の紹介の文が言うので、ここでは言わない
+POSITION = ("Utsushi is one example of paper to toy: a system that turns pictures into paper templates, and makes the templates better from what makers try. "
+            "It started in classrooms and workshops. Next, it will grow into a public service anyone can use.")
 # J-030 の少し長い紹介と同じ文。文を変える時は J-030 も直す。本人の方針（11-05）の書き方: 短い文・やさしい語（#318）。
 INTRO = (
     "In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called <i>Edo nishiki</i>. It shows more than 80 toys with short poems, but it does not say how the toys worked.",
@@ -82,7 +86,7 @@ def index_page(look=skin.DEFAULT, path="/en"):
         tag = "" if hypotheses.stage(sid) == "必須" else '<span class="lb">Untested draft</span>'
         cards += (f'<article class="card"><a href="/en/toy/{esc(sid)}">{_picture(sid)}<h3>{esc(t["name"])}</h3></a>{tag}<p class="meta">{esc(t["intro"])}</p></article>')
     intro = "".join(f"<p>{x}</p>" for x in INTRO)
-    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
+    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p><p class="position">{POSITION}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
     return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)
