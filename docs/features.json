@@ -801,5 +801,16 @@
    "tests/test_kaizen_history.py"
   ],
   "unverified": "今の段は表を repo に写す口と読み口、README の数の欄の 2 行（型紙の版・エンジンの版）まで。玩具の頁の「版の歩み」の額の並び（置き場 ①）・輪の図のエンジンの行（②）・序の頁の表（③）は後の段。README の 2 行の字は窓口の確かめ待ち。版ごとの紙の絵はこの機械の out/ に置いた物だけで、サイトの機械に置くのは別"
+ },
+ {
+  "id": "f66",
+  "name": "ワークショップで作られたおもちゃ（作例）の受け口",
+  "status": "doing",
+  "evidence": [
+   "src/web/sakurei.py",
+   "src/omochae/records.py",
+   "tests/test_sakurei.py"
+  ],
+  "unverified": "受け口だけで、作った物の頁の作例の節は次の PR。本人の写真はまだ取り込んでいない（Drive の届け口の folder はまだ無い）。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）"
  }
 ]
