@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_guard_headers.py
+# commit: 57cfadf4（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_guard_headers.py", line 46, in <module>
+    assert h.get("cache-control") == "private, no-store", (path, h.get("cache-control"))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/', None)
+rc=1

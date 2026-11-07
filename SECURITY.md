@@ -21,6 +21,7 @@ engine/ には、別の repo（paper-to-toy）で開発したエンジンをま�
 - 名前（Host）は許しの一覧で照らし、書き込みは同じ頁から来た物（Origin）だけを受ける（`tests/test_public_gate.py`・`tests/test_lan_switch.py`）。
 - 合言葉の門は、16 字より短い合言葉では立たない。照合は、時間で漏れない比べ方（`hmac.compare_digest`）で行う。合言葉は最初の 1 回だけ URL で受け、HttpOnly・Secure の cookie に移して URL から消す（`tests/test_public_gate.py`）。
 - 合言葉なしで開く公開のデモは、鍵の設定ファイルがあると立たない。そこでは Claude を呼ぶ口を開かない（`tests/test_public_open.py`）。
+- 全部の応答に、途中で溜め置かせない頭（頁と JSON は `Cache-Control: private, no-store`、絵と紙は `private`）と、ほかのサイトの枠に入れさせない頭（`X-Frame-Options: SAMEORIGIN`・`frame-ancestors 'self'`）と、`Referrer-Policy: same-origin` を付ける（`tests/test_guard_headers.py`）。
 - 失敗した時の頁は決まった字だけを出し、中の様子（スタックトレース・手元のパス）は出さない（`src/web/play_server.py` の `do_GET`・`do_POST` の受け。断りの頁の形は `tests/test_error_pages.py`）。
 
 ### 鍵の扱い
@@ -56,7 +57,6 @@ engine/ には、別の repo（paper-to-toy）で開発したエンジンをま�
   - 公開する動画の、流れの中に残りうる付帯情報を外す事
   - Claude を呼ぶ口の、同じ相手からの数の上限と、同時に頼まれた時の費用の見張り
   - 家の網に開く切り替え（`--lan`）の合言葉
-  - 応答の守りの頭（CSP など）と、途中で溜め置かせない印
   - 静的なギャラリーの書き出しで、載せる記録を人が選ぶ事
   - 作っている途中の質問の文を、印で囲んで渡す事
   - 読み（記録の解釈）の答えを、形で検査する事。人が確かめる前の読みを、上げた人の画面にだけ出す事

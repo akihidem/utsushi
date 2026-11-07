@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_to_toy.py
+# commit: e2c7e979（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_paper_to_toy.py", line 29, in <module>
+    assert en.BASIS.startswith("Utsushi is a service that supports workshops") and len(re.findall(r"[.!?](?:\s|$)", en.BASIS)) == 2
+           ^^^^^^^^
+AttributeError: module 'web.en' has no attribute 'BASIS'
+rc=1
