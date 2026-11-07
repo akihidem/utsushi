@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_loop_figure.py
+# commit: 0a6d03c1（回した時の HEAD）
+ok 学びの輪の図: 採った文の言葉だけで、a と b の 2 つの形。読み上げは全文・同じ絵・画像を読まない・図の字は全部英語の表にある
+rc=0

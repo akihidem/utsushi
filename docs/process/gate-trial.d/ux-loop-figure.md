@@ -8,3 +8,11 @@
 - 検証ゲート: **済み**。Red: main にこの試験だけを置くと rc 1（gate-evidence/red-loop-figure.txt）。Green: gate-evidence/green-loop-figure.txt
 - エビデンスゲート: 上の 2 つの記録と `tests/test_loop_figure.py`。絵は grove の state/loop-figure-ab-20261107.png（a と b を並べた物）で本人の確かめへ
 - 確かめていない事: 本人の確かめ（a か b か・直す所）。英語の頁の字（訳の表に 12 の言葉を足すのは英語の担当と合わせる）。実機
+
+### 生成の絵を差す（11-07 夕方・本人の言葉「qwen2.1 でもっと綺麗な絵を」）
+
+- 目的: 本人の言葉（統括を通して）「qwen2.1 でもっと綺麗な絵を」。字は案 1 のまま、絵だけを Qwen Image 2.1 で描き直す
+- どうしたか: 字の無い b の線の絵を下絵にして、和紙と墨の手書きの絵に描き直させた（字・人を描かせない）。部品は、公開の場のデータの置き場（OMOCHAE_DATA/loop_figure/）に絵と確かめた印（checked.json の checked_by）がある時だけ、絵の上に今の字を同じ位置の SVG で重ねる。無い時・確かめていない時は今の線の絵。絵の道は /about/loop-figure/<名>（確かめた物だけ・置き場の外を指す物は 404）
+- 前に採らなかった理由との関係: 「repo の画像の決まり」と「字を訳の表で替えられない」の 2 つ。絵は repo に入れず置き場から出し、字は絵に描かず SVG で重ねるので、英語の頁も同じ表で替わる
+- 検証ゲート: **済み**。Red: 前の head（0a6d03c1）に新しい試験だけを置くと rc 1（gate-evidence/red-loop-figure-image.txt）。Green: gate-evidence/green-loop-figure-image.txt
+- 確かめていない事: 本人の確かめ（どの絵か・前の線の絵と比べて）。公開の場への絵の置き（本人の OK の後）。実機

@@ -437,6 +437,12 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
+        m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
+        if m:
+            # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）
+            from . import loop_figure
+            data = loop_figure.image_bytes(urllib.parse.unquote(m.group(1)))
+            return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))

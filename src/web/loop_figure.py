@@ -11,9 +11,18 @@
   二度なぞる形で出す（揺れは決まった種で作るので、開くたびに同じ絵）
 - 字は SVG の text の要素に 1 つずつ置く（英語の頁の訳の表が字を替えられるように）。読み上げには ADOPTED の全文を渡す
 - 形は 2 つの案（a: 二つの輪を横に重ねる／b: 大きい輪の上に小さい一周目を重ねる）。既定は b（UX の担当の推し）。どちらにするかは本人の確かめで、svg() の既定を替えるだけ
+- 本人の言葉（11-07 夕）「qwen2.1 でもっと綺麗な絵を」: 絵は Qwen Image 2.1（SageMaker・ComfyUI 経由）で描き直す。生成の字は崩れるので、絵には字を描かせず、
+  この部品の線の絵（字を外した物）を下絵として渡し、同じ並びの絵にした。字は今のまま SVG で絵の上に重ねる（並びが下絵と同じなので、字の置き場も同じ）。
+  生成した絵は repo に入れない（repo の画像の決まり）。公開の場のデータの置き場（OMOCHAE_DATA/loop_figure/loop-<形>.jpg）に、横の checked.json の
+  確かめた印（checked_by）と一緒に置いた時だけ使い、/about/loop-figure/loop-<形>.jpg で返す。無い時（repo だけを clone した審査の場・確かめる前）は線の絵のまま
 """
+import json
+import os
+import pathlib
 import math
 import random
+
+from omochae.hypotheses import ROOT
 
 from .skin import esc
 
@@ -84,7 +93,60 @@ def _path_pts(*pts, n=6):
     return out
 
 
+def _img_dir():
+    return pathlib.Path(os.environ.get("OMOCHAE_DATA", ROOT / "data")) / "loop_figure"
+
+
+def image_ok(name):
+    """生成した絵を出してよいか: 名の形（loop-a.jpg か loop-b.jpg）・確かめた印・置き場の中のふつうのファイル。"""
+    if name not in ("loop-a.jpg", "loop-b.jpg"):
+        return False
+    box = _img_dir()
+    try:
+        checked = json.loads((box / "checked.json").read_text(encoding="utf-8"))
+        real = (box / name).resolve(strict=True)
+    except (OSError, ValueError):
+        return False
+    row = checked.get(name) if isinstance(checked, dict) else None
+    return bool(isinstance(row, dict) and row.get("checked_by")) and real.parent == box.resolve() and real.is_file()
+
+
+def image_bytes(name):
+    """/about/loop-figure/<名> の中身。出さない物は None（呼ぶ側が 404）。"""
+    if not image_ok(name):
+        return None
+    try:
+        return (_img_dir() / name).read_bytes()
+    except OSError:
+        return None
+
+
+def _labels(variant):
+    """字だけ（線の絵と同じ置き場）。生成した絵の上に重ねる時に使う。"""
+    if variant == "a":
+        return (_t("ws", 100, 50, 14, MUTE, weight="bold") + _t("fac1", 100, 70, 11, MUTE) + _t("fac2", 100, 86, 11, MUTE)
+                + _t("ut", 300, 36, 16, INK, weight="bold") + _t("alone", 300, 54, 11, INK)
+                + _t("make", 178, 148) + _t("check", 318, 96) + _t("look", 356, 282, anchor="end") + _t("next", 226, 302)
+                + _t("form", 238, 184, 12, SHU) + _t("rec", 262, 336, 12, SHU) + _t("door", 112, 336, 12, SHU)), 345
+    return (_t("ws", 90, 30, 13, MUTE, weight="bold") + _t("fac1", 90, 46, 10, MUTE) + _t("fac2", 90, 60, 10, MUTE)
+            + _t("ut", 292, 36, 16, INK, weight="bold") + _t("alone", 292, 54, 11, INK)
+            + _t("make", 40, 212) + _t("check", 322, 122) + _t("look", 352, 272, anchor="end") + _t("next", 186, 318)
+            + _t("form", 186, 190, 12, SHU) + _t("rec", 252, 348, 12, SHU) + _t("door", 110, 348, 12, SHU)), 356
+
+
 def svg(variant="b"):
+    """説明の頁に置く図。確かめた生成の絵があれば、その上に字を重ねた形（img と字だけの SVG）。無ければ線の絵。"""
+    name = f"loop-{variant}.jpg"
+    if image_ok(name):
+        labels, h = _labels(variant)
+        # 下絵（線の絵・幅 360・高さ h）は 1024×1024 の正方形の中に上寄せで置いて描かせたので、字の SVG は 360×360 の正方形で重ねる
+        return (f'<div class="loop-fig" style="position:relative;width:100%;max-width:420px">'
+                f'<img src="/about/loop-figure/{name}" alt="" style="width:100%;height:auto;display:block" loading="lazy">'
+                f'<svg viewBox="0 0 360 360" role="img" aria-label="{esc(ADOPTED)}" style="position:absolute;inset:0;width:100%;height:100%;font-family:inherit">{labels}</svg></div>')
+    return drawn(variant)
+
+
+def drawn(variant="b"):
     """図の SVG（頁の幅に合わせて縮む）。variant は "a"（二つの輪を横に重ねる）か "b"（大きい輪の左上に一周目を重ねる）。
     どちらも、回り続ける輪の上に 作って → 確かめて → ふり返って → 次を考える（時計回り）、下に 次を考える → のこした記録 → 次に作る時の入り口 → 作って の戻り。"""
     if variant == "a":
