@@ -66,7 +66,8 @@ with tempfile.TemporaryDirectory() as tmp:
     assert abs(left[0] - flip.PAPER[0]) > 60, ("左にも手の映像が出る（紙を掛けない）", left)
     assert card.frame(0.0).getpixel((1800, 300)) == flip.PAPER, "紙の地から溶けて現れる"
     late = card.frame(card.duration - 0.1)
-    assert late.getpixel((1800, 300)) == flip.PAPER and late.getpixel((20, 300)) == flip.PAPER, "使い切った後は今の地"
+    # 最後の手の映像が場面より短い時は、最後のコマで止めて場面の終わりまで敷く（11-07。紙の地に字幕だけの画面にしない）
+    assert late.tobytes() == card.frame(card.duration - 0.3).tobytes() and abs(late.getpixel((1800, 300))[0] - flip.PAPER[0]) > 60, "最後のコマで止める"
     # 図を右に置く札でも、手が届けば図の代わりに手を敷く（両方は置かない）
     pic = Image.new("RGBA", (300, 600), flip.SUMI + (255,))
     toys = words.ChunkCard("talk_toys", words.cues_of("talk_toys"), pic, hands=[(frames, 0.0, 6.0)])

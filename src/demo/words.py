@@ -326,10 +326,13 @@ class ChunkCard:
         self._mask = _wash() if self.hands else None
 
     def _hands(self, t):
-        """時刻 t の手の映像の絵と濃さ。敷いていない時は (None, 0)。"""
-        for frames, a, b in self.hands:
-            if a <= t < b:
-                v = min(ease((t - a) / DISSOLVE), ease((b - t) / DISSOLVE))
+        """時刻 t の手の映像の絵と濃さ。敷いていない時は (None, 0)。
+        語りの札（題の札でない物）では、最後の手の映像が場面より短い時、最後のコマで止めて場面の終わりまで敷く。
+        11-07 に場面 3 の字（本人の言葉の 1 文を足した）が手 C の 12.2 秒より長くなり、最後の 2 秒が紙の地に字幕だけになったため"""
+        for k, (frames, a, b) in enumerate(self.hands):
+            hold = k == len(self.hands) - 1 and self.name not in TITLE_CARDS
+            if a <= t < b or (hold and t >= b):
+                v = ease((t - a) / DISSOLVE) if hold else min(ease((t - a) / DISSOLVE), ease((b - t) / DISSOLVE))
                 with Image.open(frames[min(len(frames) - 1, int((t - a) * FPS))]) as im:
                     return im.convert("RGB").resize((W, H)), v
         return None, 0.0
