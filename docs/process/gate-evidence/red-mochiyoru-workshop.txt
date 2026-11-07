@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_workshop.py
+# commit: cce5d492（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_workshop.py", line 32, in <module>
+    kinds = json.loads(workshop.KINDS.read_text(encoding="utf-8"))["photos"]
+                       ^^^^^^^^^^^^^^
+AttributeError: module 'web.workshop' has no attribute 'KINDS'
+rc=1
