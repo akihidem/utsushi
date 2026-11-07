@@ -21,7 +21,8 @@ records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result
 # 頁と、帯で印の付く項目（None は印なし。順路の外の頁）。kazasu と tsukuru は別の枝（#242）で形が変わるので入れない
 # 手帖の作る頁（/techo）は帯を置かない（本人の決定 11-05「文字情報がおおい」、#87。tests/test_techo_step.py が見る）。記録の頁は帯を持つ
 # 帯は道しるべ（UX の見直しの段 1、本人の決定 11-06）。印は今いる駅。序・図鑑は道の外の読み物で「よむ」に印
-PAGES = {"/": "うつし", "/about": "よむ", "/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる",
+# 入口は えらぶ の駅（本人のサイト体験レビュー 11-07 の 4「入口と選ぶは分けない」）。/toys は入口へ送られ、同じ印になる
+PAGES = {"/": "えらぶ", "/about": "よむ", "/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる",
          "/zukan": "よむ", f"/zukan/{G}": "よむ", f"/zukan/{G}/yomi": "よむ", "/loop": None, f"/loop/{G}": None}
 ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "English"]  # English は右の端の言語の切り替え（窓口の決定 11-06）
 printed = False
@@ -49,7 +50,7 @@ for look in ("tenji", "zine"):
         assert re.search(r"\.nav a\[aria-current=page\]\{[^}]*border-bottom:1px solid", page), ("印に罫が無い", where)
         # <title> は「頁の名前 · うつし」。入口は「うつし」。作る側の案の名前を出さない
         title = re.search(r"<title>([^<]*)</title>", page).group(1)
-        if path == "/":
+        if path in ("/", "/toys"):  # /toys は入口へ送る（入口が えらぶ。本人のサイト体験レビュー 11-07 の 4）
             assert title == "うつし", ("入口の題", where, title)
         else:
             assert re.fullmatch(r"(?!うつし · ).+ · うつし", title), ("題の形", where, title)

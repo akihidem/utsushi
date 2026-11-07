@@ -42,6 +42,16 @@ def roads(page):
 for name, make in looks.PAGES.items():
     page = make()
     first = re.search(r'<section class="(?:zn-cover|tj-hall)".*?</section>', page, re.S).group(0)
+    if name == "tenji":
+        # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。えらぶ の釦は無く（押させない）、題の間のすぐ次に
+        # 「まずはここから」の 2 枚（御来迎・張子の首振り虎）が、その玩具の頁への口として並ぶ
+        body = page.split("</style>")[-1]
+        assert 'class="road-go"' not in body, (name, "えらぶ の釦は無い")
+        mazu = re.search(r'<section class="tj-mazu".*?</section>', body, re.S).group(0)
+        assert "<h2>まずはここから</h2>" in mazu and body.index("</section>", body.index('class="tj-hall"')) < body.index('class="tj-mazu"')
+        main = [s for s in looks.sources() if looks.hypotheses.stage(s) == "必須"]
+        assert re.findall(r'class="tj-mazu-card" href="/toy/([^"]+)"', mazu) == main, (name, "まずはここから は必須の 2 種")
+        continue
     assert first.count('class="road-go"') == 1 and '<a class="road-go" href="/toys">えらぶ</a>' in first, (name, "入口の最初の節に「えらぶ」が 1 つ")
     assert page.count('class="road-go"') == 1, (name, "入口の次へ進む釦は 1 つだけ")
 
@@ -126,7 +136,7 @@ for page in (before, after, kiroku, *(f() for f in looks.PAGES.values())):
 
 # ---- 8 幅 390 の Chrome で最初の画面に入るか
 MEASURE = r"""<script>addEventListener('load',()=>setTimeout(()=>{const R={vh:innerHeight,vw:innerWidth,sx:document.documentElement.scrollWidth};
-const e=document.querySelector('.road-go, .hero .road .btn');if(e){const b=e.getBoundingClientRect();R.go=[Math.round(b.top),Math.round(b.bottom),Math.round(b.height),e.textContent.trim()]}
+const e=document.querySelector('.road-go, .hero .road .btn, .tj-mazu-card');if(e){const b=e.getBoundingClientRect();R.go=[Math.round(b.top),Math.round(b.bottom),Math.round(b.height),e.textContent.trim()]}
 const p=document.createElement('pre');p.id='measured';p.textContent=JSON.stringify(R);document.body.appendChild(p)},400))</script>"""
 send = play_server.Handler._send
 
@@ -165,6 +175,12 @@ for key, r in measured.items():
         continue
     assert "go" in r, (key, "次へ進む釦が頁にある", r)
     top, bottom, height, word = r["go"]
+    if key[1].startswith("/look/tenji"):
+        # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。次へ進む釦の代わりに、まずはここから の札（玩具の名前）が
+        # 最初の画面で押せる（札の上の 64px が画面の中にある）。札は縦に長い絵なので、下の端まで入るとは限らない
+        assert word not in ("えらぶ", "つくる") and height >= 64 and top + 64 <= r["vh"], (key, "まずはここから の札が最初の画面で押せる", r)
+        assert r["sx"] <= r["vw"], (key, "横にはみ出さない", r)
+        continue
     assert word in ("えらぶ", "つくる") and height >= 64, (key, "押せる大きさ", r)
     assert bottom <= r["vh"], (key, "最初の画面に入る（頁を送らずに押せる）", r)
     assert r["sx"] <= r["vw"], (key, "横にはみ出さない", r)

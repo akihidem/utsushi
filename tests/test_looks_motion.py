@@ -15,9 +15,12 @@ ts = looks.toys()
 # 扇の札（扇の間）と扇をひらくノブは外した（本人の言葉 11-07「扇の間要らない」）。札も釦もノブも台本も刷らない
 assert 'class="fan-card' not in html and 'id="tj-fan"' not in html and "扇の間" not in html
 assert 'id="ogi-range"' not in html and "扇をひらく" not in html and "fan-prev" not in html
-# 扉の次は全部の玩具の一覧（間に扇の 1 室を挟まない）
-door, room = html.index('class="tj-door"'), html.index('<section class="tj-all" id="all-toys"')
-assert door < room and html[html.index("</section>", door) + len("</section>"):room].strip() == "", "扉と一覧の間に 1 室も無い"
+# 入口は えらぶ（本人のサイト体験レビュー 11-07 の 4・5）: 題の間 → まずはここから の 2 枚 → ほかの原画の並び。間に扉や扇の 1 室を挟まない
+body = html.split("</style>")[-1]
+hall, mazu, erabu = body.index('class="tj-hall"'), body.index('<section class="tj-mazu"'), body.index('<section class="tj-erabu"')
+assert hall < mazu < erabu and 'class="tj-door"' not in body and 'class="road-go"' not in body, "えらぶ の釦（押させる口）は無い"
+for gap in ((body.index("</section>", hall), mazu), (body.index("</section>", mazu), erabu)):
+    assert body[gap[0] + len("</section>"):gap[1]].strip() == "", "間に 1 室も無い"
 # 動きを減らす設定では動かさない（せり上がりは no-preference の中だけ）。スクロール連動の CSS だけで、効く閲覧器だけ
 assert "@supports (animation-timeline: view())" in html and "prefers-reduced-motion:no-preference" in html
 assert "animation-timeline:view()" in html
@@ -28,7 +31,10 @@ assert "IntersectionObserver" not in html and "whileInView" not in html
 # 仮説や仕組みの名を出さない
 assert "仮説 A" not in html and "H-A" not in html
 # 前からの線
-assert "原文の引用" in html and "100svh" in html
+# 歌の原文は、出す所に引用の印を付ける。入口は えらぶ になり、歌は玩具の頁の頭（原画と歌）だけに出す（入口に同じ物を 2 度置かない）
+songs = [x for t in ts for x in t["song"]]
+assert not any(x in body for x in songs) or "原文の引用" in html
+assert "100svh" in html
 # research/24 の小さな直し
 assert "body.tenji{background:#fcfcfa" in html and "body.tenji ::selection" in html
 assert "overflow-wrap:break-word" in html
