@@ -33,6 +33,11 @@ from web import looks, play_server, techo_site, toy  # noqa: E402
 from web import workshop as _workshop  # noqa: E402
 
 _workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
+# もちよるの頁のワークショップの様子と、できたおもちゃの節（本人の言葉 11-08）も、写真の分けの表と感想の札を外して、本物の無い形を作る
+# （2 つの節が出る形は tests/test_mochiyoru_workshop.py が見る）
+_workshop.KINDS = _workshop.KINDS.with_name("no-such-workshop-photo-kinds.json")
+from web import demo_samples as _samples  # noqa: E402
+_samples.workshop_for = lambda sid, toy: ""
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 # 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ

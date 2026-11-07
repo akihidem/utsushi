@@ -54,7 +54,7 @@ from omochae.form_import import FORM_URL  # noqa: E402
 from web.contrib_server import public_page  # noqa: E402
 from web.techo_site import gallery_page, voices_sections  # noqa: E402
 
-# 持ち寄りの入口（フォーム）は、職人の言葉の節ごと序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
-assert FORM_URL.startswith("https://docs.google.com/forms/") and FORM_URL in voices_sections() and FORM_URL in public_page()
-assert FORM_URL not in gallery_page([]), "ギャラリーに持ち寄りの入口が残る"
+# 持ち寄りの入口（フォーム）は職人の言葉の節の中にあり、節ごと もちよるの頁へ移した（本人の言葉 11-08「職人の言葉、はもちよるに移動」。前は序の頁の足）
+assert FORM_URL.startswith("https://docs.google.com/forms/") and FORM_URL in gallery_page([]) and FORM_URL in public_page()
+assert FORM_URL not in voices_sections(), "序の頁に持ち寄りの入口が残る"
 print("ok")
