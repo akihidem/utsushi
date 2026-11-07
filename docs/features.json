@@ -825,14 +825,18 @@
  },
  {
   "id": "f66",
-  "name": "ワークショップで作られたおもちゃ（作例）の受け口",
+  "name": "ワークショップで作られたおもちゃ（作例）の受け口と、作った物の頁の作例の節",
   "status": "doing",
   "evidence": [
    "src/web/sakurei.py",
    "src/omochae/records.py",
-   "tests/test_sakurei.py"
+   "src/web/techo_site.py",
+   "tests/test_sakurei.py",
+   "tests/test_sakurei_sort.py",
+   "tests/test_sakurei_gallery.py",
+   "tests/test_sakurei_faces.py"
   ],
-  "unverified": "受け口だけで、作った物の頁の作例の節は次の PR。本人の写真はまだ取り込んでいない（Drive の届け口の folder はまだ無い）。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）"
+  "unverified": "本人のチャットの写真を仕分け、公開デモの置き場に作例の記録（R-1001 から）として入れ、本人の承認の言葉が届いた物を確かめ済みにした（玩具か載せ方の答え待ちの 2 枚は仕分けの置き場に残る）。作った物の頁の節（顔の写真・参加者の型紙の改善例・玩具ごとの札）は、公開デモの置き場の写しで幅 390 と 960 の画面を撮って見た。報告の 4 回の段は回の一覧（#518 の作り直し）が main に入るまで出ない。原画の隣の作ってみた実物が作例を読む形はサイトの担当の PR。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）。実機と人の目はまだ"
  },
  {
   "id": "f67",
