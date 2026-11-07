@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_page_tate.py
+# commit: 7cc8feb8（回した時の HEAD）
+ok 玩具の頁の頭: 確かめた人なし・出典は頁の一番下・図を見るは国立国会図書館の頁へ 1 つ・題の塊と狂歌は絵の左に縦・図鑑の頁とほかのおもちゃの道なし・くずし字の置き場
+rc=0
