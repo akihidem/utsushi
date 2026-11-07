@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_nav_arrow.py
+# commit: c75951e7（回した時の HEAD）
+ok: 頭の帯の駅の間に流れの印がある（読み上げず・押さず・段を増やさない）
+rc=0

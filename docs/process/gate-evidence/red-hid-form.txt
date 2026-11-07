@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hid_form.py
+# commit: 62dd1119（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hid_form.py", line 48, in <module>
+    assert len(box.asked) == seen, f"印の形でない値で探した: {box.asked[seen:]}"
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 印の形でない値で探した: ['_v*.pdf', '../H-A_v*.pdf', 'H-A/../H-A_v*.pdf', '*_v*.pdf', '**_v*.pdf', '**/H-A_v*.pdf', 'H-A*_v*.pdf', 'H-?_v*.pdf', '[H]-A_v*.pdf', 'h-a_v*.pdf', 'H-_v*.pdf', 'OWN-_v*.pdf', 'OWN-x_v*.pdf', 'OWN-1/.._v*.pdf', 'H-A\n_v*.pdf', 'H-A _v*.pdf', 'None_v*.pdf', '3_v*.pdf', "['H-A']_v*.pdf"]
+rc=1

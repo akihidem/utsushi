@@ -128,8 +128,8 @@ assert re.findall(r'name="hypothesis" value="([^"]+)"', ask_form) == [sheet], "�
 techo = get(f"/toy/{TRIAL}/techo")
 assert re.findall(r'data-hid="([^"]+)"', techo) == [sheet], "手帖の紙もたたき台だけ"
 
-# 3. 記録はその 1 枚の hypothesis_id で残る（頁の form が送る値のまま送る）
-sent = re.search(r'name="hypothesis" value="([^"]+)"', get(f"/toy/{TRIAL}").split('id="record"', 1)[1]).group(1)
+# 3. 記録はその 1 枚の hypothesis_id で残る（手帖が送る値のまま送る。玩具の頁の記録の欄は のこす へ寄せた）
+sent = re.search(r'data-hid="([^"]+)"', get(f"/toy/{TRIAL}/techo")).group(1)
 assert sent == sheet
 result = hypotheses.load(TRIAL).get("template")
 from omochae.compose import TEMPLATES  # noqa: E402
@@ -191,8 +191,8 @@ for rid in ("R-0001", "R-0002"):
     (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "loop" / f"explanation-{rid}.json").write_text((ROOT / "data/loop" / f"explanation-{rid}.json").read_text(encoding="utf-8"), encoding="utf-8")
 gpage = get(f"/toy/{G}")
 assert "/record/R-0001/next" not in gpage and "/record/R-0002/next" not in gpage and 'id="next-R-0002"' not in gpage
-kaizen = gpage.split('id="kaizen"', 1)[1]
-assert 'href="#R-0001"' not in kaizen and 'href="#R-0002"' not in kaizen, "次の版に進めない記録を、待つ報告に数えない"
+kaizen = get(f"/loop/{G}").split('id="kaizen"', 1)[1]  # 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
+assert f'href="/toy/{G}#R-0001"' not in kaizen and f'href="/toy/{G}#R-0002"' not in kaizen, "次の版に進めない記録を、待つ報告に数えない"
 card_c = gpage.split('id="R-0002"', 1)[1].split('id="R-0001"', 1)[0]
 assert "説明: " in card_c and "次の思いつき: " in card_c, "記録の説明は読める"
 told_c = json.loads((ROOT / "data/loop/explanation-R-0002.json").read_text(encoding="utf-8"))
@@ -207,10 +207,10 @@ other = rest[0]["id"]
 assert hypotheses.print_sheet(TRIAL, other, str(out_dir(TRIAL) / f"{other}_v1"), 1) == 0
 assert post(f"/toy/{TRIAL}/record", {"hypothesis": other, "result": first_result})[0] in (200, 303)
 rid = records.all_records(TRIAL)[0]["id"]
-assert f'href="#{rid}"' not in get(f"/toy/{TRIAL}").split('id="kaizen"', 1)[1], "説明の前も、ほかの仮説の記録を待つ報告に数えない"
+assert f'href="/toy/{TRIAL}#{rid}"' not in get(f"/loop/{TRIAL}").split('id="kaizen"', 1)[1], "説明の前も、ほかの仮説の記録を待つ報告に数えない"
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] in (200, 303)
 tpage = get(f"/toy/{TRIAL}")
-assert f"/record/{rid}/next" not in tpage and f'href="#{rid}"' not in tpage.split('id="kaizen"', 1)[1]
+assert f"/record/{rid}/next" not in tpage and f'href="/toy/{TRIAL}#{rid}"' not in get(f"/loop/{TRIAL}").split('id="kaizen"', 1)[1]
 # 値は、断りが無ければ版が作れる物にする（範囲の外の値だと、断りを外しても 422 になり、見張りにならない）
 param = sorted(ALLOWED[result])[0]
 to = {**TEMPLATES[result].DEFAULTS, **rest[0]["params"]}[param] - 1
@@ -221,10 +221,10 @@ mine, _ = hypotheses.save_own(TRIAL, "自分の案", "引くと開く", "図の�
 assert not mine.get("params") and hypotheses.print_own(TRIAL, mine["id"], str(out_dir(TRIAL) / f'{mine["id"]}_v1')) == 0
 assert post(f"/toy/{TRIAL}/record", {"hypothesis": mine["id"], "result": first_result})[0] in (200, 303)
 rid = next(r["id"] for r in records.all_records(TRIAL) if r["hypothesis_id"] == mine["id"])
-assert f'href="#{rid}"' not in get(f"/toy/{TRIAL}").split('id="kaizen"', 1)[1], "説明の前も、自分の仮説の記録を待つ報告に数えない"
+assert f'href="/toy/{TRIAL}#{rid}"' not in get(f"/loop/{TRIAL}").split('id="kaizen"', 1)[1], "説明の前も、自分の仮説の記録を待つ報告に数えない"
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] in (200, 303)
 tpage = get(f"/toy/{TRIAL}")
-assert f"/record/{rid}/next" not in tpage and f'href="#{rid}"' not in tpage.split('id="kaizen"', 1)[1]
+assert f"/record/{rid}/next" not in tpage and f'href="/toy/{TRIAL}#{rid}"' not in get(f"/loop/{TRIAL}").split('id="kaizen"', 1)[1]
 assert post(f"/record/{rid}/next", {"interpretation": "x", "param": param, "to": str(to), "why": "x", "by": "x"})[0] == 422
 
 # 8. 札の上の断りは頁に出さない（本人の決定 11-05・案 A）。作る側の控えとしては残す

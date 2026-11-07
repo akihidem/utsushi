@@ -75,7 +75,9 @@ for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to
              "確かめた人: ▲本人", f"▲{esc(data['analogy']['written_by'])}"):
     assert want in page, want
 # 作る側が残した試行の控えと、記録の札の番号（字が同じ行が頁の頭の一覧にもあるので、札の形で見る）
-assert "・版 1・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
+# 札の版は記録を刷った組の番号（窓口の決定 11-07・#513 の (a)。R-0001 は 11-04 の前の組の紙なので、その組の番号）
+r1 = next(r for r in records.all_records(G) if r["id"] == "R-0001")
+assert f"・{hypotheses.label_of(r1.get('sheet_set') or hypotheses.current_set(hypotheses.load(G)), r1.get('sheet_version', 1))}・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
 # 入口の引用の札、一覧の場所、手帖の組の版と記録の番号
 # 入口から章の部屋（歌と札）を外した（本人のサイト体験レビュー 11-07 の 4）。札は玩具の頁の頭（原画と歌）で見る
 assert "確かめた人: ■" not in get("/"), "入口に章の札を出さない（札は玩具の頁。test_reader_words が見る）"
@@ -115,11 +117,12 @@ post(f"/record/{ready}/explain", {"text": "途中で止まった", "next_idea": 
 page = get(f"/toy/{G}?see={GS}&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
 assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
-kz = page.split('id="kaizen"', 1)[1]
-assert f"<a href=#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
-assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
-assert 'href="#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
-assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
+# 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）。札への道は玩具の頁の札（/toy/<印>#R-…）を指す
+kz = get(f"/loop/{G}").split('id="kaizen"', 1)[1]
+assert f"<a href=/toy/{G}#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
+assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
+assert f'href="/toy/{G}#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
+assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
 yomu = get("/about")

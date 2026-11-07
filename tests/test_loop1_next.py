@@ -132,11 +132,12 @@ assert f'action="/record/{rid}/next' in page, "OWN-n の記録にも、次の版
 ids = lambda rs: [r["id"] for r in rs]
 ready, waiting = kaizen.pending(G, records.all_records(G))
 assert rid in ids(ready) and rid not in ids(waiting), (ids(ready), ids(waiting))
-assert f'次の版を待つ報告 1 件: <a href="#{rid}">記録の番号 {rid}</a>' in page, "節に出る"
+# 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で玩具の頁から移した）。待つ報告から玩具の頁の札へ行ける
+assert f'次の版を待つ報告 1 件: <a href="/toy/{G}#{rid}">記録の番号 {rid}</a>' in send(f"/loop/{G}")[1].decode(), "節に出る"
 assert send(f"/toy/{G}/record", {"hypothesis": oid0, "sheet_version": 1, "result": "動いた", "who": "nextwho000"}, cookie=key0)[0] == 303
 rid0 = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid0)
 assert rid0 in ids(kaizen.pending(G, records.all_records(G))[1]), "説明の無い OWN-n の記録は、説明を待つ"
-assert f'説明を待つ報告 1 件: <a href="#{rid0}">記録の番号 {rid0}</a>' in send(f"/toy/{G}")[1].decode()
+assert f'説明を待つ報告 1 件: <a href="/toy/{G}#{rid0}">記録の番号 {rid0}</a>' in send(f"/loop/{G}")[1].decode()  # 輪の節は作る側の様子の頁（本人の答え Q5）
 assert send("/loop")[0] == 200
 base_params = loop.version_params(G, SHEET, 1)[0]
 param, to = one_change()
@@ -148,7 +149,9 @@ v2 = json.loads((loop.folder() / f"version-{G}-{SHEET}-2.json").read_text(encodi
 assert v2["hypothesis_id"] == SHEET and v2["record_ids"] == [rid] and v2["params"][param] == to, "根拠は OWN-n の記録のまま"
 assert v2["params"]["push_part"] == base_params["push_part"], "その人の案の寸法は混ぜない（たたき台の版に、選んだ 1 つだけを足す）"
 paper = out_dir(G) / f"{SHEET}_v2.pdf"
-assert paper.exists() and rid in flat_pdf(paper) and "版2" in flat_pdf(paper), "版 2 の紙が刷られ、根拠の記録が載る"
+# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」
+ban2 = "".join(hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2).split())  # flat_pdf は空白を落とす
+assert paper.exists() and rid in flat_pdf(paper) and ban2 in flat_pdf(paper), "版 2 の紙が刷られ、根拠の記録が載る"
 assert any(c["hypothesis_id"] == SHEET and c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の確定も残る"
 assert words.base_of(G)[1][param] == to, "最新版が次の人の型紙の元になる"
 assert rid not in ids(kaizen.pending(G, records.all_records(G))[0]), "版に使った報告は、もう待たない"

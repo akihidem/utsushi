@@ -188,10 +188,10 @@ for route, want, who, text in (("record", 303, "handover01", "下から押した
     t, k, used, p = adopted(who, text)
     # 自分の紙も型紙だけ（窓口の決定 2026-11-07 カード 012120）。手順の紙は組まないので開く物が無い
     assert opened(k, used) == 200 and opened(k, used, "_tejun") == 404
-    # 記録の form: 本人にだけ、その案の選び肢が出て、選ばれている（作った紙の記録として残すため）。ほかの人の案は並べない（型紙は玩具ごとに 1 枚。J-032）
-    label = f'<option value="{used}" selected>'
-    assert label in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 本人の form に自分の案"
-    assert f'value="{used}"' not in send(base, f"/toy/{G}")[1].decode(), f"{route}: ほかの人の form に出さない"
+    # 記録を残す手帖: 本人の画面にだけ、その案の紙を開く（作った紙の記録として残すため）。ほかの人の手帖には出さない（型紙は玩具ごとに 1 枚。J-032）。
+    # 前は玩具の頁の記録の欄の選び肢で見た。欄は本人の答え 11-07 夕の Q3 で のこす へ寄せた
+    assert f'data-hid="{used}"' in send(base, f"/toy/{G}/techo", cookie=k)[1].decode(), f"{route}: 本人の手帖に自分の案"
+    assert f'"{used}"' not in send(base, f"/toy/{G}/techo")[1].decode(), f"{route}: ほかの人の手帖に出さない"
     assert send(base, f"/toy/{G}/{route}", {"hypothesis": used, "result": "わからない", "who": who})[0] == 422, f"{route}: 鍵の無い人の記録は受けない"
     assert send(base, f"/toy/{G}/{route}", {"hypothesis": used, "result": "わからない", "who": who}, cookie=k)[0] == want, route
     assert opened(k, used) == 404 and opened(k, used, "_tejun") == 404, f"{route}: 記録を残すと、紙も手順の紙も閉じる"
@@ -200,7 +200,7 @@ for route, want, who, text in (("record", 303, "handover01", "下から押した
     assert opened("", used, "_after") == 200, f"{route}: 記録があれば別の人にも開く（話した字が無い紙。tests/test_loop1_next.py）"
     code, _, h = send(base, f"/toy/{G}/think-sheet", {"who": who})
     assert code == 422 and not h.get("Set-Cookie"), f"{route}: 同じタブの次の人が押しても、前の人の案へ戻らない"
-    assert f'value="{used}"' not in send(base, f"/toy/{G}", cookie=k)[1].decode(), f"{route}: 閉じた案は form にも出さない"
+    assert f'"{used}"' not in send(base, f"/toy/{G}/techo", cookie=k)[1].decode(), f"{route}: 閉じた案は手帖にも出さない"
 # 次の人が同じタブで話せば、その人の案を作れる。前の人の案は閉じたまま
 loc4, k4 = ask(base, "handover01", "次の人の考え")
 t4 = token_of(loc4)

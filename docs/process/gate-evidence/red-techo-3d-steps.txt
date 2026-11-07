@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_techo_step.py
+# commit: f46a5c2a（main）の木に tests/test_techo_step.py だけを置き、techo_step.py は main の物のまま（git の外の写し）
+Traceback (most recent call last):
+  File "tests/test_techo_step.py", line 166, in <module>
+    assert ".genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;" in techo_step.STYLE and ".koma.k3 .rt-stage{position:absolute;top:84px;" in techo_step.STYLE
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

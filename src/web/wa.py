@@ -8,7 +8,10 @@
   図の真ん中からそこへ飛ぶ。頁を増やさない（凍結 11-06: 新しい頁・口・欄は作らない。図は本人の言葉による置き物）。
 - 輪の 4 つの字は、頁に既にある字から取る（新しい言い方を増やさない）。PREMISE_PAGE の「ためしの案（仮説）」「どう工夫したかを記録に書いて」
   「次の型紙をよくする」と、「すぐ作る」の頭の文の「切って、折って、組みます」。並べ方と切り方は案なので、本人の確認に回す（PR は確認まで合体しない）。
-- 真ん中に出す数は、その玩具の今の型紙の版だけ（人が採った一番新しい版。無ければ版 1）。報告の数や動いた数は出さない（成績に見える数を出さない。J-025）。
+- 真ん中に出す数は、その玩具の今の型紙の版だけ。報告の数や動いた数は出さない（成績に見える数を出さない。J-025）。
+  版は組の番号（goraigo-v14 の 14。set_version）。前は寸法を 1 つ直した刻み（current_version、ループ 2 の版）を出していたが、本人の言葉（11-07）
+  「バージョンをサイトで明示したい」と窓口の決定（カード 084426）で、紙の題に刷る数と同じ「型紙の版」を出す。寸法の刻みは版の中の小さな直しとして、
+  作る側の版の歩みの頁（/loop/ayumi）に残す（学ぶ人の頁には出さない）。「エンジンの版」は別の数で、ここには出さない（言い分ける。同じ決定）。
 - 今動いていない所を、動いているように描かない。輪は人の手で回る所（作る人が工夫を記録し、作る側が寸法を 1 つ変えて次の版にする）だけを描く。
   AI が次の案を出す所は、本物の API がまだ動いていないので描かない（足すなら点線と「いま作っているところです」。本人の決定 11-05 の線）。
 - 図は字を持つ SVG（読み上げられるよう、title に輪の順を 1 文で入れる）。色は皮の色（--accent・--frame・--fg）を読むので、白の展示と黒のジンの両方で同じ作り。
@@ -67,8 +70,13 @@ def _box(x, y, label):
     return f'<rect class="wa-box" x="{x - BOX_W / 2}" y="{y - BOX_H / 2}" width="{BOX_W}" height="{BOX_H}" rx="8"/>{texts}'
 
 
-def ring(version=1, href="#kaizen"):
-    """輪の図の HTML。version は真ん中に出す今の型紙の版。href は真ん中を押した時の行き先（頁の下の「型紙の改善の輪」）。"""
+# 輪の図の真ん中を押した時の行き先。説明の頁（序の頁）の改善の歴史の節の錨（web.kaizen_rekishi）。前は玩具の頁の足の「型紙の改善の輪」（#kaizen）で、
+# 本人の答え（11-07 夕の Q5）「型紙の改善の輪は外して、説明の頁と のこす だけにする」で節を外したので、行き先を替えた（輪の図は残す。窓口の決め 11-07）
+HREF = "/about#kaizen-rekishi"
+
+
+def ring(version=1, href=HREF):
+    """輪の図の HTML。version は真ん中に出す今の型紙の版。href は真ん中を押した時の行き先（説明の頁の改善の歴史）。"""
     arcs = "".join(_arc(SPOTS[i], SPOTS[(i + 1) % len(SPOTS)]) for i in range(len(SPOTS)))
     boxes = "".join(_box(x, y, s) for (x, y), s in zip(SPOTS, STEPS))
     said = " → ".join((*STEPS, STEPS[0]))
@@ -78,6 +86,13 @@ def ring(version=1, href="#kaizen"):
               f'<text class="wa-v" x="{CX}" y="{CY + 22}" text-anchor="middle">{v}</text></a>')
     return (f'<style>{STYLE}</style><figure class="wa" id="wa"><svg viewBox="0 0 {W} {H}" role="img" aria-labelledby="wa-title">'
             f'<title id="wa-title">{esc(said)}</title>{arcs}{boxes}{center}</svg></figure>')
+
+
+def set_version(sid, data=None):
+    """その玩具の今の型紙の版（組の番号。紙の題に刷る数と同じ）。輪の真ん中と型紙の札の脇に出す。"""
+    from omochae import hypotheses
+
+    return hypotheses.set_number(data or hypotheses.load(sid))
 
 
 def current_version(sid, data):

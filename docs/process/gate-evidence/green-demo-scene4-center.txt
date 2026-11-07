@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_demo_scene4.py
+# commit: d949616c（回した時の HEAD）
+ok
+rc=0

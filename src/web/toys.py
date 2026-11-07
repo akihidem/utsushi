@@ -129,15 +129,22 @@ def _tile(sid):
             'loading="lazy" decoding="async" fetchpriority="low" alt="図">')
 
 
-def card(sid):
+def card(sid, made_url=None):
     """札は絵と名前だけ（作り直し 11-07）。必須の 2 種は前と同じ額の敷き方の大きい札、ほかは敷き詰めの 1 枚。
-    写しの無い玩具は名前と国立国会図書館への道（写しの有無で玩具が消えると選べなくなるため。前のまま）。"""
+    写しの無い玩具は名前と国立国会図書館への道（写しの有無で玩具が消えると選べなくなるため。前のまま）。
+    made_url は作った実物の写真の小さい写しの道（web.made.photo）。ある時だけ、原画の右下に小さな角で重ねる（本人の言葉 11-07「入口にギャラリーを足す」
+    「いまのものに実際に作ったものを足す」・窓口の決め 163132。新しい節は足さず、札の高さも替えない）。押すと今のとおりその玩具の頁"""
     data, src = hypotheses.load(sid), _source(sid)
     main = hypotheses.stage(sid) == "必須"
     has = (ROOT / "out/sources" / f"{sid}.jpg").exists()
     more = "" if has else f'<p class="meta"><a href="{esc(src.get("image_url", ""))}">図を見る（国立国会図書館）</a></p>'
     big = ' class="big"' if main else ""
     pic = _pic(sid, True) if main else _tile(sid)
+    if made_url:
+        from .made import PHOTO
+
+        pic = (f'<span class="made-wrap">{pic}<span class="made-corner"><img src="{esc(made_url)}" alt="{esc(PHOTO)}の写真" '
+               'loading="lazy" decoding="async"></span></span>')
     return f'<li{big}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
 
 
