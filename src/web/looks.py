@@ -351,6 +351,26 @@ def _mazu(ts, photos=True):
     return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
 
 
+# 選ぶのは 2 回目から（本人の言葉 11-08「83 のおもちゃから、1 つ選ぶ、で実際に選ぶのは 2 回目以降にしたい」・本人の決め「A＋Cでよい」）。
+# 案 A: 見分けずに全員へ同じ形を出し、敷き詰めを畳む（端末にもサーバにも印を持たない・共用の iPad でもぶれない）。畳みの札に数を出すので、
+# 審査員は初めてでも全部の数が分かり、1 押しで開く。道 /#erabu で開いた形に着く（README と審査用の頁から張る道・のこすの後の道 C）。
+# 数は字に固定せず、頁を作る時に棚の分け（genre.groups）から数える（棚の入れ先が替わると数も替わるため。統括の気づき 11-08）
+FOLD = "2 回目からは、{n} のおもちゃから えらぶ（{shelves}）"
+
+
+def erabu_counts(all_sids):
+    """（全部の数, [(棚の字, 数), …]）。棚の分けは genre.groups の並びのまま。"""
+    from . import genre
+    shelves = [(big, sum(len(ss) for _, ss in mids)) for big, mids in genre.groups(all_sids)]
+    return sum(n for _, n in shelves), shelves
+
+
+def fold_label(all_sids):
+    """畳みの札の字（数は棚の分けから）。"""
+    n, shelves = erabu_counts(all_sids)
+    return FOLD.format(n=n, shelves="・".join(f"{big} {k}" for big, k in shelves))
+
+
 def _erabu(sids, photos=True):
     """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。
     photos=True の時は、作った実物の写真（人が確かめた物・web.made.photo）がある玩具の札にだけ、原画の右下に小さな角を重ねる（窓口の決め 163132）。
@@ -364,9 +384,12 @@ def _erabu(sids, photos=True):
     # トンネル越し）で、2 枚と並びの 20 枚ほどを一度に読むと、2 枚が届くのに 5.6 秒かかった（11-07 に Chromium で測った。本人の答え 11-07 の (a)）。
     # 台本が動かない機器では、並びは名前の札だけになる（並びの絵は 2 枚より後でよい物なので、そこは止めない）
     shelves = shelves.replace(' src="/picture/', ' data-src="/picture/')
+    # 畳み（details）の札が入口に見える 1 行。前からの見出し「N のおもちゃから、1 つ選ぶ」（本人が確かめた字・test_words_card_1106）は、
+    # 畳みを開いた中の頭にそのまま残す（字を替えない）。錨は前からの #all-toys（section）と、開いた形で着く #erabu（details）の 2 つ
     n = len(sids) + len([s for s in sources() if hypotheses.stage(s) == "必須"])
-    return (f'<section class="tj-erabu" id="all-toys"><h2>{n} のおもちゃから、1 つ選ぶ</h2>{shelves}'
-            '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></section>')
+    return (f'<section class="tj-erabu" id="all-toys"><details class="tj-fold" id="erabu"><summary>{esc(fold_label(list(sources())))}</summary>'
+            f'<h2>{n} のおもちゃから、1 つ選ぶ</h2>{shelves}'
+            '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></details></section>')
 
 
 # 暗い画面の版の入口（本人の決め 11-08「もう1つ立てる」— HMD のための暗い版の公開デモ。統括の頼み 11-08「入口も白と同じ作り
@@ -416,9 +439,13 @@ def tenji(photos=True, dark=False):
 
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
 # 見えた時に起こす仕掛けは使わない（入口の決まり。research/19）。
-ERABU_JS = """<script>(()=>{let go=false;const run=()=>{if(go)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
-const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
-big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
+# 畳んだ後は、並びの小さい写しを畳みを開いた時だけ読む（閉じたままの人に 81 枚を読ませない）。開いた時も、まずはここから の 2 枚が先に届くよう、
+# 2 枚が届くか 2.5 秒たつのを待ってから読む（前の決め・遅い回線で 2 枚が 5.6 秒かかった 11-07 の測り）。道が #erabu（か前からの #all-toys）の時は開いて着く
+ERABU_JS = """<script>(()=>{let go=false,ready=false,want=false;const run=()=>{if(go||!ready||!want)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
+const fold=document.getElementById('erabu');const ask=()=>{want=true;run()};
+if(fold){fold.addEventListener('toggle',()=>{if(fold.open)ask()});const hash=()=>{if(location.hash==='#erabu'||location.hash==='#all-toys'){fold.open=true;ask()}};hash();addEventListener('hashchange',hash)}else want=true;
+const ok=()=>{ready=true;run()};const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.filter(i=>!i.complete).length;if(!left){ok();return}
+big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)ok()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(ok,2500)})();</script>"""
 
 
 # 題の間（tj-hall）は縦の組み（TENJI の .tj-hall の形）に戻した: 本人の決め（11-07 夜）「縦の組みに戻す」。11-06 夜の main 5d1358dd の最初の画面
@@ -444,6 +471,8 @@ body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
 .tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}
 .tj-erabu{padding:8vh 24px;max-width:1180px;margin:0 auto;border-top:1px solid #ebe8e2}
 .tj-erabu h2{font-size:clamp(15px,1.6vw,19px);font-weight:400;letter-spacing:.2em;margin:0 0 4vh}
+.tj-fold>summary{cursor:pointer;font-size:clamp(15px,1.6vw,19px);letter-spacing:.2em;padding:12px 0;min-height:44px;list-style-position:outside}
+.tj-fold[open]>summary{margin:0 0 3vh}
 .tj-erabu h3{font-size:14px;font-weight:400;letter-spacing:.4em;color:#5d554a;margin:5vh 0 14px}
 .tj-narabi{list-style:none;padding:0;margin:0;columns:9 72px;column-gap:12px}
 .tj-narabi li{break-inside:avoid;margin:0 0 12px}
