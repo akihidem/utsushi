@@ -71,7 +71,9 @@ for look in ("tenji", "zine"):
     entrance = get("/", at=up(look=look))
     assert "83 のおもちゃから、1 つ選ぶ" in entrance and "の玩具から、1 つ選ぶ" not in entrance, look
 toys = get("/toys")
-assert "83 のおもちゃです。" in toys and "83 の玩具。" not in toys
+# 「83 のおもちゃです。」の段は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）。字はそのまま
+yomu = get("/about")
+assert "83 のおもちゃです。" in yomu and "83 の玩具。" not in yomu and "83 の玩具。" not in toys
 assert "紙 1 枚で作れるおもちゃだけを見る" in toys and "紙 1 枚で作れる玩具だけを見る" not in toys
 page = get(f"/toy/{G}")
 assert "全部のおもちゃの、作った物を見る" in page and "全部の玩具の、作った物を見る" not in page
