@@ -19,13 +19,17 @@ from . import skin
 from .play_server import esc, sources
 
 DRAFT = "Draft translation. A native speaker has not checked it yet."
-# paper to toy の短い説明（英語 3 文）。字の元は型紙エンジンの README と版の台帳から作った材料の字（11-07 に届いた物・言葉のまま）。
-# 窓口の決め（11-07）: 序の頁の位置づけは別の PR（序の頁と README の担当）の作りでそろえ、English の頭にはこの 3 文を入れる。
-# 本人の言葉（11-07 昼「utsushi は paper to toy の具体例、という説明をサイトに」）の English の側。J-030 の紹介（INTRO）の文は変えず、別の段として頭に置く
-POSITION = ("Paper to toy is an engine for designing mechanisms with internal structure from flat materials like paper. "
-            "Give it a toy's dimensions, and it lays out the parts, checks them before and after printing, and outputs a printable PDF template; "
-            "for the two featured toys it also folds and assembles the parts in 3D to check that nothing collides. "
-            "Makers' reports and workshop feedback become improvement proposals, and when people adopt one and the fix is in, the template version and the engine version go up.")
+# うつしの位置づけ（英語 2 文）。本人の言葉（11-07 昼）「utsushi は paper to toy の具体例、という説明をサイトに」
+# 「これからというよりは、みんなが使えるサービスとして作った」に合わせた案の字を、本人が採った（11-07「この英文でよい」）。
+# J-030 の紹介（INTRO）の文は変えず、別の段として頭に置く
+POSITION = ("Utsushi is one example of paper to toy, using the toys in an Edo picture book. "
+            "We made it as a service everyone can use, from schools, research, and museums to homes.")
+# paper to toy の仕組みの英語 3 文。字は型紙エンジンの README と版の台帳から作った材料の字（11-07 に届いた物・言葉のまま）。
+# 窓口の決め（11-07 130735）「/en の英語 3 文は #526 の 1 本にまとめる。#527 は /en の分を外す」。位置づけの 2 文のすぐ後に置く
+ENGINE = ("Paper to toy is an engine for designing mechanisms with internal structure from flat materials like paper. "
+          "Give it a toy's dimensions, and it lays out the parts, checks them before and after printing, and outputs a printable PDF template; "
+          "for the two featured toys it also folds and assembles the parts in 3D to check that nothing collides. "
+          "Makers' reports and workshop feedback become improvement proposals, and when people adopt one and the fix is in, the template version and the engine version go up.")
 # J-030 の少し長い紹介と同じ文。文を変える時は J-030 も直す。本人の方針（11-05）の書き方: 短い文・やさしい語（#318）。
 INTRO = (
     "In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called <i>Edo nishiki</i>. It shows more than 80 toys with short poems, but it does not say how the toys worked.",
@@ -89,7 +93,7 @@ def index_page(look=skin.DEFAULT, path="/en"):
         tag = "" if hypotheses.stage(sid) == "必須" else '<span class="lb">Untested draft</span>'
         cards += (f'<article class="card"><a href="/en/toy/{esc(sid)}">{_picture(sid)}<h3>{esc(t["name"])}</h3></a>{tag}<p class="meta">{esc(t["intro"])}</p></article>')
     intro = "".join(f"<p>{x}</p>" for x in INTRO)
-    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p><p class="position">{esc(POSITION)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
+    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p><p class="position">{esc(POSITION)}</p><p class="engine">{esc(ENGINE)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
     return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)

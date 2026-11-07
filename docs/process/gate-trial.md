@@ -2349,7 +2349,7 @@
 - エビデンスゲート: 上の 2 つの記録と `tests/test_print_together.py`
 - マージ後の書き戻し: Issue は立てていない（新しい Issue は提出を止める物だけ）
 
-## English の頭に、paper to toy の短い説明（英語 3 文）を足す（UX の担当、ux/paper-to-toy、11-07。本人の言葉と窓口の決め）
+## English の頭に、うつしの位置づけ（英語 2 文）と paper to toy の仕組み（英語 3 文）を足す（UX の担当、ux/paper-to-toy、11-07。本人の言葉と窓口の決め）
 
 - 目的: 本人の言葉（11-07 昼）「想定する相手は教育分野から、みんなが使える公開のサービスへ広げる。utsushi は paper to toy の具体例、という説明をサイトに」の English の側
 - なぜか: English の頁には paper to toy の説明が無い
@@ -2360,3 +2360,4 @@
 - 検証ゲート: **済み**。Red: main（f8873d89）にこの試験だけを置くと rc 1（gate-evidence/red-paper-to-toy-en.txt）。Green: gate-evidence/green-paper-to-toy-en.txt
 - エビデンスゲート: 上の 2 つの記録と `tests/test_paper_to_toy.py`
 - 確かめていない事: English の文は英語を母語にする人が見ていない（頁の断りのとおり）。3 文は材料の字のままで、本人の確かめは窓口へ
+- 最後の形（11-07 13 時台）: 本人が位置づけの英文を採った（「この英文でよい」「#526 の英文は案のままで合体してよい」）。窓口の決め 130735「/en の英語 3 文は #526 の 1 本にまとめる。#527 は /en の分を外す」。English の頭に、位置づけの 2 文（POSITION）→ 仕組みの 3 文（ENGINE）の順。位置づけは「これから」の向きの字を使わない（本人の言葉「これからというよりは、みんなが使えるサービスとして作った」）。test_reader_words の「調べの番号」の式を research から research/\d に狭めた（本人の英文の research＝研究 が当たったため。research/22・docs/process/research/36 の形は今も当たる）。Red: main（62dd1119）にこの試験だけを置くと rc 1（gate-evidence/red-paper-to-toy-en-final.txt）。Green: gate-evidence/green-paper-to-toy-en-final.txt
