@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_review_2216.py
+# commit: 288930ae（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_review_2216.py", line 22, in <module>
+    assert "Noto Sans" not in techo_site.STYLE and "sans-serif" not in techo_site.STYLE.split("body.techo{")[1].split("}")[0], "のこす の頁の書体"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: のこす の頁の書体
+rc=1
