@@ -30,6 +30,8 @@ from omochae import hypotheses, records  # noqa: E402
 from web import looks, play_server, techo_site, toy  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 ROAD = ("えらぶ", "つくる", "のこす", "もちよる")  # 本人の決定 11-06（research/36）。一字も変えない
 
 
@@ -78,7 +80,7 @@ for sid in (G, T):
     assert st == 200 and "#win" in url or "see=" in url, (sid, url)
 after = toy.toy_page(G, see=hypotheses.sheet_of(G)["id"], kind="", v=1)
 hero = after[after.index('<section class="hero">'):after.index("</section>", after.index('<section class="hero">'))]
-assert re.search(rf'<p class="road"><a class="btn" href="/toy/{G}\?see=H-A&amp;kind=sheet&amp;v=\d+#win">つくる</a></p>', hero), "紙がある時は、作り直さずに窓の紙へ"
+assert re.search(rf'<p class="road"><a class="btn" href="/toy/{G}\?see={GS}&amp;kind=sheet&amp;v=\d+#win">つくる</a></p>', hero), "紙がある時は、作り直さずに窓の紙へ"
 # 刷ってある紙が一番新しい版でない時（人が採った版 2 など）と、今の組でない時（雛形の次の組）は、窓へ行かずに刷る口へ送る（古い紙を出さない）
 from omochae import loop  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
@@ -104,7 +106,7 @@ assert roads(after) == ["つくる", "つくる"], ("紙の後の道しるべ", 
 
 # ---- 5 手帖の記録の頁
 # 感想のある記録（ギャラリーは、写真か言葉の無い記録を札にしない）
-rid, fs = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "impression": "扇がよく開いた"})
+rid, fs = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた", "impression": "扇がよく開いた"})
 assert not fs, fs
 kiroku = techo_site.records_page(G, msg="上げました")
 mine = kiroku[kiroku.index('<div id="mine">'):]

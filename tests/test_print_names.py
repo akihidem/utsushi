@@ -12,6 +12,8 @@ import subprocess
 import sys
 import tempfile
 
+from omochae import hypotheses  # たたき台は組ごと（御来迎の次の組は H-C）。刷る仮説を記録から引く
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 tmp = pathlib.Path(tempfile.mkdtemp())
@@ -34,16 +36,16 @@ def made():
 
 # 1. 同じ H-A でも、玩具ごとに別の紙が残る
 for sid in (G, T):
-    r = cli("--source", sid, "print", "H-A")
+    r = cli("--source", sid, "print", hypotheses.sheet_of(sid)["id"])  # 玩具ごとのたたき台（御来迎の次の組は H-C）
     assert r.returncode == 0, r.stderr
 assert len(made()) == 2, made()
 for sid, toy in ((G, "御来迎"), (T, "張子の首振り虎")):
-    assert toy in words(here / "out/templates" / f"{sid}_H-A_v1.pdf"), (toy, "後から刷った玩具の紙で上書きされていない")
-first, second = (words(here / "out/templates" / f"{sid}_H-A_v1.pdf") for sid in (G, T))
+    assert toy in words(here / "out/templates" / f"{sid}_{hypotheses.sheet_of(sid)['id']}_v1.pdf"), (toy, "後から刷った玩具の紙で上書きされていない")
+first, second = (words(here / "out/templates" / f"{sid}_{hypotheses.sheet_of(sid)['id']}_v1.pdf") for sid in (G, T))
 assert first != second, "玩具ごとに別の紙"
 # --source を付けない時は御来迎の名前
 before = made()
-assert cli("print", "H-A").returncode == 0 and made() == before
+assert cli("print", hypotheses.sheet_of(G)["id"]).returncode == 0 and made() == before
 
 # 2. 自分の案も別々に残る
 for sid in (G, T):
@@ -53,6 +55,6 @@ for sid in (G, T):
 assert (here / "out/templates" / f"{G}_OWN-1_v1_free.pdf").exists() and (here / "out/templates" / f"{T}_OWN-1_v1_free.pdf").exists(), made()
 
 # 3. --out はそのまま
-r = cli("print", "H-A", "--out", "mine/x")
+r = cli("print", hypotheses.sheet_of(G)["id"], "--out", "mine/x")
 assert r.returncode == 0 and (here / "mine/x.pdf").exists(), r.stderr
 print("ok 既定の名前に玩具が入り、同じ H-A の紙が別々に残る")

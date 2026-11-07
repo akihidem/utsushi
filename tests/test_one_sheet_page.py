@@ -71,13 +71,15 @@ def post(path, form):
 
 def others(sid):
     data = hypotheses.load(sid)
-    return data["sheet"], [h for h in data["hypotheses"] if h["id"] != data["sheet"]]
+    sheet = hypotheses.sheet_id(data)  # たたき台は組ごと（御来迎の次の組は H-C）
+    return sheet, [h for h in data["hypotheses"] if h["id"] != sheet]
 
 
 # 1. 頁はたたき台の 1 枚だけ。紙を選ぶ欄が無い。紙を刷る前と後の両方で見る
 for sid in (G, T, TRIAL):
     sheet, rest = others(sid)
-    assert rest and sheet == "H-A", sid
+    # たたき台は組ごと（御来迎の次の組は H-C・本人の決定 2026-11-06。ほかは H-A）
+    assert rest and sheet == hypotheses.sheet_of(sid)["id"] == ("H-C" if sid == G else "H-A"), sid
     for when in ("刷る前", "刷った後"):
         page = get(f"/toy/{sid}")
         assert page.count('<div class="plate">') == 1, (sid, when)
@@ -160,6 +162,7 @@ assert "R-0002" in gpage and "R-0001" in gpage, "R-0001・R-0002 が読める"
 
 # 5. 一覧の「紙 1 枚」は、たたき台の印で数える（前は全部の仮説の印で 39 種。本人の決定 19:44 で必須 2 種が 0 種でよい）
 papers = toys.paper_only_sids(toys.sources())
+# 御来迎の次の組（goraigo-v14）のたたき台 H-C は割り箸を使うので、紙 1 枚には入らない（前の組のつまみの形と同じ）
 assert len(papers) == 33 and G not in papers and T not in papers, len(papers)
 table = ways.table()
 assert sorted(papers) == sorted(r["source_id"] for r in table if r["sheet"] and r["one_sheet"])
@@ -175,19 +178,21 @@ for r in table:
     if r["sheet"]:
         assert r["reading_of"] is None and r["source_id"] not in sheets, r
         sheets[r["source_id"]] = r["hypothesis_id"]
-assert len(sheets) == 83 and set(sheets.values()) == {"H-A"}
+# たたき台は御来迎の次の組（goraigo-v14）だけ H-C（柄を下から押し上げる・統括の決め 2026-11-06）、ほかは H-A
+assert len(sheets) == 83 and {k: v for k, v in sheets.items() if v != "H-A"} == {G: "H-C"}, {k: v for k, v in sheets.items() if v != "H-A"}
 assert all(r["reading_of"] == sheets[r["source_id"]] for r in table if not r["sheet"]) and len(table) > 83
 out = subprocess.run([sys.executable, "-m", "omochae.ways", "--json"], capture_output=True, text=True)
 assert out.returncode == 0 and json.loads(out.stdout) == json.loads(json.dumps(table, ensure_ascii=False))
 
-# 7. 次の版の欄は、たたき台の記録だけ。本物の記録で見る（R-0001 は H-A、R-0002 は H-C。どちらも説明がある）
+# 7. 次の版の欄は、たたき台の記録だけ。本物の記録で見る（R-0001 は H-A、R-0002 は H-C。どちらも説明がある）。
+# 御来迎の次の組（goraigo-v14）のたたき台は H-C（柄を下から押し上げる・統括の決め 2026-11-06）なので、11-04 の H-A の記録 R-0001 も次の版の欄を出さない（形が違う紙の版にしない）
 (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "loop").mkdir(parents=True, exist_ok=True)
 for rid in ("R-0001", "R-0002"):
     (pathlib.Path(os.environ["OMOCHAE_DATA"]) / "loop" / f"explanation-{rid}.json").write_text((ROOT / "data/loop" / f"explanation-{rid}.json").read_text(encoding="utf-8"), encoding="utf-8")
 gpage = get(f"/toy/{G}")
-assert "/record/R-0001/next" in gpage and "/record/R-0002/next" not in gpage and 'id="next-R-0002"' not in gpage
+assert "/record/R-0001/next" not in gpage and "/record/R-0002/next" not in gpage and 'id="next-R-0002"' not in gpage
 kaizen = gpage.split('id="kaizen"', 1)[1]
-assert 'href="#R-0001"' in kaizen and 'href="#R-0002"' not in kaizen, "次の版に進めない記録を、待つ報告に数えない"
+assert 'href="#R-0001"' not in kaizen and 'href="#R-0002"' not in kaizen, "次の版に進めない記録を、待つ報告に数えない"
 card_c = gpage.split('id="R-0002"', 1)[1].split('id="R-0001"', 1)[0]
 assert "説明: " in card_c and "次の思いつき: " in card_c, "記録の説明は読める"
 told_c = json.loads((ROOT / "data/loop/explanation-R-0002.json").read_text(encoding="utf-8"))

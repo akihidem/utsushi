@@ -39,6 +39,9 @@ from web.play_server import out_dir, serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
+# この試験は、たたき台に版を重ねる作り（話した字つきの記録 → 版 2・形の違う案は控え・寸法の差の案は次の版）を、前の組（goraigo-v10）の
+# つまみの形の寸法で見る（値はその寸法で選んである）。今の組（goraigo-v14）の版の重ね方は tests/test_next_version_atomic.py ほかが見る
+TEMPLATES["slider_fan"].SHEET_SET = TEMPLATES["slider_fan"].FROZEN_SET
 TRIAL = "NDL-1187053-R0000004-L-4"  # 形（form）の違う仮説を持つ試作の玩具
 WHO = "abcd1234ef"
 RESULTS = TEMPLATES["slider_fan"].RESULTS

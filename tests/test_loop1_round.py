@@ -88,7 +88,7 @@ EARLY_CRAFT, EARLY_THINK, THEIRS = "たたき台の筒を先に切った", "筒�
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": SHEET, "sheet_version": 1, "step": 1, "text": EARLY_CRAFT, "who": WHO})[0] == 200
 assert send(f"/toy/{G}/talk", {"scene": "think", "hypothesis": SHEET, "text": EARLY_THINK, "who": WHO})[0] == 303
 assert send(f"/toy/{G}/talk", {"scene": "think", "hypothesis": SHEET, "text": THEIRS, "who": OTHER})[0] == 303
-oid, key = made(WHO, THINK, {"push_part": "stick", "pusher_height": 84})
+oid, key = made(WHO, THINK, {"push_amount": 62})
 # 刷った組は、紙を確定する時に残す（紙に刷った組。記録の時の組ではない）
 confirmed = [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
 assert confirmed and confirmed[0]["version"] == 1 and confirmed[0]["confirmations"][0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, confirmed
@@ -112,7 +112,8 @@ assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 404  # 自分の
 total = body.count("<li")
 assert total >= 2, "その紙の手順の文が出る"
 # ほかの人には今のまま
-assert 'data-hid="H-A"' in page(f"/toy/{G}/tsukuru")[1], "鍵の無い人には、たたき台の頁"
+SHEET_ID = hypotheses.sheet_of(G)["id"]  # たたき台（御来迎の今の組 goraigo-v14 は H-C）
+assert f'data-hid="{SHEET_ID}"' in page(f"/toy/{G}/tsukuru")[1], "鍵の無い人には、たたき台の頁"
 assert f'data-hid="{oid}"' not in page(f"/toy/{G}/tsukuru?h={oid}")[1], "番号を知っていても開かない"
 # ほかの人の札・工夫・問い・記録は、その紙に付かない
 assert send(f"/toy/{G}/step", {"hypothesis": oid, "event": "next", "step": 1, "who": OTHER})[0] == 422
@@ -165,7 +166,7 @@ assert not [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
 # ── 手帖から: 本人の紙を選んで記録する ──
 T2, C2 = "筒を細くしたら速く開くと思う", "内筒に蝋を塗ると滑る"
 W2 = "roundwho03"
-o2, k2 = made(W2, T2, {"push_part": "stick", "pusher_height": 84})
+o2, k2 = made(W2, T2, {"push_amount": 62})
 body = page(f"/toy/{G}/techo", cookie=k2)[1]
 assert f'data-hid="{o2}"' in body, "手帖は本人の紙を作る（紙を選ばせない。#87）"
 assert o2 not in page(f"/toy/{G}/techo")[1], "ほかの人の手帖には出ない"

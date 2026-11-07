@@ -60,11 +60,13 @@ ADOPTED = {"GO": "この考えから紙を作る", "LEAD": "残した考えに�
            "DONE": "紙ができました。", "SEE": "紙を見る", "FAILED": "紙を作れませんでした。もう一度押してください。"}
 for key, text in ADOPTED.items():
     assert getattr(think_sheet, key) == text, key
-# 虎の今の組（tora-v6）の 4 つは、窓口が本人の委任で推しの字を選んだ（2026-11-06）。頭の幅と重りの深さは今ある呼び名を使う
+# 虎の今の組（tora-v6）の 4 つは、窓口が本人の委任で推しの字を選んだ（2026-11-06）。頭の幅と重りの深さは今ある呼び名を使う。
+# 御来迎の今の組（goraigo-v14）の 4 つと、押す所の値 rise（柄の字）は、窓口が本人の委任で選んだ案 A（2026-11-06）
 assert think_sheet.NAMES == {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方",
                              "axle_height": "軸の高さ（mm）", "leg_height": "脚の高さ（mm）", "body_round": "胴の角を落とす幅（mm）", "head_sides": "顔の数",
-                             "clay_back": "重りの穴の後ろへのずれ（mm）", "axle_back": "軸と前の壁の間（mm）"}  # 虎 v7 の 2 つ（窓口の決定 2026-11-07 案 A）
-assert think_sheet.VALUES == {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る"}
+                             "clay_back": "重りの穴の後ろへのずれ（mm）", "axle_back": "軸と前の壁の間（mm）",  # 虎 v7 の 2 つ（窓口の決定 2026-11-07 案 A）
+                             "tube_height": "筒の高さ（mm）", "base_side": "台の一辺（mm）", "figure_w": "像の幅（mm）", "figure_h": "像の高さ（mm）"}
+assert think_sheet.VALUES == {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る", "rise": "柄"}
 assert think_sheet.labels({"id": "H-A"}) == ("仮説 A から変えた案", "仮説 A の紙を見て話した考え"), "紙に刷る名前と根拠"
 
 base_params = words.base_of(G)[1]
@@ -75,23 +77,24 @@ think(SAID)
 assert think_sheet.request(G, "")[1] == think_sheet.NONE, "印の無い画面からは頼めない"
 assert think_sheet.request(G, OTHER)[1] == think_sheet.NONE, "ほかの人の考えは選ばない"
 w, why = think_sheet.request(G, WHO)
-assert w and why is None and w["status"] == "waiting_maker" and w["name"].startswith("仮説 A ")
+assert w and why is None and w["status"] == "waiting_maker" and w["name"].startswith(f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} ")  # たたき台の仮説の名（御来迎の今の組は C）
 assert think_sheet.request(G, WHO)[0]["id"] == w["id"] and len(words.waiting()) == 1, "押し直すと同じ案へ戻り、案を並べない"
 assert not out_dir(G).exists() and hypotheses.own_hypotheses(G) == [], "頼んだだけでは何も刷らない"
 assert think_sheet.WAITING in think_sheet.section(G, f"think-{w['token']}")
 assert think_sheet.confirm(G, w["token"])[0] is None, "作る側が書く前は採れない"
-assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+assert not words.fill_think(w["id"], words.think_result(w["base_params"], {"push_amount": 62}), "作る側")[1]
 html = think_sheet.section(G, f"think-{w['token']}")
 assert think_sheet.CHECK in html and think_sheet.OK in html and think_sheet.SAME in html
 assert think_sheet.GO not in html, "確かめている間は、作り直す釦を並べない"
-assert f"{think_sheet.NAMES['push_part']}: {think_sheet.VALUES['tab']} → {think_sheet.VALUES['stick']}" in html, "変えた所を、もと → 今で見せる"
-assert "push_part" not in html and "stick" not in html and "pusher_height" not in html, "内部の名前を見せない"
+# 御来迎の今の組（goraigo-v14）の寸法では柄の形が収まらないので、変えた所は押し上げる量（60 → 62）にした
+assert f"{think_sheet._name('slider_fan', 'push_amount')}: 60 → 62" in html, "変えた所を、もと → 今で見せる"
+assert "push_amount" not in html and "push_part" not in html, "内部の名前を見せない"
 assert hypotheses.own_hypotheses(G) == [], "本人が押すまで残らない"
 name, why = think_sheet.confirm(G, w["token"])
 oid = words.by_token(G, w["token"])["own_id"]
 assert name == f"{oid}_v1.pdf" and why is None
 assert "".join(OWN_HYPOTHESIS.split()) in flat_pdf(out_dir(G) / name), "紙に「自分で立てた」の印"
-assert "仮説Aから変えた案" in flat_pdf(out_dir(G) / name), "紙に刷る名前は採られた文"
+assert f"仮説{hypotheses.letter(hypotheses.sheet_of(G))}から変えた案" in flat_pdf(out_dir(G) / name), "紙に刷る名前は採られた文"
 done = think_sheet.section(G, f"think-{w['token']}")
 assert think_sheet.DONE in done and name in done and SAID in done
 assert f'<img src="/sheet/{G}/{name[:-4]}.png"' in done and (out_dir(G) / f"{name[:-4]}.png").exists(), "紙を作った直後に、その紙の絵が出る（#145）"
@@ -130,7 +133,7 @@ assert "耳の長さ（mm）: 12 → 13" in html and "glue" not in html and "頭
 
 # ── 鍵ありの道（偽の Claude）を画面の関数で ──
 think("割り箸の柄で押したい", who=OTHER)
-CHANGED = {"push_part": "stick", "pusher_height": 84}
+CHANGED = {"push_amount": 62}
 ok = {"fits": True, "params": {**base_params, **CHANGED}, "from_words": sorted(CHANGED),
       "filled_in": [{"param": k, "why": words.KEPT_AS_IS} for k in base_params if k not in CHANGED], "not_fit": []}
 before = sorted(out_dir(G).glob("*.pdf"))
@@ -138,7 +141,7 @@ k, why = think_sheet.request(G, OTHER, claude=True, client=Fake([ok]))
 assert k and k["status"] == "pending_human", why
 assert sorted(out_dir(G).glob("*.pdf")) == before, "本人が採るまで何も刷らない"
 html = think_sheet.section(G, f"think-{k['token']}")
-assert think_sheet.CHECK in html and think_sheet.VALUES["stick"] in html and "push_part" not in html
+assert think_sheet.CHECK in html and think_sheet._name("slider_fan", "push_amount") in html and "push_amount" not in html
 assert think_sheet.section(G, f"think-{k['id']}").count(think_sheet.CHECK) == 0, "番号では開かない"
 assert think_sheet.confirm(G, k["token"])[0], "採ると刷れる"
 # 床に当たる字（手で置いた物）は Claude へ送らず、話す口の文で断る
@@ -212,7 +215,7 @@ think("柄を長くしたい", who="pagewho456")
 _, _, h = send(f"/toy/{G}/think-sheet", {"who": "pagewho456"})
 tok = urllib.parse.parse_qs(urllib.parse.urlsplit(h["Location"]).query)["at"][0][len("think-"):]
 sections = [think_sheet.section(G, f"think-{tok}"), think_sheet.section(G)]
-assert not words.fill_think(words.by_token(G, tok)["id"], words.think_result(words.by_token(G, tok)["base_params"], {"push_part": "stick", "pusher_height": 84}), "作る側")[1]
+assert not words.fill_think(words.by_token(G, tok)["id"], words.think_result(words.by_token(G, tok)["base_params"], {"push_amount": 62}), "作る側")[1]
 sections.append(think_sheet.section(G, f"think-{tok}"))
 code, _, h = send(f"/toy/{G}/think-ok", {"t": tok})
 assert code == 303, code

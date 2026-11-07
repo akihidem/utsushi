@@ -7,9 +7,12 @@ import inspect
 
 from PIL import Image
 
-from demo import scene6
-from omochae import hypotheses
-from omochae.templates import slider_fan
+# デモの場面 6 は撮った時の組（goraigo-v10）の紙を映す。デモは撮り直さない（本人の決定 11-06 夜）ので、場面を読み込む前に雛形を前の組に置く
+# （場面は読み込む時にたたき台の仮説を引く。今の組 goraigo-v14 のたたき台は H-C。生成器は今の組の紙を刷るので、v14 の後に撮り直すなら直す要がある）
+from omochae.templates import slider_fan  # noqa: E402
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
+from demo import scene6  # noqa: E402
+from omochae import hypotheses  # noqa: E402
 
 # 本人の所見は、試行の索引の文に一字一句ある（言い換えると「作った人の言葉」でなくなる）
 readme = scene6.TRIALS_README.read_text(encoding="utf-8")
