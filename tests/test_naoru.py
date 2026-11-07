@@ -4,11 +4,12 @@
 見る事:
 1. 説明は 2〜3 行で、どの行も空でない（のこす の画面は 1 手 1 画面なので長くしない）
 2. 山場の 1 行は data/kaizen/highlight.json の表の字のまま（字を作り替えない）。出どころの欄があり、個人のパスを持たない
-3. 手帖の最後の画面（のこす の画面）は作る頁の決まり（記録の番号・「の紙」・版の名を出さない。本人の決定 11-05、#87）に従う:
-   字がその決まりに当たる今の案 1 では、手帖に枠を出さない。当たらない字なら、枠が end の節の中の「のこす」の釦のすぐ後に 1 回だけ出て
-   （釦の上に置くと小さい画面で釦が最初の画面の外へ出たため）、山場の 1 行（版の名を持つ）は添えない。公開の場（public）でも同じ
+3. 手帖の最後の画面（のこす の画面）は作る頁の決まり（記録の番号・「の紙」・版の名を出さない。本人の決定 11-05、#87）に従い、
+   窓口の決め（11-07・(a)）の字（2 行目を「…次に作る人の型紙になります。」）を出す。枠は end の節の中の「のこす」の釦のすぐ後に 1 回だけで
+   （釦の上に置くと小さい画面で釦が最初の画面の外へ出たため）、山場の 1 行（版の名を持つ）は添えない。公開の場（public）でも同じ。
+   決まりに当たる字に入れ替えると、のこす の画面には枠が出ない（記録の頁には出る）
 4. 手帖の記録の頁では、枠が頁の頭（題の後・手帖をひらくの口の前）に 1 回だけ出る。公開の場でも出る
-5. 説明の字を空にすると、枠はどちらの頁にも出ない（字を外して作りだけを残す形）
+5. 説明の字（LINES と TECHO_LINES）を空にすると、枠はどちらの頁にも出ない（字を外して作りだけを残す形）
 """
 import json
 import os
@@ -22,8 +23,10 @@ from web import naoru, techo_site, techo_step  # noqa: E402
 TORA = "NDL-1187053-R0000014-R"
 GORAIGO = "NDL-1187053-R0000005-L"
 
-# 1. 説明の行
+# 1. 説明の行。のこす の画面の字は窓口の決め（11-07・(a)）のとおり
 assert 2 <= len(naoru.LINES) <= 3 and all(t.strip() for t in naoru.LINES), naoru.LINES
+assert 2 <= len(naoru.TECHO_LINES) <= 3 and all(t.strip() for t in naoru.TECHO_LINES), naoru.TECHO_LINES
+assert naoru.TECHO_LINES == (naoru.LINES[0], "直した型紙は、次の版になって、次に作る人の型紙になります。"), naoru.TECHO_LINES
 
 # 2. 山場の 1 行は表の字のまま
 data = json.loads(naoru.HIGHLIGHT.read_text(encoding="utf-8"))
@@ -42,32 +45,30 @@ def end_section(html):
     return html[a:html.index("</section>", a)]
 
 
-# 3. のこす の画面: 作る頁の決まりに当たる字（今の案 1）なら出さない。当たらない字なら、end の節の中の「のこす」の釦のすぐ後に 1 回
-assert not naoru.techo_ok(naoru.LINES) and naoru.box(techo=True) == "", "案 1 の字は「の紙」を持つので、手帖には出さない"
+# 3. のこす の画面: 窓口の決めた字の枠が、end の節の中の「のこす」の釦のすぐ後に 1 回。山場の 1 行と、記録の頁の 2 行目（「の紙」）は出ない
+assert naoru.techo_ok(naoru.TECHO_LINES) and not naoru.techo_ok(naoru.LINES), "のこす の画面の字が作る頁の決まりに当たる"
 for sid in (TORA, GORAIGO):
     sheet = hypotheses.sheet_of(sid)["id"]
-    assert 'class="naoru"' not in techo_step.page(sid, [sheet], "tenji", step=99), (sid, "手帖に決まりに当たる字の枠が出た")
-keep_lines = naoru.LINES
-naoru.LINES = ("試しの 1 行目", "試しの 2 行目")  # 決まりに当たらない字（試験だけの字。頁の字ではない）
+    for public in (False, True):
+        page = techo_step.page(sid, [sheet], "tenji", step=99, public=public)
+        assert page.count('class="naoru"') == 1, (sid, public, "枠が 1 回でない")
+        end = end_section(page)
+        keys_end = end.index('id="keep"')
+        at = end.index('class="naoru"')
+        assert keys_end < at, (sid, public, "枠が「のこす」の釦の前にある")
+        between = end[end.index("</div>", keys_end) + len("</div>"):at]
+        assert between.strip() == '<aside', (sid, public, "釦と枠の間に別の物がある", between[:80])
+        assert all(t in end for t in naoru.TECHO_LINES), (sid, public, "決めた字が出ない")
+        assert naoru.highlight() not in page and naoru.LINES[1] not in page, (sid, public, "手帖に版の名か「の紙」が出た")
+keep_lines = naoru.TECHO_LINES
 try:
-    assert naoru.techo_ok(naoru.LINES)
-    for sid in (TORA, GORAIGO):
-        sheet = hypotheses.sheet_of(sid)["id"]
-        for public in (False, True):
-            page = techo_step.page(sid, [sheet], "tenji", step=99, public=public)
-            assert page.count('class="naoru"') == 1, (sid, public, "枠が 1 回でない")
-            end = end_section(page)
-            keys_end = end.index('id="keep"')
-            at = end.index('class="naoru"')
-            assert keys_end < at, (sid, public, "枠が「のこす」の釦の前にある")
-            between = end[end.index("</div>", keys_end) + len("</div>"):at]
-            assert between.strip() == '<aside', (sid, public, "釦と枠の間に別の物がある", between[:80])
-            assert naoru.highlight() not in page, (sid, public, "手帖に版の名を持つ山場の 1 行が出た")
     for bad in (("次に作る人の紙", "x"), ("型紙の版 v7", "x"), ("R-0001", "x")):
-        naoru.LINES = bad
-        assert naoru.box(techo=True) == "" and naoru.box() != "", bad
+        naoru.TECHO_LINES = bad
+        assert naoru.box(techo=True) == "", bad
+        sheet = hypotheses.sheet_of(TORA)["id"]
+        assert 'class="naoru"' not in techo_step.page(TORA, [sheet], "tenji", step=99), (bad, "決まりに当たる字の枠が手帖に出た")
 finally:
-    naoru.LINES = keep_lines
+    naoru.TECHO_LINES = keep_lines
 
 # 4. 記録の頁: 頭（題の後・手帖をひらくの口の前）に 1 回
 for sid in (TORA, GORAIGO):
@@ -77,13 +78,13 @@ for sid in (TORA, GORAIGO):
         assert page.index("<h1>手帖</h1>") < page.index('class="naoru"') < page.index('<p class="links">'), (sid, public, "枠が頁の頭に無い")
 
 # 5. 字を空にすると、どちらの頁にも出ない
-keep = naoru.LINES
-naoru.LINES = ()
+keep, keep_techo = naoru.LINES, naoru.TECHO_LINES
+naoru.LINES, naoru.TECHO_LINES = (), ()
 try:
     assert naoru.box() == ""
     sheet = hypotheses.sheet_of(TORA)["id"]
     assert 'class="naoru"' not in techo_step.page(TORA, [sheet], "tenji", step=99)
     assert 'class="naoru"' not in techo_site.records_page(TORA)
 finally:
-    naoru.LINES = keep
-print("ok のこすと型紙が直る事の枠（2〜3 行・山場の 1 行は表の字・のこすの釦のすぐ下と記録の頁の頭に 1 回・公開の場でも・字が空なら出ない）")
+    naoru.LINES, naoru.TECHO_LINES = keep, keep_techo
+print("ok のこすと型紙が直る事の枠（2〜3 行・山場の 1 行は表の字で記録の頁だけ・のこすの釦のすぐ下は決めた字・記録の頁の頭に 1 回・公開の場でも・字が空なら出ない）")

@@ -15,7 +15,7 @@
 - **枠は 1 か所（box）で作り、2 つの頁が同じ物を呼ぶ。** 頁ごとに字を持つと、片方だけ直した時に食い違うため。
 - **手帖の作る頁の決まりを守る。** 手帖の 1 手 1 画面の字には、記録の番号・「の紙」・版の名を出さない（本人の決定 11-05、#87）。
   のこす の画面もその頁の中なので、字がこの決まりに当たる時は手帖には枠を出さず（記録の頁には出す）、山場の 1 行（型紙の版の名を持つ）は手帖では添えない。
-  直しの設計の案 1 の 2 行目は「の紙」を持つので、今は手帖には出ない（手帖に出す字は窓口へ聞いた）。
+  案 1 の 2 行目は「の紙」を持つので、のこす の画面には窓口の決めた字（TECHO_LINES。2 行目を「…次に作る人の型紙になります。」）を出す。
 - 公開の場でも同じ枠を出す（人の言葉も記録の番号も入らない、作る側の説明と表の字だけなので）。
 """
 import json
@@ -30,6 +30,10 @@ from .skin import esc
 # 空にすると枠ごと出なくなる（字を外して作りだけ残す時の形）
 LINES = ("のこした記録は、型紙と AI（Claude）の仮説を直すのに使います。",
          "直した型紙は、次の版になって、次に作る人の紙になります。")
+# のこす の画面（手帖の作る頁の中）に出す字。窓口の決め（11-07）「(a) で。のこすの画面には 2 行目を「直した型紙は、次の版になって、
+# 次に作る人の型紙になります。」に替えて出す。山場の 1 行は記録の頁だけ。」による（案 1 の 2 行目の「の紙」が作る頁の決まりに当たるため）。
+# 記録の頁は案 1 のまま（決めは のこす の画面の字だけ）
+TECHO_LINES = (LINES[0], "直した型紙は、次の版になって、次に作る人の型紙になります。")
 HIGHLIGHT = ROOT / "data/kaizen/highlight.json"
 
 
@@ -54,14 +58,15 @@ def techo_ok(lines):
 
 
 def box(techo=False):
-    """のこす の画面（techo=True）と記録の頁に置く枠の HTML。字が空なら空の文字列。
-    手帖の画面では、字が作る頁の決まり（TECHO_BANNED）に当たる時は枠を出さず、山場の 1 行（型紙の版の名を持つ）も添えない。
+    """のこす の画面（techo=True。字は TECHO_LINES）と記録の頁（字は LINES）に置く枠の HTML。字が空なら空の文字列。
+    手帖の画面では、字が作る頁の決まり（TECHO_BANNED）に当たる時は枠を出さず（決まりを字の入れ替えで崩さない守り）、山場の 1 行（型紙の版の名を持つ）も添えない。
     記録の頁は前から「A の紙」と版を出す頁なので、字と山場の 1 行をそのまま出す。
     見た目は頁の枠の色（--frame）の細い線で囲む。手帖と記録の頁は別の CSS を持つので、どちらの頁でも同じに見えるよう、ここで style を持つ。"""
-    if not LINES or (techo and not techo_ok(LINES)):
+    lines = TECHO_LINES if techo else LINES
+    if not lines or (techo and not techo_ok(lines)):
         return ""
     hl = "" if techo else highlight()
     return ('<aside class="naoru" style="border:1px solid var(--frame);padding:10px 12px;margin:0 0 12px;text-align:left">'
-            + "".join(f'<p style="margin:0 0 4px">{esc(t)}</p>' for t in LINES)
+            + "".join(f'<p style="margin:0 0 4px">{esc(t)}</p>' for t in lines)
             + (f'<p class="meta" style="margin:6px 0 0">{esc(hl)}</p>' if hl else "")
             + "</aside>")
