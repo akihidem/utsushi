@@ -223,4 +223,39 @@ def all_sources():
     for name in ("core_make", "core_keep", "core_gallery"):
         for s in core.screen_lines(name):
             out.append((s, name))
+    # 場面「エンジンの仕組み」（demo.engine・案）。台本に入れる前から英語をそろえておく（台本に入れるかは demo.script の ENGINE_SCENE）
+    from demo import engine
+    out += [(s, "engine") for s in engine.drawn()]
     return out
+
+
+# 場面「エンジンの仕組み」（demo.engine・案）の字。本人の言葉（11-07）「paper to toy の一つの具体例であるとか、エンジンの仕組みとかは
+# デモとサイトで説明した方がいい」。英語は grove の state/engine-explain-20261107.md の (3) を元にした案。台本の字の表（上の EN）と
+# 別の所に置く（同じ時に台本の字を直す枝と取り合わないため）
+EN.update({
+    "型紙を作っているのは、paper to toy というエンジンです。": "The patterns come from an engine called paper to toy.",  # 案
+    "部品を並べて、刷る前と後に確かめ、3D で組んで当たりを見ます。": "It lays out the parts, checks before and after printing, and test-assembles in 3D.",  # 案
+    "作った人の報告から直すと、型紙の版とエンジンの版が上がります。": "Fixes from makers' reports raise the pattern version and the engine version.",  # 案
+    "うつしは、その一つの具体例です。": "utsushi is one example of it.",  # 案
+    "うつし ＝ paper to toy の一つの具体例": "utsushi: one example of paper to toy",  # 案
+    "型紙の流れ": "Pattern flow",  # 案
+    "入力（寸法・出典）": "Input (sizes, source)",  # 案
+    "部品を並べる": "Lay out parts",  # 案
+    "刷る前の検査": "Check before print",  # 案
+    "描く": "Draw",  # 案
+    "刷った後の検査": "Check after print",  # 案
+    "型紙": "Pattern",  # 案
+    "3D の流れ（御来迎・首振り虎）": "3D flow (Goraigo, nodding tiger)",  # 案
+    "型紙の部品": "Pattern parts",  # 案
+    "3D で折る": "Fold in 3D",  # 案
+    "組み立てる": "Assemble",  # 案
+    "3D 組み立て検品": "3D assembly check",  # 案
+    "作り方の 3D": "Build steps in 3D",  # 案
+    "改善の輪": "Improvement loop",  # 案
+    "作った人の報告・感想": "Makers' reports",  # 案
+    "直しの案": "Fix proposals",  # 案
+    "人が採る": "People choose",  # 案
+    "版を刻む": "New versions",  # 案
+    "型紙の版・エンジンの版": "pattern / engine",  # 案
+    "次の型紙": "Next pattern",  # 案
+})
