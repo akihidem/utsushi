@@ -37,7 +37,7 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from measure_tap import chrome  # noqa: E402
 from omochae import assembly, hypotheses  # noqa: E402
-from web import hmd, kumitate, play_server  # noqa: E402
+from web import hmd, kumitate, naoru, play_server  # noqa: E402
 
 G, T = hmd.TOYS
 # ---- 1. 字と、送らない作り
@@ -104,12 +104,15 @@ for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出�
     # （H-A と決め打ちすると 422 で断られる）
     sheet = hypotheses.sheet_of(sid)["id"]
     urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={sheet}".encode(), headers={"Origin": base}), timeout=120).read()
+# 手帖の最初の画面の重ねる頁への道「カメラに重ねる」は、のこすへの道の 1 行「つくるところを、写真と声でのこせます。」と入れ替えた
+# （本人の答え 11-08「「のこせる」の 1 行は、今の行と入れ替える。」・窓口の決め: 入れ替えるのは（イ）「カメラに重ねる」）。
+# 最初の画面の字のかたまりは 3 つまで（test_techo_step）。重ねる頁そのもの（/toy/<印>/kasane）は残る。手帖からの道は無い
 for sid in (G, T):
     techo = get(f"/toy/{sid}/techo")[1]
-    assert techo.count('/kasane') == 1 and f'<p class="meta kasane-go" data-on="start"><a href="/toy/{sid}/kasane">カメラに重ねる</a></p>' in techo, sid
-assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "組み立ての書き方が無い玩具の手帖には道を出さない"
+    assert "/kasane" not in techo and "kasane-go" not in techo and f'<p class="meta nokosu-route" data-on="start">{naoru.ROUTE_MAKING}</p>' in techo, sid
+assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "組み立ての書き方が無い玩具の手帖にも道は無い"
 for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", "/gallery"):
-    assert "/kasane" not in get(path)[1], ("道は手帖からの 1 つだけ", path)
+    assert "/kasane" not in get(path)[1], ("重ねる頁への道は頁に置かない（入れ替えの後）", path)
 
 # ---- 3〜6. Chrome で歩く
 # 見本は頁の script より先に置く。音声認識を差し替えて、始めた・止めたを window.__log に書く（マイクは使わない）。
@@ -276,12 +279,13 @@ if not exe:
     server.shutdown()
     print("ok 作業しながら見る試作の字と道。測れない: Chrome が無いので、声と大きさとカメラは歩いていない")
     raise SystemExit(0)
-# 手帖の最初の画面: 道を置いても、大きいボタン「はじめる」が狭い画面の最初の画面に入る（別の目の確かめ 11-07: 道を上に置くと 320×568 で 22px 出た）。
+# 手帖の最初の画面: のこすへの道の 1 行（前は重ねる頁への道）を置いても、大きいボタン「はじめる」が狭い画面の最初の画面に入る
+# （別の目の確かめ 11-07: 道を上に置くと 320×568 で 22px 出た）。
 # headless の Chrome は窓を 500px より狭くできないので、その大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ測り方）
 FIT_SIZES, FIT_TOYS = ((320, 568), (375, 667)), (G, T, "NDL-1187053-R0000004-L")
 FIT_WRAP = """<!doctype html><meta charset="utf-8"><body>__FRAMES__<pre id="measured"></pre><script>
 addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const d=f.contentDocument,w=f.contentWindow;
-const st=d.getElementById('start'),go=d.querySelector('.kasane-go');const r=st.getBoundingClientRect(),g=go&&go.getBoundingClientRect();
+const st=d.getElementById('start'),go=d.querySelector('.nokosu-route');const r=st.getBoundingClientRect(),g=go&&go.getBoundingClientRect();
 out.push({sid:f.dataset.sid,w:w.innerWidth,h:w.innerHeight,start:Math.round(r.bottom),go:g?[Math.round(g.top),Math.round(g.bottom)]:null,sx:d.documentElement.scrollWidth})}
 document.getElementById('measured').textContent=JSON.stringify(out)},800))</script>"""
 
@@ -319,10 +323,8 @@ else:
     unmeasured_fit = ""
     for f in fits:
         assert f["start"] <= f["h"] and f["sx"] <= f["w"], ("「はじめる」が最初の画面に入り、横にはみ出さない", f)
-        if f["sid"] == "NDL-1187053-R0000004-L":
-            assert f["go"] is None, ("組み立ての書き方が無い玩具には道が無い", f)
-        else:
-            assert f["go"] and f["go"][0] >= f["start"], ("道は「はじめる」の下に置き、重ならない", f)
+        # のこすへの道の 1 行は、全部の玩具の最初の画面に「はじめる」の下で出て、重ならず、最初の画面から押し出さない
+        assert f["go"] and f["go"][0] >= f["start"], ("のこすへの 1 行は「はじめる」の下に置き、重ならない", f)
 
 runs = {}
 for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
