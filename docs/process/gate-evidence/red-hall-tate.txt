@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_hall_tate.py
+# commit: 288930ae（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hall_tate.py", line 21, in <module>
+    assert not re.search(r"#hall\.tj-hall[^{]*\{[^}]*horizontal-tb", css), "題の間を横書きにする上書きが残った"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 題の間を横書きにする上書きが残った
+rc=1

@@ -1,5 +1,0 @@
-# 命令: .venv/bin/python -m demo.build --out out/demo-run --offline
-# commit: 68f4773（回した時の HEAD）
-検査できない: 仮説の札の数が記録と合わない（画面 1・記録 5）
-検査できない: 場面 scene3 が書き出せない（rc 4）
-rc=4

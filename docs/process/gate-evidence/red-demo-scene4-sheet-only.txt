@@ -1,8 +1,0 @@
-# 命令: .venv/bin/python tests/test_demo_scene4.py
-# commit: a1dbef27（回した時の HEAD）
-Traceback (most recent call last):
-  File "tests/test_demo_scene4.py", line 45, in <module>
-    assert not any(hasattr(scene4, n) for n in ("tejun_layout", "tejun_view_mm", "TEJUN_BOX")), "手順の紙を刷って映す部品が残っている"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: 手順の紙を刷って映す部品が残っている
-rc=1
