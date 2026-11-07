@@ -5,7 +5,8 @@
 2. 段と文: 手順の文 12 と 1 対 1 で、最後にできあがりの動き。サイトが place と turns から組んだ面の行列が、JSON の面の行列と同じ
 3. できあがりの形: 胴の色の面が外・糊代が相手の面に寝る・首の帯が前の壁の丸い穴を通る・
    竹串が胴の 2 つの穴を通る・粘土の玉が胴の中・脚の色の面が外で上の糊代が胴の底を向く・両面の頭の顔が両側の外・尾が上の面から上へ立つ・
-   揺れる間（できあがりの動きと ±10°）も、重りの腕と粘土の玉が前の壁に、帯と頭が丸い穴の縁に、0.5mm 以上の空きで当たらない
+   揺れる間（できあがりの動きと ±10°）も、重りの腕と粘土の玉が前の壁に、帯と頭が丸い穴の縁に、0.5mm 以上の空きで当たらない・
+   どの段の形でも部品が机の面より下へ出ない
 4. サイトが決める見せ方: はさみは紙の上の部品を 1 つずつ一周・カッターは首の丸い穴を一周して切れ端が落ちる・重なる面のずらし
 5. 頁: 机の面の層・丸い切れ端・5 重りの腕の札の 4 行・止まった形の口（still）と作業の頁の口（scene）・分解して見せる形（split）
 6. 崩す: 丸い穴の置き場が紙と違う JSON は使わない
@@ -193,6 +194,14 @@ assert head.lines[k][1] == "mountain" and (head.turn(child, {k: 90.0}) > 0) == (
 tail = bench.sheets["tail"]
 tip = min(q[1] for i in M["tail"] for q in pts("tail", i))
 assert tip < lo[1] - 40, (tip, lo[1])
+
+# 机の面より下へ出ない: どの段のどの形でも、部品の面の点が机の面（刷った紙を置いた面）より 0.5mm を超えて下へ出ない。
+# 型紙エンジンの 3D 組み立て検品（#139）で直った所: 前の JSON は、手順 12 の初めの形で尾が机の下へ 16mm 出ていた（尾を貼る四角の上に替えた）
+under = assembly._invert_rigid(table)
+low = min((apply(under, apply(rows_of(m), q))[2], st.get("n"), key)
+          for st in doc["steps"] + [doc["finale"]] for got in st["poses"] for key, mine in got["parts"].items()
+          for i, m in mine["panels"].items() for q in bench.sheets[key].panels[int(i)].exterior.coords)
+assert low[0] >= -0.5, ("机の面より下へ出る", low)
 
 # 4. サイトが決める見せ方
 cut2 = [q for q in bench.frames[1]["poses"] if q.get("cut")]
