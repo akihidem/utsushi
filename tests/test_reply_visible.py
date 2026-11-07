@@ -138,7 +138,10 @@ assert "AI の返事は、この場では使えません" in note_at(page, "mine
 
 # 通らなかった時に錨へ着くよう、欄の送り先に錨がある。
 page = call(f"/toy/{G}")[2]
-for want in (f"/toy/{G}/print#kasetsu", f"/toy/{G}/ask#ask",
+# 刷る口は頭の「つくる」1 つで、紙がある今は窓の紙へ行くリンクなので、刷る欄はここには無い（本人のサイト体験レビュー 11-07 の 3。前は札の「型紙を見る」の
+# #kasetsu）。作れなかった時の文を窓の錨で読む事は tests/test_sheet_window.py が見る
+assert f'action="/toy/{G}/print#kasetsu"' not in page
+for want in (f"/toy/{G}/ask#ask",
              f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}"):
     assert f'action="{want}"' in page, want
 # AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。

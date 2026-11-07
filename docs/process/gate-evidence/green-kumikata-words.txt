@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_kumikata_words.py
+# commit: a7e97a34（回した時の HEAD）
+ok
+rc=0

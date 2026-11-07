@@ -47,7 +47,16 @@ def render_claims(claims):
 
 
 def render_counts():
-    """玩具・雛形・凍結の場面の数を tree から数える。手で書くと、増やした時に文だけ古く残るため。"""
+    """玩具・雛形・凍結の場面の数を tree から数える。手で書くと、増やした時に文だけ古く残るため。
+
+    型紙の版とエンジンの版の数も、ここで雛形の今の組と改善の歴史の表から描く（設計 0.7 節の置き場 ④ README）。
+    版を上げるたびに手で書き直すと、組を上げた枝と README の数が食い違うため。字の元は表と雛形だけで、版ごとの字は書かない。
+    """
+    from . import kaizen_history
+    from .compose import TEMPLATES
+
+    sheets = "・".join(f"{name} {kaizen_history.set_no(TEMPLATES[tpl].SHEET_SET)}" for name, tpl, _ in kaizen_history.toys())
+    engine = kaizen_history.engine_now()
     toys = len(list((ROOT / "data/hypotheses").glob("*.json")))
     templates = [p for p in (ROOT / "src/omochae/templates").glob("*.py") if not p.name.startswith("_")]
     scenarios = list((ROOT / "tests/frozen/scenarios").glob("*.json"))
@@ -57,6 +66,8 @@ def render_counts():
         f"- 玩具: {toys} 件（`data/hypotheses` のファイルの数。必須の 2 種を含む）",
         f"- 雛形: {len(templates)} 本（`src/omochae/templates`。必須の 2 本を含む）",
         f"- 凍結の場面: {len(scenarios)} 本（`tests/frozen/scenarios`。うち {len(negative)} 本は落ちるべき紙を入れる負の場面）",
+        f"- 型紙の版: {sheets}（雛形の今の組。版ごとの歩みは `data/history/kaizen-history.json`）",
+        *([f"- エンジンの版: {engine['engine_version']}（型紙を作る仕組みの版。全部の玩具の型紙に効く）"] if engine else []),
         "<!-- counts:end -->",
     ])
 
@@ -138,7 +149,7 @@ def check():
                 out.append(Failure("L.links", str(f.relative_to(ROOT)), f"リンク先が無い: {target}"))
     found = COUNTS.search((ROOT / "README.md").read_text(encoding="utf-8"))
     if not found or found.group(0) != render_counts():
-        out.append(Failure("L.counts", "README.md", "玩具・雛形・凍結の場面の数が tree と違う。render を回す"))
+        out.append(Failure("L.counts", "README.md", "玩具・雛形・凍結の場面・型紙とエンジンの版の数が tree と表と違う。render を回す"))
     for f in ENTRY_DOCS:
         for hit in RUN_TOTAL.findall(COUNTS.sub("", (ROOT / f).read_text(encoding="utf-8"))):
             out.append(Failure("L.counts", f, f"試験の総数は書かず `./run.sh` の最後の行を指す: {hit}"))
