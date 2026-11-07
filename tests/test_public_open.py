@@ -75,7 +75,8 @@ closed, opened = up(), up(public_open=True)
 # 開いていないサーバは、トンネルの名前を断る
 assert closed("GET", "/")[0] == 403
 # 開いたサーバは、合言葉なしで入口から玩具の頁まで開く
-assert opened("GET", "/")[0] == 200 and opened("GET", "/toys")[0] == 200 and opened("GET", f"/toy/{G}")[0] == 200
+# えらぶ は入口そのもの（本人のサイト体験レビュー 11-07 の 4）なので、/toys は入口へ送る（302）
+assert opened("GET", "/")[0] == 200 and opened("GET", "/toys")[0] == 302 and opened("GET", f"/toy/{G}")[0] == 200
 form = {"Content-Type": "application/x-www-form-urlencoded", "Origin": f"https://{HOST}"}
 assert opened("POST", f"/toy/{G}/print", f"hypothesis={GS}", form)[0] == 303
 assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
@@ -166,7 +167,7 @@ said = f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F"
 assert opened("POST", f"/toy/{G}/record", said, form)[0] == 303
 told_id = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{told_id}/explain", "text=TOLDWORDS&next_idea=NEXTWORDS&by=BYWORDS", form)[0] == 303
-for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h={GS}&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
+for path in ("/", "/toys?paper=1", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h={GS}&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("TOLDWORDS", "NEXTWORDS", "BYWORDS"):
@@ -195,7 +196,7 @@ for path in (f"/zukan/{G}", "/zukan"):
 papers = [f"/sheet/{G}/{oid}_v1_{kind}.{ext}" for kind in ("free", "after") for ext in ("pdf", "png", "svg")]
 for path in papers:
     assert closed("GET", path, None, local)[0] == 200, path
-for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
+for path in ("/", "/toys?paper=1", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("OWNNAME", "OWNHOW", "OWNWHERE"):
