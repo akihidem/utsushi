@@ -7,6 +7,8 @@
 4. 誰がしたかを記録のとおりに分ける: Claude の印は「直しを作る」の段だけ。Claude が記録を読む段の札は無い（この 3 つの一周では使っていない）
 5. 本人の名は「このサイトを作った人」と言い、「制作者」「本人」の字と型の名は出さない
 6. 合体待ちの版は出さない。流れの文に、まだ入っていない PR が出てくる間は文を出さない
+7. いま回っている一周（本人の指示 11-07「済んだ 3 つの一周に加えて、今朝 Claude が記録 R-0001 を読んで案を出した 1 件（人の確認待ち）も…状態の違いは正直に分かるように」）:
+   済んだ一周と札の字と色で分ける。Claude の読みは写しの字のまま。人が確かめる段と次の版は「まだ」。写しに呼び出しの記録（型の名）は無い
 """
 import copy
 import json
@@ -44,6 +46,7 @@ for opened in (False, True):
 hist = json.loads(k.HISTORY.read_text(encoding="utf-8"))
 loops = re.findall(r'<section class="sec kz-loop" id="(\w+)">', page)
 assert loops == ["site", "engine", "peak"], loops
+assert re.findall(r'<section class="sec kz-loop pending" id="(\w+)">', page) == ["pending"], "いま回っている一周は済んだ一周の後に 1 つ"
 def steps(sec):
     part = page[page.index(f'id="{sec}"'):]
     part = part[:part.index("</section>")]
@@ -61,13 +64,23 @@ assert all(c.replace("制作者", k.MAKER) in t for c in v4["changed"] + v7["cha
 assert "型紙の版 v3 → v4・エンジンの版 2" in t and "型紙の版 v6 → v7・エンジンの版 7" in t and "goraigo-v7 → goraigo-v8" in t
 assert f'/utsushi/commit/{ch["commit"]}' in page and "/paper-to-toy/pull/106" in page and "/paper-to-toy/pull/138" in page, "直しを作った commit と PR へ行ける"
 
-# ---- 4 Claude の印は直しを作る段だけ。読む段の札は無い
+# ---- 4 済んだ一周の Claude の印は直しを作る段だけ。読む段の札は済んだ一周には無い
 claude_steps = [s for sec in loops for s in steps(sec) if s[0] == "claude"]
 assert claude_steps and all(h == "直しを作る" for _, h in claude_steps)
 assert "読み" not in "".join(h for sec in loops for _, h in steps(sec)) and k.NOT_YET in t
 
+# ---- 7 いま回っている一周: Claude が記録を読んだ案（人の確認待ち）
+assert steps("pending") == [("human", "作った記録"), ("human", "人の説明"), ("claude", "Claude の読み"), ("human", "人が確かめる"), ("human", "次の版")], steps("pending")
+pend = json.loads(k.PENDING.read_text(encoding="utf-8"))
+assert pend["status"] == "pending_human" and pend["drafted_by"] == "claude" and "trace" not in pend, "写しは確認待ちの Claude の案で、呼び出しの記録を持たない"
+assert all(c["text"] in t for c in pend["content"]["causes"]), "Claude の読みは写しの字のまま"
+assert k.PENDING_STATE in t and k.DONE in t and k.WAIT in t and k.NOT_CHANGED in t, "状態の違いを字で分ける"
+assert t.count(k.DONE) == 3 and t.count(k.PENDING_STATE) == 1
+assert ".kz-loop.pending{border:2px dashed" in page, "札の色と線でも分ける"
+assert "U-32" not in t and "R-0001" in t and "記録の番号 R-0001" in t, "内輪の番号は出さず、記録の番号は字の表の言い方で"
+
 # ---- 5 名の言い方
-for word in ("制作者", "本人", "Opus", "Sonnet", "Haiku", "Fable"):
+for word in ("制作者", "本人", "Opus", "opus", "Sonnet", "Haiku", "Fable"):
     assert word not in t, word
 assert k.MAKER in t
 
@@ -81,4 +94,8 @@ for toy in pend["toys"]:
 assert k.peak_loop(pend) == "", "合体待ちの版は出さない"
 nostory = copy.deepcopy(hist); nostory["engine_changes"] = [c for c in nostory["engine_changes"] if c.get("pr") != 139]
 assert "見つかった事から直る" in text(k.peak_loop(nostory)), "まだ入っていない PR が無ければ、流れの文を出す"
-print("ok 審査用の頁: 3 つの一周を段ごとに並べ、誰がしたかを記録のとおりに分け、字は記録と表だけ。合体待ちは出さない")
+# 確認待ちの写しが確かめられたら（status が替わったら）、いま回っている一周は出さない（済んだ一周として取り直す）
+import unittest.mock as mock  # noqa: E402
+with mock.patch.object(k, "_load", side_effect=lambda p: (dict(pend, status="confirmed") if p == k.PENDING else json.loads(p.read_text(encoding="utf-8")))):
+    assert k.pending_loop() == ""
+print("ok 審査用の頁: 済んだ 3 つの一周と、Claude が読んだ確認待ちの 1 件を、札の字と色で分けて並べる。字は記録と表と写しだけ。合体待ちは出さない")

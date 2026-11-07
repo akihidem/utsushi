@@ -21,6 +21,9 @@ from .wording import MAKER  # 作り手の言い方は字の表の 1 か所（#1
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 HISTORY = ROOT / "data/history/kaizen-history.json"
 SITE_REC, SITE_EXPL, SITE_CHANGE = ROOT / "data/records/R-0001.json", ROOT / "data/loop/explanation-R-0001.json", ROOT / "data/loop/template-change-0001.json"
+# Claude が記録 R-0001 を読んだ案（11-07 02:18 の本物の呼び出し・人の確認待ち）の写し。元は手元の置き場（data/loop・git の外）。
+# 写す時に呼び出しの記録（型の名と字の数）を外した。人が確かめると元の置き場が confirmed になり、写しを取り直す
+PENDING = ROOT / "data/kaizen-judge/interpretation-R-0001.json"
 REPO = "https://github.com/akihidem"
 
 # 新しい字（本人の確かめ・窓口へ）
@@ -28,7 +31,13 @@ TITLE = "改善の一周"
 LEAD = "作った人の記録から、型紙が直って次の版になるまでを、本当にあった 3 つの一周で見せます。"
 WHO = {"human": "人", "engine": "エンジン", "claude": "Claude"}
 WHO_NOTE = {"human": "作る・説明する・決める", "engine": "記録を束ねた下書きと検査。決めない", "claude": "直しを実装した"}
-NOT_YET = "Claude が記録を読んで直しの案を出す段は作ってありますが、この 3 つの一周では使っていません。"
+NOT_YET = "Claude が記録を読んで直しの案を出す段は、済んだ 3 つの一周では使っていません。最後の 1 件は、Claude が記録を読んだ案で、人の確かめを待っています。"
+DONE = "済んだ一周（人が確かめ、採り、版が上がった）"
+PENDING_STATE = "Claude の案・人の確認待ち（まだ型紙は変わっていない）"
+PENDING_LOOP = "いま回っている一周: Claude が記録を読んだ"
+CONF = "確からしさ"
+WAIT = "まだ。人が読んで、確かめるか直すかを決める"
+NOT_CHANGED = "まだ型紙は変わっていない"
 LOOPS = ("1 周目: サイトの輪", "2 周目: エンジンの輪", "山場: 3D で見つかった当たり")
 
 STYLE = """
@@ -41,6 +50,9 @@ STYLE = """
 .kz-steps h3{display:inline;font-size:16px;margin:0}
 .kz-steps p,.kz-steps ul{margin:6px 0 0}.kz-steps ul{padding-left:1.2em}
 .kz-ver{font-size:18px;letter-spacing:.06em}
+.kz-state{display:inline-block;margin:4px 0 0;padding:2px 10px;border:1px solid var(--ink);border-radius:12px;font-size:13px}
+.kz-loop.pending{border:2px dashed #b04030;padding:8px 16px 4px;border-radius:8px}.kz-loop.pending .kz-state{border-color:#b04030;color:#b04030}
+.kz-steps li.wait{color:var(--mute)}
 """
 
 
@@ -83,7 +95,7 @@ def site_loop():
              + _step("human", "人が決める", _p(f'{MAKER}が採った（{str(ch.get("at", ""))[:10]}）'))
              + _step("claude", "直しを作る", f'<p><a href="{REPO}/utsushi/commit/{esc(ch.get("commit", ""))}">{esc(ch.get("commit", ""))}</a></p>')
              + _step("human", "次の版", f'<p class="kz-ver">{esc(v_from)} → {esc(v_to)}</p>'))
-    return f'<section class="sec kz-loop" id="site"><h2>{esc(LOOPS[0])}</h2><ol class="kz-steps">{steps}</ol></section>'
+    return f'<section class="sec kz-loop" id="site"><h2>{esc(LOOPS[0])}</h2><p class="kz-state">{esc(DONE)}</p><ol class="kz-steps">{steps}</ol></section>'
 
 
 def _version(hist, toy_word, set_name):
@@ -108,7 +120,7 @@ def engine_loop(hist):
              + _step("human", "人が決める", _p(ev.get("line", "")))
              + _step("claude", "直しを作る", f"<p>{_pr_links(v.get('prs', []))}</p>" + _ul(v.get("changed", [])))
              + _step("human", "次の版", f'<p class="kz-ver">型紙の版 v{int(v["sheet_version"]) - 1} → v{int(v["sheet_version"])}・エンジンの版 {int(v["engine_version"])}</p>'))
-    return f'<section class="sec kz-loop" id="engine"><h2>{esc(LOOPS[1])}</h2>{_p(v.get("line", ""))}<ol class="kz-steps">{steps}</ol></section>'
+    return f'<section class="sec kz-loop" id="engine"><h2>{esc(LOOPS[1])}</h2><p class="kz-state">{esc(DONE)}</p>{_p(v.get("line", ""))}<ol class="kz-steps">{steps}</ol></section>'
 
 
 def peak_loop(hist):
@@ -127,11 +139,31 @@ def peak_loop(hist):
     waiting = {c.get("pr") for c in hist.get("engine_changes", []) if "合体待ち" in str(c.get("status", ""))}
     text = hist.get("story", "")
     story = _p(text) if text and not any(f"#{n}" in text for n in waiting) else ""
-    return f'<section class="sec kz-loop" id="peak"><h2>{esc(LOOPS[2])}</h2>{story}<ol class="kz-steps">{steps}</ol></section>'
+    return f'<section class="sec kz-loop" id="peak"><h2>{esc(LOOPS[2])}</h2><p class="kz-state">{esc(DONE)}</p>{story}<ol class="kz-steps">{steps}</ol></section>'
+
+
+def pending_loop():
+    """いま回っている一周: Claude が記録 R-0001 を読んだ案（人の確認待ち）。済んだ一周と、札の色と字で分ける。
+    記録と人の説明は記録の字のまま。Claude の読みは原因の読み（確からしさつき）と分からない事。人が確かめる段と次の版は「まだ」と出す。
+    分からない事のうち、作る側の決定の番号が入った物は出さない（学ぶ人の頁と同じく内輪の番号を出さない）。"""
+    pend, rec, ex = _load(PENDING), _load(SITE_REC), _load(SITE_EXPL)
+    if not (pend and rec and ex) or pend.get("status") != "pending_human" or pend.get("drafted_by") != "claude":
+        return ""
+    import re
+    from .wording import record_no
+    causes = "<ul>" + "".join(f'<li>{esc(_maker(c.get("text", "")))}（{esc(CONF)}: {esc(c.get("confidence", ""))}）</li>' for c in pend["content"].get("causes", [])) + "</ul>"
+    unknown = [u for u in pend["content"].get("unknown", []) if not re.search(r"(?<![A-Za-z0-9])[JUTWH]-\d+", u)]
+    steps = (_step("human", "作った記録", _p(f'{record_no(pend["record_id"])}・{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・刷った組 {rec.get("sheet_set", "")}'))
+             + _step("human", "人の説明", _p(ex.get("text", "")) + (_p("次の思いつき: " + ex["next_idea"]) if ex.get("next_idea") else ""))
+             + _step("claude", "Claude の読み", causes + ("<p>分からない事:</p>" + _ul(unknown) if unknown else ""))
+             + _step("human", "人が確かめる", _p(WAIT)).replace("<li>", '<li class="wait">', 1)
+             + _step("human", "次の版", _p(NOT_CHANGED)).replace("<li>", '<li class="wait">', 1))
+    return (f'<section class="sec kz-loop pending" id="pending"><h2>{esc(PENDING_LOOP)}</h2><p class="kz-state">{esc(PENDING_STATE)}</p>'
+            f'<ol class="kz-steps">{steps}</ol></section>')
 
 
 def page(look=skin.DEFAULT, path="/kaizen"):
     hist = _load(HISTORY) or {}
     body = (f'<section class="sec"><h1>{esc(TITLE)}</h1><p class="lead">{esc(LEAD)}</p><p class="meta">{esc(NOT_YET)}</p></section>'
-            + site_loop() + engine_loop(hist) + peak_loop(hist))
+            + site_loop() + engine_loop(hist) + peak_loop(hist) + pending_loop())
     return skin.shell(TITLE, body, look, "", path, STYLE)
