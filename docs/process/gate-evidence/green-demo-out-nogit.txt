@@ -1,0 +1,4 @@
+# 命令: bash -c 'd=$(mktemp -d) && git archive HEAD | tar -x -C "$d" && ln -s "$(readlink -f .venv)" "$d/.venv" && cd "$d" && PYTHONPATH=src .venv/bin/python tests/test_demo_out_of_repo.py'
+# commit: a6c62ec8（回した時の HEAD）
+ok デモ動画の作りは repo の外・北斎漫画の記録は data/hokusai・公開デモのサイトの物は残る
+rc=0

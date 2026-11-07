@@ -526,5 +526,11 @@
   "path": "research/37-toy-list-from-source.md",
   "hook": "玩具の一覧を本の原図 54 図で照らし直した。絵は 109 で棚卸しの漏れは 0、サイトの外は 26",
   "status": "本人の決定（11-07 夕）は記録だけ足す。サイトの数は 83 のまま。棚卸しの名と箱の人の確かめはまだ"
+ },
+ {
+  "id": "research/38",
+  "path": "research/38-readme-readability.md",
+  "hook": "README の頭に 30 秒の 4 行を足す前と後を yomiyasu で測った。候補 26→20 件",
+  "status": "測った記録。4 行の字は本人の確かめ待ち"
  }
 ]

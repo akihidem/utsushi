@@ -1,8 +1,8 @@
 """本人のサイトの見直し（11-07 22:16）の ⑤「ここに輪の説明ある方がいいよね。」と、本人の決め「輪の説明は のこす の頁に置く」。
 
 見る事: のこす の頁（手帖の記録の頁）に、学びの輪の文（本人が採った字・loop_figure.ADOPTED）がそのまま 1 回出て、その後に学びの輪の図
-（説明の頁と同じ部品 loop_figure.svg()）が続く。置き場は頭の「のこすと型紙が直る事の枠」の後で、上げる節より前。新しい字を書かない
-（節の字は ADOPTED だけ）。公開の場（合言葉なし）でも同じ。英語の頁では ADOPTED の英語が出る（日本語が残らない事の全体は test_en_all が見る）。
+（説明の頁と同じ部品 loop_figure.svg()）が続く。置き場は頭の「のこすと型紙が直る事の枠」の後で、上げる節より前。
+11-08 から、節の頭に 1 本の輪の名の見出し「うつしの輪」、図の下に正直な 1 行（loop_figure.HONEST）が入る（本人の決め「この案で組み直す」）。公開の場（合言葉なし）でも同じ。英語の頁では ADOPTED の英語が出る（日本語が残らない事の全体は test_en_all が見る）。
 """
 import html
 import os
@@ -28,10 +28,12 @@ def check(page, where):
     sec = re.search(r'<section class="panel manabi" id="manabi">(.*?)</section>', page, re.S)
     assert sec, f"{where}: 学びの輪の節がある"
     body = sec.group(1)
-    # 字は本人が採った文だけ（図の字は部品の WORDS で、ADOPTED から切り出した物。tests/test_loop_figure が見る）
+    # 11-08 の組み直し（本人の決め「この案で組み直す」）: 節は 見出し「うつしの輪」→ 本人が採った文（ADOPTED・一字も替えない）→ 1 本の輪の図 →
+    # 図の下の正直な 1 行（HONEST）。図の中の字は部品の字で、tests/test_loop_figure が見る
     text = re.sub(r"<svg.*?</svg>", "", body, flags=re.S)
-    assert re.sub(r"<[^>]+>", "", text).strip() == html.unescape(ADOPTED), f"{where}: 節の字は ADOPTED だけ"
-    assert body.index(ADOPTED) < body.index('class="loop-fig"'), f"{where}: 文の後に図"
+    plain = re.sub(r"<[^>]+>", "", text).strip()
+    assert plain == loop_figure.NAME + html.unescape(ADOPTED) + loop_figure.HONEST, f"{where}: 節の字は 見出し・ADOPTED・正直な 1 行だけ"
+    assert body.index(f"<h2>{loop_figure.NAME}</h2>") < body.index(ADOPTED) < body.index('class="loop-fig"') < body.index(loop_figure.HONEST), f"{where}: 見出し → 文 → 図 → 1 行"
     at = page.index('id="manabi"')
     assert page.index(naoru.LINES[0]) < at < page.index('aria-label="上げる"'), f"{where}: 枠の後・上げる節の前"
     # 図の読み上げ（aria-label）にも同じ文が入るので（説明の頁と同じ部品の作り）、数えるのは頁に見える字だけ
