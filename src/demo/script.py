@@ -26,7 +26,19 @@ import importlib
 # 作る → 動いた → 残す → 持ちよる の順になり、画面が 40 秒続く塊が割れる。前は 残す（core_keep）の後だった
 FRONT = ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep", "core_gallery"]
 BACK = ["talk_physics", "talk_claude", "core_loop", "word_ai", "scene7"]
-SCENES = [*FRONT, "border", *BACK, "close", "ask"]
+# 場面「エンジンの仕組み」（demo.engine・案）。本人の言葉（11-07）「paper to toy の一つの具体例であるとか、エンジンの仕組みとかは
+# デモとサイトで説明した方がいい」。入れるなら場面 14（talk_claude）と入れ替える（デモの担当の案）。窓口の決めが来るまで入れない（False）
+ENGINE_SCENE = False
+
+
+def scenes(engine=None):
+    """台本の場面の並び。engine=True で talk_claude を engine と入れ替えた並び（省くと ENGINE_SCENE）。"""
+    engine = ENGINE_SCENE if engine is None else engine
+    order = [*FRONT, "border", *BACK, "close", "ask"]
+    return [("engine" if n == "talk_claude" else n) for n in order] if engine else order
+
+
+SCENES = scenes()
 # 3 分に入らないので外した場面（本人が戻すかを決める。コードは残すので、SCENES へ戻せば動く）。docs/demo/plan.md の 4 に書いた。
 LEFT_OUT = ("core_map", "core_voice", "scene6", "bridge")
 # 外へ出す前に片づける物（印のほか）。demo.build が build.json の not_for_release に載せる。
