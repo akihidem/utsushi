@@ -1,13 +1,14 @@
 """型紙の版の歩みの額の並び（本人の指示 11-07「過去の型紙が改善していって、提出の時の今の型紙になっている所が分かるようにしたい。
 御来迎と虎のそれぞれで、版の歩みが今の版に行き着くまで見える形にしてください。」。設計 0.7 節の置き場 ①）。
 
-玩具の頁へ置くのは後の段（頁を直す PR の後）。ここは部品だけを見る:
+部品と、玩具の頁の置き場を見る:
 1. 御来迎と虎のそれぞれで、古い版から順に額が並び、最後が提出の時の今の版（サイトが今刷る組）。今の版の額だけに「いまの型紙」の印
 2. 額の下は「型紙の版 N」・エンジンの版の字・表の 1 行・日付の 4 つだけで、表の字のまま。きっかけと PR は出さない
 3. 額と額の間に → の印（読み上げには出さない）。開いた時に右の端（今の版）へ送る script がある
 4. 表の最初の版が版 1 でない時は「この前にも版があります」。見出しの下の数の 1 行は表から描く
 5. 絵は置いてある版だけ img にし、無い版は空の額（壊れた絵を出さない）。サーバの道は組の名の形だけを受ける
 6. 表に無い玩具・今の組の行が表に無い玩具は節を出さない（今の版と言えない並びを出さない）
+7. 玩具の頁では、型紙の窓の節のすぐ後（2 画面目の頭）に 1 つだけ置き、たとえはその後。表に無い玩具の頁には出ない
 """
 import os
 import pathlib
@@ -51,7 +52,9 @@ try:
         assert 'id="ban-ayumi"' in html and f"<h2>{ban_ayumi.HEAD}</h2>" in html and "版の歩み" in html
         # 2. 額の下は 4 つだけで、表の字のまま
         for (_, body), r in zip(got, rows):
+            # 表の字のまま。玩具の頁に「制作者」を出さない決め（窓口 11-07）は、表の作り手が字を直して守る（11-07 19 時台の表で 0）
             assert f"<b>型紙の版 {r['sheet_version']}</b>" in body and r["engine_version_text"] in body and r["line"] in body, r["set"]
+            assert "制作者" not in body and "本人" not in body, r["set"]
             assert all(w["text"] not in body for w in r["why"]) and not re.search(r"#\d", body), ("きっかけと PR は出さない", r["set"])
         # 3. → の印は額の間に 1 つずつ（最初の額の前には無い）。読み上げには出さない
         assert html.count('class="ban-to"') == len(rows) - 1 and ban_ayumi.ARROW not in got[0][1] and 'aria-hidden="true"' in ban_ayumi.ARROW
@@ -117,4 +120,18 @@ try:
 finally:
     kh.PICTURES = keep_pictures
 
-print("ok 型紙の版の歩みの額の並び（古い順・最後が今の版・印・4 つの字・→・始めは右の端・前の版のつなぎ・絵の道）")
+# 7. 玩具の頁の置き場: 原画と立体 → つくる → 型紙の窓 のすぐ後（2 画面目の頭。設計の担当の置き場 11-07）。たとえ（本人の答え Q4 で窓の近く）はその後。
+# 表に無い玩具の頁には出ない
+from web import toy  # noqa: E402
+
+for sid in (G, T):
+    page = toy.toy_page(sid)
+    at = page.index('id="ban-ayumi"')
+    win = page.index('id="win"')
+    after = [page.index(m) for m in ('id="tatoe"', 'id="hanasu"', 'id="tsukuru"') if m in page]
+    assert page.count('id="ban-ayumi"') == 1 and win < at < min(after), (sid, win, at, after)
+    assert page.index("</section>", win) < at, "型紙の窓の節の中でなく、その後"
+    assert "版の歩み" in page and wa.NOW in page[at:]
+assert 'id="ban-ayumi"' not in toy.toy_page(other), "表に無い玩具の頁には出さない"
+
+print("ok 型紙の版の歩みの額の並び（古い順・最後が今の版・印・4 つの字・→・始めは右の端・前の版のつなぎ・絵の道・玩具の頁の置き場）")
