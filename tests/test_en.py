@@ -59,6 +59,12 @@ for sid, t in table.items():
     assert t["name"].strip() and t["intro"].strip(), sid
     assert not re.search(r"[぀-ヿ一-鿿]", t["name"] + t["intro"]), sid
 
+# 日本語の玩具の頁の英語への入口に、括弧の断り「（英語の文は案です）」を付けない（本人の決め 11-07「外してよい」。頭の断り DRAFT を外したのと同じ扱い）。
+# 入口そのものは残る
+for sid in (G, T):
+    ja = get(f"/toy/{sid}")
+    assert f'<a href="/en/toy/{sid}">Read and print in English</a>' in ja and "英語の文は案です" not in ja and "英語の文は案です" not in en.band(sid), sid
+
 idx = get("/en")
 assert '<html lang="en"' in idx and all(f'href="/en/toy/{s}"' in idx for s in sources())
 # 頭の断り「Draft translation…」は出さない（本人の言葉 11-07「これ要らない。Draft translation. A native speaker has not checked it yet.」）

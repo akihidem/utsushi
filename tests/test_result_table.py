@@ -13,7 +13,6 @@ import subprocess
 import sys
 import tempfile
 
-from demo import build
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
@@ -58,10 +57,9 @@ for name, (cmd, want, _) in rows.items():
     assert pasted.returncode == want, (name, cmd, pasted.returncode, want, pasted.stderr[-300:])
     assert "--scenario" in cmd if name.startswith(("pos_", "neg_")) else f"tests/{name}.py" in cmd, cmd
 
-# 数は場面と試験で別々。動画の場面 4 が読む合計（build.count_tests）も同じ行から読める。
+# 数は場面と試験で別々。前はデモ動画の場面 4 が読む合計もここで見ていたが、動画の作りを repo の外へ移した（2026-11-08）ので、その照らしは作りと一緒に外へ移した。
 last = text.strip().splitlines()[-1]
 assert re.search(r"場面 2 本、試験 2 本", last), last
-assert build.count_tests(last) == (4, 3), last
 
 shutil.rmtree(root)
 print("ok")
