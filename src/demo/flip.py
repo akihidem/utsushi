@@ -97,6 +97,39 @@ def load_page(cache):
     return Image.open(path).convert("L"), rec
 
 
+BG_INK = 0.26                 # 背景の絵の濃さ（真ん中の北斎漫画より目立たせない）
+SIDE = ((300, 0.55), (600, 0.62), (1320, 0.62), (1620, 0.55))   # 真ん中の両脇に並べる人物の (真ん中の x, 大きさ)
+SIDE_IN = 0.5                 # 両脇の人物が 1 人ずつ現れる間（秒）
+
+
+def load_backgrounds(cache):
+    """背景の絵（figures.json の backgrounds）を IIIF から取り、枠で切った RGBA の層の並びにする。取れない絵は飛ばす（場面は止めない）。
+    墨の絵（ink=sumi）は墨色の切り絵、色の絵（ink=color）は色のまま。濃さは frame で掛ける"""
+    recs = json.loads(FIGURES.read_text(encoding="utf-8")).get("backgrounds", {})
+    cache = pathlib.Path(cache)
+    cache.mkdir(parents=True, exist_ok=True)
+    out = []
+    for key, rec in recs.items():
+        if key.startswith("_"):
+            continue
+        path = cache / f"bg-{key}.jpg"
+        try:
+            fetch_image(f'{rec["iiif"]}/full/1600,/0/default.jpg', path)
+        except OSError as e:
+            print(f"背景の絵が取れない（{key}・{e}）。この絵は敷かずに書き出す", file=sys.stderr)
+            continue
+        with Image.open(path) as im:
+            x, y, w, h = rec["box_pct"]
+            box = (round(x / 100 * im.width), round(y / 100 * im.height), round((x + w) / 100 * im.width), round((y + h) / 100 * im.height))
+            crop = im.convert("RGB").crop(box)
+        if rec.get("ink") == "sumi":
+            lay = ink_layer(crop.convert("L"), 1.0)
+        else:
+            lay = crop.convert("RGBA")
+        out.append((key, lay))
+    return out
+
+
 def clean(gray):
     """複写の細かい点を消し、墨の線だけを残す。閾値は 6 編の頁で試し見して決めた。"""
     g = ImageOps.autocontrast(gray, cutoff=1)
@@ -153,28 +186,49 @@ def draw_closing(draw, line, cx, cy, size, a):
 
 
 class Scene:
-    def __init__(self, page, rec):
+    def __init__(self, page, rec, backgrounds=()):
+        """backgrounds は load_backgrounds の層（場面 flip だけが渡す。締めの場面 7 は前のまま人物だけ）。"""
         self.rec = rec
+        self.backgrounds = list(backgrounds)
         self.figs = cut_figures(page, rec)
         # 読む順: 和本なので右の頁から、上の段の右から左へ。
         order = sorted(self.figs, key=lambda f: (f[0][0] != "R", f[0][1], -ord(f[0][2])))
         self.order = [f[0] for f in order]
         tall = max(g.height for _, g in self.figs)
         self.fig_layers = {fid: ink_layer(g, 640 / tall) for fid, g in self.figs}
+        # 背景を敷く形（11-07）では、北斎漫画を真ん中に置き、両脇にほかの型の人物を並べて賑やかにする（本人のデモの直し 7）。
+        # 両脇の人物は、真ん中で重ねる 4 人（flip の秒の間に替わる）とは別の人物から取る
+        self.cx = W // 2 if self.backgrounds else FIG_X
+        rest = self.order[4:] or self.order
+        self.side = [(x, ink_layer(dict(self.figs)[rest[k * len(rest) // len(SIDE)]], 640 / tall * sc)) for k, (x, sc) in enumerate(SIDE)] if self.backgrounds else []
 
     def _figure(self, img, i, v):
         """i 番目の人物を、足もとを同じ線に揃えて v の濃さで置く。"""
         lay = self.fig_layers[self.order[i % len(self.order)]]
         l2 = lay.copy()
         l2.putalpha(l2.getchannel("A").point(lambda x: round(x * v)))
-        img.paste(l2, (FIG_X - lay.width // 2, FIG_BASE - lay.height), l2)
+        img.paste(l2, (self.cx - lay.width // 2, FIG_BASE - lay.height), l2)
 
     def frame(self, t):
         """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
         img = Image.new("RGB", (W, H), PAPER)
+        a_in = phase(t, "page_in")
+        # 背景: 江戸の浮世絵・舞台絵を薄く（場面の頭で現れて、その後は動かさない）。1 枚目は真ん中に大きく、2 枚目は右上に小さく
+        for k, (key, lay) in enumerate(self.backgrounds):
+            scale = (H * 0.92 / lay.height) if k == 0 else (W * 0.34 / lay.width)
+            l2 = lay.resize((max(1, round(lay.width * scale)), max(1, round(lay.height * scale))), Image.LANCZOS)
+            l2.putalpha(l2.getchannel("A").point(lambda x, v=BG_INK * a_in: round(x * v)))
+            xy = ((W - l2.width) // 2, (H - l2.height) // 2) if k == 0 else (W - l2.width - 60, 60)
+            img.paste(l2, xy, l2)
+        # 両脇の人物: 1 人ずつ現れて、その後は動かさない（動いたとは言わない。18 の絵は別々の姿）
+        for k, (x, lay) in enumerate(self.side):
+            v = ease((t - (CUES["page_in"][0] + 0.3 + k * SIDE_IN)) / 0.6) * 0.8
+            if v > 0:
+                l2 = lay.copy()
+                l2.putalpha(l2.getchannel("A").point(lambda a, v=v: round(a * v)))
+                img.paste(l2, (x - lay.width // 2, FIG_BASE - lay.height), l2)
         draw = ImageDraw.Draw(img)
         # 重ねる: 型の姿をゆっくり溶かして替える。止まった所からが字幕の後半（絵は動きを止めて残した）。
-        a_in = phase(t, "page_in")
         f0, f1 = CUES["flip"]
         u = max(0.0, min(t, f1) - f0) * FLIP_FPS
         n, w = int(u), ease(u - int(u))
@@ -263,7 +317,7 @@ def main(argv=None):
     page, rec = load_page(pathlib.Path(a.cache))
     if page is None:
         return 4
-    scene = Scene(page, rec)
+    scene = Scene(page, rec, load_backgrounds(pathlib.Path(a.cache)))
     if a.sheet:
         contact_sheet(scene, a.sheet)
     return render(scene, pathlib.Path(a.out))
