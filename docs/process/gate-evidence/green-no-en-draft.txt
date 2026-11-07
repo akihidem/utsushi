@@ -1,0 +1,16 @@
+# 命令: sh -c 'PYTHONPATH=src .venv/bin/python tests/test_en.py; a=$?; PYTHONPATH=src .venv/bin/python tests/test_en_all.py; b=$?; echo "test_en rc=$a test_en_all rc=$b"; [ $a -eq 0 ] && [ $b -eq 0 ]'
+# commit: 6a45acce（回した時の HEAD）
+/tmp/tmpdjvbd6xf/data/play/NDL-1187053-R0000005-L/.tmp-rtag26en/H-C_v1.pdf
+ok
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000004-L/.tmp-veuwmuin/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000004-L-4/.tmp-fphg4tsm/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000005-L/.tmp-l8jhpxn1/H-C_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000005-L-3/.tmp-ue9fyu5h/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000007-L/.tmp-9lt4w5r3/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000007-R/.tmp-badtpvb5/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000014-L/.tmp-tvqdwpwk/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000014-R/.tmp-gu4f5o53/H-A_v1.pdf
+/tmp/tmphqdmjhvf/play/NDL-1187053-R0000019-L/.tmp-_q65vw88/H-A_v1.pdf
+ok 全頁の英語: 表に無い日本語 0・切り替え・前からの英語の頁・人の字
+test_en rc=0 test_en_all rc=0
+rc=0

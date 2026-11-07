@@ -70,11 +70,10 @@ for page in (white, black):
 # 案 2: 縦読み。黒の入口の章の頭（玩具の章より前）は前のまま。本人の決定（11-06）「ページは白案で統一します。黒案にだけある要素は白案に入れてください」で
 # 白にも同じ節を白の色で置くが、白では入口でなく帯の「よむ」の先の序の頁に置く（統括の決め 11-06。地図の「読み物は道の外へ」）。字と動きは同じ
 zine, tenji = looks.PAGES["zine"](), looks.PAGES["tenji"]()
-assert 'id="zn-hokusai"' in zine and zine.index('id="zn-hokusai"') < zine.index('id="look-1"') and "（PDM）" in zine
-assert 'class="zn-hk"' in zine and site.WHITE_SCROLL_STYLE not in zine
-assert 'id="zn-hokusai"' not in tenji, "白の入口には縦読みを置かない（序の頁へ）"
+# 暗い版（zine）の入口は白と同じ作り（本人の決め 11-08「もう1つ立てる」）になったので、縦読みは白と同じく入口に置かず、序の頁へ
+assert 'id="zn-hokusai"' not in zine and 'id="zn-hokusai"' not in tenji, "入口には縦読みを置かない（序の頁へ）"
 assert white.count('id="zn-hokusai"') == 1 and 'class="zn-hk tj-hk"' in white and site.WHITE_SCROLL_STYLE in white, "白の序の頁に縦読み"
-assert 'id="zn-hokusai"' not in black, "黒の序の頁には足さない（黒は入口にある）"
+assert black.count('id="zn-hokusai"') == 1 and 'class="zn-hk"' in black and site.WHITE_SCROLL_STYLE not in black and "（PDM）" in black, "暗い版の序の頁に縦読み（黒の色）"
 
 assert "prefers-reduced-motion" in site.SCROLL_SCRIPT and "IntersectionObserver" not in site.SCROLL_SCRIPT and "prefers-reduced-motion" in site.SCROLL_STYLE
 

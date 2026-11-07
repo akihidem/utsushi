@@ -49,3 +49,21 @@ def strip(sid):
     """「これまでの記録」の頭に置く写真の並び。写真が無い玩具は空（節に場所を取らない）。"""
     thumbs = "".join(f'<img src="/workshop/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in files(sid))
     return f'<div class="strip workshop">{thumbs}</div>' if thumbs else ""
+
+
+def gallery(sids):
+    """作った物の頁（/gallery）の「他の人が作った物」の節に置く札（本人の見直し 11-07 夜の ⑦「ワークショップで作られたもの、は
+    他の人が作ったものなのでそちらにも掲載して」）。玩具ごとに 1 枚の札で、写真の小さい写しと玩具の名（玩具の頁へ）。並びは玩具の並びの順。
+    札の形は作例の札（techo_site.sakurei_section の .sakurei-row の figure）にそろえる（同じ頁の中で、写真の板の見え方を 1 つにするため。
+    名は .workshop-row で、作例の節の有無を見る試験と混ぜない。見た目の CSS は techo_site の GALLERY_STYLE で .sakurei-row と同じ規則を掛ける）。
+    字は玩具の名と、前からある alt「作った物の写真」だけ（感想の字は出さない）。"""
+    from omochae import hypotheses
+
+    cards = ""
+    for sid in sids:
+        fs = files(sid)
+        if not fs:
+            continue
+        imgs = "".join(f'<img src="/workshop/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in fs)
+        cards += f'<figure class="workshop">{imgs}<figcaption><a href="/toy/{esc(sid)}">{esc(hypotheses.load(sid)["toy"])}</a></figcaption></figure>'
+    return f'<div class="workshop-row">{cards}</div>' if cards else ""

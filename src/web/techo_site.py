@@ -206,9 +206,10 @@ def ai_offer(rid, up_key=None):
 
 
 # 色は皮の変数から取る（skin.py の SKINS。本人の指示 11-05: A′ 白の展示と C 黒のジンを一気通貫に）。
-# 手帖だけ書体をゴシックにし字を大きくするのは、机に置いて離れて読むため（本人の指定 11-04「文字は最小」）。骨（頭の帯・余白）は skin.shell が持つ。
+# 手帖の字を大きくするのは、机に置いて離れて読むため（本人の指定 11-04「文字は最小」）。書体は他の頁と同じ明朝にした（本人のサイトの見直し 11-07 22:16
+# 「のこす、手帖、のフォントが違う。」。前は手帖だけゴシック）。骨（頭の帯・余白）は skin.shell が持つ。
 STYLE = """
-body.techo{font-family:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;font-size:18px}
+body.techo{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-size:18px}
 .techo main{max-width:640px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 64px;display:grid;gap:22px}
 .techo h1{font-family:"Noto Serif CJK JP","Hiragino Mincho ProN",serif;font-weight:400;font-size:26px;letter-spacing:.3em;margin:0}
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
@@ -294,10 +295,10 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .is-sample{border:1px dashed var(--frame);padding:10px}
 .gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
 .gallery .day{font-size:17px;letter-spacing:.1em;margin:4px 0 0}
-.gallery .sakurei-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.gallery .sakurei-row figure{margin:0;display:grid;gap:6px;align-content:start}
-.gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
-.gallery .sakurei-row figcaption{font-size:14px}
+.gallery .sakurei-row,.gallery .workshop-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.gallery .sakurei-row figure,.gallery .workshop-row figure{margin:0;display:grid;gap:6px;align-content:start}
+.gallery .sakurei-row img,.gallery .workshop-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .sakurei-row figcaption,.gallery .workshop-row figcaption{font-size:14px}
 .gallery .sakurei-row .ban{white-space:nowrap;margin-left:.6em}
 .gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
 .gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
@@ -351,7 +352,8 @@ def own_item(sid, data, r):
 # ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案から）。
 # 1 行は決めた字から「日の順に並べます。」だけを外した（本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない」で、札を玩具ごとにしたため）
 SAKUREI_TITLE = "ワークショップで作られた物"
-SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。上下はありません。"
+# 「上下はありません」は外した（本人のサイトの見直し 11-07 22:16「もちよる、の上下はありません、は要らない。」。もちよる の頁＝作った物の頁の字）
+SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。"
 # 報告の顔の写真（web.sakurei.faces）の札。本人の言葉のまま（窓口を通して 11-07「札は本人の言葉『4 日間のワークショップで作ったおもちゃたち』のままで」）
 SAKUREI_FACES = "4 日間のワークショップで作ったおもちゃたち"
 # 参加者の工夫の事例（web.sakurei.cases("kufu")）。題も文も本人の言葉から取り、言い換えない（統括 11-07「字は本人の説明のまま（本人の言葉として引用）」）。
@@ -454,14 +456,18 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 continue
             cards += made_item(sid, data, r, photos, public)
     sak = sakurei_section(sids, photos)
+    # ワークショップの試行の写真（web.workshop。本人の見直し 11-07 夜の ⑦）。他の人が作った物なので、この節の記録の札の前に置く。
+    # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示）
+    from . import workshop
+    ws = workshop.gallery(sids)
     # ワークショップで作られた物も本物の作った物なので、それだけがある時も見本を畳む（本物を先に、見本は畳む。地図の工程 5）
-    real = bool(cards or own or sak)
+    real = bool(cards or own or sak or ws)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
-    if not cards and not own and not sak:
+    if not cards and not own and not sak and not ws:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
@@ -477,8 +483,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
-            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{note}{own}{cards}</section></div>')
+            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
+            f'{note}{own}{ws}{cards}</section></div>')
 
 
 VOICES_STYLE = """
@@ -511,6 +517,16 @@ def voices_sections():
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
             f'{voices}</section></div>')
+
+
+NEXT_ERABU = "次は、{n} のおもちゃから えらぶ"
+
+
+def next_erabu():
+    """のこすの後の道の字（数は入口の畳みの札と同じ数え方）。"""
+    from .looks import erabu_counts
+    from .play_server import sources
+    return NEXT_ERABU.format(n=erabu_counts(list(sources()))[0])
 
 
 def manabi_box():
@@ -565,5 +581,10 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
             # 「のこす」の後はこの頁の #mine に着くので、返事の文のすぐ下に 1 つだけ置く。行き先はギャラリーの「他の人が作った物」
             f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}'
-            '<p class="road"><a class="go" href="/gallery#ageta">もちよる</a></p>'
+            # 釦の字は のこす（本人のサイトの見直し 11-07 22:16「もちよる、でなくのこす、というボタンにする。」）。行き先は前のまま、残した物が並ぶ所
+            '<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>'
+            # 2 回目の入口（本人の決め 11-08「A＋Cでよい」の C）。のこした人（返事の文が出た時）にだけ、入口の畳みが開いた形 /#erabu への道を出す。
+            # 印は持たない（道を見せるだけ）。数は入口の畳みの札と同じく、棚の分けから数える。道しるべの釦（class road）にはしない:
+            # のこすの後の道しるべは 1 つの決まり（段 0・research/36・test_ux_stage0）なので、その下のふつうの道として置く
+            + (f'<p class="links next-erabu"><a href="/#erabu">{esc(next_erabu())}</a></p>' if msg else '') +
             f'{mine}</div></section>') + hanasu.assets()

@@ -212,9 +212,9 @@ def _open_pages(sids, walk):
     server = play_server.serve(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
-    paths = ["/", "/about", "/otona", "/toys", "/gallery", "/zukan", "/loop", "/loop/ayumi"]
+    paths = ["/", "/about", "/otona", "/toys", "/gallery", "/loop", "/loop/ayumi"]
     for sid in sids:
-        paths += [f"/zukan/{sid}", f"/toy/{sid}", f"/toy/{sid}/tsukuru", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku", f"/loop/{sid}"]
+        paths += [f"/toy/{sid}", f"/toy/{sid}/tsukuru", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku", f"/loop/{sid}"]
 
     def fetch(p):
         with urllib.request.urlopen(base + p, timeout=120) as r:

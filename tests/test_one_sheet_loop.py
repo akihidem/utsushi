@@ -303,7 +303,7 @@ rows = ways.table()
 assert {r["hypothesis_id"] for r in rows if r["source_id"] == G} >= {"H-A", "H-N1"} and len({r["source_id"] for r in rows if r["sheet"]}) == 83
 out = subprocess.run([sys.executable, "-m", "omochae.ways", "--json"], capture_output=True, text=True)
 assert out.returncode == 0 and len(json.loads(out.stdout)) == len(rows), out.stderr[-300:]
-for path in (f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", f"/en/toy/{G}", f"/zukan/{G}", "/toys", "/toys?paper=1", "/loop"):
+for path in (f"/toy/{G}", f"/toy/{G}/techo", f"/toy/{G}/tsukuru", f"/en/toy/{G}", "/toys", "/toys?paper=1", "/loop"):
     with urllib.request.urlopen(base + path, timeout=180) as r:
         assert r.status == 200, path
 done = subprocess.run([sys.executable, "-m", "omochae.engine_bundle", "export", "--out", os.path.join(os.environ["OMOCHAE_DATA"], "bundle.json")], capture_output=True, text=True)

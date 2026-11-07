@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toys_genre.py
+# commit: 7eeb8427（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toys_genre.py", line 56, in <module>
+    assert genre.TOY.get(sid) == m and genre.middle(sid) == m and big_of_mid[m] == "うごく", sid
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: NDL-1187053-R0000004-L-4
+rc=1

@@ -154,7 +154,7 @@ def check_pages_open():
     try:
         # 手帖の作る頁は記録を読まないので、書きかけの記録があってもそのまま開く（記録の札は記録の頁。#87）
         assert urllib.request.urlopen(base + f"/toy/{G}/techo").status == 200
-        for path in (f"/toy/{G}", f"/toy/{T}", f"/toy/{G}/techo/kiroku", "/gallery", f"/zukan/{G}"):
+        for path in (f"/toy/{G}", f"/toy/{T}", f"/toy/{G}/techo/kiroku", "/gallery"):
             def fetch():
                 try:
                     with urllib.request.urlopen(base + path) as r:
