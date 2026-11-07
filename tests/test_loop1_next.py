@@ -148,7 +148,9 @@ v2 = json.loads((loop.folder() / f"version-{G}-{SHEET}-2.json").read_text(encodi
 assert v2["hypothesis_id"] == SHEET and v2["record_ids"] == [rid] and v2["params"][param] == to, "根拠は OWN-n の記録のまま"
 assert v2["params"]["push_part"] == base_params["push_part"], "その人の案の寸法は混ぜない（たたき台の版に、選んだ 1 つだけを足す）"
 paper = out_dir(G) / f"{SHEET}_v2.pdf"
-assert paper.exists() and rid in flat_pdf(paper) and "版2" in flat_pdf(paper), "版 2 の紙が刷られ、根拠の記録が載る"
+# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」
+ban2 = "".join(hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2).split())  # flat_pdf は空白を落とす
+assert paper.exists() and rid in flat_pdf(paper) and ban2 in flat_pdf(paper), "版 2 の紙が刷られ、根拠の記録が載る"
 assert any(c["hypothesis_id"] == SHEET and c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の確定も残る"
 assert words.base_of(G)[1][param] == to, "最新版が次の人の型紙の元になる"
 assert rid not in ids(kaizen.pending(G, records.all_records(G))[0]), "版に使った報告は、もう待たない"
