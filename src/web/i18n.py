@@ -46,6 +46,7 @@ EXTRA = {"easy": ROOT / "data/i18n/yasashii.d"}
 EASY_NOTE = "このページのやさしい｜日本語《にほんご》は、｜下書《したが》きです。"
 RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
 MAIN_OPEN = re.compile(r"<main\b[^>]*>")
+PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語のルビは印を外した字で入れる）
 KEEP = "="           # 訳さずに日本語のまま出す印
 CJK = re.compile(r"[぀-ヿ㐀-鿿＀-￯　-〿]")
 NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -112,7 +113,7 @@ def lookup(text, lang="en"):
         return None
 
 
-def _swap_text(raw, miss, lang="en"):
+def _swap_text(raw, miss, lang="en", plain=False):
     text = html.unescape(raw)
     if not CJK.search(text):
         return raw
@@ -125,7 +126,8 @@ def _swap_text(raw, miss, lang="en"):
     if en == KEEP:
         return f'{lead}<span lang="ja">{raw.strip()}</span>{tail}' if lang == "en" else raw
     if lang == "easy":
-        return lead + ruby_html(html.escape(en, quote=False)) + tail
+        # 要素を入れられない所（<title>・<option>）では、属性と同じくルビの印を外した字にする（タブの題に <ruby> が字のまま出たため・別の窓の指摘）
+        return lead + (html.escape(ruby_plain(en), quote=False) if plain else ruby_html(html.escape(en, quote=False))) + tail
     return lead + html.escape(en, quote=False) + tail
 
 
@@ -179,7 +181,7 @@ def to_en(page, miss=None, lang="en"):
                 stack.append((name, name in RAW or (name != "html" and bool(frozen_mark.search(tok)))))
             out.append(tok)
             continue
-        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang))
+        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY))
     return "".join(out)
 
 
