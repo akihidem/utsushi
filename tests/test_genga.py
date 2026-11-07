@@ -157,4 +157,58 @@ for public_open in (False, True):
     finally:
         server.shutdown()
         server.server_close()
-print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる")
+
+# 作ってみた実物（本人のサイト体験レビュー 11-07 の 2・web.made）: 原画のすぐ後に、人が確かめた写真を 1 枚。写真が無ければ何も置かない
+# （窓口の決め 125731・(b)。前は組み立ての止まった形を置き、C3 の頭の後の動く 3D と御来迎・虎で 2 回出た）。入口の まずはここから の札も写真がある時だけ
+from omochae import media_review, records  # noqa: E402
+from web import kumitate, looks, made, play_server  # noqa: E402
+
+GOR = "NDL-1187053-R0000005-L"
+TOYS3 = [s for s in toys.sources() if kumitate.available(s)][:1] + [s for s in toys.sources() if not kumitate.available(s)][:1]
+with_3d, without = TOYS3
+assert made.photo(with_3d) is None
+assert made.figure(with_3d) == "" and made.figure(without) == "", "写真が無ければ、3D があっても無くても何も置かない"
+assert 'class="made' not in genga.head(with_3d) and "data-still" not in genga.head(with_3d), "頭に止まった形の口を置かない"
+srv = play_server.serve(0, look="tenji")
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+try:
+    def code(path):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{srv.server_address[1]}{path}", timeout=60) as r:
+                return r.status, r.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as e:
+            return e.code, ""
+    st, page = code(f"/toy/{with_3d}")
+    assert st == 200 and "data-still" not in page and 'class="made' not in page, "写真の無い 3D の玩具の頁に止まった形の口が無い"
+    assert code(f"/toy/{with_3d}/still")[0] == 404, "止まった形を読む道は無くした"
+finally:
+    srv.shutdown()
+    srv.server_close()
+# 人が物だけと確かめた写真があれば、その 1 枚（確かめる前は出さない。#314）。入口の札にも小さく重なる
+assert "tj-made" not in looks.tenji().split("</style>")[-1]
+records.add({"source_id": GOR, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+rid = records.all_records(GOR)[-1]["id"]
+d = techo_site.media_dir(rid)
+d.mkdir(parents=True, exist_ok=True)
+(d / "m1.jpg").write_bytes(b"\xff\xd8\xff")
+assert made.photo(GOR) is None, "確かめる前の写真は出さない"
+assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
+# 写真は小さい写しの道（上げた元の写真は 3.7MB ほどある。入口の絵 100KB の線）
+assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg/small"
+assert f'<img src="/record/{rid}/media/m1.jpg/small" alt="{made.PHOTO}の写真"' in made.figure(GOR)
+assert genga.head(GOR).index('class="genga-row"') < genga.head(GOR).index('class="made genga-made"'), "写真は原画のすぐ後"
+# 開いた場の玩具の頁は写真を置かない（写真が確かめてあっても何も置かない）
+assert made.figure(GOR, photos=False) == "", "開いた場の玩具の頁は写真を置かない"
+entrance = looks.tenji().split("</style>")[-1]
+assert entrance.count('class="tj-made"') == 1 and f'src="/record/{rid}/media/m1.jpg/small"' in entrance, "入口の札に写真が重なる"
+assert "/media/" not in looks.tenji(photos=False).split("</style>")[-1], "開いた場の入口は写真を置かない"
+# 小さい写しは 100KB 以下で、上げた元の向きのまま縮める
+big = Image.new("RGB", (3024, 4032), (180, 120, 60))
+buf = io.BytesIO()
+big.save(buf, "JPEG", quality=95)
+(d / "m1.jpg").write_bytes(buf.getvalue())
+small = made.small_photo(d / "m1.jpg")
+with Image.open(io.BytesIO(small)) as im:
+    assert im.width == made.SMALL_W and len(small) <= 100_000, (im.size, len(small))
+assert made.small_photo(d / "nai.jpg") is None
+print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる。原画の隣に作ってみた実物（写真か止まった形）")

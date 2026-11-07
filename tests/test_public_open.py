@@ -115,7 +115,8 @@ assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
 gallery = stranger("GET", "/gallery")[1]
 assert f"/record/{rid}/media/m1.jpg" in gallery and wording.record_no(rid) not in gallery
 assert f"#{rid}" not in gallery and f'href="/toy/{G}"' in gallery, "札の玩具の名の道にも記録の番号を入れない（玩具の頁の頭へ行く）"
-for path in (f"/toy/{G}", "/zukan", f"/zukan/{G}"):
+# 入口（/）も同じ（作ってみた実物の写真は、開いた場では入口と玩具の頁に置かない。web.made・本人のサイト体験レビュー 11-07 の 2 の作りの時の線）
+for path in ("/", f"/toy/{G}", "/zukan", f"/zukan/{G}"):
     assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
 # 写真の札にも、人の書いた文は出さない（文の中の名前は機械で落とせない。J-028）
 assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=PHOTOWORDS", form)[0] == 303
