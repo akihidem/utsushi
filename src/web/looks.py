@@ -6,6 +6,8 @@
 新しい絵は作らず、NDL の図の頁とその寄りだけを使う。歌は人が確かめた読みだけを引用の印つきで出す。
 入口には仮説を出さない（絵を先に見せるため）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
 """
+import re
+
 from omochae import hypotheses
 
 from . import skin, wording
@@ -349,6 +351,26 @@ def _mazu(ts, photos=True):
     return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
 
 
+# 選ぶのは 2 回目から（本人の言葉 11-08「83 のおもちゃから、1 つ選ぶ、で実際に選ぶのは 2 回目以降にしたい」・本人の決め「A＋Cでよい」）。
+# 案 A: 見分けずに全員へ同じ形を出し、敷き詰めを畳む（端末にもサーバにも印を持たない・共用の iPad でもぶれない）。畳みの札に数を出すので、
+# 審査員は初めてでも全部の数が分かり、1 押しで開く。道 /#erabu で開いた形に着く（README と審査用の頁から張る道・のこすの後の道 C）。
+# 数は字に固定せず、頁を作る時に棚の分け（genre.groups）から数える（棚の入れ先が替わると数も替わるため。統括の気づき 11-08）
+FOLD = "2 回目からは、{n} のおもちゃから えらぶ（{shelves}）"
+
+
+def erabu_counts(all_sids):
+    """（全部の数, [(棚の字, 数), …]）。棚の分けは genre.groups の並びのまま。"""
+    from . import genre
+    shelves = [(big, sum(len(ss) for _, ss in mids)) for big, mids in genre.groups(all_sids)]
+    return sum(n for _, n in shelves), shelves
+
+
+def fold_label(all_sids):
+    """畳みの札の字（数は棚の分けから）。"""
+    n, shelves = erabu_counts(all_sids)
+    return FOLD.format(n=n, shelves="・".join(f"{big} {k}" for big, k in shelves))
+
+
 def _erabu(sids, photos=True):
     """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。
     photos=True の時は、作った実物の写真（人が確かめた物・web.made.photo）がある玩具の札にだけ、原画の右下に小さな角を重ねる（窓口の決め 163132）。
@@ -362,44 +384,77 @@ def _erabu(sids, photos=True):
     # トンネル越し）で、2 枚と並びの 20 枚ほどを一度に読むと、2 枚が届くのに 5.6 秒かかった（11-07 に Chromium で測った。本人の答え 11-07 の (a)）。
     # 台本が動かない機器では、並びは名前の札だけになる（並びの絵は 2 枚より後でよい物なので、そこは止めない）
     shelves = shelves.replace(' src="/picture/', ' data-src="/picture/')
+    # 畳み（details）の札が入口に見える 1 行。前からの見出し「N のおもちゃから、1 つ選ぶ」（本人が確かめた字・test_words_card_1106）は、
+    # 畳みを開いた中の頭にそのまま残す（字を替えない）。錨は前からの #all-toys（section）と、開いた形で着く #erabu（details）の 2 つ
     n = len(sids) + len([s for s in sources() if hypotheses.stage(s) == "必須"])
-    return (f'<section class="tj-erabu" id="all-toys"><h2>{n} のおもちゃから、1 つ選ぶ</h2>{shelves}'
-            '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></section>')
+    return (f'<section class="tj-erabu" id="all-toys"><details class="tj-fold" id="erabu"><summary>{esc(fold_label(list(sources())))}</summary>'
+            f'<h2>{n} のおもちゃから、1 つ選ぶ</h2>{shelves}'
+            '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></details></section>')
 
 
-def tenji(photos=True):
-    """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。"""
+# 暗い画面の版の入口（本人の決め 11-08「もう1つ立てる」— HMD のための暗い版の公開デモ。統括の頼み 11-08「入口も白と同じ作り
+# （縦の題字・まずはここから・小さい写し）で色だけ暗くする」）。前の黒のジンの入口（zine・額の表紙と縦読みの章）は、本人の決定 11-06
+# 「ページは白案で統一します」の後も黒の皮の入口として残っていたので、暗い版を立てた時に入口だけ別の作りになった。作りは白の入口 1 つに
+# し、色だけを置き換える（作りを 2 つ持つと、白の直しが暗い版に届かない）。色の対は皮の表（skin.SKINS の tenji → zine）に寄せ、
+# 表に無い白の入口だけの色は、明るさの並びを逆にした近い色にした（字と地の 4.5:1 を割らない向き）
+DARK = {"#fcfcfa": "#0b0a09", "#fffefc": "#141210", "#f6f3ec": "#15120f", "#f3f1ec": "#15120f", "#ebe8e2": "#2a251e", "#e8e1d2": "#2f2a22",
+        "#e6e1d6": "#3a3226", "#d8cdb6": "#6e5a35", "#b9a982": "#8a7a5a", "#7a7164": "#a0957f", "#6f665a": "#a0957f", "#5d554a": "#b8ad97",
+        "#4a4339": "#cfc5b0", "#6b4f2a": "#c9a96a", "#2b2722": "#e9e1cf", "#1f1b17": "#f5eedf",
+        "#d9d2c3": "#2f2a22"}  # 絵の下敷き（CSS の .tj-mazu-card .pic）。まずはここから の 2 枚は本体に直に書いた下敷きの style が勝つが、頁に書いた小さい絵が一緒に描くので、明るい地が見えるのは原画の写しの無い木だけ（別の目の測り 11-08）。本体の style は、作りを白と一字も同じに保つため替えない
+
+
+def _dark(css):
+    """白の入口の CSS の色を、暗い版の色に置き換える。影（rgba(70,55,35,…)）は黒の影に、下線（rgba(107,79,42,…)）は暗い版の差し色に。"""
+    out = re.sub(r"#[0-9a-fA-F]{6}\b", lambda m: DARK.get(m.group(0).lower(), m.group(0)), css)
+    out = re.sub(r"rgba\(70,55,35,(\.?\d+)\)", lambda m: f"rgba(0,0,0,{min(0.9, float(m.group(1)) * 2):.2f})", out)
+    return re.sub(r"rgba\(107,79,42,(\.?\d+)\)", r"rgba(201,169,106,\1)", out)
+
+
+def yoru(photos=True):
+    """暗い画面の版の入口（皮 zine のサイトの /）。作りは白の入口と同じで、色だけ暗い。"""
+    return tenji(photos, dark=True)
+
+
+def tenji(photos=True, dark=False):
+    """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。
+    dark=True は暗い画面の版の入口（yoru）: 同じ作りで、CSS の色だけを _dark で置き換え、帯の変数は皮 zine の物にする。"""
+    from . import ukabu  # 浮かぶ玩具（循環を避けて、ここで読む）
+
     ts = toys()
     body = switch("tenji")
-    # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
-    # 幅 390 の最初の画面に 2 つの大きな札の頭が入るようにする（「最初から選べる形」）
+    # 題の間: 題と副題と「このサイトについて」だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。組みは縦に戻した（本人の決め 11-07 夜
+    # 「縦の組みに戻す」。ERABU の上の注）。前は画面いっぱいの高さにせず、幅 390 の最初の画面に 2 つの大きな札の頭が入るようにしていた
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link() + '</section>')
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link()
+             # 浮かぶ玩具（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」。web.ukabu）。輪郭の絵が無い場では何も置かない
+             + ukabu.block(set(sources())) + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
+    css = TENJI + ERABU + ukabu.UKABU
+    # 暗い版も body の印は tenji を持つ（白の入口の CSS の選び body.tenji をそのまま効かせる）。暗い版の印 yoru を足して見分ける
+    return page("うつし", body + ONLY + ERABU_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji")
 
 
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
 # 見えた時に起こす仕掛けは使わない（入口の決まり。research/19）。
-ERABU_JS = """<script>(()=>{let go=false;const run=()=>{if(go)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
-const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
-big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
+# 畳んだ後は、並びの小さい写しを畳みを開いた時だけ読む（閉じたままの人に 81 枚を読ませない）。開いた時も、まずはここから の 2 枚が先に届くよう、
+# 2 枚が届くか 2.5 秒たつのを待ってから読む（前の決め・遅い回線で 2 枚が 5.6 秒かかった 11-07 の測り）。道が #erabu（か前からの #all-toys）の時は開いて着く
+ERABU_JS = """<script>(()=>{let go=false,ready=false,want=false;const run=()=>{if(go||!ready||!want)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
+const fold=document.getElementById('erabu');const ask=()=>{want=true;run()};
+if(fold){fold.addEventListener('toggle',()=>{if(fold.open)ask()});const hash=()=>{if(location.hash==='#erabu'||location.hash==='#all-toys'){fold.open=true;ask()}};hash();addEventListener('hashchange',hash)}else want=true;
+const ok=()=>{ready=true;run()};const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.filter(i=>!i.complete).length;if(!left){ok();return}
+big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)ok()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(ok,2500)})();</script>"""
 
 
+# 題の間（tj-hall）は縦の組み（TENJI の .tj-hall の形）に戻した: 本人の決め（11-07 夜）「縦の組みに戻す」。11-06 夜の main 5d1358dd の最初の画面
+# （題字を縦に大きく・英字は題の左に縦・副題 3 行は題の右に縦。幅 390 は英字が題の上に横・副題は下に縦）。前（#517・11-07）はここで #hall を
+# 横書きで短くしていた（縦書きは幅 390 で 2 つの札が 1 画面目の外に出た。札の頭が 855px）。字は 1 字も替えない。「このサイトについて」と
+# まずはここから の 2 枚は今のまま（えらぶ の入口の決めは残る）。CSS の注は頁に出るので、理由はここに書く
 # 入口の えらぶ の形（白の展示）。札の中身は toys.card（#508 の小さい写し・縦横つき）なので、その札が要る CSS をここに置く（入口は skin.BASE を読まない）。
 # 「控えめに」: ほかの玩具は 1 列 72px 以上・9 列まで（えらぶ の頁の 96px・7 列より小さく）。2 つの大きな札は横に並べ、幅 390 で 1 枚 160px ほど。
 ERABU = """
-/* 題の間は横書きで短く（前の B の間の縦書きは、幅 390 で 2 つの札が 1 画面目の外に出た。11-07 に測った: 札の頭が 855px）。
-   字は前の題の間の字のまま（英字・題・副題・表紙の 2 行） */
-#hall.tj-hall{min-height:auto;display:block;text-align:center;padding:5vh 5vw 3vh}
-#hall.tj-hall .en,#hall.tj-hall h1,#hall.tj-hall .sub{writing-mode:horizontal-tb;margin:0 auto}
-#hall.tj-hall .en{margin-bottom:2vh}
-#hall.tj-hall h1{font-size:clamp(30px,4.4vw,56px);letter-spacing:.5em;margin-left:.5em}
-#hall.tj-hall .sub{margin-top:2.4vh;line-height:2;letter-spacing:.2em}
-#hall.tj-hall .about-go{margin:2.4vh 0 0;font-size:13px}
 .tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
 .tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
 .tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
@@ -416,6 +471,8 @@ body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
 .tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}
 .tj-erabu{padding:8vh 24px;max-width:1180px;margin:0 auto;border-top:1px solid #ebe8e2}
 .tj-erabu h2{font-size:clamp(15px,1.6vw,19px);font-weight:400;letter-spacing:.2em;margin:0 0 4vh}
+.tj-fold>summary{cursor:pointer;font-size:clamp(15px,1.6vw,19px);letter-spacing:.2em;padding:12px 0;min-height:44px;list-style-position:outside}
+.tj-fold[open]>summary{margin:0 0 3vh}
 .tj-erabu h3{font-size:14px;font-weight:400;letter-spacing:.4em;color:#5d554a;margin:5vh 0 14px}
 .tj-narabi{list-style:none;padding:0;margin:0;columns:9 72px;column-gap:12px}
 .tj-narabi li{break-inside:avoid;margin:0 0 12px}
@@ -428,4 +485,6 @@ body .tj-narabi a{display:block;color:inherit;text-decoration:none;border:0}
 """
 
 
-PAGES = {"tenji": tenji, "zine": zine}
+# 皮ごとの入口。zine のサイト（暗い画面の版）の入口は、白と同じ作りの yoru（本人の決め 11-08「もう1つ立てる」）。
+# 前の黒のジンの入口 zine() は、もう道からは出さない（関数は試験が読むので、消すのは別の PR で試験と一緒に）
+PAGES = {"tenji": tenji, "zine": yoru}

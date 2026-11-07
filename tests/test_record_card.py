@@ -67,8 +67,7 @@ for label, value in (("最初に動いた所", "外筒の先"), ("引っかか�
 assert f"<h3>仮説 {hypotheses.letter(hypotheses.sheet_of(G))} の紙・動かない</h3>" in bare
 assert "成功" not in full + bare and "失敗" not in full + bare
 
-# 図鑑の行も同じ書き方
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} の紙・動いた（" in get(f"/zukan/{G}"), "図鑑の見出しの書き方"
+# 前は図鑑の行も同じ書き方かを見ていた。図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）
 
 # 押しても進めない釦は出さず、1 行の文にする
 assert loop.save_explanation("R-0001", "大人", "折りが固い", "幅を変える") == []  # 次の記録が残った後なので、作る側の道で足す

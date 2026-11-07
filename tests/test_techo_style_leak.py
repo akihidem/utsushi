@@ -41,6 +41,7 @@ assert '<div class="gallery">' in gallery and 'class="panel" id="ageta"' in gall
 
 # 手帖の本文のゴシックは本人の指定（11-04）なので残す
 techo = get(f"/toy/{G}/techo/kiroku")  # 頭の帯を持つのは手帖の記録の頁（作る頁は帯なしの 1 手 1 画面、#87）
-assert re.search(r'<body class="[^"]*\btecho\b', techo) and 'body.techo{font-family:"Noto Sans JP"' in techo
+# 手帖の書体は他の頁と同じ明朝（本人のサイトの見直し 11-07 22:16「のこす、手帖、のフォントが違う。」）。皮が漏れない事は前のまま見る
+assert re.search(r'<body class="[^"]*\btecho\b', techo) and 'body.techo{font-family:"Noto Serif CJK JP"' in techo and "Noto Sans JP" not in techo
 server.shutdown()
 print("ok")
