@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_dark_entrance.py
+# commit: da1aaa36（回した時の HEAD）
+ok 暗い画面の版の入口: 作りと字は白と同じで、色だけ暗い（帯は皮 zine の変数・body は tenji yoru・絵は小さい写し）
+rc=0

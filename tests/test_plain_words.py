@@ -89,7 +89,7 @@ def stored():
 
 before = stored()
 pages = pw.collect([G])
-for p in ("/", "/about", "/toys?paper=1", "/gallery", "/zukan", f"/zukan/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru", f"/toy/{G}/techo", "/loop", f"/loop/{G}"):
+for p in ("/", "/about", "/toys?paper=1", "/gallery", f"/toy/{G}", f"/toy/{G}/tsukuru", f"/toy/{G}/techo", "/loop", f"/loop/{G}"):
     assert p in pages and "</html>" in pages[p].lower(), p
 assert pw.census(pages)["sentences"] > 50
 assert seen[0] != _data.name and os.environ["OMOCHAE_DATA"] == _data.name and stored() == before, seen

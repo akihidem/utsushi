@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_demo_out_of_repo.py
+# commit: 3ea71f8d（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_demo_out_of_repo.py", line 21, in <module>
+    assert not left, ("repo に残っている動画の作り", left)
+           ^^^^^^^^
+AssertionError: ('repo に残っている動画の作り', ['src/demo'])
+rc=1

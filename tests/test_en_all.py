@@ -6,6 +6,7 @@
 - ?lang=en で英語になり、cookie で続き、?lang=ja で戻る。道は日本語の頁と同じ。頭に下書きの札が 1 つ出る。
 - 前からの英語の頁（/en・本人が採った英文）は替えない。
 - 人が書いた字（記録の感想）は訳さない。表の値は数の印（{0}…）が鍵と同じで、内輪の言葉（data/・.json・OWN-）を入れない。
+- 訳の表に同じ鍵が 2 つ無い（別々の枝が同じ字の英語を別の所に足すと、git は衝突を出さずに 2 行が並び、値の違う方が黙って後勝ちになる。11-07 夜に 3 回重なりかけた）。
 """
 import json
 import os
@@ -26,6 +27,17 @@ from web.play_server import serve, sources  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 table = i18n.table()
+_twice = []
+
+
+def _pairs(p):
+    seen = [k for k, _ in p]
+    _twice.extend(sorted({k for k in seen if seen.count(k) > 1}))
+    return dict(p)
+
+
+json.loads((ROOT / "data/i18n/en.json").read_text(encoding="utf-8"), object_pairs_hook=_pairs)
+assert not _twice, ("訳の表に同じ鍵が 2 つある（後から入った方の行を消す）", _twice[:8])
 PH = re.compile(r"\{\d+\}")
 for k, v in table.items():
     # 値の数の印は鍵の中の物だけ（無い印を作ると頁が落ちる）。玩具の名の「（2つ目）」のように、名の英語が数を言わない物は落としてよい
@@ -54,16 +66,17 @@ try:
 
     page, cookies = get("/?lang=en")
     assert any(c.startswith("utsushi_lang=en;") for c in cookies), cookies
-    assert '<html lang="en"' in page and page.count('class="en-draft"') == 1 and en.DRAFT in page
+    # 頭の断り（下書きの札）は出さない（本人の言葉 11-07「これ要らない。Draft translation. A native speaker has not checked it yet.」）
+    assert '<html lang="en"' in page and 'class="en-draft"' not in page and "Draft translation" not in page and "native speaker" not in page
     assert 'class="nav-lang" href="?lang=ja" lang="ja">日本語</a>' in page, "英語の頁の切り替えは日本語へ戻る口"
     toy, _ = get(f"/toy/{G}", "utsushi_lang=en")
     assert "Goraigo" in toy and "御来迎の図" not in toy
     ja, cookies = get(f"/toy/{G}?lang=ja", "utsushi_lang=en")
     assert '<html lang="ja"' in ja and "en-draft" not in ja and any(c.startswith("utsushi_lang=ja;") for c in cookies)
     assert '<a class="nav-lang" href="?lang=en" lang="en">English</a>' in get("/about")[0], "日本語の頁の切り替えは今の頁の英語へ"
-    # 前からの英語の頁は替えない（本人が採った英文。下書きの札も en.py が自分で 1 つ出す）
+    # 前からの英語の頁は替えない（本人が採った英文）。前からの頁も頭の断りを出さない
     plain, _ = get("/en")
-    assert get("/en", "utsushi_lang=en")[0] == plain and plain.count(en.DRAFT) == 1
+    assert get("/en", "utsushi_lang=en")[0] == plain and "Draft translation" not in plain
     # 人が書いた字は訳さない（機械で訳した他人の言葉を出さない）。札の字は英語になる
     records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "impression": "すっと開いた"})
     mine, _ = get(f"/toy/{G}", "utsushi_lang=en")

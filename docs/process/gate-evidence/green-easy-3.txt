@@ -1,0 +1,6 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_easy_all.py と、表の 3.json の数の印・ルビ・< > & を数える python（帳面の節「やさしい日本語の表の分け 3」）
+# commit: 725ddac1（3.json を足した commit）
+ok やさしい日本語の土台: 全部の頁が開く・ルビの形・切り替えと cookie・英語の頁は替えない
+rc 0
+鍵 921・数の印の並びが違う／ルビの無い漢字／< > & の値 0
+rc 0

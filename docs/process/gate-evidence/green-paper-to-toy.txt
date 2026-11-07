@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_paper_to_toy.py
+# commit: 03fb1750（回した時の HEAD）
+ok うつしの位置づけ（paper to toy の 1 つの例）と相手の字: 序の頁の頭と なぜ の末、English の頭に 1 回ずつ。入口には足さない
+rc=0

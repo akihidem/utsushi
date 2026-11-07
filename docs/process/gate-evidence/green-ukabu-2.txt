@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_ukabu.py
+# commit: 1b5e93e5（回した時の HEAD）
+ok 浮かぶ玩具: 絵が無い場は置かない・題の間に 4 つ・揺れるだけの飾り（押せない・焦点に入らない・読み上げで飛ばす）・とてもゆっくり・動きを減らす設定で止まる・縁の紙の地を外し白い面は残す・軽い絵
+rc=0

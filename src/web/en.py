@@ -18,7 +18,24 @@ from omochae.hypotheses import ROOT
 from . import skin
 from .play_server import esc, sources
 
-DRAFT = "Draft translation. A native speaker has not checked it yet."
+# 頭の断り（前の DRAFT「Draft translation. A native speaker has not checked it yet.」）は出さない。
+# 本人の言葉（11-07）「これ要らない。Draft translation. A native speaker has not checked it yet.」。やさしい日本語の「下書きです」を外したのと同じ扱い
+# 紹介の大前提の英語 2 文（本人の言葉 11-07 夜「学校や博物館等で使えるワークショップ支援のサービス…紙があって、それに印刷ができて、
+# ハサミと糊があればいろんなことが伝えられる…大前提として語られる必要がある」と裏付け「紙とはさみとのりの手軽さが4日間連続ワークショップを
+# 可能にしてる」。置き場は本人の「入れる」）。日本語の頁の S1・S3 の訳で、本人が OK した位置づけの 2 文と仕組みの 3 文は替えずに、その前に置く
+BASIS = ("Utsushi is a service that supports workshops in schools, museums and other places. "
+           "We could hold workshops four days in a row, from November 4 to 7, because the toys are easy to make with paper, scissors and glue.")
+# うつしの位置づけ（英語 2 文）。本人の言葉（11-07 昼）「utsushi は paper to toy の具体例、という説明をサイトに」
+# 「これからというよりは、みんなが使えるサービスとして作った」に合わせた案の字を、本人が採った（11-07「この英文でよい」）。
+# J-030 の紹介（INTRO）の文は変えず、別の段として頭に置く
+POSITION = ("Utsushi is one example of paper to toy, using the toys in an Edo picture book. "
+            "We made it as a service everyone can use, from schools, research, and museums to homes.")
+# paper to toy の仕組みの英語 3 文。字は型紙エンジンの README と版の台帳から作った材料の字（11-07 に届いた物・言葉のまま）。
+# 窓口の決め（11-07 130735）「/en の英語 3 文は #526 の 1 本にまとめる。#527 は /en の分を外す」。位置づけの 2 文のすぐ後に置く
+ENGINE = ("Paper to toy is an engine for designing mechanisms with internal structure from flat materials like paper. "
+          "Give it a toy's dimensions, and it lays out the parts, checks them before and after printing, and outputs a printable PDF template; "
+          "for the two featured toys it also folds and assembles the parts in 3D to check that nothing collides. "
+          "Makers' reports and workshop feedback become improvement proposals, and when people adopt one and the fix is in, the template version and the engine version go up.")
 # J-030 の少し長い紹介と同じ文。文を変える時は J-030 も直す。本人の方針（11-05）の書き方: 短い文・やさしい語（#318）。
 INTRO = (
     "In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called <i>Edo nishiki</i>. It shows more than 80 toys with short poems, but it does not say how the toys worked.",
@@ -82,7 +99,7 @@ def index_page(look=skin.DEFAULT, path="/en"):
         tag = "" if hypotheses.stage(sid) == "必須" else '<span class="lb">Untested draft</span>'
         cards += (f'<article class="card"><a href="/en/toy/{esc(sid)}">{_picture(sid)}<h3>{esc(t["name"])}</h3></a>{tag}<p class="meta">{esc(t["intro"])}</p></article>')
     intro = "".join(f"<p>{x}</p>" for x in INTRO)
-    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
+    body = (f'<section class="sec"><h1>utsushi</h1><p class="position basis">{esc(BASIS)}</p><p class="position">{esc(POSITION)}</p><p class="engine">{esc(ENGINE)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
     return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)
@@ -114,7 +131,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
     from . import genga  # 英語の頁は頁の全体の絵だけ（統括の決め 11-06: 歌の字も新しい字も出さない）
 
     body = (f'<section class="hero">{genga.plain(sid, "Picture from the book") or _picture(sid)}<div><h1>{esc(t["name"])}</h1>{tag}<p class="lead">{esc(t["intro"])}</p>'
-            f'<p class="meta"><span lang="ja">{esc(data["toy"])}</span>. {esc(DRAFT)} {esc(CREDIT)}</p>'
+            f'<p class="meta"><span lang="ja">{esc(data["toy"])}</span>. {esc(CREDIT)}</p>'
             f'<p class="links"><a href="/toy/{esc(sid)}">日本語の頁へ</a><a href="/en#toys">Other toys</a></p></div></section>'
             f'<section class="sec" id="ideas">{note}<h2>Make it now</h2><p class="premise" id="premise">{esc(PREMISE)}</p><p class="meta">{esc(JA_ONLY)} {esc(WAYS_NOTE)}</p>'
             f'<div class="plates">{cards}</div></section>'
@@ -123,7 +140,8 @@ def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):
 
 
 def band(sid):
-    """日本語の玩具の頁に出す、英語の短い紹介の帯（本人の指示「おもちゃの頁に英語の短い紹介」）。"""
+    """日本語の玩具の頁に出す、英語の短い紹介の帯（本人の指示「おもちゃの頁に英語の短い紹介」）。
+    英語への入口に括弧の断り「（英語の文は案です）」は付けない（本人の決め 11-07「外してよい」。頭の断り DRAFT を外したのと同じ扱い）。"""
     t = toy_text(sid)
     return (f'<section class="sec" id="english" lang="en"><p class="meta"><span class="lb">English</span> <b>{esc(t["name"])}</b>. {esc(t["intro"])} '
-            f'<a href="/en/toy/{esc(sid)}">Read and print in English</a>（英語の文は案です）</p></section>')
+            f'<a href="/en/toy/{esc(sid)}">Read and print in English</a></p></section>')

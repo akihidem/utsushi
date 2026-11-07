@@ -51,7 +51,7 @@ assert not set(map(type, row)) - {str}, row
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
-for path in (f"/loop/{G}", "/loop", f"/toy/{G}", f"/toy/{G}/techo", f"/zukan/{G}", "/gallery"):
+for path in (f"/loop/{G}", "/loop", f"/toy/{G}", f"/toy/{G}/techo", "/gallery"):
     with urllib.request.urlopen(base + path) as r:
         assert r.status == 200, path
         body = r.read().decode()

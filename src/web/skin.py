@@ -323,6 +323,28 @@ def artwork_label(toy, src):
     return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
 
 
+def artwork_title(toy, src):
+    """作品の札の題の塊（玩具の名・『書名』より・作者・刊年）。玩具の頁の頭で、狂歌の左に縦書きで置く（本人の言葉 11-08「絵の左横に縦で狂歌、
+    その左横に御来迎 江都二色よりーの部分を置く」）。字は artwork_label の前の 3 行と同じ（出典の記録の値だけ）。"""
+    who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
+    when = esc((src.get("original_publication") or {}).get("value", ""))
+    return f'<p><b>{esc(toy)}</b></p><p>『{esc(src.get("title", ""))}』より</p><p>{who}</p><p>{when}</p>'
+
+
+def artwork_credit(src):
+    """作品の札の出典の字（所蔵・権利）。玩具の頁では頁の一番下に置く（本人の言葉 11-08「国立図書館デジタルコレクションの文言はページの一番下に」）。
+    字は artwork_label の後ろの 2 行と同じ（替えない）。"""
+    rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
+    return f'{esc(src.get("holding", ""))}<br>{rights}'
+
+
+def ndl_page(src):
+    """国立国会図書館デジタルコレクションのその絵の頁（コマ）の道。出典の記録の persistent_id と canvas から作る。作れない時は絵の写しの道（image_url）。"""
+    pid = str(src.get("persistent_id", "")).rsplit("/", 1)[-1]
+    canvas = src.get("canvas")
+    return f"https://dl.ndl.go.jp/pid/{pid}/1/{canvas}" if pid.isdigit() and isinstance(canvas, int) else src.get("image_url", "")
+
+
 # 断りの頁の戻り方は入口への 1 つ。前の「おもちゃの一覧へ」（/toys）は外した（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）
 def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"),), bare=False):
     """断りの頁（404・403・500）。何が起きたかと戻り方を、皮の地で 1 つの形で出す。bare は帯も足も出さない形で、合言葉の門のように中身を見せない所に使う（#136）。"""

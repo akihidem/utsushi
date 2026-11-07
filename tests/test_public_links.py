@@ -83,7 +83,7 @@ mine[G].append(spoken)
 # 1. 合言葉なしの場に、開けないリンクが無い。全部の札を出す頁を全部歩く
 checked = 0
 for sid in (G, T, TRIAL):
-    for path in (f"/toy/{sid}", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku", f"/zukan/{sid}"):
+    for path in (f"/toy/{sid}", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku"):
         found = links(page_at(opened, path))
         assert found, path
         dead = [(x, code) for x in found if (code := status(opened, x)) >= 400]

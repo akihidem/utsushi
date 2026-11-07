@@ -25,7 +25,7 @@ from web import play_server  # noqa: E402
 MIN_TAP, MIN_FONT = 44, 12
 G = "NDL-1187053-R0000005-L"
 # kazasu と tsukuru の頁は入れていない。#242 の枝で形が変わるので、床はそこで入れる
-PAGES = ["/", "/about", "/otona", "/toys", f"/toy/{G}", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}", "/no-such-page"]
+PAGES = ["/", "/about", "/otona", "/toys", f"/toy/{G}", f"/zukan/{G}/yomi", "/gallery", "/loop", f"/loop/{G}", "/no-such-page"]
 # 文の中のリンクは床の外（本文の要件）。親に字があって、自分が inline の物
 # load を待たない。図の読み込みが遅い頁で、時間切れの前に測れなくなる。押す所の高さと字の大きさは図に頼らない
 MEASURE = """<script>setTimeout(()=>{

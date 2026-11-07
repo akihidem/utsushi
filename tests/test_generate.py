@@ -54,8 +54,8 @@ gid, fs = gen.generate(source, client, image="QQ==")
 assert not fs, fs
 first = client.calls[0]["messages"][0]["content"]
 assert first[0]["type"] == "image" and "reader_predictions" not in first[1]["text"], "図を渡す。予想の段は無いので、予想の欄は渡さない（#242）"
-# 本人が採らなかった歌の読み（複写 A の「怠らし」）は渡さない。採った読みは渡す
-assert "御来迎 拝むにつけて怠らし" not in first[1]["text"] and "怠けらじ" in first[1]["text"]
+# 本人が採らなかった歌の読み（複写 A の「怠らし」）は渡さない。採った読み（「怠らじ」（本人の決め 11-08「御来迎の歌の読みは「怠らじ」」。前は 11-04 の決め U-01 で本人の表記「怠けらじ」））は渡す
+assert "御来迎 拝むにつけて怠らし" not in first[1]["text"] and "怠らじ朝な夕なに" in first[1]["text"] and "怠けらじ" not in first[1]["text"]
 sent = json.dumps(client.calls[2]["messages"], ensure_ascii=False, default=str)
 assert "F5.range" in sent and "F8.references" in sent, "落ちた理由を読ませる"
 assert not gen.check_result({"hypotheses": [hyp("1 本", A)], "references": []}, source), "案は 1 本でよい（型紙は玩具ごとに 1 枚。J-032）"

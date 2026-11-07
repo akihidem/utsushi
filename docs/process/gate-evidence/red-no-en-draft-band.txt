@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_en.py
+# commit: 2fae8d51（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en.py", line 66, in <module>
+    assert f'<a href="/en/toy/{sid}">Read and print in English</a>' in ja and "英語の文は案です" not in ja and "英語の文は案です" not in en.band(sid), sid
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: NDL-1187053-R0000005-L
+rc=1

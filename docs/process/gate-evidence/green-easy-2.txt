@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_easy_all.py
+# commit: 7cdeac69（回した時の HEAD）
+ok やさしい日本語の土台: 全部の頁が開く・ルビの形・切り替えと cookie・英語の頁は替えない
+rc=0
