@@ -516,13 +516,14 @@ FOLD_STYLE = ("<style>.fold-sec>summary{display:flex;align-items:baseline;gap:0}
               # 狭い幅（1 列）の頭の並び: 原画 → 歌 → 題 → つくる → 原画の出所の字 → 書誌と道 → これまでの記録。原画と歌は頭のまま畳まない（#450 の形）。
               # 原画の部品の中の順（絵・歌・出所）は変えず、題と「つくる」を出所の字の前へ差し込む。幅 390×844 で、前は「つくる」が 873px（最初の画面の外）だった。
               # 広い幅は 2 列（原画 | 題と釦）のままで、ここは効かない
-              # 広い幅: 原画の部品に 題の塊と狂歌の縦の段が入ったので、頭の 2 列のうち原画の側を広くする（前の 1 : 1.2 のままだと幅 1440 で絵が 126px に細った）
-              "@media (min-width:821px){.hero{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}"
+              # 広い幅の頭の 2 列は前の 1 : 1.2 のまま（11-08 に題の塊と狂歌の縦の段を原画の側へ入れた時は 1.9 : 1 にしたが、縦の段を前の形に戻したので外した）
               "@media (max-width:820px){.hero{row-gap:10px;padding-top:20px}.hero>.genga-head,.hero>div{display:contents}.hero>*>*{order:6}"
               # 歌は原画の部品の中で名の無い div に包まれている（genga.head）ので、絵の次の div を歌の段として扱う。試作の玩具の断りは釦の後ろ
-              # 11-08: 原画の部品は 題の塊と狂歌の縦の段（.genga-tate）と、絵と道の段（.genga-main）の 2 つ。狭い幅は 絵 → 題 → つくる → 縦の段 の順
-              # （縦の段を釦の前に置くと、幅 390 で「つくる」が最初の画面の外に出る）
-              ".hero>.genga-head>.genga-main{order:1}.hero h1{order:2}.hero .road{order:3;margin:4px 0}.hero h1+.meta{order:4}.hero>.genga-head>.genga-tate{order:5}}</style>")
+              # 原画の部品は、絵と道の段（.genga-main）と歌の段（.genga-uta）。狭い幅は #595 の前の並び（本人の言葉 11-08「縦書きは失敗なので前の形に戻す」）:
+              # 絵と 図を見る → 歌（横書き）→ 題 → つくる → 名の下の 1 行 → 作品の札（題の塊）→ くずし字を読む → これまでの記録。
+              # 歌を絵のすぐ後に置くのは、前の決め（11-06「狂歌は必ず原画と一緒に見れるように」）
+              ".hero>.genga-head>.genga-main{order:1}.hero>.genga-head>.genga-uta{order:2}.hero h1{order:3}"
+              ".hero .road{order:4;margin:4px 0}.hero h1+.meta{order:5}}</style>")
 
 # 畳んだ節へ道（#kaizen など）で着いた時は、その畳みを開く。閉じた見出しだけに着くと、行き先の中身が見えないため（別の目の確かめ 11-06、#472 の輪の図の道）。
 # 着いた所が畳みの中か、畳みを持つ節なら開く。JS が無い時は、見出しに着き、押せば開く（今の畳みのまま）
@@ -588,9 +589,11 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 書誌と図鑑への道は「知る」の読み物として釦の後に残し、これまでの記録は見出しのまま畳む（記録が無い時も 1 行の節が場所を取っていた）
     hero = (f'<section class="hero">{genga.head(sid, src, photos=photos)}<div>'
             f'<h1>{esc(data["toy"])}</h1>{stage_note}{make_go(sid)}'
-            # 作品の札は、題の塊を原画の部品の縦の段へ、出典の字を頁の一番下の段へ分けた（本人の言葉 11-08。genga.head・genga.ndl_credit）。
+            # 作品の札は前の所（題と つくる の後）に、題の塊だけで置く。出典の字は頁の一番下の段（本人の言葉 11-08「文言はページの一番下に」・genga.ndl_credit）。
+            # 11-08 に一度、題の塊を原画の部品の縦の段へ移したが、本人の言葉「縦書きは失敗なので前の形に戻す」・答え「広い画面も戻す」で戻した。
             # 図を見る（国立国会図書館）は原画の部品の 1 つの道にまとめた。図鑑の頁とほかのおもちゃの道は外した（本人の言葉「図鑑のページ要らない」
             # 「ほかのおもちゃ、のリンク要らない」）。くずし字を読む は残す
+            + skin.artwork_label(data["toy"], src, credit=False)
             + f'<p class="links"><a href="/zukan/{sid}/yomi">くずし字を読む</a></p>'
             f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{workshop.strip(sid)}{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
     recs = records.all_records(sid)

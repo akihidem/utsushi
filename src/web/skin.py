@@ -311,20 +311,14 @@ def frame(sid, caption="", pos=None):
     return f'<figure class="frame"><div class="pic" style="{style}" role="img" aria-label="図"></div>{cap}</figure>'
 
 
-def artwork_label(toy, src):
-    """美術館の作品の札。中身は出典の記録（NDL の書誌）の値だけで、作る側の言葉を足さない（looks._label と同じ線）。"""
+def artwork_label(toy, src, credit=True):
+    """美術館の作品の札。中身は出典の記録（NDL の書誌）の値だけで、作る側の言葉を足さない（looks._label と同じ線）。
+    credit=False は題の塊（玩具の名・『書名』より・作者・刊年）だけ。玩具の頁は出典の字を頁の一番下に置く（本人の言葉 11-08「国立図書館デジタル
+    コレクションの文言はページの一番下に」）ので、頭の札はこの形（縦書きを前の形に戻した 11-08 の答えの後も、出典の字の置き場は替えない）。"""
     who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
     when = esc((src.get("original_publication") or {}).get("value", ""))
-    rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
-    return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
-
-
-def artwork_title(toy, src):
-    """作品の札の題の塊（玩具の名・『書名』より・作者・刊年）。玩具の頁の頭で、狂歌の左に縦書きで置く（本人の言葉 11-08「絵の左横に縦で狂歌、
-    その左横に御来迎 江都二色よりーの部分を置く」）。字は artwork_label の前の 3 行と同じ（出典の記録の値だけ）。"""
-    who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
-    when = esc((src.get("original_publication") or {}).get("value", ""))
-    return f'<p><b>{esc(toy)}</b></p><p>『{esc(src.get("title", ""))}』より</p><p>{who}</p><p>{when}</p>'
+    tail = f'<br>{artwork_credit(src)}' if credit else ""
+    return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}{tail}</p>'
 
 
 def artwork_credit(src):
