@@ -153,6 +153,11 @@ from web import i18n  # noqa: E402
 miss = []
 i18n.to_en(sec, miss)
 assert miss == [], miss
+# 本人の言葉の引用（顔の写真の札・参加者の型紙の改善例）は、英語の頁でも原文を残して英訳を添える（web.i18n の頭の決まり・#538 の形）
+en_sec = i18n.to_en(sec, [])
+for words in (techo_site.SAKUREI_FACES, techo_site.SAKUREI_KUFU_WORDS):
+    assert words in en_sec, (words, "英語の頁で本人の言葉の原文が消えた")
+assert "(“The toys made over the 4 days of workshops”)" in en_sec and "(“A participant's improvement to the template, example 1." in en_sec
 
 # 5. 場
 pub = techo_site.gallery_page(SIDS, public=True)

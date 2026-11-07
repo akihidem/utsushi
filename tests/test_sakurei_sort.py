@@ -188,5 +188,22 @@ assert sorted(r["source_id"] for r in pair) == sorted([G, T]) and len({r["worksh
 it2 = next(it for it in sakurei._hold_list() if it["name"] == "IMG_0201.jpg")
 assert it2["rids"] == [d[0] for d in done2] and it2["rid"] == done2[0][0] and not (sakurei.hold_dir() / f"{it2['fp']}.jpg").exists()
 assert sakurei.place() == ([], []) and sakurei.add([sakurei.hold_dir().parent / "nai.jpg"], G, "2026-11-07")[2], "2 度入れたか、無い写真を読めた"
+# 片方だけ入った写真（前の place で 1 つ目の玩具だけが入り、2 つ目で断られた形）は、次の place で残りだけが入り、帳面に残り続けない
+three = pathlib.Path(tempfile.mkdtemp())
+src3 = shot("IMG_0301.jpg", "2026:11:07 12:00:00", "+09:00", color=(201, 1, 99)).rename(three / "IMG_0301.jpg")
+assert sakurei.sort(three)[0] == ["IMG_0301.jpg"] and sakurei.set_toy(["IMG_0301.jpg"], G)[0]
+first3, _ = sakurei.place()
+assert [n for _, n in first3] == ["IMG_0301.jpg"]
+book = sakurei._hold_list()
+it3 = next(it for it in book if it["name"] == "IMG_0301.jpg")
+it3.pop("rid")
+it3["toy"] = f"{G},{T}"
+sakurei._hold_save(book)
+(sakurei.hold_dir() / f"{it3['fp']}.jpg").write_bytes(sakurei.to_jpeg(src3.read_bytes()))  # 断られた時は写しが残る
+again3, refused3 = sakurei.place()
+assert refused3 == [] and len(again3) == 1, (again3, refused3)
+it3 = next(it for it in sakurei._hold_list() if it["name"] == "IMG_0301.jpg")
+assert it3.get("rid") == first3[0][0] and sorted(it3["rids"]) == sorted([first3[0][0], again3[0][0]]), it3
+assert sorted(r["source_id"] for r in sakurei.workshop_records() if r["id"] in it3["rids"]) == sorted([G, T])
 assert run("sort", str(up), "--like", str(up / "nai.json")).returncode == 4, "読めない帳面は 4"
 print("ok 作例の仕分け: 撮影の日で 4 回に振る・撮影の情報を残さない・動画を分ける・玩具は人が決める・両方決まった物だけ入れる")

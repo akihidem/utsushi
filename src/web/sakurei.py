@@ -427,8 +427,17 @@ def place():
             continue
         path = hold_dir() / f"{it['fp']}.jpg"
         rids, whys = list(it.get("rids", [])), []
-        # 2 つの玩具が写る写真は玩具ごとに 1 つの記録（同じ写真を両方の札に）。途中で断られても、入った分は帳面に残す（2 度入れない）
+        # 2 つの玩具が写る写真は玩具ごとに 1 つの記録（同じ写真を両方の札に）。途中で断られても、入った分は帳面に残す（2 度入れない）。
+        # 前の place で片方だけ入った写真は、入った方を「もう入っている」と数えて、残りの玩具だけを入れる（同じ写真の断りで帳面に残り続けないように）
+        try:
+            mark = fingerprint(path.read_bytes())
+        except OSError:
+            mark = None
+        placed = {r["source_id"]: r["id"] for r in workshop_records() if mark and r.get("workshop_from") == mark}
         for sid in it["toy"].split(","):
+            if sid in placed:
+                rids += [] if placed[sid] in rids else [placed[sid]]
+                continue
             got, why, cannot = add([path], sid, it["day"], it.get("set"), kind=it.get("kind"))
             if got:
                 rids.append(got[0][0])
