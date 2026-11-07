@@ -112,7 +112,8 @@ assert proposal["status"] == "decided" and proposal["accepted"] == {"version": 2
 assert any(c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の確定も同じ操作で残る"
 # 一時の場所で刷っても、紙には記録と同じ版と根拠が載る。
 text = subprocess.run(["pdftotext", str(out_dir(G) / f"{GS}_v2.pdf"), "-"], capture_output=True, text=True, check=True).stdout
-assert "版 2" in text and rid in text, text[:300]
+# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」
+assert hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2) in text and rid in text, text[:300]
 
 # 紙の無い版: 作り直す口が画面に出て、押すと紙ができる。
 page_before = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
@@ -121,7 +122,7 @@ gone = sorted(p.name for p in out_dir(G).glob(f"{GS}_v2*"))
 for name in gone:
     (out_dir(G) / name).unlink()
 page_now = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
-assert "版 2 の紙を作り直す" in page_now, "紙の無い版を画面で知らせる"
+assert f"{hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)} の紙を作り直す" in page_now, "紙の無い版を画面で知らせる"
 code, _ = post(f"/toy/{G}/reprint", {"hypothesis": GS, "version": "3"})
 assert code == 422, "採っていない版は刷らない"
 for bad in ({"hypothesis": "H-ZZ", "version": "2"}, {"hypothesis": GS, "version": "x"}, {"hypothesis": GS, "version": "0"},
