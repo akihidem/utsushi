@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_easy_all.py
+# commit: 91bbf3ba（回した時の HEAD）
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000004-L/.tmp-orof1jvq/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000004-L-4/.tmp-3dkbfind/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000005-L/.tmp-uudz16zi/H-C_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000005-L-3/.tmp-xxpcgln8/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000007-L/.tmp-zogjbuy1/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000007-R/.tmp-46f9_603/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000014-L/.tmp-vgu6tr6r/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000014-R/.tmp-d0l46kfc/H-A_v1.pdf
+/tmp/tmpfbw4yq9f/play/NDL-1187053-R0000019-L/.tmp-00xik8um/H-A_v1.pdf
+ok やさしい日本語の土台: 全部の頁が開く・ルビの形・切り替えと cookie・英語の頁は替えない
+rc=0
