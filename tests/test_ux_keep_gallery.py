@@ -22,6 +22,9 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 from web import demo_samples, play_server, techo_step  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 
 # ---- 1 移る先
 moves = re.findall(r"location\.assign\(`([^`]+)`\)", techo_step.SCRIPT)
@@ -49,9 +52,9 @@ def get(op, path):
 
 
 a, b = screen(), screen()
-post(a, f"/toy/{G}/print", {"hypothesis": "H-A"})
-other = json.loads(post(b, f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "sheet_version": "1", "impression": "ほかの人の感想"}))["id"]
-mine = json.loads(post(a, f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない", "sheet_version": "1"}))["id"]
+post(a, f"/toy/{G}/print", {"hypothesis": GS})
+other = json.loads(post(b, f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "sheet_version": "1", "impression": "ほかの人の感想"}))["id"]
+mine = json.loads(post(a, f"/toy/{G}/record-json", {"hypothesis": GS, "result": "わからない", "sheet_version": "1"}))["id"]
 
 # ---- 2・3 記録を残した画面
 g = get(a, "/gallery?msg=" + urllib.parse.quote("記録を残しました"))
@@ -80,7 +83,7 @@ assert 'id="own"' not in urllib.request.urlopen(f"{at}/gallery", timeout=120).re
 # （https の画面は Secure の cookie も送り返す。手元の http で CookieJar を使うと Secure の物を落とし、鍵の無い画面を見るだけになる）
 TUNNEL = "made-up-name.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分けて書く（test_public_open と同じ）
 q = urllib.request.Request(f"{at}/toy/{G}/record-json", headers={"Host": TUNNEL, "Origin": f"https://{TUNNEL}"},
-                           data=urllib.parse.urlencode({"hypothesis": "H-A", "result": "動いた", "sheet_version": "1", "impression": "公開の場で書いた感想"}).encode())
+                           data=urllib.parse.urlencode({"hypothesis": GS, "result": "動いた", "sheet_version": "1", "impression": "公開の場で書いた感想"}).encode())
 with urllib.request.urlopen(q, timeout=120) as r:
     left = json.loads(r.read().decode())["id"]
     rec = [c.split(";")[0] for c in r.headers.get_all("Set-Cookie") or [] if c.startswith("utsushi_rec=")]

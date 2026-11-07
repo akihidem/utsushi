@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_goraigo_v14.py
+# commit: 089bb0c1（回した時の HEAD）
+ok 御来迎の次の組 goraigo-v14。組ごとのたたき台と寸法・考えの節の呼び名・糸の前提の字 5 つを v14 で出さない・押し方の違う記録から次の版を作らない
+rc=0

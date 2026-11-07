@@ -25,6 +25,8 @@ from web import tsukuru  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 WHO = "ab12cd34ef"
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -57,7 +59,7 @@ def post(path, data):
         return e.code, e.read().decode(), dict(e.headers)
 
 
-def step(n, event, hid="H-A", **more):
+def step(n, event, hid=GS, **more):
     return post(f"/toy/{G}/step", {"hypothesis": hid, "step": str(n), "event": event, **more})
 
 
@@ -73,13 +75,13 @@ def done_events():
     return [e for e in making_log.steps(G) if e.get("event") == "done"]
 
 
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
-total = tsukuru.count(G, "H-A")
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
+total = tsukuru.count(G, GS)
 assert total >= 3
 
 
 def big_tile_on_the_last_step():
-    body = get(f"/toy/{G}/tsukuru?h=H-A&n={total}")[1]
+    body = get(f"/toy/{G}/tsukuru?h={GS}&n={total}")[1]
     assert tile(body, "next")[1], "最後の手順の一番大きい札が「次の手順へ」のまま"
     label, hidden, big = tile(body, "done")
     assert not hidden and big, "最後の手順で組み上がりの札が一番大きい札でない"
@@ -88,7 +90,7 @@ def big_tile_on_the_last_step():
 
 def not_shown_midway():
     for n in (1, total - 1):
-        body = get(f"/toy/{G}/tsukuru?h=H-A&n={n}")[1]
+        body = get(f"/toy/{G}/tsukuru?h={GS}&n={n}")[1]
         label, hidden, big = tile(body, "next")
         assert label == "次の手順へ" and not hidden and big, f"手順 {n} の一番大きい札が「次の手順へ」でない"
         assert tile(body, "done")[1], f"途中の手順 {n} に組み上がりの札が出ている"
@@ -109,7 +111,7 @@ def road_to_the_record():
     to = urllib.parse.urlsplit(headers["Location"])
     q = dict(urllib.parse.parse_qsl(to.query))
     assert to.path == f"/toy/{G}" and to.fragment == "kiroku", f"記録の欄へ送っていない: {headers['Location']}"
-    assert q.get("at") == "kiroku" and q.get("see") == "H-A" and q.get("kind") == "sheet" and q.get("v") == "1", q
+    assert q.get("at") == "kiroku" and q.get("see") == GS and q.get("kind") == "sheet" and q.get("v") == "1", q
     assert q.get("msg") == tsukuru.DONE_NOTE, q
     code, body = get(f"{to.path}?{to.query}")
     assert code == 200, code
@@ -131,12 +133,12 @@ def who_is_kept_so_nobody_counts_as_quit():
     assert step(total, "stuck", who=me)[0] == 303
     assert step(total, "done", who=me)[0] == 303
     rec = [e for e in done_events() if e.get("who") == me]
-    assert len(rec) == 1 and rec[0]["step"] == total and rec[0]["hypothesis_id"] == "H-A", rec
-    assert making_log.summary(G)["completion"]["quit_steps"].get("H-A", {}) == {}, "作り終えた人が途中でやめた人に数えられた"
+    assert len(rec) == 1 and rec[0]["step"] == total and rec[0]["hypothesis_id"] == GS, rec
+    assert making_log.summary(G)["completion"]["quit_steps"].get(GS, {}) == {}, "作り終えた人が途中でやめた人に数えられた"
 
 
 def js_takes_the_same_road():
-    body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+    body = get(f"/toy/{G}/tsukuru?h={GS}")[1]
     assert "#tiles button:not([value=done])" in body, "JS が組み上がりの札を横取りしている（JS が無い時と道が分かれる）"
     assert "w.name='who'" in body, "フォームで送る時に、その場限りの印が抜ける"
     assert "goNext.hidden=n>=items.length" in body and "goDone.hidden=n<items.length" in body, "JS で進んだ時に札が替わらない"
@@ -145,16 +147,16 @@ def js_takes_the_same_road():
 
 def hidden_tile_stays_hidden_on_narrow_screens():
     # 幅の狭い画面の skin.TAP_FLOOR は button に display を付ける。床の側で止めないと、スマホで 2 つの大きい札が並ぶ（実物のブラウザで見つけた）。
-    body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+    body = get(f"/toy/{G}/tsukuru?h={GS}")[1]
     assert "[hidden]{display:none!important}" in body, "幅の狭い画面で、隠した札が出る"
 
 
 def back_is_not_shown_on_the_first_step():
     # 手順 1 の「戻る」は押しても何も起きない（実物のブラウザで見つけた）。#321 の最後の手順の札と同じ形で、出さない。
-    assert tile(get(f"/toy/{G}/tsukuru?h=H-A&n=1")[1], "back")[1], "手順 1 に戻るの札が出ている"
-    label, hidden, _ = tile(get(f"/toy/{G}/tsukuru?h=H-A&n=2")[1], "back")
+    assert tile(get(f"/toy/{G}/tsukuru?h={GS}&n=1")[1], "back")[1], "手順 1 に戻るの札が出ている"
+    label, hidden, _ = tile(get(f"/toy/{G}/tsukuru?h={GS}&n=2")[1], "back")
     assert label == "戻る" and not hidden, "手順 2 に戻るの札が無い"
-    body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+    body = get(f"/toy/{G}/tsukuru?h={GS}")[1]
     assert "goBack.hidden=n<=1" in body, "JS で進んだ時に戻るの札が替わらない"
 
 
@@ -163,7 +165,7 @@ def one_step_when_there_is_no_text():
     saved = tsukuru.step_texts
     tsukuru.step_texts = lambda *a, **k: []
     try:
-        body = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+        body = get(f"/toy/{G}/tsukuru?h={GS}")[1]
         assert tile(body, "next")[1] and not tile(body, "done")[1], "文の無い紙で組み上がりの札が出ない"
         assert step(1, "done")[0] == 303
     finally:
@@ -174,7 +176,7 @@ def words_are_the_ones_the_person_chose():
     # 定数で見るだけだと、字を誰かが書き換えても通ってしまう。本人が採った文（2026-11-06・本人のカード「直しで出た新しい文 5 つ」の 3）を一字ずつ見る
     assert tsukuru.DONE_LABEL == "全部できた", tsukuru.DONE_LABEL
     assert tsukuru.DONE_NOTE == "組み上がった事を残しました。動かしてみて、ここで記録を残します。", tsukuru.DONE_NOTE
-    assert tile(get(f"/toy/{G}/tsukuru?h=H-A&n={total}")[1], "done")[0] == "全部できた", "頁の札が本人の採った字でない"
+    assert tile(get(f"/toy/{G}/tsukuru?h={GS}&n={total}")[1], "done")[0] == "全部できた", "頁の札が本人の採った字でない"
 
 
 def no_praise():

@@ -303,40 +303,110 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 KANJI = "一二三四五六七八九十"
 DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
 
+# 入口を えらぶ にする（本人のサイト体験レビュー 11-07 の 4・5・1。UX の設計 state の review-fixes の A）。
+# 本人の言葉（窓口の要点）: 「入口と選ぶは分けない。最初の頁そのものを選ぶにする（江戸二色の話だけ書いて、押させるのでなく最初から選べる形）」
+# 「選ぶでは『まずはここから』で御来迎と張子の首振り虎の 2 つを前に出し、どちらかを選んで作る誘導に。他も選べるが控えめに」
+# 「83 のおもちゃが言葉だけ並んでいるのが嫌。絵で見える形に」。
+# 前は 題の間（題・えらぶ の釦・副題）→ 扉の額 → 全部の玩具の一覧 → 章ごとの部屋（歌・部分・型紙をひらく）の順で、選ぶには えらぶ を押して /toys へ行った。
+# 今は 題（題・副題・表紙の 2 行）→ 2 つの大きな札 → 83 の原画の敷き詰め（小さく）。えらぶ の釦は外し（押させない）、/toys は / へ送る（play_server）。
+# 章ごとの部屋（歌・部分）は外した: 歌は玩具の頁の頭（原画と歌）に在り、入口に同じ物を 2 度置かないため。
+MAZU = "まずはここから"  # 2 つの大きな札の見出し（本人の言葉そのもの。本人の「反映してください。レビューの要点の通りで」と窓口の決め 11-07）
+
+
+def _mazu(ts):
+    """「まずはここから」の 2 枚（必須の 2 種）。札そのものが玩具の頁（つくる）への口。額の敷き方は前の章の部屋と同じ（FRAMED）。"""
+    # 絵は中くらいの写し（/picture/<印>/mid）を img で、先に読む（fetchpriority="high"）。元の写しは最初の画面で読まない（toys.SIZES の注）。
+    # 前は背景の絵（CSS）にしていたが、遅い回線（下り 1.6Mbps・往復 150ms、トンネル越し）で、下の並びの小さい写しと取り合って 2 枚が届くのに
+    # 5.7 秒かかった（11-07 に Chromium で測った）。背景の絵は読む順が後ろになるため、img にして先に読ませる。
+    # 額の敷き方（FRAMED の 112% と綴じの反対側）は、枠の中で 1.12 倍に広げて寄せる形で同じに見せる
+    def pic(t):
+        sid = t["sid"]
+        if not (ROOT / "out/sources" / f"{sid}.jpg").exists():
+            return f'<span class="pic" style="{_bg(sid)}" role="img" aria-label="{esc(t["toy"])}の図"></span>'
+        x = framed_pos(sid).split()[0]
+        from . import toys as toys_page
+
+        # 下敷きはごく小さな絵を頁に書いた物（toys.tiny_picture）。字と一緒に届き、中くらいの写しが届くと上に重なる
+        under = f"background:#d9d2c3 url({toys_page.tiny_picture(sid)}) {x} 50%/{FRAMED} no-repeat"  # 額の敷き方と同じ大きさ（黒い縁を出さない）
+        return (f'<span class="pic" style="{under}"><img src="/picture/{esc(sid)}/mid" alt="{esc(t["toy"])}の図" fetchpriority="high" decoding="async" '
+                f'style="object-position:{x} 50%;transform-origin:{x} 50%"></span>')
+    cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}</span>'
+                    f'<span class="nm">{esc(t["toy"])}</span></a>' for t in ts)
+    head = f"<h2>{esc(MAZU)}</h2>" if MAZU else ""
+    # 黒の表紙にだけあった 1 行（額の絵の下の「江都二色　安永二年　うしなわれた玩具」。本人の決定 11-06「黒案にだけある要素は白案に入れて」）は、
+    # 前は白の扉の額の下に出していた。扉は外したので、同じ額の敷き方の 2 枚の下に置く（『江都二色』の話の 1 行でもある）
+    return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
+
+
+def _erabu(sids):
+    """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。"""
+    from . import genre
+    from . import toys as toys_page
+
+    shelves = "".join(f'<h3>{esc(big)}</h3><ul class="tj-narabi">{"".join(toys_page.card(s) for _, ss in mids for s in ss)}</ul>'
+                      for big, mids in genre.groups(sids))
+    # 並びの小さい写しは、まずはここから の 2 枚が届いてから読む（data-src を src に替える台本 ERABU_JS）。遅い回線（下り 1.6Mbps・往復 150ms・
+    # トンネル越し）で、2 枚と並びの 20 枚ほどを一度に読むと、2 枚が届くのに 5.6 秒かかった（11-07 に Chromium で測った。本人の答え 11-07 の (a)）。
+    # 台本が動かない機器では、並びは名前の札だけになる（並びの絵は 2 枚より後でよい物なので、そこは止めない）
+    shelves = shelves.replace(' src="/picture/', ' data-src="/picture/')
+    n = len(sids) + len([s for s in sources() if hypotheses.stage(s) == "必須"])
+    return (f'<section class="tj-erabu" id="all-toys"><h2>{n} のおもちゃから、1 つ選ぶ</h2>{shelves}'
+            '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></section>')
+
+
 def tenji():
     ts = toys()
     body = switch("tenji")
-    # 最初の画面（題の間）は題と「えらぶ」と副題だけにする（本人の決定 11-07「前の白の案の間」は B、入口の絵の前の間）。
-    # 11-06 夜に一度、最初の玩具の額を題の横に入れた（地図の工程 1「絵 1 枚と 1 行とボタン 1 つ」）が、iPhone で間が詰まって見えた（本人の感想）。
-    body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
-    # 扉: 黒のジンの表紙にだけあった、最初の玩具の額の絵と「江都二色　安永二年　うしなわれた玩具」の 1 行（本人の決定 11-06「ページは白案で
-    # 統一します。黒案にだけある要素は白案に入れてください」）。題の間のすぐ後の 1 室に、白の展示と同じ額（tj-work）で掛ける。字は黒の表紙の字のまま。
-    # 額は押せる口にしない（大きいボタンは「えらぶ」1 つ）。読み上げの名は全部の玩具の一覧の絵と同じ字の形
-    first = ts[0]["sid"] if ts else ""
-    if first:
-        body += (f'<section class="tj-door"><div class="tj-work"><div style="{_bg(first, framed_pos(first), FRAMED)}" role="img" aria-label="{esc(ts[0]["toy"])}の図"></div></div>'
-                 f'<p class="meta">{esc(DOOR_LINE)}</p></section>')
-    # 北斎漫画の縦読みの節は、白では入口に置かず、帯の「よむ」の先の序の頁（/about）に置く（統括の決め 11-06。ジャーニーマップの
-    # 工程 1「読み物は道の外へ（よむ）」に合わせる。前は題の間のすぐ後に置き、入口が長くなっていた）。黒の入口の作りは残す。
-    # 扉の次は全部の玩具の一覧の一室（本人の指示 11-05）。前は間に扇の間（扇の札）と扇をひらくノブを置いたが、
-    # 本人の言葉 11-07「扇の間要らない」で外した。ノブは扇の間のすぐ下の同じ扇の飾りで、外さないと扇の 1 室が残るので一緒に外した。
-    body += all_toys("tj")
-    for i, t in enumerate(ts, 1):
-        src = source(t["sid"])
-        song = "".join(f"<p>{esc(x)}</p>" for x in t["song"])
-        n = KANJI[i - 1] if i <= len(KANJI) else str(i)
-        body += (f'<section id="look-{i}" class="tj-room"><div class="panel"><p class="chapter">第{n}章</p><h2>{esc(t["toy"])}</h2>'
-                 f'<div class="tj-songs" id="song-{i}">{song}</div><p class="lead">{QUOTE}</p></div>'
-                 f'<div class="tj-work"><div style="{_bg(t["sid"], framed_pos(t["sid"]), FRAMED)}"></div></div>'
-                 f'<div class="tj-side"><div class="tj-label"><span class="no">No. {i:02d}</span><span class="ttl">{esc(t["toy"])}</span>'
-                 f'{_label(t, src, "tj-inner")}</div>{_nopic(t)}</div></section>')
-        figs = "".join(f'<figure><div style="{_bg(t["sid"], p, "300%")}"></div><figcaption>部分 {k}</figcaption></figure>'
-                       for k, p in enumerate(DETAIL_POS, 1))
-        body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
-        body += (f'<section class="tj-exit"><p>紙で作って、確かめる。</p><a href="/toy/{t["sid"]}">型紙をひらく</a></section>')
+    # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
+    # 幅 390 の最初の画面に 2 つの大きな札の頭が入るようにする（「最初から選べる形」）
+    body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+    main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
+    body += _mazu(main)
+    body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"])
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし", body + ONLY, TENJI + skin.entrance_style("tenji"), "tenji")
+    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
+
+
+# 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
+# 見えた時に起こす仕掛けは使わない（入口の決まり。research/19）。
+ERABU_JS = """<script>(()=>{let go=false;const run=()=>{if(go)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
+const big=[...document.querySelectorAll('.tj-mazu-card img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
+big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
+
+
+# 入口の えらぶ の形（白の展示）。札の中身は toys.card（#508 の小さい写し・縦横つき）なので、その札が要る CSS をここに置く（入口は skin.BASE を読まない）。
+# 「控えめに」: ほかの玩具は 1 列 72px 以上・9 列まで（えらぶ の頁の 96px・7 列より小さく）。2 つの大きな札は横に並べ、幅 390 で 1 枚 160px ほど。
+ERABU = """
+/* 題の間は横書きで短く（前の B の間の縦書きは、幅 390 で 2 つの札が 1 画面目の外に出た。11-07 に測った: 札の頭が 855px）。
+   字は前の題の間の字のまま（英字・題・副題・表紙の 2 行） */
+#hall.tj-hall{min-height:auto;display:block;text-align:center;padding:5vh 5vw 3vh}
+#hall.tj-hall .en,#hall.tj-hall h1,#hall.tj-hall .sub{writing-mode:horizontal-tb;margin:0 auto}
+#hall.tj-hall .en{margin-bottom:2vh}
+#hall.tj-hall h1{font-size:clamp(30px,4.4vw,56px);letter-spacing:.5em;margin-left:.5em}
+#hall.tj-hall .sub{margin-top:2.4vh;line-height:2;letter-spacing:.2em}
+#hall.tj-hall .grow{margin:2.4vh 0 0;font-size:13px}
+.tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
+.tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
+.tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
+.tj-mazu .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,4vw,56px)}
+body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
+.tj-mazu-card .tj-work{display:block;width:100%;margin:0}
+.tj-mazu-card .pic{display:block;aspect-ratio:1600/2656;border:1px solid #d8cdb6;box-shadow:0 18px 30px -22px rgba(70,55,35,.5);overflow:hidden;background:#d9d2c3}
+.tj-mazu-card .pic img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.12)}
+.tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}
+.tj-erabu{padding:8vh 24px;max-width:1180px;margin:0 auto;border-top:1px solid #ebe8e2}
+.tj-erabu h2{font-size:clamp(15px,1.6vw,19px);font-weight:400;letter-spacing:.2em;margin:0 0 4vh}
+.tj-erabu h3{font-size:14px;font-weight:400;letter-spacing:.4em;color:#5d554a;margin:5vh 0 14px}
+.tj-narabi{list-style:none;padding:0;margin:0;columns:9 72px;column-gap:12px}
+.tj-narabi li{break-inside:avoid;margin:0 0 12px}
+body .tj-narabi a{display:block;color:inherit;text-decoration:none;border:0}
+.tj-narabi .pic{display:block;width:100%;height:auto;border:1px solid #d8cdb6;background:#f3f1ec;box-sizing:border-box}
+.tj-narabi .nopic{aspect-ratio:3/4}
+.tj-narabi .nm{display:block;font-size:12px;letter-spacing:.06em;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tj-narabi .ways{display:none}
+.tj-erabu .links{margin-top:6vh;font-size:13px}
+"""
 
 
 PAGES = {"tenji": tenji, "zine": zine}

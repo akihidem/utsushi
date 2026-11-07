@@ -43,6 +43,8 @@ from web.play_server import esc, serve, sources  # noqa: E402
 ask._key_present = lambda: False  # 手元に鍵があっても呼ばない
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -65,7 +67,7 @@ def post(path, data):
 
 
 data = hypotheses.load(G)
-h = data["hypotheses"][0]
+h = hypotheses.sheet_of(G)  # 頁が出すのはたたき台の仮説の欄（御来迎の今の組 goraigo-v14 は H-C）
 page = get(f"/toy/{G}")
 # 玩具の頁: data/hypotheses の欄と確かめた人
 for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to_measure'])}",
@@ -75,7 +77,8 @@ for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to
 # 作る側が残した試行の控えと、記録の札の番号（字が同じ行が頁の頭の一覧にもあるので、札の形で見る）
 assert "・版 1・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
 # 入口の引用の札、一覧の場所、手帖の組の版と記録の番号
-assert "確かめた人: ■" in get("/"), "入口の札"
+# 入口から章の部屋（歌と札）を外した（本人のサイト体験レビュー 11-07 の 4）。札は玩具の頁の頭（原画と歌）で見る
+assert "確かめた人: ■" not in get("/"), "入口に章の札を出さない（札は玩具の頁。test_reader_words が見る）"
 others = [s for s in sources() if hypotheses.stage(s) != "必須"]
 assert f"◇{others[0]}" in get("/zukan"), "図鑑の一覧の場所"
 # 手帖の作る頁には、組の版も記録の番号も出さない（作る側の印を学ぶ人に見せない。#87）。記録の番号は、手帖の記録の頁に出る
@@ -91,26 +94,31 @@ assert "確かめた人: ▲本人" in yomi, "くずし字の確かめた人"
 for want in ("▲読みが割れた事", "▲手元の複写", "▲本人が 2026-11-03 に", "▲もう一方の読みは", "▲複写 B の頁", "▲上の「人が確かめた読み」"):
     assert want in yomi, want
 # 紙を作って記録を残し、次の版まで進めた後の窓・改善の輪・ギャラリー
-post(f"/toy/{G}/print", {"hypothesis": "H-A"})
-post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "すっと開いた", "note": "本人が折った"})
+post(f"/toy/{G}/print", {"hypothesis": GS})
+post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "すっと開いた", "note": "本人が折った"})
 rid = records.all_records(G)[-1]["id"]
 post(f"/record/{rid}/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})
-post(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "24", "why": "開きを見る", "by": "大人"})
+post(f"/record/{rid}/next", {"interpretation": "折りが固い", "param": "fold_count", "to": "45", "why": "開きを見る", "by": "大人"})
 assert not hypotheses.save_own(G, "糸で引く", "糸で引いて開く", "糸らしい線")[1]  # 前に書かれた仮説の形（頁の書く欄は外した。J-032 の点 2）。文は図鑑に出る
-post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "紙の端はどこまで切りますか"})
+post(f"/toy/{G}/ask", {"hypothesis": GS, "question": "紙の端はどこまで切りますか"})
 # 説明を待つ記録と、頭の帯に出る写真（人が確かめた物だけが出る）
-post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})
+post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})
 waiting = records.all_records(G)[-1]["id"]
 folder = techo_site.media_dir(rid)
 folder.mkdir(parents=True, exist_ok=True)
 (folder / "m1.jpg").write_bytes(b"\xff\xd8\xff")
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
-page = get(f"/toy/{G}?see=H-A&kind=sheet&v=2")
+# 次の版を待つ報告は、説明のある今のたたき台の記録。11-04 の R-0001・R-0002 は前の組の押し方の違う紙なので数えない（窓口の決定 案 A 11-06）
+post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない"})
+ready = records.all_records(G)[-1]["id"]
+post(f"/record/{ready}/explain", {"text": "途中で止まった", "next_idea": "折りを減らす", "by": "大人"})
+page = get(f"/toy/{G}?see={GS}&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
 assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
 kz = page.split('id="kaizen"', 1)[1]
 assert f"<a href=#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
-assert re.search(r'次の版を待つ報告 \d+ 件: [^（]*<a href="#R-0001">▼R-0001</a>', kz), "改善の輪: 次の版を待つ報告"
+assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
+assert 'href="#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
 assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
