@@ -126,8 +126,16 @@ PARAM_NAMES = {"fold_count": "折りの数", "fold_width": "折りの幅（mm）
                "opening": "胴の口の幅（mm）", "head_w": "頭の幅（mm）", "head_h": "頭の高さ（mm）", "paper_gsm": "紙の重さ（g/m²）"}
 
 
+# 仮説の印の形（紙を返す口 /sheet/... の形と同じ）。フォームから来る値は、この形の物だけを刷った紙の探しに使う。
+HID_FORM = re.compile(r"H-[A-Z0-9]+|OWN-\d+")
+
+
 def printed_versions(sid, hid):
     """刷ってある版の番号（小さい順）。無ければ空。版 1 を決め打ちしない: 報告から直した版 2 以降を、次に作る人が最初に刷る事があるため。"""
+    # 印の形でない値は探さずに空を返す。hid はフォーム（talk・record-json・ask）から検査なしで来るので、
+    # glob の形にそのまま入れると、「..」や「**」で置き場の外まで広く探させられ、合言葉なしの場でもサーバを詰まらせられた（セキュリティの点検 U16）。
+    if not isinstance(hid, str) or not HID_FORM.fullmatch(hid):
+        return []
     # 自分の仮説は、型紙なしの紙（_free）も刷った紙に数える。作りながら見る頁と話す口が、その紙に付くように（ループ1、#335）。
     free = "(?:_free)?" if str(hid).startswith("OWN-") else ""
     return sorted({int(m.group(1)) for p in out_dir(sid).glob(f"{hid}_v*.pdf") if (m := re.fullmatch(rf"{re.escape(hid)}_v(\d+){free}\.pdf", p.name))}) if out_dir(sid).exists() else []
