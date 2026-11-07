@@ -642,7 +642,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not think_sheet.opens(self, sid, hid, after=stem.endswith("_after")):
                     return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
             if stem.endswith("_after") and hid not in {r["hypothesis_id"] for r in records.all_records(sid)}:
-                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}#kiroku", "記録の欄へ"),))
+                # 道の行き先は記録の頁（のこす）。玩具の頁の記録の欄は本人の答え 11-07 夕の Q3 で のこす へ寄せたので、#kiroku に着いても欄が無い
+                # （道 1 本だけ）。1 回で着くよう直接向ける（字は替えない。別の目の指摘 11-07）
+                return self._refuse(403, "試した記録を残してから開きます。", links=((f"/toy/{sid}/techo/kiroku", "記録の欄へ"),))
             f = out_dir(sid) / f"{stem}.{ext}"
             if stem.endswith("_after"):
                 ensure_after(sid, hid, int(re.search(r"_v(\d+)", stem).group(1)))

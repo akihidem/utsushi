@@ -220,8 +220,8 @@ def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
 
 # 試した記録を残す口は、のこす（手帖の最後と記録の頁）へ寄せた（本人の答え 11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」）。
 # 前は玩具の頁に記録の欄（record_form・13 の欄）があったが外した。玩具の頁には、記録の頁への道を 1 本だけ置く（KIROKU_TO_NOKOSU）。
-# 受け口 /toy/<印>/record は残す（作る側の道具 plain_words と、前からの道で送る物のため）。字は窓口の確かめ待ち（作りを先に）
-KIROKU_TO_NOKOSU = "試した記録は、のこす で残せます。"
+# 受け口 /toy/<印>/record は残す（作る側の道具 plain_words と、前からの道で送る物のため）。字は本人の言葉（11-07 夕、設計の担当を通して）
+KIROKU_TO_NOKOSU = "つくったものを教えてください。"
 
 def _param_label(template, k):
     return PARAM_NAMES.get(k, getattr(TEMPLATES[template], "PARAM_NAMES", {}).get(k, k))

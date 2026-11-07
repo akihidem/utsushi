@@ -13,3 +13,4 @@
 - 検証ゲート: **済み**。Red: 今の main（`c4456a7b`）に新しい試験 3 本（test_ux_fold_record・test_page_order・test_wa_ring）だけを置くと 3 本とも rc 1（gate-evidence/red-kiroku-yoseru.txt）。Green: 同じ 3 本がこの枝で rc 0（gate-evidence/green-kiroku-yoseru.txt）
 - エビデンスゲート: 玩具の頁・作る側の頁・序の頁・組み方・英語・全体を見る試験の 124 本が rc 0。記録が残せる事・結果の札の字は手帖の側（test_techo_step・test_result_readers・test_result_words）と受け口の試験が、名前の断りは手帖の のこす の hanasu.NOTICE（test_public_open）が守る
 - 確かめていない事: 全部の試験（`./run.sh`）。iPhone の実機
+- 追い（11-07 17 時台）: のこすへの道の字は本人の言葉で「つくったものを教えてください。」に決まった（前の案「試した記録は、のこす で残せます。」と替えた。英語は Tell us what you made.）。別の目の指摘で、(1) 前の test_record_fold が見ていた畳みの開け閉めの印（skin.TAP_FLOOR の summary::before）を、残した test_record_fold で続けて見る形に戻した (2) 試した後の紙の断りの道「記録の欄へ」は、着いた #kiroku に欄が無いので、行き先を記録の頁（/toy/<印>/techo/kiroku）へ直接向けた（字は替えない）。入る順は #528（序の頁の改善の歴史の錨 #kaizen-rekishi）の後

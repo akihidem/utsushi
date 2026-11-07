@@ -718,7 +718,7 @@
    "tests/test_ux_fold_record.py",
    "tests/test_record_fold.py"
   ],
-  "unverified": "本人の答え（11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」）で、玩具の頁の記録の欄そのものを外した（畳む形はやめた）。玩具の頁には のこす（記録の頁）への道を 1 本だけ置く（toy.KIROKU_TO_NOKOSU・字は窓口の確かめ待ち）。受け口 /toy/<印>/record は残る。tests/test_ux_fold_record.py は欄が無い事と道がある事を、tests/test_record_fold.py は欄の畳みが戻っていない事を見る形にした"
+  "unverified": "本人の答え（11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」）で、玩具の頁の記録の欄そのものを外した（畳む形はやめた）。玩具の頁には のこす（記録の頁）への道を 1 本だけ置く（toy.KIROKU_TO_NOKOSU「つくったものを教えてください。」・本人の言葉 11-07 夕）。受け口 /toy/<印>/record は残る。tests/test_ux_fold_record.py は欄が無い事と道がある事を、tests/test_record_fold.py は欄の畳みが戻っていない事を見る形にした"
  },
  {
   "id": "f57",
