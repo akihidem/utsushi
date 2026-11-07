@@ -45,16 +45,17 @@ for look, other, title in (("tenji", "zine", '<body class="tenji"'), ("zine", "t
     assert get(f"/look/{look}")[0] == 200 and get(f"/look/{other}")[0] == 404 and get("/look/taiban")[0] == 404, look
     # 内側の頁は全部この皮。?look= を付けても変わらず、切り替えのリンクも無い
     # /toys は入口へ送る（入口が えらぶ。本人のサイト体験レビュー 11-07 の 4）。内側の頁として残るのは紙 1 枚の絞り込み
-    for path in ("/about", "/toys?paper=1", "/gallery", "/zukan", f"/toy/{G}", f"/toys?paper=1&look={other}"):
+    for path in ("/about", "/toys?paper=1", "/gallery", f"/toy/{G}", f"/toys?paper=1&look={other}"):
         code, body = get(path)
         assert code == 200 and f'class="skin-{look}' in body and f'skin-{other}' not in body and "?look=" not in body, (look, path)
 
-# 記録は 2 サイトで共有（本人の決定 11-05 朝、カード 083822 の判断 1）: 白の展示で残した自分の仮説が、黒のジンの同じ玩具の図鑑で見える
+# 記録は 2 サイトで共有（本人の決定 11-05 朝、カード 083822 の判断 1）: 白の展示で残した自分の仮説が、両方のサイトの置き場から読める
+# （前は両方の図鑑の頁で見ていた。図鑑の頁は外した・本人の言葉 11-08）
 
 tenji, zine = up("tenji"), up("zine")
 assert "先に、予想を書く" not in zine(f"/toy/{G}")[1]
 from omochae import hypotheses  # noqa: E402
 
 assert hypotheses.save_own(G, "白の展示で書いた仮説", "下から押す", "筒の下の線")[1] == []
-assert "白の展示で書いた仮説" in zine(f"/zukan/{G}")[1] and "白の展示で書いた仮説" in tenji(f"/zukan/{G}")[1]
+assert any(o.get("name") == "白の展示で書いた仮説" for o in hypotheses.own_hypotheses(G)), "置き場に残っていない"
 print("ok: 皮ごとに 1 サイト、記録は共有")

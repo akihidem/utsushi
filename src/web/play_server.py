@@ -498,12 +498,8 @@ class Handler(BaseHTTPRequestHandler):
             face = (int(m.group(1)), m.group(2))
             if face in ingest.book_faces() and zukan_hon.face_file(*face).exists():
                 return self._send(200, zukan_hon.face_file(*face).read_bytes(), "image/jpeg")
-        # 図鑑（f15）。文の印の床（F6.label）は zukan.py が持つ。床に落ちれば例外で 500 になり、頁を出さない。
-        m = re.fullmatch(rf"/zukan(?:/({SID}))?", path)
-        if m and (m.group(1) is None or m.group(1) in sources()):
-            from . import zukan
-            photos = not getattr(self.server, "public_open", False)
-            return self._send(200, zukan.toy_zukan(m.group(1), look, photos) if m.group(1) else zukan.index_page(sources(), look, photos))
+        # 図鑑の目次（/zukan）と玩具ごとの図鑑の頁（/zukan/<印>）は外した（本人の言葉 11-08「図鑑のページ要らない」）。道は無い（断りの 404）。
+        # 図鑑の本の頁（上の /zukan/hon）と、くずし字を読む（下の /zukan/<印>/yomi・道の名はそのまま）は残す
         # くずし字を読む（f14）。書く前の頁は確かめた読みを出さない。読みが先の線と印の床は kuzushi.py が持つ。
         if path == "/en":
             # 英語の入口と玩具の頁（J-030 の段 1）。

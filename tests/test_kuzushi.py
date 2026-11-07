@@ -77,9 +77,9 @@ def files_under(p):
     return sorted(x for x in p.rglob("*") if x.is_file())
 
 
-# 図鑑の玩具の頁から入れる
-for sid in sources():
-    assert f'href="/zukan/{sid}/yomi"' in get(f"/zukan/{sid}")[1], sid
+# 玩具の頁から入れる（前は図鑑の玩具の頁から。図鑑の頁は外した・本人の言葉 11-08）
+for sid in sources()[:6] + ["NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"]:
+    assert f'href="/zukan/{sid}/yomi"' in get(f"/toy/{sid}")[1], sid
 
 # 書く前: 頁は開き、歌の所の絵と書く欄がある。確かめた読みはまだ出さない（予想が先）
 for sid in sources():
