@@ -135,7 +135,9 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     for suffix, label in KINDS:
         if (out_dir(sid) / f"{see}_v{v}{suffix}.png").exists():
             kinds += f'<a href="{q(see, suffix, v)}" aria-current="{"true" if suffix == kind else "false"}">{label}</a>'
-    vers = "".join(f"<b>版 {n}</b>" if n == v else f'<a href="{q(see, kind, n)}">版 {n}</a>' for n in vs)
+    # 版の呼び方は組の番号（窓口の決定 11-07: 版の数は組の番号で統一。組の中の直しがある時だけ「（直し N）」）。hypotheses.label_of
+    ban = lambda n: esc(hypotheses.label_of(hypotheses.current_set(data), n))
+    vers = "".join(f"<b>{ban(n)}</b>" if n == v else f'<a href="{q(see, kind, n)}">{ban(n)}</a>' for n in vs)
     cap = ""
     if v > 1:
         _, adopted = loop.version_params(sid, see, v)
@@ -145,9 +147,9 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             ch = "、".join(f"{_param_name(sid, c['param'])} {c['from']}→{c['to']}" for c in adopted.get("changes", []))
             # 合言葉なしで開いた場には、記録の番号（内部の番号）を出さない（J-028）。
             basis = f'{esc(wording.BASED_ON.format("、".join(wording.record_no(r) for r in adopted.get("record_ids", []))))}。' if photos else ""
-            cap = f'<p class="meta">版 {v}: {basis}変えた所: {esc(ch)}</p>'
+            cap = f'<p class="meta">{ban(v)}: {basis}変えた所: {esc(ch)}</p>'
     # 版の記録があって紙が無い版は札に出ないので、刷り直す釦を添える（#158）。
-    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet" data-busy>版 {n} の紙を作り直す</button></form>'
+    cap += "".join(f'<form method="post" action="/toy/{sid}/reprint#win" class="inline"><input type="hidden" name="hypothesis" value="{esc(see)}"><input type="hidden" name="version" value="{n}"><button class="quiet" data-busy>{ban(n)} の紙を作り直す</button></form>'
                    for n in loop.adopted_versions(sid, see) if n not in vs)
     png = f"/sheet/{sid}/{name}.png"
     pdf = f"/sheet/{sid}/{name}.pdf"
@@ -232,7 +234,7 @@ def record_form(sid, data, mine=(), open_more=False):
     # 版が 2 つ以上ある時だけ、どの版の紙かを聞く（紙の題の横に刷ってある）。報告が版を取り違えないため（play_server.sheet_version_of）。
     seen = versions_of(sid, card["id"], printed_only=True)
     version_field = ('<label>どの版の紙か（紙の題の横に刷ってあります）<select name="sheet_version"><option value="">いちばん新しい版</option>'
-                     + "".join(f'<option value="{n}">版 {n}</option>' for n in seen) + '</select></label>') if len(seen) > 1 else ""
+                     + "".join(f'<option value="{n}">{esc(hypotheses.label_of(hypotheses.current_set(data), n))}</option>' for n in seen) + '</select></label>') if len(seen) > 1 else ""
     from .techo_site import result_icon
 
     results = "".join(f'<label class="tile"><input type="radio" name="result" value="{esc(r)}" required>{result_icon(r, TEMPLATES[template].RESULTS)}{esc(r)}</label>'
@@ -455,7 +457,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
             if told:
                 # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
                 tail = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_block(r, up_key, photos=False)
-        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・版 {esc(ver)}{"・" + esc(wording.record_no(r["id"])) if photos else ""}</p>{feel}{after}{tail}</article>'
+        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・{esc(hypotheses.label_of(r.get("sheet_set") or hypotheses.current_set(data), ver))}{"・" + esc(wording.record_no(r["id"])) if photos else ""}</p>{feel}{after}{tail}</article>'
     return out
 
 
@@ -624,13 +626,17 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body = hero + (f'<section class="sec" id="kasetsu">{told}{stage}</section>' if stage or told else '<div id="kasetsu"></div>')
     # 型紙の窓の頭: 断り（「型紙は正解ではなく、AI が考えた仮説」、本人の言葉 11-05）→ 輪の図（真ん中は今の型紙の版で、押すと頁の下の「型紙の改善の輪」へ）
     # → 仮説の札（たたき台の 1 枚だけで、順位は学ぶ人の画面に出さない。J-013・J-025・J-032）→ 紙。輪の図は版の印と並ぶ所なので本体に残す（設計の担当の答え 11-07）
-    ring = wa.ring(wa.current_version(sid, data))
+    # 真ん中は型紙の版（組の番号。本人の言葉 11-07「バージョンをサイトで明示したい」、窓口の決定 カード 084426）。前は寸法の刻み（wa.current_version）
+    ban = wa.set_version(sid, data)
+    ring = wa.ring(ban)
     plate = ""
     for h in [hypotheses.sheet_of(sid)]:
         ev = "".join(evidence_item(e) for e in h["evidence"])
         # 型紙の絵は型紙の窓の 1 か所だけに出し、刷る口は頭の「つくる」1 つにする（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。
         # 前はこの札にも紙の小さな絵と「型紙を見る」（紙を作る釦）があり、型紙が 2 か所、刷る口が 3 つ（頭・この札・窓の札）あった。札は仮説の字だけ
-        plate += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
+        # 札の脇に型紙の版（設計 0.7「型紙の札の脇に、今の版の印を 1 つ」）。字は「型紙の版」と数だけ（エンジンの版と言い分ける。カード 084426）
+        plate += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3>'
+                  f'<p class="meta"><span class="lb ban">型紙の版 {ban}</span></p><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
                   f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}'
                   '</div>')
     # 書いて立てた仮説の札と書く欄は外した（本人の決定 11-05 18:08「仮説は書かず、話すことができる」、J-032 の点 2）。考えは下の節で話す。
