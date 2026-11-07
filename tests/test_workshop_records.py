@@ -66,9 +66,21 @@ for sid, voices, spoken in ((G, 3, 4), (TORA, 0, 2), (NOBORI, 1, 0)):
     assert '<span class="sample">見本</span>' not in sec and "見本の記録" not in sec and 'class="item is-sample"' not in sec, (sid, "見本の札と作り物は出ない")
     assert esc(demo_samples.NOTE) not in sec, (sid, "作り物である事の一文は出ない（本物）")
     assert techo_site.esc("まだありません。作って残すと、ここに並びます。") not in sec, (sid, "札があるのに「まだありません」を出さない")
-# 迷う感想の玩具（独楽）は、玩具の頁に感想が出ない
-sec = minna(KOMA)
-assert '<div class="voices-real">' not in sec and not any(esc(t) in sec for v in demo_samples.VOICES if v["toy"] in OPEN for _, t in v["fields"])
+# 迷う 5 件は本人の答え（11-08）「ワークショップの感想にだけ載せて、おもちゃの頁には出さない。」で、サイトに無い 2 件は本人の答えで、
+# 玩具の頁に出さない。83 種すべての玩具の札で見て、候補だった玩具は本物の頁でも見る
+# 見る字は、迷う・サイトに無い感想にだけある字（「楽しかったです。」のように、結べる感想にも同じ字がある物は外す）
+linked_texts = {t for v in demo_samples.VOICES if v["toy"] in demo_samples.VOICE_TOYS for _, t in v["fields"]}
+open_texts = [t for v in demo_samples.VOICES if v["toy"] in OPEN for _, t in v["fields"] if t not in linked_texts]
+assert len(open_texts) >= 30, len(open_texts)
+for sid in sources():
+    t = hypotheses.load(sid)["toy"]
+    cards = demo_samples.workshop_for(sid, t if isinstance(t, str) else t["name"])
+    # 札の字は 1 つずつ <span> に入るので、要素の字が丸ごと一致するかで見る（「楽しかったです」が「楽しかったです。」の一部に当たらないように）
+    assert not any(f"<span>{esc(x)}</span>" in cards for x in open_texts), (sid, "迷う・サイトに無い感想を玩具の頁に出さない")
+for sid in (KOMA, "NDL-1187053-R0000029-R-2", "NDL-1187053-R0000021-L-2", "NDL-1187053-R0000025-L", "NDL-1187053-R0000025-L-2",
+            "NDL-1187053-R0000007-R", "NDL-1187053-R0000029-L", "NDL-1187053-R0000009-L-2"):
+    sec = minna(sid)
+    assert not any(f"<span>{esc(x)}</span>" in sec for x in open_texts), (sid, "候補だった玩具の頁にも出ない")
 
 # 3. 序の頁の寄せられた声には全部出る（結べない・迷う物も）
 about = get("/about")
