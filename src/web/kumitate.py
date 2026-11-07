@@ -32,6 +32,10 @@ LEAD = "手順どおりに組み立てます。指で回して見られます。
 NOTE_SHAPE = "これは、形を思い浮かべるための、だいたいの絵です。作る時は型紙と、組み方の絵を見てください。"
 PREV, NEXT = "前へ", "次へ"
 RESTART = "はじめから組み立てる"
+# 釦の隣の手引き（夕方のレビュー 11-07 の 10「釦を押さないと組み立て方が分からない」）。開いただけで動かし始めない決まり（上の判断の芯）は
+# 替えず、押すと動く事を字で添えるだけにする。字は窓口の確かめ。開いた時は できあがり の形で、見える釦は「はじめから組み立てる」なので、
+# その釦と、始めた後に出る「次へ」の両方を名指しする。釦の字（RESTART・NEXT）から作り、釦の字を替えた時に手引きだけ古くならないようにする
+HINT = f"「{RESTART}」を押すと、1 手目から組み立てます。「{NEXT}」で 1 手ずつ進みます。"
 DONE = "できあがり"
 LABEL = "組み立てを立体で見る"
 # 組み方の節（全 83 種。本人の決まり 11-06「文章のプリントは廃止。組み立て用のページだけでいい。組み立ての案内はサイトの
@@ -441,6 +445,7 @@ def _block_html(sid, params):
             f'<p id="rt-text" aria-live="polite" data-done="{esc(DONE)}"></p>'
             f'<div class="rt-acts"><button type="button" class="quiet" id="rt-prev">{esc(PREV)}</button>'
             f'<button type="button" id="rt-next" data-go="{esc(NEXT)}" data-again="{esc(RESTART)}"></button><span id="rt-count"></span></div>'
+            f'<p class="meta rt-hint">{esc(HINT)}</p>'
             f'<p class="meta">{esc(NOTE_SHAPE)}</p>{script}{_split_script(bench, dump)}')
 
 
