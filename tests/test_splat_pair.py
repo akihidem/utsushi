@@ -1,7 +1,7 @@
 """作った実物の立体とエンジンの 3D を並べて一緒に回す部品（本人の決定 11-07・窓口の決め 125156）の試験。絵は試験の中で作る。
 
 見る事:
-1. 絵の一覧（frames.json）が無い・人が確かめた印が無い・絵が足りない・置き場の外を指す時は、頁も絵も出さない（404）
+1. 絵の一覧（frames.json）が無い・人が確かめた印が無い・絵が足りない・置き場の外を指す・角が数でないか小さい順でない時は、頁も絵も出さない（404）
 2. 確かめた絵があれば、/toy/<印>/splat に 2 つの窓（エンジンの 3D の止まった形・作った実物）と札の字と回す口が 1 つずつ
 3. エンジンの側は kumitate.still の見る向きの rotateY に、回す角（--sp-turn）が足されている（kumitate の作りが替わったら、ここで気づく）
 4. 回す口の幅は一覧の角の端から端・最初は 0（前）。実物の絵の最初は角 0 の絵
@@ -57,6 +57,9 @@ put({"angles": ANGLES})
 assert sp.frames(SID) is None, "確かめた印が無い"
 put({"angles": ANGLES, "checked_by": "確かめた人"}, n=10)
 assert sp.frames(SID) is None, "絵が足りない"
+for bad in (["x"] + ANGLES[1:], [True] + ANGLES[1:], list(reversed(ANGLES)), ANGLES[:3] + [ANGLES[2]] + ANGLES[4:]):
+    put({"angles": bad, "checked_by": "確かめた人"})
+    assert sp.frames(SID) is None and sp.section(SID) == "", ("角が数でない・小さい順でない一覧は受けない", bad[:4])
 put({"angles": ANGLES, "checked_by": "確かめた人"})
 outside = pathlib.Path(tempfile.mkdtemp()) / "x.jpg"
 Image.new("RGB", (10, 10)).save(outside)

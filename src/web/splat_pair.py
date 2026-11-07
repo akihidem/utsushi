@@ -69,6 +69,9 @@ def frames(sid):
     angles = meta.get("angles")
     if not meta.get("checked_by") or not isinstance(angles, list) or not angles:
         return None
+    # 角は数で、小さい順に並んでいる物だけ受ける（別の目の気づき 11-07: 数でない値で頁ごと 500 になり、順が逆だと回す口の向きが逆になった）
+    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in angles) or any(b <= a for a, b in zip(angles, angles[1:])):
+        return None
     files = [f"t{i:02d}.jpg" for i in range(len(angles))]
     box = base.resolve()
     for f in files:
