@@ -130,7 +130,8 @@ assert code == 422 and page.count('id="msg"') == 1
 two = reply_note(["理由 1", "理由 <2>"], "")
 assert two.count("id=") == 1 and "理由 1" in two and "理由 &lt;2&gt;" in two, "理由が何個でも id は 1 つ"
 page = landed(call(f"/record/{rid}/next", {k: v for k, v in form.items() if k != "back"} | {"to": "45"}), "win")
-assert "版 2 の紙を作りました" in note_at(page, "win", "status")
+# 版の字は組の番号の呼び方（窓口の決定 11-07・#513 の (a)。同じ画面の窓の札と同じ字）
+assert f"{hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)} の紙を作りました" in note_at(page, "win", "status")
 
 # 手帖に戻る時は、手帖の頁に文が出る。
 page = landed(call(f"/record/{rid}/ai-interpret", {"back": "techo"}), "mine")
