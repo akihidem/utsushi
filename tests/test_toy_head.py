@@ -42,6 +42,5 @@ wide = zukan.STYLE[:zukan.STYLE.index("@media (max-width:760px)")]
 assert re.search(r"\.zukan \.song\{[^}]*float:right", wide), "図鑑も机の幅では歌を右に浮かせる"
 narrow = zukan.STYLE[zukan.STYLE.index("@media (max-width:760px)"):]
 assert re.search(r"\.zukan \.song\{[^}]*float:none", narrow), "図鑑もスマホの幅は今の縦の並びのまま"
-section = zukan.toy_section(GORAIGO)
-assert section.index("<h2>") < section.index('class="song"') < section.index('class="links"')
+# 前は図鑑の玩具の段（zukan.toy_section）の並びも見ていた。図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）。図鑑の CSS は くずし字を読む の頁が使うので上で見る
 print("ok")

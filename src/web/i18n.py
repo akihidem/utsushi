@@ -214,9 +214,9 @@ def page_en(page, miss=None):
 
 def routes(sids):
     """英語で回す頁の道（試験と collect が使う）。全部の玩具の頁と、玩具に依らない頁。POST の後の知らせは、別に流して見る。"""
-    out = ["/", "/about", "/otona", "/loop", "/loop/ayumi", "/toys?paper=1", "/gallery", "/zukan", "/kaizen", "/no-such-page"]
+    out = ["/", "/about", "/otona", "/loop", "/loop/ayumi", "/toys?paper=1", "/gallery", "/kaizen", "/no-such-page"]
     for s in sids:
-        out += [f"/loop/{s}", f"/zukan/{s}", f"/zukan/{s}/yomi", f"/toy/{s}", f"/toy/{s}/kumitate", f"/toy/{s}/tsukuru",
+        out += [f"/loop/{s}", f"/zukan/{s}/yomi", f"/toy/{s}", f"/toy/{s}/kumitate", f"/toy/{s}/tsukuru",
                 f"/toy/{s}/techo", f"/toy/{s}/techo/kiroku", f"/toy/{s}/kasane", f"/toy/{s}/kasane/hmd"]
     return out
 

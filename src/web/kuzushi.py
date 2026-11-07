@@ -127,7 +127,8 @@ def _li(line, inner=None):
     return f'<li><span class="lb">{esc(line["label"])}</span>{inner if inner is not None else esc(line["text"])}</li>'
 
 
-NAV = '<p class="nav"><a href="/">入口</a><a href="/zukan">図鑑</a><a href="/gallery">作った物</a></p>'
+# 図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）ので、図鑑への道を外した
+NAV = '<p class="nav"><a href="/">入口</a><a href="/gallery">作った物</a></p>'
 
 
 def _page(title, body, look=None, path="/zukan"):
@@ -184,7 +185,8 @@ def page(sid, mine=None, msg="", look=None):
         pic = genga.plain(sid, genga.alt(src)) or '<p class="meta">手元に絵がありません</p>'
     z = zoom_link(src, sid) if sid in SONG_BOX else ""
     pic += f'<p class="meta">{esc(src.get("holding", ""))}' + (f'　<a href="{esc(z)}">同じ所を大きく（国立国会図書館）</a>' if z else "") + "</p>"
-    head = f'<h1>くずし字を読む</h1>{NAV}<p class="meta"><a href="/zukan/{esc(sid)}">{esc(toy)}</a>の絵の、歌の所です。</p>'
+    # 玩具の名からは玩具の頁へ（前は図鑑の頁。図鑑の頁は外した・本人の言葉 11-08）
+    head = f'<h1>くずし字を読む</h1>{NAV}<p class="meta"><a href="/toy/{esc(sid)}">{esc(toy)}</a>の絵の、歌の所です。</p>'
     note = f'<p class="meta">{esc(msg)}</p>' if msg else ""
     if mine is None:
         body = f'<section class="yomi"><div>{pic}</div><div>{note}{_form(sid)}</div></section>' + notes(sid)

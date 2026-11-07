@@ -84,14 +84,12 @@ assert f"・{hypotheses.label_of(r1.get('sheet_set') or hypotheses.current_set(h
 # 入口から章の部屋（歌と札）を外した（本人のサイト体験レビュー 11-07 の 4）。札は玩具の頁の頭（原画と歌）で見る
 assert "確かめた人: ■" not in get("/"), "入口に章の札を出さない（札は玩具の頁。test_reader_words が見る）"
 others = [s for s in sources() if hypotheses.stage(s) != "必須"]
-assert f"◇{others[0]}" in get("/zukan"), "図鑑の一覧の場所"
+# 前は図鑑の一覧の場所の字（◇）も見ていた。図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）
 # 手帖の作る頁には、組の版も記録の番号も出さない（作る側の印を学ぶ人に見せない。#87）。記録の番号は、手帖の記録の頁に出る
 techo = get(f"/toy/{G}/techo")
 assert "goraigo-v10" not in techo and "R-0001" not in techo, "手帖の作る頁"
 assert "▼R-0001" in get(f"/toy/{G}/techo/kiroku"), "手帖の記録の頁"
-# 図鑑の頁とくずし字を読む頁
-zu = get(f"/zukan/{G}")
-assert "確かめた人: ▲本人" in zu and "▼R-0001" in zu and f"▲{esc(h['how_it_moves'])}" in zu, "図鑑"
+# くずし字を読む頁（前は図鑑の頁も見ていた。図鑑の頁は外した・本人の言葉 11-08）
 yomi = post(f"/zukan/{G}/yomi", {"mine": "ためしの読み"})
 assert "確かめた人: ▲本人" in yomi, "くずし字の確かめた人"
 # 読みが割れた事の文と見出しは、文ごと表を通る
@@ -137,9 +135,7 @@ for text in ("すっと開いた", "折りが固くて戻る", "本人が折っ�
     assert f"▲{text}" not in page, text
 song = next(e["text"] for e in hypotheses.json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))["transcription"]["entries"] if e.get("checked_by") and not e.get("rejected_by"))
 assert song in page and f"▲{song}" not in page, "歌の引用"
-zu = get(f"/zukan/{G}")
-assert song in zu and f"▲{song}" not in zu, "図鑑の歌の引用"
-assert "糸で引いて開く" in zu and "▲糸で引いて開く" not in zu, "図鑑の自分の仮説"
+# 前は図鑑の頁の歌の引用と自分の仮説の字も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 # 2 つの表は 1 か所に読める（#135・#317）。数える命令は内輪の言葉の表も読み、同じ語を両方に書かず、読む人の字にむずかしい語を戻さない
 keep_table = wording.TABLE
 wording.TABLE = ((re.compile("棚卸し"), "作る側"),)

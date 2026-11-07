@@ -48,7 +48,7 @@ def items(nav):
     return out
 
 
-EXPECT = {"/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる", "/about": "よむ", "/zukan": "よむ", "/otona": "よむ"}
+EXPECT = {"/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる", "/about": "よむ", f"/zukan/{G}/yomi": "よむ", "/zukan/hon/4": "よむ", "/otona": "よむ"}  # 図鑑の目次は外した（本人の言葉 11-08）。本の頁とくずし字は よむ
 for path, station in EXPECT.items():
     nav = nav_of(get(path))
     got = items(nav)
@@ -79,8 +79,9 @@ assert gallery.index("もう 1 つ つくる") < gallery.index('id="ageta"'), "�
 # ---- 5 よむ（序の頁）
 about = get("/about")
 yomu = re.search(r'<p class="links yomu">(.*?)</p>', about).group(1)
-assert [h for h in re.findall(r'href="([^"]+)"', yomu)] == ["/zukan", "/otona", "/en"], yomu
-assert re.findall(r">([^<]+)</a>", yomu) == ["図鑑", "保護者の方へ、ファシリテーターの方へ", "English"], "今の名前のまま"
+# 前の「図鑑」（/zukan）は、図鑑の頁を外したので、図鑑の本の頁の入口（前の図鑑の目次にあった字「原画と歌」）に替えた（本人の言葉 11-08・本の頁は残す）
+assert [h for h in re.findall(r'href="([^"]+)"', yomu)] == ["/zukan/hon/4", "/otona", "/en"], yomu
+assert re.findall(r">([^<]+)</a>", yomu) == ["原画と歌", "保護者の方へ、ファシリテーターの方へ", "English"], "今の名前のまま"
 server.shutdown()
 assert skin.ROAD == ROAD and skin.YOMU == ("/about", "よむ"), "帯の字は 1 か所（skin）に置く"
 print("ok 段 1: 頭の帯は道しるべで、今いる駅に印。玩具の頁の中でだけ つくる・のこす が押せる。持ち寄る駅に もう 1 つ つくる、よむ に読み物への道")
