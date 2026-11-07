@@ -1,9 +1,0 @@
-FAIL D.tests 試験が通らない（rc 3、(10, 9)）。書き出さない
-FAIL D.tests 試験が通らない（rc 4、None）。書き出さない
-ok
-Traceback (most recent call last):
-  File "tests/test_demo_build.py", line 36, in <module>
-    assert build.main(["--out", tmp]) == 4, "検査できない時は 4（落ちたの 3 と分ける）"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: 検査できない時は 4（落ちたの 3 と分ける）
-rc=1

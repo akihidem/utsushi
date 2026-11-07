@@ -333,31 +333,9 @@
  {
   "id": "f29",
   "name": "デモ動画を 1 つの命令で作り直す（7 場面をコードで描き、試験の数を入れ、3 分の床でつなぐ）",
-  "status": "doing",
-  "evidence": [
-   "src/demo/build.py",
-   "src/demo/prepare.py",
-   "src/demo/flip.py",
-   "src/demo/scene2.py",
-   "src/demo/scene3.py",
-   "src/demo/scene4.py",
-   "src/demo/scene5.py",
-   "src/demo/scene6.py",
-   "src/demo/scene7.py",
-   "src/demo/assemble.py",
-   "tests/test_demo_flip.py",
-   "tests/test_demo_scene2.py",
-   "tests/test_demo_scene3.py",
-   "tests/test_demo_scene4.py",
-   "tests/test_demo_scene5.py",
-   "tests/test_demo_scene6.py",
-   "tests/test_demo_scene7.py",
-   "tests/test_demo_assemble.py",
-   "tests/test_demo_build.py",
-   "tests/test_demo_prepare.py",
-   "docs/demo/plan.md"
-  ],
-  "unverified": "曲と字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まり、9 枚とも通る（どれを映すかは撮影の中身で決める）。本人と審査の人に見せていない"
+  "status": "dropped",
+  "evidence": [],
+  "unverified": "2026-11-08 に repo の外へ移した（本人の言葉「この動画の作成はギットハブに入ってる？入れなくていいと思うと前に指摘したけど」）。動画の作り（src/demo・docs/demo・場面の試験）は作り手の手元で続ける（この repo の機能としては外した）。提出の動画は YouTube の URL。北斎漫画の絵の出所と権利の記録はサイトが読むので data/hokusai/ へ字を替えずに移した。前の注: 曲と字幕の文面は本人の判断待ち。場面 5 の写真は U-24 の表が埋まり、9 枚とも通る（どれを映すかは撮影の中身で決める）。本人と審査の人に見せていない"
  },
  {
   "id": "f30",
