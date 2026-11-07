@@ -213,20 +213,21 @@ assert "10cm の物差し" in html
 assert bench.sheets["tube"].part.hide_folds and not bench.sheets["base"].part.hide_folds
 assert 'stroke-dasharray="2,1"' in html
 
-# 組み方の節は全 83 種（本人の決まり 11-06「全種の組み立て頁に寄せてください」）。立体で組める玩具にも出す（立体の断りが「組み方の絵」を指すため）
+# 組み方の節は全 83 種（本人の決まり 11-06「全種の組み立て頁に寄せてください」）。立体で組める玩具にも出す（立体の断りが「組み方」を指すため）
 PLAIN = "NDL-1187053-R0000009-R"
 assert kumitate.available(G) and 'id="kumitate"' in kumitate.block(G)
 assert not kumitate.available(PLAIN) and kumitate.block(PLAIN) == "" and kumitate.has(PLAIN), "立体の節は立体で組める玩具だけ"
 plain = kumitate.section(PLAIN)
 assert 'id="kumikata"' in plain and 'id="rt-stage"' not in plain and kumitate.STEPS_LABEL in plain and kumitate.STEPS_LEAD in plain
 assert 'id="kumikata"' in kumitate.section(G), "立体で組める玩具にも組み方の節"
-assert "手順の紙" not in kumitate.NOTE_SHAPE and "組み方の絵" in kumitate.NOTE_SHAPE, "断りの指し先は頁の組み方の絵（手順の紙は刷らない）"
+# 断りの指し先は頁の組み方（手順の紙は刷らない）。11-07 夕に組み方の図を外したので「組み方の絵」とは言わない（本人の答え Q2）
+assert "手順の紙" not in kumitate.NOTE_SHAPE and "組み方" in kumitate.NOTE_SHAPE and "組み方の絵" not in kumitate.NOTE_SHAPE
 # 文は手帖・作りながら見る頁と同じ物（たたき台の紙の、刷ってある一番新しい版。無ければ版 1）
 from web import play_server, tsukuru  # noqa: E402
 
 texts = tsukuru.step_texts(PLAIN, hypotheses.sheet_of(PLAIN)["id"], 1)
 assert texts and kumitate.steps(PLAIN)[0] == texts
-assert re.findall(r"<li>(?:<svg.*?</svg>)?<p>(.*?)</p></li>", plain, re.S) == [html_mod.escape(x, quote=True) for x in texts]
+assert re.findall(r"<li><p>(.*?)</p></li>", plain, re.S) == [html_mod.escape(x, quote=True) for x in texts]
 # 刷った一番新しい版の組み方を出す（版 1 を決め打ちしない。刷っていなければ版 1）
 seen, real_texts, real_versions = [], tsukuru.step_texts, play_server.printed_versions
 tsukuru.step_texts = lambda sid, hid, version=None: seen.append(version) or real_texts(sid, hid, 1)
@@ -238,8 +239,9 @@ try:
 finally:
     tsukuru.step_texts, play_server.printed_versions = real_texts, real_versions
 assert seen == [3, 1], seen
-# 絵は、手順が前と違う絵を指す所でだけ出る（ほかの雛形は図 1 枚を頭に 1 度だけ）。読み上げの木からは隠れる
-assert plain.count("<svg") == 1 and 'aria-hidden="true"' in plain
+# 組み方の節に平らな図は無い（本人の答え 11-07 夕の Q2「組み方は 3D を基本として文字で見る。図は要らない」）。3D の無い玩具も文だけ
+assert "<svg" not in plain and "kumi-pic" not in plain, "組み方の節に図が残っている"
+assert "<svg" not in kumitate._steps_html(G), "3D のある玩具も、組み方の節の中は文だけ（3D は節より上）"
 # 頭に、手順の紙にあった遊び方の文（字は紙のまま。本人の答え 11-06、6 点の 2）
 how = hypotheses.sheet_of(PLAIN)["how_it_moves"]
 assert f"<b>{kumitate.PLAY_HEAD}</b>" in plain and kumitate.PLAY_NOTE in plain and kumitate.PLAY_HEAD == "遊び方" and kumitate.PLAY_NOTE == "力を入れすぎず、手でゆっくり動かす"

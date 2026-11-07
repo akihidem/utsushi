@@ -28,8 +28,10 @@ from .skin import esc
 SCALE = 4.0  # 1mm を何 px で描くか（要素の大きさ。見た目の大きさは場面の縮尺で決める。小さいと立体の時に絵が粗くなる）
 STAGE_W, STAGE_H = 340, 480  # 図を収める大きさ（px）
 LEAD = "手順どおりに組み立てます。指で回して見られます。"
-# 手順の紙を刷らなくなった（本人の決まり 11-06）ので、断りの指し先は頁の「組み方の絵」にした（字は本人が確かめた 6 点の 3）
-NOTE_SHAPE = "これは、形を思い浮かべるための、だいたいの絵です。作る時は型紙と、組み方の絵を見てください。"
+# 手順の紙を刷らなくなった（本人の決まり 11-06）ので、断りの指し先は頁の「組み方の絵」にした（字は本人が確かめた 6 点の 3）。
+# 本人の答え（11-07 夕の Q2）「組み方は 3D を基本として文字で見る。図は要らない」で組み方の節の図を外したので、指し先の「組み方の絵」は
+# 頁から無くなる。設計の担当の案（「の絵」を外すだけ）にした。字は窓口の確かめ待ち
+NOTE_SHAPE = "これは、形を思い浮かべるための、だいたいの絵です。作る時は型紙と、組み方を見てください。"
 PREV, NEXT = "前へ", "次へ"
 RESTART = "はじめから組み立てる"
 DONE = "できあがり"
@@ -46,7 +48,6 @@ STEPS_STYLE = """
 .kumi-steps{margin:14px 0 0;padding-left:1.8em;display:grid;gap:16px}
 .kumi-steps li{line-height:1.9}
 .kumi-steps li p{margin:0}
-.kumi-steps svg.kumi-pic{display:block;width:min(100%,420px);height:auto;max-height:60vh;margin:4px 0 10px;background:#fff;border:1px solid var(--frame)}
 .kumi-play{margin:10px 0 0;line-height:1.9}.kumi-play b{font-weight:600;margin-right:.6em}
 .kumi-genga{margin:12px 0 0}.kumi-genga img{display:block;width:min(100%,280px);height:auto;border:1px solid var(--frame)}
 """
@@ -459,11 +460,13 @@ def _split_script(bench, dump):
     return f"<script>window.kumitateSplit={dump(got)};</script>" if got else ""
 
 
-def steps(sid):
+def steps(sid, pictures=True):
     """たたき台の紙の組み方の文と絵: (文の並び, 絵の並び, 手順ごとの絵の番号)。作れない時は ([], [], [])。
     手帖・作りながら見る頁と同じ物を使う（文は雛形の steps、絵は instructions.step_pictures）。紙と画面で文と絵が食い違わないため。
     版は、刷ってある一番新しい版（作りながら見る頁と同じ）。刷っていなければ版 1。文は版の寸法で変わる事があるので、その版で作る。
-    出すのはたたき台の紙だけ。自分の紙（OWN-n）は話した字が刷られ、作った本人の画面からしか開かないので出さない（設計メモ版 3）。"""
+    出すのはたたき台の紙だけ。自分の紙（OWN-n）は話した字が刷られ、作った本人の画面からしか開かないので出さない（設計メモ版 3）。
+    pictures=False は文だけを要る所（組み方の節・開けるかの見分け）。11-07 夕から組み方の節は図を出さないので、使わない絵を組まない
+    （絵は 1 手ずつ図を描くので、開くたびに組むと頁が重くなる）。返す形は同じで、絵の並びは空・番号は -1。"""
     from . import techo_step, tsukuru
     from .play_server import printed_versions
 
@@ -476,6 +479,8 @@ def steps(sid):
     texts = tsukuru.step_texts(sid, h["id"], v)
     if not texts:
         return [], [], []
+    if not pictures:
+        return texts, [], [-1] * len(texts)
     try:
         template, p = techo_step._params(sid, data, h, v)
         pictures, which = instructions.step_pictures(template, p, texts)
@@ -485,17 +490,14 @@ def steps(sid):
 
 
 def _steps_html(sid):
-    """組み方の文と絵の並び。絵は、手順が前と違う絵を指す所でだけ出す（ほかの雛形は手順の紙の図 1 枚を全部の手順で使うので、頭に 1 度だけ出る）。
-    絵は読み上げの木から隠れている（render.shapes_svg）。中身は手順の文が言う。"""
-    texts, pictures, which = steps(sid)
+    """組み方の文の並び。本人の答え（11-07 夕の Q2）「組み方は 3D を基本として文字で見る。図は要らない」で、手順の間の平らな図を外した。
+    3D のある玩具（御来迎・虎）は組み立ての 3D がこの節より上にあり、ここは文だけ。3D の無い玩具も文だけになる（本人の言葉のとおり）。
+    頭の遊び方の文と原図（_play_html）は組み方の図でないので残す。steps() は絵も返すが（手帖が使う）、ここでは文だけを読む。"""
+    texts = steps(sid, pictures=False)[0]
     if not texts:
         return ""
-    items, last = [], None
-    for t, k in zip(texts, which):
-        pic = render.shapes_svg(pictures[k], "kumi-pic") if k != last and 0 <= k < len(pictures) else ""
-        last = k
-        items.append(f"<li>{pic}<p>{esc(t)}</p></li>")
-    return f'<p class="lead">{esc(STEPS_LEAD)}</p><ol class="kumi-steps">{"".join(items)}</ol>'
+    items = "".join(f"<li><p>{esc(t)}</p></li>" for t in texts)
+    return f'<p class="lead">{esc(STEPS_LEAD)}</p><ol class="kumi-steps">{items}</ol>'
 
 
 def _play_html(sid, genga=False):
@@ -520,7 +522,7 @@ def _play_html(sid, genga=False):
 
 def has(sid):
     """組み立ての頁を開ける玩具か（立体で組めるか、組み方の文があるか）。"""
-    return available(sid) or bool(steps(sid)[0])
+    return available(sid) or bool(steps(sid, pictures=False)[0])
 
 
 def label(sid):
@@ -537,7 +539,7 @@ def block(sid, heading=True):
 
 
 def section(sid, level=2, genga=False):
-    """組み方の節（全 83 種。立体で組める玩具も、立体の断りが指す「組み方の絵」をここに出す）。作れなければ空。
+    """組み方の節（全 83 種。立体で組める玩具も、立体の断りが指す「組み方」をここに出す。11-07 夕から文だけで、図は無い）。作れなければ空。
     玩具の頁では「作る」の節の後に置く（型紙の札と刷る口を押し下げないため。統括の決め 11-06。前は「すぐ作る」の中で、幅 390 で刷る口が約 1 画面下がった）。
     level=None は、頁の題が同じ呼び名を言う時（立体の無い玩具の組み立てだけの頁）。節の見出しを重ねない。"""
     inner = _steps_html(sid)
