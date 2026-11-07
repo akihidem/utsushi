@@ -237,7 +237,8 @@ def nav(skin, current="", path="/", lang="ja"):
     here = current or path
     if sid:
         station = "のこす" if "/techo/kiroku" in path else "つくる"
-    elif here.startswith("/toys"):
+    elif here.startswith("/toys") or current == "/":
+        # 入口が えらぶ（本人のサイト体験レビュー 11-07 の 4）。入口でも えらぶ に印を付ける
         station = "えらぶ"
     elif here.startswith("/gallery"):
         station = "もちよる"
@@ -245,14 +246,15 @@ def nav(skin, current="", path="/", lang="ja"):
         station = "よむ"
     else:
         station = ""
-    to = {"えらぶ": "/toys", "つくる": f"/toy/{sid}" if sid else "", "のこす": f"/toy/{sid}/techo/kiroku" if sid else "", "もちよる": "/gallery", "よむ": YOMU[0]}
+    to = {"えらぶ": "/", "つくる": f"/toy/{sid}" if sid else "", "のこす": f"/toy/{sid}/techo/kiroku" if sid else "", "もちよる": "/gallery", "よむ": YOMU[0]}
     cur = lambda name: ' aria-current="page"' if name == station else ""  # noqa: E731
     item = lambda name: (f'<a href="{to[name]}"{cur(name)}>{esc(name)}</a>' if to[name]  # noqa: E731
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
     # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない
     items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="/en" lang="en">English</a>'
-    # 「うつし」の印は入口だけ（呼び手が current="/" を渡す）。断りの頁などは道が "/" でも、どこにもいないので印を付けない（前の帯と同じ）
-    brand = ' aria-current="page"' if current == "/" else ""
+    # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
+    # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
+    brand = ""
     return f'<nav class="nav"><a class="brand" href="/"{brand}>うつし</a>{items}</nav>'
 
 

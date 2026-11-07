@@ -68,25 +68,53 @@ def _size(path, mtime):
 
 
 SMALL_W = 400  # 敷き詰めの絵の幅（px）。幅 390 の 3 列（1 枚 103px）を 3 倍の画面で見ても粗くならない幅
+# 入口の「まずはここから」の 2 枚の幅（px）。幅 390 で 1 枚 168px を 3 倍の画面で見ても粗くならず、元の写し（約 750KB）の 1/5 ほどで届く。
+# 本人の答え（11-07）「言葉だけ並んでいる」を見たのは、iPhone の一番最初の画面で、トンネル越しに絵が届くまで名前だけに見えた形（統括の線:
+# 最初の画面の絵が名前より先か同時に見える事）。大きい元の写しは最初の画面で読まない
+# mid は幅 390 の 1 枚 168px の 3 倍の画面と、幅 1280 の 1 枚 464px の 1.6 倍ほど。統括の合格の線（11-07）「入口の絵は 1 枚 100KB 以下」に
+# 入るよう、mid は字の質を少し下げる（幅 760・82 で 112KB だった）
+SIZES = {"small": SMALL_W, "mid": 760}
+QUALITY = {"small": 82, "mid": 74}
 
 
 @functools.lru_cache(maxsize=None)
-def _small(path, mtime):
+def _small(path, mtime, width=SMALL_W, quality=82):
     from PIL import Image
     import io
     with Image.open(path) as im:
         im = im.convert("RGB")
-        im.thumbnail((SMALL_W, SMALL_W * 8))
+        im.thumbnail((width, width * 8))
         buf = io.BytesIO()
-        im.save(buf, "JPEG", quality=82, optimize=True)
+        im.save(buf, "JPEG", quality=quality, optimize=True)
     return buf.getvalue()
 
 
-def small_picture(sid):
+@functools.lru_cache(maxsize=None)
+def _tiny(path, mtime):
+    from PIL import Image
+    import base64
+    import io
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        im.thumbnail((32, 256))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=60)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def tiny_picture(sid):
+    """頁の字と一緒に届く、ごく小さな絵（幅 32px・1KB ほど。頁の中に書く）。入口の まずはここから の 2 枚の下敷きにし、
+    中くらいの写しが届くまでの間も、名前と同時に絵（ぼけた形）が見えるようにする（統括の合格の線 11-07: 最初の画面の絵が名前より先か同時に見える）。
+    写しが無ければ None。"""
+    path = ROOT / "out/sources" / f"{sid}.jpg"
+    return _tiny(str(path), path.stat().st_mtime) if path.exists() else None
+
+
+def small_picture(sid, size="small"):
     """敷き詰めの 1 枚の小さい写し（/picture/<印>/small）。切り抜きは幅 1600px で 83 枚 35MB あり、iPhone で えらぶ を開くたびに全部を読むと重い。
     小さくした写しは一度作ったら覚えておく（写しを替えた時は mtime で作り直す）。写しが無ければ None。"""
     path = ROOT / "out/sources" / f"{sid}.jpg"
-    return _small(str(path), path.stat().st_mtime) if path.exists() else None
+    return _small(str(path), path.stat().st_mtime, SIZES[size], QUALITY[size]) if path.exists() else None
 
 
 def _tile(sid):
@@ -98,7 +126,7 @@ def _tile(sid):
     # 縦横の比は style にも書く。皮の .toys .pic の aspect-ratio:3/4 が width・height からの比を上書きし、読み込む前の高さが 0 になって
     # 並びが跳ねた（11-07 に幅 390 で測った: 読み込む前 4428px・後 6441px）
     return (f'<img class="pic" src="/picture/{esc(sid)}/small" width="{w}" height="{h}" style="aspect-ratio:{w}/{h}" '
-            'loading="lazy" decoding="async" alt="図">')
+            'loading="lazy" decoding="async" fetchpriority="low" alt="図">')
 
 
 def card(sid):
