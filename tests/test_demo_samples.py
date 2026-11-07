@@ -18,10 +18,10 @@ _workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
 # 上げた物の見本はギャラリーに、職人の言葉と寄せられた声の見本は序の頁の節（voices_sections）に出る
 # （職人の言葉と寄せる話の入口を序の頁へ移した。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
 gallery, voices = techo_site.gallery_page(sources()), techo_site.voices_sections()
-assert gallery.count('class="item is-sample"') == len(demo_samples.UPLOADS), "上げた物の見本がギャラリーに出る"
+assert gallery.count('class="item is-sample"') == 0, "上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）"
 assert voices.count('class="item is-sample"') == len(demo_samples.CONTRIBUTIONS), "職人の言葉の見本が序の頁の節に出る"
 html = gallery + voices
-assert html.count('class="item is-sample"') == len(demo_samples.UPLOADS) + len(demo_samples.CONTRIBUTIONS), "見本が全部出る"
+assert html.count('class="item is-sample"') == len(demo_samples.CONTRIBUTIONS), "見本は職人の言葉だけ"
 # 寄せられた声は見本でなく、11 月のワークショップの参加者の実際の感想（本人の言葉 11-07 夜「とりあえず感想は全て反映させたい」）。
 # 1 件 1 枚の札で、見本の札は付けない。字は回答のまま。名前・番号・回（A/B）は出さない。抜き出した事と名前を外した事の一文が先頭
 yose = voices[voices.index('id="yose"'):voices.index('id="shokunin"')]
@@ -46,7 +46,8 @@ for s in demo_samples.SPOKEN:
     # 名乗り・連絡先の形が無い（持ち寄りの入口と同じ見張り）。話し手の名は字に入れない
     assert not contrib.check_pii({"body": s["text"]}), s["text"][:20]
 assert '<span class="sample">見本</span>' not in yose, "話された言葉も見本の札でない"
-assert demo_samples.NOTE in html, "作り物である事の一文"
+# 作り物である事の一文（NOTE）は、上げた物の見本と一緒に外した。残る職人の言葉の見本は、札ごとに見本の札と（架空）の名で見分ける
+assert all(demo_samples.esc(c["who"]) in html for c in demo_samples.CONTRIBUTIONS if c.get("slot")), "職人の言葉の見本は、名に（架空）を付けて出す"
 # どの見本の枠にも札がある（本物と取り違えない）
 for chunk in html.split('class="item is-sample"')[1:]:
     assert chunk.split("</div>")[0].count('<span class="sample">見本</span>') == 1, chunk[:80]

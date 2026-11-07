@@ -139,7 +139,8 @@ for sec, label in (("yose", "寄せられた声"), ("shokunin", "職人の言葉
     assert f'id="{sec}"' in yomu and f'<h2 class="mark">{label}</h2>' in yomu and f'id="{sec}"' not in g, sec
 # 見本は札と断りの一文で見分ける。縞の地と、皮によって白く浮く固定の色は使わない（#139）
 assert "repeating-linear-gradient" not in g and "#f4efe3" not in g and "#7a3b1d" not in g
-assert '<span class="sample">見本</span>' in g and "is-sample" in g
+# 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。ギャラリーに見本の札は出ない
+assert '<span class="sample">見本</span>' not in g and 'class="item is-sample"' not in g
 # 上げた後は頁の中で一覧を入れ替える（#143）。同じ道へ location.href しても読み込まれず、「…」のまま残って、もう一度押すと記録が 2 件になっていた
 from web.techo_step import SCRIPT  # noqa: E402
 up = SCRIPT[SCRIPT.index("const save"):]

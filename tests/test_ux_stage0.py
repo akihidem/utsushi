@@ -131,14 +131,10 @@ mine = kiroku[kiroku.index('<div id="mine">'):]
 assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
 assert roads(kiroku) == ["のこす"], roads(kiroku)  # 釦の字は のこす（本人のサイトの見直し 11-07 22:16）。行き先は前のまま
 
-# ---- 7 本物の記録がある時は見本を畳む
+# ---- 7 見本の記録（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。畳みも出ない
 withrec = toy.toy_page(G)
-from web import demo_samples  # noqa: E402
-if demo_samples.uploads_for(hypotheses.load(G)["toy"]):
-    assert '<details class="fold-sec samples-fold"><summary>見本</summary>' in withrec, "本物の記録があると、玩具の頁の見本は畳む"
 gallery = techo_site.gallery_page(play_server.sources())
-if demo_samples.uploads_html():
-    assert '<details class="samples-fold"><summary>見本</summary>' in gallery, "本物の記録があると、ギャラリーの見本は畳む"
+assert "samples-fold" not in withrec and '<details class="samples-fold">' not in gallery, "玩具の頁とギャラリーに見本の畳みを出さない"
 
 # ---- 1 足した押す所の字は道しるべの言葉だけ
 for page in (before, after, kiroku, *(f() for f in looks.PAGES.values())):

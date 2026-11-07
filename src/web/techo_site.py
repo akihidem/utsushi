@@ -292,7 +292,6 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .mark{font-size:22px;letter-spacing:.15em;margin:0}
 .gallery p{margin:0}
 .gallery .samples{display:grid;gap:10px;margin:0}
-.gallery .is-sample{border:1px dashed var(--frame);padding:10px}
 .gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
 .gallery .day{font-size:17px;letter-spacing:.1em;margin:4px 0 0}
 .gallery .sakurei-row,.gallery .workshop-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -460,21 +459,15 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示）
     from . import workshop
     ws = workshop.gallery(sids)
-    # ワークショップで作られた物も本物の作った物なので、それだけがある時も見本を畳む（本物を先に、見本は畳む。地図の工程 5）
-    real = bool(cards or own or sak or ws)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
-    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
     if not cards and not own and not sak and not ws:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
-    # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
-    from .demo_samples import uploads_html
-    # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
-    sample = uploads_html()
-    cards += f'<details class="samples-fold"><summary>見本</summary>{sample}</details>' if (real and sample) else sample
+    # 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」。ここには作例とワークショップの写真が本物として出る）
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
