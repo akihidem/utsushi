@@ -606,6 +606,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p><p class="meta">画面で見て、印刷する前に案を検討する所。</p>'
              f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">{plate}</div>'
              f'{window(sid, data, see, kind, v, recorded, photos)}</section>')
+    # たとえと関連する事柄は、型紙の窓のすぐ後（考えを話すの前）に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」。
+    # 夕方のサイトのレビューの 7「型紙の近くに出して一緒に考えられるように」）。C3 の前の形に戻した（前は頁の足の畳み）。字は替えない。
+    # たとえは「仕組みを考える手がかりで、答えではありません」（節の断り）なので、試す前の頁に開いて出してよい（前も開いて出していた）
+    body += analogy_section(data)
     # 仮説を見て、考えを話す（一周の 1、Issue #279）。仮説の札（型紙の窓の頭）のすぐ後に置く。
     from . import hanasu
 
@@ -636,8 +640,8 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen
 
-    # 読み物（たとえ）と作る側の節（改善の輪）は、流れの後ろで、見出しのまま畳む（段 0）
-    body += fold(analogy_section(data)) + fold(kaizen.section(sid, data, recs, photos))
+    # 作る側の節（改善の輪）は、流れの後ろで、見出しのまま畳む（段 0）。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）
+    body += fold(kaizen.section(sid, data, recs, photos))
     # 英語の短い紹介（本人の指示 11-05「実装までやって」、J-030）。頁の足に置く: 日本語の順路を押し下げないため。
     from . import en
 

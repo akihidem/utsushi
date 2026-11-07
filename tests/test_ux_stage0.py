@@ -67,7 +67,8 @@ assert f'name="hypothesis" value="{hypotheses.sheet_of(G)["id"]}"' in go, "紙�
 assert '<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>' in hero, "これまでの記録は見出しのまま畳む"
 assert re.search(r'<section class="sec" id="kaizen"><details class="fold-sec"><summary><h2>', before), "改善の輪は見出しのまま畳む"
 if 'id="tatoe"' in before:
-    assert before.index('id="minna"') < before.index('id="tatoe"') and '<section class="sec" id="tatoe"><details class="fold-sec"><summary><h2>' in before, "たとえは他の人が作った物の後ろで畳む"
+    # たとえは型紙の窓のすぐ後に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」）
+    assert before.index('id="win"') < before.index('id="tatoe"') < before.index('id="minna"') and '<section class="sec" id="tatoe"><h2>' in before, "たとえは型紙の窓の後ろで開いて出す"
 assert before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="tsukuru"') < before.index('id="kiroku"') < before.index('id="minna"'), "流れの順"
 assert '<details class="fold-sec samples-fold">' not in before, "本物の記録が無い時は、見本を畳まない"
 assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#kaizen など）"
