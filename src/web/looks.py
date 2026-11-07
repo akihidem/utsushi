@@ -441,7 +441,7 @@ def tenji(photos=True, dark=False):
     css = TENJI + ERABU + ukabu.UKABU
     # 暗い版も body の印は tenji を持つ（白の入口の CSS の選び body.tenji をそのまま効かせる）。暗い版の印 yoru を足して見分ける
     # description は S1（序の頁の頭にもう出ている字）。入口の見える所には足さない（本人の決めで、入口の題の間は題・副題・道だけ）。
-    # 副題「江都二色より／うしなわれた玩具の動きを／紙で実験して確かめる」は 3 つの字に分かれていて、つなぐと訳の表に無い字になるので使わない
+    # 副題（SUB の 3 行。今は「江都二色より／うしなわれた玩具の動きを／紙でよみがえらせる」）は 3 つの字に分かれていて、つなぐと訳の表に無い字になるので使わない
     from . import about
     return page("うつし", body + ONLY + ERABU_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji",
                 description=about.PREMISE[0])
