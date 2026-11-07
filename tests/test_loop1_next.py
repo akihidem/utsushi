@@ -29,7 +29,6 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")  # �
 from api import loop_agents, words  # noqa: E402
 from omochae import engine_bundle, hypotheses, loop, records, talk_log  # noqa: E402
 from omochae.compose import TEMPLATES, compose  # noqa: E402
-from omochae.metrics import ALLOWED  # noqa: E402
 from web import kaizen  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
@@ -97,18 +96,20 @@ def one_change():
     """たたき台の今の版から、紙に組める形で寸法を 1 つ変える。"""
     now, _ = loop.version_params(G, SHEET, loop.latest_version(G, SHEET))
     current = {**TEMPLATES["slider_fan"].DEFAULTS, **now}
-    for param in sorted(ALLOWED["slider_fan"]):
+    # その形に効く寸法だけ（loop.allowed）を、小さくする方から試す。たたき台が内筒を下から押し上げる形（H-B）だと床が少なく、折りを増やす案が先に通り、
+    # 後で柄の形の案（STICK）に替えると筒の口の角の床で落ちた（cycle._one_change と同じ理由）
+    for param in sorted(loop.allowed("slider_fan", current)):
         value = current.get(param)
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             continue
         step = 1 if isinstance(value, int) else 0.5
-        for to in (value + step, value - step):
+        for to in (value - step, value + step):
             if not compose("slider_fan", {**now, param: to}, SOURCE)[2]:
                 return param, to
     raise AssertionError("組める変更が無い")
 
 
-STICK = {"push_part": "stick", "pusher_height": 84}
+STICK = {"push_amount": 62}
 
 # ── たたき台を誰も刷っていない場でも、手帖で本人の紙を選べる ──
 oid0, key0 = made("nextwho000", "刷る前に話した考え", STICK)
@@ -203,7 +204,7 @@ assert len(client.calls) == 2, "OWN-n へ向けた案はやり直しになる"
 sent = client.calls[0]["messages"][0]["content"]
 context = json.loads(sent.split("<data>\n", 1)[1].rsplit("\n</data>", 1)[0])
 assert context["sheet"] == SHEET and C3 in sent, "向く先と話した工夫を渡す"
-assert context["own_paper"]["hypothesis_id"] == oid3 and context["own_paper"]["params"]["push_part"] == "stick", "試した紙の寸法を渡す"
+assert context["own_paper"]["hypothesis_id"] == oid3 and context["own_paper"]["params"]["push_amount"] == 62, "試した紙の寸法を渡す"
 assert T3 not in json.dumps(context["own_paper"], ensure_ascii=False), "考えの字は案の材料に入れない"
 assert "own_paper" in client.calls[0]["system"][0]["text"], "決まりの文に、自分の紙の記録の読み方がある"
 saved = json.loads((loop.folder() / f"proposal-{pid3[2:]}.json").read_text(encoding="utf-8"))
@@ -219,9 +220,10 @@ now6 = {**TEMPLATES["slider_fan"].DEFAULTS, **loop.version_params(G, SHEET, loop
 assert now6 != to6 and f"今 {now6:g}" in form and f"今 {to6:g}" not in form, form[:400]
 
 # ── 試した後の紙: 話した字が無いので、記録があれば別の人にも開く ──
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。試した後の紙は刷る時に組まず、前に配った道で開く時に作る（print_after）
+assert send(f"/sheet/{G}/{oid}_v1_after.pdf")[0] == 200, "記録があれば別の人にも開く"
 after = out_dir(G) / f"{oid}_v1_after.pdf"
 assert after.exists() and "".join(THINK.split()) not in flat_pdf(after) and "".join(CRAFT.split()) not in flat_pdf(after), "試した後の紙に話した字が刷られない"
-assert send(f"/sheet/{G}/{oid}_v1_after.pdf")[0] == 200, "記録があれば別の人にも開く"
 assert send(f"/sheet/{G}/{oid}_v1_after.png")[0] == 200
 assert send(f"/sheet/{G}/{oid}_v1.pdf")[0] == 404 and send(f"/sheet/{G}/{oid}_v1_tejun.pdf")[0] == 404, "ほかの紙は開かない"
 oid4, key4 = made("nextwho004", "記録の前の案", STICK)

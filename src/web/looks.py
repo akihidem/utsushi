@@ -208,6 +208,7 @@ def zine():
 # 札の中身は出典の記録の値だけ。解説の文は今ある決定の文（README の一言、歌の引用）だけで、作る側の言葉を足さない。
 # 動き: 本人の頼み（2026-11-04「この動き、デモサイトでやってみる？」）で、A′ だけに扇の札・スクロールのせり上がり・扇をひらくノブを足した
 # （research/19 の「動きを足さない」を本人の明示の頼みで変えた。J-024）。C は動かさないまま。
+# 扇の札（扇の間）と扇をひらくノブは 11-07 に外した（本人の言葉「扇の間要らない」。J-024 の追記）。残る動きはせり上がりだけ。
 # 入口の最初の画面の次へ進む釦（UX の見直しの段 0、本人の決定 11-06。research/36 の「道しるべの言葉は えらぶ・つくる・のこす・もちよる」）。
 # 入口の最初の画面で押せる物は頭の帯だけで、最初の玩具は 1197px 下だった（幅 390、research/36 の数）。字は道しるべの 1 語だけで、新しい字は足さない。
 # 行き先は絵で選ぶ頁（/toys）。入口の中の一覧は額装した 2 種の後にあり遠いので、近い方へ向ける
@@ -230,13 +231,11 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
    広い画面は 3 列の縦書きの下の段（2 行目）に置く */
 .tj-hall .road{grid-column:1/-1;grid-row:2;justify-self:center;margin:0}
 body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #6b4f2a;border-radius:2px;color:#1f1b17;font-size:20px;letter-spacing:.5em}
-/* 入口の額（最初の玩具）。広い画面は 英字 | 額 | 題 | 副題 の並び。額の高さは題の縦書きに合わせ、札は額の下に置く */
-/* 額は玩具がある限り必ず出る（入口は玩具の一覧から作る）。並びは題の間に直に当てる（試験と頁が見る節の class は前のまま） */
-.tj-hall{grid-template-columns:1fr auto auto 1fr}
-.tj-hall h1{grid-column:3}.tj-hall .sub{grid-column:4}
-.tj-hallwork{grid-column:2;grid-row:1;margin:0 4vw 0 0;display:flex;flex-direction:column;align-items:center;gap:14px}
-.tj-hallwork .tj-work{width:auto;height:min(46vh,440px)}
-.tj-hallwork .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
+/* 扉: 題の間の次の 1 室に、黒の表紙にあった最初の玩具の額と 1 行を掛ける（本人の決定 11-07「前の白の案の間」は B＝入口の絵の前の間。
+   最初の画面は題と「えらぶ」と副題だけにして、題のまわりの空きを残す） */
+.tj-door{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:10vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
+.tj-door .tj-work{width:min(100%,46vh)}.tj-door .tj-work div{width:100%;height:100%}
+.tj-door .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
 .tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
@@ -260,7 +259,7 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 .tj-exit{padding:14vh 5vw 18vh;text-align:center;border-top:1px solid #ebe8e2}
 .tj-exit p{font-size:clamp(20px,2.2vw,28px);letter-spacing:.3em;font-weight:400}
 .tj-note{font-size:12px;color:#7a7164;letter-spacing:.1em;padding:0 5vw 8vh;text-align:center}
-/* 全部の玩具の一覧（本人の指示 11-05）。白い壁に小さな額を並べる展示の一室。動きは無い（扇の間とせり上がりの外）。 */
+/* 全部の玩具の一覧（本人の指示 11-05）。白い壁に小さな額を並べる展示の一室。動きは無い（せり上がりの外）。 */
 .tj-all{padding:10vh 5vw;border-top:1px solid #ebe8e2}
 .tj-all .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 12px}
 .tj-all h2{font-size:clamp(22px,2.4vw,34px);font-weight:400;letter-spacing:.22em;margin:0 0 14px}
@@ -275,35 +274,6 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 .tj-all .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .tj-all .nm small,.tj-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#7a7164}
 .tj-all li > small a{color:#6b4f2a;border-bottom:1px solid rgba(107,79,42,.35)}
-
-/* 扇の札（本人の頼み 2026-11-04「この動き、デモサイトでやってみる？」の (1)）。図と寄りの札を、下の 1 点（要）を軸に
-   開いた扇のように並べる。御来迎の図の扇と響かせるため。中央の札を大きく手前に。--k は中央からの番手で、角度だけを決める。
-   JS が無くても、刷った時の --k のまま開いた扇として完成している。動きは遅い減速だけで、跳ねない（展示の静けさ）。 */
-.tj-fan{border-top:1px solid #ebe8e2;padding:8vh 5vw 6vh;text-align:center;--w:clamp(120px,15vw,210px);--step:11deg}
-.tj-fan .chapter{font-size:12px;letter-spacing:.5em;color:#7a7164;margin:0 0 2vh}
-.fan-stage{position:relative;height:calc(var(--w) * 1.5 * 1.8 + 40px);overflow:hidden;touch-action:pan-y;outline:none}
-.fan-stage:focus-visible{box-shadow:0 0 0 1px #b9a982 inset}
-.fan-card{position:absolute;left:50%;bottom:calc(var(--w) * 1.5 * .55 + 20px);width:var(--w);margin-left:calc(var(--w) / -2);aspect-ratio:2/3;
- box-sizing:border-box;padding:6px 6px 26px;background:#fffefc;border:1px solid #d8cdb6;border-bottom:1px solid #d8cdb6;
- transform-origin:50% 155%;transform:rotate(calc(var(--k) * var(--step))) scale(var(--s,.92));
- box-shadow:0 18px 26px -20px rgba(70,55,35,.45);transition:transform 1.1s cubic-bezier(.22,.61,.36,1),box-shadow 1.1s ease}
-.fan-card.is-c{--s:1.14;box-shadow:0 34px 44px -26px rgba(70,55,35,.55),0 2px 6px rgba(70,55,35,.1)}
-.fan-pic{display:block;width:100%;height:100%}
-.fan-lb{position:absolute;left:0;right:0;bottom:5px;font-size:12px;letter-spacing:.15em;color:#5d554a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
-.fan-kaname{position:absolute;left:50%;bottom:20px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#b9a982;box-shadow:0 0 0 3px #fcfcfa,0 0 0 4px #d8cdb6}
-.fan-ctl{display:flex;gap:2em;justify-content:center;align-items:center;margin-top:2vh;font-size:13px;letter-spacing:.2em;color:#5d554a}
-.fan-ctl button{font:inherit;color:#6b4f2a;background:none;border:0;border-bottom:1px solid rgba(107,79,42,.35);padding:4px 2px;cursor:pointer}
-.fan-ctl button:disabled{color:#a59b8b;border-color:transparent;cursor:default}
-.fan-cap{min-width:8em}
-
-/* 「扇をひらく」（本人の頼みの (3) を静かにした物）。派手な 3D のねじれは持ち込まず、線の扇の開く角だけをノブで動かす。
-   筒の中の仕組みは描かない（入口で仕組みを語らないため）。--t は骨の位置（-0.5〜0.5）、--a が開く角。 */
-.tj-ogi{padding:6vh 5vw 10vh;text-align:center}
-.tj-ogi svg{width:min(360px,80vw);height:auto;display:block;margin:0 auto}
-.tj-ogi .pl{transform-box:view-box;transform-origin:120px 128px;transform:rotate(calc(var(--a) * var(--t)))}
-.tj-ogi label{display:inline-flex;gap:1em;align-items:center;font-size:13px;letter-spacing:.2em;color:#5d554a;margin-top:2vh}
-.tj-ogi input{accent-color:#8a6d3b;width:min(240px,50vw)}
-.tj-ogi .cap{font-size:12px;letter-spacing:.1em;color:#7a7164;margin-top:1.2vh}
 
 /* スクロールでせり上がる（本人の頼みの (2)）。CSS のスクロール連動だけで、見える状態から始める（opacity を 0 にしない）。
    なぜ: 速く読む人から中身を隠さないため（research/19 の「全部の節に演出を付けない」を、隠さない形で守る）。
@@ -321,130 +291,122 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 @keyframes tj-rise-work{from{transform:translateY(28px) rotate(-.8deg);box-shadow:0 1px 0 #e8e1d2,0 16px 24px -18px rgba(70,55,35,.25),0 2px 6px rgba(70,55,35,.08)}
  to{transform:none;box-shadow:0 1px 0 #e8e1d2,0 40px 60px -30px rgba(70,55,35,.35),0 2px 6px rgba(70,55,35,.08)}}
 @keyframes tj-rise{from{transform:translateY(18px) rotate(.6deg)}to{transform:none}}
-/* 動きを減らす設定の人には、扇は止まった扇のまま（札の入れ替えは瞬時）、せり上がりも無し。 */
-@media (prefers-reduced-motion:reduce){.fan-card{transition:none}}
 
 @media (max-width:820px){.tj-room{grid-template-columns:minmax(0,1fr);gap:6vh}.tj-work{width:72vw}.tj-songs{writing-mode:horizontal-tb;height:auto}
  .tj-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.tj-hall{grid-template-columns:1fr;justify-items:center;gap:4vh;padding:10vh 5vw}
  .tj-hall h1,.tj-hall .sub,.tj-hall .en{grid-column:1;margin:0;justify-self:center}.tj-hall .road{grid-column:1;grid-row:auto}
  /* 1 列に積む時は、英字の小さな 1 行だけ横書きにする（縦書きのままだと 246px を取り、375×667 で釦が最初の画面の外に出た）。題と副題は縦書きのまま */
  .tj-hall .en{writing-mode:horizontal-tb}
- .tj-fan{--w:clamp(110px,30vw,150px);--step:9deg}
  .tj-all .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
 @media (max-width:680px){.tj-all li.big{grid-column:auto;grid-row:auto}}
-/* 狭い画面の入口の額（題の間の狭い幅の規則より後に置き、そちらを上書きする）: 額と題を横に並べ、額の高さを題の縦書きに合わせる（積むと「えらぶ」が最初の画面の外へ出るため）。
-   札は額の左に縦に置く（字は 12px。読む順は右の題から左の札へ）。320×568 でも「えらぶ」が最初の画面に入る高さにする */
-@media (max-width:820px){.tj-hall{grid-template-columns:auto auto;column-gap:6vw}
- .tj-hall .en,.tj-hall .road,.tj-hall .sub,.tj-hall .grow{grid-column:1/-1}
- .tj-hall h1{grid-column:2;grid-row:2}
- .tj-hallwork{grid-column:1;grid-row:2;margin:0;flex-direction:row-reverse;align-items:flex-start;gap:8px}
- .tj-hallwork .tj-work{width:auto;height:clamp(150px,32vh,250px)}
- /* 札の長さは額の高さまで（縦書きの行の長さ＝高さ）。長い 1 行のままだと段が高くなり、320×568 で「えらぶ」が画面の外へ出た */
- .tj-hallwork .meta{writing-mode:vertical-rl;font-size:12px;letter-spacing:.3em;height:clamp(150px,32vh,250px);word-break:keep-all}}
 """
 KANJI = "一二三四五六七八九十"
 DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
 
-# 扇の札を動かす小さな台本。矢印の釦・キーボードの左右・指で払う、の 3 つで中央の札を入れ替える。
-# なぜ IntersectionObserver を使わないか: 見えた時に起こす仕掛けは入口に置かない決まり（research/19、試験で固定）。押した時だけ動く。
-# 端の札を押した時は、玩具の頁へ飛ばずに先に中央へ回す（扇を回す手応えを先に返す）。中央の札を押せば玩具の頁へ入る。
-FAN_JS = """<script>(()=>{const d=document.getElementById('tj-fan');if(!d)return;
-const st=d.querySelector('.fan-stage'),cs=[...d.querySelectorAll('.fan-card')],cap=d.querySelector('.fan-cap'),
-pv=d.querySelector('.fan-prev'),nx=d.querySelector('.fan-next');let c=+d.dataset.c;
-function set(n){c=Math.max(0,Math.min(cs.length-1,n));cs.forEach((e,i)=>{const k=i-c;e.style.setProperty('--k',k);
-e.style.zIndex=50-Math.abs(k);e.classList.toggle('is-c',k===0);e.tabIndex=k===0?0:-1});
-cap.textContent=cs[c].dataset.name;pv.disabled=c===0;nx.disabled=c===cs.length-1}
-pv.hidden=nx.hidden=false;pv.onclick=()=>set(c-1);nx.onclick=()=>set(c+1);
-st.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){set(c-1);e.preventDefault()}else if(e.key==='ArrowRight'){set(c+1);e.preventDefault()}});
-cs.forEach((e,i)=>e.addEventListener('click',ev=>{if(i!==c){ev.preventDefault();set(i)}}));
-let x0=null;st.addEventListener('pointerdown',e=>{x0=e.clientX});
-st.addEventListener('pointerup',e=>{if(x0===null)return;const dx=e.clientX-x0;x0=null;if(Math.abs(dx)>40)set(c+(dx<0?1:-1))});
-set(c)})();
-(()=>{const r=document.getElementById('ogi-range'),s=document.getElementById('ogi-svg');if(!r||!s)return;
-const f=()=>s.style.setProperty('--a',r.value+'deg');r.addEventListener('input',f);f()})();</script>"""
+# 入口を えらぶ にする（本人のサイト体験レビュー 11-07 の 4・5・1。UX の設計 state の review-fixes の A）。
+# 本人の言葉（窓口の要点）: 「入口と選ぶは分けない。最初の頁そのものを選ぶにする（江戸二色の話だけ書いて、押させるのでなく最初から選べる形）」
+# 「選ぶでは『まずはここから』で御来迎と張子の首振り虎の 2 つを前に出し、どちらかを選んで作る誘導に。他も選べるが控えめに」
+# 「83 のおもちゃが言葉だけ並んでいるのが嫌。絵で見える形に」。
+# 前は 題の間（題・えらぶ の釦・副題）→ 扉の額 → 全部の玩具の一覧 → 章ごとの部屋（歌・部分・型紙をひらく）の順で、選ぶには えらぶ を押して /toys へ行った。
+# 今は 題（題・副題・表紙の 2 行）→ 2 つの大きな札 → 83 の原画の敷き詰め（小さく）。えらぶ の釦は外し（押させない）、/toys は / へ送る（play_server）。
+# 章ごとの部屋（歌・部分）は外した: 歌は玩具の頁の頭（原画と歌）に在り、入口に同じ物を 2 度置かないため。
+MAZU = "まずはここから"  # 2 つの大きな札の見出し（本人の言葉そのもの。本人の「反映してください。レビューの要点の通りで」と窓口の決め 11-07）
 
 
-def _fan_cards(ts):
-    """扇に並べる札。玩具 1 の寄り → 玩具 1 の図 → 玩具 2 の図 → 玩具 2 の寄り、の順にし、中央に図が来るようにする。
-    寄りの場所は部分の段（tj-detail）と同じ。図に見える所の写しだけで、名前は「部分」に留める（仕組みの名を出さない）。"""
-    cards = []
-    for j, t in enumerate(ts):
-        name = esc(t["toy"])
-        pic = {"href": f"/toy/{t['sid']}", "name": name, "style": _bg(t["sid"], framed_pos(t["sid"]), FRAMED)}
-        details = [{"href": "", "name": f"{name} 部分 {k}", "style": _bg(t["sid"], p, "300%")} for k, p in enumerate(DETAIL_POS, 1)]
-        cards += (details + [pic]) if j % 2 == 0 else ([pic] + details)
-    return cards
+def _mazu(ts):
+    """「まずはここから」の 2 枚（必須の 2 種）。札そのものが玩具の頁（つくる）への口。額の敷き方は前の章の部屋と同じ（FRAMED）。"""
+    # 絵は中くらいの写し（/picture/<印>/mid）を img で、先に読む（fetchpriority="high"）。元の写しは最初の画面で読まない（toys.SIZES の注）。
+    # 前は背景の絵（CSS）にしていたが、遅い回線（下り 1.6Mbps・往復 150ms、トンネル越し）で、下の並びの小さい写しと取り合って 2 枚が届くのに
+    # 5.7 秒かかった（11-07 に Chromium で測った）。背景の絵は読む順が後ろになるため、img にして先に読ませる。
+    # 額の敷き方（FRAMED の 112% と綴じの反対側）は、枠の中で 1.12 倍に広げて寄せる形で同じに見せる
+    def pic(t):
+        sid = t["sid"]
+        if not (ROOT / "out/sources" / f"{sid}.jpg").exists():
+            return f'<span class="pic" style="{_bg(sid)}" role="img" aria-label="{esc(t["toy"])}の図"></span>'
+        x = framed_pos(sid).split()[0]
+        from . import toys as toys_page
+
+        # 下敷きはごく小さな絵を頁に書いた物（toys.tiny_picture）。字と一緒に届き、中くらいの写しが届くと上に重なる
+        under = f"background:#d9d2c3 url({toys_page.tiny_picture(sid)}) {x} 50%/{FRAMED} no-repeat"  # 額の敷き方と同じ大きさ（黒い縁を出さない）
+        return (f'<span class="pic" style="{under}"><img src="/picture/{esc(sid)}/mid" alt="{esc(t["toy"])}の図" fetchpriority="high" decoding="async" '
+                f'style="object-position:{x} 50%;transform-origin:{x} 50%"></span>')
+    cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}</span>'
+                    f'<span class="nm">{esc(t["toy"])}</span></a>' for t in ts)
+    head = f"<h2>{esc(MAZU)}</h2>" if MAZU else ""
+    # 黒の表紙にだけあった 1 行（額の絵の下の「江都二色　安永二年　うしなわれた玩具」。本人の決定 11-06「黒案にだけある要素は白案に入れて」）は、
+    # 前は白の扉の額の下に出していた。扉は外したので、同じ額の敷き方の 2 枚の下に置く（『江都二色』の話の 1 行でもある）
+    return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
 
 
-def fan_deck(ts):
-    cards = _fan_cards(ts)
-    if not cards:
-        return ""
-    # 中央は 1 つ目の玩具の図。偶数枚でも図が真ん中に来るよう、寄りの数（4）を中央の番手にする。
-    c = min(len(DETAIL_POS), len(cards) - 1)
-    items = []
-    for i, cd in enumerate(cards):
-        k = i - c
-        tag, href = ("a", f' href="{cd["href"]}"') if cd["href"] else ("div", "")
-        items.append(f'<{tag} class="fan-card{" is-c" if k == 0 else ""}"{href} data-name="{cd["name"]}" style="--k:{k};z-index:{50 - abs(k)}">'
-                     f'<span class="fan-pic" style="{cd["style"]}"></span><span class="fan-lb">{cd["name"]}</span></{tag}>')
-    return (f'<section class="tj-fan" id="tj-fan" data-c="{c}" aria-label="扇の札"><p class="chapter">扇の間</p>'
-            f'<div class="fan-stage" tabindex="0" aria-label="扇の札。左右の矢印で回す">{"".join(items)}<i class="fan-kaname"></i></div>'
-            f'<div class="fan-ctl"><button type="button" class="fan-prev" hidden aria-label="左の札へ">◁ 左へ</button>'
-            f'<span class="fan-cap" aria-live="polite">{cards[c]["name"]}</span>'
-            f'<button type="button" class="fan-next" hidden aria-label="右の札へ">右へ ▷</button></div></section>')
+def _erabu(sids):
+    """ほかの玩具の原画の敷き詰め（えらぶ の #508 の札と並び・ジャンルの棚）。控えめに小さく並べる。見出しは えらぶ の頭と同じ採られた字。"""
+    from . import genre
+    from . import toys as toys_page
 
-
-def ogi_slider(n=13, start=150):
-    """線で描いた扇。骨 n 本の楔を要（120,128）から立て、開く角 --a で回すだけ。御来迎の図の扇の形（閉じた → 半円）に合わせた。
-    楔の幅は全開の 180° を n-1 で割った角。閉じると楔が重なって 1 本の骨になる。"""
-    import math
-    hw = math.radians(180 / (n - 1) / 2)
-    r0, r1, cx, cy = 34, 112, 120, 128
-
-    def pt(r, a):
-        return f"{cx + r * math.sin(a):.1f},{cy - r * math.cos(a):.1f}"
-    wedge = f"M{pt(r0, -hw)} L{pt(r1, -hw)} A{r1},{r1} 0 0 1 {pt(r1, hw)} L{pt(r0, hw)} A{r0},{r0} 0 0 0 {pt(r0, -hw)}Z"
-    pleats = "".join(f'<g class="pl" style="--t:{i / (n - 1) - .5:.4f}"><path d="{wedge}" fill="{"#f4f0e7" if i % 2 else "#e7e0d1"}" stroke="#b9a982" stroke-width=".6"/>'
-                     f'<line x1="{cx}" y1="{cy}" x2="{cx}" y2="{cy - r0}" stroke="#8a6d3b" stroke-width="1.4"/></g>' for i in range(n))
-    return (f'<section class="tj-ogi" id="tj-ogi"><svg id="ogi-svg" viewBox="0 0 240 140" style="--a:{start}deg" role="img" aria-label="線で描いた扇">{pleats}'
-            f'<circle cx="{cx}" cy="{cy}" r="4" fill="#8a6d3b"/></svg>'
-            f'<label>扇をひらく <input id="ogi-range" type="range" min="0" max="180" value="{start}" aria-label="扇をひらく角"></label>'
-            '<p class="cap">開く角だけの線の絵。どう開くかは描いていない。それを紙で確かめる。</p></section>')
+    shelves = "".join(f'<h3>{esc(big)}</h3><ul class="tj-narabi">{"".join(toys_page.card(s) for _, ss in mids for s in ss)}</ul>'
+                      for big, mids in genre.groups(sids))
+    # 並びの小さい写しは、まずはここから の 2 枚が届いてから読む（data-src を src に替える台本 ERABU_JS）。遅い回線（下り 1.6Mbps・往復 150ms・
+    # トンネル越し）で、2 枚と並びの 20 枚ほどを一度に読むと、2 枚が届くのに 5.6 秒かかった（11-07 に Chromium で測った。本人の答え 11-07 の (a)）。
+    # 台本が動かない機器では、並びは名前の札だけになる（並びの絵は 2 枚より後でよい物なので、そこは止めない）
+    shelves = shelves.replace(' src="/picture/', ' data-src="/picture/')
+    n = len(sids) + len([s for s in sources() if hypotheses.stage(s) == "必須"])
+    return (f'<section class="tj-erabu" id="all-toys"><h2>{n} のおもちゃから、1 つ選ぶ</h2>{shelves}'
+            '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></section>')
 
 
 def tenji():
     ts = toys()
     body = switch("tenji")
-    # 入口の最初の画面に、黒のジンの表紙にだけあった最初の玩具の額の絵を掛ける（ジャーニーマップの工程 1「絵 1 枚と 1 行とボタン 1 つ」。
-    # 本人の指示 11-06「サイトの残り 5 つに対応」と、本人の決定 11-06「黒案にだけある要素は白案に入れてください」）。
-    # 前は題の間を字だけにし、額は次の 1 室（扉）に掛けていたが、最初の画面に絵が無かった。黒の表紙の 1 行は、2 つ目の見出しでなく
-    # 絵の名札に読めるよう、額の札（figcaption）にする（UX の担当と合わせた）。額は押せる口にしない（大きいボタンは「えらぶ」1 つ）。
-    # 額の上に後から印（描いていない所の点線など）を重ねられるよう、絵は額の中の 1 枚の層にしておく。字は足さない。
-    first = ts[0]["sid"] if ts else ""
-    work = (f'<figure class="tj-hallwork"><div class="tj-work"><div style="{_bg(first, framed_pos(first), FRAMED)}" role="img" aria-label="{esc(ts[0]["toy"])}の図"></div></div>'
-            f'<figcaption class="meta">{esc(DOOR_LINE)}</figcaption></figure>') if first else ""
-    body += ('<section class="tj-hall"><p class="en">Lost toys of Edo · 1773</p>' + work + '<h1>うつし</h1>'
-             + ROAD_GO + '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
-    # 北斎漫画の縦読みの節は、白では入口に置かず、帯の「よむ」の先の序の頁（/about）に置く（統括の決め 11-06。ジャーニーマップの
-    # 工程 1「読み物は道の外へ（よむ）」に合わせる。前は題の間のすぐ後に置き、入口が長くなっていた）。黒の入口の作りは残す。
-    # 全部の玩具の一覧は扇の間の次の一室（本人の指示 11-05）。扇の札と動きは変えない。
-    body += fan_deck(ts) + ogi_slider() + all_toys("tj")
-    for i, t in enumerate(ts, 1):
-        src = source(t["sid"])
-        song = "".join(f"<p>{esc(x)}</p>" for x in t["song"])
-        n = KANJI[i - 1] if i <= len(KANJI) else str(i)
-        body += (f'<section id="look-{i}" class="tj-room"><div class="panel"><p class="chapter">第{n}章</p><h2>{esc(t["toy"])}</h2>'
-                 f'<div class="tj-songs" id="song-{i}">{song}</div><p class="lead">{QUOTE}</p></div>'
-                 f'<div class="tj-work"><div style="{_bg(t["sid"], framed_pos(t["sid"]), FRAMED)}"></div></div>'
-                 f'<div class="tj-side"><div class="tj-label"><span class="no">No. {i:02d}</span><span class="ttl">{esc(t["toy"])}</span>'
-                 f'{_label(t, src, "tj-inner")}</div>{_nopic(t)}</div></section>')
-        figs = "".join(f'<figure><div style="{_bg(t["sid"], p, "300%")}"></div><figcaption>部分 {k}</figcaption></figure>'
-                       for k, p in enumerate(DETAIL_POS, 1))
-        body += f'<section class="tj-detail" id="detail-{i}">{figs}</section>'
-        body += (f'<section class="tj-exit"><p>紙で作って、確かめる。</p><a href="/toy/{t["sid"]}">型紙をひらく</a></section>')
-    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。扇の開く角を示す線の絵のほかに、新しい絵は作っていない。</p>'
-    return page("うつし", body + ONLY + FAN_JS, TENJI + skin.entrance_style("tenji"), "tenji")
+    # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
+    # 幅 390 の最初の画面に 2 つの大きな札の頭が入るようにする（「最初から選べる形」）
+    body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+    main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
+    body += _mazu(main)
+    body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"])
+    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
+    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
+
+
+# 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
+# 見えた時に起こす仕掛けは使わない（入口の決まり。research/19）。
+ERABU_JS = """<script>(()=>{let go=false;const run=()=>{if(go)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
+const big=[...document.querySelectorAll('.tj-mazu-card img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
+big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
+
+
+# 入口の えらぶ の形（白の展示）。札の中身は toys.card（#508 の小さい写し・縦横つき）なので、その札が要る CSS をここに置く（入口は skin.BASE を読まない）。
+# 「控えめに」: ほかの玩具は 1 列 72px 以上・9 列まで（えらぶ の頁の 96px・7 列より小さく）。2 つの大きな札は横に並べ、幅 390 で 1 枚 160px ほど。
+ERABU = """
+/* 題の間は横書きで短く（前の B の間の縦書きは、幅 390 で 2 つの札が 1 画面目の外に出た。11-07 に測った: 札の頭が 855px）。
+   字は前の題の間の字のまま（英字・題・副題・表紙の 2 行） */
+#hall.tj-hall{min-height:auto;display:block;text-align:center;padding:5vh 5vw 3vh}
+#hall.tj-hall .en,#hall.tj-hall h1,#hall.tj-hall .sub{writing-mode:horizontal-tb;margin:0 auto}
+#hall.tj-hall .en{margin-bottom:2vh}
+#hall.tj-hall h1{font-size:clamp(30px,4.4vw,56px);letter-spacing:.5em;margin-left:.5em}
+#hall.tj-hall .sub{margin-top:2.4vh;line-height:2;letter-spacing:.2em}
+#hall.tj-hall .grow{margin:2.4vh 0 0;font-size:13px}
+.tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
+.tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
+.tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
+.tj-mazu .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,4vw,56px)}
+body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
+.tj-mazu-card .tj-work{display:block;width:100%;margin:0}
+.tj-mazu-card .pic{display:block;aspect-ratio:1600/2656;border:1px solid #d8cdb6;box-shadow:0 18px 30px -22px rgba(70,55,35,.5);overflow:hidden;background:#d9d2c3}
+.tj-mazu-card .pic img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.12)}
+.tj-mazu-card .nm{display:block;text-align:center;font-size:clamp(14px,1.6vw,18px);letter-spacing:.3em;margin-top:14px;min-height:44px;line-height:44px}
+.tj-erabu{padding:8vh 24px;max-width:1180px;margin:0 auto;border-top:1px solid #ebe8e2}
+.tj-erabu h2{font-size:clamp(15px,1.6vw,19px);font-weight:400;letter-spacing:.2em;margin:0 0 4vh}
+.tj-erabu h3{font-size:14px;font-weight:400;letter-spacing:.4em;color:#5d554a;margin:5vh 0 14px}
+.tj-narabi{list-style:none;padding:0;margin:0;columns:9 72px;column-gap:12px}
+.tj-narabi li{break-inside:avoid;margin:0 0 12px}
+body .tj-narabi a{display:block;color:inherit;text-decoration:none;border:0}
+.tj-narabi .pic{display:block;width:100%;height:auto;border:1px solid #d8cdb6;background:#f3f1ec;box-sizing:border-box}
+.tj-narabi .nopic{aspect-ratio:3/4}
+.tj-narabi .nm{display:block;font-size:12px;letter-spacing:.06em;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tj-narabi .ways{display:none}
+.tj-erabu .links{margin-top:6vh;font-size:13px}
+"""
 
 
 PAGES = {"tenji": tenji, "zine": zine}

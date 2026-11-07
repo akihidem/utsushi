@@ -96,6 +96,8 @@ from omochae import hypotheses, loop, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -117,8 +119,8 @@ def over(*a, **k):
     raise AssertionError("予算で止まるはず")
 
 
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
-rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
+rid, _ = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた"})
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")
 ask.answer = over
 ask._key_present = lambda: True  # 鍵がある時の道を通す。Claude を呼ぶ所は上の代わりに替えてある
@@ -129,9 +131,9 @@ for fill, word, other in ((lambda: spend(budget.DEFAULT_DAILY_CAP - 0.5), "今�
                           (lambda: spend(budget.STOP_TOTAL - 0.5, day="11-05"), "累計の停止線", "今日")):
     reset()
     fill()
-    code, _, page = post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "竹串はいつ通すの？"})
+    code, _, page = post(f"/toy/{G}/ask", {"hypothesis": GS, "question": "竹串はいつ通すの？"})
     assert code == 200 and word in page and "$" not in page.split("今は AI に聞けません", 1)[1][:80], (code, word)
-    code, _, body = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "竹串はいつ通すの？"})
+    code, _, body = post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "竹串はいつ通すの？"})
     got = json.loads(body)
     assert code == 200 and got["from"] == "stop" and word in got["text"] and other not in got["text"], got
     code, loc, _ = post(f"/record/{rid}/ai-interpret", {"back": "techo"})

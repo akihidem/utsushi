@@ -144,14 +144,15 @@ card = card_of(get(f"/toy/{G}"), rid_typed)
 # 刷るのは型紙だけ（本人の決まり 11-06）。札の道は型紙だけで、手順の紙の道は出さない（前に配った道は開く）
 assert re.search(rf'<a href="/sheet/{G}/{typed}_v1\.pdf"[^>]*>型紙</a>', card), card
 assert f"{typed}_v1_tejun" not in card and "手順の紙" not in card
-for stem in (f"{typed}_v1", f"{typed}_v1_tejun"):
-    assert status(f"/sheet/{G}/{stem}.pdf") == (200, "application/pdf"), stem
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。自分の紙も型紙だけで、手順の紙は組まない
+assert status(f"/sheet/{G}/{typed}_v1.pdf") == (200, "application/pdf")
+assert status(f"/sheet/{G}/{typed}_v1_tejun.pdf")[0] == 404
 assert f"{typed}_v1_free" not in card
 
 # 札を外しても、寸法つきの前の記録からの次の版はたたき台の紙になる。その人の案には版を足さない（細かい所は tests/test_loop1_next.py が見る）
 assert f"/record/{rid_typed}/next" in card
-assert post(f"/record/{rid_typed}/next", {"interpretation": "読み", "param": "fold_height", "to": "47.5", "why": "試す", "by": "書いた人"})[0] == 303
-assert (out_dir(G) / "H-A_v2.pdf").exists() and not list(out_dir(G).glob(f"{typed}_v2*"))
+assert post(f"/record/{rid_typed}/next", {"interpretation": "読み", "param": "fold_height", "to": "56.7", "why": "試す", "by": "書いた人"})[0] == 303
+assert (out_dir(G) / f"{hypotheses.sheet_of(G)['id']}_v2.pdf").exists() and not list(out_dir(G).glob(f"{typed}_v2*"))
 
 # 4. 話した案の札には紙へのリンクを出さない（紙は作った本人の画面からだけ開くので、ほかの人には行き止まりになる）
 spoken = written(G, "話した案")

@@ -22,6 +22,8 @@ from web import genga, hanasu, skin, techo_step  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -123,7 +125,7 @@ NAMES = ("つぎ", "もどる", "こまった", "とって", "のこす", "は�
 code, none = req(f"/toy/{G}/techo")
 assert code == 200 and "紙を作る" in none and f'href="/toy/{G}"' in none and "はじめる" not in none, "刷った紙が無い時は作る道へ"
 
-assert req(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
+assert req(f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
 assert req(f"/toy/{T}/print", {"hypothesis": "H-A"})[0] in (200, 303)
 code, page = req(f"/toy/{G}/techo")
 assert code == 200
@@ -133,10 +135,13 @@ doc = read(page)
 assert techo_step.NAMES == NAMES
 for name in NAMES:
     assert any(c["text"].strip() == name for c in doc.targets), name
+# 最初の画面の小さな道「カメラに重ねる」は、本人が採った口の名（11-07）。重ねる頁が開く玩具（組み立ての書き方がある玩具）だけに出る。大きいボタンは「はじめる」のまま
+from web import hmd  # noqa: E402
+
 for scene in ("start", "step", "end"):
     names = [c["text"].strip() for c in doc.shown_targets(scene)]
-    assert all(n in NAMES for n in names if n), (scene, names)
-assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"]
+    assert all(n in NAMES or (scene == "start" and n == hmd.CAM_LINK) for n in names if n), (scene, names)
+assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"] + ([hmd.CAM_LINK] if hmd.available(G) else []), "道は「はじめる」の下"
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌
@@ -148,7 +153,7 @@ if not genga._pic(G, src_g, genga.alt(src_g))[0]:
 real_pic = genga._pic
 genga._pic = lambda sid, src, alt, lazy=False, href=None: (f'<span class="genga-pic" style="--genga-r:0.7000"><img src="/picture/{sid}/page" alt="{alt}"></span>', True)
 try:
-    shown_g = techo_step.page(G, ["H-A"])
+    shown_g = techo_step.page(G, [GS])
 finally:
     genga._pic = real_pic
 doc_g = read(shown_g)
@@ -196,7 +201,7 @@ assert 'id="close"' in page
 # ---- 頁の字に、版の名・記録の番号・「の紙」が無い。記録が在っても出さない
 from omochae import records  # noqa: E402
 
-rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "impression": "KANSOU"})
+rid, _ = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた", "impression": "KANSOU"})
 page = req(f"/toy/{G}/techo")[1]
 doc = read(page)
 text = visible(page)
@@ -332,38 +337,41 @@ for sid in sources():
     assert "<svg" in render.shapes_svg(pics[0]) and not any(re.search(r"の紙|版 ?\d|R-\d", x) for x in texts), sid
 
 # ---- 紙: たたき台（先頭）を作る。先頭が無ければ刷ってある紙
-assert 'data-hid="H-A"' in page and 'data-v="1"' in page
+assert f'data-hid="{GS}"' in page and 'data-v="1"' in page
 # 作るのはたたき台の 1 枚だけ（J-032）。それが刷られていない時は、紙を作る道だけ
-assert hypotheses.sheet_of(G)["id"] == "H-A" and hypotheses.sheet_of(T)["id"] == "H-A", "必須 2 種のたたき台は H-A（本人の決定）"
-assert "紙を作る" in techo_step.page(G, ["H-C"]) and 'data-hid=' not in techo_step.page(G, [])
-assert 'data-hid="H-A"' in techo_step.page(G, ["H-C", "H-A"])
+# 御来迎の今の組（goraigo-v14）のたたき台は H-C（統括の決め 11-06）、虎は H-A（本人の決定）
+assert hypotheses.sheet_of(G)["id"] == "H-C" and hypotheses.sheet_of(T)["id"] == "H-A", "必須 2 種のたたき台"
+assert "紙を作る" in techo_step.page(G, ["H-A"]) and 'data-hid=' not in techo_step.page(G, [])
+assert f'data-hid="{GS}"' in techo_step.page(G, ["H-C", GS])
 
 # ---- 開く所を URL で持つ（場のリンク n=2）。最後の次は「とって・のこす」の画面
 assert 'data-n="2"' in req(f"/toy/{G}/techo?n=2")[1] and 'data-n="1"' in req(f"/toy/{G}/techo?n=abc")[1]
-total = len(tpl.steps(p))
+# 手帖の手順はたたき台の紙の物（御来迎の今の組 goraigo-v14 は H-C の 18 段）
+total = len(tpl.steps({**tpl.DEFAULTS, **hypotheses.sheet_of(G)["params"]}))
 assert f'data-n="{total + 1}"' in req(f"/toy/{G}/techo?n=99")[1], "範囲の外は最後の画面"
 
 # ---- 札を押した事は作りながら見る頁と同じ口に残す
 who = "abcde12345"
-step = lambda n, ev: req(f"/toy/{G}/step", {"hypothesis": "H-A", "step": n, "event": ev, "json": "1", "sheet_version": 1, "who": who})
+step = lambda n, ev: req(f"/toy/{G}/step", {"hypothesis": GS, "step": n, "event": ev, "json": "1", "sheet_version": 1, "who": who})
 assert step(1, "start")[0] == 200 and step(1, "next")[0] == 200 and step(2, "stuck")[0] == 200 and step(total, "done")[0] == 200
 got = [(s["step"], s["event"]) for s in making_log.steps(G)]
 assert (1, "start") in got and (2, "stuck") in got and (total, "done") in got
 for ev in ("next", "back", "stuck", "done", "start"):
     assert f"'{ev}'" in js, ev
 
-# ---- 残す: 記録の値だけで残り、話した工夫がその記録に入り、記録の頁に出る。床に当たる字は残らない
-assert req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": 1, "step": total, "text": "電話は090-1234-5678", "via": "voice", "who": who, "json": "1"})[0] == 422
-code, body = req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": "H-A", "sheet_version": 1, "step": total, "text": "紙を二重にした", "via": "voice", "who": who, "json": "1"})
+# ---- 残す: 記録の値だけで残り、話した工夫がその記録に入る。話した字は記録の頁に出さない（本人の決定 11-06、J-034）。床に当たる字は残らない
+assert req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": 1, "step": total, "text": "電話は090-1234-5678", "via": "voice", "who": who, "json": "1"})[0] == 422
+code, body = req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": 1, "step": total, "text": "紙を二重にした", "via": "voice", "who": who, "json": "1"})
 assert code == 200 and json.loads(body)["kept"]
 # 字を打たなくても残せる（本人の方針 19:45）。字の無い記録も、結果の札だけで残る
-code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "sheet_version": 1, "who": "nowords0000"})
+code, body = req(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "sheet_version": 1, "who": "nowords0000"})
 assert code == 201, body
-code, body = req(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない", "sheet_version": 1, "who": who})
+code, body = req(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "わからない", "sheet_version": 1, "who": who})
 j = json.loads(body)
 assert code == 201 and j["kufu"] == 1, body
 code, listed = req(f"/toy/{G}/techo/kiroku?msg=" + urllib.parse.quote("上げました"))
-assert code == 200 and '<div id="mine">' in listed and j["id"] in listed and "紙を二重にした" in listed and "上げました" in listed
+assert code == 200 and '<div id="mine">' in listed and j["id"] in listed and "上げました" in listed
+assert "紙を二重にした" not in listed and [t["text"] for t in talk_log.kufu(G, j["id"])] == ["紙を二重にした"], "記録には結ぶが、頁には出さない"
 # 記録の頁は順路の帯を持ち、試した後の紙・説明・AI の順の札がここにある
 # 試した後の紙は 11-06 から刷らないので、札に道を出さない（説明・AI の順の札はここにある）
 assert '<nav class="nav"' in listed and "試した後の紙" not in listed and 'name="back" value="techo"' in listed
@@ -390,10 +398,10 @@ assert code in (200, 303), body[:300]
 assert 'data-v="2"' in req(f"/toy/{G}/techo")[1] and 'data-v="1"' in req(f"/toy/{G}/techo?v=1")[1] and 'data-v="2"' in req(f"/toy/{G}/techo?v=9")[1]
 assert "?v=1&amp;n=3" in req(f"/toy/{G}/techo?v=1&n=2")[1], "JS が無い時のリンクも開いた時の版を持つ"
 
-# ---- 虎: 絵は手順の紙の図。結果の札は虎の値
+# ---- 虎: 絵は手順の紙の図。結果の札は虎の値（記録と手帖では「わからない」も選べる。刷った紙の欄は 2 つのまま。#373）
 page = req(f"/toy/{T}/techo")[1]
 doc = read(page)
-assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない"]
+assert [c["attrs"].get("value") for c in doc.targets if "tile" in c["attrs"].get("class", "")] == ["揺れた", "揺れない", "わからない"]
 assert "の紙" not in visible(page) and TEMPLATES["pivot_counterweight"].SHEET_SET not in page
 server.shutdown()
 print("ok")

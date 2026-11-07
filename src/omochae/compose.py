@@ -39,6 +39,14 @@ def new_fold_words(tpl):
     return hasattr(tpl, "FROZEN_SET") and tpl.SHEET_SET != tpl.FROZEN_SET
 
 
+def kept_sets(tpl):
+    """その雛形で、今の組のほかに紙を控えに残す前の組の並び（古い順）。凍結の床（tests/test_floor_pin.py）が全部の組を組む。
+
+    なぜ並びか: 組を上げるたびに前の組の紙を残す（本人の指示）ので、前の組は 1 つとは限らない（虎は tora-v3 のあと tora-v4 も刷った）。
+    FROZEN_SET（前の字で刷る最初の組）は控えの 1 つで、凡例と印の文の見分けにだけ使う。KEPT_SETS を書かない雛形は FROZEN_SET だけを控える。"""
+    return tuple(getattr(tpl, "KEPT_SETS", (tpl.FROZEN_SET,) if hasattr(tpl, "FROZEN_SET") else ()))
+
+
 def _block(texts, lines, x, y, size, width):
     """文字を折り返して置き、次の y を返す。部品の置き場をこの下から始めるために y を返す。"""
     for raw in lines:
@@ -96,8 +104,9 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     if move:  # 負の対照のためだけ。
         by_key[move["name"]].x, by_key[move["name"]].y = move["x"], move["y"]
     for q in parts:
-        texts.append(TextBox(q.x + q.label_xy[0], q.y + q.label_xy[1], text_width(q.label, LABEL_SIZE),
-                             LABEL_SIZE * LINE, q.label, LABEL_SIZE, owner=q.key))
+        # 札は 1 行（label を label_xy に）か、label_lines の行ごと。行ごとの札も、部品の枠の内に収まるかを F5.text_overlap が見る（エンジン #135 と同じ）
+        for text, dx, dy in q.label_lines or [(q.label, *q.label_xy)]:
+            texts.append(TextBox(q.x + dx, q.y + dy, text_width(text, LABEL_SIZE), LABEL_SIZE * LINE, text, LABEL_SIZE, owner=q.key))
     y = _block(texts, ["用意する物"] + [f"・{m}" for m in tpl.materials(p)], text_x, left_y, BODY_SIZE, width)
     legend_y = y + 1
     # 谷と山の意味を添える（v8）。試行のつぶやき「谷折り、山折りがわからない」（11-04）。線の種類だけでは折る向きが伝わらなかった。

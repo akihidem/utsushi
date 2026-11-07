@@ -1,5 +1,7 @@
 """必須 2 種のうち虎の次の組（tora-v4、#115）。前の組 tora-v3 の紙と指紋は変えない（tests/test_floor_pin.py が見る）。御来迎は今の組 goraigo-v10 のまま
 （次の組は本人の決定 11-06 で形を見直す。下から押し上げる形と内筒）。
+虎の今の組は tora-v6 に上げた（tests/test_tora_v6.py）。tora-v4 は控えの組として刷れるので、この試験は雛形の組を tora-v4 に置いて、
+tora-v3 との違いを前と同じに見る（v6 に上げても v4 の作りが変わらない事も見る）。
 
 なぜ次の組か: 本人の答え（11-05）は、色の面を外にして折った。手順の「谷折り」のとおりに折ると、虎の胴は色の面が箱の内に入る。
 本人の指示は「次の版で直し、今の版の紙と指紋は変えない」。次の組には、本人のレビューと作成動画の札から採った案も入る（型紙エンジン
@@ -8,11 +10,15 @@ paper-to-toy の PR #106 1f4f0b1 と同じ形と字。手順 4 の「線のと�
 見る線:
 - 胴の折り線は刷った面から見て山折り。前の組は谷折りのまま。ほかの部品の折り線は変わらない
 - 手順の文の違いは、手順 4（線のとおり山折り）と、重りの腕の手順 8・9（EP-0011）だけ。手順の数と番号は変わらない
-- 札の名（2 頭・3 首の帯・4 尾・5 腕）・胴の上の面の竹串の点の線・5 腕の粘土の高さの点の線・2 枚目の側面は y だけ裏返す（EP-0016）
+- 札の名（2 頭・3 首の帯・4 尾・5 重りの腕）・胴の上の面の竹串の点の線・5 重りの腕の粘土の高さの点の線・2 枚目の側面は y だけ裏返す（EP-0016）
+- 5 重りの腕の札は「5 重」の下に「り」「の」「腕」を縦に並べた 4 行（型紙エンジン #135 と同じ行ごとの形）で、軸の穴と粘土の線の間の
+  腕の枠の内に置く。用意する物の字も「5 重りの腕」（本人の決定 11-07「v4 の紙も「5 重りの腕」に替える」。前は札も用意する物も「5 腕」で、
+  組み方の文と違った）。4 行が入らない浅い重りの寸法だけは「5 腕」の 1 行（3 首の帯の「3 帯」と同じ扱い）
 - 用意する物: 道具にセロハンテープとカッター、竹串と粘土の置き所・丸い印は穴・4 尾だけ色の理由
 - 凡例は刷った面から見た言い方。位置の印のある紙は「位置の印（切らない・折らない）」も。御来迎の紙と前の組の紙は前の字
 - 粘土の玉の大きさの床: 軸の竹串にかかる浅い重りと、玉の下が底に当たる深い重りを落とす（先の 1 つだけを言う）
 """
+import contextlib
 import json
 
 from shapely.geometry import LineString, box
@@ -65,10 +71,23 @@ def words(layout):
     return [t.text for t in layout["texts"] if t.text]
 
 
-# 1. 組の名前。前の組の名前は控えを刷る道として残す。御来迎は今の組のまま（前の組を持たない）
-assert (TIGER.SHEET_SET, TIGER.FROZEN_SET) == ("tora-v4", "tora-v3"), TIGER.SHEET_SET
-assert FAN.SHEET_SET == "goraigo-v10" and not hasattr(FAN, "FROZEN_SET"), FAN.SHEET_SET
-assert marks.FROZEN_SETS == {GORAIGO: "goraigo-v10"}, marks.FROZEN_SETS
+# 1. 組の名前。前の組の名前は控えを刷る道として残す。
+# 虎の今の組は tora-v7 で、tora-v4 は控えの組。ここからは雛形の組を tora-v4 に置く（控えの組を刷る道と同じ）
+assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v7", "tora-v3", ("tora-v3", "tora-v4")), TIGER.SHEET_SET
+TIGER.SHEET_SET = "tora-v4"
+# 御来迎も次の組（goraigo-v14）に上げた（tests/test_goraigo_v14.py）。この試験の御来迎の行は、前の組 goraigo-v10 に雛形を置いて前の字のままを見る
+assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v14", "goraigo-v10"), FAN.SHEET_SET
+assert marks.FROZEN_SETS == {}, marks.FROZEN_SETS
+
+
+class fan_old:
+    """御来迎の前の組（goraigo-v10）を組む。前の組の紙は前の印の文で刷る（tests/test_floor_pin.py と同じ渡し方）。"""
+
+    def __enter__(self):
+        self.keep, FAN.SHEET_SET = FAN.SHEET_SET, FAN.FROZEN_SET
+
+    def __exit__(self, *_):
+        FAN.SHEET_SET = self.keep
 
 # 2. 折り線: 胴が山折りになり、線の位置は前の組と同じ。ほかの部品の折り線は変わらない
 for hid, p in plans():
@@ -92,11 +111,14 @@ for sid in (GORAIGO, TORA):
     data, source = load(sid)
     h = next(x for x in data["hypotheses"] if x["id"] == data["sheet"])
     tid = h.get("template") or data.get("template", "slider_fan")
-    now = "".join("".join(words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])).split())
     raised = sid == TORA
-    assert ("思った事" in now) == raised and ("作る前に" in now) != raised, sid
-    assert ("".join(marks.HYPOTHESIS.split()) in now) == raised and ("".join(marks.HYPOTHESIS_FROZEN.split()) in now) != raised, sid
-    assert f"刷った組 {TEMPLATES[tid].SHEET_SET}" in words(compose(tid, h["params"], source)[1]), sid
+    if not raised:
+        source = {**source, "hypothesis_mark": marks.HYPOTHESIS_FROZEN}  # 御来迎の前の組は前の印の文で刷る
+    with (fan_old() if not raised else contextlib.nullcontext()):
+        now = "".join("".join(words(compose_sheet(tid, h["params"], source, h["name"], h["how_it_moves"])[0])).split())
+        assert ("思った事" in now) == raised and ("作る前に" in now) != raised, sid
+        assert ("".join(marks.HYPOTHESIS.split()) in now) == raised and ("".join(marks.HYPOTHESIS_FROZEN.split()) in now) != raised, sid
+        assert f"刷った組 {TEMPLATES[tid].SHEET_SET}" in words(compose(tid, h["params"], source)[1]), sid
 
 # 5. 用意する物: 首の形は道具にセロハンテープとカッター、竹串と粘土の置き所・丸い印は穴・4 尾だけ色の理由。吊る形と前の組は前の字
 for hid, p in plans():
@@ -106,15 +128,16 @@ for hid, p in plans():
     assert was[1] == "のり、はさみ、定規", (hid, was)
     if p["mount"] == "neck":
         assert got[1] == TOOLS_NECK, (hid, got)
-        assert got[2] == f"{was[2]}（胴の 2 つの穴・3 首の帯の穴・5 腕の上の穴に通す。胴の上の面の点の線の下を通る）", (hid, got[2])
-        assert got[3].startswith(f"油粘土 {p['weight_g']:g}g（") and "点の線の所に付ける" in got[3], (hid, got[3])
-        assert got[4] == "丸い印は穴（竹串の先であける）。4 尾は外に見えるので色を刷り、3 首の帯と 5 腕は胴の中に入るので白", (hid, got)
+        assert got[2] == f"{was[2]}（胴の 2 つの穴・3 首の帯の穴・5 重りの腕の上の穴に通す。胴の上の面の点の線の下を通る）", (hid, got[2])
+        assert got[3].startswith(f"油粘土 {p['weight_g']:g}g（5 重りの腕の下の穴の、") and "点の線の所に付ける" in got[3], (hid, got[3])
+        assert got[4] == "丸い印は穴（竹串の先であける）。4 尾は外に見えるので色を刷り、3 首の帯と 5 重りの腕は胴の中に入るので白", (hid, got)
+        assert not any("5 腕" in w for w in got), (hid, "用意する物に前の呼び方「5 腕」が残る", got)
     else:
         assert got == was, (hid, got, was)
 
 # 6. 札（EP-0016）: 2〜5 番に名。3 首の帯の札は真ん中の谷折りの線が字の「3」と「首」の間を通る。前の組は番号だけ。虎の胴の札の字に縞がかからない
 p = {**TIGER.DEFAULTS, "mount": "neck"}
-assert {q.key: q.label for q in TIGER.parts(p)} == {"body": "1 胴", "head": "2 頭", "strip": "3 首の帯", "tail": "4 尾", "drop": "5 腕"}
+assert {q.key: q.label for q in TIGER.parts(p)} == {"body": "1 胴", "head": "2 頭", "strip": "3 首の帯", "tail": "4 尾", "drop": "5 重りの腕"}
 with old_set():
     assert {q.key: q.label for q in TIGER.parts(p)} == {"body": "1 胴", "head": "2", "strip": "3", "tail": "4", "drop": "5"}
 strip = part(p, "strip")
@@ -137,7 +160,7 @@ for mount in ("neck", "hang"):
     with old_set():
         assert label_hits_stripe(q), (mount, "前の組の札の位置が変わった（または当たりの見方が空振り）")
 
-# 7. 印（EP-0011・EP-0016）: 5 腕に軸の穴から weight_below_axle 下の穴と、その高さの点の線 2 本（穴の左右）。胴の上の面に竹串の点の線。
+# 7. 印（EP-0011・EP-0016）: 5 重りの腕に軸の穴から weight_below_axle 下の穴と、その高さの点の線 2 本（穴の左右）。胴の上の面に竹串の点の線。
 # 糸で下げる形は、玉の下が底から 3mm 以上離れる寸法の時だけ（既定の寸法では玉 約 15mm が底に当たるので出ない）。前の組には印が無い
 arm = part(p, "drop")
 assert [h[:2] for h in arm.holes] == [(4, 4), (4, 4 + p["weight_below_axle"])], arm.holes
@@ -151,6 +174,51 @@ L = TIGER.hang_thread_mm(deep)
 assert L is not None and f"玉の上は穴から {TIGER.HANG_MIN}〜{L}mm" in TIGER.steps(deep)[7], (L, TIGER.steps(deep)[7])
 with old_set():
     assert len(part(p, "drop").holes) == 1 and not part(p, "drop").art and not [a for a in part(p, "body").art if a["kind"] == "mark"]
+
+# 7b. 5 重りの腕の札（本人の決定 11-07「v4 の紙も「5 重りの腕」に替える」。札の刷る作りは型紙エンジン #135 と同じ行ごとの形・窓口の決定）。
+# 刷る紙と同じ字の箱で見る: 札は「5 重」の下に「り」「の」「腕」を「重」の列にそろえた 4 行。どの行も腕の枠の内で、軸の穴の下（縁から 0.6mm）から
+# 粘土の高さの点の線の上（下の穴の半径と 1mm の空き）までに入り、行どうしが重ならない。型紙の検査も通り、刷る札は 4 行のまま。
+# 4 行が入らない浅い重り（約 17.2mm より軸に近い）は「5 腕」の 1 行で、下の穴と点の線に重ならない。前の組 tora-v3 は「5」の 1 行のまま
+def arm_lines(q):
+    arm = part(q, "drop")
+    h = LABEL_SIZE * LINE
+    return arm, [(box(x, y, x + text_width(t, LABEL_SIZE), y + h), t) for t, x, y in arm.label_lines]
+
+
+arm, boxes = arm_lines(p)
+wy = 4 + p["weight_below_axle"]
+assert arm.label == "5 重りの腕" and [t for _, t in boxes] == ["5 重", "り", "の", "腕"], (arm.label, arm.label_lines)
+assert all(box(0, 0, arm.width, arm.height).contains(b) for b, _ in boxes), ("札が腕の枠をまたぐ", [b.bounds for b, _ in boxes])
+assert all(b.bounds[1] >= 4 + 1.0 and b.bounds[3] <= wy - (TIGER.THREAD_R + 1.0) for b, _ in boxes), ("札が軸の穴か粘土の線にかかる", [b.bounds for b, _ in boxes])
+assert all(n.bounds[1] >= m.bounds[3] - 1e-9 for (m, _), (n, _) in zip(boxes, boxes[1:])), "札の行どうしが重なる"
+col = boxes[0][0].bounds[0] + text_width("5 ", LABEL_SIZE)
+assert all(abs(b.bounds[0] - col) < 1e-9 for b, _ in boxes[1:]), ("下の 3 字が「重」の列にそろわない", [b.bounds for b, _ in boxes])
+data, source = load(TORA)
+_, sheet_layout, sheet_fails = compose("pivot_counterweight", data["hypotheses"][0]["params"], source)
+placed = next(x for x in sheet_layout["parts"] if x.key == "drop")
+drawn = [t.text for t in sorted((t for t in sheet_layout["texts"] if t.owner == "drop"), key=lambda t: t.y)]
+assert not sheet_fails and drawn == ["5 重", "り", "の", "腕"], ([f.line() for f in sheet_fails], drawn)
+with old_set():
+    old_arm = part(p, "drop")
+    assert old_arm.label == "5" and not old_arm.label_lines and old_arm.label_xy == (1, 8), (old_arm.label, old_arm.label_lines)
+for wb, want in ((17.3, "5 重りの腕"), (17.1, "5 腕"), (10, "5 腕"), (TIGER.LOWER_HOLE_MIN - 0.5, "5 腕")):
+    q = {**p, "weight_below_axle": wb}
+    arm, boxes = arm_lines(q)
+    assert arm.label == want and len(boxes) == (4 if want == "5 重りの腕" else 1), (wb, arm.label, arm.label_lines)
+    assert "5 重りの腕" in "".join(TIGER.materials(q)) and "5 腕" not in "".join(TIGER.materials(q)), (wb, TIGER.materials(q))
+    if want == "5 腕" and wb >= TIGER.LOWER_HOLE_MIN:
+        (b, _), = boxes
+        band = TIGER.THREAD_R + 1.0
+        assert b.bounds[3] <= 4 + wb - band + 1e-6 or b.bounds[1] >= 4 + wb + band - 1e-6, ("「5 腕」の 1 行が下の穴か点の線にかかる", wb, b.bounds)
+# 「5 腕」の 1 行は、下の穴のある浅い寸法を 0.07mm ずつ全部見る（粘土が軸に近いと、札を下の穴の下へ逃がす。#484 の試験と同じ見方）
+for i in range(400):
+    wb = round(TIGER.LOWER_HOLE_MIN + i * 0.07, 3)
+    if wb >= 17.2:
+        break
+    arm, ((b, t),) = arm_lines({**p, "weight_below_axle": wb})
+    band = TIGER.THREAD_R + 1.0
+    assert t == "5 腕" and (b.bounds[3] <= 4 + wb - band + 1e-6 or b.bounds[1] >= 4 + wb + band - 1e-6), ("「5 腕」の 1 行が下の穴か点の線にかかる", wb, b.bounds)
+    assert b.bounds[1] >= 4 + 1.0 and b.bounds[3] <= arm.height, ("「5 腕」の 1 行が軸の穴にかかるか腕の外", wb, b.bounds)
 
 # 8. 2 枚目の側面は y だけ裏返し、2 枚とも虎の鼻先が軸の穴の側（前の端）に来る。前の組は 180° 回したまま（頭が後ろの端）
 nose = min(range(len(TIGER._BODY)), key=lambda i: TIGER._BODY[i][0])
@@ -178,8 +246,9 @@ for h in data["hypotheses"]:
 assert MARK_LEGEND in words(compose("pivot_counterweight", {"mount": "neck"}, source)[1])
 gdata, gsource = load(GORAIGO)
 gh = next(x for x in gdata["hypotheses"] if x["id"] == gdata["sheet"])
-gwords = words(compose("slider_fan", gh["params"], gsource)[1])
-assert all(w in gwords for w in LEGEND_OLD) and MARK_LEGEND not in gwords, "御来迎の凡例が変わった"
+with fan_old():
+    gwords = words(compose("slider_fan", gh["params"], gsource)[1])
+assert all(w in gwords for w in LEGEND_OLD) and MARK_LEGEND not in gwords, "御来迎の前の組の凡例が変わった"
 
 # 10. 粘土の玉の大きさの床: 軸の竹串にかかる浅い重りと、玉の下が底に当たる深い重りを落とす。両方起きる寸法では先の 1 つだけ。重りの別の落ちがあれば言わない
 assert any("軸の竹串にかかる" in f.message for f in TIGER.check_physics({**p, "weight_below_axle": 5}))

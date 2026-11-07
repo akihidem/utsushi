@@ -23,6 +23,8 @@ from web.tsukuru import PRIVACY  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -55,7 +57,7 @@ def post(path, data, origin=None):
         return e.code, e.read().decode(), dict(e.headers)
 
 
-def step(n, event, hid="H-A", **more):
+def step(n, event, hid=GS, **more):
     return post(f"/toy/{G}/step", {"hypothesis": hid, "step": str(n), "event": event, **more})
 
 
@@ -66,13 +68,14 @@ assert get(f"/toy/{G}/tsukuru")[0] == 303
 body = urllib.request.urlopen(base + f"/toy/{G}/tsukuru").read().decode()
 assert "先に紙を作ると、作りながら見る頁が開きます" in body and 'class="tsukuru' not in body
 assert step(1, "next")[0] == 422 and f'href="/toy/{G}/tsukuru"' not in get(f"/toy/{G}")[1]
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
-assert f'href="/toy/{G}/tsukuru"' in get(f"/toy/{G}")[1]
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
+# 刷った後も、玩具の頁に入口を出さない: 作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4。玩具の頁の作る口は手帖 1 つ）。頁そのものは開く
+assert f'href="/toy/{G}/tsukuru"' not in get(f"/toy/{G}")[1]
 
 # 開く: 手順の文（手順の紙と同じ物）と、手順の紙の絵、断り
 code, t = get(f"/toy/{G}/tsukuru")
 assert code == 200 and 'class="tsukuru' in t
-texts = tsukuru.step_texts(G, "H-A")
+texts = tsukuru.step_texts(G, GS)
 assert len(texts) >= 3 and all(html.escape(s, quote=True) in t for s in texts)
 # 11-06 から刷る時に手順の紙を組まない（窓口の決定 推し A）ので、手帖と同じ組み方の絵を出す（字の無い絵で、読み上げからは隠れる）
 # 見せるのは今の手順の 1 枚だけ（手順ごとに置き、送る時に切り替える）
@@ -98,7 +101,7 @@ for w in ("成功", "失敗", "正解", "順位", "点数", "紙吹雪", "confet
 code, body, _ = step(1, "start", json="1")
 assert code == 200 and json.loads(body) == {"ok": True, "step": 1}
 code, _, headers = step(1, "next")
-assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&v=1&n=2"
+assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h={GS}&v=1&n=2"
 assert json.loads(step(2, "back", json="1")[1])["step"] == 1
 assert step(2, "stuck")[0] == 303 and step(2, "stuck", json="1")[0] == 200 and step(3, "stuck", json="1")[0] == 200
 assert step(len(texts), "next", json="1")[1] == json.dumps({"ok": True, "step": len(texts)}), "最後の手順より先へは進まない"
@@ -109,14 +112,14 @@ assert len(files) == 7, "最後の手順の次へは残さない（動かない�
 for f in files:
     rec = json.loads(f.read_text(encoding="utf-8"))
     assert set(rec) == set(making_log.STEP_FIELDS), rec
-    assert rec["source_id"] == G and rec["hypothesis_id"] == "H-A" and rec["sheet_version"] == 1 and isinstance(rec["step"], int)
+    assert rec["source_id"] == G and rec["hypothesis_id"] == GS and rec["sheet_version"] == 1 and isinstance(rec["step"], int)
     assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d\+09:00", rec["at"]), rec["at"]  # 分まで
     assert re.fullmatch(r"step-\d{8}-\d{4}-[0-9a-f]{8}\.json", f.name), f.name
 sm = making_log.summary(G)
 assert sm["stuck_steps"] == {2: 2, 3: 1} and sm["steps_done"] == 1
 # 止まったの文は、押した時だけ出る（JS が無い時は ?ev= で出す）
 assert '<p id="msg-stuck" class="msg" hidden>' in t
-assert '<p id="msg-stuck" class="msg">' in get(f"/toy/{G}/tsukuru?h=H-A&n=2&ev=stuck")[1]
+assert '<p id="msg-stuck" class="msg">' in get(f"/toy/{G}/tsukuru?h={GS}&n=2&ev=stuck")[1]
 # 作る側の頁に、止まった手順とできたの回数。学ぶ人の頁には出さない
 lp = get(f"/loop/{G}")[1]
 assert "止まった手順" in lp and "<td>手順 2</td><td>2 回</td>" in lp and "<td>手順 3</td><td>1 回</td>" in lp and "できたの札: 1 回" in lp
@@ -127,9 +130,9 @@ for bad in (step(1, "win"), step("abc", "next"), step(0, "next"), step(999, "nex
     assert bad[0] == 422, bad[:2]
 assert len(list((pathlib.Path(DATA) / "making").glob("step-*.json"))) == 7
 # 別の出所からは受けない
-assert post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": "1", "event": "next"}, origin="http://evil.example")[0] == 403
+assert post(f"/toy/{G}/step", {"hypothesis": GS, "step": "1", "event": "next"}, origin="http://evil.example")[0] == 403
 # 道具の側: 決まりの外は残さない
-assert making_log.add_step(G, "H-A", 1, 1, "win") is None and making_log.add_step(G, "H-A", 1, 0, "next") is None and making_log.add_step(G, "H-A", 1, True, "next") is None
+assert making_log.add_step(G, GS, 1, 1, "win") is None and making_log.add_step(G, GS, 1, 0, "next") is None and making_log.add_step(G, GS, 1, True, "next") is None
 
 # ---- 「ここで止まった」から、その段のまま聞ける（Issue #118・U-44 の「聞く」）
 # 札の字と、聞く口の作り: 見出し・声の釦（音声認識が在る画面でだけ JS が出す）・字の欄
@@ -147,7 +150,7 @@ assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${s
 # 3 つ目は話す口（Issue #279）。送り先は部品のフォームの action（/toy/<印>/talk）で、形は字のフォームだけ
 assert t.count("fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}") == 1 and f'<form method="post" action="/toy/{G}/talk">' in t
 # 止まった段に戻った頁（JS が無い時の戻り先）は、その段を名指しして聞く口を開く
-back = get(f"/toy/{G}/tsukuru?h=H-A&n=2&ev=stuck")[1]
+back = get(f"/toy/{G}/tsukuru?h={GS}&n=2&ev=stuck")[1]
 assert '<div class="henji open" id="henji"' in back and 'id="ask-head">手順 2 で止まった所を聞く</p>' in back
 assert '<div class="henji" id="henji"' in t  # ふだんは開いていない
 # 止まった段が残り、そのまま聞く口が答える。who と step を添えても通る（サーバが受けない版では、余った欄は読まれないだけ）
@@ -156,27 +159,27 @@ before = len(list((pathlib.Path(DATA) / "making").glob("step-*.json")))
 code, body, _ = step(4, "stuck", json="1", who=WHO)
 assert code == 200 and json.loads(body) == {"ok": True, "step": 4}
 code, _, headers = step(4, "stuck", who=WHO)
-assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h=H-A&v=1&n=4&ev=stuck"
+assert code == 303 and headers["Location"] == f"/toy/{G}/tsukuru?h={GS}&v=1&n=4&ev=stuck"
 new = sorted((pathlib.Path(DATA) / "making").glob("step-*.json"), key=lambda f: f.stat().st_mtime)[before:]
 assert len(new) == 2
 for f in new:
     rec = json.loads(f.read_text(encoding="utf-8"))
-    assert rec["step"] == 4 and rec["event"] == "stuck" and rec["hypothesis_id"] == "H-A"
+    assert rec["step"] == 4 and rec["event"] == "stuck" and rec["hypothesis_id"] == GS
     assert set(rec) - {"who"} == set(making_log.STEP_FIELDS) - {"who"}, rec  # 印を残す版でも、ほかの欄は増えない
     assert rec.get("who", WHO) == WHO
 assert making_log.summary(G)["stuck_steps"][4] == 2
-code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって何？", "step": "4", "who": WHO})
+code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "谷折りって何？", "step": "4", "who": WHO})
 assert code == 200 and "手前にへこむ" in json.loads(body)["text"]
 asked = [a for a in making_log.asks(G) if a.get("question") == "谷折りって何？"]
-assert len(asked) == 1 and asked[0]["hypothesis_id"] == "H-A" and asked[0].get("step", 4) == 4 and asked[0].get("who", WHO) == WHO
+assert len(asked) == 1 and asked[0]["hypothesis_id"] == GS and asked[0].get("step", 4) == 4 and asked[0].get("who", WHO) == WHO
 # 仕組みは答えない線は、聞く口の側のまま（段を添えても変わらない）
-code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "どういう仕組みで動くの？", "step": "4", "who": WHO})
+code, body, _ = post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "どういう仕組みで動くの？", "step": "4", "who": WHO})
 assert code == 200 and "試して確かめる所" in json.loads(body)["text"]
 # 決まりの外の印を添えられても、札は残る（印の形を見るのはサーバの側。ここでは落ちない事だけ）
 assert step(4, "next", json="1", who="x")[0] in (200, 422)
 # 検品の指摘の再発の見張り
 # 読み上げの間は聞き取らない（自分の答えを聞き取って、問いとして送らない）。作りながら見る頁と手帖の両方
-page_js = get(f"/toy/{G}/tsukuru?h=H-A")[1]
+page_js = get(f"/toy/{G}/tsukuru?h={GS}")[1]
 techo_js = get(f"/toy/{G}/techo")[1]
 for js in (page_js, techo_js):
     assert "speaking" in js and "sayStart" in js and "sayEnd" in js, "読み上げの間は音声認識を止める"
@@ -195,7 +198,7 @@ assert "tile('done')" in page_js and "say(items[n-1].textContent)" in page_js
 assert 'data-v="1"' in page_js and 'name="sheet_version" value="1"' in page_js and "b.set('sheet_version',ver)" in page_js
 assert "sheet_version" in techo_js and 'data-v="1"' in techo_js and "utsushi-who" in techo_js
 # 手順の番号は仮説ごとに別物。最後の手順の「次の手順へ」は残さない（無い手順が途中でやめた段に出ない）
-total = tsukuru.count(G, "H-A")
+total = tsukuru.count(G, GS)
 before = len(making_log.steps(G))
 assert step(total, "next", json="1", who=WHO)[0] == 200
 assert len(making_log.steps(G)) == before, "最後の手順の次へは残さない"

@@ -46,14 +46,28 @@ NO_FIT = "今の型紙には合わないので、型紙なしの紙（身の回�
 OK = "この紙にする"
 DONE = "紙ができました。"
 SEE = "紙を見る"
-MAKE = "作りながら見る（机の端に置く・試作）"  # 玩具の頁の入口と同じ字（新しい文を足さない）
+# 作る口の字。玩具の頁の作る口と同じ字（新しい文を足さない）。前は作りながら見る頁の口の字だったが、作りながら見る頁を手帖へ寄せたので
+# （窓口の決め 11-07 の 4）、窓の「つくる」と同じ字にする。手帖は、この画面が話した考えから作った紙を自分で開く（play_server の手帖の口）
+MAKE = "つくる"
 ASKED = "頼みました。"
 FAILED = "紙を作れませんでした。もう一度押してください。"
 
 SAME = "もとの紙のまま"
 # 寸法の呼び名。今ある呼び名（toy._param_label）に無い物だけ、必須 2 種の分を足した（同じ決定）。ほかの玩具の呼び名は新しい文なので、足す時に本人の確認が要る。
-NAMES = {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方"}
-VALUES = {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る"}
+# 軸の高さ・脚の高さ・胴の角を落とす幅・顔の数は、虎の今の組（tora-v6）のたたき台の寸法に入るので足した（窓口が本人の委任で推しの字を
+# 選んだ、2026-11-06）。呼び名の無い寸法がたたき台にあると ready が偽になり、考えの節が頁から消える。同じ時に選んだ頭の幅・軸から重りまでは、
+# 今ある呼び名（頭の幅（mm）・重りの軸からの下がり（mm））が先にあるので足さない（同じ寸法に 2 つの呼び名を作らない）
+# 重りの穴の後ろへのずれ・軸と前の壁の間は、虎の今の組（tora-v7）のたたき台の寸法に入るので足した（窓口の決定 2026-11-07 案 A）。
+# 同じ時に増えた当たりの検査（fit_check）は寸法でない印なので呼び名を作らず、節に出さない（雛形の UNSHOWN_PARAMS）
+# 筒の高さ・台の一辺・像の幅・像の高さは、御来迎の次の組（goraigo-v14）のたたき台の寸法に入るので足した（窓口が本人の委任で選んだ案 A、
+# 2026-11-06）。呼び名の無い寸法がたたき台にあると ready が偽になり、考えの節が頁から消える
+NAMES = {"push_part": "押す所", "hub": "扇の中心", "pusher_height": "内筒の高さ（mm）", "mount": "頭の付け方",
+         "axle_height": "軸の高さ（mm）", "leg_height": "脚の高さ（mm）", "body_round": "胴の角を落とす幅（mm）", "head_sides": "顔の数",
+         "clay_back": "重りの穴の後ろへのずれ（mm）", "axle_back": "軸と前の壁の間（mm）",
+         "tube_height": "筒の高さ（mm）", "base_side": "台の一辺（mm）", "figure_w": "像の幅（mm）", "figure_h": "像の高さ（mm）"}
+# "rise" は御来迎の次の組（goraigo-v14）のたたき台 H-C の形。「押す所」は押す部品の名で、v13 から内筒の内に貼った割り箸（部品表の 7 柄）を
+# 押すので、柄の形（stick）と同じ「柄」にする（新しい字にしない）
+VALUES = {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る", "rise": "柄"}
 
 # 本人が画面で採った印（adopt_words の decided_by）。名前は受けない決まりなので、役の名前だけを残す。
 BY_PAGE = "画面で本人"
@@ -210,7 +224,15 @@ def ready(sid):
     """節を出す玩具か。たたき台の寸法が全部読める玩具だけ（今は必須 2 種）。内部の名前（board_w など）を学ぶ人に見せないため。
     ほかの玩具の呼び名は新しい文で、足す時に本人の確認が要る。足せば、ここが自然に真になる。"""
     template, params = hypotheses.load(sid).get("template", "slider_fan"), words.base_of(sid)[1]
-    return bool(params) and all(readable(template, k, v) for k, v in params.items())
+    return bool(params) and all(readable(template, k, v) for k, v in params.items() if shown(template, k))
+
+
+def shown(template, k):
+    """学ぶ人に出す寸法か。雛形が「見せない寸法」と名指しした物（UNSHOWN_PARAMS。虎の当たりの検査の印 fit_check）は、呼び名を作らず節に出さない。
+    なぜ: 寸法でない 0・1 の印を学ぶ人に見せても、話して変える物にならない（窓口の決定 2026-11-07）。呼び名の無い寸法は変えられない決まり（words）で、変えられもしない"""
+    from omochae.compose import TEMPLATES
+
+    return k not in getattr(TEMPLATES.get(template), "UNSHOWN_PARAMS", ())
 
 
 def changeable(sid):
@@ -253,8 +275,8 @@ def _status(sid, w):
         # 紙を作った直後に、その紙の絵を画面に出す（#145 の要件を話す道でも）。絵は刷る時に PDF と一緒にできる。押すと PDF を開く。
         pic = name[:-len(".pdf")] + ".png"
         fig = f'<figure class="own-sheet" style="margin:12px 0"><a href="/sheet/{esc(sid)}/{esc(name)}"><img src="/sheet/{esc(sid)}/{esc(pic)}" alt="{esc(w["name"])}" style="display:block;width:100%;border:1px solid var(--frame)"></a></figure>' if (out_dir(sid) / pic).exists() else ""
-        # 次の段（作る）への道。その紙の手順の頁を開き、工夫がこの紙に付く（本人の描く一周の順）。
-        make = f'<p><a class="btn quiet" href="/toy/{esc(sid)}/tsukuru?h={esc(w.get("own_id", ""))}">{esc(MAKE)}</a></p>'
+        # 次の段（作る）への道。手帖を開くと、この画面が話した考えから作った紙を作り、工夫がこの紙に付く（本人の描く一周の順）。
+        make = f'<p><a class="btn quiet" href="/toy/{esc(sid)}/techo">{esc(MAKE)}</a></p>'
         return f'{said}<p>{esc(DONE)} <a href="/sheet/{esc(sid)}/{esc(name)}">{esc(SEE)}</a></p>{fig}{make}'
     r = w.get("result") or {}
     if r.get("fits"):

@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: 7e0600f4（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 255, in <module>
+    assert "error" not in got, (name, got)
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: ('縦・紙に合わせる', {'error': "TypeError: parameter 1 is not of type 'Element'.\n    at http://127.0.0.1:46677/toy/NDL-1187053-R0000005-L/kasane?walk=quad:470:15\n    at http://127.0.0.1:46677/toy/NDL-1187053-R0000005-L/kasane?walk=quad:482:3"})
+rc=1

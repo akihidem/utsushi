@@ -6,7 +6,7 @@
 - 皮はサイトごとに 1 つ（本人の決定 11-05 朝「日本画かジンで行く。それぞれのデザインのサイトを 2 つ作る」）。サーバを立てる時に
   --look で決め（play_server.serve の look）、頁の中に切り替えは置かない。cookie も ?look= も使わない。DEFAULT は --look を省いた時の皮。
   大判（A）は外した（同じ決定「他のデザインは要らない」）。
-- 動きは入口の扇の札だけ。内側の頁は静か（research/19・24 の線のまま）。見えた時に起こす仕掛け（IntersectionObserver）は置かない。
+- 動きは入口のせり上がりだけ（扇の札は 11-07 に外した。本人の言葉「扇の間要らない」）。内側の頁は静か（research/19・24 の線のまま）。見えた時に起こす仕掛け（IntersectionObserver）は置かない。
 - 図は国立国会図書館の頁の写しだけ。新しい絵は作らない。小さな字も 4.5:1 を割らない（research/24）。
 - 成績・順位に見える物（点・票・数の回る表示・祝いの演出）は部品に入れない（J-025、philosophy.md）。
 """
@@ -205,6 +205,16 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .toys .nm{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;letter-spacing:.08em;line-height:1.6;margin-top:8px}
 .toys .big{grid-column:span 2;grid-row:span 2}.toys .big .pic{aspect-ratio:1600/2656;background-size:112% 112%;background-position:85% 50%}
 @media (max-width:680px){.toys .big{grid-column:auto;grid-row:auto}}
+/* えらぶ の棚の中の敷き詰め。CSS の列だけ。1 列 96px 以上で 7 列まで。絵と絵の間は --ma の 1 か所。狭い幅でも頁の左右は 24px 以上 */
+.narabi{display:block;columns:7 96px;column-gap:var(--ma,16px)}
+.narabi li{break-inside:avoid;margin:0 0 var(--ma,16px)}
+.narabi .pic{display:block;width:100%;height:auto;box-sizing:border-box}
+.narabi .nopic{aspect-ratio:3/4}
+/* 名前は絵の下に小さく 1 行 */
+.narabi .nm{font-size:12px;margin-top:6px;-webkit-line-clamp:1}
+/* 頭の 1 行は幅 390 で 1 行に入る大きさ */
+.erabu h1{font-size:clamp(19px,4.6vw,30px);letter-spacing:.14em}
+@media (max-width:820px){.erabu{padding-left:8px;padding-right:8px}}
 .sample{display:inline-block;background:var(--accent);color:var(--onaccent);font-size:12px;letter-spacing:.2em;padding:1px 8px;margin-right:6px}
 .is-sample{border-top:1px dashed var(--frame)}.is-sample svg{height:110px;width:auto;border:1px dashed var(--frame)}.samples{margin-top:18px}
 .foot{padding:48px 5vw 40px;font-size:12px;color:var(--mute);letter-spacing:.1em;text-align:center;border-top:1px solid var(--rule)}
@@ -227,7 +237,8 @@ def nav(skin, current="", path="/", lang="ja"):
     here = current or path
     if sid:
         station = "のこす" if "/techo/kiroku" in path else "つくる"
-    elif here.startswith("/toys"):
+    elif here.startswith("/toys") or current == "/":
+        # 入口が えらぶ（本人のサイト体験レビュー 11-07 の 4）。入口でも えらぶ に印を付ける
         station = "えらぶ"
     elif here.startswith("/gallery"):
         station = "もちよる"
@@ -235,14 +246,15 @@ def nav(skin, current="", path="/", lang="ja"):
         station = "よむ"
     else:
         station = ""
-    to = {"えらぶ": "/toys", "つくる": f"/toy/{sid}" if sid else "", "のこす": f"/toy/{sid}/techo/kiroku" if sid else "", "もちよる": "/gallery", "よむ": YOMU[0]}
+    to = {"えらぶ": "/", "つくる": f"/toy/{sid}" if sid else "", "のこす": f"/toy/{sid}/techo/kiroku" if sid else "", "もちよる": "/gallery", "よむ": YOMU[0]}
     cur = lambda name: ' aria-current="page"' if name == station else ""  # noqa: E731
     item = lambda name: (f'<a href="{to[name]}"{cur(name)}>{esc(name)}</a>' if to[name]  # noqa: E731
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
     # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない
     items = "".join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span><a class="nav-lang" href="/en" lang="en">English</a>'
-    # 「うつし」の印は入口だけ（呼び手が current="/" を渡す）。断りの頁などは道が "/" でも、どこにもいないので印を付けない（前の帯と同じ）
-    brand = ' aria-current="page"' if current == "/" else ""
+    # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
+    # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
+    brand = ""
     return f'<nav class="nav"><a class="brand" href="/"{brand}>うつし</a>{items}</nav>'
 
 

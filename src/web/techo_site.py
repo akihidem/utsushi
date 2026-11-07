@@ -330,10 +330,17 @@ def own_item(sid, data, r):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
+# 合言葉なしの場で上げた直後の返事に続ける 1 行（窓口の決定 11-06 夜・案 A。字はその決定の字のまま）。上げた物は、確かめる前は上げた画面にだけ出て
+# ギャラリーには出ないので、並ばない理由を上げた時に言う。合言葉付きの場も同じ線だが、決定は合言葉なしの場の分なので、そこだけに出す
+PUBLIC_UPLOADED = "写真は、人が確かめてから、みんなの所に出ます。"
+UPLOADED = "上げました"  # 手帖の script（techo_step）が上げた後に渡す返事の字
+
+
 def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
-    """他の人が作った物のギャラリーと「職人の言葉」の枠（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
+    """他の人が作った物のギャラリー（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
+    前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
-    職人の言葉は、持ち寄りの場（J-021）と有識者の声（U-02）が入る所として枠だけを置く。"""
+    """
     cards, own = "", ""
     for sid in sids:
         data = hypotheses.load(sid)
@@ -345,7 +352,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 continue
             cards += made_item(sid, data, r, photos, public)
     real = bool(cards or own)
-    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
     # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
@@ -353,21 +361,45 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
-    from .demo_samples import uploads_html, voice_html
+    from .demo_samples import uploads_html
     # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
     sample = uploads_html()
     cards += f'<details class="samples-fold"><summary>見本</summary>{sample}</details>' if (real and sample) else sample
-    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
-    # 寄せられた声（持ち寄りの入口から来た物）は、上げた物と職人の言葉の間に置く（本人の指示 11-05: デモなので想定の内容で）。見本は札と架空の一文つき。
-    from .demo_samples import voices_html
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
-    return ('<div class="gallery"><div class="top"><h1>作った物と職人の言葉</h1><a href="/">入口へ</a></div>'
+    return ('<div class="gallery"><div class="top"><h1>作った物</h1><a href="/">入口へ</a></div>'
             '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
-            '<nav class="jump" aria-label="この頁の節"><a href="#ageta">他の人が作った物</a><a href="#yose">寄せられた声</a><a href="#shokunin">職人の言葉</a></nav>'
+            # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
+            # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
-            f'{note}{own}{cards}</section>'
+            f'{note}{own}{cards}</section></div>')
+
+
+VOICES_STYLE = """
+.voices{display:grid;gap:22px}
+.voices .panel{border:1px solid var(--frame);border-radius:0;padding:18px;display:grid;gap:14px;background:var(--paper)}
+.voices .mark{font-size:22px;letter-spacing:.15em;margin:0}
+.voices p{margin:0}
+.voices .samples{display:grid;gap:10px;margin:0}
+.voices .is-sample{border:1px dashed var(--frame);padding:10px}
+.voices .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
+"""
+
+
+def voices_sections():
+    """寄せられた声と職人の言葉の 2 つの節（持ち寄りの入口のフォームを含む）。序の頁（よむ。about.page）の足に置く。
+    本人のサイト体験レビュー（11-07）の言葉 6「残すと持ち寄るが同じに聞こえて分かりにくい。残す＝作った記録を残す事、に寄せる。
+    職人の言葉や、昔遊んだ人の寄せる話の入口は、作る側へ合体してもよい。」と、本人の答え「反映してください。…要点の通りで進めてください。」による
+    （直しの設計の D。UX の担当の読み ②: のこす は作った記録を残す事に寄せ、職人の言葉と寄せる話の入口を作る側へ。帯の駅は替えない）。
+    移し先を序の頁にしたのは、直しの設計の「玩具の頁の足の畳みか よむ」のうち、玩具の頁は別の直しの担当が持つため（統括の分担 11-07）。
+    字は前のギャラリーの節のまま（id も yose・shokunin のまま。前のギャラリーの #yose と #shokunin への道は、序の頁で同じ節に着く）。
+    見た目はギャラリーと同じ。ギャラリーの CSS は .gallery の下と頁の幅（main:has(.gallery)）を持つので、序の頁の幅を変えないよう、
+    この 2 つの節だけを包む VOICES_STYLE を別に持つ。"""
+    from .demo_samples import voice_html, voices_html
+
+    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    return ('<div class="voices">'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
             f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
@@ -396,12 +428,19 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
                         else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="上げた写真" loading="lazy">') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
         who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
-        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}'
+        # 合言葉なしの場には進行者がいないので、上げた画面にだけ「取り下げる」を置く（窓口の決定 11-06 夜・案 A）。押すと、この記録の写真と動画が
+        # 置き場ごと消え、ギャラリーからも消える。合言葉付きの場は、今までどおり進行者に記録の番号を伝える形（釦は出さない）
+        drop = (f'<form method="post" action="/record/{esc(r["id"])}/media/withdraw"><button type="submit" class="btn quiet">取り下げる</button></form>'
+                if public and media_review.uploaded_here(r["id"], media_of(r["id"]), up_key) else "")
+        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
+    from . import naoru  # 循環を避けて、ここで読む（hanasu と同じ）
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
+            # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。頁の頭に 1 回
+            + naoru.box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。

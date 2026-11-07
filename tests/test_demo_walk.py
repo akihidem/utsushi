@@ -27,6 +27,9 @@ port = server.server_address[1]
 threading.Thread(target=server.serve_forever, daemon=True).start()
 host = f"{(server.lan_hosts or ('127.0.0.1',))[0]}:{port}"
 SID = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(SID)["id"]
 
 
 # 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。説明と字を足す口は、その画面にだけ開く）
@@ -52,21 +55,21 @@ assert code == 200 and f"/toy/{SID}".encode() in top
 # 予想の段は無い（#242）。開いたらすぐ手帖が開く
 assert call(f"/toy/{SID}/techo")[0] == 200
 # 型紙
-assert call(f"/toy/{SID}/print", {"hypothesis": "H-A"})[0] in (200, 303)
-code, pdf = call(f"/sheet/{SID}/H-A_v1.pdf")
+assert call(f"/toy/{SID}/print", {"hypothesis": GS})[0] in (200, 303)
+code, pdf = call(f"/sheet/{SID}/{GS}_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF", "刷った紙が開ける（作るのはこの紙で）"
-assert call(f"/sheet/{SID}/H-A_v1_after.pdf")[0] == 403, "試した後の紙は記録の前は渡さない"
+assert call(f"/sheet/{SID}/{GS}_v1_after.pdf")[0] == 403, "試した後の紙は記録の前は渡さない"
 # 手帖と質問（鍵なし: 決まった言葉への答え）
 assert call(f"/toy/{SID}/techo")[0] == 200
-code, ans = call(f"/toy/{SID}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})
+code, ans = call(f"/toy/{SID}/ask-json", {"hypothesis": GS, "question": "谷折りって？"})
 got = json.loads(ans)
 assert code == 200 and got["from"] == "glossary" and got["text"], got
 # 語が入っていても作り方を聞く問いには、語の説明だけを返さない（#287）
-code, ans = call(f"/toy/{SID}/ask-json", {"hypothesis": "H-A", "question": "蛇腹が固定できない。どうしたらいい？"})
+code, ans = call(f"/toy/{SID}/ask-json", {"hypothesis": GS, "question": "蛇腹が固定できない。どうしたらいい？"})
 got = json.loads(ans)
 assert code == 200 and got["from"] == "no_key" and got["text"] != ask.GLOSSARY["蛇腹"], got
 # 上げる（記録 → 写真）
-code, rec = call(f"/toy/{SID}/record-json", {"hypothesis": "H-A", "result": "動いた", "note": "筒を先に丸めた"})
+code, rec = call(f"/toy/{SID}/record-json", {"hypothesis": GS, "result": "動いた", "note": "筒を先に丸めた"})
 rid = json.loads(rec)["id"]
 buf = io.BytesIO()
 Image.new("RGB", (64, 48), (200, 180, 140)).save(buf, "JPEG")
@@ -78,11 +81,11 @@ code, techo = call(f"/toy/{SID}/techo/kiroku")
 assert "次の版".encode() in techo, "説明の後に次の版の口が出る"
 # 次の版
 form = {"interpretation": "折りが多く、筒の口に当たって開き切らない", "param": "fold_count", "why": "口に当たらないように", "by": "本人", "back": "techo"}
-code, out = call(f"/record/{rid}/next", form | {"to": "29"})
+code, out = call(f"/record/{rid}/next", form | {"to": "46"})
 assert code == 422 and "筒の口の角に当たって" in out.decode(), "床に落ちる値は刷らず、理由を見せる"
-code, out = call(f"/record/{rid}/next", form | {"to": "26"})
+code, out = call(f"/record/{rid}/next", form | {"to": "45"})
 assert code in (200, 303), re.findall(r'<p id="msg">(.*?)<', out.decode()) or out.decode()[-600:]
-assert call(f"/sheet/{SID}/H-A_v2.pdf")[1][:4] == b"%PDF", "次の版の紙が開ける"
+assert call(f"/sheet/{SID}/{GS}_v2.pdf")[1][:4] == b"%PDF", "次の版の紙が開ける"
 # ギャラリー（見本も並ぶ）
 assert f"/record/{rid}/media/" not in call("/gallery")[1].decode(), "人の確認の前は出さない（#314）"
 assert media_review.record(rid, media_review.waiting()[0][1], "object", "確認者") == []

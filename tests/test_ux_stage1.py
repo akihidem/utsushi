@@ -62,10 +62,10 @@ for path, station in EXPECT.items():
         assert links["つくる"] == f"/toy/{G}" and links["のこす"] == f"/toy/{G}/techo/kiroku", (path, "玩具の頁の中では つくる・のこす が押せる", links)
     else:
         assert links["つくる"] is None and links["のこす"] is None, (path, "玩具を選ぶ前は つくる・のこす は押せない段の印", links)
-    assert links["えらぶ"] == "/toys" and links["もちよる"] == "/gallery" and links["よむ"] == "/about" and links["English"] == "/en", (path, links)
-# 入口: 帯は同じで、印は「うつし」
+    assert links["えらぶ"] == "/" and links["もちよる"] == "/gallery" and links["よむ"] == "/about" and links["English"] == "/en", (path, links)
+# 入口: 帯は同じで、印は「えらぶ」（入口が えらぶ の駅。本人のサイト体験レビュー 11-07 の 4）。「うつし」には印を付けない（同じ頁に印を 2 つ置かない）
 entry = items(nav_of(get("/")))
-assert [x[0] for x in entry if x[2]] == ["うつし"], entry
+assert [x[0] for x in entry if x[2]] == ["えらぶ"], entry
 # 英語の頁の帯は変えない
 assert ">日本語<" in nav_of(get("/en")) and ">えらぶ<" not in nav_of(get("/en"))
 

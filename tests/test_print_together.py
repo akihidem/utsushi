@@ -20,6 +20,8 @@ import web.play_server as ps  # noqa: E402
 from omochae import hypotheses  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 server = ps.serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -28,7 +30,11 @@ real_sheet, real_own = hypotheses.print_sheet, hypotheses.print_own
 
 def post(path, data):
     r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), headers={"Origin": base})
-    return urllib.request.urlopen(r).status
+    # 応答（刷った後に着く玩具の頁・約 670KB）を読み切ってから閉じる。読まずに閉じると、書いている途中の server の糸が BrokenPipe を
+    # stderr に書き、試験の終わり（Python の後始末）とぶつかって rc 134（Fatal Python error）で落ちる事があった（11-07 の main で 10 回に 3 回）
+    with urllib.request.urlopen(r) as res:
+        res.read()
+        return res.status
 
 
 class Hold:
@@ -87,20 +93,20 @@ def finish(threads, hold):
 
 # 同じ案を 4 人が同時に押す: 作るのは 1 回分だけで、全員が同じ版を受け取る
 hold = hypotheses.print_sheet = Hold(real_sheet)
-threads, results, raised = together([lambda: ps.print_latest(G, "H-A")] * 4)
+threads, results, raised = together([lambda: ps.print_latest(G, GS)] * 4)
 finish(threads, hold)
 assert len(hold.calls) == 1 and hold.most == 1, (hold.calls, hold.most)
 assert results == [1, 1, 1, 1] and not raised, (results, raised)
 
 # 別の案は待たせない
 hold = hypotheses.print_sheet = Hold(lambda *a, **k: 3)
-threads, results, raised = together([lambda: ps.print_latest(G, "H-A"), lambda: ps.print_latest(G, "H-B")])
+threads, results, raised = together([lambda: ps.print_latest(G, GS), lambda: ps.print_latest(G, "H-B")])
 assert hold.active == 2, hold.calls
 finish(threads, hold)
 assert results == [None, None] and not raised, (results, raised)
 
 # 書きかけで落ちても、前の紙は残る。一時の場所も残らない
-sheet = ps.out_dir(G) / "H-A_v1.pdf"
+sheet = ps.out_dir(G) / f"{GS}_v1.pdf"
 old = sheet.read_bytes()
 assert old.startswith(b"%PDF")
 
@@ -111,7 +117,7 @@ def half(sid, hid, out, version=1, pending=None):
 
 
 hypotheses.print_sheet = half
-assert ps.print_latest(G, "H-A") is None
+assert ps.print_latest(G, GS) is None
 assert sheet.read_bytes() == old, "書きかけの紙が置き場に出た"
 assert not list(ps.out_dir(G).glob(".tmp-*"))
 
@@ -121,12 +127,12 @@ seen = []
 
 def reading(sid, hid, out, version=1, pending=None):
     pathlib.Path(f"{out}.pdf").write_bytes(b"half")
-    seen.append(urllib.request.urlopen(f"{base}/sheet/{G}/H-A_v1.pdf").read())
+    seen.append(urllib.request.urlopen(f"{base}/sheet/{G}/{GS}_v1.pdf").read())
     return real_sheet(sid, hid, out, version, pending=pending)
 
 
 hypotheses.print_sheet = reading
-assert ps.print_latest(G, "H-A") == 1
+assert ps.print_latest(G, GS) == 1
 assert seen == [old], "書きかけの紙を渡した"
 assert sheet.read_bytes().startswith(b"%PDF")
 
@@ -138,11 +144,11 @@ def broken(*a, **k):
 
 
 hold = hypotheses.print_sheet = Hold(broken)
-threads, results, raised = together([lambda: ps.print_latest(G, "H-A")] * 3)
+threads, results, raised = together([lambda: ps.print_latest(G, GS)] * 3)
 finish(threads, hold)
 assert len(hold.calls) == 1 and not results and len(raised) == 3, (hold.calls, results, raised)
 hypotheses.print_sheet = real_sheet
-assert ps.print_latest(G, "H-A") == 1
+assert ps.print_latest(G, GS) == 1
 
 # 自分の仮説の紙（話した考えから作る紙の道）も同じ。案の名前が違っても、同じ口を通る
 own, failures = hypotheses.save_own(G, "ためしの案", "下から押す", "手元の絵")
@@ -175,7 +181,7 @@ codes = []
 
 
 def send(path):
-    codes.append(post(path, {"hypothesis": "H-A"}))
+    codes.append(post(path, {"hypothesis": GS}))
 
 
 for _ in range(3):
@@ -188,4 +194,7 @@ assert codes == [200] * 12, codes
 assert sheet.read_bytes().startswith(b"%PDF")
 assert not list(ps.out_dir(G).glob(".tmp-*"))
 
+# server の糸を止めてから終える（daemon の糸が書いている途中で Python の後始末が走らないように。上の post と同じ揺れの止め）
+server.shutdown()
+server.server_close()
 print("ok")

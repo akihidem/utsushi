@@ -18,6 +18,12 @@ from web import kumitate
 from web.play_server import ROOT  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎の今の組（goraigo-v14）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_goraigo_v14_3d）。サイトが自分で組む作り
+# （つまみの形だけを書いてある）は、控えの組 goraigo-v10 に雛形を置いて前と同じに見る（v14 に上げても v10 の 3D が変わらない事も見る）
+from omochae import assembly_json  # noqa: E402
+
+assert slider_fan.SHEET_SET == "goraigo-v14" and isinstance(assembly.assemble(G), assembly_json.Shown)
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 bench = assembly.assemble(G)
 frames = bench.frames
@@ -263,6 +269,14 @@ for pg in (made_page, plain_page):
 
 # 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
 T = "NDL-1187053-R0000014-R"
+from omochae.templates import pivot_counterweight  # noqa: E402
+
+# 虎の今の組（tora-v7。v6 は刷らずに飛ばした）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_tora_v7_3d）。サイトが自分で組む作りは、
+# 控えの組 tora-v4 に雛形を置いて前と同じに見る（今の組に上げても v4 の 3D が変わらない事も見る）
+from omochae import assembly_json  # noqa: E402
+
+assert pivot_counterweight.SHEET_SET == "tora-v7" and isinstance(assembly.assemble(T), assembly_json.Shown)
+pivot_counterweight.SHEET_SET = "tora-v4"
 tora = assembly.assemble(T)
 tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}
 tora_words = instructions.steps(tora_p, "pivot_counterweight")
@@ -281,8 +295,6 @@ found = [f.line() for f in tora.failures]
 assert any("手順 4" in x and "糊代の根元 4 か所" in x for x in found), found
 # 次の組（tora-v4）は胴を山折りにしたので、絵は箱の外に出る。前の組（谷折り）に戻すと内側に入る（検査が紙の線を見ている）
 assert not any("絵のある面が箱の内側に入る" in x for x in found), found
-from omochae.templates import pivot_counterweight  # noqa: E402
-
 _now = pivot_counterweight.SHEET_SET
 pivot_counterweight.SHEET_SET = pivot_counterweight.FROZEN_SET
 try:
@@ -304,4 +316,14 @@ assert tora.frames[1]["poses"][-1]["plug"] and not tora.frames[2]["poses"][-1]["
 # できあがりの頭は揺れて、元の位置で止まる
 final = tora.frames[-1]["poses"]
 assert len(final) >= 5 and final[0]["state"]["head"]["place"] == final[-1]["state"]["head"]["place"]
+# 5 重りの腕の札は、型紙と同じく行ごと（label_lines の「5 重」「り」「の」「腕」）に面に出す（本人の決定 11-07、型紙エンジン #135 と同じ形）。
+# label だけを 1 行で描く形に戻すと、約 13.5mm の字が幅 8mm の腕の面からはみ出して切れる（別の目の確かめで、この頁の札を見る試験が無いと分かった）
+arm = tora.sheets["drop"]
+drawn = re.findall(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)</text>', kumitate._marks(arm.part, 0, 0, arm.panels[0]))
+assert arm.part.label == "5 重りの腕" and [t for _, _, t in drawn] == ["5 重", "り", "の", "腕"], drawn
+from omochae.textfit import text_width  # noqa: E402
+assert all(float(x) + text_width(t, 2.8) <= arm.part.width + 1e-6 for x, _, t in drawn), ("札の字が腕の面からはみ出す", drawn)
+assert [float(y) for _, y, _ in drawn] == sorted(float(y) for _, y, _ in drawn), ("札の字が上から順に並ばない", drawn)
+pivot_counterweight.SHEET_SET = "tora-v7"
+slider_fan.SHEET_SET = "goraigo-v14"
 print("ok")

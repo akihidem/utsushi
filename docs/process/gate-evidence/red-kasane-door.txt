@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: ac55573c（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 99, in <module>
+    assert hmd.CAM_LINK == "カメラに重ねる"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

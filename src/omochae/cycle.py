@@ -42,7 +42,6 @@ import urllib.parse
 
 from . import engine_bundle, hypotheses, loop, records
 from .compose import TEMPLATES, compose
-from .metrics import ALLOWED
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PASSED, NOT_YET, SKIPPED, FAILED = "通った", "まだ main に無い", "飛ばした", "落ちた"
@@ -146,12 +145,14 @@ def _one_change(c):
     template = hypotheses.load(c.sid).get("template", "slider_fan")
     params = loop.version_params(c.sid, c.hid, loop.latest_version(c.sid, c.hid))[0]  # 次の版は今の版の上に足す
     current = {**TEMPLATES[template].DEFAULTS, **params}
-    for param in sorted(ALLOWED[template]):
+    # その形に効く寸法だけ（loop.allowed）。内筒を下から押し上げる形（御来迎の次の組のたたき台）は要の高さを変えても紙が変わらない
+    for param in sorted(loop.allowed(template, current)):
         value = current.get(param)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             continue
         step = 1 if isinstance(value, int) else max(round(abs(value) * 0.05, 1), 0.5)
-        for to in (value + step, value - step):
+        # 小さくする方を先に試す。自分の紙は印の文が 1 行多く部品が下がるので、扇や筒を大きくする向きは自分の紙で印字域から出やすい
+        for to in (value - step, value + step):
             if not compose(template, {**params, param: to}, c.source)[2]:
                 return {"param": param, "to": to, "why": WHY}
     raise Failed("紙に組める形で変えられる寸法が見つからない")
@@ -511,7 +512,7 @@ def run(toy=TOY, keep_going=False, keep=None, engine_repo=None):
     stages = []
     with _sandbox(keep) as folder:
         data = hypotheses.load(toy)
-        c = Context(sid=toy, folder=folder, engine_repo=find_engine_repo(engine_repo), hid=data.get("sheet") or data["hypotheses"][0]["id"],
+        c = Context(sid=toy, folder=folder, engine_repo=find_engine_repo(engine_repo), hid=hypotheses.sheet_id(data) or data["hypotheses"][0]["id"],
                     source=json.loads((ROOT / "data/sources" / f"{toy}.json").read_text(encoding="utf-8")))
         for name, fn in STAGES:
             try:

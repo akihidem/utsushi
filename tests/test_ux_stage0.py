@@ -30,6 +30,8 @@ from omochae import hypotheses, records  # noqa: E402
 from web import looks, play_server, techo_site, toy  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 ROAD = ("えらぶ", "つくる", "のこす", "もちよる")  # 本人の決定 11-06（research/36）。一字も変えない
 
 
@@ -42,6 +44,16 @@ def roads(page):
 for name, make in looks.PAGES.items():
     page = make()
     first = re.search(r'<section class="(?:zn-cover|tj-hall)".*?</section>', page, re.S).group(0)
+    if name == "tenji":
+        # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。えらぶ の釦は無く（押させない）、題の間のすぐ次に
+        # 「まずはここから」の 2 枚（御来迎・張子の首振り虎）が、その玩具の頁への口として並ぶ
+        body = page.split("</style>")[-1]
+        assert 'class="road-go"' not in body, (name, "えらぶ の釦は無い")
+        mazu = re.search(r'<section class="tj-mazu".*?</section>', body, re.S).group(0)
+        assert "<h2>まずはここから</h2>" in mazu and body.index("</section>", body.index('class="tj-hall"')) < body.index('class="tj-mazu"')
+        main = [s for s in looks.sources() if looks.hypotheses.stage(s) == "必須"]
+        assert re.findall(r'class="tj-mazu-card" href="/toy/([^"]+)"', mazu) == main, (name, "まずはここから は必須の 2 種")
+        continue
     assert first.count('class="road-go"') == 1 and '<a class="road-go" href="/toys">えらぶ</a>' in first, (name, "入口の最初の節に「えらぶ」が 1 つ")
     assert page.count('class="road-go"') == 1, (name, "入口の次へ進む釦は 1 つだけ")
 
@@ -78,7 +90,7 @@ for sid in (G, T):
     assert st == 200 and "#win" in url or "see=" in url, (sid, url)
 after = toy.toy_page(G, see=hypotheses.sheet_of(G)["id"], kind="", v=1)
 hero = after[after.index('<section class="hero">'):after.index("</section>", after.index('<section class="hero">'))]
-assert re.search(rf'<p class="road"><a class="btn" href="/toy/{G}\?see=H-A&amp;kind=sheet&amp;v=\d+#win">つくる</a></p>', hero), "紙がある時は、作り直さずに窓の紙へ"
+assert re.search(rf'<p class="road"><a class="btn" href="/toy/{G}\?see={GS}&amp;kind=sheet&amp;v=\d+#win">つくる</a></p>', hero), "紙がある時は、作り直さずに窓の紙へ"
 # 刷ってある紙が一番新しい版でない時（人が採った版 2 など）と、今の組でない時（雛形の次の組）は、窓へ行かずに刷る口へ送る（古い紙を出さない）
 from omochae import loop  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
@@ -99,12 +111,13 @@ finally:
 assert '<p class="road"><a class="btn"' in toy.make_go(G), "対照: 一番新しい版で今の組の紙なら窓へ"
 win = after[after.index('id="win"'):after.index("</section>", after.index('id="win"'))]
 assert win.index("PDF を開いて印刷する") < win.index(f'<a class="btn" href="/toy/{G}/techo">つくる</a>'), "窓は 印刷 → つくる（手帖）の順"
-assert f'href="/toy/{G}/tsukuru"' in after, "作りながら見るの釦は残す（11-07 の工作で使う。手帖から 1 手では行けない）"
+# 作りながら見るの釦は、11-07 の工作のために残していたが、作りながら見る頁を手帖へ寄せた（窓口の決め 11-07 の 4。作る口は手帖 1 つ）
+assert f'href="/toy/{G}/tsukuru"' not in after, "作りながら見るの釦は玩具の頁に出さない"
 assert roads(after) == ["つくる", "つくる"], ("紙の後の道しるべ", roads(after))
 
 # ---- 5 手帖の記録の頁
 # 感想のある記録（ギャラリーは、写真か言葉の無い記録を札にしない）
-rid, fs = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "impression": "扇がよく開いた"})
+rid, fs = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた", "impression": "扇がよく開いた"})
 assert not fs, fs
 kiroku = techo_site.records_page(G, msg="上げました")
 mine = kiroku[kiroku.index('<div id="mine">'):]
@@ -126,7 +139,7 @@ for page in (before, after, kiroku, *(f() for f in looks.PAGES.values())):
 
 # ---- 8 幅 390 の Chrome で最初の画面に入るか
 MEASURE = r"""<script>addEventListener('load',()=>setTimeout(()=>{const R={vh:innerHeight,vw:innerWidth,sx:document.documentElement.scrollWidth};
-const e=document.querySelector('.road-go, .hero .road .btn');if(e){const b=e.getBoundingClientRect();R.go=[Math.round(b.top),Math.round(b.bottom),Math.round(b.height),e.textContent.trim()]}
+const e=document.querySelector('.road-go, .hero .road .btn, .tj-mazu-card');if(e){const b=e.getBoundingClientRect();R.go=[Math.round(b.top),Math.round(b.bottom),Math.round(b.height),e.textContent.trim()]}
 const p=document.createElement('pre');p.id='measured';p.textContent=JSON.stringify(R);document.body.appendChild(p)},400))</script>"""
 send = play_server.Handler._send
 
@@ -165,6 +178,12 @@ for key, r in measured.items():
         continue
     assert "go" in r, (key, "次へ進む釦が頁にある", r)
     top, bottom, height, word = r["go"]
+    if key[1].startswith("/look/tenji"):
+        # 白の入口は えらぶ そのもの（本人のサイト体験レビュー 11-07 の 4・5）。次へ進む釦の代わりに、まずはここから の札（玩具の名前）が
+        # 最初の画面で押せる（札の上の 64px が画面の中にある）。札は縦に長い絵なので、下の端まで入るとは限らない
+        assert word not in ("えらぶ", "つくる") and height >= 64 and top + 64 <= r["vh"], (key, "まずはここから の札が最初の画面で押せる", r)
+        assert r["sx"] <= r["vw"], (key, "横にはみ出さない", r)
+        continue
     assert word in ("えらぶ", "つくる") and height >= 64, (key, "押せる大きさ", r)
     assert bottom <= r["vh"], (key, "最初の画面に入る（頁を送らずに押せる）", r)
     assert r["sx"] <= r["vw"], (key, "横にはみ出さない", r)

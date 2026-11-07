@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_photo_owner_only.py
+# commit: 12eecc55（回した時の HEAD。src/web/play_server.py の取り下げの受け口が、上げた画面かを見ない木。試しのためで commit していない）
+読めない記録を飛ばした: owners.json（JSONDecodeError）
+読めない記録を飛ばした: owners.json（JSONDecodeError）
+Traceback (most recent call last):
+  File "tests/test_photo_owner_only.py", line 203, in <module>
+    assert o.form(f"/record/{w_rid}/media/withdraw")[0] == 403 and w.image(w_rid, w_name) == 200, "別の画面からは消せない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 別の画面からは消せない
+rc=1

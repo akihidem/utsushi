@@ -49,7 +49,10 @@ cli = subprocess.run([sys.executable, "-m", "omochae.records", "add", "--hypothe
 assert cli.returncode == 4, "結果の無い記録を作らない"
 cli = subprocess.run([sys.executable, "-m", "omochae.records", "add", "--hypothesis", "H-A", "--result", "わからない", "--fix", "外筒,紙を替えた,変わらず"], capture_output=True, text=True)
 assert cli.returncode == 0 and "R-0004" in cli.stdout
-# 手順の紙: 仮説ごとに検査を通り、答えを先に言わない
+# 手順の紙: 仮説ごとに検査を通り、答えを先に言わない。11-06 から刷る時に手順の紙を組まないので、手順の紙を控えた前の組（goraigo-v10）で見る
+# （今の組 goraigo-v14 の内筒を下から押し上げる形の手順の紙は A4 に収まらず、組み方は頁が持つ。tests/test_floor_pin.py の STEP_SHEET_SETS）
+from omochae.templates import slider_fan as _fan  # noqa: E402
+_now, _fan.SHEET_SET = _fan.SHEET_SET, _fan.FROZEN_SET
 for h in load(SID)["hypotheses"]:
     layout, failures = compose_sheet("slider_fan", h["params"], source, h["name"], h["how_it_moves"])
     assert not failures, (h["id"], [f.line() for f in failures])
@@ -59,13 +62,15 @@ for h in load(SID)["hypotheses"]:
     sizes = {s["w"] for s in layout["shapes"] if s["kind"] == "rect" and s["w"] == 30}
     assert sizes == {30}, "3 値の欄は同じ大きさ"
     assert all(q in text for q in QUESTIONS)
+_fan.SHEET_SET = _now
 tab = next(h for h in load(SID)["hypotheses"] if h["id"] == "H-A")
 stick = next(h for h in load(SID)["hypotheses"] if h["id"] == "H-C")
 from omochae.templates.slider_fan import DEFAULTS
 assert any("溝" in s for s in steps({**DEFAULTS, **tab["params"]}))
 assert not any("溝" in s for s in steps({**DEFAULTS, **stick["params"]})), "溝の無い形に溝の手順を出さない"
 # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。型紙に印が入り、手順の紙は組まない
-r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", "H-A", "--out", f"{tmp}/a"], capture_output=True, text=True)
+from omochae.hypotheses import sheet_of as _sheet_of  # noqa: E402
+r = subprocess.run([sys.executable, "-m", "omochae.hypotheses", "print", _sheet_of(SID)["id"], "--out", f"{tmp}/a"], capture_output=True, text=True)
 assert r.returncode == 0, r.stderr
 flat = "".join(subprocess.run(["pdftotext", f"{tmp}/a.pdf", "-"], capture_output=True, text=True).stdout.split())
 assert SID in flat and "国立国会図書館デジタルコレクション" in flat and not pathlib.Path(f"{tmp}/a_tejun.pdf").exists()
@@ -82,8 +87,9 @@ flat = "".join(subprocess.run(["pdftotext", f"{tmp}/t.pdf", "-"], capture_output
 assert TSID in flat and "張子の首振り虎" in flat
 assert add(base(source_id=TSID, hypothesis_id="H-C", power="団扇", ten_swings_sec=4.2, result="揺れた"))[1] == []
 assert floors(add(base(source_id=TSID, hypothesis_id="H-C", power="念力"))[1]) == {"F3.result"}
-# 虎の物差しは頭が揺れるかどうか（research/15）
-assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "わからない"})} == {"F3.result"}, "虎は 2 値"
+# 虎の物差しは頭が揺れるかどうか（research/15）。決められない時の「わからない」は選べる（#146）。札に無い言葉は断る
+assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "わからない"}) == []
+assert {f.floor for f in records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "たぶん揺れた"})} == {"F3.result"}
 assert records.check({"source_id": "NDL-1187053-R0000014-R", "hypothesis_id": "H-A", "result": "揺れない"}) == []
 # 記録は成績でなく観察（philosophy.md）。紙の文で成績に読ませない
 for tid, src, sid in (("slider_fan", source, "NDL-1187053-R0000005-L"), ("pivot_counterweight", tsource, TSID)):

@@ -26,6 +26,7 @@ from . import hypotheses, instructions
 from .compose import TEMPLATES, compose
 from .model import Failure, Part, ToolMissing
 from .fan_model import clearance_limit_deg, opening_bound_deg
+from .templates import pivot_counterweight
 from .templates.pivot_counterweight import NECK_BACK
 
 ROOT = pathlib.Path(hypotheses.__file__).resolve().parents[2]
@@ -99,6 +100,18 @@ def normal_of(m):
     return _unit((m[0][2], m[1][2], m[2][2]))
 
 
+ROUND_SEGS = 32  # 丸い穴を近づける多角形の辺の数。はさみの道も面の穴も同じ点を使い、切る線と穴の縁をそろえる
+
+
+def round_ring(x, y, r):
+    """丸い穴の縁の点（部品の座標）。最初の点で閉じない。"""
+    return [(x + r * math.cos(2 * math.pi * i / ROUND_SEGS), y + r * math.sin(2 * math.pi * i / ROUND_SEGS)) for i in range(ROUND_SEGS)]
+
+
+def round_hole(x, y, r):
+    return Polygon(round_ring(x, y, r))
+
+
 @dataclass
 class Sheet:
     """部品 1 つを、折り線で分けた面の集まりにした物。"""
@@ -119,6 +132,10 @@ class Sheet:
         faces = [g for g in polygonize(net) if whole.buffer(1e-6).contains(g.representative_point())]
         for x, y, w, h in self.part.cuts:  # 中を切る四角は面の穴にする
             faces = [g.difference(box(x, y, x + w, y + h)) for g in faces]
+        # 中を切る丸い穴も面の穴にする（虎の今の組の首の穴）。前の組と御来迎の部品には無いので、形は変わらない。
+        # 丸い穴の欄が無い部品の型もある（虎の今の組の欄が入る前の型）ので、無ければ空と読む
+        for x, y, r in getattr(self.part, "round_cuts", ()):
+            faces = [g.difference(round_hole(x, y, r)) for g in faces]
         self.panels = sorted(faces, key=lambda s: (round(s.bounds[1], 3), round(s.bounds[0], 3)))
         if self.root_at is not None:
             self.root = self.at(*self.root_at)
@@ -749,6 +766,11 @@ def _pivot_counterweight(p, parts, paper=None):
     """張子の首振り虎（pivot_counterweight）の組み立て。手順の文の順に、紙が実際に動く形を並べる。首を穴に入れる形だけ書いた。Returns Bench か None。"""
     if p["mount"] != "neck":
         return None
+    # 虎の次の組（tora-v6 から）は 3D で組まない。この組み立ては前の組の胴（四角い首の穴・角のある箱・丸めた尾・片面の頭）の形で書いてあり、
+    # v6 の丸い穴・角を落とした胴・立体の脚・両面の頭・上の面に立てる尾を組めない。組み立ての頁は文と絵だけを出す（御来迎の次の組と同じ扱い）。
+    # 型紙エンジンには v6 を 3D で折る確かめ（fold3d）があるが、サイトの組み立ての頁に写すのは別の仕事
+    if pivot_counterweight.set_no() >= pivot_counterweight.V6:
+        return None
     by_key = {q.key: q for q in parts}
     body = by_key["body"]
     L, W, H, g = p["body_length"], p["body_width"], p["body_height"], p["glue"]
@@ -970,9 +992,7 @@ RECIPES = {"slider_fan": _slider_fan, "pivot_counterweight": _pivot_counterweigh
 
 
 def _paper(template, p, source_id):
-    """刷った紙の配置（compose の layout）。組み立ての書き方が無い時と読めない時は None。"""
-    if template not in RECIPES:
-        return None
+    """刷った紙の配置（compose の layout）。読めない時は None。組み立ての書き方があるかは呼ぶ側が見る（JSON で描く雛形は書き方が無くてもよい）。"""
     try:
         source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
         return compose(template, p, source)[1]
@@ -980,15 +1000,45 @@ def _paper(template, p, source_id):
         return None
 
 
+def _same(a, b):
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool) and not isinstance(b, bool):
+        return abs(a - b) < 1e-9
+    return a == b
+
+
+def _from_engine(template, tpl, p, source_id):
+    """今の組の作り方の 3D を、型紙エンジンが出した JSON（data/kumitate/<組の名>.json）から読む（決定 2026-11-07。assembly_json の注）。
+    Returns 組み立て（assembly_json.Shown）・None（JSON はあるが、刷る紙と寸法か形が違う）・False（今の組の JSON が無い。前の組の書き方で組む）。
+
+    寸法か形が違う JSON は使わない（違う紙の立体を見せない）。その時は組み立てを出さず、頁は文と絵だけにする。違いは試験が見つける。"""
+    from . import assembly_json  # assembly_json が assembly を読むので、読み込みの輪にしないためにここで読む
+
+    doc = assembly_json.load(getattr(tpl, "SHEET_SET", ""))
+    if doc is None:
+        return False
+    if any(not _same(p.get(k), v) for k, v in (doc.get("params") or {}).items()):
+        return None
+    paper = _paper(template, p, source_id)
+    parts = paper["parts"] if paper else tpl.parts(p)
+    if assembly_json.part_gaps(doc, parts):
+        return None
+    return assembly_json.bench_of(doc, parts, instructions.steps(p, template), paper)
+
+
 def assemble(source_id, hypothesis_id=None):
-    """玩具のたたき台を組み立てる。Returns Bench。組み立ての書き方がまだ無い雛形は None。"""
+    """玩具のたたき台を組み立てる。Returns Bench（今の組の JSON がある時は、それを読んだ assembly_json.Shown）。組み立ての書き方も JSON も無い雛形は None。"""
     data = hypotheses.load(source_id)
     h = hypotheses.sheet_of(source_id) if hypothesis_id is None else next(x for x in data["hypotheses"] if x["id"] == hypothesis_id)
     template = h.get("template") or data.get("template", "slider_fan")
-    if template not in RECIPES:
+    if template not in TEMPLATES:
         return None
     tpl = TEMPLATES[template]
     p = {**tpl.DEFAULTS, **(h.get("params") or {})}
+    shown = _from_engine(template, tpl, p, source_id)
+    if shown is not False:
+        return shown
+    if template not in RECIPES:
+        return None
     paper = _paper(template, p, source_id)
     bench = RECIPES[template](p, paper["parts"] if paper else tpl.parts(p), paper)
     if bench is None:

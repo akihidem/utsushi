@@ -88,29 +88,34 @@ EARLY_CRAFT, EARLY_THINK, THEIRS = "たたき台の筒を先に切った", "筒�
 assert send(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": SHEET, "sheet_version": 1, "step": 1, "text": EARLY_CRAFT, "who": WHO})[0] == 200
 assert send(f"/toy/{G}/talk", {"scene": "think", "hypothesis": SHEET, "text": EARLY_THINK, "who": WHO})[0] == 303
 assert send(f"/toy/{G}/talk", {"scene": "think", "hypothesis": SHEET, "text": THEIRS, "who": OTHER})[0] == 303
-oid, key = made(WHO, THINK, {"push_part": "stick", "pusher_height": 84})
+oid, key = made(WHO, THINK, {"push_amount": 62})
 # 刷った組は、紙を確定する時に残す（紙に刷った組。記録の時の組ではない）
 confirmed = [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
 assert confirmed and confirmed[0]["version"] == 1 and confirmed[0]["confirmations"][0]["sheet_set"] == TEMPLATES["slider_fan"].SHEET_SET, confirmed
 
-# 節から作りながら見る頁へ行ける。字は玩具の頁の入口と同じ（新しい文を足さない）
-assert think_sheet.MAKE == "作りながら見る（机の端に置く・試作）" and think_sheet.MAKE in page(f"/toy/{G}")[1]
+# 節から手帖へ行ける。字は玩具の頁の作る口と同じ（新しい文を足さない）。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）
+assert think_sheet.MAKE == "つくる" and think_sheet.MAKE in page(f"/toy/{G}")[1]
 done = page(f"/toy/{G}?at=think-{key.split('=', 1)[1]}", cookie=key)[1]
-assert f'/toy/{G}/tsukuru?h={oid}"' in done and think_sheet.MAKE in done, "節に、その紙の作りながら見る頁への道"
+assert f'<a class="btn quiet" href="/toy/{G}/techo">{think_sheet.MAKE}</a>' in done and "/tsukuru" not in done, "節に、その紙の手帖への道"
+# 手帖は、本人の画面にはその人の紙を開く（ほかの人には、たたき台の紙）
+assert f'data-hid="{oid}"' in page(f"/toy/{G}/techo", cookie=key)[1] and f'data-hid="{oid}"' not in page(f"/toy/{G}/techo")[1]
 
 # ── 作りながら見る: 本人には、その人の紙が開く ──
 code, body = page(f"/toy/{G}/tsukuru", cookie=key)
 assert code == 200 and f'data-hid="{oid}"' in body, "紙の印が無ければ、本人の紙を開く"
-assert f"{oid}_v1_tejun.png" in body and THINK not in body, "手順の紙の絵はその紙の物。話した字は頁に出さない"
+# 刷るのは型紙だけ（窓口の決定 2026-11-07 カード 012120。#493 と同じ形）。手順の紙の絵は無く、頁の組み方の絵を出す。話した字は頁に出さない
+assert "_tejun.png" not in body and THINK not in body, "手順の紙の絵を出さず、話した字は頁に出さない"
 title = re.search(r'<p class="top">.*?<span>(.*?)</span>', body, re.S).group(1)
 assert hypotheses.own_hypotheses(G)[-1]["name"] in title and oid not in title, "頁の頭は案の名前で呼ぶ。番号は出さない"
-assert f"組み方の絵（{hypotheses.own_hypotheses(G)[-1]['name']} の紙" in body and f"組み方の絵（{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ（字は 11-06 に「組み方の絵」へ）"
+# 手順の紙の絵の代わりに、手帖と同じ組み方の絵を出す（字の無い絵で、読み上げからは隠れる。#493 の作りながら見る頁と同じ）。番号は出さない
+assert 'aria-hidden="true"' in body and body.count('class="sheet koma on"') == 1 and f"{oid.split('-')[1]} の紙" not in body, "絵の説明も名前で呼ぶ（字は 11-06 に「組み方の絵」へ）"
 assert page(f"/toy/{G}/tsukuru?h={oid}", cookie=key)[1].count(f'data-hid="{oid}"') == 1
-assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 200
+assert send(f"/sheet/{G}/{oid}_v1_tejun.png", cookie=key)[0] == 404  # 自分の紙も手順の紙は組まない（窓口の決定 2026-11-07 カード 012120）
 total = body.count("<li")
 assert total >= 2, "その紙の手順の文が出る"
 # ほかの人には今のまま
-assert 'data-hid="H-A"' in page(f"/toy/{G}/tsukuru")[1], "鍵の無い人には、たたき台の頁"
+SHEET_ID = hypotheses.sheet_of(G)["id"]  # たたき台（御来迎の今の組 goraigo-v14 は H-C）
+assert f'data-hid="{SHEET_ID}"' in page(f"/toy/{G}/tsukuru")[1], "鍵の無い人には、たたき台の頁"
 assert f'data-hid="{oid}"' not in page(f"/toy/{G}/tsukuru?h={oid}")[1], "番号を知っていても開かない"
 # ほかの人の札・工夫・問い・記録は、その紙に付かない
 assert send(f"/toy/{G}/step", {"hypothesis": oid, "event": "next", "step": 1, "who": OTHER})[0] == 422
@@ -142,7 +147,7 @@ assert {x["when"] for x in told} == {"idea", "making"} and any(x["text"] == CRAF
 assert {x["text"] for x in told} == {THINK, EARLY_THINK, CRAFT, EARLY_CRAFT}, "紙を採る前にたたき台に付いた同じ印の字も結ばれる。ほかの印の字は結ばれない"
 assert {x["text"] for x in loop.maker_talk(rid)["items"]} == {CRAFT, EARLY_CRAFT}, "輪の材料に工夫が入る（考えはループ1 の材料なので入れない）"
 body = page(f"/toy/{G}/techo/kiroku")[1]  # 記録の札は手帖の記録の頁（#87）
-assert CRAFT in body and hanasu.KUFU_HEAD in body and THINK not in body, "手帖の記録の札の「工夫した所」に出る。考えは出さない"
+assert CRAFT not in body and THINK not in body and rid in body, "記録の札に出るのは記録だけ。話した工夫も考えも頁に出さない（本人の決定 11-06、J-034）"
 groups = engine_bundle.build()["groups"]
 # 束の群は紙ごと（Issue 334）。自分の紙の記録は、その紙の群で、たたき台の刷った組に入る（組が外れない）
 mine = [g for g in groups if rid in g["record_ids"]]
@@ -163,7 +168,7 @@ assert not [c for c in loop.sheet_confirmations(G) if c["hypothesis_id"] == oid]
 # ── 手帖から: 本人の紙を選んで記録する ──
 T2, C2 = "筒を細くしたら速く開くと思う", "内筒に蝋を塗ると滑る"
 W2 = "roundwho03"
-o2, k2 = made(W2, T2, {"push_part": "stick", "pusher_height": 84})
+o2, k2 = made(W2, T2, {"push_amount": 62})
 body = page(f"/toy/{G}/techo", cookie=k2)[1]
 assert f'data-hid="{o2}"' in body, "手帖は本人の紙を作る（紙を選ばせない。#87）"
 assert o2 not in page(f"/toy/{G}/techo")[1], "ほかの人の手帖には出ない"

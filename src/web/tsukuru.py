@@ -130,7 +130,11 @@ let n=+stepIn.value;
 // 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
 const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
 const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
- try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}};
+ try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}
+ // 次の手順の番号と字が画面の上の外にある時は、番号の行を画面の頭へ送る。低い画面で字の長い手順（虎 v7 の手順 10 は 62 字）では、
+ // 「次の手順へ」が下へ出て、人が札まで送ってから押すと、頁が下へ送られたままで次の手順の字が画面の上の外に出た（320×568。tests/test_landscape_fit.py）。
+ // 番号の行が画面の中にある時（開いた時と、送らずに押した時）は動かさない
+ const top=num.parentNode.getBoundingClientRect().top;if(top<0)try{num.parentNode.scrollIntoView({block:'start'})}catch(e){scrollBy(0,top)}};
 addEventListener('resize',fit);
 // その場限りの無作為の印（who）。タブごとの sessionStorage に英数字 10 桁を 1 つ持つ。cookie にしない。持てない画面では添えない。
 const who=(()=>{try{let w=sessionStorage.getItem('utsushi-who')||'';if(!/^[a-z0-9]{10}$/.test(w)){

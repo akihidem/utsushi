@@ -163,15 +163,18 @@ def _cap_texts(texts):
 
 
 def _count_result(g, rec, tpl):
-    """動きの札を数える。札の言葉は雛形が持つ物だけ（自由な文を札の欄で運ばせない）。先頭が動いた側。動かない側は、「わからない」を除いた最後の札
-    （「少し動いた」のような間の札を持つ雛形があるので、2 番目とは決めない）。「わからない」はどちらにも数えない。
+    """動きの札を数える。札の言葉は雛形が持つ物だけ（自由な文を札の欄で運ばせない）。先頭が動いた側。動かない側は、「わからない」を除いた最後の札。
+    「わからない」はどちらにも数えない。
     前の札の記録は今の札に読み替える（#146）。エンジンは moved_word と not_moved_word で数を引くので、前の札のままだと数から落ちる。
     手で置かれた記録の札は字とは限らないので、辞書を直に引かない。"""
     if tpl is None:
         return
     word, old = rec.get("result"), getattr(tpl, "OLD_RESULTS", {})
     word = old[word] if word in tuple(old) else word
-    if word in tpl.RESULTS:
+    # 動画の受け口の記録の「わからない」は、動いたかを聞いていない時の置き字で、見た事の札ではない。上げた人が選んだ札は数える。
+    # 前は、札に「わからない」の無い雛形（虎）だけがこれで外れていた。どの雛形も「わからない」を持つ形（#146）では、ここで分ける。
+    asked = not (rec.get("via") == records.UPLOADED and word == UNSURE)
+    if asked and word in tpl.RESULTS:
         g["results"][word] = g["results"].get(word, 0) + 1
     sure = [w for w in tpl.RESULTS if w != UNSURE]
     g["moved_word"], g["not_moved_word"] = sure[0], (sure[-1] if len(sure) > 1 else "")

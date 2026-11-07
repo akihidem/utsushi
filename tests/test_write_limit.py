@@ -22,6 +22,9 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "a
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 ROOM = "203.0.113.5"  # 5 人が同じ網から来る時の番地（例の番地）
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"  # 今ある字（全体の受け皿の断りと同じ）
 WRITE_LIMIT = 60  # 同じ相手から 1 分に受ける書き込みの数。5 人 × 12 回
@@ -52,18 +55,18 @@ class Person:
             return e.code, e.read().decode(), e.headers
 
     def talk(self, scene, text, **more):
-        return self.post(f"/toy/{G}/talk", {"scene": scene, "hypothesis": "H-A", "text": text, "who": self.who, "json": "1", **more})
+        return self.post(f"/toy/{G}/talk", {"scene": scene, "hypothesis": GS, "text": text, "who": self.who, "json": "1", **more})
 
 
 def step(p, n, event, as_json=True):
-    return p.post(f"/toy/{G}/step", {"hypothesis": "H-A", "sheet_version": "1", "step": str(n), "event": event, "who": p.who} | ({"json": "1"} if as_json else {}))
+    return p.post(f"/toy/{G}/step", {"hypothesis": GS, "sheet_version": "1", "step": str(n), "event": event, "who": p.who} | ({"json": "1"} if as_json else {}))
 
 
 def form_step(base, ip, n, event):
     """フォームの段の送り（JS の無い頁と、組み上がりの札）。行き先を見るので、303 を追わない。"""
     host = base.split("//", 1)[1]
     c = http.client.HTTPConnection(host, timeout=60)
-    body = urllib.parse.urlencode({"hypothesis": "H-A", "sheet_version": "1", "step": str(n), "event": event, "who": "formwhoaaa"})
+    body = urllib.parse.urlencode({"hypothesis": GS, "sheet_version": "1", "step": str(n), "event": event, "who": "formwhoaaa"})
     c.request("POST", f"/toy/{G}/step", body, {"Host": host, "Origin": base, "Content-Type": "application/x-www-form-urlencoded", "Cf-Connecting-Ip": ip})
     r = c.getresponse()
     out = (r.status, urllib.parse.unquote(r.getheader("Location") or ""), r.read().decode())
@@ -76,22 +79,22 @@ def loop_of(p, n, out):
     段の札（開く・次の手順へを最後まで。書き込みとは別に数える）。"""
     codes = [p.talk("think", f"{n}人目の考え")[0]]
     codes += [p.talk("craft", f"{n}人目の工夫{i}", sheet_version="1", step=str(i + 1))[0] for i in range(6)]
-    codes.append(p.post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": f"{n}人目の問い"})[0])
-    st, body, _ = p.post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "who": p.who})
+    codes.append(p.post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": f"{n}人目の問い"})[0])
+    st, body, _ = p.post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "who": p.who})
     codes.append(st)
     rid = json.loads(body).get("id")
     codes.append(p.talk("keep", f"{n}人目の上げた後", record=rid)[0])
     codes.append(p.post(f"/record/{rid}/explain", {"text": f"{n}人目の説明", "next_idea": "幅を変える", "by": "作った人"})[0])
-    codes.append(p.post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "who": p.who})[0])
+    codes.append(p.post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "who": p.who})[0])
     steps = [step(p, 1, "start")[0]] + [step(p, i, "next")[0] for i in range(1, TOTAL)]
     out[n] = (codes, steps)
 
 
 server, base = start()
-assert Person(base).post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
+assert Person(base).post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 200
 from web import tsukuru  # noqa: E402
 
-TOTAL = tsukuru.count(G, "H-A", 1)
+TOTAL = tsukuru.count(G, GS, 1)
 assert 5 * TOTAL <= STEP_LIMIT, TOTAL
 
 # 1. 合言葉付きの場で、同じ網の 5 人が同時に一周しても止まらない（書き込みは 5 × 12 = 上限ちょうど。段は別に数える）
@@ -110,17 +113,17 @@ for _ in range(WRITE_LIMIT - 5 * 12):
 st, body, headers = people[0].talk("think", "上限を超えた字")
 assert st == 429 and json.loads(body) == {"kept": False, "why": BUSY}, (st, body[:200])
 assert int(headers["Retry-After"]) >= 1, headers["Retry-After"]
-st, body, _ = people[1].post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "動いた", "who": people[1].who})
+st, body, _ = people[1].post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "who": people[1].who})
 assert st == 429 and json.loads(body) == {"error": BUSY}, (st, body[:200])
-st, body, _ = people[2].post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "who": people[2].who})
+st, body, _ = people[2].post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "who": people[2].who})
 assert st == 429 and BUSY in body, (st, body[-300:])
 st, body, _ = people[3].post("/record/R-0001/explain", {"text": "説明", "next_idea": "次", "by": "人"})
 assert st == 429 and BUSY in body, (st, body[-300:])
-st, body, _ = people[4].post(f"/toy/{G}/talk", {"scene": "think", "hypothesis": "H-A", "text": "頁から送った字", "who": people[4].who})
+st, body, _ = people[4].post(f"/toy/{G}/talk", {"scene": "think", "hypothesis": GS, "text": "頁から送った字", "who": people[4].who})
 assert st == 429 and BUSY in body, ("話す口の頁の形", st)
-st, body, _ = people[0].post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "谷折りって？"})
+st, body, _ = people[0].post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "谷折りって？"})
 assert st == 429 and json.loads(body) == {"text": BUSY, "from": "busy"}, ("聞く口は答えの欄の形", st, body[:200])
-st, body, _ = people[1].post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "谷折りって？"})
+st, body, _ = people[1].post(f"/toy/{G}/ask", {"hypothesis": GS, "question": "谷折りって？"})
 assert st == 429 and BUSY in body, ("聞く口の頁の形", st)
 # 段の口は別に数えるので、書き込みが上限でも手順を押す札は止まらない
 assert step(people[2], 2, "next")[0] == 200
@@ -134,11 +137,11 @@ before = sorted(making.rglob("*"))
 st, body, headers = step(busy, 2, "next")
 assert st == 429 and json.loads(body) == {"error": BUSY, "step": 3} and int(headers["Retry-After"]) >= 1, (st, body[:200])
 st, where, _ = form_step(base, "198.51.100.60", 2, "next")
-assert st == 303 and where == f"/toy/{G}/tsukuru?h=H-A&v=1&n=3", (st, where)
+assert st == 303 and where == f"/toy/{G}/tsukuru?h={GS}&v=1&n=3", (st, where)
 st, where, _ = form_step(base, "198.51.100.60", 2, "stuck")
-assert st == 303 and where == f"/toy/{G}/tsukuru?h=H-A&v=1&n=2&ev=stuck", (st, where)
+assert st == 303 and where == f"/toy/{G}/tsukuru?h={GS}&v=1&n=2&ev=stuck", (st, where)
 st, where, _ = form_step(base, "198.51.100.60", TOTAL, "done")
-assert st == 303 and where.startswith(f"/toy/{G}?msg={DONE_NOTE}&at=kiroku&see=H-A&kind=sheet&v=1"), ("組み上がりは記録の欄へ", st, where)
+assert st == 303 and where.startswith(f"/toy/{G}?msg={DONE_NOTE}&at=kiroku&see={GS}&kind=sheet&v=1"), ("組み上がりは記録の欄へ", st, where)
 after = sorted(making.rglob("*"))
 assert before and before == after, ("断った段は置き場へ書かない（前に書いた段は在る）", len(before), len(after))
 # 段の口が上限でも、同じ番地の書き込みは止まらない
@@ -147,7 +150,7 @@ assert busy.talk("think", "段の後の字")[0] == 200
 # 3. 別の網の人は止まらない。数えない口（刷る口）は同じ網でも止まらない
 other = Person(base, "198.51.100.20", "otherwhoaa")
 assert other.talk("think", "別の網の字")[0] == 200 and step(other, 1, "next")[0] == 200
-assert people[0].post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
+assert people[0].post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 200
 
 # 4. 手元から直に来た物（見出しの無い 127.0.0.1）は数えない
 local = Person(base, who="localwhoaaa")

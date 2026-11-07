@@ -124,7 +124,7 @@ def maker_talk(rid):
     - どの字か: その記録に結ばれた字だけ（talk_log.kufu）。結ぶのは記録を残した時の talk_log.bind で、同じ玩具・同じ紙（仮説と版）・
       同じその場の印の物に限る。ここで印や紙を数え直して広げない（印なしで拾うと、ほかの人の話がこの記録の材料に入る）。
     - 場面は工夫（craft）と上げた後（keep）だけ。仮説を見て話した考え（think）はループ1（words の口で紙を生む側）の材料なので混ぜない。
-    - 読み方: talk_log.kufu(出典, 記録, shared_only=True)。学ぶ人の頁と同じ字で、作る側が隠した字（set_share）と、入口の床にもう一度当たる字
+    - 読み方: talk_log.kufu(出典, 記録, shared_only=True)。作る側が隠した字（set_share）と、入口の床にもう一度当たる字
       （床を広げる前に残った字や、手で置いた字）が外れる。床をここで当て直さない（shared_only の中にある）。
       これより強い絞りは足さない（2b で字は全部見せる決定。本人の指示 11-05 17:55）。
     - 鍵の有無で読む字を変えない。人の道（material の命令）にも隠した字を出さない: 人が読んで書く解釈と案を通って、隠した字が輪に入るため。
@@ -151,16 +151,39 @@ def material(rid):
     return {"record": record(rid), "explanation": explanation(rid), "maker_talk": maker_talk(rid)}
 
 
-def next_target(source_id, hid):
+def next_target(source_id, hid, sheet_set=None):
     """次の版を足す仮説。自分の紙（OWN-n）の記録から作る次の版は、たたき台へ向ける（根拠は OWN-n の記録のまま）。
     なぜ: 型紙は玩具ごとに 1 枚（J-032）で、最新版が次の人の型紙になる。OWN-n に版を足しても紙は刷られず、次の人にも届かない。ループ1 を通った人の工夫がループ2（型紙の改善）に届くように。
     型紙なしの紙（寸法の無い案）の記録は向く先が無いので、そのまま返す。組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らないため。欄も節の数も出ず、受け口と床が断る。
-    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。"""
+    画面の欄・節の数・端末の propose・Claude の道は、ここ 1 か所を読む。
+    sheet_set は記録の紙の組。その組の紙の押し方（雛形の HYP_KEY）が今のたたき台の形と違う記録は、向く先が無い（None）。
+    なぜ: 組を上げてたたき台の形が変わると、同じ仮説の id の前の紙（御来迎の R-0002 は goraigo-v7 の柄を差す形の H-C）からの観察で、
+    今の形（goraigo-v14 の割り箸で押し上げる H-C）の版を作ってしまう。窓口が本人の委任で決めた案 A（2026-11-06）: 形の違う記録には
+    次の版の欄を出さず、待つ報告にも数えない。組を持たない記録と、同じ形の組の記録は今までどおり"""
     from .hypotheses import sheet_of
 
     if not str(hid).startswith("OWN-") or not (_hypothesis(source_id, hid) or {}).get("params"):
+        if sheet_set and not _same_form(source_id, hid, sheet_set):
+            return None
         return hid
     return sheet_of(source_id)["id"]
+
+
+def _same_form(source_id, hid, sheet_set):
+    """記録の組の紙（sheet_set の寸法）の押し方が、今のたたき台の紙の押し方と同じか。押し方の名の無い雛形は同じと見る。"""
+    from .compose import TEMPLATES
+    from .hypotheses import ROOT, load, params_for, sheet_of
+
+    tpl = TEMPLATES[load(source_id).get("template", "slider_fan")]
+    # 組の寸法は記録を直に読む（load は今の組の寸法を params に重ねるので、前の組の紙の寸法が読めない）。人が採った仮説は記録に無いので load の物
+    path = ROOT / "data/hypotheses" / f"{source_id}.json"
+    raw = json.loads(path.read_text(encoding="utf-8"))["hypotheses"] if path.exists() else []
+    key, h = getattr(tpl, "HYP_KEY", None), next((x for x in raw if x["id"] == hid), None) or _hypothesis(source_id, hid)
+    if not key or not h:
+        return True
+    then = {**tpl.DEFAULTS, **(params_for(h, sheet_set) or {})}
+    now = {**tpl.DEFAULTS, **(sheet_of(source_id).get("params") or {})}
+    return then.get(key) == now.get(key)
 
 
 def material_text(rid):
@@ -185,8 +208,10 @@ def material_text(rid):
         lines.append(f"  （作る側が隠した字が {hidden} 件ある。ここには出さない。読むのは作る側の頁）")
     elif not talk["items"]:
         lines.append("  （この記録に結んだ字は無い）")
-    target = next_target(rec["source_id"], rec["hypothesis_id"])
-    if target != rec["hypothesis_id"]:
+    target = next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))
+    if target is None:
+        lines += ["", "この記録の紙は今のたたき台と押し方が違うので、次の版には使わない"]
+    elif target != rec["hypothesis_id"]:
         lines += ["", f"次の版は {target} に足します（根拠はこの記録）"]
     lines += ["", f"読んだら、confirm {rid} --by 名前 --text 解釈 と propose {rid} --change 寸法=値 --why 理由 で書きます"]
     return "\n".join(lines)
@@ -335,8 +360,9 @@ def check_proposal(p, source, will_confirm=(), need_why=True):
             current, _ = version_params(sid, hid, latest_version(sid, hid))
             merged = dict(current)
             before = values(template, current)
+            ok = allowed(template, {**TEMPLATES_DEFAULT(template), **current})
             for c in changes:
-                if c.get("param") not in ALLOWED[template]:
+                if c.get("param") not in ok:
                     out.append(Failure("F7.revision", str(c.get("param")), "変えてよい寸法の外"))
                     continue
                 if need_why and not c.get("why", "").strip():
@@ -388,6 +414,14 @@ def _trial_values(lo, hi, now):
     return [int(v) if float(v).is_integer() else v for v in sorted(values, key=lambda v: (abs(v - now), v))]
 
 
+def allowed(template, params):
+    """次の版で変えてよい寸法。表（metrics.ALLOWED）から、その形に効かない寸法（雛形の unused_params）を外す。"""
+    from .compose import TEMPLATES
+
+    unused = getattr(TEMPLATES[template], "unused_params", lambda p: set())(params)
+    return ALLOWED[template] - unused
+
+
 @functools.lru_cache(maxsize=256)
 def _movable(sid, current_json):
     """今の寸法（json の字）で、1 つ変えて通る値がある寸法と、その値の 1 つ。寸法が同じなら答えも同じなので、1 度だけ検査する。
@@ -398,7 +432,7 @@ def _movable(sid, current_json):
     template = _template(sid)
     tpl, now = TEMPLATES[template], {**TEMPLATES[template].DEFAULTS, **json.loads(current_json)}
     found = {}
-    for k in sorted(ALLOWED[template]):
+    for k in sorted(allowed(template, now)):
         for v in _trial_values(*tpl.RANGES[k], now[k]):
             trial = {**now, k: v}
             if not (tpl.check_range(trial) or tpl.check_physics(trial)):
@@ -560,7 +594,7 @@ def next_version(rid, by, content, change, source, sheet_dir):
     if failures:
         return None, failures
     rec = record(rid)
-    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"])
+    sid, hid = rec["source_id"], next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))
     proposal = {"record_ids": [rid], "hypothesis_id": hid, "changes": [change]}
     failures = check_proposal(proposal, source, will_confirm=[rid])
     if failures:
@@ -704,7 +738,7 @@ def main(argv=None):
                 for c in args.change:
                     k, v = c.split("=", 1)
                     changes.append({"param": k, "to": float(v), "why": args.why})
-                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"]), "changes": changes}, source, "human")
+                pid, failures = save_proposal({"record_ids": [args.record], "hypothesis_id": args.hypothesis or next_target(source["source_id"], record(args.record)["hypothesis_id"], record(args.record).get("sheet_set")), "changes": changes}, source, "human")
             else:
                 from api.loop_agents import draft_proposal
 

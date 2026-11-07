@@ -23,11 +23,13 @@ if not shutil.which("ffmpeg"):  # 確かめられない時は 4（repo の決ま
     print("検査できない: ffmpeg が無い", file=sys.stderr)
     sys.exit(4)
 
-from omochae import loop, trial_video as tv  # noqa: E402
+from omochae import hypotheses, loop, trial_video as tv  # noqa: E402
 from web import techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 work = pathlib.Path(tempfile.mkdtemp())
 src = work / "take.mov"
 # 動く 8 秒 + 止まった 30 秒 + 動く 4 秒。音と、位置の撮影情報を付ける（落ちる事を見るため）
@@ -37,7 +39,7 @@ subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=siz
                 "-metadata", "location=+35.6000+139.7000/", "-metadata", "title=secret-place", str(src)], check=True, capture_output=True, timeout=120)
 
 # 記録を作って結ぶ。刷った組が残る
-rid, fails = tv.new_record(G, "H-A", "動かない", tried_on="2026-11-05", note="作成の過程の動画の試行")
+rid, fails = tv.new_record(G, GS, "動かない", tried_on="2026-11-05", note="作成の過程の動画の試行")
 assert rid and not fails, fails
 rec = loop.record(rid)
 assert rec["sheet_set"].startswith("goraigo-v") and rec["via"] == "video"
@@ -67,7 +69,7 @@ assert m1 == "M1" and m2 == "M2" and not fails
 assert (tv._base(rid) / "frames/v1-000012.jpg").exists(), "札のコマ"
 
 # 確かめていない札は根拠にならない。人の説明の前に案を作れない。版ごとの止まり方にも数えない
-assert tv.effect(G)["H-A"]["rows"] == {}, "案の札を数えない"
+assert tv.effect(G)[GS]["rows"] == {}, "案の札を数えない"
 assert tv.propose(rid, ["M1"], "折りの数を減らす", "作る側", "fold_count", 20)[1]
 assert not tv.judge_mark(rid, "M1", "本人") and tv.judge_mark(rid, "M1", "") and tv.judge_mark(rid, "M9", "本人")
 assert tv.propose(rid, ["M1"], "折りの数を減らす", "作る側", "fold_count", 20)[1], "説明が先"
@@ -76,18 +78,18 @@ assert tv.propose(rid, ["M2"], "x", "作る側")[1], "確かめていない札"
 assert not tv.judge_mark(rid, "M2", "本人", accept=False), "外した札は根拠にならない"
 assert tv.propose(rid, ["M2"], "x", "作る側")[1]
 col = (rec["sheet_set"], 1)
-assert tv.effect(G)["H-A"]["rows"] == {8: {col: {"video": 1, "tap": 0}}}
+assert tv.effect(G)[GS]["rows"] == {8: {col: {"video": 1, "tap": 0}}}
 
 # 案を採ると版になる。検査（F7）に落ちる寸法は版にならない。採る前は版が増えない
 d1, fails = tv.propose(rid, ["M1"], "折りの数を減らして、畳んだ厚さを薄くする", "作る側", "fold_count", 20)
 assert d1 == "D-0001" and not fails, fails
-assert loop.latest_version(G, "H-A") == 1
+assert loop.latest_version(G, GS) == 1
 printed = []
 assert tv.adopt(d1, "", printer=lambda *a: printed.append(a) or 0)[1], "採った人が要る"
 made, fails = tv.adopt(d1, "本人", printer=lambda *a: printed.append(a) or 0)
-assert made == {"version": 2, "printed": True} and not fails and printed == [(G, "H-A", 2)], (made, fails)
+assert made == {"version": 2, "printed": True} and not fails and printed == [(G, GS, 2)], (made, fails)
 assert tv.adopt(d1, "本人")[1], "同じ案を 2 回採らない"
-assert loop.version_params(G, "H-A", 2)[0]["fold_count"] == 20
+assert loop.version_params(G, GS, 2)[0]["fold_count"] == 20
 d2, _ = tv.propose(rid, ["M1"], "折り数をありえない値にする", "作る側", "fold_count", 9999)
 # 採れなかった案の文を、人の確定した解釈として残さない。確定済みの解釈も上書きしない
 before = loop.interpretation(rid)
@@ -100,8 +102,8 @@ assert tv.add_mark(rid, 14, 8, "fold", "外す札", "本人")[0] == "M3" and not
 d_drop, fails = tv.propose(rid, ["M3"], "外される札を根拠にする", "作る側", "fold_count", 18)
 assert d_drop and not fails, fails
 assert not tv.judge_mark(rid, "M3", "本人", accept=False)
-v_now = loop.latest_version(G, "H-A")
-assert tv.adopt(d_drop, "本人")[1] and loop.latest_version(G, "H-A") == v_now, "外した札を根拠に版を作らない"
+v_now = loop.latest_version(G, GS)
+assert tv.adopt(d_drop, "本人")[1] and loop.latest_version(G, GS) == v_now, "外した札を根拠に版を作らない"
 assert not tv.reject(d_drop, "本人")
 # 刷る所で例外が出ても、案は採った事になる（案が採れないまま版だけが増える形にしない）
 d_print, _ = tv.propose(rid, ["M1"], "折りを少し戻す", "作る側", "fold_count", 22)
@@ -121,26 +123,27 @@ made, fails = tv.adopt(d3, "本人", sheet_set="goraigo-v11", commit="abc1234", 
 assert made and made["template_change"].startswith("T-") and not fails, fails
 
 # 次の版の試行: 版ごとの止まり方が並ぶ
-r2, _ = tv.new_record(G, "H-A", "動いた", version=2, tried_on="2026-11-06")
+r2, _ = tv.new_record(G, GS, "動いた", version=2, tried_on="2026-11-06")
 assert tv.attach(r2, src)[1] == []
 tv.add_mark(r2, 20, 3, "cut", "溝を切る所で少し迷った", "本人")
 tv.judge_mark(r2, "M1", "本人")
-eff = tv.effect(G)["H-A"]
+eff = tv.effect(G)[GS]
 col2 = (rec["sheet_set"], 2)
 assert eff["columns"] == [col, col2] and eff["rows"][8] == {col: {"video": 1, "tap": 0}} and eff["rows"][3] == {col2: {"video": 1, "tap": 0}}
 assert eff["reports"] == {col: 1, col2: 1}
 # 組の記録の無い前の記録は、同じ版の組へ寄せる（1 つの版が 2 列に割れない）。画面の札も同じ表に入る。組の版は数の順
 from omochae import making_log, records  # noqa: E402
 
-r_old, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "fixes": []})
-making_log.add_step(G, "H-A", 1, 8, "stuck", who="")
-eff = tv.effect(G)["H-A"]
+r_old, _ = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた", "fixes": []})
+making_log.add_step(G, GS, 1, 8, "stuck", who="")
+eff = tv.effect(G)[GS]
 assert eff["columns"] == [col, col2] and eff["reports"][col] == 2 and eff["rows"][8][col] == {"video": 1, "tap": 1}, eff
 assert sorted([("goraigo-v10", 1), ("goraigo-v9", 1), ("", 1)], key=tv._version_order) == [("", 1), ("goraigo-v9", 1), ("goraigo-v10", 1)]
 
 # エンジンの報告の形に書き出す。確かめた札だけが困り事になる。欄はエンジンの決まりの中だけ
 rep, fails = tv.report(rid, True, finish=3, minutes=40)
-assert not fails and rep["template"] == "slider_fan" and rep["form"] == "tab" and rep["moved"] == "not" and rep["built"] is True and rep["finish"] == 3
+# 形は記録の紙の形（御来迎の今の組 goraigo-v14 のたたき台は内筒を下から押し上げる rise）
+assert not fails and rep["template"] == "slider_fan" and rep["form"] == "rise" and rep["moved"] == "not" and rep["built"] is True and rep["finish"] == 3
 # 寸法は、その記録の版の物（版 2 の報告に版 2 の寸法）
 assert tv.report(r2, True)[0]["params"].get("fold_count") == 20
 assert rep["problems"] == [{"kind": "fold", "step": 8, "note": "蛇腹の 3 枚目で手が止まった"}] and rep["stuck_step"] == 8
@@ -187,7 +190,7 @@ for args in (["confirm", r3, "M2", "--by", "本人"], ["drop", r3, "M2", "--by",
 assert not tv.load(r3)["marks"][1]["confirmed_by"] and not tv.shown(r2, "v1.mp4")
 # 終わりの番号は 0・3・4 だけ（repo の決まり）。読めない動画のために記録を作らない
 count = len(list((pathlib.Path(DATA) / "records").glob("R-*.json")))
-done = cli("attach", str(work / "none.mov"), "--source", G, "--hypothesis", "H-A", "--result", "動かない")
+done = cli("attach", str(work / "none.mov"), "--source", G, "--hypothesis", GS, "--result", "動かない")
 assert done.returncode == 3 and len(list((pathlib.Path(DATA) / "records").glob("R-*.json"))) == count, (done.returncode, done.stderr[-200:])
 assert cli("attach").returncode == 4, "引数の間違いは 4"
 assert cli("sheet", "R-9999", str(work / "x.png")).returncode == 4, "読めない記録は 4"
@@ -204,10 +207,18 @@ assert done.returncode == 0 and json.loads(done.stdout)["minutes"] == 40 and isi
 assert cli("report", rid, "--built", "yes", "--minutes", "40.5").returncode == 4
 # 受け口の記録（web/video_up の印）: 学ぶ人の頁と束の読みから外れ、版の輪の表には数える。札に「わからない」が無い雛形でも、受け口の記録だけ受ける
 TORA = "NDL-1187053-R0000014-R"
-assert records.UNSURE not in records.results_for(TORA)
-assert tv.new_record(TORA, "H-A", records.UNSURE)[1], "手で結ぶ記録は札の言葉だけ"
-up, fails = tv.new_record(TORA, "H-A", records.UNSURE, note="上げた人の文", via=records.UPLOADED)
-assert up and not fails, fails
+# どの雛形も「わからない」を持つ形にした（#146）ので、札に無い雛形の道は、虎の札から「わからない」を外した形で見る。
+# 外すのはこの 4 行の間だけで、後ろの試験は今の札で回す。
+from omochae.compose import TEMPLATES  # noqa: E402
+_tora_results = TEMPLATES["pivot_counterweight"].RESULTS
+TEMPLATES["pivot_counterweight"].RESULTS = tuple(w for w in _tora_results if w != records.UNSURE)
+try:
+    assert records.UNSURE not in records.results_for(TORA)
+    assert tv.new_record(TORA, "H-A", records.UNSURE)[1], "手で結ぶ記録は札の言葉だけ"
+    up, fails = tv.new_record(TORA, "H-A", records.UNSURE, note="上げた人の文", via=records.UPLOADED)
+    assert up and not fails, fails
+finally:
+    TEMPLATES["pivot_counterweight"].RESULTS = _tora_results
 assert up not in {r["id"] for r in records.all_records()} and up in {r["id"] for r in records.all_records(uploads=True)}
 assert up not in {r["id"] for r in records.all_records(TORA)} and tv.effect(TORA)["H-A"]["reports"], "版の輪の表には数える"
 assert tv.attach(up, src, "mov")[1] == [], "入れ物を決め打って読める"
@@ -232,7 +243,7 @@ MARK = "SECRET-IN-STREAM"
 sei = work / "sei.mov"
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=64x48:rate=5:duration=3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-bsf:v", f"h264_metadata=sei_user_data=086f3693b7b34f2c965321492feee5b8+{MARK}", str(sei)], check=True, capture_output=True, timeout=120)
 assert MARK.encode() in sei.read_bytes(), "作り物に印が入っていない"
-r4, _ = tv.new_record(G, "H-A", "動いた")
+r4, _ = tv.new_record(G, GS, "動いた")
 assert tv.attach(r4, sei)[1] == []
 out_sei = tv._base(r4) / "v1.mp4"
 assert MARK.encode() not in out_sei.read_bytes(), "流れの中の字を落とす"
@@ -247,7 +258,7 @@ assert md5(sei) == md5(out_sei), "絵は作り直さない"
 # H.264 と HEVC でない形（コマごとに EXIF を持てる MJPEG）は作り直す
 mjpeg = work / "mjpeg.mov"
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=64x48:rate=5:duration=3", "-c:v", "mjpeg", "-q:v", "5", str(mjpeg)], check=True, capture_output=True, timeout=120)
-r5, _ = tv.new_record(G, "H-A", "動いた")
+r5, _ = tv.new_record(G, GS, "動いた")
 assert tv.attach(r5, mjpeg)[1] == []
 codec = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "V:0", "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(tv._base(r5) / "v1.mp4")], capture_output=True, text=True, check=True).stdout.strip()
 assert codec == "h264", codec

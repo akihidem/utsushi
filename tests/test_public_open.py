@@ -12,16 +12,19 @@ import io
 import os
 import tempfile
 import threading
+import urllib.parse
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from PIL import Image  # noqa: E402
 
 from omochae import hypotheses, media_review, records  # noqa: E402
-from web import techo_site, wording  # noqa: E402
+from web import techo_site, techo_step, wording  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 HOST = "plain-words-here.trycloudflare" + ".com"  # 作り物の名前。門がトンネルの名前の形を落とすので、字の並びを分けて書く
 # 受け口は中身が読める写真だけを受ける（#187 の床）ので、本物の小さな JPEG を作る
 _photo = io.BytesIO()
@@ -72,10 +75,11 @@ closed, opened = up(), up(public_open=True)
 # 開いていないサーバは、トンネルの名前を断る
 assert closed("GET", "/")[0] == 403
 # 開いたサーバは、合言葉なしで入口から玩具の頁まで開く
-assert opened("GET", "/")[0] == 200 and opened("GET", "/toys")[0] == 200 and opened("GET", f"/toy/{G}")[0] == 200
+# えらぶ は入口そのもの（本人のサイト体験レビュー 11-07 の 4）なので、/toys は入口へ送る（302）
+assert opened("GET", "/")[0] == 200 and opened("GET", "/toys")[0] == 302 and opened("GET", f"/toy/{G}")[0] == 200
 form = {"Content-Type": "application/x-www-form-urlencoded", "Origin": f"https://{HOST}"}
-assert opened("POST", f"/toy/{G}/print", "hypothesis=H-A", form)[0] == 303
-assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
+assert opened("POST", f"/toy/{G}/print", f"hypothesis={GS}", form)[0] == 303
+assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
 rid = records.all_records(G)[-1]["id"]
 # 写真と動画は受ける（本人の決定 11-06。前はここで 403 を見ていた）。手帖の口を開け、合言葉付きの場と同じ数の字と約束の印を出す
 up_media = {"Content-Type": "image/jpeg", "Origin": f"https://{HOST}"}
@@ -114,7 +118,7 @@ assert f"#{rid}" not in gallery and f'href="/toy/{G}"' in gallery, "札の玩具
 for path in (f"/toy/{G}", "/zukan", f"/zukan/{G}"):
     assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
 # 写真の札にも、人の書いた文は出さない（文の中の名前は機械で落とせない。J-028）
-assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=PHOTOWORDS", form)[0] == 303
+assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=PHOTOWORDS", form)[0] == 303
 worded = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{worded}/media", jpeg, up_media)[0] == 201 and media_review.record(worded, "m1.jpg", "object", "試験の人") == []
 gallery = stranger("GET", "/gallery")[1]
@@ -128,23 +132,24 @@ assert records.mine(worded, rec_key), "対照: この鍵は今残した記録の
 assert 'id="own"' in techo_site.gallery_page([G], rec_key=rec_key), "対照: 合言葉付きの場の形なら今残した 1 つが出る"
 assert 'id="own"' not in techo_site.gallery_page([G], public=True, rec_key=rec_key), "gallery_page も開いた場では鍵を見ない"
 # 「人や声」と確かめた物は、上げた本人にも、ギャラリーにも出さない
-assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
+assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
 voiced = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{voiced}/media", jpeg, up_media)[0] == 201 and media_review.record(voiced, "m1.jpg", "people", "試験の人") == []
 assert opened("GET", f"/record/{voiced}/media/m1.jpg")[0] == 404 and stranger("GET", f"/record/{voiced}/media/m1.jpg")[0] == 404
+# 絵の道（/media/m…）を見る。上げた画面の手帖の記録の頁には、見えない物も消せるよう「取り下げる」の道（/media/withdraw）が出る
 for page in (opened("GET", "/gallery")[1], stranger("GET", "/gallery")[1], opened("GET", f"/toy/{G}/techo/kiroku")[1]):
-    assert f"/record/{voiced}/media/" not in page
+    assert f"/record/{voiced}/media/m" not in page
 # 別の画面は、番号を知っていても同じ記録へ上げられない（記録の鍵と同じ出所の確かめは、開いた場でもそのまま）
 assert stranger("POST", f"/record/{rid}/media", jpeg, up_media)[0] == 403
 assert stranger("POST", f"/record/{rid}/media", jpeg, {**up_media, "Origin": "https://evil.example"})[0] == 403
 # 1 つの記録に 3 つまで（今の数のまま）。次の記録を残すと前の記録の鍵は外れるので、新しい記録で見る
-assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
+assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
 three = records.all_records(G)[-1]["id"]
 assert [opened("POST", f"/record/{three}/media", jpeg, up_media)[0] for _ in range(3)] == [201, 201, 201]
 code, body = opened("POST", f"/record/{three}/media", jpeg, up_media)
 assert code == 422 and "3 つまで" in body, (code, body)
 # 置き場の合計の上限: 越える時は 507 で、本文は空（手帖は今ある字「写真か動画を上げられませんでした」を出す）。置き場に足さない
-assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
+assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F", form)[0] == 303
 full_id = records.all_records(G)[-1]["id"]
 total, techo_site.PUBLIC_MEDIA_TOTAL = techo_site.PUBLIC_MEDIA_TOTAL, techo_site.media_bytes() + len(jpeg) - 1
 try:
@@ -155,14 +160,14 @@ finally:
 assert opened("POST", f"/record/{full_id}/media", jpeg, up_media)[0] == 201, "上限の内なら受ける"
 assert "写真か動画を上げられませんでした" in techo, "断りの字は今ある字（新しい字を足さない）"
 # 人の書いた文は別の人に見せない（文の中の名前は機械で落とせない。J-028）
-assert opened("POST", f"/toy/{G}/record", "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=SECRETWORDS", form)[0] == 303
+assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=SECRETWORDS", form)[0] == 303
 assert "SECRETWORDS" not in opened("GET", f"/toy/{G}")[1] and "SECRETWORDS" not in opened("GET", "/gallery")[1]
 # 説明と次の思いつきと書いた人も同じ線（#336）。送っても断られる次の版の欄ごと出さず、札は「説明を残しました。」だけにする
-said = "hypothesis=H-A&result=%E5%8B%95%E3%81%84%E3%81%9F"
+said = f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F"
 assert opened("POST", f"/toy/{G}/record", said, form)[0] == 303
 told_id = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{told_id}/explain", "text=TOLDWORDS&next_idea=NEXTWORDS&by=BYWORDS", form)[0] == 303
-for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h=H-A&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
+for path in ("/", "/toys?paper=1", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h={GS}&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("TOLDWORDS", "NEXTWORDS", "BYWORDS"):
@@ -191,7 +196,7 @@ for path in (f"/zukan/{G}", "/zukan"):
 papers = [f"/sheet/{G}/{oid}_v1_{kind}.{ext}" for kind in ("free", "after") for ext in ("pdf", "png", "svg")]
 for path in papers:
     assert closed("GET", path, None, local)[0] == 200, path
-for path in ("/", "/toys", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
+for path in ("/", "/toys?paper=1", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("OWNNAME", "OWNHOW", "OWNWHERE"):
@@ -208,4 +213,11 @@ assert opened("POST", f"/record/{rid}/next", "interpretation=x&param=fold_count&
 assert opened("POST", f"/record/{rid}/ai-interpret", "x=1", form)[0] == 403 and opened("POST", f"/record/{rid}/ai-observe", "x=1", form)[0] == 403
 # 記録の欄に、名前を書かない断りがある
 assert "名前や連絡先は書かないでください" in opened("GET", f"/toy/{G}")[1]
+# 上げた直後の返事（窓口の決定 11-06 夜・案 A）: 手帖は上げた後に「上げました」をギャラリーへ渡す。合言葉なしの場では、確かめる前はギャラリーに
+# 並ばない理由の 1 行を続ける。写真なしで残した時（記録を残しました）と、合言葉付きの場には出さない
+assert f"return '{techo_site.UPLOADED}'" in techo_step.SCRIPT and "location.assign(`/gallery?msg=${encodeURIComponent(done)}" in techo_step.SCRIPT
+uploaded = f"/gallery?msg={urllib.parse.quote(techo_site.UPLOADED)}"
+assert techo_site.PUBLIC_UPLOADED == "写真は、人が確かめてから、みんなの所に出ます。" and techo_site.PUBLIC_UPLOADED in opened("GET", uploaded)[1]
+assert techo_site.PUBLIC_UPLOADED not in opened("GET", f"/gallery?msg={urllib.parse.quote('記録を残しました')}")[1], "写真なしの返事には出さない"
+assert techo_site.PUBLIC_UPLOADED not in closed("GET", uploaded, None, local)[1], "合言葉付きの場には出さない"
 print("ok: 合言葉なしで開くデモ")

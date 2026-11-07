@@ -303,11 +303,10 @@ NEXT_REASONS = {
     "F5.figure_height": "この値だと、像が扇より高くなります。",
     "F5.base_size": "この値だと、扇の台が内筒に入りません。",
     "F5.stroke": "この値だと、押し上げる動きが筒の中に収まりません。",
+    "F5.fan_leg": "この値だと、扇の足が短くて台に貼れません。",
+    "F5.figure_base": "この値だと、像の足が台より広くて貼れません。",
+    "F5.hole": "この値だと、穴が紙の外に出ます。",
 }
-# 文面を本人に確認してもらっている床（#164）。確認が済むまで検査の文を画面に出さず、下の「近い値を試す」の 1 行だけにする。文は確認の後に上の表へ足す。
-NEXT_REASONS_WAITING = {"F5.fan_leg", "F5.figure_base", "F5.hole"}
-
-
 def next_reasons(failures, sid, hid, param, to=None):
     """「次の版を作る」が通らなかった時に出す文。理由のあとに、今の値と次の一手を 1 行足す。"""
     template = hypotheses.load(sid).get("template", "slider_fan")
@@ -324,9 +323,6 @@ def next_reasons(failures, sid, hid, param, to=None):
                 on_paper = True
                 continue
             text = f"{label}は {span[0]:g}〜{span[1]:g} の間で書いてください" + (f"（今 {value}）。" if value else "。")
-        elif f.floor in NEXT_REASONS_WAITING:
-            on_paper = True
-            continue
         elif f.floor.startswith("F5."):
             # ほかの雛形の床は文がそれぞれ読めるので、座標の組だけを外す。
             text, on_paper = NEXT_REASONS.get(f.floor) or re.sub(r"\s*\([-\d., ]+\)", "", f.message), True
@@ -354,7 +350,7 @@ def next_form(r, back=""):
     自分の紙（OWN-n）の記録は、たたき台へ向けて欄を出す（loop.next_target。今の値もたたき台の物）。"""
     from omochae.metrics import ALLOWED
 
-    target = loop.next_target(r["source_id"], r["hypothesis_id"])
+    target = loop.next_target(r["source_id"], r["hypothesis_id"], r.get("sheet_set"))
     if target != hypotheses.sheet_of(r["source_id"])["id"]:
         return ""
     template = hypotheses.load(r["source_id"]).get("template", "slider_fan")
@@ -556,15 +552,16 @@ FOLD_SCRIPT = ("<script>(()=>{const open=()=>{const id=decodeURIComponent(locati
                "for(let e=d;e;e=e.parentElement&&e.parentElement.closest('details'))e.open=true};open();addEventListener('hashchange',open)})()</script>")
 
 
-def fold(section, tag="h2"):
-    """節（<section …><h2>見出し</h2>…</section>）を、見出しを畳みの見出しにした形にする。見出しが無い節はそのまま返す。"""
+def fold(section, tag="h2", opened=False):
+    """節（<section …><h2>見出し</h2>…</section>）を、見出しを畳みの見出しにした形にする。見出しが無い節はそのまま返す。
+    opened は初めから開く時（送って通らなかった記録の欄など。書いた字を隠さないため、#300 と同じ線）。"""
     i = section.find(f"<{tag}")
     j = section.find(f"</{tag}>", i)
     k = section.rfind("</section>")
     if i < 0 or j < 0 or k < j:
         return section
     j += len(f"</{tag}>")
-    return section[:i] + f'<details class="fold-sec"><summary>{section[i:j]}</summary>' + section[j:k] + "</details>" + section[k:]
+    return section[:i] + f'<details class="fold-sec"{" open" if opened else ""}><summary>{section[i:j]}</summary>' + section[j:k] + "</details>" + section[k:]
 
 
 def printed_set(sid, hid, version):
@@ -651,15 +648,20 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="meta">画面で見て、印刷する前に案を検討する所。</p>{window(sid, data, see, kind, v, recorded, photos)}</section>'
     from api import ask  # 聞く口の断りは、Claude を呼ぶ場だけ 1 文を足す（本人の決定 11-06）
 
-    body += (f'<section class="sec" id="tsukuru"><h2>作る</h2><p class="lead">刷った紙を切って、折って、組みます。机に置いた手帖で、声で手順を聞き、写真と動画を記録に添えられます。</p>'
-             f'<p><a class="btn" href="/toy/{sid}/techo">手帖をひらく（作りながら聞く・上げる）</a>'
-             # 作りながら見る（観察 A の試作。本人の案 11-05「端末を机の端に置いて…作成の様子を見れるようにする」）。刷った紙がある時だけ出す。
-             + (f' <a class="btn quiet" href="/toy/{sid}/tsukuru">作りながら見る（机の端に置く・試作）</a>' if versions_of(sid, hypotheses.sheet_of(sid)["id"], printed_only=True) or mine else "")
-             + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())}</section>')
+    # 作る口は 1 つ（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」、地図の道しるべ「作る口は
+    # 手帖 1 つ」）: 頭の「つくる」で型紙の窓へ、窓の「つくる」で手帖へ、の 1 本の道にする。前はこの節にも見出し「作る」と手帖への釦と作りながら見る
+    # 頁への釦があり、手帖へ行く口が 2 つ、作る節が「すぐ作る」と 2 つあった。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）。
+    # 節の錨（#tsukuru）は残す: 作りながら見る頁の「← 玩具」と試験の並びがこの錨を指すため。中身は困った時に聞く口だけ。刷る前は聞く口も無いので、
+    # 空の節の余白を出さず錨だけを置く。
+    making = ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())
+    body += f'<section class="sec" id="tsukuru">{making}</section>' if making else '<div id="tsukuru"></div>'
     # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置く（刷る口を押し下げない）
     body += kumitate.section(sid)
-    # 通らなかった時は畳みを開く。書いた字を隠さないため（#300）。
-    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>'
+    # 記録の欄の節は、見出しのまま畳む（地図の工程 4「声と動画が主で、字は畳んだ追加。残す口は 1 つ」。残す口は手帖の「のこす」）。
+    # 欄は 13 あり、開いたままだと玩具の頁で「全部書くのか」と読ませる。字で残したい人と JS の無い画面のために、欄そのものは残す。
+    # 開く時: 送って通らなかった時（書いた字を隠さないため、#300）と、#kiroku の道で着いた時（FOLD_SCRIPT）。返事の文（head）は畳みの外に出る。
+    body += fold(f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>',
+                 opened=bool(fill("record")))
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{fold_samples(sample_records(data), bool(recs))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')

@@ -11,7 +11,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from omochae import hypotheses, ways  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
 from omochae.model import Part  # noqa: E402
-from web import genre, toy, toys  # noqa: E402
+from web import about, genre, toy, toys  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -79,7 +79,9 @@ assert all(r["one_sheet"] == (not r["other_materials"]) for r in table)
 assert all(not r["fold_only"] or r["one_sheet"] for r in table)  # 折るだけなのに紙のほかの材料が要る、は読み違い
 # 判定が読めるよう、数を固定する。雛形や仮説を足して変わったら、増えた分の材料を見てここを直す
 counts = {k: sum(r[k] for r in table) for k in ("one_sheet", "fold_only", "period")}
-assert counts == {"one_sheet": 70, "fold_only": 0, "period": 74}, counts
+# 御来迎の H-C は、次の組（goraigo-v14）で割り箸をセロハンテープで内筒に留める形になり、テープは今の物で代えた材料なので
+# 「当時の材料」が外れて 1 つ減った（前は割り箸の柄を差す形で当時の材料。紙一枚の数は変わらない）
+assert counts == {"one_sheet": 70, "fold_only": 0, "period": 73}, counts
 assert not [r for r in table if r["period"] and r["modern_substitutes"]]  # 今の物で代えたのに当時の材料、は読み違い
 assert [r["hypothesis_id"] for r in table if r["source_id"] == GORAIGO and r["one_sheet"]] == ["H-E"]  # 必須 2 種で紙一枚は御来迎の H-E だけ
 
@@ -87,8 +89,9 @@ assert [r["hypothesis_id"] for r in table if r["source_id"] == GORAIGO and r["on
 data = hypotheses.load(TORA)
 # 予想の段は #266 で外したので、予想を置かずに開いた頁にそのまま札が出る
 page = toy.toy_page(GORAIGO)
-# 札の印はたたき台の分（J-032）。御来迎の H-E の紙一枚は頁に出さない。本人の決定 19:44 で、たたき台が紙一枚でなくてよい
-assert '<span class="lb">当時の材料</span>' in page and '<span class="lb">紙一枚</span>' not in page
+# 札の印はたたき台の分（J-032）。御来迎の次の組（goraigo-v14）のたたき台 H-C は、割り箸をセロハンテープで留める（テープは今の物で代えた材料）ので、
+# 「紙一枚」も「当時の材料」も付かない（前の組の H-A は竹串と糸で「当時の材料」だった）。本人の決定 19:44 で、たたき台が紙一枚でなくてよい
+assert 'class="ways"' not in page
 page = toy.toy_page(TORA)
 assert 'class="ways"' not in page  # 虎は竹串と油粘土が要るので、どの印も付かない。札の無い頁も開く
 assert "どれがえらい、ということはありません" in page
@@ -97,8 +100,18 @@ for w in ("順位", "おすすめ", "初心者", "点数", "★"):
 assert f'仮説 {hypotheses.letter(hypotheses.sheet_of(TORA))}「' in page and "仮説 B「" not in page, "札はたたき台の 1 枚だけ（J-032）"
 # 一覧は玩具ごと。たたき台に付く印を、並びを変えずに出す（J-032。本人の決定 19:44 で、必須 2 種に紙一枚が付かなくてよい）
 listing = toys.page("tenji")
-assert listing.count('class="ways"') >= 1 and "どれがえらい、ということはありません" in listing
-assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == ["当時の材料"]
+# 一覧の札は絵と名前だけ（えらぶ の作り直し 11-07）。印は玩具の頁の型紙の札に出し、印の断りの字は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）
+assert 'class="ways"' not in listing and "どれがえらい、ということはありません" in about.page("tenji")
+assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == []
+# 前の組（goraigo-v10）のたたき台 H-A は竹串と糸で作るので「当時の材料」が付く（主張 C-24 の根拠。前の組の紙は変えない）
+_fan = TEMPLATES["slider_fan"]
+_now, _fan.SHEET_SET = _fan.SHEET_SET, _fan.FROZEN_SET
+ways.toy_labels.cache_clear()  # 印は玩具ごとに覚えるので、組を置き替える前後で覚えを消す
+try:
+    assert ways.toy_labels(GORAIGO) == ["当時の材料"]
+finally:
+    _fan.SHEET_SET = _now
+    ways.toy_labels.cache_clear()
 # 並びは、必須 2 種 → ジャンルの見出しごと（genre.groups の順。本人の依頼 11-06）で、見出しの中は記録の順。印ではこの並びを変えない
 rest = [s for s in toys.sources() if hypotheses.stage(s) != "必須"]
 order = [s for s in toys.sources() if hypotheses.stage(s) == "必須"] + [s for _, mids in genre.groups(rest) for _, ss in mids for s in ss]

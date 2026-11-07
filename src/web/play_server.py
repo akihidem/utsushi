@@ -396,15 +396,19 @@ class Handler(BaseHTTPRequestHandler):
             from . import kaizen
             return self._send(200, kaizen.toy_page(m.group(1), look, path))
         if path == "/toys":
+            # 入口を えらぶ にした（本人のサイト体験レビュー 11-07 の 4「入口と選ぶは分けない」）ので、えらぶ の頁は入口へ送る。
+            # 紙 1 枚の絞り込み（本人の言葉 11-05 の口）は、絞った並びの頁として残す（入口に同じ絞り込みは置かない）
+            if qs.get("paper", [""])[0] != "1":
+                return self._send(302, "", headers=[("Location", "/")])
             from . import toys
-            return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
+            return self._send(200, toys.page(look, path, paper=True))
         if path == "/gallery":
             from . import techo_site
             # のこした後はここに着く（窓口の決定 11-06 夜・案 A）。今残した 1 つは、記録を残した画面の鍵（記録の鍵）で見分けて頭に出す。返事の文は ?msg= で受ける
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -445,6 +449,15 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) not in sources() or not kumitate.has(m.group(1)):
                 return self._send(404, "無い")
             return self._send(200, kumitate.page(m.group(1), look, path))
+        # 作業の頁に重ねる形（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）。
+        # 下地は試作の枝 try/hmd の頁（hmd.py）。/toy/<玩具>/kasane は後ろのカメラの映像に重ねる形、/toy/<玩具>/kasane/hmd は透けて見える画面の形。
+        # 組み立ての書き方がある玩具だけ。手帖からの道は、口の字が決まってから足す（新しい字は本人の確かめ）
+        m = re.fullmatch(rf"/toy/({SID})/kasane(/hmd)?", path)
+        if m:
+            from . import hmd
+            if m.group(1) not in sources() or not hmd.available(m.group(1)):
+                return self._send(404, "見つかりません")
+            return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2)))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
@@ -533,6 +546,13 @@ class Handler(BaseHTTPRequestHandler):
             page = genga.page_file(source(m.group(1)))
             if page.exists():
                 return self._send(200, page.read_bytes(), "image/jpeg")
+        # えらぶ の敷き詰めの小さい写し（toys.small_picture。幅 1600px の切り抜きを 83 枚読まないため）
+        m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
+        if m:
+            from . import toys
+            small = toys.small_picture(m.group(1), m.group(2))
+            if small:
+                return self._send(200, small, "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)
         if m and (ROOT / "out/sources" / f"{m.group(1)}.jpg").exists():
             return self._send(200, (ROOT / "out/sources" / f"{m.group(1)}.jpg").read_bytes(), "image/jpeg")
@@ -709,6 +729,20 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/record/(R-\d{4,})/next", self.path)
         if m:
             return self._next_version(m.group(1), form)
+        m = re.fullmatch(r"/record/(R-\d{4,})/media/withdraw", self.path)
+        if m:
+            # 合言葉なしの場の、上げた画面からの取り下げ（窓口の決定 11-06 夜・案 A）。公開の場には進行者がいないので、上げた人が自分で消す。
+            # 見分けは写真の鍵（上げた画面・期限 2 時間）で、釦を出す手帖の記録の頁と同じ条件。消すのは記録の写真と動画だけ（records.withdraw の
+            # media_only。置き場ごと消すので、確かめの控えも残らず、ギャラリーからも消える）。合言葉付きの場は進行者に番号を伝える形のまま
+            from . import techo_site
+            rid = m.group(1)
+            rec = loop.record(rid)
+            if not (getattr(self.server, "public_open", False) and rec and media_review.uploaded_here(rid, techo_site.media_of(rid), self._up_key())):
+                return self._refuse(403, "受け付けられません")
+            _, failures = records.withdraw(rid, media_only=True)
+            if failures:
+                return self._refuse(422, failures[0].message)
+            return self._send(303, "", headers=[("Location", f"/toy/{rec['source_id']}/techo/kiroku#mine")])
         m = re.fullmatch(r"/record/(R-\d{4,})/explain", self.path)
         if m:
             rid = m.group(1)
@@ -778,7 +812,9 @@ class Handler(BaseHTTPRequestHandler):
     def _next_version(self, rid, form):
         """人の解釈の確定 → 人が書いた変更の案 → 人が採る → 次の版を刷る。どこかで床に落ちたら、その理由を出して止め、何も残さない（#158）。"""
         rec = loop.record(rid)
-        sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"])  # 自分の紙の記録からの次の版は、たたき台へ向ける
+        sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))  # 自分の紙の記録からの次の版は、たたき台へ向ける
+        if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
+            return self._send(422, self._toy(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
             return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=rid))
         if loop.explanation(rid) is None:

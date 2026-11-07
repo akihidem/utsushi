@@ -20,6 +20,8 @@ from omochae.model import ToolMissing  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 DATA = pathlib.Path(os.environ["OMOCHAE_DATA"])
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -53,17 +55,17 @@ def assert_nothing_added(before, why):
 
 
 # 版 1 を刷り、記録と説明まで進める。
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
-assert post(f"/toy/{G}/record-json", {"hypothesis": "H-A", "result": "わからない"})[0] == 201
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
+assert post(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "わからない"})[0] == 201
 rid = next((DATA / "records").glob("R-*.json")).stem
 assert post(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えになった", "next_idea": "折りを増やす"})[0] in (200, 303)
 form = {"interpretation": "折りが多く、筒の口に当たって開き切らない", "param": "fold_count", "why": "口に当たらないように", "by": "本人"}
 before = tree()
 
 # 通らない値: どの段で落ちても、ファイルが 1 つも増えず、解釈も確定で残らない。
-for bad, says in (({"to": "29"}, "筒の口の角に当たって"), ({"to": "abc"}, "新しい値は数で書く"), ({"to": "26", "why": " "}, "変える理由が無い"),
-                  ({"to": "26", "param": "no_such"}, "変えてよい寸法の外"), ({"to": "26", "by": " "}, "確定した人の名前が無い"),
-                  ({"to": "26", "interpretation": " "}, "解釈の案が無く")):
+for bad, says in (({"to": "46"}, "筒の口の角に当たって"), ({"to": "abc"}, "新しい値は数で書く"), ({"to": "45", "why": " "}, "変える理由が無い"),
+                  ({"to": "45", "param": "no_such"}, "変えてよい寸法の外"), ({"to": "45", "by": " "}, "確定した人の名前が無い"),
+                  ({"to": "45", "interpretation": " "}, "解釈の案が無く")):
     code, page = post(f"/record/{rid}/next", form | bad)
     assert code == 422 and says in page, (bad, code, page[-400:])
     assert_nothing_added(before, f"通らない値 {bad}")
@@ -84,52 +86,52 @@ def tool_gone(sid, hid, out, version=1, **kw):
 
 
 hypotheses.print_sheet = print_fails
-code, page = post(f"/record/{rid}/next", form | {"to": "26"})
+code, page = post(f"/record/{rid}/next", form | {"to": "45"})
 assert code == 422 and "版 2 の紙を作れませんでした" in page, (code, page[-400:])
 assert_nothing_added(before, "刷るのが検査に落ちた")
 hypotheses.print_sheet = tool_gone
-code, _ = post(f"/record/{rid}/next", form | {"to": "26"})
+code, _ = post(f"/record/{rid}/next", form | {"to": "45"})
 assert code >= 400, code
 assert_nothing_added(before, "刷る道具が無い")
 hypotheses.print_sheet = real_print
-assert loop.latest_version(G, "H-A") == 1
+assert loop.latest_version(G, GS) == 1
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 
 # 通る値: 落ちた後に同じ値で送り直せて、全部が 1 組で揃う。
-code, page = post(f"/record/{rid}/next", form | {"to": "26"})
+code, page = post(f"/record/{rid}/next", form | {"to": "45"})
 assert code in (200, 303), page[-400:]
-assert loop.confirmed(rid) and loop.latest_version(G, "H-A") == 2
+assert loop.confirmed(rid) and loop.latest_version(G, GS) == 2
 # 刷るのは型紙だけ（窓口の決定 推し A・11-06）。手順の紙と試した後の紙は刷る時に組まない（組む仕組みは凍結の床の控えが見る）
-assert (out_dir(G) / "H-A_v2.pdf").read_bytes()[:4] == b"%PDF", "版 2 の型紙"
-assert not any((out_dir(G) / f"H-A_v2{s}.pdf").exists() for s in ("_tejun", "_after")), "版 2 の手順の紙と試した後の紙は組まない"
+assert (out_dir(G) / f"{GS}_v2.pdf").read_bytes()[:4] == b"%PDF", "版 2 の型紙"
+assert not any((out_dir(G) / f"{GS}_v2{s}.pdf").exists() for s in ("_tejun", "_after")), "版 2 の手順の紙と試した後の紙は組まない"
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
-v = json.loads((DATA / "loop" / f"version-{G}-H-A-2.json").read_text(encoding="utf-8"))
-assert v["params"]["fold_count"] == 26 and v["changes"][0]["from"] != 26 and v["record_ids"] == [rid]
+v = json.loads((DATA / "loop" / f"version-{G}-{GS}-2.json").read_text(encoding="utf-8"))
+assert v["params"]["fold_count"] == 45 and v["changes"][0]["from"] != 45 and v["record_ids"] == [rid]
 proposal = json.loads((DATA / "loop" / f"{v['proposal'].replace('P-', 'proposal-')}.json").read_text(encoding="utf-8"))
 assert proposal["status"] == "decided" and proposal["accepted"] == {"version": 2}
 assert any(c["version"] == 2 for c in loop.sheet_confirmations(G)), "型紙の確定も同じ操作で残る"
 # 一時の場所で刷っても、紙には記録と同じ版と根拠が載る。
-text = subprocess.run(["pdftotext", str(out_dir(G) / "H-A_v2.pdf"), "-"], capture_output=True, text=True, check=True).stdout
+text = subprocess.run(["pdftotext", str(out_dir(G) / f"{GS}_v2.pdf"), "-"], capture_output=True, text=True, check=True).stdout
 assert "版 2" in text and rid in text, text[:300]
 
 # 紙の無い版: 作り直す口が画面に出て、押すと紙ができる。
 page_before = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
 assert "作り直す" not in page_before, "紙がある間は出さない"
-gone = sorted(p.name for p in out_dir(G).glob("H-A_v2*"))
+gone = sorted(p.name for p in out_dir(G).glob(f"{GS}_v2*"))
 for name in gone:
     (out_dir(G) / name).unlink()
 page_now = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
 assert "版 2 の紙を作り直す" in page_now, "紙の無い版を画面で知らせる"
-code, _ = post(f"/toy/{G}/reprint", {"hypothesis": "H-A", "version": "3"})
+code, _ = post(f"/toy/{G}/reprint", {"hypothesis": GS, "version": "3"})
 assert code == 422, "採っていない版は刷らない"
-for bad in ({"hypothesis": "H-ZZ", "version": "2"}, {"hypothesis": "H-A", "version": "x"}, {"hypothesis": "H-A", "version": "0"},
-            {"hypothesis": "H-A", "version": "1"}, {"hypothesis": "../../x", "version": "2"}):
+for bad in ({"hypothesis": "H-ZZ", "version": "2"}, {"hypothesis": GS, "version": "x"}, {"hypothesis": GS, "version": "0"},
+            {"hypothesis": GS, "version": "1"}, {"hypothesis": "../../x", "version": "2"}):
     assert post(f"/toy/{G}/reprint", bad)[0] == 422, bad
 count = len([c for c in loop.sheet_confirmations(G) if c["version"] == 2][0]["confirmations"])
-code, _ = post(f"/toy/{G}/reprint", {"hypothesis": "H-A", "version": "2"})
+code, _ = post(f"/toy/{G}/reprint", {"hypothesis": GS, "version": "2"})
 assert code in (200, 303)
-assert sorted(p.name for p in out_dir(G).glob("H-A_v2*")) == gone, "同じ組の紙ができる"
-assert (out_dir(G) / "H-A_v2.pdf").read_bytes()[:4] == b"%PDF"
+assert sorted(p.name for p in out_dir(G).glob(f"{GS}_v2*")) == gone, "同じ組の紙ができる"
+assert (out_dir(G) / f"{GS}_v2.pdf").read_bytes()[:4] == b"%PDF"
 assert len([c for c in loop.sheet_confirmations(G) if c["version"] == 2][0]["confirmations"]) == count + 1
 assert "作り直す" not in urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"

@@ -18,6 +18,9 @@ from web.play_server import serve  # noqa: E402
 # 1 つのブラウザとして cookie を持つ。記録を残した画面の鍵（utsushi_rec）が無いと、自分で残した記録にも説明を書けないため
 urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 FORM = {"text": "折りが固い", "next_idea": "幅を変える", "by": "大人", "param": "fold_count", "to": "13", "why": "理由", "interpretation": "読み"}
 
 
@@ -47,8 +50,8 @@ for act in ("next", "ai-interpret", "ai-observe"):
     assert post(opened, f"/record/R-9999/{act}", FORM)[0] == 403, ("合言葉なしの場では今までどおり閉じた口", act)
 
 # 対照: ある記録へは今までどおり。説明は残り、玩具の頁の記録の札へ戻る
-assert post(closed, f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
-assert post(closed, f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] in (200, 303)
+assert post(closed, f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
+assert post(closed, f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})[0] in (200, 303)
 st, body = post(closed, "/record/R-0001/explain", FORM)
 assert st == 200 and "説明を残しました" in body, (st, body[-200:])
 cs.shutdown()

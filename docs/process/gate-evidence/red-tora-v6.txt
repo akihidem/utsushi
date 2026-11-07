@@ -1,0 +1,7 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_tora_v6.py
+# commit: ba4dca5d（回した時の HEAD。組ごとの欄の読み口の枝 issue/115-by-set の木に、この試験だけを置いて回した＝直す前）
+Traceback (most recent call last):
+  File "tests/test_tora_v6.py", line 18, in <module>
+    from omochae.templates import _tora_v6
+ImportError: cannot import name '_tora_v6' from 'omochae.templates' (src/omochae/templates/__init__.py)
+rc=1

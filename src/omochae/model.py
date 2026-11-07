@@ -25,10 +25,17 @@ class Part:
     outline: list  # 外形の頂点。切る線
     label_xy: tuple = (2, 2)
     label: str = ""
+    # 札を何行かに分けて刷る時の [(字, x, y), ...]（部品の左上からの mm）。空なら label を label_xy に 1 行で刷る（今までと同じ）。
+    # 細い部品に長い名を縦に並べるため（虎の 5 重りの腕は幅 8mm で、名が 1 行に入らない。本人の決定 2026-11-06「5 重りの腕」にそろえる。
+    # 型紙エンジン #135 と同じ）。label は部品の名の札の字として持ち続ける（試験と知らせが読む）
+    label_lines: list = field(default_factory=list)
     valley: list = field(default_factory=list)  # ((x1,y1),(x2,y2))
     mountain: list = field(default_factory=list)
     glue: list = field(default_factory=list)  # 糊代の多角形
     cuts: list = field(default_factory=list)  # 中を切る矩形 (x,y,w,h)
+    # 中を切る円 (x,y,r)。虎の次の組（tora-v6）の首の穴（実物の写真は丸い穴、2026-11-06）のように、カッターで切り抜く丸。軸の穴（holes）は
+    # 竹串の先であける小さな穴の印なので、大きな丸い切り抜きを holes に入れると「竹串であける」穴と読まれる。そのため別に持つ（型紙エンジンと同じ）
+    round_cuts: list = field(default_factory=list)
     holes: list = field(default_factory=list)  # 軸の穴 (x,y,r)
     # 描き直しの絵。{"kind": "poly"|"line", "pts": [...], "fill": 色, "stroke": 色, "sw": 太さ}。折り線や糊代をまたがない
     art: list = field(default_factory=list)

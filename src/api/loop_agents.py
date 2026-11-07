@@ -172,7 +172,7 @@ def draft_proposal(record_id, source, client=None):
         return None, [Failure("F8.references", record_id, f"記録は {rec.get('source_id')} の物で、渡された玩具 {sid} と違う")]
     data = load(sid)
     # 既定の向く先は loop.next_target（自分の紙の記録はたたき台へ。型紙なしの紙の記録は向く先が無い）。欄・受け口・端末と同じ所を読む。
-    hypothesis_id = loop.next_target(sid, rec["hypothesis_id"])
+    hypothesis_id = loop.next_target(sid, rec["hypothesis_id"], rec.get("sheet_set"))
     # 雛形と変えてよい寸法は、たたき台の物を渡す。次の版はたたき台にだけ足すので、記録が控えの物でも、控えの雛形を渡すと sheet_params と食い違う（J-032）。
     card = sheet_of(sid)
     sheet = card["id"]
@@ -192,7 +192,7 @@ def draft_proposal(record_id, source, client=None):
     def validate(result):
         # 形（PROPOSE_SCHEMA）と新しい仮説の中身も見る。提案の検査（loop.check_proposal）は寸法と根拠の記録しか見ないため。
         shape = agent.schema_errors(result, PROPOSE_SCHEMA) + _new_hypothesis_content(result.get("new_hypothesis"), sid)
-        if result.get("changes") and loop.next_target(sid, rec["hypothesis_id"]) != sheet and str(rec["hypothesis_id"]).startswith("OWN-"):
+        if result.get("changes") and loop.next_target(sid, rec["hypothesis_id"], rec.get("sheet_set")) != sheet and str(rec["hypothesis_id"]).startswith("OWN-"):
             shape = shape + ["型紙なしの紙の記録からは、寸法の変更を出さない"]  # 組の報告に数えない記録で、たたき台の寸法を変えられる形は筋が通らない（next_target）
         return shape + [f.line() for f in loop.check_proposal({**result, "record_ids": [record_id], "hypothesis_id": result.get("hypothesis_id", hypothesis_id)}, source)]
 

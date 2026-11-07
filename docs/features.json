@@ -15,9 +15,11 @@
   "status": "doing",
   "evidence": [
    "src/omochae/templates/slider_fan.py",
-   "tests/test_floor_pin.py"
+   "tests/test_floor_pin.py",
+   "tests/test_by_set.py",
+   "tests/test_goraigo_v14.py"
   ],
-  "unverified": "実物で組んで開くかは未確認"
+  "unverified": "実物で組んで開くかは未確認（今の組 goraigo-v14 の割り箸で押し上げる柄・内筒・倍の扇は、紙でまだ組んでいない。11-04 に動いたのは前の組の紙）"
  },
  {
   "id": "f03",
@@ -25,9 +27,12 @@
   "status": "doing",
   "evidence": [
    "src/omochae/templates/pivot_counterweight.py",
-   "tests/test_floor_pin.py"
+   "tests/test_floor_pin.py",
+   "tests/test_by_set.py",
+   "src/omochae/templates/_tora_v6.py",
+   "tests/test_tora_v6.py"
   ],
-  "unverified": "実物で組んで揺れるかは未確認"
+  "unverified": "実物で組んで揺れるかは未確認（今の組 tora-v7 の脚・角を落とした胴・両面の頭・粘土の玉の位置は、紙でまだ組んでいない）"
  },
  {
   "id": "f04",
@@ -421,7 +426,9 @@
    "tests/test_kaizen.py",
    "docs/process/decisions/J026-site-side-loop.md",
    "src/web/wa.py",
-   "tests/test_wa_ring.py"
+   "tests/test_wa_ring.py",
+   "src/omochae/loop.py",
+   "tests/test_goraigo_v14.py"
   ],
   "unverified": "本人の方針（11-05 朝、J-026）。感想の欄・一番新しい版を刷る・輪の節と /loop を作った。雛形そのものの直しの報告の入口と道具はエンジンの側（本人の決定、カード 090458 の (b)）で、サイトは仮説ごとの版と表示まで。人で一周した確認はまだ。輪の図（web.wa、本人の言葉 11-06）の 4 つの段の字の並べ方は本人の確認待ち"
  },
@@ -439,7 +446,7 @@
  },
  {
   "id": "f42",
-  "name": "話す口（一周の声の部分、Issue 279）: 考え・工夫・できた物を声か字で残し、話した工夫が記録の「工夫した所（直した所）」に入って、ほかの人も読める",
+  "name": "話す口（一周の声の部分、Issue 279）: 考え・工夫・できた物を声か字で残し、話した工夫が記録に結ばれる。話した字は作る側だけが読む（J-034）",
   "status": "doing",
   "evidence": [
    "src/omochae/talk_log.py",
@@ -449,7 +456,7 @@
    "tests/test_mic_seen.py",
    "tests/test_who_fresh.py"
   ],
-  "unverified": "本人の設計と決定（11-05）。声そのものは残さず、字だけを残す。個人の情報は入口で落とす（連絡先・名乗り・学年と組・学校の名前の形。名前そのものは形で見分けられないので、字を本人が見てから残し、書かないお願いを出す）。記録に入った工夫の字は、記録の感想と同じに、手帖の記録の札に文で出す（選び肢は置かない。合言葉なしで開いた場では出さない）。iPhone・iPad でも話す釦を出し、ブラウザの既定の音声認識で聞いて断りを出す。利用者向けの文は、本人が採ったやさしい言葉の文（Issue 318）。実際のブラウザでは、音声認識の口を差し替えた見本で歩いた。実機（iPhone・iPad・パソコンの Chrome）で声を入れた確認はまだ。仮説を見て話した考えは記録に結ぶが、記録の札にはまだ出していない（見出しの文面が本人の確認待ち）。他の人が作った物の頁に出す所（サイトの線）、エンジンへ渡す束に入れる所（Issue 307）はまだ。輪の Claude の読みと案に渡す所は偽の Claude で試験した（Issue 335 のループ2、tests/test_loop_talk.py）。本物の API では未実行"
+  "unverified": "本人の設計と決定（11-05）。声そのものは残さず、字だけを残す。個人の情報は入口で落とす（連絡先・名乗り・学年と組・学校の名前の形。名前そのものは形で見分けられないので、字を本人が見てから残し、書かないお願いを出す）。話した字は、記録に結んでも学ぶ人の頁に出さない（本人の決定 11-06、J-034。11-05 の「記録の感想と同じに、手帖の記録の札に文で出す」を変えた）。頁に出すのは AI が整理した字だけで、その置き場はまだ無い。記録の札の「工夫した所（直した所）」には、記録の欄に書いた直した点だけを出す（tests/test_talk_not_shown.py）。iPhone・iPad でも話す釦を出し、ブラウザの既定の音声認識で聞いて断りを出す。利用者向けの文は、本人が採ったやさしい言葉の文（Issue 318）。実際のブラウザでは、音声認識の口を差し替えた見本で歩いた。実機（iPhone・iPad・パソコンの Chrome）で声を入れた確認はまだ。エンジンへ渡す束に入れる所（Issue 307）はまだ。輪の Claude の読みと案に渡す所は偽の Claude で試験した（Issue 335 のループ2、tests/test_loop_talk.py）。本物の API では未実行"
  },
  {
   "id": "f48",
@@ -663,6 +670,7 @@
    "src/web/toy.py",
    "src/web/techo_site.py",
    "tests/test_ux_stage0.py",
+   "tests/test_one_make_door.py",
    "docs/process/research/36-road-and-audience.md"
   ],
   "unverified": "入口の最初の画面に「えらぶ」、玩具の頁の最初の画面に「つくる」、窓で紙ができた後は 印刷 → つくる（手帖へ）、手帖の記録の頁に「もちよる」（ギャラリーへ）。読み物と作る側の節は見出しのまま畳み、本物の記録がある時は見本を畳む。字は道しるべの言葉と今ある字だけ。幅 390×844・375×667 は Chromium で測った。実機と人の目、駅ごとに 1 画面の段 1 はまだ"
@@ -693,5 +701,110 @@
    "tests/test_photo_attach_walk.py"
   ],
   "unverified": "手帖の作る頁の「のこす」の後はギャラリーの「他の人が作った物」に着き、記録を残した画面にだけ返事の文と今残した 1 つを頭に出す（記録の鍵で見分ける）。札の記録の番号から記録の頁（説明と AI）へ行く。写真は人が確かめた物だけ（確認の前の物は記録の頁で）。実機と人の目はまだ"
+ },
+ {
+  "id": "f55",
+  "name": "型紙エンジンの作り方の 3D（JSON）を読む口（組み立ての頁の作り直し）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/assembly_json.py",
+   "src/omochae/assembly.py",
+   "tests/test_assembly_json.py"
+  ],
+  "unverified": "読む口だけで、今の組（虎 v6・御来迎 v14）の JSON はまだ置いていない（頁は変わらない）。読む口は、サイトの前の組の組み立てを同じ形に書いて読み戻すと、頁へ渡す形が同じ事で確かめた。エンジンの JSON を頁で見た確かめと、iPhone の実機はまだ"
+ },
+ {
+  "id": "f56",
+  "name": "作業の頁に重ねる形の下地（本人の指示 11-07: HMD か iPhone カメラでオーバーレイする形での作業を前提に。試作の枝 try/hmd から移した）",
+  "status": "doing",
+  "evidence": [
+   "src/web/hmd.py",
+   "src/web/kumitate.py",
+   "src/web/play_server.py",
+   "tests/test_hmd.py"
+  ],
+  "unverified": "/toy/<玩具>/kasane（後ろのカメラの映像に手順の字と 3D を重ねる）と /toy/<玩具>/kasane/hmd（透けて見える画面向け）。1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。映像は機器の中だけで送らない。組み立ての 3D は今の kumitate の段（エンジンの JSON の読み口 assembly_json は別の PR の後）。映像の中の紙に合わせる所は、紙の 4 隅の印（数字だけ）を動かすと 3D の舞台が囲みの中へ動いて縮む形（傾きには合わせない。紙の座標の行列はエンジンの JSON の後）。中を見る（分解）は、組み立ての節が分解した形（window.kumitateSplit）を持つ時だけ釦が出て、押すと開き「とじる」で戻す（字は本人の決定 11-07。分解した形は 3D の担当の PR の後で本物になり、それまでは見本の形で試した）。手帖の最初の画面に、小さな道「カメラに重ねる」（本人が採った口の名 11-07）を 1 つ置いた（組み立ての書き方がある玩具だけ。大きいボタンは「はじめる」のまま）。この機械の headless の Chrome では偽のカメラの映像を測れなかった。実機の iPhone・HMD と人の目はまだ"
+ },
+ {
+  "id": "f60",
+  "name": "玩具の頁の記録の欄を、見出しのまま畳む（地図の工程 4「字は畳んだ追加。残す口は 1 つ」。段 1 の残りの一切れ）",
+  "status": "doing",
+  "evidence": [
+   "src/web/toy.py",
+   "tests/test_ux_fold_record.py",
+   "tests/test_record_fold.py"
+  ],
+  "unverified": "見出し「試した記録を残す」を畳みの見出しにし、13 の欄と送る釦を畳みの中に入れた（新しい字は無い）。送って通らなかった時は開いて書いた字を戻し、#kiroku の道で着いた時も開く。残す口は手帖の「のこす」。合体は 11-07 の撮影の後。実機と人の目はまだ"
+ },
+ {
+  "id": "f57",
+  "name": "えらぶ の敷き詰め（作り直し 11-07。本人の言葉「サイト、絵が並び、タップすると絵から3Dイメージが立ち上がる。…基本構造はシンプルがいい。」の「並ぶ」）",
+  "status": "doing",
+  "evidence": [
+   "src/web/about.py",
+   "src/web/looks.py",
+   "src/web/play_server.py",
+   "src/web/skin.py",
+   "src/web/toys.py",
+   "tests/test_toys.py",
+   "tests/test_ux_stage0.py",
+   "tests/test_ways.py",
+   "tests/test_white_only.py",
+   "tests/test_words_card_1106.py"
+  ],
+  "unverified": "棚の中は原画の敷き詰め（CSS の列だけ）で、札は絵と名前だけ。頭は「83 のおもちゃから、1 つ選ぶ」の 1 行で、前の断りの段は字を変えずに序の頁へ移した（窓口の決定 11-07 の ②）。絵と絵の間は 16px・幅 390 で 3 列・札の下の作り方の印は外したまま（窓口の決定 11-07）。幅 390×844 で 7.2 画面（前 16.2）・1280×800 で 5.3 画面を Chromium で測り、設計の目当ての 5 画面には届いていない。小さい写し（/picture/<印>/small、幅 400）で、幅 390 で読む絵は 2.5MB（前は切り抜き 83 枚で 35MB）。タップで 3D とほかの人の作品を横に送る所はまだ。実機の iPhone と人の目はまだ。11-07 の本人のサイト体験レビュー（4・5・1）で入口そのものを えらぶ にした: 題の間 →「まずはここから」の 2 枚 → 原画の敷き詰め（入口では 1 列 72px 以上・9 列までの控えめな大きさ）。/toys は / へ送る。幅 390×844 で まずはここから の札の頭は 528px（最初の画面の中）、頁は 5.3 画面"
+ },
+ {
+  "id": "f58",
+  "name": "虎の今の組 tora-v7 の作り方の 3D（型紙エンジンの JSON で描く。組み立ての頁と止まった形・作業の頁の口・分解の形）",
+  "status": "doing",
+  "evidence": [
+   "data/kumitate/tora-v7.json",
+   "src/omochae/assembly_json.py",
+   "src/web/kumitate.py",
+   "tests/test_tora_v7_3d.py"
+  ],
+  "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で組めるか・iPhone の実機は、まだ確かめていない。揺れる間の前の壁との当たりは、できあがりの動きの形と ±10° の回しで見た（腕と玉が前の壁の内・帯と頭が穴の縁の内に 0.5mm 以上）。作業の頁の分解の釦は、今の組の JSON がある玩具だけに出る"
+ },
+ {
+  "id": "f59",
+  "name": "御来迎の今の組 goraigo-v14 の作り方の 3D（型紙エンジンの JSON で描く。組み立ての頁と止まった形・作業の頁の口・分解の形）",
+  "status": "doing",
+  "evidence": [
+   "data/kumitate/goraigo-v14.json",
+   "src/omochae/assembly_json.py",
+   "src/web/kumitate.py",
+   "tests/test_goraigo_v14_3d.py"
+  ],
+  "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で組めるか・iPhone の実機は、まだ確かめていない。扇が開く所と畳む所は折りで表せない形で、エンジンの面の行列のまま描く（途中の形は板ごとに回した近い形）"
+ },
+ {
+  "id": "f61",
+  "name": "のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の言葉 7「残すの頁に、記録を上げるとどう改善が進むか（型紙と AI の仮説が良くなる事）を、はっきり書く。ただで情報を上げる人はいない。」。直しの設計の E）",
+  "status": "doing",
+  "evidence": [
+   "src/web/naoru.py",
+   "data/kaizen/highlight.json",
+   "src/web/techo_site.py",
+   "src/web/techo_step.py",
+   "tests/test_naoru.py"
+  ],
+  "unverified": "手帖の記録の頁の頭に、直しの設計の案 1 の 2 行と、改善の歴史の表の山場の 1 行（張子の首振り虎の型紙の版 v7 の行を表の字のまま写した data）を出す。のこすの画面（手帖の最後の画面）は「のこす」の釦のすぐ下に、窓口の決め（11-07・(a)）の 2 行（2 行目を「直した型紙は、次の版になって、次に作る人の型紙になります。」）を出し、山場の 1 行は出さない（作る頁の決まり、本人の決定 11-05、#87。記録の番号・「の紙」・版の名を出さない）。釦の上に置くと 320×568 と 768×576 で「のこす」が最初の画面の外へ出たので、釦の下にした（Chromium で 5 つの画面を測った）。本人が頁で見るのはこれから"
+ },
+ {
+  "id": "f62",
+  "name": "のこす と もちよる を分ける（本人のサイト体験レビュー 11-07 の言葉 6「残すと持ち寄るが同じに聞こえて分かりにくい。残す＝作った記録を残す事、に寄せる。職人の言葉や、昔遊んだ人の寄せる話の入口は、作る側へ合体してもよい。」。直しの設計の D）",
+  "status": "doing",
+  "evidence": [
+   "src/web/techo_site.py",
+   "src/web/about.py",
+   "src/web/play_server.py",
+   "tests/test_techo_site.py",
+   "tests/test_demo_samples.py",
+   "tests/test_form_import.py",
+   "tests/test_wording.py",
+   "tests/test_reader_words.py"
+  ],
+  "unverified": "寄せられた声と職人の言葉の節（持ち寄りの入口のフォームを含む）を、ギャラリーから序の頁（よむ）の足へ移した。字と id（yose・shokunin）は前のまま。ギャラリーは作った記録の並び（のこす の続き）だけになり、節へ飛ぶ口を外し、題から「と職人の言葉」を外して「作った物」にした（字を外しただけ。窓口へ知らせた）。帯の駅は替えない（UX の担当の読み ②）。移し先を序の頁にしたのは、直しの設計の「玩具の頁の足の畳みか よむ」のうち、玩具の頁は別の直しの担当が持つため。玩具の頁の足の「作った物と職人の言葉」の口の字は、玩具の頁の直し（C3）で合わせる見込み。本人が頁で見るのはこれから"
  }
 ]

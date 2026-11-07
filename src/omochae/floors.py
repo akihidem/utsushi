@@ -103,6 +103,10 @@ def check_art(parts):
                     for x0, y0, w, h in p.cuts:
                         if ink.intersects(box(p.x + x0, p.y + y0, p.x + x0 + w, p.y + y0 + h)):
                             out.append(Failure("F5.image_box", p.name, "位置の印が中の切り込みにかかり、切ると消える"))
+                    # 丸い切り抜きも、矩形の切り込みと同じく切ると消える（同じ文にする。切る物の形で言い分けない。型紙エンジンと同じ）
+                    for cx, cy, r in p.round_cuts:
+                        if ink.intersects(Point(p.x + cx, p.y + cy).buffer(r)):
+                            out.append(Failure("F5.image_box", p.name, "位置の印が中の切り込みにかかり、切ると消える"))
             # 部品の外かは、面なら塗りで見る。輪郭線が切る線の上に乗る絵（虎の頭）は、外へ出た半分を切り落とすので困らない。
             # 折り線と糊代は、切り落とされないので輪郭線の太さまで見る。
             inside = geom if item["kind"] == "poly" else ink
@@ -126,4 +130,15 @@ def check_holes(parts):
         for x, y, r in p.holes:
             if not poly.buffer(EPS).contains(Point(x, y).buffer(r)):
                 out.append(Failure("F5.hole", p.name, f"穴 ({x:.1f}, {y:.1f}) が部品の外に出ている"))
+        # 丸い切り抜きも、寸法から置くので紙の外に出うる。穴と同じ床で見る（外に出た丸は、紙の縁を切り欠いてしまう。型紙エンジンと同じ）
+        for x, y, r in p.round_cuts:
+            # 円と外形・折り線・糊代は、中心からの距離を半径と直に比べる。円を多角形で近づけると、円の内に入れれば弧のはみ出しを
+            # 見逃し、外から包めば離れている縁まで落とす（どちらも境の寸法で取り違える）
+            c = Point(x, y)
+            if not (poly.contains(c) and poly.exterior.distance(c) >= r - EPS):
+                out.append(Failure("F5.hole", p.name, f"丸い切り抜き ({x:.1f}, {y:.1f}) が部品の外に出ている"))
+            # 外形の内かだけでは、折り線や糊代を切り取る丸も通る（折る所・貼る所が無くなる）。どちらにかかっても落とす
+            elif (any(LineString([a, b]).distance(c) < r - EPS for a, b in p.valley + p.mountain)
+                  or any(Polygon(gl).distance(c) < r - EPS for gl in p.glue)):
+                out.append(Failure("F5.hole", p.name, f"丸い切り抜き ({x:.1f}, {y:.1f}) が折り線か糊代にかかる"))
     return out
