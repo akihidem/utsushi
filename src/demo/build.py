@@ -57,7 +57,11 @@ DIRTY_PATHS = ["src", "data/hypotheses", "data/sources", "tests", "docs/process/
 # 曲が来るまでのクレジット。Suno の曲に見せないため、仮と書く。
 PROVISIONAL_CREDIT = "仮の拍（コードで作った音。Suno の曲待ち）"
 # 場面の別版（試作）。{台本の場面の名前: (受ける別版のモジュールの名前, …)}。別版は同じ CUES・DURATION を持つ（demo.core_loop_ban）
-ALTS = {"core_loop": ("core_loop_ban",)}
+ALTS = {"core_loop": ("core_loop_ban", "core_loop")}
+# 既定の差し替え（窓口の決定 11-07、084919 の ①「15 の輪の図は御来迎 v10→v14 の版の並びに替える」）。台本の場面の名前は core_loop のまま
+# （字幕・秒・合図・案内役・後入れの札が場面の名前で引くため。台本 script.py の順は変えない）。前の輪の図に戻す時は --swap core_loop=core_loop。
+# 作り直す場面（--only）に入っている時だけ効く（作り直さない場面は前の動画のまま）。
+DEFAULT_SWAPS = {"core_loop": "core_loop_ban"}
 
 
 def parse_swaps(items):
@@ -77,7 +81,7 @@ def parse_swaps(items):
 def scene_for(name, swaps):
     """書き出す場面の作り。差し替えた場面は別版のモジュール、ほかは台本どおり（load_scene）。"""
     alt = swaps.get(name)
-    return importlib.import_module(f"demo.{alt}") if alt else load_scene(name)
+    return importlib.import_module(f"demo.{alt}") if alt and alt != name else load_scene(name)
 
 
 def count_tests(result_text):
@@ -314,6 +318,8 @@ def main(argv=None):
     if kept:
         print(f"検査できない: 差し替えた場面は作り直す（前の動画を残すと別版にならない）: {'、'.join(kept)} を --only に足す", file=sys.stderr)
         return 4
+    # 既定の差し替えは、人が --swap で同じ場面を指していない時・作り直す場面・動画で差し替えない場面だけ
+    swaps = {**{n: x for n, x in DEFAULT_SWAPS.items() if n in only and n not in clips and n not in swaps}, **swaps}
     if a.song and not a.rights:
         print("検査できない: 曲には --rights（権利）が要る", file=sys.stderr)
         return 4

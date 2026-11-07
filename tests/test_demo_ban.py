@@ -30,12 +30,14 @@ assert core_loop_ban.EXTRA_LINE == "", "窓口が採った字幕は、秒の出�
 assert [n for _, n in core_loop_ban.VERSIONS] == [10, 11, 12, 13, 14], "御来迎の v10 → v14 だけ（虎はこの場面に入れない）"
 assert core_loop_ban.LABEL.format(n=14) == "型紙の版 14" and core_loop_ban.ENGINE_LABEL.format(n=7) == "エンジンの版 7"
 
-# 2. --swap が無い時は今のまま
+# 2. 台本の順は今のまま。既定の差し替えは場面 15 の版の並び（窓口の決定 11-07、084919 の ①）。--swap core_loop=core_loop で前の輪の図に戻る
 assert build.SCENES == ["opening", "talk_toys", "talk_lost", "scene2", "flip", "word_touch", "scene3", "core_make", "scene5", "core_keep", "core_gallery",
                         "border", "talk_physics", "talk_claude", "core_loop", "word_ai", "scene7", "close", "ask"]
 assert "core_loop_ban" not in build.SCENES and build.parse_swaps([]) == {}
+assert build.DEFAULT_SWAPS == {"core_loop": "core_loop_ban"}
 for name in build.SCENES:
     assert build.scene_for(name, {}) is script.load_scene(name), name
+assert build.scene_for("core_loop", build.parse_swaps(["core_loop=core_loop"])) is script.load_scene("core_loop"), "前の輪の図に戻せる"
 
 # 3. 差し替えはその場面だけ
 swaps = build.parse_swaps(["core_loop=core_loop_ban"])
