@@ -373,6 +373,10 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look]())
+        if path == "/kaizen":
+            # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
+            from . import kaizen_judge
+            return self._send(200, kaizen_judge.page(look, path))
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))

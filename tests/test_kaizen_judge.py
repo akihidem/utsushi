@@ -1,0 +1,84 @@
+"""審査用の頁「改善の一周」（/kaizen。本人の言葉 11-07）の試験。本物の API は呼ばない。
+
+見る事:
+1. 合言葉なしの公開の場でも開く。学ぶ人の帯と入口からは道を張らない（審査員の入口は README と序の頁）
+2. 本当にあった 3 つの一周（サイトの輪・エンジンの輪・山場）が、段ごとの札で上から順に並ぶ
+3. 字の元は repo の中の記録と改善の歴史の表だけ（記録の字・表の字がそのまま出る）
+4. 誰がしたかを記録のとおりに分ける: Claude の印は「直しを作る」の段だけ。Claude が記録を読む段の札は無い（この 3 つの一周では使っていない）
+5. 本人の名は「このサイトを作った人」と言い、「制作者」「本人」の字と型の名は出さない
+6. 合体待ちの版は出さない。流れの文に、まだ入っていない PR が出てくる間は文を出さない
+"""
+import copy
+import json
+import os
+import re
+import tempfile
+import threading
+import urllib.request
+
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ.pop("ANTHROPIC_API_KEY", None)
+
+from web import kaizen_judge as k  # noqa: E402
+from web.play_server import serve  # noqa: E402
+
+
+def text(h):
+    h = re.sub(r"<style>.*?</style>|<script>.*?</script>", "", h, flags=re.S)
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", h)).replace("&amp;", "&").replace("&quot;", '"')
+
+
+# ---- 1 開く・道を張らない
+for opened in (False, True):
+    server = serve(0, public_open=opened)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    r = urllib.request.urlopen(base + "/kaizen", timeout=120)
+    assert r.status == 200, opened
+    page = r.read().decode()
+    for path in ("/", "/toys"):
+        assert "/kaizen" not in urllib.request.urlopen(base + path, timeout=120).read().decode(), ("学ぶ人の入口には道を張らない", path)
+    server.shutdown()
+
+# ---- 2 3 つの一周と段の順
+hist = json.loads(k.HISTORY.read_text(encoding="utf-8"))
+loops = re.findall(r'<section class="sec kz-loop" id="(\w+)">', page)
+assert loops == ["site", "engine", "peak"], loops
+def steps(sec):
+    part = page[page.index(f'id="{sec}"'):]
+    part = part[:part.index("</section>")]
+    return re.findall(r'<span class="kz-who (\w+)"[^>]*>[^<]*</span><h3>([^<]*)</h3>', part)
+assert steps("site") == [("human", "作った記録"), ("human", "人の説明"), ("human", "直しの案"), ("human", "人が決める"), ("claude", "直しを作る"), ("human", "次の版")], steps("site")
+assert steps("engine") == [("human", "作った記録"), ("human", "人の説明"), ("engine", "直しの案"), ("human", "人が決める"), ("claude", "直しを作る"), ("human", "次の版")], steps("engine")
+assert steps("peak") == [("engine", "作った記録"), ("human", "人が決める"), ("claude", "直しを作る"), ("human", "次の版")], steps("peak")
+
+# ---- 3 字の元は記録と表だけ
+t = text(page)
+ex = json.loads(k.SITE_EXPL.read_text(encoding="utf-8")); ch = json.loads(k.SITE_CHANGE.read_text(encoding="utf-8"))
+assert ex["text"] in t and all(c in t for c in ch["changes"]), "サイトの輪は記録の字のまま"
+v4 = k._version(hist, "虎", "tora-v4"); v7 = k._version(hist, "虎", "tora-v7")
+assert all(c.replace("制作者", k.MAKER) in t for c in v4["changed"] + v7["changed"]), "エンジンの輪と山場は表の字のまま"
+assert "型紙の版 v3 → v4・エンジンの版 2" in t and "型紙の版 v6 → v7・エンジンの版 7" in t and "goraigo-v7 → goraigo-v8" in t
+assert f'/utsushi/commit/{ch["commit"]}' in page and "/paper-to-toy/pull/106" in page and "/paper-to-toy/pull/138" in page, "直しを作った commit と PR へ行ける"
+
+# ---- 4 Claude の印は直しを作る段だけ。読む段の札は無い
+claude_steps = [s for sec in loops for s in steps(sec) if s[0] == "claude"]
+assert claude_steps and all(h == "直しを作る" for _, h in claude_steps)
+assert "読み" not in "".join(h for sec in loops for _, h in steps(sec)) and k.NOT_YET in t
+
+# ---- 5 名の言い方
+for word in ("制作者", "本人", "Opus", "Sonnet", "Haiku", "Fable"):
+    assert word not in t, word
+assert k.MAKER in t
+
+# ---- 6 合体待ち
+assert "合体待ち" not in t and "#139" not in t, "まだ入っていない PR を済んだ事として言わない"
+pend = copy.deepcopy(hist)
+for toy in pend["toys"]:
+    for v in toy["versions"]:
+        if v.get("set") == "tora-v7":
+            v["status"] = "合体待ち"
+assert k.peak_loop(pend) == "", "合体待ちの版は出さない"
+nostory = copy.deepcopy(hist); nostory["engine_changes"] = [c for c in nostory["engine_changes"] if c.get("pr") != 139]
+assert "見つかった事から直る" in text(k.peak_loop(nostory)), "まだ入っていない PR が無ければ、流れの文を出す"
+print("ok 審査用の頁: 3 つの一周を段ごとに並べ、誰がしたかを記録のとおりに分け、字は記録と表だけ。合体待ちは出さない")
