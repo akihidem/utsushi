@@ -160,7 +160,7 @@ def head(sid, src=None, photos=True):
     src = src or _source(sid)
     pic, whole = _pic(sid, src, alt(src), href=f"/picture/{sid}/page" if page_file(src).exists() else None)
     pic = f'<div class="genga-row">{pic}{crop(sid, src) if whole else ""}</div>' if pic else ""
-    # 原画のすぐ後に、作ってみた実物（人が確かめた写真。無ければ組み立ての止まった形）を 1 枚（本人のサイト体験レビュー 11-07 の 2。web.made）
+    # 原画のすぐ後に、作ってみた実物（人が確かめた写真。無ければ何も置かない。窓口の決め 125731・(b)）を 1 枚（本人のサイト体験レビュー 11-07 の 2。web.made）
     from . import made
 
     pic += made.figure(sid, "made genga-made", photos=photos)

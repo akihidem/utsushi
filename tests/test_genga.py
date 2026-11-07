@@ -158,8 +158,8 @@ for public_open in (False, True):
         server.shutdown()
         server.server_close()
 
-# 作ってみた実物（本人のサイト体験レビュー 11-07 の 2・web.made）: 原画のすぐ後に、人が確かめた写真を 1 枚。無ければ組み立ての止まった形を
-# 頁が開いた後に読む（/toy/<印>/still）。どちらも無い玩具は何も置かない。入口の まずはここから の札は写真がある時だけ右下に小さく重ねる
+# 作ってみた実物（本人のサイト体験レビュー 11-07 の 2・web.made）: 原画のすぐ後に、人が確かめた写真を 1 枚。写真が無ければ何も置かない
+# （窓口の決め 125731・(b)。前は組み立ての止まった形を置き、C3 の頭の後の動く 3D と御来迎・虎で 2 回出た）。入口の まずはここから の札も写真がある時だけ
 from omochae import media_review, records  # noqa: E402
 from web import kumitate, looks, made, play_server  # noqa: E402
 
@@ -167,12 +167,8 @@ GOR = "NDL-1187053-R0000005-L"
 TOYS3 = [s for s in toys.sources() if kumitate.available(s)][:1] + [s for s in toys.sources() if not kumitate.available(s)][:1]
 with_3d, without = TOYS3
 assert made.photo(with_3d) is None
-fig = made.figure(with_3d)
-assert f'data-still="/toy/{with_3d}/still"' in fig and "fetch(" in fig and "<img" not in fig, "写真が無ければ止まった形を後から読む"
-assert made.figure(without) == "" and made.still_html(without) == "", "どちらも無い玩具は何も置かない"
-assert 'class="rt-still"' in made.still_html(with_3d) and made.STILL in made.still_html(with_3d)
-page = genga.head(with_3d)
-assert "data-still=" in page and (page.index('class="genga-row"') < page.index("data-still=") if 'class="genga-row"' in page else True), "原画のすぐ後"
+assert made.figure(with_3d) == "" and made.figure(without) == "", "写真が無ければ、3D があっても無くても何も置かない"
+assert 'class="made' not in genga.head(with_3d) and "data-still" not in genga.head(with_3d), "頭に止まった形の口を置かない"
 srv = play_server.serve(0, look="tenji")
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 try:
@@ -182,9 +178,9 @@ try:
                 return r.status, r.read().decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
             return e.code, ""
-    st, frag = code(f"/toy/{with_3d}/still")
-    assert st == 200 and 'class="rt-still"' in frag, st
-    assert code(f"/toy/{without}/still")[0] == 404 and code("/toy/NDL-0000000-R0000000-L/still")[0] == 404
+    st, page = code(f"/toy/{with_3d}")
+    assert st == 200 and "data-still" not in page and 'class="made' not in page, "写真の無い 3D の玩具の頁に止まった形の口が無い"
+    assert code(f"/toy/{with_3d}/still")[0] == 404, "止まった形を読む道は無くした"
 finally:
     srv.shutdown()
     srv.server_close()
@@ -199,10 +195,10 @@ assert made.photo(GOR) is None, "確かめる前の写真は出さない"
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 # 写真は小さい写しの道（上げた元の写真は 3.7MB ほどある。入口の絵 100KB の線）
 assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg/small"
-assert f'<img src="/record/{rid}/media/m1.jpg/small" alt="{made.PHOTO}の写真"' in made.figure(GOR) and "data-still" not in made.figure(GOR)
-# 開いた場の玩具の頁は写真を置かない（写真が確かめてあっても、止まった形の口だけになる）
-closed = made.figure(GOR, photos=False)
-assert "/media/" not in closed and (f'data-still="/toy/{GOR}/still"' in closed) == bool(kumitate.available(GOR)), "開いた場の玩具の頁は写真を置かない"
+assert f'<img src="/record/{rid}/media/m1.jpg/small" alt="{made.PHOTO}の写真"' in made.figure(GOR)
+assert genga.head(GOR).index('class="genga-row"') < genga.head(GOR).index('class="made genga-made"'), "写真は原画のすぐ後"
+# 開いた場の玩具の頁は写真を置かない（写真が確かめてあっても何も置かない）
+assert made.figure(GOR, photos=False) == "", "開いた場の玩具の頁は写真を置かない"
 entrance = looks.tenji().split("</style>")[-1]
 assert entrance.count('class="tj-made"') == 1 and f'src="/record/{rid}/media/m1.jpg/small"' in entrance, "入口の札に写真が重なる"
 assert "/media/" not in looks.tenji(photos=False).split("</style>")[-1], "開いた場の入口は写真を置かない"

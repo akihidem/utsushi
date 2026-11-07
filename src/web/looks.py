@@ -334,8 +334,7 @@ def _mazu(ts, photos=True):
 
     def photo(t):
         # 作ってみた実物の写真（本人のサイト体験レビュー 11-07 の 2）。人が確かめた写真がある時だけ、額の右下に小さく重ねる。
-        # 写真が無い時の組み立ての止まった形（made.figure の代わり）は入口には置かない: 1 枚 240〜450KB の頁の字になり、
-        # 最初の画面の絵が届くのが遅れる（統括の合格の線「入口の絵は 1 枚 100KB 以下」）。止まった形は玩具の頁の頭に出る
+        # 写真が無い時は何も置かない（玩具の頁の頭と同じ。窓口の決め 125731・(b)）
         url = made.photo(t["sid"]) if photos else None
         return f'<span class="tj-made"><img src="{esc(url)}" alt="{esc(made.PHOTO)}の写真" decoding="async"></span>' if url else ""
     cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}{photo(t)}</span>'
