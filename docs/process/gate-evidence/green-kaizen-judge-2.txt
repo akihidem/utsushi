@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kaizen_judge.py
+# commit: 6fc6dbf6（回した時の HEAD）
+ok 審査用の頁: 済んだ 3 つの一周と、Claude が読んだ確認待ちの 1 件を、札の字と色で分けて並べる。字は記録と表と写しだけ。合体待ちは出さない
+rc=0

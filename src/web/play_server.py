@@ -443,6 +443,30 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
+        if path == "/kaizen":
+            # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
+            from . import kaizen_judge
+            return self._send(200, kaizen_judge.page(look, path))
+        m = re.fullmatch(r"/kaizen/video/([^/]+)", path)
+        if m:
+            # 審査用の頁の動画（御来迎が開く所。公開の場のデータの置き場の、確かめた印のある物だけ。web/kaizen_kata.py）。iPhone の Safari のために Range を受ける
+            from . import kaizen_kata
+            data = kaizen_kata.video_bytes(urllib.parse.unquote(m.group(1)))
+            if data is None:
+                return self._send(404, "無い")
+            plain = (("Accept-Ranges", "bytes"),)
+            span = byte_range(self.headers.get("Range"), len(data))
+            if span is False:
+                return self._send(416, b"", "video/mp4", plain + (("Content-Range", f"bytes */{len(data)}"),))
+            if span:
+                return self._send(206, data[span[0]:span[1] + 1], "video/mp4", plain + (("Content-Range", f"bytes {span[0]}-{span[1]}/{len(data)}"),))
+            return self._send(200, data, "video/mp4", plain)
+        m = re.fullmatch(r"/kaizen/photo/(\d{1,2})/([^/]+)", path)
+        if m:
+            # 審査用の頁のワークショップの写真（サーバの記録の置き場の、人が確かめた物だけ。web/kaizen_ws.py）。出さない物はどれも 404
+            from . import kaizen_ws
+            data = kaizen_ws.photo_bytes(int(m.group(1)), urllib.parse.unquote(m.group(2)))
+            return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
         m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
         if m:
             # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）

@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kaizen_ws.py
+# commit: 0046d0aa（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kaizen_ws.py", line 25, in <module>
+    from web import kaizen_judge as k, kaizen_ws as ws  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'kaizen_ws' from 'web' (src/web/__init__.py)
+rc=1

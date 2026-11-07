@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kaizen_judge.py
+# commit: 969d3626（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kaizen_judge.py", line 130, in <module>
+    assert k.PREMISE == ("うつしは、学校や博物館などで使える、ワークショップを支えるサービスです。",
+           ^^^^^^^^^
+AttributeError: module 'web.kaizen_judge' has no attribute 'PREMISE'
+rc=1
