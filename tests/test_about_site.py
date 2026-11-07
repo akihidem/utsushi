@@ -3,7 +3,7 @@
 見る事:
 1. 節の並び: 作った人の言葉 → なぜ → なぜ紙の型紙なのか → AI がしている事 → うつしと paper to toy（どれも 1 回）。前からの節は並べ替えない
 2. 作った人の言葉の節の 1 つ目が思いの核の引用で、その後に 2 文が順に続き、前からの引用（WORDS）はその後
-3. なぜ紙の型紙なのか の 4 文と、AI がしている事 の 2 文が、それぞれの節の中に順に出る
+3. なぜ紙の型紙なのか の 4 文と、AI がしている事 の 2 文が、それぞれの節の中に順に出る。その間に学びの輪の段（見出しなし・本人の言葉 11-07 夕）が 1 回
 4. 頁の見出しは「うつし」のまま。「あなたにしかない深さ」の字を出さない（窓口の決め）
 5. README の頭の後の最初の節（うつしと paper to toy）に、思いの核の引用・その後の 2 文・なぜ紙の型紙なのか の 2 文（3D プリンタと比べる文と、型紙が直る文）
 """
@@ -44,6 +44,10 @@ for k in ("tenji", "zine"):
         pos = [part.index(f'<p class="lead">{esc(t)}</p>') for t in lines]
         assert pos == sorted(pos), (k, heads[i])
     assert len(about.KAMI) == 4 and len(about.AI_LINES) == 2
+    # 学びの輪の段: なぜ紙の節の後・AI の節の前に 1 回。見出しは付けない。字は本人が採った案 1 のまま
+    manabi = f'<section class="sec" id="manabi"><p class="lead">{esc(about.MANABI)}</p></section>'
+    assert h.count(manabi) == 1 and at[2] < h.index(manabi) < at[3], (k, "学びの輪の段の置き場")
+    assert about.MANABI.startswith("作って、確かめて、ふり返って、次を考える。") and about.MANABI.endswith("進め役の役目は、型紙と記録の形の中に残っています。"), about.MANABI
     # 4. 見出しとテーマの字
     assert "<h1>うつし</h1>" in h, k
     assert "あなたにしかない深さ" not in h, k
