@@ -7,3 +7,4 @@
 - ゴールの要件: `tests/test_toy_page_tate.py`（確かめた人なし・出典は頁の一番下・図を見るは国立国会図書館の頁へ 1 つ・題の塊と狂歌は絵の左に縦・図鑑の頁とほかのおもちゃの道なし・くずし字の置き場）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-toy-page-tate.txt`（今の main 2fae8d51 で、確かめた人の行が残り rc 1）
 - エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-toy-page-tate.txt`
+- 確かめの止めの直し（11-08 1 時台）: test_toy_page_tate と test_toy_head が class="genga-pic" を探すが、原画の写し（out/ の頁の絵と切り抜き・git の外）が無いまっさらな木では genga._pic が絵を出さず rc 1 だった。試験の中で、写しが無い時だけ部品の絵を差し替える形にした（test_landscape_fit と同じ形）。写しを隠した木と在る木の両方で rc 0。Green は `docs/process/gate-evidence/green-toy-page-tate-2.txt`

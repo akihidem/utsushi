@@ -24,6 +24,23 @@ from web import kuzushi, toy  # noqa: E402
 from web.play_server import sources  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+# 原画の写し（out/ の頁の絵と切り抜き）は git の外なので、まっさらな木（clone しただけの木・./run.sh の場面）には無い（#450 と同じ）。
+# 写しが無い時だけ、部品の絵を差し替えて絵のある形を作る（test_landscape_fit と同じ形。絵の有る無しに関わらず、並びと道を見る）
+from web import genga as _genga  # noqa: E402
+
+_real_pic = _genga._pic
+
+
+def _pic(sid, src, alt, lazy=False, href=None):
+    got = _real_pic(sid, src, alt, lazy=lazy, href=href)
+    if got[0]:
+        return got
+    tag, link = ("a", f' href="{href}"') if href else ("span", "")
+    return (f'<{tag} class="genga-pic"{link} style="--genga-r:0.7000"><img src="/picture/{sid}/page" width="700" height="1000" alt="{alt}"></{tag}>', True)
+
+
+_genga._pic = _pic
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 QUIET = "NDL-1187053-R0000013-L-5"  # 歌の読みが無い玩具（亀）
 
