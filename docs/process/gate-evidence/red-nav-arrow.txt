@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_nav_arrow.py
+# commit: f46a5c2a（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_nav_arrow.py", line 17, in <module>
+    assert seq == ["うつし", "えらぶ", "ARROW", "つくる", "ARROW", "のこす", "ARROW", "もちよる", "よむ", "English"], (path, seq)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/', ['うつし', 'えらぶ', 'つくる', 'のこす', 'もちよる', 'よむ', 'English'])
+rc=1

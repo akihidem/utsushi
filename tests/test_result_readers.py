@@ -33,7 +33,8 @@ for tid, sids in SOURCES.items():
     tpl, sid = TEMPLATES[tid], sids[0]
     data = hypotheses.load(sid)
     sure = [w for w in tpl.RESULTS if w != UNSURE]
-    for page in (toy.record_form(sid, data, []), techo_step.page(sid, [h["id"] for h in data["hypotheses"]])):
+    # 結果の札は手帖の のこす にある（玩具の頁の記録の欄は、本人の答え 11-07 夕の Q3 で のこす へ寄せた）
+    for page in (techo_step.page(sid, [h["id"] for h in data["hypotheses"]]),):
         tiles = tiles_of(page)
         assert list(tiles) == list(tpl.RESULTS), (sid, tiles)
         assert [w for w, svg in tiles.items() if svg == techo_site.ICONS[UNSURE]] == [w for w in tpl.RESULTS if w == UNSURE], (sid, tiles)
@@ -91,7 +92,7 @@ assert group["results"] == {MOVED: 2, STILL: 1} and group["reports"] == 4, group
 # 8. 頁: 前の札は選べない。記録の一覧には書いた言葉のまま出る
 data = hypotheses.load(SID)
 page = techo_site.records_page(SID)  # 記録の札は手帖の記録の頁にある（#87）。結果の札は作る頁と玩具の頁
-assert OLD_MOVED not in tiles_of(techo_step.page(SID, [h["id"] for h in data["hypotheses"]])) and OLD_MOVED not in tiles_of(toy.record_form(SID, data, []))
+assert OLD_MOVED not in tiles_of(techo_step.page(SID, [h["id"] for h in data["hypotheses"]]))
 assert rid_old in page and OLD_MOVED in page
 
 print("ok")

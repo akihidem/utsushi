@@ -38,10 +38,13 @@ def room():
 assert f".nav{{font-size:{FONT_PX}px" in skin.TAP_FLOOR
 gap, spacing = narrow_rule()
 # 帯は道しるべ（段 1）: えらぶ・つくる・のこす・もちよる と よむ
-labels = [*skin.ROAD, skin.YOMU[1]]
+# 駅の間の印（skin.ROAD_ARROW）も 1 字として項目に数え、狭い幅で左右を詰める分（.nav .nav-arrow の margin）を引く
+labels = [*sum(([n, skin.ROAD_ARROW] for n in skin.ROAD), [])[:-1], skin.YOMU[1]]
+pull = int(re.search(r"@media \(max-width:480px\)\{[^@]*\.nav \.nav-arrow\{margin:0 -(\d+)px\}", skin.NAV_STYLE).group(1))
+width = row_width(labels, gap, spacing) - 2 * pull * (len(skin.ROAD) - 1)
 # 「うつし」は margin-right:100% で 1 段目に置くので、残りの項目だけで 1 段に収める
 assert ".nav .brand{flex:none;white-space:nowrap;margin-right:100%}" in skin.NAV_STYLE
-assert row_width(labels, gap, spacing) <= room(), ("帯が 390 で 1 段に収まらない", labels, row_width(labels, gap, spacing), room())
+assert width <= room(), ("帯が 390 で 1 段に収まらない", labels, width, room())
 # 見積もりが効いている事: 長い字は落とす
 assert row_width(["うつしとは", "作る（おもちゃを選ぶ）", "作った物と職人の言葉", "図鑑（読む）", "English"], gap, spacing) > room()
 print("ok")
