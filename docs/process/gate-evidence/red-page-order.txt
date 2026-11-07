@@ -1,0 +1,8 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_page_order.py
+# commit: 62dd1119（回した時の main。この枝の試験だけを置き、頁は main の物のままにした）
+Traceback (most recent call last):
+  File "tests/test_page_order.py", line 40, in <module>
+    assert page.index("<h1>") < at[0] and at == sorted(at), (where, dict(zip(ORDER, at)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L 刷る前', {'kasetsu': 17440, 'win': 641450, 'hanasu': 632657, 'tsukuru': 641470, 'kumikata': 642028, 'kiroku': 645316, 'minna': 647257, 'tatoe': 649226, 'kaizen': 649765, 'english': 650222})
+rc=1

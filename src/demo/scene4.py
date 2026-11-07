@@ -10,7 +10,9 @@ exit: 0 = 書き出せた / 4 = 画像が取れない・型紙が刷れない・
 - 扇の開き方・動き方は見せない（紙で確かめる前に答えを見せない。J-013）。型紙は平らな紙のまま映し、矢印も動きも付けない。
 - 刷って映すのは型紙だけ。手順の紙は刷らず、映さない（本人の決まり「刷るのは型紙だけ」11-06 の当てはめ。窓口の決定 11-07）。
   家で刷る紙が型紙だけになったので、動画だけが手順の紙を見せると「家で刷る紙と同じ物」の筋が崩れる。
-  題と隅の札の字は、本人の確かめが来るまで今のまま（字の直しは別の段）。
+  題は「刷った PDF」、隅の札は「型紙: …」（どちらも前の字から「と手順の紙」を外しただけ。本人の決定 11-07「推しでよい」）。
+- 刷った紙が出た後、型紙は画面の真ん中へ寄る（本人の決定 11-07「型紙は画面の真ん中へ」）。手順の紙を外して右の半分が
+  空いたため。寄るのは糸車が消えた後の folds_out の間だけで、線も同じだけ動かす（朱の線と刷った紙の線を重ねたまま運ぶ）。
 - 見せる紙はたたき台の 1 組だけ（型紙は玩具に 1 枚。本人の決定 11-05 17:26、J-032）。組を並べる段とその字は外した。
   字は書き換えず、足してもいない（#332）。順位を付けない（J-025）。
 - 組の版（SHEET_SET）は slider_fan.py から読む。文字で書き込むと、組を刷り直した時に動画だけ古くなる。
@@ -43,7 +45,7 @@ CUES = {
     "cuts": (12.7, 14.7),        # 型紙の切る線（墨）を引く
     "folds": (14.7, 17.7),       # 型紙の折る線（朱）を引く
     "printed": (17.7, 19.2),     # 刷った PDF が線の下に現れる。糸車は消える
-    "folds_out": (19.4, 20.6),   # 朱の折り線が退き、題が刷った紙の題に替わる（前は手順の紙が右に現れた）
+    "folds_out": (19.4, 20.6),   # 朱の折り線が退き、型紙が真ん中へ寄り、題が刷った紙の題に替わる（前は手順の紙が右に現れた）
     "labels": (20.6, 21.6),      # 刷った組の版と試験の札
     "closing": (25.6, 27.4),     # 締めの字幕（30 秒まで止めて読ませる）
 }
@@ -219,20 +221,26 @@ class Scene:
         self.k = sh / ph                       # mm → px。刷った紙の絵と線を同じ倍率で置き、線が紙の線に重なるようにする
         self.sheet_rect = (sx, sy, sx + round(pw * self.k), sy + sh)
         self.sheet = tpl["sheet"].resize((self.sheet_rect[2] - sx, sh), Image.LANCZOS)
+        self.center_dx = (W - (self.sheet_rect[2] - sx)) // 2 - sx   # 真ん中へ寄った時の横のずれ（px）
         self.segs = [(kind, (sx + a[0] * self.k, sy + a[1] * self.k), (sx + b[0] * self.k, sy + b[1] * self.k))
                      for kind, a, b in tpl["segs"]]
 
+    def sheet_x(self, t):
+        """時刻 t の型紙の左の端（px）。folds_out の間に、左の置き場から真ん中へ寄る。"""
+        return self.sheet_rect[0] + round(self.center_dx * phase(t, "folds_out"))
+
     def _lines(self, img, t):
-        """型紙の線を、合図の進みに合わせて長さの割合で引く（前のコマに依らない）。"""
+        """型紙の線を、合図の進みに合わせて長さの割合で引く（前のコマに依らない）。紙と同じだけ横へ動かす。"""
         a_cut, a_fold = phase(t, "cuts"), phase(t, "folds")
         printed, gone = phase(t, "printed"), phase(t, "folds_out")
         if a_cut == 0:
             return
+        dx = self.sheet_x(t) - self.sheet_rect[0]
         layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         d = ImageDraw.Draw(layer)
         for kinds, u, alpha, color in ((("cut",), a_cut, 1 - printed, SUMI),
                                        (("valley", "mountain"), a_fold, 1 - gone, SHU)):
-            segs = [s for s in self.segs if s[0] in kinds]
+            segs = [(k, (a[0] + dx, a[1]), (b[0] + dx, b[1])) for k, a, b in self.segs if k in kinds]
             lens = [math.hypot(b[0] - a[0], b[1] - a[1]) for _, a, b in segs]
             budget = u * sum(lens)
             fill = color + (round(255 * alpha),)
@@ -276,6 +284,8 @@ class Scene:
         # 型紙: 白い紙 → 切る線 → 折る線 → 刷った PDF。紙は平らなまま（F9）。
         if aside > 0:
             x0, y0, x1, y1 = self.sheet_rect
+            dx = self.sheet_x(t) - x0
+            x0, x1 = x0 + dx, x1 + dx
             region = Image.new("RGB", (x1 - x0, y1 - y0), fade(WHITE, aside))
             if printed > 0:
                 region = Image.blend(region, self.sheet, printed)
@@ -296,8 +306,8 @@ class Scene:
             head = ("型紙の線", "切る線（墨）と折る線（朱）。生成器が寸法から描く",
                     min(ease((t - CUES["edo_aside"][0] - 0.6) / 0.6), 1 - ease((t - CUES["folds_out"][0] + 0.4) / 0.4)))
         else:
-            # 題と隅の札の字は、本人の確かめが来るまで今のまま（手順の紙はもう映さないが、字の直しは本人の確かめの後の別の段）
-            head = ("刷った PDF と手順の紙", f"例: 仮説 {self.example} の組。",
+            # 字は本人の決定（11-07「推しでよい」）。前の題から「と手順の紙」を外しただけで、足した字は無い
+            head = ("刷った PDF", f"例: 仮説 {self.example} の組。",
                     ease((t - CUES["folds_out"][0]) / 0.6))
         if head[2] > 0:
             text(draw, (80, 60), head[0], 54, fade(SUMI, head[2]), True)
@@ -318,7 +328,7 @@ class Scene:
         elif t < CUES["printed"][1]:
             rec = self.recs["pages"]["v8-R0000011"]
         else:
-            return "型紙と手順の紙: utsushi の生成器が寸法から刷った PDF（slider_fan）。原図の写しは貼っていない"
+            return "型紙: utsushi の生成器が寸法から刷った PDF（slider_fan）。原図の写しは貼っていない"
         return f'図 {rec["short"]}（{rec["publication"]}）国立国会図書館（PDM）　{rec["modification_note"]}'
 
 
