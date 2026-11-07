@@ -10,6 +10,9 @@
 4. README は、頭（本人が採った一言・言葉・説明の 3 行と畳んだ要約。tests/test_readme_head.py）の後の最初の節に同じ字を置く: 見出し・具体例の 1 文
    （paper to toy は型紙エンジンの repo へのリンク）・5 文（README の中は「AI」を「Claude」と書く本人の決定 11-06）・段の図 3 本・図の言葉。位置づけは README の言葉で、教育分野（学校の理科・研究・博物館）と、
    公開してみんなが使えるサービスへの思いを書く
+5. 仕組みの 3 文目は、ぶつかりそうな所を人が見るために書き残す事まで言う（窓口の決め 11-07。3D 検品は近い板を所見として残す作りなので、言い切らない）
+6. 英語の頁（/en）にも同じ形の節（窓口の決め 11-07「英語の 3 文は英語の頁に入れる。序の頁は #527 で作る形にそろえる」）: 案内の後・玩具を選ぶ前に 1 回、
+   英語の 3 文が順のまま。2 文目の 3D の所も、ぶつかりそうな所を人が見るために残す言い方
 """
 import os
 import re
@@ -61,4 +64,17 @@ for name, items in about.FLOWS:
     assert f"{name}:" in head and "\n  → ".join(items) in head, name
 assert about.FLOW_NOTE in head
 assert "教育分野" in head and "理科" in head and "博物館" in head and "みんなが使えるサービス" in head, "位置づけ"
+# 5. 3 文目は言い切らない
+assert "（ぶつかりそうな所は、人が見るために書き残します）" in about.ENGINE_STEPS[2], about.ENGINE_STEPS[2]
+
+# 6. 英語の頁
+from web import en  # noqa: E402
+
+ep = en.index_page()
+assert ep.count('id="engine"') == 1 and ep.index('id="engine"') < ep.index('id="toys"'), "英語の頁の節は案内の後・玩具を選ぶ前"
+esec = ep[ep.index('id="engine"'):ep.index('id="toys"')]
+assert f"<h2>{en.ENGINE_HEAD_EN}</h2>" in esec and len(en.ENGINE_EN) == 3
+pos = [esec.index(x.replace("'", "&#x27;")) for x in en.ENGINE_EN]
+assert pos == sorted(pos), "英語の 3 文が順のまま"
+assert "nothing collides" not in esec and "near misses for people to review" in esec, "英語も言い切らない"
 print("ok うつしと paper to toy（序の頁の置き場・位置づけ・具体例・仕組みの 5 文・段の図・README の最初の節と同じ字）")
