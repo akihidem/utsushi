@@ -7,3 +7,4 @@
 - ゴールの要件: test_about・test_error_pages・test_otona・test_toys が /toys へ向く道が無い事を、test_ux_stage1 がギャラリーの頭で入口へ行く口が 1 つである事を見る
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-toys-one-door.txt`（今の main e3533e16 で 3 本とも rc 1）、Green は `green-toys-one-door.txt`（3 本とも rc 0）
 - エビデンスゲート: **済み**。ギャラリーの頭の「入口へ」を戻す崩しで test_ux_stage1 が rc 1。関わる試験 38 本が rc 0
+- 載せ直し（11-07 17 時台・main 40691c43）: 序の頁は main の改善の歴史の節（#528）を残し、玩具の頁の足は main の呼び名「作った物」（#519）に /toys を外した形を合わせた。main の test_kaizen_rekishi が序の頁の「おもちゃを選ぶ」（/toys）の前を目印にしていたので、この直しで残る「入口へ戻る」の前を見る形にした（節の置き場は替えていない）
