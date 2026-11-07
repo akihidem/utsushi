@@ -68,9 +68,10 @@ for name, cues in core.CUES_ALL.items():
 
 # 偽の画面で 1 コマを描く
 fake = {
-    "make1": (Image.new("RGB", (2560, 2000), (251, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
-    "make2": (Image.new("RGB", (2560, 2000), (249, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
-    "make3": (Image.new("RGB", (2560, 2000), (248, 250, 250)), {"stage": [0, 0, 1280, 900], "h": 1000}, 1280),
+    # 場面 8 の手順は組み立ての 3D の段（11-07・本人のデモの直し 3）。3D の舞台と段の文を測る
+    "k1": (Image.new("RGB", (2560, 2000), (251, 250, 250)), {"stage": [0, 100, 1280, 700], "text": [0, 820, 1280, 60], "h": 1000}, 1280),
+    "k2": (Image.new("RGB", (2560, 2000), (249, 250, 250)), {"stage": [0, 100, 1280, 700], "text": [0, 820, 1280, 60], "h": 1000}, 1280),
+    "k3": (Image.new("RGB", (2560, 2000), (248, 250, 250)), {"stage": [0, 100, 1280, 700], "text": [0, 820, 1280, 60], "h": 1000}, 1280),
     "make": (Image.new("RGB", (2560, 2000), (250, 250, 250)), {"stage": [0, 0, 1280, 900], "henji": [700, 200, 500, 400], "h": 1000}, 1280),
     "keep": (Image.new("RGB", (2000, 3000), (245, 245, 245)), {"up": [100, 200, 800, 1200], "record": [120, 900, 760, 300], "h": 1500}, 1000),
     "gallery": (Image.new("RGB", (2800, 2400), (240, 240, 240)), {"made": [100, 100, 1200, 900], "first_made": [100, 700, 1200, 120], "h": 1200}, 1400),
@@ -93,12 +94,13 @@ assert gal.segs[0]["to"][1] > gal.segs[0]["from"][1]
 # 場面 8 は手帖の 1 手 1 画面を順に映し、「こまった」を押した後の聞く画面で止まる（統括の決め 11-06。前は作りながら見る頁）。
 # 字は上の 1 行だけで、同じ字が続く段では点滅しない
 stepping = core.build_scene("core_make", dict(core.CUES_ALL["core_make"]), shots=fake)
-assert [s["shot"] for s in stepping.segs] == ["make1", "make2", "make3", "make"]
-assert all("/techo?" in core.PAGES[s["shot"]][0] for s in stepping.segs), "作る場面は手帖だけを映す（作る口は手帖 1 つ）"
+assert [s["shot"] for s in stepping.segs] == ["k1", "k2", "k3", "make"]
+# 作る場面は、組み立ての 3D の段（同じ玩具の組み立ての頁）と、手帖の聞く画面だけを映す（作る口は手帖 1 つ。手順は 3D で。11-07）
+assert all(core.PAGES[s["shot"]][0].endswith("/kumitate") for s in stepping.segs[:3]) and "/techo?" in core.PAGES[stepping.segs[3]["shot"]][0]
 assert not any("tsukuru" in v[0] for v in core.PAGES.values()), "作りながら見る頁は撮らない"
 assert "data-scene=henji" in core.PAGES["make"][2]["henji"], "聞く画面に替わった時だけ当たる形で測る（押せていない画面を撮らない）"
-# 手帖は 1 手 1 画面なので、頁の全体を映したまま送る（寄らない）
-assert len({(s["from"], s["to"]) for s in stepping.segs}) == 1 and stepping.segs[0]["from"] == stepping.segs[0]["to"]
+# 3D の段は同じ所（舞台と段の文）を映したまま送り、聞く画面は頁の全体を映す。どの段もカメラは動かさない（寄らない）
+assert len({(s["from"], s["to"]) for s in stepping.segs[:3]}) == 1 and all(s["from"] == s["to"] for s in stepping.segs)
 at = core.CUES_ALL["core_make"]["step2"]
 band = (0, 0, flip.W, core.BOX[1] - 10)
 assert stepping.frame(at[0] + 0.05).crop(band).tobytes() == stepping.frame(at[0] - 0.5).crop(band).tobytes()
@@ -116,7 +118,7 @@ assert keeping.frame(mark[0] + 0.05).crop(upper).tobytes() == keeping.frame(mark
 # 手順が替わる時は、前の画面を頁の地の色へ溶かしてから次の画面を出す（2 つの頁の字を重ねない）
 middle = sum(core.CUES_ALL["core_make"]["step2"]) / 2
 assert len(stepping.frame(middle).crop(upper).convert("RGB").getcolors(flip.W * flip.H)) <= 2  # 帯より上の枠の中
-assert stepping.frame(middle).getpixel((core.BOX[0] + 50, core.BOX[1] + 50)) == core.page_color(fake["make2"][0])
+assert stepping.frame(middle).getpixel((core.BOX[0] + 50, core.BOX[1] + 50)) == core.page_color(fake["k2"][0])
 # 写真は確認の記録が無いとギャラリーに出ない（#314）。例の記録に一時の置き場で確認を残す。出なければ止まる（通った振りをしない）
 real_post, real_run, real_open = core._post, core.subprocess.run, core.urllib.request.urlopen
 answers = {"/print": (303, ""), "/record-json": (201, '{"id": "R-0001"}'), "/media": (201, "m1.jpg"), "/explain": (303, ""), "/next": (303, "")}

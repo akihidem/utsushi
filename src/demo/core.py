@@ -43,7 +43,9 @@ from demo.scene3 import _chrome, _ensure_picture, _free_port, page_color
 from demo.words import chunk_alpha, chunks_of, cues_of, draw_chunk, seconds_of
 
 SID = "NDL-1187053-R0000005-L"   # 御来迎の頁。場面 2・3 と同じ
-HID = "H-A"
+# たたき台の仮説（その玩具の今の組の 1 枚。J-032）。前は "H-A" と決め打ちしていたが、main の御来迎 v14 のたたき台は H-C になり、
+# 本物の画面を撮る前の刷る所（seed）が「型紙が刷れない」で止まった（11-07 に main を取り込んだ後）。記録から引く
+HID = __import__("omochae.hypotheses", fromlist=["sheet_of"]).sheet_of(SID)["id"]
 PHOTO = ROOT / "docs/process/trials/photos/20261104/p01.jpg"   # 確かめ表で通った写真（demo.scene5 の PHOTOS）
 DPR = 2
 BOX = (160, 196, 1760, 936)      # 画面を映す枠（場面 3 と同じ）
@@ -63,10 +65,16 @@ NEXT = {"interpretation": "（例）折りが多くて固い", "param": "fold_co
 # 手帖は指で触る小さな画面の作りなので、窓の幅をスマホほどにして撮る。「こまった」の後の聞く画面は頁の中の JS で切り替わるので、
 # 写しの頁で「こまった」の釦を押してから撮る（人が押した時と同じ画面。頁の字と作りには手を入れない）。
 TECHO_W = 720
+# 組み立ての頁で、段の割合 frac の止まった形にする（頁の JS の口 window.kumitateParts。動かさずに置く）
+KUMI_ACT = ("const K=window.kumitateParts,n=K.F.length-1,i=Math.round(n*{frac});K.stop();K.go(i);"
+            "const q=K.F[i].q;K.rest(q[q.length-1])")
 PAGES = {
-    "make1": (f"/toy/{SID}/techo?n=1", TECHO_W, {"stage": "#te"}),
-    "make2": (f"/toy/{SID}/techo?n=2", TECHO_W, {"stage": "#te"}),
-    "make3": (f"/toy/{SID}/techo?n=3", TECHO_W, {"stage": "#te"}),
+    # 場面 8 の手順は、サイトの組み立ての 3D（作り方の 3D・型紙エンジンの JSON）の段で見せる（本人の言葉 11-07・デモの直し 3
+    # 「手順は 3D イメージの手順で見せる」）。組み立ての頁を開き、段の止まった形（kumitateParts.rest）にしてから撮る。
+    # 段は最初の方・真ん中・できあがりの 3 つ（段の数は組ごとに違うので割合で選ぶ）。前は手帖の 1 手 1 画面（2D の手順の絵）を撮っていた
+    "k1": (f"/toy/{SID}/kumitate", TECHO_W, {"stage": "#rt-stage", "text": "#rt-text"}, KUMI_ACT.format(frac=0.15)),
+    "k2": (f"/toy/{SID}/kumitate", TECHO_W, {"stage": "#rt-stage", "text": "#rt-text"}, KUMI_ACT.format(frac=0.55)),
+    "k3": (f"/toy/{SID}/kumitate", TECHO_W, {"stage": "#rt-stage", "text": "#rt-text"}, KUMI_ACT.format(frac=1.0)),
     # 聞く画面の節は頁にいつも在り、隠れているだけなので、手帖が聞く画面に切り替わった時だけ当たる形で測る（押せていなければ測れずに止まる）
     "make": (f"/toy/{SID}/techo?n=3", TECHO_W, {"stage": "#te", "henji": "#te[data-scene=henji] section.henji"}, "document.getElementById('stuck').click()"),
     # 手帖の「上げる」の枠は、手帖の作り直し（#395）で手帖の記録の頁へ移った（前は /toy/<印>/techo の中）
@@ -497,13 +505,16 @@ def build_scene(name, cues, cache=None, shots=None):
     if not shots:
         return None
     if name == "core_make":
-        # 手帖は 1 手 1 画面なので、頁の全体を映したまま手順を送り、「こまった」を押した後の聞く画面で止める（字幕は前のまま）
-        head = _cam_fit(shots["make1"][2], shots["make1"][1]["h"])
+        # 手順は組み立ての 3D の段で見せ（本人の言葉 11-07・デモの直し 3）、「こまった」を押した後の手帖の聞く画面で止める
+        rs, rt = shots["k1"][1]["stage"], shots["k1"][1]["text"]
+        box = (rs[0], rs[1], rs[2], rt[1] + rt[3] - rs[1])   # 3D の舞台と、その下の段の文まで
+        kumi = _cam_on(box, 1.25)
+        head = _cam_fit(shots["make"][2], shots["make"][1]["h"])
         line = MAKE_LINES[0]
         return Screens(name, cues, shots, [
-            {"at": None, "shot": "make1", "from": head, "to": head, "line": line},
-            {"at": "step2", "shot": "make2", "from": head, "to": head, "line": line},
-            {"at": "step3", "shot": "make3", "from": head, "to": head, "line": line},
+            {"at": None, "shot": "k1", "from": kumi, "to": kumi, "line": line},
+            {"at": "step2", "shot": "k2", "from": kumi, "to": kumi, "line": line},
+            {"at": "step3", "shot": "k3", "from": kumi, "to": kumi, "line": line},
             {"at": "ask", "shot": "make", "from": head, "to": head, "line": MAKE_LINES[1]}])
     if name == "core_keep":
         rects = shots["keep"][1]
