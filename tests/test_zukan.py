@@ -3,7 +3,7 @@
 見る線:
 1. 図鑑の目次（/zukan）と玩具ごとの図鑑の頁（/zukan/<印>）は無い（断りの 404）
 2. 図鑑の本の頁（/zukan/hon/<n>）と、くずし字を読む（/zukan/<印>/yomi・道の名はそのまま）は残る
-3. 図鑑の頁への道は、どの頁にも無い（玩具の頁・序の頁・くずし字を読む の頁の帯と玩具の名）。本の頁の入口は序の頁に、前の字「原画と歌」で
+3. 図鑑の頁への道は、どの頁にも無い（玩具の頁・序の頁・くずし字を読む の頁の帯と玩具の名）。本の頁の入口は序の頁に、本人の決めの字「本でよむ」で
 4. 文の印の床（zukan.guard）は残る: 印の無い文・飾りの印・裏付けの無い引用を描かずに止める（くずし字を読む の頁が使う）
 
 前は図鑑の頁そのものの試験（印の無い文を出さない・採らなかった読みを出さない）だった。その線は、くずし字を読む の頁（test_kuzushi）と、
@@ -19,7 +19,8 @@ import urllib.request
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from omochae import labels  # noqa: E402
-from web import genga_words, zukan, zukan_hon  # noqa: E402
+from web import about as about_mod  # noqa: E402
+from web import zukan, zukan_hon  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -49,7 +50,7 @@ try:
         body = get(path)[1]
         assert not re.search(r'href="/zukan(?:/NDL-[^"/]*)?"', body), (path, "図鑑の頁への道が残った")
     about = get("/about")[1]
-    assert f'<a href="/zukan/hon/{first}">{genga_words.HEAD}</a>' in about, "序の頁に本の頁の入口が無い"
+    assert f'<a href="/zukan/hon/{first}">本でよむ</a>' in about and about_mod.BOOK_GO == "本でよむ", "序の頁に本の頁の入口が無い（字は本人の決め「本でよむ」）"
     yomi = get(f"/zukan/{G}/yomi")[1]
     assert f'<a href="/toy/{G}">' in yomi, "くずし字を読む の玩具の名から玩具の頁へ行かない"
 finally:

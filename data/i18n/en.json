@@ -3445,6 +3445,7 @@
   "{0} 月 {1}・{2}・{3}・{4} 日のワークショップで作られた物です。上下はありません。": "These were made at the workshops on {0}/{1}, {0}/{2}, {0}/{3} and {0}/{4} (month/day). There is no ranking.",
   "{0} 日間のワークショップで作ったおもちゃたち": "{0} 日間のワークショップで作ったおもちゃたち (“The toys made over the {0} days of workshops”)",
   "「参加者の型紙の改善例その{0}。手前が型紙通り。しかし、奥の工作のように、からくりがあると推測した参加者が蓋の開閉でネズミが箱の中に仕舞われるようにした。」": "「参加者の型紙の改善例その{0}。手前が型紙通り。しかし、奥の工作のように、からくりがあると推測した参加者が蓋の開閉でネズミが箱の中に仕舞われるようにした。」 (“A participant's improvement to the template, example {0}. The one in front follows the template. But, as in the piece at the back, a participant who guessed there was a mechanism made it so that opening and closing the lid tucks the mouse away inside the box.”)",
-  "「はじめから組み立てる」を押すと、{0} 手目から組み立てます。「次へ」で {1} 手ずつ進みます。": "Press \"はじめから組み立てる\" (Assemble from the start) to assemble it from step {0}. Then press \"次へ\" (Next) to go {1} step at a time."
+  "「はじめから組み立てる」を押すと、{0} 手目から組み立てます。「次へ」で {1} 手ずつ進みます。": "Press \"はじめから組み立てる\" (Assemble from the start) to assemble it from step {0}. Then press \"次へ\" (Next) to go {1} step at a time.",
+  "本でよむ": "Read in the book"
  }
 }

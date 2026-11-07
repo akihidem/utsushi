@@ -68,10 +68,10 @@ assert songs and all(s in h5.split('id="R0000005-L"', 1)[1] for s in songs), "�
 assert f'<a href="/zukan/hon/R0000005-L.jpg">{genga_words.BIG}</a>' in h5
 
 # 4. 入口と送り
-# 入口は前の図鑑の目次から、序の頁（よむ）へ移した（図鑑の頁は外した・本人の言葉 11-08。本の頁は残す・本人の決め 11-08）。字は前のまま「原画と歌」
+# 入口は前の図鑑の目次から、序の頁（よむ）へ移した（図鑑の頁は外した・本人の言葉 11-08。本の頁は残す・本人の決め 11-08）。字は本人の決め「本でよむ」
 from web import about  # noqa: E402
 idx = about.page("tenji")
-assert f'<a href="/zukan/hon/4">{genga_words.HEAD}</a>' in idx
+assert f'<a href="/zukan/hon/4">{about.BOOK_GO}</a>' in idx and about.BOOK_GO == "本でよむ"
 assert zukan_hon.PREV == kumitate.PREV and zukan_hon.NEXT == kumitate.NEXT, "送る字は組み立ての頁と同じ"
 assert 'href="/zukan/hon/7">前へ' in h8 and 'href="/zukan/hon/9">次へ' in h8
 first, last = zukan_hon.page(4, "tenji"), zukan_hon.page(31, "tenji")
