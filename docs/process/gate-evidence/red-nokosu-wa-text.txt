@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_loop_figure.py
+# commit: 今の main ace2a5f0 の木に、直した tests/test_loop_figure.py だけを当てた（git の外の写し・輪の節の文は main の物のまま）
+Traceback (most recent call last):
+  File "tests/test_loop_figure.py", line 30, in <module>
+    assert f.ADOPTED == ADOPTED, "本人が採った文は一字も替えない"
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: 本人が採った文は一字も替えない
+rc=1

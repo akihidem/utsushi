@@ -468,6 +468,7 @@
   "型紙そのものも直せます。作った人の記録から型紙が直って、次の版になります。": "The template itself can be fixed too. Makers’ records improve the template, and it becomes the next version.",
   "型紙のたたき台は、このサイトを作る時に、AI（Claude）が絵と歌から動く仕組みを予想した案を、エンジンが型紙の図にした物です。": "The starting template is an idea the AI (Claude) proposed, while this site was being made, about how the toy moves, based on its picture and poem; the engine turned that idea into the template drawing.",
   "型紙の部品": "Template parts",
+  "型紙は、AI が考えた ためしの案（仮説）です。切って、折って、組んで、どう工夫したかを記録に書くと、その記録をもとに次の型紙をよくします。ワークショップでは進め役の人といっしょに {0} 回、うつしがあれば そのあとも ひとりで、この輪をまわせます。": "The template is a guess the AI came up with. Cut, fold, and put it together, then write down what you changed in your record; that record is used to make the next template better. In a workshop, you go around this loop once with a facilitator. With utsushi, you can keep going around it on your own afterward.",
   "型紙は正解ではなく、AI が考えた仮説です。作って、動きを確かめて、直していきます。": "A template is not the right answer; it is an idea the AI came up with. You make it, check how it moves, and improve it.",
   "型紙（PDF・PNG）": "Template (PDF, PNG)",
   "張子": "張子 (hariko)",

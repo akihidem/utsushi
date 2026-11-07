@@ -55,7 +55,8 @@ for k in ("tenji", "zine"):
     head = f'<h2>{esc(loop_figure.NAME)}</h2>' if fig else ""
     manabi = f'<section class="sec" id="manabi">{head}<p class="lead">{esc(about.MANABI)}</p>{fig}</section>'
     assert h.count(manabi) == 1 and at[2] < h.index(manabi) < at[3], (k, "学びの輪の段の置き場（文の後に図）")
-    assert about.MANABI.startswith("作って、確かめて、ふり返って、次を考える。") and about.MANABI.endswith("進め役の役目は、型紙と記録の形の中に残っています。"), about.MANABI
+    # 11-08 から本人の答え「字 1 と絵 A。」の字。のこすの頁の輪の節（loop_figure.ADOPTED）と同じ文
+    assert about.MANABI == loop_figure.ADOPTED and about.MANABI.startswith("型紙は、AI が考えた ためしの案（仮説）です。"), about.MANABI
     # 大前提の 3 段（本人の言葉 11-07 夜「入れる」）: 頁の頭の道の並び（English の道）のすぐ後・CONCEPT の前に、この順で 1 回ずつ
     marks3 = [f'<p class="lead daizen">{esc(t)}</p>' for t in about.PREMISE]
     assert 'class="lead premise"' not in h, (k, "皮の premise の札の見た目を拾わない")
