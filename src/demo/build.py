@@ -32,11 +32,14 @@ exit: 0 = 全部できて 3 分以内 / 3 = 試験が落ちた・3 分を超え�
   前の置き場の場面を残す時、その場面の手の映像が替わっていたら、古い動画が残るので 4 で止めて場面を名指しする。
 - 記録に commit の SHA と各場面の長さを残す。出した動画がどのコードから出たかを後で辿れるようにする（エビデンスゲート）。
   場面ごとにも commit を持つ。--only で残した場面は、前の commit のコードから出た物なので。
+- 場面の別版（試作）は --swap 場面=別版 で入れ替える（窓口の決め方 11-07「本線の台本は触らない・差し替えの設定で」）。
+  入れ替えるのは絵の作りだけで、台本の順・秒・合図・字幕・案内役・声・効果音は場面の名前（core_loop など）のまま引く。
+  別版は ALTS に書いた物だけを受け、知らない組は 4 で止める。--swap が無い時は今までと同じ書き出しになる（試験で見る）。
 """
 import argparse
 import contextlib
 import hashlib
-import importlib  # noqa: F401  試験が場面の読み込みを差し替える口（demo.script と同じ物）
+import importlib  # 別版の場面を読む（scene_for）。試験が場面の読み込みを差し替える口でもある（demo.script と同じ物）
 import json
 import pathlib
 import re
@@ -53,6 +56,28 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 DIRTY_PATHS = ["src", "data/hypotheses", "data/sources", "tests", "docs/process/trials", "docs/process/philosophy.md"]
 # 曲が来るまでのクレジット。Suno の曲に見せないため、仮と書く。
 PROVISIONAL_CREDIT = "仮の拍（コードで作った音。Suno の曲待ち）"
+# 場面の別版（試作）。{台本の場面の名前: (受ける別版のモジュールの名前, …)}。別版は同じ CUES・DURATION を持つ（demo.core_loop_ban）
+ALTS = {"core_loop": ("core_loop_ban",)}
+
+
+def parse_swaps(items):
+    """--swap の並びを {場面: 別版} にする。読めない・知らない組は ValueError（呼ぶ側が 4 で止める）。"""
+    out = {}
+    for item in items:
+        name, _, alt = item.partition("=")
+        if name not in ALTS or alt not in ALTS[name]:
+            known = "・".join(f"{n}={x}" for n, xs in ALTS.items() for x in xs)
+            raise ValueError(f"差し替えが読めない: {item}（受ける組は {known}）")
+        if name in out:
+            raise ValueError(f"同じ場面を 2 度差し替えた: {name}")
+        out[name] = alt
+    return out
+
+
+def scene_for(name, swaps):
+    """書き出す場面の作り。差し替えた場面は別版のモジュール、ほかは台本どおり（load_scene）。"""
+    alt = swaps.get(name)
+    return importlib.import_module(f"demo.{alt}") if alt else load_scene(name)
 
 
 def count_tests(result_text):
@@ -251,6 +276,8 @@ def main(argv=None):
     ap.add_argument("--rights", help="曲の権利の文（作った人・道具・使ってよい範囲。build.json と beats.json に残す。--song の時は必ず）")
     ap.add_argument("--clip", action="append", default=[], metavar="場面=ファイル",
                     help="その場面を撮った動画に差し替える（声の取り込みやエンジンごとの輪が撮れた時）。映像だけを使い、音は捨てる。何度でも付けられる")
+    ap.add_argument("--swap", action="append", default=[], metavar="場面=別版",
+                    help="場面の絵を別版（試作）に入れ替える。受けるのは ALTS の組だけ（例 core_loop=core_loop_ban）。台本の順と字幕は変わらない")
     ap.add_argument("--photos")
     ap.add_argument("--partial", action="store_true", help="無い場面を飛ばす（作りかけの確かめ用。本番では使わない）")
     ap.add_argument("--skip-tests", action="store_true", help="試験を回さない（数は出さない。確かめ用）")
@@ -274,6 +301,19 @@ def main(argv=None):
             print(f"検査できない: 差し替えが読めない: {item}（場面の名前=動画のファイル）", file=sys.stderr)
             return 4
         clips[name] = path
+    try:
+        swaps = parse_swaps(a.swap)
+    except ValueError as e:
+        print(f"検査できない: {e}", file=sys.stderr)
+        return 4
+    both = [n for n in swaps if n in clips]
+    if both:
+        print(f"検査できない: 同じ場面を --clip と --swap の両方で差し替えた: {'、'.join(both)}", file=sys.stderr)
+        return 4
+    kept = [n for n in swaps if n not in only]
+    if kept:
+        print(f"検査できない: 差し替えた場面は作り直す（前の動画を残すと別版にならない）: {'、'.join(kept)} を --only に足す", file=sys.stderr)
+        return 4
     if a.song and not a.rights:
         print("検査できない: 曲には --rights（権利）が要る", file=sys.stderr)
         return 4
@@ -368,7 +408,7 @@ def main(argv=None):
             made.append(run / f"{name}.mp4")
             continue
         try:
-            mod = load_scene(name)
+            mod = scene_for(name, swaps)
         except ImportError:
             if a.partial:
                 skipped.append(name)
@@ -431,6 +471,7 @@ def main(argv=None):
     record = {"commit": sha, "dirty": dirty, "tests": tests, "music": music, "audio": audio, "photos": photos, "skipped": skipped,
               "placeholder": placeholder, "not_for_release": blockers,
               "clips": {n: {"file": pathlib.Path(p).name, "sha256": file_sha(p)} for n, p in clips.items()},
+              "swaps": swaps,
               "slots": slots, "voices": [{"file": pathlib.Path(f).name, "at": at, "speed": sp} for f, at, sp in voices], "duck": duck,
               "sfx": {"placed": [{"file": pathlib.Path(f).name, "at": at, "db": g} for f, at, g in extra.get("sfx", ())],
                       "missing": sfx_missing if a.song else []},
