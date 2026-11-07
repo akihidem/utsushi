@@ -291,6 +291,22 @@ UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面�
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
+# 応答の守りの頭（公開の前の点検 U18・U20。本人の決め 11-07「(a) を出す」）。
+# - 途中で溜め置かせない: トンネルの先（Cloudflare）は写真や PDF の拡張子を既定で溜めうる。溜めると、上げた人にだけ出す確かめる前の
+#   写真や、その人だけの紙が、同じ URL を開いた別の人に返る。private は共有の溜め置きを止め、頁と JSON は人ごとに替わるので
+#   no-store も付ける。絵と紙は同じ人の端末では溜めてよい（private だけ）ので、読み込みは遅くしない
+# - ほかのサイトの枠に入れさせない（クリックジャッキングの備え）。同じ origin の枠は開く（SAMEORIGIN・'self'）: 試験は手帖を同じ origin の
+#   親の頁の iframe で開いて本物の順で押す（test_photo_attach_walk ほか）ので、DENY・'none' にするとその枠が開かず止まった（別の目の指摘）
+# - Referrer-Policy は same-origin にする。no-referrer にすると、ブラウザは同じ頁からのフォームの POST に Origin: null を付け、
+#   書き込みの口の Origin の照らし（同じ頁から来た物だけを受ける）が全部断る形になるため
+def guard_headers(ctype):
+    dynamic = ctype.startswith("text/html") or ctype.startswith("application/json")
+    return (("Cache-Control", "private, no-store" if dynamic else "private"),
+            ("X-Frame-Options", "SAMEORIGIN"),
+            ("Content-Security-Policy", "frame-ancestors 'self'"),
+            ("Referrer-Policy", "same-origin"))
+
+
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
     # Server の見出しに Python の版を出さない（公開の前の点検）。
@@ -318,6 +334,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("X-Content-Type-Options", "nosniff")
+        given = {k.lower() for k, _ in headers}
+        for k, v in guard_headers(ctype):
+            if k.lower() not in given:  # 口が自分で決めた頭（動画の口の no-store など）を上書きしない
+                self.send_header(k, v)
         for k, v in headers:
             self.send_header(k, v)
         self.end_headers()
