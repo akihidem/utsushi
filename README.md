@@ -55,11 +55,11 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 型紙を作って検査する仕組み（`src/omochae/` の生成と検査の部分）は、期間中にエンジン paper-to-toy として別の repo にも切り出した（本人の決定、11-04）。提出物はこの repo で、paper-to-toy は単独の提出物ではない。切り出した元の commit は `1d17988`。型紙を作る仕組みと検査を直す時は、先に paper-to-toy を直して、それからこの repo に取り込む（両方を比べる道具は `tests/compare_engine.py`）。
 
-ハッカソンの運営から、提出は 1 つの repo にするよう求められた。そこで、別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発しているエンジンを、提出のためにこの repo の `engine/` にまとめる（本人の決定、11-07。エンジンはまだ開発中なので、まとめるのは提出の直前）。まとめた後も、paper-to-toy の repo とこのリンクは残す。うつしは、みんなが使えるサービスとして作った、paper to toy のエンジンの一つの具体例にあたる。
+ハッカソンの運営から、提出は 1 つの repo にするよう求められた。そこで、別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発しているエンジンを、提出のためにこの repo の engine/ にまとめる（本人の決定、11-07。エンジンはまだ開発中なので、まとめるのは提出の直前）。まとめた後も、paper-to-toy の repo とこのリンクは残す。うつしは、みんなが使えるサービスとして作った、paper to toy のエンジンの一つの具体例にあたる。
 
-- `engine/` の中は、まとめる時のエンジンの main の頭にする（その commit は、まとめる時にここへ書く）。
-- エンジンの版の台帳は、エンジンの repo の `data/engine/versions.json`（まとめた後は `engine/data/engine/versions.json`）。型紙の版とエンジンの版の歩みの表は、この repo の `data/history/kaizen-history.json`（エンジンの記録から写した表）。
-- 型紙を作って検査する仕組み `src/omochae/` は、まとめた後は、うつしと `engine/` の両方にある（正はエンジンの側。上の段落のとおり）。
+- engine/ の中は、まとめる時のエンジンの main の頭にする（その commit は、まとめる時にここへ書く）。
+- エンジンの版の台帳は、エンジンの repo の data/engine/versions.json（まとめた後は engine/data/engine/versions.json）。型紙の版とエンジンの版の歩みの表は、この repo の `data/history/kaizen-history.json`（エンジンの記録から写した表）。
+- 型紙を作って検査する仕組み `src/omochae/` は、まとめた後は、うつしと engine/ の両方にある（正はエンジンの側。上の段落のとおり）。
 
 ## できること（動く物。実物の試行は 11-04 の 1 回、本物の API は未確認。機能ごとの状態は `docs/features.json`）
 

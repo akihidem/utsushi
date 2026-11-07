@@ -18,7 +18,9 @@ sec = readme[a:readme.index("\n## ", a + 3)]
 assert "[paper-to-toy](https://github.com/akihidem/paper-to-toy)" in sec, "paper-to-toy の repo へのリンクを残す"
 
 # 2. 置き場
-assert "`engine/`" in sec and "data/engine/versions.json" in sec and "data/history/kaizen-history.json" in sec, sec[-400:]
+# まだ木に無いパス（engine/・エンジンの repo の中の台帳）は逆引用符の外に書く（push の門 F が、逆引用符の中のパスが木に在るかを見るため）
+assert "engine/ にまとめる" in sec and "data/engine/versions.json" in sec and "`data/history/kaizen-history.json`" in sec, sec[-400:]
+assert "`engine/`" not in sec and "`data/engine/versions.json`" not in sec, "まだ木に無いパスを逆引用符で書かない"
 assert (ROOT / "data/history/kaizen-history.json").exists(), "書いた表の置き場が repo に在る"
 
 # 3. 時の書き方
