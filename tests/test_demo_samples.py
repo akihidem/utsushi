@@ -14,17 +14,23 @@ from web.play_server import sources  # noqa: E402
 from web import workshop as _workshop  # noqa: E402
 
 _workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
+# もちよるの頁のワークショップの様子と、できたおもちゃの節（本人の言葉 11-08）も、写真の分けの表と感想の札を外して、本物の無い形を作る
+# （2 つの節が出る形は tests/test_mochiyoru_workshop.py が見る）
+_workshop.KINDS = _workshop.KINDS.with_name("no-such-workshop-photo-kinds.json")
+from web import demo_samples as _samples  # noqa: E402
+_samples.workshop_for = lambda sid, toy: ""
 
-# 上げた物の見本はギャラリーに、職人の言葉と寄せられた声の見本は序の頁の節（voices_sections）に出る
-# （職人の言葉と寄せる話の入口を序の頁へ移した。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
+# 寄せられた声は序の頁の節（voices_sections）に、職人の言葉（とその見本）は もちよるの頁（gallery_page の shokunin_section）に出る
+# （本人の言葉 11-08「職人の言葉、はもちよるに移動」。前は職人の言葉も序の頁の節だった）
 gallery, voices = techo_site.gallery_page(sources()), techo_site.voices_sections()
-assert gallery.count('class="item is-sample"') == 0, "上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）"
-assert voices.count('class="item is-sample"') == len(demo_samples.CONTRIBUTIONS), "職人の言葉の見本が序の頁の節に出る"
+# 職人の言葉の節（もちよるの頁の足・中身は見本の札のまま）の前には見本の札が無い＝上げた物の見本（作り物）は外したまま
+assert gallery[:gallery.index('id="shokunin"')].count('class="item is-sample"') == 0, "上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）"
+assert gallery.count('class="item is-sample"') == len(demo_samples.CONTRIBUTIONS) and voices.count('class="item is-sample"') == 0, "職人の言葉の見本は もちよるの頁に出る"
 html = gallery + voices
 assert html.count('class="item is-sample"') == len(demo_samples.CONTRIBUTIONS), "見本は職人の言葉だけ"
 # 寄せられた声は見本でなく、11 月のワークショップの参加者の実際の感想（本人の言葉 11-07 夜「とりあえず感想は全て反映させたい」）。
 # 1 件 1 枚の札で、見本の札は付けない。字は回答のまま。名前・番号・回（A/B）は出さない。抜き出した事と名前を外した事の一文が先頭
-yose = voices[voices.index('id="yose"'):voices.index('id="shokunin"')]
+yose = voices[voices.index('id="yose"'):]
 assert len(demo_samples.VOICES) == 17 and all(v["toy"] and v["fields"] for v in demo_samples.VOICES)
 assert '<span class="sample">見本</span>' not in yose and demo_samples.VOICES_NOTE in yose, "寄せられた声は見本の札でなく、抜き出した一文"
 assert yose.count('<div class="item">') == len(demo_samples.VOICES) + len(demo_samples.SPOKEN), "感想 1 件 1 枚と、話された言葉 1 か所 1 枚"

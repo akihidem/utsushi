@@ -126,7 +126,8 @@ assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{wai
 gallery = get("/gallery")
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
 yomu = get("/about")
-assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）から" in yomu and "▲紙や玩具を作る人の言葉を" in yomu, "ギャラリーと序の頁"
+# 職人の言葉の節は もちよる（本人の言葉 11-08「職人の言葉、はもちよるに移動」）。寄せられた声は序の頁のまま
+assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）から" in yomu and "▲紙や玩具を作る人の言葉を" in gallery, "ギャラリーと序の頁"
 assert "▲作った人の報告" in kz, "改善の輪の節の固定の文"
 assert "▲鍵が置かれると" in post(f"/record/{rid}/ai-interpret", {}), "鍵が無い時の AI の口"
 # 人が書いた文は表を通らない（記録の感想・説明・自分の仮説・歌の引用）

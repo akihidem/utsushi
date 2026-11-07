@@ -20,6 +20,8 @@ for sub in ("src", "tests", "data/hypotheses", "data/kumitate", "data/kaizen", "
     shutil.copytree(ledger.ROOT / sub, tmp / sub, ignore=shutil.ignore_patterns("__pycache__"))
 # ワークショップの写真 → 玩具の表（data/workshop_photos.json・web.workshop）も機能の根拠に挙がるので写す（1 つのファイルなので copy）
 shutil.copy(ledger.ROOT / "data/workshop_photos.json", tmp / "data/workshop_photos.json")
+# 写真の分けの表（もちよるの頁の様子とできたおもちゃ・data/workshop_photo_kinds.json）も機能の根拠に挙がるので写す
+shutil.copy(ledger.ROOT / "data/workshop_photo_kinds.json", tmp / "data/workshop_photo_kinds.json")
 ledger.ROOT = tmp
 assert ledger.check() == []
 

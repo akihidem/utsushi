@@ -126,21 +126,23 @@ g = req("/gallery")[1].decode()
 assert "m1.jpg" in g
 # 職人の言葉と寄せられた声の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。ギャラリーは作った記録の並びだけ
 yomu = req("/about")[1].decode()
-assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "紙と折りの職人" in yomu  # 枠の中身は見本（demo_samples）か（準備中）
+# 寄せられた声は序の頁、職人の言葉（枠の中身は見本か（準備中））は もちよる（本人の言葉 11-08「職人の言葉、はもちよるに移動」）
+assert "寄せられた声" not in g and "寄せられた声" in yomu and "職人の言葉" in g and "紙と折りの職人" in g and "職人の言葉" not in yomu
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
 name = "作った物"
 # 帯の今いる所は aria-current で出る。帯は道しるべ（段 1）なので、ギャラリーは「もちよる」の駅
 assert 'aria-current="page">もちよる</a>' in g and f"<title>{name} · うつし<" in g, g[:300]
 assert re.findall(r"<h1[^>]*>(.*?)</h1>", g) == [name]
-# ギャラリーの節は 1 つになったので、節へ飛ぶ口は無い。序の頁へ移した 2 つの節は、前と同じ id と見出しで着く（前の #yose・#shokunin への道のため）
+# 節へ飛ぶ口は無い。寄せられた声は序の頁、職人の言葉は もちよる（本人の言葉 11-08「職人の言葉、はもちよるに移動」）。どちらも前と同じ id と見出しで着く（前の #yose・#shokunin への道のため）
 assert 'id="ageta"' in g and '<h2 class="mark">他の人が作った物</h2>' in g and 'class="jump"' not in g
-for sec, label in (("yose", "寄せられた声"), ("shokunin", "職人の言葉")):
-    assert f'id="{sec}"' in yomu and f'<h2 class="mark">{label}</h2>' in yomu and f'id="{sec}"' not in g, sec
+assert 'id="yose"' in yomu and '<h2 class="mark">寄せられた声</h2>' in yomu and 'id="yose"' not in g
+assert 'id="shokunin"' in g and '<h2 class="mark">職人の言葉</h2>' in g and 'id="shokunin"' not in yomu
 # 見本は札と断りの一文で見分ける。縞の地と、皮によって白く浮く固定の色は使わない（#139）
 assert "repeating-linear-gradient" not in g and "#f4efe3" not in g and "#7a3b1d" not in g
 # 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。ギャラリーに見本の札は出ない
-assert '<span class="sample">見本</span>' not in g and 'class="item is-sample"' not in g
+# （職人の言葉の節は もちよるの頁の足に移り、その枠の中身は見本の札のまま。見本が無いのは、その節より前＝上げた物の並び）
+assert '<span class="sample">見本</span>' not in g[:g.index('id="shokunin"')] and 'class="item is-sample"' not in g[:g.index('id="shokunin"')]
 # 上げた後は頁の中で一覧を入れ替える（#143）。同じ道へ location.href しても読み込まれず、「…」のまま残って、もう一度押すと記録が 2 件になっていた
 from web.techo_step import SCRIPT  # noqa: E402
 up = SCRIPT[SCRIPT.index("const save"):]
