@@ -44,8 +44,12 @@ for look in ("tenji", "zine"):
         assert len(navs) == 1, ("帯は 1 つ", where, len(navs))
         # 項目と順が全部の頁で同じ。「うつし」は 1 つ
         # 押せない段の印（玩具を選ぶ前の つくる・のこす）も帯の項目に数える
-        names = [a or b for a, b in re.findall(r'<a [^>]*>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', navs[0])]
+        names = [a or b or c for a, b, c in re.findall(r'<span class="brand">([^<]+)</span>|<a [^>]*>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', navs[0])]
         assert names == ITEMS, ("帯の項目と順", where, names)
+        # 行き先が同じ釦は 1 つ（窓口の決め 11-07）: 入口（/）へ行く釦は えらぶ の 1 つで、「うつし」は帯の題の字（釦にしない）
+        assert navs[0].count('href="/"') == 1 and '<span class="brand">うつし</span>' in navs[0], ("帯で入口へ行く釦は 1 つ", where)
+        hrefs = re.findall(r'href="([^"]+)"', navs[0])
+        assert len(hrefs) == len(set(hrefs)), ("帯に同じ所へ行く釦が 2 つある", where, hrefs)
         # 今いる所は色以外でも分かる（aria-current と、下の罫）
         current = re.findall(r'<a [^>]*aria-current="page"[^>]*>([^<]+)</a>', navs[0])
         assert current == ([here] if here else []), ("今いる所の印", where, current)

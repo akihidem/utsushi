@@ -36,7 +36,7 @@ for f in (looks.tenji, looks.zine):
     html = f()
     found = set(re.findall(r'href="/toy/(NDL-[^"]+)"', html))
     assert len(found) >= 80 and found == set(sids), (f.__name__, len(found))
-    assert "/toys" in html and "/about" in html and "/gallery" in html
+    assert "/about" in html and "/gallery" in html and 'href="/toys"' not in html, f.__name__  # /toys へ向く道は置かない（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。/toys は入口へ送るので、/toys へ向く道は置かない）
     assert "仮説 A" not in html and "怠らし" not in html and "IntersectionObserver" not in html
     # 白の入口は えらぶ（本人のサイト体験レビュー 11-07）で、頭の断りの段は序の頁へ移した（窓口の決定 11-07 の ②）。黒の入口は前のまま
     assert 'id="all-toys"' in html and ("確かめていません" in html) == (f is looks.zine)
