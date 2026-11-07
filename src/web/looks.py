@@ -313,7 +313,7 @@ DETAIL_POS = ("30% 30%", "72% 40%", "35% 75%", "70% 82%")
 MAZU = "まずはここから"  # 2 つの大きな札の見出し（本人の言葉そのもの。本人の「反映してください。レビューの要点の通りで」と窓口の決め 11-07）
 
 
-def _mazu(ts):
+def _mazu(ts, photos=True):
     """「まずはここから」の 2 枚（必須の 2 種）。札そのものが玩具の頁（つくる）への口。額の敷き方は前の章の部屋と同じ（FRAMED）。"""
     # 絵は中くらいの写し（/picture/<印>/mid）を img で、先に読む（fetchpriority="high"）。元の写しは最初の画面で読まない（toys.SIZES の注）。
     # 前は背景の絵（CSS）にしていたが、遅い回線（下り 1.6Mbps・往復 150ms、トンネル越し）で、下の並びの小さい写しと取り合って 2 枚が届くのに
@@ -336,7 +336,7 @@ def _mazu(ts):
         # 作ってみた実物の写真（本人のサイト体験レビュー 11-07 の 2）。人が確かめた写真がある時だけ、額の右下に小さく重ねる。
         # 写真が無い時の組み立ての止まった形（made.figure の代わり）は入口には置かない: 1 枚 240〜450KB の頁の字になり、
         # 最初の画面の絵が届くのが遅れる（統括の合格の線「入口の絵は 1 枚 100KB 以下」）。止まった形は玩具の頁の頭に出る
-        url = made.photo(t["sid"])
+        url = made.photo(t["sid"]) if photos else None
         return f'<span class="tj-made"><img src="{esc(url)}" alt="{esc(made.PHOTO)}の写真" decoding="async"></span>' if url else ""
     cards = "".join(f'<a class="tj-mazu-card" href="/toy/{esc(t["sid"])}"><span class="tj-work">{pic(t)}{photo(t)}</span>'
                     f'<span class="nm">{esc(t["toy"])}</span></a>' for t in ts)
@@ -362,7 +362,8 @@ def _erabu(sids):
             '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></section>')
 
 
-def tenji():
+def tenji(photos=True):
+    """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。"""
     ts = toys()
     body = switch("tenji")
     # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
@@ -370,7 +371,7 @@ def tenji():
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
              '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
-    body += _mazu(main)
+    body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"])
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
     return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
@@ -379,7 +380,7 @@ def tenji():
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
 # 見えた時に起こす仕掛けは使わない（入口の決まり。research/19）。
 ERABU_JS = """<script>(()=>{let go=false;const run=()=>{if(go)return;go=true;document.querySelectorAll('.tj-narabi img[data-src]').forEach(i=>{i.src=i.dataset.src;i.removeAttribute('data-src')})};
-const big=[...document.querySelectorAll('.tj-mazu-card img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
+const big=[...document.querySelectorAll('.tj-mazu-card .pic img')];let left=big.filter(i=>!i.complete).length;if(!left){run();return}
 big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)run()};i.addEventListener('load',f,{once:true});i.addEventListener('error',f,{once:true})}});setTimeout(run,2500)})();</script>"""
 
 

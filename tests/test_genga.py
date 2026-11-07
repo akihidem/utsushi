@@ -197,8 +197,20 @@ d.mkdir(parents=True, exist_ok=True)
 (d / "m1.jpg").write_bytes(b"\xff\xd8\xff")
 assert made.photo(GOR) is None, "確かめる前の写真は出さない"
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
-assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg"
-assert f'<img src="/record/{rid}/media/m1.jpg" alt="{made.PHOTO}の写真"' in made.figure(GOR) and "data-still" not in made.figure(GOR)
+# 写真は小さい写しの道（上げた元の写真は 3.7MB ほどある。入口の絵 100KB の線）
+assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg/small"
+assert f'<img src="/record/{rid}/media/m1.jpg/small" alt="{made.PHOTO}の写真"' in made.figure(GOR) and "data-still" not in made.figure(GOR)
+assert made.figure(GOR, photos=False) == made.figure(with_3d if with_3d == GOR else GOR, photos=False) and "/media/" not in made.figure(GOR, photos=False), "開いた場の玩具の頁は写真を置かない"
 entrance = looks.tenji().split("</style>")[-1]
-assert entrance.count('class="tj-made"') == 1 and f'src="/record/{rid}/media/m1.jpg"' in entrance, "入口の札に写真が重なる"
+assert entrance.count('class="tj-made"') == 1 and f'src="/record/{rid}/media/m1.jpg/small"' in entrance, "入口の札に写真が重なる"
+assert "/media/" not in looks.tenji(photos=False).split("</style>")[-1], "開いた場の入口は写真を置かない"
+# 小さい写しは 100KB 以下で、上げた元の向きのまま縮める
+big = Image.new("RGB", (3024, 4032), (180, 120, 60))
+buf = io.BytesIO()
+big.save(buf, "JPEG", quality=95)
+(d / "m1.jpg").write_bytes(buf.getvalue())
+small = made.small_photo(d / "m1.jpg")
+with Image.open(io.BytesIO(small)) as im:
+    assert im.width == made.SMALL_W and len(small) <= 100_000, (im.size, len(small))
+assert made.small_photo(d / "nai.jpg") is None
 print("ok 原画は頁の全体で歌と組になり、作る時は頁を離れずに大きく見られる。原画の隣に作ってみた実物（写真か止まった形）")

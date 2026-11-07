@@ -8,6 +8,9 @@
 - 写真がいつ届いても作りは替えない: 写真の有無で切り替わる（写真は repo に入れない決まり。公開の場のサーバの記録の置き場に、人が確かめて入る）。
 - 字は今ある字だけ: 写真の札は「作った物」（ギャラリーの「他の人が作った物」と同じ言い方）、止まった形の札は「できあがり」（組み立ての頁の字）。
 """
+import functools
+import io
+
 from omochae import media_review, records
 
 from . import kumitate
@@ -18,14 +21,36 @@ STILL = kumitate.DONE
 IMAGE = (".jpg", ".jpeg", ".png")
 
 
+SMALL_W = 480   # 写真の小さい写しの幅（px）。入口の札（幅 390 で 71px）と玩具の頁の頭（240px）を 2 倍の画面で見ても粗くならない
+
+
+@functools.lru_cache(maxsize=64)
+def _small(path, mtime):
+    from PIL import Image, ImageOps
+    with Image.open(path) as im:
+        im = ImageOps.exif_transpose(im).convert("RGB")  # 上げた写真の向き（撮影の情報は上げる時に外してある。向きだけ直す）
+        im.thumbnail((SMALL_W, SMALL_W * 2))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=78, optimize=True)
+    return buf.getvalue()
+
+
+def small_photo(path):
+    """作った物の写真の小さい写し（JPEG のバイト）。読めない写真は None（壊れた写真で頁を止めない）。"""
+    try:
+        return _small(str(path), path.stat().st_mtime)
+    except OSError:
+        return None
+
+
 def photo(sid):
-    """その玩具の、人が物だけと確かめた写真のうち一番新しい物の道（/record/<記録>/media/<名前>）。無ければ None。"""
+    """その玩具の、人が物だけと確かめた写真のうち一番新しい物の小さい写しの道（/record/<記録>/media/<名前>/small）。無ければ None。"""
     from .techo_site import media_of
 
     for r in reversed(records.all_records(sid)):
         files = [f for f in media_review.public(r["id"], media_of(r["id"])) if f.lower().endswith(IMAGE)]
         if files:
-            return f"/record/{r['id']}/media/{files[-1]}"
+            return f"/record/{r['id']}/media/{files[-1]}/small"
     return None
 
 
