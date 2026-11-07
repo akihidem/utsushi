@@ -6,6 +6,8 @@
 新しい絵は作らず、NDL の図の頁とその寄りだけを使う。歌は人が確かめた読みだけを引用の印つきで出す。
 入口には仮説を出さない（絵を先に見せるため）。どの案も最後は同じ玩具の頁（/toy/）へ入る。
 """
+import re
+
 from omochae import hypotheses
 
 from . import skin, wording
@@ -390,8 +392,32 @@ def _erabu(sids, photos=True):
             '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p></details></section>')
 
 
-def tenji(photos=True):
-    """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。"""
+# 暗い画面の版の入口（本人の決め 11-08「もう1つ立てる」— HMD のための暗い版の公開デモ。統括の頼み 11-08「入口も白と同じ作り
+# （縦の題字・まずはここから・小さい写し）で色だけ暗くする」）。前の黒のジンの入口（zine・額の表紙と縦読みの章）は、本人の決定 11-06
+# 「ページは白案で統一します」の後も黒の皮の入口として残っていたので、暗い版を立てた時に入口だけ別の作りになった。作りは白の入口 1 つに
+# し、色だけを置き換える（作りを 2 つ持つと、白の直しが暗い版に届かない）。色の対は皮の表（skin.SKINS の tenji → zine）に寄せ、
+# 表に無い白の入口だけの色は、明るさの並びを逆にした近い色にした（字と地の 4.5:1 を割らない向き）
+DARK = {"#fcfcfa": "#0b0a09", "#fffefc": "#141210", "#f6f3ec": "#15120f", "#f3f1ec": "#15120f", "#ebe8e2": "#2a251e", "#e8e1d2": "#2f2a22",
+        "#e6e1d6": "#3a3226", "#d8cdb6": "#6e5a35", "#b9a982": "#8a7a5a", "#7a7164": "#a0957f", "#6f665a": "#a0957f", "#5d554a": "#b8ad97",
+        "#4a4339": "#cfc5b0", "#6b4f2a": "#c9a96a", "#2b2722": "#e9e1cf", "#1f1b17": "#f5eedf",
+        "#d9d2c3": "#2f2a22"}  # 絵の下敷き（CSS の .tj-mazu-card .pic）。まずはここから の 2 枚は本体に直に書いた下敷きの style が勝つが、頁に書いた小さい絵が一緒に描くので、明るい地が見えるのは原画の写しの無い木だけ（別の目の測り 11-08）。本体の style は、作りを白と一字も同じに保つため替えない
+
+
+def _dark(css):
+    """白の入口の CSS の色を、暗い版の色に置き換える。影（rgba(70,55,35,…)）は黒の影に、下線（rgba(107,79,42,…)）は暗い版の差し色に。"""
+    out = re.sub(r"#[0-9a-fA-F]{6}\b", lambda m: DARK.get(m.group(0).lower(), m.group(0)), css)
+    out = re.sub(r"rgba\(70,55,35,(\.?\d+)\)", lambda m: f"rgba(0,0,0,{min(0.9, float(m.group(1)) * 2):.2f})", out)
+    return re.sub(r"rgba\(107,79,42,(\.?\d+)\)", r"rgba(201,169,106,\1)", out)
+
+
+def yoru(photos=True):
+    """暗い画面の版の入口（皮 zine のサイトの /）。作りは白の入口と同じで、色だけ暗い。"""
+    return tenji(photos, dark=True)
+
+
+def tenji(photos=True, dark=False):
+    """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。
+    dark=True は暗い画面の版の入口（yoru）: 同じ作りで、CSS の色だけを _dark で置き換え、帯の変数は皮 zine の物にする。"""
     from . import ukabu  # 浮かぶ玩具（循環を避けて、ここで読む）
 
     ts = toys()
@@ -406,7 +432,9 @@ def tenji(photos=True):
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + ukabu.UKABU + skin.entrance_style("tenji"), "tenji")
+    css = TENJI + ERABU + ukabu.UKABU
+    # 暗い版も body の印は tenji を持つ（白の入口の CSS の選び body.tenji をそのまま効かせる）。暗い版の印 yoru を足して見分ける
+    return page("うつし", body + ONLY + ERABU_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji")
 
 
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
@@ -457,4 +485,6 @@ body .tj-narabi a{display:block;color:inherit;text-decoration:none;border:0}
 """
 
 
-PAGES = {"tenji": tenji, "zine": zine}
+# 皮ごとの入口。zine のサイト（暗い画面の版）の入口は、白と同じ作りの yoru（本人の決め 11-08「もう1つ立てる」）。
+# 前の黒のジンの入口 zine() は、もう道からは出さない（関数は試験が読むので、消すのは別の PR で試験と一緒に）
+PAGES = {"tenji": tenji, "zine": yoru}

@@ -37,7 +37,8 @@ except ValueError:
     pass
 
 # 入口の皮は <body> の印で見分ける。<title> に作る側の案の名前は出さない（#125）
-for look, other, title in (("tenji", "zine", '<body class="tenji"'), ("zine", "tenji", '<body class="zine"')):
+# 暗い版（zine）の入口は白と同じ作りで色だけ暗い（本人の決め 11-08「もう1つ立てる」）ので、body の印は tenji に暗い版の印 yoru を足した形
+for look, other, title in (("tenji", "zine", '<body class="tenji"'), ("zine", "tenji", '<body class="tenji yoru"')):
     get = up(look)
     code, home = get("/")
     assert code == 200 and title in home and f"/toy/{G}" in home and "大判写真集" not in home, look
