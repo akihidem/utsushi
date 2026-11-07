@@ -38,6 +38,14 @@ SMALL_W = 480  # 写しの幅（札と敷き詰めの 1 枚は幅 390 で約 110
 # 新しい字（本人の確かめ・窓口へ）
 TITLE = "ワークショップ {n} 回"
 LEAD = "ワークショップは、改善の輪の入口です。作った人の記録と感想から型紙とエンジンが直り、次のワークショップで新しい版を刷ります。"
+# 感想の分析（本人の言葉 11-07 夜「まさに今回のサービスの感想そのものだよ。もっと分析しなくちゃいけない」と、生かし方の答え「全部入れる」の 2
+# サイト）。元はワークショップの感想（名前とメールを外した写し・grove の state/voices-analysis-20261107.md）で、repo には数だけを入れ、
+# 回答の字と玩具ごとの分けは入れない。小さな数なので、割合にせず件で言う（統括の決め）。感想は回答 17 件だけを使う。
+# 数は 18 件から、本人が寄せられた声の札で見送った 1 件（うきにんぎょ）を除いた 17 件（札の 17 枚と頁をまたいで食い違わないため・統括と UX の
+# 担当の推し・分析の表の末で数え直した。注文の数は替わらない）
+# 字は本人の確かめ待ち（作りを先に）。空にすると出ない（節は前と同じ）。置き場は LEAD のすぐ後（ワークショップが改善の輪の入口だという文の裏付け）
+VOICES = ("感想 17 件のうち 9 件で、おもちゃが少なくとも一部は動きました。動かなかった 8 件のうち 4 件は、もう一度作りたいと書きました。",
+          "型紙への注文で多かったのは、作り方の手順と、穴やのりしろの印でした。")
 PRINTED = "刷った型紙"
 FROM = "この回から直った所"
 TO_LOOP = "この一周を見る"
@@ -201,7 +209,7 @@ def section(sheet):
     faces = _faces()
     face = (f'<figure class="ws-faces">{"".join(f"<img src={chr(34)}{esc(u)}{chr(34)} alt={chr(34)}{esc(FACES)}{chr(34)} loading={chr(34)}lazy{chr(34)}>" for u in faces)}'
             f'<figcaption>{esc(FACES)}</figcaption></figure>') if faces else ""
-    return (f'<section class="sec ws" id="ws"><h2 class="ws-n">{esc(TITLE.format(n=len(ws)))}</h2>{face}<p class="lead">{esc(LEAD)}</p>'
+    return (f'<section class="sec ws" id="ws"><h2 class="ws-n">{esc(TITLE.format(n=len(ws)))}</h2>{face}<p class="lead">{esc(LEAD)}</p>' + "".join(f'<p class="lead ws-voices">{esc(t)}</p>' for t in VOICES)
             + (f'<div class="ws-mosaic">{"".join(_img(n, x, alt) for n, x, alt in mosaic)}</div>' if mosaic else "")
             + f'<ol class="ws-row">{cards}</ol>'
             + (f'<p class="links"><a href="/gallery#sakurei">{esc(SAKUREI)}</a></p>' if _has_sakurei() else "")

@@ -3687,6 +3687,8 @@
   "ジャバラを最後に固定できたのか、どうやって固定したのか（のり、テープなど）。": "Whether the bellows could be fixed in the end, and how (glue, tape, and so on).",
   "ワークショップ {0} 回": "{0} workshops",
   "ワークショップは、改善の輪の入口です。作った人の記録と感想から型紙とエンジンが直り、次のワークショップで新しい版を刷ります。": "The workshops are the way into the improvement loop. Makers' records and feedback fix the template and the engine, and the next workshop prints the new version.",
+  "感想 {0} 件のうち {1} 件で、おもちゃが少なくとも一部は動きました。動かなかった {2} 件のうち {3} 件は、もう一度作りたいと書きました。": "Of the {0} feedback answers, {1} said the toy moved, at least in part. Of the {2} where it did not move, {3} wrote that they wanted to make it again.",
+  "型紙への注文で多かったのは、作り方の手順と、穴やのりしろの印でした。": "The requests for the templates were mostly about the making steps, and the marks for holes and glue tabs.",
   "下から切り取った工夫で形が型紙と変わり、それが動き方やジャバラの固定に関係したかもしれない。記録からは確かめられない。（確からしさ: 低い）": "Cutting from the bottom may have changed the shape from the template, and that may have affected how it moved or how the bellows were fixed. This cannot be confirmed from the record. (Likelihood: low)",
   "人": "Person",
   "人が決める": "A person decides",
