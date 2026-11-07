@@ -618,6 +618,12 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p><p class="meta">画面で見て、印刷する前に案を検討する所。</p>'
              f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">{plate}</div>'
              f'{window(sid, data, see, kind, v, recorded, photos)}</section>')
+    # 型紙の版の歩み（本人の指示 11-07「過去の型紙が改善していって、提出の時の今の型紙になっている所が分かるようにしたい。御来迎と虎のそれぞれで、
+    # 版の歩みが今の版に行き着くまで見える形にしてください。」。設計 0.7 節の置き場 ①）。原画と立体 → つくる → 型紙の窓 のすぐ後（2 画面目の頭）に置き、
+    # 窓の頭の輪の図と近くに並べて「版が積み上がる → 輪が回る」と読めるようにする（設計の担当の置き場 11-07）。表に無い玩具では空で、頁は変わらない
+    from . import ban_ayumi
+
+    body += ban_ayumi.section(sid)
     # たとえと関連する事柄は、型紙の窓のすぐ後（考えを話すの前）に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」。
     # 夕方のサイトのレビューの 7「型紙の近くに出して一緒に考えられるように」）。C3 の前の形に戻した（前は頁の足の畳み）。字は替えない。
     # たとえは「仕組みを考える手がかりで、答えではありません」（節の断り）なので、試す前の頁に開いて出してよい（前も開いて出していた）
