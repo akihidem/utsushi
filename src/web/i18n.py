@@ -50,6 +50,10 @@ RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
 MAIN_OPEN = re.compile(r"<main\b[^>]*>")
 PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語は 漢字（よみ） の形で読みを添える。PAREN）
 PAREN_ATTRS = {"placeholder"}  # 画面に出る属性のうち、やさしい日本語で 漢字（よみ） にする物（value は送る値なので替えない）
+# SVG の字（text・tspan・textPath。TAG は名を小さい字にそろえる）。中に <ruby> を入れるとブラウザが SVG の外へ追い出し、学びの輪の図の字が
+# 図の下に縦に並んだ（別の目が のこす の頁で撮って確かめた・11-07 夜）。ルビの印を外した字にする（<title>・<option> の 漢字（よみ） にはしない）。読みを 漢字（よみ） で添える形も撮って見たが、
+# 図の札が図の外へはみ出し、札どうしが重なった（grove の state/easy-svg-text-20261107/）。図の字の読みは、図のすぐ上の文（同じ言葉にルビ）が持つ
+SVG_TEXT = {"text", "tspan", "textpath"}
 KEEP = "="           # 訳さずに日本語のまま出す印
 CJK = re.compile(r"[぀-ヿ㐀-鿿＀-￯　-〿]")
 NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -121,7 +125,7 @@ def lookup(text, lang="en"):
         return None
 
 
-def _swap_text(raw, miss, lang="en", plain=False):
+def _swap_text(raw, miss, lang="en", plain=False, svg=False):
     text = html.unescape(raw)
     if not CJK.search(text):
         return raw
@@ -135,6 +139,9 @@ def _swap_text(raw, miss, lang="en", plain=False):
         return f'{lead}<span lang="ja">{raw.strip()}</span>{tail}' if lang == "en" else raw
     if lang == "easy":
         # 要素を入れられない所（<title>・<option>）では、属性と同じくルビの印を外した字にする（タブの題に <ruby> が字のまま出たため・別の窓の指摘）
+        # SVG の字は印を外した字（読みを添えると図の札がはみ出す・SVG_TEXT の注）。<title>・<option> は 漢字（よみ）。ほかの字の節は <ruby>
+        if svg:
+            return lead + html.escape(ruby_plain(en), quote=False) + tail
         return lead + (html.escape(ruby_paren(en), quote=False) if plain else ruby_html(html.escape(en, quote=False))) + tail
     return lead + html.escape(en, quote=False) + tail
 
@@ -189,7 +196,7 @@ def to_en(page, miss=None, lang="en"):
                 stack.append((name, name in RAW or (name != "html" and bool(frozen_mark.search(tok)))))
             out.append(tok)
             continue
-        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY))
+        out.append(tok if any(f for _, f in stack) else _swap_text(tok, miss, lang, plain=bool(stack) and stack[-1][0] in PLAIN_ONLY, svg=bool(stack) and stack[-1][0] in SVG_TEXT))
     return "".join(out)
 
 

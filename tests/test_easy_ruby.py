@@ -5,6 +5,7 @@
   値が "="（日本語のまま）の鍵に漢字があると、その字はルビ無しで出るので止める（同じ字にルビを振った値を書く）
 - 全部の頁を ?lang=easy で回し、見える字（字の節）でルビの外に残る漢字は、表に鍵が無い字（落ちた字。grove の state/yasashii-gaps の一覧）の物だけ
 - 要素を入れられない所（<title>・<option>）と、画面に出る placeholder は、ルビの代わりに 漢字（よみ） の形で読みを添える
+- SVG の字（text・tspan）は印を外した字（読みを添えると図の札がはみ出した。#591。読みは図のすぐ上の文が持つ）なので、頁の見張りから外す
 - 頁の頭の「下書きです」の札は出ない
 """
 import html
@@ -45,8 +46,10 @@ out = i18n.page_easy('<html lang="ja"><head><title>御来迎</title></head><main
 assert "<title>御来迎（ごらいごう）</title>" in out and "<option>御来迎（ごらいごう）</option>" in out, out
 assert 'placeholder="御来迎（ごらいごう）"' in out and 'alt="御来迎"' in out, out
 assert "<p><ruby>御来迎<rt>ごらいごう</rt></ruby></p>" in out and "easy-draft" not in out and "下書" not in out, out
+svg = i18n.page_easy('<html lang="ja"><main><svg><title>御来迎</title><text>御来迎</text></svg></main></html>')
+assert "<text>御来迎</text>" in svg and "<title>御来迎（ごらいごう）</title>" in svg, svg
 
-STRIP = re.compile(r"<title[^>]*>.*?</title>|<option[^>]*>.*?</option>|<script.*?</script>|<style.*?</style>|<textarea.*?</textarea>|<ruby>.*?</ruby>|<!--.*?-->", re.S)
+STRIP = re.compile(r"<title[^>]*>.*?</title>|<option[^>]*>.*?</option>|<script.*?</script>|<style.*?</style>|<textarea.*?</textarea>|<text\b[^>]*>.*?</text>|<ruby>.*?</ruby>|<!--.*?-->", re.S)
 
 srv = serve(0, look="tenji")
 threading.Thread(target=srv.serve_forever, daemon=True).start()
