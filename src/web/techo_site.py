@@ -286,6 +286,11 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .samples{display:grid;gap:10px;margin:0}
 .gallery .is-sample{border:1px dashed var(--frame);padding:10px}
 .gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
+.gallery .day{font-size:17px;letter-spacing:.1em;margin:4px 0 0}
+.gallery .sakurei-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.gallery .sakurei-row figure{margin:0;display:grid;gap:6px;align-content:start}
+.gallery .sakurei-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .sakurei-row figcaption{font-size:14px}
 """
 
 
@@ -330,6 +335,49 @@ def own_item(sid, data, r):
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
+# ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」）。
+# 新しい字なので、決まるまでは案の字（決まったらここだけを替える）
+SAKUREI_TITLE = "ワークショップで作られた物"
+SAKUREI_LEAD = "11 月 4・5・6・7 日のワークショップで作られた物です。日の順に並べます。上下はありません。"
+
+
+def sakurei_section(sids, photos=True):
+    """ワークショップで作られた物（作例）の節。持ち寄る駅（/gallery）の頭、「他の人が作った物」の上に置く（地図の工程 5）。
+
+    判断の芯:
+    - 出すのは web.sakurei.examples()（人が「物だけ」と確かめた写真がある作例）だけ。1 枚も無い時は節ごと出さない
+      （写真が来る前の形。断りの字を足さない）。
+    - 日ごとの小見出しの id は sakurei-MMDD。審査用の頁のワークショップの節は、出す物がある日にだけそこへ道を張る（web.sakurei.days()）。
+      日の中は玩具ごとに寄せる（頁の玩具の並び＝sids の順、同じ玩具の中は記録の順）。上下は付けない（J-025）。
+    - 札は 1 つの記録に 1 枚: 写真の小さい写し（/small。元の写真 3MB ほどを並べて読まない）と玩具の名（玩具の頁へ行く。他の人が作った物の札と同じ）。
+      作った日は小見出しにあるので札に重ねない（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。作った人の名と感想は記録に持たない。
+    - 合言葉なしで開いた場も同じ物を出す（人が確かめた写真は開いた場のギャラリーにも出す、本人の決定 11-06）。記録の番号は字にしない。
+      photos=False（写真を出さない前の開いた場の形）は出さない。"""
+    if not photos:
+        return ""
+    from . import sakurei  # sakurei は techo_site を読むので、ここで読む
+
+    order = {sid: i for i, sid in enumerate(sids)}
+    shown = [e for e in sakurei.examples() if e["sid"] in order]
+    if not shown:
+        return ""
+    names = {sid: hypotheses.load(sid)["toy"] for sid in {e["sid"] for e in shown}}
+    days = {}
+    for e in sorted(shown, key=lambda e: (e["day"], order[e["sid"]], e["rid"])):
+        days.setdefault(e["day"], []).append(e)
+    body = ""
+    for day, items in days.items():
+        cards = "".join(
+            f'<figure class="item">'
+            + "".join(f'<img src="/record/{esc(e["rid"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in e["photos"])
+            + f'<figcaption><a href="/toy/{esc(e["sid"])}">{esc(names[e["sid"]])}</a></figcaption></figure>'
+            for e in items)
+        body += (f'<h3 class="day" id="sakurei-{day[5:7]}{day[8:10]}">{int(day[5:7])} 月 {int(day[8:10])} 日</h3>'
+                 f'<div class="sakurei-row">{cards}</div>')
+    return (f'<section class="panel" id="sakurei"><h2 class="mark">{esc(SAKUREI_TITLE)}</h2>'
+            f'<p class="meta">{esc(SAKUREI_LEAD)}</p>{body}</section>')
+
+
 # 合言葉なしの場で上げた直後の返事に続ける 1 行（窓口の決定 11-06 夜・案 A。字はその決定の字のまま）。上げた物は、確かめる前は上げた画面にだけ出て
 # ギャラリーには出ないので、並ばない理由を上げた時に言う。合言葉付きの場も同じ線だが、決定は合言葉なしの場の分なので、そこだけに出す
 PUBLIC_UPLOADED = "写真は、人が確かめてから、みんなの所に出ます。"
@@ -351,13 +399,15 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 own = own_item(sid, data, r)
                 continue
             cards += made_item(sid, data, r, photos, public)
-    real = bool(cards or own)
+    sak = sakurei_section(sids, photos)
+    # ワークショップで作られた物も本物の作った物なので、それだけがある時も見本を畳む（本物を先に、見本は畳む。地図の工程 5）
+    real = bool(cards or own or sak)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
-    # 今残した 1 つだけがある時は「まだ…ありません」を出さない（並んだ札と食い違うため）。
+    # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
-    if not cards and not own:
+    if not cards and not own and not sak:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
     # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
@@ -370,6 +420,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
     return ('<div class="gallery"><div class="top"><h1>作った物</h1><a href="/">入口へ</a></div>'
             '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
+            f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。上下はありません。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
