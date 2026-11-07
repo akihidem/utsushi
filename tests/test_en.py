@@ -59,13 +59,21 @@ for sid, t in table.items():
     assert t["name"].strip() and t["intro"].strip(), sid
     assert not re.search(r"[぀-ヿ一-鿿]", t["name"] + t["intro"]), sid
 
+# 日本語の玩具の頁の英語への入口に、括弧の断り「（英語の文は案です）」を付けない（本人の決め 11-07「外してよい」。頭の断り DRAFT を外したのと同じ扱い）。
+# 入口そのものは残る
+for sid in (G, T):
+    ja = get(f"/toy/{sid}")
+    assert f'<a href="/en/toy/{sid}">Read and print in English</a>' in ja and "英語の文は案です" not in ja and "英語の文は案です" not in en.band(sid), sid
+
 idx = get("/en")
 assert '<html lang="en"' in idx and all(f'href="/en/toy/{s}"' in idx for s in sources())
-assert en.DRAFT in idx and "does not prove how the original was made" in idx and "It is not the answer" in idx and "Japanese only" in idx
+# 頭の断り「Draft translation…」は出さない（本人の言葉 11-07「これ要らない。Draft translation. A native speaker has not checked it yet.」）
+NO_DRAFT = ("Draft translation", "native speaker")
+assert not any(w in idx for w in NO_DRAFT) and "does not prove how the original was made" in idx and "It is not the answer" in idx and "Japanese only" in idx
 
 for sid in (G, T):
     page = get(f"/en/toy/{sid}")
-    assert '<html lang="en"' in page and en.PREMISE in page and en.JA_ONLY in page and en.DRAFT in page and "does not prove how the original was made" in page
+    assert '<html lang="en"' in page and en.PREMISE in page and en.JA_ONLY in page and not any(w in page for w in NO_DRAFT) and "does not prove how the original was made" in page
     assert page.index('id="premise"') < page.index('class="plates"')
     d = hypotheses.load(sid)
     assert sorted(required["toys"][sid]["hypotheses"]) == sorted(h["id"] for h in d["hypotheses"])
