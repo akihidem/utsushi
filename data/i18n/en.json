@@ -540,7 +540,7 @@
   "{0}-{1} に作った時の答え「色がついている所が外を向くよう折った」": "The answer when making it on {0}-{1}: “I folded it so the colored parts face out”",
   "このサイトを作った人の言葉「エンジンは{0}D組み立て検品を自分でする」「組み立ての様子も作る」。検品を足した時に、虎の作り方の {1}D の誤り（手順 {2} で尾が机の下へ出る）を見つけて直した": "Words of the person who made this site: “The engine inspects the {0}D assembly by itself” and “It also makes the assembly views.” When the inspection was added, it found and fixed an error in the tiger's {1}D build (in step {2} the tail went below the table)",
   "決めた時の言葉「作ってみる。試作して開発中と書く」": "Words when it was decided: “Let's try making it. Say it is a prototype in development.”",
-  "江戸の玩具でない模型 {0} つ（振り子の波・DNA の二重らせん）の型紙を作れるようにした（試作して開発中）": "Made it possible to make sheets for {0} models that are not Edo toys (a pendulum wave and a DNA double helix) (a prototype, still in development)",
+  "エンジンの原点にある模型 {0} つ（振り子の波・DNA の二重らせん）の型紙を、刷る所まで試作した（開発中）": "Prototyped the templates for {0} models at the origin of the engine (a pendulum wave and a DNA double helix), up to printing them (in development)",
   "決めた時の言葉「エンジンは{0}D組み立て検品を自分でする」「組み立ての様子も作る」。検品を足した時に、虎の作り方の {1}D の誤り（手順 {2} で尾が机の下へ出る）を見つけて直した": "Words when it was decided: “The engine inspects the {0}D assembly by itself” and “It also makes the assembly views.” When the inspection was added, it found and fixed an error in the tiger's {1}D build (in step {2} the tail went below the table)",
   "このブラウザでは声で送れません。ボタンか、キーボードの → ← で送れます。": "This browser cannot move on by voice. You can step with the buttons or the → ← keys on the keyboard.",
   "この値だと、像が扇より高くなります。": "With this value, the figure is taller than the fan.",
