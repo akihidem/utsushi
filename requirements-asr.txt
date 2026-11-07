@@ -1,4 +1,4 @@
-# 声を字にする道具（src/omochae/asr_worker.py）。動画の専用の口（src/web/video_up.py）だけが使う。重いので requirements.txt と ./run.sh には入れない。
+# 声を字にする道具（src/omochae/asr_worker.py）。動画の専用の口（src/web/video_up.py）と、手帖に上げた動画の声（src/omochae/voice_text.py）が使う。重いので requirements.txt と ./run.sh には入れない。
 # 作り方: uv venv .venv-asr && uv pip install --python .venv-asr/bin/python -r requirements-asr.txt
 # 版はこの機械で声を字にした時の物（2026-11-06）。モデルは手元に置く（字にする時はネットへ行かない）。
 faster-whisper==1.2.1

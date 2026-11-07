@@ -3779,6 +3779,10 @@
   "記録を束ねた下書きと検査。決めない": "Drafts made by bundling records, and checks. Does not decide",
   "部品の名を刷る（{0} 頭・{1} 首の帯・{2} 尾・{3} 腕）": "Print the part names ({0} head · {1} neck band · {2} tail · {3} arm)",
   "頭が静かな時の傾きから ±{0}° 揺れる間、粘土の玉・{1} 重りの腕・頭・首の帯が当たらない事を、エンジンが検査する": "The engine checks that the clay ball, part {1} (weight arm), the head, and the neck band do not collide while the head swings ±{0}° from its resting tilt",
-  "）。型紙もエンジンも、見つかった事から直る": "). Both the template and the engine get fixed from what was found"
+  "）。型紙もエンジンも、見つかった事から直る": "). Both the template and the engine get fixed from what was found",
+  "話す口では、声は録音しません。字だけを受け取ります。": "When you talk, we do not record your voice. We receive only the text.",
+  "写真と動画は、いつ・どこでとったかなどの情報を消してから残します。動画の声は、この機械の中で字にしてから消します。字にできない時も、{0} 日で消します。字は、このサイトを作っている人だけが読みます。子どもの声は入れないでください。": "For photos and videos, we remove information such as when and where they were taken before keeping them. The voice in a video is turned into text on this machine and then deleted. If it cannot be turned into text, it is still deleted within {0} days. Only the people who make this site read the text. Please do not include children's voices.",
+  "残るのは字だけです。声は録音しません。話した声は、このサイトに送りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。": "Only the text is saved. Your voice is not recorded. Your spoken voice is not sent to this site. Before you save, you can read the text and fix it. Please do not write your name, your school's name, your address, phone number, or email. The text you save is also used by the AI (Claude) to think of ways to make the template better.",
+  "のせた写真と動画は、いつ・どこでとったかなどの情報を消してから残します。動画の声は、この機械の中で字にしてから消します。字にできない時も、{0} 日で消します。子どもの声は入れないでください。": "Photos and videos you add are saved after we remove information such as when and where they were taken. The voice in a video is turned into text on this machine and then deleted. If it cannot be turned into text, it is still deleted within {0} days. Please do not include children's voices."
  }
 }
