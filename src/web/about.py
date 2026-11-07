@@ -17,14 +17,6 @@ from .skin import esc
 
 SID = "NDL-1187053-R0000005-L"
 CONCEPT = "なくなったおもちゃの動きを、紙で実験してたしかめる道具"
-# うつしの位置づけと想定する相手（本人の言葉 11-07 昼「想定する相手は教育分野から、みんなが使える公開のサービスへ広げる。
-# utsushi は paper to toy の具体例、という説明をサイトに」。作り直しの設計 0.8）。paper to toy は、サイトの中で型紙エンジンと呼ぶ仕組み
-# （根幹の言葉の「型紙生成システム」）。うつしをその 1 つの例と言い、根幹と同じ段（題の下の一言のすぐ下）に置く。
-# 相手の 2 文は、出発の理由（TIMSS の数と作った人の印象）の後に置く: 教育の場から始まり、だれでも使える公開のサービスへ広げる順のため。
-# 字は新しい字で、本人の確かめ（窓口）。採られるまで PR は合体しない
-# 『江都二色』のおもちゃを作る事はすぐ下の本の段が言うので、ここでは言わない（幅 390 で同じ本の名が続けて 2 回出たため）
-POSITION = "うつしは、paper to toy（ペーパー・トゥ・トイ）の 1 つの例です。paper to toy は、絵から紙の型紙を作り、作った人の工夫で型紙がよくなっていく仕組みです。"
-AUDIENCE = "はじめは、学校の授業やワークショップのために作りました。これから、だれでも使える公開のサービスへ広げていきます。"
 # 本人の言葉（philosophy.md）。鉤括弧の中は届いた文のまま。
 WORDS = ("科学の面白さを伝える。自然とのコールアンドレスポンス。おもちゃで遊び続ける。",
          "AI は鏡。江戸の絵を映すことはできるが、映すだけでは遊べない。")
@@ -75,12 +67,12 @@ def page(skin_name, path="/about"):
     body = (f'<div class="about"><section class="hero sec"><div>{skin.frame(SID, caption=src.get("holding", ""))}</div>'
             # 道の外の読み物の入口（段 1、帯の「よむ」はこの頁）。前は頭の帯にあった 図鑑・English と、保護者の方へ、ファシリテーターの方へ の頁を、今の名前のまま並べる
             f'<div><h1>うつし</h1><p class="links yomu"><a href="/zukan">図鑑</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a><a href="/en">English</a></p>'
-            f'<p class="concept">{esc(CONCEPT)}</p><p class="lead position">{esc(POSITION)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
+            f'<p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
             # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。黒のジンの案 2 は入口の章の頭（looks.py）。
             # 白の案 2（縦読み）は、入口でなく帯の「よむ」の先のこの頁に置く（統括の決め 11-06。地図の「読み物は道の外へ」）
             + (hokusai.flip_section() + hokusai.scroll_section("tenji") if skin_name == "tenji" else "") + hokusai.mechanism_section() +
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
-            f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p><p class="lead audience">{esc(AUDIENCE)}</p>'
+            f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
             # えらぶ の頭にあった断りの段（窓口の決定 11-07 の ②「よむ へ移す」）。字は変えずに、おもちゃを選ぶ釦のすぐ前に置く
             + toys.yomu_section() +
