@@ -26,7 +26,7 @@ SKINS = {
 }
 
 # 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
-# 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
+# 帯の項目。先頭の「うつし」（帯の題の字。釦にしない）は nav() が brand として出すので、ここには置かない
 # 頭の帯は道しるべ（UX の見直しの段 1、本人の決定 11-06。research/36「道しるべの言葉は えらぶ・つくる・のこす・もちよる」「頭の帯を道しるべに替える」）。
 # 帯は今いる駅に印を付ける。つくる・のこすは玩具を選んだ後の駅なので、玩具の頁の中でだけ押せる（選ぶ前は押せない段の印として字だけ出す）。
 # 道の外の読み物（序・図鑑・保護者の方へ、ファシリテーターの方へ・English）は「よむ」（序の頁）にまとめる。前の帯の名（序・おもちゃ・
@@ -99,9 +99,12 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 # body .links a は図鑑の .zukan a に勝つ詳細度にするため（図鑑の頁では床より後に .zukan a が来る）。
 # :where(.top) a は手帖とギャラリーの頭の字のリンク。詳細度を下げて、線なしの作りながら見る頁の .top a に勝たせる。ここは全部の頁に載るので .techo の名前を書かない（手帖の皮を外へ漏らさない決まり、#126）。
 # 一括の text-decoration は Safari が太さと色を読まないので、1 つずつ書く。色は頁ごとの変数に頼らず、リンクの字の色から作る（開いた頁の見た目の組は --accent を持たない）。
+# 帯の題の字「うつし」（span.brand）は釦でないが、釦だった時と同じ 44px の高さの箱を持たせる。帯の高さと、幅 480 以下で右上に置く English の
+# 高さのそろいを、釦だった時のまま保つため（確かめの気づき 11-07: 箱が無いと帯が 122 → 105px に縮み、English が うつし より 8px 下に見えた）
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
 .nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,.foot>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav .brand{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 label:not(.sr):has(>input[type=text]),label:not(.sr):has(>input[type=number]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 summary{list-style:none}
@@ -264,9 +267,10 @@ def nav(skin, current="", path="/", lang="ja"):
     items = (arrow.join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span>'
              '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい</a><a class="nav-lang" href="?lang=en" lang="en">English</a>')
     # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
-    # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
-    brand = ""
-    return f'<nav class="nav"><a class="brand" href="/"{brand}>うつし</a>{items}</nav>'
+    # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた。
+    # 「うつし」は帯の題の字で、釦にしない（窓口の決め 11-07「行き先が同じ釦は 1 つにそろえる。帯の並びは決めたまま」）。前は入口（/）への道で、
+    # えらぶ と同じ所へ行く釦の対だった（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。並びと字はそのまま
+    return f'<nav class="nav"><span class="brand">うつし</span>{items}</nav>'
 
 
 def page_title(title):
@@ -322,20 +326,14 @@ def frame(sid, caption="", pos=None):
     return f'<figure class="frame"><div class="pic" style="{style}" role="img" aria-label="図"></div>{cap}</figure>'
 
 
-def artwork_label(toy, src):
-    """美術館の作品の札。中身は出典の記録（NDL の書誌）の値だけで、作る側の言葉を足さない（looks._label と同じ線）。"""
+def artwork_label(toy, src, credit=True):
+    """美術館の作品の札。中身は出典の記録（NDL の書誌）の値だけで、作る側の言葉を足さない（looks._label と同じ線）。
+    credit=False は題の塊（玩具の名・『書名』より・作者・刊年）だけ。玩具の頁は出典の字を頁の一番下に置く（本人の言葉 11-08「国立図書館デジタル
+    コレクションの文言はページの一番下に」）ので、頭の札はこの形（縦書きを前の形に戻した 11-08 の答えの後も、出典の字の置き場は替えない）。"""
     who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
     when = esc((src.get("original_publication") or {}).get("value", ""))
-    rights = "パブリック・ドメイン（PDM）" if src.get("rights") == "PDM" else esc(src.get("rights", ""))
-    return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}<br>{esc(src.get("holding", ""))}<br>{rights}</p>'
-
-
-def artwork_title(toy, src):
-    """作品の札の題の塊（玩具の名・『書名』より・作者・刊年）。玩具の頁の頭で、狂歌の左に縦書きで置く（本人の言葉 11-08「絵の左横に縦で狂歌、
-    その左横に御来迎 江都二色よりーの部分を置く」）。字は artwork_label の前の 3 行と同じ（出典の記録の値だけ）。"""
-    who = esc(src.get("creator_as_cataloged", "").replace("||", "・"))
-    when = esc((src.get("original_publication") or {}).get("value", ""))
-    return f'<p><b>{esc(toy)}</b></p><p>『{esc(src.get("title", ""))}』より</p><p>{who}</p><p>{when}</p>'
+    tail = f'<br>{artwork_credit(src)}' if credit else ""
+    return f'<p class="label"><b>{esc(toy)}</b>『{esc(src.get("title", ""))}』より<br>{who}<br>{when}{tail}</p>'
 
 
 def artwork_credit(src):
@@ -352,7 +350,8 @@ def ndl_page(src):
     return f"https://dl.ndl.go.jp/pid/{pid}/1/{canvas}" if pid.isdigit() and isinstance(canvas, int) else src.get("image_url", "")
 
 
-def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"), ("/toys", "おもちゃの一覧へ")), bare=False):
+# 断りの頁の戻り方は入口への 1 つ。前の「おもちゃの一覧へ」（/toys）は外した（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）
+def notice(title, reason, skin=DEFAULT, links=(("/", "入口へ"),), bare=False):
     """断りの頁（404・403・500）。何が起きたかと戻り方を、皮の地で 1 つの形で出す。bare は帯も足も出さない形で、合言葉の門のように中身を見せない所に使う（#136）。"""
     back = "".join(f'<a href="{esc(p)}">{esc(n)}</a>' for p, n in links)
     back = f'<p class="notice-back">{back}</p>' if back else ""

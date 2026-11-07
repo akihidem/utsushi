@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hall_tate.py
+# commit: ace2a5f0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hall_tate.py", line 28, in <module>
+    assert looks.SUB == ("江都二色より", "うしなわれた玩具の動きを", "紙でよみがえらせる")
+           ^^^^^^^^^
+AttributeError: module 'web.looks' has no attribute 'SUB'
+rc=1

@@ -819,9 +819,15 @@ class Handler(BaseHTTPRequestHandler):
             # 同時に送られた分は数え合わないので、合計は送られた数 × 20MB まで上限を越えうる（止めるより、機械を埋めない事が目的）。
             if getattr(self.server, "public_open", False) and techo_site.media_bytes() + length > techo_site.PUBLIC_MEDIA_TOTAL:
                 return self._send(507, b"", "text/plain; charset=utf-8")
-            name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length))
+            name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length),
+                                              keep_voice=getattr(self.server, "voice_tool", False))
             if not name:
                 return self._send(422, why, "text/plain; charset=utf-8")
+            from omochae import voice_text
+
+            # 写した声は、返事の後に作業列で字にする（字にするのに数十秒かかり、上げた人を待たせないため）
+            if (voice := voice_text.voice_dir(m.group(1)) / f"{pathlib.Path(name).stem}.mka").exists() and getattr(self.server, "voice_jobs", None):
+                self.server.voice_jobs.jobs.put(voice)
             key = self._up_key() or secrets.token_urlsafe(18)
             media_review.claim(m.group(1), name, key)
             return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
@@ -1295,6 +1301,14 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
     server.print_limit = WriteLimit(limit=PRINT_LIMIT)
     server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
+    # 上げた動画の声を、この機械の中で字にしてから消す（本人の言葉 11-08「全部残していいことにしたい。」・omochae.voice_text）。
+    # 道具の確かめは立てる時に 1 度だけ（受けるたびに確かめると、上げるたびに数秒待たせる）。道具がある時だけ声を写す。
+    # 72 時間の掃除は道具の有無に関わらず、作業列が立てた時と 1 時間ごとに回す
+    from omochae import voice_text
+
+    server.voice_tool = not voice_text.tool_missing()
+    server.voice_jobs = voice_text.Worker(server.voice_tool)
+    server.voice_jobs.start()
     return server
 
 
