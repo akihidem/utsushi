@@ -18,14 +18,16 @@
 - 置き場に絵が無い版は、repo の中から作る（本人の見直し 11-07 22:16「過去の版が表示されていない。」。repo の clone だけで動く公開の場は
   out/ が空なので、全部の額が空だった）。作れるのは 2 つ: 改善の輪より前の版は、刷って渡した紙の PDF（docs/process/trials/sheets/<組>/ の
   仮説 A の型紙。v1〜v4 は仮説 A に当たる tab の紙。エンジンが出した絵と同じ紙なのを 11-07 に絵の差で確かめた）の 1 枚目。今の組は、
-  今の雛形でたたき台を刷った 1 枚目（サイトが今刷る紙と同じ）。間の版（御来迎 v11〜v13・虎 v4〜v6）はエンジンの repo の記録にしか無く、
-  repo の中からは作れないので、頁は「この版の絵は残っていない」と出す（作り直した絵を、その版の紙として見せない）。
+  今の雛形でたたき台を刷った 1 枚目（サイトが今刷る紙と同じ）。間の版は、engine/ の見本にその版の組の JSON（examples/<玩具>_v<N>.json）が
+  ある版（御来迎 v13・虎 v5・v6）だけ、engine/ のエンジンで刷った 1 枚目（エンジンが出した絵と同じ形なのを 11-07 に絵の差で確かめた）。
+  組の JSON も紙も無い版（御来迎 v11・v12・虎 v4）は、頁に「この版の絵は残っていない」と出す（作り直した絵を、その版の紙として見せない）。
   作った絵は小さい写し（幅 298）にして out/history/sheets に置く（生成物なので repo に入れない決まりはそのまま）。作るのは絵が求められた時で、
   頁を返す時は作れるかだけを見る（頁を遅くしない）
 """
 import contextlib
 import io
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -123,13 +125,21 @@ def _current_source(set_name):
     return None
 
 
+def engine_example(set_name):
+    """engine/ の見本の、その版の組の JSON（examples/<玩具>_v<N>.json）。無い時は None。"""
+    m = re.fullmatch(r"([a-z]+)-v(\d{1,3})", set_name or "")
+    path = ROOT / "engine/examples" / f"{m.group(1)}_v{m.group(2)}.json" if m else None
+    return path if path is not None and path.is_file() else None
+
+
 def can_picture(row):
     """額に絵を出せるか（置き場に在る・repo の中から作れる）。頁を返す時に見る（ここでは作らない）。"""
     name = _name(row)
     if name is None:
         return False
     set_name = name[len("sheets/"):-len(".png")]
-    return (PICTURES / name).is_file() or trial_pdf(set_name) is not None or _current_source(set_name) is not None
+    return ((PICTURES / name).is_file() or trial_pdf(set_name) is not None or _current_source(set_name) is not None
+            or engine_example(set_name) is not None)
 
 
 def _thumb(pdf, dest):
@@ -149,7 +159,8 @@ def build_picture(set_name):
     dest = PICTURES / "sheets" / f"{set_name}.png"
     pdf = trial_pdf(set_name)
     sid = None if pdf else _current_source(set_name)
-    if pdf is None and sid is None:
+    example = None if pdf or sid else engine_example(set_name)
+    if pdf is None and sid is None and example is None:
         return None
     with _build_lock:  # 同じ絵を同時に 2 度作らない（額が並ぶ頁は絵を一度に求める）
         if dest.is_file():
@@ -157,6 +168,16 @@ def build_picture(set_name):
         try:
             if pdf is not None:
                 _thumb(pdf, dest)
+            elif example is not None:
+                # engine/ のエンジンで、その版の組の JSON を刷る（この repo の src の雛形でなく、エンジンの雛形で。版の紙を作ったのはエンジン）
+                engine = ROOT / "engine"
+                with tempfile.TemporaryDirectory() as d:
+                    out = pathlib.Path(d) / "sheet"
+                    r = subprocess.run([sys.executable, "-m", "omochae", "--scenario", str(example), "--out", str(out)], cwd=engine,
+                                       env={**os.environ, "PYTHONPATH": str(engine / "src")}, capture_output=True, timeout=300)
+                    if r.returncode != 0 or not out.with_suffix(".pdf").is_file():
+                        return None
+                    _thumb(out.with_suffix(".pdf"), dest)
             else:
                 from . import hypotheses
                 data = hypotheses.load(sid)
