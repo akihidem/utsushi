@@ -667,6 +667,14 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) in hk.names() and hk.has(m.group(1)):
                 return self._send(200, hk.path_of(m.group(1)).read_bytes(), "image/jpeg")
             return self._send(404, "無い")
+        # ワークショップで作られた物の写真の小さい写し（web.workshop。表に載った物だけ・合言葉なしの場でも返す。本人の言葉 11-07 夜）
+        m = re.fullmatch(r"/workshop/(\d{8}/p\d{2}\.jpg)/small", path)
+        if m:
+            from . import workshop
+            small = workshop.small(m.group(1))
+            if small:
+                return self._send(200, small, "image/jpeg")
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         # 玩具が載る頁の全体（原画と歌。本人の指示 11-06）。合言葉なしの場でも出す（公開の古い本の絵で、人の写真ではない）
         m = re.fullmatch(rf"/picture/({SID})/page", path)
         if m and m.group(1) in sources():
