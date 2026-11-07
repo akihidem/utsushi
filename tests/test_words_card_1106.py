@@ -127,14 +127,15 @@ code, at, _ = post(f"/toy/{G}/step", {"hypothesis": GS, "step": str(total), "eve
 assert code == 303 and tsukuru.DONE_NOTE in at and "玩具の頁で記録を残します" not in at, at
 
 # 6 の続き: 次の版の紙を作った後の返事
+BAN2 = hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)  # 版の字は組の番号の呼び方（窓口の決定 11-07・#513 の (a)）
 code, at, _ = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})
 rid = re.search(r"#(R-\d+)", at).group(1)
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] == 303
 code, at, _ = post(f"/record/{rid}/next", {"interpretation": "読み", "param": "fold_height", "to": "56.7", "why": "試す", "by": "書いた人"})
-assert code == 303 and "版 2 の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at, at
+assert code == 303 and f"{BAN2} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at, at
 # 刷り直し（#158）の返事も同じ字。ここだけ別の道（_reprint）で字を持つので、別に見る
 code, at, _ = post(f"/toy/{G}/reprint", {"hypothesis": GS, "version": "2"})
-assert code == 303 and "版 2 の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at and "PDF を 100% で" not in at, (code, at)
+assert code == 303 and f"{BAN2} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at and "PDF を 100% で" not in at, (code, at)
 
 # 8. 自分の仮説の記録の札の紙の名前（ギャラリーと手帖）
 own, failures = hypotheses.save_own(G, "前に書いた案", "動かし方", "図の所")

@@ -18,14 +18,16 @@ LOOKS = {
 }
 
 
-# 表紙の題の下の 2 行（本人の決定 11-06。サイトを見た人の意見「最初の表紙が綺麗なので、コンテンツも完成されたものと勘違いしてしまう。
-# 今後も発展・進化していくし、その担い手はユーザーだというメッセージは、最初に言った方がいいのでは」から作った案 1 を本人が採った）。
-# 字を変えない。両方の表紙（白の展示と黒のジン）で同じ物を読む。題の縦書きの流れを崩さないよう、表紙の下に横書きで小さく置く。
-GROWING = ("このサイトは、まだ育っている途中です。", "型紙をよくしていくのは、作ってみるあなたです。")
+# 表紙の題の下（白の展示は副題のすぐ下）に、説明の頁（序の頁 /about を「このサイトについて」の頁にする）への道を 1 つ。
+# 本人のサイトレビュー 11-07 午後の 1「…サイトの目的や AI でやっていることや仕組みについて説明するページを作ってそのリンクを添えた方が良いかも？
+# そうするなら、トップページの『このサイトは、まだ育っている途中です。型紙をよくしていくのは、作ってみるあなたです。』もいらなそう」と、
+# 窓口の決め 132926 の ③④（UX の担当の設計 state/site-review-123-20261107.md）。前はここに表紙の 2 行（本人の決定 11-06）があったので外した。
+# 小さな字の道にし、大きいボタンにしない（入口の大きいボタンは「えらぶ」1 つの決まり）。題の縦書きの流れを崩さないよう、横書きで小さく置く（前の 2 行と同じ場所）。
+ABOUT = "このサイトについて"
 
 
-def growing():
-    return f'<p class="grow">{esc(GROWING[0])}<br>{esc(GROWING[1])}</p>'
+def about_link():
+    return f'<p class="about-go"><a href="/about">{esc(ABOUT)}</a></p>'
 
 
 def switch(look):
@@ -122,7 +124,8 @@ body.zine ::selection{background:rgba(201,169,106,.35);color:#f5eedf}
 .zn-title .road{margin:0}
 body.zine a.road-go{display:inline-flex;align-items:center;justify-content:center;min-height:64px;min-width:10em;padding:0 32px;box-sizing:border-box;border:1px solid #c9a96a;border-radius:2px;color:#efe6d2;font-size:20px;letter-spacing:.5em}
 .zn-cover .meta{grid-column:1;justify-self:end;margin-right:6vw;writing-mode:vertical-rl;color:#9a8e76;font-size:13px;letter-spacing:.45em}
-.zn-cover .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}
+.zn-cover .about-go{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:13px;line-height:2.1;letter-spacing:.12em;color:#b9ae97;text-align:center}.zn-cover .about-go a{color:inherit;text-underline-offset:.3em}
+@media (max-width:1100px),(pointer:coarse){body .about-go a{display:inline-flex;align-items:center;min-height:44px;border-bottom:0;text-decoration-line:underline;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:.35em}}  /* 触る画面の押す所の床（skin.TAP_FLOOR と同じ 44px）。字の下の線は箱の下の端でなく字のすぐ下に（線は字の線で引く） */
 .zn-label{border-top:1px solid #6e5a35;padding-top:14px;margin-top:22px;font-size:13px;line-height:2;color:#b9ae97;letter-spacing:.08em}
 .zn-label b{display:block;font-weight:400;font-size:clamp(20px,2.2vw,28px);color:#efe6d2;letter-spacing:.2em}
 .zn-toy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid #1f1b16}
@@ -154,7 +157,7 @@ body.zine a.road-go{display:inline-flex;align-items:center;justify-content:cente
 .zn-all .nm small,.zn-all li > small{display:block;font-size:12px;letter-spacing:.15em;color:#9a8e76}
 .zn-all li > small a{color:#c9a96a;border-bottom:1px solid rgba(201,169,106,.45)}
 @media (max-width:760px){.zn-cover{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;padding:8vh 8vw;gap:24px}
- .zn-cover .grow{grid-column:1;margin:0;order:1}  /* 狭い幅は 題と えらぶ → 2 行 → 額 の順（2 行も額より先） */
+ .zn-cover .about-go{grid-column:1;margin:0;order:1}  /* 狭い幅は 題と えらぶ → 説明の頁への道 → 額 の順（道も額より先） */
  .zn-cover .frame,.zn-cover h1,.zn-cover .meta{grid-column:1;justify-self:center;margin:0}
  .zn-title{grid-column:1;justify-self:center;margin:0;align-items:center;gap:18px;order:1}.zn-cover .frame{order:2}
  .zn-cover h1,.zn-cover .meta{writing-mode:horizontal-tb}.zn-cover .frame{width:70vw}
@@ -179,7 +182,7 @@ def zine():
     first = ts[0]["sid"] if ts else ""
     body = switch("zine")
     body += (f'<section class="zn-cover"><p class="meta">{esc(DOOR_LINE)}</p>'
-             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{growing()}</section>')
+             f'<div class="frame"><div style="{_bg(first, framed_pos(first), FRAMED)}"></div></div><div class="zn-title"><h1>うつし</h1>{ROAD_GO}</div>{about_link()}</section>')
     # 北斎漫画（本人の決定 11-05 の案 2）。縦読みの章の頭に置く: 玩具の章より先に「絵は動きを止めて残した」の筋を見せるため。
     from .hokusai import scroll_section
 
@@ -236,7 +239,8 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
 .tj-door{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:10vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-door .tj-work{width:min(100%,46vh)}.tj-door .tj-work div{width:100%;height:100%}
 .tj-door .meta{margin:0;font-size:13px;letter-spacing:.45em;color:#7a7164}
-.tj-hall .grow{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}
+.tj-hall .about-go{grid-column:1/-1;justify-self:center;margin:0 0 6vh;font-size:clamp(13px,1.1vw,15px);line-height:2.1;letter-spacing:.12em;color:#5d554a;text-align:center}.tj-hall .about-go a{color:inherit;text-underline-offset:.3em}
+@media (max-width:1100px),(pointer:coarse){body .about-go a{display:inline-flex;align-items:center;min-height:44px;border-bottom:0;text-decoration-line:underline;text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:.35em}}  /* 触る画面の押す所の床（skin.TAP_FLOOR と同じ 44px）。字の下の線は箱の下の端でなく字のすぐ下に（線は字の線で引く） */
 .tj-room{min-height:100vh;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:4vw;align-items:center;
  padding:12vh 5vw;box-sizing:border-box;border-top:1px solid #ebe8e2}
 .tj-room .panel{align-self:start;padding-top:6vh;min-width:0}
@@ -368,7 +372,7 @@ def tenji(photos=True):
     # 題の間: 題と副題と表紙の 2 行だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。画面いっぱいの高さにはせず、
     # 幅 390 の最初の画面に 2 つの大きな札の頭が入るようにする（「最初から選べる形」）
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + growing() + '</section>')
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link() + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"])
@@ -393,7 +397,7 @@ ERABU = """
 #hall.tj-hall .en{margin-bottom:2vh}
 #hall.tj-hall h1{font-size:clamp(30px,4.4vw,56px);letter-spacing:.5em;margin-left:.5em}
 #hall.tj-hall .sub{margin-top:2.4vh;line-height:2;letter-spacing:.2em}
-#hall.tj-hall .grow{margin:2.4vh 0 0;font-size:13px}
+#hall.tj-hall .about-go{margin:2.4vh 0 0;font-size:13px}
 .tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
 .tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
 .tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
