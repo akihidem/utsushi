@@ -90,7 +90,7 @@ finally:
 src = tmp / "grove"
 (src / "sheets").mkdir(parents=True)
 table = {"title": "t", "strip": "~/somewhere/strip.png", "workshops": [{"line": "感想から"}], "workshops_source": "答え", "toys": [{"toy": "虎", "template": "pivot_counterweight", "versions": [
-    {"set": "tora-v3", "sheet_image": "sheets/tora-v3.png", "sheet_pdf": "Drive x/20261106-000000-y/a.pdf"}, {"set": "tora-v4", "sheet_image": "../tora-v4.png"}]}], "engine_versions": []}
+    {"set": "tora-v3", "sheet_image": "sheets/tora-v3.png", "sheet_pdf": "Drive x/a.pdf"}, {"set": "tora-v4", "sheet_image": "../tora-v4.png"}]}], "engine_versions": []}
 (src / "kaizen-history.json").write_text(json.dumps(table, ensure_ascii=False), encoding="utf-8")
 (src / "sheets/tora-v3.png").write_bytes(b"png3")
 (src / "tora-v4.png").write_bytes(b"png4")
