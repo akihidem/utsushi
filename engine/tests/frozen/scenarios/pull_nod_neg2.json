@@ -1,0 +1,19 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000030-L-pull_nod",
+  "params": {
+    "kind": "jaw",
+    "stop_gap": 2
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ],
+    "lines": [
+      "F5.pull_nod [こぶ] こぶに当たるまで #° しか振れない（#° 要る）",
+      "F5.pull_nod [こぶ] こぶを貼る所が頭の紙の外に出る"
+    ]
+  }
+}

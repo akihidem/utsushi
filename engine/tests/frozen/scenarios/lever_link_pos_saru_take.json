@@ -1,0 +1,12 @@
+{
+  "template": "lever_link",
+  "source_id": "NDL-1187053-R0000004-L-lever_link",
+  "params": {
+    "kind": "saru_take"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

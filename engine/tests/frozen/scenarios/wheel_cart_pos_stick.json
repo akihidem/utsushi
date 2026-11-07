@@ -1,0 +1,10 @@
+{
+  "template": "wheel_cart",
+  "source_id": "NDL-1187053-R0000031-R-wheel_cart",
+  "params": {"ride": "stick"},
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

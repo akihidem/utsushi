@@ -1,0 +1,13 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000027-L-stand_figure",
+  "params": {
+    "figure": "mimizuku",
+    "stand": "easel"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

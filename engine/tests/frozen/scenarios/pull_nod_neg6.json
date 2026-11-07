@@ -1,0 +1,15 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000030-L-pull_nod",
+  "params": {
+    "kind": "jaw",
+    "stop_gap": 20
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ]
+  }
+}

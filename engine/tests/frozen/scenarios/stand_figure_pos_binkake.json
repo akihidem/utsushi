@@ -1,0 +1,16 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000026-R-stand_figure",
+  "params": {
+    "figure": "binkake",
+    "stand": "easel",
+    "tab_width": 12,
+    "tab_length": 36,
+    "tab_glue": 33
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

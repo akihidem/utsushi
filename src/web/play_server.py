@@ -307,6 +307,10 @@ class Handler(BaseHTTPRequestHandler):
             from . import i18n  # 全頁の英語（窓口の決め 130735 の案 B）。作る側は日本語のまま作り、出口で表を引いて替える
 
             body = i18n.page_en(body)
+        elif isinstance(body, str) and ctype.startswith("text/html") and getattr(self, "_lang", "ja") == "easy" and not re.match(r"/en(?:[/?#]|$)", self.path):
+            from . import i18n  # やさしい日本語（3 つ目の言葉・web.i18n の頭の注）。表に無い字は元の日本語のまま
+
+            body = i18n.page_easy(body)
         if getattr(self, "_lang_cookie", None):
             headers = (*headers, self._lang_cookie)
         data = body if isinstance(body, bytes) else body.encode("utf-8")
@@ -393,15 +397,15 @@ class Handler(BaseHTTPRequestHandler):
         _, _, query = self.path.partition("?")
         pick = urllib.parse.parse_qs(query).get("lang", [""])[0]
         self._lang_cookie = None
-        if pick in ("en", "ja"):
+        if pick in ("en", "ja", "easy"):
             self._lang = pick
             self._lang_cookie = ("Set-Cookie", f"utsushi_lang={pick}; Max-Age=31536000; Path=/; SameSite=Lax")
             return
         self._lang = "ja"
         for part in self.headers.get("Cookie", "").split(";"):
             name, _, value = part.strip().partition("=")
-            if name == "utsushi_lang" and value == "en":
-                self._lang = "en"
+            if name == "utsushi_lang" and value in ("en", "easy"):
+                self._lang = value
 
     def do_GET(self):
         try:
@@ -439,6 +443,12 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
+        m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
+        if m:
+            # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）
+            from . import loop_figure
+            data = loop_figure.image_bytes(urllib.parse.unquote(m.group(1)))
+            return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))

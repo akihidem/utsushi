@@ -182,10 +182,15 @@ def tag(verdict):
 
 
 def engine_ledger():
-    """エンジンの版の台帳。無い・読めない時は None。場所は omochae.cycle と同じ決め方（環境の値が先で、無ければ隣の repo）。"""
+    """エンジンの版の台帳。無い・読めない時は None。場所は omochae.cycle と同じ決め方（環境の値、この repo の中の engine/、隣の repo の順）。"""
     place = os.environ.get("OMOCHAE_ENGINE_REPO")
     if place:
         return store.read_json_or_skip(pathlib.Path(place) / "data/engine/versions.json")
+    # 提出の repo は engine/ にエンジンの頭を入れてある（11-07）。審査の人は utsushi だけを clone するので、隣の repo より先に見る。
+    # engine/ はこの repo の commit の中身なので、隣の repo のように「作業の途中の枝」を避けて git から読む事はしない
+    inside = ROOT / "engine/data/engine/versions.json"
+    if inside.exists():
+        return store.read_json_or_skip(inside)
     repo = ROOT.parent / "paper-to-toy"
     try:
         shown = subprocess.run(["git", "-C", str(repo), "show", "refs/remotes/origin/main:data/engine/versions.json"], capture_output=True, timeout=5)

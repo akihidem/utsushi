@@ -1,0 +1,13 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000030-R-stand_figure",
+  "params": {
+    "figure": "chagama",
+    "stand": "easel"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

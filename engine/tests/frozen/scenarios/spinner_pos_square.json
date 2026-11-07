@@ -1,0 +1,12 @@
+{
+  "template": "spinner",
+  "source_id": "NDL-1187053-R0000020-R-spinner",
+  "params": {
+    "kind": "square"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

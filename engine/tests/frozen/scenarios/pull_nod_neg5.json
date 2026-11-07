@@ -1,0 +1,19 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000016-R-pull_nod",
+  "params": {
+    "kind": "peck",
+    "peck_arm": 12
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ],
+    "lines": [
+      "F5.pull_nod [奥の鶏] 穴 (#, #) の縁から端か隣の穴まで #mm で、#mm 取れない",
+      "F5.pull_nod [手前の鶏] 穴 (#, #) の縁から端か隣の穴まで #mm で、#mm 取れない"
+    ]
+  }
+}

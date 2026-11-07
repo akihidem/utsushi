@@ -1,0 +1,15 @@
+{
+  "template": "launcher",
+  "source_id": "NDL-1187053-R0000008-L-launcher",
+  "params": {
+    "form": "crossbow",
+    "paper_t": 0.24
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.launch"
+    ]
+  }
+}

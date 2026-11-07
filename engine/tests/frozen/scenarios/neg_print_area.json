@@ -1,0 +1,22 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {},
+  "inject": {
+    "move_part": {
+      "name": "figure",
+      "x": 205,
+      "y": 60
+    }
+  },
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.print_area"
+    ],
+    "lines": [
+      "F5.print_area [#] 文字が印字域の外に出ている",
+      "F5.print_area [像] 印字域の外に出ている (#, #, #, #)"
+    ]
+  }
+}

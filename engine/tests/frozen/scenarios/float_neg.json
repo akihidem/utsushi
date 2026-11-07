@@ -1,0 +1,10 @@
+{
+  "template": "float",
+  "source_id": "NDL-1187053-R0000028-R-float",
+  "params": {"vane": "none", "wall_height": 8, "glue": 5, "ballast_g": 20, "clay_side": 20, "leaf_radius": 20},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.float"]
+  }
+}
