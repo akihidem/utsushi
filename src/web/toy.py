@@ -552,15 +552,16 @@ FOLD_SCRIPT = ("<script>(()=>{const open=()=>{const id=decodeURIComponent(locati
                "for(let e=d;e;e=e.parentElement&&e.parentElement.closest('details'))e.open=true};open();addEventListener('hashchange',open)})()</script>")
 
 
-def fold(section, tag="h2"):
-    """節（<section …><h2>見出し</h2>…</section>）を、見出しを畳みの見出しにした形にする。見出しが無い節はそのまま返す。"""
+def fold(section, tag="h2", opened=False):
+    """節（<section …><h2>見出し</h2>…</section>）を、見出しを畳みの見出しにした形にする。見出しが無い節はそのまま返す。
+    opened は初めから開く時（送って通らなかった記録の欄など。書いた字を隠さないため、#300 と同じ線）。"""
     i = section.find(f"<{tag}")
     j = section.find(f"</{tag}>", i)
     k = section.rfind("</section>")
     if i < 0 or j < 0 or k < j:
         return section
     j += len(f"</{tag}>")
-    return section[:i] + f'<details class="fold-sec"><summary>{section[i:j]}</summary>' + section[j:k] + "</details>" + section[k:]
+    return section[:i] + f'<details class="fold-sec"{" open" if opened else ""}><summary>{section[i:j]}</summary>' + section[j:k] + "</details>" + section[k:]
 
 
 def printed_set(sid, hid, version):
@@ -654,8 +655,11 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
              + f'</p>{ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())}</section>')
     # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置く（刷る口を押し下げない）
     body += kumitate.section(sid)
-    # 通らなかった時は畳みを開く。書いた字を隠さないため（#300）。
-    body += f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>'
+    # 記録の欄の節は、見出しのまま畳む（地図の工程 4「声と動画が主で、字は畳んだ追加。残す口は 1 つ」。残す口は手帖の「のこす」）。
+    # 欄は 13 あり、開いたままだと玩具の頁で「全部書くのか」と読ませる。字で残したい人と JS の無い画面のために、欄そのものは残す。
+    # 開く時: 送って通らなかった時（書いた字を隠さないため、#300）と、#kiroku の道で着いた時（FOLD_SCRIPT）。返事の文（head）は畳みの外に出る。
+    body += fold(f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>',
+                 opened=bool(fill("record")))
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{fold_samples(sample_records(data), bool(recs))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')

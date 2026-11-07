@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_ux_fold_record.py
+# commit: a4db52d4（回した時の HEAD）
+/tmp/tmp0gtbag4_/play/NDL-1187053-R0000005-L/.tmp-a8vnv8df/H-A_v1.pdf
+/tmp/tmp0gtbag4_/play/NDL-1187053-R0000005-L/.tmp-a8vnv8df/H-A_v1_tejun.pdf
+/tmp/tmp0gtbag4_/play/NDL-1187053-R0000005-L/.tmp-a8vnv8df/H-A_v1_after.pdf
+ok 玩具の頁の記録の欄は見出しのまま畳み、通らなかった時は開いて書いた字を戻し、返事の文は畳みの外に出る（地図の工程 4）
+rc=0
