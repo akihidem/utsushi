@@ -1,0 +1,10 @@
+{
+  "template": "whistle",
+  "source_id": "NDL-1187053-R0000024-R-whistle",
+  "params": {"kind": "tube", "tube_length": 60},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.sound"]
+  }
+}

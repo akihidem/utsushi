@@ -1,0 +1,1233 @@
+{
+ "criteria.md": "26d3d50703438eceb6f1affd6950d1d31a4158203525784078e6df5bd1a8d32c",
+ "scenarios": {
+  "balance_neg.json": {
+   "floors": [
+    "F5.balance"
+   ],
+   "rc": 3,
+   "sha256": "5e7c66ed65ccf850c58075e0dc626a748c3497401441f8d3627b38173eedb4dc"
+  },
+  "balance_neg2.json": {
+   "floors": [
+    "F5.balance"
+   ],
+   "rc": 3,
+   "sha256": "daa34505ecc566de546645bc419acd04fa077e3d40d54e5c01615f70a56694f1"
+  },
+  "balance_neg3.json": {
+   "floors": [
+    "F5.balance"
+   ],
+   "rc": 3,
+   "sha256": "237b0b9d39099276393a6e3e1ed58024d97c11e5a981403e7ead095e6363fe33"
+  },
+  "balance_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "1a51dfd301a144a79a72c7d1c6063634fb02e4571a892a2187e502b75f57a13f"
+  },
+  "balance_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ec2492b31e580f1746a4e755af7c3982ca1241d3e42df216cf889595e5f59d39"
+  },
+  "balance_pos_okiagari.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ca9f6307358b771d43a587b6986361417d7cad8cf01dcbc2b85e9e01c170a101"
+  },
+  "float_neg.json": {
+   "floors": [
+    "F5.float"
+   ],
+   "rc": 3,
+   "sha256": "2d91502e3ea8ca2f8df73823b1d085b61445e338b777c455376ef34351525056"
+  },
+  "float_neg2.json": {
+   "floors": [
+    "F5.float"
+   ],
+   "rc": 3,
+   "sha256": "a9da05043e87a44dc8eabdc027db30a7fd2da659fea6fc7897f7f25873e12e13"
+  },
+  "float_neg3.json": {
+   "floors": [
+    "F5.float"
+   ],
+   "rc": 3,
+   "sha256": "f7d55159dcfc2a50f4e214cfceb6f544b99b9f5606809f29513e19ffb4bb6a04"
+  },
+  "float_neg_blow.json": {
+   "floors": [
+    "F5.float"
+   ],
+   "rc": 3,
+   "sha256": "d9a53984962f4e8702c297cd764a930474be32040925b861bbf236742208c288"
+  },
+  "float_neg_clay.json": {
+   "floors": [
+    "F5.float"
+   ],
+   "rc": 3,
+   "sha256": "d0c3ce7fba53b5c56f532e18c07d8017c0015b91846bbddc0be8d2e5bc457921"
+  },
+  "float_neg_figure.json": {
+   "floors": [
+    "F5.float"
+   ],
+   "rc": 3,
+   "sha256": "254ed9d1a4810236d55975ba2c1072d26a6228c5bdd8e50025f4fd5a3761e8ae"
+  },
+  "float_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "2e6093267f5aba4fc8c0bda2c2488e9d76414b59dca375c9bdb19b2c6c1a7ea6"
+  },
+  "float_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "dd066b7a93d6af3dfba9069e40feae59427502935caaa60d5e4647a7e36c2332"
+  },
+  "float_pos_cups.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "e6ef60cc674b74a61920f7d879efbc26affa6ac55825de125986281837e10600"
+  },
+  "helix_neg.json": {
+   "floors": [
+    "F5.range"
+   ],
+   "rc": 3,
+   "sha256": "5012981fb843da903a2c49fb722f08a3d4f96d0d68147f139f3cc0a9565ef86d"
+  },
+  "helix_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "62b7a9d025cc0c2ebe9552bacc552c1816c1ab8fd14a2983e8995dde029d242a"
+  },
+  "launcher_neg.json": {
+   "floors": [
+    "F5.launch"
+   ],
+   "rc": 3,
+   "sha256": "54f14e3177091c14c87ec35ee92cdbb7943b1c141e894db2e9ce0406ccc96c9b"
+  },
+  "launcher_neg2.json": {
+   "floors": [
+    "F5.launch"
+   ],
+   "rc": 3,
+   "sha256": "fe754359060dfdfc8786c98ca80f5ecff98320de882f1c941d148b2328a04f34"
+  },
+  "launcher_neg3.json": {
+   "floors": [
+    "F5.launch"
+   ],
+   "rc": 3,
+   "sha256": "7422b0b22d83933d5a39e757ea1495ca3c5274f5c2275628e1d053092acfcd11"
+  },
+  "launcher_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "8dfb2702668996d7411420fcd8b948813dc71b2d332ce43ab632f9dffea76640"
+  },
+  "launcher_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "c8333e96cb9353886e3390a65f2aab23bf6f90c3c787056adf24a3b98a386534"
+  },
+  "launcher_pos_bow.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "244024e7a91e8e18d6ee3ef5e83decc447ca7fc3855577604b51a72f2e14f29c"
+  },
+  "lever_link_neg.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "6440a3e214ac0517a0b6df6621fb707471d9327b723ea2e709dfe52c7400379d"
+  },
+  "lever_link_neg2.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "429e04d2cf18e79beb7264ec39638ae482fd996a226c04be05b6324991999186"
+  },
+  "lever_link_neg3.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "07ef065e0d3cca18e463426c5aa74b6ae6fdeaa13fb31720fb3f28cdec0e4d90"
+  },
+  "lever_link_neg4.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "34d9c9cb806b6e0eb75e8f9a5b9ff4a32acaeafc8fe7e92648716a9b477eca95"
+  },
+  "lever_link_neg5.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "8a305188b494471abc12d06b3a732c08ff33e53b641cada42049d75534eff71f"
+  },
+  "lever_link_neg6.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "82e1d7763e1813b5a110bcdb5f5196f826785de59084f2ba77fa22613eee384e"
+  },
+  "lever_link_neg7.json": {
+   "floors": [
+    "F5.link"
+   ],
+   "rc": 3,
+   "sha256": "cc0e9664a7c98960d0eaede4a73f84a0563165664055ca333b4b1b714e7b838f"
+  },
+  "lever_link_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "d3576ec4f187a22f39120ac1f25f1ab9bdb177ef203a66295107c24675701874"
+  },
+  "lever_link_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "c50254e44a773799015a452c6de3e7899790e4aae7449efd9f1093d1e8ae2707"
+  },
+  "lever_link_pos_ebako.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "f38446ac2f47d5832d2d3bdd349ab680d4f8c79137e2687b5ea3b1f808f6f467"
+  },
+  "lever_link_pos_hashigo.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "8b8946d03773eee8abbad1274ca18a1f1a63a54f61ddc52164866504555d023b"
+  },
+  "lever_link_pos_karakuri.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "8f38b4abe4406310d7fb3f1e3efea1749e1a90225a95ea83587aaa697cd3abcb"
+  },
+  "lever_link_pos_saru_sao.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "5e3b3a2efc286baeb492a977eeb845ad7fa69c8bd588d11d9286089669b7b1f5"
+  },
+  "lever_link_pos_saru_take.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "6c4033b5e3652e058e498099684113b6a5693319c60019f80d4ad43e0b563ea5"
+  },
+  "lever_link_pos_yakko.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "e96f900c88f01e89810af6d5b7929e4267b26d050ab9e1d905553c689633576e"
+  },
+  "neg_base_size.json": {
+   "floors": [
+    "F5.base_size"
+   ],
+   "rc": 3,
+   "sha256": "6f9168373e8c3d2b348f97cb15e562465fcd5ea5fe50374b3efc531b9edcfa8a"
+  },
+  "neg_bom_material.json": {
+   "floors": [
+    "F2.bom"
+   ],
+   "rc": 3,
+   "sha256": "242ce1ba942801056db761f327fcd81b60f5d9a035ce2df1d3364a26aec290fc"
+  },
+  "neg_bom_original.json": {
+   "floors": [
+    "F2.bom"
+   ],
+   "rc": 3,
+   "sha256": "cbc6efe36ad14c8283ed7c4d1f64c5f4f11e0230e90e83df47ccad6b89612a93"
+  },
+  "neg_fan_clearance.json": {
+   "floors": [
+    "F5.fan_clearance"
+   ],
+   "rc": 3,
+   "sha256": "6010c3225a9df0bf1e7f5525c56479a05dbbf912160c235a41b35e14af927afb"
+  },
+  "neg_fan_height.json": {
+   "floors": [
+    "F5.fan_height"
+   ],
+   "rc": 3,
+   "sha256": "decfe974834df5b19c239427d3237feda9a83f322d57298c5a944e42327d1a7b"
+  },
+  "neg_fan_height_rim.json": {
+   "floors": [
+    "F5.fan_height"
+   ],
+   "rc": 3,
+   "sha256": "639da5688839dcde9ea6cb95e421ee66033ea46e7dfa19f3c14d67cb04f1fedf"
+  },
+  "neg_fan_leg.json": {
+   "floors": [
+    "F5.fan_leg",
+    "F5.image_box"
+   ],
+   "rc": 3,
+   "sha256": "17df22a44eaae08d34089599770596f2cebabf3212906d968e41433ac296a785"
+  },
+  "neg_fan_length.json": {
+   "floors": [
+    "F5.fan_length"
+   ],
+   "rc": 3,
+   "sha256": "c212df5fa94c09cfcc8e0ec322a1ccf57e0e4544f4dd384db45d2ee9a1c2dcda"
+  },
+  "neg_fan_thickness.json": {
+   "floors": [
+    "F5.fan_thickness"
+   ],
+   "rc": 3,
+   "sha256": "d97925fd72a5e923ea8e14ea4a0c8937d4809248601a94685dd60f84072ef673"
+  },
+  "neg_figure_base.json": {
+   "floors": [
+    "F5.figure_base"
+   ],
+   "rc": 3,
+   "sha256": "aeeecadc799358b720e73feeb0481a5fd34fc64a0b3516fcfd188ec0ca132260"
+  },
+  "neg_figure_height.json": {
+   "floors": [
+    "F5.figure_height"
+   ],
+   "rc": 3,
+   "sha256": "871d5d0f6c470195be916031018126b634f869e485115264af656ba35e0bee3b"
+  },
+  "neg_hole.json": {
+   "floors": [
+    "F5.hole"
+   ],
+   "rc": 3,
+   "sha256": "10c1a39f0f00da808ae2f9edafb9de21da8f714d896ef743ee28e4219f2345ac"
+  },
+  "neg_image_box.json": {
+   "floors": [
+    "F5.image_box"
+   ],
+   "rc": 3,
+   "sha256": "20dd09ee0544fcb33e63a596d708ac5d4bf82459a714d3287290511cf7827cd1"
+  },
+  "neg_image_count.json": {
+   "floors": [
+    "F5.image_count"
+   ],
+   "rc": 3,
+   "sha256": "b8e529716da90b765da5d84770f669f02b2b5d442a50f068f6aca7b4a37e1c73"
+  },
+  "neg_marks_all.json": {
+   "floors": [
+    "F1.marks"
+   ],
+   "rc": 3,
+   "sha256": "aa335ca3b7c654092cafb415356b6043d73bbd6414ed134840d668d16aa531e8"
+  },
+  "neg_marks_source_id.json": {
+   "floors": [
+    "F1.marks"
+   ],
+   "rc": 3,
+   "sha256": "65bd1a2bc0646219a130d1894c2443448096b899635ea52b56f61147e7e9191d"
+  },
+  "neg_overlap.json": {
+   "floors": [
+    "F5.overlap"
+   ],
+   "rc": 3,
+   "sha256": "7df355caebe429b42e929f5675eeac6a9672652a1904d0d98518e6c2c9dbd4a2"
+  },
+  "neg_pivot_ear.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "2162d5bca1e27ea2b66474f4d8d502a09ec4c7e4ed915cfdab607bf3bd680715"
+  },
+  "neg_pivot_fit.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "1ab62f0caf14866fe4bd0af713d5f78780b116800583f21e1fdeea691b7c1180"
+  },
+  "neg_pivot_fit_swing.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "d0f9b50f55841a285c19b7c7915d5d885a8e7628382cc7187132d7d7ad6fdb20"
+  },
+  "neg_pivot_floor.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "4225e33ac81310ac89851226c31d8d8a1b231384586e1dce799f74395b93db5a"
+  },
+  "neg_pivot_tilt.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "f0978192a7466129e56c81af43f763b91adaaed556d60d25520346a019f6c370"
+  },
+  "neg_pivot_weight_above.json": {
+   "floors": [
+    "F5.pivot"
+   ],
+   "rc": 3,
+   "sha256": "3589ec0a1476541ed13dda9202d279ee0ad7dca3f6643fe782be1f9b08937b71"
+  },
+  "neg_print_area.json": {
+   "floors": [
+    "F5.print_area"
+   ],
+   "rc": 3,
+   "sha256": "bc07235ceb6b75d4a28131c086eb9d04139973923c0e7dcb087f4f20b8be754e"
+  },
+  "neg_range.json": {
+   "floors": [
+    "F5.range"
+   ],
+   "rc": 3,
+   "sha256": "d587721fcc76b9056ab3fd9e674913b3d0937a2db9438033cf111e9b48e8f743"
+  },
+  "neg_slide_clearance.json": {
+   "floors": [
+    "F5.slide_clearance"
+   ],
+   "rc": 3,
+   "sha256": "88a702072bad332381d00fe99f14c3f9ca4af56db0e0d76b24c618ee002a4c03"
+  },
+  "neg_stroke_tab.json": {
+   "floors": [
+    "F5.stroke"
+   ],
+   "rc": 3,
+   "sha256": "af94f223ff602c30be2a89333e9c0d2e8fd62659187c0f15e32d00c6fd7bc5e3"
+  },
+  "neg_stroke_tube.json": {
+   "floors": [
+    "F5.stroke"
+   ],
+   "rc": 3,
+   "sha256": "bbe9067822f702d2a8da1b9d65675ba1e544868df0a193d06904b60e3ab3bdfc"
+  },
+  "neg_text_overlap.json": {
+   "floors": [
+    "F5.text_overlap"
+   ],
+   "rc": 3,
+   "sha256": "53e0e06834823dce98915899d00949ed06133d0457ee36b28a068cefb2c9f9e2"
+  },
+  "pendulum_wave_neg.json": {
+   "floors": [
+    "F5.range"
+   ],
+   "rc": 3,
+   "sha256": "ec50ec20a802c5a50e24b21d25be73fb0eb512eb2fc77a8e6dda2934a909da1f"
+  },
+  "pendulum_wave_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "7c765bf98532f6cfffcfffd49e08173ea9699c6283f2cb4954a8528145550434"
+  },
+  "popup_jar_neg.json": {
+   "floors": [
+    "F5.popup"
+   ],
+   "rc": 3,
+   "sha256": "ccbfcc22e17ee1957cde7e466b484d0d9ebab1f2ec90cb61dbbec9432bbc7cda"
+  },
+  "popup_jar_neg2.json": {
+   "floors": [
+    "F5.popup"
+   ],
+   "rc": 3,
+   "sha256": "ec2d34462682b4dd5a87f00ae669c9de61b63f72a037efc5a4c44b82858888db"
+  },
+  "popup_jar_neg3.json": {
+   "floors": [
+    "F5.jar_seat"
+   ],
+   "rc": 3,
+   "sha256": "bcf54df3b12d356d095b7f2303407c3568aebd18d7e228a0833067f2d7397094"
+  },
+  "popup_jar_neg4.json": {
+   "floors": [
+    "F5.popup"
+   ],
+   "rc": 3,
+   "sha256": "ef23d024e1356643b4d82a430b55951ef41d1ada90c7fa24efeceeeb0ca95593"
+  },
+  "popup_jar_neg5.json": {
+   "floors": [
+    "F5.popup"
+   ],
+   "rc": 3,
+   "sha256": "747281e600c599ef1267cc616c0f10749bc00157c0ec9cddf22a14bc80fc0c36"
+  },
+  "popup_jar_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "f1b72b514dd434974a0a67b3968b1528f8f6f7b6aad581560f3116d1d13c6a89"
+  },
+  "popup_jar_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "79ab74d634bda53e2772a27c6573623bc8b305fb38ed53880154dbad91e1534b"
+  },
+  "popup_jar_pos2.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "8c79bc386c973d73b4e7a3d95bc761f98fa2d639580e28327c6ef833d0bc18a8"
+  },
+  "pos_long_title.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "f0bdfed907c32cdc16292a758b618df2acfa7ff6ca498628fd79fcf346bfc56b"
+  },
+  "pos_rim.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "fa2f9d627ac4f72e3b5612da975fc28a0a4d99a4ed18c99a675782b76a79d542"
+  },
+  "pos_stick.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "50bcd814192ed30ff20e13107beac73ffdbca29d096779f0ea07b97051f08999"
+  },
+  "pos_tab.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "6504ea801e17beda3f88aac70d3992505ab560de66e1cecb2278c0bb0b2e6086"
+  },
+  "pos_tiger_hang.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "cb6b5e3f09c2e82ec15b0de374faf24b3aa95b8231d6ffb73a2d03077ea848da"
+  },
+  "pos_tiger_neck.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "8738d0b65c80385d67fc60aaab370afd4e3e82892f9ae215f531e9551edb5a49"
+  },
+  "pos_tiger_v7.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "a2520f62c332974035713b279b35561c834a0e53099e197a6611e43a8949d274"
+  },
+  "pos_tube.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "c04216525e0a9a243cb5a03dde03466f7e2d234cc96b5e9065cd39595b7bb79d"
+  },
+  "pull_nod_neg.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "f9c9202b14c8caa0129aa24da05a8685d23f846a48813309d425e997893a8104"
+  },
+  "pull_nod_neg2.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "b5cd93dbaf252887796fb6ab33bd68860d7e085fceae2dbc105de07699d519b9"
+  },
+  "pull_nod_neg3.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "930a1048b725a44b05660ae5d4c12a9a784b7a6fba293e39ec2151bcf247b42b"
+  },
+  "pull_nod_neg4.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "ba19cdf5239034803957dc2af23c112bd96de5f66001d9863bdf7e72316c77e4"
+  },
+  "pull_nod_neg5.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "8d09078489461d004a7d5d3640d4f13f4ffce57d623cc7dc2d002ffdeb4c4df7"
+  },
+  "pull_nod_neg6.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "0ff99c3ce042419d339a7b05c77a2bb5c384a4e64897356e9d08b3832bf31a4e"
+  },
+  "pull_nod_neg7.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "f7ef772ccf7892e3fce7e1ff5b2db7ad6900e8495ff2602fe0a2de76d701a272"
+  },
+  "pull_nod_neg8.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "e76bd659f4df8d6f588e5e9b772c13779edf0dc545c20e78dd0dad72fc7c6955"
+  },
+  "pull_nod_neg9.json": {
+   "floors": [
+    "F5.pull_nod"
+   ],
+   "rc": 3,
+   "sha256": "1c9004de0daec67a5340f090a345252daf7d48f9742a8ebb5b42be050687d2b4"
+  },
+  "pull_nod_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "0d84ae238db7aa7d37149c42fe6ca8af0203977fc3b98123a591f7d11df317ea"
+  },
+  "pull_nod_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "c14c08912fd505037cc7807cd989e73e1a424ea6059ec91c4bc4f95e0210708b"
+  },
+  "pull_nod_pos_jaw.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "2567bfce584f33e3642ecc9a6996dcaa106ab276cbaf67a9d0827aabf1aa8167"
+  },
+  "pull_nod_pos_peck.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "06faa33c20a9b536981f92bc9f6aa06de02ffdb14e57320b1e3c707769166e07"
+  },
+  "slide_box_neg.json": {
+   "floors": [
+    "F5.slide"
+   ],
+   "rc": 3,
+   "sha256": "9858a66d6264781789f45663c4edc535068b38c211b21ea8d217d6698a81b16c"
+  },
+  "slide_box_neg2.json": {
+   "floors": [
+    "F5.slide"
+   ],
+   "rc": 3,
+   "sha256": "eac6ed60d0c71a63e435dd98b94a5bc2a35049eb632d9f3a1c8b0164664f57c9"
+  },
+  "slide_box_neg3.json": {
+   "floors": [
+    "F5.slide"
+   ],
+   "rc": 3,
+   "sha256": "dbeba1027211d9f0db0819a07ff20269a8e263956db672d6450afc0636df861a"
+  },
+  "slide_box_neg4.json": {
+   "floors": [
+    "F5.slide"
+   ],
+   "rc": 3,
+   "sha256": "a68d8361fcb2f905f99362bcf2b259392eca21dd4dc2d9866263dc2facd3b5df"
+  },
+  "slide_box_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "d0aa8d5d9c15a82b2e7a83e0956f658c2886ee56ad8cf6bec58d0cd5dc3f558c"
+  },
+  "slide_box_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "02150b4e6dc6db10a6c903537ca1b7ae8d6497daaae896ea0a1f93cb386da739"
+  },
+  "slide_box_pos_sleeve.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "b5108357363966174857d6dac393f89eee73641e50098c0a3b8c7fb8dfe0b172"
+  },
+  "spinner_neg.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "7e060b425f94ee4b98274e110248b194f8ffa15be4fddd6954d777af56ad9f2e"
+  },
+  "spinner_neg2.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "a2f2f2712ba587432569adec2cee61cdc4cc3baf035273550a034cb360b87afb"
+  },
+  "spinner_neg3.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "1a122f529571df756eb3b8701087c392d816f4e2c45d04c0b3249a416ffbf61f"
+  },
+  "spinner_neg4.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "149f418ce63b7c4bd92fe8e97967ec4b13892d18c45b0635ce52ae1a643956c3"
+  },
+  "spinner_neg5.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "d35303da34f0f52f25f9ca263eddf7ccbcdd7b3fdb5e92b80c6ec4ef359eb76d"
+  },
+  "spinner_neg6.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "5dfcef7417e4d16524ab308e0814b068b96021cbb3167e8d63e9be247acbf66a"
+  },
+  "spinner_neg7.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "dddc096795660743626c461c2f8db6e6c2f9d77f7ff6302d5cb67842c1318a7d"
+  },
+  "spinner_neg8.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "6a24a92e66faa2a7dcb1af1c039bed99dfc891981e43ca196dddf921bb6b3839"
+  },
+  "spinner_neg9.json": {
+   "floors": [
+    "F5.spin"
+   ],
+   "rc": 3,
+   "sha256": "0ace8232095ccff5d14f9b8904590e7a6ea2d87d2ae59ac96b0a952d13cd8e17"
+  },
+  "spinner_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "19c359be5594f6010f5a89df50a158e9766ab76fd9338cbaceafbe1499a108af"
+  },
+  "spinner_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "4a60e6421e41f4af31e7cf4fe43e03ecc410a15f94ccc96b14ac7f2e1e85464c"
+  },
+  "spinner_pos_cone.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "14569d021eb411653c3ff5963f9f734c4cfc2968a406cddbe63c4b291e7f4775"
+  },
+  "spinner_pos_screen.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "9a5fde03cf73d9740140913a1381fb39617fbd308dc538b222f8b3e371423b48"
+  },
+  "spinner_pos_square.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "43cbb2e8b3587a416f9eeb7e5b6955781d655ec58e95ae434a1e76ff0e9b9386"
+  },
+  "spinner_pos_top.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "51c80b6321eb13920e258867f923a6aea5c15afe4f66d9b57b1849fedd3d4b71"
+  },
+  "stand_figure_neg.json": {
+   "floors": [
+    "F5.stand"
+   ],
+   "rc": 3,
+   "sha256": "0c9631b7372bdb332379ab9d68fcd3aa1e238aa970e7963f9118c909e6c62d7c"
+  },
+  "stand_figure_neg2.json": {
+   "floors": [
+    "F5.stand"
+   ],
+   "rc": 3,
+   "sha256": "94119389182649e6d0697ce185a7f6c7b53fba0016eca5b2581fe1bf673bd01f"
+  },
+  "stand_figure_neg3.json": {
+   "floors": [
+    "F5.stand"
+   ],
+   "rc": 3,
+   "sha256": "67a723d37429ee4ad9c4b0fd68ed6035d9359f2c89a54fd4e0f627f5659364c3"
+  },
+  "stand_figure_neg4.json": {
+   "floors": [
+    "F5.stand"
+   ],
+   "rc": 3,
+   "sha256": "e806ea521b97870b598c5539deb164e885401f0d0f997354dae486c4b0898824"
+  },
+  "stand_figure_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "8bb4f62310e4145faa63d858cb9f54f9b416ed156bad5ef4af640c5c66d3e1ea"
+  },
+  "stand_figure_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "02541a59ff45b54d97b9309a7a0af30e5dee2681ea7e8e6fd2dd74e5e549e6cc"
+  },
+  "stand_figure_pos_binkake.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ebbf39074a455f71479a6728e4b3e66b297f7c456a4645b75c4c311a7bd737cb"
+  },
+  "stand_figure_pos_chagama.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "bc07684cfaaa6140199403411769a3b1833e2fc8019201e35c6e854fb7b66274"
+  },
+  "stand_figure_pos_chigibako.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "a1b8f3a2666402133012eaeaaa7a5191177e8a56f320c9e5b6ba719e32fe14b2"
+  },
+  "stand_figure_pos_fukumen.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "70b5b83fec72e05907a5d5b69c6a38682c7d22a5413ce02dfbcd9ca718a0ed61"
+  },
+  "stand_figure_pos_fumei_tama.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "fb978b8ef6c30304059a9620d2ddcfa64d3aaf896a7214762cdee9cbb0c86e58"
+  },
+  "stand_figure_pos_fumei_tsutsu.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "880919d2f1627f68474d107ec9458f2a4f1e9adf7a101273b52063df8a7a6209"
+  },
+  "stand_figure_pos_fushimi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "63b3f2a8e2c4857f75e766c8c3270ef46ae308cdcead24bbcc889f84feea26f8"
+  },
+  "stand_figure_pos_hagoita.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "6b3fc0bce77d17a7d8d06553312d819d88a1084d7373614efbc14ccebbf819fb"
+  },
+  "stand_figure_pos_hamayumi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "54c6bb191da5f406303ad518830582249799c290e5e56465be8448174f6edc18"
+  },
+  "stand_figure_pos_hebi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "2ca1b28abf5bb83cca1e7221f7b956d9c0ebe22e98dc461410ff53d832e4082d"
+  },
+  "stand_figure_pos_kamibina.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "337493a9a6d733b0e65f53394795c27741d375ab20fe05fd7f0146f455594a27"
+  },
+  "stand_figure_pos_kidachi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "9ecee7c680368d7060d0b635abf0dda32e45f33d37e3db158b86634a73a502cd"
+  },
+  "stand_figure_pos_kubi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "448c06b82b214438f7a730f74d636b2ba944b9c20bcba35efba358e4339fdfee"
+  },
+  "stand_figure_pos_kukurizaru.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "7ecba0fb976b9c1a0c465f20d061cfe13768c791a82d583c9a50762b08c7e106"
+  },
+  "stand_figure_pos_mimizuku.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ef74a44925b0087171ce4766b0ee0d94dc0cec82a4f0a30b3aa258ac0f4800e6"
+  },
+  "stand_figure_pos_mino.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "b48d7b0d9d2a3a8bb8d2f8ecc63aaaa27d4a11fbdf4726c994eee93533ce1608"
+  },
+  "stand_figure_pos_miya.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "81bc1d3a26c42aa413416d124bb21c5667fe63bb3d35de5d4fdbde7657b2d9bd"
+  },
+  "stand_figure_pos_mochibana.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "69c47e903146f0b287e9130e3b3a80edcaeb2c4703160cfb402d3e3688cf223d"
+  },
+  "stand_figure_pos_nobori.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "bf9bf80026f9c11f84fa858cbcbe9b95b0d3ae48fc68dbd937e5ccb4ea8614dc"
+  },
+  "stand_figure_pos_sakana.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ebe17da8615606fdf4e777d071bca3153af01e9280076a5577975b1ad6202001"
+  },
+  "stand_figure_pos_shitadashi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "2bde5f551d4ea05eb174d44b81836df25ae636aad2709d77b315c3059453610a"
+  },
+  "stand_figure_pos_suribachi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "1f05c587b46db4fbdebcc7b1f23bf891294789d9f34e3e6f4eb00d85abac2871"
+  },
+  "stand_figure_pos_suwari.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ea55d48a04457f7e0b3557dd5cc6894f447aa830a243066f2542a931500ecd3c"
+  },
+  "stand_figure_pos_tako_ji.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "76b6d37200d09d032f353a3714f3daceb29de21eff0b689aec6224cf8de74249"
+  },
+  "stand_figure_pos_tako_oni.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "7a9bd08a04b944ef0e253e66e36da7b0e40f448054530c3d3a554259058848ac"
+  },
+  "stand_figure_pos_tawara.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "466566e34c44a46453088c7746fe4ac5424ab3687634b7ab59f773aa4184bad4"
+  },
+  "stand_figure_pos_tokkuri.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "3fb096ae3c241a1666964c183cd098e921f42839fdf5a9537b797eaf0f24b422"
+  },
+  "stand_figure_pos_torisao.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "fc5c28b655cfed184e8871bd4a232b94da0bf9306df2a23e8badb0c870f1dfb4"
+  },
+  "stand_figure_pos_torisao_hoso.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "1ed7a45f17f172586236b804630928125287f5d98359dfcecff8e5ad4adf2a6f"
+  },
+  "stand_figure_pos_tsuchi_hato.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "74f36dea2301a40e694661c33c9337eb726f372a8e1d75dd88df6f8f4a90e98d"
+  },
+  "stand_figure_pos_tsuchi_kame.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "b44b70251e74873eb22d6f48015686a5edb1ef20c238c753314900b69d54c5f7"
+  },
+  "stand_figure_pos_tsuchi_usagi.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "ecb007e3aa77477de4fc5f528c4ff9cb5c08d09d9e5d06885f70d7ddb578ee1f"
+  },
+  "stand_figure_pos_uma.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "9ab626134a828a5a7e7285834e039ac8a433ae7288a9d7e36d5a757af6eadec1"
+  },
+  "stand_figure_pos_yamaneko.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "2f3d7b19672145bf3a5d5514f64154c8a29d0fc93a4a4b22d85160e5bcf506f4"
+  },
+  "twist_drum_neg.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "e4d38789b4a5ad9140c278b289d189d3aed12aa73a0babb3d8681b2ce6a7e313"
+  },
+  "twist_drum_neg2.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "4272384c48dffe3df57898b1b9bb3b16a41ee77ce1ac946e21718475b86ead33"
+  },
+  "twist_drum_neg3.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "1d0bd982b85255f3e04f6bc80ae0996f51650bd161d6f6e663d8fc4dc3eb8eb6"
+  },
+  "twist_drum_neg4.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "68aa1b4ea3b4a9e46252a4aeaa3d203b2c583319a9d71c12b3a303b2a839cb72"
+  },
+  "twist_drum_neg_kanko.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "d4bac85a344998ee094ff9a416f603107a081158a7584890ff4e99237c730280"
+  },
+  "twist_drum_neg_kanko2.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "2d7b27c6aa8f3e1a29ec754a62ed647427b62e4cd313a03a4f57e4f0eab8fc72"
+  },
+  "twist_drum_neg_kanko3.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "cb956e1bc4fe84c95ac2808a24d7678b3c66c43602015dd544d85d2126a96991"
+  },
+  "twist_drum_neg_kanko4.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "dbf73b947715c3501052858fffec62746ed4dced726253047a94d49c69322f66"
+  },
+  "twist_drum_neg_kanko5.json": {
+   "floors": [
+    "F5.drum"
+   ],
+   "rc": 3,
+   "sha256": "7eaa6576f3c0f6c5eff27ccfdcdcc175b5bac38cc2fee96c14f5648569edac38"
+  },
+  "twist_drum_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "4b86bea9da059f3bb887ca1c7e3396da072b1198d2369e223aab850b5580fb66"
+  },
+  "twist_drum_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "542432a1f561cecca3af6afe705a65ad1b26ef2ac8bba9e260b3d81988f76639"
+  },
+  "twist_drum_pos_kanko.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "32e23517508ae8b7a6851c3312eff38f2cceb54df0f69350fe23637b5aa41490"
+  },
+  "twist_drum_pos_tori.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "44771305b1ee73aaee3ff2b321dfd888804110b420156692701466e5b6b2094a"
+  },
+  "wheel_cart_neg.json": {
+   "floors": [
+    "F5.wheel"
+   ],
+   "rc": 3,
+   "sha256": "619f82ecee3e53753169783f3a5ec0a8e130404ca7b22818be6bdccba8817162"
+  },
+  "wheel_cart_neg_mallet.json": {
+   "floors": [
+    "F5.wheel"
+   ],
+   "rc": 3,
+   "sha256": "e9964af53aea3726b8d73cb1d2bf9eb847d49aaf763f74e38db910c5a0f6ff7e"
+  },
+  "wheel_cart_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "a60d7d56b10cecc429e7371a249592fc63408aefd2a01ffb1c84a22cad9ccbc6"
+  },
+  "wheel_cart_neg_stick.json": {
+   "floors": [
+    "F5.wheel"
+   ],
+   "rc": 3,
+   "sha256": "876e9dc241877694eef4f7500716a5cbbe5bcb1b55d054ea6be6f87c8ee598c7"
+  },
+  "wheel_cart_neg_tip.json": {
+   "floors": [
+    "F5.wheel"
+   ],
+   "rc": 3,
+   "sha256": "0efae9d716ed72d3608b1174348617a188d7aba4625f29acefa49f37989bbe7c"
+  },
+  "wheel_cart_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "49d0c6f03a1de761205d555aaf8272f4d6a15d29b8b7975693c800691878155a"
+  },
+  "wheel_cart_pos_mallet.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "82cfb40b6b913aaf263231f49936f17d0bdfcc8669e9dc1fce7ceb9d617f0c5d"
+  },
+  "wheel_cart_pos_stick.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "a8848cf028e86e2a16d9a28ccc452805e877db8b6b4a6a324e41883977fbd847"
+  },
+  "whistle_neg.json": {
+   "floors": [
+    "F5.sound"
+   ],
+   "rc": 3,
+   "sha256": "e431cef683ea1d27a237e44c39af35d6fe3d6f0a9def95dca30e7cae9d2ccaa8"
+  },
+  "whistle_neg2.json": {
+   "floors": [
+    "F5.sound"
+   ],
+   "rc": 3,
+   "sha256": "b6b2707c115de116bd1aa0ea3f83ae79fc0a45f04174e8f7107870653ab71620"
+  },
+  "whistle_neg3.json": {
+   "floors": [
+    "F5.sound"
+   ],
+   "rc": 3,
+   "sha256": "b39150ccbfb32352c81d747f6c0f3aa9718d84c1e89977fc93e2d3fd7786aa5a"
+  },
+  "whistle_neg4.json": {
+   "floors": [
+    "F5.sound"
+   ],
+   "rc": 3,
+   "sha256": "66149658fdf519fce20e71c726073a64aaa693c40c5564dbe1e57d691e51d5a3"
+  },
+  "whistle_neg5.json": {
+   "floors": [
+    "F5.sound"
+   ],
+   "rc": 3,
+   "sha256": "a3988ccabf2134e0fddc1650b6e949975fd91c4476a0058cb77646264c055767"
+  },
+  "whistle_neg_source.json": {
+   "floors": [
+    "F1.source"
+   ],
+   "rc": 3,
+   "sha256": "4ba0390f15c749b65e43f009fb80792f8ab80019c608a37913f036ed702097fc"
+  },
+  "whistle_pos.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "8e73988463c4154ba8ea04d72e9eb6b2a7edf30902daee216ec20ff4535ba74c"
+  },
+  "whistle_pos_rattle.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "1eda88132a797949b497896a1c57c10a624c11bcec13a9586e59be6922a8263b"
+  },
+  "whistle_pos_tube.json": {
+   "floors": [],
+   "rc": 0,
+   "sha256": "7231c002d96f151ccd3fe5d28cb6750c9323deca95c22b471dba4fac4ce16630"
+  }
+ },
+ "tests": [
+  "test_assembly3d",
+  "test_balance",
+  "test_check3d",
+  "test_color_out",
+  "test_engine_loop",
+  "test_exit_codes",
+  "test_fan_model",
+  "test_feedback",
+  "test_float",
+  "test_fold3d",
+  "test_foldsim",
+  "test_frozen_manifest",
+  "test_goraigo_rise",
+  "test_goraigo_rise_3d",
+  "test_goraigo_v14",
+  "test_guards",
+  "test_helix",
+  "test_init_python",
+  "test_intake",
+  "test_launcher",
+  "test_lever_link",
+  "test_neg_exact_fails",
+  "test_paper_words",
+  "test_path_confine",
+  "test_pdf_repeatable",
+  "test_pendulum_wave",
+  "test_pivot_3d",
+  "test_pivot_arm_label",
+  "test_pivot_fold3d",
+  "test_pivot_hang_model",
+  "test_pivot_head_sides",
+  "test_pivot_model",
+  "test_pivot_neck_opening",
+  "test_popup_jar",
+  "test_pull_nod",
+  "test_readme_commands",
+  "test_run_floors",
+  "test_security",
+  "test_sheet_v8",
+  "test_sheet_version",
+  "test_sheets",
+  "test_slide_box",
+  "test_slider_fan_colors",
+  "test_slider_tube_stroke",
+  "test_spinner",
+  "test_stand_figure",
+  "test_template_contract",
+  "test_tool_timeouts",
+  "test_tora_v7",
+  "test_twist_drum",
+  "test_ways",
+  "test_wheel_cart",
+  "test_whistle"
+ ]
+}

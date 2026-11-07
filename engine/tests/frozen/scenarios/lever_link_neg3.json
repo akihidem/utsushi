@@ -1,0 +1,20 @@
+{
+  "template": "lever_link",
+  "source_id": "NDL-1187053-R0000018-L-lever_link",
+  "params": {
+    "kind": "sumo",
+    "bar_w": 6
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.link"
+    ],
+    "lines": [
+      "F5.link [細い棒] ピンの穴から紙の端まで #mm で、回すと裂けやすい（#mm 以上）",
+      "F5.link [長い棒] ピンの溝から紙の端まで #mm で、回すと裂けやすい（#mm 以上）",
+      "F5.link [長い棒] ピンの穴から紙の端まで #mm で、回すと裂けやすい（#mm 以上）"
+    ]
+  }
+}

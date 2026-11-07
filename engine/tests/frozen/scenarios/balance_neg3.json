@@ -1,0 +1,15 @@
+{
+  "template": "balance",
+  "source_id": "NDL-1187053-R0000007-L-balance",
+  "params": {
+    "kind": "yajirobe",
+    "tip_layers": 2
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.balance"
+    ]
+  }
+}

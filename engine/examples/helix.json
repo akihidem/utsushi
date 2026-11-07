@@ -1,0 +1,8 @@
+{
+  "template": "helix",
+  "source_id": "SCI-DNA-B",
+  "params": {
+    "kind": "bdna"
+  },
+  "inject": {}
+}

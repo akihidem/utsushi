@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_easy_all.py
+# commit: 4895cadd（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_easy_all.py", line 31, in <module>
+    easy = i18n.table("easy")
+TypeError: table() takes 0 positional arguments but 1 was given
+rc=1
