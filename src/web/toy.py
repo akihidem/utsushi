@@ -620,7 +620,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # わかりやすくあるといいよね」）。真ん中は今の型紙の版で、押すと頁の下の「型紙の改善の輪」へ行く（web.wa）。
     from . import wa
 
-    ring = wa.ring(wa.current_version(sid, data))
+    # 真ん中は型紙の版（組の番号。本人の言葉 11-07「バージョンをサイトで明示したい」、窓口の決定 カード 084426）。前は寸法の刻み（wa.current_version）
+    ban = wa.set_version(sid, data)
+    ring = wa.ring(ban)
     body = hero + (f'<section class="sec" id="kasetsu">{head("kasetsu") or ("" if at else note)}<h2>すぐ作る</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
                    f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">')
     from . import kumitate  # 手順どおりに組み立てる絵。型紙の絵の上に初めから出す（本人の決定 11-06。J-033）
@@ -632,7 +634,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         # 紙の種類と版を選ぶのは窓の札の役。札の下に字のリンクを並べると、版ごとに 3 つ増える（#127）。
         thumb = (f'<a class="thumb" href="/toy/{sid}?see={h["id"]}&kind=sheet&v={last[-1]}#win" aria-label="仮説 {esc(hypotheses.letter(h))} の紙を窓で見る"><img src="/sheet/{sid}/{h["id"]}_v{last[-1]}.png" alt="" loading="lazy"></a>'
                  if last and (out_dir(sid) / f"{h['id']}_v{last[-1]}.png").exists() else "")
-        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
+        # 札の脇に型紙の版（設計 0.7「型紙の札の脇に、今の版の印を 1 つ」）。字は「型紙の版」と数だけ（エンジンの版と言い分ける。カード 084426）
+        body += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3>'
+                 f'<p class="meta"><span class="lb ban">型紙の版 {ban}</span></p><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
                  f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}{thumb}<div class="acts">'
                  f'<form method="post" action="/toy/{sid}/print#kasetsu"><input type="hidden" name="hypothesis" value="{esc(h["id"])}"><button class="quiet" data-busy>型紙を見る</button></form>'
                  '</div></div>')
