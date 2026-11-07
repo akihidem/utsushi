@@ -65,7 +65,7 @@ ADOPTED = (
       "手が止まった人には、まず 1 分見ます。次に、見えた事を返します。問いを小さくします（「今、動かないのはどこ？」）。材料を 1 つ渡します。",
       "場の前に、合言葉付きのリンクで開きます。型紙を 1 度出しておきます。刷った紙の物差しが 10cm かを測ります。自分でも 1 つ作って、詰まる所を知っておきます（答えとしては見せません）。")),
 )
-BUTTONS = ("おもちゃを選ぶ", "入口へ戻る")
+BUTTONS = ("入口へ戻る",)  # 前は「おもちゃを選ぶ」と 2 つで、同じ所へ行く対だった（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。/toys は入口へ送るので、/toys へ向く道は置かない）
 
 
 class Text(html.parser.HTMLParser):
@@ -136,7 +136,7 @@ for look in ("tenji", "zine"):
     assert f"<title>{TITLE}" in page, look
     assert main_text(page) == expected, (look, "採られた文と字が違う、または外の字がある")
     assert page.count('<section class="sec" id=') == 6 and page.count('<a href="#') == 6, look
-    assert 'href="/toys"' in page and 'href="/"' in page, look
+    assert 'href="/toys"' not in page and 'href="/"' in page, look
 
 # どこから来るか。帯に「よむ」が入る時に置き場を合わせる
 assert 'href="/otona"' in about.page("tenji"), "序の頁から来られる"

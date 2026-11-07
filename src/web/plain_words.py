@@ -212,7 +212,8 @@ def _open_pages(sids, walk):
     server = play_server.serve(0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
-    paths = ["/", "/about", "/otona", "/toys", "/gallery", "/loop", "/loop/ayumi"]
+    # /toys は入口へ送るので、残る絞り込みの頁（紙 1 枚で作れる物だけ）を見る
+    paths = ["/", "/about", "/otona", "/toys?paper=1", "/gallery", "/loop", "/loop/ayumi"]
     for sid in sids:
         paths += [f"/toy/{sid}", f"/toy/{sid}/tsukuru", f"/toy/{sid}/techo", f"/toy/{sid}/techo/kiroku", f"/loop/{sid}"]
 
