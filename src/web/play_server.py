@@ -408,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物と職人の言葉", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -957,7 +957,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。組み方の紙を見てください", "error"
+                text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return out(200, {"text": text, "from": how})
@@ -991,7 +991,7 @@ class Handler(BaseHTTPRequestHandler):
             except BudgetStop as e:  # 額の入った例外の文は出さず、止めた線だけを言う
                 text, how = f"今は AI に聞けません（{e.note}）", "stop"
             except Exception:
-                text, how = "今は AI に聞けません。型紙の凡例と手順の紙の絵を見てください", "error"
+                text, how = "今は AI に聞けません。型紙の凡例と、組み方の絵を見てください", "error"  # 呼び名は ask.NO_KEY とそろえる（組み方の絵）
             making_log.add_ask(sid, hid, sheet_version_of(sid, hid, form), form.get("question", ""), how, step=form.get("step"), who=form.get("who", ""))
             return self._send(200, self._toy(sid, asked=(form.get("question", ""), text)))
         if act == "print":
