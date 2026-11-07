@@ -7,10 +7,12 @@
 判断の芯:
 - 絵は頁の全体を、拡大せず、縦横の比も絵のままで出す。玩具の所は、頁の絵の上に細い枠で示す（切り抜きは別に置かない）。
   枠の箱は出典の記録の crop_region。頁の片側の全体が玩具の記録の物（必須 2 種）は枠を出さない。
-- 歌は絵と組にする。広い幅は絵の横に縦書き、狭い幅は絵の真下に横書き。字にするのは人が確かめた読みだけ（J-016）。
+- 歌は絵と組にする。玩具の頁の頭は、左から 題の塊 → 歌 → 絵 で、題の塊と歌は縦書き（本人の言葉 11-08。狭い幅も縦のまま、高さに上限）。
+  字にするのは人が確かめた読みだけ（J-016）。
   読みが無い玩具は、歌は絵の中に書かれているので、字は出さない（断りも足さない。本人の決定 11-06）。
 - 狭い幅の絵の高さの上限は CSS の変数 1 つ（--genga-h、44svh から）。段 0 の「最初の画面にボタン 1 つ」の余地を残すため。
-- 出し方は 3 つ。head（玩具の頁の頭。「大きく見る」は絵そのものへ行く）、fold（作る時の畳み。「大きく見る」は頁の中で重ねて出す。
+- 出し方は 3 つ。head（玩具の頁の頭。絵そのものと「図を見る（国立国会図書館）」の 1 つの道は、国立国会図書館のその絵の頁へ行く・本人の言葉 11-08）、
+  fold（作る時の畳み。「大きく見る」は頁の中で重ねて出す。
   作りながら見る頁は、頁を離れると声の聞き取りと鏡が止まるため）、plain（英語の頁。絵だけで、字は足さない）。
 - 頁の写しが無い所（取れなかった・取る前の木）は、玩具の写しを比を保って出す。頁は止めない。
 """
@@ -33,8 +35,11 @@ STYLE = """
 .genga-pic{position:relative;display:block;width:100%;line-height:0}
 .genga-pic img{display:block;width:100%;height:auto;background:var(--soft)}
 .genga-box{position:absolute;border:2px solid var(--accent);outline:1px solid rgba(255,255,255,.75);pointer-events:none}
-.genga-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 22px;align-items:start}
+.genga-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 22px;align-items:start}
 .genga-songs p{margin:0 .3em}
+.genga-head .genga-tate{display:flex;flex-direction:row;gap:18px;align-items:flex-start}
+.genga-head .genga-title{writing-mode:vertical-rl;max-height:min(70vh,620px);font-size:13px;line-height:2;letter-spacing:.14em;color:var(--mute)}
+.genga-head .genga-title p{margin:0 .2em}.genga-head .genga-title b{font-size:clamp(17px,1.7vw,22px);font-weight:400;color:var(--fg);letter-spacing:.3em}
 .genga-head .genga-songs{writing-mode:vertical-rl;max-height:min(70vh,620px);font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .genga-cap{grid-column:1/-1;font-size:12px;color:var(--mute);letter-spacing:.1em;line-height:1.9;margin:0}
 .genga-cap p{margin:0 0 4px}
@@ -60,7 +65,9 @@ a.genga-pic{cursor:zoom-in}
 .genga-head{grid-template-columns:minmax(0,1fr)}
 .genga-head .genga-pic,.genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)));flex:0 0 auto}
 .genga-head .genga-crop{display:block}
-.genga-head .genga-songs{writing-mode:horizontal-tb;max-height:none;font-size:16px;line-height:2}
+.genga-head .genga-tate{justify-content:flex-end;gap:12px}
+.genga-head .genga-songs,.genga-head .genga-title{max-height:min(52vh,420px)}
+.genga-head .genga-songs{font-size:16px;line-height:2.1}
 }
 """
 
@@ -156,21 +163,34 @@ def crop(sid, src):
 
 
 def head(sid, src=None, photos=True):
-    """玩具の頁の頭。絵 → 歌の順（広い幅は横に並ぶ）。「大きく見る」と絵そのものは、頁の全体の絵へ。"""
+    """玩具の頁の頭。左から 題の塊 → 狂歌 → 絵（本人の言葉 11-08「絵の左横に縦で狂歌、その左横に御来迎 江都二色よりーの部分を置く」）。
+    題の塊と狂歌は縦書き（入口の縦の組みと同じ考え）。狭い幅は絵が上で、題の塊と狂歌は縦のまま並べて「つくる」の釦の後ろへ（toy.FOLD_STYLE）。
+    「大きく見る」と「図を見る」は 1 つにし、絵そのものも同じ所（国立国会図書館のその絵の頁）へ行く（本人の言葉「統一して国会図書館へのリンクへ」）。
+    原文の引用の「確かめた人」の行と、国立国会図書館の出典の字は頭に置かない（本人の言葉「確かめた人要らない」「文言はページの一番下に」。
+    出典の字は toy の頁の一番下の段 ndl_credit）。"""
+    from .skin import artwork_title, ndl_page
+
     src = src or _source(sid)
-    pic, whole = _pic(sid, src, alt(src), href=f"/picture/{sid}/page" if page_file(src).exists() else None)
+    ndl = ndl_page(src)
+    pic, whole = _pic(sid, src, alt(src), href=ndl or None)
     pic = f'<div class="genga-row">{pic}{crop(sid, src) if whole else ""}</div>' if pic else ""
     # 原画のすぐ後に、作ってみた実物（人が確かめた写真。無ければ何も置かない。窓口の決め 125731・(b)）を 1 枚（本人のサイト体験レビュー 11-07 の 2。web.made）
     from . import made
 
     pic += made.figure(sid, "made genga-made", photos=photos)
-    big = f'<a href="/picture/{esc(sid)}/page">{esc(BIG)}</a>' if whole else ""
-    lines, mark = _songs(src)
-    # 印の 1 行は絵の下の行に置く。歌の横の欄に置くと、横書きの字の幅で欄が広がり、広い幅で絵が細くなった
-    cap = (f'<div class="genga-cap">{mark}<p>{esc(src.get("holding", ""))}　{esc(wording.frame(sid))}<br>{big}'
-           f'<a href="{esc(src.get("image_url", ""))}">{esc(NDL)}</a></p></div>')
-    return (f'<style>{STYLE}</style><figure class="genga genga-head" id="genga" aria-label="{esc(HEAD)}">{pic}'
-            f'<div>{lines}</div>{cap}</figure>')
+    lines, _ = _songs(src)
+    tate = f'<div class="genga-tate"><div class="genga-title">{artwork_title(src["toy"], src)}</div>{lines}</div>'
+    cap = f'<div class="genga-cap"><p><a href="{esc(ndl)}">{esc(NDL)}</a></p></div>'
+    return (f'<style>{STYLE}</style><figure class="genga genga-head" id="genga" aria-label="{esc(HEAD)}">{tate}'
+            f'<div class="genga-main">{pic}{cap}</div></figure>')
+
+
+def ndl_credit(sid, src=None):
+    """玩具の頁の一番下の出典の段（国立国会図書館デジタルコレクションの所蔵・コマ・権利）。字は前の頭の札と出所の字のまま（替えない）。"""
+    from .skin import artwork_credit
+
+    src = src or _source(sid)
+    return f'<section class="sec ndl-credit"><p class="meta">{artwork_credit(src)}<br>{esc(wording.frame(sid))}</p></section>'
 
 
 def fold(sid, src=None):

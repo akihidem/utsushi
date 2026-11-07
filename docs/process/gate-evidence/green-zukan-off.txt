@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_zukan.py
+# commit: 8a43472f（回した時の HEAD）
+ok 図鑑の頁は無い・本の頁とくずし字を読む は残る・図鑑への道は無い・文の印の床は残る
+rc=0

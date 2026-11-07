@@ -15,7 +15,8 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from web import looks  # noqa: E402
 
 assert not hasattr(looks, "GROWING") and looks.ABOUT == "このサイトについて"
-for look, cover, title in (("tenji", 'class="tj-hall"', '<p class="sub">'), ("zine", 'class="zn-cover"', "<h1>うつし</h1>")):
+# 暗い版（zine）の入口は白と同じ作り（本人の決め 11-08「もう1つ立てる」）なので、表紙の節も同じ tj-hall
+for look, cover, title in (("tenji", 'class="tj-hall"', '<p class="sub">'), ("zine", 'class="tj-hall"', '<p class="sub">')):
     page = looks.PAGES[look]()
     assert "まだ育っている途中" not in page and "型紙をよくしていくのは、作ってみるあなたです" not in page, (look, "前の 2 行は外した")
     line = '<p class="about-go"><a href="/about">このサイトについて</a></p>'
