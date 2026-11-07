@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_en_all.py
+# commit: 62bce810（回した時の HEAD）
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000004-L/.tmp-i8zb9ezr/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000004-L-4/.tmp-x7_cq0rs/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000005-L/.tmp-qfmcss2n/H-C_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000005-L-3/.tmp-eyfpce85/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000007-L/.tmp-ftc_5vv4/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000007-R/.tmp-l73689j2/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000014-L/.tmp-mg3n48gw/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000014-R/.tmp-tj33h6ip/H-A_v1.pdf
+/tmp/tmp5lvc8ik5/play/NDL-1187053-R0000019-L/.tmp-_f_kk1fz/H-A_v1.pdf
+ok 全頁の英語: 表に無い日本語 0・切り替え・前からの英語の頁・人の字
+rc=0

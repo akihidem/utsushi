@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_en_all.py
+# commit: 6f5e05ce（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_all.py", line 40, in <module>
+    assert not _twice, ("訳の表に同じ鍵が 2 つある（後から入った方の行を消す）", _twice[:8])
+           ^^^^^^^^^^
+AssertionError: ('訳の表に同じ鍵が 2 つある（後から入った方の行を消す）', ['{0} 月 {1} 日から {2} 日まで、{3} 日続けてワークショップを開けたのは、紙と、はさみと、のりで作れる手軽さがあったからです。', 'うつしは、学校や博物館などで使える、ワークショップを支えるサービスです。', '人'])
+rc=1

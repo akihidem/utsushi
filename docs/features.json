@@ -155,9 +155,11 @@
   "evidence": [
    "src/web/kuzushi.py",
    "tests/test_kuzushi.py",
-   "docs/process/research/25-kuzushi-reading.md"
+   "docs/process/research/25-kuzushi-reading.md",
+   "data/kuzushi_notes/",
+   "tests/test_kuzushi_notes.py"
   ],
-  "unverified": "人が使っていない。書いた人の読みの印（観察）と、残すかは未決。図鑑と玩具の頁は確かめた読みを出している"
+  "unverified": "人が使っていない。書いた人の読みの印（観察）と、残すかは未決。図鑑と玩具の頁は確かめた読みを出している。歌の現代語訳と言葉の意味は御来迎と虎の 2 つだけ（ほかの玩具は出ない）で、人が読んで分かるかはまだ見ていない。虎の「うそふく」の意味・御来迎の何を怠らないのか・「風に」の向きは、辞書と本で分からず「わかっていません」と書いた"
  },
  {
   "id": "f15",
