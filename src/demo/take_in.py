@@ -43,6 +43,8 @@ def expected():
             out[n] = "open"
         for n in kinds.get("still", ()):
             out[n] = "still"
+        for n, _ in kinds.get("clip", ()):
+            out[n] = "clip"
     return out
 
 
@@ -67,7 +69,7 @@ def convert(srcs, dst, kind):
         head = ["ffmpeg", "-v", "error", "-y"] + (["-f", "concat", "-safe", "0"] if len(srcs) > 1 else []) + ["-i", str(src), "-map_metadata", "-1"]
         if kind == "still":  # 写真は撮影の情報（位置を含む）を外して JPEG に作り直す
             cmd = head + ["-frames:v", "1", "-q:v", "2", str(dst)]
-        elif kind in ("hands", "open"):  # 映像は音も外す（open も手の映像と同じく、撮った時の音を入れない）
+        elif kind in ("hands", "open", "clip"):  # 映像は音も外す（open も手の映像と同じく、撮った時の音を入れない）
             cmd = head + ["-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-movflags", "+faststart", str(dst)]
         else:
             cmd = head + ["-vn", "-c:a", "aac", "-b:a", "192k", str(dst)]
@@ -123,8 +125,8 @@ def main(argv=None):
                 if problem:
                     bad.append(f"手 {name}: {problem}")
                     continue
-            if kind == "open":
-                secs = next(s for kinds in SLOTS.values() for n, s in kinds.get("open", ()) if n == name)
+            if kind in ("open", "clip"):
+                secs = next(s for kinds in SLOTS.values() for n, s in kinds.get(kind, ()) if n == name)
                 problem = words.open_problem(dst, secs)
                 if problem:
                     bad.append(f"開く映像 {name}: {problem}")

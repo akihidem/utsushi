@@ -26,7 +26,7 @@ import sys
 
 from PIL import Image, ImageDraw, ImageOps
 
-from demo.flip import H, PAPER, ROOT, SUMI, W, contact_sheet, ease, fade, render, text
+from demo.flip import FPS, H, PAPER, ROOT, SUMI, W, contact_sheet, ease, fade, render, text
 
 DURATION = 5.0  # 2 つ目の字幕を消した（本人の決定 11-06）。浮いた 3 秒は始まりの場面へ戻した
 TRIALS = ROOT / "docs/process/trials/README.md"
@@ -138,11 +138,15 @@ PHOTO_DIR_06 = ROOT / "docs/process/trials/photos/20261106"
 REVIEW_06 = PHOTO_DIR_06 / "review.md"
 # 写る物で選んだ（手と作りかけ・できた物。画面の写る物は外した）。日付の札の字は日付だけ（回の呼び名は窓口から来たら替える）
 DAYS = (("11 月 4 日", "Nov 4", PHOTO_DIR, REVIEW, ("p05", "p07")),
-        ("11 月 6 日", "Nov 6", PHOTO_DIR_06, REVIEW_06, ("p11", "p14", "p21", "p33")))
+        ("11 月 6 日", "Nov 6", PHOTO_DIR_06, REVIEW_06, ("p11", "p33")))
 # 頭と終わりの 2 枚（本人の言葉 11-07「4 日間のワークショップで作ったおもちゃたち」。ワークショップの報告の顔になる写真）。置き場の W1・W2
 # （script.SLOTS の scene5 の still。take_in で撮影の情報を外した物）。この 2 枚の間は、左の 4 つの日付を全部濃くする（4 日間の物なので）。
 # 2 枚を足したので、日付の写真は 9 枚から 6 枚に減らした（作りかけの p02・p20・p30 を外し、11-04 の完成形と 11-06 の作る手と完成形を残した）
 FACE_SECONDS = 2.2
+# 終わりの動くおもちゃの映像 2 本（script.SLOTS の scene5 の clip。窓口の決め「案 A（ワークショップ場面の後ろに動く映像 2 本）」）。
+# 2 本を足したので、終わりの 4 日間の 2 枚目（W2）は外し、日付の写真は 4 枚にした（11-04 の作る手と完成形・11-06 の作りかけと並んだ完成形）。
+# 2 本はどの日の物かを決めていないので、札は 4 日間（4 つの日付を全部濃く）にする
+CLIP_SECONDS = 2.0
 ALL_DAYS = "4 日間"
 # 字は 2 かたまり（本人の言葉 11-07「ワークショップをやりまくってコーディングはクロードで、オフラインで紙をたくさんの人たちと触ってた時間の方が長い」を
 # 一般的な言い方にした案。窓口の確かめ待ち）。前の 1 かたまり「4 回のワークショップで、作って、感想を返してもらいました。」の感想から型紙が直る事は、
@@ -165,6 +169,27 @@ def face_photos():
     return [p for p in (ROOT / SLOT_DIR / "W1.jpg", ROOT / SLOT_DIR / "W2.jpg") if p.exists()]
 
 
+def clip_paths():
+    """終わりの動く映像の道（置き場の M1・M2）。届いていない物は外す。"""
+    from demo.script import HANDS_EXT, SLOT_DIR, SLOTS
+
+    return [ROOT / SLOT_DIR / f"{n}{HANDS_EXT}" for n, _ in SLOTS["scene5"]["clip"] if (ROOT / SLOT_DIR / f"{n}{HANDS_EXT}").exists()]
+
+
+def clip_sheets(path, size):
+    """動く映像を、写真と同じ枠の大きさの紙に置いたコマの並び（場面の FPS）。読めない時は空。"""
+    import subprocess
+
+    fw, fh = size
+    r = subprocess.run(["ffmpeg", "-v", "error", "-t", f"{CLIP_SECONDS}", "-i", str(path), "-an",
+                        "-vf", f"fps={FPS},scale={fw}:{fh}:force_original_aspect_ratio=decrease,pad={fw}:{fh}:(ow-iw)/2:(oh-ih)/2:color=0x{PAPER[0]:02X}{PAPER[1]:02X}{PAPER[2]:02X}",
+                        "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True)
+    if r.returncode != 0:
+        return []
+    n = fw * fh * 3
+    return [Image.frombytes("RGB", (fw, fh), r.stdout[i:i + n]) for i in range(0, len(r.stdout) - n + 1, n)]
+
+
 def workshop_photos():
     """(日付の札, 英語, 写真の道) の並び。確かめ表で通っていない写真・無い写真は None（使わずに止める）。
     頭と終わりに 4 日間の 2 枚（届いていれば）を置く。その 2 枚の札は ALL_DAYS（4 つの日付を全部濃くする）。"""
@@ -178,7 +203,9 @@ def workshop_photos():
                 print(f"検査できない: 写真 {folder.name}/{n} が確かめ表で通っていないか、無い", file=sys.stderr)
                 return None
             out.append((ja, en_label, path))
-    if len(faces) > 1:
+    clips = clip_paths()
+    out += [(ALL_DAYS, "4 days", c) for c in clips]
+    if len(faces) > 1 and not clips:  # 動く映像がある時は、終わりは映像（2 枚目の写真は置かない）
         out.append((ALL_DAYS, "4 days", faces[1]))
     return out
 
@@ -188,14 +215,34 @@ class WorkshopScene(Scene5):
     duration = WORKSHOP_SECONDS
 
     def __init__(self, items):
-        super().__init__([p for _, _, p in items])
+        stills = [p for _, _, p in items if p.suffix != ".mp4"]
+        super().__init__(stills)
+        fw, fh = FRAME_BOX[2] - FRAME_BOX[0], FRAME_BOX[3] - FRAME_BOX[1]
+        # 写真と映像を同じ並びにする。映像はコマの並び（clips）を持ち、sheets にはその頭のコマを置く（溶かす時の相手）
+        it = iter(self.sheets)
+        self.clips, sheets = {}, []
+        for k, (_, _, p) in enumerate(items):
+            if p.suffix == ".mp4":
+                frames = clip_sheets(p, (fw, fh)) or [Image.new("RGB", (fw, fh), PAPER)]
+                self.clips[k] = frames
+                sheets.append(frames[0])
+            else:
+                sheets.append(next(it))
+        self.sheets = sheets
         self.labels = [(ja, en_label) for ja, en_label, _ in items]
         # 1 枚ずつの秒: 4 日間の 2 枚は FACE_SECONDS、残りは日付の写真で等しく分ける。starts は各写真の始まりの秒
-        faces = sum(1 for ja, _ in self.labels if ja == ALL_DAYS)
-        rest = (self.duration - 0.6 - FACE_SECONDS * faces) / max(1, len(self.labels) - faces)
-        self.lengths = [FACE_SECONDS if ja == ALL_DAYS else rest for ja, _ in self.labels]
+        fixed = [CLIP_SECONDS if k in self.clips else FACE_SECONDS if ja == ALL_DAYS else None for k, (ja, _) in enumerate(self.labels)]
+        rest = (self.duration - 0.6 - sum(x for x in fixed if x)) / max(1, sum(1 for x in fixed if x is None))
+        self.lengths = [x if x else rest for x in fixed]
         self.starts = [sum(self.lengths[:k]) for k in range(len(self.lengths))]
         self.step = rest
+
+    def _sheet(self, i, t):
+        """i 番目の絵の時刻 t の 1 枚。映像なら、その始まりからのコマ（終わったら最後のコマで止める）。"""
+        if i in self.clips:
+            frames = self.clips[i]
+            return frames[min(len(frames) - 1, max(0, int((t - self.starts[i]) * FPS)))]
+        return self.sheets[i]
 
     def index_at(self, t):
         return max([k for k, s0 in enumerate(self.starts) if s0 <= t] or [0])
@@ -204,7 +251,7 @@ class WorkshopScene(Scene5):
         if not self.sheets:
             return None
         i = self.index_at(t)
-        out = self.sheets[i]
+        out = self._sheet(i, t)
         nxt = i + 1
         if nxt < len(self.sheets):
             v = ease((t - (self.starts[nxt] - XF)) / XF)
