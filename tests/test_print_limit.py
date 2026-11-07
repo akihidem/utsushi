@@ -37,7 +37,7 @@ assert len(sids) == 3, sids
 G = sids[0]
 H = hypotheses.sheet_of(G)["id"]
 
-# 1. 相手ごとの数。刷る中身は差し替えて速くし、数え方だけを見る（3 つの口が同じ数を分ける）
+# 1. 相手ごとの数。刷る中身は差し替えて速くし、数え方だけを見る（3 つの口が同じ数を分ける。PRINT_LIMIT 回までは通り、次の 1 回が 429）
 real_print_latest = play_server.print_latest
 play_server.print_latest = lambda sid, hid: 1
 real_print_version, real_confirm = loop.print_version, loop.confirm_sheet
@@ -45,7 +45,8 @@ loop.print_version = lambda *a, **k: 0
 loop.confirm_sheet = lambda *a, **k: None
 real_adopted = loop.adopted_versions
 loop.adopted_versions = lambda sid, hid: [2]
-paths = [(f"/toy/{G}/print", {"hypothesis": H})] * 4 + [(f"/en/toy/{G}/print", {"hypothesis": H})] * 3 + [(f"/toy/{G}/reprint", {"hypothesis": H, "version": "2"})] * 3
+kinds = [(f"/toy/{G}/print", {"hypothesis": H}), (f"/en/toy/{G}/print", {"hypothesis": H}), (f"/toy/{G}/reprint", {"hypothesis": H, "version": "2"})]
+paths = [kinds[n % 3] for n in range(play_server.PRINT_LIMIT)]  # 数は書き込まず PRINT_LIMIT から（窓口の決めで数が変わっても見る事は同じ）
 for path, data in paths:
     code, _ = post(path, data, "203.0.113.1")
     assert code != 429, (path, code)
