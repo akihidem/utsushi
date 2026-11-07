@@ -121,7 +121,9 @@ assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="#{ready}">
 assert 'href="#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
 assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
-assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）から" in gallery and "▲紙や玩具を作る人の言葉を" in gallery, "ギャラリー"
+# 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
+yomu = get("/about")
+assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）から" in yomu and "▲紙や玩具を作る人の言葉を" in yomu, "ギャラリーと序の頁"
 assert "▲作った人の報告" in kz, "改善の輪の節の固定の文"
 assert "▲鍵が置かれると" in post(f"/record/{rid}/ai-interpret", {}), "鍵が無い時の AI の口"
 # 人が書いた文は表を通らない（記録の感想・説明・自分の仮説・歌の引用）

@@ -111,7 +111,8 @@ finally:
 assert '<p class="road"><a class="btn"' in toy.make_go(G), "対照: 一番新しい版で今の組の紙なら窓へ"
 win = after[after.index('id="win"'):after.index("</section>", after.index('id="win"'))]
 assert win.index("PDF を開いて印刷する") < win.index(f'<a class="btn" href="/toy/{G}/techo">つくる</a>'), "窓は 印刷 → つくる（手帖）の順"
-assert f'href="/toy/{G}/tsukuru"' in after, "作りながら見るの釦は残す（11-07 の工作で使う。手帖から 1 手では行けない）"
+# 作りながら見るの釦は、11-07 の工作のために残していたが、作りながら見る頁を手帖へ寄せた（窓口の決め 11-07 の 4。作る口は手帖 1 つ）
+assert f'href="/toy/{G}/tsukuru"' not in after, "作りながら見るの釦は玩具の頁に出さない"
 assert roads(after) == ["つくる", "つくる"], ("紙の後の道しるべ", roads(after))
 
 # ---- 5 手帖の記録の頁

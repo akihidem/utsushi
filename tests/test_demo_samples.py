@@ -9,7 +9,12 @@ from omochae import records  # noqa: E402
 from web import demo_samples, techo_site  # noqa: E402
 from web.play_server import sources  # noqa: E402
 
-html = techo_site.gallery_page(sources())
+# 上げた物の見本はギャラリーに、職人の言葉と寄せられた声の見本は序の頁の節（voices_sections）に出る
+# （職人の言葉と寄せる話の入口を序の頁へ移した。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
+gallery, voices = techo_site.gallery_page(sources()), techo_site.voices_sections()
+assert gallery.count('class="item is-sample"') == len(demo_samples.UPLOADS), "上げた物の見本がギャラリーに出る"
+assert voices.count('class="item is-sample"') == len(demo_samples.CONTRIBUTIONS) + len(demo_samples.VOICES), "職人の言葉と寄せられた声の見本が序の頁の節に出る"
+html = gallery + voices
 # 寄せられた声の見本（VOICES）も同じ札で出る（11-05、デモの想定の内容）。
 assert html.count('class="item is-sample"') == len(demo_samples.UPLOADS) + len(demo_samples.CONTRIBUTIONS) + len(demo_samples.VOICES), "見本が全部出る"
 assert demo_samples.NOTE in html, "作り物である事の一文"
@@ -23,6 +28,6 @@ for sid in sources():
     assert records.all_records(sid) == [], "見本を記録の置き場に書かない"
 
 os.environ["OMOCHAE_SAMPLES"] = "0"
-off = techo_site.gallery_page(sources())
+off = techo_site.gallery_page(sources()) + techo_site.voices_sections()
 assert "is-sample" not in off and off.count("（準備中）") == 3, "本番では見本を消せる"
 print("ok")
