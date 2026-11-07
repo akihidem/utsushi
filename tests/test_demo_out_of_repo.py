@@ -17,7 +17,10 @@ sys.path.insert(0, str(ROOT / "src"))
 
 gone = ["src/demo", "docs/demo", "docs/process/demo-notes.md"] + [
     f"tests/test_demo_{n}.py" for n in ("assemble", "build", "flip", "prepare", "scene2", "scene3", "scene4", "scene5", "scene6", "scene7")]
-left = [p for p in gone if (ROOT / p).exists()]
+# 見るのは git が追うファイル。手元の作業の木には、前に回した時の src/demo/__pycache__（git の外・.gitignore の物）が残る事があり、
+# 在るかどうかで見ると、合体の道（新しい木）では通るのに担当の ./run.sh だけが毎回落ちた（3 人の担当で起きた・統括の知らせ 11-08）
+tracked = subprocess.run(["git", "ls-files", "--", *gone], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
+left = sorted(tracked)
 assert not left, ("repo に残っている動画の作り", left)
 
 kept = ["run-demo.sh", "src/web/demo_check.py", "src/web/demo_samples.py", "tests/test_run_demo.py", "tests/test_demo_samples.py",
