@@ -831,5 +831,19 @@
    "tests/test_sakurei.py"
   ],
   "unverified": "受け口だけで、作った物の頁の作例の節は次の PR。本人の写真はまだ取り込んでいない（Drive の届け口の folder はまだ無い）。HEIC の段は pillow-heif のある python で手で確かめた（repo の試験は JPEG と PNG）"
+ },
+ {
+  "id": "f67",
+  "name": "全頁の英語（本人の言葉 11-07「サイトは全てのページを英語で読めるようにする。全頁が対象です」。窓口の決め 130735 の案 B）",
+  "status": "doing",
+  "evidence": [
+   "src/web/i18n.py",
+   "data/i18n/en.json",
+   "src/web/play_server.py",
+   "src/web/skin.py",
+   "tests/test_en_all.py",
+   "docs/process/decisions/J035-all-pages-english.md"
+  ],
+  "unverified": "頭の帯の English で今の頁が英語になる（cookie で続き、日本語 で戻る）。全 83 種の玩具の頁と玩具に依らない頁の見える字 2570 種を訳の表で替え、表に無い日本語が残れば試験が落ちる。訳は作る側の下書き（英語を母語とする人はまだ読んでいない・頁の頭に下書きの札）。人が書いた記録の字は訳さない。台本が後から出す字（返事・知らせの一部）と型紙の PDF は日本語のまま。POST の後の知らせのうち試験の道で出ない物は、表に無ければ日本語のまま。実機と人の目はまだ"
  }
 ]
