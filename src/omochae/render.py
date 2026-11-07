@@ -69,6 +69,9 @@ def to_svg(layout):
                 d.append(dw.Line(q.x + x1, q.y + y1, q.x + x2, q.y + y2, stroke="black", stroke_width=0.18, stroke_dasharray=dash))
         for x, y, w, h in q.cuts:
             d.append(dw.Rectangle(q.x + x, q.y + y, w, h, stroke_width=0.25, **STROKE))
+        # 丸い切り抜きは、切る線（外形・矩形の切り込み）と同じ太さの実線の円で刷る（型紙エンジンと同じ）。持たない部品の紙は変わらない
+        for x, y, r in q.round_cuts:
+            d.append(dw.Circle(q.x + x, q.y + y, r, stroke_width=0.25, **STROKE))
         for x, y, r in q.holes:
             d.append(dw.Circle(q.x + x, q.y + y, r, stroke_width=0.25, **STROKE))
     for s in layout.get("shapes", []):

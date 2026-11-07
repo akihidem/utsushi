@@ -2,7 +2,8 @@
 
 なぜ要るか: 紙の字が雛形ごとに 7 通りあり、g/m² と mm は家や店の紙と結びつかない。「見込み」は作る側の言葉で、
 糸で動かす雛形の 18 案は「…に貼るを 1 枚」と文が崩れていた。雛形を足すたびに揺れるので、全部の案を試験で見る。
-文面は本人の確認待ちの案で、下の PAPER_LINES と BOX の 4 つのほかは落とす。必須 2 種の今の組の字は凍結の床なので変えない。次の組（goraigo-v11・tora-v4）で直す時に、下の FROZEN を外す。
+文面は本人の確認待ちの案で、下の PAPER_LINES と BOX の 4 つのほかは落とす。必須 2 種の凍結の組の字は凍結の床なので変えない。
+虎は今の組 tora-v6 で 4 つの名前にしたので FROZEN から外した（前の組 tora-v3・tora-v4 は前の字のまま。5 で見る）。御来迎は次の組で外す。
 """
 import json
 import pathlib
@@ -13,7 +14,8 @@ from omochae.compose import TEMPLATES
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-FROZEN = {GORAIGO: "紙（厚さ 0.15mm 前後）を 1 枚（全部品を同じ紙に刷る）", TORA: "紙（厚さ 0.15mm 前後・150g/m² の見込み）を 1 枚"}
+FROZEN = {GORAIGO: "紙（厚さ 0.15mm 前後）を 1 枚（全部品を同じ紙に刷る）"}
+TORA_OLD = "紙（厚さ 0.15mm 前後・150g/m² の見込み）を 1 枚"  # 虎の前の組（tora-v3・tora-v4）の字
 PAPER_LINES = {"コピー用紙くらいの厚さの紙を 1 枚", "画用紙くらいの厚さの紙を 1 枚", "画用紙より厚い紙を 1 枚"}
 BOX = "空き箱の厚紙"
 
@@ -65,4 +67,13 @@ assert not any("厚紙" in m for m in lines("string_pull", kite[3])), kite
 d = ways.details("string_pull", board[3])
 assert d["one_sheet"] is False and "厚紙" in d["modern_substitutes"], d
 assert any(c[2] == "stand_figure" and ways.details(c[2], c[3])["one_sheet"] for c in cases), "紙の名前を材料と読んで、紙一枚の印が外れた"
+# 5. 虎の前の組（控えの組）は前の字のまま刷る（凍結の床の指紋も tests/test_floor_pin.py が見る）
+tiger = TEMPLATES["pivot_counterweight"]
+now = tiger.SHEET_SET
+for kept in tiger.KEPT_SETS:
+    tiger.SHEET_SET = kept
+    try:
+        assert lines("pivot_counterweight", {"mount": "neck"})[0] == TORA_OLD, kept
+    finally:
+        tiger.SHEET_SET = now
 print(f"ok 紙の行の形 {checked} 案")

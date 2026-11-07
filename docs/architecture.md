@@ -32,7 +32,9 @@
 | `src/omochae/templates/slider_fan.py` | 御来迎の雛形。寸法の初期値・範囲・式・部品・部品表 |
 | `src/omochae/fan_model.py` | 扇の開きの幾何（開く角度の上限・口の角との干渉・糸の長さ） |
 | `src/omochae/pivot_model.py` | 首振りの重心・傾き・周期の式 |
-| `src/omochae/templates/pivot_counterweight.py` | 虎の雛形 |
+| `src/omochae/templates/pivot_counterweight.py` | 虎の雛形。前の組（tora-v3・tora-v4）の作りと、組の番号（set_no）が 6 から今の組の作り（_tora_v6）へ関数ごとに渡す口（_by_set）。控えの組の並び KEPT_SETS |
+| `src/omochae/templates/_tora_v6.py` | 虎の今の組 tora-v7 の作り（v6 は刷らずに飛ばした。ファイルの名は、上に積む 3D の枝とぶつからないよう v6 のまま）。型紙エンジン paper-to-toy の雛形の写し（立体の脚・角を落とした胴・丸い首の穴・両面の頭・上の面に立てる尾に、v7 の粘土の玉と前の壁・頭の後ろの端・腕の当たりの直しと当たりの検査）。エンジンと違うのは手順 4 の字と紙の行の 2 つ。名前が `_` で始まるので雛形として読まれない |
+| `src/omochae/templates/_paper.py` | 用意する物の紙の字（本人が確かめた 4 つの名前。#295）。名前が `_` で始まるので雛形として読まれない |
 | `src/omochae/ingest.py` | NDL から出典の記録と原図の写し（切り出し）を作る。`images` は足りない写しだけを取る（起動の台本が毎回回す） |
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
 | `src/omochae/contrib.py` | 持ち寄りの受付・確認・公開・取り下げ |
@@ -67,6 +69,7 @@
 | `src/web/failure_log.py` | 作る側が読む失敗の記録（stderr）。道・役・型・トレースバックを出し、学ぶ人の書いた文と合言葉は出さない |
 | `src/web/kumitate.py` | 手順どおりに組み立てる絵（型紙の頁と /toy/<sid>/kumitate）。`src/omochae/assembly.py` が組んだ途中の形を、外の部品なしの CSS の立体で動かす（J-033）。組み方の節（`kumitate.section`）は全 83 種に出す: たたき台の紙の組み方の文（雛形の steps）と組み方の絵（`instructions.step_pictures`、手帖と同じ物）、頭に遊び方の文。玩具の頁では「作る」の後。立体で組めない玩具の /toy/<sid>/kumitate は組み方だけの頁（本人の決まり 11-06「全種の組み立て頁に寄せる」） |
 | `src/omochae/assembly_json.py` | 型紙エンジン（paper-to-toy）が出す作り方の 3D の JSON（形 omochae-assembly-3d/1）を、組み立ての頁が読む形にする（決定 2026-11-07: エンジンが JSON で出し、サイトは読んで描く）。置き場は `data/kumitate/<組の名>.json`（エンジンの出力を写す）。今の組の JSON があれば `assembly.assemble` がそれを読み、無ければ前の組の書き方で組む。絵と刷った線はサイトの部品から描き、JSON の部品の外形・穴・折り線・面の広さ・寸法がサイトの紙と違えば組み立てを出さない。手順の文はサイトの文で、JSON の段とは数を合わせる |
+| `data/kumitate/` | 今の組の作り方の 3D の JSON（型紙エンジンの `python -m omochae.assembly3d` の出力を写す。組の名.json。出所の commit は JSON の engine）。今は虎 tora-v7（v6 は刷らずに飛ばした）。頁（`src/web/kumitate.py`）は、刷った紙を机の面の層に置いて描き、できあがりの止まった形の口（`still`。JS なし）と、作業の頁が段ごとに描く材料の口（`scene`）を持つ。道具の道・切れ端・重なる面のずらしは、エンジンとの決めでサイトが決める（`assembly_json._fill`）。動いているサイトに JSON を置いた時は立て直す（頁は組み立てを出せるかを寸法と組ごとに覚える） |
 | `src/web/toys.py` | 全部の玩具から 1 つ選ぶ頁（えらぶ。必須 2 を大きく、ほかはジャンルの棚ごとに原画の敷き詰め。札は絵と名前だけ・頭は 1 行。前の断りの段は序の頁へ。敷き詰めの絵は小さい写し `/picture/<印>/small`） |
 | `src/web/genre.py` | おもちゃのジャンル（作った後の楽しみ方の 2 段。大きい側 かざる・あそぶ・うごく、中の 8 つ）。玩具の雛形から表で引き、合わない玩具（凧の 3 本と、本人が あそぶ と決めた浮き物の 5 つ）だけを例外に置く。大きい側と中の入れ先は 1 か所の表（research/36） |
 | `src/web/about.py` | 序（コンセプト・『江都二色』の解説・動機）。文面は本人の言葉の引用と書誌の値だけ。採否は本人 |
@@ -91,7 +94,8 @@
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
-| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の凍結の組（goraigo-v10・虎の前の組 tora-v3）と虎の今の組（tora-v4）のたたき台 H-A の紙と先生の見る紙の 13 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
+| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の凍結の組（goraigo-v10・虎の前の組 tora-v3・tora-v4）と虎の今の組（tora-v7。手順の紙は控えない）のたたき台 H-A の紙と先生の見る紙の 16 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
+| `tests/test_tora_v6.py` | 虎の今の組 tora-v7 の見張り（ファイルの名は v6 のまま）。組の番号での作りの替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D を出さない事（#115） |
 | `tests/test_by_set.py` | 記録の組ごとの欄（たたき台・寸法・出さない字）と雛形の控えの組の並びの見張り。今の記録では load が前と同じ物を返す事も見る（#115） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `tests/compare_engine.py` | エンジンの共通の場面を、この repo と paper-to-toy の両方で回して結果を比べる。相手の repo が無い所でも `./run.sh` を回せるように、手で回す（#164） |

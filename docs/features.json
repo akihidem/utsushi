@@ -27,9 +27,11 @@
   "evidence": [
    "src/omochae/templates/pivot_counterweight.py",
    "tests/test_floor_pin.py",
-   "tests/test_by_set.py"
+   "tests/test_by_set.py",
+   "src/omochae/templates/_tora_v6.py",
+   "tests/test_tora_v6.py"
   ],
-  "unverified": "実物で組んで揺れるかは未確認"
+  "unverified": "実物で組んで揺れるかは未確認（今の組 tora-v7 の脚・角を落とした胴・両面の頭・粘土の玉の位置は、紙でまだ組んでいない）"
  },
  {
   "id": "f04",
@@ -726,5 +728,17 @@
    "tests/test_words_card_1106.py"
   ],
   "unverified": "棚の中は原画の敷き詰め（CSS の列だけ）で、札は絵と名前だけ。頭は「83 のおもちゃから、1 つ選ぶ」の 1 行で、前の断りの段は字を変えずに序の頁へ移した（窓口の決定 11-07 の ②）。絵と絵の間は 16px・幅 390 で 3 列・札の下の作り方の印は外したまま（窓口の決定 11-07）。幅 390×844 で 7.2 画面（前 16.2）・1280×800 で 5.3 画面を Chromium で測り、設計の目当ての 5 画面には届いていない。小さい写し（/picture/<印>/small、幅 400）で、幅 390 で読む絵は 2.5MB（前は切り抜き 83 枚で 35MB）。タップで 3D とほかの人の作品を横に送る所はまだ。実機の iPhone と人の目はまだ"
+ },
+ {
+  "id": "f58",
+  "name": "虎の今の組 tora-v7 の作り方の 3D（型紙エンジンの JSON で描く。組み立ての頁と止まった形・作業の頁の口・分解の形）",
+  "status": "doing",
+  "evidence": [
+   "data/kumitate/tora-v7.json",
+   "src/omochae/assembly_json.py",
+   "src/web/kumitate.py",
+   "tests/test_tora_v7_3d.py"
+  ],
+  "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で組めるか・iPhone の実機は、まだ確かめていない。揺れる間の前の壁との当たりは、できあがりの動きの形と ±10° の回しで見た（腕と玉が前の壁の内・帯と頭が穴の縁の内に 0.5mm 以上）。作業の頁の分解の釦は、今の組の JSON がある玩具だけに出る"
  }
 ]
