@@ -21,6 +21,11 @@ from PIL import Image  # noqa: E402
 from omochae import media_review  # noqa: E402
 from web import sakurei, techo_site  # noqa: E402
 from web.play_server import sources  # noqa: E402
+# ワークショップの試行の写真（web.workshop・repo に在る）は、ここが見る「本物の記録が無い時」の形を変えるので、この試験では表を空にする
+# （写真が出る形は tests/test_workshop_gallery.py が見る。本人の見直し 11-07 夜の ②⑦）
+from web import workshop as _workshop  # noqa: E402
+
+_workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 SIDS = sources()
