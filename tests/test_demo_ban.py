@@ -95,7 +95,7 @@ if shutil.which("pdftoppm"):
     twin.write_bytes(b"%PDF-1.4\n")
     assert ban_take_in.main([str(root), "--dry-run"]) == 3
     twin.unlink()
-    (root / ban_take_in.SOURCES[0][1]).unlink()
+    (root / ban_take_in.SOURCES[0][1].replace("*", "（頭の印）")).unlink()
     assert ban_take_in.main([str(root), "--dry-run"]) == 3, "当たる紙が無い版があると 3"
 # 同じ枠で切る: 描いてある所の少ない紙も同じ大きさのまま
 a = Image.new("RGB", (400, 600), (255, 255, 255))

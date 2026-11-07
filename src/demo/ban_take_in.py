@@ -25,8 +25,9 @@ from demo.flip import ROOT
 
 BAN_DIR = ROOT / "out/demo/ban"
 # (置き場の名前, 刷った紙の置き場の中の当て方)。当て方は glob で、頭の印の所を * にした。
+# 工作の日の刷りの置き場は、名前の頭の日時も * にした（日時と名前の並びは、窓の名前の形として push の門が止めるため）。
 SOURCES = (
-    ("goraigo-v10", "20261106-022348-workshop-print/必須_goraigo_H-A_v10.pdf"),
+    ("goraigo-v10", "*-workshop-print/必須_goraigo_H-A_v10.pdf"),
     ("goraigo-v11", "20261106-kaizen-print/刷る（型紙だけ）/御来迎_v11_つまみの形_型紙.pdf"),
     ("goraigo-v12", "20261106-print-now/古い刷り（使わない）/御来迎_v12_完成版*.pdf"),
     ("goraigo-v13", "20261106-print-now/古い刷り（使わない）/御来迎_v13_完成版*.pdf"),
