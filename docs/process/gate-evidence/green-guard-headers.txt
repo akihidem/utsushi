@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_guard_headers.py
+# commit: e3e65a36（回した時の HEAD）
+ok 応答の守りの頭（頁は private, no-store・枠に入れさせない・Referrer-Policy は same-origin・絵と紙は private だけ・JSON は no-store）
+rc=0

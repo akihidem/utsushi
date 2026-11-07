@@ -11,7 +11,9 @@
   script が動かない時は左の端（いちばん古い版）から見える。どちらでも全部の額に届く。
 - 額と額の間は「→」の印（SVG。字ではない。読み上げには出さない）。
 - 額の中は、その版の刷った紙の 1 枚目を縮めた絵（エンジンが組ごとに出した物。out/history/sheets をサーバが /history/sheets/ から出す）。
-  絵を置いていない版は、空の額にする（壊れた絵の印を出さない）。字は絵に焼かず、頁の字で出す。
+  置き場に無い絵は、repo の中から作れる版だけ作る（改善の輪より前の版は刷った PDF・今の版は今の雛形で刷った紙。kaizen_history.build_picture）。
+  作れない版（間の版）は、空の額でなく「この版の絵は残っていない」と字で出す（本人の見直し 11-07 22:16「過去の版が表示されていない。」。
+  空の額だと、絵が読み込めていないのか、残っていないのか分からない）。壊れた絵の印は出さない。字は絵に焼かず、頁の字で出す。
 - 額の下は「型紙の版 N」・エンジンの版の字（表の engine_version_text）・表の line・日付の 4 つだけ。きっかけ（why）と PR は出さない
   （玩具の頁はシンプルに。序の頁の表に出す）。
 - 表の最初の版が版 1 でない時は、その前にも版がある事を書く。前の版の行（虎 v1・v2、御来迎 v1〜v9。サイトの repo の記録から）は
@@ -33,6 +35,8 @@ COUNT = "版 {first} から版 {last} まで、{n} の版を重ねて今の型�
 SHEET = "型紙の版 {n}"
 BEFORE = "この前にも版があります"
 DATE = "{m} 月 {d} 日"
+# 絵が repo の中に残っていない版の額の字（本人の見直し 11-07 22:16 を受けた統括の頼みの字。本人の確かめ待ち）
+NO_PICTURE = "この版の絵は残っていない"
 
 SET_NAME = re.compile(r"[a-z]+-v\d{1,3}")
 # 今の版の枠と印の朱。デモの絵が枠と数字にだけ使う朱（demo.flip の SHU）と同じにし、動画と頁で今の版の枠をそろえる。
@@ -47,6 +51,7 @@ STYLE = (".ban-ayumi .ban-count{font-size:14px;letter-spacing:.06em;margin:4px 0
          ".ban .ban-to path{fill:none;stroke:var(--mute);stroke-width:1.6}"
          ".ban figure{margin:0;width:112px}.ban .now figure{width:168px}"
          ".ban .ban-pic{display:block;width:100%;height:auto;aspect-ratio:596/842;object-fit:contain;background:var(--paper);border:1px solid var(--frame)}"
+         ".ban .ban-none{display:flex;align-items:center;justify-content:center;padding:8px;font-size:12px;line-height:1.6;color:var(--mute);text-align:center;word-break:auto-phrase}"
          f".ban .now .ban-pic{{border:3px solid {SHU}}}"
          ".ban figcaption{font-size:12px;line-height:1.6;margin-top:6px;display:flex;flex-direction:column;gap:1px}"
          f".ban figcaption b{{font-weight:600;font-size:13px}}.ban .ban-now{{color:{SHU};font-weight:600;letter-spacing:.08em}}"
@@ -67,7 +72,8 @@ def _date(text):
 
 def picture_url(row):
     """額の中の絵の URL。絵を置いていない版は None。"""
-    return f"/history/sheets/{row['set']}.png" if kaizen_history.picture(row) else None
+    # 頁を返す時は、絵を作れるかだけを見る（作るのは絵が求められた時。picture_file）。頁を遅くしないため
+    return f"/history/sheets/{row['set']}.png" if kaizen_history.can_picture(row) else None
 
 
 def picture_file(name):
@@ -81,7 +87,7 @@ def _frame(row, first):
     n = row["sheet_version"]
     url = picture_url(row)
     pic = (f'<img class="ban-pic" src="{esc(url)}" alt="{esc(SHEET.format(n=n))}" loading="lazy" width="596" height="842">'
-           if url else '<span class="ban-pic" aria-hidden="true"></span>')
+           if url else f'<span class="ban-pic ban-none">{esc(NO_PICTURE)}</span>')
     now = f'<span class="ban-now">{esc(NOW)}</span>' if row["now"] else ""
     cap = (f"<b>{esc(SHEET.format(n=n))}</b>{now}<span class=\"ban-eng\">{esc(row.get('engine_version_text', ''))}</span>"
            f"<span>{esc(row.get('line', ''))}</span>")

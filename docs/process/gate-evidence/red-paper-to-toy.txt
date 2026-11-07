@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_to_toy.py
+# commit: f8873d89（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_paper_to_toy.py", line 30, in <module>
+    pos, aud = esc(about.POSITION), esc(about.AUDIENCE)
+                   ^^^^^^^^^^^^^^
+AttributeError: module 'web.about' has no attribute 'POSITION'
+rc=1

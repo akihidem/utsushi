@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_about_site.py
+# commit: 3ecb1f94（回した時の HEAD）
+ok このサイトについて の頁（節の並び・思いの核と 2 文・なぜ紙の 4 文・AI の 2 文・見出しはうつし・README の頭の後の節）
+rc=0

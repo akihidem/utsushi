@@ -37,7 +37,7 @@
 """
 import math
 
-from shapely.geometry import Point, Polygon, box
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from ..paper_words import paper_name  # 紙の書き方は 4 つの名前だけ（制作者の指示 2026-11-05）
@@ -107,7 +107,7 @@ GOLD, CREAM, ORANGE, INK = "#cdb57e", "#e9dfc3", "#c8724e", "#4a3f2c"
 BROWN, TAN = "#8a6a4a", "#c9a77c"
 CONE_GLUE = 6  # 円錐の糊代の、外の縁での幅（mm）
 LAYER_KEYS = "abcdef"
-TITLES = {"pinwheel": "紙の角を軸へ寄せる", "square": "八枚の四角い羽", "top": "円盤に串を通す",
+TITLES = {"pinwheel": "橙の角を表へ曲げて軸に寄せる", "square": "八枚の四角い羽", "top": "円盤に串を通す",
           "cone": "円錐に円盤を載せる", "screen": "屏風の車を糸で回す"}
 
 
@@ -401,8 +401,35 @@ def _pinwheel_part(p):
             band = Polygon([(x0, y0), (x1, y1), (x1 + (c - x1) * 0.24, y1 + (c - y1) * 0.24), (x0 + (c - x0) * 0.24, y0 + (c - y0) * 0.24)])
             art += _poly_art(tri.intersection(band), ORANGE)
     # 中心の飾りの丸。図の羽の中心の点を写した。穴より外。
-    art += _poly_art(Point(c, c).buffer(p["hole_d"] / 2 + 2.2, 24).difference(Point(c, c).buffer(p["hole_d"] / 2 + 1.2, 24)).intersection(inner), INK)
+    ring = p["hole_d"] / 2 + 2.2
+    art += _poly_art(Point(c, c).buffer(ring, 24).difference(Point(c, c).buffer(p["hole_d"] / 2 + 1.2, 24)).intersection(inner), INK)
+    art += _bend_marks(holes[1:], tips, c, ring)
     return Part(1, "vanes", "羽", pts, label_xy=(c - 3, 3), label="1 羽", holes=holes, art=art)
+
+
+def _bend_marks(tip_holes, tips, c, ring):
+    """軸へ寄せる角ごとの曲げる印。角の穴のすぐ外から中心の穴へ向かう点の線（位置の印の形）と、矢じりの片側。
+
+    作る前のレビューの指摘から採った案（EP-0010、2026-11-06）: 切った後にどこをどう曲げるのかが紙から読めなかった。
+    角は曲げるだけで折り目を付けないので、折り線は刷らない（刷ると折る所と読まれる）。線は中心の飾りの輪の手前で止める
+    （塗りに重ねると読めない）。線は角の切り込み（V）に沿って中心へ向かうので、矢じりは切り込みと反対の側にだけ付ける
+    （両側に付けると、切り残しの小さい寸法で切り込みにかかる）。矢じりは 3.5mm（点の線なので、2.5mm では刷った絵を 400dpi で見ても読みにくかった）。
+    """
+    out = []
+    for (hx, hy, r), ((x, y), _) in zip(tip_holes, tips):
+        d = math.hypot(c - hx, c - hy)
+        ux, uy = (c - hx) / d, (c - hy) / d
+        start = (hx + ux * (r + 1.2), hy + uy * (r + 1.2))
+        end = (c - ux * (ring + 1.5), c - uy * (ring + 1.5))
+        # 切り込みは中心から角への線の上にある。矢じりの先の 2 つの向き（線の左右）のうち、その線から遠い方へ開く。
+        # 前は外積の符号で向きを決めていて、符号を取り違えて切り込みの側へ開いていた（別の系統の検品の指摘）。距離で選べば取り違えない
+        cut = LineString([(c, c), (x, y)])
+        cs, sn = math.cos(math.radians(30)), math.sin(math.radians(30))
+        tips_ = [(end[0] + 3.5 * (-ux * cs - k * uy * sn), end[1] + 3.5 * (-uy * cs + k * ux * sn)) for k in (1, -1)]
+        head = max(tips_, key=lambda pt: cut.distance(Point(pt)))
+        out += [{"kind": "mark", "pts": [start, end], "mark": "bend"},
+                {"kind": "mark", "pts": [end, head], "mark": "bend_head"}]
+    return out
 
 
 def _star_outline(p):
@@ -692,7 +719,8 @@ def steps(p):
                 f"8 本の腕を、根元から同じ向きに約 {TWIST_DEG}° ねじる"]
     out += [f"柄のストローの上の端から {AXLE_FROM_TOP}mm の所に竹串を横に刺し通す", f"竹串に {p['spacer']}mm のストローを通す"]
     if k == "pinwheel":
-        out += ["羽の中心の穴を竹串に通す", f"{p['bearing']}mm のストローを通す", "印の穴のある 4 つの角を順に中心へ曲げ、穴を竹串に通す（折り目を付けない）"]
+        out += ["羽の表（色を刷った面）を竹串の先の側に向けて、羽の中心の穴を竹串に通す", f"{p['bearing']}mm のストローを通す",
+                "橙の帯のある 4 つの角を、刷った点の線の矢じりの向きに表の側へ順に曲げて中心に寄せ、角の穴を竹串に通す（折り目を付けない）"]
     else:
         out += ["1 羽の中心の穴を竹串に通す", f"{p['bearing']}mm のストローを通し、2 座金を通す"]
     out += ["竹串の先にテープを巻いて止める。羽が軽く回るか確かめる", "息を吹きかけるか、持って走る"]
