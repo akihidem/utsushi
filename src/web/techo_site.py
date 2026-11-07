@@ -437,7 +437,10 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
+    from . import naoru  # 循環を避けて、ここで読む（hanasu と同じ）
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
+            # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。頁の頭に 1 回
+            + naoru.box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
