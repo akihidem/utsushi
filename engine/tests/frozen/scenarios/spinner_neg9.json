@@ -1,0 +1,16 @@
+{
+  "template": "spinner",
+  "source_id": "NDL-1187053-R0000025-L-spinner",
+  "params": {
+    "kind": "screen",
+    "wheel_gap": 30,
+    "layers": 6
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.spin"
+    ]
+  }
+}

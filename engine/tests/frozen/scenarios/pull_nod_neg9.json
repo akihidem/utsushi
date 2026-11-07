@@ -1,0 +1,15 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000016-R-pull_nod",
+  "params": {
+    "kind": "peck",
+    "bird_gap": 0
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ]
+  }
+}

@@ -121,7 +121,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 ハッカソンの運営から、提出は 1 つの repo にするよう求められた。そこで、別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発しているエンジンを、提出のためにこの repo の engine/ にまとめる（本人の決定、11-07。エンジンはまだ開発中なので、まとめるのは提出の直前）。まとめた後も、paper-to-toy の repo とこのリンクは残す。うつしは、みんなが使えるサービスとして作った、paper to toy のエンジンの一つの具体例にあたる。エンジンも、今回のハッカソンのために開発期間の中で作っている（上の段落のとおり、うつしの一部を期間中に切り出した物）。うつしとエンジンの両方を、今回のハッカソンの審査の対象にしてほしい（本人の言葉、11-07）。
 
-- engine/ の中は、まとめる時のエンジンの main の頭にする（その commit は、まとめる時にここへ書く）。
+- engine/ の中は、まとめた時のエンジンの main の頭 `68775220f34f3d65c2e8801de2e45a61376d846b`（2026-11-07 20:55 JST の commit）。入れたのはその頭の中身で、エンジンの履歴（496 の commit）は paper-to-toy の repo で辿る。入れた後に、engine/ の中の SECURITY.md を一番上の 1 つにまとめた（engine/README.md の道もそこへ向けた）。
 - エンジンの版の台帳は、エンジンの repo の data/engine/versions.json（まとめた後は engine/data/engine/versions.json）。型紙の版とエンジンの版の歩みの表は、この repo の `data/history/kaizen-history.json`（エンジンの記録から写した表）。
 - 型紙を作って検査する仕組み `src/omochae/` は、まとめた後は、うつしと engine/ の両方にある（正はエンジンの側。上の段落のとおり）。
 

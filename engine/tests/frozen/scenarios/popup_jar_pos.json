@@ -1,0 +1,10 @@
+{
+  "template": "popup_jar",
+  "source_id": "NDL-1187053-R0000022-L-popup_jar",
+  "params": {"jar": "square"},
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

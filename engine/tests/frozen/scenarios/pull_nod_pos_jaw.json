@@ -1,0 +1,12 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000030-L-pull_nod",
+  "params": {
+    "kind": "jaw"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

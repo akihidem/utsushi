@@ -1,0 +1,15 @@
+{
+  "template": "lever_link",
+  "source_id": "NDL-1187053-R0000018-L-lever_link",
+  "params": {
+    "kind": "sumo",
+    "slot_len": 20
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.link"
+    ]
+  }
+}

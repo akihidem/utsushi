@@ -1,0 +1,10 @@
+{
+  "template": "twist_drum",
+  "source_id": "NDL-1187053-R0000010-R-twist_drum",
+  "params": {"face": "kanko", "k_cord": 13},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.drum"]
+  }
+}

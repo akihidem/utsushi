@@ -1,0 +1,10 @@
+{
+  "template": "float",
+  "source_id": "NDL-1187053-R0000028-R-float",
+  "params": {"vane": "none"},
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

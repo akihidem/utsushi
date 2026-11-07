@@ -1,0 +1,10 @@
+{
+  "template": "wheel_cart",
+  "source_id": "NDL-1187053-R0000009-L-wheel_cart",
+  "params": {"ride": "mallet", "head_r": 12, "wheel_r": 13},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.wheel"]
+  }
+}

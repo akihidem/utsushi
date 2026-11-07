@@ -1,0 +1,19 @@
+{
+  "template": "pull_nod",
+  "source_id": "NDL-1187053-R0000016-R-pull_nod",
+  "params": {
+    "kind": "peck",
+    "leg_h": 1
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pull_nod"
+    ],
+    "lines": [
+      "F5.pull_nod [奥の鶏] 苞に当たるまで #° しか傾かない（#° 要る）",
+      "F5.pull_nod [手前の鶏] 苞に当たるまで #° しか傾かない（#° 要る）"
+    ]
+  }
+}

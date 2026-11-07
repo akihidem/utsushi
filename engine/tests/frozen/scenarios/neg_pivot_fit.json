@@ -1,0 +1,27 @@
+{
+  "template": "pivot_counterweight",
+  "source_id": "NDL-1187053-R0000014-R",
+  "params": {
+    "mount": "neck",
+    "axle_height": 32,
+    "head_w": 36,
+    "weight_below_axle": 20,
+    "leg_height": 10,
+    "body_round": 8,
+    "head_sides": 2,
+    "fit_check": 1
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.pivot"
+    ],
+    "lines": [
+      "F5.pivot [腕] 頭が静かな時の傾きから ±#° 揺れる間に、# 重りの腕の前の端が前の壁に当たる（一番近い時の空き #mm。#mm 以上に。軸を前の壁から離す: axle_back）",
+      "F5.pivot [重り] 揺れの式の粘土（軸の #mm 後ろ）が、刷る下の穴（軸の #mm 後ろ）と違う（当たりを見る時は weight_behind を # にする）",
+      "F5.pivot [重り] 頭が静かな時の傾きから ±#° 揺れる間に、粘土の玉（半径 #mm）が前の壁に当たる（一番近い時の空き #mm。#mm 以上に。軸を前の壁から離す: axle_back）",
+      "F5.pivot [頭] 頭が静かな時の傾きから ±#° 揺れる間に、頭の後ろの端が前の壁に当たる（一番近い時の空き #mm。#mm 以上に。首の帯を長くするか頭を細くする）"
+    ]
+  }
+}

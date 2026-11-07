@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_engine_inside.py
+# commit: a259d461（回した時の HEAD）
+ok エンジンを探す所が engine/ を隣の repo より先に見る（一周の入口・版の歩みの台帳・環境の値と渡された所が先・engine/ が無ければ隣・今の repo の台帳）
+rc=0

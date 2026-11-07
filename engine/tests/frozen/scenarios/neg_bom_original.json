@@ -1,0 +1,14 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {},
+  "inject": {
+    "bom_drop_original": "knob"
+  },
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F2.bom"
+    ]
+  }
+}

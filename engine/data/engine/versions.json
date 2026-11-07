@@ -1,0 +1,675 @@
+{
+ "versions": [
+  {
+   "version": 1,
+   "commit": "c932e58ab62ae5ebc0ce085d02d6286fa73762b3",
+   "at": "2026-11-05",
+   "proposals": [],
+   "sheet_sets": {},
+   "note": "輪を足す前からの形。刷った組との結び付きは、次の版から刻む"
+  },
+  {
+   "version": 2,
+   "commit": "034ecbed2168bdeb93c89d309f5554d7e58180bf",
+   "at": "2026-11-06",
+   "proposals": [
+    {
+     "id": "EP-0011",
+     "target": {
+      "kind": "template",
+      "name": "pivot_counterweight"
+     },
+     "title": "pivot_counterweight（紙 NDL-1187053-R0000014-R.H-A）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+     "numbers": {
+      "fixes": 0,
+      "ideas": 0,
+      "craft_talks": 3,
+      "keeps": 0,
+      "reports": 1
+     },
+     "finding": "重りを 5 腕の穴から糸で下げる形を手順と部品表に入れる。腕の先に糸を留める所と位置の印を刷る。胴を閉じる前に重りの位置を試してから貼る順にする"
+    },
+    {
+     "id": "EP-0016",
+     "target": {
+      "kind": "template",
+      "name": "pivot_counterweight"
+     },
+     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 4,
+      "reports": 0
+     },
+     "finding": "前にも言われて直っていない所を先に: 胴の 2 枚目の側面の絵を、回して付けるのでなく裏返し（左右反転）にし、首の穴と絵の向きを合わせる。2〜5 番に部品の名を刷り、5 番の印が何の印かを示す。4 番だけの色の意味を示す。竹串と重りを貼る位置の線と、糸と竹串を通す穴の印を刷る"
+    },
+    {
+     "id": "EP-0017",
+     "target": {
+      "kind": "template",
+      "name": "slider_fan"
+     },
+     "title": "slider_fan（紙 tube）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 6,
+      "reports": 0
+     },
+     "finding": "扇は糸を一切使わない。扇の通し穴の印と縛るための出っぱりを消す。8 番の帯に替えて、台と扇の間に入り扇の底と側にのりで留め、扇の両端を付けて基本は開いた形にする小さい紙の部品を足す（しまう時は閉じる形がよい）。この形で開けば、下から押す仕組みと竹串と穴の案内の丸は要らない"
+    }
+   ],
+   "sheet_sets": {
+    "slider_fan": "goraigo-v11",
+    "pivot_counterweight": "tora-v4"
+   },
+   "sources": {
+    "slider_fan": [
+     "NDL-1187053-R0000005-L"
+    ],
+    "pivot_counterweight": [
+     "NDL-1187053-R0000014-R"
+    ]
+   },
+   "note": "虎 tora-v4（#106・合体 173b8fa1）と御来迎 goraigo-v11（#107・合体 034ecbed）。この版の御来迎の紙は push_part lift の形（表の 1 枚は tab のまま）。EP-0012 は溝の印が残るので次の版の予定に残す"
+  },
+  {
+   "version": 3,
+   "commit": "5edeb4937c5aff9e7f1fb32a269dc6d398ae75ad",
+   "at": "2026-11-06",
+   "proposals": [
+    {
+     "id": "EP-0045",
+     "target": {
+      "kind": "template",
+      "name": "slider_fan"
+     },
+     "title": "slider_fan（紙 rise）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 2,
+      "reports": 0
+     },
+     "finding": "制作者の決定で、御来迎の形を rise（内筒を下から押し上げる・糸なし）にし、型紙の 1 枚にする。lift と側面のつまみの形はやめる。実物の写真と照らした直し A・C・D（扇を細かく小さく・筒を細長く・白木と金と札）を入れる（paper-to-toy #117・#122）"
+    }
+   ],
+   "sheet_sets": {
+    "slider_fan": "goraigo-v12"
+   },
+   "sources": {
+    "slider_fan": [
+     "NDL-1187053-R0000005-L"
+    ]
+   },
+   "note": "御来迎 goraigo-v12（#117・合体 13479c0 と #122・合体 5edeb49）。形は rise（内筒を下から押し上げる）で、型紙の 1 枚も rise。虎の tora-v5 は 1 本目だけが入った所なので、この版に入れない"
+  },
+  {
+   "version": 4,
+   "commit": "41c90b6875a53600547b14aaf786f6fd81a88926",
+   "at": "2026-11-06",
+   "proposals": [
+    {
+     "id": "EP-0046",
+     "target": {
+      "kind": "template",
+      "name": "pivot_counterweight"
+     },
+     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 1,
+      "reports": 0
+     },
+     "finding": "実物の写真と照らした直しを、虎にも全部入れる: 丸い赤縁の首の穴・明るい黄と紺の縞・白い下と脚・長い頭・上の面の尾（paper-to-toy #119）と、立体の脚と角を落とした胴・糊代の根元・札（#124）"
+    }
+   ],
+   "sheet_sets": {
+    "pivot_counterweight": "tora-v5"
+   },
+   "sources": {
+    "pivot_counterweight": [
+     "NDL-1187053-R0000014-R"
+    ]
+   },
+   "note": "虎 tora-v5（#119・合体 4fad8f3 と #124・合体 41c90b6）。写真と照らした直しの 1 本目と 2 本目"
+  },
+  {
+   "version": 5,
+   "commit": "e7cf5f7085020652fe9125188b781870b9961df2",
+   "at": "2026-11-06",
+   "proposals": [
+    {
+     "id": "EP-0047",
+     "target": {
+      "kind": "template",
+      "name": "pivot_counterweight"
+     },
+     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 1,
+      "reports": 0
+     },
+     "finding": "見える平らな部品は、頭の上で折り返した鏡写しと 1 枚にし、裏どうしを貼ると両側に絵が出る（御来迎 v13 の像と虎 v6 の頭で同じ作り）。虎は頭を両側から見た顔の 1 枚にした（paper-to-toy #129）"
+    }
+   ],
+   "sheet_sets": {
+    "pivot_counterweight": "tora-v6"
+   },
+   "sources": {
+    "pivot_counterweight": [
+     "NDL-1187053-R0000014-R"
+    ]
+   },
+   "note": "虎 tora-v6（#129・合体 e7cf5f7）。首の形。見本は examples/tora_v6.json（v5 の見本に head_sides 2）"
+  },
+  {
+   "version": 6,
+   "commit": "de4c5840cd20205afc29491f78887b13fb9a1b89",
+   "at": "2026-11-06",
+   "proposals": [
+    {
+     "id": "EP-0048",
+     "target": {
+      "kind": "template",
+      "name": "slider_fan"
+     },
+     "title": "slider_fan（紙 rise）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 3,
+      "reports": 0
+     },
+     "finding": "蛇腹の扇の開く角は帯の長さ ÷ 高さで決まり、大きくする時は両方を同じ割合で伸ばすと形が保てる。御来迎は扇をまるごと倍にし、内筒と外筒の隙間を狭めて抵抗を持たせた（paper-to-toy #132）"
+    }
+   ],
+   "sheet_sets": {
+    "slider_fan": "goraigo-v14"
+   },
+   "sources": {
+    "slider_fan": [
+     "NDL-1187053-R0000005-L"
+    ]
+   },
+   "note": "御来迎 goraigo-v14（#132・合体 de4c584）。形は rise。見本は examples/goraigo_v14.json で、必須の紙もこれ。前の組 goraigo-v13（#127）は版を刻んでおらず、v14 はその上に積んだ直し"
+  },
+  {
+   "version": 7,
+   "commit": "43b8a1d7c5f69c1036b6e2152604d4b48b115fc1",
+   "at": "2026-11-07",
+   "proposals": [
+    {
+     "id": "EP-0049",
+     "target": {
+      "kind": "template",
+      "name": "pivot_counterweight"
+     },
+     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "numbers": {
+      "reviews": 4,
+      "reports": 0
+     },
+     "finding": "首振りの重りは、静かな時に重心が軸の真下に来るので、下の穴を後ろへ刷っても粘土の玉は軸の下へ戻る。揺れても前の壁に当たらないように竹串を前の壁から離し（axle_back 9mm）、当たりは静かな時の傾きのまわりの ±10° で見る（paper-to-toy #138）"
+    }
+   ],
+   "sheet_sets": {
+    "pivot_counterweight": "tora-v7"
+   },
+   "sources": {
+    "pivot_counterweight": [
+     "NDL-1187053-R0000014-R"
+    ]
+   },
+   "note": "虎 tora-v7（#138・合体 43b8a1d）。首の形。見本は examples/tora_v7.json（v6 の見本に axle_back 9・首の帯 23・clay_back 2.5・weight_behind 0・fit_check 1）。直しの出所は、サイトの作り方の 3D の試験で見つかった当たりと、制作者の決定"
+  }
+ ],
+ "next": [
+  {
+   "id": "EP-0001",
+   "target": {
+    "kind": "template",
+    "name": "balance"
+   },
+   "title": "balance（紙 okiagari）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 3,
+    "reports": 0
+   },
+   "finding": "重り（油粘土）を付ける所の線と、部品の向きと貼る順を紙に示す。切る線と折る線を見分けられるようにする",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0002",
+   "target": {
+    "kind": "template",
+    "name": "balance"
+   },
+   "title": "balance（紙 yajirobe）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 3,
+    "reports": 0
+   },
+   "finding": "真ん中の軸にも竹串を貼る線を足し、左右の腕の長さをそろえる。棒の上に立つ全体の形は、要る部分を人が選べる形にする",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0003",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 ebako）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 4,
+    "reports": 0
+   },
+   "finding": "絵を隠す天幕の紙と、天幕を巻き上げる糸と支えの穴を部品に足し、正面だけでなく箱の形で出す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0004",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 saru_take）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 4,
+    "reports": 0
+   },
+   "finding": "竹登り猿と竿登りの猿の紙は 1 つにまとめる。猿は両手両足のある立体か両面にし、枠のある棒と中の棒の部品を足す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0005",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 sumo）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 3,
+    "reports": 0
+   },
+   "finding": "腕・頭と胴・足を別々の部品にして後からつなぐ。腕の真ん中に竹串を通して回すと上下する形にする",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0007",
+   "target": {
+    "kind": "template",
+    "name": "pull_nod"
+   },
+   "title": "pull_nod（紙 bow）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 3,
+    "reports": 0
+   },
+   "finding": "杵と臼の部品を足し、糸を引くと体が起きて腕を振りかぶる、餅つきの動きの作りにする",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0008",
+   "target": {
+    "kind": "template",
+    "name": "pull_nod"
+   },
+   "title": "pull_nod（紙 jaw）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 4,
+    "reports": 0
+   },
+   "finding": "頭と下顎を立体で出し、糸を付ける位置と開くための重りの位置を示す。糸を通す棒も型紙で作る",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0009",
+   "target": {
+    "kind": "template",
+    "name": "pull_nod"
+   },
+   "title": "pull_nod（紙 peck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 2,
+    "reports": 0
+   },
+   "finding": "原典を読むと、鳥は動く仕掛けの無い鑑賞用の模型らしい。ついばむ仕掛けの読みを見直す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0010",
+   "target": {
+    "kind": "template",
+    "name": "spinner"
+   },
+   "title": "spinner（紙 pinwheel）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "numbers": {
+    "reviews": 3,
+    "reports": 0
+   },
+   "finding": "折る線と曲げる印を紙に刷り、題の「紙の角を軸へ寄せる」を、どの色をどの面にするかまで分かる字にする",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0012",
+   "target": {
+    "kind": "template",
+    "name": "slider_fan"
+   },
+   "title": "slider_fan（紙 NDL-1187053-R0000005-L.H-A）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 0,
+    "ideas": 0,
+    "craft_talks": 2,
+    "keeps": 0,
+    "reports": 1
+   },
+   "finding": "開く糸の段と扇の根元の帯は制作者のレビューで取り下げ（扇は糸なしで、台と扇の間の部品にした。EP-0017 で版 2 に入った）。残りは、溝が下の端から切り込む形だと紙で分かる印（つまみの形の紙）",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0018",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 ebako）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "糸を通す穴の位置を、どの糸が通るかが分かる印で型紙に刷る。糸の道が穴から穴へまっすぐ通る位置にそろえる。糸の長さの目安を組み立ての頁の文に書く",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0019",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 karakuri）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "部品をつなぐ所と穴の位置を、つなぐ相手の番号つきで型紙に刷る。回る所の穴は少しゆるく、留める所はきつくと分けて示す。折る向きを組み立ての頁の文に書く",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0020",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 saru_sao）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "竹串を通す穴の径を竹串に合わせて小さめに刷り、竹串の先で少しずつ広げる開け方を組み立ての頁の文に書く。重りで摩擦を合わせる所を、試す所として書く。折り目の線をはっきりさせる",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0021",
+   "target": {
+    "kind": "template",
+    "name": "lever_link"
+   },
+   "title": "lever_link（紙 saru_take）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "作る順と組み上がりの見本の絵を、組み立ての頁に出す（刷る物は型紙だけ）。用意する物に何に使うかを一言ずつ書く。のりと書いた所には糊代の印を型紙に刷る。絵にある部品（猿の手足など）が型紙の部品に足りているかを、絵と突き合わせる",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0022",
+   "target": {
+    "kind": "template",
+    "name": "slider_fan"
+   },
+   "title": "slider_fan: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 3,
+    "ideas": 3,
+    "craft_talks": 0,
+    "keeps": 3,
+    "reports": 3
+   },
+   "finding": "作る順・折り方・貼る順を組み立ての頁の文に足す。扇の折り目の間隔がそろって見える様に刷る。押さえずに動かせる形かを見る。扇の穴は制作者の決めで消す（EP-0017）ので、残る穴だけを示す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0023",
+   "target": {
+    "kind": "template",
+    "name": "spinner"
+   },
+   "title": "spinner（紙 cone）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "部品を、とがった所と下の蓋に絞り、要らない部品を外す。軸（爪楊枝）から紙が落ちない様に留める小さい紙を足す。立体に見える形にする（形を cone と読んだのは作る側の読み）",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0024",
+   "target": {
+    "kind": "template",
+    "name": "spinner"
+   },
+   "title": "spinner（紙 pinwheel）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "真ん中の穴は小さく刷り、竹串で広げる開け方を組み立ての頁の文に書く。四つの角を寄せる順番と、テープを貼る所の印を出す。よく回る様に、きつく留めない事を書く",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0025",
+   "target": {
+    "kind": "template",
+    "name": "spinner"
+   },
+   "title": "spinner（紙 screen）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "屏風の板をもう 1 枚足す。絵にあるヨーヨーの様な部分を部品に足すかを見る。何の部品か分からない円に、名前を刷る",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0026",
+   "target": {
+    "kind": "template",
+    "name": "spinner"
+   },
+   "title": "spinner（紙 top）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "真ん中の穴は切る線でなく、竹串の先であける印にして、切る線と見分ける。円の形と赤い線の太さをそろえる",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0027",
+   "target": {
+    "kind": "template",
+    "name": "stick_prop"
+   },
+   "title": "stick_prop（紙 tokin）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "お椀の形の立体にするかを見る（今は平らな六角）。紐の通し方（穴の位置と結び方）を組み立ての頁の文に書く。この雛形は utsushi の側にある",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0028",
+   "target": {
+    "kind": "template",
+    "name": "twist_drum"
+   },
+   "title": "twist_drum（紙 kiku）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 0,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "太鼓を貼る所の糊代を広げ、貼る順を組み立ての頁の文に書く。紙の棒（柄）の長さを見直す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0029",
+   "target": {
+    "kind": "template",
+    "name": "wheel_cart"
+   },
+   "title": "wheel_cart（紙 mallet）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 0,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "五角形の部品どうしの寸法を同じにそろえ（検査で見る）、少し大きめにする",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0030",
+   "target": {
+    "kind": "template",
+    "name": "wheel_cart"
+   },
+   "title": "wheel_cart（紙 rat）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "車（タイヤ）と軸の作りと留め方を、EP-0031 と一緒に見直す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0031",
+   "target": {
+    "kind": "template",
+    "name": "wheel_cart"
+   },
+   "title": "wheel_cart（紙 stick）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 1,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "車と棒（軸）を留める部品を足し、貼る所を増やす。割り箸の位置の印を刷る",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0032",
+   "target": {
+    "kind": "template",
+    "name": "whistle"
+   },
+   "title": "whistle（紙 horn）: 作った人の工夫（直した点と思いつき）を、雛形に入れるか見る",
+   "numbers": {
+    "fixes": 0,
+    "ideas": 1,
+    "craft_talks": 0,
+    "keeps": 1,
+    "reports": 1
+   },
+   "finding": "立体に組む順を、短くても組み立ての頁に出す（刷る物は型紙だけ）。折る線と貼る所を見直す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0036",
+   "target": {
+    "kind": "part",
+    "name": "穴の位置と大きさの示し方"
+   },
+   "title": "共有の所: 穴の位置と大きさの示し方を見直す",
+   "numbers": {
+    "templates": 4,
+    "texts": 25
+   },
+   "finding": "穴は何を通すかで分けて刷る: 回る軸の穴（串より少しゆるい）・留める穴（串と同じか小さく、補強の小さい紙を足す）・糸の穴。どの穴にも何を通すかを字か凡例で示し、竹串の先で小さく開けて広げる開け方を組み立ての頁の文に書く。切る線と見分ける",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0037",
+   "target": {
+    "kind": "part",
+    "name": "貼る所と留め方（接着・固定）"
+   },
+   "title": "共有の所: 貼る所と留め方（接着・固定）を見直す",
+   "numbers": {
+    "templates": 6,
+    "texts": 14
+   },
+   "finding": "貼る所（糊代）の印をどの部品にも刷り、貼る順を組み立ての頁の文に書く。車と軸・太鼓・回る所の様に外れやすい所は、留める小さい部品か広い糊代を足す。テープで留める所は印で示す",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0039",
+   "target": {
+    "kind": "part",
+    "name": "部品表と刷る部品（足りない部品）"
+   },
+   "title": "共有の所: 部品表と刷る部品（足りない部品）を見直す",
+   "numbers": {
+    "templates": 5,
+    "texts": 8
+   },
+   "finding": "雛形ごとに、絵にある動く部品と型紙の部品を突き合わせる。部品表の各行に何に使うかを一言書き、何か分からない部品には名前を刷る",
+   "adopted_at": "2026-11-06"
+  },
+  {
+   "id": "EP-0040",
+   "target": {
+    "kind": "part",
+    "name": "組み方の手順と説明の文（steps）"
+   },
+   "title": "共有の所: 組み方の手順と説明の文（steps）を見直す",
+   "numbers": {
+    "templates": 6,
+    "texts": 14
+   },
+   "finding": "どの雛形も、作る順・折る向き・貼る順と、組み上がりの見本の絵を、組み立ての頁に出す（刷る物は型紙だけ）。用意する物は何に使うかを書く",
+   "adopted_at": "2026-11-06"
+  }
+ ]
+}
