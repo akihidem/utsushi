@@ -10,6 +10,7 @@
   前からの本人の決め（omochae.media_review の頭）「人や声が入る物は、字だけにする」があるため。審査用の頁で人の写る写真を出すかは窓口の決め待ちで、
   決まったら SHOWS_OK に people を足す（写真ごとの印は前から持たせておく）。
 - 写真の道は /kaizen/photo/<回>/<名> の 1 本。一覧に無い名・確かめていない物・出さない種類・置き場の外を指す名は、どれも 404（中身を推させない）。
+  置き場の外は、名の形に加えて、たどった先（symlink の先）が回の箱の中かでも見る（別の目の気づき 11-07: 名の形だけでは、箱の中の印が外を指すと出た）。
   小さい写しにして出す（撮影の情報は、写しを作り直す時に落ちる。向きだけ直す）。
 - 新しい字は定数にまとめた（本人の確かめ・窓口へ）。
 """
@@ -64,21 +65,32 @@ def _load(p):
 
 
 def workshops():
-    """窓口が確かめた回の一覧（日付の順）。無ければ空。"""
+    """窓口が確かめた回の一覧（日付の順）。無ければ空。回の番号が整数でない行は外す（行 1 つの書き損じで頁ごと止めない。別の目の気づき 11-07）。"""
     d = _load(LIST) or {}
-    return sorted(d.get("workshops", []), key=lambda w: (w.get("date", ""), w.get("n", 0)))
+    rows = [w for w in d.get("workshops", []) if isinstance(w, dict) and isinstance(w.get("n"), int) and not isinstance(w.get("n"), bool)]
+    return sorted(rows, key=lambda w: (str(w.get("date", "")), w["n"]))
 
 
 def photos(n):
     """その回の、出してよい写真の名（一覧の順）。人が確かめた印があり、種類が SHOWS_OK に入り、名が安全で、置き場に在る物だけ。"""
     d = _load(_base() / "photos.json") or {}
+    box = (_base() / str(n)).resolve()
     out = []
     for p in d.get("photos", []):
         name = str(p.get("name", ""))
         if (p.get("ws") == n and p.get("checked_by") and p.get("shows") in SHOWS_OK
-                and NAME.fullmatch(name) and name.lower().endswith(IMAGE) and (_base() / str(n) / name).is_file()):
+                and NAME.fullmatch(name) and name.lower().endswith(IMAGE) and _inside(box, box / name)):
             out.append(name)
     return out
+
+
+def _inside(box, path):
+    """たどった先が回の箱の中の、ふつうのファイルか。"""
+    try:
+        real = path.resolve(strict=True)
+    except OSError:
+        return False
+    return real.parent == box and real.is_file()
 
 
 @functools.lru_cache(maxsize=128)

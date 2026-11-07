@@ -3,7 +3,7 @@
 見る事:
 1. 回の一覧が無い間は節を出さない（回数を作り話にしない）
 2. 一覧があれば、題の下に「ワークショップ N 回」（N は一覧の数）と、回ごとの札を日付の順に。札に刷った型紙の版（「型紙の版 vN」の言い方）・直った所・下の一周への道
-3. 出す写真は、人が確かめた印があり、種類が「物だけ」の物だけ（前からの本人の決め「人や声が入る物は、字だけにする」）。確かめていない物・人が入る物・名の危ない物・無い物は出さない
+3. 出す写真は、人が確かめた印があり、種類が「物だけ」の物だけ（前からの本人の決め「人や声が入る物は、字だけにする」）。確かめていない物・人が入る物・名の危ない物・無い物・置き場の外を指す印（symlink）は出さない。回の番号が整数でない行は外す
 4. 写真の道は、出してよい物だけ 200 の JPEG で、撮影の情報が無い。ほかは 404（置き場の外を指す名も）
 5. 頭の敷き詰めは 12 枚まで。幅 390 で 3 列、間 16px（えらぶ の敷き詰めと同じ間）
 6. 合言葉なしの場でも同じ
@@ -46,7 +46,9 @@ lst.write_text(json.dumps({"workshops": [
     {"n": 2, "date": "2026-11-06", "name": "2 回目", "printed": [["御来迎", "goraigo-v10"], ["虎", "tora-v3"]], "line": "感想から次の版の案", "loop": "engine"},
     {"n": 1, "date": "2026-11-04", "name": "1 回目", "printed": [["御来迎", "goraigo-v7"]], "line": "溝をはさみで切る形に", "loop": "site"},
     {"n": 3, "date": "2026-11-07", "name": "3 回目"},
-    {"n": 4, "date": "2026-11-07", "name": "4 回目"}]}, ensure_ascii=False), encoding="utf-8")
+    {"n": 4, "date": "2026-11-07", "name": "4 回目"},
+    {"date": "2026-11-08", "name": "番号の無い行"}, {"n": "5", "name": "番号が字の行"}, {"n": True, "name": "番号が真偽の行"}, "行でない物"]}, ensure_ascii=False), encoding="utf-8")
+assert [w["n"] for w in ws.workshops()] == [1, 2, 3, 4], "回の番号が整数でない行は外す（頁ごと止めない）"
 rows = []
 for n in (1, 2, 3, 4):
     (base / str(n)).mkdir(parents=True, exist_ok=True)
@@ -61,6 +63,9 @@ for name, row in (("p.jpg", {"shows": "people", "checked_by": "確かめた人"}
     rows.append(dict(row, ws=1, name=name))
 (base / "secret.jpg").write_bytes((base / "1" / "o0.jpg").read_bytes())
 rows.append({"ws": 1, "name": "../secret.jpg", "shows": "object", "checked_by": "x"})
+# 箱の中の印（symlink）が置き場の外を指す時も出さない（別の目の気づき 11-07）
+(base / "1" / "link.jpg").symlink_to(base / "secret.jpg")
+rows.append({"ws": 1, "name": "link.jpg", "shows": "object", "checked_by": "x"})
 (base / "photos.json").write_text(json.dumps({"photos": rows}, ensure_ascii=False), encoding="utf-8")
 
 # ---- 3 出す写真
@@ -87,7 +92,8 @@ for opened in (False, True):
     mosaic = mosaic[:mosaic.index("</div>")]
     assert mosaic.count("<img") == ws.MOSAIC == 12
     assert ".ws-mosaic{display:grid;grid-template-columns:repeat(3,1fr);gap:16px" in page
-    for bad in ("p.jpg", "u.jpg", "gone.jpg", "secret.jpg"):
+    assert "番号の無い行" not in page and "番号が字の行" not in page
+    for bad in ("p.jpg", "u.jpg", "gone.jpg", "secret.jpg", "link.jpg"):
         assert bad not in page, bad
     # ---- 4 写真の道
     code, ctype, data = get(srv, "/kaizen/photo/1/o0.jpg")
@@ -95,7 +101,7 @@ for opened in (False, True):
     im = Image.open(io.BytesIO(data))
     assert im.format == "JPEG" and max(im.size) <= ws.SMALL_W * 2 and im.size[0] <= ws.SMALL_W and not dict(im.getexif()), "小さい写しで、撮影の情報が無い"
     for path in ("/kaizen/photo/1/p.jpg", "/kaizen/photo/1/u.jpg", "/kaizen/photo/1/gone.jpg", "/kaizen/photo/1/..%2Fsecret.jpg",
-                 "/kaizen/photo/1/%2E%2E%2Fsecret.jpg", "/kaizen/photo/2/o0.jpg", "/kaizen/photo/9/o0.jpg", "/kaizen/photo/1/nothing.jpg"):
+                 "/kaizen/photo/1/%2E%2E%2Fsecret.jpg", "/kaizen/photo/1/link.jpg", "/kaizen/photo/2/o0.jpg", "/kaizen/photo/9/o0.jpg", "/kaizen/photo/1/nothing.jpg"):
         assert get(srv, path)[0] == 404, path
     srv.shutdown()
 
