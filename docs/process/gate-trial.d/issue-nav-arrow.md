@@ -10,3 +10,4 @@
 - 検証ゲート: **済み**。Red: 今の main（`f46a5c2a`）にこの試験だけを置くと、並びに印が無く rc 1（gate-evidence/red-nav-arrow.txt）。Green: この枝で rc 0（gate-evidence/green-nav-arrow.txt）
 - エビデンスゲート: 手元の Chrome で /gallery を幅 320 と 390 で撮り、駅の列が 1 段に収まるのを目で見た
 - 確かめていない事: 本物のスマホと iPad での見え方。読み上げの道具で、駅の名だけが続けて読まれる事
+- 別の目の止め（11-07）と直し: #538（全頁の英語）と重ねた木で、幅 320 の英語の帯が 2 段になった（英語の駅の名が長い）。手元の Chrome では 1 段だったが、もちよる と よむ の間の余りが 6px しかなかった。幅 480 以下の英語の頁だけ横の隙間（column-gap）を 6px にした（最初に gap で書くと段の間も 6px になり英語の帯が 6px 高くなったので、column-gap に直した）。#538 が入った後に今の main を取り込んで直した。Red: 取り込んだだけの頭 `2adffed1` にこの試験を置くと「英語の帯だけ、狭い幅の横の隙間を詰める」で rc 1（gate-evidence/red-nav-arrow-en.txt）。Green: gate-evidence/green-nav-arrow-en.txt。手元の Chrome で /about・/gallery・玩具の頁を日本語と英語で幅 320・390・1440 の 18 通り測り、駅の列は 1 段・はみ出し 0・帯の高さは日本語と英語で同じ（狭い幅 122px・広い幅 60px）。幅 320 の英語の帯の、もちよる と よむ の間は 22px
