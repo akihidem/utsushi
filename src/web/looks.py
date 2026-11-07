@@ -415,6 +415,12 @@ def yoru(photos=True):
     return tenji(photos, dark=True)
 
 
+# 入口の題の間の副題 3 行（縦書き）。本人の言葉 11-08「最初のページ、江都二色より／うしなわれた玩具の動きを／紙で実験して確かめる。紙で実験して
+# 確かめる、が長い。」と、3 行目の答え「紙でよみがえらせる。」。字はこの 1 か所（白と暗い版の入口が同じ字を出す・訳の表と、やさしい日本語の表の鍵も
+# この 3 つ）。替える時はここだけを直す
+SUB = ("江都二色より", "うしなわれた玩具の動きを", "紙でよみがえらせる")
+
+
 def tenji(photos=True, dark=False):
     """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。
     dark=True は暗い画面の版の入口（yoru）: 同じ作りで、CSS の色だけを _dark で置き換え、帯の変数は皮 zine の物にする。"""
@@ -425,7 +431,7 @@ def tenji(photos=True, dark=False):
     # 題の間: 題と副題と「このサイトについて」だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。組みは縦に戻した（本人の決め 11-07 夜
     # 「縦の組みに戻す」。ERABU の上の注）。前は画面いっぱいの高さにせず、幅 390 の最初の画面に 2 つの大きな札の頭が入るようにしていた
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link()
+             '<p class="sub">' + "<br>".join(esc(x) for x in SUB) + '</p>' + about_link()
              # 浮かぶ玩具（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」。web.ukabu）。輪郭の絵が無い場では何も置かない
              + ukabu.block(set(sources())) + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
