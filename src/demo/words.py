@@ -431,6 +431,22 @@ def hands_problem(path, seconds, probe=None):
     return None
 
 
+def open_problem(path, seconds, probe=None):
+    """場面 flip に重ねる開く映像（script.SLOTS の open）が決まりに合わないなら、その理由。合えば None。
+    縦でも横でもよい（真ん中の人物の場所に、縦横の比を保って収める）。高さ 720 以上・使う秒以上。"""
+    from demo import opening
+
+    got = (probe or opening._probe)(path)
+    if got is None:
+        return "動画が読めない"
+    width, height, secs = got
+    if min(width, height) < 720:
+        return f"動画が小さい（{width}×{height}）"
+    if secs < seconds:
+        return f"動画が {seconds:g} 秒より短い（{secs:.2f} 秒）"
+    return None
+
+
 def hands_slots(name, root=ROOT):
     """場面に敷く手の映像の置き場の並び [(撮る物の名前, 道, 始め, 終わり)]。届いていない物も並べる（その間は今の地）。"""
     from demo import script

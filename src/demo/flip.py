@@ -57,6 +57,11 @@ FLIP_FPS = 2                   # 1 秒に 2 枚。前の 6 枚は癒し系の方
 FADE = 0.6                     # 場面の頭と終わりを紙の地へ溶かす秒（faded）
 FIG_X, FIG_BASE, TEXT_X = 420, 860, 1270   # 人物の真ん中・足もと、字幕の真ん中
 DURATION = 6.6
+# 字幕の後半（「動きは、紙で作って確かめます。」）で、真ん中の北斎漫画の人物から、紙の御来迎が開く映像へ溶かして替える
+# （本人の言葉 11-07「御来迎が開く動画として使う。デモとサイト」・窓口へ置き場を聞いている案 1）。映像は script.SLOTS の open の G
+# （take_in で音と撮影の情報を外して置き場へ入れた物）。無い時は前のとおり人物のまま。秒は替えない（合計 179.3 秒のまま）
+OPEN_IN = 0.5                  # 人物から映像へ溶かす秒
+OPEN_H = 760                   # 映像の高さ（px）。縦の映像を、真ん中の人物の場所に、比を保って収める
 # 初めと終わりの字幕（本人の決定 11-05）。終わりの札（demo.words）もここから読み、字と置き場を食い違わせない。
 # ですます調と (7) の作り直し（11-07 昼の本人の直し。浮世絵・舞台絵を背景に北斎漫画）に合わせた字（案）。案の「江戸の人々は、…」
 # 「どう動いたかは、…確かめます。」は 2 行で 37 字になり、場面の 6.6 秒に 1 秒 5 字で入らなかった（合計の秒 179.5 の内に保つため、秒は延ばさない）
@@ -188,9 +193,11 @@ def draw_closing(draw, line, cx, cy, size, a):
 
 
 class Scene:
-    def __init__(self, page, rec, backgrounds=()):
-        """backgrounds は load_backgrounds の層（場面 flip だけが渡す。締めの場面 7 は前のまま人物だけ）。"""
+    def __init__(self, page, rec, backgrounds=(), opening=()):
+        """backgrounds は load_backgrounds の層（場面 flip だけが渡す。締めの場面 7 は前のまま人物だけ）。
+        opening は紙の御来迎が開く映像のコマの並び（load_open。場面 flip だけが渡す）。"""
         self.rec = rec
+        self.opening = list(opening)
         self.backgrounds = list(backgrounds)
         self.figs = cut_figures(page, rec)
         # 読む順: 和本なので右の頁から、上の段の右から左へ。
@@ -234,10 +241,20 @@ class Scene:
         f0, f1 = CUES["flip"]
         u = max(0.0, min(t, f1) - f0) * FLIP_FPS
         n, w = int(u), ease(u - int(u))
-        if a_in > 0:
-            self._figure(img, n, a_in * (1 - w))
+        c1 = CUES["line1"][0]
+        o = ease((t - c1) / OPEN_IN) if self.opening else 0.0  # 開く映像の濃さ（人物はその分だけ薄くなる）
+        if a_in > 0 and o < 1:
+            self._figure(img, n, a_in * (1 - w) * (1 - o))
             if w > 0:
-                self._figure(img, n + 1, a_in * w)
+                self._figure(img, n + 1, a_in * w * (1 - o))
+        if o > 0:
+            k = min(len(self.opening) - 1, max(0, int((t - c1) * FPS)))  # 頭から 1 コマずつ。終わったら開ききった形で止める
+            clip = self.opening[k]
+            x, y = self.cx - clip.width // 2, FIG_BASE - clip.height
+            box = img.crop((x, y, x + clip.width, y + clip.height))
+            img.paste(Image.blend(box, clip, o), (x, y))
+            draw = ImageDraw.Draw(img)
+            draw.rectangle((x - 1, y - 1, x + clip.width, y + clip.height), outline=fade(SUMI, 0.25 * o))
         # 字幕: 1 かたまりずつ。替わる時は溶かす（1 度に 1 かたまりだけ）。
         c0, c1 = CUES["line0"][0], CUES["line1"][0]
         v0 = ease((t - c0) / 0.5) * (1 - ease((t - (c1 - 0.5)) / 0.5))
@@ -250,6 +267,29 @@ class Scene:
         if v1 > 0:
             img = band(img, (CLOSING[1],), v1)
         return img
+
+
+def load_open(path=None):
+    """紙の御来迎が開く映像（置き場の G.mp4）を、場面のコマの速さ（FPS）の絵の並びにする。無い・読めない時は空（人物のまま）。"""
+    from demo.script import HANDS_EXT, SLOT_DIR, SLOTS
+
+    path = pathlib.Path(path) if path else ROOT / SLOT_DIR / f"G{HANDS_EXT}"
+    secs = dict(SLOTS["flip"]["open"])["G"]
+    if not path.exists() or not shutil.which("ffmpeg"):
+        return []
+    r = subprocess.run(["ffmpeg", "-v", "error", "-t", f"{secs}", "-i", str(path), "-an", "-vf", f"fps={FPS},scale=-2:{OPEN_H}",
+                        "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True)
+    if r.returncode != 0 or not r.stdout:
+        return []
+    probe = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0",
+                            str(path)], capture_output=True, text=True).stdout.strip().split(",")
+    try:
+        w0, h0 = int(probe[0]), int(probe[1])
+    except (ValueError, IndexError):
+        return []
+    w = round(w0 * OPEN_H / h0 / 2) * 2
+    size = w * OPEN_H * 3
+    return [Image.frombytes("RGB", (w, OPEN_H), r.stdout[i:i + size]) for i in range(0, len(r.stdout) - size + 1, size)]
 
 
 def faded(scene, t):
@@ -319,7 +359,7 @@ def main(argv=None):
     page, rec = load_page(pathlib.Path(a.cache))
     if page is None:
         return 4
-    scene = Scene(page, rec, load_backgrounds(pathlib.Path(a.cache)))
+    scene = Scene(page, rec, load_backgrounds(pathlib.Path(a.cache)), load_open())
     if a.sheet:
         contact_sheet(scene, a.sheet)
     return render(scene, pathlib.Path(a.out))

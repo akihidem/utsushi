@@ -37,12 +37,14 @@ def expected():
             out[n] = "hands"
         for n in kinds.get("voice", ()):
             out[n] = "voice"
+        for n, _ in kinds.get("open", ()):
+            out[n] = "open"
     return out
 
 
 def candidates(folder, name, kind):
     """届いた所の中の、その名前に当たる物。名前ちょうどの物と、撮り直し・分けて撮った物（名前-数字）を分けて返す。"""
-    exts = VIDEO_IN if kind == "hands" else AUDIO_IN
+    exts = AUDIO_IN if kind == "voice" else VIDEO_IN
     files = [p for p in sorted(pathlib.Path(folder).iterdir()) if p.is_file() and p.suffix.lower() in exts]
     exact = [p for p in files if p.stem == name]
     more = [p for p in files if re.fullmatch(rf"{re.escape(name)}-\d+", p.stem)]
@@ -59,7 +61,7 @@ def convert(srcs, dst, kind):
             listing.write_text("".join(f"file '{pathlib.Path(s).resolve()}'\n" for s in srcs), encoding="utf-8")
             src = listing
         head = ["ffmpeg", "-v", "error", "-y"] + (["-f", "concat", "-safe", "0"] if len(srcs) > 1 else []) + ["-i", str(src), "-map_metadata", "-1"]
-        if kind == "hands":
+        if kind in ("hands", "open"):  # 映像は音も外す（open も手の映像と同じく、撮った時の音を入れない）
             cmd = head + ["-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-movflags", "+faststart", str(dst)]
         else:
             cmd = head + ["-vn", "-c:a", "aac", "-b:a", "192k", str(dst)]
@@ -104,7 +106,7 @@ def main(argv=None):
             if not srcs:
                 (choose if more else waiting).append(f"{name}" + (f"（候補: {'・'.join(p.name for p in more)}。--pick {name}=… で選ぶ）" if more else ""))
                 continue
-            dst = stage / f"{name}{HANDS_EXT if kind == 'hands' else VOICE_EXT}"
+            dst = stage / f"{name}{VOICE_EXT if kind == 'voice' else HANDS_EXT}"
             err = convert(srcs, dst, kind)
             if err:
                 bad.append(f"{name}: 作り直せない（{err}）")
@@ -114,6 +116,12 @@ def main(argv=None):
                 problem = words.hands_problem(dst, secs)
                 if problem:
                     bad.append(f"手 {name}: {problem}")
+                    continue
+            if kind == "open":
+                secs = next(s for kinds in SLOTS.values() for n, s in kinds.get("open", ()) if n == name)
+                problem = words.open_problem(dst, secs)
+                if problem:
+                    bad.append(f"開く映像 {name}: {problem}")
                     continue
             made.append(name)
         # 声は場面の秒に入るかを、書き出しと同じ置き方（黙りを切る・1.08 倍まで）で確かめる
