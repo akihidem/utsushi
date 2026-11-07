@@ -54,4 +54,6 @@ for sid in TOYS:
         # 読み物と作る側の節は見出しのまま畳む（組み方・たとえ・改善の輪）
         for name, head in (("kumikata", "組み方"), ("tatoe", "たとえと、関連する事柄"), ("kaizen", "型紙の改善の輪")):
             assert re.search(rf'<details class="fold-sec"><summary><h2>{head}</h2></summary>', section(page, name)), (where, name)
+    # 頁の足のギャラリーへの口は、ギャラリーの今の題「作った物」（職人の言葉は序の頁へ移った。#519・本人のサイト体験レビュー 11-07 の 6）
+    assert '<a href="/gallery">作った物</a>' in page and "作った物と職人の言葉" not in page, sid
 print(f"ok 玩具の頁の並び: {len(TOYS)} 種の刷る前と後で、原画 → 立体 → 型紙の窓（断り・輪の図・札・紙）→ 考えを話す、組み方・たとえ・改善の輪は畳む")

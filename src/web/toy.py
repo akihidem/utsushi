@@ -512,7 +512,9 @@ def neighbours(sid):
     out = []
     if prev_:
         out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
-    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物と職人の言葉</a>', '<a href="/">入口へ</a>']
+    # ギャラリーの呼び名は、職人の言葉と寄せられた声の節を序の頁（よむ）へ移した後の題「作った物」にそろえる（のこす と もちよる を分ける直し #519。
+    # 本人のサイト体験レビュー 11-07 の 6）。字は #519 の頁の題のまま（新しい字は足さない）
+    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物</a>', '<a href="/">入口へ</a>']
     if next_:
         out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
     return '<p class="links">' + "".join(out) + "</p>"
