@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_hid_form.py
+# commit: 87c18e76（回した時の HEAD）
+ok: 印の形でない値では、刷った紙を探さない
+rc=0
