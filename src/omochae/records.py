@@ -34,7 +34,10 @@ WORKSHOP = "workshop"
 # 作例の記録の番号は R-1001 から数える（学ぶ人の記録は R-0001 から）。repo に載せた 11-04 の試行の記録 R-0001・R-0002 を審査用の頁が
 # 「記録 R-0001」として見せるので、公開デモの置き場の作例が同じ番号の札にならないように、番号の帯を分ける（統括の確かめ 11-07）。
 # 頭の字を替える（W- など）形にしないのは、写真の道（/record/R-…/media）と試験が R- の形で決め打ちしているため
-WORKSHOP_FROM = 1000
+WORKSHOP_FROM = 1000  # ふつうの記録はここまで（R-1000 まで）。越える時は add が断る（作例の帯と重ねない）
+# ワークショップの報告の顔の写真（本人の言葉 11-07「4 日間のワークショップで作ったおもちゃたち」）の印。玩具が 1 つに決まらない写真なので、
+# 玩具の印の代わりにこの印を持つ作例の記録にする（写真の道と人の確かめは作例と同じ）。作例の札には出さず、報告の段の頭にだけ出す（web.sakurei.faces）
+WORKSHOP_ALL = "workshop-all"
 UNSURE = "わからない"
 FIX_BLANK = "書かれていない"  # 工夫の 3 欄のうち、欠けた欄に入れる字（web.play_server.fixes_of）
 # 取り下げの説明文（本人の決定、Issue #335）。本人が確かめた字を、一字も変えずに出す（tests/test_withdraw_notice.py が文字列で見る）。
@@ -89,8 +92,8 @@ def known_hypothesis(source_id, hypothesis_id):
 
 def check(rec):
     out = []
-    if rec.get("via") == WORKSHOP and outside_toy(rec.get("source_id")):
-        # 83 の外の玩具の作例（outside_toy）。雛形の札も仮説も無いので、札は「わからない」だけ、仮説は持たない
+    if rec.get("via") == WORKSHOP and (rec.get("source_id") == WORKSHOP_ALL or outside_toy(rec.get("source_id"))):
+        # 83 の外の玩具の作例（outside_toy）と、報告の顔の写真（WORKSHOP_ALL）。雛形の札も仮説も無いので、札は「わからない」だけ、仮説は持たない
         if rec.get("result") != UNSURE:
             out.append(Failure("F3.result", "result", f"83 の外の玩具の作例の結果は {UNSURE}"))
         if rec.get("hypothesis_id") is not None:
@@ -151,6 +154,9 @@ def add(rec):
     # 作例は作例の帯（WORKSHOP_FROM より上）、ほかは下の帯の中で数える。片方の番号が、もう片方の続きの番号を押し上げないように
     base = WORKSHOP_FROM if rec.get("via") == WORKSHOP else 0
     nums = [n for n in nums if (n > WORKSHOP_FROM) == bool(base)]
+    if not base and max(nums, default=0) >= WORKSHOP_FROM:
+        # ふつうの記録が作例の帯に届いた。続けると作例の番号と重なるので受けない（帯の幅を広げる時は WORKSHOP_FROM を上げる）
+        return None, [Failure("F3.result", "id", f"記録の番号が R-{WORKSHOP_FROM:04d} に届いた（作例の番号の帯と重なる）")]
     while True:
         rid = f"R-{max(nums, default=base) + 1:04d}"
         out = {**rec, "id": rid, "by": "human", "recorded_at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")}

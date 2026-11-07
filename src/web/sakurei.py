@@ -120,22 +120,37 @@ def workshop_records():
 def examples():
     """頁に出してよい作例（人が「物だけ」と確かめた写真がある物）。作った日・玩具の並びの順・記録の番号の順。Returns
     [{"day", "sid", "rid", "photos", "set"}]。順位は付けない（記録の順）。合言葉付きの場と合言葉なしの場で同じ物（ギャラリーと同じく、確かめた物だけ）。"""
-    from omochae import media_review
+    from omochae import media_review, records
 
     from . import techo_site
 
     out = []
     for r in workshop_records():
+        if r["source_id"] == records.WORKSHOP_ALL:
+            continue  # 報告の顔の写真は札にしない（faces）
         shown = media_review.public(r["id"], techo_site.media_of(r["id"]))
         if shown:
             out.append({"day": r["made_on"], "sid": r["source_id"], "rid": r["id"], "photos": shown, "set": r.get("sheet_set")})
     return sorted(out, key=lambda e: (e["day"], e["rid"]))
 
 
+def faces():
+    """ワークショップの報告の顔の写真（本人の言葉 11-07「4 日間のワークショップで作ったおもちゃたち」）の小さい写しの道の並び。
+    人が「物だけ」と確かめた物だけ・記録の順。作例の節の報告の段の頭と、審査用の頁のワークショップの節の頭が読む（無ければ空で、段に写真を置かない）。"""
+    from omochae import media_review, records
+
+    from . import techo_site
+
+    return [f"/record/{r['id']}/media/{name}/small" for r in workshop_records() if r["source_id"] == records.WORKSHOP_ALL
+            for name in media_review.public(r["id"], techo_site.media_of(r["id"]))]
+
+
 def toy_name(sid):
     """作例の札の玩具の名。83 の玩具はその名、83 の外の玩具は棚卸しの名（records.outside_toy）。"""
     from omochae import hypotheses, records
 
+    if sid == records.WORKSHOP_ALL:
+        return None  # 報告の顔の写真は 1 つの玩具の物でないので、名を持たない（札にしない）
     return records.outside_toy(sid) or hypotheses.load(sid)["toy"]
 
 
@@ -153,7 +168,8 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
 
     from . import techo_site
 
-    outside = records.outside_toy(sid)  # 83 の外で棚卸しにだけある玩具（猫と鼠の箱など。作例の節にだけ出す）
+    # 83 の外で棚卸しにだけある玩具（猫と鼠の箱など。作例の節にだけ出す）と、報告の顔の写真（records.WORKSHOP_ALL）は仮説を持たない
+    outside = sid == records.WORKSHOP_ALL or records.outside_toy(sid)
     try:
         data_ = None if outside else hypotheses.load(sid)
     except (KeyError, OSError, ValueError, ToolMissing):
@@ -327,7 +343,7 @@ def set_toy(keys, sid, day=None, sheet_set=None):
         from omochae.model import ToolMissing
 
         try:
-            records.outside_toy(sid) or hypotheses.load(sid)
+            sid == records.WORKSHOP_ALL or records.outside_toy(sid) or hypotheses.load(sid)
         except (KeyError, OSError, ValueError, ToolMissing):
             return [], [("", f"知らない玩具: {sid}")]
     if day is not None and day not in WORKSHOP_DAYS + (UNKNOWN,):
@@ -390,7 +406,7 @@ def main(argv=None):
     so.add_argument("--like", help="別の置き場の帳面（hold.json）。同じ写真に、そこで決めた玩具・日・組を写す")
     ty = sub.add_parser("toy", help="仕分けの置き場の写真の玩具を書く（分からない物は 不明）")
     ty.add_argument("keys", nargs="+", help="指紋か元の名")
-    ty.add_argument("--toy", required=True, help=f"玩具の印（NDL-…）か {UNKNOWN}")
+    ty.add_argument("--toy", required=True, help=f"玩具の印（NDL-…）か {UNKNOWN}。報告の顔の写真（玩具が 1 つに決まらない写真）は workshop-all")
     ty.add_argument("--day", help=f"人が決めた日 YYYY-MM-DD か {UNKNOWN}（撮影の日時から決まらない物）")
     ty.add_argument("--set", dest="sheet_set", help="刷った型紙の組（分かる時だけ）")
     sub.add_parser("place", help="日と玩具の両方が決まった物を作例の記録に入れる")
