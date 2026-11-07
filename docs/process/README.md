@@ -106,7 +106,7 @@
 | 60 | [api-test-plan](api-test-plan.md) | 本物の API の最初の試験 7 回の手順書 | 本人の承認待ち（U-05） |
 | 61 | [contributions-form](contributions-form.md) | 外の入口の Google フォームの表と取り込みの流れ | 本人がフォームを作れば開く（f17） |
 | 62 | [claims](claims.md) | 主張ごとの確かさの種類と根拠の表 | 自動で描く |
-| 63 | [trials](trials/README.md) | 実物の試行の索引。まだ 0 件 | 0 件 |
+| 63 | [trials](trials/README.md) | 実物の試行の索引。11-04 と 11-06 の 2 回と、11-06 の参加者の感想 18 件から次の版の直しの順 | 2 回 |
 | 64 | [trials/sheets](trials/sheets/README.md) | 型紙の全版。失敗した版も残す | 記録 |
 | 65 | [template-contract](template-contract.md) | 全部の玩具を並列で作る線の契約。線が持つファイルと雛形の 1 本が持つ名前 | 設計 |
 | 66 | [site-requirements](site-requirements.md) | サイトの要件定義。順路 1 つ・皮 2 つ（白の展示・黒のジン）・型紙の窓。本人の指示で実装まで | 実装した（11-05 未明）。本人の採否はカード |
