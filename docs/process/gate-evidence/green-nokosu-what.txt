@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_nokosu_what.py
+# commit: 30a96554（回した時の HEAD）
+ok のこすの何をのこすかの 1 行と欄の手引き（2 つの頁の枠の頭・作る頁の決まり・手帖の欄だけ替える・空なら前の形）
+rc=0
