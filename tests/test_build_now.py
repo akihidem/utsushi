@@ -62,7 +62,8 @@ assert 'id="kasetsu"' in page and "すぐ作る" in page
 sheet = hypotheses.sheet_of(G)
 assert f'value="{sheet["id"]}"' in page and sheet["name"] in page
 assert not [h["id"] for h in hypotheses.load(G)["hypotheses"] if h["id"] != sheet["id"] and f'value="{h["id"]}"' in page]
-assert f'action="/toy/{G}/print#kasetsu"' in page
+# 刷る口は頭の「つくる」1 つ（本人のサイト体験レビュー 11-07 の 3。前は札の「型紙を見る」も刷る口だった）
+assert f'action="/toy/{G}/print#win"' in page and f'action="/toy/{G}/print#kasetsu"' not in page
 # 予想の段が無い
 assert "/predict" not in page and "あなたの予想" not in page and "先に、予想を書く" not in page and "kazasu" not in page
 assert post(f"/toy/{G}/predict", {"text": "x"}) == 404
