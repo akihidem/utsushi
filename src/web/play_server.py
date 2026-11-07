@@ -377,10 +377,10 @@ class Handler(BaseHTTPRequestHandler):
         # 入口はこのサイトの皮の入口（白の展示か黒のジン、--look）。別の皮の入口はこのサイトには無い（404）。
         # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
-            return self._send(200, PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
-            return self._send(200, PAGES[look]())
+            return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)) if look == "tenji" else PAGES[look]())
         if path == "/about":
             from . import about
             return self._send(200, about.page(look, path))
@@ -511,6 +511,17 @@ class Handler(BaseHTTPRequestHandler):
             # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
             return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+        # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
+        # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
+        m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
+        if m:
+            from . import made, techo_site
+            f = techo_site.media_dir(m.group(1)) / m.group(2)
+            if f.exists() and media_review.shown_to(m.group(1), [m.group(2)], self._up_key()):
+                small = made.small_photo(f)
+                if small:
+                    return self._send(200, small, "image/jpeg")
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png|mp4|mov))", path)
         if m:
             from . import techo_site
