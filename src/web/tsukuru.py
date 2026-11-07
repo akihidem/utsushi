@@ -69,8 +69,9 @@ a{color:var(--accent)}
 /* 組み方の絵（svg）は、手順の紙の絵（縦に長い img）と同じく高さの上限いっぱいを取り、絵は比を保って中に収める。
    高さを幅から決めると、横に長いコマが低くなり、絵の高さの下限（120px）より低くなった（幅 320 の御来迎、tests/test_landscape_fit.py） */
 svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.koma.on{display:block}
-/* 3D の手本（kumitate）。送る釦と段の字は頁の札と手順の字が持つので隠し、3D の舞台だけを手本の絵の場所に置く。高さは手順の紙の絵と同じ上限 */
-.k3d .lead,.k3d .rt-acts,.k3d #rt-text{display:none}
+/* 3D の手本（kumitate）。送る釦と段の字は頁の札と手順の字が持つので隠し、3D の舞台だけを手本の絵の場所に置く。高さは手順の紙の絵と同じ上限。
+   釦の後の手引き（.rt-hint・#550）も、隠した釦を名指すので一緒に隠す */
+.k3d .lead,.k3d .rt-acts,.k3d #rt-text,.k3d .rt-hint{display:none}
 .k3d .rt-stage{margin:0;width:100%;height:52vh;height:52svh;min-height:120px}
 .k3d .meta{margin:4px 0 0;font-size:12px;line-height:1.5}
 .side{padding:14px 16px;display:grid;gap:14px;align-content:start;min-width:0;border-top:1px solid var(--rule)}

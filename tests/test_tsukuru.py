@@ -86,6 +86,8 @@ from web import kumitate  # noqa: E402
 
 assert kumitate.available(G) and t.count('class="k3d"') == 1 and 'id="rt-stage"' in t and 'class="sheet koma' not in t, "3D の玩具の手本は 3D"
 assert "kp.show(n-1)" in t and "show,go:" in t, "頁の手順の番号で 3D の段を止める"
+# 3D の送る釦と段の字と、釦の後の手引き（.rt-hint）は隠す（頁の札が持つ。手引きは隠した釦を名指すので、出すと押せない釦の話になる）
+assert ".k3d .lead,.k3d .rt-acts,.k3d #rt-text,.k3d .rt-hint{display:none}" in t
 t3d = t
 # 3D の無い玩具（と同じ形）では、前のとおり今の手順の組み方の絵を 1 枚だけ見せる
 keep_av = kumitate.available
