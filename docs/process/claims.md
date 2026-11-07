@@ -41,7 +41,7 @@
 | C-21 | 試した後の紙は対比を先に出し、説明は折って閉じた札に置く | 自動試験 | [test_words.py](../../tests/test_words.py) |
 | C-22 | 閉じた札が考える邪魔をしないか | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-23 | 手元でトイモデルと遊ぶ体験をしないと科学の面白さに気づけない | 立場 | [philosophy.md](philosophy.md) |
-| C-24 | 御来迎の本体は紙と糸で作る。ただし軸の竹串なども使う（紙一枚は必須の条件でない。本人の決定 11-05 19:44） | 自動試験 | [philosophy.md](philosophy.md)、[slider_fan.py](../../src/omochae/templates/slider_fan.py)、[test_ways.py](../../tests/test_ways.py)、[J032-one-sheet-per-toy.md](decisions/J032-one-sheet-per-toy.md) |
+| C-24 | 御来迎の前の組（goraigo-v10）の本体は紙と糸で作る。ただし軸の竹串なども使う（紙一枚は必須の条件でない。本人の決定 11-05 19:44） | 自動試験 | [philosophy.md](philosophy.md)、[slider_fan.py](../../src/omochae/templates/slider_fan.py)、[test_ways.py](../../tests/test_ways.py)、[J032-one-sheet-per-toy.md](decisions/J032-one-sheet-per-toy.md) |
 | C-25 | 虎の物差しは頭が揺れるかどうか（本人の判断）。たたき台は首を通す形（H-A、J-032）で、ほかの作り方は作る側の控え | 立場 | [15-philosophy-review.md](research/15-philosophy-review.md)、[J032-one-sheet-per-toy.md](decisions/J032-one-sheet-per-toy.md) |
 | C-26 | 日本の小 4 の理科の実験は週 1 回以上が 59.6%（国際平均 31.5%。TIMSS 2023）で、実験経験が無いとは言えない | 文献 | [15-philosophy-review.md](research/15-philosophy-review.md)、[15-philosophy-review.md](research/15-philosophy-review.md) |
 | C-27 | 「学習の再定義」は立場の言葉で、実装に対応する物は無い。「AI と子どものタッグ」は、考えを話すと紙を作り直す口まで作ったが（今は必須 2 種だけ）、本物の API では未実行で、子どもでは試していない | 未確認 | [15-philosophy-review.md](research/15-philosophy-review.md)、[think_sheet.py](../../src/web/think_sheet.py)、[README.md](trials/README.md)、[think_sheet.py](../../src/web/think_sheet.py) |

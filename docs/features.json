@@ -16,9 +16,10 @@
   "evidence": [
    "src/omochae/templates/slider_fan.py",
    "tests/test_floor_pin.py",
-   "tests/test_by_set.py"
+   "tests/test_by_set.py",
+   "tests/test_goraigo_v14.py"
   ],
-  "unverified": "実物で組んで開くかは未確認"
+  "unverified": "実物で組んで開くかは未確認（今の組 goraigo-v14 の割り箸で押し上げる柄・内筒・倍の扇は、紙でまだ組んでいない。11-04 に動いたのは前の組の紙）"
  },
  {
   "id": "f03",
@@ -407,7 +408,9 @@
    "tests/test_kaizen.py",
    "docs/process/decisions/J026-site-side-loop.md",
    "src/web/wa.py",
-   "tests/test_wa_ring.py"
+   "tests/test_wa_ring.py",
+   "src/omochae/loop.py",
+   "tests/test_goraigo_v14.py"
   ],
   "unverified": "本人の方針（11-05 朝、J-026）。感想の欄・一番新しい版を刷る・輪の節と /loop を作った。雛形そのものの直しの報告の入口と道具はエンジンの側（本人の決定、カード 090458 の (b)）で、サイトは仮説ごとの版と表示まで。人で一周した確認はまだ。輪の図（web.wa、本人の言葉 11-06）の 4 つの段の字の並べ方は本人の確認待ち"
  },
@@ -740,6 +743,18 @@
    "tests/test_tora_v7_3d.py"
   ],
   "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で組めるか・iPhone の実機は、まだ確かめていない。揺れる間の前の壁との当たりは、できあがりの動きの形と ±10° の回しで見た（腕と玉が前の壁の内・帯と頭が穴の縁の内に 0.5mm 以上）。作業の頁の分解の釦は、今の組の JSON がある玩具だけに出る"
+ },
+ {
+  "id": "f59",
+  "name": "御来迎の今の組 goraigo-v14 の作り方の 3D（型紙エンジンの JSON で描く。組み立ての頁と止まった形・作業の頁の口・分解の形）",
+  "status": "doing",
+  "evidence": [
+   "data/kumitate/goraigo-v14.json",
+   "src/omochae/assembly_json.py",
+   "src/web/kumitate.py",
+   "tests/test_goraigo_v14_3d.py"
+  ],
+  "unverified": "形の確かめだけで、動くかは確かめない。本物の紙で組めるか・iPhone の実機は、まだ確かめていない。扇が開く所と畳む所は折りで表せない形で、エンジンの面の行列のまま描く（途中の形は板ごとに回した近い形）"
  },
  {
   "id": "f61",

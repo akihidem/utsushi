@@ -2,6 +2,26 @@
   "source_id": "NDL-1187053-R0000005-L",
   "toy": "御来迎",
   "sheet": "H-A",
+  "sheet_by_set": {
+    "goraigo-v14": "H-C"
+  },
+  "hide_by_set": {
+    "goraigo-v14": {
+      "questions": [
+        "何の力で扇が開くのか（紙の力・糸・手）"
+      ],
+      "after_try.contrasts": [
+        "紙の力だけの時と、糸で引いた時を比べる"
+      ],
+      "after_try.card": [
+        "戻る力が、こすれる力や糸の重さより小さいと、途中で止まります。"
+      ],
+      "analogy.related": [
+        "てこ: 糸で引く時は、糸を結ぶ所が扇の要から遠いほど、小さな力で開く（要が支点）",
+        "止まる角度: 扇の中心が筒の口より上にあるほど、口の角に当たる前に大きく開ける"
+      ]
+    }
+  },
   "note": "どれも試していない仮説で、どれが正しいかは書かない。紙で試して確かめる。",
   "written_by": "Claude Code のセッションが案を書いた。人の確認はまだ",
   "questions": [
@@ -73,6 +93,22 @@
         "push_part": "stick",
         "hub": "axle",
         "pusher_height": 84
+      },
+      "params_by_set": {
+        "goraigo-v14": {
+          "push_part": "rise",
+          "tube_side": 26,
+          "tube_height": 130,
+          "pusher_side": 24.5,
+          "pusher_height": 57.5,
+          "push_amount": 60,
+          "base_side": 24.0,
+          "fold_count": 44,
+          "fold_width": 4,
+          "fold_height": 57.2,
+          "figure_w": 10.4,
+          "figure_h": 27.7
+        }
       },
       "how_it_moves": "筒を持ち、下に出た割り箸の柄を押し上げる",
       "evidence": [

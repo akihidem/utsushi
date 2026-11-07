@@ -17,6 +17,9 @@ from omochae import engine_bundle, making_log, talk_log  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -28,7 +31,7 @@ def post(path, data):
         return x.status, x.read().decode()
 
 
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 200
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 200
 sent = []
 real = ask.answer
 ask.answer = lambda sid, hid, q: (sent.append(q), ("答えの字", "claude"))[1]
@@ -37,12 +40,12 @@ try:
     BLOCKED = ("電話は090-1234-5678", "3年2組の田中です", "さくら小学校の田中です", "ぼくの名前は田中")
     for q in BLOCKED:
         assert talk_log.blocked(q), q
-        code, body = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": q, "step": "2", "who": "abcde12345"})
+        code, body = post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": q, "step": "2", "who": "abcde12345"})
         j = json.loads(body)
         assert code == 200 and j["text"] == making_log.ASK_NAME_VOICE and j["from"] == "floor", (q, j)
     assert not sent, ("床に当たった字を Claude へ送った", sent)
     # JS が無い時の聞く口も同じ
-    code, page = post(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "3年2組の山田です"})
+    code, page = post(f"/toy/{G}/ask", {"hypothesis": GS, "question": "3年2組の山田です"})
     assert code == 200 and making_log.ASK_NAME_VOICE in page and not sent, sent
     # 字は残らず、数だけ残る。作る側の集計と束にも字が入らない
     kept = making_log.asks(G)
@@ -54,7 +57,7 @@ try:
         assert word not in bundle, word
     assert engine_bundle.build()["dropped_pii"] >= len(BLOCKED) + 1
     # 当たらない問いは今までどおり答えて残す
-    code, body = post(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "穴はどこにあける？", "step": "2"})
+    code, body = post(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "穴はどこにあける？", "step": "2"})
     assert json.loads(body)["text"] == "答えの字" and sent == ["穴はどこにあける？"], sent
     assert any(a["question"] == "穴はどこにあける？" and not a.get("dropped") for a in making_log.asks(G))
 finally:

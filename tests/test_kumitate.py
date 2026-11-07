@@ -18,6 +18,12 @@ from web import kumitate
 from web.play_server import ROOT  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎の今の組（goraigo-v14）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_goraigo_v14_3d）。サイトが自分で組む作り
+# （つまみの形だけを書いてある）は、控えの組 goraigo-v10 に雛形を置いて前と同じに見る（v14 に上げても v10 の 3D が変わらない事も見る）
+from omochae import assembly_json  # noqa: E402
+
+assert slider_fan.SHEET_SET == "goraigo-v14" and isinstance(assembly.assemble(G), assembly_json.Shown)
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 bench = assembly.assemble(G)
 frames = bench.frames
@@ -319,4 +325,5 @@ from omochae.textfit import text_width  # noqa: E402
 assert all(float(x) + text_width(t, 2.8) <= arm.part.width + 1e-6 for x, _, t in drawn), ("札の字が腕の面からはみ出す", drawn)
 assert [float(y) for _, y, _ in drawn] == sorted(float(y) for _, y, _ in drawn), ("札の字が上から順に並ばない", drawn)
 pivot_counterweight.SHEET_SET = "tora-v7"
+slider_fan.SHEET_SET = "goraigo-v14"
 print("ok")
