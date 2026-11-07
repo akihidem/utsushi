@@ -187,7 +187,7 @@ def book_paragraph(src):
 
 
 def page(skin_name, path="/about"):
-    from . import hokusai, techo_site, toys  # techo_site は寄せられた声と職人の言葉の節（循環を避けて、ここで読む）
+    from . import hokusai, kaizen_rekishi, techo_site, toys  # techo_site は寄せられた声と職人の言葉の節（循環を避けて、ここで読む）
 
     src = _source()
     body = (f'<div class="about"><section class="hero sec"><div>{skin.frame(SID, caption=src.get("holding", ""))}</div>'
@@ -205,6 +205,8 @@ def page(skin_name, path="/about"):
             + kami_section() + manabi_section() + ai_section()
             # うつしと paper to toy の節（本人の言葉 11-07。この後に、版の歩みの表の節が 1 行で続く置き場。表の担当と合わせた）
             + engine_section()
+            # 型紙とエンジンの改善の歴史（設計 0.7 節の置き場 ③）。全部の玩具に効くので道の外のこの頁に置き、エンジンの仕組みの説明の後に読む
+            + kaizen_rekishi.section()
             # えらぶ の頭にあった断りの段（窓口の決定 11-07 の ②「よむ へ移す」）。字は変えずに、おもちゃを選ぶ釦のすぐ前に置く
             + toys.yomu_section() +
             # 寄せられた声と職人の言葉（持ち寄りの入口のフォームを含む）。前はギャラリーにあったが、のこす（作った記録を残す）と分けるためにここへ移した
