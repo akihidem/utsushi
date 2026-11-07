@@ -65,13 +65,14 @@ assert hero.index("<h1>") < hero.index(">つくる<") < hero.index('class="links
 go = re.search(r'<form method="post" action="/toy/[^"]+/print#win" class="road">.*?</form>', hero, re.S).group(0)
 assert f'name="hypothesis" value="{hypotheses.sheet_of(G)["id"]}"' in go, "紙が無い時はたたき台の紙を作る"
 assert '<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>' in hero, "これまでの記録は見出しのまま畳む"
-assert re.search(r'<section class="sec" id="kaizen"><details class="fold-sec"><summary><h2>', before), "改善の輪は見出しのまま畳む"
+# 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5。作る側の様子の頁へ移した）
+assert 'id="kaizen"' not in before, "改善の輪の節は玩具の頁に無い"
 if 'id="tatoe"' in before:
     # たとえは型紙の窓のすぐ後に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」）
     assert before.index('id="win"') < before.index('id="tatoe"') < before.index('id="minna"') and '<section class="sec" id="tatoe"><h2>' in before, "たとえは型紙の窓の後ろで開いて出す"
 assert before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="tsukuru"') < before.index('id="kiroku"') < before.index('id="minna"'), "流れの順"
 assert '<details class="fold-sec samples-fold">' not in before, "本物の記録が無い時は、見本を畳まない"
-assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#kaizen など）"
+assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#kumikata など）"
 assert "genga-head" in hero, "原画と歌は頭のまま（畳まない）"
 
 # ---- 3・4 紙を作った後

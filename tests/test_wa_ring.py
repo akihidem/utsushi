@@ -33,7 +33,8 @@ for sid in (G, T, PLAIN):
         assert page.count('id="wa"') == 1, (sid, look)
         at, premise = page.index('id="wa"'), page.index('id="premise"')
         assert premise < at and page.index("</p>", premise) < at < page.index('class="plates"'), "札のすぐ後"
-        assert 'href="#kaizen"' in page[at:page.index("</figure>", at)] and 'id="kaizen"' in page, "真ん中から改善の輪の節へ飛べる"
+        # 真ん中の行き先は説明の頁（序の頁）の改善の歴史の錨（窓口の決め 11-07。輪の図は残し、頁の足の「型紙の改善の輪」の節は外した）（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
+        assert f'href="{wa.HREF}"' in page[at:page.index("</figure>", at)] and wa.HREF == "/about#kaizen-rekishi" and 'id="kaizen"' not in page, "真ん中から説明の頁の改善の歴史へ飛べる"
 
 # 3. 真ん中の数は今の型紙の版だけ。型紙の版は組の番号（紙の題に刷る数と同じ。本人の言葉 11-07・窓口の決定 カード 084426）で、
 #    寸法の刻み（kaizen の版・ループ 2）は真ん中に出さない（作る側の版の歩みの頁に残す）

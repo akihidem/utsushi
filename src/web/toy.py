@@ -637,11 +637,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
              f'{fold_samples(sample_records(data), bool(recs))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
-    # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
-    from . import kaizen
-
-    # 作る側の節（改善の輪）は、流れの後ろで、見出しのまま畳む（段 0）。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）
-    body += fold(kaizen.section(sid, data, recs, photos))
+    # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5「型紙の改善の輪は外して、説明の頁と のこす だけにする」。
+    # 夕方のレビューの 8「型紙改善の輪と型紙の窓の情報が重なる」）。報告から直した版と次の版を待つ報告は、作る側の様子の頁（/loop/<印>）へ移した。
+    # 学ぶ人には、版の歩み（ban_ayumi）が版の並びを、型紙の窓の小さな輪の図が輪の形を見せる。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）
     # 英語の短い紹介（本人の指示 11-05「実装までやって」、J-030）。頁の足に置く: 日本語の順路を押し下げないため。
     from . import en
 

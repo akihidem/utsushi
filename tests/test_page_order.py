@@ -19,7 +19,8 @@ from web.toy import toy_page  # noqa: E402
 
 TOYS = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")
 # たとえは型紙の窓のすぐ後（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」）
-ORDER = ("kasetsu", "win", "tatoe", "hanasu", "tsukuru", "kumikata", "kiroku", "minna", "kaizen", "english")
+# 頁の足の「型紙の改善の輪」（#kaizen）は外した（本人の答え 11-07 夕の Q5。作る側の様子の頁へ移した）
+ORDER = ("kasetsu", "win", "tatoe", "hanasu", "tsukuru", "kumikata", "kiroku", "minna", "english")
 GONE = ("<h2>すぐ作る</h2>",)
 
 
@@ -36,7 +37,7 @@ for sid in TOYS:
             assert print_latest(sid, hypotheses.sheet_of(sid)["id"]) is not None, (sid, "紙を作れない")
         page = toy_page(sid)
         where = f"{sid} {'刷った後' if printed else '刷る前'}"
-        # 並び: 頭（題と つくる）→ 立体 → 型紙の窓 → たとえ → 考えを話す → 困った時 → 組み方 → 記録 → 他の人が作った物 → 改善の輪 → 英語
+        # 並び: 頭（題と つくる）→ 立体 → 型紙の窓 → たとえ → 考えを話す → 困った時 → 組み方 → 記録 → 他の人が作った物 → 英語
         at = [page.index(f'id="{name}"') for name in ORDER]
         assert page.index("<h1>") < at[0] and at == sorted(at), (where, dict(zip(ORDER, at)))
         for gone in GONE:
@@ -52,10 +53,10 @@ for sid in TOYS:
         if printed:
             assert win.index('class="plates"') < win.index('<figure class="sheet">'), (where, "紙が札より前")
         assert page.count('id="wa"') == 1 and page.count('id="premise"') == 1, where
-        # 組み方と作る側の節は見出しのまま畳む。たとえは型紙の窓の近くで、畳まずに出す（本人の答え Q4）
-        for name, head in (("kumikata", "組み方"), ("kaizen", "型紙の改善の輪")):
-            assert re.search(rf'<details class="fold-sec"><summary><h2>{head}</h2></summary>', section(page, name)), (where, name)
+        # 組み方は見出しのまま畳む。たとえは型紙の窓の近くで、畳まずに出す（本人の答え Q4）。改善の輪の節は無い（Q5）
+        assert re.search(r'<details class="fold-sec"><summary><h2>組み方</h2></summary>', section(page, "kumikata")), (where, "kumikata")
+        assert 'id="kaizen"' not in page, (where, "改善の輪の節は玩具の頁に無い")
         assert '<section class="sec" id="tatoe"><h2>たとえと、関連する事柄</h2>' in page, (where, "たとえは開いて出す")
     # 頁の足のギャラリーへの口は、ギャラリーの今の題「作った物」（職人の言葉は序の頁へ移った。#519・本人のサイト体験レビュー 11-07 の 6）
     assert '<a href="/gallery">作った物</a>' in page and "作った物と職人の言葉" not in page, sid
-print(f"ok 玩具の頁の並び: {len(TOYS)} 種の刷る前と後で、原画 → 立体 → 型紙の窓（断り・輪の図・札・紙）→ たとえ（開いて）→ 考えを話す、組み方・改善の輪は畳む")
+print(f"ok 玩具の頁の並び: {len(TOYS)} 種の刷る前と後で、原画 → 立体 → 型紙の窓（断り・輪の図・札・紙）→ たとえ（開いて）→ 考えを話す、組み方は畳む・改善の輪の節は無い")
