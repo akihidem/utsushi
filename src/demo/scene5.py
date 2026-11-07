@@ -137,6 +137,11 @@ REVIEW_06 = PHOTO_DIR_06 / "review.md"
 DAYS = (("11 月 4 日", "Nov 4", PHOTO_DIR, REVIEW, ("p05", "p02", "p07")),
         ("11 月 6 日", "Nov 6", PHOTO_DIR_06, REVIEW_06, ("p11", "p14", "p20", "p21", "p30", "p33")))
 WORKSHOP_LINE = "4 回のワークショップで、作って、感想を返してもらいました。"   # 案（窓口の確かめ待ち）
+# 4 回の日付（本人の言葉 11-07「ワークショップ 4 回は 11 月 4・5・6・7 日でよい。回数の数え方と改善の歴史の表はこの 4 回でそろえてください」）。
+# 左の余白に 4 つとも縦に並べ、今の写真の日だけを濃くする。写真があるのは 11-04 と 11-06 だけ（11-05・11-07 は感想の動画の回で、
+# 動画は渡された写真の外なので使わない）。4 つを並べるのは、字幕の「4 回」と画面の日付の数を食い違わせないため
+WORKSHOP_DAYS = (("11 月 4 日", "Nov 4"), ("11 月 5 日", "Nov 5"), ("11 月 6 日", "Nov 6"), ("11 月 7 日", "Nov 7"))
+DAY_GAP = 96     # 日付の行の間（日本語 34px と英語の行の下まで）
 XF = 0.5          # 写真の溶ける秒
 LABEL_XY = (60, FRAME_BOX[1] + 14)   # 写真の枠の外（左の余白）。横長の写真に重ねない
 
@@ -187,7 +192,10 @@ class WorkshopScene(Scene5):
             i = min(len(self.labels) - 1, int(t // self.step))
             from demo.english import text_en
 
-            text_en(ImageDraw.Draw(img), LABEL_XY, self.labels[i][0], 34, fade(SUMI, 0.85 * a_in), False, "la", english=self.labels[i][1])
+            d = ImageDraw.Draw(img)
+            for k, (ja, en_label) in enumerate(WORKSHOP_DAYS):
+                on = ja == self.labels[i][0]
+                text_en(d, (LABEL_XY[0], LABEL_XY[1] + k * DAY_GAP), ja, 34, fade(SUMI, (0.85 if on else 0.22) * a_in), False, "la", english=en_label)
         from demo.words import band
 
         return band(img, (WORKSHOP_LINE,), ease((t - 0.8) / 0.5))
