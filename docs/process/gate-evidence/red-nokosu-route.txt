@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_nokosu_route.py
+# commit: ed6646b6（回した時の HEAD。今の main に新しい試験だけを置いた）
+  File "tests/test_nokosu_route.py", line 24, in <module>
+    MAKING, DONE, WHY = naoru.ROUTE_MAKING, naoru.ROUTE_DONE, naoru.LINES[0]
+                        ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'web.naoru' has no attribute 'ROUTE_MAKING'
+rc=1

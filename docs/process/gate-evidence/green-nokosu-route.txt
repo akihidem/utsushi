@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_nokosu_route.py
+# commit: この枝（main ed6646b6 の上に、のこすへの道の字を足した木）
+ok
+rc=0
