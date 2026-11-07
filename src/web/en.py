@@ -19,6 +19,11 @@ from . import skin
 from .play_server import esc, sources
 
 DRAFT = "Draft translation. A native speaker has not checked it yet."
+# 紹介の大前提の英語 2 文（本人の言葉 11-07 夜「学校や博物館等で使えるワークショップ支援のサービス…紙があって、それに印刷ができて、
+# ハサミと糊があればいろんなことが伝えられる…大前提として語られる必要がある」と裏付け「紙とはさみとのりの手軽さが4日間連続ワークショップを
+# 可能にしてる」。置き場は本人の「入れる」）。日本語の頁の S1・S3 の訳で、本人が OK した位置づけの 2 文と仕組みの 3 文は替えずに、その前に置く
+BASIS = ("Utsushi is a service that supports workshops in schools, museums and other places. "
+           "We could hold workshops four days in a row, from November 4 to 7, because the toys are easy to make with paper, scissors and glue.")
 # うつしの位置づけ（英語 2 文）。本人の言葉（11-07 昼）「utsushi は paper to toy の具体例、という説明をサイトに」
 # 「これからというよりは、みんなが使えるサービスとして作った」に合わせた案の字を、本人が採った（11-07「この英文でよい」）。
 # J-030 の紹介（INTRO）の文は変えず、別の段として頭に置く
@@ -93,7 +98,7 @@ def index_page(look=skin.DEFAULT, path="/en"):
         tag = "" if hypotheses.stage(sid) == "必須" else '<span class="lb">Untested draft</span>'
         cards += (f'<article class="card"><a href="/en/toy/{esc(sid)}">{_picture(sid)}<h3>{esc(t["name"])}</h3></a>{tag}<p class="meta">{esc(t["intro"])}</p></article>')
     intro = "".join(f"<p>{x}</p>" for x in INTRO)
-    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p><p class="position">{esc(POSITION)}</p><p class="engine">{esc(ENGINE)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
+    body = (f'<section class="sec"><h1>utsushi</h1><p class="meta">{esc(DRAFT)}</p><p class="position basis">{esc(BASIS)}</p><p class="position">{esc(POSITION)}</p><p class="engine">{esc(ENGINE)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
     return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)

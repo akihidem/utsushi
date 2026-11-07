@@ -7,6 +7,7 @@
 1. English の頁の頭（紹介の文の前）に、位置づけの 2 文 → 仕組みの 3 文の順で 1 回ずつ（合言葉なしの場でも）。紹介の文（J-030 と同じ文）は変えない
 2. 位置づけは本人が採った字のまま。「これから」の向きの字（will grow・hope）は無い。仕組みは材料の 3 文のまま
 3. 入口と序の頁には、この英語の段を足さない（序の頁の位置づけは #527）
+4. 位置づけの 2 文の前に、紹介の大前提の英語 2 文（日本語の頁の S1・S3 の訳・本人の言葉 11-07 夜「入れる」）を 1 回。人数・集まった数は書かない
 """
 import os
 import re
@@ -24,6 +25,9 @@ from web.skin import esc  # noqa: E402
 pos = esc(en.POSITION)
 ADOPTED = ("Utsushi is one example of paper to toy, using the toys in an Edo picture book. "
            "We made it as a service everyone can use, from schools, research, and museums to homes.")
+# 紹介の大前提の英語 2 文（本人の言葉 11-07 夜「入れる」）は、位置づけの 2 文の前に 1 回だけ。本人が OK した 2 文と 3 文は替えない
+assert en.BASIS.startswith("Utsushi is a service that supports workshops") and len(re.findall(r"[.!?](?:\s|$)", en.BASIS)) == 2
+assert "four days in a row" in en.BASIS and not re.search(r"\d+ (?:people|participants|visitors)", en.BASIS), "人数・集まった数は書かない"
 assert en.POSITION == ADOPTED and len(re.findall(r"[.!?](?:\s|$)", en.POSITION)) == 2, "本人が採った 2 文のまま"
 assert not re.search(r"\bwill\b|\bhope\b|\bgrow", en.POSITION), "これからの向きの字は使わない（本人の言葉 11-07 昼）"
 assert en.ENGINE.startswith("Paper to toy is an engine") and len(re.findall(r"[.!?](?:\s|$)", en.ENGINE)) == 3, "材料の英語 3 文"
@@ -38,6 +42,8 @@ for opened in (False, True):
     # ---- 1 English の頭
     page = get("/en")
     assert page.count(pos) == 1 and page.count(eng) == 1 and page.index(pos) < page.index(eng) < page.index(en.INTRO[0]), ("English の頭に 2 文 → 3 文の順で 1 回ずつ", opened)
+    pre = esc(en.BASIS)
+    assert page.count(pre) == 1 and page.index(pre) < page.index(pos), ("大前提の 2 文は位置づけの 2 文の前に 1 回", opened)
     assert all(page.count(x) == 1 for x in en.INTRO), "紹介の文は今のまま"
 
     # ---- 3 入口と序の頁には足さない
