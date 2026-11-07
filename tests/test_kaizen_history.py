@@ -53,11 +53,12 @@ for tpl in (FAN, TIGER):
     assert [kh.set_no(r["set"]) for r in rows] == sorted(kh.set_no(r["set"]) for r in rows) and len(rows) >= 2, rows
     assert [r["now"] for r in rows] == [False] * (len(rows) - 1) + [True] and rows[-1]["set"] == tpl.SHEET_SET, [(r["set"], r["now"]) for r in rows]
     assert all(r["line"] and r["engine_version_text"] and r["sheet_image"] for r in rows), "額の下の字と絵の名は表の行にある"
-assert [r["set"] for r in kh.versions("pivot_counterweight")] == ["tora-v3", "tora-v4", "tora-v5", "tora-v6", "tora-v7"]
-assert [r["set"] for r in kh.versions("slider_fan")] == ["goraigo-v10", "goraigo-v11", "goraigo-v12", "goraigo-v13", "goraigo-v14"]
+# 表は 11-07 11:42 の版から、改善の輪より前の版（虎 v1・v2、御来迎 v1〜v9。サイトの repo の記録から）も持つ
+assert [r["set"] for r in kh.versions("pivot_counterweight")] == [f"tora-v{n}" for n in range(1, 8)]
+assert [r["set"] for r in kh.versions("slider_fan")] == [f"goraigo-v{n}" for n in range(1, 15)]
 with sets(fan=FAN.FROZEN_SET, tiger=TIGER.FROZEN_SET):
-    assert [(r["set"], r["now"]) for r in kh.versions("pivot_counterweight")] == [("tora-v3", True)]
-    assert [(r["set"], r["now"]) for r in kh.versions("slider_fan")] == [("goraigo-v10", True)]
+    assert [(r["set"], r["now"]) for r in kh.versions("pivot_counterweight")] == [("tora-v1", False), ("tora-v2", False), ("tora-v3", True)]
+    assert [r["set"] for r in kh.versions("slider_fan")][-1] == "goraigo-v10" and len(kh.versions("slider_fan")) == 10
 with sets(tiger="tora-v99"):
     assert not any(r["now"] for r in kh.versions("pivot_counterweight")), "表に無い組を今の版と言わない"
 assert kh.versions("no_such_template") == []
@@ -70,7 +71,7 @@ with sets(tiger="tora-v4"):
 with sets(fan="goraigo-v13", tiger=TIGER.FROZEN_SET):
     v13 = next(r for r in kh.versions("slider_fan") if r["now"])
     assert v13["engine_version"] is None and "刻んでいない" in v13["engine_version_text"], v13
-    assert kh.engine_now()["engine_version"] == 1, "刻んでいない版は数えず、虎 v3 の版 1"
+    assert kh.engine_now() is None, "刻んでいない版（御来迎 v13）と台帳と結ばない版（虎 v3）だけなら、エンジンの今の版は無い"
 
 # 4. 紙の絵は sheets/ の下の名だけ
 tmp = pathlib.Path(tempfile.mkdtemp())

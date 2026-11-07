@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ban_ayumi.py
+# commit: 8aa03f8c（回した時の HEAD。今の main に新しい試験だけを置いた）
+Traceback (most recent call last):
+  File "tests/test_ban_ayumi.py", line 24, in <module>
+    from web import ban_ayumi, play_server, wa  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'ban_ayumi' from 'web' (src/web/__init__.py)
+rc=1
