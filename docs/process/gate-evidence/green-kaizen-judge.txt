@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kaizen_judge.py
+# commit: f203b2d7（回した時の HEAD）
+ok 審査用の頁: 3 つの一周を段ごとに並べ、誰がしたかを記録のとおりに分け、字は記録と表だけ。合体待ちは出さない
+rc=0

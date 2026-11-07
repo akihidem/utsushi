@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_about_engine.py
+# commit: f8873d89（main）の木に、このブランチの試験と、字の定数と節の部品だけを足した src/web/about.py（節を頁から呼ぶ 1 行を外した物）を置いた。README.md は main の物のまま（節を足す前の頁と概要）
+Traceback (most recent call last):
+  File "tests/test_about_engine.py", line 26, in <module>
+    at = page.index('id="engine"')
+ValueError: substring not found
+rc=1

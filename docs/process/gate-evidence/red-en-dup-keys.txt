@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_en_all.py
+# commit: 40691c43（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_all.py", line 40, in <module>
+    assert not _twice, ("訳の表に同じ鍵が 2 つある（後から入った方の行を消す）", _twice[:8])
+           ^^^^^^^^^^
+AssertionError: ('訳の表に同じ鍵が 2 つある（後から入った方の行を消す）', ['" alt="組み方の絵（'])
+rc=1

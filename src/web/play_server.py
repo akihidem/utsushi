@@ -291,6 +291,22 @@ UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面�
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
+# 応答の守りの頭（公開の前の点検 U18・U20。本人の決め 11-07「(a) を出す」）。
+# - 途中で溜め置かせない: トンネルの先（Cloudflare）は写真や PDF の拡張子を既定で溜めうる。溜めると、上げた人にだけ出す確かめる前の
+#   写真や、その人だけの紙が、同じ URL を開いた別の人に返る。private は共有の溜め置きを止め、頁と JSON は人ごとに替わるので
+#   no-store も付ける。絵と紙は同じ人の端末では溜めてよい（private だけ）ので、読み込みは遅くしない
+# - ほかのサイトの枠に入れさせない（クリックジャッキングの備え）。同じ origin の枠は開く（SAMEORIGIN・'self'）: 試験は手帖を同じ origin の
+#   親の頁の iframe で開いて本物の順で押す（test_photo_attach_walk ほか）ので、DENY・'none' にするとその枠が開かず止まった（別の目の指摘）
+# - Referrer-Policy は same-origin にする。no-referrer にすると、ブラウザは同じ頁からのフォームの POST に Origin: null を付け、
+#   書き込みの口の Origin の照らし（同じ頁から来た物だけを受ける）が全部断る形になるため
+def guard_headers(ctype):
+    dynamic = ctype.startswith("text/html") or ctype.startswith("application/json")
+    return (("Cache-Control", "private, no-store" if dynamic else "private"),
+            ("X-Frame-Options", "SAMEORIGIN"),
+            ("Content-Security-Policy", "frame-ancestors 'self'"),
+            ("Referrer-Policy", "same-origin"))
+
+
 class Handler(BaseHTTPRequestHandler):
     timeout = 20
     # Server の見出しに Python の版を出さない（公開の前の点検）。
@@ -318,6 +334,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("X-Content-Type-Options", "nosniff")
+        given = {k.lower() for k, _ in headers}
+        for k, v in guard_headers(ctype):
+            if k.lower() not in given:  # 口が自分で決めた頭（動画の口の no-store など）を上書きしない
+                self.send_header(k, v)
         for k, v in headers:
             self.send_header(k, v)
         self.end_headers()
@@ -443,6 +463,30 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
+        if path == "/kaizen":
+            # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
+            from . import kaizen_judge
+            return self._send(200, kaizen_judge.page(look, path))
+        m = re.fullmatch(r"/kaizen/video/([^/]+)", path)
+        if m:
+            # 審査用の頁の動画（御来迎が開く所。公開の場のデータの置き場の、確かめた印のある物だけ。web/kaizen_kata.py）。iPhone の Safari のために Range を受ける
+            from . import kaizen_kata
+            data = kaizen_kata.video_bytes(urllib.parse.unquote(m.group(1)))
+            if data is None:
+                return self._send(404, "無い")
+            plain = (("Accept-Ranges", "bytes"),)
+            span = byte_range(self.headers.get("Range"), len(data))
+            if span is False:
+                return self._send(416, b"", "video/mp4", plain + (("Content-Range", f"bytes */{len(data)}"),))
+            if span:
+                return self._send(206, data[span[0]:span[1] + 1], "video/mp4", plain + (("Content-Range", f"bytes {span[0]}-{span[1]}/{len(data)}"),))
+            return self._send(200, data, "video/mp4", plain)
+        m = re.fullmatch(r"/kaizen/photo/(\d{1,2})/([^/]+)", path)
+        if m:
+            # 審査用の頁のワークショップの写真（サーバの記録の置き場の、人が確かめた物だけ。web/kaizen_ws.py）。出さない物はどれも 404
+            from . import kaizen_ws
+            data = kaizen_ws.photo_bytes(int(m.group(1)), urllib.parse.unquote(m.group(2)))
+            return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
         m = re.fullmatch(r"/about/loop-figure/([^/]+)", path)
         if m:
             # 説明の頁の学びの輪の生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」・公開の場のデータの置き場の確かめた物だけ。web/loop_figure.py）
