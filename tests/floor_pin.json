@@ -50,8 +50,8 @@
    "standin": "40168ce99848544bbeb05995f41447f3bea075b49778c8e5ca56aeb950efc1d5"
   },
   "tora-v4/H-A/型紙": {
-   "real": "76d2a9d9985ca1baccac4c4092acc9f74e91bd4b611056cd48aa8faf487bd8b7",
-   "standin": "57b381f8835bb46f6797eec8706e54b5bceb2b05f37affcf37b3aa6a266c64ae"
+   "real": "1f8f04d17ff7deee97ed5aed9df16249eb38bc34e499b0a67838ac7ec2ccf7a0",
+   "standin": "a182eeea4c15eeef1acc22cfea07db6497c54a5e685dbbdebcad705b1fd15337"
   },
   "tora-v4/H-A/手順の紙": {
    "real": "d89ba510b41ec3ed638a052b38b95b1bdcb0cd3658c3c0cb80257ca36773959d",
@@ -64,6 +64,18 @@
   "tora-v4/先生の見る紙": {
    "real": "07f34608f7d1c3ad5e130c0a66a02792706bf80c2790083df34de63e374a1c4e",
    "standin": "94ff2d0c56a7e03daa7b42e94ea4d253c1500fe233637dc5db0d2fdeadbf267e"
+  },
+  "tora-v7/H-A/型紙": {
+   "real": "fcf989a592c19896cc16f5130ae2e387e62554f98a79b1addd214882aab37365",
+   "standin": "ef50acab488a6615948ed1404ebe60dd8fe40f79e81a9f20d6d4b3406bb47ad6"
+  },
+  "tora-v7/H-A/試した後の紙": {
+   "real": "391c2e6e6e4d5e18faa00afbcb29317b7ec81e0c0c60ee21664180b570027964",
+   "standin": "8b117d52dad8edc1c6aa6ac42f19a92f2790d4331b2fc0f759e0abfc1c6118b1"
+  },
+  "tora-v7/先生の見る紙": {
+   "real": "25bbed060c37084bcce8da9a6f6474c3a09e6ff89d1dd826f1336508e7912c87",
+   "standin": "e150b8fd0f74cd2be2bf534a998cd5abc40b58b5ce6d560918cfe78c8c7e61af"
   }
  },
  "removed": {

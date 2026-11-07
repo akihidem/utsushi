@@ -14,7 +14,7 @@ HYPOTHESIS = "仮説（ためしの案）: AI が考えた、ためしに作る�
 # 本人に「必須 2 種の今の版の紙は変えず、次の版から」と確かめて採ったので、今の組だけ前の文（#258 の決定の文）のまま刷る。
 # 次の組（goraigo-v11・tora-v4）を足す時は、その玩具を FROZEN_SETS から外す（雛形の SHEET_SET と食い違うと test_hypothesis_label が落ちる）。
 HYPOTHESIS_FROZEN = "仮説: AI が考えた、試すための 1 つの翻案です。正解ではありません。作って、動きを確かめて、直していきます"
-# 虎（tora-v4）と御来迎（goraigo-v14）は次の組に上げたので空。前の組（tora-v3・goraigo-v10）の紙を組む時は、呼ぶ側が source の
+# 虎（今は tora-v7）と御来迎（goraigo-v14）は次の組に上げたので空。前の組（tora-v3・tora-v4・goraigo-v10）の紙を組む時は、呼ぶ側が source の
 # hypothesis_mark で前の文を渡す（tests/test_floor_pin.py）
 FROZEN_SETS = {}
 # 使い手が自分で立てた仮説の紙の文。人の仮説を「AI が考えた」と刷らないため（print_own）。文の残りは上と揃える。

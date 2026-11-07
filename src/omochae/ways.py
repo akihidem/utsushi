@@ -37,13 +37,13 @@ def _is_paper(material):
 
 
 def fold_only(parts):
-    """部品が 1 つで、外形が軸にそろった長方形、中の切り込みも穴も糊代も無く、折り線が 1 本以上ある。"""
+    """部品が 1 つで、外形が軸にそろった長方形、中の切り込み（cuts・round_cuts）も穴も糊代も無く、折り線が 1 本以上ある。"""
     if len(parts) != 1:
         return False
     q = parts[0]
     xs = {round(x, 6) for x, _ in q.outline}
     ys = {round(y, 6) for _, y in q.outline}
-    return len(q.outline) == 4 and len(xs) == 2 and len(ys) == 2 and not q.cuts and not q.holes and not q.glue and bool(q.valley or q.mountain)
+    return len(q.outline) == 4 and len(xs) == 2 and len(ys) == 2 and not q.cuts and not q.round_cuts and not q.holes and not q.glue and bool(q.valley or q.mountain)
 
 
 def details(template_id, params):
