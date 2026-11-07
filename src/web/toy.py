@@ -580,6 +580,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     who = "・".join(sorted({wording.plain(e["checked_by"]) for e in src.get("transcription", {}).get("entries", []) if not e.get("rejected_by") and e.get("checked_by")}))
     stage = hypotheses.stage(sid)
     stage_note = '<p class="meta"><span class="lb">試作</span>全部の玩具を型紙にする途中の物。名前は作る側の見立てで、まだ確かめていません。</p>' if stage != "必須" else ""
+    from . import workshop  # ワークショップで作られた物の写真（本人の言葉 11-07 夜）。公開の場にも出すので photos の線を掛けない
     from . import genga  # 原画と歌（本人の指示 11-06）。頁の全体の絵と歌を 1 つの組にして頭に置く。歌はこの組の中に出す
 
     # 題のすぐ後に次へ進む釦を 1 つ（段 0）。前は最初の「型紙を見る」が机で約 1.8 画面、スマホで約 2.6 画面下にあった（#292）。
@@ -588,7 +589,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
             f'<h1>{esc(data["toy"])}</h1>{stage_note}{make_go(sid)}'
             + skin.artwork_label(data["toy"], src) + nopic
             + f'<p class="links"><a href="/zukan/{sid}">図鑑の頁</a><a href="/zukan/{sid}/yomi">くずし字を読む</a><a href="/toys">ほかのおもちゃ</a></p>'
-            f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
+            f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{workshop.strip(sid)}{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
     recs = records.all_records(sid)
     recorded = {r["hypothesis_id"] for r in recs}
     # 頁の本体は 原画と立体 → つくる → 型紙 の順だけにする（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」）。

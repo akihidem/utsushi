@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_nokosu_wa.py
+# commit: 288930ae（回した時の HEAD）
+ok のこす の頁に学びの輪の文と図（本人の見直し 22:16 の ⑤）
+rc=0

@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_workshop_photos.py
+# commit: 30823ef1（回した時の HEAD）
+ok ワークショップの写真: 表 15 枚・玩具 3・その玩具の分だけ・小さい写し 100KB 以下・表の外は 404・公開の場も同じ
+rc=0

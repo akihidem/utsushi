@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_workshop_photos.py
+# commit: 288930ae（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_workshop_photos.py", line 63, in <module>
+    assert got == want, (sid, kw, got, want)
+           ^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', {}, [], ['20261104/p01.jpg', '20261104/p02.jpg', '20261104/p03.jpg', '20261104/p04.jpg', '20261104/p05.jpg', '20261104/p07.jpg', '20261104/p08.jpg', '20261104/p09.jpg', '20261106/p15.jpg', '20261106/p21.jpg', '20261106/p23.jpg', '20261106/p33.jpg'])
+rc=1

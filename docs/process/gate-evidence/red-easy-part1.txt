@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_easy_part1.py
+# commit: 91bbf3ba（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_easy_part1.py", line 25, in <module>
+    assert PART.exists(), "分け 1 の表が無い"
+           ~~~~~~~~~~~^^
+AssertionError: 分け 1 の表が無い
+rc=1

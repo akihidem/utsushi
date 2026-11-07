@@ -215,6 +215,7 @@ body.techo{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN
 .techo .top{display:flex;align-items:center;gap:14px}.techo .top img{width:56px;height:84px;object-fit:cover;border:1px solid var(--frame)}
 .techo .top a{margin-left:auto;font-size:14px;color:var(--accent)}
 .techo .row{display:flex;gap:12px;flex-wrap:wrap}
+.techo .manabi .loop-fig{margin:0 auto}
 .techo .panel{border:1px solid var(--frame);border-radius:18px;padding:18px;display:grid;gap:14px;background:var(--paper)}
 .techo .mark{display:flex;align-items:center;gap:12px;font-family:"Noto Serif CJK JP",serif;font-size:22px;letter-spacing:.15em;margin:0}
 .techo .mark svg{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
@@ -514,6 +515,18 @@ def voices_sections():
             f'{voices}</section></div>')
 
 
+def manabi_box():
+    """学びの輪の文と図の節。のこす の頁（手帖の記録の頁）の頭の「のこすと型紙が直る事の枠」（naoru.box）の後に置く。
+    本人のサイトの見直し（11-07 22:16）の ⑤「ここに輪の説明ある方がいいよね。」と、本人の決め「輪の説明は のこす の頁に置く」による。
+    字は新しく書かず、本人が採った学びの輪の文（11-07 夕「学びの輪の文は案 1 の字でよい」・loop_figure.ADOPTED）をそのまま使う。
+    説明の頁（このサイトについて）の学びの輪の段と同じ形（文の後に同じ部品 loop_figure.svg() の図）にして、2 つの頁で字と絵が食い違わないようにする。
+    のこす の頁に置くのは、文の「のこした記録が、次に作る時の入り口になります。」が、この頁でする事（作った記録をのこす）の意味を言っているため。
+    のこした後は #mine に着くので、頭のこの節は上げる手の邪魔にならない。公開の場でも出す（人の言葉も記録の番号も入らない説明の字と図だけなので）"""
+    from . import loop_figure  # 循環を避けて、ここで読む（naoru と同じ）
+
+    return f'<section class="panel manabi" id="manabi"><p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}</section>'
+
+
 def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
@@ -547,6 +560,8 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。頁の頭に 1 回
             + naoru.box() +
+            # 学びの輪の文と図（本人の見直し 11-07 22:16 の ⑤・manabi_box）。枠の後、手帖をひらく道の前
+            manabi_box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
