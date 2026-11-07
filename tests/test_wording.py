@@ -75,7 +75,9 @@ for want in (f"▲{esc(h['how_it_moves'])}", f"試して見る事: ▲{esc(h['to
              "確かめた人: ▲本人", f"▲{esc(data['analogy']['written_by'])}"):
     assert want in page, want
 # 作る側が残した試行の控えと、記録の札の番号（字が同じ行が頁の頭の一覧にもあるので、札の形で見る）
-assert "・版 1・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
+# 札の版は記録を刷った組の番号（窓口の決定 11-07・#513 の (a)。R-0001 は 11-04 の前の組の紙なので、その組の番号）
+r1 = next(r for r in records.all_records(G) if r["id"] == "R-0001")
+assert f"・{hypotheses.label_of(r1.get('sheet_set') or hypotheses.current_set(hypotheses.load(G)), r1.get('sheet_version', 1))}・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
 # 入口の引用の札、一覧の場所、手帖の組の版と記録の番号
 # 入口から章の部屋（歌と札）を外した（本人のサイト体験レビュー 11-07 の 4）。札は玩具の頁の頭（原画と歌）で見る
 assert "確かめた人: ■" not in get("/"), "入口に章の札を出さない（札は玩具の頁。test_reader_words が見る）"

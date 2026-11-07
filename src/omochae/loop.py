@@ -264,8 +264,9 @@ def confirm_interpretation(rid, by, content=None):
 
 
 def confirmed_records(source_id, known=None):
-    """前例として引ける記録。人が解釈を確定した物だけ。動画の受け口の記録は外す（AI の道具に、上げた人の文を渡さない）。"""
-    from .records import UPLOADED
+    """前例として引ける記録。人が解釈を確定した物だけ。動画の受け口の記録は外す（AI の道具に、上げた人の文を渡さない）。
+    作例の受け口の記録も外す（写真から作った記録で、学ぶ人の観察が無い）。"""
+    from .records import UPLOADED, WORKSHOP
 
     out = []
     d = base() / "records"
@@ -273,7 +274,7 @@ def confirmed_records(source_id, known=None):
         if (d / "withdrawn" / p.name).exists():
             continue
         rec = store.read_json_or_skip(p)
-        if rec is not None and rec.get("source_id") == source_id and rec.get("via") != UPLOADED and confirmed(rec["id"]):
+        if rec is not None and rec.get("source_id") == source_id and rec.get("via") not in (UPLOADED, WORKSHOP) and confirmed(rec["id"]):
             out.append({**rec, "interpretation": interpretation(rec["id"])["content"]})
     return out
 
