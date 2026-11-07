@@ -71,18 +71,21 @@ SMALL_W = 400  # 敷き詰めの絵の幅（px）。幅 390 の 3 列（1 枚 10
 # 入口の「まずはここから」の 2 枚の幅（px）。幅 390 で 1 枚 168px を 3 倍の画面で見ても粗くならず、元の写し（約 750KB）の 1/5 ほどで届く。
 # 本人の答え（11-07）「言葉だけ並んでいる」を見たのは、iPhone の一番最初の画面で、トンネル越しに絵が届くまで名前だけに見えた形（統括の線:
 # 最初の画面の絵が名前より先か同時に見える事）。大きい元の写しは最初の画面で読まない
-SIZES = {"small": SMALL_W, "mid": 760}  # mid は幅 390 の 1 枚 168px の 3 倍の画面と、幅 1280 の 1 枚 464px の 1.6 倍ほど
+# mid は幅 390 の 1 枚 168px の 3 倍の画面と、幅 1280 の 1 枚 464px の 1.6 倍ほど。統括の合格の線（11-07）「入口の絵は 1 枚 100KB 以下」に
+# 入るよう、mid は字の質を少し下げる（幅 760・82 で 112KB だった）
+SIZES = {"small": SMALL_W, "mid": 760}
+QUALITY = {"small": 82, "mid": 74}
 
 
 @functools.lru_cache(maxsize=None)
-def _small(path, mtime, width=SMALL_W):
+def _small(path, mtime, width=SMALL_W, quality=82):
     from PIL import Image
     import io
     with Image.open(path) as im:
         im = im.convert("RGB")
         im.thumbnail((width, width * 8))
         buf = io.BytesIO()
-        im.save(buf, "JPEG", quality=82, optimize=True)
+        im.save(buf, "JPEG", quality=quality, optimize=True)
     return buf.getvalue()
 
 
@@ -111,7 +114,7 @@ def small_picture(sid, size="small"):
     """敷き詰めの 1 枚の小さい写し（/picture/<印>/small）。切り抜きは幅 1600px で 83 枚 35MB あり、iPhone で えらぶ を開くたびに全部を読むと重い。
     小さくした写しは一度作ったら覚えておく（写しを替えた時は mtime で作り直す）。写しが無ければ None。"""
     path = ROOT / "out/sources" / f"{sid}.jpg"
-    return _small(str(path), path.stat().st_mtime, SIZES[size]) if path.exists() else None
+    return _small(str(path), path.stat().st_mtime, SIZES[size], QUALITY[size]) if path.exists() else None
 
 
 def _tile(sid):

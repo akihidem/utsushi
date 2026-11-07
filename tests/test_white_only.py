@@ -38,6 +38,19 @@ else:
     assert f'role="img" aria-label="{first["toy"]}の図"' in mazu, "写しの無い木では地の色の札に読み上げの名"
 assert f"url(/picture/{first['sid']})" not in body and f'src="/picture/{first["sid"]}"' not in body, "最初の画面で元の大きい写しを読まない"
 assert f'<p class="meta">{looks.DOOR_LINE}</p>' in mazu, "黒の表紙の 1 行は 2 枚の下"
+# 入口の絵は小さい写しだけ（統括の合格の線 11-07: 1 枚 100KB 以下・83 の並びは遅れて読む。本人の答え「言葉だけに見えたのは一番最初の画面、
+# iPhone で」の元は、入口の絵の大きい写し 1 枚 750KB を一度に読む形だった）
+import re  # noqa: E402
+from web import toys  # noqa: E402
+urls = re.findall(r'(?:url\(|src="|data-src=")(/picture/[^)"]+)', body)
+have = any((looks.ROOT / "out/sources" / f"{t['sid']}.jpg").exists() for t in looks.toys())
+assert (urls or not have) and all(re.fullmatch(r"/picture/NDL-[^/]+/(small|mid)", u) for u in urls), [u for u in urls if not u.endswith(("/small", "/mid"))][:3]
+grid = body[body.index('<section class="tj-erabu"'):]
+assert ' src="/picture/' not in grid and grid.count(' data-src="/picture/') >= (1 if have else 0), "並びは 2 枚の後に読む"
+for u in set(urls):
+    sid, size = u.split("/")[2:4]
+    got = toys.small_picture(sid, size)
+    assert got is None or len(got) <= 100_000, (u, len(got))
 assert 'id="zn-hokusai"' not in white, "白の入口に北斎漫画の縦読みを置かない（序の頁へ。統括の決め 11-06）"
 # 公開デモは白の 1 つだけ
 sh = (ROOT / "run-demo.sh").read_text(encoding="utf-8")
