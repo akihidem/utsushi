@@ -15,8 +15,8 @@ exit: 0 = 書き出せた / 4 = 書き出せない（demo.flip.render と同じ�
 - エンジンの版の数は、out/demo/ban/engine.json（{"engine_version": N}）がある時だけ出す。数はエンジンが出す改善の歴史の表から
   人が置く（ここで数を作らない）。無い時は何も出さない。
 - 実物の写真は入れない（どの写真が何の版の物かを、台帳と記録で人が確かめてから。窓口の決め 11-07）。
-- 窓口が採った字幕「ワークショップを 2 回して、型紙の版を重ねた。」は、どこから約 4.4 秒を持ってくるかが決まっていないので、
-  EXTRA_LINE を空のままにして出さない（決まったら EXTRA_LINE に字を入れ、秒の出所を台本で決める）。
+- 窓口が採った字幕「ワークショップを 2 回して、型紙の版を重ねた。」は、場面 15 のかたまり（words.ALL の core_loop・VERSIONS_LINE）に入れた。
+  秒は場面 4 の語りが一般的な言い方で短くなった分を回した（窓口の決め 11-07 の (1) A）。字幕は下の真ん中の帯（words.band）
 - 紙の絵は demo.ban_take_in が out/demo/ban/ に置く（git の外）。無い版は点線の枠と札だけにして、書き出しは止めない（試験で見る）。
 - 案内役 B の歩き（demo.guide の core_loop の計画）は、書き出しの道の名が core_loop のままなので、そのまま重なる（紙の列の下を歩く）。
 """
@@ -30,7 +30,7 @@ from demo import core
 from demo.ban_take_in import BAN_DIR, SOURCES
 from demo.flip import H, PAPER, SHU, SUMI, W, contact_sheet, ease, fade, render, text
 from demo.english import en_format, text_en
-from demo.words import chunk_alpha, chunks_of, draw_chunk, draw_stat
+from demo.words import band, chunk_alpha, chunks_of, draw_chunk, draw_stat
 
 NAME = "core_loop"                  # 差し替える場面。字幕・数の行・案内役・後入れの札はこの名前で引く
 BASE = core.scene_module(NAME)
@@ -41,7 +41,6 @@ VERSIONS = tuple((name, int(name.rsplit("-v", 1)[1])) for name, _ in SOURCES)   
 LABEL = "型紙の版 {n}"
 ENGINE_LABEL = "エンジンの版 {n}"
 ENGINE_FILE = BAN_DIR / "engine.json"
-EXTRA_LINE = ""                     # 窓口が採った字幕の置き場（秒の出所が決まるまで空）
 
 # 紙の並び。5 枚を 1 段に大きく。字幕（上 111〜290）と数の行の帯（下 988〜）と案内役の歩く所（下 814〜994）の間に収める。
 # 札の字が案内役の頭に近づかないよう、段の頭を 318 から 296 に上げた（11-07 にコマで見た）。
@@ -105,11 +104,7 @@ class BanCard:
         img = Image.new("RGB", (W, H), PAPER)
         d = ImageDraw.Draw(img)
         n = len(self.chunks)
-        for i, lines in enumerate(self.chunks):
-            v = chunk_alpha(self.cues, n, i, t)
-            if v > 0:
-                # 英語字幕を足した高さでも紙の列（上の端 ROW_TOP）に掛からないよう、真ん中を少し上げた（前は 200）
-                draw_chunk(d, lines, W // 2, 165, 56, v)
+        subs = [(lines, chunk_alpha(self.cues, n, i, t)) for i, lines in enumerate(self.chunks)]
         shown = [ease((t - self.appear_at(i)) / APPEAR) for i in range(len(VERSIONS))]
         newest = max((i for i, v in enumerate(shown) if v > 0), default=None)
         for i, ((name, ban), sheet) in enumerate(zip(VERSIONS, self.sheets)):
@@ -132,8 +127,10 @@ class BanCard:
         if self.engine and last > 0:
             text_en(d, (ROW_X0 + len(VERSIONS) * SHEET_W + (len(VERSIONS) - 1) * GAP, ENGINE_Y), ENGINE_LABEL.format(n=self.engine),
                     28, fade(SHU, 0.85 * last), False, "ra", english=en_format(ENGINE_LABEL, n=self.engine))
-        if EXTRA_LINE and last > 0:
-            text_en(d, (W // 2, ENGINE_Y), EXTRA_LINE, 34, fade(SUMI, last), False, "ma")
+        # 字幕は下の真ん中の帯（ファイナリストから借りた点 1・2）。数の行は上の帯（words.stat_band）
+        for lines, v in subs:
+            if v > 0:
+                img = band(img, lines, v)
         return draw_stat(img, NAME, t)
 
 

@@ -49,9 +49,11 @@ assert cam[1] - view_h / 2 <= premise[1] and plate[1] + plate[3] <= cam[1] + vie
 assert cam[0] - cam[2] / 2 <= premise[0] and premise[0] + premise[2] <= cam[0] + cam[2] / 2, cam
 # 寄りが効いている（途中で絵が変わる）。頭は字を置かない（絵で分かる）。上の帯に字は 1 かたまりだけ
 assert scene.frame(1.5).tobytes() != scene.frame(5.0).tobytes() != scene.frame(10.0).tobytes()
-band = (0, 0, W, scene3.BOX[1] - 10)
-assert len(set(scene.frame(1.5).crop(band).getdata())) == 1, "頁の頭の間は字を置かない"
-assert len(set(scene.frame(5.0).crop(band).getdata())) > 1
+# 字は下の真ん中の帯（11-07 の組み直し）。頁の頭の間は帯に字を置かず、前提の札の所で 1 かたまり出る
+from demo import words as _words  # noqa: E402
+band = (0, _words.H - _words.BAND_BOTTOM - 200, W, _words.H - _words.BAND_BOTTOM)
+assert scene.frame(1.5).crop(band).tobytes() == scene.frame(1.6).crop(band).tobytes(), "頁の頭の間は字を置かない（帯の所が動かない）"
+assert scene.frame(1.5).crop(band).tobytes() != scene.frame(5.0).crop(band).tobytes(), "前提の 1 かたまりが帯に出る"
 # 撮った枠の外は、撮った頁の地の色で埋める（継ぎ目を見せない。皮の色が変わっても追いつくよう、色を書き込まない）
 for bg in ((252, 252, 250), (30, 30, 30)):
     plain = Image.new("RGB", (1600 * dpr, 1000 * dpr), bg)

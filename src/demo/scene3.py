@@ -256,12 +256,13 @@ class Scene3:
             draw.rectangle((BOX[0] - 1, BOX[1] - 1, BOX[2], BOX[3]), outline=fade(SUMI, 0.3 * a_screen), width=2)
         # 字は 1 かたまりだけ。頁の頭は絵で分かるので字を置かない。
         a_line = phase(t, "premise") * (1 - out)
-        if a_line > 0:
-            from demo.english import text_en  # 英語字幕（枠の上の余白に 1 組で）
+        # 字は下の真ん中の字幕の帯（ファイナリストから借りた点 1・2。前は枠の上の余白と、真ん中に大きく）
+        from demo.words import band
 
-            text_en(draw, (W // 2, 70), TITLE_PREMISE, 52, fade(SUMI, a_line), False, "ma")
+        if a_line > 0:
+            img = band(img, (TITLE_PREMISE,), a_line)
         if c > 0:
-            draw_chunk(draw, CLOSING, W // 2, H // 2 - 30, 72, c)
+            img = band(img, CLOSING, c)
         return img
 
 

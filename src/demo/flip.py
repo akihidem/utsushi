@@ -186,10 +186,13 @@ class Scene:
         c0, c1 = CUES["line0"][0], CUES["line1"][0]
         v0 = ease((t - c0) / 0.5) * (1 - ease((t - (c1 - 0.5)) / 0.5))
         v1 = ease((t - c1) / 0.5)
+        # 下の真ん中の字幕の帯（ファイナリストから借りた点 1・2。前は人物の右に大きく）
+        from demo.words import band
+
         if v0 > 0:
-            draw_closing(draw, CLOSING[0], TEXT_X, H // 2 - 30, 60, v0)
+            img = band(img, (CLOSING[0],), v0)
         if v1 > 0:
-            draw_closing(draw, CLOSING[1], TEXT_X, H // 2 - 30, 60, v1)
+            img = band(img, (CLOSING[1],), v1)
         return img
 
 

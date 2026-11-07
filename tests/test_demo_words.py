@@ -13,46 +13,28 @@ from demo import flip, script, words
 
 rec_lines = words.record_lines()
 assert len(rec_lines) > 5, "記録の引用の行が読めていない"
-for name, chunks in words.CARDS.items():
-    assert words.in_record((words.flat(chunks),)), f"{name} の字が記録と違う"
+# 字の札と語りは一般的な言い方（本人の言葉 11-07「デモ動画は、僕の言葉の引用ではなく、一般的な言い方にしたい」・窓口の決め (1) A・(3)）。
+# 前は哲学の記録と語りの全文に一字も違わない事を見ていた。今は、本人の言葉の印を付けない事と、一人称で本人を語らない事を見る
+assert words.MARKED == (), "本人の言葉の印を付ける札は無い"
+for name, chunks in {**words.CARDS, **words.TALKS}.items():
     assert all(s.strip() == s and s for lines in chunks for s in lines), name
+    assert not any(w in words.flat(chunks) for w in ("僕", "ぼく", "私たち")), (name, "一人称で語らない")
+# 職人の 1 文は本人の決定（11-07 の (2) B）で前の言い方のまま
+assert "職人も、もうほとんど残っていない" in words.flat(words.TALKS["talk_lost"])
 
-# 札の言葉（本人の言葉 11-05 夕）。字は足さず引かず、切れ目だけで分ける
-TOUCH = "AIが良くなるのは副次的なもので、みんなが手で実際に作ることその楽しさに気づくことが最初。"
-assert words.flat(words.CARDS["word_touch"]) == TOUCH and TOUCH in rec_lines
-assert words.flat(words.CARDS["word_ai"]) == "型紙は不完全でうまく動かないけどそれを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される"
-# 優先の順が変わったので、前の札は台本に出さない（記録の言葉は消さない）
-for gone in ("word_make", "word_fix", "word_who"):
-    assert gone not in words.CARDS and gone not in script.SCENES, gone
 
 # 語りの文を 1 字でも変えると落ちる。文の途中で終わるのも落ちる
 assert not words.in_narration((("そこに喜びが、ある。",),)) and not words.in_narration((("そこに喜びが",),))
 # 一字でも違えば落ちる。短く切った文も落ちる（切った文を本人の言葉と書かない）
-lines = tuple(s for c in words.CARDS["word_touch"] for s in c)
+lines = ("AIが良くなるのは副次的なもので、", "みんなが手で実際に作ること", "その楽しさに気づくことが最初。")  # 前の札の字（記録の引用の 1 行）
+assert words.in_record(lines), "道具は前の札の字で記録と照らせる"
 assert not words.in_record((lines[0].replace("副次的", "二次的"), *lines[1:]))
 assert not words.in_record(lines[1:]), "切った文を通した"
 assert not words.in_record(("手を動かす楽しさを忘れた人のために作っている。",))
 
-# 語り（本人の言葉 11-05 20:04）。使う 6 文は全文の中にそのままあり、全文の順に並ぶ。文の中の字は変えない（最後の 1 文は word_touch を戻す秒のために外した。本人の決定 11-06）
-SENTENCES = (
-    "江戸時代のおもちゃというものは、紙と木と竹と糸でできていて、子供が壊してもすぐ自分で直せる。",
-    "そこに喜びがある。",
-    "しかし、その江戸時代のおもちゃは、もう大半が失われていて、それを作る職人ももうほとんど残っていないという問題がある。",
-    "今唯一残ってるのは、江都二色という、おもちゃが狂歌と一緒に書かれた書物だけで、そこにはおもちゃの絵とそのおもちゃの遊び方にちなんだ狂歌が書かれているけれども、どうやって遊ぶのか、またどんなものでできていたのかってことまではわからない。",
-    "物理の世界では、トイモデルという風に言って、自分で扱えるおもちゃをこねくり回して、自分で作って、自分の手のひらで考えるというやり方が、考え方がある。",
-    "そしてそこにクロードが寄り添っている。",
-)
-full = words.NARRATION.read_text(encoding="utf-8")
-places = [full.index(s) for s in SENTENCES]
-assert places == sorted(places), "語りの順と違う"
-assert all(full[p - 1] in "。 " for p in places if p), "文の途中から始まっている"
-assert all(s.endswith("。") for s in SENTENCES)
-assert "".join(words.flat(words.TALKS[n]) for n in ("talk_toys", "talk_lost", "scene2", "talk_physics", "talk_claude")) == "".join(SENTENCES)
-assert len("".join(SENTENCES)) == 323
+# 語りは一般的な言い方（11-07）。前は本人の語りの全文（opening-narration.txt）と 1 字も違わない事を見ていた。
+# 今は、かたまりの切れ目が読点か文の終わりで、かたまりが順に続いている事だけを見る
 for name, chunks in words.TALKS.items():
-    assert words.in_narration(chunks), name
-    assert all(full.count(s) == 1 and s in SENTENCES for s in words.sentences_of(chunks)), name
-    # かたまりの切れ目は読点か文の終わり。全文の中で順に続いている
     at = 0
     text_of = words.flat(chunks)
     for lines in chunks:
@@ -61,12 +43,6 @@ for name, chunks in words.TALKS.items():
         assert text_of.index(piece, at) == at, (name, piece)
         at += len(piece)
         assert all(s.strip() == s and s for s in lines), name
-# 外した文は札に無い（本人の方針 11-05 20:10 で文を減らした）
-every = "".join(words.flat(c) for c in words.TALKS.values())
-assert "自分の手の中で完結" not in every and "理科離れ" not in every
-# 語りの全文の控えと、聞き違いを直した所
-assert "江都二色" in full and "江戸二式" not in full and "狂歌" in full and "教歌" not in full and "教科" not in full
-assert full.startswith("デモ動画のあんなんだけど。まず最初に。"), "全文は前置きごと残す（使わないのは plan.md に書く）"
 
 # 1 度に 1 かたまり、1 秒 5 字以下。足りない時は速めずに文を減らす
 for name in words.ALL:
@@ -90,7 +66,7 @@ assert not {"bridge", "close", "core_loop"} & set(words.MARKED)
 # 境目の札の字は本人の決定（11-06、カード 125217）のまま。本人の言葉の記録の引用ではないので、言葉の札の印を付けない。3 秒に入る
 assert words.flat(words.BORDER) == "ここからは、裏のしくみ。" and words.ALL["border"] == words.BORDER
 assert "border" not in words.MARKED and words.seconds_of("border") == 3.0
-assert set(words.CARDS) | set(words.TALKS) == set(words.MARKED)
+assert words.MARKED == (), "一般的な言い方にした（11-07）ので、本人の言葉の印を付ける札は無い"
 
 # 終わりの字幕は初めと同じ字（本人の決定 11-05）。字幕 → 問いの順で終わる
 assert script.SCENES[-2:] == ["close", "ask"]
@@ -114,7 +90,8 @@ for name in [*words.CARDS, "talk_toys", "talk_lost", "talk_physics", "talk_claud
         assert card.frame(mid).tobytes() == card.frame(mid + 0.05).tobytes(), name
 # 図の札: 失われる話の間に図が薄くなる（今の決定の形。見せ方の議論が決まるまで変えない）
 lost = words.ChunkCard("talk_lost", words.cues_of("talk_lost"), pic)
-box = (words.PIC_X - 100, 300, words.PIC_X + 100, 700)
+# 図は真ん中に置く（11-07 の組み直し: 字は下の帯なので、図を右へ寄せない）
+box = (words.W // 2 - 100, 300, words.W // 2 + 100, 700)
 assert lost.frame(0.0).crop(box).getextrema()[0][0] < lost.frame(lost.duration - 0.1).crop(box).getextrema()[0][0]
 
 # 問いの札は止まっている（考える間に動く物を置かない）

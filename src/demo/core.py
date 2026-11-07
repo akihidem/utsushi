@@ -328,9 +328,9 @@ class Screens:
         if nxt and nxt["line"] != s["line"]:
             v *= 1 - ease((t - (self.cues[nxt["at"]][0] - 0.5)) / 0.5)
         if s["line"] and v > 0:
-            # 英語字幕は日本語のすぐ下（画面の枠の上の余白 196px の中に入る。demo.english）
-            from demo.english import text_en
-            text_en(draw, (W // 2, 70), s["line"], 52, fade(SUMI, v), False, "ma")
+            # 下の真ん中の字幕の帯（ファイナリストから借りた点 1・2・5: 画面の録画の上に字幕を焼き込む。前は枠の上の余白に）
+            from demo.words import band
+            img = band(img, (s["line"],), v)
         return img
 
 
@@ -470,17 +470,18 @@ class LoopCard:
         img = Image.new("RGB", (W, H), PAPER)
         d = ImageDraw.Draw(img)
         n = len(self.chunks)
-        for i, lines in enumerate(self.chunks):
-            v = chunk_alpha(self.cues, n, i, t)
-            if v > 0:
-                draw_chunk(d, lines, W // 2, 200, 56, v)
+        subs = [(lines, chunk_alpha(self.cues, n, i, t)) for i, lines in enumerate(self.chunks)]
         a, b = self.cues["rings"]
         v = ease((t - a) / (b - a))
         if v > 0:
             near = ease((t - self.cues[f"c{n - 1}"][0]) / 0.5)
             _rings(d, LOOP_Y, [v] * len(LOOPS), dash=0.5 + 0.5 * near)
-        from demo.words import draw_stat  # 公的調査の数の 1 行（本人の決定 11-06・置き場 A）。字の札と同じ下の帯に置く
+        from demo.words import band, draw_stat  # 公的調査の数の 1 行（本人の決定 11-06・置き場 A）。11-07 の組み直しで上の帯
 
+        # 字幕は下の真ん中の帯（11-07 の組み直し。ファイナリストから借りた点 1・2）
+        for lines, v in subs:
+            if v > 0:
+                img = band(img, lines, v)
         return draw_stat(img, "core_loop", t)
 
 

@@ -38,10 +38,12 @@ assert the_map.frame(8.9).tobytes() != the_map.frame(0.1).tobytes()
 for s in (core.MAP_TITLE, core.MAP_SUB, core.GALLERY_LINE):
     assert len(s) <= 15, s
 
-# 手で作る所を長く。作る 3 場面は 30 秒を切らない。AI の場面（word_ai・core_loop）は前の 22 秒より短い。全体は 179.5 秒以内
+# 手で作る所を長く。作る 3 場面は 30 秒を切らない。AI の場面（word_ai・core_loop）は作る 3 場面より短い。全体は 179.5 秒以内
+# 11-07 に場面 15（版の並び）へ字幕 1 つの秒を回した（窓口の決定 084919 の ③・(1) A。版の歩みは本人の言う山場）ので、
+# AI の場面の上限を前の 22.5 秒から 27 秒にした。作る 3 場面より長くしない線は前のまま
 making = sum(script.load_scene(n).DURATION for n in ("scene3", "core_make", "core_keep"))
 ai = sum(script.load_scene(n).DURATION for n in ("word_ai", "core_loop"))
-assert making >= 30 and ai < 22.5 and making > ai, (making, ai)
+assert making >= 30 and ai < 27.0 and making > ai, (making, ai)
 assert sum(script.load_scene(n).DURATION for n in script.SCENES) <= 179.5
 # 本人の言葉の札は手で作る場面の直前へ戻した。同じ秒だけ他を削ったので、全体は戻す前の 178.9 秒を越えない（本人の決定 11-06）
 # 表と裏に分けた後も、word_touch は手で作る場面の直前（前は語りの後。今は「絵は止めて残した」の後）。境目の 3 秒は始まりから取った
@@ -108,10 +110,12 @@ assert [s["shot"] for s in keeping.segs] == ["keep", "keep"] and keeping.segs[1]
 keep_end = keeping.segs[1]["to"]
 assert 900 - 40 <= keep_end[1] - keep_end[2] * core.ASPECT / 2 <= 900, keep_end
 mark = core.CUES_ALL["core_keep"]["record"]
-assert keeping.frame(mark[0] + 0.05).crop(core.BOX).tobytes() == keeping.frame(mark[0] - 0.1).crop(core.BOX).tobytes()
+# 字幕は下の帯（11-07 の組み直し）で枠の下に重なるので、帯より上の枠の中を比べる
+upper = (core.BOX[0], core.BOX[1], core.BOX[2], min(core.BOX[3], words.H - words.BAND_BOTTOM - 260))
+assert keeping.frame(mark[0] + 0.05).crop(upper).tobytes() == keeping.frame(mark[0] - 0.1).crop(upper).tobytes()
 # 手順が替わる時は、前の画面を頁の地の色へ溶かしてから次の画面を出す（2 つの頁の字を重ねない）
 middle = sum(core.CUES_ALL["core_make"]["step2"]) / 2
-assert len(stepping.frame(middle).crop(core.BOX).convert("RGB").getcolors(flip.W * flip.H)) <= 2
+assert len(stepping.frame(middle).crop(upper).convert("RGB").getcolors(flip.W * flip.H)) <= 2  # 帯より上の枠の中
 assert stepping.frame(middle).getpixel((core.BOX[0] + 50, core.BOX[1] + 50)) == core.page_color(fake["make2"][0])
 # 写真は確認の記録が無いとギャラリーに出ない（#314）。例の記録に一時の置き場で確認を残す。出なければ止まる（通った振りをしない）
 real_post, real_run, real_open = core._post, core.subprocess.run, core.urllib.request.urlopen

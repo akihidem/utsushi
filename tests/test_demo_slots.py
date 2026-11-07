@@ -22,10 +22,11 @@ voices = [n for kinds in script.SLOTS.values() for n in kinds.get("voice", ())]
 assert hands == ["A", "B", "C", "D", "E", "F", "H", "I"] and voices == ["A1", "A2", "A3", "A4", "A5", "A6"]
 assert sum(s for _, s in script.SLOTS["talk_physics"]["hands"]) == script.load_scene("talk_physics").DURATION
 assert set(script.SLOTS) <= set(script.SCENES)
-# 声は語りの場面だけ。文の数は札の文の数と同じ（1 文 1 ファイル）
+# 声は語りの場面だけ。どの語りの場面にも声がある（11-07 に一般的な言い方にし、文の数と声のファイルの数は合わなくなった:
+# A1 は 2 文。声の字は grove の state/demo-voice-aivis-general の台本と同じ）
 for name, kinds in script.SLOTS.items():
     assert name.startswith("talk_") or name == "scene2", name
-    assert len(kinds.get("voice", ())) == len(words.sentences_of(words.TALKS[name])), name
+    assert kinds.get("voice") and name in words.TALKS, name
     # 手の映像の秒の和は場面の秒に入る（手は場面の頭から敷く）
     assert sum(s for _, s in kinds.get("hands", ())) <= script.load_scene(name).DURATION + 1e-9, name
 # 置き場は git の外
@@ -61,7 +62,8 @@ with tempfile.TemporaryDirectory() as tmp:
     assert on.tobytes() == card.frame(2.0).tobytes(), "1 コマは時刻だけで決まる"
     right, left = on.getpixel((1800, 300)), on.getpixel((20, 300))
     assert abs(right[0] - flip.PAPER[0]) > 60, ("右に手の映像が出る", right)
-    assert all(abs(left[k] - flip.PAPER[k]) < 30 for k in range(3)), ("左は紙の色が掛かる", left)
+    # 11-07 の組み直し（ファイナリストから借りた点 1・3）: 語りの札は手を画面いっぱいに敷き、字は下の帯。左にも紙を掛けない
+    assert abs(left[0] - flip.PAPER[0]) > 60, ("左にも手の映像が出る（紙を掛けない）", left)
     assert card.frame(0.0).getpixel((1800, 300)) == flip.PAPER, "紙の地から溶けて現れる"
     late = card.frame(card.duration - 0.1)
     assert late.getpixel((1800, 300)) == flip.PAPER and late.getpixel((20, 300)) == flip.PAPER, "使い切った後は今の地"
@@ -130,12 +132,13 @@ if shutil.which("ffmpeg"):
         slot = pathlib.Path(tmp) / script.SLOT_DIR
         slot.mkdir(parents=True)
         target = {}
-        for name, kinds in script.SLOTS.items():
-            sents = words.sentences_of(words.TALKS[name])
-            for v, sent in zip(kinds.get("voice", ()), sents):
-                target[v] = round(words.reading_chars(sent) / words.RATE, 1)
-                padded(slot / f"{v}.m4a", target[v])
-        assert target == {"A1": 9.2, "A2": 1.8, "A3": 11.6, "A4": 23.4, "A5": 14.8, "A6": 3.8}, target
+        # 声ごとの字（11-07 の一般的な言い方。A1 は札の頭の 3 かたまり、A2 は最後のかたまり。声の台本は grove の demo-voice-aivis-general）
+        T = words.TALKS
+        said = {"A1": T["talk_toys"][:3], "A2": T["talk_toys"][3:], "A3": T["talk_lost"], "A4": T["scene2"], "A5": T["talk_physics"], "A6": T["talk_claude"]}
+        for v, chunks in said.items():
+            target[v] = round(words.reading_chars(words.flat(chunks)) / words.RATE, 1)
+            padded(slot / f"{v}.m4a", target[v])
+        assert sorted(target) == [f"A{i}" for i in range(1, 7)] and all(0 < s < 20 for s in target.values()), target
         lengths = [script.load_scene(n).DURATION for n in script.SCENES]
         got, duck, problem = build.place_voices(script.SCENES, lengths, tmp, into=pathlib.Path(tmp) / "voice")
         assert problem is None, problem

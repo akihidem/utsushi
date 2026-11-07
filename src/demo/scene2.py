@@ -22,7 +22,7 @@ import sys
 from PIL import Image, ImageDraw, ImageChops, ImageFilter, ImageOps
 
 from demo.flip import H, PAPER, SUMI, W, contact_sheet, ease, fetch_image, ink_layer, render
-from demo.words import TALKS, chunk_alpha, cues_of, draw_chunk, draw_from, seconds_of
+from demo.words import TALKS, band, chunk_alpha, cues_of, seconds_of
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SOURCES = pathlib.Path(__file__).with_name("scene2_sources.json")
@@ -124,12 +124,11 @@ class Scene2:
                 pg.putalpha(pg.getchannel("A").point(lambda v: round(v * a_in)))
             img.paste(pg, (0, 0), pg)
         draw = ImageDraw.Draw(img)
-        # 語り: 図の右に 1 かたまりずつ。前のかたまりが消えてから次が現れる。
+        # 語り: 下の真ん中の字幕の帯に 1 かたまりずつ（ファイナリストから借りた点 1・2。前は図の右に大きく。本人の言葉の印は外した）
         for i, lines in enumerate(self.chunks):
             v = chunk_alpha(CUES, len(self.chunks), i, t)
             if v > 0:
-                draw_chunk(draw, lines, TEXT_X, H // 2 - 30, TEXT_SIZE, v)
-        draw_from(draw, TEXT_X)
+                img = band(img, lines, v)
         return img
 
 

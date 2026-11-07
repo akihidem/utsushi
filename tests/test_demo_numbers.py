@@ -31,8 +31,8 @@ for name, (line, src) in words.STATS.items():
     assert f.getlength(line) <= flip.W - 160 and g.getlength(src) <= flip.W - 160, name
     assert words.STAT_SIZE >= 30 and words.SRC_SIZE >= 22, "読める大きさの下限"
 
-# 置き場: 印のある札は上の帯、印の無い札（輪の図）は下の帯
-assert words.stat_band("talk_physics") == "top" and words.stat_band("word_ai") == "top" and words.stat_band("core_loop") == "bottom"
+# 置き場（11-07 の組み直し）: 字幕を下の帯に出す場面は、数の行を上の帯へ（帯と重ねない）。全画面の題の札（word_ai）は下の帯
+assert words.stat_band("talk_physics") == "top" and words.stat_band("core_loop") == "top" and words.stat_band("word_ai") == "bottom"
 FROM_TOP = flip.H - 130
 assert all(b1 <= FROM_TOP for b0, b1 in [words.BANDS["top"][2:]]), "上の帯は印より上"
 

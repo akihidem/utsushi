@@ -36,29 +36,28 @@ EN = {
     # 1 opening
     "こんなおもちゃを知っていますか？": "Have you ever seen a toy like this?",  # 案
     "（ここに職人のおもちゃの動画が入ります）": "(A craftsman's toy video will go here)",  # 案
-    # 2 talk_toys（声 A1・A2）
-    "江戸時代のおもちゃというものは、": "Toys in the Edo period",  # 案: 引用
-    "紙と木と竹と糸でできていて、": "were made of paper, wood, bamboo, string.",  # 案: 引用
-    "子供が壊してもすぐ自分で直せる。": "Children who broke them could mend them.",  # 案: 引用
-    "そこに喜びがある。": "That was part of the joy.",  # 案: 引用
-    # 3 talk_lost（声 A3）
-    "しかし、その江戸時代のおもちゃは、": "But most of those toys",  # 案: 引用
-    "もう大半が失われていて、": "are gone,",  # 案: 引用
-    "それを作る職人ももうほとんど残っていないという問題がある。": "and how they were made has mostly been lost.",  # 案: 引用
+    # 2 talk_toys（声 A1・A2。一般的な言い方・案。窓口の決め 11-07 の (1) A）
+    "江戸時代のおもちゃは、": "Toys in the Edo period",  # 案
+    "紙と木と竹と糸でできていた。": "were made of paper, wood, bamboo, string.",  # 案
+    "子どもが壊しても、自分で直せた。": "Children who broke them could mend them.",  # 案
+    "そこに、遊ぶ喜びがあった。": "That was part of the joy.",  # 案
+    # 3 talk_lost（声 A3。職人の 1 文は本人の決定 11-07 の (2) B で前の言い方のまま）
+    "しかし、その多くは、": "But most of those toys",  # 案
+    "もう残っていない。": "are gone.",  # 案
+    "それを作る職人も、もうほとんど残っていない。": "And hardly any craftsmen who made them remain.",  # 案
     # 4 scene2（声 A4）
-    "今唯一残ってるのは、江都二色という、": "What survives is one picture book, Edo Nishiki (1773).",  # 案: 引用
-    "おもちゃが狂歌と一緒に書かれた書物だけで、": "It pairs each toy with a comic poem,",  # 案: 引用
-    "そこにはおもちゃの絵とそのおもちゃの遊び方にちなんだ狂歌が書かれているけれども、":
-        "a picture and a poem about how it was played.",  # 案: 引用
-    "どうやって遊ぶのか、": "But not how to play them,",  # 案: 引用
-    "またどんなものでできていたのかってことまではわからない。": "or what they were made of.",  # 案: 引用
+    "残っているのは、": "What survives",  # 案
+    "『江都二色』（1773）という一冊の本。": "is one picture book, Edo Nishiki (1773).",  # 案
+    "おもちゃの絵と、遊び方にちなんだ狂歌が載っている。": "It shows each toy with a comic poem about how it was played.",  # 案
+    "けれども、どう遊ぶのか、": "But it never says how to play them,",  # 案
+    "何でできていたのかは、書かれていない。": "or what they were made of.",  # 案
     # 5 flip・18 close（決まった字）
     "絵は動きを止めて残した。": "The pictures froze the motion.",  # 案
     "どう動いたかは、紙で作って確かめる。": "To learn how it moved, build it in paper.",  # 案
-    # 6 word_touch（本人の言葉の札）
-    "AIが良くなるのは副次的なもので、": "Better AI comes second;",  # 案: 引用
-    "みんなが手で実際に作ること": "making things by hand,",  # 案: 引用
-    "その楽しさに気づくことが最初。": "and finding that joy, comes first.",  # 案: 引用
+    # 6 word_touch（名前の無い字の札・案。窓口の決め 11-07 の (3)）
+    "まず大事なのは、": "What matters first",  # 案
+    "手で作る楽しさに気づくこと。": "is finding the joy of making by hand.",  # 案
+    "AI がよくなるのは、その後。": "Better AI comes after that.",  # 案
     # 7 scene3
     "型紙は正解ではなく、Claude が考えた仮説": "The pattern is not the answer. It is Claude's hypothesis.",  # 案
     "開いたら、すぐ作る。": "Open it and start building.",  # 案
@@ -75,22 +74,22 @@ EN = {
     # 12 border
     "ここからは、裏のしくみ。": "Now, behind the scenes.",  # 案
     # 13 talk_physics（声 A5）
-    "物理の世界では、トイモデルという風に言って、": 'Physics has an idea called the "toy model":',  # 案: 引用
-    "自分で扱えるおもちゃをこねくり回して、": "build a small model you can hold,",  # 案: 引用
-    "自分で作って、自分の手のひらで考えるというやり方が、": "make it yourself, and think it through in your own hands",  # 案: 引用
-    "考え方がある。": "— that way of thinking.",  # 案: 引用
+    "物理には「トイモデル」という考え方がある。": 'Physics has an idea called the "toy model":',  # 案
+    "手で扱える小さな模型を自分で作り、": "build a small model you can hold,",  # 案
+    "動かしながら、手のひらで考える。": "and think it through in your own hands.",  # 案
     # 14 talk_claude（声 A6）
-    "そしてそこにクロードが寄り添っている。": "And Claude is there to help.",  # 案: 引用
+    "その横で、Claude が手伝う。": "And Claude is there to help.",  # 案
     # 15 core_loop（つなぎ 2・いま作っているところです）
     "作ったものを持ちよると、": "When people share what they made,",  # 案
     "Claude もそれを見て、": "Claude looks at it too,",  # 案
     "次の型紙を少しずつよくしていきます。": "and improves the next pattern, bit by bit.",  # 案
+    "ワークショップを 2 回して、型紙の版を重ねた。": "Two workshops, and the pattern went through new versions.",  # 案（窓口の決定 084919 の ③ 案 1）
     "いま作っているところです": "(Still being built)",  # 案
-    # 16 word_ai（本人の言葉の札）
-    "型紙は不完全でうまく動かないけど": "The patterns are not perfect.",  # 案: 引用
-    "それを人間が工夫で乗り切る過程を": "People work around what fails,",  # 案: 引用
-    "AIにフィードバックして": "that goes back to the AI,",  # 案: 引用
-    "型紙が改善される": "and the next pattern improves.",  # 案: 引用
+    # 16 word_ai（名前の無い字の札・案）
+    "型紙は完全ではない。": "The patterns are not perfect.",  # 案
+    "うまく動かない所を、人が工夫で乗り切る。": "People work around what fails.",  # 案
+    "その過程を AI に返すと、": "It goes back to the AI,",  # 案
+    "次の型紙が直る。": "and the next pattern improves.",  # 案
     # つなぎ 1（今の台本では外した札。words.ALL に残るので英語も置く）
     "むかしの子どもも、今の子どもも、": "Children long ago and children today",  # 案
     "もらったおもちゃより、": "often skip the toy they got",  # 案
@@ -100,8 +99,6 @@ EN = {
     "紙で動いても、昔の作り方の証明にはならない": "Working in paper does not prove how it was made back then.",  # 案
     # 19 ask
     "あなたなら、何を作りますか。": "What would you make?",  # 案
-    # 本人の言葉の印（札の下）
-    "本人の言葉（11-05）": "The maker's words (Nov 5)",  # 案: 引用（引用を外すなら印ごと外れる）
     # 数の 1 行と出所（13・15・16。数と出典の名は原典のまま訳した）
     "理科の実験が週 1 回以上ある小学 4 年生　日本 59.6％・国際平均 31.5％":
         "4th graders with science experiments at least weekly: Japan 59.6% / international avg. 31.5%",  # 案
@@ -215,7 +212,7 @@ def all_sources():
     out += [(scene3.TITLE_PREMISE, "scene3"), *[(c, "scene3") for c in scene3.CLOSING]]
     out += [(c, "scene5") for c in scene5.CAPTION]
     out += [(scene7.CAPTION, "scene7")]
-    out += [(words.ASK, "ask"), (words.FROM, "marked")]
+    out += [(words.ASK, "ask")]  # 本人の言葉の印（words.FROM）は、一般的な言い方にした（11-07）ので描かない
     for name, (line, src) in words.STATS.items():
         out += [(line, name), (src, name)]
     out += [(LABEL_CLAUDE, "later"), (LABEL_VOICE, "later")]

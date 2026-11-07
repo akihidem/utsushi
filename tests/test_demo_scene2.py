@@ -46,7 +46,9 @@ for t in (0.5, 4.0, 7.0, 11.5, scene2.DURATION - 0.1):
 # 寄っている間は絵が変わる（寄りが効いている）
 assert scene.frame(2.0).tobytes() != scene.frame(4.0).tobytes()
 # 寄り終えた後、最後まで図の領域が 1 画素も変わらない（部品を動かしていない）
-region = (0, 0, scene2.FIG_RIGHT, H - 100)
+# 字幕は下の帯（11-07 の組み直し）なので、帯より上の図の領域を見る
+from demo import words as _words  # noqa: E402
+region = (0, 0, scene2.FIG_RIGHT, _words.H - _words.BAND_BOTTOM - 260)
 h0, h1 = scene2.HOLD
 early, late = scene.frame(h0 + 0.2).crop(region), scene.frame(h1 - 0.1).crop(region)
 assert early.tobytes() == late.tobytes(), "止まっている間に図の領域が変わった"

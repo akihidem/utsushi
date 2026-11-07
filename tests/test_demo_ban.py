@@ -26,7 +26,7 @@ assert core_loop_ban.CUES is base.CUES, "合図は写さず同じ物を読む（
 assert core_loop_ban.DURATION == base.DURATION == core.SECONDS["core_loop"]
 assert core_loop_ban.CHUNKS == words.chunks_of("core_loop")
 assert core_loop_ban.NAME == "core_loop"
-assert core_loop_ban.EXTRA_LINE == "", "窓口が採った字幕は、秒の出所が決まるまで出さない"
+assert (words.VERSIONS_LINE,) in core_loop_ban.CHUNKS, "窓口が採った字幕（案 1）は場面 15 のかたまり（秒は場面 4 から回した）"
 assert [n for _, n in core_loop_ban.VERSIONS] == [10, 11, 12, 13, 14], "御来迎の v10 → v14 だけ（虎はこの場面に入れない）"
 assert core_loop_ban.LABEL.format(n=14) == "型紙の版 14" and core_loop_ban.ENGINE_LABEL.format(n=7) == "エンジンの版 7"
 

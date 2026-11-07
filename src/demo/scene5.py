@@ -118,9 +118,9 @@ class Scene5:
         # 字幕は 1 かたまり。現れたら場面の終わり（溶け）まで止めて読ませる。
         v0 = ease((t - CUES["line0"][0]) / 0.5)
         if v0 > 0:
-            from demo.english import text_en  # 英語字幕（日本語の下に 1 組で）
+            from demo.words import band  # 下の真ん中の字幕の帯（ファイナリストから借りた点 1・2）
 
-            text_en(draw, (W // 2, 880), CAPTION[0], 52, fade(SUMI, v0), False, "ma")
+            img = band(img, CAPTION, v0)
         return img
 
 

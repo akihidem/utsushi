@@ -39,22 +39,21 @@ RATE, MIN_CHUNK = 5.0, 2.0     # 1 秒に読ませる字の上限と、短いか
 LEAD, TAIL = 0.4, 0.2          # 場面の頭と終わりの余り（場面の溶けと重なる所）
 DISSOLVE = 0.5                 # かたまりが消える・現れる秒。前が消えてから次が現れるので、替わり目は 1 秒
 EPS = 1e-9                     # 小数の誤差で切り上げが 0.1 秒増えないようにする
-# 本人の言葉の札: (かたまり…)。かたまりは行の並び。つなぐと記録の引用の 1 行になる。
+# 字の札（全画面の題の札）。本人の言葉（11-07）「デモ動画は、僕の言葉の引用ではなく、一般的な言い方にしたい」と窓口の決め（11-07 の (1) A・(3)）で、
+# 本人の言葉の引用の札を、名前の無い字の札にした。字は state の demo-general-words の案（本人の確かめ待ち）。前は哲学の記録の引用と一字も違わない事を見ていた
 CARDS = {
-    "word_touch": (("AIが良くなるのは副次的なもので、",), ("みんなが手で実際に作ること",), ("その楽しさに気づくことが最初。",)),
-    "word_ai": (("型紙は不完全でうまく動かないけど",), ("それを人間が工夫で乗り切る過程を",), ("AIにフィードバックして",), ("型紙が改善される",)),
+    "word_touch": (("まず大事なのは、",), ("手で作る楽しさに気づくこと。",), ("AI がよくなるのは、その後。",)),
+    "word_ai": (("型紙は完全ではない。",), ("うまく動かない所を、人が工夫で乗り切る。",), ("その過程を AI に返すと、",), ("次の型紙が直る。",)),
 }
-# 本人の語り。文の中の字は変えない。かたまりの切れ目は読点（床で見る）。scene2 は図と歌の場面に出す分。
+# 語り（一般的な言い方・案）。合成の声（grove の state/demo-voice-aivis-general）が同じ字を読む。かたまりの切れ目は読点。
+# talk_lost の職人の 1 文は、本人の決定（11-07 の (2) B）で前の語りのまま「職人ももうほとんど残っていない」の言い方を残した
 TALKS = {
-    "talk_toys": (("江戸時代のおもちゃというものは、",), ("紙と木と竹と糸でできていて、",), ("子供が壊してもすぐ自分で直せる。",), ("そこに喜びがある。",)),
-    "talk_lost": (("しかし、その江戸時代のおもちゃは、",), ("もう大半が失われていて、",), ("それを作る職人も", "もうほとんど残っていないという", "問題がある。")),
-    "scene2": (("今唯一残ってるのは、", "江都二色という、"), ("おもちゃが狂歌と", "一緒に書かれた書物だけで、"),
-               ("そこにはおもちゃの絵と", "そのおもちゃの遊び方にちなんだ", "狂歌が書かれているけれども、"), ("どうやって遊ぶのか、",),
-               ("またどんなものでできていたのか", "ってことまではわからない。")),
-    "talk_physics": (("物理の世界では、", "トイモデルという風に言って、"), ("自分で扱えるおもちゃを", "こねくり回して、"),
-                     ("自分で作って、", "自分の手のひらで考えるという", "やり方が、"), ("考え方がある。",)),
-    # 語りの最後の文「そういうサービスを作りたいと思って、今回のサービスを作った。」は、word_touch を戻す秒のために外した（本人の決定 11-06。文の単位で外す）。
-    "talk_claude": (("そしてそこにクロードが", "寄り添っている。"),),
+    "talk_toys": (("江戸時代のおもちゃは、",), ("紙と木と竹と糸でできていた。",), ("子どもが壊しても、自分で直せた。",), ("そこに、遊ぶ喜びがあった。",)),
+    "talk_lost": (("しかし、その多くは、",), ("もう残っていない。",), ("それを作る職人も、", "もうほとんど残っていない。")),
+    "scene2": (("残っているのは、",), ("『江都二色』（1773）という一冊の本。",), ("おもちゃの絵と、", "遊び方にちなんだ狂歌が載っている。"),
+               ("けれども、どう遊ぶのか、",), ("何でできていたのかは、", "書かれていない。")),
+    "talk_physics": (("物理には「トイモデル」という", "考え方がある。"), ("手で扱える小さな模型を", "自分で作り、"), ("動かしながら、", "手のひらで考える。")),
+    "talk_claude": (("その横で、Claude が手伝う。",),),
 }
 # つなぎの文（本人の決定 11-05）。つなぎ 1 は今の台本から外してある（demo.script の LEFT_OUT）。つなぎ 2 は core_loop に出す。
 BRIDGE = (("むかしの子どもも、今の子どもも、",), ("もらったおもちゃより、",), ("それを包んでいた紙や", "リボンのひもで"), ("遊んでしまうことがあります。",))
@@ -62,8 +61,14 @@ BRIDGE2 = (("作ったものを持ちよると、",), ("Claude もそれを見�
 NOW_LINE = "いま作っているところです"      # AI はまだ動いていないので、つなぎ 2 と一緒に出す（本人の決定 11-05）
 # 表と裏の境目の札（本人の決定 11-06、カード 125217）。字を変えない。本人の言葉の記録の引用ではないので、言葉の札の印は付けない。
 BORDER = (("ここからは、裏のしくみ。",),)
-ALL = {**CARDS, **TALKS, "bridge": BRIDGE, "close": ((CLOSING[0],), (CLOSING[1],)), "core_loop": (*BRIDGE2, (NOW_LINE,)), "border": BORDER}
-MARKED = (*CARDS, *TALKS)      # 本人の言葉の印を付ける札
+# 場面 15 の字幕（窓口の決定 11-07 の 084919 の ③「言う所は字幕（案 1）」）。秒は場面 4 の語りが短くなって空いた分（窓口の決め 11-07 の (1) A）
+VERSIONS_LINE = "ワークショップを 2 回して、型紙の版を重ねた。"
+ALL = {**CARDS, **TALKS, "bridge": BRIDGE, "close": ((CLOSING[0],), (CLOSING[1],)), "core_loop": (*BRIDGE2, (VERSIONS_LINE,), (NOW_LINE,)), "border": BORDER}
+MARKED = ()                    # 本人の言葉の印を付ける札。一般的な言い方にした（11-07）ので、印を付ける札は無い
+# 場面の秒の下限（決まった秒）。字が短くなっても、手の映像の長さと場面の秒を前のままにする（本人の決定 11-06 の手の映像の秒）。
+# 字が終わった後は、手と絵だけを見せる（ファイナリストから借りた点「作っている所は語りを止める」。state の demo-rebuild）。
+# scene2 は語りが短くなった分を場面 15 の字幕へ回したので、合計の秒（178.90）が前と同じになる秒にした
+HOLD = {"talk_toys": 11.8, "talk_lost": 12.2, "talk_physics": 16.0, "talk_claude": 4.4, "word_touch": 9.4, "word_ai": 11.2, "scene2": 19.5}
 # デモと外に出す文で使わない言い方（本人の決定 11-05）。継承を軸にし、「復活」を「昔の作り方を取り戻した」の意味で使わない。
 # 前からの線「失われた技術を取り戻すとは書かない」を残す。語りの全文には「復活」の文があるが、札に選ばない。
 NOT_SAID = ("復活", "取り戻")
@@ -112,7 +117,8 @@ STRIP_INK = 0.88            # 手の映像を敷く時だけ、帯に紙の色�
 
 
 def stat_band(name):
-    return "top" if name in MARKED else "bottom"
+    # 字幕の帯（下）を使う場面は、数の行を上の帯へ（帯と重ねない）。全画面の題の札は下のまま
+    return "bottom" if name in TITLE_CARDS else "top"
 
 
 def draw_stat(img, name, t, hands=False):
@@ -198,7 +204,8 @@ def cues_of(name):
 def seconds_of(name):
     if name == "ask":
         return ASK_SECONDS
-    return math.ceil((LEAD + sum(chunk_seconds(c) for c in chunks_of(name)) + TAIL) * 10 - EPS) / 10
+    need = math.ceil((LEAD + sum(chunk_seconds(c) for c in chunks_of(name)) + TAIL) * 10 - EPS) / 10
+    return max(need, HOLD.get(name, 0.0))
 
 
 def chunk_alpha(cues, n, i, t):
@@ -223,6 +230,57 @@ def draw_chunk(draw, lines, cx, cy, size, v):
     for j, line in enumerate(lines):
         text(draw, (cx, top + j * lead), line, size, fill, False, "ma")
     english.draw_en_lines(draw, cx, top + (len(lines) - 1) * lead + size + round(size * english.GAP), en_lines, size, fill)
+
+
+# 字幕の帯（ファイナリストから借りた点 1・2。state の demo-rebuild）: 画面の下の真ん中に暗い帯、白い字の日本語（1〜2 行）、その下に英語を小さく
+# 1 かたまり。焼き込み。3 本のファイナリストの型（下の真ん中・黒地に白・大きめ）と、窓口の決め（11-07 の (3)「日本語の下に小さく英語・1 かたまり」）。
+# 全画面の題の札（借りた点 6）は帯にせず真ん中に大きく出す: 字の札 2 つ（word_touch・word_ai）と、境目・終わりの問い・締め（close）
+BAND_JA = 44                 # 帯の日本語の大きさ（px）
+BAND_PAD = (40, 18)          # 帯の中の左右と上下の余白（px）
+BAND_BOTTOM = 34             # 画面の下の端から帯の下の端（px）
+BAND_INK = 0.66              # 帯の暗さ（v=1 の時の不透明さ）
+BAND_COLOR, BAND_JA_INK, BAND_EN_INK = (24, 21, 18), (255, 253, 248), (232, 226, 214)
+TITLE_CARDS = ("word_touch", "word_ai", "border", "close")
+
+
+def band_height(lines, en_lines=None):
+    """帯の高さ（px）。案内役や数の行を帯の上へ逃がす時に使う。en_lines を渡さない時は表から引く。"""
+    from demo import english
+
+    if en_lines is None:
+        en_lines = english.wrap(english.en("".join(lines)), BAND_JA, W - 2 * 240)
+    return 2 * BAND_PAD[1] + len(lines) * round(BAND_JA * 1.45) + round(BAND_JA * english.GAP) + len(en_lines) * round(english.size_of(BAND_JA) * english.LEAD)
+
+
+BAND_TOP = H - BAND_BOTTOM - band_height(("一",), ["one"])    # 日本語 1 行・英語 1 行の帯の上の端（案内役の置き場の目安）
+
+
+def band(img, lines, v):
+    """1 かたまりを字幕の帯に描いた絵を返す（img は替えない）。英語は表（demo.english）から引き、無ければ止まる（MissingEnglish）。"""
+    if v <= 0:
+        return img
+    from demo import english
+
+    en_lines = english.wrap(english.en("".join(lines)), BAND_JA, W - 2 * 240)
+    fja, fen = ImageFont.truetype(SERIF, BAND_JA), english.font(english.size_of(BAND_JA))
+    probe = ImageDraw.Draw(img)
+    wide = max([probe.textlength(x, font=fja) for x in lines] + [probe.textlength(x, font=fen) for x in en_lines])
+    h = band_height(lines, en_lines)
+    x0, x1 = round(W / 2 - wide / 2 - BAND_PAD[0]), round(W / 2 + wide / 2 + BAND_PAD[0])
+    y1 = H - BAND_BOTTOM
+    y0 = y1 - h
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.rounded_rectangle((x0, y0, x1, y1), 10, fill=(*BAND_COLOR, round(255 * BAND_INK * v)))
+    y = y0 + BAND_PAD[1]
+    for line in lines:
+        d.text((W // 2, y), line, font=fja, fill=(*BAND_JA_INK, round(255 * v)), anchor="ma")
+        y += round(BAND_JA * 1.45)
+    y += round(BAND_JA * english.GAP) - round(BAND_JA * 0.45)
+    for line in en_lines:
+        d.text((W // 2, y), line, font=fen, fill=(*BAND_EN_INK, round(255 * v)), anchor="ma")
+        y += round(english.size_of(BAND_JA) * english.LEAD)
+    return Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
 
 
 def draw_from(draw, cx):
@@ -273,21 +331,29 @@ class ChunkCard:
         return None, 0.0
 
     def frame(self, t):
-        """時刻 t（秒）の 1 コマ。前のコマに依らない。"""
+        """時刻 t（秒）の 1 コマ。前のコマに依らない。
+        題の札（TITLE_CARDS）は前の形（紙の地の真ん中に大きな字）。語りの札は、手の映像を画面いっぱいに敷き（左に紙を掛けない）、
+        図は真ん中に置き、字は下の帯の字幕にする（ファイナリストから借りた点 1・3。state の demo-rebuild）。"""
+        title = self.name in TITLE_CARDS
         img = Image.new("RGB", (W, H), PAPER)
         shot, hv = self._hands(t) if self.hands else (None, 0.0)
         if shot is not None and hv > 0:
-            shot = Image.composite(img, shot, self._mask)
+            if title:
+                shot = Image.composite(img, shot, self._mask)
             img = Image.blend(img, shot, hv)
         elif self.pic is not None and not self.hands:
             a, b = self.ink
             lay = _ink(self.pic, a + (b - a) * ease(t / self.duration))
-            img.paste(lay, (PIC_X - lay.width // 2, (H - lay.height) // 2), lay)
-        draw = ImageDraw.Draw(img)
+            x = PIC_X if title else W // 2
+            img.paste(lay, (x - lay.width // 2, (H - lay.height) // 2), lay)
         for i, lines in enumerate(self.chunks):
             v = chunk_alpha(self.cues, len(self.chunks), i, t)
             if v > 0:
-                draw_chunk(draw, lines, self.cx, H // 2 - 30, self.size, v)
+                if title:
+                    draw_chunk(ImageDraw.Draw(img), lines, self.cx, H // 2 - 30, self.size, v)
+                else:
+                    img = band(img, lines, v)
+        draw = ImageDraw.Draw(img)
         if self.name in MARKED:
             draw_from(draw, self.cx)
         return draw_stat(img, self.name, t, hands=bool(self.hands))
@@ -377,12 +443,8 @@ def _render(name, cues, argv=None):
     if name == "ask":
         scene = AskCard(cues)
     else:
-        if name in CARDS and not in_record((flat(CARDS[name]),)):
-            print(f"検査できない: 札 {name} の字が記録（philosophy.md）と違う", file=sys.stderr)
-            return 4
-        if name in TALKS and not in_narration(TALKS[name]):
-            print(f"検査できない: 札 {name} の字が語りの全文（opening-narration.txt）と違う", file=sys.stderr)
-            return 4
+        # 前は、札の字が哲学の記録（本人の言葉）と語りの全文に一字も違わない事を見て止めた。一般的な言い方にした（本人の言葉 11-07・
+        # 窓口の決め (1) A・(3)）ので、引用の照合は外した。使わない言い方の床（NOT_SAID）はそのまま
         if name in ALL and says_restored(ALL[name]):
             print(f"検査できない: 札 {name} に使わない言い方がある（{'・'.join(NOT_SAID)}）", file=sys.stderr)
             return 4
