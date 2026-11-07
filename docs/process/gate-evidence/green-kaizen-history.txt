@@ -1,0 +1,5 @@
+# 命令: .venv/bin/python tests/test_kaizen_history.py
+# commit: a1c58dba（回した時の HEAD）
+使い方: python -m omochae.kaizen_history copy <表の json>（終了: 0 写した / 4 写せない）
+ok 改善の歴史の表の写しと読み口（今刷る組まで・エンジンの今の版・絵の名の決まり・写す口・README の数）
+rc=0
