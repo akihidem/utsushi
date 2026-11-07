@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_nokosu_route.py
+# commit: 10648fa5（回した時の HEAD）
+ok
+rc=0
