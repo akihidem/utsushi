@@ -264,6 +264,9 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     items = "".join(f'<li{on if i == n else ""}>{esc(t)}</li>' for i, t in enumerate(steps, 1))
     if not steps:
         items = '<li class="on">組み方の絵を見て、番号の順に進めます。</li>'
+    # 版の字は組の番号の呼び方（窓口の決定 11-07・#513 の (a)。玩具の頁の窓の札と同じ字にする）。
+    # 自分の仮説の紙（OWN-n）は組に属さず、紙の題も「版 N」のまま刷るので、紙と同じ字にする（hypotheses.print_own）
+    ban = f"版 {v}" if hid.startswith("OWN-") else hypotheses.label_of(hypotheses.current_set(data), int(v))
     # 3D の組み立てがある玩具（御来迎・虎）は、左の手本を組み立ての 3D にし、頁の手順の番号の段で止める（本人のサイトレビュー 11-07 昼過ぎの 4
     # 「つくる、を押した先の作業ステップで左側に出てくる図がほとんど同じだし参考にならない」）。前は前に刷った手順の紙の絵 1 枚か、
     # 組み方の絵（多くの雛形で全部の手順が同じ 1 枚）で、12 の手順の間ずっと同じ絵だった。3D の段の文は手順の文と同じ物（雛形の steps）で、
@@ -276,7 +279,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     name = f"{hid}_v{v}_tejun.png"
     if not (out_dir(sid) / name).exists():  # 型紙なしの紙には手順の紙が無い。その紙そのものを出す
         name = f"{hid}_v{v}_free.png"
-    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・版 {v}）">'
+    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・{esc(ban)}）">'
            if (out_dir(sid) / name).exists() else "")
     if stage:
         img = stage
@@ -301,7 +304,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
-            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・版 {v}</span></p>{genga.fold(sid)}'
+            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・{esc(ban)}</span></p>{genga.fold(sid)}'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'

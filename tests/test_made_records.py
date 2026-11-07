@@ -68,7 +68,8 @@ assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 after = get(f"/toy/{T}")[1]
 hero, rest = after.split('id="kasetsu"')[0], after.split('id="minna"')[1]
 assert f'href="#{rid}"' in hero and f'/record/{rid}/media/m1.jpg' in hero
-assert f'id="{rid}"' in rest and f'<img src="/record/{rid}/media/m1.jpg"' in rest and "感想: 首が長く揺れた" in rest
+# 写真は小さい写し（/small）で出し、押すと元の写真を開く（元の写真は 1 枚 3.7MB ほどで、並ぶと重い・#521 と同じ線）
+assert f'id="{rid}"' in rest and f'<a href="/record/{rid}/media/m1.jpg"><img src="/record/{rid}/media/m1.jpg/small"' in rest and "感想: 首が長く揺れた" in rest
 mine = [u for u in demo_samples.UPLOADS if u["toy"] == "張子の首振り虎"]
 assert mine and rest.count('class="item is-sample"') == len(mine) and demo_samples.NOTE in rest
 for u in demo_samples.UPLOADS:
@@ -81,7 +82,7 @@ g_rid = sorted(r["id"] for r in records.all_records(G))[-1]
 assert "引っかかった所: 3 枚目の折り目" in page and "感想: 折るのは楽しかった" in page
 assert post(f"/record/{g_rid}/media", jpeg, "image/jpeg") == 201
 assert media_review.record(g_rid, "m1.jpg", "object", "確認者") == []
-assert f'<img src="/record/{g_rid}/media/m1.jpg"' in get(f"/toy/{G}")[1]
+assert f'<img src="/record/{g_rid}/media/m1.jpg/small"' in get(f"/toy/{G}")[1]  # 小さい写し（#521 と同じ線）
 # 聞く口の断り（J-027: 質問の文を残すので、残す事と、名前を書かないでほしい事を聞く口のすぐ下に出す）
 # 文は本人の決定（11-05、カード 20261105-092043 の 1 点目）のとおり。一字でも変わったら落ちるように、ここに決定の文を書く
 DECIDED = "聞いた言葉は、名前や連絡先を除いて、案内を良くするために残します。声と映像は残しません"

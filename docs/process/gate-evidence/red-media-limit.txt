@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_media_limit.py
+# commit: 62dd1119（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_media_limit.py", line 41, in <module>
+    assert techo_site.clean_video(data, "mp4") == (None, techo_site.MISMATCH), "写すと大きく膨らむ動画は断る"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 写すと大きく膨らむ動画は断る
+rc=1
