@@ -101,7 +101,12 @@ STATS = {
 # 置き場は帯（上か下）。本人の言葉の印（下から 130）のある札（語りと本人の言葉の札）は上の帯にする: 下に置くと、印のすぐ下に数が来て、
 # 数まで本人の言葉に見えた（11-06 に絵で見た）。印の無い札（輪の図）は下の帯。字は読める大きさの下限として 30（出所は 22）。
 STAT_SIZE, SRC_SIZE = 30, 22
-BANDS = {"bottom": (H - 78, H - 40, H - 92, H), "top": (40, 78, 0, 112)}   # 数の行・出所の行の上の端、帯の上と下
+# 英語字幕を入れた形（11-07）: 数の行（日本語）→ 数の行（英語）→ 出所（日本語と英語を 1 行に）。下の帯は前の数の行の上の端（H-78）より
+# 上へ広げない: 輪の場面の案内役は足もとを H-86 に置いて帯の上を歩くため（11-06 に絵で見た）
+# 出所の行は日本語と英語を 1 行に並べ、大きさは前の下限の 22 のまま。
+BANDS = {"bottom": (H - 86, H - 28, H - 96, H), "top": (36, 92, 0, 124)}   # 数の行・出所の行の上の端、帯の上と下
+EN_Y = {"bottom": H - 54, "top": 68}                                      # 数の英語の行の上の端
+EN_STAT_SIZE = 21                                                         # 数の英語の行の大きさ
 STAT_IN = (0.4, 1.4)        # 場面の頭で現れて、その後は動かさない（字のそばに動く物を置かない線）
 STRIP_INK = 0.88            # 手の映像を敷く時だけ、帯に紙の色を掛ける濃さ
 
@@ -119,13 +124,17 @@ def draw_stat(img, name, t, hands=False):
     if v <= 0:
         return img
     y_line, y_src, b0, b1 = BANDS[stat_band(name)]
+    y_en = EN_Y[stat_band(name)]
     if hands:
         band = Image.new("RGB", (W, b1 - b0), PAPER)
         img.paste(Image.blend(img.crop((0, b0, W, b1)), band, STRIP_INK * v), (0, b0))
     line, src = STATS[name]
+    from demo.english import en
+
     draw = ImageDraw.Draw(img)
     text(draw, (W // 2, y_line), line, STAT_SIZE, fade(SUMI, 0.85 * v), False, "ma")
-    text(draw, (W // 2, y_src), src, SRC_SIZE, fade(SUMI, 0.6 * v), False, "ma")
+    text(draw, (W // 2, y_en), en(line), EN_STAT_SIZE, fade(SUMI, 0.8 * v), False, "ma")
+    text(draw, (W // 2, y_src), f"{src}　{en(src)}", SRC_SIZE, fade(SUMI, 0.6 * v), False, "ma")
     return img
 WASH = (0.9, 1000, 1450)                  # 掛ける紙の濃さ、濃いままの右端、消える所
 
@@ -202,16 +211,25 @@ def chunk_alpha(cues, n, i, t):
 
 
 def draw_chunk(draw, lines, cx, cy, size, v):
-    """1 かたまりを、cy を真ん中にして行ごとに描く。"""
+    """1 かたまりを、cy を真ん中にして行ごとに描く。英語字幕（demo.english）を日本語の下に同じ濃さで 1 組にして描き、
+    日本語と英語を合わせた高さの真ん中を cy にする（本人の言葉 11-07「英語字幕を入れよう」）。"""
+    from demo import english
+
+    fill = fade(SUMI, v)
     lead = round(size * 1.6)
-    top = cy - (len(lines) * lead) // 2
+    en_lines = english.wrap(english.en("".join(lines)), size, english.room(cx))
+    total = (len(lines) - 1) * lead + size + english.block_height(size, en_lines)
+    top = cy - total // 2
     for j, line in enumerate(lines):
-        text(draw, (cx, top + j * lead), line, size, fade(SUMI, v), False, "ma")
+        text(draw, (cx, top + j * lead), line, size, fill, False, "ma")
+    english.draw_en_lines(draw, cx, top + (len(lines) - 1) * lead + size + round(size * english.GAP), en_lines, size, fill)
 
 
 def draw_from(draw, cx):
     """本人の言葉の印。札の下に静かに置く。"""
-    text(draw, (cx, H - 130), FROM, 30, fade(SHU, 0.75), False, "ma")
+    from demo.english import text_en
+
+    text_en(draw, (cx, H - 136), FROM, 30, fade(SHU, 0.75), False, "ma")
 
 
 def _ink(layer, v):
@@ -287,7 +305,9 @@ class AskCard:
         a, b = self.cues["in"]
         v = ease((t - a) / (b - a))
         if v > 0:
-            text(ImageDraw.Draw(img), (W // 2, H // 2 - 60), ASK, ASK_SIZE, fade(SUMI, v), False, "ma")
+            from demo.english import text_en
+
+            text_en(ImageDraw.Draw(img), (W // 2, H // 2 - 80), ASK, ASK_SIZE, fade(SUMI, v), False, "ma")
         return img
 
 

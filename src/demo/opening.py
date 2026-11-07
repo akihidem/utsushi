@@ -23,6 +23,7 @@ import tempfile
 
 from PIL import Image, ImageDraw
 
+from demo.english import text_en
 from demo.flip import FPS, H, ROOT, SUMI, W, contact_sheet, ease, render, text
 
 QUESTION = "こんなおもちゃを知っていますか？"
@@ -88,12 +89,13 @@ class Opening:
         a, v = self._p(t, "in"), self._p(t, "video")
         if not self.frames:
             if a > 0:
-                text(draw, (W // 2, H // 2 - 110), QUESTION, 72, _ink(a), False, "ma")
+                text_en(draw, (W // 2, H // 2 - 130), QUESTION, 72, _ink(a), False, "ma")
             if v > 0:
-                text(draw, (W // 2, H // 2 + 40), PLACEHOLDER, 28, _ink(0.55 * v), False, "ma")
+                text_en(draw, (W // 2, H // 2 + 40), PLACEHOLDER, 28, _ink(0.55 * v), False, "ma")
             return img
         if a > 0:
-            text(draw, (W // 2, 62), QUESTION, 60, _ink(a), False, "ma")
+            # 動画の枠の上の余白（180px）に、問いと英語を入れる
+            text_en(draw, (W // 2, 44), QUESTION, 60, _ink(a), False, "ma")
         if v > 0:
             x0, y0, x1, y1 = VIDEO_BOX
             with Image.open(self.frames[min(len(self.frames) - 1, int(t * FPS))]) as im:

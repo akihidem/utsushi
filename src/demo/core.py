@@ -91,6 +91,14 @@ MAP_Y, LOOP_Y = 500, 640                       # 地図と輪の図の、輪の�
 MAP_TITLE = "真ん中は、手で作る所。"
 MAP_SUB = "点線は、これから作る所。"
 GALLERY_LINE = "作った物を、持ちよる。"
+# 画面の場面の上の 1 行（英語字幕の表 demo.english と試験が同じ字を引くため、名前を付けて 1 か所に置く）
+MAKE_LINES = ("手順を見ながら作る。", "止まったら、そのまま声か字で聞ける")
+KEEP_LINES = ("できた物の写真と、", "工夫した所を記録に添える")
+
+
+def screen_lines(name):
+    """画面の場面の上の 1 行の並び（英語字幕の試験が使う）。"""
+    return {"core_make": MAKE_LINES, "core_keep": KEEP_LINES, "core_gallery": (GALLERY_LINE,)}[name]
 GALLERY_PAN = 620                # ギャラリーの列を下へ動く量（CSS の px）。節の高さを越えない所で止める。速く見えない量にした
 SAMPLE_GAP = 6                   # 列を止める時に、本物の作った物の札の下に残す余白（CSS の px）。次の札の頭が入らない量
 VOICE_BOXES = ("話す・映す", "字と札にする", "工夫と考えの記録へ")
@@ -320,7 +328,9 @@ class Screens:
         if nxt and nxt["line"] != s["line"]:
             v *= 1 - ease((t - (self.cues[nxt["at"]][0] - 0.5)) / 0.5)
         if s["line"] and v > 0:
-            text(draw, (W // 2, 78), s["line"], 52, fade(SUMI, v), False, "ma")
+            # 英語字幕は日本語のすぐ下（画面の枠の上の余白 196px の中に入る。demo.english）
+            from demo.english import text_en
+            text_en(draw, (W // 2, 70), s["line"], 52, fade(SUMI, v), False, "ma")
         return img
 
 
@@ -488,20 +498,20 @@ def build_scene(name, cues, cache=None, shots=None):
     if name == "core_make":
         # 手帖は 1 手 1 画面なので、頁の全体を映したまま手順を送り、「こまった」を押した後の聞く画面で止める（字幕は前のまま）
         head = _cam_fit(shots["make1"][2], shots["make1"][1]["h"])
-        line = "手順を見ながら作る。"
+        line = MAKE_LINES[0]
         return Screens(name, cues, shots, [
             {"at": None, "shot": "make1", "from": head, "to": head, "line": line},
             {"at": "step2", "shot": "make2", "from": head, "to": head, "line": line},
             {"at": "step3", "shot": "make3", "from": head, "to": head, "line": line},
-            {"at": "ask", "shot": "make", "from": head, "to": head, "line": "止まったら、そのまま声か字で聞ける"}])
+            {"at": "ask", "shot": "make", "from": head, "to": head, "line": MAKE_LINES[1]}])
     if name == "core_keep":
         rects = shots["keep"][1]
         up = _cam_on(rects["up"], 1.95)  # 写真を上げる所の頭から映す。字幕がそこを言っているので
         # 上げた記録の頭から映す。節の下の端を基準にすると、記録の欄が伸びた時に写真が枠の外へ出る。
         record = (up[0], rects["record"][1] - 20 + up[2] * ASPECT / 2, up[2])
         return Screens(name, cues, shots, [
-            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, "line": "できた物の写真と、"},
-            {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "line": "工夫した所を記録に添える"}])
+            {"at": None, "shot": "keep", "move": "move", "from": _cam_page(shots["keep"][2], 1.3), "to": up, "line": KEEP_LINES[0]},
+            {"at": "record", "shot": "keep", "move": "move2", "from": up, "to": record, "line": KEEP_LINES[1]}])
     if name == "core_gallery":
         made, sample = shots["gallery"][1]["made"], shots["gallery"][1]["first_made"]
         top = _cam_on([made[0], made[1] + 10, made[2], made[3]], 1.1)  # 節の上の見出しの下線を枠に入れない

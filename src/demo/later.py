@@ -53,9 +53,13 @@ def overlay(img, name, t, root=ROOT):
 
     from demo.flip import SERIF
 
-    w = ImageFont.truetype(SERIF, SIZE).getlength(word)
+    from demo import english
+
+    en_word = english.en(word)   # 英語字幕（札も日本語と英語を 1 組で。demo.english）
+    en_size = english.size_of(SIZE)
+    w = max(ImageFont.truetype(SERIF, SIZE).getlength(word), ImageFont.truetype(SERIF, en_size).getlength(en_word))
     x1, y0 = W - 28, 24
-    x0, y1 = round(x1 - w - PAD * 2), y0 + SIZE + PAD * 2
+    x0, y1 = round(x1 - w - PAD * 2), y0 + SIZE + en_size + 6 + PAD * 2
     # 点線の枠（仮の地。字の札と見分ける）
     for x in range(x0, x1, 12):
         d.line((x, y0, min(x + 6, x1), y0), fill=SUMI, width=2)
@@ -64,6 +68,7 @@ def overlay(img, name, t, root=ROOT):
         d.line((x0, y, x0, min(y + 6, y1)), fill=SUMI, width=2)
         d.line((x1, y, x1, min(y + 6, y1)), fill=SUMI, width=2)
     text(d, (x0 + PAD, y0 + PAD), word, SIZE, SUMI, False)
+    text(d, (x0 + PAD, y0 + PAD + SIZE + 6), en_word, en_size, SUMI, False)
     return out
 
 

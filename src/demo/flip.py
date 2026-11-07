@@ -147,7 +147,9 @@ def fade(color, a):
 
 def draw_closing(draw, line, cx, cy, size, a):
     """締めの字幕の 1 かたまりを描く。動画の初めと終わりで同じ字にする。"""
-    text(draw, (cx, cy), line, size, fade(SUMI, a), False, "mm")
+    from demo.english import text_en  # 英語字幕（日本語の下に 1 組で。demo.english。ここで読むのは english が flip を読むため）
+
+    text_en(draw, (cx, cy - size // 2), line, size, fade(SUMI, a), False, "ma")
 
 
 class Scene:

@@ -257,7 +257,9 @@ class Scene3:
         # 字は 1 かたまりだけ。頁の頭は絵で分かるので字を置かない。
         a_line = phase(t, "premise") * (1 - out)
         if a_line > 0:
-            text(draw, (W // 2, 78), TITLE_PREMISE, 52, fade(SUMI, a_line), False, "ma")
+            from demo.english import text_en  # 英語字幕（枠の上の余白に 1 組で）
+
+            text_en(draw, (W // 2, 70), TITLE_PREMISE, 52, fade(SUMI, a_line), False, "ma")
         if c > 0:
             draw_chunk(draw, CLOSING, W // 2, H // 2 - 30, 72, c)
         return img

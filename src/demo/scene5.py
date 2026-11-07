@@ -118,7 +118,9 @@ class Scene5:
         # 字幕は 1 かたまり。現れたら場面の終わり（溶け）まで止めて読ませる。
         v0 = ease((t - CUES["line0"][0]) / 0.5)
         if v0 > 0:
-            text(draw, (W // 2, 900), CAPTION[0], 52, fade(SUMI, v0), False, "ma")
+            from demo.english import text_en  # 英語字幕（日本語の下に 1 組で）
+
+            text_en(draw, (W // 2, 880), CAPTION[0], 52, fade(SUMI, v0), False, "ma")
         return img
 
 

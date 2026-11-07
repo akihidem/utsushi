@@ -132,7 +132,9 @@ class Scene7:
         draw = ImageDraw.Draw(img)
         cap = ease((t - CUES["caption"][0]) / (CUES["caption"][1] - CUES["caption"][0])) * (1 - out)
         if cap > 0:
-            text(draw, (W // 2, H // 2 - 30), CAPTION, 64, _fade(SUMI, cap), False, "mm")
+            from demo.english import text_en  # 英語字幕（日本語の下に 1 組で）
+
+            text_en(draw, (W // 2, H // 2 - 70), CAPTION, 64, _fade(SUMI, cap), False, "ma")
         c = ease((t - CUES["credits"][0]) / (CUES["credits"][1] - CUES["credits"][0]))
         if c > 0:
             self._credits(img, c)

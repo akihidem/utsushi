@@ -29,6 +29,7 @@ from PIL import Image, ImageDraw
 from demo import core
 from demo.ban_take_in import BAN_DIR, SOURCES
 from demo.flip import H, PAPER, SHU, SUMI, W, contact_sheet, ease, fade, render, text
+from demo.english import en_format, text_en
 from demo.words import chunk_alpha, chunks_of, draw_chunk, draw_stat
 
 NAME = "core_loop"                  # 差し替える場面。字幕・数の行・案内役・後入れの札はこの名前で引く
@@ -48,7 +49,7 @@ SHEET_W, SHEET_H, GAP = 300, 424, 60
 ROW_TOP = 296
 ROW_X0 = (W - (len(VERSIONS) * SHEET_W + (len(VERSIONS) - 1) * GAP)) // 2
 LABEL_Y = ROW_TOP + SHEET_H + 22
-ENGINE_Y = LABEL_Y + 52
+ENGINE_Y = LABEL_Y + 68   # 版の札の英語（「Pattern v10」）の下。前は LABEL_Y + 52
 APPEAR = 0.8                        # 1 枚が現れる秒
 RISE = 18                           # 現れる時に下から上がる量（px）。入口のせり上がりと同じ静かな動き
 
@@ -107,7 +108,8 @@ class BanCard:
         for i, lines in enumerate(self.chunks):
             v = chunk_alpha(self.cues, n, i, t)
             if v > 0:
-                draw_chunk(d, lines, W // 2, 200, 56, v)
+                # 英語字幕を足した高さでも紙の列（上の端 ROW_TOP）に掛からないよう、真ん中を少し上げた（前は 200）
+                draw_chunk(d, lines, W // 2, 165, 56, v)
         shown = [ease((t - self.appear_at(i)) / APPEAR) for i in range(len(VERSIONS))]
         newest = max((i for i, v in enumerate(shown) if v > 0), default=None)
         for i, ((name, ban), sheet) in enumerate(zip(VERSIONS, self.sheets)):
@@ -124,13 +126,14 @@ class BanCard:
                 # 一番新しく現れた紙だけ朱の細い枠。前の紙は墨の薄い枠に戻る（どれが今の版かを絵で分ける）
                 frame_color = fade(SHU, 0.8 * v) if i == newest else fade(SUMI, 0.3 * v)
                 d.rectangle((ox - 1, oy - 1, ox + sheet.width, oy + sheet.height), outline=frame_color, width=2 if i == newest else 1)
-            text(d, (x + SHEET_W // 2, LABEL_Y), LABEL.format(n=ban), 30, fade(SHU if i == newest else SUMI, v), False, "ma")
+            text_en(d, (x + SHEET_W // 2, LABEL_Y), LABEL.format(n=ban), 30, fade(SHU if i == newest else SUMI, v), False, "ma",
+                    english=en_format(LABEL, n=ban))
         last = shown[-1]
         if self.engine and last > 0:
-            text(d, (ROW_X0 + len(VERSIONS) * SHEET_W + (len(VERSIONS) - 1) * GAP, ENGINE_Y), ENGINE_LABEL.format(n=self.engine),
-                 28, fade(SHU, 0.85 * last), False, "ra")
+            text_en(d, (ROW_X0 + len(VERSIONS) * SHEET_W + (len(VERSIONS) - 1) * GAP, ENGINE_Y), ENGINE_LABEL.format(n=self.engine),
+                    28, fade(SHU, 0.85 * last), False, "ra", english=en_format(ENGINE_LABEL, n=self.engine))
         if EXTRA_LINE and last > 0:
-            text(d, (W // 2, ENGINE_Y), EXTRA_LINE, 34, fade(SUMI, last), False, "ma")
+            text_en(d, (W // 2, ENGINE_Y), EXTRA_LINE, 34, fade(SUMI, last), False, "ma")
         return draw_stat(img, NAME, t)
 
 
