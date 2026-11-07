@@ -73,11 +73,14 @@ for sid in (G, PLAIN):
 for look in ("tenji", "zine"):
     page = toy_page(G, look)
     hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
-    assert hero.index(f'<img src="/picture/{G}/page" width="100" height="166"') < hero.index('class="genga-songs"') < hero.index("<h1>"), look
-    assert all(e["text"] in hero for e in genga.songs(src(G))) and genga.QUOTE in hero, "確かめた歌が絵の後に"
+    # 11-08 の本人の言葉: 左から 題の塊 → 狂歌 → 絵。「原文の引用確かめた人要らない」。「大きく見る、図を見る、は統一して国会図書館へのリンクへ」
+    assert hero.index('class="genga-songs"') < hero.index(f'<img src="/picture/{G}/page" width="100" height="166"') < hero.index("<h1>"), look
+    assert all(e["text"] in hero for e in genga.songs(src(G))) and genga.QUOTE not in hero, "確かめた歌が絵の左に・確かめた人の行は無い"
     assert 'class="genga-box"' not in hero, "頁の片側の全体の記録には枠を出さない"
-    assert f'<a href="/picture/{G}/page">{genga_words.BIG}</a>' in hero, "玩具の頁は絵そのものへ"
-    assert f'<a class="genga-pic" href="/picture/{G}/page"' in hero, "絵そのものも押せる（UX の見直し）"
+    ndl = skin.ndl_page(src(G))
+    assert ndl.startswith("https://dl.ndl.go.jp/pid/1187053/1/") and genga_words.BIG not in hero, "大きく見る は 図を見る に 1 つにした"
+    assert f'<a href="{ndl}">{genga.NDL}</a>' in hero and hero.count(genga.NDL) == 1, "図を見る（国立国会図書館）はその絵の頁へ 1 つ"
+    assert f'<a class="genga-pic" href="{ndl}"' in hero, "絵そのものも国立国会図書館のその絵の頁へ"
     assert 'class="genga-crop"' not in hero, "枠の無い玩具（頁の片側の全体）には切り抜きを置かない"
     assert "background-image:url(/picture/" not in hero, "頭に切り抜きを敷かない"
     assert f'alt="{src(G)["toy"]} {genga_words.HEAD}"' in hero and "の載る頁" not in hero, "絵の読み上げは玩具の名と本人が採った見出し（新しい字を足さない）"
@@ -92,7 +95,10 @@ assert genga.box(src(G)) is None and genga.box(src(T)) is None
 css = genga.STYLE
 assert css.index("--genga-h:44vh") < css.index("--genga-h:44svh"), "svh を知らないブラウザのために vh を先に"
 narrow = css[css.index("@media (max-width:820px)"):]
-assert "calc(var(--genga-h) * var(--genga-r))" in narrow and "writing-mode:horizontal-tb" in narrow, "狭い幅は絵の高さに上限、歌は絵の真下に横書き"
+# 狭い幅は絵の高さに上限。歌と題の塊は、11-08 の本人の言葉（絵の左横に縦で狂歌）で狭い幅でも縦のまま（前は絵の真下に横書き）。高さに上限を置いて、
+# 「つくる」の釦の後ろへ並べる（toy.FOLD_STYLE）
+assert "calc(var(--genga-h) * var(--genga-r))" in narrow and "writing-mode:horizontal-tb" not in narrow, "狭い幅は絵の高さに上限、歌と題の塊は縦のまま"
+assert ".genga-head .genga-songs,.genga-head .genga-title{max-height:" in narrow
 assert 'style="--genga-r:0.6024"' in hero or "--genga-r:" in hero, "包みの幅を絵の比から決める（枠の % がずれない）"
 assert "writing-mode:vertical-rl" in css[:css.index("@media")], "広い幅は絵の横に縦書き"
 # UX の見直し（幅 390）: 押せる所は 44px 以上。作りながら見る頁の畳みに余白と頁の皮の釦。英語の頁にも高さの上限。狭い幅だけ切り抜きを右に

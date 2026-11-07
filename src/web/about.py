@@ -120,18 +120,26 @@ def book_paragraph(src):
             f'{copy}、{rights}）には、おもちゃの絵と歌だけが残っています。どう動いたかは、書かれていません。</p>')
 
 
+BOOK_GO = "本でよむ"  # 図鑑の本の頁（/zukan/hon）への道の字（本人の決め 11-08。前の図鑑の目次の字「原画と歌」でなく）
+
+
 def page(skin_name, path="/about"):
-    from . import hokusai, kaizen_rekishi, techo_site, toys  # techo_site は寄せられた声と職人の言葉の節（循環を避けて、ここで読む）
+    from . import hokusai, kaizen_rekishi, techo_site, toys, zukan_hon  # techo_site は寄せられた声と職人の言葉の節（循環を避けて、ここで読む）
 
     src = _source()
     quotes = "".join(f"<blockquote>「{esc(w)}」</blockquote>" for w in WORDS)
     body = (f'<div class="about"><section class="hero sec"><div>{skin.frame(SID, caption=src.get("holding", ""))}</div>'
             # 道の外の読み物の入口（段 1、帯の「よむ」はこの頁）。前は頭の帯にあった 図鑑・English と、保護者の方へ、ファシリテーターの方へ の頁を、今の名前のまま並べる
-            f'<div><h1>うつし</h1><p class="links yomu"><a href="/zukan">図鑑</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a><a href="/en">English</a></p>'
+            # 図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）。図鑑の本の頁（/zukan/hon・本人の決め 11-08「本の頁は残す」）の入口を
+            # ここへ移した。字は本人の決め（11-08）「本でよむ」（BOOK_GO）
+            f'<div><h1>うつし</h1><p class="links yomu"><a href="/zukan/hon/{zukan_hon.frames()[0]}">{esc(BOOK_GO)}</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a><a href="/en">English</a></p>'
             f'<p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
-            # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。黒のジンの案 2 は入口の章の頭（looks.py）。
-            # 白の案 2（縦読み）は、入口でなく帯の「よむ」の先のこの頁に置く（統括の決め 11-06。地図の「読み物は道の外へ」）
-            + (hokusai.flip_section() + hokusai.scroll_section("tenji") if skin_name == "tenji" else "") + hokusai.mechanism_section() +
+            # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。案 2（縦読み）は、入口でなく帯の「よむ」の先の
+            # この頁に置く（白は統括の決め 11-06・地図の「読み物は道の外へ」。暗い版も入口を白と同じ作りにした 11-08 から同じ）
+            # 北斎漫画の縦読み（案 2）は、白と暗い版の両方の序の頁に置く（暗い版の入口を白と同じ作りにしたので、前に黒の入口にあった縦読みは
+            # 白と同じく序の頁へ来る。本人の決め 11-08「もう1つ立てる」・統括の頼み「入口も白と同じ作りで色だけ暗く」。縦読みの色は皮ごと）。
+            # 押すと重なる案 1 は前のとおり白の序の頁だけ
+            + (hokusai.flip_section() if skin_name == "tenji" else "") + hokusai.scroll_section("tenji" if skin_name == "tenji" else "zine") + hokusai.mechanism_section() +
             f'<section class="sec"><h2>作った人の言葉</h2>{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>'
             f'<section class="sec"><h2>なぜ</h2><p class="lead">{esc(WHY)}</p><p class="lead">{esc(DEFINITION)}</p>'
             '<p class="meta">本の情報は、国立国会図書館の記録から取っています。</p></section>'
