@@ -21,7 +21,7 @@ A papercraft template engine: generates printable PDF patterns from dimensions a
 
 制作者はずっと、紙とはさみとのりでできる授業とワークショップを続けてきました。そうした授業を支えるエンジンを作りたくて、その足がかりとして江戸のおもちゃの再現から始めました。題材は、江戸の絵本『江都二色』（1773）に図と歌だけが残る玩具です。その再現を、このエンジンの型紙で作って確かめる場として、うつしを作りました。うつしは、学校や博物館などで使える、ワークショップを支えるサービスです。うつしは、このエンジンの一つの具体例にあたります。
 
-提出物は [utsushi（うつし）](https://github.com/akihidem/utsushi) です。このエンジンは、その中の engine/ に入っています。元の repo は [paper-to-toy](https://github.com/akihidem/paper-to-toy) です。エンジンも、ハッカソンの開発期間の中で、うつしの一部を切り出して作りました。制作者の言葉は「どっちもハッカソンの審査対象にして欲しい」です（2026-11-07）。
+提出物は [utsushi（うつし）](https://github.com/akihidem/utsushi) です。エンジンは別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発し、提出のために、うつしの engine/ に一緒にしました。エンジンも、ハッカソンの開発期間の中で、うつしの一部を切り出して作りました。制作者の言葉は「どっちもハッカソンの審査対象にして欲しい」です（2026-11-07）。
 
 ### 原点
 
