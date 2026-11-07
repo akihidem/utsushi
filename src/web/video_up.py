@@ -35,7 +35,7 @@ import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from omochae import hypotheses, loop, making_log, records, store, trial_video
+from omochae import hypotheses, loop, making_log, records, store, trial_video, voice_text
 from omochae.contrib import MAX_BODY, check_pii
 from omochae.hypotheses import ROOT
 from omochae.model import Failure
@@ -143,7 +143,9 @@ def slips():
 
 
 def sweep():
-    """送りかけで止まった古い小分けと、終わった受付の残りを消す。待っている受付の物には触らない。"""
+    """送りかけで止まった古い小分けと、終わった受付の残りを消す。待っている受付の物には触らない。
+    字にできないまま 72 時間を過ぎた声も消す（omochae.voice_text.sweep・本人の決め 11-08。道具の無い機械でも回す）。"""
+    voice_text.sweep()
     open_slips = {s["id"] for s in slips() if s["state"] not in FINAL}
     for d in (folder() / "tmp").iterdir():
         if not d.is_dir():
@@ -349,6 +351,9 @@ def transcribe(slip_id):
     # 字にしている間に取り下げられていたら、字を書かない
     if (store.read_json_or_skip(path) or {}).get("state") != "done" or not voice.parent.is_dir():
         return False
+    # 字は残す前に、話す口と同じ入口の床（連絡先・名乗り・学校の名の形）を区切りごとに通し、当たった区切りは伏せる（omochae.voice_text.mask）
+    data, hidden = voice_text.mask(data)
+    data["hidden"] = hidden
     try:
         store.write_json(_text_path(rid), data)
         _text_path(rid).chmod(0o600)

@@ -92,7 +92,9 @@ def split_lines(src):
             out.append({"text": wording.plain(f"{e['checked_by']}が {e.get('checked_at') or '日付不明'} に、複写 {e.get('set')}（頁 {e.get('page')}）の読みに決めました。"), "label": OBS})
         out.append({"text": wording.plain("もう一方の読みは出典の記録に残してありますが、本人が採らなかった読みなので、この頁には出しません。"), "label": OBS})
     for e in took:
-        if e.get("printed_text"):
+        # 活字の文と確かめた読みの字が同じ時は、活字の文と「字が違う所があります」の 2 文を出さない。御来迎は本人の決め（11-08「御来迎の歌の読みは
+        # 「怠らじ」」）で確かめた読みが活字と同じ字になり、違わないのに「違う」と書く事になったため。空白の違い（行の切れ目）は字の違いに数えない
+        if e.get("printed_text") and _norm(e["printed_text"]) != _norm(e.get("text", "")):
             out.append({"text": wording.plain(f"複写 {e.get('set')} の頁 {e.get('page')} の見出しの活字は「{e['printed_text']}」です（作る側が複写から読んだ文）。"), "label": OBS})
             out.append({"text": wording.plain("上の「人が確かめた読み」とは字が違う所があります。本人は 2026-11-04 に、本人が確かめた表記で出すと決め、活字の文は記録に残しました。"), "label": OBS})
     return out

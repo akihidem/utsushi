@@ -1,0 +1,10 @@
+# 命令: bash -c 'for t in test_voice_text test_otona test_hanasu test_video_up test_media_strip test_en_all test_easy_all; do PYTHONPATH=src .venv/bin/python tests/$t.py > /dev/null 2>&1; echo "$t rc=$?"; done'
+# commit: 23b5177f（回した時の HEAD）
+test_voice_text rc=0
+test_otona rc=0
+test_hanasu rc=0
+test_video_up rc=0
+test_media_strip rc=0
+test_en_all rc=0
+test_easy_all rc=0
+rc=0

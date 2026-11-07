@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_en_terms.py
+# commit: 6f5e05ce（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 42, in <module>
+    assert not bad, (why, bad[:5])
+           ^^^^^^^
+AssertionError: ('仮説の札は Guess A', ['仮説Aの型紙では、側面の穴が周りを残してくり抜く形になっていて、紙と手元の道具では切りにくかった可能性。下から切り取るやり方なら作れたので、型紙の切り口を下の縁まで開ける形にする案が考えられる。（確からしさ: 中くらい）', '仮説Aは、くり抜く側面の穴を切るのが大変で、下から切り取ることになった。ジャバラの固定に苦慮していた。'])
+rc=1

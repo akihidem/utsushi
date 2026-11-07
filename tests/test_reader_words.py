@@ -42,7 +42,9 @@ INSIDE = (
     ("記録の番号", r"(?<![A-Za-z0-9])R-\d+"),
     ("自分の仮説の番号", r"(?<![A-Za-z0-9])OWN-\d+"),
     ("決定の番号", r"(?<![A-Za-z0-9])[JUTW]-\d+"),
-    ("調べの番号", r"research"),
+    # 調べの記録の番号（research/22・docs/process/research/36 の形）。英語の頁の言葉の research（研究）は内輪の番号でないので当てない
+    # （本人が採った英文 "from schools, research, and museums to homes" が当たった。11-07）
+    ("調べの番号", r"research/\d"),
     ("ファイルの道", r"data/|docs/|\.json"),
     ("API の URL", r"wp-json"),
     ("箱の座標", r"pct:"),

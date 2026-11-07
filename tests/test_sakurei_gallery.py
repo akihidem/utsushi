@@ -85,7 +85,11 @@ assert g2 not in html and g3 not in html, "人が入る写真か、確かめ待�
 assert sec.count("<img") == 6 and 'alt="作った物の写真"' in sec
 
 # 3. 並び: 頭に顔の写真と本人の言葉の札 → 参加者の型紙の改善例 → 玩具ごとの札（日の見出しは無い）
-assert not re.search(r'id="sakurei-\d{4}"', sec) and "11 月 4 日" not in sec and "11 月 6 日" not in sec, "日ごとの見出しが残った"
+# 本人の言葉「日毎にはしない」は札の並べ方（日ごとの見出し）の事。報告の 4 回の段（ul.sakurei-report・回ごとに日付と何をしたかの 1 行・
+# 字の元は審査用の頁の回の一覧）は別の設計で、日付で始まる行を持つ。日付の字は、その段を除いた札の側で見る（審査用の頁が入ると段が出るため）
+cards = re.sub(r'<ul class="sakurei-report">.*?</ul>', "", sec, flags=re.S)
+assert not re.search(r'id="sakurei-\d{4}"', sec) and "11 月 4 日" not in cards and "11 月 6 日" not in cards, "日ごとの見出しが残った"
+assert not re.search(r"<h[2-4][^>]*>\s*\d{1,2} 月 \d{1,2} 日", sec), "日付の見出しが残った"
 faces = sec.index('class="sakurei-faces"')
 assert f'src="/record/{f1}/media/{fn1}/small"' in sec[faces:sec.index("</figure>", faces)] and techo_site.SAKUREI_FACES in sec, "顔の写真か札が無い"
 assert sec.index("sakurei-faces") < sec.index("sakurei-kufu") < sec.index("sakurei-row"), "並びが違う"
@@ -95,7 +99,15 @@ row = sec[sec.index("sakurei-row"):]
 assert f1 not in row and k1 not in row, "顔の写真か事例の写真が玩具の札に重なった"
 assert SIDS.index(G) < SIDS.index(T) and t1 < g1, "試験の前提（玩具の並びと記録の順が逆）"
 assert row.index(g1) < row.index(t1) < row.index(t2) < row.index(o1), "玩具ごとの並び（頁の玩具の順・記録の順・83 の外は後ろ）でない"
-assert "sakurei-report" not in sec and techo_site.SAKUREI_REPORT_GO not in sec, "回の一覧が無いのに報告の段が出た"
+# 報告の段は、回の一覧の口（審査用の頁の web.kaizen_ws.workshops()）がある時だけ出る。審査用の頁が入る前の木では無く、入った後の木では
+# repo の回の一覧（data/kaizen-judge/workshops.json）で出る。どちらの木でも「口があるか」と「段が出るか」が合う事を見る
+try:
+    from web import kaizen_ws as _ws  # noqa: E402
+
+    _has = bool(_ws.workshops())
+except (ImportError, AttributeError, OSError, ValueError, TypeError):
+    _has = False
+assert ("sakurei-report" in sec) == _has and (techo_site.SAKUREI_REPORT_GO in sec) == _has, ("回の一覧の口と報告の段が合わない", _has)
 
 # 4. 札: 玩具の名から玩具の頁へ・記録の番号の字は出さない・他の人が作った物に混ざらない
 names = {sid: techo_site.hypotheses.load(sid)["toy"] for sid in (G, T)}
@@ -108,7 +120,7 @@ card = lambda rid: re.search(rf'<figure>(?:(?!</figure>).)*{rid}(?:(?!</figure>)
 assert "猫と鼠の箱（鼠捕りからくり）" in card(o1) and "<a " not in card(o1), "83 の外の玩具の札に名が無いか、無い頁への道を張った"
 assert "型紙の版 10" in card(g1), card(g1)
 assert "型紙の版" not in card(t1) and "型紙の版" not in card(t2), "組の分からない作例に版を出した"
-assert sec.count("型紙の版") == 1
+assert cards.count("型紙の版") == 1, "型紙の版は組の分かる作例の札の 1 つだけ（報告の段の字は除いて数える）"
 ageta = html.split('id="ageta"')[1]
 assert not any(r in ageta for r in (g1, t1, t2, o1, f1, k1)), "作例が他の人が作った物に混ざった"
 # 報告の段: 回の一覧の口がある時は、その字で 4 回の行と審査用の頁への道が出る（字の元を 1 つに）
@@ -167,7 +179,7 @@ assert miss == [], miss
 en_sec = i18n.to_en(sec, [])
 for words in (techo_site.SAKUREI_FACES, techo_site.SAKUREI_KUFU_WORDS):
     assert words in en_sec, (words, "英語の頁で本人の言葉の原文が消えた")
-assert "(“The toys made over the 4 days of workshops”)" in en_sec and "(“A participant's improvement to the template, example 1." in en_sec
+assert "(“The toys made over the 4 days of workshops”)" in en_sec and "(“A participant’s improvement to the template, example 1." in en_sec
 
 # 5. 場
 pub = techo_site.gallery_page(SIDS, public=True)

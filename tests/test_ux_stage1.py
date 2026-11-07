@@ -39,12 +39,13 @@ def nav_of(page):
 def items(nav):
     """帯の字と、押せるか・印。"""
     out = []
-    for m in re.finditer(r'<a([^>]*)>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', nav):
-        if m.group(3):
-            out.append((m.group(3), None, False))
+    # 「うつし」は帯の題の字で、押せない（窓口の決め 11-07「行き先が同じ釦は 1 つにそろえる」。入口へは えらぶ の 1 つ）
+    for m in re.finditer(r'<span class="brand">([^<]+)</span>|<a([^>]*)>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', nav):
+        if m.group(1) or m.group(4):
+            out.append((m.group(1) or m.group(4), None, False))
         else:
-            href = re.search(r'href="([^"]+)"', m.group(1)).group(1)
-            out.append((m.group(2), href, 'aria-current="page"' in m.group(1)))
+            href = re.search(r'href="([^"]+)"', m.group(2)).group(1)
+            out.append((m.group(3), href, 'aria-current="page"' in m.group(2)))
     return out
 
 
@@ -73,8 +74,11 @@ assert ">日本語<" in nav_of(get("/en")) and ">えらぶ<" not in nav_of(get("
 
 # ---- 4 もう 1 つ つくる
 gallery = get("/gallery")
-assert gallery.count(">もう 1 つ つくる<") == 1 and '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>' in gallery, "持ち寄る駅の頭に 1 つ"
+assert gallery.count(">もう 1 つ つくる<") == 1 and '<p class="road"><a class="go" href="/">もう 1 つ つくる</a></p>' in gallery, "持ち寄る駅の頭に 1 つ"
 assert gallery.index("もう 1 つ つくる") < gallery.index('id="ageta"'), "頭に置く"
+# 頭の「入口へ」は外した（窓口の決め 11-07）。入口へ行く口は「もう 1 つ つくる」の 1 つ（同じ所へ行く釦の対を置かない。本人のサイト体験レビュー 11-07 の 3）
+head = gallery[gallery.index('<div class="gallery">'):gallery.index('id="ageta"')]
+assert head.count('href="/"') == 1, ("ギャラリーの頭で入口へ行く口は 1 つ", head.count('href="/"'))
 
 # ---- 5 よむ（序の頁）
 about = get("/about")
