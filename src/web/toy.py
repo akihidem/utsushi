@@ -221,6 +221,15 @@ def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
 # 記録の欄の畳みの見出し（#300）。本人が採った文（11-05）を一字も変えずに入れる。空にすると畳まずに並ぶ。
 RECORD_MORE = "もっと書く（あれば）"
 
+# 作った物の並びの節（#minna）の見出しと、記録が無い時の 1 文（夕方のサイトのレビュー 11-07 の 6「これまでの復元として属人化しない」）。
+# 前は「他の人が作った物と、自分の記録」「作ったら、最初の記録を残す人になります」で、並びを人ごとの物（他の人・自分）として読ませた。
+# 並びは、失われた玩具の動きを紙で確かめ直してきた記録の積み重ねなので、誰の物かでなく「これまでの復元」と呼ぶ。置き場と並びは変えない。
+# 字は窓口の確かめ待ち（作りを先に。直す時はここだけ。3 つとも設計の担当と合わせた案）
+MINNA_HEAD = "これまでの復元"
+MINNA_EMPTY = "まだありません。作って残すと、ここに並びます。"
+# 並びの頭の 1 文。前の「自分の説明」は、見る人に人ごとの物と読ませるので「作った人の説明」にした（同じレビューの 6。並びの順の言い方は変えない）
+MINNA_ORDER = "記録の順。上下はありません。紙の返事 → 作った人の説明 → AI の返事、の順で開きます。"
+
 
 def record_form(sid, data, mine=(), open_more=False):
     """mine は、この画面が話した考えから作った本人の案（自分の仮説の記録の形）。"""
@@ -414,7 +423,7 @@ def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_k
 
     data = hypotheses.load(sid)
     spoken = spoken_own_ids(sid)
-    out = "<p class='meta'>記録の順。上下はありません。紙の返事 → 自分の説明 → AI の返事、の順で開きます。</p>" if recs else ""
+    out = f"<p class='meta'>{esc(MINNA_ORDER)}</p>" if recs else ""
     for r in reversed(recs):
         told = loop.explanation(r["id"])
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
@@ -670,8 +679,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 開く時: 送って通らなかった時（書いた字を隠さないため、#300）と、#kiroku の道で着いた時（FOLD_SCRIPT）。返事の文（head）は畳みの外に出る。
     body += fold(f'<section class="sec" id="kiroku">{head("kiroku")}<h2>試した記録を残す</h2>{refill(record_form(sid, data, [h for h in hypotheses.own_hypotheses(sid) if h["id"] in mine], bool(fill("record"))), fill("record"))}</section>',
                  opened=bool(fill("record")))
-    # 他の人の作った物（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
-    body += (f'<section class="sec" id="minna"><h2>他の人が作った物と、自分の記録</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or "<p class=meta>まだありません。作ったら、最初の記録を残す人になります。</p>"}'
+    # 作った物の並び（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
+    # 見出しは MINNA_HEAD（夕方のレビューの 6 で、人ごとの呼び方をやめた）
+    body += (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or f"<p class=meta>{esc(MINNA_EMPTY)}</p>"}'
              f'{fold_samples(sample_records(data), bool(recs))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
     # 改善の輪（本人の方針 11-05）: 報告から直した版と、次の版を待つ報告。
     from . import kaizen
