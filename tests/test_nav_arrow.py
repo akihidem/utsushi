@@ -31,4 +31,19 @@ labels = [*sum(([n, skin.ROAD_ARROW] for n in skin.ROAD), [])[:-1], skin.YOMU[1]
 width = gap * (len(labels) - 1) + sum(FONT_PX * ((0.5 if ch.isascii() else 1) + spacing) for label in labels for ch in label) - 2 * pull * (len(skin.ROAD) - 1)
 for screen in (320, 390):
     assert width <= screen * 0.9, (screen, "帯が 1 段に収まらない", width)
+
+# 英語の帯（全頁の英語・#538）: 駅の名は訳の表から読む（訳が替わっても見積もりが付いてくる）。ラテン文字は手元の Chrome の実測
+# （14px で 1 字 7.8〜9.3px）から 0.6 字に見る（test_nav_fit の 0.5 字より厚め）。幅 480 以下の英語の頁の横の隙間は html[lang=en] .nav の column-gap（段の間は替えない）
+import json  # noqa: E402
+
+from omochae.hypotheses import ROOT  # noqa: E402
+
+words = json.loads((ROOT / "data/i18n/en.json").read_text(encoding="utf-8"))["strings"]
+en_labels = [*sum(([words[n], skin.ROAD_ARROW] for n in skin.ROAD), [])[:-1], words[skin.YOMU[1]]]
+m = re.search(r"@media \(max-width:480px\)\{[^@]*html\[lang=en\] \.nav\{column-gap:(\d+)px\}", skin.NAV_STYLE)
+en_gap = int(m.group(1)) if m else gap  # 決まりが無ければ日本語と同じ隙間（下の確かめで落ちる）
+en_width = en_gap * (len(en_labels) - 1) + sum(FONT_PX * ((0.6 if ch.isascii() else 1) + spacing) for label in en_labels for ch in label) - 2 * pull * (len(skin.ROAD) - 1)
+assert en_gap < gap, "英語の帯だけ、狭い幅の横の隙間を詰める（日本語の帯は替えない）。詰めないと幅 320 の余りが 6px しかなかった（手元の Chrome）"
+for screen in (320, 390):
+    assert en_width <= screen * 0.9, (screen, "英語の帯が 1 段に収まらない", en_labels, en_width)
 print("ok: 頭の帯の駅の間に流れの印がある（読み上げず・押さず・段を増やさない）")

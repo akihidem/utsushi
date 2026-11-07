@@ -80,9 +80,10 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 .nav a{color:var(--accent);border:0}.nav .brand{font-size:15px;letter-spacing:.45em;color:var(--fg)}
 .nav a[aria-current=page]{color:var(--fg);border-bottom:1px solid var(--fg)}
 .nav .nav-step{color:var(--mute)}.nav .nav-yomu{margin-left:auto}.nav .nav-lang{font-size:12px;letter-spacing:.1em}
-/* 駅の間の印は、隙間を少し詰めて駅に寄せる（帯の段を増やさない。幅 320 でも 1 段に収める見積もりは tests/test_nav_arrow.py） */
+/* 駅の間の印は、隙間を少し詰めて駅に寄せる（帯の段を増やさない。幅 320 でも 1 段に収める見積もりは tests/test_nav_arrow.py）。
+   英語の帯（全頁の英語・#538）は駅の名が長く、幅 320 で余りが 6px しかなかった（手元の Chrome）ので、幅 480 以下では英語の頁だけ横の隙間（column-gap）を 6px にする。段の間（row-gap）は替えない */
 .nav .nav-arrow{color:var(--mute);letter-spacing:0;margin:0 -8px}
-@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}.nav .nav-arrow{margin:0 -4px}}
+@media (max-width:480px){.nav{gap:8px;letter-spacing:0;position:relative}.nav .brand{flex:none;white-space:nowrap;margin-right:100%}.nav .nav-lang{position:absolute;top:16px;right:5vw}.nav .nav-arrow{margin:0 -4px}html[lang=en] .nav{column-gap:6px}}
 """
 # 押す所の床（W-03、#137）。現場は iPhone と iPad なので、指で押し間違えない高さを取る。机の幅の静かな見た目は変えない。
 # スマホの幅だけにすると iPad の幅で小さいまま残るので、触る機器（pointer:coarse）と 1100px までに効かせる。
