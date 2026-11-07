@@ -507,6 +507,16 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             from . import kuzushi
             return self._send(200, kuzushi.page(m.group(1), look=look))
+        m = re.fullmatch(rf"/toy/({SID})/splat(?:/(\d{{1,2}})\.jpg)?", path)
+        if m and m.group(1) in sources():
+            # 作った実物の立体とエンジンの 3D を並べて一緒に回す頁と、実物の絵（本人の決定 11-07・web/splat_pair.py）。
+            # 絵は人が確かめた物だけ（サーバの記録の置き場）。無い玩具・確かめていない玩具は 404
+            from . import splat_pair
+            if m.group(2) is not None:
+                data = splat_pair.frame_bytes(m.group(1), int(m.group(2)))
+                return self._send(200, data, "image/jpeg") if data else self._send(404, "無い")
+            body = splat_pair.page(m.group(1), look, path)
+            return self._send(200, body) if body else self._send(404, "無い")
         m = re.fullmatch(rf"/toy/({SID})/kumitate", path)
         if m:
             # 手順どおりに組み立てる様子を立体で見る頁（本人の決定 11-05、#331）。
@@ -609,6 +619,13 @@ class Handler(BaseHTTPRequestHandler):
             # 前に配ったリンクのために /sheet/…_after の道は残し、紙はそこで開く時にだけ作る（ensure_after）
             from . import think_sheet
             return self._send(200, self._toy(m.group(1), msg=qs.get("msg", [""])[0], at=think_sheet.allowed_at(self, m.group(1), qs.get("at", [""])[0]), see=see, kind=kind, v=v, path=path))
+        # 型紙の版の歩みの額の絵（エンジンが組ごとに出した、刷った紙の 1 枚目を縮めた物。生成物なので repo の外の out/history に置く）。
+        # 組の名の形だけを受け、置き場の外のファイルを開かない（ban_ayumi.picture_file）。合言葉なしの場でも出す（刷った型紙で、人の写真ではない）
+        m = re.fullmatch(r"/history/sheets/([a-z]+-v[0-9]{1,3})\.png", path)
+        if m:
+            from . import ban_ayumi
+            f = ban_ayumi.picture_file(m.group(1))
+            return self._send(200, f.read_bytes(), "image/png") if f else self._send(404, "無い")
         m = re.fullmatch(r"/hokusai/([A-Za-z0-9-]+)\.jpg", path)
         if m:
             # 北斎漫画の絵（国立国会図書館・PDM）。記録にある名前だけを出す。玩具の絵の道とは分ける（取り違えないため）。
