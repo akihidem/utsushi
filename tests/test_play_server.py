@@ -78,8 +78,8 @@ assert get("/look/none")[0] == 404
 body = get(f"/toy/{G}")[1].decode()
 # 刷る口は頭の「つくる」1 つ（本人のサイト体験レビュー 11-07 の 3）。札の字は今のたたき台の字で見る（#511）
 assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#win"' in body
-# 採らなかった歌の読みは出さない
-assert "怠けらじ" in body and "怠らし" not in body
+# 採らなかった歌の読みは出さない。出すのは採った読み「怠らじ」（本人の決め 11-08「御来迎の歌の読みは「怠らじ」」。前は 11-04 の決め U-01 で本人の表記「怠けらじ」）
+assert "怠らじ朝な夕なに" in body and "怠らし" not in body and "怠けらじ" not in body
 # 別のサイトから・別の形で送らせない
 assert post(f"/toy/{G}/print", {"hypothesis": GS}, origin="http://evil.example")[0] == 403
 assert post(f"/toy/{G}/print", {"hypothesis": GS}, ctype="text/plain")[0] == 403

@@ -16,7 +16,8 @@ for f in ("README.md", "CLAUDE.md", "run.sh"):
 # のこすの頁に添える改善の歴史の山場の 1 行（data/kaizen）も機能の根拠に挙がるので写す
 # 改善の歴史の表の写し（data/history）も機能の根拠に挙がるので写す
 # 全頁の英語の訳の表（data/i18n）も機能の根拠に挙がるので写す
-for sub in ("src", "tests", "data/hypotheses", "data/kumitate", "data/kaizen", "data/history", "data/i18n", ".claude"):
+# くずし字を読む頁の歌の現代語訳と言葉の意味（data/kuzushi_notes）も機能の根拠に挙がるので写す
+for sub in ("src", "tests", "data/hypotheses", "data/kumitate", "data/kaizen", "data/history", "data/i18n", "data/kuzushi_notes", ".claude"):
     shutil.copytree(ledger.ROOT / sub, tmp / sub, ignore=shutil.ignore_patterns("__pycache__"))
 # ワークショップの写真 → 玩具の表（data/workshop_photos.json・web.workshop）も機能の根拠に挙がるので写す（1 つのファイルなので copy）
 shutil.copy(ledger.ROOT / "data/workshop_photos.json", tmp / "data/workshop_photos.json")

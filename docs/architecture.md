@@ -106,6 +106,7 @@
 | `.claude/skills/backstage`・`.claude/agents/second-eye.md`・`.claude/hooks/ledger-check.sh` | 作り手の工房: 裏の制作の手順、別の目、台帳の検査のフック |
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
+| `data/kuzushi_notes/` | くずし字を読む頁の、歌の現代語訳と言葉の意味（玩具ごとに 1 つの json・`gendaigo` と `words`）。今は御来迎と虎の 2 つ。意味は辞書と本から自分の言葉で書き、出所の名を付ける（辞書と本の字は写さない）。仕組みは書かない（`tests/test_kuzushi_notes.py`） |
 | `data/kaizen/highlight.json` | のこすの頁に添える改善の歴史の山場の 1 行と出どころ（型紙エンジンの記録から作った表の字を、そのまま写した物。src/web/naoru.py が読む） |
 | `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
 | `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の凍結の組（goraigo-v10・虎の前の組 tora-v3・tora-v4）と今の組（御来迎 goraigo-v14 のたたき台 H-C・虎 tora-v7 の H-A。どちらも手順の紙は控えない）のたたき台の紙と先生の見る紙の 19 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
