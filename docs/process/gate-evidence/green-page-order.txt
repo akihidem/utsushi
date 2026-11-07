@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_page_order.py
+# commit: 62dd1119 にこの枝の直しを当てた木
+ok 玩具の頁の並び: 2 種の刷る前と後で、原画 → 立体 → 型紙の窓（断り・輪の図・札・紙）→ 考えを話す、組み方・たとえ・改善の輪は畳む
+rc=0
