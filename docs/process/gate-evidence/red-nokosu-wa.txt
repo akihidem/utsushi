@@ -1,0 +1,11 @@
+# 命令: .venv/bin/python tests/test_nokosu_wa.py
+# commit: 654256ed（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_nokosu_wa.py", line 52, in <module>
+    check(get(base, f"/toy/{G}/techo/kiroku"), "合言葉付きの場")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "tests/test_nokosu_wa.py", line 29, in check
+    assert sec, f"{where}: 学びの輪の節がある"
+           ^^^
+AssertionError: 合言葉付きの場: 学びの輪の節がある
+rc=1

@@ -31,6 +31,11 @@ os.chdir(tmp.name)
 from omochae import hypotheses, making_log, media_review, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web import techo_site, toy  # noqa: E402
+# ワークショップの試行の写真（web.workshop・repo に在る）は、ここが見る「本物の記録が無い時」の形を変えるので、この試験では表を空にする
+# （写真が出る形は tests/test_workshop_gallery.py が見る。本人の見直し 11-07 夜の ②⑦）
+from web import workshop as _workshop  # noqa: E402
+
+_workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
 
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
