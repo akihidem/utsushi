@@ -83,18 +83,30 @@ def _pr_links(prs, repo="paper-to-toy"):
     return "・".join(f'<a href="{REPO}/{repo}/pull/{int(n)}">#{int(n)}</a>' for n in prs)
 
 
-def site_loop():
-    """1 周目（サイトの輪・11-04）。記録 R-0001 → 人の説明 → 直し T-0001（雛形の組 goraigo-v8）。"""
+def _story(text):
+    """表の流れの文。文の中の「#139」はエンジンの repo の PR なので、直しを作る段の PR と同じくエンジンの PR へ張る
+    （サイトの repo の同じ番号と取り違えないため。字は表のまま）。"""
+    import re
+    return "<p>" + re.sub(r"#(\d+)", lambda m: _pr_links([m.group(1)]), esc(_maker(text))) + "</p>"
+
+
+def site_loop(hist=None):
+    """1 周目（サイトの輪・11-04）。記録 R-0001 → 人の説明 → 直し T-0001（雛形の組 goraigo-v8）。
+    次の版は、ほかの 2 つの一周と同じく「型紙の版 vN」で言う（窓口の決め 11-07: 組の番号で言い、型紙の版とエンジンの版を言い分ける）。
+    番号は表の行（11-07 11:42 の出し直しで足された改善の輪より前の版）から取る。表に行が無い写しでは、記録の組の名のまま出す。
+    この版にはエンジンの版が無い（エンジンの台帳と結ぶのはエンジンの版 2 から）ので、エンジンの版は言わない。"""
     rec, ex, ch = _load(SITE_REC), _load(SITE_EXPL), _load(SITE_CHANGE)
     if not (rec and ex and ch):
         return ""
     v_from, v_to = rec.get("sheet_set", ""), ch.get("sheet_set", "")
+    vt = _version(hist or {}, "御来迎", v_to)
+    ver = f"型紙の版 v{int(vt['sheet_version']) - 1} → v{int(vt['sheet_version'])}" if vt and vt.get("sheet_version") else f"{v_from} → {v_to}"
     steps = (_step("human", "作った記録", _p(f'{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・刷った組 {v_from}'))
              + _step("human", "人の説明", _p(ex.get("text", "")) + (_p("次の思いつき: " + ex["next_idea"]) if ex.get("next_idea") else ""))
              + _step("human", "直しの案", _ul(ch.get("changes", [])))
              + _step("human", "人が決める", _p(f'{MAKER}が採った（{str(ch.get("at", ""))[:10]}）'))
              + _step("claude", "直しを作る", f'<p><a href="{REPO}/utsushi/commit/{esc(ch.get("commit", ""))}">{esc(ch.get("commit", ""))}</a></p>')
-             + _step("human", "次の版", f'<p class="kz-ver">{esc(v_from)} → {esc(v_to)}</p>'))
+             + _step("human", "次の版", f'<p class="kz-ver">{esc(ver)}</p>'))
     return f'<section class="sec kz-loop" id="site"><h2>{esc(LOOPS[0])}</h2><p class="kz-state">{esc(DONE)}</p><ol class="kz-steps">{steps}</ol></section>'
 
 
@@ -138,7 +150,7 @@ def peak_loop(hist):
     # 流れの文に、まだ入っていない PR（表の「合体待ち」）が出てくる間は、文を出さない（入っていない事を済んだ事として言わないため）
     waiting = {c.get("pr") for c in hist.get("engine_changes", []) if "合体待ち" in str(c.get("status", ""))}
     text = hist.get("story", "")
-    story = _p(text) if text and not any(f"#{n}" in text for n in waiting) else ""
+    story = _story(text) if text and not any(f"#{n}" in text for n in waiting) else ""
     return f'<section class="sec kz-loop" id="peak"><h2>{esc(LOOPS[2])}</h2><p class="kz-state">{esc(DONE)}</p>{story}<ol class="kz-steps">{steps}</ol></section>'
 
 
@@ -165,5 +177,5 @@ def pending_loop():
 def page(look=skin.DEFAULT, path="/kaizen"):
     hist = _load(HISTORY) or {}
     body = (f'<section class="sec"><h1>{esc(TITLE)}</h1><p class="lead">{esc(LEAD)}</p><p class="meta">{esc(NOT_YET)}</p></section>'
-            + site_loop() + engine_loop(hist) + peak_loop(hist) + pending_loop())
+            + site_loop(hist) + engine_loop(hist) + peak_loop(hist) + pending_loop())
     return skin.shell(TITLE, body, look, "", path, STYLE)

@@ -6,7 +6,7 @@
 3. 字の元は repo の中の記録と改善の歴史の表だけ（記録の字・表の字がそのまま出る）
 4. 誰がしたかを記録のとおりに分ける: Claude の印は「直しを作る」の段だけ。Claude が記録を読む段の札は無い（この 3 つの一周では使っていない）
 5. 本人の名は「このサイトを作った人」と言い、「制作者」「本人」の字と型の名は出さない
-6. 合体待ちの版は出さない。流れの文に、まだ入っていない PR が出てくる間は文を出さない
+6. 合体待ちの版は出さない。流れの文に、まだ入っていない PR が出てくる間は文を出さない。入った後は出し、文の中の PR はエンジンの PR へ張る
 7. いま回っている一周（本人の指示 11-07「済んだ 3 つの一周に加えて、今朝 Claude が記録 R-0001 を読んで案を出した 1 件（人の確認待ち）も…状態の違いは正直に分かるように」）:
    済んだ一周と札の字と色で分ける。Claude の読みは写しの字のまま。人が確かめる段と次の版は「まだ」。写しに呼び出しの記録（型の名）は無い
 """
@@ -61,7 +61,15 @@ ex = json.loads(k.SITE_EXPL.read_text(encoding="utf-8")); ch = json.loads(k.SITE
 assert ex["text"] in t and all(c in t for c in ch["changes"]), "サイトの輪は記録の字のまま"
 v4 = k._version(hist, "虎", "tora-v4"); v7 = k._version(hist, "虎", "tora-v7")
 assert all(c.replace("制作者", k.MAKER) in t for c in v4["changed"] + v7["changed"]), "エンジンの輪と山場は表の字のまま"
-assert "型紙の版 v3 → v4・エンジンの版 2" in t and "型紙の版 v6 → v7・エンジンの版 7" in t and "goraigo-v7 → goraigo-v8" in t
+assert "型紙の版 v3 → v4・エンジンの版 2" in t and "型紙の版 v6 → v7・エンジンの版 7" in t
+# 1 周目の次の版も「型紙の版」で言う。番号は表の行から（表の出し直し 11-07 11:42 で改善の輪より前の版の行が足された）。行の無い写しでは組の名のまま
+if k._version(hist, "御来迎", "goraigo-v8"):
+    assert "型紙の版 v7 → v8" in t and "goraigo-v8" not in t, "1 周目もほかの一周と同じ言い方"
+else:
+    assert "goraigo-v7 → goraigo-v8" in t
+row = {"toys": [{"toy": "御来迎", "versions": [{"set": "goraigo-v8", "sheet_version": "8"}]}]}
+assert "型紙の版 v7 → v8" in text(k.site_loop(row)) and "goraigo-v7 → goraigo-v8" in text(k.site_loop({})), "表の行があれば番号、無ければ組の名"
+assert "エンジンの版" not in text(k.site_loop(row)), "この版にエンジンの版は無いので言わない"
 assert f'/utsushi/commit/{ch["commit"]}' in page and "/paper-to-toy/pull/106" in page and "/paper-to-toy/pull/138" in page, "直しを作った commit と PR へ行ける"
 
 # ---- 4 済んだ一周の Claude の印は直しを作る段だけ。読む段の札は済んだ一周には無い
@@ -85,17 +93,24 @@ for word in ("制作者", "本人", "Opus", "opus", "Sonnet", "Haiku", "Fable"):
 assert k.MAKER in t
 
 # ---- 6 合体待ち
-assert "合体待ち" not in t and "#139" not in t, "まだ入っていない PR を済んだ事として言わない"
-pend = copy.deepcopy(hist)
-for toy in pend["toys"]:
+# 写しの表が #139 を合体待ちとしている間は流れの文を出さず、入った後（表の出し直し 11-07 11:42）は出す。どちらの写しでも同じ試験で見る
+waiting = any("合体待ち" in str(c.get("status", "")) and f'#{c["pr"]}' in hist.get("story", "") for c in hist.get("engine_changes", []))
+assert "合体待ち" not in t, "合体待ちの字は頁に出さない"
+assert ("見つかった事から直る" in t) == (not waiting), "まだ入っていない PR が出てくる間だけ、流れの文を出さない"
+held = copy.deepcopy(hist)
+for toy in held["toys"]:
     for v in toy["versions"]:
         if v.get("set") == "tora-v7":
             v["status"] = "合体待ち"
-assert k.peak_loop(pend) == "", "合体待ちの版は出さない"
-nostory = copy.deepcopy(hist); nostory["engine_changes"] = [c for c in nostory["engine_changes"] if c.get("pr") != 139]
-assert "見つかった事から直る" in text(k.peak_loop(nostory)), "まだ入っていない PR が無ければ、流れの文を出す"
+assert k.peak_loop(held) == "", "合体待ちの版は出さない"
+told = copy.deepcopy(hist); told["story"] = "3D で当たりが見つかる → v7 に直す → エンジンが自分で検品する（#139）。見つかった事から直る"
+told["engine_changes"] = [dict(c, status="合体待ち（決める人の承認）") if c.get("pr") == 139 else c for c in told["engine_changes"]]
+assert "#139" not in k.peak_loop(told) and "見つかった事から直る" not in text(k.peak_loop(told)), "まだ入っていない PR を済んだ事として言わない"
+told["engine_changes"] = [{k2: v2 for k2, v2 in c.items() if k2 != "status"} for c in told["engine_changes"]]
+done = k.peak_loop(told)
+assert "見つかった事から直る" in text(done) and '/paper-to-toy/pull/139">#139</a>' in done, "入った後は文を出し、文の中の PR はエンジンの PR へ張る"
 # 確認待ちの写しが確かめられたら（status が替わったら）、いま回っている一周は出さない（済んだ一周として取り直す）
 import unittest.mock as mock  # noqa: E402
-with mock.patch.object(k, "_load", side_effect=lambda p: (dict(pend, status="confirmed") if p == k.PENDING else json.loads(p.read_text(encoding="utf-8")))):
+with mock.patch.object(k, "_load", side_effect=lambda p: (dict(json.loads(k.PENDING.read_text(encoding="utf-8")), status="confirmed") if p == k.PENDING else json.loads(p.read_text(encoding="utf-8")))):
     assert k.pending_loop() == ""
 print("ok 審査用の頁: 済んだ 3 つの一周と、Claude が読んだ確認待ちの 1 件を、札の字と色で分けて並べる。字は記録と表と写しだけ。合体待ちは出さない")
