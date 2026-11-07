@@ -1,0 +1,6 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_voice_text.py 2>&1 | tail -2; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 55a3ecc9（回した時の HEAD）
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'voice_text' from 'omochae' (src/omochae/__init__.py)
+試験 rc=1
+rc=0

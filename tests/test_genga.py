@@ -73,9 +73,10 @@ for sid in (G, PLAIN):
 for look in ("tenji", "zine"):
     page = toy_page(G, look)
     hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
-    # 11-08 の本人の言葉: 左から 題の塊 → 狂歌 → 絵。「原文の引用確かめた人要らない」。「大きく見る、図を見る、は統一して国会図書館へのリンクへ」
-    assert hero.index('class="genga-songs"') < hero.index(f'<img src="/picture/{G}/page" width="100" height="166"') < hero.index("<h1>"), look
-    assert all(e["text"] in hero for e in genga.songs(src(G))) and genga.QUOTE not in hero, "確かめた歌が絵の左に・確かめた人の行は無い"
+    # 絵 → 歌（#595 の前の形。本人の言葉 11-08「縦書きは失敗なので前の形に戻す」・答え「広い画面も戻す」で、同じ日の「絵の左横に縦で狂歌」から戻した）。
+    # 同じ日の「原文の引用確かめた人要らない」「大きく見る、図を見る、は統一して国会図書館へのリンクへ」は残す
+    assert hero.index(f'<img src="/picture/{G}/page" width="100" height="166"') < hero.index('class="genga-songs"') < hero.index("<h1>"), look
+    assert all(e["text"] in hero for e in genga.songs(src(G))) and genga.QUOTE not in hero, "確かめた歌が絵の後に・確かめた人の行は無い"
     assert 'class="genga-box"' not in hero, "頁の片側の全体の記録には枠を出さない"
     ndl = skin.ndl_page(src(G))
     assert ndl.startswith("https://dl.ndl.go.jp/pid/1187053/1/") and genga_words.BIG not in hero, "大きく見る は 図を見る に 1 つにした"
@@ -86,8 +87,8 @@ for look in ("tenji", "zine"):
     assert f'alt="{src(G)["toy"]} {genga_words.HEAD}"' in hero and "の載る頁" not in hero, "絵の読み上げは玩具の名と本人が採った見出し（新しい字を足さない）"
 plain = toy_page(PLAIN, "tenji")
 hero = plain[plain.index('class="hero"'):plain.index('id="kasetsu"')]
-if (ROOT / "out/sources" / f"{PLAIN}.jpg").exists():
-    assert f'<span class="genga-crop"><img src="/picture/{PLAIN}"' in hero, "頁を分け合う玩具は、狭い幅で切り抜きを右に"
+# 頁を分け合う玩具の脇の切り抜き（狭い幅で絵の右の空きに置いていた）は、原図を横幅いっぱいにしたので外した（本人の言葉 11-08）
+assert 'class="genga-crop"' not in hero, "脇の切り抜きを出した"
 assert 'class="genga-box" style="left:' in hero and 'class="genga-songs"' not in hero and genga.QUOTE not in hero, "読みの無い玩具は字の歌も断りも出さない（本人の決定 11-06）"
 b = genga.box(src(PLAIN))
 assert b and all(0 <= v <= 100 for v in b) and b[2] * b[3] / 100 < genga.WHOLE
@@ -95,16 +96,17 @@ assert genga.box(src(G)) is None and genga.box(src(T)) is None
 css = genga.STYLE
 assert css.index("--genga-h:44vh") < css.index("--genga-h:44svh"), "svh を知らないブラウザのために vh を先に"
 narrow = css[css.index("@media (max-width:820px)"):]
-# 狭い幅は絵の高さに上限。歌と題の塊は、11-08 の本人の言葉（絵の左横に縦で狂歌）で狭い幅でも縦のまま（前は絵の真下に横書き）。高さに上限を置いて、
-# 「つくる」の釦の後ろへ並べる（toy.FOLD_STYLE）
-assert "calc(var(--genga-h) * var(--genga-r))" in narrow and "writing-mode:horizontal-tb" not in narrow, "狭い幅は絵の高さに上限、歌と題の塊は縦のまま"
-assert ".genga-head .genga-songs,.genga-head .genga-title{max-height:" in narrow
+# 狭い幅の玩具の頁の頭は #595 の前の形（本人の言葉 11-08「iPhone Airだとこの表示。原図を横幅いっぱいにする。縦書きは失敗なので前の形に戻す。」）:
+# 原図は横幅いっぱい、歌は横書きで高さの上限なし（題の塊は頭に無い）。英語の頁の絵は高さの上限のまま（細かい線は test_toy_head_back）
+assert ".genga-head .genga-pic{width:100%" in narrow and ".genga-head .genga-songs{writing-mode:horizontal-tb;max-height:none" in narrow, "狭い幅は原図を横幅いっぱい・歌は横書き"
+assert ".genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)))" in narrow
 assert 'style="--genga-r:0.6024"' in hero or "--genga-r:" in hero, "包みの幅を絵の比から決める（枠の % がずれない）"
 assert "writing-mode:vertical-rl" in css[:css.index("@media")], "広い幅は絵の横に縦書き"
-# UX の見直し（幅 390）: 押せる所は 44px 以上。作りながら見る頁の畳みに余白と頁の皮の釦。英語の頁にも高さの上限。狭い幅だけ切り抜きを右に
+# UX の見直し（幅 390）: 押せる所は 44px 以上。作りながら見る頁の畳みに余白と頁の皮の釦。英語の頁にも高さの上限。脇の切り抜きは狭い幅でも出さない（11-08・原図を横幅いっぱいにした）
 assert ".genga-cap a{display:inline-flex;align-items:center;min-height:44px" in css
 assert ".stage .genga-fold{padding:0 16px}" in css and re.search(r"\.genga-fold \[data-big\]\{[^}]*min-height:44px[^}]*border:1px solid var\(--accent\)", css)
-assert ".genga-plain .genga-pic" in narrow and ".genga-head .genga-crop{display:block}" in narrow and ".genga-crop{display:none" in css[:css.index("@media")]
+# 脇の切り抜きは、前は狭い幅だけ右に出していた。原図を横幅いっぱいにしたので、置く所が無く出さない（11-08）
+assert ".genga-plain .genga-pic" in narrow and "genga-crop" not in css
 
 # 3. 作る時の畳み
 fold = genga.fold(G)

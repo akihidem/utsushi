@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-terms-red/en-owner-broken.json data/i18n/en.json; .venv/bin/python tests/test_en_terms.py'
+# commit: 2eb9583c（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 77, in <module>
+    assert "guess" in e.lower() and not re.search(r"\b[Ii]dea [A-Z]\b", e), ("本人の言葉の英訳でも仮説は guess", k)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('本人の言葉の英訳でも仮説は guess', '本人の評価「よくなった」（仮説 A）。動作は未確認')
+rc=1

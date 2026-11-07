@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_en_terms.py
+# commit: 6f5e05ce（回した時の HEAD）
+ok 英語の言葉の決め: make と craft・用語の対応・玩具の名が 1 つ・引用符
+rc=0

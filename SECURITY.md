@@ -21,6 +21,7 @@ engine/ には、別の repo（paper-to-toy）で開発したエンジンをま�
 - 名前（Host）は許しの一覧で照らし、書き込みは同じ頁から来た物（Origin）だけを受ける（`tests/test_public_gate.py`・`tests/test_lan_switch.py`）。
 - 合言葉の門は、16 字より短い合言葉では立たない。照合は、時間で漏れない比べ方（`hmac.compare_digest`）で行う。合言葉は最初の 1 回だけ URL で受け、HttpOnly・Secure の cookie に移して URL から消す（`tests/test_public_gate.py`）。
 - 合言葉なしで開く公開のデモは、鍵の設定ファイルがあると立たない。そこでは Claude を呼ぶ口を開かない（`tests/test_public_open.py`）。
+- 全部の応答に、途中で溜め置かせない頭（頁と JSON は `Cache-Control: private, no-store`、絵と紙は `private`）と、ほかのサイトの枠に入れさせない頭（`X-Frame-Options: SAMEORIGIN`・`frame-ancestors 'self'`）と、`Referrer-Policy: same-origin` を付ける（`tests/test_guard_headers.py`）。
 - 失敗した時の頁は決まった字だけを出し、中の様子（スタックトレース・手元のパス）は出さない（`src/web/play_server.py` の `do_GET`・`do_POST` の受け。断りの頁の形は `tests/test_error_pages.py`）。
 
 ### 鍵の扱い
@@ -32,11 +33,13 @@ engine/ には、別の repo（paper-to-toy）で開発したエンジンをま�
 
 ### 人の情報
 
-- 写真と動画は、受けた時に撮影の情報（位置・機種・日時）と音を外して置く（`tests/test_media_strip.py`）。
+- 写真と動画は、受けた時に撮影の情報（位置・機種・日時）と音を外して置く（`tests/test_media_strip.py`）。動画の声だけは別に非公開で写し（箱 0700・ファイル 0600・git の外）、この機械の中で字にしたら消す。字にできなければ 72 時間で消す。字は名乗り・連絡先・学校の名の形を伏せてから残し、頁・束・AI に見せる口には出さない（`tests/test_voice_text.py`）。
 - 受けた写真と動画は、人が確かめるまで、上げた人の画面にだけ出す。人や声が入る物は出さない（`tests/test_media_review.py`・`tests/test_photo_owner_only.py`）。
 - 記録と自分の仮説の字は、連絡先の形（メール・電話・郵便番号）があると受けない（`check_pii`。`tests/test_own_pii.py`・`tests/test_pii_speed.py`）。
 - 試した記録・持ち寄りの投稿・写真・動画の置き場は git に入れない（`.gitignore`）。repo に入る人の記録は、持ち主が決めて載せた試行の分だけ。11-04 の試行の記録 2 件とその説明と直しの記録、11-04 と 11-06 の試行の写真 43 枚と動画 1 本と、それぞれの確かめ表（`docs/process/trials/photos/*/review.md`）。この写真と動画に撮影の情報が残っていない事は、2026-11-07 に確かめた。
 - 記録を取り下げると、添えた写真・動画・説明・解釈と、話した考えから作った字もあわせて消す（`tests/test_loop1_withdraw.py` ほか）。
+- 作業の頁のカメラに重ねる形（`/toy/<玩具>/kasane`）は、後ろのカメラの映像をその端末の中で頁の下に敷くだけで、録らない・送らない・残さない。頁の台本は外へ何も送らず、映像を絵にして取り出さない（`tests/test_hmd.py`）。カメラの許しの問いは「カメラを出す」を押した時だけ出す。カメラの無い機械や許しを断った時は、カメラ無しの形で動く。頁を隠すか離れると、カメラを止める（`src/web/hmd.py`）。
+- 声を字にする口（玩具の頁の話す口・作りながら見る頁・手帖・作業の頁）は、ブラウザの声を字にする機能（Web Speech API）を使う。この機能は、既定ではブラウザの会社の認識の場へ声を送る（MDN の説明。例えば Chrome では Google の場）。話す口と手帖は、端末の中で字にできるブラウザではそちら（`processLocally`）を使い、作りながら見る頁と作業の頁は既定のまま。うつしのサーバに声は来ない。サーバへ送るのは字だけで、話す口は送る時、作りながら見る頁は聞いた質問、手帖は「のこす」を押した時に送る。作業の頁は字も送らず、操作の言葉と合うかだけを見る（`src/web/hanasu.py`・`src/web/tsukuru.py`・`src/web/techo_step.py`・`src/web/hmd.py`）。
 
 ### AI に渡す文の中の指示への備え
 
@@ -56,7 +59,6 @@ engine/ には、別の repo（paper-to-toy）で開発したエンジンをま�
   - 公開する動画の、流れの中に残りうる付帯情報を外す事
   - Claude を呼ぶ口の、同じ相手からの数の上限と、同時に頼まれた時の費用の見張り
   - 家の網に開く切り替え（`--lan`）の合言葉
-  - 応答の守りの頭（CSP など）と、途中で溜め置かせない印
   - 静的なギャラリーの書き出しで、載せる記録を人が選ぶ事
   - 作っている途中の質問の文を、印で囲んで渡す事
   - 読み（記録の解釈）の答えを、形で検査する事。人が確かめる前の読みを、上げた人の画面にだけ出す事

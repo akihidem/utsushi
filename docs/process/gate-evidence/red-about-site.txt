@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_about_site.py
+# commit: d176c242（#527 の頭）の木に tests/test_about_site.py だけを置き、序の頁と README は d176c242 の物のまま（git の外の写し）
+Traceback (most recent call last):
+  File "tests/test_about_site.py", line 29, in <module>
+    heads = ["作った人の言葉", "なぜ", about.KAMI_HEAD, about.AI_HEAD, about.ENGINE_HEAD]
+                                       ^^^^^^^^^^^^^^^
+AttributeError: module 'web.about' has no attribute 'KAMI_HEAD'
+rc=1

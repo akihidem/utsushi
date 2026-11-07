@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_about_engine.py
+# commit: bf64901a（回した時の HEAD）
+ok うつしと paper to toy（序の頁の置き場・位置づけ・具体例・仕組みの 5 文・段の図・README の最初の節と同じ字）
+rc=0
