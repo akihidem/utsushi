@@ -4,7 +4,7 @@
 - どうしたか: 輪の節の文（`src/web/loop_figure.py` の ADOPTED と、説明の頁の同じ文 `src/web/about.py` の MANABI）を字 1 にした: 「型紙は、AI が考えた ためしの案（仮説）です。切って、折って、組んで、どう工夫したかを記録に書くと、その記録をもとに次の型紙をよくします。ワークショップでは進め役の人といっしょに 1 回、うつしがあれば そのあとも ひとりで、この輪をまわせます。」。絵は今の図（絵 A）のまま。最初の段の字「ためしの案（仮説）」は替えていない（本人の答え）
 - 訳の表: 英語は 1 行を差し込んだ（英語の見直しの言葉の決め「仮説は guess・工夫は what you changed」に合わせた）。やさしい日本語は `data/i18n/yasashii.d/nokosu-wa.json`。前の文の鍵は表に残した（英語の見直しの PR がその行を直しているので、ぶつからないように）
 - ゴールの要件: のこすの頁と説明の頁の輪の節の文が字 1。2 つの頁で同じ文。英語の頁は英語の文
-- 検証ゲート: Red: 今の main ace2a5f0 の木に直した `tests/test_loop_figure.py` を当てて rc 1（`docs/process/gate-evidence/red-nokosu-wa-text.txt`）
+- 検証ゲート: Red: 今の main ace2a5f0 の木に直した `tests/test_loop_figure.py` を当てて rc 1（`docs/process/gate-evidence/red-nokosu-wa-text.txt`）。Green: rc 0（`green-nokosu-wa-text.txt`、78fdf5f0）
 - エビデンスゲート: 輪の図・のこすの輪の節・説明の頁・英語の全頁・やさしい日本語・やさしい言葉・内輪の言葉・AI の名・序の頁・保護者の方への頁の試験が rc 0
 - 確かめていない事: 本人が頁で見る事
 - マージ後の書き戻し: Issue は立てていない
