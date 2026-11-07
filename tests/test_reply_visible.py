@@ -87,15 +87,15 @@ assert "先に紙を作ると、作りながら見る頁が開きます" in note
 code, _, page = call(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって？"})
 assert code == 422 and note_at(page, "ask", "alert") and 'value="谷折りって？"' in page
 
-# 記録: 通らないと欄の上に理由が出て、中身が戻る。通ると、今残した記録の札に着く。
+# 記録: 受け口は残る（玩具の頁の記録の欄は、本人の答え 11-07 夕の Q3 で のこす へ寄せた）。通らないと #kiroku の節に理由が出る。
+# 欄が無いので書いた字は戻らない（字を書く所は手帖の のこす で、通らなかった時の扱いは tests/test_techo_step.py が見る）。通ると、今残した記録の札に着く。
 bad = {"hypothesis": GS, "note": "3 枚目で<止まった>", "first_moved": "筒", "opener": "糸"}
 code, _, page = call(f"/toy/{G}/record", bad)
 assert code == 422 and note_at(page, "kiroku", "alert")
-assert "3 枚目で&lt;止まった&gt;</textarea>" in page and 'name="first_moved" value="筒"' in page
-assert re.search(r"<option selected>糸</option>", page) and f'name="hypothesis" value="{GS}"' in page[page.index('id="record"'):]
+assert 'id="record"' not in page and "3 枚目で&lt;止まった&gt;" not in page, "玩具の頁に記録の欄は無い"
 good = bad | {"result": "動かない", "note": "3 枚目で止まった"}
 code, _, page = call(f"/toy/{G}/record", good | {"result": "ない結果"})
-assert code == 422 and '" checked' not in page[page.index('id="record"'):page.index("</form>", page.index('id="record"'))], "無い値に印を付けない"
+assert code == 422 and note_at(page, "kiroku", "alert"), "無い値は受けない"
 where = call(f"/toy/{G}/record", good)
 rid = re.search(r"R-\d{4}", where[1]).group(0)
 page = landed(where, rid)
@@ -142,9 +142,10 @@ page = call(f"/toy/{G}")[2]
 # 刷る口は頭の「つくる」1 つで、紙がある今は窓の紙へ行くリンクなので、刷る欄はここには無い（本人のサイト体験レビュー 11-07 の 3。前は札の「型紙を見る」の
 # #kasetsu）。作れなかった時の文を窓の錨で読む事は tests/test_sheet_window.py が見る
 assert f'action="/toy/{G}/print#kasetsu"' not in page
-for want in (f"/toy/{G}/ask#ask",
-             f"/toy/{G}/record#kiroku", f"/record/{rid}/next#next-{rid}"):
+# 記録の欄は のこす へ寄せた（本人の答え 11-07 夕の Q3）ので、玩具の頁に /record の送り先は無い（受け口は残り、返事は #kiroku に出る。上で見た）
+for want in (f"/toy/{G}/ask#ask", f"/record/{rid}/next#next-{rid}"):
     assert f'action="{want}"' in page, want
+assert f'action="/toy/{G}/record#kiroku"' not in page
 # AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。
 ask._key_present = lambda: True
 page = call(f"/toy/{G}")[2]

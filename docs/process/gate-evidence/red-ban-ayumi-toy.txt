@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_ban_ayumi.py
+# commit: 3a3efc2a（回した時の HEAD。土台の #559 の頭に新しい試験だけを置いた）
+  File "tests/test_ban_ayumi.py", line 57, in <module>
+    assert "制作者" not in body and "本人" not in body, r["set"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: tora-v4
+rc=1

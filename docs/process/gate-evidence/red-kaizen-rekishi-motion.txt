@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_kaizen_rekishi.py
+# commit: d14ce8ca（回した時の HEAD。表は 12:29 の版のまま、新しい試験だけを置いた）
+  File "tests/test_kaizen_rekishi.py", line 37, in <module>
+    assert "押し上げ" not in text and "扇が開く" not in text, "序の頁の改善の歴史に動き方の字"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 序の頁の改善の歴史に動き方の字
+rc=1

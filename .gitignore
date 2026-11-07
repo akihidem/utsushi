@@ -23,6 +23,8 @@ data/records/*
 !data/records/R-0002.json
 # 動画の受け口の受付と、受け取りの途中の小分け（#337）
 data/video_uploads/
+# 作例の仕分けの置き場（まとめて上がった写真を、日と玩具が決まるまで置く。写真の元は repo に入れない）
+data/sakurei_hold/
 data/loop/*
 !data/loop/.gitkeep
 !data/loop/explanation-R-0001.json
