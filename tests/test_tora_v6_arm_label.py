@@ -1,7 +1,8 @@
 """虎の 5 重りの腕の札（本人の決定 2026-11-06「部品の名前は案3: 型紙を「5 重りの腕」にそろえる。」。型紙エンジン #135 の試験の写し）。
 
 腕は幅 8mm で、「5 重りの腕」は 1 行に入らない。腕を広げると前の壁に当たるので幅は変えず、「5 重」の下に「り」「の」「腕」を
-「重」の列にそろえて縦に並べる（_tora_v6._drop_label）。サイトでは今の組 tora-v6 から。前の組（tora-v3・tora-v4）の紙は「5 腕」のまま。
+「重」の列にそろえて縦に並べる（_tora_v6._drop_label）。サイトでは今の組 tora-v7 から。前の組 tora-v4 の紙も、本人の決定（2026-11-07
+「(1): A、v4 の紙も「5 重りの腕」に替える。」）で同じ行ごとの札になった（#498 の pivot_counterweight._drop_label）。前の組 tora-v3 の紙は「5」のまま。
 次を見る:
 1. 札の行送りの値は、描く所（compose.LINE）と同じ（値を写しているので、違うと刷る字と置き場の計算がずれる）。
 2. 既定（粘土は軸の 28mm 下）と v6 のたたき台（20mm 下）: 札は「5 重りの腕」で 4 行。どの行も腕の枠の内で、軸の穴の下から
@@ -9,7 +10,7 @@
 3. 4 行が入らない寸法（粘土が軸に近い・下の穴が無い）は、前と同じ「5 腕」の 1 行。境は粘土が軸の約 17.2mm 下。
    「5 腕」の 1 行は、下の穴と点の線に重ならない所に置く（粘土が軸に近いと、その下へ）。
 4. 用意する物の文は、どの寸法でも「5 重りの腕」と呼ぶ（「5 腕」の字は刷らない）。
-5. 前の組（tora-v4）の札と用意する物の文は「5 腕」のまま（紙と指紋を変えない）。
+5. 前の組 tora-v4 の札は「5 重りの腕」の 4 行で、用意する物の文も「5 重りの腕」と呼ぶ（#498 の作り）。凍結の組 tora-v3 の札は「5」の 1 行のまま。
 """
 import json
 
@@ -86,12 +87,16 @@ for q in (neck, sheet, fallback, dict(neck, weight_below_axle=pc.LOWER_HOLE_MIN 
     text = "".join(TIGER.materials(q))
     assert "5 重りの腕" in text and "5 腕" not in text, text
 
-# 5. 前の組（tora-v4）は「5 腕」のまま（札は 1 行、用意する物の文も前の字）
+# 5. 前の組 tora-v4 は、本人の決定（11-07）で「5 重りの腕」の 4 行（#498 の作り。今の組と同じ字と並び）。凍結の組 tora-v3 は「5」の 1 行のまま
+# なぜ見るか: v4 の札は #498 で、v7 の札は型紙エンジンの写しで、別々の作りから刷る。字か並びが割れると、組で部品の名が違って見える
 now, TIGER.SHEET_SET = TIGER.SHEET_SET, "tora-v4"
 try:
     d = drop(neck)
-    assert d.label == "5 腕" and not d.label_lines, (d.label, d.label_lines)
-    assert "5 腕" in "".join(TIGER.materials(neck)) and "5 重りの腕" not in "".join(TIGER.materials(neck))
+    assert d.label == "5 重りの腕" and [t for t, _, _ in d.label_lines] == ["5 重", "り", "の", "腕"], (d.label, d.label_lines)
+    assert "5 重りの腕" in "".join(TIGER.materials(neck)) and "5 腕" not in "".join(TIGER.materials(neck))
+    TIGER.SHEET_SET = TIGER.FROZEN_SET
+    d = drop(neck)
+    assert d.label == "5" and not d.label_lines, (d.label, d.label_lines)
 finally:
     TIGER.SHEET_SET = now
-print("ok 虎の 5 重りの腕の札（縦に 4 行・入らない寸法は 5 腕・用意する物の名・前の組は 5 腕のまま）")
+print("ok 虎の 5 重りの腕の札（縦に 4 行・入らない寸法は 5 腕・用意する物の名・前の組 v4 も 5 重りの腕・凍結の組 v3 は 5 のまま）")
