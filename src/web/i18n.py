@@ -19,7 +19,8 @@
   訳し漏れは試験（tests/test_en_all.py）が全部の頁の道を英語で回して止める。人の書いた字は試験の場（空の記録の置き場）には出ない。
 - 台本（<script>）と CSS の中の字は替えない（台本の字を置き換えると動きを壊しうる）。台本が後から出す字は日本語のまま（残りの課題）。
 - 型紙の PDF は日本語のまま（凍結の床を替えない。web/en.py の JA_ONLY と同じ断り）。
-- 訳は作る側（Claude）の下書きで、英語を母語とする人に読んでもらうまで、英語の頁の頭に en.DRAFT の札を出す（本人が採った字、#318）。
+- 訳は作る側（Claude）の下書き（英語を母語とする人はまだ読んでいない）。頁の頭の断りの札は出さない（本人の言葉 11-07「これ要らない。
+  Draft translation. A native speaker has not checked it yet.」。前は en.DRAFT の札を頭の帯の後に 1 つ出した。やさしい日本語の「下書きです」と同じ扱い）。
 
 やさしい日本語（3 つ目の言葉・lang=easy。本人の言葉 11-07 夜「サイト、言語でやさしい日本語選べるように。このモードはルビつけてやさしい日本語に
 全体の文が変換されるモード」「まだひつようなところは実装しよう」。設計は grove の state/yasashii-mode-20261107.md・UX の担当）:
@@ -47,7 +48,6 @@ TABLES = {"en": TABLE, "easy": ROOT / "data/i18n/yasashii.json"}
 # 1 つのファイルを 3 つの PR が書き足すと、1 本入るたびに残りが衝突するため（関門の帳面の gate-trial.d と同じ考え）
 EXTRA = {"easy": ROOT / "data/i18n/yasashii.d"}
 RUBY = re.compile(r"｜([^｜《》]+)《([^《》]+)》")
-MAIN_OPEN = re.compile(r"<main\b[^>]*>")
 PLAIN_ONLY = {"title", "option"}  # 中に要素を入れられない要素（やさしい日本語は 漢字（よみ） の形で読みを添える。PAREN）
 PAREN_ATTRS = {"placeholder"}  # 画面に出る属性のうち、やさしい日本語で 漢字（よみ） にする物（value は送る値なので替えない）
 # SVG の字（text・tspan・textPath。TAG は名を小さい字にそろえる）。中に <ruby> を入れるとブラウザが SVG の外へ追い出し、学びの輪の図の字が
@@ -200,17 +200,6 @@ def to_en(page, miss=None, lang="en"):
     return "".join(out)
 
 
-def draft_note():
-    from .en import DRAFT
-
-    return f'<p class="en-draft" lang="en" style="margin:0;padding:6px 12px;font-size:12px;letter-spacing:.04em;color:var(--mute,#6b6358)">{html.escape(DRAFT)}</p>'
-
-
-def _after_main(page, note):
-    """下書きの札を、頁の本体（<main …>）の頭に 1 つ置く。作りながら見る頁と手帖は <main class="…"> なので、属性つきの main も受ける。"""
-    return MAIN_OPEN.sub(lambda m: m.group(0) + note, page, count=1)
-
-
 def page_easy(page, miss=None):
     """頁をやさしい日本語にする（表に無い字は元のまま）。やさしい の切り替えは日本語へ戻る口にする。
     頭の下書きの札は出さない（本人の言葉 11-07 夜「下書きです、はとる」）。戻る口の 日本語 にもルビを振る（全部の漢字に。同じ言葉）"""
@@ -219,10 +208,9 @@ def page_easy(page, miss=None):
 
 
 def page_en(page, miss=None):
-    """頁を英語にし、頭の帯の後に下書きの札を 1 つ置く。言語の切り替えは日本語へ戻る口にする。"""
+    """頁を英語にする。言語の切り替えは日本語へ戻る口にする。頭の下書きの札は出さない（本人の言葉 11-07「これ要らない」）。"""
     page = to_en(page, miss)
-    page = page.replace('<a class="nav-lang" href="?lang=en" lang="en">English</a>', '<a class="nav-lang" href="?lang=ja" lang="ja">日本語</a>')
-    return _after_main(page, draft_note())
+    return page.replace('<a class="nav-lang" href="?lang=en" lang="en">English</a>', '<a class="nav-lang" href="?lang=ja" lang="ja">日本語</a>')
 
 
 def routes(sids):
