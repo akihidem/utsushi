@@ -1,9 +1,10 @@
 """サイトに出す『北斎漫画』の絵を取り込む（本人の決定 2026-11-05、#262: 案 1・2・3 を全部入れる）。
 
 判断の芯:
-- 絵の出所はデモ動画の計画で権利を確かめた国立国会図書館の物だけ（PDM。docs/demo/plan.md の 1 節）。記録は動画と同じ
-  src/demo/figures.json と src/demo/scene4_sources.json を読み、文と枠を二重に持たない。
-- 絵は描き直さず切り出すだけ。描き直すと北斎の線でなくなる（plan.md）。
+- 絵の出所は権利を確かめた国立国会図書館の物だけ（PDM。data/hokusai/README.md）。記録は data/hokusai/figures.json と
+  data/hokusai/scene4_sources.json を読み、文と枠を二重に持たない。前はデモ動画の作りの置き場に同じ物を置いて読んでいたが、
+  動画の作りを repo の外へ移した（本人の言葉 11-08「この動画の作成はギットハブに入ってる？入れなくていいと思う」）ので、字を替えずにサイト側へ移した。
+- 絵は描き直さず切り出すだけ。描き直すと北斎の線でなくなる（data/hokusai/README.md）。
 - 画像は repo に入れない。取り込みの時に IIIF から取り、out/sources/hokusai に置く（out/ は git の外）。
 - 取れない時に起動を止めない。頁は絵の代わりに国立国会図書館への道を出す。
 """
@@ -24,10 +25,10 @@ TIMEOUT = 60
 def pages():
     """頁の記録。{頁の名: 記録}。切り出しは crops に {id, box_pct} で揃える。"""
     out = {}
-    fig = json.loads((ROOT / "src/demo/figures.json").read_text(encoding="utf-8"))["pages"]
+    fig = json.loads((ROOT / "data/hokusai/figures.json").read_text(encoding="utf-8"))["pages"]
     for name, rec in fig.items():
         out[name] = {**rec, "crops": rec["figures"]}
-    out.update(json.loads((ROOT / "src/demo/scene4_sources.json").read_text(encoding="utf-8"))["pages"])
+    out.update(json.loads((ROOT / "data/hokusai/scene4_sources.json").read_text(encoding="utf-8"))["pages"])
     return out
 
 
