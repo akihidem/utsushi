@@ -69,7 +69,8 @@ assert get("/look/tenji")[0] == 200 and get("/look/zine")[0] == 404 and "?look="
 from web import looks  # noqa: E402
 for name, look in (("tenji", get("/look/tenji")[1].decode()), ("zine", looks.zine())):
     assert "御来迎" in look and "/toy/" in look and "仮説 A" not in look and "怠らし" not in look, name
-    assert "原文の引用" in look, "引用の印を残す"
+    # 歌の原文を出す所には引用の印。白の入口は えらぶ になり歌を出さない（本人のサイト体験レビュー 11-07 の 4。歌は玩具の頁の頭）
+    assert "原文の引用" in look or name == "tenji", "引用の印を残す"
     # スマホで表紙の下が URL の帯に隠れないよう、画面の高さは svh（research/19）
     assert "100svh" in look and "whileInView" not in look and "IntersectionObserver" not in look, name
 assert get("/look/none")[0] == 404

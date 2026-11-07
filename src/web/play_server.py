@@ -396,8 +396,12 @@ class Handler(BaseHTTPRequestHandler):
             from . import kaizen
             return self._send(200, kaizen.toy_page(m.group(1), look, path))
         if path == "/toys":
+            # 入口を えらぶ にした（本人のサイト体験レビュー 11-07 の 4「入口と選ぶは分けない」）ので、えらぶ の頁は入口へ送る。
+            # 紙 1 枚の絞り込み（本人の言葉 11-05 の口）は、絞った並びの頁として残す（入口に同じ絞り込みは置かない）
+            if qs.get("paper", [""])[0] != "1":
+                return self._send(302, "", headers=[("Location", "/")])
             from . import toys
-            return self._send(200, toys.page(look, path, paper=qs.get("paper", [""])[0] == "1"))
+            return self._send(200, toys.page(look, path, paper=True))
         if path == "/gallery":
             from . import techo_site
             # のこした後はここに着く（窓口の決定 11-06 夜・案 A）。今残した 1 つは、記録を残した画面の鍵（記録の鍵）で見分けて頭に出す。返事の文は ?msg= で受ける
@@ -543,10 +547,10 @@ class Handler(BaseHTTPRequestHandler):
             if page.exists():
                 return self._send(200, page.read_bytes(), "image/jpeg")
         # えらぶ の敷き詰めの小さい写し（toys.small_picture。幅 1600px の切り抜きを 83 枚読まないため）
-        m = re.fullmatch(rf"/picture/({SID})/small", path)
+        m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
         if m:
             from . import toys
-            small = toys.small_picture(m.group(1))
+            small = toys.small_picture(m.group(1), m.group(2))
             if small:
                 return self._send(200, small, "image/jpeg")
         m = re.fullmatch(rf"/picture/({SID})", path)

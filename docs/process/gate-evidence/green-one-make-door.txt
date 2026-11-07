@@ -1,0 +1,4 @@
+# 命令: PYTHONPATH=src .venv/bin/python tests/test_one_make_door.py
+# commit: b82ab108 にこの枝の直しを当てた木
+ok 玩具の頁の作る口: 2 種で、手帖へ行く口は型紙の窓の「つくる」1 つ（刷る前は 0）、頭の「つくる」は型紙の窓へ
+rc=0
