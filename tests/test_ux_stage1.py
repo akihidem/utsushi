@@ -39,12 +39,13 @@ def nav_of(page):
 def items(nav):
     """帯の字と、押せるか・印。"""
     out = []
-    for m in re.finditer(r'<a([^>]*)>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', nav):
-        if m.group(3):
-            out.append((m.group(3), None, False))
+    # 「うつし」は帯の題の字で、押せない（窓口の決め 11-07「行き先が同じ釦は 1 つにそろえる」。入口へは えらぶ の 1 つ）
+    for m in re.finditer(r'<span class="brand">([^<]+)</span>|<a([^>]*)>([^<]+)</a>|<span class="nav-step"[^>]*>([^<]+)</span>', nav):
+        if m.group(1) or m.group(4):
+            out.append((m.group(1) or m.group(4), None, False))
         else:
-            href = re.search(r'href="([^"]+)"', m.group(1)).group(1)
-            out.append((m.group(2), href, 'aria-current="page"' in m.group(1)))
+            href = re.search(r'href="([^"]+)"', m.group(2)).group(1)
+            out.append((m.group(3), href, 'aria-current="page"' in m.group(2)))
     return out
 
 

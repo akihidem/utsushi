@@ -26,7 +26,7 @@ SKINS = {
 }
 
 # 頭の帯の道。順路の順（序 → おもちゃ → 作った物 → 図鑑）。入口は「うつし」。
-# 帯の項目。先頭の「うつし」（入口への道）は nav() が brand として出すので、ここには置かない
+# 帯の項目。先頭の「うつし」（帯の題の字。釦にしない）は nav() が brand として出すので、ここには置かない
 # 頭の帯は道しるべ（UX の見直しの段 1、本人の決定 11-06。research/36「道しるべの言葉は えらぶ・つくる・のこす・もちよる」「頭の帯を道しるべに替える」）。
 # 帯は今いる駅に印を付ける。つくる・のこすは玩具を選んだ後の駅なので、玩具の頁の中でだけ押せる（選ぶ前は押せない段の印として字だけ出す）。
 # 道の外の読み物（序・図鑑・保護者の方へ、ファシリテーターの方へ・English）は「よむ」（序の頁）にまとめる。前の帯の名（序・おもちゃ・
@@ -99,9 +99,12 @@ NAV_STYLE = """.nav{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;pa
 # body .links a は図鑑の .zukan a に勝つ詳細度にするため（図鑑の頁では床より後に .zukan a が来る）。
 # :where(.top) a は手帖とギャラリーの頭の字のリンク。詳細度を下げて、線なしの作りながら見る頁の .top a に勝たせる。ここは全部の頁に載るので .techo の名前を書かない（手帖の皮を外へ漏らさない決まり、#126）。
 # 一括の text-decoration は Safari が太さと色を読まないので、1 つずつ書く。色は頁ごとの変数に頼らず、リンクの字の色から作る（開いた頁の見た目の組は --accent を持たない）。
+# 帯の題の字「うつし」（span.brand）は釦でないが、釦だった時と同じ 44px の高さの箱を持たせる。帯の高さと、幅 480 以下で右上に置く English の
+# 高さのそろいを、釦だった時のまま保つため（確かめの気づき 11-07: 箱が無いと帯が 122 → 105px に縮み、English が うつし より 8px 下に見えた）
 TAP_FLOOR = """@media (max-width:1100px),(pointer:coarse){
 .nav{font-size:14px;row-gap:0}
 .nav a,.links a,.notice-back a,.tabs a,.tabs span,.top a,.tj-exit a,.fan-ctl button,summary,.grid li>a,h2>a,li>small>a,li>.meta>a,.cap>a:only-child,.meta>a:only-child,.item p>a:only-child,.zn-toy p>a:only-child,.jump a,td>a,.meta li>a,.foot>a,button,select,label:not(.sr){display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+.nav .brand{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
 label:not(.sr):has(>input[type=text]),label:not(.sr):has(>input[type=number]),label:not(.sr):has(>textarea),label:not(.sr):has(>select),label:not(.sr)>select{display:block}
 input[type=range]{height:44px}
 summary{list-style:none}
@@ -264,9 +267,10 @@ def nav(skin, current="", path="/", lang="ja"):
     items = (arrow.join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span>'
              '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい</a><a class="nav-lang" href="?lang=en" lang="en">English</a>')
     # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
-    # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた
-    brand = ""
-    return f'<nav class="nav"><a class="brand" href="/"{brand}>うつし</a>{items}</nav>'
+    # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた。
+    # 「うつし」は帯の題の字で、釦にしない（窓口の決め 11-07「行き先が同じ釦は 1 つにそろえる。帯の並びは決めたまま」）。前は入口（/）への道で、
+    # えらぶ と同じ所へ行く釦の対だった（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。並びと字はそのまま
+    return f'<nav class="nav"><span class="brand">うつし</span>{items}</nav>'
 
 
 def page_title(title):
