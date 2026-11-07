@@ -22,8 +22,11 @@ KITES = ["NDL-1187053-R0000024-L", "NDL-1187053-R0000024-L-2", "NDL-1187053-R000
 # 「浮き物5つは「あそぶ」に入れます。さっきの「うかべるへ」は取り消しです。」。浮き物の 5 つは あそぶ の中の もって あそぶ。
 # ほかの 10 本（表は 15 本で、本人の言う 9 本に蓑を着た人形を足した物）は雛形の表のまま
 FLOATS = ["NDL-1187053-R0000013-L", "NDL-1187053-R0000013-L-3", "NDL-1187053-R0000013-L-4", "NDL-1187053-R0000013-L-5", "NDL-1187053-R0000013-L-6"]
-KEPT = ["NDL-1187053-R0000026-L-2", "NDL-1187053-R0000028-L-3", "NDL-1187053-R0000008-R", "NDL-1187053-R0000013-R", "NDL-1187053-R0000010-L-2",
+# 11-06 に雛形の表のままと決まった 10 本のうち、鳥の棒（R0000028-L-3）と舌出しの面（R0000008-R）は、11-07 夕の本人の答え
+# （からくりがあってうごきそうなのは うごく）で TOY へ移した（MOVED）。残りの 8 本は雛形の表のまま
+KEPT = ["NDL-1187053-R0000026-L-2", "NDL-1187053-R0000013-R", "NDL-1187053-R0000010-L-2",
         "NDL-1187053-R0000028-L-2", "NDL-1187053-R0000009-L", "NDL-1187053-R0000015-R", "NDL-1187053-R0000016-R", "NDL-1187053-R0000022-R-5"]
+MOVED = {"NDL-1187053-R0000008-R": "ひく おす", "NDL-1187053-R0000024-R": "ならす", "NDL-1187053-R0000028-L-3": "ゆれる"}
 
 # 1. 表: どの雛形にも中の 9 つのどれかがある（雛形を足して表を足し忘れると、ここで落ちる）
 assert set(genre.MIDDLE) == set(TEMPLATES), sorted(set(TEMPLATES) ^ set(genre.MIDDLE))
@@ -31,7 +34,9 @@ assert set(genre.MIDDLE.values()) <= set(MIDDLES) and set(genre.TOY.values()) <=
 # 中の 9 つは、大きい側のどれか 1 つにだけ入る。どこへ入れるかは本人の答え待ちなので、入れ先と並びは固めない
 placed = [m for _, mids in genre.BIG for m in mids]
 assert sorted(placed) == sorted(MIDDLES) and len(placed) == len(MIDDLES), genre.BIG
-assert [b for b, _ in genre.BIG] == ["かざる", "あそぶ", "うごく"], "大きい側の字は本人の決定（11-06）の 3 つ"
+assert [b for b, _ in genre.BIG] == ["うごく", "かざる"], "大きい側は本人の決め直し（11-07 夕）の 2 つ・この順"
+big_of_mid = {m: b for b, mids in genre.BIG for m in mids}
+assert big_of_mid["あげる"] == "うごく" and big_of_mid["もって あそぶ"] == "かざる", "あげる（凧）は うごく、もって あそぶ は かざる（11-07 夕）"
 
 # 2. 玩具: 83 のどれも中の 9 つに入る。決まった例外（凧の 3 本が あげる）だけを固め、ほかの例外と答え待ちは形だけを見る
 #    （本人の答えで玩具が PENDING から TOY へ移っても、この試験は直さずに通る。下の 6 で、答えの例の表でも同じ確かめを回す）
@@ -42,6 +47,8 @@ for sid in KITES:
     assert genre.TOY.get(sid) == "あげる" and genre.middle(sid) == "あげる" and "揚げる" in inv[sid]["moves_guess"], sid
 for sid in FLOATS:
     assert genre.TOY.get(sid) == "もって あそぶ" and genre.middle(sid) == "もって あそぶ" and "浮" in inv[sid]["moves_guess"], sid
+for sid, m in MOVED.items():
+    assert genre.TOY.get(sid) == m and genre.middle(sid) == m and big_of_mid[m] == "うごく", sid
 for sid in KEPT:
     assert sid not in genre.TOY and genre.middle(sid) == genre.MIDDLE[hypotheses.load(sid).get("template", "slider_fan")], sid
 assert not set(genre.PENDING) & set(FLOATS + KEPT), "本人が決めた玩具を答え待ちに残した"
@@ -91,14 +98,25 @@ for _, mids in grouped:
     for m, ss in mids:
         assert ss and ss == sorted(ss, key=sids.index), m
 
-# 4. 頁（白の展示と黒のジンの両方）。見出しは棚の 3 つだけ
+# 棚の数（11-07 夕の表どおり）: 83 のうち うごく 32・かざる 51
+counts = {b: sum(len(ss) for _, ss in mids) for b, mids in genre.groups(sids)}
+assert counts == {"うごく": 32, "かざる": 51}, counts
+
+# 4. 頁（白の展示と黒のジンの両方）。見出しは棚の 2 つだけ
 for name in skin.SKINS:
     check_page(toys.page(name), rest)
-# うかべる の棚は無い。浮き物の 5 つは あそぶ の棚に並ぶ。中の字（もって あそぶ・ひく おす など）は見出しとして出ない
+# うかべる の棚は無い。浮き物の 5 つは かざる の棚に並ぶ（からくりが無い・11-07 夕）。中の字（もって あそぶ・ひく おす など）は見出しとして出ない
 html = toys.page("tenji")
-assert "うかべる" not in html and re.findall(r"<h2[^>]*>([^<]+)</h2>", html) == ["かざる", "あそぶ", "うごく"]
+assert "うかべる" not in html and "あそぶ</h2>" not in html and re.findall(r"<h2[^>]*>([^<]+)</h2>", html) == ["うごく", "かざる"]
 for sid in FLOATS:
-    assert html.index(">あそぶ</h2>") < html.index(f'href="/toy/{sid}"') < html.index(">うごく</h2>"), sid
+    assert html.index(">かざる</h2>") < html.index(f'href="/toy/{sid}"'), sid
+for sid in list(MOVED) + KITES:
+    assert html.index(">うごく</h2>") < html.index(f'href="/toy/{sid}"') < html.index(">かざる</h2>"), sid
+# 入口（えらぶ）の棚も同じ 2 つ・この順（棚の見出しは h3）
+from web import looks  # noqa: E402
+
+entrance = looks.tenji().split("</style>")[-1]
+assert re.findall(r"<h3>([^<]+)</h3>", entrance.split('id="all-toys"')[1]) == ["うごく", "かざる"], "入口の棚"
 
 # 5. 紙 1 枚の絞り込みも同じ形で分かれ、0 の見出しは出ない
 paper = toys.page("tenji", "/toys", paper=True)

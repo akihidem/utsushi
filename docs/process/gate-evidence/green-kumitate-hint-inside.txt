@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kumitate_hint.py
+# commit: 9c196390（回した時の HEAD）
+ok: 組み立ての 3D の釦の隣に、押すと動く事の手引きがある
+rc=0
