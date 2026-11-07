@@ -100,7 +100,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 | 振り子の波（物理の模型） | 型紙を刷る所まで試作した（描く前と刷った後の検査を通した） | 雛形 pendulum_wave（[paper-to-toy #145](https://github.com/akihidem/paper-to-toy/pull/145)） | 紙で組んでいない。揺れが残って波に見えるかは、紙で組んで確かめる。3D の組み立て検品は無い |
 | DNA の二重らせん（B 形・右巻き） | 型紙を刷る所まで試作した（描く前と刷った後の検査を通した） | 雛形 helix（同じ #145） | 紙で組んでいない。2 本の腕の間の 140° は溝を見せるための見込みで、原子の位置から測った値ではない。3D の組み立て検品は無い |
 
-エンジンを engine/ にまとめた後は、雛形は engine/ の中にある（置き場の欄はまとめる PR で直す）。
+エンジンは engine/ にまとめたので、雛形はこの repo の `engine/src/omochae/templates/pendulum_wave.py` と `engine/src/omochae/templates/helix.py` にある。
 
 ## 開発の過程
 
