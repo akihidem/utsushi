@@ -1008,11 +1008,16 @@ def _same(a, b):
     return a == b
 
 
-def _sheet_title(data, tpl, p):
-    """3D の机の上の紙の題。形は compose の既定の題（玩具の名 型紙（雛形の呼び名））のまま、版の字だけを刷る紙と同じ組の番号にする
-    （hypotheses.paper_label。前の組は前の題「版 1」のまま）。刷る紙の題（仮説 A「…」）にそろえると題が長くなって部品の配置が動き、
-    型紙エンジンの 3D の JSON と寸法が合わなくなって 3D が出なくなる（tests/test_tora_v7_3d が部品の位置で見る）ので、題の形は替えない。"""
-    return f"{data['toy']} 型紙（{tpl.title(p)}）{hypotheses.paper_label(data, 1)}"
+def _sheet_title(data, tpl, p, h=None):
+    """3D の机の上の紙の題。刷る紙の題（hypotheses.print_sheet「玩具の名 型紙 仮説 A「…」版 N」）から、「…」の仮説の名を外した形
+    （玩具の名 型紙 仮説 A 版 N）。版の字は hypotheses.paper_label（今の組は組の番号・前の組は前の題「版 1」）。
+    なぜ: 前は compose の既定の題「玩具の名 型紙（雛形の呼び名）版 N」で、雛形の呼び名（御来迎は「内筒を下から押し上げる」）が
+    今のたたき台（H-C「柄を下から押し上げる」）と違う仮説の名に読め、しかも括弧の中が動き方の答えを言っていた（学ぶ人に動き方を先に見せない
+    決まり J-013 に当たる。別の系統の検品の気づき 11-07 夕）。仮説の名（「…」）も動き方を言うので外す。
+    題を長くすると部品の配置が動き、型紙エンジンの 3D の JSON と寸法が合わなくなる（tests/test_tora_v7_3d が部品の位置で見る）。
+    この形は前の題より短く、1 行のまま収まる"""
+    letter = f" 仮説 {hypotheses.letter(h)}" if h else ""
+    return f"{data['toy']} 型紙{letter} {hypotheses.paper_label(data, 1)}"
 
 
 def _from_engine(template, tpl, p, source_id, title=None):
@@ -1043,7 +1048,7 @@ def assemble(source_id, hypothesis_id=None):
         return None
     tpl = TEMPLATES[template]
     p = {**tpl.DEFAULTS, **(h.get("params") or {})}
-    title = _sheet_title(data, tpl, p)
+    title = _sheet_title(data, tpl, p, h)
     shown = _from_engine(template, tpl, p, source_id, title)
     if shown is not False:
         return shown

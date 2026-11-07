@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_nav_arrow.py
+# commit: 2adffed1（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_nav_arrow.py", line 46, in <module>
+    assert en_gap < gap, "英語の帯だけ、狭い幅の横の隙間を詰める（日本語の帯は替えない）。詰めないと幅 320 の余りが 6px しかなかった（手元の Chrome）"
+           ^^^^^^^^^^^^
+AssertionError: 英語の帯だけ、狭い幅の横の隙間を詰める（日本語の帯は替えない）。詰めないと幅 320 の余りが 6px しかなかった（手元の Chrome）
+rc=1

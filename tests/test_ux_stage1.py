@@ -54,7 +54,8 @@ for path, station in EXPECT.items():
     got = items(nav)
     assert [x[0] for x in got] == ["うつし", *ROAD, "よむ", "English"], (path, "帯は道しるべと、右の端の言語の切り替え", got)
     assert [x[0] for x in got if x[2]] == [station], (path, "今いる駅に印", got)
-    assert '<a class="nav-lang" href="/en" lang="en">English</a>' in nav, (path, "English は言語の切り替え（窓口の決定 11-06）。駅の印は付けない")
+    # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）
+    assert '<a class="nav-lang" href="?lang=en" lang="en">English</a>' in nav, (path, "English は言語の切り替え（窓口の決定 11-06）。駅の印は付けない")
     for old in ("序", "おもちゃ", "作った物と職人の言葉", "図鑑"):
         assert f">{old}<" not in nav, (path, "前の帯の名は帯に無い", old)
     links = {x[0]: x[1] for x in got}
@@ -62,7 +63,7 @@ for path, station in EXPECT.items():
         assert links["つくる"] == f"/toy/{G}" and links["のこす"] == f"/toy/{G}/techo/kiroku", (path, "玩具の頁の中では つくる・のこす が押せる", links)
     else:
         assert links["つくる"] is None and links["のこす"] is None, (path, "玩具を選ぶ前は つくる・のこす は押せない段の印", links)
-    assert links["えらぶ"] == "/" and links["もちよる"] == "/gallery" and links["よむ"] == "/about" and links["English"] == "/en", (path, links)
+    assert links["えらぶ"] == "/" and links["もちよる"] == "/gallery" and links["よむ"] == "/about" and links["English"] == "?lang=en", (path, links)  # 今の頁の英語へ（全頁の英語・窓口の決め 130735 の案 B）
 # 入口: 帯は同じで、印は「えらぶ」（入口が えらぶ の駅。本人のサイト体験レビュー 11-07 の 4）。「うつし」には印を付けない（同じ頁に印を 2 つ置かない）
 entry = items(nav_of(get("/")))
 assert [x[0] for x in entry if x[2]] == ["えらぶ"], entry
