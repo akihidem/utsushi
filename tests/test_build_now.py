@@ -33,6 +33,8 @@ from web.play_server import serve  # noqa: E402
 from web import techo_site  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -82,11 +84,11 @@ assert f"/toy/{G}/own" not in page and f"/toy/{G}/talk" in page
 # 手帖は予想なしで開く
 assert "手帖" in get(f"/toy/{G}/techo")
 # 刷れて、作りながら見る頁が開く
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"}) == 303
-assert "H-A" in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/tsukuru")
+assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
+assert GS in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/tsukuru")
 # 他の人の作った物。写真が無くても言葉で並ぶ
 assert "他の人が作った物" in get(f"/toy/{G}")
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "impression": "扇が引っかかった", "fix_part": "扇", "fix_change": "折り目を深くした", "fix_outcome": "少し開いた"}) == 303
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "扇が引っかかった", "fix_part": "扇", "fix_change": "折り目を深くした", "fix_outcome": "少し開いた"}) == 303
 page = get(f"/toy/{G}")
 assert "工夫: 扇 / 折り目を深くした / 少し開いた" in page and "扇が引っかかった" in page
 assert page.index('id="minna"') < page.index('id="kaizen"')
@@ -98,12 +100,12 @@ for word in ("順位", "1 位", "人気", "ランキング", "予想"):
 fixes = making_log.summary(G, hypotheses.load(G).get("template", "slider_fan"))["fixes"] if making_log.summary.__code__.co_argcount == 2 else making_log.summary(G)["fixes"]
 assert any(f["change"] == "折り目を深くした" for f in fixes)
 # 「あれば」の欄なので、一部だけ書いても記録ごと落とさない（落とすと書いた全部が消える）。欠けは欠けと分かる形で残す
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動かない", "impression": "途中まで", "fix_change": "直した"}) == 303
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "途中まで", "fix_change": "直した"}) == 303
 partial = records.all_records(G)[-1]
 assert partial["impression"] == "途中まで" and partial["fixes"] == [{"part": "書かれていない", "change": "直した", "outcome": "書かれていない"}]
 # 言葉の無い記録は、ギャラリーに札だけで並ばない
 rid = records.all_records(G)[-1]["id"]
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"}) == 303
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"}) == 303
 quiet = records.all_records(G)[-1]["id"]
 assert rid != quiet and quiet not in get("/gallery")
 # 写真を出さない場では、ギャラリーに画像の道が無い
@@ -117,7 +119,7 @@ closed = techo_site.gallery_page([G], photos=False)
 # 写真も人の書いた文も出さない（文の中の名前は機械で落とせない。J-028）
 assert f"/record/{rid}/media/" not in closed and "扇が引っかかった" not in closed and "公開のデモでは" in closed
 # ひとこと（note）はギャラリーに出さない
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた", "impression": "見える文", "note": "ないしょのメモ"}) == 303
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "impression": "見える文", "note": "ないしょのメモ"}) == 303
 shown = get("/gallery")
 assert "見える文" in shown and "ないしょのメモ" not in shown
 print("ok")

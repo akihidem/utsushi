@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_goraigo_v14.py
+# commit: 116bc7b4（回した時の HEAD。今の main に新しい試験だけを置いた）
+Traceback (most recent call last):
+  File "tests/test_goraigo_v14.py", line 37, in <module>
+    assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v14", "goraigo-v10")
+                           ^^^^^^^^^^^^^^
+AttributeError: module 'omochae.templates.slider_fan' has no attribute 'FROZEN_SET'
+rc=1

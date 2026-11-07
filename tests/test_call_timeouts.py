@@ -68,6 +68,8 @@ config.SCREEN_RETRIES = 1
 BOUND = 30.0
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -94,8 +96,8 @@ def timed(path, data):
 
 video = os.path.join(tempfile.mkdtemp(), "v.mp4")
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=duration=2:size=160x120:rate=10", "-pix_fmt", "yuv420p", video], check=True)
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] == 303
-rid, _ = records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた"})
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
+rid, _ = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた"})
 assert not loop.save_explanation(rid, "本人", "開いた", "速く押す")
 techo_site.media_dir(rid).mkdir(parents=True, exist_ok=True)
 shutil.copy(video, techo_site.media_dir(rid) / "m1.mp4")
@@ -104,12 +106,12 @@ shutil.copy(video, techo_site.media_dir(rid) / "m1.mp4")
 ask._key_present = lambda: True  # 鍵がある時の道を通す。送る先は手元の口だけ
 
 # 2. 画面の 4 つの口が、Claude が返らなくても決めた秒数の中で戻り、「今は AI に聞けません」と言う。つないだ数が 2 なら、やり直しの回数も届いている
-code, _, body, took, tries = timed(f"/toy/{G}/ask-json", {"hypothesis": "H-A", "question": "竹串はいつ通すの？"})
+code, _, body, took, tries = timed(f"/toy/{G}/ask-json", {"hypothesis": GS, "question": "竹串はいつ通すの？"})
 got = json.loads(body)
 assert code == 200 and "今は AI に聞けません" in got["text"] and got["from"] == "error", (code, got)
 assert took < BOUND and tries == 2, ("ask-json", took, tries)
 
-code, _, page, took, tries = timed(f"/toy/{G}/ask", {"hypothesis": "H-A", "question": "竹串はいつ通すの？"})
+code, _, page, took, tries = timed(f"/toy/{G}/ask", {"hypothesis": GS, "question": "竹串はいつ通すの？"})
 assert code == 200 and "今は AI に聞けません" in page, code
 assert took < BOUND and tries == 2, ("ask", took, tries)
 

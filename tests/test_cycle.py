@@ -73,7 +73,7 @@ if cycle.has("think_sheet"):
 
 # 4. 次の版の紙が刷れて、次の人の型紙になる。前の版と記録は残る（本人の方針 11-05）
 os.environ["OMOCHAE_DATA"] = str(kept / "data")
-hid = hypotheses.load(G).get("sheet") or hypotheses.load(G)["hypotheses"][0]["id"]
+hid = hypotheses.sheet_id(hypotheses.load(G)) or hypotheses.load(G)["hypotheses"][0]["id"]  # たたき台は組ごと（御来迎の次の組は H-C）
 # 自分の紙の記録がたたき台の版 2 を作ると、たたき台で進む人の次の版は版 3 になる
 walked = res.stage(OWN_NEXT).status == cycle.PASSED
 assert loop.latest_version(G, hid) == (3 if walked else 2), (walked, loop.latest_version(G, hid))
@@ -293,7 +293,7 @@ if cycle.has("talk_log"):
 
     with mock.patch.object(talk_log, "add", keeps):
         try:
-            cycle.stage_talk(cycle.Context(sid=G, folder=floor, hid="H-A"))
+            cycle.stage_talk(cycle.Context(sid=G, folder=floor, hid=hypotheses.sheet_of(G)["id"]))
             raise AssertionError("床に当たる字が残ったのに通った")
         except cycle.Failed as e:
             assert "床に当たる" in str(e), e

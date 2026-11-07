@@ -20,7 +20,10 @@ from measure_tap import chrome  # noqa: E402
 from web import play_server  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-PAGES = {"techo": f"/toy/{G}/techo?walk=techo", "tsukuru": f"/toy/{G}/tsukuru?h=H-A&walk=tsukuru"}
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
+PAGES = {"techo": f"/toy/{G}/techo?walk=techo", "tsukuru": f"/toy/{G}/tsukuru?h={GS}&walk=tsukuru"}
 # 見本は頁の script より先に置く。聞き始めと止めた事を、起きた順に window.__log へ書く。
 STUB = """<script>window.__log=[];class S{constructor(){window.__rec=this;this.running=false}
  start(){this.running=true;__log.push('start')}stop(){this.running=false;__log.push('stop');const t=this;setTimeout(()=>t.onend&&t.onend(),0)}};
@@ -68,7 +71,7 @@ play_server.Handler._send, play_server.Handler.do_GET = wrapped, do_get
 server = play_server.serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
-urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), headers={"Origin": base}), timeout=120)
+urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": GS}).encode(), headers={"Origin": base}), timeout=120)
 try:
     with tempfile.TemporaryDirectory() as profile:
         out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=900,900",

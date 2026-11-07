@@ -188,6 +188,8 @@ F.forEach((f,i)=>{const list=[];
   parts.forEach((part,x)=>{const chain=[...(x===0?pre:[]),part,...(x===parts.length-1?post:[])];moves.push({i,chain,end:chain[chain.length-1][1]})})}});
 body.dataset.moves=moves.length}
 const ok=P&&moves.length>0;
+// 手の並び（どの手がどの手順か）を頁の印に出す。試験が、組の手順と手の数を決め打ちせずに期待を出すため（字ではない。組が替わっても同じに測る）
+body.dataset.plan=moves.map(m=>m.i).join(',');
 const halt=()=>{token++;onDone=null;P.stop()};
 const endOf=k=>k<0?P.F[0].q[0]:moves[k].end;
 // 中を見る: 分解した形（kumitateSplit.X）が在る時だけ釦を出す。開くと今の手の終わりの形から分解した形へ、とじると戻す

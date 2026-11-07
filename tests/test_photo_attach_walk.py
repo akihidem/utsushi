@@ -33,11 +33,14 @@ from omochae import records  # noqa: E402
 from web import play_server, techo_site  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 # 親の頁。手帖と同じ origin に置き、iframe の中の頁を本物の操作と同じ順で動かす。写真は canvas で作った本物の JPEG（受け口は中身を読める物だけを受ける）。
 WALK = r"""<!doctype html><body><iframe id="f" width="820" height="900" style="border:0"></iframe><pre id="measured">started</pre><script>(async()=>{
-const R={},G=%s,f=document.getElementById('f');
+const R={},G=%s,GS=%s,f=document.getElementById('f');
 const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
-const record=(result)=>fetch('/toy/'+G+'/record',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({hypothesis:'H-A',result}),redirect:'manual'});
+const record=(result)=>fetch('/toy/'+G+'/record',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({hypothesis:GS,result}),redirect:'manual'});
 // 頁が記録の口へ送った数を数える（約束の印が無い時に、足せるかも聞かない事を見るため）。足せるかを聞いた時の紙も控える
 const open=()=>new Promise(r=>{f.onload=()=>{const w=f.contentWindow,real=w.fetch;w.__sent=0;w.__asked=null;w.fetch=(u,o)=>{if(String(u).includes('record-json')){w.__sent++;const q=new URLSearchParams(o&&o.body?o.body.toString():'');if(q.get('attach')==='1')w.__asked=q.get('hypothesis')}return real.call(w,u,o)};
  // 最後の手順の後から開き、「はじめる」で「のこす」の画面へ行く
@@ -73,7 +76,7 @@ send, get = play_server.Handler._send, play_server.Handler.do_GET
 
 def do_get(self):
     if self.path == "/__walk":
-        return send(self, 200, WALK % json.dumps(G))
+        return send(self, 200, WALK % (json.dumps(G), json.dumps(GS)))
     return get(self)
 
 
@@ -85,7 +88,7 @@ play_server.Handler.do_GET = do_get
 server = play_server.serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
-urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), headers={"Origin": base}), timeout=120)
+urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": GS}).encode(), headers={"Origin": base}), timeout=120)
 
 
 def walk():
@@ -117,12 +120,12 @@ assert got["scene"] == "end", ("最後の手順の後から開くと「のこす
 # N 約束の印なしでは、足せるかも聞かず、何も送らない。押す所も止めず、印の所を目立たせる
 assert got["n"] == ["end", 0, False, True], got
 # A 写真だけで押すと、見た事の札を出さず、玩具の頁で残した記録に足す。紙は、この頁が作っている紙（たたき台）として送る
-assert got["a"] == "上げました" and got["a_asked"] == "H-A", got
+assert got["a"] == "上げました" and got["a_asked"] == GS, got
 assert rows[0] == ("動いた", None, "", 1), rows
 # 足した時は、その場限りの印を作り直さない（記録は増えていない。作り直すと、次の作りの話が 2 つの印に割れる）
 assert got["who_a"][0] and got["who_a"][0] == got["who_a"][1], got
 # B 写真のある記録にはもう足さず、今までどおり見た事の札を出す。聞いたのは 1 回だけで、押す所は戻る
-assert got["b"] == "kekka" and got["b_asked"] == "H-A" and got["b_sent"] == 1 and got["b_ready"], got
+assert got["b"] == "kekka" and got["b_asked"] == GS and got["b_sent"] == 1 and got["b_ready"], got
 # C 続けて 2 度押しても、写真は 1 つ。2 度目の押しは聞く所まで行かない
 assert got["c"] == "上げました" and got["c_sent"] == 1 and rows[1] == ("動かない", None, "", 1), (got, rows)
 # E 工夫の字がある時は聞かずに札を出し、選ぶと新しい記録にする。玩具の頁で残した記録は、写真なしのまま

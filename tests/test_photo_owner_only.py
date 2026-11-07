@@ -33,6 +33,9 @@ from web.play_server import serve  # noqa: E402
 
 ask._key_present = lambda: False  # 合言葉なしの場は鍵のある所で立たない。鍵のある機械でも同じに動かす
 G = "NDL-1187053-R0000005-L"
+from omochae import hypotheses  # noqa: E402
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 buf = io.BytesIO()
 Image.new("RGB", (16, 16), (200, 180, 140)).save(buf, "JPEG")
 JPEG = buf.getvalue()
@@ -78,7 +81,7 @@ class Screen:
         return self.call("POST", path, urllib.parse.urlencode(fields), "application/x-www-form-urlencoded")
 
     def record(self, route="record-json"):
-        st, data = self.form(f"/toy/{G}/{route}", hypothesis="H-A", result="動いた", who="photowho01")
+        st, data = self.form(f"/toy/{G}/{route}", hypothesis=GS, result="動いた", who="photowho01")
         if route == "record-json":
             assert st == 201, (st, data[:200])
             return json.loads(data)["id"]
@@ -100,7 +103,7 @@ class Screen:
 
 
 a, b = Screen(), Screen()
-assert a.form(f"/toy/{G}/print", hypothesis="H-A")[0] == 303
+assert a.form(f"/toy/{G}/print", hypothesis=GS)[0] == 303
 rid = a.record()
 name = a.photo(rid)
 assert "HttpOnly" in a.last and "SameSite=Lax" in a.last and "Max-Age" not in a.last and "utsushi_up=" in a.last, a.last
