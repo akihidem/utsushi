@@ -11,6 +11,10 @@
 - 撮影の情報（位置など）は、取り込む時に落とす（web.techo_site.save_media）。HEIC は JPEG に描き直すので、情報は残らない。
 - 写真の元は repo に入れない（置き場はサーバの記録の置き場。OMOCHAE_DATA）。作った人の名と感想は持たない。
 - どの玩具の作例か・ワークショップの日・刷った型紙の組（分かる日だけ）は、取り込む人が渡す（写真からは分からない）。
+- 写真がまとめて 1 つの folder に上がる時（本人の言葉 11-07「全部一緒にしてしまったので日毎にはしない。ここに上げていく」）は、仕分けの段
+  （sort → toy → place）を通す。日は撮影の日時から 4 回のどれかに振る（撮影の情報を落とす前に読み、日だけを残す。時刻と位置は残さない）。
+  4 回の日でない物と日時の無い物は「不明」。玩具は写っている物を人（か取り込む担当）が見て決め、分からない物は「不明」のまま人の確かめへ
+  残す（勝手に決めない）。日と玩具の両方が決まった物だけを作例の記録に入れる。動画（一周の動画など）は写真と分けて名を挙げるだけで、触らない。
 
 使い方（端末で）:
   1. iPhone の写真（HEIC）は、先に JPEG にする。pillow-heif のある python で回す（pillow-heif の中の x265 は GPL なので、repo の依存に
@@ -20,16 +24,26 @@
        python -m web.sakurei add --toy <玩具の印> --day YYYY-MM-DD [--set <刷った型紙の組、例 goraigo-v10>] <写真...>
   3. 人が確かめる: python -m omochae.media_review list / approve <記録> <名> --shows object --reviewer <名>
   4. 一覧: python -m web.sakurei list
+  まとめて上がった folder の仕分け（上の 1・2 の代わり）:
+  a. 日を読み、撮影の情報の無い JPEG にして仕分けの置き場（OMOCHAE_DATA の sakurei_hold）へ。動画は名を挙げるだけ（pillow-heif のある python で）:
+       <pillow-heif のある python> -m web.sakurei sort <folder>
+  b. 写っている物を見て玩具を決める（分からない物は不明のまま。日が不明の物は人が --day で決めてよい）:
+       python -m web.sakurei toy <指紋か元の名...> --toy <玩具の印か 不明> [--day YYYY-MM-DD] [--set <組>]
+  c. 日と玩具の両方が決まった物を作例の記録に入れる: python -m web.sakurei place
+  d. 残っている物（不明・人の確かめ待ち）: python -m web.sakurei hold
+  別の置き場（審査の場など）へ同じ取り込みを回す時は、a に --like <前の置き場の sakurei_hold/hold.json> を付け、b を飛ばして c を回す。
 
 exit code: 0 = 通る / 3 = 受けない物がある（知らない玩具・読めない日・写真として読めない）/ 4 = 呼び方の誤り・検査できない（HEIC を読む部品が無いなど）。
 """
 import argparse
 import hashlib
 import io
+import json
+import os
 import pathlib
 import re
 import sys
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 # ワークショップの日（本人の言葉 11-07「ワークショップ 4 回は 11 月 4・5・6・7 日でよい。回数の数え方と改善の歴史の表はこの 4 回でそろえてください」）。
 # 作例はこの日のどれかで受ける（回数を数える所と同じ 4 回にそろえる）。ワークショップが増えたら、ここに足す
@@ -38,6 +52,11 @@ LONG = 2400  # px。HEIC を描き直す時の長い辺の上限。頁は小さ�
 QUALITY = 88
 HEIC_BRANDS = (b"heic", b"heix", b"heim", b"heis", b"mif1", b"msf1", b"hevc", b"hevx")
 SET_NAME = re.compile(r"[a-z_]+-v\d+")
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+UNKNOWN = "不明"  # 仕分けで日か玩具が決まらない物の印（人の確かめへ残す。統括の頼み 11-07 の字のまま）
+JST = timezone(timedelta(hours=9))  # ワークショップの場の時（撮影の日時の日をこの時で読む）
+VIDEO_EXT = (".mov", ".mp4", ".m4v")
+VIDEO_BRANDS = (b"qt  ", b"isom", b"mp41", b"mp42", b"M4V ", b"iso2", b"avc1")
 
 
 def is_heic(data):
@@ -181,6 +200,165 @@ def add(paths, sid, day, sheet_set=None, hypothesis_id=None):
     return done, refused, None
 
 
+def is_video(data, name):
+    """動画か（中身の印か拡張子で見る）。一周の動画（splat 用）は写真と分け、仕分けの段では触らない。"""
+    return (data[4:8] == b"ftyp" and data[8:12] in VIDEO_BRANDS) or name.lower().endswith(VIDEO_EXT)
+
+
+def shot_day(data):
+    """撮影の日（Asia/Tokyo の YYYY-MM-DD）。EXIF の DateTimeOriginal（と OffsetTimeOriginal）から読む。読めなければ None。
+
+    DateTime（0x0132）は直した時の日時になる事があるので使わない（撮った日と違う日に振らない）。時差の欄が無い時は、書いてある時のまま読む
+    （カメラの時計はその場の時）。HEIC は pillow-heif がある時だけ読める（無ければ None）。"""
+    from PIL import Image
+
+    try:
+        import pillow_heif
+
+        pillow_heif.register_heif_opener()
+    except ImportError:
+        if is_heic(data):
+            return None
+    try:
+        with Image.open(io.BytesIO(data)) as im:
+            sub = im.getexif().get_ifd(0x8769)
+            raw, off = sub.get(0x9003), sub.get(0x9011) or sub.get(0x9010)
+        t = datetime.strptime(str(raw).strip("\x00 "), "%Y:%m:%d %H:%M:%S")
+        m = re.fullmatch(r"([+-])(\d\d):(\d\d)", str(off or "").strip("\x00 "))
+        if m:
+            sign = 1 if m.group(1) == "+" else -1
+            t = t.replace(tzinfo=timezone(sign * timedelta(hours=int(m.group(2)), minutes=int(m.group(3))))).astimezone(JST)
+        return t.date().isoformat()
+    except (OSError, ValueError, TypeError, Image.DecompressionBombError):
+        return None
+
+
+def workshop_day(data):
+    """撮影の日が 4 回のワークショップの日なら、その日。ほかの日と、日時の無い物は不明（人が決める）。"""
+    d = shot_day(data)
+    return d if d in WORKSHOP_DAYS else UNKNOWN
+
+
+def hold_dir():
+    """仕分けの置き場（写真の元は repo に入れない: サーバの記録の置き場 OMOCHAE_DATA の下。置かない時は git の外の data/ の下）。"""
+    return pathlib.Path(os.environ.get("OMOCHAE_DATA", ROOT / "data")) / "sakurei_hold"
+
+
+def _hold_list():
+    try:
+        return json.loads((hold_dir() / "hold.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+
+def _hold_save(items):
+    d = hold_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    tmp = d / "hold.json.tmp"
+    tmp.write_text(json.dumps(items, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    tmp.replace(d / "hold.json")
+
+
+def sort(folder, like=None):
+    """まとめて上がった folder の直下を仕分けの置き場へ。Returns ([仕分けた元の名], [動画の名], [(写真でない名, 理由)], 検査できない理由 or None)。
+
+    1 枚ごとに: 撮影の日を読む → 撮影の情報の無い JPEG に描き直して置く（日時・位置・機種は残さない）→ 帳面（hold.json）に
+    指紋・元の名・日（4 回の日か不明）・玩具（不明）を書く。同じ元の写真は 2 度置かない（指紋で見る）。元の folder には書かない。
+    like は別の置き場の帳面（hold.json）。同じ指紋の写真には、そこで人が決めた玩具・日・組を写す（審査の場を立てる時に、公開のデモと
+    同じ取り込みを、決め直さずにもう一度回すため）。"""
+    folder = pathlib.Path(folder)
+    if not folder.is_dir():
+        return [], [], [], f"folder が無い: {folder}"
+    try:
+        known = {it["fp"]: it for it in json.loads(pathlib.Path(like).read_text(encoding="utf-8"))} if like else {}
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        return [], [], [], f"写す帳面を読めない: {like}: {e}"
+    items = _hold_list()
+    seen = {it["fp"] for it in items}
+    held, videos, skipped = [], [], []
+    for p in sorted(x for x in folder.iterdir() if x.is_file() and not x.name.startswith(".")):
+        try:
+            raw = p.read_bytes()
+        except OSError as e:
+            return held, videos, skipped, f"読めない: {p.name}: {e}"
+        if is_video(raw, p.name):
+            videos.append(p.name)
+            continue
+        fp = fingerprint(raw)
+        if fp in seen:
+            continue
+        jpeg = to_jpeg(raw)
+        if jpeg is None:
+            if is_heic(raw):
+                _hold_save(items)
+                return held, videos, skipped, f"HEIC を読めない（sort は pillow-heif のある python で回す）: {p.name}"
+            skipped.append((p.name, "写真（JPEG・PNG・HEIC）として読めない"))
+            continue
+        d = hold_dir()
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{fp}.jpg").write_bytes(jpeg)
+        item = {"fp": fp, "name": p.name, "day": workshop_day(raw), "toy": UNKNOWN}
+        item.update({k: known[fp][k] for k in ("day", "toy", "set") if k in known.get(fp, {})})
+        items.append(item)
+        seen.add(fp)
+        held.append(p.name)
+    _hold_save(items)
+    return held, videos, skipped, None
+
+
+def set_toy(keys, sid, day=None, sheet_set=None):
+    """仕分けの置き場の写真の玩具（と、人が決めた日・刷った組）を書く。keys は指紋か元の名。sid は玩具の印か不明。
+    Returns ([書いた指紋], [(key, 理由)])。"""
+    if sid != UNKNOWN:
+        from omochae import hypotheses
+        from omochae.model import ToolMissing
+
+        try:
+            hypotheses.load(sid)
+        except (KeyError, OSError, ValueError, ToolMissing):
+            return [], [("", f"知らない玩具: {sid}")]
+    if day is not None and day not in WORKSHOP_DAYS + (UNKNOWN,):
+        return [], [("", f"日はワークショップの日（{'・'.join(d[5:] for d in WORKSHOP_DAYS)}）か不明: {day}")]
+    if sheet_set is not None and not SET_NAME.fullmatch(sheet_set):
+        return [], [("", f"型紙の組は「名前-v番号」の形: {sheet_set}")]
+    items = _hold_list()
+    done, refused = [], []
+    for key in keys:
+        hit = [it for it in items if key in (it["fp"], it["name"]) and not it.get("rid")]
+        if len(hit) != 1:
+            refused.append((key, "元の名が 2 つ以上に当たる（指紋で選ぶ）" if hit else "仕分けの置き場に無い（取り込み済みか、名か指紋の誤り）"))
+            continue
+        it = hit[0]
+        it["toy"] = sid
+        if day is not None:
+            it["day"] = day
+        if sheet_set is not None:
+            it["set"] = sheet_set
+        done.append(it["fp"])
+    _hold_save(items)
+    return done, refused
+
+
+def place():
+    """日と玩具の両方が決まった物を作例の記録に入れる（add と同じ道: 人の確かめを待つ）。Returns ([(記録, 元の名)], [(元の名, 理由)])。
+    入れた物は仕分けの置き場の写しを消し、帳面に記録の番号を書く（2 度入れない）。"""
+    items = _hold_list()
+    done, refused = [], []
+    for it in items:
+        if it.get("rid") or UNKNOWN in (it["day"], it["toy"]):
+            continue
+        path = hold_dir() / f"{it['fp']}.jpg"
+        got, why, cannot = add([path], it["toy"], it["day"], it.get("set"))
+        if got:
+            it["rid"] = got[0][0]
+            path.unlink(missing_ok=True)
+            done.append((it["rid"], it["name"]))
+        else:
+            refused.append((it["name"], cannot or "; ".join(w for _, w in why)))
+    _hold_save(items)
+    return done, refused
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="web.sakurei", description="ワークショップで作られたおもちゃ（作例）の写真を受ける")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -194,6 +372,16 @@ def main(argv=None):
     a.add_argument("--set", dest="sheet_set", help="刷った型紙の組（例 goraigo-v10）。分からない時は書かない")
     a.add_argument("--hypothesis", help="刷った型紙の仮説（既定はたたき台）")
     sub.add_parser("list", help="取り込んだ作例と、人の確かめの状態")
+    so = sub.add_parser("sort", help="まとめて上がった folder の写真を、日を読んで撮影の情報を落とし、仕分けの置き場へ（動画は名を挙げるだけ）")
+    so.add_argument("folder")
+    so.add_argument("--like", help="別の置き場の帳面（hold.json）。同じ写真に、そこで決めた玩具・日・組を写す")
+    ty = sub.add_parser("toy", help="仕分けの置き場の写真の玩具を書く（分からない物は 不明）")
+    ty.add_argument("keys", nargs="+", help="指紋か元の名")
+    ty.add_argument("--toy", required=True, help=f"玩具の印（NDL-…）か {UNKNOWN}")
+    ty.add_argument("--day", help=f"人が決めた日 YYYY-MM-DD か {UNKNOWN}（撮影の日時から決まらない物）")
+    ty.add_argument("--set", dest="sheet_set", help="刷った型紙の組（分かる時だけ）")
+    sub.add_parser("place", help="日と玩具の両方が決まった物を作例の記録に入れる")
+    sub.add_parser("hold", help="仕分けの置き場に残っている物（不明・人の確かめ待ち）")
     try:
         args = ap.parse_args(argv)
     except SystemExit as e:
@@ -216,6 +404,38 @@ def main(argv=None):
             (out / f"{p.stem}.jpg").write_bytes(data)
             print(out / f"{p.stem}.jpg")
         return 4 if bad else 0
+    if args.cmd == "sort":
+        held, videos, skipped, cannot = sort(args.folder, args.like)
+        items = {it["name"]: it for it in _hold_list()}
+        for name in held:
+            print("仕分けた", items[name]["fp"], items[name]["day"], name)
+        for name in videos:
+            print("動画（触らない）", name)
+        for name, why in skipped:
+            print(f"受けない: {name} {why}", file=sys.stderr)
+        if cannot:
+            print(f"検査できない: {cannot}", file=sys.stderr)
+            return 4
+        return 3 if skipped else 0
+    if args.cmd == "toy":
+        done, refused = set_toy(args.keys, args.toy, args.day, args.sheet_set)
+        for fp in done:
+            print("書いた", fp, args.toy)
+        for key, why in refused:
+            print(f"受けない: {key} {why}".strip(), file=sys.stderr)
+        return 3 if refused else 0
+    if args.cmd == "place":
+        done, refused = place()
+        for rid, name in done:
+            print(rid, name)
+        for name, why in refused:
+            print(f"受けない: {name} {why}", file=sys.stderr)
+        return 3 if refused else 0
+    if args.cmd == "hold":
+        for it in _hold_list():
+            if not it.get("rid"):
+                print(it["fp"], it["day"], it["toy"], it.get("set") or "-", it["name"])
+        return 0
     if args.cmd == "add":
         done, refused, cannot = add(args.photos, args.toy, args.day, args.sheet_set, args.hypothesis)
         for rid, name, src in done:
