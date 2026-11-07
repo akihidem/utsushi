@@ -51,7 +51,9 @@ for k in ("tenji", "zine"):
         fig = loop_figure.svg()
     except ImportError:
         fig = ""
-    manabi = f'<section class="sec" id="manabi"><p class="lead">{esc(about.MANABI)}</p>{fig}</section>'
+    # 図がある時は、見出しに 1 本の輪の名（11-08 の組み直し）
+    head = f'<h2>{esc(loop_figure.NAME)}</h2>' if fig else ""
+    manabi = f'<section class="sec" id="manabi">{head}<p class="lead">{esc(about.MANABI)}</p>{fig}</section>'
     assert h.count(manabi) == 1 and at[2] < h.index(manabi) < at[3], (k, "学びの輪の段の置き場（文の後に図）")
     assert about.MANABI.startswith("作って、確かめて、ふり返って、次を考える。") and about.MANABI.endswith("進め役の役目は、型紙と記録の形の中に残っています。"), about.MANABI
     # 大前提の 3 段（本人の言葉 11-07 夜「入れる」）: 頁の頭の道の並び（English の道）のすぐ後・CONCEPT の前に、この順で 1 回ずつ

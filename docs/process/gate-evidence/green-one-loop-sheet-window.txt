@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_sheet_window.py
+# commit: b6eb7480（回した時の HEAD）
+ok
+rc=0
