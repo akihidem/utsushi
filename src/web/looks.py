@@ -369,17 +369,21 @@ def _erabu(sids, photos=True):
 
 def tenji(photos=True):
     """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。"""
+    from . import ukabu  # 浮かぶ玩具（循環を避けて、ここで読む）
+
     ts = toys()
     body = switch("tenji")
     # 題の間: 題と副題と「このサイトについて」だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。組みは縦に戻した（本人の決め 11-07 夜
     # 「縦の組みに戻す」。ERABU の上の注）。前は画面いっぱいの高さにせず、幅 390 の最初の画面に 2 つの大きな札の頭が入るようにしていた
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link() + '</section>')
+             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link()
+             # 浮かぶ玩具（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」。web.ukabu）。輪郭の絵が無い場では何も置かない
+             + ukabu.block(set(sources())) + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + skin.entrance_style("tenji"), "tenji")
+    return page("うつし", body + ONLY + ERABU_JS, TENJI + ERABU + ukabu.UKABU + skin.entrance_style("tenji"), "tenji")
 
 
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。
