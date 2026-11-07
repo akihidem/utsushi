@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_loop_figure.py
+# commit: 0a6d03c1（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_loop_figure.py", line 30, in <module>
+    s = f.drawn(v)
+        ^^^^^^^
+AttributeError: module 'web.loop_figure' has no attribute 'drawn'
+rc=1
