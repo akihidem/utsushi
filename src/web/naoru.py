@@ -1,0 +1,67 @@
+"""のこすと型紙が直る事を書く枠（本人のサイト体験レビュー 11-07 の言葉 7。直しの設計の E）。
+
+置き場は 2 つ: 手帖の最後の画面（のこす の画面。techo_step）の「のこす」の釦のすぐ下と、手帖の記録の頁（techo_site.records_page）の頭。
+直しの設計は「のこすの前」だが、釦の上に置くと 320×568 と 768×576 で「のこす」が最初の画面の外へ出たので、釦のすぐ下にした（同じ画面で読める）。
+上げた記録から型紙と AI の仮説が直り、次の版になって次の人が作る事を 2〜3 行で書き、証拠に改善の歴史の表の山場の 1 行を表の字で添える。
+地図の工程 4 のこす の「体験してほしい事」に「自分の記録が次の型紙を直すと分かる」を足す直し。
+
+判断の芯:
+- **字は LINES の 1 か所。** 直しの設計の案 1 の字（下の LINES の注）。LINES を空にすると枠ごと出ず、2 つの頁は前と 1 字も変わらない
+  （利用者に見える新しい字は本人の確かめの線なので、字を外して作りだけを残す時の形）。字を替える時は LINES だけを直す。
+- **説明は 2〜3 行。** のこす の画面は 1 手 1 画面で押す所が 3 つの頁なので、説明を長くしない（tests/test_naoru.py が行の数を見る）。
+  枠は「のこす」の釦の下なので、釦の位置は枠の有り無しで変わらない。
+- **山場の 1 行は、改善の歴史の表の字をそのまま写した data/kaizen/highlight.json から引く。** 表は型紙エンジンの記録から作った物で repo の外にあり、
+  審査の人は utsushi だけを clone するので、頁に出す 1 行と出どころを repo に写す。字を作り替えない（表の字のまま。題の形だけここで組む）。
+- **枠は 1 か所（box）で作り、2 つの頁が同じ物を呼ぶ。** 頁ごとに字を持つと、片方だけ直した時に食い違うため。
+- **手帖の作る頁の決まりを守る。** 手帖の 1 手 1 画面の字には、記録の番号・「の紙」・版の名を出さない（本人の決定 11-05、#87）。
+  のこす の画面もその頁の中なので、字がこの決まりに当たる時は手帖には枠を出さず（記録の頁には出す）、山場の 1 行（型紙の版の名を持つ）は手帖では添えない。
+  直しの設計の案 1 の 2 行目は「の紙」を持つので、今は手帖には出ない（手帖に出す字は窓口へ聞いた）。
+- 公開の場でも同じ枠を出す（人の言葉も記録の番号も入らない、作る側の説明と表の字だけなので）。
+"""
+import json
+import re
+
+from omochae.hypotheses import ROOT
+
+from .skin import esc
+
+# 説明の 2 行。直しの設計の案 1 の字（本人の答え 11-07「反映してください。先ほどのサイト体験レビューの要点の通りで進めてください。」を、
+# 要点 7「記録を上げるとどう改善が進むか（型紙と AI の仮説が良くなる事）を、はっきり書く」に沿う案 1 の字で作ると読んだ。本人が頁で見る）。
+# 空にすると枠ごと出なくなる（字を外して作りだけ残す時の形）
+LINES = ("のこした記録は、型紙と AI（Claude）の仮説を直すのに使います。",
+         "直した型紙は、次の版になって、次に作る人の紙になります。")
+HIGHLIGHT = ROOT / "data/kaizen/highlight.json"
+
+
+def highlight():
+    """山場の 1 行（表の字に、玩具と型紙の版を添えた形）。data が無いか読めない時は空（枠の説明だけを出す）。"""
+    try:
+        h = json.loads(HIGHLIGHT.read_text(encoding="utf-8"))
+        return f"{h['line']}（{h['toy']} 型紙の版 v{h['sheet_version']}）"
+    except (OSError, ValueError, KeyError, TypeError):
+        return ""
+
+
+# 手帖の作る頁（1 手 1 画面）の字に出さない印（本人の決定 11-05、#87「作る頁の字に記録の番号と「の紙」を出さない」。版の名も出さない。
+# tests/test_techo_step.py が頁の字で見る）。のこす の画面もこの頁の中なので、枠もこの決まりに従う
+TECHO_BANNED = ("の紙", "版 ")
+RECORD_NO = re.compile(r"R-\d{4}")
+
+
+def techo_ok(lines):
+    """その字を手帖の作る頁に出してよいか（上の決まりに当たらないか）。"""
+    return not any(b in t for t in lines for b in TECHO_BANNED) and not any(RECORD_NO.search(t) for t in lines)
+
+
+def box(techo=False):
+    """のこす の画面（techo=True）と記録の頁に置く枠の HTML。字が空なら空の文字列。
+    手帖の画面では、字が作る頁の決まり（TECHO_BANNED）に当たる時は枠を出さず、山場の 1 行（型紙の版の名を持つ）も添えない。
+    記録の頁は前から「A の紙」と版を出す頁なので、字と山場の 1 行をそのまま出す。
+    見た目は頁の枠の色（--frame）の細い線で囲む。手帖と記録の頁は別の CSS を持つので、どちらの頁でも同じに見えるよう、ここで style を持つ。"""
+    if not LINES or (techo and not techo_ok(LINES)):
+        return ""
+    hl = "" if techo else highlight()
+    return ('<aside class="naoru" style="border:1px solid var(--frame);padding:10px 12px;margin:0 0 12px;text-align:left">'
+            + "".join(f'<p style="margin:0 0 4px">{esc(t)}</p>' for t in LINES)
+            + (f'<p class="meta" style="margin:6px 0 0">{esc(hl)}</p>' if hl else "")
+            + "</aside>")
