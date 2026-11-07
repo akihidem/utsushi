@@ -31,6 +31,10 @@ from web.toy import toy_page  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 G = "NDL-1187053-R0000005-L"
+# この試験は輪（記録 → 説明 → 案 → 採る → 版）の作りを、前の組（goraigo-v10）のつまみの形の寸法で見る（値はその寸法で選んである）。
+# 今の組（goraigo-v14）の輪は tests/test_loop_talk.py・test_next_version_atomic.py・test_one_sheet_loop.py ほかが見る
+from omochae.templates import slider_fan as _fan  # noqa: E402
+_fan.SHEET_SET = _fan.FROZEN_SET
 SOURCE = json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))
 WHO, OTHER = "abcdefgh12", "zyxwvuts98"
 

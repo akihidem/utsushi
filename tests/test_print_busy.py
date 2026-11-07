@@ -68,7 +68,8 @@ def busy_script(page):
 
 
 page = get(f"/toy/{G}")
-ids = [h["id"] for h in hypotheses.load(G)["hypotheses"]]
+# 刷れるのは今の組のたたき台の紙だけ（J-032）。御来迎の今の組 goraigo-v14 は H-C なので、たたき台を先頭に並べる
+ids = [hypotheses.sheet_of(G)["id"]] + [h["id"] for h in hypotheses.load(G)["hypotheses"] if h["id"] != hypotheses.sheet_of(G)["id"]]
 assert any("/print#" in a for a in marked(page))
 
 # 押した時の動き: 形を変える・押せなくする・戻る操作と時間切れで元に戻す

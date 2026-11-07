@@ -20,7 +20,8 @@ from web.play_server import serve  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 WORDS = "仮説（ためしの案）: AI が考えた、ためしに作るための案の 1 つです。正しい答えではありません。作って、動くか見て、直していきます。"
-REQUIRED = {"NDL-1187053-R0000005-L": "H-A", "NDL-1187053-R0000014-R": "H-A"}
+# 刷るのは今の組のたたき台（御来迎の今の組 goraigo-v14 は H-C・虎は H-A）。記録の組ごとの欄から引く
+REQUIRED = {sid: hypotheses.sheet_of(sid)["id"] for sid in ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")}
 assert marks.HYPOTHESIS == WORDS
 # 語の見張りで外すのは打ち消しの文だけ。文から「正解」を外したら、もう残っていない
 assert "正解" not in WORDS.replace("正解ではありません", "")
@@ -74,9 +75,11 @@ server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 G = "NDL-1187053-R0000005-L"
-req = urllib.request.Request(f"{base}/toy/{G}/print", urllib.parse.urlencode({"hypothesis": "H-A"}).encode(), headers={"Origin": base})
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
+req = urllib.request.Request(f"{base}/toy/{G}/print", urllib.parse.urlencode({"hypothesis": GS}).encode(), headers={"Origin": base})
 urllib.request.urlopen(req).read()
-with urllib.request.urlopen(f"{base}/toy/{G}?see=H-A") as r:
+with urllib.request.urlopen(f"{base}/toy/{G}?see={GS}") as r:
     assert WORDS in r.read().decode()
 server.shutdown()
 

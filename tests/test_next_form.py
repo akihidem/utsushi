@@ -15,11 +15,13 @@ DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
 os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(DATA, "api-usage.jsonl")
 
-from omochae import loop  # noqa: E402
+from omochae import hypotheses, loop  # noqa: E402
 from omochae.templates import slider_fan  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
+GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -42,10 +44,10 @@ def post(path, data):
         return e.code, e.read().decode()
 
 
-assert post(f"/toy/{G}/print", {"hypothesis": "H-A"})[0] in (200, 303)
-assert post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})[0] in (200, 303)
+assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
+assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})[0] in (200, 303)
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})[0] in (200, 303)
-now = {**slider_fan.DEFAULTS, **loop.version_params(G, "H-A", 1)[0]}
+now = {**slider_fan.DEFAULTS, **loop.version_params(G, GS, 1)[0]}
 
 
 def form_of(page):
@@ -65,7 +67,7 @@ assert "紙に組める値は、この幅より狭い事があります" in form
 assert '<textarea name="interpretation" required>折りが固くて戻る</textarea>' in form_of(page)
 
 form = {"interpretation": "折りが固い", "why": "開きを見る", "by": "大人"}
-before = sorted(p.name for p in pathlib.Path(DATA).rglob("*") if p.is_file() and "H-A_v" in p.name)
+before = sorted(p.name for p in pathlib.Path(DATA).rglob("*") if p.is_file() and f"{GS}_v" in p.name)
 # はみ出す値: 検査の言葉と座標を出さず、学ぶ人の言葉と今の値を出す
 code, page = post("/record/R-0001/next", {**form, "param": "fold_width", "to": str(hi)})
 assert code == 422, code
@@ -78,12 +80,12 @@ assert code == 422 and f"折りの幅（mm）は {lo:g}〜{hi:g} の間で書い
 code, page = post("/record/R-0001/next", {**form, "param": "push_amount", "to": "30"})
 assert code == 422 and "畳んだ扇が筒に隠れません" in page and "を超え" not in page, page[:600]
 # 床に落ちたら刷らない（S-07 の線はそのまま）
-assert loop.latest_version(G, "H-A") == 1
-assert sorted(p.name for p in pathlib.Path(DATA).rglob("*") if p.is_file() and "H-A_v" in p.name) == before
+assert loop.latest_version(G, GS) == 1
+assert sorted(p.name for p in pathlib.Path(DATA).rglob("*") if p.is_file() and f"{GS}_v" in p.name) == before
 # 通る値は今までどおり刷れて、次の欄の「今」は新しい版の値になる
 code, page = post("/record/R-0001/next", {**form, "param": "paper_thickness", "to": "0.2"})
 assert code in (200, 303), (code, page[:300])
-assert loop.latest_version(G, "H-A") == 2
+assert loop.latest_version(G, GS) == 2
 assert ": 今 0.2（" in option(get(f"/toy/{G}"), "paper_thickness")
 
 server.shutdown()

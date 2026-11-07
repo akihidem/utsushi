@@ -32,6 +32,8 @@ from web.play_server import out_dir, serve  # noqa: E402
 
 ask._key_present = lambda: False  # 鍵の有無は試験の中で替える。合言葉なしの場は鍵のある所で立たないので、先に立てる
 G = "NDL-1187053-R0000005-L"
+# 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
+GS = hypotheses.sheet_of(G)["id"]
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -93,7 +95,7 @@ assert "名前・学校の名前・住所・電話番号・メールのような
 assert "名前や学校の名前のような言葉" not in body
 
 # 6. 紙を作った後の返事
-code, at, _ = post(f"/toy/{G}/print", {"hypothesis": "H-A"})
+code, at, _ = post(f"/toy/{G}/print", {"hypothesis": GS})
 assert code == 303 and "紙を作りました。下の窓で絵を見てください。印刷する時は、PDF の大きさを 100% にしてください。" in at, at
 assert "PDF を 100% で" not in at
 
@@ -121,17 +123,17 @@ ask._key_present = lambda: False
 # 7. 「できた」の後の返事（字は #321 の物。11-06 昼の本人の決定「全部このまま」が一覧の 7 より後なので、そちらを残した）
 assert tsukuru.DONE_NOTE.startswith("組み上がった事を残しました。") and "玩具の頁" not in tsukuru.DONE_NOTE
 total = len(re.findall(r"<li", get(f"/toy/{G}/tsukuru").split('id="steps"', 1)[1].split("</ol>", 1)[0]))
-code, at, _ = post(f"/toy/{G}/step", {"hypothesis": "H-A", "step": str(total), "event": "done", "sheet_version": "1"})
+code, at, _ = post(f"/toy/{G}/step", {"hypothesis": GS, "step": str(total), "event": "done", "sheet_version": "1"})
 assert code == 303 and tsukuru.DONE_NOTE in at and "玩具の頁で記録を残します" not in at, at
 
 # 6 の続き: 次の版の紙を作った後の返事
-code, at, _ = post(f"/toy/{G}/record", {"hypothesis": "H-A", "result": "動いた"})
+code, at, _ = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})
 rid = re.search(r"#(R-\d+)", at).group(1)
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] == 303
-code, at, _ = post(f"/record/{rid}/next", {"interpretation": "読み", "param": "fold_height", "to": "47.5", "why": "試す", "by": "書いた人"})
+code, at, _ = post(f"/record/{rid}/next", {"interpretation": "読み", "param": "fold_height", "to": "56.7", "why": "試す", "by": "書いた人"})
 assert code == 303 and "版 2 の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at, at
 # 刷り直し（#158）の返事も同じ字。ここだけ別の道（_reprint）で字を持つので、別に見る
-code, at, _ = post(f"/toy/{G}/reprint", {"hypothesis": "H-A", "version": "2"})
+code, at, _ = post(f"/toy/{G}/reprint", {"hypothesis": GS, "version": "2"})
 assert code == 303 and "版 2 の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at and "PDF を 100% で" not in at, (code, at)
 
 # 8. 自分の仮説の記録の札の紙の名前（ギャラリーと手帖）

@@ -289,6 +289,12 @@ def _pose(bench, pose, whole):
                        "pitch": o["pitch"] * SCALE, "w": o["w"] * SCALE, "hx": o["hole_x"] * SCALE, "fx": o["fold_x"] * SCALE, "m": o["m"], "k": {str(i): k for i, k in o["strips"].items()}, "tab": o["tab"], "mid": o["mid"]}
     if whole:
         out["p"] = panels
+    else:
+        # 折りで表せない形の部品（型紙エンジンの JSON の custom。御来迎 v14 の扇が開く所と畳む所）は、置き場と角（s）を持たないので、
+        # 面の行列を x で渡す（頁は x の面を前の形との間で補って置く）。p は「全部の面をこれで置く」形（できあがり）なので混ぜない
+        custom = {pid: m for pid, m in panels.items() if pid.split(":")[0] not in pose["state"]}
+        if custom:
+            out["x"] = custom
     return out
 
 
@@ -340,7 +346,7 @@ for(const i in o.k){const k=o.k[i],off=k-o.m,goal=k===o.m?0:(k%2?o.tilt:-o.tilt)
 out[o.tab]=mul(out[o.mid],hinge(o.fx,0,0,1,90));return out};
 const flatPlan=B=>{const out={};for(const key in B.s){const q=toQ(B.s[key].m);out[key]={levels:[],at:{},q0:q,q1:q}}return out};
 const rest=B=>{const pl=B.p?null:flatPlan(B),made={};if(pl)for(const key in pl)made[key]=shape(B,B,key,pl[key],1);
-for(const o of els){const m=B.p?B.p[o.id]:made[o.key]&&made[o.key][o.i];if(!m){o.e.style.opacity=0;continue}o.e.style.opacity=1;put(o,m)}
+for(const o of els){const m=B.p?B.p[o.id]:(made[o.key]&&made[o.key][o.i])||(B.x&&B.x[o.id]);if(!m){o.e.style.opacity=0;continue}o.e.style.opacity=1;put(o,m)}
 for(const r of rods){const a=B.r[r.dataset.r];if(!a){r.style.opacity=0;continue}r.style.opacity=1;rod(r,a.s,a.e)}
 sci.style.opacity=0;knife.style.opacity=0;if(B.ruler)lay(ruler,B.ruler);misc(B);cam=[B.rx,B.ry,B.c,B.z];view()};
 const words=()=>{const f=F[at];text.textContent=f.t||text.dataset.done;count.textContent=at<L?`${at+1} / ${L}`:'';prev.disabled=at===0;next.textContent=at===L?next.dataset.again:next.dataset.go;stage.dataset.at=at};
@@ -349,6 +355,8 @@ const along=(path,t)=>{let total=0;const seg=[];for(let i=1;i<path.length;i++){c
 const draw=(A,B,pl,u)=>{const made={};for(const key in pl.sheets)made[key]=shape(A,B,key,pl.sheets[key],u);
 if(B.open)made.fan=openShape(B.open,ease(u));
 for(const o of els){const m=made[o.key];if(m)put(o,m[o.i])}
+// 折りで表せない形の面（x）は、前の形の行列との間を補って置く（形の数が多いので、補っても硬い面がほぼ崩れない）
+if(B.x){const ex=ease(u);for(const o of els){const b=B.x[o.id];if(!b)continue;const a=A.x&&A.x[o.id];put(o,a?a.map((v,k)=>lerp(v,b[k],ex)):b)}}
 const e=ease(u);for(const r of rods){const a=A.r[r.dataset.r],b=B.r[r.dataset.r];if(a&&b)rod(r,a.s.map((v,k)=>lerp(v,b.s[k],e)),a.e.map((v,k)=>lerp(v,b.e[k],e)))}
 if(A.ruler&&B.ruler)lay(ruler,[lerp(A.ruler[0],B.ruler[0],e),lerp(A.ruler[1],B.ruler[1],e)]);
 if(B.cut){const[x,y,a]=along(B.cut,u);(B.knife?knife:sci).style.transform=`translate3d(${x}px,${y}px,8px) rotate(${a}rad) translate(${-30*S}px,${-14*S}px)`}
@@ -360,7 +368,7 @@ const stop=()=>{if(run){cancelAnimationFrame(run.raf);run=null}};
 const play=(A,seq,j)=>{const B=seq[j],pl=plan(A,B),me={raf:0};run=me;
 // この形に無い部品は消し、新しく出る部品は行き先に置いてから出す
 const fresh=flatPlan(B);for(const key in fresh){if(A.s[key])continue;const m=shape(B,B,key,fresh[key],1);for(const o of els)if(o.key===key)put(o,m[o.i])}
-for(const o of els)o.e.style.opacity=B.s[o.key]||(B.open&&o.key==='fan')?1:0;
+for(const o of els){if(B.x&&B.x[o.id]&&!(A.x&&A.x[o.id]))put(o,B.x[o.id]);o.e.style.opacity=B.s[o.key]||(B.open&&o.key==='fan')||(B.x&&B.x[o.id])?1:0}
 for(const r of rods){const b=B.r[r.dataset.r];if(!b){r.style.opacity=0;continue}r.style.opacity=1;if(!A.r[r.dataset.r])rod(r,b.s,b.e)}
 if(B.ruler&&!A.ruler)lay(ruler,B.ruler);misc(B);sci.style.opacity=B.cut&&!B.knife?1:0;knife.style.opacity=B.cut&&B.knife?1:0;
 const start=performance.now();

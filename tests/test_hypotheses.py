@@ -10,6 +10,7 @@ tmp = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = tmp
 
 from omochae.compose import compose
+from omochae import hypotheses
 from omochae.hypotheses import load
 
 SID = "NDL-1187053-R0000005-L"
@@ -35,12 +36,12 @@ assert r.returncode == 0, "予想の段は無い。開いたらすぐ並ぶ（#2
 assert cli("predict", "x").returncode != 0, "予想の口は外した"
 assert all(h["id"] in r.stdout for h in hs)
 assert cli("print", "H-Z").returncode == 4
-# 御来迎の今の組で刷れるのは、たたき台の H-A だけ（本人の決定 11-05、J-032）。ほかの仮説は F9.human で断る（tests/test_one_sheet.py）。
+# 御来迎の今の組で刷れるのは、たたき台（次の組は H-C の柄を下から押し上げる形・本人の決定 2026-11-06）だけ（J-032）。ほかの仮説は F9.human で断る（tests/test_one_sheet.py）。
 assert cli("print", "H-D", "--out", f"{tmp}/d").returncode == 3
-r = cli("print", "H-A", "--out", f"{tmp}/d")
+r = cli("print", hypotheses.sheet_of("NDL-1187053-R0000005-L")["id"], "--out", f"{tmp}/d")  # たたき台は組ごと（御来迎の次の組は H-C）
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", f"{tmp}/d.pdf", "-"], capture_output=True, text=True).stdout
-assert "仮説A" in "".join(text.split()) and "正解ではありません" in "".join(text.split())  # 必須 2 種の今の組は前の文のまま（凍結の床・#318）
+assert f"仮説{hypotheses.letter(hypotheses.sheet_of('NDL-1187053-R0000005-L'))}" in "".join(text.split()) and "正しい答えではありません" in "".join(text.split())  # 必須 2 種の今の組もやさしい言葉の文（#318。前の組は凍結の床）
 
 # 自分の仮説から入る道（J-008）。別の置き場で始める
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()

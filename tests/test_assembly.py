@@ -19,6 +19,12 @@ from omochae.model import Part
 from omochae.templates import slider_fan
 
 G = "NDL-1187053-R0000005-L"
+# 御来迎の今の組（goraigo-v14）の 3D は、型紙エンジンの JSON で描く（test_goraigo_v14_3d）。サイトが自分で組む作りは、
+# 控えの組 goraigo-v10 に雛形を置いて前と同じに見る
+from omochae import assembly_json  # noqa: E402
+
+assert slider_fan.SHEET_SET == "goraigo-v14" and isinstance(assembly.assemble(G), assembly_json.Shown)
+slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 
 

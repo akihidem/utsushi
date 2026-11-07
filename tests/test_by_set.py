@@ -1,12 +1,14 @@
 """記録の組ごとの欄（たたき台 sheet_by_set・寸法 params_by_set・出さない字 hide_by_set）と、雛形の控えの組の並び（compose.kept_sets）（#115）。
 
-なぜ要るか: 必須 2 種の次の組（御来迎 goraigo-v13・虎 tora-v6）は、たたき台・寸法・出す字が前の組と違う。前の組の紙は変えない決まりなので、
+なぜ要るか: 必須 2 種の次の組（御来迎 goraigo-v14・虎 tora-v6）は、たたき台・寸法・出す字が前の組と違う。前の組の紙は変えない決まりなので、
 記録の 1 つの欄を書き換えず、組ごとの欄に足す。2 つの組を 2 本の PR で別に足すので、読み口を先に 1 本で入れる（統括の決め 11-06）。
-欄を書いた本物の記録は、虎の H-A の tora-v7 の寸法だけ（型紙エンジンの見本 examples/tora_v7.json）。前の組の紙が変わらない事は
-tests/test_floor_pin.py の指紋で見る。
+欄を書いた本物の記録は、御来迎の goraigo-v14 の分（たたき台 H-C・H-C の寸法は型紙エンジンの見本 examples/goraigo_v14.json・
+糸の前提の共通の字 5 つを出さない）と、虎の H-A の tora-v7 の寸法（型紙エンジンの見本 examples/tora_v7.json）だけ。
+前の組の紙が変わらない事は tests/test_floor_pin.py の指紋で見る。
 
 見る線:
-- 組ごとの欄を持たない記録は、load が前と同じ物を返す（人が採った仮説を重ねるだけ）。虎は H-A の寸法だけが今の組の分に替わる
+- 組ごとの欄を持たない記録は、load が前と同じ物を返す（人が採った仮説を重ねるだけ）。御来迎は今の組の分だけが替わり、
+  虎は H-A の寸法だけが今の組の分に替わる
 - 欄を書いた記録は、雛形の今の組の分だけが効く。前の組に置くと記録の sheet・params・字のまま
 - 出さない字は外すだけで、字を変えず、元の記録も書き換えない。字で持つので、元の字を直すと外れなくなる（黙って別の字は消えない）
 - 控えの組の並びは古い順で、前の字で刷る最初の組（FROZEN_SET）を含み、今の組を含まない
@@ -29,22 +31,35 @@ TIGER, FAN = TEMPLATES["pivot_counterweight"], TEMPLATES["slider_fan"]
 FIELDS = ("sheet_by_set", "params_by_set", "hide_by_set")
 
 # 1. 組ごとの欄を持たない記録は、load が前と同じ（人が採った仮説を重ねるだけ）。たたき台は記録の sheet のまま。
-# 欄を書いたのは虎の H-A の tora-v6 の寸法だけで、load はその仮説の寸法だけを替える（たたき台・字・ほかの仮説は記録のまま）
+# 欄を書いたのは御来迎の goraigo-v14 の分と、虎の H-A の tora-v7 の寸法だけ。load は、御来迎のたたき台・H-C の寸法・出さない字の 3 つと、
+# 虎の H-A の寸法だけを替える（虎のたたき台・字・ほかの仮説は記録のまま）
+GORAIGO = "NDL-1187053-R0000005-L"
+V14 = {"push_part": "rise", "tube_side": 26, "tube_height": 130, "pusher_side": 24.5, "pusher_height": 57.5, "push_amount": 60,
+       "base_side": 24.0, "fold_count": 44, "fold_width": 4, "fold_height": 57.2, "figure_w": 10.4, "figure_h": 27.7}
 TORA = "NDL-1187053-R0000014-R"
 V7 = {"mount": "neck", "axle_height": 32, "head_w": 36, "weight_below_axle": 20, "leg_height": 10, "body_round": 8, "head_sides": 2,
       "neck_length": 23, "clay_back": 2.5, "axle_back": 9, "weight_behind": 0, "fit_check": 1}
 for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     raw = json.loads(path.read_text(encoding="utf-8"))
     got = hypotheses.load(raw["source_id"])
-    assert hypotheses.sheet_id(got) == raw.get("sheet") and not any(k in raw for k in FIELDS), path.name
     want = overlay(copy.deepcopy(raw))
-    if raw["source_id"] == TORA:
+    if raw["source_id"] == GORAIGO:
+        assert raw["sheet"] == "H-A" and raw["sheet_by_set"] == {"goraigo-v14": "H-C"} and hypotheses.sheet_id(got) == "H-C"
+        assert [h["id"] for h in raw["hypotheses"] if "params_by_set" in h] == ["H-C"], "御来迎の寸法の欄は H-C だけ"
+        assert sorted(raw["hide_by_set"]) == ["goraigo-v14"]
+        for h in want["hypotheses"]:
+            if h["id"] == "H-C":
+                h["params"] = V14
+        want = hypotheses.without_hidden(want, "goraigo-v14")
+    elif raw["source_id"] == TORA:
+        assert hypotheses.sheet_id(got) == raw.get("sheet") and not any(k in raw for k in FIELDS), path.name
         assert [h["id"] for h in raw["hypotheses"] if "params_by_set" in h] == ["H-A"], "虎の欄は H-A だけ"
         assert raw["hypotheses"][0]["params_by_set"] == {"tora-v7": V7}, "型紙エンジンの見本 examples/tora_v7.json と同じ寸法"
         want["hypotheses"][0]["params"] = V7
     else:
-        assert not any("params_by_set" in h for h in raw["hypotheses"]), (path.name, "組ごとの寸法を書いたのは虎の H-A だけ")
-    assert got == want, (path.name, "組ごとの欄で load が変わった所が、今の組の寸法のほかにある")
+        assert not any(k in raw for k in FIELDS) and not any("params_by_set" in h for h in raw["hypotheses"]), (path.name, "欄を書いたのは御来迎と虎だけ")
+        assert hypotheses.sheet_id(got) == raw.get("sheet"), path.name
+    assert got == want, (path.name, "組ごとの欄で load が変わった所が、今の組の分のほかにある")
 
 # 2. 組ごとの欄を書いた記録（代わりの記録を別の置き場に置く。repo の data は書き換えない）
 now, old = TIGER.SHEET_SET, TIGER.FROZEN_SET
@@ -114,7 +129,7 @@ for tpl in TEMPLATES.values():
         assert sets[0] == tpl.FROZEN_SET, (tpl.ID, sets)
     else:
         assert sets == (), (tpl.ID, sets)
-assert kept_sets(TIGER) == ("tora-v3", "tora-v4") and kept_sets(FAN) == (), (kept_sets(TIGER), kept_sets(FAN))
+assert kept_sets(TIGER) == ("tora-v3", "tora-v4") and kept_sets(FAN) == ("goraigo-v10",), (kept_sets(TIGER), kept_sets(FAN))
 # 凍結の床の控えは、控えの組の全部と今の組の紙を持つ
 pin = json.loads((ROOT / "tests/floor_pin.json").read_text(encoding="utf-8"))
 for tpl in (TIGER, FAN):

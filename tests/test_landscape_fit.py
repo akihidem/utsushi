@@ -22,6 +22,7 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 import html  # noqa: E402
 
 from measure_tap import chrome  # noqa: E402
+from omochae import hypotheses  # noqa: E402
 from web import genga, play_server  # noqa: E402
 
 # 原画の写しは git の外（out/）にあり、まっさらな clone には無い。無いと原画の釦も作る時の畳みも出ず、重なりを見ない試験になる。
@@ -88,7 +89,7 @@ for name, sid in TOYS.items():
     for w, h in TECHO_SIZES:
         pages[f"techo-{name}-{w}x{h}"] = (f"/toy/{sid}/techo?v=1&n=1&walk=techo-{name}-{w}x{h}", w, h, TECHO_WALK)
     for w, h in TSUKURU_SIZES:
-        pages[f"tsukuru-{name}-{w}x{h}"] = (f"/toy/{sid}/tsukuru?h=H-A&walk=tsukuru-{name}-{w}x{h}", w, h, TSUKURU_WALK)
+        pages[f"tsukuru-{name}-{w}x{h}"] = (f"/toy/{sid}/tsukuru?h={hypotheses.sheet_of(sid)['id']}&walk=tsukuru-{name}-{w}x{h}", w, h, TSUKURU_WALK)
 
 send, get = play_server.Handler._send, play_server.Handler.do_GET
 
@@ -117,7 +118,7 @@ server = play_server.serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 for sid in TOYS.values():
-    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=urllib.parse.urlencode({"hypothesis": "H-A"}).encode(),
+    urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=urllib.parse.urlencode({"hypothesis": hypotheses.sheet_of(sid)["id"]}).encode(),
                                                   headers={"Origin": base}), timeout=180)
 try:
     with tempfile.TemporaryDirectory() as profile:
