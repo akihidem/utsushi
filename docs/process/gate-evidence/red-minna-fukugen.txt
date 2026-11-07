@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_minna_fukugen.py
+# commit: f46a5c2a（回した時の HEAD。今の main に新しい試験だけを置いた）
+  File "tests/test_minna_fukugen.py", line 25, in <module>
+    assert page.count('id="minna"') == 1 and f'<section class="sec" id="minna"><h2>{toy.MINNA_HEAD}</h2>' in page, sid
+                                                                                    ^^^^^^^^^^^^^^
+AttributeError: module 'web.toy' has no attribute 'MINNA_HEAD'
+rc=1

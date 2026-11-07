@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ban_ayumi.py
+# commit: 18125f87（回した時の HEAD）
+ok 型紙の版の歩みの額の並び（古い順・最後が今の版・印・4 つの字・→・始めは右の端・前の版のつなぎ・絵の道・玩具の頁の置き場）
+rc=0
