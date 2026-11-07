@@ -29,6 +29,12 @@ REPO = "https://github.com/akihidem"
 # 新しい字（本人の確かめ・窓口へ）
 TITLE = "改善の一周"
 LEAD = "作った人の記録から、型紙が直って次の版になるまでを、本当にあった 3 つの一周で見せます。"
+# 紹介の大前提（本人の言葉 11-07 夜「学校や博物館等で使えるワークショップ支援のサービス…紙があって、それに印刷ができて、ハサミと糊が
+# あればいろんなことが伝えられる…大前提として語られる必要がある」と、その裏付け「紙とはさみとのりの手軽さが4日間連続ワークショップを
+# 可能にしてる」。置き場と字は本人の「入れる」）。審査員が開く頁なので、題のすぐ下は S1（何か）と S3（4 日続けて開けた実証）の 2 つだけにし、
+# S2（大前提の全文）は このサイトについて の頭に任せる。S3 は下のワークショップの節への橋にもなる。字は このサイトについて・README と同じ
+PREMISE = ("うつしは、学校や博物館などで使える、ワークショップを支えるサービスです。",
+           "11 月 4 日から 7 日まで、4 日続けてワークショップを開けたのは、紙と、はさみと、のりで作れる手軽さがあったからです。")
 WHO = {"human": "人", "engine": "エンジン", "claude": "Claude"}
 WHO_NOTE = {"human": "作る・説明する・決める", "engine": "記録を束ねた下書きと検査。決めない", "claude": "直しを実装した"}
 NOT_YET = "Claude が記録を読んで直しの案を出す段は、済んだ 3 つの一周では使っていません。最後の 1 件は、Claude が記録を読んだ案で、人の確かめを待っています。"
@@ -190,7 +196,7 @@ def page(look=skin.DEFAULT, path="/kaizen"):
     from . import kaizen_kata, kaizen_ws
     hist = _load(HISTORY) or {}
     # ワークショップの節は題のすぐ下（本人の言葉 11-07 昼「ウリ」。設計の案 A）。回の一覧が無い間は出ない
-    body = (f'<section class="sec"><h1>{esc(TITLE)}</h1><p class="lead">{esc(LEAD)}</p><p class="meta">{esc(NOT_YET)}</p></section>'
+    body = (f'<section class="sec"><h1>{esc(TITLE)}</h1>' + "".join(f'<p class="lead">{esc(t)}</p>' for t in PREMISE) + f'<p class="lead">{esc(LEAD)}</p><p class="meta">{esc(NOT_YET)}</p></section>'
             + kaizen_kata.section()  # 型紙で改善したおもちゃ（題の下・ワークショップの節の前。窓口の決め 152530）
             + kaizen_ws.section(lambda s: _sheet(hist, s))
             + site_loop(hist) + engine_loop(hist) + peak_loop(hist) + pending_loop(hist))

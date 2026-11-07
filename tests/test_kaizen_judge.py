@@ -9,6 +9,7 @@
 6. 合体待ちの版は出さない。流れの文に、まだ入っていない PR が出てくる間は文を出さない。入った後は出し、文の中の PR はエンジンの PR へ張る
 7. いま回っている一周（本人の指示 11-07「済んだ 3 つの一周に加えて、今朝 Claude が記録 R-0001 を読んで案を出した 1 件（人の確認待ち）も…状態の違いは正直に分かるように」）:
    済んだ一周と札の字と色で分ける。Claude の読みは写しの字のまま。人が確かめる段と次の版は「まだ」。写しに呼び出しの記録（型の名）は無い
+8. 題のすぐ下に紹介の大前提の 2 文（本人の言葉 11-07 夜の「入れる」）。S1（何か）と S3（4 日続けて開けた実証）の字のまま、今の LEAD の前
 """
 import copy
 import json
@@ -125,6 +126,14 @@ told["engine_changes"] = [{k2: v2 for k2, v2 in c.items() if k2 != "status"} for
 done = k.peak_loop(told)
 assert "見つかった事から直る" in text(done) and '/paper-to-toy/pull/139">#139</a>' in done, "入った後は文を出し、文の中の PR はエンジンの PR へ張る"
 # 確認待ちの写しが確かめられたら（status が替わったら）、いま回っている一周は出さない（済んだ一周として取り直す）
+# ---- 8 紹介の大前提（本人の言葉 11-07 夜「入れる」）: 題 → S1 → S3 → LEAD の順。字は本人が確かめたまま
+assert k.PREMISE == ("うつしは、学校や博物館などで使える、ワークショップを支えるサービスです。",
+                     "11 月 4 日から 7 日まで、4 日続けてワークショップを開けたのは、紙と、はさみと、のりで作れる手軽さがあったからです。")
+_top = k.page()
+_at = [_top.index(x) for x in (f"<h1>{k.TITLE}</h1>", *(f'<p class="lead">{t}</p>' for t in k.PREMISE), f'<p class="lead">{k.LEAD}</p>')]
+assert _at == sorted(_at) and _at[1] - _at[0] == len(f"<h1>{k.TITLE}</h1>"), "題のすぐ下に S1・S3、その後に LEAD"
+assert all(_top.count(t) == 1 for t in k.PREMISE)
+
 import unittest.mock as mock  # noqa: E402
 with mock.patch.object(k, "_load", side_effect=lambda p: (dict(json.loads(k.PENDING.read_text(encoding="utf-8")), status="confirmed") if p == k.PENDING else json.loads(p.read_text(encoding="utf-8")))):
     assert k.pending_loop() == ""
