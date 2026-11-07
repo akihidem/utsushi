@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_head_back.py
+# commit: 2f344a84（回した時の HEAD）
+ok 玩具の頭は #595 の前の形: 絵 → 歌（広い幅は縦・狭い幅は横）・題の塊は つくる の後の札・狭い幅の原図は横幅いっぱい
+rc=0

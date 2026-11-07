@@ -196,7 +196,8 @@ def page(skin, path="/toys", paper=False):
         sids = paper_only_sids(sids)
     main = [s for s in sids if hypotheses.stage(s) == "必須"]
     rest = [s for s in sids if hypotheses.stage(s) != "必須"]
-    link = '<p class="links"><a href="/toys">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p>'
+    # 全部の玩具は入口（えらぶ）に並ぶ。/toys は入口へ送るので、直に入口へ向ける（本人のサイト体験レビュー 11-07 の 3）
+    link = '<p class="links"><a href="/">全部の玩具を見る</a></p>' if paper else '<p class="links"><a href="/toys?paper=1">紙 1 枚で作れるおもちゃだけを見る</a></p>'
     body = (f'<section class="sec erabu"><h1>{len(sids)} のおもちゃから、1 つ選ぶ</h1>'
             + (_list(main, "4vh 0 0") if main else "") + by_genre(rest) + link + '</section>')
     return skinmod.shell("うつし · おもちゃ", body, skin, current="/toys", path=path)

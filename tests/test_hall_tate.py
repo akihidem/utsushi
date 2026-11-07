@@ -24,6 +24,8 @@ assert not re.search(r"#hall\.tj-hall\{[^}]*min-height:auto", css), "題の間�
 assert ".tj-hall .en{writing-mode:horizontal-tb}" in css
 # 3. 字
 hall = re.search(r'<section class="tj-hall" id="hall">.*?</section>', page, re.S).group(0)
-assert '<p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1><p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' in hall
+# 副題の 3 行目は本人の答え 11-08「紙でよみがえらせる。」（字は looks.SUB の 1 か所）
+assert looks.SUB == ("江都二色より", "うしなわれた玩具の動きを", "紙でよみがえらせる")
+assert '<p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1><p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙でよみがえらせる</p>' in hall
 assert "このサイトについて" in hall and "<h2>まずはここから</h2>" in page and page.index('id="hall"') < page.index("<h2>まずはここから</h2>")
 print("ok 入口の題の間は縦の組み（11-06 夜の形）。字と下の札は今のまま")
