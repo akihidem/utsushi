@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_sakurei_faces.py
+# commit: 5dcf9116（回した時の HEAD）
+ok 報告の顔の写真と事例の写真: 確かめた物だけ faces・cases・versions に並ぶ・玩具の札と日に入らない・ふつうの記録は R-1000 で断る
+rc=0
