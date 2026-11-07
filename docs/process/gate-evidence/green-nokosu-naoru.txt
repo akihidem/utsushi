@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_naoru.py
+# commit: b2fc7d59（回した時の HEAD）
+ok のこすと型紙が直る事の枠（2〜3 行・山場の 1 行は表の字・のこすの釦のすぐ下と記録の頁の頭に 1 回・公開の場でも・字が空なら出ない）
+rc=0
