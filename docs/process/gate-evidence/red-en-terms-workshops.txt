@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-terms-red/en-ws-broken.json data/i18n/en.json; .venv/bin/python tests/test_en_terms.py'
+# commit: 2eb9583c（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 91, in <module>
+    assert not bad, ("11 月のワークショップは workshops", bad[:5])
+           ^^^^^^^
+AssertionError: ('11 月のワークショップは workshops', ['{0} 月のワークショップで話された言葉', '{0} 月のワークショップの参加者'])
+rc=1

@@ -11,8 +11,9 @@ from web import about, demo_samples  # noqa: E402
 
 pages = {k: about.page(k) for k in ("tenji", "zine")}
 for k, h in pages.items():
-    for w in ("『江都二色』", "1773", "北尾重政", "AI は鏡", "info:ndljp/pid/1187053", "TIMSS 2023", 'href="/toys"'):
+    for w in ("『江都二色』", "1773", "北尾重政", "AI は鏡", "info:ndljp/pid/1187053", "TIMSS 2023", 'href="/"'):
         assert w in h, (k, w)
+    assert 'href="/toys"' not in h, (k, "/toys へ向く道は置かない" + '（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。/toys は入口へ送るので、/toys へ向く道は置かない）')
     # 本人が採った文（11-05、#329）。一字でも変わったら落ちるように、ここに決定の文を書く
     for w in ("なくなったおもちゃの動きを、紙で実験してたしかめる道具",
               "江戸時代の絵本『江都二色』",
@@ -38,9 +39,10 @@ for k, h in pages.items():
     for w in ("成功", "失敗", "正解", "仮説 A", "H-A", "つまみ", "内筒"):
         assert w not in without_premise(own), (k, w)
     assert "IntersectionObserver" not in h and "<blockquote>" in h, k
-# 末尾の 2 つは同じ釦の形にする。字のリンクを並べると、並びの高さに伸びて縦長の押す所になり、下線が字から離れる（#141）
+# 末尾は入口へ戻る釦の 1 つ（前は「おもちゃを選ぶ」と 2 つで、同じ所へ行く対だった（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。/toys は入口へ送るので、/toys へ向く道は置かない））。釦の形にする: 字のリンクを並べると、
+# 並びの高さに伸びて縦長の押す所になり、下線が字から離れる（#141）
 for k, h in pages.items():
-    assert '<a class="btn" href="/toys">おもちゃを選ぶ</a><a class="btn quiet" href="/">入口へ戻る</a>' in h, k
+    assert '<p class="links"><a class="btn" href="/">入口へ戻る</a><a href="/otona">' in h and "おもちゃを選ぶ</a>" not in h, k
 roots = [re.search(r":root\{([^}]*)\}", h).group(1) for h in pages.values()]
 assert roots[0] != roots[1] and "--bg:#fcfcfa" in roots[0] and "--bg:#0b0a09" in roots[1]
 print("ok")
