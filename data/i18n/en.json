@@ -3395,6 +3395,7 @@
   "）では、この歌の一部の読みが割れていました（作る側の記録、research/{0}）。": ") read part of this poem in two different ways (the makers' record, research note {0}).",
   "）にだけ足す": ")",
   "）の読みに決めました。": ") reading was chosen.",
-  "［隠している］": "[hidden]"
+  "［隠している］": "[hidden]",
+  "「はじめから組み立てる」を押すと、{0} 手目から組み立てます。「次へ」で {1} 手ずつ進みます。": "Press \"はじめから組み立てる\" (Assemble from the start) to assemble it from step {0}. Then press \"次へ\" (Next) to go {1} step at a time."
  }
 }

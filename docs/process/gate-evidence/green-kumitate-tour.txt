@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kumitate_tour.py
+# commit: 574f115c（回した時の HEAD）
+ok: 組み立ての 3D は、玩具の頁と組み立ての頁でだけ、開いた時に 1 回、組み立て終えた形まで動かす
+rc=0
