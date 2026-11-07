@@ -1,0 +1,6 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_demo_samples.py 2>&1 | tail -2; echo "試験 rc=${PIPESTATUS[0]}"'
+# commit: 971efb3c（回した時の HEAD）
+                                ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'web.demo_samples' has no attribute 'SPOKEN'
+試験 rc=1
+rc=0

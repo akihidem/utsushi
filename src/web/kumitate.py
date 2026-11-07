@@ -413,7 +413,8 @@ if(TOUR&&!still&&'IntersectionObserver' in window){const io=new IntersectionObse
 pace=Math.min(1,Math.max(1000,__TOUR_MS__-250*UNTIL)/Math.max(1,tourLen()));tour=true;stage.dataset.tour='1';show(0);if(!run)setTimeout(step,400)},{threshold:.5});io.observe(stage)}
 // 作業しながら見る試作の頁に、形の並びと動かす口を渡す。試作の頁は手順を「手」に分け、1 手ずつ動かして止める（本人の感想 11-06）。
 // ふだんの頁はこれを使わない。前は試作の枝で節の script の字を差し替えていたが、字が変わると黙って外れるので、口を開ける形にした
-window.kumitateParts={F,T,play,rest,stop,go:i=>{at=i;words()},view:()=>{if(cam)view()}};
+// show は作りながら見る頁（web.tsukuru）が、その頁の手順の番号に 3D の段を合わせるのに使う（本人のサイトレビュー 11-07 昼過ぎの 4）
+window.kumitateParts={F,T,play,rest,stop,show,go:i=>{at=i;words()},view:()=>{if(cam)view()}};
 })();</script>
 """
 
