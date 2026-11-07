@@ -7,3 +7,4 @@
 - ゴールの要件: `tests/test_zukan.py`（図鑑の頁は 404・本の頁とくずし字を読む は 200・どの頁にも図鑑の頁への道が無い・序の頁に本の頁の入口・文の印の床は残る）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-zukan-off.txt`（#595 の頭で /zukan が 200 で rc 1）
 - エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-zukan-off.txt`
+- 合体の試験で落ちた事（11-08 05:13）: test_easy_part1 が「鍵は字の順に並べる」で落ちた。原因は、前の取り込みの解きで、やさしい日本語の表（yasashii.d/1.json）に足した鍵「本でよむ」を表の終わりに置いた事。関わる試験に test_easy_part1 を入れていなかったので、手元では気づかなかった。今の main（0a8aefcb）に合わせ、英語の表とやさしい日本語の表で、その鍵を字の順の所（「木菟…」の後・「本の {0} コマ目」の前）へ移した（値は替えない）
