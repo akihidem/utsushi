@@ -122,9 +122,10 @@ def _marks(part, x0, y0, near):
                 out += f'<line x1="{x1 - x0:.2f}" y1="{y1 - y0:.2f}" x2="{x2 - x0:.2f}" y2="{y2 - y0:.2f}" stroke="#222" stroke-width=".18" stroke-dasharray="{dash}"/>'
     out += "".join(f'<circle cx="{x - x0:.2f}" cy="{y - y0:.2f}" r="{r:.2f}" fill="#fffdf8" stroke="#55492c" stroke-width=".2"/>'
                    for x, y, r in part.holes if near.contains(Point(x, y)))
-    lx, ly = part.label_xy
-    if part.label and near.contains(Point(lx, ly)):
-        out += f'<text x="{lx - x0:.2f}" y="{ly - y0 + 2.6:.2f}" font-size="2.8" fill="#3a2c12">{esc(part.label)}</text>'
+    # 札は型紙と同じく、label_lines があれば行ごと（虎の 5 重りの腕の「5 重」「り」「の」「腕」。compose と同じ読み方）、無ければ label を 1 行
+    for text, lx, ly in (part.label_lines or [(part.label, *part.label_xy)]) if part.label else []:
+        if near.contains(Point(lx, ly)):
+            out += f'<text x="{lx - x0:.2f}" y="{ly - y0 + 2.6:.2f}" font-size="2.8" fill="#3a2c12">{esc(text)}</text>'
     return out
 
 
