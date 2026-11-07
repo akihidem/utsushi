@@ -500,9 +500,9 @@ def voices_sections():
     字は前のギャラリーの節のまま（id も yose・shokunin のまま。前のギャラリーの #yose と #shokunin への道は、序の頁で同じ節に着く）。
     見た目はギャラリーと同じ。ギャラリーの CSS は .gallery の下と頁の幅（main:has(.gallery)）を持つので、序の頁の幅を変えないよう、
     この 2 つの節だけを包む VOICES_STYLE を別に持つ。"""
-    from .demo_samples import voice_html, voices_html
+    from .demo_samples import craft_html, voices_html
 
-    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    voices = craft_html()
     return ('<div class="voices">'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'
