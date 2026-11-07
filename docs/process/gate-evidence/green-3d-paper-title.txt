@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_wa_ring.py
+# commit: e7063621（回した時の HEAD）
+ok 輪の図は札のすぐ後に 1 つ出て、字は頁の字のまま、真ん中は今の型紙の版
+rc=0
