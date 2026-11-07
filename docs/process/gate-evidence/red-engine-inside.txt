@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_engine_inside.py
+# commit: b1d04e76（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_engine_inside.py", line 54, in <module>
+    assert cycle.find_engine_repo() == here / "engine", ("engine/ を隣の repo より先に見る", rel(cycle.find_engine_repo()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('engine/ を隣の repo より先に見る', 'paper-to-toy')
+rc=1
