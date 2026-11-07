@@ -68,6 +68,7 @@ EN = {
     "止まったら、そのまま声か字で聞ける": "Stuck? Ask by voice or text.",  # 案
     # 9 scene5
     "紙で作って、動いた。": "Built in paper, and it moved.",  # 案
+    "4 回のワークショップで、作って、感想を返してもらいました。": "Over four workshops, people built them and gave us feedback.",  # 案（ワークショップの写真の場面）
     # 10 core_keep
     "できた物の写真と、": "Add a photo of what you made,",  # 案
     "工夫した所を記録に添える": "and note what you changed.",  # 案
@@ -213,6 +214,7 @@ def all_sources():
     out += [(c, "flip") for c in CLOSING]
     out += [(scene3.TITLE_PREMISE, "scene3"), *[(c, "scene3") for c in scene3.CLOSING]]
     out += [(c, "scene5") for c in scene5.CAPTION]
+    out += [(scene5.WORKSHOP_LINE, "scene5")]  # ワークショップの写真の場面（11-07。scene5.WORKSHOP の時に描く）
     out += [(scene7.CAPTION, "scene7")]
     out += [(words.ASK, "ask")]  # 本人の言葉の印（words.FROM）は、一般的な言い方にした（11-07）ので描かない
     for name, (line, src) in words.STATS.items():

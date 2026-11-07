@@ -124,6 +124,75 @@ class Scene5:
         return img
 
 
+# ---------------------------------------------------------------- ワークショップの写真の場面（11-07）
+# 本人の言葉（11-07）「ワークショップは今日も合わせて 4 回実施した。ワークショップの様子や回数、位置付け、それにより改善ループがまわる、
+# はウリなので、デモと審査用サイトには写真をたくさん使って載せていきたい」と、写真の答え「いま渡している写真は使っていい。全部使っていい。
+# 4 と 6 の渡している写真を中心に使って。」。11-04 と 11-06 の写真（どちらも確かめ表で載せてよい）を日付の札ごとに溶かして並べる。
+# 秒（WORKSHOP_SECONDS）は合計の上限との兼ね合いを窓口が決めるまで、台本の既定には入れない（WORKSHOP が False の間は前の 3 枚の場面）
+WORKSHOP = False
+WORKSHOP_SECONDS = 12.0
+PHOTO_DIR_06 = ROOT / "docs/process/trials/photos/20261106"
+REVIEW_06 = PHOTO_DIR_06 / "review.md"
+# 写る物で選んだ（手と作りかけ・できた物。画面の写る物は外した）。日付の札の字は日付だけ（回の呼び名は窓口から来たら替える）
+DAYS = (("11 月 4 日", "Nov 4", PHOTO_DIR, REVIEW, ("p05", "p02", "p07")),
+        ("11 月 6 日", "Nov 6", PHOTO_DIR_06, REVIEW_06, ("p11", "p14", "p20", "p21", "p30", "p33")))
+WORKSHOP_LINE = "4 回のワークショップで、作って、感想を返してもらいました。"   # 案（窓口の確かめ待ち）
+XF = 0.5          # 写真の溶ける秒
+LABEL_XY = (60, FRAME_BOX[1] + 14)   # 写真の枠の外（左の余白）。横長の写真に重ねない
+
+
+def workshop_photos():
+    """(日付の札, 英語, 写真の道) の並び。確かめ表で通っていない写真・無い写真は None（使わずに止める）。"""
+    out = []
+    for ja, en_label, folder, review, names in DAYS:
+        ok = set(allowed_photos(review))
+        for n in names:
+            path = folder / f"{n}.jpg"
+            if n not in ok or not path.exists():
+                print(f"検査できない: 写真 {folder.name}/{n} が確かめ表で通っていないか、無い", file=sys.stderr)
+                return None
+            out.append((ja, en_label, path))
+    return out
+
+
+class WorkshopScene(Scene5):
+    """ワークショップの写真を、日付の札と一緒に順に溶かして並べる場面。字幕は 1 かたまり（下の帯）。"""
+    duration = WORKSHOP_SECONDS
+
+    def __init__(self, items):
+        super().__init__([p for _, _, p in items])
+        self.labels = [(ja, en_label) for ja, en_label, _ in items]
+        self.step = (self.duration - 0.6) / max(1, len(self.sheets))
+
+    def sheet_at(self, t):
+        if not self.sheets:
+            return None
+        i = min(len(self.sheets) - 1, int(t // self.step))
+        out = self.sheets[i]
+        nxt = i + 1
+        if nxt < len(self.sheets):
+            v = ease((t - (nxt * self.step - XF)) / XF)
+            if v > 0:
+                out = Image.blend(out, self.sheets[nxt], v)
+        return out
+
+    def frame(self, t):
+        img = Image.new("RGB", (W, H), PAPER)
+        sheet = self.sheet_at(t)
+        if sheet is not None:
+            a_in = ease(t / 0.8)
+            if a_in < 1:
+                sheet = Image.blend(Image.new("RGB", sheet.size, PAPER), sheet, a_in)
+            img.paste(sheet, FRAME_BOX[:2])
+            i = min(len(self.labels) - 1, int(t // self.step))
+            from demo.english import text_en
+
+            text_en(ImageDraw.Draw(img), LABEL_XY, self.labels[i][0], 34, fade(SUMI, 0.85 * a_in), False, "la", english=self.labels[i][1])
+        from demo.words import band
+
+        return band(img, (WORKSHOP_LINE,), ease((t - 0.8) / 0.5))
+
+
 def resolve_photos(arg):
     """--photos の名を写真の道に直す。確かめ表で通っていない名や無い写真があれば None（使わずに止める）。"""
     names = SHOWN if arg is None else tuple(n.strip() for n in arg.split(",") if n.strip())
@@ -145,7 +214,16 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="mp4 の置き場（repo の外）")
     ap.add_argument("--sheet", help="要のコマの一覧の画像")
     ap.add_argument("--photos", help="使う写真（例 p01,p09）。確かめ表で通った物だけ。省くと SHOWN")
+    ap.add_argument("--workshop", action="store_true", help="ワークショップの写真の場面（11-04 と 11-06）で書き出す（試し見）")
     a = ap.parse_args(argv)
+    if a.workshop or WORKSHOP:
+        items = workshop_photos()
+        if items is None:
+            return 4
+        scene = WorkshopScene(items)
+        if a.sheet:
+            contact_sheet(scene, a.sheet, times=tuple(round(scene.duration * k, 2) for k in (0.05, 0.15, 0.3, 0.42, 0.55, 0.65, 0.78, 0.9, 0.98)))
+        return render(scene, pathlib.Path(a.out))
     photos = resolve_photos(a.photos)
     if photos is None:
         return 4
