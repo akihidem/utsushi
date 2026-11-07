@@ -13,6 +13,11 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 型紙は正解ではなく、Claude が考えた仮説です。作った人の工夫から、人が直しを選んで、次の版にします。
 
+- **何の作品か**: 図と歌だけが残る江戸の玩具を、紙の型紙で作って動かし、仕組みを確かめます。サイト（うつし）で玩具を選んで型紙を刷ります。型紙を作る仕組みは、エンジン（paper to toy）として別に開発し、engine/ にも入れました。
+- **誰のためか**: 出発は本人の教育現場の学習活動です。博物館や科学館のワークショップ、夏休みの自由研究にも使えると考えています（本人の見立て）。ワークショップは 4 回（11 月 4・5・6・7 日）開きました。
+- **何が動くか**: 型紙を作り、刷る前と刷った後に検査して、通った紙だけを A4 の PDF にします。御来迎と張子の首振り虎は、組み立ての手順を 3D で見られます。手帖では、作りながら写真や動画と一緒に記録を残せます。本物の Claude API は、まだ動かしていません。
+- **どう見るか**: 要る物は下の「動かし方」にあります。`./run-home.sh` を打つと、手元のブラウザでサイトが開きます（http://127.0.0.1:8766/）。`./run.sh` は全部の検査を回します（8〜9 分。結果は `out/RESULT.md`）。作った過程の記録は [docs/process/README.md](docs/process/README.md) から辿れます。
+
 <details>
 <summary>くわしい要約（10 項目）</summary>
 
@@ -35,7 +40,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 ## 開発の過程
 
-調査・比較・捨てた案・試行の記録を repo の中に残している。入口は [docs/process/README.md](docs/process/README.md)。
+調査・比較・捨てた案・試行の記録を、作りながら repo の中に書いてきた。入口は [docs/process/README.md](docs/process/README.md)。
 
 - 調査メモ: [docs/process/research/](docs/process/research/)
 - 判断の記録: [docs/process/decisions/](docs/process/decisions/)
@@ -47,7 +52,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 ## 構成
 
-[docs/architecture.md](docs/architecture.md) に置き場と処理の流れ、[docs/features.json](docs/features.json) に機能の状態を書いている。
+置き場と処理の流れは [docs/architecture.md](docs/architecture.md) に書いている。機能ごとの状態は [docs/features.json](docs/features.json) にある。
 
 ## 開発基盤と提出物の切り分け
 
@@ -164,7 +169,7 @@ export PYTHONPATH=src
 
 ## Claude の活用
 
-中心は、作り方そのものにある。この作品は、Claude Code のセッションを担当ごとに並べ、同時に作った。最初（11-02 から 11-04 の昼まで）は作る側の 1 本のセッションが作り、11-04 から順に下の形にした。詳しくは [docs/process/claude-story.md](docs/process/claude-story.md) の 3 節。担当・worktree・PR の数は、提出の日に数え直して書く。
+Claude の使い方の中心は、この作品の作り方そのものにある。この作品は、Claude Code のセッションを担当ごとに並べ、同時に作った。最初（11-02 から 11-04 の昼まで）は作る側の 1 本のセッションが作り、11-04 から順に下の形にした。詳しくは [docs/process/claude-story.md](docs/process/claude-story.md) の 3 節。担当・worktree・PR の数は、提出の日に数え直して書く。
 
 - **設計を先に**: 作る前に Issue を書く。目的・なぜか・どうしたらいいか（比べた案と推し）・ゴールの要件の 4 つで書く。線を大きく分けた回（4 つのループをつなぐ回）では、担当の線ごとの持つファイルと待つ物、合体の順を足し、担当どうしで持つファイルが重ならないか、待つ順に輪が無いかを機械で確かめてから配った。不具合の直しと既存の動作の変更は、変える前に落ちて変えた後に通る試験を Issue に書いてから取り込む（11-04 からの試行）
 - **担当ごとに worktree を分けて同時に作る**: 1 担当 = 1 つの枝・1 つの git worktree・1 つの Claude Code のセッション。枝は今の main から切る。同じ作業の木を 2 つの担当で書かない
