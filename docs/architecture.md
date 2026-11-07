@@ -33,7 +33,7 @@
 | `src/omochae/fan_model.py` | 扇の開きの幾何（開く角度の上限・口の角との干渉・糸の長さ） |
 | `src/omochae/pivot_model.py` | 首振りの重心・傾き・周期の式 |
 | `src/omochae/templates/pivot_counterweight.py` | 虎の雛形。前の組（tora-v3・tora-v4）の作りと、組の番号（set_no）が 6 から今の組の作り（_tora_v6）へ関数ごとに渡す口（_by_set）。控えの組の並び KEPT_SETS |
-| `src/omochae/templates/_tora_v6.py` | 虎の今の組 tora-v6 の作り。型紙エンジン paper-to-toy の雛形の写し（立体の脚・角を落とした胴・丸い首の穴・両面の頭・上の面に立てる尾）。エンジンと違うのは手順 4 の字と紙の行の 2 つ。名前が `_` で始まるので雛形として読まれない |
+| `src/omochae/templates/_tora_v6.py` | 虎の今の組 tora-v7 の作り（v6 は刷らずに飛ばした。ファイルの名は、上に積む 3D の枝とぶつからないよう v6 のまま）。型紙エンジン paper-to-toy の雛形の写し（立体の脚・角を落とした胴・丸い首の穴・両面の頭・上の面に立てる尾に、v7 の粘土の玉と前の壁・頭の後ろの端・腕の当たりの直しと当たりの検査）。エンジンと違うのは手順 4 の字と紙の行の 2 つ。名前が `_` で始まるので雛形として読まれない |
 | `src/omochae/templates/_paper.py` | 用意する物の紙の字（本人が確かめた 4 つの名前。#295）。名前が `_` で始まるので雛形として読まれない |
 | `src/omochae/ingest.py` | NDL から出典の記録と原図の写し（切り出し）を作る。`images` は足りない写しだけを取る（起動の台本が毎回回す） |
 | `src/api/tools.py` | Claude に渡す道具（絵の拡大、公開済みの持ち寄り） |
@@ -93,8 +93,8 @@
 | `data/records/`・`data/loop/` | 試行の記録と、解釈・提案・版の記録（個人の記録なので git に入れない） |
 | `data/sources/` | 出典の記録 |
 | `tests/frozen/` | 凍結した基準と場面。`manifest.json` は照合の表（場面ごとの sha256・期待の rc と床、基準の文の sha256、在るはずの試験の名前）。床の入口が回す前に照らし、合わなければ rc 4 でファイルを名指しする |
-| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の凍結の組（goraigo-v10・虎の前の組 tora-v3・tora-v4）と虎の今の組（tora-v6）のたたき台 H-A の紙と先生の見る紙の 17 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
-| `tests/test_tora_v6.py` | 虎の今の組 tora-v6 の見張り。組の番号での作りの替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D を出さない事（#115） |
+| `tests/test_floor_pin.py`・`tests/floor_pin.json` | 凍結の床の見張り。必須の 2 種の凍結の組（goraigo-v10・虎の前の組 tora-v3・tora-v4）と虎の今の組（tora-v7。手順の紙は控えない）のたたき台 H-A の紙と先生の見る紙の 16 枚を刷る SVG の指紋を控えと比べる（J-032 で 31 枚から直した。外した 22 枚は控えの removed に残す）。控えは書き換えず、次の版は足す（U-43） |
+| `tests/test_tora_v6.py` | 虎の今の組 tora-v7 の見張り（ファイルの名は v6 のまま）。組の番号での作りの替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D を出さない事（#115） |
 | `tests/test_by_set.py` | 記録の組ごとの欄（たたき台・寸法・出さない字）と雛形の控えの組の並びの見張り。今の記録では load が前と同じ物を返す事も見る（#115） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `tests/compare_engine.py` | エンジンの共通の場面を、この repo と paper-to-toy の両方で回して結果を比べる。相手の repo が無い所でも `./run.sh` を回せるように、手で回す（#164） |
