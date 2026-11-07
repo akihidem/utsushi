@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kaizen_rekishi.py
+# commit: 8aa03f8c（回した時の HEAD。今の main に新しい試験だけを置いた）
+Traceback (most recent call last):
+  File "tests/test_kaizen_rekishi.py", line 18, in <module>
+    from web import about, kaizen_rekishi  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'kaizen_rekishi' from 'web' (src/web/__init__.py)
+rc=1

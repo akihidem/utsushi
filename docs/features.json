@@ -800,9 +800,14 @@
    "src/omochae/kaizen_history.py",
    "data/history/kaizen-history.json",
    "src/omochae/ledger.py",
-   "tests/test_kaizen_history.py"
+   "tests/test_kaizen_history.py",
+   "src/web/ban_ayumi.py",
+   "tests/test_ban_ayumi.py",
+   "src/web/kaizen_rekishi.py",
+   "src/web/about.py",
+   "tests/test_kaizen_rekishi.py"
   ],
-  "unverified": "今の段は表を repo に写す口と読み口、README の数の欄の 2 行（型紙の版・エンジンの版）まで。玩具の頁の「版の歩み」の額の並び（置き場 ①）・輪の図のエンジンの行（②）・序の頁の表（③）は後の段。README の 2 行の字は窓口の確かめ待ち。版ごとの紙の絵はこの機械の out/ に置いた物だけで、サイトの機械に置くのは別"
+  "unverified": "今の段は表を repo に写す口と読み口、README の数の欄の 2 行（型紙の版・エンジンの版）と、版の歩みの額の並びの部品（ban_ayumi）と額の絵の道まで。序の頁の表（③）も置いた。額の並びを玩具の頁に置く事（置き場 ①）・輪の図のエンジンの行（②）は後の段。表は 11-07 11:42 の版で、改善の輪より前の版（虎 v1・v2、御来迎 v1〜v9）の行と絵も持つ（その版の engine_version_text の 2 つの字は本人が採った 11-07）。版ごとの紙の絵はこの機械の out/ に置いた物だけで、サイトの機械に置くのは別。並びの形は幅 390 の白と黒の皮の絵で見た（実機はまだ）"
  },
  {
   "id": "f65",
