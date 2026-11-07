@@ -1,0 +1,17 @@
+{
+  "template": "spinner",
+  "source_id": "NDL-1187053-R0000020-R-spinner",
+  "params": {
+    "kind": "square",
+    "vane_radius": 38,
+    "hub_r": 10,
+    "spoke_w": 3
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.spin"
+    ]
+  }
+}

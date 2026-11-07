@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_sakurei_gallery.py
+# commit: c5364e12（回した時の HEAD）
+ok 作った物の頁の作例の節: 空の時・確かめた物だけ・小さい写し・顔の写真と事例・玩具ごと・報告の段・札・場
+rc=0

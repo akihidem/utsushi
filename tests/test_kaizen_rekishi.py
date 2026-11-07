@@ -17,7 +17,6 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from omochae import kaizen_history as kh  # noqa: E402
 from web import about, kaizen_rekishi  # noqa: E402
-from web.wording import MAKER  # noqa: E402
 
 data = kh.load()
 html = kaizen_rekishi.section()
@@ -44,10 +43,11 @@ assert len(re.findall(r"<b>エンジンの版 \d+</b>", html)) == len(data["engi
 assert all(f"/paper-to-toy/pull/{e['pr']}\">#{e['pr']}</a>" in html for e in data["engine_versions"] if e.get("pr"))
 assert "刷った型紙の組: 虎 型紙の版 4・御来迎 型紙の版 11" in html, "エンジンの版 2 が刷った組"
 changes = html[html.index(kaizen_rekishi.CHANGES_HEAD):]
-assert all(kaizen_rekishi._maker(c["line"]) in changes for c in data["engine_changes"]) and len(data["engine_changes"]) == 9
+assert all(kaizen_rekishi._maker(c["line"]) in changes for c in data["engine_changes"]) and len(data["engine_changes"]) >= 9  # 表が出し直されると増える
 
 # 4. 言い方と、出さない物
-assert "制作者" not in text and "本人" not in text and MAKER in text
+# 表の作り手の言い方は表で直った（11-07 19 時台の表で「制作者」「本人」0）。頁は替え方（_maker）を通すので、表に戻っても出ない
+assert "制作者" not in text and "本人" not in text
 engine = html[html.index(f"<h3>{kaizen_rekishi.ENGINE_HEAD}</h3>"):html.index(f"<h3>{kaizen_rekishi.CHANGES_HEAD}</h3>")]
 assert "EP-" not in engine, "エンジンの版に付く採った案の番号の並び（proposals）は出さない（きっかけの字の中の番号は表の字のまま）"
 assert "data/engine/versions.json" not in text and data["terms"]["型紙の版"] not in text, "表の「言葉」の欄（作る側の言葉）は出さない"

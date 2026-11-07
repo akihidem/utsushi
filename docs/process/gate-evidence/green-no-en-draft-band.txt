@@ -1,0 +1,5 @@
+# 命令: .venv/bin/python tests/test_en.py
+# commit: 2fae8d51（回した時の HEAD）
+/tmp/tmpg8nfmr06/data/play/NDL-1187053-R0000005-L/.tmp-ltuvgnja/H-C_v1.pdf
+ok
+rc=0

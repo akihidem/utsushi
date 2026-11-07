@@ -80,6 +80,7 @@ for v in (1, 2):
     rec = next(r for r in records.all_records(G) if r["sheet_version"] == v)
     assert "_after.pdf" not in techo_site.feedback(G, rec), v
     assert urllib.request.urlopen(base + f"/sheet/{G}/{GS}_v{v}_after.pdf").status == 200, v
-# 頁は版が 2 つ以上ある時だけ聞く
-assert 'name="sheet_version"' in urllib.request.urlopen(base + f"/toy/{G}").read().decode()
+# 玩具の頁には、版を聞く記録の欄が無い（本人の答え 11-07 夕の Q3 で のこす へ寄せた）。手帖は開いた時の版を持って送る（data-v。上の手帖の口で見た）
+toy_html = urllib.request.urlopen(base + f"/toy/{G}").read().decode()
+assert 'name="sheet_version"' not in toy_html and 'id="record"' not in toy_html
 print("ok")

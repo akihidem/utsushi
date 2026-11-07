@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_review_2216.py
+# commit: 7eeb8427（回した時の HEAD）
+ok 本人の見直し 22:16 の 3 点（書体・のこす の釦・上下はありません）
+rc=0

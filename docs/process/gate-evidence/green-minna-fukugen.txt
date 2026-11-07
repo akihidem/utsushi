@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_minna_fukugen.py
+# commit: 4791c4a3（回した時の HEAD）
+ok 作った物の並びの見出しと 2 つの文を「これまでの復元」の形に（置き場とギャラリーは今のまま）
+rc=0

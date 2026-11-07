@@ -1,0 +1,10 @@
+{
+  "template": "whistle",
+  "source_id": "NDL-1187053-R0000009-L-whistle",
+  "params": {"kind": "horn", "reed_length": 9, "reed_thickness": 0.03},
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": ["F5.sound"]
+  }
+}

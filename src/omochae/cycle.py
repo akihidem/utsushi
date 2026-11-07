@@ -20,7 +20,7 @@
 - 作る人は 2 人に分ける（印が 2 つ）。ループ1 の紙で作る人と、たたき台で次の版まで進む人。記録を残すと同じ印の作りは区切りが付く決まりなので、1 人では両方の道を通れない。
 
 使い方: PYTHONPATH=src python -m omochae.cycle [--toy <玩具の ID>] [--keep-going] [--keep <置き場>] [--engine-repo <paper-to-toy の場所>]
-エンジンの repo は --engine-repo・環境の値 OMOCHAE_ENGINE_REPO・この repo の隣の paper-to-toy の順に探す。
+エンジンの repo は --engine-repo・環境の値 OMOCHAE_ENGINE_REPO・この repo の中の engine/・この repo の隣の paper-to-toy の順に探す。
 終わりの値: 0 = 全部の段が通った（エンジンを飛ばした時を含む）/ 3 = 部品はあるのに落ちた / 4 = まだ main に無い部品で止まった・呼び方の誤り。
 """
 import argparse
@@ -293,11 +293,13 @@ def _walk_own_paper(c, port):
     status, body = mine.post(f"{toy}/talk", scene="craft", step="1", text=OWN_CRAFT, json="1", **paper)
     if status != 200:
         raise Failed(f"自分の紙で話した工夫を受けない（{status}: {body[:80]}）")
-    if f'value="{oid}" selected' not in mine.get(toy)[1]:
-        raise Failed(f"記録の欄に自分の紙 {oid} が選ばれて出ない")
-    status, _ = mine.post(f"{toy}/record", result=records.results_for(c.sid)[0], **paper)
+    # 記録は手帖の のこす で残す（本人の答え 11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」で、玩具の頁の記録の欄は外した）。
+    # 手帖が自分の紙を開き（作った本人の画面だけ）、手帖と同じ受け口（record-json）で送る。前は玩具の頁の欄で自分の紙が選ばれるかを見た
+    if f'data-hid="{oid}"' not in mine.get(f"{toy}/techo")[1]:
+        raise Failed(f"手帖に自分の紙 {oid} が出ない")
+    status, _ = mine.post(f"{toy}/record-json", result=records.results_for(c.sid)[0], **paper)
     kept = [r for r in records.all_records(c.sid) if r["hypothesis_id"] == oid]
-    if status != 303 or len(kept) != 1:
+    if status != 201 or len(kept) != 1:
         raise Failed(f"自分の紙の記録を受けない（{status}・{len(kept)} 件）")
     rid = kept[0]["id"]
     said = {t["when"]: t["text"] for t in talk_log.kufu(c.sid, rid)}
@@ -421,8 +423,10 @@ def stage_bundle(c):
 
 
 def find_engine_repo(given=None):
-    """エンジンの repo の場所。渡された時はそこだけを見る（渡した場所が無いのに隣の repo を呼ばないため）。"""
-    places = [given] if given else [os.environ.get("OMOCHAE_ENGINE_REPO"), ROOT.parent / "paper-to-toy"]
+    """エンジンの repo の場所。渡された時はそこだけを見る（渡した場所が無いのに隣の repo を呼ばないため）。
+    渡されなければ、環境の値・この repo の中の engine/・隣の paper-to-toy の順（engine/ は提出のために入れたエンジンの頭。
+    審査の人は utsushi だけを clone し、隣の repo が無いので、隣より先に見る）。"""
+    places = [given] if given else [os.environ.get("OMOCHAE_ENGINE_REPO"), ROOT / "engine", ROOT.parent / "paper-to-toy"]
     for place in places:
         if place and (pathlib.Path(place) / "src/omochae/engine_loop.py").exists():
             return pathlib.Path(place)

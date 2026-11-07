@@ -1,0 +1,21 @@
+# 命令: .venv/bin/python tests/test_ux_fold_record.py
+# commit: c4456a7b（回した時の HEAD。今の main に新しい試験だけを置いた）
+    LINK = f'<a href="/toy/{G}/techo/kiroku">{toy.KIROKU_TO_NOKOSU}</a>'
+                                              ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'web.toy' has no attribute 'KIROKU_TO_NOKOSU'
+rc=1
+
+# 命令: .venv/bin/python tests/test_page_order.py
+# commit: c4456a7b（回した時の HEAD。今の main に新しい試験だけを置いた）
+    assert page.index("<h1>") < at[0] and at == sorted(at), (where, dict(zip(ORDER, at)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L 刷る前', {'kasetsu': 17724, 'win': 630118, 'tatoe': 649683, 'hanasu': 633079, 'tsukuru': 641872, 'kumikata': 642430, 'kiroku': 645773, 'minna': 647714, 'english': 650679})
+rc=1
+
+# 命令: .venv/bin/python tests/test_wa_ring.py
+# commit: c4456a7b（回した時の HEAD。今の main に新しい試験だけを置いた）
+    assert f'href="{wa.HREF}"' in page[at:page.index("</figure>", at)] and wa.HREF == "/about#kaizen-rekishi" and 'id="kaizen"' not in page, "真ん中から説明の頁の改善の歴史へ飛べる"
+                    ^^^^^^^
+AttributeError: module 'web.wa' has no attribute 'HREF'
+rc=1
+

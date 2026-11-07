@@ -1,0 +1,17 @@
+{
+  "template": "slider_fan",
+  "source_id": "NDL-1187053-R0000005-L",
+  "params": {},
+  "inject": {
+    "art_shift": {
+      "part": "tube",
+      "dx": 10
+    }
+  },
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.image_box"
+    ]
+  }
+}

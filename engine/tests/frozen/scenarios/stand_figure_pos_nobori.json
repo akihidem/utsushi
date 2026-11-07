@@ -1,0 +1,14 @@
+{
+  "template": "stand_figure",
+  "source_id": "NDL-1187053-R0000031-R-stand_figure",
+  "params": {
+    "figure": "nobori",
+    "stand": "base",
+    "base_depth": 40
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

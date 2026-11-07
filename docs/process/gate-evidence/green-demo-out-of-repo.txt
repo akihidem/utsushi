@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_demo_out_of_repo.py
+# commit: 2b973590（回した時の HEAD）
+ok デモ動画の作りは repo の外・北斎漫画の記録は data/hokusai・公開デモのサイトの物は残る
+rc=0

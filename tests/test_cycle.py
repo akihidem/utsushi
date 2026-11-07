@@ -174,7 +174,8 @@ if cycle.has("think_sheet") and cycle.has("material") and cycle.has("bundle_talk
             ("工夫を記録に結ばない", mock.patch.object(talk_log, "bind", lambda *a: (0, 0)), OWN_STAGE, "結ばれ"),
             ("札を受けない", mock.patch.object(making_log, "EVENTS", ()), OWN_STAGE, "札を受けない"),
             ("工夫を受けない", mock.patch.object(think_sheet, "usable", lambda handler, sid, hid: False), OWN_STAGE, "工夫を受けない"),
-            ("記録の欄に出ない", mock.patch.object(toy, "record_form", lambda *a, **k: ""), OWN_STAGE, "記録の欄"),
+            # 記録は手帖の のこす で残す（玩具の頁の記録の欄は本人の答え Q3 で外した）。手帖が自分の紙を開かない形を落とす
+            ("手帖に自分の紙が出ない", mock.patch.object(think_sheet, "latest_mine", lambda handler, sid: None), OWN_STAGE, "手帖に自分の紙"),
             ("工夫が材料に渡らない", mock.patch.object(loop, "maker_talk", no_own_talk), MATERIAL, "材料に無い"),
             ("工夫が束に渡らない", mock.patch.object(engine_bundle, "build", no_own_bundle), BUNDLE, "束に無い"))
     if cycle.has("own_next"):

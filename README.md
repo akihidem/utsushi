@@ -57,7 +57,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 ハッカソンの運営から、提出は 1 つの repo にするよう求められた。そこで、別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発しているエンジンを、提出のためにこの repo の engine/ にまとめる（本人の決定、11-07。エンジンはまだ開発中なので、まとめるのは提出の直前）。まとめた後も、paper-to-toy の repo とこのリンクは残す。うつしは、みんなが使えるサービスとして作った、paper to toy のエンジンの一つの具体例にあたる。エンジンも、今回のハッカソンのために開発期間の中で作っている（上の段落のとおり、うつしの一部を期間中に切り出した物）。うつしとエンジンの両方を、今回のハッカソンの審査の対象にしてほしい（本人の言葉、11-07）。
 
-- engine/ の中は、まとめる時のエンジンの main の頭にする（その commit は、まとめる時にここへ書く）。
+- engine/ の中は、まとめた時のエンジンの main の頭 `68775220f34f3d65c2e8801de2e45a61376d846b`（2026-11-07 20:55 JST の commit）。入れたのはその頭の中身で、エンジンの履歴（496 の commit）は paper-to-toy の repo で辿る。入れた後に、engine/ の中の SECURITY.md を一番上の 1 つにまとめた（engine/README.md の道もそこへ向けた）。
 - エンジンの版の台帳は、エンジンの repo の data/engine/versions.json（まとめた後は engine/data/engine/versions.json）。型紙の版とエンジンの版の歩みの表は、この repo の `data/history/kaizen-history.json`（エンジンの記録から写した表）。
 - 型紙を作って検査する仕組み `src/omochae/` は、まとめた後は、うつしと engine/ の両方にある（正はエンジンの側。上の段落のとおり）。
 
@@ -106,19 +106,9 @@ cd utsushi
 
 ほかの入口: `./run-home.sh` は家のパソコンで手元の画面を開く（`--lan` で家の網に開く）。`./run-demo.sh` はデモの一周の画面（入口と手帖。置き場は本物の記録と分けた `out/demo-data`）を立て、パソコン・iPad・iPhone から開ける合言葉付きの https のリンクを作る（cloudflared が要る。止めるとリンクは変わる）。合言葉とリンクは git の外の `out/demo-key`・`out/demo-url` にだけ置く。commit に入れない。
 
-### デモ動画を作る
+### デモ動画
 
-要る物は上に足して、`google-chrome` か `chromium` の名前で呼べるブラウザ。ffmpeg も要る。足りない物は、書き出しの最初に名前で出て exit 4 で止まる。
-
-```
-export PYTHONPATH=src
-OUT_DIR="$HOME/utsushi-demo"                           # 書き出す置き場。repo の外にする
-.venv/bin/python -m demo.prepare                       # 前の日、網のある所で。道具を確かめ、江戸の絵を全部取り寄せて控えを残す
-.venv/bin/python -m demo.prepare --check               # 撮る日の朝、網なしで。写しが控えと合うか
-.venv/bin/python -m demo.build --out "$OUT_DIR" --offline          # 網を切って 7 場面を書き出す
-PREV_DIR=$(ls -d "$OUT_DIR"/*/ | tail -1)              # 一番新しい書き出しの置き場（フォルダの名前は日時）
-.venv/bin/python -m demo.build --out "$OUT_DIR" --run "$PREV_DIR" --only scene3   # 1 場面だけ作り直してつなぎ直す
-```
+提出のデモ動画（YouTube）の作り（台本・場面を描くコード・その試験）は、この repo に入れず作り手の手元で作った（2026-11-08。動画は repo に入れない決まりと同じ考え）。この repo の公開デモのサイト（`./run-demo.sh`）はそのまま使える。
 
 デモ動画の読み上げは、AivisSpeech（声のモデル「まお」）による合成の声です。
 

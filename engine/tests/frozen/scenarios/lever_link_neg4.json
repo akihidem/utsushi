@@ -1,0 +1,19 @@
+{
+  "template": "lever_link",
+  "source_id": "NDL-1187053-R0000028-L-lever_link",
+  "params": {
+    "kind": "karakuri",
+    "crank": 30
+  },
+  "inject": {},
+  "expect": {
+    "rc": 3,
+    "floors": [
+      "F5.link"
+    ],
+    "lines": [
+      "F5.link [四節] 水車の腕 #mm・連桿 #mm・犬の腕 #mm・軸の間 #mmで Grashof の条件を満たさず、手を # 周回せない（最短が水車の腕で、最短 + 最長 ≦ 残りの和）",
+      "F5.link [水車と手] 水車と机の間が #mm で、回すと机をこする（#mm 以上）"
+    ]
+  }
+}

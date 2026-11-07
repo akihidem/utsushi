@@ -76,10 +76,11 @@ PENCIL = _ICON.format('<path d="M10 38l2-9 19-19 7 7-19 19zM27 14l7 7"/>')
 
 # 色は皮の変数から取る（skin.py）。絵の地だけ白に決める: 手順の紙の形は黒い線と紙の色で描いてあり、黒の皮でもそのまま読めるように（作りながら見る頁の紙の絵と同じ）。
 # 字の大きさは机の端に置いて少し離れて読むため。角丸の箱を並べない（本人の感想「AIの考えたUiって感じ」）。
+# 書体は他の頁と同じ明朝（本人のサイトの見直し 11-07 22:16「のこす、手帖、のフォントが違う。」。前はゴシック）。
 STYLE = """
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans CJK JP","Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;font-size:18px;line-height:1.5}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-size:18px;line-height:1.5}
 a{color:inherit;text-decoration:none}
 /* 入力の部品はブラウザの既定の字（Arial など）になるので、頁の字を継がせる（#87 の要件。大きさは部品ごとの決まりのまま）。 */
 button,input,textarea,select{font-family:inherit}

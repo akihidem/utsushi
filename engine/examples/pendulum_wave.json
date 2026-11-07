@@ -1,0 +1,8 @@
+{
+  "template": "pendulum_wave",
+  "source_id": "PRINCIPLE-pendulum-wave",
+  "params": {
+    "kind": "wave"
+  },
+  "inject": {}
+}

@@ -1,0 +1,12 @@
+{
+  "template": "pendulum_wave",
+  "source_id": "PRINCIPLE-pendulum-wave",
+  "params": {
+    "kind": "wave"
+  },
+  "inject": {},
+  "expect": {
+    "rc": 0,
+    "floors": []
+  }
+}

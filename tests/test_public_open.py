@@ -92,7 +92,7 @@ assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" in te
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
 assert f"/record/{rid}/media/m1.jpg" in opened("GET", f"/toy/{G}/techo/kiroku")[1]
 # 確かめる前は、本人の画面でも、玩具の頁・ギャラリー・図鑑には出さない（ギャラリーは物だけと確かめた物だけ。#242・#314）
-for path in (f"/toy/{G}", "/gallery", "/zukan", f"/zukan/{G}"):
+for path in (f"/toy/{G}", "/gallery"):
     assert f"/record/{rid}/media/" not in opened("GET", path)[1], path
 port = int(opened.local.split(":")[1])
 
@@ -107,7 +107,7 @@ def stranger(method, path, body=None, headers=None):
 
 # 確かめる前は、別の画面に、絵の道も頁の道も出さない（確かめずに皆に見える道を作らない）
 assert stranger("GET", f"/record/{rid}/media/m1.jpg")[0] == 404
-for path in (f"/toy/{G}", "/gallery", "/zukan", f"/zukan/{G}", f"/toy/{G}/techo/kiroku"):
+for path in (f"/toy/{G}", "/gallery", f"/toy/{G}/techo/kiroku"):
     assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
 # 人が「物だけ」と確かめた後は、開いた場のギャラリーにも出る（合言葉付きの場と同じ線）。札に記録の番号は出さない（J-028）。玩具の頁と図鑑は出さないまま
 assert media_review.record(rid, "m1.jpg", "object", "試験の人") == []
@@ -116,7 +116,7 @@ gallery = stranger("GET", "/gallery")[1]
 assert f"/record/{rid}/media/m1.jpg" in gallery and wording.record_no(rid) not in gallery
 assert f"#{rid}" not in gallery and f'href="/toy/{G}"' in gallery, "札の玩具の名の道にも記録の番号を入れない（玩具の頁の頭へ行く）"
 # 入口（/）も同じ（作ってみた実物の写真は、開いた場では入口と玩具の頁に置かない。web.made・本人のサイト体験レビュー 11-07 の 2 の作りの時の線）
-for path in ("/", f"/toy/{G}", "/zukan", f"/zukan/{G}"):
+for path in ("/", f"/toy/{G}"):
     assert f"/record/{rid}/media/" not in stranger("GET", path)[1], path
 # 写真の札にも、人の書いた文は出さない（文の中の名前は機械で落とせない。J-028）
 assert opened("POST", f"/toy/{G}/record", f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F&impression=PHOTOWORDS", form)[0] == 303
@@ -168,7 +168,7 @@ said = f"hypothesis={GS}&result=%E5%8B%95%E3%81%84%E3%81%9F"
 assert opened("POST", f"/toy/{G}/record", said, form)[0] == 303
 told_id = records.all_records(G)[-1]["id"]
 assert opened("POST", f"/record/{told_id}/explain", "text=TOLDWORDS&next_idea=NEXTWORDS&by=BYWORDS", form)[0] == 303
-for path in ("/", "/toys?paper=1", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h={GS}&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
+for path in ("/", "/toys?paper=1", "/about", "/gallery", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}/tsukuru?h={GS}&v=1", f"/toy/{G}/techo", f"/toy/{G}/techo/kiroku"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("TOLDWORDS", "NEXTWORDS", "BYWORDS"):
@@ -190,14 +190,11 @@ oid = own["id"]
 assert hypotheses.print_own(G, oid, str(out_dir(G) / f"{oid}_v1")) == 0
 local_form = {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"}
 assert closed("POST", f"/toy/{G}/record", f"hypothesis={oid}&result=%E5%8B%95%E3%81%84%E3%81%9F", local_form)[0] == 303
-# 合言葉付きの場では、図鑑に今までどおり出て、紙も開ける
-for path in (f"/zukan/{G}", "/zukan"):
-    page = closed("GET", path, None, local)[1]
-    assert "OWNNAME" in page and "OWNHOW" in page, path
+# 合言葉付きの場では、紙も開ける（前は図鑑にも今までどおり出るかを見ていた。図鑑の頁は外した・本人の言葉 11-08）
 papers = [f"/sheet/{G}/{oid}_v1_{kind}.{ext}" for kind in ("free", "after") for ext in ("pdf", "png", "svg")]
 for path in papers:
     assert closed("GET", path, None, local)[0] == 200, path
-for path in ("/", "/toys?paper=1", "/about", "/gallery", "/zukan", f"/zukan/{G}", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
+for path in ("/", "/toys?paper=1", "/about", "/gallery", f"/zukan/{G}/yomi", "/en", f"/en/toy/{G}", f"/toy/{G}", f"/toy/{G}?see={oid}&kind=after&v=1", f"/toy/{G}/techo"):
     code, page = opened("GET", path)
     assert code == 200, (path, code)
     for word in ("OWNNAME", "OWNHOW", "OWNWHERE"):
@@ -212,8 +209,14 @@ assert opened("GET", "/loop")[0] == 404 and opened("GET", f"/loop/{G}")[0] == 40
 # 次の版を採る口と AI の口は閉じる（誰でも型紙の版を変えられる形にしない・費用をかけさせない）
 assert opened("POST", f"/record/{rid}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", form)[0] == 403
 assert opened("POST", f"/record/{rid}/ai-interpret", "x=1", form)[0] == 403 and opened("POST", f"/record/{rid}/ai-observe", "x=1", form)[0] == 403
-# 記録の欄に、名前を書かない断りがある
-assert "名前や連絡先は書かないでください" in opened("GET", f"/toy/{G}")[1]
+# 記録を書く所に、名前を書かない断りがある。玩具の頁の記録の欄は のこす へ寄せた（本人の答え 11-07 夕の Q3）ので、
+# 記録の字を書くのは手帖の のこす の画面で、そこに話す口と同じ断り（hanasu.NOTICE。名前・学校の名前…は書かない）が出る
+import html  # noqa: E402
+
+from web import hanasu  # noqa: E402
+
+assert "名前や連絡先は書かないでください" not in opened("GET", f"/toy/{G}")[1], "玩具の頁に記録の欄は無い"
+assert html.escape(hanasu.NOTICE, quote=False) in opened("GET", f"/toy/{G}/techo")[1] or hanasu.NOTICE in opened("GET", f"/toy/{G}/techo")[1]
 # 上げた直後の返事（窓口の決定 11-06 夜・案 A）: 手帖は上げた後に「上げました」をギャラリーへ渡す。合言葉なしの場では、確かめる前はギャラリーに
 # 並ばない理由の 1 行を続ける。写真なしで残した時（記録を残しました）と、合言葉付きの場には出さない
 assert f"return '{techo_site.UPLOADED}'" in techo_step.SCRIPT and "location.assign(`/gallery?msg=${encodeURIComponent(done)}" in techo_step.SCRIPT

@@ -138,7 +138,8 @@ assert code == 200 and json.loads(body)["from"] in ("no_key", "glossary"), body 
 assert send(f"/toy/{G}/ask", {"hypothesis": oid, "question": "糊代はどこ？", "who": WHO}, cookie=key)[0] == 200
 
 # ── 記録: 工夫も考えも、その紙の記録に結ばれる ──
-assert f'<option value="{oid}" selected>' in page(f"/toy/{G}", cookie=key)[1], "記録の欄は本人の紙を選んでいる"
+# 記録は手帖の のこす で残す（本人の答え 11-07 夕の Q3 で、玩具の頁の記録の欄は のこす へ寄せた。受け口は残る）。手帖は本人の紙を開く
+assert f'data-hid="{oid}"' in page(f"/toy/{G}/techo", cookie=key)[1], "手帖は本人の紙を開いている"
 code, _, h = send(f"/toy/{G}/record", {"hypothesis": oid, "sheet_version": 1, "result": "動いた", "who": WHO}, cookie=key)
 assert code == 303, code
 rid = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid)

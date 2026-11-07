@@ -25,8 +25,8 @@ records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": 
 # 帯は道しるべ（UX の見直しの段 1、本人の決定 11-06）。印は今いる駅。序・図鑑は道の外の読み物で「よむ」に印
 # 入口は えらぶ の駅（本人のサイト体験レビュー 11-07 の 4「入口と選ぶは分けない」）。/toys は入口へ送られ、同じ印になる
 PAGES = {"/": "えらぶ", "/about": "よむ", "/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる",
-         "/zukan": "よむ", f"/zukan/{G}": "よむ", f"/zukan/{G}/yomi": "よむ", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "English"]  # English は右の端の言語の切り替え（窓口の決定 11-06）
+         f"/zukan/{G}/yomi": "よむ", "/loop": None, f"/loop/{G}": None}
+ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "やさしい", "English"]  # やさしい と English は右の端の言語の切り替え（窓口の決定 11-06・やさしい は 11-07 夜）
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)

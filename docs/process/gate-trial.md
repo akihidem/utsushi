@@ -531,7 +531,7 @@
 ## 道具が足りない機械で、落ちる（3）でなく検査できない（4）にする（Issue 対応の担当、issue/160-missing-tool-rc4、11-05 朝。#160）
 
 - 目的: まっさらな機械で README のとおりに進めた人が、足りない道具を名前で知らされる
-- なぜか: `tests/test_demo_assemble.py` と `tests/test_ai_feedback.py` は ffmpeg を直に呼ぶのに、README・`init.sh`・床の入口の一覧に ffmpeg が無かった。無い機械では `./run.sh` が rc 3 になり、不足が「落ちた」に見える。`.venv` が無い時に床の入口を直に呼ぶと、トレースバックの rc 1 になる
+- なぜか: tests/test_demo_assemble.py と `tests/test_ai_feedback.py` は ffmpeg を直に呼ぶのに、README・`init.sh`・床の入口の一覧に ffmpeg が無かった。無い機械では `./run.sh` が rc 3 になり、不足が「落ちた」に見える。`.venv` が無い時に床の入口を直に呼ぶと、トレースバックの rc 1 になる
 - どうしたらいいか: 推し（#160 の推し）は、床の入口と `init.sh` の確かめに `ffmpeg`・`ffprobe` を足し、無ければ名前を言って 4。README にも書く。代案は、ffmpeg の要る試験だけ飛ばす形。全体が 4 にならない分、見落としやすいので採らない
 - 推しに足した物: 床の入口で `.venv` と字も見る（字が無い時も同じ形で 3 になり得るので、一覧をそろえた）。足りない物は 1 回で全部言う。uv は環境を作る時だけ使うので、床の入口では `.venv` を見る
 - 出していない範囲: デモ動画の書き出しに要る Chrome か Chromium。`./run.sh` では使わないので #168 で扱う
@@ -752,7 +752,7 @@
 - なぜか: 表は全部の行に `--scenario <名前>` と書いていて、試験の行では実在しない命令だった。最後の行は、場面と試験を足した数を「場面」と呼んでいた。関門の証拠の頭にある `PYTHONPATH=src` の形で `tests/test_generate.py` を回すと落ちた（子を別の置き場で起こすので、相対の PYTHONPATH が効かない）
 - どうしたらいいか: 推し（#170 の推し）は、行ごとに実際の命令を書き、数を分け、試験の側で PYTHONPATH を絶対に直す事。代案（命令の欄を消す）は、回し直す手がかりが無くなるので採らなかった
 - 推しに足した物: 床の入口も、表に書く形（相対の `PYTHONPATH=src`、repo の根からの相対の引数）で子を起こす。別の形で回すと、貼った時だけ落ちる試験に気づけないため。全部の試験を相対の形で回して、落ちるのは `tests/test_generate.py` だけと確かめた
-- 合わせて変えた物: `src/demo/build.py` の `count_tests` は新しい最後の行を読む。動画の場面 4 に渡す数は、今までどおり場面と試験の合計
+- 合わせて変えた物: src/demo/build.py の `count_tests` は新しい最後の行を読む。動画の場面 4 に渡す数は、今までどおり場面と試験の合計
 - 出していない範囲: 前の節が引く「実行した場面 N 本」の文は、その時の記録なので書き換えない。paper-to-toy の同じ書き方は、あちらの Issue で扱う
 - ゴールの要件: 表のどの行も貼って回せる（`tests/test_result_table.py` が小さな tree の全部の行を貼って rc を比べる）。場面と試験の数が別々に出る
 - 検証ゲート: **済み**。Red: 直す前の main 97898e7 で新しい試験が落ち、`tests/test_generate.py` も rc 1（gate-evidence/red-result-table.txt）。Green: 同じ 2 本が rc 0（gate-evidence/green-result-table.txt）
@@ -1420,7 +1420,7 @@
 - 出していない範囲: 新しい字。語りや問いなどの字は別の下書きの PR で本人の確認を待つ。場面 5・6 の「仮説 C」の字は 11-04 の試行の事実なので残した。場面 7 の札「仮説 B の紙」とクレジットの字は今の main のまま
 - ゴールの要件: 今の main の上で `demo.build --offline` が rc 0 で、3 分以内の動画ができる。札が 1 枚でなければ書き出さない。残した字は前の字のまま（試験で文字列を見る）
 - 文面: 利用者に見せる新しい文は無い
-- 検証ゲート: Red は `docs/process/gate-evidence/red-demo-one-sheet.txt`（場面 3 で止まる）と `docs/process/gate-evidence/red-generate-with-picture.txt`（原図の写しが在る時の試験）、Green は `docs/process/gate-evidence/green-demo-one-sheet.txt`。試験は `tests/test_demo_scene3.py`・`tests/test_demo_scene4.py`・`tests/test_demo_scene6.py`。要のコマは目で見た
+- 検証ゲート: Red は docs/process/gate-evidence/red-demo-one-sheet.txt（場面 3 で止まる）と `docs/process/gate-evidence/red-generate-with-picture.txt`（原図の写しが在る時の試験）、Green は docs/process/gate-evidence/green-demo-one-sheet.txt。試験は tests/test_demo_scene3.py・tests/test_demo_scene4.py・tests/test_demo_scene6.py。要のコマは目で見た
 - エビデンスゲート: 上の出力と `./run.sh`
 - マージ後の書き戻し: #332 に書く
 - 今の main への載せ直し（11-07 未明）: `tests/test_generate.py` の 2 行の直しは、同じ穴（原図の写しが在る木で落ちる）を別の形で塞いだ #461 が先に main に入ったので、main の形を取った（この枝の差は無くなった）。`red-generate-with-picture.txt` は、その時の落ちた記録として残す。`docs/architecture.md` は、main が直した gate_evidence の行と、この枝が直した src/demo の行をそれぞれ取った。#332 は閉じた Issue の記録で閉じているので、上の書き戻しはしない（PR の本文と、この帳面で足りる）

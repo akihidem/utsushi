@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kumitate_tour.py
+# commit: 9fdad291（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kumitate_tour.py", line 30, in <module>
+    assert tour_of(toy_page) == "1", "玩具の頁の頭の立体は、開いた時に動かす"
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 玩具の頁の頭の立体は、開いた時に動かす
+rc=1

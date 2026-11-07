@@ -110,8 +110,10 @@ for sid in (G, T, TRIAL):
     assert "自分の仮説を立てる" not in page and f"/toy/{sid}/print-own" not in page and f'id="own-{oid}"' not in page, (sid, "札")
     assert not [w for w in WRITTEN if w in page], (sid, "書いた文を頁に出さない")
     assert '<select name="hypothesis">' not in page and "どの仮説の紙か" not in page, (sid, "記録の欄の選ぶ欄")
-    form = page.split('id="record"', 1)[1].split("</form>", 1)[0]
-    assert re.findall(r'name="hypothesis" value="([^"]+)"', form) == [sheet], (sid, "記録の欄はたたき台の番号を送る")
+    assert 'id="record"' not in page, (sid, "玩具の頁に記録の欄は無い（本人の答え 11-07 夕の Q3 で、玩具の頁の記録の欄は のこす へ寄せた。受け口は残る）")
+    # 記録を残す手帖は、たたき台を刷ってから開く。刷った後の手帖は、書いた仮説が置き場にあってもたたき台の番号を送る
+    assert post(f"/toy/{sid}/print", {"hypothesis": sheet})[0] in (200, 303), sid
+    assert re.findall(r'data-hid="([^"]+)"', get(f"/toy/{sid}/techo")) == [sheet], (sid, "記録を残す手帖はたたき台の番号を送る")
 
     # 2. 口は閉じる。古い頁から届いても、仮説も紙も増えない
     waiting = written(sid, "刷っていない案", printed=False)
@@ -166,10 +168,9 @@ rid_written = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"]
 public = get(f"/toy/{G}", at=opened)
 assert "OWN-1_v1_free" not in card_of(public, rid_written) and not [w for w in ("前の感想", *WRITTEN) if w in public], "合言葉なしの場"
 
-# 5. 話して作った本人の紙だけ、記録の欄で選んだ形で出す。書いた仮説は並べない
-form = toy_page(G, mine={spoken}).split('id="record"', 1)[1].split("</form>", 1)[0]
-assert f'<option value="{spoken}" selected>' in form and "どの仮説の紙か" in form, form
-assert re.findall(r'<option value="([^"]+)"', form.split('name="hypothesis"', 1)[1].split("</select>", 1)[0]) == [hypotheses.sheet_of(G)["id"], spoken], form
-assert "OWN-1" not in form and WRITTEN[0] not in form
+# 5. 玩具の頁には記録の欄が無いので、書いた仮説も話した本人の案も並ばない（本人の答え 11-07 夕の Q3 で、玩具の頁の記録の欄は のこす へ寄せた。受け口は残る）。
+# 話した本人の紙は、手帖が本人の画面にだけ開く（tests/test_loop1_round.py・omochae.cycle の「自分の紙で作って記録」の段が見る）
+page5 = toy_page(G)
+assert 'id="record"' not in page5 and "どの仮説の紙か" not in page5 and "OWN-1" not in page5 and WRITTEN[0] not in page5
 
 print("ok: 玩具の頁に書く欄は無く、前の自分の仮説の記録と紙は読める")
