@@ -301,7 +301,7 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
 .gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-report{margin:0;padding-left:1.2em;display:grid;gap:4px}.gallery .sakurei-report .meta{display:block}
-.gallery .sakurei-kufu figure{margin:0;display:grid;gap:6px;max-width:520px}
+.gallery .sakurei-kufu figure{margin:0;display:grid;gap:6px;max-width:360px}
 """
 
 
