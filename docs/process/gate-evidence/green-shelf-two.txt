@@ -1,3 +1,4 @@
-# Green: 枝 ux/shelf-two で回した
+# 命令: .venv/bin/python tests/test_toys_genre.py
+# commit: d06bd631（回した時の HEAD）
 ok
 rc=0

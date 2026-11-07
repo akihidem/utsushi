@@ -5,7 +5,7 @@
 - どうしたらいいか: genre.BIG を うごく（ひく おす・まわす・ならす・ゆれる・ころがす・あげる）→ かざる（かざる・もって あそぶ）の 2 つにした。もって あそぶ の中で からくりのある 3 本（舌出しの面 → ひく おす・石橋の獅子頭 → ならす・鳥の棒 → ゆれる）だけを TOY に 1 行ずつ。玩具 1 本ずつを作る側の見立てで動かさない（genre.py の決まり）
 - 比べた案: 案 A（あそぶ の 24 本を全部 うごく）と案 A'（浮き物だけ かざる）は、本人の物差し（からくりの有る無し）と合わないので採らない
 - ゴールの要件: 棚の見出しが うごく・かざる の 2 つ（この順）。数は 83 のうち うごく 32・かざる 51。凧 3 本と移した 3 本は うごく、浮き物 5 つは かざる。入口の棚の見出しも同じ
-- 検証ゲート: **済み**。Red: 今の main（`80fc4a8f`）にこの試験だけを置くと、大きい側が 3 つのまま rc 1（gate-evidence/red-shelf-two.txt）。Green: この枝で rc 0（gate-evidence/green-shelf-two.txt）
+- 検証ゲート: **済み**。Red: 今の main（`8e201d39`）にこの試験だけを置くと、大きい側が 3 つのまま rc 1（gate-evidence/red-shelf-two.txt・`python -m omochae.gate_evidence write` で書いた）。Green: この枝で rc 0（gate-evidence/green-shelf-two.txt）
 - エビデンスゲート: 上の 2 つと、test_toys・test_ux_stage0・test_landscape_fit・test_looks_motion・test_white_only・test_two_sites・test_en_all の rc 0
 - マージ後の書き戻し: 地図（grove の state/journey-map.md）の工程 1・2 の棚の字は UX の担当が直した
 

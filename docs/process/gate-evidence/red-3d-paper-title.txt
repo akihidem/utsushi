@@ -1,4 +1,8 @@
-# Red: 今の main（80fc4a8f・#561 の前）に #561 の tests/test_wa_ring.py だけを置いて回した（3D の机の紙の題が雛形の呼び名のまま）
+# 命令: .venv/bin/python tests/test_wa_ring.py
+# commit: 80fc4a8f（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_wa_ring.py", line 84, in <module>
+    assert want in texts, (sid, texts[:2])
            ^^^^^^^^^^^^^
 AssertionError: ('NDL-1187053-R0000005-L', ['御来迎 型紙（内筒を下から押し上げる）版 14', '刷った組 goraigo-v14'])
 rc=1

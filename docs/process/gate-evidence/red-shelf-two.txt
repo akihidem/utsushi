@@ -1,4 +1,7 @@
-# Red: 今の main（80fc4a8f）にこの枝の tests/test_toys_genre.py だけを置いて回した
+# 命令: .venv/bin/python tests/test_toys_genre.py
+# commit: 8e201d39（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_toys_genre.py", line 37, in <module>
     assert [b for b, _ in genre.BIG] == ["うごく", "かざる"], "大きい側は本人の決め直し（11-07 夕）の 2 つ・この順"
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: 大きい側は本人の決め直し（11-07 夕）の 2 つ・この順
