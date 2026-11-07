@@ -481,11 +481,13 @@ def media_html(rid, cls="shots", photos=True):
     from .techo_site import media_of
 
     # 物だけと人が確かめた物だけを出す（本人の決定 11-05、#314）。この頁は他の人にも見えるので、ギャラリーと同じ線にする。
+    # 写真は小さい写し（/small・幅 480px。web.made）を出し、押すと元の写真を開く。上げた元の写真は 1 枚 3.7MB ほどあり、
+    # 記録が並ぶ頁で全部を読むと遅い回線で頁が重くなるため（入口と玩具の頭の写真と同じ線・#521）。動画は前のまま
     files = media_review.public(rid, media_of(rid)) if photos else []
     if not files:
         return ""
     pics = "".join((f'<video src="/record/{esc(rid)}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<img src="/record/{esc(rid)}/media/{esc(f)}" alt="作った物の写真" loading="lazy">') for f in files)
+                    else f'<a href="/record/{esc(rid)}/media/{esc(f)}"><img src="/record/{esc(rid)}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     return f'<div class="{cls}">{pics}</div>'
 
 
@@ -502,7 +504,7 @@ def made_strip(sid, recs, photos=True):
     for r in reversed(recs):
         for f in (media_review.public(r["id"], media_of(r["id"]))[:1] if photos else []):
             tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                   else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}" alt="作った物の写真" loading="lazy">')
+                   else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">')
             thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} へ">{tag}</a>'
     return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 

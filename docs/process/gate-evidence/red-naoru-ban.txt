@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_naoru.py
+# commit: 2585c383（main・#513 の後）の木に tests/test_naoru.py だけを置き、naoru.py は main の物のまま（git の外の写し）
+Traceback (most recent call last):
+  File "tests/test_naoru.py", line 37, in <module>
+    assert naoru.highlight() == f"{data['line']}（{data['toy']} 型紙の版 {data['sheet_version']}）", naoru.highlight()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3D で組んで見つかった当たりを直し、頭が揺れても前の壁に当たらない（張子の首振り虎 型紙の版 v7）
+rc=1

@@ -212,6 +212,9 @@ WRITE_LIMIT, WRITE_WINDOW = 60, 60.0
 # 段の口（作りながら見る頁の札）の数。書き込みの口と別に数え、手順を押す数で記録や話す口を断らない（統括の決め 11-06）。
 # 5 人が同じ網から、手順を全部同じ 1 分で押しても（1 人 13〜20 回）断らない数。超えても頁は止めず、段を置き場へ書かないだけ。
 STEP_LIMIT = 120
+# 写真と動画の口の数（セキュリティの点検 U1）。この口はフォームを読む前に本体のまま受けるので、書き込みの数（WRITE_PATHS）が届かず、上限が無かった。
+# 1 つ 20MB まで。5 人が同じ網（同じ番地）から同じ 1 分に 3〜4 枚ずつ上げても断らない数。
+MEDIA_LIMIT = 20
 WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
 
@@ -686,6 +689,8 @@ class Handler(BaseHTTPRequestHandler):
             # 記録を残した画面からだけ受ける（記録の鍵）。番号は札に出る連番なので、番号だけで受けると、別の人の記録に写真を足せる。
             if not records.mine(m.group(1), self._rec_key()):
                 return self._send(403, "受け付けられない送り方です")
+            if (who := writer(self.client_address[0], self.headers)) and (wait := self.server.media_limit.wait(who)):
+                return self._busy(wait, {})
             try:
                 length = int(self.headers.get("Content-Length", ""))
             except ValueError:
@@ -1168,6 +1173,7 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.look = look
     server.write_limit = WriteLimit()
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
+    server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
     return server
 
 
