@@ -156,6 +156,31 @@ def routes(sids):
     return out
 
 
+def prime(base, sids):
+    """作りながら見る頁と手帖は、紙を刷った後でしか開かない（刷る前は玩具の頁へ戻す）。英語で回す前に、必須の 2 種と、
+    雛形ごとに 1 種の、たたき台の紙を刷っておく（雛形ごとに手順の文が違う。全 83 種を刷ると数分かかる）。刷った玩具の道を返す。"""
+    import urllib.parse
+    import urllib.request
+
+    from omochae import hypotheses
+
+    picked, seen = [], set()
+    for sid in sids:
+        data = hypotheses.load(sid)
+        tpl = data.get("template", "slider_fan")
+        if hypotheses.stage(sid) == "必須" or tpl not in seen:
+            seen.add(tpl)
+            picked.append(sid)
+    for sid in picked:
+        body = urllib.parse.urlencode({"hypothesis": hypotheses.sheet_of(sid)["id"]}).encode()
+        req = urllib.request.Request(f"{base}/toy/{sid}/print", data=body, headers={"Origin": base})
+        try:
+            urllib.request.urlopen(req, timeout=300).read()
+        except Exception:  # 刷れない玩具は、その頁を回さないだけ（訳し漏れの試験は刷れた頁で見る）
+            pass
+    return picked
+
+
 def collect(base, paths, cookie="utsushi_lang=ja", workers=6):
     """道ごとに日本語の頁を読んで英語に通し、表に無かった日本語の字を {字: 初めに出た道} で返す。404 の頁（断りの頁）も読む。
     英語の頁をもう一度通すと、原文を残した値（本人の言葉の引用）の日本語も拾ってしまうので、日本語の頁を通す。"""
@@ -196,6 +221,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     from .play_server import sources
 
+    prime(a.base, sources())
     found = collect(a.base, routes(sources()))
     keyed = {}
     for t, p in found.items():

@@ -37,6 +37,8 @@ srv = serve(0, look="tenji")
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{srv.server_address[1]}"
 try:
+    printed = i18n.prime(base, sources())  # 作りながら見る頁と手帖は刷った後でしか開かないので、雛形ごとに 1 種を刷ってから回す
+    assert len(printed) >= 3, printed
     miss = i18n.collect(base, i18n.routes(sources()))
     assert not miss, ("訳の表に無い日本語（python -m web.i18n collect で書き出して表に足す）", len(miss), list(miss.items())[:8])
 
