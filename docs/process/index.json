@@ -536,7 +536,7 @@
  {
   "id": "research/38",
   "path": "research/38-readme-readability.md",
-  "hook": "README の頭に 30 秒の 4 行を足す前と後を yomiyasu で測った。候補 26 件のまま",
+  "hook": "README の頭に 30 秒の 4 行を足す前と後を yomiyasu で測った。候補 26→20 件",
   "status": "測った記録。4 行の字は本人の確かめ待ち"
  }
 ]
