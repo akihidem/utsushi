@@ -2093,6 +2093,21 @@
 - エビデンスゲート: 写しの木で 4 通り崩して rc 1: 出さない字を外さない・外す時に元の記録を書き換える・虎の控えの並びを空にする（凍結の床も、控えた紙が刷れないと落ちる）・組を見ずに記録の sheet でたたき台を引く。崩さない写しは rc 0
 - 関わる試験（手元で回した。全部の試験は合体の道に任せる）: test_by_set・test_floor_pin・test_hypotheses・test_sheet_heads・test_next_sheets・test_hypothesis_label・test_cycle・test_kumitate・test_engine_floors・test_one_sheet・test_one_sheet_page・test_print_names・test_build_now・test_tsukuru・test_zukan・test_zukan_more・test_zukan_hon・test_loop・test_play_server・test_making_log・test_kaizen・test_techo_site・test_ways と、全体を見張る test_ai_name・test_loop_odd_result・test_min_python・test_reader_words・test_source_id_check、文書を見る test_gate_trial_merge・test_ledger・test_print_busy・test_techo_step・test_plate_acts。どれも rc 0
 - 限界: 組ごとの欄を書いた本物の記録はまだ無く、代わりの記録（試験の中で別の置き場に置く）でだけ確かめた。本物の欄は御来迎 v13 と虎 v6 の PR で書き、その PR で紙の指紋を `--add` で足す
+
+## 虎の今の組を tora-v6 にする（型紙の次の組の担当、issue/115-tora-v6、11-06 夜。#115。組ごとの欄の読み口の上）
+
+- 目的: 型紙エンジン paper-to-toy の虎の v6（main e7cf5f7。写真と照らした直し・立体の脚・角を落とした胴・端の壁の糊代の根元・両面の頭）をサイトの今の組にする。v5 は刷らずに飛ばした（統括の読み 11-06）。前の組（tora-v3・tora-v4）の紙は変えない
+- 何をしたか: エンジンの雛形をそのまま `src/omochae/templates/_tora_v6.py` に写した。pivot_counterweight は組の番号が 6 からの時だけ、関数ごとにそちらへ渡す（_by_set）。前の組の作りは pivot_counterweight に残した。控えの組の並びは (tora-v3, tora-v4)。寸法は記録の H-A の組ごとの寸法（エンジンの見本 examples/tora_v6.json と同じ）。丸い切り抜き（round_cuts）を、部品・描く所・床・作り方の印・版の歩みの見分けに足した（エンジンと同じ）
+- エンジンと違う所は 2 つ: 手順 4 は「線のとおり山折り」（窓口が本人の委任で選んだ字。tora-v4 から同じ）、紙の行は本人が確かめた 4 つの名前（#295）
+- 決めた事（統括と窓口の決め 11-06 夜）: 3D は v6 では出さない（組み立ては前の組の形で書いてあり、丸い穴・脚・両面の頭を組めない。作り直しは提出の後）。英語の頁の手順の訳 5 段は作らない（本人の決定 6。test_en は英語の頁から組み方への道を外す PR の後に通る）。考えの節の呼び名 4 つ（軸の高さ（mm）・脚の高さ（mm）・胴の角を落とす幅（mm）・顔の数）は窓口が本人の委任で推しを選んだ
+- 呼び名の食い違い（直していない）: 同じ時に選んだ「頭の幅（mm）」「軸から重りまで（mm）」のうち、重りの深さには今ある呼び名「重りの軸からの下がり（mm）」（玉の頁の版の間の選ぶ欄と同じ表）が先にある。同じ寸法に 2 つの呼び名を作らないため、今ある呼び名を使った（統括の決め 11-06 夜。窓口には統括から知らせる）
+- 紙: 凍結の床の前の組 13 枚（goraigo-v10・tora-v3・tora-v4）の指紋は控えと同じ（代わりの字幅とこの機械の字の両方）。v6 の 4 枚を `--add` で足して 17 枚。刷り比べ（`docs/process/gate-evidence/print-compare-tora-v6.txt`）で、違ったのは 599 件のうち虎の今の組の 10 件だけ
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-tora-v6.txt`（組ごとの欄の読み口の木にこの試験だけを置くと、写しが無く rc 1）。Green は `green-tora-v6.txt`（test_tora_v6・test_floor_pin・test_next_sheets・test_by_set・test_loop1_think が rc 0）。凍結の場面の虎の 6 本は、期待の rc と床のとおり
+- エビデンスゲート: 写しの木で 5 通り崩して rc 1: 組の替わりを外す（凍結の床も落ちる）・手順 4 をエンジンの字に戻す（凍結の床も v6 の手順の紙で落ちる）・控えの並びから tora-v4 を外す（凍結の床）・紙の行をエンジンの字に戻す・前の組で v6 の寸法を通す。崩さない写しは rc 0
+- 関わる試験（手元で回した 76 本。全部の試験は合体の道に任せる）: test_ai_name・test_api_review_fixes・test_build_now・test_by_set・test_cycle・test_en・test_engine_bundle・test_engine_floors・test_floor_pin・test_foldsim・test_gate_trial_merge・test_genga・test_hanasu・test_hypotheses・test_hypothesis_label・test_ingest_keep・test_kaizen・test_kumitate・test_kuzushi・test_ledger・test_loop・test_loop1_own_private・test_loop1_round・test_loop1_think・test_loop1_words・test_loop_adopt_source・test_loop_ayumi・test_loop_odd_result・test_loop_premise・test_loop_record_source・test_made_records・test_making_log・test_material_axes・test_min_python・test_next_range・test_next_sheets・test_one_sheet・test_one_sheet_loop・test_one_sheet_page・test_own_form_gone・test_own_pii・test_photo_attach・test_pivot_hang_model・test_pivot_model・test_pivot_neck_opening・test_plate_acts・test_play_server・test_press_stops・test_print_busy・test_print_names・test_print_side・test_public_links・test_reader_words・test_record_fold・test_records・test_sheet_heads・test_sheet_u25・test_sheet_v8・test_source_id_check・test_steps_materials・test_store・test_techo_site・test_techo_step・test_tora_v6・test_toy_head・test_tpl_captions・test_tpl_registry・test_trial_video・test_tsukuru・test_ux_stage0・test_ways・test_words・test_zoom・test_zukan・test_zukan_hon・test_zukan_more。test_en のほかは rc 0。test_en は上の決めのとおり、英語の頁の直しの後に通る
+- 場の文書: docs/process/workshop-guide.md の「刷る紙は虎 v4」は直さない（統括の決め 11-06 夜。11-07 の工作の紙は v4 のまま。提出の後に v6 へ直すかは後で決める）
+- 限界: v6 の紙は実物で組んでいない。サイトの組み立ての頁は、3D を出さない時は今は節ごと出ない（文と絵を出す形は組み立ての頁の直しの PR が入れる）。#364（紙の字の 4 つ）と、後に入る方で tests/test_paper_line.py に虎の今の組を足す
+
 ## 横置きで手帖の手順の字が原画の釦の下に隠れる・作りながら見るの「次の手順へ」が画面の外（直しの担当、fix/techo-landscape-overlap、11-06 夜。11-07 の工作の前のまっさらな確かめの 1 と 3、縦置きの 390×844 の足し）
 
 - 目的: 横置きの画面（1024×768 の iPad 横〜1920）で、手帖の手順の字を原画の釦と閉じる印の下に隠さない。作りながら見る頁の 1024×768 で「次の手順へ」を最初の画面に入れる。続けて、明日の工作で虎の作りながら見る頁を使うので、縦置きの 390×844 でも入れる（統括の足し）。字は変えない
@@ -2176,6 +2191,24 @@
 - エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-3d-json-reader.txt`。読む口を 4 通り崩す（貼った面のずらしを見ない・角の向きを逆にする・外形を見ない・段の数を見ない）と rc 1、崩さないと rc 0
 - 頁は変わらない（今の組の JSON は、虎 v6 の PR と御来迎 v14 の PR で置く。前の組の組み立ては変えない）
 
+## 虎の今の組 tora-v6 の作り方の 3D を、型紙エンジンの JSON で描く（Issue 対応の担当、issue/3d-tora-v6、11-07。3D の作り直しの 2 本目）
+
+- 目的: 組み立ての頁の立体を、虎の今の組（tora-v6）の形にする。前の組 tora-v4 の古い型（四角い首の穴・角のある箱・丸めた尾・片面の頭）でなく、刷る紙と同じ部品（丸い首の穴・角を落とした胴・立体の脚・両面の頭・上の面に立てる尾）で組む
+- なぜか: 本人の指示（11-07）「サイトの作り方の3Dは古い型のものだから、新しいのにしないと。」と、作り方の決定（11-07）「エンジンが JSON で出し、サイトは読んで描く」。作業の頁（カメラの映像に重ねる頁）も同じ段を読む
+- どうしたらいいか: 型紙エンジンの出力（e5c3da9 の python -m omochae.assembly3d --scenario examples/tora_v6.json）を data/kumitate/tora-v6.json に写し（下の v7 の節で tora-v7.json に替えた）、#500 の読む口で描く。エンジンに無い見せ方（道具の道・切れ端・重なる面のずらし）は、エンジンとの決めでサイトが決める（`assembly_json._fill`）。頁は、刷った紙と道具を机の面の層に置く（エンジンは紙を水平な机に置く。前の組の頁は x-y の面）。止まった形の口（`kumitate.still`）・作業の頁の口（`kumitate.scene`）・分解して見せる形（`window.kumitateSplit`）を足した。比べた案: サイトで今の組を組む（手元の枝で書き始めたが、決定に従って止めた）
+- 見た事: 12 段と文が 1 対 1。サイトが place と turns から組んだ面の行列は、JSON の面の行列と 0.001mm の内で同じ。首の帯と頭は、静かな時も揺れる間も、前の壁の丸い穴の縁の内を通る（頭の後ろの端は前の壁の 4mm 内まで入る）。見つけた事（エンジンへ知らせ、型紙の形の事と返った。直すかは決める人に聞いている）: 粘土の玉（3g・半径 7.4mm）を球と見ると、前の壁の外へ約 1.4mm 出る。頭の後ろの端と腕が 2mm 重なる
+- ゴールの要件: tests/test_tora_v6_3d.py（下の v7 の節で `tests/test_tora_v7_3d.py` に替えた）で、写しの照らし（形・寸法・紙の上の置き場・机の面）・段と文・できあがりの形（色の面が外・糊代が寝る・帯と頭が穴を通る・竹串が 2 つの穴を通る・脚の上の糊代が胴の底を向く・両面の頭・尾が立つ）・見せ方・頁（机の層・丸い切れ端・札の 4 行・still・scene・分解）・崩し、を見る
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-3d-tora-v6.txt`（この枝の前の #484 の頭 95d20b98 で rc 1。読む口が無いので入口で落ちる。条件ごとの落ち方は下の崩しで見た）。Green は `green-3d-tora-v6.txt`
+- エビデンスゲート: **済み**。180° で重なる 2 枚をずらさない・机の行列を単位にする・札の行を見ない・切れ端を落とさない、の 4 通りで `test_tora_v6_3d` が rc 1。組み立ての頁と止まった形の口を、ブラウザで開いて目で見た（切れ端の誤りを 1 つ見つけて直した）
+
+## 虎の作り方の 3D を v7 の JSON へ替える（Issue 対応の担当、issue/3d-tora-v6、11-07。#503 の載せ直し）
+
+- 目的: 上の節（虎 v6 の 3D）を、虎の今の組 tora-v7 の形にする。決定（11-07）でサイトの虎は v7 へ上げ、v6 は刷らずに飛ばす
+- なぜか: 型紙エンジンの v7 の検品で、揺れると粘土の玉と 5 重りの腕が前の壁に当たる所（v6 から）が見つかり、v7（エンジン main 43b8a1d）で直った。本人の決定（11-07）「虎の当たり2つは v7 で今直す。」。v6 の版のこの試験は、揺れる間は帯と頭が穴を通るかだけを見て、腕と玉の当たりを見落とした
+- どうしたらいいか: #484 の枝（v7 の写し・66f87300）を取り込み、置き場の JSON を `data/kumitate/tora-v7.json`（engine.commit 43b8a1d）に替え、試験を `tests/test_tora_v7_3d.py` に替えた。v6 で値を書いて残した所（玉が前の壁の外へ 1.4mm）を、揺れる間の当たりの確かめに替えた: できあがり・できあがりの動きの 4 形・竹串のまわりの ±10° を 0.5° ずつの 41 形で、腕と玉が前の壁の内、帯が丸い穴の縁の内、頭は穴の縁の内か壁の外に、どれも 0.5mm 以上の空き
+- 見た事: v7 では空きの最小が、腕 0.89・玉 0.63・帯と頭の穴の縁 2.34mm、頭は壁の外に 1.1mm（竹串のまわり ±10°。エンジンは静かな時の傾きのまわりで回し、腕 1.4・玉 1.0mm。どちらも床 0.5mm 以上）。頁で、首の帯が長くなり頭が前の壁から離れたのが見える
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-3d-tora-v7.txt`（#484 の頭 66f87300 で rc 1。読む口が無いので入口で落ちる）、Green は `green-3d-tora-v7.txt`
+- エビデンスゲート: **済み**。回す角を ±20° に広げる（−20° で腕と玉が壁の外へ約 3mm）・玉の半径を 0.2mm 大きくする（−10° で玉の空き 0.43mm）の 2 通りで `test_tora_v7_3d` が rc 1。玉をできあがりの形で 1mm 前へ寄せても落ちない（できあがりの形の空きは約 4mm あり、いちばん狭いのは回した形の端）
 ## 手帖から重ねる頁への道（UX の担当、ux/kasane-door、11-07。口の名は本人の決定）
 
 - 目的: 手帖から、作業の頁に重ねる形（/toy/<玩具>/kasane）へ行けるようにする
@@ -2190,6 +2223,12 @@
 - 別の目の止め（11-07）と直し: 道を説明の行の下（「はじめる」の上）に置くと、幅 320×568 で「はじめる」の下の端が 556px から 590px に下がり、大きいボタンが最初の画面の外へ 22px 出た（今の試験の大きさの一覧に 320 が無く、捕まえなかった）。道を「はじめる」の下へ移した。
   試験は test_hmd に、幅 320×568 と 375×667 の iframe で手帖の最初の画面を開き、「はじめる」が画面に入る・道は「はじめる」の下で重ならない・組み立ての無い玩具には道が無い、を測る形を足した。Red: 前の置き方の頭（1552c919）で rc 1（gate-evidence/red-kasane-door-320.txt。590 > 568）。Green: gate-evidence/green-kasane-door-320.txt
 
+## 作りながら見る頁で、次の手順の番号と字を画面の頭へ送る（型紙の次の組の担当、issue/115-tora-v6、11-07。#484 の止め）
+
+- 目的: 検品の担当が #484（虎 v7）で見つけた止め。作りながら見る頁の 320×568 で、虎 v7 の字の長い手順（手順 10 は 62 字・手順 12 は 41 字）の 9〜12 で、次の手順の番号と字が画面の上の外へ出た（-18px）
+- 原因: 字が長いと「次の手順へ」が画面の下へ出て、人は札まで送ってから押す。頁が下へ送られたままで次の手順を出すので、番号の行が画面の上の外にあった（v4 の同じ所は 11 字で起きなかった）
+- 何をしたか: 手順を出す時（show）に、番号の行の上の端が画面の上の外にあれば、番号の行を画面の頭へ送る。開いた時と、送らずに押した時は動かさない
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-tsukuru-scroll.txt`（直す前の頁で、虎 320×568 の手順 9〜12 が画面の外で rc 1）。Green は `green-tsukuru-scroll.txt`（test_landscape_fit・test_tsukuru・test_tsukuru_last_step が rc 0）
 ## デモの場面 4 を、刷った型紙だけを映す形にする（Issue 対応の担当、issue/demo-scene4-sheet-only、11-07。窓口の決定）
 
 - 目的: デモ動画の場面 4 で、手順の紙を刷らず映さない。家で刷る紙と動画の紙を同じ物（型紙だけ）にする

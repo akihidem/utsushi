@@ -263,6 +263,14 @@ for pg in (made_page, plain_page):
 
 # 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
 T = "NDL-1187053-R0000014-R"
+from omochae.templates import pivot_counterweight  # noqa: E402
+
+# 虎の今の組（tora-v7。v6 は刷らずに飛ばした）の 3D は、型紙エンジンの JSON で描く（形の確かめは test_tora_v7_3d）。サイトが自分で組む作りは、
+# 控えの組 tora-v4 に雛形を置いて前と同じに見る（今の組に上げても v4 の 3D が変わらない事も見る）
+from omochae import assembly_json  # noqa: E402
+
+assert pivot_counterweight.SHEET_SET == "tora-v7" and isinstance(assembly.assemble(T), assembly_json.Shown)
+pivot_counterweight.SHEET_SET = "tora-v4"
 tora = assembly.assemble(T)
 tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}
 tora_words = instructions.steps(tora_p, "pivot_counterweight")
@@ -281,8 +289,6 @@ found = [f.line() for f in tora.failures]
 assert any("手順 4" in x and "糊代の根元 4 か所" in x for x in found), found
 # 次の組（tora-v4）は胴を山折りにしたので、絵は箱の外に出る。前の組（谷折り）に戻すと内側に入る（検査が紙の線を見ている）
 assert not any("絵のある面が箱の内側に入る" in x for x in found), found
-from omochae.templates import pivot_counterweight  # noqa: E402
-
 _now = pivot_counterweight.SHEET_SET
 pivot_counterweight.SHEET_SET = pivot_counterweight.FROZEN_SET
 try:
@@ -312,4 +318,5 @@ assert arm.part.label == "5 重りの腕" and [t for _, _, t in drawn] == ["5 �
 from omochae.textfit import text_width  # noqa: E402
 assert all(float(x) + text_width(t, 2.8) <= arm.part.width + 1e-6 for x, _, t in drawn), ("札の字が腕の面からはみ出す", drawn)
 assert [float(y) for _, y, _ in drawn] == sorted(float(y) for _, y, _ in drawn), ("札の字が上から順に並ばない", drawn)
+pivot_counterweight.SHEET_SET = "tora-v7"
 print("ok")

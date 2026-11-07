@@ -2,7 +2,9 @@
 
 頭の支え方は仮説の違いなので描き分ける（docs/process/research/12）。寸法は手元の複写の図の比から出した。
 どの値も実物では未確認。Claude が変えてよいのは RANGES の名前の値だけ。
+この雛形の作りは前の組（tora-v3・tora-v4）の物。tora-v6 から後の組は、型紙エンジンの写し（_tora_v6）の作りで刷る（_by_set）。
 """
+import functools
 import math
 
 from shapely.geometry import LineString, Polygon
@@ -10,21 +12,48 @@ from shapely.geometry import LineString, Polygon
 from ..model import Failure, Part
 from ..textfit import text_width
 from ..pivot_model import center, paper_mass, period_s, rest_tilt_deg
+from . import _tora_v6
 
 ID = "pivot_counterweight"
 # 刷った組の版（U-31）。slider_fan.SHEET_SET と同じ意味。
 # 仮説を分ける寸法の名前（words・generate が、仮説の寸法にこれがあるかを見る）。
 HYP_KEY = "mount"
-SHEET_SET = "tora-v4"
-# 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。
+# tora-v5 と tora-v6 は刷らずに飛ばした（v5 は統括の読み 11-06。v6 は当たり 2 つを v7 で直したので、窓口の決定 2026-11-07 で飛ばした。
+# どちらもサイトでは誰にも刷っていない）
+SHEET_SET = "tora-v7"
+# 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。前の字（凡例・印の文・手順）で刷る最初の組
 FROZEN_SET = "tora-v3"
 # 紙を控えに残す前の組の並び（古い順。compose.kept_sets）。次の組に上げる時は、今の組をこの並びの後ろに足す（前の組の紙は変えない）
-KEPT_SETS = (FROZEN_SET,)
+KEPT_SETS = (FROZEN_SET, "tora-v4")
+# この番号から、作りを型紙エンジンの写し（_tora_v6。中身は今の組 tora-v7 の写し）に替える。前の組の作りはこの雛形に残す
+V6 = 6
 
 
 def frozen():
     return SHEET_SET == FROZEN_SET
 
+
+def set_no():
+    """刷る組の番号（tora-v6 なら 6）。組の境で作りを替える所が、名前の比べでなく番号の大小で見るため（次の組を足しても境が動かない）。"""
+    return int(SHEET_SET.rsplit("-v", 1)[1])
+
+
+def _by_set(fn):
+    """tora-v6 から後の組では、型紙エンジンの写し（_tora_v6）の同じ名の関数に渡す。前の組（v3・v4）はこの雛形の作りのまま。
+
+    関数ごとに替えるのは、v6 で胴の網と絵がほぼ全部変わったため（_tora_v6 の注）。替えた関数が呼ぶほかの関数も _tora_v6 の物になる。"""
+    @functools.wraps(fn)
+    def run(*args, **kwargs):
+        if set_no() >= V6:
+            return getattr(_tora_v6, fn.__name__)(*args, **kwargs)
+        return fn(*args, **kwargs)
+    return run
+
+
+# tora-v6 から（脚・角・顔の数）と tora-v7 から（粘土の下の穴を後ろへ・軸を前の壁から離す・当たりの検査）の寸法の既定。型紙エンジンと同じ
+NEXT_DEFAULTS = {"leg_height": 0, "body_round": 0, "head_sides": 1, "clay_back": 0, "axle_back": 6, "fit_check": 0}
+# 学ぶ人の考えの節に出さない寸法（web.think_sheet.shown）。当たりの検査の印は寸法でないので（窓口の決定 2026-11-07）
+UNSHOWN_PARAMS = ("fit_check",)
 
 DEFAULTS = {
     "mount": "neck",
@@ -33,6 +62,9 @@ DEFAULTS = {
     "opening": 18, "neck_length": 14, "strip_width": 10,
     "head_w": 26, "head_h": 24,
     "weight_g": 3.0, "weight_below_axle": 28, "weight_behind": 1,
+    # tora-v6 からの寸法（立体の脚の高さ・胴の上の角を落とす幅・頭の顔の数）。既定は形を変えない値（型紙エンジンと同じ）。
+    # 前の組（v3・v4）の作りはこの 3 つを読まないので、既定のほかの値は check_range が落とす（刷る紙に効かない寸法を通さない）
+    **NEXT_DEFAULTS,
     # 紙の面密度は見込み。実物の紙を量ったら置き換える。
     "paper_gsm": 150,
 }
@@ -42,6 +74,8 @@ RANGES = {
     "opening": (10, 30), "neck_length": (5, 30), "strip_width": (5, 20),
     "head_w": (15, 45), "head_h": (15, 45),
     "weight_g": (0.2, 15), "weight_below_axle": (-20, 60), "weight_behind": (-10, 40),
+    # 顔の数（head_sides）と当たりの検査（fit_check）は、連続の範囲でなく選ぶ値（型紙エンジンと同じ。_tora_v6 の HEAD_SIDES・FIT_CHECKS）
+    "leg_height": (0, 15), "body_round": (0, 10), "clay_back": (0, 10), "axle_back": (4, 20),
     "paper_gsm": (40, 400),
 }
 MOUNTS = ("neck", "hang")
@@ -57,20 +91,27 @@ TIGER, STRIPE, RIM, MOUTH, EYE = "#b1a37a", "#3c3424", "#8d7745", "#553c24", "#6
 TITLES = {"neck": "首を胴の穴に入れる", "hang": "頭を前に吊る"}
 
 
+@_by_set
 def title(p):
     return TITLES[p["mount"]]
 
 
+@_by_set
 def spec():
     return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "mount": MOUNTS}
 
 
+@_by_set
 def check_range(p):
     out = []
     for k, v in p.items():
         if k == "mount":
             if v not in MOUNTS:
                 out.append(Failure("F5.range", k, f"{v} は {MOUNTS} のどれでもない"))
+        elif k in NEXT_DEFAULTS:
+            # 前の組の作りはこの寸法を読まない。通すと、刷った紙と記録の寸法が食い違う（既定の値だけを通す）
+            if v != NEXT_DEFAULTS[k]:
+                out.append(Failure("F5.range", k, f"{v} は前の組（{SHEET_SET}）の作りでは使えない（tora-v6 からの寸法）"))
         elif k not in RANGES:
             out.append(Failure("F5.range", k, "知らない寸法の名前"))
         elif not isinstance(v, (int, float)) or isinstance(v, bool) or not RANGES[k][0] <= v <= RANGES[k][1]:
@@ -78,6 +119,7 @@ def check_range(p):
     return out
 
 
+@_by_set
 def mass_points(p):
     """揺れる部分の質量の点。紙の頭は重りより桁で軽い（research/12）。"""
     head_m = paper_mass(p["head_w"] * p["head_h"], p["paper_gsm"])
@@ -91,6 +133,7 @@ def mass_points(p):
     return [head, strip, (p["weight_g"], -p["weight_behind"], p["weight_below_axle"])]
 
 
+@_by_set
 def axle_to_head_top(p):
     return 8
 
@@ -108,11 +151,13 @@ LOWER_HOLE_MIN = 1.0 + THREAD_R + 2  # 下の穴を開ける weight_below_axle �
 AXLE_CLEAR = 2.0
 
 
+@_by_set
 def clay_r(g):
     """粘土の玉の半径 mm。"""
     return (3 * g / (4 * math.pi * CLAY_DENSITY)) ** (1 / 3)
 
 
+@_by_set
 def hang_thread_mm(p):
     """次の組の首の形で、下の穴から粘土の玉を糸で下げる時の、穴から玉の上までの長さの上限（整数 mm。糸そのものの長さではない。
     穴に通して結ぶ分と玉に結ぶ分は別に要る）。玉の下が胴の底から 3mm 以上離れる長さ。
@@ -126,11 +171,13 @@ def hang_thread_mm(p):
     return math.floor(room) if room >= HANG_MIN else None
 
 
+@_by_set
 def axle_z(p):
     """刷る穴の高さ（胴の底から）。吊る形では耳の穴が胴の上の縁から HOLE_MARGIN 下に決まり、axle_height は部品に効かない。"""
     return p["body_height"] - HOLE_MARGIN if p["mount"] == "hang" else p["axle_height"]
 
 
+@_by_set
 def check_physics(p):
     out = []
     H, ax = p["body_height"], axle_z(p)
@@ -302,6 +349,7 @@ def _head_part(p):
     return Part(2, "head", "頭", outline, label_xy=(w * 0.5, h * 0.6), label="2" if frozen() else "2 頭", art=art)
 
 
+@_by_set
 def parts(p):
     L, W, H, g = p["body_length"], p["body_width"], p["body_height"], p["glue"]
     e, eh = p["ear_length"], p["ear_height"]
@@ -375,6 +423,7 @@ def parts(p):
     return out
 
 
+@_by_set
 def place(by_key, page, top, gap):
     body = by_key["body"]
     body.x, body.y = page.x0, top
@@ -394,6 +443,7 @@ def place(by_key, page, top, gap):
     return y, page.x1 - x, x
 
 
+@_by_set
 def bom(p):
     paper = f"紙（厚さ 0.15mm 前後・{p['paper_gsm']}g/m² の見込み）"
     why = "家庭のプリンタで刷って作るため"
@@ -418,6 +468,7 @@ def _weight_material(p):
     return f"油粘土 {p['weight_g']:g}g" + (f"（糸で下げる時は、たこ糸も。玉の上は穴から {HANG_MIN}〜{L}mm）" if L is not None else "")
 
 
+@_by_set
 def materials(p):
     # 行の位置でなく key で引く。形によって部品表の行が増えるので、位置で引くと別の行を刷る。
     by = {r["key"]: r for r in bom(p)}
@@ -439,6 +490,7 @@ def materials(p):
             "丸い印は穴（竹串の先であける）。4 尾は外に見えるので色を刷り、3 首の帯と 5 重りの腕は胴の中に入るので白"]
 
 
+@_by_set
 def steps(p):
     out = ["刷った物差しに定規を当て、10cm か確かめる", "部品を実線で切る。胴の穴は竹串の先であける"]
     if p["mount"] == "neck":
@@ -487,11 +539,13 @@ def paper_results():
     return PAPER_RESULTS if SHEET_SET in TWO_BOX_SETS else RESULTS
 
 
+@_by_set
 def measures(p):
     """揺れるかの二択でなく、動き方を言葉か絵で予想する（U-25 の案 1）。動かした物は数でないので残す。"""
     return {"predict": "頭はどう動くと思いますか（言葉か絵で）", "rows": [[("動かした物（手・息・団扇）", 40)]]}
 
 
+@_by_set
 def diagram(x, y, w, h, p):
     s = min(w / (p["body_length"] + p["head_w"]), h / (p["body_height"] + 6))
     bx, by = x + p["head_w"] * s, y + 3

@@ -80,10 +80,11 @@ assert floors(loop.save_proposal({"record_ids": [r1], "hypothesis_id": "H-A", "c
 # 順位は扱わない（J-025）。混ざれば黙って捨てず落とす。次に試す仮説は実在する物だけ
 assert floors(loop.save_proposal({"record_ids": [r1], "ranking": [{"hypothesis_id": "H-D", "rank_after": 1, "why": "x"}]}, gs, "human")[1]) == {"F4.evidence"}
 assert floors(loop.save_proposal({"record_ids": [r1], "next_to_try": {"hypothesis_id": "H-Z", "why": "x", "what_to_measure": "y"}}, gs, "human")[1]) == {"F8.references"}
-# 虎: 周期の向き（重りを軸に近づけると短い）。遠ざける値は、粘土の玉の下が底に当たらない 31（36 は玉の大きさの床 F5.pivot でも落ちる。型紙エンジンと同じ床）
+# 虎: 周期の向き（重りを軸に近づけると短い）。遠ざける値は、粘土の玉の下が底に当たらない 21（虎の今の組 tora-v6 の寸法は軸の高さ 32・重りは軸の 20mm 下。
+# 22 から先は玉の大きさの床 F5.pivot でも落ちる。型紙エンジンと同じ床。前の組の寸法の時は 31 だった）
 tr = rec(T, "H-A", opener=None, opened_deg=None, ten_swings_sec=4.1, result="揺れた")
 assert loop.confirm_interpretation(tr, "確認者", {"human_text": "ゆっくりで見えにくい"}) == []
-assert floors(loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 31, "why": "x", "metric": "period_s", "direction": "decrease"}]}, ts, "human")[1]) == {"F7.revision"}
+assert floors(loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 21, "why": "x", "metric": "period_s", "direction": "decrease"}]}, ts, "human")[1]) == {"F7.revision"}
 tp, fs = loop.save_proposal({"record_ids": [tr], "hypothesis_id": "H-A", "changes": [{"param": "weight_below_axle", "to": 18, "why": "速くする", "metric": "period_s", "direction": "decrease"}]}, ts, "human")
 assert not fs
 # エージェント: 前例を引き、床で直し、案を出す。落ちた案は直させる
