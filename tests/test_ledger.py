@@ -12,8 +12,8 @@ tmp = pathlib.Path(tempfile.mkdtemp()) / "r"
 shutil.copytree(ledger.ROOT / "docs", tmp / "docs")
 for f in ("README.md", "CLAUDE.md", "run.sh"):
     shutil.copy(ledger.ROOT / f, tmp / f)
-# 機能の根拠のパスは .claude の工房の部品も指すので一緒に写す。
-for sub in ("src", "tests", "data/hypotheses", ".claude"):
+# 機能の根拠のパスは .claude の工房の部品も指すので一緒に写す。作り方の 3D の JSON（data/kumitate）も機能の根拠に挙がるので写す
+for sub in ("src", "tests", "data/hypotheses", "data/kumitate", ".claude"):
     shutil.copytree(ledger.ROOT / sub, tmp / sub, ignore=shutil.ignore_patterns("__pycache__"))
 ledger.ROOT = tmp
 assert ledger.check() == []
