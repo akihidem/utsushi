@@ -117,8 +117,12 @@ svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.k
    JS が無い時は手順が全部並び --tx も無いので当てない（.js だけ） */
 @media (orientation:portrait){
  .js .tehon .sheet{max-height:min(52vh,max(120px,calc(100vh - 326px - var(--tx,0px))));max-height:min(52svh,max(120px,calc(100svh - 326px - var(--tx,0px))))}
- /* 3D の下には「だいたいの絵です」の断り（kumitate.NOTE_SHAPE）が 2 行ほど付くので、その分（56px）を引く。断りは落とさない（形の正しさを言わない線） */
- .js .tehon .k3d .rt-stage{height:min(52vh,max(120px,calc(100vh - 382px - var(--tx,0px))));height:min(52svh,max(120px,calc(100svh - 382px - var(--tx,0px))))}
+ /* 縦置きでは、3D の下の「だいたいの絵です」の断り（kumitate.NOTE_SHAPE）を 3D の舞台の下の端に重ねて置き、高さを取らない。
+    前は舞台の下に 2 行ほど付き、幅 320×568 で「次の手順へ」が最初の画面の外に出る手順が main の絵の時より増えた（別の系統の検品が数えた:
+    御来迎は 18 手順のうち 6 → 12、虎は 12 手順のうち 3 → 10）。断りは落とさない（形の正しさを言わない線）。高さの上限は手順の紙の絵と同じ 326px の引き方に戻す */
+ .k3d .kumitate{position:relative}
+ .k3d .meta{position:absolute;left:1px;right:1px;bottom:1px;margin:0;padding:3px 8px;font-size:12px;line-height:1.4;background:color-mix(in srgb,var(--paper,#fbf9f4) 86%,transparent)}
+ .js .tehon .k3d .rt-stage{height:min(52vh,max(120px,calc(100vh - 326px - var(--tx,0px))));height:min(52svh,max(120px,calc(100svh - 326px - var(--tx,0px))))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 """
