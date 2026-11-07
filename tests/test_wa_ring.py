@@ -70,6 +70,15 @@ try:
 finally:
     tiger.SHEET_SET = now
 assert hypotheses.paper_label(td, 1) == f"版 {hypotheses.set_number(td)}"
+# 玩具の頁の 3D の机の上の紙の題も、刷る紙と同じ組の番号（窓口の決定 (a)「紙の題と窓の札も組の番号に」。前は compose の既定の題で「版 1」が残った）。
+# 題の形（玩具の名 型紙（雛形の呼び名））は替えない（長くすると部品の配置が動き、型紙エンジンの 3D の JSON と合わなくなる）
+from omochae import assembly  # noqa: E402
+
+for sid in (G, T):
+    bench = assembly.assemble(sid)
+    titles = [t.text for t in bench.paper["texts"] if "型紙（" in (getattr(t, "text", None) or "")]
+    n = hypotheses.set_number(hypotheses.load(sid))
+    assert titles and titles[0].endswith(f"）版 {n}"), (sid, titles[:1])
 # 組の名前に -v<数> が無い雛形は 1
 keep_cs = hypotheses.current_set
 hypotheses.current_set = lambda data: "plain"
