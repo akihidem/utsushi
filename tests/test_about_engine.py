@@ -66,6 +66,10 @@ assert "教育分野" in head and "理科" in head and "博物館" in head and "
 # これからの思いの言い方（「したいと考えています」「していきたい」）に戻さない
 for text in (about.POSITION, head):
     assert "みんなが使えるサービスとして作りました" in text and "したいと考えて" not in text and "していきたい" not in text, text[:80]
+# 位置づけの 3 文目: 見方は作った人の物・体験はだれにでも（本人の構成の押さえ 11-07、窓口の決めの案 2）。前の 2 文の後ろに足す
+assert about.POSITION.startswith("うつしは、みんなが使えるサービスとして作りました。学校の理科の授業や研究、博物館など、教育の場で使う事を考えて始めた物です。"), "前の 2 文を替えない"
+assert about.POSITION.endswith("もとにある見方は作った人だけの物ですが、紙で作って確かめる体験そのものは、だれにでもしてほしい事です。"), "見方と体験の言い分け"
+assert "もとにある見方は作った人だけの物ですが、紙で作って確かめる体験そのものは、誰にでもしてほしい事です（本人の言葉 11-07 から）。" in head, "README も同じ言い分け"
 # 5. 3 文目は言い切らない
 assert "（ぶつかりそうな所は、人が見るために書き残します）" in about.ENGINE_STEPS[2], about.ENGINE_STEPS[2]
 
