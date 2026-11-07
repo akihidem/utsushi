@@ -62,4 +62,31 @@ bad = [k for k, v in vals.items() if re.search(r"[A-Za-z]'[A-Za-z]", v)]
 assert not bad, ("語の中の ' が残る", bad[:5])
 bad = [sid for sid, o in names.items() if re.search(r"[A-Za-z]'[A-Za-z]", o.get("name", "") + o.get("intro", ""))]
 assert not bad, ("toys.json の語の中の ' が残る", bad[:5])
-print("ok 英語の言葉の決め: make と craft・用語の対応・玩具の名が 1 つ・引用符")
+# 5. 本人の言葉と独立した引用の英訳でも、仮説は guess・工夫は what you changed（窓口の決め 11-08「仮説は guess・工夫は what you changed にそろえる」）。
+#    字の意味は替えない。英訳の部分（引用の形なら原文の後）だけを見る
+def english(k, v):
+    return v[len(k):] if v.startswith(k) else v
+
+
+# 見るのは本人の言葉と決めの記録（鍵に「本人」）と独立した引用（原文＋英訳）。「」で語を引くだけの頁の字（釦の名・語の名）は 2 で見ている
+for k, v in table.items():
+    if v == "=" or not ("本人" in k or v.startswith(k)):
+        continue
+    e = english(k, v)
+    if "仮説" in k:
+        assert "guess" in e.lower() and not re.search(r"\b[Ii]dea [A-Z]\b", e), ("本人の言葉の英訳でも仮説は guess", k)
+    if "工夫" in k:
+        assert not re.search(r"\btweak", e, re.I), ("本人の言葉の英訳でも工夫は what you changed", k)
+
+# 6. 版の番号: 鍵の v{n} の組と、英語（引用の形なら英訳の部分）の v{n} の組が同じ（窓口の決め 11-08「版番号の取り違えは直す」）。
+#    英訳が別の版を言うと、どの紙の事かを取り違えるため（前に「撮影は v{3} のまま」が v{0} と訳されていた）
+VER = re.compile(r"v\{\d+\}")
+for k, v in table.items():
+    if v == "=" or not VER.search(k):
+        continue
+    assert set(VER.findall(k)) == set(VER.findall(english(k, v))), ("版の番号が鍵と英語で違う", k, english(k, v))
+
+# 7. 11 月のワークショップは 4 日（11-04〜07）あるので複数（窓口の決め 11-08「ワークショップの英語は複数形 workshops」）
+bad = [k for k, v in table.items() if re.search(r"\bNovember workshop\b(?!s)", v)]
+assert not bad, ("11 月のワークショップは workshops", bad[:5])
+print("ok 英語の言葉の決め: make と craft・用語の対応・玩具の名が 1 つ・引用符・本人の言葉の英訳の用語・版の番号・workshops")

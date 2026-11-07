@@ -9,3 +9,4 @@
 - エビデンスゲート: test_en・test_en_all・test_sakurei_gallery・test_reader_words・test_easy_all・test_ledger が rc 0。./run.sh は前の基点（80b1395f）で 272 本のうち 271 本が期待どおりで、test_easy_ruby だけが機械の負荷で時間切れ（300 秒・負荷の平均 22）。単独で回すと rc 0（268 秒）。test_sakurei_gallery は、今の main の表と試験のままでも落ちる（日ごとの見出し・この PR の外）
 - 照らし: 本人の決めの行と 1 件ずつ照らした表は PR の本文
 - マージ後の書き戻し: Issue は立てていない（新しい Issue は提出を止める物だけ）
+- 窓口の決め（11-08）を当てた: 本人の言葉の英訳の版の番号の取り違えを直す（「撮影は v{3} のまま」が v{0} と訳されていた）・本人の言葉と決めの記録の英訳でも仮説は guess（Idea A・C → Guess A・C、both ideas → both guesses。字の意味は替えない）・11 月のワークショップは複数 workshops（11-04〜07 の 4 日）。決めの記録の英訳の steps sheet も instruction sheet にした（用語の対応・本人の決め 380）。tests/test_en_terms.py に 3 つの確かめを足した（本人の言葉の英訳の用語・鍵と英語の版の番号の組・workshops）。Red は 1 つずつ: 前の頭の表で rc 1（gate-evidence/red-en-terms-owner.txt）、版の番号だけ前に戻すと rc 1（red-en-terms-version.txt）、workshops だけ前に戻すと rc 1（red-en-terms-workshops.txt）。Green rc 0（green-en-terms-3.txt）
