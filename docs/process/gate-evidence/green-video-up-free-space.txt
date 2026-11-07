@@ -1,0 +1,5 @@
+# 命令: for i in $(seq 1 20); do PYTHONPATH=src .venv/bin/python tests/test_video_up.py; echo $?; done
+# commit: 62dd1119 にこの枝の直しを当てた木（回した機械の / の空きは 39G のまま。受け口の空きの床 40GB を切っている）
+rc（20 回）: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+20 回とも最後の行は「ok: 動画の受け口」。rc 1 は 0 回
+rc=0
