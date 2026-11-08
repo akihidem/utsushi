@@ -15,12 +15,16 @@
   選んだら約束の印（手帖と同じ字）を押さないと確かめへ進まない（気づき 7）。
 - **台本が動かない画面**: 確かめの画面は台本のある画面だけ。noscript の中に、写真なしで記録を残す素のフォーム（POST /toy/<印>/record・
   結果と感想・隠した欄に紙と back=techo）を置く。台本が無いので who は付かず、話した字は記録に結ばれない（統括の決め・ここに断る）（止め 4・B3）。
-- 話す口（声の字）は、声とカメラの区切りの PR で、ここの工夫の欄に足す（この PR は字の欄だけ。キーボードのマイクは今も使える）。
+- **声とカメラの区切り**（本人 11-08 330・412・415・「公開デモでも声も録る。」・設計 voice-camera-send の 3 版）: 工夫の欄に話す口（hanasu の「話す」の
+  形をそのまま使う・押して話した間の声を録る）を置く。確かめの画面に、この画面へ渡された区切り（web.clips の list）とこの頁で録った区切りを並べ、
+  1 つずつ「外す」。承認で記録ができた後、写真の前に、区切りを 1 つずつ /record/<番号>/media へ送る（見出し X-Utsushi-Clip に t か k。
+  カメラの区切りは、どの手順で押したかを X-Utsushi-Step、どの釦かを X-Utsushi-Button に添える。サーバが区切りの読みの手がかりにする）。
+  送れた物から端末の置き場で消し、承認の終わりに置き場と渡す印を消す。
 - 新しい字（本人の確かめ待ち）: RESULT_HEAD・CHECK_HEAD・APPROVE・FIX・PICK・NOSCRIPT。見出しは前からある のこすへの道の字（toy.KIROKU_TO_NOKOSU）。
 """
 from omochae import talk_log
 
-from . import hanasu, naoru
+from . import clips, hanasu, naoru
 from .skin import esc
 
 RESULT_HEAD = "どうだった？"
@@ -31,7 +35,8 @@ APPROVE = "承認"
 FIX = "直す"
 PICK = "どうだったかを 1 つ えらんでください"
 NOSCRIPT = "この画面では写真と動画は上げられません。"
-PROMISE = "大人の手元だけ・顔なし・声なし"  # 手帖の約束の印と同じ字（techo_step。声を送る作りの PR で「声なし」を外す）
+# 手帖の約束の印と同じ字（techo_step）。前の「・声なし」は、声を録って送る作り（本人 11-08 415）と食い違うので外した。声の断りは話す口の 1 行で。本人の確かめ待ち
+PROMISE = "大人の手元だけ・顔なし"
 
 STYLE = """
 .nokosu .nk-results{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
@@ -40,6 +45,13 @@ STYLE = """
 .nokosu textarea{display:block;width:100%;min-height:64px;margin:4px 0 12px;font:inherit}
 .nokosu .nk-thumbs img{width:72px;height:72px;object-fit:cover;margin:4px 4px 0 0}
 .nokosu .nk-check .call{outline:2px solid var(--accent, #b33)}
+/* 工夫の欄の話す釦（hanasu の台本が動かす）。音声認識の口が在ると分かった印が付いた時だけ出す（hanasu の .hanasu-mic と同じ決まり） */
+.nokosu .hanasu-mic{display:none;min-height:44px;padding:6px 16px;margin:0 0 8px}
+.hanasu-local .nokosu .hanasu-mic,.hanasu-browser .nokosu .hanasu-mic{display:inline-block}
+.nokosu .hanasu-how{display:none}
+.hanasu-local .nokosu .hanasu-how.is-local,.hanasu-browser .nokosu .hanasu-how.is-browser{display:inline}
+.nokosu .nk-clips li{margin:4px 0}
+.nokosu .nk-clips video{width:96px;height:72px;object-fit:cover;vertical-align:middle;margin-right:6px}
 """
 
 SCRIPT = """<script>(()=>{
@@ -60,6 +72,33 @@ const result = () => (f.querySelector('input[name=result]:checked') || {}).value
 const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: new URLSearchParams({ ...data, who: sessionStorage.getItem('utsushi-who') || '' }) });
 // 「のこす」: 何も送らず、確かめの画面に替える（402）
+// 区切りの並び（web.clips）。頁を開いた時に、渡す印の違う物を消す（list が消す）。確かめの画面を出す時に、この頁で録った物も入れる
+let clipsNow = [];
+const showClips = async () => {
+  const box = $('nk-c-clips'); if (!window.utsushiClips || !box) return;
+  await utsushiClips.adopt(sid); clipsNow = await utsushiClips.list(sid);
+  const ul = box.querySelector('ul'); ul.textContent = ''; box.hidden = !clipsNow.length;
+  clipsNow.forEach((c) => {
+    const li = document.createElement('li');
+    if (c.kind === 'k') { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'metadata'; v.src = URL.createObjectURL(c.blob); li.appendChild(v); }
+    li.appendChild(document.createTextNode(`${c.kind === 'k' ? 'カメラ' : '声'} ${Math.max(1, Math.round((c.ms || 0) / 1000))} 秒 `));
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = '__REMOVE__';
+    b.onclick = async () => { await utsushiClips.remove(c.id); showClips(); };
+    li.appendChild(b); ul.appendChild(li);
+  });
+};
+addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.list(sid).catch(() => {}); });
+// 区切りを 1 つずつ送る（記録ができた後・写真の前）。見出しで、声（t）かカメラ（k）かと、カメラの区切りの手順と釦を添える。送れた物から置き場で消す
+const sendClips = async (id) => {
+  let bad = false;
+  for (const c of clipsNow) {
+    const h = { 'Content-Type': c.type || 'application/octet-stream', 'X-Utsushi-Clip': c.kind };
+    if (c.kind === 'k') { if (/^[0-9]+$/.test(String(c.step))) h['X-Utsushi-Step'] = String(c.step); if (c.button) h['X-Utsushi-Button'] = c.button; }
+    const m = await fetch(`/record/${id}/media`, { method: 'POST', headers: h, body: c.blob });
+    if (m.ok) await utsushiClips.remove(c.id); else bad = true;
+  }
+  return bad;
+};
 f.onsubmit = (e) => {
   e.preventDefault();
   if (!result()) { st.textContent = '__PICK__'; return; }
@@ -72,7 +111,7 @@ f.onsubmit = (e) => {
     if (x.type.startsWith('image/')) { const i = document.createElement('img'); i.src = URL.createObjectURL(x); i.alt = x.name; th.appendChild(i); }
     else { const s = document.createElement('span'); s.textContent = x.name; th.appendChild(s); }
   });
-  st.textContent = ''; f.hidden = true; chk.hidden = false; chk.scrollIntoView();
+  st.textContent = ''; f.hidden = true; chk.hidden = false; chk.scrollIntoView(); showClips();
 };
 $('nk-fix').onclick = () => { chk.hidden = true; f.hidden = false; };
 const sendFiles = async (id, list) => {
@@ -100,7 +139,11 @@ go.onclick = async () => {
     saved = true;
     if (window.utsushiNewWho) window.utsushiNewWho();
     f.reset(); chosen = []; showPicked();
+    const clipBad = window.utsushiClips && clipsNow.length ? await sendClips(j.id) : false;
     done = list.length ? await sendFiles(j.id, list) : '記録を残しました';
+    // 区切りを送れなかった時は、サーバの断りの字を出さず（本人の確かめていない字のため）、決めた 1 行だけを出す。写真は送り続ける
+    if (clipBad) done = '__CLIP_FAIL__';
+    if (window.utsushiClips) await utsushiClips.clear();
   } catch (err) {
     if (!saved) { cs.textContent = '送れませんでした。つながりを見て、もう一度押してください'; return; }
     done = '記録は残しました。写真か動画を送れませんでした';
@@ -124,7 +167,12 @@ def entry(sid, paper, results):
     limits = f"{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで"
     form = (f'<form id="nk" hidden data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-total="{total}" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}">'
             f'<fieldset style="border:0;padding:0;margin:0"><legend>{esc(RESULT_HEAD)}</legend><div class="nk-results">{radios}</div></fieldset>'
-            f'<label for="nk-kufu">{esc(hanasu.KUFU_HEAD)}</label><textarea id="nk-kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(kufu["hint"])}"></textarea>'
+            # 工夫の欄は話す口の形（data-hanasu の中の textarea と .hanasu-mic と .hanasu-note。hanasu の台本が字を欄に足し、押して話した間の声を録る）。
+            # 送るのは承認の時だけ（hanasu の「残す」のフォームは置かないので、hanasu の submit は動かない）
+            f'<div data-hanasu data-sid="{esc(sid)}" data-scene="craft" data-voice="{hanasu.mode()}"><label for="nk-kufu">{esc(hanasu.KUFU_HEAD)}</label>'
+            f'<textarea id="nk-kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(kufu["hint"])}"></textarea>'
+            '<button type="button" class="hanasu-mic" aria-pressed="false">話す</button><p class="meta hanasu-note" aria-live="polite"></p>'
+            f'<p class="meta"><span class="hanasu-how is-local">{esc(hanasu.HOW_LOCAL)}</span><span class="hanasu-how is-browser">{esc(hanasu.HOW_BROWSER)}</span> {clips.notes()}</p></div>'
             f'<label for="nk-impression">{esc(IMPRESSION_HEAD)}</label><textarea id="nk-impression" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(naoru.KEEP_HINT)}"></textarea>'
             f'<label for="nk-files">{esc(MEDIA_HEAD)}（{esc(limits)}）</label>'
             '<input type="file" id="nk-files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple>'
@@ -140,6 +188,7 @@ def entry(sid, paper, results):
              f'<p class="meta">{esc(hanasu.KUFU_HEAD)}</p><p id="nk-c-kufu"></p>'
              f'<p class="meta">{esc(IMPRESSION_HEAD)}</p><p id="nk-c-impression"></p>'
              '<div class="nk-thumbs" id="nk-c-thumbs"></div>'
+             f'<div class="nk-clips" id="nk-c-clips" hidden><p class="meta">{esc(clips.HEAD)}</p><ul></ul><p class="meta">{esc(clips.STORE)}</p></div>'
              f'<p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}'
              + (f'<p>{esc(naoru.LINES[0])}</p>' if naoru.LINES else "") +
              f'<p><button type="button" class="go" id="nk-go">{esc(APPROVE)}</button> <button type="button" id="nk-fix">{esc(FIX)}</button></p>'
@@ -151,7 +200,7 @@ def entry(sid, paper, results):
              f'<label>{esc(IMPRESSION_HEAD)}<textarea name="impression" maxlength="{talk_log.MAX_TEXT}"></textarea></label>'
              f'<p class="meta">{esc(NOSCRIPT)}</p><p><button type="submit">のこす</button></p></form></noscript>')
     return (f'<section class="panel nokosu" id="kinyu" aria-label="のこす"><h2>{esc(toy.KIROKU_TO_NOKOSU)}</h2>{form}{check}{plain}</section>'
-            + SCRIPT.replace("__PICK__", PICK.replace("'", "\\'")))
+            + SCRIPT.replace("__PICK__", PICK.replace("'", "\\'")).replace("__REMOVE__", clips.REMOVE).replace("__CLIP_FAIL__", clips.CLIP_FAIL))
 
 
 def no_paper(sid):

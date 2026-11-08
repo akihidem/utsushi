@@ -87,7 +87,7 @@ code, body = opened("POST", f"/record/{rid}/media", jpeg, up_media)
 assert code == 201 and body == "m1.jpg", (code, body)
 techo = opened("GET", f"/toy/{G}/techo")[1]
 assert 'id="files" disabled' not in techo and "公開のデモでは、写真と動画は上げられません" not in techo
-assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" in techo and "大人の手元だけ・顔なし・声なし" in techo
+assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" in techo and "大人の手元だけ・顔なし</label>" in techo
 # 上げた本人の画面には出す（受け取りを確かめられるように。手帖の記録の頁と絵の道）
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
 assert f"/record/{rid}/media/m1.jpg" in opened("GET", f"/toy/{G}/techo/kiroku")[1]

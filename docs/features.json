@@ -948,5 +948,22 @@
    "tests/test_naoru.py"
   ],
   "unverified": "新しい字（どうだった？・感想・写真と動画・これで のこしますか・承認・直す・どうだったかを 1 つ えらんでください・この画面では写真と動画は上げられません。）は本人の確かめ待ち。話す口（声の字）は声とカメラの区切りの PR で工夫の欄に足す。幅 390 の Chromium で記入 → のこす → 確かめ → 承認 → もちよる を通した（工夫の字が記録に結ばれた）。実機の iPhone と写真を選ぶ所は人の手で試していない"
+ },
+ {
+  "id": "f83",
+  "name": "声とカメラの区切りを押した時だけ録り、端末の中に置き、のこすの承認で送る（端末の側。本人 11-08 330・412・415・「公開デモでも声も録る。」・窓口の決め A2・承認の時に・それぞれ 5 つまで）",
+  "status": "doing",
+  "evidence": [
+   "src/web/clips.py",
+   "src/web/hmd.py",
+   "src/web/hanasu.py",
+   "src/web/nokosu.py",
+   "tests/test_clips_client.py",
+   "tests/test_hmd.py",
+   "tests/test_hanasu.py",
+   "tests/test_tsukuru.py",
+   "tests/test_otona.py"
+  ],
+  "unverified": "受け口の分かれ（見出し X-Utsushi-Clip）・区切りの読み・進め役の命令はサーバの側の PR で、まだ main に無い（この PR はその後に入れる）。実機の iPhone で、音声認識とマイクを同時に取れるか・IndexedDB の残り方・Safari の MediaRecorder が mp4 を出すかは確かめていない（本人か進め役の端末で）。新しい字と替えた字は本人の確かめ待ち"
  }
 ]

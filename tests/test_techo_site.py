@@ -65,7 +65,7 @@ assert req(f"/toy/{G}/ask-json", {"hypothesis": "H-B", "question": "谷折りっ
 form = page.split('<form id="up-form"', 1)[1].split("</form>", 1)[0]
 assert "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form and f'data-max-bytes="{MAX_MEDIA}"' in form
 assert 'id="picked"' in form and 'id="thumbs"' in form
-assert 'id="keep"' in form and "<span>のこす</span>" in form and "大人の手元だけ・顔なし・声なし" in form
+assert 'id="keep"' in form and "<span>のこす</span>" in form and "大人の手元だけ・顔なし</label>" in form
 # 上げる: 記録を作り、その R-番号に写真を添える。撮影情報（APP1）を外し、型と大きさと出所を見る
 code, body = req(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "わからない"})
 rid = json.loads(body)["id"]

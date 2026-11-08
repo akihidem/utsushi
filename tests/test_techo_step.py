@@ -301,7 +301,7 @@ assert hanasu.HOW_LOCAL in note and hanasu.HOW_BROWSER in note and making_log.AS
 
 # ---- 写真の決まりは前のまま: 手元だけの確かめ・数と大きさの決まり・内側のカメラを求めない
 form = page.split('<form id="up-form"', 1)[1].split("</form>", 1)[0]
-assert "大人の手元だけ・顔なし・声なし" in form and "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form
+assert "大人の手元だけ・顔なし</label>" in form and "声なし" not in form and "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form
 assert 'capture="environment"' in form and "video/mp4" in form, "とっては外のカメラ（顔を写さない）。動画が撮れる"
 # 聞いた字は畳みを開いて見せる（字は本人が見てから残す。隠したまま送らない）。床に落ちた時も開く
 assert js.count("fold.open = true") == 2

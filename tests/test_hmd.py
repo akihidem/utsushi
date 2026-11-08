@@ -65,7 +65,21 @@ assert "window.kumitateParts={F,T,play,rest,stop," in kumitate.SCRIPT and "windo
 assert "rest(B)}beat(j+1,seq.length)" in kumitate.SCRIPT, "終わりの知らせは、形を置き終えた後に出す"
 # カメラに重ねる頁。後ろのカメラ、映像は機械の中だけ（作りながら見る頁と同じ約束の字）
 cam = hmd.page(G, cam=True)
-assert '<video id="hmd-cam" playsinline muted autoplay></video>' in cam and 'id="hmd-camera"' in cam and hmd.PRIVACY in cam
+assert '<video id="hmd-cam" playsinline muted autoplay></video>' in cam and 'id="hmd-camera"' in cam and hmd.CAM_NOTE in cam
+# カメラの区切り（本人 11-08 415・窓口の決め A2・web.clips）: 「ここで止まった」はカメラの頁だけで、カメラを出している間だけ見える。
+# 録るのは置き場の camClip で、呼ぶのはその釦を押した所の 1 か所だけ（カメラを出しただけでは録らない）。録る code（MediaRecorder）は置き場の台本だけが持つ
+from web import clips  # noqa: E402
+
+assert f'<button type="button" id="hmd-stuck">{hmd.STUCK}</button>' in cam and "body:not(.cam-on) #hmd-stuck{display:none}" in hmd.STYLE
+assert 'id="hmd-stuck"' not in hmd.page(G), "HMD の頁（カメラなし）には出さない"
+assert hmd.SCRIPT.count("utsushiClips.camClip(") == 1
+stuck = hmd.SCRIPT[hmd.SCRIPT.index("if(stuck)stuck.addEventListener('click'"):]
+assert stuck.index("if(!tracks||!window.utsushiClips") < stuck.index("utsushiClips.camClip(cam.srcObject,"), "カメラを出していない時は録らない"
+on_part = hmd.SCRIPT[hmd.SCRIPT.index("camBtn.addEventListener('click'"):]
+assert "camClip" not in on_part.split("addEventListener('pagehide',off)")[0], "カメラを出しただけでは録らない"
+assert cam.count(clips.assets()) == 1 and clips.assets() not in hmd.page(G)
+assert cam.replace(clips.assets(), "").count("MediaRecorder") == 0, "録る code は置き場の台本だけ"
+assert clips.FIRST in cam and clips.STORE in cam and f'href="/toy/{G}/techo/kiroku"' in cam, "録る時の 2 行と、渡す のこす の道"
 assert "facingMode:{ideal:'environment'}" in hmd.SCRIPT and "audio:false" in hmd.SCRIPT and "addEventListener('pagehide',off)" in hmd.SCRIPT
 assert '<video' not in hmd.page(G), "カメラは重ねる頁だけ"
 assert not hmd.available("NDL-1187053-R0000004-L"), "組み立ての書き方が無い玩具は出さない"

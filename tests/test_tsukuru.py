@@ -102,8 +102,13 @@ assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止�
 # 刷っていない紙は h で指しても開かない
 assert get(f"/toy/{G}/tsukuru?h=H-B")[0] == 303 and 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]
 # 映像は端末の中だけ: 画素を取り出す・録る・送る JS が無い。送るのは聞く口と札と話す口（どれも字のフォームの欄）だけ
+# 話す口の声の区切り（本人 11-08 415）は置き場の台本（web.clips）が録る。その台本は頁に 1 回で、外へ送らない。この頁の台本の分は今の線のまま
+from web import clips  # noqa: E402
+
+assert t.count(clips.assets()) == 1
+own = t.replace(clips.assets(), "")
 for w in ("canvas", "toBlob", "toDataURL", "MediaRecorder", "captureStream", "ImageCapture", "WebSocket", "sendBeacon", "XMLHttpRequest", "IntersectionObserver"):
-    assert w not in t, w
+    assert w not in own, w
 assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 3
 # 3 つ目は話す口（Issue #279）。送り先は部品のフォームの action（/toy/<印>/talk）で、形は字のフォームだけ
 assert t.count("fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}") == 1 and f'<form method="post" action="/toy/{G}/talk">' in t
@@ -161,8 +166,10 @@ assert "b.set('who',who)" in t and "sessionStorage.getItem('utsushi-who')" in t 
 # 印は cookie にしない・長く持たない（タブの sessionStorage だけ）
 assert "document.cookie" not in t and "localStorage" not in t
 # 声は字にして送るだけ: 録る code・マイクを開く code が無い。鏡のカメラは 1 か所で audio:false のまま
-assert ("SpeechRecognition" in t and "audio:true" not in t and "audio: true" not in t and "MediaRecorder" not in t
-        and t.count("getUserMedia(") == 1 and "getUserMedia({video:{facingMode:'user'},audio:false})" in t)
+assert ("SpeechRecognition" in own and "audio:true" not in own and "audio: true" not in own and "MediaRecorder" not in own
+        and own.count("getUserMedia(") == 1 and "getUserMedia({video:{facingMode:'user'},audio:false})" in own)
+# 置き場の台本の声のマイクは、voiceStart の中の 1 か所だけ（鏡のカメラは録らない）
+assert clips.SCRIPT.count("getUserMedia(") == 1 and "const voiceStart=async(meta)=>{" in clips.SCRIPT and clips.SCRIPT.index("const voiceStart") < clips.SCRIPT.index("getUserMedia({audio:true})") < clips.SCRIPT.index("const voiceStop")
 assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 3
 # 3 つ目は話す口（Issue #279）。送り先は部品のフォームの action（/toy/<印>/talk）で、形は字のフォームだけ
 assert t.count("fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}") == 1 and f'<form method="post" action="/toy/{G}/talk">' in t
