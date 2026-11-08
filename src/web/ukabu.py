@@ -187,8 +187,39 @@ UKABU = """
 """
 
 
+# 字に重ならない置き直し（本人の言葉 11-08「iPadで横表示で見たら文字が重なってる。PC、iPhoneなどいろんな大きさで見ても崩れないようにして。」）。
+# CSS の置き場（UKABU の vw・vh）は画面の形で余白が替わり、英語の横書きの頁の幅 1024〜1440 で英字と副題に、幅 375・390 で下へ送る印に重なった。
+# 決まった位置の表を増やすと、表に無い大きさでまた重なるので、頁が開いた後に、題の間の字の行と押す所の箱を実際に測って置き直す:
+# - まず CSS の位置のまま。字・押す所と重ならなければ動かさない（今の見た目を保つ）
+# - 重なる時は、題の間の中で、CSS の位置にいちばん近い重ならない所へ動かす（16px の目で探す）。揺れ（上下 12px・傾き）の分の間をとる
+# - どこにも入らない時は、その玩具だけ出さない（飾りなので、字を隠すより出さない方を採る）
+# - 絵が読めた時・字の形が決まった時（document.fonts）・画面の大きさが替わった時に置き直す。読み上げと押す所には今までどおり関わらない
+PLACE_JS = """<script>(()=>{const hall=document.getElementById('hall'),layer=hall&&hall.querySelector('.ukabu');if(!layer)return;
+const toys=[...layer.querySelectorAll('.uk')],GAP=12,SWAY=14,STEP=16;
+const boxes=(H)=>{const out=[],tw=document.createTreeWalker(hall,NodeFilter.SHOW_TEXT);let n;
+ while(n=tw.nextNode()){if(!n.textContent.trim()||n.parentElement.closest('.ukabu'))continue;const st=getComputedStyle(n.parentElement);if(st.display==='none'||st.visibility==='hidden')continue;
+  const r=document.createRange();r.selectNodeContents(n);for(const b of r.getClientRects())if(b.width>0)out.push(b)}
+ for(const e of hall.querySelectorAll('a,button'))if(!e.closest('.ukabu')){const b=e.getBoundingClientRect();if(b.width>0)out.push(b)}
+ return out.map(b=>({l:b.left-H.left-GAP,t:b.top-H.top-GAP,r:b.right-H.left+GAP,b:b.bottom-H.top+GAP}))};
+const hit=(a,list)=>list.some(b=>Math.min(a.r,b.r)>Math.max(a.l,b.l)&&Math.min(a.b,b.b)>Math.max(a.t,b.t));
+const place=()=>{const H=hall.getBoundingClientRect(),W=hall.clientWidth,Ht=hall.clientHeight,busy=boxes(H);
+ for(const e of toys){e.style.left=e.style.top=e.style.right=e.style.bottom='';e.style.visibility=''}
+ for(const e of toys){const b=e.getBoundingClientRect(),w=b.width,h=b.height,x0=b.left-H.left,y0=b.top-H.top;
+  const box=(x,y)=>({l:x-4,t:y-SWAY,r:x+w+4,b:y+h+SWAY});
+  if(!hit(box(x0,y0),busy)&&x0>=0&&x0+w<=W){busy.push(box(x0,y0));continue}
+  let best=null,bd=1e18;
+  for(let y=SWAY;y+h+SWAY<=Ht;y+=STEP)for(let x=4;x+w+4<=W;x+=STEP){if(hit(box(x,y),busy))continue;const d=(x-x0)**2+(y-y0)**2;if(d<bd){bd=d;best=[x,y]}}
+  if(!best){e.style.visibility='hidden';continue}
+  e.style.left=best[0]+'px';e.style.top=best[1]+'px';e.style.right=e.style.bottom='auto';busy.push(box(best[0],best[1]))}};
+let tm;const later=()=>{clearTimeout(tm);tm=setTimeout(place,80)};
+for(const im of layer.querySelectorAll('img'))if(!im.complete)im.addEventListener('load',later);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(later);
+addEventListener('resize',later);addEventListener('orientationchange',later);place()})()</script>"""
+
+
 def block(sids):
-    """浮かぶ玩具の塊（入口の題の間の中に置く・揺れるだけの飾り）。輪郭の絵（out/ukabu/<印>.webp）がある玩具だけ。1 つも無ければ空。"""
+    """浮かぶ玩具の塊（入口の題の間の中に置く・揺れるだけの飾り）。輪郭の絵（out/ukabu/<印>.webp）がある玩具だけ。1 つも無ければ空。
+    字に重ならないよう置き直す台本（PLACE_JS）を後ろに付ける。"""
     from .skin import esc
 
     have = [s for s in PICKS if s in sids and (OUT / f"{s}.webp").exists()]
@@ -196,4 +227,4 @@ def block(sids):
         return ""
     toys = "".join(f'<span class="uk uk{i}"><img src="/ukabu/{esc(s)}.webp" alt="" loading="lazy" decoding="async" fetchpriority="low"></span>'
                    for i, s in enumerate(have, 1))
-    return f'<div class="ukabu" aria-hidden="true">{toys}</div>'
+    return f'<div class="ukabu" aria-hidden="true">{toys}</div>' + PLACE_JS
