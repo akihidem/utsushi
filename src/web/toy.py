@@ -546,13 +546,14 @@ def printed_set(sid, hid, version):
     return None
 
 
-def mochiyoru_place(sid):
+def mochiyoru_place(sid, photos=True):
     """もちよる のこの玩具の札への道。札が無い玩具は None で、道を出さない（別の目の確かめ 11-08 の止め 4: もちよる に何も無い玩具で頭に着くだけの道にしない）。
-    札の錨と道は もちよる の側（techo_site.toy_place・もちよる の玩具ごとの札の枝）が持つ。その枝が入るまでは道を出さない"""
+    札の錨と道は もちよる の側（techo_site.toy_place）が持つ。photos=False（合言葉なしの場）は public=True で聞く: 公開の場の もちよる は、人が確かめた字か
+    写真の札だけを出すので、道もそれに合わせる（もちよる の担当の形）。その枝が入るまでは道を出さない"""
     from . import techo_site
 
     place = getattr(techo_site, "toy_place", None)  # 作業中: もちよる の枝が入ったら直に呼ぶ形にする
-    return place(sid) if place else None
+    return place(sid, public=not photos) if place else None
 
 
 def make_go(sid):
@@ -660,7 +661,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     done = (f'<h2>{esc(naoru.ROUTE_DONE)}</h2>' if naoru.ROUTE_DONE else "") + (f'<p class="meta">{esc(naoru.purpose())}</p>' if naoru.ROUTE_DONE and naoru.purpose() else "")
     body += (f'<section class="sec" id="kiroku">{head("kiroku")}{done}'
              f'<p class="links"><a href="/toy/{esc(sid)}/techo/kiroku">{esc(KIROKU_TO_NOKOSU)}</a></p>'
-             + (f'<p class="links"><a href="{esc(place)}">{esc(MOCHIYORU_GO)}</a></p>' if (place := mochiyoru_place(sid)) else "") + '</section>')
+             + (f'<p class="links"><a href="{esc(place)}">{esc(MOCHIYORU_GO)}</a></p>' if (place := mochiyoru_place(sid, photos)) else "") + '</section>')
     # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5「型紙の改善の輪は外して、説明の頁と のこす だけにする」。
     # 夕方のレビューの 8「型紙改善の輪と型紙の窓の情報が重なる」）。報告から直した版と次の版を待つ報告は、作る側の様子の頁（/loop/<印>）へ移した。
     # 学ぶ人には、版の歩み（ban_ayumi）が版の並びを、型紙の窓の小さな輪の図が輪の形を見せる。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）
