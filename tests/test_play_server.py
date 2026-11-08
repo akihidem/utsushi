@@ -112,8 +112,9 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "成功"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "opened_deg": "abc"})[0] == 422
 code, at = where(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
-assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の札に着く（#121）
-body = get(f"/toy/{G}")[1].decode()
+# 今残した記録の札がある所（手帖の記録の頁の記録の並び #mine）に着く（#121。つくるの頁から記録の札を外した 11-08 から、戻り先は手帖の記録の頁）
+assert code == 303 and at.endswith("#mine") and f"/toy/{G}/techo/kiroku" in at and "fresh=1" in at, at
+body = get(f"/toy/{G}/techo/kiroku")[1].decode()
 # 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
 assert f"{GS}_v1_after.pdf" not in body and get(f"/sheet/{G}/{GS}_v1_after.pdf")[0] == 200
 assert "仮説の紙・動かない・40°" in body

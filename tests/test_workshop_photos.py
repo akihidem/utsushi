@@ -47,7 +47,7 @@ def get(base, path):
 
 def card(html, sid):
     """もちよる の「みんながつくったおもちゃ」の、その玩具の札（玩具の名の道 /toy/<印> を持つ figure）。無ければ空。"""
-    for m in re.finditer(r'<figure class="workshop">(.*?)</figure>', html, re.S):
+    for m in re.finditer(r'<figure class="workshop"[^>]*>(.*?)</figure>', html, re.S):
         if f'<a href="/toy/{sid}">' in m.group(1):
             return m.group(1)
     return ""

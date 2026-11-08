@@ -53,7 +53,7 @@ def minna(sid):
     assert 'id="minna"' not in toy_page and esc(demo_samples.VOICES_WHO) not in toy_page and esc(demo_samples.SPOKEN_WHO) not in toy_page, (sid, "玩具の頁に感想の札が残った")
     assert esc(demo_samples.CRAFT_WHO) not in toy_page, (sid, "玩具の頁に職人の言葉の札が残った")
     GALLERY = GALLERY or get("/gallery")
-    for m in re.finditer(r'<figure class="workshop">(.*?)</figure>', GALLERY, re.S):
+    for m in re.finditer(r'<figure class="workshop"[^>]*>(.*?)</figure>', GALLERY, re.S):
         if f'<a href="/toy/{sid}">' in m.group(1):
             return m.group(1)
     return ""

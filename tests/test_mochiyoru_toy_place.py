@@ -7,7 +7,7 @@
 見る事:
 1. 錨は玩具ごとに頁に 1 つで、みんながつくったおもちゃ の札 → 無ければ作例の節の最初の札 → 無ければ 他の人が作った物 の最初の札 に付く。
    どれも無い玩具と 83 の外の玩具には無い。techo_site.toy_place が同じ線で道を返す（無ければ None）
-2. 玩具の頁の「これまでの復元」と頭の畳みと原画の横に出ていた写真・感想・言葉が、もちよるに全部ある（枝 1 が玩具の頁から外しても消えない）。
+2. 玩具の頁の「これまでの復元」と頭の畳みと原画の横に出ていた写真・感想・言葉（部品から数える）が、もちよるに全部あり、玩具の頁には無い（枝 1 で外した。消えない）。
    事例の写真（改善ループの例・3 バージョン）はその玩具の みんながつくったおもちゃ の札の中
 3. もちよるの頁の全体で、同じ写真の道が 2 度出ない
 4. 作例の節は今のまま（83 の玩具の札・83 の外の玩具の札・顔の写真・工夫）。札の中に記録の番号の字を出さない
@@ -104,13 +104,15 @@ for public in (False, True):
     assert f'id="toy-{CAT}"' not in page, "83 の外の玩具は玩具の頁が無いので錨を持たない"
     # 2. 玩具の頁に出ていた物が、もちよるに全部ある
     for sid in (G, T, DEN, KAZA):
+        # 玩具の頁の「これまでの復元」と頭の畳みが出していた写真（ワークショップの帯・記録の写真の小さい写し）を、部品から作る。枝 1（つくるの作り直し）で
+        # 玩具の頁からは外したので、頁でなく部品から数える。玩具の頁にはもう無い事も見る（枝 1 の側の線）
         tp = toy.toy_page(sid)
-        minna = tp.split('id="minna"', 1)[1].split("</section>", 1)[0]
-        hero = tp.split('<section class="hero">', 1)[1].split("</section>", 1)[0]
-        urls = re.findall(r'src="(/(?:workshop|record)/[^"]+)"', minna + hero)
-        assert urls, (sid, "玩具の頁に写真がある前提")
+        urls = re.findall(r'src="(/(?:workshop|record)/[^"]+)"', workshop.strip(sid))
+        urls += [f"/record/{r['id']}/media/{f}/small" for r in records.all_records(sid) for f in media_review.public(r["id"], techo_site.media_of(r["id"]))]
+        assert urls, (sid, "写真がある前提")
         for url in urls:
-            assert f'src="{url}"' in page, (sid, url, "玩具の頁の写真が、もちよるに無い")
+            assert f'src="{url}"' in page, (sid, url, "玩具の頁にあった写真が、もちよるに無い")
+            assert f'src="{url}"' not in tp, (sid, url, "玩具の頁に写真が残った")
         assert made.photo(sid) is None or f'src="{made.photo(sid)}"' in page, (sid, "原画の横の実物の写真")
         name = name_of(sid)
         texts = [t for v in demo_samples.VOICES if demo_samples.VOICE_TOYS.get(v["toy"]) == sid for _, t in v["fields"]]
