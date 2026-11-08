@@ -2,7 +2,8 @@
 
 見る事:
 1. 入口（白）は 題の間 → まずはここから の 2 枚 → 畳み（details#erabu・閉じた形）の順。畳みの札の字は FOLD の形で、数は棚の分け
-   （genre.groups）から数えた物（全部・うごく・かざる。固定の字にしない）。札の数の和は全部の数
+   （genre.groups）から数えた全部の数（固定の字にしない）。棚ごとの数は数えるが札には出さない（本人の言葉 11-08「最初の「（うごく 38・かざる 45）」は消す。」・
+   test_erabu_no_count）。棚ごとの数の和は全部の数
 2. 畳みの中に、前からの見出し（N のおもちゃから、1 つ選ぶ）と棚の敷き詰めと「紙 1 枚で…」の道。並びの写しは data-src のまま（台本が
    畳みを開いた時だけ読む）。錨は前からの #all-toys と、開いた形で着く #erabu
 3. 台本: 畳みを開いた時（toggle）か、道が #erabu・#all-toys の時に開いて読む。印を残さない（localStorage・sessionStorage・cookie を使わない）
@@ -22,7 +23,7 @@ from web.play_server import sources  # noqa: E402
 ALL = list(sources())
 n, shelves = looks.erabu_counts(ALL)
 assert n == len(ALL) and n == sum(k for _, k in shelves) and [b for b, _ in shelves] == [b for b, _ in genre.groups(ALL)]
-label = looks.FOLD.format(n=n, shelves="・".join(f"{b} {k}" for b, k in shelves))
+label = looks.FOLD.format(n=n)
 assert looks.fold_label(ALL) == label and str(n) in label
 
 # ---- 1・2 入口の並びと畳み
