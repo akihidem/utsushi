@@ -21,7 +21,7 @@ for photos in (True, False):
     white, dark = looks.tenji(photos), looks.yoru(photos)
     body = lambda h: re.sub(r"<style>.*?</style>", "", h, flags=re.S)  # noqa: E731
     assert body(white).replace('<body class="tenji">', "") == body(dark).replace('<body class="tenji yoru">', ""), "作りと字は白と同じ"
-    for part in ('class="tj-hall"', "<h1>うつし</h1>", "まずはここから", 'id="all-toys"'):
+    for part in ('class="tj-hall"', f'<h1><span class="kana" lang="ja">うつし</span><span class="yomi">{looks.YOMI}</span></h1>', "まずはここから", 'id="all-toys"'):
         assert part in dark, part
     css = "".join(re.findall(r"<style>(.*?)</style>", dark, re.S)).lower()
     assert not [c for c in ("#fcfcfa", "#2b2722", "#1f1b17", "#fffefc", "#ebe8e2") if c in css], "白の地と字の色が残らない"

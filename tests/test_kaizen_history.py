@@ -81,7 +81,8 @@ try:
     (kh.PICTURES / "sheets/tora-v7.png").write_bytes(b"png")
     (tmp / "secret.png").write_bytes(b"x")
     assert kh.picture({"sheet_image": "sheets/tora-v7.png"}) == kh.PICTURES / "sheets/tora-v7.png"
-    assert kh.picture({"sheet_image": "sheets/tora-v6.png"}) is None, "置いていない絵は None"
+    # 置いていない・repo の中から作れない絵の例。前は虎 v6 だったが、11-08 に虎 v6 の刷った PDF を置いて作れる版になったので、PDF の無い名にした
+    assert kh.picture({"sheet_image": "sheets/tora-v99.png"}) is None, "置いていない絵は None"
     assert kh.picture({"sheet_image": "../secret.png"}) is None and kh.picture({"sheet_image": "sheets/../../secret.png"}) is None
     assert kh.picture({}) is None
 finally:
@@ -113,6 +114,8 @@ finally:
 readme = (ledger.ROOT / "README.md").read_text(encoding="utf-8")
 counts = ledger.render_counts()
 assert counts in readme, "README の数の欄が表と雛形から描いた物と違う（python -m omochae.ledger render）"
+# エンジンの版の注は「全部の玩具の型紙に効く」と書かない（3D の確かめは御来迎と虎だけ・エンジンの版 3〜7 は 1 つの玩具の組だけで、言い過ぎ。照らしの止め 11-08・#671）
+assert "全部の玩具の型紙に効く" not in counts and "そのエンジンが作る型紙のどれにも使われる" in counts, counts
 assert "- 型紙の版: 張子の首振り虎 7・御来迎 14（" in counts and "- エンジンの版: 7（" in counts, counts
 
 print("ok 改善の歴史の表の写しと読み口（今刷る組まで・エンジンの今の版・絵の名の決まり・写す口・README の数）")

@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_record_details.py
+# commit: 8541ba82（回した時の HEAD）
+ok もちよるの記録の札: 畳み「のこした記録」に型紙の版と 5 つの欄・欄だけの記録も出る・公開の場は人が確かめた字だけ・前の確かめは外れない
+rc=0

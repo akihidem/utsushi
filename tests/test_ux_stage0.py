@@ -68,23 +68,29 @@ for name, make in looks.PAGES.items():
     assert page.count('class="road-go"') == 1, (name, "入口の次へ進む釦は 1 つだけ")
 
 # ---- 3・6・7 玩具の頁（紙の前）
+# 頭の「つくる」は仮説の段の頭へ行く道（本人の言葉 11-08 477「原図をみて、狂歌を読んで、仮説、たとえ、3D をみたあとに型紙の印刷にすすむ。」・答え 481-2
+# 「推しのとおり。」）。紙を作る口は型紙の窓の中の「つくる」1 つ（段 6）。前の段 0 は頭の「つくる」が紙を作って窓へ行った（本人の決定 11-05・#242
+# 「開いたらすぐ作れる」）が、本人の新しい答えで替わった。道しるべは 頭（→ 仮説）と 窓（刷る）の 2 つで、この順
 before = toy.toy_page(G)
-assert roads(before) == ["つくる"], ("紙の前の頁の道しるべは「つくる」1 つ", roads(before))
+assert roads(before) == ["つくる", "つくる"], ("紙の前の頁の道しるべは 頭と型紙の窓の「つくる」2 つ", roads(before))
 hero = before[before.index('<section class="hero">'):before.index("</section>", before.index('<section class="hero">'))]
 assert hero.index("<h1>") < hero.index(">つくる<") < hero.index('class="links"'), "題のすぐ後に「つくる」"
-go = re.search(r'<form method="post" action="/toy/[^"]+/print#win" class="road">.*?</form>', hero, re.S).group(0)
-assert f'name="hypothesis" value="{hypotheses.sheet_of(G)["id"]}"' in go, "紙が無い時はたたき台の紙を作る"
-assert '<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>' in hero, "これまでの記録は見出しのまま畳む"
+assert '<p class="road"><a class="btn" href="#kasetsu-fuda">つくる</a></p>' in hero and "/print" not in hero, "頭の「つくる」は仮説の段へ（刷らない）"
+win_part = before[before.index('id="win"'):before.index('id="kiroku"')]
+go = re.search(r'<form method="post" action="/toy/[^"]+/print#win" class="road">.*?</form>', win_part, re.S).group(0)
+assert f'name="hypothesis" value="{hypotheses.sheet_of(G)["id"]}"' in go, "紙が無い時は型紙の窓でたたき台の紙を作る"
+# 頭の畳み「これまでの記録」は消した（本人の言葉 11-08「つくるは、これまでの記録は消す。」・477「復元の記録などはすべてもちよるに統合する。」）
+assert "これまでの記録" not in hero and "fold-sec" not in hero, "頭に これまでの記録 の畳みが残った"
 # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5。作る側の様子の頁へ移した）
 assert 'id="kaizen"' not in before, "改善の輪の節は玩具の頁に無い"
 if 'id="tatoe"' in before:
-    # たとえは型紙の窓のすぐ前に、畳まずに出す（本人の言葉 11-08「…これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、型紙の順で」。
-    # 型紙の近くは本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」のまま）
-    assert before.index('id="minna"') < before.index('id="tatoe"') < before.index('id="win"') and '<section class="sec" id="tatoe"><h2>' in before, "たとえは型紙の窓の前で開いて出す"
-# 流れの順は本人の言葉 11-08 の並び（これまでの復元 → 仮説 → 立体 → たとえ → 型紙。困ったら（#tsukuru）は考えを話すと同じ窓）。前は 立体 → 型紙 → 困ったら → 記録 → これまでの復元
-assert before.index('id="minna"') < before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="tsukuru"') < before.index('id="kiroku"'), "流れの順"
+    # たとえは仮説の後・立体の前に、畳まずに出す（本人の言葉 11-08 477「…仮説、たとえ、3D をみたあとに型紙の印刷にすすむ。」）
+    assert before.index('id="kasetsu-fuda"') < before.index('id="tatoe"') < before.index('id="kasetsu"') < before.index('id="win"') and '<section class="sec" id="tatoe"><h2>' in before, "たとえは仮説の後で開いて出す"
+# 流れの順は本人の言葉 11-08 477（仮説 → たとえ → 立体 → 型紙の窓 → のこそう）。これまでの復元・困ったら（#tsukuru）・組み方は頁に無い
+assert before.index('id="kasetsu-fuda"') < before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="kiroku"'), "流れの順"
+assert not [x for x in ('id="minna"', 'id="tsukuru"', 'id="kumikata"') if x in before], "外した節が残った"
 assert '<details class="fold-sec samples-fold">' not in before, "本物の記録が無い時は、見本を畳まない"
-assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#kumikata など）"
+assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#ban-ayumi など）"
 assert "genga-head" in hero, "原画と歌は頭のまま（畳まない）"
 
 # ---- 3・4 紙を作った後
@@ -104,7 +110,10 @@ for sid in (G, T):
     assert st == 200 and "#win" in url or "see=" in url, (sid, url)
 after = toy.toy_page(G, see=hypotheses.sheet_of(G)["id"], kind="", v=1)
 hero = after[after.index('<section class="hero">'):after.index("</section>", after.index('<section class="hero">'))]
-assert re.search(rf'<p class="road"><a class="btn" href="/toy/{G}\?see={GS}&amp;kind=sheet&amp;v=\d+#win">つくる</a></p>', hero), "紙がある時は、作り直さずに窓の紙へ"
+# 紙がある時も、頭の「つくる」は仮説の段へ（477・481-2）。型紙の窓は刷った紙を出し、刷る口は出さない（版が上がった時だけ make_go が刷る口を返す。下の線）
+assert '<p class="road"><a class="btn" href="#kasetsu-fuda">つくる</a></p>' in hero, "頭の「つくる」は仮説の段へ"
+win_after = after[after.index('id="win"'):after.index('id="kiroku"')]
+assert '<figure class="sheet">' in win_after and "/print#win" not in win_after, "紙がある時は、作り直さずに窓の紙を出す"
 # 刷ってある紙が一番新しい版でない時（人が採った版 2 など）と、今の組でない時（雛形の次の組）は、窓へ行かずに刷る口へ送る（古い紙を出さない）
 from omochae import loop  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
@@ -123,7 +132,8 @@ try:
 finally:
     tpl.SHEET_SET = real_set
 assert '<p class="road"><a class="btn"' in toy.make_go(G), "対照: 一番新しい版で今の組の紙なら窓へ"
-win = after[after.index('id="win"'):after.index("</section>", after.index('id="win"'))]
+# 型紙の窓は次の段（できたら、のこそう・#kiroku）の頭まで。窓の中に版の歩みの節（畳み）が入るので、最初の </section> では切らない（11-08）
+win = after[after.index('id="win"'):after.index('id="kiroku"')]
 assert win.index("PDF を開いて印刷する") < win.index(f'<a class="btn" href="/toy/{G}/techo">つくる</a>'), "窓は 印刷 → つくる（手帖）の順"
 # 作りながら見るの釦は、11-07 の工作のために残していたが、作りながら見る頁を手帖へ寄せた（窓口の決め 11-07 の 4。作る口は手帖 1 つ）
 assert f'href="/toy/{G}/tsukuru"' not in after, "作りながら見るの釦は玩具の頁に出さない"
@@ -133,10 +143,18 @@ assert roads(after) == ["つくる", "つくる"], ("紙の後の道しるべ", 
 # 感想のある記録（ギャラリーは、写真か言葉の無い記録を札にしない）
 rid, fs = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた", "impression": "扇がよく開いた"})
 assert not fs, fs
-kiroku = techo_site.records_page(G, msg="上げました")
+# のこすの流れ（本人 11-08 402・405・設計 nokosu-flow 3 版）: 道しるべは記入の節の「のこす」の釦 1 つ（頁のいちばん上の節の最後）。
+# 前の道しるべの「のこす」（/gallery#ageta へのリンク）は外した。承認の後は台本がもちよる（/gallery#ageta）へ飛ぶ。「もちよる」の釦は無い
+# （本人のサイトの見直し 11-07 22:16「もちよる、でなくのこす、というボタンにする。」を、新しい のこす の釦で満たす）
+from web import nokosu  # noqa: E402
+
+kiroku = techo_site.records_page(G, msg="上げました", paper=(GS, 9))
 mine = kiroku[kiroku.index('<div id="mine">'):]
-assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
-assert roads(kiroku) == ["のこす"], roads(kiroku)  # 釦の字は のこす（本人のサイトの見直し 11-07 22:16）。行き先は前のまま
+assert mine.index('<p id="msg">上げました</p>') < mine.index('class="item"'), "返事の文は今までの記録の上"
+assert roads(kiroku) == ["のこす"], roads(kiroku)
+assert '<p class="road"><button type="submit" class="go" id="nk-keep">のこす</button></p>' in kiroku
+assert 'href="/gallery#ageta">のこす' not in kiroku and not re.search(r'class="go"[^>]*>もちよる<', kiroku), "前の道しるべも「もちよる」の釦も無い"
+assert "location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`)" in nokosu.SCRIPT, "承認の後はもちよる（/gallery#ageta）に着く"
 
 # ---- 7 見本の記録（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。畳みも出ない
 withrec = toy.toy_page(G)

@@ -6,7 +6,7 @@
 - 事実のとおりになる頁に出る: 話す口（玩具の頁・作りながら見る頁）、手帖の上げる節
 - 手帖は、記録が増えても 1 回だけ（記録ごとの口は、同じ節の中に並ぶ）
 - 持ち寄りの所（ギャラリーの説明と form）には出さない。持ち寄りは書き出す束に入らないので、文の後半が事実と合わない
-- 端末の案内に出る: README の取り下げの節、--talk-only の説明、根拠に使われて止めた時の文、取り下げた後の文。番号の打ち間違いには出さない
+- 端末の案内に出る: docs/run.md の取り下げの段（前は README の取り下げの節）、--talk-only の説明、根拠に使われて止めた時の文、取り下げた後の文。番号の打ち間違いには出さない
 """
 import os
 import pathlib
@@ -82,11 +82,13 @@ gallery, yomu = page("/gallery"), page("/about")
 assert "送られた物は確かめてから載せます。" in gallery and DECIDED not in yomu and DECIDED not in gallery
 assert "取り下げを申し出られる事に同意します" in contrib_server.FORM and DECIDED not in contrib_server.FORM
 
-# README: 取り下げの節に別の段落で置く（行末に句点が無い事まで見る）
-# 節の終わりは、次の段落の頭の字で切る。その段落は本人が確かめた字（11-06、#453）に変わったので、新しい頭に合わせた
-readme = (ROOT / "README.md").read_text(encoding="utf-8")
-part = readme[readme.index("手帖から上げた記録を消す時は"):readme.index("自分の案を試したい時は")]
-assert f"\n{DECIDED}\n" in part and readme.count(DECIDED) == 1
+# 命令の案内（docs/run.md）: 取り下げの段に別の段落で置く（行末に句点が無い事まで見る）
+# 節の終わりは、次の段落の頭の字で切る。その段落は本人が確かめた字（11-06、#453）に変わったので、新しい頭に合わせた。
+# README の組み直し（11-08）で、命令のくわしい形は README から docs/run.md へ字のまま移した。README には取り下げの文を置かない
+run = (ROOT / "docs/run.md").read_text(encoding="utf-8")
+part = run[run.index("手帖から上げた記録を消す時は"):run.index("自分の案を試したい時は")]
+assert f"\n{DECIDED}\n" in part and run.count(DECIDED) == 1
+assert DECIDED not in (ROOT / "README.md").read_text(encoding="utf-8")
 
 # 文を持つ所は 1 か所
 assert records.WITHDRAW_NOTICE == DECIDED

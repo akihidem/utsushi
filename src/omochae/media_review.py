@@ -164,6 +164,73 @@ def revoke(rid, name):
     return []
 
 
+CLIP_NAME = re.compile(r"voice/(k\d+\.(?:webm|mp4))")  # カメラの区切り（声とカメラの設計 3 版の 5 節・名は voice_text が決める）
+
+
+def clips_waiting():
+    """読みを待つカメラの区切り。[(記録の番号, voice/k<n>.<ext>, 控えた理由)]。公開の場では、進め役がここから見て確かめる
+    （学ぶ人の操作では読まない・J-028）。合言葉付きの場の区切りも、読めずに待っている物（説明待ち・今日の上限など）はここに並ぶ。"""
+    from . import voice_text
+
+    out = []
+    root = records.folder() / "media"
+    for d in sorted(root.glob("R-*")) if root.exists() else []:
+        for name in voice_text.clips_waiting(d.name):
+            why = store.read_json_or_skip(voice_text.voice_dir(d.name) / name.replace(name.rsplit(".", 1)[1], "wait.json")) or {}
+            out.append((d.name, f"voice/{name}", why.get("why", "")))
+    return out
+
+
+def _frames_root():
+    """frames の置き場の親。共用の /tmp の決まった名でなく、記録の置き場（OMOCHAE_DATA）の下に持つ（ほかの利用者が先に同じ名を作れないように・
+    別の目の気づき）。持ち主だけが開ける（0700）。"""
+    from . import loop
+
+    root = loop.base() / "clip-frames"
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    root.chmod(0o700)
+    return root
+
+
+def frames_dirs(rid, name):
+    """その区切りの frames の置き場（mkdtemp で作った物）の並び。approve の時に全部消す。"""
+    return sorted(_frames_root().glob(f"{rid}-{name.split('.')[0]}-*"))
+
+
+def _clip(args):
+    """区切りの命令（frames・approve の区切りの分）。Returns 失敗の一覧。人が端末で番号を打った時だけ読み、または消す。"""
+    from . import voice_text
+
+    m = CLIP_NAME.fullmatch(args.name)
+    if not (RECORD_ID.fullmatch(args.id) and m and m.group(1) in voice_text.clips_waiting(args.id)):
+        return [Failure("F10.review", f"{args.id}/{args.name}", "読みを待つ区切りが無い")]
+    name = m.group(1)
+    if args.cmd == "frames":
+        from api import observe
+
+        for old in frames_dirs(args.id, name):  # 前に書き出した物は消してから書き直す
+            shutil.rmtree(old, ignore_errors=True)
+        d = Path(tempfile.mkdtemp(prefix=f"{args.id}-{name.split('.')[0]}-", dir=_frames_root()))  # 0700 で作られる
+        for i, b in enumerate(observe.frames(voice_text.voice_dir(args.id) / name)):
+            (d / f"{i + 1}.jpg").write_bytes(b)
+            print(d / f"{i + 1}.jpg")
+        return []
+    if not contrib._human_confirm(f"{args.id}/{args.name}", "確認"):
+        return [Failure("F10.review", f"{args.id}/{args.name}", "端末での人の確認が無い")]
+    for d in frames_dirs(args.id, name):  # 見終えたコマは、読む前・消す前に消す（人の写る絵を残さない）
+        shutil.rmtree(d, ignore_errors=True)
+    if args.shows == "people":
+        voice_text.clip_drop(args.id, name, "人が写っていた（進め役の確かめ）")
+        print("読まずに消しました")
+        return []
+    from api import clip_read
+    from api.agent import default_client
+
+    result, why = clip_read.read(args.id, name, default_client("observe"))
+    print("読みました" if result else f"読めませんでした（{why}）")
+    return []
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="omochae.media_review", description="上げた写真と動画を、出す前に人が確かめる（#314）")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -173,6 +240,9 @@ def main(argv=None):
     a.add_argument("name")
     a.add_argument("--shows", required=True, choices=SHOWS, help="object: 物だけが写っている / people: 人や声が入る")
     a.add_argument("--reviewer", required=True)
+    f = sub.add_parser("frames", help="カメラの区切り（voice/k<n>.<ext>）の 3 コマを一時の置き場に書き出して見る")
+    f.add_argument("id")
+    f.add_argument("name")
     r = sub.add_parser("revoke", help="確認を取り消す")
     r.add_argument("id")
     r.add_argument("name")
@@ -184,8 +254,12 @@ def main(argv=None):
         if args.cmd == "list":
             for rid, name in waiting():
                 print(rid, name, _folder(rid) / name)
+            for rid, name, why in clips_waiting():  # カメラの区切り（読みを待つ物・控えた理由つき）
+                print(rid, name, why)
             return 0
-        if args.cmd == "approve":
+        if args.cmd == "frames" or (args.cmd == "approve" and args.name.startswith("voice/")):
+            failures = _clip(args)
+        elif args.cmd == "approve":
             path, failures = _target(args.id, args.name)
             if not failures:
                 print(path)

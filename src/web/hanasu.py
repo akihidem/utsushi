@@ -43,7 +43,7 @@ import urllib.parse
 from omochae import hypotheses, making_log, records, talk_log
 from omochae.model import Failure
 
-from . import skin
+from . import clips, skin
 from .play_server import esc, printed_versions, sheet_version_of
 
 MODES = ("browser", "local", "off")
@@ -54,7 +54,9 @@ DEFAULT_MODE = "browser"  # 本人の決定 11-05: iPhone・iPad でも話す釦
 # 頭の 3 つの文は、本人が決め直した文（11-05）: 前の「声は録音しないし、どこにも送りません」は、ブラウザの音声認識で聞く画面では本当でなかった
 # （声がブラウザの会社に送られる事がある）。どの画面でも本当の文にした。
 # 最後の文も本人が採った字（話した字を輪の Claude へ渡す事を、残す前に知らせる）。一字も変えない。
-NOTICE = "残るのは字だけです。声は録音しません。話した声は、このサイトに送りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
+# 11-08: 2・3 文目（「声は録音しません。話した声は、このサイトに送りません。」）は、本人の決め 415「声も送って解析に使う形にする。」と
+# 「公開デモでも声も録る。」で本当でなくなったので、設計の 6 節の字に替えた（押して話した間の声を録り、のこすで承認した時に送る・字にしてから消す）。本人の確かめ待ち
+NOTICE = "残るのは字だけです。押して話した間の声を録り、のこすで承認した時に受け取ります。声は字にしてから消します。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
 HOW_LOCAL = "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。"
 # ブラウザの既定の音声認識で聞く時の断り（本人の決定 11-05: iPhone・iPad でも話す釦を出し、頁に断りを出す。文は、採られたやさしい言葉の文）。
 HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
@@ -118,7 +120,7 @@ const REC=window.SpeechRecognition||window.webkitSpeechRecognition,LANG='ja-JP',
 const M={listening:'聞いています。話した事が、欄に字で出ます。',heard:'字にしました。読んで、よければ「残す」を押してください。',
  failed:'__FAILED__',nolang:'この機械では字にできませんでした。字で書いてください。',
  noheard:'__NOHEARD__',install:'声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…',
- tobrowser:'__HOW_BROWSER__'};
+ tobrowser:'__HOW_BROWSER__',norec:'__NOREC__'};
 const want='__VOICE__';
 // 釦を出すかは、口の形だけで決める（端末の中で字にする指定を持つ実装か）。頁を開いた時には、使えるかをブラウザに聞かない:
 // 聞くだけで頁ごと落ちる画面があった（操作する人のいない headless の Chromium で確かめた）。聞くのは、人が釦を押した時だけ。
@@ -129,7 +131,13 @@ const local=async()=>{try{return await REC.available({langs:[LANG],processLocall
 const note=(root,t)=>{root.querySelector('.hanasu-note').textContent=t};
 // 釦の字は短く保つ（狭い画面で折れない）。聞いている間は「止める」に替える。
 const press=(mic,on)=>{mic.setAttribute('aria-pressed',on?'true':'false');mic.textContent=on?'止める':'話す'};
-const stop=()=>{if(rec){try{rec.stop()}catch(e){}}};
+const stop=()=>{if(rec){try{rec.stop()}catch(e){}}if(window.utsushiClips)utsushiClips.voiceStop()};
+// 押して話した間の声を録る（本人 11-08 415・web.clips の voiceStart）。録るのは「話す」を押して聞き始めた所だけで、止まった所で止める。
+// 声はこの端末の中に置くだけで、送るのは のこす の承認の時（web.nokosu）。録れない画面では、字にするのは今のまま続け、1 行で知らせる
+const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+ const sid=root.dataset.sid||(m&&decodeURIComponent(m[1]));if(!sid)return;
+ const sc=root.querySelector('input[name=scene]'),st=root.querySelector('input[name=step]')||document.getElementById('step');
+ if(!await utsushiClips.voiceStart({sid,scene:sc?sc.value:(root.dataset.scene||''),step:st?st.value:''})){const n=root.querySelector('.hanasu-note');n.textContent=(n.textContent?n.textContent+' ':'')+M.norec}};
 const listen=(root,onDevice)=>{
  const box=root.querySelector('textarea'),mic=root.querySelector('.hanasu-mic'),r=new REC(),base=box.value.trim();
  // 端末の中で字にする時は、話し続けられる。ブラウザの既定の口は、1 回話すごとに止まる形で聞き、途中の字も出す
@@ -144,9 +152,10 @@ const listen=(root,onDevice)=>{
   if(said){box.value=((base?base+' ':'')+said).slice(0,box.maxLength);root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};
  r.onerror=(ev)=>{note(root,ev.error==='language-not-supported'?M.nolang:M.noheard)};
  // 終わりの字が来ないまま止まる機種がある。止まった後に「聞いています」を残さない（途中の字が欄にあれば、読んで残せる）。
- r.onend=()=>{press(mic,false);if(rec===r)rec=null;const n=root.querySelector('.hanasu-note');if(n.textContent===M.listening)n.textContent=box.value.trim()!==base?M.heard:''};
+ r.onend=()=>{press(mic,false);if(rec===r)rec=null;if(window.utsushiClips)utsushiClips.voiceStop();const n=root.querySelector('.hanasu-note');if(n.textContent===M.listening)n.textContent=box.value.trim()!==base?M.heard:''};
  rec=r;press(mic,true);note(root,M.listening);
- try{r.start()}catch(e){press(mic,false);rec=null;note(root,M.noheard)}};
+ try{r.start()}catch(e){press(mic,false);rec=null;note(root,M.noheard);return}
+ clip(root)};
 document.addEventListener('click',async(e)=>{
  if(!e.target.closest)return;
  // 聞く口の声（#mic）を押したら、こちらは止める。同時に 2 つは聞けない。
@@ -189,7 +198,7 @@ if(said){
   try{sessionStorage.setItem(keep,JSON.stringify({text:said.value,via:box.dataset.via||''}))}catch(e2){}});
 }
 addEventListener('pagehide',stop);
-})()</script>""".replace("__FAILED__", FAILED).replace("__NOHEARD__", NOHEARD).replace("__HOW_BROWSER__", HOW_BROWSER)
+})()</script>""".replace("__FAILED__", FAILED).replace("__NOHEARD__", NOHEARD).replace("__HOW_BROWSER__", HOW_BROWSER).replace("__NOREC__", clips.NO_VOICE)
 
 def mode():
     """声の釦の出し方。既定は browser（端末の中だけで字にできない画面では、ブラウザの既定の音声認識で聞く。本人の決定 11-05）。決まりの外の値は既定に戻す。"""
@@ -200,7 +209,8 @@ def mode():
 def assets():
     """頁に 1 回だけ置く物（見た目と動き）。部品を何個置いても 1 つでよい。声の釦の出し方（mode）は、ここで script に渡す:
     手帖は記録の一覧を後から入れ替えるので、頁を開いた時に部品が 1 つも無くても、後から来た部品が同じ出し方になるように。"""
-    return f"<style>{STYLE}</style>" + SCRIPT.replace("__VOICE__", mode())
+    # 声の区切りの置き場（web.clips）も頁に 1 回だけ置く。話す口の台本は録る code を持たず、置き場の voiceStart・voiceStop を呼ぶだけ
+    return f"<style>{STYLE}</style>" + SCRIPT.replace("__VOICE__", mode()) + clips.assets()
 
 
 def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
@@ -238,7 +248,9 @@ def think_section(sid, data, note=""):
     """玩具の頁の節（1 仮説を見て、考えを話す）。仮説の札のすぐ後に置く。note は、JS が無い時に送った後の返事の文（着いたこの節の頭に出す）。"""
     return (f'<section class="sec" id="hanasu">{note}<h2>考えを話す</h2>'
             '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>'
-            f'{box(sid, "think", hid=hypotheses.sheet_of(sid)["id"])}</section>')
+            f'{box(sid, "think", hid=hypotheses.sheet_of(sid)["id"])}'
+            # 玩具の頁を開いた時は作り始め（声とカメラの区切りの回の印・統括の決め 11-08・web.clips の openedAs の toy）。のこす から戻った時は引き継ぐ
+            f'<script>addEventListener("DOMContentLoaded",()=>{{if(window.utsushiClips)setTimeout(()=>utsushiClips.openedAs({json.dumps(sid)},"toy").catch(()=>{{}}))}})</script></section>')
 
 
 def craft_box(sid, hid, version, step):
@@ -328,10 +340,11 @@ def maker_section(sid, data):
     """作る側の頁（/loop/<印>）の節。話した事を場面ごとに並べる。字だけで、多い順や点にしない（J-025）。学ぶ人の頁には出さない。"""
     sm = talk_log.summary(sid)
     letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
-    paper = lambda hid: f"仮説 {letter[hid]} の紙" if hid in letter else (f"自分の仮説 {hid} の紙" if hid else "紙を選ばず")
+    # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
+    paper = lambda hid: f"{hypotheses.SHOWN}の紙" if hid in letter else (f"自分の仮説 {hid} の紙" if hid else "紙を選ばず")
     none = '<p class="meta">残した言葉はまだありません。</p>'
     lines = lambda items: "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in items) + "</ul>" if items else none
-    think = lines([f'{"仮説 " + letter[t["hypothesis_id"]] if t["hypothesis_id"] in letter else "仮説を選ばず"}: {t["text"]}' for t in sm["think"]])
+    think = lines([f'{hypotheses.SHOWN if t["hypothesis_id"] in letter else "仮説を選ばず"}: {t["text"]}' for t in sm["think"]])
     craft = "".join(f'<h4>{esc(paper(h))}・版 {esc(v)}・{"手順 " + str(n) if n is not None else "手順なし"}</h4>{lines(texts)}'
                     for h, vs in sm["craft"].items() for v, ss in vs.items() for n, texts in ss.items()) or none
     when = lambda k: "考え" if k["when"] == "idea" else (f"手順 {k['step']}" if k["step"] else "作りながら") if k["when"] == "making" else "上げた後"

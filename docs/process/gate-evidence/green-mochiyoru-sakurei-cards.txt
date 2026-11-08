@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_toy_place.py
+# commit: 4af9fe0d（回した時の HEAD）
+ok もちよるの玩具ごとの錨: 今の札に 1 つ・玩具の頁の写真と感想は全部もちよるに・事例の写真は玩具の札へ・同じ写真を 2 度出さない・作例の節は今のまま・公開の場も同じ
+rc=0

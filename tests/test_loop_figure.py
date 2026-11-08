@@ -7,7 +7,7 @@
    前の駅の名（作る・のこす・直す・刷る）と、駅の説明の行・図の下の「学ぶ人から見ると」の行は図に出さない（字を減らす）
 3. 誰がするかは駅の外の小さな絵: ためしの案は Claude、切って組むと記録に書くは人、次の型紙をよくするは Claude と人（Claude が案を出し人が採る）
 4. 図の字（駅の字・誰の絵の下の名・真ん中の 2 行）は text の要素に出る（英語の頁の訳の表が字を替えられる形）
-5. 読み上げは輪の順の 1 文。図の下に、次の型紙をよくするのは今、記録を Claude に渡して回している事の 1 行（正直に言う所）
+5. 読み上げは輪の順の 1 文。図の下に、次の型紙は今、作った人の記録を Claude に渡して作っている事の 1 行（正直に言う所・本人の答え「(A) でよい。」の字）
 6. 開くたびに同じ絵。画像のファイルと外の物を読まない（前の二つの輪を下絵にした生成の絵は、置き場にあっても使わない）
 7. 図の字と下の 1 行は全部、英語の頁の訳の表にある
 8. 生成の絵の道（/about/loop-figure/…）は、置き場の確かめた絵を返すだけの前のまま（頁からは呼ばない）
@@ -42,7 +42,7 @@ assert sorted(texts) == sorted(want), texts
 for old in ("作る", "のこす", "直す", "刷る", "学ぶ人から見ると", "紙で作って試す", "手帖に写真・声・字", "記録から型紙を直す", "新しい版の型紙", "人が版を決める"):
     assert old not in texts, ("前の駅の名と説明の行は図に出さない", old)
 pos = {}
-for m in re.finditer(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*font-size="20"[^>]*>([^<]*)</text>', s):
+for m in re.finditer(r'<text (?:class="[^"]*" )?x="([\d.]+)" y="([\d.]+)"[^>]*font-size="20"[^>]*>([^<]*)</text>', s):
     pos.setdefault(m.group(3), (float(m.group(1)), float(m.group(2))))
 first = [wa.LINES.get(n, (n,))[0] for n, _ in f.STATIONS]
 (ax, ay), (bx, by), (cx, cy), (dx, dy) = (pos[t] for t in first)
@@ -56,7 +56,9 @@ assert texts.count("人") == 3 and texts.count("Claude") == 2
 assert f'aria-label="{f.RING_LABEL}"' in s and f.RING_LABEL.startswith(f.NAME) and all(n in f.RING_LABEL for n in wa.STEPS)
 h = f.svg()
 assert h.count("<svg") == 1 and f"<figcaption" in h and f.HONEST in h and h.index("</svg>") < h.index(f.HONEST)
-assert wa.STEPS[3] in f.HONEST and "Claude" in f.HONEST, "正直な 1 行は、図の駅の字で言う"
+assert f.HONEST != "次の型紙をよくするのは今、記録を Claude に渡して回しています。", "前の字は事実に合わない（本人の言葉 11-08「文書がおかしい」）"
+# 正直な 1 行は、本人の答え（11-08）「(A) でよい。」の字。記録を Claude に渡して次の型紙の案を作り、版は人が決める事を言う
+assert f.HONEST == "今は、作った人の記録を Claude に渡して、次の型紙の案を作っています。どの版にするかは人が決めます。", "正直な 1 行（本人が選んだ A）"
 # 6. 画像と外の物を読まない
 assert not re.search(r"<image|href=|src=|url\(", h), "画像や外の物を読まない"
 # ---- 8 生成の絵（本人の言葉 11-07「qwen2.1 でもっと綺麗な絵を」）: 置き場に確かめた印のある絵がある時だけ、絵の上に同じ字を重ねる。無い・確かめていない時は線の絵。道は確かめた物だけ

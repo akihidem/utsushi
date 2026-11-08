@@ -31,7 +31,23 @@ from web.play_server import serve  # noqa: E402
 from web.toy import toy_page  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-PLAIN = "NDL-1187053-R0000009-L-2"  # 歌の読みの無い試作の玩具。箱は頁の一部
+def _no_reading():
+    """歌の読みの無い試作の玩具を 1 つ選ぶ（箱は頁の一部）。くずし字の歌の読みを 10 歌ずつ足していくので（11-08）、名指しの印にすると、
+    読みが入るたびに例の玩具を替えないといけない。並びの頭から、出典の記録に読みの無い玩具を選ぶ"""
+    from omochae import hypotheses as _h
+    for p in sorted((ROOT / "data/sources").glob("NDL-*.json")):
+        s = json.loads(p.read_text(encoding="utf-8"))
+        if s.get("transcription", {}).get("entries") or not (ROOT / "data/hypotheses" / p.name).exists():
+            continue
+        # 御来迎と虎と同じ頁を分け合う玩具は外す（この試験は例の玩具の頁の写しを消して見る所があり、同じ頁の御来迎と虎の写しまで消えるため）
+        if p.stem.rsplit("-", 1)[0] in {"NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"} or p.stem in {"NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"}:
+            continue
+        if genga.box(s) and _h.stage(p.stem) != "必須":
+            return p.stem
+    raise AssertionError("読みの無い試作の玩具が無い")
+
+
+PLAIN = _no_reading()  # 歌の読みの無い試作の玩具。箱は頁の一部
 
 
 def src(sid):
@@ -208,7 +224,9 @@ assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 # 写真は小さい写しの道（上げた元の写真は 3.7MB ほどある。入口の絵 100KB の線）
 assert made.photo(GOR) == f"/record/{rid}/media/m1.jpg/small"
 assert f'<img src="/record/{rid}/media/m1.jpg/small" alt="{made.PHOTO}の写真"' in made.figure(GOR)
-assert genga.head(GOR).index('class="genga-row"') < genga.head(GOR).index('class="made genga-made"'), "写真は原画のすぐ後"
+# 玩具の頁の頭（原画のすぐ後）には置かない: 作ってみた実物の写真は もちよる へ移した（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。
+# 復元の記録などはすべてもちよるに統合する。」・設計の問い 1 の答え「推しのとおり。」）。写真の部品（made.figure）と入口の札の写真は前のまま
+assert 'class="made genga-made"' not in genga.head(GOR) and "genga-made" not in genga.head(GOR), "頭に作ってみた実物の写真が残った"
 # 開いた場の玩具の頁は写真を置かない（写真が確かめてあっても何も置かない）
 assert made.figure(GOR, photos=False) == "", "開いた場の玩具の頁は写真を置かない"
 entrance = looks.tenji().split("</style>")[-1]
@@ -223,7 +241,7 @@ small = made.small_photo(d / "m1.jpg")
 with Image.open(io.BytesIO(small)) as im:
     assert im.width == made.SMALL_W and len(small) <= 100_000, (im.size, len(small))
 assert made.small_photo(d / "nai.jpg") is None
-print("ok 原画は頁の全体で歌と組になり、作る時の畳みは国立国会図書館への道 1 つ（別のタブ）。原画の隣に作ってみた実物（写真か止まった形）")
+print("ok 原画は頁の全体で歌と組になり、作る時の畳みは国立国会図書館への道 1 つ（別のタブ）。作ってみた実物の写真は頭に置かず、入口の札には重なる")
 
 # 入口の棚の札の角（本人の言葉 11-07「入口にギャラリーを足す」「いまのものに実際に作ったものを足す」・窓口の決め 163132）:
 # 作った実物の写真（人が確かめた物。作例 via=workshop の記録も読む）がある玩具の札にだけ、原画の右下に小さな角。無い玩具の札は前のまま。

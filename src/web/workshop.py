@@ -136,29 +136,71 @@ def scene():
             f'<div class="workshop-row tiles">{"".join(f"<figure>{_img(f, SCENE_ALT)}</figure>" for f in files)}</div></section>')
 
 
-def made(sids):
-    """「みんながつくったおもちゃ」の節（おもちゃの単体の写真）。玩具ごとに 1 枚の札（その玩具の単体の写真の全部・玩具の名・押すと開く感想）を、頁の玩具の並びの順に敷き詰める。
-    - できた物の写真は札に全部入れる（本人の決め 11-07「ワークショップの写真は 復元・記録・ギャラリーの全部の置き場に置く」。1 枚目だけにすると残りがどこにも出ない）
-    - 札に出す玩具は、できた物の写真が表で結ばれた玩具と、感想か話された言葉が結ばれた玩具（demo_samples.workshop_for が空でない玩具）
-    - 感想は workshop_for の札のまま（回答のまま・名前や番号なし・動かなかった声と注文も並べる。本人の決め 11-07「寄せられた声…置き方は案のとおり」）
-    - どの玩具とも結ばれていない単体の写真は、玩具の名を付けない札で頭に置く（玩具を勝手に決めない）。並べた写真はこの節に出さない（頭の 1 枚・top）
-    - 写真の無い玩具の札は、名と感想だけ（絵を作らない）。どれも無い時は節ごと出さない"""
+# 玩具の札に寄せる事例の写真の種類（改善ループの例・型紙で改善したおもちゃ 3 バージョン）。前は玩具の頁の「これまでの復元」にだけ出た
+# （本人の言葉 11-07 午後 193「改善ループの例として使って欲しい」の写真もその 1 つ）。玩具の頁から外すので、ここへ寄せる（本人の言葉 11-08 477）。
+# 参加者の工夫（kufu）は作例の節の工夫の段に残す（本人の言葉の引用と組で出しているため・同じ写真を 2 度出さない）
+CARD_CASES = ("loop", "versions")
+
+
+def _cases(sid, photos=True):
+    """その玩具の事例の写真の小さい写しの道（人が「物だけ」と確かめた物）。photos=False（写真を出さない前の開いた場の形）は出さない
+    （作例の節 sakurei_section と同じ線。ワークショップの試行の写真と違い、人が上げた写真なので）。"""
+    if not photos:
+        return []
+    from . import sakurei
+
+    return [c["url"] for kind in CARD_CASES for c in sakurei.cases(kind) if c["sid"] == sid]
+
+
+def has_card(sid, photos=True):
+    """もちよるの「みんながつくったおもちゃ」に、その玩具の札（錨 toy-<印>）が出るか。made と同じ線で見る。"""
     from omochae import hypotheses
 
+    from . import sakurei
     from .demo_samples import workshop_for
 
-    by_toy = {r["file"]: r["toy"] for r in rows()}
-    loose = [f for f in sorted(_kinds(KINDS.stat().st_mtime) if KINDS.exists() else {}) if kind_of(f) == "single" and _ok(f) and f not in by_toy]
-    cards = "".join(f'<figure class="workshop">{_img(f, MADE_ALT)}</figure>' for f in loose)
+    return bool((photos and any(e["sid"] == sid for e in sakurei.examples())) or _cases(sid, photos) or workshop_for(sid, hypotheses.load(sid)["toy"]))
+
+
+def made(sids, photos=True):
+    """「みんながつくったおもちゃ」の節。作例の記録の札（本人が上げた、玩具の名と写真が結ばれた写真・作例の節にあった札）を、そのままの組み合わせと形で並べる。
+    本人の言葉 11-08「みんなが作ったおもちゃの方は、おもちゃの名前と写真が合っていない。ワークショップで作られたものの方は写真と名前が一致しているので、
+    こちらの組み合わせと表示を採用して、みんなが作ったおもちゃの方に置く。」:
+    - 前の札（試行の写真の表の単体の写真を玩具に結んだ物）は使わない（名と写真が合っていなかった）。作例の節（techo_site.sakurei_section）の
+      玩具ごとの札はこの節へ移した（同じ物を 2 度出さない）。作例の節には顔の写真・報告の段・参加者の工夫が残る
+    - 札は 1 つの記録に 1 枚（作例の節と同じ形: 写真の小さい写し・玩具の名（玩具の頁へ）・刷った組が分かる時だけ型紙の版）。玩具の並びは sids の順、同じ玩具の中は記録の順
+    - 玩具の頁にだけあった事例の写真（CARD_CASES・改善ループの例と 3 バージョン）も、同じ形の札で、その玩具の作例の札の後ろに置く
+    - 感想と言葉（workshop_for）は、その玩具の最初の札の「感想を見る」の畳み。作例も事例も無い玩具は、名と感想だけの札
+    - その玩具の最初の札が錨 id="toy-<印>" を持つ（玩具の頁の「この玩具の作った物を もちよる で見る」の道の行き先・#646）
+    - 83 の外の玩具（猫と鼠の箱など）の作例の札は後ろに、棚卸しの名で、道と錨を付けずに置く（玩具の頁が無い。前の作例の節と同じ）
+    - 出すのは人が「物だけ」と確かめた写真だけ（examples・cases が確かめた物だけを返す）。photos=False（写真を出さない前の開いた場の形）は写真を出さない
+    - どれも無い時は節ごと出さない"""
+    from omochae import hypotheses, records
+
+    from . import sakurei
+    from .demo_samples import workshop_for
+    from .techo_site import _ban
+
+    order = {sid: i for i, sid in enumerate(sids)}
+    examples = sorted(sakurei.examples() if photos else [], key=lambda e: (order.get(e["sid"], len(order)), e["sid"], e["rid"]))
+    img = lambda url: f'<img src="{esc(url)}" alt="{esc(MADE_ALT)}" loading="lazy" decoding="async">'  # noqa: E731
+    cards = ""
     for sid in sids:
         name = hypotheses.load(sid)["toy"]
-        photos = [f for f in files(sid) if kind_of(f) == "single"]
         voices = workshop_for(sid, name)
-        if not (photos or voices):
+        shots = [("".join(img(f"/record/{e['rid']}/media/{f}/small") for f in e["photos"]), _ban(e["set"])) for e in examples if e["sid"] == sid]
+        shots += [(img(u), "") for u in _cases(sid, photos)]
+        if not (shots or voices):
             continue
-        pic = "".join(_img(f, MADE_ALT) for f in photos)
         fold = f'<details class="voices-fold"><summary>{esc(OPEN_VOICES)}</summary>{voices}</details>' if voices else ""
-        cards += f'<figure class="workshop">{pic}<figcaption><a href="/toy/{esc(sid)}">{esc(name)}</a></figcaption>{fold}</figure>'
+        anchor = f' id="toy-{esc(sid)}"'
+        for n, (pic, ban) in enumerate(shots or [("", "")]):
+            cards += (f'<figure class="workshop"{anchor if n == 0 else ""}>{pic}'
+                      f'<figcaption><a href="/toy/{esc(sid)}">{esc(name)}</a>{ban}</figcaption>{fold if n == 0 else ""}</figure>')
+    for e in examples:
+        if e["sid"] not in order and records.outside_toy(e["sid"]):
+            pic = "".join(img(f"/record/{e['rid']}/media/{f}/small") for f in e["photos"])
+            cards += f'<figure class="workshop">{pic}<figcaption>{esc(sakurei.toy_name(e["sid"]))}{_ban(e["set"])}</figcaption></figure>'
     if not cards:
         return ""
     return f'<section class="panel" id="dekita"><h2 class="mark">{esc(MADE_HEAD)}</h2><div class="workshop-row tiles">{cards}</div></section>'

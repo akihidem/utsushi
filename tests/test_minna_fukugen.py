@@ -2,10 +2,10 @@
 「他の人が作ったものと自分の記録 → これまでの復元として属人化しない」。設計の担当の仕分けで、決まりとぶつからない字の替え）。
 
 見る事:
-1. 玩具の頁の節の見出しは「これまでの復元」。前の見出し「他の人が作った物と、自分の記録」は、どの玩具の頁にも残らない
-   （頁の頭の「これまでの記録」の畳みの記録が無い時の 1 文も、並びの記録が無い時の字にそろえる）
-2. 記録が無い時の 1 文と、記録がある時の並びの頭の 1 文に、人を主にした字（「最初の記録を残す人」「自分の説明」）が残らない
-3. 置き場と並びは変えない: 節の錨 #minna は 1 つで、ギャラリーへの道も残る。ギャラリーの見出しは今のまま（この直しの外）
+1. 玩具の頁に「これまでの復元」の節（#minna）と頭の「これまでの記録」の畳みが無い（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を
+   感じる。復元の記録などはすべてもちよるに統合する。」で、中身は もちよる へ移した）。前の見出し「他の人が作った物と、自分の記録」は、どの玩具の頁にも残らない
+2. 字の元（MINNA_HEAD・MINNA_EMPTY・MINNA_ORDER）に、人を主にした字（「最初の記録を残す人」「自分の説明」）が残らない
+3. 記録を残した後、その記録は手帖の記録の頁にあり、玩具の頁には出ない。どちらの頁にも人を主にした字が残らない。玩具の頁からギャラリー（もちよる）への道は頁の足に残る
 """
 import os
 import tempfile
@@ -22,17 +22,18 @@ OLD = ("他の人が作った物と、自分の記録", "最初の記録を残�
 other = next(p.stem for p in (hypotheses.ROOT / "data/hypotheses").glob("*.json") if p.stem not in (G, T))
 for sid in (G, T, other):
     page = toy.toy_page(sid)
-    assert page.count('id="minna"') == 1 and f'<section class="sec" id="minna"><h2>{toy.MINNA_HEAD}</h2>' in page, sid
-    minna = page[page.index('id="minna"'):]
-    minna = minna[:minna.index("</section>")]
-    # 頁の頭の「これまでの記録」の畳みの 1 文も、並びの記録が無い時の字にそろえた（同じ頁に同じ意味の文を 2 通り置かない）
+    # 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」: 節も頭の畳みも玩具の頁に無い
+    assert 'id="minna"' not in page and toy.MINNA_HEAD not in page and "これまでの記録" not in page, sid
+    assert toy.MINNA_EMPTY not in page and toy.MINNA_ORDER not in page and "試した記録は" not in page, sid
     assert not [w for w in OLD if w in page], (sid, [w for w in OLD if w in page])
-    assert 'href="/gallery"' in minna, "ギャラリーへの道は残す"
-    if "試した記録は" in page:
-        assert f"試した記録は{toy.MINNA_EMPTY}" in page, "頭の畳みの 1 文は並びと同じ字"
+    assert 'href="/gallery"' in page, "ギャラリー（もちよる）への道は頁の足に残す"
 
-# 2. 記録が無い時と、記録がある時の 1 文（記録は使い手と同じ道で残す: 刷ってから記録の口へ送る）
-assert toy.MINNA_EMPTY in toy.toy_page(other), "記録の無い玩具では、記録が無い時の 1 文"
+# 2. 字の元に人を主にした字が残らない（並びの部品は もちよる の側でも使える形のまま残る）
+assert not [w for w in OLD for s in (toy.MINNA_HEAD, toy.MINNA_EMPTY, toy.MINNA_ORDER) if w in s]
+assert not [w for w in ("他の人", "自分") if w in toy.MINNA_HEAD], "見出しは人ごとの呼び方をしない"
+assert "作った人の説明" in toy.MINNA_ORDER
+
+# 3. 記録を残した後（記録は使い手と同じ道で残す: 刷ってから記録の口へ送る）
 import threading  # noqa: E402
 import urllib.parse  # noqa: E402
 import urllib.request  # noqa: E402
@@ -53,12 +54,11 @@ def post(path, data):
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) in (200, 303)
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"}) in (200, 303)
 page = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
+kiroku = urllib.request.urlopen(f"{base}/toy/{G}/techo/kiroku").read().decode()
 server.shutdown()
-minna = page[page.index('id="minna"'):]
-minna = minna[:minna.index("</section>")]
-assert toy.MINNA_ORDER in minna and toy.MINNA_EMPTY not in minna, "記録がある時は並びの頭の 1 文"
-assert not [w for w in OLD if w in minna] and "作った人の説明" in toy.MINNA_ORDER
-assert not [w for w in OLD for s in (toy.MINNA_HEAD, toy.MINNA_EMPTY, toy.MINNA_ORDER) if w in s]
-assert not [w for w in ("他の人", "自分") if w in toy.MINNA_HEAD], "見出しは人ごとの呼び方をしない"
+# 本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」: 残した記録は玩具の頁に出ず、手帖の記録の頁に出る
+assert "R-0001" not in page and 'id="minna"' not in page, "残した記録が玩具の頁に出た"
+assert "R-0001" in kiroku, "残した記録が手帖の記録の頁に無い"
+assert not [w for w in OLD if w in page or w in kiroku], [w for w in OLD if w in page or w in kiroku]
 
-print("ok 作った物の並びの見出しと 2 つの文を「これまでの復元」の形に（置き場とギャラリーは今のまま）")
+print("ok 玩具の頁に これまでの復元 と頭の記録の畳みが無い・字の元に人ごとの呼び方が無い・残した記録は手帖の記録の頁にある")

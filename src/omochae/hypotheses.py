@@ -243,6 +243,11 @@ def shown_name(h):
     return f"{SHOWN}「{h['name']}」"
 
 
+def version_head(h, many):
+    """作る側の頁の版の札の題の呼び名。同じ玩具で版がある仮説が 2 つ以上（many）の時だけ名を添えて見分ける。印は使わない。"""
+    return shown_name(h) if many else SHOWN
+
+
 def list_lines(data, own=()):
     lines = [f"{data['toy']}"]
     for h in own:
@@ -386,6 +391,8 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
         # 紙から根拠の記録へ戻れるように刷る（F7）。
         label += "・根拠 " + "、".join(adopted["record_ids"])
     title = f"{data['toy']} 型紙 {shown_name(h)}{label}"  # 印は出さない（SHOWN の注）
+    # 頭の段の組み方は前の題（印のある形）で決める。印を外して題が短くなっても、部品の置き場を前の紙と同じにするため（compose の fit_title）
+    fit_title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
@@ -394,7 +401,7 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     # 前は型紙の後に手順の紙（_print_instructions）と試した後の紙を組み、手順の紙が A4 に入らないと型紙も刷れなかった（御来迎 v14 で当たる）。
     # 組み方は頁（web.kumitate の組み方の節）、試した後の紙は前に配った道で開く時にだけ作る（web.play_server.ensure_after・print_after）。
     # 手順の紙を組む仕組み（instructions.compose_sheet）と凍結の床の控えは残す。自分の紙（print_own）も同じ形にした（窓口の決定 2026-11-07 カード 012120）
-    return generate(template, params, source_id, out, title=title, version=version)
+    return generate(template, params, source_id, out, title=title, version=version, fit_title=fit_title)
 
 
 def print_after(source_id, hypothesis_id, out):

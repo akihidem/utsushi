@@ -54,7 +54,12 @@ def pages():
     return {"手帖": page(f"/toy/{G}/techo/kiroku"), "玩具": page(f"/toy/{G}"), "ギャラリー": gallery.build()}
 
 
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録は手帖の記録の頁とギャラリー（もちよる）に出る。つくるの頁には取り下げる前から出ない（取り下げた後に出ない事は、下で 3 つの頁とも見る）
 for name, body in pages().items():
+    if name == "玩具":
+        assert rid not in body, "つくるの頁に記録の札が出た（上の理由で外した）"
+        continue
     assert rid in body, f"取り下げる前は {name} に出る"
 assert rid in records.summarize(records.all_records(G))["H-A"]["record_ids"]
 r = withdraw(rid)

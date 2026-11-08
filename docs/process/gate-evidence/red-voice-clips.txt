@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_voice_clips.py
+# commit: 82dac852（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_voice_clips.py", line 97, in <module>
+    name, why = voice_text.put_voice_clip(rid, clip(ext), ext)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'omochae.voice_text' has no attribute 'put_voice_clip'
+rc=1

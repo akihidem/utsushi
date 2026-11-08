@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_spec_api.py
+# commit: 26c1f0df（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_spec_api.py", line 18, in <module>
+    assert "本物の API は 0 回" not in spec and "まだ確かめていない事: 本物の API、" not in spec, "前の字が残っている"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 前の字が残っている
+rc=1

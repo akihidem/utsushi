@@ -1,0 +1,11 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tsukuru_rebuild.py
+# commit: 009719b4（回した時の HEAD・main 19447494 に のこす の釦だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_tsukuru_rebuild.py", line 70, in <module>
+    check(sid, False)
+    ~~~~~^^^^^^^^^^^^
+  File "tests/test_tsukuru_rebuild.py", line 35, in check
+    assert "これまでの記録" not in hero and "fold-sec" not in hero, (where, "頭に これまでの記録 の畳みが残った")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('NDL-1187053-R0000005-L', '刷る前'), '頭に これまでの記録 の畳みが残った')
+rc=1

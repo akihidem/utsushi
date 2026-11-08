@@ -24,8 +24,22 @@
   },
   "modification_note": "改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません",
   "transcription": {
-    "status": "pending",
-    "entries": []
+    "status": "decided_by_rule",
+    "entries": [
+      {
+        "text": "生姜市ちぎもふた見ときく時は伊勢のやうだと人のいふなり",
+        "source": "own-scans",
+        "set": "B",
+        "page": "100",
+        "printed_text": "生姜市ちぎもふた見ときく時は伊勢のやうだと人のいふなり",
+        "read_by": "Claude Code のセッション",
+        "checked_by": null,
+        "checked_at": null,
+        "decided_by": "本人",
+        "decided_at": "2026-11-08",
+        "source_note": "読みは有坂与太郎『日本玩具史 後編』（1932）の見出しの字（本人の答え 11-08「図 14 は B の読みでよい。」・旧字は今の字にした・1 字ずつの確かめはまだ）"
+      }
+    ]
   },
   "reading_hypothesis": {
     "status": "pending",

@@ -1,7 +1,8 @@
 """合言葉なしで開いた場に、内部の番号と作る側の控えを出さない（J-028。公開の前の点検で見つけた物）。
 
 見る事:
-1. 記録の番号（R-番号）を、玩具の頁・手帖・図鑑の字に出さない。札へ飛ぶ道（#R-番号）は残す
+1. 記録の番号（R-番号）を、玩具の頁・手帖の字に出さない。記録の札は玩具の頁に無い（札へ飛ぶ道 #R-番号 も無い。本人の言葉 11-08「つくるは読む情報が
+   多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、札は手帖の記録の頁と もちよる へ）
 2. 改善の輪の節に、閉じた口への案内と、次の版の理由と根拠の番号を出さない
 3. 読みと観察の文（AI の文）を出さない
 4. script と style の注釈を送らない。動く所（字の中の // や URL）は切らない
@@ -95,7 +96,9 @@ NUM = re.compile(r"R-\d{4,}")
 for path in (TOY, TECHO):
     assert not NUM.findall(visible(page(opened, path))), (path, "記録の番号")
     assert NUM.search(visible(page(closed, path))), (path, "対照: 合言葉の場では番号が出る")
-assert f'href="#{used}"' in page(opened, TOY) and f'id="{used}"' in page(opened, TOY), "札へ飛ぶ道は残す"
+# 記録の札は玩具の頁に無い（本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」）。前は札へ飛ぶ道（#R-番号）を残す事を見ていた
+for port in (opened, closed):
+    assert f'href="#{used}"' not in page(port, TOY) and f'id="{used}"' not in page(port, TOY), "玩具の頁に記録の札が残った"
 
 # 2. 改善の輪の節は、玩具の頁に無い（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）。作る側の様子の頁は合言葉なしの場で閉じる（理由と根拠の番号が出ない）。
 # 合言葉の場の作る側の頁には今までどおり出る（対照）
@@ -104,15 +107,17 @@ assert 'id="kaizen"' not in page(opened, TOY) and 'id="kaizen"' not in page(clos
 assert WHY not in page(opened, TOY) and BASED not in page(opened, TOY)
 kz = page(closed, f"/loop/{G}").split('id="kaizen"', 1)[1]
 assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and BASED in kz, "対照: 合言葉の場の作る側の頁の節は今までどおり"
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} 版 2" in kz
+assert "仮説 版 2" in kz  # 印は出さない（本人の答え 11-08「そろえる。」・hypotheses.SHOWN）
 
-# 3. 読みと観察の文を出さない
-for path in (TOY, TECHO):
+# 3. 読みと観察の文を出さない（記録の札のある手帖の記録の頁で見る。玩具の頁には札ごと無い・本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」）
+for path in (TECHO,):
     body = page(opened, path)
     assert not [w for w in (READ, CAUSE, UNKNOWN, SEEN) if w in body], (path, "AI の文")
     assert "説明を残しました。" in body, path
     body = page(closed, path)
     assert not [w for w in (READ, CAUSE, UNKNOWN, SEEN) if w not in body], (path, "対照: 合言葉の場では読める")
+for port in (opened, closed):
+    assert not [w for w in (READ, CAUSE, UNKNOWN, SEEN) if w in page(port, TOY)], (port, "玩具の頁に記録の札の AI の文が残った")
 
 # 4. 注釈を送らない。動く所は切らない
 for path in ("/", TOY, TECHO, f"/toy/{G}/tsukuru", "/gallery", f"/en/toy/{G}"):

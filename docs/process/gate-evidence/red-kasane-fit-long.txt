@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: ea5a9869（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 70, in <module>
+    assert '<video id="hmd-cam" playsinline muted autoplay></video>' in cam and 'id="hmd-camera"' in cam and hmd.PRIVACY in cam
+                                                                                                             ^^^^^^^^^^^
+AttributeError: module 'web.hmd' has no attribute 'PRIVACY'
+rc=1

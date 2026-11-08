@@ -151,7 +151,9 @@ with contextlib.redirect_stderr(err):
 assert "F9.human" in err.getvalue() and not pathlib.Path(f"{stem}.pdf").exists()
 row = next(r for r in ways.table() if r["source_id"] == G and r["hypothesis_id"] == "H-N1")
 assert row["sheet"] is False and row["reading_of"] == "H-A", "控えも一覧の行には残る"
-assert rid in page, "案のもとの記録は読める"
+# 案のもとの記録は手帖の記録の頁で読める。本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、
+# つくるの頁から記録の札を外した。記録の札は手帖の記録の頁にある
+assert rid in get(f"/toy/{G}/techo/kiroku") and f'id="{rid}"' not in page, "案のもとの記録は読める"
 # 試作の玩具は、作る側が命令から控えを刷れる（道は閉じない）。頁には出さない
 trial_rid = confirmed(TRIAL, "H-A")
 pid = propose(TRIAL, trial_rid, "H-A", new_hypothesis=new_case("浮かべる形", params_of(TRIAL, "H-B")))

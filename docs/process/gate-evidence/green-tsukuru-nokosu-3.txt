@@ -1,0 +1,6 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_tsukuru_last_fit.py
+# commit: 42e77cfa（回した時の HEAD）
+/tmp/tmpmvmn4b58/play/NDL-1187053-R0000005-L/.tmp-m066yeb8/H-C_v1.pdf
+/tmp/tmpmvmn4b58/play/NDL-1187053-R0000014-R/.tmp-myzmoccb/H-A_v1.pdf
+ok 作りながら見る頁の最後の手順の のこす の札: 原画の畳みの有り無しの両方で、日本語 375×667・390×844、やさしい日本語と英語 390×844（と 375×667 の虎）で最初の画面の中（下の端までの余裕 10〜116px）・本人の字は札の中で 2 行まで。前から外の大きさ（数だけ）: fold ja goraigo-320x568 札の下の端 692/568・fold ja tora-320x568 札の下の端 622/568・fold easy goraigo-320x568 札の下の端 710/568・fold easy goraigo-375x667 札の下の端 706/667・fold easy tora-320x568 札の下の端 668/568・fold en goraigo-320x568 札の下の端 792/568・fold en goraigo-375x667 札の下の端 743/667・fold en tora-320x568 札の下の端 652/568・nofold ja goraigo-320x568 札の下の端 640/568・nofold ja tora-320x568 札の下の端 570/568・nofold easy goraigo-320x568 札の下の端 658/568・nofold easy goraigo-375x667 札の下の端 654/667・nofold easy tora-320x568 札の下の端 616/568・nofold en goraigo-320x568 札の下の端 726/568・nofold en goraigo-375x667 札の下の端 691/667・nofold en tora-320x568 札の下の端 587/568
+rc=0

@@ -3,6 +3,7 @@
 なぜ試験にするか: 歌の箱を右へ寄せただけの形では、題の下の左側（幅 1440 で 417×360）が空いたまま札が歌の下へ送られていた。
 ./run.sh はブラウザなしで動くので、ここでは空きを消す組み方の印と字の順を見る（座標はブラウザで測って帳面に書いた）。
 """
+import json
 import os
 import re
 import tempfile
@@ -12,6 +13,7 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from web import skin, zukan  # noqa: E402
 from web.toy import toy_page  # noqa: E402
+from omochae.hypotheses import ROOT  # noqa: E402
 
 # 原画の写し（out/ の頁の絵と切り抜き）は git の外なので、まっさらな木（clone しただけの木・./run.sh の場面）には無い（#450 と同じ）。
 # 写しが無い時だけ、部品の絵を差し替えて絵のある形を作る（test_landscape_fit と同じ形。絵の有る無しに関わらず、並びと道を見る）
@@ -32,7 +34,23 @@ _genga._pic = _pic
 
 
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-PLAIN = "NDL-1187053-R0000009-L-2"
+def _no_reading():
+    """歌の読みの無い試作の玩具を 1 つ選ぶ（箱は頁の一部）。くずし字の歌の読みを 10 歌ずつ足していくので（11-08）、名指しの印にすると、
+    読みが入るたびに例の玩具を替えないといけない。並びの頭から、出典の記録に読みの無い玩具を選ぶ"""
+    from omochae import hypotheses as _h
+    for p in sorted((ROOT / "data/sources").glob("NDL-*.json")):
+        s = json.loads(p.read_text(encoding="utf-8"))
+        if s.get("transcription", {}).get("entries") or not (ROOT / "data/hypotheses" / p.name).exists():
+            continue
+        # 御来迎と虎と同じ頁を分け合う玩具は外す（この試験は例の玩具の頁の写しを消して見る所があり、同じ頁の御来迎と虎の写しまで消えるため）
+        if p.stem.rsplit("-", 1)[0] in {"NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"} or p.stem in {"NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"}:
+            continue
+        if _genga.box(s) and _h.stage(p.stem) != "必須":
+            return p.stem
+    raise AssertionError("読みの無い試作の玩具が無い")
+
+
+PLAIN = _no_reading()  # 歌の読みの無い試作の玩具
 
 for look in ("tenji", "zine"):
     for sid in (GORAIGO, TORA):

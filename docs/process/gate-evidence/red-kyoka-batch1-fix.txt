@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: 89bbebea（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kuzushi_notes.py", line 60, in <module>
+    assert not [w for w in ("例として挙げて", "呼び名にも使われました") if w in every], (sid, "確かめられない辞書の中身の言い切り")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000011-L', '確かめられない辞書の中身の言い切り')
+rc=1
