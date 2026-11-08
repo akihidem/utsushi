@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_sheet.py
+# commit: 64298cd6（回した時の HEAD）
+/tmp/tmp9dt2ru2q/play/NDL-1187053-R0000005-L/.tmp-d3liq9dh/H-C_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_shiori_sheet.py", line 114, in <module>
+    assert "const shioriOn = () => {" in NS and "sw.hidden = !shioriOn;" not in NS, "1 行を出すかを頁を読んだ時に決めている"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 行を出すかを頁を読んだ時に決めている
+rc=1

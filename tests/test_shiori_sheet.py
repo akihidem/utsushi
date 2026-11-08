@@ -106,6 +106,15 @@ assert code == 200 and len(PdfReader(io.BytesIO(pdf2)).pages) == len(src.pages) 
 assert len(ledger()) == 3 and sum(1 for e in entries() if e["pending"] is None) == 1
 assert 'id="nk-c-shiori"' not in nojs(f"/toy/{G}/techo/kiroku")[1].decode(), "待ちの無い画面には 1 行を置かない"
 assert 'id="nk-c-shiori" hidden' in call(f"/toy/{G}/techo/kiroku")[1].decode(), "待ちのある画面には 1 行を置く（台本が今の回と照らしてから見せる）"
+# 出すかは頁を読んだ時に決めず、確かめの画面を出す時と承認の時に見直す（頁を開いた後の判定で、直に開いた時は作り始めになって回が替わる。
+# 頁を読んだ時に決めると、見えたまま結ばれなかった・別の目の #702 の確かめ）
+from web import nokosu  # noqa: E402
+
+NS = nokosu.SCRIPT
+assert "const shioriOn = () => {" in NS and "sw.hidden = !shioriOn;" not in NS, "1 行を出すかを頁を読んだ時に決めている"
+show = NS[NS.index("f.onsubmit"):NS.index("$('nk-fix').onclick")]
+assert "chk.hidden = false; shioriShow();" in show, "確かめの画面を出す時に見直す"
+assert "...(shioriOn() ? { shiori: '1', run: runOf() } : {})" in NS, "承認の時にも見直してから結ぶ印を送る"
 
 
 # ---- 3 結ぶ
