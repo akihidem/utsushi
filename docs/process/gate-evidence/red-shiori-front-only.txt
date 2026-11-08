@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_card.py
+# commit: 3d3bf3f2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_shiori_card.py", line 67, in <module>
+    x0, y0 = sc.CARD_X + sc.CARD_W - 4 - sc.QR_MM, sc.CARD_Y + sc.CARD_H - 4 - sc.QR_MM
+             ^^^^^^^^^
+AttributeError: module 'omochae.shiori_card' has no attribute 'CARD_X'. Did you mean: 'CARD_H'?
+rc=1
