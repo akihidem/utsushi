@@ -932,5 +932,18 @@
    "tests/test_shiori.py"
   ],
   "unverified": "台帳だけ（決まった番地が決まる前から作れる所）。開く道（/s/<印>・とじる・20 分）・しおりの紙（QR は A 朱の落款枠に朱・裏に順の印）・進め役の道・SECURITY の字は、決まった番地の答えの後の PR。決まった番地は本人の答え待ち"
+ },
+ {
+  "id": "f80",
+  "name": "しおりの開く道（/s/<印>）: しおりに刷った絵を押して手帖を開く（本人の決め 11-08「しおりに書いてある絵を押す」）。合言葉の値は端末に渡さず、門は開いた画面の印も通す（統括の決め 11-08）",
+  "status": "doing",
+  "evidence": [
+   "src/web/shiori_open.py",
+   "src/web/play_server.py",
+   "src/omochae/shiori.py",
+   "tests/test_shiori_open.py",
+   "tests/test_shiori.py"
+  ],
+  "unverified": "しおりの紙（QR・9 つの絵・裏の順の印）と進め役の道はまだ。9 つの絵の並びは仮。決まった番地（Workers）は本人の画面の操作の後。Cloudflare が客の付けた Cf-Connecting-Ip を必ず上書きするか・ブラウザごとの session の cookie の残り方・Worker の記録に /s/<印> が残るか は、まだ確かめていない"
  }
 ]

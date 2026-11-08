@@ -225,7 +225,8 @@ STEP_LIMIT = 120
 # 上げても断らない数（窓口の決め 11-07・案 b。前は 20 で、7 人目から断りが出えた）。機械を埋めない守りは、公開の場の合計の上限
 # （PUBLIC_MEDIA_TOTAL）と、写した動画の大きさの上限（techo_site.VIDEO_ROOM）の方で効く。
 MEDIA_LIMIT = 60
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
+# しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
@@ -382,11 +383,24 @@ class Handler(BaseHTTPRequestHandler):
         key = getattr(self.server, "public_key", None)
         if not key:
             return True
+        from . import shiori_open
+
+        # しおりの開く道（GET と POST /s/<22 字> の 2 つだけ）は門の外（統括の決め 11-08）。絵の順が鍵なので、合言葉を知らない人も絵の頁までは来る。
+        # 見分けは ? より前の道の fullmatch。startswith にしない（% の入った字・末の /・/s/close・//s/… は門の中に残す）
+        if self.command in ("GET", "POST") and shiori_open.PATH.fullmatch(self.path.partition("?")[0]):
+            return True
         jar = {}
         for part in self.headers.get("Cookie", "").split(";"):
             k, _, v = part.strip().partition("=")
             jar[k] = v
         if hmac.compare_digest(jar.get("utsushi_k", "").encode(), key.encode()):
+            return True
+        # しおりで開いた画面（開いた画面の印・20 分の内）も門を通す。合言葉の値そのものは端末に渡さない（別の目の止め S1 の代わりの形）。
+        # 使えなくした・止めた・とじた・開き直したしおりの画面は、台帳が通さない。最後に使った時刻の書き直しは台帳が 1 分に 1 回に絞る
+        from omochae import shiori
+
+        if jar.get(shiori_open.COOKIE) and shiori.fresh(jar[shiori_open.COOKIE]):
+            shiori.touch(jar[shiori_open.COOKIE])
             return True
         path, _, query = self.path.partition("?")
         given = urllib.parse.parse_qs(query).get("k", [""])[0]
@@ -460,6 +474,9 @@ class Handler(BaseHTTPRequestHandler):
         # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
+        m = re.fullmatch(r"/s/([A-Za-z0-9_-]{22})", path)
+        if m:
+            return self._shiori_get(m.group(1))
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
@@ -789,10 +806,53 @@ class Handler(BaseHTTPRequestHandler):
         extra += "&fresh=1" if fresh else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}"), *headers] + (self._up_close() if fresh else []))
 
+    def _shiori_get(self, token):
+        """しおりの道の GET（web.shiori_open）。公開の場は断る（照らさず数えない）。開いた画面ならそのしおりの記録、まだなら絵の頁。"""
+        from omochae import shiori
+
+        from . import shiori_open
+        if getattr(self.server, "public_open", False):
+            return self._send(403, shiori_open.notice(shiori_open.PUBLIC_REFUSE, self._look))
+        if shiori.status(token) != "open":
+            return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
+        screen = self._key_of(shiori_open.COOKIE)
+        if screen and shiori.token_of(screen) == token and shiori.fresh(screen):
+            return self._send(200, shiori_open.opened_page(screen, self._look))
+        return self._send(200, shiori_open.picture_page(token, self._look))
+
+    def _shiori_post(self, token, form):
+        """押した順を照らす（止めは台帳の中で、当たりの前に効く）。当たった時だけ、開いた画面の印の cookie を渡す。合言葉の cookie は渡さない。"""
+        from omochae import shiori
+
+        from . import shiori_open
+        nonce = secrets.token_urlsafe(16)
+        got = shiori.check(token, shiori_open.order_of(form), writer(self.client_address[0], self.headers) or "local", screen=nonce)
+        if got == "ok":
+            secure = bool(getattr(self.server, "public_key", None))
+            return self._send(303, "", headers=[("Location", f"/s/{token}"), shiori_open.cookie_line(f"{token}.{nonce}", secure)])
+        if got == "wrong":
+            return self._send(422, shiori_open.picture_page(token, self._look, shiori_open.WRONG))
+        if got == "busy":
+            return self._send(429, shiori_open.picture_page(token, self._look, shiori_open.WAIT), headers=[("Retry-After", "60")])
+        return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
+
+    def _shiori_add(self, rid):
+        """しおりで開いた画面が残した記録を、そのしおりの並びに足す（開いていない画面では何もしない）。"""
+        from omochae import shiori
+
+        from . import shiori_open
+        screen = self._key_of(shiori_open.COOKIE)
+        if screen:
+            shiori.add_record(screen, rid)
+
     def _post(self):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        if getattr(self.server, "public_open", False) and re.fullmatch(r"/s/[A-Za-z0-9_-]{22}", self.path):
+            # 公開の場ではしおりを開かない。フォームを読む前・書き込みの数の前に断り、照らさず数えない（開く道の設計 7.2 の 1）
+            from . import shiori_open
+            return self._send(403, shiori_open.notice(shiori_open.PUBLIC_REFUSE, self._look))
         m = re.fullmatch(r"/record/(R-\d{4,})/.*", self.path)
         if m and uploaded(m.group(1)):
             return self._refuse(404, "見つかりません")
@@ -842,6 +902,16 @@ class Handler(BaseHTTPRequestHandler):
             wait = self.server.print_limit.wait(who)
             if wait:
                 return self._busy(wait, form)
+        m = re.fullmatch(r"/s/([A-Za-z0-9_-]{22})", self.path)
+        if m:
+            return self._shiori_post(m.group(1), form)
+        if self.path == "/s/close":
+            # とじる: 台帳の開いた画面の印も消す（cookie を消すだけだと、写した値が 20 分の切れまで生きる・止め S2）
+            from omochae import shiori
+
+            from . import shiori_open
+            shiori.close(self._key_of(shiori_open.COOKIE) or "")
+            return self._send(303, "", headers=[("Location", "/"), shiori_open.cookie_line("", bool(getattr(self.server, "public_key", None)))])
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
@@ -1121,6 +1191,7 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
+            self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
             return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
@@ -1176,6 +1247,7 @@ class Handler(BaseHTTPRequestHandler):
                 from omochae import talk_log
                 talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
                 claim = (self._rec_cookie(rid),)
+                self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
             # 試した後の紙は刷らなくなった（本人の決まり 11-06）ので、後ろの「試した後の紙が開けます」を外した（字は足していない）
             msg = "記録を残しました。"
             # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。
