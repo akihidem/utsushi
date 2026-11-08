@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python /tmp/kz/longcheck.py
+# commit: 5879020a（回した時の HEAD）
+縞模様の小判形の物（鰹節か魚の玩具） 最後の字の下の端 673.1 pt / しおりの下の端 538.6 pt
+Traceback (most recent call last):
+  File "/tmp/kz/longcheck.py", line 13, in <module>
+    assert ymax <= bottom, "いちばん長い名の字が しおりの下の端を越えた"
+           ^^^^^^^^^^^^^^
+AssertionError: いちばん長い名の字が しおりの下の端を越えた
+rc=1

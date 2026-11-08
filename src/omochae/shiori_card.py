@@ -73,6 +73,33 @@ def _vertical(s, x, y, size):
     return "".join(_text(ch, x, y + i * size * 1.1, size) for i, ch in enumerate(s))
 
 
+NAME_SIZE = 4.5      # 玩具の名の字の大きさ（mm・入る名はこのまま）
+NAME_TOP = 116.0     # 縦書きの名の 1 字目の行の位置（しおりの上の端から mm）
+NAME_ROOM = CARD_H - 3.0 - NAME_TOP  # 最後の字の下の端までに使える長さ（しおりの下の切る線の 3mm 手前まで）
+
+
+NAME_MIN = 2.5       # 縮める時の下限（mm・統括の決め 11-08）
+
+
+def _fit(name):
+    """字の数から、最後の字の下の端がしおりの下の切る線の 3mm 手前に収まる大きさ（_vertical の 1 字の送り 1.1 と字の下の出 0.15）。"""
+    return NAME_ROOM / ((max(len(name), 1) - 1) * 1.1 + 0.15)
+
+
+def name_fit(name):
+    """縦書きの玩具の名の（刷る字, 字の大きさ）。統括の決め 11-08（別の目の #742 の確かめ: 長い名がしおりの下の切る線を越えて、切ると欠けた）:
+    - 入る名は NAME_SIZE のまま、字も替えない（御来迎・虎など）
+    - 入らない名は、字の数で縮めて入れる（NAME_MIN まで）
+    - NAME_MIN でも越える名は、終わりの括弧の組（「（…）」）を 1 つずつ外して入れる（括弧の中を刷らない・前の括弧の読みはなるべく残す）"""
+    text = name
+    while _fit(text) < NAME_MIN:
+        i = text.rfind("（")
+        if i < 0 or not text.endswith("）"):
+            break
+        text = text[:i].rstrip()
+    return text, max(NAME_MIN, min(NAME_SIZE, _fit(text)))
+
+
 def _frame():
     """切る線（実線）と角の印と、穴の印（紐を通す丸）。"""
     x, y, w, h = CARD_X, CARD_Y, CARD_W, CARD_H
@@ -116,7 +143,8 @@ def card_svg(sid, name, url, order, sources, ids):
     # 9 つの絵（下の端 y+101）と題字（y+116 から）の間に鍵の字の 2 行（1 行 18 字まで・2.2mm で しおりの幅 42mm の内）
     body += "".join(_text(line, x + CARD_W / 2, y + 105.2 + i * 3.4, 2.2) for i, line in enumerate(KEY_LINE))
     # 題字と玩具の名は鍵の字の 2 行の下から（縦書きの 1 字目の上の端が 2 行目に重ならないよう 4mm 下げた）
-    body += (_vertical(TITLE, x + 8, y + 116, 6) + _vertical(name, x + 15.5, y + 116, 4.5) +
+    shown, size = name_fit(name)
+    body += (_vertical(TITLE, x + 8, y + NAME_TOP, 6) + _vertical(shown, x + 15.5, y + NAME_TOP, size) +
              _qr(url, x + CARD_W - 4 - QR_MM, y + CARD_H - 4 - QR_MM))
     return _svg(_frame() + body)
 
