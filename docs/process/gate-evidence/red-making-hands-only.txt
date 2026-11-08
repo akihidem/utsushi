@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_workshop.py
+# commit: 89bbebea（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_workshop.py", line 45, in <module>
+    assert body and all(r.get("why") for r in kinds if r["kind"] == "body"), "体が写る写真は、どこが写るかを書いて外す"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 体が写る写真は、どこが写るかを書いて外す
+rc=1

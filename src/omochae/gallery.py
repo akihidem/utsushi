@@ -13,7 +13,7 @@ import pathlib
 import sys
 
 from . import loop, records
-from .hypotheses import letter, load
+from .hypotheses import SHOWN, load
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 # 試行ごとの写真と動画。本人の決定で repo に載せた物だけ（U-09）。どの仮説の物かは分からないので、試行の単位で添える。
@@ -38,7 +38,7 @@ def esc(s):
 
 def card(rec, data):
     h = next((x for x in data["hypotheses"] if x["id"] == rec["hypothesis_id"]), None)
-    who = f"仮説 {letter(h)}" if h else esc(rec["hypothesis_id"])
+    who = SHOWN if h else esc(rec["hypothesis_id"])  # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
     told = loop.explanation(rec["id"])
     # 取り下げた説明は字が空になるので、空の欄を並べない。書いた人は書かなくてもよい欄なので、空の時は括弧ごと出さない。
     body = ((f'<p><b>説明</b>{"（" + esc(told["by"]) + "）" if told.get("by") else ""}: {esc(told["text"])}</p>' if told.get("text") else "")

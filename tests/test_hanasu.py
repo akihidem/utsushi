@@ -36,7 +36,7 @@ from web.play_server import serve  # noqa: E402
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
 GS = hypotheses.sheet_of(G)["id"]
-GL = f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}"  # 頁と紙のたたき台の呼び名（次の組は「仮説 F」）
+GL = hypotheses.SHOWN  # 頁と紙のたたき台の呼び名。11-08 から印（A・C）は出さない（本人の答え 11-08「そろえる。」・hypotheses.SHOWN）
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -317,9 +317,9 @@ for text in (THINK, THINK_OTHER, THINK_FREE, CRAFT, KEEP_A, KEEP_B):
     assert text in loop_page, text
 for text in (CRAFT_QUIET, CRAFT_OTHER, CRAFT_NOWHO, CRAFT_NOJS):
     assert text in loop_page, text
-assert f"{GL} の紙・版 1・手順 2" in loop_page and "連絡先の形 2 件・名乗りや学校の形 1 件" in loop_page
+assert f"{GL}の紙・版 1・手順 2" in loop_page and "連絡先の形 2 件・名乗りや学校の形 1 件" in loop_page
 # 記録ごとの「工夫した所（直した所）」: 作りながら話した物（手順の番号）と、上げた後の物。見せてよいの印は、選んだ物にだけ
-assert f"<h4>{RID}（{GL} の紙・版 1）</h4>" in loop_page and f"<h4>R-0004（{GL} の紙・版 1）</h4>" in loop_page and "<h4>R-0002" not in loop_page
+assert f"<h4>{RID}（{GL}の紙・版 1）</h4>" in loop_page and f"<h4>R-0004（{GL}の紙・版 1）</h4>" in loop_page and "<h4>R-0002" not in loop_page
 assert f"<li>考え: {THINK}</li>" in loop_page and f"<li>手順 2: {CRAFT}</li>" in loop_page and f"<li>作りながら: {CRAFT_QUIET}</li>" in loop_page
 assert f"<li>上げた後: {KEEP_A}</li>" in loop_page and f"<li>手順 1: {CRAFT_OTHER}</li>" in loop_page and "［隠している］</li>" not in loop_page
 assert "声から字にした物 3 件・字で書いた物 8 件" in loop_page

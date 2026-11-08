@@ -1,4 +1,4 @@
-"""審査用の頁「改善の一周」（/kaizen。本人の言葉 11-07）の試験。本物の API は呼ばない。
+"""審査用の頁「良くするための一周 ♻︎」（前の名は「改善の一周」・/kaizen。本人の言葉 11-07）の試験。本物の API は呼ばない。
 
 見る事:
 1. 合言葉なしの公開の場でも開く。学ぶ人の帯と入口からは道を張らない（審査員の入口は README と序の頁）
@@ -130,6 +130,8 @@ assert "見つかった事から直る" in text(done) and '/paper-to-toy/pull/13
 assert k.PREMISE == ("うつしは、学校や博物館などで使える、ワークショップを支えるサービスです。",
                      "11 月 4 日から 7 日まで、4 日続けてワークショップを開けたのは、紙と、はさみと、のりで作れる手軽さがあったからです。")
 _top = k.page()
+# 題は本人の言葉 11-08「良くするための一周 ♻︎」。♻ の後ろに字の形の印（U+FE0E）を付けて、機械ごとの絵文字の揺れを無くす
+assert k.TITLE == "良くするための一周 \u267b\ufe0e" and k.TITLE.endswith("\u267b\ufe0e"), repr(k.TITLE)
 _at = [_top.index(x) for x in (f"<h1>{k.TITLE}</h1>", *(f'<p class="lead">{t}</p>' for t in k.PREMISE), f'<p class="lead">{k.LEAD}</p>')]
 assert _at == sorted(_at) and _at[1] - _at[0] == len(f"<h1>{k.TITLE}</h1>"), "題のすぐ下に S1・S3、その後に LEAD"
 assert all(_top.count(t) == 1 for t in k.PREMISE)

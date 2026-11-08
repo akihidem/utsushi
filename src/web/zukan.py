@@ -89,7 +89,7 @@ def observation_lines(sid, data, photos=True):
 
 def hypothesis_lines(sid, data, photos=True):
     """どれも試していない考えなので、仮説の印を付ける（status も添える）。出すのはたたき台の 1 つだけ（J-032。説を羅列しない）。"""
-    out = [{"text": f"仮説 {hypotheses.letter(h)} {h['name']}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"] if h["id"] == hypotheses.sheet_id(data)]
+    out = [{"text": f"{hypotheses.shown_name(h)}: {wording.plain(h['how_it_moves'])}", "label": HYPO} for h in data["hypotheses"] if h["id"] == hypotheses.sheet_id(data)]
     from api.words import spoken_own_ids  # 話した考えから採った案は出さない（ループ1、Issue #335。記録に結ぶ前の字は学ぶ人の頁に出さない決まり）
 
     spoken = spoken_own_ids(sid)

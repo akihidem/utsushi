@@ -35,7 +35,10 @@ def check(page, where):
     assert plain == loop_figure.NAME + html.unescape(ADOPTED) + loop_figure.HONEST, f"{where}: 節の字は 見出し・ADOPTED・正直な 1 行だけ"
     assert body.index(f"<h2>{loop_figure.NAME}</h2>") < body.index(ADOPTED) < body.index('class="loop-fig"') < body.index(loop_figure.HONEST), f"{where}: 見出し → 文 → 図 → 1 行"
     at = page.index('id="manabi"')
-    assert page.index(naoru.LINES[0]) < at < page.index('aria-label="上げる"'), f"{where}: 枠の後・上げる節の前"
+    # 記入の節のすぐ下（本人の言葉 11-08「のこすのうつしの輪は、記入欄の下にする。」）。直った例の集（naoru の枠）はその下
+    assert page.index('id="kinyu"') < at < page.index(naoru.LINES[0]) < page.index('aria-label="上げる"'), f"{where}: 記入の節の後・直った例の集の前"
+    between = page[page.index('id="kinyu"'):at]
+    assert 'class="naoru"' not in between and "手帖をひらく" not in between, f"{where}: 記入の節と輪の節の間に、ほかの節が入らない"
     # 図の読み上げ（aria-label）にも同じ文が入るので（説明の頁と同じ部品の作り）、数えるのは頁に見える字だけ
     assert re.sub(r"<[^>]+>", "", page).count(ADOPTED) == 1, f"{where}: 文は 1 回"
 

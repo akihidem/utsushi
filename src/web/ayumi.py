@@ -132,12 +132,13 @@ def _set_item(row, prefix=""):
                                                        ("その後に分かった事", esc(row["分かった問題、捨てた理由"]))), next((n for n in names if SET_NAME.fullmatch(n) and n.startswith(prefix)), ""))
 
 
-def _version_item(sid, hid, letter, v):
+def _version_item(sid, hid, head, v):
     ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
     why = "、".join(esc(c["why"]) for c in v.get("changes", []) if c.get("why"))
     said = [x for rid in v.get("record_ids", []) for x in kv.record_words(rid)]
     know = why + _lines(said) if why else _lines(said).removeprefix("<br>")
-    return _item(f"仮説 {letter} 版 {v['version']}", kv.version_verdict(v), (("どこを良くしたか", ch), ("どの知見から", know), ("記録", esc("・".join(v.get("record_ids", []))))))
+    # 仮説の印（A・C）は札の題に出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし））。head は呼び名（hypotheses.version_head。版がある仮説が 2 つ以上の玩具では名を添える）
+    return _item(f"{head} 版 {v['version']}", kv.version_verdict(v), (("どこを良くしたか", ch), ("どの知見から", know), ("記録", esc("・".join(v.get("record_ids", []))))))
 
 
 def _loose_changes():
@@ -154,7 +155,10 @@ def _change_item(t):
 
 def toy_block(sid, data):
     """玩具 1 つの版の歩み。新しい版が上（日付のある版を日の新しい順に、その後に版の表の行）。書く事が無ければ空。"""
-    dated = [(v.get("adopted_at", ""), _version_item(sid, h["id"], hypotheses.letter(h), v)) for h in data["hypotheses"] for v in versions(sid, h["id"])]
+    # 同じ玩具で版がある仮説が 2 つ以上の時は、札の題に仮説の名を添えて見分ける（仮説「…」 版 N）。印（A・C）は使わない。1 つの時は「仮説 版 N」。
+    # 統括の割り振り 11-08（別の目の気づき: 印を外した後、2 つの仮説の版が同じ「仮説 版 2」で並ぶと見分けられない）
+    many = sum(1 for h in data["hypotheses"] if versions(sid, h["id"])) > 1
+    dated = [(v.get("adopted_at", ""), _version_item(sid, h["id"], hypotheses.version_head(h, many), v)) for h in data["hypotheses"] for v in versions(sid, h["id"])]
     dated += [(t.get("at", ""), _change_item(t)) for t in _loose_changes() if sid in kv.change_toys(t)]
     items = "".join(html for _, html in sorted(dated, key=lambda x: x[0], reverse=True))
     prefix = _prefix(_template(sid))

@@ -43,7 +43,12 @@ def _pic(sid, src, alt, lazy=False, href=None, **kw):
 
 _genga._pic = _pic
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-QUIET = "NDL-1187053-R0000013-L-5"  # 歌の読みが無い玩具（亀）
+# 歌の読みが無い玩具。前は名指し（R0000013-L-5・亀）だったが、#661 で亀に読みが入った（11-08）。読みを 10 歌ずつ足していくので、
+# 並びの中から出典の記録に読みの無い玩具を選ぶ（見る線は替えない）
+from web.play_server import sources as _sources  # noqa: E402
+
+QUIET = next(s for s in _sources() if s not in (G, T)
+             and not json.loads((ROOT / "data/sources" / f"{s}.json").read_text(encoding="utf-8")).get("transcription", {}).get("entries"))
 
 for sid in (G, T, QUIET):
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))

@@ -43,8 +43,11 @@ def _pic(sid, src, alt, lazy=False, href=None, **kw):
 
 genga._pic = _pic
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-QUIET = "NDL-1187053-R0000013-L-5"  # 歌の読みが無い玩具（亀）
 SIDS = sources()
+# 歌の読みが無い玩具。前は名指し（R0000013-L-5・亀）だったが、くずし字の歌の読みを 10 歌ずつ足していくので（11-08）、読みが入るたびに
+# 見本を替える事になる（#661 で亀に読みが入って落ちた）。並びの中から、出典の記録に読みの無い玩具を選ぶ（見る線は替えない）
+QUIET = next(s for s in SIDS if s not in (G, T)
+             and not json.loads((ROOT / "data/sources" / f"{s}.json").read_text(encoding="utf-8")).get("transcription", {}).get("entries"))
 
 # 1. 足の道
 for sid in (G, T, QUIET, SIDS[0], SIDS[-1]):

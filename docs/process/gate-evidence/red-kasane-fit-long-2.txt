@@ -1,0 +1,19 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: fe38ca6c（回した時の HEAD）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+/tmp/tmp0c41fkk1/play/NDL-1187053-R0000005-L/.tmp-pu08tku1/H-C_v1.pdf
+/tmp/tmp0c41fkk1/play/NDL-1187053-R0000014-R/.tmp-k4pmohop/H-A_v1.pdf
+/tmp/tmp0c41fkk1/play/NDL-1187053-R0000005-L/.tmp-ji22shdg/H-C_v1.pdf
+/tmp/tmp0c41fkk1/play/NDL-1187053-R0000014-R/.tmp-5dkvwk8z/H-A_v1.pdf
+/tmp/tmp0c41fkk1/play/NDL-1187053-R0000004-L/.tmp-i_nzcgkq/H-A_v1.pdf
+英語の頁の最初の画面（数だけ）: 0005-L 320×568 はじめるの下の端 555・0014-R 320×568 はじめるの下の端 555・0004-L 320×568 はじめるの下の端 512・0005-L 375×667 はじめるの下の端 611・0014-R 375×667 はじめるの下の端 611・0004-L 375×667 はじめるの下の端 611・0005-L 320×568 はじめるの下の端 555・0014-R 320×568 はじめるの下の端 555・0004-L 320×568 はじめるの下の端 512・0005-L 375×667 はじめるの下の端 611・0014-R 375×667 はじめるの下の端 611・0004-L 375×667 はじめるの下の端 611
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 572, in <module>
+    check_long(name, got)
+    ~~~~~~~~~~^^^^^^^^^^^
+  File "tests/test_hmd.py", line 548, in check_long
+    assert all(b[2] <= got["vh"] for b in got["btn"]), (name, "押す所が頁を動かさずに全部見える", got)
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('長い手順・横 1024×600・虎', '押す所が頁を動かさずに全部見える', {'btn': [['hmd-next', 152, 248, 689, 96, False], ['hmd-prev', 258, 322, 689, 64, False], ['hmd-again', 258, 322, 792, 64, False], ['hmd-listen', 258, 322, 895, 64, False], ['hmd-camera', 332, 396, 689, 64, False], ['hmd-stuck', 332, 396, 792, 64, False], ['hmd-split', 332, 396, 895, 64, False], ['hmd-reset', 406, 470, 689, 64, False]], 'text': [435, 663], 'len': 84, 'vh': 457, 'vw': 1024, 'sx': 1009, 'fit': True})
+rc=1
