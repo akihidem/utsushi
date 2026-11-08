@@ -70,7 +70,8 @@ def post(path, form):
 page = get(f"/toy/{G}")
 # すぐ作れる
 # 「すぐ作る」の見出しは外し、説明の文は型紙の窓の頭へ移した（本人のサイト体験レビュー 11-07 の 3。作る節が 2 つに見えた）。錨は残る
-assert 'id="kasetsu"' in page and "<h2>すぐ作る</h2>" not in page and "型紙を刷ります。切って、折って、組みます。" in page.split('id="win"', 1)[1]
+# 型紙の窓の説明の文の 2 文目（試行錯誤が作る事の大前提・本人の言葉 11-08「…最初の Claude の設計だと動かない、という前提…」・本人の答え「この字でよい」）
+assert 'id="kasetsu"' in page and "<h2>すぐ作る</h2>" not in page and "型紙を刷ります。切って、折って、組みます。動かない所は、切り方や折り方、重りの位置を変えて、動くまでためします。" in page.split('id="win"', 1)[1]
 # 札はたたき台の 1 枚だけ（本人の決定 11-05、J-032）
 sheet = hypotheses.sheet_of(G)
 assert f'value="{sheet["id"]}"' in page and sheet["name"] in page

@@ -501,7 +501,10 @@ def withdraw(rid, media_only=False, talk_only=False):
         if talk_only:
             gone += _scrub_spoken(rid)
         if media.exists() and (whole or media_only):
-            shutil.rmtree(media)
+            from . import media_review  # 循環を避けて、ここで読む（media_review は records を読む）
+
+            with media_review.media_lock():  # 同時の上げ・確認の書き込みと取り合わない（安全の事項 2 への対応）
+                shutil.rmtree(media, ignore_errors=False)
         for p in files:
             p.unlink(missing_ok=True)
         if whole or talk_only:
