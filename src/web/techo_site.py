@@ -454,6 +454,18 @@ def sakurei_section(sids, photos=True):
 # ギャラリーには出ないので、並ばない理由を上げた時に言う。合言葉付きの場も同じ線だが、決定は合言葉なしの場の分なので、そこだけに出す
 PUBLIC_UPLOADED = "写真は、人が確かめてから、みんなの所に出ます。"
 UPLOADED = "上げました"  # 手帖の script（techo_step）が上げた後に渡す返事の字
+# のこした後の「この画面をとじる」（のこすの流れの設計の別の目の気づき 9・統括の決め 11-08。設計は grove の state/screen-close-20261108.md）。
+# 1 台を順に使う場では、前の人の写真の鍵（確かめる前の写真を 2 時間見せる）と記録の鍵（今残した 1 つの札と字を足す口）が、次の人が記録を
+# 残すまでその画面に残る。のこした直後（返事のある時）にだけ釦を出し、POST /close で 2 つの鍵を消す。字は新しい字で、本人の確かめ待ち
+CLOSE = "この画面をとじる"
+CLOSED = "とじました。次の人が使えます。"
+# 公開の場だけの断り（とじると、その画面からは取り下げられない）は置かない（本人 11-08「公開デモだけのものはいらない。なにかあれば僕が対応するので。」）。
+# 公開の場の取り下げは写真の鍵で見分けるので、とじた後に取り下げたい人は、本人が受ける
+
+
+def close_form():
+    """「この画面をとじる」の素のフォーム（台本なしでも動く）。道しるべの釦（.go）にしない: 帯の駅の道しるべは 1 つの決まり（test_ux_stage0）"""
+    return f'<form method="post" action="/close" class="close-screen"><button type="submit">{esc(CLOSE)}</button></form>'
 
 
 # ギャラリーの頭の説明の文。頁と、頁の description（skin.meta_head）が同じ字を引く（description に新しい字を作らないため・11-08）
@@ -480,7 +492,9 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     from . import workshop
     ws = workshop.gallery(sids)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
-    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>' if msg else ""
+    # とじた後の返事（CLOSED）には釦を出さない（押した後に同じ釦がまた出ると、とじていないように見えるため）
+    shut = close_form() if msg and msg != CLOSED else ""
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>{shut}' if msg else ""
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
