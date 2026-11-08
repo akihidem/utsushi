@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ukabu_steady.py
+# commit: 6fd0cb76（回した時の HEAD）
+ok 入口の浮かぶ玩具: 白と暗い版・3 つの言葉・6 の大きさで、触って送っても・送ったまま高さだけを縮めて戻しても動かない
+rc=0
