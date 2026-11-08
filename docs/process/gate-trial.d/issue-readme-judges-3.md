@@ -14,6 +14,6 @@
   - エンジンの節: 具体例の 1 文の本文と位置づけの 1 文目を、序の頁の定数と同じ字に
 - 戻した見張り: 序の頁と README の字の照らし（大前提の 3 段・具体例の 1 文・位置づけの 1 文目。test_about_engine）と、試作をできた物と書かない（README の中で原点にある模型を言う文。test_readme_origin_models）
 - 読みやすさ: yomiyasu 2.5.0 で、見直し候補 24 → 24 件、60 字を超える文 41 → 41、平均 36.9 → 36.8 字、箇条書きの割合 44.6% → 44.1%（字を足しても増やさない所まで。research/39 の続き）
-- 検証ゲート: **済み**。Red: 今の main（`611d1591`）に新しい頭の試験だけを置くと rc 1（gate-evidence/red-readme-judges-3.txt）。Green: この枝で rc 0（gate-evidence/green-readme-judges-3.txt）
+- 検証ゲート: **済み**。Red: 今の main（`611d1591`）に新しい頭の試験だけを置くと rc 1（gate-evidence/red-readme-follow.txt）。Green: この枝で rc 0（gate-evidence/green-readme-follow.txt）
 - エビデンスゲート: README・CLAUDE.md・序の頁・claude-usage を見る試験 51 本が rc 0
 - 確かめていない事: 全部の試験（`./run.sh`）。謝辞の「のべ30人のみなさま」は repo に見当たらず、照らせていない
