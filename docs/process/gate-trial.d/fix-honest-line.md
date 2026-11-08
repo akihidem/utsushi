@@ -4,6 +4,6 @@
 - どうしたか: のこすの頁と説明の頁の輪の図の下の 1 行（`src/web/loop_figure.py` の HONEST）を、2 案（A・B）から本人の答え「(A) でよい。」（決めの記録 525）の A にした: 「今は、作った人の記録を Claude に渡して、次の型紙の案を作っています。どの版にするかは人が決めます。」。英語の表とやさしい日本語の表（`data/i18n/yasashii.d/5-one-loop.json`）の前の字の行を、A の行に置き換えた（英語は英語の見直しの言葉の決めに合わせた）
 - デモの台本: デモの語りの下書き（grove の state/demo-narration-oneloop-20261108-g.md・g-a.md）が、冒頭の正直さの字を前の字にそろえていたので、デモの担当へ知らせた（repo の外）
 - ゴールの要件: 図の下の 1 行が A。前の字が頁に出ない。英語とやさしい日本語の表に A がある
-- 検証ゲート: Red: 今の main 4af9fe0d の木に直した `tests/test_loop_figure.py` を当てて rc 1（`docs/process/gate-evidence/red-honest-line.txt`。前の字のまま）
+- 検証ゲート: Red: 今の main 4af9fe0d の木に直した `tests/test_loop_figure.py` を当てて rc 1（`docs/process/gate-evidence/red-honest-line.txt`。前の字のまま）。Green: rc 0（`green-honest-line.txt`、72157690）
 - 確かめていない事: 本人が頁で見る事
 - マージ後の書き戻し: Issue は立てていない
