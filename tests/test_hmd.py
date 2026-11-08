@@ -24,6 +24,7 @@
 Chrome が無い機械と、Chrome が何も答えなかった時は、測れないと出して通す。落ちるのは、歩けて結果が違う時と、歩き始めたのに終わらなかった時。
 1 手ずつの進め方と歩く試験は、別の試作の枝（proto/hmd-work-view）の物を、この枝の頁の作りに合わせて移した（統括の決め 11-06）。
 """
+import html
 import json
 import math
 import os
@@ -40,6 +41,24 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 from measure_tap import chrome  # noqa: E402
 from omochae import assembly, hypotheses  # noqa: E402
 from web import hmd, kumitate, naoru, play_server  # noqa: E402
+
+# 原画の写し（out/sources・git の外）がある時は、手帖の上の帯に原画の小さな絵（#genga-thumb）が出る。写しの無い木では出ないので、
+# 帯の印どうしの重なり（重ねる頁への印と原画の小さな絵）を見ない試験になり、今の main で写しのある木でだけ落ちた所を拾えなかった（11-08）。
+# 写しの有り無しの両方で測る: "pic" は写しが無い木でも同じ形の絵の包みを置く形（tests/test_landscape_fit.py と同じ）、"nopic" は絵を出さない形
+from web import genga  # noqa: E402
+
+_real_pic = genga._pic
+PIC = {"m": "pic"}
+
+
+def _pic(sid, src, alt, lazy=False, href=None, **kw):
+    if PIC["m"] == "nopic":
+        return "", False
+    got = _real_pic(sid, src, alt, lazy=lazy, href=href, **kw)
+    return got if got[0] else (f'<span class="genga-pic" style="--genga-r:0.7000"><img src="data:," width="700" height="1000" alt="{html.escape(alt)}"></span>', True)
+
+
+genga._pic = _pic
 
 G, T = hmd.TOYS
 # ---- 1. 字と、送らない作り
@@ -313,7 +332,7 @@ FIT_SIZES, FIT_TOYS = ((320, 568), (375, 667)), (G, T, "NDL-1187053-R0000004-L")
 FIT_WRAP = """<!doctype html><meta charset="utf-8"><body>__FRAMES__<pre id="measured"></pre><script>
 addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const d=f.contentDocument,w=f.contentWindow;
 const st=d.getElementById('start'),go=d.querySelector('.nokosu-route');const r=st.getBoundingClientRect(),g=go&&go.getBoundingClientRect();
-out.push({sid:f.dataset.sid,w:w.innerWidth,h:w.innerHeight,start:Math.round(r.bottom),go:g?[Math.round(g.top),Math.round(g.bottom)]:null,sx:d.documentElement.scrollWidth});st.click()}
+out.push({sid:f.dataset.sid,w:w.innerWidth,h:w.innerHeight,start:Math.round(r.bottom),go:g?[Math.round(g.top),Math.round(g.bottom)]:null,sx:d.documentElement.scrollWidth});st.click();d.documentElement.style.overflowY='scroll'}
 setTimeout(()=>{let i=0;for(const f of document.querySelectorAll('iframe')){const d=f.contentDocument,w=f.contentWindow,o=out[i++];
 const seen=(e)=>e&&!e.hidden&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0,box=(e)=>{const b=e.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.right),Math.round(b.bottom)]};
 const kg=d.getElementById('kasane-go'),kl=kg&&kg.querySelector('span'),li=d.querySelector('#steps li.on'),keys=[...d.querySelectorAll('.keys a,.keys button')].filter(seen);
@@ -352,8 +371,19 @@ from omochae import hypotheses  # noqa: E402
 for sid in FIT_TOYS:  # 手帖は刷った紙がある時だけ「はじめる」を出すので、測る玩具は全部刷る
     urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={hypotheses.sheet_of(sid)['id']}".encode(),
                                                   headers={"Origin": base}), timeout=120).read()
-fits = techo_fit() or techo_fit()
-fits_en = techo_fit("en") or techo_fit("en")
+fits, fits_en = [], []
+for mode in ("pic", "nopic"):
+    PIC["m"] = mode
+    got_ja = techo_fit() or techo_fit()
+    got_en = techo_fit("en") or techo_fit("en")
+    if got_ja is None or got_en is None:
+        fits = fits_en = None
+        break
+    for f in got_ja + got_en:
+        f["pic"] = mode
+    fits += got_ja
+    fits_en += got_en
+PIC["m"] = "pic"
 if fits is not None and fits_en is not None:
     # 英語の頁は印の字の塊（字が印の高さに収まり、写真機の形が印の外へ押し出されない・帯が 1 行）だけを同じ線で見る（統括の決め 11-08）。
     # 英語の最初の画面の「はじめる」の位置は、断りの字の長さで替わる別の事なので、ここでは数だけを出す（en_start）
@@ -377,6 +407,9 @@ else:
             assert f["go"] and f["go"][0] >= f["start"], ("のこすへの 1 行は「はじめる」の下に置き、重ならない", f)
         # 手順の画面の重ねる頁への印（本人の答え 11-08「どこかに道を戻す。」）: 組み立ての書き方がある玩具だけに出て、画面の中にあり、
         # 手順の字と上の帯の印（マイク・閉じる印・原画の小さな絵）と重ならず、押す所（もどる・つぎ・こまった）を最初の画面から押し出さない
+        # 手順の画面は送りの棒を必ず出した形で測る（html の overflow-y:scroll）。頁が縦に送れる長さの時（原画の写しがある木・英語の頁）は、
+        # 右寄せの印が送りの棒の幅（15px）だけ左へ寄り、幅 320 で重ねる頁への印と原画の小さな絵が重なった（今の main で落ちた・#635 の left:96px）。
+        # 送りの棒の有り無しで替わる所を、写しの有り無しに左右されずに見るため
         st = f["step"]
         over = lambda a, b: not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])  # noqa: E731
         if f["sid"] == "NDL-1187053-R0000004-L":
