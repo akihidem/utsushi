@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kaizen_band.py
+# commit: ecf6757f（回した時の HEAD）
+ok 良くするための一周 ♻︎ の帯: 白と暗い版・3 つの言葉・幅 320・390・1180・1440 で、#mazu に着くと画面の中・重ならない・はみ出さない・押せる高さ 44px 以上
+rc=0

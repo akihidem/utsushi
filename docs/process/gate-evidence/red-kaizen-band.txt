@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kaizen_band.py
+# commit: ecf6757f（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kaizen_band.py", line 29, in <module>
+    assert band and band.group(1) == "/kaizen" and band.group(2) == kaizen_judge.TITLE, "まずはここから の節に /kaizen への帯が無い（か字が題と違う）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: まずはここから の節に /kaizen への帯が無い（か字が題と違う）
+rc=1
