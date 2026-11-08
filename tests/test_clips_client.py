@@ -105,5 +105,6 @@ st = clips.START_SCRIPT
 assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "印の無い区切りを消し、次は新しい印"
 assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
 assert "utsushiClips.startMaking(T.sid,back)" in hmd.SCRIPT and "'/toy/'+T.sid+'/techo/kiroku'" in hmd.SCRIPT, "作業の頁を開いた時（のこすから戻った時は除く）"
+assert "addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false)" in hmd.SCRIPT, "戻る釦で読み直さずに戻った時も作り始め"
 assert clips.STORE.endswith("別のタブでこのサイトを開くと、前のタブの区切りも消えます。"), "2 つ目のタブで消える事を置き場の断りが言う"
 print("ok: 作り始めの消し・印は玩具ごとに使い直す・承認の後の消しはその玩具だけ")

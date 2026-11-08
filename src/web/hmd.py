@@ -150,6 +150,9 @@ const T=JSON.parse($('hmd-words').textContent),P=window.kumitateParts;
 // 作り始め（統括の決め・別の目の止め 3）: 作業の頁を開いた時に、その玩具の印の無い区切りを消す。のこす の頁から戻って開いた時は消さない（web.clips）
 addEventListener('DOMContentLoaded',()=>{if(!window.utsushiClips)return;let back=false;try{back=new URL(document.referrer).pathname==='/toy/'+T.sid+'/techo/kiroku'}catch(e){}
  utsushiClips.startMaking(T.sid,back).catch(()=>{})});
+// 戻る釦で頁が読み直されずに戻った時（bfcache・pageshow の persisted）は、前の頁がどこでも作り始めとする（別の目の残る穴・統括の決め）。
+// 同じ人が のこす から戻る釦で戻った時も、前に渡した区切りは次に渡す時に新しい印になって並ばなくなるが、前の人の声を次の人に送らない方を採る
+addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false).catch(()=>{})});
 if(!next||!prev)return;
 const at=()=>Number(stage.dataset.at||0),done0=()=>!count.textContent;
 const still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
