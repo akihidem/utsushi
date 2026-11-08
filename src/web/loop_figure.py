@@ -296,7 +296,8 @@ def drawn(variant=None, lang="ja"):
         gap = 2 * RH - (boxes[1][3] + boxes[3][3]) / 2 - 8
         now_lines = en_fig.wrap(now, n_fs, gap)
         first = CY + 18 - (10 if len(now_lines) > 1 else 0)
-        body += "".join(f'<text class="lf-n" x="{CX:.1f}" y="{first + i * (n_fs + 2):.1f}" text-anchor="middle" font-size="{n_fs}" fill="{INK}">{esc(t)}</text>'
+        # 行の送りは字の箱の高さ（字の大きさの 1.45 倍）。字の大きさ + 2 では、2 行の字の箱が 6 重なった（tests/test_no_overlap.py）
+        body += "".join(f'<text class="lf-n" x="{CX:.1f}" y="{first + i * n_fs * 1.45:.1f}" text-anchor="middle" font-size="{n_fs}" fill="{INK}">{esc(t)}</text>'
                         for i, t in enumerate(now_lines))
     else:
         body += f'<text class="lf-n" x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{n_fs}" fill="{INK}">{esc(now)}</text>'

@@ -83,7 +83,7 @@ def _box(x, y, label, lang="ja"):
     if lang == "en":  # 英語の図: 訳の表の英語を、札の幅に入らなければ折り直す（en_fig.fit）
         fs = EN_FS["step"]
         words = en_fig.fit(lines, fs, BOX_W - 12)
-        step = fs + 3
+        step = fs * 1.45  # 行の送りは字の箱の高さ（字の大きさの 1.45 倍。これより狭いと、上の行と下の行の字の箱が重なる）
         first = y - (len(words) - 1) * step / 2 + fs * 0.35  # 字の下の線（字の真ん中は下の線から字の大きさの 3〜4 割上）
         texts = "".join(f'<text class="wa-te" x="{x}" y="{first + i * step:.1f}" text-anchor="middle" font-size="{fs}">{esc(w)}</text>'
                         for i, w in enumerate(words))
@@ -112,7 +112,7 @@ def ring(version=1, href=HREF):
     said_en = " → ".join(en_fig.phrase(LINES.get(s, (s,))) for s in (*STEPS, STEPS[0]))
     fs = EN_FS["now"]
     now_lines = en_fig.wrap(en_fig.en(NOW), fs, NOW_W)  # 2 行の時は、日本語の 1 行（CY - 8）を 2 行目の下の線にして上へ積む
-    now_texts = "".join(f'<text class="wa-nowe" x="{CX}" y="{CY - 8 - (len(now_lines) - 1 - i) * (fs + 2):.1f}" text-anchor="middle" font-size="{fs}">{esc(t)}</text>'
+    now_texts = "".join(f'<text class="wa-nowe" x="{CX}" y="{CY - 8 - (len(now_lines) - 1 - i) * fs * 1.45:.1f}" text-anchor="middle" font-size="{fs}">{esc(t)}</text>'
                         for i, t in enumerate(now_lines))
     center_en = (f'<a href="{esc(href)}" aria-label="{now_en} {v_en}"><circle class="wa-c" cx="{CX}" cy="{CY}" r="44"/>{now_texts}'
                  f'<text class="wa-ve" x="{CX}" y="{CY + 22}" text-anchor="middle" font-size="{EN_FS["version"]}">{v_en}</text></a>')
