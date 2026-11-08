@@ -5,6 +5,6 @@
 - 替えていない所: 記録の中の字（人の説明・本人の所見とつぶやき・本人の決定の記録・版の台帳の文・AI の読み）。人の言葉と記録の字で、2 つの仮説を比べる文（「仮説Aにある土台が仮説Cにもあると、作りやすい」「仮説 D は型紙が仮説 C と同じ」など）は、印を外すと意味が通らないため。作る側の字を描く時に替える表（`src/web/wording.py` の H-C → 仮説 C）も、同じ理由で替えていない
 - 見つけた事: 記録の札の字（「仮説 C の紙・動いた」など）の英語は、前から表に無い（試験の場に記録が無いので、全頁の英語の試験に出ない）。今回の直しで抜けた物ではない
 - ゴールの要件: 部品が作る字に「仮説 A 版 N」「A の紙」「Idea A」の形が無い。記録の中の字は前のまま
-- 検証ゲート: Red: 今の main 6c5fc344 の木に `tests/test_kasetsu_plain_all.py` だけを当てて rc 1（`docs/process/gate-evidence/red-kasetsu-plain-all.txt`。くずし字の頁の仮説の行が「仮説 C 柄を下から押し上げる: …」）
+- 検証ゲート: Red: 今の main 6c5fc344 の木に `tests/test_kasetsu_plain_all.py` だけを当てて rc 1（`docs/process/gate-evidence/red-kasetsu-plain-all.txt`。くずし字の頁の仮説の行が「仮説 C 柄を下から押し上げる: …」）。Green: rc 0（`green-kasetsu-plain-all.txt`、6c64c9e9）
 - 確かめていない事: 本人が頁で見る事
 - マージ後の書き戻し: Issue は立てていない
