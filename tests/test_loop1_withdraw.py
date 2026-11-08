@@ -241,7 +241,9 @@ assert talk_log.kufu(G, rid8) == [] and loop.maker_talk(rid8)["items"] == [], "�
 # 消した後も、記録の札と頁が開く。字は出ない
 for html in (toy_page(G), techo_step.page(G, [sheet]), techo_site.records_page(G), json.dumps(zukan.lines_for(G), ensure_ascii=False)):
     assert not any(x in html for x in (SAID8, CRAFT8, KEEP8)), html[:200]
-assert rid8 in toy_page(G), "記録の札は残る"
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作は手帖の記録の頁にある。札の字は手帖の記録の頁とギャラリー（もちよる）で見る（つくるの頁には初めから出ない事も見る）
+assert rid8 in techo_site.records_page(G) and f'id="{rid8}"' not in toy_page(G), "記録の札は手帖の記録の頁に残る（つくるの頁に札は無い）"
 # 話した字だけの時は、写真と動画を消さない（字と写真は別の用事）
 photo = records.folder() / "media" / rid8
 photo.mkdir(parents=True, exist_ok=True)
@@ -513,12 +515,16 @@ assert pid20 and not fs, fs
 pid20b, fs = loop.save_proposal({"record_ids": [rid20], "hypothesis_id": sheet, "next_to_try": {"why": TOLD20, "what_to_measure": IDEA_TOLD20}, "references": []}, SOURCE, "human")
 assert pid20b and not fs, fs
 # 手帖の記録の札（説明と Claude の読み）は、作り直した手帖では記録の頁にある（#87）
-pages20 = lambda: {"玩具の頁": toy_page(G), "手帖": techo_site.records_page(G), "ギャラリー": gallery.build()}
-assert all(x in pages20()["玩具の頁"] for x in (NOTE20, FEEL20, FIRST20, TOLD20, IDEA_TOLD20, HEAD20)), "消す前は頁に字がある（下の確かめが効いている事を見る）"
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作は手帖の記録の頁にある。札の字は手帖の記録の頁とギャラリー（もちよる）で見る（つくるの頁には初めから出ない事も見る）
+# 記録の欄に書いた字（NOTE20・FEEL20・FIRST20）は、前はつくるの頁の札にだけ出ていた。今はどの頁にも出ないので、消した事は下の everywhere（置き場の字）で見る
+pages20 = lambda: {"手帖": techo_site.records_page(G), "ギャラリー": gallery.build()}
+assert not any(x in toy_page(G) for x in (NOTE20, FEEL20, FIRST20, TOLD20, IDEA_TOLD20, HEAD20)), "つくるの頁に記録の札の字が出た"
+assert all(x in pages20()["手帖"] for x in (TOLD20, IDEA_TOLD20, HEAD20)), "消す前は頁に字がある（下の確かめが効いている事を見る）"
 assert TOLD20 in pages20()["手帖"] and HEAD20 in pages20()["手帖"] and TOLD20 in pages20()["ギャラリー"] and NAME20 in pages20()["ギャラリー"]
 heads20 = {k: v.count(HEAD20) for k, v in pages20().items()}
 LEFT20 = "説明を残しました。"
-open20 = lambda: (toy_page(G, photos=False).count(LEFT20), techo_site.records_page(G, uploads=False).count(LEFT20))
+open20 = lambda: (techo_site.records_page(G, uploads=False).count(LEFT20),)  # 合言葉なしの場の札は手帖の記録の頁で見る（上の理由）
 open_before20 = open20()
 rec20 = json.loads((records.folder() / f"{rid20}.json").read_text(encoding="utf-8"))
 assert records.withdraw(rid20, talk_only=True)[1] == []
@@ -528,8 +534,8 @@ for name, html in pages20().items():
     assert not any(x in html for x in (*WRITTEN20, NAME20)), name
     assert not any(x in html for x in ("<p>説明: </p>", "<p>次の思いつき: </p>", "次の思いつき: </p>", "<b>説明</b>（）", "<p></p>", f"{HEAD20}</p><ul></ul>", "工夫:  /  / ")), (name, "空の欄を並べない")
     assert rid20 in html or name == "手帖", name
-assert toy_page(G).count(HEAD20) == heads20["玩具の頁"] - 1 and techo_site.records_page(G).count(HEAD20) == heads20["手帖"] - 1, "中身の無い読みの見出しは出さない"
-assert open20() == (open_before20[0] - 1, open_before20[1] - 1), "合言葉なしの場でも、字が消えた説明を残したとは言わない"
+assert techo_site.records_page(G).count(HEAD20) == heads20["手帖"] - 1 and HEAD20 not in toy_page(G), "中身の無い読みの見出しは出さない"
+assert open20() == (open_before20[0] - 1,), "合言葉なしの場でも、字が消えた説明を残したとは言わない"
 left20 = json.loads((records.folder() / f"{rid20}.json").read_text(encoding="utf-8"))
 assert left20 == {**rec20, "note": "", "impression": "", "answers": {}, "ideas": [], "fixes": []}, "番号・結果・寸法の欄は 1 つも変わらない"
 told20 = loop.explanation(rid20)
@@ -623,7 +629,14 @@ try:
     assert techo_site.ai_offer(rid20)[0] is False and techo_site.ai_offer(rid8)[0] is False, "書いた字を消した記録も同じ"
     rid25, _ = records.add({"source_id": G, "hypothesis_id": sheet, "sheet_version": 1, "result": "わからない"})
     assert loop.save_explanation(rid25, "試した人", "まだ取り下げていない説明", "次") == [] and techo_site.ai_offer(rid25)[0] is True, "説明の字がある記録では釦を出す"
-    card25 = toy_page(G).split(f'id="{rid24}"', 1)[1].split("</article>", 1)[0]
+    # 記録の札は手帖の記録の頁で見る（つくるの頁から記録の札を外した・上の理由）。札は「記録の番号 R-…」から次の札の頭まで
+    from web import wording
+
+    kiroku = techo_site.records_page(G)
+    assert wording.record_no(rid24) in kiroku and f'id="{rid24}"' not in toy_page(G), "記録の札は手帖の記録の頁にある"
+    import re as _re  # noqa: E402
+
+    card25 = _re.split(r"記録の番号 R-\d{4}", kiroku.split(wording.record_no(rid24), 1)[1], maxsplit=1)[0]  # 札の中にも item の箱があるので番号で区切る
     assert "Claude に聞く" not in card25 and "動画を見てもらう" not in card25, card25[:300]
 finally:
     ask._key_present = key_present

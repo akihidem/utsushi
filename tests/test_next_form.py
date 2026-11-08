@@ -58,7 +58,10 @@ def option(page, key):
     return re.search(rf'<option value="{key}">([^<]*)</option>', form_of(page)).group(1)
 
 
-page = get(f"/toy/{G}")
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作（次の版を作る）は手帖の記録の頁にあるので、そこで見る。つくるの頁に次の版の欄が残っていない事も見る
+assert 'action="/record/R-0001/next' not in get(f"/toy/{G}"), "つくるの頁に次の版の欄が残った"
+page = get(f"/toy/{G}/techo/kiroku")
 # 選ぶ項目に、今の値と変えてよい幅が並ぶ（JS なし）
 lo, hi = slider_fan.RANGES["fold_width"]
 assert option(page, "fold_width") == f"折りの幅（mm）: 今 {now['fold_width']:g}（{lo:g}〜{hi:g}）", option(page, "fold_width")
@@ -86,7 +89,7 @@ assert sorted(p.name for p in pathlib.Path(DATA).rglob("*") if p.is_file() and f
 code, page = post("/record/R-0001/next", {**form, "param": "paper_thickness", "to": "0.2"})
 assert code in (200, 303), (code, page[:300])
 assert loop.latest_version(G, GS) == 2
-assert ": 今 0.2（" in option(get(f"/toy/{G}"), "paper_thickness")
+assert ": 今 0.2（" in option(get(f"/toy/{G}/techo/kiroku"), "paper_thickness")  # 手帖の記録の頁の欄（上と同じ理由）
 
 server.shutdown()
 print("ok")

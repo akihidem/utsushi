@@ -42,7 +42,9 @@ a = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="ut
 assert "作る側のたとえ" in after and "答えではありません" in after and a["like"] in after and a["related"][0] in after
 # 順路: たとえは型紙の窓のすぐ前に、畳まずに出す。本人の言葉 11-08「つくるのページ、これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、
 # 型紙の順で」（前は本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」で窓のすぐ後。型紙の近くは変わらない）。前は頁の足の畳み（段 0）
-assert after.index('id="minna"') < after.index('id="kasetsu"') < after.index('id="tatoe"') < after.index('id="win"')
+# 本人の言葉 11-08（477）「原図をみて、狂歌を読んで、仮説、たとえ、3D をみたあとに型紙の印刷にすすむ。」で 仮説 → たとえ → 立体 → 型紙の窓 の順になった
+# （前は 394 の これまでの復元 → 立体 → 仮説 → たとえ → 型紙。これまでの復元 は もちよる へ移り頁に無い）
+assert after.index('id="kasetsu-fuda"') < after.index('id="tatoe"') < after.index('id="kasetsu"') < after.index('id="win"') and 'id="minna"' not in after
 assert '<section class="sec" id="tatoe"><h2>たとえと、関連する事柄</h2>' in after, "畳まずに出す"
 for w in BAD:
     assert w not in after.split('id="tatoe"')[1].split("</section>")[0], w

@@ -67,8 +67,8 @@ for x in (loop_figure.ADOPTED, "<svg", naoru.LINES[0], nokosu.APPROVE, nokosu.FI
 
 # 3 承認の順・attach を使わない・端末に残さない
 go = between(script, "go.onclick", "})()</script>")
-order = [go.index(x) for x in ("/talk`", "/record-json`", "utsushiNewWho", "sendFiles(j.id", "/gallery?msg=")]
-assert order == sorted(order), order
+order = [go.index(x) for x in ("/talk`", "/record-json`", "utsushiNewWho", "sendClips(j.id)", "sendFiles(j.id", "/gallery?msg=")]
+assert order == sorted(order), order  # 声とカメラの区切り（web.clips）は、記録と印の作り直しの後・写真の前に送る
 assert go.index("if (!tj.kept)") < go.index("/record-json`") and "return; }" in go[go.index("if (!tj.kept)"):go.index("/record-json`")], "工夫の字が断られたら記録を作らない"
 assert "attach" not in script, "「写真あり」の合図を使わない（いつも新しい記録）"
 urls = set(re.findall(r"`(/[^`$]*)", script)) | set(re.findall(r"'(/[^']*)'", script))

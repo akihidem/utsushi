@@ -23,7 +23,11 @@
   「次の手順ってどうやるの」のような話し声では動かない。認識が付ける空白と句読点は除いてから比べる。読みの候補は 3 つまで見る。
 - 作っている間、画面が消えないように頼む（断られても動く）。
 - 本人の追加（11-06）「普通にiPhoneのカメラのオーバーレイでもできるようにしたら」: /toy/<玩具>/kasane で、後ろのカメラの映像の上に
-  手順の字と 3D を重ねる。映像は機械の中だけで、送りも残しもしない（作りながら見る頁の約束と同じ字）。
+  手順の字と 3D を重ねる。
+- **カメラの区切り**（本人 11-08 330・412「解析につかう」・415「カメラの映像は、押した時の短い区切りだけ。」・窓口の決め A2）: カメラを出している間、
+  「ここで止まった」を押した後の 10 秒だけを録り（音なし・頁が持つ映像の流れを使う・web.clips.camClip）、この端末の中に置く。押す前は何も録らず、
+  カメラを出しただけでは録らない。送るのは、のこすで承認した時だけ（web.nokosu）。前の「映像は機械の中だけで、送りも残しもしない」は、この決めで替わった。
+  頁の台本は外へ何も送らない（送る口は のこすの頁の 1 か所）。のこす へ移る道を押すと、録った区切りを渡す印が付く（web.clips の handOver）。
 - 重ねる（本人の言葉 11-08「A → B → C の順。」の A。設計 grove の state/kasane-a-design-20261108.md・統括の決め ①〜③）: カメラの映像の上に、
   今の手順の 3D を半透明（不透明 0.6・机の色は透明）で重ね、指で位置・大きさ・向きを実物に合わせる。1 本指で動かし、2 本指の間の長さの比で
   大きさ、2 本を結ぶ線の角の差で向き（画面の中で回す）、2 本の真ん中の動きで位置。Safari の gesturechange（visionOS・Mac の板）も同じ所へ渡す
@@ -36,7 +40,7 @@
   「iPhone でも HMD のブラウザでも同じ」）。重ね始めた時の位置と大きさ（舞台が頁にあった所）を既定にし、「元に戻す」と画面の向きや大きさが
   替わった時はそこへ戻す。合わせた位置は頁の中だけに持ち、残さない・送らない。前の 4 隅の印（4 つを紙の角へ動かして囲みに入れる形・
   11-07）は外した（4 つで 8 回触るより 1〜2 本の指で合い、向きも合わせられる。字の無い印が画面から 4 つ減る）。
-  映像は video に出すだけで、canvas に写さず、網に出さない（送る形は C と、声とカメラの PR の上に載せる）。
+  映像は video に出すだけで、canvas に写さない。録るのは「ここで止まった」を押した後の 10 秒だけで、送るのは のこすで承認した時（上のカメラの区切り・web.clips・web.nokosu）。
 - 中を見る（本人の言葉 11-07「AI が 3D で表示して中身をそこで分解できる構造表示」）: 組み立ての節が分解した形（window.kumitateSplit の X。
   3D の担当が kumitate に足す口）を持つ時だけ釦を出す。開く時は今の手の終わりの形から分解した形へ動かし、とじる時は戻す。
   開いている間に手順を送ったら、先にとじた事にしてから送る（送りは手の終わりの形に置き直してから動くので、形は取り違えない）。
@@ -46,11 +50,16 @@ import json
 
 from omochae import hypotheses
 
-from . import kumitate, skin
+from . import clips, kumitate, skin
 from .skin import esc
-from .tsukuru import PRIVACY
 
 CAMERA, CAMERA_OFF = "カメラを出す", "カメラを止める"
+# 作業の頁のカメラの断り（設計の 6 節の字・本人の確かめ待ち）。前は作りながら見る頁と同じ PRIVACY（「映像はこの端末の中だけで、送りも残しもしません。」）を
+# 使っていたが、区切りを送る形になったので分けた（作りながら見る頁の鏡は録らないので、そちらの字は本当のまま）
+CAM_NOTE = "カメラの映像は、押した後の 10 秒だけをこの端末に置き、のこすで承認した時に送ります。押していない間は録りません。"
+STUCK = "ここで止まった"  # 作りながら見る頁と同じ字（採られた字）。押した後の 10 秒を録る
+OTONA_LINK = "保護者の方へ、ファシリテーターの方へ"  # 前からある頁の名（くわしい説明の道）
+KEEP_LINK = "のこす"  # 帯の駅の字。録った区切りを のこす の頁へ渡す道
 # 分解の釦（本人の決定 11-07: 開く「中を見る」・戻す「とじる」。「もどる」は手順を戻す釦と同じ字なので使わない）
 SPLIT_OPEN, SPLIT_CLOSE = "中を見る", "とじる"
 NO_CAMERA = "この機械ではカメラを使えません。"
@@ -106,6 +115,12 @@ body.hmd-page{background:#14161a;color:#f3efe6}
 .hmd-acts #hmd-listen[aria-pressed=true]{background:#5a2f2f;border-color:#e09b9b}
 .hmd-note{font-size:14px;line-height:1.8;color:#9a9385;max-width:60em}
 .hmd-note a{color:#c9c2b4}
+/* ここで止まった は、カメラを出している間だけ出す。録っている 10 秒は枠の色で見せる */
+body:not(.cam-on) #hmd-stuck{display:none}
+/* 横で低い画面（高さ 520px まで）でカメラを出している間は、押す所を 3 列にする。「ここで止まった」が 1 つ増えて 2 列だと 4 段になり、
+   元に戻す が画面の外へ出た（別の目の確かめの形・test_hmd の 横・低い・重ねる）。つぎ は 3 列をまたぐ */
+@media (min-aspect-ratio:1/1) and (max-height:520px){body.cam-on .hmd-acts{grid-template-columns:1fr 1fr 1fr}body.cam-on .hmd-acts #hmd-next{grid-column:1/4}}
+#hmd-stuck[data-state=rec]{border-color:#ffe08a}
 /* 縦に長い画面（iPhone を縦に持つ）: 手順の字・3D・押す所の順。字の欄は 3 行分の高さに決め、手順が替わっても 3D の大きさと置き場が
    動かないようにする。頭の帯は 1 行（聞き取った字の写しは、当たった釦が光るので縦では出さない）。押す所は「つぎ」を左の大きな 1 つ、
    ほかを右の 2 列 2 段にして、iPhone の見える高さ（390×664 ほど）でも 3D の下に全部入れる */
@@ -150,6 +165,11 @@ const $=id=>document.getElementById(id),body=document.body;
 const next=$('rt-next'),prev=$('rt-prev'),text=$('rt-text'),count=$('rt-count'),stage=$('rt-stage');
 const mic=$('hmd-mic'),heard=$('hmd-heard'),listen=$('hmd-listen'),shown=$('hmd-count'),dots=$('hmd-dots');
 const T=JSON.parse($('hmd-words').textContent),P=window.kumitateParts;
+// 作業の頁を開いた時は、玩具の頁で作り始めた回を引き継ぐ（web.clips の openedAs の work）。回が無い時だけ、ここで作り始める
+addEventListener('DOMContentLoaded',()=>{if(window.utsushiClips)setTimeout(()=>utsushiClips.openedAs(T.sid,'work').catch(()=>{}))});
+// 戻る釦で頁が読み直されずに戻った時（bfcache・pageshow の persisted）は、前の頁がどこでも作り始めとする（別の目の残る穴・統括の決め）。
+// 同じ人が のこす から戻る釦で戻った時も、前に渡した区切りは次に渡す時に新しい印になって並ばなくなるが、前の人の声を次の人に送らない方を採る
+addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false).catch(()=>{})});
 if(!next||!prev)return;
 const at=()=>Number(stage.dataset.at||0),done0=()=>!count.textContent;
 const still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -281,6 +301,12 @@ wake();
 const cam=$('hmd-cam'),camBtn=$('hmd-camera'),camNote=$('hmd-cam-note');
 if(cam&&camBtn){let tracks=null;
  const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera;fitOff()};
+ // ここで止まった: 押した後の 10 秒だけを録る（web.clips.camClip）。カメラを出していない時は何もしない。録る数がいっぱいの時は 1 行で知らせる
+ const stuck=$('hmd-stuck');
+ if(stuck)stuck.addEventListener('click',async()=>{if(!tracks||!window.utsushiClips||stuck.dataset.state==='rec')return;
+  const r=await utsushiClips.camClip(cam.srcObject,{sid:T.sid,step:Number(body.dataset.at||0)+1,button:'stuck'});
+  if(r==='full'){camNote.textContent=T.full;return}
+  if(r==='rec'){stuck.dataset.state='rec';setTimeout(()=>{stuck.dataset.state=''},T.cam*1000)}});
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camBtn.hidden=true;camNote.textContent=T.nocamera}
  camBtn.addEventListener('click',async()=>{if(tracks){off();return}
   try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});tracks=s.getTracks();cam.srcObject=s;
@@ -346,10 +372,13 @@ def page(sid, look="tenji", cam=False):
     道は玩具ごとに置く: 作る口は手帖 1 つの決まり（地図の 1）なので、玩具を選ぶ頁は持たず、選びなおす時は えらぶ（/toys）へ戻す。"""
     toy = hypotheses.load(sid)["toy"]
     words = {"words": WORDS, "on": MIC_ON, "off": MIC_OFF, "none": NO_VOICE, "blocked": BLOCKED, "listen": LISTEN, "stop": STOP, "done": kumitate.DONE,
-             "clean": CLEAN, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA, "splitopen": SPLIT_OPEN, "splitclose": SPLIT_CLOSE}
+             "clean": CLEAN, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA, "splitopen": SPLIT_OPEN, "splitclose": SPLIT_CLOSE,
+             "sid": sid, "full": clips.FULL, "cam": clips.CAM_SECONDS}
     camera = ('<video id="hmd-cam" playsinline muted autoplay></video>' if cam else "")
-    camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else "")
-    camera_note = (f'<span id="hmd-cam-note">{esc(PRIVACY)}</span> ' if cam else "")
+    camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button><button type="button" id="hmd-stuck">{esc(STUCK)}</button>' if cam else "")
+    # 手順の画面には長い断り（初めて録る時の 1 行・端末の置き場の 1 行）を置かず、カメラの断りの 1 行と、くわしい説明の頁（保護者の方へ）への道だけ
+    # （統括の決め・別の目の止め 2: 320×568 で手順の画面に縦の送りが出た）。端末の置き場の 1 行は、のこすの確かめの画面に出す
+    camera_note = (f'<span id="hmd-cam-note">{esc(CAM_NOTE)}</span> <a href="/otona">{esc(OTONA_LINK)}</a> <a href="/toy/{esc(sid)}/techo/kiroku">{esc(KEEP_LINK)}</a> ' if cam else "")
     # 組み立ての節を覚える鍵は、組み立ての節と同じ物（紙の寸法と組の名。kumitate._key）。寸法だけだと、組が替わっても前の組の立体を覚えている
     params = kumitate._key(sid)
     body = (f'<div class="hmd"><div class="hmd-top"><b>{esc(toy)}</b><span id="hmd-count"></span><span id="hmd-heard" aria-live="polite"></span>'
@@ -362,7 +391,7 @@ def page(sid, look="tenji", cam=False):
             # 元に戻す は重ねている間だけ出す（重ねていない時は押す所の数を前のまま 6 つにする）
             f'<button type="button" id="hmd-reset">{esc(RESET)}</button></div></div>'
             f'<p class="hmd-note"><span id="hmd-fit-hint">{esc(FIT_HINT)} </span>{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="/">玩具を選びなおす</a></p></div>{camera}'
-            f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False)}</script>{SCRIPT}')
+            f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False)}</script>{SCRIPT}' + (clips.assets() if cam else ""))
     # HMD の道は最初から重ねる（統括の決め ①）。頁の印で script に知らせる（字ではない）
     body = body if cam else body.replace('<div class="hmd">', '<div class="hmd" data-fit-always="1">', 1)
     return skin.shell(f"{toy}: {TITLE}", body, look, path=f"/toy/{sid}/kasane" + ("" if cam else "/hmd"), extra_style=STYLE,

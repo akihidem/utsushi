@@ -78,16 +78,20 @@ yomu = get("/about")
 assert "83 のおもちゃです。" in yomu and "83 の玩具。" not in yomu and "83 の玩具。" not in toys
 assert "紙 1 枚で作れるおもちゃだけを見る" in toys and "紙 1 枚で作れる玩具だけを見る" not in toys
 page = get(f"/toy/{G}")
-assert "全部のおもちゃの、作った物を見る" in page and "全部の玩具の、作った物を見る" not in page
+# 「全部のおもちゃの、作った物を見る」は、つくるの頁の これまでの復元 の節の道だった。節を もちよる へ移した（本人の言葉 11-08「復元の記録などはすべて
+# もちよるに統合する。」）ので頁に無い。前の字（玩具）が戻っていない事は残して見る
+assert "全部のおもちゃの、作った物を見る" not in page and "全部の玩具の、作った物を見る" not in page
 
 # 2. 「考えを話す」の箱の見出しを消す。節の見出しは残し、作りながら見る頁の「工夫を話す」の箱の見出しも残す
 think = page.split('id="hanasu"', 1)[1].split("</section>", 1)[0]
-assert "<h2>考えを話す</h2>" in think and 'class="hanasu-head"' not in think, "箱の見出し"
+# 節の見出しは、仮説の段の中の小さな口の見出し（h3）になった（段の見出し h2 は「仮説」・本人の言葉 11-08・設計の問い 4 の答え）。箱の見出しは出さないまま
+assert "<h3>考えを話す</h3>" in think and 'class="hanasu-head"' not in think, "箱の見出し"
 
 # 3. 話す箱の断り
 assert hanasu.HOW_BROWSER == "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
 told = think.split('<p class="meta">', 1)[1].split("</p>", 1)[0]
-assert "そのとき、声がブラウザの会社に送られることがあります。</span>" in told and told.count("話した声は、このサイトに送りません。") == 1, told  # 11-08: 断りの字を、上げた動画の声を字にする形に合わせた案に替えた
+# 11-08: 断りの字を、押して話した間の声を録って承認の時に送る形（本人 415・「公開デモでも声も録る。」）に替えた。前の「話した声は、このサイトに送りません。」は本当でなくなったので出さない
+assert "そのとき、声がブラウザの会社に送られることがあります。</span>" in told and told.count("押して話した間の声を録り、のこすで承認した時に受け取ります。") == 1 and "このサイトに送りません" not in told, told
 
 # 4. 名前のような言葉を断った時の返事
 code, _, body = post(f"/toy/{G}/talk", {"scene": "think", "hypothesis": hypotheses.sheet_of(G)["id"], "text": "電話は 090-1234-5678 です"})
@@ -105,13 +109,15 @@ AI = "聞いた言葉は、AI（Claude）が答えを考えるのにも使いま
 REST = "声と映像は残しません。"
 pages = {"玩具の頁": f"/toy/{G}", "作りながら見る頁": f"/toy/{G}/tsukuru", "手帖": f"/toy/{G}/techo"}
 keyless = {k: get(p) for k, p in pages.items()}
-assert KEEP + REST + "名前は書かないでください。" in keyless["玩具の頁"]
+# つくるの頁の聞く口（字で聞く欄・「名前は書かないでください。」の断り）は外した（設計の問い 4 の答え「推しのとおり。」・本人の言葉 11-08 477）。
+# 聞く口の断りの字は、聞く口のある作りながら見る頁と手帖で見る
+assert KEEP not in keyless["玩具の頁"] and "名前は書かないでください。" not in keyless["玩具の頁"], "つくるの頁に聞く口の断りが残った"
 assert KEEP + REST + "名前は言わないでください。" in keyless["作りながら見る頁"]
 assert not [k for k, v in keyless.items() if AI in v], "鍵の無い所では Claude を呼ばない"
 assert '<p class="hanasu-head">工夫を話す</p>' in keyless["作りながら見る頁"], "2: ほかの箱の見出しは残す"
 ask._key_present = lambda: True
 keyed = {k: get(p) for k, p in pages.items()}
-assert KEEP + AI + REST + "名前は書かないでください。" in keyed["玩具の頁"]
+assert KEEP not in keyed["玩具の頁"], "つくるの頁に聞く口の断りが残った（鍵がある時）"
 assert KEEP + AI + REST + "名前は言わないでください。" in keyed["作りながら見る頁"]
 assert AI + "名前は言わないでください。" in keyed["手帖"]
 assert AI not in get(f"/toy/{G}", at=opened) and AI not in get(f"/toy/{G}/techo", at=opened), "合言葉なしの場は Claude を呼ばない"
@@ -129,7 +135,9 @@ assert code == 303 and tsukuru.DONE_NOTE in at and "玩具の頁で記録を残�
 # 6 の続き: 次の版の紙を作った後の返事
 BAN2 = hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)  # 版の字は組の番号の呼び方（窓口の決定 11-07・#513 の (a)）
 code, at, _ = post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})
-rid = re.search(r"#(R-\d+)", at).group(1)
+# 記録の札へ戻す時は手帖の記録の頁（#mine）へ戻る（つくるの頁から記録の札を外した・11-08）ので、記録の番号は戻り先でなく記録の置き場から読む
+assert code == 303 and f"/toy/{G}/techo/kiroku" in at, at
+rid = records.all_records(G)[-1]["id"]
 assert post(f"/record/{rid}/explain", {"text": "説明", "next_idea": "次", "by": "書いた人"})[0] == 303
 code, at, _ = post(f"/record/{rid}/next", {"interpretation": "読み", "param": "fold_height", "to": "56.7", "why": "試す", "by": "書いた人"})
 assert code == 303 and f"{BAN2} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。" in at, at

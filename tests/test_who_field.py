@@ -71,10 +71,14 @@ def adopted_by(version):
 WHO, ADOPTER = "3 班の目印", "4 班の目印"
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 200  # 刷れるのは今の組のたたき台だけ
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})[0] == 200
-# 手帖の説明と次の版の欄は、作り直した手帖では記録の頁にある（#87）
-pages = lambda b=maker: (("玩具の頁", b.get(f"/toy/{G}")), ("手帖の記録の頁", b.get(f"/toy/{G}/techo/kiroku")))
+# 手帖の説明と次の版の欄は、作り直した手帖では記録の頁にある（#87）。
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作は手帖の記録の頁にあるので、見るのはそこだけ。つくるの頁に記録の欄が残っていない事は下で見る
+pages = lambda b=maker: (("手帖の記録の頁", b.get(f"/toy/{G}/techo/kiroku")),)
 
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": WHO})[0] == 200
+toy = maker.get(f"/toy/{G}")
+assert 'action="/record/R-0001/' not in toy, "つくるの頁に記録の札の欄が残った（上の理由で外した）"
 
 # 次の版の欄に、採る人が打つ空の欄がある。説明で書いた値は、次に開いた別の人の欄にも頁にも出ない
 for where, page in pages(other):

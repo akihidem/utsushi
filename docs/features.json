@@ -1014,5 +1014,22 @@
    "tests/test_shiori.py"
   ],
   "unverified": "しおりの紙（QR・9 つの絵・裏の順の印）と進め役の道はまだ。9 つの絵の並びは仮。決まった番地（Workers）は本人の画面の操作の後。Cloudflare が客の付けた Cf-Connecting-Ip を必ず上書きするか・ブラウザごとの session の cookie の残り方・Worker の記録に /s/<印> が残るか は、まだ確かめていない"
+ },
+ {
+  "id": "f83",
+  "name": "声とカメラの区切りを押した時だけ録り、端末の中に置き、のこすの承認で送る（端末の側。本人 11-08 330・412・415・「公開デモでも声も録る。」・窓口の決め A2・承認の時に・それぞれ 5 つまで）",
+  "status": "doing",
+  "evidence": [
+   "src/web/clips.py",
+   "src/web/hmd.py",
+   "src/web/hanasu.py",
+   "src/web/nokosu.py",
+   "tests/test_clips_client.py",
+   "tests/test_hmd.py",
+   "tests/test_hanasu.py",
+   "tests/test_tsukuru.py",
+   "tests/test_otona.py"
+  ],
+  "unverified": "受け口の分かれ（見出し X-Utsushi-Clip）・区切りの読み・進め役の命令はサーバの側の PR で、まだ main に無い（この PR はその後に入れる）。実機の iPhone で、音声認識とマイクを同時に取れるか・IndexedDB の残り方・Safari の MediaRecorder が mp4 を出すかは確かめていない（本人か進め役の端末で）。新しい字と替えた字は本人の確かめ待ち"
  }
 ]

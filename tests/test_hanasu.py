@@ -4,7 +4,9 @@
 - 3 つの場面（1 考え・2 工夫・3 できた物）で、字が残る。JS が無くても残せる。残る欄は決めた物だけで、声・IP・ブラウザの名・cookie が無い。時刻は分まで。
 - 作りながら話した工夫と、仮説を見て話した考えは、記録を残した時に、その記録に入る（同じ画面の物だけ。ほかの人の話は入らない）。
 - 入口の床: 連絡先の形・名乗りの形・学年と組の形・学校の名前の形の文は残らない（落とした数だけ残る）。工作の話は落とさない。
-- 頁は、マイクを開く code・録る code・声を送る code を持たない。受け口は字のフォームだけを受け、音のファイルは断る。聞いた字は、残すを押すまで送らない。
+- 話す口の台本は、マイクを開く code・録る code・声を送る code を持たない。押して話した間の声は、置き場（web.clips）の voiceStart を「話す」で
+  聞き始めた所でだけ呼び、voiceStop を止まった所で呼ぶ（本人 11-08 415「声も送って解析に使う形にする。」）。送るのは のこすの承認の時（web.nokosu）。
+  受け口（/talk）は字のフォームだけを受け、音のファイルは断る。聞いた字は、残すを押すまで送らない。
 - 話す釦は既定で隠れていて、音声認識の口がある画面でだけ出る。端末の中だけで字にできる画面ではその形で聞き、できない画面ではブラウザの既定の口で聞いて
   断りを出す（本人の決定 11-05: iPhone・iPad でも話す釦を出す。切り替えは OMOCHAE_VOICE）。
 - 話した字は、記録に入っていても、学ぶ人の頁（手帖の記録の札も）に出ない（本人の決定 11-06、J-034。11-05 の「記録の感想と同じに出す」を変えた）。
@@ -332,6 +334,17 @@ for word in ("getUserMedia", "MediaRecorder", "AudioContext", "createMediaStream
 assert "processLocally:true" in hanasu.SCRIPT and "r.processLocally=true" in hanasu.SCRIPT and "REC.available({langs:[LANG],processLocally:true})" in hanasu.SCRIPT
 # 端末の中で字にする時は話し続けられる形。ブラウザの既定の口は、1 回話すごとに止まる形で聞き、途中の字も出す（機種によって同じ字が重なるのを避ける）
 assert "r.lang=LANG;r.continuous=onDevice;r.interimResults=!onDevice;if(onDevice)r.processLocally=true;" in hanasu.SCRIPT
+# 声の区切り（本人 11-08 415・web.clips）: 録るのは置き場の voiceStart で、呼ぶのは「話す」で聞き始めた所（r.start() の後）の 1 か所だけ。止めるのは、止める所と聞き終わり
+from web import clips  # noqa: E402
+
+assert hanasu.SCRIPT.count("utsushiClips.voiceStart(") == 1 and hanasu.SCRIPT.count("clip(root)") == 1
+listen_part = hanasu.SCRIPT[hanasu.SCRIPT.index("const listen=(root,onDevice)=>{"):hanasu.SCRIPT.index("document.addEventListener('click'")]
+assert listen_part.index("try{r.start()}") < listen_part.index("clip(root)"), "録るのは聞き始めた後だけ"
+assert "const stop=()=>{if(rec){try{rec.stop()}catch(e){}}if(window.utsushiClips)utsushiClips.voiceStop()};" in hanasu.SCRIPT
+assert "r.onend=()=>{press(mic,false);if(rec===r)rec=null;if(window.utsushiClips)utsushiClips.voiceStop();" in hanasu.SCRIPT
+assert hanasu.assets().count(clips.assets()) == 1, "置き場の台本は頁に 1 回"
+for word in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "EventSource", "RTCPeerConnection", "document.cookie"):
+    assert word not in clips.SCRIPT, ("置き場は外へ送らない", word)
 # 送る所は 1 つで、字のフォームの形だけ。聞き取った所（onresult）からは送らない
 assert hanasu.SCRIPT.count("fetch(") == 1 and "fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}" in hanasu.SCRIPT
 onresult = hanasu.SCRIPT[hanasu.SCRIPT.index("r.onresult"):hanasu.SCRIPT.index(" r.onerror")]
@@ -369,7 +382,7 @@ os.environ.pop("OMOCHAE_VOICE")
 # ---- 利用者向けの文: 本人が採ったやさしい言葉の文（11-05、Issue #318）。一字でも変わったら落ちるように、ここに決定の文を書く
 # 11-08: NOTICE の「このサイトは声を受け取りません。」と UPLOAD_NOTICE は、上げた動画の声を字にしてから消す形（omochae.voice_text）に合わせた案（本人の確かめ待ち）
 ADOPTED = {
-    "NOTICE": "残るのは字だけです。声は録音しません。話した声は、このサイトに送りません。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。",
+    "NOTICE": "残るのは字だけです。押して話した間の声を録り、のこすで承認した時に受け取ります。声は字にしてから消します。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。",  # 11-08: 声を録って送る形（本人 415・「公開デモでも声も録る。」）に替えた案。本人の確かめ待ち
     "HOW_LOCAL": "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。",
     "HOW_BROWSER": "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。",
     "HOW_NONE": "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。",
@@ -393,7 +406,9 @@ for page in (toy, tsu, techo):
         assert ADOPTED[name] in page, name
 # 場面の見出しと例・選ぶ欄・頁の頭の一文
 # 玩具の頁の考えの箱は、節の見出しと同じ字が並ぶので箱の見出しを出さない（本人の決定 11-06）
-assert '<p class="hanasu-head">考えを話す</p>' not in toy and "<h2>考えを話す</h2>" in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' in toy
+# 考えを話す の見出しは、仮説の段の中の小さな口の見出し（h3）。段の見出し（h2）は「仮説」（本人の言葉 11-08・設計の問い 4 の答え「推しのとおり。」）。
+# 箱の見出し（hanasu-head）は出さない（11-06 の字の決めの 2）
+assert '<p class="hanasu-head">考えを話す</p>' not in toy and "<h3>考えを話す</h3>" in toy and "<h2>考えを話す</h2>" not in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' in toy
 assert '<p class="hanasu-head">工夫を話す</p>' in tsu and 'placeholder="『ここをこうしたら、うまくいった』など"' in tsu
 assert '<p class="hanasu-head">工夫した所や、思った事を足す</p>' in techo
 # 考えは、頁に出ているたたき台に結ぶ。仮説を選ぶ欄を置かない（型紙は玩具ごとに 1 枚。J-032）
@@ -408,7 +423,8 @@ for said in ("聞いています。話した事が、欄に字で出ます。", 
     assert f"'{said}'" in hanasu.SCRIPT, said
 # ③ で上げる時の説明文は、手帖（③ の上げる頁）の上げる節に出る。聞く口の断りの文は、この頁では使わない
 code, techo_make = get(f"/toy/{G}/techo")  # 上げる説明は作る頁の最後の画面に出る（1 手 1 画面、#87）
-assert code == 200 and f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo_make and making_log.ASK_NOTICE not in techo_make + techo and making_log.ASK_NOTICE in toy
+assert code == 200 and f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo_make and making_log.ASK_NOTICE not in techo_make + techo and making_log.ASK_NOTICE in tsu and making_log.ASK_NOTICE not in toy
+# （聞く口の断りは、聞く口のある作りながら見る頁で見る。つくるの頁の聞く口は外した・設計の問い 4 の答え「推しのとおり。」）
 # 端末の中で字にできないと分かった時の知らせは、採られた断りの文（次に押すと声が外へ送られる事がある、と押す前に言う）
 assert f"tobrowser:'{ADOPTED['HOW_BROWSER']}'" in hanasu.SCRIPT and "__" not in hanasu.SCRIPT.replace("__VOICE__", "")
 # 本人の確認が済んでいない文を足していない（入れる時は、確認の後に、この一覧と一緒に直す）。節の名だけは本人の言葉のまま

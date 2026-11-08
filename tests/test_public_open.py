@@ -87,7 +87,7 @@ code, body = opened("POST", f"/record/{rid}/media", jpeg, up_media)
 assert code == 201 and body == "m1.jpg", (code, body)
 techo = opened("GET", f"/toy/{G}/techo")[1]
 assert 'id="files" disabled' not in techo and "公開のデモでは、写真と動画は上げられません" not in techo
-assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" in techo and "大人の手元だけ・顔なし・声なし" in techo
+assert 'id="picked"' in techo and 'id="thumbs"' in techo and "3 つまで" in techo and "大人の手元だけ・顔なし</label>" in techo
 # 上げた本人の画面には出す（受け取りを確かめられるように。手帖の記録の頁と絵の道）
 assert opened("GET", f"/record/{rid}/media/m1.jpg")[0] == 200
 assert f"/record/{rid}/media/m1.jpg" in opened("GET", f"/toy/{G}/techo/kiroku")[1]
@@ -173,12 +173,16 @@ for path in ("/", "/toys?paper=1", "/about", "/gallery", f"/zukan/{G}/yomi", "/e
     assert code == 200, (path, code)
     for word in ("TOLDWORDS", "NEXTWORDS", "BYWORDS"):
         assert word not in page, (path, word)
-for path in (f"/toy/{G}", f"/toy/{G}/techo/kiroku"):
+# 記録の札は手帖の記録の頁にある。玩具の頁には記録の札が無い（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。
+# 復元の記録などはすべてもちよるに統合する。」で、玩具の頁の これまでの復元 を外した）
+for path in (f"/toy/{G}/techo/kiroku",):
     page = opened("GET", path)[1]
     assert "説明を残しました。" in page and f"/record/{told_id}/next" not in page and 'name="interpretation"' not in page, path
-# 合言葉付きの場（ここでは手元の名前で開く）では、同じ記録の説明が今までどおり読めて、次の版を作れる
 local = {"Host": closed.local}
-for path in (f"/toy/{G}", f"/toy/{G}/techo/kiroku"):
+for page in (opened("GET", f"/toy/{G}")[1], closed("GET", f"/toy/{G}", None, local)[1]):
+    assert f'id="{told_id}"' not in page and "説明を残しました。" not in page and f"/record/{told_id}/next" not in page, "玩具の頁に記録の札が残った"
+# 合言葉付きの場（ここでは手元の名前で開く）では、同じ記録の説明が今までどおり読めて、次の版を作れる（手帖の記録の頁）
+for path in (f"/toy/{G}/techo/kiroku",):
     page = closed("GET", path, None, local)[1]
     assert "TOLDWORDS" in page and "NEXTWORDS" in page and f"/record/{told_id}/next" in page and 'name="interpretation"' in page, path
 made = closed("POST", f"/record/{told_id}/next", "interpretation=x&param=fold_count&to=24&why=x&by=x", {**local, "Content-Type": form["Content-Type"], "Origin": f"http://{closed.local}"})

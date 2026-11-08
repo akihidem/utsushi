@@ -4,7 +4,8 @@
 押すと 404 だった。1 つのリンクだけを見ると次の行き止まりを見逃すので、記録が出る頁のリンクを全部開いて見る。
 
 見る事:
-1. 合言葉なしの場: 玩具の頁・手帖・ギャラリー・図鑑に、開けないリンクが無い。自分の仮説の記録の札は出て、紙への道だけが無い
+1. 合言葉なしの場: 玩具の頁・手帖・ギャラリーに、開けないリンクが無い。自分の仮説の記録の札は手帖の記録の頁に出て、紙への道だけが無い
+   （記録の札は玩具の頁から外した。本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」）
 2. 同じ場で、たたき台とほかの仮説の前の記録の札は、紙への道が残って開く（出さない形が広がっていない対照）
 3. 合言葉のある場: 同じ札に紙への道があって開く（同じ対照）
 """
@@ -59,8 +60,9 @@ def links(page):
     return sorted({html.unescape(x) for x in re.findall(r'(?:href|src)="(/[^"#]*)', page)})
 
 
-def card_of(page, rid):
-    return page.split(f'id="{rid}"', 1)[1].split("</article>", 1)[0]
+def no_card(page, rid):
+    """玩具の頁に、その記録の札が無い（札は手帖の記録の頁と もちよる にある。本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」）。"""
+    return f'id="{rid}"' not in page and f'href="#{rid}"' not in page
 
 
 def own_record(sid, name, params=None):
@@ -93,14 +95,15 @@ dead = [x for x in links(page_at(opened, "/gallery")) if status(opened, x) >= 40
 assert not dead, ("/gallery", dead)
 assert checked > 20, checked
 
-# 自分の仮説の記録の札は出て、紙への道だけが無い（札を消して通っているのではない）
+# 自分の仮説の記録の札は（手帖の記録の頁に）出て、紙への道だけが無い（札を消して通っているのではない）
 for sid, owned in mine.items():
     page = page_at(opened, f"/toy/{sid}")
-    for oid, rid in owned:
-        card = card_of(page, rid)
-        assert "自分の仮説" in card, (sid, rid)
-        assert "/sheet/" not in card and "試した後の紙" not in card, (sid, rid, "開かない紙への道を出さない")
     techo = page_at(opened, f"/toy/{sid}/techo/kiroku")
+    assert "自分の仮説" in techo and techo.count('<div class="item') >= len(owned), (sid, "手帖の記録の頁に自分の仮説の記録の札が無い")
+    for oid, rid in owned:
+        assert no_card(page, rid), (sid, rid, "玩具の頁に記録の札が残った")
+        # 「試した後の紙」の道の字（リンク）が無い事を見る（版の歩みの額の説明文には、前の版の直しの言葉として同じ字が入る）
+        assert f"/sheet/{sid}/{oid}_" not in page and ">試した後の紙</a>" not in page, (sid, rid, "開かない紙への道を出さない")
     assert not [oid for oid, _ in owned if f"/sheet/{sid}/{oid}_" in techo], (sid, "手帖の札にも出さない")
 
 # 2. 同じ場で、たたき台とほかの仮説の前の記録の試した後の紙: 11-06 から刷らないので札と手帖に道は出さず、前に配った道は開く
@@ -108,16 +111,18 @@ page = page_at(opened, f"/toy/{G}")
 techo = page_at(opened, f"/toy/{G}/techo/kiroku")
 for rid, hid in (("R-0001", "H-A"), ("R-0002", "H-C")):
     paper = f"/sheet/{G}/{hid}_v1_after.pdf"
-    assert paper not in card_of(page, rid) and paper not in techo and status(opened, paper) == 200, (rid, paper)
-    assert "kind=after" not in card_of(page, rid), rid
+    assert no_card(page, rid) and paper not in page and paper not in techo and status(opened, paper) == 200, (rid, paper)
+    assert "kind=after" not in page and "kind=after" not in techo, rid
 
 # 3. 合言葉のある場では、前に配った紙の道が開く。試した後の紙と型紙なしの紙は 11-06 から刷らないので、札と手帖に道は出さない
 for sid, owned in mine.items():
     page, techo = page_at(closed, f"/toy/{sid}"), page_at(closed, f"/toy/{sid}/techo/kiroku")
+    assert "自分の仮説" in techo, (sid, "合言葉のある場の手帖の記録の頁に札が無い")
     for oid, rid in owned:
         paper = f"/sheet/{sid}/{oid}_v1_after.pdf"
-        assert paper not in card_of(page, rid) and paper not in techo and status(closed, paper) == 200, (sid, rid)
+        assert no_card(page, rid) and rid in techo, (sid, rid, "札は手帖の記録の頁に（玩具の頁には無い）")
+        assert paper not in page and paper not in techo and status(closed, paper) == 200, (sid, rid)
 free_paper = f"/sheet/{G}/{mine[G][0][0]}_v1_free.pdf"
-assert free_paper not in card_of(page_at(closed, f"/toy/{G}"), mine[G][0][1]) and status(closed, free_paper) == 200
+assert free_paper not in page_at(closed, f"/toy/{G}") and free_paper not in page_at(closed, f"/toy/{G}/techo/kiroku") and status(closed, free_paper) == 200
 
 print(f"ok: 合言葉なしの場のリンク {checked} 本はどれも開き、OWN-n の紙への道は札に出ない")
