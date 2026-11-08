@@ -1,0 +1,14 @@
+# 命令: bash -c 's=$(date +%s); PYTHONPATH=src timeout 300 .venv/bin/python tests/test_easy_ruby.py; r=$?; echo "秒: $(( $(date +%s) - s ))（run_floors の 1 本の上限は 300 秒。timeout の 124 は時間切れ）"; exit $r'
+# commit: ace2a5f0（回した時の HEAD）
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000004-L/.tmp-o8ps8h6q/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000004-L-4/.tmp-bcfh_q_d/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000005-L/.tmp-bdyhljwd/H-C_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000005-L-3/.tmp-8kfmhm0n/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000007-L/.tmp-r2u69u90/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000007-R/.tmp-xgnb9cxk/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000014-L/.tmp-0dyri3qa/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000014-R/.tmp-40n0x11t/H-A_v1.pdf
+/tmp/tmpt3upi75b/play/NDL-1187053-R0000019-L/.tmp-s1jxasri/H-A_v1.pdf
+ok やさしい日本語: 表の値は全部の漢字にルビ・頁でルビの外に残る漢字は表に無い字だけ・下書きの札なし
+秒: 61（run_floors の 1 本の上限は 300 秒。timeout の 124 は時間切れ）
+rc=0

@@ -55,7 +55,8 @@ for k in ("tenji", "zine"):
     head = f'<h2>{esc(loop_figure.NAME)}</h2>' if fig else ""
     manabi = f'<section class="sec" id="manabi">{head}<p class="lead">{esc(about.MANABI)}</p>{fig}</section>'
     assert h.count(manabi) == 1 and at[2] < h.index(manabi) < at[3], (k, "学びの輪の段の置き場（文の後に図）")
-    assert about.MANABI.startswith("作って、確かめて、ふり返って、次を考える。") and about.MANABI.endswith("進め役の役目は、型紙と記録の形の中に残っています。"), about.MANABI
+    # 11-08 から本人の答え「字 1 と絵 A。」の字。のこすの頁の輪の節（loop_figure.ADOPTED）と同じ文
+    assert about.MANABI == loop_figure.ADOPTED and about.MANABI.startswith("型紙は、AI が考えた ためしの案（仮説）です。"), about.MANABI
     # 大前提の 3 段（本人の言葉 11-07 夜「入れる」）: 頁の頭の道の並び（English の道）のすぐ後・CONCEPT の前に、この順で 1 回ずつ
     marks3 = [f'<p class="lead daizen">{esc(t)}</p>' for t in about.PREMISE]
     assert 'class="lead premise"' not in h, (k, "皮の premise の札の見た目を拾わない")
@@ -66,14 +67,21 @@ for k in ("tenji", "zine"):
     assert "<h1>うつし</h1>" in h, k
     assert "あなたにしかない深さ" not in h, k
 
-# 5. README の頭の後の最初の節
+# 5. README の「作る気持ち」と「なぜ紙の型紙か」の節（本人の言葉 11-08「うつしのリードミー、エンジンが合流してぐちゃぐちゃ…優勝できる形にしよう」で、
+# 前の「うつしと paper to toy」の節は README から外し、エンジンの話は engine/README.md へつなぐ。思いの核は「作る気持ち」の節（standing-decisions 164 行の言葉だけ）、
+# なぜ紙の 2 文は「なぜ紙の型紙か」の節に、序の頁と同じ字で置く。核の後の 2 文は README には置かない（作る気持ちの節は 164 行の言葉だけの決め・統括 11-08）
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-a = readme.index(f"## {about.ENGINE_HEAD}")
-sec = readme[a:readme.index("\n## ", a + 3)]
-assert f"> {about.CORE}（本人の言葉 11-07）" in sec, "README の思いの核"
-assert "".join(about.CORE_AFTER) in sec, "README の思いの核の後の 2 文"
+
+
+def section(head):
+    a = readme.index(head + "\n")
+    return readme[a:readme.index("\n## ", a + 3)]
+
+
+feel, kami = section("## 作る気持ち"), section("## なぜ紙の型紙か")
+assert f"> {about.CORE}（本人の言葉 11-07）" in feel, "README の思いの核"
 assert about.README_KAMI == (about.KAMI[1], about.KAMI[3])
-assert f"{about.KAMI_HEAD}: " + "".join(about.README_KAMI) in sec, "README のなぜ紙の 2 文"
-assert sec.index(about.CORE) < sec.index(about.KAMI_HEAD) < sec.index("型紙を作るエンジンの仕組み:"), "README の並び"
-assert "あなたにしかない深さ" not in sec
+assert f"{about.KAMI_HEAD}: " + "".join(about.README_KAMI) in kami, "README のなぜ紙の 2 文"
+assert readme.index("## 作る気持ち") < readme.index("## なぜ紙の型紙か") < readme.index("## 型紙を作るエンジン"), "README の並び"
+assert f"## {about.ENGINE_HEAD}" not in readme and "あなたにしかない深さ" not in readme
 print("ok このサイトについて の頁（節の並び・思いの核と 2 文・なぜ紙の 4 文・AI の 2 文・見出しはうつし・README の頭の後の節）")

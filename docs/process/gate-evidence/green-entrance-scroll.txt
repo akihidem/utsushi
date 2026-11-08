@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_entrance_scroll.py
+# commit: aadbdddb（回した時の HEAD）
+ok 入口の題の間から まずはここから へ送る: 印（字なし・まずはここから）・click と上へのスライド・動きを減らす設定・focus・注記の字（白と暗い版）
+rc=0

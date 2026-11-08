@@ -59,7 +59,7 @@ for f in (ROOT / "data/hypotheses").glob("*.json"):
 renamed = [k for k in strings if k in names and strings[k] != "=" and RUBY.sub(lambda m: m.group(1), strings[k]) != k]
 assert names and not renamed, renamed
 # 6. 入口の題字と副題の 3 行は、ルビを外すと鍵と一字も同じ
-TITLE = ("江都二色より", "うしなわれた玩具の動きを", "紙で実験して確かめる")
+TITLE = ("江都二色より", "うしなわれた玩具の動きを", "紙でよみがえらせる")  # 3 行目は本人の答え 11-08
 changed = [k for k in TITLE if k not in strings or RUBY.sub(lambda m: m.group(1), strings[k]) != k]
 assert not changed, ("入口の題字と副題は、ルビだけを振る（字を足さない・言い換えない）", changed)
 print(f"ok やさしい日本語の表の分け 1（{len(strings)} 鍵・漢字は全部ルビ・読みはひらがな・数の印・= の扱い・玩具の名と入口の題字は替えない）")

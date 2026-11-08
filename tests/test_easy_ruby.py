@@ -8,6 +8,7 @@
 - SVG の字（text・tspan）は印を外した字（読みを添えると図の札がはみ出した。#591。読みは図のすぐ上の文が持つ）なので、頁の見張りから外す
 - 頁の頭の「下書きです」の札は出ない
 """
+import concurrent.futures as cf
 import html
 import json
 import os
@@ -51,6 +52,24 @@ assert "<text>御来迎</text>" in svg and "<title>御来迎（ごらいごう�
 
 STRIP = re.compile(r"<title[^>]*>.*?</title>|<option[^>]*>.*?</option>|<script.*?</script>|<style.*?</style>|<textarea.*?</textarea>|<text\b[^>]*>.*?</text>|<ruby>.*?</ruby>|<!--.*?-->", re.S)
 
+
+def check_page(item):
+    """1 つの道の日本語の頁を、サーバと同じ出口（i18n.page_easy・play_server の _send）でやさしい日本語にして、
+    ルビの外に残る漢字のうち表に鍵が無い字でない物を返す。別の process で回すので、頭の名だけを使う（module の上に置く）。"""
+    path, ja = item
+    miss = []
+    easy = i18n.page_easy(ja, miss)
+    missing = {" ".join(html.unescape(t).split()) for t in miss}
+    out = [(path, "下書きの札")] if "easy-draft" in easy else []
+    body = STRIP.sub("", easy.split("</head>", 1)[-1])
+    for node in re.split(r"<[^>]*>", body):
+        text = " ".join(html.unescape(node).split())
+        if KANJI.search(text) and text not in missing:
+            out.append((path, text[:60]))
+    return out
+
+
+
 srv = serve(0, look="tenji")
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{srv.server_address[1]}"
@@ -65,23 +84,27 @@ try:
         except urllib.error.HTTPError as e:
             return e.code, e.read().decode("utf-8", "replace"), e.headers.get("Content-Type", "")
 
-    left = []
-    for path in i18n.routes(sources()):
+    # 前は道（約 750）ごとに日本語とやさしい日本語の 2 枚をサーバから 1 つずつ読み、混んだ機械で 5 分を超えて、run_floors の
+    # 1 本 300 秒の上限で「検査できない」になった（11-08・#605 の ./run.sh）。サーバのやさしい日本語は日本語の頁に page_easy を
+    # 掛けた物（play_server._send・/en の下は掛けない）なので、日本語の頁を 1 枚だけ読み、同じ出口をこちらで掛ける。
+    # 読むのは thread で並べ（網の待ち）、変換と照らしは process で並べる（字の処理は 1 つの process の中では並ばない）。
+    # 見る事は前と同じ。サーバが出したやさしい日本語の頁そのものの形は test_easy_all が見る
+    def fetch(path):
         code, ja, ctype = get(path, "utsushi_lang=ja")
-        if not ctype.startswith("text/html") or not ja:
-            continue
-        miss = []
-        i18n.to_en(ja, miss, lang="easy")
-        missing = {" ".join(html.unescape(t).split()) for t in miss}
-        _, easy, _ = get(path, "utsushi_lang=easy")
-        assert "easy-draft" not in easy, (path, "下書きの札")
-        body = STRIP.sub("", easy.split("</head>", 1)[-1])
-        for node in re.split(r"<[^>]*>", body):
-            text = " ".join(html.unescape(node).split())
-            if KANJI.search(text) and text not in missing:
-                left.append((path, text[:60]))
-    assert not left, left[:10]
+        return (path, ja) if ctype.startswith("text/html") and ja and not re.match(r"/en(?:[/?#]|$)", path) else None
+
+    with cf.ThreadPoolExecutor(8) as ex:
+        pages = [x for x in ex.map(fetch, i18n.routes(sources())) if x]
 finally:
     srv.shutdown()
     srv.server_close()
+
+# 照らしは別の process で並べる。fork で分けるのは、この試験を __main__ として読み直さないため（spawn・forkserver だと子が
+# この file の頭から回し直し、サーバをまた立てる）。サーバと読む thread を止めた後に fork する（thread のある process の fork は危ない）
+import multiprocessing  # noqa: E402
+
+with cf.ProcessPoolExecutor(min(8, os.cpu_count() or 2), mp_context=multiprocessing.get_context("fork")) as ex:
+    left = [hit for hits in ex.map(check_page, pages, chunksize=16) for hit in hits]
+assert len(pages) > 100, len(pages)  # 道を読めていない時に、照らす物が無くて通ってしまわないように
+assert not left, left[:10]
 print("ok やさしい日本語: 表の値は全部の漢字にルビ・頁でルビの外に残る漢字は表に無い字だけ・下書きの札なし")

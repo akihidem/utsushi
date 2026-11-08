@@ -54,7 +54,7 @@ try:
     check(get(base, f"/toy/{G}/techo/kiroku"), "合言葉付きの場")
     check(get(pbase, f"/toy/{G}/techo/kiroku"), "公開の場")
     en = get(base, f"/toy/{G}/techo/kiroku?lang=en")
-    assert "experiential learning cycle" in en and ADOPTED not in en, "英語の頁は英語の文"
+    assert "The template is a guess the AI came up with." in en and ADOPTED not in en, "英語の頁は英語の文"
 finally:
     for s in (srv, pub):
         s.shutdown()

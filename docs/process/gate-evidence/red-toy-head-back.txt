@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_head_back.py
+# commit: 3ea71f8d（回した時の HEAD・今の main。試験だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_toy_head_back.py", line 49, in <module>
+    assert 'class="genga-tate"' not in fig and 'class="genga-title"' not in fig, (sid, "題の塊の縦の段が残った")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '題の塊の縦の段が残った')
+rc=1

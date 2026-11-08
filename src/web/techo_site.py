@@ -64,9 +64,10 @@ def media_dir(rid):
 
 
 def media_bytes():
-    """置き場の写真と動画の大きさの合計（確かめの控えの json は数えない）。公開の場の合計の上限を見る時に、受ける前に数える。"""
+    """置き場の写真と動画と、字にする前の声の大きさの合計（確かめの控えの json と字は数えない）。公開の場の合計の上限を見る時に、受ける前に数える。
+    声（voice/*.mka・本人の言葉 11-08「全部残していいことにしたい。」）も数える。数えないと、公開の場で声の分だけ上限を越えて機械を埋められるため。"""
     root = records.folder() / "media"
-    return sum(p.stat().st_size for p in root.glob("R-*/m*.*")) if root.exists() else 0
+    return sum(p.stat().st_size for pat in ("R-*/m*.*", "R-*/voice/*.mka") for p in root.glob(pat)) if root.exists() else 0
 
 
 def strip_jpeg_meta(data):
@@ -123,7 +124,8 @@ def clean_video(data, ext):
     """動画の撮影情報と音を落として入れ物を作り直す。絵は再符号化しない。Returns (中身 or None, 失敗の文)。
 
     絵の流れだけを写す（-map）。全体の欄だけを消しても、字幕や時刻つきの情報の流れと流れごとの欄に位置が残るため。
-    音を落とすのは本人の決定（11-05「声は字にして、声そのものは残しません」、#314）。頁の muted だけでは、ファイルに声が残る。
+    頁に出す動画からは音を落とす（頁の muted だけでは、ファイルに声が残る）。声は save_media が別に写し、この機械の中で字にしてから消す
+    （本人の言葉 11-08「全部残していいことにしたい。」・omochae.voice_text）。前は本人の決定（11-05「声は字にして、声そのものは残しません」、#314）で、字にせずに捨てていた。
     読み手を mov に決める（-f mov）。中身の形で読み手を選ばせると、ほかのファイルや URL を指す一覧（HLS など）を読みに行くため。
     """
     if data[4:8] not in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip"):
@@ -146,8 +148,11 @@ def clean_video(data, ext):
         return dst.read_bytes(), ""
 
 
-def save_media(rid, ctype, data):
-    """Returns (ファイル名 or None, 失敗の文)。記録が実在し、型と大きさと数の上限を守り、中身が読める物だけを、撮影情報を外して置く。"""
+def save_media(rid, ctype, data, keep_voice=False):
+    """Returns (ファイル名 or None, 失敗の文)。記録が実在し、型と大きさと数の上限を守り、中身が読める物だけを、撮影情報を外して置く。
+
+    keep_voice: 動画の声を、字にするために非公開で写すか（voice/m<n>.mka）。字にする道具がある時だけ、サーバが True で呼ぶ
+    （道具が無い機械では字にできず、72 時間置いて消すだけになるので、今までどおり受ける時に落とす）。字にするのはサーバの作業列（web.play_server）。"""
     if not re.fullmatch(r"R-\d{4,}", rid) or not (records.folder() / f"{rid}.json").exists():
         return None, "記録が無い"
     ext = MEDIA_TYPES.get(ctype)
@@ -168,6 +173,14 @@ def save_media(rid, ctype, data):
     d.mkdir(parents=True, exist_ok=True)
     name = f"m{len(have) + 1}.{ext}"
     (d / name).write_bytes(clean)
+    if keep_voice and ext in ("mp4", "mov"):
+        from omochae import voice_text
+
+        with tempfile.TemporaryDirectory() as tmp:
+            src = pathlib.Path(tmp) / "in"
+            src.write_bytes(data)
+            # 声を写せない形（音の無い動画など）でも、動画は受け取る
+            voice_text.copy_voice(src, voice_text.voice_dir(rid) / f"m{len(have) + 1}.mka", len(data) + VIDEO_ROOM)
     return name, ""
 
 
@@ -478,8 +491,10 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
-    return ('<div class="gallery"><div class="top"><h1>作った物</h1><a href="/">入口へ</a></div>'
-            '<p class="road"><a class="go" href="/toys">もう 1 つ つくる</a></p>'
+    # 頭の「入口へ」は外した（窓口の決め 11-07）。入口へ直した「もう 1 つ つくる」と同じ所へ行く対になったため（本人のサイト体験レビュー 11-07 の 3）
+    return ('<div class="gallery"><div class="top"><h1>作った物</h1></div>'
+            # 選ぶ所は入口（えらぶ）。/toys は入口へ送るので、直に入口へ向ける（本人のサイト体験レビュー 11-07 の 3）
+            '<p class="road"><a class="go" href="/">もう 1 つ つくる</a></p>'
             f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
@@ -532,7 +547,7 @@ def next_erabu():
 def manabi_box():
     """学びの輪の文と図の節。のこす の頁（手帖の記録の頁）の頭の「のこすと型紙が直る事の枠」（naoru.box）の後に置く。
     本人のサイトの見直し（11-07 22:16）の ⑤「ここに輪の説明ある方がいいよね。」と、本人の決め「輪の説明は のこす の頁に置く」による。
-    字は新しく書かず、本人が採った学びの輪の文（11-07 夕「学びの輪の文は案 1 の字でよい」・loop_figure.ADOPTED）をそのまま使う。
+    字は本人が採った輪の節の文（loop_figure.ADOPTED）をそのまま使う。11-08 から本人の答え「字 1 と絵 A。」の字（前は 11-07 夕「学びの輪の文は案 1 の字でよい」の字）。
     説明の頁（このサイトについて）の学びの輪の段と同じ形（文の後に同じ部品 loop_figure.svg() の図）にして、2 つの頁で字と絵が食い違わないようにする。
     のこす の頁に置くのは、文の「のこした記録が、次に作る時の入り口になります。」が、この頁でする事（作った記録をのこす）の意味を言っているため。
     のこした後は #mine に着くので、頭のこの節は上げる手の邪魔にならない。公開の場でも出す（人の言葉も記録の番号も入らない説明の字と図だけなので）"""

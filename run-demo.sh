@@ -20,6 +20,9 @@
 # 途中でサーバかトンネルが止まった時は、理由を出して 4 で終わる（片方だけ残して黙らない）。
 set -u
 cd "$(dirname "$0")" || exit 4
+# 上げた動画の声を字にする道具（requirements-asr.txt で作る .venv-asr）。在れば渡す（本人の言葉 11-08「全部残していいことにしたい。」）。
+# 渡さないと、道具の在る機械でもサーバが受けた時に声を落とす（道具の場所を知らないため）。無い機械では今までどおり受けた時に落とす
+if [ -z "${OMOCHAE_ASR_PYTHON:-}" ] && [ -x .venv-asr/bin/python ]; then export OMOCHAE_ASR_PYTHON="$PWD/.venv-asr/bin/python"; fi
 PORT=${DEMO_PORT:-8767}          # 白の展示。黒のジンは次の番号
 [ -x .venv/bin/python ] || ./init.sh >/dev/null || exit 4
 command -v cloudflared >/dev/null || { echo "cloudflared が無いので外の機器からは開けません" >&2; exit 4; }

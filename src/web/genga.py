@@ -7,10 +7,15 @@
 判断の芯:
 - 絵は頁の全体を、拡大せず、縦横の比も絵のままで出す。玩具の所は、頁の絵の上に細い枠で示す（切り抜きは別に置かない）。
   枠の箱は出典の記録の crop_region。頁の片側の全体が玩具の記録の物（必須 2 種）は枠を出さない。
-- 歌は絵と組にする。玩具の頁の頭は、左から 題の塊 → 歌 → 絵 で、題の塊と歌は縦書き（本人の言葉 11-08。狭い幅も縦のまま、高さに上限）。
+- 歌は絵と組にする。広い幅は絵の横に縦書き、狭い幅は絵の真下に横書き（#595 の前の形）。
+  11-08 に一度、左から 題の塊 → 歌 → 絵 の縦の組みにした（本人の言葉「絵の左横に縦で狂歌、その左横に御来迎 江都二色よりーの部分を置く」）が、
+  本人の言葉（11-08）「iPhone Airだとこの表示。原図を横幅いっぱいにする。縦書きは失敗なので前の形に戻す。」と、答え「広い画面も戻す」で、
+  全部の幅で前の形に戻した（幅 420 で縦書きの段が右へはみ出して切れていた）。題の塊は前の作品の札の所（玩具の頁の題と つくる の後・toy）へ戻した。
   字にするのは人が確かめた読みだけ（J-016）。
   読みが無い玩具は、歌は絵の中に書かれているので、字は出さない（断りも足さない。本人の決定 11-06）。
 - 狭い幅の絵の高さの上限は CSS の変数 1 つ（--genga-h、44svh から）。段 0 の「最初の画面にボタン 1 つ」の余地を残すため。
+  玩具の頁の頭の原図は、11-08 の本人の言葉「原図を横幅いっぱいにする」で上限を外した（幅 390 で「つくる」は最初の画面の外になる）。
+  英語の頁と作る時の畳みは上限のまま。
 - 出し方は 3 つ。head（玩具の頁の頭。絵そのものと「図を見る（国立国会図書館）」の 1 つの道は、国立国会図書館のその絵の頁へ行く・本人の言葉 11-08）、
   fold（作る時の畳み。道は head と同じ 1 つで国立国会図書館へ・本人の答え 11-08「作りながら見る頁の大きく見るも国会図書館への道にそろえる」。
   作りながら見る頁は、頁を離れると声の聞き取りと鏡が止まるので、別のタブで開く）、plain（英語の頁。絵だけで、字は足さない）。
@@ -35,19 +40,14 @@ STYLE = """
 .genga-pic{position:relative;display:block;width:100%;line-height:0}
 .genga-pic img{display:block;width:100%;height:auto;background:var(--soft)}
 .genga-box{position:absolute;border:2px solid var(--accent);outline:1px solid rgba(255,255,255,.75);pointer-events:none}
-.genga-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 22px;align-items:start}
+.genga-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 22px;align-items:start}
 .genga-songs p{margin:0 .3em}
-.genga-head .genga-tate{display:flex;flex-direction:row;gap:18px;align-items:flex-start}
-.genga-head .genga-title{writing-mode:vertical-rl;max-height:min(70vh,620px);font-size:13px;line-height:2;letter-spacing:.14em;color:var(--mute)}
-.genga-head .genga-title p{margin:0 .2em}.genga-head .genga-title b{font-size:clamp(17px,1.7vw,22px);font-weight:400;color:var(--fg);letter-spacing:.3em}
 .genga-head .genga-songs{writing-mode:vertical-rl;max-height:min(70vh,620px);font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
 .genga-cap{grid-column:1/-1;font-size:12px;color:var(--mute);letter-spacing:.1em;line-height:1.9;margin:0}
 .genga-cap p{margin:0 0 4px}
 .genga-cap a{display:inline-flex;align-items:center;min-height:44px;margin-right:1.2em}
 a.genga-pic{cursor:zoom-in}
 .genga-row{display:flex;gap:10px;align-items:flex-start;min-width:0}
-.genga-crop{display:none;flex:1 1 0;min-width:0;line-height:0}
-.genga-crop img{display:block;width:100%;height:auto;max-height:var(--genga-h);object-fit:contain;object-position:left top}
 .genga-made{margin:14px 0 0;width:min(240px,60%);line-height:0}
 .genga-made img{display:block;width:100%;height:auto;border:1px solid var(--frame);background:var(--soft)}
 .genga-made figcaption{line-height:1.6;font-size:12px;letter-spacing:.2em;color:var(--mute);margin-top:6px}
@@ -59,11 +59,9 @@ a.genga-pic{cursor:zoom-in}
 .genga-fold .genga-songs{font-size:15px;line-height:2;margin:8px 0}
 @media (max-width:820px){
 .genga-head{grid-template-columns:minmax(0,1fr)}
-.genga-head .genga-pic,.genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)));flex:0 0 auto}
-.genga-head .genga-crop{display:block}
-.genga-head .genga-tate{justify-content:flex-end;gap:12px}
-.genga-head .genga-songs,.genga-head .genga-title{max-height:min(52vh,420px)}
-.genga-head .genga-songs{font-size:16px;line-height:2.1}
+.genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)));flex:0 0 auto}
+.genga-head .genga-pic{width:100%;flex:1 1 auto}
+.genga-head .genga-songs{writing-mode:horizontal-tb;max-height:none;font-size:16px;line-height:2}
 }
 """
 
@@ -142,37 +140,28 @@ def _songs(src):
     return f'<div class="genga-songs">{body}</div>', f'<p class="meta">{esc(QUOTE + who)}</p>'
 
 
-def crop(sid, src):
-    """頁を分け合う玩具（枠がある玩具）の今の切り抜き。狭い幅で、頁の絵の右の空きに小さく置く（UX の見直し・統括の決め 11-06）。
-    頁の絵の中では玩具がとても小さくなるため。字は足さない（読み上げは隣の頁の絵と同じ玩具なので空）。"""
-    path = ROOT / "out/sources" / f"{sid}.jpg"
-    if not box(src) or not path.exists():
-        return ""
-    w, h = size(path)
-    return f'<span class="genga-crop"><img src="/picture/{esc(sid)}" width="{w}" height="{h}" alt="" loading="lazy"></span>'
-
-
 def head(sid, src=None, photos=True):
-    """玩具の頁の頭。左から 題の塊 → 狂歌 → 絵（本人の言葉 11-08「絵の左横に縦で狂歌、その左横に御来迎 江都二色よりーの部分を置く」）。
-    題の塊と狂歌は縦書き（入口の縦の組みと同じ考え）。狭い幅は絵が上で、題の塊と狂歌は縦のまま並べて「つくる」の釦の後ろへ（toy.FOLD_STYLE）。
+    """玩具の頁の頭。絵 → 歌の順（広い幅は絵の右に縦書き、狭い幅は絵の真下に横書き）。#595 の前の形（本人の言葉 11-08「縦書きは失敗なので前の形に
+    戻す。」・答え「広い画面も戻す」）。題の塊は頭に入れず、玩具の頁の題と つくる の後の作品の札（skin.artwork_label）に置く（前の形）。
     「大きく見る」と「図を見る」は 1 つにし、絵そのものも同じ所（国立国会図書館のその絵の頁）へ行く（本人の言葉「統一して国会図書館へのリンクへ」）。
     原文の引用の「確かめた人」の行と、国立国会図書館の出典の字は頭に置かない（本人の言葉「確かめた人要らない」「文言はページの一番下に」。
     出典の字は toy の頁の一番下の段 ndl_credit）。"""
-    from .skin import artwork_title, ndl_page
+    from .skin import ndl_page
 
     src = src or _source(sid)
     ndl = ndl_page(src)
-    pic, whole = _pic(sid, src, alt(src), href=ndl or None)
-    pic = f'<div class="genga-row">{pic}{crop(sid, src) if whole else ""}</div>' if pic else ""
+    pic, _ = _pic(sid, src, alt(src), href=ndl or None)
+    # 狭い幅で頁の絵の右の空きに置いていた今の切り抜き（UX の見直し・統括の決め 11-06）は外した: 原図を横幅いっぱいにしたので（本人の言葉 11-08）、置く空きが無い
+    pic = f'<div class="genga-row">{pic}</div>' if pic else ""
     # 原画のすぐ後に、作ってみた実物（人が確かめた写真。無ければ何も置かない。窓口の決め 125731・(b)）を 1 枚（本人のサイト体験レビュー 11-07 の 2。web.made）
     from . import made
 
     pic += made.figure(sid, "made genga-made", photos=photos)
     lines, _ = _songs(src)
-    tate = f'<div class="genga-tate"><div class="genga-title">{artwork_title(src["toy"], src)}</div>{lines}</div>'
     cap = f'<div class="genga-cap"><p><a href="{esc(ndl)}">{esc(NDL)}</a></p></div>'
-    return (f'<style>{STYLE}</style><figure class="genga genga-head" id="genga" aria-label="{esc(HEAD)}">{tate}'
-            f'<div class="genga-main">{pic}{cap}</div></figure>')
+    # 歌の段は絵の段の後（広い幅は右の列・狭い幅は真下）。「図を見る」は絵のすぐ下のまま（前は 2 列の下に渡していた）
+    return (f'<style>{STYLE}</style><figure class="genga genga-head" id="genga" aria-label="{esc(HEAD)}">'
+            f'<div class="genga-main">{pic}{cap}</div><div class="genga-uta">{lines}</div></figure>')
 
 
 def ndl_credit(sid, src=None):
