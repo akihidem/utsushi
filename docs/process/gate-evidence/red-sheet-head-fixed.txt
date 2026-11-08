@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_sheet_head_fixed.py
+# commit: 611d1591（今の main）の木に tests/test_sheet_head_fixed.py だけを当てた（git の外の写し・紙の組み方は 611d1591 の物のまま）
+Traceback (most recent call last):
+  File "tests/test_sheet_head_fixed.py", line 92, in <module>
+    real_n = run("real")
+  File "tests/test_sheet_head_fixed.py", line 86, in run
+    only_title_differs(sid, *got, kind)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "tests/test_sheet_head_fixed.py", line 74, in only_title_differs
+    assert len(ra) == len(rb) and not diff, (sid, kind, "題のほかの要素が違う", len(ra), len(rb), diff[:2])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000009-L', 'real', '題のほかの要素が違う', 334, 334, [('<path d="M18.2,45.95 L130.897,45.95 L130.897,85.55 L18.2,85.55 Z" fill="#c9a25a" />\n', '<path d="M18.2,42.45 L130.897,42.45 L130.897,82.05 L18.2,82.05 Z" fill="#c9a25a" />\n'), ('<path d="M18.2,70.55 L130.897,70.55 L130.897,77.75 L18.2,77.75 Z" fill="#2e2a24" />\n', '<path d="M18.2,67.05 L130.897,67.05 L130.897,74.25 L18.2,74.25 Z" fill="#2e2a24" />\n')])
+rc=1

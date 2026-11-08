@@ -164,6 +164,11 @@ assert not failures and not techo_site.media_dir(waiting).exists(), failures
 assert waiting not in gallery()
 
 # 順位の形を出さない（J-025）
-assert not re.search(r"順位|ランキング|人気|点数|\d+ 位|いいね", gallery())
+# 頁の作りの字に順位や点を出さない（J-025）。人が話した字・書いた字の引用（感想と話された言葉の札 .voices-real と、職人の言葉の節）は
+# 回答のまま出す決め（本人の決め 11-07「寄せられた声…回答のまま」・11-08 職人の言葉はレビュー 10 本の言葉）で、「パーツ点数」のような字があるので、外して見る
+_g = gallery()
+_g = re.sub(r'<div class="voices-real">.*?</details>', "", _g, flags=re.S)
+_g = _g[:_g.index('id="shokunin"')] if 'id="shokunin"' in _g else _g
+assert not re.search(r"順位|ランキング|人気|点数|\d+ 位|いいね", _g), re.search(r".{20}(順位|ランキング|人気|点数|\d+ 位|いいね).{10}", _g)
 srv.shutdown()
 print("ok")
