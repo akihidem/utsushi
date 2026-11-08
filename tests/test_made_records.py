@@ -106,8 +106,14 @@ assert DECIDED in ask_part and "名前は言わないでください" in ask_par
 UPLOAD = "のせた写真と動画は、いつ・どこでとったかなどの情報を消してから残します。動画の声は、この機械の中で字にしてから消します。字にできない時も、3 日で消します。子どもの声は入れないでください。"  # 11-08: 上げた動画の声を字にしてから消す形に合わせた案（本人の確かめ待ち）
 techo = get(f"/toy/{G}/techo")[1]
 assert f'<p class="meta" id="up-notice">{UPLOAD}</p>' in techo and DECIDED not in techo and "名前は言わないでください" in techo
-# もちよる の札の玩具の名の道の行き先（玩具の頁の記録の札 #R-… は無くなったので、もちよる の中の錨か手帖の記録の頁へ向け直す）は、
-# もちよる の玩具ごとの札の枝の試験 tests/test_mochiyoru_toy_place.py が見る
+# ギャラリーの札の玩具の名から、もちよるの中のその玩具の札（錨 toy-<印>）へ。前は玩具の頁の同じ記録（#R-…）へ行ったが、本人の言葉 11-08 477
+# 「復元の記録などはすべてもちよるに統合する。」で玩具の頁から記録の札が無くなるので向け直した。行き先の錨が頁にある事も見る
+gal = get("/gallery")[1]
+# 今残した 1 つ（own・この試験の画面の鍵が合う記録）の玩具の名は、手帖の記録の頁の自分の記録へ（記録の番号の道と同じ行き先）
+for sid in (G, T):
+    assert f'href="#toy-{sid}"' in gal or f'href="/toy/{sid}/techo/kiroku#mine"' in gal, (sid, "札の玩具の名の道")
+    assert f'id="toy-{sid}"' in gal, (sid, "行き先の錨")
+assert f'href="/toy/{G}#{g_rid}"' not in gal and f'href="/toy/{T}#{rid}"' not in gal, "無くなる玩具の頁の記録の札へ向けない"
 # 見本の無い玩具には見本を出さない
 other = "NDL-1187053-R0000016-L"
 assert "見本の記録" not in get(f"/toy/{other}")[1]

@@ -547,12 +547,11 @@ def printed_set(sid, hid, version):
 
 def mochiyoru_place(sid, photos=True):
     """もちよる のこの玩具の札への道。札が無い玩具は None で、道を出さない（別の目の確かめ 11-08 の止め 4: もちよる に何も無い玩具で頭に着くだけの道にしない）。
-    札の錨と道は もちよる の側（techo_site.toy_place）が持つ。photos=False（合言葉なしの場）は public=True で聞く: 公開の場の もちよる は、人が確かめた字か
-    写真の札だけを出すので、道もそれに合わせる（もちよる の担当の形）。その枝が入るまでは道を出さない"""
+    札の錨と道は もちよる の側（techo_site.toy_place・#646）が持つ。photos=False（合言葉なしの場）は public=True で聞く: 公開の場の もちよる は、人が確かめた字か
+    写真の札だけを出すので、道もそれに合わせる（もちよる の担当の形）"""
     from . import techo_site
 
-    place = getattr(techo_site, "toy_place", None)  # 作業中: もちよる の枝が入ったら直に呼ぶ形にする
-    return place(sid, public=not photos) if place else None
+    return techo_site.toy_place(sid, public=not photos)
 
 
 def make_go(sid):

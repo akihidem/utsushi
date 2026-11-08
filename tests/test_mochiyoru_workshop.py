@@ -68,7 +68,8 @@ by_toy = {r["file"]: r["toy"] for r in workshop.rows()}
 order = []
 for sid in SIDS:
     name = hypotheses.load(sid)["toy"]
-    card = re.search(r'<figure class="workshop">((?:(?!</figure>).)*?<a href="/toy/' + re.escape(sid) + r'">.*?)</figure>', made, re.S)
+    # 玩具ごとの札は錨 id="toy-<印>" を持つ（本人の言葉 11-08 477・つくるの作り直しの枝 2）。錨の有無で札の見分けを替えない
+    card = re.search(r'<figure class="workshop"(?: id="toy-[^"]+")?>((?:(?!</figure>).)*?<a href="/toy/' + re.escape(sid) + r'">.*?)</figure>', made, re.S)
     voices = demo_samples.workshop_for(sid, name)
     photos = [f for f in workshop.files(sid) if workshop.kind_of(f) == "single"]
     if not (photos or voices):
