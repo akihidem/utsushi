@@ -9,5 +9,5 @@
 - 見た事: 最悪の見込みは、1 回の押しが 1 回の run で、run の上限 PER_RUN_CAP（3 ドル）まで使う形。日割り 50 ドルを 17 回ほどの押しで使い切り、聞く口・動画を見る口も止まる。手元の実測は words の 5 回で 0.108 ドル（最大 0.041）。30 回の止めは最悪でも 90 ドルではなく、日割りの止め（50 ドル）が先に効く（日割りの止めはこの枝で待ちに落とさない形になった）
 - ゴールの要件: `tests/test_talk_sheet_guards.py`（受け口が書き込みの数の止めに入る・予算の止めで止めの字と記録なし・30 回で呼ばずに断る・昨日の回と呼ばなかった回は数えない・鍵の無い道は今のまま・画面は止めの字）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-talk-sheet-guards.txt`（今の main 6b33b770 で、受け口が書き込みの数の止めに無く rc 1）
-- エビデンスゲート: Green は `docs/process/gate-evidence/green-talk-sheet-guards.txt`
+- エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-talk-sheet-guards.txt`（関わる試験 21 本・rc 0）
 - 口を型紙の窓へ移す作り（置き場の移し・1 つの釦「Claude に話して型紙を作り直す」・仮説の段の古い口を外す）は、UX の担当の音声認識を外す作りが入ってから、この枝の後に続ける
