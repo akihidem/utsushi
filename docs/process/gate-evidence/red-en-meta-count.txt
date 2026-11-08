@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_to_toy.py（main 82dac852 の試験の字で回した）
+# commit: 3706c76c（回した時の HEAD。試験だけ main 82dac852 の物に戻した。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_paper_to_toy.py", line 44, in <module>
+    assert page.count(pos) == 1 and page.count(eng) == 1 and page.index(pos) < page.index(eng) < page.index(en.INTRO[0]), ("English の頭に 2 文 → 3 文の順で 1 回ずつ", opened)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('English の頭に 2 文 → 3 文の順で 1 回ずつ', False)
+rc=1
