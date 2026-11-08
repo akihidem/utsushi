@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_load_guard.py
+# commit: 3a7dd8ce（回した時の HEAD）
+ok 全体の資源の上限: 変換の入口（同時 2・待ち 4・待つ長さ）・合計の予約（合言葉付きの場にも）・同時の処理の数・声の待ち行列の長さ。ふつうの量では前のまま
+rc=0
