@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: d53b5354（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kuzushi_notes.py", line 46, in <module>
+    assert G in NOTED and T in NOTED and len(NOTED) > 2, NOTED
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['NDL-1187053-R0000005-L', 'NDL-1187053-R0000014-R']
+rc=1
