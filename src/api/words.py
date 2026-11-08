@@ -6,7 +6,7 @@ Claude が返すのは寸法と、補った点と、乗らない点だけで、�
 """
 import json
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from omochae import hypotheses, loop, making_log, records, store, talk_log
 from omochae.compose import TEMPLATES, compose
@@ -14,7 +14,7 @@ from omochae.contrib import check_pii, too_long
 from omochae.marks import LOOP_PREMISE
 from omochae.model import Failure
 
-from . import agent
+from . import agent, budget
 from .loop_agents import _tools, execute
 
 SYSTEM = """江戸の玩具の仮説を、人の言葉から紙の型紙の寸法に写す担当です。
@@ -226,6 +226,10 @@ def request_think(source, talk, talk_file, name, evidence, client=None, use_clau
     sid = source["source_id"]
     h, base_params = base_of(sid)
     result, trace, status = None, None, "waiting_maker"
+    # この口の 1 日の回数（budget.WORDS_PER_DAY）に達した時は、Claude を呼ばず、作る側の待ちにも置かずに断る。待ちに置くと、学ぶ人には頼めたように
+    # 見えるのに、作る側の手が要る（設計 2 版の 4 節「予算の止めでは止めの字を出し、作る側の待ちに落とさない」）。字は予算の止めの字（今日の上限）
+    if use_claude and called_today() >= budget.WORDS_PER_DAY:
+        return None, [Failure("F9.budget", sid, budget.BudgetStop.NOTES["day"])]
     if use_claude:
         from web import think_sheet
 
@@ -236,7 +240,11 @@ def request_think(source, talk, talk_file, name, evidence, client=None, use_clau
             result, t = agent.run("words", SYSTEM, user, _tools(), SCHEMA, execute, validate=lambda r: [f.line() for f in check_result(r, source) + check_no_rank(r) + check_names(r, source, base_params)], client=client)
             trace = {"model": t.model, "tool_calls": t.tool_calls, "retries": t.retries, "input_tokens": t.input_tokens, "output_tokens": t.output_tokens}
             status = "pending_human"
-        except Exception as e:  # 鍵が無い・通信できない・予算の上限・検査に落ちたまま。値は残さず、種類だけ
+        except budget.BudgetStop as e:
+            # 予算の止め（今日の上限・累計の停止線・1 回の上限）は、作る側の待ちに落とさず、止めの字で断る（前は下の線で待ちに落ち、止めの字が出なかった。
+            # 別の目の止め 2）。待っても作る側の手で回すと、止めた予算をその場の外で使う事になる
+            return None, [Failure("F9.budget", sid, e.note)]
+        except Exception as e:  # 鍵が無い・通信できない・検査に落ちたまま。値は残さず、種類だけ
             result, trace = None, {"fell_back": type(e).__name__}
     # 本人の画面だけが開ける印（URL に載る）。W-番号は数えられるので、番号だけで人の字が読める形にしない。
     rec = {"source_id": sid, "status": status, "name": name, "how_it_moves": text, "evidence": evidence, "typed_by": THINK_BY,
@@ -255,6 +263,27 @@ def by_token(source_id, token):
         if w and w.get("token") == token and w.get("source_id") == source_id:
             return w
     return None
+
+
+def called_today():
+    """今日（日本の日付）、この口が Claude を呼んだ回数。呼んだ記録（trace が有る物）を数える。呼べずに待ちへ落ちた回（fell_back）も、
+    呼びに行った分の費用がかかりうるので数える。予算の止めと回数の止めで断った回は記録を作らないので数えない"""
+    today = budget._today()
+    n = 0
+    for p in loop.folder().glob("words-*.json"):
+        w = store.read_json_or_skip(p)
+        if w and w.get("trace") is not None and _jst_day(w.get("asked_at", "")) == today:
+            n += 1
+    return n
+
+
+def _jst_day(at):
+    """記録の時刻（ISO 8601）を日本の日付（budget._today と同じ %m-%d）にする。読めない時は空。"""
+    try:
+        t = datetime.fromisoformat(at)
+    except ValueError:
+        return ""
+    return (t.astimezone(timezone(timedelta(hours=9))) if t.tzinfo else t).strftime("%m-%d")
 
 
 def waiting():

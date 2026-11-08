@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ukabu_steady.py
+# commit: 6fd0cb76（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ukabu_steady.py", line 121, in <module>
+    assert rec["c2"] == rec["a"], (where, "高さを戻した後に浮かぶ玩具の位置が元と違う", rec["a"], rec["c2"])
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'ja-320x568'), '高さを戻した後に浮かぶ玩具の位置が元と違う', '10,170,visible 239,227,visible 13,364,visible 236,543,visible', '10,170,visible 239,227,visible 13,364,visible 228,590,visible')
+rc=1

@@ -451,6 +451,7 @@ def tenji(photos=True, dark=False):
     from . import ukabu  # 浮かぶ玩具（循環を避けて、ここで読む）
 
     ts = toys()
+    uk = ukabu.block(set(sources()))
     body = switch("tenji")
     # 題の間: 題と副題と「このサイトについて」だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。組みは縦に戻した（本人の決め 11-07 夜
     # 「縦の組みに戻す」。ERABU の上の注）。前は画面いっぱいの高さにせず、幅 390 の最初の画面に 2 つの大きな札の頭が入るようにしていた
@@ -458,8 +459,9 @@ def tenji(photos=True, dark=False):
              # 題字のひらがなは英語の頁でも訳さない（lang="ja"。本人の言葉「うつし、のひらがなの下に」読みを入れるので、英語の頁もひらがなを残す）
              f'<h1><span class="kana" lang="ja">うつし</span><span class="yomi">{esc(YOMI)}</span></h1>'
              '<p class="sub">' + "<br>".join(esc(x) for x in SUB) + '</p>' + about_link()
-             # 浮かぶ玩具（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」。web.ukabu）。輪郭の絵が無い場では何も置かない
-             + ukabu.block(set(sources())) + DOWN + '</section>')
+             # 浮かぶ玩具（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」。web.ukabu）。輪郭の絵が無い場では何も置かない。
+             # 置き直しの台本は下へ送る印の後（印も測る字と押す所に入れるため・別の目の気づき 11-08）
+             + uk + DOWN + (ukabu.PLACE_JS if uk else "") + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
