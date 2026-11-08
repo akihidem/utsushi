@@ -7,7 +7,9 @@
 見る事:
 1. 変換を待たせて順を固定した同時の上げで、2 つは別の名になり、先に確かめた写真の中身は替わらず、公開に出るのは確かめた中身だけ
 2. 確かめた後に名の中身が替わった時（置き場へ直に書かれた時）は、公開にも配信にも出さず、確認を待つ物に戻る。確認には中身の要約（sha256）が残る
-3. 要約の無い前からの確認（この直しの前に確かめた物）は、前のとおり公開に出る（見た目と挙動を替えない）
+3. 要約の無い前からの確認（名だけの確認・この直しの前に確かめた物）は、そのままでは通さない（公開にも配信にも出さず、確認を待つ物）。
+   bind_legacy（立てる時に一度・一回きりの命令 bind）で今の中身の要約と大きさに結び直すと、今の中身のまま公開に出続ける。結び直した後に中身が
+   替われば出さない。立てる時（play_server.serve）に結び直す。何度回しても同じ（安全の事項 2 の続き・第 2 回の確かめの 3）
 4. 名の形と順は前のまま（m1・m2・m3）。同時に 5 つ上げても 3 つまで（1 つの記録の上限）で、名が重ならない
 5. 同時の上げで、上げた画面の控え（owners.json）が片方消えない
 """
@@ -78,7 +80,25 @@ assert (rid, first) in mr.waiting(), "中身が替わった物が確認を待つ
 rid3 = new_record("R-9903")
 legacy, _ = ts.save_media(rid3, "image/png", png("yellow"))
 (mr._folder(rid3) / "review.json").write_text(json.dumps({legacy: {"shows": "object", "reviewer": "前の人", "at": "2026-11-07T10:00+09:00"}}), encoding="utf-8")
-assert mr.public(rid3, [legacy]) == [legacy] and (rid3, legacy) not in mr.waiting(), "前からの確認が頁から消えた"
+assert mr.public(rid3, [legacy]) == [] and (rid3, legacy) in mr.waiting(), "名だけの確認を通した"
+assert mr.bind_legacy() == 1 and mr.bind_legacy() == 0, "結び直しが 1 回で済まない（何度回しても同じでない）"
+bound = json.loads((mr._folder(rid3) / "review.json").read_text(encoding="utf-8"))[legacy]
+assert bound["sha256"] == mr.digest(ts.media_dir(rid3) / legacy) and bound["size"] == (ts.media_dir(rid3) / legacy).stat().st_size and bound["reviewer"] == "前の人", bound
+assert mr.public(rid3, [legacy]) == [legacy] and (rid3, legacy) not in mr.waiting(), "結び直した前からの確認が頁から消えた"
+(ts.media_dir(rid3) / legacy).write_bytes(png("purple"))
+assert mr.public(rid3, [legacy]) == [], "結び直した後に中身が替わった物を出した"
+# 立てる時に結び直す（一回きりの命令と同じ道）
+rid6 = new_record("R-9906")
+legacy6, _ = ts.save_media(rid6, "image/png", png("orange"))
+(mr._folder(rid6) / "review.json").write_text(json.dumps({legacy6: {"shows": "object", "reviewer": "前の人", "at": "2026-11-07T10:00+09:00"}}), encoding="utf-8")
+from web import play_server  # noqa: E402
+
+srv = play_server.serve(0)
+try:
+    assert mr.public(rid6, [legacy6]) == [legacy6], "立てる時に前からの確認を結び直していない"
+finally:
+    srv.server_close()
+assert mr.main(["bind"]) == 0
 
 # 4
 rid4 = new_record("R-9904")
@@ -100,4 +120,4 @@ with ThreadPoolExecutor(max_workers=3) as pool:
     list(pool.map(lambda n: mr.claim(rid5, n, f"key-{n}"), saved))
 owners = json.loads((mr._folder(rid5) / "owners.json").read_text(encoding="utf-8"))
 assert sorted(owners) == sorted(saved) and all(mr._mine(rid5, n, f"key-{n}") for n in saved), owners
-print("ok 確かめた写真は差し替わらない: 同時の上げは別の名・確認は中身の要約に結び、中身が替われば出さずに待ちへ・前からの確認はそのまま・名は m1〜m3・控えは消えない")
+print("ok 確かめた写真は差し替わらない: 同時の上げは別の名・確認は中身の要約に結び、中身が替われば出さずに待ちへ・名だけの確認は通さず、立てる時に今の中身へ結び直す・名は m1〜m3・控えは消えない")

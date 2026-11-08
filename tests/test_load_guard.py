@@ -3,8 +3,10 @@
 見る事:
 1. 写真と動画の変換の入口（Gate）: 同時に回す数（2）を越えた分は待ち、待てる数（4）を越えた分はすぐ断る。待つ長さを越えたら断る。空けば次が入る
 2. 置き場の合計の予約（Reserve）: 書き終わる前の分も数えるので、同時に送られた分の合計で上限を越えない。書き終えたら（失敗でも）外す
+   予約は札で外す。台帳のファイルを渡すと、同じ台帳を使う別のプロセスの予約も数え、落ちたプロセスの予約は外れる（安全の事項 2 への対応）
 3. 本物の口: 写真と動画の口は、変換の入口が溢れた時だけ 503 で本文を空にして断る（手帖は前からの字を出す）。ふつうの量では前のまま（422・201）。
-   合言葉付きの場にも合計の止めがあり、予約中の分も数えて越えたら 507（前は公開の場だけ・今の合計＋今回の長さだけ）
+   合言葉付きの場にも合計の止めがあり、予約中の分も数えて越えたら 507（前は公開の場だけ・今の合計＋今回の長さだけ）。
+   予約の台帳は記録の置き場の中の共有のファイル。受け取り中の本文の合計（RECV_TOTAL）を越えた時だけ 503（安全の事項 2 への対応）
 4. 同時に処理する要求の数（LimitedServer）: 上限を越えた要求は読まずに 503。空けば前のまま開く
 5. 字にする前の声の待ち行列に長さの上限があり、満ちたら入れない（落ちない）
 """
@@ -51,11 +53,32 @@ assert short.enter(), "空けば次が入る"
 
 # 2. 置き場の合計の予約
 r = load_guard.Reserve()
-assert r.take(0, 30, 50) and not r.take(0, 30, 50), "書き終わる前の分も数える（前は数え合わず、2 本とも通った）"
-r.give(30)
-assert r.take(0, 30, 50) and r.reserved == 30
-r.give(30)
+a = r.take(0, 30, 50)
+assert a and not r.take(0, 30, 50), "書き終わる前の分も数える（前は数え合わず、2 本とも通った）"
+r.give(a)
+b = r.take(0, 30, 50)
+assert b and r.reserved == 30
+r.give(b)
 assert r.reserved == 0
+# 共有の台帳: 別に立てたサーバ（白と暗いなど）が同じ置き場を使う時、互いの予約を数える。前はサーバごとのメモリの中だけで、2 つが同時に
+# 受けると上限を越えうった。別のプロセスの予約は、本物の別のプロセスで取って見る（落ちて外さなかった予約は、pid が居なくなると外れる）
+import subprocess  # noqa: E402
+
+book = pathlib.Path(tempfile.mkdtemp()) / ".reserve" / "media.json"
+one, two = load_guard.Reserve(book), load_guard.Reserve(book)
+c = one.take(0, 30, 50)
+assert c and not two.take(0, 30, 50) and two.reserved == 30, "同じ台帳の予約を、別の入れ物からも数える"
+one.give(c)
+assert two.take(0, 30, 50) and one.reserved == 30
+code = f"import sys; sys.path.insert(0, {str(ROOT / 'src')!r}); from web import load_guard; r = load_guard.Reserve({str(book)!r}); print(r.reserved, bool(r.take(0, 10, 50)), bool(r.take(0, 20, 50)))"
+out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
+assert out.stdout.split() == ["30", "True", "False"], ("別のプロセスも同じ予約を数える", out.stdout, out.stderr)
+assert one.reserved == 30, "外さずに終わったプロセスの予約は、pid が居ないので外れる"
+for broken in ("[1, 2]", '{"a": 5, "b": [1], "c": {"x": 1}, "d": ["p", 3, 0]}', "null"):  # 形の違う台帳は、落ちずに空の台帳として扱う（別の目の気づき）
+    book.write_text(broken, encoding="utf-8")
+    d = one.take(0, 10, 50)
+    assert d and one.reserved == 10, ("形の違う台帳で落ちない", broken)
+    one.give(d)
 
 # 3. 本物の口
 assert techo_site.MEDIA_TOTAL == techo_site.PUBLIC_MEDIA_TOTAL == 2 * 1024 ** 3
@@ -74,6 +97,16 @@ def call(path, body, ctype, ip="203.0.113.9"):
             return x.status, x.read()
     except urllib.error.HTTPError as e:
         return e.code, e.read()
+
+
+def settle(ok, what):
+    """口は返事を送った後に予約を外す（finally）ので、返事を受けた直後はまだ外れていない事がある。少し待って見る
+    （試験の揺れ・11-08 の別の目の 8 回のうち 1 回目と、新しい木 4 つを同時に回した 1 つで、受け取りで断った後の予約の 0 の確かめが落ちた）"""
+    for _ in range(100):
+        if ok():
+            return
+        time.sleep(0.05)
+    raise AssertionError(what)
 
 
 G = "NDL-1187053-R0000005-L"
@@ -115,12 +148,27 @@ server.media_gate = real_gate
 # 合言葉付きの場の合計の止め（予約中の分も数える）。上限の手前まで予約を埋めて、今回の分で越える形
 assert not getattr(server, "public_open", False)
 used = techo_site.media_bytes()
-assert server.media_reserve.take(used, techo_site.MEDIA_TOTAL - used - 1, techo_site.MEDIA_TOTAL)
+# 予約の台帳は記録の置き場の中の共有のファイル（同じ置き場を使う別のプロセスと数え合う。安全の事項 2 への対応）
+from omochae import records  # noqa: E402
+
+assert server.media_reserve.path == records.folder() / ".reserve" / "media.json"
+settle(lambda: server.media_reserve.reserved == 0, "前の上げの予約が外れる")
+tag = load_guard.Reserve(server.media_reserve.path).take(used, techo_site.MEDIA_TOTAL - used - 1, techo_site.MEDIA_TOTAL)
+assert tag, "別の入れ物（別のプロセスの形）で予約を埋める"
 code, body = call(f"/record/{rid}/media", b"xx", "image/png")
-assert code == 507 and body == b"", (code, body)
-server.media_reserve.give(techo_site.MEDIA_TOTAL - used - 1)
+assert code == 507 and body == b"", ("別のプロセスの予約も数えて、上限を越える分を断る", code, body)
+server.media_reserve.give(tag)
 assert server.media_reserve.reserved == 0, "断った分と書き終えた分の予約は外れる"
 assert call(f"/record/{rid}/media", b"x", "image/png")[0] == 422
+# 受け取り中の本文の合計（このプロセスのメモリ）の上限。合計が越えた時だけ、変換の入口が溢れた時と同じ 503・本文は空。空けば前のまま
+assert load_guard.RECV_TOTAL == 8 * techo_site.MAX_MEDIA and isinstance(server.recv_reserve, load_guard.Reserve) and server.recv_reserve.path is None
+held = server.recv_reserve.take(0, load_guard.RECV_TOTAL - 1, load_guard.RECV_TOTAL)
+code, body = call(f"/record/{rid}/media", b"xx", "image/png")
+assert code == 503 and body == b"", ("受け取り中の合計が上限を越える分を断る", code, body)
+settle(lambda: server.media_reserve.reserved == 0, "受け取りで断った分の、置き場の予約も外れる")
+server.recv_reserve.give(held)
+assert call(f"/record/{rid}/media", b"x", "image/png")[0] == 422
+settle(lambda: server.recv_reserve.reserved == 0 and server.media_reserve.reserved == 0, "書き終えた分の受け取りの予約も外れる")
 
 # 4. 同時に処理する要求の数
 assert load_guard.HTTP_MAX == server.http_max == 64
@@ -145,4 +193,4 @@ assert w.jobs.maxsize == voice_text.QUEUE_MAX
 assert all(voice_text.enqueue(w, f"v{n}") for n in range(voice_text.QUEUE_MAX))
 assert voice_text.enqueue(w, "over") is False and w.jobs.qsize() == voice_text.QUEUE_MAX, "満ちたら入れない（落ちない）"
 assert isinstance(w.jobs, queue.Queue)
-print("ok 全体の資源の上限: 変換の入口（同時 2・待ち 4・待つ長さ）・合計の予約（合言葉付きの場にも）・同時の処理の数・声の待ち行列の長さ。ふつうの量では前のまま")
+print("ok 全体の資源の上限: 変換の入口（同時 2・待ち 4・待つ長さ）・合計の予約（合言葉付きの場にも・プロセスをまたいで共有の台帳）・受け取り中の本文の合計・同時の処理の数・声の待ち行列の長さ。ふつうの量では前のまま")
