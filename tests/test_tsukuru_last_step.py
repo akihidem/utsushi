@@ -21,7 +21,7 @@ import urllib.request
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from omochae import hypotheses, making_log  # noqa: E402
-from web import tsukuru  # noqa: E402
+from web import naoru, tsukuru  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
@@ -71,8 +71,8 @@ def tile(body, value):
     return label, "hidden" in attrs, 'class="go"' in attrs
 
 
-def done_events():
-    return [e for e in making_log.steps(G) if e.get("event") == "done"]
+def done_events(sid=None):
+    return [e for e in making_log.steps(sid or G) if e.get("event") == "done"]
 
 
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
@@ -106,19 +106,18 @@ def midway_leaves_nothing():
 
 
 def road_to_the_record():
+    # 本人の答え 11-08「B。」・統括の決め (a): 最後の手順の一番大きい札は「のこす」で、押すと組み上がりを残して、のこすの頁（手帖の記録の頁）へ直に行く。
+    # 前は玩具の頁の記録の欄（#kiroku）へ送り、そこから のこす へもう 1 押し要った
     code, _, headers = step(total, "done", who=WHO)
     assert code == 303, code
     to = urllib.parse.urlsplit(headers["Location"])
     q = dict(urllib.parse.parse_qsl(to.query))
-    assert to.path == f"/toy/{G}" and to.fragment == "kiroku", f"記録の欄へ送っていない: {headers['Location']}"
-    assert q.get("at") == "kiroku" and q.get("see") == GS and q.get("kind") == "sheet" and q.get("v") == "1", q
+    assert to.path == f"/toy/{G}/techo/kiroku" and to.fragment == "mine", f"のこすの頁へ送っていない: {headers['Location']}"
     assert q.get("msg") == tsukuru.DONE_NOTE, q
     code, body = get(f"{to.path}?{to.query}")
     assert code == 200, code
-    sec = body[body.index('<section class="sec" id="kiroku">'):]
-    # 着いた #kiroku の節は、のこす（記録の頁）への道 1 本（玩具の頁の記録の欄は、本人の答え 11-07 夕の Q3 で のこす へ寄せた）。案内はその道の上
-    road = f'href="/toy/{G}/techo/kiroku"'
-    assert html.escape(tsukuru.DONE_NOTE) in sec and road in sec and sec.index(html.escape(tsukuru.DONE_NOTE)) < sec.index(road), "案内が、のこすへの道の上に無い"
+    # 着いた のこすの頁の頭に、組み上がりを残した事の案内
+    assert f'<p id="msg">{html.escape(tsukuru.DONE_NOTE)}</p>' in body, "のこすの頁に案内が出ない"
 
 
 def passes_which_sheet():
@@ -127,7 +126,9 @@ def passes_which_sheet():
     out_dir(toy).mkdir(parents=True, exist_ok=True)
     assert hypotheses.print_sheet(toy, "H-B", str(out_dir(toy) / "H-B_v1"), 1) == 0
     code, _, headers = post(f"/toy/{toy}/step", {"hypothesis": "H-B", "step": str(tsukuru.count(toy, "H-B")), "event": "done"})
-    assert code == 303 and "see=H-B" in headers["Location"], f"どの紙かを渡していない: {headers['Location']}"
+    # のこすの頁へ直に行く形にしたので、行き先に紙の印は渡さない（のこすの頁は紙を選ぶ欄を持たない）。どの紙で組み上がったかは、作る様子の記録に残る
+    assert code == 303 and headers["Location"].startswith(f"/toy/{toy}/techo/kiroku"), f"のこすの頁へ送っていない: {headers['Location']}"
+    assert any(e.get("hypothesis_id") == "H-B" and e.get("event") == "done" for e in done_events(toy)), "どの紙で組み上がったかが残らない"
 
 
 def who_is_kept_so_nobody_counts_as_quit():
@@ -176,9 +177,15 @@ def one_step_when_there_is_no_text():
 
 def words_are_the_ones_the_person_chose():
     # 定数で見るだけだと、字を誰かが書き換えても通ってしまう。本人が採った文（2026-11-06・本人のカード「直しで出た新しい文 5 つ」の 3）を一字ずつ見る
-    assert tsukuru.DONE_LABEL == "全部できた", tsukuru.DONE_LABEL
+    # 札の字は「のこす」（本人の答え 11-08「B。」・統括の決め (a)。前は本人が採った「全部できた」）。上に本人の字（naoru.ROUTE_ASK）
+    assert tsukuru.DONE_LABEL == "のこす", tsukuru.DONE_LABEL
     assert tsukuru.DONE_NOTE == "組み上がった事を残しました。動かしてみて、ここで記録を残します。", tsukuru.DONE_NOTE
-    assert tile(get(f"/toy/{G}/tsukuru?h={GS}&n={total}")[1], "done")[0] == "全部できた", "頁の札が本人の採った字でない"
+    last = get(f"/toy/{G}/tsukuru?h={GS}&n={total}")[1]
+    assert tile(last, "done")[0] == "のこす", "頁の札が のこす でない"
+    assert naoru.ROUTE_ASK == "どう工夫したかあとで教えてください。写真や動画でもいいです。", naoru.ROUTE_ASK
+    assert f'<p class="ask-nokosu" id="ask-nokosu">{naoru.ROUTE_ASK}</p>' in last and last.index('id="ask-nokosu"') < last.index('value="done"'), "本人の字が のこす の札の上に無い"
+    mid = get(f"/toy/{G}/tsukuru?h={GS}&n=1")[1]
+    assert f'<p class="ask-nokosu" id="ask-nokosu" hidden>' in mid and "askNokosu.hidden=n<items.length" in mid, "途中の手順で本人の字が出る・JS で切り替わらない"
 
 
 def no_praise():
