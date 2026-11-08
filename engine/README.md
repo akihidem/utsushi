@@ -8,6 +8,8 @@ Paper to toy は、内部構造のある機構を、紙のような2次元素材
 
 提出物 [utsushi（うつし）](https://github.com/akihidem/utsushi) の型紙を作る仕組みを、この repo で開発しています。この README では、この repo の作り方を決めた人を「制作者」、型紙で玩具を作った人を「作った人」と呼びます。**Built with Claude: Japan 2026（ハッカソン）の開発期間に作りました**。
 
+エンジンは別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発し、提出のために、うつしの engine/ に一緒にしました。制作者の言葉は「どっちもハッカソンの審査対象にして欲しい」です（2026-11-07）。
+
 Paper to toy is an engine for designing mechanisms with internal structure from flat materials like paper.
 Give it a toy's dimensions, and it lays out the parts, checks them before and after printing, and outputs a printable PDF template; for the two featured toys it also folds and assembles the parts in 3D to check that nothing collides.
 Makers' reports and workshop feedback become improvement proposals, and when people adopt one and the fix is in, the template version and the engine version go up.
@@ -81,7 +83,7 @@ Built during the Built with Claude: Japan 2026 hackathon.
 - 材料の前提: 形ごとに材料を当てる印で、落とす検査ではありません（`omochae.ways` の `premise`）。2026-11-07 の main では、78 の形のうち 21 が前提の外でした。2026-11-08 の main（7f4443a）では 11 です（からくりの割ピン 7・風車のストロー 2・浮き人形の梱包テープ 2）。今の数は、下の「作り方の印」の命令で見られます。立体かどうかは、まだ機械で見ていません。
 - 型紙の題の版: 型紙の題に「版 N」を刷ります（虎 7・御来迎 14。`tests/test_sheet_version.py`）。
 - テープを使わない版: 御来迎 v15 は、割り箸を木工用ボンドで貼ります。虎 v8 は、重りの腕を指で押さえて止め、鉛筆で位置の印を付けます。どちらも新しい型紙の版です（`examples/goraigo_v15.json`・`examples/tora_v8.json`）。部品の形は v14・v7 と同じで、用意する物と組み方の文からテープが外れます。刷った紙の題は「版 15」「版 8」で、3D の組み立て検品も通ります。エンジンの版には、まだ刻んでいません（台帳は版 7 のまま）。
-- セキュリティ: 守っている事と、していない事は [SECURITY.md](SECURITY.md) にあります（点検 2026-11-07）。このエンジンは外の API を呼ばず、外へ何も送りません。
+- セキュリティ: 守っている事と、していない事は、この repo の一番上の [SECURITY.md](../SECURITY.md) の「エンジン（engine/）」の節にあります（点検 2026-11-07）。このエンジンは外の API を呼ばず、外へ何も送りません。
 - Claude との作り方: merge でない commit 376 本の全部に `Co-Authored-By: Claude` の行があります（main の 7f4443a で数えた）。制作者の言葉と、その言葉で決めた事は [docs/philosophy.md](docs/philosophy.md) に残しています。
 
 「型紙の版」は、玩具ごとの型紙の組の番号です。「エンジンの版」は、型紙を作るエンジンの台帳の番号です。型紙の版は、新しい型紙の組を作ると上がります。エンジンの版は、人がその組を台帳に刻むと上がります（版を刻む命令は人の名前を求める）。
@@ -597,7 +599,7 @@ PYTHONPATH=src .venv/bin/python -m omochae.engine_loop compare                  
 
 ## セキュリティ
 
-守っている事・していない事・見つけた時の知らせ方は [SECURITY.md](SECURITY.md)（点検 2026-11-07）。このエンジンは外の API を呼ばず、外へ何も送らない。外へ開く口は、手元の受付の画面（127.0.0.1）だけ。
+守っている事・していない事は、この repo の一番上の [SECURITY.md](../SECURITY.md) の「エンジン（engine/）」の節、見つけた時の知らせ方は同じ文書の終わりの節（点検 2026-11-07）。このエンジンは外の API を呼ばず、外へ何も送らない。外へ開く口は、手元の受付の画面（127.0.0.1）だけ。
 穴を見つけたら、Issue や PR などのほかの人が読める所に書かず、repo の持ち主へ非公開で知らせる。
 
 ## 終了の番号
