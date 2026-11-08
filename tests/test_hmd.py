@@ -1,32 +1,25 @@
-"""作業の頁に重ねる形（web.hmd。下地は試作の枝 try/hmd。本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）の試験。
-本物の API・マイク・カメラは使わない。
+"""作業しながら見る頁（web.hmd・/toy/<玩具>/kasane と /toy/<玩具>/kasane/hmd）の試験。聞くための経路（本人 11-08 539「3D 重ねずに、質問も
+できるだけにしよう。…記録はここでは取らず、質問のための経路と割り切る。」）。本物の API・マイク・カメラは使わない。
+受け口（POST /toy/<玩具>/kasane/ask）の側は tests/test_kasane_ask.py が見る。前の重ねる形（3D・指の合わせ・中を見る・声の操作・ここで止まった）
+の試験は、この試験の 11-08 の main（ad6d67f9）の版にある（戻す時はそこから）。
 
 見る事:
-1. 組み立ての 3D（kumitate）を中に持ち、送る釦・鍵・声の言葉がつながっている。字を外へ送らない。組み立ての書き方が無い玩具は出さない
-2. 道: /toy/<玩具>/kasane（カメラに重ねる）と /toy/<玩具>/kasane/hmd（HMD）で開く。玩具を選ぶ頁は持たない（作る口は手帖 1 つ）。
-   道は手帖の最初の画面からの 1 つだけ（口の名は本人の決定「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
-3. 1 手ごとに止まる（本人の感想 11-06）: 「つぎ」1 回で動くのは 1 手だけ。折り目 1 本の動きは 2 秒以上。「もどる」は 1 手もどる。
-   声の約束（本人の決定 11-06・手帖の作り直しの案 2 と同じ）: 聞くのは「はじめる」の後だけ。操作の言葉の全部が一致した時だけ動く。
-   教室の話し声の見本では動かない。最後の「つぎ」で、はじめに戻さない。隠れたら止め、見えたら戻し、離れたら止める
-4. 声が使えない画面でも、釦とキーボードで通れる
-5. 大きさと置き場: 手順の字は大きく、釦に掛からない。釦は 64px 以上、「つぎ」は 96px 以上。横にはみ出さない
-6. カメラに重ねる頁: 偽のカメラで映像が付き、画面いっぱいに敷かれる
-7. 重ねる（本人の言葉 11-08「A → B → C の順。」の A・統括の決め ①〜③）: カメラが付くと、今の手順の 3D を半透明で映像の上に重ね、
-   層の順は下から 映像 → 3D → 字と押す所。1 本指で動かし、2 本指の長さの比で大きさ、角の差で向き、真ん中で位置が替わる。鍵 + ] 0 も効く。
-   重ねている間は 3D の見る向き（kumitate の 1 本指の回し）は替わらない。「元に戻す」で重ね始めた所へ戻る。カメラを止めると重ねをやめる。
-   HMD の道は最初から重ねる（映像は無い）。カメラが使えない機械でも 3D は見える大きさで出て、断りの字が出る。重ねている間、頁は網に何も送らない
-   （前の 4 隅の印は外した）
-8. 中を見る（本人の言葉 11-07「中身をそこで分解できる構造表示」・字は本人の決定「中を見る」「とじる」）: 組み立ての節が分解した形
-   （window.kumitateSplit）を持つ時だけ釦が出て、押すと「とじる」に替わり、もう一度押すと戻る。開いたまま手順を送ると、先にとじる。
-   分解した形の無い組では釦を出さない（分解した形は 3D の担当が kumitate に足す口。ここでは見本の形で歩く）
+1. 頁の字と作り: 今の手順の字 1 行と ← →・大きな「聞く」・こたえ。3D と声の操作とカメラの区切りは無い。頁の台本は端末に何も置かない
+   （localStorage・sessionStorage・IndexedDB・cookie を使わない。回の判定は web.clips の start_assets だけ）。網に送るのは聞く口の 1 か所だけ。
+   写真は後ろのカメラと分かる時だけ撮り、HMD の道は撮らない。長押しで字の選びが出ない
+2. 道: 2 つの道で開く。玩具を選ぶ頁は持たない。手帖の手順の画面の印「カメラで聞く」（本人の答え 11-08 の ②）からの 1 つだけ
+3. Chrome で歩く: 手順の送り（釦と鍵）・押したまま離す形と 1 回押して始める形の両方で 1 回だけ送る・送る中身（今の手順の番号・声の型・
+   写真の数が後ろのカメラ 3・前のカメラ 0・HMD 0）・待つ間の字（聞いています・考えています）・答えを出して読み上げる・頁を隠したら送らずに止める
+4. 大きさと置き場: 字の一番長い手順と長い答えでも、押す所は頁を動かさずに全部見え、「聞く」は 96px 以上・ほかは 64px 以上・重ならない・
+   横にはみ出さない（4 つの大きさ・縦の狭い画面は iframe）
+5. 手帖の手順の画面の印（前からの測り）: 印と字「カメラで聞く」が読める大きさで切れず、帯の印と重ならない
 
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない決まり（tests/test_mic_seen.py と同じ）。入っている Chrome で頁を開いて歩く。
 Chrome が無い機械と、Chrome が何も答えなかった時は、測れないと出して通す。落ちるのは、歩けて結果が違う時と、歩き始めたのに終わらなかった時。
-1 手ずつの進め方と歩く試験は、別の試作の枝（proto/hmd-work-view）の物を、この枝の頁の作りに合わせて移した（統括の決め 11-06）。
+映像の流れ（MediaStream）が付いたままだと、headless の Chrome の時間が進まず頁を書き出さないので、歩く台本は結果を書く前にカメラを止める。
 """
 import html
 import json
-import math
 import os
 import re
 import subprocess
@@ -39,11 +32,11 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from measure_tap import chrome  # noqa: E402
-from omochae import assembly, hypotheses  # noqa: E402
-from web import hmd, kumitate, naoru, play_server  # noqa: E402
+from omochae import hypotheses  # noqa: E402
+from web import clips, hmd, naoru, play_server  # noqa: E402
 
 # 原画の写し（out/sources・git の外）がある時は、手帖の上の帯に原画の小さな絵（#genga-thumb）が出る。写しの無い木では出ないので、
-# 帯の印どうしの重なり（重ねる頁への印と原画の小さな絵）を見ない試験になり、今の main で写しのある木でだけ落ちた所を拾えなかった（11-08）。
+# 帯の印どうしの重なり（作業の頁への印と原画の小さな絵）を見ない試験になり、今の main で写しのある木でだけ落ちた所を拾えなかった（11-08）。
 # 写しの有り無しの両方で測る: "pic" は写しが無い木でも同じ形の絵の包みを置く形（tests/test_landscape_fit.py と同じ）、"nopic" は絵を出さない形
 from web import genga  # noqa: E402
 
@@ -61,51 +54,35 @@ def _pic(sid, src, alt, lazy=False, href=None, **kw):
 genga._pic = _pic
 
 G, T = hmd.TOYS
-# ---- 1. 字と、送らない作り
+# ---- 1. 頁の字と作り
 for sid in (G, T):
     assert hmd.available(sid), sid
-    page = hmd.page(sid)
-    assert 'id="rt-stage"' in page and 'id="rt-next"' in page and 'id="rt-prev"' in page, "kumitate の 3D と釦がある"
-    for w in (hmd.NEXT, hmd.PREV, hmd.AGAIN, hmd.LISTEN, hmd.NO_VOICE, hmd.HOW):
-        assert w in page or json.dumps(w, ensure_ascii=False)[1:-1] in page, w
-    words = json.loads(re.search(r'<script type="application/json" id="hmd-words">(.*?)</script>', page, flags=re.S).group(1))
-    assert set(words["words"].values()) == {"next", "prev", "again", "top", "stop"}
-    clean = re.compile(words["clean"].replace("\\s", r"\s"))
-    for said, k in (("つぎ", "next"), ("次。", "next"), ("もどる", "prev"), ("もう一回", "again"), ("もう一度", "again"), ("最初から", "top"), ("止めて", "stop")):
-        assert words["words"].get(clean.sub("", said)) == k, (said, k)
-    for said in ("次の手順ってどうやるの", "つぎはどうするの", "もどるって言って"):
-        assert clean.sub("", said) not in words["words"], ("言葉の全部が一致した時だけ", said)
-    assert "rec.start()" in hmd.SCRIPT and "listen.addEventListener('click'" in hmd.SCRIPT
-    assert "rec.onresult=e=>{if(!on)return;" in hmd.SCRIPT, "止めた後に届いた字では送らない"
-    for key in ("ArrowRight", "ArrowLeft", "PageDown", "PageUp"):
-        assert key in hmd.SCRIPT, key
-for word in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "<form", "localStorage", "sessionStorage", "document.cookie", "MediaRecorder", "toDataURL", "getImageData"):
-    assert word not in hmd.SCRIPT, ("この頁は送らず、残さない", word)
-# 組み立ての節は、試作の頁に形の並びと動かす口を渡し、1 つの動きが終わった時に知らせる（ふだんの頁は使わない）
-assert "window.kumitateParts={F,T,play,rest,stop," in kumitate.SCRIPT and "window.kumitateSlow||1" in kumitate.SCRIPT
-assert "rest(B)}beat(j+1,seq.length)" in kumitate.SCRIPT, "終わりの知らせは、形を置き終えた後に出す"
-# カメラに重ねる頁。後ろのカメラ、映像は機械の中だけ（作りながら見る頁と同じ約束の字）
-cam = hmd.page(G, cam=True)
-assert '<video id="hmd-cam" playsinline muted autoplay></video>' in cam and 'id="hmd-camera"' in cam and hmd.CAM_NOTE in cam
-# カメラの区切り（本人 11-08 415・窓口の決め A2・web.clips）: 「ここで止まった」はカメラの頁だけで、カメラを出している間だけ見える。
-# 録るのは置き場の camClip で、呼ぶのはその釦を押した所の 1 か所だけ（カメラを出しただけでは録らない）。録る code（MediaRecorder）は置き場の台本だけが持つ
-from web import clips  # noqa: E402
-
-assert f'<button type="button" id="hmd-stuck">{hmd.STUCK}</button>' in cam and "body:not(.cam-on) #hmd-stuck{display:none}" in hmd.STYLE
-assert 'id="hmd-stuck"' not in hmd.page(G), "HMD の頁（カメラなし）には出さない"
-assert hmd.SCRIPT.count("utsushiClips.camClip(") == 1
-stuck = hmd.SCRIPT[hmd.SCRIPT.index("if(stuck)stuck.addEventListener('click'"):]
-assert stuck.index("if(!tracks||!window.utsushiClips") < stuck.index("utsushiClips.camClip(cam.srcObject,"), "カメラを出していない時は録らない"
-on_part = hmd.SCRIPT[hmd.SCRIPT.index("camBtn.addEventListener('click'"):]
-assert "camClip" not in on_part.split("addEventListener('pagehide',off)")[0], "カメラを出しただけでは録らない"
-assert cam.count(clips.assets()) == 1 and clips.assets() not in hmd.page(G)
-assert cam.replace(clips.assets(), "").count("MediaRecorder") == 0, "録る code は置き場の台本だけ"
-# 手順の画面には長い断りを置かず、カメラの断りの 1 行と、くわしい説明の頁（保護者の方へ）と のこす への道だけ（統括の決め 11-08・別の目の止め 2）
-assert hmd.CAM_NOTE in cam and clips.FIRST not in cam and clips.STORE not in cam, "作業の頁の手順の画面に長い断りを置かない"
-assert f'<a href="/otona">{hmd.OTONA_LINK}</a>' in cam and f'href="/toy/{G}/techo/kiroku"' in cam, "くわしい説明の頁への道と、渡す のこす の道"
-assert "facingMode:{ideal:'environment'}" in hmd.SCRIPT and "audio:false" in hmd.SCRIPT and "addEventListener('pagehide',off)" in hmd.SCRIPT
-assert '<video' not in hmd.page(G), "カメラは重ねる頁だけ"
-assert not hmd.available("NDL-1187053-R0000004-L"), "組み立ての書き方が無い玩具は出さない"
+    texts = hmd.steps(sid)
+    assert len(texts) >= 3, sid
+    for cam in (True, False):
+        page = hmd.page(sid, cam=cam)
+        words = json.loads(re.search(r'<script type="application/json" id="hmd-words">(.*?)</script>', page, flags=re.S).group(1))
+        assert words["steps"] == texts and words["sid"] == sid and words["hmd"] is (not cam), "手順の字は組み方の節と同じ文"
+        assert words["frames"] == (hmd.FRAMES if cam else 0), "写真はカメラの道だけ（HMD の道は撮らない）"
+        assert f'<p id="hmd-text" aria-live="polite">{html.escape(texts[0])}</p>' in page and f"1 / {len(texts)}" in page, "開いた時は手順 1"
+        assert f'<button type="button" id="hmd-ask" aria-pressed="false">{hmd.ASK}</button>' in page and f"<h2>{hmd.ANSWER}</h2>" in page
+        assert (hmd.CAM_NOTE in page) is cam and (hmd.HMD_NOTE in page) is (not cam), "道ごとの断りの 1 行（送る物が違う）"
+        assert ('<video id="hmd-cam"' in page) is cam and ('id="hmd-camera"' in page) is cam, "映像とカメラの釦はカメラの道だけ"
+        for gone in ('id="rt-stage"', 'id="hmd-stuck"', 'id="hmd-split"', 'id="hmd-listen"', 'id="hmd-reset"', "ここで止まった", "中を見る", "元に戻す", "はじめる"):
+            assert gone not in page, ("3D・重ねる・声の操作・カメラの区切りは外した", gone)
+        # 回の判定（#655 の守り）: 作業の頁は録らないが、開いた時と戻る釦で読み直さずに戻った時の判定は置く（web.clips の start_assets）
+        assert page.count(clips.start_assets(sid)) == 1 and clips.assets() not in page, "回の判定だけを置き、録る台本は置かない"
+        assert f'<a href="/otona">{hmd.OTONA_LINK}</a>' in page and f'href="/toy/{sid}/techo/kiroku"' in page
+for word in ("XMLHttpRequest", "sendBeacon", "WebSocket", "<form", "localStorage", "sessionStorage", "indexedDB", "document.cookie", "camClip", "utsushiClips.", "SpeechRecognition"):
+    assert word not in hmd.SCRIPT, ("この頁の台本は端末に置かず、声の操作をしない", word)
+assert hmd.SCRIPT.count("fetch(") == 1 and "fetch(`/toy/${T.sid}/kasane/ask`" in hmd.SCRIPT, "網に送るのは聞く口の 1 か所だけ"
+assert "(v.getSettings().facingMode||'')==='environment'" in hmd.SCRIPT and "if(T.hmd||!cam||!back()" in hmd.SCRIPT, "写真は後ろのカメラと分かる時だけ・HMD の道は撮らない"
+assert "frames:T.hmd?[]:" in hmd.SCRIPT, "HMD の道は写真を送らない（二重の止め）"
+assert "facingMode:{ideal:'environment'}" in hmd.SCRIPT and "audio:false" in hmd.SCRIPT and "{audio:true,video:false}" in hmd.SCRIPT, "映像に声を混ぜず、声は聞く間だけ"
+assert "addEventListener('pagehide',away)" in hmd.SCRIPT and "if(drop){idle();return}" in hmd.SCRIPT, "頁を離れたら止めて、録りかけは送らない"
+assert "user-select:none" in hmd.STYLE and "-webkit-touch-callout:none" in hmd.STYLE and "touch-action:none" in hmd.STYLE, "長押しで字の選びや呼び出しの窓が出ない"
+assert hmd.ASK_SECONDS == 12 and hmd.FRAMES == 3 and hmd.FRAME_EDGE == 960
+assert not hmd.available("NDL-1187053-R0000004-L"), "作業の頁を開く玩具は 2 つだけ"
 
 # ---- 2. 道
 server = play_server.serve(0)
@@ -131,233 +108,31 @@ def get(path):
 
 for sid in (G, T):
     assert get(f"/toy/{sid}/kasane/hmd")[0] == 200 and get(f"/toy/{sid}/kasane")[0] == 200
-assert '<video id="hmd-cam"' in get(f"/toy/{G}/kasane")[1] and '<video id="hmd-cam"' not in get(f"/toy/{G}/kasane/hmd")[1], "映像はカメラに重ねる形だけ"
-assert get("/toy/NDL-1187053-R0000004-L/kasane")[0] == 404 and get("/toy/NDL-1187053-R0000004-L/kasane/hmd")[0] == 404, "組み立ての書き方が無い玩具では開かない"
+assert '<video id="hmd-cam"' in get(f"/toy/{G}/kasane")[1] and '<video id="hmd-cam"' not in get(f"/toy/{G}/kasane/hmd")[1], "映像はカメラの道だけ"
+assert get("/toy/NDL-1187053-R0000004-L/kasane")[0] == 404 and get("/toy/NDL-1187053-R0000004-L/kasane/hmd")[0] == 404, "2 つのほかの玩具では開かない"
 assert get("/hmd")[0] == 404 and get(f"/hmd/{G}")[0] == 404, "玩具を選ぶ頁と試作の枝の番地は持たない"
-# 道は手帖の最初の画面から 1 つだけ（作る口は手帖 1 つの決まり。口の名は本人の決定 11-07「カメラに重ねる」）。組み立ての書き方が無い玩具の手帖には出さない
-assert hmd.CAM_LINK == "カメラに重ねる"
-for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出すので、先に刷る
-    # 刷るのは、その玩具のたたき台（sheet_of）。御来迎の今の組 goraigo-v14 のたたき台は H-C で、必須 2 種の今の組はたたき台の紙だけを刷る
-    # （H-A と決め打ちすると 422 で断られる）
+# 道は手帖の手順の画面の印から 1 つだけ（作る口は手帖 1 つの決まり。印の字は本人の答え 11-08 の ②「カメラで聞く」）
+assert hmd.CAM_LINK == "カメラで聞く"
+for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出すので、先に刷る（刷るのはその玩具のたたき台 sheet_of）
     sheet = hypotheses.sheet_of(sid)["id"]
     urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={sheet}".encode(), headers={"Origin": base}), timeout=120).read()
-# 手帖の最初の画面の重ねる頁への道「カメラに重ねる」は、のこすへの道の 1 行「つくるところを、写真と声でのこせます。」と入れ替えた
-# （本人の答え 11-08「「のこせる」の 1 行は、今の行と入れ替える。」・窓口の決め: 入れ替えるのは（イ）「カメラに重ねる」）。
-# その後の本人の答え 11-08「どこかに道を戻す。」で、道を手順の画面（作りながら使う所）の上の帯の字の無い印に戻した。辿れる頁は 0 → 1（手帖）
 for sid in (G, T):
     techo = get(f"/toy/{sid}/techo")[1]
     assert f'<p class="meta nokosu-route" data-on="start">{naoru.ROUTE_MAKING}</p>' in techo, sid
-    assert techo.count('href="/toy/' + sid + '/kasane"') == 1 and f'<a class="kasane-go" id="kasane-go" href="/toy/{sid}/kasane" title="カメラに重ねる" data-on="step">' in techo and '<span>カメラに重ねる</span></a>' in techo, sid
-assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "組み立ての書き方が無い玩具の手帖には道を出さない"
+    assert techo.count('href="/toy/' + sid + '/kasane"') == 1 and f'<a class="kasane-go" id="kasane-go" href="/toy/{sid}/kasane" title="{hmd.CAM_LINK}" data-on="step">' in techo \
+        and f'<span>{hmd.CAM_LINK}</span></a>' in techo, sid
+assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "2 つのほかの玩具の手帖には道を出さない"
 for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", "/gallery"):
     assert "/kasane" not in get(path)[1], ("道は手帖の手順の画面からの 1 つだけ", path)
-
-# ---- 3〜6. Chrome で歩く
-# 見本は頁の script より先に置く。音声認識を差し替えて、始めた・止めたを window.__log に書く（マイクは使わない）。
-STUB = ("<script>window.__log=[];class S{constructor(){window.__rec=this;this.running=false}"
-        "start(){this.running=true;__log.push('start')}stop(){this.running=false;__log.push('stop');const t=this;setTimeout(()=>t.onend&&t.onend(),0)}};"
-        "window.SpeechRecognition=undefined;window.webkitSpeechRecognition=__VOICE__?S:undefined;</script>")
-# 教室の話し声の見本。操作の言葉に似た文を混ぜる。
-CHATTER = ["ねえ きょうの給食なんだっけ", "次の手順ってどうやるの", "田中くん それ取って", "つぎはどうするの", "もどるって言って", "もう一回やってみる"]
-WALK = r"""<script>(async()=>{
-const wait=(ms=40)=>new Promise(r=>setTimeout(r,ms)),R={},b=document.body,stage=document.getElementById('rt-stage'),CH=__CHATTER__,VOICE=__VOICE__;
-const at=()=>Number(stage.dataset.at),mv=()=>Number(b.dataset.move),$=(s)=>document.querySelector(s);
-const say=async(t,alts)=>{__rec.onresult({results:[[{transcript:t},...(alts||[]).map(a=>({transcript:a}))]]});await wait()};
-const box=(s)=>{const r=$(s).getBoundingClientRect();return[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)]};
-const key=async(k)=>{document.body.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true}));await wait()};
-const tap=async(op)=>{$('#hmd-'+op).click();await wait()};
-const idle=async()=>{for(let i=0;i<400&&b.dataset.busy==='1';i++)await wait(50)};
-const LAST=window.kumitateParts.F.length-1;
-try{
-R.total=Number(b.dataset.moves);R.plan=(b.dataset.plan||'').split(',').filter(x=>x!=='').map(Number);
-R.init=[at(),mv(),$('#hmd-prev').disabled,$('#hmd-mic').dataset.state];
-if(VOICE){
- R.before=[typeof window.__rec,__log.length];
- $('#hmd-listen').click();await wait();
- R.began=[$('#hmd-mic').dataset.state,__log.join(','),$('#hmd-listen').getAttribute('aria-pressed')];
- await say('つぎ');R.next0=[at(),mv()];await say('次。');R.next1=[at(),mv()];await say('つぎ');R.next2=[at(),mv()];
- for(const c of CH)await say(c);R.chatter=[at(),mv()];
- await say('すぎ',['次']);R.alt=[at(),mv()];
- R.dots=[document.querySelectorAll('#hmd-dots span').length,document.querySelectorAll('#hmd-dots span.on').length];
- await say('もどる');R.back=[at(),mv()];await say('もう一回');R.again=[at(),mv()];
- // 速さ: 折り目 1 本の動きにかかる時間（止まるまで待つ）
- await idle();const t0=performance.now();await say('つぎ');await idle();R.fold=[Math.round(performance.now()-t0),at(),mv()];
- let hidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>hidden});
- const vis=async(h)=>{hidden=h;document.dispatchEvent(new Event('visibilitychange'));await wait()};
- await vis(true);R.hid=__rec.running;await vis(false);R.shown=__rec.running;
- for(let i=0;i<80&&!$('#hmd-next').disabled;i++)await say('つぎ');
- R.end=[at()===LAST,$('#rt-text').textContent,$('#hmd-next').disabled,$('#hmd-count').textContent,mv()===R.total];
- await say('つぎ');R.afterEnd=at()===LAST&&mv()===R.total;
- await say('もう一回');R.againEnd=at()===LAST&&mv()===R.total;
- await say('はじめから');R.top=[at(),mv()];
- await say('止めて');R.stopped=[__rec.running,$('#hmd-mic').dataset.state];
- $('#hmd-listen').click();await wait();
- dispatchEvent(new Event('pagehide'));await wait();R.left=__rec.running;
-}else{
- await tap('next');R.tap=[at(),mv()];await key('ArrowRight');R.key1=[at(),mv()];await key('ArrowLeft');R.key2=[at(),mv()];await key('r');R.key3=[at(),mv()];
- await tap('prev');R.first=[at(),mv(),$('#hmd-prev').disabled,$('#hmd-again').disabled];
-}
-// 大きさと置き場（字が一番長い手順で測る。組が替わると手順の字も替わるので、段の字 F[i].t から選ぶ）
-for(let i=0;i<80&&mv()>0;i++)await tap('prev');
-const FF=window.kumitateParts.F,PL=(b.dataset.plan||'').split(',').map(Number);let LG=0;for(let i=0;i<FF.length-1;i++)if((FF[i].t||'').length>(FF[LG].t||'').length)LG=i;
-R.longest=LG;for(let i=0,n=PL.indexOf(LG)+1;i<n;i++)await tap('next');
-// 手順の字の行の数が替わると、頁は次の描画（requestAnimationFrame）で 3D の大きさを測り直す（fit）。時間を進める形の headless の Chrome では
-// 次の描画の合図が来ない事があるので、測り直しを聞いている resize を送ってから測る（本物のブラウザでは描画の合図で走る。11-07 に手で確かめた）
-dispatchEvent(new Event('resize'));await wait(200);
-const tx=$('#rt-text'),r=tx.getBoundingClientRect(),fam=getComputedStyle(b).fontFamily;
-R.size={vw:innerWidth,vh:innerHeight,sx:document.documentElement.scrollWidth,sy:document.documentElement.scrollHeight,text:parseFloat(getComputedStyle(tx).fontSize),textBottom:Math.round(r.bottom),textRight:Math.round(r.right),actsLeft:box('.hmd-acts')[0],
- textLen:tx.textContent.length,at:at(),stage:box('#rt-stage'),chips:['prev','again','next'].map(o=>box('#hmd-'+o)[3]),actsTop:box('.hmd-acts')[1],
- reach:Math.max(...[...document.querySelectorAll('.hmd-acts button')].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect().bottom))<=innerHeight,
- stageBottom:Math.round(stage.getBoundingClientRect().bottom),
- font:[...document.querySelectorAll('.hmd button')].filter(e=>getComputedStyle(e).fontFamily!==fam).length};
-}catch(e){R.error=String(e&&e.stack||e)}
-const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
-})();</script>"""
-# カメラに重ねる頁: 釦を押し、偽のカメラの映像が付くのを待つ
-CAMWALK = r"""<script>(async()=>{
-const wait=(ms=50)=>new Promise(r=>setTimeout(r,ms)),R={},v=document.getElementById('hmd-cam');
-try{R.before=[!!v.srcObject,document.getElementById('hmd-camera').textContent];
-document.getElementById('hmd-camera').click();
-for(let i=0;i<200&&!(v.videoWidth>0);i++)await wait();
-const r=v.getBoundingClientRect(),de=document.documentElement;
-// 映像の敷き: 画面（スクロールの棒を除いた幅と、見えている高さ）いっぱい。映像が付かなくても敷きは測れる
-R.cover=[Math.round(r.width)>=de.clientWidth,Math.round(r.height)>=de.clientHeight,getComputedStyle(v).position];
-R.wide=de.scrollWidth<=de.clientWidth;R.over=[de.scrollWidth,de.clientWidth,...[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>de.clientWidth+1).slice(0,4).map(e=>e.tagName+'#'+(e.id||e.className))];R.reach=Math.max(...[...document.querySelectorAll('.hmd-acts button')].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect().bottom))<=innerHeight;
-// headless の Chrome では、偽のカメラでも映像が付かない機械がある（この機械は付かない）。その時は、押した後に断りも出ず待っている
-R.pending=!(v.videoWidth>0)&&document.getElementById('hmd-cam-note').textContent!==__NOCAM__;
-R.on=[v.videoWidth>0,document.body.classList.contains('cam-on'),document.getElementById('hmd-camera').textContent];
-document.getElementById('hmd-camera').click();await wait();R.off=[!!v.srcObject,document.body.classList.contains('cam-on')];
-}catch(e){R.error=String(e&&e.stack||e)}
-const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
-})();</script>"""
-
-# 重ねる（A）: カメラの口を差し替えた見本（空の映像を返す）で押し、指（PointerEvent）と鍵で合わせる。この機械の偽のカメラは映像が付かないので、口を差し替える
-QUADSTUB = "<script>if(navigator.mediaDevices)navigator.mediaDevices.getUserMedia=async()=>new MediaStream();</script>"
-# カメラが使えない機械の見本（口が無い）
-NOCAMSTUB = "<script>Object.defineProperty(navigator,'mediaDevices',{get:()=>undefined,configurable:true});</script>"
-FITWALK = r"""<script>(async()=>{
-const wait=(ms=80)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body,stage=document.getElementById('rt-stage');
-// 頁が網に何かを送ったら数える（映像は機械の中だけ）
-const net=[];const of=window.fetch;window.fetch=(...a)=>{net.push('fetch');return of(...a)};
-const ox=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(...a){net.push('xhr');return ox.apply(this,a)};
-if(navigator.sendBeacon){const sb=navigator.sendBeacon.bind(navigator);navigator.sendBeacon=(...a)=>{net.push('beacon');return sb(...a)}}
-const OW=window.WebSocket;window.WebSocket=function(...a){net.push('ws');return new OW(...a)};
-const fv=()=>(stage.dataset.fit||'').split(',').filter(x=>x!=='').map(Number);
-const ev=(t,id,x,y)=>stage.dispatchEvent(new PointerEvent(t,{bubbles:true,cancelable:true,pointerId:id,clientX:x,clientY:y,isPrimary:id===1}));
-const key=async k=>{document.body.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true}));await wait()};
-const shown=e=>!!e&&getComputedStyle(e).display!=='none';
-try{const cam=$('#hmd-camera'),v=$('#hmd-cam');
-R.before=[b.classList.contains('fit-on'),shown($('#hmd-reset'))];
-if(cam){cam.click();await wait(300)}
-R.on=[b.classList.contains('fit-on'),shown($('#hmd-reset')),Number(getComputedStyle(stage).opacity),shown($('#hmd-fit-hint'))];
-const r=stage.getBoundingClientRect(),cx=Math.round(r.left+r.width/2),cy=Math.round(r.top+r.height/2);
-const stack=document.elementsFromPoint(cx,cy);R.layer=[stack.findIndex(e=>e===stage||stage.contains(e)),v?stack.indexOf(v):-1];
-const z=e=>Number(getComputedStyle(e).zIndex)||0;R.z=[z(stage),z($('.hmd-acts')),z($('#rt-text')),z($('.hmd-top')),v?z(v):null];
-R.home=fv();const ry0=stage.dataset.ry;
-ev('pointerdown',1,cx,cy);ev('pointermove',1,cx+30,cy+20);ev('pointerup',1,cx+30,cy+20);await wait();R.move=fv();
-ev('pointerdown',1,cx-50,cy);ev('pointerdown',2,cx+50,cy);ev('pointermove',2,cx+150,cy);await wait();R.pinch=fv();
-ev('pointermove',2,Math.round(cx-50+200*Math.cos(Math.PI/6)),Math.round(cy+200*Math.sin(Math.PI/6)));await wait();R.twist=fv();
-ev('pointerup',2,0,0);ev('pointerup',1,0,0);await wait();R.ry=[ry0,stage.dataset.ry];
-await key('+');R.plus=fv();await key(']');R.turn=fv();await key('0');R.zero=fv();
-ev('pointerdown',1,cx,cy);ev('pointermove',1,cx+40,cy);ev('pointerup',1,cx+40,cy);await wait();$('#hmd-reset').click();await wait();R.reset=fv();
-// 重ねている間の押す所（カメラの頁は「元に戻す」で 7 つ）が、頁を動かさずに全部見える（横 1024×600 で 1 列だと外へ出た・別の目の測り 11-08）
-R.reach=[...document.querySelectorAll('.hmd-acts button')].filter(e=>!e.hidden&&getComputedStyle(e).display!=='none').map(e=>[e.id,Math.round(e.getBoundingClientRect().bottom),Math.round(e.getBoundingClientRect().height)]);R.vh=innerHeight;
-R.wide=document.documentElement.scrollWidth<=document.documentElement.clientWidth;
-if(cam){cam.click();await wait();R.off=[b.classList.contains('fit-on'),stage.style.transform,!!stage.dataset.fit]}
-R.net=net;
-}catch(e){R.error=String(e&&e.stack||e)}
-const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
-})();</script>"""
-# 字の一番長い手順で測る（重ねる頁・カメラを付けて重ねた後）。別の目の測り 11-08: 375×667 の虎の字の一番長い手順（84 字）で、釦が画面の下へ出た。
-# 測るのは、押す所が頁を動かさずに全部見える事・手順の字と押す所が重ならない事・横にはみ出さない事
-FITLONG = r"""<script>(async()=>{
-const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body;
-try{const cam=$('#hmd-camera');if(cam){cam.click();await wait(300)}
-const FF=window.kumitateParts.F,PL=(b.dataset.plan||'').split(',').map(Number);let LG=0;for(let i=0;i<FF.length-1;i++)if((FF[i].t||'').length>(FF[LG].t||'').length)LG=i;
-for(let i=0,n=PL.indexOf(LG)+1;i<n;i++){$('#hmd-next').click();await wait(30)}
-dispatchEvent(new Event('resize'));await wait(250);
-const bs=[...document.querySelectorAll('.hmd-acts button')].filter(e=>!e.hidden&&getComputedStyle(e).display!=='none');
-R.btn=bs.map(e=>{const r=e.getBoundingClientRect();return[e.id,Math.round(r.top),Math.round(r.bottom),Math.round(r.left),Math.round(r.height),e.scrollWidth>e.clientWidth+1]});
-const tr=$('#rt-text').getBoundingClientRect();R.text=[Math.round(tr.bottom),Math.round(tr.right)];R.len=($('#rt-text').textContent||'').length;R.vh=innerHeight;R.vw=innerWidth;
-R.sx=document.documentElement.scrollWidth;R.fit=b.classList.contains('fit-on');
-// 測った後にカメラを止める（映像の流れが付いたままだと、headless の Chrome の時間が進まず、頁を書き出さなかった）
-if(cam){cam.click();await wait()}}catch(e){R.error=String(e&&e.stack||e)}
-const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
-})();</script>"""
-NOCAMWALK = r"""<script>(async()=>{
-const wait=(ms=200)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),stage=document.getElementById('rt-stage');
-try{await wait();const r=stage.getBoundingClientRect();R.stage=[Math.round(r.width),Math.round(r.height),getComputedStyle(stage).visibility,Number(getComputedStyle(stage).opacity)];
-R.note=$('#hmd-cam-note').textContent;R.btn=$('#hmd-camera').hidden;R.fit=document.body.classList.contains('fit-on');
-R.panels=document.querySelectorAll('#rt-stage svg').length}catch(e){R.error=String(e&&e.stack||e)}
-const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
-})();</script>"""
-
-# 中を見る: 分解した形の見本（今の手の終わりの形と同じ形を返す）を、組み立ての節の口と同じ名で置く。kumitateParts が出来た後に読まれる
-SPLITSTUB = "<script>window.kumitateSplit={get X(){const P=window.kumitateParts;return P&&P.F.at(-1).q.at(-1)}};</script>"
-# 分解した形の無い組の見本: 組み立ての節が分解した形を置いても入らない口を先に作る（御来迎 v14・虎 v6 のように、どちらの組にも分解した形が在るため）
-NOSPLITSTUB = "<script>Object.defineProperty(window,'kumitateSplit',{get:()=>undefined,set:()=>{},configurable:true});</script>"
-SPLITWALK = r"""<script>(async()=>{
-const wait=(ms=300)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body,s=$('#hmd-split');
-try{R.shown=[!s.hidden,s.textContent,s.getAttribute('aria-pressed')];
-if(!s.hidden){s.click();await wait();R.open=[s.textContent,s.getAttribute('aria-pressed'),b.classList.contains('split-on')];
-s.click();await wait();R.closed=[s.textContent,s.getAttribute('aria-pressed'),b.classList.contains('split-on')];
-s.click();await wait();$('#hmd-next').click();await wait();R.sent=[s.textContent,b.classList.contains('split-on'),Number(b.dataset.move)];
-R.size=Math.round(s.getBoundingClientRect().height)}
-}catch(e){R.error=String(e&&e.stack||e)}
-const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
-})();</script>"""
-
-send, getter = play_server.Handler._send, play_server.Handler.do_GET
-
-
-def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-    m = re.search(r"[?&]walk=(voice|plain|cam|fitlong|fit|hfit|nocam|split|nosplit)", self.path)
-    if m and isinstance(body, str) and "/kasane" in self.path:
-        kind = m.group(1)
-        voice = "true" if kind == "voice" else "false"
-        walk_js = (SPLITWALK if kind in ("split", "nosplit") else FITLONG if kind == "fitlong" else FITWALK if kind in ("fit", "hfit") else NOCAMWALK if kind == "nocam" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
-                   else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice))
-        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind in ("fit", "fitlong") else "") + (NOCAMSTUB if kind == "nocam" else "") + (SPLITSTUB if kind == "split" else "") + (NOSPLITSTUB if kind == "nosplit" else "")
-        body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
-    return send(self, code, body, ctype, headers)
-
-
-def walk(width, height, kind, sid=None):
-    """Chrome で 1 回歩く。返すのは、頁が書いた結果（歩き終われば dict、何も答えなければ None）。sid は歩く玩具（既定は御来迎）。"""
-    hold = {}
-
-    def tagged(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-        self.path = hold.get("path", self.path)
-        return wrapped(self, code, body, ctype, headers)
-
-    def tagging_get(self):
-        hold["path"], self.path = self.path, re.sub(r"[?&]walk=\w+", "", self.path)
-        return getter(self)
-
-    play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
-    flags = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] if kind == "cam" else []
-    path = f"/toy/{sid or G}/kasane" if kind in ("cam", "fit", "fitlong", "nocam") else f"/toy/{sid or G}/kasane/hmd"
-    try:
-        with tempfile.TemporaryDirectory() as profile:
-            out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", f"--window-size={width},{height}", *flags,
-                                  "--virtual-time-budget=60000", "--dump-dom", f"{base}{path}?walk={kind}"],
-                                 capture_output=True, text=True, timeout=170).stdout
-    except subprocess.TimeoutExpired:
-        return None
-    finally:
-        play_server.Handler._send, play_server.Handler.do_GET = send, getter
-    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
-    if not found:
-        return "started" if 'class="hmd"' in out else None
-    return json.loads(found.group(1).replace("&quot;", '"').replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&"))
-
 
 exe = chrome()
 if not exe:
     server.shutdown()
-    print("ok 作業しながら見る試作の字と道。測れない: Chrome が無いので、声と大きさとカメラは歩いていない")
+    print("ok 作業しながら見る頁の字と道。測れない: Chrome が無いので、聞く・大きさ・手帖の印は歩いていない")
     raise SystemExit(0)
-# 手帖の最初の画面: のこすへの道の 1 行（前は重ねる頁への道）を置いても、大きいボタン「はじめる」が狭い画面の最初の画面に入る
+send, getter = play_server.Handler._send, play_server.Handler.do_GET
+
+# ---- 5. 手帖の最初の画面: のこすへの道の 1 行（前は重ねる頁への道）を置いても、大きいボタン「はじめる」が狭い画面の最初の画面に入る
 # （別の目の確かめ 11-07: 道を上に置くと 320×568 で 22px 出た）。
 # headless の Chrome は窓を 500px より狭くできないので、その大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ測り方）
 FIT_SIZES, FIT_TOYS = ((320, 568), (375, 667)), (G, T, "NDL-1187053-R0000004-L")
@@ -371,44 +146,6 @@ const kg=d.getElementById('kasane-go'),kl=kg&&kg.querySelector('span'),li=d.quer
 const others=['mic','close','genga-thumb'].map(id=>d.getElementById(id)).filter(seen);
 o.step={kasane:seen(kg)?box(kg):null,label:kl&&seen(kl)?{box:box(kl),px:parseFloat(getComputedStyle(kl).fontSize),lines:Math.round(kl.getBoundingClientRect().height/parseFloat(getComputedStyle(kl).lineHeight)),cut:kl.scrollWidth>kl.clientWidth+1||kl.getBoundingClientRect().right>kg.getBoundingClientRect().right+1||kl.getBoundingClientRect().left<kg.getBoundingClientRect().left-1||kl.getBoundingClientRect().bottom>kg.getBoundingClientRect().bottom+1||kl.getBoundingClientRect().top<kg.getBoundingClientRect().top-1,iconOut:(()=>{const sv=kg.querySelector('svg');if(!sv)return true;const a=sv.getBoundingClientRect(),b=kg.getBoundingClientRect();return a.top<b.top-1||a.bottom>b.bottom+1})()}:null,bar:['mic','close','genga-thumb','kasane-go'].map(id=>d.getElementById(id)).filter(seen).map(e=>[Math.round(e.getBoundingClientRect().top),Math.round(e.getBoundingClientRect().bottom)]),text:li?box(li):null,others:others.map(box),keysBottom:Math.max(0,...keys.map(k=>Math.round(k.getBoundingClientRect().bottom)))}}
 document.getElementById('measured').textContent=JSON.stringify(out)},700)},800))</script>"""
-
-
-LONG_SIZES = ((375, 667), (390, 664), (320, 568))
-LONG_WRAP = """<!doctype html><meta charset="utf-8"><body>__FRAMES__<pre id="measured"></pre><script>
-addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const m=f.contentDocument.getElementById('measured');
-out.push({sid:f.dataset.sid,w:Number(f.width),h:Number(f.height),got:m?JSON.parse(m.textContent):null})}
-document.getElementById('measured').textContent=JSON.stringify(out)},9000))</script>"""
-
-
-def long_fit():
-    """狭い縦の画面（iframe）で、字の一番長い手順まで送って、重ねた後の押す所と字を測る。返すのは iframe ごとの結果の並び。"""
-    hold = {}
-
-    def tagged(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-        self.path = hold.get(self.path, self.path)
-        return wrapped(self, code, body, ctype, headers)
-
-    def tagging_get(self):
-        if self.path == "/__longfit":
-            frames = "".join(f'<iframe data-sid="{sid}" src="/toy/{sid}/kasane?walk=fitlong" width="{w}" height="{h}" style="border:0;display:block"></iframe>'
-                             for w, h in LONG_SIZES for sid in (G, T))
-            return send(self, 200, LONG_WRAP.replace("__FRAMES__", frames))
-        bare = re.sub(r"[?&]walk=\w+", "", self.path)
-        hold[bare] = self.path
-        self.path = bare
-        return getter(self)
-
-    play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
-    try:
-        with tempfile.TemporaryDirectory() as profile:
-            out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=1600,2400",
-                                  "--virtual-time-budget=60000", "--dump-dom", f"{base}/__longfit"], capture_output=True, text=True, timeout=170).stdout
-    except subprocess.TimeoutExpired:
-        return None
-    finally:
-        play_server.Handler._send, play_server.Handler.do_GET = send, getter
-    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
-    return json.loads(found.group(1).replace("&quot;", '"').replace("&amp;", "&")) if found and found.group(1).strip() else None
 
 
 def techo_fit(lang=""):
@@ -435,8 +172,6 @@ def techo_fit(lang=""):
     found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
     return json.loads(found.group(1).replace("&quot;", '"')) if found and found.group(1).strip() else None
 
-
-from omochae import hypotheses  # noqa: E402
 
 for sid in FIT_TOYS:  # 手帖は刷った紙がある時だけ「はじめる」を出すので、測る玩具は全部刷る
     urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={hypotheses.sheet_of(sid)['id']}".encode(),
@@ -475,10 +210,10 @@ else:
             assert f["start"] <= f["h"] and f["sx"] <= f["w"], ("「はじめる」が最初の画面に入り、横にはみ出さない", f)
             # のこすへの道の 1 行は、全部の玩具の最初の画面に「はじめる」の下で出て、重ならず、最初の画面から押し出さない
             assert f["go"] and f["go"][0] >= f["start"], ("のこすへの 1 行は「はじめる」の下に置き、重ならない", f)
-        # 手順の画面の重ねる頁への印（本人の答え 11-08「どこかに道を戻す。」）: 組み立ての書き方がある玩具だけに出て、画面の中にあり、
+        # 手順の画面の作業の頁への印（本人の答え 11-08「どこかに道を戻す。」・字は本人の答え 11-08 の ②「カメラで聞く」）: 組み立ての書き方がある玩具だけに出て、画面の中にあり、
         # 手順の字と上の帯の印（マイク・閉じる印・原画の小さな絵）と重ならず、押す所（もどる・つぎ・こまった）を最初の画面から押し出さない
         # 手順の画面は送りの棒を必ず出した形で測る（html の overflow-y:scroll）。頁が縦に送れる長さの時（原画の写しがある木・英語の頁）は、
-        # 右寄せの印が送りの棒の幅（15px）だけ左へ寄り、幅 320 で重ねる頁への印と原画の小さな絵が重なった（今の main で落ちた・#635 の left:96px）。
+        # 右寄せの印が送りの棒の幅（15px）だけ左へ寄り、幅 320 で作業の頁への印と原画の小さな絵が重なった（今の main で落ちた・#635 の left:96px）。
         # 送りの棒の有り無しで替わる所を、写しの有り無しに左右されずに見るため
         st = f["step"]
         over = lambda a, b: not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])  # noqa: E731
@@ -488,7 +223,7 @@ else:
             k = st["kasane"]
             assert k and k[0] >= 0 and k[2] <= f["w"] and k[3] <= f["h"], ("印が画面の中", f)
             assert not (st["text"] and over(k, st["text"])) and not any(over(k, o) for o in st["others"]), ("印が字や上の帯の印と重ならない", f)
-            # 印に添えた字「カメラに重ねる」（本人の答え 11-08）は 12px 以上で、切れずに印の中に収まる（統括の決め 11-08）
+            # 印に添えた字（本人の答え 11-08「印に「カメラに重ねる」の字を足す。」・今の字は「カメラで聞く」）は 12px 以上で、切れずに印の中に収まる（統括の決め 11-08）
             assert st["label"] and not st["label"]["cut"] and not st["label"]["iconOut"] and st["label"]["px"] >= 12, ("印の字が読める大きさで切れず、印の高さに収まる", f)
             # 帯は 1 行のまま: 上の帯の印（マイク・閉じる・原画の小さな絵・この印）の上の端がそろい、この印は帯の一番高い印（マイク 72px）より下へ出ない
             assert len({t for t, _ in st["bar"]}) == 1 and k[3] <= max(b for _, b in st["bar"]), ("帯が 2 行にならない", f)
@@ -498,176 +233,218 @@ else:
             assert st["keysBottom"] <= f["h"], ("手順の画面の押す所が最初の画面に入る", f)
     print("英語の頁の最初の画面（数だけ）:", "・".join(en_start))
 
+
+# ---- 3. Chrome で歩く: 聞く
+# 見本は頁の script より先に置く。録る口（MediaRecorder）・カメラとマイク（getUserMedia）・網（fetch）・読み上げ（speechSynthesis）を差し替える。
+# カメラは canvas の流れ（絵がある）に、向き（facingMode）の見本を付ける。本物のマイクとカメラは使わない
+ANSWER = "破線の所を、手前にへこむように折ってください。"
+STUB = r"""<script>(()=>{window.__net=[];window.__said=[];const FACING=__FACING__;
+class MR{constructor(s,o){this.stream=s;this.mimeType=(o&&o.mimeType)||'';this.state='inactive'}
+ start(){this.state='recording'}
+ stop(){if(this.state==='inactive')return;this.state='inactive';const t=this;setTimeout(()=>{t.ondataavailable&&t.ondataavailable({data:new Blob(['v'.repeat(3000)],{type:'audio/webm'})});t.onstop&&t.onstop()},0)}}
+MR.isTypeSupported=t=>t.startsWith('audio/webm');window.MediaRecorder=MR;
+const md={getUserMedia:async c=>{if(c&&c.video){const cv=document.createElement('canvas');cv.width=640;cv.height=480;const g=cv.getContext('2d');
+  const paint=()=>{g.fillStyle='#'+((Math.random()*0xffffff)|0).toString(16).padStart(6,'0');g.fillRect(0,0,640,480)};paint();const iv=setInterval(paint,100);
+  const s=cv.captureStream(10),tr=s.getVideoTracks()[0];tr.getSettings=()=>({facingMode:FACING});const st=tr.stop.bind(tr);tr.stop=()=>{clearInterval(iv);st()};return s}
+ return new MediaStream()}};
+Object.defineProperty(navigator,'mediaDevices',{get:()=>md,configurable:true});
+window.fetch=async(u,o)=>{__net.push([String(u),o&&o.body?JSON.parse(o.body):null]);await new Promise(r=>setTimeout(r,50));
+ return new Response(JSON.stringify({text:__ANSWER__,from:'ai'}),{headers:{'Content-Type':'application/json'}})};
+Object.defineProperty(window,'speechSynthesis',{value:{speak:u=>__said.push(u.text),cancel:()=>{}},configurable:true});
+})()</script>"""
+ASKWALK = r"""<script>(async()=>{
+const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body,ask=$('#hmd-ask'),cam=$('#hmd-camera'),v=$('#hmd-cam');
+const pd=t=>ask.dispatchEvent(new PointerEvent(t,{bubbles:true,cancelable:true,pointerId:1,button:0,isPrimary:true,pointerType:'touch'}));
+const until=async(f,n=200)=>{for(let i=0;i<n&&!f();i++)await wait(50)};
+const net=()=>__net.map(x=>[x[0],x[1]&&x[1].step,x[1]&&x[1].type,x[1]&&(x[1].frames||[]).length,!!(x[1]&&x[1].voice)]);
+// HMD の道（映像が無い）では、時間を進める形の headless の Chrome が待ちの間を先へ飛ばし、声を読む所（FileReader）が終わる前に測った。
+// カメラの道と同じに、映像の流れが付いている間は時間がふつうに進むので、見えない video に見本の流れを付けておき、結果を書く前に止める
+let pace=null;if(!cam){const cv=document.createElement('canvas'),g=cv.getContext('2d'),iv=setInterval(()=>{g.fillRect(0,0,8,8)},100);pace=document.createElement('video');
+ pace.muted=true;pace.style.display='none';pace.srcObject=cv.captureStream(10);document.body.appendChild(pace);pace.play().catch(()=>{});pace.stop=()=>{clearInterval(iv);pace.srcObject.getTracks().forEach(t=>t.stop());pace.srcObject=null}}
+const keys=()=>[...Object.keys(localStorage).map(k=>'l:'+k),...Object.keys(sessionStorage).map(k=>'s:'+k)].sort().join(',');
+try{
+ R.store0=keys();
+ R.init=[$('#hmd-count').textContent,$('#hmd-prev').disabled,$('#hmd-text').textContent,$('#hmd-answer').hidden,ask.textContent];
+ $('#hmd-next').click();await wait();R.next=[$('#hmd-count').textContent,$('#hmd-text').textContent,$('#hmd-prev').disabled];
+ b.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));await wait();R.key=$('#hmd-count').textContent;
+ b.dispatchEvent(new KeyboardEvent('keydown',{key:'PageUp',bubbles:true,cancelable:true}));await wait();R.key2=$('#hmd-count').textContent;
+ if(cam){cam.click();await until(()=>v.videoWidth>0);R.cam=[v.videoWidth>0,b.dataset.back,cam.textContent]}
+ // 押したまま話して離す形
+ pd('pointerdown');await until(()=>ask.getAttribute('aria-pressed')==='true');
+ R.listening=[ask.textContent,ask.getAttribute('aria-pressed'),$('#hmd-state').textContent];
+ await wait(2400);pd('pointerup');await until(()=>ask.dataset.state==='wait'||__net.length>0,100);
+ R.thinking=[ask.textContent,$('#hmd-state').textContent];
+ await until(()=>!$('#hmd-answer').hidden);
+ R.hold={net:net(),reply:$('#hmd-reply').textContent,said:__said.slice(),btn:[ask.textContent,ask.getAttribute('aria-pressed'),$('#hmd-state').textContent]};
+ // 1 回押して始める形: 短く押して離しても録り続け、もう一度押すと止まって送る
+ pd('pointerdown');await until(()=>ask.getAttribute('aria-pressed')==='true');await wait(100);pd('pointerup');await wait(400);
+ R.tapStill=[ask.getAttribute('aria-pressed'),__net.length];
+ pd('pointerdown');await until(()=>__net.length>=2);pd('pointerup');await until(()=>ask.textContent===__ASK__);
+ R.tap=__net.length;
+ // 頁を隠したら止めて、録りかけは送らない（カメラも止まる）
+ pd('pointerdown');await until(()=>ask.getAttribute('aria-pressed')==='true');
+ let hidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>hidden});
+ hidden=true;document.dispatchEvent(new Event('visibilitychange'));await wait(500);
+ R.hid=[__net.length,ask.getAttribute('aria-pressed'),ask.textContent,v?!!v.srcObject:null];hidden=false;
+ R.store=keys();
+}catch(e){R.error=String(e&&e.stack||e)}
+try{if(v&&v.srcObject&&cam)cam.click();if(pace)pace.stop()}catch(_){}
+const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+})();</script>"""
+# ---- 4. 大きさと置き場: 字の一番長い手順まで送り、長い答えを出した形で測る（カメラは付けない）
+LONG_ANSWER = "破線の所を、手前にへこむように折ります。折る前に定規を当てて、線の上を爪でなぞっておくと、まっすぐに折れます。" * 2
+LAYOUT = r"""<script>(async()=>{
+const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s);
+try{const W=JSON.parse($('#hmd-words').textContent).steps;let LG=0;W.forEach((t,i)=>{if(t.length>W[LG].length)LG=i});
+for(let i=0;i<LG;i++){$('#hmd-next').click();await wait(20)}
+$('#hmd-reply').textContent=__LONG__;$('#hmd-answer').hidden=false;$('#hmd-state').textContent=__THINKING__;await wait(200);
+const box=e=>{const r=e.getBoundingClientRect();return[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]};
+R.btn=[...document.querySelectorAll('.hmd button')].filter(e=>!e.hidden&&getComputedStyle(e).display!=='none').map(e=>[e.id,...box(e),e.scrollWidth>e.clientWidth+1]);
+R.parts=['.hmd-top','.hmd-step','#hmd-answer','#hmd-state','.hmd-acts'].map(s=>[s,...box($(s))]);
+R.len=$('#hmd-text').textContent.length;R.at=LG;R.px=parseFloat(getComputedStyle($('#hmd-text')).fontSize);
+R.vw=innerWidth;R.vh=innerHeight;R.sx=document.documentElement.scrollWidth}catch(e){R.error=String(e&&e.stack||e)}
+const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+})();</script>"""
+
+
+def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+    m = re.search(r"[?&]walk=(env|user|layout)", self.path)
+    if m and isinstance(body, str) and "/kasane" in self.path:
+        kind = m.group(1)
+        if kind == "layout":
+            walk_js = LAYOUT.replace("__LONG__", json.dumps(LONG_ANSWER, ensure_ascii=False)).replace("__THINKING__", json.dumps(hmd.THINKING, ensure_ascii=False))
+            stub = ""
+        else:
+            walk_js = ASKWALK.replace("__ASK__", json.dumps(hmd.ASK, ensure_ascii=False))
+            stub = STUB.replace("__FACING__", json.dumps("environment" if kind == "env" else "user")).replace("__ANSWER__", json.dumps(ANSWER, ensure_ascii=False))
+        body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
+    return send(self, code, body, ctype, headers)
+
+
+def run_chrome(url, size, budget=60000):
+    with tempfile.TemporaryDirectory() as profile:
+        return subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", f"--window-size={size}",
+                               f"--virtual-time-budget={budget}", "--dump-dom", url], capture_output=True, text=True, timeout=170).stdout
+
+
+def walk(path, kind):
+    """Chrome で 1 回歩く。返すのは、頁が書いた結果（歩き終われば dict、何も答えなければ None、頁は出たが書かなければ "started"）。"""
+    hold = {}
+
+    def tagged(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+        self.path = hold.get("path", self.path)
+        return wrapped(self, code, body, ctype, headers)
+
+    def tagging_get(self):
+        hold["path"], self.path = self.path, re.sub(r"[?&]walk=\w+", "", self.path)
+        return getter(self)
+
+    play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
+    try:
+        out = run_chrome(f"{base}{path}?walk={kind}", "1280,800")
+    except subprocess.TimeoutExpired:
+        return None
+    finally:
+        play_server.Handler._send, play_server.Handler.do_GET = send, getter
+    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
+    if not found:
+        return "started" if 'class="hmd"' in out else None
+    return json.loads(html.unescape(found.group(1)))
+
+
+LAYOUT_SIZES = ((1280, 720), (1024, 600), (390, 664), (375, 667), (320, 568))
+LAYOUT_WRAP = """<!doctype html><meta charset="utf-8"><body style="margin:0">__FRAMES__<pre id="measured"></pre><script>
+addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const m=f.contentDocument.getElementById('measured');
+out.push({sid:f.dataset.sid,path:f.dataset.path,w:Number(f.width),h:Number(f.height),got:m?JSON.parse(m.textContent):null})}
+document.getElementById('measured').textContent=JSON.stringify(out)},6000))</script>"""
+
+
+def layout():
+    """5 つの大きさ × 2 つの玩具 × 2 つの道を iframe で開き、字の一番長い手順と長い答えの形で測る（headless の Chrome は窓を 500px より狭くできない）。"""
+    hold = {}
+
+    def tagged(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+        self.path = hold.get(self.path, self.path)
+        return wrapped(self, code, body, ctype, headers)
+
+    def tagging_get(self):
+        if self.path == "/__layout":
+            frames = "".join(f'<iframe data-sid="{sid}" data-path="{p}" src="/toy/{sid}/{p}?walk=layout" width="{w}" height="{h}" style="border:0;display:inline-block;vertical-align:top"></iframe>'
+                             for w, h in LAYOUT_SIZES for sid in (G, T) for p in ("kasane", "kasane/hmd"))
+            return send(self, 200, LAYOUT_WRAP.replace("__FRAMES__", frames))
+        bare = re.sub(r"[?&]walk=\w+", "", self.path)
+        hold[bare] = self.path
+        self.path = bare
+        return getter(self)
+
+    play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
+    try:
+        out = run_chrome(f"{base}/__layout", "2700,4200")
+    except subprocess.TimeoutExpired:
+        return None
+    finally:
+        play_server.Handler._send, play_server.Handler.do_GET = send, getter
+    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
+    return json.loads(html.unescape(found.group(1))) if found and found.group(1).strip() else None
+
+
+fits_unmeasured = unmeasured_fit
 runs = {}
-for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・重ねる": (390, 844, "fit"), "横・重ねる": (1280, 720, "fit"), "横・低い・重ねる": (1024, 600, "fit"), "横・HMD で重ねる": (1280, 720, "hfit"), "縦・カメラが使えない": (390, 844, "nocam"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
-    got = walk(w, h, kind)
-    if not isinstance(got, dict):
-        got = walk(w, h, kind)  # 混んだ機械では答えない事があるので、1 度だけ回し直す
-    runs[name] = got
-# 字の一番長い手順で測る: 横の低い画面は窓で、狭い縦の画面は iframe で（御来迎と虎の両方）
-for sid, toy in ((G, "御来迎"), (T, "虎")):
-    got = walk(1024, 600, "fitlong", sid)
-    runs[f"長い手順・横 1024×600・{toy}"] = got if isinstance(got, dict) else walk(1024, 600, "fitlong", sid)
-longs = long_fit() or long_fit()
+for name, (path, kind) in {"カメラの道・後ろのカメラ": (f"/toy/{G}/kasane", "env"), "カメラの道・前のカメラ": (f"/toy/{T}/kasane", "user"),
+                           "HMD の道": (f"/toy/{G}/kasane/hmd", "env")}.items():
+    got = walk(path, kind)
+    runs[name] = got if isinstance(got, dict) else walk(path, kind)  # 混んだ機械では答えない事があるので、1 度だけ回し直す
+sizes = layout() or layout()
+
 server.shutdown()
-if all(v is None for v in runs.values()):
-    print("ok 作業しながら見る試作の字と道。測れない: Chrome が答えなかった（混んだ機械では起きる）")
-    raise SystemExit(0)
 unmeasured = []
-
-
-def fold_groups(sid):
-    """手順ごとの、1 つの動きで折る折り目の順の組の数の最大（頁の手の分け方と別に、組み立ての段ごとの形から数える）。
-    折る順は、段の形の折る順（o）が無ければ、根の面から遠い順（頁と同じ）。"""
-    bench = assembly.assemble(sid)
-    frames, trees = kumitate.frames_of(bench), kumitate.trees_of(bench)
-    pose, out = frames[0]["q"][0], []
-    for i, f in enumerate(frames):
-        most = 0
-        for j, B in enumerate(f["q"]):
-            if i == 0 and j == 0:
-                continue
-            A, pose = pose, B
-            orders = set()
-            for key, b in B["s"].items():
-                a = A["s"].get(key)
-                if not a:
-                    continue
-                for r, row in trees[key]["rows"].items():
-                    if abs(a["a"].get(str(r), 0) - b["a"].get(str(r), 0)) > .01:
-                        o = (B.get("o") or {}).get(key, {}).get(r)
-                        orders.add(o if o is not None else -row[5])
-            most = max(most, len(orders))
-        out.append(most)
-    return out
-
-
-def check_long(name, got):
-    """字の一番長い手順まで送った後: 押す所は頁を動かさずに全部見えて 64px 以上・字が釦からはみ出さない・手順の字と押す所が重ならない・横にはみ出さない"""
-    assert "error" not in got and got["fit"], (name, "カメラを付けて重ねた後に測る", got)
-    assert all(b[2] <= got["vh"] for b in got["btn"]), (name, "押す所が頁を動かさずに全部見える", got)
-    assert all(b[4] >= 64 and not b[5] for b in got["btn"]), (name, "押す所は 64px 以上で、字が釦からはみ出さない", got)
-    # 横の画面は押す所の列が字の横に、縦の画面は字の下に来る。どちらでも重ならない
-    wide = got["vw"] > got["vh"]
-    assert (got["text"][1] <= min(b[3] for b in got["btn"])) if wide else (got["text"][0] <= min(b[1] for b in got["btn"])), (name, "手順の字と押す所が重ならない", got)
-    assert got["sx"] <= got["vw"], (name, "横にはみ出さない", got)
-
-
-FOLD_GROUPS = fold_groups(G)
-assert max(FOLD_GROUPS) >= 2, ("折り目の組が 2 つ以上ある手順が無く、手の数の照らしが何も見ない", FOLD_GROUPS)
+if all(v is None for v in runs.values()) and sizes is None:
+    unmeasured.append("聞くと大きさ（Chrome が答えなかった。混んだ機械では起きる）")
 for name, got in runs.items():
+    if got is None:
+        unmeasured.append(f"{name}（Chrome が答えなかった）")
+        continue
     assert isinstance(got, dict), ("歩き始めたのに終わらなかった", name, got)
     assert "error" not in got, (name, got)
-    if "中を見る" in name:
-        assert got["shown"] == [True, hmd.SPLIT_OPEN, "false"], (name, "分解した形がある時だけ「中を見る」が出る", got)
-        assert got["open"] == [hmd.SPLIT_CLOSE, "true", True], (name, "押すと開いて「とじる」になる", got)
-        assert got["closed"] == [hmd.SPLIT_OPEN, "false", False], (name, "もう一度押すと戻る", got)
-        assert got["sent"] == [hmd.SPLIT_OPEN, False, 1], (name, "開いたまま手順を送ると、先にとじて 1 手進む", got)
-        assert got["size"] >= 64, (name, "釦は 64px 以上", got)
-        continue
-    if "分解の形が無い" in name:
-        assert got["shown"][0] is False, (name, "分解した形の無い組では釦を出さない", got)
-        continue
-    if name.startswith("長い手順"):
-        check_long(name, got)
-        continue
-    if "重ねる" in name:
-        hmd_path = "HMD" in name
-        close = lambda a, b, d: all(abs(x - y) <= d for x, y in zip(a, b))
-        assert got["before"] == ([True, True] if hmd_path else [False, False]), (name, "カメラに重ねる頁は押すまで重ねない・HMD の道は最初から重ねる", got)
-        assert got["on"][:2] == [True, True] and got["on"][2] < 1 and got["on"][3], (name, "重ねると 3D は半透明・元に戻す と指の使い方の 1 行が出る", got)
-        assert got["layer"][0] >= 0 and (hmd_path or (got["layer"][1] == -1 or got["layer"][0] < got["layer"][1])), (name, "3D の真ん中では 3D が映像より上", got)
-        assert got["z"][0] < min(got["z"][1:4]) and (hmd_path or got["z"][4] < got["z"][0]), (name, "層の順は 映像 → 3D → 字と押す所", got)
-        h, m, pi, tw = got["home"], got["move"], got["pinch"], got["twist"]
-        assert close(m, [h[0] + 30, h[1] + 20, h[2], h[3]], 1.01), (name, "1 本指で動かすと、指の動きだけ動く", got)
-        assert close(pi[:2], [m[0] + 50, m[1]], 1.01) and abs(pi[2] - m[2] * 2) <= .02 and abs(pi[3] - m[3]) <= .5, (name, "2 本指を広げると、長さの比で大きく・真ん中で位置", got)
-        assert abs(tw[3] - (m[3] + 30)) <= 1 and abs(tw[2] - pi[2]) <= .03, (name, "2 本指をねじると、角の差で向き", got)
-        assert got["ry"][0] == got["ry"][1], (name, "重ねている間は 3D の見る向きが替わらない", got)
-        assert abs(got["plus"][2] - tw[2] * 1.1) <= .01 and abs(got["turn"][3] - (tw[3] + 5)) <= .01 and got["zero"] == h, (name, "鍵 + ] 0", got)
-        assert got["reset"] == h, (name, "元に戻す で重ね始めた所へ戻る", got)
-        if not hmd_path:
-            assert got["off"] == [False, "", False], (name, "カメラを止めると重ねをやめる", got)
-        assert got["net"] == [], (name, "重ねている間、頁は網に何も送らない", got)
-        assert got["wide"] and all(bottom <= got["vh"] for _, bottom, _ in got["reach"]), (name, "重ねている間の押す所が、頁を動かさずに全部見える", got)
-        assert all(h >= 64 for _, _, h in got["reach"]) and (hmd_path or "hmd-reset" in [i for i, _, _ in got["reach"]]), (name, "押す所は 64px 以上・元に戻す が出る", got)
-        continue
-    if "カメラが使えない" in name:
-        assert got["stage"][0] > 100 and got["stage"][1] > 100 and got["stage"][2] == "visible" and got["stage"][3] == 1 and got["panels"] > 0, (name, "カメラが無くても 3D は出る", got)
-        assert got["note"] == hmd.NO_CAMERA and got["btn"] is True and got["fit"] is False, (name, "断りの字が出て、カメラの釦は隠れ、重ねない", got)
-        continue
-    if "カメラ" in name:
-        assert got["before"] == [False, hmd.CAMERA], (name, "押すまでカメラは付けない", got)
-        assert got["cover"] == [True, True, "fixed"], (name, "映像は画面いっぱいに敷く", got)
-        assert got["wide"] and got["reach"], (name, "横にはみ出さず、カメラの釦を含む押す所が頁を動かさずに見える", got)
-        if got["pending"]:
-            unmeasured.append("カメラの映像（この機械の headless の Chrome では偽のカメラが付かない）")
-            continue
-        assert got["on"] == [True, True, hmd.CAMERA_OFF], (name, "映像が付く", got)
-        assert got["off"] == [False, False], (name, "止めると映像を外す", got)
-        continue
-    voice = "声あり" in name
-    # 期待は頁の手の並び（data-plan: 手ごとの手順の番号）から出す。組が替わると手順と手の数が変わるため（前は組 v10 の手順 12 で決め打ちしていた）
-    plan = got["plan"]
-    at_after = lambda n: plan[n - 1] if n else 0
-    def dots_at(n):
-        i = at_after(n)
-        c = plan.count(i)
-        return [c, plan[:n].count(i)] if c > 1 else [0, 0]
-    assert len(plan) == got["total"] and got["total"] > len(set(plan)) >= 2, (name, "手順を、手（切る・折り目 1 本・通す・置く）に分けている", got)
-    assert plan == sorted(plan), (name, "手は手順の順に並ぶ", got)
-    # 頁の手の並びとは別の道で、手順ごとの手の数の下限を数えて照らす（data-plan から期待を作るだけだと、頁が分け方を崩しても気づかない。
-    # 確かめの指摘: 折り目が 2 本以上ある手順のうち 1 つだけを分ける誤りが通った）。折り目は順の組ごとに 1 手で、6 手まで（hmd の決まり）
-    for i, n in enumerate(FOLD_GROUPS):
-        if n > 1:
-            want = math.ceil(n / math.ceil(n / 6))
-            assert plan.count(i) >= want, (name, f"手順 {i + 1} の折り目の組 {n} を {want} 手以上に分けていない", plan.count(i), plan)
-    # 開いた時: 刷った紙のまま手順 1 で止まり、何も動かしていない
-    assert got["init"] == [0, 0, True, "off" if voice else "none"], (name, got)
-    if voice:
-        assert got["before"] == ["undefined", 0], (name, "聞くのは「はじめる」の後だけ。押す前は、聞く物を作ってもいない", got)
-        assert got["began"] == ["on", "start", "true"], (name, got)
-        assert (got["next0"], got["next1"], got["next2"]) == ([at_after(1), 1], [at_after(2), 2], [at_after(3), 3]), (name, "「つぎ」と「次。」で 1 手ずつ進む", got)
-        assert got["chatter"] == [at_after(3), 3], (name, "話し声の見本では動かない", got)
-        # 「つぎ」1 回で 1 手だけ動いて止まる。点は今の手順の手の数で、済んだ数だけ塗る（手が 1 つの手順は点を出さない）
-        assert got["alt"] == [at_after(4), 4] and got["dots"] == dots_at(4), (name, "1 つ目の読みが外れても、別の読みが操作の言葉なら動く。1 手進む", got)
-        assert (got["back"], got["again"]) == ([at_after(3), 3], [at_after(3), 3]), (name, "「もどる」は 1 手もどり、「もう一回」は同じ手のまま", got)
-        assert got["fold"][0] >= 2000 and got["fold"][1:] == [at_after(4), 4], (name, "1 手の動きは 2 秒以上かけ、動き終わったら止まって待つ", got)
-        assert (got["hid"], got["shown"]) == (False, True), (name, "隠れたら止め、見えたら戻す", got)
-        assert got["end"] == [True, kumitate.DONE, True, kumitate.DONE, True], (name, "最後は、できあがり。「つぎ」は押せない", got)
-        assert got["afterEnd"] and got["againEnd"], (name, "最後の「つぎ」で、はじめに戻さない", got)
-        assert got["top"] == [0, 0], (name, "「はじめから」で刷った紙に戻る", got)
-        assert got["stopped"] == [False, "off"], (name, "「止めて」で聞くのを止める", got)
-        assert got["left"] is False, (name, "頁を離れたら止める", got)
-    else:
-        # 声が使えない画面: 釦とキーボードで通れる
-        assert (got["tap"], got["key1"], got["key2"], got["key3"]) == ([at_after(1), 1], [at_after(2), 2], [at_after(1), 1], [at_after(1), 1]), (name, got)
-        assert got["first"] == [0, 0, True, True], (name, "はじめに戻ると、もどると、もう一回は押せない", got)
-    size = got["size"]
-    assert size["at"] == got["longest"] and size["textLen"] >= 30, (name, "字が一番長い手順で測る", size)
-    assert size["sx"] <= size["vw"], (name, "横にはみ出さない", size)
-    assert size["text"] >= (28 if size["vw"] >= 1000 else 20), (name, "手順の字が大きい", size)
-    # 横の画面は押す所の列が字の横に、縦の画面は字の下に来る。どちらでも重ならない
-    assert (size["textRight"] <= size["actsLeft"]) if size["vw"] > size["vh"] else (size["textBottom"] <= size["actsTop"]), (name, "手順の字は釦に掛からない", size)
-    assert min(size["chips"]) >= 64 and size["chips"][2] >= 96, (name, "釦は 64px 以上、「つぎ」は 96px 以上", size)
-    assert size["font"] == 0, (name, "釦がブラウザの既定の字のまま", size)
-    assert size["reach"] and size["stageBottom"] <= size["vh"], (name, "押す所と 3D は、頁を動かさずに全部見える", size)
-# 狭い縦の画面（iframe）で、字の一番長い手順まで送った後（御来迎と虎）。320×568 は、押す所が全部は入らない（前から・判定は「前から」として出す）
-if longs is None:
-    unmeasured.append("狭い縦の画面の字の長い手順（Chrome が答えなかった）")
+    sid = T if "前のカメラ" in name else G
+    texts = hmd.steps(sid)
+    n = len(texts)
+    cam = "HMD" not in name
+    assert got["init"] == [f"1 / {n}", True, texts[0], True, hmd.ASK], (name, "開いた時は手順 1・こたえは隠れている", got)
+    assert got["next"] == [f"2 / {n}", texts[1], False] and got["key"] == f"3 / {n}" and got["key2"] == f"2 / {n}", (name, "← → と鍵で手順を選ぶ", got)
+    if cam:
+        assert got["cam"] == [True, "1" if "後ろ" in name else "0", hmd.CAMERA_OFF], (name, "映像が付き、向きを読む", got)
+    assert got["listening"] == [hmd.LISTENING, "true", hmd.LISTENING], (name, "押している間は「聞いています」", got)
+    assert got["thinking"] == [hmd.THINKING, hmd.THINKING], (name, "離すと「考えています」", got)
+    frames = 3 if "後ろ" in name else 0
+    assert got["hold"]["net"] == [[f"/toy/{sid}/kasane/ask", 2, "audio/webm", frames, True]], \
+        (name, "離した時に 1 回だけ送る・今の手順の番号・声の型・写真は後ろのカメラの時だけ 3 枚（前のカメラと HMD は 0）", got)
+    # 読み上げの見本には、押した時の空の読み上げ（iPhone の Safari の音の許しのため）も入るので、字のある物だけを見る
+    assert got["hold"]["reply"] == ANSWER and [x for x in got["hold"]["said"] if x] == [ANSWER] and got["hold"]["btn"] == [hmd.ASK, "false", ""], (name, "答えを出して読み上げ、元に戻る", got)
+    assert got["tapStill"] == ["true", 1] and got["tap"] == 2, (name, "短く押して離しても録り続け、もう一度押すと止まって送る", got)
+    assert got["hid"][:3] == [2, "false", hmd.ASK] and got["hid"][3] in (False, None), (name, "頁を隠したら止め、録りかけは送らない・カメラも止まる", got)
+    # 頁のほかの台本（回の判定・言葉の切り替えなど）が開いた時に置く物は数えず、聞く間に増えた物だけを見る
+    assert got["store"] == got["store0"], (name, "聞いても端末に何も置かない", got)
+if sizes is None:
+    unmeasured.append("大きさと置き場（Chrome が答えなかった）")
 else:
-    narrow = []
-    for f in longs:
-        name = f"長い手順・縦 {f['w']}×{f['h']}・{'御来迎' if f['sid'] == G else '虎'}"
-        assert isinstance(f["got"], dict), ("歩き始めたのに終わらなかった", name, f)
-        if (f["w"], f["h"]) == (320, 568):
-            out = [b[0] for b in f["got"]["btn"] if b[2] > f["got"]["vh"]]
-            if out:
-                narrow.append(f"{name} で画面の下: {len(out)} つ")
-            continue
-        check_long(name, f["got"])
-    if narrow:
-        unmeasured.append("前から（320×568 は押す所が全部は入らない）: " + "・".join(narrow))
-if unmeasured_fit:
-    unmeasured.append(unmeasured_fit)
+    over = lambda a, b: not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])  # noqa: E731
+    for f in sizes:
+        name = f"{f['w']}×{f['h']}・{'御来迎' if f['sid'] == G else '虎'}・{f['path']}"
+        got = f["got"]
+        assert isinstance(got, dict) and "error" not in got, ("歩き始めたのに終わらなかった", name, f)
+        texts = hmd.steps(f["sid"])
+        assert got["at"] == max(range(len(texts)), key=lambda i: (len(texts[i]), -i)) and got["len"] >= 30, (name, "字の一番長い手順で測る", got)
+        assert got["sx"] <= got["vw"], (name, "横にはみ出さない", got)
+        assert got["px"] >= 17, (name, "手順の字は 17px 以上", got)
+        for bid, left, top, right, bottom, cut in got["btn"]:
+            assert top >= 0 and bottom <= got["vh"] and left >= 0 and right <= got["vw"], (name, "押す所が頁を動かさずに全部見える", bid, got)
+            assert bottom - top >= (96 if bid == "hmd-ask" else 64) and not cut, (name, "「聞く」は 96px 以上・ほかは 64px 以上・字が釦からはみ出さない", bid, got)
+        parts = got["parts"]
+        for i, a in enumerate(parts):
+            for b in parts[i + 1:]:
+                assert not over(a[1:], b[1:]), (name, "手順の字・こたえ・待つ字・押す所が重ならない", a, b)
+if fits_unmeasured:
+    unmeasured.append(fits_unmeasured)
 note = f"。測れない: {'・'.join(unmeasured)}" if unmeasured else ""
-print(f"ok 作業しながら見る試作: 1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。送らない。カメラは押した時だけ付く。{len(runs)} つの画面で歩いた{note}")
+print(f"ok 作業しながら見る頁: 手順の字と「聞く」とこたえ。押した間だけ録り、離した時に 1 回だけ送り、写真は後ろのカメラの時だけ。端末に置かない{note}")

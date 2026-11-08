@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kasane_ask.py
+# commit: 9e86537b（回した時の HEAD）
+ok 作業の頁の聞く口: 声はこのサーバの中で字にし、写真 3 枚までと今の手順の字で答え、何も残さない
+rc=0

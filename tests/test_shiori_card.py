@@ -99,6 +99,8 @@ assert all(m in right for m in sc.MARKS) and not any(m in left for m in sc.MARKS
 # 題字と玩具の名は縦書きの 2 列なので、字を取り出すと行ごとに混ざる。題字は 1 字ずつ見る
 assert all(ch in left for ch in sc.TITLE + "御来迎"), "表の半分に題字と玩具の名"
 assert sc.PAGE_HEAD in whole.replace("\n", "") and sc.CUT_LINE in whole.replace("\n", ""), "頁の頭の写さない断りと、帯の下の切り方"
+# 「いちばん新しく刷ったしおりだけが使えます。」は、刷り直しで前のしおりを使えなくする所が入るまで刷らない（前に刷ったしおりも開くので事実と合わない・統括の決め 11-08）
+assert "いちばん新しく刷った" not in whole.replace("\n", ""), "前のしおりも開く今の作りで、いちばん新しい物だけが使えると刷っている"
 flat = right.replace("\n", "")
 assert all(line in flat for line in sc.BACK_LINES) and "型紙の版 3" in flat and "2026年11月8日" in flat, "裏の字・版・刷った日（東京の日付）"
 
