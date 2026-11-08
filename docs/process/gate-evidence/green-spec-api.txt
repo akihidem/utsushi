@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_spec_api.py
+# commit: d792ead2（回した時の HEAD）
+ok 仕様書の本物の API の字（0 回の字なし・まだは 2 つの口だけ・claude-usage の 11-07 の事実）
+rc=0

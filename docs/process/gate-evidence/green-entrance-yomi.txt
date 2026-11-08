@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_entrance_yomi.py
+# commit: 8cb345cb（回した時の HEAD）
+ok 入口の題の間: 読みは題字のひらがなの下・英語の頁は横書き（白と暗い版・3 つの言葉・幅 320/390/1440 で重ならず、はみ出さない）
+rc=0

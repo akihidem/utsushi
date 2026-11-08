@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_nokosu_flow.py
+# commit: dd93dc8e（回した時の HEAD）
+/tmp/tmpf01wfk5_/play/NDL-1187053-R0000005-L/.tmp-uo0l0okd/H-C_v1.pdf
+ok: のこすの頁は 記入 → のこす → 内容の確かめ → 承認 → もちよる・記入の欄の下に「のこす」・承認まで送らない
+rc=0

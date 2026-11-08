@@ -225,6 +225,9 @@ STEP_LIMIT = 120
 # 上げても断らない数（窓口の決め 11-07・案 b。前は 20 で、7 人目から断りが出えた）。機械を埋めない守りは、公開の場の合計の上限
 # （PUBLIC_MEDIA_TOTAL）と、写した動画の大きさの上限（techo_site.VIDEO_ROOM）の方で効く。
 MEDIA_LIMIT = 60
+# 区切りの見出しの値と型の組（声とカメラの設計 3 版の 3 節）。声は音の型（iPhone の Safari は audio/mp4・Chrome は audio/webm）、
+# カメラは絵の型だけを受ける。組に無い物は 422（名乗った型と中身の頭のバイトが合うかは voice_text が見る）
+CLIP_TYPES = {("t", "audio/webm"): "webm", ("t", "audio/mp4"): "mp4", ("k", "video/webm"): "webm", ("k", "video/mp4"): "mp4"}
 # しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
 WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
@@ -645,7 +648,12 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+            # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
+            from . import nokosu, techo_step, think_sheet
+            sid = m.group(1)
+            sheet = hypotheses.sheet_of(sid)["id"]
+            paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(sid, msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper), look, "", path, techo_site.STYLE + nokosu.STYLE, "techo"))
         # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
         # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
@@ -800,7 +808,10 @@ class Handler(BaseHTTPRequestHandler):
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False, headers=()):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}#mine"), *headers])
+            # 着く印: 既定は上げる節（#mine）。作りながら見る頁の組み上がりからは記入の節（#kinyu・頁の頭）へ着き、返事の字もそこに出す
+            # （別の目の確かめ 11-08: #mine は頁の一番下で、記入の節を飛び越えた）
+            at = "kinyu" if anchor == "kinyu" else "mine"
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}#{at}"), *headers])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
@@ -879,6 +890,12 @@ class Handler(BaseHTTPRequestHandler):
             # 同時に送られた分は数え合わないので、合計は送られた数 × 20MB まで上限を越えうる（止めるより、機械を埋めない事が目的）。
             if getattr(self.server, "public_open", False) and techo_site.media_bytes() + length > techo_site.PUBLIC_MEDIA_TOTAL:
                 return self._send(507, b"", "text/plain; charset=utf-8")
+            # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
+            # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
+            # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
+            clip = self.headers.get("X-Utsushi-Clip")
+            if clip is not None:
+                return self._clip_post(m.group(1), clip, self.rfile.read(length))
             name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length),
                                               keep_voice=getattr(self.server, "voice_tool", False))
             if not name:
@@ -1001,6 +1018,34 @@ class Handler(BaseHTTPRequestHandler):
             return self._done(rec["source_id"], "説明を残しました", form.get("back", ""), anchor=rid)
         self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
 
+    def _clip_post(self, rid, clip, data):
+        """区切りを 1 つ受ける。t は声（音だけを .mka に写して、この機械の中で字にしてから消す）、k はカメラ（押した後の 10 秒・音なし）。
+        k は付帯情報（手順・釦）を控え、合言葉付きの場では人の操作（のこすの承認で届いた）の後に 1 回だけ読みを走らせる（api.clip_read）。
+        公開の場は学ぶ人の操作では読まない（J-028）。進め役が media_review で確かめた時に読む。"""
+        from omochae import voice_text
+
+        kind = CLIP_TYPES.get((clip, self.headers.get("Content-Type", "").split(";")[0].strip()))
+        if kind is None:
+            return self._send(422, "受け付けられない区切りです", "text/plain; charset=utf-8")
+        put = voice_text.put_voice_clip if clip == "t" else voice_text.put_cam_clip
+        # 空いた番号を選んで置くまでを錠の中で（同時に 2 つ届いても同じ番号に上書きしない・別の目の気づき）。錠は別のプロセスとも取り合う
+        with store.locked(loop.folder()):
+            name, why = put(rid, data, kind)
+        if not name:
+            return self._send(422, why, "text/plain; charset=utf-8")
+        if clip == "k":
+            from api import clip_read
+
+            step = self.headers.get("X-Utsushi-Step", "")
+            # 数は 0〜9 の 1〜3 字だけ（isdigit は上付きの「²」なども通し、int で落ちて 500 になった・別の目の止め 2）
+            clip_read.save_meta(rid, name, int(step) if re.fullmatch(r"[0-9]{1,3}", step) else None,
+                                "stuck" if self.headers.get("X-Utsushi-Button") == "stuck" else None)
+            if not getattr(self.server, "public_open", False):
+                from api.agent import default_client
+
+                clip_read.read_later(rid, name, lambda: default_client("observe"))
+        return self._send(201, name, "text/plain; charset=utf-8")
+
     def _ai_reply(self, rid, act, form):
         """手帖で AI の返事を受ける口（J-013 の決める点 2: 子どもも AI から直接返事をもらってよい。紙 → 人の説明 → AI の順）。
         人の説明が先に無い記録には呼ばない。鍵が無い時は、鍵が置かれると答える事を伝えて止める（J-023）。"""
@@ -1121,8 +1166,9 @@ class Handler(BaseHTTPRequestHandler):
                 making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
         if as_json:
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
-        if event == "done":  # どの紙かを渡して記録の欄へ送る。今の頁は JS の有無に関わらず、この道を通る（#321）。記録の欄の既定は変えない（紙を選ぶ欄は #332 で無くなる）
-            return self._done(sid, tsukuru.DONE_NOTE, see=hid, v=sheet_version_of(sid, hid, form))
+        if event == "done":  # 組み上がりを残した後、のこすの頁（手帖の記録の頁 /toy/<印>/techo/kiroku）へ直に送る（本人の答え 11-08「B。」・統括の決め (a)）。
+            # 前はどの紙かを渡して玩具の頁の記録の欄へ送り、そこから のこす へもう 1 押し要った。組み上がりの記録（making_log.add_step）は上で今と同じに残す
+            return self._done(sid, tsukuru.DONE_NOTE, back="techo", anchor="kinyu")
         ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
@@ -1264,7 +1310,8 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
+        # 台本の無い画面の のこす（web.nokosu の素のフォーム）は back=techo を送り、記録の頁の #mine へ戻る（_done は techo の時だけ替え、ほかの値は無視する）
+        self._done(sid, msg, back=form.get("back", ""), see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
 
 
 _making = {}  # 作っている最中の紙。（玩具, 案）→ その結果
