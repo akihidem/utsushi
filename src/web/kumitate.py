@@ -657,4 +657,6 @@ def page(sid, look=skin.DEFAULT, path=None):
     toy, name = hypotheses.load(sid)["toy"], label(sid)
     body = (f'<section class="sec"><h1>{esc(toy)}: {esc(name)}</h1>{block(sid, heading=False, tour=True)}</section>{section(sid, level=2 if available(sid) else None, genga=True)}'
             f'<section class="sec"><p class="links"><a href="/toy/{esc(sid)}">{esc(toy)}の頁へもどる</a></p></section>')
-    return skin.shell(f"{toy}: {name}", body, look, path=path or f"/toy/{sid}/kumitate")
+    # description は、この頁に出ている頭の文（立体で組める玩具は LEAD、組めない玩具は組み方の節の頭の文 STEPS_LEAD）。
+    # 組めない玩具の頁に「指で回して見られます」を出さないため（頁に無い事を言わない）
+    return skin.shell(f"{toy}: {name}", body, look, path=path or f"/toy/{sid}/kumitate", description=LEAD if available(sid) else STEPS_LEAD)

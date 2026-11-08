@@ -102,7 +102,7 @@ def index_page(look=skin.DEFAULT, path="/en"):
     body = (f'<section class="sec"><h1>utsushi</h1><p class="position basis">{esc(BASIS)}</p><p class="position">{esc(POSITION)}</p><p class="engine">{esc(ENGINE)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
-    return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)
+    return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT, description=POSITION)
 
 
 def toy_page(sid, look=skin.DEFAULT, path=None, printed=""):

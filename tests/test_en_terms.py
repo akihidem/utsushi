@@ -89,4 +89,34 @@ for k, v in table.items():
 # 7. 11 月のワークショップは 4 日（11-04〜07）あるので複数（窓口の決め 11-08「ワークショップの英語は複数形 workshops」）
 bad = [k for k, v in table.items() if re.search(r"\bNovember workshop\b(?!s)", v)]
 assert not bad, ("11 月のワークショップは workshops", bad[:5])
-print("ok 英語の言葉の決め: make と craft・用語の対応・玩具の名が 1 つ・引用符・本人の言葉の英訳の用語・版の番号・workshops")
+# 8. 玩具の名は、題のほか、前後の道・頁へもどる・くずし字と図鑑の頁の題・一覧の名でも toys.json の名（統括の気づき 11-08: 頁ごとに名が揺れた）
+from web.i18n import key_of  # noqa: E402
+
+for sid in sources():
+    ja, name = hypotheses.load(sid)["toy"], names.get(sid, {}).get("name")
+    jk = key_of(ja)[0]
+    if not name or "{" in jk:  # 名の中の数が頁で替わる玩具（「（2つ目）」）は、ここでは見ない
+        continue
+    for k in (jk, f"← {jk}", f"{jk} →", f"{jk}の頁へもどる", f"くずし字を読む · {jk} · うつし", f"図鑑 · {jk} · うつし", f"{jk} · うつし"):
+        v = table.get(k)
+        if v is not None and v != "=":
+            assert name.lower() in v.lower(), ("玩具の名が toys.json と違う", k, v, name)
+
+# 9. 御来迎は Goraigo（本人が採った INTRO と同じ字。Goraigō と揺れていた）
+bad = [k for k, v in table.items() if "Goraigō" in v]
+assert not bad, ("御来迎は Goraigo", bad[:5])
+
+# 10. 作例の報告の玩具の一覧（「いろいろな玩具（…）」）の名は、一覧の日本語の名と同じ玩具の toys.json の名（の頭）。日の付く行と付かない行の両方
+base = {}
+for sid in sources():
+    ja, name = hypotheses.load(sid)["toy"], names.get(sid, {}).get("name")
+    if name:
+        base.setdefault(re.split(r"[（(]", ja)[0], re.split(r" \(", name)[0])
+for k, v in table.items():
+    m = re.search(r"いろいろな玩具（([^）]*)）", k)
+    if not m or v == "=":
+        continue
+    for w in re.split(r"[・、]", m.group(1).replace("など", "")):
+        if w in base:
+            assert base[w].lower() in v.lower(), ("作例の一覧の玩具の名が toys.json と違う", k, w, base[w])
+print("ok 英語の言葉の決め: make と craft・用語の対応・玩具の名が 1 つ（題・前後の道・作例の一覧）・Goraigo・引用符・本人の言葉の英訳の用語・版の番号・workshops")

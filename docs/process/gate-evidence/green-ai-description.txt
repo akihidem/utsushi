@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_page_description.py
+# commit: 4d27c36c（回した時の HEAD）
+ok 頁の description は今ある字だけで、空けた頁には出さず、英語でも訳される
+rc=0
