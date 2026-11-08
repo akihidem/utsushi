@@ -244,11 +244,16 @@ body.techo{font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN
 .techo :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 """
 
-def feedback(sid, r, photos=True, up_key=None, can_tell=False):
+def feedback(sid, r, photos=True, up_key=None, can_tell=False, filled=None, note=""):
     """手帖で受けるフィードバック（本人「フィードバックも手帖」、11-04）。順は J-013 のまま: 紙の返事（試した後の紙）→ 人の説明 → 次の版。
     Claude の解釈は、鍵がある時に作り手の道具で作る段で、ここでは出さない（人の説明が先）。
     photos=False は合言葉なしで開いた場。手帖の札は人ごとに分かれていないので、玩具の頁と同じく説明の文も次の版の欄も出さない（J-028、#336）。
-    can_tell は、この画面がこの記録を残した時に真。説明の欄はその画面にだけ出す（受け口も断る。records.mine）。"""
+    can_tell は、この画面がこの記録を残した時に真。説明の欄はその画面にだけ出す（受け口も断る。records.mine）。
+    filled は通らなかった欄の (名前, 書いた中身)（"explain" か "next"）。書いた字を欄に戻し、次の版の欄は開いた形にする（#121 と同じ線。つくるの頁から
+    記録の札を外した 11-08 から、説明と次の版の 422 はこの頁で返す）。note は次の版の欄の頭に出す理由の文（錨 next-記録の番号 のすぐ後）"""
+    from web.toy import refill
+
+    filled = filled or (None, {})
     from omochae import loop
 
     told = loop.explanation(r["id"])
@@ -259,14 +264,20 @@ def feedback(sid, r, photos=True, up_key=None, can_tell=False):
 
         # 取り下げた説明は字が空になるので、空の欄を並べない。
         said = (f'<p>{esc(told["text"])}</p>' if told.get("text") else "") + (f'<p class="meta">次の思いつき: {esc(told["next_idea"])}</p>' if told.get("next_idea") else "")
-        body = said + ai_part(r, up_key) + next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+        nxt = next_form(r).replace('</form>', '<input type="hidden" name="back" value="techo"></form>')
+        if filled[0] == "next" and nxt:
+            nxt = refill(nxt, filled[1]).replace("<details>", "<details open>", 1)
+        # 次の版の欄に錨（next-記録の番号）を付ける: 送り先の #next-… と、通らなかった時の理由の文の置き場（前の玩具の頁の記録の札と同じ形）
+        nxt = f'<div id="next-{esc(r["id"])}">{note}{nxt}</div>' if nxt else ""
+        body = said + ai_part(r, up_key) + nxt
     elif not can_tell:
         body = ""
     else:
-        body = (f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
-                '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" id="t-' + esc(r["id"]) + '" name="text" placeholder="何が起きたと思う（わからない、でも）" required>'
+        # 欄の name を type のすぐ後に置く: 通らなかった時に字を戻す toy.refill は <input type="text" name=… の形で欄を探すため（422 をこの頁で返す 11-08 から）
+        body = refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><input type="hidden" name="back" value="techo">'
+                '<label class="sr" for="t-' + esc(r["id"]) + '">何が起きたと思う</label><input type="text" name="text" id="t-' + esc(r["id"]) + '" placeholder="何が起きたと思う（わからない、でも）" required>'
                 '<input type="text" name="next_idea" placeholder="次に試したい事" required><input type="text" name="by" placeholder="書いた人" autocomplete="off">'
-                '<p><button class="go">残す</button></p></form>')
+                '<p><button class="go">残す</button></p></form>', filled[1] if filled[0] == "explain" else {})
     # 試した後の紙は刷らなくなった（本人の決まり 11-06・6 点の 1）ので、札に紙への道を出さない。紙の返事は、作った紙の玩具そのもの
     return body
 
@@ -591,7 +602,7 @@ def manabi_box():
             f'{loop_figure.svg()}</section>')
 
 
-def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None, errors=(), at="", filled=None):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
     public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受け、確かめた物はギャラリーにも出す形）。写真と動画は合言葉付きの場と
@@ -600,13 +611,18 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     paper は記入の節で記録を残す紙（techo_step.paper_of の (紙の印, 手順の数)）。None は刷った紙が無い時で、記入の節の代わりに紙を作る道を出す。
     並び（本人 11-08 400・402・405・設計 nokosu-flow 3 版）: 題 → 記入の節（その最後が「のこす」の釦）→ のこした記録から直った所（naoru.box）→
     学びの輪 → 手帖をひらく → 上げる の節（今までの記録）。前の道しるべの「のこす」（/gallery#ageta）は外した（記入の節の「のこす」と字が
-    同じで行き先が違う物が並ぶため・承認の後は自分でもちよるへ飛ぶので要らない。別の目の気づき 6）"""
+    同じで行き先が違う物が並ぶため・承認の後は自分でもちよるへ飛ぶので要らない。別の目の気づき 6）
+    errors・at・filled は、記録の札の説明と次の版が通らなかった時（422）: 理由の文を、その記録の札（錨 id=記録の番号）か次の版の欄（next-記録の番号）の頭に出し、
+    書いた字を欄に戻す。前は玩具の頁の記録の札で返していたが、つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）"""
     closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
 
-    # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。
-    note = f'<div role="status"><p id="msg">{esc(msg)}</p></div>' if msg else ""
+    # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。通らなかった時の理由は、その記録の札の頭に出す（返事の文は頁に 1 つ・id を重ねない）
+    from web.toy import reply_note
+
+    note = "" if errors else reply_note((), msg)
+    alert = reply_note(errors, "") if errors else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
@@ -619,10 +635,12 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 置き場ごと消え、ギャラリーからも消える。合言葉付きの場は、今までどおり進行者に記録の番号を伝える形（釦は出さない）
         drop = (f'<form method="post" action="/record/{esc(r["id"])}/media/withdraw"><button type="submit" class="btn quiet">取り下げる</button></form>'
                 if public and media_review.uploaded_here(r["id"], media_of(r["id"]), up_key) else "")
-        mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
+        rid = r["id"]
+        here = alert if at == rid else ""
+        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
-                 f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
+                 f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(rid, rec_key), filled=filled if at in (rid, "next-" + rid) else None, note=alert if at == "next-" + rid else "")}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     from . import naoru, nokosu  # 循環を避けて、ここで読む（hanasu と同じ）
     kinyu = nokosu.entry(sid, paper, records.results_for(sid)) if paper and uploads else nokosu.no_paper(sid)
