@@ -354,6 +354,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _say(self, text):
+        """台本へ JSON で返す字を、頁の言葉に合わせる。頁（HTML）は出口で表を引いて替わるが、JSON は出口の替えを通らない。
+        英語は訳の表の英語、やさしい日本語はルビの印を外した字（台本が字の箱に入れるので要素を入れない）。表に無い字は日本語のまま。
+        なぜ: 予算の止めの字（api.budget.BudgetStop.NOTES）が、英語の頁の聞く口でも日本語のまま出た（#692 の別の目の気づき・統括の割り振り 11-08）"""
+        lang = getattr(self, "_lang", "ja")
+        if lang not in ("en", "easy"):
+            return text
+        from . import i18n
+
+        got = i18n.lookup(text, lang)
+        if not got or got == i18n.KEEP:
+            return text
+        return i18n.ruby_plain(got) if lang == "easy" else got
+
     def _refuse(self, code, reason, title="開けません", **kw):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
         self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
@@ -1255,8 +1269,8 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
-            except BudgetStop as e:
-                text, how = f"今は AI に聞けません（{e.note}）", "stop"
+            except BudgetStop as e:  # 止めの字は頁の言葉に合わせて返す（_say）
+                text, how = self._say(f"今は AI に聞けません（{e.note}）"), "stop"
             except Exception:
                 text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
