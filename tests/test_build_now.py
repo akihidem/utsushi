@@ -36,6 +36,11 @@ from web import techo_site, toy  # noqa: E402
 from web import workshop as _workshop  # noqa: E402
 
 _workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
+# もちよるの頁のワークショップの様子と、できたおもちゃの節（本人の言葉 11-08）も、写真の分けの表と感想の札を外して、本物の無い形を作る
+# （2 つの節が出る形は tests/test_mochiyoru_workshop.py が見る）
+_workshop.KINDS = _workshop.KINDS.with_name("no-such-workshop-photo-kinds.json")
+from web import demo_samples as _samples  # noqa: E402
+_samples.workshop_for = lambda sid, toy: ""
 
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）

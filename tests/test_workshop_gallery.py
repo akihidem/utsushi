@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "src"))
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
 from web.play_server import serve, sources  # noqa: E402
+from web import workshop  # noqa: E402
 from web.toy import MINNA_EMPTY  # noqa: E402
 
 rows = json.loads((ROOT / "data/workshop_photos.json").read_text(encoding="utf-8"))["photos"]
@@ -52,11 +53,16 @@ for kw in ({}, {"public_open": True}):
             assert MINNA_EMPTY not in minna, (sid, kw)
         minna = part(get(base, f"/toy/{none}"), 'id="minna"', "</section>")
         assert not re.findall(IMG, minna), none
-        ageta = part(get(base, "/gallery"), 'id="ageta"', "</section>")
-        assert sorted(re.findall(IMG, ageta)) == sorted(r["file"] for r in rows), (kw, re.findall(IMG, ageta))
-        for sid in toys:
-            assert f'<a href="/toy/{sid}">' in ageta, (sid, kw)
+        # もちよるの頁では、ワークショップの写真は「ワークショップの様子」と「ワークショップでできたおもちゃ」の節に出る（本人の言葉 11-08）。
+        # 前は「他の人が作った物」（#ageta）の中の玩具ごとの札だったので、そこには出さない。表の写真は、2 つの節のどちらかに 1 回ずつ出る
+        g = get(base, "/gallery")
+        ageta = part(g, 'id="ageta"', "</section>")
+        both = part(g, 'id="narabe"', "</figure>") + part(g, 'id="dekita"', "</section>") + part(g, 'id="yousu"', "</section>")
+        assert not re.findall(IMG, ageta), (kw, re.findall(IMG, ageta))
+        assert all(re.findall(IMG, both).count(r["file"]) == 1 for r in rows), (kw, re.findall(IMG, both))
+        for sid in {r["toy"] for r in rows if workshop.kind_of(r["file"]) == "single"}:
+            assert f'<a href="/toy/{sid}">' in part(g, 'id="dekita"', "</section>"), (sid, kw)
     finally:
         srv.shutdown()
         srv.server_close()
-print(f"ok ワークショップの写真: これまでの復元（玩具 {len(toys)}）と他の人が作った物（{len(rows)} 枚）・公開の場も同じ")
+print(f"ok ワークショップの写真: これまでの復元（玩具 {len(toys)}）と、もちよるの様子とできたおもちゃ（表の {len(rows)} 枚）・公開の場も同じ")
