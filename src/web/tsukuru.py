@@ -142,7 +142,8 @@ const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg
 const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');const askNokosu=document.getElementById('ask-nokosu');
 let n=+stepIn.value;
 // 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
-const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
+// 最後の手順では、のこす の札の上の本人の字（#ask-nokosu）の高さも足す（足さないと、幅 390×844 の御来迎で のこす の札が 21px 画面の下へ出た）
+const fit=()=>{const li=items[n-1],ak=askNokosu&&!askNokosu.hidden?askNokosu.offsetHeight+8:0;if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight+ak}px`)};
 const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));const kp=window.kumitateParts;if(kp&&kp.show&&document.querySelector('.k3d'))kp.show(n-1);document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;if(askNokosu)askNokosu.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}
  // 次の手順の番号と字が画面の上の外にある時は、番号の行を画面の頭へ送る。低い画面で字の長い手順（虎 v7 の手順 10 は 62 字）では、
