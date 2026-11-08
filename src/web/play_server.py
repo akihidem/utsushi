@@ -628,7 +628,12 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+            # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
+            from . import nokosu, techo_step, think_sheet
+            sid = m.group(1)
+            sheet = hypotheses.sheet_of(sid)["id"]
+            paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(sid, msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper), look, "", path, techo_site.STYLE + nokosu.STYLE, "techo"))
         # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
         # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
@@ -1186,7 +1191,8 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
+        # 台本の無い画面の のこす（web.nokosu の素のフォーム）は back=techo を送り、記録の頁の #mine へ戻る（_done は techo の時だけ替え、ほかの値は無視する）
+        self._done(sid, msg, back=form.get("back", ""), see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
 
 
 _making = {}  # 作っている最中の紙。（玩具, 案）→ その結果
