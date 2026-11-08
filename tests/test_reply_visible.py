@@ -20,7 +20,7 @@ from web.play_server import serve  # noqa: E402
 from web.toy import reply_note  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
-from omochae import hypotheses  # noqa: E402
+from omochae import hypotheses, records  # noqa: E402
 # 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
 GS = hypotheses.sheet_of(G)["id"]
 server = serve(0)
@@ -83,9 +83,11 @@ assert "紙を作りました" in note_at(page, "win", "status")
 page = landed(call(f"/toy/{G}/tsukuru?h=H-B"), "kasetsu")
 assert "先に紙を作ると、作りながら見る頁が開きます" in note_at(page, "kasetsu", "status")
 
-# 聞く: 通らない時も、答えの時も、聞く欄に着く。
+# 聞く: つくるの頁の聞く欄は外した（設計の問い 4 の答え「推しのとおり。」・本人の言葉 11-08 477）。JS の無い聞く口は作りながら見る頁にあり、その答えと
+# 通らない時の文は、つくるの頁の型紙の窓の頭に出る（toy_page の answer）。紙を作る前は作りながら見る頁が開かないので、通らない時は直に送った時だけ。
+# 欄が無いので書いた字は戻さない
 code, _, page = call(f"/toy/{G}/ask", {"hypothesis": "H-B", "question": "谷折りって？"})
-assert code == 422 and note_at(page, "ask", "alert") and 'value="谷折りって？"' in page
+assert code == 422 and note_at(page, "win", "alert") and 'id="ask"' not in page
 
 # 記録: 受け口は残る（玩具の頁の記録の欄は、本人の答え 11-07 夕の Q3 で のこす へ寄せた）。通らないと #kiroku の節に理由が出る。
 # 欄が無いので書いた字は戻らない（字を書く所は手帖の のこす で、通らなかった時の扱いは tests/test_techo_step.py が見る）。通ると、今残した記録の札に着く。
@@ -143,16 +145,20 @@ page = call(f"/toy/{G}")[2]
 # #kasetsu）。作れなかった時の文を窓の錨で読む事は tests/test_sheet_window.py が見る
 assert f'action="/toy/{G}/print#kasetsu"' not in page
 # 記録の欄は のこす へ寄せた（本人の答え 11-07 夕の Q3）ので、玩具の頁に /record の送り先は無い（受け口は残り、返事は #kiroku に出る。上で見た）
-for want in (f"/toy/{G}/ask#ask", f"/record/{rid}/next#next-{rid}"):
-    assert f'action="{want}"' in page, want
+# 記録の札の欄（次の版・説明・AI）は手帖の記録の頁にある（つくるの頁から記録の札を外した・本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）
+kiroku = call(f"/toy/{G}/techo/kiroku")[2]
+assert f'action="/toy/{G}/ask#ask"' not in page and f'action="/record/{rid}/next#next-{rid}"' not in page, "つくるの頁に聞く欄か次の版の欄が残った"
+assert f'action="/record/{rid}/next#next-{rid}"' in kiroku, "手帖の記録の頁に次の版の欄が無い"
 assert f'action="/toy/{G}/record#kiroku"' not in page
 # AI の釦は鍵のある時だけ出る。呼ばずに釦の送り先だけを見る。
 ask._key_present = lambda: True
-page = call(f"/toy/{G}")[2]
+page = call(f"/toy/{G}/techo/kiroku")[2]
 ask._key_present = lambda: False
 assert f'action="/record/{rid}/ai-interpret#{rid}"' in page
-rid2 = re.search(r"R-\d{4}", call(f"/toy/{G}/record", good)[1]).group(0)
-assert f'action="/record/{rid2}/explain#{rid2}"' in call(f"/toy/{G}")[2]
+# 記録を残した後の戻り先は手帖の記録の頁（#mine）なので、記録の番号は戻り先でなく記録の置き場から読む
+call(f"/toy/{G}/record", good)
+rid2 = records.all_records(G)[-1]["id"]
+assert f'action="/record/{rid2}/explain#{rid2}"' in call(f"/toy/{G}/techo/kiroku")[2] and f'/record/{rid2}/explain' not in call(f"/toy/{G}")[2]
 
 # 外から渡した印は、字の位置にしか使わない。
 assert "<script>mark" not in call(f"/toy/{G}?msg=%3Cscript%3Emark&at=%22%3E%3Cscript%3Emark")[2]
