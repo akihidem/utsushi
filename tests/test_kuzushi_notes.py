@@ -23,7 +23,10 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from web import i18n, kuzushi  # noqa: E402
 
-G, T, PLAIN = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R", "NDL-1187053-R0000009-R"
+G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
+# 注の json の無い玩具（10 歌ずつ足していくので、名指しにせず、注の無い玩具の頭を選ぶ）
+PLAIN = next(p.stem for p in sorted((ROOT / "data/sources").glob("NDL-*.json"))
+             if (ROOT / "data/hypotheses" / p.name).exists() and not (ROOT / "data/kuzushi_notes" / p.name).exists())
 SOURCES = ("精選版 日本国語大辞典より", "デジタル大辞泉より", "字通より", "有坂与太郎『日本玩具史 後編』")
 # 辞書の「御来迎」の項の、玩具の仕組みの言い方（学ぶ人の頁に仕組みの答えを出さない決まり）と、張子の虎の動き方の言い方
 MECHANISM = ("竹筒", "糸の仕掛け", "仕掛け", "後光が開", "せり出", "下げると", "押し上げ", "押し出", "上下する", "おもり", "重り", "釣り合")
@@ -58,6 +61,8 @@ for sid in NOTED:
     assert "本人" not in every and "制作者" not in every, sid
     # 辞書の中身を手元で確かめられない言い切り（「辞書はこの歌を…例に挙げる」「…の呼び名にも使われた」）は書かない（別の目の確かめ 11-08・#661 の後）
     assert not [w for w in ("例として挙げて", "呼び名にも使われました") if w in every], (sid, "確かめられない辞書の中身の言い切り")
+    # ふりがなの字は一覧で確かでない所があるので、「ふりがなは「…」」と言い切らない（別の目の確かめ 11-08・#677 の後）
+    assert "ふりがなは「" not in every and "とふりがながあり" not in every, (sid, "ふりがなの言い切り")
     texts += [d["gendaigo"], *(x for w in d["words"] for x in (w["word"], w["meaning"]))]
 
 # 頁: 2 つの見出しが出て、json の無い玩具には出ない
@@ -91,12 +96,16 @@ for sid in NOTED:
     if checked:
         assert genga.READ_A not in html, sid
         continue
-    assert len(dec) == 1 and dec[0]["checked_by"] is None and dec[0]["set"] == "A" and "1997 年の翻刻" in dec[0]["source_note"], sid
-    assert genga.READ_A in html, ("読みの出所の 1 行", sid)
+    # A（1997 年の翻刻）か B（有坂の本の見出し。本人の答え 11-08「図 13 は B の読みでよい。」など）。出所の欄と頁の 1 行と並べる名を、読みにした本で言い分ける
+    assert len(dec) == 1 and dec[0]["checked_by"] is None and dec[0]["set"] in ("A", "B"), sid
+    book, line, name = (("1997 年の翻刻", genga.READ_A, "1997 年の翻刻の読み") if dec[0]["set"] == "A"
+                        else ("『日本玩具史 後編』", genga.READ_B, "『日本玩具史 後編』の見出しの読み"))
+    assert book in dec[0]["source_note"] and "1 字ずつの確かめはまだ" in dec[0]["source_note"], sid
+    assert line in html, ("読みの出所の 1 行", sid)
     after = kuzushi.page(sid, mine="□")
-    assert "確かめた人" not in after and genga.READ_A in after and "1997 年の翻刻の読み" in after, ("書いた後の頁に確かめた人を出さない", sid)
+    assert "確かめた人" not in after and line in after and name in after, ("書いた後の頁に確かめた人を出さない", sid)
     texts.append(reading(sid))
-texts.append(genga.READ_A)
+texts += [genga.READ_A, genga.READ_B]
 
 # 英語とやさしい日本語の表（鍵は頁の字の形）
 en, easy = i18n.table("en"), i18n.table("easy")

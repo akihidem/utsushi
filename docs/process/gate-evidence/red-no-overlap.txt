@@ -1,0 +1,40 @@
+# 命令: bash -c 'sed "/text.wa-now/d" tests/test_no_overlap.py > tests/_red_no_overlap.py; PYTHONPATH=src .venv/bin/python tests/_red_no_overlap.py; rc=$?; rm -f tests/_red_no_overlap.py; exit $rc'
+# commit: 14143118（回した時の HEAD）
+/tmp/tmpq7dtyk8k/play/NDL-1187053-R0000005-L/.tmp-8bc5hnfr/H-C_v1.pdf
+/tmp/tmpq7dtyk8k/play/NDL-1187053-R0000014-R/.tmp-6ciz3z1z/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/_red_no_overlap.py", line 257, in <module>
+    assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 重なり・横のはみ出し（KNOWN の外）:
+pic・tenji・en・玩具の頁 御来迎・iPad 横: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 御来迎・iPad 横 帯あり: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 御来迎・iPad 縦: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 御来迎・PC 1440: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 御来迎・iPhone SE: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 虎・iPad 横: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 虎・iPad 横 帯あり: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 虎・iPad 縦: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 虎・PC 1440: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・tenji・en・玩具の頁 虎・iPhone SE: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 御来迎・iPad 横: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 御来迎・iPad 横 帯あり: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 御来迎・iPad 縦: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 御来迎・PC 1440: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 御来迎・iPhone SE: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 虎・iPad 横: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 虎・iPad 横 帯あり: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 虎・iPad 縦: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 虎・PC 1440: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+pic・zine・en・玩具の頁 虎・iPhone SE: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 御来迎・iPad 横: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 御来迎・iPad 横 帯あり: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 御来迎・iPad 縦: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 御来迎・PC 1440: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 御来迎・iPhone SE: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 虎・iPad 横: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 虎・iPad 横 帯あり: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 虎・iPad 縦: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 虎・PC 1440: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+nopic・tenji・en・玩具の頁 虎・iPhone SE: 字×字 svg>a>text.wa-now「Current template」× figure#wa.wa>svg>text.wa-t「Make the next templa」
+rc=1

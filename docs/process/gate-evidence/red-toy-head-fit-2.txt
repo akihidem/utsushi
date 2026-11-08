@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python <tests/test_toy_head_fit.py から形の線（3）と台本の線（5）と 83 頁の束を外した写し・歌をずらした虎の頁の束（4）だけ>
+# commit: 4af9fe0d（直す前の main。写し out/sources 有り）
+# 見る事: 歌を右へずらして題にかかる形を作ると、直す前の頁は横書きに替える台本が無く、歌が題・つくる・作品の札・くずし字を読む に重なったまま
+Traceback (most recent call last):
+  File "tests/(写し)test_toy_head_fit_stress_only.py", line 157, in <module>
+    assert not bad, (len(bad), bad[:8])
+           ^^^^^^^
+AssertionError: (36, [('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero h1'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .road'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .label'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .links'), ('NDL-1187053-R0000014-R', 'ja', '1180x820', '.hero .genga-songs', '.hero h1'), ('NDL-1187053-R0000014-R', 'ja', '1180x820', '.hero .genga-songs', '.hero .road'), ('NDL-1187053-R0000014-R', 'ja', '1180x820', '.hero .genga-songs', '.hero .label'), ('NDL-1187053-R0000014-R', 'ja', '1180x820', '.hero .genga-songs', '.hero .links')])
+rc=1

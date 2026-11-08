@@ -37,7 +37,12 @@ STYLE = (".wa{margin:14px auto 6px;max-width:440px}.wa svg{display:block;width:1
          ".wa .wa-box{fill:var(--paper);stroke:var(--frame);stroke-width:1.2}.wa .wa-t{fill:var(--fg);font-size:14px;letter-spacing:.04em}"
          ".wa .wa-arc{fill:none;stroke:var(--accent);stroke-width:2}.wa .wa-head{fill:var(--accent)}"
          ".wa .wa-now{fill:var(--mute);font-size:12px;letter-spacing:.08em}.wa .wa-v{fill:var(--accent);font-size:26px}"
-         ".wa a:focus .wa-c{stroke:var(--accent);stroke-width:2}.wa .wa-c{fill:var(--soft);stroke:var(--frame)}")
+         ".wa a:focus .wa-c{stroke:var(--accent);stroke-width:2}.wa .wa-c{fill:var(--soft);stroke:var(--frame)}"
+         # 英語の頁だけ字を小さくする（統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 1）。英語は日本語より長く、札（幅 132）と
+         # 真ん中の丸（直径 88）に入らず、「Make the next template」が真ん中の「Current template」に、「Version N」が左右の札に重なった。
+         # 日本語の図（字の大きさと置き場）は替えない。英語の字の幅は tests/test_ring_en_fit.py が字の測り（omochae.textfit）で見る
+         "html[lang=en] .wa .wa-t{font-size:10.5px;letter-spacing:0}html[lang=en] .wa .wa-now{font-size:9.5px;letter-spacing:0}"
+         "html[lang=en] .wa .wa-v{font-size:15px}")
 
 
 def _arc(a, b):

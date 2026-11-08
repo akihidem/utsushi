@@ -1,0 +1,13 @@
+# 命令: bash -c 'git show 89ef85d8:tests/test_no_overlap.py > tests/_red_pin.py; PYTHONPATH=src .venv/bin/python tests/_red_pin.py; rc=$?; rm -f tests/_red_pin.py; exit $rc'
+# commit: f5f6547c（回した時の HEAD）
+/tmp/tmpfhc9xevr/play/NDL-1187053-R0000005-L/.tmp-15aun85g/H-C_v1.pdf
+/tmp/tmpfhc9xevr/play/NDL-1187053-R0000014-R/.tmp-7pgxxflk/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/_red_pin.py", line 256, in <module>
+    assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 重なり・横のはみ出し（KNOWN の外）:
+pic・tenji・en・よむ・iPhone SE: 字×絵 div.about>section#hokusai.sec>p.meta「Hokusai Manga, volum」× div.pin>div.stack>img.on「」
+pic・zine・en・よむ・iPhone SE: 字×絵 div>figure.frame>figcaption「National Diet Librar」× div.pin>div.stack>img.on「」
+nopic・tenji・en・よむ・iPhone SE: 字×絵 div.about>section#hokusai.sec>p.meta「Hokusai Manga, volum」× div.pin>div.stack>img.on「」
+rc=1

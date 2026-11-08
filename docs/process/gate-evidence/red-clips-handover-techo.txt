@@ -1,0 +1,11 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_techo_step.py
+# commit: 9cd182a3（回した時の HEAD）
+/tmp/tmpgs5xz653/play/NDL-1187053-R0000005-L/.tmp-4jlo8vjt/H-C_v1.pdf
+/tmp/tmpgs5xz653/play/NDL-1187053-R0000014-R/.tmp-ehuzskc3/H-A_v1.pdf
+/tmp/tmpgs5xz653/play/NDL-1187053-R0000004-L/.tmp-b0z4d3ny/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_techo_step.py", line 324, in <module>
+    aft = js[js.index("const after = "):js.index("const sendFiles")]
+             ~~~~~~~~^^^^^^^^^^^^^^^^^^
+ValueError: substring not found
+rc=1

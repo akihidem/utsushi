@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ukabu_no_overlap.py
+# commit: 9cd182a3（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ukabu_no_overlap.py", line 128, in <module>
+    assert not rec["early"], (where, "開いた直後に浮かぶ玩具の絵が字か押す所に重なる", rec["early"])
+           ^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'js-ja-390x844'), '開いた直後に浮かぶ玩具の絵が字か押す所に重なる', [{'fr': 1, 'ms': 4018, 'hit': ['uk uk4 × [tj-down on]']}, {'fr': 2, 'ms': 4114, 'hit': ['uk uk4 × [tj-down on]']}, {'fr': 3, 'ms': 4128, 'hit': ['uk uk4 × [tj-down on]']}])
+rc=1

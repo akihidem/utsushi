@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_toy_head_fit.py
+# commit: 9dad99fb（回した時の木。commit の前に回し、同じ木を commit した）
+測れない所あり: Chrome が答えなかった束 [('ja-820x1180', 81), ('en-1180x820', 82), ('en-1366x1024', 82)]（混んだ機械では起きる）
+ok 玩具の頁の頭の字の箱は重ならない: 83 頁 × 3 言葉 × 7 の大きさ（測れなかった束 4）
+rc=0

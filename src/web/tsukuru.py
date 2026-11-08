@@ -35,7 +35,7 @@ import json
 from omochae import hypotheses, instructions, loop, making_log, render
 from omochae.compose import TEMPLATES
 
-from . import genga, naoru, skin
+from . import clips, genga, naoru, skin
 from .voice_words import CLEAN, WORDS
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
@@ -351,4 +351,6 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
             '</section></main>')
     return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
             f'<title>{esc(data["toy"])} · 作りながら見る</title><style>:root{{{root}}}{STYLE}{skin.TAP_FLOOR}</style>'
-            f'<body class="tsukuru skin-{esc(look)}">{body}{SCRIPT}</body></html>')
+            # 開いた時に、声とカメラの区切りの回を引き継ぐか作り始めるかを見る（web.clips の小さな台本・録る code も外へ送る口も無い）。
+            # 直に開いた時は作り始め（前の人が録って去った区切りを、この頁の最後の「のこす」から のこすの頁へ渡さない・統括の決め 11-08）
+            f'<body class="tsukuru skin-{esc(look)}">{body}{SCRIPT}{clips.start_assets(sid)}</body></html>')

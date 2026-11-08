@@ -316,7 +316,7 @@ def build(origin=FROM):
                 g = _group(groups, sheet["template"], "", sheet["paper"])
             else:
                 g = _group(groups, template, _sheet_set_of(r), _paper(r))
-            if r.get("video_kind") != REVIEW:  # 作る前のレビューは作っていないので、報告の数と動きの札に入れない
+            if r.get("video_kind") != REVIEW:  # ワークショップの型紙レビューは作っていないので、報告の数と動きの札に入れない
                 g["reports"] += 1
                 _count_result(g, r, TEMPLATES.get(template))  # 上げた人が結果を選んだ記録だけ、札に数える。選んでいなければ「わからない」で、どちらにも数えない
             g["record_ids"].append(rid)
