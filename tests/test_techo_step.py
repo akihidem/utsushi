@@ -103,7 +103,8 @@ class Page(html.parser.HTMLParser):
         return self
 
     def shown_targets(self, scene):
-        # 字を持たない形だけの押す所（マイク・閉じる印・原画と歌の小さな原画・重ねる頁への印）は、押す所の名前に数えない。字を持たない事は下で見る
+        # 字を持たない形だけの押す所（マイク・閉じる印・原画と歌の小さな原画）は、押す所の名前に数えない。字を持たない事は下で見る。
+        # 重ねる頁への印（上の帯・字は口の名）も今は数えない: 数えると手順の画面が 4 つになる（統括へ問い中・本人の答え 11-08 の字を足す件）
         return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("mic", "close", "genga-thumb", "kasane-go")]
 
     def shown_blocks(self, scene):
@@ -149,8 +150,9 @@ assert page.count(naoru.ROUTE_MAKING) == 1 and page.index('id="start"') < page.i
 if hmd.available(G):
     assert 'id="kasane-go"' in page, "重ねる頁への印が手帖に無い（手帖から辿れない）"
     kg = page.split('id="kasane-go"', 1)[1].split("</a>", 1)[0]
-    assert f'aria-label="{hmd.CAM_LINK}" data-on="step">' in kg and not re.sub(r"<[^>]+>", "", kg.split(">", 1)[1]).strip(), "印に見える字は無い"
-    assert page.count(hmd.CAM_LINK) == 1, "口の名は印の読み上げの 1 回だけ"
+    # 本人の答え 11-08「印に「カメラに重ねる」の字を足す。」: 見える字は口の名だけ（前からの字）・title も同じ字
+    assert f'title="{hmd.CAM_LINK}" data-on="step">' in kg and re.sub(r"<[^>]+>", "", kg.split(">", 1)[1]).strip() == hmd.CAM_LINK, "印の見える字は口の名"
+    assert page.count(hmd.CAM_LINK) == 2, "口の名は印の title と見える字の 2 回だけ（新しい字なし）"
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌

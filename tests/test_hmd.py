@@ -110,7 +110,7 @@ for sid in (G, T):  # 手帖は刷った紙がある時に手順の画面を出�
 for sid in (G, T):
     techo = get(f"/toy/{sid}/techo")[1]
     assert f'<p class="meta nokosu-route" data-on="start">{naoru.ROUTE_MAKING}</p>' in techo, sid
-    assert techo.count('href="/toy/' + sid + '/kasane"') == 1 and f'<a class="kasane-go" id="kasane-go" href="/toy/{sid}/kasane" aria-label="カメラに重ねる" data-on="step">' in techo, sid
+    assert techo.count('href="/toy/' + sid + '/kasane"') == 1 and f'<a class="kasane-go" id="kasane-go" href="/toy/{sid}/kasane" title="カメラに重ねる" data-on="step">' in techo and '<span>カメラに重ねる</span></a>' in techo, sid
 assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "組み立ての書き方が無い玩具の手帖には道を出さない"
 for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", "/gallery"):
     assert "/kasane" not in get(path)[1], ("道は手帖の手順の画面からの 1 つだけ", path)
@@ -290,9 +290,9 @@ const st=d.getElementById('start'),go=d.querySelector('.nokosu-route');const r=s
 out.push({sid:f.dataset.sid,w:w.innerWidth,h:w.innerHeight,start:Math.round(r.bottom),go:g?[Math.round(g.top),Math.round(g.bottom)]:null,sx:d.documentElement.scrollWidth});st.click()}
 setTimeout(()=>{let i=0;for(const f of document.querySelectorAll('iframe')){const d=f.contentDocument,w=f.contentWindow,o=out[i++];
 const seen=(e)=>e&&!e.hidden&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0,box=(e)=>{const b=e.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.right),Math.round(b.bottom)]};
-const kg=d.getElementById('kasane-go'),li=d.querySelector('#steps li.on'),keys=[...d.querySelectorAll('.keys a,.keys button')].filter(seen);
+const kg=d.getElementById('kasane-go'),kl=kg&&kg.querySelector('span'),li=d.querySelector('#steps li.on'),keys=[...d.querySelectorAll('.keys a,.keys button')].filter(seen);
 const others=['mic','close','genga-thumb'].map(id=>d.getElementById(id)).filter(seen);
-o.step={kasane:seen(kg)?box(kg):null,text:li?box(li):null,others:others.map(box),keysBottom:Math.max(0,...keys.map(k=>Math.round(k.getBoundingClientRect().bottom)))}}
+o.step={kasane:seen(kg)?box(kg):null,label:kl&&seen(kl)?{box:box(kl),px:parseFloat(getComputedStyle(kl).fontSize),lines:Math.round(kl.getBoundingClientRect().height/parseFloat(getComputedStyle(kl).lineHeight)),cut:kl.scrollWidth>kl.clientWidth+1||kl.getBoundingClientRect().right>kg.getBoundingClientRect().right+1||kl.getBoundingClientRect().left<kg.getBoundingClientRect().left-1||kl.getBoundingClientRect().bottom>kg.getBoundingClientRect().bottom+1}:null,bar:['mic','close','genga-thumb','kasane-go'].map(id=>d.getElementById(id)).filter(seen).map(e=>[Math.round(e.getBoundingClientRect().top),Math.round(e.getBoundingClientRect().bottom)]),text:li?box(li):null,others:others.map(box),keysBottom:Math.max(0,...keys.map(k=>Math.round(k.getBoundingClientRect().bottom)))}}
 document.getElementById('measured').textContent=JSON.stringify(out)},700)},800))</script>"""
 
 
@@ -341,6 +341,10 @@ else:
             k = st["kasane"]
             assert k and k[0] >= 0 and k[2] <= f["w"] and k[3] <= f["h"], ("印が画面の中", f)
             assert not (st["text"] and over(k, st["text"])) and not any(over(k, o) for o in st["others"]), ("印が字や上の帯の印と重ならない", f)
+            # 印に添えた字「カメラに重ねる」（本人の答え 11-08）は 12px 以上で、切れずに印の中に収まる（統括の決め 11-08）
+            assert st["label"] and not st["label"]["cut"] and st["label"]["px"] >= 12, ("印の字が読める大きさで切れない", f)
+            # 帯は 1 行のまま: 上の帯の印（マイク・閉じる・原画の小さな絵・この印）の上の端がそろい、この印は帯の一番高い印（マイク 72px）より下へ出ない
+            assert len({t for t, _ in st["bar"]}) == 1 and k[3] <= max(b for _, b in st["bar"]), ("帯が 2 行にならない", f)
         assert st["keysBottom"] <= f["h"], ("手順の画面の押す所が最初の画面に入る", f)
 
 runs = {}
