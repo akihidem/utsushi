@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_ux_keep_gallery.py > /tmp/sv-g-ukg.txt 2>&1; rc=$?; tail -1 /tmp/sv-g-ukg.txt; echo "試験 rc=$rc"'
+# commit: a61f755f（回した時の HEAD）
+ok のこした後は持ち寄る駅に着き、今残した 1 つが頭に出て、その札から記録の頁へ行ける（地図の 4・5）
+試験 rc=0
+rc=0
