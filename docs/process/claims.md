@@ -31,12 +31,12 @@
 | C-11 | 11-02 の 393 分（14:00〜20:33）のうち、作る側の最後の出力から次の文が届くまでの間隔は最長 124 分で、10 分以上の間隔は計 223 分（判断待ちの目安。間隔は本人が考えていた時間とは限らず、待ちの全部が本人の側の原因ではない） | 測定 | [how-it-was-built.md](how-it-was-built.md)、[how-it-was-built.md](how-it-was-built.md)、[how-it-was-built.md](how-it-was-built.md)、[how-it-was-built.md](how-it-was-built.md) |
 | C-12 | AI の版の調整が学習を上げた直接の証拠は見つかっていない（検索は少ない） | 文献 | [13-critical-review.md](research/13-critical-review.md) |
 | C-13 | 素の GPT で練習は 48% 上がり、試験は 17% 下がった例がある（Bastani ら。トルコの高校 1 校の数学。作業論文の数値で、PNAS の版は未読） | 文献 | [13-critical-review.md](research/13-critical-review.md)、[13-critical-review.md](research/13-critical-review.md) |
-| C-14 | 紙の型紙が実物で開くか。11-04 に前の組の御来迎が筒から扇を開いて動いた動画があるが、どの案の紙かは分からない。今の組（goraigo-v14・tora-v7）のたたき台（御来迎は H-C、虎は H-A）は、実物で動いた記録が無い | 測定 | [README.md](trials/README.md)、[README.md](trials/README.md)、[README.md](trials/README.md)、[README.md](trials/sheets/README.md) |
+| C-14 | 紙の型紙が実物で開くか。11-04 に前の組の御来迎が筒から扇を開いて動いた動画があるが、どの案の紙かは分からない。今の組（goraigo-v14・tora-v7）も、ワークショップで実物を試した（制作者の答え 11-08）。今の組が実物で動いたかの記録は repo に無い | 測定 | [README.md](trials/README.md)、[README.md](trials/README.md)、[README.md](trials/README.md)、[README.md](trials/sheets/README.md)、[claude-usage.md](../../docs/claude-usage.md) |
 | C-15 | 本物の Claude API で輪が回るか | 未確認 | [J010-loop-back-half.md](decisions/J010-loop-back-half.md) |
 | C-16 | 作っているうちに新しい考えが湧く | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-17 | 最初に返事をするのは素材と工作（紙）。仕組みについて AI が返すのは人の説明の後で、作っている途中の手順の質問には答える形まで作った（本物の API では未実行。J-013。本人の決定 11-04 で、子どもも AI から直接返事をもらってよい） | 立場 | [J013-core-words.md](decisions/J013-core-words.md)、[test_ai_feedback.py](../../tests/test_ai_feedback.py)、[ask.py](../../src/api/ask.py)、[workshop-design.md](workshop-design.md) |
 | C-18 | 学習の効果より学習の再定義を物差しにする | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |
-| C-19 | 出発は本人の教育現場（学校の理科の授業や探究の授業）で、本人も使い続ける。その現場の今の生徒では試していない（試行は卒業生の成人 5 人）。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない | 未確認 | [17-field-and-continuers.md](research/17-field-and-continuers.md)、[decided-and-open.md](decided-and-open.md)、[17-field-and-continuers.md](research/17-field-and-continuers.md)、[README.md](trials/README.md) |
+| C-19 | 出発は本人の教育現場（学校の理科の授業や探究の授業）で、本人も使い続ける。その現場の今の生徒では試していない（試行は卒業生の成人のべ 30 人で、全員が実物の型紙を試した。11-04 の 5 人を含む）。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない | 未確認 | [17-field-and-continuers.md](research/17-field-and-continuers.md)、[decided-and-open.md](decided-and-open.md)、[17-field-and-continuers.md](research/17-field-and-continuers.md)、[README.md](trials/README.md) |
 | C-20 | 言葉の口は人の文を書き換えず、隠れた寸法の補いを通さない | 偽の応答の試験 | [test_words.py](../../tests/test_words.py) |
 | C-21 | 試した後の紙は対比を先に出し、説明は折って閉じた札に置く | 自動試験 | [test_words.py](../../tests/test_words.py) |
 | C-22 | 閉じた札が考える邪魔をしないか | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
