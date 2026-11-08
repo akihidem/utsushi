@@ -1,0 +1,8 @@
+# 命令: bash -c 'git show b6895de0:tests/test_ring_en_fit.py > tests/_red_ring.py; PYTHONPATH=src .venv/bin/python tests/_red_ring.py; rc=$?; rm -f tests/_red_ring.py; exit $rc'
+# commit: 4774fe8f（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/_red_ring.py", line 88, in <module>
+    assert not small, ("英語の図の字が幅 390 で下限より小さい", small)
+           ^^^^^^^^^
+AssertionError: ('英語の図の字が幅 390 で下限より小さい', [('型紙の窓', 'wa-te', 'Guess', 8.54, 10), ('型紙の窓', 'wa-te', 'Cut, fold,', 8.54, 10), ('型紙の窓', 'wa-te', 'put together', 8.54, 10), ('型紙の窓', 'wa-te', 'What you changed:', 8.54, 10), ('型紙の窓', 'wa-te', 'write it down', 8.54, 10), ('型紙の窓', 'wa-te', 'Make the next template', 8.54, 10), ('型紙の窓', 'wa-te', 'better', 8.54, 10), ('型紙の窓', 'wa-nowe', 'Current template', 7.73, 9), ('学びの輪', 'lf-w', 'Claude', 5.46, 9), ('学びの輪', 'lf-s', 'Guess', 7.47, 10), ('学びの輪', 'lf-w', 'Person', 5.46, 9), ('学びの輪', 'lf-s', 'Cut, fold,', 7.47, 10), ('学びの輪', 'lf-s', 'put together', 7.47, 10), ('学びの輪', 'lf-w', 'Person', 5.46, 9), ('学びの輪', 'lf-s', 'What you changed:', 7.47, 10), ('学びの輪', 'lf-s', 'write it down', 7.47, 10), ('学びの輪', 'lf-w', 'Claude', 5.46, 9), ('学びの輪', 'lf-w', 'Person', 5.46, 9), ('学びの輪', 'lf-s', 'Make the next template', 7.47, 10), ('学びの輪', 'lf-s', 'better', 7.47, 10), ('学びの輪', 'lf-n', 'Current template', 8.62, 10), ('学びの輪', 'lf-c', 'Once around, the version goes up by 1', 6.32, 9)])
+rc=1
