@@ -233,6 +233,22 @@ R.net=net;
 }catch(e){R.error=String(e&&e.stack||e)}
 const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
 })();</script>"""
+# 字の一番長い手順で測る（重ねる頁・カメラを付けて重ねた後）。別の目の測り 11-08: 375×667 の虎の字の一番長い手順（84 字）で、釦が画面の下へ出た。
+# 測るのは、押す所が頁を動かさずに全部見える事・手順の字と押す所が重ならない事・横にはみ出さない事
+FITLONG = r"""<script>(async()=>{
+const wait=(ms=60)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body;
+try{const cam=$('#hmd-camera');if(cam){cam.click();await wait(300)}
+const FF=window.kumitateParts.F,PL=(b.dataset.plan||'').split(',').map(Number);let LG=0;for(let i=0;i<FF.length-1;i++)if((FF[i].t||'').length>(FF[LG].t||'').length)LG=i;
+for(let i=0,n=PL.indexOf(LG)+1;i<n;i++){$('#hmd-next').click();await wait(30)}
+dispatchEvent(new Event('resize'));await wait(250);
+const bs=[...document.querySelectorAll('.hmd-acts button')].filter(e=>!e.hidden&&getComputedStyle(e).display!=='none');
+R.btn=bs.map(e=>{const r=e.getBoundingClientRect();return[e.id,Math.round(r.top),Math.round(r.bottom),Math.round(r.left),Math.round(r.height),e.scrollWidth>e.clientWidth+1]});
+const tr=$('#rt-text').getBoundingClientRect();R.text=[Math.round(tr.bottom),Math.round(tr.right)];R.len=($('#rt-text').textContent||'').length;R.vh=innerHeight;R.vw=innerWidth;
+R.sx=document.documentElement.scrollWidth;R.fit=b.classList.contains('fit-on');
+// 測った後にカメラを止める（映像の流れが付いたままだと、headless の Chrome の時間が進まず、頁を書き出さなかった）
+if(cam){cam.click();await wait()}}catch(e){R.error=String(e&&e.stack||e)}
+const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+})();</script>"""
 NOCAMWALK = r"""<script>(async()=>{
 const wait=(ms=200)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),stage=document.getElementById('rt-stage');
 try{await wait();const r=stage.getBoundingClientRect();R.stage=[Math.round(r.width),Math.round(r.height),getComputedStyle(stage).visibility,Number(getComputedStyle(stage).opacity)];
@@ -260,19 +276,19 @@ send, getter = play_server.Handler._send, play_server.Handler.do_GET
 
 
 def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-    m = re.search(r"[?&]walk=(voice|plain|cam|fit|hfit|nocam|split|nosplit)", self.path)
+    m = re.search(r"[?&]walk=(voice|plain|cam|fitlong|fit|hfit|nocam|split|nosplit)", self.path)
     if m and isinstance(body, str) and "/kasane" in self.path:
         kind = m.group(1)
         voice = "true" if kind == "voice" else "false"
-        walk_js = (SPLITWALK if kind in ("split", "nosplit") else FITWALK if kind in ("fit", "hfit") else NOCAMWALK if kind == "nocam" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
+        walk_js = (SPLITWALK if kind in ("split", "nosplit") else FITLONG if kind == "fitlong" else FITWALK if kind in ("fit", "hfit") else NOCAMWALK if kind == "nocam" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
                    else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice))
-        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "fit" else "") + (NOCAMSTUB if kind == "nocam" else "") + (SPLITSTUB if kind == "split" else "") + (NOSPLITSTUB if kind == "nosplit" else "")
+        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind in ("fit", "fitlong") else "") + (NOCAMSTUB if kind == "nocam" else "") + (SPLITSTUB if kind == "split" else "") + (NOSPLITSTUB if kind == "nosplit" else "")
         body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
     return send(self, code, body, ctype, headers)
 
 
-def walk(width, height, kind):
-    """Chrome で 1 回歩く。返すのは、頁が書いた結果（歩き終われば dict、何も答えなければ None）。"""
+def walk(width, height, kind, sid=None):
+    """Chrome で 1 回歩く。返すのは、頁が書いた結果（歩き終われば dict、何も答えなければ None）。sid は歩く玩具（既定は御来迎）。"""
     hold = {}
 
     def tagged(self, code, body, ctype="text/html; charset=utf-8", headers=()):
@@ -285,7 +301,7 @@ def walk(width, height, kind):
 
     play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
     flags = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] if kind == "cam" else []
-    path = f"/toy/{G}/kasane" if kind in ("cam", "fit", "nocam") else f"/toy/{G}/kasane/hmd"
+    path = f"/toy/{sid or G}/kasane" if kind in ("cam", "fit", "fitlong", "nocam") else f"/toy/{sid or G}/kasane/hmd"
     try:
         with tempfile.TemporaryDirectory() as profile:
             out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", f"--window-size={width},{height}", *flags,
@@ -320,6 +336,44 @@ const kg=d.getElementById('kasane-go'),kl=kg&&kg.querySelector('span'),li=d.quer
 const others=['mic','close','genga-thumb'].map(id=>d.getElementById(id)).filter(seen);
 o.step={kasane:seen(kg)?box(kg):null,label:kl&&seen(kl)?{box:box(kl),px:parseFloat(getComputedStyle(kl).fontSize),lines:Math.round(kl.getBoundingClientRect().height/parseFloat(getComputedStyle(kl).lineHeight)),cut:kl.scrollWidth>kl.clientWidth+1||kl.getBoundingClientRect().right>kg.getBoundingClientRect().right+1||kl.getBoundingClientRect().left<kg.getBoundingClientRect().left-1||kl.getBoundingClientRect().bottom>kg.getBoundingClientRect().bottom+1||kl.getBoundingClientRect().top<kg.getBoundingClientRect().top-1,iconOut:(()=>{const sv=kg.querySelector('svg');if(!sv)return true;const a=sv.getBoundingClientRect(),b=kg.getBoundingClientRect();return a.top<b.top-1||a.bottom>b.bottom+1})()}:null,bar:['mic','close','genga-thumb','kasane-go'].map(id=>d.getElementById(id)).filter(seen).map(e=>[Math.round(e.getBoundingClientRect().top),Math.round(e.getBoundingClientRect().bottom)]),text:li?box(li):null,others:others.map(box),keysBottom:Math.max(0,...keys.map(k=>Math.round(k.getBoundingClientRect().bottom)))}}
 document.getElementById('measured').textContent=JSON.stringify(out)},700)},800))</script>"""
+
+
+LONG_SIZES = ((375, 667), (390, 664), (320, 568))
+LONG_WRAP = """<!doctype html><meta charset="utf-8"><body>__FRAMES__<pre id="measured"></pre><script>
+addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const m=f.contentDocument.getElementById('measured');
+out.push({sid:f.dataset.sid,w:Number(f.width),h:Number(f.height),got:m?JSON.parse(m.textContent):null})}
+document.getElementById('measured').textContent=JSON.stringify(out)},9000))</script>"""
+
+
+def long_fit():
+    """狭い縦の画面（iframe）で、字の一番長い手順まで送って、重ねた後の押す所と字を測る。返すのは iframe ごとの結果の並び。"""
+    hold = {}
+
+    def tagged(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+        self.path = hold.get(self.path, self.path)
+        return wrapped(self, code, body, ctype, headers)
+
+    def tagging_get(self):
+        if self.path == "/__longfit":
+            frames = "".join(f'<iframe data-sid="{sid}" src="/toy/{sid}/kasane?walk=fitlong" width="{w}" height="{h}" style="border:0;display:block"></iframe>'
+                             for w, h in LONG_SIZES for sid in (G, T))
+            return send(self, 200, LONG_WRAP.replace("__FRAMES__", frames))
+        bare = re.sub(r"[?&]walk=\w+", "", self.path)
+        hold[bare] = self.path
+        self.path = bare
+        return getter(self)
+
+    play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
+    try:
+        with tempfile.TemporaryDirectory() as profile:
+            out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=1600,2400",
+                                  "--virtual-time-budget=60000", "--dump-dom", f"{base}/__longfit"], capture_output=True, text=True, timeout=170).stdout
+    except subprocess.TimeoutExpired:
+        return None
+    finally:
+        play_server.Handler._send, play_server.Handler.do_GET = send, getter
+    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
+    return json.loads(found.group(1).replace("&quot;", '"').replace("&amp;", "&")) if found and found.group(1).strip() else None
 
 
 def techo_fit(lang=""):
@@ -401,6 +455,11 @@ for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声�
     if not isinstance(got, dict):
         got = walk(w, h, kind)  # 混んだ機械では答えない事があるので、1 度だけ回し直す
     runs[name] = got
+# 字の一番長い手順で測る: 横の低い画面は窓で、狭い縦の画面は iframe で（御来迎と虎の両方）
+for sid, toy in ((G, "御来迎"), (T, "虎")):
+    got = walk(1024, 600, "fitlong", sid)
+    runs[f"長い手順・横 1024×600・{toy}"] = got if isinstance(got, dict) else walk(1024, 600, "fitlong", sid)
+longs = long_fit() or long_fit()
 server.shutdown()
 if all(v is None for v in runs.values()):
     print("ok 作業しながら見る試作の字と道。測れない: Chrome が答えなかった（混んだ機械では起きる）")
@@ -434,6 +493,17 @@ def fold_groups(sid):
     return out
 
 
+def check_long(name, got):
+    """字の一番長い手順まで送った後: 押す所は頁を動かさずに全部見えて 64px 以上・字が釦からはみ出さない・手順の字と押す所が重ならない・横にはみ出さない"""
+    assert "error" not in got and got["fit"], (name, "カメラを付けて重ねた後に測る", got)
+    assert all(b[2] <= got["vh"] for b in got["btn"]), (name, "押す所が頁を動かさずに全部見える", got)
+    assert all(b[4] >= 64 and not b[5] for b in got["btn"]), (name, "押す所は 64px 以上で、字が釦からはみ出さない", got)
+    # 横の画面は押す所の列が字の横に、縦の画面は字の下に来る。どちらでも重ならない
+    wide = got["vw"] > got["vh"]
+    assert (got["text"][1] <= min(b[3] for b in got["btn"])) if wide else (got["text"][0] <= min(b[1] for b in got["btn"])), (name, "手順の字と押す所が重ならない", got)
+    assert got["sx"] <= got["vw"], (name, "横にはみ出さない", got)
+
+
 FOLD_GROUPS = fold_groups(G)
 assert max(FOLD_GROUPS) >= 2, ("折り目の組が 2 つ以上ある手順が無く、手の数の照らしが何も見ない", FOLD_GROUPS)
 for name, got in runs.items():
@@ -448,6 +518,9 @@ for name, got in runs.items():
         continue
     if "分解の形が無い" in name:
         assert got["shown"][0] is False, (name, "分解した形の無い組では釦を出さない", got)
+        continue
+    if name.startswith("長い手順"):
+        check_long(name, got)
         continue
     if "重ねる" in name:
         hmd_path = "HMD" in name
@@ -529,6 +602,22 @@ for name, got in runs.items():
     assert min(size["chips"]) >= 64 and size["chips"][2] >= 96, (name, "釦は 64px 以上、「つぎ」は 96px 以上", size)
     assert size["font"] == 0, (name, "釦がブラウザの既定の字のまま", size)
     assert size["reach"] and size["stageBottom"] <= size["vh"], (name, "押す所と 3D は、頁を動かさずに全部見える", size)
+# 狭い縦の画面（iframe）で、字の一番長い手順まで送った後（御来迎と虎）。320×568 は、押す所が全部は入らない（前から・判定は「前から」として出す）
+if longs is None:
+    unmeasured.append("狭い縦の画面の字の長い手順（Chrome が答えなかった）")
+else:
+    narrow = []
+    for f in longs:
+        name = f"長い手順・縦 {f['w']}×{f['h']}・{'御来迎' if f['sid'] == G else '虎'}"
+        assert isinstance(f["got"], dict), ("歩き始めたのに終わらなかった", name, f)
+        if (f["w"], f["h"]) == (320, 568):
+            out = [b[0] for b in f["got"]["btn"] if b[2] > f["got"]["vh"]]
+            if out:
+                narrow.append(f"{name} で画面の下: {len(out)} つ")
+            continue
+        check_long(name, f["got"])
+    if narrow:
+        unmeasured.append("前から（320×568 は押す所が全部は入らない）: " + "・".join(narrow))
 if unmeasured_fit:
     unmeasured.append(unmeasured_fit)
 note = f"。測れない: {'・'.join(unmeasured)}" if unmeasured else ""
