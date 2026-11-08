@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python /tmp/ukabu-nojs-red/t.py
+# commit: 4ba66d26（回した時の HEAD）
+Traceback (most recent call last):
+  File "/tmp/ukabu-nojs-red/t.py", line 133, in <module>
+    assert rec["shown"] == 0, (where, "台本が動かない画面で浮かぶ玩具が出る（CSS の置き場は英語の頁で字に重なる）", rec["shown"])
+           ^^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'nojs-ja-320x568'), '台本が動かない画面で浮かぶ玩具が出る（CSS の置き場は英語の頁で字に重なる）', 4)
+rc=1

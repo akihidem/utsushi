@@ -4,6 +4,10 @@
 - iPad の横（1024×768・1180×820・1366×1024）と縦（768×1024・820×1180）、PC（1280×800・1440×900・1920×1080）、iPhone（375×667・390×844・430×932）で、
   出ている浮かぶ玩具の絵の箱が、題の間の字の行の箱（英字・題・読み・副題・このサイトについて）と押す所の箱（下へ送る印など）に重ならない
 - 絵が画面の幅の外に出ない。4 つのうち 3 つ以上が出ている（置き直しで全部を消して重なりを無くす形を落とす）
+- 読み込みの直後も重ならない: 頁を開いてから読み込みの 1.5 秒後まで、描くたびに（requestAnimationFrame の後）見る
+  （別の目の測り 11-08: 2 回目に開いた時、絵が先に来て、置き直す前の 30〜60ms は CSS の置き場のまま重なった）
+- 台本が動かない画面（JS を切った）でも重ならない: 浮かぶ玩具は出さない（置き直しの台本 ukabu.PLACE_JS を頁から外して開く。
+  Chrome の JS を切ると測る台本も動かないので、置き直しの台本だけを外して同じ形にする）
 直す前は、英語の頁の幅 1024〜1440 で左上の絵が英字に、右上の絵が副題に重なり、幅 375・390 で右下の絵が下へ送る印に重なった。
 輪郭の絵は生成物（out/ukabu）で、まっさらな clone には無いので、本物の 4 つと同じ縦と横の比の絵を試験の中で作り、試験のサーバから出す。
 ./run.sh はブラウザなしで動く決まりなので、入っている Chrome で頁をその大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ）。
@@ -28,7 +32,7 @@ from PIL import Image  # noqa: E402
 from measure_tap import chrome  # noqa: E402
 from web import play_server, ukabu  # noqa: E402
 
-SIZES = [(1024, 768), (1180, 820), (1366, 1024), (768, 1024), (820, 1180), (1280, 800), (1440, 900), (1920, 1080), (375, 667), (390, 844), (430, 932)]
+SIZES = [(320, 568), (1024, 768), (1180, 820), (1366, 1024), (768, 1024), (820, 1180), (1280, 800), (1440, 900), (1920, 1080), (375, 667), (390, 844), (430, 932)]
 LANGS = ("ja", "easy", "en")
 # 本物の輪郭の絵（out/ukabu・PICKS の順）の大きさ。縦と横の比が置き場に効くので、同じ比の絵で測る
 REAL = [(208, 324), (208, 289), (208, 184), (208, 323)]
@@ -41,25 +45,33 @@ for sid, size in zip(ukabu.PICKS, REAL):
     pics[sid] = buf.getvalue()
     (tmp / f"{sid}.webp").write_bytes(pics[sid])
 
-MEASURE = """<script>addEventListener('load',()=>{setTimeout(()=>{
+MEASURE = """<script>(()=>{const snap=()=>{
 const hall=document.getElementById('hall'),boxes=[],tw=document.createTreeWalker(hall,NodeFilter.SHOW_TEXT);let n;
 while(n=tw.nextNode()){if(!n.textContent.trim()||n.parentElement.closest('.ukabu'))continue;const st=getComputedStyle(n.parentElement);if(st.display==='none'||st.visibility==='hidden')continue;
  const r=document.createRange();r.selectNodeContents(n);for(const b of r.getClientRects())if(b.width>0)boxes.push({t:n.textContent.trim().slice(0,20),l:b.left,tp:b.top,r:b.right,b:b.bottom})}
 for(const e of hall.querySelectorAll('a,button')){if(e.closest('.ukabu'))continue;const b=e.getBoundingClientRect();if(b.width>0)boxes.push({t:'['+(e.className||e.tagName)+']',l:b.left,tp:b.top,r:b.right,b:b.bottom})}
 const cw=document.documentElement.clientWidth,toys=[...hall.querySelectorAll('.ukabu .uk')].map(e=>{const im=e.querySelector('img'),b=im.getBoundingClientRect(),st=getComputedStyle(e);
  return {c:e.className,l:b.left,tp:b.top,r:b.right,b:b.bottom,h:b.height,shown:st.visibility!=='hidden'&&st.display!=='none'}});
-const hit=[];for(const y of toys){if(!y.shown)continue;for(const x of boxes)if(Math.min(y.r,x.r)-Math.max(y.l,x.l)>0&&Math.min(y.b,x.b)-Math.max(y.tp,x.tp)>0)hit.push(y.c+' × '+x.t);
+const hit=[];for(const y of toys){if(!y.shown||!(y.h>0))continue;for(const x of boxes)if(Math.min(y.r,x.r)-Math.max(y.l,x.l)>0&&Math.min(y.b,x.b)-Math.max(y.tp,x.tp)>0)hit.push(y.c+' × '+x.t);
  if(y.l<0||y.r>cw)hit.push(y.c+' が画面の幅の外')}
-parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,n:toys.length,shown:toys.filter(t=>t.shown).length,loaded:toys.every(t=>t.h>0),hit}),'*')},1500)})</script>"""
+return {n:toys.length,shown:toys.filter(t=>t.shown).length,loaded:toys.every(t=>t.h>0),hit}};
+// 描くたびに見る（requestAnimationFrame の後の setTimeout は、その回に描いた後の形）。重なった最初の数回を控える
+let fr=0,done=false;const early=[];const tick=()=>{if(done)return;fr++;const s=snap();if(s.hit.length&&early.length<3)early.push({fr,ms:Math.round(performance.now()),hit:s.hit.slice(0,3)});
+ requestAnimationFrame(()=>setTimeout(tick,0))};tick();
+addEventListener('load',()=>{setTimeout(()=>{done=true;const s=snap();
+parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,fr,early,...s}),'*')},1500)})})()</script>"""
 WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
 addEventListener('message',e=>{document.getElementById('measured').textContent+=e.data+'\\n'})</script>"""
-pages = {f"{lang}-{w}x{h}": (f"/?lang={lang}&walk={lang}-{w}x{h}", w, h) for lang in LANGS for w, h in SIZES}
+pages = {f"{js}-{lang}-{w}x{h}": (f"/?lang={lang}&walk={js}-{lang}-{w}x{h}", w, h) for js in ("js", "nojs") for lang in LANGS for w, h in SIZES}
 send, get = play_server.Handler._send, play_server.Handler.do_GET
 
 
 def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
     m = re.search(r"[?&]walk=([\w-]+)", self.path)
     if m and m.group(1) in pages and isinstance(body, str) and ctype.startswith("text/html"):
+        if m.group(1).startswith("nojs-"):
+            assert ukabu.PLACE_JS in body, "置き直しの台本が入口に無い（外す形が測れない）"
+            body = body.replace(ukabu.PLACE_JS, "")
         body += MEASURE.replace("__PAGE__", m.group(1))
     return send(self, code, body, ctype, headers)
 
@@ -105,11 +117,18 @@ for look in ("tenji", "zine"):
         print(f"測れない: Chrome が {look} の頁に答えきらなかった（混んだ機械では起きる）")
         raise SystemExit(0)
     for name, rec in got.items():
-        _, size = name.split("-")
+        js, _, size = name.split("-")
         w, h = (int(x) for x in size.split("x"))
         where = (look, name)
         assert (rec["w"], rec["h"]) == (w, h), where
         assert rec["n"] == 4 and rec["loaded"], (where, "浮かぶ玩具の絵が 4 つ読めていない", rec)
-        assert rec["shown"] >= 3, (where, "浮かぶ玩具が 3 つより少ない（消して重なりを無くしていないか）", rec["shown"])
         assert not rec["hit"], (where, "浮かぶ玩具の絵が字か押す所に重なる", rec["hit"][:6])
-print(f"ok 入口の浮かぶ玩具: 白と暗い版・3 つの言葉・{len(SIZES)} の大きさで、字と押す所に重ならない（3 つ以上が出ている）")
+        # 読み込みの直後: 描くたびに見た回が 3 回より少ないと、直後を見た事にならない
+        assert rec["fr"] >= 3, (where, "描く回を見られていない", rec["fr"])
+        assert not rec["early"], (where, "開いた直後に浮かぶ玩具の絵が字か押す所に重なる", rec["early"])
+        if js == "js":
+            assert rec["shown"] >= 3, (where, "浮かぶ玩具が 3 つより少ない（消して重なりを無くしていないか）", rec["shown"])
+        else:
+            assert rec["shown"] == 0, (where, "台本が動かない画面で浮かぶ玩具が出る（CSS の置き場は英語の頁で字に重なる）", rec["shown"])
+print(f"ok 入口の浮かぶ玩具: 白と暗い版・3 つの言葉・{len(SIZES)} の大きさで、字と押す所に重ならない（3 つ以上が出ている・開いた直後も・"
+      "台本が動かない画面では出さない）")
