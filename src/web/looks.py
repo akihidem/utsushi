@@ -366,7 +366,13 @@ def _mazu(ts, photos=True):
     head = f"<h2>{esc(MAZU)}</h2>" if MAZU else ""
     # 黒の表紙にだけあった 1 行（額の絵の下の「江都二色　安永二年　うしなわれた玩具」。本人の決定 11-06「黒案にだけある要素は白案に入れて」）は、
     # 前は白の扉の額の下に出していた。扉は外したので、同じ額の敷き方の 2 枚の下に置く（『江都二色』の話の 1 行でもある）
-    return f'<section class="tj-mazu" id="mazu" tabindex="-1">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
+    # 原図の周りに浮かぶ実物のおもちゃ（本人の言葉 11-08「スクロールして、まずはここからの原図の周囲に、実際のおもちゃを抜き出して浮かべる。」。web.jitsubutsu）。
+    # 絵が無い場では何も置かない。置き直しの台本は節の終わり（字と札が全部そろった後）に置く
+    from . import jitsubutsu, ukabu
+
+    real = jitsubutsu.block()
+    return (f'<section class="tj-mazu" id="mazu" tabindex="-1">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p>'
+            + real + (ukabu.place_js("mazu", wide=True) if real else "") + '</section>')
 
 
 # 選ぶのは 2 回目から（本人の言葉 11-08「83 のおもちゃから、1 つ選ぶ、で実際に選ぶのは 2 回目以降にしたい」・本人の決め「A＋Cでよい」）。
@@ -467,7 +473,9 @@ def tenji(photos=True, dark=False):
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
     # 「新しい絵は作っていない。」は外した（本人の言葉 11-08「サイト、。新しい絵は作っていない。はトル。」）
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。</p>'
-    css = TENJI + ERABU + ukabu.UKABU + DOWN_CSS
+    from . import jitsubutsu
+
+    css = TENJI + ERABU + ukabu.UKABU + jitsubutsu.MAZU + DOWN_CSS
     # 暗い版も body の印は tenji を持つ（白の入口の CSS の選び body.tenji をそのまま効かせる）。暗い版の印 yoru を足して見分ける
     # description は S1（序の頁の頭にもう出ている字）。入口の見える所には足さない（本人の決めで、入口の題の間は題・副題・道だけ）。
     # 副題（SUB の 3 行。今は「江都二色より／うしなわれた玩具の動きを／紙でよみがえらせる」）は 3 つの字に分かれていて、つなぐと訳の表に無い字になるので使わない

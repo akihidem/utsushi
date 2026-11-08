@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_kasane_ask.py
+# commit: 63502330（回した時の HEAD）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+Traceback (most recent call last):
+  File "tests/test_kasane_ask.py", line 239, in <module>
+    assert hmd.ASK_PUBLIC in page and 'id="hmd-ask"' not in page and 'id="hmd-camera"' not in page and "<video" not in page, ("公開の場は聞けない頁", path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('公開の場は聞けない頁', '/toy/NDL-1187053-R0000005-L/kasane')
+rc=1

@@ -9,7 +9,7 @@
   - 作りながら見る頁（web.tsukuru）: 「声で聞く」の釦・音声認識・操作の言葉を外した。答えの読み上げは残した。次へ・戻るの札で録りを止め、のこす の札は録っている時だけ止めて置き終えてから送る
   - のこすの頁（web.nokosu）: 工夫の欄の「話す」を「声を録る」と欄の下の 1 行に替えた。「のこす」と「承認」は録りを止めて置き終えてから並べる・送る
   - 替えた字（本人の確かめ待ち）: hanasu.NOTICE の 2 文目（「押して話した間の声を録り」→「「声を録る」を押した間の声を録り」）・保護者の方への頁（web.otona）の 2 の 1〜3 行目（設計の 4 節の字・research/36 の節の末に記録）・SECURITY.md の声を字にする口の行。「押した間」は、押してから、もう一度押すまでの意味
-  - docs: spec.md の G5・features.json の f42・f48・f36・f83 と新しい f85・architecture.md の hanasu・voice_words（行を外した）・clips・techo_step・nokosu の行・run.md の話す口・claude-usage.md の凍結の変更の記録。訳の表（en.json・yasashii.d/no-sr.json）に新しい字と替えた字を足し、外した字だけが使っていた鍵を消した（作業の頁の字の鍵は残した）
+  - docs: spec.md の G5・features.json の f42・f48・f36・f83 と新しい f87（main の取り込みで f85 が先に使われたので付け替えた）・architecture.md の hanasu・voice_words（行を外した）・clips・techo_step・nokosu の行・run.md の話す口・claude-usage.md の凍結の変更の記録。訳の表（en.json・yasashii.d/no-sr.json）に新しい字と替えた字を足し、外した字だけが使っていた鍵を消した（作業の頁の字の鍵は残した）
 - この PR の外（統括の決め 11-08）: 作業の頁（web.hmd・/toy/<玩具>/kasane）の「はじめる」の声の操作は替えていない（別の担当の「聞くだけ」の作り直しで外す）。全部の頁を回す試験（tests/test_no_speech_recognition.py）は、作業の頁の 2 つの道だけを除いて見る。作り直しが入ったら除くのをやめる
 - 検証ゲート: Red: main 9cd182a3 に新しい試験 tests/test_no_speech_recognition.py だけを置くと rc 1（gate-evidence/red-no-speech-recognition.txt・玩具の頁などに SpeechRecognition・webkitSpeechRecognition・processLocally がある）。Green: gate-evidence/green-no-speech-recognition.txt
 - 歩いて確かめた事（頭なしの Chromium・IndexedDB とマイクと録りは見本・tests/voice_stub.py）: 止まる所の全部と、5 ついっぱいの時は録らずに前からの字（clips.FULL）で知らせる事と、足す口では録らない事（tests/test_voice_pause.py）。手帖の作る頁を押す所だけで最後まで通る事と、作りながら見る頁で録った声は手帖の「のこす」では送られず、のこすの頁の「承認」の時だけ、確かめの画面に並んだ数だけ送られる事（tests/test_voice_walk.py）。録る釦が幅 390・820 の 2 つの置き所で見えて 44px 以上・欄の下の 1 行が見える事（tests/test_mic_seen.py）

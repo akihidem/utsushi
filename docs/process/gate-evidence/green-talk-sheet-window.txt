@@ -1,0 +1,24 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/<名>.py を 1 本ずつ（4 本ずつ同時）
+# commit: 71c6965c（回した時の木を、この commit にした）
+test_talk_sheet_window rc=0
+test_loop1_think rc=0（口の形に替えた後に回し直した）
+test_loop1_own_private rc=0
+test_press_stops rc=0（口の形に替えた後に回し直した）
+test_toy_page_order rc=0
+test_tsukuru_rebuild rc=0
+test_sheet_window rc=0
+test_en_all rc=0
+test_easy_ruby rc=0
+test_talk_sheet_guards rc=0
+test_write_limit rc=0
+test_ux_stage0 rc=0
+test_no_overlap rc=0
+test_tap_size rc=0
+test_one_sheet_page rc=0
+test_nokosu_route_b rc=0
+test_page_order rc=0
+test_frozen_manifest rc=0
+test_hanasu rc=0
+test_mic_seen rc=0
+test_landscape_fit rc=0
+test_tsukuru_last_fit rc=0

@@ -73,6 +73,18 @@ for sid in (G, T):
         # 回の判定（#655 の守り）: 作業の頁は録らないが、開いた時と戻る釦で読み直さずに戻った時の判定は置く（web.clips の start_assets）
         assert page.count(clips.start_assets(sid)) == 1 and clips.assets() not in page, "回の判定だけを置き、録る台本は置かない"
         assert f'<a href="/otona">{hmd.OTONA_LINK}</a>' in page and f'href="/toy/{sid}/techo/kiroku"' in page
+# 公開の場（本人 11-08「4 つとも推しのとおり。」の ①・別の目の止め 11-08）: 開いた時から「この場では聞けません」。「聞く」・カメラの釦・映像を置かず、
+# 送る物の断りも置かない（何も送らない）。手順の字と ← → は見られる。台本は「聞く」が無い時、マイクとカメラの所まで進まない
+for sid in (G, T):
+    for cam in (True, False):
+        pub = hmd.page(sid, cam=cam, public=True)
+        assert f'<p class="hmd-public" id="hmd-public">{hmd.ASK_PUBLIC}</p>' in pub, (sid, cam, "公開の場は開いた時から断りの字")
+        for gone in ('id="hmd-ask"', 'id="hmd-camera"', "<video", hmd.CAM_NOTE, hmd.HMD_NOTE):
+            assert gone not in pub, (sid, cam, "公開の場に聞く口とカメラを置かない", gone)
+        assert f'<p id="hmd-text" aria-live="polite">{html.escape(hmd.steps(sid)[0])}</p>' in pub and 'id="hmd-next"' in pub, "手順は見られる"
+script = hmd.SCRIPT
+assert script.index("if(!askBtn)return;") < script.index("getUserMedia({audio:true") and script.index("if(!askBtn)return;") > script.index("const cam=$('hmd-cam')"), \
+    "「聞く」が無い頁では、マイクの所まで台本が進まない（カメラの所は釦が無いので動かない）"
 for word in ("XMLHttpRequest", "sendBeacon", "WebSocket", "<form", "localStorage", "sessionStorage", "indexedDB", "document.cookie", "camClip", "utsushiClips.", "SpeechRecognition"):
     assert word not in hmd.SCRIPT, ("この頁の台本は端末に置かず、声の操作をしない", word)
 assert hmd.SCRIPT.count("fetch(") == 1 and "fetch(`/toy/${T.sid}/kasane/ask`" in hmd.SCRIPT, "網に送るのは聞く口の 1 か所だけ"
@@ -124,6 +136,16 @@ for sid in (G, T):
 assert "/kasane" not in get("/toy/NDL-1187053-R0000004-L/techo")[1], "2 つのほかの玩具の手帖には道を出さない"
 for path in ("/", "/toys", f"/toy/{G}", f"/toy/{G}/kumitate", "/gallery"):
     assert "/kasane" not in get(path)[1], ("道は手帖の手順の画面からの 1 つだけ", path)
+
+pub_server = play_server.serve(0, public_open=True)
+threading.Thread(target=pub_server.serve_forever, daemon=True).start()
+try:
+    for path in (f"/toy/{G}/kasane", f"/toy/{G}/kasane/hmd"):
+        got = urllib.request.urlopen(f"http://127.0.0.1:{pub_server.server_address[1]}{path}", timeout=120).read().decode()
+        assert hmd.ASK_PUBLIC in got and 'id="hmd-ask"' not in got and "<video" not in got, ("公開の場の作業の頁は聞けない頁", path)
+finally:
+    pub_server.shutdown()
+    pub_server.server_close()
 
 exe = chrome()
 if not exe:

@@ -29,7 +29,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.store import SID
 
-from . import failure_log
+from . import failure_log, jitsubutsu
 from . import skin as skinmod
 from . import wording
 from .contrib_server import STYLE
@@ -231,7 +231,7 @@ MEDIA_LIMIT = 60
 CLIP_TYPES = {("t", "audio/webm"): "webm", ("t", "audio/mp4"): "mp4", ("k", "video/webm"): "webm", ("k", "video/mp4"): "mp4"}
 # しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
 # 話した考えから紙を作る口（think-sheet・think-ok）も入れる。Claude を呼ぶ口と、紙を刷る口なのに、前は数の上限が無かった（設計 2 版の 4 節・別の目の止め 2）
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok|think-talk)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
@@ -684,7 +684,7 @@ class Handler(BaseHTTPRequestHandler):
             listener = getattr(self.server, "listener", None)
             if listener is not None and not getattr(self.server, "public_open", False):
                 listener.warm()
-            return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2)))
+            return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2), public=getattr(self.server, "public_open", False)))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
@@ -803,6 +803,10 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/ukabu/({SID})\.webp", path)
         if m and (ROOT / "out/ukabu" / f"{m.group(1)}.webp").exists():
             return self._send(200, (ROOT / "out/ukabu" / f"{m.group(1)}.webp").read_bytes(), "image/webp")
+        # まずはここから の周りに浮かぶ実物のおもちゃの絵（web.jitsubutsu・data/jitsubutsu）。名は PICKS の物だけ（道から外の絵を読ませない）
+        m = re.fullmatch(r"/jitsubutsu/([a-z]+)\.webp", path)
+        if m and m.group(1) in jitsubutsu.PICKS and (jitsubutsu.OUT / f"{m.group(1)}.webp").exists():
+            return self._send(200, (jitsubutsu.OUT / f"{m.group(1)}.webp").read_bytes(), "image/webp")
         m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
         if m:
             from . import toys
@@ -1100,7 +1104,8 @@ class Handler(BaseHTTPRequestHandler):
             # 話す口（一周の声の部分、Issue #279）。ここに届くのは字のフォームだけ（上の _form が、音のファイルなど、ほかの形の本体を断る）。
             from . import hanasu
             return hanasu.post(self, m.group(1), form)
-        m = re.fullmatch(rf"/toy/({SID})/(think-sheet|think-ok)", self.path)
+        # think-talk は型紙を印刷する の中の 1 つの釦（字を残して続けて頼む・think_sheet.window_box）。止めは think-sheet と同じ（公開の場は 403・呼び名のそろわない玩具は 404）
+        m = re.fullmatch(rf"/toy/({SID})/(think-sheet|think-ok|think-talk)", self.path)
         if m and m.group(1) in sources():  # 話した考えから紙を作り直す（ループ1、Issue #335。中身は think_sheet.py）
             if getattr(self.server, "public_open", False):  # 合言葉なしの場では開かない（J-028）
                 return self._send(403, "公開のデモでは使えません")
@@ -1352,8 +1357,6 @@ class Handler(BaseHTTPRequestHandler):
             return reply(411, BUSY, "size")
         if not 0 < length <= ASK_BODY:
             return reply(413, BUSY, "size")
-        if not self.server.ask_day.take():
-            return reply(429, BUSY, "busy")
         # 鍵が無い場では、声を字にする前に断る（字にしても答えられないので、声を扱わない）
         if not ask._key_present() and not getattr(self.server, "ask_client", None):
             return reply(200, ask.NO_KEY, "no_key")
@@ -1368,6 +1371,9 @@ class Handler(BaseHTTPRequestHandler):
         if not 0 < len(voice) <= ASK_VOICE_BYTES or len(frames) > kasane.MAX_FRAMES or any(not f.startswith(b"\xff\xd8\xff") or len(f) > ASK_FRAME_BYTES for f in frames):
             return reply(422, BUSY, "form")
         del got
+        # 場の全体の 1 日の数は、形を確かめた後に数える（形の悪い送り物や鍵の無い場の断りで、場の数を使い切らせない・別の目の気づき 11-08）
+        if not self.server.ask_day.take():
+            return reply(429, BUSY, "busy")
         from omochae import asr_serve
 
         try:

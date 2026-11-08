@@ -211,7 +211,9 @@ assert code == 422 and think_sheet.NONE in body
 code, _, h = send(f"/toy/{G}/think-sheet", {"who": "pagewho123"})
 assert code == 303 and "at=think-" in h["Location"], code  # 試験の置き場には鍵が無いので、作る側の待ちに置かれる
 code, body, _ = send(h["Location"].split("#")[0])
-assert code == 200 and think_sheet.WAITING in body and think_sheet.ASKED in body
+# 待ちの字は、型紙を印刷する の中の口では、釦を押させない字（TALK_WAITING・別の目の検品 11-08 #714 の 2）。部品の節（section）は前の字のまま
+assert code == 200 and think_sheet.TALK_WAITING in body and think_sheet.ASKED in body
+assert think_sheet.WAITING in think_sheet.section(G, h["Location"].split("at=", 1)[1].split("#")[0])
 code, body, _ = send(f"/toy/{G}/think-ok", {"t": "nothing"})
 assert code == 422 and think_sheet.FAILED in body
 # 押した後に着く頁に絵が出て、その絵が本当に開く（#145）。どの状態の節にも順位・点・推しの言葉が無い。
@@ -224,7 +226,8 @@ sections.append(think_sheet.section(G, f"think-{tok}"))
 code, _, h = send(f"/toy/{G}/think-ok", {"t": tok})
 assert code == 303, code
 code, body, _ = send(h["Location"].split("#")[0])
-src = re.search(r'<section class="sec" id="think">.*?<img src="([^"]+\.png)"', body, re.S)
+# 口は 11-08 から 型紙を印刷する の中の箱（think_sheet.window_box・<div id="think">）。前は仮説の段の後の節（<section id="think">）
+src = re.search(r'id="think">.*?<img src="([^"]+\.png)"', body, re.S)
 assert code == 200 and src, "押した後に着く頁の節に、紙の絵"
 r = opener.open(urllib.request.Request(base + src.group(1), headers={"Cookie": "; ".join(f"{k}={v}" for k, v in jar.items())}))
 assert r.status == 200 and r.headers["Content-Type"] == "image/png" and r.read()[:8] == b"\x89PNG\r\n\x1a\n", "絵が開く"

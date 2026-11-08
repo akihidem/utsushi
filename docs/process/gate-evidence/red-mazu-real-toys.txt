@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mazu_real_toys.py
+# commit: 095fb28b（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mazu_real_toys.py", line 33, in <module>
+    from web import jitsubutsu, looks, play_server, ukabu  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'jitsubutsu' from 'web' (src/web/__init__.py)
+rc=1

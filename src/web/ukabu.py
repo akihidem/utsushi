@@ -215,7 +215,13 @@ UKABU = """
 #     入り力を控えて見た）。向きや窓の幅を替えた時は玩具が動いてよい所なので、ここは直していない
 #   - 画面に留めた物（position:fixed）は、送る前（scrollY=0）の位置で測る。玩具は揺れる前の箱（offsetLeft・offsetTop・offsetWidth・offsetHeight）で測る。
 #     送り始めた後に絵が届いて置き直しが走っても（遅い回線の iPhone）、出ている玩具を送った量と揺れの途中の分だけ跳ばさないため
-PLACE_JS = """<script>(()=>{const hall=document.getElementById('hall'),layer=hall&&hall.querySelector('.ukabu');if(!layer)return;
+def place_js(sec="hall", wide=False):
+    """置き直しの台本。sec は節の id（題の間 hall・まずはここから mazu）。wide=True は、層を節の外の左右の余白まで（画面の幅いっぱいに）広げて置く
+    （まずはここから の節は幅 980px までで、左右の余白は節の外にあるため）。その時の幅の見張りは文書の幅（節の幅は替わらないので）。"""
+    return _PLACE.replace("__SEC__", sec).replace("__WIDE__", "true" if wide else "false")
+
+
+_PLACE = """<script>(()=>{const hall=document.getElementById('__SEC__'),layer=hall&&hall.querySelector('.ukabu');if(!layer)return;const WIDE=__WIDE__;
 const toys=[...layer.querySelectorAll('.uk')],GAP=12,SWAY=14,STEP=16;
 const boxes=(H)=>{const out=[],tw=document.createTreeWalker(hall,NodeFilter.SHOW_TEXT);let n;
  while(n=tw.nextNode()){if(!n.textContent.trim()||n.parentElement.closest('.ukabu'))continue;const st=getComputedStyle(n.parentElement);if(st.display==='none'||st.visibility==='hidden')continue;
@@ -226,8 +232,9 @@ const boxes=(H)=>{const out=[],tw=document.createTreeWalker(hall,NodeFilter.SHOW
  return out.map(b=>({l:b.left-H.left-GAP,t:b.top-H.top-GAP,r:b.right-H.left+GAP,b:b.bottom-H.top+GAP}))};
 const hit=(a,list)=>list.some(b=>Math.min(a.r,b.r)>Math.max(a.l,b.l)&&Math.min(a.b,b.b)>Math.max(a.t,b.t));
 const ready=(e)=>{const im=e.querySelector('img');return !!im&&im.complete&&im.naturalWidth>0};
-let wide=-1;
-const place=()=>{const H=layer.getBoundingClientRect(),W=layer.clientWidth,Ht=layer.clientHeight,busy=boxes(H);wide=W;
+const width=()=>WIDE?document.documentElement.clientWidth:layer.clientWidth;let wide=-1;
+const place=()=>{if(WIDE){const r=hall.getBoundingClientRect();layer.style.left=(-r.left)+'px';layer.style.right='auto';layer.style.width=document.documentElement.clientWidth+'px'}
+ const H=layer.getBoundingClientRect(),W=layer.clientWidth,Ht=layer.clientHeight,busy=boxes(H);wide=width();
  for(const e of toys){e.style.left=e.style.top=e.style.right=e.style.bottom='';e.style.visibility=''}
  for(const e of toys){if(!ready(e)){e.style.visibility='hidden';continue}
   const w=e.offsetWidth,h=e.offsetHeight,x0=e.offsetLeft,y0=e.offsetTop;
@@ -237,12 +244,13 @@ const place=()=>{const H=layer.getBoundingClientRect(),W=layer.clientWidth,Ht=la
   for(let y=SWAY;y+h+SWAY<=Ht;y+=STEP)for(let x=4;x+w+4<=W;x+=STEP){if(hit(box(x,y),busy))continue;const d=(x-x0)**2+(y-y0)**2;if(d<bd){bd=d;best=[x,y]}}
   if(!best){e.style.visibility='hidden';continue}
   e.style.left=best[0]+'px';e.style.top=best[1]+'px';e.style.right=e.style.bottom='auto';busy.push(box(best[0],best[1]))}};
-let rq=0;const soon=()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(layer.clientWidth!==wide)place()})};
+let rq=0;const soon=()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(width()!==wide)place()})};
 for(const im of layer.querySelectorAll('img'))if(!im.complete)im.addEventListener('load',place);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(place);
 const start=()=>{place();layer.classList.add('placed');
- if(window.ResizeObserver)new ResizeObserver(()=>{if(layer.clientWidth!==wide)place()}).observe(layer);else{addEventListener('resize',soon);addEventListener('orientationchange',soon)}};
+ if(window.ResizeObserver)new ResizeObserver(()=>{if(width()!==wide)place()}).observe(WIDE?document.documentElement:layer);else{addEventListener('resize',soon);addEventListener('orientationchange',soon)}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start()})()</script>"""
+PLACE_JS = place_js()
 
 
 def block(sids):

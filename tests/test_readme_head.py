@@ -62,7 +62,10 @@ head = [ln for ln in lines[1:at("## 名前に込めた思い")] if ln.strip()]
 # ループの中の人（本人の言葉 11-08「そしてちゃんとグラウンディングで人間が入ってる。ループの中に人間が入っている事も売りに書いてください。」
 # 「型紙をためしてもらうグラウンディングと、全体の改善案をみる管理人のグラウンディング。この 2 つを書いてください。」）
 GROUND = "- **ループの中に人がいる（2 つのグラウンディング）**: ① 型紙を試す作り手が、紙で作って現実の世界で確かめます。② 全体の改善案を見る管理人が、どの案を採るかと、エンジンをどう直すかを決めます。"
-assert head == [ONE_LINE, *SUMMARY, URI, GROUND, CORE], head
+# デモ動画のリンクの 1 行（統括の決め 11-08: 窓口が公開で上げた完成版・提出の床が頭の 30 行を見る・新しい言い回しを足さない）。3 行の要約の直後
+VIDEO = "- デモ動画（2 分 56 秒）: https://www.youtube.com/watch?v=YmPd2FHN8Nw"
+assert head == [ONE_LINE, *SUMMARY, VIDEO, URI, GROUND, CORE], head
+assert at(VIDEO) < 30, "デモ動画のリンクは頭の 30 行の内"
 assert lines.count(CORE) == 1, "核の言葉は頭の 1 行（畳みの 30 秒の要約の核の項目は CLAUDE.md と同じ字なので、同じ引用がもう 1 か所ある）"
 assert at(SITE) < 30, "決まった番地は頭の 30 行の内"
 
@@ -71,10 +74,17 @@ heads = [ln for ln in lines if ln.startswith("## ")]
 assert [h for h in heads if h != "## 30 秒の要約"] == list(ORDER), heads
 
 # 3. 投稿ビデオの項と見えない印
-for w in ("デモ動画", "YouTube", "合成の声", "投稿ビデオ", "動画のリンク"):
+# 投稿ビデオの項（動画の作りや合成の声の節）は残さない。デモ動画の字は、頭のリンクの 1 行だけ
+for w in ("YouTube", "合成の声", "投稿ビデオ", "動画のリンク"):
     assert w not in text, ("投稿ビデオの項が残っている", w)
+assert text.count("デモ動画") == 1, ("デモ動画の字は頭のリンクの 1 行だけ", text.count("デモ動画"))
 notes = re.findall(r"<!--(.*?)-->", text, re.S)
 assert sorted(n.strip() for n in notes) == ["counts:end", "counts:start", "summary:end", "summary:start"], notes
+
+# 課題の節の末尾に、本人が決めた課題の字（本人がそのまま返して決まった字・11-08）を一字も替えずに置く。数の出所は research/18 の追記
+KADAI = '課題として考えている事。学校や博物館などの現場では、安全や予算の都合で、本物の道具や特別な材料を使えない事が多いです。伝えたい事があっても、相手の年齢も、場所も、用意できる物もさまざまで、開く人はそのたびに教材を用意し直します。用意した型紙は、一度作るとそのままで、開いた後の気づきが次の回に生かされません。理科の実験が週に1回以上ある小学4年生は、日本は59.6%で国際平均の31.5%より多いのに、理科を使う職業につきたい中学2年生は27%で、国際平均の58%を大きく下回ります（TIMSS 2023）。学校の外で工作や模型作りをした高校生も13.5%で、アメリカや中国と20ポイント以上の差があります（国立青少年教育振興機構 2026）。体験が、ひらめきや将来につながっていないのです。絵と歌だけが残って、動きの分からなくなった昔のおもちゃのように、作り方や工夫のしかたも、伝えられなければ失われていきます。'
+kadai_sec = text[text.index("## 何の課題か・誰のためか\n"):text.index("\n## 仕組み")]
+assert text.count(KADAI) == 1 and kadai_sec.rstrip().endswith(KADAI), "課題の節の末尾に本人の字"
 
 # 4. 仕組みの図と 5 行の字
 how = text[text.index("## 仕組み: 型紙とエンジンが直る 2 つのフィードバックループ\n"):text.index("## Claude の使い方\n")]
@@ -117,6 +127,9 @@ rows = [ln for ln in use.splitlines() if ln.startswith("| ") and not ln.startswi
 assert {r.rsplit("|", 2)[1].strip() for r in rows} <= {"動いた（11-07）", "まだ"} and sum(r.endswith("| まだ |") for r in rows) == 2, rows
 assert any("observe.py" in r and r.endswith("| まだ |") for r in rows), "記録の動画の 3 コマはまだ"
 assert "記録の読み（字と、動画の 3 コマ）" in use
+# 担当・worktree・PR の数は、提出の前に数えた時刻を付けて書く（統括の決め 11-08: 16:40 に数え、担当は統括と窓口を除く数・worktree はこの機械に今残る
+# git worktree list の数（古い物を含む）・呼び名とほかの AI の名とアカウントは書かない）。前の「提出の日に数え直して書きます」を残さない
+assert "提出の日に数え直して書きます" not in text and "（11-08 16:40 に数えた）" in use and "統括と窓口を除く担当のセッションは" in use, "数の行"
 # 表の「まだ」はサイトの中の口の事で、同じ事は作る側の Claude Code で行った（本人の言葉 11-08「GitHub の記録の読み、動画の 3 コマは 10 本と 2 本の動画でやった
 # ことなので実施済みなのではないか」「次の手の案も、型紙が版を重ねているので実施済みです」）。誰がどこでやったかを分けて書く
 assert "同じ事は、作る側の Claude Code で行いました" in use and "計 36 コマ" in use and "EP-0011〜EP-0049" in use, "作る側で行った事"

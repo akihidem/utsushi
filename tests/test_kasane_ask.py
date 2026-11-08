@@ -14,6 +14,7 @@
 """
 import base64
 import contextlib
+import html
 import io
 import json
 import os
@@ -232,8 +233,12 @@ pub, pbase = start(public_open=True)
 try:
     assert post(pbase, body()) == (403, {"text": hmd.ASK_PUBLIC, "from": "public"}), "公開の場は「この場では聞けません」"
     assert pub.listener.calls == [], "公開の場では声を字にしない"
-    page = urllib.request.urlopen(f"{pbase}/toy/{G}/kasane", timeout=60).read().decode()
-    assert pub.listener.warmed == 0 and hmd.ASK in page, "公開の場では作り手を立てない（頁は開く）"
+    # 公開の場の頁は開いた時から「この場では聞けません」を出し、「聞く」もカメラも映像も置かない（押して送ってから断られる形にしない・別の目の止め 11-08）
+    for path in (f"/toy/{G}/kasane", f"/toy/{G}/kasane/hmd"):
+        page = urllib.request.urlopen(f"{pbase}{path}", timeout=60).read().decode()
+        assert hmd.ASK_PUBLIC in page and 'id="hmd-ask"' not in page and 'id="hmd-camera"' not in page and "<video" not in page, ("公開の場は聞けない頁", path)
+        assert hmd.CAM_NOTE not in page and hmd.HMD_NOTE not in page and html.escape(hmd.steps(G)[0]) in page, ("送る物の断りは置かず、手順は見られる", path)
+    assert pub.listener.warmed == 0, "公開の場では作り手を立てない"
 finally:
     pub.shutdown()
     pub.server_close()
@@ -334,9 +339,11 @@ try:
     codes = [post(base, body(), who="203.0.113.7")[0] for _ in range(play_server.ASK_LIMIT + 1)]
     assert codes[:play_server.ASK_LIMIT] == [200] * play_server.ASK_LIMIT and codes[-1] == 429, codes
     assert post(base, body(), who="203.0.113.8")[0] == 200, "ほかの相手は数えが別"
-    # 場の全体の 1 日の数
+    # 場の全体の 1 日の数。形の悪い送り物は数えない（形を確かめた後に数える・別の目の気づき 11-08）
     server.ask_day = play_server.DayCount(limit=1)
-    assert post(base, body())[0] == 200 and post(base, body()) == (429, {"text": play_server.BUSY, "from": "busy"})
+    assert post(base, body(frames=4))[0] == 422 and post(base, b"{not json")[0] == 422, "形の悪い送り物は断る"
+    assert post(base, body())[0] == 200, "形の悪い送り物で 1 日の数を使っていない"
+    assert post(base, body()) == (429, {"text": play_server.BUSY, "from": "busy"})
     # 3. 記録を取らない
     assert CALLED == [], CALLED
     after = files()

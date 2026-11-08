@@ -58,7 +58,8 @@ for look in ("tenji", "zine"):
         hero = page[page.index('class="hero"'):page.index('id="kasetsu"')]
         # 原画と歌（本人の指示 11-06）: 歌は頁の全体の絵と組にして左の欄に置く。絵 → 歌 の順で、作品の札（class="label"）は題と つくる の後
         # （#595 の前の形。本人の言葉 11-08「縦書きは失敗なので前の形に戻す」・答え「広い画面も戻す」）。札は題の塊だけで、出典の字は頁の一番下（同じ日の決めのまま）
-        assert (hero.index('class="genga genga-head"') < hero.index('class="genga-pic"') < hero.index('class="genga-songs"')
+        # 頭の組の名の後ろには、横書きで出す印 genga-flat が付きうる（台本が測って縦書きにする・genga.FIT_SCRIPT）
+        assert (hero.index('class="genga genga-head') < hero.index('class="genga-pic"') < hero.index('class="genga-songs"')
                 < hero.index("<h1>") < hero.index('class="label"') < hero.index('class="links"')), (look, sid)
         assert 'class="genga-title"' not in hero and 'class="sec ndl-credit"' in page, (look, sid)
         assert 'class="songs"' not in hero, (look, sid)
