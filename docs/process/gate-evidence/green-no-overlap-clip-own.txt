@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_no_overlap.py
+# commit: 039c2742（回した時の HEAD）
+/tmp/tmp9o4rrl42/play/NDL-1187053-R0000005-L/.tmp-dcnif7aw/H-C_v1.pdf
+/tmp/tmp9o4rrl42/play/NDL-1187053-R0000014-R/.tmp-t7ll5rua/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_no_overlap.py", line 255, in <module>
+    assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 重なり・横のはみ出し（KNOWN の外）:
+pic・tenji・easy・よむ・iPhone SE: 字×字 div>h2>ruby「絵」× h2>ruby>rt「のこ」
+pic・zine・easy・よむ・iPhone SE: 字×字 div>h2>ruby「絵」× h2>ruby>rt「のこ」
+nopic・tenji・easy・よむ・iPhone SE: 字×字 div>h2>ruby「絵」× h2>ruby>rt「のこ」
+rc=1
