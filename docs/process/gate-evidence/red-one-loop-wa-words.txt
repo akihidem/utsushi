@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_loop_figure.py
+# commit: 20c82715 の木に、直した tests/test_loop_figure.py だけを当てた（git の外の写し・輪の図と型紙の窓は 20c82715 の物のまま）
+Traceback (most recent call last):
+  File "tests/test_loop_figure.py", line 35, in <module>
+    assert tuple(st[0] for st in f.STATIONS) == wa.STEPS == ("ためしの案（仮説）", "切って、折って、組む", "どう工夫したかを記録に書く", "次の型紙をよくする")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

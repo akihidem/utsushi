@@ -81,6 +81,10 @@ with tempfile.TemporaryDirectory() as d:
     assert post(good, host) == 200
     assert post(good, {**host, "Host": "evil.example"}) == 403
     assert post(good, {**host, "Origin": "https://evil.example"}) == 403
+    # 同じサイトのブラウザは本当の Origin を付ける（頁の Referrer-Policy は same-origin）。Origin: null は、ほかのサイトからの送りと
+    # 見分けられないので断る（受付の見出しを no-referrer にすると、同じサイトの送りも null になって断られた）
+    assert post(good, {**host, "Origin": f"http://127.0.0.1:{port}"}) == 200
+    assert post(good, {**host, "Origin": "null"}) == 403
     assert post(urlencode({k: v[0] for k, v in GOOD.items()} | {"token": "x"}), host) == 403
     c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
     c.putrequest("POST", "/report", skip_host=True); c.putheader("Host", f"127.0.0.1:{port}"); c.putheader("Content-Length", "-1"); c.endheaders()

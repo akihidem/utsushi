@@ -112,3 +112,49 @@ for k in s.KINDS:
 # 出典は形ごとに持つ（形と合わない出典の印を刷らない）
 assert set(s.SOURCES) == set(s.KINDS) and s.SOURCES[s.DEFAULTS["kind"]] == s.SOURCE
 print("ok")
+
+# EP-0010（作る前のレビューの指摘から採った案。2026-11-06）: 紙の風車は、切った後にどこをどう曲げるのかが紙から読めず、
+# 題の「紙の角を軸へ寄せる」は、どの色の角をどの面の側へ寄せるのかが分からなかった。曲げる印と字を足した。
+# - 軸へ寄せる 4 つの角（橙の帯と印の穴のある角）ごとに、印の穴から中心の穴へ向かう曲げる印（位置の印の形の点の線と矢じり）がある
+# - 印は部品の内にあり、穴・切り込み・折り線にかからない（check_art）。中心の飾りの輪にもかけない（塗りに重なると読めない）
+# - 折り目の線は刷らない（角は曲げるだけで、折り目を付けない。線を刷ると折る所と読まれる）
+# - 題と組み方の文が、橙の角を刷った面（表）の側へ曲げて軸に寄せる事と、羽の表を竹串の先の側に向ける事を言う
+# 寸法の範囲の端の組で見る（印は角の穴と中心の輪の間に引くので、紙の大きさ・切り残し・穴の太さで長さと向きが変わる）
+from omochae.__main__ import load_source
+from omochae.compose import compose
+from omochae.floors import check_art
+pin = P(kind="pinwheel")
+# 切り残しは範囲を 1mm 刻みで見る（範囲の端の 4mm は検査で落ちるので、端だけだと通る寸法の下限の近くを見なかった。別の系統の検品の指摘）
+seen = 0
+for sq in (s.RANGES["square"][0], 90, s.DEFAULTS["square"], 150, s.RANGES["square"][1]):
+    for un in range(s.RANGES["uncut"][0], s.RANGES["uncut"][1] + 1):
+        for hd in (s.RANGES["hole_d"][0], 2.0, s.DEFAULTS["hole_d"], 6.0, s.RANGES["hole_d"][1]):
+            q = {**pin, "square": sq, "uncut": un, "hole_d": hd}
+            if s.check_range(q) or s.check_physics(q):
+                continue  # 検査で落ちる寸法は刷らないので、印も見ない
+            seen += 1
+            v = next(x for x in s.parts(q) if x.key == "vanes")
+            c, ring = sq / 2, hd / 2 + 2.2
+            bends = [a for a in v.art if a["kind"] == "mark" and a.get("mark") == "bend"]
+            assert len(bends) == 4, (q, len(bends))
+            heads = [a for a in v.art if a["kind"] == "mark" and a.get("mark") == "bend_head"]
+            assert len(heads) == 4, (q, len(heads))  # zip が黙って短くならないよう、矢じりの数を先に見る（検品の指摘）
+            corners = [(sq, 0), (sq, sq), (0, sq), (0, 0)]  # 印の穴のある角の順（雛形の tips と同じ）
+            for (hx, hy, r), b, h, (kx, ky) in zip(v.holes[1:], bends, heads, corners):
+                start, end = b["pts"][0], b["pts"][-1]
+                assert math.dist(start, (hx, hy)) <= r + 2.0, (q, start, (hx, hy))  # 角の穴のすぐ外から
+                assert ring < math.dist(end, (c, c)) < math.dist(start, (c, c)), (q, end)  # 中心へ向かい、輪の外で止まる
+                # 矢じりは、線から見て切り込み（中心から角への線）と反対の側へ開く
+                side = lambda pt: (end[0] - start[0]) * (pt[1] - start[1]) - (end[1] - start[1]) * (pt[0] - start[0])
+                assert side(h["pts"][-1]) * side(((c + kx) / 2, (c + ky) / 2)) < 0, (q, (kx, ky), "矢じりが切り込みの側へ開く")
+            assert not v.valley and not v.mountain, q
+            assert check_art([v]) == [], (q, [f.line() for f in check_art([v])])
+assert seen >= 100, seen
+_, layout, fails = compose("spinner", pin, load_source(s.SOURCE))
+assert not fails, [f.line() for f in fails]
+assert any("位置の印" in t.text for t in layout["texts"]), "凡例に位置の印の行が無い"
+assert "橙の角" in s.title(pin) and "表" in s.title(pin), s.title(pin)
+st = s.steps(pin)
+assert any("羽の表" in x and "竹串の先の側" in x and "中心の穴" in x for x in st), st
+assert any("橙の帯" in x and "表の側へ" in x and "折り目を付けない" in x for x in st), st
+print("ok 風車の曲げる印")

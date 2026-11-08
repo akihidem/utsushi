@@ -20,6 +20,22 @@ from .play_server import esc, sources
 
 # 頭の断り（前の DRAFT「Draft translation. A native speaker has not checked it yet.」）は出さない。
 # 本人の言葉（11-07）「これ要らない。Draft translation. A native speaker has not checked it yet.」。やさしい日本語の「下書きです」を外したのと同じ扱い
+# 紹介の大前提の英語 2 文（本人の言葉 11-07 夜「学校や博物館等で使えるワークショップ支援のサービス…紙があって、それに印刷ができて、
+# ハサミと糊があればいろんなことが伝えられる…大前提として語られる必要がある」と裏付け「紙とはさみとのりの手軽さが4日間連続ワークショップを
+# 可能にしてる」。置き場は本人の「入れる」）。日本語の頁の S1・S3 の訳で、本人が OK した位置づけの 2 文と仕組みの 3 文は替えずに、その前に置く
+BASIS = ("Utsushi is a service that supports workshops in schools, museums and other places. "
+           "We could hold workshops four days in a row, from November 4 to 7, because the toys are easy to make with paper, scissors and glue.")
+# うつしの位置づけ（英語 2 文）。本人の言葉（11-07 昼）「utsushi は paper to toy の具体例、という説明をサイトに」
+# 「これからというよりは、みんなが使えるサービスとして作った」に合わせた案の字を、本人が採った（11-07「この英文でよい」）。
+# J-030 の紹介（INTRO）の文は変えず、別の段として頭に置く
+POSITION = ("Utsushi is one example of paper to toy, using the toys in an Edo picture book. "
+            "We made it as a service everyone can use, from schools, research, and museums to homes.")
+# paper to toy の仕組みの英語 3 文。字は型紙エンジンの README と版の台帳から作った材料の字（11-07 に届いた物・言葉のまま）。
+# 窓口の決め（11-07 130735）「/en の英語 3 文は #526 の 1 本にまとめる。#527 は /en の分を外す」。位置づけの 2 文のすぐ後に置く
+ENGINE = ("Paper to toy is an engine for designing mechanisms with internal structure from flat materials like paper. "
+          "Give it a toy's dimensions, and it lays out the parts, checks them before and after printing, and outputs a printable PDF template; "
+          "for the two featured toys it also folds and assembles the parts in 3D to check that nothing collides. "
+          "Makers' reports and workshop feedback become improvement proposals, and when people adopt one and the fix is in, the template version and the engine version go up.")
 # J-030 の少し長い紹介と同じ文。文を変える時は J-030 も直す。本人の方針（11-05）の書き方: 短い文・やさしい語（#318）。
 INTRO = (
     "In 1773, the artist Kitao Shigemasa made a book of toys in Edo, which is now Tokyo. The book is called <i>Edo nishiki</i>. It shows more than 80 toys with short poems, but it does not say how the toys worked.",
@@ -83,7 +99,7 @@ def index_page(look=skin.DEFAULT, path="/en"):
         tag = "" if hypotheses.stage(sid) == "必須" else '<span class="lb">Untested draft</span>'
         cards += (f'<article class="card"><a href="/en/toy/{esc(sid)}">{_picture(sid)}<h3>{esc(t["name"])}</h3></a>{tag}<p class="meta">{esc(t["intro"])}</p></article>')
     intro = "".join(f"<p>{x}</p>" for x in INTRO)
-    body = (f'<section class="sec"><h1>utsushi</h1>{intro}<p class="meta">{esc(CREDIT)}</p>'
+    body = (f'<section class="sec"><h1>utsushi</h1><p class="position basis">{esc(BASIS)}</p><p class="position">{esc(POSITION)}</p><p class="engine">{esc(ENGINE)}</p>{intro}<p class="meta">{esc(CREDIT)}</p>'
             '<p class="links"><a href="/">日本語の頁へ</a></p></section>'
             f'<section class="sec" id="toys"><h2>Pick a toy</h2><div class="plates">{cards}</div></section>')
     return skin.shell("utsushi", body, look, "/en", path, lang="en", foot=FOOT)

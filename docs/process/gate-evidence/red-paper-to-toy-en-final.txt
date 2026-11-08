@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_paper_to_toy.py
+# commit: 62dd1119（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_paper_to_toy.py", line 24, in <module>
+    pos = esc(en.POSITION)
+              ^^^^^^^^^^^
+AttributeError: module 'web.en' has no attribute 'POSITION'
+rc=1
