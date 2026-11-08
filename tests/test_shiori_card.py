@@ -1,12 +1,12 @@
 """しおりの紙の生成器（omochae.shiori_card・本人の答え 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 2.1 版の 1・6・7.2 節）。
 
-なぜ: しおりは手帖の鍵なので、刷った紙の形が鍵の守りそのもの。表と裏が 1 頁の同じ面に並ぶ形（本人の答え 11-08「しおりは同じ面に刷る。」）で、
-QR の行き先が決まった番地と印だけか・印の字を刷っていないか・順の印が裏の半分だけにあるか・型紙の頁を書き直していないか・PDF の情報に手元の道が
-無いかを、刷った PDF から確かめる。
+なぜ: しおりは手帖の鍵なので、刷った紙の形が鍵の守りそのもの。表だけを刷る形（本人の答え 11-08「表だけに印刷にしたい」・押す順の絵は表に移す）で、
+QR の行き先が決まった番地と印だけか・印の字を刷っていないか・押す順の印が 3 つあるか・裏の字や折る字が残っていないか・型紙の頁を書き直していないか・
+PDF の情報に手元の道が無いかを、刷った PDF から確かめる。
 見る事:
-1 1 頁（A4 縦）。表の半分（帯の左）の QR は「決まった番地/s/<印>」（300dpi で描いて、点の並びが segno の符号と同じ。読む道具があれば読んだ字も同じ）
-2 印の 22 字は字で刷らない。①②③ は裏の半分（帯の右）だけ。題字と玩具の名は表の半分。頁の頭の断りと帯の下の切り方
-3 原画がある所では表に 1 枚・裏に 9 枚の絵が入り、無い所では枠だけで刷れる
+1 1 頁（A4 縦）に 50×150mm の 1 枚。QR は「決まった番地/s/<印>」（300dpi で描いて、点の並びが segno の符号と同じ。読む道具があれば読んだ字も同じ）
+2 印の 22 字は字で刷らない。①②③ と題字と玩具の名は、しおりの 1 枚の中。前の裏の字・頁の頭の断り・切り方の 1 行は無い（新しい字を足さない）
+3 原画がある所では、原画 1 枚と押す順の 9 枚の絵が入り、無い所では枠だけで刷れる
 4 merge は型紙の頁の中身を替えず、後ろに 1 頁を足すだけ
 5 PDF の情報は題だけ（手元の道・機械の名・作った道具の名が無い）
 6 決まった番地が無い・順の形が違う時は刷らない
@@ -64,8 +64,7 @@ subprocess.run(["pdftoppm", "-r", "300", "-f", "1", "-l", "1", "-png", "-singlef
 front = Image.open(os.path.join(tmp, "front.png")).convert("L")
 matrix = segno.make(URL, error="m", micro=False).matrix
 n = len(matrix)
-x0, y0 = sc.STRIP_X + sc.CARD_W - 4 - sc.QR_MM, sc.STRIP_Y + sc.CARD_H - 4 - sc.QR_MM
-assert x0 + sc.QR_MM <= sc.FOLD_X, "QR は表の半分（折る線の左）"
+x0, y0 = sc.CARD_X + sc.CARD_W - 4 - sc.QR_MM, sc.CARD_Y + sc.CARD_H - 4 - sc.QR_MM
 mm = 300 / 25.4
 drawn = [[front.getpixel((int((x0 + (c + 0.5) * sc.QR_MM / n) * mm), int((y0 + (rr + 0.5) * sc.QR_MM / n) * mm))) < 128 for c in range(n)] for rr in range(n)]
 assert drawn == [[bool(v) for v in row] for row in matrix], "表の半分の QR の点の並びが、決まった番地/s/<印> の符号と違う"
@@ -84,25 +83,18 @@ else:
 
 # ---- 2 印を字で刷らない・①②③ は裏の半分だけ
 pt = 72 / 25.4
-
-
-def half(x_mm, w_mm):
-    """頁の縦の帯（x_mm から w_mm の幅・帯の上から下まで）の字。表の半分と裏の半分を分けて見る。"""
-    args = ["-x", str(int(x_mm * pt)), "-y", str(int(sc.STRIP_Y * pt)), "-W", str(int(w_mm * pt)), "-H", str(int(sc.CARD_H * pt))]
-    return subprocess.run(["pdftotext", *args, path, "-"], capture_output=True, text=True, check=True).stdout
-
-
 whole = subprocess.run(["pdftotext", path, "-"], capture_output=True, text=True, check=True).stdout
-left, right = half(sc.STRIP_X, sc.CARD_W - 0.5), half(sc.FOLD_X + 0.5, sc.CARD_W - 0.5)
+card = subprocess.run(["pdftotext", "-x", str(int(sc.CARD_X * pt)), "-y", str(int(sc.CARD_Y * pt)), "-W", str(int(sc.CARD_W * pt)), "-H", str(int(sc.CARD_H * pt)),
+                       path, "-"], capture_output=True, text=True, check=True).stdout
+flat = whole.replace("\n", "")
 assert TOKEN not in whole and TOKEN.encode() not in pdf, "印の 22 字を字で刷っている"
-assert all(m in right for m in sc.MARKS) and not any(m in left for m in sc.MARKS), "順の印は裏の半分（折る線の右）だけ"
+assert all(m in card for m in sc.MARKS), "押す順の印がしおりの 1 枚に無い"
 # 題字と玩具の名は縦書きの 2 列なので、字を取り出すと行ごとに混ざる。題字は 1 字ずつ見る
-assert all(ch in left for ch in sc.TITLE + "御来迎"), "表の半分に題字と玩具の名"
-assert sc.PAGE_HEAD in whole.replace("\n", "") and sc.CUT_LINE in whole.replace("\n", ""), "頁の頭の写さない断りと、帯の下の切り方"
-# 「いちばん新しく刷ったしおりだけが使えます。」は、刷り直しで前のしおりを使えなくする所が入るまで刷らない（前に刷ったしおりも開くので事実と合わない・統括の決め 11-08）
-assert "いちばん新しく刷った" not in whole.replace("\n", ""), "前のしおりも開く今の作りで、いちばん新しい物だけが使えると刷っている"
-flat = right.replace("\n", "")
-assert all(line in flat for line in sc.BACK_LINES) and "型紙の版 3" in flat and "2026年11月8日" in flat, "裏の字・版・刷った日（東京の日付）"
+assert all(ch in card for ch in sc.TITLE + "御来迎"), "しおりに題字と玩具の名"
+# 前の裏の字・頁の頭の断り・切り方の 1 行は刷らない（表だけにした・新しい字を足さない・本人の答え 11-08）
+for old in ("この裏は、人に見せないでください。", "このしおりは手帖の鍵です。", "刷ったら、すぐ切って", "まん中の点線で折って", "いちばん新しく刷った", "型紙の版"):
+    assert old not in flat, ("表だけの形で、前の字が残っている", old)
+assert not [ch for ch in whole if not ch.isspace() and ch not in sc.TITLE + "御来迎" + "".join(sc.MARKS)], ("しおりの頁に、題字・玩具の名・押す順の印の外の字がある", whole)
 
 # ---- 3 絵の数
 assert [len(p.images) for p in r.pages] == [10], [len(p.images) for p in r.pages]
@@ -134,4 +126,4 @@ for kw in ({"base": ""}, {"order": (1, 1, 2)}, {"order": (0, 4, 9)}, {"order": (
         raise AssertionError(("刷ってはいけない形で刷った", kw))
     except ValueError:
         pass
-print("ok: しおりは表と裏を 1 頁の同じ面に並べる・QR は決まった番地/s/<印>・印の字を刷らず順の印は裏の半分だけ・型紙の頁は替えず・PDF の情報は題だけ")
+print("ok: しおりは表だけの 1 枚・QR は決まった番地/s/<印>・印の字を刷らず押す順の印は表に・前の裏の字は無い・型紙の頁は替えず・PDF の情報は題だけ")
