@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_lang_session.py
+# commit: 743706e5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_lang_session.py", line 42, in <module>
+    assert "max-age" not in attrs and "expires" not in attrs, (lang, "言葉の cookie に期限がある（閉じても残る）", cookies[0])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('en', '言葉の cookie に期限がある（閉じても残る）', 'utsushi_lang=en; Max-Age=31536000; Path=/; SameSite=Lax')
+rc=1

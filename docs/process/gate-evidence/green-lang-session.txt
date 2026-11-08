@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_lang_session.py
+# commit: 743706e5（回した時の HEAD）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+ok 言葉の cookie: 期限なし（閉じれば消える）・cookie 無しの / は日本語・開いている間は選んだ言葉のまま
+rc=0

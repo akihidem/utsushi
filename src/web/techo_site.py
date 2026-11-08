@@ -388,7 +388,7 @@ def made_item(sid, data, r, photos=True, public=False):
     # 玩具の頁から記録の札が無くなるので、向け直した（統括の決め 11-08）。この札が出る時は、その玩具の錨も頁にある（無ければこの札が錨を持つ）。
     # 錨は玩具の印で、記録の番号を道に入れない（開いた場で番号を出さない線・別の目の確かめで見つかった）
     to = f"#toy-{esc(sid)}"
-    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}{more}</div>')
 
 
@@ -409,7 +409,7 @@ def own_item(sid, data, r):
             # 玩具の名前は、手帖の記録の頁の自分の記録へ（記録の番号の道と同じ行き先）。前の玩具の頁の同じ記録（#R-…）は、本人の言葉 11-08 477 で
             # 玩具の頁から記録の札が無くなるので向け直した（統括の決め 11-08・修正の担当 d と合わせた）
             f'<a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(data["toy"])}</a>　'
-            f'{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
+            f'{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}{more}</div>')
 
 
@@ -432,11 +432,10 @@ def toy_place(sid, public=False):
     """玩具の頁から、もちよる（/gallery）のその玩具の置き場への道（つくるの作り直しの枝 1 が玩具の頁の のこす の段に置く 1 行の道の行き先）。
     もちよるにその玩具の札（みんながつくったおもちゃ・作例・他の人が作った物のどれか）があれば /gallery#toy-<印>（錨は gallery_page が今の札に 1 つ付ける）、
     どれも無ければ None（道を置かない。行き止まりを作らない）。public は合言葉なしで開いた場（記録の札は人が確かめた字か写真がある時だけ出るので、同じ線で見る）。"""
-    from . import sakurei, workshop
+    from . import workshop
 
     data = hypotheses.load(sid)
-    if (workshop.has_card(sid) or any(e["sid"] == sid for e in sakurei.examples())
-            or any(made_item(sid, data, r, True, public) for r in records.all_records(sid))):
+    if workshop.has_card(sid) or any(made_item(sid, data, r, True, public) for r in records.all_records(sid)):
         return f"/gallery#toy-{sid}"
     return None
 
@@ -466,7 +465,7 @@ def _report():
     return f'<ul class="sakurei-report">{lines}</ul><p class="meta"><a href="/kaizen#ws">{esc(SAKUREI_REPORT_GO)}</a></p>'
 
 
-def sakurei_section(sids, photos=True, anchored=frozenset()):
+def sakurei_section(sids, photos=True):
     """ワークショップで作られた物（作例）の節。持ち寄る駅（/gallery）の頭、「他の人が作った物」の上に置く（地図の工程 5）。
 
     判断の芯:
@@ -484,42 +483,22 @@ def sakurei_section(sids, photos=True, anchored=frozenset()):
       photos=False（写真を出さない前の開いた場の形）は出さない。"""
     if not photos:
         return ""
-    from omochae import records
-
     from . import sakurei  # sakurei は techo_site を読むので、ここで読む
 
-    order = {sid: i for i, sid in enumerate(sids)}
-    shown = [e for e in sakurei.examples() if e["sid"] in order or records.outside_toy(e["sid"])]
+    # 玩具ごとの作例の札は「みんながつくったおもちゃ」の節（workshop.made）へ移した（本人の言葉 11-08「…ワークショップで作られたものの方は写真と名前が
+    # 一致しているので、こちらの組み合わせと表示を採用して、みんなが作ったおもちゃの方に置く。」。同じ物を 2 度出さない）。ここには顔の写真・報告の段・工夫が残る
     faces, kufu = sakurei.faces(), sakurei.cases("kufu")
-    if not (shown or faces or kufu):
+    # 報告の段だけでは節を出さない（前と同じ: 確かめた写真が来る前の形）
+    if not (faces or kufu):
         return ""
+    report = _report()
     img = lambda url, alt="作った物の写真": f'<img src="{esc(url)}" alt="{esc(alt)}" loading="lazy" decoding="async">'  # noqa: E731
     head = (f'<figure class="sakurei-faces"><div>{"".join(img(u, SAKUREI_FACES) for u in faces)}</div>'
             f'<figcaption>{esc(SAKUREI_FACES)}</figcaption></figure>') if faces else ""
     case = (f'<div class="sakurei-kufu"><h3 class="day">{esc(SAKUREI_KUFU)}</h3><figure>{"".join(img(c["url"]) for c in kufu)}'
             f'<figcaption>「{esc(SAKUREI_KUFU_WORDS)}」</figcaption></figure></div>') if kufu else ""
-    names = {sid: sakurei.toy_name(sid) for sid in {e["sid"] for e in shown}}
-
-    def name(sid):
-        return f'<a href="/toy/{esc(sid)}">{esc(names[sid])}</a>' if sid in order else esc(names[sid])  # 83 の外の玩具は玩具の頁が無い
-
-    seen = set(anchored)
-
-    def anchor(sid):
-        # 83 の外の玩具は玩具の頁が無いので錨を持たない。錨はその玩具の最初の札だけ
-        if sid not in order or sid in seen:
-            return ""
-        seen.add(sid)
-        return f' id="toy-{esc(sid)}"'
-
-    cards = "".join(
-        f'<figure{anchor(e["sid"])}>'  # 他の人が作った物の札（.item）の上の線は付けない: 写真の板が並ぶだけの所で、線が写真ごとに切れて見えるため
-        + "".join(img(f"/record/{e['rid']}/media/{f}/small") for f in e["photos"])
-        + f'<figcaption>{name(e["sid"])}{_ban(e["set"])}</figcaption></figure>'
-        for e in sorted(shown, key=lambda e: (order.get(e["sid"], len(order)), e["sid"], e["rid"])))
     return (f'<section class="panel" id="sakurei"><h2 class="mark">{esc(SAKUREI_TITLE)}</h2>'
-            f'<p class="meta">{esc(SAKUREI_LEAD)}</p>{head}{_report()}{case}'
-            + (f'<div class="sakurei-row">{cards}</div>' if cards else "") + '</section>')
+            f'<p class="meta">{esc(SAKUREI_LEAD)}</p>{head}{report}{case}</section>')
 
 
 # 合言葉なしの場で上げた直後の返事に続ける 1 行（窓口の決定 11-06 夜・案 A。字はその決定の字のまま）。上げた物は、確かめる前は上げた画面にだけ出て
@@ -548,14 +527,13 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
     """
-    from . import sakurei, workshop
+    from . import workshop
 
     # 玩具ごとの錨 toy-<印>（本人の言葉 11-08 477「復元の記録などはすべてもちよるに統合する。」・玩具の頁の 1 行の道の行き先）は、今の札に 1 つだけ付ける:
-    # みんながつくったおもちゃ の札 → 無ければ作例の節のその玩具の最初の札 → 無ければ 他の人が作った物 のその玩具の最初の札。
+    # みんながつくったおもちゃ のその玩具の最初の札（作例の札・事例の札・名と感想だけの札）→ 無ければ 他の人が作った物 のその玩具の最初の札。
+    # 作例の節の玩具ごとの札は、みんながつくったおもちゃ へ移した（本人の言葉 11-08）ので、作例の節は錨を持たない。
     # 錨の名は玩具の印で、記録の番号は入れない（開いた場で記録の番号を画面にも道にも出さない線・J-028）
-    order = set(sids)
-    anchored = {sid for sid in sids if workshop.has_card(sid, photos)}
-    with_sak = anchored | ({e["sid"] for e in sakurei.examples() if e["sid"] in order} if photos else set())
+    with_sak = {sid for sid in sids if workshop.has_card(sid, photos)}
     cards, own = "", ""
     for sid in sids:
         data = hypotheses.load(sid)
@@ -570,7 +548,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
                 with_sak.add(sid)
                 item = item.replace('<div class="item">', f'<div class="item" id="toy-{esc(sid)}">', 1)
             cards += item
-    sak = sakurei_section(sids, photos, anchored)
+    sak = sakurei_section(sids, photos)
     # ワークショップの試行の写真（web.workshop。本人の見直し 11-07 夜の ⑦）。他の人が作った物なので、この節の記録の札の前に置く。
     # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示）
     # ワークショップの様子（作っている途中の写真）と、できたおもちゃの敷き詰め（押すと感想）（本人の言葉 11-08「もちよる、ワークショップの様子、として
@@ -698,7 +676,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="上げた写真" loading="lazy" decoding="async"></a>') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-        who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
+        who = f"{hypotheses.SHOWN}の紙" if h else "自分の仮説の紙"  # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
         # 合言葉なしの場には進行者がいないので、上げた画面にだけ「取り下げる」を置く（窓口の決定 11-06 夜・案 A）。押すと、この記録の写真と動画が
         # 置き場ごと消え、ギャラリーからも消える。合言葉付きの場は、今までどおり進行者に記録の番号を伝える形（釦は出さない）
         drop = (f'<form method="post" action="/record/{esc(r["id"])}/media/withdraw"><button type="submit" class="btn quiet">取り下げる</button></form>'
@@ -725,10 +703,11 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
             # 記入の節（いちばん上・その最後が「のこす」の釦。本人 11-08 400・405）
             # 作りながら見る頁の組み上がりから着いた時（at=kinyu）は、返事の字を記入の節のすぐ上に出す（上げる節の #mine には出さない）
             + (note if at == "kinyu" else "") + kinyu +
-            # のこすと型紙が直る事の枠と、のこした記録から直った所（本人 11-08 403）。記入の節の後に 1 回
-            naoru.box() +
-            # 学びの輪の文と図（本人の見直し 11-07 22:16 の ⑤・manabi_box）。枠の後、手帖をひらく道の前
+            # うつしの輪の文と図（本人の見直し 11-07 22:16 の ⑤・manabi_box）。記入の節のすぐ下（本人の言葉 11-08「のこすのうつしの輪は、
+            # 記入欄の下にする。」決めの記録 530。前は直った例の集の後）
             manabi_box() +
+            # のこすと型紙が直る事の枠と、のこした記録から直った所（本人 11-08 403）。うつしの輪の下に 1 回、手帖をひらく道の前
+            naoru.box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 前はここに道しるべの「のこす」（/gallery#ageta）があった。記入の節の「のこす」の釦（承認の後にもちよるへ飛ぶ）に替えた
