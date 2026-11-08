@@ -9,6 +9,8 @@
 （本人の答えを統括が伝えた線 11-08「置き直しは幅か向きが替わった時だけ」）。
 
 見る事（白と暗い版・日本語・やさしい日本語・英語・iPhone 320×568・375×667・390×844・430×932 と iPad 820×1180・1024×768）:
+0. 開いた後に浮かぶ玩具が見えている（層に .placed・4 つのうち 3 つ以上が出ていて絵が読めている）。見えていないと、動かない事を見ても空の確かめになる
+   （別の目の気づき 11-08）
 1. 題の間を触って（touchstart・touchmove・touchend。送る仕掛けが動かない 20px の動き）120px 送っても、浮かぶ玩具の位置（揺れる前の箱）と出ているかが替わらない
 2. 送ったまま画面の高さだけを 94px 縮めて（390×844 → 390×750 の形）戻しても、置き直さない（台本が付けた置き場と出ているかが替わらない）。
    戻した後は位置も元のまま。Chrome の iframe は高さを替えると vh も替わり、CSS の置き場の玩具は縮めた間だけ動くので、縮めた間は台本が付けた物だけを見る
@@ -61,10 +63,12 @@ const touch=(w)=>{const h=w.document.getElementById('hall');let ok=true;
   h.dispatchEvent(new w.TouchEvent('touchstart',{touches:[T(400)],changedTouches:[T(400)],bubbles:true}));
   h.dispatchEvent(new w.TouchEvent('touchmove',{touches:[T(380)],changedTouches:[T(380)],bubbles:true}));
   h.dispatchEvent(new w.TouchEvent('touchend',{touches:[],changedTouches:[T(380)],bubbles:true}))}catch(e){ok=false}return ok};
-const walk=async(f)=>{const w=f.contentWindow,H=+f.height;await wait(1500);const a=pos(w),am=mine(w);
+const shown=(w)=>{const l=w.document.querySelector('.ukabu');return {placed:!!l&&l.classList.contains('placed'),
+ n:toys(w).filter(e=>w.getComputedStyle(e).visibility==='visible'&&e.querySelector('img').naturalWidth>0&&e.offsetHeight>0).length}};
+const walk=async(f)=>{const w=f.contentWindow,H=+f.height;await wait(1500);const a=pos(w),am=mine(w),seen=shown(w);
  const touched=touch(w);w.scrollTo(0,120);await wait(300);const b=pos(w),y=w.scrollY;
  f.height=String(H-94);await wait(500);const c=mine(w);f.height=String(H);await wait(500);const c2=pos(w);
-  return {page:f.dataset.page,n:toys(w).length,touched,y,a,am,b,c,c2}};
+  return {page:f.dataset.page,n:toys(w).length,seen,touched,y,a,am,b,c,c2}};
 addEventListener('load',async()=>{const out=await Promise.all([...document.querySelectorAll('iframe')].map(walk));
  document.getElementById('measured').textContent=out.map(r=>JSON.stringify(r)).join('\\n')})</script>"""
 get = play_server.Handler.do_GET
@@ -114,9 +118,10 @@ for look in ("tenji", "zine"):
     for name, rec in got.items():
         where = (look, name)
         assert rec["n"] == 4, (where, "浮かぶ玩具が 4 つ無い", rec["n"])
+        assert rec["seen"]["placed"] and rec["seen"]["n"] >= 3, (where, "浮かぶ玩具が見えていない（置き直しの後に 3 つ以上が出ていない）", rec["seen"])
         assert rec["y"] >= 100, (where, "送れていない（頁が短い）", rec["y"])
         assert rec["touched"], (where, "触る事を送れなかった（TouchEvent が作れない）")
         assert rec["b"] == rec["a"], (where, "触って送ると浮かぶ玩具が動く", rec["a"], rec["b"])
         assert rec["c"] == rec["am"], (where, "送ったまま高さだけを縮めると（番地の帯の形）置き直す", rec["am"], rec["c"])
         assert rec["c2"] == rec["a"], (where, "高さを戻した後に浮かぶ玩具の位置が元と違う", rec["a"], rec["c2"])
-print(f"ok 入口の浮かぶ玩具: 白と暗い版・3 つの言葉・{len(SIZES)} の大きさで、触って送っても・送ったまま高さだけを縮めて戻しても動かない")
+print(f"ok 入口の浮かぶ玩具: 白と暗い版・3 つの言葉・{len(SIZES)} の大きさで、3 つ以上が見えていて、触って送っても・送ったまま高さだけを縮めて戻しても動かない")
