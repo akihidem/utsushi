@@ -83,8 +83,9 @@ assert "怠らじ朝な夕なに" in body and "怠らし" not in body and "怠�
 # 別のサイトから・別の形で送らせない
 assert post(f"/toy/{G}/print", {"hypothesis": GS}, origin="http://evil.example")[0] == 403
 assert post(f"/toy/{G}/print", {"hypothesis": GS}, ctype="text/plain")[0] == 403
-# 札を主にする。仮説を書く欄は出さない（本人の決定 11-05 18:08、J-032 の点 2）
-assert re.search(r"id=\"kasetsu\".*class=\"plates\"", body, re.S) and "自分の仮説を立てる" not in body
+# 札を主にする。仮説を書く欄は出さない（本人の決定 11-05 18:08、J-032 の点 2）。札は仮説の節（#kasetsu-fuda）にある
+# （本人の言葉 11-08 の並びで、立体の節 #kasetsu の前へ移った。前は立体の節の後の型紙の窓の中）
+assert re.search(r"id=\"kasetsu-fuda\".*class=\"plates\"", body, re.S) and "自分の仮説を立てる" not in body
 # 順位を出さない。並びは元の記録の順
 assert "rank" not in body and "順位" not in body
 assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "仮説 B" not in body, "札はたたき台の 1 枚だけ（J-032）"
