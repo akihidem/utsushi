@@ -34,6 +34,10 @@ DEFAULTS = {
     #   検査で見る。clay_back か axle_back を既定から変えた寸法は、fit_check が 0 でも見る（fit_on）。
     # どれも既定は今の値で、既定の寸法と v6 の紙は変わらない（凍結の場面と、撮影中の v6 の紙を変えないため）。次の組の見本 examples/tora_v7.json だけが使う
     "clay_back": 0, "axle_back": 6, "fit_check": 0,
+    # arm_hold: 首の形で、重りの腕を頭の傾きを見るまで仮に止める物。tape はセロハンテープ（v7 まで）、finger は指で押さえて、腕の位置に
+    #   鉛筆で印を付けておく形。材料の前提（2026-11-07 の設計の条件。テープは樹脂の側）による、テープを使わない新しい版（v8）だけが
+    #   finger を使う。テープは作る途中の仮留めだけなので、型紙の部品は変わらない。既定は tape（凍結の場面と、デモの v7 の紙を変えないため）
+    "arm_hold": "tape",
     # 紙の面密度は見込み。実物の紙を量ったら置き換える。
     "paper_gsm": 150,
 }
@@ -97,8 +101,12 @@ def title(p):
 
 
 def spec():
-    return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "mount": MOUNTS, "head_sides": HEAD_SIDES, "fit_check": FIT_CHECKS}
+    # 列挙の寸法は、選び肢を全部見せる（arm_hold を足した時に spec へ出し忘れ、受け付ける値と食い違った。見直しの指摘）
+    return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "mount": MOUNTS, "head_sides": HEAD_SIDES, "fit_check": FIT_CHECKS,
+            "arm_hold": ARM_HOLDS}
 
+
+ARM_HOLDS = ("tape", "finger")  # 重りの腕を仮に止める物（DEFAULTS の arm_hold）
 
 def check_range(p):
     out = []
@@ -106,6 +114,9 @@ def check_range(p):
         if k == "mount":
             if v not in MOUNTS:
                 out.append(Failure("F5.range", k, f"{v} は {MOUNTS} のどれでもない"))
+        elif k == "arm_hold":
+            if v not in ARM_HOLDS:
+                out.append(Failure("F5.range", k, f"{v!r} は {ARM_HOLDS} のどれでもない（重りの腕を仮に止める物）"))
         elif k == "fit_check":
             if isinstance(v, bool) or not isinstance(v, (int, float)) or v not in FIT_CHECKS:
                 out.append(Failure("F5.range", k, f"{v!r} は {FIT_CHECKS} のどれでもない（当たりの検査をするか）"))
@@ -792,7 +803,9 @@ def materials(p):
     # 部品を組まずに形の値で決める（切り抜きは首の形にだけある。部品から決めた答えと同じ事は試験で見る。理由は slider_fan.materials と同じ）
     # 首の形は、重りの腕をテープで仮に留めて試してから貼る（EP-0011）ので、セロハンテープも書く（見直しの指摘: 手順にあって用意する物に無かった）
     # カッターは行の終わりに置く（中を切り抜く所がある形の行は「、カッター」で終わる、と試験が見る）
-    tools = "のり、はさみ、定規" + ("、セロハンテープ、カッター" if p["mount"] == "neck" else "")
+    # テープを使わない版（arm_hold が finger）は、指で押さえて鉛筆で印を付けるので、テープの代わりに鉛筆を書く
+    tape = "、セロハンテープ" if p.get("arm_hold", "tape") == "tape" else "、鉛筆"
+    tools = "のり、はさみ、定規" + (tape + "、カッター" if p["mount"] == "neck" else "")
     if p["mount"] != "neck":
         return [f"{by['body']['material']}を 1 枚", tools, by["axle"]["material"], by["weight"]["material"]]
     # 首の形: 紙でない材料の置き所と、丸い印・色の意味を字で書く（EP-0016: 制作者に分からなかった）。手順は刷らないので、刷る紙の字で言う
@@ -823,10 +836,17 @@ def steps(p):
         # 帯は胴から来るので、口と反対の側（頭の後ろ）から入れる。手順の数と番号は変えない
         head = ("2 頭を頭の上の山折りの線で後ろへ折る。3 首の帯の先を、口と反対の側から 2 枚の間の真ん中まで挟み、裏どうしを貼る"
                 if p["head_sides"] == 2 else "3 首の帯の前の端に 2 頭を貼る")
+        # 腕を仮に止める文と、位置を決めて貼る文（arm_hold）。f-string の中に同じ引用符を入れ子にしない（Python 3.11 では構文の誤りになる）。
+        # 指で押さえる形の鉛筆の印は、頭の傾きを見て位置を決めた後に付ける（前は傾きを見る前に印を付ける順で、位置を直すと印が古い
+        # 位置に残った。見直しの指摘）
+        finger = p.get("arm_hold", "tape") == "finger"
+        hold = "指で押さえて仮に止める（まだ貼らない）" if finger else "テープで仮に留める（まだ貼らない）"
+        fix = ("頭の傾きを見て腕の位置を決めたら、帯に鉛筆で腕の位置の印を付け、印に合わせて腕を 3 首の帯に貼る" if finger
+               else "頭の傾きを見て腕の位置を決めてから、腕を 3 首の帯に貼る")
         out += [head, "帯を前の壁の穴に入れ、竹串を胴の穴と帯の穴に通す",
                 # 下の穴を後ろへ刷る腕（clay_back。v7 から）は向きがある。逆に下げると粘土の玉が前の壁に当たるので、向きを文で言う
-                f"5 重りの腕の上の穴にも竹串を通す{'（下の穴が後ろの尾の側に来る向きで）' if p['clay_back'] > 0 else ''}。{clay}。腕は 3 首の帯に添えて、テープで仮に留める（まだ貼らない）",
-                "頭の傾きを見て腕の位置を決めてから、腕を 3 首の帯に貼る"]
+                f"5 重りの腕の上の穴にも竹串を通す{'（下の穴が後ろの尾の側に来る向きで）' if p['clay_back'] > 0 else ''}。{clay}。腕は 3 首の帯に添えて、{hold}",
+                fix]
     else:
         # 式の「軸から頭の上の端まで」と重りの位置を文に書く。「下の端に貼る」「あごの近く」だけでは、式の寸法を実現できない。
         arm = axle_to_head_top(p)

@@ -35,7 +35,7 @@
       "kind": "template",
       "name": "pivot_counterweight"
      },
-     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "pivot_counterweight（紙 neck）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 4,
       "reports": 0
@@ -48,7 +48,7 @@
       "kind": "template",
       "name": "slider_fan"
      },
-     "title": "slider_fan（紙 tube）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "slider_fan（紙 tube）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 6,
       "reports": 0
@@ -81,7 +81,7 @@
       "kind": "template",
       "name": "slider_fan"
      },
-     "title": "slider_fan（紙 rise）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "slider_fan（紙 rise）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 2,
       "reports": 0
@@ -110,7 +110,7 @@
       "kind": "template",
       "name": "pivot_counterweight"
      },
-     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "pivot_counterweight（紙 neck）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 1,
       "reports": 0
@@ -139,7 +139,7 @@
       "kind": "template",
       "name": "pivot_counterweight"
      },
-     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "pivot_counterweight（紙 neck）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 1,
       "reports": 0
@@ -168,7 +168,7 @@
       "kind": "template",
       "name": "slider_fan"
      },
-     "title": "slider_fan（紙 rise）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "slider_fan（紙 rise）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 3,
       "reports": 0
@@ -197,7 +197,7 @@
       "kind": "template",
       "name": "pivot_counterweight"
      },
-     "title": "pivot_counterweight（紙 neck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+     "title": "pivot_counterweight（紙 neck）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
      "numbers": {
       "reviews": 4,
       "reports": 0
@@ -223,7 +223,7 @@
     "kind": "template",
     "name": "balance"
    },
-   "title": "balance（紙 okiagari）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "balance（紙 okiagari）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 3,
     "reports": 0
@@ -237,7 +237,7 @@
     "kind": "template",
     "name": "balance"
    },
-   "title": "balance（紙 yajirobe）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "balance（紙 yajirobe）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 3,
     "reports": 0
@@ -251,7 +251,7 @@
     "kind": "template",
     "name": "lever_link"
    },
-   "title": "lever_link（紙 ebako）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "lever_link（紙 ebako）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 4,
     "reports": 0
@@ -265,7 +265,7 @@
     "kind": "template",
     "name": "lever_link"
    },
-   "title": "lever_link（紙 saru_take）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "lever_link（紙 saru_take）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 4,
     "reports": 0
@@ -279,7 +279,7 @@
     "kind": "template",
     "name": "lever_link"
    },
-   "title": "lever_link（紙 sumo）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "lever_link（紙 sumo）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 3,
     "reports": 0
@@ -293,7 +293,7 @@
     "kind": "template",
     "name": "pull_nod"
    },
-   "title": "pull_nod（紙 bow）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "pull_nod（紙 bow）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 3,
     "reports": 0
@@ -307,7 +307,7 @@
     "kind": "template",
     "name": "pull_nod"
    },
-   "title": "pull_nod（紙 jaw）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "pull_nod（紙 jaw）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 4,
     "reports": 0
@@ -321,7 +321,7 @@
     "kind": "template",
     "name": "pull_nod"
    },
-   "title": "pull_nod（紙 peck）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "pull_nod（紙 peck）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 2,
     "reports": 0
@@ -335,7 +335,7 @@
     "kind": "template",
     "name": "spinner"
    },
-   "title": "spinner（紙 pinwheel）: 作る前のレビューの指摘を、雛形に入れるか見る",
+   "title": "spinner（紙 pinwheel）: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
    "numbers": {
     "reviews": 3,
     "reports": 0
