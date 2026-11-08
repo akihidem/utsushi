@@ -3,6 +3,7 @@
 見る線: 記録の札に写真・感想・止まった所が出る。頁の頭の帯から記録の札へ飛べる。ギャラリーの札から玩具の頁の同じ記録へ行ける。
 見本（デモ用の作り物）は札つきで、その玩具の分だけ出る。予想の段は無いので、開いたらすぐ見える（#242）。本物の API は呼ばない。
 """
+import html
 import io
 import os
 import tempfile
@@ -70,10 +71,10 @@ hero, rest = after.split('id="kasetsu"')[0], after.split('id="minna"')[1]
 assert f'href="#{rid}"' in hero and f'/record/{rid}/media/m1.jpg' in hero
 # 写真は小さい写し（/small）で出し、押すと元の写真を開く（元の写真は 1 枚 3.7MB ほどで、並ぶと重い・#521 と同じ線）
 assert f'id="{rid}"' in rest and f'<a href="/record/{rid}/media/m1.jpg"><img src="/record/{rid}/media/m1.jpg/small"' in rest and "感想: 首が長く揺れた" in rest
-mine = [u for u in demo_samples.UPLOADS if u["toy"] == "張子の首振り虎"]
-assert mine and rest.count('class="item is-sample"') == len(mine) and demo_samples.NOTE in rest
-for u in demo_samples.UPLOADS:
-    assert (u["note"] in rest) == (u["toy"] == "張子の首振り虎"), u["no"]
+# 見本の記録（作り物）は外し、ワークショップの話された言葉を同じ節に出す（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）
+assert 'class="item is-sample"' not in rest and demo_samples.NOTE not in rest
+tora = [s for s in demo_samples.SPOKEN if s["toy"] == "張子の首振り虎"]
+assert tora and all(html.escape(s["text"]) in rest for s in tora), "虎の話された言葉が、虎の頁のこれまでの復元に出る"
 # 御来迎: 画面から記録して、止まった所の答えも札に出る
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "stuck": "3 枚目の折り目", "impression": "折るのは楽しかった"}) == 303

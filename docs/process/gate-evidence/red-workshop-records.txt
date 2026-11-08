@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_workshop_records.py > /tmp/sv-red-wr.txt 2>&1; rc=$?; tail -1 /tmp/sv-red-wr.txt; echo "試験 rc=$rc"'
+# commit: 3ea71f8d（回した時の HEAD）
+AttributeError: module 'web.demo_samples' has no attribute 'VOICE_TOYS'. Did you mean: 'VOICES_NOTE'?
+試験 rc=1
+rc=0

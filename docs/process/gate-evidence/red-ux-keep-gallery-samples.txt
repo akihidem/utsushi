@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_ux_keep_gallery.py > /tmp/sv-red-ukg.txt 2>&1; rc=$?; tail -1 /tmp/sv-red-ukg.txt; echo "試験 rc=$rc"'
+# commit: a61f755f（回した時の HEAD）
+AttributeError: module 'web.demo_samples' has no attribute 'uploads_html'
+試験 rc=1
+rc=0

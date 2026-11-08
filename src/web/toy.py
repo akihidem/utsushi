@@ -175,21 +175,6 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
 
 
-def sample_records(data):
-    """その玩具の見本の記録（デモ用の作り物。札つき）。本物の記録の後ろに置き、混ぜない。"""
-    from . import demo_samples
-
-    return demo_samples.uploads_for(data["toy"])
-
-
-def fold_samples(html, real):
-    """見本の記録（作り物、札つき）。本物の記録がある時は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。
-    畳みの見出しは見本の札と同じ字「見本」で、新しい字は足さない。本物が無い時は今のまま開いて出す。"""
-    if not html or not real:
-        return html
-    return f'<details class="fold-sec samples-fold"><summary>見本</summary>{html}</details>'
-
-
 def analogy_section(data):
     """たとえと、関連する事柄（本人の頼み 11-05「扇を開くのような、身近な物へのたとえと関連する事柄を全部の玩具に」）。
     文は作る側の言葉なので印を付け、答えではない事を書く（J-016 の線）。
@@ -670,8 +655,14 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # ワークショップの試行の写真も、これまでの復元の 1 つとして並びの頭に置く（本人の見直し 11-07 夜の ②「これまでの復元にワークショップの写真がない。」）。
     # 写真がある時は「まだありません」を出さず、見本を畳む（本物が 1 つでもあれば見本は畳む、と同じ考え）
     wsp = workshop.strip(sid)
-    body += (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if wsp else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
-             f'{fold_samples(sample_records(data), bool(recs) or bool(wsp))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
+    # 見本の記録（作り物 8 件）は外し、ワークショップの感想と話された言葉を、写真と記録の後ろに置く（本人の言葉 11-08「見本の記録をワークショップの
+    # データで作成して欲しい。」「2つのデモ案はもちろん他のおもちゃも。」）。札と字は序の頁の寄せられた声と同じ（新しい字を足さない）。
+    # 写真か感想か話された言葉がある時は「まだありません」を出さない（すぐ上に並んだ札と食い違うため）
+    from . import demo_samples
+
+    wsv = demo_samples.workshop_for(sid, data["toy"])
+    body += (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if (wsp or wsv) else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
+             f'{wsv}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
     # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5「型紙の改善の輪は外して、説明の頁と のこす だけにする」。
     # 夕方のレビューの 8「型紙改善の輪と型紙の窓の情報が重なる」）。報告から直した版と次の版を待つ報告は、作る側の様子の頁（/loop/<印>）へ移した。
     # 学ぶ人には、版の歩み（ban_ayumi）が版の並びを、型紙の窓の小さな輪の図が輪の形を見せる。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）

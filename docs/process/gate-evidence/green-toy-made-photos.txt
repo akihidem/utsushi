@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_toy_made_photos.py
+# commit: 960b287b（回した時の HEAD）
+ok 玩具の頁のこれまでの復元に作例の写真: 12 種・事例も・人が入る物と全体の写真は出ない・小さい写し
+rc=0
