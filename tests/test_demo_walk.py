@@ -86,10 +86,10 @@ assert code == 422 and "筒の口の角に当たって" in out.decode(), "床に
 code, out = call(f"/record/{rid}/next", form | {"to": "45"})
 assert code in (200, 303), re.findall(r'<p id="msg">(.*?)<', out.decode()) or out.decode()[-600:]
 assert call(f"/sheet/{SID}/{GS}_v2.pdf")[1][:4] == b"%PDF", "次の版の紙が開ける"
-# ギャラリー（見本も並ぶ）
+# ギャラリー（上げた写真が並ぶ。見本の畳みは本人の決め 11-08 で外した。ギャラリーには作例とワークショップの写真が本物として出るため）
 assert f"/record/{rid}/media/" not in call("/gallery")[1].decode(), "人の確認の前は出さない（#314）"
 assert media_review.record(rid, media_review.waiting()[0][1], "object", "確認者") == []
 gallery = call("/gallery")[1].decode()
-assert f"/record/{rid}/media/" in gallery and "見本" in gallery, "上げた写真と見本が並ぶ"
+assert f"/record/{rid}/media/" in gallery and '<details class="samples-fold">' not in gallery, "上げた写真が並び、見本の畳みは出ない"
 server.shutdown()
 print("ok")

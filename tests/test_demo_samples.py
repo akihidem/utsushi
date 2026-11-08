@@ -43,6 +43,8 @@ for s in workshop:
     assert _h.escape(s["text"]) in yose and _h.escape(s["text"]) not in craft, s["text"][:20]
 # 型紙レビュー 10 本の言葉は職人の言葉の節にだけ出す（同じ言葉を 2 か所に出さない）。レビュー 1 本に 1 枚の札
 assert craft.count('<div class="item">') == 10 and demo_samples.SPOKEN_NOTE in craft, "職人の言葉はレビュー 1 本に 1 枚"
+# 本人の答え（11-08）「字だけ出す。」: レビューの録画は 10 本のうち 5 本に顔が入るので、動画は出さない
+assert "<video" not in craft and "<iframe" not in craft, "職人の言葉は字だけで、動画を出さない"
 for s in review:
     assert _h.escape(s["text"]) in craft and _h.escape(s["text"]) not in yose, s["text"][:20]
     assert _h.escape(s["toy"]) in craft
