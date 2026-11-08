@@ -100,12 +100,16 @@ def _name(row):
 
 
 def trial_pdf(set_name):
-    """改善の輪より前の版の、刷って渡した型紙の PDF（仮説 A。v1〜v4 は仮説 A に当たる tab）。無い時は None。"""
+    """刷った型紙の PDF。無い時は None。
+    改善の輪より前の版は、刷って渡した仮説 A の型紙（v1〜v4 は仮説 A に当たる tab）。
+    改善の輪の中の版（御来迎 v11〜v13・虎 v4〜v6）は、玩具ごとに 1 枚の型紙（J-032）を刷った PDF を <玩具>_v<番号>.pdf で置いた
+    （本人の言葉 11-08「データが残っているはずなので、探して反映させて欲しい」。前は絵が git の外の置き場にだけあり、版の歩みに
+    「この版の絵は残っていない」と出ていた。刷った物をそのまま置き、描き直さない。出所は docs/process/trials/sheets/README.md）。"""
     folder = TRIAL_SHEETS / set_name
     if not re.fullmatch(r"[a-z]+-v\d{1,3}", set_name or "") or not folder.is_dir():
         return None
     toy = set_name.split("-v")[0]
-    for stem in (f"{toy}_H-A_v{set_no(set_name)}", f"{toy}_tab_v{set_no(set_name)}"):
+    for stem in (f"{toy}_H-A_v{set_no(set_name)}", f"{toy}_tab_v{set_no(set_name)}", f"{toy}_v{set_no(set_name)}"):
         if (folder / f"{stem}.pdf").is_file():
             return folder / f"{stem}.pdf"
     return None
