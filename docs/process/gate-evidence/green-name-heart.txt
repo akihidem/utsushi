@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_name_heart.py
+# commit: acc0828e（回した時の HEAD）
+ok 名前の心（序の頁と README の同じ字 3 文・英語とやさしい日本語）
+rc=0

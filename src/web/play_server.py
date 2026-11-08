@@ -290,6 +290,9 @@ def kumitate_steps(sid):
     from . import kumitate
 
     return kumitate.steps(sid, pictures=False)[0]
+# 頼まれた仮説が無い時の断り（刷る・記録を残す・考えを話す）。前は「仮説 {hid} は無い」で、内部の番号（H-A など）をそのまま出していた。
+# 印（A・C）と番号を学ぶ人に出さない決め（本人の答え 11-08「そろえる。」）に外れるので、統括の決め（11-08）の向きの字にした。新しい字は本人の確かめ待ち
+NO_HYPOTHESIS = "その仮説は見つかりません。頁を開き直してください。"
 
 
 def writer(peer, headers):
@@ -1170,7 +1173,7 @@ class Handler(BaseHTTPRequestHandler):
         if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
             return self._send(422, self._kiroku(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], err_at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
-            return self._send(422, self._kiroku(sid, errors=[f"仮説 {hid} は無い"], err_at=rid))
+            return self._send(422, self._kiroku(sid, errors=[NO_HYPOTHESIS], err_at=rid))
         if loop.explanation(rid) is None:
             return self._send(422, self._kiroku(sid, errors=["先に説明を書く"], err_at=rid))
         to = _num(form.get("to"))
@@ -1411,7 +1414,7 @@ class Handler(BaseHTTPRequestHandler):
             hid = form.get("hypothesis", "")
             at = "win" if form.get("at") == "win" else "kasetsu"  # 窓の札から押した時は、通らない理由も窓で読む（#127）
             if hid != hypotheses.sheet_of(sid)["id"]:  # 刷れるのは頁に出すたたき台だけ（J-032）
-                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=at))
+                return self._send(422, self._toy(sid, errors=[NO_HYPOTHESIS], at=at))
             if print_latest(sid, hid) is None:
                 return self._send(422, self._toy(sid, errors=["型紙を作れませんでした（検査に落ちた）"], at=at))
             msg = "紙を作りました。下の窓で絵を見てください。印刷する時は、PDF の大きさを 100% にしてください。"
@@ -1421,7 +1424,7 @@ class Handler(BaseHTTPRequestHandler):
             from . import think_sheet
 
             if not think_sheet.usable(self, sid, hid):  # 話した考えから作った案の記録は、作った本人の画面からだけ
-                return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at="kiroku", filled=(act, form)))
+                return self._send(422, self._toy(sid, errors=[NO_HYPOTHESIS], at="kiroku", filled=(act, form)))
             # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
             rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
                    "impression": form.get("impression", "").strip(),

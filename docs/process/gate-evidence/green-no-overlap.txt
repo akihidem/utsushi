@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_no_overlap.py
+# commit: 14143118（回した時の HEAD）
+/tmp/tmpk8i9959e/play/NDL-1187053-R0000005-L/.tmp-z8sir_4g/H-C_v1.pdf
+/tmp/tmpk8i9959e/play/NDL-1187053-R0000014-R/.tmp-wu211g7b/H-A_v1.pdf
+ok 主な頁の字の重なり: 15 頁 × 5 大きさ × 3 言葉 × 白と暗い版（原画の写しの有り無し）で KNOWN の外は 0。KNOWN の残り 11 件・見えなくなった KNOWN 2 件（写しの有り無しの片方でだけ出る物もある。両方の木で見えなければ行を外す）（98 秒）
+  見えなかった KNOWN: 横・えらぶ・easy
+  見えなかった KNOWN: 道・えらぶ
+rc=0

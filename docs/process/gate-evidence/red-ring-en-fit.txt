@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ring_en_fit.py
+# commit: ad6d67f9（今の main）の木に tests/test_ring_en_fit.py だけを当てた（git の外の写し・輪の図 2 つは ad6d67f9 の物のまま）
+Traceback (most recent call last):
+  File "tests/test_ring_en_fit.py", line 57, in <module>
+    assert w <= wa.BOX_W - 2 * PAD, ("型紙の窓の札に入らない", en(line), round(w, 1))
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('型紙の窓の札に入らない', 'What you changed:', 132.2)
+rc=1

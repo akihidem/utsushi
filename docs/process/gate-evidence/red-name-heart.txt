@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_name_heart.py
+# commit: ad27d50d（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_name_heart.py", line 21, in <module>
+    assert page.count('id="namae"') == 1 and f"<h2>{about.NAME_HEAD}</h2>" in page
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

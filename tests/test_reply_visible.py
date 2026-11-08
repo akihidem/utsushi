@@ -16,6 +16,7 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from api import ask  # noqa: E402
 from omochae.contrib import MAX_BODY  # noqa: E402
+from web import play_server  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web.toy import reply_note  # noqa: E402
 
@@ -76,7 +77,10 @@ assert "先に紙を作ると、作りながら見る頁が開きます" in note
 
 # 刷る: 通らないと仮説の節に、通ると型紙の窓に文が出る。
 code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
-assert code == 422 and "仮説 H-ZZ は無い" in note_at(page, "kasetsu", "alert")
+# 無い仮説の断りは、内部の番号（H-ZZ）を出さない（本人の答え 11-08「そろえる。」・統括の決め）
+alert = note_at(page, "kasetsu", "alert")
+assert code == 422 and "H-ZZ" not in alert, ("無い仮説の断りに内部の番号が出る", alert)
+assert alert and getattr(play_server, "NO_HYPOTHESIS", None) and play_server.NO_HYPOTHESIS in alert, alert
 page = landed(call(f"/toy/{G}/print", {"hypothesis": GS}), "win")
 assert "紙を作りました" in note_at(page, "win", "status")
 # 別の仮説の紙がある時でも、頼んだ仮説の紙が無ければ同じ所に着く。

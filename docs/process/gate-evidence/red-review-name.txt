@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_review_name.py
+# commit: 32b981e5（回した時の HEAD。src/web/kaizen_versions.py だけを main cbb9c8c8 の物に戻した木。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_review_name.py", line 25, in <module>
+    assert not left, ("前の呼び名が残っている", left)
+           ^^^^^^^^
+AssertionError: ('前の呼び名が残っている', ['src/web/kaizen_versions.py'])
+rc=1

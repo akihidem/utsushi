@@ -8,7 +8,7 @@
   - ループ 3: 雛形の直し（T-番号）と、案から刻んだエンジンの版（型紙を作る側を直した物）。材料の記録が通ったループも並べる。
   - 寸法の版は根拠の記録で決める。話した考えから作った紙（OWN-n）の記録はループ 1 も付く。作りながらの話がある記録と、話の無い記録はループ 2。
     上げた後に残した話、手帖で上げた写真と動画、上げる口から来た記録はループ 4。
-  - 作る前のレビューは作っていないので、4 つのどれにも数えず、材料の名で出す。
+  - ワークショップの型紙レビューは作っていないので、4 つのどれにも数えず、材料の名で出す。
   - 記録に結ばれていない直し（試す前の設計・見学者の意見・決定だけの直し）は「ループの外」。ループに入れて見せない。
 - repo に入っている記録（11-04 の試行の分）は、置き場（OMOCHAE_DATA）が別の場でも読む。読まないと、同じ版の答えが場によって変わる。
   置き場の同じ番号は別の記録なので、repo の直しの根拠は repo から読み、置き場の話した字と写真を混ぜない。
@@ -31,7 +31,7 @@ from omochae import loop, records, store, talk_log
 from omochae.hypotheses import ROOT
 
 OUTSIDE = "ループの外"
-REVIEW_NAME = "作る前のレビュー"
+REVIEW_NAME = "ワークショップの型紙レビュー"  # 呼び名は制作者の言葉（2026-11-08）「全てがワークショップです。」で替えた（エンジンの engine_loop と同じ字）
 RECORD_ID = re.compile(r"R-[0-9]{4,}")
 # 案の数のうち、作る時の記録から来た数と、上げた後の話の数（engine_loop の numbers の欄）。
 MAKING_NUMBERS = ("stuck_people", "stuck_taps", "quit_people", "craft_talks", "craft_people", "fixes", "ideas", "not_moved")
@@ -66,7 +66,7 @@ def _record(rid, in_repo=False):
 
 
 def record_loops(rid, in_repo=False):
-    """記録が通ったループ。Returns (番号の list, 作る前のレビューか)。読めない記録は何も付けない。"""
+    """記録が通ったループ。Returns (番号の list, ワークショップの型紙レビューか)。読めない記録は何も付けない。"""
     rec = _record(rid, in_repo)
     if rec is None:
         return [], False
