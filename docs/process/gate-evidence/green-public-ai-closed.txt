@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_public_ai_closed.py
+# commit: 3ec588cf（回した時の HEAD）
+/tmp/tmp5nvuy3lq/play/NDL-1187053-R0000005-L/.tmp-31cenz3p/H-C_v1.pdf
+/tmp/tmp5nvuy3lq/play/NDL-1187053-R0000005-L/.tmp-fnwouj7n/H-C_v1.pdf
+ok 公開の場では、立てた後に鍵が置かれても、どの AI の口も Claude を呼ばない（返す字は鍵が無い時のまま）
+rc=0

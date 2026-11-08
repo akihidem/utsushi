@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_public_ai_closed.py
+# commit: 7f6c06e5（回した時の HEAD）
+/tmp/tmp9dpme7as/play/NDL-1187053-R0000005-L/.tmp-6amf_we2/H-C_v1.pdf
+/tmp/tmp9dpme7as/play/NDL-1187053-R0000005-L/.tmp-ob7tmim2/H-C_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_public_ai_closed.py", line 68, in <module>
+    assert code == 200 and ask.NO_KEY in page, ("手順の質問は、鍵が無い時の字のまま", code)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('手順の質問は、鍵が無い時の字のまま', 200)
+rc=1
