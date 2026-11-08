@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kasetsu_plain_all.py
+# commit: 6c5fc344（今の main）の木に tests/test_kasetsu_plain_all.py だけを当てた（git の外の写し・頁の作りは 6c5fc344 の物のまま）
+Traceback (most recent call last):
+  File "tests/test_kasetsu_plain_all.py", line 35, in <module>
+    assert lines and all(x["text"].startswith(hypotheses.shown_name(hypotheses.sheet_of(G)) + ": ") for x in lines if x["label"] == zukan.HYPO), lines[:1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [{'text': '仮説 C 柄を下から押し上げる: 筒を持ち、下に出た割り箸の柄を押し上げる', 'label': '仮説'}]
+rc=1

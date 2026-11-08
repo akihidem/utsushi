@@ -1,36 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 730" width="600" height="730" role="img" aria-labelledby="t d">
-<title id="t">型紙が直るフィードバックループ</title>
-<desc id="d">作る人が刷って作る → 字・声・写真・動画でのこす → 作る側の Claude Code が読んで新しい案 → Claude が作ったエンジンが 3D で確かめる → 人が採る → 新しい版を刷る → また作る</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1150" width="600" height="1150" role="img" aria-labelledby="t d">
+<title id="t">型紙とエンジンが直る 2 つのフィードバックループ</title>
+<desc id="d">① 型紙の版が上がる輪: 作る人が刷って作る → 字・声・写真・動画でのこす → 作る側の Claude Code が読んで新しい案 → Claude が作ったエンジンが 3D で確かめる → 人が採る → 新しい版を刷る。② エンジンの版が上がる輪: 記録や 3D の確かめで見つかった事 → 作る側の Claude Code がエンジンを直す → 人が台帳に刻みエンジンの版が上がる → そのエンジンが作る型紙に使われる（3D の確かめは、今は御来迎と虎）。人の印: ① の 1・2 は作り手（型紙を紙で試す）、① の 5 と ② の c は管理人（案を採る・エンジンの版を刻む）。</desc>
 <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8c8c8c"/></marker></defs>
-<rect x="40" y="12" width="470" height="38" rx="19" fill="#6b4f2a"/>
-<text x="275.0" y="38" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="20" font-weight="bold" fill="#ffffff">型紙が直るフィードバックループ</text>
-<rect x="40" y="64" width="470" height="76" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
-<text x="54" y="90" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" font-weight="bold" fill="#8a6d3b">1</text>
-<text x="275.0" y="109.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="20" fill="#2b2b2b">作る人が型紙を刷って作る</text>
-<rect x="40" y="174" width="470" height="76" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
-<text x="54" y="200" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" font-weight="bold" fill="#8a6d3b">2</text>
-<text x="275.0" y="205" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">作る途中や完成形を</text>
-<text x="275.0" y="231" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">字・声・写真・動画でのこす（フィードバック）</text>
-<line x1="275.0" y1="142" x2="275.0" y2="171" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
-<rect x="40" y="284" width="470" height="76" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
-<text x="54" y="310" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" font-weight="bold" fill="#8a6d3b">3</text>
-<text x="275.0" y="315" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">作る側の Claude Code が</text>
-<text x="275.0" y="341" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">記録を読み、新しい案を考える</text>
-<line x1="275.0" y1="252" x2="275.0" y2="281" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
-<rect x="40" y="394" width="470" height="76" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
-<text x="54" y="420" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" font-weight="bold" fill="#8a6d3b">4</text>
-<text x="275.0" y="425" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">Claude が作ったエンジンが</text>
-<text x="275.0" y="451" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">3D で組んで確かめる</text>
-<line x1="275.0" y1="362" x2="275.0" y2="391" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
-<rect x="40" y="504" width="470" height="76" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
-<text x="54" y="530" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" font-weight="bold" fill="#8a6d3b">5</text>
-<text x="275.0" y="535" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">どの版にするかを</text>
-<text x="275.0" y="561" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">人が決める</text>
-<line x1="275.0" y1="472" x2="275.0" y2="501" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
-<rect x="40" y="614" width="470" height="76" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
-<text x="54" y="640" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" font-weight="bold" fill="#8a6d3b">6</text>
-<text x="275.0" y="659.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="20" fill="#2b2b2b">新しい版の型紙を刷る</text>
-<line x1="275.0" y1="582" x2="275.0" y2="611" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
-<path d="M510 652.0 H544 V102.0 H516" fill="none" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
-<text x="556" y="377.0" transform="rotate(90 556 377.0)" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="17" fill="#8c8c8c">次の版で、また作る</text>
+<rect x="48" y="12" width="462" height="40" rx="20" fill="#6b4f2a"/>
+<text x="279.0" y="39" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" font-weight="bold" fill="#ffffff">型紙とエンジンが直る 2 つのフィードバックループ</text>
+<text x="279.0" y="70" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" fill="#8c8c8c">人の印＝ループの中の人（作り手が紙で試す・管理人が案を採る）</text>
+<rect x="48" y="76" width="230" height="30" rx="15" fill="#8a6d3b"/>
+<text x="163" y="97" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="16" font-weight="bold" fill="#ffffff">① 型紙の版が上がる輪</text>
+<rect x="48" y="114" width="462" height="70" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
+<text x="60" y="136" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#8a6d3b">1</text>
+<text x="279.0" y="156.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">作る人が型紙を刷って作る</text>
+<rect x="414" y="120" width="88" height="24" rx="12" fill="#b5562f"/>
+<circle cx="428" cy="128" r="4" fill="#ffffff"/><path d="M421 140 q7 -10 14 0" fill="#ffffff"/>
+<text x="470" y="137" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="13" font-weight="bold" fill="#ffffff">作り手</text>
+<line x1="279.0" y1="186" x2="279.0" y2="211" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="214" width="462" height="70" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
+<text x="60" y="236" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#8a6d3b">2</text>
+<text x="279.0" y="242" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">作る途中や完成形を</text>
+<text x="279.0" y="267" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">字・声・写真・動画でのこす（フィードバック）</text>
+<rect x="414" y="220" width="88" height="24" rx="12" fill="#b5562f"/>
+<circle cx="428" cy="228" r="4" fill="#ffffff"/><path d="M421 240 q7 -10 14 0" fill="#ffffff"/>
+<text x="470" y="237" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="13" font-weight="bold" fill="#ffffff">作り手</text>
+<line x1="279.0" y1="286" x2="279.0" y2="311" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="314" width="462" height="70" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
+<text x="60" y="336" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#8a6d3b">3</text>
+<text x="279.0" y="342" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">作る側の Claude Code が</text>
+<text x="279.0" y="367" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">記録を読み、新しい案を考える</text>
+<line x1="279.0" y1="386" x2="279.0" y2="411" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="414" width="462" height="70" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
+<text x="60" y="436" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#8a6d3b">4</text>
+<text x="279.0" y="442" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">Claude が作ったエンジンが</text>
+<text x="279.0" y="467" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">3D で組んで確かめる</text>
+<line x1="279.0" y1="486" x2="279.0" y2="511" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="514" width="462" height="70" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
+<text x="60" y="536" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#8a6d3b">5</text>
+<text x="279.0" y="542" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">どの版にするかを</text>
+<text x="279.0" y="567" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">人が決める</text>
+<rect x="414" y="520" width="88" height="24" rx="12" fill="#4a5d8a"/>
+<circle cx="428" cy="528" r="4" fill="#ffffff"/><path d="M421 540 q7 -10 14 0" fill="#ffffff"/>
+<text x="470" y="537" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="13" font-weight="bold" fill="#ffffff">管理人</text>
+<line x1="279.0" y1="586" x2="279.0" y2="611" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="614" width="462" height="70" rx="12" fill="#fdf6e3" stroke="#8a6d3b" stroke-width="2"/>
+<text x="60" y="636" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#8a6d3b">6</text>
+<text x="279.0" y="656.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" fill="#2b2b2b">新しい版の型紙を刷る</text>
+<path d="M510 649.0 H540 V149.0 H516" fill="none" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<text x="554" y="399.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" fill="#8c8c8c" transform="rotate(90 554 399.0)">次の版で、また作る</text>
+<rect x="48" y="722" width="250" height="30" rx="15" fill="#2f5d62"/>
+<text x="173" y="743" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="16" font-weight="bold" fill="#ffffff">② エンジンの版が上がる輪</text>
+<rect x="48" y="760" width="462" height="70" rx="12" fill="#eef6f4" stroke="#2f5d62" stroke-width="2"/>
+<text x="60" y="782" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#2f5d62">a</text>
+<text x="279.0" y="788" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">記録や 3D の確かめで</text>
+<text x="279.0" y="813" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">見つかった事（作りの抜け）</text>
+<line x1="279.0" y1="832" x2="279.0" y2="857" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="860" width="462" height="70" rx="12" fill="#eef6f4" stroke="#2f5d62" stroke-width="2"/>
+<text x="60" y="882" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#2f5d62">b</text>
+<text x="279.0" y="888" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">作る側の Claude Code が</text>
+<text x="279.0" y="913" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">エンジンを直す（検査や組み立ての段）</text>
+<line x1="279.0" y1="932" x2="279.0" y2="957" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="960" width="462" height="70" rx="12" fill="#eef6f4" stroke="#2f5d62" stroke-width="2"/>
+<text x="60" y="982" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#2f5d62">c</text>
+<text x="279.0" y="988" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">人が台帳に刻み、</text>
+<text x="279.0" y="1013" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">エンジンの版が上がる</text>
+<rect x="414" y="966" width="88" height="24" rx="12" fill="#4a5d8a"/>
+<circle cx="428" cy="974" r="4" fill="#ffffff"/><path d="M421 986 q7 -10 14 0" fill="#ffffff"/>
+<text x="470" y="983" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="13" font-weight="bold" fill="#ffffff">管理人</text>
+<line x1="279.0" y1="1032" x2="279.0" y2="1057" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<rect x="48" y="1060" width="462" height="70" rx="12" fill="#eef6f4" stroke="#2f5d62" stroke-width="2"/>
+<text x="60" y="1082" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#2f5d62">d</text>
+<text x="279.0" y="1088" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">そのエンジンが作る型紙に使われる</text>
+<text x="279.0" y="1113" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">（3D の確かめは、今は御来迎と虎）</text>
+<path d="M510 1095.0 H540 V795.0 H516" fill="none" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
+<text x="554" y="945.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" fill="#8c8c8c" transform="rotate(90 554 945.0)">また見つけて、直す</text>
+<path d="M48 249.0 H26 V795.0 H42" fill="none" stroke="#8c8c8c" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#a)"/>
 </svg>

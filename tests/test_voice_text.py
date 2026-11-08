@@ -162,8 +162,9 @@ rid4 = new_record()
 techo_site.save_media(rid4, "video/mp4", video(), keep_voice=srv.voice_tool)
 v4 = voice_text.voice_dir(rid4) / "m1.mka"
 srv.voice_jobs.jobs.put(v4)
-for _ in range(200):
-    if voice_text.text_of(v4).exists():
+# 作業列は字を書いてから声を消すので、字が書けた所でなく、声が消えた所まで待つ（混んだ機械で、間を見て落ちないように・上限 60 秒）
+for _ in range(1200):
+    if voice_text.text_of(v4).exists() and not v4.exists():
         break
     time.sleep(0.05)
 assert voice_text.text_of(v4).exists() and not v4.exists(), "作業列が字にして声を消す"
@@ -176,8 +177,10 @@ stale.write_bytes(b"voice")
 os.utime(stale, (past, past))
 srv2 = play_server.serve(0)
 assert srv2.voice_tool is False
-for _ in range(200):
-    if not stale.exists():
+# 掃除は音を消してから印を書くので、音が消えた所でなく、印が書けた所まで待つ（前は音が消えた所で待ちをやめ、機械が混んでいる時に
+# 印を書く前の間を見て落ちた。#666 の ./run.sh・負荷の平均 36〜40 の時）。待ちの上限も、混んだ機械に合わせて 60 秒にした
+for _ in range(1200):
+    if not stale.exists() and voice_text.dropped_of(stale).exists():
         break
     time.sleep(0.05)
 assert not stale.exists() and voice_text.dropped_of(stale).exists(), "道具が無いサーバでも、立てた時に 72 時間の掃除が回る"

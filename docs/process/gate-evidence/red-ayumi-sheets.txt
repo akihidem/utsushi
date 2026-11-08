@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ban_ayumi.py
+# commit: a5525417（回した時の HEAD。src/omochae/kaizen_history.py だけを main ad6d67f9 の物に戻した木。試しのためで commit していない）
+Traceback (most recent call last):
+  File "tests/test_ban_ayumi.py", line 78, in <module>
+    assert imgs == [f"/history/sheets/tora-v{n}.png" for n in range(1, 8)], imgs
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['/history/sheets/tora-v1.png', '/history/sheets/tora-v2.png', '/history/sheets/tora-v3.png', '/history/sheets/tora-v7.png']
+rc=1
