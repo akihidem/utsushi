@@ -32,7 +32,7 @@ const about=[...hall.querySelectorAll('a')].find(a=>(a.getAttribute('href')||'')
 const wm=(e)=>e?getComputedStyle(e).writingMode:null;
 parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,lang:document.documentElement.lang,sx:document.documentElement.scrollWidth,
  kana:box(kana),yomi:box(yomi),h1:box(q('#hall h1')),sub:box(q('#hall .sub')),en:box(q('#hall .en')),about:box(about),
- yomi_text:yomi?yomi.textContent:null,yomi_px:yomi?parseFloat(getComputedStyle(yomi).fontSize):0,
+ sub_text:q('#hall .sub')?q('#hall .sub').innerText:null,yomi_text:yomi?yomi.textContent:null,yomi_px:yomi?parseFloat(getComputedStyle(yomi).fontSize):0,
  wm:{h1:wm(q('#hall h1')),sub:wm(q('#hall .sub')),en:wm(q('#hall .en'))}}),'*')},500)})</script>"""
 WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
 addEventListener('message',e=>{document.getElementById('measured').textContent+=e.data+'\\n'})</script>"""
@@ -114,6 +114,8 @@ for look in ("tenji", "zine"):
         # 3. 書きの向き
         if lang == "en":
             assert rec["wm"] == {"h1": "horizontal-tb", "sub": "horizontal-tb", "en": "horizontal-tb"}, (where, rec["wm"])
+            # 英語の副題は 3 行で 1 つの句（統括の気づき 11-08: 2 行目が前の副題の頃の訳 "Finding out how lost toys moved" のまま残り、3 行目とつながらなかった）
+            assert [x.strip() for x in rec["sub_text"].splitlines() if x.strip()] == ["From Edo nishiki", "the lost movements of toys", "brought back to life in paper"], (where, rec["sub_text"])
         else:
             assert rec["wm"]["h1"] == "vertical-rl", (where, rec["wm"])
             if w > 820:

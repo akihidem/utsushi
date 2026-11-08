@@ -6,5 +6,5 @@
 - ゴールの要件: tests/test_entrance_yomi.py（白と暗い版・日本語・やさしい日本語・英語・幅 320/390/1440: 読みはひらがなの真下で 12px 以上・英字と題と副題と このサイトについて が重ならない・幅の外に出ない・横にはみ出さない・英語は横書き・日本語の題は縦書き・幅 390×844 と 1440×900 で このサイトについて が最初の画面の中）
 - 検証ゲート: **済み**。Red: 直す前で rc 1（gate-evidence/red-entrance-yomi.txt・読みが無い）。Green: rc 0（gate-evidence/green-entrance-yomi.txt）
 - エビデンスゲート: test_hall_tate・test_ukabu・test_dark_entrance（題の字の形を新しい形に合わせた）・test_white_only・test_cover_growing・test_ux_stage0・test_looks_motion・test_about_site・test_entrance_scroll・test_en_all・test_easy_all・test_tap_size・test_en_terms・test_ledger が rc 0。白と暗い版の幅 1440 の絵を目で見た
-- 気づき（直していない）: 英語の頁の副題の 2 行目は今も "Finding out how lost toys moved"（前の題の訳）で、3 行目 "brought back to life in paper" と 1 つの句につながらない。UX の担当の案は 2 行目を "the lost movements of toys" とする形。本人の副題の字の訳なので、替えるかは統括と本人
+- 副題の英語の 2 行目（統括の答え 11-08: 訳は作る側の仕事・本人の日本語は替えない）: 前の副題（紙で実験して確かめる）の頃の訳 "Finding out how lost toys moved" が残り、3 行目 "brought back to life in paper" と 1 つの句につながらなかったので、"the lost movements of toys" にした（UX の担当の案と同じ）。試験は英語の副題が 3 行で "From Edo nishiki / the lost movements of toys / brought back to life in paper" である事を見る。Red: 前の訳で rc 1（gate-evidence/red-entrance-sub-en.txt）、Green: rc 0（green-entrance-sub-en.txt）
 - マージ後の書き戻し: Issue は立てていない
