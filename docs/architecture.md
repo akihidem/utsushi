@@ -121,7 +121,7 @@
 | `tests/test_by_set.py` | 記録の組ごとの欄（たたき台・寸法・出さない字）と雛形の控えの組の並びの見張り。今の記録では load が前と同じ物を返す事も見る（#115） |
 | `tests/run_floors.py`・`run.sh` | 検査の入口 |
 | `tests/compare_engine.py` | エンジンの共通の場面を、この repo と paper-to-toy の両方で回して結果を比べる。相手の repo が無い所でも `./run.sh` を回せるように、手で回す（#164） |
-| `engine/` | 型紙エンジン（paper-to-toy）を、提出のためにまとめた物（エンジンの main の頭の中身。履歴は paper-to-toy の repo で辿る。まとめた時の頭は README の「開発基盤と提出物の切り分け」の節）。試験は `engine/run.sh` で別に回し、この repo の `./run.sh` は流さない。正はエンジンの側。エンジンは 11-04 に `src/omochae/` の生成と検査の部分から切り出した（切り出した元の commit は `1d17988`）ので、`src/omochae/` は、うつしと engine/ の両方にある。型紙を作る仕組みと検査を直す時は、先に paper-to-toy を直して、それからこの repo に取り込む（比べる道具は上の `tests/compare_engine.py`）。入れた後に、engine/ の中の SECURITY.md を一番上の 1 つにまとめた（README の「開発基盤と提出物の切り分け」から、この行へ移した字） |
+| `engine/` | 型紙エンジン（paper-to-toy）を、提出のためにまとめた物（エンジンの main の頭の中身。履歴は paper-to-toy の repo で辿る。まとめた時の頭は README の「開発基盤と提出物の切り分け」の節）。試験は `engine/run.sh` で別に回し、この repo の `./run.sh` は流さない。正はエンジンの側。エンジンは 11-04 に `src/omochae/` の生成と検査の部分から切り出した（切り出した元の commit は `1d17988`）ので、`src/omochae/` は、うつしと engine/ の両方にある。型紙を作る仕組みと検査を直す時は、先に paper-to-toy を直して、それからこの repo に取り込む（比べる道具は上の `tests/compare_engine.py`）。入れた後に、engine/ の中の SECURITY.md を一番上の 1 つにまとめ（engine/README.md の 2 か所の道もそこへ向けた）、engine/README.md の概要に、エンジンを別の repo で開発して engine/ に一緒にした事と、両方を審査の対象にしてほしいという制作者の言葉の 2 文を足した（README の「開発基盤と提出物の切り分け」から、この行へ移した字。2 文は 11-08 の写し直しで足した） |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |
 | `src/omochae/ledger.py` | 台帳の検査と、地図と主張の表の描画 |
