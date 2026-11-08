@@ -130,7 +130,7 @@ html[lang=en] .how.is-local.is-browser::before{content:" "}
    （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる。
    置き場は、マイクと閉じる印の並ぶ上の帯（手順の絵は上から 84px より下に描く）。前は閉じる印の下に置き、375×667 で御来迎の手順 1〜3 の絵の角を隠した */
 .genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
-.kasane-go{position:absolute;top:12px;left:96px;width:64px;height:64px;display:grid;place-items:center;align-content:center;gap:1px;box-sizing:border-box;padding:2px 0;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3;text-decoration:none}
+.kasane-go{position:absolute;top:12px;left:min(96px,calc(50% - 60px));width:min(64px,18%);height:64px;display:grid;place-items:center;align-content:center;gap:1px;box-sizing:border-box;padding:2px 0;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3;text-decoration:none}
 .kasane-go svg{width:24px;height:24px}
 .kasane-go span{display:block;width:4.2em;font-size:12px;line-height:1.15;text-align:center;letter-spacing:0}
 .genga-thumb img{display:block;width:100%;height:100%;object-fit:contain}
@@ -597,8 +597,10 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # 印の下に見える字で同じ口の名を添える（本人の答え 11-08「印に「カメラに重ねる」の字を足す。」・前からの字）。title にも同じ字（統括の決め 11-08）。
             # 字は 12px（統括の決め 11-08「読める大きさ（帯のほかの字と同じか 12px 以上）」）。12px の 7 字（84px）は帯の空きに 1 行で入らないので、
             # 印の中で「カメラに」「重ねる」の 2 行にする（字の幅を 4 字に絞って折る。英語の訳は「Camera」「overlay」の 2 行）。印は帯のほかの印と同じ 64×64px で、
-            # マイクの右（left:96px）に置く: 右から数えて置くと、縦に送れる頁で送りの棒の幅（15px）だけ左へ寄り、幅 320 でマイクと重なった（英語の頁で測った）。
-            # マイク（12〜84px）との間は 12px（統括の気づき 11-08: 前の 4px は指で押し違えやすい。8px 以上）。幅 320 で 96〜160px、原画の小さな絵は 168〜232px。読み上げは見える字
+            # マイクの右に置く。置き場と幅は帯の幅（手帖の箱の幅）で割り付ける: left は min(96px, 50% - 60px)・幅は min(64px, 18%)。
+            # 右から数えて置くと縦の送りの棒の幅（15px）だけ左へ寄り、幅 320 でマイクと重なった（英語の頁で測った）。left:96px に決め打ちすると、送りの棒が
+            # 出た幅 320（箱の幅 305px）で、右寄せの原画の小さな絵（153〜217px）と 7px 重なった（11-08・写しのある木の test_hmd）。割り付けると、箱の幅 305px で
+            # 92.5〜147.4px（マイク 12〜84px との間 8.5px・原画の小さな絵の手前 5.6px）、幅 320 で 96〜153.6px、幅 360 以上で 96〜160px。読み上げは見える字
             + (f'<a class="kasane-go" id="kasane-go" href="/toy/{esc(sid)}/kasane" title="{esc(hmd.CAM_LINK)}" data-on="step">{KASANE}<span>{esc(hmd.CAM_LINK)}</span></a>' if hmd.available(sid) else '')
             + g_thumb + koma +
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
