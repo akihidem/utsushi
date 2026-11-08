@@ -109,6 +109,16 @@ def songs(src):
     return [e for e in labels.source_lines(src) if e.get("checked_by")]
 
 
+# 本人の決め 11-08「かなと漢字の書き分けと濁点だけの違いは A（1997 の翻刻）にそろえる」で読みを決めた歌。作る側が複写から写した字で、
+# 1 字ずつの確かめはまだ。頁に「確かめた人」を出すと 1 字ずつ確かめたように読めて事実と違うので、読みの出所の 1 行だけを出す（統括の決め 11-08）
+READ_A = "読み: 1997 年の翻刻による"
+
+
+def decided(src):
+    """決めで読みにした歌（人が確かめた読みが無い時だけ使う）。採らなかった読みは labels.source_lines が外す。"""
+    return [e for e in labels.source_lines(src) if not e.get("checked_by") and e.get("decided_by")]
+
+
 def _pic(sid, src, alt, lazy=False, href=None, new_tab=False):
     """頁の全体の絵と玩具の所の枠。頁の写しが無ければ玩具の写し（比は保つ）。どちらも無ければ空。
     href があれば絵そのものを、そのリンクにする（押せば大きく見られる。字のリンクと同じ所）。new_tab は別のタブで開く（頁を離れない所の畳み）。"""
@@ -134,7 +144,11 @@ def _songs(src):
     """歌の字と、その印の 1 行（原文の引用・確かめた人）。読みが無ければ両方とも空。"""
     lines = songs(src)
     if not lines:
-        return "", ""
+        # 人が確かめた読みが無く、決めで読みにした歌がある時は、その歌と出所の 1 行（確かめた人は出さない）
+        dec = decided(src)
+        if not dec:
+            return "", ""
+        return '<div class="genga-songs">' + "".join(f"<p>{esc(e['text'])}</p>" for e in dec) + "</div>", f'<p class="meta">{esc(READ_A)}</p>'
     who = "・".join(sorted({wording.plain(e["checked_by"]) for e in lines}))
     body = "".join(f"<p>{esc(e['text'])}</p>" for e in lines)
     return f'<div class="genga-songs">{body}</div>', f'<p class="meta">{esc(QUOTE + who)}</p>'
