@@ -1,0 +1,13 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: 9e86537b（回した時の HEAD）
+/tmp/tmpudfm12e1/play/NDL-1187053-R0000005-L/.tmp-mzgl_e2p/H-C_v1.pdf
+/tmp/tmpudfm12e1/play/NDL-1187053-R0000014-R/.tmp-r02084mh/H-A_v1.pdf
+/tmp/tmpudfm12e1/play/NDL-1187053-R0000005-L/.tmp-sl8punyg/H-C_v1.pdf
+/tmp/tmpudfm12e1/play/NDL-1187053-R0000014-R/.tmp-kju12m51/H-A_v1.pdf
+/tmp/tmpudfm12e1/play/NDL-1187053-R0000004-L/.tmp-2suat18v/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 227, in <module>
+    assert st["label"] and not st["label"]["cut"] and not st["label"]["iconOut"] and st["label"]["px"] >= 12, ("印の字が読める大きさで切れず、印の高さに収まる", f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('印の字が読める大きさで切れず、印の高さに収まる', {'sid': 'NDL-1187053-R0000005-L', 'w': 320, 'h': 568, 'start': 555, 'go': [567, 611], 'sx': 305, 'step': {'kasane': [93, 12, 147, 76], 'label': {'box': [95, 36, 145, 77], 'px': 12, 'lines': 3, 'cut': True, 'iconOut': True}, 'bar': [[12, 84], [12, 76], [12, 76], [12, 76]], 'text': [16, 296, 289, 388], 'others': [[12, 12, 84, 84], [229, 12, 293, 76], [153, 12, 217, 76]], 'keysBottom': 573}, 'pic': 'pic', 'lang': 'en'})
+rc=1
