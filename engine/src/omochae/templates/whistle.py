@@ -444,7 +444,8 @@ def bom(p):
         {"number": 3, "key": "joint", "name": "継ぎの帯", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明（図では継ぎに輪が見える）", "reason": "2 本を角度を付けて留めるため"},
         {"number": 4, "key": "bell", "name": "鈴", "qty": 1, "material": paper, "substituted": True, "original_guess": "金属の鈴（図の丸い形と口からの推定）", "reason": "紙の鈴は鳴らないので、玉を入れた紙の袋で鳴らすため"},
         {"number": 7, "key": "cord", "name": "糸", "qty": 1, "material": f"木綿の糸（{cord:g}mm に切る）", "substituted": True, "original_guess": "紐（図の線による）", "reason": "家にあるため"},
-        {"number": 8, "key": "bead", "name": "鈴の玉", "qty": 1, "material": f"油粘土の玉（直径 {p['bead_d']:g}mm）かビーズ", "substituted": True, "original_guess": "鈴の中の玉（推定）", "reason": "大きさを変えて試しやすいため"},
+        # 鈴の玉の代わりの物にビーズを書かない（材料の前提で樹脂の側。油粘土は使ってよい。設計の条件・2026-11-07）
+        {"number": 8, "key": "bead", "name": "鈴の玉", "qty": 1, "material": f"油粘土の玉（直径 {p['bead_d']:g}mm）", "substituted": True, "original_guess": "鈴の中の玉（推定）", "reason": "大きさを変えて試しやすいため"},
         {"number": 9, "key": "toggle", "name": "吊りの横木", "qty": 1, "material": "竹串（長さ 30mm に切る）", "substituted": True, "original_guess": "竹か木の小片（図の吊りの横棒）", "reason": "家にあるため"},
     ]
 

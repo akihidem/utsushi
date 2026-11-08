@@ -141,7 +141,8 @@ assert st == 303 and where == f"/toy/{G}/tsukuru?h={GS}&v=1&n=3", (st, where)
 st, where, _ = form_step(base, "198.51.100.60", 2, "stuck")
 assert st == 303 and where == f"/toy/{G}/tsukuru?h={GS}&v=1&n=2&ev=stuck", (st, where)
 st, where, _ = form_step(base, "198.51.100.60", TOTAL, "done")
-assert st == 303 and where.startswith(f"/toy/{G}?msg={DONE_NOTE}&at=kiroku&see={GS}&kind=sheet&v=1"), ("組み上がりは記録の欄へ", st, where)
+# 組み上がりは のこすの頁（手帖の記録の頁）へ直に（本人の答え 11-08「B。」・統括の決め (a)。前は玩具の頁の記録の欄へ）
+assert st == 303 and where.startswith(f"/toy/{G}/techo/kiroku?msg={DONE_NOTE}"), ("組み上がりは のこすの頁へ", st, where)
 after = sorted(making.rglob("*"))
 assert before and before == after, ("断った段は置き場へ書かない（前に書いた段は在る）", len(before), len(after))
 # 段の口が上限でも、同じ番地の書き込みは止まらない

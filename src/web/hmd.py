@@ -24,12 +24,19 @@
 - 作っている間、画面が消えないように頼む（断られても動く）。
 - 本人の追加（11-06）「普通にiPhoneのカメラのオーバーレイでもできるようにしたら」: /toy/<玩具>/kasane で、後ろのカメラの映像の上に
   手順の字と 3D を重ねる。映像は機械の中だけで、送りも残しもしない（作りながら見る頁の約束と同じ字）。
-- 映像の中の紙に 3D を合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付いたら、紙の 4 隅に置く印を 4 つ出す。
-  印は画面の真ん中の既定の囲みに出て、3D の舞台もその囲みへ置く。印を指で紙の角へ動かすと、舞台を新しい囲みの中へ動かして縮める
-  （映像の中の紙の上に 3D が来る）。画面の向きや大きさが変わったら、印を既定の囲みへ置き直す。印は数字だけで、新しい字を足さない。
-  合わせ方は囲みに入れるだけで、紙の傾きに合わせて 3D を歪めない（歪めると、立った部品の形が崩れて見えるため。紙の座標の行列は
-  エンジンの JSON の paper.place が来た後に使う）。合わせた位置は頁の中だけに持ち、残さない（頁は送らず、残さない決まり）。
-  合わせた後は、頁の幅に合わせる縮尺（舞台に直に書く --hmd-zoom の zoom）を 1 に固定する。zoom は位置にも掛かり、囲みからずれるため。大きさは scale だけで決める。
+- 重ねる（本人の言葉 11-08「A → B → C の順。」の A。設計 grove の state/kasane-a-design-20261108.md・統括の決め ①〜③）: カメラの映像の上に、
+  今の手順の 3D を半透明（不透明 0.6・机の色は透明）で重ね、指で位置・大きさ・向きを実物に合わせる。1 本指で動かし、2 本指の間の長さの比で
+  大きさ、2 本を結ぶ線の角の差で向き（画面の中で回す）、2 本の真ん中の動きで位置。Safari の gesturechange（visionOS・Mac の板）も同じ所へ渡す
+  （2 本の指が別々に来ない機械の備え。Pointer Events で 2 本が来ている時は使わず、2 度効かせない）。鍵は + − で大きさ、[ ] で向き、0 で元に戻す。
+  追いかけはしない（映像の中の紙を見つけて動かす事はしない）。合わせは舞台（.rt-stage）の transform だけで持ち、舞台の中（kumitate の
+  .rt-scene の見る向き）とは別にして、互いに上書きしない。重ねている間は、1 本指は「動かす」だけにし、3D の見る向きを回す kumitate の
+  1 本指の回しは止める（同じ指の動きに 2 つの意味を持たせない・見る向きは手順の向きのまま）。止め方は、頁の capture の段で指の知らせを
+  受けて先へ渡さない形（kumitate の作りは替えない）。層の順は下から 映像 → 3D → 手順の字・頭の帯・押す所。
+  重ねるのは、カメラに重ねる頁ではカメラが付いた時から止めた時まで、HMD の道では最初から（透ける画面の向こうに実物が見えるため。
+  「iPhone でも HMD のブラウザでも同じ」）。重ね始めた時の位置と大きさ（舞台が頁にあった所）を既定にし、「元に戻す」と画面の向きや大きさが
+  替わった時はそこへ戻す。合わせた位置は頁の中だけに持ち、残さない・送らない。前の 4 隅の印（4 つを紙の角へ動かして囲みに入れる形・
+  11-07）は外した（4 つで 8 回触るより 1〜2 本の指で合い、向きも合わせられる。字の無い印が画面から 4 つ減る）。
+  映像は video に出すだけで、canvas に写さず、網に出さない（送る形は C と、声とカメラの PR の上に載せる）。
 - 中を見る（本人の言葉 11-07「AI が 3D で表示して中身をそこで分解できる構造表示」）: 組み立ての節が分解した形（window.kumitateSplit の X。
   3D の担当が kumitate に足す口）を持つ時だけ釦を出す。開く時は今の手の終わりの形から分解した形へ動かし、とじる時は戻す。
   開いている間に手順を送ったら、先にとじた事にしてから送る（送りは手の終わりの形に置き直してから動くので、形は取り違えない）。
@@ -47,6 +54,9 @@ CAMERA, CAMERA_OFF = "カメラを出す", "カメラを止める"
 # 分解の釦（本人の決定 11-07: 開く「中を見る」・戻す「とじる」。「もどる」は手順を戻す釦と同じ字なので使わない）
 SPLIT_OPEN, SPLIT_CLOSE = "中を見る", "とじる"
 NO_CAMERA = "この機械ではカメラを使えません。"
+# 重ねる（A）の新しい字。本人の確かめ待ちの案（統括 11-08）。差し替えはこの 2 つだけ
+RESET = "元に戻す"
+FIT_HINT = "1 本指で動かし、2 本指で大きさと向きを合わせます。"
 # 手帖の最初の画面から重ねる頁へ行く道の名（本人の決定 11-07「口の名「カメラに重ねる」」）
 CAM_LINK = "カメラに重ねる"
 
@@ -118,9 +128,14 @@ body.hmd-page{background:#14161a;color:#f3efe6}
 .hmd-acts button.hit{background:#ffe08a;border-color:#ffe08a;color:#14161a}
 body.hmd-cam{background:#000}
 #hmd-cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#000}
-#hmd-quad{display:none;position:fixed;inset:0;z-index:3;pointer-events:none}body.quad-on #hmd-quad{display:block}
-.hmd-corner{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid #fffaf0;background:rgba(0,0,0,.35);color:#fffaf0;font-weight:600;font-size:16px;line-height:40px;font-family:inherit;text-align:center;pointer-events:auto;touch-action:none;cursor:grab;user-select:none}
-body.quad-set .hmd-k .rt-stage{position:fixed;margin:0;z-index:2;transform-origin:0 0;zoom:1!important}
+/* 重ねる（A）: 舞台は頁の置き場のまま、映像（z -1）の上・字と押す所（z 2）の下に置く。合わせは舞台の transform（置き場からのずれ・大きさ・向き）。
+   半透明にして下の実物を透かす。指は舞台だけが受ける。頁の流れから外さないので、字が長い手順でも押す所の置き場は前と同じ（fit の縮尺も効く） */
+body.fit-on .hmd-k .rt-stage{position:relative;z-index:1;transform-origin:50% 50%;opacity:.6;touch-action:none;cursor:move;--rt-table:transparent;background:transparent;border-color:rgba(255,255,255,.35)}
+body.fit-on .hmd-top,body.fit-on #hmd-dots,body.fit-on .hmd-k #rt-text,body.fit-on .hmd-acts,body.fit-on .hmd-note{position:relative;z-index:2}
+#hmd-reset,#hmd-fit-hint{display:none}body.fit-on #hmd-fit-hint{display:inline}body.fit-on #hmd-reset{display:flex}
+/* 横で高さの低い画面（1024×600 など）は、押す所を 2 列にする（「つぎ」は 2 列の幅）。重ねている間は「元に戻す」で 7 つになり、1 列では
+   下の釦が画面の外へ出た（別の目の測り 11-08・統括の決め）。縦の画面は前のまま（3 列 2 段の形） */
+@media (min-aspect-ratio:1/1) and (max-height:800px){.hmd-acts{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:10px}.hmd-acts #hmd-next{grid-column:1/3}.hmd-acts button{min-height:64px;padding:0 .3em;font-size:clamp(18px,1.7vw,28px);letter-spacing:.04em;line-height:1.25}}
 body.hmd-cam .hmd{position:relative}
 body.hmd-cam .hmd-k #rt-text{background:rgba(0,0,0,.55);padding:8px 14px;border-radius:10px;text-shadow:0 1px 3px #000}
 body.hmd-cam .hmd-top{background:rgba(0,0,0,.45);padding:6px 12px;border-radius:10px}
@@ -265,26 +280,56 @@ const wake=()=>{try{if(navigator.wakeLock&&!document.hidden)navigator.wakeLock.r
 wake();
 const cam=$('hmd-cam'),camBtn=$('hmd-camera'),camNote=$('hmd-cam-note');
 if(cam&&camBtn){let tracks=null;
- // 紙の 4 隅の印（左上・右上・右下・左下の順）。動かしたら、3D の舞台を 4 隅の囲みの中へ動かして縮める。位置は頁の中だけに持つ
- const quad=$('hmd-quad'),C=quad?[...quad.querySelectorAll('.hmd-corner')]:[],Q=[];
- const fit=()=>{if(Q.length<4)return;const xs=Q.map(q=>q[0]),ys=Q.map(q=>q[1]),x0=Math.min(...xs),y0=Math.min(...ys),bw=Math.max(...xs)-x0,bh=Math.max(...ys)-y0;
-  body.classList.add('quad-set');stage.style.transform='';const sw=stage.offsetWidth||1,sh=stage.offsetHeight||1,z=Math.max(.2,Math.min(bw/sw,bh/sh));
-  stage.style.left=(x0+(bw-sw*z)/2)+'px';stage.style.top=(y0+(bh-sh*z)/2)+'px';stage.style.transform='scale('+z+')'};
- const put=()=>{C.forEach((c,i)=>{c.style.left=Q[i][0]+'px';c.style.top=Q[i][1]+'px'});fit()};
- const home=()=>{const w=innerWidth,h=innerHeight,bw=Math.min(w*.7,h*.45),bh=bw*1.414,x=(w-bw)/2,y=Math.max(30,(h-bh)/2);Q.length=0;Q.push([x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]);put()};
- C.forEach((c,i)=>{c.addEventListener('pointerdown',e=>{e.preventDefault();try{c.setPointerCapture(e.pointerId)}catch(_){}c.dataset.drag='1'});
-  c.addEventListener('pointermove',e=>{if(!c.dataset.drag)return;Q[i]=[Math.max(0,Math.min(innerWidth,e.clientX)),Math.max(0,Math.min(innerHeight,e.clientY))];put()});
-  const up=()=>{delete c.dataset.drag};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up)});
- const quadOn=()=>{if(!quad)return;body.classList.add('quad-on');home()};
- // 画面の向きや大きさが変わったら、映像の敷きも変わるので、合わせた印を既定の囲みへ置き直す（ずれた印のまま 3D を置かない）
- addEventListener('resize',()=>{if(body.classList.contains('quad-on'))home()});
- const quadOff=()=>{body.classList.remove('quad-on','quad-set');stage.style.left=stage.style.top=stage.style.transform=''};
- const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera;quadOff()};
+ const off=()=>{if(tracks)tracks.forEach(x=>x.stop());tracks=null;cam.srcObject=null;document.body.classList.remove('cam-on');camBtn.textContent=T.camera;fitOff()};
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camBtn.hidden=true;camNote.textContent=T.nocamera}
  camBtn.addEventListener('click',async()=>{if(tracks){off();return}
   try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});tracks=s.getTracks();cam.srcObject=s;
-   document.body.classList.add('cam-on');camBtn.textContent=T.cameraoff;quadOn()}catch(_){camNote.textContent=T.nocamera}});
+   document.body.classList.add('cam-on');camBtn.textContent=T.cameraoff;fitOn()}catch(_){camNote.textContent=T.nocamera}});
  addEventListener('pagehide',off);document.addEventListener('visibilitychange',()=>{if(document.hidden)off()})}
+// ---- 重ねる（A）。合わせは舞台の transform だけで持つ（頁の置き場からのずれ・大きさ・向き）。頁の中だけに持ち、残さない・送らない
+const fitBtn=$('hmd-reset');let fitting=false;const F={x:0,y:0,s:1,r:0};
+// 舞台には頁の幅に合わせる縮尺（zoom）が掛かっていて、zoom は translate の長さにも掛かるので、ずれは zoom で割って画面の px に合わせる
+const fitPut=()=>{const z=parseFloat(getComputedStyle(stage).zoom)||1;
+ stage.style.transform='translate('+(F.x/z).toFixed(2)+'px,'+(F.y/z).toFixed(2)+'px) rotate('+F.r.toFixed(2)+'deg) scale('+F.s.toFixed(4)+')';
+ // 試験と見る人の道具が、合わせた値を字でなく読めるように（画面の px のずれ・大きさ・向き）
+ stage.dataset.fit=[F.x.toFixed(1),F.y.toFixed(1),F.s.toFixed(4),F.r.toFixed(2)].join(',')};
+// 既定は重ね始めた所（頁の置き場・見えていた大きさ・向き 0）。重ねても 3D が跳ばない
+const fitHome=()=>{Object.assign(F,{x:0,y:0,s:1,r:0});fitPut()};
+function fitOn(){if(fitting)return;fitting=true;body.classList.add('fit-on');fitHome()}
+function fitOff(){if(!fitting)return;fitting=false;body.classList.remove('fit-on');stage.style.transform='';delete stage.dataset.fit}
+// 大きさは 0.3〜4 倍。真ん中は画面の中に留める（舞台の置き場の真ん中から、画面の端までのずれ）
+const clampS=v=>Math.max(.3,Math.min(4,v)),keepIn=()=>{const r=stage.getBoundingClientRect(),cx=r.left+r.width/2-F.x,cy=r.top+r.height/2-F.y;
+ F.x=Math.max(-cx,Math.min(innerWidth-cx,F.x));F.y=Math.max(-cy,Math.min(innerHeight-cy,F.y))};
+// 指: 1 本で動かす・2 本で大きさ（指の間の長さの比）と向き（2 本を結ぶ線の角の差）と位置（2 本の真ん中）。始めの形から測るので、
+// 指を足したり離したりしたら、残った指で測り直す（跳ばない）。capture の段で受けて先へ渡さない（kumitate の 1 本指の回しを止める）
+const pts=new Map();let g0=null;
+const begin=()=>{g0={F:{...F},p:[...pts.values()].map(q=>q.slice())}};
+const ang=(a,b)=>Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI,len=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1])||1,mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+const onStage=e=>fitting&&e.target&&e.target.closest&&e.target.closest('.rt-stage')===stage;
+document.addEventListener('pointerdown',e=>{if(!onStage(e))return;e.stopPropagation();e.preventDefault();pts.set(e.pointerId,[e.clientX,e.clientY]);
+ try{stage.setPointerCapture(e.pointerId)}catch(_){}begin()},true);
+document.addEventListener('pointermove',e=>{if(!fitting||!pts.has(e.pointerId))return;e.stopPropagation();e.preventDefault();pts.set(e.pointerId,[e.clientX,e.clientY]);
+ const p=[...pts.values()],q=g0.p;
+ if(p.length>=2&&q.length>=2){const c0=mid(q[0],q[1]),c=mid(p[0],p[1]);F.s=clampS(g0.F.s*len(p[0],p[1])/len(q[0],q[1]));
+  F.r=g0.F.r+ang(p[0],p[1])-ang(q[0],q[1]);F.x=g0.F.x+c[0]-c0[0];F.y=g0.F.y+c[1]-c0[1]}
+ else if(p.length===1&&q.length===1){F.x=g0.F.x+p[0][0]-q[0][0];F.y=g0.F.y+p[0][1]-q[0][1]}
+ keepIn();fitPut()},true);
+const lift=e=>{if(!pts.has(e.pointerId))return;e.stopPropagation();pts.delete(e.pointerId);begin()};
+document.addEventListener('pointerup',lift,true);document.addEventListener('pointercancel',lift,true);
+// Safari の gesture の知らせ（visionOS・Mac の板）。Pointer Events で 2 本の指が来ている時は使わない（同じ動きを 2 度効かせない）
+let gs=null;
+document.addEventListener('gesturestart',e=>{if(!onStage(e))return;e.preventDefault();gs=pts.size>=2?null:{...F}},true);
+document.addEventListener('gesturechange',e=>{if(!fitting||!gs||pts.size>=2)return;e.preventDefault();F.s=clampS(gs.s*(e.scale||1));F.r=gs.r+(e.rotation||0);fitPut()},true);
+document.addEventListener('gestureend',()=>{gs=null},true);
+// 鍵: + − で大きさ、[ ] で向き、0 で元に戻す（→ ← スペースは手順の送りのまま）
+document.addEventListener('keydown',e=>{if(!fitting||e.altKey||e.ctrlKey||e.metaKey)return;const el=e.target;if(el&&el.closest&&el.closest('input,textarea'))return;
+ const k={'+':[1.1,0],'=':[1.1,0],'-':[1/1.1,0],'[':[1,-5],']':[1,5]}[e.key];
+ if(k){e.preventDefault();F.s=clampS(F.s*k[0]);F.r+=k[1];fitPut()}else if(e.key==='0'){e.preventDefault();fitHome()}});
+if(fitBtn)fitBtn.addEventListener('click',fitHome);
+// 画面の向きや大きさが替わったら、既定を測り直して戻す（ずれた合わせのまま 3D を置かない）
+addEventListener('resize',()=>{if(fitting)fitHome()});
+// HMD の道は最初から重ねる（透ける画面の向こうに実物が見えるため。統括の決め ①）
+if(document.querySelector('.hmd[data-fit-always]'))fitOn();
 // 隠れたら聞くのを止め、見えたら聞いていた時だけ戻す。頁を離れたら止める（手帖の作り直しと同じ）
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(rec)try{rec.stop()}catch(_){}}else{if(on&&rec)try{rec.start()}catch(_){}wake()}});
 addEventListener('pagehide',()=>{if(on)stopListen()});
@@ -302,9 +347,7 @@ def page(sid, look="tenji", cam=False):
     toy = hypotheses.load(sid)["toy"]
     words = {"words": WORDS, "on": MIC_ON, "off": MIC_OFF, "none": NO_VOICE, "blocked": BLOCKED, "listen": LISTEN, "stop": STOP, "done": kumitate.DONE,
              "clean": CLEAN, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA, "splitopen": SPLIT_OPEN, "splitclose": SPLIT_CLOSE}
-    # 紙の 4 隅の印は数字だけ（新しい字を足さない）。読み上げには出さない（指で動かす印で、押す所ではない）
-    corners = "".join(f'<span class="hmd-corner" data-i="{i}">{i + 1}</span>' for i in range(4))
-    camera = (f'<video id="hmd-cam" playsinline muted autoplay></video><div id="hmd-quad" aria-hidden="true">{corners}</div>' if cam else "")
+    camera = ('<video id="hmd-cam" playsinline muted autoplay></video>' if cam else "")
     camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else "")
     camera_note = (f'<span id="hmd-cam-note">{esc(PRIVACY)}</span> ' if cam else "")
     # 組み立ての節を覚える鍵は、組み立ての節と同じ物（紙の寸法と組の名。kumitate._key）。寸法だけだと、組が替わっても前の組の立体を覚えている
@@ -315,9 +358,13 @@ def page(sid, look="tenji", cam=False):
             f'<div class="hmd-k">{kumitate._block_html(sid, params)}'
             f'<div class="hmd-acts"><button type="button" id="hmd-next">{esc(NEXT)}</button><button type="button" id="hmd-prev">{esc(PREV)}</button>'
             f'<button type="button" id="hmd-again">{esc(AGAIN)}</button><button type="button" id="hmd-listen" aria-pressed="false">{esc(LISTEN)}</button>{camera_btn}'
-            f'<button type="button" id="hmd-split" aria-pressed="false">{esc(SPLIT_OPEN)}</button></div></div>'
-            f'<p class="hmd-note">{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="/">玩具を選びなおす</a></p></div>{camera}'
+            f'<button type="button" id="hmd-split" aria-pressed="false">{esc(SPLIT_OPEN)}</button>'
+            # 元に戻す は重ねている間だけ出す（重ねていない時は押す所の数を前のまま 6 つにする）
+            f'<button type="button" id="hmd-reset">{esc(RESET)}</button></div></div>'
+            f'<p class="hmd-note"><span id="hmd-fit-hint">{esc(FIT_HINT)} </span>{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="/">玩具を選びなおす</a></p></div>{camera}'
             f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False)}</script>{SCRIPT}')
+    # HMD の道は最初から重ねる（統括の決め ①）。頁の印で script に知らせる（字ではない）
+    body = body if cam else body.replace('<div class="hmd">', '<div class="hmd" data-fit-always="1">', 1)
     return skin.shell(f"{toy}: {TITLE}", body, look, path=f"/toy/{sid}/kasane" + ("" if cam else "/hmd"), extra_style=STYLE,
                       body_class="hmd-page hmd-cam" if cam else "hmd-page")
 
