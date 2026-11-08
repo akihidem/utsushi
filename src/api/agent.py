@@ -107,11 +107,15 @@ def run(role, system, user, tools, submit_schema, execute, validate=None, client
         budget.check(run_usd, budget.worst_case(trace.model, budget.estimate_tokens(system, definitions, messages), config.MAX_TOKENS))
         # 1 回の生成で道具の往復ごとに図と指示を送り直すので、キャッシュで入力の費用を下げる。
         # 指示と道具の定義は変わらないので、その終わりに目印を置く。伸びていく会話は自動の目印に任せる。
-        response = client.beta.messages.create(
-            model=trace.model, max_tokens=config.MAX_TOKENS, system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
-            tools=definitions, messages=messages, cache_control={"type": "ephemeral"},
-            output_config={"effort": config.EFFORT[role]}, thinking={"type": "adaptive"}, betas=BETAS, fallbacks="default",
-        )
+        try:
+            response = client.beta.messages.create(
+                model=trace.model, max_tokens=config.MAX_TOKENS, system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+                tools=definitions, messages=messages, cache_control={"type": "ephemeral"},
+                output_config={"effort": config.EFFORT[role]}, thinking={"type": "adaptive"}, betas=BETAS, fallbacks="default",
+            )
+        except BaseException:  # 呼べなかった時は予約を返す（安全の事項 3 への対応・budget の頭の注）
+            budget.release()
+            raise
         usage = getattr(response, "usage", None)
         counts = {k: getattr(usage, k, 0) or 0 for k in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")}
         # 入力の数はキャッシュの外の残りだけなので、書いた分と読んだ分も足して数える。足さないと費用を少なく見積もる。
