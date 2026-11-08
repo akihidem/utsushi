@@ -104,12 +104,13 @@ assert 'id="hanasu"' not in page and 'name="scene" value="think"' not in page, "
 go = re.search(r'<form[^>]*think-sheet[^>]*>(.*?)</form>', think_sheet.section(G), re.S).group(1)  # 部品の釦（頁からは外した・上の 3）
 assert "<textarea" not in go and "<input" not in go, "釦は字を送らない"
 script = hanasu.SCRIPT
-keep = script[script.index("// 「残す」の前に"):script.index("addEventListener('pagehide',stop)")]
+keep = script[script.index("// 「残す」の前に"):script.rindex("})()</script>")]
 assert "e.target.closest('#think')" in keep, "#think の釦を押す時に持つ"
 assert "sessionStorage.setItem" in keep and "sessionStorage.removeItem" in keep, "タブの中に持ち、読み直したら消す"
 assert "fetch" not in keep, "サーバへ送らない"
-assert "via:box.dataset.via" in keep and "box.dataset.via=d.via" in keep, "話した字か書いた字かも一緒に持って戻す"
-assert "if(d&&!said.value){said.value=d.text" in keep, "読み直した後の空の欄にだけ戻す（書きかけの字を上書きしない）"
+# 前は話した字か書いた字か（via）も一緒に持って戻した。11-08 に話す口の音声認識を外し、字はどれも欄に打った字なので持たない
+assert "via" not in keep, "via は持たない"
+assert "if(d&&!said.value)said.value=d.text" in keep, "読み直した後の空の欄にだけ戻す（書きかけの字を上書きしない）"
 
 for server in shut:
     server.shutdown()

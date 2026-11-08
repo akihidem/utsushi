@@ -93,12 +93,15 @@ code, at, _ = post(f"/toy/{G}/print", {"hypothesis": GS})
 assert code == 303 and "紙を作りました。下の窓で絵を見てください。印刷する時は、PDF の大きさを 100% にしてください。" in at, at
 assert "PDF を 100% で" not in at
 
-# 3. 話す箱の断り（考えを話す の口を外したので、残った作りながら見る頁の 工夫を話す の箱の断りで見る。字は同じ hanasu.box の物）
-assert hanasu.HOW_BROWSER == "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
+# 3. 話す箱の断り（考えを話す の口を外したので、残った作りながら見る頁の 工夫を話す の箱の断りで見る。字は同じ hanasu.box の物・#709）。
+# 11-06 の字の札は「「話す」を押すと、ブラウザ…」（HOW_BROWSER）を固めていた。11-08 に話す口のブラウザの音声認識を外した
+# （本人「クロードの音声認識をはずして、ユーザーの端末の音声入力に頼るのでいいのではないか。」）ので、その字は無い。断りは録る釦の名に合わせた字と、
+# 欄の下の 1 行（本人の OK 11-08「新しい字 3 つもよい。」・替えた字は本人の OK「字 3 か所とも、この字でよい。」）
+assert not hasattr(hanasu, "HOW_BROWSER")
 craft = get(f"/toy/{G}/tsukuru").split("data-hanasu", 1)[1]
 told = craft.split('<p class="meta">', 1)[1].split("</p>", 1)[0]
-# 11-08: 断りの字を、押して話した間の声を録って承認の時に送る形（本人 415・「公開デモでも声も録る。」）に替えた。前の「話した声は、このサイトに送りません。」は本当でなくなったので出さない
-assert "そのとき、声がブラウザの会社に送られることがあります。</span>" in told and told.count("押して話した間の声を録り、のこすで承認した時に受け取ります。") == 1 and "このサイトに送りません" not in told, told
+assert "ブラウザの会社に送られる" not in told and told.count("「声を録る」を押した間の声を録り、のこすで承認した時に受け取ります。") == 1 and "このサイトに送りません" not in told, told
+assert '<p class="meta hanasu-kb">キーボードのマイクで話して入れられます。</p>' in craft
 
 # 4. 名前のような言葉を断った時の返事（残った 工夫を話す の口で送る。前は 考えを話す の口で送った）
 code, _, body = post(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": "1", "step": "1", "text": "電話は 090-1234-5678 です"})

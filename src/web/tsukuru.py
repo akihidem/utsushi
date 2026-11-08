@@ -20,12 +20,15 @@
 - JS が無くても札は働く（フォームの送信で手順が進む）。JS がある時は、頁を読み直さずに進める（読み直すと鏡が止まるため）。
   組み上がりの札は頁を移るので読み直しを避ける理由が無く、JS がある時もフォームのまま送る（JS の有無で道を分けない）。
 - 「ここで止まった」から、その段のまま聞ける（Issue #118・U-44 の「聞く」）。札を押すと止まった段が残り、同じ画面の聞く口が
-  「手順 N で止まった所を聞く」に変わって、字の欄に手が届き、声の釦が出る。聞く口には今の手順の番号（step）を添えて送る。
+  「手順 N で止まった所を聞く」に変わって、字の欄に手が届く。聞く口には今の手順の番号（step）を添えて送る。
   なぜ添えるか: どの段でどんな問いが出るかを束ねて、手順の紙の直しと先回りの答えの材料にするため（U-45）。
-- 声で聞く口は手帖と同じ作り（ブラウザの音声認識。使えない画面では釦を隠す）。**声そのものは録らず、送らない。** 送るのは字になった問いだけ。
-  声の操作も手帖と同じ（本人の決定 11-05、#87。voice_words.py）: 1 回押した後は聞き続け、つぎ・もどる・もう一回などは言葉の全部が一致した時だけ札を押す。操作の字は送らない。
-  聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）: 問いは「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。周りの話し声を問いにしない。
-  マイクを getUserMedia で開く code と録る code は書かない（鏡は audio:false のまま）。試験で固定する。
+- **この頁は声を聞かない**（本人 11-08「クロードの音声認識をはずして、ユーザーの端末の音声入力に頼るのでいいのではないか。」・設計は grove の
+  state/no-speech-recognition-20261108.md の 2 版）。前は「声で聞く」の釦でブラウザの音声認識を使い、つぎ・もどる・もう一回などの操作の言葉も聞いた
+  （本人の決定 11-05・#87 と 11-06 の案 2）。今は、問いは字の欄（端末のキーボードのマイクでも入る）、操作は札だけ。答えの読み上げは残す
+  （音声認識とは別の物で、手が紙でふさがっていても答えが届くように）。この頁の台本は、マイクを getUserMedia で開く code と録る code を書かない
+  （鏡は audio:false のまま）。試験で固定する。
+- 工夫の口の「声を録る」（hanasu・本人の答え (A)）は、置き場（web.clips）が録る。手順を移る時（次へ・戻る・のこす）は、その録りを止める:
+  1 つの区切りが 1 つの手順に結ぶように（区切りの手順の番号は、録り始めた時の番号）。のこす は頁を移るので、置き終えてから送る。
 - 出来事（札と問い）には、その場限りの無作為の印（who）を添える。sessionStorage に持つ英数字 10 桁で、タブを閉じると消える。
   なぜ持つか: 「同じ段で 3 人以上止まった」を数えるには、同じ人の押し直しを 1 人と数える印が要る（Issue #119 の「人は、その場限りの
   無作為の印で数える」）。cookie にしない・名前や機器と結び付けない・次に開いた時は別の印になる、で人を追える物にしない。
@@ -36,7 +39,6 @@ from omochae import hypotheses, instructions, loop, making_log, render
 from omochae.compose import TEMPLATES
 
 from . import clips, genga, naoru, skin
-from .voice_words import CLEAN, WORDS
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
 PRIVACY = "映像はこの端末の中だけで、送りも残しもしません。"
@@ -100,9 +102,6 @@ svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.k
 .ask-head{margin:0 0 8px;font-size:17px}
 .henji.open{border:2px solid var(--accent);padding:12px}
 .henji.open .ask-head{font-size:20px;font-weight:600}
-/* 声の釦は、手が紙でふさがっている時の入口なので札と同じ大きさ。押している間（続けて聞いている間）は地の色を変える。 */
-.mic{font:inherit;font-size:20px;min-height:60px;width:100%;margin:0 0 8px;border:2px solid var(--accent);background:var(--paper);color:var(--fg);cursor:pointer}
-.mic[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
 .meta{margin:6px 0 0;font-size:13px;color:var(--mute)}
 .meta button{font:inherit;font-size:13px;color:var(--accent);background:transparent;border:1px solid var(--accent);padding:6px 12px;margin-right:8px;cursor:pointer}
 .sr{position:absolute;left:-9999px}
@@ -175,49 +174,27 @@ document.body.classList.add('js');show();
 try{const k=`tsukuru-start-${sid}-${hid}`;if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');send('start')}}catch(e){}
 // 聞く口。「ここで止まった」を押した段では、見出しを「手順 N で止まった所を聞く」に変えて囲み、字の欄へ手を届かせる。段を進めたら元に戻す。
 const henji=document.getElementById('henji'),head=document.getElementById('ask-head'),qIn=document.getElementById('q');
-// 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。問いは、「ここで止まった」（こまった）か「声で聞く」を押した後の 1 つだけ受ける。
-let armed=false;
-const openAsk=(on)=>{armed=on;henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
+const openAsk=(on)=>{henji.classList.toggle('open',on);head.textContent=on?`手順 ${n} で止まった所を聞く`:'聞く';
  if(on){try{henji.scrollIntoView({block:'nearest'})}catch(e){}qIn.focus()}};
+// 手順を移る札では、工夫の口の録りを止める（1 つの区切りを 1 つの手順に結ぶ。web.clips）。止めるのを待たずに進める（頁は移らない）
+const stopRec=()=>window.utsushiClips?utsushiClips.voiceStop():Promise.resolve();
 document.querySelectorAll('#tiles button:not([value=done])').forEach(b=>b.addEventListener('click',async(e)=>{e.preventDefault();const ev=b.value;
+ if(ev==='next'||ev==='back')stopRec();
  const j=await send(ev);mStuck.hidden=true;
  if(ev==='next'||ev==='back'){if(j.step)n=j.step;show();openAsk(false)}
  else if(ev==='stuck'){mStuck.querySelector('.sn').textContent=n;mStuck.hidden=false;openAsk(true)}}));
 // 答えの読み上げ（手帖と同じ扱い。在る画面だけ）。手が紙でふさがっていても答えが届くようにする。
-// 読み上げの間は音声認識を止める: 止めないと端末が自分の答えを聞き取り、問いとして送り、それがまた読み上げられる（答えの文が質問として残り、費用もかかる）。
-// 読み上げの終わりの知らせが来ない機種があるので、長さから見た時間でも戻す。前の読み上げの取り消しの知らせで戻らないよう、番号で見分ける。
-let sayStart=()=>{},sayEnd=()=>{},sayId=0;
-const say=(t)=>{try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t),id=++sayId;u.lang='ja-JP';
- const fin=()=>{if(id===sayId)sayEnd()};u.onend=fin;u.onerror=fin;setTimeout(fin,Math.min(60000,t.length*400+3000));sayStart();speechSynthesis.speak(u)}catch(e){sayEnd()}};
+// 前は読み上げの間に音声認識を止めていた（読み上げの始めと終わりで聞くのを止めて戻す作り）。この頁は声を聞かなくなったので、読み上げるだけにした
+const say=(t)=>{try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';speechSynthesis.speak(u)}catch(e){}};
 const ans=document.getElementById('answer');
 // 問いには今の手順の番号（step）と、その場限りの印（who）を添える。サーバが受けない版では、余った欄は読まれないだけ。
 const ask=async(q)=>{if(!q)return;ans.textContent='…';
  const r=await fetch(`/toy/${sid}/ask-json`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fields({hypothesis:hid,question:q,step:n})}).catch(()=>null);
  const j=r?await r.json().catch(()=>({})):{};const t=j.text||j.error||'今は答えられません';ans.textContent=t;say(t)};
 document.getElementById('ask-form').addEventListener('submit',(e)=>{e.preventDefault();ask(qIn.value.trim())});
-// 声で聞く: ブラウザの音声認識で字にし、字になった問いだけを上の口へ送る（声は録らない・送らない）。1 回押すと話し続けられ、もう 1 回で止まる。
-// 使えない画面では釦を隠し、字の欄だけにする（手帖と同じ作り）。
-// 声の操作（手帖と同じ決まり。#87）。言葉の全部が一致した時だけ操作にし、操作の字は送らない。ほかは質問として聞く。この頁に無い操作（とって・のこす）は何もしない。
-const WORDS=__WORDS__,clean=(t)=>t.replace(/__CLEAN__/g,'');
-const tile=(v)=>document.querySelector(`#tiles [value=${v}]`);
-const act=(op)=>{if(op==='next'){const b=tile('next');(b.hidden?tile('done'):b).click()}else if(op==='back')tile('back').click();else if(op==='stuck')tile('stuck').click();else if(op==='again')say(items[n-1].textContent)};
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition,mic=document.getElementById('mic');
-if(SR){mic.hidden=false;let rec=null,listening=false,speaking=false;
- sayStart=()=>{speaking=true;if(listening&&rec){try{rec.stop()}catch(e){}}};
- sayEnd=()=>{if(!speaking)return;speaking=false;if(listening&&rec){try{rec.start()}catch(e){}}};
- mic.addEventListener('click',()=>{
-  if(listening){listening=false;rec&&rec.stop();mic.setAttribute('aria-pressed','false');return}
-  rec=new SR();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=false;
-  rec.onresult=(ev)=>{if(speaking)return;const t=ev.results[ev.results.length-1][0].transcript.trim();if(!t)return;const op=WORDS[clean(t)];if(op){act(op);return}if(!armed)return;armed=false;qIn.value=t;ask(t)};
-  rec.onend=()=>{if(listening&&!speaking){try{rec.start()}catch(e){}}};
-  rec.onerror=()=>{listening=false;mic.setAttribute('aria-pressed','false')};
-  listening=true;armed=true;mic.setAttribute('aria-pressed','true');try{rec.start()}catch(e){}});
- // 頁を離れたら止める。隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
- addEventListener('pagehide',()=>{listening=false;if(rec){try{rec.stop()}catch(e){}}});
- let paused=false;
- document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){if(listening){paused=true;listening=false;mic.setAttribute('aria-pressed','false');try{rec.stop()}catch(e){}}return}
-  if(paused){paused=false;listening=true;mic.setAttribute('aria-pressed','true');if(!speaking){try{rec.start()}catch(e){}}}})}
+// 組み上がりの札（のこす）はフォームのまま頁を移る。工夫の口で録っている時だけ、録りを止めて置き終えてから送る（置き終える前に頁が移ると、区切りが置かれない）
+goDone.addEventListener('click',(e)=>{if(!window.utsushiClips||!utsushiClips.voiceOn())return;e.preventDefault();
+ utsushiClips.voiceStop().finally(()=>{if(tiles.requestSubmit)tiles.requestSubmit(goDone);else goDone.click()})});
 if(henji.classList.contains('open'))head.textContent=`手順 ${n} で止まった所を聞く`;
 const v=document.getElementById('cam'),on=document.getElementById('on'),note=document.getElementById('mirror-note');
 const off='鏡は出さなくても全部できます。';
@@ -228,7 +205,6 @@ else{const start=async()=>{try{const s=await navigator.mediaDevices.getUserMedia
  if(wantCam)start()}
 addEventListener('pagehide',()=>{const s=v.srcObject;if(s)s.getTracks().forEach(t=>t.stop())});
 })()</script>""" % PRIVACY
-SCRIPT = SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__CLEAN__", CLEAN)
 
 
 def _paper(sid, hid):
@@ -314,7 +290,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
             img = ""
     # 止まったの文は先に置いておき、押した時に出す（JS が無い時は ?ev= で出す）。
     stuck = (f'<p id="msg-stuck" class="msg"{"" if event == "stuck" else " hidden"}>止まった所を残しました（手順 <span class="sn">{n}</span>）。'
-             'このまま下で、声か字で聞けます。</p>')
+             'このまま下で、声か字で聞けます。</p>')  # 声は字の欄に端末のキーボードのマイクで入れる（この頁は声を聞かない）
     # 聞く口の見出し。止まった段（?ev=stuck。JS が無い時の戻り先）では、その段を名指しして囲む。JS がある時は札を押した時に同じ形に変える。
     asking = event == "stuck"
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
@@ -339,9 +315,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
             # 作りながら、工夫を話す（一周の 2、Issue #279）。札のすぐ下に置き、今の手順の番号に結ぶ。声は字にして、字だけを残す（hanasu.py）。
             f'{hanasu.craft_box(sid, hid, v, n)}'
             # 聞く口: JS がある時は手帖と同じ口（ask-json）で答えをここに出す。無い時は玩具の頁の聞く口へ送る。
-            # 声の釦は、音声認識が在る画面でだけ JS が出す（hidden を外す）。声は字にして送るだけで、録らない。
+            # 前の「声で聞く」の釦（ブラウザの音声認識）は外した（本人 11-08・この頁の注）。問いは字の欄に、端末のキーボードのマイクでも入る
             f'<div class="henji{" open" if asking else ""}" id="henji" aria-label="返事"><p class="ask-head" id="ask-head">{esc(ask_head)}</p>'
-            '<button type="button" class="mic" id="mic" aria-pressed="false" hidden>声で聞く（もう一度押すと止まる）</button>'
             f'<form id="ask-form" method="post" action="/toy/{esc(sid)}/ask">'
             f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="sheet_version" value="{v}"><label class="sr" for="q">聞きたい事</label>'
             '<input type="text" id="q" name="question" maxlength="300" placeholder="谷折りって？" enterkeyhint="send" required><button>聞く</button></form>'

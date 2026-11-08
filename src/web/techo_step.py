@@ -4,7 +4,7 @@
 前の頁は最初の画面に字が約 11 個あり、絵が 0 で、次に押す所が 1 つに決まらなかった（390px の幅で数えた）。
 
 判断の芯:
-- **今の手順の絵と 1 文だけ。** 一番大きい物は絵で、画面の高さの半分以上。押す所は 1 画面に 3 つまで（閉じる印とマイクを除く）。字を読まずに絵と形で進める。
+- **今の手順の絵と 1 文だけ。** 一番大きい物は絵で、画面の高さの半分以上。押す所は 1 画面に 3 つまで（閉じる印を除く）。字を読まずに絵と形で進める。
 - **押す所の名前は本人が決めた 6 つ（NAMES）。** 一字も変えない（tests/test_techo_step.py が文字列で見る）。結果の札だけは別で、記録の値（凍結の床 F3 の語）の字を絵に添える:
   「よく動いた」と「少し動いた」のように、絵だけでは取り違えて記録が濁るため。既定の選びは置かない。
 - **頁の帯を置かない。** 帯の字だけで字のかたまりが 6 個増えるため。閉じる印で玩具の頁へ戻る（作りながら見る頁と同じ形）。
@@ -15,22 +15,24 @@
   ほかの玩具は手順の文だけ。3D の節の送る釦・説明の字・断りは手帖では hidden にする（押す所は 1 画面 3 つまで・字のかたまりを増やさない）。
   開いただけで動かし始めない（組み立ての 3D の決まり）。開いた時はその手の形で止め、つぎで進んだ時だけその手の動きを見せる。
 - **記録の札（試した後の紙 → 説明 → AI）はこの頁に置かない。** 頁の字に版の名・記録の番号・「の紙」を出さないため。のこした後に手帖の記録の頁（techo_site.records_page）へ移る。順（J-013・S-03）は変えない。
-- **声は全部が一致した時だけ操作にする。** 「次の手順ってどうやるの」で進まないように、部分一致を使わない。操作の字は送らず残さない。
-- **聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。** 質問は「こまった」を押した（言った）後の 1 つだけ受ける。工夫は、最後の画面でマイクを押した後に話した事だけを欄に入れる。
-  教室の話し声が、問いや工夫として記録と Claude に入らないようにするため。字で打つ欄はいつでも使える。
-- **声を字にする所は話す口（hanasu）の切り替えのまま。** OMOCHAE_VOICE の browser（既定）・local・off を読み、どちらにも切り替えられる形を保つ（本人の決定待ち）。local と browser の見分けは hanasu.SCRIPT と同じ式。
-  hanasu の部品は置かない: 話す釦と残す釦が増え、マイクが 1 頁に 2 つになるため。声そのものは録らず、受け取らない（マイクを開く code と録る code を持たない）。
-- **「のこす」の画面は声と動画が主で、字を打つのは畳んだ追加（本人の方針 11-05 19:45「文字で記入がオプションの扱い」、#335）。** 字を打たなくても残せる。押す所は とって・字の畳み・のこす の 3 つで、マイクを大きく出す。
-  閉じる印が「もどる」を兼ねる（最後の手順へ戻る）。1 画面に 3 つまでの決まりの中で、畳みを優先したため。声の「もどる」も効く。
-- **工夫の字は「のこす」で送る。** 話す口の決まり「字は本人が見てから残す」を、この頁でも守る。聞いた字が入ったら畳みを開いて見せる（隠したまま送らない）。先に床（talk_log）に通し、落ちたら記録を作らず、字を残して理由を見せる（押し直しで記録を増やさない。#143）。
-- **「もう一回」は今の手順の文を読み上げる。** 手順ごとに自動で読まない: 教室で 30 台が同時に読むと、紙の返事を聞く場が濁るため。
+- **この頁は声を聞かない**（本人 11-08「サイトの中の「はなす」がうまく動かない。クロードの音声認識をはずして、ユーザーの端末の音声入力に頼るので
+  いいのではないか。」・設計は grove の state/no-speech-recognition-20261108.md の 2 版）。前はマイクの釦でブラウザの音声認識を使い、つぎ・もどる・
+  こまった・とって・のこす・もう一回の操作の言葉（全部が一致した時だけ）と、「こまった」の後の 1 つの問いと、最後の画面でマイクを押した後の工夫を聞いた
+  （本人の決定 11-05・#87 と 11-06 の案 2）。今は、操作は押す所だけ、問いと工夫は字の欄（端末のキーボードのマイクでも入る）。切り替え OMOCHAE_VOICE も
+  外した。答えの読み上げは残す（音声認識とは別の物で、手が紙でふさがっていても答えが届くように）。前の「もう一回」（今の手順の文を読む）は声の操作だけの
+  道だったので、一緒に無くなった。この頁は録らない（マイクを開く code と録る code を持たない・声の区切りの「声を録る」は作りながら見る頁と のこすの頁）。
+- **「のこす」の画面は動画が主で、字を打つのは畳んだ追加（本人の方針 11-05 19:45「文字で記入がオプションの扱い」、#335）。** 字を打たなくても残せる。
+  押す所は とって・字の畳み・のこす の 3 つ。閉じる印が「もどる」を兼ねる（最後の手順へ戻る）。1 画面に 3 つまでの決まりの中で、畳みを優先したため。
+  前はここで「マイクを大きく出す」（声が主）だったが、マイクを外した。
+- **工夫の字は「のこす」で送る。** 話す口の決まり「字は本人が見てから残す」を、この頁でも守る。先に床（talk_log）に通し、落ちたら記録を作らず、
+  畳みを開いて字を残し、理由を見せる（押し直しで記録を増やさない。#143）。
+- 答えの読み上げは、手順ごとに自動では読まない: 教室で 30 台が同時に読むと、紙の返事を聞く場が濁るため。
 - **「とって」は外のカメラを求める（capture="environment"）。** 顔を写さない線のため。写真を選んだ時は前と同じ確かめ（大人の手元だけ・顔なし・声なし）を通す。
 - 手順の文は雛形の steps のまま（tsukuru.step_texts。紙と画面で言う事を変えない）。札を押した事は作りながら見る頁と同じ口（/toy/<印>/step）に残す。
 - 祝う演出と順位の言葉は入れない（J-025）。JS が無い時は、つぎ・もどるがリンクとして手順を送る。
 """
 import functools
 import html
-import json
 import re
 
 from api import ask
@@ -41,23 +43,10 @@ from . import clips, genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
-from .voice_words import CLEAN, WORDS, clean  # noqa: F401  (clean は試験が読む)
 
 # 本人の決定 11-05: 押す所の名前。字を変える時は本人の確認が要る。
 NAMES = ("つぎ", "もどる", "こまった", "とって", "のこす", "はじめる")
 NEXT, BACK, STUCK, SHOOT, KEEP, START = NAMES
-
-# 結果の札を声で選ぶ言い方。値は雛形の RESULTS のまま（凍結の床 F3 の語）。
-# 前の札（OLD_RESULTS の左。「倒れた」「少し動いた」など）を言った時も、今の札へ読み替えて残す。前の札は記録を読むために
-# 受け付けに残っているので、声で前の札をそのまま送ると、選べないはずの札で新しい記録ができてしまう（#373、札を 3 つにそろえた時）
-RESULT_WORDS = {r: r for tpl in TEMPLATES.values() for r in tpl.RESULTS} | {
-    o: n for tpl in TEMPLATES.values() for o, n in getattr(tpl, "OLD_RESULTS", {}).items()} | {
-    "うごいた": "動いた", "うごかない": "動かない", "分からない": "わからない", "ゆれた": "揺れた", "ゆれない": "揺れない", "もどった": "戻った", "もどらない": "戻らない",
-    "なった": "鳴った", "ならない": "鳴らない", "まわった": "回った", "まわらない": "回らない", "たった": "立った", "たたない": "立たない", "たおれた": "立たない", "あそべた": "遊べた",
-    "すこしあそべた": "遊べた", "あそべない": "遊べない", "よくうごいた": "動いた", "すこしうごいた": "動いた", "ころがった": "転がった", "ころがらない": "転がらない"}
-
-# hanasu.SCRIPT の M と同じ文。声を字にするしくみを機械に入れている間の知らせ。
-INSTALL = "声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…"
 
 _ICON = '<svg viewBox="0 0 48 48" aria-hidden="true">{}</svg>'
 KEY_ICONS = {
@@ -69,7 +58,6 @@ KEY_ICONS = {
     SHOOT: _ICON.format('<rect x="5" y="13" width="27" height="22"/><path d="M32 21l11-7v20l-11-7z"/>'),
     KEEP: _ICON.format('<path d="M24 7v22M14 20L24 30L34 20M8 40h32"/>'),
 }
-MIC = _ICON.format('<rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/>')
 CLOSE = _ICON.format('<path d="M12 12l24 24M36 12L12 36"/>')
 # 作業の頁への印（字の無い形・読み上げは本人が採った口の名 hmd.CAM_LINK。11-08 夕から「カメラで聞く」・前は「カメラに重ねる」）。とって（動画）の印と見分けるため、写真機の形にする
 KASANE = _ICON.format('<rect x="6" y="14" width="36" height="25" rx="3"/><circle cx="24" cy="26.5" r="7"/><path d="M17 14l3-5h8l3 5"/>')
@@ -97,7 +85,7 @@ button,input,textarea,select{font-family:inherit}
 .bar{position:absolute;top:0;left:0;right:0;height:6px;background:var(--rule);z-index:2}
 .bar span{display:block;height:100%;background:var(--accent)}
 .koma{flex:1 0 auto;position:relative;min-height:50vh;min-height:50svh;margin:0;background:#fff}
-/* 3D の組み立てがある玩具は、絵の枠に今の手の 3D の段（本人の答え 11-07 夕）。マイク・原画の釦・閉じる印の並ぶ上の帯（84px）の下から置き、
+/* 3D の組み立てがある玩具は、絵の枠に今の手の 3D の段（本人の答え 11-07 夕）。重ねる頁への印・原画の釦・閉じる印の並ぶ上の帯（84px）の下から置き、
    枠に収まるよう script が舞台を zoom で縮める（作業の頁 kasane と同じ縮め方）。前の平らな図の svg の決まりは、3D の節の svg まで隠すので外した */
 /* 舞台は枠の中に浮かせる（枠の高さを舞台の高さで伸ばさない。前の平らな図の svg と同じ置き方。伸ばすと 768×576 などで押す所が最初の画面の外へ出た） */
 .koma.k3{overflow:hidden}
@@ -108,29 +96,18 @@ button,input,textarea,select{font-family:inherit}
 .meta{margin:0;font-size:13px;color:var(--mute);line-height:1.7}
 /* やさしい日本語の頁（ルビのある字）は行の間を 1.9 に広げる。手順の字（1.4）と断り（1.7）のままでは、次の行のルビが前の行の字に触れた（11-08 の見回り・tests/test_no_overlap.py）。ルビは やさしい日本語 の時だけ出る */
 #steps li:has(ruby),.meta:has(ruby){line-height:1.9}
-#start-note{padding:6px 16px}
-#note{padding:0 16px}
-#note:empty{display:none}
-.how{display:none}
-.te-local .how.is-local,.te-browser .how.is-browser{display:inline}
-/* 英語の頁では、声の断りの 2 つの文（どこで字にするか・名前は言わない）の間に空白を置く。日本語は文の間に空白を置かないので、要素の間に空白は無い */
-html[lang=en] .how.is-local.is-browser::before{content:" "}
 .keys{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px))}
 .key{min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin:0;padding:6px;font:inherit;font-size:18px;font-weight:600;text-align:center;border:2px solid var(--accent);border-radius:0;background:var(--paper);color:var(--fg);cursor:pointer;position:relative}
 .key.go{min-height:96px;background:var(--accent);color:var(--onaccent);font-size:26px}
 .key[aria-disabled=true]{opacity:.45}
-.key svg,.send svg,.mic svg,.close svg,.tile svg{stroke:currentColor;fill:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.key svg,.send svg,.close svg,.tile svg{stroke:currentColor;fill:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
 .key svg{width:32px;height:32px}
 .key.go svg{width:36px;height:36px}
 #start{grid-column:1/-1}
-.mic{position:absolute;top:12px;left:12px;width:72px;height:72px;display:grid;place-items:center;padding:0;margin:0;border:2px solid var(--accent);border-radius:50%;background:var(--paper);color:var(--accent);cursor:pointer;z-index:3}
-.mic svg{width:40px;height:40px}
-/* 聞いている間は地と字を入れ替える。別の色を足さず、どちらの皮でも「今は違う状態」と読めるようにする。 */
-.mic[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
 .close{position:absolute;top:12px;right:12px;width:64px;height:64px;display:grid;place-items:center;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3}
 /* 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）。閉じる印の左の小さな原画で、字は持たない
-   （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる。
-   置き場は、マイクと閉じる印の並ぶ上の帯（手順の絵は上から 84px より下に描く）。前は閉じる印の下に置き、375×667 で御来迎の手順 1〜3 の絵の角を隠した */
+   （押す所の名前は 6 つの決定。閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる。
+   置き場は、閉じる印の並ぶ上の帯（手順の絵は上から 84px より下に描く）。前は閉じる印の下に置き、375×667 で御来迎の手順 1〜3 の絵の角を隠した */
 .genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
 .kasane-go{position:absolute;top:12px;left:min(96px,calc(50% - 60px));width:min(64px,18%);height:64px;display:grid;place-items:center;align-content:center;gap:1px;box-sizing:border-box;padding:2px 0;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3;text-decoration:none}
 .kasane-go svg{width:24px;height:24px}
@@ -149,9 +126,6 @@ html[lang=en] .how.is-local.is-browser::before{content:" "}
 .answer{font-size:24px;line-height:1.5;white-space:pre-wrap;min-height:1.5em}
 .answer:empty::before{content:"ここに答えが出ます";font-size:14px;color:var(--mute)}
 .end{padding:120px 12px 16px;display:grid;gap:10px}
-/* 「のこす」の画面は声が主なので、マイクを大きく出す（マイクは頁に 1 つのまま）。 */
-.te[data-scene=end] .mic,.te[data-scene=kekka] .mic{width:96px;height:96px}
-.te[data-scene=end] .mic svg,.te[data-scene=kekka] .mic svg{width:52px;height:52px}
 .fold summary{list-style:none;border-color:var(--frame);background:transparent}
 .fold summary::-webkit-details-marker{display:none}
 .fold textarea{margin-top:10px}
@@ -184,7 +158,7 @@ html[lang=en] .how.is-local.is-browser::before{content:" "}
 @media (min-width:860px) and (orientation:landscape){
  .te{display:grid;max-width:none;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);grid-auto-rows:min-content;align-content:start}
  .koma{grid-row:1/span 8;min-height:100vh;min-height:100svh}
- /* 右の列の頭は、マイク・原画の釦・閉じる印の並ぶ上の帯（top 12px・高さ 64px）と同じ高さになる。手順の字をその帯の下（絵と同じ 84px）から始め、
+ /* 右の列の頭は、重ねる頁への印・原画の釦・閉じる印の並ぶ上の帯（top 12px・高さ 64px）と同じ高さになる。手順の字をその帯の下（絵と同じ 84px）から始め、
     字が釦の下に隠れないようにする（11-07 の前の確かめで、1024×768〜1920 の横置きで御来迎と虎のほぼ全部の手が隠れた）。縦置きは字が絵の下に来るので要らない */
  #steps{padding-top:84px}
  .end,.kekka{grid-column:1/-1;max-width:820px;width:100%;margin:0 auto}
@@ -193,18 +167,15 @@ html[lang=en] .how.is-local.is-browser::before{content:" "}
 }
 """
 
-# 読み上げの間は音声認識を止める: 止めないと端末が自分の声を聞き取り、問いとして送る（前の手帖と作りながら見る頁と同じ決まり）。
 # 手順の番号は頁の中で持ち、札の送信の返事を待たない: 手がふさがっている時に画面の変わりを待たせないため。送れなくても手順は進む。
-# 端末の中で字にする時は話し続け、ブラウザの既定の口は 1 回話すごとに止まる形で聞いて、止まったらまた聞く（話す口と同じ聞き方）。
+# 声は聞かない（頭の注）。答えの読み上げだけを残す。
 SCRIPT = """<script>
 (() => {
-const te = document.getElementById('te'), sid = te.dataset.sid, hid = te.dataset.hid, ver = te.dataset.v, total = +te.dataset.total, want = te.dataset.voice;
-const WORDS = __WORDS__, RESULT_WORDS = __RESULT_WORDS__;
-const clean = (t) => t.replace(/__CLEAN__/g, '');
+const te = document.getElementById('te'), sid = te.dataset.sid, hid = te.dataset.hid, ver = te.dataset.v, total = +te.dataset.total;
 const $ = (id) => document.getElementById(id);
 const items = [...document.querySelectorAll('#steps li')];
 // 3D の段（3D の組み立てがある玩具だけ。節の script が window.kumitateParts を開ける）。手順 n の 3D の段は F[n - 1]（段の字は手順の文と 1 対 1）。
-// 開いた時はその手の形で止める（開いただけで動かし始めない）。つぎで 1 つ進んだ時だけ、その手の動きを見せる。もどる・声の飛びは形だけ替える
+// 開いた時はその手の形で止める（開いただけで動かし始めない）。つぎで 1 つ進んだ時だけ、その手の動きを見せる。もどるは形だけ替える
 const K = window.kumitateParts, box3 = $('koma'), stage3 = $('rt-stage');
 const still3 = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 let at3 = -1;
@@ -222,13 +193,10 @@ const fit3 = () => { if (!stage3 || !box3) return; const w = box3.clientWidth - 
   const z = Math.max(.35, Math.min(1.6, w / 420, h / 520)); stage3.style.zoom = z.toFixed(2);
   // zoom は top にも掛かるので、上の帯の下（84px）に置くよう割り戻す
   stage3.style.top = `${(84 / z).toFixed(1)}px`; if (K && K.view) K.view(); };
-const mic = $('mic'), note = $('note'), ans = $('answer'), q = $('q'), kufu = $('kufu'), fold = $('fold'), bar = $('bar');
+const ans = $('answer'), q = $('q'), kufu = $('kufu'), fold = $('fold'), bar = $('bar');
 let n = +te.dataset.n;
-// 本人の決定（11-06・案 2）: 聞き続けるのは操作の言葉だけ。ほかの言葉を受けるのは、「こまった」の後の 1 つの問い（armed）と、
-// 最後の画面でマイクを押した後の工夫（talking）だけ。周りの話し声を、問いや工夫として拾わないため。画面を移ると、どちらも閉じる。
-let armed = false, talking = false;
 const scene = () => te.dataset.scene;
-const to = (s) => { te.dataset.scene = s; if (s !== 'henji') armed = false; if (s !== 'end') talking = false; press(); };
+const to = (s) => { te.dataset.scene = s; };
 // 版（開いた時に刷ってあった一番新しい版）と、その場限りの印（skin.WHO_SCRIPT が持つ）を、出来事に添える。
 const extra = (o) => { const b = new URLSearchParams(o); b.set('sheet_version', ver); try { const w = sessionStorage.getItem('utsushi-who'); if (w) b.set('who', w); } catch (e) {} return b; };
 const post = (path, o) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: extra(o) });
@@ -253,10 +221,8 @@ const goBack = () => {
   if (n > 1) { send('back'); n -= 1; paint(); }
   to('step');
 };
-// 読み上げ。始まりと終わりで聞くのを止めて戻す。終わりの知らせが来ない機種があるので、長さから見た時間でも戻す。前の読み上げの取り消しの知らせで戻らないよう、番号で見分ける。
-let sayStart = () => {}, sayEnd = () => {}, sayId = 0;
-const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t), id = ++sayId; u.lang = 'ja-JP';
-  const fin = () => { if (id === sayId) sayEnd(); }; u.onend = fin; u.onerror = fin; setTimeout(fin, Math.min(60000, t.length * 400 + 3000)); sayStart(); speechSynthesis.speak(u); } catch (e) { sayEnd(); } };
+// 答えの読み上げ。前は読み上げの始めと終わりで聞くのを止めて戻していた。この頁は声を聞かなくなったので、読み上げるだけにした
+const say = (t) => { try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; speechSynthesis.speak(u); } catch (e) {} };
 const ask = async (t) => {
   if (!t) return;
   ans.textContent = '…';
@@ -265,90 +231,12 @@ const ask = async (t) => {
   const text = j.text || j.error || '今は答えられません';
   ans.textContent = text; say(text);
 };
-const openAsk = () => { send('stuck'); to('henji'); armed = true; if (!listening) q.focus(); };
-const act = (op) => {
-  const s = scene();
-  if (op === 'again') { if (n <= total) say(items[n - 1].textContent); return; }
-  if (op === 'next') { if (s === 'step' || s === 'henji') goNext(); return; }
-  if (op === 'back') { if (s === 'kekka') to('end'); else if (s === 'henji') to('step'); else goBack(); return; }
-  if (op === 'stuck') { if (s === 'step') openAsk(); else if (s === 'henji') armed = true; return; }
-  if (op === 'photo') { if (s === 'end') shoot(); return; }
-  if (op === 'keep') { if (s === 'end') keepPress(); }
-};
-// 聞いた字。全部が一致した時だけ操作にする。操作の字は送らず残さない。
-const heard = (t) => {
-  const s = scene();
-  if (s === 'kekka') { const r = RESULT_WORDS[clean(t)]; if (r) { save(r); return; } }
-  const op = WORDS[clean(t)];
-  if (op) { act(op); return; }
-  // 操作の言葉のほかは受けない。受けるのは次の 2 つの時だけ（問いは 1 つ受けたら閉じる）。
-  if (s === 'henji' && armed) { armed = false; q.value = t; ask(t); return; }
-  if (s === 'end' && talking) { kufu.value = (kufu.value ? `${kufu.value} ` : '') + t; kufu.dataset.via = 'voice'; fold.open = true; }
-};
-// 声を字にする所。切り替えと見分けは話す口（hanasu.SCRIPT）と同じ。頁を開いた時にはブラウザへ聞かない（聞くだけで頁ごと落ちる画面があった）。人が押した時だけ聞く。
-const REC = window.SpeechRecognition || window.webkitSpeechRecognition, LANG = 'ja-JP';
-const feat = !!(REC&&typeof REC.available==='function'&&'processLocally' in REC.prototype);
-let how = want === 'off' ? 'none' : feat ? 'local' : (want === 'browser' && REC) ? 'browser' : 'none';
-let rec = null, listening = false, speaking = false, onDevice = false;
-// 端末の中で字にできるかを聞くと、頁ごと落ちる画面がある（Chromium 156 の headless で確かめた。例外でなく頁が落ちるので受けられない）。
-// 「はじめる」は全員が押す唯一の釦なので、開き直しても同じ所で止まらないよう、聞く前に印を置き、無事に済んだら消す。印が残っていれば端末の中の口を使えない物として扱う。
-// 印は機器の事だけで、人を指さない（英数字の印とは別物）。残せない画面では、印なしで今までどおり。
-const CHECKING = 'utsushi-voice-local-check';
-const mem = (v) => { try { if (v === undefined) return localStorage.getItem(CHECKING) === '1'; if (v) localStorage.setItem(CHECKING, '1'); else localStorage.removeItem(CHECKING); } catch (e) {} return false; };
-if (how === 'local' && mem()) how = want === 'browser' ? 'browser' : 'none';
-// マイクの見た目: 最後の画面では「工夫を話している」時だけ、ほかの画面では「聞いている」時に、押した形にする。
-const press = () => mic.setAttribute('aria-pressed', (scene() === 'end' ? listening && talking : listening) ? 'true' : 'false');
-const mark = () => { te.classList.remove('te-local', 'te-browser', 'te-none'); te.classList.add(`te-${how}`); if (how === 'none') { mic.hidden = true; } else { mic.hidden = false; } };
-const begin = () => {
-  rec = new REC(); rec.lang = LANG; rec.continuous = onDevice; rec.interimResults = false; if (onDevice) rec.processLocally = true;
-  rec.onresult = (ev) => { if (speaking) return; const t = ev.results[ev.results.length - 1][0].transcript.trim(); if (t) heard(t); };
-  // 許されなかった時と使えない時は聞くのをやめる。ボタンだけで最後まで通る。聞き取れなかっただけの時は聞き続ける。
-  rec.onerror = (ev) => { if (['not-allowed', 'service-not-allowed', 'language-not-supported'].indexOf(ev.error) >= 0) { listening = false; press(); } };
-  rec.onend = () => { if (listening && !speaking) { try { rec.start(); } catch (e) {} } };
-  listening = true; press(); try { rec.start(); } catch (e) {}
-};
-const wake = async () => {
-  if (how === 'none') return;
-  if (how === 'local') {
-    // 印が書かれるのを待ってから聞く（すぐ落ちると、書く前に頁が消える事があるため）。
-    mem(true); await new Promise((r) => setTimeout(r, 80));
-    let a = 'no'; try { a = await REC.available({ langs: [LANG], processLocally: true }); } catch (e) {}
-    if (a === 'downloadable' || a === 'downloading') { note.textContent = '__INSTALL__'; let ok = false; try { ok = await REC.install({ langs: [LANG], processLocally: true }); } catch (e) {} note.textContent = ''; if (ok) a = 'available'; }
-    if (a !== 'available') {
-      // 端末の中では字にできないと分かった。切り替えが browser の時は、断りの文を替えて、もう一度押した時から既定の口を使う（黙って外へ送らない）。ほかはマイクをしまう。
-      mem(false);
-      if (want === 'browser' && REC) { how = 'browser'; note.textContent = '__HOW_BROWSER__'; } else { how = 'none'; }
-      mark(); return;
-    }
-    onDevice = true;
-  }
-  begin();
-  // 端末の中の指定で聞き始めても落ちる画面がある（同じ headless）ので、始まった後に印を消す。
-  if (onDevice) setTimeout(() => mem(false), 1500);
-};
-sayStart = () => { speaking = true; if (listening && rec) { try { rec.stop(); } catch (e) {} } };
-sayEnd = () => { if (!speaking) return; speaking = false; if (listening && rec) { try { rec.start(); } catch (e) {} } };
-mic.onclick = () => {
-  // 最後の画面のマイクは、工夫を話す切り替え: 押してから話した事だけを欄に入れる。ほかの画面では、聞くのを止める・始める。
-  if (scene() === 'end') {
-    if (!listening) { talking = true; note.textContent = ''; wake(); return; }
-    talking = !talking; press(); return;
-  }
-  if (listening) { listening = false; if (rec) rec.stop(); press(); return; }
-  note.textContent = ''; wake();
-};
-addEventListener('pagehide', () => { listening = false; if (rec) { try { rec.stop(); } catch (e) {} } });
-// 隠れたら止め、見えたら聞いていた時だけ戻す（別のタブやアプリの間に、周りの声を聞き続けないため）。
-let paused = false;
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { if (listening) { paused = true; listening = false; press(); try { rec.stop(); } catch (e) {} } return; }
-  if (paused) { paused = false; listening = true; press(); if (!speaking) { try { rec.start(); } catch (e) {} } }
-});
+const openAsk = () => { send('stuck'); to('henji'); q.focus(); };
 $('start').onclick = () => {
   try { const k = `tsukuru-start-${sid}-${hid}`; if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); send('start'); } } catch (e) {}
   // 回の印を引き継ぐ（統括の決め 11-08）: 玩具の頁で作り始めた回が 3 時間の内なら消さない。無い時だけ作り始めとして、印の無い区切りを消す（web.clips）
   if (window.utsushiClipsStart) window.utsushiClipsStart(sid);
-  to(n > total ? 'end' : 'step'); wake();
+  to(n > total ? 'end' : 'step');
 };
 $('next').onclick = (e) => { e.preventDefault(); goNext(); };
 $('back').onclick = (e) => { e.preventDefault(); goBack(); };
@@ -356,7 +244,7 @@ $('stuck').onclick = (e) => { e.preventDefault(); openAsk(); };
 // 閉じる印: 今の画面を閉じて 1 つ前へ。札は元の画面へ、「のこす」の画面は最後の手順へ。手順の画面と最初の画面では玩具の頁へ戻る。
 $('close').onclick = (e) => { const s = scene(); if (s === 'henji') { e.preventDefault(); to('step'); } else if (s === 'kekka') { e.preventDefault(); to('end'); } else if (s === 'end') { e.preventDefault(); goBack(); } };
 $('ask-form').onsubmit = (e) => { e.preventDefault(); ask(q.value.trim()); };
-// 原画と歌: 小さな原画を押すと、頁の中で大きく重ねる（頁を離れると声の聞き取りが止まるため）。どこを押しても閉じる。重ねられない画面では原画の釦を隠す
+// 原画と歌: 小さな原画を押すと、頁の中で大きく重ねる（頁を離れると、今の手順の画面から外れるため）。どこを押しても閉じる。重ねられない画面では原画の釦を隠す
 const gThumb = $('genga-thumb'), gDlg = $('genga-dlg');
 if (gThumb && gDlg) {
   if (!gDlg.showModal) gThumb.hidden = true;
@@ -383,8 +271,6 @@ function showPicked() {
   te.classList.toggle('picked', kept.length > 0);
 }
 picker.onchange = () => { chosen = chosen.concat([...picker.files]); picker.value = ''; showPicked(); };
-// 声の「とって」: 画面によっては人が押さないとカメラを開けないので、開けない時は「とって」を目立たせて手を呼ぶ。
-const shoot = () => { const shot = $('shot'); if (!shot) return; shot.classList.add('call'); setTimeout(() => shot.classList.remove('call'), 2000); try { picker.click(); } catch (e) {} };
 // のこした後の行き先。今の回に声かカメラの区切りがある時だけ（web.clips の印・IndexedDB は開かない）、もちよるでなく のこすの頁の
 // 「区切りだけ」の確かめへ（統括の決め 11-08 (a)）。この頁からは区切りを送らない（送るのは、そこでの承認の後だけ・窓口の決め「承認の時にまとめて」）
 const clipsMade = () => !!(window.utsushiClipsMade && window.utsushiClipsMade(sid));
@@ -436,10 +322,10 @@ const save = async (result) => {
   let done = '', saved = false, rid = '', toClips = false;
   try {
     if (said) {
-      const t = await post(`/toy/${sid}/talk`, { scene: 'craft', hypothesis: hid, step: total, text: said, via: kufu.dataset.via === 'voice' ? 'voice' : 'text', json: '1' });
+      const t = await post(`/toy/${sid}/talk`, { scene: 'craft', hypothesis: hid, step: total, text: said, via: 'text', json: '1' });
       const tj = await t.json().catch(() => ({}));
       if (!tj.kept) { fold.open = true; st.textContent = tj.why || '残せませんでした'; return; }
-      kufu.value = ''; kufu.dataset.via = '';
+      kufu.value = '';
     }
     const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result });
     const j = await r.json().catch(() => ({}));
@@ -461,7 +347,7 @@ const save = async (result) => {
   if (toClips) { location.assign(toNokosu(rid, done)); return; }
   location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
 };
-mark(); paint(); to('start');
+paint(); to('start');
 fit3(); requestAnimationFrame(fit3); window.addEventListener('resize', fit3);
 })();
 </script>"""
@@ -508,7 +394,7 @@ def _three(sid, texts):
 
 def _genga(sid):
     """原画と歌の釦と、押した時に重ねる窓（main の原画と歌の部品 web.genga を使う）。返すのは (釦, 窓)。原画が無い玩具は両方とも空。
-    釦は字を持たない形だけの押す所（マイクと閉じる印と同じ）で、名前は読み上げの字だけ（genga.alt。新しい字を足さない）。
+    釦は字を持たない形だけの押す所（閉じる印と同じ）で、名前は読み上げの字だけ（genga.alt。新しい字を足さない）。
     窓は開くまで hidden にし、字（歌）を手順の画面の字に数えない。歌は人が確かめた読みだけ（genga._songs。読みが無い玩具は絵だけ）。"""
     try:
         src = genga._source(sid)
@@ -583,10 +469,6 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     steps = "".join(f'<li class="on">{esc(t)}</li>' if i == n else f'<li hidden>{esc(t)}</li>' for i, t in enumerate(texts, 1))
     width = round(min(n, total) / total * 100)
     tiles = "".join(f'<button type="button" class="tile" value="{esc(r)}">{result_icon(r, TEMPLATES[template].RESULTS)}<span>{esc(r)}</span></button>' for r in TEMPLATES[template].RESULTS)
-    # 声の断りは、声がどこへ行くかをマイクが起きる前に言う文。声が使える時だけ出す。どちらの文を出すかは画面ごとに違うので、JS の印で切り替える。
-    # 文は採られた文のまま（hanasu）。「話す」を「はじめる」に合わせた文は本人の確認待ちで、確認が済むまで入れない（本人の指示 11-05「新しい文は確認までマージしない」）。
-    how = (f'<span class="how is-local">{esc(hanasu.HOW_LOCAL)}</span><span class="how is-browser">{esc(hanasu.HOW_BROWSER)}</span>'
-           f'<span class="how is-local is-browser">{esc(making_log.ASK_NAME_VOICE)}</span>')
     # 合言葉なしで開いたデモ（public）でも、写真と動画の口は開く（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。
     # 上げた物は上げた本人の画面にだけ出る（play_server の写真の道と手帖の記録の頁）。uploads=False は口ごと閉じた前の形で、今は呼ぶ所が無い。
     shot = (_key(SHOOT, "key shot", 'id="shot" for="files"', "label",
@@ -598,9 +480,8 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
     craft = hanasu.SCENES["craft"]
     g_thumb, g_dlg = _genga(sid)
     body = (f'<main class="te{"" if three else " te-text"}" id="te" data-scene="{"end" if n > total else "step"}" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}" '
-            f'data-total="{total}" data-n="{n}" data-voice="{hanasu.mode()}"><h1 class="sr">手帖</h1>'
+            f'data-total="{total}" data-n="{n}"><h1 class="sr">手帖</h1>'
             f'<div class="bar" id="bar" role="progressbar" aria-valuemin="1" aria-valuemax="{total}" aria-valuenow="{min(n, total)}"><span style="width:{width}%"></span></div>'
-            f'<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）" data-on="step henji end kekka" hidden>{MIC}</button>'
             f'<a class="close" id="close" href="/toy/{esc(sid)}" aria-label="閉じる">{CLOSE}</a>'
             # 作業の頁への道（本人の答え 11-08「どこかに道を戻す。」）。前は最初の画面の「はじめる」の下の字の道だったが、のこせる の 1 行と入れ替えた（#612）。
             # 作りながら使う所なので手順の画面に置く。手順の画面の押す所は もどる・つぎ・こまった の 3 つまで（1 手 1 画面の決まり・test_techo_step）なので、
@@ -608,15 +489,15 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # 印の下に見える字で同じ口の名を添える（本人の答え 11-08「印に「カメラに重ねる」の字を足す。」・前からの字）。title にも同じ字（統括の決め 11-08）。
             # 字は 12px（統括の決め 11-08「読める大きさ（帯のほかの字と同じか 12px 以上）」）。12px の 7 字（84px）は帯の空きに 1 行で入らないので、
             # 印の中で「カメラに」「重ねる」の 2 行にする（字の幅を 4 字に絞って折る。英語の訳は「Camera」「overlay」の 2 行）。印は帯のほかの印と同じ 64×64px で、
-            # マイクの右に置く。置き場と幅は帯の幅（手帖の箱の幅）で割り付ける: left は min(96px, 50% - 60px)・幅は min(64px, 18%)。
+            # 前はマイク（帯の左の端 12〜84px）の右に置いた。置き場と幅は帯の幅（手帖の箱の幅）で割り付ける: left は min(96px, 50% - 60px)・幅は min(64px, 18%)。
             # 右から数えて置くと縦の送りの棒の幅（15px）だけ左へ寄り、幅 320 でマイクと重なった（英語の頁で測った）。left:96px に決め打ちすると、送りの棒が
             # 出た幅 320（箱の幅 305px）で、右寄せの原画の小さな絵（153〜217px）と 7px 重なった（11-08・写しのある木の test_hmd）。割り付けると、箱の幅 305px で
-            # 92.5〜147.4px（マイク 12〜84px との間 8.5px・原画の小さな絵の手前 5.6px）、幅 320 で 96〜153.6px、幅 360 以上で 96〜160px。読み上げは見える字
+            # 92.5〜147.4px（原画の小さな絵の手前 5.6px）、幅 320 で 96〜153.6px、幅 360 以上で 96〜160px。読み上げは見える字。
+            # マイクを外した後（音声認識を外す設計の 2 版）も置き場は替えていない: 左の端へ寄せると、手帖の最初の画面と手順の画面の帯を測る試験
+            # （test_hmd・test_landscape_fit）の置き場が全部替わるので、この PR の外にした（空いた左の端は、帯の印が重ならない余白のまま）
             + (f'<a class="kasane-go" id="kasane-go" href="/toy/{esc(sid)}/kasane" title="{esc(hmd.CAM_LINK)}" data-on="step">{KASANE}<span>{esc(hmd.CAM_LINK)}</span></a>' if hmd.available(sid) else '')
             + g_thumb + koma +
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
-            '<p class="meta" id="note" aria-live="polite"></p>'
-            f'<p class="meta" id="start-note" data-on="start">{how}</p>'
             '<div class="keys" data-on="start step">'
             + _key(START, "key go", 'id="start" data-on="start"')
             + _key(BACK, "key", f'id="back" data-on="step" href="?v={v}&amp;n={max(n - 1, 1)}"', "a")
@@ -652,8 +533,7 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<p class="meta" id="up-status" aria-live="polite"></p>{limits}'
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
-    js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
-          .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
+    js = SCRIPT
     # 回の印を引き継ぐ小さな台本（web.clips.START_SCRIPT）だけを置く（回の印が無い時だけ、ここで作り始める）。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない。
     # 開いた時にも作り始めかを見る（手帖の頁を直に開いて のこす へ進んだ時に、前の人の回を引き継がない・統括の決め 11-08）
     return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.start_assets(sid))
