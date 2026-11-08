@@ -1,0 +1,7 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_toy_head_fit.py
+# commit: 743706e5（回した時の HEAD・今の main。試験だけを足した木）
+  File "tests/test_toy_head_fit.py", line 34, in <module>
+    assert ".genga-head .genga-songs{writing-mode:vertical-rl;height:min(70vh,620px)" in wide, "歌の列の高さが決まった値でない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 歌の列の高さが決まった値でない
+rc=1
