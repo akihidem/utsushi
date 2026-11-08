@@ -59,15 +59,17 @@ const f = document.getElementById('nk'), chk = document.getElementById('nk-check
 f.hidden = false;
 const sid = f.dataset.sid, hid = f.dataset.hid, total = f.dataset.total, max = +f.dataset.maxN, maxBytes = +f.dataset.maxBytes;
 const $ = (id) => document.getElementById(id), st = $('nk-status'), go = $('nk-go'), files = $('nk-files'), ok = $('nk-ok');
-let chosen = [];
+let chosen = [], big = false;
 const showPicked = () => {
   const kept = chosen.slice(0, max);
   let t = kept.map((x) => x.name).join('、');
   if (chosen.length > kept.length) t += `（${max} つまでなので、残りの ${chosen.length - kept.length} つは上げません）`;
+  // 20MB を越えて選びから落とした物があれば、手帖と同じ字で言う（何も言わずに落とさない・別の目の気づき）
+  if (big) t += '（大きすぎて上げられない物があります）';
   $('nk-picked').textContent = t;
   $('nk-promise').hidden = !chosen.length;
 };
-files.onchange = () => { chosen = [...files.files].filter((x) => x.size <= maxBytes); showPicked(); };
+files.onchange = () => { const all = [...files.files]; chosen = all.filter((x) => x.size <= maxBytes); big = chosen.length < all.length; showPicked(); };
 const result = () => (f.querySelector('input[name=result]:checked') || {}).value || '';
 const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: new URLSearchParams({ ...data, who: sessionStorage.getItem('utsushi-who') || '' }) });

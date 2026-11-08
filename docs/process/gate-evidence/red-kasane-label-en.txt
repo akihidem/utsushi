@@ -1,0 +1,13 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_hmd.py
+# commit: 3bdaa6a8（回した時の HEAD）
+/tmp/tmp44fk9ua1/play/NDL-1187053-R0000005-L/.tmp-h8qpujau/H-C_v1.pdf
+/tmp/tmp44fk9ua1/play/NDL-1187053-R0000014-R/.tmp-rbez_j9y/H-A_v1.pdf
+/tmp/tmp44fk9ua1/play/NDL-1187053-R0000005-L/.tmp-zeljwdm7/H-C_v1.pdf
+/tmp/tmp44fk9ua1/play/NDL-1187053-R0000014-R/.tmp-lyg4w47w/H-A_v1.pdf
+/tmp/tmp44fk9ua1/play/NDL-1187053-R0000004-L/.tmp-q2sapjl0/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 361, in <module>
+    assert not (st["text"] and over(k, st["text"])) and not any(over(k, o) for o in st["others"]), ("印が字や上の帯の印と重ならない", f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('印が字や上の帯の印と重ならない', {'sid': 'NDL-1187053-R0000005-L', 'w': 320, 'h': 568, 'start': 577, 'go': [589, 633], 'sx': 305, 'step': {'kasane': [73, 12, 145, 76], 'label': {'box': [84, 29, 134, 84], 'px': 12, 'lines': 4, 'cut': True, 'iconOut': True}, 'bar': [[12, 84], [12, 76], [12, 76]], 'text': [16, 296, 289, 388], 'others': [[12, 12, 84, 84], [229, 12, 293, 76]], 'keysBottom': 573}, 'lang': 'en'})
+rc=1
