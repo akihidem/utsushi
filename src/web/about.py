@@ -235,4 +235,4 @@ def page(skin_name, path="/about"):
             f'<section class="sec">{techo_site.voices_sections()}</section>'
             # 「おもちゃを選ぶ」（/toys）は外し、入口へ戻る釦の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）。残る 1 つを大きい釦にする
             '<section class="sec"><p class="links"><a class="btn" href="/">入口へ戻る</a><a href="/otona">保護者の方へ、ファシリテーターの方へ</a></p></section></div>')
-    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE + techo_site.VOICES_STYLE)
+    return skin.shell("うつし · 序", body, skin_name, current="/about", path=path, extra_style=STYLE + techo_site.VOICES_STYLE, description=PREMISE[0])

@@ -37,7 +37,7 @@ from api import ask
 from omochae import assembly, hypotheses, loop, making_log, records, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, kumitate, naoru, skin, tsukuru
+from . import genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -71,6 +71,8 @@ KEY_ICONS = {
 }
 MIC = _ICON.format('<rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/>')
 CLOSE = _ICON.format('<path d="M12 12l24 24M36 12L12 36"/>')
+# 重ねる頁への印（字の無い形・読み上げは本人が採った口の名 hmd.CAM_LINK）。とって（動画）の印と見分けるため、写真機の形にする
+KASANE = _ICON.format('<rect x="6" y="14" width="36" height="25" rx="3"/><circle cx="24" cy="26.5" r="7"/><path d="M17 14l3-5h8l3 5"/>')
 SEND = _ICON.format('<path d="M10 24h26M26 12l12 12-12 12"/>')
 PENCIL = _ICON.format('<path d="M10 38l2-9 19-19 7 7-19 19zM27 14l7 7"/>')
 
@@ -126,6 +128,7 @@ button,input,textarea,select{font-family:inherit}
    （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる。
    置き場は、マイクと閉じる印の並ぶ上の帯（手順の絵は上から 84px より下に描く）。前は閉じる印の下に置き、375×667 で御来迎の手順 1〜3 の絵の角を隠した */
 .genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
+.kasane-go{position:absolute;top:12px;right:164px;width:64px;height:64px;display:grid;place-items:center;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3}
 .genga-thumb img{display:block;width:100%;height:100%;object-fit:contain}
 .te-genga{max-width:96vw;max-height:96vh;max-height:96svh;overflow:auto;padding:10px;border:0;background:var(--paper);color:var(--fg)}
 .te-genga::backdrop{background:rgba(0,0,0,.82)}
@@ -568,6 +571,10 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<div class="bar" id="bar" role="progressbar" aria-valuemin="1" aria-valuemax="{total}" aria-valuenow="{min(n, total)}"><span style="width:{width}%"></span></div>'
             f'<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）" data-on="step henji end kekka" hidden>{MIC}</button>'
             f'<a class="close" id="close" href="/toy/{esc(sid)}" aria-label="閉じる">{CLOSE}</a>'
+            # 重ねる頁への道（本人の答え 11-08「どこかに道を戻す。」）。前は最初の画面の「はじめる」の下の字の道だったが、のこせる の 1 行と入れ替えた（#612）。
+            # 作りながら使う所なので手順の画面に置く。手順の画面の押す所は もどる・つぎ・こまった の 3 つまで（1 手 1 画面の決まり・test_techo_step）なので、
+            # 閉じる印・原画の小さな絵と同じ、字の無い形の印を上の帯に並べる（読み上げは今の口の名 hmd.CAM_LINK・新しい字なし）。組み立ての書き方がある玩具だけ
+            + (f'<a class="kasane-go" id="kasane-go" href="/toy/{esc(sid)}/kasane" aria-label="{esc(hmd.CAM_LINK)}" data-on="step">{KASANE}</a>' if hmd.available(sid) else '')
             + g_thumb + koma +
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
             '<p class="meta" id="note" aria-live="polite"></p>'

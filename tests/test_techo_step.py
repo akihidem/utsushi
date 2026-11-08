@@ -103,8 +103,8 @@ class Page(html.parser.HTMLParser):
         return self
 
     def shown_targets(self, scene):
-        # 字を持たない形だけの押す所（マイク・閉じる印・原画と歌の小さな原画）は、押す所の名前に数えない。字を持たない事は下で見る
-        return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("mic", "close", "genga-thumb")]
+        # 字を持たない形だけの押す所（マイク・閉じる印・原画と歌の小さな原画・重ねる頁への印）は、押す所の名前に数えない。字を持たない事は下で見る
+        return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("mic", "close", "genga-thumb", "kasane-go")]
 
     def shown_blocks(self, scene):
         return [c for c in self.blocks if self._shown(c, scene) and c["text"].strip()]
@@ -144,7 +144,13 @@ for scene in ("start", "step", "end"):
 # 「カメラに重ねる」の道は、のこすへの道の 1 行と入れ替えた（本人の答え 11-08「「のこせる」の 1 行は、今の行と入れ替える。」・窓口の決め（イ））。
 # 最初の画面で押す所は「はじめる」だけに戻り、その下に のこせる の 1 行（押す所ではない字）
 assert [c["text"].strip() for c in doc.shown_targets("start")] == ["はじめる"], "最初の画面で押すのは はじめる だけ"
-assert hmd.CAM_LINK not in page and page.count(naoru.ROUTE_MAKING) == 1 and page.index('id="start"') < page.index(naoru.ROUTE_MAKING), "のこせる の 1 行は はじめる の下に 1 回"
+assert page.count(naoru.ROUTE_MAKING) == 1 and page.index('id="start"') < page.index(naoru.ROUTE_MAKING), "のこせる の 1 行は はじめる の下に 1 回"
+# 重ねる頁への道は手順の画面の上の帯の字の無い印（本人の答え 11-08「どこかに道を戻す。」）。読み上げは今の口の名・見える字は無い・手順の画面だけ
+if hmd.available(G):
+    assert 'id="kasane-go"' in page, "重ねる頁への印が手帖に無い（手帖から辿れない）"
+    kg = page.split('id="kasane-go"', 1)[1].split("</a>", 1)[0]
+    assert f'aria-label="{hmd.CAM_LINK}" data-on="step">' in kg and not re.sub(r"<[^>]+>", "", kg.split(">", 1)[1]).strip(), "印に見える字は無い"
+    assert page.count(hmd.CAM_LINK) == 1, "口の名は印の読み上げの 1 回だけ"
 assert [c["text"].strip() for c in doc.shown_targets("step")] == ["もどる", "つぎ", "こまった"]
 # 原画と歌（本人の指示 11-06「狂歌は制作の際参考になるので必ず原画と一緒に見れるようにしてください」）: 始める前と手順の画面に小さな原画を出す。
 # 字は持たない（押す所の名前は 6 つのまま）。押すと頁の中で重ねる窓は、開くまで hidden で、手順の画面の字に数えない。窓には頁の全体の原画と、確かめた歌
