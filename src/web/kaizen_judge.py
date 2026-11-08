@@ -137,7 +137,7 @@ def _merged(v):
 
 
 def engine_loop(hist):
-    """2 周目（エンジンの輪・11-06）。作る様子の札と作る前のレビュー → エンジンが束ねた案 → 人が採る → エンジンの版 2 → 虎 v4。"""
+    """2 周目（エンジンの輪・11-06）。作る様子の札とワークショップの型紙レビュー → エンジンが束ねた案 → 人が採る → エンジンの版 2 → 虎 v4。"""
     v = _version(hist, "虎", "tora-v4")
     ev = next((e for e in hist.get("engine_versions", []) if e.get("engine_version") == v.get("engine_version")), None) if v else None
     if not (_merged(v) and ev):

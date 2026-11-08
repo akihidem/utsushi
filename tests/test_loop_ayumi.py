@@ -260,7 +260,7 @@ assert kv.set_verdict(["goraigo-v8"]) == V8, "置き場の同じ番号の写真�
 put("R-0101", via=records.UPLOADED)
 assert kv.record_loops("R-0101") == ([4], False), "上げる口から来た記録"
 put("R-0102", via=records.UPLOADED, video_kind="review")
-assert kv.record_loops("R-0102") == ([], True), "作る前のレビューは 4 つのどれにも数えない"
+assert kv.record_loops("R-0102") == ([], True), "ワークショップの型紙レビューは 4 つのどれにも数えない"
 put("R-0103", hypothesis_id="OWN-1")
 assert kv.record_loops("R-0103") == ([2], False), "話した考えから作った紙でなければ ループ 1 を付けない"
 (LOOP / "words-W-0001.json").write_text(json.dumps({"source_id": G, "typed_by": words.THINK_BY, "own_id": "OWN-1"}, ensure_ascii=False), encoding="utf-8")
@@ -284,7 +284,7 @@ assert talk_log.add(G, "think", "たたき台を見て話した字", hypothesis_
 talk_log.bind(G, "H-A", 1, "ayumitest04", "R-0108")
 assert kv.record_loops("R-0108") == ([2], False) and not any("たたき台を見て話した字" in x for x in kv.record_words("R-0108")), "考えはループ 1 の版にだけ"
 assert kv.version_verdict({"record_ids": ["R-0021"]}) == {"loops": [2, 4], "material": [], "review": False}
-assert kv.version_verdict({"record_ids": ["R-0102"]}) == {"loops": [], "material": [], "review": True} and kv.tag(kv.version_verdict({"record_ids": ["R-0102"]})) == "ループの外（材料は作る前のレビュー）"
+assert kv.version_verdict({"record_ids": ["R-0102"]}) == {"loops": [], "material": [], "review": True} and kv.tag(kv.version_verdict({"record_ids": ["R-0102"]})) == "ループの外（材料はワークショップの型紙レビュー）"
 assert kv.version_verdict({"record_ids": ["無い記録"]})["loops"] == [2]
 assert kv.change_verdict([]) == OUT and kv.tag(OUT) == "ループの外"
 assert kv.tag({"loops": [1, 2], "material": [], "review": False}) == "ループ 1・2"
@@ -340,7 +340,7 @@ ledger = {"next": [{"id": "EP-0009", "target": {"kind": "part", "name": "まだ�
 (root / "versions.json").write_text(json.dumps(ledger, ensure_ascii=False), encoding="utf-8")
 versions_ = ledger["versions"]
 assert kv.engine_verdict(versions_[0]) == OUT and kv.engine_verdict(versions_[1]) == {"loops": [3], "material": [2, 4], "review": False}
-assert kv.tag(kv.engine_verdict(versions_[2])) == "ループ 3（材料は作る前のレビュー）"
+assert kv.tag(kv.engine_verdict(versions_[2])) == "ループ 3（材料はワークショップの型紙レビュー）"
 block = ayumi.engine_block()
 assert block.index("エンジンの版 4") < block.index("エンジンの版 2") < block.index("エンジンの版 1") and "spin-v2" in block and "案 1 件から" in block and "足の絵を直した" in block
 assert "足の向きは絵で見せる &lt;i&gt;（案 EP-0001）" in block and "<i>" not in block and PHONE not in block, "採る人の 1 行。連絡先の形は出さない"
