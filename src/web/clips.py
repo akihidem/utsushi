@@ -2,8 +2,23 @@
 設計は grove の state/voice-camera-send-20261108.md の 3 版（別の目の検品 3 回）と、作る時の統括の直し。
 
 判断の芯:
-- **録るのは押した時だけ。** 声は話す口の「話す」を押して話した間（hanasu が voiceStart・voiceStop を呼ぶ）、カメラは作業の頁の
-  「ここで止まった」を押した後の 10 秒（hmd が camClip を呼ぶ）。押す前は何も録らず、何も覚えない（A2）。カメラを出しただけでは録らない。
+- **録るのは押した時だけ。** 声は話す口の「声を録る」を押してから「止める」を押すまで（hanasu が voiceStart・voiceStop を呼ぶ。1 回 60 秒まで）、
+  カメラは作業の頁の「ここで止まった」を押した後の 10 秒（hmd が camClip を呼ぶ）。押す前は何も録らず、何も覚えない（A2）。カメラを出しただけでは録らない。
+  前は、話す口の「話す」で聞き始めた間（ブラウザの音声認識と一緒に）録っていた。本人 11-08「クロードの音声認識をはずして、ユーザーの端末の音声入力に
+  頼るのでいいのではないか。」と本人の答え「(A) 声を録る釦を置いて残す。」で、音声認識を外し、録る釦を別に置いた（grove の state/no-speech-recognition-20261108.md の 2 版）。
+- **声の止まる所**（設計の 2 版の止め 2 と、2 版の照らしの課題 2）: 釦で移る 4 つ（2 回目に押した時・欄の「残す」・のこす の「のこす」と「承認」・
+  作りながら見る頁で手順を移る時。のこす へ移る道を押した時も同じ）と、60 秒（VOICE_SECONDS）と、大きさの手前（下）は、置き場に置き終えてから進む
+  （voiceStop は置き終えた時に返る。置き終える前に頁が移ると、区切りが置かれないため。置き場が答えない時も呼ぶ側を止めないよう、3 秒で待つのをやめる）。
+  頁を離れる時（pagehide・見えなくなった時。タブを閉じる・戻る・ほかのアプリへ移る）は、頁の側が待てないので、止めるだけにする。iPhone の Safari では、
+  止めた後の置きが終わる前に頁が止まり、その区切りが無くなる事がある（外へ漏れる形ではない。頁の字には出さない）。
+- **大きさは録っている間に見る**（2 版の照らしの課題 3）: 録りを 1 秒ごとの区切り（timeslice）で受け、たまった大きさが VOICE_CLIP_BYTES（サーバの
+  受け口の上限と同じ値・omochae.voice_text）の手前（VOICE_NEAR・1.9MiB）に来たら、60 秒と同じく止める（釦は「声を録る」に戻る）。区切りはいつも上限の
+  内になるので、断りの新しい字が要らない。32kbps で 60 秒は約 240KB で、ふつうは当たらない（ブラウザが録りの速さを聞かない時のための止め）。
+  止めた後の最後の 1 つで上限を越えた時（越えない見込み）は、置かずに捨てる（受け口が断って、承認の後に CLIP_FAIL になるより先に）。
+- **録った所で見えるのは、釦の字が「止める」から「声を録る」に戻る事だけ**（2 版の照らしの課題 4）。録った区切りの並び（HEAD「録った区切り」）は、
+  のこす の確かめの画面にだけある。作りながら見る頁に数や並びを足すと、その字が新しい字になる（本人の確かめが要る）ので足さない。
+- **キーボードのマイクと同時には使えない事がある**（2 版の照らしの課題 5）: 端末のキーボードの音声入力も同じマイクを使う。録っている間に欄で
+  キーボードのマイクを押すと、片方が止まるか、録りが無音になりうる（実機で確かめていない・関門の帳面の確かめていない事に入れた）。
 - **承認まで、utsushi のサーバへは送らない。** 録った区切りは、この端末の IndexedDB に置くだけ。この台本は外へ送る口（fetch など）を持たない。
   送るのは、のこすの頁の「承認」の後の 1 か所（web.nokosu）だけ。
 - **開いた時に消す。** IndexedDB は出所ごとにタブをまたいで残り、ブラウザを閉じても消えない。だから、この台本のある頁を開くたびに、
@@ -41,11 +56,15 @@
 """
 import json
 
+from omochae.voice_text import VOICE_CLIP_BYTES
+
 from .skin import esc
 
 CLIP_HOURS = 3   # 端末の中に置く長さ（統括の決め）。サーバの側の 72 時間の掃除とは別
 CLIP_MAX = 5     # 声とカメラ、それぞれの数（窓口の決め）
 CAM_SECONDS = 10  # 押した後に録る長さ（A2・窓口の決め）
+VOICE_SECONDS = 60  # 「声を録る」の 1 回の長さの上限（設計の 2 版・本人の決めの推し 60 秒。2MiB の上限の内に入る長さ）
+VOICE_NEAR = VOICE_CLIP_BYTES - 100 * 1024  # 録りを止める大きさ（受け口の上限の手前・約 1.9MiB。止めた後の最後の 1 秒の分の余り）
 OPEN_WAIT = 6     # 置き場（IndexedDB）が開くのを待つ秒。頭なしの試験の仮の時計や止まった置き場で、承認や移りが止まったままにならないように
 
 FIRST = "押した間の声と、押した後の 10 秒の映像を、のこすで承認した時に送り、字にしてから消します。"
@@ -58,7 +77,7 @@ CLIP_FAIL = "記録は残しました。声かカメラの区切りを送れま�
 
 SCRIPT = """<script>(()=>{
 if(window.utsushiClips||!window.indexedDB)return;
-const HOURS=__HOURS__,MAX=__MAX__,CAM=__CAM__*1000,WAIT=__WAIT__*1000,DB='utsushi-clips',ST='clips',AGE=HOURS*3600000;
+const HOURS=__HOURS__,MAX=__MAX__,CAM=__CAM__*1000,VOICE=__VOICE__*1000,NEAR=__NEAR__,BIG=__BIG__,WAIT=__WAIT__*1000,DB='utsushi-clips',ST='clips',AGE=HOURS*3600000;
 const who=()=>{try{return sessionStorage.getItem('utsushi-who')||''}catch(e){return ''}};
 const PK=(sid)=>'utsushi-pass:'+sid,NK=(sid)=>'utsushi-pass-new:'+sid,RK=(sid)=>'utsushi-run:'+sid,MK=(sid)=>'utsushi-clips-made:'+sid;
 // 区切りだけの確かめの画面で控えた、並べる前の who（その画面でだけ使う）
@@ -106,16 +125,32 @@ const handed=async(sid)=>{const p=passNow(sid),w=who(),k=kept(),out=[];for(const
 const adopt=async(sid)=>{const p=passNow(sid)||passMake(sid);if(p)await mark(sid,p)};
 // 承認の終わり: その玩具の区切りと印だけを消す（ほかの玩具の区切りは消さない・別の目の気づき）
 const clear=async(sid)=>{for(const c of await all())if(c.sid===sid)await remove(c.id);try{[PK,NK,RK,MK].forEach(k=>sessionStorage.removeItem(k(sid)))}catch(e){}};
-// 声: 話す口の「話す」を押した時だけ始め、話し終わりで止める。開けない画面（iPhone の Safari で音声認識とマイクを取り合う時など）は録らない
-let vr=null,vs=null;
-const voiceStart=async(meta)=>{if(vr||!window.MediaRecorder||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return false;
- if(!who()||await waiting(meta.sid,'t')>=MAX)return false;
- try{vs=await navigator.mediaDevices.getUserMedia({audio:true});const r=new MediaRecorder(vs,{audioBitsPerSecond:32000}),parts=[],t0=Date.now();vr=r;
-  r.ondataavailable=(e)=>{if(e.data&&e.data.size)parts.push(e.data)};
-  r.onstop=async()=>{const b=new Blob(parts,{type:r.mimeType||'audio/webm'});if(vs)vs.getTracks().forEach(t=>t.stop());vs=null;vr=null;
-   if(b.size)await put({...meta,kind:'t',type:b.type,size:b.size,ms:Date.now()-t0,blob:b})};
-  r.start();return true}catch(e){if(vs)vs.getTracks().forEach(t=>t.stop());vs=null;vr=null;return false}};
-const voiceStop=()=>{if(vr&&vr.state!=='inactive')vr.stop()};
+// 声: 話す口の「声を録る」を押した時だけ始め、止める所（上の注）で止める。返すのは 'rec'（録り始めた）・'full'（5 ついっぱい）・'none'（録れない画面）。
+// onEnd は録り終えた時に 1 回だけ呼ぶ（60 秒・大きさの手前・頁が隠れた時のように、釦の外で止まった時も、釦の形を戻すため）。値は 'put'（置いた）・
+// 'full'・'none'（置けなかった・何も録れなかった・上限を越えて捨てた）
+let vr=null,vs=null,vend=null,vtimer=0,vgo=false,vhalt=false;
+const voiceStart=async(meta,onEnd)=>{if(vr||vgo||!window.MediaRecorder||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!who())return 'none';
+ let fin;vgo=true;vhalt=false;vend=new Promise(ok=>{fin=ok});
+ const out=(v)=>{if(vs)vs.getTracks().forEach(t=>t.stop());vs=null;vr=null;vgo=false;fin(v);return v};
+ try{if(await waiting(meta.sid,'t')>=MAX)return out('full');
+  vs=await navigator.mediaDevices.getUserMedia({audio:true});const r=new MediaRecorder(vs,{audioBitsPerSecond:32000}),parts=[],t0=Date.now();vr=r;
+  let size=0;
+  // 1 秒ごとに受け、たまった大きさが上限の手前に来たら止める（60 秒と同じ止め方）
+  r.ondataavailable=(e)=>{if(e.data&&e.data.size){parts.push(e.data);size+=e.data.size;if(size>=NEAR&&r.state!=='inactive')r.stop()}};
+  r.onstop=async()=>{clearTimeout(vtimer);const b=new Blob(parts,{type:r.mimeType||'audio/webm'});if(vs)vs.getTracks().forEach(t=>t.stop());vs=null;vr=null;
+   let got='none';try{if(b.size&&b.size<=BIG)got=await put({...meta,kind:'t',type:b.type,size:b.size,ms:Date.now()-t0,blob:b})?'put':'full'}catch(e){}
+   fin(got);if(onEnd)onEnd(got)};
+  r.start(1000);vgo=false;vtimer=setTimeout(()=>{if(r.state!=='inactive')r.stop()},VOICE);
+  // マイクの許しを待つ間に止める所を通った（頁が隠れた・残すを押した）時は、録り始めた所ですぐ止める
+  if(vhalt)r.stop();return 'rec'}
+ catch(e){return out('none')}};
+const halt=()=>{if(vgo)vhalt=true;if(vr&&vr.state!=='inactive')vr.stop()};
+// 止めて、置き終えるのを待つ（録っていない時は、すぐ返る）。置き場が答えない時も呼ぶ側を止めないよう、3 秒で待つのをやめる
+const voiceStop=()=>{if(!vr&&!vgo)return Promise.resolve('none');halt();return Promise.race([vend,new Promise(ok=>setTimeout(()=>ok('none'),3000))])};
+const voiceOn=()=>!!vr;
+// 頁を離れる時と見えなくなった時は止める（待てないので止めるだけ。別のタブやアプリの間に、周りの声を録り続けないため）
+addEventListener('pagehide',halt);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)halt()});
 // カメラ: 作業の頁の「ここで止まった」を押した後の 10 秒だけ。映像の流れ（音なし）は頁が持つ物を使い、ここで新しく開かない
 let cr=null;
 const camClip=async(stream,meta)=>{if(cr||!window.MediaRecorder||!stream)return 'none';if(!who())return 'none';
@@ -124,10 +159,10 @@ const camClip=async(stream,meta)=>{if(cr||!window.MediaRecorder||!stream)return 
  const parts=[];cr=r;r.ondataavailable=(e)=>{if(e.data&&e.data.size)parts.push(e.data)};
  r.onstop=async()=>{cr=null;const b=new Blob(parts,{type:r.mimeType||'video/webm'});if(b.size)await put({...meta,kind:'k',type:b.type,size:b.size,ms:CAM,blob:b})};
  r.start();setTimeout(()=>{if(r.state!=='inactive')r.stop()},CAM);return 'rec'};
-// のこす へ移る道（記録の頁 /toy/<印>/techo/kiroku）を押した時に渡す。台本の無い画面では、ふつうのリンクのまま動く
+// のこす へ移る道（記録の頁 /toy/<印>/techo/kiroku）を押した時に渡す。録っている声は先に止めて置き、渡す並びに入れる。台本の無い画面では、ふつうのリンクのまま動く
 document.addEventListener('click',(e)=>{const a=e.target.closest&&e.target.closest('a[href]');if(!a)return;
  const m=new URL(a.href,location.href).pathname.match(/^\\/toy\\/([^/]+)\\/techo\\/kiroku$/);if(!m||e.defaultPrevented||e.metaKey||e.ctrlKey)return;
- e.preventDefault();handOver(decodeURIComponent(m[1])).finally(()=>{location.href=a.href})});
+ e.preventDefault();voiceStop().then(()=>handOver(decodeURIComponent(m[1]))).finally(()=>{location.href=a.href})});
 // 開いた時の振り分け（統括の決め）: 玩具の頁は作り始め（toy）、作業の頁は続き（work）。前の頁が その玩具の のこす なら、どちらも引き継ぐ。
 // 呼ぶのは頁の側（玩具の頁と作業の頁が、開いた時に自分の種類を言う）。消し（purge）を済ませてから振り分ける
 let purged=null;
@@ -143,7 +178,7 @@ const openedAs=async(sid,kind)=>{await purgeOnce();let back=false;try{back=new U
  if(kind==='nokosu'){if(fromOutside()){await runNew(sid);try{sessionStorage.removeItem(PK(sid))}catch(e){}}else if(fromMaking(sid))await handOver(sid);return handed(sid)}
  if(kind==='work')return back||(fromOutside()?startMaking(sid,false):goOn(sid));return startMaking(sid,back)};
 addEventListener('DOMContentLoaded',purgeOnce);
-window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goOn,openedAs,keepWho,dropKeep,voiceStart,voiceStop,camClip};
+window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goOn,openedAs,keepWho,dropKeep,voiceStart,voiceStop,voiceOn,camClip};
 // その場限りの印は頁の終わりの台本（skin.WHO_SCRIPT）が作るので、消しは頁を読み終えた後に回す
 })()</script>"""
 
@@ -182,7 +217,8 @@ def start_assets(sid=None):
 
 def assets():
     """頁に 1 回だけ置く台本。数は 1 か所の値から入れる。"""
-    return SCRIPT.replace("__HOURS__", str(CLIP_HOURS)).replace("__MAX__", str(CLIP_MAX)).replace("__CAM__", str(CAM_SECONDS)).replace("__WAIT__", str(OPEN_WAIT))
+    return (SCRIPT.replace("__HOURS__", str(CLIP_HOURS)).replace("__MAX__", str(CLIP_MAX)).replace("__CAM__", str(CAM_SECONDS))
+            .replace("__VOICE__", str(VOICE_SECONDS)).replace("__NEAR__", str(VOICE_NEAR)).replace("__BIG__", str(VOICE_CLIP_BYTES)).replace("__WAIT__", str(OPEN_WAIT)))
 
 
 def notes():

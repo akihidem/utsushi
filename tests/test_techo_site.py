@@ -46,7 +46,7 @@ assert code == 200 and "先に予想を書く" not in body.decode(), "予想の�
 assert req(f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
 code, body = req(f"/toy/{G}/techo")
 page = body.decode()
-assert code == 200 and "手帖" in page and f'data-hid="{GS}"' in page and 'id="mic"' in page
+assert code == 200 and "手帖" in page and f'data-hid="{GS}"' in page and 'id="keep"' in page  # 前はマイク（id="mic"）で見た。11-08 にマイクを外したので、のこすの釦で見る
 for h in hypotheses.load(G)["hypotheses"]:
     assert h["how_it_moves"] not in page and h["name"] not in page, "仮説の名前と動き方は出さない"
 # 聞く: 字で打った後に押す釦が欄と同じ form にある。Enter だけだと、声の使えない機器で送り方が画面から分からない（#140）

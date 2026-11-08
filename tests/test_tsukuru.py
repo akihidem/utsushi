@@ -98,7 +98,8 @@ try:
     assert t.count('class="sheet koma on"') == 1 and 'data-n="1" xmlns="http://www.w3.org/2000/svg" class="sheet koma on"' in t, "手順 1 の絵だけが見えている"
 finally:
     kumitate.available = keep_av
-assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and "できた" in t
+# 「できた」は前は声の操作の言葉の表（つぎと同じ）から頁に入っていた。表を外したので、組み上がりの札の字（DONE_LABEL）を見る
+assert tsukuru.NOTICE in t and PRIVACY in t and "次の手順へ" in t and "止まった" in t and f'<span class="nm">{tsukuru.DONE_LABEL}</span>' in t
 # 刷っていない紙は h で指しても開かない
 assert get(f"/toy/{G}/tsukuru?h=H-B")[0] == 303 and 'class="tsukuru' not in get(f"/toy/{G}/tsukuru?h=H-B")[1]
 # 映像は端末の中だけ: 画素を取り出す・録る・送る JS が無い。送るのは聞く口と札と話す口（どれも字のフォームの欄）だけ
@@ -158,19 +159,21 @@ assert post(f"/toy/{G}/step", {"hypothesis": GS, "step": "1", "event": "next"}, 
 assert making_log.add_step(G, GS, 1, 1, "win") is None and making_log.add_step(G, GS, 1, 0, "next") is None and making_log.add_step(G, GS, 1, True, "next") is None
 
 # ---- 「ここで止まった」から、その段のまま聞ける（Issue #118・U-44 の「聞く」）
-# 札の字と、聞く口の作り: 見出し・声の釦（音声認識が在る画面でだけ JS が出す）・字の欄
+# 札の字と、聞く口の作り: 見出しと字の欄。前の「声で聞く」の釦（ブラウザの音声認識）は無い（本人 11-08「クロードの音声認識をはずして、
+# ユーザーの端末の音声入力に頼るのでいいのではないか。」）。凍結の表の名の試験なので、消さずに中身を替えた（理由は commit と docs/claude-usage.md）
 assert ">ここで止まった</button>" in t and 'id="ask-head">聞く</p>' in t
-assert '<button type="button" class="mic" id="mic" aria-pressed="false" hidden>' in t and 'id="q"' in t
+assert 'id="mic"' not in t and "声で聞く（もう一度押すと止まる）" not in t and 'id="q"' in t
 # JS: 問いに今の手順の番号（step）を添え、出来事と問いの両方に、その場限りの印（who）を添える
 assert "fields({hypothesis:hid,question:q,step:n})" in t and "fields({hypothesis:hid,step:n,event,json:'1'})" in t
 assert "b.set('who',who)" in t and "sessionStorage.getItem('utsushi-who')" in t and "/^[a-z0-9]{10}$/" in t
 # 印は cookie にしない・長く持たない（タブの sessionStorage だけ）
 assert "document.cookie" not in t and "localStorage" not in t
-# 声は字にして送るだけ: 録る code・マイクを開く code が無い。鏡のカメラは 1 か所で audio:false のまま
-assert ("SpeechRecognition" in own and "audio:true" not in own and "audio: true" not in own and "MediaRecorder" not in own
+# この頁は声を聞かない・録らない: 音声認識・録る code・マイクを開く code が無い。鏡のカメラは 1 か所で audio:false のまま
+# （工夫の口の「声を録る」の録りは、置き場の台本 web.clips だけが持つ。own はその台本を除いた字）
+assert ("SpeechRecognition" not in own and "audio:true" not in own and "audio: true" not in own and "MediaRecorder" not in own
         and own.count("getUserMedia(") == 1 and "getUserMedia({video:{facingMode:'user'},audio:false})" in own)
 # 置き場の台本の声のマイクは、voiceStart の中の 1 か所だけ（鏡のカメラは録らない）
-assert clips.SCRIPT.count("getUserMedia(") == 1 and "const voiceStart=async(meta)=>{" in clips.SCRIPT and clips.SCRIPT.index("const voiceStart") < clips.SCRIPT.index("getUserMedia({audio:true})") < clips.SCRIPT.index("const voiceStop")
+assert clips.SCRIPT.count("getUserMedia(") == 1 and "const voiceStart=async(meta,onEnd)=>{" in clips.SCRIPT and clips.SCRIPT.index("const voiceStart") < clips.SCRIPT.index("getUserMedia({audio:true})") < clips.SCRIPT.index("const voiceStop")
 assert set(re.findall(r"fetch\(`([^`]+)`", t)) == {"/toy/${sid}/step", "/toy/${sid}/ask-json"} and t.count("fetch(") == 3
 # 3 つ目は話す口（Issue #279）。送り先は部品のフォームの action（/toy/<印>/talk）で、形は字のフォームだけ
 assert t.count("fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}") == 1 and f'<form method="post" action="/toy/{G}/talk">' in t
@@ -206,19 +209,18 @@ assert step(4, "next", json="1", who="x")[0] in (200, 422)
 # 読み上げの間は聞き取らない（自分の答えを聞き取って、問いとして送らない）。作りながら見る頁と手帖の両方
 page_js = get(f"/toy/{G}/tsukuru?h={GS}")[1]
 techo_js = get(f"/toy/{G}/techo")[1]
+# 声は聞かない（音声認識・操作の言葉の表は無い）。答えの読み上げは残す（音声認識とは別の物）
 for js in (page_js, techo_js):
-    assert "speaking" in js and "sayStart" in js and "sayEnd" in js, "読み上げの間は音声認識を止める"
-assert "if(speaking)return" in page_js and "if (speaking) return" in techo_js
-# 声の操作は手帖と同じ表（#87）。言葉の全部が一致した時だけ札を押し、操作の字は問いに送らない。ほかは問いとして送る
-from web.voice_words import WORDS, clean  # noqa: E402
-assert "WORDS[clean(t)]" in page_js and page_js.index("if(op){act(op);return}") < page_js.index("qIn.value=t;ask(t)")
-# 聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。問いは、止まったか声で聞くを押した後の 1 つだけ（歩いて見るのは tests/test_voice_walk.py）
-assert "if(!armed)return;armed=false;qIn.value=t;ask(t)" in page_js and "listening=true;armed=true;" in page_js and "const openAsk=(on)=>{armed=on;" in page_js
-assert all(f'"{word}": "{op}"' in page_js for word, op in WORDS.items()) and "__WORDS__" not in page_js and "__CLEAN__" not in page_js
-assert WORDS[clean("つぎ。")] == "next" and WORDS[clean("もう 一回")] == "again" and clean("次の手順ってどうやるの") not in WORDS
+    assert "speechSynthesis.speak(u)" in js and "sayStart" not in js and "sayEnd" not in js and "SpeechRecognition" not in js, "読み上げは残し、聞く所との結びは外す"
+    assert "__WORDS__" not in js and "__CLEAN__" not in js and "WORDS[" not in js
+import importlib.util  # noqa: E402
+assert importlib.util.find_spec("web.voice_words") is None, "操作の言葉の表（voice_words.py）は使う所が無くなったので外した"
 for v in ("back", "stuck", "next", "done"):
     assert f'value="{v}"' in page_js, v
-assert "tile('done')" in page_js and "say(items[n-1].textContent)" in page_js
+# 手順を移る札（次へ・戻る）では工夫の口の録りを止め、のこす の札は録っている時だけ止めて置き終えてから送る（web.clips・音声認識を外す設計の 2 版の止め 2）
+assert "if(ev==='next'||ev==='back')stopRec();" in page_js and page_js.index("if(ev==='next'||ev==='back')stopRec();") < page_js.index("const j=await send(ev)")
+assert "goDone.addEventListener('click',(e)=>{if(!window.utsushiClips||!utsushiClips.voiceOn())return;e.preventDefault();" in page_js
+assert "utsushiClips.voiceStop().finally(()=>{if(tiles.requestSubmit)tiles.requestSubmit(goDone);else goDone.click()})" in page_js
 # 開いた時の版のまま作る: 版を言えばその版の文と札、札の記録もその版
 assert 'data-v="1"' in page_js and 'name="sheet_version" value="1"' in page_js and "b.set('sheet_version',ver)" in page_js
 assert "sheet_version" in techo_js and 'data-v="1"' in techo_js and "utsushi-who" in techo_js

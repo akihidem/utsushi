@@ -15,8 +15,10 @@
   選んだら約束の印（手帖と同じ字）を押さないと確かめへ進まない（気づき 7）。
 - **台本が動かない画面**: 確かめの画面は台本のある画面だけ。noscript の中に、写真なしで記録を残す素のフォーム（POST /toy/<印>/record・
   結果と感想・隠した欄に紙と back=techo）を置く。台本が無いので who は付かず、話した字は記録に結ばれない（統括の決め・ここに断る）（止め 4・B3）。
-- **声とカメラの区切り**（本人 11-08 330・412・415・「公開デモでも声も録る。」・設計 voice-camera-send の 3 版）: 工夫の欄に話す口（hanasu の「話す」の
-  形をそのまま使う・押して話した間の声を録る）を置く。確かめの画面に、この画面へ渡された区切り（web.clips の list）とこの頁で録った区切りを並べ、
+- **声とカメラの区切り**（本人 11-08 330・412・415・「公開デモでも声も録る。」・設計 voice-camera-send の 3 版）: 工夫の欄に話す口の録る釦
+  （hanasu.rec_button の「声を録る」・押してから「止める」までの声を録る）と、字の欄の下の 1 行（hanasu.keyboard_line）を置く。前は hanasu の「話す」
+  （ブラウザの音声認識で字にしながら録る）だったが、本人 11-08 の答え (A) で音声認識を外した（grove の state/no-speech-recognition-20261108.md の 2 版）。
+  「のこす」と「承認」は、録っている声を先に止め、置き終えてから並べる・送る（止めた区切りが並びに入るように）。確かめの画面に、この画面へ渡された区切り（web.clips の list）とこの頁で録った区切りを並べ、
   1 つずつ「外す」。承認で記録ができた後、写真の前に、区切りを 1 つずつ /record/<番号>/media へ送る（見出し X-Utsushi-Clip に t か k。
   カメラの区切りは、どの手順で押したかを X-Utsushi-Step、どの釦かを X-Utsushi-Button に添える。サーバが区切りの読みの手がかりにする）。
   送れた物から端末の置き場で消し、承認の終わりに置き場と渡す印を消す。
@@ -56,11 +58,9 @@ STYLE = """
 .nokosu textarea{display:block;width:100%;min-height:64px;margin:4px 0 12px;font:inherit}
 .nokosu .nk-thumbs img{width:72px;height:72px;object-fit:cover;margin:4px 4px 0 0}
 .nokosu .nk-check .call{outline:2px solid var(--accent, #b33)}
-/* 工夫の欄の話す釦（hanasu の台本が動かす）。音声認識の口が在ると分かった印が付いた時だけ出す（hanasu の .hanasu-mic と同じ決まり） */
-.nokosu .hanasu-mic{display:none;min-height:44px;padding:6px 16px;margin:0 0 8px}
-.hanasu-local .nokosu .hanasu-mic,.hanasu-browser .nokosu .hanasu-mic{display:inline-block}
-.nokosu .hanasu-how{display:none}
-.hanasu-local .nokosu .hanasu-how.is-local,.hanasu-browser .nokosu .hanasu-how.is-browser{display:inline}
+/* 工夫の欄の録る釦（hanasu の台本が動かす）。指で押せる大きさ。録っている間の字と地の入れ替えは hanasu の .hanasu-rec の決まり */
+.nokosu .hanasu-rec{min-height:44px;padding:6px 16px;margin:0 0 8px;border:2px solid var(--accent);background:var(--paper);color:var(--fg)}
+.nokosu .hanasu-kb{margin:-8px 0 8px}
 .nokosu .nk-clips li{margin:4px 0}
 .nokosu .nk-clips video{width:96px;height:72px;object-fit:cover;vertical-align:middle;margin-right:6px}
 """
@@ -134,10 +134,12 @@ const sendClips = async (id) => {
   }
   return bad;
 };
-f.onsubmit = (e) => {
+f.onsubmit = async (e) => {
   e.preventDefault();
   if (!result()) { st.textContent = '__PICK__'; return; }
   if (chosen.length && !ok.checked) { ok.closest('label').classList.add('call'); return; }
+  // 録っている声は止めて、置き終えてから確かめの画面に並べる（止めた区切りが並びに入るように・音声認識を外す設計の 2 版の止め 2）
+  if (window.utsushiClips) await utsushiClips.voiceStop();
   $('nk-c-result').textContent = result();
   $('nk-c-kufu').textContent = $('nk-kufu').value.trim();
   $('nk-c-impression').textContent = $('nk-impression').value.trim();
@@ -160,6 +162,8 @@ const sendFiles = async (id, list) => {
 go.onclick = async () => {
   if (go.disabled) return;
   go.disabled = true; const cs = $('nk-c-status'); cs.textContent = '送っています…';
+  // 送る前にも止める（確かめの画面で録る釦は見えないが、録りの止まりを送りの前に必ず通す）
+  if (window.utsushiClips) await utsushiClips.voiceStop();
   // 区切りだけの確かめ: 手帖が作った記録へ区切りを送り、その玩具の区切りと印を消して もちよるへ（記録は作らない）
   if (toRec) {
     const bad = clipsNow.length ? await sendClips(toRec) : false;
@@ -209,12 +213,12 @@ def entry(sid, paper, results):
     limits = f"{MAX_PER_RECORD} つまで・1 つ {MAX_MEDIA // (1024 * 1024)}MB まで"
     form = (f'<form id="nk" hidden data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-total="{total}" data-max-n="{MAX_PER_RECORD}" data-max-bytes="{MAX_MEDIA}">'
             f'<fieldset style="border:0;padding:0;margin:0"><legend>{esc(RESULT_HEAD)}</legend><div class="nk-results">{radios}</div></fieldset>'
-            # 工夫の欄は話す口の形（data-hanasu の中の textarea と .hanasu-mic と .hanasu-note。hanasu の台本が字を欄に足し、押して話した間の声を録る）。
-            # 送るのは承認の時だけ（hanasu の「残す」のフォームは置かないので、hanasu の submit は動かない）
-            f'<div data-hanasu data-sid="{esc(sid)}" data-scene="craft" data-voice="{hanasu.mode()}"><label for="nk-kufu">{esc(hanasu.KUFU_HEAD)}</label>'
+            # 工夫の欄は話す口の形（data-hanasu の中の textarea と .hanasu-rec と .hanasu-note。hanasu の台本が、押してから止めるまでの声を録る）。
+            # 字は端末のキーボードのマイクでも入る（欄の下の 1 行）。送るのは承認の時だけ（hanasu の「残す」のフォームは置かないので、hanasu の submit は動かない）
+            f'<div data-hanasu data-sid="{esc(sid)}" data-scene="craft"><label for="nk-kufu">{esc(hanasu.KUFU_HEAD)}</label>'
             f'<textarea id="nk-kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(kufu["hint"])}"></textarea>'
-            '<button type="button" class="hanasu-mic" aria-pressed="false">話す</button><p class="meta hanasu-note" aria-live="polite"></p>'
-            f'<p class="meta"><span class="hanasu-how is-local">{esc(hanasu.HOW_LOCAL)}</span><span class="hanasu-how is-browser">{esc(hanasu.HOW_BROWSER)}</span> {clips.notes()}</p></div>'
+            f'{hanasu.keyboard_line()}{hanasu.rec_button()}<p class="meta hanasu-note" aria-live="polite"></p>'
+            f'<p class="meta">{clips.notes()}</p></div>'
             f'<label for="nk-impression">{esc(IMPRESSION_HEAD)}</label><textarea id="nk-impression" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(naoru.KEEP_HINT)}"></textarea>'
             f'<label for="nk-files">{esc(MEDIA_HEAD)}（{esc(limits)}）</label>'
             '<input type="file" id="nk-files" accept="image/jpeg,image/png,video/mp4,video/quicktime" multiple>'

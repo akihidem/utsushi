@@ -1,0 +1,13 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_no_speech_recognition.py
+# commit: 0b147b27（回した時の HEAD）
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000004-L/.tmp-koa8ekm3/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000004-L-4/.tmp-1skyl9gl/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000005-L/.tmp-ha87tcf0/H-C_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000005-L-3/.tmp-7ia8zvnk/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000007-L/.tmp-h8wy3u_f/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000007-R/.tmp-87gla8x8/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000014-L/.tmp-1g70s8u2/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000014-R/.tmp-dxl_nnag/H-A_v1.pdf
+/tmp/tmpxja1uhw8/play/NDL-1187053-R0000019-L/.tmp-w5_c3o94/H-A_v1.pdf
+{"pages": 1184, "banned": ["SpeechRecognition", "webkitSpeechRecognition", "processLocally", "SpeechGrammar", "OMOCHAE_VOICE"]} ok: どの頁の台本も音声認識を使わない（読み上げは残す）
+rc=0

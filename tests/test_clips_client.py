@@ -7,7 +7,9 @@
 1 置き場の台本: 外へ送る口が無い。開いた時に、別の画面の物と 3 時間を過ぎた物を消す。pagehide で消さない。
   渡す印は印の無い区切りにだけ付く。のこすの頁では、今の印と違う物を消す。数は 5 つまで。録る長さは 10 秒
 2 作業の頁: 「ここで止まった」はカメラの頁だけ・カメラを出している間だけ。録るのは押した所だけで、カメラを出しただけでは録らない
-3 話す口: 録るのは「話す」で聞き始めた後の 1 か所だけ
+3 話す口: 録るのは「声を録る」を押した所の 1 か所だけ（本人の答え (A)・音声認識は外した）。止まる所は、もう一度押した時・60 秒・
+  受け口の上限の手前・頁を離れる時と見えなくなった時・欄の「残す」・のこす の「のこす」と「承認」・作りながら見る頁で手順を移る時・
+  のこす へ移る道。釦で移る所は止めて置き終えてから進む（voiceStop は置き終えた時に返る）。記録の札の足す口には録る釦が無い
 4 のこすの頁: 確かめの画面に区切りの並びと「外す」。承認の時、記録の後・写真の前に区切りを送る（見出し X-Utsushi-Clip。カメラは X-Utsushi-Step と
   X-Utsushi-Button も）。送れなかった時は、サーバの字を出さず決めた 1 行。承認の終わりに置き場と渡す印を消す
 """
@@ -38,7 +40,9 @@ assert "const HOURS=3,MAX=5,CAM=10*1000," in A and "__" not in A, "数は 1 か�
 purge = body(S, "const purge=async()=>{", "\nconst ")
 assert "c.who!==w" in purge and "now-c.at>AGE" in purge and "AGE=HOURS*3600000" in S, "別の画面の物と 3 時間を過ぎた物を消す"
 assert "addEventListener('DOMContentLoaded',purgeOnce)" in S and "const purgeOnce=()=>purged||(purged=purge().catch(()=>{}))" in S, "どの頁を開いた時も消す（印は頁の終わりの台本が作るので、読み終えた後）"
-assert "pagehide" not in S.replace("pagehide では消さない", ""), "pagehide では消さない（同じタブで のこす へ移る時にも起きるため）"
+# pagehide では消さない（同じタブで のこす へ移る時にも起きるため）。pagehide で起きるのは、録っている声を止める事だけ（音声認識を外す設計の 2 版の止め 2）
+assert S.replace("pagehide では消さない", "").count("pagehide") == 1 and "addEventListener('pagehide',halt);" in S
+assert "const halt=()=>{if(vgo)vhalt=true;if(vr&&vr.state!=='inactive')vr.stop()};" in S, "止めるだけで、消さない"
 hand = body(S, "const handOver=async(sid)=>{", "\n")
 marker = body(S, "const mark=async(sid,p)=>{", "\nconst ")
 assert "await mark(sid,p)" in hand and "c.sid===sid&&c.who===w&&!c.pass" in marker and "c.pass=p.id" in marker, "渡す印は、その玩具の、印の無い区切りにだけ付ける"
@@ -67,10 +71,25 @@ assert "await waiting(c.sid,c.kind)>=MAX" in S and "await waiting(meta.sid,'k')>
 cam = body(S, "const camClip=async(stream,meta)=>{", "\n// ")
 assert "new MediaRecorder(stream,{videoBitsPerSecond:1000000})" in cam and "setTimeout(()=>{if(r.state!=='inactive')r.stop()},CAM)" in cam, "押した後の 10 秒"
 assert "getUserMedia" not in cam, "カメラの区切りは頁が持つ映像の流れを使い、新しく開かない（音も開かない）"
-voice = body(S, "const voiceStart=async(meta)=>{", "const voiceStop")
+voice = body(S, "const voiceStart=async(meta,onEnd)=>{", "const voiceStop")
 assert S.count("getUserMedia(") == 1 and "getUserMedia({audio:true})" in voice, "声のマイクは voiceStart の中の 1 か所だけ"
 assert S.count("new MediaRecorder(") == 2, "録るのは声とカメラの 2 か所だけ"
-assert "r.start()" in voice and "r.start()" in cam
+assert "r.start(1000)" in voice and "r.start()" in cam
+# 声の止まる所（音声認識を外す設計の 2 版の止め 2・2 版の照らしの課題 2 と 3）: 60 秒（VOICE_SECONDS）と、1 秒ごとに受けてたまった大きさが受け口の上限の手前
+# （VOICE_NEAR）に来た時。上限はサーバの受け口と同じ値（omochae.voice_text.VOICE_CLIP_BYTES）。止めた後の最後の 1 つで越えた時は置かない
+from omochae import voice_text  # noqa: E402
+
+assert (clips.VOICE_SECONDS, clips.VOICE_NEAR) == (60, voice_text.VOICE_CLIP_BYTES - 100 * 1024) and clips.VOICE_NEAR < voice_text.VOICE_CLIP_BYTES
+assert f"VOICE=60*1000,NEAR={clips.VOICE_NEAR},BIG={voice_text.VOICE_CLIP_BYTES}," in A
+assert "vtimer=setTimeout(()=>{if(r.state!=='inactive')r.stop()},VOICE)" in voice and "size+=e.data.size;if(size>=NEAR&&r.state!=='inactive')r.stop()" in voice
+assert "if(b.size&&b.size<=BIG)got=await put(" in voice, "上限を越えた区切りは置かない（受け口が断る前に）"
+# voiceStop は止めて、置き終えるのを待つ（置き場が答えない時は 3 秒で待つのをやめる）。onEnd は録り終えた時に 1 回（釦の形を戻す）
+stop = body(S, "const voiceStop=()=>{", "\n")
+assert "return Promise.race([vend,new Promise(ok=>setTimeout(()=>ok('none'),3000))])" in stop and "if(!vr&&!vgo)return Promise.resolve('none')" in stop
+assert voice.index("fin(got);if(onEnd)onEnd(got)") > voice.index("await put("), "置き終えてから返す"
+# 見えなくなった時も止める（別のタブやアプリの間に録り続けない）。のこす へ移る道は、録りを止めて置き終えてから渡す
+assert "document.addEventListener('visibilitychange',()=>{if(document.hidden)halt()});" in S
+assert "e.preventDefault();voiceStop().then(()=>handOver(decodeURIComponent(m[1]))).finally(()=>{location.href=a.href})" in S
 
 # ---- 2 作業の頁
 page_cam, page_hmd = hmd.page("NDL-1187053-R0000005-L", cam=True), hmd.page("NDL-1187053-R0000005-L")
@@ -82,10 +101,17 @@ assert handler.index("if(!tracks||!window.utsushiClips") < handler.index("utsush
 assert "r==='full'){camNote.textContent=T.full" in handler
 assert page_cam.count(A) == 1 and A not in page_hmd and clips.FULL in page_cam
 
-# ---- 3 話す口
-listen = body(hanasu.SCRIPT, "const listen=(root,onDevice)=>{", "document.addEventListener('click'")
-assert listen.index("try{r.start()}") < listen.index("clip(root)") and hanasu.SCRIPT.count("clip(root)") == 1
-assert hanasu.SCRIPT.count("utsushiClips.voiceStart(") == 1 and "MediaRecorder" not in hanasu.SCRIPT and "getUserMedia" not in hanasu.SCRIPT
+# ---- 3 話す口: 録るのは「声を録る」を押した所の 1 か所。もう一度押すと止める。「残す」の前に止めて置き終えるのを待つ
+H = hanasu.SCRIPT
+click = body(H, "document.addEventListener('click',async(e)=>{", "\ndocument.addEventListener('submit'")
+assert H.count("utsushiClips.voiceStart(") == 1 and "utsushiClips.voiceStart(meta(root),ended)" in click and "MediaRecorder" not in H and "getUserMedia" not in H
+order = [click.index(x) for x in ("e.target.closest('.hanasu-rec')", "if(b.getAttribute('aria-pressed')==='true'){await stopRec();press(b,false);return}",
+                                  "await stopRec();\n if(!window.utsushiClips", "press(b,true)", "utsushiClips.voiceStart(")]
+assert order == sorted(order), ("押した所の順: 録る釦 → 録っている時は止めるだけ → ほかの録りを止める → 押した形 → 録り始め", order)
+submit = body(H, "document.addEventListener('submit',async(e)=>{", "\n// ")
+assert submit.index("e.preventDefault();await stopRec();") < submit.index("fetch(form.action"), "「残す」は録りを止めて置き終えてから送る"
+# 録る釦は記録の札の足す口（keep）に置かない（設計の 2 版の止め 1）。考えの口と工夫の口にだけある
+assert "hanasu-rec" in hanasu.box("NDL-1187053-R0000005-L", "craft", hid="H-C", version=1, step=1) and "hanasu-rec" not in hanasu.box("NDL-1187053-R0000005-L", "keep", rid="R-0001", with_assets=False)
 
 # ---- 4 のこすの頁
 G = "NDL-1187053-R0000005-L"
@@ -98,6 +124,10 @@ go_all = body(nokosu.SCRIPT, "go.onclick = async () => {", "\n};")
 go = go_all[go_all.index("const said = "):]  # ふつうの承認（区切りだけの確かめの分かれの後）
 order = [go.index(x) for x in ("/record-json`", "utsushiNewWho", "sendClips(j.id)", "sendFiles(j.id, list)", "utsushiClips.clear(sid)", "/gallery?msg=")]
 assert order == sorted(order), ("承認の順: 記録 → 印の作り直し → 区切り → 写真 → 置き場を消す → もちよる", order)
+# 承認は、どの分かれ（区切りだけの確かめも）より前に録りを止める（音声認識外しの止まる所）
+assert go_all.index("utsushiClips.voiceStop()") < go_all.index("if (toRec) {"), "承認の頭で録りを止めて置き終えてから送る"
+keep = body(nokosu.SCRIPT, "f.onsubmit = async (e) => {", "\n};")
+assert keep.index("await utsushiClips.voiceStop();") < keep.index("showClips()"), "「のこす」は録りを止めて置き終えてから、確かめの画面に並べる"
 send = body(nokosu.SCRIPT, "const sendClips = async (id) => {", "\n};")
 assert "'X-Utsushi-Clip': c.kind" in send and "fetch(`/record/${id}/media`, { method: 'POST', headers: h, body: c.blob })" in send
 assert "if (c.kind === 'k') { if (/^[0-9]+$/.test(String(c.step))) h['X-Utsushi-Step'] = String(c.step); if (c.button) h['X-Utsushi-Button'] = c.button; }" in send, \
@@ -105,7 +135,8 @@ assert "if (c.kind === 'k') { if (/^[0-9]+$/.test(String(c.step))) h['X-Utsushi-
 assert "if (m.ok) await utsushiClips.remove(c.id).catch(() => {}); else bad = true;" in send and "text()" not in send, "送れた物から消す。サーバの断りの字は読まない"
 assert "if (clipBad) done = '__CLIP_FAIL__';" in go and clips.CLIP_FAIL in page, "送れなかった時は決めた 1 行"
 assert go.index("sendClips(j.id)") < go.index("sendFiles(j.id, list)"), "区切りを送れなくても写真は送り続ける"
-assert 'data-hanasu data-sid="' + G + '" data-scene="craft"' in page and 'class="hanasu-mic"' in page, "工夫の欄の話す口（押して話した間の声を録る）"
+assert 'data-hanasu data-sid="' + G + '" data-scene="craft"' in page and hanasu.rec_button() in page and hanasu.keyboard_line() in page, "工夫の欄の録る釦と欄の下の 1 行"
+assert 'class="hanasu-mic"' not in page and "data-voice" not in page, "前の「話す」の釦は無い"
 assert page.count(A) == 1, "置き場の台本は頁に 1 回（話す口の台本と一緒に置く）"
 # 手帖の「のこす」の後の区切りだけの確かめ（#to=<記録の番号>・統括の決め 11-08 (a)）: 記録は作らず、区切りを手帖の記録へ送り、消して もちよるへ
 assert "location.hash.match(/^#to=(R-[0-9]{4,})&msg=(.*)$/)" in nokosu.SCRIPT, "印の形は R- と数字だけ（ほかは ふつうの のこすの頁）"
@@ -145,6 +176,8 @@ st = clips.start_assets()
 assert "if(r&&!out&&Date.now()-r.at<3*3600000)return" in st and "out=!document.referrer||new URL(document.referrer).origin!==location.origin" in st, "回の印が 3 時間の内でも、外から直に開いた手帖は引き継がない"
 assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "回が無い時だけ、印の無い区切りを消し、次は新しい印"
 assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
+# 開いた時の判定を置く形（start_assets(印)・手帖の頁と作りながら見る頁が置く）も、録る code も外へ送る口も持たない（別の目の #682 の気づき）
+assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", clips.start_assets("NDL-1187053-R0000005-L")), "開いた時の台本も録らず送らない"
 # 手帖からは区切りを送らない（#659 の取り消し・統括の決め 11-08 (a)）。手帖は IndexedDB を開かずに印だけを見て、のこすの頁の確かめへ移る
 assert "utsushiClipsSend" not in techo_step.SCRIPT and "X-Utsushi-Clip" not in techo_step.SCRIPT and "indexedDB" not in techo_step.SCRIPT
 made = body(st, "window.utsushiClipsMade=(sid)=>{", "};\n")

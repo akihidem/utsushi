@@ -4,11 +4,13 @@
 - 3 つの場面（1 考え・2 工夫・3 できた物）で、字が残る。JS が無くても残せる。残る欄は決めた物だけで、声・IP・ブラウザの名・cookie が無い。時刻は分まで。
 - 作りながら話した工夫と、仮説を見て話した考えは、記録を残した時に、その記録に入る（同じ画面の物だけ。ほかの人の話は入らない）。
 - 入口の床: 連絡先の形・名乗りの形・学年と組の形・学校の名前の形の文は残らない（落とした数だけ残る）。工作の話は落とさない。
-- 話す口の台本は、マイクを開く code・録る code・声を送る code を持たない。押して話した間の声は、置き場（web.clips）の voiceStart を「話す」で
-  聞き始めた所でだけ呼び、voiceStop を止まった所で呼ぶ（本人 11-08 415「声も送って解析に使う形にする。」）。送るのは のこすの承認の時（web.nokosu）。
-  受け口（/talk）は字のフォームだけを受け、音のファイルは断る。聞いた字は、残すを押すまで送らない。
-- 話す釦は既定で隠れていて、音声認識の口がある画面でだけ出る。端末の中だけで字にできる画面ではその形で聞き、できない画面ではブラウザの既定の口で聞いて
-  断りを出す（本人の決定 11-05: iPhone・iPad でも話す釦を出す。切り替えは OMOCHAE_VOICE）。
+- 話す口の台本は、マイクを開く code・録る code・声を送る code・声を字にする code（音声認識）を持たない。録る釦「声を録る」（録っている間は「止める」）を
+  押した時に、置き場（web.clips）の voiceStart を 1 か所で呼び、もう一度押した時と「残す」の前に voiceStop を呼ぶ（本人 11-08 415「声も送って解析に使う形に
+  する。」・本人の答え (A)「声を録る釦を置いて残す。」）。送るのは のこすの承認の時（web.nokosu）。受け口（/talk）は字のフォームだけを受け、音のファイルは断る。
+- 録る釦は考えの口と工夫の口にあり、記録の札の足す口には無い（設計の 2 版の止め 1）。字の欄の下に「キーボードのマイクで話して入れられます。」の 1 行が
+  3 つの場面の全部にある。前の「話す」の釦・音声認識・切り替え OMOCHAE_VOICE・どこで字にするかの断り（HOW_LOCAL・HOW_BROWSER・HOW_NONE）と
+  NOHEARD は無い（本人 11-08「クロードの音声認識をはずして、ユーザーの端末の音声入力に頼るのでいいのではないか。」）。
+  凍結の表の名の試験なので消さずに中身を替えた（理由は commit と docs/claude-usage.md）。
 - 話した字は、記録に入っていても、学ぶ人の頁（手帖の記録の札も）に出ない（本人の決定 11-06、J-034。11-05 の「記録の感想と同じに出す」を変えた）。
   記録の札の「工夫した所（直した所）」には、記録の欄に書いた直した点だけが出る。合言葉なしで開いた場では、節ごと出ない（J-028）。
   作る側は、気づいた時に記録の字を輪と束から外せる。
@@ -27,7 +29,6 @@ import urllib.request
 
 DATA = tempfile.mkdtemp()
 os.environ["OMOCHAE_DATA"] = DATA
-os.environ.pop("OMOCHAE_VOICE", None)
 
 from omochae import hypotheses, making_log, records, talk_log  # noqa: E402
 from web import hanasu  # noqa: E402
@@ -198,7 +199,8 @@ code, j = talk(scene="keep", record=RID, text="緑町小学校の田中と申し
 assert code == 422 and j["why"] == hanasu.BLOCKED and "の形がある" not in j["why"], j  # 作る人向けの理由の言葉は、そのまま出さない
 assert len(files()) == n + 2
 code, j = talk(scene="think", text="   ")
-assert code == 422 and j["why"] == hanasu.NOHEARD, j
+# 空の字は、前は「聞き取れませんでした。…」（NOHEARD）だった。声を聞かなくなったので、受け口の断りの字（REFUSED）
+assert code == 422 and j["why"] == hanasu.REFUSED and not hasattr(hanasu, "NOHEARD"), j
 assert talk(scene="sing", text="歌った")[0] == 422
 assert len(files()) == n + 2
 
@@ -279,24 +281,34 @@ assert list(sm["craft"][GS][1]) == [1, 2, 3, None] and sm["craft"][GS][1][None] 
 assert [(r["record_id"], r["hypothesis_id"], r["sheet_version"], len(r["kufu"])) for r in sm["records"]] == [(RID, GS, 1, 6), ("R-0004", GS, 1, 1)], sm["records"]
 assert sm["via"] == {"voice": 3, "text": 8} and sm["dropped"] == {"pii": 2, "name": 1}, sm
 
-# ---- 頁: 3 つの場面に口がある。話す釦は既定で隠れている
-MIC = '<button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'
+# ---- 頁: 3 つの場面に口がある。録る釦は考えの口と工夫の口にあり、記録の札の足す口には無い。字の欄の下の 1 行は 3 つとも
+REC = '<button type="button" class="hanasu-rec" aria-pressed="false"><span class="rec-go">声を録る</span><span class="rec-stop">止める</span></button>'
+KB = '<p class="meta hanasu-kb">キーボードのマイクで話して入れられます。</p>'
+HEAD = "<script>(()=>{\nconst M={norec:"  # 話す口の台本の頭（頁に 1 回だけ置く）
 code, toy = get(f"/toy/{G}")
-assert code == 200 and 'id="hanasu"' in toy and f'action="/toy/{G}/talk#hanasu"' in toy and 'name="scene" value="think"' in toy and MIC in toy
-assert hanasu.NOTICE in toy and toy.count("<script>(()=>{\nconst REC=") == 1
+assert code == 200 and 'id="hanasu"' in toy and f'action="/toy/{G}/talk#hanasu"' in toy and 'name="scene" value="think"' in toy and REC in toy and KB in toy
+assert hanasu.NOTICE in toy and toy.count(HEAD) == 1
 code, tsu = get(f"/toy/{G}/tsukuru?h={GS}&n=2")
-assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and MIC in tsu
+assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and REC in tsu and KB in tsu
+assert f'data-hanasu data-sid="{G}" data-scene="craft"' in tsu, "録る区切りに玩具の印と場面を添える（台本が読む）"
 # 手帖の記録の札は記録の頁にある（作る頁は 1 手 1 画面にして、記録の番号を出さない。本人の決定 11-05、#87）
 code, techo = get(f"/toy/{G}/techo/kiroku")
-assert code == 200 and f'name="record" value="{RID}"' in techo and MIC in techo
-# 釦に hidden 属性を付けない。指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が CSS の出し分けに勝って、幅 1100 以下で釦が消えた。
+assert code == 200 and f'name="record" value="{RID}"' in techo
+keep_form = techo[techo.index(f'name="record" value="{RID}"'):techo.index("</form>", techo.index(f'name="record" value="{RID}"'))]
+assert KB in keep_form and "hanasu-rec" not in keep_form, "記録の札の足す口は字の欄と端末のマイクだけ（録る釦を置かない・設計の 2 版の止め 1）"
+keep_boxes = [b for b in techo.split('<div class="hanasu" data-hanasu')[1:] if 'data-scene="keep"' in b[:120]]
+assert keep_boxes and all("hanasu-rec" not in b.split("</div>")[0] + b.split("</form>")[0] for b in keep_boxes), "どの足す口にも録る釦が無い"
+assert techo.count('data-scene="keep"') == len(keep_boxes) and "hanasu-mic" not in toy + tsu + techo, "前の「話す」の釦は無い"
+# 釦に hidden 属性を付けない。指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が CSS の出し分けに勝って、幅 1100 以下で釦が消えた事がある。
 # 画面の結果は tests/test_mic_seen.py が測る（Chrome が無い機械では測れないので、原因の形をここでも字で見る）
-assert re.search(r'<button[^>]*class="hanasu-mic"[^>]*\bhidden\b', toy + tsu + techo) is None and ".hanasu-local .hanasu .hanasu-mic,.hanasu-browser .hanasu .hanasu-mic{display:block}" in hanasu.STYLE
+assert re.search(r'<button[^>]*class="hanasu-rec"[^>]*\bhidden\b', toy + tsu + techo) is None
+assert ".hanasu-rec .rec-stop,.hanasu-rec[aria-pressed=true] .rec-go{display:none}" in hanasu.STYLE and ".hanasu-rec[aria-pressed=true] .rec-stop{display:inline}" in hanasu.STYLE, \
+    "録っている間だけ「止める」の字を見せる（字は 2 つとも頁にあり、英語の頁でも訳される）"
 # ほかの人に見せるかの選び肢は、どの頁にも置かない（話した字は学ぶ人の頁に出さないので、選ぶ物が無い。J-034）
 for page in (toy, tsu, techo):
     assert 'name="share"' not in page and 'name="sign"' not in page and "hanasu-sign" not in page and 'type="checkbox" name' not in page.split('id="mine"')[-1]
-assert techo.count("<script>(()=>{\nconst REC=") == 1, "手帖には部品が何個あっても、動きは 1 回だけ置く"
-assert techo.index(f'name="record" value="{RID}"') < techo.index("</div></section>") and techo.rindex("const REC=") > techo.rindex('id="mine"')
+assert techo.count(HEAD) == 1, "手帖には部品が何個あっても、動きは 1 回だけ置く"
+assert techo.index(f'name="record" value="{RID}"') < techo.index("</div></section>") and techo.rindex(HEAD) > techo.rindex('id="mine"')
 
 # ---- 見せる範囲（本人の決定 11-06、J-034）: 話した字は、記録に入っていても、学ぶ人の頁に出ない。頁に出す字は AI が整理した字だけで、
 # その置き場はまだ無い。記録の札の「工夫した所（直した所）」には、記録の欄に書いた直した点だけが出る
@@ -322,88 +334,75 @@ assert f"{GL}の紙・版 1・手順 2" in loop_page and "連絡先の形 2 件�
 assert f"<h4>{RID}（{GL}の紙・版 1）</h4>" in loop_page and f"<h4>R-0004（{GL}の紙・版 1）</h4>" in loop_page and "<h4>R-0002" not in loop_page
 assert f"<li>考え: {THINK}</li>" in loop_page and f"<li>手順 2: {CRAFT}</li>" in loop_page and f"<li>作りながら: {CRAFT_QUIET}</li>" in loop_page
 assert f"<li>上げた後: {KEEP_A}</li>" in loop_page and f"<li>手順 1: {CRAFT_OTHER}</li>" in loop_page and "［隠している］</li>" not in loop_page
-assert "声から字にした物 3 件・字で書いた物 8 件" in loop_page
+# 前の「声から字にした物 n 件・字で書いた物 n 件」は外した（声を字にしなくなった）。前の記録の via は talk_log に残る（上の sm["via"]）
+assert "声から字にした物" not in loop_page and "字で書いた物" not in loop_page
 part = loop_page[loop_page.index("7 話した事"):]
 for word in ("090-1234", "緑町", "田中", "位", "点数", "％", "ランキング"):
     assert word not in part, word
 
-# ---- 頁の code: マイクを開く・録る・声を送る物が無い。声を字にする指定は「端末の中だけ」
+# ---- 頁の code: マイクを開く・録る・声を送る・声を字にする物が無い
 for word in ("getUserMedia", "MediaRecorder", "AudioContext", "createMediaStreamSource", "captureStream", "audio:true", "audio: true", "srcObject",
-             "toBlob", "toDataURL", "FileReader", "Blob(", "WebSocket", "sendBeacon", "XMLHttpRequest", "EventSource", "RTCPeerConnection"):
+             "toBlob", "toDataURL", "FileReader", "Blob(", "WebSocket", "sendBeacon", "XMLHttpRequest", "EventSource", "RTCPeerConnection",
+             "SpeechRecognition", "processLocally", "speechSynthesis"):
     assert word not in hanasu.SCRIPT and word not in hanasu.STYLE, word
-assert "processLocally:true" in hanasu.SCRIPT and "r.processLocally=true" in hanasu.SCRIPT and "REC.available({langs:[LANG],processLocally:true})" in hanasu.SCRIPT
-# 端末の中で字にする時は話し続けられる形。ブラウザの既定の口は、1 回話すごとに止まる形で聞き、途中の字も出す（機種によって同じ字が重なるのを避ける）
-assert "r.lang=LANG;r.continuous=onDevice;r.interimResults=!onDevice;if(onDevice)r.processLocally=true;" in hanasu.SCRIPT
-# 声の区切り（本人 11-08 415・web.clips）: 録るのは置き場の voiceStart で、呼ぶのは「話す」で聞き始めた所（r.start() の後）の 1 か所だけ。止めるのは、止める所と聞き終わり
+assert not hasattr(hanasu, "mode") and not hasattr(hanasu, "MODES") and "data-voice" not in toy + tsu + techo, "切り替え OMOCHAE_VOICE は無い"
+# 声の区切り（本人 11-08 415・本人の答え (A)・web.clips）: 録るのは置き場の voiceStart で、呼ぶのは録る釦を押した所の 1 か所だけ。
+# 止めるのは、もう一度押した所（止める）と「残す」の前（置き終えるのを待ってから送る）
 from web import clips  # noqa: E402
 
-assert hanasu.SCRIPT.count("utsushiClips.voiceStart(") == 1 and hanasu.SCRIPT.count("clip(root)") == 1
-listen_part = hanasu.SCRIPT[hanasu.SCRIPT.index("const listen=(root,onDevice)=>{"):hanasu.SCRIPT.index("document.addEventListener('click'")]
-assert listen_part.index("try{r.start()}") < listen_part.index("clip(root)"), "録るのは聞き始めた後だけ"
-assert "const stop=()=>{if(rec){try{rec.stop()}catch(e){}}if(window.utsushiClips)utsushiClips.voiceStop()};" in hanasu.SCRIPT
-assert "r.onend=()=>{press(mic,false);if(rec===r)rec=null;if(window.utsushiClips)utsushiClips.voiceStop();" in hanasu.SCRIPT
+S = hanasu.SCRIPT
+assert S.count("utsushiClips.voiceStart(") == 1 and S.count("utsushiClips.voiceStop()") == 1 and "const stopRec=()=>window.utsushiClips?utsushiClips.voiceStop():Promise.resolve('none');" in S
+click = S[S.index("document.addEventListener('click'"):S.index("document.addEventListener('submit'")]
+assert "e.target.closest('.hanasu-rec')" in click and click.index("if(b.getAttribute('aria-pressed')==='true'){await stopRec();press(b,false);return}") < click.index("utsushiClips.voiceStart("), \
+    "押した印がある時は止めるだけ（2 回目に押した時）"
+assert click.index("await stopRec();\n if(!window.utsushiClips") < click.index("voiceStart("), "録り始める前に、ほかの口の録りを止める（録りは頁に 1 つ）"
+submit = S[S.index("document.addEventListener('submit'"):]
+assert submit.index("e.preventDefault();await stopRec();") < submit.index("fetch("), "「残す」の前に録りを止め、置き終えてから送る"
+assert "fetch" not in click and "submit" not in click.replace("'submit'", ""), "録る釦の所からは送らない（送るのは「残す」の時だけ）"
 assert hanasu.assets().count(clips.assets()) == 1, "置き場の台本は頁に 1 回"
 for word in ("fetch(", "XMLHttpRequest", "sendBeacon", "WebSocket", "EventSource", "RTCPeerConnection", "document.cookie"):
     assert word not in clips.SCRIPT, ("置き場は外へ送らない", word)
-# 送る所は 1 つで、字のフォームの形だけ。聞き取った所（onresult）からは送らない
-assert hanasu.SCRIPT.count("fetch(") == 1 and "fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}" in hanasu.SCRIPT
-onresult = hanasu.SCRIPT[hanasu.SCRIPT.index("r.onresult"):hanasu.SCRIPT.index(" r.onerror")]
-assert "fetch" not in onresult and "submit" not in onresult and "box.value" in onresult
-# 聞き取った所は、欄に字を足して知らせるだけ。字の並びごと固定する（ここに、送る・押す・残すを足すと落ちる。「残すを押すまで送らない」が設計の要）
-assert onresult == "r.onresult=(ev)=>{\n  // 読み上げの間に入った字は、端末が自分の答えを聞いた物なので入れない。\n  if(window.speechSynthesis&&speechSynthesis.speaking)return;\n  // 聞き始めた時の欄の字の後ろに、この回に聞いた字を置き直す（途中の字が来るたびに足すと、同じ字が重なる）。\n  let said='',n=ev.results.length;for(let i=0;i<n;i++)said+=ev.results[i][0].transcript;said=said.trim();\n  // 欄の長さで切る（script が入れた字には maxlength が効かない。見せた字と残る字を同じにする）。\n  if(said){box.value=((base?base+' ':'')+said).slice(0,box.maxLength);root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};\n", onresult
-# 止まった後に「聞いています」を残さない。終わりの字が来ない機種でも、途中の字があれば読んで残せると知らせる
-assert "if(n.textContent===M.listening)n.textContent=box.value.trim()!==base?M.heard:''" in hanasu.SCRIPT
-# 送る所は、残すを押した時の所だけ。残す釦を code から押す所・フォームを code から送る所が無い（押すのは、聞く口の声を止める 1 か所だけ）
-SUBMIT = hanasu.SCRIPT.index("document.addEventListener('submit'")
-assert hanasu.SCRIPT.index("fetch(") > SUBMIT and hanasu.SCRIPT.count(".hanasu-go") == 1 and hanasu.SCRIPT.index(".hanasu-go") > SUBMIT
-assert hanasu.SCRIPT.count(".click()") == 1 and "if(ask)ask.click()" in hanasu.SCRIPT
-for word in ("requestSubmit", "dispatchEvent", ".submit()"):
-    assert word not in hanasu.SCRIPT, word
-# 既定の音声認識（声を外の認識のサービスへ送る事がある）は、切り替えが browser の時にしか使わない
-assert "if(how==='browser'){listen(root,false);return}" in hanasu.SCRIPT and hanasu.SCRIPT.count("listen(root,false)") == 1
-assert "let how=want==='off'?'none':feat?'local':(want==='browser'&&REC)?'browser':'none'" in hanasu.SCRIPT
-assert "if(want==='browser'&&REC){how='browser';mark();note(root,M.tobrowser);return}" in hanasu.SCRIPT and hanasu.SCRIPT.count("how='browser'") == 1
-# 使えるかをブラウザに聞くのは、人が釦を押した時だけ（頁を開いた時に聞くと、頁ごと落ちる画面があった）
-assert "local()" not in hanasu.SCRIPT[:hanasu.SCRIPT.index("document.addEventListener('click'")] and hanasu.SCRIPT.count("await local()") == 1
-# 端末の中で字にできるかは、口の形で見分ける（前置きの付いた名前しか無い版でも同じに動く）。聞く時の指定は、端末の中の時だけ付ける
-assert "const REC=window.SpeechRecognition||window.webkitSpeechRecognition," in hanasu.SCRIPT
-assert "const feat=!!(REC&&typeof REC.available==='function'&&'processLocally' in REC.prototype);" in hanasu.SCRIPT and "if(onDevice)r.processLocally=true" in hanasu.SCRIPT
-# 釦は CSS でも既定で隠れ、端末の中で字にできると分かった印が付いた時だけ出る
-assert ".hanasu .hanasu-mic{display:none" in hanasu.STYLE and ".hanasu-local .hanasu .hanasu-mic,.hanasu-browser .hanasu .hanasu-mic{display:block}" in hanasu.STYLE
-
-# ---- 切り替え（OMOCHAE_VOICE）: 既定は browser（本人の決定 11-05: iPhone・iPad でも話す釦を出す）。決まりの外の値は既定に戻す
-assert hanasu.mode() == "browser" and 'data-voice="browser"' in toy and "const want='browser';" in toy
-for value, want in (("local", "local"), ("off", "off"), ("everything", "browser"), ("", "browser")):
-    os.environ["OMOCHAE_VOICE"] = value
-    assert hanasu.mode() == want and f"const want='{want}';" in hanasu.assets(), value
-    assert f'data-voice="{want}"' in get(f"/toy/{G}")[1], value
-os.environ.pop("OMOCHAE_VOICE")
+# 送る所は 1 つで、字のフォームの形だけ。字は欄に打った字（via は text だけ）
+assert S.count("fetch(") == 1 and "fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'}" in S and "b.set('via','text')" in S and "'voice'" not in S
+# 残す釦を code から押す所・フォームを code から送る所が無い
+SUBMIT = S.index("document.addEventListener('submit'")
+assert S.index("fetch(") > SUBMIT and S.count(".hanasu-go") == 1 and S.index(".hanasu-go") > SUBMIT
+for word in ("requestSubmit", "dispatchEvent", ".submit()", ".click()"):
+    assert word not in S, word
+# 録れない画面と 5 ついっぱいの時の 1 行は、置き場の前からの字（本人の OK 11-08）。新しい字は足さない
+assert f"norec:'{clips.NO_VOICE}'" in S and f"full:'{clips.FULL}'" in S and "__" not in S
 
 # ---- 利用者向けの文: 本人が採ったやさしい言葉の文（11-05、Issue #318）。一字でも変わったら落ちるように、ここに決定の文を書く
 # 11-08: NOTICE の「このサイトは声を受け取りません。」と UPLOAD_NOTICE は、上げた動画の声を字にしてから消す形（omochae.voice_text）に合わせた案（本人の確かめ待ち）
 ADOPTED = {
-    "NOTICE": "残るのは字だけです。押して話した間の声を録り、のこすで承認した時に受け取ります。声は字にしてから消します。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。",  # 11-08: 声を録って送る形（本人 415・「公開デモでも声も録る。」）に替えた案。本人の確かめ待ち
-    "HOW_LOCAL": "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。",
-    "HOW_BROWSER": "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。",
-    "HOW_NONE": "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。",
+    # 11-08: 声を録って送る形（本人 415・「公開デモでも声も録る。」）に替えた案の、録る釦の名に合わせた字（音声認識を外す設計の 4 節の (A)）。本人の確かめ待ち
+    "NOTICE": "残るのは字だけです。「声を録る」を押した間の声を録り、のこすで承認した時に受け取ります。声は字にしてから消します。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。",
+    # 本人の答え 11-08「新しい字 3 つもよい。」
+    "KEYBOARD": "キーボードのマイクで話して入れられます。",
+    "REC_START": "声を録る",
+    "REC_STOP": "止める",
     "KEPT": "残しました。型紙や説明をよくするのに使います。",
     "BLOCKED": "名前・学校の名前・住所・電話番号・メールのような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。",
     "FAILED": "残せませんでした。インターネットにつながっているか見て、もう一度押してください。",
-    "NOHEARD": "聞き取れませんでした。もう一度押すか、字で書いてください。",
     "UPLOAD_NOTICE": "のせた写真と動画は、いつ・どこでとったかなどの情報を消してから残します。動画の声は、この機械の中で字にしてから消します。字にできない時も、3 日で消します。子どもの声は入れないでください。",
 }
 for name, text in ADOPTED.items():
     assert getattr(hanasu, name) == text, name
+# 前の断り（どこで声を字にするか）と NOHEARD は外した（同じ意味の字を 2 つにしない・HOW_NONE の後半は KEYBOARD に寄せた）
+for name in ("HOW_LOCAL", "HOW_BROWSER", "HOW_NONE", "NOHEARD"):
+    assert not hasattr(hanasu, name), name
 # 本人が採った字（一字も変えない）。話す口の断りの後に置く。断りは定数 1 か所で、話す口のある頁の全部に同じ物が出る
 AI_USE = "残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
 assert hanasu.NOTICE.endswith("書かないでください。" + AI_USE)
 for page in (toy, tsu, techo):
     assert page.count(AI_USE) == page.count('<div class="hanasu" data-hanasu') >= 1, "話す口ごとに 1 回"
     assert hanasu.NOTICE in page
-# 断りと、話す釦の説明 3 つは、3 つの頁の口に出る
+# 断りと、字の欄の下の 1 行は、3 つの頁の口に出る（1 行は口ごとに 1 回）
 for page in (toy, tsu, techo):
-    for name in ("NOTICE", "HOW_LOCAL", "HOW_BROWSER", "HOW_NONE"):
-        assert ADOPTED[name] in page, name
+    # 手帖の記録の頁の上の のこす の記入の節（web.nokosu）の工夫の欄にも同じ 1 行がある（話す口の形の div・class なし）
+    assert ADOPTED["NOTICE"] in page and page.count(KB) == page.count('<div class="hanasu" data-hanasu') + page.count('<div data-hanasu data-sid=') >= 1
+    for old in ("「話す」を押すと", "声を機械の中だけで字にできません", "キーボードのマイクのマーク"):
+        assert old not in page, old
 # 場面の見出しと例・選ぶ欄・頁の頭の一文
 # 玩具の頁の考えの箱は、節の見出しと同じ字が並ぶので箱の見出しを出さない（本人の決定 11-06）
 # 考えを話す の見出しは、仮説の段の中の小さな口の見出し（h3）。段の見出し（h2）は「仮説」（本人の言葉 11-08・設計の問い 4 の答え「推しのとおり。」）。
@@ -415,18 +414,16 @@ assert '<p class="hanasu-head">工夫した所や、思った事を足す</p>' i
 think_form = toy[toy.index('id="hanasu"'):toy.index("</form>", toy.index('id="hanasu"'))]
 assert f'<input type="hidden" name="hypothesis" value="{GS}">' in think_form and "<select" not in think_form and "どの案（仮説）" not in toy
 assert '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>' in toy
-# 釦は「話す」「止める」「残す」のまま。声を聞いている時などの知らせ
-assert ">話す</button>" in toy and '<button class="hanasu-go">残す</button>' in toy and "mic.textContent=on?'止める':'話す'" in hanasu.SCRIPT
-for said in ("聞いています。話した事が、欄に字で出ます。", "字にしました。読んで、よければ「残す」を押してください。",
-             "残せませんでした。インターネットにつながっているか見て、もう一度押してください。", "この機械では字にできませんでした。字で書いてください。",
+# 釦は「声を録る」（録っている間は「止める」）と「残す」。台本は釦の字を書き替えない（押した印だけを替え、CSS が字を選ぶ）
+assert REC in toy and '<button class="hanasu-go">残す</button>' in toy and "textContent=on?" not in hanasu.SCRIPT
+for said in ("聞いています。話した事が、欄に字で出ます。", "字にしました。読んで、よければ「残す」を押してください。", "この機械では字にできませんでした。字で書いてください。",
              "聞き取れませんでした。もう一度押すか、字で書いてください。", "声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…"):
-    assert f"'{said}'" in hanasu.SCRIPT, said
+    assert said not in hanasu.SCRIPT, ("聞く口の知らせは外した", said)
+assert f"failed:'{ADOPTED['FAILED']}'" in hanasu.SCRIPT
 # ③ で上げる時の説明文は、手帖（③ の上げる頁）の上げる節に出る。聞く口の断りの文は、この頁では使わない
 code, techo_make = get(f"/toy/{G}/techo")  # 上げる説明は作る頁の最後の画面に出る（1 手 1 画面、#87）
 assert code == 200 and f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo_make and making_log.ASK_NOTICE not in techo_make + techo and making_log.ASK_NOTICE in tsu and making_log.ASK_NOTICE not in toy
 # （聞く口の断りは、聞く口のある作りながら見る頁で見る。つくるの頁の聞く口は外した・設計の問い 4 の答え「推しのとおり。」）
-# 端末の中で字にできないと分かった時の知らせは、採られた断りの文（次に押すと声が外へ送られる事がある、と押す前に言う）
-assert f"tobrowser:'{ADOPTED['HOW_BROWSER']}'" in hanasu.SCRIPT and "__" not in hanasu.SCRIPT.replace("__VOICE__", "")
 # 本人の確認が済んでいない文を足していない（入れる時は、確認の後に、この一覧と一緒に直す）。節の名だけは本人の言葉のまま
 assert hanasu.KUFU_HEAD == "工夫した所（直した所）" and f'<p class="hanasu-kufu-head">{hanasu.KUFU_HEAD}</p>' in techo
 for word in ("に入ります", "ほかの人にも見せます", "ほかの人には見せません", "に入りました", "残しています", "公開のデモでは、文を出しません", "頁を開き直して",

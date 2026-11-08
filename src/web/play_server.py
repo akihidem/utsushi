@@ -1490,5 +1490,6 @@ if __name__ == "__main__":
         sys.exit(4)
     print(f"http://127.0.0.1:{port}/  皮: {skinmod.SKINS[look]['name']}（{look}）")
     for h in server.lan_hosts:
-        print(f"家の網から: http://{h}:{port}/  （同じ網の iPhone で開く。音声認識は https でないので使えない見込みで、字の入力と読み上げは使える）")
+        # 前は「音声認識は https でないので使えない見込み」と添えた。音声認識を外した（web.hanasu）ので、https でないと開けないマイクとカメラの事だけを言う
+        print(f"家の網から: http://{h}:{port}/  （同じ網の iPhone で開く。https でないので声を録る・カメラは使えない見込みで、字の入力と読み上げは使える）")
     server.serve_forever()

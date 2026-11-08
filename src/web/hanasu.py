@@ -4,25 +4,26 @@
 3 できた物を上げた後に工夫と考えを残す（手帖の記録の札）。残す先は omochae.talk_log（字だけ）。
 
 判断の芯:
-- **声そのものは残さない（本人の決定）。** この頁は、マイクを開く code・録る code・声を送る code を持たない（tests/test_hanasu.py が固定する）。
-  声を字にするのはブラウザの音声認識で、頁が受け取るのは字だけ。受け口は字のフォームしか受けない（play_server の _form）。
-- **声を字にする所（本人の決定 11-05: iPhone・iPad でも話す釦を出す）。** ブラウザの音声認識は、既定では声を認識のサービスへ送って字にする
-  （MDN の Web Speech API の頁で確かめた）。端末の中だけで字にする指定（processLocally）を持つ画面では、その指定で聞く。日本語で使えるかは、
-  釦を押した時にブラウザへ聞く（available）。持たない画面（調べた時点で iPhone と iPad の Safari など）と、使えなかった画面では、ブラウザの既定の
-  音声認識で聞き、本人の決めた断り（「声はブラウザの音声認識で字になります。この頁は声を受け取りません」）を出す。声がブラウザの会社の仕組みへ
-  送られる事がある事も、続けて書く。音声認識の口が無い画面では釦を出さず、字の欄だけにする（キーボードの音声入力は使える。頁は声に触らない）。
-  切り替え（OMOCHAE_VOICE）: browser（既定）・local（端末の中だけで字にできる画面でだけ釦を出す）・off（釦を出さない）。
-- ブラウザの既定の口では、1 回話すごとに止まる形で聞き、途中の字も欄に出す。話し続ける形は、機種によって同じ字が重なったり、終わりの字が来なかったり
-  するため（実機では確かめていない。広く使われている聞き方に合わせた）。端末の中で字にする時は、話し続けられる。
-- **字は本人が見てから残す。** 聞き取った字は欄に足すだけで、送らない。「残す」を押した時に送る。なぜ: 名前は機械で見分けられない
-  （talk_log の床の限り）ので、人の目を入口に置く。聞き違いも直せる。話し終えたら自動で残す形は、手は空くが、この目が無くなるので採らない。
+- **声を字にするのは、その機械のキーボード（端末の音声入力）。この頁は声を聞いて字にしない。** 本人 11-08「サイトの中の「はなす」がうまく動かない。
+  クロードの音声認識をはずして、ユーザーの端末の音声入力に頼るのでいいのではないか。」で、ブラウザの音声認識（Web Speech API）と、
+  端末の中だけで字にする指定と、切り替え OMOCHAE_VOICE（browser・local・off）を外した（設計は grove の state/no-speech-recognition-20261108.md の 2 版）。
+  前の本人の決定 11-05「iPhone・iPad でも話す釦を出す」は、音声認識の上の決めなので、ここで替わった。
+  字の欄の下に「キーボードのマイクで話して入れられます。」の 1 行（KEYBOARD・本人の OK 11-08）を置く。iPhone・iPad・Android の画面のキーボードの
+  マイクの釦の事で、パソコンや作業の頁の画面には無い事がある（統括から本人へ添えた）。
+- **声の区切りは「声を録る」を押した間だけ録る（本人の答え 11-08「(A) 声を録る釦を置いて残す。新しい字 3 つもよい。」・415「声も送って解析に使う形にする。」）。**
+  録る code はこの台本に置かず、置き場（web.clips）の voiceStart・voiceStop を呼ぶだけ（tests/test_hanasu.py が固定する）。録った声はこの端末に置き、
+  のこすで承認した時に送り、サーバの中で字にしてから消す（omochae.voice_text）。欄の字と録った声は別の物で、片方だけでもよい。
+  釦の字は「声を録る」、録っている間は「止める」（本人の OK）。2 つの字は両方とも頁に置き、押した印（aria-pressed）で CSS が片方を見せる:
+  台本の中の字は英語の頁で訳されない（web.i18n）ので、台本で釦の字を書き替えない。止まる所は web.clips の注の 7 つで、この台本は「残す」の前に止めて
+  置き終えるのを待つ。
+  **記録の札の足す口（keep）には置かない**（設計の 2 版の止め 1）: 前の記録に足す口で録った声は、その記録に結べず、次の のこす の承認で別の記録と
+  一緒に送られ、回が無い時は印の無い区切りを消すため。足す口は字の欄と端末のマイクだけにする。
+- **字は本人が見てから残す。** 欄の字は「残す」を押した時に送る。なぜ: 名前は機械で見分けられない（talk_log の床の限り）ので、人の目を入口に置く。
 - 床に落ちた時は、欄の字を消さずに理由を返す（直して残せる）。JS が無い時は、理由の頁を返す。
 - JS が無くても字で残せる（フォームの送信）。JS がある時は頁を読み直さない（作りながら見る頁の鏡と手順が切れないように）。
-- 釦と断りの出し分けは CSS で持つ（html に付く印）。手帖は記録の一覧を頁の中で入れ替えるので、後から来た部品にも同じ出し分けが効くように。
-  釦に hidden 属性を付けない: 指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が勝って、幅 1100 以下で釦が消える（tests/test_mic_seen.py が測る）。
-  同じ理由で、釦の動きは頁に 1 回だけ置く script が、頁全体で受ける。
-- 聞く口の声（手帖・作りながら見る頁の #mic）と同時には聞かない。片方を押したら、もう片方を止める。読み上げの間に入った字は捨てる
-  （端末が自分の答えを聞いた物なので）。
+- 釦の字の出し分けは CSS で持つ。釦に hidden 属性を付けない: 指で触る機器の床（skin.TAP_FLOOR の [hidden]{display:none!important}）が勝って、
+  幅 1100 以下で釦が消えた事がある（tests/test_mic_seen.py が測る）。釦の動きは頁に 1 回だけ置く script が、頁全体で受ける
+  （手帖の記録の頁は、記録の一覧を頁の中で入れ替えるので、後から来た部品にも同じ動きが効くように）。
 - **作りながら話した工夫は、記録を残した時に、その記録に結ぶ（本人の設計）。** 同じ画面（その場限りの印）で、同じ紙について話した工夫を、
   その記録に結ぶ（talk_log.bind。play_server の記録を残す口が呼ぶ）。上げた後に書き直さなくてよい。結んだ字は、輪と束と作る側の頁が読む。
 - **話した字は、学ぶ人の頁に出さない（本人の決定 11-06、J-034。11-05 の「記録の感想と同じに出す」を変えた）。** 頁に出す字は、AI が整理した字だけ。
@@ -37,7 +38,6 @@
   節の名「工夫した所（直した所）」だけは、本人の言葉のまま置く。
 """
 import json
-import os
 import urllib.parse
 
 from omochae import hypotheses, making_log, records, talk_log
@@ -46,22 +46,20 @@ from omochae.model import Failure
 from . import clips, skin
 from .play_server import esc, printed_versions, sheet_version_of
 
-MODES = ("browser", "local", "off")
-DEFAULT_MODE = "browser"  # 本人の決定 11-05: iPhone・iPad でも話す釦を出す
-
 # 利用者向けの文は、本人が採ったやさしい言葉の文（11-05、Issue #318）。小学生・中学生にも分かる言葉で、一字も変えずに置く（tests/test_hanasu.py が文字列で見る）。
 # 断りの文。どの場面でも同じ物を出す。名前は床で落とせない（落とせるのは形だけ）ので、入れないお願いを添える。
 # 頭の 3 つの文は、本人が決め直した文（11-05）: 前の「声は録音しないし、どこにも送りません」は、ブラウザの音声認識で聞く画面では本当でなかった
 # （声がブラウザの会社に送られる事がある）。どの画面でも本当の文にした。
 # 最後の文も本人が採った字（話した字を輪の Claude へ渡す事を、残す前に知らせる）。一字も変えない。
 # 11-08: 2・3 文目（「声は録音しません。話した声は、このサイトに送りません。」）は、本人の決め 415「声も送って解析に使う形にする。」と
-# 「公開デモでも声も録る。」で本当でなくなったので、設計の 6 節の字に替えた（押して話した間の声を録り、のこすで承認した時に送る・字にしてから消す）。本人の確かめ待ち
-NOTICE = "残るのは字だけです。押して話した間の声を録り、のこすで承認した時に受け取ります。声は字にしてから消します。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
-HOW_LOCAL = "「話す」を押すと、声はこの機械（タブレットやパソコン）の中で字になります。"
-# ブラウザの既定の音声認識で聞く時の断り（本人の決定 11-05: iPhone・iPad でも話す釦を出し、頁に断りを出す。文は、採られたやさしい言葉の文）。
-HOW_BROWSER = "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
-# 釦を出さない時（切り替えが local か off の時と、音声認識の口が無い画面）。
-HOW_NONE = "この機械では、声を機械の中だけで字にできません。だから「話す」のボタンを出していません。キーボードのマイクのマークを押すと、話した事が字で入ります（声がどう使われるかは、機械の設定によってちがいます）。"
+# 「公開デモでも声も録る。」で本当でなくなったので、設計の 6 節の字に替えた（押して話した間の声を録り、のこすで承認した時に送る・字にしてから消す）。
+# 同じ日の後で、「話す」の釦を外して「声を録る」の釦にした（本人の答え (A)）ので、2 文目の「押して話した間」を「「声を録る」を押した間」にした
+# （音声認識を外す設計の 4 節の (A) の字。本人の確かめ待ち）
+NOTICE = "残るのは字だけです。「声を録る」を押した間の声を録り、のこすで承認した時に受け取ります。声は字にしてから消します。残す前に、字を読んで直せます。名前・学校の名前・住所・電話番号・メールは書かないでください。残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
+# 字の欄の下の 1 行と、録る釦の字（本人の答え 11-08「新しい字 3 つもよい。」）。前の HOW_LOCAL・HOW_BROWSER・HOW_NONE（どこで声を字にするかの断り）は、
+# この頁が声を字にしなくなったので外した。HOW_NONE の後半（キーボードのマイクのマーク）は、この 1 行に寄せた（同じ意味の字を 2 つにしない）
+KEYBOARD = "キーボードのマイクで話して入れられます。"
+REC_START, REC_STOP = "声を録る", "止める"
 # ③ で上げる時の説明文（本人の決定 11-05、Issue #275 の決める点 3。採られたやさしい言葉の文）。文を変える時は、ここだけを変える。
 # 11-08: 動画の声を字にしてから消す形（本人の言葉「全部残していいことにしたい。」・omochae.voice_text）に合わせた案。本人の確かめ待ち。
 # 子どもの声は入れないでくださいは、決まり（今週は成人のみ・子どもの写真と声は扱わない。J-013 の 6・J-021・J-022）と字を合わせるため。
@@ -77,7 +75,6 @@ KUFU_HEAD = "工夫した所（直した所）"
 KEPT = "残しました。型紙や説明をよくするのに使います。"
 FAILED = "残せませんでした。インターネットにつながっているか見て、もう一度押してください。"
 REFUSED = "受け付けられません"  # 記録を残した画面の外から足す字を断る時。つながりの案内は誤りになる（開いたままのタブ、15 分の後）。説明の受け口と同じ字
-NOHEARD = "聞き取れませんでした。もう一度押すか、字で書いてください。"
 # 入口の床に当たって残せなかった時の文。talk_log の理由（「名乗りの形がある」など）は作る人向けの言葉なので、そのまま出さない。
 # 連絡先の形の時も、この文を出す（採られた文は 1 つ。連絡先の時の言い分けは、文面の確認が要るので足していない）。
 BLOCKED = "名前・学校の名前・住所・電話番号・メールのような言葉が入っていたので、残しませんでした。その言葉を消して、もう一度「残す」を押してください。"
@@ -93,124 +90,89 @@ STYLE = """
 /* 釦は、手が紙でふさがっていても押せる大きさ（作りながら見る頁の札と同じ考え）。字は中央（指で触る機器の床が button を横並びの箱にして、字が左に寄るため）。 */
 .hanasu .hanasu-row button{flex:1 1 140px;min-height:56px;margin:0;padding:8px 12px;font:inherit;font-size:18px;letter-spacing:.08em;border-radius:0;cursor:pointer;
  text-align:center;justify-content:center}
-/* 話す釦は、端末の中で字にできると分かった時（html に印が付いた時）だけ出す。 */
-.hanasu .hanasu-mic{display:none;border:2px solid var(--accent);background:var(--paper);color:var(--fg)}
-.hanasu-local .hanasu .hanasu-mic,.hanasu-browser .hanasu .hanasu-mic{display:block}
-.hanasu .hanasu-mic[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
+/* 録る釦は、録っている間（押した印）だけ地と字を入れ替え、字を「止める」にする。字は 2 つとも頁にあり、片方だけを見せる */
+.hanasu .hanasu-rec{border:2px solid var(--accent);background:var(--paper);color:var(--fg)}
+.hanasu-rec[aria-pressed=true]{background:var(--accent);color:var(--onaccent)}
+.hanasu-rec .rec-stop,.hanasu-rec[aria-pressed=true] .rec-go{display:none}
+.hanasu-rec[aria-pressed=true] .rec-stop{display:inline}
 .hanasu .hanasu-go{border:0;background:var(--accent);color:var(--onaccent)}
 .hanasu .hanasu-go:disabled{opacity:.6}
 .hanasu .hanasu-note{margin:0;font-size:15px}
 .hanasu .hanasu-note:empty,.hanasu .hanasu-said:empty{display:none}
 .hanasu .hanasu-said{margin:0;padding-left:1.2em;font-size:14px}
 .hanasu .meta{margin:0;font-size:12px;color:var(--mute);line-height:1.8}
-.hanasu .hanasu-how{display:none}
-.hanasu-local .hanasu .hanasu-how.is-local,.hanasu-browser .hanasu .hanasu-how.is-browser,.hanasu-none .hanasu .hanasu-how.is-none{display:inline}
+.hanasu-kb{margin:0;font-size:14px}
 .hanasu-kufu{margin:8px 0}
 .hanasu-kufu .hanasu-kufu-head{margin:0;font-size:15px;font-weight:600;letter-spacing:.06em}
 .hanasu-kufu ul{margin:4px 0;padding-left:1.2em;font-size:15px}
 .hanasu-kufu .meta{margin:0;font-size:12px;color:var(--mute)}
 """
 
-# 声を字にする所。REC はブラウザの音声認識の口（前置きの付いた名前でしか出していない版もあるので、両方の名前を見る）。
-# 端末の中で字にできるかは、名前でなく、口の形で見分ける（使えるかを聞く口 available と、端末の中だけの指定 processLocally を持つか）。
-# 端末の中だけの指定を付けない聞き方（ブラウザの既定。声が外へ送られる事がある）は、切り替えが browser（既定）の時だけ使い、断りの文を替える。
-# 聞き取った字は欄に足すだけ。送るのは「残す」を押した時（submit）。
+# 録る釦と「残す」の動き（頁に 1 回）。録る code は置き場（web.clips）にだけあり、ここは voiceStart・voiceStop を呼ぶだけ。
+# 録れない画面（置き場の台本が無い・マイクを開けない）と、5 ついっぱいの時は、1 行で知らせる。録っている口は頁に 1 つだけ（置き場の録りが 1 つなので）。
+# 欄の字は「残す」を押した時に送る（submit）。送る前に録りを止め、置き終えるのを待つ（止めた区切りが、のこすの並びに入るように）。
 SCRIPT = """<script>(()=>{
-const REC=window.SpeechRecognition||window.webkitSpeechRecognition,LANG='ja-JP',html=document.documentElement;
-const M={listening:'聞いています。話した事が、欄に字で出ます。',heard:'字にしました。読んで、よければ「残す」を押してください。',
- failed:'__FAILED__',nolang:'この機械では字にできませんでした。字で書いてください。',
- noheard:'__NOHEARD__',install:'声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…',
- tobrowser:'__HOW_BROWSER__',norec:'__NOREC__'};
-const want='__VOICE__';
-// 釦を出すかは、口の形だけで決める（端末の中で字にする指定を持つ実装か）。頁を開いた時には、使えるかをブラウザに聞かない:
-// 聞くだけで頁ごと落ちる画面があった（操作する人のいない headless の Chromium で確かめた）。聞くのは、人が釦を押した時だけ。
-const feat=!!(REC&&typeof REC.available==='function'&&'processLocally' in REC.prototype);
-let how=want==='off'?'none':feat?'local':(want==='browser'&&REC)?'browser':'none',rec=null;
-const mark=()=>{html.classList.remove('hanasu-local','hanasu-browser','hanasu-none');html.classList.add('hanasu-'+how)};mark();
-const local=async()=>{try{return await REC.available({langs:[LANG],processLocally:true})}catch(e){return 'no'}};
-const note=(root,t)=>{root.querySelector('.hanasu-note').textContent=t};
-// 釦の字は短く保つ（狭い画面で折れない）。聞いている間は「止める」に替える。
-const press=(mic,on)=>{mic.setAttribute('aria-pressed',on?'true':'false');mic.textContent=on?'止める':'話す'};
-const stop=()=>{if(rec){try{rec.stop()}catch(e){}}if(window.utsushiClips)utsushiClips.voiceStop()};
-// 押して話した間の声を録る（本人 11-08 415・web.clips の voiceStart）。録るのは「話す」を押して聞き始めた所だけで、止まった所で止める。
-// 声はこの端末の中に置くだけで、送るのは のこす の承認の時（web.nokosu）。録れない画面では、字にするのは今のまま続け、1 行で知らせる
-const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
- const sid=root.dataset.sid||(m&&decodeURIComponent(m[1]));if(!sid)return;
- const sc=root.querySelector('input[name=scene]'),st=root.querySelector('input[name=step]')||document.getElementById('step');
- if(!await utsushiClips.voiceStart({sid,scene:sc?sc.value:(root.dataset.scene||''),step:st?st.value:''})){const n=root.querySelector('.hanasu-note');n.textContent=(n.textContent?n.textContent+' ':'')+M.norec}};
-const listen=(root,onDevice)=>{
- const box=root.querySelector('textarea'),mic=root.querySelector('.hanasu-mic'),r=new REC(),base=box.value.trim();
- // 端末の中で字にする時は、話し続けられる。ブラウザの既定の口は、1 回話すごとに止まる形で聞き、途中の字も出す
- // （話し続ける形は、機種によって同じ字が重なったり、終わりの字が来なかったりする）。
- r.lang=LANG;r.continuous=onDevice;r.interimResults=!onDevice;if(onDevice)r.processLocally=true;
- r.onresult=(ev)=>{
-  // 読み上げの間に入った字は、端末が自分の答えを聞いた物なので入れない。
-  if(window.speechSynthesis&&speechSynthesis.speaking)return;
-  // 聞き始めた時の欄の字の後ろに、この回に聞いた字を置き直す（途中の字が来るたびに足すと、同じ字が重なる）。
-  let said='',n=ev.results.length;for(let i=0;i<n;i++)said+=ev.results[i][0].transcript;said=said.trim();
-  // 欄の長さで切る（script が入れた字には maxlength が効かない。見せた字と残る字を同じにする）。
-  if(said){box.value=((base?base+' ':'')+said).slice(0,box.maxLength);root.dataset.via='voice';note(root,ev.results[n-1].isFinal?M.heard:M.listening)}};
- r.onerror=(ev)=>{note(root,ev.error==='language-not-supported'?M.nolang:M.noheard)};
- // 終わりの字が来ないまま止まる機種がある。止まった後に「聞いています」を残さない（途中の字が欄にあれば、読んで残せる）。
- r.onend=()=>{press(mic,false);if(rec===r)rec=null;if(window.utsushiClips)utsushiClips.voiceStop();const n=root.querySelector('.hanasu-note');if(n.textContent===M.listening)n.textContent=box.value.trim()!==base?M.heard:''};
- rec=r;press(mic,true);note(root,M.listening);
- try{r.start()}catch(e){press(mic,false);rec=null;note(root,M.noheard);return}
- clip(root)};
+const M={norec:'__NOREC__',full:'__FULL__',failed:'__FAILED__'};
+const note=(root,t)=>{const n=root.querySelector('.hanasu-note');if(n)n.textContent=t};
+const press=(b,v)=>b.setAttribute('aria-pressed',v?'true':'false');
+const stopRec=()=>window.utsushiClips?utsushiClips.voiceStop():Promise.resolve('none');
+// 区切りに添える付帯情報: 玩具の印・場面・手順の番号（作りながら見る頁は手順が頁の中で進むので、その頁の欄 #step から読む）
+const meta=(root)=>{const sc=root.querySelector('input[name=scene]'),st=root.querySelector('input[name=step]')||document.getElementById('step');
+ return {sid:root.dataset.sid,scene:sc?sc.value:(root.dataset.scene||''),step:st?st.value:''}};
 document.addEventListener('click',async(e)=>{
- if(!e.target.closest)return;
- // 聞く口の声（#mic）を押したら、こちらは止める。同時に 2 つは聞けない。
- if(e.target.closest('#mic')){stop();return}
- const mic=e.target.closest('.hanasu-mic');if(!mic)return;
- const root=mic.closest('[data-hanasu]');
- if(mic.getAttribute('aria-pressed')==='true'){stop();return}
- stop();const ask=document.querySelector('#mic[aria-pressed="true"]');if(ask)ask.click();
- if(how==='browser'){listen(root,false);return}
- if(how!=='local')return;
- const a=await local();
- if(a==='available'){listen(root,true);return}
- if(a==='downloadable'||a==='downloading'){note(root,M.install);let ok=false;try{ok=await REC.install({langs:[LANG],processLocally:true})}catch(e2){}
-  if(ok){listen(root,true);return}}
- // 端末の中では字にできないと分かった。切り替えが browser の時は、断りの文を替えて、もう一度押した時から既定の口を使う。ほかは釦をしまう。
- if(want==='browser'&&REC){how='browser';mark();note(root,M.tobrowser);return}
- how='none';mark();note(root,M.nolang)});
+ const b=e.target.closest&&e.target.closest('.hanasu-rec');if(!b)return;
+ const root=b.closest('[data-hanasu]');if(!root)return;
+ if(b.getAttribute('aria-pressed')==='true'){await stopRec();press(b,false);return}
+ await stopRec();
+ if(!window.utsushiClips||!root.dataset.sid){note(root,M.norec);return}
+ press(b,true);note(root,'');
+ // 録り終えた時（もう一度押した・60 秒・大きさの手前・頁が隠れた・残す など）に釦を戻す。5 ついっぱいで置けなかった時だけ知らせる。
+ // 録れた事を見せるのは釦の字が戻る事だけで、並びは のこす の確かめの画面にある（数や並びをここに足すと新しい字になる・web.clips の注）
+ const ended=(got)=>{press(b,false);if(got==='full')note(root,M.full)};
+ let r='none';try{r=await utsushiClips.voiceStart(meta(root),ended)}catch(e2){}
+ if(r!=='rec'){press(b,false);note(root,r==='full'?M.full:M.norec)}});
 document.addEventListener('submit',async(e)=>{
  const form=e.target,root=form.closest?form.closest('[data-hanasu]'):null;if(!root)return;
- e.preventDefault();stop();
+ e.preventDefault();await stopRec();
  const box=form.querySelector('textarea'),go=form.querySelector('.hanasu-go'),text=box.value.trim();
  if(!text||go.disabled)return;
- const b=new URLSearchParams(new FormData(form));b.set('via',root.dataset.via==='voice'?'voice':'text');b.set('json','1');
+ const b=new URLSearchParams(new FormData(form));b.set('via','text');b.set('json','1');
  // 作りながら見る頁は、頁を読み直さずに手順が進む。今の手順の番号は、その頁の欄（#step）から読む。
  const st=document.getElementById('step');if(b.get('scene')==='craft'&&st)b.set('step',st.value);
  try{const w=sessionStorage.getItem('utsushi-who');if(w)b.set('who',w)}catch(e2){}
  go.disabled=true;let j={};
  try{const r=await fetch(form.action,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b});j=await r.json()}catch(e3){j={}}
  go.disabled=false;
- if(j.kept){const li=document.createElement('li');li.textContent=text;root.querySelector('.hanasu-said').append(li);box.value='';root.dataset.via='';note(root,j.note)}
+ if(j.kept){const li=document.createElement('li');li.textContent=text;root.querySelector('.hanasu-said').append(li);box.value='';note(root,j.note)}
  else note(root,j.why||M.failed)});
 // 「残す」の前に #think の釦を押すと、頁を読み直して欄の字が消える。字はこのタブの中にだけ持ち、読み直したら消す（サーバへ送るのは「残す」の時だけ）。
 const said=document.querySelector('#hanasu textarea');
 if(said){
- const keep='utsushi-said '+said.form.getAttribute('action'),box=said.closest('[data-hanasu]');
+ const keep='utsushi-said '+said.form.getAttribute('action');
  try{const d=JSON.parse(sessionStorage.getItem(keep)||'null');sessionStorage.removeItem(keep);
-  if(d&&!said.value){said.value=d.text;box.dataset.via=d.via}}catch(e){}
+  if(d&&!said.value)said.value=d.text}catch(e){}
  document.addEventListener('submit',(e)=>{
   if(!e.target.closest||!e.target.closest('#think')||!said.value.trim())return;
-  try{sessionStorage.setItem(keep,JSON.stringify({text:said.value,via:box.dataset.via||''}))}catch(e2){}});
+  try{sessionStorage.setItem(keep,JSON.stringify({text:said.value}))}catch(e2){}});
 }
-addEventListener('pagehide',stop);
-})()</script>""".replace("__FAILED__", FAILED).replace("__NOHEARD__", NOHEARD).replace("__HOW_BROWSER__", HOW_BROWSER).replace("__NOREC__", clips.NO_VOICE)
+})()</script>""".replace("__NOREC__", clips.NO_VOICE).replace("__FULL__", clips.FULL).replace("__FAILED__", FAILED)
 
-def mode():
-    """声の釦の出し方。既定は browser（端末の中だけで字にできない画面では、ブラウザの既定の音声認識で聞く。本人の決定 11-05）。決まりの外の値は既定に戻す。"""
-    m = os.environ.get("OMOCHAE_VOICE", DEFAULT_MODE)
-    return m if m in MODES else DEFAULT_MODE
+
+def rec_button():
+    """録る釦（作りながら見る頁の工夫の口・のこすの頁の工夫の欄）。字は 2 つとも置き、押した印で CSS が片方を見せる（英語の頁でも両方が訳される）。"""
+    return (f'<button type="button" class="hanasu-rec" aria-pressed="false"><span class="rec-go">{esc(REC_START)}</span>'
+            f'<span class="rec-stop">{esc(REC_STOP)}</span></button>')
+
+
+def keyboard_line():
+    """字の欄の下の 1 行（端末のキーボードのマイク）。話す口の 3 つの場面と、のこすの頁の工夫の欄に、同じ字を 1 か所から出す。"""
+    return f'<p class="meta hanasu-kb">{esc(KEYBOARD)}</p>'
 
 
 def assets():
-    """頁に 1 回だけ置く物（見た目と動き）。部品を何個置いても 1 つでよい。声の釦の出し方（mode）は、ここで script に渡す:
-    手帖は記録の一覧を後から入れ替えるので、頁を開いた時に部品が 1 つも無くても、後から来た部品が同じ出し方になるように。"""
+    """頁に 1 回だけ置く物（見た目と動き）。部品を何個置いても 1 つでよい（手帖は記録の一覧を後から入れ替えるので、後から来た部品にも同じ動きが効く）。"""
     # 声の区切りの置き場（web.clips）も頁に 1 回だけ置く。話す口の台本は録る code を持たず、置き場の voiceStart・voiceStop を呼ぶだけ
-    return f"<style>{STYLE}</style>" + SCRIPT.replace("__VOICE__", mode()) + clips.assets()
+    return f"<style>{STYLE}</style>" + SCRIPT + clips.assets()
 
 
 def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
@@ -226,8 +188,6 @@ def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
                    f'<input type="hidden" name="step" value="{esc(step)}">')
     else:
         hidden += f'<input type="hidden" name="record" value="{esc(rid)}">'
-    how = (f'<span class="hanasu-how is-local">{esc(HOW_LOCAL)}</span><span class="hanasu-how is-browser">{esc(HOW_BROWSER)}</span>'
-           f'<span class="hanasu-how is-none">{esc(HOW_NONE)}</span>')
     # 玩具の頁の口は、JS が無い時に同じ節へ着く（返事の文もそこに出る。#121 と同じ形）。ほかの 2 つは、戻る道の付いた頁で答える。
     land = "#hanasu" if scene == "think" else ""
     hint = f' placeholder="{esc(s["hint"])}"' if s.get("hint") else ""
@@ -235,13 +195,14 @@ def box(sid, scene, hid="", version=None, step=None, rid="", with_assets=True):
     withdraw = "" if scene == "keep" else f'<p class="meta">{esc(records.WITHDRAW_NOTICE)}</p>'
     # 玩具の頁の考えの箱は、節の見出し「考えを話す」と同じ字が並ぶので、箱の見出しを出さない（本人の決定 11-06。読み上げの名前の label は残す）。
     shown = "" if scene == "think" else f'<p class="hanasu-head">{esc(s["head"])}</p>'
-    return (f'<div class="hanasu" data-hanasu data-voice="{mode()}">{shown}'
+    # 録る釦は記録の札の足す口（keep）には置かない（設計の 2 版の止め 1・上の注）。字の欄の下の 1 行は 3 つの場面の全部に出す
+    rec = "" if scene == "keep" else rec_button()
+    return (f'<div class="hanasu" data-hanasu data-sid="{esc(sid)}" data-scene="{esc(scene)}">{shown}'
             f'<form method="post" action="/toy/{esc(sid)}/talk{land}">{hidden}'
             f'<label class="sr" for="{key}">{esc(s["head"])}</label><textarea id="{key}" name="text" maxlength="{talk_log.MAX_TEXT}" {hint} required></textarea>'
-            '<div class="hanasu-row"><button type="button" class="hanasu-mic" aria-pressed="false">話す</button>'
-            '<button class="hanasu-go">残す</button></div></form>'
+            f'{keyboard_line()}<div class="hanasu-row">{rec}<button class="hanasu-go">残す</button></div></form>'
             '<p class="hanasu-note" aria-live="polite"></p><ul class="hanasu-said"></ul>'
-            f'<p class="meta">{esc(NOTICE)}{how}</p>{withdraw}</div>' + (assets() if with_assets else ""))
+            f'<p class="meta">{esc(NOTICE)}</p>{withdraw}</div>' + (assets() if with_assets else ""))
 
 
 def think_section(sid, data, note=""):
@@ -282,11 +243,13 @@ def keep_box(sid, r, show_shared=True, can_add=False):
 
 
 def reason(failures):
-    """残せなかった理由を、学ぶ人の言葉にする。言うのは採られた文だけ（記録が消えた時などの文は、本人の確認の後に足す）。"""
+    """残せなかった理由を、学ぶ人の言葉にする。言うのは採られた文だけ（記録が消えた時などの文は、本人の確認の後に足す）。
+    字が空の時は、前は「聞き取れませんでした。…」（NOHEARD）だった。この頁が声を聞かなくなって本当でないので、受け口の断りの字（REFUSED）にする
+    （台本のある画面は空の字を送らず、ここに来るのは台本の無い画面で空白だけを送った時だけ）。"""
     f = failures[0]
     if f.floor == "F10.pii":
         return BLOCKED
-    return NOHEARD if f.message == talk_log.EMPTY else FAILED
+    return REFUSED if f.message == talk_log.EMPTY else FAILED
 
 
 def post(handler, sid, form):
@@ -358,5 +321,5 @@ def maker_section(sid, data):
             '<p class="meta">話した考えと、作りながら話した工夫は、記録を残した時にその記録に入ります。上げた後に足した言葉も、ここに並びます。'
             '記録に入った言葉は、ほかの人の頁にも出ます。［隠している］は、作る側が隠した言葉です。</p>'
             f'{keep}'
-            f'<p class="meta">声から字にした物 {sm["via"]["voice"]} 件・字で書いた物 {sm["via"]["text"]} 件。'
-            f'床で落とした物（文は残していません）: 連絡先の形 {d["pii"]} 件・名乗りや学校の形 {d["name"]} 件。</p></section>')
+            # 前の「声から字にした物 n 件・字で書いた物 n 件」は外した（この頁が声を字にしなくなり、どの字も欄に打った字になったため。前の記録の via は talk_log に残る）
+            f'<p class="meta">床で落とした物（文は残していません）: 連絡先の形 {d["pii"]} 件・名乗りや学校の形 {d["name"]} 件。</p></section>')
