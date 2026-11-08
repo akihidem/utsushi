@@ -7,6 +7,7 @@
 1. 名の字（ルビの外）は 1 行だけ（隠れた行が無い）
 2. ルビ（rt）は札の箱の中（上も下も切れない）
 3. 札の箱は、絵・ほかの札・下の道（全部の玩具を見る）に重ならない。札は自分の列（li）の幅の中
+4. 札の a の title に全名がある（ルビの外の名の字と同じ）。名が … で切れる時に、全名を見る道（統括の頼み 11-08・英語は 33 のうち 24〜31 が切れる）
 ./run.sh はブラウザなしで動く決まりなので、入っている Chrome で頁をその大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ）。
 原画の写し（out/sources・git の外）が無い木では、絵の無い札（.nopic）で同じ形を測る。Chrome が無い機械と、時間内に答えなかった時は、測れないと出して通す。
 """
@@ -31,9 +32,10 @@ const R=(b)=>({l:b.left,t:b.top,r:b.right,b:b.bottom}),meet=(a,b)=>Math.min(a.r,
 const sec=document.querySelector('.erabu'),bad=[];let n=0;
 const pics=[...sec.querySelectorAll('.narabi .pic')].map(e=>R(e.getBoundingClientRect())),links=[...sec.querySelectorAll('p.links a')].map(e=>R(e.getBoundingClientRect()));
 const nms=[...sec.querySelectorAll('.narabi .nm')],own=nms.map(e=>R(e.getBoundingClientRect()));
-nms.forEach((e,i)=>{n++;const o=own[i],li=R(e.closest('li').getBoundingClientRect()),name=e.textContent.slice(0,24),tops=[];
- const tw=document.createTreeWalker(e,NodeFilter.SHOW_TEXT);let t;while(t=tw.nextNode()){if(t.parentElement.closest('rt')||!t.textContent.trim())continue;
+nms.forEach((e,i)=>{n++;const o=own[i],li=R(e.closest('li').getBoundingClientRect()),name=e.textContent.slice(0,24),tops=[];let base='';
+ const tw=document.createTreeWalker(e,NodeFilter.SHOW_TEXT);let t;while(t=tw.nextNode()){if(t.parentElement.closest('rt')||!t.textContent.trim())continue;base+=t.textContent;
   const rg=document.createRange();rg.selectNodeContents(t);for(const b of rg.getClientRects())if(b.width>0)tops.push(b.top)}
+ const ttl=(e.closest('a').getAttribute('title')||'').trim();if(ttl!==base.trim())bad.push(name+': 札の a の title が全名でない「'+ttl.slice(0,24)+'」');
  if(tops.length&&Math.max(...tops)-Math.min(...tops)>4)bad.push(name+': 名の字が 2 行以上（隠れた行）');
  for(const rt of e.querySelectorAll('rt')){const b=R(rt.getBoundingClientRect());if(b.r-b.l>0&&(b.t<o.t-0.5||b.b>o.b+0.5)){bad.push(name+': ルビが札の箱の外 '+Math.round(b.t)+'〜'+Math.round(b.b)+' / '+Math.round(o.t)+'〜'+Math.round(o.b));break}}
  if(pics.some(p=>meet(o,p)))bad.push(name+': 札が絵に重なる');
@@ -98,4 +100,4 @@ for look in ("tenji", "zine"):
         assert (rec["w"], rec["h"]) == (w, h), where
         assert rec["n"] >= 10, (where, "棚の名の札が少ない（測る頁を取り違えていないか）", rec["n"])
         assert not rec["bad"], (where, f"名の札が崩れる（{rec['nbad']} 件）", rec["bad"])
-print(f"ok えらぶの棚の名の札: 白と暗い版・3 つの言葉・{len(SIZES)} の大きさで 1 行・ルビは札の中・絵と道とほかの札に重ならない")
+print(f"ok えらぶの棚の名の札: 白と暗い版・3 つの言葉・{len(SIZES)} の大きさで 1 行・ルビは札の中・絵と道とほかの札に重ならない・札の a の title に全名")
