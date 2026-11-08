@@ -82,6 +82,7 @@ def video_record(key=OWN_KEY, explained=True):
 def reviewed(rid, shows):
     """人の確認の結果を置く。動画の中身は作り物なので、確認の命令（音を落とす）を通さず、結果の形だけを置く。"""
     (media_dir(rid) / "review.json").write_text(json.dumps({"m1.mp4": {"shows": shows}}), encoding="utf-8")
+    __import__('omochae.media_review', fromlist=['bind_legacy']).bind_legacy()  # 名だけの確認は通さない（安全の事項 2 の続き）ので、試験の置き場の確認も今の中身に結び直す
 
 
 # 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。

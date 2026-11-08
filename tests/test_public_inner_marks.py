@@ -89,6 +89,7 @@ media = records.folder() / "media" / ready
 media.mkdir(parents=True, exist_ok=True)
 (media / "m1.mp4").write_bytes(b"\0")
 store.write_json(media / "review.json", {"m1.mp4": {"shows": "object"}})
+__import__('omochae.media_review', fromlist=['bind_legacy']).bind_legacy()  # 名だけの確認は通さない（安全の事項 2 の続き）ので、試験の置き場の確認も今の中身に結び直す
 TOY, TECHO = f"/toy/{G}", f"/toy/{G}/techo/kiroku"  # 前は図鑑の目次と玩具ごとの図鑑の頁も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 NUM = re.compile(r"R-\d{4,}")
 
