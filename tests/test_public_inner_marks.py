@@ -104,7 +104,7 @@ assert 'id="kaizen"' not in page(opened, TOY) and 'id="kaizen"' not in page(clos
 assert WHY not in page(opened, TOY) and BASED not in page(opened, TOY)
 kz = page(closed, f"/loop/{G}").split('id="kaizen"', 1)[1]
 assert "次の版を待つ報告 1 件" in kz and "説明を待つ報告 1 件" in kz and WHY in kz and BASED in kz, "対照: 合言葉の場の作る側の頁の節は今までどおり"
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} 版 2" in kz
+assert "仮説 版 2" in kz  # 印は出さない（本人の答え 11-08「そろえる。」・hypotheses.SHOWN）
 
 # 3. 読みと観察の文を出さない
 for path in (TOY, TECHO):

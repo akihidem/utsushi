@@ -932,5 +932,18 @@
    "tests/test_shiori.py"
   ],
   "unverified": "台帳だけ（決まった番地が決まる前から作れる所）。開く道（/s/<印>・とじる・20 分）・しおりの紙（QR は A 朱の落款枠に朱・裏に順の印）・進め役の道・SECURITY の字は、決まった番地の答えの後の PR。決まった番地は本人の答え待ち"
+ },
+ {
+  "id": "f82",
+  "name": "つくるの外の頁でも、部品が作る仮説の字を印なしの「仮説」にする（本人の答え 11-08「そろえる。」・#621 の続き）",
+  "status": "done",
+  "evidence": [
+   "src/web/kaizen.py",
+   "src/web/ayumi.py",
+   "src/web/techo_site.py",
+   "src/web/en.py",
+   "tests/test_kasetsu_plain_all.py"
+  ],
+  "unverified": "記録の中の字（人の説明・本人の決定の記録など）は替えていない。本人が頁で見る事"
  }
 ]

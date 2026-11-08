@@ -23,7 +23,7 @@ from web.play_server import serve  # noqa: E402
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
 GS = hypotheses.sheet_of(G)["id"]
-GL = f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}"  # 頁と紙のたたき台の呼び名（次の組は「仮説 F」）
+GL = hypotheses.SHOWN  # 頁と紙のたたき台の呼び名。11-08 から印（A・C）は出さない（本人の答え 11-08「そろえる。」・hypotheses.SHOWN）
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
