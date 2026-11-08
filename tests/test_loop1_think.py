@@ -67,7 +67,8 @@ assert think_sheet.NAMES == {"push_part": "押す所", "hub": "扇の中心", "p
                              "clay_back": "重りの穴の後ろへのずれ（mm）", "axle_back": "軸と前の壁の間（mm）",  # 虎 v7 の 2 つ（窓口の決定 2026-11-07 案 A）
                              "tube_height": "筒の高さ（mm）", "base_side": "台の一辺（mm）", "figure_w": "像の幅（mm）", "figure_h": "像の高さ（mm）"}
 assert think_sheet.VALUES == {"tab": "つまみ", "tube": "内筒", "stick": "柄", "axle": "軸", "rim": "筒の口の台", "neck": "首を穴に入れる", "hang": "吊る", "rise": "柄"}
-assert think_sheet.labels({"id": "H-A"}) == ("仮説 A から変えた案", "仮説 A の紙を見て話した考え"), "紙に刷る名前と根拠"
+# 11-08 から仮説の印（A・C）は出さない（本人の言葉「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
+assert think_sheet.labels({"id": "H-A"}) == ("仮説から変えた案", "仮説の紙を見て話した考え"), "紙に刷る名前と根拠"
 
 base_params = words.base_of(G)[1]
 
@@ -77,7 +78,7 @@ think(SAID)
 assert think_sheet.request(G, "")[1] == think_sheet.NONE, "印の無い画面からは頼めない"
 assert think_sheet.request(G, OTHER)[1] == think_sheet.NONE, "ほかの人の考えは選ばない"
 w, why = think_sheet.request(G, WHO)
-assert w and why is None and w["status"] == "waiting_maker" and w["name"].startswith(f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} ")  # たたき台の仮説の名（御来迎の今の組は C）
+assert w and why is None and w["status"] == "waiting_maker" and w["name"] == "仮説から変えた案"  # たたき台の仮説から変えた案（印は出さない）
 assert think_sheet.request(G, WHO)[0]["id"] == w["id"] and len(words.waiting()) == 1, "押し直すと同じ案へ戻り、案を並べない"
 assert not out_dir(G).exists() and hypotheses.own_hypotheses(G) == [], "頼んだだけでは何も刷らない"
 assert think_sheet.WAITING in think_sheet.section(G, f"think-{w['token']}")
@@ -94,7 +95,7 @@ name, why = think_sheet.confirm(G, w["token"])
 oid = words.by_token(G, w["token"])["own_id"]
 assert name == f"{oid}_v1.pdf" and why is None
 assert "".join(OWN_HYPOTHESIS.split()) in flat_pdf(out_dir(G) / name), "紙に「自分で立てた」の印"
-assert f"仮説{hypotheses.letter(hypotheses.sheet_of(G))}から変えた案" in flat_pdf(out_dir(G) / name), "紙に刷る名前は採られた文"
+assert "仮説から変えた案" in flat_pdf(out_dir(G) / name), "紙に刷る名前は採られた文（印は出さない）"
 done = think_sheet.section(G, f"think-{w['token']}")
 assert think_sheet.DONE in done and name in done and SAID in done
 assert f'<img src="/sheet/{G}/{name[:-4]}.png"' in done and (out_dir(G) / f"{name[:-4]}.png").exists(), "紙を作った直後に、その紙の絵が出る（#145）"
