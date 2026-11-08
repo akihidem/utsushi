@@ -9,4 +9,4 @@
   - 前から出ていた写真は、今の中身のまま出続ける（見た目を替えない）。結び直した時の中身が確かめた時の中身と同じかは分からない（前の作りは名だけを控えていた）
 - ゴールの要件: `tests/test_media_content_bound.py` の 3（名だけの確認は通さず確認を待つ物・結び直すと今の中身のまま公開・何度回しても同じ・結び直した後に中身が替われば出さない・立てる時に結び直す・命令 bind）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-media-bind-legacy.txt`（今の main で名だけの確認を通して rc 1）
-- エビデンスゲート: Green は `docs/process/gate-evidence/green-media-bind-legacy.txt`
+- エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-media-bind-legacy.txt`（58 本・rc 0）
