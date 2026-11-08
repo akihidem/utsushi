@@ -10,3 +10,4 @@
 - 検証ゲート: Red: 今の main（79ef6da3）の木に `tests/test_load_guard.py` だけを当てて rc 1（`docs/process/gate-evidence/red-s2-shared-reserve.txt`。予約を長さで外す形で、札で外すと予約が残る。台帳のファイルを渡す口も無い）。Green: この枝の直しを当てた木で rc 0（`green-s2-shared-reserve.txt`）。写真と動画の口に触る試験と、最低の Python・凍結の表・証拠の試験の 36 本も回した
 - まだの所: 本番の HTTP サーバとプロキシでの要求全体の締切、CPU・メモリ・一時領域の制限（OS やコンテナの側）、外の変換の処理（ffmpeg など）の隔離、写真と動画の口の外の本文の受け取り（フォームと JSON の口・動画を上げる別の口 `src/web/video_up.py`）の合計の上限、同じ機械の別のプロセスの間での変換の入口（Gate）の共有、`./run.sh` の全部
 - マージ後の書き戻し: Issue は立てていない
+- 追い（11-08 19:4x・別の目の気づき）: 台帳の JSON の形が違う時（リストや欠けた行）に、毎回落ちて全部の上げが 500 になり続けた。形の合う行だけを残し、形が違えば空の台帳として扱う（`src/web/load_guard.py` の _kept）。消えるのは予約の数えだけで、置き場の写真と動画は消えない。Red: 前の頭（106bd0b6）の木に足した試験だけを当てて rc 1（`docs/process/gate-evidence/red-s2-ledger-shape.txt`・リストの台帳で AttributeError）。Green: rc 0（`green-s2-ledger-shape.txt`）

@@ -74,6 +74,11 @@ code = f"import sys; sys.path.insert(0, {str(ROOT / 'src')!r}); from web import 
 out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
 assert out.stdout.split() == ["30", "True", "False"], ("別のプロセスも同じ予約を数える", out.stdout, out.stderr)
 assert one.reserved == 30, "外さずに終わったプロセスの予約は、pid が居ないので外れる"
+for broken in ("[1, 2]", '{"a": 5, "b": [1], "c": {"x": 1}, "d": ["p", 3, 0]}', "null"):  # 形の違う台帳は、落ちずに空の台帳として扱う（別の目の気づき）
+    book.write_text(broken, encoding="utf-8")
+    d = one.take(0, 10, 50)
+    assert d and one.reserved == 10, ("形の違う台帳で落ちない", broken)
+    one.give(d)
 
 # 3. 本物の口
 assert techo_site.MEDIA_TOTAL == techo_site.PUBLIC_MEDIA_TOTAL == 2 * 1024 ** 3

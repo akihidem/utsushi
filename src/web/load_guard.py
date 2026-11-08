@@ -93,8 +93,7 @@ class Reserve:
                     book = json.loads(self.path.read_text(encoding="utf-8"))
                 except (OSError, ValueError):
                     book = {}
-                now = time.time()
-                book = {k: v for k, v in book.items() if _alive(v[0]) and now - v[2] < RESERVE_TTL_S}
+                book = _kept(book, time.time())
                 yield book
                 tmp = self.path.with_suffix(".tmp")
                 tmp.write_text(json.dumps(book), encoding="utf-8")
@@ -118,6 +117,22 @@ class Reserve:
     def reserved(self):
         with self._ledger() as book:
             return sum(v[1] for v in book.values())
+
+
+def _kept(book, now):
+    """台帳から、形の合う・生きている・寿命の内の予約だけを残す。形が違う台帳（リストや、欠けた行）は、空の台帳として扱う。
+    読めない台帳で毎回落ちると、全部の上げが 500 になり続けるため（別の目の気づき 11-08）。消えるのは予約の数えだけで、置き場の写真と動画は消えない"""
+    if not isinstance(book, dict):
+        return {}
+    kept = {}
+    for k, v in book.items():
+        try:
+            pid, length, at = v
+            if _alive(int(pid)) and now - float(at) < RESERVE_TTL_S:
+                kept[str(k)] = [int(pid), int(length), float(at)]
+        except (TypeError, KeyError, ValueError, OverflowError):
+            continue
+    return kept
 
 
 def _alive(pid):

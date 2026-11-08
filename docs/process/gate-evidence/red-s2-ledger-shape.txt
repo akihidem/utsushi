@@ -1,0 +1,15 @@
+# 命令: .venv/bin/python tests/test_load_guard.py
+# commit: 106bd0b6（#750 の前の頭）の木に、足した tests/test_load_guard.py だけを当てた（git の外の写し・形の違う台帳で落ちる形）
+Traceback (most recent call last):
+  File "tests/test_load_guard.py", line 79, in <module>
+    d = one.take(0, 10, 50)
+  File "src/web/load_guard.py", line 106, in take
+    with self._ledger() as book:
+         ~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "src/web/load_guard.py", line 97, in _ledger
+    book = {k: v for k, v in book.items() if _alive(v[0]) and now - v[2] < RESERVE_TTL_S}
+                             ^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'items'
+rc=1
