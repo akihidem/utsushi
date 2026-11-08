@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_load_guard.py
+# commit: 7f6c06e5（今の main）の木に tests/test_load_guard.py だけを当てた（git の外の写し・上限の部品は無い形）
+Traceback (most recent call last):
+  File "tests/test_load_guard.py", line 32, in <module>
+    from web import load_guard, play_server, techo_site  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'load_guard' from 'web' (src/web/__init__.py)
+rc=1

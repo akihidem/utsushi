@@ -410,6 +410,36 @@ class Handler(BaseHTTPRequestHandler):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
         self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
 
+    def _media_post(self, rid, length):
+        """写真と動画の本文を読んで写し直す所（/record/<rid>/media の照らしを全部通した後）。変換は全体で同時に回す数と待てる数に上限がある
+        （安全の事項 4 への対応・web.load_guard.Gate）。溢れた時は本文を読まずに 503 で断り、本文を空にする（手帖は前からの字を出す）。"""
+        from . import techo_site
+
+        if not self.server.media_gate.enter():
+            return self._send(503, b"", "text/plain; charset=utf-8", [("Retry-After", "30")])
+        try:
+            # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
+            # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
+            # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
+            clip = self.headers.get("X-Utsushi-Clip")
+            if clip is not None:
+                return self._clip_post(rid, clip, self.rfile.read(length))
+            name, why = techo_site.save_media(rid, self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length),
+                                              keep_voice=getattr(self.server, "voice_tool", False))
+        finally:
+            self.server.media_gate.leave()
+        if not name:
+            return self._send(422, why, "text/plain; charset=utf-8")
+        from omochae import voice_text
+
+        # 写した声は、返事の後に作業列で字にする（字にするのに数十秒かかり、上げた人を待たせないため）。待ち行列には長さの上限があり
+        # （安全の事項 4 への対応・load_guard.VOICE_QUEUE_MAX）、満ちている時は入れない（声は置き場に残り、次に立てた時に回し直す）
+        if (voice := voice_text.voice_dir(rid) / f"{pathlib.Path(name).stem}.mka").exists() and getattr(self.server, "voice_jobs", None):
+            voice_text.enqueue(self.server.voice_jobs, voice)
+        key = self._up_key() or secrets.token_urlsafe(18)
+        media_review.claim(rid, name, key)
+        return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
+
     def _busy(self, wait, form):
         """書き込みが多すぎる時の断り（429）。字は全体の受け皿と同じ物で、新しい字を足さない。JSON で受ける口には、その口の形で返す。"""
         headers = [("Retry-After", str(wait))]
@@ -1032,27 +1062,17 @@ class Handler(BaseHTTPRequestHandler):
             # 合言葉なしで開いたデモでも受ける（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。前は 403 で断っていた。
             # 誰でも上げられる場なので、置き場の合計に上限を置く。断る時は本文を空にし、手帖は今ある字（写真か動画を上げられませんでした）を出す。
             # 確かめていない写真が皆に見える形にはしない線（J-021）は、出す側で守る（確かめる前は上げた本人の画面だけ。合言葉付きの場と同じ shown_to）。
-            # 同時に送られた分は数え合わないので、合計は送られた数 × 20MB まで上限を越えうる（止めるより、機械を埋めない事が目的）。
-            if getattr(self.server, "public_open", False) and techo_site.media_bytes() + length > techo_site.PUBLIC_MEDIA_TOTAL:
+            # 合計は、書き終わる前の分（同時に受けている途中の本文）を予約して数える（安全の事項 4 への対応・web.load_guard.Reserve）。
+            # 前は「今の合計＋今回の長さ」だけで、同時に送られた分が数え合わず、送られた数 × 20MB まで上限を越えうった。
+            # 合言葉付きの場にも合計の止めを置く（前は公開の場だけ）。大きさは同じ 2GB（techo_site.MEDIA_TOTAL の注）。ふつうの量では届かない
+            total = techo_site.PUBLIC_MEDIA_TOTAL if getattr(self.server, "public_open", False) else techo_site.MEDIA_TOTAL
+            if not self.server.media_reserve.take(techo_site.media_bytes(), length, total):
                 return self._send(507, b"", "text/plain; charset=utf-8")
-            # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
-            # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
-            # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
-            clip = self.headers.get("X-Utsushi-Clip")
-            if clip is not None:
-                return self._clip_post(m.group(1), clip, self.rfile.read(length))
-            name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length),
-                                              keep_voice=getattr(self.server, "voice_tool", False))
-            if not name:
-                return self._send(422, why, "text/plain; charset=utf-8")
-            from omochae import voice_text
-
-            # 写した声は、返事の後に作業列で字にする（字にするのに数十秒かかり、上げた人を待たせないため）
-            if (voice := voice_text.voice_dir(m.group(1)) / f"{pathlib.Path(name).stem}.mka").exists() and getattr(self.server, "voice_jobs", None):
-                self.server.voice_jobs.jobs.put(voice)
-            key = self._up_key() or secrets.token_urlsafe(18)
-            media_review.claim(m.group(1), name, key)
-            return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
+            try:
+                return self._media_post(m.group(1), length)
+            finally:
+                self.server.media_reserve.give(length)
+        m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
         m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
         if m:
             return self._kasane_ask(m.group(1))
@@ -1642,7 +1662,12 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     if look not in skinmod.SKINS:
         raise ValueError(f"皮が無い: {look}（{'・'.join(skinmod.SKINS)}）")
     # bind は試験のため。--lan の番地の許しを試す間も、全部の網に口を開かない（#169）。
-    server = ThreadingHTTPServer((bind or bind_host(lan), port), Handler)
+    # 同時に処理する要求の数に上限を置く（安全の事項 4 への対応・web.load_guard.LimitedServer）。写真と動画の変換の入口と、置き場の合計の予約も持つ
+    from . import load_guard
+
+    server = load_guard.LimitedServer((bind or bind_host(lan), port), Handler)
+    server.media_gate = load_guard.Gate()
+    server.media_reserve = load_guard.Reserve()
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
