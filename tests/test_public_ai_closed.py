@@ -5,6 +5,10 @@
 1. 公開の場: 手順の質問（/ask・/ask-json）・記録の解釈と観察（ai-interpret・ai-observe）・話した考えから紙を作る口（think-sheet）・
    作業の頁の聞く口（kasane/ask）のどれも Claude を呼ばない。返す字は、鍵が無い時の字のまま（頁の見た目と挙動を替えない）
 2. 見比べ: 合言葉の場では、同じ偽の鍵で手順の質問が偽の Claude まで届く（この試験の差し替えが効いている事の確かめ）
+3. 公開の場で作り直す口だけを開く印（--public-think・本人の決め 11-08「公開のデモにも、本当に動く形で出してください。…この口だけは本人の決めで
+   開けます。他の口は閉じたままにしてください。」）: 鍵のある所でも立ち、型紙を印刷する の作り直す口（think-talk）だけが Claude を呼ぶ。
+   ほかの 5 つの口（/ask・/ask-json・ai-interpret・ai-observe・kasane/ask）は 1 と同じに閉じたまま。印が無ければ鍵のある所では立たない。
+   印は合言葉なしの場とだけ使える。頁には作り直す口が出る（印の無い公開の場には出ない）
 """
 import json
 import os
@@ -31,6 +35,7 @@ CALLS = []
 class FakeClaude:
     def __init__(self, role=None):
         self.messages = SimpleNamespace(create=self._create)
+        self.beta = SimpleNamespace(messages=self.messages)  # 道具を使う口（api.agent.run・作り直す口）は beta の口から呼ぶ
 
     def _create(self, **req):
         CALLS.append(req.get("model"))
@@ -84,8 +89,44 @@ try:
     # 2. 見比べ: 合言葉の場（公開でない場）では、同じ差し替えで手順の質問が偽の Claude まで届く
     code, got = post(lbase, f"/toy/{G}/ask-json", {"hypothesis": HG, "question": "竹串はいつ通すの？", "who": "b" * 22})
     assert code == 200 and json.loads(got) == {"text": "偽の答え", "from": "ai"} and len(CALLS) == 1, (code, got, CALLS)
+
+    # 3. 公開の場で作り直す口だけを開く印（鍵は 2 のとおり「ある」形のまま）
+    try:
+        play_server.serve(0, public_open=True)
+        raise AssertionError("印が無いのに、鍵のある所で公開の場が立った")
+    except ValueError:
+        pass
+    try:
+        play_server.serve(0, public_think=True)
+        raise AssertionError("印が合言葉なしの場の外で使えた")
+    except ValueError:
+        pass
+    think = play_server.serve(0, public_open=True, public_think=True)
+    threading.Thread(target=think.serve_forever, daemon=True).start()
+    tbase = f"http://127.0.0.1:{think.server_address[1]}"
+    try:
+        assert post(tbase, f"/toy/{G}/print", {"hypothesis": HG})[0] == 303
+        before = len(CALLS)
+        code, page = post(tbase, f"/toy/{G}/ask", {"hypothesis": HG, "question": "竹串はいつ通すの？"})
+        assert code == 200 and ask.NO_KEY in page, code
+        code, got = post(tbase, f"/toy/{G}/ask-json", {"hypothesis": HG, "question": "竹串はいつ通すの？", "who": "c" * 22})
+        assert code == 200 and json.loads(got) == {"text": ask.NO_KEY, "from": "no_key"}, (code, got)
+        for act in ("ai-interpret", "ai-observe"):
+            assert post(tbase, f"/record/{rid}/{act}", {"back": "techo"})[0] == 403, act
+        code, got = post(tbase, f"/toy/{G}/kasane/ask", json.dumps({"step": 1, "type": "audio/webm", "voice": "dg==", "frames": []}).encode(), "application/json")
+        assert code == 403 and json.loads(got)["text"] == hmd.ASK_PUBLIC, (code, got)
+        assert len(CALLS) == before, ("作り直す口の印で、ほかの口が Claude を呼んだ", CALLS[before:])
+        page = urllib.request.urlopen(tbase + f"/toy/{G}").read().decode()
+        assert 'id="think"' in page and f'action="/toy/{G}/think-talk#think"' in page, "印のある公開の場に作り直す口が無い"
+        assert 'id="think"' not in urllib.request.urlopen(pbase + f"/toy/{G}").read().decode(), "印の無い公開の場に作り直す口が出た"
+        code, body = post(tbase, f"/toy/{G}/think-talk", {"who": "pubthink01", "text": "扇をもう少し大きく開きたい"})
+        traces = [json.loads(p.read_text(encoding="utf-8")).get("trace") for p in sorted(loop.folder().glob("words-*.json"))]
+        assert code == 303 and len(CALLS) > before, ("作り直す口が Claude を呼ばない", code, CALLS[before:], traces)
+    finally:
+        think.shutdown()
+        think.server_close()
 finally:
     for s in (pub, lan):
         s.shutdown()
         s.server_close()
-print("ok 公開の場では、立てた後に鍵が置かれても、どの AI の口も Claude を呼ばない（返す字は鍵が無い時のまま）")
+print("ok 公開の場では、立てた後に鍵が置かれても、どの AI の口も Claude を呼ばない（返す字は鍵が無い時のまま）。作り直す口だけを開く印の時は、その口だけが呼ぶ")
