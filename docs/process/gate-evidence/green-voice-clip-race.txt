@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_voice_clip_race.py
+# commit: 21583c61（回した時の HEAD）
+ok 区切りが同時に届いても同じ番号で上書きしない: 声・カメラ・一時のファイルなし・上限は今のまま
+rc=0
