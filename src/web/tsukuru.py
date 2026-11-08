@@ -70,6 +70,8 @@ a{color:var(--accent)}
 .js #steps{list-style:none;padding:0}
 .js #steps li{display:none}
 .js #steps li.on{display:block;font-size:clamp(24px,3.6vw,44px);line-height:1.45}
+/* やさしい日本語の頁（ルビのある字）は行の間を 1.9 に広げる。今の手順（1.45）と返事の断り（1.6）のままでは、次の行のルビが前の行の字に触れた（11-08 の見回り・tests/test_no_overlap.py）。ルビは やさしい日本語 の時だけ出る */
+#steps li:has(ruby),.js #steps li.on:has(ruby),.meta:has(ruby){line-height:1.9}
 .sheet{display:block;width:100%;max-height:52svh;object-fit:contain;object-position:left top;background:#fff;border:1px solid var(--frame)}
 /* 組み方の絵（svg）は、手順の紙の絵（縦に長い img）と同じく高さの上限いっぱいを取り、絵は比を保って中に収める。
    高さを幅から決めると、横に長いコマが低くなり、絵の高さの下限（120px）より低くなった（幅 320 の御来迎、tests/test_landscape_fit.py） */

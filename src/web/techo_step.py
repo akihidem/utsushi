@@ -106,6 +106,8 @@ button,input,textarea,select{font-family:inherit}
 /* 3D の無い玩具は手順の文だけ（図は要らない、本人の答え 11-07 夕）。字を上の帯の下から始め、余りの高さは字に回して押す所を画面の下に残す */
 .te-text #steps{flex:1 0 auto;padding-top:96px}
 .meta{margin:0;font-size:13px;color:var(--mute);line-height:1.7}
+/* やさしい日本語の頁（ルビのある字）は行の間を 1.9 に広げる。手順の字（1.4）と断り（1.7）のままでは、次の行のルビが前の行の字に触れた（11-08 の見回り・tests/test_no_overlap.py）。ルビは やさしい日本語 の時だけ出る */
+#steps li:has(ruby),.meta:has(ruby){line-height:1.9}
 #start-note{padding:6px 16px}
 #note{padding:0 16px}
 #note:empty{display:none}

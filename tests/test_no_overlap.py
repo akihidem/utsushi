@@ -78,8 +78,6 @@ KNOWN_WIDE = {("えらぶ", "easy")}
 # 原画の写しの無い木の えらぶ の札にだけ出る「図を見る（国立国会図書館）」の字が、札の玩具の名の字に重なる（写しの無い札は絵の箱が空で、名と道の字が詰まる。上の えらぶ の札の名と同じ持ち主）。
 # 審査する人が repo だけを clone して回すと、この形を見る
 KNOWN_LINK = ("えらぶ", "p.meta>a")
-# やさしい日本語のルビ（rt）が、行の間が狭くて前の行の字に重なる所は、頁と要素を問わず 1 つの事として数える（ルビの行の高さの直しで消える）
-KNOWN_RUBY = ("easy", "ruby>rt")
 
 FIND = r"""(() => {
   const SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TITLE", "OPTION", "TEMPLATE"]);
@@ -245,10 +243,9 @@ for (mode, look, lang), rec in results:
                 wide.append(f"{mode}・{look}・{lang}・{page}・{size}: 横にはみ出す {r['sw']}px（幅 {r['w']}px）")
         for hit in r["hits"]:
             key = (page, hit["kind"], hit["a"], hit["b"], lang)
-            ruby = lang == KNOWN_RUBY[0] and hit["kind"] == "字×字" and (hit["a"].endswith(KNOWN_RUBY[1]) or hit["b"].endswith(KNOWN_RUBY[1]))
             link = page == KNOWN_LINK[0] and (KNOWN_LINK[1] in hit["a"] or KNOWN_LINK[1] in hit["b"])
-            if key in KNOWN or ruby or link:
-                known_seen.add(key if key in KNOWN else ("ルビ", lang) if ruby else ("道", page))
+            if key in KNOWN or link:
+                known_seen.add(key if key in KNOWN else ("道", page))
                 continue
             found.append(f"{mode}・{look}・{lang}・{page}・{size}: {hit['kind']} {hit['a']}「{hit['ta']}」× {hit['b']}「{hit['tb']}」")
 for s in servers.values():
@@ -258,7 +255,7 @@ if unmeasured and len(unmeasured) == len(RUNS):
     raise SystemExit(0)
 assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
 gone = ([k for k in KNOWN if k not in known_seen] + [("横", *k) for k in KNOWN_WIDE if ("横", *k) not in known_seen]
-        + [k for k in (("ルビ", KNOWN_RUBY[0]), ("道", KNOWN_LINK[0])) if k not in known_seen])
+        + [k for k in (("道", KNOWN_LINK[0]),) if k not in known_seen])
 print(f"ok 主な頁の字の重なり: {len(PAGES)} 頁 × {len(SIZES)} 大きさ × 3 言葉 × 白と暗い版（原画の写しの有り無し）で KNOWN の外は 0。"
       f"KNOWN の残り {len(known_seen)} 件" + (f"・見えなくなった KNOWN {len(gone)} 件（写しの有り無しの片方でだけ出る物もある。両方の木で見えなければ行を外す）" if gone else "")
       + (f"。測れない回: {'・'.join(unmeasured)}" if unmeasured else "") + f"（{time.monotonic() - started:.0f} 秒）")
