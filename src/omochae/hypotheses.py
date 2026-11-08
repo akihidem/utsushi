@@ -366,6 +366,20 @@ def print_teacher(source_id, out):
     return 3
 
 
+def sheet_label(data, version=1, adopted=None):
+    """紙の題の版の字（版は組の番号）。人が採った版は、紙から根拠の記録へ戻れるように記録の番号を添える（F7）。"""
+    label = paper_label(data, version)
+    if adopted:
+        label += "・根拠 " + "、".join(adopted["record_ids"])
+    return label
+
+
+def sheet_title(data, h, version=1, adopted=None):
+    """型紙の紙の頭の題。刷る時（print_sheet）と、刷ってある紙が今の題か照らす時（web.toy.paper_current）が同じ字を使うため、1 か所に置く。
+    仮説の印（A・C）は出さない（SHOWN の注）。"""
+    return f"{data['toy']} 型紙 {shown_name(h)}{sheet_label(data, version, adopted)}"
+
+
 def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     """pending は、まだ記録していない版の中身。刷れると分かってから版の記録を書くために渡す（#158）。"""
     from .__main__ import generate
@@ -386,11 +400,8 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     if params is None:
         print(Failure("F9.human", f"{hypothesis_id} 版 {version}", "人が採っていない版は刷らない").line(), file=sys.stderr)
         return 3
-    label = paper_label(data, version)
-    if adopted:
-        # 紙から根拠の記録へ戻れるように刷る（F7）。
-        label += "・根拠 " + "、".join(adopted["record_ids"])
-    title = f"{data['toy']} 型紙 {shown_name(h)}{label}"  # 印は出さない（SHOWN の注）
+    label = sheet_label(data, version, adopted)
+    title = sheet_title(data, h, version, adopted)
     # 頭の段の組み方は前の題（印のある形）で決める。印を外して題が短くなっても、部品の置き場を前の紙と同じにするため（compose の fit_title）
     fit_title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
     template = h.get("template") or data.get("template", "slider_fan")
