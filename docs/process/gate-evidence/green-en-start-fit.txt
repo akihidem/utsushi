@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_en_start_fit.py
+# commit: 82dac852（回した時の HEAD）
+/tmp/tmpfq57kzul/play/NDL-1187053-R0000005-L/.tmp-zlq4cqkb/H-C_v1.pdf
+/tmp/tmpfq57kzul/play/NDL-1187053-R0000014-R/.tmp-xtmfqgxs/H-A_v1.pdf
+ok 英語の手帖の最初の画面: 幅 320×568 で はじめる が画面の中（声の断りの 2 つの形とも）・断りの文の間に空白
+rc=0

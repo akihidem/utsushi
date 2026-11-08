@@ -78,7 +78,8 @@ assert kiroku.count(DECIDED) == 1 and PARA in kiroku, "記録の頁（記録ご�
 # 持ち寄りの所には出さない（「前にエンジンへ渡した分は残ります」が事実と合わない）。説明の文がある事も見て、見本の取り違えで通らないようにする
 # 持ち寄りの入口（職人の言葉の節）は序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。そこにも、ギャラリーにも出さない
 gallery, yomu = page("/gallery"), page("/about")
-assert "送られた物は確かめてから載せます。" in yomu and DECIDED not in yomu and DECIDED not in gallery
+# 職人の言葉の節（持ち寄りの入口の断りを含む）は もちよるへ移した（本人の言葉 11-08「職人の言葉、はもちよるに移動」）
+assert "送られた物は確かめてから載せます。" in gallery and DECIDED not in yomu and DECIDED not in gallery
 assert "取り下げを申し出られる事に同意します" in contrib_server.FORM and DECIDED not in contrib_server.FORM
 
 # README: 取り下げの節に別の段落で置く（行末に句点が無い事まで見る）

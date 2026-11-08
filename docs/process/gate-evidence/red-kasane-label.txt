@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_techo_step.py
+# commit: 6c5fc344（回した時の HEAD）
+/tmp/tmpmus8z6zg/play/NDL-1187053-R0000005-L/.tmp-owbzz6jw/H-C_v1.pdf
+/tmp/tmpmus8z6zg/play/NDL-1187053-R0000014-R/.tmp-g5_w3y3b/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_techo_step.py", line 154, in <module>
+    assert f'title="{hmd.CAM_LINK}" data-on="step">' in kg and re.sub(r"<[^>]+>", "", kg.split(">", 1)[1]).strip() == hmd.CAM_LINK, "印の見える字は口の名"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 印の見える字は口の名
+rc=1

@@ -33,8 +33,8 @@ from web import genga as _genga  # noqa: E402
 _real_pic = _genga._pic
 
 
-def _pic(sid, src, alt, lazy=False, href=None):
-    got = _real_pic(sid, src, alt, lazy=lazy, href=href)
+def _pic(sid, src, alt, lazy=False, href=None, **kw):
+    got = _real_pic(sid, src, alt, lazy=lazy, href=href, **kw)  # 増えた引数（new_tab）も本物へ渡す
     if got[0]:
         return got
     tag, link = ("a", f' href="{href}"') if href else ("span", "")

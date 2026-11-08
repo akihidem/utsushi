@@ -53,5 +53,6 @@ for sid in TOYS:
         assert gone not in page, (sid, gone)
     # 作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）ので、頁から作りながら見る頁への口は無い。困った時に聞く口は今の節に残る
     assert "/tsukuru" not in page and "作りながら見る（机の端に置く・試作）" not in page, (sid, "作りながら見る頁への口")
-    assert 'id="ask"' in secs["tsukuru"], sid
+    # 困った時に聞く口は、考えを話す と同じ窓（本人の言葉 11-08「考えを話す、作ってる途中で困ったら、は同じ窓で。」）
+    assert 'id="ask"' in secs["hanasu"] and 'id="tsukuru"' in secs["hanasu"], sid
 print(f"ok 玩具の頁の作る口: {len(TOYS)} 種で、手帖へ行く口は型紙の窓の「つくる」1 つ（刷る前は 0）、頭の「つくる」は型紙の窓へ")
