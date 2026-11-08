@@ -1,0 +1,13 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_next_form.py
+# commit: c63822f3（回した時の HEAD）
+/tmp/tmpjjtxlzfe/play/NDL-1187053-R0000005-L/.tmp-cx9lexq_/H-C_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_next_form.py", line 81, in <module>
+    assert code == 422 and f"折りの幅（mm）は {lo:g}〜{hi:g} の間で書いてください" in page and "の外" not in page, page[:600]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: <!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>手帖 · うつし</title><style>:root{--bg:#fcfcfa;--fg:#2b2722;--mute:#6f665a;--accent:#6b4f2a;--rule:#ebe8e2;--paper:#fffefc;--frame:#d8cdb6;--shadow:rgba(70,55,35,.35);--selbg:#e6e1d6;--selfg:#1f1b17;--field:#fffefc;--onaccent:#fcfcfa;--soft:#f3f1ec}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+ font-feature-settings:"pa
+rc=1

@@ -128,7 +128,7 @@ const adopt=async(sid)=>{const p=passNow(sid)||passMake(sid);if(p)await mark(sid
 // 承認の終わり: その玩具の区切りと印だけを消す（ほかの玩具の区切りは消さない・別の目の気づき）
 const clear=async(sid)=>{for(const c of await all())if(c.sid===sid)await remove(c.id);try{[PK,NK,RK,MK].forEach(k=>sessionStorage.removeItem(k(sid)))}catch(e){}};
 // 声: 話す口の「声を録る」を押した時だけ始め、止める所（上の注）で止める。返すのは 'rec'（録り始めた）・'full'（5 ついっぱい）・'none'（録れない画面）。
-// onEnd は録り終えた時に 1 回だけ呼ぶ（60 秒・大きさの手前・頁が隠れた時のように、釦の外で止まった時も、釦の形を戻すため）。値は 'put'（置いた）・
+// onEnd は録り終えた時に 1 回だけ呼ぶ（60 秒・大きさの手前・頁が隠れた時のように、釦を押さずに止まった時も、釦の形を戻すため）。値は 'put'（置いた）・
 // 'full'・'none'（置けなかった・何も録れなかった・上限を越えて捨てた）
 let vr=null,vs=null,vend=null,vtimer=0,vgo=false,vhalt=false;
 const voiceStart=async(meta,onEnd)=>{if(vr||vgo||!window.MediaRecorder||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!who())return 'none';
