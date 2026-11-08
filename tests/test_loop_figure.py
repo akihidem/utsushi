@@ -42,7 +42,7 @@ assert sorted(texts) == sorted(want), texts
 for old in ("作る", "のこす", "直す", "刷る", "学ぶ人から見ると", "紙で作って試す", "手帖に写真・声・字", "記録から型紙を直す", "新しい版の型紙", "人が版を決める"):
     assert old not in texts, ("前の駅の名と説明の行は図に出さない", old)
 pos = {}
-for m in re.finditer(r'<text x="([\d.]+)" y="([\d.]+)"[^>]*font-size="20"[^>]*>([^<]*)</text>', s):
+for m in re.finditer(r'<text (?:class="[^"]*" )?x="([\d.]+)" y="([\d.]+)"[^>]*font-size="20"[^>]*>([^<]*)</text>', s):
     pos.setdefault(m.group(3), (float(m.group(1)), float(m.group(2))))
 first = [wa.LINES.get(n, (n,))[0] for n, _ in f.STATIONS]
 (ax, ay), (bx, by), (cx, cy), (dx, dy) = (pos[t] for t in first)
