@@ -132,7 +132,7 @@ body.hmd-cam{background:#000}
    半透明にして下の実物を透かす。指は舞台だけが受ける。頁の流れから外さないので、字が長い手順でも押す所の置き場は前と同じ（fit の縮尺も効く） */
 body.fit-on .hmd-k .rt-stage{position:relative;z-index:1;transform-origin:50% 50%;opacity:.6;touch-action:none;cursor:move;--rt-table:transparent;background:transparent;border-color:rgba(255,255,255,.35)}
 body.fit-on .hmd-top,body.fit-on #hmd-dots,body.fit-on .hmd-k #rt-text,body.fit-on .hmd-acts,body.fit-on .hmd-note{position:relative;z-index:2}
-#hmd-reset,#hmd-fit-hint{display:none}body.fit-on #hmd-fit-hint{display:inline}body.fit-on #hmd-reset{display:block}
+#hmd-reset,#hmd-fit-hint{display:none}body.fit-on #hmd-fit-hint{display:inline}body.fit-on #hmd-reset{display:flex}
 /* 横で高さの低い画面（1024×600 など）は、押す所を 2 列にする（「つぎ」は 2 列の幅）。重ねている間は「元に戻す」で 7 つになり、1 列では
    下の釦が画面の外へ出た（別の目の測り 11-08・統括の決め）。縦の画面は前のまま（3 列 2 段の形） */
 @media (min-aspect-ratio:1/1) and (max-height:800px){.hmd-acts{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:10px}.hmd-acts #hmd-next{grid-column:1/3}.hmd-acts button{min-height:64px;padding:0 .3em;font-size:clamp(18px,1.7vw,28px);letter-spacing:.04em;line-height:1.25}}
