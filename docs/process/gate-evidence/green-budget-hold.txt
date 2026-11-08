@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_budget_hold.py
+# commit: 8624ae57（回した時の HEAD）
+ok AI の費用は呼ぶ前に最大の見込み額を予約し、同時に呼んでも上限を越えない。記録の後の次の版と AI の口も書き込みの数に入る
+rc=0
