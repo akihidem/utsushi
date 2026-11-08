@@ -29,7 +29,7 @@ from omochae.compose import TEMPLATES
 from omochae.hypotheses import ROOT
 from omochae.store import SID
 
-from . import failure_log
+from . import failure_log, jitsubutsu
 from . import skin as skinmod
 from . import wording
 from .contrib_server import STYLE
@@ -803,6 +803,10 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/ukabu/({SID})\.webp", path)
         if m and (ROOT / "out/ukabu" / f"{m.group(1)}.webp").exists():
             return self._send(200, (ROOT / "out/ukabu" / f"{m.group(1)}.webp").read_bytes(), "image/webp")
+        # まずはここから の周りに浮かぶ実物のおもちゃの絵（web.jitsubutsu・data/jitsubutsu）。名は PICKS の物だけ（道から外の絵を読ませない）
+        m = re.fullmatch(r"/jitsubutsu/([a-z]+)\.webp", path)
+        if m and m.group(1) in jitsubutsu.PICKS and (jitsubutsu.OUT / f"{m.group(1)}.webp").exists():
+            return self._send(200, (jitsubutsu.OUT / f"{m.group(1)}.webp").read_bytes(), "image/webp")
         m = re.fullmatch(rf"/picture/({SID})/(small|mid)", path)
         if m:
             from . import toys
