@@ -57,10 +57,13 @@ TEXT_KEYS = {"kind", "step", "text", "count"}
 # 文の種類: 止まった所・直した点（工夫）・次の思いつき（工夫）・感想・聞く口の質問・試した記録への人の説明。
 # 話した事の 3 つ（#65）: think 作る前の考え・craft 作りながらの工夫（手順の番号つき）・keep できた後の話。
 # 報告の欄の案（#62）の when とは、idea = think・making = craft・made = keep で対応する（idea はここでは試した後の思いつきなので、名を分けた）。
-# review は、作る前の型紙のレビュー（経験者が作らずに型紙を読んだ指摘）。人が確かめた字だけが束に来る。
+# review は、ワークショップの型紙レビュー（経験者が作らずに型紙を読んだ指摘）。人が確かめた字だけが束に来る。
+# 呼び名は、制作者の言葉（2026-11-08）「全てがワークショップです。」で「作る前のレビュー」から替えた（git の中の台帳
+# data/engine/versions.json の題も同じ字にそろえた）。git の外の案の記録（採った案・刻んだ案）は前の字のままなので、そこから
+# Issue の下書きを作り直すと、題は前の字・証拠の欄は新しい字になる（記録は人の確認なしに書き換えない。見直しの指摘）
 TEXT_KINDS = ("stuck", "fix", "idea", "impression", "question", "explain", "think", "craft", "keep", "review")
 TEXT_JA = {"stuck": "止まった所", "fix": "直した点", "idea": "思いつき", "impression": "感想", "question": "質問", "explain": "人の説明",
-           "think": "作る前の考え", "craft": "話した工夫", "keep": "できた後の話", "review": "作る前のレビュー"}
+           "think": "作る前の考え", "craft": "話した工夫", "keep": "できた後の話", "review": "ワークショップの型紙レビュー"}
 TALK_JA = {"think": "考え", "craft": "工夫", "keep": "できた後", "review": "レビュー"}  # 版ごとの数の並びで、話した事の列に出す短い呼び方
 # 案が持つ数の呼び方（Issue の下書きで使う）。どれも件数で、寸法の値ではない。
 NUMBER_JA = {"stuck_taps": "止まったの札", "stuck_people": "止まった人（印のある分）", "quit_people": "その段でやめた人", "reports": "報告",
@@ -476,14 +479,14 @@ def drafts(gs):
                         "numbers": {"fixes": n_fix, "ideas": n_idea, "craft_talks": n_talk, "keeps": n_keep, "reports": g["reports"]},
                         "why": f"{where}で、作った人が直した点が {n_fix} 件、思いつきが {n_idea} 件、作りながら話した工夫が {n_talk} 件、できた後の話が {n_keep} 件。",
                         "evidence": craft, "record_ids": g["record_ids"], "in_engine": here})
-        # 雛形: 作る前の型紙のレビュー。経験者が読んで人が確かめた指摘なので 1 件から案にする。作っていないので、止まった段・工夫の案には混ぜない。
+        # 雛形: ワークショップの型紙レビュー。経験者が読んで人が確かめた指摘なので 1 件から案にする。作っていないので、止まった段・工夫の案には混ぜない。
         reviews = [t for t in g["texts"] if t["kind"] == "review"]
         if reviews:
             n_review = sum(t["count"] for t in reviews)
             out.append({"key": _key("review", tid, ss, paper), "target": {"kind": "template", "name": tid}, "template": tid, "sheet_set": ss, "paper": paper, "step": None,
-                        "title": f"{tid}{_on(paper)}: 作る前のレビューの指摘を、雛形に入れるか見る",
+                        "title": f"{tid}{_on(paper)}: ワークショップの型紙レビューの指摘を、雛形に入れるか見る",
                         "numbers": {"reviews": n_review, "reports": g["reports"]},
-                        "why": f"{where}について、作る前のレビューの指摘が {n_review} 件（人が確かめた物）。",
+                        "why": f"{where}について、ワークショップの型紙レビューの指摘が {n_review} 件（人が確かめた物）。",
                         "evidence": reviews, "record_ids": g["record_ids"], "in_engine": here})
         # 生成の決まり: 検査を通って刷られた紙なのに、動かない側の札が重なった所。「わからない」は動かない側に数えない。
         # 作る前の考え（仮説を見て、どう動くと思ったか）もここに付ける。考えだけでは案にしない。

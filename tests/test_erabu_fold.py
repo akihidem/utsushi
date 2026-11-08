@@ -50,6 +50,6 @@ said = techo_site.records_page(G, msg="残しました")
 quiet = techo_site.records_page(G)
 go = f'<p class="links next-erabu"><a href="/#erabu">{techo_site.NEXT_ERABU.format(n=n)}</a></p>'
 assert said.count(go) == 1 and go not in quiet, "返事の文が出た時だけ"
-assert said.index('<p class="road"><a class="go" href="/gallery#ageta">') < said.index(go), "道しるべの釦（字は本人の決めで のこす）の下（道しるべの釦は増やさない）"
+assert said.index('<p class="road">') < said.index(go), "道しるべの釦（記入の節の のこす か、紙の無い時の紙を作る）の下（道しるべの釦は増やさない）"
 assert said.count('<p class="road">') == 1
 print("ok 選ぶのは 2 回目から: 入口は 2 枚の下で 83 を畳み（数は棚から）・開いた時だけ写しを読む・印を残さない・のこすの後に 2 回目の道")

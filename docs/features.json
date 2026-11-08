@@ -761,7 +761,7 @@
   "status": "doing",
   "evidence": [
    "src/web/naoru.py",
-   "data/kaizen/highlight.json",
+   "data/kaizen/examples.json",
    "src/web/techo_site.py",
    "src/web/techo_step.py",
    "tests/test_naoru.py",
@@ -973,6 +973,22 @@
    "tests/test_floor_pin.py"
   ],
   "unverified": "刷った紙を物差しで測っていない（配置の SVG で比べた）"
+ },
+ {
+  "id": "f79",
+  "name": "のこすの頁を 記入 → のこす → 内容の確かめ → 承認 → もちよる にし、記入の欄の下に「のこす」の釦を置く（本人 11-08 402・405）。のこした記録から直った所を 4 つの例にする（本人 11-08 403）",
+  "status": "doing",
+  "evidence": [
+   "src/web/nokosu.py",
+   "src/web/naoru.py",
+   "src/web/techo_site.py",
+   "src/web/techo_step.py",
+   "src/web/play_server.py",
+   "data/kaizen/examples.json",
+   "tests/test_nokosu_flow.py",
+   "tests/test_naoru.py"
+  ],
+  "unverified": "新しい字（どうだった？・感想・写真と動画・これで のこしますか・承認・直す・どうだったかを 1 つ えらんでください・この画面では写真と動画は上げられません。）は本人の確かめ待ち。話す口（声の字）は声とカメラの区切りの PR で工夫の欄に足す。幅 390 の Chromium で記入 → のこす → 確かめ → 承認 → もちよる を通した（工夫の字が記録に結ばれた）。実機の iPhone と写真を選ぶ所は人の手で試していない"
  },
  {
   "id": "f84",
