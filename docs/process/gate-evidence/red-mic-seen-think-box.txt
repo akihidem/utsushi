@@ -1,0 +1,7 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_mic_seen.py
+# commit: 7f6c06e5（今の main・試験は前のまま）
+  File "tests/test_mic_seen.py", line 105, in <module>
+    assert not rec["shown"] and not rec["kb"], ("話す口の無い玩具の頁に録る釦か 1 行がある", width, rec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('話す口の無い玩具の頁に録る釦か 1 行がある', 390, {'key': 2, 'w': 390, 'rec': [0, 0], 'shown': False, 'label': '', 'kb': True, 'keep': 0, 'keeps': 0, 'sx': 375})
+rc=1

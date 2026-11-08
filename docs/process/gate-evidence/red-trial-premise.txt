@@ -1,0 +1,18 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_about.py
+# commit: 64298cd6（今の main。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_about.py", line 28, in <module>
+    assert html.escape(w, quote=False) in h or w in h, (k, w)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('tenji', 'ここでは、おもちゃを選ぶと、すぐに紙の型紙を作れます。紙と糸で作って、動くかたしかめます。型紙は、正しい答えではありません。AI が「こうかな？」と考えた、ためしの案（仮説）です。最初の型紙のままでは、動かないのがふつうです。動かそうと工夫して、ためしてはなおす事が、ここでのおもちゃづくりの中心です。まず紙が返事をします。動かなかった時の記録も、紙の返事の 1 つです。どう工夫したかを記録に書いてください。次の型紙をよくするヒントになります。自分の考えを書いた後で、AI（Claude）からも返事をもらえます。紙で動いても、昔の作り方が分かったことにはなりません。昔の物をそのまま作り直した物ではなく、ためしに作るための案です。')
+rc=1
+
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_page_order.py
+# commit: 64298cd6（今の main。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_page_order.py", line 62, in <module>
+    assert hypotheses.sheet_of(sid)["name"] in fuda and '<h2>型紙を印刷する</h2>' in win and '<h2>型紙の窓</h2>' not in page and '型紙を刷ります。切って、折って、組みます。動かない所は、切り方や折り方、重りの位置を変えて、動くまでためします。' in win, where
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: NDL-1187053-R0000005-L 刷る前
+rc=1
+

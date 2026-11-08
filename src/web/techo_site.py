@@ -11,6 +11,7 @@
 """
 import html
 import io
+import os
 import pathlib
 import re
 import shutil
@@ -172,9 +173,30 @@ def save_media(rid, ctype, data, keep_voice=False):
         clean, why = clean_photo(data, ext), MISMATCH
     if clean is None:
         return None, why
-    d.mkdir(parents=True, exist_ok=True)
-    name = f"m{len(have) + 1}.{ext}"
-    (d / name).write_bytes(clean)
+    # 安全の事項 2 への対応: 名の番号と書き込みを、変換の後に置き場の鍵の中で決め、上書きしない形で作る。前は変換の前に数えた番号
+    # （m<数+1>）へ書いたので、同時の上げで同じ名に 2 つ目が書かれ、確かめた写真が別の写真に差し替わった。
+    # 名の形（m<n>.<ext>・1 から順）は前のまま（頁と控えの並びが名の順に頼るため）。中身は隠した仮の名に書いてから os.link で名を作る:
+    # link は名が既にあると失敗するので（排他の作成）、書き終えた物だけが名で見え、前の物を上書きしない
+    with media_review.media_lock():
+        d.mkdir(parents=True, exist_ok=True)
+        have = sorted(d.glob("m*.*"))
+        if len(have) >= MAX_PER_RECORD:  # 鍵の外で数えた後に、同時の上げが先に入った時
+            return None, "1 つの記録に 3 つまで"
+        used = {int(m.group(1)) for p in have if (m := re.fullmatch(r"m(\d+)\..+", p.name))}
+        n = len(have) + 1
+        while n in used:
+            n += 1
+        name = f"m{n}.{ext}"
+        fd, tmp_path = tempfile.mkstemp(prefix=".up-", suffix=".tmp", dir=d)  # 頭の「.」で m*.* の並びに出ない
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(clean)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(tmp_path, 0o644)
+            os.link(tmp_path, d / name)  # 名が既にあれば FileExistsError（上書きしない）
+        finally:
+            os.unlink(tmp_path)
     if keep_voice and ext in ("mp4", "mov"):
         from omochae import voice_text
 
@@ -182,7 +204,7 @@ def save_media(rid, ctype, data, keep_voice=False):
             src = pathlib.Path(tmp) / "in"
             src.write_bytes(data)
             # 声を写せない形（音の無い動画など）でも、動画は受け取る
-            voice_text.copy_voice(src, voice_text.voice_dir(rid) / f"m{len(have) + 1}.mka", len(data) + VIDEO_ROOM)
+            voice_text.copy_voice(src, voice_text.voice_dir(rid) / f"m{n}.mka", len(data) + VIDEO_ROOM)
     return name, ""
 
 

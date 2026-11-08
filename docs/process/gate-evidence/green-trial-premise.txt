@@ -1,0 +1,20 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/<名>.py を 1 本ずつ（5 本ずつ同時）
+# commit: 85203955（回した時の木を、この commit にした）
+test_about rc=0
+test_build_now rc=0
+test_page_order rc=0
+test_en_all rc=0
+test_easy_ruby rc=0
+test_easy_part1 rc=0
+test_wa_ring rc=0
+test_ai_name rc=0
+test_sheet_window rc=0
+test_toy_page_order rc=0
+test_tsukuru_rebuild rc=0
+test_no_overlap rc=0
+test_tap_size rc=0
+test_ux_stage0 rc=0
+test_loop_premise rc=0
+test_easy_all rc=0
+test_frozen_manifest rc=0
+test_landscape_fit rc=0

@@ -34,13 +34,14 @@ GS = hypotheses.sheet_of(G)["id"]
 MAKE, NOKOSU = f"/toy/{G}/tsukuru?h={GS}", f"/toy/{G}/techo/kiroku"
 # （幅, 頁）。幅 390 は iPhone、820 は iPad。どちらも指で触る機器の床が効く幅
 TOY = f"/toy/{G}"
-# 玩具の頁は話す口の無い頁（考えを話す の口を外した・本人の言葉 11-08「つくるの「考えを話す」は無くす。」・#709）: 録る釦も 1 行も無い事を測る
+# 玩具の頁は話す口の無い頁（考えを話す の口を外した・本人の言葉 11-08「つくるの「考えを話す」は無くす。」・#709）: 録る釦が無い事を測る。
+# 字の欄の下の 1 行は、型紙を印刷する の中の「Claude に話して型紙を作り直す」口（#714・#722・#think）の中にだけある（話す口ではなく、同じ部品の 1 行）
 CASES = [(w, page) for w in (390, 820) for page in (MAKE, NOKOSU, TOY)]
 # 頁の終わりに足す。録る釦の大きさと、欄の下の 1 行が見えるかと、足す口の録る釦の数を親へ送る。番号はサーバが書く
 MEASURE = """<script>setTimeout(()=>{const seen=e=>!!e&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0;
-const m=document.querySelector('.hanasu-rec'),r=m?m.getBoundingClientRect():{width:0,height:0},kb=document.querySelector('.hanasu-kb');
+const m=document.querySelector('.hanasu-rec'),r=m?m.getBoundingClientRect():{width:0,height:0},kb=[...document.querySelectorAll('.hanasu-kb')].find(e=>!e.closest('#think')),kt=document.querySelector('#think .hanasu-kb');
 const keep=[...document.querySelectorAll('[data-scene=keep] .hanasu-rec')].filter(seen).length,keeps=document.querySelectorAll('[data-scene=keep]').length;
-parent.postMessage(JSON.stringify({key:__CASE__,w:innerWidth,rec:[Math.round(r.width),Math.round(r.height)],shown:seen(m),label:m?m.innerText.trim():'',kb:seen(kb),keep,keeps,sx:document.documentElement.scrollWidth}),'*')},800)</script>"""
+parent.postMessage(JSON.stringify({key:__CASE__,w:innerWidth,rec:[Math.round(r.width),Math.round(r.height)],shown:seen(m),label:m?m.innerText.trim():'',kb:seen(kb),kt:seen(kt),keep,keeps,sx:document.documentElement.scrollWidth}),'*')},800)</script>"""
 WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
 addEventListener('message',e=>{document.getElementById('measured').textContent+=e.data+'\\n'})</script>"""
 
@@ -102,7 +103,8 @@ for i, (width, page) in enumerate(CASES):
     assert rec["w"] == width, (page, width, rec)
     assert rec["sx"] <= width, ("横にはみ出す", page, width, rec)
     if page == TOY:
-        assert not rec["shown"] and not rec["kb"], ("話す口の無い玩具の頁に録る釦か 1 行がある", width, rec)
+        assert not rec["shown"] and not rec["kb"], ("話す口の無い玩具の頁に録る釦か、作り直しの口の外に 1 行がある", width, rec)
+        assert rec["kt"], ("作り直しの口の字の欄の下の 1 行が見えない", width, rec)
         continue
     # 指で押せる大きさで見える（手がふさがっていても押せる。のこすの頁の決まりは 44px・話す口の決まりは 56px）
     assert rec["shown"] and rec["rec"][0] >= 44 and rec["rec"][1] >= 44 and rec["label"] == "声を録る", ("録る釦が見えない", page, width, rec)
