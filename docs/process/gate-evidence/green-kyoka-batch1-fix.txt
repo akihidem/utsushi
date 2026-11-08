@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: cb59ff6f（回した時の HEAD）
+ok 現代語訳と言葉の意味 22 玩具（頁の字 271）・御来迎の読みは怠らじ・決めで読みにした歌は 1997 年の翻刻の 1 行
+rc=0

@@ -51,7 +51,7 @@ for sid in MADE:
         jobs.append((sid, h["id"], str(out / f"{sid}-{h['id']}")))
     # 名前は見立てのまま、翻刻は空（読みは本人が確かめる、U-01）。
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-    assert src["transcription"]["entries"] == [], sid
+    assert all(e.get("decided_by") or e.get("checked_by") for e in src["transcription"]["entries"]), sid  # 線（雛形の生成）は翻刻を書かない。入るのは人の決め（本人の決め 11-08「A にそろえる」の decided_by）か人が確かめた読みだけ
 
 # 3.14 の既定（forkserver）は試験の本体を子で読み直すので、fork で子を起こす。本体は __main__ の守りの無い素の試験の書き方のため。
 with ProcessPoolExecutor(max_workers=min(8, os.cpu_count() or 2), mp_context=multiprocessing.get_context("fork")) as ex:
