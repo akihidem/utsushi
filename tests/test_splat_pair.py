@@ -85,10 +85,11 @@ for opened in (False, True):
     # ---- 4 回す口と最初の絵
     assert f'min="{ANGLES[0]:g}" max="{ANGLES[-1]:g}"' in page and 'value="0"' in page
     assert f'src="/toy/{SID}/splat/{ANGLES.index(0.0)}.jpg"' in page, "最初は前（角 0）の絵"
-    # ---- 8 札の版: エンジンは今の組（14）、実物は絵の一覧の版（13）。実物に今の組の版を書かない。v を付けない（本人の言葉 11-07）
+    # ---- 8 札の版: エンジンは今の組（15）、実物は絵の一覧の版（13）。実物に今の組の版を書かない。v を付けない（本人の言葉 11-07）
+    # 今の組 goraigo-v15 は v14 と同じ部品（割り箸を木工用ボンドで貼る版・11-08）で、エンジンが組んだ 3D の形も v14 と同じ
     ai = re.search(r'<figure class="sp-ai">.*?<figcaption>(.*?)</figcaption>', page, re.S).group(1)
     made = re.search(r'<figure class="sp-made">.*?<figcaption>(.*?)</figcaption>', page, re.S).group(1)
-    assert "型紙の版 14" in ai and "型紙の版 13" in made and "14" not in made and not re.search(r"版 v\d", ai + made), (ai, made)
+    assert "型紙の版 15" in ai and "型紙の版 13" in made and "15" not in made and not re.search(r"版 v\d", ai + made), (ai, made)
     # ---- 6 外の部品を読まない
     assert not re.search(r"<script[^>]+src=", page) and "webgl" not in page.lower()
     # ---- 5 絵の道

@@ -29,11 +29,13 @@ engine = (ROOT / "engine/src/omochae/engine_loop.py").read_text(encoding="utf-8"
 m = re.search(r'"review": "([^"]+)"', engine)
 assert m and m.group(1) == NEW == kaizen_versions.REVIEW_NAME, ("エンジンの呼び名と違う", m and m.group(1), kaizen_versions.REVIEW_NAME)
 
+# 11-08 に足した、テープを使わない版の行（本人の決め「版の数は、エンジンの版15・版8に合わせてください。」）。前からある行の印は替えないので、この 2 行を外して比べる
+ADDED_1108 = ("goraigo-v15", "tora-v8")
 # 3 呼び名を替える前の表（main 19447494）から取った印。why の text と changed を、行の順に並べた物の sha256
 FROZEN = "1bb42f1b2cf9433a10130e5be88fce576571ba9a15b7908f582f636e815cb8b5"
 table = json.loads((ROOT / "data/history/kaizen-history.json").read_text(encoding="utf-8"))
 rows = [[t.get("template") or t.get("toy"), v.get("set") or v.get("version"), [w.get("text") for w in v.get("why", [])], v.get("changed", [])]
-        for t in table["toys"] for v in t["versions"]]
+        for t in table["toys"] for v in t["versions"] if v.get("set") not in ADDED_1108]
 got = hashlib.sha256(json.dumps(rows, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 assert got == FROZEN, ("版の歩みの表の why の字か changed が替わった（のこすの直った例は替えない）", got)
 kinds = [w.get("kind") for t in table["toys"] for v in t["versions"] for w in v.get("why", [])]
