@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_ux_stage1.py
+# commit: 82dac852（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ux_stage1.py", line 57, in <module>
+    assert [x[0] for x in got] == ["うつし", *ROAD, "よむ", "やさしい日本語", "English"], (path, "帯は道しるべと、右の端の言語の切り替え", got)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('/toys', '帯は道しるべと、右の端の言語の切り替え', [('うつし', None, False), ('えらぶ', '/', True), ('つくる', None, False), ('のこす', None, False), ('もちよる', '/gallery', False), ('よむ', '/about', False), ('やさしい', '?lang=easy', False), ('English', '?lang=en', False)])
+rc=1
