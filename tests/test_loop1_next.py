@@ -137,11 +137,12 @@ ready, waiting = kaizen.pending(G, records.all_records(G))
 assert rid in ids(ready) and rid not in ids(waiting), (ids(ready), ids(waiting))
 # 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で玩具の頁から移した）。待つ報告から手帖の記録の頁の記録の並び（#mine）へ行ける
 # （つくるの頁から記録の札を外したので、行き先を手帖の記録の頁にした・上の理由）
-assert f'次の版を待つ報告 1 件: <a href="/toy/{G}/techo/kiroku#mine">記録の番号 {rid}</a>' in send(f"/loop/{G}")[1].decode(), "節に出る"
+# 記録への道は手帖の記録の頁のその記録の札（#記録の番号）。前は並びの頭（#mine）で、どの札か探す事になった（統括の割り振り 11-08）
+assert f'次の版を待つ報告 1 件: <a href="/toy/{G}/techo/kiroku#{rid}">記録の番号 {rid}</a>' in send(f"/loop/{G}")[1].decode(), "節に出る"
 assert send(f"/toy/{G}/record", {"hypothesis": oid0, "sheet_version": 1, "result": "動いた", "who": "nextwho000"}, cookie=key0)[0] == 303
 rid0 = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid0)
 assert rid0 in ids(kaizen.pending(G, records.all_records(G))[1]), "説明の無い OWN-n の記録は、説明を待つ"
-assert f'説明を待つ報告 1 件: <a href="/toy/{G}/techo/kiroku#mine">記録の番号 {rid0}</a>' in send(f"/loop/{G}")[1].decode()  # 輪の節は作る側の様子の頁（本人の答え Q5）。行き先は手帖の記録の頁（上の理由）
+assert f'説明を待つ報告 1 件: <a href="/toy/{G}/techo/kiroku#{rid0}">記録の番号 {rid0}</a>' in send(f"/loop/{G}")[1].decode()  # 輪の節は作る側の様子の頁（本人の答え Q5）。行き先は手帖の記録の頁（上の理由）
 assert send("/loop")[0] == 200
 base_params = loop.version_params(G, SHEET, 1)[0]
 param, to = one_change()

@@ -345,7 +345,7 @@ DETAILS_HEAD = "のこした記録"
 
 def record_details(data, r, say=True):
     """記録の札の畳み「のこした記録」の中身: 型紙の版の札と、最初に動いた所・引っかかった所・変えると違いが出そうな所・思いついた事。
-    字と並びは玩具の頁の記録の札（toy.records_list）と同じ。say=False（公開の場で人が確かめていない記録）は 4 つの欄の字を出さず、版の札だけ。
+    字と並びは前の玩具の頁の記録の札（toy.records_list・#657 で札を外した後に関数も外した）と同じ。say=False（公開の場で人が確かめていない記録）は 4 つの欄の字を出さず、版の札だけ。
     ひとこと（玩具の頁の「メモ」）は、もちよる（みんなが見る所）に出さない（11-05 の別の目の決まり・統括の答え 11-08 の C）。
     代わりに、手帖の記録の頁の自分の記録の札（records_page・その人の画面）に出す。Returns (畳みの html, 欄の字があるか)。"""
     ans = r.get("answers") or {}
@@ -644,7 +644,7 @@ def manabi_box():
             f'{loop_figure.svg()}</section>')
 
 
-def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None, at="", errors=(), err_at="", filled=None):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None, at="", errors=(), err_at="", filled=None, shiori_wait=False):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
     public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受け、確かめた物はギャラリーにも出す形）。写真と動画は合言葉付きの場と
@@ -659,11 +659,15 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
+    from . import zukan  # 試した日の字（前のつくるの頁の記録の札と同じ部品）
 
     # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。通らなかった時の理由は、その記録の札の頭に出す（返事の文は頁に 1 つ・id を重ねない）
     from web.toy import reply_note
 
     note = "" if errors else reply_note((), msg)
+    # 札へ戻した時（at が記録の番号・play_server._done）は、返事の文をその札の頭に出す（着く所と文を同じ所にする。#mine の頭に出すと、
+    # 札へ着いた画面の外になる）。無い番号の時は前のとおり #mine の頭（文を落とさない）
+    at_card = at if at in {r["id"] for r in records.all_records(sid)} else ""
     from api.words import spoken_own_ids
     from web.toy import own_papers as toy_own_papers
 
@@ -685,20 +689,24 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 玩具の頁から記録の札を外してもサイトから消えないように、その人の画面のここへ）。開いた場では人の言葉を出さない（前と同じ線）
         memo = wording.record_note(r.get("note")) if not closed and records.mine(r["id"], rec_key) else ""
         rid = r["id"]
-        here = alert if err_at == rid else ""
+        here = alert if err_at == rid else (note if at_card == rid else "")
         # 前に書かれた自分の仮説で刷った紙（型紙）への道は、前はつくるの頁の記録の札にだけあった（toy.own_papers）。つくるの頁から記録の札を外した
         # （本人の言葉 11-08）ので、ここ（その記録の札）に置く。合言葉なしの場と、話した案の紙（作った本人の画面からだけ開く）には出さない（前と同じ線）
         own = toy_own_papers(sid, r["hypothesis_id"], r.get("sheet_version", 1)) if (not closed and h is None and r["hypothesis_id"] not in spoken) else ""
         # 開いた角度（測った数）は、前はつくるの頁の記録の札の題（「…・40°」）にだけあった。記録の札を外したので、同じ形でここの 1 行に付ける（11-08）
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
-        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
+        # 試した日と型紙の版は、前はつくるの頁の記録の札の頭（「11 月 4 日・版 7」）にだけあった。#657 で記録の札を外した後、写真も感想も無い記録は
+        # どこにも出なくなった（統括の確かめ 11-08）ので、同じ部品と同じ字でここの頭の 1 行に付ける。人の言葉でないので合言葉なしの場でも出す
+        when = f'　{zukan.record_date(r)}・{hypotheses.label_of(r.get("sheet_set") or hypotheses.current_set(data), r.get("sheet_version", 1))}'
+        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}{esc(when)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
                  + (f'<p>メモ: {esc(memo)}</p>' if memo else "") + own +
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(rid, rec_key), filled=filled if err_at in (rid, "next-" + rid) else None, note=alert if err_at == "next-" + rid else "")}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     from . import naoru, nokosu  # 循環を避けて、ここで読む（hanasu と同じ）
-    kinyu = nokosu.entry(sid, paper, records.results_for(sid)) if paper and uploads else nokosu.no_paper(sid)
+    # shiori_wait: 型紙と一緒に刷ったしおりの待ちがこの画面にある（play_server が cookie で見分ける）。確かめの画面に 1 行を出すかの手がかり
+    kinyu = nokosu.entry(sid, paper, records.results_for(sid), shiori_wait=shiori_wait and not public) if paper and uploads else nokosu.no_paper(sid)
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
             # 記入の節（いちばん上・その最後が「のこす」の釦。本人 11-08 400・405）
             # 作りながら見る頁の組み上がりから着いた時（at=kinyu）は、返事の字を記入の節のすぐ上に出す（上げる節の #mine には出さない）
@@ -711,7 +719,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 前はここに道しるべの「のこす」（/gallery#ageta）があった。記入の節の「のこす」の釦（承認の後にもちよるへ飛ぶ）に替えた
-            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{"" if at == "kinyu" else note}'
+            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{"" if at == "kinyu" or at_card else note}'
             # 2 回目の入口（本人の決め 11-08「A＋Cでよい」の C）。のこした人（返事の文が出た時）にだけ、入口の畳みが開いた形 /#erabu への道を出す。
             # 印は持たない（道を見せるだけ）。数は入口の畳みの札と同じく、棚の分けから数える。道しるべの釦（class road）にはしない:
             # のこすの後の道しるべは 1 つの決まり（段 0・research/36・test_ux_stage0）なので、その下のふつうの道として置く

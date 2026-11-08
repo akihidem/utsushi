@@ -7,6 +7,7 @@
 家の網に開く切り替え（--lan、U-36）と、デモの一周を外の機器から開く合言葉の門（--public-key-file、11-04 の本人の決定 A）は
 本人の決定で足した。後者は口を 127.0.0.1 のままにし、外からはトンネル（run-demo.sh）だけが入る。
 """
+import base64
 import collections
 import hmac
 import html
@@ -236,7 +237,8 @@ WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|t
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
 # 機械の重さは全体の同時の数（PRINT_SLOTS）の方で守るので、相手ごとの数は、1 つの相手が空きを独り占めしない程度でよい。
 PRINT_LIMIT = 30
-PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint)|/en/toy/{SID}/print")
+# 型紙としおりを一緒に返す道（sheet-shiori）も刷る道として数える（しおりの頁を描いて合わせる重さがある・設計 2.1 版）
+PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint|sheet-shiori)|/en/toy/{SID}/print")
 # 全体: 同時に刷るのは 2 本まで。番地を替えて送られても、描画の処理が機械を埋めないため。空きは少し待ち、待っても空かなければ断る。
 PRINT_SLOTS, PRINT_WAIT = 2, 20.0
 _print_slots = threading.BoundedSemaphore(PRINT_SLOTS)
@@ -255,6 +257,41 @@ def _printing(make):
     finally:
         _print_slots.release()
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
+# 作業の頁の「聞く」（本人 11-08 539）の受け口の上限（設計の 2 版の気づき）。声は 12 秒ぶん（頁の録りは 32kbps ほどで、12 秒は 50KB ほど。
+# iPhone の Safari の mp4 は大きめなので余裕を取る）・写真は長い辺 960px の JPEG を 1 枚 300KB まで 3 枚。本体は base64 の JSON なので 4/3 倍と頭の分
+ASK_VOICE_BYTES = 400 * 1024
+ASK_FRAME_BYTES = 300 * 1024
+ASK_BODY = (ASK_VOICE_BYTES + 3 * ASK_FRAME_BYTES) * 4 // 3 + 4096
+ASK_VOICE_TYPES = {"audio/webm": "webm", "audio/mp4": "mp4"}  # iPhone の Safari は audio/mp4・Chrome は audio/webm
+# 回数: 同じ相手から 1 分に 6 回まで（1 回の問いに 10 秒ほどかかるので、人が聞く速さを越えない数）・場の全体で 1 日 200 回まで
+# （1 回の最悪の費用を 1 日の上限より十分小さく保つため。費用そのものは budget の日割りと累計の線が止める）
+ASK_LIMIT, ASK_DAY = 6, 200
+
+
+class DayCount:
+    """場の全体の、その日（日本の時刻）の聞いた数。持つのは日付と数だけ。"""
+
+    def __init__(self, limit=ASK_DAY):
+        self.limit, self.day, self.n, self.lock = limit, "", 0, threading.Lock()
+
+    def take(self):
+        from api import budget
+
+        with self.lock:
+            today = budget._today()
+            if today != self.day:
+                self.day, self.n = today, 0
+            if self.n >= self.limit:
+                return False
+            self.n += 1
+            return True
+
+
+def kumitate_steps(sid):
+    """作業の頁に出す手順の字（組み方の節と同じ文・kumitate.steps）。頁と聞く口で同じ文を使い、頁の番号から字を引く（頁の字を受けない）。"""
+    from . import kumitate
+
+    return kumitate.steps(sid, pictures=False)[0]
 # 頼まれた仮説が無い時の断り（刷る・記録を残す・考えを話す）。前は「仮説 {hid} は無い」で、内部の番号（H-A など）をそのまま出していた。
 # 印（A・C）と番号を学ぶ人に出さない決め（本人の答え 11-08「そろえる。」）に外れるので、統括の決め（11-08）の向きの字にした。新しい字は本人の確かめ待ち
 NO_HYPOTHESIS = "その仮説は見つかりません。頁を開き直してください。"
@@ -299,6 +336,7 @@ class WriteLimit:
 
 
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
+SHIORI_PENDING = "utsushi_sp"  # 型紙と一緒に刷ったしおりの待ちの印（記録に結ぶ前・omochae.shiori の pending）
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
@@ -353,6 +391,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(k, v)
         self.end_headers()
         self.wfile.write(data)
+
+    def _say(self, text):
+        """台本へ JSON で返す字を、頁の言葉に合わせる。頁（HTML）は出口で表を引いて替わるが、JSON は出口の替えを通らない。
+        英語は訳の表の英語、やさしい日本語はルビの印を外した字（台本が字の箱に入れるので要素を入れない）。表に無い字は日本語のまま。
+        なぜ: 予算の止めの字（api.budget.BudgetStop.NOTES）が、英語の頁の聞く口でも日本語のまま出た（#692 の別の目の気づき・統括の割り振り 11-08）"""
+        lang = getattr(self, "_lang", "ja")
+        if lang not in ("en", "easy"):
+            return text
+        from . import i18n
+
+        got = i18n.lookup(text, lang)
+        if not got or got == i18n.KEEP:
+            return text
+        return i18n.ruby_plain(got) if lang == "easy" else got
 
     def _refuse(self, code, reason, title="開けません", **kw):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
@@ -438,7 +490,10 @@ class Handler(BaseHTTPRequestHandler):
         sheet = hypotheses.sheet_of(sid)["id"]
         # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
         paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+        from omochae import shiori
+
         body = techo_site.records_page(sid, msg=msg, at=at, up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper,
+                                       shiori_wait=shiori.pending_fresh(self._key_of(SHIORI_PENDING)),
                                        errors=errors, err_at=err_at, filled=filled)
         return skinmod.shell("手帖", body, look or self._look, "", path or f"/toy/{sid}/techo/kiroku", techo_site.STYLE + nokosu.STYLE, "techo")
 
@@ -616,14 +671,19 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) not in sources() or not kumitate.has(m.group(1)):
                 return self._send(404, "無い")
             return self._send(200, kumitate.page(m.group(1), look, path))
-        # 作業の頁に重ねる形（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）。
-        # 下地は試作の枝 try/hmd の頁（hmd.py）。/toy/<玩具>/kasane は後ろのカメラの映像に重ねる形、/toy/<玩具>/kasane/hmd は透けて見える画面の形。
-        # 組み立ての書き方がある玩具だけ。手帖からの道は、口の字が決まってから足す（新しい字は本人の確かめ）
+        # 作業の頁（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）。11-08 から聞くための経路
+        # （hmd.py の頭の決め）。/toy/<玩具>/kasane は後ろのカメラの映像を頁の下に敷く形、/toy/<玩具>/kasane/hmd は透けて見える画面の形。
+        # 開くのは hmd.TOYS の玩具だけ。手帖の手順の画面の印「カメラで聞く」から来る
         m = re.fullmatch(rf"/toy/({SID})/kasane(/hmd)?", path)
         if m:
             from . import hmd
             if m.group(1) not in sources() or not hmd.available(m.group(1)):
                 return self._send(404, "見つかりません")
+            # 聞くだけの経路（本人 11-08 539）。頁を開いた時に、声を字にする作り手を裏で立て始める（最初に聞いた人が型の読み込みを待たないため。
+            # サーバを立てた時に立てると、作業の頁を誰も開かない場でも数 GB の型を読み続けるので、開いた時にする）
+            listener = getattr(self.server, "listener", None)
+            if listener is not None and not getattr(self.server, "public_open", False):
+                listener.warm()
             return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2)))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
@@ -825,14 +885,20 @@ class Handler(BaseHTTPRequestHandler):
         if back == "techo":
             # 着く印: 既定は上げる節（#mine）。作りながら見る頁の組み上がりからは記入の節（#kinyu・頁の頭）へ着き、返事の字もそこに出す
             # （別の目の確かめ 11-08: #mine は頁の一番下で、記入の節を飛び越えた）
+            # JS の無い画面の のこす（back=techo）でも、記録を残した時は fresh の合図と写真の鍵を閉じる行（_up_close）を付ける（統括の割り振り 11-08・
+            # 別の目の確かめ）。付けないと、同じ機械の次の人が前の人の写真の口を持ったままになる。下の記録の札へ戻す時と同じ線
             at = "kinyu" if anchor == "kinyu" else "mine"
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}#{at}"), *headers])
-        # 記録の札（錨が記録の番号）へ戻す時は、手帖の記録の頁の記録の並びへ: つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべて
-        # もちよるに統合する。」）。fresh の合図と、写真の鍵を閉じる行（_up_close）は、玩具の頁へ戻す時と同じに付ける: 付けないと、同じ機械の次の人が
-        # 前の人の写真の口を持ったままになる（別の目の試験 test_photo_owner_only・test_who_fresh が見る）
-        if re.fullmatch(r"R-\d{4}", anchor or ""):
             mark = "&fresh=1" if fresh else ""
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{mark}#mine"), *headers] + (self._up_close() if fresh else []))
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}{mark}#{at}"), *headers]
+                              + (self._up_close() if fresh else []))
+        # 記録の札（錨が記録の番号）へ戻す時は、手帖の記録の頁のその記録の札（id=記録の番号）へ: つくるの頁から記録の札を外した（本人の言葉 11-08「復元の
+        # 記録などはすべてもちよるに統合する。」）。前は記録の並び（#mine）の頭に着き、どの札か探す事になった。番号の形は R- と 4 桁以上（records の番号が
+        # 1 万を越えても同じ道。作る側の頁の道と同じ線）。錨は形を確かめた物だけを Location に入れる。fresh の合図と、写真の鍵を閉じる行（_up_close）は、
+        # 玩具の頁へ戻す時と同じに付ける（別の目の試験 test_photo_owner_only・test_who_fresh が見る）
+        if re.fullmatch(r"R-\d{4,}", anchor or ""):
+            mark = "&fresh=1" if fresh else ""
+            # at= にも番号を渡し、返事の文をその札の頭に出す（techo_site.records_page の at_card）
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}&at={anchor}{mark}#{anchor}"), *headers] + (self._up_close() if fresh else []))
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
@@ -867,6 +933,60 @@ class Handler(BaseHTTPRequestHandler):
         if got == "busy":
             return self._send(429, shiori_open.picture_page(token, self._look, shiori_open.WAIT), headers=[("Retry-After", "60")])
         return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
+
+    def _sheet_shiori(self, sid, form):
+        """型紙の PDF の後ろに、その場で作ったしおりの 1 頁（表と裏を同じ面に並べる・本人「しおりは同じ面に刷る。」）を足して返す（本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 grove の
+        state/shiori-in-sheet-20261108.md の 2.1 版）。合わせた物はどこにも書き出さない（台帳は印そのものを持たない決まり）。
+        - 合言葉なしの場（公開デモ）は台帳を作らずに断る（頁の釦も出さない・受け口でも 2 重に・しおりはワークショップの場でだけ開くため）。
+        - 決まった番地が無い場は、しおりを作らずに型紙だけを返す（替わる番地を刷らない・shiori.NoBase）。
+        - 待ち: who と作り始めの回の印が届いた時だけ作る（台本の無い画面は送れないので作らない。結ぶのは開いた画面から）。待ちの印は cookie で渡し、
+          押すたびに替わる（結べるのは一番新しく刷った 1 枚だけ）。
+        - 返し方は今の /sheet/ と同じ inline（iPhone・iPad の Safari で別のタブに開いて刷れる）。no-store（鍵の入った物を残さない）。"""
+        from omochae import shiori
+
+        if getattr(self.server, "public_open", False):
+            return self._send(403, "公開のデモでは使えません")
+        stem = form.get("name", "")
+        m = re.fullmatch(r"(H-[A-Z0-9]+)_v(\d+)", stem)
+        # 刷れるのは頁に出すたたき台の紙だけ（J-032）。話した字の紙（OWN-n）と試した後の紙には、しおりを付けない
+        if not m or m.group(1) != hypotheses.sheet_of(sid)["id"] or not (out_dir(sid) / f"{stem}.pdf").exists():
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
+        sheet = out_dir(sid) / f"{stem}.pdf"
+        inline = [("Content-Disposition", f'inline; filename="{stem}.pdf"'), ("Cache-Control", "no-store")]
+        who, run = form.get("who", ""), form.get("run", "")
+        nonce = secrets.token_urlsafe(18) if re.fullmatch(r"[a-z0-9]{10}", who) and re.fullmatch(r"[a-z0-9]{6,40}", run) else ""
+        try:
+            made = shiori.make(pending={"nonce": nonce, "who": who, "run": run} if nonce else None)
+        except shiori.NoBase:
+            return self._send(200, sheet.read_bytes(), "application/pdf", inline)
+        from omochae import shiori_card
+
+        def build():
+            card = shiori_card.pages(sid, made["token"], made["order"], int(m.group(2)), time.time(), shiori.base_url())
+            return shiori_card.merge(sheet, card)
+        try:
+            pdf = _printing(build)
+        except PrintBusy:
+            shiori.revoke(made["token"])  # 返せなかったしおりは、紙にならないので使えなくする
+            return self._send(429, "少し待ってから、もう一度押してください。", "text/plain; charset=utf-8", [("Retry-After", "30")])
+        except Exception:
+            shiori.revoke(made["token"])
+            raise
+        # 待ちの印は Max-Age なし（ブラウザを閉じれば消える）・HttpOnly（台本から読ませない）
+        sp = [self._key_cookie(SHIORI_PENDING, nonce)] if nonce else []
+        return self._send(200, pdf, "application/pdf", inline + sp)
+
+    def _shiori_bind(self, rid, form):
+        """記録を、型紙と一緒に刷ったしおりの待ちに結ぶ。確かめの画面で「外す」を押さなかった時（shiori=1）だけ。結んでも結ばなくても待ちの
+        cookie は消す（結べるのは 1 回だけ）。返すのは足す見出しの並び。"""
+        from omochae import shiori
+
+        nonce = self._key_of(SHIORI_PENDING)
+        if not nonce:
+            return []
+        if form.get("shiori") == "1":
+            shiori.bind_pending(nonce, form.get("who", ""), form.get("run", ""), rid)
+        return [self._key_cookie(SHIORI_PENDING)]
 
     def _shiori_add(self, rid):
         """しおりで開いた画面が残した記録を、そのしおりの並びに足す（開いていない画面では何もしない）。"""
@@ -929,6 +1049,9 @@ class Handler(BaseHTTPRequestHandler):
             key = self._up_key() or secrets.token_urlsafe(18)
             media_review.claim(m.group(1), name, key)
             return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
+        m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
+        if m:
+            return self._kasane_ask(m.group(1))
         form = self._form()
         if form is None:
             # しおりの道（門の外）への断りは、当たる前の頁と同じ帯なしの形にする（頭の帯の道しるべから門の中へ行けると見せない・#631 の別の目の気づき）
@@ -963,6 +1086,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
+        m = re.fullmatch(rf"/toy/({SID})/sheet-shiori", self.path)
+        if m and m.group(1) in sources():
+            return self._sheet_shiori(m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
         if m and m.group(1) in sources():
             return self._json_post(m.group(1), m.group(2), form)
@@ -1198,6 +1324,79 @@ class Handler(BaseHTTPRequestHandler):
         ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
+    def _kasane_ask(self, sid):
+        """作業の頁の「聞く」（本人 11-08 539「…記録はここでは取らず、質問のための経路と割り切る。」・設計 grove の state/kasane-ask-20261108.md）。
+        本体は JSON（声の中身・声の型・手元の写真 3 枚まで・今の手順の番号）。声はこのサーバの中で字にし（omochae.asr_serve）、字と写真を
+        Claude に渡して（api.kasane）、答えの字だけを返す。making_log・talk_log・records・voice_text の置き場を呼ばない（手帖の聞く口 _ask は
+        質問の字を残す。本人 11-05 の決め。ここは 539 で残さない。2 つの口で残す決まりが違うので、口を分けた）。
+        失敗の記録は役と失敗の種類だけ（字は private で伏せる）。返事はどれも 1 つの形 {"text": 字, "from": どこから} で、頁はそのまま出して読む。"""
+        from api import ask, budget, kasane
+
+        from . import hmd
+
+        def reply(code, text, how, headers=()):
+            return self._send(code, json.dumps({"text": text, "from": how}, ensure_ascii=False), "application/json; charset=utf-8", headers)
+
+        if sid not in sources() or not hmd.available(sid):
+            return self._send(404, "見つかりません")
+        # 合言葉なしで開く公開の場では聞かない（本人 11-08「4 つとも推しのとおり。」の ①）。本体を読む前・数える前に断る
+        if getattr(self.server, "public_open", False):
+            return reply(403, hmd.ASK_PUBLIC, "public")
+        if not self._origin_ok():
+            return reply(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。", "origin")
+        if (who := writer(self.client_address[0], self.headers)) and (wait := self.server.ask_limit.wait(who)):
+            return reply(429, BUSY, "busy", [("Retry-After", str(wait))])
+        try:
+            length = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            return reply(411, BUSY, "size")
+        if not 0 < length <= ASK_BODY:
+            return reply(413, BUSY, "size")
+        if not self.server.ask_day.take():
+            return reply(429, BUSY, "busy")
+        # 鍵が無い場では、声を字にする前に断る（字にしても答えられないので、声を扱わない）
+        if not ask._key_present() and not getattr(self.server, "ask_client", None):
+            return reply(200, ask.NO_KEY, "no_key")
+        try:
+            got = json.loads(self.rfile.read(length))
+            step = int(got.get("step", 0))
+            form = ASK_VOICE_TYPES[got.get("type")]
+            voice = base64.b64decode(got.get("voice", ""), validate=True)
+            frames = [base64.b64decode(f, validate=True) for f in (got.get("frames") or [])]
+        except (ValueError, KeyError, TypeError, AttributeError):  # 字は読まずに捨てる（binascii.Error は ValueError の子）
+            return reply(422, BUSY, "form")
+        if not 0 < len(voice) <= ASK_VOICE_BYTES or len(frames) > kasane.MAX_FRAMES or any(not f.startswith(b"\xff\xd8\xff") or len(f) > ASK_FRAME_BYTES for f in frames):
+            return reply(422, BUSY, "form")
+        del got
+        from omochae import asr_serve
+
+        try:
+            question = self.server.listener.text(voice, form)
+        except asr_serve.Missing:
+            return reply(200, hmd.ASK_DOWN, "no_tool")
+        except asr_serve.Failed as e:
+            if e.kind == "decode":
+                return reply(200, hmd.ASK_NOHEARD, "noheard")
+            return reply(200, hmd.ASK_DOWN, e.kind)
+        finally:
+            del voice
+        if not question.strip():
+            return reply(200, hmd.ASK_NOHEARD, "noheard")
+        texts = kumitate_steps(sid)
+        line = ""
+        if 0 < step <= len(texts):
+            line = "\n".join(f"{name}: {k}. {texts[k - 1]}" for name, k in (("前の手順", step - 1), ("今の手順", step), ("次の手順", step + 1)) if 0 < k <= len(texts))
+        try:
+            text, how = kasane.answer(sid, question, frames, line, client=getattr(self.server, "ask_client", None))
+        except budget.BudgetStop as e:
+            text, how = f"今は AI に聞けません（{e.note}）", "stop"
+        except Exception as e:
+            failure_log.claude_failed(kasane.ROLE, "POST", self.path, e, private=(question,))
+            text, how = "今は AI に聞けません", "error"
+        finally:
+            del frames
+        return reply(200, text or hmd.ASK_NOHEARD, how)
+
     def _ask(self, sid, hid, question):
         """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。
         話す口と同じ入口の床を先に当てる（#87）。手帖は 1 回押した後は聞き続けるので、名乗りや連絡先の形の話し声も字になって届く。
@@ -1255,8 +1454,8 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
-            except BudgetStop as e:
-                text, how = f"今は AI に聞けません（{e.note}）", "stop"
+            except BudgetStop as e:  # 止めの字は頁の言葉に合わせて返す（_say）
+                text, how = self._say(f"今は AI に聞けません（{e.note}）"), "stop"
             except Exception:
                 text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
@@ -1270,7 +1469,8 @@ class Handler(BaseHTTPRequestHandler):
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
             self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
+            sp = self._shiori_bind(rid, form)  # 型紙と一緒に刷ったしおりの待ちに結ぶ（確かめの画面で外さなかった時だけ・設計 2.1 版の 2 節）
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid), *sp])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
@@ -1454,6 +1654,12 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
     server.print_limit = WriteLimit(limit=PRINT_LIMIT)
     server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
+    # 作業の頁の「聞く」の回数と、声を字にする常駐の作り手（作り手は作業の頁を開いた時に立て始め、使われない間は止まる・omochae.asr_serve）
+    from omochae import asr_serve
+
+    server.ask_limit = WriteLimit(limit=ASK_LIMIT)
+    server.ask_day = DayCount()
+    server.listener = asr_serve.Listener()
     # 上げた動画の声を、この機械の中で字にしてから消す（本人の言葉 11-08「全部残していいことにしたい。」・omochae.voice_text）。
     # 道具の確かめは立てる時に 1 度だけ（受けるたびに確かめると、上げるたびに数秒待たせる）。道具がある時だけ声を写す。
     # 72 時間の掃除は道具の有無に関わらず、作業列が立てた時と 1 時間ごとに回す

@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_card.py
+# commit: a6d622ed（回した時の HEAD）
+測れない: QR を読む道具（OpenCV か zbarimg）が無い（点の並びは segno の符号と同じ事を確かめた）
+Traceback (most recent call last):
+  File "tests/test_shiori_card.py", line 103, in <module>
+    assert "いちばん新しく刷った" not in whole.replace("\n", ""), "前のしおりも開く今の作りで、いちばん新しい物だけが使えると刷っている"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 前のしおりも開く今の作りで、いちばん新しい物だけが使えると刷っている
+rc=1

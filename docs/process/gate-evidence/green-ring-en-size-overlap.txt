@@ -1,0 +1,70 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_no_overlap.py
+# commit: 5d3cadb6（回した時の HEAD）
+/tmp/tmpmx2lt666/play/NDL-1187053-R0000005-L/.tmp-75lwnbon/H-C_v1.pdf
+/tmp/tmpmx2lt666/play/NDL-1187053-R0000014-R/.tmp-bg_krjyf/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_no_overlap.py", line 245, in <module>
+    assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 重なり・横のはみ出し（KNOWN の外）:
+pic・tenji・ja・えらぶ・iPad 横: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+pic・tenji・ja・えらぶ・iPad 横: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・tenji・ja・えらぶ・iPad 横 帯あり: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+pic・tenji・ja・えらぶ・iPad 横 帯あり: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・tenji・ja・えらぶ・iPad 縦: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・tenji・ja・えらぶ・PC 1440: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+pic・tenji・ja・えらぶ・PC 1440: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・tenji・ja・えらぶ・iPhone SE: 字×絵 li>a>span.nm「縞模様の小判形の物（鰹節か魚の玩具）」× li>a>img.pic「図」
+pic・tenji・easy・よむ・iPhone SE: 字×字 div>h2>ruby「絵」× h2>ruby>rt「のこ」
+pic・tenji・easy・えらぶ・iPad 横: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+pic・tenji・easy・えらぶ・iPad 横: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+pic・tenji・easy・えらぶ・iPad 横 帯あり: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+pic・tenji・easy・えらぶ・iPad 横 帯あり: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+pic・tenji・easy・えらぶ・iPad 縦: 字×絵 li>a>span.nm「（2つ」× li>a>img.pic「図」
+pic・tenji・easy・えらぶ・PC 1440: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+pic・tenji・easy・えらぶ・PC 1440: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+pic・tenji・easy・えらぶ・iPhone SE: 字×絵 li>a>span.nm「の」× li>a>img.pic「図」
+pic・tenji・en・えらぶ・iPad 横: 字×字 li>a>span.nm「Clay teapot (dobin)」× li>a>span.nm「Bare doll (crawling-」
+pic・tenji・en・えらぶ・iPad 横 帯あり: 字×字 li>a>span.nm「Clay teapot (dobin)」× li>a>span.nm「Bare doll (crawling-」
+pic・tenji・en・えらぶ・iPad 縦: 字×字 li>a>span.nm「Sake cup and cup sta」× li>a>span.nm「Drawstring pouch」
+pic・tenji・en・えらぶ・PC 1440: 字×字 li>a>span.nm「Clay teapot (dobin)」× li>a>span.nm「Bare doll (crawling-」
+pic・tenji・en・えらぶ・iPhone SE: 字×字 li>a>span.nm「Inu-hariko (dog char」× li>a>span.nm「Shrine (toy shrine b」
+nopic・tenji・ja・えらぶ・iPad 横: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+nopic・tenji・ja・えらぶ・iPad 横: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+nopic・tenji・ja・えらぶ・iPad 横 帯あり: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+nopic・tenji・ja・えらぶ・iPad 横 帯あり: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+nopic・tenji・ja・えらぶ・iPad 縦: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+nopic・tenji・ja・えらぶ・PC 1440: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+nopic・tenji・ja・えらぶ・PC 1440: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+nopic・tenji・ja・えらぶ・iPhone SE: 字×絵 li>a>span.nm「縞模様の小判形の物（鰹節か魚の玩具）」× li>a>img.pic「図」
+pic・zine・ja・えらぶ・iPad 横: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+pic・zine・ja・えらぶ・iPad 横: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・zine・ja・えらぶ・iPad 横 帯あり: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+pic・zine・ja・えらぶ・iPad 横 帯あり: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・zine・ja・えらぶ・iPad 縦: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・zine・ja・えらぶ・PC 1440: 字×字 li>a>span.nm「土瓶」× li>a>span.nm「裸人形（這子・御所人形の類）」
+pic・zine・ja・えらぶ・PC 1440: 字×絵 li>a>span.nm「縞模様の小判形の物（2つ目）」× li>a>img.pic「図」
+pic・zine・ja・えらぶ・iPhone SE: 字×絵 li>a>span.nm「縞模様の小判形の物（鰹節か魚の玩具）」× li>a>img.pic「図」
+pic・zine・easy・よむ・iPhone SE: 字×字 div>h2>ruby「絵」× h2>ruby>rt「のこ」
+pic・zine・easy・えらぶ・iPad 横: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+pic・zine・easy・えらぶ・iPad 横: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+pic・zine・easy・えらぶ・iPad 横 帯あり: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+pic・zine・easy・えらぶ・iPad 横 帯あり: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+pic・zine・easy・えらぶ・iPad 縦: 字×絵 li>a>span.nm「（2つ」× li>a>img.pic「図」
+pic・zine・easy・えらぶ・PC 1440: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+pic・zine・easy・えらぶ・PC 1440: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+pic・zine・easy・えらぶ・iPhone SE: 字×絵 li>a>span.nm「の」× li>a>img.pic「図」
+pic・zine・en・えらぶ・iPad 横: 字×字 li>a>span.nm「Clay teapot (dobin)」× li>a>span.nm「Bare doll (crawling-」
+pic・zine・en・えらぶ・iPad 横 帯あり: 字×字 li>a>span.nm「Clay teapot (dobin)」× li>a>span.nm「Bare doll (crawling-」
+pic・zine・en・えらぶ・iPad 縦: 字×字 li>a>span.nm「Sake cup and cup sta」× li>a>span.nm「Drawstring pouch」
+pic・zine・en・えらぶ・PC 1440: 字×字 li>a>span.nm「Clay teapot (dobin)」× li>a>span.nm「Bare doll (crawling-」
+pic・zine・en・えらぶ・iPhone SE: 字×字 li>a>span.nm「Inu-hariko (dog char」× li>a>span.nm「Shrine (toy shrine b」
+nopic・tenji・easy・よむ・iPhone SE: 字×字 div>h2>ruby「絵」× h2>ruby>rt「のこ」
+nopic・tenji・easy・えらぶ・iPad 横: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+nopic・tenji・easy・えらぶ・iPad 横: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+nopic・tenji・easy・えらぶ・iPad 横 帯あり: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+nopic・tenji・easy・えらぶ・iPad 横 帯あり: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+nopic・tenji・easy・えらぶ・iPad 縦: 字×絵 li>a>span.nm「（2つ」× li>a>img.pic「図」
+nopic・tenji・easy・えらぶ・PC 1440: 字×字 a>span.nm>ruby「土瓶」× li>a>span.nm「）」
+nopic・tenji・easy・えらぶ・PC 1440: 字×絵 li>a>span.nm「）」× li>a>img.pic「図」
+rc=1

@@ -78,8 +78,9 @@ assert "R-0001" in get(f"/toy/{G}/techo/kiroku")[1] and "<p>折るのは楽し�
 # 説明の前は「説明を待つ報告」。説明の後は「次の版を待つ報告」（輪の節は作る側の様子の頁。本人の答え Q5）
 loop_page = get(f"/loop/{G}")[1]
 assert "説明を待つ報告 1 件" in loop_page and "次の版を待つ報告" not in loop_page
-# 待つ報告から、手帖の記録の頁の記録の並びへ行ける（前は玩具の頁の記録の札 #R-0001 へ。札は玩具の頁から外した・本人の言葉 11-08）
-assert f'href="/toy/{G}/techo/kiroku#mine"' in loop_page and f'href="/toy/{G}#R-0001"' not in loop_page, "待つ報告から記録の頁へ行けない"
+# 待つ報告から、手帖の記録の頁のその記録の札（id=記録の番号）へ行ける（前は玩具の頁の記録の札 #R-0001 へ。札は玩具の頁から外した・本人の言葉 11-08。
+# #657 では記録の並びの頭 #mine へ着き、どの札か探す事になったので、札の錨へ向けた・統括の割り振り 11-08）
+assert f'href="/toy/{G}/techo/kiroku#R-0001"' in loop_page and f'href="/toy/{G}#R-0001"' not in loop_page and "kiroku#mine" not in loop_page, "待つ報告から記録の札へ行けない"
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る力が足りない", "next_idea": "折りを減らす", "by": "作った人"})[0] in (200, 303)
 loop_page = get(f"/loop/{G}")[1]
 assert "次の版を待つ報告 1 件" in loop_page and "報告から直した版はまだありません" in loop_page
@@ -117,12 +118,16 @@ for path in ("/about", "/toys", "/", f"/toy/{G}"):
 
 # 検品の指摘の再発の見張り: 窓は刷ってある版だけを出し、版を言わなければ一番新しい版
 page = get(f"/toy/{G}")[1]
-assert f'see={GS}&kind=sheet&v=2#win" aria-current' in page and f'see={GS}&kind=sheet&v=1#win" aria-current' not in page, "仮説の札は一番新しい版へ"
+# 窓の「仮説」「型紙」の切り替えの札は外した（本人の言葉 11-08「型紙の窓のところにある仮説・型紙のボタンは要らない。」）。前は仮説の札の行き先が
+# 一番新しい版かを見ていた。今は、版を言わずに開いた窓の紙そのものが一番新しい版（版 2 の絵・版の札の太字が版 2・版 1 は押せる道）かを見る
+ban = lambda n: hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), n)
+w0 = page.split('id="win"')[1].split('id="kiroku"')[0]
+assert f'<img src="/sheet/{G}/{GS}_v2.png"' in w0 and f"<b>{ban(2)}</b>" in w0 and f'see={GS}&kind=sheet&v=1#win">{ban(1)}</a>' in w0, "窓は一番新しい版"
+assert '<div class="tabs">' not in w0 and f'aria-current="true">{hypotheses.SHOWN}<' not in w0, "窓に切り替えの札が残った"
 (out / f"{GS}_v1.pdf").unlink()
 (out / f"{GS}_v1.png").unlink()
 only2 = get(f"/toy/{G}")[1]
-# 組の番号の呼び方（#513 の (a)）。版 1 は「版 14」で、型紙の窓の頭の輪の図の真ん中（型紙の版）と同じ字になるので、版の札は札の道（v=1）で見分ける
-ban = lambda n: hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), n)
+# 組の番号の呼び方（#513 の (a)）。版 1 は「版 14」で、札の脇の版の札（型紙の版）と同じ字になるので、版の札は札の道（v=1）で見分ける
 assert f"/sheet/{G}/{GS}_v1.png" not in only2 and f"<b>{ban(2)}</b>" in only2 and f'v=1#win">{ban(1)}</a>' not in only2.split('id="win"')[1].split('id="kiroku"')[0], "刷っていない版を出さない"
 assert get(f"/toy/{G}?see={GS}&kind=sheet&v=1")[0] == 200 and f'<img src="/sheet/{G}/{GS}_v2.png"' in get(f"/toy/{G}?see={GS}&kind=sheet&v=1")[1], "無い版を言われても一番新しい版へ"
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303  # 元に戻す（版 2 を刷り直す。版 1 は無いまま）

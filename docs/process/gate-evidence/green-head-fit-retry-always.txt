@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python /tmp/fitdrop/drop.py always tests/test_toy_head_fit.py
+# commit: 07471476（回した時の HEAD）
+AssertionError: ('Chrome が答えなかった束が、2 回回し直しても残る（測れない頁を通さない）', [('ja-1024x768', 0, 83)])
+試験の rc=1・落とした束を呼んだ回数=3
+見張り: 通る
+rc=0

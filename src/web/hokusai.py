@@ -77,6 +77,9 @@ def flip_section():
 # 留まる箱（100svh）を超えた。中寄せのままはみ出すので、絵が節の上の端より 115px 上へ出て前の節の出典の字に重なり、字の終わりは画面の下に切れていた
 # （11-08 の見回り・tests/test_no_overlap.py）。絵の箱の行を minmax(0,56svh) にし、字が長い時は絵の箱の方が縮む（字は切らない）。
 # 見出しと出典の行の高さも狭い幅だけ詰め、絵に残る高さを増やす（幅 375 の英語で絵の箱 117px → 143px）
+# 見出しにルビのある時（やさしい日本語）は 1.9 に戻す。1.45 では、幅 375 で 2 行目のルビ（「のこ」）が 1 行目の字に重なった（#696 でルビの KNOWN を外した後の試験）。
+# 幅 336px 以下の英語は、字だけで留まる箱（100svh）を超え（320×568 で 530px）、絵の箱が 2px につぶれて、留まった時に字の 10 行が画面の下へ出た
+# （#687 の別の目の測り）。そこだけ留めずに流す（動きを減らす設定の形と同じ）。絵の箱は前の 56svh に戻し、下へ送ると 1 人ずつ替わる動きはそのまま
 SCROLL_STYLE = """
 .zn-hk{position:relative;height:420vh;border-top:1px solid #1f1b16}
 .zn-hk .pin{position:sticky;top:0;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5vw;align-items:center;padding:0 7vw}
@@ -87,7 +90,9 @@ SCROLL_STYLE = """
 .zn-hk h2{font-size:clamp(24px,2.6vw,36px);font-weight:300;letter-spacing:.25em;margin:0 0 18px}
 .zn-hk .cap{font-size:12px;letter-spacing:.08em;line-height:1.9;color:#9a8e76}
 @media (max-width:760px){.zn-hk .pin{grid-template-columns:1fr;grid-template-rows:minmax(0,56svh) auto;align-content:center;padding:12px 7vw}
- .zn-hk .stack{height:auto;align-self:stretch}.zn-hk h2{line-height:1.45;margin:0 0 12px}.zn-hk .cap{line-height:1.7}}
+ .zn-hk .stack{height:auto;align-self:stretch}.zn-hk h2{line-height:1.45;margin:0 0 12px}.zn-hk h2:has(ruby){line-height:1.9}.zn-hk .cap{line-height:1.7}}
+@media (max-width:336px){html[lang=en] .zn-hk{height:auto}html[lang=en] .zn-hk .pin{position:static;height:auto;grid-template-rows:auto;padding:8vh 7vw}
+ html[lang=en] .zn-hk .stack{height:56svh}}
 @media (prefers-reduced-motion:reduce){.zn-hk{height:auto}.zn-hk .pin{position:static;height:auto;padding:12vh 7vw}}
 """
 # 下へ送ると 1 人ずつ入れ替わる。送った量で決めるので、止まれば止まる。動きを減らす設定の人には最初の 1 人だけを出す。

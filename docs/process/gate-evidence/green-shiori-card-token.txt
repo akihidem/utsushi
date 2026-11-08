@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_card.py
+# commit: 2bb3b25b（回した時の HEAD）
+測れない: QR を読む道具（OpenCV か zbarimg）が無い（点の並びは segno の符号と同じ事を確かめた）
+ok: しおりは表と裏の 2 頁・QR は決まった番地/s/<印>・印の字を刷らず順の印は裏だけ・型紙の頁は替えず・PDF の情報は題だけ
+rc=0

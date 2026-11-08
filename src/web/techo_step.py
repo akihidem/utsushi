@@ -71,7 +71,7 @@ KEY_ICONS = {
 }
 MIC = _ICON.format('<rect x="17" y="6" width="14" height="24" rx="7"/><path d="M10 22a14 14 0 0 0 28 0M24 36v6"/>')
 CLOSE = _ICON.format('<path d="M12 12l24 24M36 12L12 36"/>')
-# 重ねる頁への印（字の無い形・読み上げは本人が採った口の名 hmd.CAM_LINK）。とって（動画）の印と見分けるため、写真機の形にする
+# 作業の頁への印（字の無い形・読み上げは本人が採った口の名 hmd.CAM_LINK。11-08 夕から「カメラで聞く」・前は「カメラに重ねる」）。とって（動画）の印と見分けるため、写真機の形にする
 KASANE = _ICON.format('<rect x="6" y="14" width="36" height="25" rx="3"/><circle cx="24" cy="26.5" r="7"/><path d="M17 14l3-5h8l3 5"/>')
 SEND = _ICON.format('<path d="M10 24h26M26 12l12 12-12 12"/>')
 PENCIL = _ICON.format('<path d="M10 38l2-9 19-19 7 7-19 19zM27 14l7 7"/>')
@@ -602,7 +602,7 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<div class="bar" id="bar" role="progressbar" aria-valuemin="1" aria-valuemax="{total}" aria-valuenow="{min(n, total)}"><span style="width:{width}%"></span></div>'
             f'<button type="button" class="mic" id="mic" aria-pressed="false" aria-label="話して聞く（もう一度押すと止まる）" data-on="step henji end kekka" hidden>{MIC}</button>'
             f'<a class="close" id="close" href="/toy/{esc(sid)}" aria-label="閉じる">{CLOSE}</a>'
-            # 重ねる頁への道（本人の答え 11-08「どこかに道を戻す。」）。前は最初の画面の「はじめる」の下の字の道だったが、のこせる の 1 行と入れ替えた（#612）。
+            # 作業の頁への道（本人の答え 11-08「どこかに道を戻す。」）。前は最初の画面の「はじめる」の下の字の道だったが、のこせる の 1 行と入れ替えた（#612）。
             # 作りながら使う所なので手順の画面に置く。手順の画面の押す所は もどる・つぎ・こまった の 3 つまで（1 手 1 画面の決まり・test_techo_step）なので、
             # 閉じる印・原画の小さな絵と同じ、字の無い形の印を上の帯に並べる（読み上げは今の口の名 hmd.CAM_LINK・新しい字なし）。組み立ての書き方がある玩具だけ
             # 印の下に見える字で同じ口の名を添える（本人の答え 11-08「印に「カメラに重ねる」の字を足す。」・前からの字）。title にも同じ字（統括の決め 11-08）。

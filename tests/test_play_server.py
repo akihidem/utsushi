@@ -9,7 +9,7 @@ import urllib.request
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 
-from omochae import hypotheses  # noqa: E402
+from omochae import hypotheses, records  # noqa: E402
 from omochae.marks import without_premise  # noqa: E402
 from web.play_server import out_dir, serve  # noqa: E402
 
@@ -93,9 +93,10 @@ assert body.count('<div class="plate">') == 1 and not re.search(r"仮説 [A-Z]",
 # 刷る。試した後の紙は記録の前は出さず、URL を知っていても渡さない
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 body = get(f"/toy/{G}")[1].decode()
-# 字のリンクは画面の窓へ（本人の指示 11-05「型紙はクリックすると表示される形に」）。PDF は窓の押し釦。試した後の紙はどちらも出ない
-# 刷るのは型紙だけ（本人の決まり 11-06）。手順の紙の札は出ない
-assert f"see={GS}&kind=sheet&v=1#win" in body and "kind=tejun" not in body and "kind=after" not in body and "_tejun.pdf" not in body
+# 型紙は画面の窓に出る（本人の指示 11-05「型紙はクリックすると表示される形に」）。PDF は窓の押し釦。試した後の紙はどちらも出ない
+# 刷るのは型紙だけ（本人の決まり 11-06）。手順の紙の札は出ない。窓の「仮説」「型紙」の切り替えの札（see=…&kind=sheet の字のリンク）は外した
+# （本人の言葉 11-08「型紙の窓のところにある仮説・型紙のボタンは要らない。」）ので、窓に紙の絵が出る事で見る
+assert f'<img src="/sheet/{G}/{GS}_v1.png"' in body and '<div class="tabs">' not in body and "kind=tejun" not in body and "kind=after" not in body and "_tejun.pdf" not in body
 assert f"{GS}_v1.pdf" in body and f"{GS}_v1_after.pdf" not in body
 code, pdf = get(f"/sheet/{G}/{GS}_v1.pdf")
 assert code == 200 and pdf[:4] == b"%PDF"
@@ -112,8 +113,10 @@ assert post(f"/toy/{G}/print", {"hypothesis": "H-Z"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "成功"})[0] == 422
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "opened_deg": "abc"})[0] == 422
 code, at = where(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "opened_deg": "40", "opener": "紙の力", "stuck": "3 枚目の折り目"})
-# 今残した記録の札がある所（手帖の記録の頁の記録の並び #mine）に着く（#121。つくるの頁から記録の札を外した 11-08 から、戻り先は手帖の記録の頁）
-assert code == 303 and at.endswith("#mine") and f"/toy/{G}/techo/kiroku" in at and "fresh=1" in at, at
+# 今残した記録の札に着く（#121。つくるの頁から記録の札を外した 11-08 から、戻り先は手帖の記録の頁。#657 では並びの頭 #mine だったが、
+# その札の錨 #R-… へ向けた・統括の割り振り 11-08）
+rid_now = records.all_records(G)[-1]["id"]
+assert code == 303 and at.endswith(f"#{rid_now}") and f"/toy/{G}/techo/kiroku" in at and "fresh=1" in at, at
 body = get(f"/toy/{G}/techo/kiroku")[1].decode()
 # 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
 assert f"{GS}_v1_after.pdf" not in body and get(f"/sheet/{G}/{GS}_v1_after.pdf")[0] == 200

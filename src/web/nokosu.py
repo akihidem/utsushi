@@ -38,6 +38,8 @@ from omochae import talk_log
 from . import clips, hanasu, naoru
 from .skin import esc
 
+# 型紙と一緒に刷ったしおりに、この記録を入れる 1 行（新しい字・本人の確かめ待ち・設計 grove の state/shiori-in-sheet-20261108.md の 6 節 7″）
+SHIORI_LINE = "この記録を、さっき刷ったしおりに入れます。"
 RESULT_HEAD = "どうだった？"
 IMPRESSION_HEAD = "感想"
 MEDIA_HEAD = "写真と動画"
@@ -87,6 +89,16 @@ const showPicked = () => {
 };
 files.onchange = () => { const all = [...files.files]; chosen = all.filter((x) => x.size <= maxBytes); big = chosen.length < all.length; showPicked(); };
 const result = () => (f.querySelector('input[name=result]:checked') || {}).value || '';
+// 型紙と一緒に刷ったしおり（設計 2.1 版の 2 節）: サーバが待ちを見つけた時だけ 1 行が頁にあり、さらに、この画面の今の回の印が、刷った時の控え
+// （utsushi-shiori-wait）と同じ時だけ出す（1 台を順に使う形で、次の人が玩具の頁から作り始めたら回が替わって出ない）。外したら結ばない
+const runOf = () => { try { const r = JSON.parse(sessionStorage.getItem('utsushi-run:' + sid) || 'null'); return r && r.id ? r.id : ''; } catch (e) { return ''; } };
+let shioriOn = false;
+const sw = $('nk-c-shiori');
+if (sw) {
+  try { shioriOn = !!runOf() && sessionStorage.getItem('utsushi-shiori-wait:' + sid) === runOf(); } catch (e) { shioriOn = false; }
+  sw.hidden = !shioriOn;
+  $('nk-shiori-x').onclick = () => { shioriOn = false; sw.hidden = true; };
+}
 const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: new URLSearchParams({ ...data, who: sessionStorage.getItem('utsushi-who') || '' }) });
 // 「のこす」: 何も送らず、確かめの画面に替える（402）
@@ -175,7 +187,9 @@ go.onclick = async () => {
       const tj = await t.json().catch(() => ({}));
       if (!tj.kept) { chk.hidden = true; f.hidden = false; st.textContent = tj.why || '残せませんでした'; return; }
     }
-    const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result: result(), impression: $('nk-impression').value.trim() });
+    // しおりの 1 行を外さなかった時だけ、結ぶ印と今の回の印を添える（サーバが待ちの cookie・who・回・3 時間を照らしてから結ぶ）
+    const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result: result(), impression: $('nk-impression').value.trim(), ...(shioriOn ? { shiori: '1', run: runOf() } : {}) });
+    try { sessionStorage.removeItem('utsushi-shiori-wait:' + sid); } catch (e) {}
     const j = await r.json().catch(() => ({}));
     if (!j.id) { cs.textContent = j.error || '残せませんでした'; return; }
     saved = true;
@@ -195,7 +209,7 @@ go.onclick = async () => {
 })()</script>"""
 
 
-def entry(sid, paper, results):
+def entry(sid, paper, results, shiori_wait=False):
     """記入の節と確かめの画面（台本で動く形）と、台本の無い画面の素のフォーム。paper は (紙の印, 手順の数)。
     results は結果の札の字（records.results_for）。頁に 1 回だけ置く。"""
     from . import loop_figure, toy  # 循環を避けて、ここで読む（techo_site と同じ）
@@ -232,6 +246,8 @@ def entry(sid, paper, results):
              f'<p class="meta">{esc(IMPRESSION_HEAD)}</p><p id="nk-c-impression"></p>'
              '<div class="nk-thumbs" id="nk-c-thumbs"></div></div>'
              f'<div class="nk-clips" id="nk-c-clips" hidden><p class="meta">{esc(clips.HEAD)}</p><ul></ul><p class="meta">{esc(clips.STORE)}</p></div>'
+             # しおりの 1 行は待ちがある時だけ頁に置く（台本が今の回と照らしてから見せる）。横の釦は今の字「外す」
+             + (f'<p id="nk-c-shiori" hidden>{esc(SHIORI_LINE)} <button type="button" id="nk-shiori-x">{esc(clips.REMOVE)}</button></p>' if shiori_wait else '') +
              f'<p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}'
              + (f'<p>{esc(naoru.LINES[0])}</p>' if naoru.LINES else "") +
              f'<p><button type="button" class="go" id="nk-go">{esc(APPROVE)}</button> <button type="button" id="nk-fix">{esc(FIX)}</button></p>'

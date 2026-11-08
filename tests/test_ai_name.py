@@ -96,7 +96,9 @@ assert "この場所での表示だけ（AI（Claude）には渡しません）"
 # 3. 札と状態の字は「AI」のまま（子どもが触る画面。本人の決定）
 toy = visible(get(f"/toy/{G}"))
 assert "AI が「こうかな？」と考えた、ためしの案（仮説）です" in toy and "AI（Claude）が「こうかな" not in toy
-assert "仮説は、AI が考えたためしの案です" in toy
+# 考えを話す の口の頭の字「仮説は、AI が考えたためしの案です。…」は、口ごと外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）。
+# 仮説の段の うつしの輪 の文（のこす の頁と同じ字）が「AI」のまま言う
+assert "仮説は、AI が考えたためしの案です" not in toy and "型紙は、AI が考えた ためしの案（仮説）です。" in toy
 # えらぶ の頭の断りの段は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）。見張りも行き先へ移す
 assert "型紙は正解ではなく、AI が考えた仮説です" in visible(get("/about"))
 assert "It is a guess made by an AI." in visible(get(f"/en/toy/{G}"))

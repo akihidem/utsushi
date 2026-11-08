@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_erabu_names.py
+# commit: b1261495（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_erabu_names.py", line 102, in <module>
+    assert not rec["bad"], (where, f"名の札が崩れる（{rec['nbad']} 件）", rec["bad"])
+           ^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'ja-768x1024'), '名の札が崩れる（33 件）', ['金屏風（ミニ屏風）: 札の a の title が全名でない「」', '縞模様の小判形の物（鰹節か魚の玩具）: 札の a の title が全名でない「」', '縞模様の小判形の物（2つ目）: 札の a の title が全名でない「」', '幟（箱入りの鯉のぼり）: 札の a の title が全名でない「」', 'お宮（社殿の玩具）: 札の a の title が全名でない「」', '蓑を着た人形（網を持つ）: 札の a の title が全名でない「」'])
+rc=1

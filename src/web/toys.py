@@ -150,7 +150,9 @@ def card(sid, made_url=None):
 
         pic = (f'<span class="made-wrap">{pic}<span class="made-corner"><img src="{esc(made_url)}" alt="{esc(PHOTO)}の写真" '
                'loading="lazy" decoding="async"></span></span>')
-    return f'<li{big}><a href="/toy/{esc(sid)}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
+    # 札の a の title に全名（名が … で切れる時に、全名を見る道。統括の頼み 11-08: 英語は 33 のうち 24〜31 が切れる）。字は名の字そのもので、新しい字は無い。
+    # 英語とやさしい日本語の頁では、訳の出口（web.i18n の ATTR）が title も名と同じ字に替える
+    return f'<li{big}><a href="/toy/{esc(sid)}" title="{esc(data["toy"])}">{pic}<span class="nm">{esc(data["toy"])}</span></a>{more}</li>'
 
 
 def paper_only_sids(sids):
