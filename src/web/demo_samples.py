@@ -1,5 +1,8 @@
 """デモ用の見本（本人の指示、11-04「デモ用の作り物と分かる形で」サイトに出す。11-05「過去の人のギャラリーや職人の声なども、デモなので想定の内容で作っておく」）。
-上げた物と職人の言葉の見本（寄せられた声は、11-07 夜から見本でなく参加者の実際の感想。下の VOICES の注）。
+寄せられた声（ワークショップの参加者の感想と、ワークショップの場で話された言葉）と、職人の言葉（型紙レビュー 10 本の言葉）。どちらも見本でなく本物。
+職人の言葉の見本（見本の職人 甲・乙・丙）は、11-08 に外した（本人の言葉「改善のために撮影し上た型紙レビュー10本は職人の言葉です。見本と取り替えて、もちよる、に掲載してください。」）。
+上げた物の見本（UPLOADS・線画の作り物 8 件）は、11-08 に外した（本人の言葉「見本の記録をワークショップのデータで作成して欲しい。」）。
+玩具の頁には、代わりにワークショップの感想と話された言葉を、序の頁の寄せられた声と同じ札で出す（workshop_for）。
 
 判断の芯:
 - 本物の記録と混ぜない。見本は記録の置き場（OMOCHAE_DATA）に書かず、このファイルの定数だけから描く。台帳にも数えない。
@@ -8,7 +11,9 @@
 - 本番では消せる。OMOCHAE_SAMPLES=0 で出さない。既定で出すのは、11-07 の撮影と見学者の一周で空の頁を見せないため。
 """
 import html
+import json
 import os
+import pathlib
 
 NOTE = "デモ用の作り物です。実在の人の投稿・言葉・写真ではありません。"
 
@@ -21,53 +26,7 @@ def esc(s):
     return html.escape(str(s))
 
 
-# 上げた物の見本の絵。写真に見えない線画にして、本物の上げた物と取り違えないようにする。地と線は皮の色で描く。固定の色だと、黒のジンで白い箱が頁から浮いた（#139）。
-def _svg(label, inner):
-    return f'<svg viewBox="0 0 160 110" role="img" aria-label="見本の線画（{label}）"><rect width="160" height="110" fill="var(--soft)"/>{inner}</svg>'
 
-
-FAN = _svg("扇", '<path d="M80 92 L28 40 A74 74 0 0 1 132 40 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>'
-                 '<path d="M80 92 L54 30 M80 92 L80 20 M80 92 L106 30" stroke="var(--accent)" stroke-width="1.5"/>'
-                 '<rect x="66" y="92" width="28" height="12" fill="none" stroke="var(--accent)" stroke-width="2"/>')
-TORA = _svg("首振り", '<rect x="40" y="52" width="80" height="34" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"/>'
-                     '<circle cx="42" cy="44" r="18" fill="none" stroke="var(--accent)" stroke-width="2"/>'
-                     '<path d="M50 86v14M110 86v14M120 60q18 -6 22 -22" fill="none" stroke="var(--accent)" stroke-width="2"/>')
-KAZAGURUMA = _svg("風車", '<path d="M80 50 L80 18 L100 34 Z M80 50 L112 50 L96 70 Z M80 50 L80 82 L60 66 Z M80 50 L48 50 L64 30 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>'
-                          '<circle cx="80" cy="50" r="3" fill="var(--accent)"/><path d="M80 53v47" stroke="var(--accent)" stroke-width="2"/>')
-DENDEN = _svg("でんでん太鼓", '<circle cx="80" cy="44" r="24" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M80 68v36" stroke="var(--accent)" stroke-width="2"/>'
-                             '<path d="M56 44 Q42 54 38 70 M104 44 Q118 54 122 70" fill="none" stroke="var(--accent)" stroke-width="1.5"/>'
-                             '<circle cx="38" cy="70" r="4" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="122" cy="70" r="4" fill="none" stroke="var(--accent)" stroke-width="2"/>')
-OKIAGARI = _svg("起き上がり", '<path d="M80 20 a30 30 0 0 1 0 60 a30 30 0 0 1 0 -60" fill="none" stroke="var(--accent)" stroke-width="2"/>'
-                              '<path d="M52 72 a28 14 0 0 0 56 0" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="80" cy="36" r="10" fill="none" stroke="var(--accent)" stroke-width="1.5"/>'
-                              '<path d="M30 92 h100" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3"/>')
-
-# 上げた物の見本。見た事の言葉は各雛形の RESULTS の中から選ぶ（本物の記録と同じ言葉で並ぶ形を見せるため）:
-# 御来迎 slider_fan（動いた・動かない・わからない）、虎 pivot_counterweight（揺れた・揺れない・わからない）、風車 spin_toy（回った・回らない・わからない）、
-# でんでん太鼓 den_den（鳴った・鳴らない・わからない）、起き上がり小法師 balance_toy（戻った・戻らない・わからない）。並びは番号の順（記録の順の見本）。
-UPLOADS = [
-    {"no": 1, "toy": "御来迎", "sheet": "A", "result": "動いた", "note": "筒を先に丸めたら、すっと立った", "pic": FAN},
-    {"no": 2, "toy": "御来迎", "sheet": "C", "result": "動かない", "note": "蛇腹が開いたまま戻らない。糸を短くしてみたい", "pic": FAN},
-    {"no": 3, "toy": "張子の首振り虎", "sheet": "A", "result": "揺れた", "note": "首の重りを一枚足したら長く揺れた", "pic": TORA},
-    {"no": 4, "toy": "風車", "sheet": "A", "result": "回った", "note": "息で回った。羽を少し反らせたら止まりにくい", "pic": KAZAGURUMA},
-    {"no": 5, "toy": "でんでん太鼓", "sheet": "B", "result": "鳴らない", "note": "玉が皮に届かない。糸をあと 1cm 長くする", "pic": DENDEN},
-    {"no": 6, "toy": "起き上がり小法師（頭巾姿）", "sheet": "A", "result": "戻った", "note": "底の重りを真ん中に置くと、ゆっくり戻る", "pic": OKIAGARI},
-    {"no": 7, "toy": "御来迎", "sheet": "A", "result": "わからない", "note": "開いたけれど、押した手の力か紙の力か分からない", "pic": FAN},
-    {"no": 8, "toy": "張子の首振り虎", "sheet": "B", "result": "揺れない", "note": "首が胴に当たる。口を 2mm 広げて次の版にする", "pic": TORA},
-]
-
-# フォーム（持ち寄りの入口、J-021）に寄せられる情報提供の見本。項目は form_import が受ける形（種類・題・本文・権利）に合わせる。
-# slot のある物は「職人の言葉」の枠に入る（枠は 3 つ、本人の設計 11-04）。slot の無い物は「寄せられた声」に並ぶ。
-CONTRIBUTIONS = [
-    {"who": "見本の職人 甲（架空）", "slot": "紙と折りの職人", "kind": "作り方の知恵",
-     "title": "筒の糊しろは内側へ", "text": "糊しろを内に折り込むと、外から継ぎ目が見えず、丸めた時の段差も出にくい。",
-     "rights": "自分の言葉（公開してよい）"},
-    {"who": "見本の職人 乙（架空）", "slot": "からくりの職人", "kind": "仕掛けの見方",
-     "title": "首振りは重さの釣り合い", "text": "首の付け根を少し後ろにずらすと、揺れが長く続く。重りより支点の位置が先。",
-     "rights": "自分の言葉（公開してよい）"},
-    {"who": "見本の作り手 丙（架空）", "slot": "郷土玩具の作り手", "kind": "写真の添付",
-     "title": "手元の古い扇の玩具", "text": "家にある古い玩具の写真を添えます（見本なので写真はありません）。",
-     "rights": "権利の確かめ待ち（確かめるまで載せない）"},
-]
 # 寄せられた声は、見本でなく、11 月のワークショップの参加者の実際の感想（本人の見直しの ⑧「ワークショップのアンケート記録をもとにコメントも反映させる。」と
 # 本人の言葉 11-07 夜「とりあえず感想は全て反映させたい。その上で微妙そうなのを聞いて」）。アンケートの答え 18 件のうち、本人が見送ると決めた 1 件
 # （うきにんぎょの回答・11-07 夜）を除く 17 件を、1 件を 1 枚の札にする。
@@ -93,6 +52,9 @@ VOICES = [
     {"toy": "でんでん太鼓", "fields": [("うごいたか", "良く動いた"), ("どこがへんか", "紙の棒の長さが変だった"), ("よかった所", "しっかりと遊べる所"), ("型紙への注文", "太鼓を接着する所が異常にやりずらいから、そこをもう少し直して欲しい"), ("楽しかったか", "大変だったから、あんまり面白く無かった"), ("ひとこと", "作りずらいことを除けば、すごい良いキットだと思った")]},
     {"toy": "御来迎", "fields": [("うごいたか", "できました"), ("どこがへんか", "扇の部分を広げたとき、折り目の幅が少し不均等になり、左右の形がきれいにそろわないところがありました。"), ("よかった所", "側面を押し上げると、扇が大きく広がり、実際に動く仕組みを作れたところがよかったです。"), ("工夫", "左右のつまみを持ち、力を入れすぎずにゆっくり押し上げることで、扇がスムーズに広がるように工夫しました。"), ("型紙への注文", "扇の折り目の位置や間隔をもっと分かりやすくしてほしいです。また、部品を通す穴の位置や大きさを正確に示すと、組み立てやすくなると思います。"), ("楽しかったか", "はい。自分で部品を組み立てて、実際に扇が広がる仕組みを確認できたので楽しかったです。"), ("ひとこと", "難しい部分もありましたが、最後まで完成させることができてよかったです。")]}
 ]
+# 感想の「作ったおもちゃ」（回答者の書いた名）を、サイトの玩具の印に結ぶ表（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。
+# 玩具の頁ともちよる（ギャラリー）が同じ表を読むので、data/workshop_voice_toys.json に置く（結び方の根拠と、入れていない 7 件のわけも、その note に書いた）
+VOICE_TOYS = json.loads((pathlib.Path(__file__).resolve().parents[2] / "data/workshop_voice_toys.json").read_text(encoding="utf-8"))["toys"]
 VOICES_WHO = "{0} 月のワークショップの参加者".format(11)
 VOICES_NOTE = "参加者の感想から抜き出した（名前は外した）"
 # 話された言葉（本人の言葉 11-07 夜: 62 分の音源から拾った言葉は「載せてよい」、作る前の型紙のレビューの言葉は「話した人に了承を得ているので大丈夫です」）。
@@ -103,6 +65,9 @@ VOICES_NOTE = "参加者の感想から抜き出した（名前は外した）"
 # where は、どの録画から拾ったか（ワークショップの場の録音か、作る前の型紙のレビューか）の控えで、頁には出さない。並びは録画の順（順位・点は付けない。J-025）。
 # 札の 11 は数の印に替えて訳の表を引く（訳の表の鍵は数を {n} で持つ）
 SPOKEN_WHO = "{0} 月のワークショップで話された言葉".format(11)
+# 型紙レビュー 10 本の言葉（where が review の 22 か所）は、職人の言葉（本人の言葉 11-08「改善のために撮影し上た型紙レビュー10本は職人の言葉です。」）。
+# 寄せられた声には出さず（同じ言葉を 2 か所に出さない）、職人の言葉の節と、玩具の頁の札（札の字は節の見出しと同じ「職人の言葉」）に出す
+CRAFT_WHO = "職人の言葉"
 SPOKEN_NOTE = "話された言葉は、録画の声をこの機械の中で字にして抜き出しました（話した人の名前は出しません）。"
 SPOKEN = [
     {"where": "workshop", "toy": "御来迎", "text": "御来迎も内筒がめっちゃでかくなった。"},
@@ -138,36 +103,19 @@ SPOKEN = [
 ]
 
 
-def badge():
-    return '<span class="sample">見本</span>'
-
-
-def uploads_html():
-    if not enabled():
-        return ""
-    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["toy"])}　{esc(u["sheet"])} の紙　{esc(u["result"])}</p>'
-                    f'<div class="row">{u["pic"]}</div><p>{esc(u["note"])}</p></div>' for u in UPLOADS)
-    return f'<div class="samples"><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
-
-
-def uploads_for(toy):
-    """玩具の頁に出す、その玩具の見本の記録（本人の指摘 11-05「制作した記録とおもちゃのページが関連してない。同じページで見れると良い」）。
-    見本の無い玩具と、見本を切った時は空。札と架空である事の一文は、ギャラリーと同じに付ける。"""
-    mine = [u for u in UPLOADS if u["toy"] == toy] if enabled() else []
-    if not mine:
-        return ""
-    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["sheet"])} の紙　{esc(u["result"])}</p>'
-                    f'<div class="row">{u["pic"]}</div><p>{esc(u["note"])}</p></div>' for u in mine)
-    return f'<div class="samples"><h3>見本の記録</h3><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
-
-
-def voice_html(slot):
-    """職人の言葉の 1 枠。見本が無い枠や見本を切った時は、今までどおり（準備中）。"""
-    c = next((c for c in CONTRIBUTIONS if c["slot"] == slot), None) if enabled() else None
-    if c is None:
-        return f'<div class="item"><p class="meta">{esc(slot)}</p><p>（準備中）</p></div>'
-    return (f'<div class="item is-sample"><p class="meta">{badge()} {esc(slot)}　{esc(c["who"])}　{esc(c["kind"])}</p>'
-            f'<p><b>{esc(c["title"])}</b></p><p>{esc(c["text"])}</p><p class="meta">権利: {esc(c["rights"])}</p></div>')
+def craft_html():
+    """職人の言葉の節の、箱の中身（札の並び）。節の箱と見出しと入口は、それを置く頁が持つ（今は序の頁・techo_site.voices_sections）。
+    中身を作る所を 1 つにして、節を別の頁へ移す直しと、中身を替える直しがぶつからないようにする（11-08 の分担）。
+    中身は型紙レビュー 10 本の言葉（本人の言葉 11-08「改善のために撮影し上た型紙レビュー10本は職人の言葉です。見本と取り替えて、もちよる、に掲載してください。」）。
+    レビュー 1 本（玩具）に 1 枚の札で、字は話したまま（SPOKEN の where が review の物）。名前は出さない。並びは録画の順（順位・点は付けない）。
+    動画は出さない（顔と名札の写るコマがあった。出すかは本人の答えの後）。"""
+    groups = {}
+    for s in SPOKEN:
+        if s["where"] == "review":
+            groups.setdefault(s["toy"], []).append(s["text"])
+    cards = "".join(f'<div class="item"><p class="meta"><span>{esc(toy)}</span></p>' + "".join(f'<p><span>{esc(x)}</span></p>' for x in texts) + "</div>"
+                    for toy, texts in groups.items())
+    return f'<div class="voices-real"><p class="meta">{esc(SPOKEN_NOTE)}</p>{cards}</div>' if cards else ""
 
 
 def voices_html():
@@ -175,13 +123,38 @@ def voices_html():
     抜き出した事と名前を外した事の一文を先頭に置く。玩具の名・参加者・欄の名・字は、訳の表がそれぞれ引けるよう別の要素にする。"""
     if not VOICES:
         return '<p class="meta">まだ寄せられた声はありません。</p>'
-    items = "".join('<div class="item">'
-                    f'<p class="meta"><span>{esc(v["toy"])}</span> · <span>{esc(VOICES_WHO)}</span></p>'
-                    + "".join(f'<p><span class="meta">{esc(lab)}</span> <span>{esc(t)}</span></p>' for lab, t in v["fields"])
-                    + "</div>" for v in VOICES)
+    items = "".join(_voice_card(v) for v in VOICES)
     # 話された言葉は、感想の札の後に同じ札の形で並べる。玩具の名が字から決められない札（しくみの感想など）は、玩具の名を出さない
-    spoken = "".join('<div class="item"><p class="meta">'
-                     + (f'<span>{esc(s["toy"])}</span> · ' if s["toy"] else "")
-                     + f'<span>{esc(SPOKEN_WHO)}</span></p><p><span>{esc(s["text"])}</span></p></div>' for s in SPOKEN)
-    note = f'<p class="meta">{esc(SPOKEN_NOTE)}</p>' if SPOKEN else ""
+    spoken = "".join(_spoken_card(s) for s in SPOKEN if s["where"] == "workshop")
+    note = f'<p class="meta">{esc(SPOKEN_NOTE)}</p>' if spoken else ""
     return f'<div class="voices-real"><p class="meta">{esc(VOICES_NOTE)}</p>{items}{note}{spoken}</div>'
+
+
+def _voice_card(v):
+    """感想 1 件の札。序の頁と玩具の頁で同じ形・同じ字（訳の表がそれぞれ引けるよう別の要素にする）。"""
+    return ('<div class="item">'
+            f'<p class="meta"><span>{esc(v["toy"])}</span> · <span>{esc(VOICES_WHO)}</span></p>'
+            + "".join(f'<p><span class="meta">{esc(lab)}</span> <span>{esc(t)}</span></p>' for lab, t in v["fields"])
+            + "</div>")
+
+
+def _spoken_card(s):
+    """話された言葉 1 か所の札。序の頁と玩具の頁で同じ形・同じ字。型紙レビューの言葉は、札の字を「職人の言葉」にする。"""
+    who = CRAFT_WHO if s["where"] == "review" else SPOKEN_WHO
+    return ('<div class="item"><p class="meta">'
+            + (f'<span>{esc(s["toy"])}</span> · ' if s["toy"] else "")
+            + f'<span>{esc(who)}</span></p><p><span>{esc(s["text"])}</span></p></div>')
+
+
+def workshop_for(sid, toy):
+    """玩具の頁に出す、その玩具のワークショップの記録（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」
+    「2つのデモ案はもちろん他のおもちゃも。」）。感想は VOICE_TOYS で結んだ物、話された言葉は玩具の名が同じ物（SPOKEN の名はサイトの名）。
+    札と字は序の頁の寄せられた声と同じで、新しい字を足さない。見本の札は付けない（本物）。並びは記録の順（J-025）。無い玩具は空。"""
+    voices = [v for v in VOICES if VOICE_TOYS.get(v["toy"]) == sid]
+    spoken = [s for s in SPOKEN if s["toy"] and s["toy"] == toy]
+    parts = []
+    if voices:
+        parts.append(f'<p class="meta">{esc(VOICES_NOTE)}</p>' + "".join(_voice_card(v) for v in voices))
+    if spoken:
+        parts.append(f'<p class="meta">{esc(SPOKEN_NOTE)}</p>' + "".join(_spoken_card(s) for s in spoken))
+    return f'<div class="voices-real">{"".join(parts)}</div>' if parts else ""

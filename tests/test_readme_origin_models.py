@@ -30,6 +30,11 @@ eng = (ROOT / "engine/README.md").read_text(encoding="utf-8")
 e = eng.index("### エンジンの原点にある模型（試作して開発中）")
 sec = eng[e:eng.find("\n## ", e)]
 assert "開発中" in sec and "原点にある" in sec and "振り子の波" in sec and "DNA の二重らせん" in sec, sec[:200]
+# 試作をできた物として書かない（別の目の指摘 11-08 で戻した見張り）。節は engine/README.md へ移したので、README の中で原点にある模型を言う文を見る
+for sent in re.split(r"(?<=。)", readme):
+    if "原点" in sent or "振り子" in sent or "二重らせん" in sent:
+        for w in ("できる", "できます", "作れる", "動く"):
+            assert w not in sent, ("試作をできた物として書かない", w, sent.strip()[:60])
 summary = section("## 30 秒の要約")
 can = section(next(h for h in heads if h.startswith("## できること")))
 for w in ("振り子", "二重らせん"):

@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_demo_walk.py
+# commit: 960b287b（回した時の HEAD）
+/tmp/tmpbsmr9cm9/play/NDL-1187053-R0000005-L/.tmp-t28l0d_h/H-C_v1.pdf
+/tmp/tmpbsmr9cm9/play/NDL-1187053-R0000005-L/.tmp-gwm6h6md/H-C_v2.pdf
+Traceback (most recent call last):
+  File "tests/test_demo_walk.py", line 93, in <module>
+    assert f"/record/{rid}/media/" in gallery and "見本" in gallery, "上げた写真と見本が並ぶ"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 上げた写真と見本が並ぶ
+rc=1

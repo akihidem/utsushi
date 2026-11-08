@@ -75,8 +75,8 @@ BY_PAGE = "画面で本人"
 
 def labels(h):
     """自分の仮説として残す時の名前と根拠（紙に刷られる）。本人の決定（11-05 21:5x）で採られた文。"""
-    letter = hypotheses.letter(h)
-    return f"仮説 {letter} から変えた案", f"仮説 {letter} の紙を見て話した考え"
+    # 11-08 から仮説の印（A・C）は出さない（本人の言葉「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
+    return f"{hypotheses.SHOWN}から変えた案", f"{hypotheses.SHOWN}の紙を見て話した考え"
 
 
 COOKIE = "utsushi_own_"

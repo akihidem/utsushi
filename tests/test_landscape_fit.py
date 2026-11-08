@@ -59,7 +59,7 @@ for(let n=1;n<=total;n++){
  const li=document.querySelector('#steps li.on'),rg=document.createRange();rg.selectNodeContents(li);const rects=[...rg.getClientRects()].filter(a=>a.width>0);
  const hit=(id)=>{const e=$(id);if(!seen(e))return false;const b=e.getBoundingClientRect();return rects.some(a=>!(a.right<=b.left||b.right<=a.left||a.bottom<=b.top||b.bottom<=a.top))};
  const keys=[...document.querySelectorAll('.keys a,.keys button')].filter(seen);
- out.push({n,text:rects.length,thumb:hit('genga-thumb'),close:hit('close'),mic:hit('mic'),below:keys.some(k=>k.getBoundingClientRect().bottom>innerHeight+1)});
+ out.push({n,text:rects.length,thumb:hit('genga-thumb'),close:hit('close'),mic:hit('mic'),kasane:hit('kasane-go'),below:keys.some(k=>k.getBoundingClientRect().bottom>innerHeight+1)});
  if(n<total){$('next').click();await wait()}
 }
 parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,thumb:seen($('genga-thumb')),out}),'*');
@@ -148,7 +148,7 @@ for page, rec in sorted(got.items()):
         assert rec["thumb"], (page, "原画の釦が出ていない")
         assert rec["out"] and all(s["text"] for s in rec["out"]), (page, "手順の字が測れない")
         for s in rec["out"]:
-            hits = [k for k in ("thumb", "close", "mic") if s[k]]
+            hits = [k for k in ("thumb", "close", "mic", "kasane") if s.get(k)]  # kasane は重ねる頁への印（本人の答え 11-08「どこかに道を戻す。」）
             if hits:
                 bad.append(f"{page} 手順 {s['n']}: 字が {'・'.join(hits)} と重なる")
             if s["below"]:

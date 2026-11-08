@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_toy_made_photos.py > /tmp/sv-red-tmp.txt 2>&1; rc=$?; tail -1 /tmp/sv-red-tmp.txt; echo "試験 rc=$rc"'
+# commit: 30d19308（回した時の HEAD）
+AssertionError: ('NDL-1187053-R0000005-L', '作例の写真がこれまでの復元に出ない')
+試験 rc=1
+rc=0

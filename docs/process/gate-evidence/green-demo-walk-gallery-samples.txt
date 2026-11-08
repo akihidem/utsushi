@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_demo_walk.py
+# commit: 960b287b（回した時の HEAD）
+/tmp/tmptqxiof0s/play/NDL-1187053-R0000005-L/.tmp-arko_27m/H-C_v1.pdf
+/tmp/tmptqxiof0s/play/NDL-1187053-R0000005-L/.tmp-3184rekj/H-C_v2.pdf
+ok
+rc=0

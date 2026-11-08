@@ -130,7 +130,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
     # たたき台の札だけ。前の記録の紙を見ている時は、ここから戻る。
     hyps = ("" if card["id"] not in ids else
-            f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">仮説 {esc(hypotheses.letter(card))}</a>')
+            f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">{esc(hypotheses.SHOWN)}</a>')
     kinds = ""
     for suffix, label in KINDS:
         if (out_dir(sid) / f"{see}_v{v}{suffix}.png").exists():
@@ -157,10 +157,10 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     big = f"/sheet/{sid}/{name}.svg" if (out_dir(sid) / f"{name}.svg").exists() else png
     sizes = "".join(f'<input type="radio" name="zoom-size" id="zs{n}"{" checked" if n == 180 else ""}>' for n in ZOOM_SIZES)
     labels = "".join(f'<label for="zs{n}">{n}%</label>' for n in ZOOM_SIZES)
-    fig = (f'<figure class="sheet"><a href="#zoom" aria-label="拡大して見る"><img src="{png}" alt="{esc(data["toy"])} 仮説 {esc(hypotheses.letter(h))} の{esc(dict(KINDS)[kind])}"></a></figure>'
+    fig = (f'<figure class="sheet"><a href="#zoom" aria-label="拡大して見る"><img src="{png}" alt="{esc(data["toy"])} {esc(hypotheses.SHOWN)}の{esc(dict(KINDS)[kind])}"></a></figure>'
            f'<div class="zoom" id="zoom">{sizes}<div class="bar" role="group" aria-label="大きさ">{labels}</div><a class="close" href="#win">閉じる</a><div class="pic"><img src="{big}" alt="" loading="lazy"></div></div>'
            + ZOOM_SCRIPT)
-    side = (f'<div class="side"><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」の{esc(dict(KINDS)[kind])}</h3>'
+    side = (f'<div class="side"><h3>{esc(hypotheses.shown_name(h))}の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}'
             # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
             f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>{print_help()}'
@@ -173,21 +173,6 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
-
-
-def sample_records(data):
-    """その玩具の見本の記録（デモ用の作り物。札つき）。本物の記録の後ろに置き、混ぜない。"""
-    from . import demo_samples
-
-    return demo_samples.uploads_for(data["toy"])
-
-
-def fold_samples(html, real):
-    """見本の記録（作り物、札つき）。本物の記録がある時は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。
-    畳みの見出しは見本の札と同じ字「見本」で、新しい字は足さない。本物が無い時は今のまま開いて出す。"""
-    if not html or not real:
-        return html
-    return f'<details class="fold-sec samples-fold"><summary>見本</summary>{html}</details>'
 
 
 def analogy_section(data):
@@ -612,7 +597,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         # 型紙の絵は型紙の窓の 1 か所だけに出し、刷る口は頭の「つくる」1 つにする（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。
         # 前はこの札にも紙の小さな絵と「型紙を見る」（紙を作る釦）があり、型紙が 2 か所、刷る口が 3 つ（頭・この札・窓の札）あった。札は仮説の字だけ
         # 札の脇に型紙の版（設計 0.7「型紙の札の脇に、今の版の印を 1 つ」）。字は「型紙の版」と数だけ（エンジンの版と言い分ける。カード 084426）
-        plate += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3>'
+        plate += (f'<div class="plate"><h3>{esc(hypotheses.shown_name(h))}</h3>'
                   f'<p class="meta"><span class="lb ban">型紙の版 {ban}</span></p><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
                   f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}'
                   '</div>')
@@ -636,8 +621,14 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # ワークショップの試行の写真も、これまでの復元の 1 つとして並びの頭に置く（本人の見直し 11-07 夜の ②「これまでの復元にワークショップの写真がない。」）。
     # 写真がある時は「まだありません」を出さず、見本を畳む（本物が 1 つでもあれば見本は畳む、と同じ考え）
     wsp = workshop.strip(sid)
-    minna = (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if wsp else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
-             f'{fold_samples(sample_records(data), bool(recs) or bool(wsp))}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
+    # 見本の記録（作り物 8 件）は外し、ワークショップの感想と話された言葉を、写真と記録の後ろに置く（本人の言葉 11-08「見本の記録をワークショップの
+    # データで作成して欲しい。」「2つのデモ案はもちろん他のおもちゃも。」）。札と字は序の頁の寄せられた声と同じ（新しい字を足さない）。
+    # 写真か感想か話された言葉がある時は「まだありません」を出さない（すぐ上に並んだ札と食い違うため）
+    from . import demo_samples
+
+    wsv = demo_samples.workshop_for(sid, data["toy"])
+    minna = (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if (wsp or wsv) else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
+             f'{wsv}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
     # 節の並び（本人の言葉 11-08「つくるのページ、これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、型紙の順で。」）:
     # 頭 → これまでの復元 → 仮説 → 組み立てを立体で見る → たとえと、関連する事柄 → 型紙の窓 → 型紙の版の歩み。
     # 前は 頭 → 立体 → 型紙の窓（仮説の札が頭）→ 版の歩み → たとえ → 考えを話す … のこそう → これまでの復元 だった。

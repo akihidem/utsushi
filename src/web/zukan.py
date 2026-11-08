@@ -66,9 +66,10 @@ def quote_lines(src):
 
 
 def record_title(r, data):
-    """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。字だけで仮説を指し、仮説の名前は書かない。"""
+    """記録の見出し。玩具の頁の札と図鑑の行で同じ書き方にする（#130）。「仮説の紙」と書き、仮説の名前と印は書かない。"""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-    who = f"仮説 {hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
+    # 11-08 から仮説の印（A・C）は出さない（本人の言葉「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
+    who = f"{hypotheses.SHOWN}の紙" if h else "自分の仮説の紙"
     word = records.result_word(r)
     return f"{who}・{word}" if word else who
 

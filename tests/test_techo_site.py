@@ -126,7 +126,7 @@ g = req("/gallery")[1].decode()
 assert "m1.jpg" in g
 # 職人の言葉と寄せられた声の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。ギャラリーは作った記録の並びだけ
 yomu = req("/about")[1].decode()
-assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "紙と折りの職人" in yomu  # 枠の中身は見本（demo_samples）か（準備中）
+assert "職人の言葉" not in g and "寄せられた声" not in g and "職人の言葉" in yomu and "（準備中）" not in yomu  # 中身は型紙レビュー 10 本の言葉（demo_samples.craft_html・11-08）
 assert "/gallery" in req("/look/tenji")[1].decode()
 # 頁の名前は帯・<title>・h1 で同じ。h1 は 1 つで、節は h2。頁の頭から節へ 1 回で行ける（#139）
 name = "作った物"
@@ -139,7 +139,8 @@ for sec, label in (("yose", "寄せられた声"), ("shokunin", "職人の言葉
     assert f'id="{sec}"' in yomu and f'<h2 class="mark">{label}</h2>' in yomu and f'id="{sec}"' not in g, sec
 # 見本は札と断りの一文で見分ける。縞の地と、皮によって白く浮く固定の色は使わない（#139）
 assert "repeating-linear-gradient" not in g and "#f4efe3" not in g and "#7a3b1d" not in g
-assert '<span class="sample">見本</span>' in g and "is-sample" in g
+# 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。ギャラリーに見本の札は出ない
+assert '<span class="sample">見本</span>' not in g and 'class="item is-sample"' not in g
 # 上げた後は頁の中で一覧を入れ替える（#143）。同じ道へ location.href しても読み込まれず、「…」のまま残って、もう一度押すと記録が 2 件になっていた
 from web.techo_step import SCRIPT  # noqa: E402
 up = SCRIPT[SCRIPT.index("const save"):]

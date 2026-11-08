@@ -77,7 +77,8 @@ assert get("/look/none")[0] == 404
 # 開いたら仮説と刷る口がすぐ見える（本人の決定 11-05、#242）
 body = get(f"/toy/{G}")[1].decode()
 # 刷る口は頭の「つくる」1 つ（本人のサイト体験レビュー 11-07 の 3）。札の字は今のたたき台の字で見る（#511）
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#win"' in body
+# 札の字は印なしの「仮説「…」」（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」）
+assert hypotheses.shown_name(hypotheses.sheet_of(G)) in body and "どう動くと思いますか" not in body and f'action="/toy/{G}/print#win"' in body
 # 採らなかった歌の読みは出さない。出すのは採った読み「怠らじ」（本人の決め 11-08「御来迎の歌の読みは「怠らじ」」。前は 11-04 の決め U-01 で本人の表記「怠けらじ」）
 assert "怠らじ朝な夕なに" in body and "怠らし" not in body and "怠けらじ" not in body
 # 別のサイトから・別の形で送らせない
@@ -88,7 +89,7 @@ assert post(f"/toy/{G}/print", {"hypothesis": GS}, ctype="text/plain")[0] == 403
 assert re.search(r"id=\"kasetsu-fuda\".*class=\"plates\"", body, re.S) and "自分の仮説を立てる" not in body
 # 順位を出さない。並びは元の記録の順
 assert "rank" not in body and "順位" not in body
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}" in body and "仮説 B" not in body, "札はたたき台の 1 枚だけ（J-032）"
+assert body.count('<div class="plate">') == 1 and not re.search(r"仮説 [A-Z]", re.sub(r"<script.*?</script>", "", body, flags=re.S)), "札はたたき台の 1 枚だけ（J-032）・印は出さない"
 # 刷る。試した後の紙は記録の前は出さず、URL を知っていても渡さない
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303
 body = get(f"/toy/{G}")[1].decode()
@@ -115,7 +116,7 @@ assert code == 303 and re.search(r"#R-\d{4}$", at), at  # 今残した記録の�
 body = get(f"/toy/{G}")[1].decode()
 # 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
 assert f"{GS}_v1_after.pdf" not in body and get(f"/sheet/{G}/{GS}_v1_after.pdf")[0] == 200
-assert f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))} の紙・動かない・40°" in body
+assert "仮説の紙・動かない・40°" in body
 # 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("成功", "失敗", "正解"):
     assert word not in without_premise(body), word
