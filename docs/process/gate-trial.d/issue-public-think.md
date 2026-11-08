@@ -13,4 +13,4 @@
 - 見た事: 偽の Claude（試験）は beta の口が無く、道具を使う口（api.agent.run）が呼べずに待ちへ落ちていた。偽の Claude に beta の口を足して、作り直す口が Claude まで届く事を見た
 - ゴールの要件: `tests/test_public_ai_closed.py` の 3（印の時だけ鍵のある所で立つ・印は公開の場とだけ・ほかの 5 つの口は Claude を呼ばない・頁に口が出る・作り直す口だけが呼ぶ）と `tests/test_print_busy.py`
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-public-think.txt`（今の main で serve に印が無く rc 1・test_print_busy が think-talk の待つ印で rc 1）
-- エビデンスゲート: Green は `docs/process/gate-evidence/green-public-think.txt`
+- エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-public-think.txt`（19 本・rc 0）
