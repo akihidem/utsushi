@@ -2,5 +2,5 @@
 
 - 目的: #686 の別の目の確かめの続き（統括の頼み 3 つ）
 - どうしたか: 図 25 の訳を「…と読めます（「くらいつきぬる」の意味は、確かではありません）」に。図 23「いやかる」を確かめた所までの「1997 年の翻刻の字では、にごる点の無い「いやかる」と書かれています」に（3 つの記録）。図 12 の訳の「この細工」に、1932 年の有坂の本の「此」の字で読んだ訳の断り。英語とやさしい日本語の鍵も。注の試験に刷りの言い切りの見張り
-- 検証ゲート: **済み**。Red: 今の main に新しい注の試験だけを置くと rc 1（gate-evidence/red-kyoka-batch2-more.txt）。Green: この枝で rc 0（gate-evidence/green-kyoka-batch2-more.txt）
+- 検証ゲート: **済み**。Red: 今の main に新しい注の試験だけを置くと rc 1（gate-evidence/red-kyoka-batch2-more-2.txt）。Green: この枝で rc 0（gate-evidence/green-kyoka-batch2-more-2.txt。見張りを狭めた後）
 - 確かめていない事: 全部の試験（`./run.sh`）。新しい字の本人の確かめ

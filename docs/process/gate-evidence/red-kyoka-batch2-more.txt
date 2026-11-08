@@ -1,8 +1,0 @@
-# 命令: .venv/bin/python tests/test_kuzushi_notes.py
-# commit: 07471476（回した時の HEAD）
-Traceback (most recent call last):
-  File "tests/test_kuzushi_notes.py", line 67, in <module>
-    assert "と刷られています" not in every, (sid, "刷りの言い切り")
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: ('NDL-1187053-R0000010-L', '刷りの言い切り')
-rc=1
