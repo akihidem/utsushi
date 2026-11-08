@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_security_doc.py
+# commit: b0ac3899（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_security_doc.py", line 29, in <module>
+    assert f"直接の依存 {len(pins)} つ" in doc, ("直接の依存の数", len(pins))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('直接の依存の数', 9)
+rc=1

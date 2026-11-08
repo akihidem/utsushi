@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_security_doc.py
+# commit: 488d389c（回した時の HEAD）
+ok SECURITY.md の数（直接の依存 9・保存期間・しおりの 504 通り）がコードと同じで、事項 8〜13 が していない事 にある
+rc=0
