@@ -116,6 +116,9 @@ rows = [ln for ln in use.splitlines() if ln.startswith("| ") and not ln.startswi
 assert {r.rsplit("|", 2)[1].strip() for r in rows} <= {"動いた（11-07）", "まだ"} and sum(r.endswith("| まだ |") for r in rows) == 2, rows
 assert any("observe.py" in r and r.endswith("| まだ |") for r in rows), "記録の動画の 3 コマはまだ"
 assert "記録の読み（字と、動画の 3 コマ）" in use
+# 表の「まだ」はサイトの中の口の事で、同じ事は作る側の Claude Code で行った（本人の言葉 11-08「GitHub の記録の読み、動画の 3 コマは 10 本と 2 本の動画でやった
+# ことなので実施済みなのではないか」「次の手の案も、型紙が版を重ねているので実施済みです」）。誰がどこでやったかを分けて書く
+assert "同じ事は、作る側の Claude Code で行いました" in use and "計 36 コマ" in use and "EP-0011〜EP-0049" in use, "作る側で行った事"
 
 # 7. 30 秒の要約は畳みの中
 fold, start, end, close = at("<details>"), at("<!-- summary:start -->"), at("<!-- summary:end -->"), at("</details>")
