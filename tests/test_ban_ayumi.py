@@ -6,7 +6,7 @@
 2. 額の下は「型紙の版 N」・エンジンの版の字・表の 1 行・日付の 4 つだけで、表の字のまま。きっかけと PR は出さない
 3. 額と額の間に → の印（読み上げには出さない）。開いた時に右の端（今の版）へ送る script がある
 4. 表の最初の版が版 1 でない時は「この前にも版があります」。見出しの下の数の 1 行は表から描く
-5. 絵は置いてある版と repo の中から作れる版（改善の輪より前の版は刷った PDF・今の版は今の雛形）を img にし、作れない間の版は
+5. 絵は置いてある版と repo の中から作れる版（刷った PDF のある版・今の版は今の雛形）を img にし、作れない版は
    「この版の絵は残っていない」の字（本人の見直し 11-07 22:16「過去の版が表示されていない。」。壊れた絵を出さない）。作った絵は小さい写し。サーバの道は組の名の形だけを受ける
 6. 表に無い玩具・今の組の行が表に無い玩具は節を出さない（今の版と言えない並びを出さない）
 7. 玩具の頁では、型紙の窓の節のすぐ後（2 画面目の頭）に 1 つだけ置き、たとえはその後。表に無い玩具の頁には出ない
@@ -71,19 +71,32 @@ try:
     v13 = next(body for _, body in frames(ban_ayumi.section(G)) if "型紙の版 13" in body)
     assert "刻んでいない" in v13, "エンジンの版を刻んでいない版は、表の字のまま"
 
-    # 5. 絵は置いた版（tora-v7）と、repo の中から作れる版（虎 v1〜v3 は刷った PDF）を img。作れない間の版（虎 v4〜v6）は字
+    # 5. 絵は置いた版（tora-v7）と、repo の中の刷った PDF から作れる版を img。刷った PDF は、改善の輪より前の版（虎 v1〜v3・御来迎 v1〜v10）と、
+    #    輪の中の版（虎 v4〜v6・御来迎 v11〜v13。本人の言葉 11-08「データが残っているはずなので、探して反映させて欲しい」で、刷った物を置いた）。
+    #    前は輪の中の版の絵が git の外の置き場にだけあり、「この版の絵は残っていない」と出ていた。今は全部の版に絵が出る
     imgs = re.findall(r'<img class="ban-pic" src="([^"]+)"', tiger)
-    assert imgs == [f"/history/sheets/tora-v{n}.png" for n in (1, 2, 3, 7)], imgs
+    assert imgs == [f"/history/sheets/tora-v{n}.png" for n in range(1, 8)], imgs
     none = f'<span class="ban-pic ban-none">{ban_ayumi.NO_PICTURE}</span>'
-    assert tiger.count(none) == 3 and '<span class="ban-pic" aria-hidden="true"></span>' not in tiger, "空の額でなく、残っていないと字で"
-    assert [i for i, (_, body) in enumerate(frames(tiger)) if none in body] == [3, 4, 5], "字になるのは虎 v4〜v6 の額"
+    assert none not in tiger and '<span class="ban-pic" aria-hidden="true"></span>' not in tiger, "残っていないと出る虎の版は無い"
+    for n in (4, 5, 6):
+        assert kh.trial_pdf(f"tora-v{n}") == kh.TRIAL_SHEETS / f"tora-v{n}/tora_v{n}.pdf", n
+    for n in (11, 12, 13):
+        assert kh.trial_pdf(f"goraigo-v{n}") == kh.TRIAL_SHEETS / f"goraigo-v{n}/goraigo_v{n}.pdf", n
+    # 作れない版は、空の額でなく「この版の絵は残っていない」と字で（字の道を見続けるため、作れない版を 1 つ作って見る）
+    real_pdf = kh.trial_pdf
+    kh.trial_pdf = lambda set_name: None if set_name == "tora-v5" else real_pdf(set_name)
+    try:
+        lost = ban_ayumi.section(T)
+        assert lost.count(none) == 1 and [i for i, (_, body) in enumerate(frames(lost)) if none in body] == [4], "作れない版だけが字"
+    finally:
+        kh.trial_pdf = real_pdf
     assert not (kh.PICTURES / "sheets/tora-v1.png").exists(), "頁を返す時は絵を作らない（作れるかだけを見る）"
     goraigo = ban_ayumi.section(G)
     gimgs = re.findall(r'<img class="ban-pic" src="([^"]+)"', goraigo)
-    assert gimgs == [f"/history/sheets/goraigo-v{n}.png" for n in (*range(1, 11), 14)] and goraigo.count(none) == 3, gimgs
+    assert gimgs == [f"/history/sheets/goraigo-v{n}.png" for n in range(1, 15)] and none not in goraigo, gimgs
     assert ban_ayumi.COUNT.format(first=1, last=7, n=7) in tiger and ban_ayumi.COUNT.format(first=1, last=14, n=14) in ban_ayumi.section(G)
     assert ban_ayumi.picture_file("tora-v7") == kh.PICTURES / "sheets/tora-v7.png"
-    assert ban_ayumi.picture_file("tora-v6") is None and ban_ayumi.picture_file("../x") is None and ban_ayumi.picture_file("tora-v7.png/..") is None
+    assert ban_ayumi.picture_file("tora-v99") is None and ban_ayumi.picture_file("../x") is None and ban_ayumi.picture_file("tora-v7.png/..") is None
     made = ban_ayumi.picture_file("tora-v3")  # 求められた時に、刷った PDF の 1 枚目から小さい写しを作る
     assert made == kh.PICTURES / "sheets/tora-v3.png" and made.read_bytes()[:4] == b"\x89PNG"
     from PIL import Image
@@ -93,7 +106,11 @@ try:
     base = f"http://127.0.0.1:{server.server_address[1]}"
     r = urllib.request.urlopen(f"{base}/history/sheets/tora-v7.png", timeout=30)
     assert r.status == 200 and r.headers["Content-Type"] == "image/png" and r.read() == b"\x89PNGtora-v7"
-    for bad in ("/history/sheets/tora-v6.png", "/history/sheets/Tora-v7.png", "/history/sheets/..%2Fx.png"):
+    # 輪の中の版の絵も、刷った PDF から作って返す（虎 v6・御来迎 v12）
+    for good in ("tora-v6", "goraigo-v12"):
+        r = urllib.request.urlopen(f"{base}/history/sheets/{good}.png", timeout=60)
+        assert r.status == 200 and r.headers["Content-Type"] == "image/png" and r.read()[:4] == b"\x89PNG", good
+    for bad in ("/history/sheets/tora-v99.png", "/history/sheets/Tora-v7.png", "/history/sheets/..%2Fx.png"):
         try:
             urllib.request.urlopen(f"{base}{bad}", timeout=30)
             raise AssertionError(("出してはいけない道が開いた", bad))

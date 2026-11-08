@@ -81,7 +81,8 @@ try:
     (kh.PICTURES / "sheets/tora-v7.png").write_bytes(b"png")
     (tmp / "secret.png").write_bytes(b"x")
     assert kh.picture({"sheet_image": "sheets/tora-v7.png"}) == kh.PICTURES / "sheets/tora-v7.png"
-    assert kh.picture({"sheet_image": "sheets/tora-v6.png"}) is None, "置いていない絵は None"
+    # 置いていない・repo の中から作れない絵の例。前は虎 v6 だったが、11-08 に虎 v6 の刷った PDF を置いて作れる版になったので、PDF の無い名にした
+    assert kh.picture({"sheet_image": "sheets/tora-v99.png"}) is None, "置いていない絵は None"
     assert kh.picture({"sheet_image": "../secret.png"}) is None and kh.picture({"sheet_image": "sheets/../../secret.png"}) is None
     assert kh.picture({}) is None
 finally:
