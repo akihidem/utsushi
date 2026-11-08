@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_role.py
+# commit: 64298cd6（回した時の HEAD）
+/tmp/tmpo4ekq0kx/play/NDL-1187053-R0000005-L/.tmp-d0b3i97c/H-C_v1.pdf
+ok: しおりだけの画面は管理の面と変える口を開かず、他の人の記録へ送れない・合言葉の画面と手元の場は今のまま
+rc=0

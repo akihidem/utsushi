@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_role.py
+# commit: 64298cd6（回した時の HEAD）
+/tmp/tmp52i5ugk7/play/NDL-1187053-R0000005-L/.tmp-c84z_o3e/H-C_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_shiori_role.py", line 82, in <module>
+    assert code == 403 and "受け付けられません" in body, ("しおりだけの画面で管理の面が開いた", path, code)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('しおりだけの画面で管理の面が開いた', '/loop', 200)
+rc=1
