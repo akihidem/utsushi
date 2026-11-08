@@ -1,0 +1,121 @@
+"""入口の題の間: 題字「うつし」の下に読み（looks.YOMI）があり、英語の頁は題・副題・英字が横書き（本人の言葉 11-08）。
+
+本人の言葉: 「トップページ、英語版は余白維持で横書きにしてください。うつし、のひらがなの下に utushi と読みをいれる。」
+見る事（白と暗い版の入口・日本語・やさしい日本語・英語の頁・幅 320×568・390×844・1440×900）:
+1. 読みの字は looks.YOMI で、ひらがなの真下にある（読みの上の端がひらがなの下の端より下・読みの真ん中がひらがなの幅の中）。字は 12px 以上
+2. 英字の 1 行・題・副題・このサイトについて が互いに重ならない。題の間の字が画面の幅の外に出ず、頁が横にはみ出さない
+3. 英語の頁は題・副題・英字が横書き。日本語とやさしい日本語の頁の題は縦書きのまま（広い画面では副題も縦書きのまま）
+./run.sh はブラウザなしで動く決まりなので、入っている Chrome で頁をその大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ）。
+Chrome が無い機械と、時間内に答えなかった時は、測れないと出して通す。
+"""
+import json
+import os
+import re
+import subprocess
+import tempfile
+import threading
+
+os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
+os.environ.pop("ANTHROPIC_API_KEY", None)
+
+import html  # noqa: E402
+
+from measure_tap import chrome  # noqa: E402
+from web import looks, play_server  # noqa: E402
+
+SIZES = [(320, 568), (390, 844), (1440, 900)]
+LANGS = ("ja", "easy", "en")
+MEASURE = """<script>addEventListener('load',()=>{setTimeout(()=>{
+const q=(s)=>document.querySelector(s),box=(e)=>{if(!e)return null;const r=e.getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom,w:r.width,h:r.height}};
+const hall=q('#hall'),kana=q('#hall h1 .kana'),yomi=q('#hall h1 .yomi');
+const about=[...hall.querySelectorAll('a')].find(a=>(a.getAttribute('href')||'').startsWith('/about'));
+const wm=(e)=>e?getComputedStyle(e).writingMode:null;
+parent.postMessage(JSON.stringify({page:'__PAGE__',w:innerWidth,h:innerHeight,lang:document.documentElement.lang,sx:document.documentElement.scrollWidth,
+ kana:box(kana),yomi:box(yomi),h1:box(q('#hall h1')),sub:box(q('#hall .sub')),en:box(q('#hall .en')),about:box(about),
+ yomi_text:yomi?yomi.textContent:null,yomi_px:yomi?parseFloat(getComputedStyle(yomi).fontSize):0,
+ wm:{h1:wm(q('#hall h1')),sub:wm(q('#hall .sub')),en:wm(q('#hall .en'))}}),'*')},500)})</script>"""
+WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
+addEventListener('message',e=>{document.getElementById('measured').textContent+=e.data+'\\n'})</script>"""
+
+pages = {f"{lang}-{w}x{h}": (f"/?lang={lang}&walk={lang}-{w}x{h}", w, h) for lang in LANGS for w, h in SIZES}
+send, get = play_server.Handler._send, play_server.Handler.do_GET
+
+
+def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
+    m = re.search(r"[?&]walk=([\w-]+)", self.path)
+    if m and m.group(1) in pages and isinstance(body, str) and ctype.startswith("text/html"):
+        body += MEASURE.replace("__PAGE__", m.group(1))
+    return send(self, code, body, ctype, headers)
+
+
+def do_get(self):
+    if self.path == "/__wrap":
+        frames = "".join(f'<iframe src="{p.replace("&", "&amp;")}" width="{w}" height="{h}" style="border:0;display:block"></iframe>' for p, w, h in pages.values())
+        return send(self, 200, WRAP % frames)
+    return get(self)
+
+
+def measure(look):
+    """皮 look のサイト（tenji 白・zine 暗い版）を立て、全部の頁を 1 回の Chrome で測る。答えが揃わなければ None"""
+    server = play_server.serve(0, look=look)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        with tempfile.TemporaryDirectory() as profile:
+            out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=2000,1200",
+                                  "--virtual-time-budget=20000", "--dump-dom", f"{base}/__wrap"], capture_output=True, text=True, timeout=240).stdout
+    except subprocess.TimeoutExpired:
+        out = ""
+    server.shutdown()
+    found = re.search(r'<pre id="measured">(.*?)</pre>', out, re.S)
+    got = {}
+    for line in html.unescape(found.group(1) if found else "").splitlines():
+        if line.strip():
+            rec = json.loads(line)
+            got[rec["page"]] = rec
+    return got if set(got) == set(pages) else None
+
+
+def overlap(a, b):
+    return a and b and min(a["r"], b["r"]) - max(a["l"], b["l"]) > 1 and min(a["b"], b["b"]) - max(a["t"], b["t"]) > 1
+
+
+exe = chrome()
+if not exe:
+    print("測れない: Chrome が無い")
+    raise SystemExit(0)
+play_server.Handler._send, play_server.Handler.do_GET = wrapped, do_get
+for look in ("tenji", "zine"):
+    got = measure(look)
+    if got is None:
+        print(f"測れない: Chrome が {look} の頁に答えきらなかった（混んだ機械では起きる）")
+        raise SystemExit(0)
+    for name, rec in got.items():
+        lang, size = name.split("-")
+        w, h = (int(x) for x in size.split("x"))
+        where = (look, name)
+        assert (rec["w"], rec["h"]) == (w, h), where
+        assert rec["lang"] == ("en" if lang == "en" else "ja"), (where, rec["lang"])
+        # 1. 読みはひらがなの真下
+        k, y = rec["kana"], rec["yomi"]
+        assert rec["yomi_text"] == looks.YOMI and rec["yomi_px"] >= 12, (where, rec["yomi_text"], rec["yomi_px"])
+        assert y["t"] >= k["b"] - 1 and k["l"] - 2 <= (y["l"] + y["r"]) / 2 <= k["r"] + 2, (where, "読みがひらがなの下に無い", k, y)
+        # 2. 重ならない・はみ出さない
+        parts = {n: rec[n] for n in ("en", "h1", "sub", "about")}
+        for i, a in enumerate(parts):
+            for b in list(parts)[i + 1:]:
+                assert not overlap(parts[a], parts[b]), (where, f"{a} と {b} が重なる", parts[a], parts[b])
+        for n, r in parts.items():
+            assert r and r["l"] >= -1 and r["r"] <= w + 1, (where, f"{n} が画面の幅の外", r)
+        assert rec["sx"] <= w, (where, "頁が横にはみ出す", rec["sx"])
+        # 読みを足しても、main で最初の画面に入っていた「このサイトについて」は入ったまま（幅 390×844・1440×900。狭い 320〜375 は main でも画面の下）
+        if (w, h) in ((390, 844), (1440, 900)):
+            assert rec["about"]["b"] <= h, (where, "このサイトについて が最初の画面の外", rec["about"])
+        # 3. 書きの向き
+        if lang == "en":
+            assert rec["wm"] == {"h1": "horizontal-tb", "sub": "horizontal-tb", "en": "horizontal-tb"}, (where, rec["wm"])
+        else:
+            assert rec["wm"]["h1"] == "vertical-rl", (where, rec["wm"])
+            if w > 820:
+                assert rec["wm"]["sub"] == "vertical-rl" and rec["wm"]["en"] == "vertical-rl", (where, rec["wm"])
+print("ok 入口の題の間: 読みは題字のひらがなの下・英語の頁は横書き（白と暗い版・3 つの言葉・幅 320/390/1440 で重ならず、はみ出さない）")
