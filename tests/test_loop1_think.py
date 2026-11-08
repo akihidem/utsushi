@@ -224,7 +224,8 @@ sections.append(think_sheet.section(G, f"think-{tok}"))
 code, _, h = send(f"/toy/{G}/think-ok", {"t": tok})
 assert code == 303, code
 code, body, _ = send(h["Location"].split("#")[0])
-src = re.search(r'<section class="sec" id="think">.*?<img src="([^"]+\.png)"', body, re.S)
+# 口は 11-08 から 型紙を印刷する の中の箱（think_sheet.window_box・<div id="think">）。前は仮説の段の後の節（<section id="think">）
+src = re.search(r'id="think">.*?<img src="([^"]+\.png)"', body, re.S)
 assert code == 200 and src, "押した後に着く頁の節に、紙の絵"
 r = opener.open(urllib.request.Request(base + src.group(1), headers={"Cookie": "; ".join(f"{k}={v}" for k, v in jar.items())}))
 assert r.status == 200 and r.headers["Content-Type"] == "image/png" and r.read()[:8] == b"\x89PNG\r\n\x1a\n", "絵が開く"

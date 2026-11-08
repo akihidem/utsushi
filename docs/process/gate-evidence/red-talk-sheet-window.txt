@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_talk_sheet_window.py
+# commit: a6d622ed（今の main。試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_talk_sheet_window.py", line 65, in <module>
+    assert page.count('id="think"') == 1 and w.count('id="think"') == 1, (sid, printed, "口が型紙を印刷する の中に 1 つでない")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', False, '口が型紙を印刷する の中に 1 つでない')
+rc=1
