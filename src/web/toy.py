@@ -128,6 +128,11 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     see = see if see in ids else (card["id"] if card["id"] in ids else ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
     v = v if v in vs else vs[-1]
+    # たたき台の紙が前の題で刷った物（paper_current）の時は、窓に出さない。出すと「PDF を開いて印刷する」が前の題（版 1 など）の紙を開き、
+    # 頁の版の札（版 7）と食い違う（11-08 に見つかった）。紙を刷る「つくる」（make_go）が今の題で刷り直す。前の記録の紙（たたき台でない仮説）は、
+    # その記録で刷った紙として読むので、照らさずに出す
+    if see == card["id"] and not paper_current(sid, see, v):
+        return "", ""
     h = next(x for x in data["hypotheses"] if x["id"] == see)
     name = f"{see}_v{v}{kind}"
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
@@ -545,6 +550,25 @@ def printed_set(sid, hid, version):
     return None
 
 
+def paper_current(sid, hid, version):
+    """刷ってある紙が、今の題で刷った物か（紙の SVG の頭の字が、今刷れば付く題 hypotheses.sheet_title と同じか）。
+    紙の置き場の名前（<仮説>_v<版>）は仮説と版の数だけで決まるので、紙の題の決まり（版は組の番号・仮説の印を出さない。11-07〜11-08）が替わっても、
+    前に刷った紙が同じ名前で残る。刷った組の台帳（printed_set）は組だけを見るので、組が同じまま題の決まりが替わった紙を拾えなかった
+    （11-08: 公開のサイトの虎の頁の PDF が「…仮説 A「…」版 1」で、頁の版は「版 7」だった）。
+    照らせない紙（型紙なしの紙・SVG の無い古い紙・版の記録の無い仮説）は今の紙と読む: 刷り直しの口が出続け、紙を出せなくなるのを避けるため。
+    字は字の節をつなげ、空白を外して照らす（長い題が 2 行に分かれても同じに読む）"""
+    data = hypotheses.load(sid)
+    h = next((x for x in data["hypotheses"] if x["id"] == hid), None)
+    svg = out_dir(sid) / f"{hid}_v{version}.svg"
+    if h is None or h.get("template_id", "") is None or not svg.exists():
+        return True
+    params, adopted = loop.version_params(sid, hid, version)
+    if params is None:
+        return True
+    shown = re.sub(r"\s", "", html.unescape(re.sub(r"<[^>]+>", "", svg.read_text(encoding="utf-8", errors="replace"))))
+    return re.sub(r"\s", "", hypotheses.sheet_title(data, h, version, adopted)) in shown
+
+
 def mochiyoru_place(sid, photos=True):
     """もちよる のこの玩具の札への道。札が無い玩具は None で、道を出さない（別の目の確かめ 11-08 の止め 4: もちよる に何も無い玩具で頭に着くだけの道にしない）。
     札の錨と道は もちよる の側（techo_site.toy_place・#646）が持つ。photos=False（合言葉なしの場）は public=True で聞く: 公開の場の もちよる は、人が確かめた字か
@@ -563,7 +587,8 @@ def make_go(sid):
     last = versions_of(sid, h["id"], printed_only=True)
     now = loop.latest_version(sid, h["id"])
     this_set = TEMPLATES[hypotheses.load(sid).get("template", "slider_fan")].SHEET_SET
-    if last and last[-1] == now and printed_set(sid, h["id"], now) == this_set:
+    # 刷ってある紙の題が今の題でない時（題の決まりが替わる前に刷った紙）も刷る口へ送る（paper_current）
+    if last and last[-1] == now and printed_set(sid, h["id"], now) == this_set and paper_current(sid, h["id"], now):
         return f'<p class="road"><a class="btn" href="/toy/{sid}?see={h["id"]}&amp;kind=sheet&amp;v={last[-1]}#win">つくる</a></p>'
     return (f'<form method="post" action="/toy/{sid}/print#win" class="road"><input type="hidden" name="hypothesis" value="{esc(h["id"])}">'
             f'<input type="hidden" name="at" value="win"><button class="btn" data-busy>つくる</button></form>')
