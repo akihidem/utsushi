@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ask.py
+# commit: d71e15c7（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ask.py", line 78, in <module>
+    assert how == "no_key" and text == ask.NO_KEY, ("虎の語の問いに語の表（御来迎の紙の字）を返さない", q, text, how)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('虎の語の問いに語の表（御来迎の紙の字）を返さない', '谷折り・山折り', '谷折りは、折った所が手前にへこむ折り方です。型紙では破線で、線の無い面（筒と扇）は色の境で折ります。 山折りは、折った所が手前に出る折り方です。型紙では一点鎖線で、線の無い面（筒と扇）は色の境で折ります。', 'glossary')
+rc=1
