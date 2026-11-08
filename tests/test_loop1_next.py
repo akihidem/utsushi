@@ -126,18 +126,22 @@ assert loop.latest_version(G, SHEET) == 1
 THINK, CRAFT = "割り箸の柄で押したら大きく開くと思う", "柄の先に紙を巻くと滑らない"
 oid, key = made("nextwho001", THINK, STICK)
 rid = recorded("nextwho001", oid, key, CRAFT)
-page = send(f"/toy/{G}")[1].decode()
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作（次の版を作る）は手帖の記録の頁にあるので、欄はそこで見る。つくるの頁に欄が残っていない事も見る
+assert f'action="/record/{rid}/next' not in send(f"/toy/{G}")[1].decode(), "つくるの頁に次の版の欄が残った"
+page = send(f"/toy/{G}/techo/kiroku")[1].decode()
 assert f'action="/record/{rid}/next' in page, "OWN-n の記録にも、次の版の欄が出る"
 # 改善の輪の節と作る側の数も、同じ記録を数える（説明のある報告は次の版を待ち、説明の無い報告は説明を待つ）
 ids = lambda rs: [r["id"] for r in rs]
 ready, waiting = kaizen.pending(G, records.all_records(G))
 assert rid in ids(ready) and rid not in ids(waiting), (ids(ready), ids(waiting))
-# 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で玩具の頁から移した）。待つ報告から玩具の頁の札へ行ける
-assert f'次の版を待つ報告 1 件: <a href="/toy/{G}#{rid}">記録の番号 {rid}</a>' in send(f"/loop/{G}")[1].decode(), "節に出る"
+# 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で玩具の頁から移した）。待つ報告から手帖の記録の頁の記録の並び（#mine）へ行ける
+# （つくるの頁から記録の札を外したので、行き先を手帖の記録の頁にした・上の理由）
+assert f'次の版を待つ報告 1 件: <a href="/toy/{G}/techo/kiroku#mine">記録の番号 {rid}</a>' in send(f"/loop/{G}")[1].decode(), "節に出る"
 assert send(f"/toy/{G}/record", {"hypothesis": oid0, "sheet_version": 1, "result": "動いた", "who": "nextwho000"}, cookie=key0)[0] == 303
 rid0 = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == oid0)
 assert rid0 in ids(kaizen.pending(G, records.all_records(G))[1]), "説明の無い OWN-n の記録は、説明を待つ"
-assert f'説明を待つ報告 1 件: <a href="/toy/{G}#{rid0}">記録の番号 {rid0}</a>' in send(f"/loop/{G}")[1].decode()  # 輪の節は作る側の様子の頁（本人の答え Q5）
+assert f'説明を待つ報告 1 件: <a href="/toy/{G}/techo/kiroku#mine">記録の番号 {rid0}</a>' in send(f"/loop/{G}")[1].decode()  # 輪の節は作る側の様子の頁（本人の答え Q5）。行き先は手帖の記録の頁（上の理由）
 assert send("/loop")[0] == 200
 base_params = loop.version_params(G, SHEET, 1)[0]
 param, to = one_change()
@@ -218,7 +222,7 @@ param6, to6 = one_change()
 oid6, key6 = made("nextwho006", "寸法を変えた紙で試した", {param6: to6})
 assert next(h for h in hypotheses.own_hypotheses(G) if h["id"] == oid6)["params"][param6] == to6, "本人の紙の値はたたき台と違う"
 rid6 = recorded("nextwho006", oid6, key6)
-form = send(f"/toy/{G}")[1].decode().split(f'action="/record/{rid6}/next', 1)[1].split("</form>", 1)[0]
+form = send(f"/toy/{G}/techo/kiroku")[1].decode().split(f'action="/record/{rid6}/next', 1)[1].split("</form>", 1)[0]  # 欄は手帖の記録の頁（上の理由）
 now6 = {**TEMPLATES["slider_fan"].DEFAULTS, **loop.version_params(G, SHEET, loop.latest_version(G, SHEET))[0]}[param6]
 assert now6 != to6 and f"今 {now6:g}" in form and f"今 {to6:g}" not in form, form[:400]
 

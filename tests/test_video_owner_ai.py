@@ -9,6 +9,7 @@
 """
 import http.client
 import json
+import re
 import os
 import pathlib
 import tempfile
@@ -24,6 +25,7 @@ from api import agent, ask, observe  # noqa: E402
 from omochae import loop, media_review, records  # noqa: E402
 from web.play_server import serve  # noqa: E402
 from web.techo_site import media_dir  # noqa: E402
+from web import wording  # noqa: E402
 
 ask._key_present = lambda: True
 observe.frames = lambda path: [b"koma"]
@@ -82,12 +84,21 @@ def reviewed(rid, shows):
     (media_dir(rid) / "review.json").write_text(json.dumps({"m1.mp4": {"shows": shows}}), encoding="utf-8")
 
 
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作（動画を見てもらう）と読んだ文は手帖の記録の頁にあるので、そこで見る。つくるの頁には、どの画面にも札が出ない事を、呼ぶたびに見る
 def pages(key=None):
-    return call(f"/toy/{G}", key)[1] + call(f"/toy/{G}/techo/kiroku", key)[1]
+    toy = call(f"/toy/{G}", key)[1]
+    assert "/ai-observe" not in toy and READ not in toy, "つくるの頁に記録の札が残った"
+    return call(f"/toy/{G}/techo/kiroku", key)[1]
 
 
 def card(page, rid):
-    return page.split(f'id="{rid}"', 1)[1].split("</article>", 1)[0]
+    """手帖の記録の頁の、その記録の札（「記録の番号 R-…」から次の記録の番号まで。札の中にも item の箱があるので、箱でなく番号で区切る）。"""
+    return re.split(r"記録の番号 R-\d{4}", page.split(wording.record_no(rid), 1)[1], maxsplit=1)[0]
+
+
+def kiroku(key=None):
+    return pages(key)
 
 
 rid = video_record()
@@ -118,22 +129,22 @@ assert call(f"/record/{early}/ai-observe", OWN_KEY, {})[0] == 422, "上げた本
 
 # 4. 確認の後は確認のとおり
 reviewed(rid, "object")
-assert form in pages(OTHER_KEY) and READ in card(call(f"/toy/{G}", OTHER_KEY)[1], rid), "物だけと確かめた後は誰にでも"
+assert form in pages(OTHER_KEY) and READ in card(kiroku(OTHER_KEY), rid), "物だけと確かめた後は誰にでも"
 calls = fake.calls
 assert call(form, OTHER_KEY, {})[0] == 303 and fake.calls == calls + 1, "物だけと確かめた後は誰でも呼べる"
 hidden = video_record()
 assert call(f"/record/{hidden}/ai-observe", OWN_KEY, {})[0] == 303
-assert READ in card(call(f"/toy/{G}", OWN_KEY)[1], hidden)
+assert READ in card(kiroku(OWN_KEY), hidden)
 reviewed(hidden, "people")
 calls = fake.calls
 assert call(f"/record/{hidden}/ai-observe", OWN_KEY, {})[0] == 303 and fake.calls == calls, "人や声が入る動画は誰も渡せない（前からの断りの文）"
 for key in (OWN_KEY, None):
-    assert READ not in card(call(f"/toy/{G}", key)[1], hidden), "人や声が入る動画を読んだ前の文も出さない"
+    assert READ not in card(kiroku(key), hidden), "人や声が入る動画を読んだ前の文も出さない"
 
 # 5. どの動画を読んだかの控えが無い前の文は、その記録の動画を見られる画面にだけ
 older = video_record()
 loop._write(observe.path(older), {"record_id": older, "observed": ["前の文の目印"], "unclear": [], "by": "claude", "label": "観察（Claude の補助）"})
-assert "前の文の目印" in card(call(f"/toy/{G}", OWN_KEY)[1], older) and "前の文の目印" not in card(call(f"/toy/{G}", OTHER_KEY)[1], older)
+assert "前の文の目印" in card(kiroku(OWN_KEY), older) and "前の文の目印" not in card(kiroku(OTHER_KEY), older)
 assert "前の文の目印" in call(f"/toy/{G}/techo/kiroku", OWN_KEY)[1] and "前の文の目印" not in call(f"/toy/{G}/techo/kiroku")[1]
 
 print("ok: 確認の前の動画を Claude に渡す口と読んだ文は、上げた本人の画面だけ")

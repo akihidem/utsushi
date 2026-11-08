@@ -70,7 +70,11 @@ def source(sid):
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] in (200, 303)
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた"})[0] in (200, 303)
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"})[0] in (200, 303)
-shown = options(get(f"/toy/{G}"))
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 記録の札の操作（次の版を作る）は手帖の記録の頁にあるので、欄はそこで見る（KIROKU）。つくるの頁に次の版の欄が残っていない事も見る
+KIROKU = f"/toy/{G}/techo/kiroku"
+assert 'action="/record/R-0001/next' not in get(f"/toy/{G}"), "つくるの頁に次の版の欄が残った"
+shown = options(get(KIROKU))
 assert "push_amount" not in shown, "選んでも必ず断られる寸法が欄に出ている"
 assert sorted(shown) == sorted(ALLOWED["slider_fan"] - {"push_amount"}), shown
 
@@ -89,13 +93,13 @@ assert code == 422 and "押し上げる動きが筒の中に収まりません" 
 # 4. ほかの寸法を変えて幅が開くと、欄に出て通る。表で固定しない
 assert post("/record/R-0001/next", {**form, "param": "fold_height", "to": "47.5"})[0] in (200, 303)
 assert loop.latest_version(G, GS) == 2
-page = get(f"/toy/{G}")
+page = get(KIROKU)
 assert "push_amount" in options(page) and "押し上げる量（mm）: 今 69（" in page, options(page)
 assert post("/record/R-0001/next", {**form, "param": "push_amount", "to": "68.6"})[0] in (200, 303)
 assert loop.latest_version(G, GS) == 3 and loop.version_params(G, GS, 3)[0]["push_amount"] == 68.6
 
 # 5. 整数だけの寸法は、欄が整数だけを受ける。数の欄で、既定は小数も通し（step=any）、選んだ寸法が整数だけの時に JS が step=1 にする。min と max は付けない（幅の外は今ある字で断る）
-page = get(f"/toy/{G}")
+page = get(KIROKU)
 box = page.split('action="/record/R-0001/next#next-R-0001"', 1)[1].split("</details>", 1)[0]
 assert '<input type="number" step="any" name="to" inputmode="decimal" required>' in box, box[:900]
 assert " min=" not in box and " max=" not in box
