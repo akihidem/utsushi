@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_budget_hold.py
+# commit: 7f6c06e5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_budget_hold.py", line 72, in <module>
+    assert sorted(got) == ["day", "day", "day", "ok"], ("上限の内の 1 本だけが通る", got)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('上限の内の 1 本だけが通る', ['ok', 'ok', 'ok', 'ok'])
+rc=1

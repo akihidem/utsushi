@@ -68,8 +68,12 @@ def observe(rid, video_path, client):
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64.b64encode(b).decode()}} for b in imgs]
     content.append({"type": "text", "text": "この 3 コマで見えた事を、決まった形の JSON だけで返してください: {\"observed\": [...], \"unclear\": [...]}"})
     budget.check(0.0, budget.worst_case(config.MODELS["observe"], 3 * 1600 + 400, config.ASK_MAX_TOKENS))
-    r = client.messages.create(model=config.MODELS["observe"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
-                               messages=[{"role": "user", "content": content}], thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["observe"]})
+    try:
+        r = client.messages.create(model=config.MODELS["observe"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
+                                   messages=[{"role": "user", "content": content}], thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["observe"]})
+    except BaseException:  # 呼べなかった時は予約を返す（安全の事項 3 への対応・budget の頭の注）
+        budget.release()
+        raise
     usage = getattr(r, "usage", None)
     budget.add("observe", config.MODELS["observe"], getattr(usage, "input_tokens", 0) or 0, getattr(usage, "output_tokens", 0) or 0)
     text = "".join(getattr(b, "text", "") for b in r.content if getattr(b, "type", "") == "text").strip()
