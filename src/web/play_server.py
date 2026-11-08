@@ -258,6 +258,9 @@ BUSY = "受け付けられませんでした。少し待って、もう一度送
 # 頼まれた仮説が無い時の断り（刷る・記録を残す・考えを話す）。前は「仮説 {hid} は無い」で、内部の番号（H-A など）をそのまま出していた。
 # 印（A・C）と番号を学ぶ人に出さない決め（本人の答え 11-08「そろえる。」）に外れるので、統括の決め（11-08）の向きの字にした。新しい字は本人の確かめ待ち
 NO_HYPOTHESIS = "その仮説は見つかりません。頁を開き直してください。"
+# 押し方の違う紙の記録から次の版を作ろうとした時の断り（loop.next_target が None）。前は「次の版はたたき台（H-C）にだけ足す」で、
+# たたき台の内部の番号を出していた（別の目の気づき・統括の決め 11-08）。新しい字は本人の確かめ待ち
+NEXT_SHEET_ONLY = "次の版は、今のたたき台の型紙にだけ足せます。"
 
 
 def writer(peer, headers):
@@ -1128,7 +1131,7 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))  # 自分の紙の記録からの次の版は、たたき台へ向ける
         if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
-            return self._send(422, self._kiroku(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], err_at=rid))
+            return self._send(422, self._kiroku(sid, errors=[NEXT_SHEET_ONLY], err_at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
             return self._send(422, self._kiroku(sid, errors=[NO_HYPOTHESIS], err_at=rid))
         if loop.explanation(rid) is None:
@@ -1307,7 +1310,9 @@ class Handler(BaseHTTPRequestHandler):
             hid = form.get("hypothesis", "")
             from . import think_sheet
 
-            if not think_sheet.usable(self, sid, hid):  # 話した考えから作った案の記録は、作った本人の画面からだけ
+            # 話した考えから作った案の記録は、作った本人の画面からだけ。無い仮説は受け口で先に断る（前は records.add の床の字
+            # 「仮説 H-ZZ は実在しない」が内部の番号のまま、3 つの言葉とも訳されずに出た。別の目の気づき・統括の決め 11-08）
+            if not think_sheet.usable(self, sid, hid) or not records.known_hypothesis(sid, hid):
                 return self._send(422, self._toy(sid, errors=[NO_HYPOTHESIS], at="kiroku", filled=(act, form)))
             # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
             rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
