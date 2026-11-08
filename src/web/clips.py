@@ -135,7 +135,10 @@ window.utsushiClipsStart=(sid)=>{try{const r=JSON.parse(sessionStorage.getItem('
 # 送り先は、記録を作った直後のその記録の写真の口（のこすの頁と同じ道・同じ見出し）だけ。送れた物は消し、終わったらその玩具の回と印を消す。
 # その場限りの印（who）は記録の後に作り直されるので、手帖は記録の直後・作り直しの前に呼ぶ
 SEND_SCRIPT = """<script>(()=>{if(!window.indexedDB)return;
-window.utsushiClipsSend=(sid,id)=>new Promise((done)=>{let w='',r=null;try{w=sessionStorage.getItem('utsushi-who')||'';r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null')}catch(e){}
+window.utsushiClipsSend=(sid,id)=>new Promise((fin)=>{let w='',r=null,over=false;try{w=sessionStorage.getItem('utsushi-who')||'';r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null')}catch(e){}
+ const done=(v)=>{if(!over){over=true;fin(v)}};
+ // 置き場が答えない時（ブラウザの置き場が止まっている・試験の仮の時計の中など）に、記録の残しを止めないよう、6 秒で待つのをやめる（区切りは送らずに残る）
+ setTimeout(()=>done(false),6000);
  if(!w||!r){done(false);return}
  const q=indexedDB.open('utsushi-clips',1);q.onupgradeneeded=()=>q.result.createObjectStore('clips',{keyPath:'id'});q.onerror=()=>done(false);
  q.onsuccess=async()=>{const db=q.result,get=()=>new Promise(ok=>{const g=db.transaction('clips').objectStore('clips').getAll();g.onsuccess=()=>ok(g.result||[]);g.onerror=()=>ok([])});

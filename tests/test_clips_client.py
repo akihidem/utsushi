@@ -92,7 +92,7 @@ G = "NDL-1187053-R0000005-L"
 page = techo_site.records_page(G, paper=(hypotheses.sheet_of(G)["id"], 9))
 assert 'id="nk-c-clips" hidden' in page and clips.HEAD in page and clips.STORE in page
 assert nokosu.SCRIPT.replace("__REMOVE__", clips.REMOVE).count(f"b.textContent = '{clips.REMOVE}'") == 1 and "await utsushiClips.remove(c.id); showClips();" in nokosu.SCRIPT, "1 つずつ外す"
-assert "addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.list(sid)" in nokosu.SCRIPT, "頁を開いた時に、渡す印の違う物を消す"
+assert "addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.adopt(sid).then(() => utsushiClips.list(sid))" in nokosu.SCRIPT, "頁を開いた時に、今の回の物を渡してから、渡す印の違う物を消す"
 go = body(nokosu.SCRIPT, "go.onclick = async () => {", "\n};")
 order = [go.index(x) for x in ("/record-json`", "utsushiNewWho", "sendClips(j.id)", "sendFiles(j.id, list)", "utsushiClips.clear(sid)", "/gallery?msg=")]
 assert order == sorted(order), ("承認の順: 記録 → 印の作り直し → 区切り → 写真 → 置き場を消す → もちよる", order)
@@ -114,7 +114,21 @@ assert "window.utsushiClipsStart(sid)" in techo_step.SCRIPT[techo_step.SCRIPT.in
 st = clips.start_assets()
 assert "if(r&&!out&&Date.now()-r.at<3*3600000)return" in st and "out=!document.referrer||new URL(document.referrer).origin!==location.origin" in st, "回の印が 3 時間の内でも、外から直に開いた手帖は引き継がない"
 assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "回が無い時だけ、印の無い区切りを消し、次は新しい印"
-assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
+assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", clips.START_SCRIPT), "作り始めの台本は録る code も外へ送る口も持たない"
+# 手帖の最後の「のこす」でも、同じ玩具の今の回の区切りを送る（統括の決め 11-08）。送るだけの台本で、録る code を持たない
+sd = clips.SEND_SCRIPT
+assert sd in clips.start_assets() and sd in techo_step.page("NDL-1187053-R0000005-L", [techo_step.hypotheses.sheet_of("NDL-1187053-R0000005-L")["id"]], "tenji", step=99)
+assert not re.search(r"getUserMedia|MediaRecorder|getDisplayMedia|captureStream|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", sd), "送るだけ（録らない）"
+assert sd.count("fetch(") == 1 and "fetch('/record/'+id+'/media'" in sd and "'X-Utsushi-Clip':c.kind" in sd, "送り先は記録の写真の口だけ・見出しで区切りと言う"
+assert "c.sid===sid&&c.who===w&&c.run===r.id" in sd and "if(m.ok)await del(c.id)" in sd, "同じ玩具・同じ画面・今の回の区切りだけを送り、送れた物は消す"
+assert "setTimeout(()=>done(false),6000)" in sd, "置き場が答えない時も、記録の残しを止めない"
+sv = techo_step.SCRIPT[techo_step.SCRIPT.index("const save = async (result)"):]
+order = [sv.index(x) for x in ("/record-json`", "utsushiClipsSend(sid, j.id)", "utsushiNewWho", "sendFiles(j.id, files)", "if (clipBad) done = '__CLIP_FAIL__'")]
+assert order == sorted(order), ("手帖の のこす: 記録 → 区切り（印を作り直す前）→ 写真 → 送れない時の決めた 1 行", order)
+kp = techo_step.SCRIPT[techo_step.SCRIPT.index("const keepPress = async () =>"):techo_step.SCRIPT.index("const save = async (result)")]
+assert kp.index("utsushiClipsSend(sid, target)") < kp.index("sendFiles(target, files)"), "前の記録に足す時も区切りを送る"
+# のこすの頁を開いた時は、今の回のまだ渡していない区切りを渡してから並べる（作りながら見る頁の「のこす」のようにフォームで着く道のため）
+assert "utsushiClips.adopt(sid).then(() => utsushiClips.list(sid))" in nokosu.SCRIPT
 assert "utsushiClips.openedAs(T.sid,'work')" in hmd.SCRIPT and "utsushiClips.startMaking(T.sid,back)" not in hmd.SCRIPT, "作業の頁は続き（玩具の頁の回を引き継ぐ）"
 assert 'utsushiClips.openedAs("NDL-1187053-R0000005-L","toy")' in hanasu.think_section("NDL-1187053-R0000005-L", {}), "玩具の頁は作り始め"
 assert "addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false)" in hmd.SCRIPT, "戻る釦で読み直さずに戻った時も作り始め"
