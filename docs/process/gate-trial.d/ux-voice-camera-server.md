@@ -5,7 +5,7 @@
   - web/play_server.py の写真と動画の口: 見出し X-Utsushi-Clip（t か k）を、Origin・記録の鍵・書き込みの止め・大きさ・公開の場の合計の照らしの後、save_media と claim の前で分ける。値と型の組に無い物は 422。k は付帯情報（X-Utsushi-Step・X-Utsushi-Button）を控え、合言葉付きの場では読みを 1 回だけ走らせる
   - api/clip_read.py（新しい）: 3 コマを observe と同じ係に付帯情報を添えて見せ、答えは「案」。人の言葉が先（感想と工夫の行・記録に結んだ工夫の字）・鍵・1 日の回数（CLIP_DAILY 40・台帳の role clip）・予算の止めで読まない時は理由を控える。人が写っていたら字を残さず消す（clip_drop）。成否の言葉の答えは出さない
   - omochae/media_review.py: list にカメラの区切りを控えた理由つきで並べ、frames で 3 コマを書き出し、approve の object で 1 回読み、people で読まずに消す（端末で番号を打った時だけ）
-- 検証ゲート: **済み**。Red: 声の担当の枝の頭 23f86eb3 に新しい試験 tests/test_clip_receipt.py だけを置くと rc 1（gate-evidence/red-clip-receipt.txt）。Green: gate-evidence/green-clip-receipt.txt
+- 検証ゲート: **済み**。Red: 声の担当の枝の頭 23f86eb3 に新しい試験 tests/test_clip_receipt.py だけを置くと rc 1（gate-evidence/red-clip-receipt.txt）。Green: gate-evidence/green-clip-receipt.txt（止め 2 つと気づき 3 つの直しの後は green-clip-receipt-floor.txt）
 
 | 決めの行 | 照らし | 根拠 |
 |---|---|---|

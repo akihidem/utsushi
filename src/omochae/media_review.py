@@ -181,6 +181,11 @@ def clips_waiting():
     return out
 
 
+def frames_dir(rid, name):
+    """frames が 3 コマを書き出す置き場。区切りごとに 1 つに決め、approve の時に消す（人の写る絵を一時の置き場に残さない・別の目の気づき）。"""
+    return Path(tempfile.gettempdir()) / "utsushi-clip-frames" / f"{rid}-{name.split('.')[0]}"
+
+
 def _clip(args):
     """区切りの命令（frames・approve の区切りの分）。Returns 失敗の一覧。人が端末で番号を打った時だけ読み、または消す。"""
     from . import voice_text
@@ -192,13 +197,17 @@ def _clip(args):
     if args.cmd == "frames":
         from api import observe
 
-        d = Path(tempfile.mkdtemp(prefix="clip-frames-"))
+        d = frames_dir(args.id, name)
+        shutil.rmtree(d, ignore_errors=True)
+        d.mkdir(parents=True, mode=0o700)
+        d.parent.chmod(0o700)
         for i, b in enumerate(observe.frames(voice_text.voice_dir(args.id) / name)):
             (d / f"{i + 1}.jpg").write_bytes(b)
             print(d / f"{i + 1}.jpg")
         return []
     if not contrib._human_confirm(f"{args.id}/{args.name}", "確認"):
         return [Failure("F10.review", f"{args.id}/{args.name}", "端末での人の確認が無い")]
+    shutil.rmtree(frames_dir(args.id, name), ignore_errors=True)  # 見終えたコマは、読む前・消す前に消す
     if args.shows == "people":
         voice_text.clip_drop(args.id, name, "人が写っていた（進め役の確かめ）")
         print("読まずに消しました")

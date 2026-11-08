@@ -18,7 +18,9 @@
 """
 import base64
 import json
+import os
 import threading
+import time
 
 from omochae import loop, records, store, talk_log, voice_text, words_review
 from omochae.marks import without_premise
@@ -26,6 +28,10 @@ from omochae.marks import without_premise
 from . import budget, config, observe
 
 ROLE = "clip"  # 台帳の役の名。区切りの読みの 1 日の回数を数える
+# 観察の字に、人の体や顔を言う語が入っていたら残さない（person の欄の見張りと重ねる床・別の目の止め 1）。
+# 「顔」は虎の顔のような玩具の顔でも当たるが、消す側へ倒す（人の写った物を案として残すより、読み直さずに消す方を採る）
+PERSON_WORDS = ("顔", "人物", "人の体", "人が写", "子ども", "子供", "髪")
+READING_STALE = 600  # 読みの印が 10 分を過ぎたら、前の読みが落ちた物と見る（印が残って二度と読めなくならないように）
 CLIP_DAILY = 40  # 区切りの読みだけの 1 日の回数の止め（推し・本人の答え待ち。替える時はここだけ）
 SYSTEM = (observe.SYSTEM + "\n今回のコマは、作っている人が「ここで止まった」を押した後の 10 秒の動画から取った物です。"
           "手と紙がどうなっているか（どの部品をどう持ち、どこが折れず・貼れずに止まっているか）を見えたとおりに書きます。"
@@ -46,11 +52,13 @@ def observations(rid):
 
 
 def save_meta(rid, name, step=None, button=None):
-    """区切りの付帯情報（どの手順・どの釦）。受け口が受けた時に控え、読む時に係へ添える。字の中身は持たない。"""
-    p = _meta_path(rid)
-    meta = store.read_json_or_skip(p) or {}
-    meta[name] = {"step": step, "button": button}
-    store.write_json(p, meta)
+    """区切りの付帯情報（どの手順・どの釦）。受け口が受けた時に控え、読む時に係へ添える。字の中身は持たない。
+    読んで書き直す形なので錠の中で（同時に 2 つ届いても、片方の控えが欠けないように・別の目の気づき）。"""
+    with store.locked(loop.folder()):
+        p = _meta_path(rid)
+        meta = store.read_json_or_skip(p) or {}
+        meta[name] = {"step": step, "button": button}
+        store.write_json(p, meta)
 
 
 def count_today():
@@ -73,8 +81,37 @@ def told_first(rid):
     return any(t["when"] == "making" and t["text"].strip() for t in talk_log.kufu(rec["source_id"], rid))
 
 
+def _claim(rid, name):
+    """同じ区切りを 2 回読まない印（受け口の読みと進め役の approve が重なった時・別の目の気づき）。印を取れたら True。
+    印は別のプロセスとも取り合うファイル（O_EXCL）。読みが落ちて残った古い印（10 分過ぎ）は取り直す。"""
+    p = loop.folder() / f"clip-reading-{rid}-{name}"
+    try:
+        if p.exists() and time.time() - p.stat().st_mtime > READING_STALE:
+            p.unlink(missing_ok=True)
+        os.close(os.open(p, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+        return True
+    except FileExistsError:
+        return False
+
+
+def _release(rid, name):
+    (loop.folder() / f"clip-reading-{rid}-{name}").unlink(missing_ok=True)
+
+
 def read(rid, name, client):
     """1 つの区切りを読む。Returns (結果 or None, 読まなかった理由)。読めなかった時は理由を控え、区切りは残す（72 時間で掃除）。"""
+    if name not in voice_text.clips_waiting(rid):
+        return None, "区切りが無い"
+    if not _claim(rid, name):
+        return None, "読んでいる途中"
+    try:
+        return _read(rid, name, client)
+    finally:
+        _release(rid, name)
+
+
+def _read(rid, name, client):
+    """read の中身（印を取った後）。印を取る間に別の読みが済ませていたら読まない。"""
     if name not in voice_text.clips_waiting(rid):
         return None, "区切りが無い"
 
@@ -111,12 +148,16 @@ def read(rid, name, client):
         result = json.loads(text[text.index("{"): text.rindex("}") + 1])
     except ValueError:
         return wait("答えの形が読めない")
-    if result.get("person") is True:
-        # 床: 人が写っていると出たら、字を残さず区切りごと消す（設計 5 節）
-        voice_text.clip_drop(rid, name, "人が写っていた")
-        return None, "人が写っていた"
+    # 床: 人が写っていないと答えが言い切った時（person が真偽の値の false）だけ残す。欄が無い・字の "true"・true は、
+    # 字を残さず区切りごと消す（設計 5 節・別の目の止め 1: 答えの形しだいで床が効かなかった）
+    if result.get("person") is not False:
+        voice_text.clip_drop(rid, name, "人が写っていた" if result.get("person") is True else "人の見分けの答えが無い")
+        return None, "人が写っていた" if result.get("person") is True else "人の見分けの答えが無い"
     if not isinstance(result.get("observed"), list) or not isinstance(result.get("unclear"), list):
         return wait("答えの形が違う")
+    if any(w in " ".join(map(str, result["observed"] + result["unclear"])) for w in PERSON_WORDS):
+        voice_text.clip_drop(rid, name, "観察の字に人の体や顔の語")
+        return None, "観察の字に人の体や顔の語"
     if any(w in without_premise(" ".join(map(str, result["observed"] + result["unclear"]))) for w in observe.BANNED):
         return wait("成否や点の言葉が入っていた")
     p = _path(rid)

@@ -134,6 +134,20 @@ code, m1 = call(f"/record/{rid}/media", buf.getvalue(), "image/png")
 assert code == 201 and m1 == "m1.png" and (media / "owners.json").exists(), "見出しなしは今のまま（写真の口）"
 meta = json.loads((clip_read.loop.folder() / f"clip-meta-{rid}.json").read_text(encoding="utf-8"))
 assert meta == {"k1.webm": {"step": 4, "button": "stuck"}}, meta
+# 手順の見出しは 0〜9 の 1〜3 字だけを数に読む（上付きの「²」は isdigit を通るが int で落ちて 500 だった・別の目の止め 2）
+rid_s = new_record(call)  # 区切りは記録ごとに 5 つまでなので、手順の見出しの試しは別の記録で
+for step, want in (("²", None), ("1000", None), ("abc", None), ("007", 7)):
+    code, n = call(f"/record/{rid_s}/media", cam, "video/webm", headers={"X-Utsushi-Clip": "k", "X-Utsushi-Step": step})
+    assert code == 201, (step, code, n)
+    assert json.loads((clip_read.loop.folder() / f"clip-meta-{rid_s}.json").read_text(encoding="utf-8"))[n]["step"] == want, (step, n)
+# 同時に 2 つ届いても、同じ番号に上書きしない（空いた番号を選んで置くまでを錠の中で・別の目の気づき）
+rid2 = new_record(call)
+got = []
+ths = [threading.Thread(target=lambda: got.append(call(f"/record/{rid2}/media", cam, "video/webm", headers={"X-Utsushi-Clip": "k", "X-Utsushi-Step": "2"}))) for _ in range(2)]
+[t.start() for t in ths]
+[t.join() for t in ths]
+assert sorted(n for c, n in got if c == 201) == ["k1.webm", "k2.webm"], got
+assert set(json.loads((clip_read.loop.folder() / f"clip-meta-{rid2}.json").read_text(encoding="utf-8"))) == {"k1.webm", "k2.webm"}, "控えも欠けない"
 server.shutdown()
 
 # ---- 2・3 読みの段（偽の係で）
@@ -171,6 +185,23 @@ budget.check = keep_check
 seen_person = Client({"observed": ["顔が見える"], "unclear": [], "person": True})
 assert clip_read.read(rid, "k2.webm", seen_person) == (None, "人が写っていた")
 assert "k2.webm" not in voice_text.clips_waiting(rid) and len(clip_read.observations(rid)) == 1, "字を残さない"
+rid_p = records.add({"source_id": G, "hypothesis_id": H, "sheet_version": 1, "result": records.results_for(G)[0], "impression": "人の見分けの試し"})[0]
+# 人の見分けの答えが真偽の false でない時（欄が無い・字の "true"）と、観察の字に顔の語がある時も、字を残さず消す（別の目の止め 1）
+for ans in ({"observed": ["扇が開いた"], "unclear": []}, {"observed": ["扇が開いた"], "unclear": [], "person": "true"},
+            {"observed": ["顔が見える"], "unclear": [], "person": False}):
+    n = voice_text.put_cam_clip(rid_p, cam, "webm")[0]
+    before = len(clip_read.observations(rid_p))
+    result, why = clip_read.read(rid_p, n, Client(ans))
+    assert result is None and why in ("人の見分けの答えが無い", "観察の字に人の体や顔の語"), (ans, why)
+    assert n not in voice_text.clips_waiting(rid_p) and len(clip_read.observations(rid_p)) == before, (ans, "字を残さない")
+rid_p = records.add({"source_id": G, "hypothesis_id": H, "sheet_version": 1, "result": records.results_for(G)[0], "impression": "二度読まない試し"})[0]
+# 受け口の読みと進め役の approve が重なっても、同じ区切りを 2 回読まない（読みの印）
+n = voice_text.put_cam_clip(rid_p, cam, "webm")[0]
+assert clip_read._claim(rid_p, n)
+twice = Client({"observed": ["扇が開いた"], "unclear": [], "person": False})
+assert clip_read.read(rid_p, n, twice) == (None, "読んでいる途中") and not twice.seen
+clip_read._release(rid_p, n)
+assert clip_read.read(rid_p, n, twice)[0] and len(twice.seen) == 1, "印が外れたら 1 回読む"
 # 成否の言葉の入った答えは出さない
 bad = Client({"observed": ["失敗している"], "unclear": [], "person": False})
 assert clip_read.read(rid, voice_text.put_cam_clip(rid, cam, "webm")[0], bad)[1] == "成否や点の言葉が入っていた"
@@ -190,5 +221,13 @@ assert (prid, f"voice/{pname}", "") in waiting, waiting
 assert media_review.main(["approve", prid, f"voice/{pname}", "--shows", "object", "--reviewer", "進め役"]) == 3, "端末の人の確かめが無いと進まない"
 assert pname in voice_text.clips_waiting(prid)
 assert media_review.main(["frames", prid, f"voice/{pname}"]) == 0
+fd = media_review.frames_dir(prid, pname)
+assert sorted(p.name for p in fd.iterdir()) == ["1.jpg", "2.jpg", "3.jpg"] and oct(fd.stat().st_mode & 0o777) == "0o700"
+keep_confirm = media_review.contrib._human_confirm
+media_review.contrib._human_confirm = lambda *a: True  # 試験には端末が無いので、人が番号を打った事にする
+assert media_review.main(["approve", prid, f"voice/{pname}", "--shows", "people", "--reviewer", "進め役"]) == 0
+media_review.contrib._human_confirm = keep_confirm
+assert not fd.exists(), "見終えたコマの一時の置き場は消える（人の写る絵を残さない）"
+assert pname not in voice_text.clips_waiting(prid), "people は読まずに消す"
 assert media_review.main(["approve", prid, "voice/k9.webm", "--shows", "object", "--reviewer", "進め役"]) == 3, "無い区切りは断る"
 print("ok: 区切りは見出しで受け、照らしの後で分ける・読みは人の操作の後に 1 回・人の言葉が先・止めで待つ・公開の場は進め役の確かめの後")

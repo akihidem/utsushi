@@ -110,7 +110,7 @@ Claude が考えた型紙を紙に刷り、切って、折って、作って、�
 
 ハッカソンの運営から、提出は 1 つの repo にするよう求められた。そこで、別の repo（[paper-to-toy](https://github.com/akihidem/paper-to-toy)）で開発しているエンジンを、提出のためにこの repo の engine/ にまとめる（本人の決定、11-07）。まとめた後も、paper-to-toy の repo とこのリンクは残す。うつしは、みんなが使えるサービスとして作った、paper to toy のエンジンの一つの具体例にあたる。エンジンも、今回のハッカソンのために開発期間の中で作っている。うつしとエンジンの両方を、今回のハッカソンの審査の対象にしてほしい（本人の言葉、11-07）。
 
-- engine/ の中は、まとめた時のエンジンの main の頭 `26156d35b02345b130e44708921bbd74f58cb1b9`（2026-11-08 06:37 JST の commit）。エンジンの履歴（518 の commit）は paper-to-toy の repo で辿る。直す時と、両方の比べ方は [docs/architecture.md](docs/architecture.md) の engine/ の行にある。
+- engine/ の中は、まとめた時のエンジンの main の頭 `d204a5a4a2d385e0a9fe4c78dd4c010833e58043`（2026-11-08 09:47 JST の commit）。エンジンの履歴（544 の commit）は paper-to-toy の repo で辿る。直す時と、両方の比べ方は [docs/architecture.md](docs/architecture.md) の engine/ の行にある。
 - エンジンの版の台帳は engine/data/engine/versions.json。型紙の版とエンジンの版の歩みの表は `data/history/kaizen-history.json`（エンジンの記録から写した表）。
 
 ## できること（動く物。ワークショップは 11 月 4・5・6・7 日の 4 回、Claude は 11-07 に本物の鍵で手元から 4 つの所を呼び、動いた。機能ごとの状態は `docs/features.json`）
