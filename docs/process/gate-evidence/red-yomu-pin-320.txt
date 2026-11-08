@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/_red_pin320.py
+# commit: 039c2742（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/_red_pin320.py", line 113, in <module>
+    assert not bad, "北斎漫画の留まる節が狭い画面で崩れる:\n" + "\n".join(bad)
+           ^^^^^^^
+AssertionError: 北斎漫画の留まる節が狭い画面で崩れる:
+en・320x568: 絵の箱が 2px（100px より低い）
+rc=1
