@@ -8,6 +8,7 @@
 - 保存期間の数（声の写し 72 時間・確かめ前の物を出す 2 時間・話した字の鍵 2 時間・しおりの待ち 3 時間・記録の鍵 15 分）と、しおりの順の数（504 通り・外れ 20 回）がコードの値と同じ
 - 「fsync はしていない」と書いてある間は、store.write_atomic が fsync を呼ばない（呼ぶ形にしたら文書も直す）
 - 事項 8〜13 の項目が「していない事」にある。書きかけの印（〈 〉）が残っていない
+- SECURITY.md に名を書いた試験のファイル（tests/test_*.py）が、どれも在る（守りを書いた所が、在る試験を指す・直しの PR より先に字だけが入らない）
 """
 import inspect
 import itertools
@@ -42,4 +43,8 @@ not_done = doc[doc.index("## していない事"):doc.index("## エンジン（e
 for n in (8, 9, 10, 11, 12, 13):
     assert f"（事項 {n}）" in not_done, ("していない事に事項の項目が無い", n)
 assert "〈" not in doc and "〉" not in doc, "書きかけの印が残っている"
-print(f"ok SECURITY.md の数（直接の依存 {len(pins)}・保存期間・しおりの {ways} 通り）がコードと同じで、事項 8〜13 が していない事 にある")
+# engine/tests/ の試験（エンジンの節）は engine/ の中で探す
+named = sorted(set(m.group(0) for m in re.finditer(r"(?:engine/)?tests/test_[a-z0-9_]+\.py", doc)))
+missing = [n for n in named if not (ROOT / n).exists()]
+assert not missing, ("SECURITY.md が名を書いた試験が無い", missing)
+print(f"ok SECURITY.md の数（直接の依存 {len(pins)}・保存期間・しおりの {ways} 通り）がコードと同じで、事項 8〜13 が していない事 にあり、名を書いた試験 {len(named)} 本が在る")
