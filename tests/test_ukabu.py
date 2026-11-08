@@ -38,7 +38,7 @@ assert 3 <= len(toys) <= 5 and toys == list(ukabu.PICKS), toys
 assert block.startswith('<div class="ukabu" aria-hidden="true">'), "読み上げで飛ばさない"
 assert "<a " not in block and "href" not in block and "tabindex" not in block, "押すと飛ぶ形か、焦点に入る形が残った"
 assert page.count('class="uk uk') == len(toys), "題の間の外にも置いた"
-assert '<p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>' in hall, "題の間の字を替えた"
+assert f'<p class="en">Lost toys of Edo · 1773</p><h1><span class="kana" lang="ja">うつし</span><span class="yomi">{looks.YOMI}</span></h1>' in hall, "題の間の字を替えた"
 
 # 3. 動き
 css = "".join(re.findall(r"<style>(.*?)</style>", page, re.S))
