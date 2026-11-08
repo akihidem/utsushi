@@ -63,7 +63,8 @@ server = play_server.serve(0)
 assert isinstance(server, load_guard.LimitedServer) and isinstance(server.media_gate, load_guard.Gate) and isinstance(server.media_reserve, load_guard.Reserve)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
-op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+jar = http.cookiejar.CookieJar()
+op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
 
 def call(path, body, ctype, ip="203.0.113.9"):
@@ -89,6 +90,27 @@ code, body = call(f"/record/{rid}/media", b"x", "image/png")
 assert code == 503 and body == b"", (code, body)
 server.media_gate.leave()
 assert call(f"/record/{rid}/media", b"x", "image/png")[0] == 422, "空けば前のまま"
+# 遅い送り（会場の遅い Wi-Fi で本文を送っている途中）が 2 本あっても、3 本目の小さな写真は待たずに通る。写し直しの枠は本文を読み終えてから
+# 取るので、受け取りの間は持たない（別の目の気づき 11-08。前の形では 3 本目が枠を待ち、待つ長さを越えて 503 になった）
+import socket  # noqa: E402
+
+server.media_gate = load_guard.Gate(slots=2, wait_max=4, wait_s=3.0)
+cookie = "; ".join(f"{c.name}={c.value}" for c in jar)
+slow = []
+for ip in ("203.0.113.21", "203.0.113.22"):
+    so = socket.create_connection(("127.0.0.1", server.server_address[1]), timeout=10)
+    so.sendall((f"POST /record/{rid}/media HTTP/1.1\r\nHost: 127.0.0.1:{server.server_address[1]}\r\nOrigin: {base}\r\nCookie: {cookie}\r\nContent-Type: image/png\r\n"
+                f"Cf-Connecting-Ip: {ip}\r\nContent-Length: {1024 * 1024}\r\n\r\n").encode() + b"x" * 1000)
+    slow.append(so)
+time.sleep(0.5)  # 2 本とも本文の途中で止まっている
+assert server.media_reserve.reserved == 2 * 1024 * 1024, ("遅い送りが 2 本とも照らしを通って受け取りの途中にいる", server.media_reserve.reserved)
+t0 = time.time()
+code, _ = call(f"/record/{rid}/media", b"x", "image/png", ip="203.0.113.23")
+took = time.time() - t0
+assert code == 422 and took < 2.0, ("遅い送りが 2 本ある時に、3 本目の小さな写真が待たされた", code, round(took, 1))
+for so in slow:
+    so.close()
+time.sleep(0.5)
 server.media_gate = real_gate
 # 合言葉付きの場の合計の止め（予約中の分も数える）。上限の手前まで予約を埋めて、今回の分で越える形
 assert not getattr(server, "public_open", False)

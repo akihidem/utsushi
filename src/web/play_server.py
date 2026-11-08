@@ -411,20 +411,23 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
 
     def _media_post(self, rid, length):
-        """写真と動画の本文を読んで写し直す所（/record/<rid>/media の照らしを全部通した後）。変換は全体で同時に回す数と待てる数に上限がある
-        （安全の事項 4 への対応・web.load_guard.Gate）。溢れた時は本文を読まずに 503 で断り、本文を空にする（手帖は前からの字を出す）。"""
+        """写真と動画の本文を読んで写し直す所（/record/<rid>/media の照らしを全部通した後）。写し直しは全体で同時に回す数と待てる数に上限がある
+        （安全の事項 4 への対応・web.load_guard.Gate）。溢れた時は 503 で断り、本文を空にする（手帖は前からの字を出す）。
+        枠は本文を読み終えてから、写し直しの直前に取る（受け取りの間は持たない）。前の形（受け取りの間も持つ）では、会場の遅い Wi-Fi で 20MB を
+        送る人が 2 人いると、次の人が待たされ、7 人目は 503 になった（別の目の気づき・ふつうの量で挙動を替えない条件に当たる）"""
         from . import techo_site
 
+        # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
+        # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
+        # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
+        clip = self.headers.get("X-Utsushi-Clip")
+        data = self.rfile.read(length)  # 受け取りの間は写し直しの枠を持たない
+        if clip is not None:
+            return self._clip_post(rid, clip, data)  # 区切りの枠は、共用の錠を取った後・写す直前に取る（_clip_post）
         if not self.server.media_gate.enter():
             return self._send(503, b"", "text/plain; charset=utf-8", [("Retry-After", "30")])
         try:
-            # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
-            # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
-            # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
-            clip = self.headers.get("X-Utsushi-Clip")
-            if clip is not None:
-                return self._clip_post(rid, clip, self.rfile.read(length))
-            name, why = techo_site.save_media(rid, self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length),
+            name, why = techo_site.save_media(rid, self.headers.get("Content-Type", "").split(";")[0], data,
                                               keep_voice=getattr(self.server, "voice_tool", False))
         finally:
             self.server.media_gate.leave()
@@ -1235,8 +1238,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(422, "受け付けられない区切りです", "text/plain; charset=utf-8")
         put = voice_text.put_voice_clip if clip == "t" else voice_text.put_cam_clip
         # 空いた番号を選んで置くまでを錠の中で（同時に 2 つ届いても同じ番号に上書きしない・別の目の気づき）。錠は別のプロセスとも取り合う
+        # 写す枠（安全の事項 4 への対応・web.load_guard.Gate）は、錠を取った後に取る（錠を待つ間は枠を持たない・別の目の気づき）。
+        # 写真の保存は別の錠（media_review.media_lock）なので、枠と錠を互いに待ち合って止まる形にはならない
         with store.locked(loop.folder()):
-            name, why = put(rid, data, kind)
+            if not self.server.media_gate.enter():
+                return self._send(503, b"", "text/plain; charset=utf-8", [("Retry-After", "30")])
+            try:
+                name, why = put(rid, data, kind)
+            finally:
+                self.server.media_gate.leave()
         if not name:
             return self._send(422, why, "text/plain; charset=utf-8")
         if clip == "k":
