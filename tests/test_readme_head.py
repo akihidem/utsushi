@@ -62,7 +62,10 @@ head = [ln for ln in lines[1:at("## 名前に込めた思い")] if ln.strip()]
 # ループの中の人（本人の言葉 11-08「そしてちゃんとグラウンディングで人間が入ってる。ループの中に人間が入っている事も売りに書いてください。」
 # 「型紙をためしてもらうグラウンディングと、全体の改善案をみる管理人のグラウンディング。この 2 つを書いてください。」）
 GROUND = "- **ループの中に人がいる（2 つのグラウンディング）**: ① 型紙を試す作り手が、紙で作って現実の世界で確かめます。② 全体の改善案を見る管理人が、どの案を採るかと、エンジンをどう直すかを決めます。"
-assert head == [ONE_LINE, *SUMMARY, URI, GROUND, CORE], head
+# デモ動画のリンクの 1 行（統括の決め 11-08: 窓口が公開で上げた完成版・提出の床が頭の 30 行を見る・新しい言い回しを足さない）。3 行の要約の直後
+VIDEO = "- デモ動画（2 分 56 秒）: https://www.youtube.com/watch?v=YmPd2FHN8Nw"
+assert head == [ONE_LINE, *SUMMARY, VIDEO, URI, GROUND, CORE], head
+assert at(VIDEO) < 30, "デモ動画のリンクは頭の 30 行の内"
 assert lines.count(CORE) == 1, "核の言葉は頭の 1 行（畳みの 30 秒の要約の核の項目は CLAUDE.md と同じ字なので、同じ引用がもう 1 か所ある）"
 assert at(SITE) < 30, "決まった番地は頭の 30 行の内"
 
@@ -71,8 +74,10 @@ heads = [ln for ln in lines if ln.startswith("## ")]
 assert [h for h in heads if h != "## 30 秒の要約"] == list(ORDER), heads
 
 # 3. 投稿ビデオの項と見えない印
-for w in ("デモ動画", "YouTube", "合成の声", "投稿ビデオ", "動画のリンク"):
+# 投稿ビデオの項（動画の作りや合成の声の節）は残さない。デモ動画の字は、頭のリンクの 1 行だけ
+for w in ("YouTube", "合成の声", "投稿ビデオ", "動画のリンク"):
     assert w not in text, ("投稿ビデオの項が残っている", w)
+assert text.count("デモ動画") == 1, ("デモ動画の字は頭のリンクの 1 行だけ", text.count("デモ動画"))
 notes = re.findall(r"<!--(.*?)-->", text, re.S)
 assert sorted(n.strip() for n in notes) == ["counts:end", "counts:start", "summary:end", "summary:start"], notes
 
