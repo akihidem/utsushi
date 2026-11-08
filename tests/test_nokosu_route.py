@@ -43,7 +43,7 @@ for sid in TOYS:
     win = page[page.index('id="win"'):page.index('id="kiroku"')]
     go = f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
     nokosu = f'<p class="nokosu-go"><a class="btn quiet" href="/toy/{sid}/techo/kiroku">のこす</a></p>'
-    after = f'<p class="meta nokosu-route">{MAKING}</p><p class="meta nokosu-route">{toy.NOKOSU_ASK}</p><p class="meta nokosu-route">{WHY}</p>'
+    after = f'<p class="meta nokosu-route">{MAKING}</p><p class="meta nokosu-route">{naoru.ROUTE_ASK}</p><p class="meta nokosu-route">{WHY}</p>'
     assert win.count(go + nokosu + after) == 1, (sid, "道 1 は窓の「つくる」のすぐ下")
     assert page.count(MAKING) == 1, (sid, "道 1 の字は玩具の頁に 1 回")
     # 道 2: #kiroku の節の、今の道の上に見出しと意義。道の字と行き先は替えない

@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-fit/en-sub-old.json data/i18n/en.json; .venv/bin/python tests/test_entrance_yomi.py'
+# commit: 79255d21（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_entrance_yomi.py", line 118, in <module>
+    assert [x.strip() for x in rec["sub_text"].splitlines() if x.strip()] == ["From Edo nishiki", "the lost movements of toys", "brought back to life in paper"], (where, rec["sub_text"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'en-390x844'), 'From Edo nishiki\nFinding out how lost toys moved\nbrought back to life in paper')
+rc=1

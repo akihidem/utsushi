@@ -175,9 +175,9 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             # のこすの誘導が全体的に弱いので、のこすに行かない可能性が高い。」）。行き先は記録の頁（今の「つくったものを教えてください。」と同じ所）。
             # 枠だけの釦（.quiet）にして、作る口の つくる と見分ける。釦の字は道しるべの駅の名「のこす」（新しい字ではない）
             f'<p class="nokosu-go"><a class="btn quiet" href="/toy/{sid}/techo/kiroku">のこす</a></p>'
-            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）の 1 行と、本人の字（NOKOSU_ASK）と、意義の 1 行（のこす の画面と同じ字・
+            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）の 1 行と、本人の字（naoru.ROUTE_ASK・作りながら見る頁の最後と同じ字）と、意義の 1 行（のこす の画面と同じ字・
             # naoru.purpose）を のこす の釦の下に置く
-            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, NOKOSU_ASK, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
+            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, naoru.ROUTE_ASK, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     # 口は紙の 2 列（紙の絵 | 札）の下に 1 列で出す（.win の中に置き、札の CSS（.win .side）をそのまま効かせる）
@@ -220,8 +220,6 @@ def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
 # 前は玩具の頁に記録の欄（record_form・13 の欄）があったが外した。玩具の頁には、記録の頁への道を 1 本だけ置く（KIROKU_TO_NOKOSU）。
 # 受け口 /toy/<印>/record は残す（作る側の道具 plain_words と、前からの道で送る物のため）。字は本人の言葉（11-07 夕、設計の担当を通して）
 KIROKU_TO_NOKOSU = "つくったものを教えてください。"
-# 型紙の窓の のこす の釦の下の本人の字（本人の答え 11-08 で、修正の担当 c の案 B の字。のこすへの道を強くする 1 行）
-NOKOSU_ASK = "どう工夫したかあとで教えてください。写真や動画でもいいです。"
 # のこそう の段の、もちよる のこの玩具の所への 1 行（設計の問い 7 の推しの字・本人の答え 11-08「推しのとおり。」）。推しの字の「玩具」は、本人の 11-06 の字の決め
 # 「玩具の頁の下の本文の玩具をおもちゃに」に合わせて「おもちゃ」にした（統括の決め 11-08・推しの字を作る時の照らし漏れ）
 MOCHIYORU_GO = "このおもちゃの作った物を もちよる で見る"

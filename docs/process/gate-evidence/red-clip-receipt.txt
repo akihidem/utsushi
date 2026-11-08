@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_clip_receipt.py
+# commit: 23f86eb3（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_clip_receipt.py", line 37, in <module>
+    from api import ask, budget, clip_read  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'clip_read' from 'api' (src/api/__init__.py)
+rc=1

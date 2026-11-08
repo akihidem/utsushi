@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_nokosu_flow.py
+# commit: 611d1591（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_nokosu_flow.py", line 29, in <module>
+    from web import loop_figure, naoru, nokosu, play_server, techo_site, techo_step  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'nokosu' from 'web' (src/web/__init__.py)
+rc=1
