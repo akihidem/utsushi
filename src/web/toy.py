@@ -606,8 +606,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 仮説の札は型紙の窓の中から出して、仮説の節に置く（本人の言葉 11-08「…これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、型紙の順で」）。
     # 断り（「型紙は正解ではなく、AI が考えた仮説」）・輪の図・しるしの断りも札と一緒に移す: 断りは仮説の札より前に出す決め（本人の言葉 11-05・
     # test_build_now）と、輪の図は断りと札の間（設計の担当の答え 11-07・test_wa_ring）を保つため。型紙の窓には紙だけが残る。
-    # 札を作る行（上の for）は替えない（「仮説 A」の字の直しを別の担当が持つため）
-    kasetsu = (f'<section class="sec" id="kasetsu-fuda"><p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p>'
+    # 札を作る行（上の for）は替えない（「仮説 A」の字の直しを別の担当が持つため）。見出しは「仮説」（本人の言葉の並びの名。置くのは本人の答え 11-08「3 つともよい。」。
+    # 字は頁に前からある字で、英語とやさしい日本語の表にもある）
+    kasetsu = (f'<section class="sec" id="kasetsu-fuda"><h2>仮説</h2><p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p>'
                f'<div class="plates">{plate}</div></section>')
     win = (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p><p class="meta">画面で見て、印刷する前に案を検討する所。</p>'
            f'{window(sid, data, see, kind, v, recorded, photos)}</section>')
