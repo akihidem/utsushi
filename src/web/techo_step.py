@@ -37,7 +37,7 @@ from api import ask
 from omochae import assembly, hypotheses, loop, making_log, records, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
+from . import clips, genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -344,6 +344,8 @@ document.addEventListener('visibilitychange', () => {
 });
 $('start').onclick = () => {
   try { const k = `tsukuru-start-${sid}-${hid}`; if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); send('start'); } } catch (e) {}
+  // 回の印を引き継ぐ（統括の決め 11-08）: 玩具の頁で作り始めた回が 3 時間の内なら消さない。無い時だけ作り始めとして、印の無い区切りを消す（web.clips）
+  if (window.utsushiClipsStart) window.utsushiClipsStart(sid);
   to(n > total ? 'end' : 'step'); wake();
 };
 $('next').onclick = (e) => { e.preventDefault(); goNext(); };
@@ -630,7 +632,8 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # 欄の手引きは のこす の字の置き場（naoru.KEEP_HINT・夕方のレビュー 11-07 の 15）から。空なら作りながら見る頁と同じ hanasu の手引き
             f'<label class="sr" for="kufu">{esc(craft["head"])}</label><textarea id="kufu" maxlength="{talk_log.MAX_TEXT}" placeholder="{esc(naoru.KEEP_HINT or craft["hint"])}"></textarea></details>'
             # 約束の印は写真と動画の分。写真の口がある所では、合言葉なしの場でも出す（main の #429 と同じ）。要るかどうかは、選んだ時に script が決める。
-            + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし・声なし</label>' if uploads else '') +
+            # 前の「・声なし」は、声を録って送る作り（本人 11-08 415・web.clips）と食い違うので外した。声の断りは話す口の 1 行で（本人の確かめ待ち）
+            + ('<label class="check" for="ok"><input type="checkbox" id="ok"> 大人の手元だけ・顔なし</label>' if uploads else '') +
             f'<div class="keys"><button class="key go" id="keep">{KEY_ICONS[KEEP]}<span>{KEEP}</span></button></div>'
             # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。「のこす」の釦のすぐ下に置く。
             # 釦の上に置くと、320×568 と 768×576 で「のこす」が最初の画面の外へ押し出された（11-07 に Chromium で測った。1 手 1 画面・押す所は最初の画面の決まり）
@@ -640,4 +643,5 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
           .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
-    return _doc(title, look, body + skin.WHO_SCRIPT + js)
+    # 回の印を引き継ぐ小さな台本（web.clips.START_SCRIPT）だけを置く（回の印が無い時だけ、ここで作り始める）。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない
+    return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.start_assets())
