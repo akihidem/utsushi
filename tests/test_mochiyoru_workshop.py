@@ -39,7 +39,10 @@ for day in ("20261104", "20261106"):
 assert len(seen) == 43 and len(kinds) == 42, (len(seen), len(kinds))
 assert {r["file"] for r in kinds} == set(seen) - {"20261106/p28.jpg"}, "p28 だけを外す（他社の AI の対話の画面が写る・統括の決め 11-08）"
 # 分けは本人の言葉（11-08）の 3 つ（並べた・単体・様子）と、どれにも入らない物
-assert all(r["kind"] in ("lineup", "single", "making", "none") and r["seen"] == seen[r["file"]] for r in kinds), "写っている物の字のまま・分けは 3 つと none"
+# body は 11-08 本人の言葉「ワークショップの様子は、みんなの手元の写真だけで良い。」で、手元のほかに人の体が大きく写る写真（出さない）
+assert all(r["kind"] in ("lineup", "single", "making", "none", "body") and r["seen"] == seen[r["file"]] for r in kinds), "写っている物の字のまま・分けは 3 つと none と body"
+body = [r["file"] for r in kinds if r["kind"] == "body"]
+assert body and all(r.get("why") for r in kinds if r["kind"] == "body"), "体が写る写真は、どこが写るかを書いて外す"
 none = [r["file"] for r in kinds if r["kind"] == "none"]
 lineup = [r["file"] for r in kinds if r["kind"] == "lineup"]
 assert all((workshop.PHOTOS / r["file"]).exists() for r in kinds)
@@ -58,11 +61,12 @@ assert workshop.TOP in lineup and re.findall(r'src="/workshop/([^"]+)/small"', t
 made = workshop.made(SIDS)
 pics = re.findall(r'src="/workshop/([^"]+)/small"', made)
 assert made.count('id="dekita"') == 1 and f'<h2 class="mark">{workshop.MADE_HEAD}</h2>' in made
-assert pics and all(workshop.kind_of(f) == "single" for f in pics), pics
-assert not set(pics) & set(shown), "同じ写真を 2 つの節に出さない"
-# 単体と様子の写真は全部、どちらかの節に 1 回ずつ出る。並べた写真は頭の 1 枚だけで、どれにも入らない写真は出さない
-assert sorted(pics + shown) == sorted(r["file"] for r in kinds if r["kind"] in ("single", "making")) and len(pics) == len(set(pics)), "単体か様子で、どこにも出ない写真か 2 回出る写真がある"
-assert not set(none) & set(pics + shown) and not (set(lineup) - {workshop.TOP}) & set(pics + shown)
+# 本人の言葉 11-08「みんなが作ったおもちゃの方は、おもちゃの名前と写真が合っていない。ワークショップで作られたものの方は写真と名前が一致しているので、こちらの組み合わせと表示を採用して、みんなが作ったおもちゃの方に置く。」
+# 試行の写真の表の単体の写真を玩具に結んだ組（名と写真が合っていなかった）は使わない。札は作例の記録の札（この試験の場には作例が無い）
+assert not pics, ("みんながつくったおもちゃに、試行の写真の表の組を出さない", pics)
+# 様子の写真（making）は全部、つくっている様子に 1 回ずつ出る。並べた写真は頭の 1 枚だけで、どれにも入らない写真と体が写る写真は出さない
+assert sorted(shown) == sorted(r["file"] for r in kinds if r["kind"] == "making") and len(shown) == len(set(shown)), "様子の写真で、どこにも出ない写真か 2 回出る写真がある"
+assert not (set(none) | set(body)) & set(shown) and not (set(lineup) - {workshop.TOP}) & set(shown)
 assert not any(workshop.known(f) for f in none) and not workshop.known("20261106/p28.jpg"), "出さない写真は道でも返さない"
 by_toy = {r["file"]: r["toy"] for r in workshop.rows()}
 order = []
@@ -71,15 +75,14 @@ for sid in SIDS:
     # 玩具ごとの札は錨 id="toy-<印>" を持つ（本人の言葉 11-08 477・つくるの作り直しの枝 2）。錨の有無で札の見分けを替えない
     card = re.search(r'<figure class="workshop"(?: id="toy-[^"]+")?>((?:(?!</figure>).)*?<a href="/toy/' + re.escape(sid) + r'">.*?)</figure>', made, re.S)
     voices = demo_samples.workshop_for(sid, name)
-    photos = [f for f in workshop.files(sid) if workshop.kind_of(f) == "single"]
-    if not (photos or voices):
+    if not voices:  # この試験の場には作例が無いので、札は感想か言葉のある玩具だけ
         assert not card, ("札の要らない玩具に札", sid)
         continue
     assert card, ("札が無い", sid)
     order.append(made.index(f'<a href="/toy/{sid}">'))
     body = card.group(1)
     got = re.findall(r'src="/workshop/([^"]+)/small"', body)
-    assert got == photos and all(by_toy.get(f) == sid for f in got), (sid, got)
+    assert got == [], (sid, got, "試行の写真の表の組を札に出さない")
     if voices:
         assert f"<summary>{workshop.OPEN_VOICES}</summary>{voices}</details>" in body, ("感想は声の担当の札のまま", sid)
     else:
