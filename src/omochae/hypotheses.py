@@ -243,6 +243,11 @@ def shown_name(h):
     return f"{SHOWN}「{h['name']}」"
 
 
+def version_head(h, many):
+    """作る側の頁の版の札の題の呼び名。同じ玩具で版がある仮説が 2 つ以上（many）の時だけ名を添えて見分ける。印は使わない。"""
+    return shown_name(h) if many else SHOWN
+
+
 def list_lines(data, own=()):
     lines = [f"{data['toy']}"]
     for h in own:
