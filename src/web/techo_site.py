@@ -65,9 +65,11 @@ def media_dir(rid):
 
 def media_bytes():
     """置き場の写真と動画と、字にする前の声の大きさの合計（確かめの控えの json と字は数えない）。公開の場の合計の上限を見る時に、受ける前に数える。
-    声（voice/*.mka・本人の言葉 11-08「全部残していいことにしたい。」）も数える。数えないと、公開の場で声の分だけ上限を越えて機械を埋められるため。"""
+    声（voice/*.mka・本人の言葉 11-08「全部残していいことにしたい。」）も数える。数えないと、公開の場で声の分だけ上限を越えて機械を埋められるため。
+    声の区切り（voice/t<n>.mka）は *.mka に入る。カメラの区切り（voice/k<n>.webm・k<n>.mp4・本人の言葉 11-08「カメラの映像は、押した時の短い区切りだけ。」）も同じわけで数える。"""
     root = records.folder() / "media"
-    return sum(p.stat().st_size for pat in ("R-*/m*.*", "R-*/voice/*.mka") for p in root.glob(pat)) if root.exists() else 0
+    pats = ("R-*/m*.*", "R-*/voice/*.mka", "R-*/voice/k*.webm", "R-*/voice/k*.mp4")
+    return sum(p.stat().st_size for pat in pats for p in root.glob(pat)) if root.exists() else 0
 
 
 def strip_jpeg_meta(data):
