@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_no_overlap.py
+# commit: 039c2742（回した時の HEAD）
+/tmp/tmp_qlxw_8l/play/NDL-1187053-R0000005-L/.tmp-zxsg7clv/H-C_v1.pdf
+/tmp/tmp_qlxw_8l/play/NDL-1187053-R0000014-R/.tmp-c4q98_ao/H-A_v1.pdf
+ok 主な頁の字の重なり: 15 頁 × 5 大きさ × 3 言葉 × 白と暗い版（原画の写しの有り無し）で KNOWN の外は 0。KNOWN の残り 1 件・見えなくなった KNOWN 8 件（写しの有り無しの片方でだけ出る物もある。両方の木で見えなければ行を外す）（137 秒）
+  見えなかった KNOWN: 玩具の頁 御来迎・字×字・figure#wa.wa>svg>text.wa-t・svg>a>text.wa-v・en
+  見えなかった KNOWN: 玩具の頁 御来迎・字×字・svg>a>text.wa-now・figure#wa.wa>svg>text.wa-t・en
+  見えなかった KNOWN: 玩具の頁 虎・字×字・figure#wa.wa>svg>text.wa-t・svg>a>text.wa-v・en
+  見えなかった KNOWN: よむ・字×字・figure.loop-fig>svg.loop-ring>text・figure.loop-fig>svg.loop-ring>text・en
+  見えなかった KNOWN: 玩具の頁 虎・字×字・svg>a>text.wa-now・figure#wa.wa>svg>text.wa-t・en
+  見えなかった KNOWN: のこす・字×字・figure.loop-fig>svg.loop-ring>text・figure.loop-fig>svg.loop-ring>text・en
+  見えなかった KNOWN: 横・えらぶ・easy
+  見えなかった KNOWN: 道・えらぶ
+rc=0
