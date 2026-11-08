@@ -950,14 +950,17 @@ class Handler(BaseHTTPRequestHandler):
         if kind is None:
             return self._send(422, "受け付けられない区切りです", "text/plain; charset=utf-8")
         put = voice_text.put_voice_clip if clip == "t" else voice_text.put_cam_clip
-        name, why = put(rid, data, kind)
+        # 空いた番号を選んで置くまでを錠の中で（同時に 2 つ届いても同じ番号に上書きしない・別の目の気づき）。錠は別のプロセスとも取り合う
+        with store.locked(loop.folder()):
+            name, why = put(rid, data, kind)
         if not name:
             return self._send(422, why, "text/plain; charset=utf-8")
         if clip == "k":
             from api import clip_read
 
             step = self.headers.get("X-Utsushi-Step", "")
-            clip_read.save_meta(rid, name, int(step) if step.isdigit() and len(step) <= 3 else None,
+            # 数は 0〜9 の 1〜3 字だけ（isdigit は上付きの「²」なども通し、int で落ちて 500 になった・別の目の止め 2）
+            clip_read.save_meta(rid, name, int(step) if re.fullmatch(r"[0-9]{1,3}", step) else None,
                                 "stuck" if self.headers.get("X-Utsushi-Button") == "stuck" else None)
             if not getattr(self.server, "public_open", False):
                 from api.agent import default_client
