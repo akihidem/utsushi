@@ -3441,6 +3441,7 @@
   "聞き取れませんでした。もう一度押すか、字で書いてください。": "Could not hear that. Press again, or type it.",
   "聞く": "Ask",
   "このサイトは、声を聞いて動きません。操作はボタンで、質問は字の欄に入れます。": "This site does not listen to your voice to do things. You use buttons to move along, and you type questions into the text box.",
+  "このサイトは、声を聞いて動きません。操作はボタンで、質問は字の欄に入れます。作業の頁の「聞く」だけは、押した間の声を受けて、質問として答えます。": "This site does not listen to your voice to do things. You use buttons to move along, and you type questions into the text box. Only the “Ask” button on the work page takes your voice while you press it, and answers it as a question.",
   "聞く口の質問、手順の進み、試した記録の止まった所・感想・動きの札を、案内と答えと型紙の版を直す材料として並べます。名前と連絡先は残していません（質問の文に連絡先の形があれば、文ごと残しません）。人は、その場限りの無作為の印で数えます（印の無い出来事は札の数だけ）。声・映像・写真はここに入りません。報告 {0} 件。": "Lists questions asked in the Ask box, how far people got through the steps, where people stopped in their records, comments, and movement tags, as material to improve the guidance, the answers, and the template versions. Names and contact details are not kept (if a question contains something that looks like contact details, the whole sentence is dropped). People are counted with a random mark that lasts for one visit only (events without a mark are counted only by their tags). Voice, video, and photos are not included here. {0} reports.",
   "職人の言葉": "Words from craftspeople",
   "肩の道具: 網のような長い物を片側に付けると重心がずれる。反対側に少し重さを足すと釣り合う": "Tool on the shoulder: If you attach something long, like a net, to one side, the center of gravity shifts. If you add a little weight to the other side, it balances.",
