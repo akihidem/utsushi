@@ -99,6 +99,16 @@ def call(path, body, ctype, ip="203.0.113.9"):
         return e.code, e.read()
 
 
+def settle(ok, what):
+    """口は返事を送った後に予約を外す（finally）ので、返事を受けた直後はまだ外れていない事がある。少し待って見る
+    （試験の揺れ・11-08 の別の目の 8 回のうち 1 回目と、新しい木 4 つを同時に回した 1 つで、受け取りで断った後の予約の 0 の確かめが落ちた）"""
+    for _ in range(100):
+        if ok():
+            return
+        time.sleep(0.05)
+    raise AssertionError(what)
+
+
 G = "NDL-1187053-R0000005-L"
 H = hypotheses.sheet_of(G)["id"]
 form = lambda d: urllib.parse.urlencode(d).encode()  # noqa: E731
@@ -142,6 +152,7 @@ used = techo_site.media_bytes()
 from omochae import records  # noqa: E402
 
 assert server.media_reserve.path == records.folder() / ".reserve" / "media.json"
+settle(lambda: server.media_reserve.reserved == 0, "前の上げの予約が外れる")
 tag = load_guard.Reserve(server.media_reserve.path).take(used, techo_site.MEDIA_TOTAL - used - 1, techo_site.MEDIA_TOTAL)
 assert tag, "別の入れ物（別のプロセスの形）で予約を埋める"
 code, body = call(f"/record/{rid}/media", b"xx", "image/png")
@@ -154,9 +165,10 @@ assert load_guard.RECV_TOTAL == 8 * techo_site.MAX_MEDIA and isinstance(server.r
 held = server.recv_reserve.take(0, load_guard.RECV_TOTAL - 1, load_guard.RECV_TOTAL)
 code, body = call(f"/record/{rid}/media", b"xx", "image/png")
 assert code == 503 and body == b"", ("受け取り中の合計が上限を越える分を断る", code, body)
-assert server.media_reserve.reserved == 0, "受け取りで断った分の、置き場の予約も外れる"
+settle(lambda: server.media_reserve.reserved == 0, "受け取りで断った分の、置き場の予約も外れる")
 server.recv_reserve.give(held)
-assert call(f"/record/{rid}/media", b"x", "image/png")[0] == 422 and server.recv_reserve.reserved == 0
+assert call(f"/record/{rid}/media", b"x", "image/png")[0] == 422
+settle(lambda: server.recv_reserve.reserved == 0 and server.media_reserve.reserved == 0, "書き終えた分の受け取りの予約も外れる")
 
 # 4. 同時に処理する要求の数
 assert load_guard.HTTP_MAX == server.http_max == 64
