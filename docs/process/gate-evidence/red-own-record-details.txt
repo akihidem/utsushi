@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_record_details.py
+# commit: 60ffdc86（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_record_details.py", line 100, in <module>
+    assert f"<summary>{esc(techo_site.DETAILS_HEAD)}</summary>" in own and all(esc(x) in own for x in LINES[full]), "今残した札にも畳みと 4 つの欄"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 今残した札にも畳みと 4 つの欄
+rc=1

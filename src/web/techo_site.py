@@ -390,13 +390,16 @@ def own_item(sid, data, r):
     pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                     else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") else ""
+    # ほかの札と同じ畳み「のこした記録」（型紙の版と 4 つの欄）。今残した札は記録を残した画面にだけ出る（合言葉付きの場だけ）ので、欄の字はそのまま出す。
+    # 付けないと、残した人の画面では その記録が 他の人が作った物 の並びに出ず（ここに出る）、4 つの欄がどこにも出ない（修正の担当 d の気づき 11-08）
+    more, _ = record_details(data, r)
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
             # 玩具の名前は、手帖の記録の頁の自分の記録へ（記録の番号の道と同じ行き先）。前の玩具の頁の同じ記録（#R-…）は、本人の言葉 11-08 477 で
             # 玩具の頁から記録の札が無くなるので向け直した（統括の決め 11-08・修正の担当 d と合わせた）
             f'<a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(data["toy"])}</a>　'
             f'{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
-            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
+            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}{more}</div>')
 
 
 # ワークショップで作られた物（作例）の節の字（本人の言葉 11-07「サイトにワークショップで作られたおもちゃを掲載したい」。字は 11-07 に決まった案から）。
