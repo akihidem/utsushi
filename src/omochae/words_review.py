@@ -43,13 +43,13 @@ DETAIL_KEYS = ("first_moved", "stuck", "what_if")  # 記録の欄（answers）�
 
 
 def details_of(rec):
-    """札の畳み「のこした記録」に出す人の字: 最初に動いた所・引っかかった所・変えると違いが出そうな所・思いついた事・メモ（made_item が出す物と同じ欄）。
+    """札の畳み「のこした記録」に出す人の字: 最初に動いた所・引っかかった所・変えると違いが出そうな所・思いついた事（made_item が出す物と同じ欄）。
     前は玩具の頁の記録の札にだけ出ていた。本人の言葉 11-08 477「復元の記録などはすべてもちよるに統合する。」で、もちよるの札に移した（統括の決め）。
+    ひとこと（note・玩具の頁の「メモ」）は入れない: もちよるに出さない欄（11-05 の別の目の決まり「ギャラリーに出さない」・統括の答え 11-08 の C）。
     どれも空なら空の辞書（words_of に足さない）。"""
     ans = rec.get("answers") if isinstance(rec.get("answers"), dict) else {}
     d = {k: str(ans.get(k) or "") for k in DETAIL_KEYS}
     d["ideas"] = [str(x) for x in rec.get("ideas") or [] if str(x).strip()]
-    d["note"] = str(rec.get("note") or "")
     return d if any(v.strip() if isinstance(v, str) else v for v in d.values()) else {}
 
 
@@ -68,7 +68,7 @@ def words_of(rec):
 def _texts(w):
     """words_of の字の全部（連絡先の形の床に当てる字）。"""
     d = w.get("details", {})
-    return [w["impression"], *(v for f in w["fixes"] for v in f.values()), *(d.get(k, "") for k in DETAIL_KEYS), *d.get("ideas", []), d.get("note", "")]
+    return [w["impression"], *(v for f in w["fixes"] for v in f.values()), *(d.get(k, "") for k in DETAIL_KEYS), *d.get("ideas", [])]
 
 
 def has_words(rec):
