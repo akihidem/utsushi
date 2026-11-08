@@ -10,5 +10,4 @@
   - 試験: 「読みの無い玩具」の見本を名指しから選び方に（test_genga・test_toy_head・test_kuzushi_notes）。注の試験に B の読みの見方を足した
 - 検証ゲート: **済み**。Red: 今の main に新しい注の試験だけを置くと rc 1（gate-evidence/red-kyoka-batch2.txt）。Green: この枝で rc 0（gate-evidence/green-kyoka-batch2.txt）
 - エビデンスゲート: くずし字・原画・玩具の頁の頭と足と縦の頁・雛形の 5 本・英語の全頁・やさしい日本語の全頁・英語の言葉の決め・ルビ・サーバの試験が rc 0
-- 照らしの直し（11-08・grove の state/kyoka-batch2-verify-20261108.md）: くらいつきぬるの言葉遊びの断り・麁相と凱陣のふりがなを言い切らない・桃太郎の組み立てを替える（測り直した重なりは最大 8 字）・ちぎ／そのまゝ／麁相／いやかるの辞書の名の置き場・B の出所の欄に 1932 の写しが原本か後の複製かは分からない事。Green: gate-evidence/green-kyoka-batch2-2.txt
 - 確かめていない事: 全部の試験（`./run.sh`）。新しい字（訳・意味・B の出所の 1 行）の本人の確かめ。歌の字の 1 字ずつの人の確かめ
