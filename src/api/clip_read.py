@@ -132,8 +132,11 @@ def read_later(rid, name, client_factory):
     """受け口から 1 回だけ呼ぶ: 区切りの読みを別の糸で走らせ、受け口の返事を待たせない（読みは 1 回の API の呼び出しで、数十秒かかりうる）。
     常駐しない（この 1 つを読んだら終わる）。試験では client_factory に偽の係を渡し、返る糸を join して待つ。"""
     def run():
+        from . import ask
+
         try:
-            read(rid, name, client_factory())
+            # 鍵が無い場では係を作らない（作る時に鍵を読みに行って落ちるため）。read が「鍵が無い」と控える
+            read(rid, name, client_factory() if ask._key_present() else None)
         except Exception as e:  # 読みが落ちても受け口は答え済み。理由を控えて 72 時間の掃除に任せる
             voice_text.clip_wait(rid, name, f"読めなかった（{type(e).__name__}）")
 
