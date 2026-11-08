@@ -6,4 +6,5 @@
 - 読みやすさ: yomiyasu 2.5.0 で、見直し候補 19 → 21 件（warn 7 → 9。増えた 2 つは「版」の訳語の見直し候補で、玩具ごとの型紙の組の番号の意味なので残した）、文 193 → 198、60 字を超える文 30 → 32、平均 38.0 → 38.6 字。段の名の太字は、太字の多すぎの候補になったので外した
 - 検証ゲート: **済み**。Red: 今の main（`60ffdc86`）に新しい頭の試験だけを置くと rc 1（gate-evidence/red-readme-loop.txt）。Green: この枝で rc 0（gate-evidence/green-readme-loop.txt）
 - 核の引用の替え（本人の言葉 11-08「…AIによって良くなることは副次的なもの、の言い間違い…システムが良くなるところをクロードが担ってくれるから、人間は人間同士の関わりや工作に熱中できる。」）: README の頭の核の行と 30 秒の要約の核（README と CLAUDE.md）を本人の今の言葉に。前の引用は README から引かない。Green: gate-evidence/green-readme-loop-2.txt
-- 確かめていない事: 全部の試験（`./run.sh`）。GitHub での図の目での確かめ（markdown の API では mermaid として受けられる）
+- 図を SVG の絵に（本人の言葉 11-08「flowchart LRがそのまま字で表示されてる。図として出るように直してください。」）: docs/img/feedback-loop.svg を手で書き、README は説明の字つきの絵 1 つ。頭のない Chrome で幅 390 の明るい頁と暗い頁に開き、字と矢印が読める事を確かめた。Green: gate-evidence/green-readme-loop-3.txt
+- 確かめていない事: 全部の試験（`./run.sh`）。GitHub の携帯のアプリでの図の目での確かめ（手元の Chrome の幅 390 では読める）
