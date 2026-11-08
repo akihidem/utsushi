@@ -81,4 +81,5 @@ def page(skin_name, path="/otona"):
             + "".join(_section(i, sid, head, lines) for i, (sid, head, lines) in enumerate(SECTIONS))
             # 「おもちゃを選ぶ」（/toys）は外し、入口へ戻る釦の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）。残る 1 つを大きい釦にする
             + '<section class="sec"><p class="links"><a class="btn" href="/">入口へ戻る</a></p></section></div>')
-    return skin.shell(TITLE, body, skin_name, path=path, extra_style=STYLE)
+    # description は 1 節の 1 行目（採られた文のまま）
+    return skin.shell(TITLE, body, skin_name, path=path, extra_style=STYLE, description=SECTIONS[0][2][0])
