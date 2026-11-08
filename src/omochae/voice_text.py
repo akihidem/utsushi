@@ -21,6 +21,7 @@
 - 声の区切りは t<n>.mka（受けた webm・mp4 から声の流れだけを copy_voice で写す。元の形は置かない）。字にして消す道は手帖の m<n> と同じ。
 - カメラの区切りは k<n>.<webm|mp4>（絵の流れだけ・音と撮影の情報を落として入れ物を作り直す）。音が無いので字にする道具に入れず、
   読み（UX の枝の区切りの読み）が字を書けたら clip_done で消し、読めないまま 72 時間を過ぎたら sweep_clips が読まずに消す。
+  人が写っていると分かった時は、clip_drop が読まずに今すぐ消す。
 - 5 つは記録ごとの通しの数。番号は t<n>.・k<n>. で始まるファイル（音・字・控え・印）が持ち続ける。消した後に番号が空くと、
   6 つ目を受けてしまうため（k は読み終えた時に k<n>.done.json の印を残す）。
 """
@@ -234,6 +235,22 @@ def clip_done(rid, name):
     p.with_name(f"{p.stem}.wait.json").unlink(missing_ok=True)
     try:
         _write_mark(p.with_name(f"{p.stem}.done.json"), {"at": _now()})
+    except FileNotFoundError:
+        pass  # 取り下げが置き場を消した。区切りは消えている
+    return True
+
+
+def clip_drop(rid, name, why):
+    """読まずに今すぐカメラの区切りを消し、控えも消して、k<n>.dropped.json に why・at を残す（72 時間を待たない）。
+    受け口の枝が、進め役が「人が写っている」と確かめた時と、Claude の答えに人が写っていると出た時（字を残さず区切りごと消す床）に呼ぶ。
+    先に区切りを消してから印を書く（印が書けなくても区切りは残さない）。番号は印が持ち続ける。Returns 消したか（無い物・形の違う名・空の理由は False）。"""
+    p = _cam_path(rid, name)
+    if p is None or not p.exists() or not isinstance(why, str) or not why.strip():
+        return False
+    p.unlink(missing_ok=True)
+    p.with_name(f"{p.stem}.wait.json").unlink(missing_ok=True)
+    try:
+        _write_mark(p.with_name(f"{p.stem}.dropped.json"), {"why": why.strip()[:80], "at": _now()})
     except FileNotFoundError:
         pass  # 取り下げが置き場を消した。区切りは消えている
     return True
