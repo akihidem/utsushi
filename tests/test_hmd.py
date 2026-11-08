@@ -11,9 +11,11 @@
 4. 声が使えない画面でも、釦とキーボードで通れる
 5. 大きさと置き場: 手順の字は大きく、釦に掛からない。釦は 64px 以上、「つぎ」は 96px 以上。横にはみ出さない
 6. カメラに重ねる頁: 偽のカメラで映像が付き、画面いっぱいに敷かれる
-7. 映像の中の紙に合わせる（本人の言葉 11-07「自分が作った実物がオーバーレイする」）: カメラが付くと紙の 4 隅の印が 4 つ出て（字は数字だけ）、
-   印は既定の囲みに出て 3D の舞台もその中、印を動かすと舞台が新しい囲みの中へ動いて縮む。画面の大きさが変わると印を既定の囲みへ置き直す。
-   カメラを止めると印を消し、舞台を元の置き場へ戻す。押すまで印は出ない
+7. 重ねる（本人の言葉 11-08「A → B → C の順。」の A・統括の決め ①〜③）: カメラが付くと、今の手順の 3D を半透明で映像の上に重ね、
+   層の順は下から 映像 → 3D → 字と押す所。1 本指で動かし、2 本指の長さの比で大きさ、角の差で向き、真ん中で位置が替わる。鍵 + ] 0 も効く。
+   重ねている間は 3D の見る向き（kumitate の 1 本指の回し）は替わらない。「元に戻す」で重ね始めた所へ戻る。カメラを止めると重ねをやめる。
+   HMD の道は最初から重ねる（映像は無い）。カメラが使えない機械でも 3D は見える大きさで出て、断りの字が出る。重ねている間、頁は網に何も送らない
+   （前の 4 隅の印は外した）
 8. 中を見る（本人の言葉 11-07「中身をそこで分解できる構造表示」・字は本人の決定「中を見る」「とじる」）: 組み立ての節が分解した形
    （window.kumitateSplit）を持つ時だけ釦が出て、押すと「とじる」に替わり、もう一度押すと戻る。開いたまま手順を送ると、先にとじる。
    分解した形の無い組では釦を出さない（分解した形は 3D の担当が kumitate に足す口。ここでは見本の形で歩く）
@@ -210,24 +212,48 @@ document.getElementById('hmd-camera').click();await wait();R.off=[!!v.srcObject,
 const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
 })();</script>"""
 
-# 紙の 4 隅の印: カメラの口を差し替えた見本（空の映像を返す）で押し、印を紙の角に見立てた所へ動かす。この機械の偽のカメラは映像が付かないので、口を差し替える
+# 重ねる（A）: カメラの口を差し替えた見本（空の映像を返す）で押し、指（PointerEvent）と鍵で合わせる。この機械の偽のカメラは映像が付かないので、口を差し替える
 QUADSTUB = "<script>if(navigator.mediaDevices)navigator.mediaDevices.getUserMedia=async()=>new MediaStream();</script>"
-QUADWALK = r"""<script>(async()=>{
-const wait=(ms=80)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),stage=document.getElementById('rt-stage');
-const box=e=>{const r=e.getBoundingClientRect();return[r.left,r.top,r.right,r.bottom].map(Math.round)};
-const centers=()=>[...document.querySelectorAll('.hmd-corner')].map(c=>{const r=c.getBoundingClientRect();return[Math.round(r.left+r.width/2),Math.round(r.top+r.height/2)]});
-try{R.before=[getComputedStyle($('#hmd-quad')).display,box(stage)];
-$('#hmd-camera').click();await wait(300);
-R.on=[document.body.classList.contains('quad-on'),getComputedStyle($('#hmd-quad')).display,[...document.querySelectorAll('.hmd-corner')].map(c=>c.textContent).join('')];
-R.home=centers();R.stage1=box(stage);
-const W=innerWidth,H=innerHeight,T=[[W*.5,H*.55],[W*.92,H*.55],[W*.92,H*.92],[W*.5,H*.92]].map(p=>p.map(Math.round));
-const drag=(c,[x,y])=>{const o={bubbles:true,pointerId:7,clientX:x,clientY:y};c.dispatchEvent(new PointerEvent('pointerdown',o));c.dispatchEvent(new PointerEvent('pointermove',o));c.dispatchEvent(new PointerEvent('pointerup',o))};
-[...document.querySelectorAll('.hmd-corner')].forEach((c,i)=>drag(c,T[i]));await wait();
-R.target=T;R.moved=centers();R.stage2=box(stage);
-dispatchEvent(new Event('resize'));await wait();R.reset=centers();
-$('#hmd-camera').click();await wait();
-R.off=[document.body.classList.contains('quad-on'),document.body.classList.contains('quad-set'),stage.style.transform,getComputedStyle($('#hmd-quad')).display];
+# カメラが使えない機械の見本（口が無い）
+NOCAMSTUB = "<script>Object.defineProperty(navigator,'mediaDevices',{get:()=>undefined,configurable:true});</script>"
+FITWALK = r"""<script>(async()=>{
+const wait=(ms=80)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),b=document.body,stage=document.getElementById('rt-stage');
+// 頁が網に何かを送ったら数える（映像は機械の中だけ）
+const net=[];const of=window.fetch;window.fetch=(...a)=>{net.push('fetch');return of(...a)};
+const ox=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(...a){net.push('xhr');return ox.apply(this,a)};
+if(navigator.sendBeacon){const sb=navigator.sendBeacon.bind(navigator);navigator.sendBeacon=(...a)=>{net.push('beacon');return sb(...a)}}
+const OW=window.WebSocket;window.WebSocket=function(...a){net.push('ws');return new OW(...a)};
+const fv=()=>(stage.dataset.fit||'').split(',').filter(x=>x!=='').map(Number);
+const ev=(t,id,x,y)=>stage.dispatchEvent(new PointerEvent(t,{bubbles:true,cancelable:true,pointerId:id,clientX:x,clientY:y,isPrimary:id===1}));
+const key=async k=>{document.body.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true}));await wait()};
+const shown=e=>!!e&&getComputedStyle(e).display!=='none';
+try{const cam=$('#hmd-camera'),v=$('#hmd-cam');
+R.before=[b.classList.contains('fit-on'),shown($('#hmd-reset'))];
+if(cam){cam.click();await wait(300)}
+R.on=[b.classList.contains('fit-on'),shown($('#hmd-reset')),Number(getComputedStyle(stage).opacity),shown($('#hmd-fit-hint'))];
+const r=stage.getBoundingClientRect(),cx=Math.round(r.left+r.width/2),cy=Math.round(r.top+r.height/2);
+const stack=document.elementsFromPoint(cx,cy);R.layer=[stack.findIndex(e=>e===stage||stage.contains(e)),v?stack.indexOf(v):-1];
+const z=e=>Number(getComputedStyle(e).zIndex)||0;R.z=[z(stage),z($('.hmd-acts')),z($('#rt-text')),z($('.hmd-top')),v?z(v):null];
+R.home=fv();const ry0=stage.dataset.ry;
+ev('pointerdown',1,cx,cy);ev('pointermove',1,cx+30,cy+20);ev('pointerup',1,cx+30,cy+20);await wait();R.move=fv();
+ev('pointerdown',1,cx-50,cy);ev('pointerdown',2,cx+50,cy);ev('pointermove',2,cx+150,cy);await wait();R.pinch=fv();
+ev('pointermove',2,Math.round(cx-50+200*Math.cos(Math.PI/6)),Math.round(cy+200*Math.sin(Math.PI/6)));await wait();R.twist=fv();
+ev('pointerup',2,0,0);ev('pointerup',1,0,0);await wait();R.ry=[ry0,stage.dataset.ry];
+await key('+');R.plus=fv();await key(']');R.turn=fv();await key('0');R.zero=fv();
+ev('pointerdown',1,cx,cy);ev('pointermove',1,cx+40,cy);ev('pointerup',1,cx+40,cy);await wait();$('#hmd-reset').click();await wait();R.reset=fv();
+// 重ねている間の押す所（カメラの頁は「元に戻す」で 7 つ）が、頁を動かさずに全部見える（横 1024×600 で 1 列だと外へ出た・別の目の測り 11-08）
+R.reach=[...document.querySelectorAll('.hmd-acts button')].filter(e=>!e.hidden&&getComputedStyle(e).display!=='none').map(e=>[e.id,Math.round(e.getBoundingClientRect().bottom),Math.round(e.getBoundingClientRect().height)]);R.vh=innerHeight;
+R.wide=document.documentElement.scrollWidth<=document.documentElement.clientWidth;
+if(cam){cam.click();await wait();R.off=[b.classList.contains('fit-on'),stage.style.transform,!!stage.dataset.fit]}
+R.net=net;
 }catch(e){R.error=String(e&&e.stack||e)}
+const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
+})();</script>"""
+NOCAMWALK = r"""<script>(async()=>{
+const wait=(ms=200)=>new Promise(r=>setTimeout(r,ms)),R={},$=s=>document.querySelector(s),stage=document.getElementById('rt-stage');
+try{await wait();const r=stage.getBoundingClientRect();R.stage=[Math.round(r.width),Math.round(r.height),getComputedStyle(stage).visibility,Number(getComputedStyle(stage).opacity)];
+R.note=$('#hmd-cam-note').textContent;R.btn=$('#hmd-camera').hidden;R.fit=document.body.classList.contains('fit-on');
+R.panels=document.querySelectorAll('#rt-stage svg').length}catch(e){R.error=String(e&&e.stack||e)}
 const pre=document.createElement('pre');pre.id='measured';pre.textContent=JSON.stringify(R);document.body.appendChild(pre);
 })();</script>"""
 
@@ -250,13 +276,13 @@ send, getter = play_server.Handler._send, play_server.Handler.do_GET
 
 
 def wrapped(self, code, body, ctype="text/html; charset=utf-8", headers=()):
-    m = re.search(r"[?&]walk=(voice|plain|cam|quad|split|nosplit)", self.path)
+    m = re.search(r"[?&]walk=(voice|plain|cam|fit|hfit|nocam|split|nosplit)", self.path)
     if m and isinstance(body, str) and "/kasane" in self.path:
         kind = m.group(1)
         voice = "true" if kind == "voice" else "false"
-        walk_js = (SPLITWALK if kind in ("split", "nosplit") else QUADWALK if kind == "quad" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
+        walk_js = (SPLITWALK if kind in ("split", "nosplit") else FITWALK if kind in ("fit", "hfit") else NOCAMWALK if kind == "nocam" else CAMWALK.replace("__NOCAM__", json.dumps(hmd.NO_CAMERA, ensure_ascii=False)) if kind == "cam"
                    else WALK.replace("__CHATTER__", json.dumps(CHATTER, ensure_ascii=False)).replace("__VOICE__", voice))
-        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "quad" else "") + (SPLITSTUB if kind == "split" else "") + (NOSPLITSTUB if kind == "nosplit" else "")
+        stub = STUB.replace("__VOICE__", voice) + (QUADSTUB if kind == "fit" else "") + (NOCAMSTUB if kind == "nocam" else "") + (SPLITSTUB if kind == "split" else "") + (NOSPLITSTUB if kind == "nosplit" else "")
         body = body.replace('<meta charset="utf-8">', '<meta charset="utf-8">' + stub, 1).replace("</body>", walk_js + "</body>", 1)
     return send(self, code, body, ctype, headers)
 
@@ -275,7 +301,7 @@ def walk(width, height, kind):
 
     play_server.Handler._send, play_server.Handler.do_GET = tagged, tagging_get
     flags = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] if kind == "cam" else []
-    path = f"/toy/{G}/kasane" if kind in ("cam", "quad") else f"/toy/{G}/kasane/hmd"
+    path = f"/toy/{G}/kasane" if kind in ("cam", "fit", "nocam") else f"/toy/{G}/kasane/hmd"
     try:
         with tempfile.TemporaryDirectory() as profile:
             out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", f"--window-size={width},{height}", *flags,
@@ -386,7 +412,7 @@ else:
     print("英語の頁の最初の画面（数だけ）:", "・".join(en_start))
 
 runs = {}
-for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
+for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・重ねる": (390, 844, "fit"), "横・重ねる": (1280, 720, "fit"), "横・低い・重ねる": (1024, 600, "fit"), "横・HMD で重ねる": (1280, 720, "hfit"), "縦・カメラが使えない": (390, 844, "nocam"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
     got = walk(w, h, kind)
     if not isinstance(got, dict):
         got = walk(w, h, kind)  # 混んだ機械では答えない事があるので、1 度だけ回し直す
@@ -439,15 +465,29 @@ for name, got in runs.items():
     if "分解の形が無い" in name:
         assert got["shown"][0] is False, (name, "分解した形の無い組では釦を出さない", got)
         continue
-    if "紙に合わせる" in name:
-        inside = lambda b, pts, pad=3: b[0] >= min(p[0] for p in pts) - pad and b[1] >= min(p[1] for p in pts) - pad and b[2] <= max(p[0] for p in pts) + pad and b[3] <= max(p[1] for p in pts) + pad
-        assert got["before"][0] == "none", (name, "押すまで印は出ない", got)
-        assert got["on"] == [True, "block", "1234"], (name, "カメラが付くと、数字だけの印が 4 つ出る", got)
-        assert inside(got["stage1"], got["home"]), (name, "印を出した時、3D の舞台は印の囲みの中", got)
-        assert all(abs(a[0] - b[0]) <= 1 and abs(a[1] - b[1]) <= 1 for a, b in zip(got["moved"], got["target"])), (name, "印は指で動かした所へ動く", got)
-        assert inside(got["stage2"], got["target"]) and got["stage2"] != got["stage1"], (name, "印を動かすと、3D の舞台が新しい囲みの中へ動く", got)
-        assert got["reset"] == got["home"], (name, "画面の大きさが変わると、印を既定の囲みへ置き直す", got)
-        assert got["off"] == [False, False, "", "none"], (name, "カメラを止めると印を消し、舞台を元の置き場へ戻す", got)
+    if "重ねる" in name:
+        hmd_path = "HMD" in name
+        close = lambda a, b, d: all(abs(x - y) <= d for x, y in zip(a, b))
+        assert got["before"] == ([True, True] if hmd_path else [False, False]), (name, "カメラに重ねる頁は押すまで重ねない・HMD の道は最初から重ねる", got)
+        assert got["on"][:2] == [True, True] and got["on"][2] < 1 and got["on"][3], (name, "重ねると 3D は半透明・元に戻す と指の使い方の 1 行が出る", got)
+        assert got["layer"][0] >= 0 and (hmd_path or (got["layer"][1] == -1 or got["layer"][0] < got["layer"][1])), (name, "3D の真ん中では 3D が映像より上", got)
+        assert got["z"][0] < min(got["z"][1:4]) and (hmd_path or got["z"][4] < got["z"][0]), (name, "層の順は 映像 → 3D → 字と押す所", got)
+        h, m, pi, tw = got["home"], got["move"], got["pinch"], got["twist"]
+        assert close(m, [h[0] + 30, h[1] + 20, h[2], h[3]], 1.01), (name, "1 本指で動かすと、指の動きだけ動く", got)
+        assert close(pi[:2], [m[0] + 50, m[1]], 1.01) and abs(pi[2] - m[2] * 2) <= .02 and abs(pi[3] - m[3]) <= .5, (name, "2 本指を広げると、長さの比で大きく・真ん中で位置", got)
+        assert abs(tw[3] - (m[3] + 30)) <= 1 and abs(tw[2] - pi[2]) <= .03, (name, "2 本指をねじると、角の差で向き", got)
+        assert got["ry"][0] == got["ry"][1], (name, "重ねている間は 3D の見る向きが替わらない", got)
+        assert abs(got["plus"][2] - tw[2] * 1.1) <= .01 and abs(got["turn"][3] - (tw[3] + 5)) <= .01 and got["zero"] == h, (name, "鍵 + ] 0", got)
+        assert got["reset"] == h, (name, "元に戻す で重ね始めた所へ戻る", got)
+        if not hmd_path:
+            assert got["off"] == [False, "", False], (name, "カメラを止めると重ねをやめる", got)
+        assert got["net"] == [], (name, "重ねている間、頁は網に何も送らない", got)
+        assert got["wide"] and all(bottom <= got["vh"] for _, bottom, _ in got["reach"]), (name, "重ねている間の押す所が、頁を動かさずに全部見える", got)
+        assert all(h >= 64 for _, _, h in got["reach"]) and (hmd_path or "hmd-reset" in [i for i, _, _ in got["reach"]]), (name, "押す所は 64px 以上・元に戻す が出る", got)
+        continue
+    if "カメラが使えない" in name:
+        assert got["stage"][0] > 100 and got["stage"][1] > 100 and got["stage"][2] == "visible" and got["stage"][3] == 1 and got["panels"] > 0, (name, "カメラが無くても 3D は出る", got)
+        assert got["note"] == hmd.NO_CAMERA and got["btn"] is True and got["fit"] is False, (name, "断りの字が出て、カメラの釦は隠れ、重ねない", got)
         continue
     if "カメラ" in name:
         assert got["before"] == [False, hmd.CAMERA], (name, "押すまでカメラは付けない", got)
