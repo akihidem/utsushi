@@ -248,7 +248,9 @@ def think_section(sid, data, note=""):
     """玩具の頁の節（1 仮説を見て、考えを話す）。仮説の札のすぐ後に置く。note は、JS が無い時に送った後の返事の文（着いたこの節の頭に出す）。"""
     return (f'<section class="sec" id="hanasu">{note}<h2>考えを話す</h2>'
             '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>'
-            f'{box(sid, "think", hid=hypotheses.sheet_of(sid)["id"])}</section>')
+            f'{box(sid, "think", hid=hypotheses.sheet_of(sid)["id"])}'
+            # 玩具の頁を開いた時は作り始め（声とカメラの区切りの回の印・統括の決め 11-08・web.clips の openedAs の toy）。のこす から戻った時は引き継ぐ
+            f'<script>addEventListener("DOMContentLoaded",()=>{{if(window.utsushiClips)setTimeout(()=>utsushiClips.openedAs({json.dumps(sid)},"toy").catch(()=>{{}}))}})</script></section>')
 
 
 def craft_box(sid, hid, version, step):

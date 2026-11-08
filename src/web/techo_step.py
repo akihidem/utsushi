@@ -344,7 +344,7 @@ document.addEventListener('visibilitychange', () => {
 });
 $('start').onclick = () => {
   try { const k = `tsukuru-start-${sid}-${hid}`; if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); send('start'); } } catch (e) {}
-  // 作り始め（統括の決め・別の目の止め 3）: その玩具の印の無い声とカメラの区切りを消す。前の人が録っただけで去った物を、次の人の承認で送らない（web.clips）
+  // 回の印を引き継ぐ（統括の決め 11-08）: 玩具の頁で作り始めた回が 3 時間の内なら消さない。無い時だけ作り始めとして、印の無い区切りを消す（web.clips）
   if (window.utsushiClipsStart) window.utsushiClipsStart(sid);
   to(n > total ? 'end' : 'step'); wake();
 };
@@ -641,5 +641,5 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
           .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
-    # 作り始めの消しの小さな台本（web.clips.START_SCRIPT）だけを置く。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない
-    return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.START_SCRIPT)
+    # 回の印を引き継ぐ小さな台本（web.clips.START_SCRIPT）だけを置く（回の印が無い時だけ、ここで作り始める）。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない
+    return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.start_assets())

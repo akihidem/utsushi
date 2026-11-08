@@ -37,16 +37,23 @@ assert (clips.CLIP_HOURS, clips.CLIP_MAX, clips.CAM_SECONDS) == (3, 5, 10)
 assert "const HOURS=3,MAX=5,CAM=10*1000," in A and "__" not in A, "数は 1 か所の値から"
 purge = body(S, "const purge=async()=>{", "\nconst ")
 assert "c.who!==w" in purge and "now-c.at>AGE" in purge and "AGE=HOURS*3600000" in S, "別の画面の物と 3 時間を過ぎた物を消す"
-assert "addEventListener('DOMContentLoaded',()=>{purge()" in S, "どの頁を開いた時も消す（印は頁の終わりの台本が作るので、読み終えた後）"
+assert "addEventListener('DOMContentLoaded',()=>{purged=purge()" in S, "どの頁を開いた時も消す（印は頁の終わりの台本が作るので、読み終えた後）"
 assert "pagehide" not in S.replace("pagehide では消さない", ""), "pagehide では消さない（同じタブで のこす へ移る時にも起きるため）"
 hand = body(S, "const handOver=async(sid)=>{", "\n")
 marker = body(S, "const mark=async(sid,p)=>{", "\nconst ")
 assert "await mark(sid,p)" in hand and "c.sid===sid&&c.who===w&&!c.pass" in marker and "c.pass=p.id" in marker, "渡す印は、その玩具の、印の無い区切りにだけ付ける"
 # 印は玩具ごと・3 時間の内の今の印を使い直す（戻って録り足した後に渡しても、前に渡した区切りが消えない）・作り始めの後は新しい印
 assert "const PK=(sid)=>'utsushi-pass:'+sid" in S and "sessionStorage.getItem(NK(sid))?null:passNow(sid)" in hand and "p=p||passMake(sid)" in hand
-# 作り始め（統括の決め・止め 3）: その玩具の印の無い区切りを消し、次は新しい印。のこす の頁から戻った時は消さない
-start = body(S, "const startMaking=async(sid,fromNokosu)=>{", "\n// ")
-assert "if(fromNokosu)return" in start and "c.sid===sid&&!c.pass)await remove(c.id)" in start and "sessionStorage.setItem(NK(sid),'1')" in start
+# 回の印（統括の決め 11-08）: 作り始めは玩具の頁を開いた時（のこす から戻った時は除く）。新しい回は印の無い区切りを消し、次は新しい渡す印。
+# 作業の頁と手帖の「はじめる」は同じ玩具の回が 3 時間の内なら引き継ぐ。区切りに回の印を付け、渡す印は今の回の物にだけ付ける
+new_run = body(S, "const runNew=async(sid)=>{", "\n// ")
+assert "sessionStorage.setItem(RK(sid),JSON.stringify(r));sessionStorage.setItem(NK(sid),'1')" in new_run and "c.sid===sid&&!c.pass)await remove(c.id)" in new_run
+assert "const startMaking=async(sid,fromNokosu)=>{if(fromNokosu&&runNow(sid))return;await runNew(sid)}" in S
+assert "const goOn=async(sid)=>{if(!runNow(sid))await runNew(sid)}" in S
+assert "run:r?r.id:null" in S and "c.run===r.id" in marker, "区切りに回の印・渡す印は今の回の物だけ"
+opened = body(S, "const openedAs=async(sid,kind)=>{", "\naddEventListener")
+assert "await purged;" in opened and "if(kind==='work')return back||goOn(sid);return startMaking(sid,back)" in opened, "玩具の頁は作り始め・作業の頁は続き（消しの後で）"
+assert "'/toy/'+sid+'/techo/kiroku'" in opened, "前の頁が その玩具の のこす なら引き継ぐ"
 # 承認の終わりは、その玩具の区切りと印だけ（ほかの玩具の区切りを消さない）
 clr = body(S, "const clear=async(sid)=>{", "\n")
 assert "if(c.sid===sid)await remove(c.id)" in clr and "s.clear()" not in S, clr
@@ -100,11 +107,13 @@ print("ok: 声とカメラの区切りは押した時だけ録り、端末の中
 # 作り始めの呼び所: 手帖の「はじめる」と作業の頁を開いた時（作業の頁は、のこす の頁から戻った時を作り始めとしない）
 from web import techo_step  # noqa: E402
 
-assert "window.utsushiClipsStart(sid)" in techo_step.SCRIPT[techo_step.SCRIPT.index("$('start').onclick"):][:600], "手帖の「はじめる」で作り始め"
-st = clips.START_SCRIPT
-assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "印の無い区切りを消し、次は新しい印"
+assert "window.utsushiClipsStart(sid)" in techo_step.SCRIPT[techo_step.SCRIPT.index("$('start').onclick"):][:600], "手帖の「はじめる」で回を引き継ぐ"
+st = clips.start_assets()
+assert "if(r&&Date.now()-r.at<3*3600000)return" in st, "回の印が 3 時間の内なら引き継ぐ（消さない）"
+assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "回が無い時だけ、印の無い区切りを消し、次は新しい印"
 assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
-assert "utsushiClips.startMaking(T.sid,back)" in hmd.SCRIPT and "'/toy/'+T.sid+'/techo/kiroku'" in hmd.SCRIPT, "作業の頁を開いた時（のこすから戻った時は除く）"
+assert "utsushiClips.openedAs(T.sid,'work')" in hmd.SCRIPT and "utsushiClips.startMaking(T.sid,back)" not in hmd.SCRIPT, "作業の頁は続き（玩具の頁の回を引き継ぐ）"
+assert 'utsushiClips.openedAs("NDL-1187053-R0000005-L","toy")' in hanasu.think_section("NDL-1187053-R0000005-L", {}), "玩具の頁は作り始め"
 assert "addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false)" in hmd.SCRIPT, "戻る釦で読み直さずに戻った時も作り始め"
 assert clips.STORE.endswith("このサイトをほかの画面で開くと、前に録った声と映像は消えます。"), "ほかの画面（2 つ目のタブ）で消える事を置き場の断りが言う（本人の答えの字 11-08）"
 print("ok: 作り始めの消し・印は玩具ごとに使い直す・承認の後の消しはその玩具だけ")
