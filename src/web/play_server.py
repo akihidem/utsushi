@@ -553,6 +553,8 @@ class Handler(BaseHTTPRequestHandler):
 
         body = techo_site.records_page(sid, msg=msg, at=at, up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper,
                                        shiori_wait=shiori.pending_fresh(self._key_of(SHIORI_PENDING)),
+                                       # しおりだけで門を通った画面は、そのしおりに結ばれた記録だけを今のまま出す（安全の事項 1・11）。ほかの画面は None で今のまま
+                                       shiori_mine=set(shiori.records_of(self._shiori_screen)) if getattr(self, "_shiori_screen", None) is not None else None,
                                        errors=errors, err_at=err_at, filled=filled)
         return skinmod.shell("手帖", body, look or self._look, "", path or f"/toy/{sid}/techo/kiroku", techo_site.STYLE + nokosu.STYLE, "techo")
 

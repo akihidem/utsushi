@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_kiroku.py
+# commit: 3b0da3c0（回した時の HEAD）
+/tmp/tmpofl95g3t/play/NDL-1187053-R0000005-L/.tmp-3x9sgbsu/H-C_v1.pdf
+ok: しおりだけの画面の 手帖の記録の頁は、自分のしおりの記録だけ字を出し、ほかの人の記録は公開の場と同じ形・合言葉の画面と手元の場は今のまま
+rc=0

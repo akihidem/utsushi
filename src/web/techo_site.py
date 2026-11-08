@@ -675,7 +675,8 @@ def manabi_box():
             f'{loop_figure.svg()}</section>')
 
 
-def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None, at="", errors=(), err_at="", filled=None, shiori_wait=False):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None, at="", errors=(), err_at="", filled=None, shiori_wait=False,
+                 shiori_mine=None):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
     public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受け、確かめた物はギャラリーにも出す形）。写真と動画は合言葉付きの場と
@@ -688,6 +689,9 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     errors・err_at・filled は、記録の札の説明と次の版が通らなかった時（422）: 理由の文を、その記録の札（錨 id=記録の番号）か次の版の欄（next-記録の番号）の頭に出し、
     書いた字を欄に戻す。前は玩具の頁の記録の札で返していたが、つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）"""
     closed = public or not uploads
+    # shiori_mine はしおりだけで開いた画面（合言葉の cookie が無い）の時の、そのしおりに結ばれた記録の番号の組。None は合言葉の画面・手元の場・公開の場で、
+    # 今のまま。組がある時は、結ばれた記録（本人の物）は今のまま、ほかの人の記録は公開の場の記録の頁と同じ形（記録の番号・人の書いた字・説明・
+    # AI の字を出さない）にする（安全の事項 1・11 しおりの範囲を本人に関係するデータに閉じる・統括の決め 11-08）
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
     from . import zukan  # 試した日の字（前のつくるの頁の記録の札と同じ部品）
@@ -706,6 +710,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     alert = reply_note(errors, "") if errors else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
+        shut = closed or (shiori_mine is not None and r["id"] not in shiori_mine)  # この記録の札を閉じた形で出すか
         # 開いた場は受け口が画像を出さないので、壊れた絵にしない（J-028）。確認の前の物は、上げた本人の画面にだけ、受け取りを確かめられるように出す（#314）。
         files = media_review.shown_to(r["id"], media_of(r["id"]), up_key) if uploads else []
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
@@ -718,22 +723,22 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
                 if public and media_review.uploaded_here(r["id"], media_of(r["id"]), up_key) else "")
         # ひとこと（玩具の頁の「メモ」）は、その画面が残した自分の記録の札にだけ出す（統括の答え 11-08 の C: もちよる＝みんなが見る所には出さず、
         # 玩具の頁から記録の札を外してもサイトから消えないように、その人の画面のここへ）。開いた場では人の言葉を出さない（前と同じ線）
-        memo = wording.record_note(r.get("note")) if not closed and records.mine(r["id"], rec_key) else ""
+        memo = wording.record_note(r.get("note")) if not shut and records.mine(r["id"], rec_key) else ""
         rid = r["id"]
         here = alert if err_at == rid else (note if at_card == rid else "")
         # 前に書かれた自分の仮説で刷った紙（型紙）への道は、前はつくるの頁の記録の札にだけあった（toy.own_papers）。つくるの頁から記録の札を外した
         # （本人の言葉 11-08）ので、ここ（その記録の札）に置く。合言葉なしの場と、話した案の紙（作った本人の画面からだけ開く）には出さない（前と同じ線）
-        own = toy_own_papers(sid, r["hypothesis_id"], r.get("sheet_version", 1)) if (not closed and h is None and r["hypothesis_id"] not in spoken) else ""
+        own = toy_own_papers(sid, r["hypothesis_id"], r.get("sheet_version", 1)) if (not shut and h is None and r["hypothesis_id"] not in spoken) else ""
         # 開いた角度（測った数）は、前はつくるの頁の記録の札の題（「…・40°」）にだけあった。記録の札を外したので、同じ形でここの 1 行に付ける（11-08）
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
         # 試した日と型紙の版は、前はつくるの頁の記録の札の頭（「11 月 4 日・版 7」）にだけあった。#657 で記録の札を外した後、写真も感想も無い記録は
         # どこにも出なくなった（統括の確かめ 11-08）ので、同じ部品と同じ字でここの頭の 1 行に付ける。人の言葉でないので合言葉なしの場でも出す
         when = f'　{zukan.record_date(r)}・{hypotheses.label_of(r.get("sheet_set") or hypotheses.current_set(data), r.get("sheet_version", 1))}'
-        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}{esc(when)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
+        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not shut else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}{esc(when)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
                  + (f'<p>メモ: {esc(memo)}</p>' if memo else "") + own +
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
-                 f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
-                 f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(rid, rec_key), filled=filled if err_at in (rid, "next-" + rid) else None, note=alert if err_at == "next-" + rid else "")}</div>')
+                 f'{hanasu.keep_box(sid, r, show_shared=not shut, can_add=records.mine(r["id"], rec_key))}'
+                 f'{feedback(sid, r, photos=not shut, up_key=up_key, can_tell=records.mine(rid, rec_key), filled=filled if err_at in (rid, "next-" + rid) else None, note=alert if err_at == "next-" + rid else "")}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
     from . import naoru, nokosu  # 循環を避けて、ここで読む（hanasu と同じ）
     # shiori_wait: 型紙と一緒に刷ったしおりの待ちがこの画面にある（play_server が cookie で見分ける）。確かめの画面に 1 行を出すかの手がかり
