@@ -94,7 +94,8 @@ try:
 finally:
     hypotheses.current_set = keep_cs
 fig = wa.ring(1)
-shown = re.findall(r"<text[^>]*>([^<]*)</text>", fig)
+# 日本語の図の字（英語の頁でだけ見せる英語の図 en-fig は、tests/test_ring_en_fit が見る）
+shown = re.findall(r"<text[^>]*>([^<]*)</text>", re.search(r'<svg class="ja-fig".*?</svg>', fig, re.S).group(0))
 assert shown == [s for label in wa.STEPS for s in wa.LINES.get(label, (label,))] + [wa.NOW, "版 1"], shown
 assert not re.search(r"[0-9]", "".join(shown).replace("版 1", "")), "版のほかに数を出さない"
 
