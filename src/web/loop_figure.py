@@ -171,7 +171,7 @@ def _person(x, y):
     """人の形の小さな絵（頭の丸と肩の線）と、右に「人」。x, y は絵の真ん中。返すのは (SVG, 横の幅)。"""
     return (f'<circle cx="{x:.1f}" cy="{y - 5:.1f}" r="5" fill="none" stroke="{INK}" stroke-width="2"/>'
             f'<path d="M{x - 9:.1f} {y + 10:.1f} Q{x:.1f} {y - 3:.1f} {x + 9:.1f} {y + 10:.1f}" fill="none" stroke="{INK}" stroke-width="2" stroke-linecap="round"/>'
-            f'<text x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{MUTE}">人</text>'), 14 + WHO_FS
+            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{MUTE}">人</text>'), 14 + WHO_FS
 
 
 def _claude(x, y):
@@ -179,7 +179,7 @@ def _claude(x, y):
     star = " ".join(f"{x + dx:.1f},{y + dy:.1f}" for dx, dy in ((0, -6), (1.8, -1.8), (6, 0), (1.8, 1.8), (0, 6), (-1.8, 1.8), (-6, 0), (-1.8, -1.8)))
     return (f'<rect x="{x - 10:.1f}" y="{y - 9:.1f}" width="20" height="18" rx="5" fill="none" stroke="{SHU}" stroke-width="2"/>'
             f'<polygon points="{star}" fill="{SHU}"/>'
-            f'<text x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{SHU}">Claude</text>'), 14 + WHO_FS * 3.4
+            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{SHU}">Claude</text>'), 14 + WHO_FS * 3.4
 
 
 def _sheet(x, y):
@@ -204,6 +204,11 @@ def _bend(p0, c, p1, seed, n=18):
 # 図の字の大きさ（viewBox の中の px）。幅 390 の画面では図が約 320px に縮むので、駅の字 20 は約 13px・誰の名 15 は約 10px で出る
 # （前の 15 では約 8px で読めなかった。11-08 に 390 の幅で撮って見た）
 STEP_FS, WHO_FS = 20, 15
+# 英語の頁だけの字の大きさ（統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 2）。札の幅は日本語の字の数で決まるので、
+# 長い英語（「Make the next template」など）が札からはみ出し、真ん中の「Current template」と下の 1 行に重なった。日本語の図は替えない。
+# 真ん中の小さな 1 行（「1 周で 1 つ版が上がる」の英語）は左右の札の間に入らないので、英語の時だけ左右の札より下へ下げる（下の札の上には届かない）
+EN_STYLE = ("html[lang=en] .loop-ring .lf-s{font-size:13px}html[lang=en] .loop-ring .lf-w{font-size:9.5px}"
+            "html[lang=en] .loop-ring .lf-n{font-size:15px}html[lang=en] .loop-ring .lf-c{font-size:11px;transform:translateY(22px)}")
 
 
 def drawn(variant=None):
@@ -241,10 +246,10 @@ def drawn(variant=None):
             body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22)[0]
             ix += wd + 12
         top = y - h / 2 + 30 + STEP_FS + 4
-        body += "".join(f'<text x="{x:.1f}" y="{top + i * (STEP_FS + 6):.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(t)}</text>'
+        body += "".join(f'<text class="lf-s" x="{x:.1f}" y="{top + i * (STEP_FS + 6):.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(t)}</text>'
                         for i, t in enumerate(lines))
     body += _sheet(CX, CY - 30)
-    body += f'<text x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(wa.NOW)}</text>'
-    body += f'<text x="{CX:.1f}" y="{CY + 40:.1f}" text-anchor="middle" font-size="13" fill="{MUTE}">{esc(CENTER)}</text>'
+    body += f'<text class="lf-n" x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(wa.NOW)}</text>'
+    body += f'<text class="lf-c" x="{CX:.1f}" y="{CY + 40:.1f}" text-anchor="middle" font-size="13" fill="{MUTE}">{esc(CENTER)}</text>'
     return (f'<svg class="loop-ring" viewBox="0 0 {W:.0f} {H:.0f}" role="img" aria-label="{esc(RING_LABEL)}" '
-            f'style="width:100%;height:auto;display:block;font-family:inherit">{body}</svg>')
+            f'style="width:100%;height:auto;display:block;font-family:inherit"><style>{EN_STYLE}</style>{body}</svg>')

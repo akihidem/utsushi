@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_toy_head_fit.py
+# commit: 9361056d（回した時の HEAD）
+測れない所あり: Chrome が答えなかった束 [('en-1180x820', 81), ('en-820x1180', 82), ('en-1440x900', 81)]（混んだ機械では起きる）
+ok 玩具の頁の頭の字の箱は重ならない: 83 頁 × 3 言葉 × 7 の大きさ（測れなかった束 3）
+rc=0

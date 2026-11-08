@@ -42,7 +42,9 @@ STYLE = """
 .genga-box{position:absolute;border:2px solid var(--accent);outline:1px solid rgba(255,255,255,.75);pointer-events:none}
 .genga-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 22px;align-items:start}
 .genga-songs p{margin:0 .3em}
-.genga-head .genga-songs{writing-mode:vertical-rl;max-height:min(70vh,620px);font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
+.genga-head .genga-songs{writing-mode:vertical-rl;height:min(70vh,620px);font-size:clamp(16px,1.6vw,21px);line-height:2.3;letter-spacing:.14em}
+.genga-head.genga-flat{grid-template-columns:minmax(0,1fr)}
+.genga-head.genga-flat .genga-songs{writing-mode:horizontal-tb;height:auto;font-size:16px;line-height:2;margin:6px 0}
 .genga-cap{grid-column:1/-1;font-size:12px;color:var(--mute);letter-spacing:.1em;line-height:1.9;margin:0}
 .genga-cap p{margin:0 0 4px}
 .genga-cap a{display:inline-flex;align-items:center;min-height:44px;margin-right:1.2em}
@@ -58,9 +60,26 @@ a.genga-pic{cursor:zoom-in}
 .genga-head{grid-template-columns:minmax(0,1fr)}
 .genga-plain .genga-pic{width:min(100%,calc(var(--genga-h) * var(--genga-r)));flex:0 0 auto}
 .genga-head .genga-pic{width:100%;flex:1 1 auto}
-.genga-head .genga-songs{writing-mode:horizontal-tb;max-height:none;font-size:16px;line-height:2}
+.genga-head .genga-songs{writing-mode:horizontal-tb;max-height:none;height:auto;font-size:16px;line-height:2}
 }
 """
+
+# 広い幅で絵の右に縦書きにした歌が、頭の列（.genga-head）からはみ出す時は、歌を絵の下の横書きに替える（本人の言葉 11-08「iPadで横表示で見たら文字が重なってる。
+# …いろんな大きさで見ても崩れないようにして。」）。縦書きの歌の列の幅は、字の量と高さで決まる。高さを決まった値（height）にしたので多くの閲覧器は正しく
+# 測るが、閲覧器ごとの縦書きの幅の見積もりの違い（iPad の Safari で、縦書きの列が細く見積もられ、題と本文の上へはみ出した）と、とても長い歌に備えて、
+# 頁で実の箱を測って確かめる。歌の字の行（要素の箱の外へはみ出した行も拾うため Range の行ごとの箱）が、頭の列の外へ出るか、頭の外の題・つくる・作品の札・
+# くずし字を読む の箱に重なるか、絵の列が頭の幅の 4 割より細くなる時に横書き（.genga-flat）。開いた時・読み込み・大きさが替わる時に測り直す。
+# 台本の中に「<」を書かない（比べる向きを「>」にそろえた）: 英語とやさしい日本語の頁を作る i18n.to_en は HTML を <[^>]*> で区切るので、台本の中の
+# 「<a.left…」を a の開きの札と読み、</script> を飲み込んで、その後の頁の字を全部替えなくなった（直しの途中の木で test_easy_ruby が落ちて分かった）
+FIT_SCRIPT = """<script>(()=>{const hit=(r,o)=>o.right-1>r.left&&r.right-1>o.left&&o.bottom-1>r.top&&r.bottom-1>o.top;
+const fit=()=>{document.querySelectorAll('.genga-head').forEach(h=>{h.classList.remove('genga-flat');const s=h.querySelector('.genga-songs');
+if(!s||getComputedStyle(s).writingMode.indexOf('vertical')==-1)return;const a=h.getBoundingClientRect(),p=h.querySelector('.genga-pic'),rg=document.createRange();
+rg.selectNodeContents(s);const lines=[...rg.getClientRects(),s.getBoundingClientRect()].filter(r=>r.width>1&&r.height>1),hero=h.closest('.hero')||h.parentElement;
+const others=[...hero.querySelectorAll('h1,.road,.label,.links')].filter(e=>!h.contains(e)).map(e=>e.getBoundingClientRect());
+const pw=p?p.getBoundingClientRect().width:a.width;
+if(lines.some(r=>r.right>a.right+1||a.left-1>r.left||others.some(o=>hit(r,o)))||a.width*.4>pw)h.classList.add('genga-flat')})};
+fit();addEventListener('DOMContentLoaded',fit);addEventListener('load',fit);addEventListener('resize',fit)})()</script>"""
+
 
 def alt(src):
     """絵の読み上げの字。新しい字を足さず、玩具の名と本人が採った見出しにする（統括の決め 11-06）。"""
@@ -177,7 +196,7 @@ def head(sid, src=None, photos=True):
     cap = f'<div class="genga-cap"><p><a href="{esc(ndl)}">{esc(NDL)}</a></p></div>'
     # 歌の段は絵の段の後（広い幅は右の列・狭い幅は真下）。「図を見る」は絵のすぐ下のまま（前は 2 列の下に渡していた）
     return (f'<style>{STYLE}</style><figure class="genga genga-head" id="genga" aria-label="{esc(HEAD)}">'
-            f'<div class="genga-main">{pic}{cap}</div><div class="genga-uta">{lines}</div></figure>')
+            f'<div class="genga-main">{pic}{cap}</div><div class="genga-uta">{lines}</div></figure>' + (FIT_SCRIPT if lines else ""))
 
 
 def ndl_credit(sid, src=None):

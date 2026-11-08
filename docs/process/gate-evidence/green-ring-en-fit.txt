@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ring_en_fit.py
+# commit: d411b890（回した時の HEAD）
+ok 輪の図 2 つの英語の字が札と丸と札の間に収まり、日本語の図は前のまま
+rc=0
