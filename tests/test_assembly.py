@@ -23,7 +23,7 @@ G = "NDL-1187053-R0000005-L"
 # 控えの組 goraigo-v10 に雛形を置いて前と同じに見る
 from omochae import assembly_json  # noqa: E402
 
-assert slider_fan.SHEET_SET == "goraigo-v14" and isinstance(assembly.assemble(G), assembly_json.Shown)
+assert slider_fan.SHEET_SET == "goraigo-v15" and isinstance(assembly.assemble(G), assembly_json.Shown)
 slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 

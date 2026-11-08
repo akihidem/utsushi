@@ -88,13 +88,18 @@ def label_of(sheet_set, version=1):
     return f"版 {n}" + (f"（直し {int(version)}）" if int(version) >= 2 else "")
 
 
+# 前の題「版 N」で刷る前の組は、窓口の決定 11-07 の時に控えていた組だけ。後で控えに入った組（goraigo-v14・tora-v7。テープを使わない
+# goraigo-v15・tora-v8 に上げた 11-08）は、今の組だった時に控えた題（組の番号「版 14」「版 7」）のまま刷る（凍結の床の指紋を替えないため）
+OLD_TITLE_SETS = ("goraigo-v10", "tora-v3", "tora-v4")
+
+
 def paper_label(data, version=1):
     """紙の題に刷る版の字。今の組は組の番号（label_of）。前の組（compose.kept_sets。凍結の床が控えている紙）は前の題「版 N」のまま刷る
     （窓口の決定 11-07: 今の組だけ題の分の控えを取り直し、前の組の紙は前の題のまま）。"""
     from .compose import TEMPLATES, kept_sets
 
     now = current_set(data)
-    if now in kept_sets(TEMPLATES[data.get("template", "slider_fan")]):
+    if now in kept_sets(TEMPLATES[data.get("template", "slider_fan")]) and now in OLD_TITLE_SETS:
         return f"版 {version}"
     return label_of(now, version)
 

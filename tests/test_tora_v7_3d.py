@@ -34,11 +34,12 @@ T = "NDL-1187053-R0000014-R"
 TIGER = TEMPLATES["pivot_counterweight"]
 p = {**TIGER.DEFAULTS, **hypotheses.sheet_of(T)["params"]}
 words = instructions.steps(p, "pivot_counterweight")
-doc = assembly_json.load("tora-v7")
+doc = assembly_json.load("tora-v8")
 apply, sub, dot, normal_of = assembly.apply, assembly._sub, assembly._dot, assembly.normal_of
 
 # 1. 写した JSON
-assert TIGER.SHEET_SET == "tora-v7" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "tora-v7"
+# 今の組は tora-v8（v7 と同じ部品で、重りの腕を指で押さえて鉛筆で印を付ける版・11-08）。JSON は v7 の物の組の名と寸法だけを替えた写し
+assert TIGER.SHEET_SET == "tora-v8" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "tora-v8"
 assert re.fullmatch(r"[0-9a-f]{7,40}", doc["engine"]["commit"]) and "examples/tora_v7.json" in doc["engine"]["command"]
 assert all(assembly._same(p.get(k), v) for k, v in doc["params"].items()), {k: (p.get(k), v) for k, v in doc["params"].items()}
 bench = assembly.assemble(T)
@@ -259,7 +260,7 @@ try:
     assembly_json.DIR = pathlib.Path(tempfile.mkdtemp())
     bad = copy.deepcopy(doc)
     next(jp for jp in bad["parts"] if jp["key"] == "body")["round_cuts"][0][0] += 1
-    assembly_json.path_of("tora-v7").write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+    assembly_json.path_of("tora-v8").write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
     assert assembly.assemble(T) is None
 finally:
     assembly_json.DIR = keep

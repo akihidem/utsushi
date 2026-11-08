@@ -20,6 +20,11 @@ SHEET_SET = "goraigo-v15"
 FROZEN_SET = "goraigo-v10"
 
 
+# 控える前の組（compose.kept_sets）。goraigo-v14 は、テープを使わない goraigo-v15 に上げた後も控える（ワークショップで試した組。
+# 凍結の床が前の指紋のまま刷れる事を見る）。前は KEPT_SETS を書かず FROZEN_SET だけを控えていた
+KEPT_SETS = (FROZEN_SET, "goraigo-v14")
+
+
 def frozen():
     return SHEET_SET == FROZEN_SET
 
@@ -95,6 +100,8 @@ CRADLE_FLAP = 8  # 受けの左右の面の高さ mm。扇の両端の板の下�
 CRADLE_ROOM = 0.8  # 受けの底の奥行きの、畳んだ扇の厚さに足す余り mm
 HUBS = ("axle", "rim")
 STICK_FIXES = ("tape", "glue")  # 割り箸を内筒に留める物（DEFAULTS の stick_fix）
+# 学ぶ人の考えの節に出さない寸法（web.think_sheet.shown）。割り箸を留める物は寸法の数でないので（組み方の文と用意する物に出る）
+UNSHOWN_PARAMS = ("stick_fix",)
 # 開く糸を扇の中心からこの距離につなぐ。途中で突っ張らない糸が一番短く、よく開く位置（research/08）。
 # 低い扇では穴が紙の外に出る（F5.hole で落とす）が、半径を折りの高さに合わせて縮めない。黙って変えると糸の長さの計算と食い違うため。
 THREAD_RADIUS = 35

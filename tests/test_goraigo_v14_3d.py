@@ -34,11 +34,12 @@ G = "NDL-1187053-R0000005-L"
 FAN = TEMPLATES["slider_fan"]
 p = {**FAN.DEFAULTS, **(hypotheses.sheet_of(G).get("params") or {})}
 words = instructions.steps(p, "slider_fan")
-doc = assembly_json.load("goraigo-v14")
+doc = assembly_json.load("goraigo-v15")
 apply, sub, dot, normal_of = assembly.apply, assembly._sub, assembly._dot, assembly.normal_of
 
 # 1. 写した JSON
-assert FAN.SHEET_SET == "goraigo-v14" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "goraigo-v14"
+# 今の組は goraigo-v15（v14 と同じ部品で、割り箸を木工用ボンドで貼る版・11-08）。JSON は v14 の物の組の名と寸法だけを替えた写し
+assert FAN.SHEET_SET == "goraigo-v15" and doc["format"] == assembly_json.FORMAT and doc["toy"] == "goraigo-v15"
 assert re.fullmatch(r"[0-9a-f]{7,40}", doc["engine"]["commit"]) and "examples/goraigo_v14.json" in doc["engine"]["command"]
 assert all(assembly._same(p.get(k), v) for k, v in doc["params"].items()), {k: (p.get(k), v) for k, v in doc["params"].items()}
 bench = assembly.assemble(G)
@@ -155,7 +156,7 @@ try:
     assembly_json.DIR = pathlib.Path(tempfile.mkdtemp())
     bad = copy.deepcopy(doc)
     next(jp for jp in bad["parts"] if jp["key"] == "fan")["outline"][0][0] += 1
-    assembly_json.path_of("goraigo-v14").write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+    assembly_json.path_of("goraigo-v15").write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
     assert assembly.assemble(G) is None
 finally:
     assembly_json.DIR = keep

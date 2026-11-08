@@ -44,18 +44,18 @@ for path in sorted((ROOT / "data/hypotheses").glob("*.json")):
     got = hypotheses.load(raw["source_id"])
     want = overlay(copy.deepcopy(raw))
     if raw["source_id"] == GORAIGO:
-        assert raw["sheet"] == "H-A" and raw["sheet_by_set"] == {"goraigo-v14": "H-C"} and hypotheses.sheet_id(got) == "H-C"
+        assert raw["sheet"] == "H-A" and raw["sheet_by_set"] == {"goraigo-v14": "H-C", "goraigo-v15": "H-C"} and hypotheses.sheet_id(got) == "H-C"
         assert [h["id"] for h in raw["hypotheses"] if "params_by_set" in h] == ["H-C"], "御来迎の寸法の欄は H-C だけ"
-        assert sorted(raw["hide_by_set"]) == ["goraigo-v14"]
+        assert sorted(raw["hide_by_set"]) == ["goraigo-v14", "goraigo-v15"]
         for h in want["hypotheses"]:
             if h["id"] == "H-C":
-                h["params"] = V14
-        want = hypotheses.without_hidden(want, "goraigo-v14")
+                h["params"] = {**V14, "stick_fix": "glue"}  # 今の組 goraigo-v15（v14 の寸法に木工用ボンドの印）
+        want = hypotheses.without_hidden(want, "goraigo-v15")
     elif raw["source_id"] == TORA:
         assert hypotheses.sheet_id(got) == raw.get("sheet") and not any(k in raw for k in FIELDS), path.name
         assert [h["id"] for h in raw["hypotheses"] if "params_by_set" in h] == ["H-A"], "虎の欄は H-A だけ"
-        assert raw["hypotheses"][0]["params_by_set"] == {"tora-v7": V7}, "型紙エンジンの見本 examples/tora_v7.json と同じ寸法"
-        want["hypotheses"][0]["params"] = V7
+        assert raw["hypotheses"][0]["params_by_set"] == {"tora-v7": V7, "tora-v8": {**V7, "arm_hold": "finger"}}, "型紙エンジンの見本 examples/tora_v7.json・tora_v8.json と同じ寸法"
+        want["hypotheses"][0]["params"] = {**V7, "arm_hold": "finger"}  # 今の組 tora-v8（v7 の寸法に指と鉛筆の印）
     else:
         assert not any(k in raw for k in FIELDS) and not any("params_by_set" in h for h in raw["hypotheses"]), (path.name, "欄を書いたのは御来迎と虎だけ")
         assert hypotheses.sheet_id(got) == raw.get("sheet"), path.name
@@ -129,7 +129,8 @@ for tpl in TEMPLATES.values():
         assert sets[0] == tpl.FROZEN_SET, (tpl.ID, sets)
     else:
         assert sets == (), (tpl.ID, sets)
-assert kept_sets(TIGER) == ("tora-v3", "tora-v4") and kept_sets(FAN) == ("goraigo-v10",), (kept_sets(TIGER), kept_sets(FAN))
+# 11-08 にテープを使わない組（tora-v8・goraigo-v15）へ上げ、ワークショップで試した tora-v7・goraigo-v14 も控えに入れた
+assert kept_sets(TIGER) == ("tora-v3", "tora-v4", "tora-v7") and kept_sets(FAN) == ("goraigo-v10", "goraigo-v14"), (kept_sets(TIGER), kept_sets(FAN))
 # 凍結の床の控えは、控えの組の全部と今の組の紙を持つ
 pin = json.loads((ROOT / "tests/floor_pin.json").read_text(encoding="utf-8"))
 for tpl in (TIGER, FAN):

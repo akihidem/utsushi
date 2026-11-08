@@ -73,10 +73,10 @@ def words(layout):
 
 # 1. 組の名前。前の組の名前は控えを刷る道として残す。
 # 虎の今の組は tora-v7 で、tora-v4 は控えの組。ここからは雛形の組を tora-v4 に置く（控えの組を刷る道と同じ）
-assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v7", "tora-v3", ("tora-v3", "tora-v4")), TIGER.SHEET_SET
+assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v8", "tora-v3", ("tora-v3", "tora-v4", "tora-v7")), TIGER.SHEET_SET
 TIGER.SHEET_SET = "tora-v4"
 # 御来迎も次の組（goraigo-v14）に上げた（tests/test_goraigo_v14.py）。この試験の御来迎の行は、前の組 goraigo-v10 に雛形を置いて前の字のままを見る
-assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v14", "goraigo-v10"), FAN.SHEET_SET
+assert (FAN.SHEET_SET, FAN.FROZEN_SET, FAN.KEPT_SETS) == ("goraigo-v15", "goraigo-v10", ("goraigo-v10", "goraigo-v14")), FAN.SHEET_SET
 assert marks.FROZEN_SETS == {}, marks.FROZEN_SETS
 
 

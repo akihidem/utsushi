@@ -44,8 +44,8 @@ def words(layout):
 
 
 # 1. 組の名前と並び。御来迎も今の組 goraigo-v14 に上げたので、凍結の組の印の表は空（前の組の紙は、呼ぶ側が前の印の文を渡す）
-# 今の組は tora-v7（v6 は当たり 2 つを v7 で直したので、刷らずに飛ばした。窓口の決定 2026-11-07）。試験の名は v6 の写しの時のまま
-assert (TIGER.SHEET_SET, TIGER.set_no(), TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v7", 7, "tora-v3", ("tora-v3", "tora-v4"))
+# 今の組は tora-v8（v7 と同じ部品で、テープを使わない版・本人の決め 11-08。v6 は当たり 2 つを v7 で直したので、刷らずに飛ばした。窓口の決定 2026-11-07）。試験の名は v6 の写しの時のまま
+assert (TIGER.SHEET_SET, TIGER.set_no(), TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v8", 8, "tora-v3", ("tora-v3", "tora-v4", "tora-v7"))
 assert marks.FROZEN_SETS == {}, marks.FROZEN_SETS
 assert h["id"] == "H-A" and {k: p[k] for k in ("leg_height", "body_round", "head_sides")} == {"leg_height": 10, "body_round": 8, "head_sides": 2}
 
@@ -73,7 +73,7 @@ assert len(by["body"].round_cuts) == 1 and not by["body"].cuts and len(by["head"
 _, layout, failures = compose("pivot_counterweight", h["params"], source)
 assert layout is not None and not failures, [f.line() for f in failures]
 got = words(layout)
-assert all(w in got for w in FOLD_WORDS) and MARK_LEGEND in got and "刷った組 tora-v7" in got, got
+assert all(w in got for w in FOLD_WORDS) and MARK_LEGEND in got and "刷った組 tora-v8" in got, got
 # 手順は 12 段（脚を貼る段を、上の面を閉じる前に足した。エンジンと同じ）
 assert len(steps) == 12 and steps[9].startswith("6〜9 脚を") and steps[11].startswith("4 尾の糊代を山折りし"), steps
 
@@ -100,7 +100,7 @@ mx, my = axle["pts"][0]
 body.round_cuts = [(mx, my + 1, 2.0)]
 assert any("位置の印が中の切り込みにかかり" in f.message for f in check_art([body])), [f.line() for f in check_art([body])]
 
-# 7. 3D の組み立ては、型紙エンジンが出した今の組の JSON（data/kumitate/tora-v7.json）で描く（assembly_json。形の確かめは test_tora_v7_3d）。
+# 7. 3D の組み立ては、型紙エンジンが出した今の組の JSON（data/kumitate/tora-v8.json）で描く（assembly_json。形の確かめは test_tora_v7_3d）。
 #    控えの組 tora-v4 では、前と同じにサイトが自分で組む
 got = assembly.assemble(TORA)
 assert isinstance(got, assembly_json.Shown) and got.failures == [], got and [f.line() for f in got.failures]
@@ -108,4 +108,4 @@ with at_set("tora-v4"):
     old = assembly.assemble(TORA)
     assert old is not None and not isinstance(old, assembly_json.Shown)
 
-print("ok 虎の今の組 tora-v7。組の替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D はエンジンの JSON")
+print("ok 虎の今の組 tora-v8。組の替わり・エンジンと違う 2 つ・たたき台の紙・前の組の寸法の床・丸い切り抜きの床・3D はエンジンの JSON")

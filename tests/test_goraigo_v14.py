@@ -20,6 +20,8 @@ G = "NDL-1187053-R0000005-L"
 FAN = TEMPLATES["slider_fan"]
 V14 = {"push_part": "rise", "tube_side": 26, "tube_height": 130, "pusher_side": 24.5, "pusher_height": 57.5, "push_amount": 60,
        "base_side": 24.0, "fold_count": 44, "fold_width": 4, "fold_height": 57.2, "figure_w": 10.4, "figure_h": 27.7}
+# 今の組 goraigo-v15 は v14 の寸法に、割り箸を木工用ボンドで貼る印（stick_fix）を足した版（11-08。部品の形は v14 と同じ）
+V15 = {**V14, "stick_fix": "glue"}
 
 
 class old_set:
@@ -34,11 +36,11 @@ class old_set:
 
 
 # 1. 組の名前と、組ごとのたたき台と寸法
-assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v14", "goraigo-v10")
+assert (FAN.SHEET_SET, FAN.FROZEN_SET) == ("goraigo-v15", "goraigo-v10")
 raw = json.loads((ROOT / "data/hypotheses" / f"{G}.json").read_text(encoding="utf-8"))
-assert raw["sheet"] == "H-A" and raw["sheet_by_set"] == {"goraigo-v14": "H-C"}
+assert raw["sheet"] == "H-A" and raw["sheet_by_set"] == {"goraigo-v14": "H-C", "goraigo-v15": "H-C"}
 h = hypotheses.sheet_of(G)
-assert h["id"] == "H-C" and h["params"] == V14 and h["name"] == "柄を下から押し上げる", (h["id"], h["params"])
+assert h["id"] == "H-C" and h["params"] == V15 and h["name"] == "柄を下から押し上げる", (h["id"], h["params"])
 with old_set():
     h0 = hypotheses.sheet_of(G)
     assert h0["id"] == "H-A" and h0["params"]["push_part"] == "tab", (h0["id"], h0["params"])
@@ -58,7 +60,7 @@ FIVE = {"questions": ["何の力で扇が開くのか（紙の力・糸・手）
         "after_try.card": ["戻る力が、こすれる力や糸の重さより小さいと、途中で止まります。"],
         "analogy.related": ["てこ: 糸で引く時は、糸を結ぶ所が扇の要から遠いほど、小さな力で開く（要が支点）",
                             "止まる角度: 扇の中心が筒の口より上にあるほど、口の角に当たる前に大きく開ける"]}
-assert raw["hide_by_set"] == {"goraigo-v14": FIVE}
+assert raw["hide_by_set"] == {"goraigo-v14": FIVE, "goraigo-v15": FIVE}
 texts = [t for v in FIVE.values() for t in v]
 
 
