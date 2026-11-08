@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: ad6d67f9（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kuzushi_notes.py", line 106, in <module>
+    texts += [genga.READ_A, genga.READ_B]
+                            ^^^^^^^^^^^^
+AttributeError: module 'web.genga' has no attribute 'READ_B'. Did you mean: 'READ_A'?
+rc=1
