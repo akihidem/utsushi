@@ -113,6 +113,26 @@ def print_help():
     return f'<details class="print-help"><summary>{esc(PRINT_HELP_SUMMARY)}</summary>{items}</details>'
 
 
+# 型紙と一緒にしおりを刷る釦の台本: 押した時に、作り始めの回の印（web.clips の utsushi-run）を送り、のこすの確かめの画面が
+# 「さっき刷ったしおり」の 1 行を出すかを見分ける控え（utsushi-shiori-wait）を残す。who は頁の終わりの台本（skin.WHO_SCRIPT）が添える
+SHIORI_FORM_SCRIPT = ("<script>document.querySelectorAll('form.shiori-print').forEach(f=>f.addEventListener('submit',()=>{const s=f.dataset.sid;"
+                      "try{const r=JSON.parse(sessionStorage.getItem('utsushi-run:'+s)||'null');if(r&&r.id){f.elements.run.value=r.id;"
+                      "sessionStorage.setItem('utsushi-shiori-wait:'+s,r.id)}}catch(e){}}))</script>")
+
+
+def pdf_button(sid, name, pdf, photos):
+    """型紙の窓の「PDF を開いて印刷する」。合言葉付きの場で決まった番地がある時は、型紙の後ろにしおりの表と裏を足して返す POST の釦にする
+    （本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 2.1 版）。字は今のまま。別のタブで開く（今の釦と同じ・同じタブだと窓から離れる）。
+    合言葉なしの場（photos=False）と番地の無い場は、今のまま GET のリンク（しおりは作らない）。刷れるのはたたき台の紙だけ（OWN-n には付けない）。"""
+    from omochae import shiori
+
+    if not photos or not shiori.base_url() or name.startswith("OWN-") or name.endswith("_after"):
+        return f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>'
+    return (f'<form method="post" action="/toy/{esc(sid)}/sheet-shiori" target="_blank" class="shiori-print" data-sid="{esc(sid)}">'
+            f'<input type="hidden" name="name" value="{esc(name)}"><input type="hidden" name="run" value="">'
+            '<p><button class="btn">PDF を開いて印刷する</button></p></form>' + SHIORI_FORM_SCRIPT)
+
+
 def window(sid, data, see, kind, v, recorded, photos=True):
     """型紙の窓（要件の S-01〜S-05）。紙の種類と版を字の札で選び、絵（PNG）を出す。押すと拡大の窓（#zoom）。
     Returns (紙, 口)。紙 は紙の絵と札と版の札、口 は 印刷・つくる（手帖へ）・のこす と行。刷った紙が無ければ ("", "")。
@@ -172,7 +192,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             f'<div class="v">{vers}</div>{cap}</div>')
     acts = ('<div class="side">'
             # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
-            f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>{print_help()}'
+            f'{pdf_button(sid, name, pdf, photos)}{print_help()}'
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             # 刷った後に次へ進む口（段 0）。印刷 → つくる（手帖）の順に置く。作る口は手帖（research/36 の本人の決定）
             f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
