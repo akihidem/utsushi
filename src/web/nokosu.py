@@ -20,6 +20,17 @@
   1 つずつ「外す」。承認で記録ができた後、写真の前に、区切りを 1 つずつ /record/<番号>/media へ送る（見出し X-Utsushi-Clip に t か k。
   カメラの区切りは、どの手順で押したかを X-Utsushi-Step、どの釦かを X-Utsushi-Button に添える。サーバが区切りの読みの手がかりにする）。
   送れた物から端末の置き場で消し、承認の終わりに置き場と渡す印を消す。
+- **手帖の「のこす」の後の「区切りだけ」の確かめ**（#659 の取り消しの後の作り直し・統括の決め 11-08 (a)）: 手帖は記録と写真を送った後、
+  今の回に区切りがある時だけ、この頁へ #to=<記録の番号>&msg=<返事> で移る。その時は記入の欄を出さず、確かめの画面を区切りの並びと「外す」と
+  輪の話と「承認」だけで出す（記録の行と「直す」は隠す・新しい字なし）。承認で、区切りを手帖が作った記録へ送り、その玩具の区切りと印を消し、
+  もちよるへ（返事の字は手帖の物。送れない物があれば CLIP_FAIL）。記録は作らない。サーバは記録の鍵で見るので、ほかの記録の番号では送れない。
+  並びを手元に持った直後に、その場限りの印を作り直す（手帖が作り直さずに渡したため）。並びが空・置き場が開かない時は、そのまま もちよるへ。
+  作り直すのは、この画面のどの出口よりも前（置き場の台本が無い・開かない・並びが空・承認、のどれでも。同じタブの次の人が前の人の印のまま
+  作らないように・別の目の設計の確かめ 1）。読み直しても並ぶように、作り直す前の印を 1 回分だけ控える（web.clips の keepWho）。
+  記録の鍵は作ってから 15 分なので、手帖の「残した記録に足す」から来た時や、この画面で長く止まった時は、送りが断られて CLIP_FAIL になる。
+- **戻る釦で読み直さずに戻った時は読み直す**（pageshow の persisted・別の目の設計の確かめ 3）。手元の並びや記入が残ったまま、もう一度「承認」で
+  同じ区切りを送り直したり、2 つ目の記録を作ったりしないように。区切りだけの確かめは、承認の後なら並びが空なので もちよるへ移る。
+- **開いた時の渡し**は web.clips の openedAs(印, 'nokosu') に任せる（前の頁が作る頁の時だけ渡す・直に開いたら作り始め・別の目の #659 の止め 2）。
 - 新しい字（本人の確かめ待ち）: RESULT_HEAD・CHECK_HEAD・APPROVE・FIX・PICK・NOSCRIPT。見出しは前からある のこすへの道の字（toy.KIROKU_TO_NOKOSU）。
 """
 from omochae import talk_log
@@ -60,6 +71,11 @@ f.hidden = false;
 const sid = f.dataset.sid, hid = f.dataset.hid, total = f.dataset.total, max = +f.dataset.maxN, maxBytes = +f.dataset.maxBytes;
 const $ = (id) => document.getElementById(id), st = $('nk-status'), go = $('nk-go'), files = $('nk-files'), ok = $('nk-ok');
 let chosen = [], big = false;
+// 手帖の「のこす」の後（#to=R-…&msg=…）。形の違う印は無い物とする（ふつうの のこすの頁のまま）
+let toRec = '', toMsg = '';
+try { const hm = location.hash.match(/^#to=(R-[0-9]{4,})&msg=(.*)$/); if (hm) { toRec = hm[1]; toMsg = decodeURIComponent(hm[2]); } } catch (e) { toRec = ''; }
+const toGallery = (msg) => `/gallery?msg=${encodeURIComponent(msg)}#ageta`;
+if (toRec) f.hidden = true;
 const showPicked = () => {
   const kept = chosen.slice(0, max);
   let t = kept.map((x) => x.name).join('、');
@@ -76,28 +92,45 @@ const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Typ
 // 「のこす」: 何も送らず、確かめの画面に替える（402）
 // 区切りの並び（web.clips）。頁を開いた時に、渡す印の違う物を消す（list が消す）。確かめの画面を出す時に、この頁で録った物も入れる
 let clipsNow = [];
-const showClips = async () => {
-  const box = $('nk-c-clips'); if (!window.utsushiClips || !box) return;
-  await utsushiClips.adopt(sid); clipsNow = await utsushiClips.list(sid);
+// 並びを描くのは手元の clipsNow から（区切りだけの確かめでは、印を作り直した後に置き場から並べ直すと、前の印の物が消えるため）
+const drawClips = () => {
+  const box = $('nk-c-clips'); if (!box) return;
   const ul = box.querySelector('ul'); ul.textContent = ''; box.hidden = !clipsNow.length;
   clipsNow.forEach((c) => {
     const li = document.createElement('li');
     if (c.kind === 'k') { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'metadata'; v.src = URL.createObjectURL(c.blob); li.appendChild(v); }
     li.appendChild(document.createTextNode(`${c.kind === 'k' ? 'カメラ' : '声'} ${Math.max(1, Math.round((c.ms || 0) / 1000))} 秒 `));
     const b = document.createElement('button'); b.type = 'button'; b.textContent = '__REMOVE__';
-    b.onclick = async () => { await utsushiClips.remove(c.id); showClips(); };
+    b.onclick = async () => { await utsushiClips.remove(c.id); clipsNow = clipsNow.filter((x) => x.id !== c.id); drawClips(); };
     li.appendChild(b); ul.appendChild(li);
   });
 };
-addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.list(sid).catch(() => {}); });
+const showClips = async () => {
+  if (!window.utsushiClips || !$('nk-c-clips')) return;
+  await utsushiClips.adopt(sid); clipsNow = await utsushiClips.list(sid); drawClips();
+};
+// 区切りだけの確かめ: 記入の欄と記録の行と「直す」を隠し、並びと輪の話と「承認」だけ
+const onlyClips = () => { $('nk-c-rec').hidden = true; $('nk-fix').hidden = true; chk.hidden = false; drawClips(); chk.scrollIntoView(); };
+// 開いた時: 渡すかどうかと並べる事は web.clips の openedAs に任せる（作る頁から来た時だけ渡す・直に開いたら作り始め）
+addEventListener('DOMContentLoaded', () => {
+  const newWho = () => { if (window.utsushiNewWho) window.utsushiNewWho(); };
+  if (!window.utsushiClips) { if (toRec) { newWho(); location.replace(toGallery(toMsg)); } return; }
+  utsushiClips.openedAs(sid, 'nokosu').then((list) => {
+    if (!toRec) return;
+    clipsNow = list; utsushiClips.keepWho(sid, toRec); newWho();
+    if (!clipsNow.length) { utsushiClips.dropKeep(); location.replace(toGallery(toMsg)); return; }
+    onlyClips();
+  }).catch(() => { if (toRec) { newWho(); utsushiClips.dropKeep(); location.replace(toGallery('__CLIP_FAIL__')); } });
+});
+addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
 // 区切りを 1 つずつ送る（記録ができた後・写真の前）。見出しで、声（t）かカメラ（k）かと、カメラの区切りの手順と釦を添える。送れた物から置き場で消す
 const sendClips = async (id) => {
   let bad = false;
   for (const c of clipsNow) {
     const h = { 'Content-Type': c.type || 'application/octet-stream', 'X-Utsushi-Clip': c.kind };
     if (c.kind === 'k') { if (/^[0-9]+$/.test(String(c.step))) h['X-Utsushi-Step'] = String(c.step); if (c.button) h['X-Utsushi-Button'] = c.button; }
-    const m = await fetch(`/record/${id}/media`, { method: 'POST', headers: h, body: c.blob });
-    if (m.ok) await utsushiClips.remove(c.id); else bad = true;
+    // 1 つずつ受ける（送りが落ちたら送れなかった事にして次へ・CLIP_FAIL）。送れた後に置き場で消せなかった時は送れた事のまま（承認の終わりの消しが、もう一度消す）
+    try { const m = await fetch(`/record/${id}/media`, { method: 'POST', headers: h, body: c.blob }); if (m.ok) await utsushiClips.remove(c.id).catch(() => {}); else bad = true; } catch (e) { bad = true; }
   }
   return bad;
 };
@@ -127,6 +160,13 @@ const sendFiles = async (id, list) => {
 go.onclick = async () => {
   if (go.disabled) return;
   go.disabled = true; const cs = $('nk-c-status'); cs.textContent = '送っています…';
+  // 区切りだけの確かめ: 手帖が作った記録へ区切りを送り、その玩具の区切りと印を消して もちよるへ（記録は作らない）
+  if (toRec) {
+    const bad = clipsNow.length ? await sendClips(toRec) : false;
+    try { await utsushiClips.clear(sid); } catch (e) {}
+    utsushiClips.dropKeep();
+    location.assign(toGallery(bad ? '__CLIP_FAIL__' : toMsg)); return;
+  }
   const said = $('nk-kufu').value.trim(), list = chosen.slice(0, max);
   let done = '', saved = false;
   try {
@@ -185,11 +225,12 @@ def entry(sid, paper, results):
             # 「のこす」は記入の欄のすぐ下（405）。帯の駅の道しるべの釦（p.road の .go）で、頁の道しるべはこの 1 つ（test_ux_stage0）
             '<p class="road"><button type="submit" class="go" id="nk-keep">のこす</button></p></form>')
     # 確かめの画面。自己改善の輪の話は、学びの輪の文と図（輪の部品の字のまま・401）と naoru の 1 行（402「承認の時に自己改善ループの話を出そう」）
-    check = (f'<div class="nk-check" id="nk-check" hidden><h3>{esc(CHECK_HEAD)}</h3>'
+    # 記録の行は 1 つの囲み（nk-c-rec）にまとめる。手帖の のこす の後の区切りだけの確かめでは、囲みごと隠す
+    check = (f'<div class="nk-check" id="nk-check" hidden><h3>{esc(CHECK_HEAD)}</h3><div id="nk-c-rec">'
              f'<p class="meta">{esc(RESULT_HEAD)}</p><p id="nk-c-result"></p>'
              f'<p class="meta">{esc(hanasu.KUFU_HEAD)}</p><p id="nk-c-kufu"></p>'
              f'<p class="meta">{esc(IMPRESSION_HEAD)}</p><p id="nk-c-impression"></p>'
-             '<div class="nk-thumbs" id="nk-c-thumbs"></div>'
+             '<div class="nk-thumbs" id="nk-c-thumbs"></div></div>'
              f'<div class="nk-clips" id="nk-c-clips" hidden><p class="meta">{esc(clips.HEAD)}</p><ul></ul><p class="meta">{esc(clips.STORE)}</p></div>'
              f'<p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}'
              + (f'<p>{esc(naoru.LINES[0])}</p>' if naoru.LINES else "") +

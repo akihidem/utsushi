@@ -319,8 +319,11 @@ assert "/media" in files_send and "/media" not in up
 assert up.index("/talk") < up.index("record-json") < up.index("form.reset()") < up.index("sendFiles(j.id, files)")
 assert "if (go.disabled) return" in up and "go.disabled = true" in up
 assert "上げました" in files_send and "に入りました" not in js, "工夫の数を知らせる文は本人の確認が済むまで出さない"
-# のこした後は持ち寄る駅（ギャラリー）へ移る（窓口の決定 11-06 夜・案 A。地図の 5）。記録の頁へは、ギャラリーの今残した 1 つの札から行く
-assert "/gallery?msg=" in up and "/techo/kiroku?msg=" not in up
+# のこした後は持ち寄る駅（ギャラリー）へ移る（窓口の決定 11-06 夜・案 A。地図の 5）。記録の頁へは、ギャラリーの今残した 1 つの札から行く。
+# 今の回に声かカメラの区切りがある時だけ、のこすの頁の区切りだけの確かめ（#to=）を通る（統括の決め 11-08 (a)・web.clips の印）
+to_nk = js[js.index("const toNokosu = "):js.index("const sendFiles")]
+assert "`/toy/${sid}/techo/kiroku#to=${encodeURIComponent(id)}&msg=${encodeURIComponent(done)}`" in to_nk and "/techo/kiroku?msg=" not in js
+assert up.index("if (toClips) { location.assign(toNokosu(rid, done)); return; }") < up.index("location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`)")
 
 # ---- 絵: 御来迎は折る順の 4 コマ（手順の紙と同じ形）。手順の順に進み、最後は 4 コマ目
 data = hypotheses.load(G)
