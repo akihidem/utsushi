@@ -211,7 +211,9 @@ assert code == 422 and think_sheet.NONE in body
 code, _, h = send(f"/toy/{G}/think-sheet", {"who": "pagewho123"})
 assert code == 303 and "at=think-" in h["Location"], code  # 試験の置き場には鍵が無いので、作る側の待ちに置かれる
 code, body, _ = send(h["Location"].split("#")[0])
-assert code == 200 and think_sheet.WAITING in body and think_sheet.ASKED in body
+# 待ちの字は、型紙を印刷する の中の口では、釦を押させない字（TALK_WAITING・別の目の検品 11-08 #714 の 2）。部品の節（section）は前の字のまま
+assert code == 200 and think_sheet.TALK_WAITING in body and think_sheet.ASKED in body
+assert think_sheet.WAITING in think_sheet.section(G, h["Location"].split("at=", 1)[1].split("#")[0])
 code, body, _ = send(f"/toy/{G}/think-ok", {"t": "nothing"})
 assert code == 422 and think_sheet.FAILED in body
 # 押した後に着く頁に絵が出て、その絵が本当に開く（#145）。どの状態の節にも順位・点・推しの言葉が無い。

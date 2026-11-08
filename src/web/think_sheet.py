@@ -56,6 +56,13 @@ ASKED = "頼みました。"
 TALK_GO = "Claude に話して型紙を作り直す"
 TALK_NOTICE = ("残るのは字だけです。書いた字は、AI（Claude）に送って、型紙を作り直す案を作ってもらいます。作る人も、型紙をよくするのに使います。"
                "名前や連絡先は書かないでください。")
+# この口で断る時と待つ時の字（別の目の検品 11-08 #714: 前からの字は「残す」の釦・声・前の行き止まりの話で、この口に合わなかった）。
+# 新しい字で、前からの字（hanasu.BLOCKED・NOHEARD・NONE・WAITING）の言い方に寄せた。本人の答え（11-08）「4つともこの字でよい」
+TALK_BLOCKED = "名前・学校の名前・住所・電話番号・メールのような言葉が入っていたので、送りませんでした。その言葉を消して、もう一度押してください。"
+TALK_EMPTY = "作り直したい所を、字で書いてから押してください。"
+TALK_NO_SCREEN = "この画面では頼めませんでした。頁を開き直して、もう一度書いて押してください。"
+# 作る側の待ちに置いた時（鍵の無い場・Claude を呼べなかった時）。待ちの間は釦を出さない: 押すと新しく頼み、1 日の回数が減るため（同じ検品の 2）
+TALK_WAITING = "作る人が、この考えから紙を作っています。あとで、この頁を開き直すと、続きが見られます。"
 FAILED = "紙を作れませんでした。もう一度押してください。"
 
 SAME = "もとの紙のまま"
@@ -309,8 +316,9 @@ def window_box(sid, at="", note=""):
     錨は #think の 1 つ（前の仮説の段の節は外した）。字の欄の見出しは前からの LEAD（新しい字を増やさない）。声を録る釦は置かない:
     録った声は のこす の承認で送る物で、Claude には渡らない（UX の担当の推し・設計 2 版の 2 節）"""
     w = words.by_token(sid, at[len("think-"):]) if at.startswith("think-") else None
-    status = _status(sid, w) if w else ""
-    form = ("" if w and w["status"] == "pending_human" else
+    status = (f"<p>{esc(TALK_WAITING)}</p>" if w["status"] == "waiting_maker" else _status(sid, w)) if w else ""
+    # 確かめている間（pending_human）と、作る側の待ちの間（waiting_maker）は、頼む釦を出さない（押すと新しく頼み直し、1 日の回数が減る）
+    form = ("" if w and w["status"] in ("pending_human", "waiting_maker") else
             f'<form method="post" action="/toy/{esc(sid)}/think-talk#think" class="think-talk">'
             f'<label for="think-text"><span class="lead">{esc(LEAD)}</span></label>'
             f'<textarea id="think-text" name="text" maxlength="{talk_log.MAX_TEXT}" required></textarea>'
@@ -324,13 +332,16 @@ def post(handler, sid, act, form):
     if act == "think-talk":
         # 字を残してから頼む（人の言葉が先・J-013）。床（個人の情報の形・長さ・空）で断られたら頼まずに理由を返す（UX の担当の答え 11-08 の 2）。
         # 頼むのは人の操作 1 回で 1 回だけ（下の think-sheet と同じ道）。字はたたき台の紙の考えとして残す（前の考えを話す の口と同じ場面 think）
-        from .hanasu import reason
-
+        # 断りの字はこの口の字（TALK_*）。前は話す口の字（「残す」の釦・声の話）で、この口に合わなかった（別の目の検品 11-08 #714 の 1）。
+        # 画面の印（who。JS が足す）が無い時は、字を残さずに断る（残しても、その字から頼めない）
+        if not making_log.clean_who(form.get("who", "")):
+            return handler._send(422, handler._toy(sid, errors=[TALK_NO_SCREEN], at="think"))
         hid = hypotheses.sheet_of(sid)["id"]
         vs = printed_versions(sid, hid)
         kept, failures = talk_log.add(sid, "think", form.get("text", ""), hypothesis_id=hid, sheet_version=vs[-1] if vs else None, via="text", who=form.get("who", ""))
         if kept is None:
-            return handler._send(422, handler._toy(sid, errors=[reason(failures)], at="think"))
+            why = TALK_BLOCKED if failures and failures[0].floor == "F10.pii" else TALK_EMPTY if failures and failures[0].message == talk_log.EMPTY else FAILED
+            return handler._send(422, handler._toy(sid, errors=[why], at="think"))
         act = "think-sheet"
     if act == "think-sheet":
         w, why = request(sid, form.get("who", ""), claude=use_claude(handler))
