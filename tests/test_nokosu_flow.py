@@ -80,6 +80,7 @@ assert "go.disabled" in go, "押している間は押せない（2 度押しの�
 # 4 3 つまで・約束の印
 assert f'data-max-n="{techo_site.MAX_PER_RECORD}"' in page and techo_site.MAX_PER_RECORD == 3
 assert "つは上げません" in script and "!ok.checked" in keep and nokosu.PROMISE in page
+assert "（大きすぎて上げられない物があります）" in script, "20MB を越えて落とした物は、手帖と同じ字で言う"
 
 # 5 台本の無い画面の素のフォーム
 plain = between(page, "<noscript>", "</noscript>")
