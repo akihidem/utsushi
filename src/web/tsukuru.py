@@ -304,7 +304,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     asking = event == "stuck"
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
-            f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
+            f'<p class="top"><a href="/toy/{esc(sid)}#win">← {esc(data["toy"])}</a>'
             f'<span>作りながら見る（試作）　{esc(_label(h))}・{esc(ban)}</span></p>{genga.fold(sid)}'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'

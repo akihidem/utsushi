@@ -7,9 +7,9 @@
    頭の「つくる」は仮説の段の頭（#kasetsu-fuda）へ行く道（刷らない）
 2. 頭の後の段の順: 仮説 → たとえと、関連する事柄 → 組み立てを立体で見る → 型紙の窓 → できたら、のこそう。これまでの復元（#minna）・組み方・作っている途中で困ったら は頁に無い
 3. 仮説の段: 見出し「仮説」→ 前提の断り（11-05）→ 輪の図 → 札 → 考えを話す（段の中の小さな口・見出しは h3）。段の見出し（h2）は 仮説 だけ
-4. 型紙の窓: 刷る前は窓の中に紙を作る「つくる」（刷る口は 1 つ）。刷った後は 紙・PDF・つくる（手帖へ）・のこす。型紙の版の歩みは窓の中の畳み（閉じた形）
-5. できたら、のこそう の段に、もちよる のこの玩具の所（/gallery#toy-<印>）への 1 行の道「この玩具の作った物を もちよる で見る」
-6. 作りながら見る頁の「← 玩具」の錨（#tsukuru）は頁に残る（型紙の窓のすぐ前）
+4. 型紙の窓: 刷る前は窓の中に紙を作る「つくる」（刷る口は 1 つ）。刷った後は 型紙（紙の絵と札）→ 型紙の版の歩み（閉じた畳み）→ 口（PDF・つくる（手帖へ）・のこす）
+5. できたら、のこそう の段に、もちよる のこの玩具の札（/gallery#toy-<印>）への 1 行の道「この玩具の作った物を もちよる で見る」。札が無い玩具には出さない
+6. 作りながら見る頁の「← 玩具」は型紙の窓（#win）へ行く（前の錨 #tsukuru は外した）
 """
 import os
 import re
@@ -58,11 +58,17 @@ def check(sid, printed):
         assert re.search(rf'<form method="post" action="/toy/{sid}/print#win"[^>]*>.*?<button class="btn" data-busy>つくる</button></form>', w, re.S), (where, "刷る前の窓に紙を作る口が無い")
     if 'id="ban-ayumi"' in page:
         assert re.search(r'id="ban-ayumi"[^>]*><details class="fold-sec"><summary><h2>型紙の版の歩み</h2></summary>', w), (where, "版の歩みが窓の中の閉じた畳みでない")
-    # 5
+        if printed:  # 段の中の順: 型紙（紙の絵と札）→ 版の歩み → 型紙の窓の口（印刷・つくる・のこす）（本人の言葉 469・統括の読み 11-08）
+            assert w.index('<figure class="sheet">') < w.index('id="ban-ayumi"') < w.index("PDF を開いて印刷する"), (where, "型紙 → 版の歩み → 口 の順でない")
+    # 5（もちよる の札がある時だけ。札の有る無しは もちよる の側の techo_site.toy_place が決める）
     k = page[page.index('id="kiroku"'):]
-    assert f'<a href="/gallery#toy-{sid}">この玩具の作った物を もちよる で見る</a>' in k, (where, "もちよる への道が無い")
+    place = toy.mochiyoru_place(sid)
+    if place:
+        assert f'<a href="{place}">この玩具の作った物を もちよる で見る</a>' in k, (where, "もちよる への道が無い")
+    else:
+        assert "この玩具の作った物を もちよる で見る" not in page, (where, "札の無い玩具に もちよる への道を出した")
     # 6
-    assert page.index('id="tsukuru"') < page.index('<section class="sec" id="win">'), (where, "#tsukuru の錨が無いか、窓の後")
+    assert 'id="tsukuru"' not in page, (where, "前の錨 #tsukuru が残った")
     return page
 
 

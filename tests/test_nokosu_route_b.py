@@ -27,8 +27,9 @@ TOYS = ("NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R")
 
 
 def win(page):
+    # 型紙の窓の中に版の歩みの節（畳み）が入るので、窓の終わりは次の段（できたら、のこそう）の頭で切る
     a = page.index('<section class="sec" id="win">')
-    return page[a:page.index("</section>", a)]
+    return page[a:page.index('id="kiroku"', a)]
 
 
 for sid in TOYS:
