@@ -181,8 +181,6 @@ pub = techo_site.gallery_page(SIDS, public=True)
 assert section(pub) == sec, "合言葉なしで開いた場で、作例の節が違う"
 closed = techo_site.gallery_page(SIDS, photos=False)
 assert 'id="sakurei"' not in closed and "/small" not in closed
-from web.demo_samples import uploads_html  # noqa: E402
-if uploads_html():
-    assert '<details class="samples-fold"><summary>見本</summary>' in html, "作例だけがある時に見本を畳まない"
-    assert '<details class="samples-fold">' not in before, "作例が無い時に見本を畳んだ（前の形が変わった）"
+# 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。畳みも出ない
+assert '<details class="samples-fold">' not in html and '<details class="samples-fold">' not in before, "ギャラリーに見本の畳みを出さない"
 print("ok 作った物の頁の作例の節: 空の時・確かめた物だけ・小さい写し・顔の写真と事例・玩具ごと・報告の段・札・場")
