@@ -1,0 +1,9 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_kiroku.py
+# commit: 3b0da3c0（回した時の HEAD）
+/tmp/tmpcoi9hewm/play/NDL-1187053-R0000005-L/.tmp-tpr294yb/H-C_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_shiori_kiroku.py", line 68, in <module>
+    assert word not in page, ("しおりだけの画面に、ほかの人の記録の字か番号が出た", word)
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('しおりだけの画面に、ほかの人の記録の字か番号が出た', 'ほかの人の部品')
+rc=1

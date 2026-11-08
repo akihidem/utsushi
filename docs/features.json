@@ -1032,9 +1032,10 @@
    "tests/test_shiori_open.py",
    "tests/test_shiori.py",
    "tests/test_shiori_role.py",
-   "tests/test_shiori_gallery.py"
+   "tests/test_shiori_gallery.py",
+   "tests/test_shiori_kiroku.py"
   ],
-  "unverified": "しおりの紙（QR・9 つの絵・裏の順の印）と進め役の道はまだ。9 つの絵の並びは仮。決まった番地（Workers）は本人の画面の操作の後。Cloudflare が客の付けた Cf-Connecting-Ip を必ず上書きするか・ブラウザごとの session の cookie の残り方・Worker の記録に /s/<印> が残るか は、まだ確かめていない。安全の事項 1・11 への対応（11-08）: しおりだけで門を通った画面は、管理の面（/loop・/loop/<玩具>・/loop/ayumi）と次の版・AI の口を 403 にし、ほかの /record/<番号>/ への送りは結ばれた記録だけにした（test_shiori_role）。もちよるの他の人の札の字は、しおりだけの画面では公開の場と同じ線（人が確かめた字だけ・番号なし・test_shiori_gallery）にした。参加者・進行者・管理者の 3 つの役の分け方はまだ"
+  "unverified": "しおりの紙（QR・9 つの絵・裏の順の印）と進め役の道はまだ。9 つの絵の並びは仮。決まった番地（Workers）は本人の画面の操作の後。Cloudflare が客の付けた Cf-Connecting-Ip を必ず上書きするか・ブラウザごとの session の cookie の残り方・Worker の記録に /s/<印> が残るか は、まだ確かめていない。安全の事項 1・11 への対応（11-08）: しおりだけで門を通った画面は、管理の面（/loop・/loop/<玩具>・/loop/ayumi）と次の版・AI の口を 403 にし、ほかの /record/<番号>/ への送りは結ばれた記録だけにした（test_shiori_role）。もちよるの他の人の札の字は、しおりだけの画面では公開の場と同じ線（人が確かめた字だけ・番号なし・test_shiori_gallery）にした。参加者・進行者・管理者の 3 つの役の分け方はまだ。手帖の記録の頁も、しおりだけの画面では、結ばれた記録だけ今のまま字を出し、ほかの人の記録は公開の場の記録の頁と同じ形にした（test_shiori_kiroku）"
  },
  {
   "id": "f83",
