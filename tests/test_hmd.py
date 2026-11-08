@@ -292,14 +292,18 @@ setTimeout(()=>{let i=0;for(const f of document.querySelectorAll('iframe')){cons
 const seen=(e)=>e&&!e.hidden&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0,box=(e)=>{const b=e.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.right),Math.round(b.bottom)]};
 const kg=d.getElementById('kasane-go'),kl=kg&&kg.querySelector('span'),li=d.querySelector('#steps li.on'),keys=[...d.querySelectorAll('.keys a,.keys button')].filter(seen);
 const others=['mic','close','genga-thumb'].map(id=>d.getElementById(id)).filter(seen);
-o.step={kasane:seen(kg)?box(kg):null,label:kl&&seen(kl)?{box:box(kl),px:parseFloat(getComputedStyle(kl).fontSize),lines:Math.round(kl.getBoundingClientRect().height/parseFloat(getComputedStyle(kl).lineHeight)),cut:kl.scrollWidth>kl.clientWidth+1||kl.getBoundingClientRect().right>kg.getBoundingClientRect().right+1||kl.getBoundingClientRect().left<kg.getBoundingClientRect().left-1||kl.getBoundingClientRect().bottom>kg.getBoundingClientRect().bottom+1}:null,bar:['mic','close','genga-thumb','kasane-go'].map(id=>d.getElementById(id)).filter(seen).map(e=>[Math.round(e.getBoundingClientRect().top),Math.round(e.getBoundingClientRect().bottom)]),text:li?box(li):null,others:others.map(box),keysBottom:Math.max(0,...keys.map(k=>Math.round(k.getBoundingClientRect().bottom)))}}
+o.step={kasane:seen(kg)?box(kg):null,label:kl&&seen(kl)?{box:box(kl),px:parseFloat(getComputedStyle(kl).fontSize),lines:Math.round(kl.getBoundingClientRect().height/parseFloat(getComputedStyle(kl).lineHeight)),cut:kl.scrollWidth>kl.clientWidth+1||kl.getBoundingClientRect().right>kg.getBoundingClientRect().right+1||kl.getBoundingClientRect().left<kg.getBoundingClientRect().left-1||kl.getBoundingClientRect().bottom>kg.getBoundingClientRect().bottom+1||kl.getBoundingClientRect().top<kg.getBoundingClientRect().top-1,iconOut:(()=>{const sv=kg.querySelector('svg');if(!sv)return true;const a=sv.getBoundingClientRect(),b=kg.getBoundingClientRect();return a.top<b.top-1||a.bottom>b.bottom+1})()}:null,bar:['mic','close','genga-thumb','kasane-go'].map(id=>d.getElementById(id)).filter(seen).map(e=>[Math.round(e.getBoundingClientRect().top),Math.round(e.getBoundingClientRect().bottom)]),text:li?box(li):null,others:others.map(box),keysBottom:Math.max(0,...keys.map(k=>Math.round(k.getBoundingClientRect().bottom)))}}
 document.getElementById('measured').textContent=JSON.stringify(out)},700)},800))</script>"""
 
 
-def techo_fit():
+def techo_fit(lang=""):
+    # lang="en" は英語の頁（訳の表の字で印の字の塊の大きさが替わる。#628 の別の目: 前の訳は 4 行に折れて印から上下に出た）。
+    # 言葉の切り替えは cookie なので、日本語の頁と同じ回に混ぜず、英語だけの回にする
+    q = f"&amp;lang={lang}" if lang else ""
+
     def do_wrap(self):
         if self.path == "/__fit":
-            frames = "".join(f'<iframe data-sid="{sid}" src="/toy/{sid}/techo?v=1&amp;n=1" width="{w}" height="{h}" style="border:0;display:block"></iframe>'
+            frames = "".join(f'<iframe data-sid="{sid}" src="/toy/{sid}/techo?v=1&amp;n=1{q}" width="{w}" height="{h}" style="border:0;display:block"></iframe>'
                              for w, h in FIT_SIZES for sid in FIT_TOYS)
             return send(self, 200, FIT_WRAP.replace("__FRAMES__", frames))
         return getter(self)
@@ -323,14 +327,28 @@ for sid in FIT_TOYS:  # 手帖は刷った紙がある時だけ「はじめる�
     urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{sid}/print", data=f"hypothesis={hypotheses.sheet_of(sid)['id']}".encode(),
                                                   headers={"Origin": base}), timeout=120).read()
 fits = techo_fit() or techo_fit()
+fits_en = techo_fit("en") or techo_fit("en")
+if fits is not None and fits_en is not None:
+    # 英語の頁は印の字の塊（字が印の高さに収まり、写真機の形が印の外へ押し出されない・帯が 1 行）だけを同じ線で見る（統括の決め 11-08）。
+    # 英語の最初の画面の「はじめる」の位置は、断りの字の長さで替わる別の事なので、ここでは数だけを出す（en_start）
+    for f in fits_en:
+        f["lang"] = "en"
+    fits = fits + fits_en
+elif fits is not None:
+    fits = None  # 英語の回が答えなかった時は、測れないとして出す（日本語だけで通さない）
 if fits is None:
     unmeasured_fit = "手帖の最初の画面の大きさ（Chrome が答えなかった）"
 else:
     unmeasured_fit = ""
+    en_start = []
     for f in fits:
-        assert f["start"] <= f["h"] and f["sx"] <= f["w"], ("「はじめる」が最初の画面に入り、横にはみ出さない", f)
-        # のこすへの道の 1 行は、全部の玩具の最初の画面に「はじめる」の下で出て、重ならず、最初の画面から押し出さない
-        assert f["go"] and f["go"][0] >= f["start"], ("のこすへの 1 行は「はじめる」の下に置き、重ならない", f)
+        en = f.get("lang") == "en"
+        if en:
+            en_start.append(f"{f['sid'][-6:]} {f['w']}×{f['h']} はじめるの下の端 {f['start']}")
+        else:
+            assert f["start"] <= f["h"] and f["sx"] <= f["w"], ("「はじめる」が最初の画面に入り、横にはみ出さない", f)
+            # のこすへの道の 1 行は、全部の玩具の最初の画面に「はじめる」の下で出て、重ならず、最初の画面から押し出さない
+            assert f["go"] and f["go"][0] >= f["start"], ("のこすへの 1 行は「はじめる」の下に置き、重ならない", f)
         # 手順の画面の重ねる頁への印（本人の答え 11-08「どこかに道を戻す。」）: 組み立ての書き方がある玩具だけに出て、画面の中にあり、
         # 手順の字と上の帯の印（マイク・閉じる印・原画の小さな絵）と重ならず、押す所（もどる・つぎ・こまった）を最初の画面から押し出さない
         st = f["step"]
@@ -342,10 +360,12 @@ else:
             assert k and k[0] >= 0 and k[2] <= f["w"] and k[3] <= f["h"], ("印が画面の中", f)
             assert not (st["text"] and over(k, st["text"])) and not any(over(k, o) for o in st["others"]), ("印が字や上の帯の印と重ならない", f)
             # 印に添えた字「カメラに重ねる」（本人の答え 11-08）は 12px 以上で、切れずに印の中に収まる（統括の決め 11-08）
-            assert st["label"] and not st["label"]["cut"] and st["label"]["px"] >= 12, ("印の字が読める大きさで切れない", f)
+            assert st["label"] and not st["label"]["cut"] and not st["label"]["iconOut"] and st["label"]["px"] >= 12, ("印の字が読める大きさで切れず、印の高さに収まる", f)
             # 帯は 1 行のまま: 上の帯の印（マイク・閉じる・原画の小さな絵・この印）の上の端がそろい、この印は帯の一番高い印（マイク 72px）より下へ出ない
             assert len({t for t, _ in st["bar"]}) == 1 and k[3] <= max(b for _, b in st["bar"]), ("帯が 2 行にならない", f)
-        assert st["keysBottom"] <= f["h"], ("手順の画面の押す所が最初の画面に入る", f)
+        if not en:
+            assert st["keysBottom"] <= f["h"], ("手順の画面の押す所が最初の画面に入る", f)
+    print("英語の頁の最初の画面（数だけ）:", "・".join(en_start))
 
 runs = {}
 for name, (w, h, kind) in {"横・声あり": (1280, 720, "voice"), "横・声なし": (1280, 720, "plain"), "縦・声あり": (390, 844, "voice"), "縦・カメラ": (390, 844, "cam"), "縦・紙に合わせる": (390, 844, "quad"), "横・紙に合わせる": (1280, 720, "quad"), "縦・中を見る": (390, 844, "split"), "横・分解の形が無い": (1280, 720, "nosplit")}.items():
