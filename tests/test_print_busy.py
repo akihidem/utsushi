@@ -24,7 +24,8 @@ BUSY = " data-busy"
 # 押した時に釦に出す字（本人の決定 11-05）。一字も変えない。
 ADOPTED_JA, ADOPTED_EN = "作っています…", "Making…"
 # 紙を作る送信。記録や説明の送信は速く、押せなくすると書き直す道を狭めるので、印を付けない。
-SHEET = re.compile(rf"/toy/{G}/(print|reprint|think-sheet|think-ok)#|/record/R-\d+/next#")
+# 型紙を印刷する の作り直す口（think-talk・#714）も、押すと Claude に頼んで紙を作る送り（待つ印が要る）
+SHEET = re.compile(rf"/toy/{G}/(print|reprint|think-sheet|think-ok|think-talk)#|/record/R-\d+/next#")
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -93,9 +94,11 @@ assert (out_dir(G) / f"{ids[0]}_v1.pdf").exists()
 # 紙がある時は、頭の「つくる」は窓の紙へ行くリンクで、刷る欄は頁に無い（刷る口は 1 つ。本人のサイト体験レビュー 11-07 の 3）
 assert not any("/print#" in a for a in marked(get(f"/toy/{G}")))
 
-# 話した考えから紙を作る釦と、「この紙にする」の釦
+# 話した考えから紙を作る釦と、「この紙にする」の釦。頁の作り直す口は 11-08 から 型紙を印刷する の中の 1 つの釦（think-talk・#714）で、
+# 前の「この考えから紙を作る」（think-sheet）は頁に無い（部品の節にだけある）
 page = get(f"/toy/{G}")
-assert any("/think-sheet#" in a for a in marked(page))
+assert any("/think-talk#" in a for a in marked(page)) and not any("/think-sheet#" in a for a in marked(page))
+assert any("/think-sheet#" in a for a in marked(think_sheet.section(G)))
 # 考えから紙を作る釦は Claude を呼ぶ。呼び出しの上限より先に押せるように戻ると、費用のかかる呼び出しが 2 回走る
 wait = int(re.search(r'data-busy-for="(\d+)"', page).group(1))
 assert wait > config.RUN_TIME_LIMIT["words"], wait

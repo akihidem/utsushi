@@ -13,6 +13,7 @@
 #   手元の口と、トンネルの名前越しの両方を、サイトごとに開いて確かめ、開かなければ案内せずにログの末尾を出して 4 で止める。
 # 使い方: ./run-demo.sh            前回の置き場と合言葉を続けて使う（合言葉付きのリンク）
 #         ./run-demo.sh --fresh    置き場を空にし、合言葉も作り直して始める（前のデモで渡したリンクでは入れない）
+#         ./run-demo.sh --open --public-think   合言葉なしで開き、型紙を印刷する の作り直す口だけが Claude を呼べる形（本人の決め 11-08）
 #         ./run-demo.sh --open     合言葉なしで、他の人も見られる形に開く（本人の許可 11-05「デモサイト 2 つを他の人でも見れるように公開していいよ」）。
 #                                  置き場は別（out/demo-data-open）: 合言葉付きの時に書かれた記録と写真を、開いた場に出さないため。
 #                                  開いた場では写真と動画を受けない（誰でも上げられる所に、確かめていない写真を載せない）。
@@ -31,8 +32,12 @@ LOOKS="tenji"  # 白の 1 つだけ（本人の決定 11-06）。黒も立てる
 port_of() { if [ "$1" = zine ]; then echo $((PORT + 1)); else echo "$PORT"; fi; }
 # 何より先に、2 つの port を見る。塞いでいるのが動いているデモなら、そのリンク・合言葉・置き場に触らずに止めるため。
 for look in $LOOKS; do check --port-free "$(port_of "$look")" || exit 4; done
-OPEN=""; DATA=out/demo-data
+OPEN=""; DATA=out/demo-data; THINK=""
 for a in "$@"; do [ "$a" = "--open" ] && { OPEN=1; DATA=out/demo-data-open; }; done
+# --public-think: 合言葉なしの場（--open）で、型紙を印刷する の作り直す口だけが Claude を呼べる形に立てる（本人の決め 11-08「公開のデモにも、
+# 本当に動く形で出してください。…この口だけは本人の決めで開けます。他の口は閉じたままにしてください。」）。ほかの AI の口は閉じたまま。
+# この印の時だけ、鍵のある所でも開いた場を立てる。鍵を置くのは本人か窓口（このスクリプトは鍵を読まない）
+for a in "$@"; do [ "$a" = "--public-think" ] && THINK="--public-think"; done
 mkdir -p out
 rm -f out/demo-url out/demo-url-tenji out/demo-url-zine  # 前回が止まり切らずに残したリンクを、今回の物と取り違えない
 # 原図の写し（切り出し）は git の外なので、足りない分を起動のたびに取る（出典の記録の URL から。網が無ければ字だけで動く）。
@@ -65,7 +70,7 @@ wait_open() {  # wait_open <URL の頭> <回数> <ログ> <pid> [demo_check の�
 for look in $LOOKS; do
   port=$(port_of "$look")
   if [ -n "$OPEN" ]; then
-    OMOCHAE_DATA="$PWD/$DATA" PYTHONPATH=src .venv/bin/python -m web.play_server "$port" --look "$look" --public > "out/demo-server-$look.log" 2>&1 &
+    OMOCHAE_DATA="$PWD/$DATA" PYTHONPATH=src .venv/bin/python -m web.play_server "$port" --look "$look" --public $THINK > "out/demo-server-$look.log" 2>&1 &
   else
     OMOCHAE_DATA="$PWD/$DATA" PYTHONPATH=src .venv/bin/python -m web.play_server "$port" --look "$look" --public-key-file out/demo-key > "out/demo-server-$look.log" 2>&1 &
   fi

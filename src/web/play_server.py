@@ -525,7 +525,10 @@ class Handler(BaseHTTPRequestHandler):
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
         # 話した本人の案（think_sheet.mine）は、玩具の頁の記録の欄が選ぶ口に使っていた。欄はのこすへ寄せたので渡さない（本人の答え Q3）
-        return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
+        # 作り直す口（think）は、合言葉の場と、公開の場で作り直す口だけを開く印（public_think）の時に出す
+        public = getattr(self.server, "public_open", False)
+        return toy_page(sid, look=self._look, photos=not public, up_key=self._up_key(), rec_key=self._rec_key(),
+                        think=not public or getattr(self.server, "public_think", False), **kw)
 
     def _pick_lang(self):
         """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、ブラウザを閉じれば消える cookie に持つ。道は日本語の頁と同じ。
@@ -1136,7 +1139,8 @@ class Handler(BaseHTTPRequestHandler):
         # think-talk は型紙を印刷する の中の 1 つの釦（字を残して続けて頼む・think_sheet.window_box）。止めは think-sheet と同じ（公開の場は 403・呼び名のそろわない玩具は 404）
         m = re.fullmatch(rf"/toy/({SID})/(think-sheet|think-ok|think-talk)", self.path)
         if m and m.group(1) in sources():  # 話した考えから紙を作り直す（ループ1、Issue #335。中身は think_sheet.py）
-            if getattr(self.server, "public_open", False):  # 合言葉なしの場では開かない（J-028）
+            # 合言葉なしの場では開かない（J-028）。公開の場で作り直す口だけを開く印（--public-think・本人の決め 11-08）がある時は開く
+            if getattr(self.server, "public_open", False) and not getattr(self.server, "public_think", False):
                 return self._send(403, "公開のデモでは使えません")
             from . import think_sheet
             if not think_sheet.ready(m.group(1)):  # 節を出さない玩具には、受け口も無い
@@ -1667,7 +1671,7 @@ def bind_host(lan):
     return "0.0.0.0" if lan else "127.0.0.1"
 
 
-def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_open=False, bind=None):
+def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_open=False, bind=None, public_think=False):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
     public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。
     look はこのサイトの皮（tenji 白の展示・zine 黒のジン）。皮ごとに 1 サイト（本人の決定 11-05 朝）なので、2 つ立てる時は port と look を変える。"""
@@ -1683,12 +1687,19 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     # 開いた場でも写真と動画は受ける（本人の決定 11-06）。確かめる前は上げた本人の画面にだけ、物だけと確かめた後はギャラリーにも出す（合言葉付きの場と同じ線）。
     if public_open and public_key:
         raise ValueError("合言葉付きと合言葉なしは同時に使えない")
-    if public_open:
+    if public_think and not public_open:
+        raise ValueError("作り直す口だけを開く印は、合言葉なしの場（--public）と一緒に使う")
+    if public_open and not public_think:
         # 鍵のある場所では開かない: 誰でも聞く口から費用のかかる呼び出しができてしまうため（J-028）。
+        # 作り直す口だけを開く印（public_think）の時は、鍵のある所でも立てる（下の server.public_think の注）
         from api import ask
         if ask._key_present():
             raise ValueError("鍵（.env）がある所では、合言葉なしで開けない")
     server.public_open = bool(public_open)
+    # 公開の場で、型紙を印刷する の作り直す口（think-talk・think-sheet・think-ok）だけが Claude を呼べる印（本人の決め 11-08「公開のデモにも、
+    # 本当に動く形で出してください。…この口だけは本人の決めで開けます。他の口は閉じたままにしてください。」）。ほかの AI の口（手順の質問・
+    # 記録の解釈と観察・作業の頁の聞く口）は、呼ぶたびに public_open を見て閉じたまま（安全の事項 5）。止め（1 日 30 回・予算・書き込みの数）は公開でも効く
+    server.public_think = bool(public_think)
     server.look = look
     server.write_limit = WriteLimit()
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
@@ -1727,10 +1738,11 @@ if __name__ == "__main__":
             look = argv[i + 1]
             del argv[i:i + 2]
         public_open = "--public" in argv  # 合言葉なしで開く（run-demo.sh --open）
-        args = [a for a in argv if a not in ("--lan", "--public")]
+        public_think = "--public-think" in argv  # 公開の場で作り直す口だけを開く（本人の決め 11-08・run-demo.sh --open --public-think）
+        args = [a for a in argv if a not in ("--lan", "--public", "--public-think")]
         lan = "--lan" in argv
         port = int(args[0]) if args else 8766
-        server = serve(port, lan=lan, public_key=key, look=look, public_open=public_open)
+        server = serve(port, lan=lan, public_key=key, look=look, public_open=public_open, public_think=public_think)
         # 作り方の印は部品を組み立てて数えるので、初めて数える時は一覧の頁が 3 秒ほど待たされる。人が開く前に裏で数えておく
         import threading
         from omochae import ways

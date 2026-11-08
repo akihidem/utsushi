@@ -1,0 +1,16 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_public_ai_closed.py
+# commit: a6f352df（今の main。この枝の試験だけを入れた木）
+  File "tests/test_public_ai_closed.py", line 100, in <module>
+    play_server.serve(0, public_think=True)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+TypeError: serve() got an unexpected keyword argument 'public_think'. Did you mean 'public_open'?
+rc=1
+
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_print_busy.py
+# commit: a6f352df（今の main。この枝の試験だけを入れた木）
+  File "tests/test_print_busy.py", line 99, in <module>
+    assert any("/think-sheet#" in a for a in marked(page))
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
+

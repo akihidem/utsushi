@@ -117,9 +117,17 @@ def _holds(handler, sid, token):
     return bool(w and words.key_open(w))
 
 
+def _closed(handler):
+    """この画面で作り直す口を閉じるか。合言葉なしの場（public_open）は閉じる（J-028）。ただし公開の場で作り直す口だけを開く印
+    （server.public_think・命令の --public-think）がある時は開く（本人の決め 11-08「公開のデモにも、本当に動く形で出してください。
+    鍵と予算の止め（1日30回・0）つきです。安全の事項5（公開ではAIを呼ばない）とは、この口だけは本人の決めで開けます。他の口は閉じたままにしてください。」）。
+    開いても、話した字・頼んだ後の様子・自分の案の紙は、頼んだ画面の鍵（cookie）を持つ画面だけに開く（下の各々の確かめのまま）"""
+    return getattr(handler.server, "public_open", False) and not getattr(handler.server, "public_think", False)
+
+
 def mine(handler, sid):
     """この画面が今開いてよい案の OWN-n。記録の form・手帖の札・作りながら見る頁に、本人の案だけを出すために引く（ほかの人の案は並べない）。"""
-    if getattr(handler.server, "public_open", False):
+    if _closed(handler):
         return set()
     found = (words.by_token(sid, t) for t in _tokens(handler))
     return {w["own_id"] for w in found if w and w.get("own_id") and words.key_open(w)}
@@ -138,7 +146,7 @@ def usable(handler, sid, hid):
 def opens(handler, sid, oid, after=False):
     """OWN-n の紙を、この画面に開いてよいか。書いて立てた仮説の紙は今までどおり（合言葉なしの場を除く）。
     after は試した後の紙。話した字が刷られず（tests/test_loop1_next.py が PDF の字で見る）、記録の札から誰でも着く紙なので、記録があれば開く。記録の前は、在るかどうかも言わない。"""
-    if getattr(handler.server, "public_open", False):
+    if _closed(handler):
         return False
     if oid not in words.spoken_own_ids(sid):
         return True
@@ -149,16 +157,17 @@ def opens(handler, sid, oid, after=False):
 
 def allowed_at(handler, sid, at):
     """頼んだ後の頁を開く at。本人の印でなければ、節を開かない（URL だけでは話した字を見せない）。"""
-    if at.startswith("think-") and (getattr(handler.server, "public_open", False) or not _holds(handler, sid, at[len("think-"):])):
+    if at.startswith("think-") and (_closed(handler) or not _holds(handler, sid, at[len("think-"):])):
         return ""
     return at
 
 
 def use_claude(handler):
-    """鍵があり、合言葉なしで開いた場でない時だけ Claude を呼ぶ（J-028）。"""
+    """鍵があり、合言葉なしで開いた場でない時だけ Claude を呼ぶ（J-028）。公開の場で作り直す口を開く印がある時は、この口だけ呼ぶ（_closed）。
+    止め（1 日 30 回 budget.WORDS_PER_DAY・予算の止め・書き込みの数）は、公開の場でも同じに効く"""
     from api import ask
 
-    return not getattr(handler.server, "public_open", False) and ask._key_present()
+    return not _closed(handler) and ask._key_present()
 
 
 def request(sid, who, claude=False, client=None):

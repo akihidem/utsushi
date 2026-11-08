@@ -470,7 +470,8 @@ def make_go(sid):
             f'<input type="hidden" name="at" value="win"><button class="btn" data-busy>つくる</button></form>')
 
 
-def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None, up_key=None, rec_key=None):
+def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, kind="", v=0, path=None, photos=True, at="", filled=None, up_key=None, rec_key=None,
+             think=None):
     """玩具の頁。本人の決定（11-05、#242）「予想の段を無くして、すぐ作る形にする」で、開いたら仮説の札と刷る口がすぐ見える。
     答えに読まれない事は、門でなく札で守る: 「型紙は正解ではなく、AI が考えた仮説」を作る節の頭に出す（本人の言葉 11-05）。
     photos=False は合言葉なしで開いた場（写真と動画を出さない。J-028）。
@@ -551,7 +552,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 型紙を印刷する の中の作り直しの口（本人の言葉 11-08「…型紙のところに、クロードに自分の考えを話して型紙を改善するボタンを設置して、再生成してもらうボタンを
     # つけたい。」）。見出しと PDF（刷る前は刷る つくる）のすぐ下・紙の絵の前（刷る前にも話せる）。出すのは、合言葉付きの場（photos）で、たたき台の寸法の呼び名が
     # そろった玩具（think_sheet.ready・今は御来迎と虎）だけ。版が若い 81 種に広げるかは本人の答え待ち（設計 2 版の 6 節）。頼んだ後の様子もここに出す
-    talk = think_sheet.window_box(sid, at, note) if photos and think_sheet.ready(sid) else ""
+    # think は作り直す口を出すか（既定は photos と同じ・合言葉なしの場は出さない）。公開の場で作り直す口だけを開く印（--public-think・本人の決め 11-08）の時は、
+    # 呼び手（play_server._toy）が真を渡す。見た目は合言葉の場の口と同じ
+    talk = think_sheet.window_box(sid, at, note) if (photos if think is None else think) and think_sheet.ready(sid) else ""
     # 段 6 型紙の窓（型紙の印刷）: 刷る前は窓の中に紙を作る「つくる」1 つ（make_go。刷る口は 1 つ・前は頭の釦）。刷った後は 紙・PDF・つくる（手帖へ）・のこす（案 B）。
     # 型紙の版の歩みは窓の中の閉じた畳み（設計の問い 3 の答え「推しのとおり。」。本人の指示 11-07 の版の歩みは残し、読む量を減らす）
     from . import ban_ayumi
