@@ -157,13 +157,19 @@ class Tee:
 # 同じ頁を 4 つの大きさの枠で開くので、1 度作った応答をそのまま返す。頁を作るのは Python の糸を並べても速くならず
 # （やさしい日本語の頁は 1 枚 0.5〜2.4 秒）、作り直すと 9 回 × 60 枠で run.sh の時間切れを超えた。鍵はサーバ（皮と写しの有り無し）・道・言葉の cookie
 CACHE, LOCKS, GUARD = {}, {}, threading.Lock()
+STATUS = {}  # (サーバの port, 道) → 返りの番号（枠の頁が 200 で返ったかを、測った後に見る）
+
+
+def frame_src(path, lang):
+    """枠に開く道（言葉の印を足した物）。枠を作る所と、返りの番号を引く所で同じ形にする。"""
+    return path + ("&" if "?" in path else "?") + "lang=" + lang
 
 
 def do_get(self):
     PIC.m = MODE[self.server.server_address[1]]
     if self.path.startswith("/__ov"):
         lang = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("lang", ["ja"])[0]
-        frames = "".join(f'<iframe data-key="{html.escape(pn)}|{sz}" src="{html.escape(path + ("&" if "?" in path else "?") + "lang=" + lang)}" width="{w}" height="{h}" '
+        frames = "".join(f'<iframe data-key="{html.escape(pn)}|{sz}" src="{html.escape(frame_src(path, lang))}" width="{w}" height="{h}" '
                          'style="border:0;display:block"></iframe>' for pn, path in PAGES.items() for sz, (w, h) in SIZES.items())
         return send(self, 200, WRAP.replace("__FRAMES__", frames).replace("__FIND__", json.dumps(FIND)))
     cookie = re.search(r"utsushi_lang=(\w+)", self.headers.get("Cookie", ""))
@@ -176,6 +182,8 @@ def do_get(self):
         self.wfile = Tee(self.wfile)
         get(self)
         CACHE[key] = self.wfile.buf.getvalue()
+    head = re.match(rb"HTTP/\d\.\d (\d{3})", CACHE[key])
+    STATUS[key[:2]] = int(head.group(1)) if head else None
 
 
 play_server.Handler.do_GET = do_get
@@ -230,9 +238,13 @@ for (mode, look, lang), rec in results:
     if rec is None:
         unmeasured.append(f"{mode}・{look}・{lang}")
         continue
+    port = servers[look, mode].server_address[1]
     for r in rec:
         page, size = r["key"].split("|")
         assert "err" not in r, (mode, look, lang, r["key"], r.get("err"))
+        # 枠の頁が 200 で返ったか（404 や 500 の断りの頁の字を測って 0 と数えない・#684 の別の目）。返りは覚えた応答の頭の行から読む
+        status = STATUS.get((port, frame_src(PAGES[page], lang)))
+        assert status == 200, (mode, look, lang, page, "枠の頁が 200 で返らない（測った字は頁の字でない）", status)
         if r["sw"] > r["w"] + 1:
             if (page, lang) in KNOWN_WIDE:
                 known_seen.add(("横", page, lang))
