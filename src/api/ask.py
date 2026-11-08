@@ -109,8 +109,9 @@ def leaks(answer, h):
     return any(x and x in answer for x in (h.get("name"), h.get("how_it_moves"), "仮説"))
 
 
-def answer(source_id, hypothesis_id, question, client=None):
+def answer(source_id, hypothesis_id, question, client=None, allow_ai=True):
     """Returns (答えの文, どこから: "glossary"|"ai"|"refuse"|"no_key")。聞かれた時だけ呼ぶ。この関数は何も残さない。
+    allow_ai=False は、鍵の有り無しに関わらず Claude を呼ばない（合言葉なしの公開の場・安全の事項 5 への対応）。返す字と形は鍵が無い時と同じ。
     質問の文を残すのは呼び手（play_server が omochae.making_log に、連絡先の形を落として残す。本人の決定 11-05、J-027）。"""
     question = (question or "").strip()[:MAX_QUESTION]
     if not question:
@@ -121,6 +122,10 @@ def answer(source_id, hypothesis_id, question, client=None):
     if asks_term(question) and fan:
         return glossary(question), "glossary"
     context, h = sheet_context(source_id, hypothesis_id)
+    if not allow_ai:
+        # 公開の場では、立てた後に鍵が置かれても呼ばない（立てる時の鍵の確かめだけに頼らない）。字は鍵が無い時と同じにして、頁の見た目と挙動を替えない
+        known = glossary(question) if fan else None
+        return f"{known} {NO_KEY}" if known else NO_KEY, "no_key"
     if client is None:
         from .agent import default_client
 
@@ -132,11 +137,15 @@ def answer(source_id, hypothesis_id, question, client=None):
     messages = [{"role": "user", "content": f"{context}\n\n質問: {question}"}]
     # 呼ぶ前に、この 1 回の最悪の費用まで足して上限を見る（輪の agent.run と同じ見方。外の検品の指摘、11-04）。
     budget.check(0.0, budget.worst_case(config.MODELS["ask"], budget.estimate_tokens(SYSTEM, messages), config.ASK_MAX_TOKENS))
-    response = client.messages.create(
-        model=config.MODELS["ask"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
-        messages=messages,
-        thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["ask"]},
-    )
+    try:
+        response = client.messages.create(
+            model=config.MODELS["ask"], max_tokens=config.ASK_MAX_TOKENS, system=SYSTEM,
+            messages=messages,
+            thinking={"type": "adaptive"}, output_config={"effort": config.EFFORT["ask"]},
+        )
+    except BaseException:  # 呼べなかった時は予約を返す（安全の事項 3 への対応・budget の頭の注）
+        budget.release()
+        raise
     usage = getattr(response, "usage", None)
     budget.add("ask", config.MODELS["ask"], getattr(usage, "input_tokens", 0) or 0, getattr(usage, "output_tokens", 0) or 0)
     text = "".join(getattr(b, "text", "") for b in response.content if getattr(b, "type", "") == "text").strip()

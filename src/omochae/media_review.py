@@ -16,7 +16,9 @@
 exit code: 0 = 通る / 3 = 確認にならない・取り消せない / 4 = 呼び方の誤り・検査できない。
 """
 import argparse
+import hashlib
 import hmac
+import threading
 import json
 import re
 import shutil
@@ -40,14 +42,62 @@ def _folder(rid):
     return records.folder() / "media" / rid
 
 
+def media_lock():
+    """写真と動画の置き場の排他（安全の事項 2 への対応）。保存（techo_site.save_media の番号と書き込み）・上げた画面の控え（claim）・
+    確認の記録（record・revoke）・取り下げ（records.withdraw）を順に通す。前はどれも読んでから書く形で、同時に来ると、同じ番号の名に
+    2 つの写真が書かれて確認済みの写真が差し替わったり、控えの片方が消えたりした。置き場の根（records/media）の 1 つの鍵にする:
+    記録ごとの置き場は取り下げで消えるので、そこに鍵のファイルを置けない。store.locked は同じスレッドで入れ子にできる"""
+    root = records.folder() / "media"
+    root.mkdir(parents=True, exist_ok=True)
+    return store.locked(root)
+
+
+# 中身の要約（sha256）の控え。頁を開くたびに 20MB までの写真と動画を読み直さないよう、置き場の名・変えた時刻・大きさごとに覚える
+_DIGESTS = {}
+_DIGESTS_LOCK = threading.Lock()
+
+
+def digest(path):
+    """ファイルの中身の sha256（16 進）。読めない時は None。"""
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    key = (str(path), st.st_mtime_ns, st.st_size)
+    with _DIGESTS_LOCK:
+        if key in _DIGESTS:
+            return _DIGESTS[key]
+    h = hashlib.sha256()
+    try:
+        with open(path, "rb") as f:
+            for block in iter(lambda: f.read(1 << 20), b""):
+                h.update(block)
+    except OSError:
+        return None
+    with _DIGESTS_LOCK:
+        if len(_DIGESTS) > 4096:
+            _DIGESTS.clear()
+        _DIGESTS[key] = h.hexdigest()
+    return _DIGESTS[key]
+
+
 def _load(rid):
     """確認の記録。無い時も読めない時も空にする（出さない方へ倒す）。"""
     return store.read_json_or_skip(_folder(rid) / "review.json") or {} if RECORD_ID.fullmatch(rid) else {}
 
 
 def _shows(rid, name):
+    """人が確かめた結果。確かめた時の中身の要約（sha256）が残っていて、今のファイルの中身と違えば、確かめていない物として扱う
+    （安全の事項 2 への対応: 確認はファイルの名でなく中身に結ぶ。名が同じでも、確かめた後に中身が替わった物を公開しない）。
+    要約の無い前からの確認（この直しの前に確かめた物）は、前のとおり名で読む: 前に確かめた物を頁から消さない（見た目と挙動を替えない）。
+    保存は上書きしない形になったので（techo_site.save_media）、前からの確認の名の中身も、この後は替わらない"""
     entry = _load(rid).get(name)
-    return entry.get("shows") if isinstance(entry, dict) else None
+    if not isinstance(entry, dict):
+        return None
+    want = entry.get("sha256")
+    if want is not None and (not isinstance(want, str) or digest(_folder(rid) / name) != want):
+        return None
+    return entry.get("shows")
 
 
 def public(rid, files):
@@ -63,8 +113,9 @@ def visible(rid, files):
 def claim(rid, name, key):
     """上げた画面の鍵を、写真ごとに控える。別の人が同じ記録へ上げても、前の人の写真を開けないように。"""
     path = _folder(rid) / "owners.json"
-    owners = store.read_json_or_skip(path) or {}
-    store.write_json(path, {**owners, name: {"key": key, "at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")}})
+    with media_lock():  # 読んでから書くので、同時の上げで片方の控えが消えないように（安全の事項 2 への対応）
+        owners = store.read_json_or_skip(path) or {}
+        store.write_json(path, {**owners, name: {"key": key, "at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")}})
 
 
 def _mine(rid, name, key):
@@ -116,8 +167,8 @@ def waiting():
     root = records.folder() / "media"
     out = []
     for d in sorted(root.glob("R-*")) if root.exists() else []:
-        done = _load(d.name)
-        out += [(d.name, p.name) for p in sorted(d.glob("m*.*")) if p.name not in done]
+        # 確かめた後に中身が替わった物（_shows が None）も、確認を待つ物に戻す（安全の事項 2 への対応）
+        out += [(d.name, p.name) for p in sorted(d.glob("m*.*")) if _shows(d.name, p.name) is None]
     return out
 
 
@@ -163,13 +214,19 @@ def record(rid, name, shows, reviewer):
         return [Failure("F10.review", f"{rid}/{name}", "結果は object（物だけ）か people（人や声が入る）")]
     if not (isinstance(reviewer, str) and reviewer.strip()):
         return [Failure("F10.review", f"{rid}/{name}", "確かめた人の名前が無い")]
-    if shows == "object" and path.suffix in (".mp4", ".mov"):
-        why = _drop_audio(path)
-        if why:
-            return [Failure("F10.review", f"{rid}/{name}", why)]
-    done = _load(rid)
-    done[name] = {"shows": shows, "reviewer": reviewer.strip(), "at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="minutes")}
-    store.write_json(_folder(rid) / "review.json", done)
+    with media_lock():
+        if shows == "object" and path.suffix in (".mp4", ".mov"):
+            why = _drop_audio(path)
+            if why:
+                return [Failure("F10.review", f"{rid}/{name}", why)]
+        # 確かめた結果を、その時の中身の要約（sha256）と大きさに結ぶ（安全の事項 2 への対応）。音を落とした後の中身で取る
+        sha = digest(path)
+        if sha is None:
+            return [Failure("F10.review", f"{rid}/{name}", "写真か動画を読めない")]
+        done = _load(rid)
+        done[name] = {"shows": shows, "reviewer": reviewer.strip(), "at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="minutes"),
+                      "sha256": sha, "size": path.stat().st_size}
+        store.write_json(_folder(rid) / "review.json", done)
     return []
 
 
@@ -178,10 +235,11 @@ def revoke(rid, name):
     _, failures = _target(rid, name)
     if failures:
         return failures
-    done = _load(rid)
-    if name in done:
-        del done[name]
-        store.write_json(_folder(rid) / "review.json", done)
+    with media_lock():
+        done = _load(rid)
+        if name in done:
+            del done[name]
+            store.write_json(_folder(rid) / "review.json", done)
     return []
 
 

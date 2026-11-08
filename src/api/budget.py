@@ -3,10 +3,22 @@
 実際の消費の正は Console で、これは手元の見積もり。日割りの上限と累計の停止線に当たったら、呼ぶ前に止める。
 日割りは、表にある日（期間の中）は表の額、表に無い日（期間の後）は既定の額。累計の停止線は、どの日にも効く。
 上限の値は予算の決まりの配分表と同じ。変える時は本人の承認が要る。
+
+呼ぶ前の予約（安全の事項 3 への対応）: 前は check（済んだ台帳だけを読む）→ 呼ぶ → add（呼んだ後に書く）の間に、呼んでいる途中の費用を
+数える所が無く、同時に呼ぶと日割りを越えた（日割り 0.25 で 0.20 の 4 本が同時に通り、0.80 になった）。今は check が、台帳の錠
+（台帳の横の .lock・flock なので別のプロセスとも取り合う）の中で、済んだ額と、ほかの呼び出しが予約した額と、この 1 回の最大の見込み額を
+足して見て、通れば最大の見込み額を予約する（台帳の横の .holds.json）。add は錠の中で実費を書き、その予約を消す。呼べなかった時は
+release で予約を返す。予約は呼んだスレッドに 1 つずつ持たせるので、呼ぶ側の形（check → 呼ぶ → add）は前のまま。
+返し忘れた予約（落ちたプロセスなど）は HOLD_SECONDS で数えなくなる。
 """
+import contextlib
+import fcntl
 import json
 import os
 import pathlib
+import secrets
+import threading
+import time
 from datetime import datetime, timedelta, timezone
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -26,6 +38,12 @@ PER_RUN_CAP = 3.0
 # 本人の答え（11-08）「1 日 30 回」。最悪の見込み（1 回の押しが 1 回の run で、run の上限 PER_RUN_CAP まで使う）でも、日割りを聞く口・動画を見る口と
 # 分け合えるようにする（設計 grove の state/tsukuru-talk-sheet-20261108.md の 4 節・別の目の止め 2）。値を変える時は本人の承認が要る
 WORDS_PER_DAY = 30
+
+
+# 予約を数える長さ（秒）。画面の役の時間切れ（config.SCREEN_TIMEOUT・最大 90 秒）とやり直し、命令から呼ぶ役（SDK の既定 10 分）より長く取る。
+# これより古い予約は、返し忘れ（落ちたプロセス）とみなして数えない
+HOLD_SECONDS = 15 * 60
+_held = threading.local()  # このスレッドが予約して、まだ精算していない 1 つ（check → 呼ぶ → add は同じスレッドで続く）
 
 
 class BudgetStop(Exception):
@@ -66,6 +84,55 @@ def daily_cap():
 def cost(model, input_tokens, output_tokens, cache_write=0, cache_read=0):
     i, o = PRICES.get(model, PRICES["claude-opus-5-5"])
     return (input_tokens * i + cache_write * i * CACHE_WRITE + cache_read * i * CACHE_READ.get(model, 0.1) + output_tokens * o) / 1e6
+
+
+def _holds_path():
+    return _path().with_name(_path().name + ".holds.json")
+
+
+@contextlib.contextmanager
+def _locked():
+    """台帳の錠。台帳の横の .lock を flock で取る（別のプロセスとも取り合う）。"""
+    with open(_path().with_name(_path().name + ".lock"), "a", encoding="utf-8") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        yield
+
+
+def _read_holds(now=None):
+    """今数える予約（HOLD_SECONDS より古い物は除く）。読めない時は空（予約の無い前の形に戻るだけで、台帳の額は数える）。"""
+    now = time.time() if now is None else now
+    try:
+        holds = json.loads(_holds_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {k: v for k, v in holds.items() if isinstance(v, dict) and now - v.get("at", 0) < HOLD_SECONDS}
+
+
+def _write_holds(holds):
+    tmp = _holds_path().with_name(_holds_path().name + ".tmp")
+    tmp.write_text(json.dumps(holds), encoding="utf-8")
+    tmp.replace(_holds_path())
+
+
+def held():
+    """今の予約の額（今日の分・全部）。試験と見張りのため。"""
+    holds = _read_holds()
+    return sum(v["usd"] for v in holds.values() if v.get("day") == _today()), sum(v["usd"] for v in holds.values())
+
+
+def _drop_hold(token):
+    holds = _read_holds()
+    if holds.pop(token, None) is not None:
+        _write_holds(holds)
+
+
+def release():
+    """このスレッドの予約を返す（呼べなかった・落ちた時）。予約が無ければ何もしない。"""
+    token = getattr(_held, "token", None)
+    _held.token = None
+    if token:
+        with _locked():
+            _drop_hold(token)
 
 
 def spent():
@@ -119,19 +186,36 @@ def check(run_usd=0.0, upcoming_usd=0.0):
 
     なぜ足すか: 今までの消費だけを見ると、上限の直前から 1 回分（Opus の出力の上限だけで $0.32）はみ出す（外の検品の指摘、11-04）。
     引数なしと run_usd だけの呼び方は前と同じに動く（upcoming_usd の既定が 0）。
+    通れば、upcoming_usd をこのスレッドの予約として置く（上の頭の注）。前の予約が精算されずに残っていたら、先に返す。
     """
-    day, total = spent()
-    cap = daily_cap()
-    if total + upcoming_usd >= STOP_TOTAL:
-        raise BudgetStop(f"累計の見積もり ${total:.2f} と次の 1 回の最大 ${upcoming_usd:.2f} で停止線 ${STOP_TOTAL:.0f} に達する。本人の承認が要る", "total")
-    if day + upcoming_usd >= cap:
-        raise BudgetStop(f"今日の見積もり ${day:.2f} と次の 1 回の最大 ${upcoming_usd:.2f} で日割りの上限 ${cap} に達する。本人の承認が要る", "day")
-    if run_usd + upcoming_usd >= PER_RUN_CAP:
-        raise BudgetStop(f"この 1 回が ${run_usd:.2f} と次の最大 ${upcoming_usd:.2f} で上限 ${PER_RUN_CAP:.0f} に達する。そこで止める", "run")
+    release()  # 前の呼び出しが add も release もせずに抜けた時の予約を、このスレッドで持ち越さない
+    with _locked():
+        day, total = spent()
+        holds = _read_holds()
+        day += sum(v["usd"] for v in holds.values() if v.get("day") == _today())
+        total += sum(v["usd"] for v in holds.values())
+        cap = daily_cap()
+        if total + upcoming_usd >= STOP_TOTAL:
+            raise BudgetStop(f"累計の見積もり ${total:.2f}（予約を含む）と次の 1 回の最大 ${upcoming_usd:.2f} で停止線 ${STOP_TOTAL:.0f} に達する。本人の承認が要る", "total")
+        if day + upcoming_usd >= cap:
+            raise BudgetStop(f"今日の見積もり ${day:.2f}（予約を含む）と次の 1 回の最大 ${upcoming_usd:.2f} で日割りの上限 ${cap} に達する。本人の承認が要る", "day")
+        if run_usd + upcoming_usd >= PER_RUN_CAP:
+            raise BudgetStop(f"この 1 回が ${run_usd:.2f} と次の最大 ${upcoming_usd:.2f} で上限 ${PER_RUN_CAP:.0f} に達する。そこで止める", "run")
+        if upcoming_usd > 0:
+            token = secrets.token_hex(8)
+            holds[token] = {"usd": upcoming_usd, "day": _today(), "at": time.time()}
+            _write_holds(holds)
+            _held.token = token
 
 
 def add(role, model, input_tokens, output_tokens, cache_write=0, cache_read=0):
+    """呼んだ後に実費を書き、このスレッドの予約を消す（精算）。書くのと消すのを同じ錠の中でするので、間に別の check が二重に数えない。"""
     usd = cost(model, input_tokens, output_tokens, cache_write, cache_read)
-    with open(_path(), "a", encoding="utf-8") as f:
-        f.write(json.dumps({"day": _today(), "role": role, "model": model, "input": input_tokens, "output": output_tokens, "cache_write": cache_write, "cache_read": cache_read, "usd": usd}) + "\n")
+    token = getattr(_held, "token", None)
+    _held.token = None
+    with _locked():
+        with open(_path(), "a", encoding="utf-8") as f:
+            f.write(json.dumps({"day": _today(), "role": role, "model": model, "input": input_tokens, "output": output_tokens, "cache_write": cache_write, "cache_read": cache_read, "usd": usd}) + "\n")
+        if token:
+            _drop_hold(token)
     return usd

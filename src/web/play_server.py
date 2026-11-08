@@ -231,7 +231,8 @@ MEDIA_LIMIT = 60
 CLIP_TYPES = {("t", "audio/webm"): "webm", ("t", "audio/mp4"): "mp4", ("k", "video/webm"): "webm", ("k", "video/mp4"): "mp4"}
 # しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
 # 話した考えから紙を作る口（think-sheet・think-ok）も入れる。Claude を呼ぶ口と、紙を刷る口なのに、前は数の上限が無かった（設計 2 版の 4 節・別の目の止め 2）
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok|think-talk)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
+# 記録の後の次の版（next）と AI の口（ai-interpret・ai-observe）も数える（安全の事項 3 への対応）。前は数えず、同じ相手から続けて送れた
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok|think-talk)|/record/R-\d{{4,}}/(?:explain|next|ai-interpret|ai-observe)|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
@@ -410,6 +411,39 @@ class Handler(BaseHTTPRequestHandler):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
         self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
 
+    def _media_post(self, rid, length):
+        """写真と動画の本文を読んで写し直す所（/record/<rid>/media の照らしを全部通した後）。写し直しは全体で同時に回す数と待てる数に上限がある
+        （安全の事項 4 への対応・web.load_guard.Gate）。溢れた時は 503 で断り、本文を空にする（手帖は前からの字を出す）。
+        枠は本文を読み終えてから、写し直しの直前に取る（受け取りの間は持たない）。前の形（受け取りの間も持つ）では、会場の遅い Wi-Fi で 20MB を
+        送る人が 2 人いると、次の人が待たされ、7 人目は 503 になった（別の目の気づき・ふつうの量で挙動を替えない条件に当たる）"""
+        from . import techo_site
+
+        # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
+        # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
+        # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
+        clip = self.headers.get("X-Utsushi-Clip")
+        data = self.rfile.read(length)  # 受け取りの間は写し直しの枠を持たない
+        if clip is not None:
+            return self._clip_post(rid, clip, data)  # 区切りの枠は、共用の錠を取った後・写す直前に取る（_clip_post）
+        if not self.server.media_gate.enter():
+            return self._send(503, b"", "text/plain; charset=utf-8", [("Retry-After", "30")])
+        try:
+            name, why = techo_site.save_media(rid, self.headers.get("Content-Type", "").split(";")[0], data,
+                                              keep_voice=getattr(self.server, "voice_tool", False))
+        finally:
+            self.server.media_gate.leave()
+        if not name:
+            return self._send(422, why, "text/plain; charset=utf-8")
+        from omochae import voice_text
+
+        # 写した声は、返事の後に作業列で字にする（字にするのに数十秒かかり、上げた人を待たせないため）。待ち行列には長さの上限があり
+        # （安全の事項 4 への対応・load_guard.VOICE_QUEUE_MAX）、満ちている時は入れない（声は置き場に残り、次に立てた時に回し直す）
+        if (voice := voice_text.voice_dir(rid) / f"{pathlib.Path(name).stem}.mka").exists() and getattr(self.server, "voice_jobs", None):
+            voice_text.enqueue(self.server.voice_jobs, voice)
+        key = self._up_key() or secrets.token_urlsafe(18)
+        media_review.claim(rid, name, key)
+        return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
+
     def _busy(self, wait, form):
         """書き込みが多すぎる時の断り（429）。字は全体の受け皿と同じ物で、新しい字を足さない。JSON で受ける口には、その口の形で返す。"""
         headers = [("Retry-After", str(wait))]
@@ -442,6 +476,9 @@ class Handler(BaseHTTPRequestHandler):
     def _gate(self):
         """合言葉の門。public_key がある時だけ働く。URL を知っただけの人に記録と写真を見せないため。通れば True、断った時は返事を送って False。
         合言葉は最初の 1 回だけ ?k= で受け、Cookie に移して URL から消す（履歴や画面に長く残さない）。"""
+        # 安全の事項 1（参加者と管理者の権限の分離）・11（しおりの範囲）: しおりだけで門を通った画面は、そのしおりの印を控えて、管理の面と
+        # 変える口を断る（_shiori_refuse）。要求ごとに空にする（http.server は 1 本のつなぎで続けて要求を受けるので、前の要求の値を残さない）
+        self._shiori_screen = None
         key = getattr(self.server, "public_key", None)
         if not key:
             return True
@@ -463,6 +500,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if jar.get(shiori_open.COOKIE) and shiori.fresh(jar[shiori_open.COOKIE]):
             shiori.touch(jar[shiori_open.COOKIE])
+            self._shiori_screen = jar[shiori_open.COOKIE]  # しおりだけの画面（合言葉の cookie は上で照らして無かった）
             return True
         path, _, query = self.path.partition("?")
         given = urllib.parse.parse_qs(query).get("k", [""])[0]
@@ -474,6 +512,27 @@ class Handler(BaseHTTPRequestHandler):
         # 合言葉を落とした人が最初に見る頁。帯もリンクも出さず、頁の中身と玩具の名前を見せない
         self._refuse(403, "合言葉付きのリンクから開いてください。リンクを渡した人に聞いてください。", "合言葉が要ります", links=(), bare=True)
         return False
+
+    def _shiori_refuse(self):
+        """しおりだけで門を通った画面の範囲を、そのしおりに結ばれた記録に閉じる（安全の事項 1・11）。断ったら True。
+        - 管理の面（/loop・/loop/<印>・/loop/ayumi。工作の様子・他の人の聞いた事と感想が読める作る側の頁）は開かない
+        - 型紙の次の版を作る口と AI の口（/record/<番号>/next・ai-interpret・ai-observe）は送れない
+        - ほかの /record/<番号>/ への送り（説明・写真の上げなど）は、そのしおりに結ばれた記録だけ
+        合言葉の画面と、合言葉の設定が無い手元の場は、何も替えない（見た目と挙動を替えない・本人の条件）。
+        写真の GET（/record/<番号>/media/…）は今の見せる線（media_review.shown_to: 人が物だけと確かめた物は場の誰にでも）のまま。"""
+        screen = getattr(self, "_shiori_screen", None)
+        if screen is None:
+            return False
+        path = self.path.partition("?")[0]
+        bad = path.startswith("/loop") or bool(re.fullmatch(r"/record/R-\d{4,}/(?:next|ai-interpret|ai-observe)", path))
+        if not bad and self.command == "POST":
+            m = re.fullmatch(r"/record/(R-\d{4,})/.*", path)
+            if m:
+                from omochae import shiori
+                bad = m.group(1) not in shiori.records_of(screen)
+        if bad:
+            self._refuse(403, "受け付けられません")
+        return bad
 
     def _pick_look(self):
         """この要求の皮。サーバを立てた時に 1 つに決める（serve の look、命令の --look）。
@@ -544,6 +603,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        if self._shiori_refuse():
+            return
         path, _, query = self.path.partition("?")
         qs = urllib.parse.parse_qs(query)
         look = self._look
@@ -624,7 +685,10 @@ class Handler(BaseHTTPRequestHandler):
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE, description=techo_site.GALLERY_LEAD))
+            # しおりだけで門を通った画面（_gate が控えた印がある）は、他の人の札の字を公開の場と同じ線（人が確かめた字だけ）にする（安全の事項 11）。
+            # 合言葉の画面・手元の場・公開の場は替えない
+            only = getattr(self, "_shiori_screen", None) is not None
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key(), shiori=only), look, "/gallery", path, techo_site.GALLERY_STYLE, description=techo_site.GALLERY_LEAD))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
@@ -1006,6 +1070,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        if self._shiori_refuse():
+            return
         if getattr(self.server, "public_open", False) and re.fullmatch(r"/s/[A-Za-z0-9_-]{22}", self.path):
             # 公開の場ではしおりを開かない。フォームを読む前・書き込みの数の前に断り、照らさず数えない（開く道の設計 7.2 の 1）
             from . import shiori_open
@@ -1033,27 +1099,17 @@ class Handler(BaseHTTPRequestHandler):
             # 合言葉なしで開いたデモでも受ける（本人の決定 11-06「公開のデモでも写真と動画を上げられるようにしてください」）。前は 403 で断っていた。
             # 誰でも上げられる場なので、置き場の合計に上限を置く。断る時は本文を空にし、手帖は今ある字（写真か動画を上げられませんでした）を出す。
             # 確かめていない写真が皆に見える形にはしない線（J-021）は、出す側で守る（確かめる前は上げた本人の画面だけ。合言葉付きの場と同じ shown_to）。
-            # 同時に送られた分は数え合わないので、合計は送られた数 × 20MB まで上限を越えうる（止めるより、機械を埋めない事が目的）。
-            if getattr(self.server, "public_open", False) and techo_site.media_bytes() + length > techo_site.PUBLIC_MEDIA_TOTAL:
+            # 合計は、書き終わる前の分（同時に受けている途中の本文）を予約して数える（安全の事項 4 への対応・web.load_guard.Reserve）。
+            # 前は「今の合計＋今回の長さ」だけで、同時に送られた分が数え合わず、送られた数 × 20MB まで上限を越えうった。
+            # 合言葉付きの場にも合計の止めを置く（前は公開の場だけ）。大きさは同じ 2GB（techo_site.MEDIA_TOTAL の注）。ふつうの量では届かない
+            total = techo_site.PUBLIC_MEDIA_TOTAL if getattr(self.server, "public_open", False) else techo_site.MEDIA_TOTAL
+            if not self.server.media_reserve.take(techo_site.media_bytes(), length, total):
                 return self._send(507, b"", "text/plain; charset=utf-8")
-            # 声とカメラの区切り（声とカメラの設計 3 版の 3 節・統括の決め (3)）: 見出し X-Utsushi-Clip で渡す。上の照らし（Origin・記録の鍵・
-            # 書き込みの止め・大きさ・公開の場の合計）は全部通した後で、save_media（m<n>）と claim の前で分ける。区切りは人に見せる物でないので
-            # 確かめる前の並び（claim）に入れず、頁にもギャラリーにも出ない（voice/ の下・voice_text が置く）
-            clip = self.headers.get("X-Utsushi-Clip")
-            if clip is not None:
-                return self._clip_post(m.group(1), clip, self.rfile.read(length))
-            name, why = techo_site.save_media(m.group(1), self.headers.get("Content-Type", "").split(";")[0], self.rfile.read(length),
-                                              keep_voice=getattr(self.server, "voice_tool", False))
-            if not name:
-                return self._send(422, why, "text/plain; charset=utf-8")
-            from omochae import voice_text
-
-            # 写した声は、返事の後に作業列で字にする（字にするのに数十秒かかり、上げた人を待たせないため）
-            if (voice := voice_text.voice_dir(m.group(1)) / f"{pathlib.Path(name).stem}.mka").exists() and getattr(self.server, "voice_jobs", None):
-                self.server.voice_jobs.jobs.put(voice)
-            key = self._up_key() or secrets.token_urlsafe(18)
-            media_review.claim(m.group(1), name, key)
-            return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
+            try:
+                return self._media_post(m.group(1), length)
+            finally:
+                self.server.media_reserve.give(length)
+        m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
         m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
         if m:
             return self._kasane_ask(m.group(1))
@@ -1190,8 +1246,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(422, "受け付けられない区切りです", "text/plain; charset=utf-8")
         put = voice_text.put_voice_clip if clip == "t" else voice_text.put_cam_clip
         # 空いた番号を選んで置くまでを錠の中で（同時に 2 つ届いても同じ番号に上書きしない・別の目の気づき）。錠は別のプロセスとも取り合う
+        # 写す枠（安全の事項 4 への対応・web.load_guard.Gate）は、錠を取った後に取る（錠を待つ間は枠を持たない・別の目の気づき）。
+        # 写真の保存は別の錠（media_review.media_lock）なので、枠と錠を互いに待ち合って止まる形にはならない
         with store.locked(loop.folder()):
-            name, why = put(rid, data, kind)
+            if not self.server.media_gate.enter():
+                return self._send(503, b"", "text/plain; charset=utf-8", [("Retry-After", "30")])
+            try:
+                name, why = put(rid, data, kind)
+            finally:
+                self.server.media_gate.leave()
         if not name:
             return self._send(422, why, "text/plain; charset=utf-8")
         if clip == "k":
@@ -1417,6 +1480,11 @@ class Handler(BaseHTTPRequestHandler):
         if talk_log.blocked(question or ""):
             return making_log.ASK_NAME_VOICE, "floor"
         try:
+            # 合言葉なしの公開の場では、鍵の有り無しに関わらず Claude を呼ばない（安全の事項 5 への対応）。前は立てる時の鍵の確かめだけで、
+            # 立てた後に鍵が置かれると、この口（/ask・/ask-json）から呼べた。返す字は鍵が無い時と同じなので、頁の見た目と挙動は替わらない
+            # 合言葉の場は前と同じ呼び方のまま（引数を足すのは公開の場だけ）
+            if getattr(self.server, "public_open", False):
+                return ask.answer(sid, hid, question, allow_ai=False)
             return ask.answer(sid, hid, question)
         except Exception as e:
             failure_log.claude_failed("ask", "POST", self.path, e, private=(question,))
@@ -1646,7 +1714,12 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     if look not in skinmod.SKINS:
         raise ValueError(f"皮が無い: {look}（{'・'.join(skinmod.SKINS)}）")
     # bind は試験のため。--lan の番地の許しを試す間も、全部の網に口を開かない（#169）。
-    server = ThreadingHTTPServer((bind or bind_host(lan), port), Handler)
+    # 同時に処理する要求の数に上限を置く（安全の事項 4 への対応・web.load_guard.LimitedServer）。写真と動画の変換の入口と、置き場の合計の予約も持つ
+    from . import load_guard
+
+    server = load_guard.LimitedServer((bind or bind_host(lan), port), Handler)
+    server.media_gate = load_guard.Gate()
+    server.media_reserve = load_guard.Reserve()
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。

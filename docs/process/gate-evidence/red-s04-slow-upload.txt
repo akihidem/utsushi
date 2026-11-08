@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_load_guard.py
+# commit: 4220bdc1（#732 の前の頭）の木に、足した tests/test_load_guard.py だけを当てた（git の外の写し・受け取りの間も写し直しの枠を持つ形）
+Traceback (most recent call last):
+  File "tests/test_load_guard.py", line 110, in <module>
+    assert code == 422 and took < 2.0, ("遅い送りが 2 本ある時に、3 本目の小さな写真が待たされた", code, round(took, 1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('遅い送りが 2 本ある時に、3 本目の小さな写真が待たされた', 503, 3.0)
+rc=1

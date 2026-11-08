@@ -408,6 +408,18 @@ def still_wanted(voice):
     return (records.folder() / f"{voice.parent.parent.name}.json").exists() and voice.parent.is_dir()
 
 
+QUEUE_MAX = 32  # 字にする前の声の待ち行列の長さ（web.load_guard.VOICE_QUEUE_MAX と同じ値）
+
+
+def enqueue(worker, path):
+    """作業列に声を入れる。満ちている時は入れずに False（声は置き場に残り、次に立てた時に回し直す）。"""
+    try:
+        worker.jobs.put_nowait(path)
+        return True
+    except queue.Full:
+        return False
+
+
 class Worker(threading.Thread):
     """1 本ずつ順に字にする作業列と、1 時間ごとの掃除。同時に字にすると、長い字にする間に機械のほかの作業を止めるため 1 本ずつ。
     字にする道具が無い時（tool=False）も、掃除だけは回す。立てた時に、前に止まって残った字の無い音を回し直す。
@@ -416,7 +428,9 @@ class Worker(threading.Thread):
     def __init__(self, tool, every=3600):
         super().__init__(daemon=True)
         self.tool, self.every = tool, every
-        self.jobs = queue.Queue()
+        # 待ち行列の長さに上限（安全の事項 4 への対応・web.load_guard.VOICE_QUEUE_MAX と同じ値）。満ちた時に入れない声は置き場に残り、
+        # 次に立てた時（pending）に回し直す。前は長さの上限が無く、上げ続けると覚えの量が増え続けた
+        self.jobs = queue.Queue(maxsize=QUEUE_MAX)
 
     def sweeps(self):
         for fn in (sweep, sweep_clips):
@@ -429,7 +443,8 @@ class Worker(threading.Thread):
         self.sweeps()
         if self.tool:
             for v in pending():
-                self.jobs.put(v)
+                if not enqueue(self, v):
+                    break  # 満ちた分は置き場に残る（次に立てた時に回し直す）
         while True:
             try:
                 v = self.jobs.get(timeout=self.every)

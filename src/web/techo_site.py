@@ -11,6 +11,7 @@
 """
 import html
 import io
+import os
 import pathlib
 import re
 import shutil
@@ -32,6 +33,9 @@ MAX_PER_RECORD = 3
 # 誰でも上げられる場なので、機械の空き（11-06 に 102G）を埋めさせない。2GB は空きの 2% で、20MB の動画なら 100 本・写真なら数百枚。
 # 記録を作る口は書き込みの数の上限が絞り、1 つの記録には MAX_PER_RECORD までなので、1 人で一気に埋める形にはなりにくい
 PUBLIC_MEDIA_TOTAL = 2 * 1024 * 1024 * 1024
+# 合言葉付きの場の合計（安全の事項 4 への対応・11-08）。前は合計の止めが公開の場だけだった。機械の空きは 11-08 に 13G まで減ったので、
+# 同じ 2GB にする（11-04〜07 の 4 回のワークショップの写真と動画は、今の置き場で数 MB）。ふつうの量では届かない
+MEDIA_TOTAL = PUBLIC_MEDIA_TOTAL
 MISMATCH = "中身を写真か動画として読めません（JPEG・PNG・MP4・MOV だけ）"
 # 動画を写す時に、元より増えてよい量（セキュリティの点検 U1）。絵の流れを写すだけで音と撮影情報を外すので、ふつうは元より小さい。
 # 同じコマを何度も指す小さな動画は、写すと何倍にも膨らみ、合言葉なしの場でも一時の置き場とメモリを埋められた。動画の受け口（trial_video.ROOM）と同じ考えで、
@@ -172,9 +176,30 @@ def save_media(rid, ctype, data, keep_voice=False):
         clean, why = clean_photo(data, ext), MISMATCH
     if clean is None:
         return None, why
-    d.mkdir(parents=True, exist_ok=True)
-    name = f"m{len(have) + 1}.{ext}"
-    (d / name).write_bytes(clean)
+    # 安全の事項 2 への対応: 名の番号と書き込みを、変換の後に置き場の鍵の中で決め、上書きしない形で作る。前は変換の前に数えた番号
+    # （m<数+1>）へ書いたので、同時の上げで同じ名に 2 つ目が書かれ、確かめた写真が別の写真に差し替わった。
+    # 名の形（m<n>.<ext>・1 から順）は前のまま（頁と控えの並びが名の順に頼るため）。中身は隠した仮の名に書いてから os.link で名を作る:
+    # link は名が既にあると失敗するので（排他の作成）、書き終えた物だけが名で見え、前の物を上書きしない
+    with media_review.media_lock():
+        d.mkdir(parents=True, exist_ok=True)
+        have = sorted(d.glob("m*.*"))
+        if len(have) >= MAX_PER_RECORD:  # 鍵の外で数えた後に、同時の上げが先に入った時
+            return None, "1 つの記録に 3 つまで"
+        used = {int(m.group(1)) for p in have if (m := re.fullmatch(r"m(\d+)\..+", p.name))}
+        n = len(have) + 1
+        while n in used:
+            n += 1
+        name = f"m{n}.{ext}"
+        fd, tmp_path = tempfile.mkstemp(prefix=".up-", suffix=".tmp", dir=d)  # 頭の「.」で m*.* の並びに出ない
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(clean)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(tmp_path, 0o644)
+            os.link(tmp_path, d / name)  # 名が既にあれば FileExistsError（上書きしない）
+        finally:
+            os.unlink(tmp_path)
     if keep_voice and ext in ("mp4", "mov"):
         from omochae import voice_text
 
@@ -182,7 +207,7 @@ def save_media(rid, ctype, data, keep_voice=False):
             src = pathlib.Path(tmp) / "in"
             src.write_bytes(data)
             # 声を写せない形（音の無い動画など）でも、動画は受け取る
-            voice_text.copy_voice(src, voice_text.voice_dir(rid) / f"m{len(have) + 1}.mka", len(data) + VIDEO_ROOM)
+            voice_text.copy_voice(src, voice_text.voice_dir(rid) / f"m{n}.mka", len(data) + VIDEO_ROOM)
     return name, ""
 
 
@@ -356,12 +381,14 @@ def record_details(data, r, say=True):
     return f'<details class="record-more"><summary>{esc(DETAILS_HEAD)}</summary><p class="meta">{esc(ban)}</p>{lines}</details>', bool(lines)
 
 
-def made_item(sid, data, r, photos=True, public=False):
+def made_item(sid, data, r, photos=True, public=False, shiori=False):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
     public=True は合言葉なしで開いた場。人が「物だけ」と確かめた写真と動画は出す（本人の決定 11-06「公開の場で上げた写真は、公開の場の
     ギャラリーにも出します」）。人の書いた文（感想と工夫の行）は、人が確かめた字だけを出す（窓口の決め A・11-08。前は出さなかった:
     文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由・J-028。確かめが人の目になる）。記録の番号は前と同じく出さない。
     photos=False は写真も文も出さない前の開いた場の形（今は呼ぶ所が無い）。
+    shiori=True はしおりだけで開いた画面（合言葉の cookie が無い）。人の書いた文と記録の番号は公開の場と同じ線（人が確かめた字だけ・番号を出さない）にする
+    （安全の事項 11 しおりの範囲を本人に関係するデータに閉じる・統括の決め 11-08）。写真は前から公開の場と同じ線（物だけと確かめた物）。
     畳み「のこした記録」（record_details）に、型紙の版と 4 つの欄（最初に動いた所…思いついた事）を出す。前は玩具の頁の記録の札にだけあった欄で、
     本人の言葉 11-08 477 でもちよるへ移した。公開の場は感想と同じく、人が確かめた字だけ（words_review が欄の字も確かめる）。
     ひとこと（note）はギャラリーに出さない（前からの決まりのまま。自分の記録は手帖の記録の頁で見える）。
@@ -375,7 +402,7 @@ def made_item(sid, data, r, photos=True, public=False):
                     else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     # 人の書いた文（感想と工夫の行）は、公開の場では人が確かめた字だけを出す（窓口の決め A・11-08。omochae.words_review）。
     # 確かめていない・確かめた後に字が替わった・連絡先の床に当たる物は、前と同じく出さない。合言葉付きの場は今までどおり出す
-    say = not public or words_review.checked(r["id"])
+    say = not (public or shiori) or words_review.checked(r["id"])
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and say else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and say)
     more, has_more = record_details(data, r, say)
@@ -388,7 +415,7 @@ def made_item(sid, data, r, photos=True, public=False):
     # 玩具の頁から記録の札が無くなるので、向け直した（統括の決め 11-08）。この札が出る時は、その玩具の錨も頁にある（無ければこの札が錨を持つ）。
     # 錨は玩具の印で、記録の番号を道に入れない（開いた場で番号を出さない線・別の目の確かめで見つかった）
     to = f"#toy-{esc(sid)}"
-    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public or shiori else "　" + esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}{more}</div>')
 
 
@@ -522,7 +549,7 @@ def close_form():
 # ギャラリーの頭の説明の文。頁と、頁の description（skin.meta_head）が同じ字を引く（description に新しい字を作らないため・11-08）
 GALLERY_LEAD = "記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。"
 
-def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
+def gallery_page(sids, photos=True, public=False, msg="", rec_key=None, shiori=False):
     """他の人が作った物のギャラリー（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
@@ -543,7 +570,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             if photos and not public and rec_key and not own and records.mine(r["id"], rec_key):
                 own = own_item(sid, data, r)
                 continue
-            item = made_item(sid, data, r, photos, public)
+            # しおりだけの画面は、他の人の札の字を公開の場と同じ線に（made_item の shiori）。今残した 1 つの札（自分の記録）は上のとおり出す
+            item = made_item(sid, data, r, photos, public, shiori)
             if item and sid not in with_sak:
                 with_sak.add(sid)
                 item = item.replace('<div class="item">', f'<div class="item" id="toy-{esc(sid)}">', 1)
