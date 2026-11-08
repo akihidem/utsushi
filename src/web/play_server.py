@@ -7,6 +7,7 @@
 家の網に開く切り替え（--lan、U-36）と、デモの一周を外の機器から開く合言葉の門（--public-key-file、11-04 の本人の決定 A）は
 本人の決定で足した。後者は口を 127.0.0.1 のままにし、外からはトンネル（run-demo.sh）だけが入る。
 """
+import base64
 import collections
 import hmac
 import html
@@ -254,6 +255,41 @@ def _printing(make):
     finally:
         _print_slots.release()
 BUSY = "受け付けられませんでした。少し待って、もう一度送ってください。"
+# 作業の頁の「聞く」（本人 11-08 539）の受け口の上限（設計の 2 版の気づき）。声は 12 秒ぶん（頁の録りは 32kbps ほどで、12 秒は 50KB ほど。
+# iPhone の Safari の mp4 は大きめなので余裕を取る）・写真は長い辺 960px の JPEG を 1 枚 300KB まで 3 枚。本体は base64 の JSON なので 4/3 倍と頭の分
+ASK_VOICE_BYTES = 400 * 1024
+ASK_FRAME_BYTES = 300 * 1024
+ASK_BODY = (ASK_VOICE_BYTES + 3 * ASK_FRAME_BYTES) * 4 // 3 + 4096
+ASK_VOICE_TYPES = {"audio/webm": "webm", "audio/mp4": "mp4"}  # iPhone の Safari は audio/mp4・Chrome は audio/webm
+# 回数: 同じ相手から 1 分に 6 回まで（1 回の問いに 10 秒ほどかかるので、人が聞く速さを越えない数）・場の全体で 1 日 200 回まで
+# （1 回の最悪の費用を 1 日の上限より十分小さく保つため。費用そのものは budget の日割りと累計の線が止める）
+ASK_LIMIT, ASK_DAY = 6, 200
+
+
+class DayCount:
+    """場の全体の、その日（日本の時刻）の聞いた数。持つのは日付と数だけ。"""
+
+    def __init__(self, limit=ASK_DAY):
+        self.limit, self.day, self.n, self.lock = limit, "", 0, threading.Lock()
+
+    def take(self):
+        from api import budget
+
+        with self.lock:
+            today = budget._today()
+            if today != self.day:
+                self.day, self.n = today, 0
+            if self.n >= self.limit:
+                return False
+            self.n += 1
+            return True
+
+
+def kumitate_steps(sid):
+    """作業の頁に出す手順の字（組み方の節と同じ文・kumitate.steps）。頁と聞く口で同じ文を使い、頁の番号から字を引く（頁の字を受けない）。"""
+    from . import kumitate
+
+    return kumitate.steps(sid, pictures=False)[0]
 
 
 def writer(peer, headers):
@@ -617,6 +653,11 @@ class Handler(BaseHTTPRequestHandler):
             from . import hmd
             if m.group(1) not in sources() or not hmd.available(m.group(1)):
                 return self._send(404, "見つかりません")
+            # 聞くだけの経路（本人 11-08 539）。頁を開いた時に、声を字にする作り手を裏で立て始める（最初に聞いた人が型の読み込みを待たないため。
+            # サーバを立てた時に立てると、作業の頁を誰も開かない場でも数 GB の型を読み続けるので、開いた時にする）
+            listener = getattr(self.server, "listener", None)
+            if listener is not None and not getattr(self.server, "public_open", False):
+                listener.warm()
             return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2)))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
@@ -922,6 +963,9 @@ class Handler(BaseHTTPRequestHandler):
             key = self._up_key() or secrets.token_urlsafe(18)
             media_review.claim(m.group(1), name, key)
             return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
+        m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
+        if m:
+            return self._kasane_ask(m.group(1))
         form = self._form()
         if form is None:
             # しおりの道（門の外）への断りは、当たる前の頁と同じ帯なしの形にする（頭の帯の道しるべから門の中へ行けると見せない・#631 の別の目の気づき）
@@ -1191,6 +1235,79 @@ class Handler(BaseHTTPRequestHandler):
         ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
+    def _kasane_ask(self, sid):
+        """作業の頁の「聞く」（本人 11-08 539「…記録はここでは取らず、質問のための経路と割り切る。」・設計 grove の state/kasane-ask-20261108.md）。
+        本体は JSON（声の中身・声の型・手元の写真 3 枚まで・今の手順の番号）。声はこのサーバの中で字にし（omochae.asr_serve）、字と写真を
+        Claude に渡して（api.kasane）、答えの字だけを返す。making_log・talk_log・records・voice_text の置き場を呼ばない（手帖の聞く口 _ask は
+        質問の字を残す。本人 11-05 の決め。ここは 539 で残さない。2 つの口で残す決まりが違うので、口を分けた）。
+        失敗の記録は役と失敗の種類だけ（字は private で伏せる）。返事はどれも 1 つの形 {"text": 字, "from": どこから} で、頁はそのまま出して読む。"""
+        from api import ask, budget, kasane
+
+        from . import hmd
+
+        def reply(code, text, how, headers=()):
+            return self._send(code, json.dumps({"text": text, "from": how}, ensure_ascii=False), "application/json; charset=utf-8", headers)
+
+        if sid not in sources() or not hmd.available(sid):
+            return self._send(404, "見つかりません")
+        # 合言葉なしで開く公開の場では聞かない（本人 11-08「4 つとも推しのとおり。」の ①）。本体を読む前・数える前に断る
+        if getattr(self.server, "public_open", False):
+            return reply(403, hmd.ASK_PUBLIC, "public")
+        if not self._origin_ok():
+            return reply(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。", "origin")
+        if (who := writer(self.client_address[0], self.headers)) and (wait := self.server.ask_limit.wait(who)):
+            return reply(429, BUSY, "busy", [("Retry-After", str(wait))])
+        try:
+            length = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            return reply(411, BUSY, "size")
+        if not 0 < length <= ASK_BODY:
+            return reply(413, BUSY, "size")
+        if not self.server.ask_day.take():
+            return reply(429, BUSY, "busy")
+        # 鍵が無い場では、声を字にする前に断る（字にしても答えられないので、声を扱わない）
+        if not ask._key_present() and not getattr(self.server, "ask_client", None):
+            return reply(200, ask.NO_KEY, "no_key")
+        try:
+            got = json.loads(self.rfile.read(length))
+            step = int(got.get("step", 0))
+            form = ASK_VOICE_TYPES[got.get("type")]
+            voice = base64.b64decode(got.get("voice", ""), validate=True)
+            frames = [base64.b64decode(f, validate=True) for f in (got.get("frames") or [])]
+        except (ValueError, KeyError, TypeError, AttributeError):  # 字は読まずに捨てる（binascii.Error は ValueError の子）
+            return reply(422, BUSY, "form")
+        if not 0 < len(voice) <= ASK_VOICE_BYTES or len(frames) > kasane.MAX_FRAMES or any(not f.startswith(b"\xff\xd8\xff") or len(f) > ASK_FRAME_BYTES for f in frames):
+            return reply(422, BUSY, "form")
+        del got
+        from omochae import asr_serve
+
+        try:
+            question = self.server.listener.text(voice, form)
+        except asr_serve.Missing:
+            return reply(200, hmd.ASK_DOWN, "no_tool")
+        except asr_serve.Failed as e:
+            if e.kind == "decode":
+                return reply(200, hmd.ASK_NOHEARD, "noheard")
+            return reply(200, hmd.ASK_DOWN, e.kind)
+        finally:
+            del voice
+        if not question.strip():
+            return reply(200, hmd.ASK_NOHEARD, "noheard")
+        texts = kumitate_steps(sid)
+        line = ""
+        if 0 < step <= len(texts):
+            line = "\n".join(f"{name}: {k}. {texts[k - 1]}" for name, k in (("前の手順", step - 1), ("今の手順", step), ("次の手順", step + 1)) if 0 < k <= len(texts))
+        try:
+            text, how = kasane.answer(sid, question, frames, line, client=getattr(self.server, "ask_client", None))
+        except budget.BudgetStop as e:
+            text, how = f"今は AI に聞けません（{e.note}）", "stop"
+        except Exception as e:
+            failure_log.claude_failed(kasane.ROLE, "POST", self.path, e, private=(question,))
+            text, how = "今は AI に聞けません", "error"
+        finally:
+            del frames
+        return reply(200, text or hmd.ASK_NOHEARD, how)
+
     def _ask(self, sid, hid, question):
         """手順の質問を Claude へ。失敗は理由を作る側の記録に残し、投げ直す（画面の文は呼ぶ側が決める）。
         話す口と同じ入口の床を先に当てる（#87）。手帖は 1 回押した後は聞き続けるので、名乗りや連絡先の形の話し声も字になって届く。
@@ -1445,6 +1562,12 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.step_limit = WriteLimit(limit=STEP_LIMIT)
     server.print_limit = WriteLimit(limit=PRINT_LIMIT)
     server.media_limit = WriteLimit(limit=MEDIA_LIMIT)
+    # 作業の頁の「聞く」の回数と、声を字にする常駐の作り手（作り手は作業の頁を開いた時に立て始め、使われない間は止まる・omochae.asr_serve）
+    from omochae import asr_serve
+
+    server.ask_limit = WriteLimit(limit=ASK_LIMIT)
+    server.ask_day = DayCount()
+    server.listener = asr_serve.Listener()
     # 上げた動画の声を、この機械の中で字にしてから消す（本人の言葉 11-08「全部残していいことにしたい。」・omochae.voice_text）。
     # 道具の確かめは立てる時に 1 度だけ（受けるたびに確かめると、上げるたびに数秒待たせる）。道具がある時だけ声を写す。
     # 72 時間の掃除は道具の有無に関わらず、作業列が立てた時と 1 時間ごとに回す
