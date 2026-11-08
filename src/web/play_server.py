@@ -874,7 +874,7 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
 
     def _sheet_shiori(self, sid, form):
-        """型紙の PDF の後ろに、その場で作ったしおりの表と裏の 2 頁を足して返す（本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 grove の
+        """型紙の PDF の後ろに、その場で作ったしおりの 1 頁（表と裏を同じ面に並べる・本人「しおりは同じ面に刷る。」）を足して返す（本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 grove の
         state/shiori-in-sheet-20261108.md の 2.1 版）。合わせた物はどこにも書き出さない（台帳は印そのものを持たない決まり）。
         - 合言葉なしの場（公開デモ）は台帳を作らずに断る（頁の釦も出さない・受け口でも 2 重に・しおりはワークショップの場でだけ開くため）。
         - 決まった番地が無い場は、しおりを作らずに型紙だけを返す（替わる番地を刷らない・shiori.NoBase）。

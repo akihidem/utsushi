@@ -3,7 +3,7 @@
 なぜ: しおりは手帖の鍵。型紙の PDF はサーバに 1 つの玩具・1 つの版ごとに 1 つだけ置いて誰にも同じ物を渡すので、1 人ごとの印は置いた PDF に
 入れられない。押した時にその場で組んで返し、どこにも置かない形と、記録への結び方（押した人＝次に記録を残す人と決め打ちしない）を固める。
 見る事:
-1 合言葉付きの場の型紙の窓の PDF の釦は POST のフォーム（別のタブ）。返すのは型紙＋しおりの 2 頁・inline・no-store。最初の頁は置いた型紙と同じ中身。
+1 合言葉付きの場の型紙の窓の PDF の釦は POST のフォーム（別のタブ）。返すのは型紙＋しおりの 1 頁（表と裏を同じ面に並べる）・inline・no-store。最初の頁は置いた型紙と同じ中身。
   置いた PDF は替わらず、out の中にファイルが増えない。押すたびに台帳のしおりが 1 つ増える。GET では増えない
 2 待ち: who と回の印が届いた時だけ待ちの cookie を渡す（台本の無い画面は待ちを作らない）。のこすの確かめの画面に 1 行が出るのは待ちがある時だけ
 3 結ぶ: 「外す」を押さずに承認した記録（shiori=1）を、cookie・who・回・3 時間が合う時だけ結ぶ。違う who・外した・3 時間を過ぎた時は結ばない。
@@ -88,7 +88,7 @@ assert code == 200 and head.get("Content-Type") == "application/pdf", (code, hea
 assert head.get("Content-Disposition", "").startswith("inline;") and head.get("Cache-Control") == "no-store", head
 assert any(c.startswith("utsushi_sp=") and "HttpOnly" in c and "Max-Age" not in c for c in cookies), cookies
 got, src = PdfReader(io.BytesIO(pdf)), PdfReader(str(sheet))
-assert len(got.pages) == len(src.pages) + 2, (len(got.pages), len(src.pages))
+assert len(got.pages) == len(src.pages) + 1, (len(got.pages), len(src.pages))
 assert got.pages[0].get_contents().get_data() == src.pages[0].get_contents().get_data(), "最初の頁は置いた型紙と同じ中身"
 assert hashlib.sha256(sheet.read_bytes()).hexdigest() == before_sha and sorted(p.name for p in play_server.out_dir(G).rglob("*")) == files_before, "置いた PDF は替わらず、何も書き出さない"
 assert len(ledger()) == 1 and entries()[0]["pending"] and set(entries()[0]["pending"]) == {"nonce", "who", "run", "at"}
@@ -102,7 +102,7 @@ assert call(f"/toy/{G}/sheet-shiori", form({"name": "OWN-1_v1", "who": WHO, "run
 # ---- 2 台本の無い画面（who と回が無い）は待ちを作らない・しおりは刷る
 nojs, _ = session(base)
 code, pdf2, head2, cookies2 = nojs(f"/toy/{G}/sheet-shiori", form({"name": stem}))
-assert code == 200 and len(PdfReader(io.BytesIO(pdf2)).pages) == len(src.pages) + 2 and not any(c.startswith("utsushi_sp=") for c in cookies2)
+assert code == 200 and len(PdfReader(io.BytesIO(pdf2)).pages) == len(src.pages) + 1 and not any(c.startswith("utsushi_sp=") for c in cookies2)
 assert len(ledger()) == 3 and sum(1 for e in entries() if e["pending"] is None) == 1
 assert 'id="nk-c-shiori"' not in nojs(f"/toy/{G}/techo/kiroku")[1].decode(), "待ちの無い画面には 1 行を置かない"
 assert 'id="nk-c-shiori" hidden' in call(f"/toy/{G}/techo/kiroku")[1].decode(), "待ちのある画面には 1 行を置く（台本が今の回と照らしてから見せる）"
