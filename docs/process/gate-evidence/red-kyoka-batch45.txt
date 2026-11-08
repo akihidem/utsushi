@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: b1261495（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kuzushi_notes.py", line 50, in <module>
+    assert G in NOTED and T in NOTED and len(NOTED) >= 79, (len(NOTED), "注の玩具が減った")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (54, '注の玩具が減った')
+rc=1
