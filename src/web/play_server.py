@@ -636,7 +636,7 @@ class Handler(BaseHTTPRequestHandler):
             sid = m.group(1)
             sheet = hypotheses.sheet_of(sid)["id"]
             paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
-            return self._send(200, skinmod.shell("手帖", techo_site.records_page(sid, msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper), look, "", path, techo_site.STYLE + nokosu.STYLE, "techo"))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(sid, msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper), look, "", path, techo_site.STYLE + nokosu.STYLE, "techo"))
         # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
         # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
@@ -791,7 +791,10 @@ class Handler(BaseHTTPRequestHandler):
     def _done(self, sid, msg, back="", see=None, anchor="kiroku", v=None, fresh=False, headers=()):
         # 手帖から送った物は手帖へ戻す（本人「アップロードも手帖から。フィードバックも手帖」、11-04）。玩具の頁へ戻す時は、刷った紙の窓か記録の所へ。
         if back == "techo":
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}#mine"), *headers])
+            # 着く印: 既定は上げる節（#mine）。作りながら見る頁の組み上がりからは記入の節（#kinyu・頁の頭）へ着き、返事の字もそこに出す
+            # （別の目の確かめ 11-08: #mine は頁の一番下で、記入の節を飛び越えた）
+            at = "kinyu" if anchor == "kinyu" else "mine"
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}#{at}"), *headers])
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
@@ -1095,7 +1098,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
         if event == "done":  # 組み上がりを残した後、のこすの頁（手帖の記録の頁 /toy/<印>/techo/kiroku）へ直に送る（本人の答え 11-08「B。」・統括の決め (a)）。
             # 前はどの紙かを渡して玩具の頁の記録の欄へ送り、そこから のこす へもう 1 押し要った。組み上がりの記録（making_log.add_step）は上で今と同じに残す
-            return self._done(sid, tsukuru.DONE_NOTE, back="techo")
+            return self._done(sid, tsukuru.DONE_NOTE, back="techo", anchor="kinyu")
         ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 

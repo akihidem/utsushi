@@ -1,0 +1,6 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_tsukuru_last_fit.py
+# commit: 83a4184b（回した時の HEAD）
+/tmp/tmpekl68wdu/play/NDL-1187053-R0000005-L/.tmp-6wzlhnpv/H-C_v1.pdf
+/tmp/tmpekl68wdu/play/NDL-1187053-R0000014-R/.tmp-_nklx4qn/H-A_v1.pdf
+ok 作りながら見る頁の最後の手順の のこす の札: 日本語 375×667・390×844 と英語 390×844 で最初の画面の中・本人の字は札の中で 2 行まで（日本語と英語）。前から外の大きさ（数だけ）: ja goraigo-320x568 札の下の端 676/568・ja tora-320x568 札の下の端 606/568・en goraigo-320x568 札の下の端 777/568・en goraigo-375x667 札の下の端 742/667・en tora-320x568 札の下の端 638/568・en tora-375x667 札の下の端 603/667
+rc=0
