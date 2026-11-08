@@ -47,7 +47,7 @@ for sid in lane:
     assert len(set(keys)) == len(keys), (sid, "仮説は HYP_KEY の値で分ける")
     assert all(e["certainty"] in ("観察", "推測") for h in hs for e in h["evidence"]), sid
     # 翻刻は人が写す欄（U-01）。棚卸しの見立ての名前から読みを起こさない。
-    assert src(sid)["transcription"]["entries"] == [], sid
+    assert all(e.get("decided_by") or e.get("checked_by") for e in src(sid)["transcription"]["entries"]), sid  # 線（雛形の生成）は翻刻を書かない。入るのは人の決め（本人の決め 11-08「A にそろえる」の decided_by）か人が確かめた読みだけ
     for h in hs:
         out = pathlib.Path(tmp) / "sheets" / f"{sid}_{h['id']}"
         err = io.StringIO()

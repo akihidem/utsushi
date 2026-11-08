@@ -132,18 +132,17 @@ try:
 finally:
     kh.PICTURES = keep_pictures
 
-# 7. 玩具の頁の置き場: 型紙の窓 のすぐ後（設計の担当の置き場 11-07）。たとえは、本人の言葉 11-08「…これまでの復元、仮説、組み立てを立体で見る、
-# たとえと関連する事柄、型紙の順で」で型紙の窓の前へ移ったので、後ろに来るのは 考えを話す（と同じ窓の困ったら）。
+# 7. 玩具の頁の置き場: 型紙の窓の段の中、型紙（紙の絵と札）の後・窓の口（印刷・つくる・のこす）の前の、閉じた畳み（本人の言葉 11-08「…型紙、型紙の歩み、
+# 型紙の窓、の順がいい。」・設計の問い 3 の答え「推しのとおり。」・統括の読み 11-08）。前は型紙の窓の節のすぐ後の開いた節（設計の担当の置き場 11-07）。
 # 表に無い玩具の頁には出ない
 from web import toy  # noqa: E402
 
 for sid in (G, T):
     page = toy.toy_page(sid)
     at = page.index('id="ban-ayumi"')
-    win = page.index('id="win"')
-    after = [page.index(m) for m in ('id="hanasu"', 'id="tsukuru"') if m in page]
-    assert page.count('id="ban-ayumi"') == 1 and win < at < min(after), (sid, win, at, after)
-    assert page.index("</section>", win) < at, "型紙の窓の節の中でなく、その後"
+    win, kiroku = page.index('<section class="sec" id="win">'), page.index('id="kiroku"')
+    assert page.count('id="ban-ayumi"') == 1 and win < at < kiroku, (sid, win, at, kiroku)
+    assert page[at:at + 200].split(">", 1)[1].startswith('<details class="fold-sec"><summary><h2>型紙の版の歩み</h2></summary>'), "閉じた畳みでない"
     assert "版の歩み" in page and wa.NOW in page[at:]
 assert 'id="ban-ayumi"' not in toy.toy_page(other), "表に無い玩具の頁には出さない"
 

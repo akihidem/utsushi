@@ -59,10 +59,13 @@ class Screen:
         return r.getcode(), r.read().decode("utf-8", "replace")
 
     def forms(self, rid):
-        """(玩具の頁の説明の欄, 手帖の説明の欄, 手帖の字を足す口)。"""
+        """(手帖の説明の欄, 手帖の字を足す口)。
+        本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+        記録の札の操作は手帖の記録の頁にあるので、欄はそこで見る。つくるの頁には、本人の画面にも別の人の画面にも説明の欄が出ない事を、呼ぶたびに見る"""
         toy, techo = self.call(f"/toy/{G}")[1], self.call(f"/toy/{G}/techo/kiroku")[1]
         explain = f'action="/record/{rid}/explain'
-        return explain in toy, explain in techo, f'name="record" value="{rid}"' in techo
+        assert explain not in toy, "つくるの頁に説明の欄が残った"
+        return explain in techo, f'name="record" value="{rid}"' in techo
 
     def explain(self, rid, **more):
         return self.call(f"/record/{rid}/explain", {"text": "折りが固い", "next_idea": "幅を変える", "by": "作った人", **more})[0]
@@ -75,7 +78,7 @@ class Screen:
         return records.all_records(G)[-1]["id"]
 
 
-OPEN, SHUT = (True, True, True), (False, False, False)
+OPEN, SHUT = (True, True), (False, False)
 sheet = hypotheses.sheet_of(G)["id"]
 
 for kw in ({}, {"public_open": True}):
@@ -137,7 +140,7 @@ for kw in ({}, {"public_open": True}):
     bad = a.call(f"/record/{third}/explain", {"text": "戻す字", "next_idea": "", "by": "作った人"})
     assert bad[0] == 422 and "戻す字" in bad[1], kw
     assert a.explain(third) == 303 and loop.explanation(third)["text"] == "折りが固い", kw
-    assert a.forms(third)[:2] == (False, False), "説明の後は欄が閉じる（今までどおり）"
+    assert a.forms(third)[:1] == (False,), "説明の後は欄が閉じる（今までどおり・欄は手帖の記録の頁）"
 
     # 6. 作り物の印は通らない。形の外の値でも落ちない
     forged = Screen(base)

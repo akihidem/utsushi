@@ -4,7 +4,7 @@
 1. 題字「うつし」・英字・副題は縦書き（TENJI の .tj-hall の形）で、横書きで短くする上書き（#hall.tj-hall の horizontal-tb）が無い
 2. 幅 480 以下の形（英字は題の上に横・副題は下に縦）は TENJI のまま
 3. 字は 1 字も替えない（英字・題・副題 3 行・このサイトについて）。まずはここから の 2 枚と帯は今のまま
-   題字の下の読み（looks.YOMI）は本人の言葉 11-08「うつし、のひらがなの下に utushi と読みをいれる」で足した（題の縦書きはそのまま。tests/test_entrance_yomi.py が測る）
+   題字の下の読み（looks.YOMI）は字の形に残るが、出すのは英語の頁だけ（本人の言葉 11-08「英語は英語モードの時のみ横書きで、他はかえない」。tests/test_entrance_yomi.py が測る）
 """
 import os
 import re

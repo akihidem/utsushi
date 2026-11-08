@@ -260,16 +260,18 @@ assert alone_seen.count(kumitate.STEPS_LABEL) == 3 and "<h2>" not in alone and "
 assert ('class="kumi-genga"' in alone) == (ROOT / "out/sources" / f"{PLAIN}.jpg").exists()
 assert 'class="kumi-genga"' not in plain, "玩具の頁の組み方の節には原図を重ねない（頁の頭に原図がある）"
 
-# 型紙の頁: 立体は「すぐ作る」の中（本人の決定 11-06。J-033）。組み方の節は「作る」の節の後（刷る口を押し下げない。統括の決め 11-06）
+# 玩具の頁: 立体は 組み立てを立体で見る の段（#kasetsu）に 1 つ（本人の決定 11-06。J-033）。組み方の節（文の手順）は玩具の頁から外した:
+# 作る時は手帖が 3D と文で 1 手ずつ出す（本人の言葉 11-08「作成を 3D の手順の解説に従って行い」・設計の問い 5 の答え「推しのとおり。」）。
+# 組み方の節そのもの（kumitate.section）は上の線のまま組み立ての頁と手帖が使う
 from web import toy  # noqa: E402
 
 made_page = toy.toy_page(G)
-assert made_page.count('id="kumitate"') == 1 and made_page.count('id="rt-stage"') == 1 and made_page.count('id="kumikata"') == 1
-assert made_page.index('id="kumitate"') > made_page.index('id="kasetsu"'), "すぐ作る節の中に無い"
+assert made_page.count('id="kumitate"') == 1 and made_page.count('id="rt-stage"') == 1 and 'id="kumikata"' not in made_page
+assert made_page.index('id="kumitate"') > made_page.index('id="kasetsu"'), "立体の段の中に無い"
 plain_page = toy.toy_page(PLAIN)
-assert plain_page.count('id="kumikata"') == 1 and 'id="kumitate"' not in plain_page and 'id="rt-stage"' not in plain_page
+assert 'id="kumikata"' not in plain_page and 'id="kumitate"' not in plain_page and 'id="rt-stage"' not in plain_page
 for pg in (made_page, plain_page):
-    assert pg.index('id="win"') < pg.index('id="tsukuru"') < pg.index('id="kumikata"') < pg.index('id="kiroku"'), "刷る口と手帖の口の後、記録の前"
+    assert pg.index('id="win"') < pg.index('id="kiroku"'), "型紙の窓の後に のこそう の段"
 
 # 虎: 手順と段が 1 対 1。胴は箱に折れ、絵は外、頭は前の壁の外、軸は帯の穴を通る
 T = "NDL-1187053-R0000014-R"

@@ -228,7 +228,8 @@ MEDIA_LIMIT = 60
 # 区切りの見出しの値と型の組（声とカメラの設計 3 版の 3 節）。声は音の型（iPhone の Safari は audio/mp4・Chrome は audio/webm）、
 # カメラは絵の型だけを受ける。組に無い物は 422（名乗った型と中身の頭のバイトが合うかは voice_text が見る）
 CLIP_TYPES = {("t", "audio/webm"): "webm", ("t", "audio/mp4"): "mp4", ("k", "video/webm"): "webm", ("k", "video/mp4"): "mp4"}
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/close")
+# しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
@@ -385,11 +386,24 @@ class Handler(BaseHTTPRequestHandler):
         key = getattr(self.server, "public_key", None)
         if not key:
             return True
+        from . import shiori_open
+
+        # しおりの開く道（GET と POST /s/<22 字> の 2 つだけ）は門の外（統括の決め 11-08）。絵の順が鍵なので、合言葉を知らない人も絵の頁までは来る。
+        # 見分けは ? より前の道の fullmatch。startswith にしない（% の入った字・末の /・/s/close・//s/… は門の中に残す）
+        if self.command in ("GET", "POST") and shiori_open.PATH.fullmatch(self.path.partition("?")[0]):
+            return True
         jar = {}
         for part in self.headers.get("Cookie", "").split(";"):
             k, _, v = part.strip().partition("=")
             jar[k] = v
         if hmac.compare_digest(jar.get("utsushi_k", "").encode(), key.encode()):
+            return True
+        # しおりで開いた画面（開いた画面の印・20 分の内）も門を通す。合言葉の値そのものは端末に渡さない（別の目の止め S1 の代わりの形）。
+        # 使えなくした・止めた・とじた・開き直したしおりの画面は、台帳が通さない。最後に使った時刻の書き直しは台帳が 1 分に 1 回に絞る
+        from omochae import shiori
+
+        if jar.get(shiori_open.COOKIE) and shiori.fresh(jar[shiori_open.COOKIE]):
+            shiori.touch(jar[shiori_open.COOKIE])
             return True
         path, _, query = self.path.partition("?")
         given = urllib.parse.parse_qs(query).get("k", [""])[0]
@@ -408,6 +422,18 @@ class Handler(BaseHTTPRequestHandler):
         見た目を切り替える形ではなく、皮ごとに 1 サイト。cookie も ?look= も見ない（前の形の名残を受け付けると 2 サイトの線が崩れる）。"""
         self._look = getattr(self.server, "look", skinmod.DEFAULT)
         self._pick_lang()
+
+    def _kiroku(self, sid, msg="", errors=(), err_at="", filled=None, look=None, path=None, at=""):
+        """手帖の記録の頁（/toy/<印>/techo/kiroku）。記録の札の説明と次の版が通らなかった時（422）も、この頁を理由の文と書いた字つきで返す:
+        つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）ので、前の玩具の頁の札の返事の代わり"""
+        from . import nokosu, techo_site, techo_step, think_sheet
+
+        sheet = hypotheses.sheet_of(sid)["id"]
+        # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
+        paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+        body = techo_site.records_page(sid, msg=msg, at=at, up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper,
+                                       errors=errors, err_at=err_at, filled=filled)
+        return skinmod.shell("手帖", body, look or self._look, "", path or f"/toy/{sid}/techo/kiroku", techo_site.STYLE + nokosu.STYLE, "techo")
 
     def _toy(self, sid, **kw):
         # 合言葉なしで開いた場では写真と動画を出さない（受け口が断るので、壊れた絵にしない。J-028）。
@@ -463,11 +489,14 @@ class Handler(BaseHTTPRequestHandler):
         # 大判（A）と外した 3 案は出さない（本人の決定 11-05 朝「日本画かジンで行くから、他のデザインは要らない」）。
         if path == "/":
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
+        m = re.fullmatch(r"/s/([A-Za-z0-9_-]{22})", path)
+        if m:
+            return self._shiori_get(m.group(1))
         m = re.fullmatch(r"/look/([a-z]+)", path)
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         if path == "/kaizen":
-            # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
+            # 審査用の頁「良くするための一周 ♻︎」（本人の言葉 11-07・題は 11-08）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
             from . import kaizen_judge
             return self._send(200, kaizen_judge.page(look, path))
         m = re.fullmatch(r"/kaizen/video/([^/]+)", path)
@@ -629,14 +658,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, techo_step.page(sid, printed, look, step=n, version=v, own=own, public=getattr(self.server, "public_open", False)))
         m = re.fullmatch(rf"/toy/({SID})/techo/kiroku", path)
         if m and m.group(1) in sources():
-            # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
-            from . import techo_site
-            # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
-            from . import nokosu, techo_step, think_sheet
-            sid = m.group(1)
-            sheet = hypotheses.sheet_of(sid)["id"]
-            paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
-            return self._send(200, skinmod.shell("手帖", techo_site.records_page(sid, msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper), look, "", path, techo_site.STYLE + nokosu.STYLE, "techo"))
+            # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。組み方は _kiroku（記録の札の 422 の返事と同じ頁）
+            return self._send(200, self._kiroku(m.group(1), msg=qs.get("msg", [""])[0], at=qs.get("at", [""])[0], look=look, path=path))
         # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
         # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
@@ -795,15 +818,64 @@ class Handler(BaseHTTPRequestHandler):
             # （別の目の確かめ 11-08: #mine は頁の一番下で、記入の節を飛び越えた）
             at = "kinyu" if anchor == "kinyu" else "mine"
             return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}#{at}"), *headers])
+        # 記録の札（錨が記録の番号）へ戻す時は、手帖の記録の頁の記録の並びへ: つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべて
+        # もちよるに統合する。」）。fresh の合図と、写真の鍵を閉じる行（_up_close）は、玩具の頁へ戻す時と同じに付ける: 付けないと、同じ機械の次の人が
+        # 前の人の写真の口を持ったままになる（別の目の試験 test_photo_owner_only・test_who_fresh が見る）
+        if re.fullmatch(r"R-\d{4}", anchor or ""):
+            mark = "&fresh=1" if fresh else ""
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{mark}#mine"), *headers] + (self._up_close() if fresh else []))
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
         self._send(303, "", headers=[("Location", f"/toy/{sid}?msg={urllib.parse.quote(msg)}&at={anchor}{extra}#{anchor}"), *headers] + (self._up_close() if fresh else []))
 
+    def _shiori_get(self, token):
+        """しおりの道の GET（web.shiori_open）。公開の場は断る（照らさず数えない）。開いた画面ならそのしおりの記録、まだなら絵の頁。"""
+        from omochae import shiori
+
+        from . import shiori_open
+        if getattr(self.server, "public_open", False):
+            return self._send(403, shiori_open.notice(shiori_open.PUBLIC_REFUSE, self._look))
+        if shiori.status(token) != "open":
+            return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
+        screen = self._key_of(shiori_open.COOKIE)
+        if screen and shiori.token_of(screen) == token and shiori.fresh(screen):
+            return self._send(200, shiori_open.opened_page(screen, self._look))
+        return self._send(200, shiori_open.picture_page(token, self._look))
+
+    def _shiori_post(self, token, form):
+        """押した順を照らす（止めは台帳の中で、当たりの前に効く）。当たった時だけ、開いた画面の印の cookie を渡す。合言葉の cookie は渡さない。"""
+        from omochae import shiori
+
+        from . import shiori_open
+        nonce = secrets.token_urlsafe(16)
+        got = shiori.check(token, shiori_open.order_of(form), writer(self.client_address[0], self.headers) or "local", screen=nonce)
+        if got == "ok":
+            secure = bool(getattr(self.server, "public_key", None))
+            return self._send(303, "", headers=[("Location", f"/s/{token}"), shiori_open.cookie_line(f"{token}.{nonce}", secure)])
+        if got == "wrong":
+            return self._send(422, shiori_open.picture_page(token, self._look, shiori_open.WRONG))
+        if got == "busy":
+            return self._send(429, shiori_open.picture_page(token, self._look, shiori_open.WAIT), headers=[("Retry-After", "60")])
+        return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
+
+    def _shiori_add(self, rid):
+        """しおりで開いた画面が残した記録を、そのしおりの並びに足す（開いていない画面では何もしない）。"""
+        from omochae import shiori
+
+        from . import shiori_open
+        screen = self._key_of(shiori_open.COOKIE)
+        if screen:
+            shiori.add_record(screen, rid)
+
     def _post(self):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        if getattr(self.server, "public_open", False) and re.fullmatch(r"/s/[A-Za-z0-9_-]{22}", self.path):
+            # 公開の場ではしおりを開かない。フォームを読む前・書き込みの数の前に断り、照らさず数えない（開く道の設計 7.2 の 1）
+            from . import shiori_open
+            return self._send(403, shiori_open.notice(shiori_open.PUBLIC_REFUSE, self._look))
         m = re.fullmatch(r"/record/(R-\d{4,})/.*", self.path)
         if m and uploaded(m.group(1)):
             return self._refuse(404, "見つかりません")
@@ -850,6 +922,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
         form = self._form()
         if form is None:
+            # しおりの道（門の外）への断りは、当たる前の頁と同じ帯なしの形にする（頭の帯の道しるべから門の中へ行けると見せない・#631 の別の目の気づき）
+            from . import shiori_open
+            if shiori_open.PATH.fullmatch(self.path.partition("?")[0]):  # 門の外の見分けと同じく ? より前の道で見る（問い付きでも同じ形にそろえる）
+                return self._send(403, shiori_open.notice("受け付けられない送り方です。頁を開き直して、もう一度送ってください。", getattr(self, "_look", skinmod.DEFAULT)))
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
         if WRITE_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
             wait = self.server.write_limit.wait(who)
@@ -859,6 +935,16 @@ class Handler(BaseHTTPRequestHandler):
             wait = self.server.print_limit.wait(who)
             if wait:
                 return self._busy(wait, form)
+        m = re.fullmatch(r"/s/([A-Za-z0-9_-]{22})", self.path)
+        if m:
+            return self._shiori_post(m.group(1), form)
+        if self.path == "/s/close":
+            # とじる: 台帳の開いた画面の印も消す（cookie を消すだけだと、写した値が 20 分の切れまで生きる・止め S2）
+            from omochae import shiori
+
+            from . import shiori_open
+            shiori.close(self._key_of(shiori_open.COOKIE) or "")
+            return self._send(303, "", headers=[("Location", "/"), shiori_open.cookie_line("", bool(getattr(self.server, "public_key", None)))])
         if self.path == "/close":
             # のこした後の「この画面をとじる」（techo_site.close_form）。この画面の写真の鍵と記録の鍵を消し、その場限りの印も作り直させる（fresh）。
             # 鍵が無くても同じ返事にする（とじる事は誰にでもできてよく、鍵の有り無しを外へ見せない）。フォームなので _form の Origin の照らしが先に効く
@@ -944,7 +1030,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._refuse(403, "受け付けられません")
             failures = loop.save_explanation(rid, form.get("by", ""), form.get("text", ""), form.get("next_idea", ""))
             if failures:
-                return self._send(422, self._toy(rec["source_id"], errors=[f.message for f in failures], at=rid, filled=("explain", form)))
+                # 記録の札の説明と次の版が通らない時は、手帖の記録の頁で、その札の頭に理由を出し、書いた字を戻す（つくるの頁から記録の札を外した 11-08。_kiroku）
+                return self._send(422, self._kiroku(rec["source_id"], errors=[f.message for f in failures], err_at=rid, filled=("explain", form)))
             return self._done(rec["source_id"], "説明を残しました", form.get("back", ""), anchor=rid)
         self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
 
@@ -993,7 +1080,7 @@ class Handler(BaseHTTPRequestHandler):
         if act == "ai-observe" and not videos and any(is_video(f) for f in media_review.visible(rid, files)):
             return self._refuse(403, "受け付けられません")
         if not loop.explained(rid):  # 取り下げで字が空になった説明も、説明が無いと読む（J-013）
-            return self._send(422, self._toy(sid, errors=["先に何が起きたと思うかを書く"], at=rid))
+            return self._send(422, self._kiroku(sid, errors=["先に何が起きたと思うかを書く"], err_at=rid))
         if not ask._key_present():
             return self._done(sid, wording.plain("鍵が置かれると、Claude が答えます"), form.get("back", ""), anchor=rid)
         try:
@@ -1035,14 +1122,14 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))  # 自分の紙の記録からの次の版は、たたき台へ向ける
         if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
-            return self._send(422, self._toy(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], at=rid))
+            return self._send(422, self._kiroku(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], err_at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
-            return self._send(422, self._toy(sid, errors=[f"仮説 {hid} は無い"], at=rid))
+            return self._send(422, self._kiroku(sid, errors=[f"仮説 {hid} は無い"], err_at=rid))
         if loop.explanation(rid) is None:
-            return self._send(422, self._toy(sid, errors=["先に説明を書く"], at=rid))
+            return self._send(422, self._kiroku(sid, errors=["先に説明を書く"], err_at=rid))
         to = _num(form.get("to"))
         if not isinstance(to, float):
-            return self._send(422, self._toy(sid, errors=["新しい値は数で書く"], at=f"next-{rid}", filled=("next", form)))
+            return self._send(422, self._kiroku(sid, errors=["新しい値は数で書く"], err_at=f"next-{rid}", filled=("next", form)))
         # 折りの数のような整数の寸法は、整数で渡す（範囲の検査が小数の折り数を落とすため）。
         to = int(to) if to.is_integer() else to
         source = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -1051,7 +1138,7 @@ class Handler(BaseHTTPRequestHandler):
         if failures:
             from . import toy
 
-            return self._send(422, self._toy(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), at=f"next-{rid}", filled=("next", form)))
+            return self._send(422, self._kiroku(sid, errors=toy.next_reasons(failures, sid, hid, change["param"], to), err_at=f"next-{rid}", filled=("next", form)))
         return self._done(sid, f"{_ban(sid, v)} の紙を作りました。印刷する時は、PDF の大きさを 100% にしてください。", form.get("back", ""), see=hid, anchor="win")
 
     def _step_post(self, sid, form):
@@ -1173,6 +1260,7 @@ class Handler(BaseHTTPRequestHandler):
             # 作りながら話した工夫と、仮説を見て話した考えを、この記録に結ぶ（Issue #279）。結んだ数を返す（頁はまだ読まない。知らせる文は本人の確認の後）。
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
+            self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
             return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
@@ -1228,6 +1316,7 @@ class Handler(BaseHTTPRequestHandler):
                 from omochae import talk_log
                 talk_log.bind(sid, hid, rec["sheet_version"], form.get("who", ""), rid)
                 claim = (self._rec_cookie(rid),)
+                self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
             # 試した後の紙は刷らなくなった（本人の決まり 11-06）ので、後ろの「試した後の紙が開けます」を外した（字は足していない）
             msg = "記録を残しました。"
             # 残した札へ戻す。次の段（試した後の紙・説明）がそこにあるため。

@@ -32,7 +32,7 @@ for sid in lane:
     drives = [{**T.DEFAULTS, **h["params"]}[T.HYP_KEY] for h in data["hypotheses"]]
     assert len(set(drives)) == len(drives), (sid, drives)
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-    assert src["transcription"]["entries"] == [], "翻刻は人が写す欄で、線では空のまま（U-01）"
+    assert all(e.get("decided_by") or e.get("checked_by") for e in src["transcription"]["entries"]), "翻刻は人が写す欄で、線では空のまま（U-01）"  # 線（雛形の生成）は翻刻を書かない。入るのは人の決め（本人の決め 11-08「A にそろえる」の decided_by）か人が確かめた読みだけ
     for h in data["hypotheses"]:
         assert {e["certainty"] for e in h["evidence"]} <= {"観察", "推測", "計算", "二次資料"}, (sid, h["id"])
         err = io.StringIO()

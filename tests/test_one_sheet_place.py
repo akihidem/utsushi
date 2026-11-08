@@ -25,18 +25,19 @@ def main_part(page):
 
 
 def win(page):
-    """型紙の窓の節（次の節の頭まで）。"""
+    """型紙の窓の段（次の段 できたら、のこそう の頭まで）。窓の中に版の歩みの節（畳み）が入るので、次の <section では切らない。"""
     a = page.index('id="win"')
-    b = page.find("<section", a)
-    return page[a:b if b > 0 else len(page)]
+    return page[a:page.index('id="kiroku"', a)]
 
 
 for sid in TOYS:
     prints = rf'<form method="post" action="/toy/{re.escape(sid)}/print#\w+"'
     before = main_part(toy_page(sid))
-    # 紙が無い時: 紙を作る口は頭の「つくる」1 つだけ。型紙の絵は無く、窓の節も出さない（錨だけ）
-    hero = before[:before.index('id="kasetsu"')]
-    assert len(re.findall(prints, before)) == 1 and len(re.findall(prints, hero)) == 1, (sid, re.findall(prints, before))
+    # 紙が無い時: 紙を作る口は型紙の窓の中の「つくる」1 つだけ。頭の「つくる」は仮説の段へ行く道で刷らない（本人の言葉 11-08「原図をみて、狂歌を読んで、
+    # 仮説、たとえ、3D をみたあとに型紙の印刷にすすむ。」・設計の問い 2 の答え）。型紙の絵は無い
+    hero = before[:before.index("</section>", before.index('<section class="hero">'))]
+    win_before = before[before.index('id="win"'):before.index('id="kiroku"')]
+    assert len(re.findall(prints, before)) == 1 and len(re.findall(prints, win_before)) == 1 and not re.findall(prints, hero), (sid, re.findall(prints, before))
     assert f'<img src="/sheet/{sid}/' not in before, (sid, "紙が無いのに型紙の絵")
     # 窓の節は、紙が無い時も、説明・断り・輪の図・仮説の札を出す（「すぐ作る」の節を窓へ寄せた。C3）。紙の絵と紙の種類の札は無い
     assert "<h2>型紙の窓</h2>" in before and '<figure class="sheet">' not in win(before), (sid, "紙が無いのに紙の窓")

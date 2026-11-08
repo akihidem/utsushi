@@ -1,0 +1,8 @@
+# 命令: sh -c 'git show origin/main:src/web/ukabu.py > src/web/ukabu.py; .venv/bin/python tests/test_ukabu_no_overlap.py'
+# commit: 4af9fe0d（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ukabu_no_overlap.py", line 114, in <module>
+    assert not rec["hit"], (where, "浮かぶ玩具の絵が字か押す所に重なる", rec["hit"][:6])
+           ^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'ja-390x844'), '浮かぶ玩具の絵が字か押す所に重なる', ['uk uk4 × [tj-down on]'])
+rc=1

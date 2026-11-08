@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ukabu_no_overlap.py
+# commit: 4af9fe0d（回した時の HEAD）
+ok 入口の浮かぶ玩具: 白と暗い版・3 つの言葉・11 の大きさで、字と押す所に重ならない（3 つ以上が出ている）
+rc=0

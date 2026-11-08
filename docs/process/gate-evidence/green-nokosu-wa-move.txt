@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_nokosu_flow.py
+# commit: 63c2870e（回した時の HEAD。作りは d311a951＝うつしの輪を移した commit と同じ）
+ok: のこすの頁は 記入 → のこす → 内容の確かめ → 承認 → もちよる・記入の欄の下に「のこす」・承認まで送らない
+rc=0

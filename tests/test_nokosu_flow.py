@@ -45,7 +45,8 @@ def between(text, a, b):
 # 1 並びと道しるべ（合言葉付きの場と公開の場）
 for public in (False, True):
     page = techo_site.records_page(G, paper=(H, 9), public=public)
-    marks = ('<div class="top"><h1>手帖</h1>', 'id="kinyu"', 'class="naoru"', 'id="manabi"', "手帖をひらく", 'aria-label="上げる"')
+    # うつしの輪（id=manabi）は記入の節のすぐ下、直った例の集（class=naoru）はその下（本人の言葉 11-08「のこすのうつしの輪は、記入欄の下にする。」）
+    marks = ('<div class="top"><h1>手帖</h1>', 'id="kinyu"', 'id="manabi"', 'class="naoru"', "手帖をひらく", 'aria-label="上げる"')
     at = [page.index(x) for x in marks]
     assert at == sorted(at), (public, at)
     assert roads(page) == ["のこす"], (public, roads(page))
@@ -67,8 +68,8 @@ for x in (loop_figure.ADOPTED, "<svg", naoru.LINES[0], nokosu.APPROVE, nokosu.FI
 
 # 3 承認の順・attach を使わない・端末に残さない
 go = between(script, "go.onclick", "})()</script>")
-order = [go.index(x) for x in ("/talk`", "/record-json`", "utsushiNewWho", "sendFiles(j.id", "/gallery?msg=")]
-assert order == sorted(order), order
+order = [go.index(x) for x in ("/talk`", "/record-json`", "utsushiNewWho", "sendClips(j.id)", "sendFiles(j.id", "/gallery?msg=")]
+assert order == sorted(order), order  # 声とカメラの区切り（web.clips）は、記録と印の作り直しの後・写真の前に送る
 assert go.index("if (!tj.kept)") < go.index("/record-json`") and "return; }" in go[go.index("if (!tj.kept)"):go.index("/record-json`")], "工夫の字が断られたら記録を作らない"
 assert "attach" not in script, "「写真あり」の合図を使わない（いつも新しい記録）"
 urls = set(re.findall(r"`(/[^`$]*)", script)) | set(re.findall(r"'(/[^']*)'", script))

@@ -98,11 +98,15 @@ assert "手帖" in get(f"/toy/{G}/techo")
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
 assert GS in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/tsukuru")
 # 他の人の作った物。写真が無くても言葉で並ぶ
-assert toy.MINNA_HEAD in get(f"/toy/{G}")  # 玩具の頁の見出しは「これまでの復元」（夕方のレビュー 11-07 の 6。ギャラリーの見出しは今のまま）
+# 「これまでの復元」の節は もちよる へ移した（本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）。玩具の頁には無い
+assert toy.MINNA_HEAD not in get(f"/toy/{G}")
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "impression": "扇が引っかかった", "fix_part": "扇", "fix_change": "折り目を深くした", "fix_outcome": "少し開いた"}) == 303
+# 残した記録の札（感想と工夫の行）は もちよる の「他の人が作った物」に出る。玩具の頁には出さない（記録の札は もちよる へ移した・本人の言葉 11-08）
+shared = get("/gallery")
+assert "工夫: 扇 / 折り目を深くした / 少し開いた" in shared and "扇が引っかかった" in shared
 page = get(f"/toy/{G}")
-assert "工夫: 扇 / 折り目を深くした / 少し開いた" in page and "扇が引っかかった" in page
-assert 'id="minna"' in page and 'id="kaizen"' not in page  # 輪の節は玩具の頁に無い（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
+assert "工夫: 扇 / 折り目を深くした / 少し開いた" not in page
+assert 'id="minna"' not in page and 'id="kaizen"' not in page  # 輪の節は玩具の頁に無い（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）  （これまでの復元 #minna も 11-08 に もちよる へ移した）
 gallery = get("/gallery")
 assert "他の人が作った物" in gallery and "扇が引っかかった" in gallery and "折り目を深くした" in gallery
 for word in ("順位", "1 位", "人気", "ランキング", "予想"):

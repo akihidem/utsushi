@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_record_details.py
+# commit: 09db5382（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_record_details.py", line 68, in <module>
+    assert "二回目に作った" not in page and "メモ:" not in page.split('id="ageta"', 1)[1], "メモ（ひとこと）は もちよる に出さない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: メモ（ひとこと）は もちよる に出さない
+rc=1
