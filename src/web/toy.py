@@ -567,7 +567,9 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 見出しは「型紙を印刷する」（本人の言葉 11-08「型紙の窓を「型紙を印刷する」からにして、その直下に PDF を開いて印刷するボタンを置く。」）。前は「型紙の窓」。
     # 見出しの直下は、刷った後は PDF を開いて印刷する（top）、刷る前は紙を刷る「つくる」（printing）。版が上がった時は新しい紙を刷る「つくる」の後に、
     # 前の紙の PDF（前は口の中にあった物を残す）。説明の 2 行はその後ろへ下げた（字は前のまま）
-    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙を印刷する</h2>{printing}{top}{talk}<p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
+    # 説明の文の 2 文目は、試行錯誤が作る事の大前提（本人の言葉 11-08・本人の答え「この字でよい（重りの位置もそのまま）」・grove の
+    # state/tsukuru-trial-premise-20261108.md の 2）。見出しの直前に 1 行を足す形でなく、この文に足した（字のかたまりを増やさない）
+    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙を印刷する</h2>{printing}{top}{talk}<p class="lead">型紙を刷ります。切って、折って、組みます。動かない所は、切り方や折り方、重りの位置を変えて、動くまでためします。</p>'
            f'<p class="meta">画面で見て、印刷する前に案を検討する所。</p>{sheet}{fold(ban_ayumi.section(sid))}{acts}</section>')
     # 錨 #tsukuru（前の 作っている途中で困ったら の節）は外した。作りながら見る頁の「← 玩具」は #win（型紙の窓）へ向け直した（tsukuru.py）。
     # 作っている途中で困ったら（聞く口）は外した: 手帖の手順の画面に「こまった」と聞く口が前からある（設計の問い 4 の答え「推しのとおり。」）。
