@@ -136,13 +136,44 @@ def scene():
             f'<div class="workshop-row tiles">{"".join(f"<figure>{_img(f, SCENE_ALT)}</figure>" for f in files)}</div></section>')
 
 
-def made(sids):
+# 玩具の札に寄せる事例の写真の種類（改善ループの例・型紙で改善したおもちゃ 3 バージョン）。前は玩具の頁の「これまでの復元」にだけ出た
+# （本人の言葉 11-07 午後 193「改善ループの例として使って欲しい」の写真もその 1 つ）。玩具の頁から外すので、ここへ寄せる（本人の言葉 11-08 477）。
+# 参加者の工夫（kufu）は作例の節の工夫の段に残す（本人の言葉の引用と組で出しているため・同じ写真を 2 度出さない）
+CARD_CASES = ("loop", "versions")
+
+
+def _cases(sid, photos=True):
+    """その玩具の事例の写真の小さい写しの道（人が「物だけ」と確かめた物）。photos=False（写真を出さない前の開いた場の形）は出さない
+    （作例の節 sakurei_section と同じ線。ワークショップの試行の写真と違い、人が上げた写真なので）。"""
+    if not photos:
+        return []
+    from . import sakurei
+
+    return [c["url"] for kind in CARD_CASES for c in sakurei.cases(kind) if c["sid"] == sid]
+
+
+def has_card(sid, photos=True):
+    """もちよるの「みんながつくったおもちゃ」に、その玩具の札（錨 toy-<印>）が出るか。made と同じ線で見る。"""
+    from omochae import hypotheses
+
+    from .demo_samples import workshop_for
+
+    return bool([f for f in files(sid) if kind_of(f) == "single"] or _cases(sid, photos) or workshop_for(sid, hypotheses.load(sid)["toy"]))
+
+
+def made(sids, photos=True):
     """「みんながつくったおもちゃ」の節（おもちゃの単体の写真）。玩具ごとに 1 枚の札（その玩具の単体の写真の全部・玩具の名・押すと開く感想）を、頁の玩具の並びの順に敷き詰める。
     - できた物の写真は札に全部入れる（本人の決め 11-07「ワークショップの写真は 復元・記録・ギャラリーの全部の置き場に置く」。1 枚目だけにすると残りがどこにも出ない）
-    - 札に出す玩具は、できた物の写真が表で結ばれた玩具と、感想か話された言葉が結ばれた玩具（demo_samples.workshop_for が空でない玩具）
+    - 札は玩具ごとの置き場で、錨は id="toy-<印>"（本人の言葉 11-08 477「復元の記録などはすべてもちよるに統合する。」。玩具の頁の「この玩具の作った物を
+      もちよる で見る」の道の行き先・つくるの作り直しの枝 1 と合わせた名）。新しい置き場は足さず、今の札に錨を付ける（統括の決め 11-08。
+      もちよるには玩具ごとの中身がもうある: 感想はこの札の 感想を見る・作例の写真は作例の節の玩具ごとの札・人の記録は 他の人が作った物）。
+      札が無い玩具の錨は、作例の節の札か 他の人が作った物 の札に付く（techo_site.gallery_page）。玩具の頁にだけあった事例の写真（CARD_CASES）は、
+      単体の写真に続けてこの札に寄せる。作っている途中の写真は つくっている様子 に出る
+    - 札に出す玩具は、単体の写真か事例の写真か、感想か話された言葉がある玩具（has_card）。並びは sids の順
     - 感想は workshop_for の札のまま（回答のまま・名前や番号なし・動かなかった声と注文も並べる。本人の決め 11-07「寄せられた声…置き方は案のとおり」）
     - どの玩具とも結ばれていない単体の写真は、玩具の名を付けない札で頭に置く（玩具を勝手に決めない）。並べた写真はこの節に出さない（頭の 1 枚・top）
-    - 写真の無い玩具の札は、名と感想だけ（絵を作らない）。どれも無い時は節ごと出さない"""
+    - 写真の無い玩具の札は、名と感想だけ（絵を作らない）。どれも無い時は節ごと出さない
+    - photos=False（写真を出さない前の開いた場の形）は、事例の写真を出さない。試行の写真と感想は、公開の決めが済んだ物なので出す（前と同じ）"""
     from omochae import hypotheses
 
     from .demo_samples import workshop_for
@@ -152,13 +183,15 @@ def made(sids):
     cards = "".join(f'<figure class="workshop">{_img(f, MADE_ALT)}</figure>' for f in loose)
     for sid in sids:
         name = hypotheses.load(sid)["toy"]
-        photos = [f for f in files(sid) if kind_of(f) == "single"]
+        singles = [f for f in files(sid) if kind_of(f) == "single"]
+        shots = _cases(sid, photos)
         voices = workshop_for(sid, name)
-        if not (photos or voices):
+        if not (singles or shots or voices):
             continue
-        pic = "".join(_img(f, MADE_ALT) for f in photos)
+        pic = "".join(_img(f, MADE_ALT) for f in singles)
+        pic += "".join(f'<img src="{esc(u)}" alt="{esc(MADE_ALT)}" loading="lazy" decoding="async">' for u in shots)
         fold = f'<details class="voices-fold"><summary>{esc(OPEN_VOICES)}</summary>{voices}</details>' if voices else ""
-        cards += f'<figure class="workshop">{pic}<figcaption><a href="/toy/{esc(sid)}">{esc(name)}</a></figcaption>{fold}</figure>'
+        cards += f'<figure class="workshop" id="toy-{esc(sid)}">{pic}<figcaption><a href="/toy/{esc(sid)}">{esc(name)}</a></figcaption>{fold}</figure>'
     if not cards:
         return ""
     return f'<section class="panel" id="dekita"><h2 class="mark">{esc(MADE_HEAD)}</h2><div class="workshop-row tiles">{cards}</div></section>'

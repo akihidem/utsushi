@@ -133,10 +133,18 @@ assert roads(after) == ["つくる", "つくる"], ("紙の後の道しるべ", 
 # 感想のある記録（ギャラリーは、写真か言葉の無い記録を札にしない）
 rid, fs = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": "動いた", "impression": "扇がよく開いた"})
 assert not fs, fs
-kiroku = techo_site.records_page(G, msg="上げました")
+# のこすの流れ（本人 11-08 402・405・設計 nokosu-flow 3 版）: 道しるべは記入の節の「のこす」の釦 1 つ（頁のいちばん上の節の最後）。
+# 前の道しるべの「のこす」（/gallery#ageta へのリンク）は外した。承認の後は台本がもちよる（/gallery#ageta）へ飛ぶ。「もちよる」の釦は無い
+# （本人のサイトの見直し 11-07 22:16「もちよる、でなくのこす、というボタンにする。」を、新しい のこす の釦で満たす）
+from web import nokosu  # noqa: E402
+
+kiroku = techo_site.records_page(G, msg="上げました", paper=(GS, 9))
 mine = kiroku[kiroku.index('<div id="mine">'):]
-assert mine.index('<p id="msg">上げました</p>') < mine.index('<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>') < mine.index('class="item"'), "返事の文のすぐ下に「もちよる」"
-assert roads(kiroku) == ["のこす"], roads(kiroku)  # 釦の字は のこす（本人のサイトの見直し 11-07 22:16）。行き先は前のまま
+assert mine.index('<p id="msg">上げました</p>') < mine.index('class="item"'), "返事の文は今までの記録の上"
+assert roads(kiroku) == ["のこす"], roads(kiroku)
+assert '<p class="road"><button type="submit" class="go" id="nk-keep">のこす</button></p>' in kiroku
+assert 'href="/gallery#ageta">のこす' not in kiroku and not re.search(r'class="go"[^>]*>もちよる<', kiroku), "前の道しるべも「もちよる」の釦も無い"
+assert "location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`)" in nokosu.SCRIPT, "承認の後はもちよる（/gallery#ageta）に着く"
 
 # ---- 7 見本の記録（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。畳みも出ない
 withrec = toy.toy_page(G)

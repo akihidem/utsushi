@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_readme_engine.py
+# commit: a8ac4231（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_readme_engine.py", line 54, in <module>
+    assert not heads or m.group(1) == heads[0], ("README の commit が、engine/ に入れたエンジンの頭と違う", m.group(1), heads[:1])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('README の commit が、engine/ に入れたエンジンの頭と違う', '26156d35b02345b130e44708921bbd74f58cb1b9', ['d204a5a4a2d385e0a9fe4c78dd4c010833e58043'])
+rc=1

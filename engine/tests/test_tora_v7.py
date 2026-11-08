@@ -201,3 +201,35 @@ t0, t1 = pc.swing_range(v6)
 bad = worst(d6, v6, [t0 + (t1 - t0) * k / 40 for k in range(41)])
 assert bad[0] < 0 and bad[2] < 0, bad  # v6 の 3D は、同じ確かめで玉と頭が前の壁に入る（負の対照）
 print("ok 虎 v7（揺れても当たらない: 粘土の玉 %.1f・腕 %.1f・頭 %.1f・首の帯 %.1fmm。v6 は玉 %.1f・頭 %.1fmm）" % (*got, neck3d, bad[0], bad[2]))
+
+# 虎 v8（examples/tora_v8.json）: テープを使わない新しい版。材料の前提（2026-11-07 の設計の条件。テープは樹脂の側）と、
+# 制作者の言葉（2026-11-08）「対応する。」（型紙の再設計の答えへ）による。v7 の寸法に arm_hold="finger" を足しただけで、
+# 重りの腕を、テープでなく指で押さえて仮に止め、帯に鉛筆で腕の位置の印を付ける。テープは作る途中の仮留めだけなので、部品の形は v7 と同じ
+import json as _json
+from omochae.compose import compose as _compose
+from omochae.__main__ import load_source as _load
+_ex = lambda n: _json.loads((ROOT / f"examples/{n}.json").read_text(encoding="utf-8"))
+t7, t8 = _ex("tora_v7"), _ex("tora_v8")
+assert t8["version"] == 8 and t8["params"] == {**t7["params"], "arm_hold": "finger"}, t8
+assert "arm_hold" not in t7["params"]  # デモの v7 は前のまま（既定の tape）
+q7, q8 = ({**pc.DEFAULTS, **t["params"]} for t in (t7, t8))
+shape = lambda p: [(q.key, q.outline, q.holes, q.cuts) for q in pc.parts(p)]
+assert shape(q8) == shape(q7), "v8 の部品の形が v7 と違う"
+m8, m7 = " ".join(pc.materials(q8)), " ".join(pc.materials(q7))
+assert "テープ" not in m8 and "鉛筆" in m8 and "カッター" in m8, m8
+assert "セロハンテープ" in m7, m7
+st8 = pc.steps(q8)
+assert len(st8) == len(pc.steps(q7)) and any("指で押さえて仮に止める" in s for s in st8), st8
+# 鉛筆の印は、頭の傾きを見て位置を決めた後に付ける（傾きを見る前に印を付けると、位置を直した時に印が古い位置に残る。見直しの指摘）
+i_hold = next(i for i, s in enumerate(st8) if "指で押さえて仮に止める" in s)
+i_mark = next(i for i, s in enumerate(st8) if "鉛筆で腕の位置の印" in s)
+assert i_mark == i_hold + 1 and st8[i_mark].index("傾きを見て") < st8[i_mark].index("鉛筆で") < st8[i_mark].index("貼る"), st8[i_hold:i_mark + 1]
+assert "鉛筆" not in st8[i_hold], st8[i_hold]
+assert pc.steps(q7)[i_mark] == "頭の傾きを見て腕の位置を決めてから、腕を 3 首の帯に貼る"  # デモの v7 の手順は前のまま
+assert not any("テープ" in s for s in st8), st8
+_, lay8, fails8 = _compose("pivot_counterweight", t8["params"], _load(t8["source_id"]), version=8)
+assert not fails8, [f.line() for f in fails8]
+assert any(t.text and t.text.endswith("版 8") for t in lay8["texts"]), "題が版 8 でない"
+assert pc.check_range({**q8, "arm_hold": "clip"}) and not pc.check_range(q8)  # 仮に止める物は tape と finger だけ
+assert pc.spec()["arm_hold"] == ("tape", "finger")  # 仕様の道具にも選び肢を出す（見直しの指摘）
+print("ok 虎 v8（テープを使わず、指で押さえて鉛筆で印・部品は v7 と同じ）")

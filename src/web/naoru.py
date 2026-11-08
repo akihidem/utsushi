@@ -10,8 +10,10 @@
   （利用者に見える新しい字は本人の確かめの線なので、字を外して作りだけを残す時の形）。字を替える時は LINES だけを直す。
 - **説明は 2〜3 行。** のこす の画面は 1 手 1 画面で押す所が 3 つの頁なので、説明を長くしない（tests/test_naoru.py が行の数を見る）。
   枠は「のこす」の釦の下なので、釦の位置は枠の有り無しで変わらない。
-- **山場の 1 行は、改善の歴史の表の字をそのまま写した data/kaizen/highlight.json から引く。** 表は型紙エンジンの記録から作った物で repo の外にあり、
-  審査の人は utsushi だけを clone するので、頁に出す 1 行と出どころを repo に写す。字を作り替えない（表の字のまま。題の形だけここで組む）。
+- **記録の頁には、記録と声から直った例の集を出す**（本人 11-08「のこす、3D で組んで見つかった当たりを直し、頭が揺れても前の壁に当たらない
+  （張子の首振り虎 型紙の版 7）が唐突。これで参考になったこと、集みたいな感じで何個か例示して。」）。前は虎 版 7 の山場の 1 行だけだった。
+  例は data/kaizen/examples.json に、改善の歴史の表（data/history/kaizen-history.json）のその版の why と changed の字のまま写す（作り替えない。
+  試験が表と 1 字ずつ照らす）。見出しと最後の 1 行は本人の OK の字（EXAMPLES_HEAD・FIXED_BY）。
 - **枠は 1 か所（box）で作り、2 つの頁が同じ物を呼ぶ。** 頁ごとに字を持つと、片方だけ直した時に食い違うため。
 - **手帖の作る頁の決まりを守る。** 手帖の 1 手 1 画面の字には、記録の番号・「の紙」・版の名を出さない（本人の決定 11-05、#87）。
   のこす の画面もその頁の中なので、字がこの決まりに当たる時は手帖には枠を出さず（記録の頁には出す）、山場の 1 行（型紙の版の名を持つ）は手帖では添えない。
@@ -52,25 +54,32 @@ KEEP_HINT = "ひとことの感想でも（『ここがむずかしかった』�
 # 字は本人の確かめ待ちの案（作りを先に）。空にすると、その道の字は出ない（頁は前と同じ）
 ROUTE_MAKING = "つくるところを、写真と声でのこせます。"
 ROUTE_DONE = "できたら、のこそう"
+# のこす の大きな釦の上に置く 1 行（本人の答え 11-08「B。」・本人の字そのもの）。作りながら見る頁の最後の手順（web.tsukuru）と、玩具の頁の型紙の窓の
+#「つくる」の直後（つくるの作り直しの枝）の 2 か所が、この 1 か所の字を読む（字の元を 1 つにする）
+ROUTE_ASK = "どう工夫したかあとで教えてください。写真や動画でもいいです。"
 
 
 def purpose():
     """道に添える意義の 1 文。のこす の画面の枠の 1 行目と同じ字（LINES[0]）で、字の元を 1 つにする。LINES を空にした時は出さない。"""
     return LINES[0] if LINES else ""
-HIGHLIGHT = ROOT / "data/kaizen/highlight.json"
+EXAMPLES = ROOT / "data/kaizen/examples.json"
+# 例の集の見出しと最後の 1 行（本人の OK 11-08・統括を通して）。最後の 1 行は、作品の中の AI がひとりでに記録を読んで直したと読まれないよう、
+# 記録を Claude に渡した事を言う形（別の目の気づき B5 の後の本人の答え）。型紙の版は全部 Claude が直した事と合う
+EXAMPLES_HEAD = "のこした記録から直った所"
+FIXED_BY = "記録を Claude に渡して、Claude が直しました。どの版にするかは人が決めました。"
 
 
-def highlight():
-    """山場の 1 行（表の字に、玩具と型紙の版を添えた形）。data が無いか読めない時は空（枠の説明だけを出す）。
+def examples():
+    """例の集の行（声 → 直った所（玩具 型紙の版 N））。data が無いか読めない時は空（枠の説明だけを出す）。
 
-    型紙の版は「型紙の版 7」の形（v を付けない）。玩具の頁の型紙の札の脇と輪の図の真ん中が出す形（組の番号・紙の題に刷る数と同じ。
-    窓口の決定 (a)、#513）にそろえる。前は「型紙の版 v7」で、同じサイトの中で書き方が 2 つあった
+    型紙の版は「型紙の版 8」の形（v を付けない）。玩具の頁の型紙の札の脇と輪の図の真ん中が出す形（組の番号・紙の題に刷る数と同じ。
+    窓口の決定 (a)、#513）にそろえる
     """
     try:
-        h = json.loads(HIGHLIGHT.read_text(encoding="utf-8"))
-        return f"{h['line']}（{h['toy']} 型紙の版 {h['sheet_version']}）"
+        rows = json.loads(EXAMPLES.read_text(encoding="utf-8"))["examples"]
+        return [f"{e['voice']} → {e['change']}（{e['toy']} 型紙の版 {e['sheet_version']}）" for e in rows]
     except (OSError, ValueError, KeyError, TypeError):
-        return ""
+        return []
 
 
 # 手帖の作る頁（1 手 1 画面）の字に出さない印（本人の決定 11-05、#87「作る頁の字に記録の番号と「の紙」を出さない」。版の名も出さない。
@@ -86,8 +95,8 @@ def techo_ok(lines):
 
 def box(techo=False):
     """のこす の画面（techo=True。字は TECHO_LINES）と記録の頁（字は LINES）に置く枠の HTML。字が空なら空の文字列。
-    手帖の画面では、字が作る頁の決まり（TECHO_BANNED）に当たる時は枠を出さず（決まりを字の入れ替えで崩さない守り）、山場の 1 行（型紙の版の名を持つ）も添えない。
-    記録の頁は前から「A の紙」と版を出す頁なので、字と山場の 1 行をそのまま出す。
+    手帖の画面では、字が作る頁の決まり（TECHO_BANNED）に当たる時は枠を出さず（決まりを字の入れ替えで崩さない守り）、例の集（型紙の版の名を持つ）も添えない。
+    記録の頁は前から「A の紙」と版を出す頁なので、字と例の集をそのまま出す。
     見た目は頁の枠の色（--frame）の細い線で囲む。手帖と記録の頁は別の CSS を持つので、どちらの頁でも同じに見えるよう、ここで style を持つ。"""
     lines = TECHO_LINES if techo else LINES
     if not lines:
@@ -96,8 +105,8 @@ def box(techo=False):
     lines = ((WHAT,) if WHAT else ()) + tuple(lines)
     if techo and not techo_ok(lines):
         return ""
-    hl = "" if techo else highlight()
+    rows = [] if techo else examples()
+    shu = (f'<h3 style="margin:8px 0 4px;font-size:1em">{esc(EXAMPLES_HEAD)}</h3><ul class="naoru-rei" style="margin:0 0 4px;padding-left:1.2em">'
+           + "".join(f'<li class="meta">{esc(t)}</li>' for t in rows) + f'</ul><p class="meta" style="margin:4px 0 0">{esc(FIXED_BY)}</p>') if rows else ""
     return ('<aside class="naoru" style="border:1px solid var(--frame);padding:10px 12px;margin:0 0 12px;text-align:left">'
-            + "".join(f'<p style="margin:0 0 4px">{esc(t)}</p>' for t in lines)
-            + (f'<p class="meta" style="margin:6px 0 0">{esc(hl)}</p>' if hl else "")
-            + "</aside>")
+            + "".join(f'<p style="margin:0 0 4px">{esc(t)}</p>' for t in lines) + shu + "</aside>")

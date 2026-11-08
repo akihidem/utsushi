@@ -82,3 +82,29 @@ row13 = max(by13[k].y + by13[k].height for k in ("base", "figure", "cradle"))
 assert row13 <= by13["pusher"].y + by13["pusher"].height  # v13 は右の段が左の列より上で終わる（前の置き方のまま）
 assert min(tb.y for tb in body13) >= by13["pusher"].y + by13["pusher"].height
 print("ok 御来迎 v14（扇はまるごと倍・内筒の隙間 0.75mm・置き方）")
+
+# 御来迎 v15（examples/goraigo_v15.json）: テープを使わない新しい版。材料の前提（2026-11-07 の設計の条件。テープは樹脂の側、
+# 接着剤は使ってよい）と、制作者の言葉（2026-11-08）「対応する。」（型紙の再設計の答えへ）による。v14 の寸法に stick_fix="glue" を
+# 足しただけで、割り箸を内筒に留める物を、セロハンテープから木工用ボンドにする。部品の形は v14 と同じ。デモの v14 は変えない
+import json as _json
+from omochae.compose import TEMPLATES as _T, compose as _compose
+from omochae.__main__ import load_source as _load
+_tpl = _T["slider_fan"]
+_ex = lambda n: _json.loads((ROOT / f"examples/{n}.json").read_text(encoding="utf-8"))
+g14, g15 = _ex("goraigo_v14"), _ex("goraigo_v15")
+assert g15["version"] == 15 and g15["params"] == {**g14["params"], "stick_fix": "glue"}, g15
+assert "stick_fix" not in g14["params"]  # デモの v14 は前のまま（既定の tape）
+p14, p15 = ({**_tpl.DEFAULTS, **g["params"]} for g in (g14, g15))
+shape = lambda p: [(q.key, q.outline, q.holes, q.cuts) for q in _tpl.parts(p)]
+assert shape(p15) == shape(p14), "v15 の部品の形が v14 と違う"
+m15, m14 = " ".join(_tpl.materials(p15)), " ".join(_tpl.materials(p14))
+assert "テープ" not in m15 and "木工用ボンド（割り箸を貼る）" in m15, m15
+assert "セロハンテープ（割り箸を留める）" in m14, m14
+st15 = _tpl.steps(p15)
+assert len(st15) == len(_tpl.steps(p14)) and any("木工用ボンドで貼る" in s for s in st15) and not any("テープ" in s for s in st15), st15
+_, lay15, fails15 = _compose("slider_fan", g15["params"], _load(g15["source_id"]), version=15)
+assert not fails15, [f.line() for f in fails15]
+assert any(t.text and t.text.endswith("版 15") for t in lay15["texts"]), "題が版 15 でない"
+assert _tpl.check_range({**p15, "stick_fix": "nail"}) and not _tpl.check_range(p15)  # 留める物は tape と glue だけ
+assert _tpl.spec()["stick_fix"] == ("tape", "glue")  # 仕様の道具にも選び肢を出す（見直しの指摘）
+print("ok 御来迎 v15（テープを使わず、木工用ボンドで割り箸を貼る・部品は v14 と同じ）")

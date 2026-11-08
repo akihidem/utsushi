@@ -1,0 +1,34 @@
+{
+ "about": "のこすの頁の「のこした記録から直った所」（本人 11-08「…唐突。これで参考になったこと、集みたいな感じで何個か例示して。」・src/web/naoru.py が読む）。声と直った所は改善の歴史の表（data/history/kaizen-history.json）のその版の why と changed の字のまま写し、作り替えない",
+ "source": "data/history/kaizen-history.json",
+ "examples": [
+  {
+   "toy": "御来迎",
+   "sheet_version": 8,
+   "set": "goraigo-v8",
+   "voice": "「くり抜く側面の穴を切るのが大変」",
+   "change": "溝は下の端からはさみで切り込む形（くり抜かない。カッター不要）"
+  },
+  {
+   "toy": "御来迎",
+   "sheet_version": 8,
+   "set": "goraigo-v8",
+   "voice": "「谷折り、山折りがわからない」",
+   "change": "凡例に「谷折り（手前にへこむ）」「山折り（手前に出る）」"
+  },
+  {
+   "toy": "御来迎",
+   "sheet_version": 9,
+   "set": "goraigo-v9",
+   "voice": "「見た目のクオリティが低く見えるのは、谷折り線とか入ってるからじゃない？」",
+   "change": "見える面（1 外筒と 4 扇）の折り線を刷らず、絵の色の境で折る"
+  },
+  {
+   "toy": "張子の首振り虎",
+   "sheet_version": 4,
+   "set": "tora-v4",
+   "voice": "作った人は紙の玉を糸で下げた",
+   "change": "5 腕に、粘土を付ける下の穴と点の線を足した（釣り合いの式の重りの所と同じ）"
+  }
+ ]
+}

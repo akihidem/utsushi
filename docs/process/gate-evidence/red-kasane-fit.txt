@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_hmd.py
+# commit: 21583c61（回した時の HEAD）
+/tmp/tmp37x58c_a/play/NDL-1187053-R0000005-L/.tmp-41jjez4e/H-C_v1.pdf
+/tmp/tmp37x58c_a/play/NDL-1187053-R0000014-R/.tmp-8tvfae39/H-A_v1.pdf
+/tmp/tmp37x58c_a/play/NDL-1187053-R0000005-L/.tmp-7dcv3r85/H-C_v1.pdf
+/tmp/tmp37x58c_a/play/NDL-1187053-R0000014-R/.tmp-4ksakex5/H-A_v1.pdf
+/tmp/tmp37x58c_a/play/NDL-1187053-R0000004-L/.tmp-rn9b3vqq/H-A_v1.pdf
+英語の頁の最初の画面（数だけ）: 0005-L 320×568 はじめるの下の端 555・0014-R 320×568 はじめるの下の端 555・0004-L 320×568 はじめるの下の端 512・0005-L 375×667 はじめるの下の端 611・0014-R 375×667 はじめるの下の端 611・0004-L 375×667 はじめるの下の端 611
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 440, in <module>
+    assert isinstance(got, dict), ("歩き始めたのに終わらなかった", name, got)
+           ~~~~~~~~~~^^^^^^^^^^^
+AssertionError: ('歩き始めたのに終わらなかった', '縦・重ねる', None)
+rc=1
