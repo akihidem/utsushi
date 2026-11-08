@@ -20,11 +20,12 @@ ID = "pivot_counterweight"
 HYP_KEY = "mount"
 # tora-v5 と tora-v6 は刷らずに飛ばした（v5 は統括の読み 11-06。v6 は当たり 2 つを v7 で直したので、窓口の決定 2026-11-07 で飛ばした。
 # どちらもサイトでは誰にも刷っていない）
-SHEET_SET = "tora-v7"
+SHEET_SET = "tora-v8"
 # 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。前の字（凡例・印の文・手順）で刷る最初の組
 FROZEN_SET = "tora-v3"
 # 紙を控えに残す前の組の並び（古い順。compose.kept_sets）。次の組に上げる時は、今の組をこの並びの後ろに足す（前の組の紙は変えない）
-KEPT_SETS = (FROZEN_SET, "tora-v4")
+# tora-v7 は、テープを使わない tora-v8 に上げた後も控える（ワークショップで試した組。凍結の床が前の指紋のまま刷れる事を見る）
+KEPT_SETS = (FROZEN_SET, "tora-v4", "tora-v7")
 # この番号から、作りを型紙エンジンの写し（_tora_v6。中身は今の組 tora-v7 の写し）に替える。前の組の作りはこの雛形に残す
 V6 = 6
 
@@ -51,9 +52,11 @@ def _by_set(fn):
 
 
 # tora-v6 から（脚・角・顔の数）と tora-v7 から（粘土の下の穴を後ろへ・軸を前の壁から離す・当たりの検査）の寸法の既定。型紙エンジンと同じ
-NEXT_DEFAULTS = {"leg_height": 0, "body_round": 0, "head_sides": 1, "clay_back": 0, "axle_back": 6, "fit_check": 0}
+# arm_hold は tora-v8 からの寸法（重りの腕を仮に止める物。型紙エンジンの 90c4ba0 と同じ・_tora_v6 の DEFAULTS と同じ値にそろえる）
+NEXT_DEFAULTS = {"leg_height": 0, "body_round": 0, "head_sides": 1, "clay_back": 0, "axle_back": 6, "fit_check": 0, "arm_hold": "tape"}
 # 学ぶ人の考えの節に出さない寸法（web.think_sheet.shown）。当たりの検査の印は寸法でないので（窓口の決定 2026-11-07）
-UNSHOWN_PARAMS = ("fit_check",)
+# 腕を仮に止める物（arm_hold）も寸法の数でないので出さない（組み方の文と用意する物に出る）
+UNSHOWN_PARAMS = ("fit_check", "arm_hold")
 
 DEFAULTS = {
     "mount": "neck",

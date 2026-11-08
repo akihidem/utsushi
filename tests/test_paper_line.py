@@ -70,7 +70,10 @@ assert any(c[2] == "stand_figure" and ways.details(c[2], c[3])["one_sheet"] for 
 # 5. 虎の前の組（控えの組）は前の字のまま刷る（凍結の床の指紋も tests/test_floor_pin.py が見る）
 tiger = TEMPLATES["pivot_counterweight"]
 now = tiger.SHEET_SET
-for kept in tiger.KEPT_SETS:
+# 前の字で刷るのは、11-07 の時に控えていた組（tora-v3・tora-v4）。11-08 に控えに入った tora-v7（テープを使わない tora-v8 に上げた）は
+# 今の組だった時の字のまま控えてある（hypotheses.OLD_TITLE_SETS と同じ見分け）
+from omochae.hypotheses import OLD_TITLE_SETS
+for kept in [s for s in tiger.KEPT_SETS if s in OLD_TITLE_SETS]:
     tiger.SHEET_SET = kept
     try:
         assert lines("pivot_counterweight", {"mount": "neck"})[0] == TORA_OLD, kept

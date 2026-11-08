@@ -43,6 +43,8 @@ FROZEN = {
     # 御来迎の次の組（goraigo-v14）でも、E は刷らないヒントの形のまま（たたき台は H-C）。手順の穴あけの文を外すと新しい字になるので、
     # E を使う時まで今の字を残す（型紙エンジンの字と同じ）
     (GORAIGO, "goraigo-v14"): {"H-E": ["竹串"]},
+    # 今の組 goraigo-v15 は v14 と同じ部品で、割り箸を木工用ボンドで貼る版（11-08）。E の扱いは v14 と同じ
+    (GORAIGO, "goraigo-v15"): {"H-E": ["竹串"]},
 }
 
 # 部品に穴があるのに、手順にあけ方の文が無い案。台の穴に竹串を通す形で、文を足すと新しい字になるので、今は足さない。
@@ -113,7 +115,7 @@ for sid, hid, _, tpl, p in all_cases:
     if any("穴あけ" in str(m) for m in tpl.materials(p)):
         assert any(q.holes for q in tpl.parts(p)), ("穴の無い案に穴あけの字がある", sid, hid)
     if says_missing_hole(tpl, p):
-        assert (sid, hid) == (GORAIGO, "H-E") and tpl.SHEET_SET in ("goraigo-v10", "goraigo-v14"), ("穴の無い案の手順に穴の字がある", sid, hid)
+        assert (sid, hid) == (GORAIGO, "H-E") and tpl.SHEET_SET in ("goraigo-v10", "goraigo-v14", "goraigo-v15"), ("穴の無い案の手順に穴の字がある", sid, hid)
 # 反対の向き: 部品に穴がある案は、あけ方の文を消さない
 named = {(sid, hid) for sid, hid, _, tpl, p in all_cases if lacks_poke_words(tpl, p)}
 assert named == NO_POKE_WORDS, ("穴があるのにあけ方の文が無い、または例外が古い", named ^ NO_POKE_WORDS)

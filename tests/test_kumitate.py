@@ -22,7 +22,7 @@ G = "NDL-1187053-R0000005-L"
 # （つまみの形だけを書いてある）は、控えの組 goraigo-v10 に雛形を置いて前と同じに見る（v14 に上げても v10 の 3D が変わらない事も見る）
 from omochae import assembly_json  # noqa: E402
 
-assert slider_fan.SHEET_SET == "goraigo-v14" and isinstance(assembly.assemble(G), assembly_json.Shown)
+assert slider_fan.SHEET_SET == "goraigo-v15" and isinstance(assembly.assemble(G), assembly_json.Shown)
 slider_fan.SHEET_SET = slider_fan.FROZEN_SET
 P = {**slider_fan.DEFAULTS, **hypotheses.sheet_of(G).get("params", {})}
 bench = assembly.assemble(G)
@@ -281,7 +281,7 @@ from omochae.templates import pivot_counterweight  # noqa: E402
 # 控えの組 tora-v4 に雛形を置いて前と同じに見る（今の組に上げても v4 の 3D が変わらない事も見る）
 from omochae import assembly_json  # noqa: E402
 
-assert pivot_counterweight.SHEET_SET == "tora-v7" and isinstance(assembly.assemble(T), assembly_json.Shown)
+assert pivot_counterweight.SHEET_SET == "tora-v8" and isinstance(assembly.assemble(T), assembly_json.Shown)
 pivot_counterweight.SHEET_SET = "tora-v4"
 tora = assembly.assemble(T)
 tora_p = {**TEMPLATES["pivot_counterweight"].DEFAULTS, **(hypotheses.sheet_of(T).get("params") or {})}
@@ -330,6 +330,6 @@ assert arm.part.label == "5 重りの腕" and [t for _, _, t in drawn] == ["5 �
 from omochae.textfit import text_width  # noqa: E402
 assert all(float(x) + text_width(t, 2.8) <= arm.part.width + 1e-6 for x, _, t in drawn), ("札の字が腕の面からはみ出す", drawn)
 assert [float(y) for _, y, _ in drawn] == sorted(float(y) for _, y, _ in drawn), ("札の字が上から順に並ばない", drawn)
-pivot_counterweight.SHEET_SET = "tora-v7"
-slider_fan.SHEET_SET = "goraigo-v14"
+pivot_counterweight.SHEET_SET = "tora-v8"
+slider_fan.SHEET_SET = "goraigo-v15"
 print("ok")

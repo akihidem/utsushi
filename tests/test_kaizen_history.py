@@ -54,8 +54,8 @@ for tpl in (FAN, TIGER):
     assert [r["now"] for r in rows] == [False] * (len(rows) - 1) + [True] and rows[-1]["set"] == tpl.SHEET_SET, [(r["set"], r["now"]) for r in rows]
     assert all(r["line"] and r["engine_version_text"] and r["sheet_image"] for r in rows), "額の下の字と絵の名は表の行にある"
 # 表は 11-07 11:42 の版から、改善の輪より前の版（虎 v1・v2、御来迎 v1〜v9。サイトの repo の記録から）も持つ
-assert [r["set"] for r in kh.versions("pivot_counterweight")] == [f"tora-v{n}" for n in range(1, 8)]
-assert [r["set"] for r in kh.versions("slider_fan")] == [f"goraigo-v{n}" for n in range(1, 15)]
+assert [r["set"] for r in kh.versions("pivot_counterweight")] == [f"tora-v{n}" for n in range(1, 9)]
+assert [r["set"] for r in kh.versions("slider_fan")] == [f"goraigo-v{n}" for n in range(1, 16)]
 with sets(fan=FAN.FROZEN_SET, tiger=TIGER.FROZEN_SET):
     assert [(r["set"], r["now"]) for r in kh.versions("pivot_counterweight")] == [("tora-v1", False), ("tora-v2", False), ("tora-v3", True)]
     assert [r["set"] for r in kh.versions("slider_fan")][-1] == "goraigo-v10" and len(kh.versions("slider_fan")) == 10
@@ -66,7 +66,8 @@ assert kh.versions("no_such_template") == []
 # 3. エンジンの今の版は、今刷る組が結ぶ版の大きい方
 now = kh.engine_now()
 assert now["engine_version"] == 7 and now["line"] == next(e["line"] for e in data["engine_versions"] if e["engine_version"] == 7)
-with sets(tiger="tora-v4"):
+# 御来迎は今の組 v15（エンジンの版 7）なので、v14（版 6）に置いて見る（11-08 にテープを使わない組へ上げた後）
+with sets(tiger="tora-v4", fan="goraigo-v14"):
     assert kh.engine_now()["engine_version"] == 6, "虎 v4（版 2）と御来迎 v14（版 6）なら 6。表の最新の 7 ではない"
 with sets(fan="goraigo-v13", tiger=TIGER.FROZEN_SET):
     v13 = next(r for r in kh.versions("slider_fan") if r["now"])
@@ -116,6 +117,6 @@ counts = ledger.render_counts()
 assert counts in readme, "README の数の欄が表と雛形から描いた物と違う（python -m omochae.ledger render）"
 # エンジンの版の注は「全部の玩具の型紙に効く」と書かない（3D の確かめは御来迎と虎だけ・エンジンの版 3〜7 は 1 つの玩具の組だけで、言い過ぎ。照らしの止め 11-08・#671）
 assert "全部の玩具の型紙に効く" not in counts and "そのエンジンが作る型紙のどれにも使われる" in counts, counts
-assert "- 型紙の版: 張子の首振り虎 7・御来迎 14（" in counts and "- エンジンの版: 7（" in counts, counts
+assert "- 型紙の版: 張子の首振り虎 8・御来迎 15（" in counts and "- エンジンの版: 7（" in counts, counts
 
 print("ok 改善の歴史の表の写しと読み口（今刷る組まで・エンジンの今の版・絵の名の決まり・写す口・README の数）")

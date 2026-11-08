@@ -193,10 +193,12 @@ assert think_sheet.GO in think_sheet.section(G) and 'action="/toy/' + G + '/thin
 # 節は、たたき台の寸法が全部読める玩具の頁だけ（今は必須 2 種。呼び名を足すと増える）。内部の名前（board_w など）を学ぶ人に見せないため
 T, P = "NDL-1187053-R0000014-R", "NDL-1187053-R0000004-L"
 assert [p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("NDL-*.json")) if think_sheet.ready(p.stem)] == [G, T]
-# 虎のたたき台は今の組（tora-v7）の 12 の寸法。当たりの検査の印（fit_check）は見せない寸法で、ほかはどれも呼び名で読める（呼び名の無い寸法があると節が消える）
+# 虎のたたき台は今の組（tora-v8）の 13 の寸法（v7 の 12 に、腕を仮に止める物 arm_hold を足した・11-08）。当たりの検査の印（fit_check）と
+# arm_hold は見せない寸法で、ほかはどれも呼び名で読める（呼び名の無い寸法があると節が消える）
 assert sorted(words.base_of(T)[1]) == sorted(["mount", "axle_height", "head_w", "weight_below_axle", "leg_height", "body_round", "head_sides",
-                                              "neck_length", "clay_back", "axle_back", "weight_behind", "fit_check"])
+                                              "neck_length", "clay_back", "axle_back", "weight_behind", "fit_check", "arm_hold"])
 assert not think_sheet.shown("pivot_counterweight", "fit_check") and not think_sheet.readable("pivot_counterweight", "fit_check", 1)
+assert not think_sheet.shown("pivot_counterweight", "arm_hold") and not think_sheet.shown("slider_fan", "stick_fix")
 assert all(think_sheet.readable("pivot_counterweight", k, v) for k, v in words.base_of(T)[1].items() if think_sheet.shown("pivot_counterweight", k))
 assert think_sheet.GO not in send(f"/toy/{T}")[1] and think_sheet.GO in think_sheet.section(T)
 code, body, _ = send(f"/toy/{P}")

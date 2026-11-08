@@ -36,7 +36,7 @@ for path in files:
 for sid in (G, T):
     assert json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))["sheet"] == "H-A", sid
 # 御来迎の次の組（goraigo-v14）のたたき台は、柄を下から押し上げる H-C（本人の決定 2026-11-06）。前の組は "sheet" の H-A のまま（hypotheses.sheet_id）
-assert json.loads((ROOT / "data/hypotheses" / f"{G}.json").read_text(encoding="utf-8"))["sheet_by_set"] == {"goraigo-v14": "H-C"}
+assert json.loads((ROOT / "data/hypotheses" / f"{G}.json").read_text(encoding="utf-8"))["sheet_by_set"] == {"goraigo-v14": "H-C", "goraigo-v15": "H-C"}
 assert "sheet_by_set" not in json.loads((ROOT / "data/hypotheses" / f"{T}.json").read_text(encoding="utf-8"))
 
 # 2. sheet_of は記録の欄の仮説を返す。順位の欄は持たない（J-025）

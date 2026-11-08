@@ -43,7 +43,7 @@ try:
         (kh.PICTURES / f"sheets/{name}.png").write_bytes(b"\x89PNG" + name.encode())
 
     # 1. 古い順に並び、最後が今の版。印は今の版だけ
-    for sid, tpl, want in ((T, TIGER, [f"tora-v{n}" for n in range(1, 8)]), (G, FAN, [f"goraigo-v{n}" for n in range(1, 15)])):
+    for sid, tpl, want in ((T, TIGER, [f"tora-v{n}" for n in range(1, 9)]), (G, FAN, [f"goraigo-v{n}" for n in range(1, 16)])):
         html = ban_ayumi.section(sid)
         rows = kh.versions(tpl.__name__.rsplit(".", 1)[1])
         assert [r["set"] for r in rows] == want and rows[-1]["set"] == tpl.SHEET_SET, [r["set"] for r in rows]
@@ -75,7 +75,7 @@ try:
     #    輪の中の版（虎 v4〜v6・御来迎 v11〜v13。本人の言葉 11-08「データが残っているはずなので、探して反映させて欲しい」で、刷った物を置いた）。
     #    前は輪の中の版の絵が git の外の置き場にだけあり、「この版の絵は残っていない」と出ていた。今は全部の版に絵が出る
     imgs = re.findall(r'<img class="ban-pic" src="([^"]+)"', tiger)
-    assert imgs == [f"/history/sheets/tora-v{n}.png" for n in range(1, 8)], imgs
+    assert imgs == [f"/history/sheets/tora-v{n}.png" for n in range(1, 9)], imgs
     none = f'<span class="ban-pic ban-none">{ban_ayumi.NO_PICTURE}</span>'
     assert none not in tiger and '<span class="ban-pic" aria-hidden="true"></span>' not in tiger, "残っていないと出る虎の版は無い"
     for n in (4, 5, 6):
@@ -93,8 +93,8 @@ try:
     assert not (kh.PICTURES / "sheets/tora-v1.png").exists(), "頁を返す時は絵を作らない（作れるかだけを見る）"
     goraigo = ban_ayumi.section(G)
     gimgs = re.findall(r'<img class="ban-pic" src="([^"]+)"', goraigo)
-    assert gimgs == [f"/history/sheets/goraigo-v{n}.png" for n in range(1, 15)] and none not in goraigo, gimgs
-    assert ban_ayumi.COUNT.format(first=1, last=7, n=7) in tiger and ban_ayumi.COUNT.format(first=1, last=14, n=14) in ban_ayumi.section(G)
+    assert gimgs == [f"/history/sheets/goraigo-v{n}.png" for n in range(1, 16)] and none not in goraigo, gimgs
+    assert ban_ayumi.COUNT.format(first=1, last=8, n=8) in tiger and ban_ayumi.COUNT.format(first=1, last=15, n=15) in ban_ayumi.section(G)
     assert ban_ayumi.picture_file("tora-v7") == kh.PICTURES / "sheets/tora-v7.png"
     assert ban_ayumi.picture_file("tora-v99") is None and ban_ayumi.picture_file("../x") is None and ban_ayumi.picture_file("tora-v7.png/..") is None
     made = ban_ayumi.picture_file("tora-v3")  # 求められた時に、刷った PDF の 1 枚目から小さい写しを作る
