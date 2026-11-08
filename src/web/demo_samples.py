@@ -10,6 +10,8 @@
 import html
 import os
 
+from omochae.hypotheses import SHOWN
+
 NOTE = "デモ用の作り物です。実在の人の投稿・言葉・写真ではありません。"
 
 
@@ -22,6 +24,8 @@ def esc(s):
 
 
 # 上げた物の見本の絵。写真に見えない線画にして、本物の上げた物と取り違えないようにする。地と線は皮の色で描く。固定の色だと、黒のジンで白い箱が頁から浮いた（#139）。
+# 見本の札の紙の呼び名は「仮説の紙」（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」）。
+# 見本の "sheet"（A・C）は見本の中の印として残し、頁には出さない
 def _svg(label, inner):
     return f'<svg viewBox="0 0 160 110" role="img" aria-label="見本の線画（{label}）"><rect width="160" height="110" fill="var(--soft)"/>{inner}</svg>'
 
@@ -145,7 +149,7 @@ def badge():
 def uploads_html():
     if not enabled():
         return ""
-    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["toy"])}　{esc(u["sheet"])} の紙　{esc(u["result"])}</p>'
+    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["toy"])}　{esc(SHOWN)}の紙　{esc(u["result"])}</p>'
                     f'<div class="row">{u["pic"]}</div><p>{esc(u["note"])}</p></div>' for u in UPLOADS)
     return f'<div class="samples"><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
 
@@ -156,7 +160,7 @@ def uploads_for(toy):
     mine = [u for u in UPLOADS if u["toy"] == toy] if enabled() else []
     if not mine:
         return ""
-    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(u["sheet"])} の紙　{esc(u["result"])}</p>'
+    items = "".join(f'<div class="item is-sample"><p class="meta">{badge()} 見本 {u["no"]:02d}　{esc(SHOWN)}の紙　{esc(u["result"])}</p>'
                     f'<div class="row">{u["pic"]}</div><p>{esc(u["note"])}</p></div>' for u in mine)
     return f'<div class="samples"><h3>見本の記録</h3><p class="meta">{badge()} {esc(NOTE)}</p>{items}</div>'
 

@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-names-red/goraigo.json data/i18n/en.json; .venv/bin/python tests/test_en_terms.py'
+# commit: bc6d0cb0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 107, in <module>
+    assert not bad, ("御来迎は Goraigo", bad[:5])
+           ^^^^^^^
+AssertionError: ('御来迎は Goraigo', ['「南無阿弥（陀仏）」に掛けた言い方で、阿弥陀さまの御来迎から、飴細工の鳥へつないでいます（有坂与太郎『日本玩具史 後編』 {0} 頁より）。', '御来迎を拝むにつけても、怠けずにいよう。朝に夕に、南無あめの鳥。', '飴で作った鳥。飴を吹いてふくらませ、鳥の形にして色を付けた物です（精選版 日本国語大辞典より）。この絵の、棒の先の鳥です（有坂与太郎『日本玩具史 後編』 {0} 頁の図の題「御來迎・飴細工の鳥」より）。'])
+rc=1
