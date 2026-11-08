@@ -442,6 +442,9 @@ class Handler(BaseHTTPRequestHandler):
     def _gate(self):
         """合言葉の門。public_key がある時だけ働く。URL を知っただけの人に記録と写真を見せないため。通れば True、断った時は返事を送って False。
         合言葉は最初の 1 回だけ ?k= で受け、Cookie に移して URL から消す（履歴や画面に長く残さない）。"""
+        # 安全の事項 1（参加者と管理者の権限の分離）・11（しおりの範囲）: しおりだけで門を通った画面は、そのしおりの印を控えて、管理の面と
+        # 変える口を断る（_shiori_refuse）。要求ごとに空にする（http.server は 1 本のつなぎで続けて要求を受けるので、前の要求の値を残さない）
+        self._shiori_screen = None
         key = getattr(self.server, "public_key", None)
         if not key:
             return True
@@ -463,6 +466,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if jar.get(shiori_open.COOKIE) and shiori.fresh(jar[shiori_open.COOKIE]):
             shiori.touch(jar[shiori_open.COOKIE])
+            self._shiori_screen = jar[shiori_open.COOKIE]  # しおりだけの画面（合言葉の cookie は上で照らして無かった）
             return True
         path, _, query = self.path.partition("?")
         given = urllib.parse.parse_qs(query).get("k", [""])[0]
@@ -474,6 +478,27 @@ class Handler(BaseHTTPRequestHandler):
         # 合言葉を落とした人が最初に見る頁。帯もリンクも出さず、頁の中身と玩具の名前を見せない
         self._refuse(403, "合言葉付きのリンクから開いてください。リンクを渡した人に聞いてください。", "合言葉が要ります", links=(), bare=True)
         return False
+
+    def _shiori_refuse(self):
+        """しおりだけで門を通った画面の範囲を、そのしおりに結ばれた記録に閉じる（安全の事項 1・11）。断ったら True。
+        - 管理の面（/loop・/loop/<印>・/loop/ayumi。工作の様子・他の人の聞いた事と感想が読める作る側の頁）は開かない
+        - 型紙の次の版を作る口と AI の口（/record/<番号>/next・ai-interpret・ai-observe）は送れない
+        - ほかの /record/<番号>/ への送り（説明・写真の上げなど）は、そのしおりに結ばれた記録だけ
+        合言葉の画面と、合言葉の設定が無い手元の場は、何も替えない（見た目と挙動を替えない・本人の条件）。
+        写真の GET（/record/<番号>/media/…）は今の見せる線（media_review.shown_to: 人が物だけと確かめた物は場の誰にでも）のまま。"""
+        screen = getattr(self, "_shiori_screen", None)
+        if screen is None:
+            return False
+        path = self.path.partition("?")[0]
+        bad = path.startswith("/loop") or bool(re.fullmatch(r"/record/R-\d{4,}/(?:next|ai-interpret|ai-observe)", path))
+        if not bad and self.command == "POST":
+            m = re.fullmatch(r"/record/(R-\d{4,})/.*", path)
+            if m:
+                from omochae import shiori
+                bad = m.group(1) not in shiori.records_of(screen)
+        if bad:
+            self._refuse(403, "受け付けられません")
+        return bad
 
     def _pick_look(self):
         """この要求の皮。サーバを立てた時に 1 つに決める（serve の look、命令の --look）。
@@ -544,6 +569,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        if self._shiori_refuse():
+            return
         path, _, query = self.path.partition("?")
         qs = urllib.parse.parse_qs(query)
         look = self._look
@@ -1005,6 +1032,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
+        if self._shiori_refuse():
+            return
         if getattr(self.server, "public_open", False) and re.fullmatch(r"/s/[A-Za-z0-9_-]{22}", self.path):
             # 公開の場ではしおりを開かない。フォームを読む前・書き込みの数の前に断り、照らさず数えない（開く道の設計 7.2 の 1）
             from . import shiori_open
