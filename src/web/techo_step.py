@@ -111,6 +111,8 @@ button,input,textarea,select{font-family:inherit}
 #note:empty{display:none}
 .how{display:none}
 .te-local .how.is-local,.te-browser .how.is-browser{display:inline}
+/* 英語の頁では、声の断りの 2 つの文（どこで字にするか・名前は言わない）の間に空白を置く。日本語は文の間に空白を置かないので、要素の間に空白は無い */
+html[lang=en] .how.is-local.is-browser::before{content:" "}
 .keys{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px))}
 .key{min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin:0;padding:6px;font:inherit;font-size:18px;font-weight:600;text-align:center;border:2px solid var(--accent);border-radius:0;background:var(--paper);color:var(--fg);cursor:pointer;position:relative}
 .key.go{min-height:96px;background:var(--accent);color:var(--onaccent);font-size:26px}
@@ -128,7 +130,9 @@ button,input,textarea,select{font-family:inherit}
    （押す所の名前は 6 つの決定。マイクと閉じる印と同じ、形だけの押す所）。押すと頁の中で大きく重ね、どこを押しても閉じる。
    置き場は、マイクと閉じる印の並ぶ上の帯（手順の絵は上から 84px より下に描く）。前は閉じる印の下に置き、375×667 で御来迎の手順 1〜3 の絵の角を隠した */
 .genga-thumb{position:absolute;top:12px;right:88px;width:64px;height:64px;padding:2px;margin:0;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);z-index:3;cursor:zoom-in}
-.kasane-go{position:absolute;top:12px;right:164px;width:64px;height:64px;display:grid;place-items:center;box-sizing:border-box;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3}
+.kasane-go{position:absolute;top:12px;left:88px;width:64px;height:64px;display:grid;place-items:center;align-content:center;gap:1px;box-sizing:border-box;padding:2px 0;border:2px solid var(--frame);background:var(--paper);color:var(--fg);z-index:3;text-decoration:none}
+.kasane-go svg{width:24px;height:24px}
+.kasane-go span{display:block;width:4.2em;font-size:12px;line-height:1.15;text-align:center;letter-spacing:0}
 .genga-thumb img{display:block;width:100%;height:100%;object-fit:contain}
 .te-genga{max-width:96vw;max-height:96vh;max-height:96svh;overflow:auto;padding:10px;border:0;background:var(--paper);color:var(--fg)}
 .te-genga::backdrop{background:rgba(0,0,0,.82)}
@@ -588,7 +592,12 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             # 重ねる頁への道（本人の答え 11-08「どこかに道を戻す。」）。前は最初の画面の「はじめる」の下の字の道だったが、のこせる の 1 行と入れ替えた（#612）。
             # 作りながら使う所なので手順の画面に置く。手順の画面の押す所は もどる・つぎ・こまった の 3 つまで（1 手 1 画面の決まり・test_techo_step）なので、
             # 閉じる印・原画の小さな絵と同じ、字の無い形の印を上の帯に並べる（読み上げは今の口の名 hmd.CAM_LINK・新しい字なし）。組み立ての書き方がある玩具だけ
-            + (f'<a class="kasane-go" id="kasane-go" href="/toy/{esc(sid)}/kasane" aria-label="{esc(hmd.CAM_LINK)}" data-on="step">{KASANE}</a>' if hmd.available(sid) else '')
+            # 印の下に見える字で同じ口の名を添える（本人の答え 11-08「印に「カメラに重ねる」の字を足す。」・前からの字）。title にも同じ字（統括の決め 11-08）。
+            # 字は 12px（統括の決め 11-08「読める大きさ（帯のほかの字と同じか 12px 以上）」）。12px の 7 字（84px）は帯の空きに 1 行で入らないので、
+            # 印の中で「カメラに」「重ねる」の 2 行にする（字の幅を 4 字に絞って折る。英語の訳は「Camera」「overlay」の 2 行）。印は帯のほかの印と同じ 64×64px で、
+            # マイクの右（left:88px）に置く: 右から数えて置くと、縦に送れる頁で送りの棒の幅（15px）だけ左へ寄り、幅 320 でマイクと重なった（英語の頁で測った）。
+            # 幅 320 で 88〜152px、原画の小さな絵は 168〜232px（送りの棒がある時 153〜217px）で重ならない。読み上げは見える字
+            + (f'<a class="kasane-go" id="kasane-go" href="/toy/{esc(sid)}/kasane" title="{esc(hmd.CAM_LINK)}" data-on="step">{KASANE}<span>{esc(hmd.CAM_LINK)}</span></a>' if hmd.available(sid) else '')
             + g_thumb + koma +
             f'<ol id="steps" data-on="start step henji">{steps}</ol>'
             '<p class="meta" id="note" aria-live="polite"></p>'

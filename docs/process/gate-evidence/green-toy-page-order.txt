@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_page_order.py
+# commit: 315d33a1（回した時の HEAD）
+ok 玩具の頁の節の並び: これまでの復元 → 仮説 → 組み立てを立体で見る → たとえと関連する事柄 → 型紙。考えを話す と 困ったら は同じ節
+rc=0

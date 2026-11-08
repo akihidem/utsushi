@@ -6,7 +6,7 @@
 3. 玩具の頁の題のすぐ後に「つくる」が 1 つ。紙が無い時はたたき台の紙を作る（型紙を見ると同じ口）、紙がある時は窓の紙へ行く
 4. 窓で紙ができた後は「PDF を開いて印刷する」→「つくる」（手帖へ）の順
 5. 手帖の記録の頁で、返事の文のすぐ下に「もちよる」（ギャラリーの他の人が作った物へ）
-6. 玩具の頁は流れの順: これまでの記録・たとえ・改善の輪は見出しのまま畳み、たとえは他の人が作った物の後ろ。作りながら見るの釦は残す（11-07 の工作で使う）
+6. 玩具の頁は流れの順（本人の言葉 11-08 の並び: これまでの復元 → 仮説 → 立体 → たとえ → 型紙）。これまでの記録は見出しのまま畳む。改善の輪の節は無い
 7. 本物の記録がある時だけ、見本を「見本」の畳みに入れる（玩具の頁とギャラリー）。原画と歌は頭のまま
 8. 狭い幅の Chrome で、玩具の頁の「つくる」が横にはみ出さず、1 回 下へ送ると見える（11-08 の本人の言葉で原図を横幅いっぱいにしたので、最初の画面には入らない。必須 2 種、白と黒）。headless の Chrome は窓の幅を 500 より狭くできないので、
    窓を 390×844 で頼んだ時の実の大きさ（500×701 ほど）で測る。幅 390×844・375×667 は実際のブラウザ（Chromium）で手で測った（関門の帳面）
@@ -33,6 +33,11 @@ from web import looks, play_server, techo_site, toy  # noqa: E402
 from web import workshop as _workshop  # noqa: E402
 
 _workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
+# もちよるの頁のワークショップの様子と、できたおもちゃの節（本人の言葉 11-08）も、写真の分けの表と感想の札を外して、本物の無い形を作る
+# （2 つの節が出る形は tests/test_mochiyoru_workshop.py が見る）
+_workshop.KINDS = _workshop.KINDS.with_name("no-such-workshop-photo-kinds.json")
+from web import demo_samples as _samples  # noqa: E402
+_samples.workshop_for = lambda sid, toy: ""
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
 # 御来迎のたたき台は組ごと（今の組 goraigo-v14 は H-C・記録の欄 sheet_by_set）。今の組で刷れるのはたたき台の紙だけ
@@ -73,9 +78,11 @@ assert '<details class="fold-sec" style="margin-top:24px"><summary><h3>これま
 # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5。作る側の様子の頁へ移した）
 assert 'id="kaizen"' not in before, "改善の輪の節は玩具の頁に無い"
 if 'id="tatoe"' in before:
-    # たとえは型紙の窓のすぐ後に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」）
-    assert before.index('id="win"') < before.index('id="tatoe"') < before.index('id="minna"') and '<section class="sec" id="tatoe"><h2>' in before, "たとえは型紙の窓の後ろで開いて出す"
-assert before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="tsukuru"') < before.index('id="kiroku"') < before.index('id="minna"'), "流れの順"
+    # たとえは型紙の窓のすぐ前に、畳まずに出す（本人の言葉 11-08「…これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、型紙の順で」。
+    # 型紙の近くは本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」のまま）
+    assert before.index('id="minna"') < before.index('id="tatoe"') < before.index('id="win"') and '<section class="sec" id="tatoe"><h2>' in before, "たとえは型紙の窓の前で開いて出す"
+# 流れの順は本人の言葉 11-08 の並び（これまでの復元 → 仮説 → 立体 → たとえ → 型紙。困ったら（#tsukuru）は考えを話すと同じ窓）。前は 立体 → 型紙 → 困ったら → 記録 → これまでの復元
+assert before.index('id="minna"') < before.index('id="kasetsu"') < before.index('id="win"') < before.index('id="tsukuru"') < before.index('id="kiroku"'), "流れの順"
 assert '<details class="fold-sec samples-fold">' not in before, "本物の記録が無い時は、見本を畳まない"
 assert toy.FOLD_SCRIPT in before and "hashchange" in toy.FOLD_SCRIPT, "畳んだ節へ道で着いた時は開く（#kumikata など）"
 assert "genga-head" in hero, "原画と歌は頭のまま（畳まない）"

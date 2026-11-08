@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_erabu_no_count.py
+# commit: 82dac852（回した時の HEAD・今の main。試験だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_erabu_no_count.py", line 27, in <module>
+    assert f"<summary>2 回目からは、{n} のおもちゃから えらぶ</summary>" in fold, "札は全部の数だけ"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 札は全部の数だけ
+rc=1
