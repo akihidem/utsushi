@@ -1,0 +1,22 @@
+## つくるの続き: 手帖の札の日付と版・立体を仮説の前へ・考えを話すを外す・うつしの輪・型紙を印刷する（Issue 対応の担当、issue/kiroku-date-ban、11-08）
+
+- 目的: #657（つくるの作り直し）の後に届いた本人の言葉と、別の目の確かめの止めを、1 つの続きの枝で入れる
+- なぜか:
+  - 本人の言葉（11-08・統括を通して）「つくるの「考えを話す」は無くす。」「つくるの仮説にある図は、のこすのうつしの輪の図にする。」「つくるは、仮説の前に「組み立てを立体で見る」を置く。」「型紙の窓を「型紙を印刷する」からにして、その直下に PDF を開いて印刷するボタンを置く。型紙の窓のところにある仮説・型紙のボタンは要らない。」
+  - 統括の確かめ（11-08）: #657 で記録の札を外した後、写真も感想も無い記録の試した日と型紙の版が、サイトのどこにも出なくなった。しおりの開く頁の記録への道が、外した錨（/toy/<印>#R-…）を指していた
+  - 別の目の確かめの止め 1: 型紙の窓の本人の字「どう工夫したかあとで教えてください。写真や動画でもいいです。」が のこす の釦の下にあり、作りながら見る頁の のこす の札（本人の字が上）と順が逆だった
+- どうしたらいいか:
+  - 段の順を 頭 → 組み立てを立体で見る → 仮説（断り → うつしの輪の図 → 札）→ たとえ → 型紙を印刷する → のこそう にした。立体の無い玩具は立体の段が抜ける。頭の「つくる」は流れの最初の段（立体・無い玩具は仮説）へ（統括の決め: 481-2 の「仮説の段の頭へ」は流れの最初の段と読む）
+  - 仮説の段の図を、のこす の頁と同じ うつしの輪（loop_figure の名・本人が採った文・図。新しい字は足さない）にした。錨 #wa は引き継いだ
+  - 考えを話す の口（hanasu.think_section）を外した。話した考えから紙を作り直す口（think_sheet）と、手帖・作りながら見る頁の聞く口は残した。声とカメラの区切りの作り始め（clips の openedAs）は頁の終わりに 1 回置いた
+  - 型紙の窓の見出しを「型紙を印刷する」にし、直下に PDF を開いて印刷する（刷る前は刷る「つくる」）を置いた。窓の「仮説」「型紙」の切り替えの札を外した。本人の字は のこす の釦のすぐ上へ
+  - 手帖の記録の頁の札の頭の 1 行に、試した日と型紙の版を、前の札と同じ部品（zukan.record_date・hypotheses.label_of）で出した。しおりの道は手帖の記録の頁のその札（#R-…）へ
+  - 送った後の戻り先: 記録の札は手帖の記録の頁のその札（#R-… ・番号の形は R- と 4 桁以上）。JS の無い のこす（back=techo）にも fresh の合図と写真の鍵を閉じる行。作る側の様子の頁の記録への道もその札へ
+  - 使われなくなった部品（records_list・made_strip・observations・ask_form・media_html・ai_block）と、使われなくなった訳の字を外した
+- 見た事:
+  - 考えを話す を外すと、試験 7 本（test_hanasu ほか）が頁の口を見ていた。口の有る頁（作りながら見る頁・手帖）へ見る所を移し、玩具の頁は「無い事」を見る形にした。test_withdraw_notice は、紙を刷る前に作りながら見る頁を開くと玩具の頁へ戻されるので、前は玩具の頁の口を見て通っていた（中身の無い見張りだった）。刷ってから見る形に直した
+  - 本人の字を のこす の上へ動かすと、道の字（ROUTE_MAKING）を空にした時に本人の字だけが残った。前と同じく 3 つの行を 1 つの組にした（道の字が空なら本人の字も出さない）
+  - 版の歩みの節は前の組の額（型紙の版 3 など）を並べるので、札の版の照らしは仮説の段の中だけで見る形にした
+- ゴールの要件: `tests/test_toy_page_order.py`・`tests/test_tsukuru_rebuild.py`・`tests/test_wa_ring.py`・`tests/test_nokosu_route_b.py`・`tests/test_kiroku_date_ban.py`・`tests/test_done_record_anchor.py` と、替えた試験（test_page_order・test_analogy・test_one_make_door・test_ux_stage0・test_nokosu_route・test_plate_acts・test_one_sheet_page・test_one_sheet_place・test_kaizen・test_techo_site・test_sheet_window・test_ai_name・test_hanasu・test_words_card_1106・test_withdraw_notice・test_build_now・test_clips_client・test_mic_seen・test_press_stops・test_shiori_open）
+- 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-kiroku-date-ban.txt`（main d53b5354・しおりの道）、`docs/process/gate-evidence/red-kiroku-date-ban-2.txt`（main 6b33b770・札の日付と版）、`docs/process/gate-evidence/red-follow-toy-page-order.txt`（段の順）、`docs/process/gate-evidence/red-follow-wa-ring.txt`（うつしの輪）、`docs/process/gate-evidence/red-follow-nokosu-route-b.txt`（本人の字の位置）、`docs/process/gate-evidence/red-done-record-anchor.txt`（戻り先）。どれも main 6b33b770 の木に、この枝の試験だけを入れて rc 1
+- エビデンスゲート: Green は `docs/process/gate-evidence/green-kiroku-date-ban.txt`

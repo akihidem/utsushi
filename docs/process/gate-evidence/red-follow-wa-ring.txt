@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_wa_ring.py
+# commit: 6b33b770（今の main。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_wa_ring.py", line 41, in <module>
+    assert loop_figure.svg() in fig + "</figure>" and loop_figure.ADOPTED in page[at:page.index('class="plates"')], (sid, look, "うつしの輪の図でない")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', 'tenji', 'うつしの輪の図でない')
+rc=1

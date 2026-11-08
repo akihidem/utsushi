@@ -16,9 +16,8 @@ import html
 import json
 import re
 
-from omochae import hypotheses, loop, making_log, records, ways
+from omochae import hypotheses, loop, records, ways
 from omochae.compose import TEMPLATES
-from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
 from . import naoru, skin, wording
@@ -115,29 +114,27 @@ def print_help():
 
 def window(sid, data, see, kind, v, recorded, photos=True):
     """型紙の窓（要件の S-01〜S-05）。紙の種類と版を字の札で選び、絵（PNG）を出す。押すと拡大の窓（#zoom）。
-    Returns (紙, 口)。紙 は紙の絵と札と版の札、口 は 印刷・つくる（手帖へ）・のこす と行。刷った紙が無ければ ("", "")。
-    2 つに分けるのは、型紙の段の中を 型紙 → 版の歩み → 型紙の窓（口）の順にするため（本人の言葉 11-08「…型紙、型紙の歩み、型紙の窓、の順がいい。」・
-    統括の読み 11-08: 段の見出し「型紙の窓」は頭のまま、中を 紙 → 版の歩み（畳み）→ 口）。呼び手（toy_page）が間に版の歩みを入れる"""
+    Returns (頭, 紙, 口)。頭 は PDF を開いて印刷する の釦と刷り方の行、紙 は紙の絵と札と版の札、口 は つくる（手帖へ）・のこす と行。
+    刷った紙が無ければ ("", "", "")。
+    3 つに分けるのは、段の中を 見出し「型紙を印刷する」→ PDF を開いて印刷する → 型紙 → 版の歩み → 口 の順にするため（本人の言葉 11-08「型紙の窓を
+    「型紙を印刷する」からにして、その直下に PDF を開いて印刷するボタンを置く。」・前の言葉「…型紙、型紙の歩み、型紙の窓、の順がいい。」）。
+    呼び手（toy_page）が見出しの下に頭を、紙と口の間に版の歩みを入れる"""
     card = hypotheses.sheet_of(sid)
     ids = printed_ids(sid, data, recorded)
     # 紙を作るのは頭の「つくる」だけ（刷る口を 1 つに。本人のサイト体験レビュー 11-07 の 3）。前は、まだ紙の無い札を窓の中で押して紙を作る釦にしていた（#127）。
     # 前の札や記録の後の知らせのリンク（kind=tejun・after）で来ても、型紙を出す（文章の紙は刷らなくなった。本人の決まり 11-06）
     kind = ""
     if not ids:
-        return "", ""
+        return "", "", ""
     see = see if see in ids else (card["id"] if card["id"] in ids else ids[0])
     vs = versions_of(sid, see, printed_only=True)  # 刷ってある版だけ（版 1 を決め打ちすると、無い紙の絵とリンクが出る）
     v = v if v in vs else vs[-1]
     h = next(x for x in data["hypotheses"] if x["id"] == see)
     name = f"{see}_v{v}{kind}"
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
-    # たたき台の札だけ。前の記録の紙を見ている時は、ここから戻る。
-    hyps = ("" if card["id"] not in ids else
-            f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">{esc(hypotheses.SHOWN)}</a>')
-    kinds = ""
-    for suffix, label in KINDS:
-        if (out_dir(sid) / f"{see}_v{v}{suffix}.png").exists():
-            kinds += f'<a href="{q(see, suffix, v)}" aria-current="{"true" if suffix == kind else "false"}">{label}</a>'
+    # 窓の中の「仮説」「型紙」の切り替えの札は外した（本人の言葉 11-08「型紙の窓のところにある仮説・型紙のボタンは要らない。」）。札は 1 つずつしか無く
+    # （たたき台の仮説 1 つ・紙の種類は型紙だけ）、押しても何も替わらなかった。どの仮説の紙かは札の見出し（side の h3「仮説の型紙」）の字で分かる。
+    # 前の記録の紙を見ている時（see が たたき台でない）の戻り道は、頭の「つくる」と版の札（vers）が持つ
     # 版の呼び方は組の番号（窓口の決定 11-07: 版の数は組の番号で統一。組の中の直しがある時だけ「（直し N）」）。hypotheses.label_of
     ban = lambda n: esc(hypotheses.label_of(hypotheses.current_set(data), n))
     vers = "".join(f"<b>{ban(n)}</b>" if n == v else f'<a href="{q(see, kind, n)}">{ban(n)}</a>' for n in vs)
@@ -165,24 +162,28 @@ def window(sid, data, see, kind, v, recorded, photos=True):
            + ZOOM_SCRIPT)
     side = (f'<div class="side"><h3>{esc(hypotheses.shown_name(h))}の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}</div>')
+    # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
+    # 段の見出し「型紙を印刷する」の直下に置く（本人の言葉 11-08）。刷り方の行（print_help・100% の行）は釦の字の続きなので一緒に
+    top = (f'<div class="print-top"><p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>{print_help()}'
+           '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p></div>')
     acts = ('<div class="side">'
-            # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
-            f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>{print_help()}'
-            '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             # 刷った後に次へ進む口（段 0）。印刷 → つくる（手帖）の順に置く。作る口は手帖（research/36 の本人の決定）
             f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
             # つくる のすぐ下に大きな「のこす」（本人の答え 11-08: のこすへの道は案 B「印刷 → つくる の直後に大きな のこす」。本人の言葉 476「…つくるから
             # のこすの誘導が全体的に弱いので、のこすに行かない可能性が高い。」）。行き先は記録の頁（今の「つくったものを教えてください。」と同じ所）。
-            # 枠だけの釦（.quiet）にして、作る口の つくる と見分ける。釦の字は道しるべの駅の名「のこす」（新しい字ではない）
+            # 枠だけの釦（.quiet）にして、作る口の つくる と見分ける。釦の字は道しるべの駅の名「のこす」（新しい字ではない）。
+            # 本人の字（naoru.ROUTE_ASK）は のこす の釦のすぐ上（作りながら見る頁の のこす の札と同じ順: 札の中の上の段に本人の字・その下に のこす。
+            # 統括の決め 11-08（479）。#657 では釦の下にあり、別の目の確かめの止め 1 で直した）
+            # 道の字（ROUTE_MAKING）を空にした時は、前と同じく本人の字も出さない（3 つの行は 1 つの組。字を外す時の形・test_nokosu_route）
+            + (f'<p class="meta nokosu-route">{esc(naoru.ROUTE_ASK)}</p>' if naoru.ROUTE_MAKING and naoru.ROUTE_ASK else "") +
             f'<p class="nokosu-go"><a class="btn quiet" href="/toy/{sid}/techo/kiroku">のこす</a></p>'
-            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）の 1 行と、本人の字（naoru.ROUTE_ASK・作りながら見る頁の最後と同じ字）と、意義の 1 行（のこす の画面と同じ字・
-            # naoru.purpose）を のこす の釦の下に置く
-            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, naoru.ROUTE_ASK, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
+            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）の 1 行と、意義の 1 行（のこす の画面と同じ字・naoru.purpose）を
+            # のこす の釦の下に置く
+            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     # 口は紙の 2 列（紙の絵 | 札）の下に 1 列で出す（.win の中に置き、札の CSS（.win .side）をそのまま効かせる）
-    return (f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>',
-            f'<div class="win win-acts">{acts}</div>')
+    return (top, f'<div class="win">{fig}{side}</div>', f'<div class="win win-acts">{acts}</div>')
 
 
 def analogy_section(data):
@@ -197,23 +198,6 @@ def analogy_section(data):
             f'<p class="meta"><span class="lb">作る側のたとえ</span>{esc(wording.plain(a.get("written_by", "")))}。たとえは仕組みを考える手がかりで、答えではありません。</p>'
             f'<article class="card"><h3>身近な物でいうと</h3><p>{esc(a["like"])}</p></article>'
             f'<article class="card"><h3>関連する事柄</h3><ul>{rel}</ul></article></section>')
-
-
-def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
-    """作っている最中の手順の質問の口（本人の決定 11-04、src/api/ask.py）。刷った紙がある仮説だけを選べる。聞かれた時だけ答える。"""
-    card = hypotheses.sheet_of(sid)
-    if not versions_of(sid, card["id"], printed_only=True):
-        return ""
-    shown = ""
-    if asked:
-        q, a = asked
-        shown = f'<div id="ask-answer" class="notice"><p class="meta">聞いた事: {esc(q)}</p><p>{esc(a)}</p></div>'
-    return refill(f'<form method="post" action="/toy/{sid}/ask#ask" id="ask" class="card">{note}<h3>作っている途中で困ったら</h3>'
-            '<p class="meta">切る・折る・貼る・組む順の疑問に答えます（例: 谷折りって？）。どう動くか・仕組みは、試して確かめる所なので答えません。</p>'
-            f'<input type="hidden" name="hypothesis" value="{esc(card["id"])}"><label>聞きたい事<input type="text" name="question" required maxlength="300"></label>'
-            # 断り（本人の決定 11-05「工作の様子を蓄積してサービス全体の改善に回す。個人の情報は落とす」）: 質問の文を残すので、残す事と、
-            # 名前を書かないでほしい事を、聞く口のすぐ下に出す。床が落とせるのは連絡先の形だけで、名前は機械では落とせないため。
-            f'<button>聞く</button><p class="meta">{esc(making_log.ask_notice(ai))}{esc(making_log.ASK_NAME_TEXT)}</p>{shown}</form>', filled)
 
 
 # 試した記録を残す口は、のこす（手帖の最後と記録の頁）へ寄せた（本人の答え 11-07 夕の Q3「試した記録を残すは寄せる — のこすへ」）。
@@ -345,141 +329,12 @@ def next_form(r, back=""):
             f'<button data-busy>次の版の紙を作る</button></form>{step}</details>')
 
 
-def ai_block(r, up_key=None, photos=True):
-    """人の説明の後に出す AI の返事（J-013 の順の最後）。読みと観察は案で、採点しない。鍵が無い時は play_server がその旨を返す。
-    photos=False は合言葉なしで開いた場で、読みと観察の文を出さない（記録の文から作った字なので。J-028）。"""
-    from . import techo_site
-
-    rid = esc(r["id"])
-    out = ""
-    i = loop.interpretation(r["id"]) if photos else None
-    if i and isinstance(i.get("content"), dict):
-        c = i["content"]
-        lines = "".join(f"<li>{esc(x)}</li>" for x in c.get("observed", []))
-        lines += "".join(f'<li>{esc(x.get("text", ""))}（確からしさ: {esc(x.get("confidence", ""))}）</li>' for x in c.get("causes", []) if isinstance(x, dict))
-        lines += "".join(f"<li>分からない事: {esc(x)}</li>" for x in c.get("unknown", []))
-        out += f'<div class="item"><p class="meta">Claude の読み（案）</p><ul>{lines}</ul></div>' if lines else ""  # 取り下げで中身が消えた読みは、見出しも出さない
-    o = techo_site.seen_observation(r["id"], up_key) if photos else None
-    if o:
-        lines = "".join(f"<li>{esc(x)}</li>" for x in o.get("observed", [])) + "".join(f"<li>見えなかった事: {esc(x)}</li>" for x in o.get("unclear", []))
-        out += f'<div class="item"><p class="meta">観察（Claude の補助）</p><ul>{lines}</ul></div>'
-    can_ask, can_watch, why = techo_site.ai_offer(r["id"], up_key)
-    buttons = (f'<form method="post" action="/record/{rid}/ai-interpret#{rid}" class="inline"><button class="quiet">Claude に聞く（何が起きたか）</button></form>' if can_ask else "") + (
-               f'<form method="post" action="/record/{rid}/ai-observe#{rid}" class="inline"><button class="quiet">動画を見てもらう</button></form>' if can_watch else "")
-    return out + (f'<div class="row">{buttons}</div>' if buttons else "") + (f'<p class="meta">{why}</p>' if why else "")
-
-
 def own_papers(sid, hid, ver):
     """前に書かれた自分の仮説で刷った紙へのリンク。札を外したので（J-032 の点 2）、記録の札から開く。字は札と窓にあった物のまま。"""
     links = [f'<a href="/sheet/{sid}/{esc(hid)}_v{esc(ver)}{kind}.pdf" target="_blank" rel="noopener">{label}</a>'
              # 刷るのは型紙だけ（本人の決まり 11-06・6 点の 1）。前は型紙なしの紙と手順の紙も並べた
              for kind, label in (("", "型紙"),) if (out_dir(sid) / f"{hid}_v{ver}{kind}.pdf").exists()]
     return f'<p>{"・".join(links)}</p>' if links else ""
-
-
-def records_list(sid, recs, photos=True, at="", note="", filled=(None, {}), up_key=None, rec_key=None):
-    """記録の札を並べる。rec_key は、この画面が記録を残した時に渡した鍵。説明の欄はその記録にだけ出す（records.mine）。"""
-    from api.words import spoken_own_ids
-
-    from . import zukan
-
-    data = hypotheses.load(sid)
-    spoken = spoken_own_ids(sid)
-    out = f"<p class='meta'>{esc(MINNA_ORDER)}</p>" if recs else ""
-    for r in reversed(recs):
-        told = loop.explanation(r["id"])
-        deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
-        # 試した後の紙は刷らなくなった（本人の決まり 11-06・6 点の 1。試した事の欄は紙から外した、6 点の 2）ので、記録の札に紙への道を出さない。
-        # 前は「試した後の紙（先に開いて、次に変える条件を読む）」を窓と PDF へ向けていた。次に変える条件は、説明と次の版の欄が受ける。
-        ver = r.get("sheet_version", 1)
-        after = ""
-        # 自分の仮説の刷った紙（型紙）は、作った本人の画面からだけ開く（合言葉なしの場では OWN-n の紙を開かない。think_sheet.opens）。
-        if not any(h["id"] == r["hypothesis_id"] for h in data["hypotheses"]) and photos and r["hypothesis_id"] not in spoken:
-            after = own_papers(sid, r["hypothesis_id"], ver)
-        if told:
-            nid = f'next-{r["id"]}'
-            nxt = next_form(r)
-            if at == nid:
-                # 通らなかった時は、畳んだ欄を開いて、その上に理由を出す。手帖から来た印も保つ。
-                nxt = refill(next_form(r, filled[1].get("back", "")), filled[1]).replace("<details>", "<details open>", 1)
-            # 紙の返事 → 自分の説明 → AI → 次の版 の順を、罫で見分ける（#130）。取り下げた説明は字が空になるので、空の欄を並べない。
-            said = "".join(f"<p>{label}: {esc(told[key])}</p>" for label, key in (("説明", "text"), ("次の思いつき", "next_idea")) if told.get(key))
-            tail = ((f'<div class="step">{said}</div>' if said else "") +
-                    f'<div class="step">{ai_block(r, up_key)}</div>' + (f'<div class="step" id="{esc(nid)}">{note if at == nid else ""}{nxt}</div>' if nxt else ""))
-        else:
-            # 人の説明が先。Claude の釦はこの後の段で出す。autocomplete: 同じ機器で、前の人の値を候補に出さない（#138）。
-            tail = "" if not records.mine(r["id"], rec_key) else refill(f'<form method="post" action="/record/{esc(r["id"])}/explain#{esc(r["id"])}"><label>何が起きたと思いますか（わからない、でもよい）<textarea name="text" required></textarea></label>'
-                    '<label>次に試したい事<input type="text" name="next_idea" required></label><label>書いた人<input type="text" name="by" autocomplete="off"></label><button>説明を残す</button></form>', filled[1] if filled[0] == "explain" and at == r["id"] else {})
-        here = note if at == r["id"] else ""
-        # 感想（本人の方針 11-05「感想と動きの報告」）。動きの欄の次に、作った人の言葉として出す。
-        feel = f'<p>感想: {esc(r["impression"])}</p>' if r.get("impression") else ""
-        # 作った物の写真と動画、止まった所の答えも同じ札に出す（本人の指摘 11-05: 制作した記録を玩具の頁で見る）。
-        ans = r.get("answers") or {}
-        # 書いた欄だけを読める字で出す。書いていない欄の名前は並べない（#130）。
-        written = [("最初に動いた所", ans.get("first_moved")), ("引っかかった所", ans.get("stuck")), ("変えると違いが出そうな所", ans.get("what_if")),
-                   ("思いついた事", "、".join(str(x) for x in r.get("ideas") or [])), ("メモ", wording.record_note(r.get("note")))]
-        feel += "".join(f"<p>{label}: {esc(text)}</p>" for label, text in written if text)
-        # 人の工夫（本人の言葉 11-05「それを人間が工夫で乗り切る過程をAIにフィードバックして型紙が改善される」）。輪の材料そのものなので札の上の方に出す。
-        feel = "".join(f'<p>工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict)) + feel
-        feel = media_html(r["id"], photos=photos) + feel
-        if not photos:
-            # 合言葉なしで開いた場: 人の書いた文を別の人に見せない（文の中の名前は機械で落とせない。J-028）。札と紙への道と欄だけ残す。
-            feel = ""
-            if told:
-                # 次の版の欄も出さない: 解釈の欄に説明が初めから入る上に、この場では送っても断られる（#336）。
-                tail = ('<p class="meta">説明を残しました。</p>' if told.get("text") else "") + ai_block(r, up_key, photos=False)
-        out += f'<article class="card" id="{esc(r["id"])}">{here}<h3>{esc(zukan.record_title(r, data))}{esc(deg)}</h3><p class="meta">{esc(zukan.record_date(r))}・{esc(hypotheses.label_of(r.get("sheet_set") or hypotheses.current_set(data), ver))}{"・" + esc(wording.record_no(r["id"])) if photos else ""}</p>{feel}{after}{tail}</article>'
-    return out
-
-
-def observations(sid, data, link=True, photos=True):
-    """記録を読む（順路の 2 段目）。文には印を付ける（J-016 の線。zukan と同じ作り）。"""
-    from . import zukan
-
-    lines = zukan.observation_lines(sid, data, photos)
-    if not lines:
-        # 作った物の並びの記録が無い時の 1 文（MINNA_EMPTY）と同じ字にそろえる。同じ頁に同じ意味の文が 2 通りあると読む人が迷い、
-        # 前の「最初の記録を残す人になります」は人を主にした字だったため（夕方のレビューの 6 と同じ向き。設計の担当の推し 11-07）
-        return f'<p class="meta"><span class="lb">観察</span>試した記録は{esc(MINNA_EMPTY)}</p>'
-    # 行から同じ頁の記録の札（写真・感想・説明）へ飛べる。
-    text = lambda x: f'<a href="#{esc(x["record_id"])}">{esc(x["text"])}</a>' if link and x.get("record_id") else esc(x["text"])
-    return "<ul class='meta' style='list-style:none;padding:0'>" + "".join(f'<li><span class="lb">{esc(x["label"])}</span>{text(x)}</li>' for x in lines) + "</ul>"
-
-
-def media_html(rid, cls="shots", photos=True):
-    """記録に添えた写真と動画（手帖の「上げる」で添えた物）。ギャラリーと同じ道（/record/<記録>/media/）から出す。
-    photos=False は合言葉なしで開いた場。受け口が画像を出さないので、壊れた絵にしないよう枠ごと出さない（J-028）。"""
-    from omochae import media_review
-
-    from .techo_site import media_of
-
-    # 物だけと人が確かめた物だけを出す（本人の決定 11-05、#314）。この頁は他の人にも見えるので、ギャラリーと同じ線にする。
-    # 写真は小さい写し（/small・幅 480px。web.made）を出し、押すと元の写真を開く。上げた元の写真は 1 枚 3.7MB ほどあり、
-    # 記録が並ぶ頁で全部を読むと遅い回線で頁が重くなるため（入口と玩具の頭の写真と同じ線・#521）。動画は前のまま
-    files = media_review.public(rid, media_of(rid)) if photos else []
-    if not files:
-        return ""
-    pics = "".join((f'<video src="/record/{esc(rid)}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                    else f'<a href="/record/{esc(rid)}/media/{esc(f)}"><img src="/record/{esc(rid)}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
-    return f'<div class="{cls}">{pics}</div>'
-
-
-def made_strip(sid, recs, photos=True):
-    """玩具の頁の頭に出す「他の人が作った物」の帯（本人の指摘 11-05「制作した記録とおもちゃのページが関連してない」、本人の決定 11-05「他の人の作ったものギャラリーは作る」）。
-    写真の小さな並びから、同じ頁の記録の札へ飛ぶ。photos=False は合言葉なしで開いた場で、写真は出さず札への道だけを出す（J-028）。"""
-    if not recs:
-        return ""
-    from omochae import media_review
-
-    from .techo_site import media_of
-
-    thumbs = ""
-    for r in reversed(recs):
-        for f in (media_review.public(r["id"], media_of(r["id"]))[:1] if photos else []):
-            tag = (f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
-                   else f'<img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">')
-            thumbs += f'<a href="#{esc(r["id"])}" aria-label="{esc(wording.record_no(r["id"]))} へ">{tag}</a>'
-    return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 
 def foot_links():
@@ -587,11 +442,18 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     from . import workshop  # ワークショップで作られた物の写真（本人の言葉 11-07 夜）。公開の場にも出すので photos の線を掛けない
     from . import genga  # 原画と歌（本人の指示 11-06）。頁の全体の絵と歌を 1 つの組にして頭に置く。歌はこの組の中に出す
 
-    # 題のすぐ後に次へ進む釦を 1 つ（段 0）。行き先は仮説の段の頭（本人の言葉 11-08「原図をみて、狂歌を読んで、仮説、たとえ、3D をみたあとに型紙の印刷にすすむ。」・
+    from . import kumitate, wa  # 立体の組み立て（本人の決定 11-06。J-033）と、型紙の版（web.wa）
+
+    # 段 3 組み立てを立体で見る: 開いた時に 1 回動かして見せる（本人の答え 11-07 Q6）。頭の「つくる」の行き先を決めるので、頭より先に作る
+    rittai_block = kumitate.block(sid, heading=False, tour=True)
+    # 題のすぐ後に次へ進む釦を 1 つ（段 0）。行き先は流れの最初の段（本人の言葉 11-08「原図をみて、狂歌を読んで、仮説、たとえ、3D をみたあとに型紙の印刷にすすむ。」・
     # 設計の問い 2 の答え「推しのとおり。」）。前は頭の釦が紙を刷って型紙の窓へ行き、仮説・たとえ・3D を飛ばしていた。紙を刷る口は型紙の窓の中（make_go）。
+    # 本人の言葉 11-08「つくるは、仮説の前に「組み立てを立体で見る」を置く。」で最初の段が立体になったので、行き先は立体の段（#kasetsu）。
+    # 立体の無い玩具は仮説の段（#kasetsu-fuda）。481-2 の「仮説の段の頭へ」は流れの最初の段という意味で読む（統括の決め 11-08）
+    first = "#kasetsu" if rittai_block else "#kasetsu-fuda"
     # 頭の畳み「これまでの記録」は消した（本人の言葉 11-08「つくるは、これまでの記録は消す。」・477「復元の記録などはすべてもちよるに統合する。」）
     hero = (f'<section class="hero">{genga.head(sid, src, photos=photos)}<div>'
-            f'<h1>{esc(data["toy"])}</h1>{stage_note}<p class="road"><a class="btn" href="#kasetsu-fuda">つくる</a></p>'
+            f'<h1>{esc(data["toy"])}</h1>{stage_note}<p class="road"><a class="btn" href="{first}">つくる</a></p>'
             # 作品の札は前の所（題と つくる の後）に、題の塊だけで置く。出典の字は頁の一番下の段（本人の言葉 11-08「文言はページの一番下に」・genga.ndl_credit）。
             # 11-08 に一度、題の塊を原画の部品の縦の段へ移したが、本人の言葉「縦書きは失敗なので前の形に戻す」・答え「広い画面も戻す」で戻した。
             # 図を見る（国立国会図書館）は原画の部品の 1 つの道にまとめた。図鑑の頁とほかのおもちゃの道は外した（本人の言葉「図鑑のページ要らない」
@@ -605,16 +467,19 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 立体は頭の原画のすぐ後へ（核の体験「絵が立体のおもちゃとなって自分の手のひらで遊べる」）、断りと輪の図と仮説の札は型紙の窓の頭へ寄せる。
     # 「すぐ作る」の見出しは外し、説明の文（輪の図の「切って、折って、組む」の字の出所）は型紙の窓の頭へ移した（新しい字は足さない）。
     # 節の錨 #kasetsu は残す（紙を作れなかった時の文を受ける錨・試験の並び）。
-    from . import kumitate, wa  # 立体の組み立て（本人の決定 11-06。J-033）と、輪の図（本人の言葉 11-06。web.wa）
-
-    # 段 5 組み立てを立体で見る: 開いた時に 1 回動かして見せる（本人の答え 11-07 Q6）。段の見出しは h2 にそろえる（字は kumitate.LABEL のまま）。
-    # 節の錨 #kasetsu は残す（紙を作れなかった時の文を受ける錨・前からの道）
-    stage = kumitate.block(sid, heading=False, tour=True)
+    # 段 3 組み立てを立体で見る（中身は頭の前で作った rittai_block）。段の見出しは h2 にそろえる（字は kumitate.LABEL のまま）。
+    # 節の錨 #kasetsu は残す（紙を作れなかった時の文を受ける錨・前からの道・頭の「つくる」の行き先）
     told = head("kasetsu") or ("" if at else note)
-    rittai = (f'<section class="sec" id="kasetsu">{told}' + (f'<h2>{esc(kumitate.LABEL)}</h2>{stage}' if stage else "") + '</section>') if stage or told else '<div id="kasetsu"></div>'
+    rittai = ((f'<section class="sec" id="kasetsu">{told}' + (f'<h2>{esc(kumitate.LABEL)}</h2>{rittai_block}' if rittai_block else "") + '</section>')
+              if rittai_block or told else '<div id="kasetsu"></div>')
     # 真ん中は型紙の版（組の番号。本人の言葉 11-07「バージョンをサイトで明示したい」、窓口の決定 カード 084426）。前は寸法の刻み（wa.current_version）
     ban = wa.set_version(sid, data)
-    ring = wa.ring(ban)
+    # 仮説の段の図は、のこす の頁の うつしの輪 の図（本人の言葉 11-08「つくるの仮説にある図は、のこすのうつしの輪の図にする。」・本人の答え「字 1 と絵 A。」の絵）。
+    # 字は のこす の頁（techo_site.manabi_box）と同じ（輪の名・本人が採った文 ADOPTED・図と図の下の 1 行。新しい字は足さない）。段の見出し（h2）は 仮説 だけに
+    # 保つので、輪の名は h3。錨 #wa は前の輪の図（wa.ring・真ん中に今の型紙の版）から引き継ぐ。型紙の版は札の脇の版の札（下の plate）が出す
+    from . import loop_figure
+
+    ring = f'<div class="manabi" id="wa"><h3>{esc(loop_figure.NAME)}</h3><p>{esc(loop_figure.ADOPTED)}</p>{loop_figure.svg()}</div>'
     plate = ""
     for h in [hypotheses.sheet_of(sid)]:
         ev = "".join(evidence_item(e) for e in h["evidence"])
@@ -641,21 +506,26 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 型紙の版の歩みは窓の中の閉じた畳み（設計の問い 3 の答え「推しのとおり。」。本人の指示 11-07 の版の歩みは残し、読む量を減らす）
     from . import ban_ayumi
 
-    sheet, acts = window(sid, data, see, kind, v, recorded, photos)
+    top, sheet, acts = window(sid, data, see, kind, v, recorded, photos)
     go = make_go(sid)
     printing = "" if sheet and "/print" not in go else go
-    # 段の中の順: 刷る口（刷る前・版が上がった時）→ 型紙（紙の絵と札と版の札）→ 版の歩み（閉じた畳み）→ 型紙の窓の口（印刷・つくる・のこす）
+    # 段の中の順: 見出し「型紙を印刷する」→ 刷る口（刷る前・版が上がった時）と PDF を開いて印刷する → 型紙（紙の絵と札と版の札）→ 版の歩み（閉じた畳み）→
+    # 口（つくる・本人の字・のこす）
     # JS の無い画面の聞く口（作りながら見る頁の #ask-form）は、この頁へ答えを返す（play_server の ask）。聞く口の節は外したので、答えだけを窓の頭に出す。
     # 字は前の聞く口の答えの形のまま（「聞いた事: …」と答え）
     answer = (f'<div id="ask-answer" class="notice"><p class="meta">聞いた事: {esc(asked[0])}</p><p>{esc(asked[1])}</p></div>' if asked else "") + head("ask")
-    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
-           f'<p class="meta">画面で見て、印刷する前に案を検討する所。</p>{printing}{sheet}{fold(ban_ayumi.section(sid))}{acts}</section>')
+    # 見出しは「型紙を印刷する」（本人の言葉 11-08「型紙の窓を「型紙を印刷する」からにして、その直下に PDF を開いて印刷するボタンを置く。」）。前は「型紙の窓」。
+    # 見出しの直下は、刷った後は PDF を開いて印刷する（top）、刷る前は紙を刷る「つくる」（printing）。版が上がった時は新しい紙を刷る「つくる」の後に、
+    # 前の紙の PDF（前は口の中にあった物を残す）。説明の 2 行はその後ろへ下げた（字は前のまま）
+    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙を印刷する</h2>{printing}{top}<p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
+           f'<p class="meta">画面で見て、印刷する前に案を検討する所。</p>{sheet}{fold(ban_ayumi.section(sid))}{acts}</section>')
     # 錨 #tsukuru（前の 作っている途中で困ったら の節）は外した。作りながら見る頁の「← 玩具」は #win（型紙の窓）へ向け直した（tsukuru.py）。
     # 作っている途中で困ったら（聞く口）は外した: 手帖の手順の画面に「こまった」と聞く口が前からある（設計の問い 4 の答え「推しのとおり。」）。
     # 組み方の畳みは外した: 作る時は手帖が 3D と文で 1 手ずつ出す（本人の言葉 477「作成を 3D の手順の解説に従って行い」・設計の問い 5 の答え）。
     # これまでの復元（作った物の記録・ワークショップの写真と感想と話された言葉）は もちよる の玩具ごとの所へ移した（本人の言葉 477）。下の のこそう の段から 1 行で行ける
-    # 段の順（本人の言葉 477）: 頭（段 1 原図・段 2 狂歌）→ 段 3 仮説 → 段 4 たとえ → 段 5 立体 → 段 6 型紙の窓 → 段 8 のこそう（段 7 作る は手帖）
-    body = hero + kasetsu + analogy_section(data) + rittai + win
+    # 段の順（本人の言葉 477 と 11-08「つくるは、仮説の前に「組み立てを立体で見る」を置く。」）: 頭（段 1 原図・段 2 狂歌）→ 段 3 立体 → 段 4 仮説 →
+    # 段 5 たとえ → 段 6 型紙の窓 → 段 8 のこそう（段 7 作る は手帖）。立体の無い玩具は立体の段が抜けるだけ（錨 #kasetsu の空の div は残る）
+    body = hero + rittai + kasetsu + analogy_section(data) + win
     # 段 8 のこす: 試した記録を残す口は のこす（記録の頁）へ寄せた（本人の答え 11-07 夕の Q3）。錨 #kiroku と返事の文（head）は残す: 作りながら見る頁の
     # 組み上がりの札・試した後の紙の断りの「記録の欄へ」・受け口の返事が、この錨へ戻るため。のこすへの道 2（本人の言葉 11-07 夜「できたはのこそう」）
     # を残す（設計の問い 9 の答え）。もちよる のこの玩具の所への 1 行（字は設計の問い 7 の推しの字・本人の答え「推しのとおり。」）

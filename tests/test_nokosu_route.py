@@ -38,13 +38,15 @@ for sid in TOYS:
     hid = hypotheses.sheet_of(sid)["id"]
     assert print_latest(sid, hid) is not None, (sid, "紙を作れない")
     page = toy.toy_page(sid)
-    # 道 1: 型紙の窓の「つくる」のすぐ下に、大きな のこす の釦（本人の答え 11-08 の案 B）と、1 行・本人の字・意義（字は のこす の釦の下・test_nokosu_route_b）。
+    # 道 1: 型紙の窓の「つくる」のすぐ下に、本人の字・大きな のこす の釦（本人の答え 11-08 の案 B）・1 行・意義。本人の字は のこす の釦のすぐ上
+    # （作りながら見る頁の のこす の札と同じ順・統括の決め 11-08。#657 では釦の下だった。test_nokosu_route_b）。
     # 型紙の窓の中に版の歩みの節（畳み）が入るので、窓は次の段（#kiroku）の頭まで見る
     win = page[page.index('id="win"'):page.index('id="kiroku"')]
     go = f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
     nokosu = f'<p class="nokosu-go"><a class="btn quiet" href="/toy/{sid}/techo/kiroku">のこす</a></p>'
-    after = f'<p class="meta nokosu-route">{MAKING}</p><p class="meta nokosu-route">{naoru.ROUTE_ASK}</p><p class="meta nokosu-route">{WHY}</p>'
-    assert win.count(go + nokosu + after) == 1, (sid, "道 1 は窓の「つくる」のすぐ下")
+    ask = f'<p class="meta nokosu-route">{naoru.ROUTE_ASK}</p>'
+    after = f'<p class="meta nokosu-route">{MAKING}</p><p class="meta nokosu-route">{WHY}</p>'
+    assert win.count(go + ask + nokosu + after) == 1, (sid, "道 1 は窓の「つくる」のすぐ下（本人の字 → のこす → 1 行・意義）")
     assert page.count(MAKING) == 1, (sid, "道 1 の字は玩具の頁に 1 回")
     # 道 2: #kiroku の節の、今の道の上に見出しと意義。道の字と行き先は替えない
     kiroku = section(page, "kiroku")

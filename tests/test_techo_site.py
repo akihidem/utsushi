@@ -95,8 +95,11 @@ code, body = req(f"/record/{rid}/next", {"interpretation": "折りが固い", "p
 assert code in (200, 303), body[:300]
 page = req(f"/toy/{G}")[1].decode()
 # 版を言わずに開くと窓は最新の版（PDF の押し釦は版 2）。字の札は窓へ（本人の指示 11-05）
-# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」
-assert f"{GS}_v2.pdf" in page and f"<b>{hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)}</b>" in page and f"see={GS}&kind=sheet&v=2#win" in page
+# 版の呼び方は組の番号（窓口の決定 11-07・#513 の (a)）。組の中の直しの版 2 は「版 <組の番号>（直し 2）」。
+# 前は窓の「仮説」の切り替えの札（see=…&v=2）も見ていたが、札は外した（本人の言葉 11-08「型紙の窓のところにある仮説・型紙のボタンは要らない。」）。
+# 版 1 へは版の札の道（v=1）で行ける
+assert f"{GS}_v2.pdf" in page and f"<b>{hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2)}</b>" in page and f"see={GS}&kind=sheet&v=1#win" in page
+assert '<div class="tabs">' not in page, "窓に切り替えの札が残った"
 assert req(f"/sheet/{G}/{GS}_v2.pdf")[1][:4] == b"%PDF"
 # 型紙の確定の記録（f09）: 刷った版ごとに、誰が・どの組で確定したかが台帳に残る
 from omochae import loop  # noqa: E402

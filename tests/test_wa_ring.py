@@ -2,8 +2,10 @@
 
 見る事:
 1. 輪の字は、頁に既にある字から取った物（新しい言い方を増やさない）。順は 案 → 作る → 工夫を記録に書く → 次の型紙をよくする
-2. 玩具の頁の「すぐ作る」の札のすぐ後に 1 つだけ出る（白の展示と黒のジン、必須 2 種と試作）。真ん中から頁の下の「型紙の改善の輪」へ飛べる
-3. 真ん中の数は今の型紙の版だけ（組の番号。紙の題に刷る数と同じ。11-07 に寸法の刻みから替えた）。報告や動いた数は出さない（J-025）
+2. 玩具の頁の仮説の段の図（#wa・断りの後・札の前に 1 つだけ。白の展示と黒のジン、必須 2 種と試作）は、11-08 から のこす の頁の うつしの輪 の図
+   （本人の言葉 11-08「つくるの仮説にある図は、のこすのうつしの輪の図にする。」）。駅の字「ためしの案（仮説）」が図の中にある。前の輪の図（wa.ring）は頁に出ない
+3. 真ん中の数（wa.ring の図の部品の形）は今の型紙の版だけ（組の番号。紙の題に刷る数と同じ。11-07 に寸法の刻みから替えた）。報告や動いた数は出さない（J-025）。
+   玩具の頁では、型紙の版は札の脇の版の札が出す
 4. 図の札は図の中に収まる（幅 390 の画面で左右の札の端が切れたのを直した）。読み上げの title に輪の順が 1 文で入る
 """
 import os
@@ -14,7 +16,7 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from omochae.marks import PREMISE_PAGE  # noqa: E402
-from web import kaizen, toy, wa  # noqa: E402
+from web import kaizen, loop_figure, toy, wa  # noqa: E402
 
 G, T, PLAIN = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R", "NDL-1187053-R0000009-L-2"
 
@@ -33,8 +35,16 @@ for sid in (G, T, PLAIN):
         assert page.count('id="wa"') == 1, (sid, look)
         at, premise = page.index('id="wa"'), page.index('id="premise"')
         assert premise < at and page.index("</p>", premise) < at < page.index('class="plates"'), "札のすぐ後"
-        # 真ん中の行き先は説明の頁（序の頁）の改善の歴史の錨（窓口の決め 11-07。輪の図は残し、頁の足の「型紙の改善の輪」の節は外した）（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
-        assert f'href="{wa.HREF}"' in page[at:page.index("</figure>", at)] and wa.HREF == "/about#kaizen-rekishi" and 'id="kaizen"' not in page, "真ん中から説明の頁の改善の歴史へ飛べる"
+        # 図は のこす の頁と同じ うつしの輪（同じ部品・同じ文）。駅の字「ためしの案（仮説）」が図の中にあり（統括の割り振り 11-08）、前の輪の図（真ん中に版と
+        # 説明の頁の改善の歴史への道）は無い。頁の足の「型紙の改善の輪」の節は外したまま（本人の答え 11-07 夕の Q5）
+        fig = page[at:page.index("</figure>", at)]
+        assert loop_figure.svg() in fig + "</figure>" and loop_figure.ADOPTED in page[at:page.index('class="plates"')], (sid, look, "うつしの輪の図でない")
+        # 図の中の字（SVG の text・2 行に分けた駅の字はつなげて読む）に「ためしの案（仮説）」がある
+        assert "ためしの案（仮説）" in "".join(re.findall(r"<text[^>]*>([^<]*)</text>", fig)), (sid, look, "図の中に ためしの案（仮説） が無い")
+        assert 'class="wa-c"' not in page and 'class="wa-v"' not in page and 'id="kaizen"' not in page, (sid, look, "前の輪の図が残った")
+        # 前の線: 真ん中の行き先は説明の頁（序の頁）の改善の歴史の錨（窓口の決め 11-07。輪の図は残し、頁の足の「型紙の改善の輪」の節は外した）（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）
+        # 部品の wa.ring には残る（頁には出さない）
+assert f'href="{wa.HREF}"' in wa.ring(1) and wa.HREF == "/about#kaizen-rekishi", "部品の真ん中から説明の頁の改善の歴史へ飛べる"
 
 # 3. 真ん中の数は今の型紙の版だけ。型紙の版は組の番号（紙の題に刷る数と同じ。本人の言葉 11-07・窓口の決定 カード 084426）で、
 #    寸法の刻み（kaizen の版・ループ 2）は真ん中に出さない（作る側の版の歩みの頁に残す）
@@ -43,8 +53,8 @@ for sid in (G, T, PLAIN):
     n = hypotheses.set_number(hypotheses.load(sid))
     assert wa.set_version(sid) == n and hypotheses.current_set(hypotheses.load(sid)).endswith(f"-v{n}"), sid
     page = toy.toy_page(sid, "tenji")
-    fig_at = page.index('id="wa"')
-    assert f'<text class="wa-v" x="{wa.CX}" y="{wa.CY + 22}" text-anchor="middle">版 {n}</text>' in page[fig_at:page.index("</figure>", fig_at)], sid
+    # 部品の wa.ring の真ん中は今の型紙の版（玩具の頁には出さない。上の 2）
+    assert f'<text class="wa-v" x="{wa.CX}" y="{wa.CY + 22}" text-anchor="middle">版 {n}</text>' in wa.ring(wa.set_version(sid)), sid
     # 型紙の札の脇にも同じ数を「型紙の版」の字で 1 つ。「エンジンの版」とは言い分ける（エンジンの版はここに出さない）。
     # 版の歩みの節（#ban-ayumi）の額の下には、型紙の版とエンジンの版を言い分けて出す（設計 0.7 節）ので、その節を外して見る
     outside = re.sub(r'<section[^>]*id="ban-ayumi".*?</section>', "", page, flags=re.S)
@@ -55,7 +65,11 @@ kaizen.versions = lambda sid, hid: [{"version": 2}, {"version": 3}]
 try:
     assert wa.current_version(G, None) == 3, "寸法の刻みは前のまま数える（作る側の頁が使う）"
     n = wa.set_version(G)
-    assert f"版 {n}</text>" in toy.toy_page(G, "tenji") and ">版 3</text>" not in toy.toy_page(G, "tenji"), "真ん中は寸法の刻みでなく型紙の版"
+    # 玩具の頁の札の脇の版の札は、寸法の刻みでなく型紙の版（前は輪の図の真ん中で見ていた。図を うつしの輪 に替えた後も、版は札が出す）
+    # 版の歩みの節（#ban-ayumi）は前の組の額（型紙の版 3 など）を並べるので、仮説の札の所（#kasetsu-fuda から たとえ の前まで）で見る
+    page = toy.toy_page(G, "tenji")
+    fuda = page[page.index('id="kasetsu-fuda"'):page.index('id="tatoe"')]
+    assert f'<span class="lb ban">型紙の版 {n}</span>' in fuda and "型紙の版 3<" not in fuda, "札の版は寸法の刻みでなく型紙の版"
 finally:
     kaizen.versions = keep
 # 版の呼び方は組の番号で統一（窓口の決定 11-07）。組の中で人が採った直しがある時だけ「（直し N）」
@@ -103,4 +117,4 @@ for x, y in wa.SPOTS:
     assert 0 <= x - wa.BOX_W / 2 and x + wa.BOX_W / 2 <= wa.W and 0 <= y - wa.BOX_H / 2 and y + wa.BOX_H / 2 <= wa.H, (x, y)
 title = re.search(r"<title[^>]*>([^<]*)</title>", fig).group(1)
 assert title == " → ".join((*wa.STEPS, wa.STEPS[0])) and 'role="img"' in fig
-print("ok 輪の図は札のすぐ後に 1 つ出て、字は頁の字のまま、真ん中は今の型紙の版")
+print("ok 仮説の段の図は うつしの輪（断りの後・札の前に 1 つ・ためしの案（仮説）が図の中）。部品の輪の図の字は頁の字のまま、真ん中は今の型紙の版")
