@@ -1,0 +1,16 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_toy_head_fit.py
+# commit: 6b33b770（main。#679 の守りが入った後。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_toy_head_fit.py", line 44, in <module>
+    assert 'class="genga genga-head genga-flat"' in genga.head("NDL-1187053-R0000014-R", play_server.source("NDL-1187053-R0000014-R")), "頭が横書きで出ない"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 頭が横書きで出ない
+rc=1
+
+# 命令: 同じ試験から 6（頭が横書きで出る）の線を外した写しで、列を細くする形を見る
+Traceback (most recent call last):
+  File "tests/test_toy_head_fit.py（6 を外した写し）", line 188, in <module>
+    assert not bad, (len(bad), bad[:8])
+           ^^^^^^^
+AssertionError: (21, [('NDL-1187053-R0000014-R', 'ja', '1180x820', '.hero .genga-songs', '.hero .genga-pic'), ('NDL-1187053-R0000014-R', 'ja', '1180x820', '.hero .genga-songs', '.hero .genga-pic'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .genga-cap'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .genga-pic'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .genga-cap'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .genga-pic'), ('NDL-1187053-R0000014-R', 'ja', '1366x1024', '.hero .genga-songs', '.hero .genga-pic'), ('NDL-1187053-R0000014-R', 'easy', '1180x820', '.hero .genga-songs', '.hero .genga-pic')])
+rc=1
