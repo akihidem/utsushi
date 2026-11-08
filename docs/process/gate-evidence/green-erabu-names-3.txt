@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_erabu_names.py
+# commit: 4ba66d26（回した時の HEAD）
+ok えらぶの棚の名の札: 白と暗い版・3 つの言葉・12 の大きさで 1 行・ルビは札の中・絵と道とほかの札に重ならない
+rc=0

@@ -81,6 +81,44 @@ code, _, page = call(f"/toy/{G}/print", {"hypothesis": "H-ZZ"})
 alert = note_at(page, "kasetsu", "alert")
 assert code == 422 and "H-ZZ" not in alert, ("無い仮説の断りに内部の番号が出る", alert)
 assert alert and getattr(play_server, "NO_HYPOTHESIS", None) and play_server.NO_HYPOTHESIS in alert, alert
+
+
+def call_lang(path, data, lang):
+    """言葉を決めた別の画面から送る（英語とやさしい日本語の頁で、断りが訳されて出るか）。"""
+    r = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode(), method="POST",
+                               headers={"Content-Type": "application/x-www-form-urlencoded", "Origin": base, "Cookie": f"utsushi_lang={lang}"})
+    try:
+        x = urllib.request.build_opener(Stay).open(r)
+        return x.status, x.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode()
+
+
+# 記録を残す口でも、無い仮説の断りは同じ字で、内部の番号を出さない。前は受け口を通らず、記録の床の字「仮説 H-ZZ は実在しない」が
+# 3 つの言葉とも訳されずに出た（別の目の気づき・統括の決め 11-08）
+code, _, page = call(f"/toy/{G}/record", {"hypothesis": "H-ZZ", "result": "動いた"})
+alert = note_at(page, "kiroku", "alert")
+assert code == 422 and "H-ZZ" not in alert and "実在しない" not in alert, ("記録を残す口の断りに内部の番号が出る", alert)
+assert getattr(play_server, "NO_HYPOTHESIS", None) and play_server.NO_HYPOTHESIS in alert, alert
+from web import i18n  # noqa: E402
+for lang in ("en", "easy"):
+    code, page = call_lang(f"/toy/{G}/record", {"hypothesis": "H-ZZ", "result": "動いた"}, lang)
+    alert = note_at(page, "kiroku", "alert")
+    want = re.sub(r"[｜《][^《》｜]*》|｜", "", i18n.lookup(play_server.NO_HYPOTHESIS, lang) or "") if lang == "easy" else i18n.lookup(play_server.NO_HYPOTHESIS)
+    assert code == 422 and "H-ZZ" not in alert and "実在しない" not in alert, (lang, alert)
+    assert want and (want in re.sub(r"<rt>.*?</rt>|</?ruby>", "", alert)), (lang, want, alert)
+
+# 押し方の違う紙（前の組 goraigo-v7 の H-C）の記録から次の版を作ろうとした時の断りも、たたき台の内部の番号を出さない
+# （前は「次の版はたたき台（H-C）にだけ足す」。別の目の気づき・統括の決め 11-08）
+from omochae import records  # noqa: E402
+old_rid, failures = records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "sheet_set": "goraigo-v7", "result": records.results_for(G)[0],
+                                 "impression": "", "fixes": [], "answers": {}, "ideas": [], "note": ""})
+assert old_rid and not failures, failures
+code, _, page = call(f"/record/{old_rid}/next", {"to": "1"})
+alert = note_at(page, old_rid, "alert")
+assert code == 422 and GS not in alert and "たたき台（" not in alert, ("次の版の断りに内部の番号が出る", alert)
+assert getattr(play_server, "NEXT_SHEET_ONLY", None) and play_server.NEXT_SHEET_ONLY in alert, alert
+
 page = landed(call(f"/toy/{G}/print", {"hypothesis": GS}), "win")
 assert "紙を作りました" in note_at(page, "win", "status")
 # 別の仮説の紙がある時でも、頼んだ仮説の紙が無ければ同じ所に着く。

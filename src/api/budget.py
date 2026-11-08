@@ -22,6 +22,10 @@ DEFAULT_DAILY_CAP = 50
 STOP_TOTAL = 475.0
 # 1 回の生成の上限。暴走した輪で日割りを使い切らないため。
 PER_RUN_CAP = 3.0
+# 話した考えから型紙を作り直す口（role words・web.think_sheet）が Claude を呼ぶ 1 日の回数（日本の日付・全部の玩具と画面を合わせて）。
+# 本人の答え（11-08）「1 日 30 回」。最悪の見込み（1 回の押しが 1 回の run で、run の上限 PER_RUN_CAP まで使う）でも、日割りを聞く口・動画を見る口と
+# 分け合えるようにする（設計 grove の state/tsukuru-talk-sheet-20261108.md の 4 節・別の目の止め 2）。値を変える時は本人の承認が要る
+WORDS_PER_DAY = 30
 
 
 class BudgetStop(Exception):
