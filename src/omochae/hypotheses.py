@@ -228,7 +228,19 @@ def stage(source_id):
 
 
 def letter(h):
+    """仮説の印（H-C の C）。記録・作る側の頁・前の組の紙の題で使う番号。学ぶ人のつくるの頁と今の組の紙には出さない（下の SHOWN）。"""
     return h["id"].split("-")[1]
+
+
+# 学ぶ人に見せる仮説の呼び名（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」）。
+# 型紙は玩具ごとに 1 枚のたたき台（J-032）なので、印が無くても読み違えない。印（letter）は記録の番号として残し、替えない。
+# 前の組の紙（凍結の床の控え・compose.kept_sets）は前の題「仮説 A「…」」のまま刷る（控えた紙を替えない。tests/test_floor_pin.py）
+SHOWN = "仮説"
+
+
+def shown_name(h):
+    """つくるの頁と今の組の紙の、仮説の呼び名と名前（仮説「…」）。"""
+    return f"{SHOWN}「{h['name']}」"
 
 
 def list_lines(data, own=()):
@@ -373,11 +385,11 @@ def print_sheet(source_id, hypothesis_id, out, version=1, pending=None):
     if adopted:
         # 紙から根拠の記録へ戻れるように刷る（F7）。
         label += "・根拠 " + "、".join(adopted["record_ids"])
-    title = f"{data['toy']} 型紙 仮説 {letter(h)}「{h['name']}」{label}"
+    title = f"{data['toy']} 型紙 {shown_name(h)}{label}"  # 印は出さない（SHOWN の注）
     template = h.get("template") or data.get("template", "slider_fan")
     if h.get("template_id", "") is None:
         evidence = "、".join(f"{e['what']}（{e['where']}）" for e in h.get("evidence", []))
-        return print_free(source_id, f"仮説 {letter(h)}「{h['name']}」", h["how_it_moves"], evidence, out)
+        return print_free(source_id, shown_name(h), h["how_it_moves"], evidence, out)
     # 刷るのは型紙だけ（本人の決まり 11-06「文章のプリントは廃止」・窓口の決定 推し A）。手順の紙と試した後の紙は組まない。
     # 前は型紙の後に手順の紙（_print_instructions）と試した後の紙を組み、手順の紙が A4 に入らないと型紙も刷れなかった（御来迎 v14 で当たる）。
     # 組み方は頁（web.kumitate の組み方の節）、試した後の紙は前に配った道で開く時にだけ作る（web.play_server.ensure_after・print_after）。
@@ -393,7 +405,7 @@ def print_after(source_id, hypothesis_id, out):
     source = json.loads((ROOT / "data/sources" / f"{source_id}.json").read_text(encoding="utf-8"))
     match = [h for h in load(source_id)["hypotheses"] if h["id"] == hypothesis_id]
     if match:
-        return _print_after(source, f"仮説 {letter(match[0])}「{match[0]['name']}」", out)
+        return _print_after(source, shown_name(match[0]), out)
     own = [h for h in own_hypotheses(source_id) if h["id"] == hypothesis_id]
     if not own:
         raise ToolMissing(f"その仮説は無い: {hypothesis_id}")
