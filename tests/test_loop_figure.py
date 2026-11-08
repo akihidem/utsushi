@@ -55,7 +55,8 @@ assert texts.count("人") == 3 and texts.count("Claude") == 2
 # 4・5. 読み上げと正直に言う 1 行
 assert f'aria-label="{f.RING_LABEL}"' in s and f.RING_LABEL.startswith(f.NAME) and all(n in f.RING_LABEL for n in wa.STEPS)
 h = f.svg()
-assert h.count("<svg") == 1 and f"<figcaption" in h and f.HONEST in h and h.index("</svg>") < h.index(f.HONEST)
+# 図は日本語の図と英語の図の 2 つ（英語の頁でだけ英語の図を見せる・web.en_fig）。日本語の図は drawn() のまま
+assert h.count("<svg") == 2 and s in h and f"<figcaption" in h and f.HONEST in h and h.rindex("</svg>") < h.index(f.HONEST)
 assert f.HONEST != "次の型紙をよくするのは今、記録を Claude に渡して回しています。", "前の字は事実に合わない（本人の言葉 11-08「文書がおかしい」）"
 # 正直な 1 行は、本人の答え（11-08）「(A) でよい。」の字。記録を Claude に渡して次の型紙の案を作り、版は人が決める事を言う
 assert f.HONEST == "今は、作った人の記録を Claude に渡して、次の型紙の案を作っています。どの版にするかは人が決めます。", "正直な 1 行（本人が選んだ A）"

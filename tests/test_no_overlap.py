@@ -58,14 +58,6 @@ SIZES = {"iPad 横": (1180, 820), "iPad 横 帯あり": (1180, 746), "iPad 縦":
 # 今わかっている重なり（11-08 の見回り・grove の state/no-overlap-20261108.md）。鍵は（頁, 種類, 片方の要素の道の尾, もう片方の要素の道の尾, 言葉）。
 # 持ち主が直したら、その行を外す（外すと、残っていれば落ちる）
 KNOWN = {
-    # 型紙の窓の輪の図（web.wa）の英語の字が重なる: 「Current template」「Make the next template …」「Version N」
-    ("玩具の頁 御来迎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 御来迎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    ("玩具の頁 虎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 虎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    # 学びの輪の図（web.loop_figure）の英語の字が重なる（のこす・よむ）
-    ("のこす", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
-    ("よむ", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
     # えらぶの棚の札で、英語の玩具の名（長い）が札の絵に重なる。狭い幅では下の「See all toys」にも
     ("えらぶ", "字×絵", "li>a>span.nm", "li>a>img.pic", "en"),
     ("えらぶ", "字×字", "li>a>span.nm", "section.sec.erabu>p.links>a", "en"),
