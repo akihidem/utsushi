@@ -111,7 +111,8 @@ def opened_page(cookie, look):
         if r is None:
             continue
         sid = r["source_id"]
-        rows += (f'<li><a href="/toy/{esc(sid)}#{esc(rid)}">{esc(hypotheses.load(sid)["toy"])}</a>　{esc(records.result_word(r))}'
+        # 記録への道は手帖の記録の頁のその記録の札へ（#657 でつくるの頁から記録の札を外した。前の /toy/<印>#<記録> は行き先の札が無い・統括の確かめ 11-08）
+        rows += (f'<li><a href="/toy/{esc(sid)}/techo/kiroku#{esc(rid)}">{esc(hypotheses.load(sid)["toy"])}</a>　{esc(records.result_word(r))}'
                  f'　<a href="/toy/{esc(sid)}/techo">{esc(GO_ON)}</a></li>')
     body = (f'<section class="sec"><h1>{esc(OPENED)}</h1><p>{esc(CLOSE_NOTE)}</p>'
             + (f'<ul>{rows}</ul>' if rows else f'<p>{esc(NONE_YET)}</p>')

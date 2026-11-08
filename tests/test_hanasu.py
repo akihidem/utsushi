@@ -2,6 +2,9 @@
 
 見る線:
 - 3 つの場面（1 考え・2 工夫・3 できた物）で、字が残る。JS が無くても残せる。残る欄は決めた物だけで、声・IP・ブラウザの名・cookie が無い。時刻は分まで。
+  1 考え の口（玩具の頁の 考えを話す）は 11-08 に頁から外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）。受け口は前に残した字と
+  前の頁から送る物のために残るので、受け口は前のまま見て、玩具の頁に口が無い事を見る。話す口の形と断りは、残った 2 工夫（作りながら見る頁）と
+  3 できた物（手帖の記録の頁）の口で見る
 - 作りながら話した工夫と、仮説を見て話した考えは、記録を残した時に、その記録に入る（同じ画面の物だけ。ほかの人の話は入らない）。
 - 入口の床: 連絡先の形・名乗りの形・学年と組の形・学校の名前の形の文は残らない（落とした数だけ残る）。工作の話は落とさない。
 - 話す口の台本は、マイクを開く code・録る code・声を送る code・声を字にする code（音声認識）を持たない。録る釦「声を録る」（録っている間は「止める」）を
@@ -118,12 +121,13 @@ code, j = talk(scene="think", hypothesis=GS, text=THINK, via="voice", who=W)
 assert code == 200 and j["kept"] is True and "残しました" in j["note"], j
 code, _, head = post(f"/toy/{G}/talk", {"scene": "think", "text": "糸で引く所が気になる"})
 assert code == 303 and head["Location"].startswith(f"/toy/{G}?msg=") and head["Location"].endswith("&at=hanasu#hanasu"), head
-# 着いた節の頭に、返事の文が出る（JS が無い時。送った後の返事を、着いた場所で読む形）
+# 返事の文は落とさずに頁に 1 回出る（JS が無い時。送った後の返事を、着いた頁で読む形）。考えを話す の節（#hanasu）は 11-08 に外した
+# （本人の言葉 11-08「つくるの「考えを話す」は無くす。」）ので、文は頁の文の受け所（toy_page の終わりの、錨 #kasetsu の頭）に出る
 landed = get(head["Location"].split("#")[0])[1]
-assert '<section class="sec" id="hanasu"><div role="status"><p id="msg">残しました。型紙や説明をよくするのに使います。</p></div>' in landed, landed[landed.index('id="hanasu"'):][:300]
-# 通らなかった時も、同じ節の頭に理由が出る
+assert 'id="hanasu"' not in landed and landed.count('<div role="status"><p id="msg">残しました。型紙や説明をよくするのに使います。</p></div>') == 1, landed[:300]
+# 通らなかった時も、理由が頁に 1 回出る（連絡先の形の名は出さない）
 code, page, _ = post(f"/toy/{G}/talk", {"scene": "think", "text": "電話は 090-1234-5678 です"})
-assert code == 422 and f'<section class="sec" id="hanasu"><div role="alert"><p id="msg">{hanasu.BLOCKED}</p></div>' in page and "連絡先の形" not in page
+assert code == 422 and page.count(f'<div role="alert"><p id="msg">{hanasu.BLOCKED}</p></div>') == 1 and 'id="hanasu"' not in page and "連絡先の形" not in page
 code, j = talk(scene="think", hypothesis="H-ZZ", text="無い仮説")
 assert code == 422 and j["kept"] is False, j
 # 同じ画面で、別の仮説について話した考えと、仮説を選ばずに話した考え（頁に選ぶ欄は無いが、前に残した字と、JS の無い送り方の分。記録の形は受ける）
@@ -281,15 +285,17 @@ assert list(sm["craft"][GS][1]) == [1, 2, 3, None] and sm["craft"][GS][1][None] 
 assert [(r["record_id"], r["hypothesis_id"], r["sheet_version"], len(r["kufu"])) for r in sm["records"]] == [(RID, GS, 1, 6), ("R-0004", GS, 1, 1)], sm["records"]
 assert sm["via"] == {"voice": 3, "text": 8} and sm["dropped"] == {"pii": 2, "name": 1}, sm
 
-# ---- 頁: 3 つの場面に口がある。録る釦は考えの口と工夫の口にあり、記録の札の足す口には無い。字の欄の下の 1 行は 3 つとも
+# ---- 頁: 口は作りながら見る頁の工夫の口と、記録の札の足す口。録る釦は工夫の口にあり、記録の札の足す口には無い。字の欄の下の 1 行は口ごとに。
+# 玩具の頁の 考えを話す の口は外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」・#709）ので、玩具の頁に話す口・送り先・録る釦・断り・台本が無い
 REC = '<button type="button" class="hanasu-rec" aria-pressed="false"><span class="rec-go">声を録る</span><span class="rec-stop">止める</span></button>'
 KB = '<p class="meta hanasu-kb">キーボードのマイクで話して入れられます。</p>'
 HEAD = "<script>(()=>{\nconst M={norec:"  # 話す口の台本の頭（頁に 1 回だけ置く）
 code, toy = get(f"/toy/{G}")
-assert code == 200 and 'id="hanasu"' in toy and f'action="/toy/{G}/talk#hanasu"' in toy and 'name="scene" value="think"' in toy and REC in toy and KB in toy
-assert hanasu.NOTICE in toy and toy.count(HEAD) == 1
+assert code == 200 and 'id="hanasu"' not in toy and f'action="/toy/{G}/talk' not in toy and 'name="scene" value="think"' not in toy and REC not in toy and KB not in toy
+assert hanasu.NOTICE not in toy and "data-hanasu" not in toy and HEAD not in toy
 code, tsu = get(f"/toy/{G}/tsukuru?h={GS}&n=2")
 assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and REC in tsu and KB in tsu
+assert hanasu.NOTICE in tsu and tsu.count(HEAD) == 1
 assert f'data-hanasu data-sid="{G}" data-scene="craft"' in tsu, "録る区切りに玩具の印と場面を添える（台本が読む）"
 # 手帖の記録の札は記録の頁にある（作る頁は 1 手 1 画面にして、記録の番号を出さない。本人の決定 11-05、#87）
 code, techo = get(f"/toy/{G}/techo/kiroku")
@@ -394,28 +400,30 @@ for name in ("HOW_LOCAL", "HOW_BROWSER", "HOW_NONE", "NOHEARD"):
 # 本人が採った字（一字も変えない）。話す口の断りの後に置く。断りは定数 1 か所で、話す口のある頁の全部に同じ物が出る
 AI_USE = "残した字は、AI（Claude）が型紙をよくする案を考えるのにも使います。"
 assert hanasu.NOTICE.endswith("書かないでください。" + AI_USE)
-for page in (toy, tsu, techo):
+for page in (tsu, techo):
     assert page.count(AI_USE) == page.count('<div class="hanasu" data-hanasu') >= 1, "話す口ごとに 1 回"
     assert hanasu.NOTICE in page
-# 断りと、字の欄の下の 1 行は、3 つの頁の口に出る（1 行は口ごとに 1 回）
-for page in (toy, tsu, techo):
+# 断りと、字の欄の下の 1 行は、口のある 2 つの頁に出る（1 行は口ごとに 1 回）。口の無い玩具の頁には出ない（考えを話す の口を外した・#709）
+for page in (tsu, techo):
     # 手帖の記録の頁の上の のこす の記入の節（web.nokosu）の工夫の欄にも同じ 1 行がある（話す口の形の div・class なし）
     assert ADOPTED["NOTICE"] in page and page.count(KB) == page.count('<div class="hanasu" data-hanasu') + page.count('<div data-hanasu data-sid=') >= 1
     for old in ("「話す」を押すと", "声を機械の中だけで字にできません", "キーボードのマイクのマーク"):
         assert old not in page, old
+assert AI_USE not in toy and ADOPTED["NOTICE"] not in toy and KB not in toy, "口の無い玩具の頁に話す口の断りが残った"
 # 場面の見出しと例・選ぶ欄・頁の頭の一文
-# 玩具の頁の考えの箱は、節の見出しと同じ字が並ぶので箱の見出しを出さない（本人の決定 11-06）
-# 考えを話す の見出しは、仮説の段の中の小さな口の見出し（h3）。段の見出し（h2）は「仮説」（本人の言葉 11-08・設計の問い 4 の答え「推しのとおり。」）。
-# 箱の見出し（hanasu-head）は出さない（11-06 の字の決めの 2）
-assert '<p class="hanasu-head">考えを話す</p>' not in toy and "<h3>考えを話す</h3>" in toy and "<h2>考えを話す</h2>" not in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' in toy
+# 玩具の頁の 考えを話す の口（見出し・例の字・頭の一文・考えの欄）は、口ごと外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）。
+# 前は仮説の段の中の小さな口（見出し h3・箱の見出し hanasu-head は出さない 11-06 の字の決めの 2）だった
+assert "考えを話す" not in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' not in toy
 assert '<p class="hanasu-head">工夫を話す</p>' in tsu and 'placeholder="『ここをこうしたら、うまくいった』など"' in tsu
 assert '<p class="hanasu-head">工夫した所や、思った事を足す</p>' in techo
-# 考えは、頁に出ているたたき台に結ぶ。仮説を選ぶ欄を置かない（型紙は玩具ごとに 1 枚。J-032）
-think_form = toy[toy.index('id="hanasu"'):toy.index("</form>", toy.index('id="hanasu"'))]
-assert f'<input type="hidden" name="hypothesis" value="{GS}">' in think_form and "<select" not in think_form and "どの案（仮説）" not in toy
-assert '<p class="lead">仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。合っているかどうかは見ません。思ったとおりに話してください。</p>' in toy
-# 釦は「声を録る」（録っている間は「止める」）と「残す」。台本は釦の字を書き替えない（押した印だけを替え、CSS が字を選ぶ）
-assert REC in toy and '<button class="hanasu-go">残す</button>' in toy and "textContent=on?" not in hanasu.SCRIPT
+# 考えの口は、頁に出ているたたき台に結ぶ形だった（型紙は玩具ごとに 1 枚。J-032）。口を外した後も、仮説を選ぶ欄と頭の一文は戻っていない（#709）
+assert "<select" not in toy.split('id="win"', 1)[0] and "どの案（仮説）" not in toy
+assert "仮説は、AI が考えたためしの案です。見て思った事を、話すか書いて残してください。" not in toy
+# 工夫の口も、頁に出ているたたき台と版に結ぶ（選ぶ欄を置かない）
+craft_form = tsu[tsu.index('name="scene" value="craft"'):tsu.index("</form>", tsu.index('name="scene" value="craft"'))]
+assert f'<input type="hidden" name="hypothesis" value="{GS}">' in craft_form and "<select" not in craft_form
+# 釦は「声を録る」（録っている間は「止める」）と「残す」（口の残った作りながら見る頁で見る）。台本は釦の字を書き替えない（押した印だけを替え、CSS が字を選ぶ）
+assert REC in tsu and '<button class="hanasu-go">残す</button>' in tsu and "textContent=on?" not in hanasu.SCRIPT
 for said in ("聞いています。話した事が、欄に字で出ます。", "字にしました。読んで、よければ「残す」を押してください。", "この機械では字にできませんでした。字で書いてください。",
              "聞き取れませんでした。もう一度押すか、字で書いてください。", "声を字にするしくみを、この機械に入れています（はじめの 1 回だけ）…"):
     assert said not in hanasu.SCRIPT, ("聞く口の知らせは外した", said)

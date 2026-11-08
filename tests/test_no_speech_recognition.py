@@ -29,8 +29,9 @@ from web import i18n  # noqa: E402
 from web.play_server import serve, sources  # noqa: E402
 
 BANNED = ("SpeechRecognition", "webkitSpeechRecognition", "processLocally", "SpeechGrammar", "OMOCHAE_VOICE")
-WORK = ("/kasane", "/kasane/hmd")  # 作業の頁の道（上の注・この PR の外）。除くのは道の終わりがこの形の物だけ
-WORK_SRC = ("hmd.py",)
+# 作業の頁を聞くだけにする作り直し（先に main に入った）で、作業の頁の音声認識も外れたので、除く道も字も無い（上の注の「除くのをやめる」）
+WORK = ()
+WORK_SRC = ()
 G = "NDL-1187053-R0000005-L"
 KEY = "b" * 24  # この画面が記録を残した時の鍵（記録の札の足す口は、その画面にだけ開く・records.mine）
 

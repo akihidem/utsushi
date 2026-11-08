@@ -91,15 +91,14 @@ assert voice.index("fin(got);if(onEnd)onEnd(got)") > voice.index("await put("), 
 assert "document.addEventListener('visibilitychange',()=>{if(document.hidden)halt()});" in S
 assert "e.preventDefault();voiceStop().then(()=>handOver(decodeURIComponent(m[1]))).finally(()=>{location.href=a.href})" in S
 
-# ---- 2 作業の頁
+# ---- 2 作業の頁（11-08 から録らない。本人 11-08 539「記録はここでは取らず、質問のための経路と割り切る。」・本人の答え「…カメラの区切りを外す事も、推しのとおり。」）
+# 前はここで「ここで止まった」の 10 秒の録り（camClip）を見ていた。今は、作業の頁に録る釦も録る台本（置き場の台本・camClip）も無い事を見る。
+# 回の判定（start_assets）は置く（下の「作業の頁は、録る形なら…」の節が見る）
 page_cam, page_hmd = hmd.page("NDL-1187053-R0000005-L", cam=True), hmd.page("NDL-1187053-R0000005-L")
-assert f'<button type="button" id="hmd-stuck">{hmd.STUCK}</button>' in page_cam and 'id="hmd-stuck"' not in page_hmd
-assert "body:not(.cam-on) #hmd-stuck{display:none}" in hmd.STYLE, "カメラを出している間だけ見える"
-assert hmd.SCRIPT.count("camClip(") == 1 and "MediaRecorder" not in hmd.SCRIPT
-handler = body(hmd.SCRIPT, "if(stuck)stuck.addEventListener('click',async()=>{", "}});")
-assert handler.index("if(!tracks||!window.utsushiClips") < handler.index("utsushiClips.camClip(cam.srcObject,{sid:T.sid,step:Number(body.dataset.at||0)+1,button:'stuck'})")
-assert "r==='full'){camNote.textContent=T.full" in handler
-assert page_cam.count(A) == 1 and A not in page_hmd and clips.FULL in page_cam
+for page in (page_cam, page_hmd):
+    assert 'id="hmd-stuck"' not in page and "ここで止まった" not in page and A not in page and "camClip(" not in page, "作業の頁は録らない（録る釦も置き場の台本も無い）"
+    assert clips.FULL not in page and clips.FIRST not in page, "録らない頁に録る時の断りを置かない"
+assert "camClip" not in hmd.SCRIPT and "utsushiClips." not in hmd.SCRIPT, "作業の頁の台本は区切りの置き場を呼ばない"
 
 # ---- 3 話す口: 録るのは「声を録る」を押した所の 1 か所。もう一度押すと止める。「残す」の前に止めて置き終えるのを待つ
 H = hanasu.SCRIPT
@@ -216,8 +215,15 @@ hmd_page = hmd.page("NDL-1187053-R0000005-L", cam=True)
 work_rec = "utsushiClips.openedAs(T.sid,'work')" in hmd.SCRIPT and "utsushiClips.startMaking(T.sid,back)" not in hmd.SCRIPT
 work_plain = "utsushiClipsStart(s)" in hmd_page and "utsushiClips.openedAs(" not in hmd.SCRIPT
 assert work_rec or work_plain, "作業の頁は続き（玩具の頁の回を引き継ぐ）"
-assert 'utsushiClips.openedAs("NDL-1187053-R0000005-L","toy")' in hanasu.think_section("NDL-1187053-R0000005-L", {}), "玩具の頁は作り始め"
+# 玩具の頁は作り始め。前は 考えを話す の節（hanasu.think_section）の中にあった。本人の言葉 11-08「つくるの「考えを話す」は無くす。」で節を外した後は、
+# 頁の終わりに 1 回置く（clips.toy_start）。節が無い事と、置き場の台本と作り始めが頁に 1 回ずつある事を、頁そのもので見る
+from web import toy  # noqa: E402
+
+toy_page = toy.toy_page("NDL-1187053-R0000005-L")
+assert toy_page.count('utsushiClips.openedAs("NDL-1187053-R0000005-L","toy")') == 1 and toy_page.count(A) == 1, "玩具の頁は作り始め"
+assert 'id="hanasu"' not in toy_page and not hasattr(hanasu, "think_section"), "考えを話す の節が残った"
 assert ("addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false)" in hmd.SCRIPT if work_rec
         else "if(e.persisted&&window.utsushiClipsFresh)utsushiClipsFresh(s)" in hmd_page), "戻る釦で読み直さずに戻った時も作り始め"
-assert clips.STORE.endswith("このサイトをほかの画面で開くと、前に録った声と映像は消えます。"), "ほかの画面（2 つ目のタブ）で消える事を置き場の断りが言う（本人の答えの字 11-08）"
+# 11-08 夕に作業の頁のカメラの区切りを外したので「と映像」を外した（本人の答え「字の替え 11 か所も、カメラの区切りを外す事も、推しのとおり。」）
+assert clips.STORE.endswith("このサイトをほかの画面で開くと、前に録った声は消えます。"), "ほかの画面（2 つ目のタブ）で消える事を置き場の断りが言う（本人の答えの字 11-08）"
 print("ok: 作り始めの消し・印は玩具ごとに使い直す・承認の後の消しはその玩具だけ")

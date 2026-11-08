@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_nokosu_route_b.py
+# commit: 6b33b770（今の main。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_nokosu_route_b.py", line 49, in <module>
+    assert make < w.index(ASK) < go.start() and w[:go.start()].endswith(f'<p class="meta nokosu-route">{ASK}</p>'), (sid, "本人の字が のこす の釦のすぐ上に無い")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '本人の字が のこす の釦のすぐ上に無い')
+rc=1

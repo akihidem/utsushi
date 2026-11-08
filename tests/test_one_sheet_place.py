@@ -40,7 +40,8 @@ for sid in TOYS:
     assert len(re.findall(prints, before)) == 1 and len(re.findall(prints, win_before)) == 1 and not re.findall(prints, hero), (sid, re.findall(prints, before))
     assert f'<img src="/sheet/{sid}/' not in before, (sid, "紙が無いのに型紙の絵")
     # 窓の節は、紙が無い時も、説明・断り・輪の図・仮説の札を出す（「すぐ作る」の節を窓へ寄せた。C3）。紙の絵と紙の種類の札は無い
-    assert "<h2>型紙の窓</h2>" in before and '<figure class="sheet">' not in win(before), (sid, "紙が無いのに紙の窓")
+    # 見出しは「型紙を印刷する」（本人の言葉 11-08「型紙の窓を「型紙を印刷する」からにして…」。前は「型紙の窓」）
+    assert "<h2>型紙を印刷する</h2>" in before and '<figure class="sheet">' not in win(before), (sid, "紙が無いのに紙の窓")
     for gone in GONE:
         assert gone not in before, (sid, gone)
 
@@ -50,7 +51,7 @@ for sid in TOYS:
     # 紙がある時: 型紙の絵は窓の中だけ。札（すぐ作る）に絵は無い。紙を作り直す口も無い（頭の「つくる」は窓の紙へ行く）
     pics = re.findall(rf'<img src="/sheet/{re.escape(sid)}/[^"]+"', page)
     assert pics and all(p in w for p in pics) and len(re.findall(rf'<img src="/sheet/{re.escape(sid)}/[^"]+"', page.replace(w, ""))) == 0, (sid, pics)
-    assert "<h2>型紙の窓</h2>" in w and "PDF を開いて印刷する" in w, sid
+    assert "<h2>型紙を印刷する</h2>" in w and "PDF を開いて印刷する" in w and "<h2>型紙の窓</h2>" not in page, sid
     assert not re.findall(prints, page), (sid, re.findall(prints, page))
     for gone in GONE:
         assert gone not in page, (sid, gone)

@@ -2,8 +2,12 @@
 
 1. 手帖の約束の印は、写真か動画を選んだ時だけ要る。写真なしの「のこす」は印が無くても押せる。合言葉なしの場も写真の口があるので、同じ印を出す（本人の決定 11-06 で口を開けた。前は口が閉じていて、印を出さなかった）
 2. 写真を選ばずに残した時の返事を「上げました」にしない（上げていないので）。字は頁の記録の返事に今ある字
-3. 「この考えから紙を作る」の戻り先は #think。断りの文はそこにあり、頁の頭に戻ると見えなかった（幅 390 で 2978px 下）
-4. 「残す」の前に釦を押しても、話した字を消さない。字はタブの中にだけ持ち、サーバへ送らない（送るのは「残す」の時だけ、hanasu の決まり）
+3. 「この考えから紙を作る」の戻り先は #think。断りの文はそこにあり、頁の頭に戻ると見えなかった（幅 390 で 2978px 下）。
+   11-08 に玩具の頁から #think の口ごと外した（本人の言葉「つくるの「考えを話す」は無くす。」・字の欄の無い釦は行き止まりになった）ので、
+   頁に釦が無い事と、部品（think_sheet.section・_status）の戻り先が #think のままである事と、受け口の断りの文が落ちない事を見る
+4. 「残す」の前に釦を押しても、話した字を消さない。字はタブの中にだけ持ち、サーバへ送らない（送るのは「残す」の時だけ、hanasu の決まり）。
+   玩具の頁の字の欄（考えを話す の口）は 11-08 に外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）ので、頁に欄が無い事と、
+   釦が字を送らない事と、話す口の台本の持ち方を見る
 5. 約束の印なしに写真を送らない。前の手帖の頁では、写真を選んで別の頁へ行って戻ると、ブラウザが写真を戻すのに change を出さず、押した時に写真が上がった
    （この PR の最初の形で別の目のレビューが見つけた）。作り直した手帖（1 手 1 画面、#87）は、選んだ写真を頁の中に持って選ぶ欄を空に戻すので、
    ブラウザが戻す写真は無い。印は「のこす」を押した時に見て、記録の口へ何かを送る前に止める（歩いて確かめるのは tests/test_voice_walk.py）
@@ -85,15 +89,17 @@ assert "記録を残しました" in (ROOT / "src/web/play_server.py").read_text
 
 # 3. 戻り先
 page = get(base, f"/toy/{G}")
-assert f'action="/toy/{G}/think-sheet#think"' in page, "断りの文のある節へ戻す"
+assert "think-sheet" not in page and 'id="think"' not in page and think_sheet.GO not in page, "玩具の頁に作り直す口（行き止まり）が残った"
+assert f'action="/toy/{G}/think-sheet#think"' in think_sheet.section(G), "部品の釦は断りの文のある節へ戻す"
 pending = think_sheet._status(G, {"status": "pending_human", "how_it_moves": "x", "token": "t", "result": {}})
 assert f'action="/toy/{G}/think-ok#think"' in pending, "こちらの釦も同じ節へ戻す"
 code, body = post(base, f"/toy/{G}/think-sheet", {"who": ""})
-assert code == 422 and think_sheet.NONE in body.split('id="think"', 1)[1].split("</section>", 1)[0], "断りの文は #think の中"
+assert code == 422 and think_sheet.NONE in body, "受け口の断りの文は頁に残る（節が無くても落とさない）"
 
 # 4. 話した字
-assert page.index('id="hanasu"') < page.index('id="think"'), "字の欄は釦の節のすぐ前"
-go = re.search(r'<form[^>]*think-sheet[^>]*>(.*?)</form>', page, re.S).group(1)
+# 字の欄（考えを話す の口）は、前は釦の節のすぐ前にあった。本人の言葉 11-08「つくるの「考えを話す」は無くす。」で口ごと外したので、頁に無い
+assert 'id="hanasu"' not in page and 'name="scene" value="think"' not in page, "字の欄は外した"
+go = re.search(r'<form[^>]*think-sheet[^>]*>(.*?)</form>', think_sheet.section(G), re.S).group(1)  # 部品の釦（頁からは外した・上の 3）
 assert "<textarea" not in go and "<input" not in go, "釦は字を送らない"
 script = hanasu.SCRIPT
 keep = script[script.index("// 「残す」の前に"):script.rindex("})()</script>")]

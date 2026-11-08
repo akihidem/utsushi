@@ -84,7 +84,10 @@ for sid in (G, T, TRIAL):
         page = get(f"/toy/{sid}")
         assert page.count('<div class="plate">') == 1, (sid, when)
         assert '<select name="hypothesis">' not in page, (sid, when, "紙を選ぶ欄")
-        assert f'<input type="hidden" name="hypothesis" value="{sheet}"' in page, (sid, when)
+        if when == "刷る前":  # 紙を刷る口（型紙の窓の「つくる」）がたたき台を送る
+            assert f'<input type="hidden" name="hypothesis" value="{sheet}"' in page, (sid, when)
+        else:  # 刷った後は刷る口が無く、窓の紙がたたき台の紙（前は 考えを話す の口の hidden も持っていた。口は 11-08 に外した・本人の言葉「つくるの「考えを話す」は無くす。」）
+            assert f'<img src="/sheet/{sid}/{sheet}_v' in page and f'href="/sheet/{sid}/{sheet}_v' in page, (sid, when, "窓の紙がたたき台でない")
         for h in rest:
             letter = hypotheses.letter(h)
             assert f"仮説 {letter}" not in page, (sid, when, letter)

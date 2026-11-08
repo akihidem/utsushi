@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_kiroku_date_ban.py
+# commit: 6b33b770（今の main。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_kiroku_date_ban.py", line 30, in <module>
+    assert f"{date}・{ban}" in head.group(1), (public, head.group(1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (False, '記録の番号 R-0001\u3000仮説の紙\u3000動いた')
+rc=1

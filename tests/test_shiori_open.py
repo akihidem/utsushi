@@ -123,7 +123,9 @@ assert call(GP, f"/toy/{G}/print", "POST", {"hypothesis": H}, cookie=mine)[0] in
 code, _, _, body = call(GP, f"/toy/{G}/record-json", "POST", {"hypothesis": H, "result": "動いた"}, cookie=mine)
 rid = json.loads(body)["id"]
 assert shiori.records_of(value) == [rid], shiori.records_of(value)
-assert f"#{rid}" in call(GP, f"/s/{T}", cookie=mine)[3], "開いた画面の頁に、その記録への道"
+# 記録への道は手帖の記録の頁のその記録の札へ（つくるの頁から記録の札を外した 11-08・#657。前の /toy/<印>#<記録> は行き先の札が無い）
+opened_body = call(GP, f"/s/{T}", cookie=mine)[3]
+assert f'href="/toy/{G}/techo/kiroku#{rid}"' in opened_body and f'href="/toy/{G}#{rid}"' not in opened_body, "開いた画面の頁に、その記録への道"
 
 # 5 の続き: 20 分さわらないと門も閉じる（触れば数え直す。1 分に 1 回）
 clock[0] += 1199

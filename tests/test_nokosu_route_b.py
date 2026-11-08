@@ -3,7 +3,9 @@
 
 見る事:
 1. 紙を刷った後の型紙の窓に、「PDF を開いて印刷する」→「つくる」（手帖へ）→「のこす」（記録の頁へ・枠の釦）の順で並ぶ
-2. 「のこす」のすぐ下に、今の 1 行「つくるところを、写真と声でのこせます。」→ 本人の字「どう工夫したかあとで教えてください。写真や動画でもいいです。」→ 意義の 1 行 の順
+2. 本人の字「どう工夫したかあとで教えてください。写真や動画でもいいです。」は「のこす」のすぐ上（作りながら見る頁の のこす の札と同じ順: 札の中の上の段に
+   本人の字・その下に のこす。統括の決め 11-08・別の目の確かめの止め 1。#657 では釦の下だった）。「のこす」のすぐ下に、今の 1 行
+   「つくるところを、写真と声でのこせます。」→ 意義の 1 行 の順
 3. 「のこす」の釦は「つくる」と同じ大きさ（高さ 64px・幅 10em 以上）で、押せる所は 44px 以上
 4. 刷る前（窓に紙が無い時）は のこす の釦を出さない（作る前に のこす を押す人を作らない）
 5. 本人の字は英語とやさしい日本語の表にある
@@ -44,8 +46,9 @@ for sid in TOYS:
     go = re.search(rf'<p class="nokosu-go"><a class="btn quiet" href="/toy/{sid}/techo/kiroku">のこす</a></p>', w)
     assert go and pdf < make < go.start(), (sid, "印刷 → つくる → のこす の順でない")
     # 2
-    lines = [w.index(t, go.end()) for t in (naoru.ROUTE_MAKING, ASK, naoru.purpose())]
-    assert lines == sorted(lines), (sid, "のこす の下の行の順が違う")
+    assert make < w.index(ASK) < go.start() and w[:go.start()].endswith(f'<p class="meta nokosu-route">{ASK}</p>'), (sid, "本人の字が のこす の釦のすぐ上に無い")
+    lines = [w.index(t, go.end()) for t in (naoru.ROUTE_MAKING, naoru.purpose())]
+    assert lines == sorted(lines) and ASK not in w[go.end():], (sid, "のこす の下の行の順が違う")
     assert w.count(ASK) == 1 and w.count(naoru.ROUTE_MAKING) == 1, (sid, "同じ行を 2 度出した")
 # 3
 css = toy.FOLD_STYLE
@@ -57,4 +60,4 @@ easy = {}
 for f in sorted((ROOT / "data/i18n/yasashii.d").glob("*.json")):
     easy.update(json.loads(f.read_text(encoding="utf-8"))["strings"])
 assert ASK in easy and "｜工夫《くふう》" in easy[ASK], "やさしい日本語の表に本人の字が無い"
-print("ok 型紙の窓: 印刷 → つくる → のこす（大きな枠の釦）・下に のこせる・本人の字・意義の 3 行・刷る前は出さない・英語とやさしい日本語の表にある")
+print("ok 型紙の窓: 印刷 → つくる → 本人の字 → のこす（大きな枠の釦）・下に のこせる・意義の 2 行・刷る前は出さない・英語とやさしい日本語の表にある")

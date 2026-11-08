@@ -48,10 +48,11 @@ for sid in TOYS:
     # 刷った後: 手帖へ行く口は型紙の窓の「つくる」1 つだけ
     assert page.count(techo) == 1 and techo in secs["win"], (sid, page.count(techo))
     assert f'<a class="btn" {techo}>つくる</a>' in secs["win"], (sid, "窓の「つくる」が手帖へ行かない")
-    # 頭の「つくる」は仮説の段の頭へ（本人の言葉 477・設計の問い 2 の答え）。頁の「つくる」は頭と窓の 2 つで、行き先は 仮説の段 → 手帖 の順
+    # 頭の「つくる」は流れの最初の段へ（本人の言葉 477・設計の問い 2 の答え。11-08「つくるは、仮説の前に「組み立てを立体で見る」を置く。」で最初の段は
+    # 立体 #kasetsu。2 つの玩具とも立体がある）。頁の「つくる」は頭と窓の 2 つで、行き先は 立体の段 → 手帖 の順
     assert page.count(">つくる<") == 2, (sid, page.count(">つくる<"))
     hero = page[:page.index('</section>', page.index('<section class="hero">'))]
-    assert '<a class="btn" href="#kasetsu-fuda">つくる</a>' in hero, (sid, "頭の「つくる」が仮説の段へ行かない")
+    assert '<a class="btn" href="#kasetsu">つくる</a>' in hero, (sid, "頭の「つくる」が最初の段（立体）へ行かない")
     # 前の「作る」の節の見出し・説明・手帖への釦は無い（外した字）
     for gone in ("<h2>作る</h2>", "手帖をひらく（作りながら聞く・上げる）", "刷った紙を切って、折って、組みます。机に置いた手帖で"):
         assert gone not in page, (sid, gone)
@@ -59,4 +60,4 @@ for sid in TOYS:
     assert "/tsukuru" not in page and "作りながら見る（机の端に置く・試作）" not in page, (sid, "作りながら見る頁への口")
     # 困った時に聞く口は玩具の頁から外した: 手帖の手順の画面に「こまった」と聞く口がある（設計の問い 4 の答え「推しのとおり。」）
     assert 'id="ask"' not in page and 'id="tsukuru"' not in page, sid
-print(f"ok 玩具の頁の作る口: {len(TOYS)} 種で、手帖へ行く口は型紙の窓の「つくる」1 つ（刷る前は 0）、刷る口は型紙の窓の 1 つ、頭の「つくる」は仮説の段へ")
+print(f"ok 玩具の頁の作る口: {len(TOYS)} 種で、手帖へ行く口は型紙の窓の「つくる」1 つ（刷る前は 0）、刷る口は型紙の窓の 1 つ、頭の「つくる」は最初の段（立体）へ")

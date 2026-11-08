@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_toy_page_order.py
+# commit: 6b33b770（今の main。この枝の試験だけを入れた木）
+Traceback (most recent call last):
+  File "tests/test_toy_page_order.py", line 43, in <module>
+    assert at == sorted(at) and page.index('<section class="hero">') < at[0], (where, dict(zip(STEPS, at)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('NDL-1187053-R0000005-L', '刷る前'), {'kasetsu': 40228, 'kasetsu-fuda': 18400, 'tatoe': 39744, 'win': 654066, 'kiroku': 662303})
+rc=1

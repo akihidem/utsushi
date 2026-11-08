@@ -90,13 +90,16 @@ assert not hasattr(hypotheses, "need_prediction") and not hasattr(hypotheses, "s
 # 前提の明示。頭の札が仮説の札より前にある
 assert 'id="premise"' in page and "ためしの案（仮説）" in page and "正しい答えではありません" in page
 assert page.index('id="premise"') < page.index('class="plates"')
-# 仮説を書く欄は外した（本人の決定 11-05 18:08、J-032 の点 2）。考えは話す節で話す
-assert f"/toy/{G}/own" not in page and f"/toy/{G}/talk" in page
+# 仮説を書く欄は外した（本人の決定 11-05 18:08、J-032 の点 2）。考えを話す の口も外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）。
+# 話す口は作りながら見る頁（工夫を話す）に残る（下の 刷れて… の後で見る）
+assert f"/toy/{G}/own" not in page and f"/toy/{G}/talk" not in page
 # 手帖は予想なしで開く
 assert "手帖" in get(f"/toy/{G}/techo")
 # 刷れて、作りながら見る頁が開く
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
 assert GS in get(f"/toy/{G}/tsukuru") or "作りながら" in get(f"/toy/{G}/tsukuru")
+# 話す口は、作りながら見る頁の 工夫を話す に残る（考えを話す の口を玩具の頁から外した後も、話して残す道がある）
+assert f'action="/toy/{G}/talk"' in get(f"/toy/{G}/tsukuru") and 'name="scene" value="craft"' in get(f"/toy/{G}/tsukuru")
 # 他の人の作った物。写真が無くても言葉で並ぶ
 # 「これまでの復元」の節は もちよる へ移した（本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）。玩具の頁には無い
 assert toy.MINNA_HEAD not in get(f"/toy/{G}")
