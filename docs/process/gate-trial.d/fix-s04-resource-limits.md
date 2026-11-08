@@ -9,6 +9,6 @@
   - 字にする前の声の待ち行列（`src/omochae/voice_text.py` の Worker）に長さ 32 の上限。満ちた時は入れず、声は置き場に残って次に立てた時に回し直す
 - ふつうの量では挙動を替えない: どの上限もワークショップの 1 つの場の量では届かない。断りの字は前からの字
 - 試験: `tests/test_load_guard.py`（入口・予約・本物の口の 503 と 507・同時の処理の数・声の待ち行列）
-- 検証ゲート: Red: 今の main の木に `tests/test_load_guard.py` だけを当てて rc 1（`docs/process/gate-evidence/red-s04-resource-limits.txt`。上限の部品が無い）
+- 検証ゲート: Red: 今の main の木に `tests/test_load_guard.py` だけを当てて rc 1（`docs/process/gate-evidence/red-s04-resource-limits.txt`。上限の部品が無い）。Green: rc 0（`green-s04-resource-limits.txt`、2cd2618b）。上げる口・声とカメラの区切り・遊びの場・英語の全頁ほか 28 本が rc 0
 - まだの所: 本番の HTTP サーバとプロキシでの接続数・本文の大きさ・要求全体の締切の制御、CPU・メモリ・一時領域の制限（OS やコンテナの側）、動画を上げる別の口（`src/web/video_up.py`）の作業列の長さ、`./run.sh` の全部（関わる試験だけ回した）
 - マージ後の書き戻し: Issue は立てていない
