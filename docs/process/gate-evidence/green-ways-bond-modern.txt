@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ways.py
+# commit: e3bbf358（回した時の HEAD）
+ok
+rc=0
