@@ -31,7 +31,23 @@ from web.play_server import serve  # noqa: E402
 from web.toy import toy_page  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-PLAIN = "NDL-1187053-R0000009-R"  # 歌の読みの無い試作の玩具。箱は頁の一部（前の R0000009-L-2 は 11-08 に図 11 の歌の読みが入った）
+def _no_reading():
+    """歌の読みの無い試作の玩具を 1 つ選ぶ（箱は頁の一部）。くずし字の歌の読みを 10 歌ずつ足していくので（11-08）、名指しの印にすると、
+    読みが入るたびに例の玩具を替えないといけない。並びの頭から、出典の記録に読みの無い玩具を選ぶ"""
+    from omochae import hypotheses as _h
+    for p in sorted((ROOT / "data/sources").glob("NDL-*.json")):
+        s = json.loads(p.read_text(encoding="utf-8"))
+        if s.get("transcription", {}).get("entries") or not (ROOT / "data/hypotheses" / p.name).exists():
+            continue
+        # 御来迎と虎と同じ頁を分け合う玩具は外す（この試験は例の玩具の頁の写しを消して見る所があり、同じ頁の御来迎と虎の写しまで消えるため）
+        if p.stem.rsplit("-", 1)[0] in {"NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"} or p.stem in {"NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"}:
+            continue
+        if genga.box(s) and _h.stage(p.stem) != "必須":
+            return p.stem
+    raise AssertionError("読みの無い試作の玩具が無い")
+
+
+PLAIN = _no_reading()  # 歌の読みの無い試作の玩具。箱は頁の一部
 
 
 def src(sid):
