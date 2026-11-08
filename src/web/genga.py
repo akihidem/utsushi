@@ -109,6 +109,13 @@ def songs(src):
 # 本人の決め 11-08「かなと漢字の書き分けと濁点だけの違いは A（1997 の翻刻）にそろえる」で読みを決めた歌。作る側が複写から写した字で、
 # 1 字ずつの確かめはまだ。頁に「確かめた人」を出すと 1 字ずつ確かめたように読めて事実と違うので、読みの出所の 1 行だけを出す（統括の決め 11-08）
 READ_A = "読み: 1997 年の翻刻による"
+# 本人の答え（11-08「図 13 は B の読みでよい。」など）で、有坂与太郎『日本玩具史 後編』（1932）の見出しの活字を読みにした歌。A と同じく 1 字ずつの確かめはまだ
+READ_B = "読み: 有坂与太郎『日本玩具史 後編』（1932）の見出しによる"
+
+
+def read_line(entries):
+    """決めで読みにした歌の出所の 1 行。複写 B（有坂の本の見出し）の字なら READ_B、ほかは READ_A。"""
+    return READ_B if any(e.get("set") == "B" for e in entries) else READ_A
 
 
 def decided(src):
@@ -145,7 +152,7 @@ def _songs(src):
         dec = decided(src)
         if not dec:
             return "", ""
-        return '<div class="genga-songs">' + "".join(f"<p>{esc(e['text'])}</p>" for e in dec) + "</div>", f'<p class="meta">{esc(READ_A)}</p>'
+        return '<div class="genga-songs">' + "".join(f"<p>{esc(e['text'])}</p>" for e in dec) + "</div>", f'<p class="meta">{esc(read_line(dec))}</p>'
     who = "・".join(sorted({wording.plain(e["checked_by"]) for e in lines}))
     body = "".join(f"<p>{esc(e['text'])}</p>" for e in lines)
     return f'<div class="genga-songs">{body}</div>', f'<p class="meta">{esc(QUOTE + who)}</p>'

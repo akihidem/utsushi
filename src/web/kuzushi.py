@@ -84,7 +84,7 @@ def _decided(src):
     「原文の引用」でなく「観察」の印にし、確かめた人の代わりに読みの出所（genga.READ_A）を添える（統括の決め 11-08）。"""
     from . import genga
 
-    return [{"text": e["text"], "label": OBS} for e in genga.decided(src)]
+    return [{"text": e["text"], "label": OBS, "set": e.get("set")} for e in genga.decided(src)]
 
 
 def split_lines(src):
@@ -173,11 +173,12 @@ def notes(sid):
         return ""
     out = ""
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-    if not zukan.quote_lines(src) and _decided(src):
-        # 訳と意味の元の読みが 1997 年の翻刻の字である事（確かめた人の字は出さない・統括の決め 11-08）
-        from .genga import READ_A
+    dec = [] if zukan.quote_lines(src) else _decided(src)
+    if dec:
+        # 訳と意味の元の読みの出所（1997 年の翻刻か、有坂の本の見出しか）。確かめた人の字は出さない（統括の決め 11-08）
+        from .genga import read_line
 
-        out += f'<p class="meta">{esc(READ_A)}</p>'
+        out += f'<p class="meta">{esc(read_line(dec))}</p>'
     if isinstance(d.get("gendaigo"), str) and d["gendaigo"].strip():
         out += f'<h2>現代語訳</h2><p>{esc(d["gendaigo"])}</p>'
     words = [w for w in d.get("words", []) if isinstance(w, dict) and str(w.get("word", "")).strip() and str(w.get("meaning", "")).strip()]
@@ -221,13 +222,15 @@ def page(sid, mine=None, msg="", look=None):
                     ("線の付いた字は、ここが違って読めた所です。" if differs else "二つの読みは、同じ字の並びでした。") + "</p>")
     decided = [] if checked else _decided(src)
     if decided:
-        from .genga import READ_A
+        from .genga import read_line
 
-        zukan.guard(decided)
+        zukan.guard([{"text": q["text"], "label": q["label"]} for q in decided])
     for q in decided:
         mh, th, differs = diff_marks(mine, q["text"])
-        rows.append('<ul class="pair">' + _li(reader, "あなたの読み　" + mh) + _li(q, "1997 年の翻刻の読み　" + th) + "</ul>")
-        rows.append(f'<p class="meta">{esc(READ_A)}。' + ("線の付いた字は、ここが違って読めた所です。" if differs else "二つの読みは、同じ字の並びでした。") + "</p>")
+        # 並べる時の名は、読みにした本で言い分ける（A は 1997 年の翻刻、B は有坂の本の見出し。本人の答え 11-08 で B にした歌がある）
+        name = "『日本玩具史 後編』の見出しの読み　" if q.get("set") == "B" else "1997 年の翻刻の読み　"
+        rows.append('<ul class="pair">' + _li(reader, "あなたの読み　" + mh) + _li(q, name + th) + "</ul>")
+        rows.append(f'<p class="meta">{esc(read_line([q]))}。' + ("線の付いた字は、ここが違って読めた所です。" if differs else "二つの読みは、同じ字の並びでした。") + "</p>")
     if not checked and not decided:
         rows.append('<ul class="pair">' + _li(reader) + '</ul><p class="meta">人が確かめた読みは、まだありません。</p>')
     how = f'<p class="meta">{esc(wording.plain("読みが割れた事と、決めた事"))}</p><ul>{"".join(_li(x) for x in splits)}</ul>' if splits else ""

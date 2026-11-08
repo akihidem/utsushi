@@ -24,8 +24,21 @@
   },
   "modification_note": "改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません",
   "transcription": {
-    "status": "pending",
-    "entries": []
+    "status": "decided_by_rule",
+    "entries": [
+      {
+        "text": "身を団扇うりとやつしの色事師ある時はまた頬かぶりなり",
+        "source": "own-scans",
+        "set": "A",
+        "page": "220",
+        "read_by": "Claude Code のセッション",
+        "checked_by": null,
+        "checked_at": null,
+        "decided_by": "本人",
+        "decided_at": "2026-11-08",
+        "source_note": "読みは 1997 年の翻刻の字（本人の答え 11-08「図 8 は A の読みでよい。」・1 字ずつの確かめはまだ）"
+      }
+    ]
   },
   "reading_hypothesis": {
     "status": "pending",
