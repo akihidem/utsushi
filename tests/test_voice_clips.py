@@ -196,8 +196,9 @@ assert PLAIN not in bundle and "k1.webm" not in bundle and "t1.transcript" not i
 os.utime(kfile, (past, past))
 worker = voice_text.Worker(tool=False, every=3600)
 worker.start()
-for _ in range(200):
-    if not kfile.exists():
+# 掃除は区切りを消してから印を書くので、印が書けた所まで待つ（混んだ機械で、間を見て落ちないように・上限 60 秒）
+for _ in range(1200):
+    if not kfile.exists() and (voice_text.voice_dir(k6) / "k1.dropped.json").exists():
         break
     time.sleep(0.05)
 assert not kfile.exists() and (voice_text.voice_dir(k6) / "k1.dropped.json").exists(), "立てた時に区切りの掃除も回る"
