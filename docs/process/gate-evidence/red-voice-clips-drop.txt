@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_voice_clips.py
+# commit: 39c5b76b（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_voice_clips.py", line 160, in <module>
+    assert not voice_text.clip_drop(dr, bad, why), (bad, why, "断る")
+               ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'omochae.voice_text' has no attribute 'clip_drop'. Did you mean: 'clip_done'?
+rc=1

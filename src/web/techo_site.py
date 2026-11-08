@@ -65,9 +65,11 @@ def media_dir(rid):
 
 def media_bytes():
     """置き場の写真と動画と、字にする前の声の大きさの合計（確かめの控えの json と字は数えない）。公開の場の合計の上限を見る時に、受ける前に数える。
-    声（voice/*.mka・本人の言葉 11-08「全部残していいことにしたい。」）も数える。数えないと、公開の場で声の分だけ上限を越えて機械を埋められるため。"""
+    声（voice/*.mka・本人の言葉 11-08「全部残していいことにしたい。」）も数える。数えないと、公開の場で声の分だけ上限を越えて機械を埋められるため。
+    声の区切り（voice/t<n>.mka）は *.mka に入る。カメラの区切り（voice/k<n>.webm・k<n>.mp4・本人の言葉 11-08「カメラの映像は、押した時の短い区切りだけ。」）も同じわけで数える。"""
     root = records.folder() / "media"
-    return sum(p.stat().st_size for pat in ("R-*/m*.*", "R-*/voice/*.mka") for p in root.glob(pat)) if root.exists() else 0
+    pats = ("R-*/m*.*", "R-*/voice/*.mka", "R-*/voice/k*.webm", "R-*/voice/k*.mp4")
+    return sum(p.stat().st_size for pat in pats for p in root.glob(pat)) if root.exists() else 0
 
 
 def strip_jpeg_meta(data):
@@ -628,12 +630,16 @@ def manabi_box():
             f'{loop_figure.svg()}</section>')
 
 
-def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False):
+def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=False, paper=None):
     """手帖の記録の頁。作る頁（techo_step）から外した札を置く: 上げた物・工夫・試した後の紙 → 説明 → AI の順（J-013）。
     作る頁の字に記録の番号と「の紙」を出さない決定（本人の決定 11-05、#87）のために分けた。のこした後と、説明を送った後にここへ着く。
     public=True は合言葉なしで開いた場（本人の決定 11-06 で写真と動画を受け、確かめた物はギャラリーにも出す形）。写真と動画は合言葉付きの場と
     同じ線（確かめる前は上げた本人の画面だけ・物だけの後は誰にでも・人や声は誰にも）。記録の番号・人の言葉・説明の文は前と同じく出さない。
-    uploads=False は写真の口ごと閉じた形（前の開いた場の形。今は呼ぶ所が無いが、試験が使う）。"""
+    uploads=False は写真の口ごと閉じた形（前の開いた場の形。今は呼ぶ所が無いが、試験が使う）。
+    paper は記入の節で記録を残す紙（techo_step.paper_of の (紙の印, 手順の数)）。None は刷った紙が無い時で、記入の節の代わりに紙を作る道を出す。
+    並び（本人 11-08 400・402・405・設計 nokosu-flow 3 版）: 題 → 記入の節（その最後が「のこす」の釦）→ のこした記録から直った所（naoru.box）→
+    学びの輪 → 手帖をひらく → 上げる の節（今までの記録）。前の道しるべの「のこす」（/gallery#ageta）は外した（記入の節の「のこす」と字が
+    同じで行き先が違う物が並ぶため・承認の後は自分でもちよるへ飛ぶので要らない。別の目の気づき 6）"""
     closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
@@ -657,19 +663,19 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')
     # 話す口の見た目と動きは、頁に 1 回だけ置く。
-    from . import naoru  # 循環を避けて、ここで読む（hanasu と同じ）
+    from . import naoru, nokosu  # 循環を避けて、ここで読む（hanasu と同じ）
+    kinyu = nokosu.entry(sid, paper, records.results_for(sid)) if paper and uploads else nokosu.no_paper(sid)
     return (f'<div class="top"><h1>手帖</h1><a href="/toy/{esc(sid)}">{esc(data["toy"])}</a></div>'
-            # のこすと型紙が直る事の枠（本人のサイト体験レビュー 11-07 の 7、直しの設計の E）。頁の頭に 1 回
-            + naoru.box() +
+            # 記入の節（いちばん上・その最後が「のこす」の釦。本人 11-08 400・405）
+            + kinyu +
+            # のこすと型紙が直る事の枠と、のこした記録から直った所（本人 11-08 403）。記入の節の後に 1 回
+            naoru.box() +
             # 学びの輪の文と図（本人の見直し 11-07 22:16 の ⑤・manabi_box）。枠の後、手帖をひらく道の前
             manabi_box() +
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
-            # 残した後に次へ進む口（段 0、本人の決定 11-06「もちよる は、残した物がみんなの作った物に並ぶ所」。research/36）。
-            # 「のこす」の後はこの頁の #mine に着くので、返事の文のすぐ下に 1 つだけ置く。行き先はギャラリーの「他の人が作った物」
+            # 前はここに道しるべの「のこす」（/gallery#ageta）があった。記入の節の「のこす」の釦（承認の後にもちよるへ飛ぶ）に替えた
             f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{note}'
-            # 釦の字は のこす（本人のサイトの見直し 11-07 22:16「もちよる、でなくのこす、というボタンにする。」）。行き先は前のまま、残した物が並ぶ所
-            '<p class="road"><a class="go" href="/gallery#ageta">のこす</a></p>'
             # 2 回目の入口（本人の決め 11-08「A＋Cでよい」の C）。のこした人（返事の文が出た時）にだけ、入口の畳みが開いた形 /#erabu への道を出す。
             # 印は持たない（道を見せるだけ）。数は入口の畳みの札と同じく、棚の分けから数える。道しるべの釦（class road）にはしない:
             # のこすの後の道しるべは 1 つの決まり（段 0・research/36・test_ux_stage0）なので、その下のふつうの道として置く

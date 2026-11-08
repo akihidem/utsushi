@@ -761,7 +761,7 @@
   "status": "doing",
   "evidence": [
    "src/web/naoru.py",
-   "data/kaizen/highlight.json",
+   "data/kaizen/examples.json",
    "src/web/techo_site.py",
    "src/web/techo_step.py",
    "tests/test_naoru.py",
@@ -906,13 +906,15 @@
  },
  {
   "id": "f74",
-  "name": "上げた動画の声を、この機械の中で字にしてから消す（本人の言葉 11-08「全部残していいことにしたい。」）: 手帖と動画の専用の口の両方。字にできなければ 72 時間で消す。字は名乗りと連絡先の形を伏せ、作る側だけが読む",
+  "name": "上げた動画の声を、この機械の中で字にしてから消す（本人の言葉 11-08「全部残していいことにしたい。」）: 手帖と動画の専用の口の両方。字にできなければ 72 時間で消す。字は名乗りと連絡先の形を伏せ、作る側だけが読む。押した時だけ録る声とカメラの区切り（voice/t<n>.mka・voice/k<n>.<webm|mp4>・それぞれ 1 つの記録に 5 つまで）の置き場と、読めないカメラの区切りの 72 時間の掃除も（受け口と録る頁は別の枝）",
   "status": "doing",
   "evidence": [
    "src/omochae/voice_text.py",
    "src/web/techo_site.py",
    "src/web/play_server.py",
-   "tests/test_voice_text.py"
+   "tests/test_voice_text.py",
+   "src/web/video_up.py",
+   "tests/test_voice_clips.py"
   ],
   "unverified": "本物の人の声での字の精度。字にする道具は手元のモデルで、道具の無い機械では今までどおり受けた時に声を落とす。頁の約束の字 4 つは本人の確かめ待ち"
  },
@@ -971,5 +973,21 @@
    "tests/test_floor_pin.py"
   ],
   "unverified": "刷った紙を物差しで測っていない（配置の SVG で比べた）"
+ },
+ {
+  "id": "f79",
+  "name": "のこすの頁を 記入 → のこす → 内容の確かめ → 承認 → もちよる にし、記入の欄の下に「のこす」の釦を置く（本人 11-08 402・405）。のこした記録から直った所を 4 つの例にする（本人 11-08 403）",
+  "status": "doing",
+  "evidence": [
+   "src/web/nokosu.py",
+   "src/web/naoru.py",
+   "src/web/techo_site.py",
+   "src/web/techo_step.py",
+   "src/web/play_server.py",
+   "data/kaizen/examples.json",
+   "tests/test_nokosu_flow.py",
+   "tests/test_naoru.py"
+  ],
+  "unverified": "新しい字（どうだった？・感想・写真と動画・これで のこしますか・承認・直す・どうだったかを 1 つ えらんでください・この画面では写真と動画は上げられません。）は本人の確かめ待ち。話す口（声の字）は声とカメラの区切りの PR で工夫の欄に足す。幅 390 の Chromium で記入 → のこす → 確かめ → 承認 → もちよる を通した（工夫の字が記録に結ばれた）。実機の iPhone と写真を選ぶ所は人の手で試していない"
  }
 ]

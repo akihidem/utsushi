@@ -162,14 +162,14 @@ few = el.groups([variant(lambda b: b["groups"][1]["craft_steps"].update({"4": {"
 assert not any(d["key"].startswith("talk:pivot_counterweight") for d in el.drafts(few))
 # 前の形の束からは、前と同じ鍵の案だけが起きる（話した事の案は起きない）
 assert {d["key"] for d in el.drafts(el.groups([OLD]))} == {k for k in by_key if not k.startswith(("talk:", "review:"))}
-# 作る前の型紙のレビュー（経験者が、作らずに型紙を読んだ指摘）: 人が確かめた字だけが束に来るので、1 件から案にする。作っていないので、
+# ワークショップの型紙レビュー（経験者が、作らずに型紙を読んだ指摘）: 人が確かめた字だけが束に来るので、1 件から案にする。作っていないので、
 # 止まった段にも工夫の数にも、報告の数にも入れない
 rv = by_key["review:slider_fan:goraigo-v10"]
 assert rv["target"] == {"kind": "template", "name": "slider_fan"} and rv["numbers"] == {"reviews": 1, "reports": 5} and "レビュー" in rv["title"]
 assert [(t["kind"], t["step"], t["text"]) for t in rv["evidence"]] == [("review", 8, "このつまみの幅だと、大人の指では押しにくそう")]
 assert not [k for k in by_key if k.endswith(":8") and k.startswith(("stuck:", "talk:"))]
 assert "review" not in {t["kind"] for t in by_key["craft:slider_fan:goraigo-v10"]["evidence"]}
-assert "作る前のレビュー（手順 8）" in el.issue_draft({**rv, "id": "EP-0000"}).split("---")[1]
+assert "ワークショップの型紙レビュー（手順 8）" in el.issue_draft({**rv, "id": "EP-0000"}).split("---")[1]
 only_review = variant(lambda b: b.update(groups=[{"template": "slider_fan", "sheet_set": "goraigo-v10", "reports": 0,
                                                   "texts": [{"kind": "review", "step": None, "text": "外筒の糊代が細く見える", "count": 1}]}]))
 assert el.check_bundle(only_review) == [] and [d["key"] for d in el.drafts(el.groups([only_review]))] == ["review:slider_fan:goraigo-v10"]
