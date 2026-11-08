@@ -89,7 +89,9 @@ assert "記録を残しました" in (ROOT / "src/web/play_server.py").read_text
 
 # 3. 戻り先
 page = get(base, f"/toy/{G}")
-assert "think-sheet" not in page and 'id="think"' not in page and think_sheet.GO not in page, "玩具の頁に作り直す口（行き止まり）が残った"
+# 11-08 から、作り直す口は 型紙を印刷する の中の 1 つの釦（字の欄つき・think-talk。tests/test_talk_sheet_window.py）。前の字の欄の無い釦は無い
+assert "think-sheet#think" not in page and think_sheet.GO not in page, "玩具の頁に作り直す口（行き止まり）が残った"
+assert page.count('id="think"') == 1 and f'action="/toy/{G}/think-talk#think"' in page, "型紙を印刷する の中の口が 1 つでない"
 assert f'action="/toy/{G}/think-sheet#think"' in think_sheet.section(G), "部品の釦は断りの文のある節へ戻す"
 pending = think_sheet._status(G, {"status": "pending_human", "how_it_moves": "x", "token": "t", "result": {}})
 assert f'action="/toy/{G}/think-ok#think"' in pending, "こちらの釦も同じ節へ戻す"

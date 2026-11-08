@@ -27,9 +27,9 @@ import json
 import urllib.parse
 
 from api import config, words
-from omochae import hypotheses, making_log, records
+from omochae import hypotheses, making_log, records, talk_log
 
-from .play_server import esc, out_dir, print_own
+from .play_server import esc, out_dir, print_own, printed_versions
 
 # 考えから紙を作る釦は Claude を呼ぶので、呼び出しの上限より長く押せないままにする。途中で押し直せると、費用のかかる呼び出しが 2 回走る。
 GO_BUSY_FOR = config.RUN_TIME_LIMIT["words"] + 20
@@ -50,6 +50,12 @@ SEE = "紙を見る"
 # （窓口の決め 11-07 の 4）、窓の「つくる」と同じ字にする。手帖は、この画面が話した考えから作った紙を自分で開く（play_server の手帖の口）
 MAKE = "つくる"
 ASKED = "頼みました。"
+# 型紙を印刷する の中の口（本人の言葉 11-08「…型紙のところに、クロードに自分の考えを話して型紙を改善するボタンを設置して、再生成してもらうボタンをつけたい。」・
+# 設計 grove の state/tsukuru-talk-sheet-20261108.md 2 版）。釦の字と断りの字は本人の答え（11-08）「釦は 1 つ『Claude に話して型紙を作り直す』」
+# 「断りの字はこのままでよい」。字の欄に書いて 1 回押すと、字を残して（talk_log の think）、続けて 1 回だけ頼む（人の言葉が先・J-013）
+TALK_GO = "Claude に話して型紙を作り直す"
+TALK_NOTICE = ("残るのは字だけです。書いた字は、AI（Claude）に送って、型紙を作り直す案を作ってもらいます。作る人も、型紙をよくするのに使います。"
+               "名前や連絡先は書かないでください。")
 FAILED = "紙を作れませんでした。もう一度押してください。"
 
 SAME = "もとの紙のまま"
@@ -298,8 +304,34 @@ def section(sid, at="", note=""):
     return f'<section class="sec" id="think">{note if at.startswith("think") else ""}<p class="lead">{esc(LEAD)}</p>{status}{go}</section>'
 
 
+def window_box(sid, at="", note=""):
+    """型紙を印刷する（玩具の頁の #win）の中の口。字の欄と 1 つの釦。頼んだ後に戻った時（at が think-<印>）は、前の節と同じ様子と確かめを出す。
+    錨は #think の 1 つ（前の仮説の段の節は外した）。字の欄の見出しは前からの LEAD（新しい字を増やさない）。声を録る釦は置かない:
+    録った声は のこす の承認で送る物で、Claude には渡らない（UX の担当の推し・設計 2 版の 2 節）"""
+    w = words.by_token(sid, at[len("think-"):]) if at.startswith("think-") else None
+    status = _status(sid, w) if w else ""
+    form = ("" if w and w["status"] == "pending_human" else
+            f'<form method="post" action="/toy/{esc(sid)}/think-talk#think" class="think-talk">'
+            f'<label for="think-text"><span class="lead">{esc(LEAD)}</span></label>'
+            f'<textarea id="think-text" name="text" maxlength="{talk_log.MAX_TEXT}" required></textarea>'
+            f'<p><button class="btn quiet" data-busy data-busy-for="{GO_BUSY_FOR}">{esc(TALK_GO)}</button></p>'
+            f'<p class="meta">{esc(TALK_NOTICE)}</p></form>')
+    return f'<div class="think-box" id="think">{note if at.startswith("think") else ""}{status}{form}</div>'
+
+
 def post(handler, sid, act, form):
     """受け口（/toy/<玩具>/think-sheet と /think-ok）。戻り先は玩具の頁のこの節（送られた値を戻り先にしない）。"""
+    if act == "think-talk":
+        # 字を残してから頼む（人の言葉が先・J-013）。床（個人の情報の形・長さ・空）で断られたら頼まずに理由を返す（UX の担当の答え 11-08 の 2）。
+        # 頼むのは人の操作 1 回で 1 回だけ（下の think-sheet と同じ道）。字はたたき台の紙の考えとして残す（前の考えを話す の口と同じ場面 think）
+        from .hanasu import reason
+
+        hid = hypotheses.sheet_of(sid)["id"]
+        vs = printed_versions(sid, hid)
+        kept, failures = talk_log.add(sid, "think", form.get("text", ""), hypothesis_id=hid, sheet_version=vs[-1] if vs else None, via="text", who=form.get("who", ""))
+        if kept is None:
+            return handler._send(422, handler._toy(sid, errors=[reason(failures)], at="think"))
+        act = "think-sheet"
     if act == "think-sheet":
         w, why = request(sid, form.get("who", ""), claude=use_claude(handler))
         token, msg = (w["token"], ASKED) if w else ("", why)

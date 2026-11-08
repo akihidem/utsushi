@@ -542,13 +542,16 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 考えを話す の口（字の欄）と、話した考えから紙を作り直す口（think_sheet.section・#think の「この考えから紙を作る」）は外した（本人の言葉 11-08
     # 「つくるの「考えを話す」は無くす。」）。字の欄だけを外して釦を残すと、押すと「先に、考えを話すか書いて…」が出る行き止まりになった（別の目の確かめ 11-08）。
     # 作り直す口は、型紙を印刷する の中の「Claude に話して型紙を作り直す」として新しい形で戻す（設計 grove の state/tsukuru-talk-sheet-20261108.md）。
-    # 受け口（/think-sheet・/think-ok）と部品は残す。頼んだ後に戻った頁（at が think-<印>・本人の画面だけ）では、前のとおり様子と確かめ（この紙にする）を出す:
-    # 頼んである案を、本人が見失わないため（ふつうに開いた頁には出さない）。声とカメラの区切りの作り始めは頁の終わりの clips.toy_start
+    # 受け口（/think-sheet・/think-ok）と部品は残す。口は 型紙を印刷する の中の「Claude に話して型紙を作り直す」へ移した（下の win・think_sheet.window_box）。
+    # 声とカメラの区切りの作り始めは頁の終わりの clips.toy_start
     from . import think_sheet
 
-    talk = think_sheet.section(sid, at, head(at)) if photos and at.startswith("think-") and think_sheet.ready(sid) else ""
     kasetsu = (f'<section class="sec" id="kasetsu-fuda"><h2>仮説</h2><p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p>'
-               f'<div class="plates">{plate}</div>{talk}</section>')
+               f'<div class="plates">{plate}</div></section>')
+    # 型紙を印刷する の中の作り直しの口（本人の言葉 11-08「…型紙のところに、クロードに自分の考えを話して型紙を改善するボタンを設置して、再生成してもらうボタンを
+    # つけたい。」）。見出しと PDF（刷る前は刷る つくる）のすぐ下・紙の絵の前（刷る前にも話せる）。出すのは、合言葉付きの場（photos）で、たたき台の寸法の呼び名が
+    # そろった玩具（think_sheet.ready・今は御来迎と虎）だけ。版が若い 81 種に広げるかは本人の答え待ち（設計 2 版の 6 節）。頼んだ後の様子もここに出す
+    talk = think_sheet.window_box(sid, at, note) if photos and think_sheet.ready(sid) else ""
     # 段 6 型紙の窓（型紙の印刷）: 刷る前は窓の中に紙を作る「つくる」1 つ（make_go。刷る口は 1 つ・前は頭の釦）。刷った後は 紙・PDF・つくる（手帖へ）・のこす（案 B）。
     # 型紙の版の歩みは窓の中の閉じた畳み（設計の問い 3 の答え「推しのとおり。」。本人の指示 11-07 の版の歩みは残し、読む量を減らす）
     from . import ban_ayumi
@@ -564,7 +567,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 見出しは「型紙を印刷する」（本人の言葉 11-08「型紙の窓を「型紙を印刷する」からにして、その直下に PDF を開いて印刷するボタンを置く。」）。前は「型紙の窓」。
     # 見出しの直下は、刷った後は PDF を開いて印刷する（top）、刷る前は紙を刷る「つくる」（printing）。版が上がった時は新しい紙を刷る「つくる」の後に、
     # 前の紙の PDF（前は口の中にあった物を残す）。説明の 2 行はその後ろへ下げた（字は前のまま）
-    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙を印刷する</h2>{printing}{top}<p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
+    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙を印刷する</h2>{printing}{top}{talk}<p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
            f'<p class="meta">画面で見て、印刷する前に案を検討する所。</p>{sheet}{fold(ban_ayumi.section(sid))}{acts}</section>')
     # 錨 #tsukuru（前の 作っている途中で困ったら の節）は外した。作りながら見る頁の「← 玩具」は #win（型紙の窓）へ向け直した（tsukuru.py）。
     # 作っている途中で困ったら（聞く口）は外した: 手帖の手順の画面に「こまった」と聞く口が前からある（設計の問い 4 の答え「推しのとおり。」）。
