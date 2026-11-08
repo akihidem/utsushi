@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_techo_step.py
+# commit: 3f878563（回した時の HEAD）
+/tmp/tmpzcjf3lrs/play/NDL-1187053-R0000005-L/.tmp-j5pkrw0w/H-C_v1.pdf
+/tmp/tmpzcjf3lrs/play/NDL-1187053-R0000014-R/.tmp-7q1m2_b4/H-A_v1.pdf
+/tmp/tmpzcjf3lrs/play/NDL-1187053-R0000004-L/.tmp-v1e8fvgd/H-A_v1.pdf
+/tmp/tmpzcjf3lrs/play/NDL-1187053-R0000005-L/.tmp-2ioterc8/H-C_v2.pdf
+ok
+rc=0

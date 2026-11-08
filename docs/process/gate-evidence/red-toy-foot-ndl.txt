@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_foot_ndl.py
+# commit: 80b1395f（回した時の HEAD・今の main。試験だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_toy_foot_ndl.py", line 55, in <module>
+    assert f'href="/toy/{o}"' not in page, (sid, o, "前か次の玩具への道が残った")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', 'NDL-1187053-R0000004-L-5', '前か次の玩具への道が残った')
+rc=1
