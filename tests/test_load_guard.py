@@ -102,8 +102,9 @@ assert call(f"/record/{rid}/media", b"x", "image/png")[0] == 422
 
 # 4. 同時に処理する要求の数
 assert load_guard.HTTP_MAX == server.http_max == 64
+# 前の要求の処理（返事の後の閉じ）がまだ枠を持っている事があるので、枠を取る時は少し待つ（試験の揺れ・11-08 の Green の 1 回目で当たった）
 for _ in range(server.http_max):
-    assert server._slots.acquire(blocking=False)
+    assert server._slots.acquire(timeout=5)
 c = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=10)
 c.request("GET", "/")
 resp = c.getresponse()
