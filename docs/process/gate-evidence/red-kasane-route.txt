@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_techo_step.py
+# commit: 79ea234f（回した時の HEAD）
+/tmp/tmpqanr0vkq/play/NDL-1187053-R0000005-L/.tmp-i1wqz4bl/H-C_v1.pdf
+/tmp/tmpqanr0vkq/play/NDL-1187053-R0000014-R/.tmp-bs8p9hld/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_techo_step.py", line 150, in <module>
+    assert 'id="kasane-go"' in page, "重ねる頁への印が手帖に無い（手帖から辿れない）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 重ねる頁への印が手帖に無い（手帖から辿れない）
+rc=1

@@ -19,7 +19,7 @@ import urllib.request
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
-from web import demo_samples, play_server, techo_step  # noqa: E402
+from web import play_server, techo_step  # noqa: E402
 
 G = "NDL-1187053-R0000005-L"
 from omochae import hypotheses  # noqa: E402
@@ -66,8 +66,8 @@ assert f'<a href="/toy/{G}/techo/kiroku#mine">記録の番号 {mine}</a>' in own
 assert "ほかの人の感想" in ageta and ageta.index('id="own"') < ageta.index("ほかの人の感想"), "今残した 1 つが頭、ほかの人の物はその後"
 assert ageta.count(f"記録の番号 {mine}") == 1, "並びの中に重ねて出さない"
 assert "まだ作った物の記録はありません" not in ageta
-if demo_samples.uploads_html():
-    assert '<details class="samples-fold"><summary>見本</summary>' in ageta, "本物を先に、見本は畳む（地図の 5）"
+# 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。本物だけが並び、見本の畳みは出ない
+assert '<details class="samples-fold">' not in ageta and 'class="item is-sample"' not in ageta, "見本の畳みと作り物を出さない"
 
 # ---- 4 別の画面・鍵の無い画面
 head_b = re.search(r'<div class="item mine" id="own">.*?</div>', get(b, "/gallery"), re.S).group(0)

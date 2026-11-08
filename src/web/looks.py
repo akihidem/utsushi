@@ -442,7 +442,11 @@ def tenji(photos=True, dark=False):
     body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。</p>'
     css = TENJI + ERABU + ukabu.UKABU + DOWN_CSS
     # 暗い版も body の印は tenji を持つ（白の入口の CSS の選び body.tenji をそのまま効かせる）。暗い版の印 yoru を足して見分ける
-    return page("うつし", body + ONLY + ERABU_JS + DOWN_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji")
+    # description は S1（序の頁の頭にもう出ている字）。入口の見える所には足さない（本人の決めで、入口の題の間は題・副題・道だけ）。
+    # 副題（SUB の 3 行。今は「江都二色より／うしなわれた玩具の動きを／紙でよみがえらせる」）は 3 つの字に分かれていて、つなぐと訳の表に無い字になるので使わない
+    from . import about
+    return page("うつし", body + ONLY + ERABU_JS + DOWN_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji",
+                description=about.PREMISE[0])
 
 
 # 題の間から まずはここから へ送る仕掛け（本人の言葉 11-08「トップページスクロールしてもらう仕掛けを。うつしの文字や周囲のひろい領域タップしても
