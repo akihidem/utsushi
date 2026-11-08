@@ -922,5 +922,15 @@
    "tests/test_entrance_scroll.py"
   ],
   "unverified": "動き（押す・滑らせる・Enter・動きを減らす設定）は作る側が手元の Chromium で白と暗い版の幅 390・1440 を確かめた。本物の iPhone・Safari の指の滑らせ方では見ていない。右下の印は浮かぶ玩具と重なる場がある"
+ },
+ {
+  "id": "f77",
+  "name": "手帖の鍵の「しおり」の台帳（本人の決め 11-08: しおり・しおりそのものが鍵・しおりに書いてある絵を押す・決まった番地）",
+  "status": "doing",
+  "evidence": [
+   "src/omochae/shiori.py",
+   "tests/test_shiori.py"
+  ],
+  "unverified": "台帳だけ（決まった番地が決まる前から作れる所）。開く道（/s/<印>・とじる・20 分）・しおりの紙（QR は A 朱の落款枠に朱・裏に順の印）・進め役の道・SECURITY の字は、決まった番地の答えの後の PR。決まった番地は本人の答え待ち"
  }
 ]
