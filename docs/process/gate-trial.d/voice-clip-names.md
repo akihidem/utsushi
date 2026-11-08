@@ -8,3 +8,4 @@
 - エビデンスゲート: 写しの木で、Worker の掃除から sweep_clips を外す・空いた番号を音と区切りのファイルだけで数える・カメラの区切りの音を残す、の 3 通りで rc 1。関わる試験 12 本（test_voice_text・test_video_up・test_media_strip・test_photo_owner_only・test_public_open・test_engine_bundle・test_techo_site・test_made_records・test_min_python・test_ledger・test_frozen_manifest・test_gate_evidence）が rc 0
 - 確かめていない事: 本物の端末が録った webm・mp4（試験は ffmpeg で作った作り物）。受け口から呼ぶ所は UX の担当の枝。断りの字は受け口へ返す字で、利用者に見せるかは受け口の枝が決める（見せるなら本人の確かめ）
 - マージ後の書き戻し: Issue は立てていない
+- 追い（11-08 昼）: (1) ./run.sh（39c5b76b）は 292 本中 291 本。落ちた test_paper_to_toy は main 82dac852 でも同じに落ち（English の頭の試験）、今の main の 3706c76c で直っていたので、今の main（3e68b68f）を取り込んだ（衝突なし）。取り込んだ木で test_paper_to_toy は rc 0。(2) UX の担当の頼みで clip_drop（人が写っている時に読まずに今すぐ消し、k<n>.dropped.json に why・at）を足した。Red: 39c5b76b の木に今の試験を当てて rc 1（`docs/process/gate-evidence/red-voice-clips-drop.txt`）。Green: rc 0（`green-voice-clips-drop.txt`）。写しの木で clip_drop の消す 1 行を外すと rc 1。関わる試験 14 本が rc 0

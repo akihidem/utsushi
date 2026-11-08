@@ -1,0 +1,13 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_hmd.py
+# commit: aaa1bbaf（回した時の HEAD）
+/tmp/tmpb6cumcg_/play/NDL-1187053-R0000005-L/.tmp-k1c9xkn8/H-C_v1.pdf
+/tmp/tmpb6cumcg_/play/NDL-1187053-R0000014-R/.tmp-nqmfwpox/H-A_v1.pdf
+/tmp/tmpb6cumcg_/play/NDL-1187053-R0000005-L/.tmp-4c3smitu/H-C_v1.pdf
+/tmp/tmpb6cumcg_/play/NDL-1187053-R0000014-R/.tmp-dq3_l4tr/H-A_v1.pdf
+/tmp/tmpb6cumcg_/play/NDL-1187053-R0000004-L/.tmp-lufwk4ge/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_hmd.py", line 367, in <module>
+    assert k[0] - st["others"][0][2] >= 8, ("マイクと印の間が 8px 以上", f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('マイクと印の間が 8px 以上', {'sid': 'NDL-1187053-R0000005-L', 'w': 320, 'h': 568, 'start': 546, 'go': [558, 580], 'sx': 305, 'step': {'kasane': [88, 12, 152, 76], 'label': {'box': [95, 43, 145, 70], 'px': 12, 'lines': 2, 'cut': False, 'iconOut': False}, 'bar': [[12, 84], [12, 76], [12, 76]], 'text': [16, 310, 304, 372], 'others': [[12, 12, 84, 84], [244, 12, 308, 76]], 'keysBottom': 556}})
+rc=1

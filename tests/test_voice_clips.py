@@ -9,7 +9,8 @@
 2. カメラの区切り（put_cam_clip）: voice/k<n>.<webm|mp4> に、絵の流れだけが撮影の情報なしで置かれる。5MB を越える・頭のバイトが違う・
    読めない物・6 つ目（読み終えた後も）は断る
 3. pending が t を拾い、字にしたら音が消える（t<n>.transcript.json）。k は字にする道具に入らない
-4. clips_waiting・clip_wait（最後の理由で上書き）・clip_done（k と控えが消え、読み終えた印が残る）。名の形の違う name は断る
+4. clips_waiting・clip_wait（最後の理由で上書き）・clip_done（k と控えが消え、読み終えた印が残る）・clip_drop（人が写っている時に今すぐ消し、
+   印に why・at）。名の形の違う name・空の理由は断る
 5. sweep_clips: 72 時間の前は残る・過ぎた k は読まずに消え、印に why・at と最後の理由 wait。読み終えた物には触らない
 6. 公開の場の大きさの合計（media_bytes）に t と k が入り、控えの json は入らない
 7. 取り下げで t・k・字・印が全部消える
@@ -151,6 +152,19 @@ for n in (3, 4, 5):
     assert voice_text.put_cam_clip(cam, clip("webm", audio=False, video=True), "webm")[0] == f"k{n}.webm"
 assert voice_text.put_cam_clip(cam, clip("webm", audio=False, video=True), "webm")[0] is None, "6 つ目は、読み終えた後も受けない"
 
+# 4 の続き: 人が写っている時は、読まずに今すぐ消す（clip_drop・受け口の枝の進め役の確かめと Claude の答えから呼ぶ）
+dr = new_record()
+dd = voice_text.voice_dir(dr)
+assert voice_text.put_cam_clip(dr, clip("webm", video=True), "webm")[0] == "k1.webm" and voice_text.clip_wait(dr, "k1.webm", "人の確かめ待ち")
+for bad, why in (("k1.webm", ""), ("k1.webm", "   "), ("../k1.webm", "人が写っている"), ("k1.mka", "人が写っている"), ("k2.webm", "人が写っている")):
+    assert not voice_text.clip_drop(dr, bad, why), (bad, why, "断る")
+assert (dd / "k1.webm").exists(), "断った時は消さない"
+assert voice_text.clip_drop(dr, "k1.webm", "人が写っている") and not (dd / "k1.webm").exists() and not (dd / "k1.wait.json").exists(), "今すぐ消し、控えも消す"
+mark = json.loads((dd / "k1.dropped.json").read_text(encoding="utf-8"))
+assert mark["why"] == "人が写っている" and mark["at"] and stat.S_IMODE((dd / "k1.dropped.json").stat().st_mode) == 0o600, mark
+assert not voice_text.clip_drop(dr, "k1.webm", "人が写っている") and voice_text.clips_waiting(dr) == [], "2 度は消さない"
+assert voice_text.put_cam_clip(dr, clip("webm", video=True), "webm")[0] == "k2.webm", "消した番号は印が持ち続ける"
+
 # 5. 72 時間の掃除
 past = time.time() - voice_text.LIMIT - 60
 os.utime(cd / "k1.webm", (past, past))
@@ -159,7 +173,7 @@ assert gone == [cd / "k1.webm"] and not (cd / "k1.webm").exists() and (cd / "k3.
 mark = json.loads((cd / "k1.dropped.json").read_text(encoding="utf-8"))
 assert "読まずに消した" in mark["why"] and mark["at"] and mark["wait"] == "人の確かめ待ち", mark
 assert not (cd / "k1.wait.json").exists(), "控えは印へ移す"
-assert voice_text.sweep_clips(now=time.time() + voice_text.LIMIT + 120) == [cd / "k3.webm", cd / "k4.webm", cd / "k5.webm"]
+assert voice_text.sweep_clips(now=time.time() + voice_text.LIMIT + 120) == [cd / "k3.webm", cd / "k4.webm", cd / "k5.webm", dd / "k2.webm"], "時刻を進めると、ほかの記録の物も消える"
 assert json.loads((cd / "k3.dropped.json").read_text(encoding="utf-8"))["wait"] is None, "理由が無い時は空"
 assert (cd / "k2.done.json").exists(), "読み終えた印には触らない"
 

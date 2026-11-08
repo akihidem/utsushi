@@ -262,10 +262,11 @@ def nav(skin, current="", path="/", lang="ja"):
                          else f'<span class="nav-step" aria-disabled="true">{esc(name)}</span>')
     # 言語の切り替え（窓口の決定 11-06「頭の帯の右の端に小さく English を残してよい」）。道しるべの駅とは別の小さな切り替えで、印は付けない。
     # 行き先は今の頁の英語（?lang=en。全頁の英語・窓口の決め 130735 の案 B）。前は英語の入口 /en へ飛んだ。英語の頁では web.i18n が「日本語」へ戻る口に替える。
-    # その前に やさしい（やさしい日本語・?lang=easy。本人の言葉 11-07 夜）。lang="ja" を付けて、英語の頁でも訳さずに やさしい のまま出す
+    # その前に やさしい日本語（?lang=easy。本人の言葉 11-07 夜）。lang="ja" を付けて、英語の頁でも訳さずにそのまま出す。字は「やさしい日本語」
+    # （本人の言葉 11-08「サイトは「やさしい」だけではなく、「やさしい日本語」とする。」。web.i18n.EASY_LINK と同じ字で、置き換えの鍵になる）
     arrow = f'<span class="nav-arrow" aria-hidden="true">{esc(ROAD_ARROW)}</span>'
     items = (arrow.join(item(n) for n in ROAD) + f'<span class="nav-yomu">{item(YOMU[1])}</span>'
-             '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい</a><a class="nav-lang" href="?lang=en" lang="en">English</a>')
+             '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい日本語</a><a class="nav-lang" href="?lang=en" lang="en">English</a>')
     # 入口は えらぶ の駅になった（本人のサイト体験レビュー 11-07 の 4）ので、印は えらぶ に 1 つだけ付け、「うつし」には付けない
     # （同じ頁に印が 2 つあると、今いる駅がどれか分からない）。前は「うつし」の印を入口だけに付けていた。
     # 「うつし」は帯の題の字で、釦にしない（窓口の決め 11-07「行き先が同じ釦は 1 つにそろえる。帯の並びは決めたまま」）。前は入口（/）への道で、

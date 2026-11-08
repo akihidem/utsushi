@@ -65,7 +65,9 @@ VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "met
 RAW = {"script", "style", "textarea"}  # 中の字を替えない（台本・CSS・人が書く欄）
 NO = re.compile(r'\stranslate="no"|\slang="ja"')
 NO_EASY = re.compile(r'\stranslate="no"')
-EASY_LINK = '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい</a>'  # 頭の帯の やさしい の切り替え（web.skin.nav）
+# 頭の帯の やさしい日本語 の切り替え（web.skin.nav）。字は「やさしい日本語」（本人の言葉 11-08「サイトは「やさしい」だけではなく、「やさしい日本語」とする。」。
+# 前は「やさしい」だけで、何がやさしいのか（言葉の切り替えである事）が分からなかった）
+EASY_LINK = '<a class="nav-lang nav-easy" href="?lang=easy" lang="ja">やさしい日本語</a>'
 
 
 def key_of(text):
