@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_budget_notes_i18n.py
+# commit: 44dd2c3c（回した時の HEAD）
+ok 予算の止めの字 3 つ: 英語とやさしい日本語の表にあり、頁は出口の訳で、聞く口の JSON は頁の言葉に合わせて返る。日本語の字は前のまま
+rc=0
