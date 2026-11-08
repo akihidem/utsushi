@@ -327,13 +327,33 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 """
 
 
+# 記録の札の畳みの見出し（前からある字・のこすの頁の言い方）。中は、玩具の頁の記録の札にだけあった型紙の版と 4 つの欄
+# （本人の言葉 11-08 477「復元の記録などはすべてもちよるに統合する。」・統括の決め: 玩具の頁から記録の札を外すとサイトのどこにも出なくなるので、ここへ）
+DETAILS_HEAD = "のこした記録"
+
+
+def record_details(data, r, say=True):
+    """記録の札の畳み「のこした記録」の中身: 型紙の版の札と、最初に動いた所・引っかかった所・変えると違いが出そうな所・思いついた事。
+    字と並びは玩具の頁の記録の札（toy.records_list）と同じ。say=False（公開の場で人が確かめていない記録）は 4 つの欄の字を出さず、版の札だけ。
+    ひとこと（玩具の頁の「メモ」）は、もちよる（みんなが見る所）に出さない（11-05 の別の目の決まり・統括の答え 11-08 の C）。
+    代わりに、手帖の記録の頁の自分の記録の札（records_page・その人の画面）に出す。Returns (畳みの html, 欄の字があるか)。"""
+    ans = r.get("answers") or {}
+    written = [("最初に動いた所", ans.get("first_moved")), ("引っかかった所", ans.get("stuck")), ("変えると違いが出そうな所", ans.get("what_if")),
+               ("思いついた事", "、".join(str(x) for x in r.get("ideas") or []))] if say else []
+    lines = "".join(f"<p>{label}: {esc(text)}</p>" for label, text in written if text)
+    ban = hypotheses.label_of(r.get("sheet_set") or hypotheses.current_set(data), r.get("sheet_version", 1))
+    return f'<details class="record-more"><summary>{esc(DETAILS_HEAD)}</summary><p class="meta">{esc(ban)}</p>{lines}</details>', bool(lines)
+
+
 def made_item(sid, data, r, photos=True, public=False):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
     public=True は合言葉なしで開いた場。人が「物だけ」と確かめた写真と動画は出す（本人の決定 11-06「公開の場で上げた写真は、公開の場の
     ギャラリーにも出します」）。人の書いた文（感想と工夫の行）は、人が確かめた字だけを出す（窓口の決め A・11-08。前は出さなかった:
     文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由・J-028。確かめが人の目になる）。記録の番号は前と同じく出さない。
     photos=False は写真も文も出さない前の開いた場の形（今は呼ぶ所が無い）。
-    ひとこと（note）は学ぶ人の頁に出してこなかった欄なので、ギャラリーにも出さない。
+    畳み「のこした記録」（record_details）に、型紙の版と 4 つの欄（最初に動いた所…思いついた事）を出す。前は玩具の頁の記録の札にだけあった欄で、
+    本人の言葉 11-08 477 でもちよるへ移した。公開の場は感想と同じく、人が確かめた字だけ（words_review が欄の字も確かめる）。
+    ひとこと（note）はギャラリーに出さない（前からの決まりのまま。自分の記録は手帖の記録の頁で見える）。
     動きの札（result）を残しても評価はしない。並びと同じく上下を付けない（J-025）。"""
     if not photos:
         return ""
@@ -347,7 +367,9 @@ def made_item(sid, data, r, photos=True, public=False):
     say = not public or words_review.checked(r["id"])
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and say else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and say)
-    if not pics and not words:
+    more, has_more = record_details(data, r, say)
+    # 欄だけの記録（写真も感想も工夫も無い）も札を出す（玩具の頁から記録の札を外しても、欄の字が消えないように）
+    if not pics and not words and not has_more:
         return ""
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     # 玩具の名前から、もちよるの中のその玩具の札（錨 toy-<印>・gallery_page が今の札に 1 つ付ける）へ行く。前は玩具の頁の同じ記録（#R-…）へ
@@ -356,7 +378,7 @@ def made_item(sid, data, r, photos=True, public=False):
     # 錨は玩具の印で、記録の番号を道に入れない（開いた場で番号を出さない線・別の目の確かめで見つかった）
     to = f"#toy-{esc(sid)}"
     return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
-            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
+            + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}{more}</div>')
 
 
 def own_item(sid, data, r):
@@ -658,7 +680,11 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 置き場ごと消え、ギャラリーからも消える。合言葉付きの場は、今までどおり進行者に記録の番号を伝える形（釦は出さない）
         drop = (f'<form method="post" action="/record/{esc(r["id"])}/media/withdraw"><button type="submit" class="btn quiet">取り下げる</button></form>'
                 if public and media_review.uploaded_here(r["id"], media_of(r["id"]), up_key) else "")
+        # ひとこと（玩具の頁の「メモ」）は、その画面が残した自分の記録の札にだけ出す（統括の答え 11-08 の C: もちよる＝みんなが見る所には出さず、
+        # 玩具の頁から記録の札を外してもサイトから消えないように、その人の画面のここへ）。開いた場では人の言葉を出さない（前と同じ線）
+        memo = wording.record_note(r.get("note")) if not closed and records.mine(r["id"], rec_key) else ""
         mine += (f'<div class="item"><p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
+                 + (f'<p>メモ: {esc(memo)}</p>' if memo else "") +
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(r["id"], rec_key))}</div>')

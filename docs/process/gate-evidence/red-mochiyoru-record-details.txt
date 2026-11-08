@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_record_details.py
+# commit: 8541ba82（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_record_details.py", line 60, in <module>
+    assert c is not None, (rid, "札が出ない")
+           ^^^^^^^^^^^^^
+AssertionError: ('R-0001', '札が出ない')
+rc=1
