@@ -181,9 +181,20 @@ def clips_waiting():
     return out
 
 
-def frames_dir(rid, name):
-    """frames が 3 コマを書き出す置き場。区切りごとに 1 つに決め、approve の時に消す（人の写る絵を一時の置き場に残さない・別の目の気づき）。"""
-    return Path(tempfile.gettempdir()) / "utsushi-clip-frames" / f"{rid}-{name.split('.')[0]}"
+def _frames_root():
+    """frames の置き場の親。共用の /tmp の決まった名でなく、記録の置き場（OMOCHAE_DATA）の下に持つ（ほかの利用者が先に同じ名を作れないように・
+    別の目の気づき）。持ち主だけが開ける（0700）。"""
+    from . import loop
+
+    root = loop.base() / "clip-frames"
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    root.chmod(0o700)
+    return root
+
+
+def frames_dirs(rid, name):
+    """その区切りの frames の置き場（mkdtemp で作った物）の並び。approve の時に全部消す。"""
+    return sorted(_frames_root().glob(f"{rid}-{name.split('.')[0]}-*"))
 
 
 def _clip(args):
@@ -197,17 +208,17 @@ def _clip(args):
     if args.cmd == "frames":
         from api import observe
 
-        d = frames_dir(args.id, name)
-        shutil.rmtree(d, ignore_errors=True)
-        d.mkdir(parents=True, mode=0o700)
-        d.parent.chmod(0o700)
+        for old in frames_dirs(args.id, name):  # 前に書き出した物は消してから書き直す
+            shutil.rmtree(old, ignore_errors=True)
+        d = Path(tempfile.mkdtemp(prefix=f"{args.id}-{name.split('.')[0]}-", dir=_frames_root()))  # 0700 で作られる
         for i, b in enumerate(observe.frames(voice_text.voice_dir(args.id) / name)):
             (d / f"{i + 1}.jpg").write_bytes(b)
             print(d / f"{i + 1}.jpg")
         return []
     if not contrib._human_confirm(f"{args.id}/{args.name}", "確認"):
         return [Failure("F10.review", f"{args.id}/{args.name}", "端末での人の確認が無い")]
-    shutil.rmtree(frames_dir(args.id, name), ignore_errors=True)  # 見終えたコマは、読む前・消す前に消す
+    for d in frames_dirs(args.id, name):  # 見終えたコマは、読む前・消す前に消す（人の写る絵を残さない）
+        shutil.rmtree(d, ignore_errors=True)
     if args.shows == "people":
         voice_text.clip_drop(args.id, name, "人が写っていた（進め役の確かめ）")
         print("読まずに消しました")

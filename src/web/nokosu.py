@@ -145,7 +145,7 @@ go.onclick = async () => {
     done = list.length ? await sendFiles(j.id, list) : '記録を残しました';
     // 区切りを送れなかった時は、サーバの断りの字を出さず（本人の確かめていない字のため）、決めた 1 行だけを出す。写真は送り続ける
     if (clipBad) done = '__CLIP_FAIL__';
-    if (window.utsushiClips) await utsushiClips.clear();
+    if (window.utsushiClips) await utsushiClips.clear(sid);  // その玩具の区切りと印だけ（ほかの玩具の物は消さない）
   } catch (err) {
     if (!saved) { cs.textContent = '送れませんでした。つながりを見て、もう一度押してください'; return; }
     done = '記録は残しました。写真か動画を送れませんでした';

@@ -79,7 +79,9 @@ on_part = hmd.SCRIPT[hmd.SCRIPT.index("camBtn.addEventListener('click'"):]
 assert "camClip" not in on_part.split("addEventListener('pagehide',off)")[0], "カメラを出しただけでは録らない"
 assert cam.count(clips.assets()) == 1 and clips.assets() not in hmd.page(G)
 assert cam.replace(clips.assets(), "").count("MediaRecorder") == 0, "録る code は置き場の台本だけ"
-assert clips.FIRST in cam and clips.STORE in cam and f'href="/toy/{G}/techo/kiroku"' in cam, "録る時の 2 行と、渡す のこす の道"
+# 手順の画面には長い断りを置かず、カメラの断りの 1 行と、くわしい説明の頁（保護者の方へ）と のこす への道だけ（統括の決め 11-08・別の目の止め 2）
+assert hmd.CAM_NOTE in cam and clips.FIRST not in cam and clips.STORE not in cam, "作業の頁の手順の画面に長い断りを置かない"
+assert f'<a href="/otona">{hmd.OTONA_LINK}</a>' in cam and f'href="/toy/{G}/techo/kiroku"' in cam, "くわしい説明の頁への道と、渡す のこす の道"
 assert "facingMode:{ideal:'environment'}" in hmd.SCRIPT and "audio:false" in hmd.SCRIPT and "addEventListener('pagehide',off)" in hmd.SCRIPT
 assert '<video' not in hmd.page(G), "カメラは重ねる頁だけ"
 assert not hmd.available("NDL-1187053-R0000004-L"), "組み立ての書き方が無い玩具は出さない"

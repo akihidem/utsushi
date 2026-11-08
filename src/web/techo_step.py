@@ -37,7 +37,7 @@ from api import ask
 from omochae import assembly, hypotheses, loop, making_log, records, talk_log
 from omochae.compose import TEMPLATES
 
-from . import genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
+from . import clips, genga, hanasu, hmd, kumitate, naoru, skin, tsukuru
 from .genga_words import HEAD as GENGA_HEAD
 from .play_server import esc, printed_versions
 from .techo_site import MAX_MEDIA, MAX_PER_RECORD, result_icon
@@ -344,6 +344,8 @@ document.addEventListener('visibilitychange', () => {
 });
 $('start').onclick = () => {
   try { const k = `tsukuru-start-${sid}-${hid}`; if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); send('start'); } } catch (e) {}
+  // 作り始め（統括の決め・別の目の止め 3）: その玩具の印の無い声とカメラの区切りを消す。前の人が録っただけで去った物を、次の人の承認で送らない（web.clips）
+  if (window.utsushiClipsStart) window.utsushiClipsStart(sid);
   to(n > total ? 'end' : 'step'); wake();
 };
 $('next').onclick = (e) => { e.preventDefault(); goNext(); };
@@ -639,4 +641,5 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
           .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
-    return _doc(title, look, body + skin.WHO_SCRIPT + js)
+    # 作り始めの消しの小さな台本（web.clips.START_SCRIPT）だけを置く。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない
+    return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.START_SCRIPT)

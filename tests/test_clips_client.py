@@ -39,8 +39,17 @@ purge = body(S, "const purge=async()=>{", "\nconst ")
 assert "c.who!==w" in purge and "now-c.at>AGE" in purge and "AGE=HOURS*3600000" in S, "別の画面の物と 3 時間を過ぎた物を消す"
 assert "addEventListener('DOMContentLoaded',()=>{purge()" in S, "どの頁を開いた時も消す（印は頁の終わりの台本が作るので、読み終えた後）"
 assert "pagehide" not in S.replace("pagehide では消さない", ""), "pagehide では消さない（同じタブで のこす へ移る時にも起きるため）"
-hand = body(S, "const handOver=async(sid)=>{", "\nconst ")
-assert "c.sid===sid&&c.who===w&&!c.pass" in hand and "c.pass=p.id" in hand, "渡す印は、その玩具の、印の無い区切りにだけ付ける"
+hand = body(S, "const handOver=async(sid)=>{", "\n")
+marker = body(S, "const mark=async(sid,p)=>{", "\nconst ")
+assert "await mark(sid,p)" in hand and "c.sid===sid&&c.who===w&&!c.pass" in marker and "c.pass=p.id" in marker, "渡す印は、その玩具の、印の無い区切りにだけ付ける"
+# 印は玩具ごと・3 時間の内の今の印を使い直す（戻って録り足した後に渡しても、前に渡した区切りが消えない）・作り始めの後は新しい印
+assert "const PK=(sid)=>'utsushi-pass:'+sid" in S and "sessionStorage.getItem(NK(sid))?null:passNow(sid)" in hand and "p=p||passMake(sid)" in hand
+# 作り始め（統括の決め・止め 3）: その玩具の印の無い区切りを消し、次は新しい印。のこす の頁から戻った時は消さない
+start = body(S, "const startMaking=async(sid,fromNokosu)=>{", "\n// ")
+assert "if(fromNokosu)return" in start and "c.sid===sid&&!c.pass)await remove(c.id)" in start and "sessionStorage.setItem(NK(sid),'1')" in start
+# 承認の終わりは、その玩具の区切りと印だけ（ほかの玩具の区切りを消さない）
+clr = body(S, "const clear=async(sid)=>{", "\n")
+assert "if(c.sid===sid)await remove(c.id)" in clr and "s.clear()" not in S, clr
 handed = body(S, "const handed=async(sid)=>{", "\nconst ")
 assert "if(p&&c.who===w&&c.pass===p.id)out.push(c);else await remove(c.id)" in handed, "のこすの頁では、今の印と違う物（印の無い物も）を消す"
 assert "Date.now()-p.at<AGE" in S, "渡す印も 3 時間まで"
@@ -75,7 +84,7 @@ assert 'id="nk-c-clips" hidden' in page and clips.HEAD in page and clips.STORE i
 assert nokosu.SCRIPT.replace("__REMOVE__", clips.REMOVE).count(f"b.textContent = '{clips.REMOVE}'") == 1 and "await utsushiClips.remove(c.id); showClips();" in nokosu.SCRIPT, "1 つずつ外す"
 assert "addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.list(sid)" in nokosu.SCRIPT, "頁を開いた時に、渡す印の違う物を消す"
 go = body(nokosu.SCRIPT, "go.onclick = async () => {", "\n};")
-order = [go.index(x) for x in ("/record-json`", "utsushiNewWho", "sendClips(j.id)", "sendFiles(j.id, list)", "utsushiClips.clear()", "/gallery?msg=")]
+order = [go.index(x) for x in ("/record-json`", "utsushiNewWho", "sendClips(j.id)", "sendFiles(j.id, list)", "utsushiClips.clear(sid)", "/gallery?msg=")]
 assert order == sorted(order), ("承認の順: 記録 → 印の作り直し → 区切り → 写真 → 置き場を消す → もちよる", order)
 send = body(nokosu.SCRIPT, "const sendClips = async (id) => {", "\n};")
 assert "'X-Utsushi-Clip': c.kind" in send and "fetch(`/record/${id}/media`, { method: 'POST', headers: h, body: c.blob })" in send
@@ -87,3 +96,14 @@ assert go.index("sendClips(j.id)") < go.index("sendFiles(j.id, list)"), "区切�
 assert 'data-hanasu data-sid="' + G + '" data-scene="craft"' in page and 'class="hanasu-mic"' in page, "工夫の欄の話す口（押して話した間の声を録る）"
 assert page.count(A) == 1, "置き場の台本は頁に 1 回（話す口の台本と一緒に置く）"
 print("ok: 声とカメラの区切りは押した時だけ録り、端末の中に置き、のこすの承認で送る（区切りの種類と手がかりの見出しつき）")
+
+# 作り始めの呼び所: 手帖の「はじめる」と作業の頁を開いた時（作業の頁は、のこす の頁から戻った時を作り始めとしない）
+from web import techo_step  # noqa: E402
+
+assert "window.utsushiClipsStart(sid)" in techo_step.SCRIPT[techo_step.SCRIPT.index("$('start').onclick"):][:600], "手帖の「はじめる」で作り始め"
+st = clips.START_SCRIPT
+assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "印の無い区切りを消し、次は新しい印"
+assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
+assert "utsushiClips.startMaking(T.sid,back)" in hmd.SCRIPT and "'/toy/'+T.sid+'/techo/kiroku'" in hmd.SCRIPT, "作業の頁を開いた時（のこすから戻った時は除く）"
+assert clips.STORE.endswith("別のタブでこのサイトを開くと、前のタブの区切りも消えます。"), "2 つ目のタブで消える事を置き場の断りが言う"
+print("ok: 作り始めの消し・印は玩具ごとに使い直す・承認の後の消しはその玩具だけ")

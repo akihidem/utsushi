@@ -51,6 +51,7 @@ CAMERA, CAMERA_OFF = "カメラを出す", "カメラを止める"
 # 使っていたが、区切りを送る形になったので分けた（作りながら見る頁の鏡は録らないので、そちらの字は本当のまま）
 CAM_NOTE = "カメラの映像は、押した後の 10 秒だけをこの端末に置き、のこすで承認した時に送ります。押していない間は録りません。"
 STUCK = "ここで止まった"  # 作りながら見る頁と同じ字（採られた字）。押した後の 10 秒を録る
+OTONA_LINK = "保護者の方へ、ファシリテーターの方へ"  # 前からある頁の名（くわしい説明の道）
 KEEP_LINK = "のこす"  # 帯の駅の字。録った区切りを のこす の頁へ渡す道
 # 分解の釦（本人の決定 11-07: 開く「中を見る」・戻す「とじる」。「もどる」は手順を戻す釦と同じ字なので使わない）
 SPLIT_OPEN, SPLIT_CLOSE = "中を見る", "とじる"
@@ -146,6 +147,9 @@ const $=id=>document.getElementById(id),body=document.body;
 const next=$('rt-next'),prev=$('rt-prev'),text=$('rt-text'),count=$('rt-count'),stage=$('rt-stage');
 const mic=$('hmd-mic'),heard=$('hmd-heard'),listen=$('hmd-listen'),shown=$('hmd-count'),dots=$('hmd-dots');
 const T=JSON.parse($('hmd-words').textContent),P=window.kumitateParts;
+// 作り始め（統括の決め・別の目の止め 3）: 作業の頁を開いた時に、その玩具の印の無い区切りを消す。のこす の頁から戻って開いた時は消さない（web.clips）
+addEventListener('DOMContentLoaded',()=>{if(!window.utsushiClips)return;let back=false;try{back=new URL(document.referrer).pathname==='/toy/'+T.sid+'/techo/kiroku'}catch(e){}
+ utsushiClips.startMaking(T.sid,back).catch(()=>{})});
 if(!next||!prev)return;
 const at=()=>Number(stage.dataset.at||0),done0=()=>!count.textContent;
 const still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -325,7 +329,9 @@ def page(sid, look="tenji", cam=False):
     camera = (f'<video id="hmd-cam" playsinline muted autoplay></video><div id="hmd-quad" aria-hidden="true">{corners}</div>' if cam else "")
     camera_btn = (f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button><button type="button" id="hmd-stuck">{esc(STUCK)}</button>' if cam else "")
     # カメラの断りと、録る時の 2 行（初めて録る時の 1 行・端末の置き場の 1 行）。のこす への道は、録った区切りを渡す所（web.clips の handOver）
-    camera_note = (f'<span id="hmd-cam-note">{esc(CAM_NOTE)}</span> {clips.notes()} <a href="/toy/{esc(sid)}/techo/kiroku">{esc(KEEP_LINK)}</a> ' if cam else "")
+    # 手順の画面には長い断り（初めて録る時の 1 行・端末の置き場の 1 行）を置かず、カメラの断りの 1 行と、くわしい説明の頁（保護者の方へ）への道だけ
+    # （統括の決め・別の目の止め 2: 320×568 で手順の画面に縦の送りが出た）。端末の置き場の 1 行は、のこすの確かめの画面に出す
+    camera_note = (f'<span id="hmd-cam-note">{esc(CAM_NOTE)}</span> <a href="/otona">{esc(OTONA_LINK)}</a> <a href="/toy/{esc(sid)}/techo/kiroku">{esc(KEEP_LINK)}</a> ' if cam else "")
     # 組み立ての節を覚える鍵は、組み立ての節と同じ物（紙の寸法と組の名。kumitate._key）。寸法だけだと、組が替わっても前の組の立体を覚えている
     params = kumitate._key(sid)
     body = (f'<div class="hmd"><div class="hmd-top"><b>{esc(toy)}</b><span id="hmd-count"></span><span id="hmd-heard" aria-live="polite"></span>'
