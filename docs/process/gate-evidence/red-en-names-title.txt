@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-names-red/title.json data/i18n/en.json; .venv/bin/python tests/test_en_terms.py'
+# commit: bc6d0cb0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 103, in <module>
+    assert name.lower() in v.lower(), ("玩具の名が toys.json と違う", k, v, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('玩具の名が toys.json と違う', '糸からくりの絵箱 →', 'String-trick picture box →', 'Picture box with a string mechanism')
+rc=1

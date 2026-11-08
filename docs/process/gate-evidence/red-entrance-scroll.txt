@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_entrance_scroll.py
+# commit: 62bce810（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_entrance_scroll.py", line 29, in <module>
+    assert OLD not in page, (name, "注記に 新しい絵は作っていない が残る")
+           ^^^^^^^^^^^^^^^
+AssertionError: ('白', '注記に 新しい絵は作っていない が残る')
+rc=1

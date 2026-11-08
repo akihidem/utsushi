@@ -41,7 +41,8 @@ assert cli("print", "H-D", "--out", f"{tmp}/d").returncode == 3
 r = cli("print", hypotheses.sheet_of("NDL-1187053-R0000005-L")["id"], "--out", f"{tmp}/d")  # たたき台は組ごと（御来迎の次の組は H-C）
 assert r.returncode == 0, r.stderr
 text = subprocess.run(["pdftotext", f"{tmp}/d.pdf", "-"], capture_output=True, text=True).stdout
-assert f"仮説{hypotheses.letter(hypotheses.sheet_of('NDL-1187053-R0000005-L'))}" in "".join(text.split()) and "正しい答えではありません" in "".join(text.split())  # 必須 2 種の今の組もやさしい言葉の文（#318。前の組は凍結の床）
+# 紙の題の仮説は印なし（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
+assert f"型紙仮説「{hypotheses.sheet_of('NDL-1187053-R0000005-L')['name']}」" in "".join(text.split()) and "正しい答えではありません" in "".join(text.split())  # 必須 2 種の今の組もやさしい言葉の文（#318。前の組は凍結の床）
 
 # 自分の仮説から入る道（J-008）。別の置き場で始める
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
