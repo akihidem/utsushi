@@ -84,6 +84,7 @@ body.hmd-page{background:#14161a;color:#f3efe6}
 .hmd-acts #hmd-ask[aria-pressed=true]{background:#5a2f2f;border-color:#e09b9b}
 .hmd-acts #hmd-ask[data-state=wait]{background:#3b3550;border-color:#a99be0}
 .hmd-acts #hmd-camera{flex:0 0 auto;padding:0 .7em;font-size:clamp(15px,1.6vw,22px);letter-spacing:.02em}
+.hmd-public{margin:auto 0 0;padding:20px 0;font-size:clamp(20px,2.4vw,32px);color:#f0c7b0;text-align:center}
 .hmd-note{margin:0;font-size:13px;line-height:1.7;color:#9a9385;max-width:60em}
 .hmd-note a{color:#c9c2b4}
 .hmd-list{display:flex;flex-wrap:wrap;gap:18px;margin:18px 0}
@@ -130,6 +131,8 @@ const shot=()=>new Promise(res=>{try{if(T.hmd||!cam||!back()||!cam.videoWidth)re
  c.getContext('2d').drawImage(cam,0,0,c.width,c.height);
  const fit=q=>c.toBlob(b=>{if(b&&b.size>T.frameMax&&q>.45)return fit(q-.15);res(b&&b.size<=T.frameMax?b:null)},'image/jpeg',q);fit(.8)}catch(_){res(null)}});
 const b64=blob=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]||'');r.onerror=()=>res('');r.readAsDataURL(blob)});
+// 公開の場（「聞く」の無い頁）は、ここまで（手順の送りと画面の明かり）だけ。マイクもカメラも開かない
+if(!askBtn)return;
 // ---- 聞く。録るのは押している間だけ（押したまま離す形と、1 回押して始め 2 回目で止める形のどちらでも）。送るのは止めた時の 1 回だけ
 let rec=null,mic=null,chunks=[],shots=[],timer=null,ticks=[],downAt=0,busy=false,drop=false;
 const say=s=>{stateLine.textContent=s||''};
@@ -188,10 +191,16 @@ def available(sid):
     return sid in TOYS and bool(steps(sid))
 
 
-def page(sid, look="tenji", cam=False):
+def page(sid, look="tenji", cam=False, public=False):
     """1 つの玩具の、作業しながら見る頁。帯と足は出さない（見る所を手順の字と「聞く」とこたえだけにする）。
     cam=True はカメラの道（後ろのカメラの映像を頁の下に敷く。/toy/<印>/kasane）。cam=False は HMD の道（/toy/<印>/kasane/hmd・写真を撮らない）。
+    public=True は合言葉なしで開く公開の場（本人 11-08「4 つとも推しのとおり。」の ①）。開いた時から「この場では聞けません」を出し、
+    「聞く」もカメラの釦も映像も置かない（マイクもカメラも開かない。前は「聞く」が出て押せ、声と写真を送ってから断られた・別の目の止め）。
+    手順の字と ← → は公開の場でも見られる。
     道は玩具ごとに置く: 作る口は手帖 1 つの決まり（地図の 1）なので、玩具を選ぶ頁は持たず、選びなおす時は入口へ戻す。"""
+    path = f"/toy/{sid}/kasane" + ("" if cam else "/hmd")  # 道は開いた道のまま（公開の場で cam を外す前に決める）
+    if public:
+        cam = False  # 映像も写真も無い（カメラの道でも、HMD の道と同じく字だけの頁）
     toy = hypotheses.load(sid)["toy"]
     texts = steps(sid)
     words = {"steps": texts, "sid": sid, "hmd": not cam, "ask": ASK, "listening": LISTENING, "thinking": THINKING, "noheard": ASK_NOHEARD, "down": ASK_DOWN,
@@ -201,15 +210,19 @@ def page(sid, look="tenji", cam=False):
     data = json.dumps(words, ensure_ascii=False).replace("<", "\\u003c")
     camera = '<video id="hmd-cam" playsinline muted autoplay></video>' if cam else ""
     camera_btn = f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else ""
+    acts = (f'<p class="hmd-public" id="hmd-public">{esc(ASK_PUBLIC)}</p>' if public
+            else f'<div class="hmd-acts"><button type="button" id="hmd-ask" aria-pressed="false">{esc(ASK)}</button>{camera_btn}</div>')
+    # 公開の場は何も送らないので、送る物の断り（カメラの道・HMD の道の 1 行）は置かない
+    sent = "" if public else f'<span id="hmd-cam-note">{esc(CAM_NOTE if cam else HMD_NOTE)}</span> '
     body = (f'<div class="hmd"><div class="hmd-top"><b>{esc(toy)}</b><span id="hmd-count">{f"1 / {len(texts)}" if texts else ""}</span></div>'
             f'<div class="hmd-step"><button type="button" id="hmd-prev" aria-label="{esc(PREV)}" disabled>←</button>'
             f'<p id="hmd-text" aria-live="polite">{esc(texts[0]) if texts else ""}</p>'
             f'<button type="button" id="hmd-next" aria-label="{esc(NEXT)}">→</button></div>'
             f'<section id="hmd-answer" hidden><h2>{esc(ANSWER)}</h2><p id="hmd-reply" aria-live="polite"></p></section>'
             f'<p id="hmd-state" aria-live="polite"></p>'
-            f'<div class="hmd-acts"><button type="button" id="hmd-ask" aria-pressed="false">{esc(ASK)}</button>{camera_btn}</div>'
-            f'<p class="hmd-note"><span id="hmd-cam-note">{esc(CAM_NOTE if cam else HMD_NOTE)}</span> <a href="/otona">{esc(OTONA_LINK)}</a> '
+            f'{acts}'
+            f'<p class="hmd-note">{sent}<a href="/otona">{esc(OTONA_LINK)}</a> '
             f'<a href="/toy/{esc(sid)}/techo/kiroku">{esc(KEEP_LINK)}</a> {esc(TRIAL)} <a href="/">玩具を選びなおす</a></p></div>{camera}'
             f'<script type="application/json" id="hmd-words">{data}</script>{SCRIPT}{clips.start_assets(sid)}')
-    return skin.shell(f"{toy}: {TITLE}", body, look, path=f"/toy/{sid}/kasane" + ("" if cam else "/hmd"), extra_style=STYLE,
+    return skin.shell(f"{toy}: {TITLE}", body, look, path=path, extra_style=STYLE,
                       body_class="hmd-page hmd-cam" if cam else "hmd-page")

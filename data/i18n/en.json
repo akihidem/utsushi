@@ -1280,7 +1280,6 @@
   "エンジンの版の台帳が、この機械から読めません。": "The engine’s version ledger cannot be read from this device.",
   "エンジンの版は刻んでいない（この上に積んだ v{0} を、エンジンの版 {1} で刻んだ）": "This one has no engine version (v{0}, built on top of it, was released as engine version {1})",
   "カメラで見るのは、うまくいかない型紙を、どう工夫して作ったかです。じょうずかどうかを見るためではありません。": "The camera looks at what you changed when a template did not work. It is not there to judge whether you are good at it.",
-  "カメラに重ねる": "Camera overlay",
   "カメラを出す": "Show the camera",
   "カメラを止める": "Stop the camera",
   "コピー用紙より少し薄く、折り目が戻りにくい紙だと、扇が畳んだまま筒に入る。和紙なら楮の薄い物。": "Paper a little thinner than copy paper, whose folds do not spring back, lets the fan stay folded inside the tube. For Japanese paper, use thin kōzo (paper mulberry) paper.",
