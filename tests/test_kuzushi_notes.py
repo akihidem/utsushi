@@ -63,6 +63,8 @@ for sid in NOTED:
     assert not [w for w in ("例として挙げて", "呼び名にも使われました") if w in every], (sid, "確かめられない辞書の中身の言い切り")
     # ふりがなの字は一覧で確かでない所があるので、「ふりがなは「…」」と言い切らない（別の目の確かめ 11-08・#677 の後）
     assert "ふりがなは「" not in every and "とふりがながあり" not in every, (sid, "ふりがなの言い切り")
+    # 刷りの字は、確かめた所（1997 年の翻刻の字）までで言う。「…と刷られています」と元の本の刷りを言い切らない（別の目の確かめ 11-08・#686 の後）
+    assert "と刷られています" not in every, (sid, "刷りの言い切り")
     texts += [d["gendaigo"], *(x for w in d["words"] for x in (w["word"], w["meaning"]))]
 
 # 頁: 2 つの見出しが出て、json の無い玩具には出ない
