@@ -960,5 +960,16 @@
    "docs/process/workshop-guide.md"
   ],
   "unverified": "進め役が本物の置き場で確かめる手順は、場で通していない。人の分かる言葉かの見分けは人の目だけ（機械は連絡先の形だけを見る）"
+ },
+ {
+  "id": "f81",
+  "name": "刷る紙の題から仮説の印を外しても部品が動かない頭の段（統括の決め 11-08 の (b)。本人の言葉「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」の後の直し）",
+  "status": "done",
+  "evidence": [
+   "src/omochae/compose.py",
+   "tests/test_sheet_head_fixed.py",
+   "tests/test_floor_pin.py"
+  ],
+  "unverified": "刷った紙を物差しで測っていない（配置の SVG で比べた）"
  }
 ]
