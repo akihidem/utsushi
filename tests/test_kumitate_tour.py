@@ -30,8 +30,9 @@ server.shutdown()
 assert tour_of(toy_page) == "1", "玩具の頁の頭の立体は、開いた時に動かす"
 assert tour_of(kumitate.page(G)) == "1", "組み立ての頁は、開いた時に動かす"
 assert tour_of(kumitate.block(G)) == "0", "block の既定は動かさない（作りながら見る頁など、明示しない呼び手は動かさない）"
-assert tour_of(hmd.page(G)) == "0", "作業の頁（重ねる頁）は動かさない"
-for html in (toy_page, kumitate.page(G), kumitate.block(G), hmd.page(G)):
+# 作業の頁（web.hmd）は 11-08 から 3D を出さない（本人 11-08「3D 重ねずに、質問もできるだけにしよう。」）。前はここで、開いても動かさない事を見ていた
+assert "__TOUR" not in hmd.page(G) and 'id="rt-stage"' not in hmd.page(G), "作業の頁に 3D が残っている"
+for html in (toy_page, kumitate.page(G), kumitate.block(G)):
     assert "__TOUR" not in html, "差し替えの印が残っている"
 
 # 2. 頁の JS の決まり: 画面に入った時に 1 回（IntersectionObserver・disconnect）、動きを減らす設定の人は動かさない、長さの上限は TOUR_MS、

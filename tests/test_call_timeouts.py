@@ -33,7 +33,8 @@ from web import techo_site  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
 # 1. 画面から呼ぶ役は、config の時間切れとやり直しの回数で client を作る。命令から呼ぶ役は、待てるので SDK の既定のまま
-assert set(config.SCREEN_TIMEOUT) == {"ask", "observe", "interpret", "words"}, config.SCREEN_TIMEOUT
+# kasane は作業の頁の「聞く」（api.kasane・本人 11-08 539）。声を字にした後に呼ぶので、待ちの合計を短くする
+assert set(config.SCREEN_TIMEOUT) == {"ask", "observe", "interpret", "words", "kasane"}, config.SCREEN_TIMEOUT
 for role, limit in config.SCREEN_TIMEOUT.items():
     c = agent.default_client(role)
     assert c.timeout == limit and c.max_retries == config.SCREEN_RETRIES, (role, c.timeout, c.max_retries)
@@ -61,7 +62,7 @@ class Silent:
 silent = Silent()
 os.environ["ANTHROPIC_BASE_URL"] = silent.url
 assert str(agent.default_client("ask").base_url).startswith(silent.url), "手元の口だけに送る"
-config.SCREEN_TIMEOUT = {"ask": 0.5, "observe": 0.5, "interpret": 0.5, "words": 0.5}
+config.SCREEN_TIMEOUT = {"ask": 0.5, "observe": 0.5, "interpret": 0.5, "words": 0.5, "kasane": 0.5}
 config.SCREEN_RETRIES = 1
 # 0.5 秒 × 2 回に、やり直しの間（SDK の既定で 1 秒まで）を足すと 2 秒ほど。ほかの試験が同時に走る混んだ機械でも越えない幅を取る。
 # SDK の既定なら 10 分なので、30 秒でも紛れない。
@@ -119,6 +120,17 @@ for act in ("ai-interpret", "ai-observe"):
     code, loc, _, took, tries = timed(f"/record/{rid}/{act}", {"back": "techo"})
     assert code == 303 and urllib.parse.quote("今は AI に聞けません") in loc, (act, code, loc)
     assert took < BOUND and tries == 2, (act, took, tries)
+# 作業の頁の「聞く」（POST /toy/<印>/kasane/ask）も同じ。声を字にする所は偽にする（型を読まない）
+import base64  # noqa: E402
+
+server.listener = type("L", (), {"warm": lambda self: None, "text": lambda self, data, form: "竹串はいつ通すの？"})()
+n, t = len(silent.conns), time.monotonic()
+req = urllib.request.Request(f"{base}/toy/{G}/kasane/ask", headers={"Content-Type": "application/json", "Origin": base},
+                             data=json.dumps({"step": 1, "type": "audio/webm", "voice": base64.b64encode(b"v" * 100).decode(), "frames": []}).encode())
+got = json.loads(urllib.request.urlopen(req, timeout=60).read())
+took = time.monotonic() - t
+time.sleep(0.3)
+assert got == {"text": "今は AI に聞けません", "from": "error"} and took < BOUND and len(silent.conns) - n == 2, ("kasane/ask", got, took, len(silent.conns) - n)
 server.shutdown()
 
 # 3. 動画の外の命令が返らない時、observe は時間切れで「動画のコマを取り出せない」と戻り、Claude を呼ばない

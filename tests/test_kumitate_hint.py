@@ -27,12 +27,11 @@ for sid in shown:
     assert acts < hint < note, (sid, "手引きは釦の並びの中、形の断りの前")
     assert html.count(kumitate.esc(kumitate.HINT)) == 1, sid
     assert not re.search(r'id="rt-next"[^>]*autoplay|data-autoplay', html), (sid, "開いただけで動かし始めない決まりは替えない")
-# 釦を隠す頁（重ねる頁）: 釦の並びを隠す決まりがあり、手引きは全部その並びの中にある（並びごと隠れる）
-assert ".hmd-k .rt-acts{display:none}" in hmd.STYLE.replace(".hmd-k .lead,", ""), "重ねる頁は釦の並びを隠す（この試験の前提）"
+# 作業の頁（web.hmd）は 11-08 から 3D を出さない（本人 11-08「3D 重ねずに、質問もできるだけにしよう。」）ので、組み立ての手引きも出ない。
+# 前はここで、釦を隠す頁（重ねる頁）の手引きが釦の並びの中にある事を見ていた
 for sid in [s for s in shown if hmd.available(s)]:
     page = hmd.page(sid)
-    outside = ACTS.sub("", page)
-    assert kumitate.esc(kumitate.HINT) in page and kumitate.esc(kumitate.HINT) not in outside, (sid, "重ねる頁で、手引きが釦の並びの外に出ている")
+    assert kumitate.esc(kumitate.HINT) not in page and 'id="rt-stage"' not in page, (sid, "作業の頁に 3D と手引きが残っている")
 # 3D の無い玩具には手引きを出さない
 plain = [s for s in sorted(play_server.sources()) if not kumitate.available(s) and hypotheses.load(s).get("hypotheses")][:5]
 for sid in plain:

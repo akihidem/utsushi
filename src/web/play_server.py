@@ -645,9 +645,9 @@ class Handler(BaseHTTPRequestHandler):
             if m.group(1) not in sources() or not kumitate.has(m.group(1)):
                 return self._send(404, "無い")
             return self._send(200, kumitate.page(m.group(1), look, path))
-        # 作業の頁に重ねる形（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）。
-        # 下地は試作の枝 try/hmd の頁（hmd.py）。/toy/<玩具>/kasane は後ろのカメラの映像に重ねる形、/toy/<玩具>/kasane/hmd は透けて見える画面の形。
-        # 組み立ての書き方がある玩具だけ。手帖からの道は、口の字が決まってから足す（新しい字は本人の確かめ）
+        # 作業の頁（本人の指示 11-07「HMD か iPhone カメラでオーバーレイする形での作業を前提に、作業ページを作ろう。」）。11-08 から聞くための経路
+        # （hmd.py の頭の決め）。/toy/<玩具>/kasane は後ろのカメラの映像を頁の下に敷く形、/toy/<玩具>/kasane/hmd は透けて見える画面の形。
+        # 開くのは hmd.TOYS の玩具だけ。手帖の手順の画面の印「カメラで聞く」から来る
         m = re.fullmatch(rf"/toy/({SID})/kasane(/hmd)?", path)
         if m:
             from . import hmd
