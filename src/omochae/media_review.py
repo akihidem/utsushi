@@ -89,15 +89,48 @@ def _load(rid):
 def _shows(rid, name):
     """人が確かめた結果。確かめた時の中身の要約（sha256）が残っていて、今のファイルの中身と違えば、確かめていない物として扱う
     （安全の事項 2 への対応: 確認はファイルの名でなく中身に結ぶ。名が同じでも、確かめた後に中身が替わった物を公開しない）。
-    要約の無い前からの確認（この直しの前に確かめた物）は、前のとおり名で読む: 前に確かめた物を頁から消さない（見た目と挙動を替えない）。
-    保存は上書きしない形になったので（techo_site.save_media）、前からの確認の名の中身も、この後は替わらない"""
+    要約の無い前からの確認は、bind_legacy で今の中身に結び直してから読む（下の注）"""
     entry = _load(rid).get(name)
     if not isinstance(entry, dict):
         return None
+    # 安全の事項 2 の続き（第 2 回の確かめの 3）: 要約の無い確認（名だけの確認）は通さない。前からの確認は、立てる時（play_server.serve）か
+    # 一回きりの命令（python -m omochae.media_review bind）で、今のファイルの中身の要約と大きさに結び直す（bind_legacy）。
+    # 結び直した物は、今の中身のまま出続ける（前から出ていた写真は頁から消えない）
     want = entry.get("sha256")
-    if want is not None and (not isinstance(want, str) or digest(_folder(rid) / name) != want):
+    if not isinstance(want, str) or digest(_folder(rid) / name) != want:
         return None
     return entry.get("shows")
+
+
+def bind_legacy():
+    """前からの確認（中身の要約 sha256 の無い、名だけの確認）を、今のファイルの中身の要約と大きさに結び直す。Returns 結び直した数。
+    何度回しても同じ（要約のある確認は替えない）。ファイルの無い確認と、読めない確認は替えない（出さない方へ倒れたまま）。
+    置き場の鍵（media_lock）の中で回すので、同時の上げ・確認・取り下げと取り合わない。
+    結び直した時の中身が、確かめた時の中身と同じかは分からない（前の作りでは名だけを控えていた）。今の中身のまま出し続けるのは本人の条件
+    「見た目、挙動は変えずに」による。この後は保存が上書きしない形（techo_site.save_media）なので、結んだ中身は替わらない"""
+    root = records.folder() / "media"
+    if not root.exists():
+        return 0
+    n = 0
+    at = datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
+    with media_lock():
+        for d in sorted(root.glob("R-*")):
+            if not RECORD_ID.fullmatch(d.name):
+                continue
+            done = _load(d.name)
+            changed = False
+            for name, entry in done.items():
+                if not (isinstance(entry, dict) and MEDIA_NAME.fullmatch(name) and not isinstance(entry.get("sha256"), str)):
+                    continue
+                path = d / name
+                sha = digest(path) if path.is_file() else None
+                if sha is None:
+                    continue
+                entry.update({"sha256": sha, "size": path.stat().st_size, "bound_at": at})
+                changed, n = True, n + 1
+            if changed:
+                store.write_json(d / "review.json", done)
+    return n
 
 
 def public(rid, files):
@@ -322,6 +355,7 @@ def main(argv=None):
     f = sub.add_parser("frames", help="カメラの区切り（voice/k<n>.<ext>）の 3 コマを一時の置き場に書き出して見る")
     f.add_argument("id")
     f.add_argument("name")
+    sub.add_parser("bind", help="前からの確認（名だけの確認）を、今のファイルの中身の要約と大きさに結び直す（一回きり・何度回しても同じ）")
     r = sub.add_parser("revoke", help="確認を取り消す")
     r.add_argument("id")
     r.add_argument("name")
@@ -335,6 +369,9 @@ def main(argv=None):
                 print(rid, name, _folder(rid) / name)
             for rid, name, why in clips_waiting():  # カメラの区切り（読みを待つ物・控えた理由つき）
                 print(rid, name, why)
+            return 0
+        if args.cmd == "bind":
+            print(f"結び直した確認: {bind_legacy()}")
             return 0
         if args.cmd == "frames" or (args.cmd == "approve" and args.name.startswith("voice/")):
             failures = _clip(args)

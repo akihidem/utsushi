@@ -1,4 +1,5 @@
 """手帖の AI の返事（J-013 の順の最後）と動画の観察の補助（J-022）。人の説明が先、成否の言葉を出さない、鍵が無ければ呼ばない。本物は呼ばない。"""
+import json
 import os
 import subprocess
 import tempfile
@@ -53,6 +54,13 @@ from web.techo_site import media_dir  # noqa: E402
 # 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
 media_dir(rid).mkdir(parents=True, exist_ok=True)
 (media_dir(rid) / "review.json").write_text('{"v.mp4": {"shows": "object"}}', encoding="utf-8")
+# 名だけの確認は通さない（安全の事項 2 の続き）ので、確かめた動画の中身を置き場に置き、確認をその中身の要約に結ぶ（観察が読んだ v.mp4）
+import shutil  # noqa: E402
+
+from omochae import media_review as _mr  # noqa: E402
+
+shutil.copy(video, media_dir(rid) / "v.mp4")
+(media_dir(rid) / "review.json").write_text(json.dumps({"v.mp4": {"shows": "object", "sha256": _mr.digest(media_dir(rid) / "v.mp4")}}), encoding="utf-8")
 server = serve(0)
 base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()

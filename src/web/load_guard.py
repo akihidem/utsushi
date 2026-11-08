@@ -12,9 +12,22 @@
   同時に送られた分が数え合わず、送られた数 × 20MB まで上限を越えうった
 - 同時に処理する要求の数を、全体で HTTP_MAX に絞る（LimitedServer）。越えた要求は、読まずに 503 で閉じる。ふつうの量（頁と絵の読み込みで
   1 人あたり数本）では届かない
+- 置き場の合計の予約は、同じ置き場を使う全部のプロセス（白と暗いなど、別に立てたサーバ）で 1 つの台帳を共有する（安全の事項 2 への対応・
+  Reserve の path）。前はサーバごとのメモリの中だけで、2 つのプロセスが同時に受けると、互いの予約を数えずに上限を越えうった。
+  台帳はファイルの錠（flock）の中で読み書きし、落ちたプロセスの予約は pid が居ない事か RESERVE_TTL_S で外す（残ると上限が戻らないため）
+- 受け取り中の本文の合計（このプロセスのメモリに持つ分）に RECV_TOTAL の上限を置く（安全の事項 2 への対応）。1 つの上限（20MB）と
+  遅い Wi-Fi の時の待ち方（受け取りの間は写し直しの枠を持たない）は替えず、同時に受け取る分の合計が越えた時だけ 503 で断る。
+  前は同時に処理する要求の数（HTTP_MAX）× 20MB まで持ちえた。ふつうの量（写真は数 MB・同時に数人）では届かない
 - 本番の HTTP サーバとプロキシでの接続数・本文の大きさ・締切の制御、CPU・メモリ・一時領域の制限は、この直しの外（PR の本文の「まだの所」）
 """
+import contextlib
+import fcntl
+import json
+import os
+import pathlib
+import secrets
 import threading
+import time
 from http.server import ThreadingHTTPServer
 
 MEDIA_SLOTS = 2       # 写真と動画の変換を、全体で同時に回す数
@@ -22,6 +35,8 @@ MEDIA_WAIT = 4        # 空きを待てる数（それより多く来たら断�
 MEDIA_WAIT_S = 60.0   # 待つ長さの上限（秒）。越えたら断る
 HTTP_MAX = 64         # 同時に処理する要求の数（全体）
 VOICE_QUEUE_MAX = 32  # 字にする前の声の待ち行列の長さ（omochae.voice_text の作業列）
+RECV_TOTAL = 8 * 20 * 1024 * 1024  # 受け取り中の本文の合計（1 つ 20MB の 8 本分）。写真は数 MB なので、同時に数十枚でも届かない
+RESERVE_TTL_S = 30 * 60  # 共有の台帳の予約の寿命（秒）。受け取りの締切より長く取り、落ちたプロセスの分だけを外す
 BUSY_503 = b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nRetry-After: 30\r\nConnection: close\r\n\r\n"
 
 
@@ -52,23 +67,82 @@ class Gate:
 
 
 class Reserve:
-    """置き場の合計の予約。受けた時に長さを足し、書き終えたら（失敗でも）外す。"""
+    """置き場の合計の予約。受けた時に長さを足し、書き終えたら（失敗でも）外す。
 
-    def __init__(self):
+    path を渡すと、予約を共有の台帳（JSON）に置き、ファイルの錠の中で読み書きする（安全の事項 2 への対応）。同じ置き場を使う別のプロセスの
+    予約も数えるため。path が無い時はこのプロセスのメモリの中だけで数える（受け取り中の本文の合計のように、プロセスごとに数える物）。
+    take は予約の札（文字列）を返し、give はその札で外す。前は長さで外していたが、プロセスをまたぐと同じ長さの別の予約と見分けられないため
+    """
+
+    def __init__(self, path=None):
         self._lock = threading.Lock()
-        self.reserved = 0
+        self._mine = {}
+        self.path = pathlib.Path(path) if path else None
+
+    @contextlib.contextmanager
+    def _ledger(self):
+        """台帳を錠の中で開き、{札: [pid, 長さ, 時刻]} を渡す。抜ける時に書き戻す。pid の居ない予約と古い予約はここで外す"""
+        with self._lock:
+            if self.path is None:
+                yield self._mine
+                return
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.path.with_suffix(".lock"), "a", encoding="utf-8") as f:
+                fcntl.flock(f, fcntl.LOCK_EX)  # 閉じると外れる
+                try:
+                    book = json.loads(self.path.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    book = {}
+                book = _kept(book, time.time())
+                yield book
+                tmp = self.path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(book), encoding="utf-8")
+                os.replace(tmp, self.path)
 
     def take(self, used, length, total):
-        """今の合計 used に、予約中の分と今回の length を足して total を越えなければ予約して True。"""
-        with self._lock:
-            if used + self.reserved + length > total:
-                return False
-            self.reserved += length
-            return True
+        """今の合計 used に、予約中の分（共有の台帳なら全部のプロセスの分）と今回の length を足して total を越えなければ予約し、札を返す。
+        越えたら None"""
+        with self._ledger() as book:
+            if used + sum(v[1] for v in book.values()) + length > total:
+                return None
+            tag = secrets.token_hex(8)
+            book[tag] = [os.getpid(), length, time.time()]
+            return tag
 
-    def give(self, length):
-        with self._lock:
-            self.reserved = max(0, self.reserved - length)
+    def give(self, tag):
+        with self._ledger() as book:
+            book.pop(tag, None)
+
+    @property
+    def reserved(self):
+        with self._ledger() as book:
+            return sum(v[1] for v in book.values())
+
+
+def _kept(book, now):
+    """台帳から、形の合う・生きている・寿命の内の予約だけを残す。形が違う台帳（リストや、欠けた行）は、空の台帳として扱う。
+    読めない台帳で毎回落ちると、全部の上げが 500 になり続けるため（別の目の気づき 11-08）。消えるのは予約の数えだけで、置き場の写真と動画は消えない"""
+    if not isinstance(book, dict):
+        return {}
+    kept = {}
+    for k, v in book.items():
+        try:
+            pid, length, at = v
+            if _alive(int(pid)) and now - float(at) < RESERVE_TTL_S:
+                kept[str(k)] = [int(pid), int(length), float(at)]
+        except (TypeError, KeyError, ValueError, OverflowError):
+            continue
+    return kept
+
+
+def _alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
 
 
 class LimitedServer(ThreadingHTTPServer):

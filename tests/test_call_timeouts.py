@@ -104,6 +104,7 @@ techo_site.media_dir(rid).mkdir(parents=True, exist_ok=True)
 shutil.copy(video, techo_site.media_dir(rid) / "m1.mp4")
 # 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
 (techo_site.media_dir(rid) / "review.json").write_text(json.dumps({"m1.mp4": {"shows": "object"}}), encoding="utf-8")
+__import__('omochae.media_review', fromlist=['bind_legacy']).bind_legacy()  # 名だけの確認は通さない（安全の事項 2 の続き）ので、試験の置き場の確認も今の中身に結び直す
 ask._key_present = lambda: True  # 鍵がある時の道を通す。送る先は手元の口だけ
 
 # 2. 画面の 4 つの口が、Claude が返らなくても決めた秒数の中で戻り、「今は AI に聞けません」と言う。つないだ数が 2 なら、やり直しの回数も届いている
