@@ -1,0 +1,12 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tsukuru_last_step.py
+# commit: 467fd3f0（回した時の HEAD）
+/tmp/tmpoarq42p8/play/NDL-1187053-R0000005-L/.tmp-3ob7y4_7/H-C_v1.pdf
+/tmp/tmpoarq42p8/play/NDL-1187053-R0000019-L/H-B_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_tsukuru_last_step.py", line 210, in <module>
+    assert not fails, "\n" + "\n".join(fails)
+           ^^^^^^^^^
+AssertionError: 
+road_to_the_record: AssertionError: のこすの頁の記入の節へ送っていない: /toy/NDL-1187053-R0000005-L/techo/kiroku?msg=%E7%B5%84%E3%81%BF%E4%B8%8A%E3%81%8C%E3%81%A3%E3%81%9F%E4%BA%8B%E3%82%92%E6%AE%8B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%E5%8B%95%E3%81%8B%E3%81%97%E3%81%A6%E3%81%BF%E3%81%A6%E3%80%81%E3%81%93%E3%81%93%E3%81%A7%E8%A8%98%E9%8C%B2%E3%82%92%E6%AE%8B%E3%81%97%E3%81%BE%E3%81%99%E3%80%82#mine
+words_are_the_ones_the_person_chose: AssertionError: のこす
+rc=1
