@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_load_guard.py
+# commit: 79ef6da3（今の main）の木に、足した tests/test_load_guard.py だけを当てた（git の外の写し・予約はサーバごとのメモリの中で、長さで外す形。台帳のファイルを渡す口が無い）
+Traceback (most recent call last):
+  File "tests/test_load_guard.py", line 60, in <module>
+    assert b and r.reserved == 30
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1
