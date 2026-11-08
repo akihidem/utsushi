@@ -628,7 +628,12 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) in sources():
             # 手帖の記録の頁（上げた物とフィードバック）。作る頁から分けた（#87）。
             from . import techo_site
-            return self._send(200, skinmod.shell("手帖", techo_site.records_page(m.group(1), msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False)), look, "", path, techo_site.STYLE, "techo"))
+            # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
+            from . import nokosu, techo_step, think_sheet
+            sid = m.group(1)
+            sheet = hypotheses.sheet_of(sid)["id"]
+            paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+            return self._send(200, skinmod.shell("手帖", techo_site.records_page(sid, msg=qs.get("msg", [""])[0], up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper), look, "", path, techo_site.STYLE + nokosu.STYLE, "techo"))
         # 作った物の写真の小さい写し（web.made。入口の札と玩具の頁の頭は、上げた元の写真 3.7MB ほどを読まない。1 枚 100KB 以下の線）。
         # 見せてよいかは元の写真と同じ線（media_review.shown_to）で決める
         m = re.fullmatch(r"/record/(R-\d{4,})/media/(m\d+\.(?:jpg|png))/small", path)
@@ -1051,8 +1056,9 @@ class Handler(BaseHTTPRequestHandler):
                 making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
         if as_json:
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
-        if event == "done":  # どの紙かを渡して記録の欄へ送る。今の頁は JS の有無に関わらず、この道を通る（#321）。記録の欄の既定は変えない（紙を選ぶ欄は #332 で無くなる）
-            return self._done(sid, tsukuru.DONE_NOTE, see=hid, v=sheet_version_of(sid, hid, form))
+        if event == "done":  # 組み上がりを残した後、のこすの頁（手帖の記録の頁 /toy/<印>/techo/kiroku）へ直に送る（本人の答え 11-08「B。」・統括の決め (a)）。
+            # 前はどの紙かを渡して玩具の頁の記録の欄へ送り、そこから のこす へもう 1 押し要った。組み上がりの記録（making_log.add_step）は上で今と同じに残す
+            return self._done(sid, tsukuru.DONE_NOTE, back="techo")
         ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 
@@ -1192,7 +1198,8 @@ class Handler(BaseHTTPRequestHandler):
         # 人の印は画面が送った時だけ。書けなくても例外は出ないので、この口は止まらない。
         if act in ("print", "record"):
             making_log.add_stage(sid, act, form.get("who", ""))
-        self._done(sid, msg, see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
+        # 台本の無い画面の のこす（web.nokosu の素のフォーム）は back=techo を送り、記録の頁の #mine へ戻る（_done は techo の時だけ替え、ほかの値は無視する）
+        self._done(sid, msg, back=form.get("back", ""), see=see, anchor="win" if see else anchor, fresh=act == "record", headers=claim)
 
 
 _making = {}  # 作っている最中の紙。（玩具, 案）→ その結果

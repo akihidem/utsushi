@@ -2,7 +2,7 @@
 「生徒の一人一台端末や iPhone を机の端に置いて、端末のカメラで生徒の上半身を写す形に。間に手と動画と紙があり、作成の様子を見れるようにする」。
 
 何をする頁か: 端末を机の端に立て、画面に手本（今の手順の文と、手順の紙の絵）と返事（聞いた事の答え）を出す。隅の小さな鏡に、
-自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順は全部できた）で残す。設計は docs/process/research/30 の「観察の置き方」。
+自分と机の上（手と紙）が映る。進み方は大きな札（次の手順へ・止まった。最後の手順は のこす）で残す。設計は docs/process/research/30 の「観察の置き方」。
 
 判断の芯:
 - **一番浅い段（観察 A）だけを作る。映像は端末の中だけ。** 鏡は <video> に流すだけで、画素を取り出さない・録らない・送らない。
@@ -35,7 +35,7 @@ import json
 from omochae import hypotheses, instructions, loop, making_log, render
 from omochae.compose import TEMPLATES
 
-from . import genga, skin
+from . import genga, naoru, skin
 from .voice_words import CLEAN, WORDS
 
 # 映像の約束。かざして選ぶ頁（U-44）を外した後も、作りながら見る頁の鏡に同じ約束を残す（決まり「子どもの写真・声は扱わない」）。
@@ -45,7 +45,9 @@ from .play_server import esc, out_dir, printed_versions
 
 NOTICE = making_log.ASK_NOTICE + making_log.ASK_NAME_VOICE  # 断りの文は making_log に 1 か所（本人の決定 11-05）
 # 最後の手順の札と、押した後に記録の欄の頭で出す案内（#321）。案内は play_server が記録の欄へ渡す。
-DONE_LABEL = "全部できた"
+# 最後の手順の一番大きい札の字。前は「全部できた」（#321）。本人の答え 11-08「B。」（つくる → のこす の誘導を強くする案 B: 作りながら見る頁の最後の手順に
+# 大きな「のこす」の釦）と統括の決め (a)（一番大きい札は 1 つのまま、その札を「のこす」に替える）で、押すと組み上がりを残して、のこすの頁へ直に行く
+DONE_LABEL = "のこす"
 DONE_NOTE = "組み上がった事を残しました。動かしてみて、ここで記録を残します。"
 
 STYLE = """
@@ -80,6 +82,7 @@ svg.sheet{height:52vh;height:52svh;margin-bottom:8px}svg.koma{display:none}svg.k
 .tiles button{font:inherit;font-size:clamp(17px,4.8vw,22px);min-height:72px;border:2px solid var(--accent);background:var(--paper);color:var(--fg);cursor:pointer;padding:8px 10px}
 .tiles .go{background:var(--accent);color:var(--onaccent);font-size:26px;min-height:84px}
 .tiles .small{min-height:44px;font-size:15px;border:1px solid var(--frame);color:var(--mute)}
+.ask-nokosu{margin:0 0 8px;font-size:16px;line-height:1.6}
 .msg{margin:0;padding:10px 12px;border:1px solid var(--accent);font-size:17px}
 .henji form{display:flex;gap:8px}
 .henji input{flex:1;min-width:0;font:inherit;font-size:18px;padding:10px;border:1px solid var(--frame);background:var(--field);color:var(--fg)}
@@ -136,11 +139,12 @@ const st=document.querySelector('.stage'),sid=st.dataset.sid,hid=st.dataset.hid,
 const wantCam=new URLSearchParams(location.search).get('cam')==='1';
 const items=[...document.querySelectorAll('#steps li')],num=document.getElementById('n'),stepIn=document.getElementById('step');
 const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg-stuck');
-const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');
+const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');const askNokosu=document.getElementById('ask-nokosu');
 let n=+stepIn.value;
 // 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
-const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
-const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));const kp=window.kumitateParts;if(kp&&kp.show&&document.querySelector('.k3d'))kp.show(n-1);document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
+// 最後の手順では、のこす の札の上の本人の字（#ask-nokosu）の高さも足す（足さないと、幅 390×844 の御来迎で のこす の札が 21px 画面の下へ出た）
+const fit=()=>{const li=items[n-1],ak=askNokosu&&!askNokosu.hidden?askNokosu.offsetHeight+8:0;if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight+ak}px`)};
+const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));const kp=window.kumitateParts;if(kp&&kp.show&&document.querySelector('.k3d'))kp.show(n-1);document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;if(askNokosu)askNokosu.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}
  // 次の手順の番号と字が画面の上の外にある時は、番号の行を画面の頭へ送る。低い画面で字の長い手順（虎 v7 の手順 10 は 62 字）では、
  // 「次の手順へ」が下へ出て、人が札まで送ってから押すと、頁が下へ送られたままで次の手順の字が画面の上の外に出た（320×568。tests/test_landscape_fit.py）。
@@ -309,6 +313,8 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'
+            # のこす の札の上の本人の字（naoru.ROUTE_ASK・本人の答え 11-08「B。」）。最後の手順でだけ出す（JS で進む時は show が札と一緒に切り替える）
+            + (f'<p class="ask-nokosu" id="ask-nokosu"{"" if n >= total else " hidden"}>{esc(naoru.ROUTE_ASK)}</p>' if naoru.ROUTE_ASK else '') +
             f'<form class="tiles" id="tiles" method="post" action="/toy/{esc(sid)}/step">'
             f'<input type="hidden" name="hypothesis" value="{esc(hid)}"><input type="hidden" name="step" id="step" value="{n}"><input type="hidden" name="sheet_version" value="{v}">'
             # 一番大きい札は 1 つだけ。最後の手順で替わる（JS で進む時は show が同じ 2 つを切り替える）。

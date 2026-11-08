@@ -1,0 +1,6 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tsukuru_last_step.py
+# commit: 20bbea3c（回した時の HEAD）
+/tmp/tmpv7_wnlhh/play/NDL-1187053-R0000005-L/.tmp-r0cc_ky3/H-C_v1.pdf
+/tmp/tmpv7_wnlhh/play/NDL-1187053-R0000019-L/H-B_v1.pdf
+ok: 作りながら見るの最後の手順
+rc=0

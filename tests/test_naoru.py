@@ -3,10 +3,10 @@
 
 見る事:
 1. 説明は 2〜3 行で、どの行も空でない（のこす の画面は 1 手 1 画面なので長くしない）
-2. 山場の 1 行は data/kaizen/highlight.json の表の字のまま（字を作り替えない）。出どころの欄があり、個人のパスを持たない
+2. のこした記録から直った所の 4 つの例は data/kaizen/examples.json に、改善の歴史の表の why と changed の字のまま（字を作り替えない）。個人のパスを持たない
 3. 手帖の最後の画面（のこす の画面）は作る頁の決まり（記録の番号・「の紙」・版の名を出さない。本人の決定 11-05、#87）に従い、
    窓口の決め（11-07・(a)）の字（2 行目を「…次に作る人の型紙になります。」）を出す。枠は end の節の中の「のこす」の釦のすぐ後に 1 回だけで
-   （釦の上に置くと小さい画面で釦が最初の画面の外へ出たため）、山場の 1 行（版の名を持つ）は添えない。公開の場（public）でも同じ。
+   （釦の上に置くと小さい画面で釦が最初の画面の外へ出たため）、直った例の集（版の名を持つ）は添えない。公開の場（public）でも同じ。
    決まりに当たる字に入れ替えると、のこす の画面には枠が出ない（記録の頁には出る）
 4. 手帖の記録の頁では、枠が頁の頭（題の後・手帖をひらくの口の前）に 1 回だけ出る。公開の場でも出る
 5. 説明の字（LINES と TECHO_LINES）を空にすると、枠はどちらの頁にも出ない（字を外して作りだけを残す形）
@@ -28,19 +28,22 @@ assert 2 <= len(naoru.LINES) <= 3 and all(t.strip() for t in naoru.LINES), naoru
 assert 2 <= len(naoru.TECHO_LINES) <= 3 and all(t.strip() for t in naoru.TECHO_LINES), naoru.TECHO_LINES
 assert naoru.TECHO_LINES == (naoru.LINES[0], "直した型紙は、次の版になって、次に作る人の型紙になります。"), naoru.TECHO_LINES
 
-# 2. 山場の 1 行は表の字のまま
-data = json.loads(naoru.HIGHLIGHT.read_text(encoding="utf-8"))
-# 表の字（改善の歴史の表の、張子の首振り虎の型紙の版 v7 の行）。表は repo の外にあるので、写した字をここで留める（写し違い・作り替えを拾う）
-assert (data["line"], data["toy"], data["sheet_version"]) == ("3D で組んで見つかった当たりを直し、頭が揺れても前の壁に当たらない", "張子の首振り虎", 7), data
-assert data["source"] and data["why_this_one"], data
-# 型紙の版は玩具の頁の札の脇・輪の図の真ん中と同じ形（v を付けない組の番号。窓口の決定 (a)、#513）。数も、その玩具の今の組の番号と同じ
-assert naoru.highlight() == f"{data['line']}（{data['toy']} 型紙の版 {data['sheet_version']}）", naoru.highlight()
-assert "型紙の版 v" not in naoru.highlight(), naoru.highlight()
-assert wa.set_version(TORA) == data["sheet_version"], (wa.set_version(TORA), data["sheet_version"])
-raw = naoru.HIGHLIGHT.read_text(encoding="utf-8")
+# 2. のこした記録から直った所（本人 11-08 403「…唐突。これで参考になったこと、集みたいな感じで何個か例示して。」）: 例の字は改善の歴史の表のまま
+rows = json.loads(naoru.EXAMPLES.read_text(encoding="utf-8"))["examples"]
+hist = json.loads((naoru.ROOT / "data/history/kaizen-history.json").read_text(encoding="utf-8"))
+assert len(rows) == 4, rows
+for e in rows:
+    v = next(x for t in hist["toys"] if t["toy"] == e["toy"] for x in t["versions"] if str(x["sheet_version"]) == str(e["sheet_version"]))
+    assert e["voice"] in " ".join(w["text"] for w in v["why"]) and e["change"] in v["changed"] and v["set"] == e["set"], e
+# 型紙の版は玩具の頁の札の脇・輪の図の真ん中と同じ形（v を付けない組の番号。窓口の決定 (a)、#513）
+assert naoru.examples() == [f"{e['voice']} → {e['change']}（{e['toy']} 型紙の版 {e['sheet_version']}）" for e in rows], naoru.examples()
+assert all("型紙の版 v" not in t for t in naoru.examples())
+raw = naoru.EXAMPLES.read_text(encoding="utf-8")
 assert "/home/" not in raw and "~/" not in raw, "data に個人のパスが入っている"
 box = naoru.box()
-assert box.count('class="naoru"') == 1 and all(t in box for t in naoru.LINES) and naoru.highlight() in box, box
+assert box.count('class="naoru"') == 1 and all(t in box for t in naoru.LINES) and all(t in box for t in naoru.examples()), box
+assert naoru.EXAMPLES_HEAD in box and box.index(naoru.EXAMPLES_HEAD) < box.index(naoru.FIXED_BY), "見出し → 例 → 最後の 1 行"
+assert "頭が揺れても前の壁に当たらない" not in box, "虎 版 7 の 1 行は外した（本人 403）"
 
 
 def end_section(html):
@@ -48,7 +51,7 @@ def end_section(html):
     return html[a:html.index("</section>", a)]
 
 
-# 3. のこす の画面: 窓口の決めた字の枠が、end の節の中の「のこす」の釦のすぐ後に 1 回。山場の 1 行と、記録の頁の 2 行目（「の紙」）は出ない
+# 3. のこす の画面: 窓口の決めた字の枠が、end の節の中の「のこす」の釦のすぐ後に 1 回。直った例の集と、記録の頁の 2 行目（「の紙」）は出ない
 assert naoru.techo_ok(naoru.TECHO_LINES) and not naoru.techo_ok(naoru.LINES), "のこす の画面の字が作る頁の決まりに当たる"
 for sid in (TORA, GORAIGO):
     sheet = hypotheses.sheet_of(sid)["id"]
@@ -62,7 +65,7 @@ for sid in (TORA, GORAIGO):
         between = end[end.index("</div>", keys_end) + len("</div>"):at]
         assert between.strip() == '<aside', (sid, public, "釦と枠の間に別の物がある", between[:80])
         assert all(t in end for t in naoru.TECHO_LINES), (sid, public, "決めた字が出ない")
-        assert naoru.highlight() not in page and naoru.LINES[1] not in page, (sid, public, "手帖に版の名か「の紙」が出た")
+        assert naoru.EXAMPLES_HEAD not in page and naoru.LINES[1] not in page, (sid, public, "手帖に版の名か「の紙」が出た")
 keep_lines = naoru.TECHO_LINES
 try:
     for bad in (("次に作る人の紙", "x"), ("型紙の版 7", "x"), ("R-0001", "x")):
@@ -90,4 +93,4 @@ try:
     assert 'class="naoru"' not in techo_site.records_page(TORA)
 finally:
     naoru.LINES, naoru.TECHO_LINES = keep, keep_techo
-print("ok のこすと型紙が直る事の枠（2〜3 行・山場の 1 行は表の字で記録の頁だけ・のこすの釦のすぐ下は決めた字・記録の頁の頭に 1 回・公開の場でも・字が空なら出ない）")
+print("ok のこすと型紙が直る事の枠（2〜3 行・直った例の集は表の字で記録の頁だけ・のこすの釦のすぐ下は決めた字・記録の頁の頭に 1 回・公開の場でも・字が空なら出ない）")

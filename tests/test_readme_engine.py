@@ -16,8 +16,9 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-a = readme.index("## 開発基盤と提出物の切り分け")
-sec = readme[a:readme.index("\n## ", a + 3)]
+# README の組み直し（11-08）で、この節は「決まりと出典」の節の中の小見出し（### ）になった。次の見出し（## か ###）までを節とする
+a = readme.index("### 開発基盤と提出物の切り分け\n")
+sec = readme[a:min(i for i in (readme.find("\n## ", a + 4), readme.find("\n### ", a + 4), len(readme)) if i >= 0)]
 
 # 1. 別の repo へのリンク
 assert "[paper-to-toy](https://github.com/akihidem/paper-to-toy)" in sec, "paper-to-toy の repo へのリンクを残す"

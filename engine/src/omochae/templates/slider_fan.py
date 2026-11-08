@@ -30,6 +30,10 @@ DEFAULTS = {
     "knob_width": 4,
     # 0.15mm はふつうの厚めの紙の見込み。実物の紙を測ったら置き換える。
     "paper_thickness": 0.15,
+    # 内筒を下から押し上げる形（rise）で、割り箸を内筒に留める物。tape はセロハンテープ（v14 まで）、glue は木工用ボンド。
+    # 材料の前提（2026-11-07 の設計の条件。テープは樹脂の側、接着剤は使ってよい）による、テープを使わない新しい版（v15）だけが glue を使う。
+    # 既定は tape のまま（凍結の場面と、デモの v14 の紙を変えないため）
+    "stick_fix": "tape",
 }
 RANGES = {
     "tube_side": (20, 50), "tube_height": (50, 130), "tube_glue": (5, 12),
@@ -107,6 +111,7 @@ FORMS = PUSH_PARTS  # 刷る形の値の一覧（作りうる部品を数える�
 # 既定の出典（data/sources/ の名前）。--source を書かない時に、雛形と合わない出典の印を刷らないため。
 SOURCE = "NDL-1187053-R0000005-L"
 HUBS = ("axle", "rim")
+STICK_FIXES = ("tape", "glue")  # 割り箸を内筒に留める物（DEFAULTS の stick_fix）
 # 開く糸を扇の中心からこの距離につなぐ。途中で突っ張らない糸が一番短く、よく開く位置。糸の長さはこの距離から fan_model.shortest_free_thread で出す。
 THREAD_RADIUS = 35
 # 開く糸を結ぶ筒の穴の、口からの深さ。糸の長さの式（thread_mm）も同じ値から測る。
@@ -117,7 +122,8 @@ SLOT_MARGIN = 5
 
 def spec():
     """Claude に渡す道具 get_template_spec の中身。"""
-    return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "push_part": PUSH_PARTS, "hub": HUBS}
+    # 列挙の寸法は、選び肢を全部見せる（stick_fix を足した時に spec へ出し忘れ、受け付ける値と食い違った。見直しの指摘）
+    return {"template_id": ID, "defaults": DEFAULTS, "ranges": RANGES, "push_part": PUSH_PARTS, "hub": HUBS, "stick_fix": STICK_FIXES}
 
 
 def check_range(p):
@@ -131,6 +137,9 @@ def check_range(p):
         elif k == "hub":
             if v not in HUBS:
                 out.append(Failure("F5.range", k, f"{v} は {HUBS} のどれでもない"))
+        elif k == "stick_fix":
+            if v not in STICK_FIXES:
+                out.append(Failure("F5.range", k, f"{v!r} は {STICK_FIXES} のどれでもない（割り箸を留める物）"))
         elif k not in RANGES:
             out.append(Failure("F5.range", k, "知らない寸法の名前"))
         elif not isinstance(v, (int, float)) or isinstance(v, bool) or not RANGES[k][0] <= v <= RANGES[k][1]:
@@ -674,8 +683,9 @@ def materials(p):
     if _axle(p) and not any("竹串" in r["material"] for r in rows):
         tools += "、竹串（穴あけ）"
     if p["push_part"] == RISE:
-        # 割り箸は木で糊が付きにくいので、内筒にはセロハンテープで留める（組み方の文と同じ）
-        tools += "、セロハンテープ（割り箸を留める）"
+        # 割り箸は木で、でんぷんのりが付きにくいので、内筒にはセロハンテープで留める（v14 まで）。テープを使わない版（stick_fix が glue）は、
+        # 木にも付く木工用ボンドで貼る（材料の前提で接着剤は使ってよい）。組み方の文と同じ
+        tools += "、セロハンテープ（割り箸を留める）" if p.get("stick_fix", "tape") == "tape" else "、木工用ボンド（割り箸を貼る）"
     lines = [f"{rows[0]['material']}を 1 枚（全部品を同じ紙に刷る）", tools]
     # 6 番は紙でない棒（竹串・割り箸）の行。内筒を下から押し上げる形の 6 受けは紙の部品で、1 枚目の紙の行に入るので書かない
     lines += [f"{r['material']} {r['qty']} 本" for r in rows if r["number"] == 6 and r["key"] != "cradle"]
@@ -758,7 +768,9 @@ def _steps(p):
             "1 外筒を、色の境で 4 回山折りする",
             "1 外筒の糊代を、反対の端の面の裏に貼って角筒にする",
             "2 内筒を、破線で 4 回谷折りして、平らに戻す（まだ貼らない）",
-            "割り箸を、2 内筒の刷った面の点の線の長方形に沿って置き、上の端を長方形の上の端にそろえて、セロハンテープで 2〜3 か所留める（下の端は内筒の下へ出す）",
+            ("割り箸を、2 内筒の刷った面の点の線の長方形に沿って置き、上の端を長方形の上の端にそろえて、セロハンテープで 2〜3 か所留める（下の端は内筒の下へ出す）"
+             if p.get("stick_fix", "tape") == "tape" else
+             "割り箸を、2 内筒の刷った面の点の線の長方形に沿って置き、上の端を長方形の上の端にそろえて、木工用ボンドで貼る（下の端は内筒の下へ出す。乾くまで押さえる）"),
             "2 内筒の糊代を、反対の端の面に貼って角筒にする（割り箸は筒の内に入る）",
             "3 台の 4 つの糊代を、山折りの線で下へ折る",
             "3 台を、印のある上の面を上にして 2 内筒の上の口に差し込み、糊代を内筒の内の面に貼る（蓋をする）",
