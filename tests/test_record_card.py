@@ -91,6 +91,7 @@ try:
     (folder / "m1.mp4").write_bytes(b"\0")
     # 確認の前の動画は、上げた本人の画面にだけ AI の口を出す（tests/test_video_owner_ai.py）。ここは釦の出し方を見るので、人が物だけと確かめた動画として置く
     (folder / "review.json").write_text('{"m1.mp4": {"shows": "object"}}', encoding="utf-8")
+    __import__('omochae.media_review', fromlist=['bind_legacy']).bind_legacy()  # 名だけの確認は通さない（安全の事項 2 の続き）ので、試験の置き場の確認も今の中身に結び直す
     full = card(get(f"/toy/{G}/techo/kiroku"), "R-0001")
     assert "Claude に聞く" in full and "動画を見てもらう" in full
     (folder / "m1.mp4").unlink()

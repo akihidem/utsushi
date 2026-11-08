@@ -1767,6 +1767,9 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.voice_tool = not voice_text.tool_missing()
     server.voice_jobs = voice_text.Worker(server.voice_tool)
     server.voice_jobs.start()
+    # 安全の事項 2 の続き（第 2 回の確かめの 3）: 前からの写真と動画の確認（名だけの確認）を、立てる時に一度、今の中身の要約と大きさに結び直す。
+    # 名だけの確認は、この後は通さない（media_review._shows）。前から出ていた写真は、今の中身のまま出続ける
+    media_review.bind_legacy()
     return server
 
 

@@ -150,6 +150,7 @@ techo_site.media_dir(rid).mkdir(parents=True, exist_ok=True)
 (techo_site.media_dir(rid) / "m1.mp4").write_bytes(b"not a video")
 # 人の確認の後の形で見る（確認の前の動画は、上げた本人の画面からだけ渡す。tests/test_video_owner_ai.py）
 (techo_site.media_dir(rid) / "review.json").write_text(json.dumps({"m1.mp4": {"shows": "object"}}), encoding="utf-8")
+__import__('omochae.media_review', fromlist=['bind_legacy']).bind_legacy()  # 名だけの確認は通さない（安全の事項 2 の続き）ので、試験の置き場の確認も今の中身に結び直す
 agent.default_client = lambda role=None: (_ for _ in ()).throw(api_error("AuthenticationError", f"invalid x-api-key {key_like}"))
 keep_interpret = loop_agents.draft_interpretation
 for act, role in (("ai-interpret", "interpret"), ("ai-observe", "observe")):
