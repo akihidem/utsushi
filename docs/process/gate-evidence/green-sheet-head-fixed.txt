@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_sheet_head_fixed.py
+# commit: 67b95228（回した時の HEAD）
+ok 刷る紙の題から印を外しても部品は動かない: 玩具 83 種の型紙で、違うのは題の行だけ（この機械の字と決まった字の幅の両方）
+rc=0

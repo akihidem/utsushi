@@ -14,17 +14,23 @@ from web.play_server import sources  # noqa: E402
 from web import workshop as _workshop  # noqa: E402
 
 _workshop.TABLE = _workshop.TABLE.with_name("no-such-workshop-photos.json")
+# もちよるの頁のワークショップの様子と、できたおもちゃの節（本人の言葉 11-08）も、写真の分けの表と感想の札を外して、本物の無い形を作る
+# （2 つの節が出る形は tests/test_mochiyoru_workshop.py が見る）
+_workshop.KINDS = _workshop.KINDS.with_name("no-such-workshop-photo-kinds.json")
+from web import demo_samples as _samples  # noqa: E402
+_samples.workshop_for = lambda sid, toy: ""
 
 # 見本は全部外した（上げた物の見本: 本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」。
 # 職人の言葉の見本: 本人の言葉 11-08「改善のために撮影し上た型紙レビュー10本は職人の言葉です。見本と取り替えて、もちよる、に掲載してください。」）
+# 寄せられた声は序の頁の節（voices_sections）に、職人の言葉は もちよるの頁（gallery_page の shokunin_section）に出る（本人の言葉 11-08「職人の言葉、はもちよるに移動」）
 gallery, voices = techo_site.gallery_page(sources()), techo_site.voices_sections()
 html = gallery + voices
 assert 'class="item is-sample"' not in html and '<span class="sample">見本</span>' not in html and demo_samples.NOTE not in html, "見本と作り物の一文は出ない"
 assert not hasattr(demo_samples, "CONTRIBUTIONS") and not hasattr(demo_samples, "UPLOADS"), "作り物を残さない"
 # 寄せられた声は、11 月のワークショップの参加者の実際の感想（本人の言葉 11-07 夜「とりあえず感想は全て反映させたい」）と、ワークショップの場で話された言葉。
 # 1 件 1 枚の札で、見本の札は付けない。字は回答のまま。名前・番号・回（A/B）は出さない。抜き出した事と名前を外した事の一文が先頭
-yose = voices[voices.index('id="yose"'):voices.index('id="shokunin"')]
-craft = voices[voices.index('id="shokunin"'):]
+yose = voices[voices.index('id="yose"'):]
+craft = gallery[gallery.index('id="shokunin"'):]
 assert len(demo_samples.VOICES) == 17 and all(v["toy"] and v["fields"] for v in demo_samples.VOICES)
 assert demo_samples.VOICES_NOTE in yose, "寄せられた声は抜き出した一文が先頭"
 workshop = [s for s in demo_samples.SPOKEN if s["where"] == "workshop"]

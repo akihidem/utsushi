@@ -355,8 +355,10 @@ def _mazu(ts, photos=True):
 # 選ぶのは 2 回目から（本人の言葉 11-08「83 のおもちゃから、1 つ選ぶ、で実際に選ぶのは 2 回目以降にしたい」・本人の決め「A＋Cでよい」）。
 # 案 A: 見分けずに全員へ同じ形を出し、敷き詰めを畳む（端末にもサーバにも印を持たない・共用の iPad でもぶれない）。畳みの札に数を出すので、
 # 審査員は初めてでも全部の数が分かり、1 押しで開く。道 /#erabu で開いた形に着く（README と審査用の頁から張る道・のこすの後の道 C）。
-# 数は字に固定せず、頁を作る時に棚の分け（genre.groups）から数える（棚の入れ先が替わると数も替わるため。統括の気づき 11-08）
-FOLD = "2 回目からは、{n} のおもちゃから えらぶ（{shelves}）"
+# 数は字に固定せず、頁を作る時に棚の分け（genre.groups）から数える（棚の入れ先が替わると数も替わるため。統括の気づき 11-08）。
+# 棚ごとの数（うごく N・かざる N）は札から外した（本人の言葉 11-08「最初の「（うごく 38・かざる 45）」は消す。」）。全部の数だけを出す。
+# 棚の名は畳みの中の見出しに残る
+FOLD = "2 回目からは、{n} のおもちゃから えらぶ"
 
 
 def erabu_counts(all_sids):
@@ -367,9 +369,9 @@ def erabu_counts(all_sids):
 
 
 def fold_label(all_sids):
-    """畳みの札の字（数は棚の分けから）。"""
-    n, shelves = erabu_counts(all_sids)
-    return FOLD.format(n=n, shelves="・".join(f"{big} {k}" for big, k in shelves))
+    """畳みの札の字（全部の数は棚の分けから数える）。"""
+    n, _ = erabu_counts(all_sids)
+    return FOLD.format(n=n)
 
 
 def _erabu(sids, photos=True):

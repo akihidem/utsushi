@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_ux_stage1.py
+# commit: 1cbd3749（回した時の HEAD）
+ok 段 1: 頭の帯は道しるべで、今いる駅に印。玩具の頁の中でだけ つくる・のこす が押せる。持ち寄る駅に もう 1 つ つくる、よむ に読み物への道
+rc=0

@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_hmd.py
+# commit: 1cbd3749（回した時の HEAD）
+/tmp/tmp85qu0izk/play/NDL-1187053-R0000005-L/.tmp-1x3nu7sh/H-C_v1.pdf
+/tmp/tmp85qu0izk/play/NDL-1187053-R0000014-R/.tmp-mwy6ir9u/H-A_v1.pdf
+/tmp/tmp85qu0izk/play/NDL-1187053-R0000005-L/.tmp-3eldglwy/H-C_v1.pdf
+/tmp/tmp85qu0izk/play/NDL-1187053-R0000014-R/.tmp-g0xg9r2f/H-A_v1.pdf
+/tmp/tmp85qu0izk/play/NDL-1187053-R0000004-L/.tmp-5704s3vg/H-A_v1.pdf
+英語の頁の最初の画面（数だけ）: 0005-L 320×568 はじめるの下の端 577・0014-R 320×568 はじめるの下の端 577・0004-L 320×568 はじめるの下の端 512・0005-L 375×667 はじめるの下の端 626・0014-R 375×667 はじめるの下の端 626・0004-L 375×667 はじめるの下の端 611
+ok 作業しながら見る試作: 1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。送らない。カメラは押した時だけ付く。8 つの画面で歩いた。測れない: カメラの映像（この機械の headless の Chrome では偽のカメラが付かない）
+rc=0

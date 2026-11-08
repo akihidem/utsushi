@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_erabu_no_count.py
+# commit: 3ee750a4（回した時の HEAD）
+ok 入口の えらぶ の札は全部の数だけ（83）・棚ごとの数の字は無い・棚の名は残る・英語の表も同じ
+rc=0

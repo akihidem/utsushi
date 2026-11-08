@@ -56,18 +56,23 @@ def _block(texts, lines, x, y, size, width):
     return y
 
 
-def set_label(texts, label, page, y_after_title):
-    """組の版を題の行の右端に小さく置く（U-31）。題と重なるなら題の下に行を足し、次の y を返す。"""
+def set_label(texts, label, page, y_after_title, fit=None):
+    """組の版を題の行の右端に小さく置く（U-31）。題と重なるなら題の下に行を足し、次の y を返す。
+    fit は、置き方を決める時に使う題の字の段（compose の fit_title）。無い時は texts の題で決める。"""
     w = text_width(label, LABEL_SIZE)
-    first = next(t for t in reversed(texts) if t.size == TITLE_SIZE)
+    first = next(t for t in reversed(fit if fit is not None else texts) if t.size == TITLE_SIZE)
     if first.y == page.y0 and first.x + first.w + 4 <= page.x1 - w:
         texts.append(TextBox(page.x1 - w, page.y0 + TITLE_SIZE * LINE - LABEL_SIZE * LINE, w, LABEL_SIZE * LINE, label, LABEL_SIZE))
         return y_after_title
     return _block(texts, [label], page.x0, y_after_title, LABEL_SIZE, page.x1 - page.x0)
 
 
-def compose(template_id, params, source, page_name="A4", version=1, title=None, inject=None):
-    """Returns (merged params, layout dict, failures)。寸法の範囲か物理で落ちたら配置は作らない所までで返す。"""
+def compose(template_id, params, source, page_name="A4", version=1, title=None, inject=None, fit_title=None):
+    """Returns (merged params, layout dict, failures)。寸法の範囲か物理で落ちたら配置は作らない所までで返す。
+
+    fit_title は、頭の字の段の高さと「刷った組」の置き場を決めるための題（刷るのは title）。題の字だけを替えて、部品の置き場を
+    前の紙と同じにしたい時に、前の題を渡す（11-08: 仮説の印を外して題が短くなり、「刷った組」が題の行に入って、虎 v7 の型紙の部品が
+    この機械の字で 3.5mm 上へ動いた。統括の決め (b)「頭の段を前と同じ組み方に固定し、部品が 1 つも動かない形」）。無い時は title で決める"""
     tpl, inject = TEMPLATES[template_id], inject or {}
     p = {**tpl.DEFAULTS, **params}
     failures = tpl.check_range(p)
@@ -86,9 +91,15 @@ def compose(template_id, params, source, page_name="A4", version=1, title=None, 
     texts = []
     title = title or f"{source['toy']} 型紙（{tpl.title(p)}）版 {version}"
     y = _block(texts, [title], page.x0, page.y0, TITLE_SIZE, page.x1 - page.x0)
+    fit = None
+    if fit_title:
+        # 段の高さ（次の y）と「刷った組」の置き方は、前の題で組んだ時と同じにする（上の注）。刷る字は title のまま。
+        # 新しい題が前の題より短い時（印を外した時）だけを考える: 行が減っても次の y は前のままなので、部品は動かない
+        fit = []
+        y = max(y, _block(fit, [fit_title], page.x0, page.y0, TITLE_SIZE, page.x1 - page.x0))
     # 題の「版」は仮説の版。どの組の紙かを、照らし合わせ用に小さく刷る（U-31）。
     # 題の行の右端に置く。行を足すと縦に長い型紙（内筒が長い形）が頁に収まらなくなるため。題が長くて入らない時だけ行を足す。
-    y = set_label(texts, f"刷った組 {tpl.SHEET_SET}", page, y)
+    y = set_label(texts, f"刷った組 {tpl.SHEET_SET}", page, y, fit)
     y = _block(texts, mark_lines(source, inject.get("omit_marks")), page.x0, y + 1, BODY_SIZE, page.x1 - page.x0)
     # 見出しが増えれば部品の置き場も下がる。固定の y にすると行が増えた時に重なる。
     # fixed_parts_top は検査が重なりを見つける事を確かめる負の対照のためだけにあり、寸法の入力からは渡せない。
