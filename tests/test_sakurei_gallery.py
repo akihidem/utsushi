@@ -116,7 +116,8 @@ text = re.sub(r"<[^>]+>", " ", sec)
 assert not re.search(r"R-\d{4}", text), "記録の番号を字で出した"
 assert "記録の番号" not in text and "goraigo-v10" not in sec
 # 型紙の版は、刷った組が分かる作例の札にだけ、組の番号で出す（玩具の頁の型紙の札の脇と同じ「型紙の版 10」の形）
-card = lambda rid: re.search(rf'<figure>(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', row, re.S).group(0)  # noqa: E731
+# 作例の札は、みんながつくったおもちゃ の札が無い玩具の時だけ、最初の 1 枚が錨 id="toy-<印>" を持つ（つくるの作り直しの枝 2）
+card = lambda rid: re.search(rf'<figure(?: id="toy-[^"]+")?>(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', row, re.S).group(0)  # noqa: E731
 assert "猫と鼠の箱（鼠捕りからくり）" in card(o1) and "<a " not in card(o1), "83 の外の玩具の札に名が無いか、無い頁への道を張った"
 assert "型紙の版 10" in card(g1), card(g1)
 assert "型紙の版" not in card(t1) and "型紙の版" not in card(t2), "組の分からない作例に版を出した"
