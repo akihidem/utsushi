@@ -92,13 +92,13 @@ const result = () => (f.querySelector('input[name=result]:checked') || {}).value
 // 型紙と一緒に刷ったしおり（設計 2.1 版の 2 節）: サーバが待ちを見つけた時だけ 1 行が頁にあり、さらに、この画面の今の回の印が、刷った時の控え
 // （utsushi-shiori-wait）と同じ時だけ出す（1 台を順に使う形で、次の人が玩具の頁から作り始めたら回が替わって出ない）。外したら結ばない
 const runOf = () => { try { const r = JSON.parse(sessionStorage.getItem('utsushi-run:' + sid) || 'null'); return r && r.id ? r.id : ''; } catch (e) { return ''; } };
-let shioriOn = false;
+// 頁を開いた後の判定（web.clips の openedAs の nokosu・直に開いた時は作り始め）で回が替わるので、出すかは頁を読んだ時に決めず、
+// 確かめの画面を出す時と承認の時に、その都度見直す（見えたまま結ばれない形を作らない・別の目の #702 の確かめ）
+let shioriOff = false;
 const sw = $('nk-c-shiori');
-if (sw) {
-  try { shioriOn = !!runOf() && sessionStorage.getItem('utsushi-shiori-wait:' + sid) === runOf(); } catch (e) { shioriOn = false; }
-  sw.hidden = !shioriOn;
-  $('nk-shiori-x').onclick = () => { shioriOn = false; sw.hidden = true; };
-}
+const shioriOn = () => { if (!sw || shioriOff) return false; try { return !!runOf() && sessionStorage.getItem('utsushi-shiori-wait:' + sid) === runOf(); } catch (e) { return false; } };
+const shioriShow = () => { if (sw) sw.hidden = !shioriOn(); };
+if (sw) $('nk-shiori-x').onclick = () => { shioriOff = true; sw.hidden = true; };
 const post = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: new URLSearchParams({ ...data, who: sessionStorage.getItem('utsushi-who') || '' }) });
 // 「のこす」: 何も送らず、確かめの画面に替える（402）
@@ -160,7 +160,7 @@ f.onsubmit = async (e) => {
     if (x.type.startsWith('image/')) { const i = document.createElement('img'); i.src = URL.createObjectURL(x); i.alt = x.name; th.appendChild(i); }
     else { const s = document.createElement('span'); s.textContent = x.name; th.appendChild(s); }
   });
-  st.textContent = ''; f.hidden = true; chk.hidden = false; chk.scrollIntoView(); showClips();
+  st.textContent = ''; f.hidden = true; chk.hidden = false; shioriShow(); chk.scrollIntoView(); showClips();
 };
 $('nk-fix').onclick = () => { chk.hidden = true; f.hidden = false; };
 const sendFiles = async (id, list) => {
@@ -192,7 +192,7 @@ go.onclick = async () => {
       if (!tj.kept) { chk.hidden = true; f.hidden = false; st.textContent = tj.why || '残せませんでした'; return; }
     }
     // しおりの 1 行を外さなかった時だけ、結ぶ印と今の回の印を添える（サーバが待ちの cookie・who・回・3 時間を照らしてから結ぶ）
-    const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result: result(), impression: $('nk-impression').value.trim(), ...(shioriOn ? { shiori: '1', run: runOf() } : {}) });
+    const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result: result(), impression: $('nk-impression').value.trim(), ...(shioriOn() ? { shiori: '1', run: runOf() } : {}) });
     try { sessionStorage.removeItem('utsushi-shiori-wait:' + sid); } catch (e) {}
     const j = await r.json().catch(() => ({}));
     if (!j.id) { cs.textContent = j.error || '残せませんでした'; return; }

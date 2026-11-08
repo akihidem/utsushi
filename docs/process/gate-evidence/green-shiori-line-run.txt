@@ -1,0 +1,6 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_sheet.py
+# commit: 64298cd6（回した時の HEAD）
+/tmp/tmppnxgql9w/play/NDL-1187053-R0000005-L/.tmp-pbks_wy7/H-C_v1.pdf
+/tmp/tmppnxgql9w/play/NDL-1187053-R0000005-L/.tmp-zf7_12kw/H-C_v1.pdf
+ok: しおりは押した時に作って型紙の後ろに足して返し、置かない・結ぶのは確かめの画面で外さず承認した時に who と回が合う時だけ・公開の場と番地の無い場は型紙だけ
+rc=0
