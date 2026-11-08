@@ -10,4 +10,4 @@
 - 見た事: 名を でたらめの名 にする案もあったが、頁と控えの並びが名の順（m1・m2…）に頼るので、名の形は替えずに、排他の作成と中身の要約で守った（見た目と挙動を替えない）
 - ゴールの要件: `tests/test_media_content_bound.py`（変換を待たせて順を固定した同時の上げで別の名・確かめた中身は替わらず公開は確かめた中身だけ・中身が替われば出さずに待ちへ・要約が残る・前からの確認はそのまま・同時の 5 つで 3 つまで名が重ならない・控えが消えない）
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-media-content-bound.txt`（今の main で、同じ名に 2 つ目が書かれて rc 1）
-- エビデンスゲート: Green は `docs/process/gate-evidence/green-media-content-bound.txt`
+- エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-media-content-bound.txt`（写真・確認・取り下げ・控えに触れる試験 51 本のうち 50 本 rc 0・残る test_mic_seen は main で前から落ちる）
