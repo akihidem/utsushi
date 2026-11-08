@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-bal/looks-main.py src/web/looks.py; .venv/bin/python tests/test_entrance_yomi.py'
+# commit: ea5a9869（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_entrance_yomi.py", line 107, in <module>
+    assert not rec["yomi_shown"], (where, "日本語の頁に読みが出た")
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'ja-375x667'), '日本語の頁に読みが出た')
+rc=1
