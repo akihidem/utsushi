@@ -23,15 +23,30 @@
   戻る釦で頁が読み直されずに作業の頁へ戻った時（pageshow の persisted）は、前の頁が分からないので作り始めとする（実機でまだ確かめていない）。
   作業の頁と手帖を、前の頁がこのサイトの頁でない所（referrer が空か外）から開いた時も作り始めとする（URL を直に打って入った時・統括の決め）。
   開いたまま次の人へ渡した時は見分けようがないので、進め役の手引き（workshop-guide）に、渡す前の 1 手を書いた。
+- **手帖の「のこす」の後**（#659 の取り消しの後の作り直し・統括の決め 11-08 (a)）: 手帖の頁は送らず、IndexedDB も開かない。区切りを置いた時に
+  sessionStorage の utsushi-clips-made:<印> に今の回の印を書き、手帖はそれが今の回と同じ時だけ、記録の後に のこすの頁の「区切りだけ」の確かめ
+  （#to=<記録の番号>）へ移る。送るのは、そこでの「承認」の後だけ（窓口の決め「承認の時にまとめて」・本人の OK の字 STORE のまま）。
+- **のこすの頁を開いた時**（openedAs の 'nokosu'・別の目の #659 の止め 2）: 前の頁が同じ出所の作る頁（玩具の頁・作業の頁・作りながら見る頁・手帖）の
+  時だけ渡す（handOver。その玩具の頁と、その下の頁で、のこすの頁そのものは除く）。直に開いた時（前の頁が外か空）は作り始めで、渡す印も外す（前の人の物は、渡した物も含めて並ばずに消える）。
+  ほかの頁（もちよるなど）から来た時は渡さずに並べるだけ。作りながら見る頁と手帖の頁も、開いた時に作り始めかを見る（start_assets(sid)）。
+- **区切りだけの確かめの読み直し**（別の目の設計の確かめ 2）: その画面は並べた後に who を作り直すので、読み直すと自分の区切りが開いた時の消しで
+  黙って消えていた。並べる前の who を 1 回分だけ控え（sessionStorage の utsushi-clips-keep・玩具と記録の番号つき）、同じ確かめの画面
+  （/toy/<印>/techo/kiroku#to=<その番号>&…）でだけ、その who の区切りを消さずに並べる。ほかの頁では控えを見ないので、前の人の区切りは消える。
+  出口（承認・もちよるへ移る時）で控えを消す。
+- **待つのは置き場が開くまでだけ**（別の目の #659 の気づき）: 開かない時は OPEN_WAIT の後に断り、送る側はそれを送れなかった事として扱う
+  （CLIP_FAIL）。送り（fetch）には切りを掛けない（遅い網で、送っている途中の区切りを捨てて頁を移らないように）。
 - **印は玩具ごと**（sessionStorage の utsushi-pass:<印>）。のこす へ移るたびに、3 時間の内の今の印を使い直す（戻って録り足した後に渡しても、
   前に渡した区切りが消えない・別の目の気づき）。承認の終わりの消しは、その玩具の区切りと印だけ（ほかの玩具の区切りを消さない）。
 - 字（本人の OK 11-08）: FIRST・STORE・FULL・NO_VOICE・REMOVE・HEAD・CLIP_FAIL。STORE の最後の 1 句は本人の答えの字（11-08「このサイトをほかの画面で開くと、前に録った声と映像は消えます。」）
 """
+import json
+
 from .skin import esc
 
 CLIP_HOURS = 3   # 端末の中に置く長さ（統括の決め）。サーバの側の 72 時間の掃除とは別
 CLIP_MAX = 5     # 声とカメラ、それぞれの数（窓口の決め）
 CAM_SECONDS = 10  # 押した後に録る長さ（A2・窓口の決め）
+OPEN_WAIT = 6     # 置き場（IndexedDB）が開くのを待つ秒。頭なしの試験の仮の時計や止まった置き場で、承認や移りが止まったままにならないように
 
 FIRST = "押した間の声と、押した後の 10 秒の映像を、のこすで承認した時に送り、字にしてから消します。"
 STORE = "録った区切りは、のこすで承認するまで、この端末の中だけに置きます。ブラウザを閉じても、次にこのサイトを開くまで残ります（3 時間を過ぎた物と、別の画面の物は、開いた時に消します）。このサイトをほかの画面で開くと、前に録った声と映像は消えます。"
@@ -43,9 +58,15 @@ CLIP_FAIL = "記録は残しました。声かカメラの区切りを送れま�
 
 SCRIPT = """<script>(()=>{
 if(window.utsushiClips||!window.indexedDB)return;
-const HOURS=__HOURS__,MAX=__MAX__,CAM=__CAM__*1000,DB='utsushi-clips',ST='clips',AGE=HOURS*3600000;
+const HOURS=__HOURS__,MAX=__MAX__,CAM=__CAM__*1000,WAIT=__WAIT__*1000,DB='utsushi-clips',ST='clips',AGE=HOURS*3600000;
 const who=()=>{try{return sessionStorage.getItem('utsushi-who')||''}catch(e){return ''}};
-const PK=(sid)=>'utsushi-pass:'+sid,NK=(sid)=>'utsushi-pass-new:'+sid,RK=(sid)=>'utsushi-run:'+sid;
+const PK=(sid)=>'utsushi-pass:'+sid,NK=(sid)=>'utsushi-pass-new:'+sid,RK=(sid)=>'utsushi-run:'+sid,MK=(sid)=>'utsushi-clips-made:'+sid;
+// 区切りだけの確かめの画面で控えた、並べる前の who（その画面でだけ使う）
+const KEEP='utsushi-clips-keep';
+const kept=()=>{try{const k=JSON.parse(sessionStorage.getItem(KEEP)||'null');if(!k||Date.now()-k.at>=AGE)return null;
+ return location.pathname==='/toy/'+k.sid+'/techo/kiroku'&&location.hash.startsWith('#to='+k.rec+'&')?k:null}catch(e){return null}};
+const keepWho=(sid,rec)=>{try{const k=kept();if(k&&k.sid===sid&&k.rec===rec)return;sessionStorage.setItem(KEEP,JSON.stringify({sid,rec,who:who(),at:Date.now()}))}catch(e){}};
+const dropKeep=()=>{try{sessionStorage.removeItem(KEEP)}catch(e){}};
 const runNow=(sid)=>{try{const r=JSON.parse(sessionStorage.getItem(RK(sid))||'null');return r&&Date.now()-r.at<AGE?r:null}catch(e){return null}};
 const passNow=(sid)=>{try{const p=JSON.parse(sessionStorage.getItem(PK(sid))||'null');return p&&Date.now()-p.at<AGE?p:null}catch(e){return null}};
 const passMake=(sid)=>{const p={id:newId(),at:Date.now()};try{sessionStorage.setItem(PK(sid),JSON.stringify(p));sessionStorage.removeItem(NK(sid))}catch(e){return null}return p};
@@ -55,18 +76,23 @@ const mark=async(sid,p)=>{const w=who(),r=runNow(sid);await run('readwrite',s=>{
 // 新しい回: 回の印を作り、その玩具の印の無い区切りを消し、次に渡す時は新しい渡す印にする
 const runNew=async(sid)=>{const r={id:newId(),at:Date.now()};try{sessionStorage.setItem(RK(sid),JSON.stringify(r));sessionStorage.setItem(NK(sid),'1')}catch(e){return null}
  for(const c of await all())if(c.sid===sid&&!c.pass)await remove(c.id);return r};
-const open=()=>new Promise((ok,ng)=>{const q=indexedDB.open(DB,1);q.onupgradeneeded=()=>q.result.createObjectStore(ST,{keyPath:'id'});q.onsuccess=()=>ok(q.result);q.onerror=()=>ng(q.error)});
+// 待つのは開くまでだけ。開かなければ断る（遅れて開いたら閉じる）。一度開かなかった頁では、次からは待たずに断る（待ちを重ねない）
+let dead=false;
+const open=()=>new Promise((ok,ng)=>{if(dead)return ng(new Error('wait'));let late=false;const t=setTimeout(()=>{late=true;dead=true;ng(new Error('wait'))},WAIT);const q=indexedDB.open(DB,1);
+ q.onupgradeneeded=()=>q.result.createObjectStore(ST,{keyPath:'id'});q.onsuccess=()=>{clearTimeout(t);if(late)q.result.close();else ok(q.result)};q.onerror=()=>{clearTimeout(t);ng(q.error)}});
 const run=async(mode,fn)=>{const db=await open();return new Promise((ok,ng)=>{const t=db.transaction(ST,mode),q=fn(t.objectStore(ST));
  t.oncomplete=()=>{db.close();ok(q&&'result' in q?q.result:undefined)};t.onerror=()=>{db.close();ng(t.error)}})};
 const all=()=>run('readonly',s=>s.getAll());
 const remove=(id)=>run('readwrite',s=>s.delete(id));
 const newId=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 // 開いた時の消し: 別の画面（who が違う）の物と、録ってから 3 時間を過ぎた物
-const purge=async()=>{const w=who(),now=Date.now();for(const c of await all())if(!w||c.who!==w||now-c.at>AGE)await remove(c.id)};
+const purge=async()=>{const w=who(),k=kept(),now=Date.now();for(const c of await all())if(!w||(c.who!==w&&!(k&&c.sid===k.sid&&c.who===k.who))||now-c.at>AGE)await remove(c.id)};
 const waiting=async(sid,kind)=>(await all()).filter(c=>c.sid===sid&&c.kind===kind&&!c.pass&&c.who===who()).length;
 const put=async(c)=>{if(!who()||await waiting(c.sid,c.kind)>=MAX)return false;
  const r=runNow(c.sid)||await runNew(c.sid);
- await run('readwrite',s=>s.put({...c,id:newId(),who:who(),at:Date.now(),pass:null,run:r?r.id:null}));return true};
+ await run('readwrite',s=>s.put({...c,id:newId(),who:who(),at:Date.now(),pass:null,run:r?r.id:null}));
+ // 手帖の「のこす」が、のこすの頁の確かめへ移るかを IndexedDB を開かずに見る印（今の回に区切りを置いた）
+ if(r)try{sessionStorage.setItem(MK(c.sid),r.id)}catch(e){}return true};
 // 作り始め（玩具の頁を開いた時・戻る釦で読み直さずに戻った時）: 新しい回。のこす の頁から戻って開いた時（fromNokosu）は作り始めとしない
 const startMaking=async(sid,fromNokosu)=>{if(fromNokosu&&runNow(sid))return;await runNew(sid)};
 // 続き（作業の頁を開いた時・手帖の「はじめる」）: 同じ玩具の回の印が 3 時間の内なら引き継ぐ。無い時だけ作り始める
@@ -74,12 +100,12 @@ const goOn=async(sid)=>{if(!runNow(sid))await runNew(sid)};
 // 渡す: 3 時間の内の今の印を使い直す（作り始めの後は新しい印）。その玩具の、まだ印の無い区切りにだけ付ける（印の有る物は替えない）
 const handOver=async(sid)=>{let p=null;try{p=sessionStorage.getItem(NK(sid))?null:passNow(sid)}catch(e){}p=p||passMake(sid);if(!p)return;await mark(sid,p)};
 // のこすの頁: 同じ画面・今の印（3 時間の内）の物だけを返し、その玩具の、印の違う物（印の無い物も）は消す
-const handed=async(sid)=>{const p=passNow(sid),w=who(),out=[];for(const c of await all()){if(c.sid!==sid)continue;
- if(p&&c.who===w&&c.pass===p.id)out.push(c);else await remove(c.id)}return out.sort((a,b)=>a.at-b.at)};
+const handed=async(sid)=>{const p=passNow(sid),w=who(),k=kept(),out=[];for(const c of await all()){if(c.sid!==sid)continue;
+ if(p&&(c.who===w||(k&&k.sid===sid&&c.who===k.who))&&c.pass===p.id)out.push(c);else await remove(c.id)}return out.sort((a,b)=>a.at-b.at)};
 // のこすの頁で録った区切り（工夫の欄の話す口）も、承認で送る並びに入れる: 今の印（無ければ作る）を、その玩具の、まだ印の無い区切りに付ける
 const adopt=async(sid)=>{const p=passNow(sid)||passMake(sid);if(p)await mark(sid,p)};
 // 承認の終わり: その玩具の区切りと印だけを消す（ほかの玩具の区切りは消さない・別の目の気づき）
-const clear=async(sid)=>{for(const c of await all())if(c.sid===sid)await remove(c.id);try{sessionStorage.removeItem(PK(sid));sessionStorage.removeItem(NK(sid));sessionStorage.removeItem(RK(sid))}catch(e){}};
+const clear=async(sid)=>{for(const c of await all())if(c.sid===sid)await remove(c.id);try{[PK,NK,RK,MK].forEach(k=>sessionStorage.removeItem(k(sid)))}catch(e){}};
 // 声: 話す口の「話す」を押した時だけ始め、話し終わりで止める。開けない画面（iPhone の Safari で音声認識とマイクを取り合う時など）は録らない
 let vr=null,vs=null;
 const voiceStart=async(meta)=>{if(vr||!window.MediaRecorder||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return false;
@@ -105,13 +131,19 @@ document.addEventListener('click',(e)=>{const a=e.target.closest&&e.target.close
 // 開いた時の振り分け（統括の決め）: 玩具の頁は作り始め（toy）、作業の頁は続き（work）。前の頁が その玩具の のこす なら、どちらも引き継ぐ。
 // 呼ぶのは頁の側（玩具の頁と作業の頁が、開いた時に自分の種類を言う）。消し（purge）を済ませてから振り分ける
 let purged=null;
+const purgeOnce=()=>purged||(purged=purge().catch(()=>{}));
 // 作業の頁を、前の頁がこのサイトの頁でない所（URL を直に打った・外のリンク）から開いた時は、続きでなく作り始めにする
 // （玩具の頁を通らずに直に入った前の人の区切りを、3 時間の内に直に入った次の人に渡さない・別の目の確かめ 11-08・統括の決め）
 const fromOutside=()=>{try{return !document.referrer||new URL(document.referrer).origin!==location.origin}catch(e){return true}};
-const openedAs=async(sid,kind)=>{await purged;let back=false;try{back=new URL(document.referrer).pathname==='/toy/'+sid+'/techo/kiroku'}catch(e){}
+// 前の頁が、その玩具の作る頁か: 同じ出所の、その玩具の頁と、その下の頁（作業の頁・作りながら見る頁・手帖）。のこすの頁そのもの（読み直し）は除く。
+// 道の名を並べて書かない（台本は玩具の頁にも載り、頁の中の道の字を数える試験に当たるため）
+const fromMaking=(sid)=>{try{const u=new URL(document.referrer),t='/toy/'+sid;return u.origin===location.origin&&(u.pathname===t||u.pathname.startsWith(t+'/'))&&u.pathname!==t+'/techo/kiroku'}catch(e){return false}};
+// のこすの頁（'nokosu'）は並びを返す: 直に開いたら作り始めで渡す印も外す・作る頁から来たら渡す・ほかは並べるだけ（並べる時に印の違う物は消える）
+const openedAs=async(sid,kind)=>{await purgeOnce();let back=false;try{back=new URL(document.referrer).pathname==='/toy/'+sid+'/techo/kiroku'}catch(e){}
+ if(kind==='nokosu'){if(fromOutside()){await runNew(sid);try{sessionStorage.removeItem(PK(sid))}catch(e){}}else if(fromMaking(sid))await handOver(sid);return handed(sid)}
  if(kind==='work')return back||(fromOutside()?startMaking(sid,false):goOn(sid));return startMaking(sid,back)};
-addEventListener('DOMContentLoaded',()=>{purged=purge().catch(()=>{})});
-window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goOn,openedAs,voiceStart,voiceStop,camClip};
+addEventListener('DOMContentLoaded',purgeOnce);
+window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goOn,openedAs,keepWho,dropKeep,voiceStart,voiceStop,camClip};
 // その場限りの印は頁の終わりの台本（skin.WHO_SCRIPT）が作るので、消しは頁を読み終えた後に回す
 })()</script>"""
 
@@ -119,25 +151,38 @@ window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goO
 # 手帖の作る頁に置く小さな台本: 「はじめる」の作り始めの消しだけ（その頁は録らない決まりで、録る code を持たない・test_techo_step）。
 # 置き場の台本（SCRIPT）と同じ db・同じ印の名を使う。外へ送る口も持たない
 START_SCRIPT = """<script>(()=>{if(!window.indexedDB)return;
-window.utsushiClipsStart=(sid)=>{try{const r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null');
-  // 手帖を、前の頁がこのサイトの頁でない所から開いた時は、回を引き継がずに作り始める（作業の頁と同じ・直に入った前の人の区切りを渡さない）
-  let out=true;try{out=!document.referrer||new URL(document.referrer).origin!==location.origin}catch(e){}
-  if(r&&!out&&Date.now()-r.at<__HOURS__*3600000)return;sessionStorage.setItem('utsushi-run:'+sid,JSON.stringify({id:Math.random().toString(36).slice(2)+Date.now().toString(36),at:Date.now()}));
+// 作り始め: 新しい回の印を作り、次は新しい渡す印にし、その玩具の印の無い区切りを消す
+const fresh=(sid)=>{try{sessionStorage.setItem('utsushi-run:'+sid,JSON.stringify({id:Math.random().toString(36).slice(2)+Date.now().toString(36),at:Date.now()}));
   sessionStorage.setItem('utsushi-pass-new:'+sid,'1')}catch(e){return}
  const q=indexedDB.open('utsushi-clips',1);q.onupgradeneeded=()=>q.result.createObjectStore('clips',{keyPath:'id'});
  q.onsuccess=()=>{const db=q.result,t=db.transaction('clips','readwrite'),c=t.objectStore('clips').openCursor();
   c.onsuccess=()=>{const cur=c.result;if(!cur)return;if(cur.value.sid===sid&&!cur.value.pass)cur.delete();cur.continue()};t.oncomplete=()=>db.close()}};
+// 開いた時の判定（録らない頁の 1 つの入口。作業の頁の「続き」と同じ決まり）: 同じ出所から 3 時間の内の回なら引き継ぐ（のこす から戻った時も
+// 同じ出所なので引き継ぐ）。前の頁がこのサイトの頁でない所（直に開いた・外のリンク）か、回が無い時は作り始め（直に入った前の人の区切りを渡さない）
+window.utsushiClipsStart=(sid)=>{let r=null,out=true;try{r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null')}catch(e){return}
+  try{out=!document.referrer||new URL(document.referrer).origin!==location.origin}catch(e){}
+  if(r&&!out&&Date.now()-r.at<__HOURS__*3600000)return;fresh(sid)};
+// 戻る釦で読み直さずに戻った時（pageshow の persisted）は、前の頁が分からないので作り始め（録る頁の台本の作業の頁と同じ決まり）
+window.utsushiClipsFresh=fresh;
+// 今の回に区切りが置かれたか（置き場の台本の put が書く印）。手帖の「のこす」が、のこすの頁の確かめへ移るかを決める。IndexedDB は開かない
+window.utsushiClipsMade=(sid)=>{try{const r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null');
+  return !!r&&Date.now()-r.at<__HOURS__*3600000&&sessionStorage.getItem('utsushi-clips-made:'+sid)===r.id}catch(e){return false}};
 })()</script>"""
 
 
-def start_assets():
-    """手帖の作る頁に置く小さな台本（数は 1 か所の値から入れる）。"""
-    return START_SCRIPT.replace("__HOURS__", str(CLIP_HOURS))
+def start_assets(sid=None):
+    """録らない頁（手帖の作る頁・作りながら見る頁・録らない形の作業の頁）に置く小さな台本（数は 1 か所の値から入れる）。sid を渡すと、開いた時と
+    戻る釦で読み直さずに戻った時に、作り始めかを見る
+    （同じ出所から 3 時間の内なら引き継ぎ、直に開いた時は作り始め・統括の決め 11-08。手帖の手順の頁や作りながら見る頁を直に開いて
+    のこす へ進んだ時に、前の人の回を引き継がないように）。"""
+    on_open = (f"<script>(()=>{{const s={json.dumps(sid)};window.utsushiClipsStart&&utsushiClipsStart(s);"
+               "addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClipsFresh)utsushiClipsFresh(s)})})()</script>")
+    return START_SCRIPT.replace("__HOURS__", str(CLIP_HOURS)) + (on_open if sid else "")
 
 
 def assets():
     """頁に 1 回だけ置く台本。数は 1 か所の値から入れる。"""
-    return SCRIPT.replace("__HOURS__", str(CLIP_HOURS)).replace("__MAX__", str(CLIP_MAX)).replace("__CAM__", str(CAM_SECONDS))
+    return SCRIPT.replace("__HOURS__", str(CLIP_HOURS)).replace("__MAX__", str(CLIP_MAX)).replace("__CAM__", str(CAM_SECONDS)).replace("__WAIT__", str(OPEN_WAIT))
 
 
 def notes():

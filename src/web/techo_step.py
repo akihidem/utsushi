@@ -383,6 +383,10 @@ function showPicked() {
 picker.onchange = () => { chosen = chosen.concat([...picker.files]); picker.value = ''; showPicked(); };
 // 声の「とって」: 画面によっては人が押さないとカメラを開けないので、開けない時は「とって」を目立たせて手を呼ぶ。
 const shoot = () => { const shot = $('shot'); if (!shot) return; shot.classList.add('call'); setTimeout(() => shot.classList.remove('call'), 2000); try { picker.click(); } catch (e) {} };
+// のこした後の行き先。今の回に声かカメラの区切りがある時だけ（web.clips の印・IndexedDB は開かない）、もちよるでなく のこすの頁の
+// 「区切りだけ」の確かめへ（統括の決め 11-08 (a)）。この頁からは区切りを送らない（送るのは、そこでの承認の後だけ・窓口の決め「承認の時にまとめて」）
+const clipsMade = () => !!(window.utsushiClipsMade && window.utsushiClipsMade(sid));
+const toNokosu = (id, done) => `/toy/${sid}/techo/kiroku#to=${encodeURIComponent(id)}&msg=${encodeURIComponent(done)}`;
 // 写真と動画を、残した記録に 1 つずつ送る。返すのは頁に出す字。
 const sendFiles = async (id, files) => {
   for (const f of files) {
@@ -412,6 +416,7 @@ const keepPress = async () => {
       let done = '';
       try { done = await sendFiles(target, files); } catch (err) { done = '記録は残しました。写真か動画を送れませんでした'; }
       go.disabled = false;
+      if (clipsMade()) { location.assign(toNokosu(target, done)); return; }
       location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
       return;
     }
@@ -426,7 +431,7 @@ const save = async (result) => {
   if (go.disabled) return;
   go.disabled = true; to('end'); st.textContent = '送っています…';
   const files = chosen.slice(0, max), said = kufu.value.trim();
-  let done = '', saved = false;
+  let done = '', saved = false, rid = '', toClips = false;
   try {
     if (said) {
       const t = await post(`/toy/${sid}/talk`, { scene: 'craft', hypothesis: hid, step: total, text: said, via: kufu.dataset.via === 'voice' ? 'voice' : 'text', json: '1' });
@@ -437,9 +442,11 @@ const save = async (result) => {
     const r = await post(`/toy/${sid}/record-json`, { hypothesis: hid, result });
     const j = await r.json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
-    saved = true;
+    saved = true; rid = j.id; toClips = clipsMade();
     // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。残らなかった時は作り直さない。
-    if (window.utsushiNewWho) window.utsushiNewWho();
+    // 区切りを のこすの頁へ渡す時は、ここで作り直さない（区切りは今の印で見分けるので、作り直すと のこすの頁の開いた時の消しが全部消す）。
+    // のこすの頁が、区切りを並べて手元に持った直後に作り直す（web.nokosu）
+    if (!toClips && window.utsushiNewWho) window.utsushiNewWho();
     form.reset(); chosen = []; showPicked();
     // 写真を選ばずに残した時は「上げました」と言わない（上げていないので）。字は頁の記録の返事に今ある字（main の #429 と同じ）
     done = files.length ? await sendFiles(j.id, files) : '記録を残しました';
@@ -448,6 +455,8 @@ const save = async (result) => {
     done = '記録は残しました。写真か動画を送れませんでした';
   } finally { go.disabled = false; }
   // のこした後は持ち寄る駅（ギャラリー）に着き、今残した 1 つが頭に出る（窓口の決定 11-06 夜・案 A。地図の 5）。記録の頁へは、その札の記録の番号から行く
+  // 区切りがある時は、のこすの頁の確かめを通ってから もちよるへ（返事の字は持って行く）
+  if (toClips) { location.assign(toNokosu(rid, done)); return; }
   location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
 };
 mark(); paint(); to('start');
@@ -643,5 +652,6 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
           .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
-    # 回の印を引き継ぐ小さな台本（web.clips.START_SCRIPT）だけを置く（回の印が無い時だけ、ここで作り始める）。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない
-    return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.start_assets())
+    # 回の印を引き継ぐ小さな台本（web.clips.START_SCRIPT）だけを置く（回の印が無い時だけ、ここで作り始める）。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない。
+    # 開いた時にも作り始めかを見る（手帖の頁を直に開いて のこす へ進んだ時に、前の人の回を引き継がない・統括の決め 11-08）
+    return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.start_assets(sid))
