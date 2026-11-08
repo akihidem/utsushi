@@ -6,8 +6,8 @@
 その形を測って守る。
 ./run.sh はブラウザなしで動く決まりなので、入っている Chrome で頁をその大きさの iframe に開いて測る（tests/test_landscape_fit.py と同じ測り方）。
 Chrome が無い機械と、時間内に答えなかった時は、測れないと出して通す。
-見る事（御来迎と虎・日本語と英語）:
-- 日本語は 375×667 と 390×844、英語は 390×844 で、のこす の札の下の端が画面の高さの中
+見る事（御来迎と虎・日本語とやさしい日本語と英語・原画の畳みの有り無し）:
+- 日本語は 375×667 と 390×844、やさしい日本語と英語は 390×844（と 375×667 の虎）で、のこす の札の下の端と画面の下の端の間に 8px 以上
 - 札の中の本人の字（.ask）は 2 行まで・札の名（.nm）の字が一番大きい・札の中で字が札の外へ出ない
 - 320×568（と英語の 375×667）は #643 の前（「全部できた」の札）から画面の外だったので、数だけを出す
 """
@@ -25,15 +25,36 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 os.environ.pop("ANTHROPIC_API_KEY", None)
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
+import html  # noqa: E402
+
 from measure_tap import chrome  # noqa: E402
 from omochae import hypotheses  # noqa: E402
-from web import play_server, tsukuru  # noqa: E402
+from web import genga, play_server, tsukuru  # noqa: E402
+
+# 原画の写し（out/sources・git の外）がある時は、頁の頭に原画の畳みが出て、その分だけ札が下がる（別の目の確かめ 11-08・#645: 写しのある木で
+# 375×667 の御来迎が 705px）。写しの有り無しで頁の高さが替わるので、両方の形で測る: "fold" は畳みを出す形（写しが無い木では、同じ形の絵の
+# 包みを置く。tests/test_landscape_fit.py と同じ）、"nofold" は畳みを出さない形（まっさらな clone の形）
+_real_pic = genga._pic
+MODE = {"m": "fold"}
+
+
+def _pic(sid, src, alt, lazy=False, href=None, **kw):
+    if MODE["m"] == "nofold":
+        return "", False
+    got = _real_pic(sid, src, alt, lazy=lazy, href=href, **kw)
+    return got if got[0] else (f'<span class="genga-pic" style="--genga-r:0.7000"><img src="data:," width="700" height="1000" alt="{html.escape(alt)}"></span>', True)
+
+
+genga._pic = _pic
 
 TOYS = {"goraigo": "NDL-1187053-R0000005-L", "tora": "NDL-1187053-R0000014-R"}
 SIZES = ((320, 568), (375, 667), (390, 844))
-# 守る大きさ: 日本語は 375×667 と 390×844、英語は 390×844（統括の決め 11-08）。英語の 375×667 と 320×568 は、英語の手順の字が長く、
+# 守る大きさ: 日本語は 375×667 と 390×844、やさしい日本語と英語は 390×844（統括の決め 11-08）。英語の 375×667 と 320×568 は、英語の手順の字が長く、
 # 手順の紙の絵が下限まで縮んでも入らない（#643 の前から）ので、数だけを出す
-MUST = {"ja": {(375, 667), (390, 844)}, "en": {(390, 844)}}
+MUST = {"ja": {(375, 667), (390, 844)}, "easy": {(390, 844)}, "en": {(390, 844)}}
+# やさしい日本語と英語の 375×667 は、虎（手順の字が短い）だけ守る（統括の決め 11-08「やさしい・英語の 375×667 の虎が下の端まで 0〜3px」）。
+# 御来迎はルビと英語で手順の字が長く、絵を下限まで縮めても入らない（数だけ）
+MUST_TOY = {("easy", "tora", (375, 667)), ("en", "tora", (375, 667))}
 WRAP = """<!doctype html><meta charset="utf-8"><body>__FRAMES__<pre id="measured"></pre><script>
 addEventListener('load',()=>setTimeout(()=>{const out=[];for(const f of document.querySelectorAll('iframe')){const d=f.contentDocument,w=f.contentWindow;
 const b=d.querySelector('#tiles [value=done]'),a=b&&b.querySelector('.ask'),nm=b&&b.querySelector('.nm');const r=b.getBoundingClientRect(),ra=a.getBoundingClientRect(),rn=nm.getBoundingClientRect();
@@ -84,27 +105,31 @@ def measure(lang):
 
 
 got = {}
-for lang in ("ja", "en"):
-    rec = measure(lang) or measure(lang)
-    if rec is None:
-        server.shutdown()
-        print(f"測れない: Chrome が答えなかった（{lang}）")
-        raise SystemExit(0)
-    got[lang] = rec
+for mode in ("fold", "nofold"):
+    MODE["m"] = mode
+    for lang in ("ja", "easy", "en"):
+        rec = measure(lang) or measure(lang)
+        if rec is None:
+            server.shutdown()
+            print(f"測れない: Chrome が答えなかった（{mode}・{lang}）")
+            raise SystemExit(0)
+        got[(mode, lang)] = rec
 server.shutdown()
 
-small = []
-for lang, recs in got.items():
-    assert len(recs) == len(TOYS) * len(SIZES), (lang, len(recs))
+small, room = [], []
+MARGIN = 8  # 札の下の端と画面の下の端の間に残す余裕（統括の決め 11-08「下の端まで 0〜3px しかないので余裕を持たせて」）
+for (mode, lang), recs in got.items():
+    assert len(recs) == len(TOYS) * len(SIZES), (mode, lang, len(recs))
     for f in recs:
         w, h = f["w"], f["h"]
         assert not f["hidden"], (lang, f)
         assert f["lines"] <= 2, (lang, "札の中の本人の字が 2 行を越える", f)
         assert f["nmPx"] > f["askPx"], (lang, "札の名 のこす が一番大きく読めない", f)
         assert f["inside"], (lang, "札の中の字が札の外へ出る", f)
-        if (w, h) in MUST[lang]:
-            assert f["bottom"] <= h, (lang, "のこす の札が最初の画面の外", f)
+        if (w, h) in MUST[lang] or (lang, f["key"].split("-")[0], (w, h)) in MUST_TOY:
+            assert f["bottom"] <= h - MARGIN, (mode, lang, f"のこす の札が最初の画面の外か、下の端まで {MARGIN}px 無い", f)
+            room.append(h - f["bottom"])
         else:
-            small.append(f"{lang} {f['key']} 札の下の端 {f['bottom']}/{h}")
-print("ok 作りながら見る頁の最後の手順の のこす の札: 日本語 375×667・390×844 と英語 390×844 で最初の画面の中・本人の字は札の中で 2 行まで（日本語と英語）。"
-      "前から外の大きさ（数だけ）: " + "・".join(small))
+            small.append(f"{mode} {lang} {f['key']} 札の下の端 {f['bottom']}/{h}")
+print(f"ok 作りながら見る頁の最後の手順の のこす の札: 原画の畳みの有り無しの両方で、日本語 375×667・390×844、やさしい日本語と英語 390×844（と 375×667 の虎）で最初の画面の中"
+      f"（下の端までの余裕 {min(room)}〜{max(room)}px）・本人の字は札の中で 2 行まで。前から外の大きさ（数だけ）: " + "・".join(small))

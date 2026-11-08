@@ -56,7 +56,10 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans CJK JP","Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.6;font-size:18px}
 a{color:var(--accent)}
 .stage{min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;align-content:start}
-.top{grid-column:1/-1;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;margin:0;padding:10px 16px;font-size:14px;border-bottom:1px solid var(--rule)}
+.top{grid-column:1/-1;display:flex;justify-content:space-between;flex-wrap:nowrap;gap:6px 12px;margin:0;padding:10px 16px;font-size:14px;border-bottom:1px solid var(--rule)}
+.top a{flex:none;white-space:nowrap}.top span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage .genga-fold{margin:4px 0}
+@media (orientation:portrait){.side{padding-top:8px}.tiles .go{padding:4px 10px}}
 .top a{text-decoration:none}
 .tehon{padding:14px 16px;min-width:0}
 .num{margin:0 0 6px;font-size:16px;color:var(--mute);letter-spacing:.1em}
@@ -143,7 +146,11 @@ const tiles=document.getElementById('tiles'),mStuck=document.getElementById('msg
 const goNext=tiles.querySelector('[value=next]'),goDone=tiles.querySelector('[value=done]'),goBack=tiles.querySelector('[value=back]');
 let n=+stepIn.value;
 // 縦置きで手順の紙の絵の高さを決めるため、今の手順の番号と字の高さを --tx に入れる（CSS の縦置きの注）。字の折れ方は幅で変わるので、画面の大きさが変わった時も測り直す。
-const fit=()=>{const li=items[n-1];if(li)st.style.setProperty('--tx',`${num.parentNode.offsetHeight+li.offsetHeight}px`)};
+// 326px の見込みより頭の行・原画の畳みが高い画面（原画の写しがある時の畳み・頭の行が 2 行に折れる幅 375・英語の頁）では、一番大きい札が画面の下へ出る。
+// その分（札の下の端と画面の下の端の差に 12px の余裕）を --tx に足して絵を縮める（絵の下限 120px は CSS が守る。別の目の確かめ 11-08・#645）
+const fit=()=>{const li=items[n-1];if(!li)return;const tx=num.parentNode.offsetHeight+li.offsetHeight;st.style.setProperty('--tx',`${tx}px`);
+ const g=[goNext,goDone].find(b=>!b.hidden);if(!g||!matchMedia('(orientation:portrait)').matches)return;
+ const over=g.getBoundingClientRect().bottom+scrollY-innerHeight+12;if(over>0)st.style.setProperty('--tx',`${tx+over}px`)};
 const show=()=>{items.forEach((li,i)=>li.classList.toggle('on',i+1===n));const kp=window.kumitateParts;if(kp&&kp.show&&document.querySelector('.k3d'))kp.show(n-1);document.querySelectorAll('svg.koma').forEach(k=>k.classList.toggle('on',+k.dataset.n===n));num.textContent=n;stepIn.value=n;goNext.hidden=n>=items.length;goDone.hidden=n<items.length;goBack.hidden=n<=1;fit();
  try{history.replaceState(null,'',`?h=${encodeURIComponent(hid)}&v=${ver}&n=${n}`)}catch(e){}
  // 次の手順の番号と字が画面の上の外にある時は、番号の行を画面の頭へ送る。低い画面で字の長い手順（虎 v7 の手順 10 は 62 字）では、
