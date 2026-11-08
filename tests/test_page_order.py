@@ -58,7 +58,8 @@ for sid in TOYS:
         fuda, win = page[page.index('id="kasetsu-fuda"'):page.index('id="tatoe"')], page[page.index('id="win"'):page.index('id="kiroku"')]  # 段の中に節が入るので、次の段の頭まで
         heads = [fuda.index(x) for x in ('id="premise"', 'id="wa"', 'class="plates"')]
         assert heads == sorted(heads), (where, heads)
-        assert hypotheses.sheet_of(sid)["name"] in fuda and '<h2>型紙を印刷する</h2>' in win and '<h2>型紙の窓</h2>' not in page and '型紙を刷ります。切って、折って、組みます。' in win, where
+        # 型紙の窓の説明の文の 2 文目（試行錯誤が作る事の大前提・本人の言葉 11-08「…最初の Claude の設計だと動かない、という前提…」・本人の答え「この字でよい」）
+        assert hypotheses.sheet_of(sid)["name"] in fuda and '<h2>型紙を印刷する</h2>' in win and '<h2>型紙の窓</h2>' not in page and '型紙を刷ります。切って、折って、組みます。動かない所は、切り方や折り方、重りの位置を変えて、動くまでためします。' in win, where
         if printed:
             assert page.index('class="plates"') < page.index('<figure class="sheet">') and '<figure class="sheet">' in win, (where, "紙が札より前か、窓の外")
         assert page.count('id="wa"') == 1 and page.count('id="premise"') == 1, where
