@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/_new404.py
+# commit: 1678b87b（回した時の HEAD）
+/tmp/tmpv22m62j2/play/NDL-1187053-R0000005-L/.tmp-z5r63p0t/H-C_v1.pdf
+/tmp/tmpv22m62j2/play/NDL-1187053-R0000014-R/.tmp-dfl9j7k7/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/_new404.py", line 237, in <module>
+    assert status == 200, (mode, look, lang, page, "枠の頁が 200 で返らない（測った字は頁の字でない）", status)
+           ^^^^^^^^^^^^^
+AssertionError: ('pic', 'tenji', 'ja', '壊れた頁', '枠の頁が 200 で返らない（測った字は頁の字でない）', 404)
+rc=1
