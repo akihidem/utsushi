@@ -328,10 +328,11 @@ def maker_section(sid, data):
     """作る側の頁（/loop/<印>）の節。話した事を場面ごとに並べる。字だけで、多い順や点にしない（J-025）。学ぶ人の頁には出さない。"""
     sm = talk_log.summary(sid)
     letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
-    paper = lambda hid: f"仮説 {letter[hid]} の紙" if hid in letter else (f"自分の仮説 {hid} の紙" if hid else "紙を選ばず")
+    # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
+    paper = lambda hid: f"{hypotheses.SHOWN}の紙" if hid in letter else (f"自分の仮説 {hid} の紙" if hid else "紙を選ばず")
     none = '<p class="meta">残した言葉はまだありません。</p>'
     lines = lambda items: "<ul>" + "".join(f"<li>{esc(x)}</li>" for x in items) + "</ul>" if items else none
-    think = lines([f'{"仮説 " + letter[t["hypothesis_id"]] if t["hypothesis_id"] in letter else "仮説を選ばず"}: {t["text"]}' for t in sm["think"]])
+    think = lines([f'{hypotheses.SHOWN if t["hypothesis_id"] in letter else "仮説を選ばず"}: {t["text"]}' for t in sm["think"]])
     craft = "".join(f'<h4>{esc(paper(h))}・版 {esc(v)}・{"手順 " + str(n) if n is not None else "手順なし"}</h4>{lines(texts)}'
                     for h, vs in sm["craft"].items() for v, ss in vs.items() for n, texts in ss.items()) or none
     when = lambda k: "考え" if k["when"] == "idea" else (f"手順 {k['step']}" if k["step"] else "作りながら") if k["when"] == "making" else "上げた後"

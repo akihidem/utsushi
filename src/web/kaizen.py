@@ -68,7 +68,8 @@ def section(sid, data, recs, photos=True):
         for v in versions(sid, h["id"]):
             ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
-            rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
+            # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
+            rows += (f'<li><b>{esc(hypotheses.SHOWN)} 版 {v["version"]}</b>: {ch}'
                      + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=/toy/{esc(sid)}#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
     ready, waiting = pending(sid, recs) if photos else ([], [])
@@ -141,7 +142,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     data = hypotheses.load(sid)
     sm = making_log.summary(sid)
     letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
-    paper = lambda hid: f"仮説 {letter[hid]} の紙" if hid in letter else f"自分の仮説 {hid} の紙"
+    paper = lambda hid: f"{hypotheses.SHOWN}の紙" if hid in letter else f"自分の仮説 {hid} の紙"  # 印は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
     none = lambda text: f'<p class="meta">{text}</p>'
 
     def lines(items, empty):

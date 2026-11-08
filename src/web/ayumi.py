@@ -137,7 +137,8 @@ def _version_item(sid, hid, letter, v):
     why = "、".join(esc(c["why"]) for c in v.get("changes", []) if c.get("why"))
     said = [x for rid in v.get("record_ids", []) for x in kv.record_words(rid)]
     know = why + _lines(said) if why else _lines(said).removeprefix("<br>")
-    return _item(f"仮説 {letter} 版 {v['version']}", kv.version_verdict(v), (("どこを良くしたか", ch), ("どの知見から", know), ("記録", esc("・".join(v.get("record_ids", []))))))
+    # 仮説の印（A・C）は札の題に出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）。letter は呼ぶ側との形のために受けるだけ
+    return _item(f"{hypotheses.SHOWN} 版 {v['version']}", kv.version_verdict(v), (("どこを良くしたか", ch), ("どの知見から", know), ("記録", esc("・".join(v.get("record_ids", []))))))
 
 
 def _loose_changes():

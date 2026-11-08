@@ -342,7 +342,7 @@ def made_item(sid, data, r, photos=True, public=False):
     # 玩具の名前から、その玩具の頁の同じ記録へ行ける（本人の指摘 11-05: 制作した記録と玩具の頁をつなぐ）。
     # 開いた場では記録の番号を画面に出さないので、道（#R-…）にも入れず、玩具の頁の頭へ行く（別の目の確かめで見つかった）
     to = f"/toy/{esc(sid)}" + ("" if public else f"#{esc(r['id'])}")
-    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
@@ -358,7 +358,7 @@ def own_item(sid, data, r):
     h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
     return (f'<div class="item mine" id="own"><p class="meta"><a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>　'
             f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(data["toy"])}</a>　'
-            f'{esc(hypotheses.letter(h) + " の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
+            f'{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}</div>')
 
 
@@ -577,7 +577,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         pics = "".join((f'<video src="/record/{esc(r["id"])}/media/{esc(f)}" controls muted playsinline preload="metadata"></video>' if f.endswith(("mp4", "mov"))
                         else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="上げた写真" loading="lazy" decoding="async"></a>') for f in files)
         h = next((x for x in data["hypotheses"] if x["id"] == r["hypothesis_id"]), None)
-        who = f"{hypotheses.letter(h)} の紙" if h else "自分の仮説の紙"
+        who = f"{hypotheses.SHOWN}の紙" if h else "自分の仮説の紙"  # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
         # 合言葉なしの場には進行者がいないので、上げた画面にだけ「取り下げる」を置く（窓口の決定 11-06 夜・案 A）。押すと、この記録の写真と動画が
         # 置き場ごと消え、ギャラリーからも消える。合言葉付きの場は、今までどおり進行者に記録の番号を伝える形（釦は出さない）
         drop = (f'<form method="post" action="/record/{esc(r["id"])}/media/withdraw"><button type="submit" class="btn quiet">取り下げる</button></form>'
