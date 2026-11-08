@@ -910,6 +910,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(201, name, "text/plain; charset=utf-8", [self._key_cookie(UP_COOKIE, key)])
         form = self._form()
         if form is None:
+            # しおりの道（門の外）への断りは、当たる前の頁と同じ帯なしの形にする（頭の帯の道しるべから門の中へ行けると見せない・#631 の別の目の気づき）
+            from . import shiori_open
+            if shiori_open.PATH.fullmatch(self.path.partition("?")[0]):  # 門の外の見分けと同じく ? より前の道で見る（問い付きでも同じ形にそろえる）
+                return self._send(403, shiori_open.notice("受け付けられない送り方です。頁を開き直して、もう一度送ってください。", getattr(self, "_look", skinmod.DEFAULT)))
             return self._refuse(403, "受け付けられない送り方です。頁を開き直して、もう一度送ってください。")
         if WRITE_PATHS.fullmatch(self.path) and (who := writer(self.client_address[0], self.headers)):
             wait = self.server.write_limit.wait(who)
