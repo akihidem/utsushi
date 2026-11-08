@@ -12,4 +12,5 @@
 - 検証ゲート: **済み**。Red: 今の main（`19447494`）に新しい頭の試験だけを置くと rc 1（gate-evidence/red-readme-rebuild.txt）。Green: この枝で rc 0（gate-evidence/green-readme-rebuild.txt）
 - エビデンスゲート: README を読む試験 17 本（頭・字・作る気持ち・エンジン・切り分け・回数・取り下げ・要る物・数・台帳ほか）と、英語・証拠・凍結の表が rc 0
 - 照らし: 本人の決めとの照らしの表は grove の state/review/20261108-readme-rebuild-check.md（行番号つき）。AI に読ませた要約が本人の伝えたい事と合うかは、別の係が見る
+- 照らしの止めと直し（11-08）: 新しい案を考えたのは作る側の Claude Code（図の C と仕組みの 3 行目。サイトの中の次の案の口はまだ）・題材は本人が採った字のまま・呼び方は外の字で「制作者」に（30 秒の要約は CLAUDE.md も）・核の言葉を頭の要約の下へ・制作者自身の 4 日間の話。直した後の Green は gate-evidence/green-readme-rebuild-2.txt
 - 確かめていない事: 全部の試験（`./run.sh`）。GitHub での mermaid の図の描き方（PR の頁で見る）。新しい字の本人の確かめ
