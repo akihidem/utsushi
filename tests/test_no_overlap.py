@@ -59,16 +59,8 @@ SIZES = {"iPad 横": (1180, 820), "iPad 横 帯あり": (1180, 746), "iPad 縦":
 # 今わかっている重なり（11-08 の見回り・grove の state/no-overlap-20261108.md）。鍵は（頁, 種類, 片方の要素の道の尾, もう片方の要素の道の尾, 言葉）。
 # 持ち主が直したら、その行を外す（外すと、残っていれば落ちる）
 KNOWN = {
-    # 型紙の窓の輪の図（web.wa）の英語の字が重なる: 「Current template」「Make the next template …」「Version N」
-    ("玩具の頁 御来迎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 御来迎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    ("玩具の頁 虎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 虎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    # 学びの輪の図（web.loop_figure）の英語の字が重なる（のこす・よむ）
-    ("のこす", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
-    ("よむ", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
     # えらぶの棚の札の名の 2 行は外した（#691 で名を折らずに … で切る形にし、この試験も字を直に持つ要素の overflow で切る形にした）
-    # よむ の見出しで、やさしい日本語の次の行のルビ（「残」の のこ）が、前の行の字（絵）に重なる（iPhone SE・白と暗い版・写しの有り無し）。
+    # よむ の見出しで、やさしい日本語の次の行のルビ（「残」の のこ）が、前の行の字（絵）に重なる（iPhone SE・白と暗い版・写しのある木）。
     # 11-08 の main 039c2742 で出た。持ち主の直し待ち（やさしい日本語のルビのある見出しの行の高さ）
     ("よむ", "字×字", "div>h2>ruby", "h2>ruby>rt", "easy"),
 }
