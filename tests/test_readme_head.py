@@ -42,8 +42,11 @@ SUMMARY = (
 # （昔の記録 philosophy.md・research/34 はその時の言葉の記録なので替えないが、README からは引かない）
 CORE = "「システムが良くなるところを Claude が担ってくれるから、人間は人間同士の関わりや工作に熱中できる。」（制作者の言葉 11-08）"
 OLD_CORE = "AIが良くなるのは副次的"
+# 売りの 1 行（本人の言葉 11-08「型紙改善、その型紙生成エンジンの改善のループが回るのが今回のシステムの売りです。README・提出文・デモはこの売りで書いて
+# ください。」）。本人の 3 つの項目の字は替えず、その後に置く
+URI = "- **売り（2 つのループ）**: 型紙を直すループと、型紙を作るエンジンを直すループの 2 つが回ります。エンジンの直しは、全部の玩具の型紙に効きます。"
 SITE = "- サイト: https://utsushi.konoba.workers.dev"
-ORDER = ("## 試す", "## 何の課題か・誰のためか", "## 仕組み: 型紙が直るフィードバックループ", "## Claude の使い方", "## 確かめた事と、まだの事", "## 作る気持ち",
+ORDER = ("## 試す", "## 何の課題か・誰のためか", "## 仕組み: 型紙とエンジンが直る 2 つのフィードバックループ", "## Claude の使い方", "## 確かめた事と、まだの事", "## 作る気持ち",
          "## repo の地図と動かし方", "## 型紙を作るエンジン（paper to toy）", "## 決まりと出典")
 
 
@@ -55,7 +58,7 @@ def at(line):
 # 1. 頭
 assert lines[0] == "# utsushi", lines[0]
 head = [ln for ln in lines[1:at("## 試す")] if ln.strip()]
-assert head == [ONE_LINE, *SUMMARY, CORE], head
+assert head == [ONE_LINE, *SUMMARY, URI, CORE], head
 assert lines.count(CORE) == 1, "核の言葉は頭の 1 行（畳みの 30 秒の要約の核の項目は CLAUDE.md と同じ字なので、同じ引用がもう 1 か所ある）"
 assert at(SITE) < 30, "決まった番地は頭の 30 行の内"
 
@@ -70,15 +73,23 @@ notes = re.findall(r"<!--(.*?)-->", text, re.S)
 assert sorted(n.strip() for n in notes) == ["counts:end", "counts:start", "summary:end", "summary:start"], notes
 
 # 4. 仕組みの図と 5 行の字
-how = text[text.index("## 仕組み: 型紙が直るフィードバックループ\n"):text.index("## Claude の使い方\n")]
+how = text[text.index("## 仕組み: 型紙とエンジンが直る 2 つのフィードバックループ\n"):text.index("## Claude の使い方\n")]
 # 図は SVG の絵（docs/img/feedback-loop.svg）。前の mermaid の塊は、GitHub の携帯のアプリなどで描かれず字のまま出た（本人の言葉 11-08「flowchart LRが
 # そのまま字で表示されてる。図として出るように直してください。」）。絵の説明の字（alt）に輪の順を書き、AI にも読めるようにする。図は 1 度だけ出す
-IMG = re.search(r"!\[(フィードバックループ: [^\]]+)\]\((docs/img/feedback-loop\.svg)\)", how)
+IMG = re.search(r"!\[(2 つのフィードバックループ: [^\]]+)\]\((docs/img/feedback-loop\.svg)\)", how)
 assert IMG and how.count("![") == 1 and "```mermaid" not in text, "図は SVG の絵 1 つ（mermaid の塊を残さない）"
 assert all(w in IMG.group(1) for w in ("のこす", "作る側の Claude Code", "Claude が作ったエンジン", "3D", "人が採る", "新しい版を刷る")), IMG.group(1)
 svg = (ROOT / IMG.group(2)).read_text(encoding="utf-8")
 assert svg.startswith("<svg ") and "<title" in svg and "<image" not in svg and "<script" not in svg, "字を絵の中に持つ SVG（外の絵や script を読まない）"
 assert all(w in svg for w in ("作る側の Claude Code が", "Claude が作ったエンジンが", "人が決める", "新しい版の型紙を刷る", "フィードバック")), "絵の中の字"
+# 2 つのループ（型紙の版が上がる輪と、エンジンの版が上がる輪）が絵と説明の字の両方に見える（本人の言葉 11-08「…エンジンも改善される説明にしてください」「…ループが回るのが売り」）
+assert "① 型紙の版が上がる輪" in svg and "② エンジンの版が上がる輪" in svg and "エンジンを直す" in svg, "絵の 2 つの輪"
+assert "① 型紙の版が上がる輪" in IMG.group(1) and "② エンジンの版が上がる輪" in IMG.group(1), "説明の字の 2 つの輪"
+# エンジンも直る事の例は、版の記録（data/history/kaizen-history.json）にある事だけ
+eng = how[how.index("### エンジンも直る（版の記録にある例）"):]
+hist = (ROOT / "data/history/kaizen-history.json").read_text(encoding="utf-8")
+assert "色がついている所が外を向くよう折った" in eng and "色がついている所が外を向くよう折った" in hist, "例 1 の元の字が版の記録にある"
+assert "虎の版 6 の当たり" in eng and "虎 v6 の当たりが見つかる" in hist, "例 2 の元の字が版の記録にある"
 after = how[how.index(IMG.group(0)) + len(IMG.group(0)):]
 steps = re.findall(r"(?m)^(\d)\. ", after)
 assert steps == ["1", "2", "3", "4", "5"], ("図の下に 5 行の字", steps)
