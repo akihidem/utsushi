@@ -200,4 +200,4 @@ def page(look=skin.DEFAULT, path="/kaizen"):
             + kaizen_kata.section()  # 型紙で改善したおもちゃ（題の下・ワークショップの節の前。窓口の決め 152530）
             + kaizen_ws.section(lambda s: _sheet(hist, s))
             + site_loop(hist) + engine_loop(hist) + peak_loop(hist) + pending_loop(hist))
-    return skin.shell(TITLE, body, look, "", path, STYLE + kaizen_kata.STYLE + kaizen_ws.STYLE)
+    return skin.shell(TITLE, body, look, "", path, STYLE + kaizen_kata.STYLE + kaizen_ws.STYLE, description=LEAD)

@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_workshop_records.py
+# commit: 960b287b（回した時の HEAD）
+ok 玩具の頁の記録はワークショップのデータ: 結べる 10 件と話された言葉・見本なし・迷う物は序の頁だけ
+rc=0

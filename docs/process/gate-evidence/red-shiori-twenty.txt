@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori.py
+# commit: 23da7a26（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_shiori.py", line 62, in <module>
+    assert shiori.TOTAL_FAILS == 20, "本人 11-08「外れ 20 回で止める。」"
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 本人 11-08「外れ 20 回で止める。」
+rc=1

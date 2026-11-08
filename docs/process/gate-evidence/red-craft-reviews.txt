@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_demo_samples.py > /tmp/sv-red-cr.txt 2>&1; rc=$?; tail -1 /tmp/sv-red-cr.txt; echo "試験 rc=$rc"'
+# commit: c21e3550（回した時の HEAD）
+AssertionError: 見本と作り物の一文は出ない
+試験 rc=1
+rc=0

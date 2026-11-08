@@ -45,9 +45,22 @@ def small(file):
     return small_photo(PHOTOS / file) if known(file) else None
 
 
+def made_photos(sid):
+    """その玩具の作例の写真（本人が上げたワークショップの作った物の写真）の小さい写しの道。人が「物だけ」と確かめた物だけ・記録の順。
+    玩具の札（sakurei.examples）と、事例の写真（3 バージョン・改善ループの例・参加者の工夫）の両方。ワークショップ全体の写真（玩具が 1 つに決まらない）は入れない。
+    本人の言葉 11-08「つくる、虎のこれまでの復元の写真が少ない。」: 前は試行の写真の表だけを読み、作例は作った物の頁の作例の節にしか出なかった。"""
+    from . import sakurei
+
+    out = [f"/record/{e['rid']}/media/{name}/small" for e in sakurei.examples() if e["sid"] == sid for name in e["photos"]]
+    out += [c["url"] for kind in sakurei.KINDS for c in sakurei.cases(kind) if c["sid"] == sid]
+    return out
+
+
 def strip(sid):
-    """「これまでの記録」の頭に置く写真の並び。写真が無い玩具は空（節に場所を取らない）。"""
+    """「これまでの記録」の頭に置く写真の並び。試行の写真（表の順）の後ろに、その玩具の作例の写真を置く。写真が無い玩具は空（節に場所を取らない）。
+    字は前からある alt「作った物の写真」だけ（新しい字を足さない）。どちらも小さい写しで出す。"""
     thumbs = "".join(f'<img src="/workshop/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async">' for f in files(sid))
+    thumbs += "".join(f'<img src="{esc(u)}" alt="作った物の写真" loading="lazy" decoding="async">' for u in made_photos(sid))
     return f'<div class="strip workshop">{thumbs}</div>' if thumbs else ""
 
 
