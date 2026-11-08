@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1150" width="600" height="1150" role="img" aria-labelledby="t d">
 <title id="t">型紙とエンジンが直る 2 つのフィードバックループ</title>
-<desc id="d">① 型紙の版が上がる輪: 作る人が刷って作る → 字・声・写真・動画でのこす → 作る側の Claude Code が読んで新しい案 → Claude が作ったエンジンが 3D で確かめる → 人が採る → 新しい版を刷る。② エンジンの版が上がる輪: 記録や 3D の確かめで見つかった事 → 作る側の Claude Code がエンジンを直す → 人が台帳に刻みエンジンの版が上がる → 全部の玩具の型紙に効く。人の印: ① の 1・2 は作り手（型紙を紙で試す）、① の 5 と ② の c は管理人（案を採る・エンジンの版を刻む）。</desc>
+<desc id="d">① 型紙の版が上がる輪: 作る人が刷って作る → 字・声・写真・動画でのこす → 作る側の Claude Code が読んで新しい案 → Claude が作ったエンジンが 3D で確かめる → 人が採る → 新しい版を刷る。② エンジンの版が上がる輪: 記録や 3D の確かめで見つかった事 → 作る側の Claude Code がエンジンを直す → 人が台帳に刻みエンジンの版が上がる → そのエンジンが作る型紙に使われる（3D の確かめは、今は御来迎と虎）。人の印: ① の 1・2 は作り手（型紙を紙で試す）、① の 5 と ② の c は管理人（案を採る・エンジンの版を刻む）。</desc>
 <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8c8c8c"/></marker></defs>
 <rect x="48" y="12" width="462" height="40" rx="20" fill="#6b4f2a"/>
 <text x="279.0" y="39" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="19" font-weight="bold" fill="#ffffff">型紙とエンジンが直る 2 つのフィードバックループ</text>
@@ -67,8 +67,8 @@
 <line x1="279.0" y1="1032" x2="279.0" y2="1057" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
 <rect x="48" y="1060" width="462" height="70" rx="12" fill="#eef6f4" stroke="#2f5d62" stroke-width="2"/>
 <text x="60" y="1082" text-anchor="start" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="14" font-weight="bold" fill="#2f5d62">d</text>
-<text x="279.0" y="1088" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">全部の玩具の型紙に効く</text>
-<text x="279.0" y="1113" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">（① の 4 の確かめにも使う）</text>
+<text x="279.0" y="1088" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">そのエンジンが作る型紙に使われる</text>
+<text x="279.0" y="1113" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="18" fill="#2b2b2b">（3D の確かめは、今は御来迎と虎）</text>
 <path d="M510 1095.0 H540 V795.0 H516" fill="none" stroke="#8c8c8c" stroke-width="3" marker-end="url(#a)"/>
 <text x="554" y="945.0" text-anchor="middle" font-family="'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans CJK JP','Noto Sans JP','Yu Gothic','Noto Serif CJK JP',sans-serif" font-size="15" fill="#8c8c8c" transform="rotate(90 554 945.0)">また見つけて、直す</text>
 <path d="M48 249.0 H26 V795.0 H42" fill="none" stroke="#8c8c8c" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#a)"/>
