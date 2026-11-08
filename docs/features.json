@@ -1028,9 +1028,12 @@
    "tests/test_hmd.py",
    "tests/test_hanasu.py",
    "tests/test_tsukuru.py",
-   "tests/test_otona.py"
+   "tests/test_otona.py",
+   "src/web/techo_step.py",
+   "src/web/tsukuru.py",
+   "tests/test_techo_step.py"
   ],
-  "unverified": "受け口の分かれ（見出し X-Utsushi-Clip）・区切りの読み・進め役の命令はサーバの側の PR で、まだ main に無い（この PR はその後に入れる）。実機の iPhone で、音声認識とマイクを同時に取れるか・IndexedDB の残り方・Safari の MediaRecorder が mp4 を出すかは確かめていない（本人か進め役の端末で）。新しい字と替えた字は本人の確かめ待ち"
+  "unverified": "受け口の分かれ（見出し X-Utsushi-Clip）・区切りの読み・進め役の命令はサーバの側の PR で、まだ main に無い（この PR はその後に入れる）。実機の iPhone で、音声認識とマイクを同時に取れるか・IndexedDB の残り方・Safari の MediaRecorder が mp4 を出すかは確かめていない（本人か進め役の端末で）。新しい字と替えた字は本人の確かめ待ち。手帖の「のこす」の後の区切りだけの確かめと、直に開いた時の作り始めは、頭なしの Chromium で歩いた（実機の iPhone ではまだ）"
  },
  {
   "id": "f82",
