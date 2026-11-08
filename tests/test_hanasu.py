@@ -291,7 +291,12 @@ REC = '<button type="button" class="hanasu-rec" aria-pressed="false"><span class
 KB = '<p class="meta hanasu-kb">キーボードのマイクで話して入れられます。</p>'
 HEAD = "<script>(()=>{\nconst M={norec:"  # 話す口の台本の頭（頁に 1 回だけ置く）
 code, toy = get(f"/toy/{G}")
-assert code == 200 and 'id="hanasu"' not in toy and f'action="/toy/{G}/talk' not in toy and 'name="scene" value="think"' not in toy and REC not in toy and KB not in toy
+# 玩具の頁の 型紙を印刷する の中にある「Claude に話して型紙を作り直す」口（#714・think_sheet.window_box）は話す口ではないが、字の欄の下の 1 行（KB）は
+# 同じ部品で出す。話す口の線は、その口（#think）を外した頁で見る
+think_box = re.search(r'<div class="think-box" id="think">.*?</form>', toy, re.S)
+assert think_box and think_box.group(0).count(KB) == 1, "作り直しの口の字の欄の下に 1 行が無い"
+toy_rest = toy.replace(think_box.group(0), "")
+assert code == 200 and 'id="hanasu"' not in toy and f'action="/toy/{G}/talk' not in toy and 'name="scene" value="think"' not in toy and REC not in toy and KB not in toy_rest
 assert hanasu.NOTICE not in toy and "data-hanasu" not in toy and HEAD not in toy
 code, tsu = get(f"/toy/{G}/tsukuru?h={GS}&n=2")
 assert code == 200 and 'name="scene" value="craft"' in tsu and 'name="step" value="2"' in tsu and 'name="sheet_version" value="1"' in tsu and REC in tsu and KB in tsu
@@ -409,7 +414,7 @@ for page in (tsu, techo):
     assert ADOPTED["NOTICE"] in page and page.count(KB) == page.count('<div class="hanasu" data-hanasu') + page.count('<div data-hanasu data-sid=') >= 1
     for old in ("「話す」を押すと", "声を機械の中だけで字にできません", "キーボードのマイクのマーク"):
         assert old not in page, old
-assert AI_USE not in toy and ADOPTED["NOTICE"] not in toy and KB not in toy, "口の無い玩具の頁に話す口の断りが残った"
+assert AI_USE not in toy and ADOPTED["NOTICE"] not in toy and KB not in toy_rest, "口の無い玩具の頁に話す口の断りが残った"
 # 場面の見出しと例・選ぶ欄・頁の頭の一文
 # 玩具の頁の 考えを話す の口（見出し・例の字・頭の一文・考えの欄）は、口ごと外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）。
 # 前は仮説の段の中の小さな口（見出し h3・箱の見出し hanasu-head は出さない 11-06 の字の決めの 2）だった

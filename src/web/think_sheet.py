@@ -315,6 +315,8 @@ def window_box(sid, at="", note=""):
     """型紙を印刷する（玩具の頁の #win）の中の口。字の欄と 1 つの釦。頼んだ後に戻った時（at が think-<印>）は、前の節と同じ様子と確かめを出す。
     錨は #think の 1 つ（前の仮説の段の節は外した）。字の欄の見出しは前からの LEAD（新しい字を増やさない）。声を録る釦は置かない:
     録った声は のこす の承認で送る物で、Claude には渡らない（UX の担当の推し・設計 2 版の 2 節）"""
+    from . import hanasu  # 循環を避けて、ここで読む（hanasu も think_sheet を読む）
+
     w = words.by_token(sid, at[len("think-"):]) if at.startswith("think-") else None
     status = (f"<p>{esc(TALK_WAITING)}</p>" if w["status"] == "waiting_maker" else _status(sid, w)) if w else ""
     # 確かめている間（pending_human）と、作る側の待ちの間（waiting_maker）は、頼む釦を出さない（押すと新しく頼み直し、1 日の回数が減る）
@@ -322,6 +324,8 @@ def window_box(sid, at="", note=""):
             f'<form method="post" action="/toy/{esc(sid)}/think-talk#think" class="think-talk">'
             f'<label for="think-text"><span class="lead">{esc(LEAD)}</span></label>'
             f'<textarea id="think-text" name="text" maxlength="{talk_log.MAX_TEXT}" required></textarea>'
+            # 字の欄の下の 1 行（端末のキーボードのマイク・#699）。話す口とのこすの工夫の欄と同じ字を、同じ部品から出す
+            + hanasu.keyboard_line() +
             f'<p><button class="btn quiet" data-busy data-busy-for="{GO_BUSY_FOR}">{esc(TALK_GO)}</button></p>'
             f'<p class="meta">{esc(TALK_NOTICE)}</p></form>')
     return f'<div class="think-box" id="think">{note if at.startswith("think") else ""}{status}{form}</div>'

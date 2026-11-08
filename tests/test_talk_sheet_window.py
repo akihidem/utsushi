@@ -27,7 +27,7 @@ os.environ["OMOCHAE_USAGE_LEDGER"] = os.path.join(os.environ["OMOCHAE_DATA"], "a
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from omochae import hypotheses, loop  # noqa: E402
-from web import play_server, think_sheet  # noqa: E402
+from web import hanasu, play_server, think_sheet  # noqa: E402
 from web.play_server import print_latest  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -74,6 +74,8 @@ try:
                 assert w.index('id="think"') < w.index('<figure class="sheet">'), (sid, "口が紙の絵の後")
             assert f'action="/toy/{sid}/think-talk#think"' in box and "<textarea" in box and f">{think_sheet.TALK_GO}</button>" in box, (sid, box[:300])
             assert think_sheet.TALK_NOTICE in box and "声を録る" not in box and "hanasu-mic" not in box, (sid, "断りの字が無いか、声を録る釦がある")
+            # 字の欄のすぐ下に、キーボードのマイクの 1 行（#699 の hanasu.keyboard_line・話す口と同じ部品）
+            assert "</textarea>" + hanasu.keyboard_line() in box, (sid, "キーボードのマイクの 1 行が字の欄の下に無い")
             assert box.count("<button") == 1, (sid, "釦が 1 つでない")
             assert 'id="think"' not in page[page.index('id="kasetsu-fuda"'):page.index('id="tatoe"')], (sid, "仮説の段に口が残った")
     page = send(base, f"/toy/{PLAIN}")[1]
