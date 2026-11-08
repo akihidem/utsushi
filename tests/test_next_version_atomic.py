@@ -117,7 +117,10 @@ assert hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), 2) in tex
 
 # 紙の無い版: 作り直す口が画面に出て、押すと紙ができる。
 page_before = urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
-assert "作り直す" not in page_before, "紙がある間は出さない"
+# 見るのは、前からの刷り直しの釦（「版 N の紙を作り直す」・/reprint）。型紙を印刷する の作り直す口の釦「Claude に話して型紙を作り直す」（#714・
+# think_sheet.TALK_GO）は、話して型紙を作り直す別の口で、紙の有り無しに関わらず出るので、この線では見ない
+reprint_shown = lambda page: "の紙を作り直す" in page or f'action="/toy/{G}/reprint#win"' in page
+assert not reprint_shown(page_before), "紙がある間は出さない"
 gone = sorted(p.name for p in out_dir(G).glob(f"{GS}_v2*"))
 for name in gone:
     (out_dir(G) / name).unlink()
@@ -134,7 +137,7 @@ assert code in (200, 303)
 assert sorted(p.name for p in out_dir(G).glob(f"{GS}_v2*")) == gone, "同じ組の紙ができる"
 assert (out_dir(G) / f"{GS}_v2.pdf").read_bytes()[:4] == b"%PDF"
 assert len([c for c in loop.sheet_confirmations(G) if c["version"] == 2][0]["confirmations"]) == count + 1
-assert "作り直す" not in urllib.request.urlopen(f"{base}/toy/{G}").read().decode()
+assert not reprint_shown(urllib.request.urlopen(f"{base}/toy/{G}").read().decode()), "刷り直した後も刷り直しの釦が残った"
 assert not list(out_dir(G).glob(".tmp-*")), "一時の場所を残さない"
 server.shutdown()
 print("ok")
