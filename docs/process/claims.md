@@ -36,7 +36,7 @@
 | C-16 | 作っているうちに新しい考えが湧く | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
 | C-17 | 最初に返事をするのは素材と工作（紙）。仕組みについて AI が返すのは人の説明の後で、作っている途中の手順の質問には答える形まで作った（本物の API では未実行。J-013。本人の決定 11-04 で、子どもも AI から直接返事をもらってよい） | 立場 | [J013-core-words.md](decisions/J013-core-words.md)、[test_ai_feedback.py](../../tests/test_ai_feedback.py)、[ask.py](../../src/api/ask.py)、[workshop-design.md](workshop-design.md) |
 | C-18 | 学習の効果より学習の再定義を物差しにする | 立場 | [J013-core-words.md](decisions/J013-core-words.md) |
-| C-19 | 出発は本人の教育現場（学校の理科の授業や探究の授業）で、本人も使い続ける。その現場の今の生徒では試していない（試行は卒業生の成人 5 人）。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない | 未確認 | [17-field-and-continuers.md](research/17-field-and-continuers.md)、[decided-and-open.md](decided-and-open.md)、[17-field-and-continuers.md](research/17-field-and-continuers.md)、[README.md](trials/README.md) |
+| C-19 | 出発は本人の教育現場（学校の理科の授業や探究の授業）で、本人も使い続ける。その現場の今の生徒では試していない（試行は卒業生の成人のべ 30 人で、全員が実物の型紙を試した。11-04 の 5 人を含む）。理科教育の人、自由研究、館のワークショップ、家庭への広がりは本人の見立てで、まだ試していない | 未確認 | [17-field-and-continuers.md](research/17-field-and-continuers.md)、[decided-and-open.md](decided-and-open.md)、[17-field-and-continuers.md](research/17-field-and-continuers.md)、[README.md](trials/README.md) |
 | C-20 | 言葉の口は人の文を書き換えず、隠れた寸法の補いを通さない | 偽の応答の試験 | [test_words.py](../../tests/test_words.py) |
 | C-21 | 試した後の紙は対比を先に出し、説明は折って閉じた札に置く | 自動試験 | [test_words.py](../../tests/test_words.py) |
 | C-22 | 閉じた札が考える邪魔をしないか | 未確認 | [J013-core-words.md](decisions/J013-core-words.md) |
