@@ -46,7 +46,8 @@ def reading(sid):
 # 11-08 から、御来迎と虎のほかの玩具にも、歌の現代語訳と言葉の意味を 10 歌ずつ足す（本人の答え「この出し方でよい。」・統括の段取り）。
 # 置き場の全部の json を同じ線で見る。同じ図の玩具は、出典の記録の全部に同じ字を置く（統括の決め 11-08）
 NOTED = sorted(p.stem for p in (ROOT / "data/kuzushi_notes").glob("*.json"))
-assert G in NOTED and T in NOTED and len(NOTED) > 2, NOTED
+# 10 歌ずつ足した注の玩具の数が減っていない事（3 番目の組まで: 御来迎と虎の 2・最初の組 20・2 番目の組 16・3 番目の組 16）
+assert G in NOTED and T in NOTED and len(NOTED) >= 54, (len(NOTED), "注の玩具が減った")
 texts = []
 for sid in NOTED:
     d = json.loads((ROOT / "data/kuzushi_notes" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -61,6 +62,8 @@ for sid in NOTED:
     assert "本人" not in every and "制作者" not in every, sid
     # 辞書の中身を手元で確かめられない言い切り（「辞書はこの歌を…例に挙げる」「…の呼び名にも使われた」）は書かない（別の目の確かめ 11-08・#661 の後）
     assert not [w for w in ("例として挙げて", "呼び名にも使われました") if w in every], (sid, "確かめられない辞書の中身の言い切り")
+    # ふりがなの字は一覧で確かでない所があるので、「ふりがなは「…」」と言い切らない（別の目の確かめ 11-08・#677 の後）
+    assert "ふりがなは「" not in every and "とふりがながあり" not in every, (sid, "ふりがなの言い切り")
     texts += [d["gendaigo"], *(x for w in d["words"] for x in (w["word"], w["meaning"]))]
 
 # 頁: 2 つの見出しが出て、json の無い玩具には出ない

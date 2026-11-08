@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kuzushi_notes.py
+# commit: cbb9c8c8（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kuzushi_notes.py", line 65, in <module>
+    assert "ふりがなは「" not in every and "とふりがながあり" not in every, (sid, "ふりがなの言い切り")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000016-L', 'ふりがなの言い切り')
+rc=1

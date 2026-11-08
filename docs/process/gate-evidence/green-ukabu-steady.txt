@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ukabu_steady.py
+# commit: 6fd0cb76（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ukabu_steady.py", line 110, in <module>
+    assert rec["d"] == rec["a"], (where, "送ったまま幅を替えて戻すと、送る前と違う所に置かれる", rec["a"], rec["d"])
+           ^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'ja-390x844'), '送ったまま幅を替えて戻すと、送る前と違う所に置かれる', '12,253,visible 307,338,visible 16,540,visible 308,542,visible', '12,253,visible 307,338,visible 16,540,visible 308,526,visible')
+rc=1

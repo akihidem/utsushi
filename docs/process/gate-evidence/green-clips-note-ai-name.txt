@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_ai_name.py
+# commit: 8e8eacf8（回した時の HEAD）
+/tmp/tmpi37j2w41/play/NDL-1187053-R0000005-L/.tmp-b5hknp6a/H-C_v1.pdf
+ok: 断りの AI には名前を添え、札と状態の AI は変えていない
+rc=0

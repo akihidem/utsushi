@@ -220,8 +220,8 @@ article.card,.card{background:var(--paper);border:1px solid var(--frame);padding
 .narabi li{break-inside:avoid;margin:0 0 var(--ma,16px)}
 .narabi .pic{display:block;width:100%;height:auto;box-sizing:border-box}
 .narabi .nopic{aspect-ratio:3/4}
-/* 名前は絵の下に小さく 1 行 */
-.narabi .nm{font-size:12px;margin-top:6px;-webkit-line-clamp:1}
+/* 名前は絵の下に小さく 1 行。折らずに末を … で切る */
+.narabi .nm{display:block;font-size:12px;margin-top:1px;padding-top:5px;white-space:nowrap;text-overflow:ellipsis}
 /* 頭の 1 行は幅 390 で 1 行に入る大きさ */
 .erabu h1{font-size:clamp(19px,4.6vw,30px);letter-spacing:.14em}
 @media (max-width:820px){.erabu{padding-left:8px;padding-right:8px}}

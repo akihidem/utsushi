@@ -171,11 +171,15 @@ PICKS = ("NDL-1187053-R0000026-L", "NDL-1187053-R0000030-L-2", "NDL-1187053-R000
 # - 数と動きは試作のまま（4 つ・16〜25 秒で 1 往復・上下 12px と傾き 1.5 度）。動きを減らす設定では止める
 # - 押しても頁へ飛ばない、揺れるだけの飾り（本人の言葉 11-07 夜「リンクにはせず揺れる」）。リンクにせず、焦点に入れず、読み上げでは飛ばす
 #   （aria-hidden・alt は空）。押す所も取らない（pointer-events は全部 none）。浮かぶ絵は題の間の字より後ろの層
+# - 層は見せずに始め（.ukabu の visibility:hidden）、置き直しの台本（PLACE_JS）が字を測って置いた後に見せる（.placed）。
+#   台本が動かない画面（JS を切った）では飾りを出さない: CSS の vw・vh の置き場は、英語の頁の幅 1024〜1440 で英字と副題に重なった
+#   （別の目の測り 11-08: JS なしの英語 1024×768 で 6223px²）。下の「字を隠すより出さない方を採る」と同じ向き
 # - 読み込みは題字より後（loading=lazy・fetchpriority=low・decoding=async）
 # - 狭い幅の左下（uk3）は上からの位置で置く（下からだと、題の間が画面より少し高い 390 で画面の下の端に切れた・確かめの気づき 11-07）
 UKABU = """
 .tj-hall{position:relative}
-.ukabu{position:absolute;inset:0;pointer-events:none;z-index:0}
+.ukabu{position:absolute;inset:0;pointer-events:none;z-index:0;visibility:hidden}
+.ukabu.placed{visibility:visible}
 .tj-hall>*:not(.ukabu){position:relative;z-index:1}
 .uk{position:absolute;display:block;width:104px;line-height:0;animation:uk-float 19s ease-in-out infinite}
 .uk img{width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(70,55,35,.16))}
@@ -193,33 +197,57 @@ UKABU = """
 # - まず CSS の位置のまま。字・押す所と重ならなければ動かさない（今の見た目を保つ）
 # - 重なる時は、題の間の中で、CSS の位置にいちばん近い重ならない所へ動かす（16px の目で探す）。揺れ（上下 12px・傾き）の分の間をとる
 # - どこにも入らない時は、その玩具だけ出さない（飾りなので、字を隠すより出さない方を採る）
-# - 絵が読めた時・字の形が決まった時（document.fonts）・画面の大きさが替わった時に置き直す。読み上げと押す所には今までどおり関わらない
+# - 絵が読めた時・字の形が決まった時（document.fonts）・題の間の幅が替わった時に置き直す。読み上げと押す所には今までどおり関わらない
+# - 重なった所を一瞬でも描かない（別の目の測り 11-08: 2 回目に開いた時、絵が手元の写しから先に来て、置き直す前の 30〜60ms は CSS の置き場のまま
+#   重なった。前は絵が読めてから 80ms 待って置き直していた）:
+#   - 最初の置き直しは頁の字が全部そろった後（DOMContentLoaded。下へ送る印と、それを画面に留める台本 DOWN_JS の後）。済むまで層を見せない
+#   - 絵がまだ読めていない玩具は出さない（大きさが分からず、測れないため）。絵が読めた時と字の形が決まった時は、待たずにその場で置き直す
+#     （描く前に済む）。題の間の幅が替わった時は、描く前（ResizeObserver）に置き直す
+# - 触って送っても跳ばない（本人の言葉 11-08「トップページ、右下のツボが iPhone で触ると動く。」。ツボは 4 つ目の土の徳利）。
+#   iPhone の Safari は送り始めると番地の帯が縮んで resize が起きる。前は resize のたびに置き直し、画面に留めた下へ送る印（fixed）を送った後の位置で、
+#   玩具の元の位置を揺れの途中の箱（transform 込み）で測ったので、徳利が印を避けた所と元の所の間を跳び、揺れの分だけずれた。そこで:
+#   - 題の間の幅が替わった時だけ置き直す（本人の答えを統括が伝えた線 11-08「置き直しは幅か向きが替わった時だけ」。向きを替えると幅が替わる）。
+#     番地の帯の伸び縮みは高さだけで、題の間（100svh）も CSS の置き場（vw・vh）も替わらない。PC の窓の高さだけを替えた時も置き直さない
+#   - 幅は題の間の箱を ResizeObserver で見る（window の resize でなく）。置き場を決めるのは題の間の幅で、スクロールの帯の出入りのように
+#     窓の幅が替わらずに題の間の幅が替わる時も追える。入口の決まりで使わないのは IntersectionObserver（見えた時に起こす仕掛け・test_looks_motion）で、
+#     ResizeObserver は大きさを見るだけ。無いブラウザは resize で見る
+#   - 幅を替えた直後は、横のスクロールの帯が一瞬残り、画面に留めた印がその太さの 15px だけ上に測られる事がある（PC の Chrome・11-08 に置き直しの
+#     入り力を控えて見た）。向きや窓の幅を替えた時は玩具が動いてよい所なので、ここは直していない
+#   - 画面に留めた物（position:fixed）は、送る前（scrollY=0）の位置で測る。玩具は揺れる前の箱（offsetLeft・offsetTop・offsetWidth・offsetHeight）で測る。
+#     送り始めた後に絵が届いて置き直しが走っても（遅い回線の iPhone）、出ている玩具を送った量と揺れの途中の分だけ跳ばさないため
 PLACE_JS = """<script>(()=>{const hall=document.getElementById('hall'),layer=hall&&hall.querySelector('.ukabu');if(!layer)return;
 const toys=[...layer.querySelectorAll('.uk')],GAP=12,SWAY=14,STEP=16;
 const boxes=(H)=>{const out=[],tw=document.createTreeWalker(hall,NodeFilter.SHOW_TEXT);let n;
  while(n=tw.nextNode()){if(!n.textContent.trim()||n.parentElement.closest('.ukabu'))continue;const st=getComputedStyle(n.parentElement);if(st.display==='none'||st.visibility==='hidden')continue;
   const r=document.createRange();r.selectNodeContents(n);for(const b of r.getClientRects())if(b.width>0)out.push(b)}
- for(const e of hall.querySelectorAll('a,button'))if(!e.closest('.ukabu')){const b=e.getBoundingClientRect();if(b.width>0)out.push(b)}
+ for(const e of hall.querySelectorAll('a,button'))if(!e.closest('.ukabu')){const b=e.getBoundingClientRect();if(!(b.width>0))continue;
+  if(getComputedStyle(e).position!=='fixed'){out.push(b);continue}
+  out.push({left:b.left-scrollX,right:b.right-scrollX,top:b.top-scrollY,bottom:b.bottom-scrollY})}
  return out.map(b=>({l:b.left-H.left-GAP,t:b.top-H.top-GAP,r:b.right-H.left+GAP,b:b.bottom-H.top+GAP}))};
 const hit=(a,list)=>list.some(b=>Math.min(a.r,b.r)>Math.max(a.l,b.l)&&Math.min(a.b,b.b)>Math.max(a.t,b.t));
-const place=()=>{const H=hall.getBoundingClientRect(),W=hall.clientWidth,Ht=hall.clientHeight,busy=boxes(H);
+const ready=(e)=>{const im=e.querySelector('img');return !!im&&im.complete&&im.naturalWidth>0};
+let wide=-1;
+const place=()=>{const H=layer.getBoundingClientRect(),W=layer.clientWidth,Ht=layer.clientHeight,busy=boxes(H);wide=W;
  for(const e of toys){e.style.left=e.style.top=e.style.right=e.style.bottom='';e.style.visibility=''}
- for(const e of toys){const b=e.getBoundingClientRect(),w=b.width,h=b.height,x0=b.left-H.left,y0=b.top-H.top;
+ for(const e of toys){if(!ready(e)){e.style.visibility='hidden';continue}
+  const w=e.offsetWidth,h=e.offsetHeight,x0=e.offsetLeft,y0=e.offsetTop;
   const box=(x,y)=>({l:x-4,t:y-SWAY,r:x+w+4,b:y+h+SWAY});
   if(!hit(box(x0,y0),busy)&&x0>=0&&x0+w<=W){busy.push(box(x0,y0));continue}
   let best=null,bd=1e18;
   for(let y=SWAY;y+h+SWAY<=Ht;y+=STEP)for(let x=4;x+w+4<=W;x+=STEP){if(hit(box(x,y),busy))continue;const d=(x-x0)**2+(y-y0)**2;if(d<bd){bd=d;best=[x,y]}}
   if(!best){e.style.visibility='hidden';continue}
   e.style.left=best[0]+'px';e.style.top=best[1]+'px';e.style.right=e.style.bottom='auto';busy.push(box(best[0],best[1]))}};
-let tm;const later=()=>{clearTimeout(tm);tm=setTimeout(place,80)};
-for(const im of layer.querySelectorAll('img'))if(!im.complete)im.addEventListener('load',later);
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(later);
-addEventListener('resize',later);addEventListener('orientationchange',later);place()})()</script>"""
+let rq=0;const soon=()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(layer.clientWidth!==wide)place()})};
+for(const im of layer.querySelectorAll('img'))if(!im.complete)im.addEventListener('load',place);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(place);
+const start=()=>{place();layer.classList.add('placed');
+ if(window.ResizeObserver)new ResizeObserver(()=>{if(layer.clientWidth!==wide)place()}).observe(layer);else{addEventListener('resize',soon);addEventListener('orientationchange',soon)}};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start()})()</script>"""
 
 
 def block(sids):
     """浮かぶ玩具の塊（入口の題の間の中に置く・揺れるだけの飾り）。輪郭の絵（out/ukabu/<印>.webp）がある玩具だけ。1 つも無ければ空。
-    字に重ならないよう置き直す台本（PLACE_JS）を後ろに付ける。"""
+    字に重ならないよう置き直す台本（PLACE_JS）は、置く側（looks の入口）が題の間の終わり（下へ送る印の後）に付ける。"""
     from .skin import esc
 
     have = [s for s in PICKS if s in sids and (OUT / f"{s}.webp").exists()]
@@ -227,4 +255,4 @@ def block(sids):
         return ""
     toys = "".join(f'<span class="uk uk{i}"><img src="/ukabu/{esc(s)}.webp" alt="" loading="lazy" decoding="async" fetchpriority="low"></span>'
                    for i, s in enumerate(have, 1))
-    return f'<div class="ukabu" aria-hidden="true">{toys}</div>' + PLACE_JS
+    return f'<div class="ukabu" aria-hidden="true">{toys}</div>'
