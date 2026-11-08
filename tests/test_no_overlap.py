@@ -4,7 +4,8 @@
 くずし字・作る側の様子 を、iPad の横（1180×820 と、Safari の帯で縮んだ 1180×746）と縦（820×1180）・PC（1440×900）・iPhone（375×667）で、日本語・やさしい日本語・英語、白と暗い版で開き、
 - 字の 1 行ずつの箱どうしが重なる所（字×字）と、字の箱と絵（img・svg・video・canvas）が重なる所（字×絵）を数える
 - 見えていない物（hidden・display:none・畳んだ中・読み上げだけの字）と、親と子の要素どうし（ルビと元の字など）は数えない
-- 親の overflow で切られた所は、切り口で切って数える（額の中で広げた絵など）
+- 親の overflow で切られた所は、切り口で切って数える（額の中で広げた絵など）。字は、字を直に持つ要素の overflow でも切る（… で切った名の末や
+  行の数の切りで隠した行は、画面に出ない。えらぶ の棚の名の札・#691 の後に、隠れた末の字の箱を横の札の名と絵との重なりとして数えていた）
 - 組み立ての 3D の舞台（#rt-scene）の中は 1 つの絵として扱い、中の部品の字と面の重なりは数えない（立体の重なりとして描く物）
 - 原画の写し（out/sources・git の外）の有り無しの両方で測る（写しの無い木では同じ形の絵の包みを置く・tests/test_landscape_fit.py と同じ）。
   原画の畳みの外の絵（えらぶ の札・入口の浮かぶ玩具・よむ の北斎漫画）は木の写しのとおりに出るので、写しのある木と無い木の両方で 1 度ずつ回して確かめる
@@ -58,17 +59,10 @@ SIZES = {"iPad 横": (1180, 820), "iPad 横 帯あり": (1180, 746), "iPad 縦":
 # 今わかっている重なり（11-08 の見回り・grove の state/no-overlap-20261108.md）。鍵は（頁, 種類, 片方の要素の道の尾, もう片方の要素の道の尾, 言葉）。
 # 持ち主が直したら、その行を外す（外すと、残っていれば落ちる）
 KNOWN = {
-    # 型紙の窓の輪の図（web.wa）の英語の字が重なる: 「Current template」「Make the next template …」「Version N」
-    ("玩具の頁 御来迎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 御来迎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    ("玩具の頁 虎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 虎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    # 学びの輪の図（web.loop_figure）の英語の字が重なる（のこす・よむ）
-    ("のこす", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
-    ("よむ", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
-    # えらぶの棚の札で、英語の玩具の名（長い）が札の絵に重なる。狭い幅では下の「See all toys」にも
-    ("えらぶ", "字×絵", "li>a>span.nm", "li>a>img.pic", "en"),
-    ("えらぶ", "字×字", "li>a>span.nm", "section.sec.erabu>p.links>a", "en"),
+    # えらぶの棚の札の名の 2 行は外した（#691 で名を折らずに … で切る形にし、この試験も字を直に持つ要素の overflow で切る形にした）
+    # よむ の見出しで、やさしい日本語の次の行のルビ（「残」の のこ）が、前の行の字（絵）に重なる（iPhone SE・白と暗い版・写しのある木）。
+    # 11-08 の main 039c2742 で出た。持ち主の直し待ち（やさしい日本語のルビのある見出しの行の高さ）
+    ("よむ", "字×字", "div>h2>ruby", "h2>ruby>rt", "easy"),
 }
 # 原画の写しの無い木の えらぶ の札で、やさしい日本語の玩具の名と「図を見る（国立国会図書館）」のルビ（切れない）が札の幅より長く、端の列が画面の横にはみ出す（上の えらぶ の札の名と同じ持ち主）
 KNOWN_WIDE = {("えらぶ", "easy")}
@@ -93,9 +87,9 @@ FIND = r"""(() => {
     return ok;
   };
   const sx = scrollX, sy = scrollY;
-  const clipOf = (el) => {
+  const clipOf = (el, own) => {
     let c = [-1e9, -1e9, 1e9, 1e9];
-    for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+    for (let e = own ? el : el.parentElement; e && e !== document.body; e = e.parentElement) {
       const s = getComputedStyle(e);
       if (s.overflow !== "visible" || s.overflowX !== "visible" || s.overflowY !== "visible" || s.contain.includes("paint")) {
         const r = e.getBoundingClientRect();
@@ -104,7 +98,7 @@ FIND = r"""(() => {
     }
     return c;
   };
-  const box = (r, el) => { const c = clipOf(el); return [Math.max(r.left, c[0]) + sx, Math.max(r.top, c[1]) + sy, Math.min(r.right, c[2]) + sx, Math.min(r.bottom, c[3]) + sy]; };
+  const box = (r, el, own) => { const c = clipOf(el, own); return [Math.max(r.left, c[0]) + sx, Math.max(r.top, c[1]) + sy, Math.min(r.right, c[2]) + sx, Math.min(r.bottom, c[3]) + sy]; };
   const inScene = (el) => !!el.closest("#rt-scene, .rt-scene");
   const name = (el) => { const id = el.id ? "#" + el.id : "", cls = el.classList.length ? "." + [...el.classList].slice(0, 2).join(".") : ""; return el.tagName.toLowerCase() + id + cls; };
   const path = (el) => { const out = []; for (let e = el; e && e !== document.body && out.length < 3; e = e.parentElement) out.unshift(name(e)); return out.join(">"); };
@@ -114,7 +108,7 @@ FIND = r"""(() => {
     const n = tw.currentNode, el = n.parentElement;
     if (!n.textContent.trim() || !el || SKIP.has(el.tagName) || inScene(el) || !shown(el)) continue;
     const rg = document.createRange(); rg.selectNodeContents(n);
-    for (const r of rg.getClientRects()) { const b = box(r, el); if (b[2] - b[0] >= 3 && b[3] - b[1] >= 3) texts.push({ el, b, t: n.textContent.trim().slice(0, 20) }); }
+    for (const r of rg.getClientRects()) { const b = box(r, el, true); if (b[2] - b[0] >= 3 && b[3] - b[1] >= 3) texts.push({ el, b, t: n.textContent.trim().slice(0, 20) }); }
   }
   const pics = [...document.querySelectorAll("img,svg,video,canvas")].filter((e) => shown(e) && !inScene(e) && !(e.parentElement && e.parentElement.closest("svg")))
     .map((e) => ({ el: e, b: box(e.getBoundingClientRect(), e) })).filter((x) => x.b[2] - x.b[0] > 6 && x.b[3] - x.b[1] > 6);
@@ -201,7 +195,8 @@ def measure(base, lang):
     if left < 20:
         return None
     # 言葉の切り替えは cookie なので、言葉ごとに別の回（別の profile）にする
-    with tempfile.TemporaryDirectory() as profile:
+    # 時間切れで止めた Chrome の子が profile に書き続けると、片付けが「Directory not empty」で落ちる（11-08 の混んだ機械で 1 度）。片付けの誤りは測りの外なので通す
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:
         try:
             out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=2000,1400",
                                   "--virtual-time-budget=30000", "--dump-dom", f"{base}/__ov?lang={lang}"], capture_output=True, text=True, timeout=left).stdout

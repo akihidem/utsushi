@@ -65,4 +65,32 @@ assert ask.answer(G, "H-A", "竹串はいつ通すの？") == (ask.NO_KEY, "no_k
 assert ask.answer(G, "H-A", "谷折りって？") == (ask.GLOSSARY["谷折り"], "glossary")
 assert ask.answer(G, "H-A", "これはどう動くの？") == (ask.REFUSE, "refuse")
 assert ask.answer(G, "H-A", "蛇腹はどう動くの？") == (ask.REFUSE, "refuse"), "語が入っていても、仕組みの問いは先に断る"
+
+# 玩具ごとの中身（11-08 に公開デモの虎で「谷折り・山折り」と聞くと、御来迎の筒と扇の答えが返った）: 語の表は御来迎の紙（扇の紙）の字なので、
+# ほかの玩具では使わない。字は本人の確かめの字のまま（一字も替えない）。凡例はその玩具の型紙が刷る字で、御来迎の部品と絵の字を渡さない
+from omochae import compose  # noqa: E402
+
+T = "NDL-1187053-R0000014-R"  # 張子の首振り虎（pivot_counterweight）
+HT = hypotheses.sheet_of(T)["id"]
+FAN_WORDS = ("筒と扇", "外筒", "扇", "蛇腹（横から）", "色の境")  # 「筒」だけは虎の手順にもある（脚を角筒に）ので、御来迎の部品と絵の名で見る
+for q in ("谷折り・山折り", "谷折りって何", "色の境ってどういう意味", "蛇腹とは"):
+    text, how = ask.answer(T, HT, q)
+    assert how == "no_key" and text == ask.NO_KEY, ("虎の語の問いに語の表（御来迎の紙の字）を返さない", q, text, how)
+    f = Fake("線のとおりに折ります。")
+    assert ask.answer(T, HT, q, client=f) == ("線のとおりに折ります。", "ai"), ("虎の語の問いは虎の紙の凡例で Claude に聞く", q)
+    sent = f.sent["messages"][0]["content"].split("\n\n質問: ")[0]  # 問いの字そのもの（色の境って…）は除いて、渡した紙の字を見る
+    assert not [w for w in FAN_WORDS if w in sent], ("虎に御来迎の紙の字が渡った", q, [w for w in FAN_WORDS if w in sent])
+text, how = ask.answer(T, HT, "蛇腹が固定できない。どうしたらいい？")
+assert (text, how) == (ask.NO_KEY, "no_key"), "鍵が無い時も、虎には語の表の字を添えない"
+assert ask.template_name(G, "H-A") == ask.FAN and ask.template_name(T, HT) != ask.FAN and ask.template_name(T) == ask.template_name(T, HT)
+f = Fake("線のとおりに折ります。")
+ask.answer(T, HT, "竹串はいつ通すの？", client=f)
+assert f"凡例: {ask.legend(ask.template_name(T, HT))}" in f.sent["messages"][0]["content"]
+# 御来迎は前のとおり（語の表で答え、凡例に色の境の 1 句）。凡例の谷と山の言い方は、その紙が刷る字と同じ
+assert ask.answer(G, "H-A", "谷折り・山折り") == (f"{ask.GLOSSARY['谷折り']} {ask.GLOSSARY['山折り']}", "glossary")
+for sid, hid in ((G, "H-A"), (T, HT)):
+    name = ask.template_name(sid, hid)
+    valley, mountain = compose.FOLD_WORDS if compose.new_fold_words(compose.TEMPLATES[name]) else compose._OLD_SHEET_FOLD_WORDS
+    assert valley in ask.legend(name) and mountain in ask.legend(name), (sid, ask.legend(name))
+assert "色の境" in ask.legend(ask.FAN) and "色の境" not in ask.legend(ask.template_name(T, HT))
 print("ok")

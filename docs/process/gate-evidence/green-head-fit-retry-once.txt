@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python /tmp/fitdrop/drop.py once tests/test_toy_head_fit.py
+# commit: 07471476（回した時の HEAD）
+ok 玩具の頁の頭の字の箱は重ならない: 83 頁 × 3 言葉 × 7 の大きさ（測れなかった束 0・回し直した束 1）
+試験の rc=0・落とした束を呼んだ回数=3
+見張り: 通る
+rc=0
