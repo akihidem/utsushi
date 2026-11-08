@@ -1,13 +1,15 @@
 """README の 7 か所は、本人が確かめた字（本人の決定 11-06「全部案でよい」。読めない字の 1 枚の 9〜15）。一字も変えない。
 
-見る事: 本人が採った字が README に 1 回ずつあり、前の字が残っていない。行ごと入れ替えた所は、行の頭の箇条の印まで合わせて見る。
+見る事: 本人が採った字が README か docs/run.md に 1 回ずつあり、前の字が残っていない。行ごと入れ替えた所は、行の頭の箇条の印まで合わせて見る。
 字を直す時は、本人の確認を取ってから、ここの字も同じに直す。
+README の組み直し（11-08・本人の言葉「今読んだら、表が読みにくい…優勝できるものにする」）で、命令のくわしい形とできる事の全部は docs/run.md へ字のまま
+移した。README に残るのは、確かめた事の 2 行（型紙を 1 枚だけ出す・考えを話すと作り直す。統括の決め 11-08「字のまま」）と、全部の検査の命令の行
 """
 import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-text = (ROOT / "README.md").read_text(encoding="utf-8")
-lines = text.splitlines()
+readme = (ROOT / "README.md").read_text(encoding="utf-8")
+run = (ROOT / "docs/run.md").read_text(encoding="utf-8")
 
 # 行ごと入れ替えた所（9・10・13・14・15）
 LINES = (
@@ -33,10 +35,15 @@ OLD = (
     "比べたくなった時に一覧を見る。",
 )
 
-for ln in LINES:
-    assert lines.count(ln) == 1, ("本人が採った字の行が 1 回ずつある", ln[:40], lines.count(ln))
-for s in SENTENCES:
-    assert text.count(s) == 1, ("本人が採った字の文が 1 回ずつある", s[:40], text.count(s))
-for o in OLD:
-    assert o not in text, ("前の字が残っている", o[:40])
-print(f"ok README の {len(LINES) + len(SENTENCES)} か所は本人が確かめた字")
+# どの字がどちらのファイルにあるか（README に残す 3 行と、docs/run.md へ移した 2 行と 2 文）
+IN_README = LINES[:3]
+IN_RUN = LINES[3:]
+for name, text, want_lines, want_sents in (("README.md", readme, IN_README, ()), ("docs/run.md", run, IN_RUN, SENTENCES)):
+    lines = text.splitlines()
+    for ln in want_lines:
+        assert lines.count(ln) == 1, ("本人が採った字の行が 1 回ずつある", name, ln[:40], lines.count(ln))
+    for x in want_sents:
+        assert text.count(x) == 1, ("本人が採った字の文が 1 回ずつある", name, x[:40], text.count(x))
+    for o in OLD:
+        assert o not in text, ("前の字が残っている", name, o[:40])
+print(f"ok README と docs/run.md の {len(LINES) + len(SENTENCES)} か所は本人が確かめた字")

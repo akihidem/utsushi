@@ -5,7 +5,7 @@
 2. 作った人の言葉の節の 1 つ目が思いの核の引用で、その後に 2 文が順に続き、前からの引用（WORDS）はその後
 3. なぜ紙の型紙なのか の 4 文と、AI がしている事 の 2 文が、それぞれの節の中に順に出る。その間に学びの輪の段（見出しなし・本人の言葉 11-07 夕）が 1 回
 4. 頁の見出しは「うつし」のまま。「あなたにしかない深さ」の字を出さない（窓口の決め）。頭の道の並びの後・CONCEPT の前に大前提の 3 段（本人の言葉 11-07 夜「入れる」）
-5. README の頭の後の最初の節（うつしと paper to toy）に、思いの核の引用・その後の 2 文・なぜ紙の型紙なのか の 2 文（3D プリンタと比べる文と、型紙が直る文）
+5. README の「作る気持ち」の節に思いの核の引用、「何の課題か」の節の小見出し「なぜ紙の型紙か」に、なぜ紙の型紙なのか の 2 文（3D プリンタと比べる文と、型紙が直る文）
 """
 import html
 import os
@@ -67,21 +67,23 @@ for k in ("tenji", "zine"):
     assert "<h1>うつし</h1>" in h, k
     assert "あなたにしかない深さ" not in h, k
 
-# 5. README の「作る気持ち」と「なぜ紙の型紙か」の節（本人の言葉 11-08「うつしのリードミー、エンジンが合流してぐちゃぐちゃ…優勝できる形にしよう」で、
-# 前の「うつしと paper to toy」の節は README から外し、エンジンの話は engine/README.md へつなぐ。思いの核は「作る気持ち」の節（standing-decisions 164 行の言葉だけ）、
-# なぜ紙の 2 文は「なぜ紙の型紙か」の節に、序の頁と同じ字で置く。核の後の 2 文は README には置かない（作る気持ちの節は 164 行の言葉だけの決め・統括 11-08）
+# 5. README の「作る気持ち」の節と「なぜ紙の型紙か」の小見出し（README の組み直し 11-08: 本人の言葉「今読んだら、表が読みにくい、全体的に構造化できていない…
+# 審査員と審査用の AI が読んでわかりやすく優勝できるものにする」から、骨組みを 一言・要約 → 試す → 課題 → 仕組み → Claude → 確かめた事 → 作る気持ち → 地図 → エンジン
+# にした）。思いの核は「作る気持ち」の節（standing-decisions 164 行の言葉。言った人の呼び方は欄 3 と同じ「制作者」）、なぜ紙の 2 文は「何の課題か」の節の中の
+# 小見出し「なぜ紙の型紙か」に、序の頁と同じ字で置く。核の後の 2 文は README には置かない（作る気持ちの節は 164 行と 16 行の言葉の決め・統括 11-08）
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
 
 def section(head):
     a = readme.index(head + "\n")
-    return readme[a:readme.index("\n## ", a + 3)]
+    nxt = [i for i in (readme.find("\n## ", a + 3), readme.find("\n### ", a + 3)) if i >= 0]
+    return readme[a:min(nxt) if nxt else None]
 
 
-feel, kami = section("## 作る気持ち"), section("## なぜ紙の型紙か")
-assert f"> {about.CORE}（本人の言葉 11-07）" in feel, "README の思いの核"
+feel, kami = section("## 作る気持ち"), section("### なぜ紙の型紙か")
+assert f"> {about.CORE}（制作者の言葉 11-07）" in feel, "README の思いの核"
 assert about.README_KAMI == (about.KAMI[1], about.KAMI[3])
 assert f"{about.KAMI_HEAD}: " + "".join(about.README_KAMI) in kami, "README のなぜ紙の 2 文"
-assert readme.index("## 作る気持ち") < readme.index("## なぜ紙の型紙か") < readme.index("## 型紙を作るエンジン"), "README の並び"
+assert readme.index("## 何の課題か・誰のためか") < readme.index("### なぜ紙の型紙か") < readme.index("## 仕組み") < readme.index("## 作る気持ち") < readme.index("## 型紙を作るエンジン"), "README の並び"
 assert f"## {about.ENGINE_HEAD}" not in readme and "あなたにしかない深さ" not in readme
-print("ok このサイトについて の頁（節の並び・思いの核と 2 文・なぜ紙の 4 文・AI の 2 文・見出しはうつし・README の頭の後の節）")
+print("ok このサイトについて の頁（節の並び・思いの核と 2 文・なぜ紙の 4 文・AI の 2 文・見出しはうつし・README の作る気持ちとなぜ紙）")
