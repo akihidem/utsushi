@@ -1413,6 +1413,11 @@ class Handler(BaseHTTPRequestHandler):
         if talk_log.blocked(question or ""):
             return making_log.ASK_NAME_VOICE, "floor"
         try:
+            # 合言葉なしの公開の場では、鍵の有り無しに関わらず Claude を呼ばない（安全の事項 5 への対応）。前は立てる時の鍵の確かめだけで、
+            # 立てた後に鍵が置かれると、この口（/ask・/ask-json）から呼べた。返す字は鍵が無い時と同じなので、頁の見た目と挙動は替わらない
+            # 合言葉の場は前と同じ呼び方のまま（引数を足すのは公開の場だけ）
+            if getattr(self.server, "public_open", False):
+                return ask.answer(sid, hid, question, allow_ai=False)
             return ask.answer(sid, hid, question)
         except Exception as e:
             failure_log.claude_failed("ask", "POST", self.path, e, private=(question,))

@@ -109,8 +109,9 @@ def leaks(answer, h):
     return any(x and x in answer for x in (h.get("name"), h.get("how_it_moves"), "仮説"))
 
 
-def answer(source_id, hypothesis_id, question, client=None):
+def answer(source_id, hypothesis_id, question, client=None, allow_ai=True):
     """Returns (答えの文, どこから: "glossary"|"ai"|"refuse"|"no_key")。聞かれた時だけ呼ぶ。この関数は何も残さない。
+    allow_ai=False は、鍵の有り無しに関わらず Claude を呼ばない（合言葉なしの公開の場・安全の事項 5 への対応）。返す字と形は鍵が無い時と同じ。
     質問の文を残すのは呼び手（play_server が omochae.making_log に、連絡先の形を落として残す。本人の決定 11-05、J-027）。"""
     question = (question or "").strip()[:MAX_QUESTION]
     if not question:
@@ -121,6 +122,10 @@ def answer(source_id, hypothesis_id, question, client=None):
     if asks_term(question) and fan:
         return glossary(question), "glossary"
     context, h = sheet_context(source_id, hypothesis_id)
+    if not allow_ai:
+        # 公開の場では、立てた後に鍵が置かれても呼ばない（立てる時の鍵の確かめだけに頼らない）。字は鍵が無い時と同じにして、頁の見た目と挙動を替えない
+        known = glossary(question) if fan else None
+        return f"{known} {NO_KEY}" if known else NO_KEY, "no_key"
     if client is None:
         from .agent import default_client
 
