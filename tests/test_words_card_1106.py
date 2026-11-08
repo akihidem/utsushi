@@ -87,7 +87,8 @@ assert "<h2>考えを話す</h2>" in think and 'class="hanasu-head"' not in thin
 # 3. 話す箱の断り
 assert hanasu.HOW_BROWSER == "「話す」を押すと、ブラウザ（ネットを見るアプリ）が声を字にします。そのとき、声がブラウザの会社に送られることがあります。"
 told = think.split('<p class="meta">', 1)[1].split("</p>", 1)[0]
-assert "そのとき、声がブラウザの会社に送られることがあります。</span>" in told and told.count("話した声は、このサイトに送りません。") == 1, told  # 11-08: 断りの字を、上げた動画の声を字にする形に合わせた案に替えた
+# 11-08: 断りの字を、押して話した間の声を録って承認の時に送る形（本人 415・「公開デモでも声も録る。」）に替えた。前の「話した声は、このサイトに送りません。」は本当でなくなったので出さない
+assert "そのとき、声がブラウザの会社に送られることがあります。</span>" in told and told.count("押して話した間の声を録り、のこすで承認した時に受け取ります。") == 1 and "このサイトに送りません" not in told, told
 
 # 4. 名前のような言葉を断った時の返事
 code, _, body = post(f"/toy/{G}/talk", {"scene": "think", "hypothesis": hypotheses.sheet_of(G)["id"], "text": "電話は 090-1234-5678 です"})

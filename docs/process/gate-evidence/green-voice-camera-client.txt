@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_clips_client.py
+# commit: 8eb08662（回した時の HEAD）
+ok: 声とカメラの区切りは押した時だけ録り、端末の中に置き、のこすの承認で送る（区切りの種類と手がかりの見出しつき）
+rc=0
