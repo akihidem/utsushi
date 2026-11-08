@@ -83,7 +83,7 @@ class Page(html.parser.HTMLParser):
             on = c["attrs"].get("data-on")
             if on is not None and scene not in on.split():
                 return False
-            if "hidden" in c["attrs"] and c["attrs"].get("id") not in ("mic",):
+            if "hidden" in c["attrs"]:
                 return False
         return True
 
@@ -105,7 +105,7 @@ class Page(html.parser.HTMLParser):
     def shown_targets(self, scene):
         # 字を持たない形だけの押す所（マイク・閉じる印・原画と歌の小さな原画）は、押す所の名前に数えない。字を持たない事は下で見る。
         # 重ねる頁への印（上の帯・字は口の名）も今は数えない: 数えると手順の画面が 4 つになる（統括へ問い中・本人の答え 11-08 の字を足す件）
-        return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("mic", "close", "genga-thumb", "kasane-go")]
+        return [c for c in self.targets if self._shown(c, scene) and c["attrs"].get("id") not in ("close", "genga-thumb", "kasane-go")]
 
     def shown_blocks(self, scene):
         return [c for c in self.blocks if self._shown(c, scene) and c["text"].strip()]
@@ -180,7 +180,7 @@ assert f'/picture/{G}/page' in dlg and "<a " not in dlg, "窓に頁の全体の�
 if genga._songs(src_g)[0]:
     assert 'class="genga-songs"' in dlg, "確かめた歌のある玩具は、窓に歌も出す"
 assert "gDlg.showModal()" in techo_step.SCRIPT and "gDlg.close()" in techo_step.SCRIPT, "頁の中で重ねる（頁を離れない）"
-# 「のこす」の画面: 声と動画が主で、字は畳んだ追加（本人の方針 19:45、#335）。押す所は とって・畳み（字なしの形）・のこす
+# 「のこす」の画面: 動画が主で、字は畳んだ追加（本人の方針 19:45、#335。前は声も主だったが、11-08 にマイクを外した）。押す所は とって・畳み（字なしの形）・のこす
 assert sorted(c["text"].strip() for c in doc.shown_targets("end")) == sorted(["とって", "", "のこす"])
 fold = page.split('<details class="fold" id="fold">', 1)[1].split("</details>", 1)[0]
 assert '<textarea id="kufu"' in fold and "<summary" in fold and '<details class="fold" id="fold" open' not in page, "字の欄は畳んだ追加として残る"
@@ -221,7 +221,7 @@ assert 'id="koma"' not in p3 and '<main class="te te-text"' in p3 and p3.index('
 assert len([c for c in read(p3).shown_targets("step")]) == 3, "文だけの玩具も押す所は 3 つ"
 # ---- 押す所は 64px 以上、「つぎ」と「はじめる」は 96px 以上
 assert re.search(r"\.key\{[^}]*min-height:64px", techo_step.STYLE) and re.search(r"\.key\.go\{[^}]*min-height:96px", techo_step.STYLE)
-for sel in (r"\.mic\{", r"\.close\{", r"\.tile\{"):
+for sel in (r"\.close\{", r"\.tile\{"):
     assert re.search(sel + r"[^}]*(min-)?(width|height):(6[4-9]|[7-9]\d|\d{3,})px", techo_step.STYLE), sel
 assert 'id="close"' in page
 
@@ -247,66 +247,40 @@ assert "button,input,textarea,select{font-family:inherit}" in techo_step.STYLE
 for tpl in TEMPLATES.values():
     assert tpl.SHEET_SET not in page, tpl.SHEET_SET
 
-# ---- 頁の骨: 帯なし（字を減らす）。マイクは 1 つ。録る口を持たない
+# ---- 頁の骨: 帯なし（字を減らす）。マイクは無い（11-08 に音声認識を外した）。録る口を持たない
 assert '<nav class="nav"' not in page and skin.TAP_FLOOR in page, "帯なし。指の床は届く"
-assert page.count('id="mic"') == 1 and "hanasu-mic" not in page, "マイクは 1 頁に 1 つ"
+assert 'id="mic"' not in page and "hanasu-mic" not in page and "hanasu-rec" not in page, "マイクも録る釦も無い（手帖の作る頁は録らない）"
 for word in ("getUserMedia", "MediaRecorder", "getDisplayMedia", "toDataURL", "drawImage", "captureStream"):
     assert word not in page, word
 
-# ---- 声の決まり: 全体が一致した時だけ操作。ほかは質問。操作の字は送らない
-W = techo_step.WORDS
-for said, op in (("つぎ", "next"), ("次", "next"), ("できた", "next"), ("もどる", "back"), ("戻る", "back"), ("もう一回", "again"), ("もういっかい", "again"),
-                 ("とって", "photo"), ("撮って", "photo"), ("のこす", "keep"), ("残す", "keep"), ("こまった", "stuck"), ("困った", "stuck")):
-    assert W.get(said) == op, said
-for said in ("次の手順ってどうやるの", "つぎはどうするの", "戻るってどういうこと", "もう一回やりたいんだけど"):
-    assert techo_step.clean(said) not in W, said
+# ---- 声は聞かない（本人 11-08「クロードの音声認識をはずして、ユーザーの端末の音声入力に頼るのでいいのではないか。」・設計は grove の
+# state/no-speech-recognition-20261108.md の 2 版）。前の声の決まり（操作の言葉の全部が一致した時だけ・「こまった」の後の 1 つの問い・
+# 最後の画面でマイクを押した後の工夫・切り替え OMOCHAE_VOICE）は、音声認識と一緒に外した。問いと工夫は字の欄、操作は押す所だけ
 js = techo_step.SCRIPT
-assert "WORDS[clean(t)]" in js, "声は全部が一致した時だけ操作にする"
-assert js.index("WORDS[clean(t)]") < js.index("ask(t)"), "操作の字は質問に送らない"
-assert "includes(" not in js.split("const heard")[1].split("};")[0] and "indexOf(" not in js.split("const heard")[1].split("};")[0], "部分一致で進めない"
-# 聞き続けるのは操作の言葉だけ（本人の決定 11-06・案 2）。問いは「こまった」の後の 1 つ、工夫は最後の画面でマイクを押した後だけ（歩いて見るのは tests/test_voice_walk.py）
-assert "if (s === 'henji' && armed) { armed = false; q.value = t; ask(t); return; }" in js and "if (s === 'end' && talking) {" in js
-assert js.count("ask(t)") == 1 and js.count("q.value = t") == 1, "聞いた字を問いにする所は 1 か所だけ"
-# 結果の札も声で選べる（字は値のまま残す）。どの雛形の値にも言い方がある
-for tpl in TEMPLATES.values():
-    for r in tpl.RESULTS:
-        assert r in techo_step.RESULT_WORDS.values(), r
-        assert techo_step.RESULT_WORDS[r] == r
-# 読み上げの間は聞かない。「もう一回」は今の手順の文を読む
-assert "if (speaking) return" in js and "sayStart" in js and "sayEnd" in js
-# ---- 声を字にする所は #308 の切り替えのまま（本人の決定待ち。どちらにも切り替えられる形を保つ）
-same = "typeof REC.available==='function'&&'processLocally' in REC.prototype"
-assert same in hanasu.SCRIPT and same in js, "端末の中で字にできるかの見分けは話す口と同じ"
-assert "processLocally = true" in js and "REC.install" in js
-# 聞くと頁ごと落ちる画面がある。全員が押す釦なので、聞く前に印を置き、開き直した時は端末の中の口を使わない（同じ所で止まり続けない）
-assert js.index("mem(true)") < js.index("REC.available({") and "if (how === 'local' && mem()) how = want === 'browser' ? 'browser' : 'none';" in js
-assert js.index("to(n > total ? 'end' : 'step'); wake();") > 0, "聞く前に手順の画面へ移る（返事が来なくても手順は進める）"
-assert hanasu.DEFAULT_MODE == "browser"
-assert f'data-voice="{hanasu.mode()}"' in page
-keep = os.environ.get("OMOCHAE_VOICE")
-for mode in hanasu.MODES:
-    os.environ["OMOCHAE_VOICE"] = mode
-    assert f'data-voice="{mode}"' in req(f"/toy/{G}/techo")[1], mode
-os.environ.pop("OMOCHAE_VOICE") if keep is None else os.environ.update(OMOCHAE_VOICE=keep)
-# 「声が使えない画面」: 口が無い時はマイクを隠し、ボタンだけで通る
-assert "mic.hidden = false" in js or "mic.hidden=false" in js
-assert '<button type="button" class="mic" id="mic"' in page and "hidden" in page.split('id="mic"')[1].split(">")[0]
+for word in ("SpeechRecognition", "processLocally", "REC.install", "WORDS", "RESULT_WORDS", "armed", "talking", "listening", "wake(", "data-voice", "want"):
+    assert word not in js and word not in page, word
+for name in ("WORDS", "RESULT_WORDS", "INSTALL", "MIC", "clean"):
+    assert not hasattr(techo_step, name), name
+assert js.count("ask(") == 1 and "ask(q.value.trim())" in js, "問いを送るのは、字の欄の送りの 1 か所だけ"
+# 答えの読み上げは残す（音声認識とは別の物）。読み上げの間に聞くのを止める作りは外した
+assert "speechSynthesis.speak(u)" in js and "sayStart" not in js and "sayEnd" not in js
+assert js.index("to(n > total ? 'end' : 'step');") > 0, "はじめるで手順の画面へ移る"
+assert "via: 'text'" in js and "'voice'" not in js, "工夫の字は欄に書いた字（端末のキーボードのマイクで入れた字も同じ）"
 
 # ---- 断りの文: 採られた文のまま。新しい文は本人の確認までマージしない（本人の指示 11-05）
 assert hanasu.UPLOAD_NOTICE in page and f'<p class="meta" id="up-notice">{hanasu.UPLOAD_NOTICE}</p>' in page
 assert making_log.ASK_NOTICE not in page, "手帖は ③ の頁なので、聞く口の断りの文は使わない（本人の決定 11-05、#275）"
 assert making_log.ASK_NAME_VOICE in page
 assert hanasu.NOTICE in page
-# 声がどこへ行くかは、マイクが起きる前（はじめるの画面）に言う
-note = page.split('id="start-note"', 1)[1].split("</p>", 1)[0]
-assert hanasu.HOW_LOCAL in note and hanasu.HOW_BROWSER in note and making_log.ASK_NAME_VOICE in note
+# 前の「声がどこへ行くか」の断り（はじめるの画面の start-note）は、声を聞かなくなったので外した
+assert 'id="start-note"' not in page and "「話す」を押すと" not in page
 
 # ---- 写真の決まりは前のまま: 手元だけの確かめ・数と大きさの決まり・内側のカメラを求めない
 form = page.split('<form id="up-form"', 1)[1].split("</form>", 1)[0]
 assert "大人の手元だけ・顔なし</label>" in form and "声なし" not in form and "3 つまで・1 つ 20MB まで" in form and 'data-max-n="3"' in form
 assert 'capture="environment"' in form and "video/mp4" in form, "とっては外のカメラ（顔を写さない）。動画が撮れる"
-# 聞いた字は畳みを開いて見せる（字は本人が見てから残す。隠したまま送らない）。床に落ちた時も開く
-assert js.count("fold.open = true") == 2
+# 床に落ちた時は畳みを開いて字を見せる（前は聞いた字が入った時も開いた。声を聞かなくなったので 1 か所）
+assert js.count("fold.open = true") == 1
 assert 'id="picked"' in form and 'id="thumbs"' in form
 # 確かめの欄は写真を選んだ時に出る。押さないと送らない
 assert "ok.checked" in js
@@ -391,8 +365,8 @@ for ev in ("next", "back", "stuck", "done", "start"):
     assert f"'{ev}'" in js, ev
 
 # ---- 残す: 記録の値だけで残り、話した工夫がその記録に入る。話した字は記録の頁に出さない（本人の決定 11-06、J-034）。床に当たる字は残らない
-assert req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": 1, "step": total, "text": "電話は090-1234-5678", "via": "voice", "who": who, "json": "1"})[0] == 422
-code, body = req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": 1, "step": total, "text": "紙を二重にした", "via": "voice", "who": who, "json": "1"})
+assert req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": 1, "step": total, "text": "電話は090-1234-5678", "via": "text", "who": who, "json": "1"})[0] == 422
+code, body = req(f"/toy/{G}/talk", {"scene": "craft", "hypothesis": GS, "sheet_version": 1, "step": total, "text": "紙を二重にした", "via": "text", "who": who, "json": "1"})
 assert code == 200 and json.loads(body)["kept"]
 # 字を打たなくても残せる（本人の方針 19:45）。字の無い記録も、結果の札だけで残る
 code, body = req(f"/toy/{G}/record-json", {"hypothesis": GS, "result": "動いた", "sheet_version": 1, "who": "nowords0000"})
@@ -406,7 +380,7 @@ assert "紙を二重にした" not in listed and [t["text"] for t in talk_log.ku
 # 記録の頁は順路の帯を持ち、試した後の紙・説明・AI の順の札がここにある
 # 試した後の紙は 11-06 から刷らないので、札に道を出さない（説明・AI の順の札はここにある）
 assert '<nav class="nav"' in listed and "試した後の紙" not in listed and 'name="back" value="techo"' in listed
-assert listed.count("<script>(()=>{\nconst REC=") == 1
+assert listed.count("<script>(()=>{\nconst M={norec:") == 1
 for tpl in TEMPLATES.values():
     assert tpl.SHEET_SET not in listed, ("記録の頁に内部の番号", tpl.SHEET_SET)
 assert talk_log.kufu(G, j["id"], shared_only=True)[0]["text"] == "紙を二重にした"

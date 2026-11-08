@@ -78,14 +78,9 @@ for tid, sids in SOURCES.items():
         for w in getattr(tpl, "OLD_RESULTS", {}):
             assert mark.format(w) not in page, (sid, w)
 
-# 3b. 声で選ぶ札: どの言い方も今の札のどれかに着く。前の札を言っても、前の札のまま送らず今の札に読み替える
-# （前の札は記録を読むために受け付けに残るので、声の道で前の札が新しく残るのを、ここで止める）
-NOW = {w for tpl in TEMPLATES.values() for w in tpl.RESULTS}
-assert set(techo_step.RESULT_WORDS.values()) <= NOW, set(techo_step.RESULT_WORDS.values()) - NOW
-for tpl in TEMPLATES.values():
-    for o, n in getattr(tpl, "OLD_RESULTS", {}).items():
-        assert techo_step.RESULT_WORDS[o] == n, (o, n)
-assert techo_step.RESULT_WORDS["たおれた"] == "立たない" and techo_step.RESULT_WORDS["すこしうごいた"] == "動いた"
+# 3b. 声で選ぶ札（前の techo_step.RESULT_WORDS）は、11-08 に手帖の作る頁の音声認識と一緒に外した（本人「クロードの音声認識をはずして、
+# ユーザーの端末の音声入力に頼るのでいいのではないか。」）。札は押して選ぶだけで、送る値は札の value（上の 3 の照らし）。前の札は頁に出ない
+assert not hasattr(techo_step, "RESULT_WORDS")
 
 # 3c. 動画の報告: どの雛形も、打ち消しの札（2 つ目）が「動かなかった」として渡る。3 つ目の「わからない」は渡さない（None）
 for tid, tpl in TEMPLATES.items():

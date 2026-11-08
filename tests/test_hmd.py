@@ -249,8 +249,10 @@ else:
             assert st["label"] and not st["label"]["cut"] and not st["label"]["iconOut"] and st["label"]["px"] >= 12, ("印の字が読める大きさで切れず、印の高さに収まる", f)
             # 帯は 1 行のまま: 上の帯の印（マイク・閉じる・原画の小さな絵・この印）の上の端がそろい、この印は帯の一番高い印（マイク 72px）より下へ出ない
             assert len({t for t, _ in st["bar"]}) == 1 and k[3] <= max(b for _, b in st["bar"]), ("帯が 2 行にならない", f)
-            # マイクとの間は 8px 以上（統括の気づき 11-08: 4px は指で押し違えやすい）。マイクは帯の左の端の印
-            assert k[0] - st["others"][0][2] >= 8, ("マイクと印の間が 8px 以上", f)
+            # 左隣の印との間は 8px 以上（統括の気づき 11-08: 4px は指で押し違えやすい）。前は帯の左の端の印がマイクだった。手帖の作る頁のマイクを
+            # 外した後（音声認識を外す PR・11-08）は、印の左に帯の印が無い（印の置き場は替えていない）。左隣がある時だけ測る
+            left = [o for o in st["others"] if o[2] <= k[0]]
+            assert not left or k[0] - max(o[2] for o in left) >= 8, ("左隣の印と印の間が 8px 以上", f)
         if not en:
             assert st["keysBottom"] <= f["h"], ("手順の画面の押す所が最初の画面に入る", f)
     print("英語の頁の最初の画面（数だけ）:", "・".join(en_start))
