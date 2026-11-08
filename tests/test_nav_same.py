@@ -26,7 +26,7 @@ records.add({"source_id": G, "hypothesis_id": GS, "sheet_version": 1, "result": 
 # 入口は えらぶ の駅（本人のサイト体験レビュー 11-07 の 4「入口と選ぶは分けない」）。/toys は入口へ送られ、同じ印になる
 PAGES = {"/": "えらぶ", "/about": "よむ", "/toys": "えらぶ", f"/toy/{G}": "つくる", f"/toy/{G}/techo/kiroku": "のこす", "/gallery": "もちよる",
          f"/zukan/{G}/yomi": "よむ", "/loop": None, f"/loop/{G}": None}
-ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "やさしい", "English"]  # やさしい と English は右の端の言語の切り替え（窓口の決定 11-06・やさしい は 11-07 夜）
+ITEMS = ["うつし", "えらぶ", "つくる", "のこす", "もちよる", "よむ", "やさしい日本語", "English"]  # やさしい と English は右の端の言語の切り替え（窓口の決定 11-06・やさしい は 11-07 夜）
 printed = False
 for look in ("tenji", "zine"):
     server = serve(0, look=look)

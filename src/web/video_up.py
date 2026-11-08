@@ -144,8 +144,10 @@ def slips():
 
 def sweep():
     """送りかけで止まった古い小分けと、終わった受付の残りを消す。待っている受付の物には触らない。
-    字にできないまま 72 時間を過ぎた声も消す（omochae.voice_text.sweep・本人の決め 11-08。道具の無い機械でも回す）。"""
+    字にできないまま 72 時間を過ぎた声も消す（omochae.voice_text.sweep・本人の決め 11-08。道具の無い機械でも回す）。
+    同じ置き場のカメラの区切りも、読めないまま 72 時間を過ぎた物を消す（voice_text.sweep_clips。このサーバだけが立っている時にも残さないため）。"""
     voice_text.sweep()
+    voice_text.sweep_clips()
     open_slips = {s["id"] for s in slips() if s["state"] not in FINAL}
     for d in (folder() / "tmp").iterdir():
         if not d.is_dir():
