@@ -20,7 +20,7 @@ ID = "pivot_counterweight"
 HYP_KEY = "mount"
 # tora-v5 と tora-v6 は刷らずに飛ばした（v5 は統括の読み 11-06。v6 は当たり 2 つを v7 で直したので、窓口の決定 2026-11-07 で飛ばした。
 # どちらもサイトでは誰にも刷っていない）
-SHEET_SET = "tora-v7"
+SHEET_SET = "tora-v8"
 # 控えを残す前の組（凍結の床）。slider_fan.FROZEN_SET と同じ意味。前の字（凡例・印の文・手順）で刷る最初の組
 FROZEN_SET = "tora-v3"
 # 紙を控えに残す前の組の並び（古い順。compose.kept_sets）。次の組に上げる時は、今の組をこの並びの後ろに足す（前の組の紙は変えない）

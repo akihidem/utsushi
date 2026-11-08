@@ -15,7 +15,7 @@ HYP_KEY = "push_part"
 # 次の組は goraigo-v14（v11・v12・v13 は誰にも刷らずに飛ばした。本人の決定 2026-11-06: 内筒を下から押し上げる形 rise・実物の写真と照らした直し。
 # 型紙エンジン paper-to-toy の #117 13479c0・#122 5edeb49・#127 54952de・#132 de4c584 と同じ形と字）。v11 はつまみと開く糸・筒を外す形 lift の版、
 # v12 は rise の 1 本目の版、v13 は割り箸の形の版（扇は v14 の半分。サイトでは刷っていない）
-SHEET_SET = "goraigo-v14"
+SHEET_SET = "goraigo-v15"
 # 控えを残す前の組（凍結の床。本人の指示「今の版の紙と指紋は変えない」）。SHEET_SET をこの名に置くと、前の組の紙を組む（tests/test_floor_pin.py）。
 FROZEN_SET = "goraigo-v10"
 
@@ -46,6 +46,10 @@ DEFAULTS = {
     "knob_width": 4,
     # 0.15mm はふつうの厚めの紙の見込み。実物の紙を測ったら置き換える。
     "paper_thickness": 0.15,
+    # 内筒を下から押し上げる形（rise）で、割り箸を内筒に留める物。tape はセロハンテープ（v14 まで）、glue は木工用ボンド。
+    # 材料の前提（2026-11-07 の設計の条件。テープは樹脂の側、接着剤は使ってよい）による、テープを使わない版（v15）が glue を使う。
+    # 型紙エンジンの commit 90c4ba0 と同じ作り。既定は tape のまま（凍結の場面と、前の組 v14 の紙を変えないため）。今の組の値は仮説の JSON の params_by_set
+    "stick_fix": "tape",
 }
 RANGES = {
     "tube_side": (20, 50), "tube_height": (50, 130), "tube_glue": (5, 12),
@@ -90,6 +94,7 @@ CHOPSTICK_GAP = 1  # 台の糊代（内筒の上の口の内に貼る）の下�
 CRADLE_FLAP = 8  # 受けの左右の面の高さ mm。扇の両端の板の下の端からこの高さまでを貼る
 CRADLE_ROOM = 0.8  # 受けの底の奥行きの、畳んだ扇の厚さに足す余り mm
 HUBS = ("axle", "rim")
+STICK_FIXES = ("tape", "glue")  # 割り箸を内筒に留める物（DEFAULTS の stick_fix）
 # 開く糸を扇の中心からこの距離につなぐ。途中で突っ張らない糸が一番短く、よく開く位置（research/08）。
 # 低い扇では穴が紙の外に出る（F5.hole で落とす）が、半径を折りの高さに合わせて縮めない。黙って変えると糸の長さの計算と食い違うため。
 THREAD_RADIUS = 35
@@ -117,6 +122,9 @@ def check_range(p):
         elif k == "hub":
             if v not in HUBS:
                 out.append(Failure("F5.range", k, f"{v} は {HUBS} のどれでもない"))
+        elif k == "stick_fix":
+            if v not in STICK_FIXES:
+                out.append(Failure("F5.range", k, f"{v!r} は {STICK_FIXES} のどれでもない（割り箸を留める物）"))
         elif k not in RANGES:
             out.append(Failure("F5.range", k, "知らない寸法の名前"))
         elif not isinstance(v, (int, float)) or isinstance(v, bool) or not RANGES[k][0] <= v <= RANGES[k][1]:
@@ -658,8 +666,9 @@ def materials(p):
     if not frozen() and _axle(p) and not any("竹串" in r["material"] for r in rows):
         tools += "、竹串（穴あけ）"
     if p["push_part"] == RISE:
-        # 割り箸は木で糊が付きにくいので、内筒にはセロハンテープで留める（組み方の文と同じ。エンジンと同じ字）
-        tools += "、セロハンテープ（割り箸を留める）"
+        # 割り箸は木で、でんぷんのりが付きにくいので、内筒にはセロハンテープで留める（v14 まで）。テープを使わない版（stick_fix が glue）は、
+        # 木にも付く木工用ボンドで貼る（材料の前提で接着剤は使ってよい）。組み方の文と同じ。エンジンと同じ字
+        tools += "、セロハンテープ（割り箸を留める）" if p.get("stick_fix", "tape") == "tape" else "、木工用ボンド（割り箸を貼る）"
     lines = [f"{rows[0]['material']}を 1 枚（全部品を同じ紙に刷る）", tools]
     # 6 番は紙でない棒（竹串・割り箸）の行。内筒を下から押し上げる形の 6 受けは紙の部品で、1 枚目の紙の行に入るので書かない
     lines += [f"{r['material']} {r['qty']} 本" for r in rows if r["number"] == 6 and r["key"] != "cradle"]
@@ -731,7 +740,9 @@ def steps(p):
                 "1 外筒を、色の境で 4 回山折りする",
                 "1 外筒の糊代を、反対の端の面の裏に貼って角筒にする",
                 "2 内筒を、破線で 4 回谷折りして、平らに戻す（まだ貼らない）",
-                "割り箸を、2 内筒の刷った面の点の線の長方形に沿って置き、上の端を長方形の上の端にそろえて、セロハンテープで 2〜3 か所留める（下の端は内筒の下へ出す）",
+                ("割り箸を、2 内筒の刷った面の点の線の長方形に沿って置き、上の端を長方形の上の端にそろえて、セロハンテープで 2〜3 か所留める（下の端は内筒の下へ出す）"
+                 if p.get("stick_fix", "tape") == "tape" else
+                 "割り箸を、2 内筒の刷った面の点の線の長方形に沿って置き、上の端を長方形の上の端にそろえて、木工用ボンドで貼る（下の端は内筒の下へ出す。乾くまで押さえる）"),
                 "2 内筒の糊代を、反対の端の面に貼って角筒にする（割り箸は筒の内に入る）",
                 "3 台の 4 つの糊代を、山折りの線で下へ折る",
                 "3 台を、印のある上の面を上にして 2 内筒の上の口に差し込み、糊代を内筒の内の面に貼る（蓋をする）",
