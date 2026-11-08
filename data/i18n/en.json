@@ -801,6 +801,7 @@
   "で、型紙の作りそのもの（雛形）の直しは型紙エンジンの側が受け持ちます": ", and fixes to how the template itself is built (the base form) are handled by the template engine",
   "できあがり": "Finished",
   "できたの札: {0} 回": "“Done” tag: {0} times",
+  "どう工夫したかあとで教えてください。写真や動画でもいいです。": "Tell us later what you changed. Photos or videos are fine too.",
   "できたら、のこそう": "When you’re done, save a record",
   "できました": "=",
   "です。型紙の作りそのものは、作る側が直します": ". The site team fixes how the template itself is built",
