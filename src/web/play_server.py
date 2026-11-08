@@ -230,13 +230,15 @@ MEDIA_LIMIT = 60
 # カメラは絵の型だけを受ける。組に無い物は 422（名乗った型と中身の頭のバイトが合うかは voice_text が見る）
 CLIP_TYPES = {("t", "audio/webm"): "webm", ("t", "audio/mp4"): "mp4", ("k", "video/webm"): "webm", ("k", "video/mp4"): "mp4"}
 # しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
+# 話した考えから紙を作る口（think-sheet・think-ok）も入れる。Claude を呼ぶ口と、紙を刷る口なのに、前は数の上限が無かった（設計 2 版の 4 節・別の目の止め 2）
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
 # 機械の重さは全体の同時の数（PRINT_SLOTS）の方で守るので、相手ごとの数は、1 つの相手が空きを独り占めしない程度でよい。
 PRINT_LIMIT = 30
-PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint)|/en/toy/{SID}/print")
+# 型紙としおりを一緒に返す道（sheet-shiori）も刷る道として数える（しおりの頁を描いて合わせる重さがある・設計 2.1 版）
+PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint|sheet-shiori)|/en/toy/{SID}/print")
 # 全体: 同時に刷るのは 2 本まで。番地を替えて送られても、描画の処理が機械を埋めないため。空きは少し待ち、待っても空かなければ断る。
 PRINT_SLOTS, PRINT_WAIT = 2, 20.0
 _print_slots = threading.BoundedSemaphore(PRINT_SLOTS)
@@ -293,6 +295,9 @@ def kumitate_steps(sid):
 # 頼まれた仮説が無い時の断り（刷る・記録を残す・考えを話す）。前は「仮説 {hid} は無い」で、内部の番号（H-A など）をそのまま出していた。
 # 印（A・C）と番号を学ぶ人に出さない決め（本人の答え 11-08「そろえる。」）に外れるので、統括の決め（11-08）の向きの字にした。新しい字は本人の確かめ待ち
 NO_HYPOTHESIS = "その仮説は見つかりません。頁を開き直してください。"
+# 押し方の違う紙の記録から次の版を作ろうとした時の断り（loop.next_target が None）。前は「次の版はたたき台（H-C）にだけ足す」で、
+# たたき台の内部の番号を出していた（別の目の気づき・統括の決め 11-08）。新しい字は本人の確かめ待ち
+NEXT_SHEET_ONLY = "次の版は、今のたたき台の型紙にだけ足せます。"
 
 
 def writer(peer, headers):
@@ -331,6 +336,7 @@ class WriteLimit:
 
 
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
+SHIORI_PENDING = "utsushi_sp"  # 型紙と一緒に刷ったしおりの待ちの印（記録に結ぶ前・omochae.shiori の pending）
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
@@ -385,6 +391,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(k, v)
         self.end_headers()
         self.wfile.write(data)
+
+    def _say(self, text):
+        """台本へ JSON で返す字を、頁の言葉に合わせる。頁（HTML）は出口で表を引いて替わるが、JSON は出口の替えを通らない。
+        英語は訳の表の英語、やさしい日本語はルビの印を外した字（台本が字の箱に入れるので要素を入れない）。表に無い字は日本語のまま。
+        なぜ: 予算の止めの字（api.budget.BudgetStop.NOTES）が、英語の頁の聞く口でも日本語のまま出た（#692 の別の目の気づき・統括の割り振り 11-08）"""
+        lang = getattr(self, "_lang", "ja")
+        if lang not in ("en", "easy"):
+            return text
+        from . import i18n
+
+        got = i18n.lookup(text, lang)
+        if not got or got == i18n.KEEP:
+            return text
+        return i18n.ruby_plain(got) if lang == "easy" else got
 
     def _refuse(self, code, reason, title="開けません", **kw):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
@@ -470,7 +490,10 @@ class Handler(BaseHTTPRequestHandler):
         sheet = hypotheses.sheet_of(sid)["id"]
         # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
         paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+        from omochae import shiori
+
         body = techo_site.records_page(sid, msg=msg, at=at, up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper,
+                                       shiori_wait=shiori.pending_fresh(self._key_of(SHIORI_PENDING)),
                                        errors=errors, err_at=err_at, filled=filled)
         return skinmod.shell("手帖", body, look or self._look, "", path or f"/toy/{sid}/techo/kiroku", techo_site.STYLE + nokosu.STYLE, "techo")
 
@@ -905,6 +928,60 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(429, shiori_open.picture_page(token, self._look, shiori_open.WAIT), headers=[("Retry-After", "60")])
         return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
 
+    def _sheet_shiori(self, sid, form):
+        """型紙の PDF の後ろに、その場で作ったしおりの 1 頁（表と裏を同じ面に並べる・本人「しおりは同じ面に刷る。」）を足して返す（本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 grove の
+        state/shiori-in-sheet-20261108.md の 2.1 版）。合わせた物はどこにも書き出さない（台帳は印そのものを持たない決まり）。
+        - 合言葉なしの場（公開デモ）は台帳を作らずに断る（頁の釦も出さない・受け口でも 2 重に・しおりはワークショップの場でだけ開くため）。
+        - 決まった番地が無い場は、しおりを作らずに型紙だけを返す（替わる番地を刷らない・shiori.NoBase）。
+        - 待ち: who と作り始めの回の印が届いた時だけ作る（台本の無い画面は送れないので作らない。結ぶのは開いた画面から）。待ちの印は cookie で渡し、
+          押すたびに替わる（結べるのは一番新しく刷った 1 枚だけ）。
+        - 返し方は今の /sheet/ と同じ inline（iPhone・iPad の Safari で別のタブに開いて刷れる）。no-store（鍵の入った物を残さない）。"""
+        from omochae import shiori
+
+        if getattr(self.server, "public_open", False):
+            return self._send(403, "公開のデモでは使えません")
+        stem = form.get("name", "")
+        m = re.fullmatch(r"(H-[A-Z0-9]+)_v(\d+)", stem)
+        # 刷れるのは頁に出すたたき台の紙だけ（J-032）。話した字の紙（OWN-n）と試した後の紙には、しおりを付けない
+        if not m or m.group(1) != hypotheses.sheet_of(sid)["id"] or not (out_dir(sid) / f"{stem}.pdf").exists():
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
+        sheet = out_dir(sid) / f"{stem}.pdf"
+        inline = [("Content-Disposition", f'inline; filename="{stem}.pdf"'), ("Cache-Control", "no-store")]
+        who, run = form.get("who", ""), form.get("run", "")
+        nonce = secrets.token_urlsafe(18) if re.fullmatch(r"[a-z0-9]{10}", who) and re.fullmatch(r"[a-z0-9]{6,40}", run) else ""
+        try:
+            made = shiori.make(pending={"nonce": nonce, "who": who, "run": run} if nonce else None)
+        except shiori.NoBase:
+            return self._send(200, sheet.read_bytes(), "application/pdf", inline)
+        from omochae import shiori_card
+
+        def build():
+            card = shiori_card.pages(sid, made["token"], made["order"], int(m.group(2)), time.time(), shiori.base_url())
+            return shiori_card.merge(sheet, card)
+        try:
+            pdf = _printing(build)
+        except PrintBusy:
+            shiori.revoke(made["token"])  # 返せなかったしおりは、紙にならないので使えなくする
+            return self._send(429, "少し待ってから、もう一度押してください。", "text/plain; charset=utf-8", [("Retry-After", "30")])
+        except Exception:
+            shiori.revoke(made["token"])
+            raise
+        # 待ちの印は Max-Age なし（ブラウザを閉じれば消える）・HttpOnly（台本から読ませない）
+        sp = [self._key_cookie(SHIORI_PENDING, nonce)] if nonce else []
+        return self._send(200, pdf, "application/pdf", inline + sp)
+
+    def _shiori_bind(self, rid, form):
+        """記録を、型紙と一緒に刷ったしおりの待ちに結ぶ。確かめの画面で「外す」を押さなかった時（shiori=1）だけ。結んでも結ばなくても待ちの
+        cookie は消す（結べるのは 1 回だけ）。返すのは足す見出しの並び。"""
+        from omochae import shiori
+
+        nonce = self._key_of(SHIORI_PENDING)
+        if not nonce:
+            return []
+        if form.get("shiori") == "1":
+            shiori.bind_pending(nonce, form.get("who", ""), form.get("run", ""), rid)
+        return [self._key_cookie(SHIORI_PENDING)]
+
     def _shiori_add(self, rid):
         """しおりで開いた画面が残した記録を、そのしおりの並びに足す（開いていない画面では何もしない）。"""
         from omochae import shiori
@@ -1003,6 +1080,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
+        m = re.fullmatch(rf"/toy/({SID})/sheet-shiori", self.path)
+        if m and m.group(1) in sources():
+            return self._sheet_shiori(m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
         if m and m.group(1) in sources():
             return self._json_post(m.group(1), m.group(2), form)
@@ -1171,7 +1251,7 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))  # 自分の紙の記録からの次の版は、たたき台へ向ける
         if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
-            return self._send(422, self._kiroku(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], err_at=rid))
+            return self._send(422, self._kiroku(sid, errors=[NEXT_SHEET_ONLY], err_at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
             return self._send(422, self._kiroku(sid, errors=[NO_HYPOTHESIS], err_at=rid))
         if loop.explanation(rid) is None:
@@ -1368,8 +1448,8 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
-            except BudgetStop as e:
-                text, how = f"今は AI に聞けません（{e.note}）", "stop"
+            except BudgetStop as e:  # 止めの字は頁の言葉に合わせて返す（_say）
+                text, how = self._say(f"今は AI に聞けません（{e.note}）"), "stop"
             except Exception:
                 text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
@@ -1383,7 +1463,8 @@ class Handler(BaseHTTPRequestHandler):
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
             self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
+            sp = self._shiori_bind(rid, form)  # 型紙と一緒に刷ったしおりの待ちに結ぶ（確かめの画面で外さなかった時だけ・設計 2.1 版の 2 節）
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid), *sp])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
@@ -1423,7 +1504,9 @@ class Handler(BaseHTTPRequestHandler):
             hid = form.get("hypothesis", "")
             from . import think_sheet
 
-            if not think_sheet.usable(self, sid, hid):  # 話した考えから作った案の記録は、作った本人の画面からだけ
+            # 話した考えから作った案の記録は、作った本人の画面からだけ。無い仮説は受け口で先に断る（前は records.add の床の字
+            # 「仮説 H-ZZ は実在しない」が内部の番号のまま、3 つの言葉とも訳されずに出た。別の目の気づき・統括の決め 11-08）
+            if not think_sheet.usable(self, sid, hid) or not records.known_hypothesis(sid, hid):
                 return self._send(422, self._toy(sid, errors=[NO_HYPOTHESIS], at="kiroku", filled=(act, form)))
             # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
             rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),

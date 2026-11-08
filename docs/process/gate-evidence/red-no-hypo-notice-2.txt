@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_reply_visible.py
+# commit: 095fb28b（今の main）の木に、直した tests/test_reply_visible.py だけを当てた（git の外の写し・断りの作りは 095fb28b の物のまま）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+Traceback (most recent call last):
+  File "tests/test_reply_visible.py", line 101, in <module>
+    assert code == 422 and "H-ZZ" not in alert and "実在しない" not in alert, ("記録を残す口の断りに内部の番号が出る", alert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('記録を残す口の断りに内部の番号が出る', 'id="msg">仮説 H-ZZ は実在しない')
+rc=1

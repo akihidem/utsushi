@@ -1,0 +1,23 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/<名>.py を 1 本ずつ（3 本ずつ同時）
+# commit: d0eee31c（回した時の木を、この commit にした）
+test_budget_one_ledger rc=0 
+test_budget_after_period rc=0 ok
+test_api_review_fixes rc=0 ok
+test_loop1_think rc=0 ok
+test_loop1_round rc=0 ok
+test_loop1_next rc=0 ok
+test_own_pii rc=0 ok: 自分の仮説を残す口に、記録と同じ床がある
+test_talk_sheet_guards rc=0 ok 作り直しの口の費用の止め: 受け口は書き込みの数の止め・予算の止め�
+test_call_timeouts rc=0 ok
+test_write_limit rc=0 ok: 書き込みの口と段の口に、同じ相手からの短い間の数の上限
+test_loop1_words rc=0 ok
+test_own_form_gone rc=0 ok: 玩具の頁に書く欄は無く、前の自分の仮説の記録と紙は読める
+test_who_fresh rc=0 ok（字で見て、Chrome でも動きを測った）
+test_media_limit rc=0 ok: 写真と動画の口は、写した動画の大きさと、同じ相手からの数に上限が
+test_loop1_own_private rc=0 ok
+test_loop1_withdraw rc=0 ok
+test_words rc=0 
+test_print_busy rc=0 ok
+test_agent_sdk rc=0 ok
+test_failure_log rc=0 ok
+test_frozen_manifest rc=0 ok 場面 34 本と基準の文、在るはずの試験 125 本。崩し方 6 通りを名指しで�

@@ -10,10 +10,15 @@
 - それ以外は Claude に、その紙の組み方と凡例と用意する物だけを渡して答えさせる。仮説の名前と動き方は渡さない
 - 答えに仮説の名前や動き方の文が混ざったら、出さずに断りの文に替える（渡していないが、念のため出口でも見る）
 - 本物の API は、本人が repo の .env に鍵を置いた時だけ動く（J-023。鍵を置く事が本人の承認）。鍵が無ければ、その旨を返す
+- 玩具ごとの中身（11-08）: 語の表（GLOSSARY）の字は御来迎の紙（扇の紙 slider_fan。筒と扇・組み方の絵の蛇腹と色の境）の字で、前は
+  どの玩具にも返していた（公開デモの虎で「谷折り・山折り」と聞くと、御来迎の筒と扇の答えが返った）。字は本人の確かめの字なので一字も
+  替えず、使う玩具を扇の紙に絞る。ほかの玩具の語の問いは、その紙の組み方と凡例を渡して Claude に聞く（鍵が無ければ断りだけ）。
+  Claude に渡す凡例も、前は全部の玩具に御来迎の字（線の無い面（外筒と扇）は色の境で折る）と前の谷と山の言い方を渡していたので、
+  その玩具の型紙が刷る字（compose の谷と山の言い方）から作り、色の境の 1 句は扇の紙にだけ添える（instructions が蛇腹と色の境の絵を刷るのも扇の紙だけ）
 """
 import re
 
-from omochae import hypotheses
+from omochae import compose, hypotheses
 from omochae.compose import TEMPLATES
 
 from . import budget, config
@@ -59,19 +64,39 @@ def asks_term(question):
     return re.fullmatch(TERM_QUESTION, question) is not None
 
 
+FAN = "slider_fan"  # 語の表と、凡例の色の境の 1 句が書かれた紙（御来迎）
+
+
+def template_name(source_id, hypothesis_id=None):
+    """その紙の雛形の名。hypothesis_id が無い時は、その玩具のたたき台の紙。"""
+    data = hypotheses.load(source_id)
+    if hypothesis_id:
+        h = next((x for x in data["hypotheses"] + hypotheses.own_hypotheses(source_id) if x["id"] == hypothesis_id), {})
+    else:
+        h = hypotheses.sheet_of(source_id)
+    return h.get("template") or data.get("template", FAN)
+
+
+def legend(template):
+    """その雛形の型紙が刷る凡例の字（谷と山の言い方は compose が刷る物と同じ）。色の境で折る 1 句は扇の紙だけ。"""
+    valley, mountain = compose.FOLD_WORDS if compose.new_fold_words(TEMPLATES[template]) else compose._OLD_SHEET_FOLD_WORDS
+    out = f"切る＝実線、{valley}＝破線、{mountain}＝一点鎖線、糊代＝斜線"
+    return out + "。線の無い面（外筒と扇）は色の境で折る" if template == FAN else out
+
+
 def sheet_context(source_id, hypothesis_id):
     """その紙の組み方・用意する物だけ。仮説の名前と動き方は入れない。"""
     data = hypotheses.load(source_id)
     # 話した考えから作った本人の案（OWN-n）も、その紙の寸法で答える（ループ1、#335）。名前と話した字は入れない。
     h = next(x for x in data["hypotheses"] + hypotheses.own_hypotheses(source_id) if x["id"] == hypothesis_id)
-    tpl = TEMPLATES[h.get("template") or data.get("template", "slider_fan")]
+    name = h.get("template") or data.get("template", FAN)
+    tpl = TEMPLATES[name]
     if hypothesis_id.startswith("OWN-") and not h.get("params"):  # 型紙なしの紙に、雛形の手順は無い。無い手順を答えさせない
         return "組み方: 型紙の無い紙です。手順は刷った紙にあります。", h
     p = {**tpl.DEFAULTS, **(h.get("params") or {})}
     steps = "\n".join(f"{i}. {s}" for i, s in enumerate(tpl.steps(p), 1))
     materials = "\n".join(f"・{m}" for m in tpl.materials(p))
-    legend = "切る＝実線、谷折り＝破線（手前にへこむ）、山折り＝一点鎖線（手前に出る）、糊代＝斜線。線の無い面（外筒と扇）は色の境で折る"
-    return f"組み方:\n{steps}\n\n用意する物:\n{materials}\n\n凡例: {legend}", h
+    return f"組み方:\n{steps}\n\n用意する物:\n{materials}\n\n凡例: {legend(name)}", h
 
 
 SYSTEM = ("あなたは紙工作の手順の質問だけに答える係です。渡された組み方・用意する物・凡例の範囲で、切る・折る・貼る・組む順の疑問に、"
@@ -92,7 +117,8 @@ def answer(source_id, hypothesis_id, question, client=None):
         return "聞きたい事を書いてください。", "refuse"
     if is_mechanism(question):
         return REFUSE, "refuse"
-    if asks_term(question):
+    fan = template_name(source_id, hypothesis_id) == FAN  # 語の表は扇の紙の字（上の芯の玩具ごとの中身）
+    if asks_term(question) and fan:
         return glossary(question), "glossary"
     context, h = sheet_context(source_id, hypothesis_id)
     if client is None:
@@ -100,7 +126,7 @@ def answer(source_id, hypothesis_id, question, client=None):
 
         if not _key_present():
             # 語が入っていれば語の説明は残す。ただ問いの答えにはならないので、語の表で答えた問いとは分けて no_key と返す。
-            known = glossary(question)
+            known = glossary(question) if fan else None
             return f"{known} {NO_KEY}" if known else NO_KEY, "no_key"
         client = default_client("ask")
     messages = [{"role": "user", "content": f"{context}\n\n質問: {question}"}]

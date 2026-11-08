@@ -4,7 +4,8 @@
 くずし字・作る側の様子 を、iPad の横（1180×820 と、Safari の帯で縮んだ 1180×746）と縦（820×1180）・PC（1440×900）・iPhone（375×667）で、日本語・やさしい日本語・英語、白と暗い版で開き、
 - 字の 1 行ずつの箱どうしが重なる所（字×字）と、字の箱と絵（img・svg・video・canvas）が重なる所（字×絵）を数える
 - 見えていない物（hidden・display:none・畳んだ中・読み上げだけの字）と、親と子の要素どうし（ルビと元の字など）は数えない
-- 親の overflow で切られた所は、切り口で切って数える（額の中で広げた絵など）
+- 親の overflow で切られた所は、切り口で切って数える（額の中で広げた絵など）。字は、字を直に持つ要素の overflow でも切る（… で切った名の末や
+  行の数の切りで隠した行は、画面に出ない。えらぶ の棚の名の札・#691 の後に、隠れた末の字の箱を横の札の名と絵との重なりとして数えていた）
 - 組み立ての 3D の舞台（#rt-scene）の中は 1 つの絵として扱い、中の部品の字と面の重なりは数えない（立体の重なりとして描く物）
 - 原画の写し（out/sources・git の外）の有り無しの両方で測る（写しの無い木では同じ形の絵の包みを置く・tests/test_landscape_fit.py と同じ）。
   原画の畳みの外の絵（えらぶ の札・入口の浮かぶ玩具・よむ の北斎漫画）は木の写しのとおりに出るので、写しのある木と無い木の両方で 1 度ずつ回して確かめる
@@ -58,25 +59,13 @@ SIZES = {"iPad 横": (1180, 820), "iPad 横 帯あり": (1180, 746), "iPad 縦":
 # 今わかっている重なり（11-08 の見回り・grove の state/no-overlap-20261108.md）。鍵は（頁, 種類, 片方の要素の道の尾, もう片方の要素の道の尾, 言葉）。
 # 持ち主が直したら、その行を外す（外すと、残っていれば落ちる）
 KNOWN = {
-    # 型紙の窓の輪の図（web.wa）の英語の字が重なる: 「Current template」「Make the next template …」「Version N」
-    ("玩具の頁 御来迎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 御来迎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    ("玩具の頁 虎", "字×字", "svg>a>text.wa-now", "figure#wa.wa>svg>text.wa-t", "en"),
-    ("玩具の頁 虎", "字×字", "figure#wa.wa>svg>text.wa-t", "svg>a>text.wa-v", "en"),
-    # 学びの輪の図（web.loop_figure）の英語の字が重なる（のこす・よむ）
-    ("のこす", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
-    ("よむ", "字×字", "figure.loop-fig>svg.loop-ring>text", "figure.loop-fig>svg.loop-ring>text", "en"),
-    # えらぶの棚の札で、英語の玩具の名（長い）が札の絵に重なる。狭い幅では下の「See all toys」にも
-    ("えらぶ", "字×絵", "li>a>span.nm", "li>a>img.pic", "en"),
-    ("えらぶ", "字×字", "li>a>span.nm", "section.sec.erabu>p.links>a", "en"),
+    # えらぶの棚の札の名の 2 行は外した（#691 で名を折らずに … で切る形にし、この試験も字を直に持つ要素の overflow で切る形にした）
 }
 # 原画の写しの無い木の えらぶ の札で、やさしい日本語の玩具の名と「図を見る（国立国会図書館）」のルビ（切れない）が札の幅より長く、端の列が画面の横にはみ出す（上の えらぶ の札の名と同じ持ち主）
 KNOWN_WIDE = {("えらぶ", "easy")}
 # 原画の写しの無い木の えらぶ の札にだけ出る「図を見る（国立国会図書館）」の字が、札の玩具の名の字に重なる（写しの無い札は絵の箱が空で、名と道の字が詰まる。上の えらぶ の札の名と同じ持ち主）。
 # 審査する人が repo だけを clone して回すと、この形を見る
 KNOWN_LINK = ("えらぶ", "p.meta>a")
-# やさしい日本語のルビ（rt）が、行の間が狭くて前の行の字に重なる所は、頁と要素を問わず 1 つの事として数える（ルビの行の高さの直しで消える）
-KNOWN_RUBY = ("easy", "ruby>rt")
 
 FIND = r"""(() => {
   const SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TITLE", "OPTION", "TEMPLATE"]);
@@ -95,9 +84,9 @@ FIND = r"""(() => {
     return ok;
   };
   const sx = scrollX, sy = scrollY;
-  const clipOf = (el) => {
+  const clipOf = (el, own) => {
     let c = [-1e9, -1e9, 1e9, 1e9];
-    for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+    for (let e = own ? el : el.parentElement; e && e !== document.body; e = e.parentElement) {
       const s = getComputedStyle(e);
       if (s.overflow !== "visible" || s.overflowX !== "visible" || s.overflowY !== "visible" || s.contain.includes("paint")) {
         const r = e.getBoundingClientRect();
@@ -106,7 +95,7 @@ FIND = r"""(() => {
     }
     return c;
   };
-  const box = (r, el) => { const c = clipOf(el); return [Math.max(r.left, c[0]) + sx, Math.max(r.top, c[1]) + sy, Math.min(r.right, c[2]) + sx, Math.min(r.bottom, c[3]) + sy]; };
+  const box = (r, el, own) => { const c = clipOf(el, own); return [Math.max(r.left, c[0]) + sx, Math.max(r.top, c[1]) + sy, Math.min(r.right, c[2]) + sx, Math.min(r.bottom, c[3]) + sy]; };
   const inScene = (el) => !!el.closest("#rt-scene, .rt-scene");
   const name = (el) => { const id = el.id ? "#" + el.id : "", cls = el.classList.length ? "." + [...el.classList].slice(0, 2).join(".") : ""; return el.tagName.toLowerCase() + id + cls; };
   const path = (el) => { const out = []; for (let e = el; e && e !== document.body && out.length < 3; e = e.parentElement) out.unshift(name(e)); return out.join(">"); };
@@ -116,7 +105,7 @@ FIND = r"""(() => {
     const n = tw.currentNode, el = n.parentElement;
     if (!n.textContent.trim() || !el || SKIP.has(el.tagName) || inScene(el) || !shown(el)) continue;
     const rg = document.createRange(); rg.selectNodeContents(n);
-    for (const r of rg.getClientRects()) { const b = box(r, el); if (b[2] - b[0] >= 3 && b[3] - b[1] >= 3) texts.push({ el, b, t: n.textContent.trim().slice(0, 20) }); }
+    for (const r of rg.getClientRects()) { const b = box(r, el, true); if (b[2] - b[0] >= 3 && b[3] - b[1] >= 3) texts.push({ el, b, t: n.textContent.trim().slice(0, 20) }); }
   }
   const pics = [...document.querySelectorAll("img,svg,video,canvas")].filter((e) => shown(e) && !inScene(e) && !(e.parentElement && e.parentElement.closest("svg")))
     .map((e) => ({ el: e, b: box(e.getBoundingClientRect(), e) })).filter((x) => x.b[2] - x.b[0] > 6 && x.b[3] - x.b[1] > 6);
@@ -159,13 +148,19 @@ class Tee:
 # 同じ頁を 4 つの大きさの枠で開くので、1 度作った応答をそのまま返す。頁を作るのは Python の糸を並べても速くならず
 # （やさしい日本語の頁は 1 枚 0.5〜2.4 秒）、作り直すと 9 回 × 60 枠で run.sh の時間切れを超えた。鍵はサーバ（皮と写しの有り無し）・道・言葉の cookie
 CACHE, LOCKS, GUARD = {}, {}, threading.Lock()
+STATUS = {}  # (サーバの port, 道) → 返りの番号（枠の頁が 200 で返ったかを、測った後に見る）
+
+
+def frame_src(path, lang):
+    """枠に開く道（言葉の印を足した物）。枠を作る所と、返りの番号を引く所で同じ形にする。"""
+    return path + ("&" if "?" in path else "?") + "lang=" + lang
 
 
 def do_get(self):
     PIC.m = MODE[self.server.server_address[1]]
     if self.path.startswith("/__ov"):
         lang = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("lang", ["ja"])[0]
-        frames = "".join(f'<iframe data-key="{html.escape(pn)}|{sz}" src="{html.escape(path + ("&" if "?" in path else "?") + "lang=" + lang)}" width="{w}" height="{h}" '
+        frames = "".join(f'<iframe data-key="{html.escape(pn)}|{sz}" src="{html.escape(frame_src(path, lang))}" width="{w}" height="{h}" '
                          'style="border:0;display:block"></iframe>' for pn, path in PAGES.items() for sz, (w, h) in SIZES.items())
         return send(self, 200, WRAP.replace("__FRAMES__", frames).replace("__FIND__", json.dumps(FIND)))
     cookie = re.search(r"utsushi_lang=(\w+)", self.headers.get("Cookie", ""))
@@ -178,6 +173,8 @@ def do_get(self):
         self.wfile = Tee(self.wfile)
         get(self)
         CACHE[key] = self.wfile.buf.getvalue()
+    head = re.match(rb"HTTP/\d\.\d (\d{3})", CACHE[key])
+    STATUS[key[:2]] = int(head.group(1)) if head else None
 
 
 play_server.Handler.do_GET = do_get
@@ -203,7 +200,8 @@ def measure(base, lang):
     if left < 20:
         return None
     # 言葉の切り替えは cookie なので、言葉ごとに別の回（別の profile）にする
-    with tempfile.TemporaryDirectory() as profile:
+    # 時間切れで止めた Chrome の子が profile に書き続けると、片付けが「Directory not empty」で落ちる（11-08 の混んだ機械で 1 度）。片付けの誤りは測りの外なので通す
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:
         try:
             out = subprocess.run([exe, "--headless=new", "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "--window-size=2000,1400",
                                   "--virtual-time-budget=30000", "--dump-dom", f"{base}/__ov?lang={lang}"], capture_output=True, text=True, timeout=left).stdout
@@ -232,9 +230,13 @@ for (mode, look, lang), rec in results:
     if rec is None:
         unmeasured.append(f"{mode}・{look}・{lang}")
         continue
+    port = servers[look, mode].server_address[1]
     for r in rec:
         page, size = r["key"].split("|")
         assert "err" not in r, (mode, look, lang, r["key"], r.get("err"))
+        # 枠の頁が 200 で返ったか（404 や 500 の断りの頁の字を測って 0 と数えない・#684 の別の目）。返りは覚えた応答の頭の行から読む
+        status = STATUS.get((port, frame_src(PAGES[page], lang)))
+        assert status == 200, (mode, look, lang, page, "枠の頁が 200 で返らない（測った字は頁の字でない）", status)
         if r["sw"] > r["w"] + 1:
             if (page, lang) in KNOWN_WIDE:
                 known_seen.add(("横", page, lang))
@@ -242,10 +244,9 @@ for (mode, look, lang), rec in results:
                 wide.append(f"{mode}・{look}・{lang}・{page}・{size}: 横にはみ出す {r['sw']}px（幅 {r['w']}px）")
         for hit in r["hits"]:
             key = (page, hit["kind"], hit["a"], hit["b"], lang)
-            ruby = lang == KNOWN_RUBY[0] and hit["kind"] == "字×字" and (hit["a"].endswith(KNOWN_RUBY[1]) or hit["b"].endswith(KNOWN_RUBY[1]))
             link = page == KNOWN_LINK[0] and (KNOWN_LINK[1] in hit["a"] or KNOWN_LINK[1] in hit["b"])
-            if key in KNOWN or ruby or link:
-                known_seen.add(key if key in KNOWN else ("ルビ", lang) if ruby else ("道", page))
+            if key in KNOWN or link:
+                known_seen.add(key if key in KNOWN else ("道", page))
                 continue
             found.append(f"{mode}・{look}・{lang}・{page}・{size}: {hit['kind']} {hit['a']}「{hit['ta']}」× {hit['b']}「{hit['tb']}」")
 for s in servers.values():
@@ -255,7 +256,7 @@ if unmeasured and len(unmeasured) == len(RUNS):
     raise SystemExit(0)
 assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
 gone = ([k for k in KNOWN if k not in known_seen] + [("横", *k) for k in KNOWN_WIDE if ("横", *k) not in known_seen]
-        + [k for k in (("ルビ", KNOWN_RUBY[0]), ("道", KNOWN_LINK[0])) if k not in known_seen])
+        + [k for k in (("道", KNOWN_LINK[0]),) if k not in known_seen])
 print(f"ok 主な頁の字の重なり: {len(PAGES)} 頁 × {len(SIZES)} 大きさ × 3 言葉 × 白と暗い版（原画の写しの有り無し）で KNOWN の外は 0。"
       f"KNOWN の残り {len(known_seen)} 件" + (f"・見えなくなった KNOWN {len(gone)} 件（写しの有り無しの片方でだけ出る物もある。両方の木で見えなければ行を外す）" if gone else "")
       + (f"。測れない回: {'・'.join(unmeasured)}" if unmeasured else "") + f"（{time.monotonic() - started:.0f} 秒）")

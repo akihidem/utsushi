@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_ask.py
+# commit: c531ae1e（回した時の HEAD）
+ok
+rc=0

@@ -20,6 +20,11 @@ grove の state/techo-card-20261108/README.md の 2″・2‴・6（別の目の
 - さわらない 20 分で切れる。最後に使った時刻（last_used）の書き直しは 1 分に 1 回まで（門の頼みのたびに台帳を書かないため）。
 - 押した順が数でない・形が違う時は、落とさずに外れとして数える（#611 の別の目の気づき (2)）。
 - 作る道具（QR の絵と紙）は別の PR。ここは番地が決まる前から作れる台帳と、開いた画面の印まで（統括の段取り 11-08）。
+- **型紙の PDF に一緒に刷った時の「待ち」**（本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 grove の state/shiori-in-sheet-20261108.md の 2.1 版）:
+  刷った時は、まだ記録が無い。押した画面の待ちの印（cookie）・その場限りの印（who）・作り始めの回の印（run）を、秘密の値と組にしたハッシュと
+  時刻で持つ。のこすの確かめの画面で「この記録を、さっき刷ったしおりに入れます。」を外さずに承認した記録だけを、4 つが合う時に結ぶ
+  （押した人＝次に記録を残す人と決め打ちしない・1 台を順に使う形で前の人のしおりに次の人の記録を結ばない・別の目の止め 2）。
+  待ちは結んだ時と 3 時間（PENDING）で切れる。cookie は押すたびに替わるので、結べるのはいつも一番新しく刷った 1 枚だけ。
 """
 import hashlib
 import hmac
@@ -41,6 +46,7 @@ IDLE = 1200                       # さわらない 20 分で切れる（共用�
 TOUCH_EVERY = 60                  # 最後に使った時刻を書き直すのは 1 分に 1 回まで
 PICTURES = 9                      # しおりに刷る玩具の小さな絵の数（どの絵かは紙の版の PR で決める）
 ORDER = 3                         # 押す数
+PENDING = 3 * 3600                # 刷ってから記録に結ぶまでの待ちの長さ（声とカメラの区切りの 3 時間と同じ・統括の決め）
 TOKEN = re.compile(r"[A-Za-z0-9_-]{22}")
 SCREEN = re.compile(r"([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{22})")  # 画面の cookie の値: しおりの印.開いた画面の印
 # 替わる番地（立てるたびに名前が替わる一時のトンネル）。しおりに刷らない。手元の名前（点の無い名）と数の番地も刷らない（下の base_url の形で断る）
@@ -113,9 +119,15 @@ def _screen_hash(screen):
     return hashlib.sha256(("screen:" + screen).encode()).hexdigest()
 
 
-def make(records=(), now=None):
+def _hp(kind, value):
+    """待ちの印・who・回を、そのものでなく秘密の値と組にしたハッシュで持つ（置き場だけが漏れても、画面の印をたどれないように）。"""
+    return hmac.new(_secret(), (kind + ":" + str(value)).encode(), hashlib.sha256).hexdigest()
+
+
+def make(records=(), now=None, pending=None):
     """しおりを 1 つ作る。{"token", "order", "url"}（order は 9 つの絵の番号 0〜8 から 3 つの順）。決まった番地が無ければ NoBase。
-    token と order は作った時にだけ返し、台帳には残さない（紙に刷るのはこの時だけ）。"""
+    token と order は作った時にだけ返し、台帳には残さない（紙に刷るのはこの時だけ）。
+    pending は型紙と一緒に刷った時の待ち {"nonce", "who", "run"}（どれかが空なら待ちを作らない＝台本の無い画面。結ぶのは開いた画面から）。"""
     base = base_url()
     if not base:
         raise NoBase("決まった番地が無いので、しおりを作りません（設定 " + BASE_ENV + "）")
@@ -124,7 +136,9 @@ def make(records=(), now=None):
     rng = secrets.SystemRandom()
     order = tuple(rng.sample(range(PICTURES), ORDER))
     entry = {"seal": _seal(token, order), "records": [str(r) for r in records], "made_at": now, "last_used": None,
-             "tries": [], "fails": 0, "peer_fails": {}, "revoked": False, "stopped": False, "screen": None}
+             "tries": [], "fails": 0, "peer_fails": {}, "revoked": False, "stopped": False, "screen": None, "pending": None}
+    if pending and all(pending.get(k) for k in ("nonce", "who", "run")):
+        entry["pending"] = {"nonce": _hp("pn", pending["nonce"]), "who": _hp("pw", pending["who"]), "run": _hp("pr", pending["run"]), "at": now}
     with store.locked(folder()):
         store.write_json(folder() / _name(token), entry, exclusive=True)
     return {"token": token, "order": order, "url": f"{base}/s/{token}"}
@@ -288,3 +302,34 @@ def revoke(token):
         e["revoked"], e["revoked_why"], e["screen"] = True, "進め役", None
         store.write_json(p, e)
         return True
+
+
+def pending_fresh(nonce, now=None):
+    """待ちの印（cookie）が、まだ結んでいない 3 時間の内のしおりを指しているか（のこすの確かめの画面に 1 行を出すか）。"""
+    if not nonce:
+        return False
+    now, n = time.time() if now is None else now, _hp("pn", nonce)
+    return any((pd := e.get("pending")) and hmac.compare_digest(pd["nonce"], n) and now - pd["at"] < PENDING
+               and not e.get("revoked") and not e.get("stopped") for _, e in _entries())
+
+
+def bind_pending(nonce, who, run, rid, now=None):
+    """待ちのしおりに、確かめの画面で外さずに承認した記録を結ぶ。待ちの印・who・回・3 時間がどれも合う時だけ結ぶ（1 つでも違えば結ばない）。
+    合っても合わなくても、その待ちは消す（結べるのは 1 回だけ・前の人の待ちが次の人の記録を待ち続けないように）。結んだら True。"""
+    if not (nonce and who and run):
+        return False
+    now = time.time() if now is None else now
+    n, w, r = _hp("pn", nonce), _hp("pw", who), _hp("pr", run)
+    with store.locked(folder()):
+        for p, e in _entries():
+            pd = e.get("pending")
+            if not pd or not hmac.compare_digest(pd["nonce"], n):
+                continue
+            ok = (now - pd["at"] < PENDING and not e.get("revoked") and not e.get("stopped")
+                  and hmac.compare_digest(pd["who"], w) and hmac.compare_digest(pd["run"], r))
+            e["pending"] = None
+            if ok and str(rid) not in e["records"]:
+                e["records"].append(str(rid))
+            store.write_json(p, e)
+            return ok
+    return False

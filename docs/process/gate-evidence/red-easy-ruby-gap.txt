@@ -1,0 +1,55 @@
+# 命令: bash -c 'git show 6ad907dd:tests/test_no_overlap.py > tests/_red_ruby.py; PYTHONPATH=src .venv/bin/python tests/_red_ruby.py; rc=$?; rm -f tests/_red_ruby.py; exit $rc'
+# commit: f5f6547c（回した時の HEAD）
+/tmp/tmppofob40c/play/NDL-1187053-R0000005-L/.tmp-llp92xct/H-C_v1.pdf
+/tmp/tmppofob40c/play/NDL-1187053-R0000014-R/.tmp-wmatvelb/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/_red_ruby.py", line 256, in <module>
+    assert not found and not wide, "重なり・横のはみ出し（KNOWN の外）:\n" + "\n".join((wide + found)[:60])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 重なり・横のはみ出し（KNOWN の外）:
+pic・tenji・easy・作りながら見る・iPad 横: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・tenji・easy・作りながら見る・iPad 横: 字×字 div#henji.henji>p.meta>ruby「案内」× p.meta>ruby>rt「えいぞう」
+pic・tenji・easy・作りながら見る・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・tenji・easy・作りながら見る・iPad 横 帯あり: 字×字 div#henji.henji>p.meta>ruby「案内」× p.meta>ruby>rt「えいぞう」
+pic・tenji・easy・作りながら見る・PC 1440: 字×字 ol#steps>li.on>ruby「刷」× li.on>ruby>rt「たし」
+pic・tenji・easy・作りながら見る・PC 1440: 字×字 div#henji.henji>p.meta>ruby「聞」× p.meta>ruby>rt「えいぞう」
+pic・tenji・easy・作りながら見る・iPhone SE: 字×字 div#henji.henji>p.meta>ruby「聞」× p.meta>ruby>rt「れんらくさき」
+pic・tenji・easy・作りながら見る・iPhone SE: 字×字 section.side>p.meta>ruby「型紙」× p.meta>ruby>rt「み」
+pic・tenji・easy・作りながら見る・iPhone SE: 字×字 p.meta>span#mirror-note>ruby「機械」× span#mirror-note>ruby>rt「かがみ」
+pic・tenji・easy・手帖 最初・iPad 横: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・tenji・easy・手帖 最初・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・tenji・easy・手帖 最初・iPhone SE: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・tenji・easy・手帖 手順・iPad 横: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+pic・tenji・easy・手帖 手順・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+pic・tenji・easy・手帖 手順・iPhone SE: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+pic・zine・easy・作りながら見る・iPad 横: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・zine・easy・作りながら見る・iPad 横: 字×字 div#henji.henji>p.meta>ruby「案内」× p.meta>ruby>rt「えいぞう」
+pic・zine・easy・作りながら見る・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・zine・easy・作りながら見る・iPad 横 帯あり: 字×字 div#henji.henji>p.meta>ruby「案内」× p.meta>ruby>rt「えいぞう」
+pic・zine・easy・作りながら見る・PC 1440: 字×字 ol#steps>li.on>ruby「刷」× li.on>ruby>rt「たし」
+pic・zine・easy・作りながら見る・PC 1440: 字×字 div#henji.henji>p.meta>ruby「聞」× p.meta>ruby>rt「えいぞう」
+pic・zine・easy・作りながら見る・iPhone SE: 字×字 div#henji.henji>p.meta>ruby「聞」× p.meta>ruby>rt「れんらくさき」
+pic・zine・easy・作りながら見る・iPhone SE: 字×字 section.side>p.meta>ruby「型紙」× p.meta>ruby>rt「み」
+pic・zine・easy・作りながら見る・iPhone SE: 字×字 p.meta>span#mirror-note>ruby「機械」× span#mirror-note>ruby>rt「かがみ」
+pic・zine・easy・手帖 最初・iPad 横: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・zine・easy・手帖 最初・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・zine・easy・手帖 最初・iPhone SE: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+pic・zine・easy・手帖 手順・iPad 横: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+pic・zine・easy・手帖 手順・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+pic・zine・easy・手帖 手順・iPhone SE: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+nopic・tenji・easy・作りながら見る・iPad 横: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+nopic・tenji・easy・作りながら見る・iPad 横: 字×字 div#henji.henji>p.meta>ruby「案内」× p.meta>ruby>rt「えいぞう」
+nopic・tenji・easy・作りながら見る・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+nopic・tenji・easy・作りながら見る・iPad 横 帯あり: 字×字 div#henji.henji>p.meta>ruby「案内」× p.meta>ruby>rt「えいぞう」
+nopic・tenji・easy・作りながら見る・PC 1440: 字×字 ol#steps>li.on>ruby「刷」× li.on>ruby>rt「たし」
+nopic・tenji・easy・作りながら見る・PC 1440: 字×字 div#henji.henji>p.meta>ruby「聞」× p.meta>ruby>rt「えいぞう」
+nopic・tenji・easy・作りながら見る・iPhone SE: 字×字 div#henji.henji>p.meta>ruby「聞」× p.meta>ruby>rt「れんらくさき」
+nopic・tenji・easy・作りながら見る・iPhone SE: 字×字 section.side>p.meta>ruby「型紙」× p.meta>ruby>rt「み」
+nopic・tenji・easy・作りながら見る・iPhone SE: 字×字 p.meta>span#mirror-note>ruby「機械」× span#mirror-note>ruby>rt「かがみ」
+nopic・tenji・easy・手帖 最初・iPad 横: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+nopic・tenji・easy・手帖 最初・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+nopic・tenji・easy・手帖 最初・iPhone SE: 字×字 ol#steps>li.on>ruby「物差」× li.on>ruby>rt「たし」
+nopic・tenji・easy・手帖 手順・iPad 横: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+nopic・tenji・easy・手帖 手順・iPad 横 帯あり: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+nopic・tenji・easy・手帖 手順・iPhone SE: 字×字 ol#steps>li.on>ruby「外筒」× li.on>ruby>rt「やまお」
+rc=1

@@ -163,6 +163,8 @@ def request(sid, who, claude=False, client=None):
     title, evidence = labels(words.base_of(sid)[0])
     w, failures = words.request_think(source, talk, name, title, evidence, client=client, use_claude=claude)
     if failures:
+        if failures[0].floor == "F9.budget":  # 予算の止めと回数の止めは、止めの字（BudgetStop.NOTES・待てば頼めるか）をそのまま返す
+            return None, failures[0].message
         from .hanasu import reason  # 床に当たった時の文は、話す口の採られた文をそのまま使う
 
         return None, reason(failures)

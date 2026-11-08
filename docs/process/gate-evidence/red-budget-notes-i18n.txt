@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_budget_notes_i18n.py
+# commit: b1261495（今の main）の木に tests/test_budget_notes_i18n.py だけを当てた（git の外の写し・訳の表と聞く口は b1261495 の物のまま）
+Traceback (most recent call last):
+  File "tests/test_budget_notes_i18n.py", line 40, in <module>
+    assert en and en != i18n.KEEP and not i18n.CJK.search(en), ("英語の表に無い", kind, text, en)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('英語の表に無い', 'day', '今日の予算の上限に達しました。明日また聞けます', None)
+rc=1
