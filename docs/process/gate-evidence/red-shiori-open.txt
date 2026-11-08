@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_open.py
+# commit: e434c788（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_shiori_open.py", line 28, in <module>
+    from web import play_server, shiori_open  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'shiori_open' from 'web' (src/web/__init__.py)
+rc=1

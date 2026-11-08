@@ -65,9 +65,12 @@ def step(n, event, hid=GS, **more):
 
 def tile(body, value):
     """その札の字と、隠れているかと、一番大きい札か。同じ札は 1 つだけ（前の小さい札が残っていても落ちる）。"""
-    found = re.findall(rf'<button name="event" value="{value}"([^>]*)>([^<]*)</button>', body)
+    found = re.findall(rf'<button name="event" value="{value}"([^>]*)>(.*?)</button>', body, re.S)
     assert len(found) == 1, f"{value} の札が {len(found)} 個"
-    attrs, label = found[0]
+    attrs, inner = found[0]
+    # のこす の札は、中の上の段に本人の字（.ask）、下の段に札の名（.nm）を持つ。札の名は .nm の字（無ければ札の字の全部）
+    nm = re.search(r'<span class="nm">([^<]*)</span>', inner)
+    label = nm.group(1) if nm else re.sub(r"<[^>]+>", "", inner)
     return label, "hidden" in attrs, 'class="go"' in attrs
 
 
@@ -112,12 +115,14 @@ def road_to_the_record():
     assert code == 303, code
     to = urllib.parse.urlsplit(headers["Location"])
     q = dict(urllib.parse.parse_qsl(to.query))
-    assert to.path == f"/toy/{G}/techo/kiroku" and to.fragment == "mine", f"のこすの頁へ送っていない: {headers['Location']}"
-    assert q.get("msg") == tsukuru.DONE_NOTE, q
+    # 着く印は記入の節（#kinyu・頁の頭）。前の #mine は頁の一番下の上げる節で、記入の節を飛び越えた（別の目の確かめ 11-08）
+    assert to.path == f"/toy/{G}/techo/kiroku" and to.fragment == "kinyu", f"のこすの頁の記入の節へ送っていない: {headers['Location']}"
+    assert q.get("msg") == tsukuru.DONE_NOTE and q.get("at") == "kinyu", q
     code, body = get(f"{to.path}?{to.query}")
     assert code == 200, code
-    # 着いた のこすの頁の頭に、組み上がりを残した事の案内
-    assert f'<p id="msg">{html.escape(tsukuru.DONE_NOTE)}</p>' in body, "のこすの頁に案内が出ない"
+    # 組み上がりを残した事の案内は、記入の節のすぐ上に 1 回（上げる節には出さない）
+    note = f'<p id="msg">{html.escape(tsukuru.DONE_NOTE)}</p>'
+    assert body.count(note) == 1 and body.index(note) < body.index('id="kinyu"') < body.index('id="mine"'), "案内が記入の節の上に無い"
 
 
 def passes_which_sheet():
@@ -183,9 +188,11 @@ def words_are_the_ones_the_person_chose():
     last = get(f"/toy/{G}/tsukuru?h={GS}&n={total}")[1]
     assert tile(last, "done")[0] == "のこす", "頁の札が のこす でない"
     assert naoru.ROUTE_ASK == "どう工夫したかあとで教えてください。写真や動画でもいいです。", naoru.ROUTE_ASK
-    assert f'<p class="ask-nokosu" id="ask-nokosu">{naoru.ROUTE_ASK}</p>' in last and last.index('id="ask-nokosu"') < last.index('value="done"'), "本人の字が のこす の札の上に無い"
-    mid = get(f"/toy/{G}/tsukuru?h={GS}&n=1")[1]
-    assert f'<p class="ask-nokosu" id="ask-nokosu" hidden>' in mid and "askNokosu.hidden=n<items.length" in mid, "途中の手順で本人の字が出る・JS で切り替わらない"
+    # 本人の字は のこす の札の中の上の段（統括の決め 11-08「札の中の上の段に小さく・読み上げの順は 本人の字 → のこす」）
+    btn = re.search(r'<button name="event" value="done"[^>]*>(.*?)</button>', last, re.S).group(1)
+    assert btn == f'<span class="ask">{naoru.ROUTE_ASK}</span><span class="nm">のこす</span>', btn
+    assert ".tiles .go .ask{display:block;font-size:13px" in last, "本人の字が小さい字でない（札の名が一番大きく読めない）"
+    assert "ask-nokosu" not in last, "札の外の前の字の置き場が残っている"
 
 
 def no_praise():

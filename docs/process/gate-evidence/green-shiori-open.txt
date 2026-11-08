@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_open.py
+# commit: fe34f161（回した時の HEAD）
+/tmp/tmpbq_y460u/play/NDL-1187053-R0000005-L/.tmp-rogkac96/H-C_v1.pdf
+ok しおりの開く道: 門の外は 2 つの道だけ・止めが cookie の前・合言葉は渡さない・20 分・とじる・開き直す・使えなくする・公開の場は断る
+rc=0

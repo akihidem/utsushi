@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_tsukuru_last_fit.py
+# commit: ffb31de7（回した時の HEAD）
+/tmp/tmpj2k6k3yw/play/NDL-1187053-R0000005-L/.tmp-4a3ael2y/H-C_v1.pdf
+/tmp/tmpj2k6k3yw/play/NDL-1187053-R0000014-R/.tmp-e88nkt85/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_tsukuru_last_fit.py", line 130, in <module>
+    assert f["bottom"] <= h - MARGIN, (mode, lang, f"のこす の札が最初の画面の外か、下の端まで {MARGIN}px 無い", f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('fold', 'ja', 'のこす の札が最初の画面の外か、下の端まで 8px 無い', {'key': 'goraigo-375x667', 'w': 375, 'h': 667, 'bottom': 705, 'hidden': False, 'lines': 2, 'askPx': 13, 'nmPx': 26, 'inside': True})
+rc=1

@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_voice_clip_race.py
+# commit: 21583c61（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_voice_clip_race.py", line 69, in <module>
+    assert name == "t2.mka", (name, why, "同じ番号に当たったら、次の空いた番号に置く")
+           ^^^^^^^^^^^^^^^^
+AssertionError: ('t1.mka', '', '同じ番号に当たったら、次の空いた番号に置く')
+rc=1

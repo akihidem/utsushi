@@ -128,8 +128,8 @@ assert json.loads(step(2, "back", json="1")[1])["step"] == 1
 assert step(2, "stuck")[0] == 303 and step(2, "stuck", json="1")[0] == 200 and step(3, "stuck", json="1")[0] == 200
 assert step(len(texts), "next", json="1")[1] == json.dumps({"ok": True, "step": len(texts)}), "最後の手順より先へは進まない"
 code, _, headers = step(len(texts), "done")
-# 組み上がりは のこすの頁（手帖の記録の頁の #mine）へ直に（本人の答え 11-08「B。」・統括の決め (a)）。行き先と札の形は tests/test_tsukuru_last_step.py（#321）
-assert code == 303 and headers["Location"].startswith(f"/toy/{G}/techo/kiroku") and headers["Location"].endswith("#mine")
+# 組み上がりは のこすの頁の記入の節（#kinyu）へ直に（本人の答え 11-08「B。」・統括の決め (a)・#643 の後の別の目で #mine から #kinyu へ）。行き先と札の形は tests/test_tsukuru_last_step.py（#321）
+assert code == 303 and headers["Location"].startswith(f"/toy/{G}/techo/kiroku") and headers["Location"].endswith("#kinyu")
 files = sorted((pathlib.Path(DATA) / "making").glob("step-*.json"))
 assert len(files) == 7, "最後の手順の次へは残さない（動かないので、途中でやめた段の数えを狂わせる）"
 for f in files:
