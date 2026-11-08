@@ -231,7 +231,8 @@ MEDIA_LIMIT = 60
 CLIP_TYPES = {("t", "audio/webm"): "webm", ("t", "audio/mp4"): "mp4", ("k", "video/webm"): "webm", ("k", "video/mp4"): "mp4"}
 # しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
 # 話した考えから紙を作る口（think-sheet・think-ok）も入れる。Claude を呼ぶ口と、紙を刷る口なのに、前は数の上限が無かった（設計 2 版の 4 節・別の目の止め 2）
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok|think-talk)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
+# 記録の後の次の版（next）と AI の口（ai-interpret・ai-observe）も数える（安全の事項 3 への対応）。前は数えず、同じ相手から続けて送れた
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|think-sheet|think-ok|think-talk)|/record/R-\d{{4,}}/(?:explain|next|ai-interpret|ai-observe)|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
