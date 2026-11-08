@@ -14,6 +14,7 @@ PDF の情報に手元の道が無いかを、刷った PDF から確かめる�
 """
 import io
 import os
+import re
 import secrets
 import shutil
 import socket
@@ -103,6 +104,28 @@ rest = flat
 for line in sc.KEY_LINE:
     rest = rest.replace(line, "")
 assert not [ch for ch in rest if not ch.isspace() and ch not in sc.TITLE + "御来迎" + "".join(sc.MARKS)], ("しおりの頁に、題字・玩具の名・押す順の印・鍵の字の外の字がある", whole)
+
+# ---- 2′ 長い玩具の名もしおりの中（統括の決め 11-08・別の目の #742 の確かめ: 83 種のうち 45 種が下の切る線を越えて、切ると欠けた）
+from omochae import hypotheses as _hy  # noqa: E402
+from web.play_server import sources as _sources  # noqa: E402
+
+names = sorted({_hy.load(s_)["toy"] for s_ in _sources()}, key=len)
+assert len(names) >= 80, len(names)
+for nm in names:
+    shown, size = sc.name_fit(nm)
+    last = sc.NAME_TOP + (len(shown) - 1) * 1.1 * size + 0.15 * size
+    assert last <= sc.CARD_H - 3 + 1e-6 and size >= sc.NAME_MIN, ("名の最後の字がしおりの中に無い", nm, shown, size)
+    assert shown == nm or nm.startswith(shown), ("名の字を替えた（括弧を外す外に）", nm, shown)
+    if sc.NAME_TOP + (len(nm) - 1) * 1.1 * sc.NAME_SIZE + 0.15 * sc.NAME_SIZE <= sc.CARD_H - 3:
+        assert (shown, size) == (nm, sc.NAME_SIZE), ("入る名を替えた", nm, shown, size)
+assert sc.name_fit("御来迎") == ("御来迎", sc.NAME_SIZE) and sc.name_fit("虎") == ("虎", sc.NAME_SIZE), "御来迎と虎は今のまま"
+# いちばん長い名で刷って、字の箱の下の端が しおりの下の端より上（pdftotext の字の箱で見る）
+longest = names[-1]
+lp = os.path.join(tmp, "long.pdf")
+open(lp, "wb").write(sc.pages(G, TOKEN, ORDER, 3, 1794120000, BASE, name=longest, sources=src, ids=IDS))
+bbox = subprocess.run(["pdftotext", "-bbox", lp, "-"], capture_output=True, text=True, check=True).stdout
+ymax = [float(v) for v in re.findall(r'yMax="([\d.]+)"', bbox)]
+assert ymax and max(ymax) <= (sc.CARD_Y + sc.CARD_H) * 72 / 25.4, ("いちばん長い名の字が しおりの下の端を越えた", longest, max(ymax))
 
 # ---- 3 絵の数
 assert [len(p.images) for p in r.pages] == [10], [len(p.images) for p in r.pages]
