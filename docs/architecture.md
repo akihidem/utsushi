@@ -128,7 +128,7 @@
 | `tests/compare_engine.py` | エンジンの共通の場面を、この repo と paper-to-toy の両方で回して結果を比べる。相手の repo が無い所でも `./run.sh` を回せるように、手で回す（#164） |
 | `engine/` | 型紙エンジン（paper-to-toy）を、提出のためにまとめた物（エンジンの main の頭の中身。履歴は paper-to-toy の repo で辿る。まとめた時の頭は README の「開発基盤と提出物の切り分け」の節）。試験は `engine/run.sh` で別に回し、この repo の `./run.sh` は流さない。正はエンジンの側。エンジンは 11-04 に `src/omochae/` の生成と検査の部分から切り出した（切り出した元の commit は `1d17988`）ので、`src/omochae/` は、うつしと engine/ の両方にある。型紙を作る仕組みと検査を直す時は、先に paper-to-toy を直して、それからこの repo に取り込む（比べる道具は上の `tests/compare_engine.py`）。入れた後に、engine/ の中の SECURITY.md を一番上の 1 つにまとめ（engine/README.md の 2 か所の道もそこへ向けた）、engine/README.md の概要に、エンジンを別の repo で開発して engine/ に一緒にした事と、両方を審査の対象にしてほしいという制作者の言葉の 2 文を足した（README の「開発基盤と提出物の切り分け」から、この行へ移した字。2 文は 11-08 の写し直しで足した） |
 | `docs/run.md` | 命令のくわしい形とできる事の全部（README の組み直し 11-08 で、README の「できること」「動かし方」の続き「評価」の節から字のまま移した。README は短い地図と始め方だけ） |
-| `docs/img/feedback-loop.svg` | README の仕組みの節の図（型紙が直るフィードバックループ）。字を絵の中に持つ SVG で、明るい頁でも暗い頁でも読める色。前の mermaid の塊は GitHub の携帯のアプリで字のまま出たので、絵にした（本人の言葉 11-08） |
+| `docs/img/feedback-loop.svg` | README の仕組みの節の図（型紙とエンジンが直る 2 つのフィードバックループ: ① 型紙の版が上がる輪と ② エンジンの版が上がる輪。本人の言葉 11-08「型紙改善、その型紙生成エンジンの改善のループが回るのが今回のシステムの売り」）。字を絵の中に持つ SVG で、明るい頁でも暗い頁でも読める色。前の mermaid の塊は GitHub の携帯のアプリで字のまま出たので、絵にした（本人の言葉 11-08） |
 | `docs/features.json` | 機能の状態（`id`・`name`・`status`・`evidence`・`unverified`）。todo = 未着手、doing = 動くが `unverified` が残る、done = 残りが無い |
 | `docs/process/` | 開発の過程。`index.json`（地図の正本）、`claims.json`（主張と根拠の正本） |
 | `src/omochae/ledger.py` | 台帳の検査と、地図と主張の表の描画 |
