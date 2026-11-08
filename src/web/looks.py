@@ -368,10 +368,15 @@ def _mazu(ts, photos=True):
     # 前は白の扉の額の下に出していた。扉は外したので、同じ額の敷き方の 2 枚の下に置く（『江都二色』の話の 1 行でもある）
     # 原図の周りに浮かぶ実物のおもちゃ（本人の言葉 11-08「スクロールして、まずはここからの原図の周囲に、実際のおもちゃを抜き出して浮かべる。」。web.jitsubutsu）。
     # 絵が無い場では何も置かない。置き直しの台本は節の終わり（字と札が全部そろった後）に置く
-    from . import jitsubutsu, ukabu
+    from . import jitsubutsu, kaizen_judge, ukabu
 
+    # 審査用の頁「良くするための一周 ♻︎」（/kaizen）への帯（本人の言葉 11-08「「良くするための一周」がサイトで目立っていません。ここは審査者に見せたい所です。
+    # 審査の人が入口から来て、掘らずに一周の仕組みが目に入るように、目立たせてください。」・統括の決め 11-08 の案 A）。
+    # 置き場は まずはここから の節の頭（見出しの上）: 下へ送る印・指の送り・題の間を押す、のどれでも #mazu に着くので、最初の 1 回の送りで画面の上に出る。
+    # 題の間（最初の画面）は崩さない。字は本人の OK 済みの題（kaizen_judge.TITLE）そのもので、新しい字は足さない（訳の表の鍵と同じ 1 つの字の節にする）
+    band = f'<a class="tj-kaizen" href="/kaizen">{esc(kaizen_judge.TITLE)}</a>'
     real = jitsubutsu.block()
-    return (f'<section class="tj-mazu" id="mazu" tabindex="-1">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p>'
+    return (f'<section class="tj-mazu" id="mazu" tabindex="-1">{band}{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p>'
             + real + (ukabu.place_js("mazu", wide=True) if real else "") + '</section>')
 
 
@@ -540,6 +545,8 @@ big.forEach(i=>{if(!i.complete){const f=()=>{if(--left<=0)ok()};i.addEventListen
 ERABU = """
 .tj-mazu{padding:2vh 5vw 8vh;max-width:980px;margin:0 auto}
 .tj-mazu h2{font-size:clamp(18px,2vw,24px);font-weight:400;letter-spacing:.3em;text-align:center;margin:0 0 3vh}
+body .tj-mazu .tj-kaizen{display:block;box-sizing:border-box;min-height:56px;margin:0 0 4vh;padding:12px 16px 12px calc(16px + .16em);border:1px solid #d8cdb6;text-align:center;font-size:clamp(17px,2.2vw,26px);letter-spacing:.16em;line-height:1.6;color:inherit;text-decoration:none;background:none}
+body .tj-mazu .tj-kaizen:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .tj-mazu .meta{text-align:center;font-size:13px;letter-spacing:.3em;color:#5d554a;margin:4vh 0 0}
 .tj-mazu .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,4vw,56px)}
 body .tj-mazu-card{display:block;color:inherit;text-decoration:none;border:0}
