@@ -221,8 +221,10 @@ assert (prid, f"voice/{pname}", "") in waiting, waiting
 assert media_review.main(["approve", prid, f"voice/{pname}", "--shows", "object", "--reviewer", "進め役"]) == 3, "端末の人の確かめが無いと進まない"
 assert pname in voice_text.clips_waiting(prid)
 assert media_review.main(["frames", prid, f"voice/{pname}"]) == 0
-fd = media_review.frames_dir(prid, pname)
-assert sorted(p.name for p in fd.iterdir()) == ["1.jpg", "2.jpg", "3.jpg"] and oct(fd.stat().st_mode & 0o777) == "0o700"
+fds = media_review.frames_dirs(prid, pname)
+assert len(fds) == 1 and sorted(p.name for p in fds[0].iterdir()) == ["1.jpg", "2.jpg", "3.jpg"] and oct(fds[0].stat().st_mode & 0o777) == "0o700"
+assert fds[0].parent.parent == clip_read.loop.base() and oct(fds[0].parent.stat().st_mode & 0o777) == "0o700", "共用の /tmp でなく、記録の置き場の下"
+fd = fds[0]
 keep_confirm = media_review.contrib._human_confirm
 media_review.contrib._human_confirm = lambda *a: True  # 試験には端末が無いので、人が番号を打った事にする
 assert media_review.main(["approve", prid, f"voice/{pname}", "--shows", "people", "--reviewer", "進め役"]) == 0

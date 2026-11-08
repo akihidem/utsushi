@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_tsukuru_rebuild.py
+# commit: f3210f06（回した時の HEAD）
+ok つくるの頁の作り直し: 頭は原図と狂歌と題・仮説 → たとえ → 立体 → 型紙の窓 → のこそう・復元と組み方と困ったらは無い・窓の中で刷る・もちよるへの 1 行
+rc=0

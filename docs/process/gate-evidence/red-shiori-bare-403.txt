@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_open.py
+# commit: 8ee683af（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_shiori_open.py", line 90, in <module>
+    assert '<nav class="nav"' not in refused and "href=" not in refused.split("<body", 1)[-1], "外の Origin の断りの頁も、当たる前の頁と同じ帯なし・道なし"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 外の Origin の断りの頁も、当たる前の頁と同じ帯なし・道なし
+rc=1

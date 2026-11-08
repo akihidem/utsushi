@@ -32,7 +32,7 @@ _genga._pic = _pic
 
 
 GORAIGO, TORA = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-PLAIN = "NDL-1187053-R0000009-L-2"
+PLAIN = "NDL-1187053-R0000009-R"  # 歌の読みの無い試作の玩具（前の R0000009-L-2 は 11-08 に図 11 の歌の読みが入った）
 
 for look in ("tenji", "zine"):
     for sid in (GORAIGO, TORA):

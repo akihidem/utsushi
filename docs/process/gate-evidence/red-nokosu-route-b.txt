@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_nokosu_route_b.py
+# commit: 19447494（回した時の HEAD・今の main。試験だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_nokosu_route_b.py", line 44, in <module>
+    assert go and pdf < make < go.start(), (sid, "印刷 → つくる → のこす の順でない")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', '印刷 → つくる → のこす の順でない')
+rc=1

@@ -73,15 +73,17 @@ def section(sid, data, recs, photos=True):
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
             # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
             rows += (f'<li><b>{esc(hypotheses.version_head(h, many))} 版 {v["version"]}</b>: {ch}'
-                     + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=/toy/{esc(sid)}#{esc(r)}>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
+                     + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=/toy/{esc(sid)}/techo/kiroku#mine>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
+    # 記録への道は、手帖の記録の頁の記録の並び（#mine）へ向ける。つくるの頁から記録の札（/toy/<印>#R-…）を外したため（本人の言葉 11-08「つくるは読む情報が多すぎて
+    # 整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」）。記録の札の操作（説明を残す・Claude に聞く・次の版を作る）は記録の頁にある
     ready, waiting = pending(sid, recs) if photos else ([], [])
     lines = f'<ul>{rows}</ul>' if rows else '<p class="meta">報告から直した版はまだありません。最初の報告が最初の版を変えます。</p>'
     todo = ""
     if ready:
-        todo += f'<p>次の版を待つ報告 {len(ready)} 件: ' + "・".join(f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(wording.record_no(r["id"]))}</a>' for r in ready) + '（記録の「次の版を作る」から、寸法を 1 つ変えて紙を作ります）</p>'
+        todo += f'<p>次の版を待つ報告 {len(ready)} 件: ' + "・".join(f'<a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>' for r in ready) + '（記録の「次の版を作る」から、寸法を 1 つ変えて紙を作ります）</p>'
     if waiting:
-        todo += f'<p class="meta">説明を待つ報告 {len(waiting)} 件: ' + "・".join(f'<a href="/toy/{esc(sid)}#{esc(r["id"])}">{esc(wording.record_no(r["id"]))}</a>' for r in waiting) + '（人の説明が先。説明が付くと次の版に進めます）</p>'
+        todo += f'<p class="meta">説明を待つ報告 {len(waiting)} 件: ' + "・".join(f'<a href="/toy/{esc(sid)}/techo/kiroku#mine">{esc(wording.record_no(r["id"]))}</a>' for r in waiting) + '（人の説明が先。説明が付くと次の版に進めます）</p>'
     if not recs:
         todo = '<p class="meta">報告はまだありません。作って、記録と感想を残すと、ここから型紙が変わっていきます。</p>'
     return (f'<section class="sec" id="kaizen"><h2>型紙の改善の輪</h2>'

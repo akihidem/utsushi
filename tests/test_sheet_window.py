@@ -42,7 +42,11 @@ def visible(page):
 
 
 def win(page):
-    return page.split('id="win"', 1)[1].split("</section>", 1)[0]
+    """型紙の窓の中の、紙と口（版の歩みの畳みを除く）。窓は次の段（できたら、のこそう・#kiroku）の頭まで。
+    版の歩みの畳みは 11-08 に窓の中（型紙 → 版の歩み → 窓の口）へ入った。中の字（前の版の歩み「…刷った」「試した後の紙を足した」）は過ぎた版の記録で、
+    この試験が見る「今の窓に出す物」ではないので除く（版の歩みの字は test_ban_ayumi が見る）"""
+    w = page.split('id="win"', 1)[1].split('id="kiroku"', 1)[0]
+    return re.sub(r'<section class="sec ban-ayumi".*?</section>', "", w, flags=re.S)
 
 
 # 予想の段は #266 で外したので、予想を置かずに開いた頁で窓を見る

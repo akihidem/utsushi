@@ -222,14 +222,15 @@ ROAD_GO = '<p class="road"><a class="road-go" href="/">えらぶ</a></p>'
 # 黒のジンの表紙の 1 行（字は変えない）。白に統一した後は、白の扉の額の下に出す（本人の決定 11-06）。
 DOOR_LINE = "江都二色　安永二年　うしなわれた玩具"
 
-# 題の間の 2 つの足し（CSS の注は頁に出るので、理由はここに書く）:
-# - 題字の下の読み（YOMI・.tj-hall h1 .yomi）: 縦書きの題の行の中で、ひらがなの後に横書きの小さな字の塊として置くと、ひらがなの真下に並ぶ
-#   （題の縦書きはそのまま）。字は 12px 以上（字の大きさの床）。色は英字の小さな 1 行と同じ灰（暗い版は _dark が替える）
-# - 英語の頁（html[lang=en]）は、題・副題・英字を横書きにする（本人の言葉 11-08「トップページ、英語版は余白維持で横書きにしてください」）。
-#   題の間の 3 列・高さ・余白は日本語の頁のまま（余白維持）。英語の副題は縦書きの字の間（.5em）だと語がばらけるので詰め、読みは題の下の別の行。
+# 題の間の足し（CSS の注は頁に出るので、理由はここに書く）。本人の言葉 11-08「英語は英語モードの時のみ横書きで、他はかえない。iPhoneで見ると
+# 英語モードの左右のバランスがズレてる。Utsushiはすこし大きめのほうがいい。」で、足しは英語の頁（html[lang=en]）だけにした:
+# - 日本語とやさしい日本語の頁は、題の間を #644 の前の形のまま（縦書き・読みを出さない・上の余白も詰めない）。題字の下の読み（YOMI・.yomi）は
+#   字の形は日本語の頁にも残る（頁の作りは 1 つ）が、出さない（display:none）
+# - 英語の頁は、題・副題・英字を横書きにする（本人の言葉 11-08「トップページ、英語版は余白維持で横書きにしてください」）。題の間の 3 列・高さ・
+#   余白は日本語の頁のまま（余白維持）。読みは題のひらがなの下の別の行で、副題（14〜17px）との差が分かる大きさ（20〜28px）にする
+# - 左右の真ん中: 字の間（letter-spacing）は最後の字の後にも付くので、真ん中に寄せた字は字の間の半分だけ左へずれて見える（ひらがなの .6em で
+#   幅 390 の時 13px）。英語の頁の真ん中に寄せる字（題のひらがな・読み・英字・副題）は、左に字の間と同じ余白を置いて、字の見える所を真ん中にする
 #   1 列に積む幅（820 以下）では、副題も題と同じく真ん中に寄せる
-# - 1 列に積む幅の日本語の頁（やさしい日本語も lang=ja）は、読みの分（約 24px）だけ題の間の上の余白を詰める。読みを足すと題の縦の行が伸び、
-#   幅 390×844 で「このサイトについて」が最初の画面の下の端（main では 834px）から 857px へ出たため。英語の頁は横書きで短いので詰めない（余白維持）
 TENJI = """
 body.tenji{background:#fcfcfa;color:#2b2722;font-family:"Noto Serif CJK JP","Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;font-feature-settings:"palt" 1}
 /* 地は本人の言葉「白の背景」へ戻した（research/24 の 1）。前のクリーム #f6f3ec は作る側の手癖で、生成物の定番の見た目に寄っていた。
@@ -240,11 +241,13 @@ body.tenji a{color:#6b4f2a;text-decoration:none;border-bottom:1px solid rgba(107
 .tj-hall h1{grid-column:2;writing-mode:vertical-rl;font-weight:400;font-size:clamp(44px,6vw,86px);letter-spacing:.6em;margin:0;color:#1f1b17}
 .tj-hall .sub{grid-column:3;justify-self:start;writing-mode:vertical-rl;margin-left:5vw;font-size:clamp(14px,1.3vw,17px);letter-spacing:.5em;line-height:2.4;color:#5d554a}
 .tj-hall .en{grid-column:1;justify-self:end;margin-right:5vw;font-size:12px;letter-spacing:.35em;color:#7a7164;text-transform:uppercase;writing-mode:vertical-rl}
-.tj-hall h1 .yomi{display:inline-block;writing-mode:horizontal-tb;margin-top:.9em;font-size:clamp(12px,1vw,14px);letter-spacing:.3em;line-height:1;color:#7a7164}
+.tj-hall h1 .yomi{display:none}
 html[lang=en] .tj-hall h1,html[lang=en] .tj-hall .sub,html[lang=en] .tj-hall .en{writing-mode:horizontal-tb}
 html[lang=en] .tj-hall h1{text-align:center}
-html[lang=en] .tj-hall h1 .yomi{display:block;margin-top:.5em}
-html[lang=en] .tj-hall .sub{letter-spacing:.04em;line-height:1.9}
+html[lang=en] .tj-hall h1 .kana{padding-left:.6em}
+html[lang=en] .tj-hall h1 .yomi{display:block;margin-top:.45em;padding-left:.2em;font-size:clamp(20px,2vw,28px);letter-spacing:.2em;line-height:1.2;color:#5d554a}
+html[lang=en] .tj-hall .en{padding-left:.35em}
+html[lang=en] .tj-hall .sub{letter-spacing:.04em;line-height:1.9;padding-left:.04em}
 /* 次へ進む釦（段 0）は題の 3 列の下の段に 1 つだけ。白の壁の展示に合わせ、塗らずに細い枠で示す */
 /* 字の並びは 題 → 釦 → 副題。幅の狭い画面（1 列に積む）では、副題まで積むと釦が最初の画面の外に出る（幅 390 で 1015px）ので、題のすぐ後に置く。
    広い画面は 3 列の縦書きの下の段（2 行目）に置く */
@@ -318,7 +321,6 @@ body.tenji a.road-go{display:inline-flex;align-items:center;justify-content:cent
  /* 1 列に積む時は、英字の小さな 1 行だけ横書きにする（縦書きのままだと 246px を取り、375×667 で釦が最初の画面の外に出た）。題と副題は縦書きのまま */
  .tj-hall .en{writing-mode:horizontal-tb}
  html[lang=en] .tj-hall .sub{text-align:center}
- html[lang=ja] .tj-hall{padding-top:calc(10vh - 24px)}
  .tj-all .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}}
 @media (max-width:680px){.tj-all li.big{grid-column:auto;grid-row:auto}}
 """

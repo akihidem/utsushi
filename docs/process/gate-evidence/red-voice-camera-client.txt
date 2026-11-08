@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_clips_client.py
+# commit: 8eb08662（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_clips_client.py", line 21, in <module>
+    from web import clips, hanasu, hmd, nokosu, techo_site  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'clips' from 'web' (src/web/__init__.py)
+rc=1

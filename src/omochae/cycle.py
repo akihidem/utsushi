@@ -330,7 +330,9 @@ def _walk_own_next(c, port):
     status, _ = mine.post(f"/record/{rid}/explain", text=EXPLAIN, next_idea=NEXT_IDEA, by=BY)
     if status != 303:
         raise Failed(f"自分の紙の記録の説明を受けない（{status}）")
-    if f"/record/{rid}/next" not in mine.get(toy)[1]:
+    # 次の版の欄は手帖の記録の頁で見る: つくるの頁から記録の札を外した（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。
+    # 復元の記録などはすべてもちよるに統合する。」）。記録の札の操作（説明・次の版）は手帖の記録の頁にある
+    if f"/record/{rid}/next" not in mine.get(f"{toy}/techo/kiroku")[1]:
         raise Failed("自分の紙の記録に、次の版の欄が出ない")
     change = _one_change(c)
     status, _ = mine.post(f"/record/{rid}/next", interpretation=INTERPRET, param=change["param"], to=str(change["to"]), why=WHY, by=BY)

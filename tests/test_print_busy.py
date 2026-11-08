@@ -106,7 +106,8 @@ assert re.search(r"<button[^>]* data-busy>[^<]+</button>", check) and "/think-ok
 # 次の版の紙を作る釦
 assert post(f"/toy/{G}/record", {"hypothesis": ids[0], "result": "動いた"}) == 200
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る", "next_idea": "厚さを変える", "by": "大人"}) == 200
-assert any("/next#" in a for a in marked(get(f"/toy/{G}")))
+# 次の版の欄は手帖の記録の頁の記録の札にある（つくるの頁から記録の札を外した・本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）
+assert any("/next#" in a for a in marked(get(f"/toy/{G}/techo/kiroku")))
 
 # 紙の無い版を作り直す釦。押すたびに確定の記録が 1 件増えるので、2 回送ると確定も増えていた
 form = {"interpretation": "折りが固い", "param": "paper_thickness", "to": "0.2", "why": "開きを見る", "by": "大人"}

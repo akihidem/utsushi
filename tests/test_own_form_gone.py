@@ -97,7 +97,8 @@ def recorded(sid, oid, words_text):
 
 
 def card_of(page, rid):
-    return page.split(f'id="{rid}"', 1)[1].split("</article>", 1)[0]
+    """手帖の記録の頁のその記録の札（錨は記録の番号・次の札の頭まで）。前はつくるの頁の記録の札だったが、つくるの頁から記録の札を外した（11-08）"""
+    return page.split(f'id="{rid}"', 1)[1].split('<div class="item" id="R-', 1)[0]
 
 
 for sid in (G, T, TRIAL):
@@ -125,8 +126,10 @@ for sid in (G, T, TRIAL):
 
     # 3. 前の記録と、それで刷った紙は読める。紙は記録の札から開く
     rid = recorded(sid, oid, "前の感想")
-    card = card_of(get(f"/toy/{sid}"), rid)
-    assert "自分の仮説の紙" in card and "感想: 前の感想" in card and "説明: 前の感想の説明" in card and "次の思いつき: 前の感想の次" in card, card
+    # 記録の札は手帖の記録の頁（つくるの頁から外した・11-08）。手帖の札は説明の字に「説明: 」の札を付けない。感想は もちよる の札に出る
+    card = card_of(get(f"/toy/{sid}/techo/kiroku"), rid)
+    assert "自分の仮説の紙" in card and "前の感想の説明" in card and "次の思いつき: 前の感想の次" in card, card
+    assert "前の感想" in get("/gallery") and rid not in get(f"/toy/{sid}"), (sid, "感想は もちよる・つくるの頁に記録の札は無い")
     paper = f"/sheet/{sid}/{oid}_v1_free.pdf"
     # 型紙なしの紙は 11-06 から刷らない（本人の決まり「文章のプリントは廃止」）ので、札に道は出さない。前に刷った紙の道は残す
     assert f'<a href="{paper}"' not in card and "型紙なしの紙" not in card, (sid, "型紙なしの紙への道を出さない")
@@ -142,7 +145,7 @@ for sid in (G, T, TRIAL):
 # 寸法つきの仮説は型紙と手順の紙を刷る（作る側の命令の道。頁の札にはリンクが無かった）。これも記録の札から開く
 typed = written(G, "寸法つきの案", {"push_part": "tab", "hub": "axle", "pusher_height": 15})
 rid_typed = recorded(G, typed, "寸法つきの感想")
-card = card_of(get(f"/toy/{G}"), rid_typed)
+card = card_of(get(f"/toy/{G}/techo/kiroku"), rid_typed)
 # 刷るのは型紙だけ（本人の決まり 11-06）。札の道は型紙だけで、手順の紙の道は出さない（前に配った道は開く）
 assert re.search(rf'<a href="/sheet/{G}/{typed}_v1\.pdf"[^>]*>型紙</a>', card), card
 assert f"{typed}_v1_tejun" not in card and "手順の紙" not in card
@@ -161,12 +164,12 @@ spoken = written(G, "話した案")
 rid_spoken = recorded(G, spoken, "話した案の感想")  # 話した案の記録は本人の鍵がある画面から届く。鍵の試験は tests/test_loop1_own_private.py が見るので、ここは印を後から置く
 store.write_json(loop.folder() / "words-W-9001.json", {"id": "W-9001", "source_id": G, "typed_by": words.THINK_BY, "own_id": spoken})
 assert spoken in words.spoken_own_ids(G)
-assert f"{spoken}_v1_free" not in card_of(get(f"/toy/{G}"), rid_spoken), "話した案の紙への道を札に出さない"
+assert f"{spoken}_v1_free" not in card_of(get(f"/toy/{G}/techo/kiroku"), rid_spoken), "話した案の紙への道を札に出さない"
 
 # 合言葉なしの場は OWN-n の紙を開かないので、札にも出さない。人の書いた文も出さない
 rid_written = next(r["id"] for r in records.all_records(G) if r["hypothesis_id"] == "OWN-1")
-public = get(f"/toy/{G}", at=opened)
-assert "OWN-1_v1_free" not in card_of(public, rid_written) and not [w for w in ("前の感想", *WRITTEN) if w in public], "合言葉なしの場"
+public = get(f"/toy/{G}/techo/kiroku", at=opened)
+assert "OWN-1_v1_free" not in public and not [w for w in ("前の感想", *WRITTEN) if w in public], "合言葉なしの場"
 
 # 5. 玩具の頁には記録の欄が無いので、書いた仮説も話した本人の案も並ばない（本人の答え 11-07 夕の Q3 で、玩具の頁の記録の欄は のこす へ寄せた。受け口は残る）。
 # 話した本人の紙は、手帖が本人の画面にだけ開く（tests/test_loop1_round.py・omochae.cycle の「自分の紙で作って記録」の段が見る）
