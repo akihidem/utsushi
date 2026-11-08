@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_ways.py
+# commit: 79ef6da3（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_ways.py", line 87, in <module>
+    assert counts == {"one_sheet": 70, "fold_only": 0, "period": 73}, counts
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'one_sheet': 70, 'fold_only': 0, 'period': 74}
+rc=1

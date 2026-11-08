@@ -82,8 +82,9 @@ assert all(not r["fold_only"] or r["one_sheet"] for r in table)  # 折るだけ�
 counts = {k: sum(r[k] for r in table) for k in ("one_sheet", "fold_only", "period")}
 # 御来迎の H-C は、次の組（goraigo-v14）で割り箸をセロハンテープで内筒に留める形になり、テープは今の物で代えた材料なので
 # 「当時の材料」が外れて 1 つ減った（前は割り箸の柄を差す形で当時の材料。紙一枚の数は変わらない）
-# 11-08 に今の組を goraigo-v15（割り箸を木工用ボンドで貼る。テープを使わない版）に上げ、H-C の「当時の材料」が戻って 1 つ増えた
-assert counts == {"one_sheet": 70, "fold_only": 0, "period": 74}, counts
+# 11-08 に今の組を goraigo-v15（割り箸を木工用ボンドで貼る。テープを使わない版）に上げた。木工用ボンドは今の物なので（本人の答え 11-08
+# 「御来迎の頁の『当時の材料』の印は外してください。」）、H-C は前と同じく「当時の材料」が付かず、数は 73 のまま
+assert counts == {"one_sheet": 70, "fold_only": 0, "period": 73}, counts
 assert not [r for r in table if r["period"] and r["modern_substitutes"]]  # 今の物で代えたのに当時の材料、は読み違い
 assert [r["hypothesis_id"] for r in table if r["source_id"] == GORAIGO and r["one_sheet"]] == ["H-E"]  # 必須 2 種で紙一枚は御来迎の H-E だけ
 
@@ -93,9 +94,11 @@ data = hypotheses.load(TORA)
 page = toy.toy_page(GORAIGO)
 # 札の印はたたき台の分（J-032）。御来迎の次の組（goraigo-v14）のたたき台 H-C は、割り箸をセロハンテープで留める（テープは今の物で代えた材料）ので、
 # 「紙一枚」も「当時の材料」も付かない（前の組の H-A は竹串と糸で「当時の材料」だった）。本人の決定 19:44 で、たたき台が紙一枚でなくてよい
-# 11-08 に今の組を goraigo-v15（割り箸を木工用ボンドで貼る。テープを使わない版）に上げ、テープが外れたので「当時の材料」の札だけが付く
-# （ボンドは、のりと同じく道具の行で、材料に数えない。ways の注の one_sheet の決まり）
-assert 'class="ways"' in page and "当時の材料" in page and "紙一枚" not in re.sub(r"<[^>]+>", "", page.split('class="ways"', 1)[1][:400])
+# 11-08 に今の組を goraigo-v15（割り箸を木工用ボンドで貼る）に上げても、木工用ボンドは今の物で代えた材料なので印は付かない
+# （本人の答え 11-08「御来迎の頁の『当時の材料』の印は外してください。」）
+assert 'class="ways"' not in page
+FAN_V15 = TEMPLATES["slider_fan"].SHEET_SET
+assert FAN_V15 == "goraigo-v15" and not marks_of(GORAIGO, "H-C")["period"] and "木工用ボンド" in ways.details("slider_fan", hypotheses.params_for(next(h for h in hypotheses.load(GORAIGO)["hypotheses"] if h["id"] == "H-C"), FAN_V15))["modern_substitutes"], "御来迎の版 15 に当時の材料の印が無い"
 page = toy.toy_page(TORA)
 assert 'class="ways"' not in page  # 虎は竹串と油粘土が要るので、どの印も付かない。札の無い頁も開く
 assert "どれがえらい、ということはありません" in page
@@ -107,8 +110,8 @@ assert hypotheses.shown_name(hypotheses.sheet_of(TORA)) in page and not re.searc
 listing = toys.page("tenji")
 # 一覧の札は絵と名前だけ（えらぶ の作り直し 11-07）。印は玩具の頁の型紙の札に出し、印の断りの字は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）
 assert 'class="ways"' not in listing and "どれがえらい、ということはありません" in about.page("tenji")
-# 御来迎は今の組 goraigo-v15（テープを使わない版・11-08）で「当時の材料」が付く。虎は油粘土が要るので付かない
-assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == ["当時の材料"]
+# 御来迎の今の組 goraigo-v15 は木工用ボンドが今の物なので、印が付かない（本人の答え 11-08）。虎は油粘土が要るので付かない
+assert ways.toy_labels(TORA) == [] and ways.toy_labels(GORAIGO) == []
 # 前の組（goraigo-v10）のたたき台 H-A は竹串と糸で作るので「当時の材料」が付く（主張 C-24 の根拠。前の組の紙は変えない）
 _fan = TEMPLATES["slider_fan"]
 _now, _fan.SHEET_SET = _fan.SHEET_SET, _fan.FROZEN_SET
