@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-names-red/list.json data/i18n/en.json; .venv/bin/python tests/test_en_terms.py'
+# commit: bc6d0cb0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_en_terms.py", line 121, in <module>
+    assert base[w].lower() in v.lower(), ("作例の一覧の玩具の名が toys.json と違う", k, w, base[w])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('作例の一覧の玩具の名が toys.json と違う', '{0} 月 {1} 日 いろいろな玩具（風車・独楽・舟・竿登りの猿・鼠車・でんでん太鼓・御来迎など）を、刷った型紙から紙で作った。作った人の動画も感想として受けた', '鼠車', 'Rat cart')
+rc=1
