@@ -11,7 +11,8 @@
 3. 公開の場: 人が確かめる前は 5 つの欄の字を出さない。確かめた後は出す。確かめた後に字が替わったら、また出さない
 4. 人が確かめる時に、5 つの欄の字も見える（words_review の字に入る）。連絡先の形の床に当たる字は、確かめた後でも出さない
 5. 欄が無い記録の、前の確かめの指紋は替わらない（words_review の字の形が、前と同じ）
-6. メモは、手帖の記録の頁で、その画面が残した自分の記録の札にだけ出る（ほかの人の画面・公開の場には出ない）
+6. メモは、手帖の記録の頁で、その画面が残した自分の記録の札にだけ出る（ほかの人の画面・公開の場には出ない）。
+   記録を残した画面の もちよる の頭の「今残した」札にも、同じ畳み（4 つの欄・メモなし）が付く
 """
 import html
 import json
@@ -91,6 +92,13 @@ assert set(words_review.words_of(prec)) == {"impression", "fixes"}, "欄の無�
 # 6. メモは、手帖の記録の頁の自分の記録の札にだけ
 assert "二回目に作った" not in techo_site.gallery_page(sources(), public=True) and "二回目に作った" not in json.dumps(words_review.words_of(store.read_json_or_skip(records.folder() / f"{full}.json")), ensure_ascii=False), "公開の場にも確かめる字にもメモを入れない"
 records.claim(full, "key-1")
+# 6 の前に: 記録を残した画面の もちよる では、その記録は頭の「今残した」札（own）だけに出る。その札にも同じ畳みを付ける
+# （付けないと、残した人の画面のどこにも 4 つの欄が出ない。修正の担当 d の気づき 11-08）。メモは own の札にも出さない（もちよる なので）
+mine_page = techo_site.gallery_page(sources(), rec_key="key-1")
+own = mine_page.split('id="own"', 1)[1].split('id="ageta"', 1)[0] if 'id="own"' in mine_page.split('id="ageta"', 1)[0] else mine_page.split('id="own"', 1)[1]
+own = own.split("</details>", 1)[0]
+assert f"<summary>{esc(techo_site.DETAILS_HEAD)}</summary>" in own and all(esc(x) in own for x in LINES[full]), "今残した札にも畳みと 4 つの欄"
+assert "二回目に作った" not in mine_page, "今残した札にもメモは出さない"
 assert "メモ: 二回目に作った" in techo_site.records_page(G, rec_key="key-1"), "自分の記録の札にメモが出る"
 assert "二回目に作った" not in techo_site.records_page(G, rec_key="key-2") and "二回目に作った" not in techo_site.records_page(G), "ほかの人の画面には出ない"
 assert "二回目に作った" not in techo_site.records_page(G, rec_key="key-1", public=True), "公開の場には出ない"
