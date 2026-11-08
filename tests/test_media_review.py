@@ -94,7 +94,9 @@ assert url not in techo_site.records_page(G, up_key="別の鍵"), "別の鍵で�
 # 物だけと確かめた物は出る。撮影の情報は外れている。
 assert media_review.record(rid, "m1.jpg", "object", "確認者") == []
 assert media_review.waiting() == []
-assert url in gallery() and url in toy.toy_page(G)
+# 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+# 確かめた写真は、もちよる（ギャラリー）と手帖の記録の頁に出る。つくるの頁には出ない
+assert url in gallery() and url in techo_site.records_page(G) and url not in toy.toy_page(G)
 code, served = fetch(url)
 assert code == 200 and PLACE.encode() not in served, "撮影の情報を外した物が出る"
 # 合言葉なしで開いた場は、確かめた物でも出さない（J-028 を変えない）
