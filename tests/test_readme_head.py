@@ -58,7 +58,10 @@ def at(line):
 # 1. 頭
 assert lines[0] == "# utsushi", lines[0]
 head = [ln for ln in lines[1:at("## 試す")] if ln.strip()]
-assert head == [ONE_LINE, *SUMMARY, URI, CORE], head
+# ループの中の人（本人の言葉 11-08「そしてちゃんとグラウンディングで人間が入ってる。ループの中に人間が入っている事も売りに書いてください。」
+# 「型紙をためしてもらうグラウンディングと、全体の改善案をみる管理人のグラウンディング。この 2 つを書いてください。」）
+GROUND = "- **ループの中に人がいる（2 つのグラウンディング）**: ① 型紙を試す作り手が、紙で作って現実の世界で確かめます。② 全体の改善案を見る管理人が、どの案を採るかと、エンジンをどう直すかを決めます。"
+assert head == [ONE_LINE, *SUMMARY, URI, GROUND, CORE], head
 assert lines.count(CORE) == 1, "核の言葉は頭の 1 行（畳みの 30 秒の要約の核の項目は CLAUDE.md と同じ字なので、同じ引用がもう 1 か所ある）"
 assert at(SITE) < 30, "決まった番地は頭の 30 行の内"
 
@@ -84,6 +87,8 @@ assert svg.startswith("<svg ") and "<title" in svg and "<image" not in svg and "
 assert all(w in svg for w in ("作る側の Claude Code が", "Claude が作ったエンジンが", "人が決める", "新しい版の型紙を刷る", "フィードバック")), "絵の中の字"
 # 2 つのループ（型紙の版が上がる輪と、エンジンの版が上がる輪）が絵と説明の字の両方に見える（本人の言葉 11-08「…エンジンも改善される説明にしてください」「…ループが回るのが売り」）
 assert "① 型紙の版が上がる輪" in svg and "② エンジンの版が上がる輪" in svg and "エンジンを直す" in svg, "絵の 2 つの輪"
+assert svg.count(">作り手</text>") == 2 and svg.count(">管理人</text>") == 2, "絵の人の印（作り手が 2・管理人が 2）"
+assert "作り手" in IMG.group(1) and "管理人" in IMG.group(1) and "グラウンディング" in how, "説明の字と節の字にも 2 つのグラウンディング"
 assert "① 型紙の版が上がる輪" in IMG.group(1) and "② エンジンの版が上がる輪" in IMG.group(1), "説明の字の 2 つの輪"
 # エンジンも直る事の例は、版の記録（data/history/kaizen-history.json）にある事だけ
 eng = how[how.index("### エンジンも直る（版の記録にある例）"):]
