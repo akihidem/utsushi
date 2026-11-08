@@ -39,7 +39,8 @@ def done(**kw):
 # 1
 for rid in ("R-0001", "R-12345"):
     code, loc, _ = done(anchor=rid)
-    assert code == 303 and loc.startswith("/toy/NDL-1187053-R0000005-L/techo/kiroku?") and loc.endswith(f"#{rid}"), (rid, loc)
+    # at= にも番号を渡し、返事の文をその札の頭に出す（techo_site.records_page）
+    assert code == 303 and loc.startswith("/toy/NDL-1187053-R0000005-L/techo/kiroku?") and f"&at={rid}" in loc and loc.endswith(f"#{rid}"), (rid, loc)
 code, loc, _ = done(anchor="R-12")
 assert "/techo/kiroku" not in loc, ("形の違う錨を札の道にした", loc)  # 形の違う錨は前からの玩具の頁の道（at と錨）へ
 # 2

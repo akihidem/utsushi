@@ -665,6 +665,9 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     from web.toy import reply_note
 
     note = "" if errors else reply_note((), msg)
+    # 札へ戻した時（at が記録の番号・play_server._done）は、返事の文をその札の頭に出す（着く所と文を同じ所にする。#mine の頭に出すと、
+    # 札へ着いた画面の外になる）。無い番号の時は前のとおり #mine の頭（文を落とさない）
+    at_card = at if at in {r["id"] for r in records.all_records(sid)} else ""
     from api.words import spoken_own_ids
     from web.toy import own_papers as toy_own_papers
 
@@ -686,7 +689,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         # 玩具の頁から記録の札を外してもサイトから消えないように、その人の画面のここへ）。開いた場では人の言葉を出さない（前と同じ線）
         memo = wording.record_note(r.get("note")) if not closed and records.mine(r["id"], rec_key) else ""
         rid = r["id"]
-        here = alert if err_at == rid else ""
+        here = alert if err_at == rid else (note if at_card == rid else "")
         # 前に書かれた自分の仮説で刷った紙（型紙）への道は、前はつくるの頁の記録の札にだけあった（toy.own_papers）。つくるの頁から記録の札を外した
         # （本人の言葉 11-08）ので、ここ（その記録の札）に置く。合言葉なしの場と、話した案の紙（作った本人の画面からだけ開く）には出さない（前と同じ線）
         own = toy_own_papers(sid, r["hypothesis_id"], r.get("sheet_version", 1)) if (not closed and h is None and r["hypothesis_id"] not in spoken) else ""
@@ -715,7 +718,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
             f'<p class="links"><a href="/toy/{esc(sid)}/techo">手帖をひらく（作りながら聞く・上げる）</a></p>'
             # 取り下げの説明文（#438 で本人が決めた字）。記録ごとに「足す」口が並ぶ頁なので、節の頭に 1 回だけ置く（main の手帖の上げる節と同じ）
             # 前はここに道しるべの「のこす」（/gallery#ageta）があった。記入の節の「のこす」の釦（承認の後にもちよるへ飛ぶ）に替えた
-            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{"" if at == "kinyu" else note}'
+            f'<section class="panel" aria-label="上げる"><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><div id="mine">{"" if at == "kinyu" or at_card else note}'
             # 2 回目の入口（本人の決め 11-08「A＋Cでよい」の C）。のこした人（返事の文が出た時）にだけ、入口の畳みが開いた形 /#erabu への道を出す。
             # 印は持たない（道を見せるだけ）。数は入口の畳みの札と同じく、棚の分けから数える。道しるべの釦（class road）にはしない:
             # のこすの後の道しるべは 1 つの決まり（段 0・research/36・test_ux_stage0）なので、その下のふつうの道として置く

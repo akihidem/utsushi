@@ -833,7 +833,8 @@ class Handler(BaseHTTPRequestHandler):
         # 玩具の頁へ戻す時と同じに付ける（別の目の試験 test_photo_owner_only・test_who_fresh が見る）
         if re.fullmatch(r"R-\d{4,}", anchor or ""):
             mark = "&fresh=1" if fresh else ""
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{mark}#{anchor}"), *headers] + (self._up_close() if fresh else []))
+            # at= にも番号を渡し、返事の文をその札の頭に出す（techo_site.records_page の at_card）
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}&at={anchor}{mark}#{anchor}"), *headers] + (self._up_close() if fresh else []))
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""

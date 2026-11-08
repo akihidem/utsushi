@@ -103,11 +103,12 @@ good = bad | {"result": "動かない", "note": "3 枚目で止まった"}
 code, _, page = call(f"/toy/{G}/record", good | {"result": "ない結果"})
 assert code == 422 and note_at(page, "kiroku", "alert"), "無い値は受けない"
 # 記録の札は手帖の記録の頁にある（つくるの頁から記録の札を外した・本人の言葉 11-08「復元の記録などはすべてもちよるに統合する。」）。
-# 記録を残した後と、札への返事は、手帖の記録の頁の記録の並び（#mine）に着く。通らない時の理由は、その頁のその札の頭（錨は記録の番号）に出る
+# 記録を残した後と、札への返事は、手帖の記録の頁のその札（錨は記録の番号）に着き、返事の文も札の頭に出る（統括の割り振り 11-08。#657 では記録の並びの
+# 頭 #mine に着き、どの札か探す事になった）。通らない時の理由も、その札の頭に出る。手帖から来た時（back=techo）は前のとおり #mine
 where = call(f"/toy/{G}/record", good)
 rid = records.all_records(G)[-1]["id"]
-page = landed(where, "mine")
-assert "記録を残しました" in note_at(page, "mine", "status")
+page = landed(where, rid)
+assert "記録を残しました" in note_at(page, rid, "status")
 start = page.index(f'id="{rid}"')
 assert 'name="next_idea"' in page[start:start + 3000], "札の中に次の欄（説明）がある"
 
@@ -118,12 +119,12 @@ code, _, page = call(f"/record/{rid}/explain", {"by": "", "text": "筒が<支え
 assert code == 422 and note_at(page, rid, "alert")
 # 手帖の記録の頁の説明の欄は 1 行の欄（textarea でない）なので、書いた字は value に戻る
 assert 'value="筒が&lt;支えた&gt;"' in page and f'value="{too}"' in page
-page = landed(call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えた", "next_idea": "折りを増やす"}), "mine")
-assert "説明を残しました" in note_at(page, "mine", "status")
-page = landed(call(f"/record/{rid}/ai-interpret", {}), "mine")
-assert "AI の返事は、この場では使えません" in note_at(page, "mine", "status")
-page = landed(call(f"/record/{rid}/ai-observe", {}), "mine")
-assert note_at(page, "mine", "status")
+page = landed(call(f"/record/{rid}/explain", {"by": "本人", "text": "筒が支えた", "next_idea": "折りを増やす"}), rid)
+assert "説明を残しました" in note_at(page, rid, "status")
+page = landed(call(f"/record/{rid}/ai-interpret", {}), rid)
+assert "AI の返事は、この場では使えません" in note_at(page, rid, "status")
+page = landed(call(f"/record/{rid}/ai-observe", {}), rid)
+assert note_at(page, rid, "status")
 
 # 次の版: 欄を開いて、その上に理由を出し、書いた中身を戻す。手帖から来た印も保つ。
 form = {"interpretation": "折りが<多い>", "param": "fold_count", "why": "口に当たる", "by": "本人", "back": "techo"}

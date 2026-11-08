@@ -52,8 +52,9 @@ def post(path, data):
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) == 303
 code, body, _ = get(f"/toy/{G}")
 body = body.decode()
-# 紙を選ぶ字の札は窓へ。PDF へ直に飛ぶ字のリンクは置かない（窓の押し釦だけ）
-assert f'href="/toy/{G}?see={GS}&kind=sheet&v=1#win" aria-current="true">型紙</a>' in body
+# 紙は窓に出る。PDF へ直に飛ぶ字のリンクは置かない（窓の押し釦だけ）。窓の「型紙」の切り替えの札は外した
+# （本人の言葉 11-08「型紙の窓のところにある仮説・型紙のボタンは要らない。」）
+assert f'<img src="/sheet/{G}/{GS}_v1.png"' in body and f'aria-current="true">型紙</a>' not in body and '<div class="tabs">' not in body
 # 刷るのは型紙だけ（本人の決まり 11-06）。手順の紙の札は出ない
 assert "kind=tejun" not in body and ">手順の紙</a>" not in body
 assert body.count(f'href="/sheet/{G}/{GS}_v1.pdf"') == 1 and 'target="_blank"' in body.split(f'href="/sheet/{G}/{GS}_v1.pdf"')[1][:40]

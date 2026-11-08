@@ -127,11 +127,12 @@ assert f'aria-label="▼{rid}' not in page, "頭の帯の写真が残った"
 # 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）。札への道は玩具の頁の札（/toy/<印>#R-…）を指す
 kz = get(f"/loop/{G}").split('id="kaizen"', 1)[1]
 # 版のもとの記録への道は、手帖の記録の頁の記録の並び（#mine）へ（つくるの頁から記録の札を外した 11-08・kaizen.py）。記録の番号の字は wording を通る
-assert f"<a href=/toy/{G}/techo/kiroku#mine>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
+# 記録への道は手帖の記録の頁のその記録の札（#記録の番号・統括の割り振り 11-08。前は並びの頭 #mine）
+assert f"<a href=/toy/{G}/techo/kiroku#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
 # 待つ報告の道も手帖の記録の頁の並び（#mine）へ。どの記録も同じ行き先なので、記録の番号の字（wording を通る）で見る
-assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}/techo/kiroku#mine">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
+assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}/techo/kiroku#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
 assert "▼R-0001</a>" not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
-assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}/techo/kiroku#mine">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
+assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}/techo/kiroku#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
 yomu = get("/about")
