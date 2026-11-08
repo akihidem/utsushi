@@ -1,0 +1,16 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/<名>.py を 1 本ずつ
+# commit: de488ec9（main 493346c2 の後を取り込んだ頭）
+test_toy_head_fit rc=0 ok 玩具の頁の頭の字の箱は重ならない: 83 頁 × 3 言葉 × 7 の大きさ（測れなかった束 0・回し直した束 2）
+test_no_overlap rc=0
+test_toy_head_back rc=0
+test_toy_head rc=0
+test_genga rc=0
+test_toy_page_tate rc=0（取り込みの前の頭 8f5fefd5）
+test_ux_stage0 rc=0（取り込みの前の頭 8f5fefd5）
+test_landscape_fit rc=0（取り込みの前の頭 8f5fefd5）
+test_easy_ruby rc=0（取り込みの前の頭 8f5fefd5）
+test_en_all rc=0（取り込みの前の頭 8f5fefd5）
+test_tsukuru_last_fit rc=0（取り込みの前の頭 8f5fefd5）
+test_public_open rc=0（取り込みの前の頭 8f5fefd5）
+test_hmd rc=0（取り込みの前の頭 8f5fefd5）
+test_kuzushi rc=1（今の main でも同じに落ちる・くずし字の頁の「正しい」・この枝の差ではない）
