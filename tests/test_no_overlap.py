@@ -69,9 +69,6 @@ KNOWN = {
     # えらぶの棚の札で、英語の玩具の名（長い）が札の絵に重なる。狭い幅では下の「See all toys」にも
     ("えらぶ", "字×絵", "li>a>span.nm", "li>a>img.pic", "en"),
     ("えらぶ", "字×字", "li>a>span.nm", "section.sec.erabu>p.links>a", "en"),
-    # よむ の北斎漫画の留まる絵（.pin の .stack）が、幅 375 の英語で節の注と額の下の出典の字に重なる
-    ("よむ", "字×絵", "div.about>section#hokusai.sec>p.meta", "div.pin>div.stack>img.on", "en"),
-    ("よむ", "字×絵", "div>figure.frame>figcaption", "div.pin>div.stack>img.on", "en"),
 }
 # 原画の写しの無い木の えらぶ の札で、やさしい日本語の玩具の名と「図を見る（国立国会図書館）」のルビ（切れない）が札の幅より長く、端の列が画面の横にはみ出す（上の えらぶ の札の名と同じ持ち主）
 KNOWN_WIDE = {("えらぶ", "easy")}

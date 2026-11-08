@@ -73,6 +73,10 @@ def flip_section():
             f'<p class="meta">{esc(credit(rec))}</p></section>{FLIP_SCRIPT}')
 
 
+# 幅 760px 以下は 1 列で、絵の箱（前は高さ 56svh に固定）と字を縦に積む。英語の字は長く、幅 375×667 で字が 507px になり、積んだ高さが
+# 留まる箱（100svh）を超えた。中寄せのままはみ出すので、絵が節の上の端より 115px 上へ出て前の節の出典の字に重なり、字の終わりは画面の下に切れていた
+# （11-08 の見回り・tests/test_no_overlap.py）。絵の箱の行を minmax(0,56svh) にし、字が長い時は絵の箱の方が縮む（字は切らない）。
+# 見出しと出典の行の高さも狭い幅だけ詰め、絵に残る高さを増やす（幅 375 の英語で絵の箱 117px → 143px）
 SCROLL_STYLE = """
 .zn-hk{position:relative;height:420vh;border-top:1px solid #1f1b16}
 .zn-hk .pin{position:sticky;top:0;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5vw;align-items:center;padding:0 7vw}
@@ -82,7 +86,8 @@ SCROLL_STYLE = """
 .zn-hk .chapter{font-size:12px;letter-spacing:.5em;color:#c9a96a;margin:0 0 12px}
 .zn-hk h2{font-size:clamp(24px,2.6vw,36px);font-weight:300;letter-spacing:.25em;margin:0 0 18px}
 .zn-hk .cap{font-size:12px;letter-spacing:.08em;line-height:1.9;color:#9a8e76}
-@media (max-width:760px){.zn-hk .pin{grid-template-columns:1fr;align-content:center}.zn-hk .stack{height:56svh}}
+@media (max-width:760px){.zn-hk .pin{grid-template-columns:1fr;grid-template-rows:minmax(0,56svh) auto;align-content:center;padding:12px 7vw}
+ .zn-hk .stack{height:auto;align-self:stretch}.zn-hk h2{line-height:1.45;margin:0 0 12px}.zn-hk .cap{line-height:1.7}}
 @media (prefers-reduced-motion:reduce){.zn-hk{height:auto}.zn-hk .pin{position:static;height:auto;padding:12vh 7vw}}
 """
 # 下へ送ると 1 人ずつ入れ替わる。送った量で決めるので、止まれば止まる。動きを減らす設定の人には最初の 1 人だけを出す。
