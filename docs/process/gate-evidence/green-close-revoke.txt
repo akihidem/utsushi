@@ -1,0 +1,16 @@
+# 命令: .venv/bin/python tests/test_close_revoke.py
+# commit: 7f6c06e5（回した時の HEAD）
+[2026-11-08 18:07:05 +0900] POST /close の失敗: TypeError: revoke() missing 1 required positional argument: 'name'
+TypeError:
+  File "src/web/play_server.py", line 536, in do_POST
+    self._post()
+    ~~~~~~~~~~^^
+  File "src/web/play_server.py", line 1090, in _post
+    media_review.revoke(self._up_key() or "")
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+Traceback (most recent call last):
+  File "tests/test_close_revoke.py", line 57, in <module>
+    assert plain[0] == 303 and "/gallery" in plain[1], plain
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (500, '', [])
+rc=1

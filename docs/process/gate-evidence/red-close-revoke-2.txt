@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_close_revoke.py
+# commit: 7f6c06e5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_close_revoke.py", line 62, in <module>
+    assert not records.mine(rid, rec), ("とじた後も、写した記録の鍵が通る", opened)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('とじた後も、写した記録の鍵が通る', False)
+rc=1

@@ -1,0 +1,21 @@
+## 「この画面をとじる」で所有者の印をサーバの側でも失効させ、所有者の cookie を公開の場でも Secure にする（README の担当、sec/close-revoke-lan、11-08）
+
+- 目的: 本人の指示（11-08）の安全の事項 6「「とじる」が所有者トークンを失効させない」と、事項 7「LANモードの通信・認証とCookie属性が不十分」のうち Cookie の Secure。本人の条件「サイトの機能は維持した状態で、見た目、挙動は変えずに、セキュリティの事項にだけ対応する。」（正本は grove の state/security-items-owner-20261108.md）
+- なぜか:
+  - POST /close は cookie を消すだけだった。写した記録の鍵（records.claim）と写真の鍵（media_review.claim）は、期限（記録 15 分・写真の時間）まで台帳で生きた
+  - 所有者の cookie の Secure は合言葉の有無だけで決めていて、合言葉なしの公開の場（https の公開デモ）では付かなかった
+- どうしたか:
+  - records.close_key・media_review.close_key（新）: とじた画面の鍵で控えた物に closed を書く。mine と写真の見分け（_mine）は、closed の控えを通さない
+  - しおりの /s/close（shiori.close）と同じ形。鍵が空か、どこにも無い時は何もしない（鍵の有り無しを外へ見せない）
+  - /close は 2 つの鍵を台帳の側で失効させてから、前と同じ返事（303・cookie を消す行）を返す。見た目と行き先は替えていない
+  - play_server._key_cookie と think_sheet の印の cookie: Secure を、合言葉付きの場に加えて、合言葉なしの公開の場でも付ける。手元（127.0.0.1）は今までどおり付けない
+  - 名の衝突: media_review には前から写真の取り下げの revoke(rid, name) がある。新しい関数を revoke(key) と名付けたら後ろの定義に上書きされ、/close が 500 を返した（gate-evidence/green-close-revoke.txt）。close_key に替えた
+- まだの所（事項 7 の残り）: --lan で合言葉が無い時に立たない形は入れなかった。合言葉の cookie（utsushi_k）が前から Secure なので、--lan に合言葉を要る形にすると、http の家の網では合言葉が残らず開けなくなる。本人の決定 U-36（家の iPhone で手帖を使う）が止まり、本人の条件「機能を維持」に当たる（統括の決め 11-08）。https（TLS）を前に置く形と合わせて直す
+- ゴールの要件: tests/test_close_revoke.py（新・手元の場と公開の場）
+  - 鍵のある画面が /close を押すと、写した古い記録の鍵と写真の鍵が拒まれる
+  - ほかの画面の鍵は生きたまま。鍵の無い /close は同じ返事で、何も失効しない
+  - 返事の形は前と同じ
+  - 所有者の cookie は、公開の場で Secure、手元の場は付かない
+- 検証ゲート: **済み**。Red: 今の main で rc 1（gate-evidence/red-close-revoke-2.txt・とじた後も写した記録の鍵が通る）。Green: rc 0（gate-evidence/green-close-revoke-2.txt）。落ちた版: red-close-revoke.txt（試験の写真の箱を作る前）・green-close-revoke.txt（名の衝突）
+- 限り: 失効は とじる を押した画面の鍵だけ。押さずにブラウザを閉じた鍵は、今までどおり期限で切れる
+- マージ後の書き戻し: Issue は立てていない
