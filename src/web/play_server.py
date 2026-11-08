@@ -225,7 +225,7 @@ STEP_LIMIT = 120
 # 上げても断らない数（窓口の決め 11-07・案 b。前は 20 で、7 人目から断りが出えた）。機械を埋めない守りは、公開の場の合計の上限
 # （PUBLIC_MEDIA_TOTAL）と、写した動画の大きさの上限（techo_site.VIDEO_ROOM）の方で効く。
 MEDIA_LIMIT = 60
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain")
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
@@ -842,6 +842,12 @@ class Handler(BaseHTTPRequestHandler):
             wait = self.server.print_limit.wait(who)
             if wait:
                 return self._busy(wait, form)
+        if self.path == "/close":
+            # のこした後の「この画面をとじる」（techo_site.close_form）。この画面の写真の鍵と記録の鍵を消し、その場限りの印も作り直させる（fresh）。
+            # 鍵が無くても同じ返事にする（とじる事は誰にでもできてよく、鍵の有り無しを外へ見せない）。フォームなので _form の Origin の照らしが先に効く
+            from . import techo_site
+            return self._send(303, "", headers=[("Location", f"/gallery?msg={urllib.parse.quote(techo_site.CLOSED)}&fresh=1#ageta"),
+                                                self._key_cookie(UP_COOKIE), self._key_cookie(REC_COOKIE)])
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)

@@ -932,5 +932,18 @@
    "tests/test_shiori.py"
   ],
   "unverified": "台帳だけ（決まった番地が決まる前から作れる所）。開く道（/s/<印>・とじる・20 分）・しおりの紙（QR は A 朱の落款枠に朱・裏に順の印）・進め役の道・SECURITY の字は、決まった番地の答えの後の PR。決まった番地は本人の答え待ち"
+ },
+ {
+  "id": "f78",
+  "name": "のこした後の「この画面をとじる」（のこすの流れの設計の別の目の気づき 9・統括の決め 11-08）。この画面の写真の鍵と記録の鍵を消す",
+  "status": "doing",
+  "evidence": [
+   "src/web/techo_site.py",
+   "src/web/play_server.py",
+   "tests/test_screen_close.py",
+   "data/i18n/en.json",
+   "data/i18n/yasashii.d/screen-close.json"
+  ],
+  "unverified": "字 2 つ（「この画面をとじる」「とじました。次の人が使えます。」）は本人の確かめ待ち。公開の場だけの断りは置かない（本人 11-08）。実機の 1 台を順に使う場では試していない"
  }
 ]
