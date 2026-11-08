@@ -37,7 +37,7 @@ for t in made:
     data = json.loads((ROOT / "data/hypotheses" / f"{sid}.json").read_text(encoding="utf-8"))
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
     assert data["template"] == T.ID and data["stage"] == "試作" and data["toy"] == t["name_guess"], sid
-    assert src["transcription"]["entries"] == [], "翻刻は人が写す欄で、線では空のまま（U-01）"
+    assert all(e.get("decided_by") or e.get("checked_by") for e in src["transcription"]["entries"]), "翻刻は人が写す欄で、線では空のまま（U-01）"  # 線（雛形の生成）は翻刻を書かない。入るのは人の決め（本人の決め 11-08「A にそろえる」の decided_by）か人が確かめた読みだけ
     hs = data["hypotheses"]
     assert 2 <= len(hs) <= 3 and len({h["params"][T.HYP_KEY] for h in hs}) == len(hs), (sid, "仮説は付け方で分ける")
     for h in hs:

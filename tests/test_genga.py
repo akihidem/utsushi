@@ -31,7 +31,7 @@ from web.play_server import serve  # noqa: E402
 from web.toy import toy_page  # noqa: E402
 
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
-PLAIN = "NDL-1187053-R0000009-L-2"  # 歌の読みの無い試作の玩具。箱は頁の一部
+PLAIN = "NDL-1187053-R0000009-R"  # 歌の読みの無い試作の玩具。箱は頁の一部（前の R0000009-L-2 は 11-08 に図 11 の歌の読みが入った）
 
 
 def src(sid):

@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-bal/looks-nopad.py src/web/looks.py; .venv/bin/python tests/test_entrance_yomi.py'
+# commit: ea5a9869（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_entrance_yomi.py", line 122, in <module>
+    assert abs(left - right) <= 4, (where, f"{part} の左右の余白が {left:.0f}px と {right:.0f}px", rec["bal"][part])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'en-320x568'), 'kana の左右の余白が 56px と 83px', [[56.203125, 82.603125]])
+rc=1

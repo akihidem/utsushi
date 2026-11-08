@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_workshop.py
+# commit: 9cd182a3（回した時の HEAD）
+ok もちよる: 様子 18 枚・できたおもちゃ 16 枚の札・職人の言葉は もちよる
+rc=0

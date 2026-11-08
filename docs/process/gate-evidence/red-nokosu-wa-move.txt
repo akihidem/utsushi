@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_nokosu_flow.py
+# commit: 743706e5（今の main）の木に、直した tests/test_nokosu_flow.py だけを当てた（git の外の写し・のこすの頁の並びは 743706e5 の物のまま）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+Traceback (most recent call last):
+  File "tests/test_nokosu_flow.py", line 51, in <module>
+    assert at == sorted(at), (public, at)
+           ^^^^^^^^^^^^^^^^
+AssertionError: (False, [0, 109, 15729, 14806, 21167, 21217])
+rc=1

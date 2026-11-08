@@ -441,14 +441,16 @@ class Handler(BaseHTTPRequestHandler):
         return toy_page(sid, look=self._look, photos=not getattr(self.server, "public_open", False), up_key=self._up_key(), rec_key=self._rec_key(), **kw)
 
     def _pick_lang(self):
-        """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、cookie に持つ。道は日本語の頁と同じ。
+        """頁の言語（全頁の英語。web.i18n・窓口の決め 130735 の案 B）。?lang=en か ?lang=ja で選び、ブラウザを閉じれば消える cookie に持つ。道は日本語の頁と同じ。
         前からの英語の頁（/en と /en/toy/<印>）は別の作りで、ここでは替えない（もう英語なので）。"""
         _, _, query = self.path.partition("?")
         pick = urllib.parse.parse_qs(query).get("lang", [""])[0]
         self._lang_cookie = None
         if pick in ("en", "ja", "easy"):
             self._lang = pick
-            self._lang_cookie = ("Set-Cookie", f"utsushi_lang={pick}; Max-Age=31536000; Path=/; SameSite=Lax")
+            # 期限（Max-Age）を付けない: ブラウザを閉じれば消え、新しく開いた入口はいつも日本語から始まる（本人の言葉 11-08「サイトトップのデフォルトの表示は日本語で。」）。
+            # 前は 1 年の期限で、一度 English を押した端末は次の日も英語の入口が出た。開いている間は cookie が残るので、頁をたどっても選んだ言葉のまま
+            self._lang_cookie = ("Set-Cookie", f"utsushi_lang={pick}; Path=/; SameSite=Lax")
             return
         self._lang = "ja"
         for part in self.headers.get("Cookie", "").split(";"):
@@ -496,7 +498,7 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         if path == "/kaizen":
-            # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
+            # 審査用の頁「良くするための一周 ♻︎」（本人の言葉 11-07・題は 11-08）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
             from . import kaizen_judge
             return self._send(200, kaizen_judge.page(look, path))
         m = re.fullmatch(r"/kaizen/video/([^/]+)", path)

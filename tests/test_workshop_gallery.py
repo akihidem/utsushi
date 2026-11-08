@@ -54,7 +54,10 @@ for kw in ({}, {"public_open": True}):
         ageta = part(g, 'id="ageta"', "</section>")
         both = part(g, 'id="narabe"', "</figure>") + part(g, 'id="dekita"', "</section>") + part(g, 'id="yousu"', "</section>")
         assert not re.findall(IMG, ageta), (kw, re.findall(IMG, ageta))
-        assert all(re.findall(IMG, both).count(r["file"]) == 1 for r in rows), (kw, re.findall(IMG, both))
+        # 本人の言葉 11-08「みんなが作ったおもちゃの方は、おもちゃの名前と写真が合っていない。ワークショップで作られたものの方は写真と名前が一致しているので、こちらの組み合わせと表示を採用して、みんなが作ったおもちゃの方に置く。」
+        # 単体の写真（single）は札に出さない（作例の記録の札に替えた）。体が写る写真（body）は 本人の言葉 11-08「ワークショップの様子は、みんなの手元の写真だけで良い。」で出さない
+        want = {r["file"]: 0 if workshop.kind_of(r["file"]) in ("single", "body") else 1 for r in rows}
+        assert all(re.findall(IMG, both).count(f) == n for f, n in want.items()), (kw, re.findall(IMG, both))
         for sid in {r["toy"] for r in rows if workshop.kind_of(r["file"]) == "single"}:
             assert f'<a href="/toy/{sid}">' in part(g, 'id="dekita"', "</section>"), (sid, kw)
     finally:

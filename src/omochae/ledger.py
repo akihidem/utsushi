@@ -67,7 +67,7 @@ def render_counts():
         f"- 雛形: {len(templates)} 本（`src/omochae/templates`。必須の 2 本を含む）",
         f"- 凍結の場面: {len(scenarios)} 本（`tests/frozen/scenarios`。うち {len(negative)} 本は落ちるべき紙を入れる負の場面）",
         f"- 型紙の版: {sheets}（雛形の今の組。版ごとの歩みは `data/history/kaizen-history.json`）",
-        *([f"- エンジンの版: {engine['engine_version']}（型紙を作る仕組みの版。全部の玩具の型紙に効く）"] if engine else []),
+        *([f"- エンジンの版: {engine['engine_version']}（型紙を作る仕組みの版。そのエンジンが作る型紙のどれにも使われる）"] if engine else []),
         "<!-- counts:end -->",
     ])
 
