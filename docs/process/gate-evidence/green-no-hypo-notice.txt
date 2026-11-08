@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_reply_visible.py
+# commit: aa7517eb（回した時の HEAD）
+ok
+rc=0
