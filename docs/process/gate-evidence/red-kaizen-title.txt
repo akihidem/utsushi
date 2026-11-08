@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_kaizen_judge.py
+# commit: 4af9fe0d（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kaizen_judge.py", line 134, in <module>
+    assert k.TITLE == "良くするための一周 \u267b\ufe0e" and k.TITLE.endswith("\u267b\ufe0e"), repr(k.TITLE)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '改善の一周'
+rc=1

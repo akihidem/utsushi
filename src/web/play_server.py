@@ -496,7 +496,7 @@ class Handler(BaseHTTPRequestHandler):
         if m and m.group(1) == look:
             return self._send(200, PAGES[look](photos=not getattr(self.server, "public_open", False)))
         if path == "/kaizen":
-            # 審査用の頁「改善の一周」（本人の言葉 11-07）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
+            # 審査用の頁「良くするための一周 ♻︎」（本人の言葉 11-07・題は 11-08）。記録済みの 1 周を段ごとに見せる。合言葉なしの場でも開く（repo の中の記録だけを出す）
             from . import kaizen_judge
             return self._send(200, kaizen_judge.page(look, path))
         m = re.fullmatch(r"/kaizen/video/([^/]+)", path)
