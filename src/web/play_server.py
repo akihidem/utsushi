@@ -1093,8 +1093,9 @@ class Handler(BaseHTTPRequestHandler):
                 making_log.add_stage(sid, "make", form.get("who", ""))  # 頁の段の進み: 作る頁を開いた（U-45 の段取り 2）
         if as_json:
             return self._send(200, json.dumps({"ok": True, "step": nxt}), "application/json; charset=utf-8")
-        if event == "done":  # どの紙かを渡して記録の欄へ送る。今の頁は JS の有無に関わらず、この道を通る（#321）。記録の欄の既定は変えない（紙を選ぶ欄は #332 で無くなる）
-            return self._done(sid, tsukuru.DONE_NOTE, see=hid, v=sheet_version_of(sid, hid, form))
+        if event == "done":  # 組み上がりを残した後、のこすの頁（手帖の記録の頁 /toy/<印>/techo/kiroku）へ直に送る（本人の答え 11-08「B。」・統括の決め (a)）。
+            # 前はどの紙かを渡して玩具の頁の記録の欄へ送り、そこから のこす へもう 1 押し要った。組み上がりの記録（making_log.add_step）は上で今と同じに残す
+            return self._done(sid, tsukuru.DONE_NOTE, back="techo")
         ev = f"&ev={event}" if event == "stuck" else ""
         return self._send(303, "", headers=[("Location", f"/toy/{sid}/tsukuru?h={urllib.parse.quote(hid)}&v={sheet_version_of(sid, hid, form)}&n={nxt}{ev}")])
 

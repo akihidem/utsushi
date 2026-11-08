@@ -1,0 +1,8 @@
+# 命令: sh -c 'cp /tmp/en-fit/looks-main.py src/web/looks.py; .venv/bin/python tests/test_entrance_yomi.py'
+# commit: 8cb345cb（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_entrance_yomi.py", line 101, in <module>
+    assert rec["yomi_text"] == looks.YOMI and rec["yomi_px"] >= 12, (where, rec["yomi_text"], rec["yomi_px"])
+                               ^^^^^^^^^^
+AttributeError: module 'web.looks' has no attribute 'YOMI'
+rc=1
