@@ -133,7 +133,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     # 頁の版の札（版 7）と食い違う（11-08 に見つかった）。紙を刷る「つくる」（make_go）が今の題で刷り直す。前の記録の紙（たたき台でない仮説）は、
     # その記録で刷った紙として読むので、照らさずに出す
     if see == card["id"] and not paper_current(sid, see, v):
-        return "", ""
+        return "", "", ""  # 窓は (頭, 紙, 口) の 3 つを返す（PDF の釦を見出しの直下へ分けた。取り込みの時に 2 つのままだった）
     h = next(x for x in data["hypotheses"] if x["id"] == see)
     name = f"{see}_v{v}{kind}"
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
