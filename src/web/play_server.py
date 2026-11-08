@@ -926,8 +926,9 @@ class Handler(BaseHTTPRequestHandler):
         return None
 
     def _key_cookie(self, cookie, key=""):
-        """鍵の cookie。ブラウザを閉じれば消えるように Max-Age を付けない。key が空なら消す。外から開く場（合言葉付き）は https なので Secure を付ける。"""
-        secure = "; Secure" if getattr(self.server, "public_key", None) else ""
+        """鍵の cookie。ブラウザを閉じれば消えるように Max-Age を付けない。key が空なら消す。外から開く場（合言葉付きと、合言葉なしの公開の場）は https なので
+        Secure を付ける（本人の指示 11-08 の安全の事項 7: 前は合言葉の有無だけで決めていて、合言葉なしの公開の場では付かなかった）。手元（127.0.0.1）は今までどおり。"""
+        secure = "; Secure" if getattr(self.server, "public_key", None) or getattr(self.server, "public_open", False) else ""
         return ("Set-Cookie", f"{cookie}={key}; Path=/; HttpOnly; SameSite=Lax{secure}" + ("" if key else "; Max-Age=0"))
 
     def _up_key(self):
@@ -1139,7 +1140,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(303, "", headers=[("Location", "/"), shiori_open.cookie_line("", bool(getattr(self.server, "public_key", None)))])
         if self.path == "/close":
             # のこした後の「この画面をとじる」（techo_site.close_form）。この画面の写真の鍵と記録の鍵を消し、その場限りの印も作り直させる（fresh）。
-            # 鍵が無くても同じ返事にする（とじる事は誰にでもできてよく、鍵の有り無しを外へ見せない）。フォームなので _form の Origin の照らしが先に効く
+            # 鍵が無くても同じ返事にする（とじる事は誰にでもできてよく、鍵の有り無しを外へ見せない）。フォームなので _form の Origin の照らしが先に効く。
+            # 台帳の側でも 2 つの鍵を失効させる（本人の指示 11-08 の安全の事項 6: cookie を消すだけだと、写した鍵が期限まで生きる・/s/close と同じ形）
+            records.close_key(self._rec_key() or "")
+            media_review.close_key(self._up_key() or "")
             from . import techo_site
             return self._send(303, "", headers=[("Location", f"/gallery?msg={urllib.parse.quote(techo_site.CLOSED)}&fresh=1#ageta"),
                                                 self._key_cookie(UP_COOKIE), self._key_cookie(REC_COOKIE)])

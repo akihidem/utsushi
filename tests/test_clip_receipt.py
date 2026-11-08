@@ -89,7 +89,9 @@ clip_read.read_later = lambda rid, name, factory: started.append((rid, name))
 
 
 def session(base):
-    jar = http.cookiejar.CookieJar()
+    # 公開の場の所有者の cookie は Secure（本人の指示 11-08 の安全の事項 7）。本番の公開デモは https 越しなので届くが、この試験は http://127.0.0.1 で開くので、
+    # Python の CookieJar が Secure の cookie を送り返さない。手元の試験の中だけ http でも送り返す決まりにする（サイトの作りは替えない・ブラウザは https で受ける）
+    jar = http.cookiejar.CookieJar(http.cookiejar.DefaultCookiePolicy(secure_protocols=("https", "wss", "http")))
     op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), Stay)
 
     def call(path, body=None, ctype="application/x-www-form-urlencoded", origin=None, headers=None):

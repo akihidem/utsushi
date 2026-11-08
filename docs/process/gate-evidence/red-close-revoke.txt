@@ -1,0 +1,21 @@
+# 命令: .venv/bin/python tests/test_close_revoke.py
+# commit: 7f6c06e5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_close_revoke.py", line 50, in <module>
+    media_review.claim(rid, "p1.jpg", up)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "src/omochae/media_review.py", line 67, in claim
+    store.write_json(path, {**owners, name: {"key": key, "at": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")}})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/omochae/store.py", line 44, in write_json
+    write_atomic(path, json.dumps(obj, ensure_ascii=False, indent=2) + "\n", exclusive=exclusive)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/omochae/store.py", line 28, in write_atomic
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
+              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/tempfile.py", line 354, in mkstemp
+    return _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/tempfile.py", line 255, in _mkstemp_inner
+    fd = _os.open(file, flags, 0o600)
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpbaa0u2me/records/media/R-1001/.tmp-n08didrk'
+rc=1

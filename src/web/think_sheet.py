@@ -106,8 +106,9 @@ def _tokens(handler):
 
 
 def _key_header(handler, w):
-    """本人の画面へ印を渡す。ブラウザを閉じれば消えるように Max-Age を付けない。外から開く場（合言葉付き）は https なので Secure を付ける。"""
-    secure = "; Secure" if getattr(handler.server, "public_key", None) else ""
+    """本人の画面へ印を渡す。ブラウザを閉じれば消えるように Max-Age を付けない。外から開く場（合言葉付きと合言葉なしの公開の場）は https なので Secure を付ける
+    （本人の指示 11-08 の安全の事項 7・play_server._key_cookie と同じ決め方。公開の場ではこの口は閉じているが、所有者の印の決め方を 1 つにそろえる）。"""
+    secure = "; Secure" if getattr(handler.server, "public_key", None) or getattr(handler.server, "public_open", False) else ""
     return ("Set-Cookie", f"{COOKIE}{w['id']}={w['token']}; Path=/; HttpOnly; SameSite=Lax{secure}")
 
 

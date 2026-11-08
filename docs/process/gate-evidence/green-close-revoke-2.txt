@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_close_revoke.py
+# commit: 7f6c06e5（回した時の HEAD）
+ok この画面をとじる: 記録と写真の古い印をサーバの側で失効させ、ほかの画面の鍵は残す。所有者の cookie は公開の場でも Secure・手元は今のまま
+rc=0

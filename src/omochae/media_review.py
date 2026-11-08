@@ -123,11 +123,32 @@ def _mine(rid, name, key):
     entry = (store.read_json_or_skip(_folder(rid) / "owners.json") or {}).get(name) if key and RECORD_ID.fullmatch(rid) else None
     if not isinstance(entry, dict) or not isinstance(entry.get("key"), str) or not hmac.compare_digest(entry["key"].encode(), key.encode()):
         return False
+    if entry.get("closed"):  # とじた画面の鍵（close_key）は通さない
+        return False
     try:
         at = datetime.fromisoformat(entry["at"])
         return datetime.now(at.tzinfo) - at <= timedelta(hours=OWNER_HOURS)
     except (KeyError, TypeError, ValueError):
         return False
+
+
+def close_key(key):
+    """とじた画面の写真の鍵を、台帳の側で失効させる（本人の指示 11-08 の安全の事項 6・records.close_key と同じ形）。
+    その鍵で控えた写真の全部に closed を書き、_mine が通さないようにする。鍵が空か、どこにも無い時は何もしない。書いた数を返す。"""
+    if not key:
+        return 0
+    n = 0
+    for path in sorted((records.folder() / "media").glob("R-*/owners.json")):
+        owners = store.read_json_or_skip(path)
+        if not isinstance(owners, dict):
+            continue
+        hit = {name: e for name, e in owners.items() if isinstance(e, dict) and isinstance(e.get("key"), str) and not e.get("closed")
+               and hmac.compare_digest(e["key"].encode(), key.encode("utf-8", "replace"))}
+        if hit:
+            at = datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")
+            store.write_json(path, {**owners, **{name: {**e, "closed": at} for name, e in hit.items()}})
+            n += len(hit)
+    return n
 
 
 def shown_to(rid, files, key=None):

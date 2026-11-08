@@ -193,17 +193,38 @@ def claim(rid, key):
 
 
 def mine(rid, key):
-    """その鍵の画面が残した記録で、期限の中か。控えの無い記録（作る側の端末で残した物、前からある記録）と、読めない控えは、閉じる側に倒す。"""
+    """その鍵の画面が残した記録で、期限の中か。控えの無い記録（作る側の端末で残した物、前からある記録）と、読めない控えと、
+    とじた画面の控え（close_key の closed）は、閉じる側に倒す。"""
     from . import loop
 
     entry = store.read_json_or_skip(loop.folder() / f"owner-{rid}.json") if key and re.fullmatch(r"R-[0-9]{4,}", str(rid)) else None
     if not isinstance(entry, dict) or not isinstance(entry.get("key"), str) or not hmac.compare_digest(entry["key"].encode(), key.encode("utf-8", "replace")):
+        return False
+    if entry.get("closed"):
         return False
     try:
         at = datetime.fromisoformat(entry["at"])
         return datetime.now(at.tzinfo) - at <= timedelta(minutes=OWNER_MINUTES)
     except (KeyError, TypeError, ValueError):
         return False
+
+
+def close_key(key):
+    """とじた画面の鍵を、台帳の側で失効させる（本人の指示 11-08 の安全の事項 6「「とじる」が所有者トークンを失効させない」）。
+    とじる で cookie を消すだけだと、写した鍵が期限（OWNER_MINUTES）まで生きる。その鍵で控えた記録の全部に closed を書き、mine が通さないようにする
+    （しおりの /s/close の shiori.close と同じ形）。鍵が空か、どこにも無い時は何もしない（鍵の有り無しを外へ見せない）。書いた数を返す。"""
+    from . import loop
+
+    if not key:
+        return 0
+    n = 0
+    for path in sorted(loop.folder().glob("owner-R-*.json")):
+        entry = store.read_json_or_skip(path)
+        if isinstance(entry, dict) and isinstance(entry.get("key"), str) and not entry.get("closed") \
+                and hmac.compare_digest(entry["key"].encode(), key.encode("utf-8", "replace")):
+            store.write_json(path, {**entry, "closed": datetime.now(timezone(timedelta(hours=9))).isoformat(timespec="seconds")})
+            n += 1
+    return n
 
 
 def _used_paths(rid):
