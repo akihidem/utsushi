@@ -692,15 +692,18 @@
  },
  {
   "id": "f56",
-  "name": "作業の頁に重ねる形の下地（本人の指示 11-07: HMD か iPhone カメラでオーバーレイする形での作業を前提に。試作の枝 try/hmd から移した）",
+  "name": "作業の頁を聞くための経路に（本人 11-08「3D 重ねずに、質問もできるだけにしよう。…記録はここでは取らず、質問のための経路と割り切る。」。道は本人の指示 11-07: HMD か iPhone カメラでオーバーレイする形での作業を前提に）",
   "status": "doing",
   "evidence": [
    "src/web/hmd.py",
-   "src/web/kumitate.py",
    "src/web/play_server.py",
-   "tests/test_hmd.py"
+   "src/api/kasane.py",
+   "src/omochae/asr_serve.py",
+   "src/omochae/asr_worker.py",
+   "tests/test_hmd.py",
+   "tests/test_kasane_ask.py"
   ],
-  "unverified": "/toy/<玩具>/kasane（後ろのカメラの映像に手順の字と 3D を重ねる）と /toy/<玩具>/kasane/hmd（透けて見える画面向け）。1 手ずつ止まり、声は操作の言葉の全部が一致した時だけ動く。映像は機器の中だけで送らない。組み立ての 3D は今の kumitate の段（エンジンの JSON の読み口 assembly_json は別の PR の後）。重ねる（本人の言葉 11-08「A → B → C の順。」の A）は、カメラが付くと（HMD の道は最初から）今の手順の 3D を半透明で重ね、1 本指で動かし・2 本指で大きさと向きを合わせる（鍵 + − [ ] 0・「元に戻す」）。追いかけはしない。本物の iPhone の 2 本指と Vision Pro の 2 つの手のつまみでは、まだ試していない（前の 4 隅の印は外した）。中を見る（分解）は、組み立ての節が分解した形（window.kumitateSplit）を持つ時だけ釦が出て、押すと開き「とじる」で戻す（字は本人の決定 11-07。分解した形は 3D の担当の PR の後で本物になり、それまでは見本の形で試した）。手帖の最初の画面の小さな道「カメラに重ねる」（本人が採った口の名 11-07）は、11-08 にのこすへの道の 1 行「つくるところを、写真と声でのこせます。」と入れ替えた（本人の答え「「のこせる」の 1 行は、今の行と入れ替える。」・窓口の決め（イ））。その後の本人の答え 11-08「どこかに道を戻す。」で、手順の画面の上の帯に印を置き、手帖から辿れるようにした。印には見える字「カメラに重ねる」（本人の答え 11-08「印に「カメラに重ねる」の字を足す。」・12px・幅 320 では印の中で 2 行）と同じ字の title。この機械の headless の Chrome では偽のカメラの映像を測れなかった。実機の iPhone・HMD と人の目はまだ"
+  "unverified": "/toy/<玩具>/kasane（後ろのカメラの映像を頁の下に敷く）と /toy/<玩具>/kasane/hmd（透ける画面向け・写真を撮らない）。今の手順の字 1 行と ← →・「聞く」・こたえ。押した間の声をこのサーバの中で字にし（asr_worker --serve）、字と手元の写真 3 枚まで（後ろのカメラの時だけ）を Claude に渡して答え、端末の読み上げで返す。何も残さない。合言葉なしの公開の場では聞かない（本人の答え 11-08 ①）。3D・重ねる・中を見る・声の操作・ここで止まった は 11-08 に外した。まだ: Vision Pro の Safari で getUserMedia が前の景色を返すか（HMD の道は写真を撮らないので字の問いだけ）・声を字にする待ち時間（負荷 30 ほどの機械で 4 秒の問いに large-v3-turbo 13 秒・small 2 秒、機械の読み上げの声で字の正しさは測れていない。負荷の無い機械では未測）・iPhone の Safari で録りと読み上げが続けて動くか（押した時に空の読み上げを呼ぶ形）・本物の Claude の答えの字と待ち時間（試験は偽の答え手）・実機の iPhone・HMD と人の目"
  },
  {
   "id": "f60",
@@ -1038,11 +1041,9 @@
   "status": "doing",
   "evidence": [
    "src/web/clips.py",
-   "src/web/hmd.py",
    "src/web/hanasu.py",
    "src/web/nokosu.py",
    "tests/test_clips_client.py",
-   "tests/test_hmd.py",
    "tests/test_hanasu.py",
    "tests/test_tsukuru.py",
    "tests/test_otona.py",
