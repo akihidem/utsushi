@@ -97,9 +97,9 @@ def esc(s):
     return html.escape(str(s if s is not None else ""))
 
 
-def page(title, body, extra_style="", body_class=""):
+def page(title, body, extra_style="", body_class="", description=""):
     cls = f' class="{body_class}"' if body_class else ""
-    return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title>'
+    return (f'<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title>{skinmod.meta_head(title, description)}'
             f'<style>{LOOK}{BOOK}{skinmod.TAP_FLOOR}{extra_style}</style><body{cls}><main>{body}</main></body></html>')
 
 
@@ -528,7 +528,7 @@ class Handler(BaseHTTPRequestHandler):
             # 今残した 1 つの札（記録の番号と感想の字）は、合言葉なしの場では出さない（J-028）。場の見分けを photos の引数に頼らず、
             # 記録の鍵を渡さない形で閉じる: 公開の場の見分けを別の引数に替える直しと合わせても、札が出ないように。
             opened = getattr(self.server, "public_open", False)
-            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE))
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key()), look, "/gallery", path, techo_site.GALLERY_STYLE, description=techo_site.GALLERY_LEAD))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:

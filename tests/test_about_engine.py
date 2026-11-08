@@ -58,6 +58,11 @@ for text in (about.POSITION,):
     assert "みんなが使えるサービスとして作りました" in text and "したいと考えて" not in text and "していきたい" not in text, text[:80]
 # README の中は「AI」でなく「Claude」と書く（本人の決定 11-06、tests/test_readme_head.py）。序の頁は前からの言い方（AI）のまま
 assert not re.search(r"(?<![A-Za-z])AI(?![A-Za-z])", re.sub(r"「[^」]*」", "", head)), "README の中は Claude と書く"
+# 序の頁と README の字の照らし（別の目の指摘 11-08 で戻した見張り）: 大前提の 3 段・エンジンの節の具体例の 1 文・位置づけの 1 文目は、序の頁の定数と同じ字
+assert all(readme.count(x) >= 1 for x in about.PREMISE), "大前提の 3 段が序の頁と違う"
+# README は具体例の 1 文の本文だけ（括弧の中のエンジンの細かい事は engine/README.md へ・README にエンジンの細かい事を混ぜない書き直し 11-08）
+assert about.EXAMPLE.split("（")[0] + "。" in head, "具体例の 1 文が序の頁と違う"
+assert about.POSITION.split("。")[0] + "。" in head, "位置づけの 1 文目が序の頁と違う"
 # 位置づけの 3 文目: 見方は作った人の物・体験はだれにでも（本人の構成の押さえ 11-07、窓口の決めの案 2）。序の頁の字のまま
 assert about.POSITION.startswith("うつしは、みんなが使えるサービスとして作りました。学校の理科の授業や研究、博物館など、教育の場で使う事を考えて始めた物です。"), "前の 2 文を替えない"
 assert about.POSITION.endswith("もとにある見方は作った人だけの物ですが、紙で作って確かめる体験そのものは、だれにでもしてほしい事です。"), "見方と体験の言い分け"

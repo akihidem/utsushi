@@ -25,7 +25,7 @@ from omochae import assembly, hypotheses  # noqa: E402
 from omochae.compose import TEMPLATES  # noqa: E402
 from web.play_server import serve  # noqa: E402
 
-G, T, PLAIN = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R", "NDL-1187053-R0000020-R"  # 御来迎・虎・風車（見本の札がある試作の玩具）
+G, T, PLAIN = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R", "NDL-1187053-R0000020-R"  # 御来迎・虎・風車（見本の札があった試作の玩具）
 MARK = re.compile(r"仮説 ?[A-ZＡ-Ｚ](?![A-Za-z0-9])|(?<![A-Za-z0-9])[A-Z] の紙")
 EN_MARK = re.compile(r"\b(?:Idea|Guess|Hypothesis) [A-Z]\b|\b[Ss]heet [A-Z]\b")
 
@@ -73,8 +73,10 @@ try:
         assert found, ("刷った紙が無い", sid)
         head = found[0].read_text(encoding="utf-8")
         assert f"{data['toy']} 型紙 仮説「{hypotheses.sheet_of(sid)['name']}」" in head and not MARK.search(head), (sid, MARK.findall(head)[:3])
-    # 見本の札（デモ用の作り物）も「仮説の紙」
-    assert "仮説の紙" in get(f"/toy/{PLAIN}") and not [t for t in visible(get(f"/toy/{PLAIN}")) if MARK.search(t)]
+    # 見本の札（デモ用の作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」）。
+    # 見本の札があった玩具の頁にも、仮説の印が見える字に残らない
+    page = get(f"/toy/{PLAIN}")
+    assert 'class="item is-sample"' not in page and not [t for t in visible(page) if MARK.search(t)]
 finally:
     srv.shutdown()
 # 4. 印は記録の番号として残る（呼び名の部品は 1 か所）
@@ -89,4 +91,4 @@ for sid in (G, T):
     title = assembly._sheet_title(data, tpl, h["params"] or {}, h)
     assert title == f"{data['toy']} 型紙 仮説 {hypotheses.paper_label(data, 1)}" and not MARK.search(title), title
 
-print("ok つくるの頁と刷る紙は印なしの「仮説」: 玩具の頁・組み立て・作りながら見る・手帖・重ねる（日本語と英語）・紙の題・3D の紙の題・見本の札。印は記録の番号として残る")
+print("ok つくるの頁と刷る紙は印なしの「仮説」: 玩具の頁・組み立て・作りながら見る・手帖・重ねる（日本語と英語）・紙の題・3D の紙の題・見本の札があった頁。印は記録の番号として残る")

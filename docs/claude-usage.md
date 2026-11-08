@@ -11,7 +11,7 @@
 
 ## 製品の中で Claude を呼ぶ所
 
-裏の制作の仮説生成（`src/api/generate.py`）、言葉の仮説を寸法に写す口（`src/api/words.py`）、輪の後半（記録の解釈・次の手の提案）で Messages API の tool use を呼ぶ形を作った。道具は 8 回・やり直しは 2 回で止める（`src/api/config.py` の MAX_TOOL_CALLS・MAX_RETRIES）。このほか、作っている途中の手順の質問に答える口（`src/api/ask.py`、11-04）が Messages API を 1 回呼ぶ。仕組みとどの仮説かは答えず、よくある言葉は刷った説明から API なしで答え、それ以外は鍵がある時だけ Claude に組み方と凡例だけを渡す。入口のサイトの中の手帖の頁（`src/web/techo_site.py`）もこの口を使う。本物の API はまだ 1 回も呼んでいない。試験は記録した形の偽物。実行時のモデルは本人の決定で全部 Opus 5.5（`src/api/config.py`）。計画書どおりにした判断で、下の層と質を比べた結果ではない。上限は `src/api/budget.py` で守る（`docs/process/decisions/J017-runtime-model.md`）。
+裏の制作の仮説生成（`src/api/generate.py`）、言葉の仮説を寸法に写す口（`src/api/words.py`）、輪の後半（記録の解釈・次の手の提案）で Messages API の tool use を呼ぶ形を作った。道具は 8 回・やり直しは 2 回で止める（`src/api/config.py` の MAX_TOOL_CALLS・MAX_RETRIES）。このほか、作っている途中の手順の質問に答える口（`src/api/ask.py`、11-04）が Messages API を 1 回呼ぶ。仕組みとどの仮説かは答えず、よくある言葉は刷った説明から API なしで答え、それ以外は鍵がある時だけ Claude に組み方と凡例だけを渡す。入口のサイトの中の手帖の頁（`src/web/techo_site.py`）もこの口を使う。本物の API は、11-07 に手元で本物の鍵を置いて、聞く口・記録の読み・言葉の仮説・原画から仮説の案の 4 つを呼び、動いた（呼び出し 19 回・約 0.86 ドル。手元の使用記録で、git の外）。次の手の提案は、まだ本物の鍵で呼んでいない。試験は記録した形の偽物。実行時のモデルは本人の決定で全部 Opus 5.5（`src/api/config.py`）。計画書どおりにした判断で、下の層と質を比べた結果ではない。上限は `src/api/budget.py` で守る（`docs/process/decisions/J017-runtime-model.md`）。
 
 ## 作り手の工房の Claude Code の機能
 

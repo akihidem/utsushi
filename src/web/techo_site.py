@@ -305,7 +305,6 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .mark{font-size:22px;letter-spacing:.15em;margin:0}
 .gallery p{margin:0}
 .gallery .samples{display:grid;gap:10px;margin:0}
-.gallery .is-sample{border:1px dashed var(--frame);padding:10px}
 .gallery .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
 .gallery .day{font-size:17px;letter-spacing:.1em;margin:4px 0 0}
 .gallery .sakurei-row,.gallery .workshop-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -465,6 +464,9 @@ def close_form():
     return f'<form method="post" action="/close" class="close-screen"><button type="submit">{esc(CLOSE)}</button></form>'
 
 
+# ギャラリーの頭の説明の文。頁と、頁の description（skin.meta_head）が同じ字を引く（description に新しい字を作らないため・11-08）
+GALLERY_LEAD = "記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。"
+
 def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     """他の人が作った物のギャラリー（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
@@ -485,23 +487,17 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示）
     from . import workshop
     ws = workshop.gallery(sids)
-    # ワークショップで作られた物も本物の作った物なので、それだけがある時も見本を畳む（本物を先に、見本は畳む。地図の工程 5）
-    real = bool(cards or own or sak or ws)
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     # とじた後の返事（CLOSED）には釦を出さない（押した後に同じ釦がまた出ると、とじていないように見えるため）
     shut = close_form() if msg and msg != CLOSED else ""
-    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>{shut}' if msg else ""  # 本物の作った物の札が 1 つでもあるか（見本を畳むかを決める）
+    note = f'<div role="status"><p id="msg">{esc(msg)}</p>{after}</div>{shut}' if msg else ""
     # 今残した 1 つだけがある時と、ワークショップで作られた物だけがある時は「まだ…ありません」を出さない（すぐ上に並んだ札と食い違うため）。
     # 開いた場で札が無い時は、断りの字を出さない。前の「公開のデモでは、人が書いた文と写真は出しません。」は、確かめた写真を出す形にしたので
     # 事実と違う。「記録を残すと、ここに並びます」も、開いた場では字の記録が並ばないので合わない。新しい字は本人の確かめが要るので、足さない
     if not cards and not own and not sak and not ws:
         cards = ('<p class="meta">公開のデモでは、人が書いた文と写真は出しません。</p>' if not photos else
                  "" if public else '<p class="meta">まだ作った物の記録はありません。玩具の頁か手帖で記録を残すと、ここに並びます。</p>')
-    # 見本（本人の指示、11-04）は本物の後ろに、札を付けて置く。本物が増えても見本と混ざらない。
-    from .demo_samples import uploads_html
-    # 本物の作った物が 1 つでもあれば、見本は「見本」の畳みに入れる（段 0。research/36「本物が 1 つでもあれば、見本は畳む」）。畳みの見出しは見本の札と同じ字
-    sample = uploads_html()
-    cards += f'<details class="samples-fold"><summary>見本</summary>{sample}</details>' if (real and sample) else sample
+    # 上げた物の見本（作り物）は外した（本人の言葉 11-08「見本の記録をワークショップのデータで作成して欲しい。」。ここには作例とワークショップの写真が本物として出る）
 
     # .gallery で包むのは、手帖の幅（640px）より広く並べるため（GALLERY_STYLE の main:has(.gallery)）。
     # 次の型紙へ（段 1、本人の決定 11-06「「次の型紙へ」の口は「もう 1 つ つくる」の 1 つだけ。次の玩具は勧めない」）。持ち寄る駅の頭に 1 つ。行き先は えらぶ（/toys）
@@ -512,7 +508,7 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
-            '<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。</p>'
+            f'<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">{esc(GALLERY_LEAD)}</p>'
             f'{note}{own}{ws}{cards}</section></div>')
 
 
@@ -522,7 +518,6 @@ VOICES_STYLE = """
 .voices .mark{font-size:22px;letter-spacing:.15em;margin:0}
 .voices p{margin:0}
 .voices .samples{display:grid;gap:10px;margin:0}
-.voices .is-sample{border:1px dashed var(--frame);padding:10px}
 .voices .go{display:inline-block;background:var(--accent);color:var(--onaccent);border:0;padding:12px 22px;letter-spacing:.05em}
 """
 
@@ -536,9 +531,9 @@ def voices_sections():
     字は前のギャラリーの節のまま（id も yose・shokunin のまま。前のギャラリーの #yose と #shokunin への道は、序の頁で同じ節に着く）。
     見た目はギャラリーと同じ。ギャラリーの CSS は .gallery の下と頁の幅（main:has(.gallery)）を持つので、序の頁の幅を変えないよう、
     この 2 つの節だけを包む VOICES_STYLE を別に持つ。"""
-    from .demo_samples import voice_html, voices_html
+    from .demo_samples import craft_html, voices_html
 
-    voices = "".join(voice_html(k) for k in ("紙と折りの職人", "からくりの職人", "郷土玩具の作り手"))
+    voices = craft_html()
     return ('<div class="voices">'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
             f'{voices_html()}</section>'

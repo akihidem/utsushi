@@ -254,7 +254,9 @@ from web.play_server import sources  # noqa: E402
 assert all(kumitate.has(s) for s in sources()), [s for s in sources() if not kumitate.has(s)]
 # 組み立てだけの頁は、頁の題が呼び名を言うので、節の見出しを重ねない（立体の無い玩具）。原図は組み立てだけの頁にだけ出す（写しがある時）
 alone = kumitate.page(PLAIN)
-assert alone.count(kumitate.STEPS_LABEL) == 3 and "<h2>" not in alone and "<h3>" not in alone, "題（title と h1）の 2 つと、頭の文「組み方の順に並べました。」の 1 つ"
+# 数えるのは頁の字（title と本文）。head の meta（og:title・description。AI に読みやすくする 11-08 の直し）は同じ題と頭の文を写すので除く
+alone_seen = re.sub(r"<meta [^>]*>", "", alone)
+assert alone_seen.count(kumitate.STEPS_LABEL) == 3 and "<h2>" not in alone and "<h3>" not in alone, "題（title と h1）の 2 つと、頭の文「組み方の順に並べました。」の 1 つ"
 assert ('class="kumi-genga"' in alone) == (ROOT / "out/sources" / f"{PLAIN}.jpg").exists()
 assert 'class="kumi-genga"' not in plain, "玩具の頁の組み方の節には原図を重ねない（頁の頭に原図がある）"
 
