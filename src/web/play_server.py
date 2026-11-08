@@ -684,7 +684,7 @@ class Handler(BaseHTTPRequestHandler):
             listener = getattr(self.server, "listener", None)
             if listener is not None and not getattr(self.server, "public_open", False):
                 listener.warm()
-            return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2)))
+            return self._send(200, hmd.page(m.group(1), look, cam=not m.group(2), public=getattr(self.server, "public_open", False)))
         m = re.fullmatch(rf"/toy/({SID})/tsukuru", path)
         if m and m.group(1) in sources():
             # 作りながら見る（観察 A の試作、本人の案 11-05）。机の端に立てた端末に手本と返事を出し、鏡は端末の中だけ（tsukuru.py）。
@@ -1357,8 +1357,6 @@ class Handler(BaseHTTPRequestHandler):
             return reply(411, BUSY, "size")
         if not 0 < length <= ASK_BODY:
             return reply(413, BUSY, "size")
-        if not self.server.ask_day.take():
-            return reply(429, BUSY, "busy")
         # 鍵が無い場では、声を字にする前に断る（字にしても答えられないので、声を扱わない）
         if not ask._key_present() and not getattr(self.server, "ask_client", None):
             return reply(200, ask.NO_KEY, "no_key")
@@ -1373,6 +1371,9 @@ class Handler(BaseHTTPRequestHandler):
         if not 0 < len(voice) <= ASK_VOICE_BYTES or len(frames) > kasane.MAX_FRAMES or any(not f.startswith(b"\xff\xd8\xff") or len(f) > ASK_FRAME_BYTES for f in frames):
             return reply(422, BUSY, "form")
         del got
+        # 場の全体の 1 日の数は、形を確かめた後に数える（形の悪い送り物や鍵の無い場の断りで、場の数を使い切らせない・別の目の気づき 11-08）
+        if not self.server.ask_day.take():
+            return reply(429, BUSY, "busy")
         from omochae import asr_serve
 
         try:

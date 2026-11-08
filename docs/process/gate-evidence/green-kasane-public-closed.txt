@@ -1,0 +1,6 @@
+# 命令: .venv/bin/python tests/test_kasane_ask.py
+# commit: 19d45057（回した時の HEAD）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+ok 作業の頁の聞く口: 声はこのサーバの中で字にし、写真 3 枚までと今の手順の字で答え、何も残さない
+rc=0
