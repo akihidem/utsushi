@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/<名>.py を 1 本ずつ（4 本ずつ同時）
+# commit: 0ca29ff5（回した時の木を、この commit にした・main 8eef7f2b を取り込んだ頭）
+test_talk_sheet_window rc=0
+test_loop1_think rc=0
+test_press_stops rc=0
+test_hanasu rc=0（玩具の頁の 1 行を作り直しの口の中だけ認める形に替えた後に回し直した）
+test_en_all rc=0
+test_easy_ruby rc=0
+test_talk_sheet_guards rc=0
+test_no_overlap rc=0
