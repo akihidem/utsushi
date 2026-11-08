@@ -1,0 +1,13 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_words_review.py
+# commit: ace2a5f0（回した時の HEAD）
+FAIL F10.review [R-0006] 端末での人の確かめが無い
+usage: omochae.words_review approve [-h] --reviewer REVIEWER id
+omochae.words_review approve: error: the following arguments are required: id, --reviewer
+FAIL F10.review [bad] 記録の番号の形が違う
+{"impression": "扇がよく開いた", "fixes": [{"part": "扇", "change": "紙を厚くした", "outcome": "よく開いた"}]}
+R-0001 {"impression": "あとで替えた字", "fixes": [{"part": "扇", "change": "紙を厚くした", "outcome": "よく開いた"}]}
+R-0003 {"impression": "扇がよく開いた", "fixes": [{"part": "扇", "change": "紙を厚くした", "outcome": "よく開いた"}]}
+R-0004 {"impression": "連絡は a@example.com まで", "fixes": [{"part": "扇", "change": "紙を厚くした", "outcome": "よく開いた"}]}
+R-0006 {"impression": "扇がよく開いた", "fixes": [{"part": "扇", "change": "紙を厚くした", "outcome": "よく開いた"}]}
+ok: 公開の場のギャラリーの札は、人が確かめた後だけ、作った人の感想と工夫の行を出す
+rc=0

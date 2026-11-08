@@ -40,7 +40,9 @@ for opened in (False, True):
     get = lambda path: urllib.request.urlopen(base + path, timeout=120).read().decode()  # noqa: E731
 
     # ---- 1 English の頭
-    page = get("/en")
+    # 数えるのは頁の字（本文の順と回数）。head の meta の description（AI に読みやすくする 11-08 の直し・#619）は en.POSITION を写すので除く。
+    # meta の字そのものは tests/test_page_description.py が見る
+    page = re.sub(r"<meta [^>]*>", "", get("/en"))
     assert page.count(pos) == 1 and page.count(eng) == 1 and page.index(pos) < page.index(eng) < page.index(en.INTRO[0]), ("English の頭に 2 文 → 3 文の順で 1 回ずつ", opened)
     pre = esc(en.BASIS)
     assert page.count(pre) == 1 and page.index(pre) < page.index(pos), ("大前提の 2 文は位置づけの 2 文の前に 1 回", opened)
