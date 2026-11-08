@@ -43,6 +43,11 @@ assert {r["file"] for r in kinds} == set(seen) - {"20261106/p28.jpg"}, "p28 だ�
 assert all(r["kind"] in ("lineup", "single", "making", "none", "body") and r["seen"] == seen[r["file"]] for r in kinds), "写っている物の字のまま・分けは 3 つと none と body"
 body = [r["file"] for r in kinds if r["kind"] == "body"]
 assert body and all(r.get("why") for r in kinds if r["kind"] == "body"), "体が写る写真は、どこが写るかを書いて外す"
+# 人が 1 枚ずつ見て「手元のほかに体が大きく写る」と決めた 11 枚（11-08・#666 の 9 枚に、別の目の照らしと統括の決めで 3 枚を足し、
+# ほぼ手元の 20261106/p24 を戻した）。決めを変えずに様子の節へ戻さない・外さないための見張り（替えるなら、表と一緒にここも直す）
+BODY = {"20261104/p02.jpg", "20261104/p03.jpg", "20261104/p05.jpg", "20261104/p08.jpg", "20261106/p02.jpg", "20261106/p03.jpg",
+        "20261106/p04.jpg", "20261106/p14.jpg", "20261106/p17.jpg", "20261106/p18.jpg", "20261106/p29.jpg"}
+assert set(body) == BODY, ("体が写ると決めた写真と表が合わない", sorted(set(body) ^ BODY))
 none = [r["file"] for r in kinds if r["kind"] == "none"]
 lineup = [r["file"] for r in kinds if r["kind"] == "lineup"]
 assert all((workshop.PHOTOS / r["file"]).exists() for r in kinds)

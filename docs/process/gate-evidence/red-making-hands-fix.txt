@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_workshop.py
+# commit: 9cd182a3（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_workshop.py", line 50, in <module>
+    assert set(body) == BODY, ("体が写ると決めた写真と表が合わない", sorted(set(body) ^ BODY))
+           ^^^^^^^^^^^^^^^^^
+AssertionError: ('体が写ると決めた写真と表が合わない', ['20261104/p03.jpg', '20261104/p05.jpg', '20261106/p02.jpg', '20261106/p24.jpg'])
+rc=1
