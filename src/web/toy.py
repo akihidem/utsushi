@@ -167,9 +167,13 @@ def window(sid, data, see, kind, v, recorded, photos=True):
             '<p class="meta">100% で刷り、紙の物差しが 10cm か確かめます。A4 の紙 1 枚。</p>'
             # 刷った後に次へ進む口（段 0）。印刷 → つくる（手帖）の順に置く。作る口は手帖（research/36 の本人の決定）
             f'<p class="road"><a class="btn" href="/toy/{sid}/techo">つくる</a></p>'
-            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）。行き先は上の「つくる」と同じ手帖なので、道は増やさず字だけを
-            # 釦のすぐ下に置く（釦の位置は変わらない）。意義は のこす の画面と同じ字（naoru.purpose）
-            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
+            # つくる のすぐ下に大きな「のこす」（本人の答え 11-08: のこすへの道は案 B「印刷 → つくる の直後に大きな のこす」。本人の言葉 476「…つくるから
+            # のこすの誘導が全体的に弱いので、のこすに行かない可能性が高い。」）。行き先は記録の頁（今の「つくったものを教えてください。」と同じ所）。
+            # 枠だけの釦（.quiet）にして、作る口の つくる と見分ける。釦の字は道しるべの駅の名「のこす」（新しい字ではない）
+            f'<p class="nokosu-go"><a class="btn quiet" href="/toy/{sid}/techo/kiroku">のこす</a></p>'
+            # のこすへの道 1（本人の言葉 11-07 夜「つくる＝つくるところをのこせます」）の 1 行と、本人の字（NOKOSU_ASK）と、意義の 1 行（のこす の画面と同じ字・
+            # naoru.purpose）を のこす の釦の下に置く
+            + ("".join(f'<p class="meta nokosu-route">{esc(t)}</p>' for t in (naoru.ROUTE_MAKING, NOKOSU_ASK, naoru.purpose()) if t) if naoru.ROUTE_MAKING else "") +
             f'<p class="meta"><a href="/sheet/{sid}/{name}.svg" target="_blank" rel="noopener">線の絵（SVG）</a>・絵を押すと大きく見られます。</p>'
             f'<p class="meta">{esc(HYPOTHESIS)}</p></div>')
     return f'<div class="tabs">{hyps}</div><div class="tabs">{kinds}</div><div class="win">{fig}{side}</div>'
@@ -210,6 +214,8 @@ def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
 # 前は玩具の頁に記録の欄（record_form・13 の欄）があったが外した。玩具の頁には、記録の頁への道を 1 本だけ置く（KIROKU_TO_NOKOSU）。
 # 受け口 /toy/<印>/record は残す（作る側の道具 plain_words と、前からの道で送る物のため）。字は本人の言葉（11-07 夕、設計の担当を通して）
 KIROKU_TO_NOKOSU = "つくったものを教えてください。"
+# 型紙の窓の のこす の釦の下の本人の字（本人の答え 11-08 で、修正の担当 c の案 B の字。のこすへの道を強くする 1 行）
+NOKOSU_ASK = "どう工夫したかあとで教えてください。写真や動画でもいいです。"
 
 # 作った物の並びの節（#minna）の見出しと、記録が無い時の 1 文（夕方のサイトのレビュー 11-07 の 6「これまでの復元として属人化しない」）。
 # 前は「他の人が作った物と、自分の記録」「作ったら、最初の記録を残す人になります」で、並びを人ごとの物（他の人・自分）として読ませた。
@@ -491,6 +497,8 @@ def evidence_item(e):
 # 畳んでも節の中身と字は変えない（新しい字は足さない）。見出しを畳みの見出しにするので、開けば前と同じに読める。
 FOLD_STYLE = ("<style>.fold-sec>summary{display:flex;align-items:baseline;gap:0}.fold-sec>summary>h2,.fold-sec>summary>h3{display:inline;margin:0}"
               ".road{margin:18px 0 6px}.road .btn{min-height:64px;min-width:10em;font-size:20px;letter-spacing:.4em}"
+              # 型紙の窓の のこす の釦は つくる と同じ大きさ（案 B「大きな のこす」）。字の下の行と離しすぎない
+              ".nokosu-go{margin:10px 0 6px}.nokosu-go .btn{min-height:64px;min-width:10em;font-size:20px;letter-spacing:.4em;margin-top:0;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}"
               # 狭い幅（1 列）の頭の並び: 原画 → 歌 → 題 → つくる → 原画の出所の字 → 書誌と道 → これまでの記録。原画と歌は頭のまま畳まない（#450 の形）。
               # 原画の部品の中の順（絵・歌・出所）は変えず、題と「つくる」を出所の字の前へ差し込む。幅 390×844 で、前は「つくる」が 873px（最初の画面の外）だった。
               # 広い幅は 2 列（原画 | 題と釦）のままで、ここは効かない
