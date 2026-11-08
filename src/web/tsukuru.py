@@ -222,8 +222,9 @@ def _paper(sid, hid):
 
 
 def _label(h):
-    """紙の呼び名。案は名前で呼ぶ（OWN-n の番号は学ぶ人に見せない）。話した字（how_it_moves）は出さない。"""
-    return h["name"] if h["id"].startswith("OWN-") else hypotheses.letter(h)
+    """紙の呼び名（「…の紙」）。案は名前で呼ぶ（OWN-n の番号は学ぶ人に見せない）。話した字（how_it_moves）は出さない。
+    たたき台は仮説の印（A・C）を出さず「仮説の紙」（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」）"""
+    return f"{h['name']} の紙" if h["id"].startswith("OWN-") else f"{hypotheses.SHOWN}の紙"
 
 
 def step_texts(sid, hid, version=None):
@@ -279,7 +280,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     name = f"{hid}_v{v}_tejun.png"
     if not (out_dir(sid) / name).exists():  # 型紙なしの紙には手順の紙が無い。その紙そのものを出す
         name = f"{hid}_v{v}_free.png"
-    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))} の紙・{esc(ban)}）">'
+    img = (f'<img class="sheet" src="/sheet/{esc(sid)}/{esc(name)}" alt="組み方の絵（{esc(_label(h))}・{esc(ban)}）">'
            if (out_dir(sid) / name).exists() else "")
     if stage:
         img = stage
@@ -304,7 +305,7 @@ def page(sid, hid, look=skin.DEFAULT, step=1, event="", version=None, ai=False):
     ask_head = f"手順 {n} で止まった所を聞く" if asking else "聞く"
     body = (f'<main class="stage" data-sid="{esc(sid)}" data-hid="{esc(hid)}" data-v="{v}">'
             f'<p class="top"><a href="/toy/{esc(sid)}#tsukuru">← {esc(data["toy"])}</a>'
-            f'<span>作りながら見る（試作）　{esc(_label(h))} の紙・{esc(ban)}</span></p>{genga.fold(sid)}'
+            f'<span>作りながら見る（試作）　{esc(_label(h))}・{esc(ban)}</span></p>{genga.fold(sid)}'
             f'<section class="tehon" aria-label="手本"><p class="num">手順 <b id="n">{n}</b> / {total}</p>'
             f'<ol id="steps">{items}</ol>{img}</section>'
             f'<section class="side">{stuck}'
