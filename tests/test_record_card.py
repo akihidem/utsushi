@@ -44,7 +44,10 @@ def post(path, data):
 
 
 def card(page, rid):
-    return page.split(f'id="{rid}"', 1)[1].split("</article>", 1)[0]
+    """手帖の記録の頁のその記録の札（錨は記録の番号・次の札の頭まで）。つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべて
+    もちよるに統合する。」）ので、札の釦と字は手帖の記録の頁の札で見る"""
+    rest = page.split(f'id="{rid}"', 1)[1]
+    return rest.split('<div class="item" id="R-', 1)[0]
 
 
 assert post(f"/toy/{G}/print", {"hypothesis": GS}) in (200, 303)
@@ -53,19 +56,20 @@ base_form = {"hypothesis": GS, "result": "動いた"}
 assert post(f"/toy/{G}/record", {**base_form, **written}) in (200, 303)
 assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない"}) in (200, 303)
 
-page = get(f"/toy/{G}")
-full, bare = card(page, "R-0001"), card(page, "R-0002")
-# 見出しは学ぶ人の言葉。番号は見出しの外の小さな字。日付は読める形
-# 記録の札の題の仮説は印なし（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
-assert "<h3>仮説の紙・動いた</h3>" in full and f"R-0001 {GS}" not in full, full[:300]
-meta = re.search(r'<p class="meta">([^<]*R-0001[^<]*)</p>', full)
-assert meta and re.search(r"\d+ 月 \d+ 日", meta.group(1)) and "T" not in meta.group(1), full[:300]
-# 書いた欄は全部読める。書いていない欄の名前は出さない
-for label, value in (("最初に動いた所", "外筒の先"), ("引っかかった所", "折りの向き"), ("変えると違いが出そうな所", "折りの幅"), ("思いついた事", "糊を減らす"), ("メモ", "紙が厚かった")):
-    assert f"{label}: {value}" in full, label
-    assert label not in bare, label
-# 動かない記録も同じ大きさの見出しで並ぶ（L-07）。成功・失敗の言葉を足さない
-assert "<h3>仮説の紙・動かない</h3>" in bare
+# 書いた欄（最初に動いた所・引っかかった所・変えると違いが出そうな所・思いついた事）は、もちよる の記録の札の畳み「のこした記録」に出る（#653）。
+# つくるの頁には出さない。メモ（ひとこと）は もちよる に出さず、その画面の手帖の記録の札にだけ出る（統括の答え 11-08 の C・tests/test_mochiyoru_record_details.py が見る）。
+# 書いていない記録（R-0002）に欄の名前は出さない（どの欄も もちよる の頁の全体で 1 回だけ）
+toy_page = get(f"/toy/{G}")
+shared = get("/gallery")
+for label, value in (("最初に動いた所", "外筒の先"), ("引っかかった所", "折りの向き"), ("変えると違いが出そうな所", "折りの幅"), ("思いついた事", "糊を減らす")):
+    assert shared.count(f"{label}: {value}") == 1 and shared.count(f"{label}: ") == 1, label
+    assert label not in toy_page, (label, "つくるの頁に記録の欄が残った")
+assert "紙が厚かった" not in shared and "紙が厚かった" not in toy_page, "メモは もちよる と つくるの頁に出さない"
+# 記録の番号と紙と結果は、手帖の記録の札の頭の 1 行（成功・失敗の言葉を足さない。L-07: 動かない記録も同じ形で並ぶ）
+kiroku = get(f"/toy/{G}/techo/kiroku")
+full, bare = card(kiroku, "R-0001"), card(kiroku, "R-0002")
+# 紙の名（「C の紙」）は仮説の表記をそろえる直し（本人の言葉 452）で替わるので、形だけを見る
+assert re.search(r"R-0001　[^　<]+の紙　動いた", full) and re.search(r"R-0002　[^　<]+の紙　動かない", bare), (full[:200], bare[:200])
 assert "成功" not in full + bare and "失敗" not in full + bare
 
 # 前は図鑑の行も同じ書き方かを見ていた。図鑑の頁は外した（本人の言葉 11-08「図鑑のページ要らない」）
@@ -75,11 +79,11 @@ assert loop.save_explanation("R-0001", "大人", "折りが固い", "幅を変�
 keep = ask._key_present
 try:
     ask._key_present = lambda: False
-    full = card(get(f"/toy/{G}"), "R-0001")
+    full = card(get(f"/toy/{G}/techo/kiroku"), "R-0001")
     assert "Claude に聞く" not in full and "動画を見てもらう" not in full, "鍵が無い時は押しても断りが返るだけ"
     assert "AI の返事は、この場では使えません" in full and "鍵" not in full
     ask._key_present = lambda: True
-    full = card(get(f"/toy/{G}"), "R-0001")
+    full = card(get(f"/toy/{G}/techo/kiroku"), "R-0001")
     assert "Claude に聞く" in full and "動画を見てもらう" not in full, "動画が無い時は見てもらう物が無い"
     assert "動画を上げると、Claude が見えた事を返します" in full
     folder = techo_site.media_dir("R-0001")
@@ -87,7 +91,7 @@ try:
     (folder / "m1.mp4").write_bytes(b"\0")
     # 確認の前の動画は、上げた本人の画面にだけ AI の口を出す（tests/test_video_owner_ai.py）。ここは釦の出し方を見るので、人が物だけと確かめた動画として置く
     (folder / "review.json").write_text('{"m1.mp4": {"shows": "object"}}', encoding="utf-8")
-    full = card(get(f"/toy/{G}"), "R-0001")
+    full = card(get(f"/toy/{G}/techo/kiroku"), "R-0001")
     assert "Claude に聞く" in full and "動画を見てもらう" in full
     (folder / "m1.mp4").unlink()
     (folder / "review.json").unlink()
@@ -101,8 +105,8 @@ finally:
     ask._key_present = keep
 # 札の中は 紙の返事（記録そのもの） → 自分の説明 → AI → 次の版 の順に区切る。試した後の紙は 11-06 から刷らないので札に道を出さない
 assert "試した後の紙" not in full
-assert full.index("・版 ") < full.index("説明: 折りが固い") < full.index("Claude に聞く") < full.index("次の版を作る")
-assert full.count('class="step"') == 3, full.count('class="step"')
+# 手帖の記録の札も同じ順（記録の 1 行 → 説明の字 → AI → 次の版）。手帖の札は説明の字に「説明: 」の札を付けず、段の箱（class="step"）も持たない（techo_site.feedback）
+assert full.index("R-0001") < full.index("折りが固い") < full.index("Claude に聞く") < full.index("次の版を作る")
 
 server.shutdown()
 print("ok")

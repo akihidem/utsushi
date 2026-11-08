@@ -79,7 +79,10 @@ assert "原文の引用。確かめた人" not in page, "玩具の頁に原文�
 # 作る側が残した試行の控えと、記録の札の番号（字が同じ行が頁の頭の一覧にもあるので、札の形で見る）
 # 札の版は記録を刷った組の番号（窓口の決定 11-07・#513 の (a)。R-0001 は 11-04 の前の組の紙なので、その組の番号）
 r1 = next(r for r in records.all_records(G) if r["id"] == "R-0001")
-assert f"・{hypotheses.label_of(r1.get('sheet_set') or hypotheses.current_set(hypotheses.load(G)), r1.get('sheet_version', 1))}・▼R-0001</p>" in page and "メモ: ●" in page, "記録の札"
+# 記録の札（版の札・記録の番号・メモ）は、前はつくるの頁にだけ出ていた。つくるの頁から記録の札を外し（本人の言葉 11-08 477）、版の札と欄は もちよる の札の畳み
+# （#653・字や写真のある記録だけ）、記録の番号は手帖の記録の頁（下の線）、メモは自分の記録の札だけ（統括の答え 11-08 の C）に出る形になった。
+# この記録（11-04 の試行の控え・写真も感想も無い）は もちよる に札が無い。つくるの頁に記録の札が残っていない事を見る
+assert "▼R-0001" not in page and "メモ: ●" not in page, "つくるの頁に記録の札が残った"
 # 入口の引用の札、一覧の場所、手帖の組の版と記録の番号
 # 入口から章の部屋（歌と札）を外した（本人のサイト体験レビュー 11-07 の 4）。札は玩具の頁の頭（原画と歌）で見る
 assert "確かめた人: ■" not in get("/"), "入口に章の札を出さない（札は玩具の頁。test_reader_words が見る）"
@@ -119,13 +122,16 @@ ready = records.all_records(G)[-1]["id"]
 post(f"/record/{ready}/explain", {"text": "途中で止まった", "next_idea": "折りを減らす", "by": "大人"})
 page = get(f"/toy/{G}?see={GS}&kind=sheet&v=2")
 assert f'class="side"' in page and f"▼{rid}" in page.split('class="side"', 1)[1].split("</div></div>", 1)[0], "窓の版の添え書き"
-assert f'aria-label="▼{rid}' in page, "頭の帯の写真"
+# 頭の帯の写真（作った物の写しの帯・記録の番号の読み上げ）は、頭の畳み「これまでの記録」ごと外した（本人の言葉 11-08「つくるは、これまでの記録は消す。」）
+assert f'aria-label="▼{rid}' not in page, "頭の帯の写真が残った"
 # 輪の節は作る側の様子の頁（本人の答え 11-07 夕の Q5 で、玩具の頁の足の「型紙の改善の輪」は外し、作る側の様子の頁 /loop/<印> へ移した）。札への道は玩具の頁の札（/toy/<印>#R-…）を指す
 kz = get(f"/loop/{G}").split('id="kaizen"', 1)[1]
-assert f"<a href=/toy/{G}#{rid}>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
-assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{ready}">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
-assert f'href="/toy/{G}#R-0001">▼R-0001</a>' not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
-assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}#{waiting}">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
+# 版のもとの記録への道は、手帖の記録の頁の記録の並び（#mine）へ（つくるの頁から記録の札を外した 11-08・kaizen.py）。記録の番号の字は wording を通る
+assert f"<a href=/toy/{G}/techo/kiroku#mine>▼{rid}</a>" in kz, "改善の輪: 版のもとの記録"
+# 待つ報告の道も手帖の記録の頁の並び（#mine）へ。どの記録も同じ行き先なので、記録の番号の字（wording を通る）で見る
+assert re.search(rf'次の版を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}/techo/kiroku#mine">▼{ready}</a>', kz), "改善の輪: 次の版を待つ報告"
+assert "▼R-0001</a>" not in kz.split("次の版を待つ報告", 1)[1].split("</p>", 1)[0], "前の組の別の形の記録は数えない"
+assert re.search(rf'説明を待つ報告 \d+ 件: [^（]*<a href="/toy/{G}/techo/kiroku#mine">▼{waiting}</a>', kz), "改善の輪: 説明を待つ報告"
 gallery = get("/gallery")
 # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）
 yomu = get("/about")
@@ -134,9 +140,14 @@ assert f"▼{rid}" in gallery and "▲持ち寄りの入口（フォーム）か
 assert "▲作った人の報告" in kz, "改善の輪の節の固定の文"
 assert "▲鍵が置かれると" in post(f"/record/{rid}/ai-interpret", {}), "鍵が無い時の AI の口"
 # 人が書いた文は表を通らない（記録の感想・説明・自分の仮説・歌の引用）
-for text in ("すっと開いた", "折りが固くて戻る", "本人が折った"):
-    assert text in page, text
-    assert f"▲{text}" not in page, text
+# 記録の字（感想・説明・メモ）は、もちよる の札と手帖の記録の頁の札で見る（つくるの頁から記録の札を外した 11-08。感想は もちよる、説明とメモは手帖の自分の札）
+# メモ（本人が折った）は、その画面が残した自分の記録の札にだけ出る（統括の答え 11-08 の C）。この試験の呼び方は画面の鍵を持たないので、メモは もちよる にも
+# つくるの頁にも出ない事を見る（自分の札で字を替えずに出る事は tests/test_reader_words.py の「人の文」と tests/test_mochiyoru_record_details.py が見る）
+written = get("/gallery") + get(f"/toy/{G}/techo/kiroku")
+for text in ("すっと開いた", "折りが固くて戻る"):
+    assert text in written, text
+    assert f"▲{text}" not in written, text
+assert "本人が折った" not in get("/gallery") and "本人が折った" not in page, "メモを もちよる か つくるの頁に出した"
 song = next(e["text"] for e in hypotheses.json.loads((ROOT / "data/sources" / f"{G}.json").read_text(encoding="utf-8"))["transcription"]["entries"] if e.get("checked_by") and not e.get("rejected_by"))
 assert song in page and f"▲{song}" not in page, "歌の引用"
 # 前は図鑑の頁の歌の引用と自分の仮説の字も見ていた（図鑑の頁は外した・本人の言葉 11-08）

@@ -683,6 +683,10 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     from web.toy import reply_note
 
     note = "" if errors else reply_note((), msg)
+    from api.words import spoken_own_ids
+    from web.toy import own_papers as toy_own_papers
+
+    spoken = spoken_own_ids(sid)
     alert = reply_note(errors, "") if errors else ""
     mine = ""
     for r in reversed(records.all_records(sid)):
@@ -701,8 +705,13 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         memo = wording.record_note(r.get("note")) if not closed and records.mine(r["id"], rec_key) else ""
         rid = r["id"]
         here = alert if err_at == rid else ""
-        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
-                 + (f'<p>メモ: {esc(memo)}</p>' if memo else "") +
+        # 前に書かれた自分の仮説で刷った紙（型紙）への道は、前はつくるの頁の記録の札にだけあった（toy.own_papers）。つくるの頁から記録の札を外した
+        # （本人の言葉 11-08）ので、ここ（その記録の札）に置く。合言葉なしの場と、話した案の紙（作った本人の画面からだけ開く）には出さない（前と同じ線）
+        own = toy_own_papers(sid, r["hypothesis_id"], r.get("sheet_version", 1)) if (not closed and h is None and r["hypothesis_id"] not in spoken) else ""
+        # 開いた角度（測った数）は、前はつくるの頁の記録の札の題（「…・40°」）にだけあった。記録の札を外したので、同じ形でここの 1 行に付ける（11-08）
+        deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
+        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
+                 + (f'<p>メモ: {esc(memo)}</p>' if memo else "") + own +
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'
                  f'{feedback(sid, r, photos=not closed, up_key=up_key, can_tell=records.mine(rid, rec_key), filled=filled if err_at in (rid, "next-" + rid) else None, note=alert if err_at == "next-" + rid else "")}</div>')

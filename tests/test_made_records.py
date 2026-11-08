@@ -89,10 +89,14 @@ assert media_review.record(g_rid, "m1.jpg", "object", "確認者") == []
 assert "3 枚目の折り目" not in page and "折るのは楽しかった" not in page and g_rid not in get(f"/toy/{G}")[1]
 gal_g = get("/gallery")[1]
 assert "<p>折るのは楽しかった</p>" in gal_g and f'<img src="/record/{g_rid}/media/m1.jpg/small"' in gal_g
-# 止まった所（引っかかった所）は、手帖の記録の頁の記録に出る（前は玩具の頁の記録の札だけに出ていた）
+# 止まった所（引っかかった所）は、もちよる の記録の札の畳み「のこした記録」に出る（前は玩具の頁の記録の札だけに出ていた・#653・統括の決め 11-08 の (ア)）
 kiroku = get(f"/toy/{G}/techo/kiroku")[1]
 assert f'<img src="/record/{g_rid}/media/m1.jpg/small"' in kiroku, "手帖の記録の頁に写真が無い"
-assert "3 枚目の折り目" in kiroku, "止まった所（引っかかった所）が、玩具の頁から外れた後、どの頁にも出ない"
+# 記録を残した画面の もちよる は、その記録を「今残した」札で出す（他の人が作った物 の札は出さない）。畳み「のこした記録」は 他の人が作った物 の札に付くので、
+# 鍵の無い別の画面で開いて見る
+with urllib.request.urlopen(f"{base}/gallery", timeout=120) as r:
+    other_gal = r.read().decode()
+assert "引っかかった所: 3 枚目の折り目" in other_gal, "止まった所（引っかかった所）が、玩具の頁から外れた後、どの頁にも出ない"
 # 聞く口の断り（J-027: 質問の文を残すので、残す事と、名前を出さないでほしい事を聞く口のすぐ下に出す）。玩具の頁の聞く口は外したので（本人の言葉 11-08・
 # 困ったら は手帖の聞く口に任せる）、残った聞く口（作りながら見る頁）で見る。文は本人の決定（11-05、カード 20261105-092043 の 1 点目）のとおり。
 # 一字でも変わったら落ちるように、ここに決定の文を書く

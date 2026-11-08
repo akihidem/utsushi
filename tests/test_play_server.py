@@ -117,14 +117,16 @@ assert code == 303 and at.endswith("#mine") and f"/toy/{G}/techo/kiroku" in at a
 body = get(f"/toy/{G}/techo/kiroku")[1].decode()
 # 試した後の紙は 11-06 から刷らないので頁に道を出さない。前に配った道は記録の後に開く
 assert f"{GS}_v1_after.pdf" not in body and get(f"/sheet/{G}/{GS}_v1_after.pdf")[0] == 200
-assert "仮説の紙・動かない・40°" in body
+# 手帖の記録の札の 1 行に、紙・結果・開いた角度（前はつくるの頁の記録の札の題「仮説の紙・動かない・40°」。紙の名は仮説の表記の直しで替わるので形で見る）
+assert re.search(r"[^　<]+の紙　動かない・40°", body), "手帖の記録の札に結果と開いた角度が無い"
 # 仮説の文の「正解ではありません」は本人の決定で刷る（#258）。打ち消しの文だけを外し、ほかの「正解」は今までどおり落とす
 for word in ("成功", "失敗", "正解"):
     assert word not in without_premise(body), word
 # 人の説明は、説明と次の思いつきの両方が要る
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "", "by": "本人"})[0] == 422
 assert post("/record/R-0001/explain", {"text": "折りが固い", "next_idea": "強くしごく", "by": "本人"})[0] == 303
-assert "次の思いつき: 強くしごく" in get(f"/toy/{G}")[1].decode()
+# 説明の字は手帖の記録の頁の記録の札に出る（つくるの頁から記録の札を外した 11-08）。つくるの頁には出さない
+assert "次の思いつき: 強くしごく" in get(f"/toy/{G}/techo/kiroku")[1].decode() and "強くしごく" not in get(f"/toy/{G}")[1].decode()
 # 自分の仮説には型紙なしの紙を返す（本人の決定）。書く欄と刷る口は頁から外した（J-032 の点 2。tests/test_own_form_gone.py）ので、前に刷った紙の形で開く
 assert post(f"/toy/{G}/own", {"name": "筒を回す", "how": "ひねると紐が巻かれる", "evidence": "筒の線"})[0] == 404
 assert not hypotheses.save_own(G, "筒を回す", "ひねると紐が巻かれる", "筒の線")[1]
