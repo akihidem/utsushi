@@ -1108,13 +1108,25 @@ class Handler(BaseHTTPRequestHandler):
             # 合計は、書き終わる前の分（同時に受けている途中の本文）を予約して数える（安全の事項 4 への対応・web.load_guard.Reserve）。
             # 前は「今の合計＋今回の長さ」だけで、同時に送られた分が数え合わず、送られた数 × 20MB まで上限を越えうった。
             # 合言葉付きの場にも合計の止めを置く（前は公開の場だけ）。大きさは同じ 2GB（techo_site.MEDIA_TOTAL の注）。ふつうの量では届かない
+            # 予約は同じ置き場を使う全部のプロセスで共有の台帳に置く（安全の事項 2 への対応・load_guard.Reserve の path）
             total = techo_site.PUBLIC_MEDIA_TOTAL if getattr(self.server, "public_open", False) else techo_site.MEDIA_TOTAL
-            if not self.server.media_reserve.take(techo_site.media_bytes(), length, total):
+            tag = self.server.media_reserve.take(techo_site.media_bytes(), length, total)
+            if not tag:
                 return self._send(507, b"", "text/plain; charset=utf-8")
             try:
-                return self._media_post(m.group(1), length)
+                # 受け取り中の本文の合計（このプロセスのメモリ）の上限（安全の事項 2 への対応・load_guard.RECV_TOTAL）。1 つ 20MB と遅い Wi-Fi の
+                # 時の待ち方は替えず、合計が越えた時だけ、変換の入口が溢れた時と同じ 503・本文を空で断る（手帖は前からの字を出す）
+                from . import load_guard
+
+                held = self.server.recv_reserve.take(0, length, load_guard.RECV_TOTAL)
+                if not held:
+                    return self._send(503, b"", "text/plain; charset=utf-8", [("Retry-After", "30")])
+                try:
+                    return self._media_post(m.group(1), length)
+                finally:
+                    self.server.recv_reserve.give(held)
             finally:
-                self.server.media_reserve.give(length)
+                self.server.media_reserve.give(tag)
         m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
         m = re.fullmatch(rf"/toy/({SID})/kasane/ask", self.path)
         if m:
@@ -1726,7 +1738,10 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
 
     server = load_guard.LimitedServer((bind or bind_host(lan), port), Handler)
     server.media_gate = load_guard.Gate()
-    server.media_reserve = load_guard.Reserve()
+    # 置き場の合計の予約は、同じ置き場（records.folder）を使う全部のプロセスで共有する台帳（安全の事項 2 への対応）。台帳は記録の置き場の
+    # 中（git の外）。受け取り中の本文の合計は、メモリがプロセスごとなので、このプロセスの中だけで数える
+    server.media_reserve = load_guard.Reserve(records.folder() / ".reserve" / "media.json")
+    server.recv_reserve = load_guard.Reserve()
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
