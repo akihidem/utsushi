@@ -425,7 +425,8 @@ def bom(p):
         {"number": 4, "key": "wrap", "name": "柄の巻き紙", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": "竹串の柄を持ちやすく、図の柄の色に近づけるため"},
         {"number": 7, "key": "stick", "name": "柄", "qty": 1, "material": f"竹ぐし（太さ {p['stick_d']:g}mm・{SKEWER_LEN}mm の物を {stick_cut(p):g}mm に切る）", "substituted": True, "original_guess": "竹か木（図の柄の形からの推定）", "reason": "家にあり、胴に通しやすいため"},
         {"number": 8, "key": "cord", "name": "糸", "qty": 2, "material": f"もめんの糸（1 本 {cord:g}mm に切る）", "substituted": True, "original_guess": "糸か紐（図の線による）", "reason": "家にあるため"},
-        {"number": 9, "key": "bead", "name": "玉", "qty": 2, "material": f"油ねんどの玉（直径 {p['bead_d']:g}mm）かビーズ", "substituted": True, "original_guess": "不明", "reason": "大きさを変えて試しやすいため"},
+        # 玉の代わりの物にビーズを書かない（材料の前提で樹脂の側。油ねんどは使ってよい。設計の条件・2026-11-07）
+        {"number": 9, "key": "bead", "name": "玉", "qty": 2, "material": f"油ねんどの玉（直径 {p['bead_d']:g}mm）", "substituted": True, "original_guess": "不明", "reason": "大きさを変えて試しやすいため"},
     ]
     if p["face"] == "tori":
         rows.insert(4, {"number": 5, "key": "streamer", "name": "幣の房", "qty": 1, "material": paper, "substituted": True, "original_guess": "紙（図の形からの推定）", "reason": why})
@@ -935,7 +936,7 @@ def bom_kanko(p):
         {"number": 2, "key": "back", "name": "裏の面", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明（同じ）", "reason": why},
         {"number": 3, "key": "band", "name": "胴の帯", "qty": 1, "material": paper, "substituted": True, "original_guess": "不明", "reason": why},
         {"number": 8, "key": "cord", "name": "糸", "qty": 1, "material": f"もめんの糸（{p['k_cord'] + CORD_SPARE:g}mm）", "substituted": True, "original_guess": "糸（図の線による）", "reason": "家にあるため"},
-        {"number": 9, "key": "bead", "name": "玉", "qty": 1, "material": f"油ねんどの玉（直径 {p['bead_d']:g}mm）かビーズを 1 つ", "substituted": True, "original_guess": "不明", "reason": "大きさを変えて試しやすいため"},
+        {"number": 9, "key": "bead", "name": "玉", "qty": 1, "material": f"油ねんどの玉（直径 {p['bead_d']:g}mm）を 1 つ", "substituted": True, "original_guess": "不明", "reason": "大きさを変えて試しやすいため"},
         {"number": 10, "key": "post", "name": "柱", "qty": 1, "material": paper, "substituted": True, "original_guess": "木か竹（図の形からの推定）", "reason": why},
         {"number": 11, "key": "base", "name": "台", "qty": 1, "material": paper, "substituted": True, "original_guess": "木の板（図の形からの推定）", "reason": why},
         {"number": 12, "key": "wheel", "name": "花車", "qty": 1, "material": paper, "substituted": True, "original_guess": "紙（図の形からの推定）", "reason": why},

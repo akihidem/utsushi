@@ -532,6 +532,20 @@ def _key(name, cls="key", attrs="", tag="button", extra=""):
     return f'<{tag}{kind} class="{cls}" {attrs}>{KEY_ICONS[name]}<span>{name}</span>{extra}</{tag}>'
 
 
+def paper_of(sid, printed_ids, own=None):
+    """手帖が作る紙と手順の数。(紙の印, 手順の数) か、刷った紙が無い時は None。
+    のこすの頁（techo_site.records_page の記入の節）も同じ紙で記録を残すので、決め方をここ 1 か所に置く（設計の 3 節・別の目の気づき 10:
+    「今の手帖と同じ（たたき台か、この画面の案の紙）」。前の設計の「その画面で刷った最後の紙」は誤りだった）。"""
+    hid = hypotheses.sheet_of(sid)["id"]
+    mine = tsukuru._paper(sid, own) if own else None
+    if mine and mine.get("params") and printed_versions(sid, own):
+        hid, printed_ids = own, [own]
+    if hid not in printed_ids:
+        return None
+    vs = printed_versions(sid, hid)
+    return hid, len(tsukuru.step_texts(sid, hid, vs[-1] if vs else 1) or [""])
+
+
 def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True, own=None, public=False):
     """手帖の頁。呼ぶ側（play_server）が刷ってある紙の一覧を渡す。作るのはたたき台の 1 枚だけ（J-032）。それが刷られていない時は、紙を作る道だけを出す（手順は紙と一緒に使う物なので）。"""
     data = hypotheses.load(sid)
