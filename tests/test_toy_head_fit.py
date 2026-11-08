@@ -12,7 +12,8 @@
 5. 替えの台本の中に「<」が無く、英語とやさしい日本語の頁で、台本の後ろの頭の字（題・作品の札・くずし字を読む）も替わる
 
 ./run.sh はブラウザなしで動く決まりで、ブラウザを操る道具も入れない（tests/test_landscape_fit.py と同じ）。入っている Chrome で頁をその大きさの iframe に
-開いて測る。Chrome が無い機械と、時間内に答えなかった時は、測れないと出して通す。iPad の Safari そのものでは測れない（この機械に WebKit の部品が無い）ので、
+開いて測る。Chrome が無い機械は、測れないと出して通す。時間内に答えなかった束は、1 つずつ（負荷を下げて）2 回まで回し直し、それでも答えなければ落とす
+（別の目の気づき 11-08: 負荷の高い時に毎回 83 頁の束が 1 つ答えず、測れないまま rc 0 で通っていた）。iPad の Safari そのものでは測れない（この機械に WebKit の部品が無い）ので、
 Safari の縦書きの幅の見積もりの違いは、頁の台本（.genga-flat）が実の箱を測って替える形で守る。
 """
 import html
@@ -128,6 +129,7 @@ server = play_server.serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
 bad, short, unflat = [], [], []
+RETRY = 2  # 答えなかった束を回し直す回数（1 つずつ。同時に回すと混んだ機械でまた答えない）
 
 
 def run(key):
@@ -147,32 +149,51 @@ def run(key):
     return key, got
 
 
+def take(key, got):
+    """1 つの束の答えを見る（重なり・はみ出し・横書きへの替え）。"""
+    for name, rec in got.items():
+        if key.startswith("stress-"):
+            sid, lang, size = TIGER, key.split("-")[1], name.rsplit("-", 1)[1]
+            if not rec["flat"]:
+                unflat.append((lang, size))
+        else:
+            sid = SIDS[int(name.rsplit("-", 1)[1])]
+            lang, size = key.split("-", 1)
+        if rec["sw"] > rec["w"] + 1:
+            bad.append((sid, lang, size, "横にはみ出す", rec["sw"]))
+        boxes = rec["boxes"]
+        for i in range(len(boxes)):
+            for j in range(i + 1, len(boxes)):
+                if overlap(boxes[i], boxes[j]):
+                    bad.append((sid, lang, size, boxes[i][0], boxes[j][0]))
+
+
+retried = []
 try:
     from concurrent.futures import ThreadPoolExecutor
 
     with ThreadPoolExecutor(max_workers=4) as pool:
-        for key, got in pool.map(run, batches):
-            if len(got) < len(batches[key]):
-                short.append((key, len(got)))
-            for name, rec in got.items():
-                if key.startswith("stress-"):
-                    sid, lang, size = TIGER, key.split("-")[1], name.rsplit("-", 1)[1]
-                    if not rec["flat"]:
-                        unflat.append((lang, size))
-                else:
-                    sid = SIDS[int(name.rsplit("-", 1)[1])]
-                    lang, size = key.split("-", 1)
-                if rec["sw"] > rec["w"] + 1:
-                    bad.append((sid, lang, size, "横にはみ出す", rec["sw"]))
-                boxes = rec["boxes"]
-                for i in range(len(boxes)):
-                    for j in range(i + 1, len(boxes)):
-                        if overlap(boxes[i], boxes[j]):
-                            bad.append((sid, lang, size, boxes[i][0], boxes[j][0]))
+        first = list(pool.map(run, batches))
+    # 答えが揃った束だけを見る。揃わなかった束は 1 つずつ回し直し、揃った時に見る（同じ頁を 2 度数えない）
+    later = {}
+    for key, got in first:
+        if len(got) < len(batches[key]):
+            later[key] = got
+        else:
+            take(key, got)
+    for _ in range(RETRY):
+        for key in list(later):
+            retried.append(key)
+            _, got = run(key)
+            if len(got) == len(batches[key]):
+                take(key, got)
+                del later[key]
+    for key, got in later.items():  # 回し直しても揃わなかった束: 測れた頁の重なりは知らせ、測れなかった事で落とす
+        take(key, got)
+        short.append((key, len(got), len(batches[key])))
 finally:
     server.shutdown()
-if short and not bad:
-    print(f"測れない所あり: Chrome が答えなかった束 {short[:3]}（混んだ機械では起きる）")
 assert not bad, (len(bad), bad[:8])
+assert not short, ("Chrome が答えなかった束が、" + str(RETRY) + " 回回し直しても残る（測れない頁を通さない）", short[:4])
 assert not unflat, ("歌をずらした虎の頁で横書きに替わらなかった", unflat)
-print(f"ok 玩具の頁の頭の字の箱は重ならない: {len(SIDS)} 頁 × {len(LANGS)} 言葉 × {len(SIZES)} の大きさ（測れなかった束 {len(short)}）")
+print(f"ok 玩具の頁の頭の字の箱は重ならない: {len(SIDS)} 頁 × {len(LANGS)} 言葉 × {len(SIZES)} の大きさ（測れなかった束 0・回し直した束 {len(set(retried))}）")

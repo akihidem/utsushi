@@ -36,7 +36,7 @@ import random
 
 from omochae.hypotheses import ROOT
 
-from . import wa
+from . import en_fig, wa
 from .skin import esc
 
 # 輪の節の文（本人の答え 11-08「字 1 と絵 A。」）。本人の言葉「…と図がわかりにくい」「型紙の窓のこれまでの説明のほうがわかりやすい」で、
@@ -163,23 +163,24 @@ def _labels(variant):
 
 def svg(variant=None):
     """説明の頁と のこす の頁に置く 1 本の輪の図（11-08 の組み直し）。下に正直に言う 1 行を添える。variant は前の 2 形の名残で、使わない。"""
-    return (f'<figure class="loop-fig" style="margin:12px auto;max-width:460px">{drawn()}'
+    # 日本語の図と英語の図を並べ、頁の言葉で片方だけを見せる（en_fig.TOGGLE。英語の字の長さに合わせた図を別に持つため）
+    return (f'<figure class="loop-fig" style="margin:12px auto;max-width:460px">{drawn()}{drawn_en()}'
             f'<figcaption class="meta" style="text-align:center">{esc(HONEST)}</figcaption></figure>')
 
 
-def _person(x, y):
-    """人の形の小さな絵（頭の丸と肩の線）と、右に「人」。x, y は絵の真ん中。返すのは (SVG, 横の幅)。"""
+def _person(x, y, label="人", fs=None):
+    """人の形の小さな絵（頭の丸と肩の線）と、右に「人」。x, y は絵の真ん中。返すのは (SVG, 横の幅)。label と fs は英語の図の名と字の大きさ。"""
     return (f'<circle cx="{x:.1f}" cy="{y - 5:.1f}" r="5" fill="none" stroke="{INK}" stroke-width="2"/>'
             f'<path d="M{x - 9:.1f} {y + 10:.1f} Q{x:.1f} {y - 3:.1f} {x + 9:.1f} {y + 10:.1f}" fill="none" stroke="{INK}" stroke-width="2" stroke-linecap="round"/>'
-            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{MUTE}">人</text>'), 14 + WHO_FS
+            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{fs or WHO_FS}" fill="{MUTE}">{esc(label)}</text>'), 14 + WHO_FS
 
 
-def _claude(x, y):
+def _claude(x, y, label="Claude", fs=None):
     """Claude の印の小さな絵（画面の四角と、中の 4 つの光の先）と、右に「Claude」。会社の標章は描かない。返すのは (SVG, 横の幅)。"""
     star = " ".join(f"{x + dx:.1f},{y + dy:.1f}" for dx, dy in ((0, -6), (1.8, -1.8), (6, 0), (1.8, 1.8), (0, 6), (-1.8, 1.8), (-6, 0), (-1.8, -1.8)))
     return (f'<rect x="{x - 10:.1f}" y="{y - 9:.1f}" width="20" height="18" rx="5" fill="none" stroke="{SHU}" stroke-width="2"/>'
             f'<polygon points="{star}" fill="{SHU}"/>'
-            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{SHU}">Claude</text>'), 14 + WHO_FS * 3.4
+            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{fs or WHO_FS}" fill="{SHU}">{esc(label)}</text>'), 14 + WHO_FS * 3.4
 
 
 def _sheet(x, y):
@@ -204,15 +205,43 @@ def _bend(p0, c, p1, seed, n=18):
 # 図の字の大きさ（viewBox の中の px）。幅 390 の画面では図が約 320px に縮むので、駅の字 20 は約 13px・誰の名 15 は約 10px で出る
 # （前の 15 では約 8px で読めなかった。11-08 に 390 の幅で撮って見た）
 STEP_FS, WHO_FS = 20, 15
-# 英語の頁だけの字の大きさ（統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 2）。札の幅は日本語の字の数で決まるので、
-# 長い英語（「Make the next template」など）が札からはみ出し、真ん中の「Current template」と下の 1 行に重なった。日本語の図は替えない。
-# 真ん中の小さな 1 行（「1 周で 1 つ版が上がる」の英語）は左右の札の間に入らないので、英語の時だけ左右の札より下へ下げる（下の札の上には届かない）
-EN_STYLE = ("html[lang=en] .loop-ring .lf-s{font-size:13px}html[lang=en] .loop-ring .lf-w{font-size:9.5px}"
-            "html[lang=en] .loop-ring .lf-n{font-size:15px}html[lang=en] .loop-ring .lf-c{font-size:11px;transform:translateY(22px)}")
+# 英語の図（drawn_en・統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 2）の字の大きさと、真ん中の小さな 1 行を下げる長さ。
+# 札の幅は日本語の字の数で決まるので、長い英語（「Make the next template」など）は小さくしないと札からはみ出し、真ん中の字に重なった。
+# 前は英語の頁の CSS（font-size の px）で替えたが、押す所と字の大きさの床（tests/test_tap_size.py の 12px）に当たり main が落ちたので（11-08）、
+# 英語の図を別の SVG にし、大きさは SVG の中の字の大きさ（viewBox の中の値）で持つ。
+# 大きさは、幅 390 の画面に出る大きさの下限（統括の決め 11-08: 駅の字と真ん中の「Current template」10px・誰の名と真ん中の小さな 1 行 9px）から、
+# 英語の図の幅（viewBox の W）で逆に出す（_en_boxes）。前の 13・9.5・11 は、幅 390 で約 7.3px・5.4px・6.2px で読めなかった（#680 の後の別の目の測り）。
+# 札の幅は日本語の図と同じ（字の数で決まる幅）を下限にし、英語の名の並び（絵と名）が広い時だけ広げる。駅の字は札の幅で折る
+EN_FLOOR = {"step": en_fig.MIN_TEXT, "who": en_fig.MIN_SMALL, "now": en_fig.MIN_TEXT, "center": en_fig.MIN_SMALL}
+EN_DROP = 22
 
 
-def drawn(variant=None):
-    """1 本の輪の SVG（頁の幅に合わせて縮む）。4 つの駅を時計回り（上 → 右 → 下 → 左）に角の丸い札で置き、札の間を手書きの風合いの曲がった矢でつなぐ。
+def _en_boxes(ja_boxes, PAD, RH):
+    """英語の図の札（字の折り方・札の幅と高さ・名の並びの幅）と字の大きさ。字の大きさは図の幅で決まり、図の幅は左右の札の幅で決まるので、
+    日本語の図の幅から始めて、幅が 1 より動かなくなるまで 2〜3 回くり返す（札が広がると図が縮んで見え、字を少し大きくする要がある）。"""
+    W = PAD + ja_boxes[3][3] / 2 + 2 * RH + ja_boxes[1][3] / 2 + PAD
+    for _ in range(6):
+        fs = {k: en_fig.floor_size(px, "loop", W) for k, px in EN_FLOOR.items()}
+        boxes = []
+        for k, (name, who, lines, ja_w, _h, _wd) in enumerate(ja_boxes):
+            # 名の並び: 絵の真ん中から名の左の端まで 14・名・右のゆとり 16（日本語の図の _person と _claude の幅と同じ割り付け）
+            widths = [14 + en_fig.width(en_fig.en(w), fs["who"]) + 16 for w in who]
+            row = sum(widths) + 12 * (len(widths) - 1)
+            inner = max(ja_w - 28, row)
+            # 上と下の札（0 と 2）は広げても図の幅が変わらない（図の幅は左右の札で決まる）ので、訳の表の行の分け方のまま札を広げる。
+            # 左右の札は広げると図が縮んで見えるので、札の幅で折る
+            words = [en_fig.en(t) for t in lines] if k in (0, 2) else en_fig.fit(lines, fs["step"], inner)
+            inner = max([inner] + [en_fig.width(t, fs["step"]) for t in words])
+            boxes.append((name, who, words, inner + 28, 30 + len(words) * (fs["step"] + 6) + 12, widths))
+        new = PAD + boxes[3][3] / 2 + 2 * RH + boxes[1][3] / 2 + PAD
+        if abs(new - W) < 1:
+            break
+        W = new
+    return boxes, fs
+
+
+def drawn(variant=None, lang="ja"):
+    """1 本の輪の SVG（頁の幅に合わせて縮む）。lang="en" は英語の図（並べ方は日本語の図と同じで、字は訳の表の英語・大きさと札の幅は _en_boxes）。4 つの駅を時計回り（上 → 右 → 下 → 左）に角の丸い札で置き、札の間を手書きの風合いの曲がった矢でつなぐ。
     誰がするかの小さな絵は札の中の上の段（札の外に置くと図の横幅が広がり、狭い画面で字が小さくなりすぎた）。字は text の要素に 1 つずつ。"""
     PAD, RH, RV = 10, 172, 140  # 真ん中から左右の札・上下の札までの長さ
     boxes = []
@@ -223,6 +252,8 @@ def drawn(variant=None):
         bw = max(max(len(t) for t in lines) * STEP_FS, row) + 28
         bh = 30 + len(lines) * (STEP_FS + 6) + 12
         boxes.append((name, who, lines, bw, bh, widths))
+    if lang == "en":
+        boxes, en_fs = _en_boxes(boxes, PAD, RH)
     CX = PAD + boxes[3][3] / 2 + RH
     W = CX + RH + boxes[1][3] / 2 + PAD
     CY = PAD + boxes[0][4] / 2 + RV
@@ -243,13 +274,40 @@ def drawn(variant=None):
         # 上の段: 誰がするかの絵（2 つの時は並べる）。札の真ん中にそろえる
         ix = x - (sum(widths) + 12 * (len(widths) - 1)) / 2
         for w_, wd in zip(who, widths):
-            body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22)[0]
+            if lang == "en":
+                body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22, en_fig.en(w_), en_fs["who"])[0]
+            else:
+                body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22)[0]
             ix += wd + 12
-        top = y - h / 2 + 30 + STEP_FS + 4
-        body += "".join(f'<text class="lf-s" x="{x:.1f}" y="{top + i * (STEP_FS + 6):.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(t)}</text>'
+        fs = en_fs["step"] if lang == "en" else STEP_FS
+        top = y - h / 2 + 30 + fs + 4
+        body += "".join(f'<text class="lf-s" x="{x:.1f}" y="{top + i * (fs + 6):.1f}" text-anchor="middle" font-size="{fs}" fill="{INK}">{esc(t)}</text>'
                         for i, t in enumerate(lines))
     body += _sheet(CX, CY - 30)
-    body += f'<text class="lf-n" x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(wa.NOW)}</text>'
-    body += f'<text class="lf-c" x="{CX:.1f}" y="{CY + 40:.1f}" text-anchor="middle" font-size="13" fill="{MUTE}">{esc(CENTER)}</text>'
-    return (f'<svg class="loop-ring" viewBox="0 0 {W:.0f} {H:.0f}" role="img" aria-label="{esc(RING_LABEL)}" '
-            f'style="width:100%;height:auto;display:block;font-family:inherit"><style>{EN_STYLE}</style>{body}</svg>')
+    if lang == "en":
+        now, center, label, cls = en_fig.en(wa.NOW), en_fig.en(CENTER), en_fig.en(RING_LABEL), "loop-ring en-fig"
+        n_fs, c_fs = en_fs["now"], en_fs["center"]
+        # 小さな 1 行は左右の札の間に入らないので、左右の札の下の端より下へ下げる（字の上の端が札の下の端から 4 以上離れる所）
+        c_y = max(CY + 40 + EN_DROP, CY + max(boxes[1][4], boxes[3][4]) / 2 + 4 + c_fs * 0.8)
+    else:
+        now, center, label, cls = wa.NOW, CENTER, RING_LABEL, "loop-ring ja-fig"
+        n_fs, c_fs, c_y = STEP_FS, 13, CY + 40
+    if lang == "en":  # 「Current template」は左右の札の間（4 ずつのゆとり）に入らない時、2 行に折る（2 行目の下の線は日本語の 1 行より 10 下）
+        gap = 2 * RH - (boxes[1][3] + boxes[3][3]) / 2 - 8
+        now_lines = en_fig.wrap(now, n_fs, gap)
+        first = CY + 18 - (10 if len(now_lines) > 1 else 0)
+        # 行の送りは字の箱の高さ（字の大きさの 1.45 倍）。字の大きさ + 2 では、2 行の字の箱が 6 重なった（tests/test_no_overlap.py）
+        body += "".join(f'<text class="lf-n" x="{CX:.1f}" y="{first + i * n_fs * 1.45:.1f}" text-anchor="middle" font-size="{n_fs}" fill="{INK}">{esc(t)}</text>'
+                        for i, t in enumerate(now_lines))
+    else:
+        body += f'<text class="lf-n" x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{n_fs}" fill="{INK}">{esc(now)}</text>'
+    body += f'<text class="lf-c" x="{CX:.1f}" y="{c_y:.1f}" text-anchor="middle" font-size="{c_fs}" fill="{MUTE}">{esc(center)}</text>'
+    # 片方だけを見せる決まり（en_fig.TOGGLE）は英語の図の中に置く（図の外に置くと、節の字を読む所に CSS の字が混ざる）
+    keep = f"<style>{en_fig.TOGGLE}</style>" if lang == "en" else ""
+    return (f'<svg class="{cls}" viewBox="0 0 {W:.0f} {H:.0f}" role="img" aria-label="{esc(label)}" '
+            f'style="width:100%;height:auto;font-family:inherit">{keep}{body}</svg>')
+
+
+def drawn_en(variant=None):
+    """英語の図（英語の頁でだけ見える。en_fig.TOGGLE）。"""
+    return drawn(variant, lang="en")

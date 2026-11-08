@@ -258,6 +258,9 @@ BUSY = "受け付けられませんでした。少し待って、もう一度送
 # 頼まれた仮説が無い時の断り（刷る・記録を残す・考えを話す）。前は「仮説 {hid} は無い」で、内部の番号（H-A など）をそのまま出していた。
 # 印（A・C）と番号を学ぶ人に出さない決め（本人の答え 11-08「そろえる。」）に外れるので、統括の決め（11-08）の向きの字にした。新しい字は本人の確かめ待ち
 NO_HYPOTHESIS = "その仮説は見つかりません。頁を開き直してください。"
+# 押し方の違う紙の記録から次の版を作ろうとした時の断り（loop.next_target が None）。前は「次の版はたたき台（H-C）にだけ足す」で、
+# たたき台の内部の番号を出していた（別の目の気づき・統括の決め 11-08）。新しい字は本人の確かめ待ち
+NEXT_SHEET_ONLY = "次の版は、今のたたき台の型紙にだけ足せます。"
 
 
 def writer(peer, headers):
@@ -350,6 +353,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(k, v)
         self.end_headers()
         self.wfile.write(data)
+
+    def _say(self, text):
+        """台本へ JSON で返す字を、頁の言葉に合わせる。頁（HTML）は出口で表を引いて替わるが、JSON は出口の替えを通らない。
+        英語は訳の表の英語、やさしい日本語はルビの印を外した字（台本が字の箱に入れるので要素を入れない）。表に無い字は日本語のまま。
+        なぜ: 予算の止めの字（api.budget.BudgetStop.NOTES）が、英語の頁の聞く口でも日本語のまま出た（#692 の別の目の気づき・統括の割り振り 11-08）"""
+        lang = getattr(self, "_lang", "ja")
+        if lang not in ("en", "easy"):
+            return text
+        from . import i18n
+
+        got = i18n.lookup(text, lang)
+        if not got or got == i18n.KEEP:
+            return text
+        return i18n.ruby_plain(got) if lang == "easy" else got
 
     def _refuse(self, code, reason, title="開けません", **kw):
         """断りの頁を出す。_look は要求の始めに決まるが、そこで落ちた時も頁を出せるように既定を持つ（#136）。"""
@@ -1128,7 +1145,7 @@ class Handler(BaseHTTPRequestHandler):
         rec = loop.record(rid)
         sid, hid = rec["source_id"], loop.next_target(rec["source_id"], rec["hypothesis_id"], rec.get("sheet_set"))  # 自分の紙の記録からの次の版は、たたき台へ向ける
         if hid is None:  # 今のたたき台と押し方の違う紙の記録（loop.next_target）。断りは床の今の字のまま
-            return self._send(422, self._kiroku(sid, errors=[f"次の版はたたき台（{hypotheses.sheet_of(sid)['id']}）にだけ足す"], err_at=rid))
+            return self._send(422, self._kiroku(sid, errors=[NEXT_SHEET_ONLY], err_at=rid))
         if hid != hypotheses.sheet_of(sid)["id"]:  # 次の版はたたき台の記録からだけ（J-032。欄も toy.next_form が出さない）
             return self._send(422, self._kiroku(sid, errors=[NO_HYPOTHESIS], err_at=rid))
         if loop.explanation(rid) is None:
@@ -1252,8 +1269,8 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 text, how = self._ask(sid, hid, form.get("question", ""))
-            except BudgetStop as e:
-                text, how = f"今は AI に聞けません（{e.note}）", "stop"
+            except BudgetStop as e:  # 止めの字は頁の言葉に合わせて返す（_say）
+                text, how = self._say(f"今は AI に聞けません（{e.note}）"), "stop"
             except Exception:
                 text, how = "今は AI に聞けません。組み方の絵を見てください", "error"  # 呼び名は「組み方の絵」にそろえる（11-06 の決定。紙は刷らなくなった）
             # 質問の文だけを工作の様子として残す（本人の決定 11-05 朝。連絡先の形は落とす。答えの文・声・誰が聞いたかは残さない）。
@@ -1307,7 +1324,9 @@ class Handler(BaseHTTPRequestHandler):
             hid = form.get("hypothesis", "")
             from . import think_sheet
 
-            if not think_sheet.usable(self, sid, hid):  # 話した考えから作った案の記録は、作った本人の画面からだけ
+            # 話した考えから作った案の記録は、作った本人の画面からだけ。無い仮説は受け口で先に断る（前は records.add の床の字
+            # 「仮説 H-ZZ は実在しない」が内部の番号のまま、3 つの言葉とも訳されずに出た。別の目の気づき・統括の決め 11-08）
+            if not think_sheet.usable(self, sid, hid) or not records.known_hypothesis(sid, hid):
                 return self._send(422, self._toy(sid, errors=[NO_HYPOTHESIS], at="kiroku", filled=(act, form)))
             # 版は刷ってある一番新しい物（報告はその版への返事）。感想は本人の方針（11-05）「感想と動きの報告」の欄。
             rec = {"source_id": sid, "hypothesis_id": hid, "sheet_version": sheet_version_of(sid, hid, form), "result": form.get("result"),
