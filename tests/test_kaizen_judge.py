@@ -1,7 +1,9 @@
 """審査用の頁「良くするための一周 ♻︎」（前の名は「改善の一周」・/kaizen。本人の言葉 11-07）の試験。本物の API は呼ばない。
 
 見る事:
-1. 合言葉なしの公開の場でも開く。学ぶ人の帯と入口からは道を張らない（審査員の入口は README と序の頁）
+1. 合言葉なしの公開の場でも開く。学ぶ人の帯（頭の帯）からは道を張らない（審査員の入口は README と序の頁）。
+   入口（/）は、まずはここから の節の頭の帯 1 つだけ張る（本人の言葉 11-08「「良くするための一周」がサイトで目立っていません。ここは審査者に見せたい所です。
+   審査の人が入口から来て、掘らずに一周の仕組みが目に入るように、目立たせてください。」・統括の決め 11-08 の案 A。前は入口にも張らない決まりだった）
 2. 本当にあった 3 つの一周（サイトの輪・エンジンの輪・山場）が、段ごとの札で上から順に並ぶ
 3. 字の元は repo の中の記録と改善の歴史の表だけ（記録の字・表の字がそのまま出る）
 4. 誰がしたかを記録のとおりに分ける: Claude の印は「直しを作る」の段だけ。Claude が記録を読む段の札は無い（この 3 つの一周では使っていない）
@@ -39,8 +41,11 @@ for opened in (False, True):
     r = urllib.request.urlopen(base + "/kaizen", timeout=120)
     assert r.status == 200, opened
     page = r.read().decode()
-    for path in ("/", "/toys"):
-        assert "/kaizen" not in urllib.request.urlopen(base + path, timeout=120).read().decode(), ("学ぶ人の入口には道を張らない", path)
+    for path in ("/", "/toys"):  # /toys は入口へ送る道なので、どちらも入口の頁
+        top = urllib.request.urlopen(base + path, timeout=120).read().decode()
+        nav = re.search(r'<nav class="nav">.*?</nav>', top, re.S)
+        assert top.count("/kaizen") == 1 and '<a class="tj-kaizen" href="/kaizen">' in top, ("入口の道は まずはここから の頭の帯 1 つだけ", path, opened, top.count("/kaizen"))
+        assert nav and "/kaizen" not in nav.group(0), ("頭の帯には道を張らない", path, opened)
     server.shutdown()
 
 # ---- 2 3 つの一周と段の順
