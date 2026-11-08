@@ -305,6 +305,10 @@ try:
         tpl = compose.TEMPLATES[kasane.template_of(sid)]
         valley = (compose.FOLD_WORDS if compose.new_fold_words(tpl) else compose._OLD_SHEET_FOLD_WORDS)[0]
         assert valley in kasane.legend(sid), ("凡例はその紙が刷る谷と山の言い方", sid)
+        # 位置の印は、その紙に印がある時だけ凡例に入る（compose が凡例に足すのと同じ見分け・別の目の気づき 11-08）
+        hs = hypotheses.sheet_of(sid)
+        marks = any(i["kind"] == "mark" for q in tpl.parts({**tpl.DEFAULTS, **(hs.get("params") or {})}) for i in q.art)
+        assert ("位置の印（切らない・折らない）" in kasane.legend(sid)) is marks, ("位置の印の有り無しが紙と同じ", sid, marks)
     server.listener.reply = "谷折りって何"
     assert post(base, body(), sid=G)[1]["from"] == "glossary", "御来迎の語の問いは前のとおり語の表で答える"
     server.listener.reply = "谷折りはどこを折りますか"

@@ -39,11 +39,15 @@ def template_of(source_id):
 
 
 def legend(source_id):
-    """その玩具の型紙が刷る凡例の字（compose が刷る谷と山の言い方）。色の境で折る事は、扇の紙にだけ添える。"""
+    """その玩具の型紙が刷る凡例の字（compose が刷る谷と山の言い方）。位置の印は、その紙に印がある時だけ（compose と同じ見分け・別の目の気づき 11-08）。
+    色の境で折る事は、扇の紙にだけ添える。"""
     name = template_of(source_id)
     tpl = compose.TEMPLATES[name]
     valley, mountain = compose.FOLD_WORDS if compose.new_fold_words(tpl) else compose._OLD_SHEET_FOLD_WORDS
     out = f"切る＝実線、{valley}＝破線、{mountain}＝一点鎖線、糊代＝斜線"
+    params = {**tpl.DEFAULTS, **(hypotheses.sheet_of(source_id).get("params") or {})}
+    if any(item["kind"] == "mark" for q in tpl.parts(params) for item in q.art):
+        out += "、位置の印（切らない・折らない）"
     return out + "。線の無い面は色の境で折る" if name == FAN else out
 
 

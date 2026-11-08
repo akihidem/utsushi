@@ -197,6 +197,8 @@ def page(sid, look="tenji", cam=False):
     words = {"steps": texts, "sid": sid, "hmd": not cam, "ask": ASK, "listening": LISTENING, "thinking": THINKING, "noheard": ASK_NOHEARD, "down": ASK_DOWN,
              "novoice": clips.NO_VOICE, "camera": CAMERA, "cameraoff": CAMERA_OFF, "nocamera": NO_CAMERA,
              "seconds": ASK_SECONDS, "frames": FRAMES if cam else 0, "edge": FRAME_EDGE, "hold": HOLD_MS, "frameMax": 300 * 1024}
+    # 字の中の < は \u003c にして、手順の字が script の終わりの印にならないようにする（f 文字列の中に \ を書かない: 3.11 で読めない・test_min_python）
+    data = json.dumps(words, ensure_ascii=False).replace("<", "\\u003c")
     camera = '<video id="hmd-cam" playsinline muted autoplay></video>' if cam else ""
     camera_btn = f'<button type="button" id="hmd-camera">{esc(CAMERA)}</button>' if cam else ""
     body = (f'<div class="hmd"><div class="hmd-top"><b>{esc(toy)}</b><span id="hmd-count">{f"1 / {len(texts)}" if texts else ""}</span></div>'
@@ -208,6 +210,6 @@ def page(sid, look="tenji", cam=False):
             f'<div class="hmd-acts"><button type="button" id="hmd-ask" aria-pressed="false">{esc(ASK)}</button>{camera_btn}</div>'
             f'<p class="hmd-note"><span id="hmd-cam-note">{esc(CAM_NOTE if cam else HMD_NOTE)}</span> <a href="/otona">{esc(OTONA_LINK)}</a> '
             f'<a href="/toy/{esc(sid)}/techo/kiroku">{esc(KEEP_LINK)}</a> {esc(TRIAL)} <a href="/">玩具を選びなおす</a></p></div>{camera}'
-            f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False).replace("<", "\\u003c")}</script>{SCRIPT}{clips.start_assets(sid)}')
+            f'<script type="application/json" id="hmd-words">{data}</script>{SCRIPT}{clips.start_assets(sid)}')
     return skin.shell(f"{toy}: {TITLE}", body, look, path=f"/toy/{sid}/kasane" + ("" if cam else "/hmd"), extra_style=STYLE,
                       body_class="hmd-page hmd-cam" if cam else "hmd-page")
