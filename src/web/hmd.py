@@ -117,20 +117,19 @@ body.hmd-page{background:#14161a;color:#f3efe6}
 .hmd-note a{color:#c9c2b4}
 /* ここで止まった は、カメラを出している間だけ出す。録っている 10 秒は枠の色で見せる */
 body:not(.cam-on) #hmd-stuck{display:none}
-/* 横で低い画面（高さ 520px まで）でカメラを出している間は、押す所を 3 列にする。「ここで止まった」が 1 つ増えて 2 列だと 4 段になり、
-   元に戻す が画面の外へ出た（別の目の確かめの形・test_hmd の 横・低い・重ねる）。つぎ は 3 列をまたぐ */
-@media (min-aspect-ratio:1/1) and (max-height:520px){body.cam-on .hmd-acts{grid-template-columns:1fr 1fr 1fr}body.cam-on .hmd-acts #hmd-next{grid-column:1/4}}
+/* 横で低い画面でカメラを出している間の押す所の並び（「ここで止まった」が 1 つ増えて 2 列だと 4 段になり、元に戻す が画面の外へ出た・
+   test_hmd の 横・低い・重ねる）は、下の 横で高さの低い画面の 4 列 2 段の形にまとめた（3 列でも、虎の字の一番長い手順では 3 段目が外へ出た） */
 #hmd-stuck[data-state=rec]{border-color:#ffe08a}
 /* 縦に長い画面（iPhone を縦に持つ）: 手順の字・3D・押す所の順。字の欄は 3 行分の高さに決め、手順が替わっても 3D の大きさと置き場が
    動かないようにする。頭の帯は 1 行（聞き取った字の写しは、当たった釦が光るので縦では出さない）。押す所は「つぎ」を左の大きな 1 つ、
-   ほかを右の 3 列 2 段にして、iPhone の見える高さ（390×664 ほど）でも 3D の下に全部入れる。前は 2 列 2 段で、カメラに重ねる頁の釦
-   （もどる・もう一回・はじめる・カメラ・中を見る・重ねている間の元に戻す）が 3 段目に溢れ、375×667 の字の長い手順で画面の下へ出た
-   （別の目の測り 11-08）。3 列にすると 1 つの釦の幅が狭いので、長い字（カメラを止める）は釦の中で 2 行に折れる */
+   ほかを右の 4 列 2 段にして、iPhone の見える高さ（390×664 ほど）でも 3D の下に全部入れる。前は 2 列 2 段で、カメラに重ねる頁の釦
+   （もどる・もう一回・はじめる・カメラ・ここで止まった・中を見る・重ねている間の元に戻す の 7 つ）が 3 段目に溢れ、375×667 の字の長い
+   手順で画面の下へ出た（別の目の測り 11-08）。4 列にすると 1 つの釦の幅が狭いので、長い字（カメラを止める）は釦の中で 2 行に折れる */
 @media (max-aspect-ratio:1/1){.hmd{gap:8px;padding-top:8px}
 .hmd-top{flex-wrap:nowrap;gap:10px;font-size:14px;letter-spacing:.02em}.hmd-top b,#hmd-count{white-space:nowrap}.hmd-mic{min-width:0;padding:2px 10px;border-width:1px;border-radius:12px;line-height:1.4}#hmd-heard{display:none}
 .hmd-k{grid-template-columns:minmax(0,1fr);grid-template-areas:"text" "stage" "acts" "note";grid-template-rows:none;gap:8px}
 .hmd-k #rt-text{font-size:clamp(19px,5.6vw,26px);min-height:4.35em}
-.hmd-acts{display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr;grid-template-rows:64px 64px;gap:8px}
+.hmd-acts{display:grid;grid-template-columns:1.15fr repeat(4,1fr);grid-template-rows:64px 64px;gap:8px}
 .hmd-acts #hmd-next{grid-row:1/3;min-height:96px}
 .hmd-acts button{min-height:64px;padding:0 .3em;font-size:clamp(15px,4.2vw,22px);letter-spacing:0;line-height:1.2;white-space:normal;overflow-wrap:anywhere;justify-content:center;text-align:center}}
 @media (prefers-reduced-motion:reduce){.hmd-acts button{transition:none}}
@@ -150,10 +149,10 @@ body.hmd-cam{background:#000}
 body.fit-on .hmd-k .rt-stage{position:relative;z-index:1;transform-origin:50% 50%;opacity:.6;touch-action:none;cursor:move;--rt-table:transparent;background:transparent;border-color:rgba(255,255,255,.35)}
 body.fit-on .hmd-top,body.fit-on #hmd-dots,body.fit-on .hmd-k #rt-text,body.fit-on .hmd-acts,body.fit-on .hmd-note{position:relative;z-index:2}
 #hmd-reset,#hmd-fit-hint{display:none}body.fit-on #hmd-fit-hint{display:inline}body.fit-on #hmd-reset{display:flex}
-/* 横で高さの低い画面（1024×600 など）は、押す所を「つぎ」の下に 3 列にする（「つぎ」は 3 列の幅）。重ねている間は「元に戻す」で 7 つになり、
-   1 列では下の釦が画面の外へ出た（別の目の測り 11-08・統括の決め）。2 列にしても、虎の字の一番長い手順では頭の帯が 2 行に折れて
-   下の段が外へ出たので 3 列にした（字は釦の中で折れる）。縦の画面は別の形（下の max-aspect-ratio の所） */
-@media (min-aspect-ratio:1/1) and (max-height:800px){.hmd-acts{display:grid;grid-template-columns:repeat(3,1fr);align-content:start;gap:10px}.hmd-acts #hmd-next{grid-column:1/-1}.hmd-acts button{min-height:64px;padding:0 .25em;font-size:clamp(15px,1.5vw,26px);letter-spacing:.02em;line-height:1.25;white-space:normal;overflow-wrap:anywhere;justify-content:center;text-align:center}}
+/* 横で高さの低い画面（1024×600 など）は、押す所を「つぎ」の下に 4 列にする（「つぎ」は 4 列の幅）。重ねている間は「元に戻す」で 7 つになり、
+   1 列では下の釦が画面の外へ出た（別の目の測り 11-08・統括の決め）。2 列・3 列でも、虎の字の一番長い手順では頭の帯が 2 行に折れ、
+   「ここで止まった」が足された後は 3 段目が外へ出たので、4 列 2 段にした（字は釦の中で折れる）。縦の画面は別の形（下の max-aspect-ratio の所） */
+@media (min-aspect-ratio:1/1) and (max-height:800px){.hmd-acts{display:grid;grid-template-columns:repeat(4,1fr);align-content:start;gap:8px}.hmd-acts #hmd-next{grid-column:1/-1}.hmd-acts button{min-height:64px;padding:0 .25em;font-size:clamp(15px,1.5vw,26px);letter-spacing:.02em;line-height:1.25;white-space:normal;overflow-wrap:anywhere;justify-content:center;text-align:center}}
 body.hmd-cam .hmd{position:relative}
 body.hmd-cam .hmd-k #rt-text{background:rgba(0,0,0,.55);padding:8px 14px;border-radius:10px;text-shadow:0 1px 3px #000}
 body.hmd-cam .hmd-top{background:rgba(0,0,0,.45);padding:6px 12px;border-radius:10px}
