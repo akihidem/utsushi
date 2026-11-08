@@ -46,8 +46,12 @@ STYLE = (".wa{margin:14px auto 6px;max-width:440px}.wa svg{display:block;width:1
 # 英語の図の字の大きさ（viewBox の中の値。統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 1）。英語は日本語より長く、
 # 札（幅 132）と真ん中の丸（直径 88）に入らず、「Make the next template」が真ん中の「Current template」に、「Version N」が左右の札に重なった。
 # 前は英語の頁の CSS（font-size の px）で替えたが、押す所と字の大きさの床（tests/test_tap_size.py の 12px）に当たり main が落ちたので（11-08）、
-# 英語の図を別の SVG にし、大きさは SVG の中で持つ。日本語の図は替えない。画面に出る大きさを 10px 以上にする並べ方は次の直し
-EN_FS = {"step": 10.5, "now": 9.5, "version": 15}
+# 英語の図を別の SVG にし、大きさは SVG の中で持つ。日本語の図は替えない。
+# 大きさは、幅 390 の画面に出る大きさの下限（統括の決め 11-08: 字 10px・真ん中の小さな 1 行 9px・en_fig.MIN_TEXT と MIN_SMALL）から、
+# 図の幅（viewBox の W）と幅 390 での図の幅（en_fig.FIG_390）で逆に出す（前の 10.5・9.5 は、画面で約 8.5px・7.7px で読めなかった）。
+# 大きくした分、札の字と真ん中の「Current template」は札と丸の幅で語の切れ目で折る（_box と ring）
+EN_FS = {"step": en_fig.floor_size(en_fig.MIN_TEXT, "wa", W), "now": en_fig.floor_size(en_fig.MIN_SMALL, "wa", W), "version": 15}
+NOW_W = 72  # 真ん中の丸（直径 88）の中で「Current template」を折る幅（字の上の端の高さでの丸の幅に収まる）
 
 
 def _arc(a, b):
@@ -76,9 +80,13 @@ def _arc(a, b):
 def _box(x, y, label, lang="ja"):
     lines = LINES.get(label, (label,))
     top = y - (len(lines) - 1) * 9
-    if lang == "en":  # 英語の図: 訳の表の英語を、英語の時の大きさで（並べ方は日本語の図と同じ）
-        texts = "".join(f'<text class="wa-te" x="{x}" y="{top + i * 18 + 5}" text-anchor="middle" font-size="{EN_FS["step"]}">{esc(en_fig.en(s))}</text>'
-                        for i, s in enumerate(lines))
+    if lang == "en":  # 英語の図: 訳の表の英語を、札の幅に入らなければ折り直す（en_fig.fit）
+        fs = EN_FS["step"]
+        words = en_fig.fit(lines, fs, BOX_W - 12)
+        step = fs + 3
+        first = y - (len(words) - 1) * step / 2 + fs * 0.35  # 字の下の線（字の真ん中は下の線から字の大きさの 3〜4 割上）
+        texts = "".join(f'<text class="wa-te" x="{x}" y="{first + i * step:.1f}" text-anchor="middle" font-size="{fs}">{esc(w)}</text>'
+                        for i, w in enumerate(words))
     else:
         texts = "".join(f'<text class="wa-t" x="{x}" y="{top + i * 18 + 5}" text-anchor="middle">{esc(s)}</text>' for i, s in enumerate(lines))
     return f'<rect class="wa-box" x="{x - BOX_W / 2}" y="{y - BOX_H / 2}" width="{BOX_W}" height="{BOX_H}" rx="8"/>{texts}'
@@ -102,8 +110,11 @@ def ring(version=1, href=HREF):
     boxes_en = "".join(_box(x, y, s, "en") for (x, y), s in zip(SPOTS, STEPS))
     now_en, v_en = esc(en_fig.en(NOW)), esc(en_fig.en(VERSION.format(n=int(version))))
     said_en = " → ".join(en_fig.phrase(LINES.get(s, (s,))) for s in (*STEPS, STEPS[0]))
-    center_en = (f'<a href="{esc(href)}" aria-label="{now_en} {v_en}"><circle class="wa-c" cx="{CX}" cy="{CY}" r="44"/>'
-                 f'<text class="wa-nowe" x="{CX}" y="{CY - 8}" text-anchor="middle" font-size="{EN_FS["now"]}">{now_en}</text>'
+    fs = EN_FS["now"]
+    now_lines = en_fig.wrap(en_fig.en(NOW), fs, NOW_W)  # 2 行の時は、日本語の 1 行（CY - 8）を 2 行目の下の線にして上へ積む
+    now_texts = "".join(f'<text class="wa-nowe" x="{CX}" y="{CY - 8 - (len(now_lines) - 1 - i) * (fs + 2):.1f}" text-anchor="middle" font-size="{fs}">{esc(t)}</text>'
+                        for i, t in enumerate(now_lines))
+    center_en = (f'<a href="{esc(href)}" aria-label="{now_en} {v_en}"><circle class="wa-c" cx="{CX}" cy="{CY}" r="44"/>{now_texts}'
                  f'<text class="wa-ve" x="{CX}" y="{CY + 22}" text-anchor="middle" font-size="{EN_FS["version"]}">{v_en}</text></a>')
     return (f'<style>{STYLE}{en_fig.TOGGLE}</style><figure class="wa" id="wa"><svg class="ja-fig" viewBox="0 0 {W} {H}" role="img" aria-labelledby="wa-title">'
             f'<title id="wa-title">{esc(said)}</title>{arcs}{boxes}{center}</svg>'

@@ -13,6 +13,8 @@
 - 字の大きさは、幅 390 の画面での図の幅（FIG_390）と viewBox の幅から決める。図は頁の幅に合わせて縮むので、viewBox の中の字の大きさ ×
   （図の幅 ÷ viewBox の幅）が画面に出る大きさ
 """
+import math
+
 from omochae import textfit
 from omochae.model import ToolMissing
 
@@ -63,6 +65,18 @@ def wrap(text, size, max_w):
     return lines
 
 
+def fit(lines, size, max_w):
+    """日本語の段の分け方の英語（訳の表は行ごと）が全部の行で幅に入るなら、その分け方のまま（訳の表の切れ目は意味の切れ目）。
+    入らない行があれば、つないで語の切れ目で折り直す（「Make the next template」は札に入らない）。"""
+    own = [en(t) for t in lines]
+    return own if all(width(t, size) <= max_w for t in own) else wrap(" ".join(own), size, max_w)
+
+
 def user_size(px, fig, view_w):
     """画面に px で出したい時の、viewBox の中の字の大きさ（幅 390 の画面での図の幅から）。"""
     return px * view_w / FIG_390[fig]
+
+
+def floor_size(px, fig, view_w):
+    """画面に px 以上で出る、viewBox の中の字の大きさ（0.1 の位へ切り上げ。切り捨てると画面で下限をわずかに割る）。"""
+    return math.ceil(user_size(px, fig, view_w) * 10) / 10
