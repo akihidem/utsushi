@@ -3,6 +3,7 @@
 見本の中に印の文字列（位置の値）を入れ、置かれたファイルのバイトに残っていない事を見る。見本に印が入っている事も先に確かめる
 （印が最初から無いと、何も外さなくても試験が通るため）。
 """
+import http.cookiejar
 import io
 import json
 import os
@@ -35,7 +36,10 @@ base = f"http://127.0.0.1:{server.server_address[1]}"
 threading.Thread(target=server.serve_forever, daemon=True).start()
 tmp = pathlib.Path(tempfile.mkdtemp())
 # 1 つのブラウザとして動く（記録を残した画面の鍵の cookie を持つ。写真の受け口は、その画面からだけ受ける）
-urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor()))
+# 公開の場の所有者の cookie は Secure（本人の指示 11-08 の安全の事項 7）。本番の公開デモは https 越しなので届くが、この試験は http://127.0.0.1 で開くので、
+# Python の CookieJar が Secure の cookie を送り返さない。手元の試験の中だけ http でも送り返す決まりにする（サイトの作りは替えない・ブラウザは https で受ける）
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor(
+    http.cookiejar.CookieJar(http.cookiejar.DefaultCookiePolicy(secure_protocols=("https", "wss", "http"))))))
 
 
 def req(path, data, ctype="application/x-www-form-urlencoded"):

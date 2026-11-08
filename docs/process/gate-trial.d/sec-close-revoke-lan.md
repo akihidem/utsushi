@@ -17,5 +17,6 @@
   - 返事の形は前と同じ
   - 所有者の cookie は、公開の場で Secure、手元の場は付かない
 - 検証ゲート: **済み**。Red: 今の main で rc 1（gate-evidence/red-close-revoke-2.txt・とじた後も写した記録の鍵が通る）。Green: rc 0（gate-evidence/green-close-revoke-2.txt）。落ちた版: red-close-revoke.txt（試験の写真の箱を作る前）・green-close-revoke.txt（名の衝突）
+- 別の目の FAIL（11-08）と直し: tests/test_clip_receipt.py と tests/test_media_strip.py がこの PR で新しく落ちた。試験が Python の CookieJar で http://127.0.0.1 から公開の場を開き、Secure の cookie を送り返さず 403 になった。サイトの作りは替えず、試験の CookieJar だけ http でも送り返す決まり（secure_protocols に http）にした（gate-evidence/green-sec-clip-receipt.txt・green-sec-media-strip.txt）。本番の公開デモは https 越しなので届く
 - 限り: 失効は とじる を押した画面の鍵だけ。押さずにブラウザを閉じた鍵は、今までどおり期限で切れる
 - マージ後の書き戻し: Issue は立てていない

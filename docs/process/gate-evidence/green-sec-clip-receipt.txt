@@ -1,0 +1,14 @@
+# 命令: .venv/bin/python tests/test_clip_receipt.py
+# commit: d6e21dc8（回した時の HEAD）
+FAIL F10.review [R-0007/voice/k1.webm] 端末での人の確認が無い
+FAIL F10.review [R-0007/voice/k9.webm] 読みを待つ区切りが無い
+/tmp/tmpizcap_k2/play/NDL-1187053-R0000005-L/.tmp-gpilap_0/H-C_v1.pdf
+/tmp/tmpizcap_k2/play/NDL-1187053-R0000005-L/.tmp-_lrj6_oh/H-C_v1.pdf
+/tmp/tmpizcap_k2/play/NDL-1187053-R0000005-L/.tmp-gvqw570o/H-C_v1.pdf
+/tmp/tmpizcap_k2/play/NDL-1187053-R0000005-L/.tmp-z3q51cir/H-C_v1.pdf
+/tmp/tmpizcap_k2/clip-frames/R-0007-k1-_yobvaq_/1.jpg
+/tmp/tmpizcap_k2/clip-frames/R-0007-k1-_yobvaq_/2.jpg
+/tmp/tmpizcap_k2/clip-frames/R-0007-k1-_yobvaq_/3.jpg
+読まずに消しました
+ok: 区切りは見出しで受け、照らしの後で分ける・読みは人の操作の後に 1 回・人の言葉が先・止めで待つ・公開の場は進め役の確かめの後
+rc=0
