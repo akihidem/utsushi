@@ -137,6 +137,7 @@ assert meta == {"k1.webm": {"step": 4, "button": "stuck"}}, meta
 server.shutdown()
 
 # ---- 2・3 読みの段（偽の係で）
+real_key = ask._key_present
 ask._key_present = lambda: True
 ok = Client({"observed": ["左手で 2 の受けを持ち、扇の端が貼れずに浮いている"], "unclear": ["のりの量"], "person": False})
 result, why = clip_read.read(rid, "k1.webm", ok)
@@ -174,7 +175,8 @@ assert "k2.webm" not in voice_text.clips_waiting(rid) and len(clip_read.observat
 bad = Client({"observed": ["失敗している"], "unclear": [], "person": False})
 assert clip_read.read(rid, voice_text.put_cam_clip(rid, cam, "webm")[0], bad)[1] == "成否や点の言葉が入っていた"
 
-# ---- 4 公開の場: 受け口では読まず、命令の道に並ぶ
+# ---- 4 公開の場: 受け口では読まず、命令の道に並ぶ（鍵のある所では合言葉なしで開けないので、偽の鍵を戻してから立てる）
+ask._key_present = real_key
 started.clear()
 pub, pbase = site(public_open=True)
 pcall = session(pbase)
