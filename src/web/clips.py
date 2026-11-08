@@ -130,9 +130,30 @@ window.utsushiClipsStart=(sid)=>{try{const r=JSON.parse(sessionStorage.getItem('
 })()</script>"""
 
 
+# 手帖の作る頁に置く、送るだけの小さな台本（統括の決め 11-08: 手帖の最後の「のこす」でも、同じ玩具の今の回の区切りを送る。
+# 手帖で終えた人の声とカメラが届かないと、本人の「解析につかう」に外れるため）。録る code は持たない（手帖の作る頁は録らない決まり・test_techo_step）。
+# 送り先は、記録を作った直後のその記録の写真の口（のこすの頁と同じ道・同じ見出し）だけ。送れた物は消し、終わったらその玩具の回と印を消す。
+# その場限りの印（who）は記録の後に作り直されるので、手帖は記録の直後・作り直しの前に呼ぶ
+SEND_SCRIPT = """<script>(()=>{if(!window.indexedDB)return;
+window.utsushiClipsSend=(sid,id)=>new Promise((fin)=>{let w='',r=null,over=false;try{w=sessionStorage.getItem('utsushi-who')||'';r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null')}catch(e){}
+ const done=(v)=>{if(!over){over=true;fin(v)}};
+ // 置き場が答えない時（ブラウザの置き場が止まっている・試験の仮の時計の中など）に、記録の残しを止めないよう、6 秒で待つのをやめる（区切りは送らずに残る）
+ setTimeout(()=>done(false),6000);
+ if(!w||!r){done(false);return}
+ const q=indexedDB.open('utsushi-clips',1);q.onupgradeneeded=()=>q.result.createObjectStore('clips',{keyPath:'id'});q.onerror=()=>done(false);
+ q.onsuccess=async()=>{const db=q.result,get=()=>new Promise(ok=>{const g=db.transaction('clips').objectStore('clips').getAll();g.onsuccess=()=>ok(g.result||[]);g.onerror=()=>ok([])});
+  const del=(cid)=>new Promise(ok=>{const t=db.transaction('clips','readwrite');t.objectStore('clips').delete(cid);t.oncomplete=ok;t.onerror=ok});
+  let bad=false;for(const c of (await get()).filter(c=>c.sid===sid&&c.who===w&&c.run===r.id).sort((a,b)=>a.at-b.at)){
+   const h={'Content-Type':c.type||'application/octet-stream','X-Utsushi-Clip':c.kind};
+   if(c.kind==='k'){if(/^[0-9]+$/.test(String(c.step)))h['X-Utsushi-Step']=String(c.step);if(c.button)h['X-Utsushi-Button']=c.button}
+   try{const m=await fetch('/record/'+id+'/media',{method:'POST',headers:h,body:c.blob});if(m.ok)await del(c.id);else bad=true}catch(e){bad=true}}
+  db.close();try{['utsushi-run:','utsushi-pass:','utsushi-pass-new:'].forEach(k=>sessionStorage.removeItem(k+sid))}catch(e){}done(bad)}});
+})()</script>"""
+
+
 def start_assets():
     """手帖の作る頁に置く小さな台本（数は 1 か所の値から入れる）。"""
-    return START_SCRIPT.replace("__HOURS__", str(CLIP_HOURS))
+    return START_SCRIPT.replace("__HOURS__", str(CLIP_HOURS)) + SEND_SCRIPT
 
 
 def assets():

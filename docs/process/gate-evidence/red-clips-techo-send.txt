@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_clips_client.py
+# commit: 7e41cf29（回した時の HEAD）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+Traceback (most recent call last):
+  File "tests/test_clips_client.py", line 95, in <module>
+    assert "addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.adopt(sid).then(() => utsushiClips.list(sid))" in nokosu.SCRIPT, "頁を開いた時に、今の回の物を渡してから、渡す印の違う物を消す"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 頁を開いた時に、今の回の物を渡してから、渡す印の違う物を消す
+rc=1

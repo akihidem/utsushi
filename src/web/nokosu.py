@@ -89,7 +89,9 @@ const showClips = async () => {
     li.appendChild(b); ul.appendChild(li);
   });
 };
-addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.list(sid).catch(() => {}); });
+// のこすの頁を開いた時は、同じ玩具の今の回の、まだ渡していない区切りを渡してから並べる（作りながら見る頁の「のこす」のように、
+// フォームで送って のこす へ着く道は、のこす への道の押しで渡されないため。回の印で前の人の物とは分かれる・統括の決め 11-08）
+addEventListener('DOMContentLoaded', () => { if (window.utsushiClips) utsushiClips.adopt(sid).then(() => utsushiClips.list(sid)).catch(() => {}); });
 // 区切りを 1 つずつ送る（記録ができた後・写真の前）。見出しで、声（t）かカメラ（k）かと、カメラの区切りの手順と釦を添える。送れた物から置き場で消す
 const sendClips = async (id) => {
   let bad = false;

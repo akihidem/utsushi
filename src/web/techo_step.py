@@ -410,7 +410,10 @@ const keepPress = async () => {
       st.textContent = '送っています…';
       form.reset(); chosen = []; showPicked();
       let done = '';
+      // 前の記録に足す時も、同じ玩具の今の回の区切りを、その記録へ送る（作り直しの前）
+      const clipBad = window.utsushiClipsSend ? await window.utsushiClipsSend(sid, target) : false;
       try { done = await sendFiles(target, files); } catch (err) { done = '記録は残しました。写真か動画を送れませんでした'; }
+      if (clipBad) done = '__CLIP_FAIL__';
       go.disabled = false;
       location.assign(`/gallery?msg=${encodeURIComponent(done)}#ageta`);
       return;
@@ -438,11 +441,15 @@ const save = async (result) => {
     const j = await r.json().catch(() => ({}));
     if (!j.id) { st.textContent = j.error || '残せませんでした'; return; }
     saved = true;
+    // 同じ玩具の今の回の声とカメラの区切りを、この記録へ送る（統括の決め 11-08・web.clips の SEND_SCRIPT）。印を作り直す前に（区切りは今の印で見分ける）
+    const clipBad = window.utsushiClipsSend ? await window.utsushiClipsSend(sid, j.id) : false;
     // 記録が残ったので、その場限りの印を作り直す（次の作りの字が、この記録の字と混ざらないように。skin.WHO_SCRIPT）。残らなかった時は作り直さない。
     if (window.utsushiNewWho) window.utsushiNewWho();
     form.reset(); chosen = []; showPicked();
     // 写真を選ばずに残した時は「上げました」と言わない（上げていないので）。字は頁の記録の返事に今ある字（main の #429 と同じ）
     done = files.length ? await sendFiles(j.id, files) : '記録を残しました';
+    // 区切りを送れなかった時は、サーバの断りの字を出さず、のこすの頁と同じ決めた 1 行を出す
+    if (clipBad) done = '__CLIP_FAIL__';
   } catch (err) {
     if (!saved) { st.textContent = '送れませんでした。つながりを見て、もう一度押してください'; return; }
     done = '記録は残しました。写真か動画を送れませんでした';
@@ -642,6 +649,6 @@ def page(sid, printed_ids, look=skin.DEFAULT, step=1, version=None, uploads=True
             f'<p class="meta" id="up-notice">{esc(hanasu.UPLOAD_NOTICE)}</p><p class="meta">{esc(records.WITHDRAW_NOTICE)}</p><p class="meta">{esc(hanasu.NOTICE)}</p></form></section>'
             f'<section class="kekka" data-on="kekka">{tiles}</section></main>' + g_dlg)
     js = (SCRIPT.replace("__WORDS__", json.dumps(WORDS, ensure_ascii=False)).replace("__RESULT_WORDS__", json.dumps(RESULT_WORDS, ensure_ascii=False))
-          .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL))
+          .replace("__CLEAN__", CLEAN).replace("__HOW_BROWSER__", hanasu.HOW_BROWSER).replace("__INSTALL__", INSTALL).replace("__CLIP_FAIL__", clips.CLIP_FAIL))
     # 回の印を引き継ぐ小さな台本（web.clips.START_SCRIPT）だけを置く（回の印が無い時だけ、ここで作り始める）。この頁は録らない決まりなので、録る code を持つ置き場の台本は置かない
     return _doc(title, look, body + skin.WHO_SCRIPT + js + clips.start_assets())
