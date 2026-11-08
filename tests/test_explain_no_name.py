@@ -4,6 +4,7 @@
 空の時は記録に空のまま残す（空の時に入れる、今ある決まった字は無い）。
 「人の説明が先」の床（説明のファイルがある事）と、次の版・Claude の読みは、空の書いた人で止まらない。合言葉あり・なしの両方で見る。
 """
+import http.cookiejar
 import json
 import os
 import re
@@ -33,7 +34,10 @@ class Browser:
 
     def __init__(self, base):
         self.base = base
-        self.op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor())
+        # 公開の場の所有者の cookie は Secure（本人の指示 11-08 の安全の事項 7・#735）。この試験は http://127.0.0.1 で開くので、手元の試験の中だけ
+        # http でも Secure の cookie を送り返す決まりにする（サイトの作りは替えない・本番の公開デモは https 越し・test_clip_receipt と同じ直し）
+        self.op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(
+            http.cookiejar.CookieJar(http.cookiejar.DefaultCookiePolicy(secure_protocols=("https", "wss", "http")))))
 
     def call(self, path, data=None):
         r = urllib.request.Request(self.base + path, data=urllib.parse.urlencode(data).encode() if data is not None else None, headers={"Origin": self.base})

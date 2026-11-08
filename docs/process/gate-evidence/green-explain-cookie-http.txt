@@ -1,0 +1,7 @@
+# 命令: .venv/bin/python tests/test_explain_no_name.py
+# commit: c63822f3（回した時の HEAD）
+/tmp/tmpy279tqbz/play/NDL-1187053-R0000005-L/.tmp-tgtvljnm/H-C_v1.pdf
+/tmp/tmpy279tqbz/play/NDL-1187053-R0000005-L/.tmp-zp833t9p/H-C_v1.pdf
+/tmp/tmpy279tqbz/play/NDL-1187053-R0000005-L/.tmp-4970zsul/H-C_v2.pdf
+ok: 説明の書いた人は、書かなくても送れる
+rc=0
