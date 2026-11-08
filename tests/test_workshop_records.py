@@ -96,7 +96,9 @@ assert all(esc(t) in about for v in demo_samples.VOICES for _, t in v["fields"])
 # 4. ギャラリーに見本が出ない
 gallery = get("/gallery")
 # 札と畳みの要素で見る（「is-sample」の語は、序の頁の職人の言葉の見本のために、全体の皮の CSS に残る）
-assert '<details class="samples-fold">' not in gallery and 'class="item is-sample"' not in gallery and esc(demo_samples.NOTE) not in gallery, "上げた物の見本は外した"
+# 職人の言葉の節（本人の言葉 11-08「職人の言葉、はもちよるに移動」・中身は見本の札のまま）は頁の足なので、その前で見る
+before = gallery[:gallery.index('id="shokunin"')]
+assert '<details class="samples-fold">' not in gallery and 'class="item is-sample"' not in before and esc(demo_samples.NOTE) not in gallery, "上げた物の見本は外した"
 assert not hasattr(demo_samples, "UPLOADS"), "作り物の 8 件を残さない"
 srv.shutdown()
 print("ok 玩具の頁の記録はワークショップのデータ: 結べる 10 件と話された言葉・見本なし・迷う物は序の頁だけ")

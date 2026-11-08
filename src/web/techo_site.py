@@ -311,6 +311,12 @@ main:has(.gallery){max-width:960px;padding-top:20px}
 .gallery .sakurei-row figure,.gallery .workshop-row figure{margin:0;display:grid;gap:6px;align-content:start}
 .gallery .sakurei-row img,.gallery .workshop-row img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
 .gallery .sakurei-row figcaption,.gallery .workshop-row figcaption{font-size:14px}
+.gallery .tiles figure:has(details[open]){grid-column:1/-1}
+.gallery .workshop-top{margin:0}
+.gallery .workshop-top img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
+.gallery .voices-fold summary{cursor:pointer;color:var(--accent);font-size:14px}
+.gallery .voices-fold .item{display:grid;gap:4px;border-top:1px solid var(--frame);padding-top:8px;margin-top:8px}
+.gallery .voices-fold p{margin:0}
 .gallery .sakurei-row .ban{white-space:nowrap;margin-left:.6em}
 .gallery .sakurei-faces{margin:0;display:grid;gap:6px}.gallery .sakurei-faces>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
 .gallery .sakurei-faces img,.gallery .sakurei-kufu img{width:100%;height:auto;display:block;border:1px solid var(--frame)}
@@ -485,8 +491,13 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     sak = sakurei_section(sids, photos)
     # ワークショップの試行の写真（web.workshop。本人の見直し 11-07 夜の ⑦）。他の人が作った物なので、この節の記録の札の前に置く。
     # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示）
+    # ワークショップの様子（作っている途中の写真）と、できたおもちゃの敷き詰め（押すと感想）（本人の言葉 11-08「もちよる、ワークショップの様子、として
+    # 作っている様子をあげるのと、できたおもちゃはギャラリーの形で並べる。感想も見れるように」）。前は「他の人が作った物」の中に、玩具ごとの写真の札
+    # （workshop.gallery）を置いていたが、できたおもちゃの節が同じ写真を玩具ごとに出すので、2 回出さないよう外した。
+    # repo の公開の決めが済んだ写真なので、合言葉なしの場（photos=False）でも出す（本人の直の指示・前と同じ）
     from . import workshop
-    ws = workshop.gallery(sids)
+    ws = workshop.made(sids) + workshop.scene()
+    narabe = workshop.top()
     after = f'<p class="meta">{esc(PUBLIC_UPLOADED)}</p>' if public and msg == UPLOADED else ""
     # とじた後の返事（CLOSED）には釦を出さない（押した後に同じ釦がまた出ると、とじていないように見えるため）
     shut = close_form() if msg and msg != CLOSED else ""
@@ -505,11 +516,15 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
     return ('<div class="gallery"><div class="top"><h1>作った物</h1></div>'
             # 選ぶ所は入口（えらぶ）。/toys は入口へ送るので、直に入口へ向ける（本人のサイト体験レビュー 11-07 の 3）
             '<p class="road"><a class="go" href="/">もう 1 つ つくる</a></p>'
+            # 頭のおもちゃが並べてある写真 1 枚 → みんながつくったおもちゃ → つくっている様子（本人の言葉 11-08「冒頭におもちゃが並べてある写真一枚。…」）
+            f'{narabe}{ws}'
             f'{sak}'
             # 寄せられた声と職人の言葉の節は、序の頁（よむ）へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6、直しの設計の D）。
             # この頁は作った記録の並び（のこす の続き）だけになったので、節へ飛ぶ口（jump）は外した（1 つの節へ飛ぶ口は要らない）。題も「と職人の言葉」を外した
             f'<section class="panel" id="ageta"><h2 class="mark">他の人が作った物</h2><p class="meta">{esc(GALLERY_LEAD)}</p>'
-            f'{note}{own}{ws}{cards}</section></div>')
+            f'{note}{own}{cards}</section>'
+            # 職人の言葉の節は、もちよるの頁の足（本人の言葉 11-08「職人の言葉、はもちよるに移動」。前は序の頁の足）
+            f'{shokunin_section()}</div>')
 
 
 VOICES_STYLE = """
@@ -523,24 +538,27 @@ VOICES_STYLE = """
 
 
 def voices_sections():
-    """寄せられた声と職人の言葉の 2 つの節（持ち寄りの入口のフォームを含む）。序の頁（よむ。about.page）の足に置く。
-    本人のサイト体験レビュー（11-07）の言葉 6「残すと持ち寄るが同じに聞こえて分かりにくい。残す＝作った記録を残す事、に寄せる。
-    職人の言葉や、昔遊んだ人の寄せる話の入口は、作る側へ合体してもよい。」と、本人の答え「反映してください。…要点の通りで進めてください。」による
-    （直しの設計の D。UX の担当の読み ②: のこす は作った記録を残す事に寄せ、職人の言葉と寄せる話の入口を作る側へ。帯の駅は替えない）。
-    移し先を序の頁にしたのは、直しの設計の「玩具の頁の足の畳みか よむ」のうち、玩具の頁は別の直しの担当が持つため（統括の分担 11-07）。
-    字は前のギャラリーの節のまま（id も yose・shokunin のまま。前のギャラリーの #yose と #shokunin への道は、序の頁で同じ節に着く）。
-    見た目はギャラリーと同じ。ギャラリーの CSS は .gallery の下と頁の幅（main:has(.gallery)）を持つので、序の頁の幅を変えないよう、
-    この 2 つの節だけを包む VOICES_STYLE を別に持つ。"""
-    from .demo_samples import craft_html, voices_html
+    """寄せられた声の節（序の頁・よむ。about.page の足に置く）。本人のサイト体験レビュー（11-07）の言葉 6 で、ギャラリーから序の頁へ移した節。
+    前は職人の言葉の節も並べていたが、本人の言葉（11-08）「職人の言葉、はもちよるに移動」で、職人の言葉の節は箱ごと もちよるの頁（gallery_page）へ
+    移した（shokunin_section）。寄せられた声はここに残す。字と id（yose）は前のまま。見た目は VOICES_STYLE（序の頁の幅を変えないため、この節だけを包む）。"""
+    from .demo_samples import voices_html
 
-    voices = craft_html()
     return ('<div class="voices">'
             f'<section class="panel" id="yose"><h2 class="mark">寄せられた声</h2><p class="meta">{esc(wording.plain("持ち寄りの入口（フォーム）から寄せられた物を、同意・権利・確認・個人情報の床を通してから載せる所です。"))}</p>'
-            f'{voices_html()}</section>'
-            f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
+            f'{voices_html()}</section></div>')
+
+
+def shokunin_section():
+    """職人の言葉の節（持ち寄りの入口のフォームを含む）。本人の言葉（11-08）「職人の言葉、はもちよるに移動」で、序の頁から もちよるの頁へ箱ごと移した。
+    箱・見出し・入口の字と id（shokunin）は前のまま（前の #shokunin への道は、もちよるの頁の同じ節に着く。英語とやさしい日本語の表の鍵も替えない）。
+    箱の中身（札の並び）は声の担当の demo_samples.craft_html を呼ぶ（中身を型紙レビュー 10 本の言葉に替える直しと、ぶつからない分担・11-08）。
+    見た目は GALLERY_STYLE の .gallery .panel・.mark・.go（ギャラリーの頁の中に置くので、VOICES_STYLE は要らない）。"""
+    from .demo_samples import craft_html
+
+    return (f'<section class="panel" id="shokunin"><h2 class="mark">職人の言葉</h2><p class="meta">{esc(wording.plain("紙や玩具を作る人の言葉を、確かめてから載せる所です（持ち寄りの場、J-021）。"))}</p>'
             f'<p><a class="go" href="{esc(FORM_URL)}" rel="noopener" target="_blank">持ち寄りの入口（フォーム）で寄せる</a></p>'
             '<p class="meta">フォームは Google のフォームです。写真や動画を添える時は Google に入る必要があり、添えた人の名前とメールがフォームの持ち主に記録されます。送られた物は確かめてから載せます。</p>'
-            f'{voices}</section></div>')
+            f'{craft_html()}</section>')
 
 
 NEXT_ERABU = "次は、{n} のおもちゃから えらぶ"
