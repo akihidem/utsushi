@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_pdf_current_title.py
+# commit: 50829c81（回した時の木を、この commit にした）
+ok 型紙の窓の PDF は今の題で刷った紙だけ: 前の題の紙は出さずに刷り直しの つくる、刷り直すと今の紙。今の題の紙はそのまま（御来迎・虎）
+rc=0
