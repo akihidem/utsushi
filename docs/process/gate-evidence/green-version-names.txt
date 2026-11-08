@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_version_names.py
+# commit: 06a625fc（回した時の HEAD）
+ok 作る側の頁の版の札: 2 つ以上の仮説に版がある時は仮説の名で分け、1 つの時は「仮説 版 N」（改善の輪・版の歩み）
+rc=0

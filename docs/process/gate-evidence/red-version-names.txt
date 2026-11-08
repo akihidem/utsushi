@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_version_names.py
+# commit: f9871858（#630 の頭）の木に tests/test_version_names.py だけを当てた（git の外の写し・版の札の作りは f9871858 の物のまま）
+Traceback (most recent call last):
+  File "tests/test_version_names.py", line 49, in <module>
+    assert sorted(got) == want, (where, got, want)
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: ('改善の輪', ['仮説 版 2', '仮説 版 2'], ['仮説「側面のつまみで押し上げる」 版 2', '仮説「内筒を下から押し上げる」 版 2'])
+rc=1

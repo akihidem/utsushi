@@ -55,7 +55,7 @@ try:
     urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/record", data=urllib.parse.urlencode({"hypothesis": hid, "result": "動いた"}).encode(), headers={"Origin": base}), timeout=120).read()
     # 1. 作る側の頁の版の札の題（試験の場には採った版が無いので、版の札の部品を直に呼ぶ）
     from web import ayumi as ay
-    card = ay._version_item(G, hid, hypotheses.letter(hypotheses.sheet_of(G)), {"version": 2, "changes": [], "record_ids": []})
+    card = ay._version_item(G, hid, hypotheses.version_head(hypotheses.sheet_of(G), False), {"version": 2, "changes": [], "record_ids": []})
     assert "仮説 版 2" in card and not VERSION_MARK.search(card), card[:200]
     ayumi = text(get("/loop/ayumi"))
     assert not VERSION_MARK.search(ayumi), VERSION_MARK.findall(ayumi)[:3]
