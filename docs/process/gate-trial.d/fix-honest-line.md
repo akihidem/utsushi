@@ -7,3 +7,4 @@
 - 検証ゲート: Red: 今の main 4af9fe0d の木に直した `tests/test_loop_figure.py` を当てて rc 1（`docs/process/gate-evidence/red-honest-line.txt`。前の字のまま）。Green: rc 0（`green-honest-line.txt`、72157690）
 - 確かめていない事: 本人が頁で見る事
 - マージ後の書き戻し: Issue は立てていない
+- 追い（11-08 昼・同じ PR）: 本人の言葉「のこすのうつしの輪は、記入欄の下にする。」（決めの記録 530）。のこすの頁（`src/web/techo_site.py` の records_page）で、うつしの輪の節（manabi_box・字 1・絵 A・正直な 1 行）を記入の節（id=kinyu・のこすの釦）のすぐ下へ移し、直った例の集（naoru.box）をその下にした。並びの試験（`tests/test_nokosu_flow.py`・`tests/test_nokosu_wa.py`）を新しい順にした（見る所の数は替えず、記入の節と輪の節の間にほかの節が入らない事を足した）。Red: 今の main 743706e5 の木に直した `tests/test_nokosu_flow.py` を当てて rc 1（`docs/process/gate-evidence/red-nokosu-wa-move.txt`）。画面: 日本語・英語・やさしい日本語の 3 つ × 幅 320・390・1440 の 9 通りで、記入の節 → 輪 → 直った例の集の順に箱が重ならず（間は 22px）、横のはみ出し 0。幅 390 の絵は grove の state/nokosu-wa-move/

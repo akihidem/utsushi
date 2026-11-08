@@ -45,7 +45,8 @@ def between(text, a, b):
 # 1 並びと道しるべ（合言葉付きの場と公開の場）
 for public in (False, True):
     page = techo_site.records_page(G, paper=(H, 9), public=public)
-    marks = ('<div class="top"><h1>手帖</h1>', 'id="kinyu"', 'class="naoru"', 'id="manabi"', "手帖をひらく", 'aria-label="上げる"')
+    # うつしの輪（id=manabi）は記入の節のすぐ下、直った例の集（class=naoru）はその下（本人の言葉 11-08「のこすのうつしの輪は、記入欄の下にする。」）
+    marks = ('<div class="top"><h1>手帖</h1>', 'id="kinyu"', 'id="manabi"', 'class="naoru"', "手帖をひらく", 'aria-label="上げる"')
     at = [page.index(x) for x in marks]
     assert at == sorted(at), (public, at)
     assert roads(page) == ["のこす"], (public, roads(page))
