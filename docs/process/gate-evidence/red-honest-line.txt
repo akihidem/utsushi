@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_loop_figure.py
+# commit: 4af9fe0d（今の main）の木に、直した tests/test_loop_figure.py だけを当てた（git の外の写し・図の下の 1 行は 4af9fe0d の物のまま）
+Traceback (most recent call last):
+  File "tests/test_loop_figure.py", line 59, in <module>
+    assert f.HONEST != "次の型紙をよくするのは今、記録を Claude に渡して回しています。", "前の字は事実に合わない（本人の言葉 11-08「文書がおかしい」）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 前の字は事実に合わない（本人の言葉 11-08「文書がおかしい」）
+rc=1
