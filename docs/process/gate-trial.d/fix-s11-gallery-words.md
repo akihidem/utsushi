@@ -4,3 +4,4 @@
 - どうしたか: web/techo_site.py の made_item と gallery_page に shiori の引数を足し、しおりだけの画面の時だけ、人の書いた文（感想・工夫・のこした記録の欄）を人が確かめた字だけにし、記録の番号を出さない（公開の場と同じ線）。web/play_server.py の /gallery が、門の控えた印（しおりだけで通った画面）を見て渡す。今残した 1 つの札（自分の記録・記録の鍵で見分ける）は今のまま
 - 試験 tests/test_shiori_gallery.py: しおりだけの画面は確かめた字だけ・番号なし／合言葉の画面・両方の画面・手元の場の もちよる の中身が前の作り（gallery_page の既定）と一字も同じ／公開の場は前のまま
 - 検証ゲート: Red: main a6f352df に試験だけを置くと rc 1（gate-evidence/red-shiori-gallery.txt）。Green: gate-evidence/green-shiori-gallery.txt
+- 直し（11-08 18:3x・別の目の #734 の止め）: しおりだけの画面で、そのしおりに結ばれた記録（本人の物）の字まで もちよる に出なくなっていた（手帖の記録の頁にも前から出ないので、確かめる前の自分の字がどこにも見えなかった）。gallery_page に結ばれた記録の番号の組（mine）を渡し、made_item の own で本人の物は前のとおり字を出す（記録の番号は出さないまま）。試験に「自分のしおりに結ばれた記録の字は出る・番号は出ない」を足した。Red: main 3d3bf3f2 に試験だけを置くと rc 1（gate-evidence/red-shiori-gallery-own.txt）。Green: gate-evidence/green-shiori-gallery-own.txt

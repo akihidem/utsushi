@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_gallery.py
+# commit: 3d3bf3f2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_shiori_gallery.py", line 67, in <module>
+    assert mine_words in page and wording.record_no(r_mine) not in page, "自分のしおりに結ばれた記録の字が出ない（か、番号が出た）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 自分のしおりに結ばれた記録の字が出ない（か、番号が出た）
+rc=1
