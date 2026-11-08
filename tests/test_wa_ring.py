@@ -82,7 +82,7 @@ for sid in (G, T):
     bench = assembly.assemble(sid)
     data = hypotheses.load(sid)
     h = hypotheses.sheet_of(sid)
-    want = f"{data['toy']} 型紙 仮説 {hypotheses.letter(h)} 版 {hypotheses.set_number(data)}"
+    want = f"{data['toy']} 型紙 仮説 版 {hypotheses.set_number(data)}"  # 仮説の印は出さない（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
     texts = [getattr(t, "text", None) or "" for t in bench.paper["texts"]]
     assert want in texts, (sid, texts[:2])
     assert not any("（" in x and "型紙" in x for x in texts) and not any(h["name"] in x for x in texts), (sid, "動き方の字（雛形の呼び名・仮説の名）を出さない")

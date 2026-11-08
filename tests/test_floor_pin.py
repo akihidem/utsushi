@@ -40,7 +40,7 @@ from PIL import Image
 
 from omochae import marks, textfit
 from omochae.compose import TEMPLATES, compose, kept_sets
-from omochae.hypotheses import ROOT, letter, paper_label, params_for, sheet_id, without_hidden
+from omochae.hypotheses import ROOT, letter, paper_label, params_for, sheet_id, shown_name, without_hidden
 from omochae.instructions import compose_after, compose_sheet, compose_teacher
 from omochae.render import to_svg
 
@@ -111,7 +111,9 @@ def papers(picture, strict):
                 for h in [{**h, "params": params_for(h, sheet_set)} for h in data["hypotheses"] if h["id"] == sheet_id(data, sheet_set)]:
                     tid = h.get("template") or data.get("template", "slider_fan")
                     base = f"{sheet_set}/{h['id']}"
-                    name = f"仮説 {letter(h)}「{h['name']}」"
+                    # 今の組は仮説の印を出さない呼び名（hypotheses.shown_name。本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで
+                    # 仮説、と表記する」）。前の組（控えの並び）は前の題「仮説 A「…」」のまま（控えた紙を替えない。統括の決め 11-08 の (b)）
+                    name = shown_name(h) if sheet_set == now else f"仮説 {letter(h)}「{h['name']}」"
                     # 題と呼び方は hypotheses.print_sheet と同じ（版 1 の紙）。版の字は hypotheses.paper_label: 今の組は組の番号（版 14・版 7）、
                     # 前の組（控えの並び）は前の題の「版 1」のまま（窓口の決定 11-07。今の組の型紙 2 枚だけ控えを取り直した。理由は docs/claude-usage.md）
                     _, layout, failures = compose(tid, h["params"], src, "A4", 1, f"{data['toy']} 型紙 {name}{paper_label(data, 1)}")
