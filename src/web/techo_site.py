@@ -378,12 +378,14 @@ def record_details(data, r, say=True):
     return f'<details class="record-more"><summary>{esc(DETAILS_HEAD)}</summary><p class="meta">{esc(ban)}</p>{lines}</details>', bool(lines)
 
 
-def made_item(sid, data, r, photos=True, public=False):
+def made_item(sid, data, r, photos=True, public=False, shiori=False):
     """作った物の 1 件。ギャラリーの札。写真か言葉（感想・工夫）の無い記録は、見せる物が無いので空を返す。
     public=True は合言葉なしで開いた場。人が「物だけ」と確かめた写真と動画は出す（本人の決定 11-06「公開の場で上げた写真は、公開の場の
     ギャラリーにも出します」）。人の書いた文（感想と工夫の行）は、人が確かめた字だけを出す（窓口の決め A・11-08。前は出さなかった:
     文の中の名前は機械で落とせず、/loop を閉じたのと同じ理由・J-028。確かめが人の目になる）。記録の番号は前と同じく出さない。
     photos=False は写真も文も出さない前の開いた場の形（今は呼ぶ所が無い）。
+    shiori=True はしおりだけで開いた画面（合言葉の cookie が無い）。人の書いた文と記録の番号は公開の場と同じ線（人が確かめた字だけ・番号を出さない）にする
+    （安全の事項 11 しおりの範囲を本人に関係するデータに閉じる・統括の決め 11-08）。写真は前から公開の場と同じ線（物だけと確かめた物）。
     畳み「のこした記録」（record_details）に、型紙の版と 4 つの欄（最初に動いた所…思いついた事）を出す。前は玩具の頁の記録の札にだけあった欄で、
     本人の言葉 11-08 477 でもちよるへ移した。公開の場は感想と同じく、人が確かめた字だけ（words_review が欄の字も確かめる）。
     ひとこと（note）はギャラリーに出さない（前からの決まりのまま。自分の記録は手帖の記録の頁で見える）。
@@ -397,7 +399,7 @@ def made_item(sid, data, r, photos=True, public=False):
                     else f'<a href="/record/{esc(r["id"])}/media/{esc(f)}"><img src="/record/{esc(r["id"])}/media/{esc(f)}/small" alt="作った物の写真" loading="lazy" decoding="async"></a>') for f in files)
     # 人の書いた文（感想と工夫の行）は、公開の場では人が確かめた字だけを出す（窓口の決め A・11-08。omochae.words_review）。
     # 確かめていない・確かめた後に字が替わった・連絡先の床に当たる物は、前と同じく出さない。合言葉付きの場は今までどおり出す
-    say = not public or words_review.checked(r["id"])
+    say = not (public or shiori) or words_review.checked(r["id"])
     words = f'<p>{esc(r["impression"])}</p>' if r.get("impression") and say else ""
     words += "".join(f'<p class="meta">工夫: {esc(f.get("part", ""))} / {esc(f.get("change", ""))} / {esc(f.get("outcome", ""))}</p>' for f in r.get("fixes", []) if isinstance(f, dict) and say)
     more, has_more = record_details(data, r, say)
@@ -410,7 +412,7 @@ def made_item(sid, data, r, photos=True, public=False):
     # 玩具の頁から記録の札が無くなるので、向け直した（統括の決め 11-08）。この札が出る時は、その玩具の錨も頁にある（無ければこの札が錨を持つ）。
     # 錨は玩具の印で、記録の番号を道に入れない（開いた場で番号を出さない線・別の目の確かめで見つかった）
     to = f"#toy-{esc(sid)}"
-    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public else "　" + esc(wording.record_no(r["id"]))}</p>'
+    return (f'<div class="item"><p class="meta"><a href="{to}">{esc(data["toy"])}</a>　{esc(hypotheses.SHOWN + "の紙" if h else "自分の仮説の紙")}　{esc(records.result_word(r))}{"" if public or shiori else "　" + esc(wording.record_no(r["id"]))}</p>'
             + (f'<div class="row">{pics}</div>' if pics else "") + f'{words}{more}</div>')
 
 
@@ -544,7 +546,7 @@ def close_form():
 # ギャラリーの頭の説明の文。頁と、頁の description（skin.meta_head）が同じ字を引く（description に新しい字を作らないため・11-08）
 GALLERY_LEAD = "記録の順に並べます。型紙は正解ではなく AI が考えた仮説で、作った人の工夫も一緒に残ります。紙で動いても、昔の作り方の証明にはなりません。"
 
-def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
+def gallery_page(sids, photos=True, public=False, msg="", rec_key=None, shiori=False):
     """他の人が作った物のギャラリー（本人の決定 11-05「他の人の作ったものギャラリーは作る」。予想のギャラリーではない）。
     前は「職人の言葉」と「寄せられた声」の枠もここにあったが、序の頁へ移した（voices_sections。本人のサイト体験レビュー 11-07 の言葉 6）。
     作った物は手元の記録から読む（git の外の物なので、手元のサーバでだけ出す）。並びは記録の順で、上下を付けない（J-025）。
@@ -565,7 +567,8 @@ def gallery_page(sids, photos=True, public=False, msg="", rec_key=None):
             if photos and not public and rec_key and not own and records.mine(r["id"], rec_key):
                 own = own_item(sid, data, r)
                 continue
-            item = made_item(sid, data, r, photos, public)
+            # しおりだけの画面は、他の人の札の字を公開の場と同じ線に（made_item の shiori）。今残した 1 つの札（自分の記録）は上のとおり出す
+            item = made_item(sid, data, r, photos, public, shiori)
             if item and sid not in with_sak:
                 with_sak.add(sid)
                 item = item.replace('<div class="item">', f'<div class="item" id="toy-{esc(sid)}">', 1)

@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_gallery.py
+# commit: a6f352df（回した時の HEAD）
+ok: しおりだけの画面の もちよる は確かめた字だけ・番号なし・合言葉の画面と手元の場は前の作りと一字も同じ・公開の場は前のまま
+rc=0

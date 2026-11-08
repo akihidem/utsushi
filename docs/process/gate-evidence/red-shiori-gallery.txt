@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_shiori_gallery.py
+# commit: a6f352df（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_shiori_gallery.py", line 64, in <module>
+    assert code == 200 and ok_words in page and raw_words not in page, ("しおりだけの画面に、確かめていない他の人の字が出た", code)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('しおりだけの画面に、確かめていない他の人の字が出た', 200)
+rc=1
