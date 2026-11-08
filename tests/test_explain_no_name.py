@@ -84,8 +84,11 @@ def explain_without_name(public):
     rid = json.loads(body)["id"]
     if not public:
         # 欄: 書いた人は任意。説明と次の思いつきは今までどおり要る
-        # 手帖の説明の欄は、作り直した手帖では記録の頁にある（#87）
-        for path in (f"/toy/{G}", f"/toy/{G}/techo/kiroku"):
+        # 手帖の説明の欄は、作り直した手帖では記録の頁にある（#87）。
+        # 本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、つくるの頁から記録の札を外した。
+        # 記録の札の操作は手帖の記録の頁にあるので、欄はそこで見る。つくるの頁に説明の欄が残っていない事も見る
+        assert f'action="/record/{rid}/explain' not in b.call(f"/toy/{G}")[1], "つくるの頁に説明の欄が残った"
+        for path in (f"/toy/{G}/techo/kiroku",):
             by, nxt = by_input(b.call(path)[1], f"/record/{rid}/explain")
             assert "required" not in by and "required" in nxt, (path, by, nxt)
     st, page = b.call(f"/record/{rid}/explain", {"text": "筒が固かった", "next_idea": "幅を変える", "by": ""})

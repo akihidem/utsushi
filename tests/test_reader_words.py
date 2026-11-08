@@ -163,7 +163,9 @@ see(white, f"/toy/{G}", name="自分の仮説の後")
 see(white, f"/toy/{G}/record", {"hypothesis": "OWN-1", "result": "動いた", "impression": "開いた"}, "自分の仮説の記録の後")
 # 前は自分の仮説の後の図鑑の頁も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 asked = see(white, f"/toy/{G}/ask", {"hypothesis": GS, "question": "紙の端はどこまで切りますか"}, "聞く口の答え")
-assert "AI の答えは" in asked, "鍵が無い時の文まで届いていない"
+# 玩具の頁の聞く口（作っている途中で困ったら）は外した（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。…」）。
+# JS の無い作りながら見る頁の聞く口は /toy/<印>/ask へ送るので、答えは戻った玩具の頁の答えの枠（#ask-answer）に出る
+assert 'id="ask-answer"' in asked and "AI の答えは" in asked, "鍵が無い時の文まで届いていない"
 
 left = {}
 for where, words in pages.items():
@@ -241,8 +243,11 @@ assert any(t.startswith(f"〔{_ev['certainty']}〕") for t in tp), "根拠の種
 assert "作る側のたとえ" in tp and any("AI（Claude）が書いた下書きです" in t for t in tp), "たとえの印"
 yomi = " ".join(pages[f"/zukan/{G}/yomi（読みの後）"])
 assert f"確かめた人: {wording.MAKER}" in yomi and f"{wording.MAKER}が 2026-11-03 に" in yomi, "読みを決めた人の印"
-# 作る側が残した試行の控えは文ごと替わる。人が書いた文は替えない（記録のメモも自分の仮説も、書いたとおりに出す）
-assert any("見た事は、このサイトを作った人が答えました" in t for t in tp), "試行の控え"
+# 作る側が残した試行の控えは文ごと替わる。人が書いた文は替えない（記録のメモも自分の仮説も、書いたとおりに出す）。
+# 控え（記録のメモ）は、前はつくるの頁の記録の札に出ていた。記録の札を外し、メモは自分の記録の札（手帖の記録の頁・その画面が残した記録）にだけ出す
+# 形になった（本人の言葉 11-08 477・統括の答え 11-08 の C）ので、作る側の控えは頁に出ない。替える文そのものは wording.record_note で見る
+assert "見た事は、このサイトを作った人が答えました" in wording.record_note(next(iter(wording.RECORD_NOTES))), "試行の控え"
+assert not any("見た事は、このサイトを作った人が答えました" in t for t in tp), "つくるの頁に記録のメモが残った"
 see(white, f"/toy/{G}/record", {"hypothesis": GS, "result": "動いた", "note": f"本人が {GS} の紙で折った"}, "人の文")
 assert f"メモ: 本人が {GS} の紙で折った" in pages["人の文"], "人の文を替えない"
 # 床は記録の値のままで見る。画面の字を替えても、人が確かめた線は動かない

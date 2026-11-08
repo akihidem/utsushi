@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_nokosu_route_b.py
+# commit: f3210f06（回した時の HEAD）
+ok 型紙の窓: 印刷 → つくる → のこす（大きな枠の釦）・下に のこせる・本人の字・意義の 3 行・刷る前は出さない・英語とやさしい日本語の表にある
+rc=0

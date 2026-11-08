@@ -56,7 +56,8 @@ def files(sid, hid):
 
 
 def window(page):
-    return page[page.index('id="win"'):page.index('id="tsukuru"')]
+    # 型紙の窓は次の段（できたら、のこそう・#kiroku）の頭まで。前は窓のすぐ後の作る節の錨（#tsukuru）までだったが、その節は外した（11-08）
+    return page[page.index('id="win"'):page.index('id="kiroku"')]
 
 
 def pdf_text(data):

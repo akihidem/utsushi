@@ -48,9 +48,6 @@ STYLE = """
 .genga-cap a{display:inline-flex;align-items:center;min-height:44px;margin-right:1.2em}
 a.genga-pic{cursor:zoom-in}
 .genga-row{display:flex;gap:10px;align-items:flex-start;min-width:0}
-.genga-made{margin:14px 0 0;width:min(240px,60%);line-height:0}
-.genga-made img{display:block;width:100%;height:auto;border:1px solid var(--frame);background:var(--soft)}
-.genga-made figcaption{line-height:1.6;font-size:12px;letter-spacing:.2em;color:var(--mute);margin-top:6px}
 .genga-fold{margin:10px 0}
 .genga-fold summary{cursor:pointer;min-height:44px;display:flex;align-items:center;letter-spacing:.12em}
 .stage .genga-fold{padding:0 16px}
@@ -153,10 +150,8 @@ def head(sid, src=None, photos=True):
     pic, _ = _pic(sid, src, alt(src), href=ndl or None)
     # 狭い幅で頁の絵の右の空きに置いていた今の切り抜き（UX の見直し・統括の決め 11-06）は外した: 原図を横幅いっぱいにしたので（本人の言葉 11-08）、置く空きが無い
     pic = f'<div class="genga-row">{pic}</div>' if pic else ""
-    # 原画のすぐ後に、作ってみた実物（人が確かめた写真。無ければ何も置かない。窓口の決め 125731・(b)）を 1 枚（本人のサイト体験レビュー 11-07 の 2。web.made）
-    from . import made
-
-    pic += made.figure(sid, "made genga-made", photos=photos)
+    # 原画のすぐ後に置いていた作ってみた実物の写真（本人のサイト体験レビュー 11-07 の 2・web.made）は、もちよる へ移した（本人の言葉 11-08「つくるは読む情報が
+    # 多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」・設計の問い 1 の答え「推しのとおり。」）。photos の線は呼び手との形のため残す
     lines, _ = _songs(src)
     cap = f'<div class="genga-cap"><p><a href="{esc(ndl)}">{esc(NDL)}</a></p></div>'
     # 歌の段は絵の段の後（広い幅は右の列・狭い幅は真下）。「図を見る」は絵のすぐ下のまま（前は 2 列の下に渡していた）

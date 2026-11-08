@@ -71,11 +71,15 @@ assert post(f"/toy/{G}/record", {"hypothesis": GS, "result": "動かない", "op
 rec = json.loads((pathlib.Path(DATA) / "records/R-0001.json").read_text(encoding="utf-8"))
 assert rec["impression"] == "折るのは楽しかったが、扇が半分で止まった" and rec["sheet_version"] == 1
 page = get(f"/toy/{G}")[1]
-assert "感想: 折るのは楽しかったが、扇が半分で止まった" in page and 'id="R-0001"' in page
+# 記録の札は玩具の頁に無く、手帖の記録の頁と もちよる に出る（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。
+# 復元の記録などはすべてもちよるに統合する。」）
+assert "折るのは楽しかったが、扇が半分で止まった" not in page and 'id="R-0001"' not in page, "玩具の頁に記録の札が残った"
+assert "R-0001" in get(f"/toy/{G}/techo/kiroku")[1] and "<p>折るのは楽しかったが、扇が半分で止まった</p>" in get("/gallery")[1]
 # 説明の前は「説明を待つ報告」。説明の後は「次の版を待つ報告」（輪の節は作る側の様子の頁。本人の答え Q5）
 loop_page = get(f"/loop/{G}")[1]
 assert "説明を待つ報告 1 件" in loop_page and "次の版を待つ報告" not in loop_page
-assert f'href="/toy/{G}#R-0001"' in loop_page, "待つ報告から、玩具の頁の記録の札へ行ける"
+# 待つ報告から、手帖の記録の頁の記録の並びへ行ける（前は玩具の頁の記録の札 #R-0001 へ。札は玩具の頁から外した・本人の言葉 11-08）
+assert f'href="/toy/{G}/techo/kiroku#mine"' in loop_page and f'href="/toy/{G}#R-0001"' not in loop_page, "待つ報告から記録の頁へ行けない"
 assert post("/record/R-0001/explain", {"text": "折りが固くて戻る力が足りない", "next_idea": "折りを減らす", "by": "作った人"})[0] in (200, 303)
 loop_page = get(f"/loop/{G}")[1]
 assert "次の版を待つ報告 1 件" in loop_page and "報告から直した版はまだありません" in loop_page
@@ -119,7 +123,7 @@ assert f'see={GS}&kind=sheet&v=2#win" aria-current' in page and f'see={GS}&kind=
 only2 = get(f"/toy/{G}")[1]
 # 組の番号の呼び方（#513 の (a)）。版 1 は「版 14」で、型紙の窓の頭の輪の図の真ん中（型紙の版）と同じ字になるので、版の札は札の道（v=1）で見分ける
 ban = lambda n: hypotheses.label_of(hypotheses.current_set(hypotheses.load(G)), n)
-assert f"/sheet/{G}/{GS}_v1.png" not in only2 and f"<b>{ban(2)}</b>" in only2 and f'v=1#win">{ban(1)}</a>' not in only2.split('id="win"')[1].split('id="tsukuru"')[0], "刷っていない版を出さない"
+assert f"/sheet/{G}/{GS}_v1.png" not in only2 and f"<b>{ban(2)}</b>" in only2 and f'v=1#win">{ban(1)}</a>' not in only2.split('id="win"')[1].split('id="kiroku"')[0], "刷っていない版を出さない"
 assert get(f"/toy/{G}?see={GS}&kind=sheet&v=1")[0] == 200 and f'<img src="/sheet/{G}/{GS}_v2.png"' in get(f"/toy/{G}?see={GS}&kind=sheet&v=1")[1], "無い版を言われても一番新しい版へ"
 assert post(f"/toy/{G}/print", {"hypothesis": GS})[0] == 303  # 元に戻す（版 2 を刷り直す。版 1 は無いまま）
 # 報告の版: 版が 2 つある時は、どの版の紙かを聞き、言われた版の報告として残す（版 1 で作っていた人の報告が版 2 の記録にならない）

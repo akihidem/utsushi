@@ -406,7 +406,9 @@ for page in (toy, tsu, techo):
         assert ADOPTED[name] in page, name
 # 場面の見出しと例・選ぶ欄・頁の頭の一文
 # 玩具の頁の考えの箱は、節の見出しと同じ字が並ぶので箱の見出しを出さない（本人の決定 11-06）
-assert '<p class="hanasu-head">考えを話す</p>' not in toy and "<h2>考えを話す</h2>" in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' in toy
+# 考えを話す の見出しは、仮説の段の中の小さな口の見出し（h3）。段の見出し（h2）は「仮説」（本人の言葉 11-08・設計の問い 4 の答え「推しのとおり。」）。
+# 箱の見出し（hanasu-head）は出さない（11-06 の字の決めの 2）
+assert '<p class="hanasu-head">考えを話す</p>' not in toy and "<h3>考えを話す</h3>" in toy and "<h2>考えを話す</h2>" not in toy and 'placeholder="『こう動くと思う』『ここが気になる』など"' in toy
 assert '<p class="hanasu-head">工夫を話す</p>' in tsu and 'placeholder="『ここをこうしたら、うまくいった』など"' in tsu
 assert '<p class="hanasu-head">工夫した所や、思った事を足す</p>' in techo
 # 考えは、頁に出ているたたき台に結ぶ。仮説を選ぶ欄を置かない（型紙は玩具ごとに 1 枚。J-032）
@@ -421,7 +423,8 @@ for said in ("聞いています。話した事が、欄に字で出ます。", 
     assert f"'{said}'" in hanasu.SCRIPT, said
 # ③ で上げる時の説明文は、手帖（③ の上げる頁）の上げる節に出る。聞く口の断りの文は、この頁では使わない
 code, techo_make = get(f"/toy/{G}/techo")  # 上げる説明は作る頁の最後の画面に出る（1 手 1 画面、#87）
-assert code == 200 and f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo_make and making_log.ASK_NOTICE not in techo_make + techo and making_log.ASK_NOTICE in toy
+assert code == 200 and f'<p class="meta" id="up-notice">{ADOPTED["UPLOAD_NOTICE"]}</p>' in techo_make and making_log.ASK_NOTICE not in techo_make + techo and making_log.ASK_NOTICE in tsu and making_log.ASK_NOTICE not in toy
+# （聞く口の断りは、聞く口のある作りながら見る頁で見る。つくるの頁の聞く口は外した・設計の問い 4 の答え「推しのとおり。」）
 # 端末の中で字にできないと分かった時の知らせは、採られた断りの文（次に押すと声が外へ送られる事がある、と押す前に言う）
 assert f"tobrowser:'{ADOPTED['HOW_BROWSER']}'" in hanasu.SCRIPT and "__" not in hanasu.SCRIPT.replace("__VOICE__", "")
 # 本人の確認が済んでいない文を足していない（入れる時は、確認の後に、この一覧と一緒に直す）。節の名だけは本人の言葉のまま
