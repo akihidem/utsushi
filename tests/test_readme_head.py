@@ -86,6 +86,11 @@ KADAI = '課題として考えている事。学校や博物館などの現場�
 kadai_sec = text[text.index("## 何の課題か・誰のためか\n"):text.index("\n## 仕組み")]
 assert text.count(KADAI) == 1 and kadai_sec.rstrip().endswith(KADAI), "課題の節の末尾に本人の字"
 
+# 課題の節の頭の 2 行は本人の字（11-08 13:26「誰のためか」「課題」）。一字も替えない
+WHO = '- **誰のためか**: 学校や博物館などでワークショップを開く人と、そこに来る多様な方々です。'
+KADAI2 = '- **課題**: 公的な機関でのワークショップは、安全管理や予算の都合で、特別な道具を使えない現場が多くあります。日本の生徒は実験を多くしているのに、中学 2 年で「理科を使う職業につきたい」は 27%（国際平均 58%）です（TIMSS 2023。`docs/process/research/18-field-evidence.md`）。'
+assert lines.count(WHO) == 1 and lines.count(KADAI2) == 1, "課題の節の頭の 2 行は本人の字"
+
 # 4. 仕組みの図と 5 行の字
 how = text[text.index("## 仕組み: 型紙とエンジンが直る 2 つのフィードバックループ\n"):text.index("## Claude の使い方\n")]
 # 図は SVG の絵（docs/img/feedback-loop.svg）。前の mermaid の塊は、GitHub の携帯のアプリなどで描かれず字のまま出た（本人の言葉 11-08「flowchart LRが
