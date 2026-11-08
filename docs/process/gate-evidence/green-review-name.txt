@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_review_name.py
+# commit: 32b981e5（回した時の HEAD）
+ok 呼び名はワークショップの型紙レビューにそろい、エンジンと同じで、版の歩みの表の why の字と changed は替わっていない
+rc=0
