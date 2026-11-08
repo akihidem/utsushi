@@ -56,6 +56,8 @@ for sid in NOTED:
     every = d["gendaigo"] + "".join(w["word"] + w["meaning"] for w in d["words"])
     assert not [m for m in MECHANISM if m in every], ("仕組みの言い方", sid, [m for m in MECHANISM if m in every])
     assert "本人" not in every and "制作者" not in every, sid
+    # 辞書の中身を手元で確かめられない言い切り（「辞書はこの歌を…例に挙げる」「…の呼び名にも使われた」）は書かない（別の目の確かめ 11-08・#661 の後）
+    assert not [w for w in ("例として挙げて", "呼び名にも使われました") if w in every], (sid, "確かめられない辞書の中身の言い切り")
     texts += [d["gendaigo"], *(x for w in d["words"] for x in (w["word"], w["meaning"]))]
 
 # 頁: 2 つの見出しが出て、json の無い玩具には出ない
