@@ -11,7 +11,7 @@ standing-decisions）から骨組みを組み直した（骨組みは統括が�
 2. 節の並び: 試す → 何の課題か・誰のためか → 仕組み → Claude の使い方 → 確かめた事と、まだの事 → 作る気持ち → repo の地図と動かし方 → エンジン → 決まりと出典
 3. 投稿ビデオの項を残さない（本人の言葉 11-08）。動画のリンクの見えない印も置かない（統括の決め 11-08: HTML の注は AI に読まれる内輪の印。動画を上げた時に
    統括が見える 1 行を足す）。README の HTML の注は、台帳が描く 2 組の印（要約と数）だけ
-4. 仕組みの節（見出しは「型紙が直るフィードバックループ」）に、GitHub で描ける図（mermaid）が 1 つと、図の下に 5 行の字（図だけに頼らない。段の名つき）
+4. 仕組みの節（見出しは「型紙が直るフィードバックループ」）に、SVG の絵の図が 1 つ（説明の字に輪の順）と、図の下に 5 行の字（図だけに頼らない。段の名つき）
 5. 表は 3 列まで（本人の「表が読みにくい」）。1 行 1 事実
 6. Claude の使い方の節: 本物の鍵で動いた口と、まだの口（記録の動画の 3 コマ・次の手の案）を分けて書く（統括の決め 11-08「どれが動いた・どれがまだ」）
 7. 30 秒の要約は畳んだ中にあり、見出しの項目の数が中身と合う（要約の字は omochae.ledger の L.summary が CLAUDE.md と照らす）
@@ -70,8 +70,15 @@ assert sorted(n.strip() for n in notes) == ["counts:end", "counts:start", "summa
 
 # 4. 仕組みの図と 5 行の字
 how = text[text.index("## 仕組み: 型紙が直るフィードバックループ\n"):text.index("## Claude の使い方\n")]
-assert how.count("```mermaid\n") == 1 and "flowchart" in how, "GitHub で描ける図が 1 つ"
-after = how[how.index("```", how.index("```mermaid") + 3) + 3:]
+# 図は SVG の絵（docs/img/feedback-loop.svg）。前の mermaid の塊は、GitHub の携帯のアプリなどで描かれず字のまま出た（本人の言葉 11-08「flowchart LRが
+# そのまま字で表示されてる。図として出るように直してください。」）。絵の説明の字（alt）に輪の順を書き、AI にも読めるようにする。図は 1 度だけ出す
+IMG = re.search(r"!\[(フィードバックループ: [^\]]+)\]\((docs/img/feedback-loop\.svg)\)", how)
+assert IMG and how.count("![") == 1 and "```mermaid" not in text, "図は SVG の絵 1 つ（mermaid の塊を残さない）"
+assert all(w in IMG.group(1) for w in ("のこす", "作る側の Claude Code", "Claude が作ったエンジン", "3D", "人が採る", "新しい版を刷る")), IMG.group(1)
+svg = (ROOT / IMG.group(2)).read_text(encoding="utf-8")
+assert svg.startswith("<svg ") and "<title" in svg and "<image" not in svg and "<script" not in svg, "字を絵の中に持つ SVG（外の絵や script を読まない）"
+assert all(w in svg for w in ("作る側の Claude Code が", "Claude が作ったエンジンが", "人が決める", "新しい版の型紙を刷る", "フィードバック")), "絵の中の字"
+after = how[how.index(IMG.group(0)) + len(IMG.group(0)):]
 steps = re.findall(r"(?m)^(\d)\. ", after)
 assert steps == ["1", "2", "3", "4", "5"], ("図の下に 5 行の字", steps)
 # 新しい案を考えたのは作る側の Claude Code（サイトの中の次の案の口は、まだ本物の鍵で呼んでいない。下の表と食い違わない。統括の照らし 11-08 の止め）
