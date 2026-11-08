@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_erabu_names.py
+# commit: 4ba66d26（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_erabu_names.py", line 100, in <module>
+    assert not rec["bad"], (where, f"名の札が崩れる（{rec['nbad']} 件）", rec["bad"])
+           ^^^^^^^^^^^^^^
+AssertionError: (('tenji', 'ja-375x667'), '名の札が崩れる（10 件）', ['縞模様の小判形の物（鰹節か魚の玩具）: 名の字が 2 行以上（隠れた行）', '縞模様の小判形の物（2つ目）: 名の字が 2 行以上（隠れた行）', '蓑を着た人形（槍か竿を持つ）: 名の字が 2 行以上（隠れた行）', '頬かむりの人形（覆面の人形）: 名の字が 2 行以上（隠れた行）', '裸人形（這子・御所人形の類）: 名の字が 2 行以上（隠れた行）', 'ままごとの柄付き鍋（焙烙・片口）: 名の字が 2 行以上（隠れた行）'])
+rc=1
