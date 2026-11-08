@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_en_terms.py
+# commit: bc6d0cb0（回した時の HEAD）
+ok 英語の言葉の決め: make と craft・用語の対応・玩具の名が 1 つ（題・前後の道・作例の一覧）・Goraigo・引用符・本人の言葉の英訳の用語・版の番号・workshops
+rc=0

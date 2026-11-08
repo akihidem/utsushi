@@ -2,6 +2,7 @@
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -97,7 +98,8 @@ assert 'class="ways"' not in page  # 虎は竹串と油粘土が要るので、�
 assert "どれがえらい、ということはありません" in page
 for w in ("順位", "おすすめ", "初心者", "点数", "★"):
     assert w not in page, w
-assert f'仮説 {hypotheses.letter(hypotheses.sheet_of(TORA))}「' in page and "仮説 B「" not in page, "札はたたき台の 1 枚だけ（J-032）"
+# 札の字は印なし（本人の言葉 11-08「つくる、のところ仮説Cとか仮説Aとかはなしで仮説、と表記する」・hypotheses.SHOWN）
+assert hypotheses.shown_name(hypotheses.sheet_of(TORA)) in page and not re.search(r"仮説 [A-Z]「", page), "札はたたき台の 1 枚だけ（J-032）・印は出さない"
 # 一覧は玩具ごと。たたき台に付く印を、並びを変えずに出す（J-032。本人の決定 19:44 で、必須 2 種に紙一枚が付かなくてよい）
 listing = toys.page("tenji")
 # 一覧の札は絵と名前だけ（えらぶ の作り直し 11-07）。印は玩具の頁の型紙の札に出し、印の断りの字は序の頁（よむ）へ移した（窓口の決定 11-07 の ②）

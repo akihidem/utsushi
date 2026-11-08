@@ -130,7 +130,7 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     q = lambda hid, k, vv: f"/toy/{sid}?see={hid}&kind={k.lstrip('_') or 'sheet'}&v={vv}#win"
     # たたき台の札だけ。前の記録の紙を見ている時は、ここから戻る。
     hyps = ("" if card["id"] not in ids else
-            f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">仮説 {esc(hypotheses.letter(card))}</a>')
+            f'<a href="{q(card["id"], "", versions_of(sid, card["id"], printed_only=True)[-1])}" aria-current="{"true" if card["id"] == see else "false"}">{esc(hypotheses.SHOWN)}</a>')
     kinds = ""
     for suffix, label in KINDS:
         if (out_dir(sid) / f"{see}_v{v}{suffix}.png").exists():
@@ -157,10 +157,10 @@ def window(sid, data, see, kind, v, recorded, photos=True):
     big = f"/sheet/{sid}/{name}.svg" if (out_dir(sid) / f"{name}.svg").exists() else png
     sizes = "".join(f'<input type="radio" name="zoom-size" id="zs{n}"{" checked" if n == 180 else ""}>' for n in ZOOM_SIZES)
     labels = "".join(f'<label for="zs{n}">{n}%</label>' for n in ZOOM_SIZES)
-    fig = (f'<figure class="sheet"><a href="#zoom" aria-label="拡大して見る"><img src="{png}" alt="{esc(data["toy"])} 仮説 {esc(hypotheses.letter(h))} の{esc(dict(KINDS)[kind])}"></a></figure>'
+    fig = (f'<figure class="sheet"><a href="#zoom" aria-label="拡大して見る"><img src="{png}" alt="{esc(data["toy"])} {esc(hypotheses.SHOWN)}の{esc(dict(KINDS)[kind])}"></a></figure>'
            f'<div class="zoom" id="zoom">{sizes}<div class="bar" role="group" aria-label="大きさ">{labels}</div><a class="close" href="#win">閉じる</a><div class="pic"><img src="{big}" alt="" loading="lazy"></div></div>'
            + ZOOM_SCRIPT)
-    side = (f'<div class="side"><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」の{esc(dict(KINDS)[kind])}</h3>'
+    side = (f'<div class="side"><h3>{esc(hypotheses.shown_name(h))}の{esc(dict(KINDS)[kind])}</h3>'
             f'<div class="v">{vers}</div>{cap}'
             # PDF は別のタブで開く（インラインの印は play_server の /sheet/ が付ける）。同じタブで開くと窓から離れ、機器によっては落とすだけになる。
             f'<p><a class="btn" href="{pdf}" target="_blank" rel="noopener">PDF を開いて印刷する</a></p>{print_help()}'
@@ -476,9 +476,10 @@ def neighbours(sid):
     out = []
     if prev_:
         out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
+    # 「おもちゃの一覧」（/toys）は外し、入口へ の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）
     # ギャラリーの呼び名は、職人の言葉と寄せられた声の節を序の頁（よむ）へ移した後の題「作った物」にそろえる（のこす と もちよる を分ける直し #519。
     # 本人のサイト体験レビュー 11-07 の 6）。字は #519 の頁の題のまま（新しい字は足さない）
-    out += ['<a href="/toys">おもちゃの一覧</a>', '<a href="/gallery">作った物</a>', '<a href="/">入口へ</a>']
+    out += ['<a href="/gallery">作った物</a>', '<a href="/">入口へ</a>']
     if next_:
         out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
     return '<p class="links">' + "".join(out) + "</p>"
@@ -501,13 +502,14 @@ FOLD_STYLE = ("<style>.fold-sec>summary{display:flex;align-items:baseline;gap:0}
               # 狭い幅（1 列）の頭の並び: 原画 → 歌 → 題 → つくる → 原画の出所の字 → 書誌と道 → これまでの記録。原画と歌は頭のまま畳まない（#450 の形）。
               # 原画の部品の中の順（絵・歌・出所）は変えず、題と「つくる」を出所の字の前へ差し込む。幅 390×844 で、前は「つくる」が 873px（最初の画面の外）だった。
               # 広い幅は 2 列（原画 | 題と釦）のままで、ここは効かない
-              # 広い幅: 原画の部品に 題の塊と狂歌の縦の段が入ったので、頭の 2 列のうち原画の側を広くする（前の 1 : 1.2 のままだと幅 1440 で絵が 126px に細った）
-              "@media (min-width:821px){.hero{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}"
+              # 広い幅の頭の 2 列は前の 1 : 1.2 のまま（11-08 に題の塊と狂歌の縦の段を原画の側へ入れた時は 1.9 : 1 にしたが、縦の段を前の形に戻したので外した）
               "@media (max-width:820px){.hero{row-gap:10px;padding-top:20px}.hero>.genga-head,.hero>div{display:contents}.hero>*>*{order:6}"
               # 歌は原画の部品の中で名の無い div に包まれている（genga.head）ので、絵の次の div を歌の段として扱う。試作の玩具の断りは釦の後ろ
-              # 11-08: 原画の部品は 題の塊と狂歌の縦の段（.genga-tate）と、絵と道の段（.genga-main）の 2 つ。狭い幅は 絵 → 題 → つくる → 縦の段 の順
-              # （縦の段を釦の前に置くと、幅 390 で「つくる」が最初の画面の外に出る）
-              ".hero>.genga-head>.genga-main{order:1}.hero h1{order:2}.hero .road{order:3;margin:4px 0}.hero h1+.meta{order:4}.hero>.genga-head>.genga-tate{order:5}}</style>")
+              # 原画の部品は、絵と道の段（.genga-main）と歌の段（.genga-uta）。狭い幅は #595 の前の並び（本人の言葉 11-08「縦書きは失敗なので前の形に戻す」）:
+              # 絵と 図を見る → 歌（横書き）→ 題 → つくる → 名の下の 1 行 → 作品の札（題の塊）→ くずし字を読む → これまでの記録。
+              # 歌を絵のすぐ後に置くのは、前の決め（11-06「狂歌は必ず原画と一緒に見れるように」）
+              ".hero>.genga-head>.genga-main{order:1}.hero>.genga-head>.genga-uta{order:2}.hero h1{order:3}"
+              ".hero .road{order:4;margin:4px 0}.hero h1+.meta{order:5}}</style>")
 
 # 畳んだ節へ道（#kaizen など）で着いた時は、その畳みを開く。閉じた見出しだけに着くと、行き先の中身が見えないため（別の目の確かめ 11-06、#472 の輪の図の道）。
 # 着いた所が畳みの中か、畳みを持つ節なら開く。JS が無い時は、見出しに着き、押せば開く（今の畳みのまま）
@@ -573,9 +575,11 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     # 書誌と図鑑への道は「知る」の読み物として釦の後に残し、これまでの記録は見出しのまま畳む（記録が無い時も 1 行の節が場所を取っていた）
     hero = (f'<section class="hero">{genga.head(sid, src, photos=photos)}<div>'
             f'<h1>{esc(data["toy"])}</h1>{stage_note}{make_go(sid)}'
-            # 作品の札は、題の塊を原画の部品の縦の段へ、出典の字を頁の一番下の段へ分けた（本人の言葉 11-08。genga.head・genga.ndl_credit）。
+            # 作品の札は前の所（題と つくる の後）に、題の塊だけで置く。出典の字は頁の一番下の段（本人の言葉 11-08「文言はページの一番下に」・genga.ndl_credit）。
+            # 11-08 に一度、題の塊を原画の部品の縦の段へ移したが、本人の言葉「縦書きは失敗なので前の形に戻す」・答え「広い画面も戻す」で戻した。
             # 図を見る（国立国会図書館）は原画の部品の 1 つの道にまとめた。図鑑の頁とほかのおもちゃの道は外した（本人の言葉「図鑑のページ要らない」
             # 「ほかのおもちゃ、のリンク要らない」）。くずし字を読む は残す
+            + skin.artwork_label(data["toy"], src, credit=False)
             + f'<p class="links"><a href="/zukan/{sid}/yomi">くずし字を読む</a></p>'
             f'<details class="fold-sec" style="margin-top:24px"><summary><h3>これまでの記録</h3></summary>{workshop.strip(sid)}{observations(sid, data, photos=photos)}{made_strip(sid, records.all_records(sid), photos)}</details></div></section>')
     recs = records.all_records(sid)
@@ -601,7 +605,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
         # 型紙の絵は型紙の窓の 1 か所だけに出し、刷る口は頭の「つくる」1 つにする（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」）。
         # 前はこの札にも紙の小さな絵と「型紙を見る」（紙を作る釦）があり、型紙が 2 か所、刷る口が 3 つ（頭・この札・窓の札）あった。札は仮説の字だけ
         # 札の脇に型紙の版（設計 0.7「型紙の札の脇に、今の版の印を 1 つ」）。字は「型紙の版」と数だけ（エンジンの版と言い分ける。カード 084426）
-        plate += (f'<div class="plate"><div class="letter">{esc(hypotheses.letter(h))}</div><h3>仮説 {esc(hypotheses.letter(h))}「{esc(h["name"])}」</h3>'
+        plate += (f'<div class="plate"><h3>{esc(hypotheses.shown_name(h))}</h3>'
                   f'<p class="meta"><span class="lb ban">型紙の版 {ban}</span></p><p>{esc(wording.plain(h["how_it_moves"]))}</p><ul>{ev}</ul>'
                   f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}'
                   '</div>')

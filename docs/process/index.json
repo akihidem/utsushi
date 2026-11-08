@@ -532,5 +532,11 @@
   "path": "research/38-readme-readability.md",
   "hook": "README の頭に 30 秒の 4 行を足す前と後を yomiyasu で測った。候補 26→20 件",
   "status": "測った記録。4 行の字は本人の確かめ待ち"
+ },
+ {
+  "id": "research/39",
+  "path": "research/39-readme-judges-ai.md",
+  "hook": "README を審査の方と AI 向けに書き直す前と後。候補 31→24 件・長い文 45→41",
+  "status": "測った記録。字は本人の確かめ待ち"
  }
 ]

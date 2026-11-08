@@ -201,7 +201,8 @@ def zine():
                  f'<div><p class="h2" style="font-size:clamp(22px,2.4vw,30px);letter-spacing:.2em;font-weight:300">紙で作って、確かめる。</p><p><a href="/toy/{t["sid"]}">型紙をひらく</a></p></div></div></section>')
     # 全部の玩具の一覧は、額装した 2 種の後、奥付の前（本人の指示 11-05）。黒地のジンの性格は保つ（U-23）。
     body += all_toys("zn")
-    body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
+    # 「新しい絵は作っていない。」は外した（本人の言葉 11-08「サイト、。新しい絵は作っていない。はトル。」・白の入口の注記と同じ）
+    body += '<p class="cap zn-end">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。</p>'
     return page("うつし", body + ONLY, ZINE + skin.entrance_style("zine"), "zine")
 
 
@@ -216,8 +217,8 @@ def zine():
 # 扇の札（扇の間）と扇をひらくノブは 11-07 に外した（本人の言葉「扇の間要らない」。J-024 の追記）。残る動きはせり上がりだけ。
 # 入口の最初の画面の次へ進む釦（UX の見直しの段 0、本人の決定 11-06。research/36 の「道しるべの言葉は えらぶ・つくる・のこす・もちよる」）。
 # 入口の最初の画面で押せる物は頭の帯だけで、最初の玩具は 1197px 下だった（幅 390、research/36 の数）。字は道しるべの 1 語だけで、新しい字は足さない。
-# 行き先は絵で選ぶ頁（/toys）。入口の中の一覧は額装した 2 種の後にあり遠いので、近い方へ向ける
-ROAD_GO = '<p class="road"><a class="road-go" href="/toys">えらぶ</a></p>'
+# 行き先は えらぶ。入口が えらぶ になり /toys は入口へ送るので、直に入口へ向ける（本人のサイト体験レビュー 11-07 の 3）
+ROAD_GO = '<p class="road"><a class="road-go" href="/">えらぶ</a></p>'
 # 黒のジンの表紙の 1 行（字は変えない）。白に統一した後は、白の扉の額の下に出す（本人の決定 11-06）。
 DOOR_LINE = "江都二色　安永二年　うしなわれた玩具"
 
@@ -348,7 +349,7 @@ def _mazu(ts, photos=True):
     head = f"<h2>{esc(MAZU)}</h2>" if MAZU else ""
     # 黒の表紙にだけあった 1 行（額の絵の下の「江都二色　安永二年　うしなわれた玩具」。本人の決定 11-06「黒案にだけある要素は白案に入れて」）は、
     # 前は白の扉の額の下に出していた。扉は外したので、同じ額の敷き方の 2 枚の下に置く（『江都二色』の話の 1 行でもある）
-    return f'<section class="tj-mazu" id="mazu">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
+    return f'<section class="tj-mazu" id="mazu" tabindex="-1">{head}<div class="row">{cards}</div><p class="meta">{esc(DOOR_LINE)}</p></section>'
 
 
 # 選ぶのは 2 回目から（本人の言葉 11-08「83 のおもちゃから、1 つ選ぶ、で実際に選ぶのは 2 回目以降にしたい」・本人の決め「A＋Cでよい」）。
@@ -415,6 +416,12 @@ def yoru(photos=True):
     return tenji(photos, dark=True)
 
 
+# 入口の題の間の副題 3 行（縦書き）。本人の言葉 11-08「最初のページ、江都二色より／うしなわれた玩具の動きを／紙で実験して確かめる。紙で実験して
+# 確かめる、が長い。」と、3 行目の答え「紙でよみがえらせる。」。字はこの 1 か所（白と暗い版の入口が同じ字を出す・訳の表と、やさしい日本語の表の鍵も
+# この 3 つ）。替える時はここだけを直す
+SUB = ("江都二色より", "うしなわれた玩具の動きを", "紙でよみがえらせる")
+
+
 def tenji(photos=True, dark=False):
     """白の入口（えらぶ）。photos=False は合言葉なしで開いた場: 記録の写真を置かない（玩具の頁と同じ前の決まり。test_public_open）。
     dark=True は暗い画面の版の入口（yoru）: 同じ作りで、CSS の色だけを _dark で置き換え、帯の変数は皮 zine の物にする。"""
@@ -425,16 +432,53 @@ def tenji(photos=True, dark=False):
     # 題の間: 題と副題と「このサイトについて」だけ（えらぶ の釦は外した。押させずに、すぐ下から選べる）。組みは縦に戻した（本人の決め 11-07 夜
     # 「縦の組みに戻す」。ERABU の上の注）。前は画面いっぱいの高さにせず、幅 390 の最初の画面に 2 つの大きな札の頭が入るようにしていた
     body += ('<section class="tj-hall" id="hall"><p class="en">Lost toys of Edo · 1773</p><h1>うつし</h1>'
-             '<p class="sub">江都二色より<br>うしなわれた玩具の動きを<br>紙で実験して確かめる</p>' + about_link()
+             '<p class="sub">' + "<br>".join(esc(x) for x in SUB) + '</p>' + about_link()
              # 浮かぶ玩具（本人の決め 11-07 夜「これをうつしの一番最初の余白に浮かばせる」。web.ukabu）。輪郭の絵が無い場では何も置かない
-             + ukabu.block(set(sources())) + '</section>')
+             + ukabu.block(set(sources())) + DOWN + '</section>')
     main = [t for t in ts if hypotheses.stage(t["sid"]) == "必須"]
     body += _mazu(main, photos)
     body += _erabu([s for s in sources() if hypotheses.stage(s) != "必須"], photos)
-    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。新しい絵は作っていない。</p>'
-    css = TENJI + ERABU + ukabu.UKABU
+    # 「新しい絵は作っていない。」は外した（本人の言葉 11-08「サイト、。新しい絵は作っていない。はトル。」）
+    body += '<p class="tj-note">図は国立国会図書館デジタルコレクションの頁（米山堂・1931 年の複製）。</p>'
+    css = TENJI + ERABU + ukabu.UKABU + DOWN_CSS
     # 暗い版も body の印は tenji を持つ（白の入口の CSS の選び body.tenji をそのまま効かせる）。暗い版の印 yoru を足して見分ける
-    return page("うつし", body + ONLY + ERABU_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji")
+    return page("うつし", body + ONLY + ERABU_JS + DOWN_JS, (_dark(css) if dark else css) + skin.entrance_style("zine" if dark else "tenji"), "tenji yoru" if dark else "tenji")
+
+
+# 題の間から まずはここから へ送る仕掛け（本人の言葉 11-08「トップページスクロールしてもらう仕掛けを。うつしの文字や周囲のひろい領域タップしても
+# スライドしても下にスクロールしおもちゃを選ばせる、切り抜きした4つのおもちゃをタップしてもスクロールして2つのおもちゃを選ばせる。」）。
+# - 印は字の無い下向きの山形（字を足すと本人の確かめが要るので、見える字は足さない）。読み上げは今ある見出しの字 MAZU。JS が無くても href で飛ぶ
+# - 置き場は最初の画面の右下の隅。題の間は画面いっぱい（100svh）で頭の帯の分だけ画面の下へはみ出すので、題の間の下に置くと最初の画面に入らない
+#   （幅 390×844 で題の間の下の端が 969px）。台本が動く時は画面に留め（.on・fixed）、40px 下へ送ったら消す（.off）。真ん中でなく右下なのは、
+#   幅 390×844 で「このサイトについて」が画面の下の端（790〜834px）にあり、真ん中だと重なるため。台本が無い時は題の間の右下（absolute）に残り、href で飛ぶ
+# - UKABU の .tj-hall>*:not(.ukabu){position:relative} に負けないよう、.tj-hall>a.tj-down の形で書く
+# - 押せる所は 48px（44px 以上の線）。色は副題と同じ灰（暗い版は _dark が替える）。揺らす動きは付けない（入口の動きは浮かぶ玩具だけ）
+# CSS の注は頁に出るので、理由はここに書く（memory の決まり）
+DOWN = (f'<a class="tj-down" href="#mazu" aria-label="{esc(MAZU)}">'
+        '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">'
+        '<path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>')
+DOWN_CSS = """
+.tj-hall>a.tj-down{position:absolute;z-index:2;right:16px;bottom:16px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;color:#7a7164;border:0;text-decoration:none;background:none;transition:opacity .3s}
+.tj-hall>a.tj-down.on{position:fixed}
+.tj-hall>a.tj-down.off{opacity:0;pointer-events:none}
+.tj-hall>a.tj-down:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.tj-hall>a.tj-down{transition:none}}
+.tj-mazu:focus{outline:none}
+"""
+# 送る台本（入口だけ）。
+# - 題の間の click で送る。押した所が a・button などの中なら何もしない（帯の釦・このサイトについて・言葉の切り替えは今のまま押せる）。
+#   下へ送る印（a.tj-down）だけは送る。字を選んでいる時は送らない（題字を写したい人の邪魔をしない）
+# - 浮かぶ玩具は pointer-events:none のまま（本人の決め 11-07「リンクにはせず揺れる」）。押すと下の題の間の click になり、頁へは飛ばずに送るだけ
+# - 上へのスライド: 1 本指で 30px 以上上へ動かし、まだ まずはここから が画面の上より下にある時だけ送る（passive。指の送りはそのまま効く）
+# - 動きを減らす設定（prefers-reduced-motion: reduce）では滑らせずに飛ぶ。送った後は まずはここから（tabindex=-1）に focus を置く
+#   （置いた focus の枠は節の全体を囲んで見えるので消す。節は押す所ではなく、次の Tab の起点にするだけ。2 枚の札の focus の枠は残る）
+# - 印を消すのは scroll の数だけを見る（passive）。見えた時に起こす仕掛け（IntersectionObserver）は使わない（入口の決まり。research/19・test_looks_motion）
+DOWN_JS = """<script>(()=>{const h=document.getElementById('hall'),m=document.getElementById('mazu');if(!h||!m)return;
+const d=h.querySelector('a.tj-down');if(d){d.classList.add('on');const s=()=>d.classList.toggle('off',scrollY>40);s();addEventListener('scroll',s,{passive:true})}
+const go=()=>{const r=matchMedia('(prefers-reduced-motion: reduce)').matches;m.scrollIntoView({behavior:r?'auto':'smooth',block:'start'});m.focus({preventScroll:true})};
+h.addEventListener('click',e=>{const t=e.target.closest('a,button,summary,input,label,select,textarea');if(t&&!t.classList.contains('tj-down'))return;if(String(getSelection()).length)return;e.preventDefault();go()});
+let y=null;h.addEventListener('touchstart',e=>{y=e.touches.length===1?e.touches[0].clientY:null},{passive:true});
+h.addEventListener('touchend',e=>{if(y===null)return;const d=y-e.changedTouches[0].clientY;y=null;if(d>=30&&m.getBoundingClientRect().top>1)go()},{passive:true})})();</script>"""
 
 
 # 並びの小さい写しを読み始める台本。まずはここから の 2 枚が届くか（失敗も含む）、2.5 秒たった方の早い時に、並びの data-src を src にする。

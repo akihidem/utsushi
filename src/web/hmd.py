@@ -316,7 +316,7 @@ def page(sid, look="tenji", cam=False):
             f'<div class="hmd-acts"><button type="button" id="hmd-next">{esc(NEXT)}</button><button type="button" id="hmd-prev">{esc(PREV)}</button>'
             f'<button type="button" id="hmd-again">{esc(AGAIN)}</button><button type="button" id="hmd-listen" aria-pressed="false">{esc(LISTEN)}</button>{camera_btn}'
             f'<button type="button" id="hmd-split" aria-pressed="false">{esc(SPLIT_OPEN)}</button></div></div>'
-            f'<p class="hmd-note">{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="/toys">玩具を選びなおす</a></p></div>{camera}'
+            f'<p class="hmd-note">{camera_note}{esc(HOW)} {esc(TRIAL)} <a href="/">玩具を選びなおす</a></p></div>{camera}'
             f'<script type="application/json" id="hmd-words">{json.dumps(words, ensure_ascii=False)}</script>{SCRIPT}')
     return skin.shell(f"{toy}: {TITLE}", body, look, path=f"/toy/{sid}/kasane" + ("" if cam else "/hmd"), extra_style=STYLE,
                       body_class="hmd-page hmd-cam" if cam else "hmd-page")
