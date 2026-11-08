@@ -116,7 +116,13 @@ assert "if(r&&!out&&Date.now()-r.at<3*3600000)return" in st and "out=!document.r
 assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "回が無い時だけ、印の無い区切りを消し、次は新しい印"
 assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
 assert "utsushiClips.openedAs(T.sid,'work')" in hmd.SCRIPT and "utsushiClips.startMaking(T.sid,back)" not in hmd.SCRIPT, "作業の頁は続き（玩具の頁の回を引き継ぐ）"
-assert 'utsushiClips.openedAs("NDL-1187053-R0000005-L","toy")' in hanasu.think_section("NDL-1187053-R0000005-L", {}), "玩具の頁は作り始め"
+# 玩具の頁は作り始め。前は 考えを話す の節（hanasu.think_section）の中にあった。本人の言葉 11-08「つくるの「考えを話す」は無くす。」で節を外した後は、
+# 頁の終わりに 1 回置く（clips.toy_start）。節が無い事と、置き場の台本と作り始めが頁に 1 回ずつある事を、頁そのもので見る
+from web import toy  # noqa: E402
+
+toy_page = toy.toy_page("NDL-1187053-R0000005-L")
+assert toy_page.count('utsushiClips.openedAs("NDL-1187053-R0000005-L","toy")') == 1 and toy_page.count(A) == 1, "玩具の頁は作り始め"
+assert 'id="hanasu"' not in toy_page and not hasattr(hanasu, "think_section"), "考えを話す の節が残った"
 assert "addEventListener('pageshow',(e)=>{if(e.persisted&&window.utsushiClips)utsushiClips.startMaking(T.sid,false)" in hmd.SCRIPT, "戻る釦で読み直さずに戻った時も作り始め"
 assert clips.STORE.endswith("このサイトをほかの画面で開くと、前に録った声と映像は消えます。"), "ほかの画面（2 つ目のタブ）で消える事を置き場の断りが言う（本人の答えの字 11-08）"
 print("ok: 作り始めの消し・印は玩具ごとに使い直す・承認の後の消しはその玩具だけ")
