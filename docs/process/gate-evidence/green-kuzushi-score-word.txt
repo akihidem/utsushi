@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kuzushi.py
+# commit: a0bc0f5e（回した時の HEAD）
+ok
+rc=0
