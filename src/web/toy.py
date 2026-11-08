@@ -222,8 +222,9 @@ def ask_form(sid, data, asked=None, note="", filled=None, ai=False):
 KIROKU_TO_NOKOSU = "つくったものを教えてください。"
 # 型紙の窓の のこす の釦の下の本人の字（本人の答え 11-08 で、修正の担当 c の案 B の字。のこすへの道を強くする 1 行）
 NOKOSU_ASK = "どう工夫したかあとで教えてください。写真や動画でもいいです。"
-# のこそう の段の、もちよる のこの玩具の所への 1 行（設計の問い 7 の推しの字・本人の答え 11-08「推しのとおり。」）
-MOCHIYORU_GO = "この玩具の作った物を もちよる で見る"
+# のこそう の段の、もちよる のこの玩具の所への 1 行（設計の問い 7 の推しの字・本人の答え 11-08「推しのとおり。」）。推しの字の「玩具」は、本人の 11-06 の字の決め
+# 「玩具の頁の下の本文の玩具をおもちゃに」に合わせて「おもちゃ」にした（統括の決め 11-08・推しの字を作る時の照らし漏れ）
+MOCHIYORU_GO = "このおもちゃの作った物を もちよる で見る"
 
 # 作った物の並びの節（#minna）の見出しと、記録が無い時の 1 文（夕方のサイトのレビュー 11-07 の 6「これまでの復元として属人化しない」）。
 # 前は「他の人が作った物と、自分の記録」「作ったら、最初の記録を残す人になります」で、並びを人ごとの物（他の人・自分）として読ませた。
@@ -647,7 +648,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     go = make_go(sid)
     printing = "" if sheet and "/print" not in go else go
     # 段の中の順: 刷る口（刷る前・版が上がった時）→ 型紙（紙の絵と札と版の札）→ 版の歩み（閉じた畳み）→ 型紙の窓の口（印刷・つくる・のこす）
-    win = (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
+    # JS の無い画面の聞く口（作りながら見る頁の #ask-form）は、この頁へ答えを返す（play_server の ask）。聞く口の節は外したので、答えだけを窓の頭に出す。
+    # 字は前の聞く口の答えの形のまま（「聞いた事: …」と答え）
+    answer = (f'<div id="ask-answer" class="notice"><p class="meta">聞いた事: {esc(asked[0])}</p><p>{esc(asked[1])}</p></div>' if asked else "") + head("ask")
+    win = (f'<section class="sec" id="win">{head("win")}{answer}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p>'
            f'<p class="meta">画面で見て、印刷する前に案を検討する所。</p>{printing}{sheet}{fold(ban_ayumi.section(sid))}{acts}</section>')
     # 錨 #tsukuru（前の 作っている途中で困ったら の節）は外した。作りながら見る頁の「← 玩具」は #win（型紙の窓）へ向け直した（tsukuru.py）。
     # 作っている途中で困ったら（聞く口）は外した: 手帖の手順の画面に「こまった」と聞く口が前からある（設計の問い 4 の答え「推しのとおり。」）。
