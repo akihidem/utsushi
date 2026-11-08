@@ -51,6 +51,12 @@ def section(html):
     return m.group(0) if m else ""
 
 
+def dekita(html):
+    """みんながつくったおもちゃ の節。本人の言葉 11-08「…ワークショップで作られたものの方は写真と名前が一致しているので、こちらの組み合わせと表示を採用して、みんなが作ったおもちゃの方に置く。」で、作例の玩具ごとの札は作例の節からここへ移った。"""
+    m = re.search(r'<section class="panel" id="dekita">.*?</section>', html, re.S)
+    return m.group(0) if m else ""
+
+
 # 1. 空の時
 before = techo_site.gallery_page(SIDS)
 assert 'id="sakurei' not in before and techo_site.SAKUREI_TITLE not in before and "sakurei-row" not in before
@@ -77,12 +83,14 @@ for rid, name in ((g1, gn1), (t1, tn1), (t2, tn2), (o1, on1), (f1, fn1), (k1, kn
 assert media_review.record(g2, gn2, "people", "確認者") == []
 html = techo_site.gallery_page(SIDS)
 sec = section(html)
-assert sec, "確かめた作例があるのに節が無い"
+dk = dekita(html)
+assert sec and dk, "確かめた作例があるのに節が無い"
 for rid, name in ((g1, gn1), (t1, tn1), (t2, tn2)):
-    assert f'src="/record/{rid}/media/{name}/small"' in sec, (rid, "小さい写しで出ない")
+    assert f'src="/record/{rid}/media/{name}/small"' in dk, (rid, "小さい写しで、みんながつくったおもちゃ に出ない")
     assert f'/record/{rid}/media/{name}"' not in html, (rid, "元の写真の道を並べた")
 assert g2 not in html and g3 not in html, "人が入る写真か、確かめ待ちの写真が出た"
-assert sec.count("<img") == 6 and 'alt="作った物の写真"' in sec
+# 作例の節には顔の写真と工夫の 2 枚だけ。玩具ごとの札の 4 枚（83 の外の玩具を含む）は みんながつくったおもちゃ（同じ写真を 2 度出さない）
+assert sec.count("<img") == 2 and dk.count("<img") == 4 and 'alt="作った物の写真"' in sec + dk
 
 # 3. 並び: 頭に顔の写真と本人の言葉の札 → 参加者の型紙の改善例 → 玩具ごとの札（日の見出しは無い）
 # 本人の言葉「日毎にはしない」は札の並べ方（日ごとの見出し）の事。報告の 4 回の段（ul.sakurei-report・回ごとに日付と何をしたかの 1 行・
@@ -92,10 +100,10 @@ assert not re.search(r'id="sakurei-\d{4}"', sec) and "11 月 4 日" not in cards
 assert not re.search(r"<h[2-4][^>]*>\s*\d{1,2} 月 \d{1,2} 日", sec), "日付の見出しが残った"
 faces = sec.index('class="sakurei-faces"')
 assert f'src="/record/{f1}/media/{fn1}/small"' in sec[faces:sec.index("</figure>", faces)] and techo_site.SAKUREI_FACES in sec, "顔の写真か札が無い"
-assert sec.index("sakurei-faces") < sec.index("sakurei-kufu") < sec.index("sakurei-row"), "並びが違う"
-kufu = sec[sec.index("sakurei-kufu"):sec.index("sakurei-row")]
+assert sec.index("sakurei-faces") < sec.index("sakurei-kufu") and "sakurei-row" not in sec, "並びが違う・玩具ごとの札が作例の節に残った"
+kufu = sec[sec.index("sakurei-kufu"):]
 assert f"/record/{k1}/media/{kn1}/small" in kufu and f"「{techo_site.SAKUREI_KUFU_WORDS}」" in kufu and techo_site.SAKUREI_KUFU in kufu
-row = sec[sec.index("sakurei-row"):]
+row = dk  # 玩具ごとの札の並びは、みんながつくったおもちゃ の節
 assert f1 not in row and k1 not in row, "顔の写真か事例の写真が玩具の札に重なった"
 assert SIDS.index(G) < SIDS.index(T) and t1 < g1, "試験の前提（玩具の並びと記録の順が逆）"
 assert row.index(g1) < row.index(t1) < row.index(t2) < row.index(o1), "玩具ごとの並び（頁の玩具の順・記録の順・83 の外は後ろ）でない"
@@ -111,17 +119,17 @@ assert ("sakurei-report" in sec) == _has and (techo_site.SAKUREI_REPORT_GO in se
 
 # 4. 札: 玩具の名から玩具の頁へ・記録の番号の字は出さない・他の人が作った物に混ざらない
 names = {sid: techo_site.hypotheses.load(sid)["toy"] for sid in (G, T)}
-assert f'<a href="/toy/{G}">{techo_site.esc(names[G])}</a>' in sec and f'<a href="/toy/{T}">{techo_site.esc(names[T])}</a>' in sec
-text = re.sub(r"<[^>]+>", " ", sec)
+assert f'<a href="/toy/{G}">{techo_site.esc(names[G])}</a>' in dk and f'<a href="/toy/{T}">{techo_site.esc(names[T])}</a>' in dk
+text = re.sub(r"<[^>]+>", " ", sec + dk)
 assert not re.search(r"R-\d{4}", text), "記録の番号を字で出した"
-assert "記録の番号" not in text and "goraigo-v10" not in sec
+assert "記録の番号" not in text and "goraigo-v10" not in sec + dk
 # 型紙の版は、刷った組が分かる作例の札にだけ、組の番号で出す（玩具の頁の型紙の札の脇と同じ「型紙の版 10」の形）
-# 作例の札は、みんながつくったおもちゃ の札が無い玩具の時だけ、最初の 1 枚が錨 id="toy-<印>" を持つ（つくるの作り直しの枝 2）
-card = lambda rid: re.search(rf'<figure(?: id="toy-[^"]+")?>(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', row, re.S).group(0)  # noqa: E731
+# 作例の札は みんながつくったおもちゃ の札（figure.workshop）。その玩具の最初の 1 枚が錨 id="toy-<印>" を持つ（つくるの作り直しの枝 2）
+card = lambda rid: re.search(rf'<figure class="workshop"(?: id="toy-[^"]+")?>(?:(?!</figure>).)*{rid}(?:(?!</figure>).)*</figure>', row, re.S).group(0)  # noqa: E731
 assert "猫と鼠の箱（鼠捕りからくり）" in card(o1) and "<a " not in card(o1), "83 の外の玩具の札に名が無いか、無い頁への道を張った"
 assert "型紙の版 10" in card(g1), card(g1)
 assert "型紙の版" not in card(t1) and "型紙の版" not in card(t2), "組の分からない作例に版を出した"
-assert cards.count("型紙の版") == 1, "型紙の版は組の分かる作例の札の 1 つだけ（報告の段の字は除いて数える）"
+assert dk.count("型紙の版") == 1, "型紙の版は組の分かる作例の札の 1 つだけ"
 ageta = html.split('id="ageta"')[1]
 assert not any(r in ageta for r in (g1, t1, t2, o1, f1, k1)), "作例が他の人が作った物に混ざった"
 # 報告の段: 回の一覧の口がある時は、その字で 4 回の行と審査用の頁への道が出る（字の元を 1 つに）
