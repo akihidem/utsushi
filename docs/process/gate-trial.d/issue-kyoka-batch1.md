@@ -9,6 +9,6 @@
   - 虎の「張子」の意味は辞書の字と 22 字重なっていたので言い換えた
   - 英語の表とやさしい日本語の表に 121 の鍵（やさしい日本語は全ての漢字にルビ）
   - 試験: test_kuzushi_notes を置き場の全部の注へ広げ、決めで読みにした歌の頁の 1 行を見る。雛形の 5 本の試験は、人の決めか人が確かめた読みだけが入ってよい形に。原画の試験 2 本の「読みの無い玩具」の例を R0000009-R に
-- 検証ゲート: **済み**。Red: 今の main（`d53b5354`）に新しい試験だけを置くと rc 1（gate-evidence/red-kyoka-batch1.txt）。Green: この枝で rc 0（gate-evidence/green-kyoka-batch1.txt）
+- 検証ゲート: **済み**。Red: 今の main（`d53b5354`）に新しい試験だけを置くと rc 1（gate-evidence/red-kyoka-batch1.txt）。Green: この枝で rc 0（gate-evidence/green-kyoka-batch1.txt。push の門の語を替えた後は green-kyoka-batch1-2.txt）
 - エビデンスゲート: くずし字・原画・玩具の頁の頭・雛形の 5 本・英語の全頁（test_en_all）・やさしい日本語の全頁（test_easy_all）・英語の言葉の決め・ルビ・サーバ・頁の見張りの試験が rc 0
 - 確かめていない事: 全部の試験（`./run.sh`）。新しい字（訳・意味・読みの出所の 1 行）の本人の確かめ。英語の新しい字の英語の担当の確かめ。歌の字の 1 字ずつの人の確かめ
