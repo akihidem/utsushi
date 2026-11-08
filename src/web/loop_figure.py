@@ -36,7 +36,7 @@ import random
 
 from omochae.hypotheses import ROOT
 
-from . import wa
+from . import en_fig, wa
 from .skin import esc
 
 # 輪の節の文（本人の答え 11-08「字 1 と絵 A。」）。本人の言葉「…と図がわかりにくい」「型紙の窓のこれまでの説明のほうがわかりやすい」で、
@@ -163,23 +163,24 @@ def _labels(variant):
 
 def svg(variant=None):
     """説明の頁と のこす の頁に置く 1 本の輪の図（11-08 の組み直し）。下に正直に言う 1 行を添える。variant は前の 2 形の名残で、使わない。"""
-    return (f'<figure class="loop-fig" style="margin:12px auto;max-width:460px">{drawn()}'
+    # 日本語の図と英語の図を並べ、頁の言葉で片方だけを見せる（en_fig.TOGGLE。英語の字の長さに合わせた図を別に持つため）
+    return (f'<figure class="loop-fig" style="margin:12px auto;max-width:460px">{drawn()}{drawn_en()}'
             f'<figcaption class="meta" style="text-align:center">{esc(HONEST)}</figcaption></figure>')
 
 
-def _person(x, y):
-    """人の形の小さな絵（頭の丸と肩の線）と、右に「人」。x, y は絵の真ん中。返すのは (SVG, 横の幅)。"""
+def _person(x, y, label="人", fs=None):
+    """人の形の小さな絵（頭の丸と肩の線）と、右に「人」。x, y は絵の真ん中。返すのは (SVG, 横の幅)。label と fs は英語の図の名と字の大きさ。"""
     return (f'<circle cx="{x:.1f}" cy="{y - 5:.1f}" r="5" fill="none" stroke="{INK}" stroke-width="2"/>'
             f'<path d="M{x - 9:.1f} {y + 10:.1f} Q{x:.1f} {y - 3:.1f} {x + 9:.1f} {y + 10:.1f}" fill="none" stroke="{INK}" stroke-width="2" stroke-linecap="round"/>'
-            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{MUTE}">人</text>'), 14 + WHO_FS
+            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{fs or WHO_FS}" fill="{MUTE}">{esc(label)}</text>'), 14 + WHO_FS
 
 
-def _claude(x, y):
+def _claude(x, y, label="Claude", fs=None):
     """Claude の印の小さな絵（画面の四角と、中の 4 つの光の先）と、右に「Claude」。会社の標章は描かない。返すのは (SVG, 横の幅)。"""
     star = " ".join(f"{x + dx:.1f},{y + dy:.1f}" for dx, dy in ((0, -6), (1.8, -1.8), (6, 0), (1.8, 1.8), (0, 6), (-1.8, 1.8), (-6, 0), (-1.8, -1.8)))
     return (f'<rect x="{x - 10:.1f}" y="{y - 9:.1f}" width="20" height="18" rx="5" fill="none" stroke="{SHU}" stroke-width="2"/>'
             f'<polygon points="{star}" fill="{SHU}"/>'
-            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{WHO_FS}" fill="{SHU}">Claude</text>'), 14 + WHO_FS * 3.4
+            f'<text class="lf-w" x="{x + 14:.1f}" y="{y + 6:.1f}" font-size="{fs or WHO_FS}" fill="{SHU}">{esc(label)}</text>'), 14 + WHO_FS * 3.4
 
 
 def _sheet(x, y):
@@ -204,15 +205,16 @@ def _bend(p0, c, p1, seed, n=18):
 # 図の字の大きさ（viewBox の中の px）。幅 390 の画面では図が約 320px に縮むので、駅の字 20 は約 13px・誰の名 15 は約 10px で出る
 # （前の 15 では約 8px で読めなかった。11-08 に 390 の幅で撮って見た）
 STEP_FS, WHO_FS = 20, 15
-# 英語の頁だけの字の大きさ（統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 2）。札の幅は日本語の字の数で決まるので、
-# 長い英語（「Make the next template」など）が札からはみ出し、真ん中の「Current template」と下の 1 行に重なった。日本語の図は替えない。
-# 真ん中の小さな 1 行（「1 周で 1 つ版が上がる」の英語）は左右の札の間に入らないので、英語の時だけ左右の札より下へ下げる（下の札の上には届かない）
-EN_STYLE = ("html[lang=en] .loop-ring .lf-s{font-size:13px}html[lang=en] .loop-ring .lf-w{font-size:9.5px}"
-            "html[lang=en] .loop-ring .lf-n{font-size:15px}html[lang=en] .loop-ring .lf-c{font-size:11px;transform:translateY(22px)}")
+# 英語の図（drawn_en・統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 2）の字の大きさと、真ん中の小さな 1 行を下げる長さ。
+# 札の幅は日本語の字の数で決まるので、長い英語（「Make the next template」など）は小さくしないと札からはみ出し、真ん中の字に重なった。
+# 前は英語の頁の CSS（font-size の px）で替えたが、押す所と字の大きさの床（tests/test_tap_size.py の 12px）に当たり main が落ちたので（11-08）、
+# 英語の図を別の SVG にし、大きさは SVG の中の字の大きさ（viewBox の中の値）で持つ。画面に出る大きさを 10px 以上にする並べ方は次の直し
+EN_FS = {"step": 13, "who": 9.5, "now": 15, "center": 11}
+EN_DROP = 22
 
 
-def drawn(variant=None):
-    """1 本の輪の SVG（頁の幅に合わせて縮む）。4 つの駅を時計回り（上 → 右 → 下 → 左）に角の丸い札で置き、札の間を手書きの風合いの曲がった矢でつなぐ。
+def drawn(variant=None, lang="ja"):
+    """1 本の輪の SVG（頁の幅に合わせて縮む）。lang="en" は英語の図（並べ方は日本語の図と同じで、字は訳の表の英語・大きさは EN_FS）。4 つの駅を時計回り（上 → 右 → 下 → 左）に角の丸い札で置き、札の間を手書きの風合いの曲がった矢でつなぐ。
     誰がするかの小さな絵は札の中の上の段（札の外に置くと図の横幅が広がり、狭い画面で字が小さくなりすぎた）。字は text の要素に 1 つずつ。"""
     PAD, RH, RV = 10, 172, 140  # 真ん中から左右の札・上下の札までの長さ
     boxes = []
@@ -243,13 +245,30 @@ def drawn(variant=None):
         # 上の段: 誰がするかの絵（2 つの時は並べる）。札の真ん中にそろえる
         ix = x - (sum(widths) + 12 * (len(widths) - 1)) / 2
         for w_, wd in zip(who, widths):
-            body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22)[0]
+            if lang == "en":
+                body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22, en_fig.en(w_), EN_FS["who"])[0]
+            else:
+                body += (_claude if w_ == "Claude" else _person)(ix + 10, y - h / 2 + 22)[0]
             ix += wd + 12
         top = y - h / 2 + 30 + STEP_FS + 4
-        body += "".join(f'<text class="lf-s" x="{x:.1f}" y="{top + i * (STEP_FS + 6):.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(t)}</text>'
+        fs = EN_FS["step"] if lang == "en" else STEP_FS
+        body += "".join(f'<text class="lf-s" x="{x:.1f}" y="{top + i * (STEP_FS + 6):.1f}" text-anchor="middle" font-size="{fs}" fill="{INK}">{esc(en_fig.en(t) if lang == "en" else t)}</text>'
                         for i, t in enumerate(lines))
     body += _sheet(CX, CY - 30)
-    body += f'<text class="lf-n" x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{STEP_FS}" fill="{INK}">{esc(wa.NOW)}</text>'
-    body += f'<text class="lf-c" x="{CX:.1f}" y="{CY + 40:.1f}" text-anchor="middle" font-size="13" fill="{MUTE}">{esc(CENTER)}</text>'
-    return (f'<svg class="loop-ring" viewBox="0 0 {W:.0f} {H:.0f}" role="img" aria-label="{esc(RING_LABEL)}" '
-            f'style="width:100%;height:auto;display:block;font-family:inherit"><style>{EN_STYLE}</style>{body}</svg>')
+    if lang == "en":
+        now, center, label, cls = en_fig.en(wa.NOW), en_fig.en(CENTER), en_fig.en(RING_LABEL), "loop-ring en-fig"
+        n_fs, c_fs, c_y = EN_FS["now"], EN_FS["center"], CY + 40 + EN_DROP  # 小さな 1 行は左右の札の間に入らないので、左右の札より下へ下げる
+    else:
+        now, center, label, cls = wa.NOW, CENTER, RING_LABEL, "loop-ring ja-fig"
+        n_fs, c_fs, c_y = STEP_FS, 13, CY + 40
+    body += f'<text class="lf-n" x="{CX:.1f}" y="{CY + 18:.1f}" text-anchor="middle" font-size="{n_fs}" fill="{INK}">{esc(now)}</text>'
+    body += f'<text class="lf-c" x="{CX:.1f}" y="{c_y:.1f}" text-anchor="middle" font-size="{c_fs}" fill="{MUTE}">{esc(center)}</text>'
+    # 片方だけを見せる決まり（en_fig.TOGGLE）は英語の図の中に置く（図の外に置くと、節の字を読む所に CSS の字が混ざる）
+    keep = f"<style>{en_fig.TOGGLE}</style>" if lang == "en" else ""
+    return (f'<svg class="{cls}" viewBox="0 0 {W:.0f} {H:.0f}" role="img" aria-label="{esc(label)}" '
+            f'style="width:100%;height:auto;font-family:inherit">{keep}{body}</svg>')
+
+
+def drawn_en(variant=None):
+    """英語の図（英語の頁でだけ見える。en_fig.TOGGLE）。"""
+    return drawn(variant, lang="en")

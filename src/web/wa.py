@@ -16,6 +16,7 @@
   AI が次の案を出す所は、本物の API がまだ動いていないので描かない（足すなら点線と「いま作っているところです」。本人の決定 11-05 の線）。
 - 図は字を持つ SVG（読み上げられるよう、title に輪の順を 1 文で入れる）。色は皮の色（--accent・--frame・--fg）を読むので、白の展示と黒のジンの両方で同じ作り。
 """
+from . import en_fig
 from .skin import esc
 
 # 輪の字（並びの順）。どれも頁に既にある字から取った（上の判断の芯）。字を直す時はここ 1 か所だけ。
@@ -38,11 +39,15 @@ STYLE = (".wa{margin:14px auto 6px;max-width:440px}.wa svg{display:block;width:1
          ".wa .wa-arc{fill:none;stroke:var(--accent);stroke-width:2}.wa .wa-head{fill:var(--accent)}"
          ".wa .wa-now{fill:var(--mute);font-size:12px;letter-spacing:.08em}.wa .wa-v{fill:var(--accent);font-size:26px}"
          ".wa a:focus .wa-c{stroke:var(--accent);stroke-width:2}.wa .wa-c{fill:var(--soft);stroke:var(--frame)}"
-         # 英語の頁だけ字を小さくする（統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 1）。英語は日本語より長く、札（幅 132）と
-         # 真ん中の丸（直径 88）に入らず、「Make the next template」が真ん中の「Current template」に、「Version N」が左右の札に重なった。
-         # 日本語の図（字の大きさと置き場）は替えない。英語の字の幅は tests/test_ring_en_fit.py が字の測り（omochae.textfit）で見る
-         "html[lang=en] .wa .wa-t{font-size:10.5px;letter-spacing:0}html[lang=en] .wa .wa-now{font-size:9.5px;letter-spacing:0}"
-         "html[lang=en] .wa .wa-v{font-size:15px}")
+         # 英語の図（ring の en-fig）の字の色。大きさは SVG の中の字の大きさ（EN_FS）で持つ（下の EN_FS の注）
+         ".wa .wa-te{fill:var(--fg)}.wa .wa-nowe{fill:var(--mute)}.wa .wa-ve{fill:var(--accent)}")
+
+
+# 英語の図の字の大きさ（viewBox の中の値。統括の割り振り 11-08・重なりの見回り state/no-overlap-20261108.md の 1）。英語は日本語より長く、
+# 札（幅 132）と真ん中の丸（直径 88）に入らず、「Make the next template」が真ん中の「Current template」に、「Version N」が左右の札に重なった。
+# 前は英語の頁の CSS（font-size の px）で替えたが、押す所と字の大きさの床（tests/test_tap_size.py の 12px）に当たり main が落ちたので（11-08）、
+# 英語の図を別の SVG にし、大きさは SVG の中で持つ。日本語の図は替えない。画面に出る大きさを 10px 以上にする並べ方は次の直し
+EN_FS = {"step": 10.5, "now": 9.5, "version": 15}
 
 
 def _arc(a, b):
@@ -68,10 +73,14 @@ def _arc(a, b):
             f'<polygon class="wa-head" points="{pts}"/>')
 
 
-def _box(x, y, label):
+def _box(x, y, label, lang="ja"):
     lines = LINES.get(label, (label,))
     top = y - (len(lines) - 1) * 9
-    texts = "".join(f'<text class="wa-t" x="{x}" y="{top + i * 18 + 5}" text-anchor="middle">{esc(s)}</text>' for i, s in enumerate(lines))
+    if lang == "en":  # 英語の図: 訳の表の英語を、英語の時の大きさで（並べ方は日本語の図と同じ）
+        texts = "".join(f'<text class="wa-te" x="{x}" y="{top + i * 18 + 5}" text-anchor="middle" font-size="{EN_FS["step"]}">{esc(en_fig.en(s))}</text>'
+                        for i, s in enumerate(lines))
+    else:
+        texts = "".join(f'<text class="wa-t" x="{x}" y="{top + i * 18 + 5}" text-anchor="middle">{esc(s)}</text>' for i, s in enumerate(lines))
     return f'<rect class="wa-box" x="{x - BOX_W / 2}" y="{y - BOX_H / 2}" width="{BOX_W}" height="{BOX_H}" rx="8"/>{texts}'
 
 
@@ -89,8 +98,17 @@ def ring(version=1, href=HREF):
     center = (f'<a href="{esc(href)}" aria-label="{esc(NOW)} {v}"><circle class="wa-c" cx="{CX}" cy="{CY}" r="44"/>'
               f'<text class="wa-now" x="{CX}" y="{CY - 8}" text-anchor="middle">{esc(NOW)}</text>'
               f'<text class="wa-v" x="{CX}" y="{CY + 22}" text-anchor="middle">{v}</text></a>')
-    return (f'<style>{STYLE}</style><figure class="wa" id="wa"><svg viewBox="0 0 {W} {H}" role="img" aria-labelledby="wa-title">'
-            f'<title id="wa-title">{esc(said)}</title>{arcs}{boxes}{center}</svg></figure>')
+    # 英語の図（英語の頁でだけ見える。en_fig.TOGGLE）。並べ方は日本語の図と同じで、字は訳の表の英語・大きさは EN_FS
+    boxes_en = "".join(_box(x, y, s, "en") for (x, y), s in zip(SPOTS, STEPS))
+    now_en, v_en = esc(en_fig.en(NOW)), esc(en_fig.en(VERSION.format(n=int(version))))
+    said_en = " → ".join(en_fig.phrase(LINES.get(s, (s,))) for s in (*STEPS, STEPS[0]))
+    center_en = (f'<a href="{esc(href)}" aria-label="{now_en} {v_en}"><circle class="wa-c" cx="{CX}" cy="{CY}" r="44"/>'
+                 f'<text class="wa-nowe" x="{CX}" y="{CY - 8}" text-anchor="middle" font-size="{EN_FS["now"]}">{now_en}</text>'
+                 f'<text class="wa-ve" x="{CX}" y="{CY + 22}" text-anchor="middle" font-size="{EN_FS["version"]}">{v_en}</text></a>')
+    return (f'<style>{STYLE}{en_fig.TOGGLE}</style><figure class="wa" id="wa"><svg class="ja-fig" viewBox="0 0 {W} {H}" role="img" aria-labelledby="wa-title">'
+            f'<title id="wa-title">{esc(said)}</title>{arcs}{boxes}{center}</svg>'
+            f'<svg class="en-fig" viewBox="0 0 {W} {H}" role="img" aria-labelledby="wa-title-en">'
+            f'<title id="wa-title-en">{esc(said_en)}</title>{arcs}{boxes_en}{center_en}</svg></figure>')
 
 
 def set_version(sid, data=None):

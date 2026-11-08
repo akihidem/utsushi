@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_tap_size.py
+# commit: 095fb28b（今の main・字の大きさの床が落ちている形）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+Traceback (most recent call last):
+  File "tests/test_tap_size.py", line 102, in <module>
+    assert not small, ("小さい字の指定", where, sorted(set(small)))
+           ^^^^^^^^^
+AssertionError: ('小さい字の指定', ('tenji', '/about'), [9.5, 11.0])
+rc=1
