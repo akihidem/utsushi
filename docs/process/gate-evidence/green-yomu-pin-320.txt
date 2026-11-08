@@ -1,0 +1,5 @@
+# 命令: bash -c 'PYTHONPATH=src .venv/bin/python tests/test_hokusai_pin_fit.py && PYTHONPATH=src .venv/bin/python tests/test_site_hokusai.py'
+# commit: 9732c2ba（回した時の HEAD）
+ok 北斎漫画の留まる節: 9 通り（ja・320x568 留まる 絵 152px・ja・375x667 留まる 絵 268px・ja・390x844 留まる 絵 445px・easy・320x568 留まる 絵 108px・easy・375x667 留まる 絵 245px・easy・390x844 留まる 絵 421px・en・320x568 流す 絵 318px・en・375x667 留まる 絵 144px・en・390x844 留まる 絵 320px）で、絵の箱 100px 以上・前の節に出ない・字が画面の下へ出ない
+ok
+rc=0

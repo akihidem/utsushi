@@ -1,0 +1,10 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/_old404.py
+# commit: 1678b87b（回した時の HEAD）
+/tmp/tmpeqtsozll/play/NDL-1187053-R0000005-L/.tmp-q771bvae/H-C_v1.pdf
+/tmp/tmpeqtsozll/play/NDL-1187053-R0000014-R/.tmp-opqm9mk_/H-A_v1.pdf
+ok 主な頁の字の重なり: 2 頁 × 5 大きさ × 3 言葉 × 白と暗い版（原画の写しの有り無し）で KNOWN の外は 0。KNOWN の残り 0 件・見えなくなった KNOWN 4 件（写しの有り無しの片方でだけ出る物もある。両方の木で見えなければ行を外す）（13 秒）
+  見えなかった KNOWN: えらぶ・字×絵・li>a>span.nm・li>a>img.pic・en
+  見えなかった KNOWN: えらぶ・字×字・li>a>span.nm・section.sec.erabu>p.links>a・en
+  見えなかった KNOWN: 横・えらぶ・easy
+  見えなかった KNOWN: 道・えらぶ
+rc=0

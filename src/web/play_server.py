@@ -236,7 +236,8 @@ WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json|t
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
 # 機械の重さは全体の同時の数（PRINT_SLOTS）の方で守るので、相手ごとの数は、1 つの相手が空きを独り占めしない程度でよい。
 PRINT_LIMIT = 30
-PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint)|/en/toy/{SID}/print")
+# 型紙としおりを一緒に返す道（sheet-shiori）も刷る道として数える（しおりの頁を描いて合わせる重さがある・設計 2.1 版）
+PRINT_PATHS = re.compile(rf"/toy/{SID}/(?:print|reprint|sheet-shiori)|/en/toy/{SID}/print")
 # 全体: 同時に刷るのは 2 本まで。番地を替えて送られても、描画の処理が機械を埋めないため。空きは少し待ち、待っても空かなければ断る。
 PRINT_SLOTS, PRINT_WAIT = 2, 20.0
 _print_slots = threading.BoundedSemaphore(PRINT_SLOTS)
@@ -299,6 +300,7 @@ class WriteLimit:
 
 
 UP_COOKIE = "utsushi_up"  # 確認の前の写真を、上げた本人の画面にだけ出すための鍵（media_review.shown_to）
+SHIORI_PENDING = "utsushi_sp"  # 型紙と一緒に刷ったしおりの待ちの印（記録に結ぶ前・omochae.shiori の pending）
 REC_COOKIE = "utsushi_rec"  # 記録の札の説明と字を足す口を、記録を残した本人の画面にだけ開くための鍵（records.mine）
 
 
@@ -452,7 +454,10 @@ class Handler(BaseHTTPRequestHandler):
         sheet = hypotheses.sheet_of(sid)["id"]
         # 記入の節の紙は手帖と同じ決め方（たたき台か、この画面の案の紙・techo_step.paper_of）。刷った紙が無い時は記入の節を出さず、紙を作る道
         paper = techo_step.paper_of(sid, [sheet] if printed_versions(sid, sheet) else [], think_sheet.latest_mine(self, sid))
+        from omochae import shiori
+
         body = techo_site.records_page(sid, msg=msg, at=at, up_key=self._up_key(), rec_key=self._rec_key(), public=getattr(self.server, "public_open", False), paper=paper,
+                                       shiori_wait=shiori.pending_fresh(self._key_of(SHIORI_PENDING)),
                                        errors=errors, err_at=err_at, filled=filled)
         return skinmod.shell("手帖", body, look or self._look, "", path or f"/toy/{sid}/techo/kiroku", techo_site.STYLE + nokosu.STYLE, "techo")
 
@@ -888,6 +893,60 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(429, shiori_open.picture_page(token, self._look, shiori_open.WAIT), headers=[("Retry-After", "60")])
         return self._send(404, shiori_open.notice(shiori_open.CANNOT, self._look))
 
+    def _sheet_shiori(self, sid, form):
+        """型紙の PDF の後ろに、その場で作ったしおりの 1 頁（表と裏を同じ面に並べる・本人「しおりは同じ面に刷る。」）を足して返す（本人 11-08「しおりは型紙の PDF に一緒に刷る。」・設計 grove の
+        state/shiori-in-sheet-20261108.md の 2.1 版）。合わせた物はどこにも書き出さない（台帳は印そのものを持たない決まり）。
+        - 合言葉なしの場（公開デモ）は台帳を作らずに断る（頁の釦も出さない・受け口でも 2 重に・しおりはワークショップの場でだけ開くため）。
+        - 決まった番地が無い場は、しおりを作らずに型紙だけを返す（替わる番地を刷らない・shiori.NoBase）。
+        - 待ち: who と作り始めの回の印が届いた時だけ作る（台本の無い画面は送れないので作らない。結ぶのは開いた画面から）。待ちの印は cookie で渡し、
+          押すたびに替わる（結べるのは一番新しく刷った 1 枚だけ）。
+        - 返し方は今の /sheet/ と同じ inline（iPhone・iPad の Safari で別のタブに開いて刷れる）。no-store（鍵の入った物を残さない）。"""
+        from omochae import shiori
+
+        if getattr(self.server, "public_open", False):
+            return self._send(403, "公開のデモでは使えません")
+        stem = form.get("name", "")
+        m = re.fullmatch(r"(H-[A-Z0-9]+)_v(\d+)", stem)
+        # 刷れるのは頁に出すたたき台の紙だけ（J-032）。話した字の紙（OWN-n）と試した後の紙には、しおりを付けない
+        if not m or m.group(1) != hypotheses.sheet_of(sid)["id"] or not (out_dir(sid) / f"{stem}.pdf").exists():
+            return self._refuse(404, "リンクが古いか、道が違うようです。", "見つかりません")
+        sheet = out_dir(sid) / f"{stem}.pdf"
+        inline = [("Content-Disposition", f'inline; filename="{stem}.pdf"'), ("Cache-Control", "no-store")]
+        who, run = form.get("who", ""), form.get("run", "")
+        nonce = secrets.token_urlsafe(18) if re.fullmatch(r"[a-z0-9]{10}", who) and re.fullmatch(r"[a-z0-9]{6,40}", run) else ""
+        try:
+            made = shiori.make(pending={"nonce": nonce, "who": who, "run": run} if nonce else None)
+        except shiori.NoBase:
+            return self._send(200, sheet.read_bytes(), "application/pdf", inline)
+        from omochae import shiori_card
+
+        def build():
+            card = shiori_card.pages(sid, made["token"], made["order"], int(m.group(2)), time.time(), shiori.base_url())
+            return shiori_card.merge(sheet, card)
+        try:
+            pdf = _printing(build)
+        except PrintBusy:
+            shiori.revoke(made["token"])  # 返せなかったしおりは、紙にならないので使えなくする
+            return self._send(429, "少し待ってから、もう一度押してください。", "text/plain; charset=utf-8", [("Retry-After", "30")])
+        except Exception:
+            shiori.revoke(made["token"])
+            raise
+        # 待ちの印は Max-Age なし（ブラウザを閉じれば消える）・HttpOnly（台本から読ませない）
+        sp = [self._key_cookie(SHIORI_PENDING, nonce)] if nonce else []
+        return self._send(200, pdf, "application/pdf", inline + sp)
+
+    def _shiori_bind(self, rid, form):
+        """記録を、型紙と一緒に刷ったしおりの待ちに結ぶ。確かめの画面で「外す」を押さなかった時（shiori=1）だけ。結んでも結ばなくても待ちの
+        cookie は消す（結べるのは 1 回だけ）。返すのは足す見出しの並び。"""
+        from omochae import shiori
+
+        nonce = self._key_of(SHIORI_PENDING)
+        if not nonce:
+            return []
+        if form.get("shiori") == "1":
+            shiori.bind_pending(nonce, form.get("who", ""), form.get("run", ""), rid)
+        return [self._key_cookie(SHIORI_PENDING)]
+
     def _shiori_add(self, rid):
         """しおりで開いた画面が残した記録を、そのしおりの並びに足す（開いていない画面では何もしない）。"""
         from omochae import shiori
@@ -983,6 +1042,9 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)
+        m = re.fullmatch(rf"/toy/({SID})/sheet-shiori", self.path)
+        if m and m.group(1) in sources():
+            return self._sheet_shiori(m.group(1), form)
         m = re.fullmatch(rf"/toy/({SID})/(ask-json|record-json)", self.path)
         if m and m.group(1) in sources():
             return self._json_post(m.group(1), m.group(2), form)
@@ -1290,7 +1352,8 @@ class Handler(BaseHTTPRequestHandler):
             from omochae import talk_log
             kufu, kangae = talk_log.bind(sid, hid, sheet_version_of(sid, hid, form), form.get("who", ""), rid)
             self._shiori_add(rid)  # しおりで開いた画面なら、その並びに足す（続きの記録を足す・2‴ の 3）
-            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid)])
+            sp = self._shiori_bind(rid, form)  # 型紙と一緒に刷ったしおりの待ちに結ぶ（確かめの画面で外さなかった時だけ・設計 2.1 版の 2 節）
+            return out(201, {"id": rid} | ({"kufu": kufu} if kufu else {}) | ({"kangae": kangae} if kangae else {}), [*self._up_close(), self._rec_cookie(rid), *sp])
         return out(422, {"error": "；".join(f.message for f in failures)})
 
     def _toy_post(self, sid, act, form):
