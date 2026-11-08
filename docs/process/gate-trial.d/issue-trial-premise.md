@@ -9,4 +9,4 @@
   - 英語とやさしい日本語の表（data/i18n/en.json・yasashii.d/1.json）の鍵と値を新しい字に。紙に刷る字（marks.HYPOTHESIS・凍結の床）と Claude に渡す前提（marks.LOOP_PREMISE）は替えない
 - ゴールの要件: 前の字を見ていた試験（test_about・test_page_order・test_build_now）を新しい字に替え、英語とやさしい日本語の試験（test_en_all・test_easy_ruby・test_easy_part1・test_easy_all）と頁の並び・重なり・字の大きさの試験が通る
 - 検証ゲート: **済み**。Red は `docs/process/gate-evidence/red-trial-premise.txt`（今の main で、test_about と test_page_order が新しい字を見つけられず rc 1）
-- エビデンスゲート: Green は `docs/process/gate-evidence/green-trial-premise.txt`
+- エビデンスゲート: **済み**。Green は `docs/process/gate-evidence/green-trial-premise.txt`（18 本・rc 0）
