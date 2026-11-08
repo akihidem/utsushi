@@ -1,0 +1,154 @@
+# 命令: .venv/bin/python tests/test_load_guard.py
+# commit: 5fb5297a（回した時の HEAD）
+[2026-11-08 18:22:11 +0900] POST /record/R-0001/media の失敗: BrokenPipeError: Broken pipe
+BrokenPipeError:
+  File "src/web/play_server.py", line 594, in do_POST
+    self._post()
+    ~~~~~~~~~~^^
+  File "src/web/play_server.py", line 1104, in _post
+    return self._media_post(m.group(1), length)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 435, in _media_post
+    return self._send(422, why, "text/plain; charset=utf-8")
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 393, in _send
+    self.wfile.write(data)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+[2026-11-08 18:22:11 +0900] POST /record/R-0001/media の失敗: BrokenPipeError: Broken pipe
+BrokenPipeError:
+  File "src/web/play_server.py", line 594, in do_POST
+    self._post()
+    ~~~~~~~~~~^^
+  File "src/web/play_server.py", line 1104, in _post
+    return self._media_post(m.group(1), length)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 435, in _media_post
+    return self._send(422, why, "text/plain; charset=utf-8")
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 393, in _send
+    self.wfile.write(data)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50400)
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50408)
+Traceback (most recent call last):
+  File "src/web/play_server.py", line 594, in do_POST
+    self._post()
+    ~~~~~~~~~~^^
+  File "src/web/play_server.py", line 1104, in _post
+    return self._media_post(m.group(1), length)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 435, in _media_post
+    return self._send(422, why, "text/plain; charset=utf-8")
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 393, in _send
+    self.wfile.write(data)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 500, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 488, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "src/web/play_server.py", line 599, in do_POST
+    self._refuse(500, BUSY, "送れませんでした")
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 411, in _refuse
+    self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 392, in _send
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 602, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 606, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+Traceback (most recent call last):
+  File "src/web/play_server.py", line 594, in do_POST
+    self._post()
+    ~~~~~~~~~~^^
+  File "src/web/play_server.py", line 1104, in _post
+    return self._media_post(m.group(1), length)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 435, in _media_post
+    return self._send(422, why, "text/plain; charset=utf-8")
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 393, in _send
+    self.wfile.write(data)
+    ~~~~~~~~~~~~~~~~^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 500, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 488, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "src/web/play_server.py", line 599, in do_POST
+    self._refuse(500, BUSY, "送れませんでした")
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 411, in _refuse
+    self._send(code, skinmod.notice(title, reason, getattr(self, "_look", skinmod.DEFAULT), **kw))
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "src/web/play_server.py", line 392, in _send
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 602, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/http/server.py", line 606, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.local/share/uv/python/cpython-3.14.8-linux-x86_64-gnu/lib/python3.14/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+ok 全体の資源の上限: 変換の入口（同時 2・待ち 4・待つ長さ）・合計の予約（合言葉付きの場にも）・同時の処理の数・声の待ち行列の長さ。ふつうの量では前のまま
+rc=0
