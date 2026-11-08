@@ -3,7 +3,7 @@
 
 見る事:
 1. 序の頁（よむ）に「名前の心」の節が 1 つあり、頁の頭（大前提の札）の後・作った人の言葉の前に、about.NAME の 3 文が順に出る
-2. README の頭の後（「試す」の前）に「## 名前の心」の節が 1 つあり、序の頁と同じ 3 文
+2. README の頭の後（「試す」の前）に「## 名前に込めた思い」の節が 1 つあり（README の見出しは本人の訂正 11-08「GitHub（README）では、「名前の心」ではなくて「名前に込めた思い」。」。序の頁の見出しは「名前の心」のまま）、序の頁と同じ 3 文
 3. 3 文目はこの作品に当てはめた文（江戸の絵本の絵と歌と向き合い、動きを紙で解釈し直す）
 4. 字は英語の表とやさしい日本語の表にあり、やさしい日本語は全ての漢字にルビ
 """
@@ -26,9 +26,10 @@ assert len(about.NAME) == 3 and idx == sorted(idx), "3 文が順に"
 assert "江戸の絵本" in about.NAME[2] and "紙で解釈し直します" in about.NAME[2], "この作品に当てはめた 1 文"
 
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
-assert readme.count("\n## 名前の心\n") == 1 and readme.index("\n## 名前の心\n") < readme.index("\n## 試す\n"), "README の頭の後・試すの前"
-sec = readme[readme.index("\n## 名前の心\n"):readme.index("\n## 試す\n")]
+assert readme.count("\n## 名前に込めた思い\n") == 1 and readme.index("\n## 名前に込めた思い\n") < readme.index("\n## 試す\n"), "README の頭の後・試すの前"
+sec = readme[readme.index("\n## 名前に込めた思い\n"):readme.index("\n## 試す\n")]
 assert "".join(about.NAME) in sec, "README も序の頁と同じ字"
+assert "\n## 名前の心\n" not in readme, "README の見出しは「名前に込めた思い」（本人の訂正 11-08）"
 
 en, easy = i18n.table("en"), i18n.table("easy")
 for t in (about.NAME_HEAD, *about.NAME):
