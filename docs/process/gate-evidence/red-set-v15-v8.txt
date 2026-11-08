@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_next_sheets.py
+# commit: 3d3bf3f2（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_next_sheets.py", line 76, in <module>
+    assert (TIGER.SHEET_SET, TIGER.FROZEN_SET, TIGER.KEPT_SETS) == ("tora-v8", "tora-v3", ("tora-v3", "tora-v4", "tora-v7")), TIGER.SHEET_SET
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: tora-v7
+rc=1
