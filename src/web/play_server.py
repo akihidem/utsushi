@@ -479,6 +479,17 @@ class Handler(BaseHTTPRequestHandler):
         # 安全の事項 1（参加者と管理者の権限の分離）・11（しおりの範囲）: しおりだけで門を通った画面は、そのしおりの印を控えて、管理の面と
         # 変える口を断る（_shiori_refuse）。要求ごとに空にする（http.server は 1 本のつなぎで続けて要求を受けるので、前の要求の値を残さない）
         self._shiori_screen = None
+        # 管理の入口（管理の合言葉の設定がある時だけ・今の合言葉の ?k= と同じ形の別の 1 回の入口）。合言葉の cookie を持つ画面も、合言葉の門の無い
+        # 手元の場も通るよう、門の照らしより先に見る。cookie に移して URL から消す
+        admin = getattr(self.server, "admin_key", None)
+        if admin and self.command == "GET":
+            apath, _, aquery = self.path.partition("?")
+            given_a = urllib.parse.parse_qs(aquery).get("a", [""])[0]
+            if given_a and hmac.compare_digest(given_a.encode(), admin.encode()):
+                rest = urllib.parse.urlencode([(a, b) for a, b in urllib.parse.parse_qsl(aquery) if a != "a"])
+                self._send(303, "", headers=[("Location", apath + (f"?{rest}" if rest else "")),
+                                             ("Set-Cookie", f"utsushi_a={admin}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax")])
+                return False
         key = getattr(self.server, "public_key", None)
         if not key:
             return True
@@ -493,6 +504,8 @@ class Handler(BaseHTTPRequestHandler):
             k, _, v = part.strip().partition("=")
             jar[k] = v
         if hmac.compare_digest(jar.get("utsushi_k", "").encode(), key.encode()):
+            return True
+        if self._admin_ok(jar):
             return True
         # しおりで開いた画面（開いた画面の印・20 分の内）も門を通す。合言葉の値そのものは端末に渡さない（別の目の止め S1 の代わりの形）。
         # 使えなくした・止めた・とじた・開き直したしおりの画面は、台帳が通さない。最後に使った時刻の書き直しは台帳が 1 分に 1 回に絞る
@@ -511,6 +524,29 @@ class Handler(BaseHTTPRequestHandler):
             return False
         # 合言葉を落とした人が最初に見る頁。帯もリンクも出さず、頁の中身と玩具の名前を見せない
         self._refuse(403, "合言葉付きのリンクから開いてください。リンクを渡した人に聞いてください。", "合言葉が要ります", links=(), bare=True)
+        return False
+
+    def _admin_ok(self, jar=None):
+        """管理の cookie（utsushi_a）が設定の管理の合言葉と合うか。設定が無い時は False（門では使わず、_admin_refuse も何もしない）。"""
+        admin = getattr(self.server, "admin_key", None)
+        if not admin:
+            return False
+        if jar is None:
+            jar = {}
+            for part in self.headers.get("Cookie", "").split(";"):
+                k, _, v = part.strip().partition("=")
+                jar[k] = v
+        return hmac.compare_digest(jar.get("utsushi_a", "").encode(), admin.encode())
+
+    def _admin_refuse(self):
+        """管理の口（/loop・/loop/<玩具>・/loop/ayumi＝作る側の頁と、次の版を採る口・AI の口）を、管理の合言葉の設定がある時だけ、管理の cookie を
+        持つ画面に限る（安全の事項 1 の締め前の手当て）。設定が無い時は今のまま。断りの字は前からの物。断ったら True。"""
+        if not getattr(self.server, "admin_key", None) or self._admin_ok():
+            return False
+        path = self.path.partition("?")[0]
+        if path.startswith("/loop") or re.fullmatch(r"/record/R-\d{4,}/(?:next|ai-interpret|ai-observe)", path):
+            self._refuse(403, "受け付けられません")
+            return True
         return False
 
     def _shiori_refuse(self):
@@ -606,7 +642,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
-        if self._shiori_refuse():
+        if self._shiori_refuse() or self._admin_refuse():
             return
         path, _, query = self.path.partition("?")
         qs = urllib.parse.parse_qs(query)
@@ -1076,7 +1112,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             # 手元の名前でない Host には、その名前へ戻るリンクを出さない
             return self._refuse(403, "受け付けられません", links=(), bare=True)
-        if self._shiori_refuse():
+        if self._shiori_refuse() or self._admin_refuse():
             return
         if getattr(self.server, "public_open", False) and re.fullmatch(r"/s/[A-Za-z0-9_-]{22}", self.path):
             # 公開の場ではしおりを開かない。フォームを読む前・書き込みの数の前に断り、照らさず数えない（開く道の設計 7.2 の 1）
@@ -1712,6 +1748,16 @@ def bind_host(lan):
     return "0.0.0.0" if lan else "127.0.0.1"
 
 
+def _admin_key():
+    """管理の合言葉の設定のファイルの中身。ファイルが無い・読めない・16 字に満たない時は None（今のまま）。値は引数や URL に書かない（ps と履歴に残さない）。"""
+    path = os.environ.get("OMOCHAE_ADMIN_KEY_FILE", "")
+    try:
+        key = pathlib.Path(path).read_text(encoding="utf-8").strip() if path else ""
+    except OSError:
+        key = ""
+    return key if len(key) >= 16 else None
+
+
 def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_open=False, bind=None, public_think=False):
     """lan=True は本人の決定（11-04、U-36）で、家の網から iPhone で手帖を開くための切り替え。既定は今までどおり手元だけ。
     public_key はデモの一周をパソコン・iPad・iPhone から開く時（本人の決定 A、11-04）。短すぎる合言葉は断る（当てられないため）。
@@ -1729,6 +1775,9 @@ def serve(port=8766, lan=False, public_key=None, look=skinmod.DEFAULT, public_op
     server.media_reserve = load_guard.Reserve()
     server.lan_hosts = tuple(lan_addresses()) if lan else ()
     server.public_key = public_key
+    # 管理の合言葉（安全の事項 1 の締め前の手当て・本人の頼み 11-08）: 設定のファイル（OMOCHAE_ADMIN_KEY_FILE が指す・16 字以上）がある時だけ、
+    # 管理の口（_admin_refuse）を管理の cookie（utsushi_a）を持つ画面に限る。無い時は None で今のまま（機能・見た目・挙動を替えない）
+    server.admin_key = _admin_key()
     # public_open: 合言葉なしで外から開けるデモ（本人の許可 11-05）。合言葉付き（public_key）とは同時に使わない。
     # 開いた場でも写真と動画は受ける（本人の決定 11-06）。確かめる前は上げた本人の画面にだけ、物だけと確かめた後はギャラリーにも出す（合言葉付きの場と同じ線）。
     if public_open and public_key:

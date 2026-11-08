@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_admin_key.py
+# commit: 3b0da3c0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_admin_key.py", line 63, in <module>
+    assert play_server.serve.__defaults__ is not None and plain_g.admin_key is None and plain_l.admin_key is None
+                                                          ^^^^^^^^^^^^^^^^^
+AttributeError: 'LimitedServer' object has no attribute 'admin_key'
+rc=1

@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_admin_key.py
+# commit: 3b0da3c0（回した時の HEAD）
+ok: 管理の合言葉の設定がある時だけ、管理の口は管理の cookie の画面に限る・設定が無い時は今のまま
+rc=0
