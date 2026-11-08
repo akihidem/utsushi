@@ -68,14 +68,17 @@ a.genga-pic{cursor:zoom-in}
 # …いろんな大きさで見ても崩れないようにして。」）。縦書きの歌の列の幅は、字の量と高さで決まる。高さを決まった値（height）にしたので多くの閲覧器は正しく
 # 測るが、閲覧器ごとの縦書きの幅の見積もりの違い（iPad の Safari で、縦書きの列が細く見積もられ、題と本文の上へはみ出した）と、とても長い歌に備えて、
 # 頁で実の箱を測って確かめる。歌の字の行（要素の箱の外へはみ出した行も拾うため Range の行ごとの箱）が、頭の列の外へ出るか、頭の外の題・つくる・作品の札・
-# くずし字を読む の箱に重なるか、絵の列が頭の幅の 4 割より細くなる時に横書き（.genga-flat）。開いた時・読み込み・大きさが替わる時に測り直す。
+# くずし字を読む の箱か、頭の中の絵（.genga-pic）と「図を見る」（.genga-cap）に重なるか、絵の列が頭の幅の 4 割より細くなる時に横書き（.genga-flat）。開いた時・読み込み・大きさが替わる時に測り直す。
+# 絵を見るのは別の目の検品（11-08）の止め: 縦書きの列が細く見積もられると、字の行は列の左（行の進む向き）へ出て、頭の列の中に留まったまま左の絵に重なる。
+# 前は頭の外の字だけを見ていて、この形を拾わなかった（作り物の形で Chromium 12 頁・WebKit 14 頁が重なったまま）。
+# 初めの形は横書き（head が .genga-flat を付けて出す）で、台本が測って入ると分かった時だけ縦書きにする: 台本の動かない画面でも重ならない（同じ検品の推し）
 # 台本の中に「<」を書かない（比べる向きを「>」にそろえた）: 英語とやさしい日本語の頁を作る i18n.to_en は HTML を <[^>]*> で区切るので、台本の中の
 # 「<a.left…」を a の開きの札と読み、</script> を飲み込んで、その後の頁の字を全部替えなくなった（直しの途中の木で test_easy_ruby が落ちて分かった）
 FIT_SCRIPT = """<script>(()=>{const hit=(r,o)=>o.right-1>r.left&&r.right-1>o.left&&o.bottom-1>r.top&&r.bottom-1>o.top;
 const fit=()=>{document.querySelectorAll('.genga-head').forEach(h=>{h.classList.remove('genga-flat');const s=h.querySelector('.genga-songs');
 if(!s||getComputedStyle(s).writingMode.indexOf('vertical')==-1)return;const a=h.getBoundingClientRect(),p=h.querySelector('.genga-pic'),rg=document.createRange();
 rg.selectNodeContents(s);const lines=[...rg.getClientRects(),s.getBoundingClientRect()].filter(r=>r.width>1&&r.height>1),hero=h.closest('.hero')||h.parentElement;
-const others=[...hero.querySelectorAll('h1,.road,.label,.links')].filter(e=>!h.contains(e)).map(e=>e.getBoundingClientRect());
+const others=[...hero.querySelectorAll('h1,.road,.label,.links')].filter(e=>!h.contains(e)).map(e=>e.getBoundingClientRect()).concat([...h.querySelectorAll('.genga-pic,.genga-cap')].map(e=>e.getBoundingClientRect()));
 const pw=p?p.getBoundingClientRect().width:a.width;
 if(lines.some(r=>r.right>a.right+1||a.left-1>r.left||others.some(o=>hit(r,o)))||a.width*.4>pw)h.classList.add('genga-flat')})};
 fit();addEventListener('DOMContentLoaded',fit);addEventListener('load',fit);addEventListener('resize',fit)})()</script>"""
@@ -195,7 +198,9 @@ def head(sid, src=None, photos=True):
     lines, _ = _songs(src)
     cap = f'<div class="genga-cap"><p><a href="{esc(ndl)}">{esc(NDL)}</a></p></div>'
     # 歌の段は絵の段の後（広い幅は右の列・狭い幅は真下）。「図を見る」は絵のすぐ下のまま（前は 2 列の下に渡していた）
-    return (f'<style>{STYLE}</style><figure class="genga genga-head" id="genga" aria-label="{esc(HEAD)}">'
+    # 歌がある時は横書き（.genga-flat）で出し、FIT_SCRIPT が測って縦書きが入る時だけ外す（上の FIT_SCRIPT の注）
+    flat = " genga-flat" if lines else ""
+    return (f'<style>{STYLE}</style><figure class="genga genga-head{flat}" id="genga" aria-label="{esc(HEAD)}">'
             f'<div class="genga-main">{pic}{cap}</div><div class="genga-uta">{lines}</div></figure>' + (FIT_SCRIPT if lines else ""))
 
 

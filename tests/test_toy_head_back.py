@@ -45,7 +45,8 @@ for sid in (G, T, QUIET):
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
     page = toy.toy_page(sid)
     hero = re.search(r'<section class="hero">.*?</section>', page, re.S).group(0)
-    fig = re.search(r'<figure class="genga genga-head".*?</figure>', hero, re.S).group(0)
+    # 歌のある頭は横書き（genga-flat）で出て、台本が測って縦書きにする（genga.FIT_SCRIPT・別の目の検品 11-08）ので、組の名の後ろに印が付きうる
+    fig = re.search(r'<figure class="genga genga-head(?: genga-flat)?".*?</figure>', hero, re.S).group(0)
     assert 'class="genga-tate"' not in fig and 'class="genga-title"' not in fig, (sid, "題の塊の縦の段が残った")
     assert fig.index('class="genga-main"') < fig.index('class="genga-uta"'), (sid, "絵 → 歌 の順でない")
     if sid != QUIET:
