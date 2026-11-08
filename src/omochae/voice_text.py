@@ -148,21 +148,54 @@ def _free_slot(rid, kind):
     return next((n for n in range(1, CLIP_MAX + 1) if n not in used), None)
 
 
+def _claim(tmpfile, rid, kind, ext):
+    """置き場の中に書いた一時のファイルに、次の空いた番号の名（<kind><n>.<ext>）を、その名が無い時だけ付ける。Returns 付けた名 or None（空きが無い）。
+    空いた番号を見てから置くまでの間に、同じ記録へ同時に届いたほかの区切りが同じ番号を置く事がある（#642 の確かめの気づき 11-08）。
+    os.link は名が在れば落ちるので、置く所が 1 つの番号の取り合いの決め手になる（錠を持たずに、別の作業列や別のサーバの間でも効く）。
+    落ちたら番号を見直す。1 度落ちるたびに番号が 1 つ埋まるので、CLIP_MAX 回で必ず終わる。"""
+    for _ in range(CLIP_MAX):
+        n = _free_slot(rid, kind)
+        if n is None:
+            return None
+        dst = tmpfile.with_name(f"{kind}{n}.{ext}")
+        try:
+            os.link(tmpfile, dst)
+        except FileExistsError:
+            continue
+        return dst.name
+    return None
+
+
+def _scratch(rid, ext):
+    """置き場の中の一時のファイル（.tmp- で始まる名・0600）。名を付けるのは _claim の os.link なので、同じ置き場（同じファイルの仕組み）に書く。
+    .tmp- の名は、字にする道具の待ち（pending）・番号（_free_slot）・カメラの区切りの並び（clips_waiting）のどれにも入らない。"""
+    d = voice_dir(rid)
+    d.mkdir(parents=True, exist_ok=True)
+    d.chmod(0o700)
+    fd, path = tempfile.mkstemp(dir=d, prefix=".tmp-", suffix=f".{ext}")
+    os.close(fd)
+    return pathlib.Path(path)
+
+
 def put_voice_clip(rid, data, ext):
     """押して話した声の区切り（webm か mp4）を、声の流れだけ voice/t<n>.mka に写す。元の形は置かない（撮影の情報と絵を持ち込まない）。
     字にするのはサーバの作業列（Worker）で、手帖の m<n> と同じ道（pending・transcribe・72 時間の sweep）を通る。Returns (名 or None, 断りの字)。"""
     why = _clip_refused(rid, data, ext, VOICE_CLIP_BYTES)
     if why:
         return None, why
-    n = _free_slot(rid, "t")
-    if n is None:
+    if _free_slot(rid, "t") is None:
         return None, f"声の区切りは 1 つの記録に {CLIP_MAX} つまで"
-    dst = voice_dir(rid) / f"t{n}.mka"
-    with tempfile.TemporaryDirectory() as tmp:
-        src = pathlib.Path(tmp) / "in"
-        src.write_bytes(data)
-        ok = copy_voice(src, dst, len(data) + CLIP_ROOM, demuxer=CLIP_FORMATS[ext][0])
-    return (dst.name, "") if ok else (None, "声を読めない（声の流れが無いか、読めない形）")
+    out = _scratch(rid, "mka")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            src = pathlib.Path(tmp) / "in"
+            src.write_bytes(data)
+            if not copy_voice(src, out, len(data) + CLIP_ROOM, demuxer=CLIP_FORMATS[ext][0]):
+                return None, "声を読めない（声の流れが無いか、読めない形）"
+        name = _claim(out, rid, "t", "mka")
+    finally:
+        out.unlink(missing_ok=True)
+    return (name, "") if name else (None, f"声の区切りは 1 つの記録に {CLIP_MAX} つまで")
 
 
 def put_cam_clip(rid, data, ext):
@@ -172,8 +205,7 @@ def put_cam_clip(rid, data, ext):
     why = _clip_refused(rid, data, ext, CAM_CLIP_BYTES)
     if why:
         return None, why
-    n = _free_slot(rid, "k")
-    if n is None:
+    if _free_slot(rid, "k") is None:
         return None, f"カメラの区切りは 1 つの記録に {CLIP_MAX} つまで"
     reader, writer = CLIP_FORMATS[ext]
     with tempfile.TemporaryDirectory() as tmp:
@@ -189,12 +221,13 @@ def put_cam_clip(rid, data, ext):
         # -fs は越えても 0 で終わるので、書けた大きさを後で比べる（途中で切れた物を置かない）
         if r.returncode != 0 or not out.exists() or not 0 < out.stat().st_size < limit:
             return None, "映像を読めない"
-        d = voice_dir(rid)
-        d.mkdir(parents=True, exist_ok=True)
-        d.chmod(0o700)
-        dst = d / f"k{n}.{ext}"
-        _write_private(dst, out.read_bytes())
-    return dst.name, ""
+        scratch = _scratch(rid, ext)
+        try:
+            _write_private(scratch, out.read_bytes())
+            name = _claim(scratch, rid, "k", ext)
+        finally:
+            scratch.unlink(missing_ok=True)
+    return (name, "") if name else (None, f"カメラの区切りは 1 つの記録に {CLIP_MAX} つまで")
 
 
 def _cam_path(rid, name):
@@ -264,6 +297,13 @@ def sweep_clips(now=None):
     if not root.exists():
         return []
     gone = []
+    # 置く途中で止まって残った一時のファイル（_scratch）も、72 時間を過ぎたら消す（数にも頁にも入らないが、置き場を埋めないため）
+    for t in root.glob("R-*/voice/.tmp-*"):
+        try:
+            if now - t.stat().st_mtime > LIMIT:
+                t.unlink(missing_ok=True)
+        except FileNotFoundError:
+            continue
     for k in sorted(p for p in root.glob("R-*/voice/k*.*") if CAM_NAME.fullmatch(p.name)):
         try:
             age = now - k.stat().st_mtime
