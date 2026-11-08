@@ -691,7 +691,10 @@ class Handler(BaseHTTPRequestHandler):
             # しおりだけで門を通った画面（_gate が控えた印がある）は、他の人の札の字を公開の場と同じ線（人が確かめた字だけ）にする（安全の事項 11）。
             # 合言葉の画面・手元の場・公開の場は替えない
             only = getattr(self, "_shiori_screen", None) is not None
-            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key(), shiori=only), look, "/gallery", path, techo_site.GALLERY_STYLE, description=techo_site.GALLERY_LEAD))
+            # そのしおりに結ばれた記録（本人の物）は、しおりだけの画面でも字を出す（番号は出さない・別の目の #734 の止め）
+            from omochae import shiori as shiori_ledger
+            mine = set(shiori_ledger.records_of(self._shiori_screen)) if only else set()
+            return self._send(200, skinmod.shell("作った物", techo_site.gallery_page(sources(), public=opened, msg=qs.get("msg", [""])[0], rec_key=None if opened else self._rec_key(), shiori=only, mine=mine), look, "/gallery", path, techo_site.GALLERY_STYLE, description=techo_site.GALLERY_LEAD))
         # 図鑑の本の頁（本人の決定 11-06。玩具の絵がある頁を 1 コマずつ）。頁の全体の絵は ingest が git の外に取る
         m = re.fullmatch(r"/zukan/hon/(\d{1,2})", path)
         if m:
