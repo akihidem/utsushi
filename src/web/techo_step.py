@@ -111,6 +111,8 @@ button,input,textarea,select{font-family:inherit}
 #note:empty{display:none}
 .how{display:none}
 .te-local .how.is-local,.te-browser .how.is-browser{display:inline}
+/* 英語の頁では、声の断りの 2 つの文（どこで字にするか・名前は言わない）の間に空白を置く。日本語は文の間に空白を置かないので、要素の間に空白は無い */
+html[lang=en] .how.is-local.is-browser::before{content:" "}
 .keys{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px))}
 .key{min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin:0;padding:6px;font:inherit;font-size:18px;font-weight:600;text-align:center;border:2px solid var(--accent);border-radius:0;background:var(--paper);color:var(--fg);cursor:pointer;position:relative}
 .key.go{min-height:96px;background:var(--accent);color:var(--onaccent);font-size:26px}

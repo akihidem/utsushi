@@ -1,0 +1,10 @@
+# 命令: sh -c 'cp /tmp/en-fit/en-main.json data/i18n/en.json; cp /tmp/en-fit/ts-main.py src/web/techo_step.py; .venv/bin/python tests/test_en_start_fit.py'
+# commit: 82dac852（回した時の HEAD）
+/tmp/tmpz13j99oe/play/NDL-1187053-R0000005-L/.tmp-7wmhyv31/H-C_v1.pdf
+/tmp/tmpz13j99oe/play/NDL-1187053-R0000014-R/.tmp-tgmdf59g/H-A_v1.pdf
+Traceback (most recent call last):
+  File "tests/test_en_start_fit.py", line 89, in <module>
+    assert rec[how] <= H, (name, how, f"はじめるの下の端 {rec[how]}px が画面の高さ {H}px の外")
+           ^^^^^^^^^^^^^
+AssertionError: ('tora', 'local', 'はじめるの下の端 577px が画面の高さ 568px の外')
+rc=1
