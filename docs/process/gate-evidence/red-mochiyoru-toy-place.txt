@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_mochiyoru_toy_place.py
+# commit: 19447494（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_mochiyoru_toy_place.py", line 93, in <module>
+    if workshop.has_card(sid):
+       ^^^^^^^^^^^^^^^^^
+AttributeError: module 'web.workshop' has no attribute 'has_card'
+rc=1
