@@ -85,8 +85,9 @@ code, _, cookies, body = call(GP, f"/s/{T}", "POST", {"order": wrong})
 assert code == 422 and shiori_open.WRONG in body and not cookies
 code, _, cookies, body = call(GP, f"/s/{T}", "POST", {"order": "a,b,c"})
 assert code == 422 and not cookies, "数でない順は落ちずに外れ"
-code, _, cookies, _ = call(GP, f"/s/{T}", "POST", {"order": ORDER}, origin="https://example.com")
+code, _, cookies, refused = call(GP, f"/s/{T}", "POST", {"order": ORDER}, origin="https://example.com")
 assert code == 403 and not cookies, "外の Origin は断る"
+assert '<nav class="nav"' not in refused and "href=" not in refused.split("<body", 1)[-1], "外の Origin の断りの頁も、当たる前の頁と同じ帯なし・道なし"
 entry = lambda tok: json.loads((shiori.folder() / shiori._name(tok)).read_text(encoding="utf-8"))
 assert entry(T)["fails"] == 2, "外の Origin の頼みは数えない"
 for _ in range(3):
