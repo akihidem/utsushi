@@ -10,7 +10,7 @@
    （記録では、11-06 に刷ったのは前の組で、11-05・11-07 は動画の感想を受けた回。今の組を実物で試した記録は無い）
 4. README の「確かめた事」の頭の行も 4 回の数え方（前は「できること」の見出し）
 5. README の「データの扱い」: 人の記録は 4 回のワークショップをまとめた記録（本人の言葉 11-07）で、repo に在る物は写真と動画の置き場の日付と数のとおり。
-   卒業生 5 人は 11-04 の参加者として書く
+   卒業生 5 人は 11-04 の参加者として書く。言った人の呼び方は、外に出す字では「制作者」にそろえた（README の組み直し 11-08・統括の照らし）
 """
 import pathlib
 
@@ -23,7 +23,7 @@ for name, text in (("README.md", readme), ("CLAUDE.md", claude)):
     assert "ワークショップは 4 回（11 月 4・5・6・7 日）" in summary, (name, "4 回の数え方")
     assert "実物の試行は 1 回" not in text and "試行は 11-04 の 1 回" not in text, (name, "前の数え方が残る")
     assert "回目" not in summary, (name, "回は日付で呼ぶ")
-    assert "11 月 4 日の回は本人の教え子の卒業生 5 人" in summary and "筒から扇を開いて動いた" in summary, (name, "11-04 の回の中身を残す")
+    assert "11 月 4 日の回は制作者の教え子の卒業生 5 人" in summary and "筒から扇を開いて動いた" in summary, (name, "11-04 の回の中身を残す")
     assert "今の組の紙は実物で確かめていない" in summary, (name, "前からの字を残す")
 
 # 4. README の組み直し（11-08）で「できること」の節は「確かめた事と、まだの事」になった。確かめた事の頭の行で 4 回の数え方を見る
@@ -43,6 +43,6 @@ photos = sum(1 for d in dirs for f in d.iterdir() if f.suffix.lower() in (".jpg"
 videos = sum(1 for d in dirs for f in d.iterdir() if f.suffix.lower() in (".mp4", ".mov"))
 dates = " と ".join(f"11-{d.name[6:]}" for d in dirs)
 assert f"{dates} の試行の写真 {photos} 枚と動画 {videos} 本" in data, (dates, photos, videos, data[:300])
-assert data.count("卒業生 5 人") == 1 and "11-04 の参加者は本人の教え子の卒業生 5 人" in data, "卒業生 5 人は 11-04 の参加者として書く"
+assert data.count("卒業生 5 人") == 1 and "11-04 の参加者は制作者の教え子の卒業生 5 人" in data, "卒業生 5 人は 11-04 の参加者として書く"
 assert "回目" not in data and "の分だけ" not in data and "11 月 4 日と 6 日のワークショップの分" not in data, data[:200]
 print("ok ワークショップの回数の数え方（要約・確かめた事の頭の行・日付で呼ぶ・11-04 の回の中身・データの扱いは 4 回をまとめた記録で、在る物は置き場の日付と数のとおり）")
