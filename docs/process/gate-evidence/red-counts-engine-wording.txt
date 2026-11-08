@@ -1,0 +1,17 @@
+# 命令: .venv/bin/python tests/test_kaizen_history.py
+# commit: c17e19b7（回した時の HEAD）
+使い方: python -m omochae.kaizen_history copy <表の json>（終了: 0 写した / 4 写せない）
+写せない: [Errno 2] No such file or directory: '/tmp/tmp42276f6c/none.json'
+写した: 表（・型紙の版 2 行・エンジンの版 0 行）・紙の絵 1 枚
+Traceback (most recent call last):
+  File "tests/test_kaizen_history.py", line 117, in <module>
+    assert "全部の玩具の型紙に効く" not in counts and "そのエンジンが作る型紙のどれにも使われる" in counts, counts
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: <!-- counts:start -->
+- 玩具: 83 件（`data/hypotheses` のファイルの数。必須の 2 種を含む）
+- 雛形: 9 本（`src/omochae/templates`。必須の 2 本を含む）
+- 凍結の場面: 34 本（`tests/frozen/scenarios`。うち 27 本は落ちるべき紙を入れる負の場面）
+- 型紙の版: 張子の首振り虎 7・御来迎 14（雛形の今の組。版ごとの歩みは `data/history/kaizen-history.json`）
+- エンジンの版: 7（型紙を作る仕組みの版。全部の玩具の型紙に効く）
+<!-- counts:end -->
+rc=1

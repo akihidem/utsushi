@@ -24,8 +24,21 @@
   },
   "modification_note": "改変: 図を参照して寸法と形を起こし、色と線を描き直した翻案で、原図そのものではありません",
   "transcription": {
-    "status": "pending",
-    "entries": []
+    "status": "decided_by_rule",
+    "entries": [
+      {
+        "text": "月の兎魚や亀すむ海原をすゞめのやうにひんづはねむし",
+        "source": "own-scans",
+        "set": "A",
+        "page": "231",
+        "read_by": "Claude Code のセッション",
+        "checked_by": null,
+        "checked_at": null,
+        "decided_by": "本人",
+        "decided_at": "2026-11-08",
+        "source_note": "読みは 1997 年の翻刻の字（本人の決め 11-08 で A にそろえた・1 字ずつの確かめはまだ）"
+      }
+    ]
   },
   "reading_hypothesis": {
     "status": "pending",

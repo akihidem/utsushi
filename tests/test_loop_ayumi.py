@@ -166,12 +166,12 @@ def put_version(sid, hid, n, record_ids, param="fold_count", at="2026-11-06T02:0
 
 put_version(G, "H-A", 2, ["R-0011"])
 block = ayumi.toy_block(G, hypotheses.load(G))
-v2 = item_of(block, "仮説 A 版 2")
+v2 = item_of(block, "仮説 版 2")
 assert "折りの数 70→72" in v2 and "変更の理由の字" in v2 and "根拠の記録の説明の字" in v2 and "ループ 2" in v2 and "<dt>記録</dt><dd>R-0011</dd>" in v2
 assert "止まった所 R-0011: 止まった所の字" in v2 and "人の工夫 R-0011: 外筒 / 幅を広げた / 入った" in v2 and "次の思いつきの字" in v2
 assert "根拠でない記録の説明の字" not in block, "版の知見は版の根拠の記録から。組の知見は組の直しの根拠の記録から"
 assert "サイトの係" not in block, "採った人と説明した人の名前は出さない"
-assert block.index("仮説 A 版 2") < block.index("goraigo-v10"), "新しい版が上"
+assert block.index("仮説 版 2") < block.index("goraigo-v10"), "新しい版が上"
 # 置き場の R-0001 を根拠にした版と、repo の 11-04 の R-0001 が 1 つの頁に並んでも、同じ記録に読めない。番号が出るのは置き場の記録だけ
 put_version(G, "H-A", 3, ["R-0001"])
 block = ayumi.toy_block(G, hypotheses.load(G))
@@ -188,7 +188,7 @@ assert fails == [], fails
 assert kv.set_verdict(["goraigo-v8"]) == V8 and kv.set_verdict(["goraigo-v99"]) == V8 and kv.set_verdict(["x-v1"]) == V8
 block = ayumi.toy_block(G, hypotheses.load(G))
 assert "goraigo-v99" in block and "表にまだ無い直し" in block and "<b>字</b>" not in block and "x-v1" in block and "組の名が雛形に当たらない直し" in block
-assert max(block.index("x-v1"), block.index("goraigo-v99"), block.index("仮説 A 版 2")) < block.index("goraigo-v10"), "日付のある版は、版の表より上"
+assert max(block.index("x-v1"), block.index("goraigo-v99"), block.index("仮説 版 2")) < block.index("goraigo-v10"), "日付のある版は、版の表より上"
 assert "組の名が雛形に当たらない直し" not in ayumi.toy_block(T, hypotheses.load(T)), "根拠の玩具の札にだけ出す"
 assert "根拠の記録の説明の字" in item_of(block, "x-v1") and "根拠でない記録の説明の字" not in block
 # 根拠から玩具が分からない直しは、別の節に出す
@@ -218,7 +218,7 @@ with urllib.request.urlopen(f"http://127.0.0.1:{win.server_address[1]}/toy/{T}?s
 win.shutdown()
 assert "変えた所: 寸法 70→72" in shown and "no_such_param" not in shown, re.findall(r"変えた所[^<]{0,40}", shown)
 # 根拠の記録が読めない寸法の版も、頁を止めず ループ 2 と見る（版は記録からしか作れない）
-assert "ループ 2" in item_of(tiger, "仮説 A 版 2")
+assert "ループ 2" in item_of(tiger, "仮説 版 2")
 (LOOP / f"version-{T}-H-A-2.json").unlink()
 assert kv.record_loops("R-9999") == ([], False) and kv.record_loops("../x") == ([], False) and kv.record_words("R-9999") == []
 assert kv.record_loops("../loop/explanation-R-0001", True) == ([], False) and kv.record_words("../loop/explanation-R-0001", True) == [], "repo の外や別の置き場を番号で読まない"
@@ -273,7 +273,7 @@ assert talk_log.add(G, "think", "話した考えの字", who="ayumitest03")[1] =
 talk_log.bind(G, "OWN-1", 1, "ayumitest03", "R-0103")
 assert "話した考え R-0103: 話した考えの字" in kv.record_words("R-0103")
 put_version(G, "H-A", 3, ["R-0103"])
-own_item = item_of(ayumi.toy_block(G, hypotheses.load(G)), "仮説 A 版 3")
+own_item = item_of(ayumi.toy_block(G, hypotheses.load(G)), "仮説 版 3")
 assert "ループ 1・2" in own_item and "話した考え R-0103: 話した考えの字" in own_item
 (LOOP / f"version-{G}-H-A-3.json").unlink()
 talk_log.set_share(G, "R-0103", False)
@@ -291,8 +291,8 @@ assert kv.tag({"loops": [1, 2], "material": [], "review": False}) == "ループ 
 put_version(G, "H-A", 3, ["R-0022"], at="2026-11-06T03:00:00+09:00")
 summary = ayumi.loop_summary(sids)
 assert "寸法の版 1" in summary["2"] and "上げた物も材料にした版 1" in summary["4"], summary
-assert "ループ 4" in item_of(ayumi.toy_block(G, hypotheses.load(G)), "仮説 A 版 3")
-assert ayumi.toy_block(G, hypotheses.load(G)).index("仮説 A 版 3") < ayumi.toy_block(G, hypotheses.load(G)).index("仮説 A 版 2"), "日の新しい版が上"
+assert "ループ 4" in item_of(ayumi.toy_block(G, hypotheses.load(G)), "仮説 版 3")
+assert ayumi.toy_block(G, hypotheses.load(G)).index("仮説 版 3") < ayumi.toy_block(G, hypotheses.load(G)).index("仮説 版 2"), "日の新しい版が上"
 (LOOP / f"version-{G}-H-A-3.json").unlink()
 
 # 9. 知見の字: 話した工夫は並ぶ。隠した字と案のままの読みは出ない。人が確かめた読みは出る。床に当たる字は、手で置いた記録でも出さない。人の字は符号にする

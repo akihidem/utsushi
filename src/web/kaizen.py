@@ -64,11 +64,15 @@ def section(sid, data, recs, photos=True):
     （作る側が版を直す時に読む物なので、作る側の頁に残す）。記録への道は、玩具の頁の記録の札（/toy/<印>#R-…）を指す。
     photos=False は合言葉なしで開いた場。次の版の口が閉じているので案内せず、人の書いた理由と記録の番号も出さない（J-028）。"""
     rows = ""
+    # 同じ玩具で版がある仮説が 2 つ以上の時は、札の題に仮説の名を添えて見分ける（仮説「…」 版 N）。印（A・C）は使わない。1 つの時は「仮説 版 N」。
+    # 統括の割り振り 11-08（別の目の気づき: 印を外した後、2 つの仮説の版が同じ「仮説 版 2」で並ぶと見分けられない）
+    many = sum(1 for h in data["hypotheses"] if versions(sid, h["id"])) > 1
     for h in data["hypotheses"]:
         for v in versions(sid, h["id"]):
             ch = "、".join(f'{esc(_param_name(sid, c["param"]))} {esc(c.get("from", ""))}→{esc(c["to"])}' if c.get("from") not in (None, "") else f'{esc(_param_name(sid, c["param"]))} → {esc(c["to"])}' for c in v.get("changes", []))
             why = "、".join(esc(c.get("why", "")) for c in v.get("changes", []) if c.get("why"))
-            rows += (f'<li><b>仮説 {esc(hypotheses.letter(h))} 版 {v["version"]}</b>: {ch}'
+            # 仮説の印（A・C）は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
+            rows += (f'<li><b>{esc(hypotheses.version_head(h, many))} 版 {v["version"]}</b>: {ch}'
                      + (f'（{why}）' if why and photos else "") + (f'。{wording.BASED_ON.format("・".join(f"<a href=/toy/{esc(sid)}/techo/kiroku#mine>{esc(wording.record_no(r))}</a>" for r in v.get("record_ids", [])))}' if photos else "")
                      + f'。<a href="/toy/{sid}?see={esc(h["id"])}&kind=sheet&v={v["version"]}#win">この版の型紙</a></li>')
     # 記録への道は、手帖の記録の頁の記録の並び（#mine）へ向ける。つくるの頁から記録の札（/toy/<印>#R-…）を外したため（本人の言葉 11-08「つくるは読む情報が多すぎて
@@ -143,7 +147,7 @@ def toy_page(sid, look=skin.DEFAULT, path=None):
     data = hypotheses.load(sid)
     sm = making_log.summary(sid)
     letter = {h["id"]: hypotheses.letter(h) for h in data["hypotheses"]}
-    paper = lambda hid: f"仮説 {letter[hid]} の紙" if hid in letter else f"自分の仮説 {hid} の紙"
+    paper = lambda hid: f"{hypotheses.SHOWN}の紙" if hid in letter else f"自分の仮説 {hid} の紙"  # 印は出さない（本人の答え 11-08「そろえる。」（つくるの外も印なし）・hypotheses.SHOWN）
     none = lambda text: f'<p class="meta">{text}</p>'
 
     def lines(items, empty):

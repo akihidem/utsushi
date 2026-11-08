@@ -66,10 +66,10 @@ for kw in ({}, {"public_open": True}):
             assert st == 200, (sid, st)
             # 本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」: 玩具の頁には写真の並びも これまでの記録 の畳みも無い
             assert "strip workshop" not in body.decode() and "/workshop/" not in body.decode() and "これまでの記録" not in body.decode(), (sid, kw)
-            # もちよる の、その玩具の札に、その玩具の単体の写真が表の順で出る（ほかの玩具の写真は出ない）
-            single = [r["file"] for r in rows if r["toy"] == sid and workshop.kind_of(r["file"]) == "single"]
+            # 本人の言葉 11-08「みんなが作ったおもちゃの方は、おもちゃの名前と写真が合っていない。ワークショップで作られたものの方は写真と名前が一致しているので、こちらの組み合わせと表示を採用して、みんなが作ったおもちゃの方に置く。」
+            # もちよる の札は作例の記録の札にしたので、試行の写真の表の単体の写真は札に出さない（名と写真が合っていなかった）
             got = re.findall(r'<img src="/workshop/(\d{8}/p\d{2}\.jpg)/small"', card(gal, sid))
-            assert got == single, (sid, kw, got, single)
+            assert got == [], (sid, kw, got)
         # 作っている様子と並べた写真（玩具を言わない写真）も もちよる に出る
         for r in rows:
             if workshop.kind_of(r["file"]) in ("making", "lineup"):

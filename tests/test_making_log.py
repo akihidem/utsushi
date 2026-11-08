@@ -29,7 +29,7 @@ from web.play_server import serve  # noqa: E402
 G = "NDL-1187053-R0000005-L"
 # 御来迎のたたき台の仮説（次の組は H-C の柄を下から押し上げる形・前の組は H-A。本人の決定 2026-11-06。hypotheses.sheet_id）
 GS = hypotheses.sheet_of(G)["id"]
-GL = f"仮説 {hypotheses.letter(hypotheses.sheet_of(G))}"  # 頁と紙のたたき台の呼び名（次の組は「仮説 F」）
+GL = hypotheses.SHOWN  # 頁と紙のたたき台の呼び名。11-08 から印（A・C）は出さない（本人の答え 11-08「そろえる。」・hypotheses.SHOWN）
 server = serve(0)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -200,15 +200,15 @@ code, page = get(f"/loop/{G}")
 assert code == 200 and "作る側の集計" in page and "公開しない頁" in page and "上下を付ける物ではありません" in page
 for i, h in enumerate(("止まった段", "動きの結果", "感想の言葉", "聞く口の質問", "完成の様子", "サイトの流れ"), 1):
     assert f'id="k{i}"' in page and f"<h2>{i} {h}</h2>" in page, h
-assert f"<td>{GL} の紙</td><td>版 1</td><td>手順 2</td><td>3 回</td><td>2 人</td>" in page and "3 枚目の折り目" in page
-assert f"{GL} の紙" in page and "動かない 1、動いた 3" in page and "開いた角度（度） 40〜90（2 件）" in page
-assert f"{r3}（{GL} の紙・版 1）: 扇 / 折りを減らした / 前より開いた" in page
+assert f"<td>{GL}の紙</td><td>版 1</td><td>手順 2</td><td>3 回</td><td>2 人</td>" in page and "3 枚目の折り目" in page
+assert f"{GL}の紙" in page and "動かない 1、動いた 3" in page and "開いた角度（度） 40〜90（2 件）" in page
+assert f"{r3}（{GL}の紙・版 1）: 扇 / 折りを減らした / 前より開いた" in page
 assert "分からなかった・むずかしかった（2 件）" in page and "面白かった・楽しかった（2 件）" in page and "折るのは楽しかった" in page
-assert f"<h3>{GL} の紙・手順 3</h3>" in page and f"<h3>{GL} の紙・段なし</h3>" in page and page.index(f"<h3>{GL} の紙・手順 3</h3>") < page.index(f"<h3>{GL} の紙・段なし</h3>")
+assert f"<h3>{GL}の紙・手順 3</h3>" in page and f"<h3>{GL}の紙・段なし</h3>" in page and page.index(f"<h3>{GL}の紙・手順 3</h3>") < page.index(f"<h3>{GL}の紙・段なし</h3>")
 assert f"<td>{sm['asks'][0][0]}</td><td>2 回</td>" in page
 assert "連絡先や名乗りの形があったので文を残さなかった質問: 1 件" in page and "090" not in page
 assert "最初に動くまでの分: 20〜40 分（2 件）" in page and "「動いた」の記録: 4 件のうち 3 件" in page and "できたの札: 1 回" in page
-assert f"<td>{GL} の紙</td><td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
+assert f"<td>{GL}の紙</td><td>手順 2</td><td>1 人</td>" in page, "途中でやめた段"
 assert "<td>作りながら見る頁を開いた</td><td>2 回</td><td>2 人</td>" in page
 assert "<td>記録を残した</td><td>2 回</td><td>—</td>" in page
 for h in hypotheses.load(G)["hypotheses"]:

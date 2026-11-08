@@ -1,0 +1,10 @@
+# 命令: .venv/bin/python tests/test_toy_foot_ndl.py
+# commit: 9cd182a3（回した時の HEAD）
+src/web/hanasu.py:137: SyntaxWarning: "\/" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\/"? A raw string is also an option.
+  const clip=async(root)=>{if(!window.utsushiClips)return;const f=root.querySelector('form'),a=f&&f.getAttribute('action'),m=a&&a.match(/^\/toy\/([^/]+)\//);
+Traceback (most recent call last):
+  File "tests/test_toy_foot_ndl.py", line 75, in <module>
+    assert ("<ul" in genga.fold(G) or 'class="genga-songs"' in genga.fold(G)) and 'class="genga-songs"' not in genga.fold(QUIET), "歌の字は読みのある玩具だけ（前のまま）"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 歌の字は読みのある玩具だけ（前のまま）
+rc=1

@@ -34,7 +34,7 @@ for sid in made:
     keys = [h["params"]["play"] for h in data["hypotheses"]]
     assert len(set(keys)) == len(keys), (sid, "仮説は鳴らし方（HYP_KEY）で分ける")
     src = json.loads((ROOT / "data/sources" / f"{sid}.json").read_text(encoding="utf-8"))
-    assert src["transcription"]["entries"] == [], (sid, "翻刻は人が確かめるまで空")
+    assert all(e.get("decided_by") or e.get("checked_by") for e in src["transcription"]["entries"]), (sid, "翻刻は人が確かめるか決めるまで空")  # 線（雛形の生成）は翻刻を書かない。入るのは人の決め（本人の決め 11-08「A にそろえる」の decided_by）か人が確かめた読みだけ
     for h in data["hypotheses"]:
         out = f"{tmp}/{sid}_{h['id']}"
         err = io.StringIO()
