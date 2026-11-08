@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_paper_to_toy.py
+# commit: 3706c76c（回した時の HEAD）
+ok English の頭に、本人が採ったうつしの位置づけ（英語 2 文）と paper to toy の仕組み（英語 3 文）を 1 回ずつ。紹介の文は今のまま、入口と序の頁には足さない
+rc=0

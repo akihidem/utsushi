@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_foot_ndl.py
+# commit: 315d33a1（回した時の HEAD）
+ok 玩具の頁の足に前と次と一覧の道が無い・作りながら見る頁の畳みは国立国会図書館への道 1 つ（別のタブ）
+rc=0

@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_words_review.py
+# commit: ace2a5f0（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_words_review.py", line 14, in <module>
+    from omochae import hypotheses, records, store, words_review  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'words_review' from 'omochae' (src/omochae/__init__.py)
+rc=1
