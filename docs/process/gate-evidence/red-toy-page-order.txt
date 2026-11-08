@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_toy_page_order.py
+# commit: f69e39ca（回した時の HEAD・並べ替えの前。試験だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_toy_page_order.py", line 44, in <module>
+    assert [names.index(n) for n in want] == sorted(names.index(n) for n in want), (sid, printed, "並びが 復元 → 仮説 → 立体 → たとえ → 型紙 でない", names)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('NDL-1187053-R0000005-L', False, '並びが 復元 → 仮説 → 立体 → たとえ → 型紙 でない', ['kasetsu', 'win', 'ban-ayumi', 'tatoe', 'hanasu', 'think', 'kumikata', 'kiroku', 'minna', 'english'])
+rc=1

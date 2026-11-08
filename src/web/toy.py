@@ -22,7 +22,7 @@ from omochae.hypotheses import ROOT
 from omochae.marks import HYPOTHESIS, PREMISE_PAGE
 
 from . import naoru, skin, wording
-from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source, sources
+from .play_server import PARAM_NAMES, esc, out_dir, printed_versions, source
 from .toys import way_tags
 
 # 窓で見て刷る紙は型紙だけ（本人の決まり 11-06「文章のプリントは廃止。組み立て用のページだけでいい」・6 点の 1）。
@@ -469,20 +469,12 @@ def made_strip(sid, recs, photos=True):
     return (f'<div class="strip">{thumbs}</div>' if thumbs else "") + '<p class="meta"><a href="#minna">他の人が作った物を見る（写真・感想・工夫）</a></p>'
 
 
-def neighbours(sid):
-    ss = sources()
-    i = ss.index(sid)
-    prev_, next_ = ss[i - 1] if i > 0 else None, ss[i + 1] if i + 1 < len(ss) else None
-    out = []
-    if prev_:
-        out.append(f'<a href="/toy/{prev_}">← {esc(hypotheses.load(prev_)["toy"])}</a>')
-    # 「おもちゃの一覧」（/toys）は外し、入口へ の 1 つにした（本人のサイト体験レビュー 11-07 の 3「同じ物が何回も出る」。入口が えらぶ になり /toys は入口へ送るので、/toys へ向く釦は入口へ向く釦と同じ所へ行く）
+def foot_links():
+    """頁の足の道。前と次の玩具への道と「おもちゃの一覧」は外した（本人の答え 11-08「つくるの頁の一番下の前と次のおもちゃと一覧への道は外す」。
+    最初の言葉は「ほかのおもちゃ、のリンク要らない」）。作った物と入口への道は答えに無いので残す。"""
     # ギャラリーの呼び名は、職人の言葉と寄せられた声の節を序の頁（よむ）へ移した後の題「作った物」にそろえる（のこす と もちよる を分ける直し #519。
     # 本人のサイト体験レビュー 11-07 の 6）。字は #519 の頁の題のまま（新しい字は足さない）
-    out += ['<a href="/gallery">作った物</a>', '<a href="/">入口へ</a>']
-    if next_:
-        out.append(f'<a href="/toy/{next_}">{esc(hypotheses.load(next_)["toy"])} →</a>')
-    return '<p class="links">' + "".join(out) + "</p>"
+    return '<p class="links"><a href="/gallery">作った物</a><a href="/">入口へ</a></p>'
 
 
 def evidence_item(e):
@@ -593,7 +585,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
 
     stage = kumitate.block(sid, tour=True)  # 玩具の頁の頭の立体は、開いた時に 1 回動かして見せる（本人の答え 11-07）
     told = head("kasetsu") or ("" if at else note)
-    body = hero + (f'<section class="sec" id="kasetsu">{told}{stage}</section>' if stage or told else '<div id="kasetsu"></div>')
+    rittai = f'<section class="sec" id="kasetsu">{told}{stage}</section>' if stage or told else '<div id="kasetsu"></div>'
     # 型紙の窓の頭: 断り（「型紙は正解ではなく、AI が考えた仮説」、本人の言葉 11-05）→ 輪の図（真ん中は今の型紙の版で、押すと頁の下の「型紙の改善の輪」へ）
     # → 仮説の札（たたき台の 1 枚だけで、順位は学ぶ人の画面に出さない。J-013・J-025・J-032）→ 紙。輪の図は版の印と並ぶ所なので本体に残す（設計の担当の答え 11-07）
     # 真ん中は型紙の版（組の番号。本人の言葉 11-07「バージョンをサイトで明示したい」、窓口の決定 カード 084426）。前は寸法の刻み（wa.current_version）
@@ -611,45 +603,20 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                   '</div>')
     # 書いて立てた仮説の札と書く欄は外した（本人の決定 11-05 18:08「仮説は書かず、話すことができる」、J-032 の点 2）。考えは下の節で話す。
     # 紙がまだ無い時は、窓の節に断りと輪の図と札だけを出す（紙を作るのは頭の「つくる」。作れなかった時の文は窓の錨の所で読む、#121）
-    body += (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p><p class="meta">画面で見て、印刷する前に案を検討する所。</p>'
-             f'<p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p><div class="plates">{plate}</div>'
-             f'{window(sid, data, see, kind, v, recorded, photos)}</section>')
+    # 仮説の札は型紙の窓の中から出して、仮説の節に置く（本人の言葉 11-08「…これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、型紙の順で」）。
+    # 断り（「型紙は正解ではなく、AI が考えた仮説」）・輪の図・しるしの断りも札と一緒に移す: 断りは仮説の札より前に出す決め（本人の言葉 11-05・
+    # test_build_now）と、輪の図は断りと札の間（設計の担当の答え 11-07・test_wa_ring）を保つため。型紙の窓には紙だけが残る。
+    # 札を作る行（上の for）は替えない（「仮説 A」の字の直しを別の担当が持つため）。見出しは「仮説」（本人の言葉の並びの名。置くのは本人の答え 11-08「3 つともよい。」。
+    # 字は頁に前からある字で、英語とやさしい日本語の表にもある）
+    kasetsu = (f'<section class="sec" id="kasetsu-fuda"><h2>仮説</h2><p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p>'
+               f'<div class="plates">{plate}</div></section>')
+    win = (f'<section class="sec" id="win">{head("win")}<h2>型紙の窓</h2><p class="lead">型紙を刷ります。切って、折って、組みます。</p><p class="meta">画面で見て、印刷する前に案を検討する所。</p>'
+           f'{window(sid, data, see, kind, v, recorded, photos)}</section>')
     # 型紙の版の歩み（本人の指示 11-07「過去の型紙が改善していって、提出の時の今の型紙になっている所が分かるようにしたい。御来迎と虎のそれぞれで、
     # 版の歩みが今の版に行き着くまで見える形にしてください。」。設計 0.7 節の置き場 ①）。原画と立体 → つくる → 型紙の窓 のすぐ後（2 画面目の頭）に置き、
     # 窓の頭の輪の図と近くに並べて「版が積み上がる → 輪が回る」と読めるようにする（設計の担当の置き場 11-07）。表に無い玩具では空で、頁は変わらない
     from . import ban_ayumi
 
-    body += ban_ayumi.section(sid)
-    # たとえと関連する事柄は、型紙の窓のすぐ後（考えを話すの前）に、畳まずに出す（本人の答え 11-07 夕の Q4「型紙の窓の近くへ戻す」。
-    # 夕方のサイトのレビューの 7「型紙の近くに出して一緒に考えられるように」）。C3 の前の形に戻した（前は頁の足の畳み）。字は替えない。
-    # たとえは「仕組みを考える手がかりで、答えではありません」（節の断り）なので、試す前の頁に開いて出してよい（前も開いて出していた）
-    body += analogy_section(data)
-    # 仮説を見て、考えを話す（一周の 1、Issue #279）。仮説の札（型紙の窓の頭）のすぐ後に置く。
-    from . import hanasu
-
-    body += hanasu.think_section(sid, data, head("hanasu"))
-    from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ1、Issue #335）
-    if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では節を出さない。受け口も閉じている（J-028）
-        body += think_sheet.section(sid, at, head(at))
-    from api import ask  # 聞く口の断りは、Claude を呼ぶ場だけ 1 文を足す（本人の決定 11-06）
-
-    # 作る口は 1 つ（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」、地図の道しるべ「作る口は
-    # 手帖 1 つ」）: 頭の「つくる」で型紙の窓へ、窓の「つくる」で手帖へ、の 1 本の道にする。前はこの節にも見出し「作る」と手帖への釦と作りながら見る
-    # 頁への釦があり、手帖へ行く口が 2 つ、作る節が「すぐ作る」と 2 つあった。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）。
-    # 節の錨（#tsukuru）は残す: 作りながら見る頁の「← 玩具」と試験の並びがこの錨を指すため。中身は困った時に聞く口だけ。刷る前は聞く口も無いので、
-    # 空の節の余白を出さず錨だけを置く。
-    making = ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())
-    body += f'<section class="sec" id="tsukuru">{making}</section>' if making else '<div id="tsukuru"></div>'
-    # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置き、見出しのまま畳む:
-    # 作る時の組み方は手帖が 1 手ずつ出すので、頁の本体には置かない（本人のサイト体験レビュー 11-07 の 3。組み方が 頁の立体・この節・手帖 と重なっていた）
-    body += fold(kumitate.section(sid))
-    # 試した記録を残す口は、のこす（記録の頁）へ寄せた（本人の答え 11-07 夕の Q3）。同じ所に記録の頁への道を 1 本だけ置く。
-    # 錨 #kiroku と返事の文（head）は残す: 作りながら見る頁の組み上がりの札・試した後の紙の断りの「記録の欄へ」・受け口の返事が、この錨へ戻るため
-    # （道の直しは増やさない。着いた所から 1 本でのこすへ行ける）。JS の無い画面で記録を残す道は無くなる（手帖の のこす は JS で送る）
-    # のこすへの道 2（本人の言葉 11-07 夜「できたはのこそう」）。今の道の上に見出しと意義の 1 文を足す。道の字（KIROKU_TO_NOKOSU）・行き先・錨は替えない
-    done = (f'<h2>{esc(naoru.ROUTE_DONE)}</h2>' if naoru.ROUTE_DONE else "") + (f'<p class="meta">{esc(naoru.purpose())}</p>' if naoru.ROUTE_DONE and naoru.purpose() else "")
-    body += (f'<section class="sec" id="kiroku">{head("kiroku")}{done}'
-             f'<p class="links"><a href="/toy/{esc(sid)}/techo/kiroku">{esc(KIROKU_TO_NOKOSU)}</a></p></section>')
     # 作った物の並び（本人の決定 11-05「他の人の作ったものギャラリーは作る」）。記録の札と見本を、同じ節に並べる。全部の玩具の分は /gallery。
     # 見出しは MINNA_HEAD（夕方のレビューの 6 で、人ごとの呼び方をやめた）
     # ワークショップの試行の写真も、これまでの復元の 1 つとして並びの頭に置く（本人の見直し 11-07 夜の ②「これまでの復元にワークショップの写真がない。」）。
@@ -661,8 +628,37 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     from . import demo_samples
 
     wsv = demo_samples.workshop_for(sid, data["toy"])
-    body += (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if (wsp or wsv) else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
+    minna = (f'<section class="sec" id="minna"><h2>{esc(MINNA_HEAD)}</h2>{wsp}{records_list(sid, recs, photos, at, note, filled, up_key, rec_key) or ("" if (wsp or wsv) else f"<p class=meta>{esc(MINNA_EMPTY)}</p>")}'
              f'{wsv}<p class="links"><a href="/gallery">全部のおもちゃの、作った物を見る</a></p></section>')
+    # 節の並び（本人の言葉 11-08「つくるのページ、これまでの復元、仮説、組み立てを立体で見る、たとえと関連する事柄、型紙の順で。」）:
+    # 頭 → これまでの復元 → 仮説 → 組み立てを立体で見る → たとえと、関連する事柄 → 型紙の窓 → 型紙の版の歩み。
+    # 前は 頭 → 立体 → 型紙の窓（仮説の札が頭）→ 版の歩み → たとえ → 考えを話す … のこそう → これまでの復元 だった。
+    # 版の歩みは型紙の窓のすぐ後のまま（窓の頭の輪の図と並べて「版が積み上がる → 輪が回る」と読む。設計の担当の置き場 11-07）。
+    # たとえは「仕組みを考える手がかりで、答えではありません」（節の断り）なので、試す前の頁に開いて出す（本人の答え 11-07 夕の Q4。字は替えない）
+    body = hero + minna + kasetsu + rittai + analogy_section(data) + win + ban_ayumi.section(sid)
+    # 考えを話す（一周の 1、Issue #279）と、作っている途中で困ったら（聞く口）は同じ窓（本人の言葉 11-08「考えを話す、作ってる途中で困ったら、は同じ窓で。」）。
+    # 考えを話す の節の終わりの前に、聞く口を入れる（考えを話す の部品は web.hanasu の物なので、中身は替えずに包みの中へ足す）
+    from . import hanasu
+    from api import ask  # 聞く口の断りは、Claude を呼ぶ場だけ 1 文を足す（本人の決定 11-06）
+
+    # 作る口は 1 つ（本人のサイト体験レビュー 11-07 の 3「作るの頁がごちゃごちゃして、同じ物が何回も出る。まとめる」、地図の道しるべ「作る口は
+    # 手帖 1 つ」）: 頭の「つくる」で型紙の窓へ、窓の「つくる」で手帖へ、の 1 本の道にする。作りながら見る頁は手帖へ寄せた（窓口の決め 11-07 の 4）。
+    # 錨（#tsukuru）は残す: 作りながら見る頁の「← 玩具」と試験の並びがこの錨を指すため。中身は困った時に聞く口だけで、刷る前は空の錨だけ
+    making = ask_form(sid, data, asked, head("ask"), fill("ask"), ai=photos and ask._key_present())
+    body += hanasu.think_section(sid, data, head("hanasu")).removesuffix("</section>") + f'<div id="tsukuru">{making}</div></section>'
+    from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ1、Issue #335）
+    if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では節を出さない。受け口も閉じている（J-028）
+        body += think_sheet.section(sid, at, head(at))
+    # 組み方（全 83 種。本人の決まり 11-06「組み立ての案内はサイトの組み立て頁に寄せる」）。刷る口と手帖の口の後に置き、見出しのまま畳む:
+    # 作る時の組み方は手帖が 1 手ずつ出すので、頁の本体には置かない（本人のサイト体験レビュー 11-07 の 3。組み方が 頁の立体・この節・手帖 と重なっていた）
+    body += fold(kumitate.section(sid))
+    # 試した記録を残す口は、のこす（記録の頁）へ寄せた（本人の答え 11-07 夕の Q3）。同じ所に記録の頁への道を 1 本だけ置く。
+    # 錨 #kiroku と返事の文（head）は残す: 作りながら見る頁の組み上がりの札・試した後の紙の断りの「記録の欄へ」・受け口の返事が、この錨へ戻るため
+    # （道の直しは増やさない。着いた所から 1 本でのこすへ行ける）。JS の無い画面で記録を残す道は無くなる（手帖の のこす は JS で送る）
+    # のこすへの道 2（本人の言葉 11-07 夜「できたはのこそう」）。今の道の上に見出しと意義の 1 文を足す。道の字（KIROKU_TO_NOKOSU）・行き先・錨は替えない
+    done = (f'<h2>{esc(naoru.ROUTE_DONE)}</h2>' if naoru.ROUTE_DONE else "") + (f'<p class="meta">{esc(naoru.purpose())}</p>' if naoru.ROUTE_DONE and naoru.purpose() else "")
+    body += (f'<section class="sec" id="kiroku">{head("kiroku")}{done}'
+             f'<p class="links"><a href="/toy/{esc(sid)}/techo/kiroku">{esc(KIROKU_TO_NOKOSU)}</a></p></section>')
     # 頁の足の「型紙の改善の輪」の節は外した（本人の答え 11-07 夕の Q5「型紙の改善の輪は外して、説明の頁と のこす だけにする」。
     # 夕方のレビューの 8「型紙改善の輪と型紙の窓の情報が重なる」）。報告から直した版と次の版を待つ報告は、作る側の様子の頁（/loop/<印>）へ移した。
     # 学ぶ人には、版の歩み（ban_ayumi）が版の並びを、型紙の窓の小さな輪の図が輪の形を見せる。たとえは型紙の窓のすぐ後へ移した（本人の答え Q4）
@@ -670,7 +666,7 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     from . import en
 
     body += en.band(sid)
-    body += f'<section class="sec">{neighbours(sid)}</section>'
+    body += f'<section class="sec">{foot_links()}</section>'
     # 国立国会図書館デジタルコレクションの出典の字（所蔵・コマ・権利）は頁の一番下（本人の言葉 11-08「国立図書館デジタルコレクションの文言はページの一番下に」）
     body += genga.ndl_credit(sid, src)
     if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない
