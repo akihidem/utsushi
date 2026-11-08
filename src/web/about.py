@@ -143,6 +143,21 @@ def words_section():
             f'{quotes}<p class="meta">{esc(WORD_NOTE)}</p></section>')
 
 
+# 名前の心（本人の言葉 11-08「「写し」は伝統芸術では、単なる模倣ではなく、過去の大家や名品との対話を通じて、作品の精神やエッセンスを解釈・再創造すること
+# （茶の湯・日本画・陶磁器・漆芸・能・歌舞伎・和歌の本歌取り）。名前の心として、サイトや README に生かしてほしい。」）。字は本人の言葉の中身を、
+# この頁の言葉にした物で、どこかの文を写していない。3 文目はこの作品に当てはめた 1 文（江戸の絵本の絵と歌と向き合い、動きを紙で解釈し直す）。
+# README の「名前の心」の節も同じ字（tests/test_name_heart.py が照らす）。頁の頭の札（大前提）のすぐ後に置く（名前の心は、頁を読み始める所で伝える）
+NAME_HEAD = "名前の心"
+NAME = ("名前の「うつし」には、伝統の芸の「写し」の心を込めています。",
+        "写しは、ただまねる事ではありません。昔の名人や名品と向き合い、その心をくみ取って、自分の手で作り直す事です（茶の湯・日本画・焼き物・漆・能・歌舞伎・和歌の本歌取りなど）。",
+        "うつしも、江戸の絵本に残る絵と歌と向き合い、失われた動きを紙で解釈し直します。")
+
+
+def name_section():
+    """名前の心の節（頁の頭の後・北斎漫画の前）。"""
+    return f'<section class="sec" id="namae"><h2>{esc(NAME_HEAD)}</h2>' + "".join(f'<p class="lead">{esc(t)}</p>' for t in NAME) + "</section>"
+
+
 def kami_section():
     """なぜ紙の型紙なのか（なぜ の節の後）。"""
     return f'<section class="sec" id="kami"><h2>{esc(KAMI_HEAD)}</h2>' + "".join(f'<p class="lead">{esc(t)}</p>' for t in KAMI) + "</section>"
@@ -226,6 +241,8 @@ def page(skin_name, path="/about"):
             # 札の名は daizen（大前提）。premise は皮（skin.py）の左に線の札の見た目で、頁の頭に札が 3 つ並んでしまう（別の目の気づき）。見た目はふつうの lead
             + "".join(f'<p class="lead daizen">{esc(t)}</p>' for t in PREMISE) +
             f'<p class="concept">{esc(CONCEPT)}</p>{book_paragraph(src)}<p class="lead">{esc(LOOP)}</p></div></section>'
+            # 名前の心（本人の言葉 11-08・上の NAME）
+            + name_section()
             # 北斎漫画（本人の決定 11-05）。案 1 は白の展示の序の頁、案 3 は両方のサイトの序の頁。案 2（縦読み）は、入口でなく帯の「よむ」の先の
             # この頁に置く（白は統括の決め 11-06・地図の「読み物は道の外へ」。暗い版も入口を白と同じ作りにした 11-08 から同じ）
             # 北斎漫画の縦読み（案 2）は、白と暗い版の両方の序の頁に置く（暗い版の入口を白と同じ作りにしたので、前に黒の入口にあった縦読みは
