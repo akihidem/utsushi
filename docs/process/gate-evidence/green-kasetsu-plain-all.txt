@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_kasetsu_plain_all.py
+# commit: 6c64c9e9（回した時の HEAD）
+ok つくるの外も印なしの「仮説」: 版の札の題・記録の札（のこす・もちよる・作る側）・英語の玩具の頁・くずし字の仮説の行。記録の中の字は前のまま
+rc=0
