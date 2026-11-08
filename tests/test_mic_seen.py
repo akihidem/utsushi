@@ -35,12 +35,14 @@ SHAPES = {
 }
 # 話す釦は手帖の記録の頁の札にある（作る頁のマイクは 1 つで、はじめるの後に出る。#87。tests/test_techo_step.py が見る）
 TOY, MAKE, TECHO = f"/toy/{G}", f"/toy/{G}/tsukuru?h={GS}", f"/toy/{G}/techo/kiroku"
-# （幅, 頁, 形, 釦が見えるはずか）。幅 390 は iPhone、820 は iPad。どちらも指で触る機器の床が効く幅
-CASES = [(w, page, "safari", True) for w in (390, 820) for page in (TOY, MAKE, TECHO)] + [(390, MAKE, "local", True), (390, MAKE, "none", False)]
+# （幅, 頁, 形, 釦が見えるはずか）。幅 390 は iPhone、820 は iPad。どちらも指で触る機器の床が効く幅。
+# None は話す口の無い頁: 玩具の頁の 考えを話す の口は外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）ので、釦も断りも無い事を測る
+CASES = ([(w, page, "safari", True) for w in (390, 820) for page in (MAKE, TECHO)] + [(w, TOY, "safari", None) for w in (390, 820)]
+         + [(390, MAKE, "local", True), (390, MAKE, "none", False)])
 # 頁の終わりに足す。釦の大きさと、断りの何が出ているかを親へ送る。番号はサーバが書く（作りながら見る頁は住所の後ろを書き換えるので、住所から読めない）
 MEASURE = """<script>setTimeout(()=>{const m=document.querySelector('.hanasu-mic'),r=m?m.getBoundingClientRect():{width:0,height:0},
 how=[...document.querySelectorAll('.hanasu-how')].filter(e=>e.getBoundingClientRect().width>0).map(e=>e.className);
-parent.postMessage(JSON.stringify({key:__CASE__,w:innerWidth,mic:[Math.round(r.width),Math.round(r.height)],shown:!!m&&getComputedStyle(m).display!=='none',how,sx:document.documentElement.scrollWidth}),'*')},800)</script>"""
+parent.postMessage(JSON.stringify({key:__CASE__,w:innerWidth,has:!!m,all:document.querySelectorAll('.hanasu-how').length,mic:[Math.round(r.width),Math.round(r.height)],shown:!!m&&getComputedStyle(m).display!=='none',how,sx:document.documentElement.scrollWidth}),'*')},800)</script>"""
 WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
 addEventListener('message',e=>{document.getElementById('measured').textContent+=e.data+'\\n'})</script>"""
 
@@ -102,11 +104,14 @@ for i, (width, page, shape, want) in enumerate(CASES):
     rec = got[i]
     assert rec["w"] == width, (page, width, rec)
     assert rec["sx"] <= width, ("横にはみ出す", page, width, rec)
-    if want:
+    if want is None:
+        # 話す口の無い頁（玩具の頁）: 話す釦も、釦の説明の断りも頁に無い
+        assert not rec["has"] and rec["all"] == 0, ("話す口の無い頁に話す釦か断りがある", page, width, rec)
+    elif want:
         # 指で押せる大きさで見える（手がふさがっていても押せる。話す口の決まりは 56px）
         assert rec["shown"] and rec["mic"][0] >= 44 and rec["mic"][1] >= 44, ("話す釦が見えない", page, width, shape, rec)
         kind = {"safari": "is-browser", "local": "is-local"}[shape]
         assert any(kind in c for c in rec["how"]), ("断りが釦と合わない", page, width, shape, rec)
     else:
         assert not rec["shown"] and any("is-none" in c for c in rec["how"]), ("口が無い画面に釦が出た", page, width, shape, rec)
-print(f"ok 話す釦: 幅 390 と 820 の {len(CASES)} 件で、見える物は見え、口の無い画面には出ない")
+print(f"ok 話す釦: 幅 390 と 820 の {len(CASES)} 件で、見える物は見え、口の無い画面と話す口の無い玩具の頁には出ない")

@@ -3,7 +3,8 @@
 本人が確かめた字を、一字も変えずに置く。一字でも変わったら落ちるように、ここに決定の文を書く（句点も足さない）。
 
 見る線:
-- 事実のとおりになる頁に出る: 話す口（玩具の頁・作りながら見る頁）、手帖の上げる節
+- 事実のとおりになる頁に出る: 話す口（作りながら見る頁）、手帖の上げる節。玩具の頁の話す口（考えを話す）は 11-08 に外した（本人の言葉 11-08
+  「つくるの「考えを話す」は無くす。」）ので、玩具の頁には話す口の断りも、そのすぐ下のこの文も出ない
 - 手帖は、記録が増えても 1 回だけ（記録ごとの口は、同じ節の中に並ぶ）
 - 持ち寄りの所（ギャラリーの説明と form）には出さない。持ち寄りは書き出す束に入らないので、文の後半が事実と合わない
 - 端末の案内に出る: docs/run.md の取り下げの段（前は README の取り下げの節）、--talk-only の説明、根拠に使われて止めた時の文、取り下げた後の文。番号の打ち間違いには出さない
@@ -60,15 +61,22 @@ def trial():
 
 rids = [trial(), trial()]
 
-# 話す口: 声の断りのすぐ下に出る。玩具の頁と、作りながら見る頁
-for name, path in (("玩具の頁", f"/toy/{G}"), ("作りながら見る頁", f"/toy/{G}/tsukuru?h={GS}&n=2")):
-    body = page(path)
-    assert body.count(DECIDED) == 1 and re.search(re.escape(hanasu.NOTICE) + r"[^\n]*?</p>" + re.escape(PARA), body), name
-
-# 手帖: 作る頁の「のこす」の画面で、上げる時の説明のすぐ下（作り直した手帖、#87）。記録ごとの口が並ぶ記録の頁にも 1 回
-# 作る頁は、たたき台の紙が刷ってある時だけ「のこす」の画面を出す（刷っていない時は紙を作る道だけ）
+# 作りながら見る頁と手帖の作る頁は、たたき台の紙が刷ってある時だけ開く（刷っていない時は玩具の頁へ送る）。先に刷る。
+# 前は刷る前に作りながら見る頁を開き、送られた先の玩具の頁の 考えを話す の口の文で通っていた（11-08 にその口を外して分かった）
 base = f"http://127.0.0.1:{server.server_address[1]}"
 urllib.request.urlopen(urllib.request.Request(f"{base}/toy/{G}/print", data=urllib.parse.urlencode({"hypothesis": GS}).encode(), headers={"Origin": base}), timeout=120)
+
+# 話す口: 声の断りのすぐ下に出る。作りながら見る頁（開いたのが作りながら見る頁である事も見る: 手順の並び #steps と工夫の口）
+for name, path in (("作りながら見る頁", f"/toy/{G}/tsukuru?h={GS}&n=2"),):
+    body = page(path)
+    assert 'id="steps"' in body and 'name="scene" value="craft"' in body, (name, "作りながら見る頁が開かなかった")
+    assert body.count(DECIDED) == 1 and re.search(re.escape(hanasu.NOTICE) + r"[^\n]*?</p>" + re.escape(PARA), body), name
+# 玩具の頁: 考えを話す の口を外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）ので、話す口の断りも、そのすぐ下のこの文も無い
+toy_body = page(f"/toy/{G}")
+assert hanasu.NOTICE not in toy_body and DECIDED not in toy_body, "口の無い玩具の頁に取り下げの文が残った"
+
+# 手帖: 作る頁の「のこす」の画面で、上げる時の説明のすぐ下（作り直した手帖、#87）。記録ごとの口が並ぶ記録の頁にも 1 回
+# 作る頁は、たたき台の紙が刷ってある時だけ「のこす」の画面を出す（刷っていない時は紙を作る道だけ。紙は上で刷った）
 techo = page(f"/toy/{G}/techo")
 assert f'id="up-notice">{hanasu.UPLOAD_NOTICE}</p>{PARA}' in techo and techo.count(DECIDED) == 1
 kiroku = page(f"/toy/{G}/techo/kiroku")

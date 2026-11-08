@@ -14,8 +14,9 @@ from web import skin, toy  # noqa: E402
 SID = "NDL-1187053-R0000005-L"
 for look in skin.SKINS:
     html = toy.toy_page(SID, look)
-    # 仮説の札は型紙の窓の頭にある（「すぐ作る」の節を窓へ寄せた。本人のサイト体験レビュー 11-07 の 3）。札の並びから考えを話す節の頭まで
-    plates = html[html.index('<div class="plates">'):html.index('id="hanasu"')]
+    # 仮説の札は仮説の段にある。札の並びから、仮説の段の終わり（次の段 たとえ の頭）まで。前は考えを話す節の頭までだったが、
+    # 考えを話す は外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」）
+    plates = html[html.index('<div class="plates">'):html.index('id="tatoe"')]
     n = plates.count('class="plate"')
     assert n == 1, look  # 札はたたき台の 1 枚だけ（J-032）
     # 札の足（acts）にあった「型紙を見る」は外した（刷る口は頭の「つくる」1 つ。本人のサイト体験レビュー 11-07 の 3）。札は仮説の字だけで、足を持たない

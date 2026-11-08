@@ -73,14 +73,16 @@ w = win(page)
 # 「刷る」「印刷」は、紙に印刷する所にだけ出る。PDF の釦の下の案内（#297）も印刷する所なので除く
 rest = visible(re.sub(r'<details class="print-help">.*?</details>', "", w, flags=re.S))
 # 「型紙を刷ります。」は、型紙の窓の頭へ移した説明の文（前は「すぐ作る」の頭。本人のサイト体験レビュー 11-07 の 3）。窓は紙に印刷する所なので並べる
-for printing in ("印刷する時は、PDF の大きさを 100% にしてください。", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り", "型紙を刷ります。"):
+# 窓の見出し「型紙を印刷する」も紙に印刷する所の字（本人の言葉 11-08「型紙の窓を「型紙を印刷する」からにして…」）
+for printing in ("型紙を印刷する", "印刷する時は、PDF の大きさを 100% にしてください。", "印刷する前に案を検討する所", "PDF を開いて印刷する", "100% で刷り", "型紙を刷ります。"):
     assert printing in rest, printing
     rest = rest.replace(printing, "")
 assert "刷" not in rest and "印刷" not in rest, rest[:400]
 assert not [b for b in re.findall(r"<button[^>]*>(.*?)</button>", page, re.S) if "刷" in b or "印刷" in b]
 assert "紙を作りました" in page and "刷りました" not in page
-# 紙ができた札は字のリンクになる。ほかの仮説の札は窓にも節にも出ない。順位や推しの字は足さない
-assert making(first) not in w and f"see={first}&" in w and making(other) not in w, w[:600]
+# 紙ができたら窓にその紙が出る（前は窓の「仮説」の札が字のリンクになったが、切り替えの札は外した。本人の言葉 11-08「型紙の窓のところにある仮説・
+# 型紙のボタンは要らない。」）。ほかの仮説の札は窓にも節にも出ない。順位や推しの字は足さない
+assert making(first) not in w and f'<img src="/sheet/{G}/{first}_v' in w and '<div class="tabs">' not in w and making(other) not in w, w[:600]
 assert "仮説の点線の札は" not in w
 # 仮説の札の下には紙ごとの字のリンクを並べない。種類と版は窓の札で選ぶ（#127 の補足）。型紙の絵も札に出さない（窓の 1 か所。本人のサイト体験レビュー 11-07 の 3）
 plates = page.split('id="kasetsu"', 1)[1].split('id="win"', 1)[0]

@@ -1,0 +1,14 @@
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_shiori_open.py
+# commit: d53b5354（回した時の HEAD・今の main。試験だけを替えた木）
+  File "tests/test_shiori_open.py", line 128, in <module>
+    assert f'href="/toy/{G}/techo/kiroku#{rid}"' in opened and f'href="/toy/{G}#{rid}"' not in opened, "開いた画面の頁に、その記録への道"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 開いた画面の頁に、その記録への道
+rc=1
+# 命令: env PYTHONPATH=src .venv/bin/python tests/test_kiroku_date_ban.py
+# commit: d53b5354（回した時の HEAD・今の main。試験だけを替えた木）
+  File "tests/test_kiroku_date_ban.py", line 30, in <module>
+    assert f"{date}・{ban}" in head.group(1), (public, head.group(1))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (False, '記録の番号 R-0001\u3000C の紙\u3000動いた')
+rc=1

@@ -1,0 +1,8 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_done_record_anchor.py
+# commit: 6b33b770（今の main。試験だけを足した木）
+Traceback (most recent call last):
+  File "tests/test_done_record_anchor.py", line 42, in <module>
+    assert code == 303 and loc.startswith("/toy/NDL-1187053-R0000005-L/techo/kiroku?") and loc.endswith(f"#{rid}"), (rid, loc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('R-0001', '/toy/NDL-1187053-R0000005-L/techo/kiroku?msg=%E6%AE%8B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F#mine')
+rc=1
