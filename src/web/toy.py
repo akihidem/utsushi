@@ -626,13 +626,13 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                   f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}'
                   '</div>')
     # 段 3 仮説: 見出し → 前提の断り（「型紙は正解ではなく、AI が考えた仮説」・本人の言葉 11-05。札より前）→ 輪の図（窓口の決め 162346 で残す・
-    # 設計の問い 6 の答え「推しのとおり。」で仮説の段のまま）→ 仮説の札 → 考えを話す（段の中の小さな口・設計の問い 4 の答え）。
+    # 設計の問い 6 の答え「推しのとおり。」で仮説の段のまま）→ 仮説の札（→ 話した考えから作り直す口。考えを話す の口は 11-08 に外した）。
     # 札を作る行（上の for）は替えない（「仮説」の字の直しは別の担当が持つ）。書いて立てる欄は無い（本人の決定 11-05 18:08、J-032 の点 2）
-    from . import hanasu
     from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ 1、Issue #335）
 
-    # 考えを話す は web.hanasu の節をそのまま入れ、見出しだけを段の中の見出し（h3）にする（段の見出し h2 は「仮説」だけにして、段の数を見せるため）
-    talk = hanasu.think_section(sid, data, head("hanasu")).replace("<h2>考えを話す</h2>", "<h3>考えを話す</h3>", 1)
+    # 考えを話す の口は外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」・前は設計の問い 4 の答えで仮説の段の中に残していた）。
+    # 話した考えから紙を作り直す口（自分の案 OWN の道・ループ 1）は残す。声とカメラの区切りの作り始めは頁の終わりの clips.toy_start
+    talk = ""
     if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では出さない。受け口も閉じている（J-028）
         talk += think_sheet.section(sid, at, head(at))
     kasetsu = (f'<section class="sec" id="kasetsu-fuda"><h2>仮説</h2><p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p>'
@@ -673,6 +673,10 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
     body += f'<section class="sec">{foot_links()}</section>'
     # 国立国会図書館デジタルコレクションの出典の字（所蔵・コマ・権利）は頁の一番下（本人の言葉 11-08「国立図書館デジタルコレクションの文言はページの一番下に」）
     body += genga.ndl_credit(sid, src)
+    # 声とカメラの区切りの置き場の台本と、頁を開いた時の作り始め（#640）。前は 考えを話す の節の中にあったので、節を外した後も頁に 1 回置く（web.clips.toy_start）
+    from . import clips
+
+    body += clips.toy_start(sid)
     if note and note not in body:  # 知らない印や、欄が出ていない時も、文を落とさない
         body = body.replace('id="kasetsu">', f'id="kasetsu">{note}', 1)
     return skin.shell(data["toy"], FOLD_STYLE + body + FOLD_SCRIPT, look, "", path)

@@ -681,6 +681,7 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
     closed = public or not uploads
     data = hypotheses.load(sid)
     from . import hanasu  # 循環を避けて、ここで読む
+    from . import zukan  # 試した日の字（前のつくるの頁の記録の札と同じ部品）
 
     # 手帖から送った後の返事の文（#121）。着く #mine の頭に出す。通らなかった時の理由は、その記録の札の頭に出す（返事の文は頁に 1 つ・id を重ねない）
     from web.toy import reply_note
@@ -713,7 +714,10 @@ def records_page(sid, uploads=True, msg="", up_key=None, rec_key=None, public=Fa
         own = toy_own_papers(sid, r["hypothesis_id"], r.get("sheet_version", 1)) if (not closed and h is None and r["hypothesis_id"] not in spoken) else ""
         # 開いた角度（測った数）は、前はつくるの頁の記録の札の題（「…・40°」）にだけあった。記録の札を外したので、同じ形でここの 1 行に付ける（11-08）
         deg = f'・{r["opened_deg"]:g}°' if r.get("opened_deg") is not None else ""
-        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
+        # 試した日と型紙の版は、前はつくるの頁の記録の札の頭（「11 月 4 日・版 7」）にだけあった。#657 で記録の札を外した後、写真も感想も無い記録は
+        # どこにも出なくなった（統括の確かめ 11-08）ので、同じ部品と同じ字でここの頭の 1 行に付ける。人の言葉でないので合言葉なしの場でも出す
+        when = f'　{zukan.record_date(r)}・{hypotheses.label_of(r.get("sheet_set") or hypotheses.current_set(data), r.get("sheet_version", 1))}'
+        mine += (f'<div class="item" id="{esc(rid)}">{here}<p class="meta">{esc(wording.record_no(r["id"])) + "　" if not closed else ""}{esc(who)}　{esc(records.result_word(r))}{esc(deg)}{esc(when)}</p>{f"<div class=row>{pics}</div>" if pics else ""}{drop}'
                  + (f'<p>メモ: {esc(memo)}</p>' if memo else "") + own +
                  # 記録の「工夫した所（直した所）」と、上げた後に足す口（一周の 2 と 3、Issue #279）。開いた場では、人の言葉を出さない。
                  f'{hanasu.keep_box(sid, r, show_shared=not closed, can_add=records.mine(r["id"], rec_key))}'

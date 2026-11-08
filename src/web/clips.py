@@ -27,6 +27,8 @@
   前に渡した区切りが消えない・別の目の気づき）。承認の終わりの消しは、その玩具の区切りと印だけ（ほかの玩具の区切りを消さない）。
 - 字（本人の OK 11-08）: FIRST・STORE・FULL・NO_VOICE・REMOVE・HEAD・CLIP_FAIL。STORE の最後の 1 句は本人の答えの字（11-08「このサイトをほかの画面で開くと、前に録った声と映像は消えます。」）
 """
+import json
+
 from .skin import esc
 
 CLIP_HOURS = 3   # 端末の中に置く長さ（統括の決め）。サーバの側の 72 時間の掃除とは別
@@ -138,6 +140,14 @@ def start_assets():
 def assets():
     """頁に 1 回だけ置く台本。数は 1 か所の値から入れる。"""
     return SCRIPT.replace("__HOURS__", str(CLIP_HOURS)).replace("__MAX__", str(CLIP_MAX)).replace("__CAM__", str(CAM_SECONDS))
+
+
+def toy_start(sid):
+    """玩具の頁（つくる）に置く 2 つ: 置き場の台本（assets）と、頁を開いた時の作り始め（openedAs の toy。回の印を新しく作り、前の人の渡していない
+    区切りを消す・統括の決め 11-08・#640）。のこす から戻った時は引き継ぐ（openedAs の中で見る）。
+    前は「考えを話す」の節（hanasu.think_section）の中にあった。本人の言葉 11-08「つくるの「考えを話す」は無くす。」で節を外した後も、作り始めのきっかけを
+    玩具の頁に残す（外すと、同じタブで前の人が録って去った区切りが、次の人の のこす に並ぶ・UX の担当の気づき）"""
+    return assets() + f'<script>addEventListener("DOMContentLoaded",()=>{{if(window.utsushiClips)setTimeout(()=>utsushiClips.openedAs({json.dumps(sid)},"toy").catch(()=>{{}}))}})</script>'
 
 
 def notes():
