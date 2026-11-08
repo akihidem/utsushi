@@ -186,7 +186,10 @@ def send(path, data=None):
 
 
 code, body, _ = send(f"/toy/{G}")
-assert code == 200 and think_sheet.GO in body and 'action="/toy/' + G + '/think-sheet#think"' in body
+# ふつうに開いた玩具の頁には、作り直す口（「この考えから紙を作る」）を出さない（本人の言葉 11-08「つくるの「考えを話す」は無くす。」。字の欄の無い釦は
+# 行き止まりになった・別の目の確かめ 11-08）。部品の節（think_sheet.section）は前のまま。頼んだ後に戻った頁（think-<印>）には下のとおり出る
+assert code == 200 and think_sheet.GO not in body and 'action="/toy/' + G + '/think-sheet#think"' not in body
+assert think_sheet.GO in think_sheet.section(G) and 'action="/toy/' + G + '/think-sheet#think"' in think_sheet.section(G)
 # 節は、たたき台の寸法が全部読める玩具の頁だけ（今は必須 2 種。呼び名を足すと増える）。内部の名前（board_w など）を学ぶ人に見せないため
 T, P = "NDL-1187053-R0000014-R", "NDL-1187053-R0000004-L"
 assert [p.stem for p in sorted((hypotheses.ROOT / "data/hypotheses").glob("NDL-*.json")) if think_sheet.ready(p.stem)] == [G, T]
@@ -195,7 +198,7 @@ assert sorted(words.base_of(T)[1]) == sorted(["mount", "axle_height", "head_w", 
                                               "neck_length", "clay_back", "axle_back", "weight_behind", "fit_check"])
 assert not think_sheet.shown("pivot_counterweight", "fit_check") and not think_sheet.readable("pivot_counterweight", "fit_check", 1)
 assert all(think_sheet.readable("pivot_counterweight", k, v) for k, v in words.base_of(T)[1].items() if think_sheet.shown("pivot_counterweight", k))
-assert think_sheet.GO in send(f"/toy/{T}")[1]
+assert think_sheet.GO not in send(f"/toy/{T}")[1] and think_sheet.GO in think_sheet.section(T)
 code, body, _ = send(f"/toy/{P}")
 assert code == 200 and think_sheet.GO not in body and think_sheet.LEAD not in body, "呼び名がそろっていない玩具には節を出さない"
 talk_log.add(P, "think", "呼び名の無い玩具の考え", who="pagewho000")

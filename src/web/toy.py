@@ -537,15 +537,16 @@ def toy_page(sid, look=skin.DEFAULT, errors=(), msg="", asked=None, see=None, ki
                   f'<p class="meta">試して見る事: {esc(wording.plain(h["to_measure"]))}</p>{way_tags(ways.labels(ways.of_hypothesis(data, h))) if h.get("params") is not None else ""}'
                   '</div>')
     # 段 3 仮説: 見出し → 前提の断り（「型紙は正解ではなく、AI が考えた仮説」・本人の言葉 11-05。札より前）→ 輪の図（窓口の決め 162346 で残す・
-    # 設計の問い 6 の答え「推しのとおり。」で仮説の段のまま）→ 仮説の札（→ 話した考えから作り直す口。考えを話す の口は 11-08 に外した）。
+    # 設計の問い 6 の答え「推しのとおり。」で仮説の段のまま）→ 仮説の札。
     # 札を作る行（上の for）は替えない（「仮説」の字の直しは別の担当が持つ）。書いて立てる欄は無い（本人の決定 11-05 18:08、J-032 の点 2）
-    from . import think_sheet  # 話した考えから、たたき台の紙を作り直す（ループ 1、Issue #335）
+    # 考えを話す の口（字の欄）と、話した考えから紙を作り直す口（think_sheet.section・#think の「この考えから紙を作る」）は外した（本人の言葉 11-08
+    # 「つくるの「考えを話す」は無くす。」）。字の欄だけを外して釦を残すと、押すと「先に、考えを話すか書いて…」が出る行き止まりになった（別の目の確かめ 11-08）。
+    # 作り直す口は、型紙を印刷する の中の「Claude に話して型紙を作り直す」として新しい形で戻す（設計 grove の state/tsukuru-talk-sheet-20261108.md）。
+    # 受け口（/think-sheet・/think-ok）と部品は残す。頼んだ後に戻った頁（at が think-<印>・本人の画面だけ）では、前のとおり様子と確かめ（この紙にする）を出す:
+    # 頼んである案を、本人が見失わないため（ふつうに開いた頁には出さない）。声とカメラの区切りの作り始めは頁の終わりの clips.toy_start
+    from . import think_sheet
 
-    # 考えを話す の口は外した（本人の言葉 11-08「つくるの「考えを話す」は無くす。」・前は設計の問い 4 の答えで仮説の段の中に残していた）。
-    # 話した考えから紙を作り直す口（自分の案 OWN の道・ループ 1）は残す。声とカメラの区切りの作り始めは頁の終わりの clips.toy_start
-    talk = ""
-    if photos and think_sheet.ready(sid):  # 合言葉なしの場（photos=False）と、呼び名がそろっていない玩具では出さない。受け口も閉じている（J-028）
-        talk += think_sheet.section(sid, at, head(at))
+    talk = think_sheet.section(sid, at, head(at)) if photos and at.startswith("think-") and think_sheet.ready(sid) else ""
     kasetsu = (f'<section class="sec" id="kasetsu-fuda"><h2>仮説</h2><p class="premise" id="premise">{esc(PREMISE_PAGE)}</p>{ring}<p class="meta">{esc(ways.NOTE)}</p>'
                f'<div class="plates">{plate}</div>{talk}</section>')
     # 段 6 型紙の窓（型紙の印刷）: 刷る前は窓の中に紙を作る「つくる」1 つ（make_go。刷る口は 1 つ・前は頭の釦）。刷った後は 紙・PDF・つくる（手帖へ）・のこす（案 B）。
