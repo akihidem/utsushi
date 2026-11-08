@@ -226,7 +226,7 @@ STEP_LIMIT = 120
 # （PUBLIC_MEDIA_TOTAL）と、写した動画の大きさの上限（techo_site.VIDEO_ROOM）の方で効く。
 MEDIA_LIMIT = 60
 # しおりの開く道（押した順を送る・とじる）も書き込みの数に入れる。台帳の止め 3 つの前に、同じ相手の短い間の数でも抑えるため（開く道の設計 7.2）
-WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/s/[A-Za-z0-9_-]{{22}}|/s/close")
+WRITE_PATHS = re.compile(rf"/toy/{SID}/(?:talk|record|record-json|ask|ask-json)|/record/R-\d{{4,}}/explain|/close|/s/[A-Za-z0-9_-]{{22}}|/s/close")
 # 紙を刷る口（刷る・刷り直す・英語の頁から刷る）の数（セキュリティの点検 U17）。1 回ごとに描画と PDF の別の処理が走り、刷った記録に
 # 1 件足す重い口なのに、前は数の上限が無く、合言葉なしの場で玩具を変えながら送り続けると CPU が詰まった。書き込みの口と別に数える。
 # 相手ごと: 1 つの網（学校の網など、トンネル越しの番地が 1 つ）から、同じ 1 分に 30 人が刷っても通る数（窓口の決め 11-07・案 b）。
@@ -912,6 +912,12 @@ class Handler(BaseHTTPRequestHandler):
             from . import shiori_open
             shiori.close(self._key_of(shiori_open.COOKIE) or "")
             return self._send(303, "", headers=[("Location", "/"), shiori_open.cookie_line("", bool(getattr(self.server, "public_key", None)))])
+        if self.path == "/close":
+            # のこした後の「この画面をとじる」（techo_site.close_form）。この画面の写真の鍵と記録の鍵を消し、その場限りの印も作り直させる（fresh）。
+            # 鍵が無くても同じ返事にする（とじる事は誰にでもできてよく、鍵の有り無しを外へ見せない）。フォームなので _form の Origin の照らしが先に効く
+            from . import techo_site
+            return self._send(303, "", headers=[("Location", f"/gallery?msg={urllib.parse.quote(techo_site.CLOSED)}&fresh=1#ageta"),
+                                                self._key_cookie(UP_COOKIE), self._key_cookie(REC_COOKIE)])
         m = re.fullmatch(rf"/toy/({SID})/reprint", self.path)
         if m and m.group(1) in sources():
             return self._reprint(m.group(1), form)

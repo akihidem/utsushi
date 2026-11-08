@@ -1,0 +1,5 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_screen_close.py
+# commit: b2d910cd（回した時の HEAD）
+/tmp/tmptxj59e_0/play/NDL-1187053-R0000005-L/.tmp-qr6bf9s_/H-C_v1.pdf
+ok: のこした後の「この画面をとじる」で、この画面の写真の鍵と記録の鍵が消える
+rc=0
