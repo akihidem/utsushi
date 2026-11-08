@@ -99,7 +99,7 @@
 - 合体は 11-05 の夜から 1 つの道を通し、まっさらな clone で全部の試験（`./run.sh`）が通った物だけを入れました。その道ができる前は、main の試験が落ちた事があります。
 - 制作者は手元のチャットから、決める事だけをしました。
 - 並べた事で速くなったか、品質が上がったかは、測っていません。
-- 担当・worktree・PR の数は、提出の日に数え直して書きます。くわしくは [docs/process/claude-story.md](docs/process/claude-story.md)。
+- 統括と窓口を除く担当のセッションは 33 でした。PR は 481（合体 461・開いている 6・閉じた 14）、この機械に今残る git worktree list の数は 305（古い物を含む）です（11-08 16:40 に数えた）。くわしくは [docs/process/claude-story.md](docs/process/claude-story.md)。
 
 ## 確かめた事と、まだの事
 
