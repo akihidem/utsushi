@@ -20,7 +20,7 @@ class Parser(argparse.ArgumentParser):
         sys.exit(4)
 
 
-def generate(template, params, source_id, out, page="A4", version=1, title=None, inject=None, mark=None):
+def generate(template, params, source_id, out, page="A4", version=1, title=None, inject=None, mark=None, fit_title=None):
     """型紙を 1 枚作る共通の流れ。検査に落ちれば 3 を返す。mark は紙に刷る仮説の印の文。自分の仮説の紙だけ別の文にする（hypotheses.print_own）。"""
     src = ROOT / "data/sources" / f"{source_id}.json"
     if not src.exists():
@@ -28,7 +28,7 @@ def generate(template, params, source_id, out, page="A4", version=1, title=None,
     source = json.loads(src.read_text(encoding="utf-8"))
     if mark:
         source["hypothesis_mark"] = mark
-    _, layout, failures = compose(template, params, source, page, version, title, inject or {})
+    _, layout, failures = compose(template, params, source, page, version, title, inject or {}, fit_title=fit_title)
     if failures:
         for f in failures:
             print(f.line(), file=sys.stderr)
