@@ -52,8 +52,11 @@ assert "const startMaking=async(sid,fromNokosu)=>{if(fromNokosu&&runNow(sid))ret
 assert "const goOn=async(sid)=>{if(!runNow(sid))await runNew(sid)}" in S
 assert "run:r?r.id:null" in S and "c.run===r.id" in marker, "区切りに回の印・渡す印は今の回の物だけ"
 opened = body(S, "const openedAs=async(sid,kind)=>{", "\naddEventListener")
-assert "await purged;" in opened and "if(kind==='work')return back||goOn(sid);return startMaking(sid,back)" in opened, "玩具の頁は作り始め・作業の頁は続き（消しの後で）"
+assert "await purged;" in opened and "return startMaking(sid,back)" in opened and "goOn(sid)" in opened, "玩具の頁は作り始め・作業の頁は続き（消しの後で）"
 assert "'/toy/'+sid+'/techo/kiroku'" in opened, "前の頁が その玩具の のこす なら引き継ぐ"
+# 前の頁がこのサイトの頁でない所（URL を直に打った・外）から開いた作業の頁と手帖は、続きでなく作り始め（統括の決め 11-08）
+assert "const fromOutside=()=>{try{return !document.referrer||new URL(document.referrer).origin!==location.origin}catch(e){return true}}" in S
+assert "if(kind==='work')return back||(fromOutside()?startMaking(sid,false):goOn(sid))" in opened, "作業の頁は外から直に開くと作り始め"
 # 承認の終わりは、その玩具の区切りと印だけ（ほかの玩具の区切りを消さない）
 clr = body(S, "const clear=async(sid)=>{", "\n")
 assert "if(c.sid===sid)await remove(c.id)" in clr and "s.clear()" not in S, clr
@@ -109,7 +112,7 @@ from web import techo_step  # noqa: E402
 
 assert "window.utsushiClipsStart(sid)" in techo_step.SCRIPT[techo_step.SCRIPT.index("$('start').onclick"):][:600], "手帖の「はじめる」で回を引き継ぐ"
 st = clips.start_assets()
-assert "if(r&&Date.now()-r.at<3*3600000)return" in st, "回の印が 3 時間の内なら引き継ぐ（消さない）"
+assert "if(r&&!out&&Date.now()-r.at<3*3600000)return" in st and "out=!document.referrer||new URL(document.referrer).origin!==location.origin" in st, "回の印が 3 時間の内でも、外から直に開いた手帖は引き継がない"
 assert "cur.value.sid===sid&&!cur.value.pass)cur.delete()" in st and "'utsushi-pass-new:'+sid" in st, "回が無い時だけ、印の無い区切りを消し、次は新しい印"
 assert not re.search(r"getUserMedia|MediaRecorder|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|document\.cookie", st), "録る code も外へ送る口も持たない"
 assert "utsushiClips.openedAs(T.sid,'work')" in hmd.SCRIPT and "utsushiClips.startMaking(T.sid,back)" not in hmd.SCRIPT, "作業の頁は続き（玩具の頁の回を引き継ぐ）"

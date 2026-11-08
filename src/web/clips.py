@@ -21,6 +21,8 @@
   のこす と同じタブで続けて移った時は同じ回として消さない）。回の印が無い時だけ、そこで作り始める。区切りには回の印を付け、渡す時は
   今の回の印の付いた物だけに渡す印を付ける。前の人が録っただけで去っても、次の人が玩具の頁を開いた時に消え、次の人の承認で送られない。
   戻る釦で頁が読み直されずに作業の頁へ戻った時（pageshow の persisted）は、前の頁が分からないので作り始めとする（実機でまだ確かめていない）。
+  作業の頁と手帖を、前の頁がこのサイトの頁でない所（referrer が空か外）から開いた時も作り始めとする（URL を直に打って入った時・統括の決め）。
+  開いたまま次の人へ渡した時は見分けようがないので、進め役の手引き（workshop-guide）に、渡す前の 1 手を書いた。
 - **印は玩具ごと**（sessionStorage の utsushi-pass:<印>）。のこす へ移るたびに、3 時間の内の今の印を使い直す（戻って録り足した後に渡しても、
   前に渡した区切りが消えない・別の目の気づき）。承認の終わりの消しは、その玩具の区切りと印だけ（ほかの玩具の区切りを消さない）。
 - 字（本人の OK 11-08）: FIRST・STORE・FULL・NO_VOICE・REMOVE・HEAD・CLIP_FAIL。STORE の最後の 1 句は本人の答えの字（11-08「このサイトをほかの画面で開くと、前に録った声と映像は消えます。」）
@@ -103,8 +105,11 @@ document.addEventListener('click',(e)=>{const a=e.target.closest&&e.target.close
 // 開いた時の振り分け（統括の決め）: 玩具の頁は作り始め（toy）、作業の頁は続き（work）。前の頁が その玩具の のこす なら、どちらも引き継ぐ。
 // 呼ぶのは頁の側（玩具の頁と作業の頁が、開いた時に自分の種類を言う）。消し（purge）を済ませてから振り分ける
 let purged=null;
+// 作業の頁を、前の頁がこのサイトの頁でない所（URL を直に打った・外のリンク）から開いた時は、続きでなく作り始めにする
+// （玩具の頁を通らずに直に入った前の人の区切りを、3 時間の内に直に入った次の人に渡さない・別の目の確かめ 11-08・統括の決め）
+const fromOutside=()=>{try{return !document.referrer||new URL(document.referrer).origin!==location.origin}catch(e){return true}};
 const openedAs=async(sid,kind)=>{await purged;let back=false;try{back=new URL(document.referrer).pathname==='/toy/'+sid+'/techo/kiroku'}catch(e){}
- if(kind==='work')return back||goOn(sid);return startMaking(sid,back)};
+ if(kind==='work')return back||(fromOutside()?startMaking(sid,false):goOn(sid));return startMaking(sid,back)};
 addEventListener('DOMContentLoaded',()=>{purged=purge().catch(()=>{})});
 window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goOn,openedAs,voiceStart,voiceStop,camClip};
 // その場限りの印は頁の終わりの台本（skin.WHO_SCRIPT）が作るので、消しは頁を読み終えた後に回す
@@ -115,7 +120,9 @@ window.utsushiClips={put,list:handed,adopt,remove,clear,handOver,startMaking,goO
 # 置き場の台本（SCRIPT）と同じ db・同じ印の名を使う。外へ送る口も持たない
 START_SCRIPT = """<script>(()=>{if(!window.indexedDB)return;
 window.utsushiClipsStart=(sid)=>{try{const r=JSON.parse(sessionStorage.getItem('utsushi-run:'+sid)||'null');
-  if(r&&Date.now()-r.at<__HOURS__*3600000)return;sessionStorage.setItem('utsushi-run:'+sid,JSON.stringify({id:Math.random().toString(36).slice(2)+Date.now().toString(36),at:Date.now()}));
+  // 手帖を、前の頁がこのサイトの頁でない所から開いた時は、回を引き継がずに作り始める（作業の頁と同じ・直に入った前の人の区切りを渡さない）
+  let out=true;try{out=!document.referrer||new URL(document.referrer).origin!==location.origin}catch(e){}
+  if(r&&!out&&Date.now()-r.at<__HOURS__*3600000)return;sessionStorage.setItem('utsushi-run:'+sid,JSON.stringify({id:Math.random().toString(36).slice(2)+Date.now().toString(36),at:Date.now()}));
   sessionStorage.setItem('utsushi-pass-new:'+sid,'1')}catch(e){return}
  const q=indexedDB.open('utsushi-clips',1);q.onupgradeneeded=()=>q.result.createObjectStore('clips',{keyPath:'id'});
  q.onsuccess=()=>{const db=q.result,t=db.transaction('clips','readwrite'),c=t.objectStore('clips').openCursor();
