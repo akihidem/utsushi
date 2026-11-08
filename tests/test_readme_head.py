@@ -86,6 +86,11 @@ KADAI = '課題として考えている事。学校や博物館などの現場�
 kadai_sec = text[text.index("## 何の課題か・誰のためか\n"):text.index("\n## 仕組み")]
 assert text.count(KADAI) == 1 and kadai_sec.rstrip().endswith(KADAI), "課題の節の末尾に本人の字"
 
+# 作る気持ちの節に、うつしの始まりの本人の言葉（11-08 17:4x・grove の standing の行）をそのまま引く。1 段目の後
+ORIGIN = '> 「動くか動かないか、楽しいか楽しくないかは、おもちゃはすら分かりやすい。だから子供たちが自分から進んでトライアンドエラーをする、モチベーションのある題材だ。これが科学や科学実験を下支えしている、と思い至ったのが始まり。」（制作者の言葉 11-08・うつしの始まり）'
+feel = text[text.index("## 作る気持ち\n"):text.index("\n## repo の地図と動かし方")]
+assert lines.count(ORIGIN) == 1 and ORIGIN in feel, "作る気持ちの節にうつしの始まりの言葉"
+
 # 4. 仕組みの図と 5 行の字
 how = text[text.index("## 仕組み: 型紙とエンジンが直る 2 つのフィードバックループ\n"):text.index("## Claude の使い方\n")]
 # 図は SVG の絵（docs/img/feedback-loop.svg）。前の mermaid の塊は、GitHub の携帯のアプリなどで描かれず字のまま出た（本人の言葉 11-08「flowchart LRが
