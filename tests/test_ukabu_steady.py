@@ -53,9 +53,10 @@ for sid, size in zip(ukabu.PICKS, REAL):
 
 pages = {f"{lang}-{w}x{h}": (f"/?lang={lang}", w, h) for lang in LANGS for w, h in SIZES}
 # 包みの頁が iframe ごとに、開いて 1.5 秒の後に 送る → resize → 幅を替えて戻す と歩き、各段の浮かぶ玩具の位置を控える
+# 浮かぶ玩具は題の間（#hall）の物だけを見る（まずはここから の節にも浮かぶ実物の層 .ukabu があるため・web.jitsubutsu）
 WRAP = """<!doctype html><body>%s<pre id="measured"></pre><script>
 const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
-const toys=(w)=>[...w.document.querySelectorAll('.ukabu .uk')];
+const toys=(w)=>[...w.document.querySelectorAll('#hall .ukabu .uk')];
 const pos=(w)=>toys(w).map(e=>e.offsetLeft+','+e.offsetTop+','+w.getComputedStyle(e).visibility).join(' ');
 const mine=(w)=>toys(w).map(e=>e.style.left+'/'+e.style.top+'/'+w.getComputedStyle(e).visibility).join(' ');
 const touch=(w)=>{const h=w.document.getElementById('hall');let ok=true;
@@ -63,7 +64,7 @@ const touch=(w)=>{const h=w.document.getElementById('hall');let ok=true;
   h.dispatchEvent(new w.TouchEvent('touchstart',{touches:[T(400)],changedTouches:[T(400)],bubbles:true}));
   h.dispatchEvent(new w.TouchEvent('touchmove',{touches:[T(380)],changedTouches:[T(380)],bubbles:true}));
   h.dispatchEvent(new w.TouchEvent('touchend',{touches:[],changedTouches:[T(380)],bubbles:true}))}catch(e){ok=false}return ok};
-const shown=(w)=>{const l=w.document.querySelector('.ukabu');return {placed:!!l&&l.classList.contains('placed'),
+const shown=(w)=>{const l=w.document.querySelector('#hall .ukabu');return {placed:!!l&&l.classList.contains('placed'),
  n:toys(w).filter(e=>w.getComputedStyle(e).visibility==='visible'&&e.querySelector('img').naturalWidth>0&&e.offsetHeight>0).length}};
 const walk=async(f)=>{const w=f.contentWindow,H=+f.height;await wait(1500);const a=pos(w),am=mine(w),seen=shown(w);
  const touched=touch(w);w.scrollTo(0,120);await wait(300);const b=pos(w),y=w.scrollY;

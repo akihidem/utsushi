@@ -1064,5 +1064,19 @@
    "tests/test_kasetsu_plain_all.py"
   ],
   "unverified": "記録の中の字（人の説明・本人の決定の記録など）は替えていない。本人が頁で見る事"
+ },
+ {
+  "id": "f85",
+  "name": "まずはここから の原図の周りに、実物のおもちゃを抜き出して浮かべる（本人の言葉 11-08「スクロールして、まずはここからの原図の周囲に、実際のおもちゃを抜き出して浮かべる。」）",
+  "status": "doing",
+  "evidence": [
+   "src/web/jitsubutsu.py",
+   "src/web/ukabu.py",
+   "src/web/looks.py",
+   "src/web/play_server.py",
+   "data/jitsubutsu",
+   "tests/test_mazu_real_toys.py"
+  ],
+  "unverified": "5 種（6 種のうち手が残った 1 種は使わない）。背景は repo の外の道具で抜き、位置の札 0 を試験で見る。本人の答え: 写真も repo に入れてよい・作った人の名は出さない。狭い画面（帯を足すか出さないか）と名は本人の答え待ちで、今は狭い画面では出さず名も付けない。本物の iPad と iPhone の Safari では見ていない"
  }
 ]

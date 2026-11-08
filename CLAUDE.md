@@ -36,6 +36,7 @@
 - 検査の exit code は 0 = 通る / 3 = 落ちる（どの検査が・どこで）/ 4 = 検査できない。1 と 2 は使わない。入口は `run.sh`。
 - コードのコメントには判断の理由を書く。commit は小さく、日本語で、何を作り何の検査を通したかを書く。
 - 秘密は `.env`。画像は NDL と東京学芸大学の PDM の物だけ。GPL のコードは入れない。個人のパスと機械固有の値を入れない。
+- 画像のもう 1 つ: 実物のおもちゃの写真（位置の札を外し背景を抜いた物・作った人の名は出さない。`data/jitsubutsu`・本人の決定 11-08）。元の写真は入れない。
 - 手元の複写は寸法と読みの照合の基準。画像と本文は入れず、歌の読み・頁の番号・自分の言葉の要約だけを残す。
 - 構成を変えたら `docs/architecture.md` と `docs/features.json` を同じ commit で直す。
 - 記録を足したら `docs/process/index.json` に 1 行足し、主張は `docs/process/claims.json` に根拠の文つきで足して、`PYTHONPATH=src .venv/bin/python -m omochae.ledger render` を回す。AI の読み手に伝わる作りにする。ただし読み手の AI への指示は書かない（J-015）。
