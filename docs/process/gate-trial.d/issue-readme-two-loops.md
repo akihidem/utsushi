@@ -6,4 +6,5 @@
 - 確かめ: 頭のない Chrome で幅 390 の明るい頁と暗い頁に絵を開き、字と矢印が読める事を見た（写しは grove の state/readme-two-loops-20261108/）
 - 読みやすさ: yomiyasu 2.5.0 で、見直し候補 21 → 27 件（warn 9 → 10・info 12 → 17）、文 202 → 217、60 字を超える文 32 → 34、平均 39.0 → 39.3 字（説明の字を足した分）
 - 検証ゲート: **済み**。Red: 今の main（`743706e5`）に新しい頭の試験だけを置くと rc 1（gate-evidence/red-readme-two-loops.txt）。Green: この枝で rc 0（gate-evidence/green-readme-two-loops.txt）
+- ループの中の人（本人の言葉 11-08「…グラウンディングで人間が入ってる…」「型紙をためしてもらうグラウンディングと、全体の改善案をみる管理人のグラウンディング。」）: 頭の売りの 2 行目・仕組みの節の人が入る所・図の人の印（作り手 2・管理人 2）。Green: gate-evidence/green-readme-two-loops-2.txt
 - 確かめていない事: 全部の試験（`./run.sh`）。新しい字の本人の確かめ。GitHub の携帯のアプリでの図の目での確かめ
