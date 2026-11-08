@@ -1,0 +1,4 @@
+# 命令: env PYTHONPATH=src:tests .venv/bin/python tests/test_talk_sheet_window.py
+# commit: 直しの commit（下の commit の本文に SHA）の木で回した
+ok 型紙を印刷する の中の作り直しの口: 御来迎と虎に 1 つ（見出しと PDF の後・紙の絵の前）・1 回で字を残して頼む・この口の字で断り頼まない・待ちの間は釦なし・404 と 403・訳の表にある
+rc=0

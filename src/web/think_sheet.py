@@ -342,9 +342,15 @@ def post(handler, sid, act, form):
         if kept is None:
             why = TALK_BLOCKED if failures and failures[0].floor == "F10.pii" else TALK_EMPTY if failures and failures[0].message == talk_log.EMPTY else FAILED
             return handler._send(422, handler._toy(sid, errors=[why], at="think"))
-        act = "think-sheet"
+        act, talked = "think-sheet", True
+    else:
+        talked = False
     if act == "think-sheet":
         w, why = request(sid, form.get("who", ""), claude=use_claude(handler))
+        # 字を残した後の止め（頼み済みの案の鍵が閉じている・残した考えが選べない時など）で request が返す前の口の字（NONE「先に、考えを話すか書いて…」）は、
+        # この口では TALK_NO_SCREEN にそろえる（字の欄はこの口にあるので、前の字は合わない。#721 の別の目の気づき）
+        if talked and why == NONE:
+            why = TALK_NO_SCREEN
         token, msg = (w["token"], ASKED) if w else ("", why)
     else:
         token = form.get("t", "")

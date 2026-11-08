@@ -99,6 +99,17 @@ try:
         for old in ("「残す」", "聞き取れませんでした", think_sheet.NONE):
             assert old not in body[body.index('id="think"'):body.index('id="think"') + 1500], (form, old, "前の口の字が出た")
     assert send(base, f"/toy/{PLAIN}/think-talk", {"who": "talkwin0005", "text": "大きく"})[0] == 404, "呼び名のそろわない玩具の受け口が開いている"
+    # 字を残した後の止め（残した考えが選べない・頼み済みの案の鍵が閉じている時など）も、この口の字（前の口の NONE を出さない・#721 の別の目の気づき）
+    from api import words  # noqa: E402
+
+    keep_latest = words.latest_think
+    words.latest_think = lambda sid, who: (None, None)
+    try:
+        before = words_n()
+        code, body, _ = send(base, f"/toy/{G}/think-talk", {"who": "talkwin0006", "text": "扇を大きく"})
+        assert code == 422 and think_sheet.TALK_NO_SCREEN in body and think_sheet.NONE not in body and words_n() == before, (code, "字を残した後の止めで前の字が出た")
+    finally:
+        words.latest_think = keep_latest
     assert play_server.WRITE_PATHS.fullmatch(f"/toy/{G}/think-talk"), "書き込みの数の止めに入っていない"
 finally:
     server.shutdown()
