@@ -163,7 +163,9 @@ see(white, f"/toy/{G}", name="自分の仮説の後")
 see(white, f"/toy/{G}/record", {"hypothesis": "OWN-1", "result": "動いた", "impression": "開いた"}, "自分の仮説の記録の後")
 # 前は自分の仮説の後の図鑑の頁も見ていた（図鑑の頁は外した・本人の言葉 11-08）
 asked = see(white, f"/toy/{G}/ask", {"hypothesis": GS, "question": "紙の端はどこまで切りますか"}, "聞く口の答え")
-assert "AI の答えは" in asked, "鍵が無い時の文まで届いていない"
+# 玩具の頁の聞く口（作っている途中で困ったら）は外した（本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。…」）。
+# JS の無い作りながら見る頁の聞く口は /toy/<印>/ask へ送るので、答えは戻った玩具の頁の答えの枠（#ask-answer）に出る
+assert 'id="ask-answer"' in asked and "AI の答えは" in asked, "鍵が無い時の文まで届いていない"
 
 left = {}
 for where, words in pages.items():

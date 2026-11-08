@@ -79,8 +79,11 @@ try:
     assert get("/en", "utsushi_lang=en")[0] == plain and "Draft translation" not in plain
     # 人が書いた字は訳さない（機械で訳した他人の言葉を出さない）。札の字は英語になる
     records.add({"source_id": G, "hypothesis_id": "H-A", "sheet_version": 1, "result": "動いた", "impression": "すっと開いた"})
-    mine, _ = get(f"/toy/{G}", "utsushi_lang=en")
-    assert "すっと開いた" in mine
+    # 人の書いた感想は、記録の札のある もちよる（/gallery の「他の人が作った物」）で、訳さずに出る。玩具の頁には記録の札が無い
+    # （本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」）
+    mine, _ = get("/gallery", "utsushi_lang=en")
+    assert "すっと開いた" in mine and '<html lang="en"' in mine
+    assert "すっと開いた" not in get(f"/toy/{G}", "utsushi_lang=en")[0]
 finally:
     srv.shutdown()
     srv.server_close()

@@ -1,9 +1,11 @@
-"""玩具の頁の「これまでの記録」に、ワークショップで作られた物の写真が、その玩具の分だけ出る（本人の言葉 11-07 夜
-「おもちゃ毎のつくるにあるこれまでの記録にはワークショップで作られた写真を載せて欲しい」・web.workshop）。
+"""ワークショップで作られた物の写真（本人の言葉 11-07 夜「おもちゃ毎のつくるにあるこれまでの記録にはワークショップで作られた写真を載せて欲しい」・web.workshop）。
+本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、置き場は玩具の頁の
+「これまでの記録」から もちよる（/gallery）へ移った。
 
-見る事: 表（data/workshop_photos.json）の写真は全部置き場に在り、玩具の印は 83 の中。表の玩具の頁の「これまでの記録」に、
-その玩具の写真だけが小さい写しの道で出る（ほかの玩具の写真は出ない・写真の無い玩具は並びを出さない）。小さい写しは 100KB 以下。
-表の外の道は 404。合言葉なしの公開の場でも同じに出る（本人の直の指示）。人の書いた字（感想）は頁に足さない。
+見る事: 表（data/workshop_photos.json）の写真は全部置き場に在り、玩具の印は 83 の中。玩具の頁には写真の並びが無い。もちよる には、
+その玩具の単体の写真がその玩具の札（みんながつくったおもちゃ）に出て、ほかの玩具の札には出ない。作っている様子と並べた写真も もちよる に出る
+（分けの表に無い写真の置き場は、もちよる の玩具ごとの札の枝の試験 tests/test_mochiyoru_toy_place.py が見る）。小さい写しは 100KB 以下。
+表の外の道は 404。合言葉なしの公開の場でも同じに出る（本人の直の指示）。
 """
 import json
 import os
@@ -43,10 +45,12 @@ def get(base, path):
         return e.code, e.read()
 
 
-def section(html):
-    m = re.search(r"<summary><h3>これまでの記録</h3></summary>(.*?)</details>", html, re.S)
-    assert m, "これまでの記録の節が無い"
-    return m.group(1)
+def card(html, sid):
+    """もちよる の「みんながつくったおもちゃ」の、その玩具の札（玩具の名の道 /toy/<印> を持つ figure）。無ければ空。"""
+    for m in re.finditer(r'<figure class="workshop">(.*?)</figure>', html, re.S):
+        if f'<a href="/toy/{sid}">' in m.group(1):
+            return m.group(1)
+    return ""
 
 
 for kw in ({}, {"public_open": True}):
@@ -54,13 +58,22 @@ for kw in ({}, {"public_open": True}):
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"
     try:
+        st, gal = get(base, "/gallery")
+        assert st == 200, st
+        gal = gal.decode()
         for sid in sorted(toys):
             st, body = get(base, f"/toy/{sid}")
             assert st == 200, (sid, st)
-            sec = section(body.decode())
-            want = [r["file"] for r in rows if r["toy"] == sid]
-            got = re.findall(r'<img src="/workshop/(\d{8}/p\d{2}\.jpg)/small"', sec)
-            assert got == want, (sid, kw, got, want)
+            # 本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」: 玩具の頁には写真の並びも これまでの記録 の畳みも無い
+            assert "strip workshop" not in body.decode() and "/workshop/" not in body.decode() and "これまでの記録" not in body.decode(), (sid, kw)
+            # もちよる の、その玩具の札に、その玩具の単体の写真が表の順で出る（ほかの玩具の写真は出ない）
+            single = [r["file"] for r in rows if r["toy"] == sid and workshop.kind_of(r["file"]) == "single"]
+            got = re.findall(r'<img src="/workshop/(\d{8}/p\d{2}\.jpg)/small"', card(gal, sid))
+            assert got == single, (sid, kw, got, single)
+        # 作っている様子と並べた写真（玩具を言わない写真）も もちよる に出る
+        for r in rows:
+            if workshop.kind_of(r["file"]) in ("making", "lineup"):
+                assert f'/workshop/{r["file"]}/small' in gal, (r["file"], kw, "もちよる に無い")
         st, body = get(base, f"/toy/{none}")
         assert st == 200 and "strip workshop" not in body.decode(), none
         for f in {r["file"] for r in rows}:

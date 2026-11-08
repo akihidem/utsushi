@@ -1,15 +1,16 @@
-"""玩具の頁の「これまでの復元」に、その玩具の作例の写真（本人が上げたワークショップの作った物の写真）を出す（本人の言葉 11-08「つくる、虎のこれまでの復元の写真が少ない。」）。
-前は試行の写真の表（data/workshop_photos.json）だけを読み、作例は作った物の頁の作例の節にしか出なかった。本物の写真は使わない（作り物の色の写真）。
+"""その玩具の作例の写真（本人が上げたワークショップの作った物の写真）の置き場（本人の言葉 11-08「つくる、虎のこれまでの復元の写真が少ない。」）。
+本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。復元の記録などはすべてもちよるに統合する。」で、玩具の頁の「これまでの復元」は外し、
+作例の写真は もちよる（/gallery）に出す。本物の写真は使わない（作り物の色の写真）。
 
 見る事:
-1. 作例のある 12 種の玩具（今の公開デモの置き場で作例があった物）すべてで、人が「物だけ」と確かめた作例の写真が、玩具の頁のこれまでの復元に出る
-2. 事例の写真（型紙で改善したおもちゃ 3 バージョン・改善ループの例・参加者の工夫）も、その玩具の頁に出る
-3. 人が入る写真・確かめる前の写真・ワークショップ全体の写真（玩具が 1 つに決まらない）は出ない。ほかの玩具の頁にも出ない
-4. 小さい写しで出し、字は前からある alt「作った物の写真」だけ（新しい字を足さない）。試行の写真の後ろに並ぶ
+1. 作例のある 12 種の玩具（今の公開デモの置き場で作例があった物）すべてで、人が「物だけ」と確かめた作例の写真が、玩具の頁に出ず、もちよる に出る
+2. 事例の写真（型紙で改善したおもちゃ 3 バージョン）は玩具の頁に出ない（もちよる の玩具の札に出る事は、もちよる の玩具ごとの札の枝の
+   試験 tests/test_mochiyoru_toy_place.py が見る）
+3. 人が入る写真・確かめる前の写真は、玩具の頁にも もちよる にも出ない。ワークショップ全体の写真（玩具が 1 つに決まらない）は玩具の頁に出ない
+4. もちよる では小さい写しで出し、元の写真の道を並べない
 """
 import io
 import os
-import re
 import tempfile
 
 os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
@@ -17,7 +18,8 @@ os.environ["OMOCHAE_DATA"] = tempfile.mkdtemp()
 from PIL import Image  # noqa: E402
 
 from omochae import media_review, records  # noqa: E402
-from web import sakurei, toy  # noqa: E402
+from web import sakurei, techo_site, toy  # noqa: E402
+from web.play_server import sources  # noqa: E402
 
 tmp = tempfile.mkdtemp()
 G, T = "NDL-1187053-R0000005-L", "NDL-1187053-R0000014-R"
@@ -36,8 +38,10 @@ def photo(name, n):
 
 
 def minna(sid):
+    """その玩具の頁（前は、この頁の これまでの復元 の節を見ていた）。本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」で節は無い"""
     page = toy.toy_page(sid)
-    return page.split('id="minna"', 1)[1].split("</section>", 1)[0]
+    assert 'id="minna"' not in page and "strip workshop" not in page, (sid, "玩具の頁に これまでの復元 が残った")
+    return page
 
 
 def url(rid, name):
@@ -58,21 +62,18 @@ for rid, name in ((vr, vn), (ar, an)):
     assert media_review.record(rid, name, "object", "確認者") == []
 assert media_review.record(pr, pn, "people", "確認者") == []
 
-# 1. 12 種すべてで出る
+gallery = techo_site.gallery_page(list(sources()))
+# 1. 12 種すべてで、玩具の頁に出ず、もちよる に出る（本人の言葉 11-08「…復元の記録などはすべてもちよるに統合する。」）
 for sid, (rid, name) in made.items():
-    sec = minna(sid)
-    assert url(rid, name) in sec, (sid, "作例の写真がこれまでの復元に出ない")
-    others = [made[o] for o in TWELVE if o != sid]
-    assert not any(url(r, n) in sec for r, n in others), (sid, "ほかの玩具の作例が出た")
-# 2. 事例の写真も、その玩具の頁に出る
+    page = minna(sid)
+    assert url(rid, name) not in page and not any(url(r, n) in page for r, n in made.values()), (sid, "作例の写真が玩具の頁に残った")
+    assert url(rid, name) in gallery, (sid, "作例の写真が もちよる に無い")
+# 2. 事例の写真（虎の 3 バージョン）は玩具の頁に出ない（もちよる の札は tests/test_mochiyoru_toy_place.py）
 tora = minna(T)
-assert url(vr, vn) in tora, "虎の 3 バージョンの写真が出ない"
-assert url(vr, vn) not in minna(G)
-# 3. 人が入る写真・確かめる前・全体の写真は出ない
-assert pr not in tora and wr not in tora and ar not in tora and ar not in minna(G), "出してはいけない写真が出た"
-# 4. 小さい写し・字は alt だけ・試行の写真の後ろ
-assert f'/record/{made[T][0]}/media/{made[T][1]}"' not in tora, "元の写真の道を並べた"
-strip = re.search(r'<div class="strip workshop">(.*?)</div>', tora, re.S).group(1)
-assert strip.count("<img") == 3 and set(re.findall(r'alt="([^"]*)"', strip)) == {"作った物の写真"}, "虎は試行の 1 枚と作例の 2 枚（札 1・事例 1）"
-assert strip.index("/workshop/") < strip.index("/record/"), "試行の写真の後ろに並ぶ"
-print("ok 玩具の頁のこれまでの復元に作例の写真: 12 種・事例も・人が入る物と全体の写真は出ない・小さい写し")
+assert url(vr, vn) not in tora and url(vr, vn) not in minna(G), "事例の写真が玩具の頁に残った"
+# 3. 人が入る写真・確かめる前は、どちらの頁にも出ない。全体の写真は玩具の頁に出ない（もちよる では報告の顔の写真として出る・test_sakurei_gallery）
+assert pr not in tora and wr not in tora and ar not in tora and ar not in minna(G), "出してはいけない写真が玩具の頁に出た"
+assert url(pr, pn) not in gallery and url(wr, wn) not in gallery, "人が入る写真か確かめる前の写真が もちよる に出た"
+# 4. もちよる では小さい写しで出し、元の写真の道を並べない
+assert f'/record/{made[T][0]}/media/{made[T][1]}"' not in gallery, "元の写真の道を並べた"
+print("ok 作例の写真: 12 種とも玩具の頁に無く もちよる にある・事例も玩具の頁に無い・人が入る物と確かめる前の物は出ない・小さい写し")

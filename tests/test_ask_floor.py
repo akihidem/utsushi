@@ -44,9 +44,11 @@ try:
         j = json.loads(body)
         assert code == 200 and j["text"] == making_log.ASK_NAME_VOICE and j["from"] == "floor", (q, j)
     assert not sent, ("床に当たった字を Claude へ送った", sent)
-    # JS が無い時の聞く口も同じ
+    # JS が無い時の聞く口（作りながら見る頁の form が /toy/<印>/ask へ送る）も同じ。答えは戻った玩具の頁の答えの枠（#ask-answer）に出る
+    # （玩具の頁の聞く口そのものは外した。本人の言葉 11-08「つくるは読む情報が多すぎて整理する必要を感じる。…」）
     code, page = post(f"/toy/{G}/ask", {"hypothesis": GS, "question": "3年2組の山田です"})
-    assert code == 200 and making_log.ASK_NAME_VOICE in page and not sent, sent
+    answer = page.split('id="ask-answer"', 1)[1].split("</div>", 1)[0] if 'id="ask-answer"' in page else ""
+    assert code == 200 and making_log.ASK_NAME_VOICE in answer and not sent, (sent, "答えの枠に床の字が無い")
     # 字は残らず、数だけ残る。作る側の集計と束にも字が入らない
     kept = making_log.asks(G)
     assert len(kept) == len(BLOCKED) + 1 and all(a["dropped"] and not a["question"] for a in kept), kept
