@@ -818,14 +818,19 @@ class Handler(BaseHTTPRequestHandler):
         if back == "techo":
             # 着く印: 既定は上げる節（#mine）。作りながら見る頁の組み上がりからは記入の節（#kinyu・頁の頭）へ着き、返事の字もそこに出す
             # （別の目の確かめ 11-08: #mine は頁の一番下で、記入の節を飛び越えた）
+            # JS の無い画面の のこす（back=techo）でも、記録を残した時は fresh の合図と写真の鍵を閉じる行（_up_close）を付ける（統括の割り振り 11-08・
+            # 別の目の確かめ）。付けないと、同じ機械の次の人が前の人の写真の口を持ったままになる。下の記録の札へ戻す時と同じ線
             at = "kinyu" if anchor == "kinyu" else "mine"
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}#{at}"), *headers])
-        # 記録の札（錨が記録の番号）へ戻す時は、手帖の記録の頁の記録の並びへ: つくるの頁から記録の札を外した（本人の言葉 11-08「復元の記録などはすべて
-        # もちよるに統合する。」）。fresh の合図と、写真の鍵を閉じる行（_up_close）は、玩具の頁へ戻す時と同じに付ける: 付けないと、同じ機械の次の人が
-        # 前の人の写真の口を持ったままになる（別の目の試験 test_photo_owner_only・test_who_fresh が見る）
-        if re.fullmatch(r"R-\d{4}", anchor or ""):
             mark = "&fresh=1" if fresh else ""
-            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{mark}#mine"), *headers] + (self._up_close() if fresh else []))
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{'&at=kinyu' if at == 'kinyu' else ''}{mark}#{at}"), *headers]
+                              + (self._up_close() if fresh else []))
+        # 記録の札（錨が記録の番号）へ戻す時は、手帖の記録の頁のその記録の札（id=記録の番号）へ: つくるの頁から記録の札を外した（本人の言葉 11-08「復元の
+        # 記録などはすべてもちよるに統合する。」）。前は記録の並び（#mine）の頭に着き、どの札か探す事になった。番号の形は R- と 4 桁以上（records の番号が
+        # 1 万を越えても同じ道。作る側の頁の道と同じ線）。錨は形を確かめた物だけを Location に入れる。fresh の合図と、写真の鍵を閉じる行（_up_close）は、
+        # 玩具の頁へ戻す時と同じに付ける（別の目の試験 test_photo_owner_only・test_who_fresh が見る）
+        if re.fullmatch(r"R-\d{4,}", anchor or ""):
+            mark = "&fresh=1" if fresh else ""
+            return self._send(303, "", headers=[("Location", f"/toy/{sid}/techo/kiroku?msg={urllib.parse.quote(msg)}{mark}#{anchor}"), *headers] + (self._up_close() if fresh else []))
         extra = (f"&see={see}&kind=sheet" + (f"&v={v}" if v else "")) if see else ""
         # fresh: 記録を残した時の合図。戻った頁で、その場限りの印を作り直す（skin.WHO_SCRIPT）。通らなかった時はここに来ない。
         extra += "&fresh=1" if fresh else ""
