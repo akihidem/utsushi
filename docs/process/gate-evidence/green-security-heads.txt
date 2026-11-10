@@ -1,0 +1,4 @@
+# 命令: .venv/bin/python tests/test_security_doc.py
+# commit: 6fe08787（回した時の HEAD）
+ok SECURITY.md の数（直接の依存 9・保存期間・しおりの 504 通り）がコードと同じで、事項 8〜13 が していない事 にあり、名を書いた試験 37 本が在り、見出し 6 つがエンジンの節とそろう
+rc=0

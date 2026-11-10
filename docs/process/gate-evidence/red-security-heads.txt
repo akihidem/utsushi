@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_security_doc.py
+# commit: a584b2c5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_security_doc.py", line 62, in <module>
+    assert theirs and ours == theirs, ("守っている事の見出しがエンジンの節とそろっていない", ours, theirs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('守っている事の見出しがエンジンの節とそろっていない', ['入力の扱い', '外へ開く口', '鍵の扱い', '人の情報', 'AI に渡す文の中の指示への備え', '依存の版'], ['入力の扱い', '外へ開く口', '鍵', '人の情報', 'AI に渡る文の中の指示への備え', '依存'])
+rc=1
