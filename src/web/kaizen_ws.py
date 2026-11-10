@@ -185,7 +185,7 @@ def _mosaic(each):
 
 
 def section(sheet):
-    """節の HTML。sheet は組の名を「型紙の版 vN」で言う関数（kaizen_judge._sheet と同じ言い方にそろえる）。一覧が無ければ空。"""
+    """節の HTML。sheet は組の名を「型紙の版 N」で言う関数（kaizen_judge._sheet と同じ言い方にそろえる）。一覧が無ければ空。"""
     ws = workshops()
     if not ws:
         return ""
