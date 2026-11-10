@@ -9,6 +9,9 @@
 - 「fsync はしていない」と書いてある間は、store.write_atomic が fsync を呼ばない（呼ぶ形にしたら文書も直す）
 - 事項 8〜13 の項目が「していない事」にある。書きかけの印（〈 〉）が残っていない
 - SECURITY.md に名を書いた試験のファイル（tests/test_*.py）が、どれも在る（守りを書いた所が、在る試験を指す・直しの PR より先に字だけが入らない）
+- utsushi の「守っている事」の見出しが、エンジン（paper-to-toy）の節の見出しと同じ字で同じ順に並ぶ（カード 20261107-130112 の決め
+  「SECURITY.md はエンジンの側とそろえた見出しで作る」・窓口の記録 11-10。前は「鍵の扱い」「AI に渡す文の…」「依存の版」で字がずれていた）。
+  utsushi にだけある見出し（UTSUSHI_ONLY）は、並びの間に入ってよい
 """
 import inspect
 import itertools
@@ -47,4 +50,16 @@ assert "〈" not in doc and "〉" not in doc, "書きかけの印が残ってい
 named = sorted(set(m.group(0) for m in re.finditer(r"(?:engine/)?tests/test_[a-z0-9_]+\.py", doc)))
 missing = [n for n in named if not (ROOT / n).exists()]
 assert not missing, ("SECURITY.md が名を書いた試験が無い", missing)
-print(f"ok SECURITY.md の数（直接の依存 {len(pins)}・保存期間・しおりの {ways} 通り）がコードと同じで、事項 8〜13 が していない事 にあり、名を書いた試験 {len(named)} 本が在る")
+# 見出しをエンジンの節とそろえる。エンジンの節は paper-to-toy の SECURITY.md の見出しを写した物（SECURITY.md は 1 つ・窓口の決め 125840）なので、
+# この file の中の 2 つの節を照らせば、エンジンの側との食い違いが分かる。「誰が何を開けるか」は utsushi の管理の口と合言葉の画面の分け方
+# （2026-11-08 の安全の点検の事項 1 への対応）で、エンジンには無い
+UTSUSHI_ONLY = ("誰が何を開けるか",)
+ours_part = doc[doc.index("## 守っている事"):doc.index("## していない事")]
+engine_part = doc[doc.index("## エンジン（engine/）"):doc.index("## 見つけた時の知らせ方")]
+engine_part = engine_part[engine_part.index("### 守っている事"):engine_part.index("### していない事")]
+ours = [h for h in re.findall(r"^### (.+)$", ours_part, re.M) if h not in UTSUSHI_ONLY]
+theirs = re.findall(r"^#### (.+)$", engine_part, re.M)
+assert theirs and ours == theirs, ("守っている事の見出しがエンジンの節とそろっていない", ours, theirs)
+assert re.findall(r"^## (.+)$", doc, re.M) == ["守っている事", "していない事", "エンジン（engine/）", "見つけた時の知らせ方"], "大きい見出しの並び"
+
+print(f"ok SECURITY.md の数（直接の依存 {len(pins)}・保存期間・しおりの {ways} 通り）がコードと同じで、事項 8〜13 が していない事 にあり、名を書いた試験 {len(named)} 本が在り、見出し {len(theirs)} つがエンジンの節とそろう")
