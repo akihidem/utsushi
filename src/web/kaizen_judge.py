@@ -100,7 +100,9 @@ def _story(text):
 
 def site_loop(hist=None):
     """1 周目（サイトの輪・11-04）。記録 R-0001 → 人の説明 → 直し T-0001（雛形の組 goraigo-v8）。
-    次の版は、ほかの 2 つの一周と同じく「型紙の版 vN」で言う（窓口の決め 11-07: 組の番号で言い、型紙の版とエンジンの版を言い分ける）。
+    次の版は、ほかの 2 つの一周と同じく「型紙の版 N」で言う（窓口の決め 11-07: 組の番号で言い、型紙の版とエンジンの版を言い分ける）。
+    v は付けない（カード 20261107-090257 の決め A「頁は「型紙の版 14」「エンジンの版 7」の形で、「v14」は使わない」・窓口の記録 11-10。
+    玩具の頁の札の脇・輪の図の真ん中・手帖の山場の 1 行と同じ形。前はこの頁だけ「型紙の版 v7 → v8」で、同じサイトに書き方が 2 つあった）。
     番号は表の行（11-07 11:42 の出し直しで足された改善の輪より前の版）から取る。表に行が無い写しでは、記録の組の名のまま出す。
     この版にはエンジンの版が無い（エンジンの台帳と結ぶのはエンジンの版 2 から）ので、エンジンの版は言わない。"""
     rec, ex, ch = _load(SITE_REC), _load(SITE_EXPL), _load(SITE_CHANGE)
@@ -108,7 +110,7 @@ def site_loop(hist=None):
         return ""
     v_from, v_to = rec.get("sheet_set", ""), ch.get("sheet_set", "")
     vt = _version(hist or {}, "御来迎", v_to)
-    ver = f"型紙の版 v{int(vt['sheet_version']) - 1} → v{int(vt['sheet_version'])}" if vt and vt.get("sheet_version") else f"{v_from} → {v_to}"
+    ver = f"型紙の版 {int(vt['sheet_version']) - 1} → {int(vt['sheet_version'])}" if vt and vt.get("sheet_version") else f"{v_from} → {v_to}"
     steps = (_step("human", "作った記録", _p(f'{rec.get("tried_on", "")}・見た事「{rec.get("result", "")}」・{_tried(hist, v_from)}'))
              + _step("human", "人の説明", _p(ex.get("text", "")) + (_p("次の思いつき: " + ex["next_idea"]) if ex.get("next_idea") else ""))
              + _step("human", "直しの案", _ul(ch.get("changes", [])))
@@ -124,9 +126,10 @@ def _version(hist, toy_word, set_name):
 
 
 def _sheet(hist, set_name):
-    """組の名を、表の行があれば「型紙の版 vN」で言う（窓口の決め 11-07。同じ頁の中で版の言い方をそろえる）。行の無い写しでは組の名のまま。"""
+    """組の名を、表の行があれば「型紙の版 N」で言う（窓口の決め 11-07。同じ頁の中で版の言い方をそろえる。v を付けない形は site_loop の注）。
+    行の無い写しでは組の名のまま。ワークショップの節の「刷った型紙」もこれで言う（kaizen_ws.section に渡す）。"""
     v = next((v for t in (hist or {}).get("toys", []) for v in t.get("versions", []) if v.get("set") == set_name), None)
-    return f"型紙の版 v{int(v['sheet_version'])}" if v and v.get("sheet_version") else set_name
+    return f"型紙の版 {int(v['sheet_version'])}" if v and v.get("sheet_version") else set_name
 
 
 def _tried(hist, set_name):
@@ -150,12 +153,12 @@ def engine_loop(hist):
              + _step("engine", "直しの案", _p("・".join(ev.get("proposals", []))))
              + _step("human", "人が決める", _p(ev.get("line", "")))
              + _step("claude", "直しを作る", f"<p>{_pr_links(v.get('prs', []))}</p>" + _ul(v.get("changed", [])))
-             + _step("human", "次の版", f'<p class="kz-ver">型紙の版 v{int(v["sheet_version"]) - 1} → v{int(v["sheet_version"])}・エンジンの版 {int(v["engine_version"])}</p>'))
+             + _step("human", "次の版", f'<p class="kz-ver">型紙の版 {int(v["sheet_version"]) - 1} → {int(v["sheet_version"])}・エンジンの版 {int(v["engine_version"])}</p>'))
     return f'<section class="sec kz-loop" id="engine"><h2>{esc(LOOPS[1])}</h2><p class="kz-state">{esc(DONE)}</p>{_p(v.get("line", ""))}<ol class="kz-steps">{steps}</ol></section>'
 
 
 def peak_loop(hist):
-    """山場（11-07）。サイトの作り方の 3D の試験で虎 v6 の当たり → 見直し → 人が決める → 型紙の版 v7（エンジンの版 7）。"""
+    """山場（11-07）。サイトの作り方の 3D の試験で虎 v6 の当たり → 見直し → 人が決める → 型紙の版 7（エンジンの版 7）。"""
     v = _version(hist, "虎", "tora-v7")
     if not _merged(v):
         return ""
@@ -165,7 +168,7 @@ def peak_loop(hist):
     steps = (_step("engine", "作った記録", "".join(_p(w["text"]) for w in find))
              + _step("human", "人が決める", "".join(_p(w["text"]) for w in decide))
              + _step("claude", "直しを作る", f"<p>{_pr_links(v.get('prs', []))}</p>" + _ul(v.get("changed", [])))
-             + _step("human", "次の版", f'<p class="kz-ver">型紙の版 v{int(v["sheet_version"]) - 1} → v{int(v["sheet_version"])}・エンジンの版 {int(v["engine_version"])}</p>'))
+             + _step("human", "次の版", f'<p class="kz-ver">型紙の版 {int(v["sheet_version"]) - 1} → {int(v["sheet_version"])}・エンジンの版 {int(v["engine_version"])}</p>'))
     # 流れの文に、まだ入っていない PR（表の「合体待ち」）が出てくる間は、文を出さない（入っていない事を済んだ事として言わないため）
     waiting = {c.get("pr") for c in hist.get("engine_changes", []) if "合体待ち" in str(c.get("status", ""))}
     text = hist.get("story", "")

@@ -1,0 +1,8 @@
+# 命令: .venv/bin/python tests/test_kaizen_judge.py
+# commit: a584b2c5（回した時の HEAD）
+Traceback (most recent call last):
+  File "tests/test_kaizen_judge.py", line 72, in <module>
+    assert "型紙の版 3 → 4・エンジンの版 2" in t and "型紙の版 6 → 7・エンジンの版 7" in t
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+rc=1

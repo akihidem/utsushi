@@ -12,6 +12,8 @@
 7. いま回っている一周（本人の指示 11-07「済んだ 3 つの一周に加えて、今朝 Claude が記録 R-0001 を読んで案を出した 1 件（人の確認待ち）も…状態の違いは正直に分かるように」）:
    済んだ一周と札の字と色で分ける。Claude の読みは写しの字のまま。人が確かめる段と次の版は「まだ」。写しに呼び出しの記録（型の名）は無い
 8. 題のすぐ下に紹介の大前提の 2 文（本人の言葉 11-07 夜の「入れる」）。S1（何か）と S3（4 日続けて開けた実証）の字のまま、今の LEAD の前
+9. 版は「型紙の版 7」の形（v を付けない）で言い、頁のどこにも「型紙の版 v」の形を出さない（カード 20261107-090257 の決め A「頁は「型紙の版 14」
+   「エンジンの版 7」の形で、「v14」は使わない」・窓口の記録 11-10。玩具の頁の札の脇・輪の図の真ん中・手帖の山場の 1 行と同じ形）
 """
 import copy
 import json
@@ -67,23 +69,27 @@ ex = json.loads(k.SITE_EXPL.read_text(encoding="utf-8")); ch = json.loads(k.SITE
 assert ex["text"] in t and all(c in t for c in ch["changes"]), "サイトの輪は記録の字のまま"
 v4 = k._version(hist, "虎", "tora-v4"); v7 = k._version(hist, "虎", "tora-v7")
 assert all(c.replace("制作者", k.MAKER) in t for c in v4["changed"] + v7["changed"]), "エンジンの輪と山場は表の字のまま"
-assert "型紙の版 v3 → v4・エンジンの版 2" in t and "型紙の版 v6 → v7・エンジンの版 7" in t
+assert "型紙の版 3 → 4・エンジンの版 2" in t and "型紙の版 6 → 7・エンジンの版 7" in t
 # 1 周目の次の版も「型紙の版」で言う。番号は表の行から（表の出し直し 11-07 11:42 で改善の輪より前の版の行が足された）。行の無い写しでは組の名のまま
 if k._version(hist, "御来迎", "goraigo-v8"):
-    assert "型紙の版 v7 → v8" in t and "goraigo-v8" not in t, "1 周目もほかの一周と同じ言い方"
+    assert "型紙の版 7 → 8" in t and "goraigo-v8" not in t, "1 周目もほかの一周と同じ言い方"
 else:
     assert "goraigo-v7 → goraigo-v8" in t
 row = {"toys": [{"toy": "御来迎", "versions": [{"set": "goraigo-v8", "sheet_version": "8"}]}]}
-assert "型紙の版 v7 → v8" in text(k.site_loop(row)) and "goraigo-v7 → goraigo-v8" in text(k.site_loop({})), "表の行があれば番号、無ければ組の名"
+assert "型紙の版 7 → 8" in text(k.site_loop(row)) and "goraigo-v7 → goraigo-v8" in text(k.site_loop({})), "表の行があれば番号、無ければ組の名"
 assert "エンジンの版" not in text(k.site_loop(row)), "この版にエンジンの版は無いので言わない"
 # 同じ頁の中で版の言い方をそろえる（作った記録の「刷った」版も、いま回っている一周も。別の目の気づき 11-07）
 if k._version(hist, "御来迎", "goraigo-v7"):
-    assert "goraigo-v7" not in t and t.count("刷った型紙の版 v7") == 2, "1 周目といま回っている一周の、刷った版の言い方"
+    assert "goraigo-v7" not in t and t.count("刷った型紙の版 7") == 2, "1 周目といま回っている一周の、刷った版の言い方"
 else:
     assert t.count("刷った組 goraigo-v7") == 2
 row7 = {"toys": [{"toy": "御来迎", "versions": [{"set": "goraigo-v7", "sheet_version": "7"}, {"set": "goraigo-v8", "sheet_version": "8"}]}]}
-assert "刷った型紙の版 v7" in text(k.site_loop(row7)) and "刷った型紙の版 v7" in text(k.pending_loop(row7)) and "刷った組 goraigo-v7" in text(k.pending_loop({}))
+assert "刷った型紙の版 7" in text(k.site_loop(row7)) and "刷った型紙の版 7" in text(k.pending_loop(row7)) and "刷った組 goraigo-v7" in text(k.pending_loop({}))
 assert f'/utsushi/commit/{ch["commit"]}' in page and "/paper-to-toy/pull/106" in page and "/paper-to-toy/pull/138" in page, "直しを作った commit と PR へ行ける"
+
+# ---- 9 版の形: v を付けない（ワークショップの節の「刷った型紙」も同じ _sheet で言うので、頁の全体で見る）
+assert "型紙の版 v" not in t and "型紙の版 v" not in text(k.site_loop(row) + k.site_loop(row7) + k.pending_loop(row7)), "型紙の版に v を付けない"
+assert k._sheet(row7, "goraigo-v7") == "型紙の版 7" and k._sheet({}, "goraigo-v7") == "goraigo-v7", "表の行があれば「型紙の版 N」、無ければ組の名"
 
 # ---- 4 済んだ一周の Claude の印は直しを作る段だけ。読む段の札は済んだ一周には無い
 claude_steps = [s for sec in loops for s in steps(sec) if s[0] == "claude"]
